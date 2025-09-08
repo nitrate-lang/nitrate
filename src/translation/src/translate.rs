@@ -1,4 +1,6 @@
 use crate::{TranslationOptions, TranslationOptionsBuilder};
+use nitrate_diagnosis::{Diagnose, DiagnosticDrain};
+use nitrate_optimization::FunctionOptimization;
 use nitrate_parse::{Parser, SymbolTable};
 use nitrate_structure::SourceModel;
 use nitrate_tokenize::Lexer;
@@ -64,15 +66,60 @@ fn parse_language(lexer: Lexer) -> Result<(SourceModel, SymbolTable), Translatio
     Ok((model, symbol_table))
 }
 
+fn diagnose_problems(
+    model: &SourceModel,
+    diagnostic_passes: &[Box<dyn Diagnose + Sync>],
+    drain: &DiagnosticDrain,
+    pool: &ThreadPool,
+) {
+    scope_with(pool, |scope| {
+        for diagnostic in diagnostic_passes {
+            scope.execute(|| {
+                diagnostic.diagnose(model, drain);
+            });
+        }
+    });
+}
+
+fn optimize_functions(
+    symbols: &mut SymbolTable,
+    function_optimization_passes: &[Box<dyn FunctionOptimization + Sync>],
+    drain: &DiagnosticDrain,
+    pool: &ThreadPool,
+) {
+    scope_with(pool, |scope| {
+        for function in symbols.function_iter_mut() {
+            // We can't optimize function declarations
+            if function.read().unwrap().is_declaration() {
+                continue;
+            }
+
+            // The race condition checking if the function is a declaration
+            // is fine, because optimization passes will check it internally
+            // and be a no-op.
+
+            scope.execute(|| {
+                let mut function_mut = function.write().unwrap();
+
+                for pass in function_optimization_passes {
+                    pass.optimize_function(&mut function_mut, drain);
+                }
+            });
+        }
+    });
+}
+
 pub fn compile_code(
     source_code: &mut dyn std::io::Read,
     _machine_code: &mut dyn std::io::Write,
     options: &TranslationOptions,
 ) -> Result<(), TranslationError> {
+    let drain = &options.drain;
+
     let source = scan_into_memory(source_code)?;
     let lexer = create_lexer(&source, &options.source_name_for_debug_messages)?;
 
-    let (model, _symbol_table) = parse_language(lexer)?;
+    let (model, mut symtab) = parse_language(lexer)?;
     if model.any_errors() {
         return Err(TranslationError::SyntaxError);
     }
@@ -82,17 +129,11 @@ pub fn compile_code(
     // TODO: Perform name resolution
     // TODO: Perform type checking
 
-    let pool = ThreadPool::new(32);
+    let pool = ThreadPool::new(options.thread_count);
 
-    scope_with(&pool, |scope| {
-        for diagnostic in &options.diagnostic_passes {
-            scope.execute(|| {
-                diagnostic.diagnose(&model, &options.drain);
-            });
-        }
-    });
+    diagnose_problems(&model, &options.diagnostics, drain, &pool);
+    optimize_functions(&mut symtab, &options.function_optimizations, &drain, &pool);
 
-    // TODO: Perform optimizations
     // TODO: Generate code
 
     Err(TranslationError::NameResolutionError)

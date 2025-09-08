@@ -1,9 +1,11 @@
+use nitrate_structure::kind::Function;
 #[allow(unused_imports)]
 use nitrate_structure::{
     Builder,
     kind::{Expr, QualifiedScope},
 };
 use std::collections::HashMap;
+use std::sync::RwLock;
 
 #[derive(Debug, Clone, Default)]
 pub struct SymbolTable<'a> {
@@ -45,6 +47,16 @@ impl<'a> SymbolTable<'a> {
 
             search_scope.pop();
         }
+    }
+
+    pub fn function_iter_mut(&mut self) -> impl Iterator<Item = &RwLock<Function<'a>>> + '_ {
+        self.scopes
+            .values()
+            .flat_map(|symbols| symbols.values())
+            .filter_map(|symbol| match symbol {
+                Expr::Function(func) => Some(func.as_ref()),
+                _ => None,
+            })
     }
 }
 

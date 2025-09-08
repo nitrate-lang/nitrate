@@ -4,14 +4,14 @@ use nitrate_tokenize::{IntegerKind, Op};
 use ordered_float::NotNan;
 use smallvec::SmallVec;
 use std::collections::BTreeMap;
-use std::sync::Arc;
+use std::sync::{Arc, RwLock};
 
 use super::types::{
     ArrayType, FunctionType, GenericType, ManagedRefType, MapType, RefinementType, SliceType,
     StructType, TupleType, Type, UnmanagedRefType,
 };
 
-#[derive(Clone, PartialEq, Eq, Hash)]
+#[derive(Clone)]
 pub struct Integer {
     value: UInt,
     kind: IntegerKind,
@@ -53,7 +53,7 @@ impl std::fmt::Debug for Integer {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone)]
 pub struct List<'a> {
     elements: Vec<Expr<'a>>,
 }
@@ -75,7 +75,7 @@ impl<'a> List<'a> {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone)]
 pub struct Object<'a> {
     fields: BTreeMap<&'a str, Expr<'a>>,
 }
@@ -107,7 +107,7 @@ impl<'a> Object<'a> {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum UnaryExprOp {
     /*----------------------------------------------------------------*
      * Arithmetic Operators                                           *
@@ -195,7 +195,7 @@ impl TryFrom<Op> for UnaryExprOp {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone)]
 pub struct UnaryExpr<'a> {
     operator: UnaryExprOp,
     is_postfix: bool,
@@ -228,7 +228,7 @@ impl<'a> UnaryExpr<'a> {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum BinExprOp {
     /*----------------------------------------------------------------*
      * Arithmetic Operators                                           *
@@ -360,7 +360,7 @@ impl TryFrom<Op> for BinExprOp {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone)]
 pub struct BinExpr<'a> {
     operator: BinExprOp,
     left: Expr<'a>,
@@ -393,7 +393,7 @@ impl<'a> BinExpr<'a> {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone)]
 pub struct Statement<'a> {
     expr: Expr<'a>,
 }
@@ -410,7 +410,7 @@ impl<'a> Statement<'a> {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone)]
 pub struct Block<'a> {
     elements: Vec<Expr<'a>>,
 }
@@ -432,7 +432,7 @@ impl<'a> Block<'a> {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone)]
 pub struct FunctionParameter<'a> {
     name: &'a str,
     param_type: Type<'a>,
@@ -465,7 +465,7 @@ impl<'a> FunctionParameter<'a> {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone)]
 pub struct Function<'a> {
     parameters: Vec<FunctionParameter<'a>>,
     return_type: Type<'a>,
@@ -538,13 +538,13 @@ impl<'a> Function<'a> {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy)]
 pub enum VariableKind {
     Let,
     Var,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone)]
 pub struct Variable<'a> {
     kind: VariableKind,
     is_mutable: bool,
@@ -626,7 +626,7 @@ impl<'a> Variable<'a> {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone)]
 pub struct Identifier<'a> {
     full_name: String,
     segments: Vec<&'a str>,
@@ -657,7 +657,7 @@ impl<'a> Identifier<'a> {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone)]
 pub struct IndexAccess<'a> {
     collection: Expr<'a>,
     index: Expr<'a>,
@@ -735,7 +735,7 @@ impl std::fmt::Display for QualifiedScope<'_> {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone)]
 pub struct Scope<'a> {
     name: &'a str,
     attributes: Vec<Expr<'a>>,
@@ -780,7 +780,7 @@ impl<'a> Scope<'a> {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone)]
 pub struct If<'a> {
     condition: Expr<'a>,
     then_branch: Expr<'a>,
@@ -829,7 +829,7 @@ impl<'a> If<'a> {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone)]
 pub struct WhileLoop<'a> {
     condition: Expr<'a>,
     body: Expr<'a>,
@@ -860,7 +860,7 @@ impl<'a> WhileLoop<'a> {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone)]
 pub struct DoWhileLoop<'a> {
     condition: Expr<'a>,
     body: Expr<'a>,
@@ -891,7 +891,7 @@ impl<'a> DoWhileLoop<'a> {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone)]
 pub struct Switch<'a> {
     condition: Expr<'a>,
     cases: Vec<(Expr<'a>, Expr<'a>)>,
@@ -941,7 +941,7 @@ impl<'a> Switch<'a> {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone)]
 pub struct Break<'a> {
     label: Option<&'a str>,
 }
@@ -958,7 +958,7 @@ impl<'a> Break<'a> {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone)]
 pub struct Continue<'a> {
     label: Option<&'a str>,
 }
@@ -975,7 +975,7 @@ impl<'a> Continue<'a> {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone)]
 pub struct Return<'a> {
     value: Option<Expr<'a>>,
 }
@@ -996,7 +996,7 @@ impl<'a> Return<'a> {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone)]
 pub struct ForEach<'a> {
     iterable: Expr<'a>,
     bindings: Vec<(&'a str, Option<Type<'a>>)>,
@@ -1046,7 +1046,7 @@ impl<'a> ForEach<'a> {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone)]
 pub struct Await<'a> {
     expression: Expr<'a>,
 }
@@ -1067,7 +1067,7 @@ impl<'a> Await<'a> {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone)]
 pub struct Assert<'a> {
     condition: Expr<'a>,
     message: Expr<'a>,
@@ -1100,7 +1100,7 @@ impl<'a> Assert<'a> {
 
 pub type CallArguments<'a> = Vec<(Option<&'a str>, Expr<'a>)>;
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone)]
 pub struct Call<'a> {
     callee: Expr<'a>,
     arguments: CallArguments<'a>,
@@ -1136,7 +1136,7 @@ impl<'a> Call<'a> {
     }
 }
 
-#[derive(Clone, PartialEq, Eq, Hash)]
+#[derive(Clone)]
 pub enum Expr<'a> {
     Bool,
     UInt8,
@@ -1189,7 +1189,7 @@ pub enum Expr<'a> {
     Statement(Arc<Statement<'a>>),
     Block(Arc<Block<'a>>),
 
-    Function(Arc<Function<'a>>),
+    Function(Arc<RwLock<Function<'a>>>),
     Variable(Arc<Variable<'a>>),
     Identifier(Arc<Identifier<'a>>),
     IndexAccess(Arc<IndexAccess<'a>>),

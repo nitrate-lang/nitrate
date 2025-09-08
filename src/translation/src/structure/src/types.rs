@@ -2,7 +2,7 @@ use crate::expression::{Expr, FunctionParameter, Identifier};
 use nitrate_tokenize::StringData;
 use std::sync::Arc;
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone)]
 pub struct RefinementType<'a> {
     base: Type<'a>,
     width: Option<Expr<'a>>,
@@ -47,7 +47,7 @@ impl<'a> RefinementType<'a> {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone)]
 pub struct TupleType<'a> {
     elements: Vec<Type<'a>>,
 }
@@ -64,7 +64,7 @@ impl<'a> TupleType<'a> {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone)]
 pub struct ArrayType<'a> {
     element: Type<'a>,
     count: Expr<'a>,
@@ -87,7 +87,7 @@ impl<'a> ArrayType<'a> {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone)]
 pub struct MapType<'a> {
     key: Type<'a>,
     value: Type<'a>,
@@ -110,7 +110,7 @@ impl<'a> MapType<'a> {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone)]
 pub struct SliceType<'a> {
     element: Type<'a>,
 }
@@ -127,7 +127,7 @@ impl<'a> SliceType<'a> {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone)]
 pub struct FunctionType<'a> {
     parameters: Vec<FunctionParameter<'a>>,
     return_type: Type<'a>,
@@ -164,7 +164,7 @@ impl<'a> FunctionType<'a> {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone)]
 pub struct ManagedRefType<'a> {
     target: Type<'a>,
     is_mutable: bool,
@@ -187,7 +187,7 @@ impl<'a> ManagedRefType<'a> {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone)]
 pub struct UnmanagedRefType<'a> {
     target: Type<'a>,
     is_mutable: bool,
@@ -210,7 +210,7 @@ impl<'a> UnmanagedRefType<'a> {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone)]
 pub struct GenericType<'a> {
     base: Type<'a>,
     args: Vec<(&'a str, Expr<'a>)>,
@@ -235,7 +235,7 @@ impl<'a> GenericType<'a> {
 
 pub type StructField<'a> = (&'a str, Type<'a>, Option<Expr<'a>>);
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone)]
 pub struct StructType<'a> {
     fields: Vec<StructField<'a>>,
 }
@@ -252,7 +252,7 @@ impl<'a> StructType<'a> {
     }
 }
 
-#[derive(Clone, PartialEq, Eq, Hash)]
+#[derive(Clone)]
 pub enum Type<'a> {
     Bool,
     UInt8,

@@ -1,4 +1,3 @@
-use nitrate_tokenize::{Integer, Keyword, Name, Op, Punct, Token};
 use nitrate_structure::kind::{
     ArrayType, Assert, Await, BinExpr, BinExprOp, Block, Break, Call, Continue, DoWhileLoop, Expr,
     ForEach, Function, FunctionType, GenericType, Identifier, If, IndexAccess, List,
@@ -6,6 +5,7 @@ use nitrate_structure::kind::{
     StructType, Switch, TupleType, Type, UnaryExpr, UnaryExprOp, UnmanagedRefType, Variable,
     VariableKind, WhileLoop,
 };
+use nitrate_tokenize::{Integer, Keyword, Name, Op, Punct, Token};
 use std::ops::Deref;
 
 // FIXME: Keep this in sync with the parser
@@ -618,7 +618,7 @@ impl<'a> ToCode<'a> for Expr<'a> {
             Expr::Statement(e) => e.to_code(tokens, options),
             Expr::Block(e) => e.to_code(tokens, options),
 
-            Expr::Function(e) => e.to_code(tokens, options),
+            Expr::Function(e) => e.read().unwrap().to_code(tokens, options),
             Expr::Variable(e) => e.to_code(tokens, options),
             Expr::IndexAccess(e) => e.to_code(tokens, options),
             Expr::Scope(e) => e.to_code(tokens, options),

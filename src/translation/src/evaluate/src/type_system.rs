@@ -230,11 +230,7 @@ impl<'a> AbstractMachine<'a> {
     pub fn evaluate_type(&mut self, type_expression: &Type<'a>) -> Result<Type<'a>, Unwind<'a>> {
         // TODO: Verify and write tests
 
-        if self.already_evaluated_types.contains(type_expression) {
-            return Ok(type_expression.to_owned());
-        }
-
-        let result = match type_expression {
+        match type_expression {
             Type::Bool => Ok(Type::Bool),
             Type::UInt8 => Ok(Type::UInt8),
             Type::UInt16 => Ok(Type::UInt16),
@@ -267,10 +263,6 @@ impl<'a> AbstractMachine<'a> {
             Type::StructType(struct_type) => self.evaluate_struct_type(struct_type),
             Type::LatentType(latent_type) => self.evaluate_latent_type(latent_type),
             Type::HasParenthesesType(inner) => self.evaluate_type(inner),
-        };
-
-        result.inspect(|t| {
-            self.already_evaluated_types.insert(t.clone());
-        })
+        }
     }
 }

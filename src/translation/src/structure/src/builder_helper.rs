@@ -1,8 +1,8 @@
 use crate::Builder;
 use apint::UInt;
 use nitrate_tokenize::IntegerKind;
-use std::collections::BTreeMap;
 use std::sync::Arc;
+use std::{collections::BTreeMap, sync::RwLock};
 
 use crate::kind::{
     ArrayType, Assert, Await, BinExpr, BinExprOp, Block, Break, Call, CallArguments, Continue,
@@ -726,12 +726,12 @@ impl<'a> FunctionBuilder<'a> {
     }
 
     pub fn build(self) -> Expr<'a> {
-        Expr::Function(Arc::new(Function::new(
+        Expr::Function(Arc::new(RwLock::new(Function::new(
             self.parameters,
             self.return_type.expect("Return type must be provided"),
             self.attributes,
             self.definition,
-        )))
+        ))))
     }
 }
 

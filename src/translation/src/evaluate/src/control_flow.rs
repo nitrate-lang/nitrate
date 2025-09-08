@@ -6,7 +6,7 @@ use nitrate_structure::{
         Switch, WhileLoop,
     },
 };
-use std::sync::Arc;
+use std::sync::{Arc, RwLock};
 
 impl<'a> AbstractMachine<'a> {
     pub(crate) fn evaluate_if(&mut self, if_expr: &If<'a>) -> Result<Expr<'a>, Unwind<'a>> {
@@ -140,14 +140,12 @@ impl<'a> AbstractMachine<'a> {
         // TODO: Verify and write tests
 
         enum Callee<'a> {
-            FunctionCode(Arc<Function<'a>>),
+            FunctionCode(Arc<RwLock<Function<'a>>>),
             Intrinsic(IntrinsicFunction<'a>),
         }
 
         let callee = match self.evaluate(call.callee()) {
-            Ok(Expr::Function(function)) if function.is_definition() => {
-                Ok(Callee::FunctionCode(function))
-            }
+            Ok(Expr::Function(function)) => Ok(Callee::FunctionCode(function)),
 
             Err(Unwind::UnresolvedIdentifier(callee_name)) => {
                 if let Some(intrinsic) = self.resolve_intrinsic(&callee_name) {
@@ -171,7 +169,13 @@ impl<'a> AbstractMachine<'a> {
         self.current_task_mut().callstack_mut().push(callframe);
 
         let result = match callee {
-            Callee::FunctionCode(function) => self.evaluate(function.definition().unwrap()),
+            Callee::FunctionCode(function) => self.evaluate(
+                function
+                    .read()
+                    .unwrap()
+                    .definition()
+                    .ok_or(Unwind::TypeError)?,
+            ),
             Callee::Intrinsic(intrinsic) => intrinsic(self),
         };
 

@@ -1,8 +1,5 @@
-use hashbrown::{HashMap, HashSet};
-use nitrate_structure::{
-    Builder,
-    kind::{Expr, Type},
-};
+use hashbrown::HashMap;
+use nitrate_structure::{Builder, kind::Expr};
 use std::rc::Rc;
 
 #[derive(Debug, Default)]
@@ -66,8 +63,6 @@ pub struct AbstractMachine<'a> {
     provided_functions: HashMap<&'a str, IntrinsicFunction<'a>>,
     tasks: Vec<Task<'a>>,
     current_task: usize,
-
-    pub(crate) already_evaluated_types: HashSet<Type<'a>>,
 }
 
 impl Default for AbstractMachine<'_> {
@@ -84,7 +79,6 @@ impl<'a> AbstractMachine<'a> {
             provided_functions: HashMap::new(),
             tasks: Vec::from([Task::new()]),
             current_task: 0,
-            already_evaluated_types: HashSet::new(),
         };
 
         abstract_machine.setup_builtins();

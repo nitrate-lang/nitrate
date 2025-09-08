@@ -443,6 +443,10 @@ dependencies = [
 [[package]]
 name = "nitrate_optimization"
 version = "0.1.0"
+dependencies = [
+ "nitrate_diagnosis",
+ "nitrate_structure",
+]
 
 [[package]]
 name = "nitrate_parse"
@@ -490,6 +494,7 @@ version = "0.1.0"
 dependencies = [
  "nitrate_diagnosis",
  "nitrate_evaluate",
+ "nitrate_optimization",
  "nitrate_parse",
  "nitrate_resolve",
  "nitrate_structure",
