@@ -147,11 +147,14 @@ pub fn compile_code(
     let drain = &options.drain;
 
     diagnose_problems(&model, &options.diagnostic_passes, drain, &pool);
+    drop(model);
+
     if drain.any_errors() {
         return Err(TranslationError::DiagnosticError);
     }
 
     optimize_functions(&mut symtab, &options.function_optimizations, drain, &pool);
+    drop(pool);
 
     generate_code(&symtab)
 }
