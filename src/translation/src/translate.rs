@@ -129,7 +129,7 @@ pub fn compile_code(
     // TODO: Perform name resolution
     // TODO: Perform type checking
 
-    let pool = ThreadPool::new(options.thread_count);
+    let pool = ThreadPool::new(options.thread_count.get());
 
     diagnose_problems(&model, &options.diagnostics, drain, &pool);
     optimize_functions(&mut symtab, &options.function_optimizations, &drain, &pool);
