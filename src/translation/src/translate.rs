@@ -66,6 +66,19 @@ fn parse_language(lexer: Lexer) -> Result<(SourceModel, SymbolTable), Translatio
     Ok((model, symbol_table))
 }
 
+fn resolve_names(
+    _model: &mut SourceModel,
+    _symbol_table: &mut SymbolTable,
+) -> Result<(), TranslationError> {
+    // TODO: Implement name resolution logic
+    Err(TranslationError::NameResolutionError)
+}
+
+fn type_check(_model: &mut SourceModel) -> Result<(), TranslationError> {
+    // TODO: Implement type checking logic
+    Err(TranslationError::TypeCheckingError)
+}
+
 fn diagnose_problems(
     model: &SourceModel,
     diagnostic_passes: &[Box<dyn Diagnose + Sync>],
@@ -109,32 +122,36 @@ fn optimize_functions(
     });
 }
 
+fn generate_code(_model: &SymbolTable) -> Result<(), TranslationError> {
+    // TODO: Implement code generation logic
+    Ok(())
+}
+
 pub fn compile_code(
     source_code: &mut dyn std::io::Read,
     _machine_code: &mut dyn std::io::Write,
     options: &TranslationOptions,
 ) -> Result<(), TranslationError> {
-    let drain = &options.drain;
-
     let source = scan_into_memory(source_code)?;
     let lexer = create_lexer(&source, &options.source_name_for_debug_messages)?;
 
-    let (model, mut symtab) = parse_language(lexer)?;
+    let (mut model, mut symtab) = parse_language(lexer)?;
     if model.any_errors() {
         return Err(TranslationError::SyntaxError);
     }
 
-    let _parse_tree = model.tree();
-
-    // TODO: Perform name resolution
-    // TODO: Perform type checking
+    resolve_names(&mut model, &mut symtab)?;
+    type_check(&mut model)?;
 
     let pool = ThreadPool::new(options.thread_count.get());
+    let drain = &options.drain;
 
-    diagnose_problems(&model, &options.diagnostics, drain, &pool);
-    optimize_functions(&mut symtab, &options.function_optimizations, &drain, &pool);
+    diagnose_problems(&model, &options.diagnostic_passes, drain, &pool);
+    if drain.any_errors() {
+        return Err(TranslationError::DiagnosticError);
+    }
 
-    // TODO: Generate code
+    optimize_functions(&mut symtab, &options.function_optimizations, drain, &pool);
 
-    Err(TranslationError::NameResolutionError)
+    generate_code(&symtab)
 }

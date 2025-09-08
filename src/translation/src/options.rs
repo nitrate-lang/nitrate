@@ -10,7 +10,7 @@ pub struct TranslationOptions {
     pub source_name_for_debug_messages: String,
     pub drain: DiagnosticDrain,
     pub thread_count: NonZero<usize>,
-    pub diagnostics: Vec<Box<dyn Diagnose + Sync>>,
+    pub diagnostic_passes: Vec<Box<dyn Diagnose + Sync>>,
     pub function_optimizations: Vec<Box<dyn FunctionOptimization + Sync>>,
 }
 
@@ -20,7 +20,7 @@ impl Default for TranslationOptions {
             source_name_for_debug_messages: String::default(),
             drain: DiagnosticDrain::default(),
             thread_count: NonZero::new(1).unwrap(),
-            diagnostics: Vec::new(),
+            diagnostic_passes: Vec::new(),
             function_optimizations: Vec::new(),
         }
     }
