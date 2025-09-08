@@ -94,7 +94,7 @@ fn optimize_functions(
                 continue;
             }
 
-            // The race condition checking if the function is a declaration
+            // The RwLock race condition checking if the function is a declaration
             // is fine, because optimization passes will check it internally
             // and be a no-op.
 
