@@ -1,4 +1,5 @@
 use crate::{TranslationOptions, TranslationOptionsBuilder};
+use nitrate_codegen::{Codegen, CodegenError};
 use nitrate_diagnosis::{Diagnose, DiagnosticDrain};
 use nitrate_optimization::FunctionOptimization;
 use nitrate_parse::{Parser, SymbolTable};
@@ -7,14 +8,15 @@ use nitrate_tokenize::Lexer;
 use threadpool::ThreadPool;
 use threadpool_scope::scope_with;
 
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug)]
 pub enum TranslationError {
-    ScannerError,
+    ScannerError(std::io::Error),
     LexerError(nitrate_tokenize::LexerError),
     SyntaxError,
     NameResolutionError,
     TypeCheckingError,
     DiagnosticError,
+    CodegenError(CodegenError),
 }
 
 pub fn compile_debugable_code(
@@ -44,7 +46,7 @@ fn scan_into_memory(source_code: &mut dyn std::io::Read) -> Result<String, Trans
 
     source_code
         .read_to_string(&mut source_str)
-        .map_err(|_| TranslationError::ScannerError)?;
+        .map_err(|e| TranslationError::ScannerError(e))?;
 
     Ok(source_str)
 }
@@ -71,12 +73,12 @@ fn resolve_names(
     _symbol_table: &mut SymbolTable,
 ) -> Result<(), TranslationError> {
     // TODO: Implement name resolution logic
-    Err(TranslationError::NameResolutionError)
+    Ok(())
 }
 
 fn type_check(_model: &mut SourceModel) -> Result<(), TranslationError> {
     // TODO: Implement type checking logic
-    Err(TranslationError::TypeCheckingError)
+    Ok(())
 }
 
 fn diagnose_problems(
@@ -122,9 +124,13 @@ fn optimize_functions(
     });
 }
 
-fn generate_code(_model: &SymbolTable) -> Result<(), TranslationError> {
-    // TODO: Implement code generation logic
-    Ok(())
+fn generate_code(
+    model: &SourceModel,
+    object: &mut dyn std::io::Write,
+) -> Result<(), TranslationError> {
+    Codegen::default()
+        .generate(model, object)
+        .map_err(TranslationError::CodegenError)
 }
 
 pub fn compile_code(
@@ -147,7 +153,6 @@ pub fn compile_code(
     let drain = &options.drain;
 
     diagnose_problems(&model, &options.diagnostic_passes, drain, &pool);
-    drop(model);
 
     if drain.any_errors() {
         return Err(TranslationError::DiagnosticError);
@@ -156,5 +161,5 @@ pub fn compile_code(
     optimize_functions(&mut symtab, &options.function_optimizations, drain, &pool);
     drop(pool);
 
-    generate_code(&symtab)
+    generate_code(&model, _machine_code)
 }

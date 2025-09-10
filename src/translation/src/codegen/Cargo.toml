@@ -1,0 +1,8 @@
+[package]
+name = "nitrate_codegen"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+nitrate_structure = { path = "../structure" }
+cranelift = { version = "0.123.2", features = ["object", "core", "native"] }

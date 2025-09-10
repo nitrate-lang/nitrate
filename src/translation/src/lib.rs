@@ -2,6 +2,7 @@ mod options;
 mod options_builder;
 mod translate;
 
+pub use nitrate_codegen as codegen;
 pub use nitrate_evaluate as evaluate;
 pub use nitrate_parse as parse;
 pub use nitrate_resolve as resolve;

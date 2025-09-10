@@ -9,6 +9,7 @@ nitrate_tokenize = { path = "src/tokenize" }
 nitrate_structure = { path = "src/structure" }
 nitrate_resolve = { path = "src/resolve" }
 nitrate_parse = { path = "src/parse" }
+nitrate_codegen = { path = "src/codegen" }
 nitrate_diagnosis = { path = "../diagnosis" }
 nitrate_optimization = { path = "../optimization" }
 threadpool_scope = "0.1.0"
