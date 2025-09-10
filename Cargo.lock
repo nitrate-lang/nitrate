@@ -674,6 +674,7 @@ version = "0.1.0"
 dependencies = [
  "cranelift",
  "nitrate_structure",
+ "target-lexicon",
 ]
 
 [[package]]
