@@ -1,10 +1,10 @@
-use std::str::FromStr;
+use log::{debug, trace};
 use std::sync::Arc;
+use std::{collections::HashMap, str::FromStr};
 
 use cranelift::{
-    module::Module,
     object::{ObjectBuilder, ObjectModule},
-    prelude::isa::TargetIsa,
+    prelude::{Configurable, isa::TargetIsa},
 };
 
 use nitrate_structure::SourceModel;
@@ -16,39 +16,82 @@ pub enum CodegenError {
     TargetTripleParseError(target_lexicon::ParseError),
     UnsupportedTargetTriple(Triple),
     UnsupportedISAConfiguration(String),
+    UnsupportedISAConfigurationFlag((String, String)),
     ModuleCreationError(cranelift::module::ModuleError),
     ObjectFinalizationError(cranelift::object::object::write::Error),
     Other(String),
 }
 
 #[derive(Default)]
-pub struct Codegen {}
+pub struct Codegen {
+    target_triple_string: String,
+    isa_config: HashMap<String, String>,
+}
 
 impl Codegen {
-    fn create_cpu_feature_configuration() -> cranelift::codegen::settings::Flags {
+    pub fn new(target_triple_string: String, isa_config: HashMap<String, String>) -> Self {
+        Self {
+            target_triple_string,
+            isa_config,
+        }
+    }
+
+    fn create_shared_flags() -> cranelift::codegen::settings::Flags {
         let builder = cranelift::codegen::settings::builder();
         let flags = cranelift::codegen::settings::Flags::new(builder);
+
+        debug!(
+            "Shared flags: {:?}",
+            flags
+                .iter()
+                .map(|flag| (flag.name, flag.value_string()))
+                .collect::<Vec<_>>()
+        );
 
         flags
     }
 
     fn create_target_triple(triple_str: &str) -> Result<Triple, CodegenError> {
-        Triple::from_str(triple_str).map_err(CodegenError::TargetTripleParseError)
+        trace!("Creating target triple from string: {}", triple_str);
+
+        let triple = Triple::from_str(triple_str).map_err(CodegenError::TargetTripleParseError)?;
+        debug!("Compiling for target: {:?}", triple);
+
+        Ok(triple)
     }
 
     fn create_isa(
+        shared_flags: cranelift::codegen::settings::Flags,
         target_triple: Triple,
-        cpu_flags: cranelift::codegen::settings::Flags,
+        isa_config: &HashMap<String, String>,
     ) -> Result<Arc<dyn cranelift::codegen::isa::TargetIsa>, CodegenError> {
-        let isa_builder = match cranelift::codegen::isa::lookup(target_triple.clone()) {
+        let mut isa_builder = match cranelift::codegen::isa::lookup(target_triple.clone()) {
             Ok(isa) => Ok(isa),
             Err(_) => Err(CodegenError::UnsupportedTargetTriple(target_triple)),
         }?;
 
-        match isa_builder.finish(cpu_flags) {
+        for (key, value) in isa_config {
+            if isa_builder.set(key, value).is_err() {
+                return Err(CodegenError::UnsupportedISAConfigurationFlag((
+                    key.to_owned(),
+                    value.to_owned(),
+                )));
+            };
+
+            debug!("ISA config flag set: {} = {}", key, value);
+        }
+
+        match isa_builder.finish(shared_flags) {
             Ok(isa) => Ok(isa),
             Err(e) => Err(CodegenError::UnsupportedISAConfiguration(e.to_string())),
         }
+    }
+
+    fn compute_module_name(_model: &SourceModel) -> String {
+        // let hash = model.hash();
+
+        // TODO: Hash
+        "example_module".to_string()
     }
 
     fn create_module(
@@ -67,6 +110,8 @@ impl Codegen {
             .per_data_object_section(true)
             .per_function_section(true);
 
+        debug!("Created module with name: {}", module_name);
+
         Ok(ObjectModule::new(builder))
     }
 
@@ -75,14 +120,12 @@ impl Codegen {
         _model: &SourceModel<'a>,
         output: &mut dyn std::io::Write,
     ) -> Result<(), CodegenError> {
-        let target_triple_string = "x86_64"; // Example target ISA
-        let module_name = "example_module";
+        let shared_flags = Self::create_shared_flags();
+        let target_triple = Self::create_target_triple(&self.target_triple_string)?;
+        let isa = Self::create_isa(shared_flags, target_triple, &self.isa_config)?;
 
-        let cpu_flags = Self::create_cpu_feature_configuration();
-        let target_triple = Self::create_target_triple(target_triple_string)?;
-        let isa = Self::create_isa(target_triple, cpu_flags)?;
-
-        let module = Self::create_module(isa, module_name)?;
+        let module_name = Self::compute_module_name(_model);
+        let module = Self::create_module(isa, &module_name)?;
 
         // TODO: Implement code generation logic
 

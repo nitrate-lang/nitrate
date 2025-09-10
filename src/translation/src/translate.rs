@@ -5,6 +5,7 @@ use nitrate_optimization::FunctionOptimization;
 use nitrate_parse::{Parser, SymbolTable};
 use nitrate_structure::SourceModel;
 use nitrate_tokenize::Lexer;
+use std::collections::HashMap;
 use threadpool::ThreadPool;
 use threadpool_scope::scope_with;
 
@@ -128,7 +129,12 @@ fn generate_code(
     model: &SourceModel,
     object: &mut dyn std::io::Write,
 ) -> Result<(), TranslationError> {
-    Codegen::default()
+    let target_triple_string = "x86_64"; // Example target ISA
+    let isa_config = HashMap::new();
+
+    let codegen = Codegen::new(target_triple_string.to_string(), isa_config);
+
+    codegen
         .generate(model, object)
         .map_err(TranslationError::CodegenError)
 }

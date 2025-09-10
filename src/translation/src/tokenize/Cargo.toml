@@ -6,5 +6,6 @@ edition = "2024"
 [dependencies]
 enum-iterator = "2.1.0"
 log = "0.4.27"
-"ordered-float" = "5.0.0"
+ordered-float = { version = "5.0.0", features = ["serde"] }
 smallvec = "1.15.1"
+serde = { version = "1.0.219", features = ["derive"] }
