@@ -7,7 +7,7 @@ For our purposes, semantic analysis is the process of automated quality assuranc
 
 ### Overview
 Developing a diagnostic system is difficult. Developing a general and correct diagnostic system is impossible because of [Rice's Theorem](https://en.wikipedia.org/wiki/Rice%27s_theorem).
-With that in mind, the Nitrate diagnostic system, hereinafter referred to as an ("Analyzer"), focuses on practical checks that can be implemented effectively, striving to minimize diagnostic false-positives and maximize value creation for the programmer, thereby easing development.
+With that in mind, the Nitrate diagnostic system, hereinafter referred to as an ("Analyzer"), focuses on practical checks that can be implemented efficiently, striving to minimize diagnostic false-positives and maximize value creation for the programmer, thereby easing development.
 
 ### Performance Trade offs
 Diagnosis passes generally have at least `O(n)` best-case time complexity.
