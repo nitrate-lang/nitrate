@@ -4,27 +4,27 @@ use nitrate_structure::{Builder, kind::Expr};
 use std::rc::Rc;
 
 #[derive(Debug, Default)]
-pub(crate) struct CallFrame<'a> {
-    local_variables: HashMap<IString, Expr<'a>>,
+pub(crate) struct CallFrame {
+    local_variables: HashMap<IString, Expr>,
 }
 
-impl<'a> CallFrame<'a> {
-    fn get(&self, name: &IString) -> Option<&Expr<'a>> {
+impl CallFrame {
+    fn get(&self, name: &IString) -> Option<&Expr> {
         self.local_variables.get(name)
     }
 
-    pub(crate) fn set(&mut self, name: IString, expr: Expr<'a>) {
+    pub(crate) fn set(&mut self, name: IString, expr: Expr) {
         self.local_variables.insert(name, expr);
     }
 }
 
 #[derive(Debug)]
-pub(crate) struct Task<'a> {
-    call_stack: Vec<CallFrame<'a>>,
-    task_locals: HashMap<IString, Expr<'a>>,
+pub(crate) struct Task {
+    call_stack: Vec<CallFrame>,
+    task_locals: HashMap<IString, Expr>,
 }
 
-impl<'a> Task<'a> {
+impl Task {
     fn new() -> Self {
         let call_stack = Vec::from([CallFrame::default()]);
         Task {
@@ -33,7 +33,7 @@ impl<'a> Task<'a> {
         }
     }
 
-    pub(crate) fn callstack_mut(&mut self) -> &mut Vec<CallFrame<'a>> {
+    pub(crate) fn callstack_mut(&mut self) -> &mut Vec<CallFrame> {
         &mut self.call_stack
     }
 
@@ -41,14 +41,14 @@ impl<'a> Task<'a> {
         self.call_stack.len() > 1
     }
 
-    pub(crate) fn add_task_local(&mut self, name: IString, expr: Expr<'a>) {
+    pub(crate) fn add_task_local(&mut self, name: IString, expr: Expr) {
         self.task_locals.insert(name, expr);
     }
 }
 
 #[derive(Debug)]
-pub enum Unwind<'a> {
-    FunctionReturn(Expr<'a>),
+pub enum Unwind {
+    FunctionReturn(Expr),
     TypeError,
     MissingArgument,
     UnknownCallee(IString),
@@ -56,23 +56,22 @@ pub enum Unwind<'a> {
     ProgramaticAssertionFailed(IString),
 }
 
-pub type IntrinsicFunction<'a> =
-    Rc<dyn Fn(&mut AbstractMachine<'a>) -> Result<Expr<'a>, Unwind<'a>>>;
+pub type IntrinsicFunction = Rc<dyn Fn(&mut AbstractMachine) -> Result<Expr, Unwind>>;
 
-pub struct AbstractMachine<'a> {
-    global_variables: HashMap<IString, Expr<'a>>,
-    provided_functions: HashMap<IString, IntrinsicFunction<'a>>,
-    tasks: Vec<Task<'a>>,
+pub struct AbstractMachine {
+    global_variables: HashMap<IString, Expr>,
+    provided_functions: HashMap<IString, IntrinsicFunction>,
+    tasks: Vec<Task>,
     current_task: usize,
 }
 
-impl Default for AbstractMachine<'_> {
+impl Default for AbstractMachine {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl<'a> AbstractMachine<'a> {
+impl AbstractMachine {
     #[must_use]
     pub fn new() -> Self {
         let mut abstract_machine = AbstractMachine {
@@ -86,19 +85,19 @@ impl<'a> AbstractMachine<'a> {
         abstract_machine
     }
 
-    pub(crate) fn current_task(&self) -> &Task<'a> {
+    pub(crate) fn current_task(&self) -> &Task {
         &self.tasks[self.current_task]
     }
 
-    pub(crate) fn current_task_mut(&mut self) -> &mut Task<'a> {
+    pub(crate) fn current_task_mut(&mut self) -> &mut Task {
         &mut self.tasks[self.current_task]
     }
 
-    pub(crate) fn resolve_intrinsic(&self, name: &IString) -> Option<IntrinsicFunction<'a>> {
+    pub(crate) fn resolve_intrinsic(&self, name: &IString) -> Option<IntrinsicFunction> {
         self.provided_functions.get(name).cloned()
     }
 
-    pub(crate) fn resolve(&self, name: &IString) -> Option<&Expr<'a>> {
+    pub(crate) fn resolve(&self, name: &IString) -> Option<&Expr> {
         // TODO: Verify and write tests
 
         if let Some(local_var) = self
@@ -121,13 +120,13 @@ impl<'a> AbstractMachine<'a> {
         None
     }
 
-    pub fn get_parameter(&self, name: &IString) -> Option<&Expr<'a>> {
+    pub fn get_parameter(&self, name: &IString) -> Option<&Expr> {
         self.current_task().call_stack.last()?.get(name)
     }
 
     pub fn provide_function<F>(&mut self, name: IString, callback: F)
     where
-        F: Fn(&mut AbstractMachine<'a>) -> Result<Expr<'a>, Unwind<'a>> + 'static,
+        F: Fn(&mut AbstractMachine) -> Result<Expr, Unwind> + 'static,
     {
         self.provided_functions.insert(name, Rc::new(callback));
     }
@@ -135,7 +134,7 @@ impl<'a> AbstractMachine<'a> {
     pub fn setup_builtins(&mut self) {
         self.provide_function(
             "std::intrinsic::print".intern(),
-            |m: &mut AbstractMachine<'a>| {
+            |m: &mut AbstractMachine| {
                 let value = m
                     .get_parameter(&"message".intern())
                     .ok_or(Unwind::MissingArgument)?;
@@ -151,7 +150,7 @@ impl<'a> AbstractMachine<'a> {
         );
     }
 
-    pub fn evaluate(&mut self, expression: &Expr<'a>) -> Result<Expr<'a>, Unwind<'a>> {
+    pub fn evaluate(&mut self, expression: &Expr) -> Result<Expr, Unwind> {
         // TODO: Verify and write tests
 
         match expression {

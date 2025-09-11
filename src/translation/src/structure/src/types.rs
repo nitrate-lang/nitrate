@@ -3,20 +3,20 @@ use interned_string::IString;
 use std::sync::Arc;
 
 #[derive(Debug, Clone)]
-pub struct RefinementType<'a> {
-    base: Type<'a>,
-    width: Option<Expr<'a>>,
-    min: Option<Expr<'a>>,
-    max: Option<Expr<'a>>,
+pub struct RefinementType {
+    base: Type,
+    width: Option<Expr>,
+    min: Option<Expr>,
+    max: Option<Expr>,
 }
 
-impl<'a> RefinementType<'a> {
+impl RefinementType {
     #[must_use]
     pub(crate) fn new(
-        base: Type<'a>,
-        width: Option<Expr<'a>>,
-        min: Option<Expr<'a>>,
-        max: Option<Expr<'a>>,
+        base: Type,
+        width: Option<Expr>,
+        min: Option<Expr>,
+        max: Option<Expr>,
     ) -> Self {
         RefinementType {
             base,
@@ -27,119 +27,119 @@ impl<'a> RefinementType<'a> {
     }
 
     #[must_use]
-    pub fn base(&self) -> &Type<'a> {
+    pub fn base(&self) -> &Type {
         &self.base
     }
 
     #[must_use]
-    pub fn width(&self) -> Option<&Expr<'a>> {
+    pub fn width(&self) -> Option<&Expr> {
         self.width.as_ref()
     }
 
     #[must_use]
-    pub fn min(&self) -> Option<&Expr<'a>> {
+    pub fn min(&self) -> Option<&Expr> {
         self.min.as_ref()
     }
 
     #[must_use]
-    pub fn max(&self) -> Option<&Expr<'a>> {
+    pub fn max(&self) -> Option<&Expr> {
         self.max.as_ref()
     }
 }
 
 #[derive(Debug, Clone)]
-pub struct TupleType<'a> {
-    elements: Vec<Type<'a>>,
+pub struct TupleType {
+    elements: Vec<Type>,
 }
 
-impl<'a> TupleType<'a> {
+impl TupleType {
     #[must_use]
-    pub(crate) fn new(elements: Vec<Type<'a>>) -> Self {
+    pub(crate) fn new(elements: Vec<Type>) -> Self {
         TupleType { elements }
     }
 
     #[must_use]
-    pub fn elements(&self) -> &[Type<'a>] {
+    pub fn elements(&self) -> &[Type] {
         &self.elements
     }
 }
 
 #[derive(Debug, Clone)]
-pub struct ArrayType<'a> {
-    element: Type<'a>,
-    count: Expr<'a>,
+pub struct ArrayType {
+    element: Type,
+    count: Expr,
 }
 
-impl<'a> ArrayType<'a> {
+impl ArrayType {
     #[must_use]
-    pub(crate) fn new(element: Type<'a>, count: Expr<'a>) -> Self {
+    pub(crate) fn new(element: Type, count: Expr) -> Self {
         ArrayType { element, count }
     }
 
     #[must_use]
-    pub fn element(&self) -> &Type<'a> {
+    pub fn element(&self) -> &Type {
         &self.element
     }
 
     #[must_use]
-    pub fn count(&self) -> &Expr<'a> {
+    pub fn count(&self) -> &Expr {
         &self.count
     }
 }
 
 #[derive(Debug, Clone)]
-pub struct MapType<'a> {
-    key: Type<'a>,
-    value: Type<'a>,
+pub struct MapType {
+    key: Type,
+    value: Type,
 }
 
-impl<'a> MapType<'a> {
+impl MapType {
     #[must_use]
-    pub(crate) fn new(key: Type<'a>, value: Type<'a>) -> Self {
+    pub(crate) fn new(key: Type, value: Type) -> Self {
         MapType { key, value }
     }
 
     #[must_use]
-    pub fn key(&self) -> &Type<'a> {
+    pub fn key(&self) -> &Type {
         &self.key
     }
 
     #[must_use]
-    pub fn value(&self) -> &Type<'a> {
+    pub fn value(&self) -> &Type {
         &self.value
     }
 }
 
 #[derive(Debug, Clone)]
-pub struct SliceType<'a> {
-    element: Type<'a>,
+pub struct SliceType {
+    element: Type,
 }
 
-impl<'a> SliceType<'a> {
+impl SliceType {
     #[must_use]
-    pub(crate) fn new(element: Type<'a>) -> Self {
+    pub(crate) fn new(element: Type) -> Self {
         SliceType { element }
     }
 
     #[must_use]
-    pub fn element(&self) -> &Type<'a> {
+    pub fn element(&self) -> &Type {
         &self.element
     }
 }
 
 #[derive(Debug, Clone)]
-pub struct FunctionType<'a> {
-    parameters: Vec<FunctionParameter<'a>>,
-    return_type: Type<'a>,
-    attributes: Vec<Expr<'a>>,
+pub struct FunctionType {
+    parameters: Vec<FunctionParameter>,
+    return_type: Type,
+    attributes: Vec<Expr>,
 }
 
-impl<'a> FunctionType<'a> {
+impl FunctionType {
     #[must_use]
     pub(crate) fn new(
-        parameters: Vec<FunctionParameter<'a>>,
-        return_type: Type<'a>,
-        attributes: Vec<Expr<'a>>,
+        parameters: Vec<FunctionParameter>,
+        return_type: Type,
+        attributes: Vec<Expr>,
     ) -> Self {
         FunctionType {
             parameters,
@@ -149,35 +149,35 @@ impl<'a> FunctionType<'a> {
     }
 
     #[must_use]
-    pub fn attributes(&self) -> &[Expr<'a>] {
+    pub fn attributes(&self) -> &[Expr] {
         &self.attributes
     }
 
     #[must_use]
-    pub fn parameters(&self) -> &[FunctionParameter<'a>] {
+    pub fn parameters(&self) -> &[FunctionParameter] {
         &self.parameters
     }
 
     #[must_use]
-    pub fn return_type(&self) -> &Type<'a> {
+    pub fn return_type(&self) -> &Type {
         &self.return_type
     }
 }
 
 #[derive(Debug, Clone)]
-pub struct ManagedRefType<'a> {
-    target: Type<'a>,
+pub struct ManagedRefType {
+    target: Type,
     is_mutable: bool,
 }
 
-impl<'a> ManagedRefType<'a> {
+impl ManagedRefType {
     #[must_use]
-    pub(crate) fn new(target: Type<'a>, is_mutable: bool) -> Self {
+    pub(crate) fn new(target: Type, is_mutable: bool) -> Self {
         ManagedRefType { target, is_mutable }
     }
 
     #[must_use]
-    pub fn target(&self) -> &Type<'a> {
+    pub fn target(&self) -> &Type {
         &self.target
     }
 
@@ -188,19 +188,19 @@ impl<'a> ManagedRefType<'a> {
 }
 
 #[derive(Debug, Clone)]
-pub struct UnmanagedRefType<'a> {
-    target: Type<'a>,
+pub struct UnmanagedRefType {
+    target: Type,
     is_mutable: bool,
 }
 
-impl<'a> UnmanagedRefType<'a> {
+impl UnmanagedRefType {
     #[must_use]
-    pub(crate) fn new(target: Type<'a>, is_mutable: bool) -> Self {
+    pub(crate) fn new(target: Type, is_mutable: bool) -> Self {
         UnmanagedRefType { target, is_mutable }
     }
 
     #[must_use]
-    pub fn target(&self) -> &Type<'a> {
+    pub fn target(&self) -> &Type {
         &self.target
     }
 
@@ -211,49 +211,49 @@ impl<'a> UnmanagedRefType<'a> {
 }
 
 #[derive(Debug, Clone)]
-pub struct GenericType<'a> {
-    base: Type<'a>,
-    args: Vec<(IString, Expr<'a>)>,
+pub struct GenericType {
+    base: Type,
+    args: Vec<(IString, Expr)>,
 }
 
-impl<'a> GenericType<'a> {
+impl GenericType {
     #[must_use]
-    pub(crate) fn new(base: Type<'a>, args: Vec<(IString, Expr<'a>)>) -> Self {
+    pub(crate) fn new(base: Type, args: Vec<(IString, Expr)>) -> Self {
         GenericType { base, args }
     }
 
     #[must_use]
-    pub fn base(&self) -> &Type<'a> {
+    pub fn base(&self) -> &Type {
         &self.base
     }
 
     #[must_use]
-    pub fn arguments(&self) -> &[(IString, Expr<'a>)] {
+    pub fn arguments(&self) -> &[(IString, Expr)] {
         &self.args
     }
 }
 
-pub type StructField<'a> = (IString, Type<'a>, Option<Expr<'a>>);
+pub type StructField = (IString, Type, Option<Expr>);
 
 #[derive(Debug, Clone)]
-pub struct StructType<'a> {
-    fields: Vec<StructField<'a>>,
+pub struct StructType {
+    fields: Vec<StructField>,
 }
 
-impl<'a> StructType<'a> {
+impl StructType {
     #[must_use]
-    pub(crate) fn new(fields: Vec<StructField<'a>>) -> Self {
+    pub(crate) fn new(fields: Vec<StructField>) -> Self {
         StructType { fields }
     }
 
     #[must_use]
-    pub fn fields(&self) -> &[StructField<'a>] {
+    pub fn fields(&self) -> &[StructField] {
         &self.fields
     }
 }
 
 #[derive(Clone)]
-pub enum Type<'a> {
+pub enum Type {
     Bool,
     UInt8,
     UInt16,
@@ -273,23 +273,23 @@ pub enum Type<'a> {
     UnitType,
     InferType,
     TypeName(Arc<Identifier>),
-    RefinementType(Arc<RefinementType<'a>>),
-    TupleType(Arc<TupleType<'a>>),
-    ArrayType(Arc<ArrayType<'a>>),
-    MapType(Arc<MapType<'a>>),
-    SliceType(Arc<SliceType<'a>>),
-    FunctionType(Arc<FunctionType<'a>>),
-    ManagedRefType(Arc<ManagedRefType<'a>>),
-    UnmanagedRefType(Arc<UnmanagedRefType<'a>>),
-    GenericType(Arc<GenericType<'a>>),
+    RefinementType(Arc<RefinementType>),
+    TupleType(Arc<TupleType>),
+    ArrayType(Arc<ArrayType>),
+    MapType(Arc<MapType>),
+    SliceType(Arc<SliceType>),
+    FunctionType(Arc<FunctionType>),
+    ManagedRefType(Arc<ManagedRefType>),
+    UnmanagedRefType(Arc<UnmanagedRefType>),
+    GenericType(Arc<GenericType>),
     OpaqueType(IString),
-    StructType(Arc<StructType<'a>>),
-    LatentType(Arc<Expr<'a>>),
-    HasParenthesesType(Arc<Type<'a>>),
+    StructType(Arc<StructType>),
+    LatentType(Arc<Expr>),
+    HasParenthesesType(Arc<Type>),
 }
 
-impl<'a> From<Type<'a>> for Expr<'a> {
-    fn from(val: Type<'a>) -> Expr<'a> {
+impl From<Type> for Expr {
+    fn from(val: Type) -> Expr {
         match val {
             Type::Bool => Expr::Bool,
             Type::UInt8 => Expr::UInt8,
@@ -328,16 +328,16 @@ impl<'a> From<Type<'a>> for Expr<'a> {
     }
 }
 
-impl Type<'_> {
+impl Type {
     #[must_use]
     pub fn is_known(&self) -> bool {
         matches!(self, Type::InferType)
     }
 }
 
-impl<'a> std::fmt::Debug for Type<'a> {
+impl std::fmt::Debug for Type {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let expr: Expr<'a> = self.to_owned().into();
+        let expr: Expr = self.to_owned().into();
         expr.fmt(f)
     }
 }

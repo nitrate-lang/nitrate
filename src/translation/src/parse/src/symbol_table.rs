@@ -9,16 +9,16 @@ use std::collections::HashMap;
 use std::sync::RwLock;
 
 #[derive(Debug, Clone, Default)]
-pub struct SymbolTable<'a> {
-    scopes: HashMap<QualifiedScope, HashMap<IString, Expr<'a>>>,
+pub struct SymbolTable {
+    scopes: HashMap<QualifiedScope, HashMap<IString, Expr>>,
 }
 
-impl<'a> SymbolTable<'a> {
+impl SymbolTable {
     pub fn insert(
         &mut self,
         symbol_scope: QualifiedScope,
         symbol_name: IString,
-        symbol: Expr<'a>,
+        symbol: Expr,
     ) -> bool {
         self.scopes
             .entry(symbol_scope.clone())
@@ -28,11 +28,7 @@ impl<'a> SymbolTable<'a> {
     }
 
     #[must_use]
-    pub fn resolve(
-        &self,
-        current_scope: QualifiedScope,
-        symbol_name: &IString,
-    ) -> Option<Expr<'a>> {
+    pub fn resolve(&self, current_scope: QualifiedScope, symbol_name: &IString) -> Option<Expr> {
         let mut search_scope = current_scope;
 
         loop {
@@ -50,7 +46,7 @@ impl<'a> SymbolTable<'a> {
         }
     }
 
-    pub fn function_iter_mut(&mut self) -> impl Iterator<Item = &RwLock<Function<'a>>> + '_ {
+    pub fn function_iter_mut(&mut self) -> impl Iterator<Item = &RwLock<Function>> + '_ {
         self.scopes
             .values()
             .flat_map(|symbols| symbols.values())
@@ -61,7 +57,7 @@ impl<'a> SymbolTable<'a> {
     }
 }
 
-impl std::fmt::Display for SymbolTable<'_> {
+impl std::fmt::Display for SymbolTable {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         for (scope, symbols) in &self.scopes {
             for (name, symbol) in symbols {

@@ -6,7 +6,7 @@ use smallvec::SmallVec;
 
 pub struct Parser<'a, 'symbol_table> {
     pub(crate) lexer: Lexer<'a>,
-    pub(crate) symtab: &'symbol_table mut SymbolTable<'a>,
+    pub(crate) symtab: &'symbol_table mut SymbolTable,
     pub(crate) scope: QualifiedScope,
     pub(crate) generic_type_depth: i64,
     pub(crate) generic_type_suffix_terminator_ambiguity: bool,
@@ -14,7 +14,7 @@ pub struct Parser<'a, 'symbol_table> {
 }
 
 impl<'a, 'symbol_table> Parser<'a, 'symbol_table> {
-    pub fn new(lexer: Lexer<'a>, symbol_table: &'symbol_table mut SymbolTable<'a>) -> Self {
+    pub fn new(lexer: Lexer<'a>, symbol_table: &'symbol_table mut SymbolTable) -> Self {
         Parser {
             lexer,
             symtab: symbol_table,
@@ -26,11 +26,11 @@ impl<'a, 'symbol_table> Parser<'a, 'symbol_table> {
     }
 
     #[must_use]
-    pub fn get_symbol_table(&self) -> &SymbolTable<'a> {
+    pub fn get_symbol_table(&self) -> &SymbolTable {
         self.symtab
     }
 
-    pub fn get_symbol_table_mut(&mut self) -> &mut SymbolTable<'a> {
+    pub fn get_symbol_table_mut(&mut self) -> &mut SymbolTable {
         self.symtab
     }
 
@@ -48,7 +48,7 @@ impl<'a, 'symbol_table> Parser<'a, 'symbol_table> {
         matches!(language_version, (1, _))
     }
 
-    pub fn parse(&mut self) -> Option<SourceModel<'a>> {
+    pub fn parse(&mut self) -> Option<SourceModel> {
         let preamble = self.parse_preamble();
 
         if !self.is_supported(preamble.language_version) {

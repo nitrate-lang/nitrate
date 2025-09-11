@@ -8,11 +8,11 @@ use nitrate_structure::{
     },
 };
 
-impl<'a> AbstractMachine<'a> {
+impl AbstractMachine {
     pub(crate) fn evaluate_refinement_type(
         &mut self,
-        refinement: &RefinementType<'a>,
-    ) -> Result<Type<'a>, Unwind<'a>> {
+        refinement: &RefinementType,
+    ) -> Result<Type, Unwind> {
         /*
          * The order of evaluation:
          * 1. Base type
@@ -55,10 +55,7 @@ impl<'a> AbstractMachine<'a> {
             .build())
     }
 
-    pub(crate) fn evaluate_tuple_type(
-        &mut self,
-        tuple: &TupleType<'a>,
-    ) -> Result<Type<'a>, Unwind<'a>> {
+    pub(crate) fn evaluate_tuple_type(&mut self, tuple: &TupleType) -> Result<Type, Unwind> {
         // TODO: Verify and write tests
 
         let mut elements = Vec::new();
@@ -71,10 +68,7 @@ impl<'a> AbstractMachine<'a> {
         Ok(Builder::create_tuple_type().add_elements(elements).build())
     }
 
-    pub(crate) fn evaluate_array_type(
-        &mut self,
-        array: &ArrayType<'a>,
-    ) -> Result<Type<'a>, Unwind<'a>> {
+    pub(crate) fn evaluate_array_type(&mut self, array: &ArrayType) -> Result<Type, Unwind> {
         // TODO: Verify and write tests
 
         let element = self.evaluate_type(&array.element())?;
@@ -89,7 +83,7 @@ impl<'a> AbstractMachine<'a> {
             .build())
     }
 
-    pub(crate) fn evaluate_map_type(&mut self, map: &MapType<'a>) -> Result<Type<'a>, Unwind<'a>> {
+    pub(crate) fn evaluate_map_type(&mut self, map: &MapType) -> Result<Type, Unwind> {
         // TODO: Verify and write tests
 
         let key = self.evaluate_type(&map.key())?;
@@ -101,10 +95,7 @@ impl<'a> AbstractMachine<'a> {
             .build())
     }
 
-    pub(crate) fn evaluate_slice_type(
-        &mut self,
-        slice: &SliceType<'a>,
-    ) -> Result<Type<'a>, Unwind<'a>> {
+    pub(crate) fn evaluate_slice_type(&mut self, slice: &SliceType) -> Result<Type, Unwind> {
         // TODO: Verify and write tests
 
         let element = self.evaluate_type(&slice.element())?;
@@ -113,8 +104,8 @@ impl<'a> AbstractMachine<'a> {
 
     pub(crate) fn evaluate_function_type(
         &mut self,
-        function: &FunctionType<'a>,
-    ) -> Result<Type<'a>, Unwind<'a>> {
+        function: &FunctionType,
+    ) -> Result<Type, Unwind> {
         // TODO: Verify and write tests
 
         let attributes = function.attributes().to_vec();
@@ -143,8 +134,8 @@ impl<'a> AbstractMachine<'a> {
 
     pub(crate) fn evaluate_managed_ref_type(
         &mut self,
-        reference: &ManagedRefType<'a>,
-    ) -> Result<Type<'a>, Unwind<'a>> {
+        reference: &ManagedRefType,
+    ) -> Result<Type, Unwind> {
         // TODO: Verify and write tests
 
         let is_mutable = reference.is_mutable();
@@ -158,8 +149,8 @@ impl<'a> AbstractMachine<'a> {
 
     pub(crate) fn evaluate_unmanaged_ref_type(
         &mut self,
-        reference: &UnmanagedRefType<'a>,
-    ) -> Result<Type<'a>, Unwind<'a>> {
+        reference: &UnmanagedRefType,
+    ) -> Result<Type, Unwind> {
         // TODO: Verify and write tests
 
         let is_mutable = reference.is_mutable();
@@ -171,10 +162,7 @@ impl<'a> AbstractMachine<'a> {
             .build())
     }
 
-    pub(crate) fn evaluate_generic_type(
-        &mut self,
-        generic: &GenericType<'a>,
-    ) -> Result<Type<'a>, Unwind<'a>> {
+    pub(crate) fn evaluate_generic_type(&mut self, generic: &GenericType) -> Result<Type, Unwind> {
         // TODO: Verify and write tests
 
         let base = self.evaluate_type(&generic.base())?;
@@ -195,8 +183,8 @@ impl<'a> AbstractMachine<'a> {
 
     pub(crate) fn evaluate_struct_type(
         &mut self,
-        struct_type: &StructType<'a>,
-    ) -> Result<Type<'a>, Unwind<'a>> {
+        struct_type: &StructType,
+    ) -> Result<Type, Unwind> {
         // TODO: Verify and write tests
 
         let mut fields = Vec::new();
@@ -210,10 +198,7 @@ impl<'a> AbstractMachine<'a> {
         Ok(Builder::create_struct_type().add_fields(fields).build())
     }
 
-    pub(crate) fn evaluate_latent_type(
-        &mut self,
-        latent_type: &Expr<'a>,
-    ) -> Result<Type<'a>, Unwind<'a>> {
+    pub(crate) fn evaluate_latent_type(&mut self, latent_type: &Expr) -> Result<Type, Unwind> {
         // TODO: Verify and write tests
 
         let Expr::Object(object) = self.evaluate(latent_type)? else {
@@ -228,7 +213,7 @@ impl<'a> AbstractMachine<'a> {
             .map_err(|_| Unwind::TypeError)
     }
 
-    pub fn evaluate_type(&mut self, type_expression: &Type<'a>) -> Result<Type<'a>, Unwind<'a>> {
+    pub fn evaluate_type(&mut self, type_expression: &Type) -> Result<Type, Unwind> {
         // TODO: Verify and write tests
 
         match type_expression {

@@ -15,20 +15,20 @@ use crate::SymbolTable;
 use nitrate_tokenize::Lexer;
 
 #[derive(Default)]
-struct RefinementOptions<'a> {
-    minimum: Option<Expr<'a>>,
-    maximum: Option<Expr<'a>>,
-    width: Option<Expr<'a>>,
+struct RefinementOptions {
+    minimum: Option<Expr>,
+    maximum: Option<Expr>,
+    width: Option<Expr>,
 }
 
-impl RefinementOptions<'_> {
+impl RefinementOptions {
     fn has_any(&self) -> bool {
         self.minimum.is_some() || self.maximum.is_some() || self.width.is_some()
     }
 }
 
-impl<'a> Parser<'a, '_> {
-    fn parse_refinement_range(&mut self) -> Option<(Option<Expr<'a>>, Option<Expr<'a>>)> {
+impl Parser<'_, '_> {
+    fn parse_refinement_range(&mut self) -> Option<(Option<Expr>, Option<Expr>)> {
         assert!(self.lexer.peek_t() == Token::Punct(Punct::LeftBracket));
         self.lexer.skip_tok();
 
@@ -68,7 +68,7 @@ impl<'a> Parser<'a, '_> {
         Some((minimum_bound, maximum_bound))
     }
 
-    fn parse_refinement_options(&mut self) -> Option<RefinementOptions<'a>> {
+    fn parse_refinement_options(&mut self) -> Option<RefinementOptions> {
         if self.generic_type_suffix_terminator_ambiguity
             || !self.lexer.skip_if(&Token::Punct(Punct::Colon))
         {
@@ -113,7 +113,7 @@ impl<'a> Parser<'a, '_> {
         })
     }
 
-    fn parse_generic_argument(&mut self) -> Option<(IString, Expr<'a>)> {
+    fn parse_generic_argument(&mut self) -> Option<(IString, Expr)> {
         let mut argument_name: Option<IString> = None;
 
         if let Token::Name(name) = self.lexer.peek_t() {
@@ -160,7 +160,7 @@ impl<'a> Parser<'a, '_> {
         Some((argument_name.unwrap_or_default(), argument_value))
     }
 
-    fn parse_generic_arguments(&mut self) -> Option<Vec<(IString, Expr<'a>)>> {
+    fn parse_generic_arguments(&mut self) -> Option<Vec<(IString, Expr)>> {
         assert!(self.lexer.peek_t() == Token::Op(Op::LogicLt));
         self.lexer.skip_tok();
 
@@ -215,7 +215,7 @@ impl<'a> Parser<'a, '_> {
         Some(arguments)
     }
 
-    fn parse_type_name(&mut self) -> Option<Type<'a>> {
+    fn parse_type_name(&mut self) -> Option<Type> {
         match self.lexer.peek_t() {
             Token::Name(name) if name.deref() == "_" => {
                 self.lexer.skip_tok();
@@ -317,7 +317,7 @@ impl<'a> Parser<'a, '_> {
         )
     }
 
-    fn parse_tuple_type(&mut self) -> Option<Type<'a>> {
+    fn parse_tuple_type(&mut self) -> Option<Type> {
         assert!(self.lexer.peek_t() == Token::Punct(Punct::LeftBrace));
         self.lexer.skip_tok();
 
@@ -358,7 +358,7 @@ impl<'a> Parser<'a, '_> {
         }
     }
 
-    fn parse_rest_of_array(&mut self, element_type: Type<'a>) -> Option<Type<'a>> {
+    fn parse_rest_of_array(&mut self, element_type: Type) -> Option<Type> {
         assert!(self.lexer.peek_t() == Token::Punct(Punct::Semicolon));
         self.lexer.skip_tok();
 
@@ -381,7 +381,7 @@ impl<'a> Parser<'a, '_> {
         )
     }
 
-    fn parse_rest_of_map_type(&mut self, key_type: Type<'a>) -> Option<Type<'a>> {
+    fn parse_rest_of_map_type(&mut self, key_type: Type) -> Option<Type> {
         assert!(self.lexer.peek_t() == Token::Op(Op::Arrow));
         self.lexer.skip_tok();
 
@@ -404,7 +404,7 @@ impl<'a> Parser<'a, '_> {
         )
     }
 
-    fn parse_rest_of_slice_type(&mut self, element_type: Type<'a>) -> Option<Type<'a>> {
+    fn parse_rest_of_slice_type(&mut self, element_type: Type) -> Option<Type> {
         /*
          * The syntax for defining a slice type is as follows:
          * [<type>]
@@ -422,7 +422,7 @@ impl<'a> Parser<'a, '_> {
         )
     }
 
-    fn parse_array_or_slice_or_map(&mut self) -> Option<Type<'a>> {
+    fn parse_array_or_slice_or_map(&mut self) -> Option<Type> {
         assert!(self.lexer.peek_t() == Token::Punct(Punct::LeftBracket));
         self.lexer.skip_tok();
 
@@ -451,7 +451,7 @@ impl<'a> Parser<'a, '_> {
         None
     }
 
-    fn parse_managed_type(&mut self) -> Option<Type<'a>> {
+    fn parse_managed_type(&mut self) -> Option<Type> {
         /*
          * The syntax for defining a managed reference type is as follows:
          * &mut <type>
@@ -482,7 +482,7 @@ impl<'a> Parser<'a, '_> {
         )
     }
 
-    fn parse_unmanaged_type(&mut self) -> Option<Type<'a>> {
+    fn parse_unmanaged_type(&mut self) -> Option<Type> {
         /*
          * The syntax for defining an unmanaged reference type is as follows:
          * *mut <type>
@@ -513,7 +513,7 @@ impl<'a> Parser<'a, '_> {
         )
     }
 
-    pub(crate) fn parse_function_parameters(&mut self) -> Option<Vec<FunctionParameter<'a>>> {
+    pub(crate) fn parse_function_parameters(&mut self) -> Option<Vec<FunctionParameter>> {
         /*
          * Syntax for defining function parameters is as follows:
          *  <parameter> ::= <name>? (':' <type>)? ('=' <expression>)?
@@ -568,7 +568,7 @@ impl<'a> Parser<'a, '_> {
         Some(parameters)
     }
 
-    fn parse_function_type(&mut self) -> Option<Type<'a>> {
+    fn parse_function_type(&mut self) -> Option<Type> {
         /*
          * The syntax for defining a function type is as follows:
          * <return_type> ::= "->" <type>
@@ -597,7 +597,7 @@ impl<'a> Parser<'a, '_> {
         )
     }
 
-    fn parse_opaque_type(&mut self) -> Option<Type<'a>> {
+    fn parse_opaque_type(&mut self) -> Option<Type> {
         /*
          * The syntax for defining an opaque type is as follows:
          * opaque(<string>)
@@ -639,7 +639,7 @@ impl<'a> Parser<'a, '_> {
         Some(Builder::create_opaque_type(opaque_identity))
     }
 
-    fn parse_type_primary(&mut self) -> Option<Type<'a>> {
+    fn parse_type_primary(&mut self) -> Option<Type> {
         let first_token = self.lexer.peek_tok();
         let current_pos = first_token.start();
 
@@ -813,7 +813,7 @@ impl<'a> Parser<'a, '_> {
         result
     }
 
-    pub fn parse_type(&mut self) -> Option<Type<'a>> {
+    pub fn parse_type(&mut self) -> Option<Type> {
         /*
          * The syntax for defining a type is as follows:
          * <type>

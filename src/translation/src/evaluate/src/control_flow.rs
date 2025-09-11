@@ -8,8 +8,8 @@ use nitrate_structure::{
 };
 use std::sync::{Arc, RwLock};
 
-impl<'a> AbstractMachine<'a> {
-    pub(crate) fn evaluate_if(&mut self, if_expr: &If<'a>) -> Result<Expr<'a>, Unwind<'a>> {
+impl AbstractMachine {
+    pub(crate) fn evaluate_if(&mut self, if_expr: &If) -> Result<Expr, Unwind> {
         // TODO: Verify and write tests
 
         if let Expr::Boolean(true) = self.evaluate(if_expr.condition())? {
@@ -21,10 +21,7 @@ impl<'a> AbstractMachine<'a> {
         }
     }
 
-    pub(crate) fn evaluate_while(
-        &mut self,
-        while_loop: &WhileLoop<'a>,
-    ) -> Result<Expr<'a>, Unwind<'a>> {
+    pub(crate) fn evaluate_while(&mut self, while_loop: &WhileLoop) -> Result<Expr, Unwind> {
         // TODO: Verify and write tests
 
         loop {
@@ -42,8 +39,8 @@ impl<'a> AbstractMachine<'a> {
 
     pub(crate) fn evaluate_do_while(
         &mut self,
-        do_while_loop: &DoWhileLoop<'a>,
-    ) -> Result<Expr<'a>, Unwind<'a>> {
+        do_while_loop: &DoWhileLoop,
+    ) -> Result<Expr, Unwind> {
         // TODO: Verify and write tests
 
         self.evaluate(do_while_loop.body())?;
@@ -61,34 +58,28 @@ impl<'a> AbstractMachine<'a> {
         Ok(Builder::create_unit())
     }
 
-    pub(crate) fn evaluate_switch(
-        &mut self,
-        _switch_expr: &Switch<'a>,
-    ) -> Result<Expr<'a>, Unwind<'a>> {
+    pub(crate) fn evaluate_switch(&mut self, _switch_expr: &Switch) -> Result<Expr, Unwind> {
         // TODO: Verify and write tests
 
         // TODO: Evaluate switch
         unimplemented!()
     }
 
-    pub(crate) fn evaluate_break(&mut self, _break: &Break) -> Result<Expr<'a>, Unwind<'a>> {
+    pub(crate) fn evaluate_break(&mut self, _break: &Break) -> Result<Expr, Unwind> {
         // TODO: Verify and write tests
 
         // TODO: Evaluate break
         unimplemented!()
     }
 
-    pub(crate) fn evaluate_continue(
-        &mut self,
-        _continue: &Continue,
-    ) -> Result<Expr<'a>, Unwind<'a>> {
+    pub(crate) fn evaluate_continue(&mut self, _continue: &Continue) -> Result<Expr, Unwind> {
         // TODO: Verify and write tests
 
         // TODO: Evaluate continue
         unimplemented!()
     }
 
-    pub(crate) fn evaluate_return(&mut self, return_: &Return<'a>) -> Result<Expr<'a>, Unwind<'a>> {
+    pub(crate) fn evaluate_return(&mut self, return_: &Return) -> Result<Expr, Unwind> {
         // TODO: Verify and write tests
 
         let return_value = return_
@@ -99,24 +90,21 @@ impl<'a> AbstractMachine<'a> {
         Err(Unwind::FunctionReturn(return_value))
     }
 
-    pub(crate) fn evaluate_for_each(
-        &mut self,
-        _for_each: &ForEach<'a>,
-    ) -> Result<Expr<'a>, Unwind<'a>> {
+    pub(crate) fn evaluate_for_each(&mut self, _for_each: &ForEach) -> Result<Expr, Unwind> {
         // TODO: Verify and write tests
 
         // TODO: Evaluate for_each
         unimplemented!()
     }
 
-    pub(crate) fn evaluate_await(&mut self, _await: &Await<'a>) -> Result<Expr<'a>, Unwind<'a>> {
+    pub(crate) fn evaluate_await(&mut self, _await: &Await) -> Result<Expr, Unwind> {
         // TODO: Verify and write tests
 
         // TODO: Evaluate await
         unimplemented!()
     }
 
-    pub(crate) fn evaluate_assert(&mut self, assert: &Assert<'a>) -> Result<Expr<'a>, Unwind<'a>> {
+    pub(crate) fn evaluate_assert(&mut self, assert: &Assert) -> Result<Expr, Unwind> {
         // TODO: Verify and write tests
 
         let condition = self.evaluate(assert.condition())?;
@@ -136,12 +124,12 @@ impl<'a> AbstractMachine<'a> {
         }
     }
 
-    pub(crate) fn evaluate_call(&mut self, call: &Call<'a>) -> Result<Expr<'a>, Unwind<'a>> {
+    pub(crate) fn evaluate_call(&mut self, call: &Call) -> Result<Expr, Unwind> {
         // TODO: Verify and write tests
 
-        enum Callee<'a> {
-            FunctionCode(Arc<RwLock<Function<'a>>>),
-            Intrinsic(IntrinsicFunction<'a>),
+        enum Callee {
+            FunctionCode(Arc<RwLock<Function>>),
+            Intrinsic(IntrinsicFunction),
         }
 
         let callee = match self.evaluate(call.callee()) {

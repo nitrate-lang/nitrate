@@ -15,8 +15,8 @@ pub(crate) struct SourcePreamble {
     pub insource_config: HashSet<IString>,
 }
 
-impl<'a> Parser<'a, '_> {
-    fn parse_macro_prefix(&mut self) -> Option<(IString, Vec<Expr<'a>>)> {
+impl Parser<'_, '_> {
+    fn parse_macro_prefix(&mut self) -> Option<(IString, Vec<Expr>)> {
         while self.lexer.skip_if(&Token::Punct(Punct::Semicolon)) {}
         if !self.lexer.skip_if(&Token::Punct(Punct::AtSign)) {
             return None;
@@ -88,7 +88,7 @@ impl<'a> Parser<'a, '_> {
         pair.0.zip(pair.1)
     }
 
-    fn parse_preamble_version_macro(&mut self, macro_args: Vec<Expr<'a>>) -> Option<(u32, u32)> {
+    fn parse_preamble_version_macro(&mut self, macro_args: Vec<Expr>) -> Option<(u32, u32)> {
         if macro_args.len() != 1 {
             self.set_failed_bit();
             error!(
@@ -121,10 +121,7 @@ impl<'a> Parser<'a, '_> {
         Some((major, minor))
     }
 
-    fn parse_preamble_copyright_macro(
-        &mut self,
-        macro_args: Vec<Expr<'a>>,
-    ) -> Option<CopyrightInfo> {
+    fn parse_preamble_copyright_macro(&mut self, macro_args: Vec<Expr>) -> Option<CopyrightInfo> {
         if macro_args.len() != 2 {
             self.set_failed_bit();
             error!(
@@ -159,7 +156,7 @@ impl<'a> Parser<'a, '_> {
         ))
     }
 
-    fn parse_preamble_license_macro(&mut self, macro_args: Vec<Expr<'a>>) -> Option<LicenseId> {
+    fn parse_preamble_license_macro(&mut self, macro_args: Vec<Expr>) -> Option<LicenseId> {
         if macro_args.len() != 1 {
             self.set_failed_bit();
             error!(
@@ -192,10 +189,7 @@ impl<'a> Parser<'a, '_> {
         Some(license_id)
     }
 
-    fn parse_preamble_insource_macro(
-        &mut self,
-        macro_args: Vec<Expr<'a>>,
-    ) -> Option<HashSet<IString>> {
+    fn parse_preamble_insource_macro(&mut self, macro_args: Vec<Expr>) -> Option<HashSet<IString>> {
         if macro_args.len() != 1 {
             self.set_failed_bit();
             error!(

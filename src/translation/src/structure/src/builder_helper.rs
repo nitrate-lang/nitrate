@@ -14,14 +14,14 @@ use crate::kind::{
 };
 
 #[derive(Debug)]
-pub struct RefinementTypeBuilder<'a> {
-    base: Option<Type<'a>>,
-    width: Option<Expr<'a>>,
-    minimum: Option<Expr<'a>>,
-    maximum: Option<Expr<'a>>,
+pub struct RefinementTypeBuilder {
+    base: Option<Type>,
+    width: Option<Expr>,
+    minimum: Option<Expr>,
+    maximum: Option<Expr>,
 }
 
-impl<'a> RefinementTypeBuilder<'a> {
+impl RefinementTypeBuilder {
     pub(crate) fn new() -> Self {
         RefinementTypeBuilder {
             base: None,
@@ -31,27 +31,27 @@ impl<'a> RefinementTypeBuilder<'a> {
         }
     }
 
-    pub fn with_base(mut self, base: Type<'a>) -> Self {
+    pub fn with_base(mut self, base: Type) -> Self {
         self.base = Some(base);
         self
     }
 
-    pub fn with_width(mut self, width: Option<Expr<'a>>) -> Self {
+    pub fn with_width(mut self, width: Option<Expr>) -> Self {
         self.width = width;
         self
     }
 
-    pub fn with_minimum(mut self, minimum: Option<Expr<'a>>) -> Self {
+    pub fn with_minimum(mut self, minimum: Option<Expr>) -> Self {
         self.minimum = minimum;
         self
     }
 
-    pub fn with_maximum(mut self, maximum: Option<Expr<'a>>) -> Self {
+    pub fn with_maximum(mut self, maximum: Option<Expr>) -> Self {
         self.maximum = maximum;
         self
     }
 
-    pub fn build(self) -> Type<'a> {
+    pub fn build(self) -> Type {
         Type::RefinementType(Arc::new(RefinementType::new(
             self.base.expect("Principal type must be provided"),
             self.width,
@@ -62,31 +62,31 @@ impl<'a> RefinementTypeBuilder<'a> {
 }
 
 #[derive(Debug)]
-pub struct TupleTypeBuilder<'a> {
-    elements: Vec<Type<'a>>,
+pub struct TupleTypeBuilder {
+    elements: Vec<Type>,
 }
 
-impl<'a> TupleTypeBuilder<'a> {
+impl TupleTypeBuilder {
     pub(crate) fn new() -> Self {
         TupleTypeBuilder {
             elements: Vec::new(),
         }
     }
 
-    pub fn add_element(mut self, ty: Type<'a>) -> Self {
+    pub fn add_element(mut self, ty: Type) -> Self {
         self.elements.push(ty);
         self
     }
 
     pub fn add_elements<I>(mut self, elements: I) -> Self
     where
-        I: IntoIterator<Item = Type<'a>>,
+        I: IntoIterator<Item = Type>,
     {
         self.elements.extend(elements);
         self
     }
 
-    pub fn build(self) -> Type<'a> {
+    pub fn build(self) -> Type {
         if self.elements.is_empty() {
             Type::UnitType
         } else {
@@ -96,12 +96,12 @@ impl<'a> TupleTypeBuilder<'a> {
 }
 
 #[derive(Debug)]
-pub struct ArrayTypeBuilder<'a> {
-    element: Option<Type<'a>>,
-    count: Option<Expr<'a>>,
+pub struct ArrayTypeBuilder {
+    element: Option<Type>,
+    count: Option<Expr>,
 }
 
-impl<'a> ArrayTypeBuilder<'a> {
+impl ArrayTypeBuilder {
     pub(crate) fn new() -> Self {
         ArrayTypeBuilder {
             element: None,
@@ -109,17 +109,17 @@ impl<'a> ArrayTypeBuilder<'a> {
         }
     }
 
-    pub fn with_element(mut self, element: Type<'a>) -> Self {
+    pub fn with_element(mut self, element: Type) -> Self {
         self.element = Some(element);
         self
     }
 
-    pub fn with_count(mut self, count: Expr<'a>) -> Self {
+    pub fn with_count(mut self, count: Expr) -> Self {
         self.count = Some(count);
         self
     }
 
-    pub fn build(self) -> Type<'a> {
+    pub fn build(self) -> Type {
         Type::ArrayType(Arc::new(ArrayType::new(
             self.element.expect("Element type must be provided"),
             self.count.expect("Array length must be provided"),
@@ -128,12 +128,12 @@ impl<'a> ArrayTypeBuilder<'a> {
 }
 
 #[derive(Debug)]
-pub struct MapTypeBuilder<'a> {
-    key: Option<Type<'a>>,
-    value: Option<Type<'a>>,
+pub struct MapTypeBuilder {
+    key: Option<Type>,
+    value: Option<Type>,
 }
 
-impl<'a> MapTypeBuilder<'a> {
+impl MapTypeBuilder {
     pub(crate) fn new() -> Self {
         MapTypeBuilder {
             key: None,
@@ -141,17 +141,17 @@ impl<'a> MapTypeBuilder<'a> {
         }
     }
 
-    pub fn with_key(mut self, key: Type<'a>) -> Self {
+    pub fn with_key(mut self, key: Type) -> Self {
         self.key = Some(key);
         self
     }
 
-    pub fn with_value(mut self, value: Type<'a>) -> Self {
+    pub fn with_value(mut self, value: Type) -> Self {
         self.value = Some(value);
         self
     }
 
-    pub fn build(self) -> Type<'a> {
+    pub fn build(self) -> Type {
         Type::MapType(Arc::new(MapType::new(
             self.key.expect("Key type must be provided"),
             self.value.expect("Value type must be provided"),
@@ -160,21 +160,21 @@ impl<'a> MapTypeBuilder<'a> {
 }
 
 #[derive(Debug)]
-pub struct SliceTypeBuilder<'a> {
-    element: Option<Type<'a>>,
+pub struct SliceTypeBuilder {
+    element: Option<Type>,
 }
 
-impl<'a> SliceTypeBuilder<'a> {
+impl SliceTypeBuilder {
     pub(crate) fn new() -> Self {
         SliceTypeBuilder { element: None }
     }
 
-    pub fn with_element(mut self, element: Type<'a>) -> Self {
+    pub fn with_element(mut self, element: Type) -> Self {
         self.element = Some(element);
         self
     }
 
-    pub fn build(self) -> Type<'a> {
+    pub fn build(self) -> Type {
         Type::SliceType(Arc::new(SliceType::new(
             self.element.expect("Element type must be provided"),
         )))
@@ -182,13 +182,13 @@ impl<'a> SliceTypeBuilder<'a> {
 }
 
 #[derive(Debug)]
-pub struct FunctionTypeBuilder<'a> {
-    parameters: Vec<FunctionParameter<'a>>,
-    return_type: Option<Type<'a>>,
-    attributes: Vec<Expr<'a>>,
+pub struct FunctionTypeBuilder {
+    parameters: Vec<FunctionParameter>,
+    return_type: Option<Type>,
+    attributes: Vec<Expr>,
 }
 
-impl<'a> FunctionTypeBuilder<'a> {
+impl FunctionTypeBuilder {
     pub(crate) fn new() -> Self {
         FunctionTypeBuilder {
             parameters: Vec::new(),
@@ -197,12 +197,7 @@ impl<'a> FunctionTypeBuilder<'a> {
         }
     }
 
-    pub fn add_parameter(
-        mut self,
-        name: IString,
-        ty: Type<'a>,
-        default_value: Option<Expr<'a>>,
-    ) -> Self {
+    pub fn add_parameter(mut self, name: IString, ty: Type, default_value: Option<Expr>) -> Self {
         self.parameters
             .push(FunctionParameter::new(name, ty, default_value));
         self
@@ -210,31 +205,31 @@ impl<'a> FunctionTypeBuilder<'a> {
 
     pub fn add_parameters<I>(mut self, parameters: I) -> Self
     where
-        I: IntoIterator<Item = FunctionParameter<'a>>,
+        I: IntoIterator<Item = FunctionParameter>,
     {
         self.parameters.extend(parameters);
         self
     }
 
-    pub fn with_return_type(mut self, ty: Type<'a>) -> Self {
+    pub fn with_return_type(mut self, ty: Type) -> Self {
         self.return_type = Some(ty);
         self
     }
 
-    pub fn add_attribute(mut self, attribute: Expr<'a>) -> Self {
+    pub fn add_attribute(mut self, attribute: Expr) -> Self {
         self.attributes.push(attribute);
         self
     }
 
     pub fn add_attributes<I>(mut self, attributes: I) -> Self
     where
-        I: IntoIterator<Item = Expr<'a>>,
+        I: IntoIterator<Item = Expr>,
     {
         self.attributes.extend(attributes);
         self
     }
 
-    pub fn build(self) -> Type<'a> {
+    pub fn build(self) -> Type {
         Type::FunctionType(Arc::new(FunctionType::new(
             self.parameters,
             self.return_type.expect("Return type must be provided"),
@@ -244,12 +239,12 @@ impl<'a> FunctionTypeBuilder<'a> {
 }
 
 #[derive(Debug)]
-pub struct ManagedRefTypeBuilder<'a> {
-    target: Option<Type<'a>>,
+pub struct ManagedRefTypeBuilder {
+    target: Option<Type>,
     is_mutable: bool,
 }
 
-impl<'a> ManagedRefTypeBuilder<'a> {
+impl ManagedRefTypeBuilder {
     pub(crate) fn new() -> Self {
         ManagedRefTypeBuilder {
             target: None,
@@ -257,7 +252,7 @@ impl<'a> ManagedRefTypeBuilder<'a> {
         }
     }
 
-    pub fn with_target(mut self, target: Type<'a>) -> Self {
+    pub fn with_target(mut self, target: Type) -> Self {
         self.target = Some(target);
         self
     }
@@ -267,7 +262,7 @@ impl<'a> ManagedRefTypeBuilder<'a> {
         self
     }
 
-    pub fn build(self) -> Type<'a> {
+    pub fn build(self) -> Type {
         Type::ManagedRefType(Arc::new(ManagedRefType::new(
             self.target.expect("Target type must be provided"),
             self.is_mutable,
@@ -276,12 +271,12 @@ impl<'a> ManagedRefTypeBuilder<'a> {
 }
 
 #[derive(Debug)]
-pub struct UnmanagedRefTypeBuilder<'a> {
-    target: Option<Type<'a>>,
+pub struct UnmanagedRefTypeBuilder {
+    target: Option<Type>,
     is_mutable: bool,
 }
 
-impl<'a> UnmanagedRefTypeBuilder<'a> {
+impl UnmanagedRefTypeBuilder {
     pub(crate) fn new() -> Self {
         UnmanagedRefTypeBuilder {
             target: None,
@@ -289,7 +284,7 @@ impl<'a> UnmanagedRefTypeBuilder<'a> {
         }
     }
 
-    pub fn with_target(mut self, target: Type<'a>) -> Self {
+    pub fn with_target(mut self, target: Type) -> Self {
         self.target = Some(target);
         self
     }
@@ -299,7 +294,7 @@ impl<'a> UnmanagedRefTypeBuilder<'a> {
         self
     }
 
-    pub fn build(self) -> Type<'a> {
+    pub fn build(self) -> Type {
         Type::UnmanagedRefType(Arc::new(UnmanagedRefType::new(
             self.target.expect("Target type must be provided"),
             self.is_mutable,
@@ -308,12 +303,12 @@ impl<'a> UnmanagedRefTypeBuilder<'a> {
 }
 
 #[derive(Debug)]
-pub struct GenericTypeBuilder<'a> {
-    base: Option<Type<'a>>,
-    arguments: Vec<(IString, Expr<'a>)>,
+pub struct GenericTypeBuilder {
+    base: Option<Type>,
+    arguments: Vec<(IString, Expr)>,
 }
 
-impl<'a> GenericTypeBuilder<'a> {
+impl GenericTypeBuilder {
     pub(crate) fn new() -> Self {
         GenericTypeBuilder {
             base: None,
@@ -321,25 +316,25 @@ impl<'a> GenericTypeBuilder<'a> {
         }
     }
 
-    pub fn with_base(mut self, base: Type<'a>) -> Self {
+    pub fn with_base(mut self, base: Type) -> Self {
         self.base = Some(base);
         self
     }
 
-    pub fn add_argument(mut self, name: IString, value: Expr<'a>) -> Self {
+    pub fn add_argument(mut self, name: IString, value: Expr) -> Self {
         self.arguments.push((name, value));
         self
     }
 
     pub fn add_arguments<I>(mut self, arguments: I) -> Self
     where
-        I: IntoIterator<Item = (IString, Expr<'a>)>,
+        I: IntoIterator<Item = (IString, Expr)>,
     {
         self.arguments.extend(arguments);
         self
     }
 
-    pub fn build(self) -> Type<'a> {
+    pub fn build(self) -> Type {
         Type::GenericType(Arc::new(GenericType::new(
             self.base.expect("Principal type must be provided"),
             self.arguments,
@@ -348,34 +343,29 @@ impl<'a> GenericTypeBuilder<'a> {
 }
 
 #[derive(Debug)]
-pub struct StructTypeBuilder<'a> {
-    fields: Vec<StructField<'a>>,
+pub struct StructTypeBuilder {
+    fields: Vec<StructField>,
 }
 
-impl<'a> StructTypeBuilder<'a> {
+impl StructTypeBuilder {
     pub(crate) fn new() -> Self {
         StructTypeBuilder { fields: Vec::new() }
     }
 
-    pub fn add_field(
-        mut self,
-        name: IString,
-        ty: Type<'a>,
-        default_value: Option<Expr<'a>>,
-    ) -> Self {
+    pub fn add_field(mut self, name: IString, ty: Type, default_value: Option<Expr>) -> Self {
         self.fields.push((name, ty, default_value));
         self
     }
 
     pub fn add_fields<I>(mut self, fields: I) -> Self
     where
-        I: IntoIterator<Item = StructField<'a>>,
+        I: IntoIterator<Item = StructField>,
     {
         self.fields.extend(fields);
         self
     }
 
-    pub fn build(self) -> Type<'a> {
+    pub fn build(self) -> Type {
         Type::StructType(Arc::new(StructType::new(self.fields)))
     }
 }
@@ -424,7 +414,7 @@ impl IntegerBuilder {
         self
     }
 
-    pub fn build<'a>(self) -> Expr<'a> {
+    pub fn build(self) -> Expr {
         let lit = Integer::new(
             self.value.expect("Integer value must be provided"),
             self.kind.unwrap_or(IntegerKind::Dec),
@@ -436,78 +426,78 @@ impl IntegerBuilder {
 }
 
 #[derive(Debug)]
-pub struct ListBuilder<'a> {
-    elements: Vec<Expr<'a>>,
+pub struct ListBuilder {
+    elements: Vec<Expr>,
 }
 
-impl<'a> ListBuilder<'a> {
+impl ListBuilder {
     pub(crate) fn new() -> Self {
         ListBuilder {
             elements: Vec::new(),
         }
     }
 
-    pub fn add_element(mut self, element: Expr<'a>) -> Self {
+    pub fn add_element(mut self, element: Expr) -> Self {
         self.elements.push(element);
         self
     }
 
     pub fn add_elements<I>(mut self, elements: I) -> Self
     where
-        I: IntoIterator<Item = Expr<'a>>,
+        I: IntoIterator<Item = Expr>,
     {
         self.elements.extend(elements);
         self
     }
 
-    pub fn prepend_element(mut self, element: Expr<'a>) -> Self {
+    pub fn prepend_element(mut self, element: Expr) -> Self {
         self.elements.insert(0, element);
         self
     }
 
-    pub fn build(self) -> Expr<'a> {
+    pub fn build(self) -> Expr {
         Expr::List(Arc::new(List::new(self.elements)))
     }
 }
 
 #[derive(Debug)]
-pub struct ObjectBuilder<'a> {
-    fields: BTreeMap<IString, Expr<'a>>,
+pub struct ObjectBuilder {
+    fields: BTreeMap<IString, Expr>,
 }
 
-impl<'a> ObjectBuilder<'a> {
+impl ObjectBuilder {
     pub(crate) fn new() -> Self {
         ObjectBuilder {
             fields: BTreeMap::new(),
         }
     }
 
-    pub fn add_field(mut self, key: IString, value: Expr<'a>) -> Self {
+    pub fn add_field(mut self, key: IString, value: Expr) -> Self {
         self.fields.insert(key, value);
         self
     }
 
     pub fn add_fields<I>(mut self, fields: I) -> Self
     where
-        I: IntoIterator<Item = (IString, Expr<'a>)>,
+        I: IntoIterator<Item = (IString, Expr)>,
     {
         self.fields.extend(fields);
         self
     }
 
-    pub fn build(self) -> Expr<'a> {
+    pub fn build(self) -> Expr {
         Expr::Object(Arc::new(Object::new(self.fields)))
     }
 }
 
 #[derive(Debug)]
-pub struct UnaryExprBuilder<'a> {
+pub struct UnaryExprBuilder {
     operator: Option<UnaryExprOp>,
-    operand: Option<Expr<'a>>,
+    operand: Option<Expr>,
     is_postfix: Option<bool>,
 }
 
-impl<'a> UnaryExprBuilder<'a> {
+impl UnaryExprBuilder {
     pub(crate) fn new() -> Self {
         UnaryExprBuilder {
             operator: None,
@@ -521,7 +511,7 @@ impl<'a> UnaryExprBuilder<'a> {
         self
     }
 
-    pub fn with_operand(mut self, operand: Expr<'a>) -> Self {
+    pub fn with_operand(mut self, operand: Expr) -> Self {
         self.operand = Some(operand);
         self
     }
@@ -541,7 +531,7 @@ impl<'a> UnaryExprBuilder<'a> {
         self
     }
 
-    pub fn build(self) -> Expr<'a> {
+    pub fn build(self) -> Expr {
         Expr::UnaryExpr(Arc::new(UnaryExpr::new(
             self.operand.expect("Operand must be provided"),
             self.operator.expect("Unary operator must be provided"),
@@ -551,13 +541,13 @@ impl<'a> UnaryExprBuilder<'a> {
 }
 
 #[derive(Debug)]
-pub struct BinExprBuilder<'a> {
-    left: Option<Expr<'a>>,
+pub struct BinExprBuilder {
+    left: Option<Expr>,
     operator: Option<BinExprOp>,
-    right: Option<Expr<'a>>,
+    right: Option<Expr>,
 }
 
-impl<'a> BinExprBuilder<'a> {
+impl BinExprBuilder {
     pub(crate) fn new() -> Self {
         BinExprBuilder {
             left: None,
@@ -566,7 +556,7 @@ impl<'a> BinExprBuilder<'a> {
         }
     }
 
-    pub fn with_left(mut self, left: Expr<'a>) -> Self {
+    pub fn with_left(mut self, left: Expr) -> Self {
         self.left = Some(left);
         self
     }
@@ -576,12 +566,12 @@ impl<'a> BinExprBuilder<'a> {
         self
     }
 
-    pub fn with_right(mut self, right: Expr<'a>) -> Self {
+    pub fn with_right(mut self, right: Expr) -> Self {
         self.right = Some(right);
         self
     }
 
-    pub fn build(self) -> Expr<'a> {
+    pub fn build(self) -> Expr {
         Expr::BinExpr(Arc::new(BinExpr::new(
             self.left.expect("Left expression must be provided"),
             self.operator.expect("BinExpr operator must be provided"),
@@ -591,21 +581,21 @@ impl<'a> BinExprBuilder<'a> {
 }
 
 #[derive(Debug)]
-pub struct StatementBuilder<'a> {
-    expression: Option<Expr<'a>>,
+pub struct StatementBuilder {
+    expression: Option<Expr>,
 }
 
-impl<'a> StatementBuilder<'a> {
+impl StatementBuilder {
     pub(crate) fn new() -> Self {
         StatementBuilder { expression: None }
     }
 
-    pub fn with_expression(mut self, expression: Expr<'a>) -> Self {
+    pub fn with_expression(mut self, expression: Expr) -> Self {
         self.expression = Some(expression);
         self
     }
 
-    pub fn build(self) -> Expr<'a> {
+    pub fn build(self) -> Expr {
         Expr::Statement(Arc::new(Statement::new(
             self.expression.expect("Expression must be provided"),
         )))
@@ -613,31 +603,31 @@ impl<'a> StatementBuilder<'a> {
 }
 
 #[derive(Debug)]
-pub struct BlockBuilder<'a> {
-    elements: Vec<Expr<'a>>,
+pub struct BlockBuilder {
+    elements: Vec<Expr>,
 }
 
-impl<'a> BlockBuilder<'a> {
+impl BlockBuilder {
     pub(crate) fn new() -> Self {
         BlockBuilder {
             elements: Vec::new(),
         }
     }
 
-    pub fn add_element(mut self, expr: Expr<'a>) -> Self {
+    pub fn add_element(mut self, expr: Expr) -> Self {
         self.elements.push(expr);
         self
     }
 
     pub fn add_expressions<I>(mut self, elements: I) -> Self
     where
-        I: IntoIterator<Item = Expr<'a>>,
+        I: IntoIterator<Item = Expr>,
     {
         self.elements.extend(elements);
         self
     }
 
-    pub fn add_statement(mut self, expression: Expr<'a>) -> Self {
+    pub fn add_statement(mut self, expression: Expr) -> Self {
         let statement = Builder::create_statement()
             .with_expression(expression)
             .build();
@@ -648,7 +638,7 @@ impl<'a> BlockBuilder<'a> {
 
     pub fn add_statements<I>(mut self, elements: I) -> Self
     where
-        I: IntoIterator<Item = Expr<'a>>,
+        I: IntoIterator<Item = Expr>,
     {
         for expression in elements {
             let statement = Builder::create_statement()
@@ -661,20 +651,20 @@ impl<'a> BlockBuilder<'a> {
         self
     }
 
-    pub fn build(self) -> Expr<'a> {
+    pub fn build(self) -> Expr {
         Expr::Block(Arc::new(Block::new(self.elements)))
     }
 }
 
 #[derive(Debug)]
-pub struct FunctionBuilder<'a> {
-    parameters: Vec<FunctionParameter<'a>>,
-    return_type: Option<Type<'a>>,
-    attributes: Vec<Expr<'a>>,
-    definition: Option<Expr<'a>>,
+pub struct FunctionBuilder {
+    parameters: Vec<FunctionParameter>,
+    return_type: Option<Type>,
+    attributes: Vec<Expr>,
+    definition: Option<Expr>,
 }
 
-impl<'a> FunctionBuilder<'a> {
+impl FunctionBuilder {
     pub(crate) fn new() -> Self {
         FunctionBuilder {
             parameters: Vec::new(),
@@ -684,12 +674,7 @@ impl<'a> FunctionBuilder<'a> {
         }
     }
 
-    pub fn with_parameter(
-        mut self,
-        name: IString,
-        ty: Type<'a>,
-        default_value: Option<Expr<'a>>,
-    ) -> Self {
+    pub fn with_parameter(mut self, name: IString, ty: Type, default_value: Option<Expr>) -> Self {
         self.parameters
             .push(FunctionParameter::new(name, ty, default_value));
         self
@@ -697,36 +682,36 @@ impl<'a> FunctionBuilder<'a> {
 
     pub fn with_parameters<I>(mut self, parameters: I) -> Self
     where
-        I: IntoIterator<Item = FunctionParameter<'a>>,
+        I: IntoIterator<Item = FunctionParameter>,
     {
         self.parameters.extend(parameters);
         self
     }
 
-    pub fn with_return_type(mut self, ty: Type<'a>) -> Self {
+    pub fn with_return_type(mut self, ty: Type) -> Self {
         self.return_type = Some(ty);
         self
     }
 
-    pub fn with_attribute(mut self, attribute: Expr<'a>) -> Self {
+    pub fn with_attribute(mut self, attribute: Expr) -> Self {
         self.attributes.push(attribute);
         self
     }
 
     pub fn with_attributes<I>(mut self, attributes: I) -> Self
     where
-        I: IntoIterator<Item = Expr<'a>>,
+        I: IntoIterator<Item = Expr>,
     {
         self.attributes.extend(attributes);
         self
     }
 
-    pub fn with_definition(mut self, definition: Option<Expr<'a>>) -> Self {
+    pub fn with_definition(mut self, definition: Option<Expr>) -> Self {
         self.definition = definition;
         self
     }
 
-    pub fn build(self) -> Expr<'a> {
+    pub fn build(self) -> Expr {
         Expr::Function(Arc::new(RwLock::new(Function::new(
             self.parameters,
             self.return_type.expect("Return type must be provided"),
@@ -737,16 +722,16 @@ impl<'a> FunctionBuilder<'a> {
 }
 
 #[derive(Debug)]
-pub struct VariableBuilder<'a> {
+pub struct VariableBuilder {
     kind: Option<VariableKind>,
     is_mutable: bool,
-    attributes: Vec<Expr<'a>>,
+    attributes: Vec<Expr>,
     name: IString,
-    ty: Option<Type<'a>>,
-    value: Option<Expr<'a>>,
+    ty: Option<Type>,
+    value: Option<Expr>,
 }
 
-impl<'a> VariableBuilder<'a> {
+impl VariableBuilder {
     pub(crate) fn new() -> Self {
         VariableBuilder {
             kind: None,
@@ -768,12 +753,12 @@ impl<'a> VariableBuilder<'a> {
         self
     }
 
-    pub fn add_attribute(mut self, attribute: Expr<'a>) -> Self {
+    pub fn add_attribute(mut self, attribute: Expr) -> Self {
         self.attributes.push(attribute);
         self
     }
 
-    pub fn with_attributes(mut self, attributes: Vec<Expr<'a>>) -> Self {
+    pub fn with_attributes(mut self, attributes: Vec<Expr>) -> Self {
         self.attributes = attributes;
         self
     }
@@ -783,17 +768,17 @@ impl<'a> VariableBuilder<'a> {
         self
     }
 
-    pub fn with_type(mut self, ty: Type<'a>) -> Self {
+    pub fn with_type(mut self, ty: Type) -> Self {
         self.ty = Some(ty);
         self
     }
 
-    pub fn with_value(mut self, value: Option<Expr<'a>>) -> Self {
+    pub fn with_value(mut self, value: Option<Expr>) -> Self {
         self.value = value;
         self
     }
 
-    pub fn build(self) -> Expr<'a> {
+    pub fn build(self) -> Expr {
         Expr::Variable(Arc::new(Variable::new(
             self.kind.expect("Variable kind must be provided"),
             self.is_mutable,
@@ -806,12 +791,12 @@ impl<'a> VariableBuilder<'a> {
 }
 
 #[derive(Debug)]
-pub struct IndexAccessBuilder<'a> {
-    collection: Option<Expr<'a>>,
-    index: Option<Expr<'a>>,
+pub struct IndexAccessBuilder {
+    collection: Option<Expr>,
+    index: Option<Expr>,
 }
 
-impl<'a> IndexAccessBuilder<'a> {
+impl IndexAccessBuilder {
     pub(crate) fn new() -> Self {
         IndexAccessBuilder {
             collection: None,
@@ -819,17 +804,17 @@ impl<'a> IndexAccessBuilder<'a> {
         }
     }
 
-    pub fn with_collection(mut self, collection: Expr<'a>) -> Self {
+    pub fn with_collection(mut self, collection: Expr) -> Self {
         self.collection = Some(collection);
         self
     }
 
-    pub fn with_index(mut self, index: Expr<'a>) -> Self {
+    pub fn with_index(mut self, index: Expr) -> Self {
         self.index = Some(index);
         self
     }
 
-    pub fn build(self) -> Expr<'a> {
+    pub fn build(self) -> Expr {
         Expr::IndexAccess(Arc::new(IndexAccess::new(
             self.collection
                 .expect("Collection expression must be provided"),
@@ -839,13 +824,13 @@ impl<'a> IndexAccessBuilder<'a> {
 }
 
 #[derive(Debug)]
-pub struct ScopeBuilder<'a> {
+pub struct ScopeBuilder {
     name: Option<IString>,
-    attributes: Vec<Expr<'a>>,
-    elements: Vec<Expr<'a>>,
+    attributes: Vec<Expr>,
+    elements: Vec<Expr>,
 }
 
-impl<'a> ScopeBuilder<'a> {
+impl ScopeBuilder {
     pub(crate) fn new() -> Self {
         ScopeBuilder {
             name: None,
@@ -859,33 +844,33 @@ impl<'a> ScopeBuilder<'a> {
         self
     }
 
-    pub fn add_attribute(mut self, attribute: Expr<'a>) -> Self {
+    pub fn add_attribute(mut self, attribute: Expr) -> Self {
         self.attributes.push(attribute);
         self
     }
 
     pub fn add_attributes<I>(mut self, attributes: I) -> Self
     where
-        I: IntoIterator<Item = Expr<'a>>,
+        I: IntoIterator<Item = Expr>,
     {
         self.attributes.extend(attributes);
         self
     }
 
-    pub fn add_element(mut self, element: Expr<'a>) -> Self {
+    pub fn add_element(mut self, element: Expr) -> Self {
         self.elements.push(element);
         self
     }
 
     pub fn add_elements<I>(mut self, elements: I) -> Self
     where
-        I: IntoIterator<Item = Expr<'a>>,
+        I: IntoIterator<Item = Expr>,
     {
         self.elements.extend(elements);
         self
     }
 
-    pub fn build(self) -> Expr<'a> {
+    pub fn build(self) -> Expr {
         Expr::Scope(Arc::new(Scope::new(
             self.name.expect("Name must be provided"),
             self.attributes,
@@ -895,13 +880,13 @@ impl<'a> ScopeBuilder<'a> {
 }
 
 #[derive(Debug)]
-pub struct IfBuilder<'a> {
-    condition: Option<Expr<'a>>,
-    then_branch: Option<Expr<'a>>,
-    else_branch: Option<Expr<'a>>,
+pub struct IfBuilder {
+    condition: Option<Expr>,
+    then_branch: Option<Expr>,
+    else_branch: Option<Expr>,
 }
 
-impl<'a> IfBuilder<'a> {
+impl IfBuilder {
     pub(crate) fn new() -> Self {
         IfBuilder {
             condition: None,
@@ -910,22 +895,22 @@ impl<'a> IfBuilder<'a> {
         }
     }
 
-    pub fn with_condition(mut self, condition: Expr<'a>) -> Self {
+    pub fn with_condition(mut self, condition: Expr) -> Self {
         self.condition = Some(condition);
         self
     }
 
-    pub fn with_then_branch(mut self, then_branch: Expr<'a>) -> Self {
+    pub fn with_then_branch(mut self, then_branch: Expr) -> Self {
         self.then_branch = Some(then_branch);
         self
     }
 
-    pub fn with_else_branch(mut self, else_branch: Option<Expr<'a>>) -> Self {
+    pub fn with_else_branch(mut self, else_branch: Option<Expr>) -> Self {
         self.else_branch = else_branch;
         self
     }
 
-    pub fn build(self) -> Expr<'a> {
+    pub fn build(self) -> Expr {
         let expr = If::new(
             self.condition.expect("Condition must be provided"),
             self.then_branch.expect("Then branch must be provided"),
@@ -937,12 +922,12 @@ impl<'a> IfBuilder<'a> {
 }
 
 #[derive(Debug)]
-pub struct WhileLoopBuilder<'a> {
-    condition: Option<Expr<'a>>,
-    body: Option<Expr<'a>>,
+pub struct WhileLoopBuilder {
+    condition: Option<Expr>,
+    body: Option<Expr>,
 }
 
-impl<'a> WhileLoopBuilder<'a> {
+impl WhileLoopBuilder {
     pub(crate) fn new() -> Self {
         WhileLoopBuilder {
             condition: None,
@@ -950,17 +935,17 @@ impl<'a> WhileLoopBuilder<'a> {
         }
     }
 
-    pub fn with_condition(mut self, condition: Expr<'a>) -> Self {
+    pub fn with_condition(mut self, condition: Expr) -> Self {
         self.condition = Some(condition);
         self
     }
 
-    pub fn with_body(mut self, body: Expr<'a>) -> Self {
+    pub fn with_body(mut self, body: Expr) -> Self {
         self.body = Some(body);
         self
     }
 
-    pub fn build(self) -> Expr<'a> {
+    pub fn build(self) -> Expr {
         let expr = WhileLoop::new(
             self.condition.expect("Condition must be provided"),
             self.body.expect("Body expression must be provided"),
@@ -971,12 +956,12 @@ impl<'a> WhileLoopBuilder<'a> {
 }
 
 #[derive(Debug)]
-pub struct DoWhileLoopBuilder<'a> {
-    body: Option<Expr<'a>>,
-    condition: Option<Expr<'a>>,
+pub struct DoWhileLoopBuilder {
+    body: Option<Expr>,
+    condition: Option<Expr>,
 }
 
-impl<'a> DoWhileLoopBuilder<'a> {
+impl DoWhileLoopBuilder {
     pub(crate) fn new() -> Self {
         DoWhileLoopBuilder {
             body: None,
@@ -984,17 +969,17 @@ impl<'a> DoWhileLoopBuilder<'a> {
         }
     }
 
-    pub fn with_body(mut self, body: Expr<'a>) -> Self {
+    pub fn with_body(mut self, body: Expr) -> Self {
         self.body = Some(body);
         self
     }
 
-    pub fn with_condition(mut self, condition: Expr<'a>) -> Self {
+    pub fn with_condition(mut self, condition: Expr) -> Self {
         self.condition = Some(condition);
         self
     }
 
-    pub fn build(self) -> Expr<'a> {
+    pub fn build(self) -> Expr {
         let expr = DoWhileLoop::new(
             self.condition.expect("Condition must be provided"),
             self.body.expect("Body expression must be provided"),
@@ -1005,13 +990,13 @@ impl<'a> DoWhileLoopBuilder<'a> {
 }
 
 #[derive(Debug)]
-pub struct SwitchBuilder<'a> {
-    condition: Option<Expr<'a>>,
-    cases: Vec<(Expr<'a>, Expr<'a>)>,
-    default: Option<Expr<'a>>,
+pub struct SwitchBuilder {
+    condition: Option<Expr>,
+    cases: Vec<(Expr, Expr)>,
+    default: Option<Expr>,
 }
 
-impl<'a> SwitchBuilder<'a> {
+impl SwitchBuilder {
     pub(crate) fn new() -> Self {
         SwitchBuilder {
             condition: None,
@@ -1020,30 +1005,30 @@ impl<'a> SwitchBuilder<'a> {
         }
     }
 
-    pub fn with_condition(mut self, condition: Expr<'a>) -> Self {
+    pub fn with_condition(mut self, condition: Expr) -> Self {
         self.condition = Some(condition);
         self
     }
 
-    pub fn add_case(mut self, case: Expr<'a>, body: Expr<'a>) -> Self {
+    pub fn add_case(mut self, case: Expr, body: Expr) -> Self {
         self.cases.push((case, body));
         self
     }
 
     pub fn add_cases<I>(mut self, cases: I) -> Self
     where
-        I: IntoIterator<Item = (Expr<'a>, Expr<'a>)>,
+        I: IntoIterator<Item = (Expr, Expr)>,
     {
         self.cases.extend(cases);
         self
     }
 
-    pub fn with_default(mut self, default: Option<Expr<'a>>) -> Self {
+    pub fn with_default(mut self, default: Option<Expr>) -> Self {
         self.default = default;
         self
     }
 
-    pub fn build(self) -> Expr<'a> {
+    pub fn build(self) -> Expr {
         let expr = Switch::new(
             self.condition.expect("Condition must be provided"),
             self.cases,
@@ -1069,7 +1054,7 @@ impl BreakBuilder {
         self
     }
 
-    pub fn build<'a>(self) -> Expr<'a> {
+    pub fn build(self) -> Expr {
         let expr = Break::new(self.label);
 
         Expr::Break(Arc::new(expr))
@@ -1091,7 +1076,7 @@ impl ContinueBuilder {
         self
     }
 
-    pub fn build<'a>(self) -> Expr<'a> {
+    pub fn build(self) -> Expr {
         let expr = Continue::new(self.label);
 
         Expr::Continue(Arc::new(expr))
@@ -1099,21 +1084,21 @@ impl ContinueBuilder {
 }
 
 #[derive(Debug)]
-pub struct ReturnBuilder<'a> {
-    value: Option<Expr<'a>>,
+pub struct ReturnBuilder {
+    value: Option<Expr>,
 }
 
-impl<'a> ReturnBuilder<'a> {
+impl ReturnBuilder {
     pub(crate) fn new() -> Self {
         ReturnBuilder { value: None }
     }
 
-    pub fn with_value(mut self, value: Option<Expr<'a>>) -> Self {
+    pub fn with_value(mut self, value: Option<Expr>) -> Self {
         self.value = value;
         self
     }
 
-    pub fn build(self) -> Expr<'a> {
+    pub fn build(self) -> Expr {
         let expr = Return::new(self.value);
 
         Expr::Return(Arc::new(expr))
@@ -1121,13 +1106,13 @@ impl<'a> ReturnBuilder<'a> {
 }
 
 #[derive(Debug)]
-pub struct ForEachBuilder<'a> {
-    bindings: Vec<(IString, Option<Type<'a>>)>,
-    iterable: Option<Expr<'a>>,
-    body: Option<Expr<'a>>,
+pub struct ForEachBuilder {
+    bindings: Vec<(IString, Option<Type>)>,
+    iterable: Option<Expr>,
+    body: Option<Expr>,
 }
 
-impl<'a> ForEachBuilder<'a> {
+impl ForEachBuilder {
     pub(crate) fn new() -> Self {
         ForEachBuilder {
             bindings: Vec::new(),
@@ -1136,30 +1121,30 @@ impl<'a> ForEachBuilder<'a> {
         }
     }
 
-    pub fn add_binding(mut self, name: IString, ty: Option<Type<'a>>) -> Self {
+    pub fn add_binding(mut self, name: IString, ty: Option<Type>) -> Self {
         self.bindings.push((name, ty));
         self
     }
 
     pub fn add_bindings<I>(mut self, bindings: I) -> Self
     where
-        I: IntoIterator<Item = (IString, Option<Type<'a>>)>,
+        I: IntoIterator<Item = (IString, Option<Type>)>,
     {
         self.bindings.extend(bindings);
         self
     }
 
-    pub fn with_iterable(mut self, iterable: Expr<'a>) -> Self {
+    pub fn with_iterable(mut self, iterable: Expr) -> Self {
         self.iterable = Some(iterable);
         self
     }
 
-    pub fn with_body(mut self, body: Expr<'a>) -> Self {
+    pub fn with_body(mut self, body: Expr) -> Self {
         self.body = Some(body);
         self
     }
 
-    pub fn build(self) -> Expr<'a> {
+    pub fn build(self) -> Expr {
         let expr = ForEach::new(
             self.bindings,
             self.iterable.expect("Iterable expression must be provided"),
@@ -1171,21 +1156,21 @@ impl<'a> ForEachBuilder<'a> {
 }
 
 #[derive(Debug)]
-pub struct AwaitBuilder<'a> {
-    expression: Option<Expr<'a>>,
+pub struct AwaitBuilder {
+    expression: Option<Expr>,
 }
 
-impl<'a> AwaitBuilder<'a> {
+impl AwaitBuilder {
     pub(crate) fn new() -> Self {
         AwaitBuilder { expression: None }
     }
 
-    pub fn with_expression(mut self, expression: Expr<'a>) -> Self {
+    pub fn with_expression(mut self, expression: Expr) -> Self {
         self.expression = Some(expression);
         self
     }
 
-    pub fn build(self) -> Expr<'a> {
+    pub fn build(self) -> Expr {
         let expr = Await::new(self.expression.expect("Expression must be provided"));
 
         Expr::Await(Arc::new(expr))
@@ -1193,12 +1178,12 @@ impl<'a> AwaitBuilder<'a> {
 }
 
 #[derive(Debug)]
-pub struct AssertBuilder<'a> {
-    condition: Option<Expr<'a>>,
-    message: Option<Expr<'a>>,
+pub struct AssertBuilder {
+    condition: Option<Expr>,
+    message: Option<Expr>,
 }
 
-impl<'a> AssertBuilder<'a> {
+impl AssertBuilder {
     pub(crate) fn new() -> Self {
         AssertBuilder {
             condition: None,
@@ -1206,17 +1191,17 @@ impl<'a> AssertBuilder<'a> {
         }
     }
 
-    pub fn with_condition(mut self, condition: Expr<'a>) -> Self {
+    pub fn with_condition(mut self, condition: Expr) -> Self {
         self.condition = Some(condition);
         self
     }
 
-    pub fn with_message(mut self, message: Expr<'a>) -> Self {
+    pub fn with_message(mut self, message: Expr) -> Self {
         self.message = Some(message);
         self
     }
 
-    pub fn build(self) -> Expr<'a> {
+    pub fn build(self) -> Expr {
         let expr = Assert::new(
             self.condition.expect("Condition must be provided"),
             self.message.expect("Message must be provided"),
@@ -1227,12 +1212,12 @@ impl<'a> AssertBuilder<'a> {
 }
 
 #[derive(Debug)]
-pub struct CallBuilder<'a> {
-    callee: Option<Expr<'a>>,
-    arguments: CallArguments<'a>,
+pub struct CallBuilder {
+    callee: Option<Expr>,
+    arguments: CallArguments,
 }
 
-impl<'a> CallBuilder<'a> {
+impl CallBuilder {
     pub(crate) fn new() -> Self {
         CallBuilder {
             callee: None,
@@ -1240,7 +1225,7 @@ impl<'a> CallBuilder<'a> {
         }
     }
 
-    pub fn with_callee(mut self, callee: Expr<'a>) -> Self {
+    pub fn with_callee(mut self, callee: Expr) -> Self {
         self.callee = Some(callee);
         self
     }
@@ -1250,20 +1235,20 @@ impl<'a> CallBuilder<'a> {
         self
     }
 
-    pub fn add_argument(mut self, name: Option<IString>, value: Expr<'a>) -> Self {
+    pub fn add_argument(mut self, name: Option<IString>, value: Expr) -> Self {
         self.arguments.push((name, value));
         self
     }
 
     pub fn add_arguments<I>(mut self, arguments: I) -> Self
     where
-        I: IntoIterator<Item = (Option<IString>, Expr<'a>)>,
+        I: IntoIterator<Item = (Option<IString>, Expr)>,
     {
         self.arguments.extend(arguments);
         self
     }
 
-    pub fn build(self) -> Expr<'a> {
+    pub fn build(self) -> Expr {
         let expr = Call::new(
             self.callee.expect("Callee must be provided"),
             self.arguments,

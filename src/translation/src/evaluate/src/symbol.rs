@@ -4,11 +4,8 @@ use nitrate_structure::{
     kind::{Expr, Identifier, IndexAccess, Scope, Variable},
 };
 
-impl<'a> AbstractMachine<'a> {
-    pub(crate) fn evaluate_variable(
-        &mut self,
-        variable: &Variable<'a>,
-    ) -> Result<Expr<'a>, Unwind<'a>> {
+impl AbstractMachine {
+    pub(crate) fn evaluate_variable(&mut self, variable: &Variable) -> Result<Expr, Unwind> {
         // TODO: Verify and write tests
 
         // FIXME: Properly handle variable storage class attributes
@@ -34,10 +31,7 @@ impl<'a> AbstractMachine<'a> {
         Ok(Builder::create_unit())
     }
 
-    pub(crate) fn evaluate_identifier(
-        &mut self,
-        identifier: &Identifier,
-    ) -> Result<Expr<'a>, Unwind<'a>> {
+    pub(crate) fn evaluate_identifier(&mut self, identifier: &Identifier) -> Result<Expr, Unwind> {
         // TODO: Verify and write tests
 
         // FIXME: What about lvalue vs rvalue?
@@ -51,14 +45,14 @@ impl<'a> AbstractMachine<'a> {
 
     pub(crate) fn evaluate_index_access(
         &mut self,
-        _index_access: &IndexAccess<'a>,
-    ) -> Result<Expr<'a>, Unwind<'a>> {
+        _index_access: &IndexAccess,
+    ) -> Result<Expr, Unwind> {
         // TODO: Verify and write tests
 
         todo!("Implement index access evaluation")
     }
 
-    pub(crate) fn evaluate_scope(&mut self, scope: &Scope<'a>) -> Result<Expr<'a>, Unwind<'a>> {
+    pub(crate) fn evaluate_scope(&mut self, scope: &Scope) -> Result<Expr, Unwind> {
         // TODO: Verify and write tests
 
         for element in scope.elements() {

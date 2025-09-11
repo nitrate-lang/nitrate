@@ -29,22 +29,22 @@ impl CopyrightInfo {
 }
 
 #[derive(Debug, Clone)]
-pub struct SourceModel<'a> {
+pub struct SourceModel {
     language_version: (u32, u32),
     copyright: Option<CopyrightInfo>,
     license_id: Option<LicenseId>,
     insource_config: HashSet<IString>,
-    tree: Expr<'a>,
+    tree: Expr,
     any_errors: bool,
 }
 
-impl<'a> SourceModel<'a> {
+impl SourceModel {
     pub fn new(
         language_version: (u32, u32),
         copyright: Option<CopyrightInfo>,
         license_id: Option<LicenseId>,
         insource_config: HashSet<IString>,
-        tree: Expr<'a>,
+        tree: Expr,
         any_errors: bool,
     ) -> Self {
         SourceModel {
@@ -78,7 +78,7 @@ impl<'a> SourceModel<'a> {
     }
 
     #[must_use]
-    pub fn tree(&self) -> Expr<'a> {
+    pub fn tree(&self) -> Expr {
         self.tree.clone()
     }
 

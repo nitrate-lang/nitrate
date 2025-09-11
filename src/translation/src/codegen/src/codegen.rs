@@ -115,9 +115,9 @@ impl Codegen {
         Ok(ObjectModule::new(builder))
     }
 
-    pub fn generate<'a>(
+    pub fn generate(
         self,
-        _model: &SourceModel<'a>,
+        _model: &SourceModel,
         output: &mut dyn std::io::Write,
     ) -> Result<(), CodegenError> {
         let shared_flags = Self::create_shared_flags();

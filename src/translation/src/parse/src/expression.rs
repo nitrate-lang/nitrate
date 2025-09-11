@@ -133,8 +133,8 @@ fn get_prefix_precedence(op: Op) -> Option<Precedence> {
     Some(precedence as Precedence)
 }
 
-impl<'a> Parser<'a, '_> {
-    fn parse_expression_primary(&mut self) -> Option<Expr<'a>> {
+impl Parser<'_, '_> {
+    fn parse_expression_primary(&mut self) -> Option<Expr> {
         match self.lexer.peek_t() {
             Token::Integer(int) => {
                 self.lexer.skip_tok();
@@ -267,7 +267,7 @@ impl<'a> Parser<'a, '_> {
         }
     }
 
-    fn parse_prefix(&mut self) -> Option<Expr<'a>> {
+    fn parse_prefix(&mut self) -> Option<Expr> {
         if let Token::Op(prefix_op) = self.lexer.peek_t() {
             if let Some(precedence) = get_prefix_precedence(prefix_op) {
                 self.lexer.skip_tok();
@@ -305,7 +305,7 @@ impl<'a> Parser<'a, '_> {
     fn parse_expression_precedence(
         &mut self,
         min_precedence_to_proceed: Precedence,
-    ) -> Option<Expr<'a>> {
+    ) -> Option<Expr> {
         let mut sofar = self.parse_prefix()?;
 
         loop {
@@ -389,11 +389,11 @@ impl<'a> Parser<'a, '_> {
         }
     }
 
-    pub fn parse_expression(&mut self) -> Option<Expr<'a>> {
+    pub fn parse_expression(&mut self) -> Option<Expr> {
         self.parse_expression_precedence(Precedence::MIN)
     }
 
-    fn parse_integer_literal(value: u128, kind: IntegerKind) -> Expr<'a> {
+    fn parse_integer_literal(value: u128, kind: IntegerKind) -> Expr {
         let mut bb = Builder::create_integer_with_kind().with_kind(kind);
 
         if value <= 0xff {
@@ -411,7 +411,7 @@ impl<'a> Parser<'a, '_> {
         bb.build()
     }
 
-    fn parse_literal_suffix(&mut self, lit: Expr<'a>) -> Expr<'a> {
+    fn parse_literal_suffix(&mut self, lit: Expr) -> Expr {
         let type_name = match self.lexer.peek_t() {
             Token::Name(name) => Some(Builder::create_type_name(name)),
 
@@ -448,7 +448,7 @@ impl<'a> Parser<'a, '_> {
         }
     }
 
-    pub(crate) fn parse_list(&mut self) -> Option<Expr<'a>> {
+    pub(crate) fn parse_list(&mut self) -> Option<Expr> {
         assert!(self.lexer.peek_t() == Token::Punct(Punct::LeftBracket));
         self.lexer.skip_tok();
 
@@ -478,7 +478,7 @@ impl<'a> Parser<'a, '_> {
         Some(Builder::create_list().add_elements(elements).build())
     }
 
-    pub(crate) fn parse_attributes(&mut self) -> Option<Vec<Expr<'a>>> {
+    pub(crate) fn parse_attributes(&mut self) -> Option<Vec<Expr>> {
         let mut attributes = Vec::new();
 
         if !self.lexer.skip_if(&Token::Punct(Punct::LeftBracket)) {
@@ -509,7 +509,7 @@ impl<'a> Parser<'a, '_> {
         Some(attributes)
     }
 
-    fn parse_type_or_type_alias(&mut self) -> Option<Expr<'a>> {
+    fn parse_type_or_type_alias(&mut self) -> Option<Expr> {
         assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Type));
 
         let rewind_pos = self.lexer.sync_position();
@@ -539,7 +539,7 @@ impl<'a> Parser<'a, '_> {
         self.parse_type_alias()
     }
 
-    fn parse_if(&mut self) -> Option<Expr<'a>> {
+    fn parse_if(&mut self) -> Option<Expr> {
         assert!(self.lexer.peek_t() == Token::Keyword(Keyword::If));
         self.lexer.skip_tok();
 
@@ -574,14 +574,14 @@ impl<'a> Parser<'a, '_> {
         )
     }
 
-    fn parse_for(&mut self) -> Option<Expr<'a>> {
+    fn parse_for(&mut self) -> Option<Expr> {
         // TODO: for expression parsing logic
         self.set_failed_bit();
         error!("For expression parsing not implemented yet");
         None
     }
 
-    fn parse_while(&mut self) -> Option<Expr<'a>> {
+    fn parse_while(&mut self) -> Option<Expr> {
         assert!(self.lexer.peek_t() == Token::Keyword(Keyword::While));
         self.lexer.skip_tok();
 
@@ -601,7 +601,7 @@ impl<'a> Parser<'a, '_> {
         )
     }
 
-    fn parse_do(&mut self) -> Option<Expr<'a>> {
+    fn parse_do(&mut self) -> Option<Expr> {
         assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Do));
         self.lexer.skip_tok();
 
@@ -625,14 +625,14 @@ impl<'a> Parser<'a, '_> {
         )
     }
 
-    fn parse_switch(&mut self) -> Option<Expr<'a>> {
+    fn parse_switch(&mut self) -> Option<Expr> {
         // TODO: switch expression parsing logic
         self.set_failed_bit();
         error!("Switch expression parsing not implemented yet");
         None
     }
 
-    fn parse_break(&mut self) -> Option<Expr<'a>> {
+    fn parse_break(&mut self) -> Option<Expr> {
         assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Break));
         self.lexer.skip_tok();
 
@@ -654,7 +654,7 @@ impl<'a> Parser<'a, '_> {
         Some(Builder::create_break().with_label(branch_label).build())
     }
 
-    fn parse_continue(&mut self) -> Option<Expr<'a>> {
+    fn parse_continue(&mut self) -> Option<Expr> {
         assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Continue));
         self.lexer.skip_tok();
 
@@ -676,7 +676,7 @@ impl<'a> Parser<'a, '_> {
         Some(Builder::create_continue().with_label(branch_label).build())
     }
 
-    fn parse_return(&mut self) -> Option<Expr<'a>> {
+    fn parse_return(&mut self) -> Option<Expr> {
         assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Ret));
         self.lexer.skip_tok();
 
@@ -689,14 +689,14 @@ impl<'a> Parser<'a, '_> {
         Some(Builder::create_return().with_value(value).build())
     }
 
-    fn parse_foreach(&mut self) -> Option<Expr<'a>> {
+    fn parse_foreach(&mut self) -> Option<Expr> {
         // TODO: foreach expression parsing logic
         self.set_failed_bit();
         error!("Foreach expression parsing not implemented yet");
         None
     }
 
-    fn parse_await(&mut self) -> Option<Expr<'a>> {
+    fn parse_await(&mut self) -> Option<Expr> {
         assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Await));
         self.lexer.skip_tok();
 
@@ -708,14 +708,14 @@ impl<'a> Parser<'a, '_> {
         Some(Builder::create_await().with_expression(expr).build())
     }
 
-    fn parse_asm(&mut self) -> Option<Expr<'a>> {
+    fn parse_asm(&mut self) -> Option<Expr> {
         // TODO: asm expression parsing logic
         self.set_failed_bit();
         error!("Asm expression parsing not implemented yet");
         None
     }
 
-    fn parse_assert(&mut self) -> Option<Expr<'a>> {
+    fn parse_assert(&mut self) -> Option<Expr> {
         assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Assert));
         self.lexer.skip_tok();
 
@@ -755,14 +755,14 @@ impl<'a> Parser<'a, '_> {
         )
     }
 
-    fn parse_type_alias(&mut self) -> Option<Expr<'a>> {
+    fn parse_type_alias(&mut self) -> Option<Expr> {
         // TODO: type alias parsing logic
         self.set_failed_bit();
         error!("Type alias parsing not implemented yet");
         None
     }
 
-    fn parse_scope(&mut self) -> Option<Expr<'a>> {
+    fn parse_scope(&mut self) -> Option<Expr> {
         assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Scope));
         self.lexer.skip_tok();
 
@@ -794,49 +794,49 @@ impl<'a> Parser<'a, '_> {
         )
     }
 
-    fn parse_enum(&mut self) -> Option<Expr<'a>> {
+    fn parse_enum(&mut self) -> Option<Expr> {
         // TODO: enum parsing logic
         self.set_failed_bit();
         error!("Enum parsing not implemented yet");
         None
     }
 
-    fn parse_struct(&mut self) -> Option<Expr<'a>> {
+    fn parse_struct(&mut self) -> Option<Expr> {
         // TODO: struct parsing logic
         self.set_failed_bit();
         error!("Struct parsing not implemented yet");
         None
     }
 
-    fn parse_class(&mut self) -> Option<Expr<'a>> {
+    fn parse_class(&mut self) -> Option<Expr> {
         // TODO: class parsing logic
         self.set_failed_bit();
         error!("Class parsing not implemented yet");
         None
     }
 
-    fn parse_trait(&mut self) -> Option<Expr<'a>> {
+    fn parse_trait(&mut self) -> Option<Expr> {
         // TODO: trait parsing logic
         self.set_failed_bit();
         error!("Trait parsing not implemented yet");
         None
     }
 
-    fn parse_implementation(&mut self) -> Option<Expr<'a>> {
+    fn parse_implementation(&mut self) -> Option<Expr> {
         // TODO: implementation parsing logic
         self.set_failed_bit();
         error!("Implementation parsing not implemented yet");
         None
     }
 
-    fn parse_contract(&mut self) -> Option<Expr<'a>> {
+    fn parse_contract(&mut self) -> Option<Expr> {
         // TODO: contract parsing logic
         self.set_failed_bit();
         error!("Contract parsing not implemented yet");
         None
     }
 
-    fn parse_function(&mut self) -> Option<Expr<'a>> {
+    fn parse_function(&mut self) -> Option<Expr> {
         if self.lexer.peek_t() == Token::Punct(Punct::LeftBrace) {
             let block = Some(self.parse_block()?);
 
@@ -880,7 +880,7 @@ impl<'a> Parser<'a, '_> {
         Some(function)
     }
 
-    fn parse_let_variable(&mut self) -> Option<Expr<'a>> {
+    fn parse_let_variable(&mut self) -> Option<Expr> {
         assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Let));
         self.lexer.skip_tok();
 
@@ -935,7 +935,7 @@ impl<'a> Parser<'a, '_> {
         Some(variable)
     }
 
-    fn parse_var_variable(&mut self) -> Option<Expr<'a>> {
+    fn parse_var_variable(&mut self) -> Option<Expr> {
         assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Var));
         self.lexer.skip_tok();
 
@@ -990,7 +990,7 @@ impl<'a> Parser<'a, '_> {
         Some(variable)
     }
 
-    fn parse_function_argument(&mut self) -> Option<(Option<IString>, Expr<'a>)> {
+    fn parse_function_argument(&mut self) -> Option<(Option<IString>, Expr)> {
         let mut argument_name = None;
 
         if let Token::Name(name) = self.lexer.peek_t() {
@@ -1015,7 +1015,7 @@ impl<'a> Parser<'a, '_> {
         Some((argument_name, argument_value))
     }
 
-    fn parse_function_arguments(&mut self) -> Option<CallArguments<'a>> {
+    fn parse_function_arguments(&mut self) -> Option<CallArguments> {
         assert!(self.lexer.peek_t() == Token::Punct(Punct::LeftParen));
         self.lexer.skip_tok();
 
@@ -1045,7 +1045,7 @@ impl<'a> Parser<'a, '_> {
         Some(arguments)
     }
 
-    pub(crate) fn parse_block_as_elements(&mut self) -> Option<Vec<Expr<'a>>> {
+    pub(crate) fn parse_block_as_elements(&mut self) -> Option<Vec<Expr>> {
         if !self.lexer.skip_if(&Token::Punct(Punct::LeftBrace)) {
             self.set_failed_bit();
             error!(
@@ -1105,7 +1105,7 @@ impl<'a> Parser<'a, '_> {
         Some(elements)
     }
 
-    pub(crate) fn parse_block(&mut self) -> Option<Expr<'a>> {
+    pub(crate) fn parse_block(&mut self) -> Option<Expr> {
         Some(
             Builder::create_block()
                 .add_expressions(self.parse_block_as_elements()?)

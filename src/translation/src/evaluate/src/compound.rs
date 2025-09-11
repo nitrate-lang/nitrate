@@ -6,11 +6,8 @@ use nitrate_structure::{
 };
 use std::collections::BTreeMap;
 
-impl<'a> AbstractMachine<'a> {
-    pub(crate) fn evaluate_type_envelop(
-        &mut self,
-        content: &Type<'a>,
-    ) -> Result<Expr<'a>, Unwind<'a>> {
+impl AbstractMachine {
+    pub(crate) fn evaluate_type_envelop(&mut self, content: &Type) -> Result<Expr, Unwind> {
         let evaluated_type = self.evaluate_type(content)?;
 
         Ok(Builder::create_object()
@@ -18,7 +15,7 @@ impl<'a> AbstractMachine<'a> {
             .build())
     }
 
-    pub(crate) fn evaluate_list(&mut self, list: &List<'a>) -> Result<Expr<'a>, Unwind<'a>> {
+    pub(crate) fn evaluate_list(&mut self, list: &List) -> Result<Expr, Unwind> {
         // TODO: Verify and write tests
 
         let mut elements = Vec::new();
@@ -31,7 +28,7 @@ impl<'a> AbstractMachine<'a> {
         Ok(Builder::create_list().add_elements(elements).build())
     }
 
-    pub(crate) fn evaluate_object(&mut self, object: &Object<'a>) -> Result<Expr<'a>, Unwind<'a>> {
+    pub(crate) fn evaluate_object(&mut self, object: &Object) -> Result<Expr, Unwind> {
         // TODO: Verify and write tests
 
         let mut fields = BTreeMap::new();
@@ -44,37 +41,28 @@ impl<'a> AbstractMachine<'a> {
         Ok(Builder::create_object().add_fields(fields).build())
     }
 
-    pub(crate) fn evaluate_unaryexpr(
-        &mut self,
-        _uexpr: &UnaryExpr<'a>,
-    ) -> Result<Expr<'a>, Unwind<'a>> {
+    pub(crate) fn evaluate_unaryexpr(&mut self, _uexpr: &UnaryExpr) -> Result<Expr, Unwind> {
         // TODO: Verify and write tests
 
         // TODO: Evaluate unary expression
         unimplemented!()
     }
 
-    pub(crate) fn evaluate_binexpr(
-        &mut self,
-        _bexpr: &BinExpr<'a>,
-    ) -> Result<Expr<'a>, Unwind<'a>> {
+    pub(crate) fn evaluate_binexpr(&mut self, _bexpr: &BinExpr) -> Result<Expr, Unwind> {
         // TODO: Verify and write tests
 
         // TODO: Evaluate binary expression
         unimplemented!()
     }
 
-    pub(crate) fn evaluate_statement(
-        &mut self,
-        statement: &Statement<'a>,
-    ) -> Result<Expr<'a>, Unwind<'a>> {
+    pub(crate) fn evaluate_statement(&mut self, statement: &Statement) -> Result<Expr, Unwind> {
         // TODO: Verify and write tests
 
         self.evaluate(&statement.get())?;
         Ok(Builder::create_unit())
     }
 
-    pub(crate) fn evaluate_block(&mut self, block: &Block<'a>) -> Result<Expr<'a>, Unwind<'a>> {
+    pub(crate) fn evaluate_block(&mut self, block: &Block) -> Result<Expr, Unwind> {
         // TODO: Verify and write tests
 
         let mut result = None;
