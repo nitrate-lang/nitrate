@@ -141,20 +141,20 @@ pub enum CommentKind {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash)]
-pub struct Comment<'a> {
-    text: &'a str,
+pub struct Comment {
+    text: IString,
     kind: CommentKind,
 }
 
-impl<'a> Comment<'a> {
+impl Comment {
     #[must_use]
-    pub const fn new(text: &'a str, kind: CommentKind) -> Self {
+    pub const fn new(text: IString, kind: CommentKind) -> Self {
         Comment { text, kind }
     }
 
     #[must_use]
-    pub const fn text(&self) -> &str {
-        self.text
+    pub fn text(&self) -> &IString {
+        &self.text
     }
 
     #[must_use]
@@ -163,7 +163,7 @@ impl<'a> Comment<'a> {
     }
 }
 
-impl std::fmt::Display for Comment<'_> {
+impl std::fmt::Display for Comment {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self.kind() {
             CommentKind::SingleLine => write!(f, "#{}", self.text()),
@@ -493,7 +493,7 @@ pub enum Token<'a> {
     Float(NotNan<f64>),
     String(IString),
     BString(Vec<u8>),
-    Comment(Comment<'a>),
+    Comment(Comment),
     Keyword(Keyword),
     Punct(Punct),
     Op(Op),

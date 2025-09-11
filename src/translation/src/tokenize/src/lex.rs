@@ -199,7 +199,7 @@ impl<'a> Lexer<'a> {
     }
 
     #[inline(always)]
-    pub fn next_if_comment(&mut self) -> Option<Comment<'a>> {
+    pub fn next_if_comment(&mut self) -> Option<Comment> {
         if let Token::Comment(comment) = self.peek_t() {
             self.skip_tok();
             Some(comment)
@@ -855,7 +855,7 @@ impl<'a> Lexer<'a> {
 
         if let Ok(comment) = str::from_utf8(comment_bytes) {
             Ok(Token::Comment(Comment::new(
-                comment,
+                comment.intern(),
                 CommentKind::SingleLine,
             )))
         } else {
