@@ -1,10 +1,10 @@
 use super::abstract_machine::{AbstractMachine, CallFrame, IntrinsicFunction, Unwind};
 use nitrate_structure::{
+    Builder,
     kind::{
         Assert, Await, Break, Call, Continue, DoWhileLoop, Expr, ForEach, Function, If, Return,
         Switch, WhileLoop,
     },
-    Builder,
 };
 use std::sync::{Arc, RwLock};
 
@@ -71,7 +71,7 @@ impl<'a> AbstractMachine<'a> {
         unimplemented!()
     }
 
-    pub(crate) fn evaluate_break(&mut self, _break: &Break<'a>) -> Result<Expr<'a>, Unwind<'a>> {
+    pub(crate) fn evaluate_break(&mut self, _break: &Break) -> Result<Expr<'a>, Unwind<'a>> {
         // TODO: Verify and write tests
 
         // TODO: Evaluate break
@@ -80,7 +80,7 @@ impl<'a> AbstractMachine<'a> {
 
     pub(crate) fn evaluate_continue(
         &mut self,
-        _continue: &Continue<'a>,
+        _continue: &Continue,
     ) -> Result<Expr<'a>, Unwind<'a>> {
         // TODO: Verify and write tests
 
@@ -127,7 +127,7 @@ impl<'a> AbstractMachine<'a> {
 
             _ => {
                 let message_string = match message {
-                    Expr::String(s) => s.to_string(),
+                    Expr::String(s) => s,
                     _ => return Err(Unwind::TypeError),
                 };
 
@@ -162,7 +162,7 @@ impl<'a> AbstractMachine<'a> {
         let mut callframe = CallFrame::default();
 
         for (provided_name, value) in call.arguments() {
-            let name = provided_name.ok_or(Unwind::MissingArgument)?;
+            let name = provided_name.to_owned().ok_or(Unwind::MissingArgument)?;
             callframe.set(name, self.evaluate(value)?);
         }
 

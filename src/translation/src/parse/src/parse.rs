@@ -7,7 +7,7 @@ use smallvec::SmallVec;
 pub struct Parser<'a, 'symbol_table> {
     pub(crate) lexer: Lexer<'a>,
     pub(crate) symtab: &'symbol_table mut SymbolTable<'a>,
-    pub(crate) scope: QualifiedScope<'a>,
+    pub(crate) scope: QualifiedScope,
     pub(crate) generic_type_depth: i64,
     pub(crate) generic_type_suffix_terminator_ambiguity: bool,
     failed_bit: bool,

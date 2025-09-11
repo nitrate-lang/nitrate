@@ -1,4 +1,5 @@
 use super::abstract_machine::{AbstractMachine, Unwind};
+use interned_string::Intern;
 use nitrate_structure::{
     Builder,
     kind::{BinExpr, Block, Expr, List, Object, Statement, Type, UnaryExpr},
@@ -13,7 +14,7 @@ impl<'a> AbstractMachine<'a> {
         let evaluated_type = self.evaluate_type(content)?;
 
         Ok(Builder::create_object()
-            .add_field("inner", evaluated_type.into())
+            .add_field("inner".intern(), evaluated_type.into())
             .build())
     }
 

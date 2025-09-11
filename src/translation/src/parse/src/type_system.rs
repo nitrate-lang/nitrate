@@ -1,10 +1,13 @@
+use std::ops::Deref;
+
 use super::parse::Parser;
+use interned_string::IString;
 use log::{error, info};
 use nitrate_structure::{
-    kind::{Expr, FunctionParameter, Type},
     Builder,
+    kind::{Expr, FunctionParameter, Type},
 };
-use nitrate_tokenize::{Keyword, Name, Op, Punct, Token};
+use nitrate_tokenize::{Keyword, Op, Punct, Token};
 
 #[allow(unused_imports)]
 use crate::SymbolTable;
@@ -110,8 +113,8 @@ impl<'a> Parser<'a, '_> {
         })
     }
 
-    fn parse_generic_argument(&mut self) -> Option<(&'a str, Expr<'a>)> {
-        let mut argument_name: &'a str = "";
+    fn parse_generic_argument(&mut self) -> Option<(IString, Expr<'a>)> {
+        let mut argument_name: Option<IString> = None;
 
         if let Token::Name(name) = self.lexer.peek_t() {
             /* Named generic argument syntax is ambiguous,
@@ -124,7 +127,7 @@ impl<'a> Parser<'a, '_> {
             self.lexer.skip_tok();
 
             if self.lexer.skip_if(&Token::Punct(Punct::Colon)) {
-                argument_name = name.name();
+                argument_name = Some(name);
             } else {
                 self.lexer.rewind(rewind_pos);
             }
@@ -154,10 +157,10 @@ impl<'a> Parser<'a, '_> {
             return None;
         };
 
-        Some((argument_name, argument_value))
+        Some((argument_name.unwrap_or_default(), argument_value))
     }
 
-    fn parse_generic_arguments(&mut self) -> Option<Vec<(&'a str, Expr<'a>)>> {
+    fn parse_generic_arguments(&mut self) -> Option<Vec<(IString, Expr<'a>)>> {
         assert!(self.lexer.peek_t() == Token::Op(Op::LogicLt));
         self.lexer.skip_tok();
 
@@ -214,7 +217,7 @@ impl<'a> Parser<'a, '_> {
 
     fn parse_type_name(&mut self) -> Option<Type<'a>> {
         match self.lexer.peek_t() {
-            Token::Name(name) if name.name() == "_" => {
+            Token::Name(name) if name.deref() == "_" => {
                 self.lexer.skip_tok();
                 return Some(Builder::get_infer_type());
             }
@@ -231,7 +234,7 @@ impl<'a> Parser<'a, '_> {
                 Token::Name(name) => {
                     if last_was_scope || segments.is_empty() {
                         self.lexer.skip_tok();
-                        segments.push(name.name());
+                        segments.push(name);
 
                         last_was_scope = false;
                     } else {
@@ -248,7 +251,7 @@ impl<'a> Parser<'a, '_> {
 
                     // For absolute scoping
                     if segments.is_empty() {
-                        segments.push("");
+                        segments.push(IString::default());
                     }
 
                     last_was_scope = true;
@@ -529,11 +532,7 @@ impl<'a> Parser<'a, '_> {
                 break;
             }
 
-            let parameter_name = self
-                .lexer
-                .next_if_name()
-                .unwrap_or(Name::new("").unwrap())
-                .into_name();
+            let parameter_name = self.lexer.next_if_name().unwrap_or_default();
 
             let parameter_type = if self.lexer.skip_if(&Token::Punct(Punct::Colon)) {
                 self.parse_type()?

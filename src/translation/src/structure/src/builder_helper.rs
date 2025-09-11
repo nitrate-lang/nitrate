@@ -1,5 +1,6 @@
 use crate::Builder;
 use apint::UInt;
+use interned_string::IString;
 use nitrate_tokenize::IntegerKind;
 use std::sync::Arc;
 use std::{collections::BTreeMap, sync::RwLock};
@@ -198,7 +199,7 @@ impl<'a> FunctionTypeBuilder<'a> {
 
     pub fn add_parameter(
         mut self,
-        name: &'a str,
+        name: IString,
         ty: Type<'a>,
         default_value: Option<Expr<'a>>,
     ) -> Self {
@@ -309,7 +310,7 @@ impl<'a> UnmanagedRefTypeBuilder<'a> {
 #[derive(Debug)]
 pub struct GenericTypeBuilder<'a> {
     base: Option<Type<'a>>,
-    arguments: Vec<(&'a str, Expr<'a>)>,
+    arguments: Vec<(IString, Expr<'a>)>,
 }
 
 impl<'a> GenericTypeBuilder<'a> {
@@ -325,14 +326,14 @@ impl<'a> GenericTypeBuilder<'a> {
         self
     }
 
-    pub fn add_argument(mut self, name: &'a str, value: Expr<'a>) -> Self {
+    pub fn add_argument(mut self, name: IString, value: Expr<'a>) -> Self {
         self.arguments.push((name, value));
         self
     }
 
     pub fn add_arguments<I>(mut self, arguments: I) -> Self
     where
-        I: IntoIterator<Item = (&'a str, Expr<'a>)>,
+        I: IntoIterator<Item = (IString, Expr<'a>)>,
     {
         self.arguments.extend(arguments);
         self
@@ -358,7 +359,7 @@ impl<'a> StructTypeBuilder<'a> {
 
     pub fn add_field(
         mut self,
-        name: &'a str,
+        name: IString,
         ty: Type<'a>,
         default_value: Option<Expr<'a>>,
     ) -> Self {
@@ -471,7 +472,7 @@ impl<'a> ListBuilder<'a> {
 
 #[derive(Debug)]
 pub struct ObjectBuilder<'a> {
-    fields: BTreeMap<&'a str, Expr<'a>>,
+    fields: BTreeMap<IString, Expr<'a>>,
 }
 
 impl<'a> ObjectBuilder<'a> {
@@ -481,14 +482,14 @@ impl<'a> ObjectBuilder<'a> {
         }
     }
 
-    pub fn add_field(mut self, key: &'a str, value: Expr<'a>) -> Self {
+    pub fn add_field(mut self, key: IString, value: Expr<'a>) -> Self {
         self.fields.insert(key, value);
         self
     }
 
     pub fn add_fields<I>(mut self, fields: I) -> Self
     where
-        I: IntoIterator<Item = (&'a str, Expr<'a>)>,
+        I: IntoIterator<Item = (IString, Expr<'a>)>,
     {
         self.fields.extend(fields);
         self
@@ -685,7 +686,7 @@ impl<'a> FunctionBuilder<'a> {
 
     pub fn with_parameter(
         mut self,
-        name: &'a str,
+        name: IString,
         ty: Type<'a>,
         default_value: Option<Expr<'a>>,
     ) -> Self {
@@ -740,7 +741,7 @@ pub struct VariableBuilder<'a> {
     kind: Option<VariableKind>,
     is_mutable: bool,
     attributes: Vec<Expr<'a>>,
-    name: &'a str,
+    name: IString,
     ty: Option<Type<'a>>,
     value: Option<Expr<'a>>,
 }
@@ -751,7 +752,7 @@ impl<'a> VariableBuilder<'a> {
             kind: None,
             is_mutable: false,
             attributes: Vec::new(),
-            name: "",
+            name: IString::from(""),
             ty: None,
             value: None,
         }
@@ -777,7 +778,7 @@ impl<'a> VariableBuilder<'a> {
         self
     }
 
-    pub fn with_name(mut self, name: &'a str) -> Self {
+    pub fn with_name(mut self, name: IString) -> Self {
         self.name = name;
         self
     }
@@ -839,7 +840,7 @@ impl<'a> IndexAccessBuilder<'a> {
 
 #[derive(Debug)]
 pub struct ScopeBuilder<'a> {
-    name: Option<&'a str>,
+    name: Option<IString>,
     attributes: Vec<Expr<'a>>,
     elements: Vec<Expr<'a>>,
 }
@@ -853,7 +854,7 @@ impl<'a> ScopeBuilder<'a> {
         }
     }
 
-    pub fn with_name(mut self, name: &'a str) -> Self {
+    pub fn with_name(mut self, name: IString) -> Self {
         self.name = Some(name);
         self
     }
@@ -1054,21 +1055,21 @@ impl<'a> SwitchBuilder<'a> {
 }
 
 #[derive(Debug)]
-pub struct BreakBuilder<'a> {
-    label: Option<&'a str>,
+pub struct BreakBuilder {
+    label: Option<IString>,
 }
 
-impl<'a> BreakBuilder<'a> {
+impl BreakBuilder {
     pub(crate) fn new() -> Self {
         BreakBuilder { label: None }
     }
 
-    pub fn with_label(mut self, label: Option<&'a str>) -> Self {
+    pub fn with_label(mut self, label: Option<IString>) -> Self {
         self.label = label;
         self
     }
 
-    pub fn build(self) -> Expr<'a> {
+    pub fn build<'a>(self) -> Expr<'a> {
         let expr = Break::new(self.label);
 
         Expr::Break(Arc::new(expr))
@@ -1076,21 +1077,21 @@ impl<'a> BreakBuilder<'a> {
 }
 
 #[derive(Debug)]
-pub struct ContinueBuilder<'a> {
-    label: Option<&'a str>,
+pub struct ContinueBuilder {
+    label: Option<IString>,
 }
 
-impl<'a> ContinueBuilder<'a> {
+impl ContinueBuilder {
     pub(crate) fn new() -> Self {
         ContinueBuilder { label: None }
     }
 
-    pub fn with_label(mut self, label: Option<&'a str>) -> Self {
+    pub fn with_label(mut self, label: Option<IString>) -> Self {
         self.label = label;
         self
     }
 
-    pub fn build(self) -> Expr<'a> {
+    pub fn build<'a>(self) -> Expr<'a> {
         let expr = Continue::new(self.label);
 
         Expr::Continue(Arc::new(expr))
@@ -1121,7 +1122,7 @@ impl<'a> ReturnBuilder<'a> {
 
 #[derive(Debug)]
 pub struct ForEachBuilder<'a> {
-    bindings: Vec<(&'a str, Option<Type<'a>>)>,
+    bindings: Vec<(IString, Option<Type<'a>>)>,
     iterable: Option<Expr<'a>>,
     body: Option<Expr<'a>>,
 }
@@ -1135,14 +1136,14 @@ impl<'a> ForEachBuilder<'a> {
         }
     }
 
-    pub fn add_binding(mut self, name: &'a str, ty: Option<Type<'a>>) -> Self {
+    pub fn add_binding(mut self, name: IString, ty: Option<Type<'a>>) -> Self {
         self.bindings.push((name, ty));
         self
     }
 
     pub fn add_bindings<I>(mut self, bindings: I) -> Self
     where
-        I: IntoIterator<Item = (&'a str, Option<Type<'a>>)>,
+        I: IntoIterator<Item = (IString, Option<Type<'a>>)>,
     {
         self.bindings.extend(bindings);
         self
@@ -1244,19 +1245,19 @@ impl<'a> CallBuilder<'a> {
         self
     }
 
-    pub fn with_callee_name(mut self, callee: &'a str) -> Self {
+    pub fn with_callee_name(mut self, callee: IString) -> Self {
         self.callee = Some(Builder::create_identifier(callee));
         self
     }
 
-    pub fn add_argument(mut self, name: Option<&'a str>, value: Expr<'a>) -> Self {
+    pub fn add_argument(mut self, name: Option<IString>, value: Expr<'a>) -> Self {
         self.arguments.push((name, value));
         self
     }
 
     pub fn add_arguments<I>(mut self, arguments: I) -> Self
     where
-        I: IntoIterator<Item = (Option<&'a str>, Expr<'a>)>,
+        I: IntoIterator<Item = (Option<IString>, Expr<'a>)>,
     {
         self.arguments.extend(arguments);
         self

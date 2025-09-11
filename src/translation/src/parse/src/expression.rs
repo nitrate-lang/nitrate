@@ -1,5 +1,5 @@
 use super::parse::Parser;
-use interned_string::Intern;
+use interned_string::{IString, Intern};
 use log::error;
 use nitrate_structure::{
     Builder,
@@ -164,7 +164,7 @@ impl<'a> Parser<'a, '_> {
 
             Token::Name(name) => {
                 self.lexer.skip_tok();
-                Some(Builder::create_identifier(name.name()))
+                Some(Builder::create_identifier(name))
             }
 
             Token::Keyword(Keyword::True) => {
@@ -413,7 +413,7 @@ impl<'a> Parser<'a, '_> {
 
     fn parse_literal_suffix(&mut self, lit: Expr<'a>) -> Expr<'a> {
         let type_name = match self.lexer.peek_t() {
-            Token::Name(name) => Some(Builder::create_type_name(name.name())),
+            Token::Name(name) => Some(Builder::create_type_name(name)),
 
             Token::Keyword(Keyword::Bool) => Some(Builder::get_bool()),
             Token::Keyword(Keyword::U8) => Some(Builder::get_u8()),
@@ -646,7 +646,7 @@ impl<'a> Parser<'a, '_> {
                 return None;
             };
 
-            Some(label.name())
+            Some(label)
         } else {
             None
         };
@@ -668,7 +668,7 @@ impl<'a> Parser<'a, '_> {
                 return None;
             };
 
-            Some(label.name())
+            Some(label)
         } else {
             None
         };
@@ -776,7 +776,7 @@ impl<'a> Parser<'a, '_> {
             return None;
         };
 
-        self.scope.push(name_token.name());
+        self.scope.push(name_token.clone());
 
         let Some(elements) = self.parse_block_as_elements() else {
             self.scope.pop();
@@ -787,7 +787,7 @@ impl<'a> Parser<'a, '_> {
 
         Some(
             Builder::create_scope()
-                .with_name(name_token.name())
+                .with_name(name_token)
                 .add_attributes(attributes)
                 .add_elements(elements)
                 .build(),
@@ -893,7 +893,7 @@ impl<'a> Parser<'a, '_> {
 
         let name_pos = self.lexer.peek_tok().start();
         let variable_name = if let Some(name_token) = self.lexer.next_if_name() {
-            name_token.name()
+            name_token
         } else {
             error!(
                 "[P????]: let: expected variable name\n--> {}",
@@ -917,7 +917,7 @@ impl<'a> Parser<'a, '_> {
         let variable = Builder::create_let()
             .with_mutability(is_mutable)
             .with_attributes(attributes)
-            .with_name(variable_name)
+            .with_name(variable_name.clone())
             .with_type(type_annotation)
             .with_value(initializer)
             .build();
@@ -925,7 +925,7 @@ impl<'a> Parser<'a, '_> {
         let current_scope = self.scope.clone();
         if !self
             .symtab
-            .insert(current_scope, variable_name, variable.clone())
+            .insert(current_scope, variable_name.clone(), variable.clone())
         {
             self.set_failed_bit();
             error!("[P????]: let: duplicate variable '{variable_name}'\n--> {name_pos}");
@@ -948,7 +948,7 @@ impl<'a> Parser<'a, '_> {
 
         let name_pos = self.lexer.peek_tok().start();
         let variable_name = if let Some(name_token) = self.lexer.next_if_name() {
-            name_token.name()
+            name_token
         } else {
             error!(
                 "[P????]: var: expected variable name\n--> {}",
@@ -972,7 +972,7 @@ impl<'a> Parser<'a, '_> {
         let variable = Builder::create_var()
             .with_mutability(is_mutable)
             .with_attributes(attributes)
-            .with_name(variable_name)
+            .with_name(variable_name.clone())
             .with_type(type_annotation)
             .with_value(initializer)
             .build();
@@ -980,7 +980,7 @@ impl<'a> Parser<'a, '_> {
         let current_scope = self.scope.clone();
         if !self
             .symtab
-            .insert(current_scope, variable_name, variable.clone())
+            .insert(current_scope, variable_name.clone(), variable.clone())
         {
             self.set_failed_bit();
             error!("[P????]: var: duplicate variable '{variable_name}'\n--> {name_pos}");
@@ -990,7 +990,7 @@ impl<'a> Parser<'a, '_> {
         Some(variable)
     }
 
-    fn parse_function_argument(&mut self) -> Option<(Option<&'a str>, Expr<'a>)> {
+    fn parse_function_argument(&mut self) -> Option<(Option<IString>, Expr<'a>)> {
         let mut argument_name = None;
 
         if let Token::Name(name) = self.lexer.peek_t() {
@@ -1004,7 +1004,7 @@ impl<'a> Parser<'a, '_> {
             self.lexer.skip_tok();
 
             if self.lexer.skip_if(&Token::Punct(Punct::Colon)) {
-                argument_name = Some(name.name());
+                argument_name = Some(name);
             } else {
                 self.lexer.rewind(rewind_pos);
             }

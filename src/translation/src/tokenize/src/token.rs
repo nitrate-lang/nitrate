@@ -8,91 +8,6 @@ pub enum IdentifierKind {
     Atypical,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash)]
-pub struct Name<'a> {
-    name: &'a str,
-    kind: IdentifierKind,
-}
-
-impl<'a> Name<'a> {
-    #[must_use]
-    pub fn new(name: &'a str) -> Option<Self> {
-        Some(Name {
-            name,
-            kind: Name::get_kind(name)?,
-        })
-    }
-
-    #[must_use]
-    pub fn new_typical(name: &'a str) -> Option<Self> {
-        Name::is_typical(name).then_some(Name {
-            name,
-            kind: IdentifierKind::Typical,
-        })
-    }
-
-    #[must_use]
-    pub fn new_atypical(name: &'a str) -> Option<Self> {
-        Name::is_atypical(name).then_some(Name {
-            name,
-            kind: IdentifierKind::Atypical,
-        })
-    }
-
-    #[must_use]
-    pub const fn into_name(self) -> &'a str {
-        self.name
-    }
-
-    #[must_use]
-    pub const fn name(&self) -> &'a str {
-        self.name
-    }
-
-    #[must_use]
-    pub const fn kind(&self) -> IdentifierKind {
-        self.kind
-    }
-
-    #[must_use]
-    pub fn is_typical(name: &str) -> bool {
-        let mut iter = name.chars();
-
-        if let Some(first) = iter.next() {
-            if first.is_ascii_alphabetic() || first == '_' || !first.is_ascii() {
-                return iter.all(|c| c.is_ascii_alphanumeric() || c == '_' || !c.is_ascii());
-            }
-        }
-
-        false
-    }
-
-    #[must_use]
-    pub fn is_atypical(name: &str) -> bool {
-        !name.contains('`')
-    }
-
-    #[must_use]
-    pub fn get_kind(name: &str) -> Option<IdentifierKind> {
-        if Self::is_typical(name) {
-            Some(IdentifierKind::Typical)
-        } else if Self::is_atypical(name) {
-            Some(IdentifierKind::Atypical)
-        } else {
-            None
-        }
-    }
-}
-
-impl std::fmt::Display for Name<'_> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self.kind() {
-            IdentifierKind::Typical => write!(f, "{}", self.name()),
-            IdentifierKind::Atypical => write!(f, "`{}`", self.name()),
-        }
-    }
-}
-
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Hash, Sequence)]
 pub enum IntegerKind {
     Bin,
@@ -487,8 +402,8 @@ impl std::fmt::Display for Op {
 }
 
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
-pub enum Token<'a> {
-    Name(Name<'a>),
+pub enum Token {
+    Name(IString),
     Integer(Integer),
     Float(NotNan<f64>),
     String(IString),
@@ -501,13 +416,13 @@ pub enum Token<'a> {
     Illegal,
 }
 
-impl std::fmt::Display for Token<'_> {
+impl std::fmt::Display for Token {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Token::Name(id) => write!(f, "{id}"),
             Token::Integer(int) => write!(f, "{int}"),
             Token::Float(float) => write!(f, "{float}"),
-            Token::String(s) => write!(f, "{s}"),
+            Token::String(s) => write!(f, "\"{s}\""),
             Token::BString(s) => write!(f, "{s:?}"),
             Token::Comment(c) => write!(f, "{c}"),
             Token::Keyword(kw) => write!(f, "{kw}"),
@@ -519,17 +434,17 @@ impl std::fmt::Display for Token<'_> {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Hash)]
-pub struct SourcePosition<'a> {
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash)]
+pub struct SourcePosition {
     line: u32,   // zero-based unicode-aware line number
     column: u32, // zero-based unicode-aware column number
     offset: u32, // zero-based raw byte offset number
-    filename: &'a str,
+    filename: IString,
 }
 
-impl<'a> SourcePosition<'a> {
+impl SourcePosition {
     #[must_use]
-    pub const fn new(line: u32, column: u32, offset: u32, filename: &'a str) -> Self {
+    pub const fn new(line: u32, column: u32, offset: u32, filename: IString) -> Self {
         SourcePosition {
             line,
             column,
@@ -554,20 +469,20 @@ impl<'a> SourcePosition<'a> {
     }
 
     #[must_use]
-    pub const fn filename(&self) -> &'a str {
-        self.filename
+    pub fn filename(&self) -> &IString {
+        &self.filename
     }
 }
 
-impl std::fmt::Display for SourcePosition<'_> {
+impl std::fmt::Display for SourcePosition {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}:{}:{}", self.filename, self.line + 1, self.column + 1)
     }
 }
 
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
-pub struct AnnotatedToken<'a> {
-    token: Token<'a>,
+pub struct AnnotatedToken {
+    token: Token,
 
     start_line: u32,
     start_column: u32,
@@ -577,12 +492,12 @@ pub struct AnnotatedToken<'a> {
     end_column: u32,
     end_offset: u32,
 
-    filename: &'a str,
+    filename: IString,
 }
 
-impl<'a> AnnotatedToken<'a> {
+impl AnnotatedToken {
     #[must_use]
-    pub const fn new(token: Token<'a>, start: SourcePosition<'a>, end: SourcePosition<'a>) -> Self {
+    pub fn new(token: Token, start: SourcePosition, end: SourcePosition) -> Self {
         AnnotatedToken {
             token,
             start_line: start.line(),
@@ -591,7 +506,7 @@ impl<'a> AnnotatedToken<'a> {
             end_line: end.line(),
             end_column: end.column(),
             end_offset: end.offset,
-            filename: start.filename(),
+            filename: start.filename().to_owned(),
         }
     }
 
@@ -601,32 +516,32 @@ impl<'a> AnnotatedToken<'a> {
     }
 
     #[must_use]
-    pub fn into_token(self) -> Token<'a> {
+    pub fn into_token(self) -> Token {
         self.token
     }
 
     #[must_use]
-    pub const fn start(&self) -> SourcePosition<'a> {
+    pub fn start(&self) -> SourcePosition {
         SourcePosition::new(
             self.start_line,
             self.start_column,
             self.start_offset,
-            self.filename,
+            self.filename.clone(),
         )
     }
 
     #[must_use]
-    pub const fn end(&self) -> SourcePosition<'a> {
+    pub fn end(&self) -> SourcePosition {
         SourcePosition::new(
             self.end_line,
             self.end_column,
             self.end_offset,
-            self.filename,
+            self.filename.clone(),
         )
     }
 
     #[must_use]
-    pub const fn range(&self) -> (SourcePosition<'a>, SourcePosition<'a>) {
+    pub fn range(&self) -> (SourcePosition, SourcePosition) {
         (self.start(), self.end())
     }
 }
@@ -634,57 +549,14 @@ impl<'a> AnnotatedToken<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use interned_string::Intern;
+
     #[test]
     fn test_name_token_structure() {
         assert_eq!(
             enum_iterator::all::<IdentifierKind>().collect::<Vec<_>>(),
             vec![IdentifierKind::Typical, IdentifierKind::Atypical]
         );
-
-        let test_vectors = [
-            ("foo", Some(IdentifierKind::Typical)),
-            ("_bar", Some(IdentifierKind::Typical)),
-            ("baz123", Some(IdentifierKind::Typical)),
-            ("0wierd", Some(IdentifierKind::Atypical)),
-            ("123", Some(IdentifierKind::Atypical)),
-            ("!@#$%", Some(IdentifierKind::Atypical)),
-            ("λ", Some(IdentifierKind::Typical)),
-            ("变量", Some(IdentifierKind::Typical)),
-            ("🔥", Some(IdentifierKind::Typical)),
-            ("1🔥", Some(IdentifierKind::Atypical)),
-            ("🔥`", None),
-            ("with space", Some(IdentifierKind::Atypical)),
-            (" ", Some(IdentifierKind::Atypical)),
-            ("\n", Some(IdentifierKind::Atypical)),
-            ("", Some(IdentifierKind::Atypical)),
-            ("`", None),
-        ];
-
-        for (input, expected) in test_vectors {
-            let name = Name::new(input);
-
-            if let Some(expected_kind) = expected {
-                let name = name.expect(&format!("input: {:?}", input));
-                assert_eq!(name.kind(), expected_kind, "input: {:?}", input);
-                assert_eq!(name.name(), input, "input: {:?}", input);
-
-                let expected_display_str = match expected_kind {
-                    IdentifierKind::Atypical => format!("`{}`", input),
-                    IdentifierKind::Typical => format!("{}", input),
-                };
-
-                assert_eq!(format!("{}", name), expected_display_str);
-                assert_eq!(name.into_name(), input);
-            } else {
-                assert!(name.is_none(), "input: {:?}", input);
-            }
-
-            assert!(expected == None || Name::new_atypical(input).is_some());
-            assert_eq!(
-                Name::new_typical(input).is_some(),
-                expected == Some(IdentifierKind::Typical),
-            );
-        }
     }
 
     #[test]
@@ -757,32 +629,6 @@ mod tests {
     }
 
     #[test]
-    fn test_string_data_structure() {
-        assert_eq!(StringData::from_ref("hello").get(), "hello");
-        assert_eq!(StringData::from_dyn("world".to_string()).get(), "world");
-        assert_eq!(format!("{}", StringData::from_ref("test")), "\"test\"");
-        assert_eq!(
-            format!("{:?}", StringData::from_ref("test2")),
-            "StringData(\"test2\")",
-        );
-    }
-
-    #[test]
-    fn test_binary_data_structure() {
-        assert_eq!(BStringData::from_ref(b"hello").get(), b"hello");
-        assert_eq!(BStringData::from_dyn(b"world".to_vec()).get(), b"world");
-        assert_eq!(
-            format!("{}", BStringData::from_ref(b"test")),
-            "[116, 101, 115, 116]"
-        );
-
-        assert_eq!(
-            format!("{:?}", BStringData::from_ref(b"test2")),
-            "BStringData([116, 101, 115, 116, 50])"
-        );
-    }
-
-    #[test]
     fn test_comment_token_structure() {
         assert_eq!(
             enum_iterator::all::<CommentKind>().collect::<Vec<_>>(),
@@ -791,20 +637,20 @@ mod tests {
 
         let test_vectors = [
             (
-                " This is a single-line comment",
+                " This is a single-line comment".intern(),
                 CommentKind::SingleLine,
                 "# This is a single-line comment",
             ),
             (
-                "This is another single-line comment",
+                "This is another single-line comment".intern(),
                 CommentKind::SingleLine,
                 "#This is another single-line comment",
             ),
         ];
 
         for (text, kind, expected_str) in test_vectors {
-            let comment = Comment::new(text, kind);
-            assert_eq!(comment.text(), text);
+            let comment = Comment::new(text.clone(), kind);
+            assert_eq!(comment.text(), &text);
             assert_eq!(comment.kind(), kind);
             assert_eq!(format!("{}", comment), expected_str);
         }
@@ -961,16 +807,19 @@ mod tests {
     #[test]
     fn test_token_structure() {
         let test_vectors = [
-            (Token::Name(Name::new("example").unwrap()), "example"),
+            (Token::Name("example".into()), "example"),
             (Token::Integer(Integer::new(42, IntegerKind::Dec)), "42"),
             (Token::Float(NotNan::new(3.14).unwrap()), "3.14"),
-            (Token::String(StringData::from_ref("hello")), "\"hello\""),
+            (Token::String("hello".into()), "\"hello\""),
             (
-                Token::BString(BStringData::from_ref(b"world")),
+                Token::BString(Vec::from(b"world")),
                 "[119, 111, 114, 108, 100]",
             ),
             (
-                Token::Comment(Comment::new(" This is a comment", CommentKind::SingleLine)),
+                Token::Comment(Comment::new(
+                    " This is a comment".intern(),
+                    CommentKind::SingleLine,
+                )),
                 "# This is a comment",
             ),
             (Token::Keyword(Keyword::Let), "let"),
@@ -990,13 +839,14 @@ mod tests {
         let line = 2_u32;
         let column = 5_u32;
         let offset = 15_u32;
-        let filename = "test_file.txt";
+        let filename = "test_file.txt".intern();
 
-        let position = SourcePosition::new(line, column, offset, filename);
+        let position = SourcePosition::new(line, column, offset, filename.clone());
+
         assert_eq!(position.line(), line);
         assert_eq!(position.column(), column);
         assert_eq!(position.offset(), offset);
-        assert_eq!(position.filename(), filename);
+        assert_eq!(position.filename(), &filename);
 
         assert_eq!(
             format!("{}", position),
@@ -1006,77 +856,83 @@ mod tests {
 
     #[test]
     fn test_annotated_token_structure() {
+        let filename = "file.txt".intern();
+
         let test_vectors = [
             (
-                Token::Name(Name::new("example").unwrap()),
-                SourcePosition::new(1, 0, 10, "file.txt"),
-                SourcePosition::new(1, 7, 17, "file.txt"),
+                Token::Name("example".into()),
+                SourcePosition::new(1, 0, 10, filename.clone()),
+                SourcePosition::new(1, 7, 17, filename.clone()),
                 "example",
             ),
             (
                 Token::Integer(Integer::new(42, IntegerKind::Dec)),
-                SourcePosition::new(2, 5, 25, "file.txt"),
-                SourcePosition::new(2, 7, 27, "file.txt"),
+                SourcePosition::new(2, 5, 25, filename.clone()),
+                SourcePosition::new(2, 7, 27, filename.clone()),
                 "42",
             ),
             (
                 Token::Float(NotNan::new(3.14).unwrap()),
-                SourcePosition::new(3, 0, 30, "file.txt"),
-                SourcePosition::new(3, 5, 35, "file.txt"),
+                SourcePosition::new(3, 0, 30, filename.clone()),
+                SourcePosition::new(3, 5, 35, filename.clone()),
                 "3.14",
             ),
             (
-                Token::String(StringData::from_ref("hello")),
-                SourcePosition::new(4, 0, 40, "file.txt"),
-                SourcePosition::new(4, 6, 46, "file.txt"),
+                Token::String("hello".into()),
+                SourcePosition::new(4, 0, 40, filename.clone()),
+                SourcePosition::new(4, 6, 46, filename.clone()),
                 "\"hello\"",
             ),
             (
-                Token::BString(BStringData::from_ref(b"world")),
-                SourcePosition::new(5, 0, 50, "file.txt"),
-                SourcePosition::new(5, 6, 56, "file.txt"),
+                Token::BString(Vec::from(b"world")),
+                SourcePosition::new(5, 0, 50, filename.clone()),
+                SourcePosition::new(5, 6, 56, filename.clone()),
                 "[119, 111, 114, 108, 100]",
             ),
             (
-                Token::Comment(Comment::new(" This is a comment", CommentKind::SingleLine)),
-                SourcePosition::new(6, 0, 60, "file.txt"),
-                SourcePosition::new(6, 7, 67, "file.txt"),
+                Token::Comment(Comment::new(
+                    " This is a comment".into(),
+                    CommentKind::SingleLine,
+                )),
+                SourcePosition::new(6, 0, 60, filename.clone()),
+                SourcePosition::new(6, 7, 67, filename.clone()),
                 "# This is a comment",
             ),
             (
                 Token::Keyword(Keyword::Let),
-                SourcePosition::new(7, 0, 70, "file.txt"),
-                SourcePosition::new(7, 3, 73, "file.txt"),
+                SourcePosition::new(7, 0, 70, filename.clone()),
+                SourcePosition::new(7, 3, 73, filename.clone()),
                 "let",
             ),
             (
                 Token::Punct(Punct::LeftParen),
-                SourcePosition::new(8, 0, 80, "file.txt"),
-                SourcePosition::new(8, 1, 81, "file.txt"),
+                SourcePosition::new(8, 0, 80, filename.clone()),
+                SourcePosition::new(8, 1, 81, filename.clone()),
                 "(",
             ),
             (
                 Token::Op(Op::Add),
-                SourcePosition::new(9, 0, 90, "file.txt"),
-                SourcePosition::new(9, 1, 91, "file.txt"),
+                SourcePosition::new(9, 0, 90, filename.clone()),
+                SourcePosition::new(9, 1, 91, filename.clone()),
                 "+",
             ),
             (
                 Token::Eof,
-                SourcePosition::new(10, 0, 100, "file.txt"),
-                SourcePosition::new(10, 0, 100, "file.txt"),
+                SourcePosition::new(10, 0, 100, filename.clone()),
+                SourcePosition::new(10, 0, 100, filename.clone()),
                 "",
             ),
             (
                 Token::Illegal,
-                SourcePosition::new(11, 0, 110, "file.txt"),
-                SourcePosition::new(11, 8, 118, "file.txt"),
+                SourcePosition::new(11, 0, 110, filename.clone()),
+                SourcePosition::new(11, 8, 118, filename.clone()),
                 "<illegal>",
             ),
         ];
 
         for (token, start, end, expected_str) in test_vectors {
-            let annotated_token = AnnotatedToken::new(token.clone(), start, end);
+            let annotated_token = AnnotatedToken::new(token.clone(), start.clone(), end.clone());
+
             assert_eq!(annotated_token.token(), &token);
             assert_eq!(annotated_token.start(), start);
             assert_eq!(annotated_token.end(), end);

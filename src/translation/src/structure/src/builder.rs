@@ -71,7 +71,7 @@ impl<'a> Builder {
 
     #[must_use]
     pub fn create_string(str: IString) -> Expr<'a> {
-        Expr::String(Arc::new(str))
+        Expr::String(str)
     }
 
     #[must_use]
@@ -130,13 +130,18 @@ impl<'a> Builder {
     }
 
     #[must_use]
-    pub fn create_qualified_identifier(segments: Vec<&'a str>) -> Expr<'a> {
+    pub fn create_qualified_identifier(segments: Vec<IString>) -> Expr<'a> {
         Expr::Identifier(Arc::new(Identifier::new(segments)))
     }
 
     #[must_use]
-    pub fn create_identifier(name: &'a str) -> Expr<'a> {
-        let parts = name.split("::").collect::<Vec<&'a str>>();
+    pub fn create_identifier(name: IString) -> Expr<'a> {
+        let parts = name
+            .to_string()
+            .split("::")
+            .map(IString::from)
+            .collect::<Vec<IString>>();
+
         Self::create_qualified_identifier(parts)
     }
 
@@ -181,12 +186,12 @@ impl<'a> Builder {
     }
 
     #[must_use]
-    pub fn create_break() -> BreakBuilder<'a> {
+    pub fn create_break() -> BreakBuilder {
         BreakBuilder::new()
     }
 
     #[must_use]
-    pub fn create_continue() -> ContinueBuilder<'a> {
+    pub fn create_continue() -> ContinueBuilder {
         ContinueBuilder::new()
     }
 
@@ -306,13 +311,18 @@ impl<'a> Builder {
     }
 
     #[must_use]
-    pub fn create_qualified_type_name(segments: Vec<&'a str>) -> Type<'a> {
+    pub fn create_qualified_type_name(segments: Vec<IString>) -> Type<'a> {
         Type::TypeName(Arc::new(Identifier::new(segments)))
     }
 
     #[must_use]
-    pub fn create_type_name(name: &'a str) -> Type<'a> {
-        let parts = name.split("::").collect::<Vec<&'a str>>();
+    pub fn create_type_name(name: IString) -> Type<'a> {
+        let parts = name
+            .to_string()
+            .split("::")
+            .map(IString::from)
+            .collect::<Vec<IString>>();
+
         Self::create_qualified_type_name(parts)
     }
 
@@ -363,7 +373,7 @@ impl<'a> Builder {
 
     #[must_use]
     pub fn create_opaque_type(identity: IString) -> Type<'a> {
-        Type::OpaqueType(Arc::new(identity))
+        Type::OpaqueType(identity)
     }
 
     #[must_use]

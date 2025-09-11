@@ -1,18 +1,19 @@
 use hashbrown::HashMap;
-use nitrate_structure::{kind::Expr, Builder};
+use interned_string::{IString, Intern};
+use nitrate_structure::{Builder, kind::Expr};
 use std::rc::Rc;
 
 #[derive(Debug, Default)]
 pub(crate) struct CallFrame<'a> {
-    local_variables: HashMap<&'a str, Expr<'a>>,
+    local_variables: HashMap<IString, Expr<'a>>,
 }
 
 impl<'a> CallFrame<'a> {
-    fn get(&self, name: &str) -> Option<&Expr<'a>> {
+    fn get(&self, name: &IString) -> Option<&Expr<'a>> {
         self.local_variables.get(name)
     }
 
-    pub(crate) fn set(&mut self, name: &'a str, expr: Expr<'a>) {
+    pub(crate) fn set(&mut self, name: IString, expr: Expr<'a>) {
         self.local_variables.insert(name, expr);
     }
 }
@@ -20,7 +21,7 @@ impl<'a> CallFrame<'a> {
 #[derive(Debug)]
 pub(crate) struct Task<'a> {
     call_stack: Vec<CallFrame<'a>>,
-    task_locals: HashMap<&'a str, Expr<'a>>,
+    task_locals: HashMap<IString, Expr<'a>>,
 }
 
 impl<'a> Task<'a> {
@@ -40,7 +41,7 @@ impl<'a> Task<'a> {
         self.call_stack.len() > 1
     }
 
-    pub(crate) fn add_task_local(&mut self, name: &'a str, expr: Expr<'a>) {
+    pub(crate) fn add_task_local(&mut self, name: IString, expr: Expr<'a>) {
         self.task_locals.insert(name, expr);
     }
 }
@@ -50,17 +51,17 @@ pub enum Unwind<'a> {
     FunctionReturn(Expr<'a>),
     TypeError,
     MissingArgument,
-    UnknownCallee(String),
-    UnresolvedIdentifier(String),
-    ProgramaticAssertionFailed(String),
+    UnknownCallee(IString),
+    UnresolvedIdentifier(IString),
+    ProgramaticAssertionFailed(IString),
 }
 
 pub type IntrinsicFunction<'a> =
     Rc<dyn Fn(&mut AbstractMachine<'a>) -> Result<Expr<'a>, Unwind<'a>>>;
 
 pub struct AbstractMachine<'a> {
-    global_variables: HashMap<&'a str, Expr<'a>>,
-    provided_functions: HashMap<&'a str, IntrinsicFunction<'a>>,
+    global_variables: HashMap<IString, Expr<'a>>,
+    provided_functions: HashMap<IString, IntrinsicFunction<'a>>,
     tasks: Vec<Task<'a>>,
     current_task: usize,
 }
@@ -93,11 +94,11 @@ impl<'a> AbstractMachine<'a> {
         &mut self.tasks[self.current_task]
     }
 
-    pub(crate) fn resolve_intrinsic(&self, name: &str) -> Option<IntrinsicFunction<'a>> {
+    pub(crate) fn resolve_intrinsic(&self, name: &IString) -> Option<IntrinsicFunction<'a>> {
         self.provided_functions.get(name).cloned()
     }
 
-    pub(crate) fn resolve(&self, name: &str) -> Option<&Expr<'a>> {
+    pub(crate) fn resolve(&self, name: &IString) -> Option<&Expr<'a>> {
         // TODO: Verify and write tests
 
         if let Some(local_var) = self
@@ -120,11 +121,11 @@ impl<'a> AbstractMachine<'a> {
         None
     }
 
-    pub fn get_parameter(&self, name: &str) -> Option<&Expr<'a>> {
+    pub fn get_parameter(&self, name: &IString) -> Option<&Expr<'a>> {
         self.current_task().call_stack.last()?.get(name)
     }
 
-    pub fn provide_function<F>(&mut self, name: &'a str, callback: F)
+    pub fn provide_function<F>(&mut self, name: IString, callback: F)
     where
         F: Fn(&mut AbstractMachine<'a>) -> Result<Expr<'a>, Unwind<'a>> + 'static,
     {
@@ -132,17 +133,22 @@ impl<'a> AbstractMachine<'a> {
     }
 
     pub fn setup_builtins(&mut self) {
-        self.provide_function("std::intrinsic::print", |m: &mut AbstractMachine<'a>| {
-            let value = m.get_parameter("message").ok_or(Unwind::MissingArgument)?;
+        self.provide_function(
+            "std::intrinsic::print".intern(),
+            |m: &mut AbstractMachine<'a>| {
+                let value = m
+                    .get_parameter(&"message".intern())
+                    .ok_or(Unwind::MissingArgument)?;
 
-            if let Expr::String(string) = value {
-                print!("{}", string);
-            } else {
-                print!("{:#?}", value);
-            }
+                if let Expr::String(string) = value {
+                    print!("{}", string);
+                } else {
+                    print!("{:#?}", value);
+                }
 
-            Ok(Builder::create_unit())
-        });
+                Ok(Builder::create_unit())
+            },
+        );
     }
 
     pub fn evaluate(&mut self, expression: &Expr<'a>) -> Result<Expr<'a>, Unwind<'a>> {

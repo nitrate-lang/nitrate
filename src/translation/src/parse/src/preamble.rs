@@ -16,7 +16,7 @@ pub(crate) struct SourcePreamble {
 }
 
 impl<'a> Parser<'a, '_> {
-    fn parse_macro_prefix(&mut self) -> Option<(&'a str, Vec<Expr<'a>>)> {
+    fn parse_macro_prefix(&mut self) -> Option<(IString, Vec<Expr<'a>>)> {
         while self.lexer.skip_if(&Token::Punct(Punct::Semicolon)) {}
         if !self.lexer.skip_if(&Token::Punct(Punct::AtSign)) {
             return None;
@@ -43,7 +43,7 @@ impl<'a> Parser<'a, '_> {
                 self.set_failed_bit();
                 error!(
                     "[P????]: Unable to parse argument expression for macro '{}'\n--> {}",
-                    macro_name.name(),
+                    &macro_name,
                     self.lexer.sync_position()
                 );
                 break;
@@ -63,7 +63,7 @@ impl<'a> Parser<'a, '_> {
             }
         }
 
-        Some((macro_name.name(), macro_args))
+        Some((macro_name, macro_args))
     }
 
     fn parse_preamble_version_number(number: NotNan<f64>) -> Option<(u32, u32)> {
@@ -154,7 +154,7 @@ impl<'a> Parser<'a, '_> {
         };
 
         Some(CopyrightInfo::new(
-            holder_name.deref().to_owned(),
+            holder_name.to_owned(),
             copyright_year.get_u128() as u16,
         ))
     }
@@ -227,7 +227,7 @@ impl<'a> Parser<'a, '_> {
                 return None;
             };
 
-            config.insert(option.deref().to_owned());
+            config.insert(option.to_owned());
         }
 
         Some(config)
@@ -240,7 +240,7 @@ impl<'a> Parser<'a, '_> {
         let mut insource_config = None;
 
         while let Some((macro_name, macro_args)) = self.parse_macro_prefix() {
-            match macro_name {
+            match macro_name.deref() {
                 "nitrate" => {
                     self.parse_preamble_version_macro(macro_args)
                         .inspect(|version| {

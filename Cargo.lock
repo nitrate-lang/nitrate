@@ -780,6 +780,7 @@ name = "nitrate_evaluate"
 version = "0.1.0"
 dependencies = [
  "hashbrown 0.16.0",
+ "interned-string",
  "log",
  "nitrate_structure",
  "nitrate_tokenize",

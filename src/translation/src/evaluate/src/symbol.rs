@@ -22,13 +22,13 @@ impl<'a> AbstractMachine<'a> {
                 .callstack_mut()
                 .last_mut()
                 .unwrap()
-                .set(variable.name(), value);
+                .set(variable.name().to_owned(), value);
         } else {
             let initializer = variable.value().ok_or(Unwind::TypeError)?;
             let value = self.evaluate(initializer)?;
 
             self.current_task_mut()
-                .add_task_local(variable.name(), value);
+                .add_task_local(variable.name().to_owned(), value);
         }
 
         Ok(Builder::create_unit())
@@ -36,16 +36,16 @@ impl<'a> AbstractMachine<'a> {
 
     pub(crate) fn evaluate_identifier(
         &mut self,
-        identifier: &Identifier<'a>,
+        identifier: &Identifier,
     ) -> Result<Expr<'a>, Unwind<'a>> {
         // TODO: Verify and write tests
 
         // FIXME: What about lvalue vs rvalue?
 
-        self.resolve(identifier.full_name())
+        self.resolve(&identifier.full_name())
             .cloned()
             .ok_or(Unwind::UnresolvedIdentifier(
-                identifier.full_name().to_string(),
+                identifier.full_name().to_owned(),
             ))
     }
 

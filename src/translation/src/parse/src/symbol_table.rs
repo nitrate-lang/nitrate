@@ -1,3 +1,4 @@
+use interned_string::IString;
 use nitrate_structure::kind::Function;
 #[allow(unused_imports)]
 use nitrate_structure::{
@@ -9,14 +10,14 @@ use std::sync::RwLock;
 
 #[derive(Debug, Clone, Default)]
 pub struct SymbolTable<'a> {
-    scopes: HashMap<QualifiedScope<'a>, HashMap<&'a str, Expr<'a>>>,
+    scopes: HashMap<QualifiedScope, HashMap<IString, Expr<'a>>>,
 }
 
 impl<'a> SymbolTable<'a> {
     pub fn insert(
         &mut self,
-        symbol_scope: QualifiedScope<'a>,
-        symbol_name: &'a str,
+        symbol_scope: QualifiedScope,
+        symbol_name: IString,
         symbol: Expr<'a>,
     ) -> bool {
         self.scopes
@@ -29,8 +30,8 @@ impl<'a> SymbolTable<'a> {
     #[must_use]
     pub fn resolve(
         &self,
-        current_scope: QualifiedScope<'a>,
-        symbol_name: &str,
+        current_scope: QualifiedScope,
+        symbol_name: &IString,
     ) -> Option<Expr<'a>> {
         let mut search_scope = current_scope;
 

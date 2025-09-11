@@ -1,3 +1,4 @@
+use interned_string::Intern;
 use nitrate_structure::kind::{
     ArrayType, Assert, Await, BinExpr, BinExprOp, Block, Break, Call, Continue, DoWhileLoop, Expr,
     ForEach, Function, FunctionType, GenericType, Identifier, If, IndexAccess, List,
@@ -5,7 +6,7 @@ use nitrate_structure::kind::{
     StructType, Switch, TupleType, Type, UnaryExpr, UnaryExprOp, UnmanagedRefType, Variable,
     VariableKind, WhileLoop,
 };
-use nitrate_tokenize::{Integer, Keyword, Name, Op, Punct, Token};
+use nitrate_tokenize::{Integer, Keyword, Op, Punct, Token};
 use std::ops::Deref;
 
 // FIXME: Keep this in sync with the parser
@@ -14,11 +15,11 @@ use std::ops::Deref;
 pub struct CodeFormat {}
 
 pub trait ToCode<'a> {
-    fn to_code(&self, tokens: &mut Vec<Token<'a>>, options: &CodeFormat);
+    fn to_code(&self, tokens: &mut Vec<Token>, options: &CodeFormat);
 }
 
 impl<'a> ToCode<'a> for RefinementType<'a> {
-    fn to_code(&self, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
+    fn to_code(&self, tokens: &mut Vec<Token>, options: &CodeFormat) {
         self.base().to_code(tokens, options);
 
         if let Some(width) = self.width() {
@@ -42,7 +43,7 @@ impl<'a> ToCode<'a> for RefinementType<'a> {
 }
 
 impl<'a> ToCode<'a> for TupleType<'a> {
-    fn to_code(&self, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
+    fn to_code(&self, tokens: &mut Vec<Token>, options: &CodeFormat) {
         tokens.push(Token::Punct(Punct::LeftBrace));
         for (i, ty) in self.elements().iter().enumerate() {
             (i > 0).then(|| tokens.push(Token::Punct(Punct::Comma)));
@@ -53,7 +54,7 @@ impl<'a> ToCode<'a> for TupleType<'a> {
 }
 
 impl<'a> ToCode<'a> for ArrayType<'a> {
-    fn to_code(&self, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
+    fn to_code(&self, tokens: &mut Vec<Token>, options: &CodeFormat) {
         tokens.push(Token::Punct(Punct::LeftBracket));
         self.element().to_code(tokens, options);
         tokens.push(Token::Punct(Punct::Semicolon));
@@ -63,7 +64,7 @@ impl<'a> ToCode<'a> for ArrayType<'a> {
 }
 
 impl<'a> ToCode<'a> for MapType<'a> {
-    fn to_code(&self, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
+    fn to_code(&self, tokens: &mut Vec<Token>, options: &CodeFormat) {
         tokens.push(Token::Punct(Punct::LeftBracket));
         self.key().to_code(tokens, options);
         tokens.push(Token::Op(Op::Arrow));
@@ -73,7 +74,7 @@ impl<'a> ToCode<'a> for MapType<'a> {
 }
 
 impl<'a> ToCode<'a> for SliceType<'a> {
-    fn to_code(&self, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
+    fn to_code(&self, tokens: &mut Vec<Token>, options: &CodeFormat) {
         tokens.push(Token::Punct(Punct::LeftBracket));
         self.element().to_code(tokens, options);
         tokens.push(Token::Punct(Punct::RightBracket));
@@ -81,7 +82,7 @@ impl<'a> ToCode<'a> for SliceType<'a> {
 }
 
 impl<'a> ToCode<'a> for FunctionType<'a> {
-    fn to_code(&self, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
+    fn to_code(&self, tokens: &mut Vec<Token>, options: &CodeFormat) {
         tokens.push(Token::Keyword(Keyword::Fn));
 
         if !self.attributes().is_empty() {
@@ -97,7 +98,7 @@ impl<'a> ToCode<'a> for FunctionType<'a> {
         for (i, param) in self.parameters().iter().enumerate() {
             (i > 0).then(|| tokens.push(Token::Punct(Punct::Comma)));
 
-            tokens.push(Token::Name(Name::new(param.name()).expect("invalid name")));
+            tokens.push(Token::Name(param.name().to_owned()));
 
             if param.type_().is_known() {
                 tokens.push(Token::Punct(Punct::Colon));
@@ -119,7 +120,7 @@ impl<'a> ToCode<'a> for FunctionType<'a> {
 }
 
 impl<'a> ToCode<'a> for ManagedRefType<'a> {
-    fn to_code(&self, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
+    fn to_code(&self, tokens: &mut Vec<Token>, options: &CodeFormat) {
         tokens.push(Token::Op(Op::BitAnd));
         if self.is_mutable() {
             tokens.push(Token::Keyword(Keyword::Mut));
@@ -130,7 +131,7 @@ impl<'a> ToCode<'a> for ManagedRefType<'a> {
 }
 
 impl<'a> ToCode<'a> for UnmanagedRefType<'a> {
-    fn to_code(&self, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
+    fn to_code(&self, tokens: &mut Vec<Token>, options: &CodeFormat) {
         tokens.push(Token::Op(Op::Mul));
         if self.is_mutable() {
             tokens.push(Token::Keyword(Keyword::Mut));
@@ -143,14 +144,14 @@ impl<'a> ToCode<'a> for UnmanagedRefType<'a> {
 }
 
 impl<'a> ToCode<'a> for GenericType<'a> {
-    fn to_code(&self, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
+    fn to_code(&self, tokens: &mut Vec<Token>, options: &CodeFormat) {
         self.base().to_code(tokens, options);
 
         tokens.push(Token::Op(Op::LogicLt));
         for (i, (name, value)) in self.arguments().iter().enumerate() {
             (i > 0).then(|| tokens.push(Token::Punct(Punct::Comma)));
             if !name.is_empty() {
-                tokens.push(Token::Name(Name::new(name).expect("invalid name")));
+                tokens.push(Token::Name(name.to_owned()));
                 tokens.push(Token::Punct(Punct::Colon));
             }
             value.to_code(tokens, options);
@@ -160,13 +161,13 @@ impl<'a> ToCode<'a> for GenericType<'a> {
 }
 
 impl<'a> ToCode<'a> for StructType<'a> {
-    fn to_code(&self, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
+    fn to_code(&self, tokens: &mut Vec<Token>, options: &CodeFormat) {
         tokens.push(Token::Keyword(Keyword::Struct));
 
         tokens.push(Token::Punct(Punct::LeftBrace));
         for (i, (name, ty, default)) in self.fields().iter().enumerate() {
             (i > 0).then(|| tokens.push(Token::Punct(Punct::Comma)));
-            tokens.push(Token::Name(Name::new(name).expect("invalid name")));
+            tokens.push(Token::Name(name.to_owned()));
             tokens.push(Token::Punct(Punct::Colon));
             ty.to_code(tokens, options);
             if let Some(default) = default {
@@ -179,7 +180,7 @@ impl<'a> ToCode<'a> for StructType<'a> {
 }
 
 impl<'a> ToCode<'a> for nitrate_structure::kind::Integer {
-    fn to_code(&self, tokens: &mut Vec<Token<'a>>, _options: &CodeFormat) {
+    fn to_code(&self, tokens: &mut Vec<Token>, _options: &CodeFormat) {
         let u128 = self
             .get()
             .try_to_u128()
@@ -191,7 +192,7 @@ impl<'a> ToCode<'a> for nitrate_structure::kind::Integer {
 }
 
 impl<'a> ToCode<'a> for List<'a> {
-    fn to_code(&self, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
+    fn to_code(&self, tokens: &mut Vec<Token>, options: &CodeFormat) {
         tokens.push(Token::Punct(Punct::LeftBracket));
         for (i, expr) in self.elements().iter().enumerate() {
             (i > 0).then(|| tokens.push(Token::Punct(Punct::Comma)));
@@ -202,10 +203,10 @@ impl<'a> ToCode<'a> for List<'a> {
 }
 
 impl<'a> ToCode<'a> for Object<'a> {
-    fn to_code(&self, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
+    fn to_code(&self, tokens: &mut Vec<Token>, options: &CodeFormat) {
         tokens.push(Token::Punct(Punct::LeftBracket));
         for (key, value) in self.fields() {
-            tokens.push(Token::Name(Name::new(key).expect("invalid name")));
+            tokens.push(Token::Name(key.to_owned()));
             tokens.push(Token::Punct(Punct::Colon));
 
             value.to_code(tokens, options);
@@ -216,7 +217,7 @@ impl<'a> ToCode<'a> for Object<'a> {
 }
 
 impl<'a> ToCode<'a> for UnaryExprOp {
-    fn to_code(&self, tokens: &mut Vec<Token<'a>>, _options: &CodeFormat) {
+    fn to_code(&self, tokens: &mut Vec<Token>, _options: &CodeFormat) {
         let operator = Token::Op(match self {
             UnaryExprOp::Add => Op::Add,
             UnaryExprOp::Sub => Op::Sub,
@@ -234,7 +235,7 @@ impl<'a> ToCode<'a> for UnaryExprOp {
 }
 
 impl<'a> ToCode<'a> for UnaryExpr<'a> {
-    fn to_code(&self, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
+    fn to_code(&self, tokens: &mut Vec<Token>, options: &CodeFormat) {
         if self.is_postfix() {
             self.operand().to_code(tokens, options);
             self.operator().to_code(tokens, options);
@@ -246,7 +247,7 @@ impl<'a> ToCode<'a> for UnaryExpr<'a> {
 }
 
 impl<'a> ToCode<'a> for BinExprOp {
-    fn to_code(&self, tokens: &mut Vec<Token<'a>>, _options: &CodeFormat) {
+    fn to_code(&self, tokens: &mut Vec<Token>, _options: &CodeFormat) {
         let operator = Token::Op(match self {
             BinExprOp::Add => Op::Add,
             BinExprOp::Sub => Op::Sub,
@@ -300,7 +301,7 @@ impl<'a> ToCode<'a> for BinExprOp {
 }
 
 impl<'a> ToCode<'a> for BinExpr<'a> {
-    fn to_code(&self, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
+    fn to_code(&self, tokens: &mut Vec<Token>, options: &CodeFormat) {
         self.left().to_code(tokens, options);
         self.op().to_code(tokens, options);
         self.right().to_code(tokens, options);
@@ -308,14 +309,14 @@ impl<'a> ToCode<'a> for BinExpr<'a> {
 }
 
 impl<'a> ToCode<'a> for Statement<'a> {
-    fn to_code(&self, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
+    fn to_code(&self, tokens: &mut Vec<Token>, options: &CodeFormat) {
         self.get().to_code(tokens, options);
         tokens.push(Token::Punct(Punct::Semicolon));
     }
 }
 
 impl<'a> ToCode<'a> for Block<'a> {
-    fn to_code(&self, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
+    fn to_code(&self, tokens: &mut Vec<Token>, options: &CodeFormat) {
         tokens.push(Token::Punct(Punct::LeftBrace));
         for expr in self.elements() {
             expr.to_code(tokens, options);
@@ -325,7 +326,7 @@ impl<'a> ToCode<'a> for Block<'a> {
 }
 
 impl<'a> ToCode<'a> for Function<'a> {
-    fn to_code(&self, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
+    fn to_code(&self, tokens: &mut Vec<Token>, options: &CodeFormat) {
         tokens.push(Token::Keyword(Keyword::Fn));
 
         if !self.attributes().is_empty() {
@@ -341,7 +342,7 @@ impl<'a> ToCode<'a> for Function<'a> {
         for (i, param) in self.parameters().iter().enumerate() {
             (i > 0).then(|| tokens.push(Token::Punct(Punct::Comma)));
 
-            tokens.push(Token::Name(Name::new(param.name()).expect("invalid name")));
+            tokens.push(Token::Name(param.name().to_owned()));
 
             if param.type_().is_known() {
                 tokens.push(Token::Punct(Punct::Colon));
@@ -367,13 +368,13 @@ impl<'a> ToCode<'a> for Function<'a> {
 }
 
 impl<'a> ToCode<'a> for Variable<'a> {
-    fn to_code(&self, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
+    fn to_code(&self, tokens: &mut Vec<Token>, options: &CodeFormat) {
         match self.kind() {
             VariableKind::Let => tokens.push(Token::Keyword(Keyword::Let)),
             VariableKind::Var => tokens.push(Token::Keyword(Keyword::Var)),
         }
 
-        tokens.push(Token::Name(Name::new(self.name()).expect("invalid name")));
+        tokens.push(Token::Name(self.name().to_owned()));
 
         let var_type = self.get_type();
         tokens.push(Token::Punct(Punct::Colon));
@@ -386,17 +387,17 @@ impl<'a> ToCode<'a> for Variable<'a> {
     }
 }
 
-impl<'a> ToCode<'a> for Identifier<'a> {
-    fn to_code(&self, tokens: &mut Vec<Token<'a>>, _options: &CodeFormat) {
+impl<'a> ToCode<'a> for Identifier {
+    fn to_code(&self, tokens: &mut Vec<Token>, _options: &CodeFormat) {
         for (i, segment) in self.segments().iter().enumerate() {
             (i > 0).then(|| tokens.push(Token::Op(Op::Scope)));
-            tokens.push(Token::Name(Name::new(segment).expect("invalid name")));
+            tokens.push(Token::Name(segment.to_owned()));
         }
     }
 }
 
 impl<'a> ToCode<'a> for IndexAccess<'a> {
-    fn to_code(&self, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
+    fn to_code(&self, tokens: &mut Vec<Token>, options: &CodeFormat) {
         self.collection().to_code(tokens, options);
         tokens.push(Token::Punct(Punct::LeftBracket));
         self.index().to_code(tokens, options);
@@ -405,9 +406,9 @@ impl<'a> ToCode<'a> for IndexAccess<'a> {
 }
 
 impl<'a> ToCode<'a> for Scope<'a> {
-    fn to_code(&self, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
+    fn to_code(&self, tokens: &mut Vec<Token>, options: &CodeFormat) {
         tokens.push(Token::Keyword(Keyword::Scope));
-        tokens.push(Token::Name(Name::new(self.name()).expect("invalid name")));
+        tokens.push(Token::Name(self.name().to_owned()));
 
         if !self.attributes().is_empty() {
             tokens.push(Token::Punct(Punct::LeftBracket));
@@ -427,7 +428,7 @@ impl<'a> ToCode<'a> for Scope<'a> {
 }
 
 impl<'a> ToCode<'a> for If<'a> {
-    fn to_code(&self, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
+    fn to_code(&self, tokens: &mut Vec<Token>, options: &CodeFormat) {
         tokens.push(Token::Keyword(Keyword::If));
         self.condition().to_code(tokens, options);
         self.then_branch().to_code(tokens, options);
@@ -439,7 +440,7 @@ impl<'a> ToCode<'a> for If<'a> {
 }
 
 impl<'a> ToCode<'a> for WhileLoop<'a> {
-    fn to_code(&self, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
+    fn to_code(&self, tokens: &mut Vec<Token>, options: &CodeFormat) {
         tokens.push(Token::Keyword(Keyword::While));
         self.condition().to_code(tokens, options);
         self.body().to_code(tokens, options);
@@ -447,7 +448,7 @@ impl<'a> ToCode<'a> for WhileLoop<'a> {
 }
 
 impl<'a> ToCode<'a> for DoWhileLoop<'a> {
-    fn to_code(&self, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
+    fn to_code(&self, tokens: &mut Vec<Token>, options: &CodeFormat) {
         tokens.push(Token::Keyword(Keyword::Do));
         self.body().to_code(tokens, options);
         tokens.push(Token::Keyword(Keyword::While));
@@ -456,33 +457,33 @@ impl<'a> ToCode<'a> for DoWhileLoop<'a> {
 }
 
 impl<'a> ToCode<'a> for Switch<'a> {
-    fn to_code(&self, _tokens: &mut Vec<Token<'a>>, _options: &CodeFormat) {
+    fn to_code(&self, _tokens: &mut Vec<Token>, _options: &CodeFormat) {
         // TODO: Switch to_code
     }
 }
 
-impl<'a> ToCode<'a> for Break<'a> {
-    fn to_code(&self, tokens: &mut Vec<Token<'a>>, _options: &CodeFormat) {
+impl<'a> ToCode<'a> for Break {
+    fn to_code(&self, tokens: &mut Vec<Token>, _options: &CodeFormat) {
         tokens.push(Token::Keyword(Keyword::Break));
         if let Some(label) = self.label() {
             tokens.push(Token::Punct(Punct::SingleQuote));
-            tokens.push(Token::Name(Name::new(label).expect("invalid name")));
+            tokens.push(Token::Name(label.to_owned()));
         }
     }
 }
 
-impl<'a> ToCode<'a> for Continue<'a> {
-    fn to_code(&self, tokens: &mut Vec<Token<'a>>, _options: &CodeFormat) {
+impl<'a> ToCode<'a> for Continue {
+    fn to_code(&self, tokens: &mut Vec<Token>, _options: &CodeFormat) {
         tokens.push(Token::Keyword(Keyword::Continue));
         if let Some(label) = self.label() {
             tokens.push(Token::Punct(Punct::SingleQuote));
-            tokens.push(Token::Name(Name::new(label).expect("invalid name")));
+            tokens.push(Token::Name(label.to_owned()));
         }
     }
 }
 
 impl<'a> ToCode<'a> for Return<'a> {
-    fn to_code(&self, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
+    fn to_code(&self, tokens: &mut Vec<Token>, options: &CodeFormat) {
         tokens.push(Token::Keyword(Keyword::Ret));
         if let Some(value) = self.value() {
             value.to_code(tokens, options);
@@ -491,20 +492,20 @@ impl<'a> ToCode<'a> for Return<'a> {
 }
 
 impl<'a> ToCode<'a> for ForEach<'a> {
-    fn to_code(&self, _tokens: &mut Vec<Token<'a>>, _options: &CodeFormat) {
+    fn to_code(&self, _tokens: &mut Vec<Token>, _options: &CodeFormat) {
         // TODO: ForEach to_code
     }
 }
 
 impl<'a> ToCode<'a> for Await<'a> {
-    fn to_code(&self, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
+    fn to_code(&self, tokens: &mut Vec<Token>, options: &CodeFormat) {
         tokens.push(Token::Keyword(Keyword::Await));
         self.expression().to_code(tokens, options);
     }
 }
 
 impl<'a> ToCode<'a> for Assert<'a> {
-    fn to_code(&self, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
+    fn to_code(&self, tokens: &mut Vec<Token>, options: &CodeFormat) {
         tokens.push(Token::Keyword(Keyword::Assert));
 
         tokens.push(Token::Punct(Punct::LeftParen));
@@ -516,14 +517,14 @@ impl<'a> ToCode<'a> for Assert<'a> {
 }
 
 impl<'a> ToCode<'a> for Call<'a> {
-    fn to_code(&self, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
+    fn to_code(&self, tokens: &mut Vec<Token>, options: &CodeFormat) {
         self.callee().to_code(tokens, options);
 
         tokens.push(Token::Punct(Punct::LeftParen));
         for (i, arg) in self.arguments().iter().enumerate() {
             (i > 0).then(|| tokens.push(Token::Punct(Punct::Comma)));
-            if let Some(param_name) = arg.0 {
-                tokens.push(Token::Name(Name::new(param_name).expect("invalid name")));
+            if let Some(param_name) = &arg.0 {
+                tokens.push(Token::Name(param_name.to_owned()));
                 tokens.push(Token::Punct(Punct::Colon));
             }
 
@@ -534,7 +535,7 @@ impl<'a> ToCode<'a> for Call<'a> {
 }
 
 impl<'a> ToCode<'a> for Expr<'a> {
-    fn to_code(&self, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
+    fn to_code(&self, tokens: &mut Vec<Token>, options: &CodeFormat) {
         match self {
             Expr::Discard => {}
 
@@ -544,28 +545,28 @@ impl<'a> ToCode<'a> for Expr<'a> {
                 tokens.push(Token::Punct(Punct::RightParen));
             }
 
-            Expr::Bool => tokens.push(Token::Name(Name::new("bool").expect("invalid name"))),
-            Expr::UInt8 => tokens.push(Token::Name(Name::new("u8").expect("invalid name"))),
-            Expr::UInt16 => tokens.push(Token::Name(Name::new("u16").expect("invalid name"))),
-            Expr::UInt32 => tokens.push(Token::Name(Name::new("u32").expect("invalid name"))),
-            Expr::UInt64 => tokens.push(Token::Name(Name::new("u64").expect("invalid name"))),
-            Expr::UInt128 => tokens.push(Token::Name(Name::new("u128").expect("invalid name"))),
-            Expr::Int8 => tokens.push(Token::Name(Name::new("i8").expect("invalid name"))),
-            Expr::Int16 => tokens.push(Token::Name(Name::new("i16").expect("invalid name"))),
-            Expr::Int32 => tokens.push(Token::Name(Name::new("i32").expect("invalid name"))),
-            Expr::Int64 => tokens.push(Token::Name(Name::new("i64").expect("invalid name"))),
-            Expr::Int128 => tokens.push(Token::Name(Name::new("i128").expect("invalid name"))),
-            Expr::Float8 => tokens.push(Token::Name(Name::new("f8").expect("invalid name"))),
-            Expr::Float16 => tokens.push(Token::Name(Name::new("f16").expect("invalid name"))),
-            Expr::Float32 => tokens.push(Token::Name(Name::new("f32").expect("invalid name"))),
-            Expr::Float64 => tokens.push(Token::Name(Name::new("f64").expect("invalid name"))),
-            Expr::Float128 => tokens.push(Token::Name(Name::new("f128").expect("invalid name"))),
+            Expr::Bool => tokens.push(Token::Name("bool".intern())),
+            Expr::UInt8 => tokens.push(Token::Name("u8".intern())),
+            Expr::UInt16 => tokens.push(Token::Name("u16".intern())),
+            Expr::UInt32 => tokens.push(Token::Name("u32".intern())),
+            Expr::UInt64 => tokens.push(Token::Name("u64".intern())),
+            Expr::UInt128 => tokens.push(Token::Name("u128".intern())),
+            Expr::Int8 => tokens.push(Token::Name("i8".intern())),
+            Expr::Int16 => tokens.push(Token::Name("i16".intern())),
+            Expr::Int32 => tokens.push(Token::Name("i32".intern())),
+            Expr::Int64 => tokens.push(Token::Name("i64".intern())),
+            Expr::Int128 => tokens.push(Token::Name("i128".intern())),
+            Expr::Float8 => tokens.push(Token::Name("f8".intern())),
+            Expr::Float16 => tokens.push(Token::Name("f16".intern())),
+            Expr::Float32 => tokens.push(Token::Name("f32".intern())),
+            Expr::Float64 => tokens.push(Token::Name("f64".intern())),
+            Expr::Float128 => tokens.push(Token::Name("f128".intern())),
             Expr::UnitType => {
                 tokens.push(Token::Punct(Punct::LeftParen));
                 tokens.push(Token::Punct(Punct::RightParen));
             }
 
-            Expr::InferType => tokens.push(Token::Name(Name::new("_").expect("invalid name"))),
+            Expr::InferType => tokens.push(Token::Name("_".intern())),
             Expr::TypeName(e) | Expr::Identifier(e) => e.to_code(tokens, options),
             Expr::RefinementType(e) => e.to_code(tokens, options),
             Expr::TupleType(e) => e.to_code(tokens, options),
@@ -579,7 +580,7 @@ impl<'a> ToCode<'a> for Expr<'a> {
             Expr::OpaqueType(e) => {
                 tokens.push(Token::Keyword(Keyword::Opaque));
                 tokens.push(Token::Punct(Punct::LeftParen));
-                tokens.push(Token::String(e.deref().clone()));
+                tokens.push(Token::String(e.clone()));
                 tokens.push(Token::Punct(Punct::RightParen));
             }
             Expr::StructType(e) => e.to_code(tokens, options),
@@ -600,7 +601,7 @@ impl<'a> ToCode<'a> for Expr<'a> {
             })),
             Expr::Integer(e) => e.to_code(tokens, options),
             Expr::Float(e) => tokens.push(Token::Float(*e)),
-            Expr::String(e) => tokens.push(Token::String(e.deref().clone())),
+            Expr::String(e) => tokens.push(Token::String(e.clone())),
             Expr::BString(e) => tokens.push(Token::BString(e.deref().clone())),
             Expr::Unit => {
                 tokens.push(Token::Punct(Punct::LeftParen));
@@ -639,30 +640,30 @@ impl<'a> ToCode<'a> for Expr<'a> {
 }
 
 impl<'a> ToCode<'a> for Type<'a> {
-    fn to_code(&self, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
+    fn to_code(&self, tokens: &mut Vec<Token>, options: &CodeFormat) {
         match self {
-            Type::Bool => tokens.push(Token::Name(Name::new("bool").expect("invalid name"))),
-            Type::UInt8 => tokens.push(Token::Name(Name::new("u8").expect("invalid name"))),
-            Type::UInt16 => tokens.push(Token::Name(Name::new("u16").expect("invalid name"))),
-            Type::UInt32 => tokens.push(Token::Name(Name::new("u32").expect("invalid name"))),
-            Type::UInt64 => tokens.push(Token::Name(Name::new("u64").expect("invalid name"))),
-            Type::UInt128 => tokens.push(Token::Name(Name::new("u128").expect("invalid name"))),
-            Type::Int8 => tokens.push(Token::Name(Name::new("i8").expect("invalid name"))),
-            Type::Int16 => tokens.push(Token::Name(Name::new("i16").expect("invalid name"))),
-            Type::Int32 => tokens.push(Token::Name(Name::new("i32").expect("invalid name"))),
-            Type::Int64 => tokens.push(Token::Name(Name::new("i64").expect("invalid name"))),
-            Type::Int128 => tokens.push(Token::Name(Name::new("i128").expect("invalid name"))),
-            Type::Float8 => tokens.push(Token::Name(Name::new("f8").expect("invalid name"))),
-            Type::Float16 => tokens.push(Token::Name(Name::new("f16").expect("invalid name"))),
-            Type::Float32 => tokens.push(Token::Name(Name::new("f32").expect("invalid name"))),
-            Type::Float64 => tokens.push(Token::Name(Name::new("f64").expect("invalid name"))),
-            Type::Float128 => tokens.push(Token::Name(Name::new("f128").expect("invalid name"))),
+            Type::Bool => tokens.push(Token::Name("bool".intern())),
+            Type::UInt8 => tokens.push(Token::Name("u8".intern())),
+            Type::UInt16 => tokens.push(Token::Name("u16".intern())),
+            Type::UInt32 => tokens.push(Token::Name("u32".intern())),
+            Type::UInt64 => tokens.push(Token::Name("u64".intern())),
+            Type::UInt128 => tokens.push(Token::Name("u128".intern())),
+            Type::Int8 => tokens.push(Token::Name("i8".intern())),
+            Type::Int16 => tokens.push(Token::Name("i16".intern())),
+            Type::Int32 => tokens.push(Token::Name("i32".intern())),
+            Type::Int64 => tokens.push(Token::Name("i64".intern())),
+            Type::Int128 => tokens.push(Token::Name("i128".intern())),
+            Type::Float8 => tokens.push(Token::Name("f8".intern())),
+            Type::Float16 => tokens.push(Token::Name("f16".intern())),
+            Type::Float32 => tokens.push(Token::Name("f32".intern())),
+            Type::Float64 => tokens.push(Token::Name("f64".intern())),
+            Type::Float128 => tokens.push(Token::Name("f128".intern())),
             Type::UnitType => {
                 tokens.push(Token::Punct(Punct::LeftParen));
                 tokens.push(Token::Punct(Punct::RightParen));
             }
 
-            Type::InferType => tokens.push(Token::Name(Name::new("_").expect("invalid name"))),
+            Type::InferType => tokens.push(Token::Name("_".intern())),
             Type::TypeName(e) => e.to_code(tokens, options),
             Type::RefinementType(e) => e.to_code(tokens, options),
             Type::TupleType(e) => e.to_code(tokens, options),
@@ -676,7 +677,7 @@ impl<'a> ToCode<'a> for Type<'a> {
             Type::OpaqueType(e) => {
                 tokens.push(Token::Keyword(Keyword::Opaque));
                 tokens.push(Token::Punct(Punct::LeftParen));
-                tokens.push(Token::String(e.deref().clone()));
+                tokens.push(Token::String(e.clone()));
                 tokens.push(Token::Punct(Punct::RightParen));
             }
             Type::StructType(e) => e.to_code(tokens, options),

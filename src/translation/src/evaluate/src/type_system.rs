@@ -1,4 +1,5 @@
 use super::abstract_machine::{AbstractMachine, Unwind};
+use interned_string::Intern;
 use nitrate_structure::{
     Builder,
     kind::{
@@ -125,7 +126,7 @@ impl<'a> AbstractMachine<'a> {
             let type_ = self.evaluate_type(&parameter.type_())?;
             let default = parameter.default();
             parameters.push(FunctionParameter::new(
-                parameter.name(),
+                parameter.name().to_owned(),
                 type_,
                 default.cloned(),
             ));
@@ -203,7 +204,7 @@ impl<'a> AbstractMachine<'a> {
 
         for (name, type_, default) in struct_type.fields() {
             let evaluated_type = self.evaluate_type(type_)?;
-            fields.push((*name, evaluated_type, default.clone()));
+            fields.push((name.to_owned(), evaluated_type, default.clone()));
         }
 
         Ok(Builder::create_struct_type().add_fields(fields).build())
@@ -220,7 +221,7 @@ impl<'a> AbstractMachine<'a> {
         };
 
         object
-            .access("inner")
+            .access("inner".intern())
             .ok_or(Unwind::TypeError)?
             .to_owned()
             .try_into()

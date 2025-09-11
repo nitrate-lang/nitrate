@@ -213,12 +213,12 @@ impl<'a> UnmanagedRefType<'a> {
 #[derive(Debug, Clone)]
 pub struct GenericType<'a> {
     base: Type<'a>,
-    args: Vec<(&'a str, Expr<'a>)>,
+    args: Vec<(IString, Expr<'a>)>,
 }
 
 impl<'a> GenericType<'a> {
     #[must_use]
-    pub(crate) fn new(base: Type<'a>, args: Vec<(&'a str, Expr<'a>)>) -> Self {
+    pub(crate) fn new(base: Type<'a>, args: Vec<(IString, Expr<'a>)>) -> Self {
         GenericType { base, args }
     }
 
@@ -228,12 +228,12 @@ impl<'a> GenericType<'a> {
     }
 
     #[must_use]
-    pub fn arguments(&self) -> &[(&'a str, Expr<'a>)] {
+    pub fn arguments(&self) -> &[(IString, Expr<'a>)] {
         &self.args
     }
 }
 
-pub type StructField<'a> = (&'a str, Type<'a>, Option<Expr<'a>>);
+pub type StructField<'a> = (IString, Type<'a>, Option<Expr<'a>>);
 
 #[derive(Debug, Clone)]
 pub struct StructType<'a> {
@@ -272,7 +272,7 @@ pub enum Type<'a> {
     Float128,
     UnitType,
     InferType,
-    TypeName(Arc<Identifier<'a>>),
+    TypeName(Arc<Identifier>),
     RefinementType(Arc<RefinementType<'a>>),
     TupleType(Arc<TupleType<'a>>),
     ArrayType(Arc<ArrayType<'a>>),
@@ -282,7 +282,7 @@ pub enum Type<'a> {
     ManagedRefType(Arc<ManagedRefType<'a>>),
     UnmanagedRefType(Arc<UnmanagedRefType<'a>>),
     GenericType(Arc<GenericType<'a>>),
-    OpaqueType(Arc<IString>),
+    OpaqueType(IString),
     StructType(Arc<StructType<'a>>),
     LatentType(Arc<Expr<'a>>),
     HasParenthesesType(Arc<Type<'a>>),

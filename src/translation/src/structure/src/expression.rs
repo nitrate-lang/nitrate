@@ -4,6 +4,7 @@ use nitrate_tokenize::{IntegerKind, Op};
 use ordered_float::NotNan;
 use smallvec::SmallVec;
 use std::collections::BTreeMap;
+use std::ops::Deref;
 use std::sync::{Arc, RwLock};
 
 use super::types::{
@@ -77,33 +78,33 @@ impl<'a> List<'a> {
 
 #[derive(Debug, Clone)]
 pub struct Object<'a> {
-    fields: BTreeMap<&'a str, Expr<'a>>,
+    fields: BTreeMap<IString, Expr<'a>>,
 }
 
 impl<'a> Object<'a> {
     #[must_use]
-    pub(crate) fn new(fields: BTreeMap<&'a str, Expr<'a>>) -> Self {
+    pub(crate) fn new(fields: BTreeMap<IString, Expr<'a>>) -> Self {
         Object { fields }
     }
 
     #[must_use]
-    pub fn fields(&self) -> &BTreeMap<&'a str, Expr<'a>> {
+    pub fn fields(&self) -> &BTreeMap<IString, Expr<'a>> {
         &self.fields
     }
 
     #[must_use]
-    pub fn fields_mut(&mut self) -> &mut BTreeMap<&'a str, Expr<'a>> {
+    pub fn fields_mut(&mut self) -> &mut BTreeMap<IString, Expr<'a>> {
         &mut self.fields
     }
 
     #[must_use]
-    pub fn access(&self, key: &'a str) -> Option<&Expr<'a>> {
-        self.fields.get(key)
+    pub fn access(&self, key: IString) -> Option<&Expr<'a>> {
+        self.fields.get(&key)
     }
 
     #[must_use]
-    pub fn access_mut(&mut self, key: &'a str) -> Option<&mut Expr<'a>> {
-        self.fields_mut().get_mut(key)
+    pub fn access_mut(&mut self, key: IString) -> Option<&mut Expr<'a>> {
+        self.fields_mut().get_mut(&key)
     }
 }
 
@@ -434,14 +435,14 @@ impl<'a> Block<'a> {
 
 #[derive(Debug, Clone)]
 pub struct FunctionParameter<'a> {
-    name: &'a str,
+    name: IString,
     param_type: Type<'a>,
     default_value: Option<Expr<'a>>,
 }
 
 impl<'a> FunctionParameter<'a> {
     #[must_use]
-    pub fn new(name: &'a str, param_type: Type<'a>, default_value: Option<Expr<'a>>) -> Self {
+    pub fn new(name: IString, param_type: Type<'a>, default_value: Option<Expr<'a>>) -> Self {
         FunctionParameter {
             name,
             param_type,
@@ -450,8 +451,8 @@ impl<'a> FunctionParameter<'a> {
     }
 
     #[must_use]
-    pub fn name(&self) -> &'a str {
-        self.name
+    pub fn name(&self) -> &IString {
+        &self.name
     }
 
     #[must_use]
@@ -549,7 +550,7 @@ pub struct Variable<'a> {
     kind: VariableKind,
     is_mutable: bool,
     attributes: Vec<Expr<'a>>,
-    name: &'a str,
+    name: IString,
     var_type: Type<'a>,
     value: Option<Expr<'a>>,
 }
@@ -560,7 +561,7 @@ impl<'a> Variable<'a> {
         kind: VariableKind,
         is_mutable: bool,
         attributes: Vec<Expr<'a>>,
-        name: &'a str,
+        name: IString,
         var_type: Type<'a>,
         value: Option<Expr<'a>>,
     ) -> Self {
@@ -599,11 +600,11 @@ impl<'a> Variable<'a> {
     }
 
     #[must_use]
-    pub fn name(&self) -> &'a str {
-        self.name
+    pub fn name(&self) -> &IString {
+        &self.name
     }
 
-    pub fn set_name(&mut self, name: &'a str) {
+    pub fn set_name(&mut self, name: IString) {
         self.name = name;
     }
 
@@ -627,33 +628,38 @@ impl<'a> Variable<'a> {
 }
 
 #[derive(Debug, Clone)]
-pub struct Identifier<'a> {
-    full_name: String,
-    segments: Vec<&'a str>,
+pub struct Identifier {
+    full_name: IString,
+    segments: Vec<IString>,
 }
 
-impl<'a> Identifier<'a> {
+impl Identifier {
     #[must_use]
-    pub(crate) fn new(segments: Vec<&'a str>) -> Self {
+    pub(crate) fn new(segments: Vec<IString>) -> Self {
         Identifier {
-            full_name: segments.join("::"),
+            full_name: segments
+                .iter()
+                .map(Deref::deref)
+                .collect::<Vec<&str>>()
+                .join("::")
+                .into(),
             segments,
         }
     }
 
     #[must_use]
-    pub fn full_name(&self) -> &str {
+    pub fn full_name(&self) -> &IString {
         &self.full_name
     }
 
     #[must_use]
-    pub fn segments(&self) -> &[&'a str] {
+    pub fn segments(&self) -> &[IString] {
         &self.segments
     }
 
     #[must_use]
     pub fn is_absolute(&self) -> bool {
-        self.segments.first() == Some(&"")
+        self.segments.first().map_or(false, |s| s.is_empty())
     }
 }
 
@@ -689,22 +695,24 @@ impl<'a> IndexAccess<'a> {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct QualifiedScope<'a> {
-    scopes: SmallVec<[&'a str; 3]>,
+pub struct QualifiedScope {
+    scopes: SmallVec<[IString; 3]>,
 }
 
-impl<'a> QualifiedScope<'a> {
+impl QualifiedScope {
     #[must_use]
-    pub fn new(scopes: SmallVec<[&'a str; 3]>) -> Self {
+    pub fn new(scopes: SmallVec<[IString; 3]>) -> Self {
         Self { scopes }
     }
 
     #[must_use]
-    pub fn parse(qualified_scope: &'a str) -> Self {
+    pub fn parse(qualified_scope: IString) -> Self {
         let parts = qualified_scope
             .split("::")
             .filter(|s| !s.is_empty())
-            .collect::<SmallVec<[&'a str; 3]>>();
+            .map(IString::from)
+            .collect::<SmallVec<[IString; 3]>>();
+
         Self { scopes: parts }
     }
 
@@ -719,32 +727,40 @@ impl<'a> QualifiedScope<'a> {
         }
     }
 
-    pub fn push(&mut self, scope: &'a str) {
+    pub fn push(&mut self, scope: IString) {
         self.scopes.push(scope);
     }
 
     #[must_use]
-    pub fn scopes(&self) -> &[&'a str] {
+    pub fn scopes(&self) -> &[IString] {
         &self.scopes
     }
 }
 
-impl std::fmt::Display for QualifiedScope<'_> {
+impl std::fmt::Display for QualifiedScope {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.scopes().to_vec().join("::"))
+        write!(
+            f,
+            "{}",
+            self.scopes()
+                .iter()
+                .map(Deref::deref)
+                .collect::<Vec<&str>>()
+                .join("::")
+        )
     }
 }
 
 #[derive(Debug, Clone)]
 pub struct Scope<'a> {
-    name: &'a str,
+    name: IString,
     attributes: Vec<Expr<'a>>,
     elements: Vec<Expr<'a>>,
 }
 
 impl<'a> Scope<'a> {
     #[must_use]
-    pub fn new(name: &'a str, attributes: Vec<Expr<'a>>, elements: Vec<Expr<'a>>) -> Self {
+    pub fn new(name: IString, attributes: Vec<Expr<'a>>, elements: Vec<Expr<'a>>) -> Self {
         Scope {
             name,
             attributes,
@@ -753,11 +769,11 @@ impl<'a> Scope<'a> {
     }
 
     #[must_use]
-    pub fn name(&self) -> &'a str {
-        self.name
+    pub fn name(&self) -> &IString {
+        &self.name
     }
 
-    pub fn set_name(&mut self, name: &'a str) {
+    pub fn set_name(&mut self, name: IString) {
         self.name = name;
     }
 
@@ -942,36 +958,36 @@ impl<'a> Switch<'a> {
 }
 
 #[derive(Debug, Clone)]
-pub struct Break<'a> {
-    label: Option<&'a str>,
+pub struct Break {
+    label: Option<IString>,
 }
 
-impl<'a> Break<'a> {
+impl Break {
     #[must_use]
-    pub(crate) fn new(label: Option<&'a str>) -> Self {
+    pub(crate) fn new(label: Option<IString>) -> Self {
         Break { label }
     }
 
     #[must_use]
-    pub fn label(&self) -> Option<&'a str> {
-        self.label
+    pub fn label(&self) -> Option<&IString> {
+        self.label.as_ref()
     }
 }
 
 #[derive(Debug, Clone)]
-pub struct Continue<'a> {
-    label: Option<&'a str>,
+pub struct Continue {
+    label: Option<IString>,
 }
 
-impl<'a> Continue<'a> {
+impl Continue {
     #[must_use]
-    pub(crate) fn new(label: Option<&'a str>) -> Self {
+    pub(crate) fn new(label: Option<IString>) -> Self {
         Continue { label }
     }
 
     #[must_use]
-    pub fn label(&self) -> Option<&'a str> {
-        self.label
+    pub fn label(&self) -> Option<&IString> {
+        self.label.as_ref()
     }
 }
 
@@ -999,14 +1015,14 @@ impl<'a> Return<'a> {
 #[derive(Debug, Clone)]
 pub struct ForEach<'a> {
     iterable: Expr<'a>,
-    bindings: Vec<(&'a str, Option<Type<'a>>)>,
+    bindings: Vec<(IString, Option<Type<'a>>)>,
     body: Expr<'a>,
 }
 
 impl<'a> ForEach<'a> {
     #[must_use]
     pub(crate) fn new(
-        bindings: Vec<(&'a str, Option<Type<'a>>)>,
+        bindings: Vec<(IString, Option<Type<'a>>)>,
         iterable: Expr<'a>,
         body: Expr<'a>,
     ) -> Self {
@@ -1027,12 +1043,12 @@ impl<'a> ForEach<'a> {
     }
 
     #[must_use]
-    pub fn bindings(&self) -> &[(&'a str, Option<Type<'a>>)] {
+    pub fn bindings(&self) -> &[(IString, Option<Type<'a>>)] {
         &self.bindings
     }
 
     #[must_use]
-    pub fn bindings_mut(&mut self) -> &mut Vec<(&'a str, Option<Type<'a>>)> {
+    pub fn bindings_mut(&mut self) -> &mut Vec<(IString, Option<Type<'a>>)> {
         &mut self.bindings
     }
 
@@ -1098,7 +1114,7 @@ impl<'a> Assert<'a> {
     }
 }
 
-pub type CallArguments<'a> = Vec<(Option<&'a str>, Expr<'a>)>;
+pub type CallArguments<'a> = Vec<(Option<IString>, Expr<'a>)>;
 
 #[derive(Debug, Clone)]
 pub struct Call<'a> {
@@ -1122,7 +1138,7 @@ impl<'a> Call<'a> {
     }
 
     #[must_use]
-    pub fn arguments(&self) -> &[(Option<&'a str>, Expr<'a>)] {
+    pub fn arguments(&self) -> &[(Option<IString>, Expr<'a>)] {
         &self.arguments
     }
 
@@ -1156,7 +1172,7 @@ pub enum Expr<'a> {
     Float128,
     UnitType,
     InferType,
-    TypeName(Arc<Identifier<'a>>),
+    TypeName(Arc<Identifier>),
     RefinementType(Arc<RefinementType<'a>>),
     TupleType(Arc<TupleType<'a>>),
     ArrayType(Arc<ArrayType<'a>>),
@@ -1166,7 +1182,7 @@ pub enum Expr<'a> {
     ManagedRefType(Arc<ManagedRefType<'a>>),
     UnmanagedRefType(Arc<UnmanagedRefType<'a>>),
     GenericType(Arc<GenericType<'a>>),
-    OpaqueType(Arc<IString>),
+    OpaqueType(IString),
     StructType(Arc<StructType<'a>>),
     LatentType(Arc<Expr<'a>>),
     HasParenthesesType(Arc<Type<'a>>),
@@ -1177,7 +1193,7 @@ pub enum Expr<'a> {
     Boolean(bool),
     Integer(Arc<Integer>),
     Float(NotNan<f64>),
-    String(Arc<IString>),
+    String(IString),
     BString(Arc<Vec<u8>>),
     Unit,
 
@@ -1191,7 +1207,7 @@ pub enum Expr<'a> {
 
     Function(Arc<RwLock<Function<'a>>>),
     Variable(Arc<Variable<'a>>),
-    Identifier(Arc<Identifier<'a>>),
+    Identifier(Arc<Identifier>),
     IndexAccess(Arc<IndexAccess<'a>>),
     Scope(Arc<Scope<'a>>),
 
@@ -1199,8 +1215,8 @@ pub enum Expr<'a> {
     WhileLoop(Arc<WhileLoop<'a>>),
     DoWhileLoop(Arc<DoWhileLoop<'a>>),
     Switch(Arc<Switch<'a>>),
-    Break(Arc<Break<'a>>),
-    Continue(Arc<Continue<'a>>),
+    Break(Arc<Break>),
+    Continue(Arc<Continue>),
     Return(Arc<Return<'a>>),
     ForEach(Arc<ForEach<'a>>),
     Await(Arc<Await<'a>>),

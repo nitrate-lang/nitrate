@@ -1,6 +1,6 @@
 use super::token::{
-    AnnotatedToken, Comment, CommentKind, Integer, IntegerKind, Keyword, Name, Op, Punct,
-    SourcePosition, Token,
+    AnnotatedToken, Comment, CommentKind, Integer, IntegerKind, Keyword, Op, Punct, SourcePosition,
+    Token,
 };
 use interned_string::{IString, Intern};
 use log::error;
@@ -15,9 +15,9 @@ pub enum LexerError {
 #[derive(Debug)]
 pub struct Lexer<'a> {
     source: &'a [u8],
-    current_peek_pos: SourcePosition<'a>,
-    sync_pos: SourcePosition<'a>,
-    current: Option<AnnotatedToken<'a>>,
+    current_peek_pos: SourcePosition,
+    sync_pos: SourcePosition,
+    current: Option<AnnotatedToken>,
 }
 
 enum StringEscape {
@@ -39,19 +39,21 @@ impl<'a> Lexer<'a> {
     /// # Errors
     /// Returns `LexerError::SourceTooBig` if the source code exceeds 4 GiB in size.
     pub fn new(src: &'a [u8], filename: &'a str) -> Result<Self, LexerError> {
+        let filename = filename.intern();
+
         if src.len() > MAX_SOURCE_SIZE {
             Err(LexerError::SourceTooBig)
         } else {
             Ok(Lexer {
                 source: src,
-                current_peek_pos: SourcePosition::new(0, 0, 0, filename),
+                current_peek_pos: SourcePosition::new(0, 0, 0, filename.clone()),
                 sync_pos: SourcePosition::new(0, 0, 0, filename),
                 current: None,
             })
         }
     }
 
-    pub fn next_tok(&mut self) -> AnnotatedToken<'a> {
+    pub fn next_tok(&mut self) -> AnnotatedToken {
         let token = self
             .current
             .take()
@@ -62,7 +64,7 @@ impl<'a> Lexer<'a> {
         token
     }
 
-    pub fn peek_tok(&mut self) -> AnnotatedToken<'a> {
+    pub fn peek_tok(&mut self) -> AnnotatedToken {
         let token = self
             .current
             .take()
@@ -83,24 +85,24 @@ impl<'a> Lexer<'a> {
     }
 
     #[inline(always)]
-    pub fn next_t(&mut self) -> Token<'a> {
+    pub fn next_t(&mut self) -> Token {
         self.next_tok().into_token()
     }
 
     #[inline(always)]
     #[must_use]
-    pub fn peek_t(&mut self) -> Token<'a> {
+    pub fn peek_t(&mut self) -> Token {
         self.peek_tok().into_token()
     }
 
     #[inline(always)]
     #[must_use]
-    pub fn next_is(&mut self, matches: &Token<'a>) -> bool {
+    pub fn next_is(&mut self, matches: &Token) -> bool {
         &self.peek_t() == matches
     }
 
     #[inline(always)]
-    pub fn skip_if(&mut self, matches: &Token<'a>) -> bool {
+    pub fn skip_if(&mut self, matches: &Token) -> bool {
         if &self.peek_t() == matches {
             self.skip_tok();
             true
@@ -111,8 +113,8 @@ impl<'a> Lexer<'a> {
 
     #[inline(always)]
     #[must_use]
-    pub fn sync_position(&self) -> SourcePosition<'a> {
-        self.sync_pos
+    pub fn sync_position(&self) -> SourcePosition {
+        self.sync_pos.clone()
     }
 
     #[inline(always)]
@@ -122,8 +124,8 @@ impl<'a> Lexer<'a> {
     }
 
     #[inline(always)]
-    pub fn rewind(&mut self, pos: SourcePosition<'a>) {
-        self.current_peek_pos = pos;
+    pub fn rewind(&mut self, pos: SourcePosition) {
+        self.current_peek_pos = pos.clone();
         self.sync_pos = pos;
         self.current = None;
     }
@@ -149,7 +151,7 @@ impl<'a> Lexer<'a> {
     }
 
     #[inline(always)]
-    pub fn next_if_name(&mut self) -> Option<Name<'a>> {
+    pub fn next_if_name(&mut self) -> Option<IString> {
         if let Token::Name(name) = self.peek_t() {
             self.skip_tok();
             Some(name)
@@ -210,8 +212,8 @@ impl<'a> Lexer<'a> {
 
     #[inline(always)]
     #[must_use]
-    fn reader_position(&self) -> SourcePosition<'a> {
-        self.current_peek_pos
+    fn reader_position(&self) -> SourcePosition {
+        self.current_peek_pos.clone()
     }
 
     #[inline(always)]
@@ -223,14 +225,14 @@ impl<'a> Lexer<'a> {
                 current.line() + 1,
                 0,
                 current.offset() + 1,
-                current.filename(),
+                current.filename().clone(),
             );
         } else {
             self.current_peek_pos = SourcePosition::new(
                 current.line(),
                 current.column() + 1,
                 current.offset() + 1,
-                current.filename(),
+                current.filename().clone(),
             );
         }
 
@@ -267,7 +269,7 @@ impl<'a> Lexer<'a> {
     }
 
     #[inline(always)]
-    fn parse_atypical_identifier(&mut self) -> Result<Token<'a>, ()> {
+    fn parse_atypical_identifier(&mut self) -> Result<Token, ()> {
         let start_pos = self.reader_position();
 
         assert!(self.peek_byte().expect("Failed to peek byte") == b'`');
@@ -285,9 +287,7 @@ impl<'a> Lexer<'a> {
         }
 
         if let Ok(identifier) = str::from_utf8(identifier) {
-            Ok(Token::Name(
-                Name::new_atypical(identifier).expect("Failed to create atypical identifier"),
-            ))
+            Ok(Token::Name(identifier.intern()))
         } else {
             error!("[L0001]: Identifier contains some invalid utf-8 bytes\n--> {start_pos}");
 
@@ -296,7 +296,7 @@ impl<'a> Lexer<'a> {
     }
 
     #[inline(always)]
-    fn parse_typical_identifier(&mut self) -> Result<Token<'a>, ()> {
+    fn parse_typical_identifier(&mut self) -> Result<Token, ()> {
         let start_pos = self.reader_position();
 
         let name = self.read_while(|b| b.is_ascii_alphanumeric() || b == b'_' || !b.is_ascii());
@@ -378,9 +378,7 @@ impl<'a> Lexer<'a> {
         } {
             Ok(Token::Keyword(keyword))
         } else if let Ok(identifier) = str::from_utf8(name) {
-            Ok(Token::Name(
-                Name::new_typical(identifier).expect("Failed to create typical identifier"),
-            ))
+            Ok(Token::Name(identifier.intern()))
         } else {
             error!("[L0100]: Identifier contains some invalid utf-8 bytes\n--> {start_pos}");
 
@@ -400,7 +398,7 @@ impl<'a> Lexer<'a> {
     }
 
     #[inline(always)]
-    fn parse_float(&mut self, start_pos: &SourcePosition) -> Result<Token<'a>, ()> {
+    fn parse_float(&mut self, start_pos: &SourcePosition) -> Result<Token, ()> {
         if let Ok(b'.') = self.peek_byte() {
             let rewind_pos = self.reader_position();
             self.advance(b'.');
@@ -457,7 +455,7 @@ impl<'a> Lexer<'a> {
     }
 
     #[inline(always)]
-    fn parse_number(&mut self) -> Result<Token<'a>, ()> {
+    fn parse_number(&mut self) -> Result<Token, ()> {
         let start_pos = self.reader_position();
 
         let mut base_prefix = None;
@@ -768,7 +766,7 @@ impl<'a> Lexer<'a> {
     }
 
     #[inline(always)]
-    fn parse_string(&mut self) -> Result<Token<'a>, ()> {
+    fn parse_string(&mut self) -> Result<Token, ()> {
         let start_pos = self.reader_position();
 
         assert!(self.peek_byte().expect("Failed to peek byte") == b'"');
@@ -845,7 +843,7 @@ impl<'a> Lexer<'a> {
     }
 
     #[inline(always)]
-    fn parse_comment(&mut self) -> Result<Token<'a>, ()> {
+    fn parse_comment(&mut self) -> Result<Token, ()> {
         let start_pos = self.reader_position();
         let mut comment_bytes = self.read_while(|b| b != b'\n');
 
@@ -868,7 +866,7 @@ impl<'a> Lexer<'a> {
     }
 
     #[inline(always)]
-    fn parse_operator_or_punctuation(&mut self) -> Result<Token<'a>, ()> {
+    fn parse_operator_or_punctuation(&mut self) -> Result<Token, ()> {
         /*
          * The word-like operators are not handled here, as they are ambiguous with identifiers.
          * They are handled in `parse_typical_identifier`.
@@ -1137,7 +1135,7 @@ impl<'a> Lexer<'a> {
     }
 
     #[inline(always)]
-    fn parse_next_token(&mut self) -> AnnotatedToken<'a> {
+    fn parse_next_token(&mut self) -> AnnotatedToken {
         self.read_while(|b| b.is_ascii_whitespace());
 
         let start_pos = self.reader_position();
