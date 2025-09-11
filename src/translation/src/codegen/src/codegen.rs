@@ -87,11 +87,15 @@ impl Codegen {
         }
     }
 
-    fn compute_module_name(_model: &SourceModel) -> String {
-        // let hash = model.hash();
+    fn compute_module_name(model: &SourceModel) -> String {
+        let name = model
+            .tree()
+            .digest_128()
+            .iter()
+            .map(|b| format!("{:02x}", b))
+            .collect::<String>();
 
-        // TODO: Hash
-        "example_module".to_string()
+        name
     }
 
     fn create_module(
