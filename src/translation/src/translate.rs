@@ -141,7 +141,7 @@ fn generate_code(
 
 pub fn compile_code(
     source_code: &mut dyn std::io::Read,
-    _machine_code: &mut dyn std::io::Write,
+    machine_code: &mut dyn std::io::Write,
     options: &TranslationOptions,
 ) -> Result<(), TranslationError> {
     let source = scan_into_memory(source_code)?;
@@ -167,5 +167,5 @@ pub fn compile_code(
     optimize_functions(&mut symtab, &options.function_optimizations, drain, &pool);
     drop(pool);
 
-    generate_code(&model, _machine_code)
+    generate_code(&model, machine_code)
 }

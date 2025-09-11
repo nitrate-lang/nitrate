@@ -1068,7 +1068,7 @@ impl Parser<'_, '_> {
                 continue;
             }
 
-            let Some(mut expression) = self.parse_expression() else {
+            let Some(expression) = self.parse_expression() else {
                 let before_pos = self.lexer.sync_position();
                 loop {
                     match self.lexer.next_t() {
@@ -1093,11 +1093,14 @@ impl Parser<'_, '_> {
                 continue;
             };
 
-            if self.lexer.skip_if(&Token::Punct(Punct::Semicolon)) {
-                expression = Builder::create_statement()
-                    .with_expression(expression)
-                    .build();
-            }
+            // TODO: Handle the semicolon
+            self.lexer.skip_if(&Token::Punct(Punct::Semicolon));
+
+            // if self.lexer.skip_if(&Token::Punct(Punct::Semicolon)) {
+            //     expression = Builder::create_statement()
+            //         .with_expression(expression)
+            //         .build();
+            // }
 
             elements.push(expression);
         }

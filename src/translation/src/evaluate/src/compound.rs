@@ -2,7 +2,7 @@ use super::abstract_machine::{AbstractMachine, Unwind};
 use interned_string::Intern;
 use nitrate_structure::{
     Builder,
-    kind::{BinExpr, Block, Expr, List, Object, Statement, Type, UnaryExpr},
+    kind::{BinExpr, Block, Expr, List, Object, Type, UnaryExpr},
 };
 use std::collections::BTreeMap;
 
@@ -53,13 +53,6 @@ impl AbstractMachine {
 
         // TODO: Evaluate binary expression
         unimplemented!()
-    }
-
-    pub(crate) fn evaluate_statement(&mut self, statement: &Statement) -> Result<Expr, Unwind> {
-        // TODO: Verify and write tests
-
-        self.evaluate(&statement.get())?;
-        Ok(Builder::create_unit())
     }
 
     pub(crate) fn evaluate_block(&mut self, block: &Block) -> Result<Expr, Unwind> {

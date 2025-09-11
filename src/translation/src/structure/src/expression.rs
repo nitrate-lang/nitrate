@@ -396,23 +396,6 @@ impl BinExpr {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Statement {
-    expr: Expr,
-}
-
-impl Statement {
-    #[must_use]
-    pub(crate) fn new(expr: Expr) -> Self {
-        Statement { expr }
-    }
-
-    #[must_use]
-    pub fn get(&self) -> &Expr {
-        &self.expr
-    }
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Block {
     elements: Vec<Expr>,
 }
@@ -1195,7 +1178,6 @@ pub enum Expr {
     Object(Arc<Object>),
     UnaryExpr(Arc<UnaryExpr>),
     BinExpr(Arc<BinExpr>),
-    Statement(Arc<Statement>),
     Block(Arc<Block>),
 
     Function(Arc<RwLock<Function>>),
@@ -1269,7 +1251,6 @@ impl TryInto<Type> for Expr {
             | Expr::Object(_)
             | Expr::UnaryExpr(_)
             | Expr::BinExpr(_)
-            | Expr::Statement(_)
             | Expr::Block(_)
             | Expr::Function(_)
             | Expr::Variable(_)
@@ -1363,7 +1344,6 @@ impl std::fmt::Debug for Expr {
             Expr::Object(e) => e.fmt(f),
             Expr::UnaryExpr(e) => e.fmt(f),
             Expr::BinExpr(e) => e.fmt(f),
-            Expr::Statement(e) => e.fmt(f),
             Expr::Block(e) => e.fmt(f),
 
             Expr::Function(e) => e.fmt(f),

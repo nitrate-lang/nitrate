@@ -9,7 +9,7 @@ use crate::kind::{
     ArrayType, Assert, Await, BinExpr, BinExprOp, Block, Break, Call, CallArguments, Continue,
     DoWhileLoop, Expr, ForEach, Function, FunctionParameter, FunctionType, GenericType, If,
     IndexAccess, Integer, List, ManagedRefType, MapType, Object, RefinementType, Return, Scope,
-    SliceType, Statement, StructField, StructType, Switch, TupleType, Type, UnaryExpr, UnaryExprOp,
+    SliceType, StructField, StructType, Switch, TupleType, Type, UnaryExpr, UnaryExprOp,
     UnmanagedRefType, Variable, VariableKind, WhileLoop,
 };
 
@@ -581,28 +581,6 @@ impl BinExprBuilder {
 }
 
 #[derive(Debug)]
-pub struct StatementBuilder {
-    expression: Option<Expr>,
-}
-
-impl StatementBuilder {
-    pub(crate) fn new() -> Self {
-        StatementBuilder { expression: None }
-    }
-
-    pub fn with_expression(mut self, expression: Expr) -> Self {
-        self.expression = Some(expression);
-        self
-    }
-
-    pub fn build(self) -> Expr {
-        Expr::Statement(Arc::new(Statement::new(
-            self.expression.expect("Expression must be provided"),
-        )))
-    }
-}
-
-#[derive(Debug)]
 pub struct BlockBuilder {
     elements: Vec<Expr>,
 }
@@ -624,30 +602,6 @@ impl BlockBuilder {
         I: IntoIterator<Item = Expr>,
     {
         self.elements.extend(elements);
-        self
-    }
-
-    pub fn add_statement(mut self, expression: Expr) -> Self {
-        let statement = Builder::create_statement()
-            .with_expression(expression)
-            .build();
-
-        self.elements.push(statement);
-        self
-    }
-
-    pub fn add_statements<I>(mut self, elements: I) -> Self
-    where
-        I: IntoIterator<Item = Expr>,
-    {
-        for expression in elements {
-            let statement = Builder::create_statement()
-                .with_expression(expression)
-                .build();
-
-            self.elements.push(statement);
-        }
-
         self
     }
 

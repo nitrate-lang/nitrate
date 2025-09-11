@@ -202,7 +202,6 @@ impl AbstractMachine {
             Expr::Object(e) => self.evaluate_object(e),
             Expr::UnaryExpr(e) => self.evaluate_unaryexpr(e),
             Expr::BinExpr(e) => self.evaluate_binexpr(e),
-            Expr::Statement(e) => self.evaluate_statement(e),
             Expr::Block(e) => self.evaluate_block(e),
 
             Expr::Function(_) => Ok(expression.clone()),

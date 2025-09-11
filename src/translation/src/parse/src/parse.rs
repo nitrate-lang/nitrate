@@ -70,7 +70,7 @@ impl<'a, 'symbol_table> Parser<'a, 'symbol_table> {
                 continue;
             }
 
-            let Some(mut expression) = self.parse_expression() else {
+            let Some(expression) = self.parse_expression() else {
                 let before_pos = self.lexer.sync_position();
                 loop {
                     match self.lexer.next_t() {
@@ -90,12 +90,6 @@ impl<'a, 'symbol_table> Parser<'a, 'symbol_table> {
 
                 continue;
             };
-
-            if self.lexer.skip_if(&Token::Punct(Punct::Semicolon)) {
-                expression = Builder::create_statement()
-                    .with_expression(expression)
-                    .build();
-            }
 
             expressions.push(expression);
         }

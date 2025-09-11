@@ -10,9 +10,8 @@ use crate::builder_helper::{
     CallBuilder, ContinueBuilder, DoWhileLoopBuilder, ForEachBuilder, FunctionBuilder,
     FunctionTypeBuilder, GenericTypeBuilder, IfBuilder, IndexAccessBuilder, IntegerBuilder,
     ListBuilder, ManagedRefTypeBuilder, MapTypeBuilder, ObjectBuilder, RefinementTypeBuilder,
-    ReturnBuilder, ScopeBuilder, SliceTypeBuilder, StatementBuilder, StructTypeBuilder,
-    SwitchBuilder, TupleTypeBuilder, UnaryExprBuilder, UnmanagedRefTypeBuilder, VariableBuilder,
-    WhileLoopBuilder,
+    ReturnBuilder, ScopeBuilder, SliceTypeBuilder, StructTypeBuilder, SwitchBuilder,
+    TupleTypeBuilder, UnaryExprBuilder, UnmanagedRefTypeBuilder, VariableBuilder, WhileLoopBuilder,
 };
 
 #[derive(Debug, Default)]
@@ -107,11 +106,6 @@ impl Builder {
     #[must_use]
     pub fn create_binexpr() -> BinExprBuilder {
         BinExprBuilder::new()
-    }
-
-    #[must_use]
-    pub fn create_statement() -> StatementBuilder {
-        StatementBuilder::new()
     }
 
     #[must_use]
