@@ -1,6 +1,7 @@
-use cranelift::module::{Linkage, Module};
+use cranelift::module::{FuncId, Linkage, Module};
 use log::{debug, trace};
 use nitrate_structure::kind::{self, Expr};
+use std::ops::Deref;
 use std::sync::Arc;
 use std::{collections::HashMap, str::FromStr};
 
@@ -156,6 +157,19 @@ impl Codegen {
             .map_err(CodegenError::ModuleCreationError)
     }
 
+    fn create_global_function(
+        function: &kind::Function,
+        module: &mut ObjectModule,
+    ) -> Result<FuncId, CodegenError> {
+        // TODO: Generate code for the function
+
+        // let name = function.name();
+
+        Err(CodegenError::Other(
+            "Global function generation not yet implemented".to_string(),
+        ))
+    }
+
     pub fn generate(
         self,
         model: &SourceModel,
@@ -168,8 +182,6 @@ impl Codegen {
         let module_name = Self::compute_module_name(model);
         let mut module = Self::create_module(isa, &module_name)?;
 
-        // TODO: Implement code generation logic
-
         let Expr::Block(block) = model.tree() else {
             return Err(CodegenError::Other(
                 "Top-level expression is not a block".to_string(),
@@ -179,8 +191,7 @@ impl Codegen {
         for expression in block.elements() {
             match expression {
                 Expr::Function(function) => {
-                    // TODO: Generate code for the function
-                    debug!("Generating code for function: {:?}", function);
+                    Self::create_global_function(function.read().unwrap().deref(), &mut module)?;
                 }
 
                 Expr::Variable(global_variable) => {
