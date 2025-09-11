@@ -2,6 +2,7 @@ use apint::UInt;
 use interned_string::IString;
 use nitrate_tokenize::{IntegerKind, Op};
 use ordered_float::NotNan;
+use serde::{Deserialize, Serialize};
 use smallvec::SmallVec;
 use std::collections::BTreeMap;
 use std::ops::Deref;
@@ -12,7 +13,7 @@ use super::types::{
     StructType, TupleType, Type, UnmanagedRefType,
 };
 
-#[derive(Clone)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct Integer {
     value: UInt,
     kind: IntegerKind,

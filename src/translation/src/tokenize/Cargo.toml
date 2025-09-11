@@ -9,4 +9,4 @@ log = "0.4.27"
 ordered-float = { version = "5.0.0", features = ["serde"] }
 smallvec = "1.15.1"
 serde = { version = "1.0.219", features = ["derive"] }
-interned-string = "0.3.0"
+interned-string = { version = "0.3.0", features = ["serde"] }

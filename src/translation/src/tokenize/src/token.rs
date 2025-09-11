@@ -1,14 +1,15 @@
 use enum_iterator::Sequence;
 use interned_string::IString;
 pub use ordered_float::NotNan;
+use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Hash, Sequence)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Hash, Sequence, Serialize, Deserialize)]
 pub enum IdentifierKind {
     Typical,
     Atypical,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Hash, Sequence)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Hash, Sequence, Serialize, Deserialize)]
 pub enum IntegerKind {
     Bin,
     Oct,
@@ -16,7 +17,7 @@ pub enum IntegerKind {
     Hex,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash, Serialize, Deserialize)]
 pub struct Integer {
     value: u128,
     kind: IntegerKind,
@@ -50,12 +51,12 @@ impl std::fmt::Display for Integer {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Hash, Sequence)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Hash, Sequence, Serialize, Deserialize)]
 pub enum CommentKind {
     SingleLine,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash, Serialize, Deserialize)]
 pub struct Comment {
     text: IString,
     kind: CommentKind,
@@ -86,7 +87,7 @@ impl std::fmt::Display for Comment {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Hash, Sequence)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Hash, Sequence, Serialize, Deserialize)]
 pub enum Keyword {
     /* Storage */
     Let,      /* 'let' */
@@ -224,7 +225,7 @@ impl std::fmt::Display for Keyword {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Hash, Sequence)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Hash, Sequence, Serialize, Deserialize)]
 pub enum Punct {
     LeftParen,    /* '(' */
     RightParen,   /* ')' */
@@ -257,7 +258,7 @@ impl std::fmt::Display for Punct {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Hash, Sequence)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Hash, Sequence, Serialize, Deserialize)]
 pub enum Op {
     /*----------------------------------------------------------------*
      * Arithmetic Operators                                           *
@@ -401,7 +402,7 @@ impl std::fmt::Display for Op {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, PartialOrd)]
+#[derive(Debug, Clone, PartialEq, PartialOrd, Serialize, Deserialize)]
 pub enum Token {
     Name(IString),
     Integer(Integer),
@@ -434,7 +435,7 @@ impl std::fmt::Display for Token {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash, Serialize, Deserialize)]
 pub struct SourcePosition {
     line: u32,   // zero-based unicode-aware line number
     column: u32, // zero-based unicode-aware column number
@@ -480,7 +481,7 @@ impl std::fmt::Display for SourcePosition {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, PartialOrd)]
+#[derive(Debug, Clone, PartialEq, PartialOrd, Serialize, Deserialize)]
 pub struct AnnotatedToken {
     token: Token,
 
