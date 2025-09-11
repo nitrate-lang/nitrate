@@ -11,7 +11,7 @@ use std::ops::Deref;
 
 // FIXME: Keep this in sync with the parser
 
-#[derive(Debug, Default, Clone, PartialEq, PartialOrd, Hash)]
+#[derive(Debug, Default, Clone, PartialEq)]
 pub struct CodeFormat {}
 
 pub trait ToCode {

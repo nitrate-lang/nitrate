@@ -1,8 +1,9 @@
 use crate::expression::{Expr, FunctionParameter, Identifier};
 use interned_string::IString;
+use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RefinementType {
     base: Type,
     width: Option<Expr>,
@@ -47,7 +48,7 @@ impl RefinementType {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TupleType {
     elements: Vec<Type>,
 }
@@ -64,7 +65,7 @@ impl TupleType {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ArrayType {
     element: Type,
     count: Expr,
@@ -87,7 +88,7 @@ impl ArrayType {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MapType {
     key: Type,
     value: Type,
@@ -110,7 +111,7 @@ impl MapType {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SliceType {
     element: Type,
 }
@@ -127,7 +128,7 @@ impl SliceType {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FunctionType {
     parameters: Vec<FunctionParameter>,
     return_type: Type,
@@ -164,7 +165,7 @@ impl FunctionType {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ManagedRefType {
     target: Type,
     is_mutable: bool,
@@ -187,7 +188,7 @@ impl ManagedRefType {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct UnmanagedRefType {
     target: Type,
     is_mutable: bool,
@@ -210,7 +211,7 @@ impl UnmanagedRefType {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GenericType {
     base: Type,
     args: Vec<(IString, Expr)>,
@@ -235,7 +236,7 @@ impl GenericType {
 
 pub type StructField = (IString, Type, Option<Expr>);
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct StructType {
     fields: Vec<StructField>,
 }
@@ -252,7 +253,7 @@ impl StructType {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Serialize, Deserialize)]
 pub enum Type {
     Bool,
     UInt8,

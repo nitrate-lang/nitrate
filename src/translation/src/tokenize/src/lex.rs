@@ -7,7 +7,7 @@ use log::error;
 use ordered_float::NotNan;
 use smallvec::SmallVec;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum LexerError {
     SourceTooBig,
 }

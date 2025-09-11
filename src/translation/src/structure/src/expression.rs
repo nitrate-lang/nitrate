@@ -55,7 +55,7 @@ impl std::fmt::Debug for Integer {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct List {
     elements: Vec<Expr>,
 }
@@ -77,7 +77,7 @@ impl List {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Object {
     fields: BTreeMap<IString, Expr>,
 }
@@ -109,7 +109,7 @@ impl Object {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum UnaryExprOp {
     /*----------------------------------------------------------------*
      * Arithmetic Operators                                           *
@@ -197,7 +197,7 @@ impl TryFrom<Op> for UnaryExprOp {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct UnaryExpr {
     operator: UnaryExprOp,
     is_postfix: bool,
@@ -230,7 +230,7 @@ impl UnaryExpr {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum BinExprOp {
     /*----------------------------------------------------------------*
      * Arithmetic Operators                                           *
@@ -362,7 +362,7 @@ impl TryFrom<Op> for BinExprOp {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BinExpr {
     operator: BinExprOp,
     left: Expr,
@@ -395,7 +395,7 @@ impl BinExpr {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Statement {
     expr: Expr,
 }
@@ -412,7 +412,7 @@ impl Statement {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Block {
     elements: Vec<Expr>,
 }
@@ -434,7 +434,7 @@ impl Block {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FunctionParameter {
     name: IString,
     param_type: Type,
@@ -467,7 +467,7 @@ impl FunctionParameter {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Function {
     parameters: Vec<FunctionParameter>,
     return_type: Type,
@@ -540,13 +540,13 @@ impl Function {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 pub enum VariableKind {
     Let,
     Var,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Variable {
     kind: VariableKind,
     is_mutable: bool,
@@ -628,7 +628,7 @@ impl Variable {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Identifier {
     full_name: IString,
     segments: Vec<IString>,
@@ -664,7 +664,7 @@ impl Identifier {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct IndexAccess {
     collection: Expr,
     index: Expr,
@@ -695,7 +695,7 @@ impl IndexAccess {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct QualifiedScope {
     scopes: SmallVec<[IString; 3]>,
 }
@@ -752,7 +752,7 @@ impl std::fmt::Display for QualifiedScope {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Scope {
     name: IString,
     attributes: Vec<Expr>,
@@ -797,7 +797,7 @@ impl Scope {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct If {
     condition: Expr,
     then_branch: Expr,
@@ -842,7 +842,7 @@ impl If {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct WhileLoop {
     condition: Expr,
     body: Expr,
@@ -873,7 +873,7 @@ impl WhileLoop {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DoWhileLoop {
     condition: Expr,
     body: Expr,
@@ -904,7 +904,7 @@ impl DoWhileLoop {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Switch {
     condition: Expr,
     cases: Vec<(Expr, Expr)>,
@@ -954,7 +954,7 @@ impl Switch {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Break {
     label: Option<IString>,
 }
@@ -971,7 +971,7 @@ impl Break {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Continue {
     label: Option<IString>,
 }
@@ -988,7 +988,7 @@ impl Continue {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Return {
     value: Option<Expr>,
 }
@@ -1009,7 +1009,7 @@ impl Return {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ForEach {
     iterable: Expr,
     bindings: Vec<(IString, Option<Type>)>,
@@ -1055,7 +1055,7 @@ impl ForEach {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Await {
     expression: Expr,
 }
@@ -1076,7 +1076,7 @@ impl Await {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Assert {
     condition: Expr,
     message: Expr,
@@ -1109,7 +1109,7 @@ impl Assert {
 
 pub type CallArguments = Vec<(Option<IString>, Expr)>;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Call {
     callee: Expr,
     arguments: CallArguments,
@@ -1145,7 +1145,7 @@ impl Call {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Serialize, Deserialize)]
 pub enum Expr {
     Bool,
     UInt8,

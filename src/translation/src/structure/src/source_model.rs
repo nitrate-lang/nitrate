@@ -1,9 +1,10 @@
 use crate::kind::Expr;
 use interned_string::IString;
+use serde::{Deserialize, Serialize};
 use spdx::LicenseId;
 use std::collections::HashSet;
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct CopyrightInfo {
     holder_name: IString,
     copyright_year: u16,
