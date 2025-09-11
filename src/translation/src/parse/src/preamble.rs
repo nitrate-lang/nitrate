@@ -1,17 +1,18 @@
 use super::parse::Parser;
+use interned_string::IString;
 use log::error;
 use nitrate_structure::{CopyrightInfo, kind::Expr};
-use nitrate_tokenize::{Punct, StringData, Token};
+use nitrate_tokenize::{Punct, Token};
 use ordered_float::NotNan;
 use spdx::{LicenseId, license_id};
 use std::collections::HashSet;
 use std::ops::Deref;
 
-pub(crate) struct SourcePreamble<'a> {
+pub(crate) struct SourcePreamble {
     pub language_version: (u32, u32),
-    pub copyright: Option<CopyrightInfo<'a>>,
+    pub copyright: Option<CopyrightInfo>,
     pub license_id: Option<LicenseId>,
-    pub insource_config: HashSet<StringData<'a>>,
+    pub insource_config: HashSet<IString>,
 }
 
 impl<'a> Parser<'a, '_> {
@@ -123,7 +124,7 @@ impl<'a> Parser<'a, '_> {
     fn parse_preamble_copyright_macro(
         &mut self,
         macro_args: Vec<Expr<'a>>,
-    ) -> Option<CopyrightInfo<'a>> {
+    ) -> Option<CopyrightInfo> {
         if macro_args.len() != 2 {
             self.set_failed_bit();
             error!(
@@ -177,10 +178,10 @@ impl<'a> Parser<'a, '_> {
             return None;
         };
 
-        let Some(license_id) = license_id(license_name.get()) else {
+        let Some(license_id) = license_id(license_name) else {
             error!(
                 "[P????]: The SPDX license database does not contain \"{}\". Only valid SPDX license IDs are allowed.\n--> {}",
-                license_name.get(),
+                license_name,
                 self.lexer.sync_position()
             );
             self.set_failed_bit();
@@ -194,7 +195,7 @@ impl<'a> Parser<'a, '_> {
     fn parse_preamble_insource_macro(
         &mut self,
         macro_args: Vec<Expr<'a>>,
-    ) -> Option<HashSet<StringData<'a>>> {
+    ) -> Option<HashSet<IString>> {
         if macro_args.len() != 1 {
             self.set_failed_bit();
             error!(
@@ -232,7 +233,7 @@ impl<'a> Parser<'a, '_> {
         Some(config)
     }
 
-    pub(crate) fn parse_preamble(&mut self) -> SourcePreamble<'a> {
+    pub(crate) fn parse_preamble(&mut self) -> SourcePreamble {
         let mut language_version = (1, 0);
         let mut copyright = None;
         let mut license_id = None;

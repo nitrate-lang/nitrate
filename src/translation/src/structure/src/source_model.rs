@@ -1,16 +1,16 @@
 use crate::kind::Expr;
-use nitrate_tokenize::StringData;
+use interned_string::IString;
 use spdx::LicenseId;
 use std::collections::HashSet;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct CopyrightInfo<'a> {
-    holder_name: StringData<'a>,
+pub struct CopyrightInfo {
+    holder_name: IString,
     copyright_year: u16,
 }
 
-impl<'a> CopyrightInfo<'a> {
-    pub fn new(holder_name: StringData<'a>, copyright_year: u16) -> Self {
+impl CopyrightInfo {
+    pub fn new(holder_name: IString, copyright_year: u16) -> Self {
         CopyrightInfo {
             holder_name,
             copyright_year,
@@ -18,7 +18,7 @@ impl<'a> CopyrightInfo<'a> {
     }
 
     #[must_use]
-    pub fn holder_name(&self) -> &StringData<'a> {
+    pub fn holder_name(&self) -> &IString {
         &self.holder_name
     }
 
@@ -31,9 +31,9 @@ impl<'a> CopyrightInfo<'a> {
 #[derive(Debug, Clone)]
 pub struct SourceModel<'a> {
     language_version: (u32, u32),
-    copyright: Option<CopyrightInfo<'a>>,
+    copyright: Option<CopyrightInfo>,
     license_id: Option<LicenseId>,
-    insource_config: HashSet<StringData<'a>>,
+    insource_config: HashSet<IString>,
     tree: Expr<'a>,
     any_errors: bool,
 }
@@ -41,9 +41,9 @@ pub struct SourceModel<'a> {
 impl<'a> SourceModel<'a> {
     pub fn new(
         language_version: (u32, u32),
-        copyright: Option<CopyrightInfo<'a>>,
+        copyright: Option<CopyrightInfo>,
         license_id: Option<LicenseId>,
-        insource_config: HashSet<StringData<'a>>,
+        insource_config: HashSet<IString>,
         tree: Expr<'a>,
         any_errors: bool,
     ) -> Self {
@@ -63,7 +63,7 @@ impl<'a> SourceModel<'a> {
     }
 
     #[must_use]
-    pub fn copyright(&self) -> Option<&CopyrightInfo<'a>> {
+    pub fn copyright(&self) -> Option<&CopyrightInfo> {
         self.copyright.as_ref()
     }
 
@@ -73,7 +73,7 @@ impl<'a> SourceModel<'a> {
     }
 
     #[must_use]
-    pub fn insource_config(&self) -> &HashSet<StringData<'a>> {
+    pub fn insource_config(&self) -> &HashSet<IString> {
         &self.insource_config
     }
 

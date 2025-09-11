@@ -1,7 +1,8 @@
 use crate::expression::VariableKind;
 use crate::expression::{Expr, Identifier};
 use crate::types::{TupleType, Type};
-use nitrate_tokenize::{BStringData, NotNan, StringData};
+use interned_string::IString;
+use nitrate_tokenize::{BStringData, NotNan};
 use std::sync::Arc;
 
 use crate::builder_helper::{
@@ -69,18 +70,8 @@ impl<'a> Builder {
     }
 
     #[must_use]
-    pub fn create_string_from_ref(str: &'a str) -> Expr<'a> {
-        Expr::String(Arc::new(StringData::from_ref(str)))
-    }
-
-    #[must_use]
-    pub fn create_string(str: String) -> Expr<'a> {
-        Expr::String(Arc::new(StringData::from_dyn(str)))
-    }
-
-    #[must_use]
-    pub fn create_string_from(storage: StringData<'a>) -> Expr<'a> {
-        Expr::String(Arc::new(storage))
+    pub fn create_string(str: IString) -> Expr<'a> {
+        Expr::String(Arc::new(str))
     }
 
     #[must_use]
@@ -381,7 +372,7 @@ impl<'a> Builder {
     }
 
     #[must_use]
-    pub fn create_opaque_type(identity: StringData<'a>) -> Type<'a> {
+    pub fn create_opaque_type(identity: IString) -> Type<'a> {
         Type::OpaqueType(Arc::new(identity))
     }
 

@@ -1,5 +1,5 @@
 use hashbrown::HashMap;
-use nitrate_structure::{Builder, kind::Expr};
+use nitrate_structure::{kind::Expr, Builder};
 use std::rc::Rc;
 
 #[derive(Debug, Default)]
@@ -136,7 +136,7 @@ impl<'a> AbstractMachine<'a> {
             let value = m.get_parameter("message").ok_or(Unwind::MissingArgument)?;
 
             if let Expr::String(string) = value {
-                print!("{}", string.get());
+                print!("{}", string);
             } else {
                 print!("{:#?}", value);
             }

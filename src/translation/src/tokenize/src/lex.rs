@@ -1,7 +1,8 @@
 use super::token::{
     AnnotatedToken, BStringData, Comment, CommentKind, Integer, IntegerKind, Keyword, Name, Op,
-    Punct, SourcePosition, StringData, Token,
+    Punct, SourcePosition, Token,
 };
+use interned_string::{IString, Intern};
 use log::error;
 use ordered_float::NotNan;
 use smallvec::SmallVec;
@@ -128,7 +129,7 @@ impl<'a> Lexer<'a> {
     }
 
     #[inline(always)]
-    pub fn next_if_string(&mut self) -> Option<StringData<'a>> {
+    pub fn next_if_string(&mut self) -> Option<IString> {
         if let Token::String(string_data) = self.peek_t() {
             self.skip_tok();
             Some(string_data)
@@ -138,7 +139,7 @@ impl<'a> Lexer<'a> {
     }
 
     #[inline(always)]
-    pub fn next_if_bstring(&mut self) -> Option<BStringData<'a>> {
+    pub fn next_if_bstring(&mut self) -> Option<BStringData> {
         if let Token::BString(bstring_data) = self.peek_t() {
             self.skip_tok();
             Some(bstring_data)
@@ -815,11 +816,11 @@ impl<'a> Lexer<'a> {
                         let buffer = &self.source[start_offset as usize..end_offset as usize];
 
                         if let Ok(utf8_str) = str::from_utf8(buffer) {
-                            return Ok(Token::String(StringData::from_ref(utf8_str)));
+                            return Ok(Token::String(utf8_str.intern()));
                         }
                         return Ok(Token::BString(BStringData::from_ref(buffer)));
                     } else if let Ok(utf8_str) = String::from_utf8(storage.to_vec()) {
-                        return Ok(Token::String(StringData::from_dyn(utf8_str)));
+                        return Ok(Token::String(utf8_str.intern()));
                     }
                     return Ok(Token::BString(BStringData::from_dyn(storage.to_vec())));
                 }

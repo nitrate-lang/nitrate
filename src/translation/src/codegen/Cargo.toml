@@ -14,3 +14,4 @@ cranelift = { version = "0.123.2", features = [
 target-lexicon = "0.13.3"
 log = "0.4.28"
 serde = { version = "1.0.219", features = ["derive"] }
+interned-string = "0.3.0"

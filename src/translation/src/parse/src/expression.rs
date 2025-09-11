@@ -1,4 +1,5 @@
 use super::parse::Parser;
+use interned_string::Intern;
 use log::error;
 use nitrate_structure::{
     Builder,
@@ -149,7 +150,7 @@ impl<'a> Parser<'a, '_> {
 
             Token::String(string) => {
                 self.lexer.skip_tok();
-                let lit = Builder::create_string_from(string);
+                let lit = Builder::create_string(string);
                 Some(self.parse_literal_suffix(lit))
             }
 
@@ -732,7 +733,7 @@ impl<'a> Parser<'a, '_> {
         self.lexer.skip_if(&Token::Punct(Punct::Comma));
 
         let message = if self.lexer.next_is(&Token::Punct(Punct::RightParen)) {
-            Builder::create_string_from_ref("")
+            Builder::create_string("".intern())
         } else {
             self.parse_expression()?
         };

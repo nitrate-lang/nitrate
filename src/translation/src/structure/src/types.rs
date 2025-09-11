@@ -1,5 +1,5 @@
 use crate::expression::{Expr, FunctionParameter, Identifier};
-use nitrate_tokenize::StringData;
+use interned_string::IString;
 use std::sync::Arc;
 
 #[derive(Debug, Clone)]
@@ -282,7 +282,7 @@ pub enum Type<'a> {
     ManagedRefType(Arc<ManagedRefType<'a>>),
     UnmanagedRefType(Arc<UnmanagedRefType<'a>>),
     GenericType(Arc<GenericType<'a>>),
-    OpaqueType(Arc<StringData<'a>>),
+    OpaqueType(Arc<IString>),
     StructType(Arc<StructType<'a>>),
     LatentType(Arc<Expr<'a>>),
     HasParenthesesType(Arc<Type<'a>>),

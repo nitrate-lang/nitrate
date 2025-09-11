@@ -1,4 +1,5 @@
 use enum_iterator::Sequence;
+use interned_string::IString;
 pub use ordered_float::NotNan;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Hash, Sequence)]
@@ -131,53 +132,6 @@ impl std::fmt::Display for Integer {
             IntegerKind::Dec => write!(f, "{}", self.value()),
             IntegerKind::Hex => write!(f, "0x{:x}", self.value()),
         }
-    }
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash)]
-enum StringDataStorage<'a> {
-    RefString(&'a str),
-    DynString(String),
-}
-
-#[derive(Clone, PartialEq, Eq, PartialOrd, Hash)]
-pub struct StringData<'a> {
-    data: StringDataStorage<'a>,
-}
-
-impl<'a> StringData<'a> {
-    #[must_use]
-    pub const fn from_ref(data: &'a str) -> Self {
-        StringData {
-            data: StringDataStorage::RefString(data),
-        }
-    }
-
-    #[must_use]
-    pub fn from_dyn(data: String) -> Self {
-        StringData {
-            data: StringDataStorage::DynString(data),
-        }
-    }
-
-    #[must_use]
-    pub fn get(&self) -> &str {
-        match &self.data {
-            StringDataStorage::RefString(s) => s,
-            StringDataStorage::DynString(s) => s.as_str(),
-        }
-    }
-}
-
-impl std::fmt::Debug for StringData<'_> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "StringData({:?})", self.get())
-    }
-}
-
-impl std::fmt::Display for StringData<'_> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "\"{}\"", self.get())
     }
 }
 
@@ -584,7 +538,7 @@ pub enum Token<'a> {
     Name(Name<'a>),
     Integer(Integer),
     Float(NotNan<f64>),
-    String(StringData<'a>),
+    String(IString),
     BString(BStringData<'a>),
     Comment(Comment<'a>),
     Keyword(Keyword),

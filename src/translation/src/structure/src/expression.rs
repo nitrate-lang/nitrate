@@ -1,5 +1,6 @@
 use apint::UInt;
-use nitrate_tokenize::{BStringData, StringData};
+use interned_string::IString;
+use nitrate_tokenize::BStringData;
 use nitrate_tokenize::{IntegerKind, Op};
 use ordered_float::NotNan;
 use smallvec::SmallVec;
@@ -1166,7 +1167,7 @@ pub enum Expr<'a> {
     ManagedRefType(Arc<ManagedRefType<'a>>),
     UnmanagedRefType(Arc<UnmanagedRefType<'a>>),
     GenericType(Arc<GenericType<'a>>),
-    OpaqueType(Arc<StringData<'a>>),
+    OpaqueType(Arc<IString>),
     StructType(Arc<StructType<'a>>),
     LatentType(Arc<Expr<'a>>),
     HasParenthesesType(Arc<Type<'a>>),
@@ -1177,7 +1178,7 @@ pub enum Expr<'a> {
     Boolean(bool),
     Integer(Arc<Integer>),
     Float(NotNan<f64>),
-    String(Arc<StringData<'a>>),
+    String(Arc<IString>),
     BString(Arc<BStringData<'a>>),
     Unit,
 
