@@ -156,7 +156,7 @@ impl<'a> Parser<'a, '_> {
 
             Token::BString(data) => {
                 self.lexer.skip_tok();
-                let lit = Builder::create_bstring_from(data);
+                let lit = Builder::create_bstring(data);
                 Some(self.parse_literal_suffix(lit))
             }
 

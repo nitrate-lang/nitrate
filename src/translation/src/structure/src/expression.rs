@@ -1,6 +1,5 @@
 use apint::UInt;
 use interned_string::IString;
-use nitrate_tokenize::BStringData;
 use nitrate_tokenize::{IntegerKind, Op};
 use ordered_float::NotNan;
 use smallvec::SmallVec;
@@ -1179,7 +1178,7 @@ pub enum Expr<'a> {
     Integer(Arc<Integer>),
     Float(NotNan<f64>),
     String(Arc<IString>),
-    BString(Arc<BStringData<'a>>),
+    BString(Arc<Vec<u8>>),
     Unit,
 
     TypeEnvelop(Arc<Type<'a>>),

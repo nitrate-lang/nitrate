@@ -135,53 +135,6 @@ impl std::fmt::Display for Integer {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash)]
-enum BStringDataStorage<'a> {
-    RefString(&'a [u8]),
-    DynString(Vec<u8>),
-}
-
-#[derive(Clone, PartialEq, Eq, PartialOrd, Hash)]
-pub struct BStringData<'a> {
-    data: BStringDataStorage<'a>,
-}
-
-impl<'a> BStringData<'a> {
-    #[must_use]
-    pub const fn from_ref(data: &'a [u8]) -> Self {
-        BStringData {
-            data: BStringDataStorage::RefString(data),
-        }
-    }
-
-    #[must_use]
-    pub fn from_dyn(data: Vec<u8>) -> Self {
-        BStringData {
-            data: BStringDataStorage::DynString(data),
-        }
-    }
-
-    #[must_use]
-    pub fn get(&self) -> &[u8] {
-        match &self.data {
-            BStringDataStorage::RefString(s) => s,
-            BStringDataStorage::DynString(s) => s.as_slice(),
-        }
-    }
-}
-
-impl std::fmt::Debug for BStringData<'_> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "BStringData({:?})", self.get())
-    }
-}
-
-impl std::fmt::Display for BStringData<'_> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{:?}", self.get())
-    }
-}
-
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Hash, Sequence)]
 pub enum CommentKind {
     SingleLine,
@@ -539,7 +492,7 @@ pub enum Token<'a> {
     Integer(Integer),
     Float(NotNan<f64>),
     String(IString),
-    BString(BStringData<'a>),
+    BString(Vec<u8>),
     Comment(Comment<'a>),
     Keyword(Keyword),
     Punct(Punct),
@@ -555,7 +508,7 @@ impl std::fmt::Display for Token<'_> {
             Token::Integer(int) => write!(f, "{int}"),
             Token::Float(float) => write!(f, "{float}"),
             Token::String(s) => write!(f, "{s}"),
-            Token::BString(s) => write!(f, "{s}"),
+            Token::BString(s) => write!(f, "{s:?}"),
             Token::Comment(c) => write!(f, "{c}"),
             Token::Keyword(kw) => write!(f, "{kw}"),
             Token::Punct(p) => write!(f, "{p}"),

@@ -2,7 +2,7 @@ use crate::expression::VariableKind;
 use crate::expression::{Expr, Identifier};
 use crate::types::{TupleType, Type};
 use interned_string::IString;
-use nitrate_tokenize::{BStringData, NotNan};
+use nitrate_tokenize::NotNan;
 use std::sync::Arc;
 
 use crate::builder_helper::{
@@ -75,18 +75,8 @@ impl<'a> Builder {
     }
 
     #[must_use]
-    pub fn create_bstring_from_ref(bytes: &'a [u8]) -> Expr<'a> {
-        Expr::BString(Arc::new(BStringData::from_ref(bytes)))
-    }
-
-    #[must_use]
     pub fn create_bstring(bytes: Vec<u8>) -> Expr<'a> {
-        Expr::BString(Arc::new(BStringData::from_dyn(bytes)))
-    }
-
-    #[must_use]
-    pub fn create_bstring_from(storage: BStringData<'a>) -> Expr<'a> {
-        Expr::BString(Arc::new(storage))
+        Expr::BString(Arc::new(bytes))
     }
 
     #[must_use]

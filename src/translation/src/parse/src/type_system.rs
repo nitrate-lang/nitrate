@@ -1,10 +1,10 @@
 use super::parse::Parser;
 use log::{error, info};
-use nitrate_tokenize::{Keyword, Name, Op, Punct, Token};
 use nitrate_structure::{
-    Builder,
     kind::{Expr, FunctionParameter, Type},
+    Builder,
 };
+use nitrate_tokenize::{Keyword, Name, Op, Punct, Token};
 
 #[allow(unused_imports)]
 use crate::SymbolTable;
@@ -771,7 +771,7 @@ impl<'a> Parser<'a, '_> {
             }
 
             Token::BString(bstring) => {
-                error!("[P0???]: type: unexpected bstring '{bstring}'\n--> {current_pos}");
+                error!("[P0???]: type: unexpected bstring '{bstring:?}'\n--> {current_pos}");
 
                 None
             }

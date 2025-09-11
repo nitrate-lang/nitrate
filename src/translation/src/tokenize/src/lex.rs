@@ -1,6 +1,6 @@
 use super::token::{
-    AnnotatedToken, BStringData, Comment, CommentKind, Integer, IntegerKind, Keyword, Name, Op,
-    Punct, SourcePosition, Token,
+    AnnotatedToken, Comment, CommentKind, Integer, IntegerKind, Keyword, Name, Op, Punct,
+    SourcePosition, Token,
 };
 use interned_string::{IString, Intern};
 use log::error;
@@ -139,7 +139,7 @@ impl<'a> Lexer<'a> {
     }
 
     #[inline(always)]
-    pub fn next_if_bstring(&mut self) -> Option<BStringData> {
+    pub fn next_if_bstring(&mut self) -> Option<Vec<u8>> {
         if let Token::BString(bstring_data) = self.peek_t() {
             self.skip_tok();
             Some(bstring_data)
@@ -818,11 +818,11 @@ impl<'a> Lexer<'a> {
                         if let Ok(utf8_str) = str::from_utf8(buffer) {
                             return Ok(Token::String(utf8_str.intern()));
                         }
-                        return Ok(Token::BString(BStringData::from_ref(buffer)));
+                        return Ok(Token::BString(buffer.to_vec()));
                     } else if let Ok(utf8_str) = String::from_utf8(storage.to_vec()) {
                         return Ok(Token::String(utf8_str.intern()));
                     }
-                    return Ok(Token::BString(BStringData::from_dyn(storage.to_vec())));
+                    return Ok(Token::BString(storage.to_vec()));
                 }
 
                 Ok(b) => {
