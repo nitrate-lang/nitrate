@@ -305,7 +305,6 @@ impl<'a> Lexer<'a> {
         if let Some(word_like_operator) = match name {
             b"as" => Some(Op::As),
             b"bitcast_as" => Some(Op::BitcastAs),
-            b"alignof" => Some(Op::Alignof),
             b"typeof" => Some(Op::Typeof),
             _ => None,
         } {

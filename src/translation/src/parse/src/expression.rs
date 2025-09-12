@@ -90,7 +90,7 @@ fn get_precedence_of_operator(operator: Op) -> Option<(Associativity, Precedence
         | Op::SetLogicOr
         | Op::SetLogicXor => (Associativity::RightToLeft, PrecedenceRank::Assign),
 
-        Op::BitNot | Op::LogicNot | Op::Typeof | Op::Alignof | Op::Ellipsis | Op::BlockArrow => {
+        Op::BitNot | Op::LogicNot | Op::Typeof | Op::Ellipsis | Op::BlockArrow => {
             return None;
         }
     };
@@ -118,7 +118,6 @@ fn get_prefix_precedence(op: Op) -> Option<Precedence> {
         Op::Mul => PrecedenceRank::Unary,
         Op::BitAnd => PrecedenceRank::Unary,
         Op::Typeof => PrecedenceRank::Unary,
-        Op::Alignof => PrecedenceRank::Unary,
 
         _ => return None,
     };
