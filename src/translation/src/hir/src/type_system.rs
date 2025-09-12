@@ -26,6 +26,14 @@ pub struct Reference {
 #[derive(Serialize, Deserialize)]
 pub enum StructAttribute {}
 
+impl StructAttribute {
+    fn dump(&self, o: &mut dyn std::fmt::Write) -> Result<(), std::fmt::Error> {
+        match self {
+            _ => Ok(()),
+        }
+    }
+}
+
 #[derive(Serialize, Deserialize)]
 pub struct StructType {
     pub attributes: Vec<StructAttribute>,
@@ -35,6 +43,14 @@ pub struct StructType {
 #[derive(Serialize, Deserialize)]
 pub enum EnumAttribute {}
 
+impl EnumAttribute {
+    fn dump(&self, o: &mut dyn std::fmt::Write) -> Result<(), std::fmt::Error> {
+        match self {
+            _ => Ok(()),
+        }
+    }
+}
+
 #[derive(Serialize, Deserialize)]
 pub struct EnumType {
     pub attributes: Vec<EnumAttribute>,
@@ -43,6 +59,14 @@ pub struct EnumType {
 
 #[derive(Serialize, Deserialize)]
 pub struct FunctionAttribute {}
+
+impl FunctionAttribute {
+    fn dump(&self, o: &mut dyn std::fmt::Write) -> Result<(), std::fmt::Error> {
+        match self {
+            _ => Ok(()),
+        }
+    }
+}
 
 #[derive(Serialize, Deserialize)]
 pub struct FunctionType {
@@ -240,12 +264,12 @@ impl Type {
 
                 if !struct_type.attributes.is_empty() {
                     write!(o, " [")?;
-                    for (i, _attr) in struct_type.attributes.iter().enumerate() {
+                    for (i, attr) in struct_type.attributes.iter().enumerate() {
                         if i != 0 {
                             write!(o, ", ")?;
                         }
 
-                        todo!()
+                        attr.dump(o)?;
                     }
                     write!(o, "]")?;
                 }
@@ -267,12 +291,12 @@ impl Type {
 
                 if !enum_type.attributes.is_empty() {
                     write!(o, " [")?;
-                    for (i, _attr) in enum_type.attributes.iter().enumerate() {
+                    for (i, attr) in enum_type.attributes.iter().enumerate() {
                         if i != 0 {
                             write!(o, ", ")?;
                         }
 
-                        todo!()
+                        attr.dump(o)?;
                     }
                     write!(o, "]")?;
                 }
@@ -294,12 +318,12 @@ impl Type {
 
                 if !func_type.attributes.is_empty() {
                     write!(o, " [")?;
-                    for (i, _attr) in func_type.attributes.iter().enumerate() {
+                    for (i, attr) in func_type.attributes.iter().enumerate() {
                         if i != 0 {
                             write!(o, ", ")?;
                         }
 
-                        todo!()
+                        attr.dump(o)?;
                     }
                     write!(o, "]")?;
                 }
