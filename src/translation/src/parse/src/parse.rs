@@ -1,6 +1,8 @@
 use super::symbol_table::SymbolTable;
-use log::{error, info};
-use nitrate_structure::{Builder, SourceModel, kind::QualifiedScope};
+use nitrate_structure::{
+    Builder,
+    kind::{Expr, QualifiedScope},
+};
 use nitrate_tokenize::{Lexer, Punct, Token};
 use smallvec::SmallVec;
 
@@ -48,20 +50,7 @@ impl<'a, 'symbol_table> Parser<'a, 'symbol_table> {
         matches!(language_version, (1, _))
     }
 
-    pub fn parse(&mut self) -> Option<SourceModel> {
-        let preamble = self.parse_preamble();
-
-        if !self.is_supported(preamble.language_version) {
-            self.set_failed_bit();
-            error!(
-                "[P????]: This compiler does not support Nitrate version {}.{}.",
-                preamble.language_version.0, preamble.language_version.1
-            );
-            info!("[P????]: Consider upgrading to a newer version of the compiler.");
-
-            return None;
-        }
-
+    pub fn parse(&mut self) -> Result<Expr, Expr> {
         let mut expressions = Vec::new();
         while !self.lexer.is_eof() {
             if self.lexer.skip_if(&Token::Punct(Punct::Semicolon))
@@ -96,13 +85,10 @@ impl<'a, 'symbol_table> Parser<'a, 'symbol_table> {
 
         let block = Builder::create_block().add_expressions(expressions).build();
 
-        Some(SourceModel::new(
-            preamble.language_version,
-            preamble.copyright,
-            preamble.license_id,
-            preamble.insource_config,
-            block,
-            self.has_failed(),
-        ))
+        if self.has_failed() {
+            Err(block)
+        } else {
+            Ok(block)
+        }
     }
 }

@@ -10,7 +10,6 @@ use cranelift::{
     prelude::*,
 };
 
-use nitrate_structure::SourceModel;
 use target_lexicon::Triple;
 
 #[derive(Debug)]
@@ -90,9 +89,8 @@ impl Codegen {
         }
     }
 
-    fn compute_module_name(model: &SourceModel) -> String {
-        let name = model
-            .tree()
+    fn compute_module_name(program: &Expr) -> String {
+        let name = program
             .digest_128()
             .iter()
             .map(|b| format!("{:02x}", b))
@@ -172,17 +170,17 @@ impl Codegen {
 
     pub fn generate(
         self,
-        model: &SourceModel,
+        program: &Expr,
         output: &mut dyn std::io::Write,
     ) -> Result<(), CodegenError> {
         let shared_flags = Self::create_shared_flags();
         let target_triple = Self::create_target_triple(&self.target_triple_string)?;
         let isa = Self::create_isa(shared_flags, target_triple, &self.isa_config)?;
 
-        let module_name = Self::compute_module_name(model);
+        let module_name = Self::compute_module_name(program);
         let mut module = Self::create_module(isa, &module_name)?;
 
-        let Expr::Block(block) = model.tree() else {
+        let Expr::Block(block) = program else {
             return Err(CodegenError::Other(
                 "Top-level expression is not a block".to_string(),
             ));

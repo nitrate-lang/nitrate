@@ -2,7 +2,6 @@
 
 mod expression;
 mod parse;
-mod preamble;
 mod symbol_table;
 mod type_system;
 

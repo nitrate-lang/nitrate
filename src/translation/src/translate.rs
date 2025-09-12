@@ -3,7 +3,7 @@ use nitrate_codegen::{Codegen, CodegenError};
 use nitrate_diagnosis::{Diagnose, DiagnosticDrain};
 use nitrate_optimization::FunctionOptimization;
 use nitrate_parse::{Parser, SymbolTable};
-use nitrate_structure::SourceModel;
+use nitrate_structure::kind::Expr;
 use nitrate_tokenize::Lexer;
 use std::collections::HashMap;
 use threadpool::ThreadPool;
@@ -60,30 +60,30 @@ fn create_lexer<'a>(
     lexer.map_err(TranslationError::LexerError)
 }
 
-fn parse_language(lexer: Lexer) -> Result<(SourceModel, SymbolTable), TranslationError> {
+fn parse_language(lexer: Lexer) -> Result<(Expr, SymbolTable), TranslationError> {
     let mut symbol_table = SymbolTable::default();
 
     let mut parser = Parser::new(lexer, &mut symbol_table);
-    let model = parser.parse().ok_or(TranslationError::SyntaxError)?;
+    let program = parser.parse().map_err(|_| TranslationError::SyntaxError)?;
 
-    Ok((model, symbol_table))
+    Ok((program, symbol_table))
 }
 
 fn resolve_names(
-    _model: &mut SourceModel,
+    _program: &mut Expr,
     _symbol_table: &mut SymbolTable,
 ) -> Result<(), TranslationError> {
     // TODO: Implement name resolution logic
     Ok(())
 }
 
-fn type_check(_model: &mut SourceModel) -> Result<(), TranslationError> {
+fn type_check(_program: &mut Expr) -> Result<(), TranslationError> {
     // TODO: Implement type checking logic
     Ok(())
 }
 
 fn diagnose_problems(
-    model: &SourceModel,
+    program: &Expr,
     diagnostic_passes: &[Box<dyn Diagnose + Sync>],
     drain: &DiagnosticDrain,
     pool: &ThreadPool,
@@ -91,7 +91,7 @@ fn diagnose_problems(
     scope_with(pool, |scope| {
         for diagnostic in diagnostic_passes {
             scope.execute(|| {
-                diagnostic.diagnose(model, drain);
+                diagnostic.diagnose(program, drain);
             });
         }
     });
@@ -125,17 +125,14 @@ fn optimize_functions(
     });
 }
 
-fn generate_code(
-    model: &SourceModel,
-    object: &mut dyn std::io::Write,
-) -> Result<(), TranslationError> {
+fn generate_code(program: &Expr, object: &mut dyn std::io::Write) -> Result<(), TranslationError> {
     let target_triple_string = "x86_64"; // Example target ISA
     let isa_config = HashMap::new();
 
     let codegen = Codegen::new(target_triple_string.to_string(), isa_config);
 
     codegen
-        .generate(model, object)
+        .generate(program, object)
         .map_err(TranslationError::CodegenError)
 }
 
@@ -147,18 +144,15 @@ pub fn compile_code(
     let source = scan_into_memory(source_code)?;
     let lexer = create_lexer(&source, &options.source_name_for_debug_messages)?;
 
-    let (mut model, mut symtab) = parse_language(lexer)?;
-    if model.any_errors() {
-        return Err(TranslationError::SyntaxError);
-    }
+    let (mut program, mut symtab) = parse_language(lexer)?;
 
-    resolve_names(&mut model, &mut symtab)?;
-    type_check(&mut model)?;
+    resolve_names(&mut program, &mut symtab)?;
+    type_check(&mut program)?;
 
     let pool = ThreadPool::new(options.thread_count.get());
     let drain = &options.drain;
 
-    diagnose_problems(&model, &options.diagnostic_passes, drain, &pool);
+    diagnose_problems(&program, &options.diagnostic_passes, drain, &pool);
 
     if drain.any_errors() {
         return Err(TranslationError::DiagnosticError);
@@ -167,5 +161,5 @@ pub fn compile_code(
     optimize_functions(&mut symtab, &options.function_optimizations, drain, &pool);
     drop(pool);
 
-    generate_code(&model, machine_code)
+    generate_code(&program, machine_code)
 }
