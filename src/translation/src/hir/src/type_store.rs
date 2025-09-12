@@ -25,11 +25,27 @@ impl TypeStore {
         TypeId { id }
     }
 
-    pub fn get(&self, id: &TypeId) -> Option<&Type> {
-        self.types.get(id)
+    pub fn get(&self, id: &TypeId) -> &Type {
+        self.types.get(id).expect("TypeId not found in TypeStore")
     }
 
-    pub fn get_mut(&mut self, id: &TypeId) -> Option<&mut Type> {
-        self.types.get_mut(id)
+    pub fn get_mut(&mut self, id: &TypeId) -> &mut Type {
+        self.types
+            .get_mut(id)
+            .expect("TypeId not found in TypeStore")
+    }
+}
+
+impl std::ops::Index<&TypeId> for TypeStore {
+    type Output = Type;
+
+    fn index(&self, index: &TypeId) -> &Self::Output {
+        self.get(index)
+    }
+}
+
+impl std::ops::IndexMut<&TypeId> for TypeStore {
+    fn index_mut(&mut self, index: &TypeId) -> &mut Self::Output {
+        self.get_mut(index)
     }
 }
