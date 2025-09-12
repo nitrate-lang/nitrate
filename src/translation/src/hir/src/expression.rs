@@ -1,7 +1,5 @@
 use serde::{Deserialize, Serialize};
 
-use super::types::Type;
-
 #[derive(Clone, Serialize, Deserialize)]
 pub enum Expr {}
 
@@ -21,11 +19,5 @@ impl Expr {
 impl std::fmt::Debug for Expr {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         Ok(())
-    }
-}
-
-impl From<Type> for Expr {
-    fn from(val: Type) -> Expr {
-        match val {}
     }
 }
