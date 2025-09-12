@@ -1059,37 +1059,6 @@ impl Await {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Assert {
-    condition: Expr,
-    message: Expr,
-}
-
-impl Assert {
-    #[must_use]
-    pub(crate) fn new(condition: Expr, message: Expr) -> Self {
-        Assert { condition, message }
-    }
-
-    #[must_use]
-    pub fn condition(&self) -> &Expr {
-        &self.condition
-    }
-
-    pub fn set_condition(&mut self, condition: Expr) {
-        self.condition = condition;
-    }
-
-    #[must_use]
-    pub fn message(&self) -> &Expr {
-        &self.message
-    }
-
-    pub fn set_message(&mut self, message: Expr) {
-        self.message = message;
-    }
-}
-
 pub type CallArguments = Vec<(Option<IString>, Expr)>;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -1195,7 +1164,6 @@ pub enum Expr {
     Return(Arc<Return>),
     ForEach(Arc<ForEach>),
     Await(Arc<Await>),
-    Assert(Arc<Assert>),
     Call(Arc<Call>),
 }
 
@@ -1266,7 +1234,6 @@ impl TryInto<Type> for Expr {
             | Expr::Return(_)
             | Expr::ForEach(_)
             | Expr::Await(_)
-            | Expr::Assert(_)
             | Expr::Call(_) => Err(self),
         }
     }
@@ -1364,7 +1331,6 @@ impl std::fmt::Debug for Expr {
             Expr::Return(e) => e.fmt(f),
             Expr::ForEach(e) => e.fmt(f),
             Expr::Await(e) => e.fmt(f),
-            Expr::Assert(e) => e.fmt(f),
             Expr::Call(e) => e.fmt(f),
         }
     }

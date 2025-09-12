@@ -2,8 +2,8 @@ use super::abstract_machine::{AbstractMachine, CallFrame, IntrinsicFunction, Unw
 use nitrate_structure::{
     Builder,
     kind::{
-        Assert, Await, Break, Call, Continue, DoWhileLoop, Expr, ForEach, Function, If, Return,
-        Switch, WhileLoop,
+        Await, Break, Call, Continue, DoWhileLoop, Expr, ForEach, Function, If, Return, Switch,
+        WhileLoop,
     },
 };
 use std::sync::{Arc, RwLock};
@@ -102,26 +102,6 @@ impl AbstractMachine {
 
         // TODO: Evaluate await
         unimplemented!()
-    }
-
-    pub(crate) fn evaluate_assert(&mut self, assert: &Assert) -> Result<Expr, Unwind> {
-        // TODO: Verify and write tests
-
-        let condition = self.evaluate(assert.condition())?;
-        let message = self.evaluate(assert.message())?;
-
-        match condition {
-            Expr::Boolean(true) => Ok(Builder::create_unit()),
-
-            _ => {
-                let message_string = match message {
-                    Expr::String(s) => s,
-                    _ => return Err(Unwind::TypeError),
-                };
-
-                Err(Unwind::ProgramaticAssertionFailed(message_string))
-            }
-        }
     }
 
     pub(crate) fn evaluate_call(&mut self, call: &Call) -> Result<Expr, Unwind> {

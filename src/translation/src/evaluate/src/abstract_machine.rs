@@ -53,7 +53,6 @@ pub enum Unwind {
     MissingArgument,
     UnknownCallee(IString),
     UnresolvedIdentifier(IString),
-    ProgramaticAssertionFailed(IString),
 }
 
 pub type IntrinsicFunction = Rc<dyn Fn(&mut AbstractMachine) -> Result<Expr, Unwind>>;
@@ -219,7 +218,6 @@ impl AbstractMachine {
             Expr::Return(e) => self.evaluate_return(e),
             Expr::ForEach(e) => self.evaluate_for_each(e),
             Expr::Await(e) => self.evaluate_await(e),
-            Expr::Assert(e) => self.evaluate_assert(e),
             Expr::Call(e) => self.evaluate_call(e),
         }
     }

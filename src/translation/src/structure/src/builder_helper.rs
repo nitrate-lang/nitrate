@@ -6,11 +6,11 @@ use std::sync::Arc;
 use std::{collections::BTreeMap, sync::RwLock};
 
 use crate::kind::{
-    ArrayType, Assert, Await, BinExpr, BinExprOp, Block, Break, Call, CallArguments, Continue,
-    DoWhileLoop, Expr, ForEach, Function, FunctionParameter, FunctionType, GenericType, If,
-    IndexAccess, Integer, List, ManagedRefType, MapType, Object, RefinementType, Return, Scope,
-    SliceType, StructField, StructType, Switch, TupleType, Type, UnaryExpr, UnaryExprOp,
-    UnmanagedRefType, Variable, VariableKind, WhileLoop,
+    ArrayType, Await, BinExpr, BinExprOp, Block, Break, Call, CallArguments, Continue, DoWhileLoop,
+    Expr, ForEach, Function, FunctionParameter, FunctionType, GenericType, If, IndexAccess,
+    Integer, List, ManagedRefType, MapType, Object, RefinementType, Return, Scope, SliceType,
+    StructField, StructType, Switch, TupleType, Type, UnaryExpr, UnaryExprOp, UnmanagedRefType,
+    Variable, VariableKind, WhileLoop,
 };
 
 #[derive(Debug)]
@@ -1128,40 +1128,6 @@ impl AwaitBuilder {
         let expr = Await::new(self.expression.expect("Expression must be provided"));
 
         Expr::Await(Arc::new(expr))
-    }
-}
-
-#[derive(Debug)]
-pub struct AssertBuilder {
-    condition: Option<Expr>,
-    message: Option<Expr>,
-}
-
-impl AssertBuilder {
-    pub(crate) fn new() -> Self {
-        AssertBuilder {
-            condition: None,
-            message: None,
-        }
-    }
-
-    pub fn with_condition(mut self, condition: Expr) -> Self {
-        self.condition = Some(condition);
-        self
-    }
-
-    pub fn with_message(mut self, message: Expr) -> Self {
-        self.message = Some(message);
-        self
-    }
-
-    pub fn build(self) -> Expr {
-        let expr = Assert::new(
-            self.condition.expect("Condition must be provided"),
-            self.message.expect("Message must be provided"),
-        );
-
-        Expr::Assert(Arc::new(expr))
     }
 }
 

@@ -130,7 +130,6 @@ pub enum Keyword {
     Async,    /* 'async' */
     Await,    /* 'await' */
     Asm,      /* 'asm' */
-    Assert,   /* 'assert' */
 
     /* Literals */
     Null,  /* 'null' */
@@ -198,7 +197,6 @@ impl std::fmt::Display for Keyword {
             Keyword::Async => write!(f, "async"),
             Keyword::Await => write!(f, "await"),
             Keyword::Asm => write!(f, "asm"),
-            Keyword::Assert => write!(f, "assert"),
 
             Keyword::Null => write!(f, "null"),
             Keyword::True => write!(f, "true"),
@@ -697,7 +695,6 @@ mod tests {
                 Keyword::Async => "async",
                 Keyword::Await => "await",
                 Keyword::Asm => "asm",
-                Keyword::Assert => "assert",
                 Keyword::Null => "null",
                 Keyword::True => "true",
                 Keyword::False => "false",

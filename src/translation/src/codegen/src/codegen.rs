@@ -158,8 +158,8 @@ impl Codegen {
     }
 
     fn create_global_function(
-        function: &kind::Function,
-        module: &mut ObjectModule,
+        _function: &kind::Function,
+        _module: &mut ObjectModule,
     ) -> Result<FuncId, CodegenError> {
         // TODO: Generate code for the function
 

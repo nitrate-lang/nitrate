@@ -6,12 +6,12 @@ use nitrate_tokenize::NotNan;
 use std::sync::Arc;
 
 use crate::builder_helper::{
-    ArrayTypeBuilder, AssertBuilder, AwaitBuilder, BinExprBuilder, BlockBuilder, BreakBuilder,
-    CallBuilder, ContinueBuilder, DoWhileLoopBuilder, ForEachBuilder, FunctionBuilder,
-    FunctionTypeBuilder, GenericTypeBuilder, IfBuilder, IndexAccessBuilder, IntegerBuilder,
-    ListBuilder, ManagedRefTypeBuilder, MapTypeBuilder, ObjectBuilder, RefinementTypeBuilder,
-    ReturnBuilder, ScopeBuilder, SliceTypeBuilder, StructTypeBuilder, SwitchBuilder,
-    TupleTypeBuilder, UnaryExprBuilder, UnmanagedRefTypeBuilder, VariableBuilder, WhileLoopBuilder,
+    ArrayTypeBuilder, AwaitBuilder, BinExprBuilder, BlockBuilder, BreakBuilder, CallBuilder,
+    ContinueBuilder, DoWhileLoopBuilder, ForEachBuilder, FunctionBuilder, FunctionTypeBuilder,
+    GenericTypeBuilder, IfBuilder, IndexAccessBuilder, IntegerBuilder, ListBuilder,
+    ManagedRefTypeBuilder, MapTypeBuilder, ObjectBuilder, RefinementTypeBuilder, ReturnBuilder,
+    ScopeBuilder, SliceTypeBuilder, StructTypeBuilder, SwitchBuilder, TupleTypeBuilder,
+    UnaryExprBuilder, UnmanagedRefTypeBuilder, VariableBuilder, WhileLoopBuilder,
 };
 
 #[derive(Debug, Default)]
@@ -202,11 +202,6 @@ impl Builder {
     #[must_use]
     pub fn create_await() -> AwaitBuilder {
         AwaitBuilder::new()
-    }
-
-    #[must_use]
-    pub fn create_assert() -> AssertBuilder {
-        AssertBuilder::new()
     }
 
     #[must_use]

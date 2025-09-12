@@ -350,7 +350,6 @@ impl<'a> Lexer<'a> {
             b"async" => Some(Keyword::Async),
             b"await" => Some(Keyword::Await),
             b"asm" => Some(Keyword::Asm),
-            b"assert" => Some(Keyword::Assert),
 
             b"null" => Some(Keyword::Null),
             b"true" => Some(Keyword::True),

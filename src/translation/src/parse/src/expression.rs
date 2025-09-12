@@ -1,5 +1,5 @@
 use super::parse::Parser;
-use interned_string::{IString, Intern};
+use interned_string::IString;
 use log::error;
 use nitrate_structure::{
     Builder,
@@ -200,7 +200,6 @@ impl Parser<'_, '_> {
             Token::Keyword(Keyword::Foreach) => self.parse_foreach(),
             Token::Keyword(Keyword::Await) => self.parse_await(),
             Token::Keyword(Keyword::Asm) => self.parse_asm(),
-            Token::Keyword(Keyword::Assert) => self.parse_assert(),
 
             Token::Keyword(keyword) => {
                 self.set_failed_bit();
@@ -713,46 +712,6 @@ impl Parser<'_, '_> {
         self.set_failed_bit();
         error!("Asm expression parsing not implemented yet");
         None
-    }
-
-    fn parse_assert(&mut self) -> Option<Expr> {
-        assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Assert));
-        self.lexer.skip_tok();
-
-        if !self.lexer.skip_if(&Token::Punct(Punct::LeftParen)) {
-            self.set_failed_bit();
-            error!(
-                "[P????]: assert: expected opening parenthesis\n--> {}",
-                self.lexer.sync_position()
-            );
-            return None;
-        }
-
-        self.lexer.skip_if(&Token::Punct(Punct::Comma));
-        let condition = self.parse_expression()?;
-        self.lexer.skip_if(&Token::Punct(Punct::Comma));
-
-        let message = if self.lexer.next_is(&Token::Punct(Punct::RightParen)) {
-            Builder::create_string("".intern())
-        } else {
-            self.parse_expression()?
-        };
-
-        if !self.lexer.skip_if(&Token::Punct(Punct::RightParen)) {
-            self.set_failed_bit();
-            error!(
-                "[P????]: assert: expected closing parenthesis\n--> {}",
-                self.lexer.sync_position()
-            );
-            return None;
-        }
-
-        Some(
-            Builder::create_assert()
-                .with_condition(condition)
-                .with_message(message)
-                .build(),
-        )
     }
 
     fn parse_type_alias(&mut self) -> Option<Expr> {
