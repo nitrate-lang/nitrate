@@ -24,12 +24,14 @@ pub struct Reference {
 }
 
 #[derive(Serialize, Deserialize)]
-pub enum StructAttribute {}
+pub enum StructAttribute {
+    Packed,
+}
 
 impl StructAttribute {
     fn dump(&self, o: &mut dyn std::fmt::Write) -> Result<(), std::fmt::Error> {
         match self {
-            _ => Ok(()),
+            StructAttribute::Packed => write!(o, "packed"),
         }
     }
 }
@@ -41,12 +43,14 @@ pub struct StructType {
 }
 
 #[derive(Serialize, Deserialize)]
-pub enum EnumAttribute {}
+pub enum EnumAttribute {
+    Packed,
+}
 
 impl EnumAttribute {
     fn dump(&self, o: &mut dyn std::fmt::Write) -> Result<(), std::fmt::Error> {
         match self {
-            _ => Ok(()),
+            EnumAttribute::Packed => write!(o, "packed"),
         }
     }
 }
@@ -58,12 +62,14 @@ pub struct EnumType {
 }
 
 #[derive(Serialize, Deserialize)]
-pub struct FunctionAttribute {}
+pub enum FunctionAttribute {
+    Variadic,
+}
 
 impl FunctionAttribute {
     fn dump(&self, o: &mut dyn std::fmt::Write) -> Result<(), std::fmt::Error> {
         match self {
-            _ => Ok(()),
+            FunctionAttribute::Variadic => write!(o, "variadic"),
         }
     }
 }
