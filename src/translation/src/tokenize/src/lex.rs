@@ -344,7 +344,6 @@ impl<'a> Lexer<'a> {
             b"break" => Some(Keyword::Break),
             b"continue" => Some(Keyword::Continue),
             b"ret" => Some(Keyword::Ret),
-            b"foreach" => Some(Keyword::Foreach),
             b"async" => Some(Keyword::Async),
             b"await" => Some(Keyword::Await),
             b"asm" => Some(Keyword::Asm),

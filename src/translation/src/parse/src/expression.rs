@@ -189,7 +189,6 @@ impl Parser<'_, '_> {
             Token::Keyword(Keyword::Break) => self.parse_break(),
             Token::Keyword(Keyword::Continue) => self.parse_continue(),
             Token::Keyword(Keyword::Ret) => self.parse_return(),
-            Token::Keyword(Keyword::Foreach) => self.parse_foreach(),
             Token::Keyword(Keyword::Await) => self.parse_await(),
             Token::Keyword(Keyword::Asm) => self.parse_asm(),
 
@@ -678,13 +677,6 @@ impl Parser<'_, '_> {
         };
 
         Some(Builder::create_return().with_value(value).build())
-    }
-
-    fn parse_foreach(&mut self) -> Option<Expr> {
-        // TODO: foreach expression parsing logic
-        self.set_failed_bit();
-        error!("Foreach expression parsing not implemented yet");
-        None
     }
 
     fn parse_await(&mut self) -> Option<Expr> {

@@ -126,7 +126,6 @@ pub enum Keyword {
     Break,    /* 'break' */
     Continue, /* 'continue' */
     Ret,      /* 'ret' */
-    Foreach,  /* 'foreach' */
     Async,    /* 'async' */
     Await,    /* 'await' */
     Asm,      /* 'asm' */
@@ -193,7 +192,6 @@ impl std::fmt::Display for Keyword {
             Keyword::Break => write!(f, "break"),
             Keyword::Continue => write!(f, "continue"),
             Keyword::Ret => write!(f, "ret"),
-            Keyword::Foreach => write!(f, "foreach"),
             Keyword::Async => write!(f, "async"),
             Keyword::Await => write!(f, "await"),
             Keyword::Asm => write!(f, "asm"),
@@ -687,7 +685,6 @@ mod tests {
                 Keyword::Break => "break",
                 Keyword::Continue => "continue",
                 Keyword::Ret => "ret",
-                Keyword::Foreach => "foreach",
                 Keyword::Async => "async",
                 Keyword::Await => "await",
                 Keyword::Asm => "asm",
