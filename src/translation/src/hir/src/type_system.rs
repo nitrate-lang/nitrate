@@ -3,6 +3,8 @@ use interned_string::IString;
 use serde::{Deserialize, Serialize};
 use std::num::NonZeroU32;
 
+use crate::{TypeId, TypeStore};
+
 #[derive(Serialize, Deserialize)]
 pub enum Lifetime {
     ManuallyManaged,
@@ -16,8 +18,8 @@ pub enum Lifetime {
 #[derive(Serialize, Deserialize)]
 pub struct Reference {
     pub lifetime: Lifetime,
-    pub mutable: bool,
     pub iso: bool,
+    pub mutable: bool,
     pub to: TypeId,
 }
 
@@ -86,9 +88,8 @@ pub enum Type {
     Enum(Box<EnumType>),
 
     /* ----------------------------------------------------- */
-    /* Function Types                                        */
+    /* Function Type                                         */
     Function(Box<FunctionType>),
-    Closure(Box<FunctionType>),
 
     /* ----------------------------------------------------- */
     /* Reference Type                                        */
@@ -158,52 +159,12 @@ impl Type {
         matches!(self, Type::Enum { .. })
     }
 
-    pub fn is_nonclosure_function(&self) -> bool {
+    pub fn is_function(&self) -> bool {
         matches!(self, Type::Function(_))
-    }
-
-    pub fn is_closure(&self) -> bool {
-        matches!(self, Type::Closure(_))
-    }
-
-    pub fn is_function_or_closure(&self) -> bool {
-        matches!(self, Type::Function(_) | Type::Closure(_))
     }
 
     pub fn is_reference(&self) -> bool {
         matches!(self, Type::Reference(_))
-    }
-}
-
-#[derive(Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
-pub struct TypeId {
-    id: u32,
-}
-
-#[derive(Default)]
-pub struct TypeStore {
-    types: HashMap<TypeId, Type>,
-    next_id: u32,
-}
-
-impl TypeStore {
-    pub fn new() -> Self {
-        Self::default()
-    }
-
-    pub fn store(&mut self, ty: Type) -> TypeId {
-        let id = self.next_id;
-        self.types.insert(TypeId { id }, ty);
-        self.next_id += 1;
-        TypeId { id }
-    }
-
-    pub fn get(&self, id: &TypeId) -> Option<&Type> {
-        self.types.get(id)
-    }
-
-    pub fn get_mut(&mut self, id: &TypeId) -> Option<&mut Type> {
-        self.types.get_mut(id)
     }
 }
 
@@ -328,12 +289,8 @@ impl Type {
                 write!(o, " }}")
             }
 
-            Type::Function(func_type) | Type::Closure(func_type) => {
-                if matches!(self, Type::Closure(_)) {
-                    write!(o, "closure")?;
-                } else {
-                    write!(o, "fn")?;
-                }
+            Type::Function(func_type) => {
+                write!(o, "fn")?;
 
                 if !func_type.attributes.is_empty() {
                     write!(o, " [")?;

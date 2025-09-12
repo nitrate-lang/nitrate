@@ -1,9 +1,9 @@
 #![warn(clippy::pedantic)]
 
 mod expression;
-mod types;
+mod type_store;
 
-pub mod kind {
-    pub use super::expression::*;
-    pub use super::types::*;
-}
+pub mod type_system;
+pub use type_store::{TypeId, TypeStore};
+
+pub use expression::*;
