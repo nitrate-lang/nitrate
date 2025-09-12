@@ -25,11 +25,11 @@ impl TypeStore {
         TypeId { id }
     }
 
-    pub fn get(&self, id: &TypeId) -> &Type {
+    fn get(&self, id: &TypeId) -> &Type {
         self.types.get(id).expect("TypeId not found in TypeStore")
     }
 
-    pub fn get_mut(&mut self, id: &TypeId) -> &mut Type {
+    fn get_mut(&mut self, id: &TypeId) -> &mut Type {
         self.types
             .get_mut(id)
             .expect("TypeId not found in TypeStore")

@@ -400,9 +400,7 @@ pub fn get_align_of(
 
         Type::Array { element_type, .. } => {
             // Array alignment is the same as its element type alignment
-
-            let element_type = storage.get(element_type);
-            get_align_of(element_type, storage, ptr_size)
+            get_align_of(&storage[element_type], storage, ptr_size)
         }
 
         Type::Tuple { elements } => {
@@ -411,8 +409,7 @@ pub fn get_align_of(
             let mut max_align = 1;
 
             for element in elements {
-                let element = storage.get(element);
-                let element_align = get_align_of(element, storage, ptr_size)?;
+                let element_align = get_align_of(&storage[element], storage, ptr_size)?;
 
                 if element_align > max_align {
                     max_align = element_align;
@@ -424,9 +421,7 @@ pub fn get_align_of(
 
         Type::Slice { element_type } => {
             // Slice alignment is the same as its element type alignment
-
-            let element_type = storage.get(element_type);
-            get_align_of(element_type, storage, ptr_size)
+            get_align_of(&storage[element_type], storage, ptr_size)
         }
 
         Type::Struct(struct_type) => {
@@ -440,8 +435,7 @@ pub fn get_align_of(
             let mut max_align = 1;
 
             for (_, field_type) in &struct_type.fields {
-                let field_type = storage.get(field_type);
-                let field_align = get_align_of(field_type, storage, ptr_size)?;
+                let field_align = get_align_of(&storage[field_type], storage, ptr_size)?;
 
                 if field_align > max_align {
                     max_align = field_align;
@@ -457,8 +451,7 @@ pub fn get_align_of(
             let mut max_align = 1;
 
             for (_, variant_type) in &enum_type.variants {
-                let variant_type = storage.get(variant_type);
-                let variant_align = get_align_of(variant_type, storage, ptr_size)?;
+                let variant_align = get_align_of(&storage[variant_type], storage, ptr_size)?;
 
                 if variant_align > max_align {
                     max_align = variant_align;
@@ -520,7 +513,7 @@ pub fn get_size_of(
             // So the size of an array is the size of its element type
             // rounded up to the next multiple of its alignment, times the length.
 
-            let element_type = storage.get(element_type);
+            let element_type = &storage[element_type];
 
             let element_align = match get_align_of(element_type, storage, ptr_size) {
                 Ok(align) => Ok(align),
@@ -541,7 +534,7 @@ pub fn get_size_of(
             let mut offset = 0_u64;
 
             for element in elements {
-                let element = storage.get(element);
+                let element = &storage[element];
 
                 let element_align = match get_align_of(element, storage, ptr_size) {
                     Ok(align) => Ok(align),
@@ -572,9 +565,7 @@ pub fn get_size_of(
                 let mut total_size = 0_u64;
 
                 for (_, field_type) in &struct_type.fields {
-                    let field_type = storage.get(field_type);
-                    let field_size = get_size_of(field_type, storage, ptr_size)?;
-
+                    let field_size = get_size_of(&storage[field_type], storage, ptr_size)?;
                     total_size += field_size;
                 }
 
@@ -584,7 +575,7 @@ pub fn get_size_of(
             let mut offset = 0_u64;
 
             for (_, field_type) in &struct_type.fields {
-                let field_type = storage.get(field_type);
+                let field_type = &storage[field_type];
 
                 let field_align = match get_align_of(field_type, storage, ptr_size) {
                     Ok(align) => Ok(align),
@@ -608,9 +599,7 @@ pub fn get_size_of(
             let mut max_variant_size = 0_u64;
 
             for (_, variant_type) in &enum_type.variants {
-                let variant_type = storage.get(variant_type);
-                let variant_size = get_size_of(variant_type, storage, ptr_size)?;
-
+                let variant_size = get_size_of(&storage[variant_type], storage, ptr_size)?;
                 if variant_size > max_variant_size {
                     max_variant_size = variant_size;
                 }
