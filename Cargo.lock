@@ -828,6 +828,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "nitrate_hir"
+version = "0.1.0"
+dependencies = [
+ "blake3",
+ "hashbrown 0.16.0",
+ "interned-string",
+ "log",
+ "ordered-float",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "nitrate_optimization"
 version = "0.1.0"
 dependencies = [
@@ -889,6 +902,7 @@ dependencies = [
  "nitrate_codegen",
  "nitrate_diagnosis",
  "nitrate_evaluate",
+ "nitrate_hir",
  "nitrate_optimization",
  "nitrate_parse",
  "nitrate_resolve",
