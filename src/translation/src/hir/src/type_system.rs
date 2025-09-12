@@ -197,18 +197,6 @@ impl Type {
 }
 
 impl Type {
-    fn dump_or_placeholder(
-        id: &TypeId,
-        storage: &TypeStore,
-        o: &mut dyn std::fmt::Write,
-    ) -> Result<(), std::fmt::Error> {
-        if let Some(ty) = storage.get(id) {
-            ty.dump(storage, o)
-        } else {
-            write!(o, "?")
-        }
-    }
-
     pub fn dump(
         &self,
         storage: &TypeStore,
@@ -241,7 +229,7 @@ impl Type {
 
             Type::Array { element_type, len } => {
                 write!(o, "[")?;
-                Self::dump_or_placeholder(element_type, storage, o)?;
+                storage[element_type].dump(storage, o)?;
                 write!(o, "; {len}]")
             }
 
@@ -252,14 +240,14 @@ impl Type {
                         write!(o, ", ")?;
                     }
 
-                    Self::dump_or_placeholder(element, storage, o)?;
+                    storage[element].dump(storage, o)?;
                 }
                 write!(o, ")")
             }
 
             Type::Slice { element_type } => {
                 write!(o, "[")?;
-                Self::dump_or_placeholder(element_type, storage, o)?;
+                storage[element_type].dump(storage, o)?;
                 write!(o, "]")
             }
 
@@ -285,7 +273,7 @@ impl Type {
                     }
 
                     write!(o, "{name}: ")?;
-                    Self::dump_or_placeholder(ty, storage, o)?;
+                    storage[ty].dump(storage, o)?;
                 }
                 write!(o, " }}")
             }
@@ -312,7 +300,7 @@ impl Type {
                     }
 
                     write!(o, "{name}: ")?;
-                    Self::dump_or_placeholder(ty, storage, o)?;
+                    storage[ty].dump(storage, o)?;
                 }
                 write!(o, " }}")
             }
@@ -338,10 +326,10 @@ impl Type {
                         write!(o, ", ")?;
                     }
 
-                    Self::dump_or_placeholder(param, storage, o)?;
+                    storage[param].dump(storage, o)?;
                 }
                 write!(o, ") -> ")?;
-                Self::dump_or_placeholder(&func_type.return_type, storage, o)
+                storage[&func_type.return_type].dump(storage, o)
             }
 
             Type::Reference(reference) => {
@@ -366,7 +354,7 @@ impl Type {
                     write!(o, "const ")?;
                 }
 
-                Self::dump_or_placeholder(&reference.to, storage, o)
+                storage[&reference.to].dump(storage, o)
             }
         }
     }
@@ -393,7 +381,6 @@ pub struct AlignofOptions {
 
 pub enum AlignofError {
     UnknownAlignment,
-    Storage404,
 }
 
 pub fn get_align_of(
@@ -414,7 +401,7 @@ pub fn get_align_of(
         Type::Array { element_type, .. } => {
             // Array alignment is the same as its element type alignment
 
-            let element_type = storage.get(element_type).ok_or(AlignofError::Storage404)?;
+            let element_type = storage.get(element_type);
             get_align_of(element_type, storage, ptr_size)
         }
 
@@ -424,7 +411,7 @@ pub fn get_align_of(
             let mut max_align = 1;
 
             for element in elements {
-                let element = storage.get(element).ok_or(AlignofError::Storage404)?;
+                let element = storage.get(element);
                 let element_align = get_align_of(element, storage, ptr_size)?;
 
                 if element_align > max_align {
@@ -438,7 +425,7 @@ pub fn get_align_of(
         Type::Slice { element_type } => {
             // Slice alignment is the same as its element type alignment
 
-            let element_type = storage.get(element_type).ok_or(AlignofError::Storage404)?;
+            let element_type = storage.get(element_type);
             get_align_of(element_type, storage, ptr_size)
         }
 
@@ -453,7 +440,7 @@ pub fn get_align_of(
             let mut max_align = 1;
 
             for (_, field_type) in &struct_type.fields {
-                let field_type = storage.get(field_type).ok_or(AlignofError::Storage404)?;
+                let field_type = storage.get(field_type);
                 let field_align = get_align_of(field_type, storage, ptr_size)?;
 
                 if field_align > max_align {
@@ -470,7 +457,7 @@ pub fn get_align_of(
             let mut max_align = 1;
 
             for (_, variant_type) in &enum_type.variants {
-                let variant_type = storage.get(variant_type).ok_or(AlignofError::Storage404)?;
+                let variant_type = storage.get(variant_type);
                 let variant_align = get_align_of(variant_type, storage, ptr_size)?;
 
                 if variant_align > max_align {
@@ -508,7 +495,6 @@ pub fn get_align_of(
 }
 pub enum SizeofError {
     UnknownSize,
-    Storage404,
 }
 
 pub fn get_size_of(
@@ -534,12 +520,11 @@ pub fn get_size_of(
             // So the size of an array is the size of its element type
             // rounded up to the next multiple of its alignment, times the length.
 
-            let element_type = storage.get(element_type).ok_or(SizeofError::Storage404)?;
+            let element_type = storage.get(element_type);
 
             let element_align = match get_align_of(element_type, storage, ptr_size) {
                 Ok(align) => Ok(align),
 
-                Err(AlignofError::Storage404) => Err(SizeofError::Storage404),
                 Err(AlignofError::UnknownAlignment) => Err(SizeofError::UnknownSize),
             }?;
 
@@ -556,12 +541,11 @@ pub fn get_size_of(
             let mut offset = 0_u64;
 
             for element in elements {
-                let element = storage.get(element).ok_or(SizeofError::Storage404)?;
+                let element = storage.get(element);
 
                 let element_align = match get_align_of(element, storage, ptr_size) {
                     Ok(align) => Ok(align),
 
-                    Err(AlignofError::Storage404) => Err(SizeofError::Storage404),
                     Err(AlignofError::UnknownAlignment) => Err(SizeofError::UnknownSize),
                 }?;
 
@@ -588,7 +572,7 @@ pub fn get_size_of(
                 let mut total_size = 0_u64;
 
                 for (_, field_type) in &struct_type.fields {
-                    let field_type = storage.get(field_type).ok_or(SizeofError::Storage404)?;
+                    let field_type = storage.get(field_type);
                     let field_size = get_size_of(field_type, storage, ptr_size)?;
 
                     total_size += field_size;
@@ -600,12 +584,11 @@ pub fn get_size_of(
             let mut offset = 0_u64;
 
             for (_, field_type) in &struct_type.fields {
-                let field_type = storage.get(field_type).ok_or(SizeofError::Storage404)?;
+                let field_type = storage.get(field_type);
 
                 let field_align = match get_align_of(field_type, storage, ptr_size) {
                     Ok(align) => Ok(align),
 
-                    Err(AlignofError::Storage404) => Err(SizeofError::Storage404),
                     Err(AlignofError::UnknownAlignment) => Err(SizeofError::UnknownSize),
                 }?;
 
@@ -625,7 +608,7 @@ pub fn get_size_of(
             let mut max_variant_size = 0_u64;
 
             for (_, variant_type) in &enum_type.variants {
-                let variant_type = storage.get(variant_type).ok_or(SizeofError::Storage404)?;
+                let variant_type = storage.get(variant_type);
                 let variant_size = get_size_of(variant_type, storage, ptr_size)?;
 
                 if variant_size > max_variant_size {
