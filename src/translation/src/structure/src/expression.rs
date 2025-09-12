@@ -132,7 +132,6 @@ pub enum UnaryExprOp {
     /*----------------------------------------------------------------*
      * Type System Operators                                          *
      *----------------------------------------------------------------*/
-    Sizeof,  /* 'sizeof':     "Size Of Operator" */
     Alignof, /* 'alignof':    "Alignment Of Operator" */
     Typeof,  /* 'typeof':     "Type Of Operator" */
 }
@@ -148,7 +147,6 @@ impl TryFrom<Op> for UnaryExprOp {
             Op::BitAnd => Ok(UnaryExprOp::AddressOf),
             Op::BitNot => Ok(UnaryExprOp::BitNot),
             Op::LogicNot => Ok(UnaryExprOp::LogicNot),
-            Op::Sizeof => Ok(UnaryExprOp::Sizeof),
             Op::Typeof => Ok(UnaryExprOp::Typeof),
             Op::Alignof => Ok(UnaryExprOp::Alignof),
 
@@ -357,7 +355,7 @@ impl TryFrom<Op> for BinExprOp {
             Op::BlockArrow => Ok(BinExprOp::BlockArrow),
             Op::Range => Ok(BinExprOp::Range),
 
-            Op::BitNot | Op::LogicNot | Op::Sizeof | Op::Typeof | Op::Alignof => Err(()),
+            Op::BitNot | Op::LogicNot | Op::Typeof | Op::Alignof => Err(()),
         }
     }
 }

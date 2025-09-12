@@ -318,7 +318,6 @@ pub enum Op {
      *----------------------------------------------------------------*/
     As,        /* 'as':         "Type Cast Operator" */
     BitcastAs, /* 'bitcast_as': "Bitcast Operator" */
-    Sizeof,    /* 'sizeof':     "Size Of Operator" */
     Alignof,   /* 'alignof':    "Alignment Of Operator" */
     Typeof,    /* 'typeof':     "Type Of Operator" */
 
@@ -385,7 +384,6 @@ impl std::fmt::Display for Op {
 
             Op::As => write!(f, "as"),
             Op::BitcastAs => write!(f, "bitcast_as"),
-            Op::Sizeof => write!(f, "sizeof"),
             Op::Alignof => write!(f, "alignof"),
             Op::Typeof => write!(f, "typeof"),
 
@@ -787,7 +785,6 @@ mod tests {
                 Op::SetLogicXor => "^^=",
                 Op::As => "as",
                 Op::BitcastAs => "bitcast_as",
-                Op::Sizeof => "sizeof",
                 Op::Alignof => "alignof",
                 Op::Typeof => "typeof",
                 Op::Dot => ".",
