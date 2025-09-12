@@ -1,4 +1,4 @@
-use hashbrown::HashMap;
+use hashbrown::{HashMap, HashSet};
 use interned_string::IString;
 use serde::{Deserialize, Serialize};
 use std::num::NonZeroU32;
@@ -23,7 +23,7 @@ pub struct Reference {
     pub to: TypeId,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub enum StructAttribute {
     Packed,
 }
@@ -38,11 +38,11 @@ impl StructAttribute {
 
 #[derive(Serialize, Deserialize)]
 pub struct StructType {
-    pub attributes: Vec<StructAttribute>,
+    pub attributes: HashSet<StructAttribute>,
     pub fields: HashMap<IString, TypeId>,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub enum EnumAttribute {
     Packed,
 }
@@ -57,11 +57,11 @@ impl EnumAttribute {
 
 #[derive(Serialize, Deserialize)]
 pub struct EnumType {
-    pub attributes: Vec<EnumAttribute>,
+    pub attributes: HashSet<EnumAttribute>,
     pub variants: HashMap<IString, TypeId>,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub enum FunctionAttribute {
     Variadic,
 }
@@ -76,7 +76,7 @@ impl FunctionAttribute {
 
 #[derive(Serialize, Deserialize)]
 pub struct FunctionType {
-    pub attributes: Vec<FunctionAttribute>,
+    pub attributes: HashSet<FunctionAttribute>,
     pub parameters: Vec<TypeId>,
     pub return_type: TypeId,
 }
@@ -377,5 +377,127 @@ impl Type {
         let mut buf = String::new();
         self.dump(storage, &mut buf).ok();
         buf
+    }
+}
+
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+pub enum PointerSize {
+    U8 = 1,
+    U16 = 2,
+    U32 = 4,
+    U64 = 8,
+    U128 = 16,
+}
+
+pub struct AlignofOptions {
+    pub usize_size: PointerSize,
+}
+
+pub enum AlignofError {
+    UnknownAlignment,
+    Storage404,
+}
+
+pub fn get_align_of(
+    ty: &Type,
+    storage: &TypeStore,
+    ptr_size: PointerSize,
+) -> Result<u64, AlignofError> {
+    match ty {
+        Type::Never => Ok(1),
+        Type::Bool => Ok(1),
+        Type::U8 | Type::I8 | Type::F8 => Ok(1),
+        Type::U16 | Type::I16 | Type::F16 => Ok(2),
+        Type::U32 | Type::I32 | Type::F32 => Ok(4),
+        Type::U64 | Type::I64 | Type::F64 => Ok(8),
+        Type::U128 | Type::I128 | Type::F128 => Ok(16),
+        Type::USize | Type::ISize => Ok(ptr_size as u64),
+
+        Type::Array { element_type, .. } => {
+            // Array alignment is the same as its element type alignment
+
+            let element_type = storage.get(element_type).ok_or(AlignofError::Storage404)?;
+            get_align_of(element_type, storage, ptr_size)
+        }
+
+        Type::Tuple { elements } => {
+            // Tuple alignment is the max alignment among its element types
+
+            let mut max_align = 1;
+
+            for element in elements {
+                let element = storage.get(element).ok_or(AlignofError::Storage404)?;
+                let element_align = get_align_of(element, storage, ptr_size)?;
+
+                if element_align > max_align {
+                    max_align = element_align;
+                }
+            }
+
+            Ok(max_align)
+        }
+
+        Type::Slice { element_type } => {
+            // Slice alignment is the same as its element type alignment
+
+            let element_type = storage.get(element_type).ok_or(AlignofError::Storage404)?;
+            get_align_of(element_type, storage, ptr_size)
+        }
+
+        Type::Struct(struct_type) => {
+            // Struct alignment is the same as its largest field alignment
+            // unless it is packed, in which case it is 1
+
+            if struct_type.attributes.contains(&StructAttribute::Packed) {
+                return Ok(1);
+            }
+
+            let mut max_align = 1;
+
+            for (_, field_type) in &struct_type.fields {
+                let field_type = storage.get(field_type).ok_or(AlignofError::Storage404)?;
+                let field_align = get_align_of(field_type, storage, ptr_size)?;
+
+                if field_align > max_align {
+                    max_align = field_align;
+                }
+            }
+
+            Ok(max_align)
+        }
+
+        Type::Enum(enum_type) => {
+            // Enum alignment is the same as its largest variant alignment
+            // unless it is packed, in which case it is 1
+
+            if enum_type.attributes.contains(&EnumAttribute::Packed) {
+                return Ok(1);
+            }
+
+            let mut max_align = 1;
+
+            for (_, variant_type) in &enum_type.variants {
+                let variant_type = storage.get(variant_type).ok_or(AlignofError::Storage404)?;
+                let variant_align = get_align_of(variant_type, storage, ptr_size)?;
+
+                if variant_align > max_align {
+                    max_align = variant_align;
+                }
+            }
+
+            Ok(max_align)
+        }
+
+        Type::Function(_) => {
+            // A Type::Function represents the literal machine code or whatever,
+            // like just like a slice of bytes represents the literal bytes in memory.
+            // This is not the same as a reference to a function which has an alignment.
+            // We don't know the alignment of machine code, it could vary by platform.
+            // This is why the function type itself has no alignment.
+
+            Err(AlignofError::UnknownAlignment)
+        }
+
+        Type::Reference(_) => Ok(ptr_size as u64),
     }
 }
