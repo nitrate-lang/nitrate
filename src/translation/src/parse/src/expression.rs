@@ -3,9 +3,10 @@ use interned_string::IString;
 use log::error;
 use nitrate_parsetree::{
     Builder,
-    kind::{BinExprOp, CallArguments, Expr, UnaryExprOp},
+    kind::{BinExprOp, CallArguments, Expr, Path, Type, UnaryExprOp},
 };
 use nitrate_tokenize::{Keyword, Op, Punct, Token};
+use smallvec::smallvec;
 
 type Precedence = u32;
 
@@ -384,7 +385,9 @@ impl Parser<'_, '_> {
 
     fn parse_literal_suffix(&mut self, lit: Expr) -> Expr {
         let type_name = match self.lexer.peek_t() {
-            Token::Name(name) => Some(Builder::create_type_name([name].to_vec())),
+            Token::Name(name) => Some(Type::TypeName(Path {
+                path: smallvec![name],
+            })),
 
             Token::Keyword(Keyword::Bool) => Some(Builder::get_bool()),
             Token::Keyword(Keyword::U8) => Some(Builder::get_u8()),

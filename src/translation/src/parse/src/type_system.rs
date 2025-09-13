@@ -3,12 +3,9 @@ use std::ops::Deref;
 use super::parse::Parser;
 use interned_string::IString;
 use log::{error, info};
-use nitrate_parsetree::{
-    Builder,
-    kind::{
-        ArrayType, Expr, FunctionParameter, FunctionType, GenericArgument, GenericType, Lifetime,
-        MapType, Path, ReferenceType, RefinementType, SliceType, TupleType, Type,
-    },
+use nitrate_parsetree::kind::{
+    ArrayType, Expr, FunctionParameter, FunctionType, GenericArgument, GenericType, Lifetime,
+    MapType, Path, ReferenceType, RefinementType, SliceType, TupleType, Type,
 };
 use nitrate_tokenize::{Keyword, Op, Punct, Token};
 
