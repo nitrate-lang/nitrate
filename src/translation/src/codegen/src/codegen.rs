@@ -155,7 +155,7 @@ impl Codegen {
     }
 
     fn create_global_function(
-        _function: &kind::Function,
+        _function: &kind::AnonymousFunction,
         _module: &mut ObjectModule,
     ) -> Result<FuncId, CodegenError> {
         // TODO: Generate code for the function

@@ -2,9 +2,9 @@ use super::parse::Parser;
 use interned_string::IString;
 use log::error;
 use nitrate_parsetree::kind::{
-    Await, BinExpr, BinExprOp, Block, Break, Call, CallArguments, Continue, DoWhileLoop, Expr,
-    Function, If, IndexAccess, Integer, List, Path, Return, Type, UnaryExpr, UnaryExprOp, Variable,
-    VariableKind, WhileLoop,
+    AnonymousFunction, Await, BinExpr, BinExprOp, Block, Break, Call, CallArguments, Continue,
+    DoWhileLoop, Expr, If, IndexAccess, Integer, List, Path, Return, Type, UnaryExpr, UnaryExprOp,
+    Variable, VariableKind, WhileLoop,
 };
 use nitrate_tokenize::{Keyword, Op, Punct, Token};
 use smallvec::smallvec;
@@ -162,9 +162,9 @@ impl Parser<'_, '_> {
 
             Token::Name(name) => {
                 self.lexer.skip_tok();
-                Some(Expr::Path(Path {
+                Some(Expr::Path(Box::new(Path {
                     path: smallvec![name],
-                }))
+                })))
             }
 
             Token::Keyword(Keyword::True) => {
@@ -512,7 +512,7 @@ impl Parser<'_, '_> {
                 return None;
             }
 
-            return Some(Expr::TypeInfo(for_type));
+            return Some(Expr::TypeInfo(Box::new(for_type)));
         }
 
         self.lexer.rewind(rewind_pos);
@@ -538,7 +538,10 @@ impl Parser<'_, '_> {
                     return None;
                 };
 
-                Some(else_if_branch)
+                Some(Block {
+                    elements: vec![else_if_branch],
+                    ends_with_semi: false,
+                })
             } else {
                 Some(self.parse_block()?)
             }
@@ -728,11 +731,11 @@ impl Parser<'_, '_> {
 
     fn parse_function(&mut self) -> Option<Expr> {
         if self.lexer.peek_t() == Token::Punct(Punct::LeftBrace) {
-            let definition = Some(self.parse_block()?);
+            let definition = self.parse_block()?;
 
             let infer_type = Type::InferType;
 
-            return Some(Expr::Function(Box::new(Function {
+            return Some(Expr::Function(Box::new(AnonymousFunction {
                 attributes: Vec::new(),
                 parameters: Vec::new(),
                 return_type: infer_type,
@@ -753,14 +756,23 @@ impl Parser<'_, '_> {
         };
 
         let definition = if self.lexer.next_is(&Token::Punct(Punct::LeftBrace)) {
-            Some(self.parse_block()?)
+            self.parse_block()?
         } else if self.lexer.skip_if(&Token::Op(Op::BlockArrow)) {
-            Some(self.parse_expression()?)
+            let expr = self.parse_expression()?;
+            Block {
+                elements: vec![expr],
+                ends_with_semi: false,
+            }
         } else {
-            None
+            self.set_failed_bit();
+            error!(
+                "[P????]: function: expected function body\n--> {}",
+                self.lexer.sync_position()
+            );
+            return None;
         };
 
-        let function = Expr::Function(Box::new(Function {
+        let function = Expr::Function(Box::new(AnonymousFunction {
             attributes,
             parameters,
             return_type,
@@ -781,7 +793,6 @@ impl Parser<'_, '_> {
             self.lexer.skip_if(&Token::Keyword(Keyword::Const));
         }
 
-        let name_pos = self.lexer.peek_tok().start();
         let variable_name = if let Some(name_token) = self.lexer.next_if_name() {
             name_token
         } else {
@@ -813,16 +824,6 @@ impl Parser<'_, '_> {
             initializer: initializer,
         }));
 
-        let current_scope = self.scope.clone();
-        if !self
-            .symtab
-            .insert(current_scope, variable_name.clone(), variable.clone())
-        {
-            self.set_failed_bit();
-            error!("[P????]: let: duplicate variable '{variable_name}'\n--> {name_pos}");
-            // Fallthrough
-        }
-
         Some(variable)
     }
 
@@ -837,7 +838,6 @@ impl Parser<'_, '_> {
             self.lexer.skip_if(&Token::Keyword(Keyword::Const));
         }
 
-        let name_pos = self.lexer.peek_tok().start();
         let variable_name = if let Some(name_token) = self.lexer.next_if_name() {
             name_token
         } else {
@@ -868,16 +868,6 @@ impl Parser<'_, '_> {
             attributes: attributes,
             initializer: initializer,
         }));
-
-        let current_scope = self.scope.clone();
-        if !self
-            .symtab
-            .insert(current_scope, variable_name.clone(), variable.clone())
-        {
-            self.set_failed_bit();
-            error!("[P????]: var: duplicate variable '{variable_name}'\n--> {name_pos}");
-            // Fallthrough
-        }
 
         Some(variable)
     }
@@ -1000,12 +990,12 @@ impl Parser<'_, '_> {
         Some(elements)
     }
 
-    pub(crate) fn parse_block(&mut self) -> Option<Expr> {
+    pub(crate) fn parse_block(&mut self) -> Option<Block> {
         let elements = self.parse_block_as_elements()?;
 
-        Some(Expr::Block(Box::new(Block {
+        Some(Block {
             elements,
             ends_with_semi: false,
-        })))
+        })
     }
 }

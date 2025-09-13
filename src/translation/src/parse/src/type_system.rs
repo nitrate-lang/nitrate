@@ -685,12 +685,8 @@ impl Parser<'_, '_> {
             Token::Op(Op::Mul) => self.parse_unmanaged_type(),
 
             Token::Punct(Punct::LeftBrace) => {
-                let block = match self.parse_block()? {
-                    Expr::Block(block) => block,
-                    _ => return None,
-                };
-
-                Some(Type::LatentType(block))
+                let block = self.parse_block()?;
+                Some(Type::LatentType(Box::new(block)))
             }
 
             Token::Keyword(Keyword::Fn) => self.parse_function_type(),

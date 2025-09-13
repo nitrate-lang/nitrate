@@ -1,12 +1,10 @@
 use interned_string::IString;
-use nitrate_parsetree::kind::Function;
-#[allow(unused_imports)]
-use nitrate_parsetree::kind::{Expr, QualifiedScope};
+use nitrate_parsetree::kind::{Item, NamedFunction, QualifiedScope};
 use std::collections::HashMap;
 
 #[derive(Debug, Clone, Default)]
 pub struct SymbolTable {
-    scopes: HashMap<QualifiedScope, HashMap<IString, Expr>>,
+    scopes: HashMap<QualifiedScope, HashMap<IString, Item>>,
 }
 
 impl SymbolTable {
@@ -14,7 +12,7 @@ impl SymbolTable {
         &mut self,
         symbol_scope: QualifiedScope,
         symbol_name: IString,
-        symbol: Expr,
+        symbol: Item,
     ) -> bool {
         self.scopes
             .entry(symbol_scope.clone())
@@ -24,7 +22,7 @@ impl SymbolTable {
     }
 
     #[must_use]
-    pub fn resolve(&self, current_scope: QualifiedScope, symbol_name: &IString) -> Option<Expr> {
+    pub fn resolve(&self, current_scope: QualifiedScope, symbol_name: &IString) -> Option<Item> {
         let mut search_scope = current_scope;
 
         loop {
@@ -42,12 +40,12 @@ impl SymbolTable {
         }
     }
 
-    pub fn function_iter_mut(&mut self) -> impl Iterator<Item = &mut Function> + '_ {
+    pub fn function_iter_mut(&mut self) -> impl Iterator<Item = &mut NamedFunction> + '_ {
         self.scopes
             .values_mut()
             .flat_map(|symbols| symbols.values_mut())
             .filter_map(|symbol| match symbol {
-                Expr::Function(func) => Some(func.as_mut()),
+                Item::NamedFunction(func) => Some(func.as_mut()),
                 _ => None,
             })
     }
@@ -97,8 +95,8 @@ fn test_symbol_table() {
 
     for (scope, symbol) in symbols.clone() {
         let name = match &symbol {
-            Expr::Variable(var) => var.name(),
-            _ => panic!("Expected a variable expression"),
+            Item::Variable(var) => var.name(),
+            _ => panic!("Expected a variable item"),
         };
 
         assert!(symbol_table.insert(scope, name, symbol));

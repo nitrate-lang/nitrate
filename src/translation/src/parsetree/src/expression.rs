@@ -219,23 +219,11 @@ pub struct Block {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Function {
+pub struct AnonymousFunction {
+    pub attributes: Vec<Expr>,
     pub parameters: Vec<FunctionParameter>,
     pub return_type: Type,
-    pub attributes: Vec<Expr>,
-    pub definition: Option<Expr>,
-}
-
-impl Function {
-    #[must_use]
-    pub fn is_definition(&self) -> bool {
-        self.definition.is_some()
-    }
-
-    #[must_use]
-    pub fn is_declaration(&self) -> bool {
-        self.definition.is_none()
-    }
+    pub definition: Block,
 }
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
@@ -325,27 +313,27 @@ impl std::fmt::Display for QualifiedScope {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct If {
     pub condition: Expr,
-    pub then_branch: Expr,
-    pub else_branch: Option<Expr>,
+    pub then_branch: Block,
+    pub else_branch: Option<Block>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct WhileLoop {
     pub condition: Expr,
-    pub body: Expr,
+    pub body: Block,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DoWhileLoop {
     pub condition: Expr,
-    pub body: Expr,
+    pub body: Block,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Switch {
     pub condition: Expr,
-    pub cases: Vec<(Expr, Expr)>,
-    pub default_case: Option<Expr>,
+    pub cases: Vec<(Expr, Block)>,
+    pub default_case: Option<Block>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -367,7 +355,7 @@ pub struct Return {
 pub struct ForEach {
     pub iterable: Expr,
     pub bindings: Vec<(IString, Option<Type>)>,
-    pub body: Expr,
+    pub body: Block,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -401,7 +389,7 @@ pub enum Expr {
     BinExpr(Box<BinExpr>),
     Block(Box<Block>),
 
-    Function(Box<Function>),
+    Function(Box<AnonymousFunction>),
     Variable(Box<Variable>),
     Path(Box<Path>),
     IndexAccess(Box<IndexAccess>),

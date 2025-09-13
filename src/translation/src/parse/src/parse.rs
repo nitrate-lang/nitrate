@@ -1,12 +1,10 @@
 use super::symbol_table::SymbolTable;
-use nitrate_parsetree::kind::{Block, Expr, QualifiedScope};
+use nitrate_parsetree::kind::{Block, Expr};
 use nitrate_tokenize::{Lexer, Punct, Token};
-use smallvec::SmallVec;
 
 pub struct Parser<'a, 'symbol_table> {
     pub(crate) lexer: Lexer<'a>,
     pub(crate) symtab: &'symbol_table mut SymbolTable,
-    pub(crate) scope: QualifiedScope,
     pub(crate) generic_type_depth: i64,
     pub(crate) generic_type_suffix_terminator_ambiguity: bool,
     failed_bit: bool,
@@ -17,7 +15,6 @@ impl<'a, 'symbol_table> Parser<'a, 'symbol_table> {
         Parser {
             lexer,
             symtab: symbol_table,
-            scope: QualifiedScope::new(SmallVec::new()),
             generic_type_depth: 0,
             generic_type_suffix_terminator_ambiguity: false,
             failed_bit: false,
