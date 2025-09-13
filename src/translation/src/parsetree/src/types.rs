@@ -1,4 +1,4 @@
-use crate::kind::{Block, Expr, FunctionParameter, StructField};
+use crate::kind::{Block, Expr, FunctionParameter, Path, StructField};
 use interned_string::IString;
 use serde::{Deserialize, Serialize};
 
@@ -50,9 +50,9 @@ pub enum Lifetime {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Reference {
+pub struct ReferenceType {
     pub lifetime: Option<Lifetime>,
-    pub is_mutable: bool,
+    pub mutable: bool,
     pub exclusive: bool,
     pub to: Type,
 }
@@ -94,19 +94,19 @@ pub enum Type {
     Float128,
     UnitType,
     InferType,
-    TypeName(IString),
+    TypeName(Path),
     RefinementType(Box<RefinementType>),
     TupleType(Box<TupleType>),
     ArrayType(Box<ArrayType>),
     MapType(Box<MapType>),
     SliceType(Box<SliceType>),
     FunctionType(Box<FunctionType>),
-    Reference(Box<Reference>),
+    ReferenceType(Box<ReferenceType>),
     GenericType(Box<GenericType>),
     OpaqueType(IString),
     StructType(Box<StructType>),
     LatentType(Box<Block>),
-    HasParenthesesType(Box<Type>),
+    Parentheses(Box<Type>),
 }
 
 impl std::fmt::Debug for Type {
@@ -137,12 +137,12 @@ impl std::fmt::Debug for Type {
             Type::MapType(e) => e.fmt(f),
             Type::SliceType(e) => e.fmt(f),
             Type::FunctionType(e) => e.fmt(f),
-            Type::Reference(e) => e.fmt(f),
+            Type::ReferenceType(e) => e.fmt(f),
             Type::GenericType(e) => e.fmt(f),
             Type::OpaqueType(e) => f.debug_struct("OpaqueType").field("name", e).finish(),
             Type::StructType(e) => e.fmt(f),
             Type::LatentType(e) => f.debug_struct("LatentType").field("type", e).finish(),
-            Type::HasParenthesesType(e) => f.debug_struct("Parentheses").field("type", e).finish(),
+            Type::Parentheses(e) => f.debug_struct("Parentheses").field("type", e).finish(),
         }
     }
 }

@@ -5,7 +5,10 @@ use interned_string::IString;
 use log::{error, info};
 use nitrate_parsetree::{
     Builder,
-    kind::{Expr, FunctionParameter, GenericArgument, Lifetime, Type},
+    kind::{
+        ArrayType, Expr, FunctionParameter, FunctionType, GenericArgument, GenericType, Lifetime,
+        MapType, Path, ReferenceType, RefinementType, SliceType, TupleType, Type,
+    },
 };
 use nitrate_tokenize::{Keyword, Op, Punct, Token};
 
@@ -210,7 +213,7 @@ impl Parser<'_, '_> {
         match self.lexer.peek_t() {
             Token::Name(name) if name.deref() == "_" => {
                 self.lexer.skip_tok();
-                return Some(Builder::get_infer_type());
+                return Some(Type::InferType);
             }
             _ => {}
         }
@@ -269,7 +272,7 @@ impl Parser<'_, '_> {
         }
 
         if !self.lexer.next_is(&Token::Op(Op::LogicLt)) {
-            return Some(Builder::create_type_name(path));
+            return Some(Type::TypeName(Path { path: path.into() }));
         }
 
         let is_already_parsing_generic_type = self.generic_type_depth != 0;
@@ -300,12 +303,10 @@ impl Parser<'_, '_> {
             self.generic_type_suffix_terminator_ambiguity = false;
         }
 
-        Some(
-            Builder::create_generic_type()
-                .with_base(Builder::create_type_name(path))
-                .add_arguments(generic_arguments)
-                .build(),
-        )
+        Some(Type::GenericType(Box::new(GenericType {
+            basis_type: Type::TypeName(Path { path: path.into() }),
+            arguments: generic_arguments,
+        })))
     }
 
     fn parse_rest_of_array(&mut self, element_type: Type) -> Option<Type> {
@@ -323,12 +324,10 @@ impl Parser<'_, '_> {
             return None;
         }
 
-        Some(
-            Builder::create_array_type()
-                .with_element(element_type)
-                .with_count(array_count)
-                .build(),
-        )
+        Some(Type::ArrayType(Box::new(ArrayType {
+            element_type: element_type,
+            len: array_count,
+        })))
     }
 
     fn parse_rest_of_map_type(&mut self, key_type: Type) -> Option<Type> {
@@ -346,12 +345,10 @@ impl Parser<'_, '_> {
             return None;
         }
 
-        Some(
-            Builder::create_map_type()
-                .with_key(key_type)
-                .with_value(value_type)
-                .build(),
-        )
+        Some(Type::MapType(Box::new(MapType {
+            key_type,
+            value_type,
+        })))
     }
 
     fn parse_rest_of_slice_type(&mut self, element_type: Type) -> Option<Type> {
@@ -365,11 +362,7 @@ impl Parser<'_, '_> {
         assert!(self.lexer.peek_t() == Token::Punct(Punct::RightBracket));
         self.lexer.skip_tok();
 
-        Some(
-            Builder::create_slice_type()
-                .with_element(element_type)
-                .build(),
-        )
+        Some(Type::SliceType(Box::new(SliceType { element_type })))
     }
 
     fn parse_array_or_slice_or_map(&mut self) -> Option<Type> {
@@ -417,26 +410,24 @@ impl Parser<'_, '_> {
         assert!(self.lexer.peek_t() == Token::Op(Op::BitAnd));
         self.lexer.skip_tok();
 
-        let is_shared = self.lexer.skip_if(&Token::Keyword(Keyword::Poly));
-        if !is_shared {
+        let exclusive = !self.lexer.skip_if(&Token::Keyword(Keyword::Poly));
+        if exclusive {
             self.lexer.skip_if(&Token::Keyword(Keyword::Iso));
         }
 
-        let is_mutable = self.lexer.skip_if(&Token::Keyword(Keyword::Mut));
-        if !is_mutable {
+        let mutable = self.lexer.skip_if(&Token::Keyword(Keyword::Mut));
+        if !mutable {
             self.lexer.skip_if(&Token::Keyword(Keyword::Const));
         }
 
-        let target = self.parse_type()?;
+        let to = self.parse_type()?;
 
-        Some(
-            Builder::create_reference_type()
-                .with_lifetime(Some(Lifetime::CollectorManaged))
-                .with_mutability(is_mutable)
-                .with_exclusivity(!is_shared)
-                .with_target(target)
-                .build(),
-        )
+        Some(Type::ReferenceType(Box::new(ReferenceType {
+            lifetime: Some(Lifetime::CollectorManaged),
+            exclusive,
+            mutable,
+            to,
+        })))
     }
 
     fn parse_unmanaged_type(&mut self) -> Option<Type> {
@@ -455,26 +446,24 @@ impl Parser<'_, '_> {
         assert!(self.lexer.peek_t() == Token::Op(Op::Mul));
         self.lexer.skip_tok();
 
-        let is_shared = self.lexer.skip_if(&Token::Keyword(Keyword::Poly));
-        if !is_shared {
+        let exclusive = !self.lexer.skip_if(&Token::Keyword(Keyword::Poly));
+        if exclusive {
             self.lexer.skip_if(&Token::Keyword(Keyword::Iso));
         }
 
-        let is_mutable = self.lexer.skip_if(&Token::Keyword(Keyword::Mut));
-        if !is_mutable {
+        let mutable = self.lexer.skip_if(&Token::Keyword(Keyword::Mut));
+        if !mutable {
             self.lexer.skip_if(&Token::Keyword(Keyword::Const));
         }
 
-        let target = self.parse_type()?;
+        let to = self.parse_type()?;
 
-        Some(
-            Builder::create_reference_type()
-                .with_lifetime(None)
-                .with_mutability(is_mutable)
-                .with_exclusivity(!is_shared)
-                .with_target(target)
-                .build(),
-        )
+        Some(Type::ReferenceType(Box::new(ReferenceType {
+            lifetime: None,
+            exclusive,
+            mutable,
+            to,
+        })))
     }
 
     pub(crate) fn parse_function_parameters(&mut self) -> Option<Vec<FunctionParameter>> {
@@ -501,7 +490,7 @@ impl Parser<'_, '_> {
             let parameter_type = if self.lexer.skip_if(&Token::Punct(Punct::Colon)) {
                 self.parse_type()?
             } else {
-                Builder::get_infer_type()
+                Type::InferType
             };
 
             let parameter_default = if self.lexer.skip_if(&Token::Op(Op::Set)) {
@@ -550,16 +539,14 @@ impl Parser<'_, '_> {
         let return_type = if self.lexer.skip_if(&Token::Op(Op::Arrow)) {
             self.parse_type()?
         } else {
-            Builder::get_infer_type()
+            Type::InferType
         };
 
-        Some(
-            Builder::create_function_type()
-                .add_attributes(attributes)
-                .add_parameters(parameters)
-                .with_return_type(return_type)
-                .build(),
-        )
+        Some(Type::FunctionType(Box::new(FunctionType {
+            parameters,
+            return_type,
+            attributes,
+        })))
     }
 
     fn parse_opaque_type(&mut self) -> Option<Type> {
@@ -601,7 +588,7 @@ impl Parser<'_, '_> {
             return None;
         }
 
-        Some(Builder::create_opaque_type(opaque_identity))
+        Some(Type::OpaqueType(opaque_identity))
     }
 
     fn parse_type_primary(&mut self) -> Option<Type> {
@@ -617,82 +604,82 @@ impl Parser<'_, '_> {
         let result = match first_token.into_token() {
             Token::Keyword(Keyword::Bool) => {
                 self.lexer.skip_tok();
-                Some(Builder::get_bool())
+                Some(Type::Bool)
             }
 
             Token::Keyword(Keyword::U8) => {
                 self.lexer.skip_tok();
-                Some(Builder::get_u8())
+                Some(Type::UInt8)
             }
 
             Token::Keyword(Keyword::U16) => {
                 self.lexer.skip_tok();
-                Some(Builder::get_u16())
+                Some(Type::UInt16)
             }
 
             Token::Keyword(Keyword::U32) => {
                 self.lexer.skip_tok();
-                Some(Builder::get_u32())
+                Some(Type::UInt32)
             }
 
             Token::Keyword(Keyword::U64) => {
                 self.lexer.skip_tok();
-                Some(Builder::get_u64())
+                Some(Type::UInt64)
             }
 
             Token::Keyword(Keyword::U128) => {
                 self.lexer.skip_tok();
-                Some(Builder::get_u128())
+                Some(Type::UInt128)
             }
 
             Token::Keyword(Keyword::I8) => {
                 self.lexer.skip_tok();
-                Some(Builder::get_i8())
+                Some(Type::Int8)
             }
 
             Token::Keyword(Keyword::I16) => {
                 self.lexer.skip_tok();
-                Some(Builder::get_i16())
+                Some(Type::Int16)
             }
 
             Token::Keyword(Keyword::I32) => {
                 self.lexer.skip_tok();
-                Some(Builder::get_i32())
+                Some(Type::Int32)
             }
 
             Token::Keyword(Keyword::I64) => {
                 self.lexer.skip_tok();
-                Some(Builder::get_i64())
+                Some(Type::Int64)
             }
 
             Token::Keyword(Keyword::I128) => {
                 self.lexer.skip_tok();
-                Some(Builder::get_i128())
+                Some(Type::Int128)
             }
 
             Token::Keyword(Keyword::F8) => {
                 self.lexer.skip_tok();
-                Some(Builder::get_f8())
+                Some(Type::Float8)
             }
 
             Token::Keyword(Keyword::F16) => {
                 self.lexer.skip_tok();
-                Some(Builder::get_f16())
+                Some(Type::Float16)
             }
 
             Token::Keyword(Keyword::F32) => {
                 self.lexer.skip_tok();
-                Some(Builder::get_f32())
+                Some(Type::Float32)
             }
 
             Token::Keyword(Keyword::F64) => {
                 self.lexer.skip_tok();
-                Some(Builder::get_f64())
+                Some(Type::Float64)
             }
 
             Token::Keyword(Keyword::F128) => {
                 self.lexer.skip_tok();
-                Some(Builder::get_f128())
+                Some(Type::Float128)
             }
 
             Token::Name(_) | Token::Op(Op::Scope) => self.parse_type_name(),
@@ -706,7 +693,7 @@ impl Parser<'_, '_> {
                     _ => return None,
                 };
 
-                Some(Builder::create_latent_type(block))
+                Some(Type::LatentType(block))
             }
 
             Token::Keyword(Keyword::Fn) => self.parse_function_type(),
@@ -792,7 +779,7 @@ impl Parser<'_, '_> {
 
         if self.lexer.skip_if(&Token::Punct(Punct::LeftParen)) {
             if self.lexer.skip_if(&Token::Punct(Punct::RightParen)) {
-                return Some(Builder::get_unit_type());
+                return Some(Type::UnitType);
             }
 
             let Some(inner) = self.parse_type() else {
@@ -806,10 +793,10 @@ impl Parser<'_, '_> {
             };
 
             let result = match self.lexer.next_t() {
-                Token::Punct(Punct::RightParen) => Some(Builder::create_type_parentheses(inner)),
+                Token::Punct(Punct::RightParen) => Some(Type::Parentheses(Box::new(inner))),
 
                 Token::Punct(Punct::Comma) => {
-                    let mut tuple_elements = Vec::from([inner]);
+                    let mut element_types = Vec::from([inner]);
 
                     loop {
                         if self.lexer.skip_if(&Token::Punct(Punct::RightParen)) {
@@ -817,7 +804,7 @@ impl Parser<'_, '_> {
                         }
 
                         let element = self.parse_type()?;
-                        tuple_elements.push(element);
+                        element_types.push(element);
 
                         if !self.lexer.skip_if(&Token::Punct(Punct::Comma)) {
                             if self.lexer.skip_if(&Token::Punct(Punct::RightParen)) {
@@ -834,11 +821,7 @@ impl Parser<'_, '_> {
                         }
                     }
 
-                    Some(
-                        Builder::create_tuple_type()
-                            .add_elements(tuple_elements)
-                            .build(),
-                    )
+                    Some(Type::TupleType(Box::new(TupleType { element_types })))
                 }
 
                 _ => {
@@ -866,14 +849,12 @@ impl Parser<'_, '_> {
         };
 
         if refinement.has_any() {
-            return Some(
-                Builder::create_refinement_type()
-                    .with_base(the_type)
-                    .with_width(refinement.width)
-                    .with_minimum(refinement.minimum)
-                    .with_maximum(refinement.maximum)
-                    .build(),
-            );
+            return Some(Type::RefinementType(Box::new(RefinementType {
+                basis_type: the_type,
+                width: refinement.width,
+                minimum: refinement.minimum,
+                maximum: refinement.maximum,
+            })));
         }
 
         return Some(the_type);

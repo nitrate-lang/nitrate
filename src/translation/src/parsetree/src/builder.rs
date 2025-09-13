@@ -1,20 +1,15 @@
-use std::ops::Deref;
-
 use crate::expression::Expr;
 use crate::expression::VariableKind;
-use crate::kind::Block;
 use crate::kind::Path;
-use crate::types::{TupleType, Type};
+use crate::types::Type;
 use interned_string::IString;
 use nitrate_tokenize::{IntegerKind, NotNan};
 
 use crate::builder_helper::{
-    ArrayTypeBuilder, AwaitBuilder, BinExprBuilder, BlockBuilder, BreakBuilder, CallBuilder,
-    ContinueBuilder, DoWhileLoopBuilder, ForEachBuilder, FunctionBuilder, FunctionTypeBuilder,
-    GenericTypeBuilder, IfBuilder, IndexAccessBuilder, IntegerBuilder, ListBuilder, MapTypeBuilder,
-    ObjectBuilder, ReferenceTypeBuilder, RefinementTypeBuilder, ReturnBuilder, SliceTypeBuilder,
-    StructTypeBuilder, SwitchBuilder, TupleTypeBuilder, UnaryExprBuilder, VariableBuilder,
-    WhileLoopBuilder,
+    AwaitBuilder, BinExprBuilder, BlockBuilder, BreakBuilder, CallBuilder, ContinueBuilder,
+    DoWhileLoopBuilder, ForEachBuilder, FunctionBuilder, IfBuilder, IndexAccessBuilder,
+    IntegerBuilder, ListBuilder, ObjectBuilder, ReturnBuilder, SwitchBuilder, UnaryExprBuilder,
+    VariableBuilder, WhileLoopBuilder,
 };
 
 #[derive(Debug, Default)]
@@ -169,173 +164,5 @@ impl Builder {
     #[must_use]
     pub fn create_call() -> CallBuilder {
         CallBuilder::new()
-    }
-
-    #[must_use]
-    pub fn get_bool() -> Type {
-        Type::Bool
-    }
-
-    #[must_use]
-    pub fn get_u8() -> Type {
-        Type::UInt8
-    }
-
-    #[must_use]
-    pub fn get_u16() -> Type {
-        Type::UInt16
-    }
-
-    #[must_use]
-    pub fn get_u32() -> Type {
-        Type::UInt32
-    }
-
-    #[must_use]
-    pub fn get_u64() -> Type {
-        Type::UInt64
-    }
-
-    #[must_use]
-    pub fn get_u128() -> Type {
-        Type::UInt128
-    }
-
-    #[must_use]
-    pub fn get_i8() -> Type {
-        Type::Int8
-    }
-
-    #[must_use]
-    pub fn get_i16() -> Type {
-        Type::Int16
-    }
-
-    #[must_use]
-    pub fn get_i32() -> Type {
-        Type::Int32
-    }
-
-    #[must_use]
-    pub fn get_i64() -> Type {
-        Type::Int64
-    }
-
-    #[must_use]
-    pub fn get_i128() -> Type {
-        Type::Int128
-    }
-
-    #[must_use]
-    pub fn get_f8() -> Type {
-        Type::Float8
-    }
-
-    #[must_use]
-    pub fn get_f16() -> Type {
-        Type::Float16
-    }
-
-    #[must_use]
-    pub fn get_f32() -> Type {
-        Type::Float32
-    }
-
-    #[must_use]
-    pub fn get_f64() -> Type {
-        Type::Float64
-    }
-
-    #[must_use]
-    pub fn get_f128() -> Type {
-        Type::Float128
-    }
-
-    #[must_use]
-    pub fn get_infer_type() -> Type {
-        Type::InferType
-    }
-
-    #[must_use]
-    pub fn get_unit_type() -> Type {
-        Type::TupleType(Box::new(TupleType {
-            element_types: vec![],
-        }))
-    }
-
-    #[must_use]
-    pub fn create_type_name(path: Vec<IString>) -> Type {
-        let joined = path
-            .iter()
-            .map(Deref::deref)
-            .collect::<Vec<&str>>()
-            .join("::");
-
-        Type::TypeName(joined.into())
-    }
-
-    #[must_use]
-    pub fn create_refinement_type() -> RefinementTypeBuilder {
-        RefinementTypeBuilder::new()
-    }
-
-    #[must_use]
-    pub fn create_tuple_type() -> TupleTypeBuilder {
-        TupleTypeBuilder::new()
-    }
-
-    #[must_use]
-    pub fn create_array_type() -> ArrayTypeBuilder {
-        ArrayTypeBuilder::new()
-    }
-
-    #[must_use]
-    pub fn create_map_type() -> MapTypeBuilder {
-        MapTypeBuilder::new()
-    }
-
-    #[must_use]
-    pub fn create_slice_type() -> SliceTypeBuilder {
-        SliceTypeBuilder::new()
-    }
-
-    #[must_use]
-    pub fn create_function_type() -> FunctionTypeBuilder {
-        FunctionTypeBuilder::new()
-    }
-
-    #[must_use]
-    pub fn create_reference_type() -> ReferenceTypeBuilder {
-        ReferenceTypeBuilder::new()
-    }
-
-    #[must_use]
-    pub fn create_generic_type() -> GenericTypeBuilder {
-        GenericTypeBuilder::new()
-    }
-
-    #[must_use]
-    pub fn create_opaque_type(identity: IString) -> Type {
-        Type::OpaqueType(identity)
-    }
-
-    #[must_use]
-    pub fn create_struct_type() -> StructTypeBuilder {
-        StructTypeBuilder::new()
-    }
-
-    #[must_use]
-    pub fn create_latent_type(block: Box<Block>) -> Type {
-        Type::LatentType(block)
-    }
-
-    #[must_use]
-    pub fn create_type_parentheses(inner: Type) -> Type {
-        Type::HasParenthesesType(Box::new(inner))
-    }
-
-    #[must_use]
-    pub fn create_parentheses(inner: Expr) -> Expr {
-        Expr::HasParentheses(Box::new(inner))
     }
 }
