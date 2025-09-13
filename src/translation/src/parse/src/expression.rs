@@ -291,7 +291,7 @@ impl Parser<'_, '_> {
                 return None;
             }
 
-            return Some(Expr::HasParentheses(Box::new(inner)));
+            return Some(Expr::Parentheses(Box::new(inner)));
         }
 
         self.parse_expression_primary()

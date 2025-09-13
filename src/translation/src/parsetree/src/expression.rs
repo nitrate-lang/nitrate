@@ -5,7 +5,7 @@ use nitrate_tokenize::{IntegerKind, Op};
 use ordered_float::NotNan;
 use serde::{Deserialize, Serialize};
 use smallvec::SmallVec;
-use std::collections::BTreeMap;
+use std::collections::HashMap;
 use std::ops::Deref;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -21,33 +21,18 @@ pub struct List {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Object {
-    pub fields: BTreeMap<IString, Expr>,
+    pub fields: HashMap<IString, Expr>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum UnaryExprOp {
-    /*----------------------------------------------------------------*
-     * Arithmetic Operators                                           *
-     *----------------------------------------------------------------*/
-    Add,   /* '+': "Addition Operator" */
-    Sub,   /* '-': "Subtraction Operator" */
-    Deref, /* '*': "Multiplication Operator" */
-
-    /*----------------------------------------------------------------*
-     * Bitwise Operators                                              *
-     *----------------------------------------------------------------*/
-    AddressOf, /* '&':   "Bitwise AND Operator" */
-    BitNot,    /* '~':   "Bitwise NOT Operator" */
-
-    /*----------------------------------------------------------------*
-     * Logical Operators                                              *
-     *----------------------------------------------------------------*/
-    LogicNot, /* '!':  "Logical NOT Operator" */
-
-    /*----------------------------------------------------------------*
-     * Type System Operators                                          *
-     *----------------------------------------------------------------*/
-    Typeof, /* 'typeof':     "Type Of Operator" */
+    Add,
+    Sub,
+    Deref,
+    AddressOf,
+    BitNot,
+    LogicNot,
+    Typeof,
 }
 
 impl TryFrom<Op> for UnaryExprOp {
@@ -117,78 +102,51 @@ pub struct UnaryExpr {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum BinExprOp {
-    /*----------------------------------------------------------------*
-     * Arithmetic Operators                                           *
-     *----------------------------------------------------------------*/
-    Add, /* '+': "Addition Operator" */
-    Sub, /* '-': "Subtraction Operator" */
-    Mul, /* '*': "Multiplication Operator" */
-    Div, /* '/': "Division Operator" */
-    Mod, /* '%': "Modulus Operator" */
-
-    /*----------------------------------------------------------------*
-     * Bitwise Operators                                              *
-     *----------------------------------------------------------------*/
-    BitAnd, /* '&':   "Bitwise AND Operator" */
-    BitOr,  /* '|':   "Bitwise OR Operator" */
-    BitXor, /* '^':   "Bitwise XOR Operator" */
-    BitShl, /* '<<':  "Bitwise Left-Shift Operator" */
-    BitShr, /* '>>':  "Bitwise Right-Shift Operator" */
-    BitRol, /* '<<<': "Bitwise Left-Rotate Operator" */
-    BitRor, /* '>>>': "Bitwise Right-Rotate Operator" */
-
-    /*----------------------------------------------------------------*
-     * Logical Operators                                              *
-     *----------------------------------------------------------------*/
-    LogicAnd, /* '&&': "Logical AND Operator" */
-    LogicOr,  /* '||': "Logical OR Operator" */
-    LogicXor, /* '^^': "Logical XOR Operator" */
-    LogicLt,  /* '<':  "Logical Less-Than Operator" */
-    LogicGt,  /* '>':  "Logical Greater-Than Operator" */
-    LogicLe,  /* '<=': "Logical Less-Than or Equal-To Operator" */
-    LogicGe,  /* '>=': "Logical Greater-Than or Equal-To Operator" */
-    LogicEq,  /* '==': "Logical Equal-To Operator" */
-    LogicNe,  /* '!=': "Logical Not Equal-To Operator" */
-
-    /*----------------------------------------------------------------*
-     * Assignment Operators                                           *
-     *----------------------------------------------------------------*/
-    Set,         /* '=':    "Assignment Operator" */
-    SetPlus,     /* '+=':   "Addition Assignment Operator" */
-    SetMinus,    /* '-=':   "Subtraction Assignment Operator" */
-    SetTimes,    /* '*=':   "Multiplication Assignment Operator" */
-    SetSlash,    /* '/=':   "Division Assignment Operator" */
-    SetPercent,  /* '%=':   "Modulus Assignment Operator" */
-    SetBitAnd,   /* '&=':   "Bitwise AND Assignment Operator" */
-    SetBitOr,    /* '|=':   "Bitwise OR Assignment Operator" */
-    SetBitXor,   /* '^=':   "Bitwise XOR Assignment Operator" */
-    SetBitShl,   /* '<<=':  "Bitwise Left-Shift Assignment Operator" */
-    SetBitShr,   /* '>>=':  "Bitwise Right-Shift Assignment Operator" */
-    SetBitRotl,  /* '<<<=': "Bitwise Rotate-Left Assignment Operator" */
-    SetBitRotr,  /* '>>>=': "Bitwise Rotate-Right Assignment Operator" */
-    SetLogicAnd, /* '&&=':  "Logical AND Assignment Operator" */
-    SetLogicOr,  /* '||=':  "Logical OR Assignment Operator" */
-    SetLogicXor, /* '^^=':  "Logical XOR Assignment Operator" */
-
-    /*----------------------------------------------------------------*
-     * Type System Operators                                          *
-     *----------------------------------------------------------------*/
-    As,        /* 'as':         "Type Cast Operator" */
-    BitcastAs, /* 'bitcast_as': "Bitwise Type Cast Operator" */
-
-    /*----------------------------------------------------------------*
-     * Syntactic Operators                                            *
-     *----------------------------------------------------------------*/
-    Dot,        /* '.':          "Dot Operator" */
-    Ellipsis,   /* '...':        "Ellipsis Operator" */
-    Scope,      /* '::':         "Scope Resolution Operator" */
-    Arrow,      /* '->':         "Arrow Operator" */
-    BlockArrow, /* '=>':         "Block Arrow Operator" */
-
-    /*----------------------------------------------------------------*
-     * Special Operators                                              *
-     *----------------------------------------------------------------*/
-    Range, /* '..':         "Range Operator" */
+    Add,
+    Sub,
+    Mul,
+    Div,
+    Mod,
+    BitAnd,
+    BitOr,
+    BitXor,
+    BitShl,
+    BitShr,
+    BitRol,
+    BitRor,
+    LogicAnd,
+    LogicOr,
+    LogicXor,
+    LogicLt,
+    LogicGt,
+    LogicLe,
+    LogicGe,
+    LogicEq,
+    LogicNe,
+    Set,
+    SetPlus,
+    SetMinus,
+    SetTimes,
+    SetSlash,
+    SetPercent,
+    SetBitAnd,
+    SetBitOr,
+    SetBitXor,
+    SetBitShl,
+    SetBitShr,
+    SetBitRotl,
+    SetBitRotr,
+    SetLogicAnd,
+    SetLogicOr,
+    SetLogicXor,
+    As,
+    BitcastAs,
+    Dot,
+    Ellipsis,
+    Scope,
+    Arrow,
+    BlockArrow,
+    Range,
 }
 
 impl TryFrom<Op> for BinExprOp {
@@ -427,7 +385,7 @@ pub struct Call {
 
 #[derive(Clone, Serialize, Deserialize)]
 pub enum Expr {
-    HasParentheses(Box<Expr>),
+    Parentheses(Box<Expr>),
 
     Boolean(bool),
     Integer(Box<Integer>),
@@ -436,7 +394,7 @@ pub enum Expr {
     BString(Box<Vec<u8>>),
     Unit,
 
-    TypeInfo(Type),
+    TypeInfo(Box<Type>),
     List(Box<List>),
     Object(Box<Object>),
     UnaryExpr(Box<UnaryExpr>),
@@ -445,7 +403,7 @@ pub enum Expr {
 
     Function(Box<Function>),
     Variable(Box<Variable>),
-    Path(Path),
+    Path(Box<Path>),
     IndexAccess(Box<IndexAccess>),
 
     If(Box<If>),
@@ -477,7 +435,7 @@ impl Expr {
 impl std::fmt::Debug for Expr {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Expr::HasParentheses(e) => f.debug_struct("Parentheses").field("expr", e).finish(),
+            Expr::Parentheses(e) => f.debug_struct("Parentheses").field("expr", e).finish(),
 
             Expr::Boolean(e) => e.fmt(f),
             Expr::Integer(e) => e.fmt(f),
