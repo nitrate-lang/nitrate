@@ -6,7 +6,6 @@ use nitrate_parsetree::{
         WhileLoop,
     },
 };
-use std::sync::{Arc, RwLock};
 
 impl AbstractMachine {
     pub(crate) fn evaluate_if(&mut self, if_expr: &If) -> Result<Expr, Unwind> {
@@ -108,7 +107,7 @@ impl AbstractMachine {
         // TODO: Verify and write tests
 
         enum Callee {
-            FunctionCode(Arc<RwLock<Function>>),
+            FunctionCode(Box<Function>),
             Intrinsic(IntrinsicFunction),
         }
 
@@ -137,13 +136,9 @@ impl AbstractMachine {
         self.current_task_mut().callstack_mut().push(callframe);
 
         let result = match callee {
-            Callee::FunctionCode(function) => self.evaluate(
-                function
-                    .read()
-                    .unwrap()
-                    .definition()
-                    .ok_or(Unwind::TypeError)?,
-            ),
+            Callee::FunctionCode(function) => {
+                self.evaluate(function.definition().ok_or(Unwind::TypeError)?)
+            }
             Callee::Intrinsic(intrinsic) => intrinsic(self),
         };
 

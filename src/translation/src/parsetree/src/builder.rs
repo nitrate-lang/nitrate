@@ -3,7 +3,6 @@ use crate::expression::{Expr, Identifier};
 use crate::types::{TupleType, Type};
 use interned_string::IString;
 use nitrate_tokenize::NotNan;
-use std::sync::Arc;
 
 use crate::builder_helper::{
     ArrayTypeBuilder, AwaitBuilder, BinExprBuilder, BlockBuilder, BreakBuilder, CallBuilder,
@@ -75,12 +74,12 @@ impl Builder {
 
     #[must_use]
     pub fn create_bstring(bytes: Vec<u8>) -> Expr {
-        Expr::BString(Arc::new(bytes))
+        Expr::BString(Box::new(bytes))
     }
 
     #[must_use]
     pub fn create_type_envelop(inner: Type) -> Expr {
-        Expr::TypeEnvelop(Arc::new(inner))
+        Expr::TypeEnvelop(Box::new(inner))
     }
 
     #[must_use]
@@ -125,7 +124,7 @@ impl Builder {
 
     #[must_use]
     pub fn create_qualified_identifier(segments: Vec<IString>) -> Expr {
-        Expr::Identifier(Arc::new(Identifier::new(segments)))
+        Expr::Identifier(Box::new(Identifier::new(segments)))
     }
 
     #[must_use]
@@ -296,12 +295,12 @@ impl Builder {
 
     #[must_use]
     pub fn get_unit_type() -> Type {
-        Type::TupleType(Arc::new(TupleType::new(vec![])))
+        Type::TupleType(Box::new(TupleType::new(vec![])))
     }
 
     #[must_use]
     pub fn create_qualified_type_name(segments: Vec<IString>) -> Type {
-        Type::TypeName(Arc::new(Identifier::new(segments)))
+        Type::TypeName(Box::new(Identifier::new(segments)))
     }
 
     #[must_use]
@@ -372,16 +371,16 @@ impl Builder {
 
     #[must_use]
     pub fn create_latent_type(expr: Expr) -> Type {
-        Type::LatentType(Arc::new(expr))
+        Type::LatentType(Box::new(expr))
     }
 
     #[must_use]
     pub fn create_type_parentheses(inner: Type) -> Type {
-        Type::HasParenthesesType(Arc::new(inner))
+        Type::HasParenthesesType(Box::new(inner))
     }
 
     #[must_use]
     pub fn create_parentheses(inner: Expr) -> Expr {
-        Expr::HasParentheses(Arc::new(inner))
+        Expr::HasParentheses(Box::new(inner))
     }
 }

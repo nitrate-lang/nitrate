@@ -1,7 +1,6 @@
 use cranelift::module::{FuncId, Linkage, Module};
 use log::{debug, trace};
 use nitrate_parsetree::kind::{self, Expr};
-use std::ops::Deref;
 use std::sync::Arc;
 use std::{collections::HashMap, str::FromStr};
 
@@ -189,7 +188,7 @@ impl Codegen {
         for expression in block.elements() {
             match expression {
                 Expr::Function(function) => {
-                    Self::create_global_function(function.read().unwrap().deref(), &mut module)?;
+                    Self::create_global_function(function, &mut module)?;
                 }
 
                 Expr::Variable(global_variable) => {

@@ -2,8 +2,7 @@ use crate::Builder;
 use apint::UInt;
 use interned_string::IString;
 use nitrate_tokenize::IntegerKind;
-use std::sync::Arc;
-use std::{collections::BTreeMap, sync::RwLock};
+use std::collections::BTreeMap;
 
 use crate::kind::{
     ArrayType, Await, BinExpr, BinExprOp, Block, Break, Call, CallArguments, Continue, DoWhileLoop,
@@ -52,7 +51,7 @@ impl RefinementTypeBuilder {
     }
 
     pub fn build(self) -> Type {
-        Type::RefinementType(Arc::new(RefinementType::new(
+        Type::RefinementType(Box::new(RefinementType::new(
             self.base.expect("Principal type must be provided"),
             self.width,
             self.minimum,
@@ -90,7 +89,7 @@ impl TupleTypeBuilder {
         if self.elements.is_empty() {
             Type::UnitType
         } else {
-            Type::TupleType(Arc::new(TupleType::new(self.elements)))
+            Type::TupleType(Box::new(TupleType::new(self.elements)))
         }
     }
 }
@@ -120,7 +119,7 @@ impl ArrayTypeBuilder {
     }
 
     pub fn build(self) -> Type {
-        Type::ArrayType(Arc::new(ArrayType::new(
+        Type::ArrayType(Box::new(ArrayType::new(
             self.element.expect("Element type must be provided"),
             self.count.expect("Array length must be provided"),
         )))
@@ -152,7 +151,7 @@ impl MapTypeBuilder {
     }
 
     pub fn build(self) -> Type {
-        Type::MapType(Arc::new(MapType::new(
+        Type::MapType(Box::new(MapType::new(
             self.key.expect("Key type must be provided"),
             self.value.expect("Value type must be provided"),
         )))
@@ -175,7 +174,7 @@ impl SliceTypeBuilder {
     }
 
     pub fn build(self) -> Type {
-        Type::SliceType(Arc::new(SliceType::new(
+        Type::SliceType(Box::new(SliceType::new(
             self.element.expect("Element type must be provided"),
         )))
     }
@@ -230,7 +229,7 @@ impl FunctionTypeBuilder {
     }
 
     pub fn build(self) -> Type {
-        Type::FunctionType(Arc::new(FunctionType::new(
+        Type::FunctionType(Box::new(FunctionType::new(
             self.parameters,
             self.return_type.expect("Return type must be provided"),
             self.attributes,
@@ -263,7 +262,7 @@ impl ManagedRefTypeBuilder {
     }
 
     pub fn build(self) -> Type {
-        Type::ManagedRefType(Arc::new(ManagedRefType::new(
+        Type::ManagedRefType(Box::new(ManagedRefType::new(
             self.target.expect("Target type must be provided"),
             self.is_mutable,
         )))
@@ -295,7 +294,7 @@ impl UnmanagedRefTypeBuilder {
     }
 
     pub fn build(self) -> Type {
-        Type::UnmanagedRefType(Arc::new(UnmanagedRefType::new(
+        Type::UnmanagedRefType(Box::new(UnmanagedRefType::new(
             self.target.expect("Target type must be provided"),
             self.is_mutable,
         )))
@@ -335,7 +334,7 @@ impl GenericTypeBuilder {
     }
 
     pub fn build(self) -> Type {
-        Type::GenericType(Arc::new(GenericType::new(
+        Type::GenericType(Box::new(GenericType::new(
             self.base.expect("Principal type must be provided"),
             self.arguments,
         )))
@@ -366,7 +365,7 @@ impl StructTypeBuilder {
     }
 
     pub fn build(self) -> Type {
-        Type::StructType(Arc::new(StructType::new(self.fields)))
+        Type::StructType(Box::new(StructType::new(self.fields)))
     }
 }
 
@@ -421,7 +420,7 @@ impl IntegerBuilder {
         )
         .expect("Invalid integer value");
 
-        Expr::Integer(Arc::new(lit))
+        Expr::Integer(Box::new(lit))
     }
 }
 
@@ -456,7 +455,7 @@ impl ListBuilder {
     }
 
     pub fn build(self) -> Expr {
-        Expr::List(Arc::new(List::new(self.elements)))
+        Expr::List(Box::new(List::new(self.elements)))
     }
 }
 
@@ -486,7 +485,7 @@ impl ObjectBuilder {
     }
 
     pub fn build(self) -> Expr {
-        Expr::Object(Arc::new(Object::new(self.fields)))
+        Expr::Object(Box::new(Object::new(self.fields)))
     }
 }
 
@@ -532,7 +531,7 @@ impl UnaryExprBuilder {
     }
 
     pub fn build(self) -> Expr {
-        Expr::UnaryExpr(Arc::new(UnaryExpr::new(
+        Expr::UnaryExpr(Box::new(UnaryExpr::new(
             self.operand.expect("Operand must be provided"),
             self.operator.expect("Unary operator must be provided"),
             self.is_postfix.expect("Postfix flag must be provided"),
@@ -572,7 +571,7 @@ impl BinExprBuilder {
     }
 
     pub fn build(self) -> Expr {
-        Expr::BinExpr(Arc::new(BinExpr::new(
+        Expr::BinExpr(Box::new(BinExpr::new(
             self.left.expect("Left expression must be provided"),
             self.operator.expect("BinExpr operator must be provided"),
             self.right.expect("Right expression must be provided"),
@@ -606,7 +605,7 @@ impl BlockBuilder {
     }
 
     pub fn build(self) -> Expr {
-        Expr::Block(Arc::new(Block::new(self.elements)))
+        Expr::Block(Box::new(Block::new(self.elements)))
     }
 }
 
@@ -666,12 +665,12 @@ impl FunctionBuilder {
     }
 
     pub fn build(self) -> Expr {
-        Expr::Function(Arc::new(RwLock::new(Function::new(
+        Expr::Function(Box::new(Function::new(
             self.parameters,
             self.return_type.expect("Return type must be provided"),
             self.attributes,
             self.definition,
-        ))))
+        )))
     }
 }
 
@@ -733,7 +732,7 @@ impl VariableBuilder {
     }
 
     pub fn build(self) -> Expr {
-        Expr::Variable(Arc::new(Variable::new(
+        Expr::Variable(Box::new(Variable::new(
             self.kind.expect("Variable kind must be provided"),
             self.is_mutable,
             self.attributes,
@@ -769,7 +768,7 @@ impl IndexAccessBuilder {
     }
 
     pub fn build(self) -> Expr {
-        Expr::IndexAccess(Arc::new(IndexAccess::new(
+        Expr::IndexAccess(Box::new(IndexAccess::new(
             self.collection
                 .expect("Collection expression must be provided"),
             self.index.expect("Index expression must be provided"),
@@ -825,7 +824,7 @@ impl ScopeBuilder {
     }
 
     pub fn build(self) -> Expr {
-        Expr::Scope(Arc::new(Scope::new(
+        Expr::Scope(Box::new(Scope::new(
             self.name.expect("Name must be provided"),
             self.attributes,
             self.elements,
@@ -871,7 +870,7 @@ impl IfBuilder {
             self.else_branch,
         );
 
-        Expr::If(Arc::new(expr))
+        Expr::If(Box::new(expr))
     }
 }
 
@@ -905,7 +904,7 @@ impl WhileLoopBuilder {
             self.body.expect("Body expression must be provided"),
         );
 
-        Expr::WhileLoop(Arc::new(expr))
+        Expr::WhileLoop(Box::new(expr))
     }
 }
 
@@ -939,7 +938,7 @@ impl DoWhileLoopBuilder {
             self.body.expect("Body expression must be provided"),
         );
 
-        Expr::DoWhileLoop(Arc::new(expr))
+        Expr::DoWhileLoop(Box::new(expr))
     }
 }
 
@@ -989,7 +988,7 @@ impl SwitchBuilder {
             self.default,
         );
 
-        Expr::Switch(Arc::new(expr))
+        Expr::Switch(Box::new(expr))
     }
 }
 
@@ -1011,7 +1010,7 @@ impl BreakBuilder {
     pub fn build(self) -> Expr {
         let expr = Break::new(self.label);
 
-        Expr::Break(Arc::new(expr))
+        Expr::Break(Box::new(expr))
     }
 }
 
@@ -1033,7 +1032,7 @@ impl ContinueBuilder {
     pub fn build(self) -> Expr {
         let expr = Continue::new(self.label);
 
-        Expr::Continue(Arc::new(expr))
+        Expr::Continue(Box::new(expr))
     }
 }
 
@@ -1055,7 +1054,7 @@ impl ReturnBuilder {
     pub fn build(self) -> Expr {
         let expr = Return::new(self.value);
 
-        Expr::Return(Arc::new(expr))
+        Expr::Return(Box::new(expr))
     }
 }
 
@@ -1105,7 +1104,7 @@ impl ForEachBuilder {
             self.body.expect("Body expression must be provided"),
         );
 
-        Expr::ForEach(Arc::new(expr))
+        Expr::ForEach(Box::new(expr))
     }
 }
 
@@ -1127,7 +1126,7 @@ impl AwaitBuilder {
     pub fn build(self) -> Expr {
         let expr = Await::new(self.expression.expect("Expression must be provided"));
 
-        Expr::Await(Arc::new(expr))
+        Expr::Await(Box::new(expr))
     }
 }
 
@@ -1174,6 +1173,6 @@ impl CallBuilder {
             self.arguments,
         );
 
-        Expr::Call(Arc::new(expr))
+        Expr::Call(Box::new(expr))
     }
 }

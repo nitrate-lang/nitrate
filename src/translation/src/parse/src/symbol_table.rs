@@ -6,7 +6,6 @@ use nitrate_parsetree::{
     kind::{Expr, QualifiedScope},
 };
 use std::collections::HashMap;
-use std::sync::RwLock;
 
 #[derive(Debug, Clone, Default)]
 pub struct SymbolTable {
@@ -46,12 +45,12 @@ impl SymbolTable {
         }
     }
 
-    pub fn function_iter_mut(&mut self) -> impl Iterator<Item = &RwLock<Function>> + '_ {
+    pub fn function_iter_mut(&mut self) -> impl Iterator<Item = &mut Function> + '_ {
         self.scopes
-            .values()
-            .flat_map(|symbols| symbols.values())
+            .values_mut()
+            .flat_map(|symbols| symbols.values_mut())
             .filter_map(|symbol| match symbol {
-                Expr::Function(func) => Some(func.as_ref()),
+                Expr::Function(func) => Some(func.as_mut()),
                 _ => None,
             })
     }

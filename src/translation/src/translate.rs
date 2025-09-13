@@ -104,9 +104,9 @@ fn optimize_functions(
     pool: &ThreadPool,
 ) {
     scope_with(pool, |scope| {
-        for function in symbols.function_iter_mut() {
+        for function_mut in symbols.function_iter_mut() {
             // We can't optimize function declarations
-            if function.read().unwrap().is_declaration() {
+            if function_mut.is_declaration() {
                 continue;
             }
 
@@ -115,10 +115,8 @@ fn optimize_functions(
             // and be a no-op.
 
             scope.execute(|| {
-                let mut function_mut = function.write().unwrap();
-
                 for pass in function_optimization_passes {
-                    pass.optimize_function(&mut function_mut, drain);
+                    pass.optimize_function(function_mut, drain);
                 }
             });
         }

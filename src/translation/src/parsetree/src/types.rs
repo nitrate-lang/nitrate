@@ -1,7 +1,6 @@
 use crate::expression::{Expr, FunctionParameter, Identifier};
 use interned_string::IString;
 use serde::{Deserialize, Serialize};
-use std::sync::Arc;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RefinementType {
@@ -273,20 +272,20 @@ pub enum Type {
     Float128,
     UnitType,
     InferType,
-    TypeName(Arc<Identifier>),
-    RefinementType(Arc<RefinementType>),
-    TupleType(Arc<TupleType>),
-    ArrayType(Arc<ArrayType>),
-    MapType(Arc<MapType>),
-    SliceType(Arc<SliceType>),
-    FunctionType(Arc<FunctionType>),
-    ManagedRefType(Arc<ManagedRefType>),
-    UnmanagedRefType(Arc<UnmanagedRefType>),
-    GenericType(Arc<GenericType>),
+    TypeName(Box<Identifier>),
+    RefinementType(Box<RefinementType>),
+    TupleType(Box<TupleType>),
+    ArrayType(Box<ArrayType>),
+    MapType(Box<MapType>),
+    SliceType(Box<SliceType>),
+    FunctionType(Box<FunctionType>),
+    ManagedRefType(Box<ManagedRefType>),
+    UnmanagedRefType(Box<UnmanagedRefType>),
+    GenericType(Box<GenericType>),
     OpaqueType(IString),
-    StructType(Arc<StructType>),
-    LatentType(Arc<Expr>),
-    HasParenthesesType(Arc<Type>),
+    StructType(Box<StructType>),
+    LatentType(Box<Expr>),
+    HasParenthesesType(Box<Type>),
 }
 
 impl From<Type> for Expr {
