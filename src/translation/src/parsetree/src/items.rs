@@ -1,4 +1,4 @@
-use crate::kind::{Block, Expr, Type};
+use crate::kind::{Block, Expr, Path, Type};
 
 use interned_string::IString;
 use serde::{Deserialize, Serialize};
@@ -12,13 +12,23 @@ pub struct Module {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Import {
-    pub path: Vec<IString>,
+    pub language: Option<IString>,
+    pub attributes: Vec<Expr>,
+    pub path: Path,
     pub alias: Option<IString>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct TypeAlias {
+pub struct GenericParameter {
     pub name: IString,
+    pub default: Option<Type>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TypeAlias {
+    pub attributes: Vec<Expr>,
+    pub name: IString,
+    pub type_params: Vec<GenericParameter>,
     pub aliased_type: Type,
 }
 
@@ -34,7 +44,9 @@ pub struct StructField {
 pub struct StructDefinition {
     pub attributes: Vec<Expr>,
     pub name: IString,
+    pub type_params: Vec<GenericParameter>,
     pub fields: Vec<StructField>,
+    pub methods: Vec<NamedFunction>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -48,25 +60,29 @@ pub struct EnumVariant {
 pub struct EnumDefinition {
     pub attributes: Vec<Expr>,
     pub name: IString,
+    pub type_params: Vec<GenericParameter>,
     pub variants: Vec<EnumVariant>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FunctionParameter {
+    pub attributes: Vec<Expr>,
     pub name: IString,
     pub param_type: Type,
     pub default: Option<Expr>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct GlobalFunction {
+pub struct NamedFunction {
     pub attributes: Vec<Expr>,
+    pub name: IString,
+    pub type_params: Vec<GenericParameter>,
     pub parameters: Vec<FunctionParameter>,
     pub return_type: Type,
     pub definition: Option<Block>,
 }
 
-impl GlobalFunction {
+impl NamedFunction {
     #[must_use]
     pub fn is_definition(&self) -> bool {
         self.definition.is_some()
@@ -86,13 +102,6 @@ pub struct GlobalVariable {
     pub initializer: Option<Expr>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Scope {
-    pub name: IString,
-    pub attributes: Vec<Expr>,
-    pub items: Vec<Item>,
-}
-
 #[derive(Clone, Serialize, Deserialize)]
 pub enum Item {
     Module(Box<Module>),
@@ -100,9 +109,8 @@ pub enum Item {
     TypeAlias(Box<TypeAlias>),
     StructDefinition(Box<StructDefinition>),
     EnumDefinition(Box<EnumDefinition>),
-    GlobalFunction(Box<GlobalFunction>),
+    NamedFunction(Box<NamedFunction>),
     GlobalVariable(Box<GlobalVariable>),
-    Scope(Box<Scope>),
 }
 
 impl std::fmt::Debug for Item {
@@ -113,9 +121,8 @@ impl std::fmt::Debug for Item {
             Item::TypeAlias(e) => e.fmt(f),
             Item::StructDefinition(e) => e.fmt(f),
             Item::EnumDefinition(e) => e.fmt(f),
-            Item::GlobalFunction(e) => e.fmt(f),
+            Item::NamedFunction(e) => e.fmt(f),
             Item::GlobalVariable(e) => e.fmt(f),
-            Item::Scope(e) => e.fmt(f),
         }
     }
 }

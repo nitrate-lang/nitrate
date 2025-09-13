@@ -5,7 +5,7 @@ use interned_string::IString;
 use log::{error, info};
 use nitrate_parsetree::{
     Builder,
-    kind::{Expr, FunctionParameter, Type},
+    kind::{Expr, FunctionParameter, GenericArgument, Type},
 };
 use nitrate_tokenize::{Keyword, Op, Punct, Token};
 
@@ -113,7 +113,7 @@ impl Parser<'_, '_> {
         })
     }
 
-    fn parse_generic_argument(&mut self) -> Option<(IString, Type)> {
+    fn parse_generic_argument(&mut self) -> Option<GenericArgument> {
         let mut argument_name: Option<IString> = None;
 
         if let Token::Name(name) = self.lexer.peek_t() {
@@ -145,10 +145,13 @@ impl Parser<'_, '_> {
             return None;
         };
 
-        Some((argument_name.unwrap_or_default(), argument_value))
+        Some(GenericArgument {
+            name: argument_name.unwrap_or_default(),
+            value: Some(argument_value),
+        })
     }
 
-    fn parse_generic_arguments(&mut self) -> Option<Vec<(IString, Type)>> {
+    fn parse_generic_arguments(&mut self) -> Option<Vec<GenericArgument>> {
         assert!(self.lexer.peek_t() == Token::Op(Op::LogicLt));
         self.lexer.skip_tok();
 

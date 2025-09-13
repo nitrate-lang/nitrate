@@ -566,6 +566,11 @@ impl Variable {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Path {
+    pub path: SmallVec<[IString; 3]>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct IndexAccess {
     collection: Expr,
     index: Expr,
@@ -991,7 +996,7 @@ pub enum Expr {
 
     Function(Box<Function>),
     Variable(Box<Variable>),
-    Identifier(IString),
+    Path(Path),
     IndexAccess(Box<IndexAccess>),
 
     If(Box<If>),
@@ -1046,7 +1051,7 @@ impl std::fmt::Debug for Expr {
 
             Expr::Function(e) => e.fmt(f),
             Expr::Variable(e) => e.fmt(f),
-            Expr::Identifier(e) => f.debug_struct("Identifier").field("name", &e).finish(),
+            Expr::Path(e) => e.fmt(f),
             Expr::IndexAccess(e) => e.fmt(f),
 
             Expr::If(e) => e.fmt(f),

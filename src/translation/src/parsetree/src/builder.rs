@@ -3,6 +3,7 @@ use std::ops::Deref;
 use crate::expression::Expr;
 use crate::expression::VariableKind;
 use crate::kind::Block;
+use crate::kind::Path;
 use crate::types::{TupleType, Type};
 use interned_string::IString;
 use nitrate_tokenize::{IntegerKind, NotNan};
@@ -102,13 +103,7 @@ impl Builder {
 
     #[must_use]
     pub fn create_identifier(path: Vec<IString>) -> Expr {
-        let joined = path
-            .iter()
-            .map(Deref::deref)
-            .collect::<Vec<&str>>()
-            .join("::");
-
-        Expr::Identifier(joined.into())
+        Expr::Path(Path { path: path.into() })
     }
 
     #[must_use]
@@ -268,7 +263,7 @@ impl Builder {
 
     #[must_use]
     pub fn get_unit_type() -> Type {
-        Type::TupleType(Box::new(TupleType::new(vec![])))
+        Type::TupleType(Box::new(TupleType { elements: vec![] }))
     }
 
     #[must_use]

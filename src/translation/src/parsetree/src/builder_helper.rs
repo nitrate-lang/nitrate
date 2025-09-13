@@ -4,10 +4,10 @@ use std::collections::BTreeMap;
 
 use crate::kind::{
     ArrayType, Await, BinExpr, BinExprOp, Block, Break, Call, CallArguments, Continue, DoWhileLoop,
-    Expr, ForEach, Function, FunctionParameter, FunctionType, GenericType, If, IndexAccess,
-    Integer, Item, List, ManagedRefType, MapType, Object, RefinementType, Return, Scope, SliceType,
-    StructField, StructType, Switch, TupleType, Type, UnaryExpr, UnaryExprOp, UnmanagedRefType,
-    Variable, VariableKind, WhileLoop,
+    Expr, ForEach, Function, FunctionParameter, FunctionType, GenericArgument, GenericType, If,
+    IndexAccess, Integer, Item, List, ManagedRefType, MapType, Object, RefinementType, Return,
+    Scope, SliceType, StructField, StructType, Switch, TupleType, Type, UnaryExpr, UnaryExprOp,
+    UnmanagedRefType, Variable, VariableKind, WhileLoop,
 };
 
 #[derive(Debug)]
@@ -49,12 +49,12 @@ impl RefinementTypeBuilder {
     }
 
     pub fn build(self) -> Type {
-        Type::RefinementType(Box::new(RefinementType::new(
-            self.base.expect("Principal type must be provided"),
-            self.width,
-            self.minimum,
-            self.maximum,
-        )))
+        Type::RefinementType(Box::new(RefinementType {
+            base: self.base.expect("Principal type must be provided"),
+            width: self.width,
+            minimum: self.minimum,
+            maximum: self.maximum,
+        }))
     }
 }
 
@@ -87,7 +87,9 @@ impl TupleTypeBuilder {
         if self.elements.is_empty() {
             Type::UnitType
         } else {
-            Type::TupleType(Box::new(TupleType::new(self.elements)))
+            Type::TupleType(Box::new(TupleType {
+                elements: self.elements,
+            }))
         }
     }
 }
@@ -117,10 +119,10 @@ impl ArrayTypeBuilder {
     }
 
     pub fn build(self) -> Type {
-        Type::ArrayType(Box::new(ArrayType::new(
-            self.element.expect("Element type must be provided"),
-            self.count.expect("Array length must be provided"),
-        )))
+        Type::ArrayType(Box::new(ArrayType {
+            element: self.element.expect("Element type must be provided"),
+            count: self.count.expect("Array length must be provided"),
+        }))
     }
 }
 
@@ -149,10 +151,10 @@ impl MapTypeBuilder {
     }
 
     pub fn build(self) -> Type {
-        Type::MapType(Box::new(MapType::new(
-            self.key.expect("Key type must be provided"),
-            self.value.expect("Value type must be provided"),
-        )))
+        Type::MapType(Box::new(MapType {
+            key: self.key.expect("Key type must be provided"),
+            value: self.value.expect("Value type must be provided"),
+        }))
     }
 }
 
@@ -172,9 +174,9 @@ impl SliceTypeBuilder {
     }
 
     pub fn build(self) -> Type {
-        Type::SliceType(Box::new(SliceType::new(
-            self.element.expect("Element type must be provided"),
-        )))
+        Type::SliceType(Box::new(SliceType {
+            element: self.element.expect("Element type must be provided"),
+        }))
     }
 }
 
@@ -230,11 +232,11 @@ impl FunctionTypeBuilder {
     }
 
     pub fn build(self) -> Type {
-        Type::FunctionType(Box::new(FunctionType::new(
-            self.parameters,
-            self.return_type.expect("Return type must be provided"),
-            self.attributes,
-        )))
+        Type::FunctionType(Box::new(FunctionType {
+            parameters: self.parameters,
+            return_type: self.return_type.expect("Return type must be provided"),
+            attributes: self.attributes,
+        }))
     }
 }
 
@@ -263,10 +265,10 @@ impl ManagedRefTypeBuilder {
     }
 
     pub fn build(self) -> Type {
-        Type::ManagedRefType(Box::new(ManagedRefType::new(
-            self.target.expect("Target type must be provided"),
-            self.is_mutable,
-        )))
+        Type::ManagedRefType(Box::new(ManagedRefType {
+            is_mutable: self.is_mutable,
+            target: self.target.expect("Target type must be provided"),
+        }))
     }
 }
 
@@ -295,17 +297,17 @@ impl UnmanagedRefTypeBuilder {
     }
 
     pub fn build(self) -> Type {
-        Type::UnmanagedRefType(Box::new(UnmanagedRefType::new(
-            self.target.expect("Target type must be provided"),
-            self.is_mutable,
-        )))
+        Type::UnmanagedRefType(Box::new(UnmanagedRefType {
+            is_mutable: self.is_mutable,
+            target: self.target.expect("Target type must be provided"),
+        }))
     }
 }
 
 #[derive(Debug)]
 pub struct GenericTypeBuilder {
     base: Option<Type>,
-    arguments: Vec<(IString, Type)>,
+    arguments: Vec<GenericArgument>,
 }
 
 impl GenericTypeBuilder {
@@ -321,24 +323,27 @@ impl GenericTypeBuilder {
         self
     }
 
-    pub fn add_argument(mut self, name: IString, value: Type) -> Self {
-        self.arguments.push((name, value));
+    pub fn add_argument(mut self, name: IString, default: Option<Type>) -> Self {
+        self.arguments.push(GenericArgument {
+            name,
+            value: default,
+        });
         self
     }
 
     pub fn add_arguments<I>(mut self, arguments: I) -> Self
     where
-        I: IntoIterator<Item = (IString, Type)>,
+        I: IntoIterator<Item = GenericArgument>,
     {
         self.arguments.extend(arguments);
         self
     }
 
     pub fn build(self) -> Type {
-        Type::GenericType(Box::new(GenericType::new(
-            self.base.expect("Principal type must be provided"),
-            self.arguments,
-        )))
+        Type::GenericType(Box::new(GenericType {
+            base: self.base.expect("Principal type must be provided"),
+            arguments: self.arguments,
+        }))
     }
 }
 
@@ -371,7 +376,9 @@ impl StructTypeBuilder {
     }
 
     pub fn build(self) -> Type {
-        Type::StructType(Box::new(StructType::new(self.fields)))
+        Type::StructType(Box::new(StructType {
+            fields: self.fields,
+        }))
     }
 }
 

@@ -4,250 +4,68 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RefinementType {
-    base: Type,
-    width: Option<Expr>,
-    min: Option<Expr>,
-    max: Option<Expr>,
-}
-
-impl RefinementType {
-    #[must_use]
-    pub(crate) fn new(
-        base: Type,
-        width: Option<Expr>,
-        min: Option<Expr>,
-        max: Option<Expr>,
-    ) -> Self {
-        RefinementType {
-            base,
-            width,
-            min,
-            max,
-        }
-    }
-
-    #[must_use]
-    pub fn base(&self) -> &Type {
-        &self.base
-    }
-
-    #[must_use]
-    pub fn width(&self) -> Option<&Expr> {
-        self.width.as_ref()
-    }
-
-    #[must_use]
-    pub fn min(&self) -> Option<&Expr> {
-        self.min.as_ref()
-    }
-
-    #[must_use]
-    pub fn max(&self) -> Option<&Expr> {
-        self.max.as_ref()
-    }
+    pub base: Type,
+    pub width: Option<Expr>,
+    pub minimum: Option<Expr>,
+    pub maximum: Option<Expr>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TupleType {
-    elements: Vec<Type>,
-}
-
-impl TupleType {
-    #[must_use]
-    pub(crate) fn new(elements: Vec<Type>) -> Self {
-        TupleType { elements }
-    }
-
-    #[must_use]
-    pub fn elements(&self) -> &[Type] {
-        &self.elements
-    }
+    pub elements: Vec<Type>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ArrayType {
-    element: Type,
-    count: Expr,
-}
-
-impl ArrayType {
-    #[must_use]
-    pub(crate) fn new(element: Type, count: Expr) -> Self {
-        ArrayType { element, count }
-    }
-
-    #[must_use]
-    pub fn element(&self) -> &Type {
-        &self.element
-    }
-
-    #[must_use]
-    pub fn count(&self) -> &Expr {
-        &self.count
-    }
+    pub element: Type,
+    pub count: Expr,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MapType {
-    key: Type,
-    value: Type,
-}
-
-impl MapType {
-    #[must_use]
-    pub(crate) fn new(key: Type, value: Type) -> Self {
-        MapType { key, value }
-    }
-
-    #[must_use]
-    pub fn key(&self) -> &Type {
-        &self.key
-    }
-
-    #[must_use]
-    pub fn value(&self) -> &Type {
-        &self.value
-    }
+    pub key: Type,
+    pub value: Type,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SliceType {
-    element: Type,
-}
-
-impl SliceType {
-    #[must_use]
-    pub(crate) fn new(element: Type) -> Self {
-        SliceType { element }
-    }
-
-    #[must_use]
-    pub fn element(&self) -> &Type {
-        &self.element
-    }
+    pub element: Type,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FunctionType {
-    parameters: Vec<FunctionParameter>,
-    return_type: Type,
-    attributes: Vec<Expr>,
-}
-
-impl FunctionType {
-    #[must_use]
-    pub(crate) fn new(
-        parameters: Vec<FunctionParameter>,
-        return_type: Type,
-        attributes: Vec<Expr>,
-    ) -> Self {
-        FunctionType {
-            parameters,
-            return_type,
-            attributes,
-        }
-    }
-
-    #[must_use]
-    pub fn attributes(&self) -> &[Expr] {
-        &self.attributes
-    }
-
-    #[must_use]
-    pub fn parameters(&self) -> &[FunctionParameter] {
-        &self.parameters
-    }
-
-    #[must_use]
-    pub fn return_type(&self) -> &Type {
-        &self.return_type
-    }
+    pub parameters: Vec<FunctionParameter>,
+    pub return_type: Type,
+    pub attributes: Vec<Expr>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ManagedRefType {
-    target: Type,
-    is_mutable: bool,
-}
-
-impl ManagedRefType {
-    #[must_use]
-    pub(crate) fn new(target: Type, is_mutable: bool) -> Self {
-        ManagedRefType { target, is_mutable }
-    }
-
-    #[must_use]
-    pub fn target(&self) -> &Type {
-        &self.target
-    }
-
-    #[must_use]
-    pub fn is_mutable(&self) -> bool {
-        self.is_mutable
-    }
+    pub is_mutable: bool,
+    pub target: Type,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct UnmanagedRefType {
-    target: Type,
-    is_mutable: bool,
+    pub is_mutable: bool,
+    pub target: Type,
 }
 
-impl UnmanagedRefType {
-    #[must_use]
-    pub(crate) fn new(target: Type, is_mutable: bool) -> Self {
-        UnmanagedRefType { target, is_mutable }
-    }
-
-    #[must_use]
-    pub fn target(&self) -> &Type {
-        &self.target
-    }
-
-    #[must_use]
-    pub fn is_mutable(&self) -> bool {
-        self.is_mutable
-    }
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct GenericArgument {
+    pub name: IString,
+    pub value: Option<Type>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GenericType {
-    base: Type,
-    args: Vec<(IString, Type)>,
-}
-
-impl GenericType {
-    #[must_use]
-    pub(crate) fn new(base: Type, args: Vec<(IString, Type)>) -> Self {
-        GenericType { base, args }
-    }
-
-    #[must_use]
-    pub fn base(&self) -> &Type {
-        &self.base
-    }
-
-    #[must_use]
-    pub fn arguments(&self) -> &[(IString, Type)] {
-        &self.args
-    }
+    pub base: Type,
+    pub arguments: Vec<GenericArgument>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct StructType {
-    fields: Vec<StructField>,
-}
-
-impl StructType {
-    #[must_use]
-    pub(crate) fn new(fields: Vec<StructField>) -> Self {
-        StructType { fields }
-    }
-
-    #[must_use]
-    pub fn fields(&self) -> &[StructField] {
-        &self.fields
-    }
+    pub fields: Vec<StructField>,
 }
 
 #[derive(Clone, Serialize, Deserialize)]
