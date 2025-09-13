@@ -3,7 +3,7 @@ use interned_string::IString;
 use log::error;
 use nitrate_parsetree::{
     Builder,
-    kind::{BinExprOp, CallArguments, Expr, UnaryExprOp},
+    kind::{BinExprOp, CallArguments, Expr, Scope, UnaryExprOp},
 };
 use nitrate_tokenize::{Keyword, Op, Punct, Token};
 
@@ -169,7 +169,6 @@ impl Parser<'_, '_> {
                 Some(Builder::create_boolean(false))
             }
 
-            Token::Keyword(Keyword::Scope) => self.parse_scope(),
             Token::Keyword(Keyword::Enum) => self.parse_enum(),
             Token::Keyword(Keyword::Struct) => self.parse_struct(),
             Token::Keyword(Keyword::Class) => self.parse_class(),
@@ -689,7 +688,7 @@ impl Parser<'_, '_> {
         None
     }
 
-    fn parse_scope(&mut self) -> Option<Expr> {
+    fn parse_scope(&mut self) -> Option<Scope> {
         assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Scope));
         self.lexer.skip_tok();
 
@@ -712,13 +711,15 @@ impl Parser<'_, '_> {
 
         self.scope.pop();
 
-        Some(
-            Builder::create_scope()
-                .with_name(name_token)
-                .add_attributes(attributes)
-                .add_elements(elements)
-                .build(),
-        )
+        // Some(
+        //     Builder::create_scope()
+        //         .with_name(name_token)
+        //         .add_attributes(attributes)
+        //         .add_items(elements)
+        //         .build(),
+        // )
+        // TODO: Convert scope
+        todo!()
     }
 
     fn parse_enum(&mut self) -> Option<Expr> {

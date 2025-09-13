@@ -1,7 +1,4 @@
-use crate::{
-    expression::{Expr, FunctionParameter},
-    kind::Block,
-};
+use crate::kind::{Block, Expr, FunctionParameter, StructField};
 use interned_string::IString;
 use serde::{Deserialize, Serialize};
 
@@ -235,8 +232,6 @@ impl GenericType {
         &self.args
     }
 }
-
-pub type StructField = (IString, Type, Option<Expr>);
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct StructType {

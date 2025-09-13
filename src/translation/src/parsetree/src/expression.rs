@@ -1,4 +1,4 @@
-use crate::kind::Type;
+use crate::kind::{FunctionParameter, Type};
 
 use interned_string::IString;
 use nitrate_tokenize::{IntegerKind, Op};
@@ -405,39 +405,6 @@ impl Block {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct FunctionParameter {
-    name: IString,
-    param_type: Type,
-    default_value: Option<Expr>,
-}
-
-impl FunctionParameter {
-    #[must_use]
-    pub fn new(name: IString, param_type: Type, default_value: Option<Expr>) -> Self {
-        FunctionParameter {
-            name,
-            param_type,
-            default_value,
-        }
-    }
-
-    #[must_use]
-    pub fn name(&self) -> &IString {
-        &self.name
-    }
-
-    #[must_use]
-    pub fn type_(&self) -> &Type {
-        &self.param_type
-    }
-
-    #[must_use]
-    pub fn default(&self) -> Option<&Expr> {
-        self.default_value.as_ref()
-    }
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Function {
     parameters: Vec<FunctionParameter>,
     return_type: Type,
@@ -683,51 +650,6 @@ impl std::fmt::Display for QualifiedScope {
                 .collect::<Vec<&str>>()
                 .join("::")
         )
-    }
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Scope {
-    name: IString,
-    attributes: Vec<Expr>,
-    elements: Vec<Expr>,
-}
-
-impl Scope {
-    #[must_use]
-    pub fn new(name: IString, attributes: Vec<Expr>, elements: Vec<Expr>) -> Self {
-        Scope {
-            name,
-            attributes,
-            elements,
-        }
-    }
-
-    #[must_use]
-    pub fn name(&self) -> &IString {
-        &self.name
-    }
-
-    pub fn set_name(&mut self, name: IString) {
-        self.name = name;
-    }
-
-    #[must_use]
-    pub fn attributes(&self) -> &[Expr] {
-        &self.attributes
-    }
-
-    pub fn attributes_mut(&mut self) -> &mut Vec<Expr> {
-        &mut self.attributes
-    }
-
-    #[must_use]
-    pub fn elements(&self) -> &[Expr] {
-        &self.elements
-    }
-
-    pub fn elements_mut(&mut self) -> &mut Vec<Expr> {
-        &mut self.elements
     }
 }
 
@@ -1071,7 +993,6 @@ pub enum Expr {
     Variable(Box<Variable>),
     Identifier(IString),
     IndexAccess(Box<IndexAccess>),
-    Scope(Box<Scope>),
 
     If(Box<If>),
     WhileLoop(Box<WhileLoop>),
@@ -1127,7 +1048,6 @@ impl std::fmt::Debug for Expr {
             Expr::Variable(e) => e.fmt(f),
             Expr::Identifier(e) => f.debug_struct("Identifier").field("name", &e).finish(),
             Expr::IndexAccess(e) => e.fmt(f),
-            Expr::Scope(e) => e.fmt(f),
 
             Expr::If(e) => e.fmt(f),
             Expr::WhileLoop(e) => e.fmt(f),

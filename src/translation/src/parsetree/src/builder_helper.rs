@@ -5,7 +5,7 @@ use std::collections::BTreeMap;
 use crate::kind::{
     ArrayType, Await, BinExpr, BinExprOp, Block, Break, Call, CallArguments, Continue, DoWhileLoop,
     Expr, ForEach, Function, FunctionParameter, FunctionType, GenericType, If, IndexAccess,
-    Integer, List, ManagedRefType, MapType, Object, RefinementType, Return, Scope, SliceType,
+    Integer, Item, List, ManagedRefType, MapType, Object, RefinementType, Return, Scope, SliceType,
     StructField, StructType, Switch, TupleType, Type, UnaryExpr, UnaryExprOp, UnmanagedRefType,
     Variable, VariableKind, WhileLoop,
 };
@@ -195,8 +195,11 @@ impl FunctionTypeBuilder {
     }
 
     pub fn add_parameter(mut self, name: IString, ty: Type, default_value: Option<Expr>) -> Self {
-        self.parameters
-            .push(FunctionParameter::new(name, ty, default_value));
+        self.parameters.push(FunctionParameter {
+            name,
+            param_type: ty,
+            default: default_value,
+        });
         self
     }
 
@@ -350,7 +353,12 @@ impl StructTypeBuilder {
     }
 
     pub fn add_field(mut self, name: IString, ty: Type, default_value: Option<Expr>) -> Self {
-        self.fields.push((name, ty, default_value));
+        self.fields.push(StructField {
+            attributes: Vec::new(),
+            name,
+            field_type: ty,
+            default: default_value,
+        });
         self
     }
 
@@ -613,8 +621,11 @@ impl FunctionBuilder {
     }
 
     pub fn with_parameter(mut self, name: IString, ty: Type, default_value: Option<Expr>) -> Self {
-        self.parameters
-            .push(FunctionParameter::new(name, ty, default_value));
+        self.parameters.push(FunctionParameter {
+            name,
+            param_type: ty,
+            default: default_value,
+        });
         self
     }
 
@@ -765,7 +776,7 @@ impl IndexAccessBuilder {
 pub struct ScopeBuilder {
     name: Option<IString>,
     attributes: Vec<Expr>,
-    elements: Vec<Expr>,
+    items: Vec<Item>,
 }
 
 impl ScopeBuilder {
@@ -773,7 +784,7 @@ impl ScopeBuilder {
         ScopeBuilder {
             name: None,
             attributes: Vec::new(),
-            elements: Vec::new(),
+            items: Vec::new(),
         }
     }
 
@@ -795,25 +806,25 @@ impl ScopeBuilder {
         self
     }
 
-    pub fn add_element(mut self, element: Expr) -> Self {
-        self.elements.push(element);
+    pub fn add_item(mut self, item: Item) -> Self {
+        self.items.push(item);
         self
     }
 
-    pub fn add_elements<I>(mut self, elements: I) -> Self
+    pub fn add_items<I>(mut self, items: I) -> Self
     where
-        I: IntoIterator<Item = Expr>,
+        I: IntoIterator<Item = Item>,
     {
-        self.elements.extend(elements);
+        self.items.extend(items);
         self
     }
 
-    pub fn build(self) -> Expr {
-        Expr::Scope(Box::new(Scope::new(
-            self.name.expect("Name must be provided"),
-            self.attributes,
-            self.elements,
-        )))
+    pub fn build(self) -> Item {
+        Item::Scope(Box::new(Scope {
+            name: self.name.expect("Name must be provided"),
+            attributes: self.attributes,
+            items: self.items,
+        }))
     }
 }
 

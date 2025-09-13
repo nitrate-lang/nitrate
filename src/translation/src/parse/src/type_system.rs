@@ -493,11 +493,11 @@ impl Parser<'_, '_> {
                 None
             };
 
-            parameters.push(FunctionParameter::new(
-                parameter_name,
-                parameter_type,
-                parameter_default,
-            ));
+            parameters.push(FunctionParameter {
+                name: parameter_name,
+                param_type: parameter_type,
+                default: parameter_default,
+            });
 
             if !self.lexer.skip_if(&Token::Punct(Punct::Comma)) {
                 if self.lexer.skip_if(&Token::Punct(Punct::RightParen)) {

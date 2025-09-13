@@ -816,20 +816,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "nitrate_evaluate"
-version = "0.1.0"
-dependencies = [
- "hashbrown 0.16.0",
- "interned-string",
- "log",
- "nitrate_parsetree",
- "nitrate_tokenize",
- "ordered-float",
- "smallvec 1.15.1",
- "spdx",
-]
-
-[[package]]
 name = "nitrate_hir"
 version = "0.1.0"
 dependencies = [
@@ -903,7 +889,6 @@ version = "0.1.0"
 dependencies = [
  "nitrate_codegen",
  "nitrate_diagnosis",
- "nitrate_evaluate",
  "nitrate_hir",
  "nitrate_optimization",
  "nitrate_parse",
