@@ -200,7 +200,7 @@ impl AbstractMachine {
     pub(crate) fn evaluate_latent_type(&mut self, latent_type: &Expr) -> Result<Type, Unwind> {
         // TODO: Verify and write tests
 
-        let Expr::Object(object) = self.evaluate(latent_type)? else {
+        let Expr::Object(_object) = self.evaluate(latent_type)? else {
             return Err(Unwind::TypeError);
         };
 

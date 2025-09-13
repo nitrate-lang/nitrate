@@ -305,47 +305,6 @@ impl Parser<'_, '_> {
         )
     }
 
-    fn parse_tuple_type(&mut self) -> Option<Type> {
-        assert!(self.lexer.peek_t() == Token::Punct(Punct::LeftBrace));
-        self.lexer.skip_tok();
-
-        let mut tuple_elements = Vec::new();
-        self.lexer.skip_if(&Token::Punct(Punct::Comma));
-
-        loop {
-            if self.lexer.skip_if(&Token::Punct(Punct::RightBrace)) {
-                break;
-            }
-
-            let element = self.parse_type()?;
-
-            tuple_elements.push(element);
-
-            if !self.lexer.skip_if(&Token::Punct(Punct::Comma)) {
-                if self.lexer.skip_if(&Token::Punct(Punct::RightBrace)) {
-                    break;
-                }
-                error!(
-                    "[P0???]: tuple type: expected ',' or '}}' after element type\n--> {}",
-                    self.lexer.sync_position()
-                );
-                info!("[P0???]: tuple type: syntax hint: {{<type1>, <type2>, ...}}");
-
-                return None;
-            }
-        }
-
-        if tuple_elements.is_empty() {
-            Some(Builder::get_unit_type())
-        } else {
-            Some(
-                Builder::create_tuple_type()
-                    .add_elements(tuple_elements)
-                    .build(),
-            )
-        }
-    }
-
     fn parse_rest_of_array(&mut self, element_type: Type) -> Option<Type> {
         assert!(self.lexer.peek_t() == Token::Punct(Punct::Semicolon));
         self.lexer.skip_tok();
@@ -719,7 +678,6 @@ impl Parser<'_, '_> {
             }
 
             Token::Name(_) | Token::Op(Op::Scope) => self.parse_type_name(),
-            Token::Punct(Punct::LeftBrace) => self.parse_tuple_type(),
             Token::Punct(Punct::LeftBracket) => self.parse_array_or_slice_or_map(),
             Token::Op(Op::BitAnd) => self.parse_managed_type(),
             Token::Op(Op::Mul) => self.parse_unmanaged_type(),
@@ -826,41 +784,78 @@ impl Parser<'_, '_> {
                 return None;
             };
 
-            if !self.lexer.skip_if(&Token::Punct(Punct::RightParen)) {
-                self.set_failed_bit();
-                error!(
-                    "[P0???]: type: expected ')' to close\n--> {}",
-                    self.lexer.sync_position()
-                );
+            let result = match self.lexer.next_t() {
+                Token::Punct(Punct::RightParen) => Some(Builder::create_type_parentheses(inner)),
 
-                return None;
-            }
+                Token::Punct(Punct::Comma) => {
+                    let mut tuple_elements = Vec::from([inner]);
 
-            Some(Builder::create_type_parentheses(inner))
-        } else {
-            let Some(the_type) = self.parse_type_primary() else {
-                self.set_failed_bit();
-                return None;
+                    loop {
+                        if self.lexer.skip_if(&Token::Punct(Punct::RightParen)) {
+                            break;
+                        }
+
+                        let element = self.parse_type()?;
+                        tuple_elements.push(element);
+
+                        if !self.lexer.skip_if(&Token::Punct(Punct::Comma)) {
+                            if self.lexer.skip_if(&Token::Punct(Punct::RightParen)) {
+                                break;
+                            }
+
+                            error!(
+                                "[P0???]: tuple type: expected ',' or ')' after element type\n--> {}",
+                                self.lexer.sync_position()
+                            );
+                            info!("[P0???]: tuple type: syntax hint: (<type1>, <type2>, ... )");
+
+                            return None;
+                        }
+                    }
+
+                    Some(
+                        Builder::create_tuple_type()
+                            .add_elements(tuple_elements)
+                            .build(),
+                    )
+                }
+
+                _ => {
+                    self.set_failed_bit();
+                    error!(
+                        "[P0???]: type: expected ')' or ',' after type \n--> {}",
+                        self.lexer.sync_position()
+                    );
+
+                    None
+                }
             };
 
-            let Some(refinement) = self.parse_refinement_options() else {
-                self.set_failed_bit();
-                return None;
-            };
-
-            if refinement.has_any() {
-                return Some(
-                    Builder::create_refinement_type()
-                        .with_base(the_type)
-                        .with_width(refinement.width)
-                        .with_minimum(refinement.minimum)
-                        .with_maximum(refinement.maximum)
-                        .build(),
-                );
-            }
-
-            Some(the_type)
+            return result;
         }
+
+        let Some(the_type) = self.parse_type_primary() else {
+            self.set_failed_bit();
+            return None;
+        };
+
+        let Some(refinement) = self.parse_refinement_options() else {
+            self.set_failed_bit();
+            return None;
+        };
+
+        if refinement.has_any() {
+            return Some(
+                Builder::create_refinement_type()
+                    .with_base(the_type)
+                    .with_width(refinement.width)
+                    .with_minimum(refinement.minimum)
+                    .with_maximum(refinement.maximum)
+                    .build(),
+            );
+        }
+
+        return Some(the_type);
     }
 }
 

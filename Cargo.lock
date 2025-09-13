@@ -789,6 +789,7 @@ dependencies = [
  "nitrate_diagnosis",
  "nitrate_optimization",
  "nitrate_translation",
+ "serde_json",
  "slog",
  "slog-async",
  "slog-term",
