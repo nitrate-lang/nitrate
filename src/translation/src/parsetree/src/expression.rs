@@ -353,6 +353,7 @@ pub struct Return {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ForEach {
+    pub attributes: Vec<Expr>,
     pub iterable: Expr,
     pub bindings: Vec<(IString, Option<Type>)>,
     pub body: Block,

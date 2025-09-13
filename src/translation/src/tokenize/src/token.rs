@@ -120,6 +120,7 @@ pub enum Keyword {
     If,       /* 'if' */
     Else,     /* 'else' */
     For,      /* 'for' */
+    In,       /* 'in' */
     While,    /* 'while' */
     Do,       /* 'do' */
     Switch,   /* 'switch' */
@@ -186,6 +187,7 @@ impl std::fmt::Display for Keyword {
             Keyword::If => write!(f, "if"),
             Keyword::Else => write!(f, "else"),
             Keyword::For => write!(f, "for"),
+            Keyword::In => write!(f, "in"),
             Keyword::While => write!(f, "while"),
             Keyword::Do => write!(f, "do"),
             Keyword::Switch => write!(f, "switch"),
@@ -679,6 +681,7 @@ mod tests {
                 Keyword::If => "if",
                 Keyword::Else => "else",
                 Keyword::For => "for",
+                Keyword::In => "in",
                 Keyword::While => "while",
                 Keyword::Do => "do",
                 Keyword::Switch => "switch",

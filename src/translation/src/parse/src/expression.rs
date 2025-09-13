@@ -3,8 +3,8 @@ use interned_string::IString;
 use log::error;
 use nitrate_parsetree::kind::{
     AnonymousFunction, Await, BinExpr, BinExprOp, Block, Break, Call, CallArguments, Continue,
-    DoWhileLoop, Expr, If, IndexAccess, Integer, List, Path, Return, Type, UnaryExpr, UnaryExprOp,
-    Variable, VariableKind, WhileLoop,
+    DoWhileLoop, Expr, ForEach, If, IndexAccess, Integer, List, Path, Return, Type, UnaryExpr,
+    UnaryExprOp, Variable, VariableKind, WhileLoop,
 };
 use nitrate_tokenize::{Keyword, Op, Punct, Token};
 use smallvec::smallvec;
@@ -556,11 +556,90 @@ impl Parser<'_, '_> {
         })))
     }
 
+    fn parse_for_bindings(&mut self) -> Option<Vec<(IString, Option<Type>)>> {
+        let mut bindings = Vec::new();
+
+        if self.lexer.skip_if(&Token::Punct(Punct::LeftParen)) {
+            self.lexer.skip_if(&Token::Punct(Punct::Comma));
+
+            loop {
+                if self.lexer.skip_if(&Token::Punct(Punct::RightParen)) {
+                    break;
+                }
+
+                let Some(variable_name) = self.lexer.next_if_name() else {
+                    error!(
+                        "[P????]: for: expected loop variable name\n--> {}",
+                        self.lexer.sync_position()
+                    );
+                    return None;
+                };
+
+                let type_annotation = if self.lexer.skip_if(&Token::Punct(Punct::Colon)) {
+                    Some(self.parse_type()?)
+                } else {
+                    None
+                };
+
+                bindings.push((variable_name, type_annotation));
+
+                if !self.lexer.skip_if(&Token::Punct(Punct::Comma))
+                    && !self.lexer.next_is(&Token::Punct(Punct::RightParen))
+                {
+                    error!(
+                        "[P0???]: for: expected ',' or ')' after loop variable\n--> {}",
+                        self.lexer.sync_position()
+                    );
+
+                    return None;
+                }
+            }
+        } else {
+            let Some(variable_name) = self.lexer.next_if_name() else {
+                error!(
+                    "[P????]: for: expected loop variable name\n--> {}",
+                    self.lexer.sync_position()
+                );
+                return None;
+            };
+
+            let type_annotation = if self.lexer.skip_if(&Token::Punct(Punct::Colon)) {
+                Some(self.parse_type()?)
+            } else {
+                None
+            };
+
+            bindings.push((variable_name, type_annotation));
+        }
+
+        Some(bindings)
+    }
+
     fn parse_for(&mut self) -> Option<Expr> {
-        // TODO: for expression parsing logic
-        self.set_failed_bit();
-        error!("For expression parsing not implemented yet");
-        None
+        assert!(self.lexer.peek_t() == Token::Keyword(Keyword::For));
+        self.lexer.skip_tok();
+
+        let attributes = self.parse_attributes()?;
+        let bindings = self.parse_for_bindings()?;
+
+        if !self.lexer.skip_if(&Token::Keyword(Keyword::In)) {
+            self.set_failed_bit();
+            error!(
+                "[P????]: for: expected 'in' after loop variable\n--> {}",
+                self.lexer.sync_position()
+            );
+            return None;
+        }
+
+        let iterable = self.parse_expression()?;
+        let body = self.parse_block()?;
+
+        Some(Expr::ForEach(Box::new(ForEach {
+            attributes,
+            bindings,
+            iterable,
+            body,
+        })))
     }
 
     fn parse_while(&mut self) -> Option<Expr> {
@@ -927,7 +1006,7 @@ impl Parser<'_, '_> {
         Some(arguments)
     }
 
-    pub(crate) fn parse_block_as_elements(&mut self) -> Option<Vec<Expr>> {
+    pub(crate) fn parse_block(&mut self) -> Option<Block> {
         if !self.lexer.skip_if(&Token::Punct(Punct::LeftBrace)) {
             self.set_failed_bit();
             error!(
@@ -939,17 +1018,18 @@ impl Parser<'_, '_> {
         }
 
         let mut elements = Vec::new();
+        let mut ends_with_semi = false;
+
         loop {
             if self.lexer.skip_if(&Token::Punct(Punct::RightBrace)) {
                 break;
             }
 
-            if self.lexer.skip_if(&Token::Punct(Punct::Semicolon))
-                || self.lexer.next_if_comment().is_some()
-            {
+            if self.lexer.next_if_comment().is_some() {
                 continue;
             }
 
+            ends_with_semi = false;
             let Some(expression) = self.parse_expression() else {
                 let before_pos = self.lexer.sync_position();
                 loop {
@@ -975,27 +1055,14 @@ impl Parser<'_, '_> {
                 continue;
             };
 
-            // TODO: Handle the semicolon
-            self.lexer.skip_if(&Token::Punct(Punct::Semicolon));
-
-            // if self.lexer.skip_if(&Token::Punct(Punct::Semicolon)) {
-            //     expression = Builder::create_statement()
-            //         .with_expression(expression)
-            //         .build();
-            // }
-
             elements.push(expression);
+
+            ends_with_semi = self.lexer.skip_if(&Token::Punct(Punct::Semicolon));
         }
-
-        Some(elements)
-    }
-
-    pub(crate) fn parse_block(&mut self) -> Option<Block> {
-        let elements = self.parse_block_as_elements()?;
 
         Some(Block {
             elements,
-            ends_with_semi: false,
+            ends_with_semi,
         })
     }
 }

@@ -338,6 +338,7 @@ impl<'a> Lexer<'a> {
             b"if" => Some(Keyword::If),
             b"else" => Some(Keyword::Else),
             b"for" => Some(Keyword::For),
+            b"in" => Some(Keyword::In),
             b"while" => Some(Keyword::While),
             b"do" => Some(Keyword::Do),
             b"switch" => Some(Keyword::Switch),
