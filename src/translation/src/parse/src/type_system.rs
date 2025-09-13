@@ -212,7 +212,7 @@ impl Parser<'_, '_> {
             _ => {}
         }
 
-        let mut segments = Vec::new();
+        let mut path = Vec::new();
         let mut last_was_scope = false;
 
         let pos = self.lexer.sync_position();
@@ -220,9 +220,9 @@ impl Parser<'_, '_> {
         loop {
             match self.lexer.peek_t() {
                 Token::Name(name) => {
-                    if last_was_scope || segments.is_empty() {
+                    if last_was_scope || path.is_empty() {
                         self.lexer.skip_tok();
-                        segments.push(name);
+                        path.push(name);
 
                         last_was_scope = false;
                     } else {
@@ -238,8 +238,8 @@ impl Parser<'_, '_> {
                     self.lexer.skip_tok();
 
                     // For absolute scoping
-                    if segments.is_empty() {
-                        segments.push(IString::default());
+                    if path.is_empty() {
+                        path.push(IString::default());
                     }
 
                     last_was_scope = true;
@@ -251,7 +251,7 @@ impl Parser<'_, '_> {
             }
         }
 
-        if segments.is_empty() {
+        if path.is_empty() {
             error!("[P????]: type name: expected type name\n--> {pos}");
             return None;
         }
@@ -266,7 +266,7 @@ impl Parser<'_, '_> {
         }
 
         if !self.lexer.next_is(&Token::Op(Op::LogicLt)) {
-            return Some(Builder::create_qualified_type_name(segments));
+            return Some(Builder::create_type_name(path));
         }
 
         let is_already_parsing_generic_type = self.generic_type_depth != 0;
@@ -299,7 +299,7 @@ impl Parser<'_, '_> {
 
         Some(
             Builder::create_generic_type()
-                .with_base(Builder::create_qualified_type_name(segments))
+                .with_base(Builder::create_type_name(path))
                 .add_arguments(generic_arguments)
                 .build(),
         )

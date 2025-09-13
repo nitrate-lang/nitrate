@@ -36,11 +36,9 @@ impl AbstractMachine {
 
         // FIXME: What about lvalue vs rvalue?
 
-        self.resolve(&identifier.full_name())
+        self.resolve(&identifier.path())
             .cloned()
-            .ok_or(Unwind::UnresolvedIdentifier(
-                identifier.full_name().to_owned(),
-            ))
+            .ok_or(Unwind::UnresolvedIdentifier(identifier.path().to_owned()))
     }
 
     pub(crate) fn evaluate_index_access(

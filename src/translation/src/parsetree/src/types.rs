@@ -1,4 +1,4 @@
-use crate::expression::{Expr, FunctionParameter, Identifier};
+use crate::expression::{Expr, FunctionParameter};
 use interned_string::IString;
 use serde::{Deserialize, Serialize};
 
@@ -272,7 +272,7 @@ pub enum Type {
     Float128,
     UnitType,
     InferType,
-    TypeName(Box<Identifier>),
+    TypeName(IString),
     RefinementType(Box<RefinementType>),
     TupleType(Box<TupleType>),
     ArrayType(Box<ArrayType>),
@@ -316,10 +316,7 @@ impl std::fmt::Debug for Type {
             Type::Float128 => write!(f, "f128"),
             Type::UnitType => write!(f, "()"),
             Type::InferType => write!(f, "_"),
-            Type::TypeName(e) => f
-                .debug_struct("TypeName")
-                .field("name", &e.full_name())
-                .finish(),
+            Type::TypeName(e) => f.debug_struct("TypeName").field("name", &e).finish(),
             Type::RefinementType(e) => e.fmt(f),
             Type::TupleType(e) => e.fmt(f),
             Type::ArrayType(e) => e.fmt(f),

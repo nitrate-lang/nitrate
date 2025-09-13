@@ -1,3 +1,5 @@
+use std::ops::Deref;
+
 use crate::expression::VariableKind;
 use crate::expression::{Expr, Identifier};
 use crate::types::{TupleType, Type};
@@ -98,8 +100,8 @@ impl Builder {
     }
 
     #[must_use]
-    pub fn create_qualified_identifier(segments: Vec<IString>) -> Expr {
-        Expr::Identifier(Box::new(Identifier::new(segments)))
+    pub fn create_qualified_identifier(path: Vec<IString>) -> Expr {
+        Expr::Identifier(Box::new(Identifier::new(path)))
     }
 
     #[must_use]
@@ -274,19 +276,14 @@ impl Builder {
     }
 
     #[must_use]
-    pub fn create_qualified_type_name(segments: Vec<IString>) -> Type {
-        Type::TypeName(Box::new(Identifier::new(segments)))
-    }
+    pub fn create_type_name(path: Vec<IString>) -> Type {
+        let joined = path
+            .iter()
+            .map(Deref::deref)
+            .collect::<Vec<&str>>()
+            .join("::");
 
-    #[must_use]
-    pub fn create_type_name(name: IString) -> Type {
-        let parts = name
-            .to_string()
-            .split("::")
-            .map(IString::from)
-            .collect::<Vec<IString>>();
-
-        Self::create_qualified_type_name(parts)
+        Type::TypeName(joined.into())
     }
 
     #[must_use]

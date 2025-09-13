@@ -591,37 +591,30 @@ impl Variable {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Identifier {
-    full_name: IString,
-    segments: Vec<IString>,
+    path: IString,
 }
 
 impl Identifier {
     #[must_use]
-    pub(crate) fn new(segments: Vec<IString>) -> Self {
+    pub(crate) fn new(path: Vec<IString>) -> Self {
         Identifier {
-            full_name: segments
+            path: path
                 .iter()
                 .map(Deref::deref)
                 .collect::<Vec<&str>>()
                 .join("::")
                 .into(),
-            segments,
         }
     }
 
     #[must_use]
-    pub fn full_name(&self) -> &IString {
-        &self.full_name
-    }
-
-    #[must_use]
-    pub fn segments(&self) -> &[IString] {
-        &self.segments
+    pub fn path(&self) -> &IString {
+        &self.path
     }
 
     #[must_use]
     pub fn is_absolute(&self) -> bool {
-        self.segments.first().map_or(false, |s| s.is_empty())
+        self.path().starts_with("::")
     }
 }
 
@@ -1154,7 +1147,7 @@ impl std::fmt::Debug for Expr {
             Expr::Variable(e) => e.fmt(f),
             Expr::Identifier(e) => f
                 .debug_struct("Identifier")
-                .field("name", &e.full_name())
+                .field("name", &e.path())
                 .finish(),
             Expr::IndexAccess(e) => e.fmt(f),
             Expr::Scope(e) => e.fmt(f),
