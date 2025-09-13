@@ -500,6 +500,7 @@ impl Parser<'_, '_> {
                 name: parameter_name,
                 param_type: parameter_type,
                 default: parameter_default,
+                attributes: Vec::new(),
             });
 
             if !self.lexer.skip_if(&Token::Punct(Punct::Comma)) {

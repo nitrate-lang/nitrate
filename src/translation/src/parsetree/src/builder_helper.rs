@@ -4,9 +4,9 @@ use std::collections::BTreeMap;
 
 use crate::kind::{
     ArrayType, Await, BinExpr, BinExprOp, Block, Break, Call, CallArguments, Continue, DoWhileLoop,
-    Expr, ForEach, Function, FunctionParameter, FunctionType, GenericArgument, GenericType, If,
-    IndexAccess, Integer, Item, List, ManagedRefType, MapType, Object, RefinementType, Return,
-    Scope, SliceType, StructField, StructType, Switch, TupleType, Type, UnaryExpr, UnaryExprOp,
+    Expr, ForEach, Function, FunctionParameter, FunctionType, GenericArgument, GenericParameter,
+    GenericType, If, IndexAccess, Integer, List, ManagedRefType, MapType, Object, RefinementType,
+    Return, SliceType, StructField, StructType, Switch, TupleType, Type, UnaryExpr, UnaryExprOp,
     UnmanagedRefType, Variable, VariableKind, WhileLoop,
 };
 
@@ -182,25 +182,32 @@ impl SliceTypeBuilder {
 
 #[derive(Debug)]
 pub struct FunctionTypeBuilder {
+    attributes: Vec<Expr>,
     parameters: Vec<FunctionParameter>,
     return_type: Option<Type>,
-    attributes: Vec<Expr>,
 }
 
 impl FunctionTypeBuilder {
     pub(crate) fn new() -> Self {
         FunctionTypeBuilder {
+            attributes: Vec::new(),
             parameters: Vec::new(),
             return_type: None,
-            attributes: Vec::new(),
         }
     }
 
-    pub fn add_parameter(mut self, name: IString, ty: Type, default_value: Option<Expr>) -> Self {
+    pub fn add_parameter(
+        mut self,
+        name: IString,
+        ty: Type,
+        default_value: Option<Expr>,
+        attributes: Vec<Expr>,
+    ) -> Self {
         self.parameters.push(FunctionParameter {
             name,
             param_type: ty,
             default: default_value,
+            attributes,
         });
         self
     }
@@ -407,11 +414,10 @@ impl IntegerBuilder {
     }
 
     pub fn build(self) -> Expr {
-        let lit = Integer::new(
-            self.value.expect("Integer value must be provided"),
-            self.kind.unwrap_or(IntegerKind::Dec),
-        )
-        .expect("Invalid integer value");
+        let lit = Integer {
+            value: self.value.expect("Integer value must be provided"),
+            kind: self.kind.unwrap_or(IntegerKind::Dec),
+        };
 
         Expr::Integer(Box::new(lit))
     }
@@ -448,7 +454,9 @@ impl ListBuilder {
     }
 
     pub fn build(self) -> Expr {
-        Expr::List(Box::new(List::new(self.elements)))
+        Expr::List(Box::new(List {
+            elements: self.elements,
+        }))
     }
 }
 
@@ -478,7 +486,9 @@ impl ObjectBuilder {
     }
 
     pub fn build(self) -> Expr {
-        Expr::Object(Box::new(Object::new(self.fields)))
+        Expr::Object(Box::new(Object {
+            fields: self.fields,
+        }))
     }
 }
 
@@ -524,11 +534,11 @@ impl UnaryExprBuilder {
     }
 
     pub fn build(self) -> Expr {
-        Expr::UnaryExpr(Box::new(UnaryExpr::new(
-            self.operand.expect("Operand must be provided"),
-            self.operator.expect("Unary operator must be provided"),
-            self.is_postfix.expect("Postfix flag must be provided"),
-        )))
+        Expr::UnaryExpr(Box::new(UnaryExpr {
+            operand: self.operand.expect("Operand must be provided"),
+            operator: self.operator.expect("Unary operator must be provided"),
+            is_postfix: self.is_postfix.expect("Postfix flag must be provided"),
+        }))
     }
 }
 
@@ -564,11 +574,11 @@ impl BinExprBuilder {
     }
 
     pub fn build(self) -> Expr {
-        Expr::BinExpr(Box::new(BinExpr::new(
-            self.left.expect("Left expression must be provided"),
-            self.operator.expect("BinExpr operator must be provided"),
-            self.right.expect("Right expression must be provided"),
-        )))
+        Expr::BinExpr(Box::new(BinExpr {
+            left: self.left.expect("Left expression must be provided"),
+            operator: self.operator.expect("BinExpr operator must be provided"),
+            right: self.right.expect("Right expression must be provided"),
+        }))
     }
 }
 
@@ -605,33 +615,78 @@ impl BlockBuilder {
     }
 
     pub fn build(self) -> Expr {
-        Expr::Block(Box::new(Block::new(self.elements, self.ends_with_semi)))
+        Expr::Block(Box::new(Block {
+            elements: self.elements,
+            ends_with_semi: self.ends_with_semi,
+        }))
     }
 }
 
 #[derive(Debug)]
 pub struct FunctionBuilder {
+    attributes: Vec<Expr>,
+    name: Option<IString>,
+    type_params: Vec<GenericParameter>,
     parameters: Vec<FunctionParameter>,
     return_type: Option<Type>,
-    attributes: Vec<Expr>,
     definition: Option<Expr>,
 }
 
 impl FunctionBuilder {
     pub(crate) fn new() -> Self {
         FunctionBuilder {
+            attributes: Vec::new(),
+            name: None,
+            type_params: Vec::new(),
             parameters: Vec::new(),
             return_type: None,
-            attributes: Vec::new(),
             definition: None,
         }
     }
 
-    pub fn with_parameter(mut self, name: IString, ty: Type, default_value: Option<Expr>) -> Self {
+    pub fn with_attribute(mut self, attribute: Expr) -> Self {
+        self.attributes.push(attribute);
+        self
+    }
+
+    pub fn with_attributes<I>(mut self, attributes: I) -> Self
+    where
+        I: IntoIterator<Item = Expr>,
+    {
+        self.attributes.extend(attributes);
+        self
+    }
+
+    pub fn with_name(mut self, name: IString) -> Self {
+        self.name = Some(name);
+        self
+    }
+
+    pub fn with_type_param(mut self, type_param: GenericParameter) -> Self {
+        self.type_params.push(type_param);
+        self
+    }
+
+    pub fn with_type_params<I>(mut self, type_params: I) -> Self
+    where
+        I: IntoIterator<Item = GenericParameter>,
+    {
+        self.type_params.extend(type_params);
+        self
+    }
+
+    pub fn with_parameter(
+        mut self,
+        name: IString,
+        ty: Type,
+        default_value: Option<Expr>,
+        attributes: Vec<Expr>,
+    ) -> Self {
         self.parameters.push(FunctionParameter {
             name,
             param_type: ty,
             default: default_value,
+            attributes,
         });
         self
     }
@@ -649,31 +704,18 @@ impl FunctionBuilder {
         self
     }
 
-    pub fn with_attribute(mut self, attribute: Expr) -> Self {
-        self.attributes.push(attribute);
-        self
-    }
-
-    pub fn with_attributes<I>(mut self, attributes: I) -> Self
-    where
-        I: IntoIterator<Item = Expr>,
-    {
-        self.attributes.extend(attributes);
-        self
-    }
-
     pub fn with_definition(mut self, definition: Option<Expr>) -> Self {
         self.definition = definition;
         self
     }
 
     pub fn build(self) -> Expr {
-        Expr::Function(Box::new(Function::new(
-            self.parameters,
-            self.return_type.expect("Return type must be provided"),
-            self.attributes,
-            self.definition,
-        )))
+        Expr::Function(Box::new(Function {
+            parameters: self.parameters,
+            return_type: self.return_type.expect("Return type must be provided"),
+            attributes: self.attributes,
+            definition: self.definition,
+        }))
     }
 }
 
@@ -684,7 +726,7 @@ pub struct VariableBuilder {
     attributes: Vec<Expr>,
     name: IString,
     ty: Option<Type>,
-    value: Option<Expr>,
+    initializer: Option<Expr>,
 }
 
 impl VariableBuilder {
@@ -695,7 +737,7 @@ impl VariableBuilder {
             attributes: Vec::new(),
             name: IString::from(""),
             ty: None,
-            value: None,
+            initializer: None,
         }
     }
 
@@ -729,20 +771,20 @@ impl VariableBuilder {
         self
     }
 
-    pub fn with_value(mut self, value: Option<Expr>) -> Self {
-        self.value = value;
+    pub fn with_initializer(mut self, initializer: Option<Expr>) -> Self {
+        self.initializer = initializer;
         self
     }
 
     pub fn build(self) -> Expr {
-        Expr::Variable(Box::new(Variable::new(
-            self.kind.expect("Variable kind must be provided"),
-            self.is_mutable,
-            self.attributes,
-            self.name,
-            self.ty.expect("Variable type must be provided"),
-            self.value,
-        )))
+        Expr::Variable(Box::new(Variable {
+            kind: self.kind.expect("Variable kind must be provided"),
+            attributes: self.attributes,
+            is_mutable: self.is_mutable,
+            name: self.name,
+            var_type: self.ty.expect("Variable type must be provided"),
+            initializer: self.initializer,
+        }))
     }
 }
 
@@ -771,66 +813,11 @@ impl IndexAccessBuilder {
     }
 
     pub fn build(self) -> Expr {
-        Expr::IndexAccess(Box::new(IndexAccess::new(
-            self.collection
+        Expr::IndexAccess(Box::new(IndexAccess {
+            collection: self
+                .collection
                 .expect("Collection expression must be provided"),
-            self.index.expect("Index expression must be provided"),
-        )))
-    }
-}
-
-#[derive(Debug)]
-pub struct ScopeBuilder {
-    name: Option<IString>,
-    attributes: Vec<Expr>,
-    items: Vec<Item>,
-}
-
-impl ScopeBuilder {
-    pub(crate) fn new() -> Self {
-        ScopeBuilder {
-            name: None,
-            attributes: Vec::new(),
-            items: Vec::new(),
-        }
-    }
-
-    pub fn with_name(mut self, name: IString) -> Self {
-        self.name = Some(name);
-        self
-    }
-
-    pub fn add_attribute(mut self, attribute: Expr) -> Self {
-        self.attributes.push(attribute);
-        self
-    }
-
-    pub fn add_attributes<I>(mut self, attributes: I) -> Self
-    where
-        I: IntoIterator<Item = Expr>,
-    {
-        self.attributes.extend(attributes);
-        self
-    }
-
-    pub fn add_item(mut self, item: Item) -> Self {
-        self.items.push(item);
-        self
-    }
-
-    pub fn add_items<I>(mut self, items: I) -> Self
-    where
-        I: IntoIterator<Item = Item>,
-    {
-        self.items.extend(items);
-        self
-    }
-
-    pub fn build(self) -> Item {
-        Item::Scope(Box::new(Scope {
-            name: self.name.expect("Name must be provided"),
-            attributes: self.attributes,
-            items: self.items,
+            index: self.index.expect("Index expression must be provided"),
         }))
     }
 }
@@ -867,11 +854,11 @@ impl IfBuilder {
     }
 
     pub fn build(self) -> Expr {
-        let expr = If::new(
-            self.condition.expect("Condition must be provided"),
-            self.then_branch.expect("Then branch must be provided"),
-            self.else_branch,
-        );
+        let expr = If {
+            condition: self.condition.expect("Condition must be provided"),
+            then_branch: self.then_branch.expect("Then branch must be provided"),
+            else_branch: self.else_branch,
+        };
 
         Expr::If(Box::new(expr))
     }
@@ -902,10 +889,10 @@ impl WhileLoopBuilder {
     }
 
     pub fn build(self) -> Expr {
-        let expr = WhileLoop::new(
-            self.condition.expect("Condition must be provided"),
-            self.body.expect("Body expression must be provided"),
-        );
+        let expr = WhileLoop {
+            condition: self.condition.expect("Condition must be provided"),
+            body: self.body.expect("Body expression must be provided"),
+        };
 
         Expr::WhileLoop(Box::new(expr))
     }
@@ -936,10 +923,10 @@ impl DoWhileLoopBuilder {
     }
 
     pub fn build(self) -> Expr {
-        let expr = DoWhileLoop::new(
-            self.condition.expect("Condition must be provided"),
-            self.body.expect("Body expression must be provided"),
-        );
+        let expr = DoWhileLoop {
+            condition: self.condition.expect("Condition must be provided"),
+            body: self.body.expect("Body expression must be provided"),
+        };
 
         Expr::DoWhileLoop(Box::new(expr))
     }
@@ -985,11 +972,11 @@ impl SwitchBuilder {
     }
 
     pub fn build(self) -> Expr {
-        let expr = Switch::new(
-            self.condition.expect("Condition must be provided"),
-            self.cases,
-            self.default,
-        );
+        let expr = Switch {
+            condition: self.condition.expect("Condition must be provided"),
+            cases: self.cases,
+            default_case: self.default,
+        };
 
         Expr::Switch(Box::new(expr))
     }
@@ -1011,9 +998,7 @@ impl BreakBuilder {
     }
 
     pub fn build(self) -> Expr {
-        let expr = Break::new(self.label);
-
-        Expr::Break(Box::new(expr))
+        Expr::Break(Box::new(Break { label: self.label }))
     }
 }
 
@@ -1033,9 +1018,7 @@ impl ContinueBuilder {
     }
 
     pub fn build(self) -> Expr {
-        let expr = Continue::new(self.label);
-
-        Expr::Continue(Box::new(expr))
+        Expr::Continue(Box::new(Continue { label: self.label }))
     }
 }
 
@@ -1055,9 +1038,7 @@ impl ReturnBuilder {
     }
 
     pub fn build(self) -> Expr {
-        let expr = Return::new(self.value);
-
-        Expr::Return(Box::new(expr))
+        Expr::Return(Box::new(Return { value: self.value }))
     }
 }
 
@@ -1101,11 +1082,11 @@ impl ForEachBuilder {
     }
 
     pub fn build(self) -> Expr {
-        let expr = ForEach::new(
-            self.bindings,
-            self.iterable.expect("Iterable expression must be provided"),
-            self.body.expect("Body expression must be provided"),
-        );
+        let expr = ForEach {
+            bindings: self.bindings,
+            iterable: self.iterable.expect("Iterable expression must be provided"),
+            body: self.body.expect("Body expression must be provided"),
+        };
 
         Expr::ForEach(Box::new(expr))
     }
@@ -1113,23 +1094,23 @@ impl ForEachBuilder {
 
 #[derive(Debug)]
 pub struct AwaitBuilder {
-    expression: Option<Expr>,
+    future: Option<Expr>,
 }
 
 impl AwaitBuilder {
     pub(crate) fn new() -> Self {
-        AwaitBuilder { expression: None }
+        AwaitBuilder { future: None }
     }
 
-    pub fn with_expression(mut self, expression: Expr) -> Self {
-        self.expression = Some(expression);
+    pub fn with_future(mut self, future: Expr) -> Self {
+        self.future = Some(future);
         self
     }
 
     pub fn build(self) -> Expr {
-        let expr = Await::new(self.expression.expect("Expression must be provided"));
-
-        Expr::Await(Box::new(expr))
+        Expr::Await(Box::new(Await {
+            future: self.future.expect("Future must be provided"),
+        }))
     }
 }
 
@@ -1166,11 +1147,9 @@ impl CallBuilder {
     }
 
     pub fn build(self) -> Expr {
-        let expr = Call::new(
-            self.callee.expect("Callee must be provided"),
-            self.arguments,
-        );
-
-        Expr::Call(Box::new(expr))
+        Expr::Call(Box::new(Call {
+            callee: self.callee.expect("Callee must be provided"),
+            arguments: self.arguments,
+        }))
     }
 }

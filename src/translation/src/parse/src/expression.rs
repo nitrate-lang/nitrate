@@ -3,7 +3,7 @@ use interned_string::IString;
 use log::error;
 use nitrate_parsetree::{
     Builder,
-    kind::{BinExprOp, CallArguments, Expr, Scope, UnaryExprOp},
+    kind::{BinExprOp, CallArguments, Expr, UnaryExprOp},
 };
 use nitrate_tokenize::{Keyword, Op, Punct, Token};
 
@@ -671,7 +671,7 @@ impl Parser<'_, '_> {
             return None;
         };
 
-        Some(Builder::create_await().with_expression(expr).build())
+        Some(Builder::create_await().with_future(expr).build())
     }
 
     fn parse_asm(&mut self) -> Option<Expr> {
@@ -686,40 +686,6 @@ impl Parser<'_, '_> {
         self.set_failed_bit();
         error!("Type alias parsing not implemented yet");
         None
-    }
-
-    fn parse_scope(&mut self) -> Option<Scope> {
-        assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Scope));
-        self.lexer.skip_tok();
-
-        let attributes = self.parse_attributes()?;
-
-        let Some(name_token) = self.lexer.next_if_name() else {
-            error!(
-                "[P????]: scope: expected scope name\n--> {}",
-                self.lexer.sync_position()
-            );
-            return None;
-        };
-
-        self.scope.push(name_token.clone());
-
-        let Some(elements) = self.parse_block_as_elements() else {
-            self.scope.pop();
-            return None;
-        };
-
-        self.scope.pop();
-
-        // Some(
-        //     Builder::create_scope()
-        //         .with_name(name_token)
-        //         .add_attributes(attributes)
-        //         .add_items(elements)
-        //         .build(),
-        // )
-        // TODO: Convert scope
-        todo!()
     }
 
     fn parse_enum(&mut self) -> Option<Expr> {
@@ -847,7 +813,7 @@ impl Parser<'_, '_> {
             .with_attributes(attributes)
             .with_name(variable_name.clone())
             .with_type(type_annotation)
-            .with_value(initializer)
+            .with_initializer(initializer)
             .build();
 
         let current_scope = self.scope.clone();
@@ -902,7 +868,7 @@ impl Parser<'_, '_> {
             .with_attributes(attributes)
             .with_name(variable_name.clone())
             .with_type(type_annotation)
-            .with_value(initializer)
+            .with_initializer(initializer)
             .build();
 
         let current_scope = self.scope.clone();

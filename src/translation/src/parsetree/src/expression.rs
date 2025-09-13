@@ -8,87 +8,20 @@ use smallvec::SmallVec;
 use std::collections::BTreeMap;
 use std::ops::Deref;
 
-#[derive(Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Integer {
-    value: u128,
-    kind: IntegerKind,
-}
-
-impl Integer {
-    #[must_use]
-    pub(crate) fn new(value: u128, kind: IntegerKind) -> Option<Self> {
-        Some(Integer { value, kind })
-    }
-
-    #[must_use]
-    pub fn get_u128(&self) -> u128 {
-        self.value
-    }
-
-    #[must_use]
-    pub fn kind(&self) -> IntegerKind {
-        self.kind
-    }
-}
-
-impl std::fmt::Debug for Integer {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "Integer({}, {:?})", self.get_u128(), self.kind())
-    }
+    pub value: u128,
+    pub kind: IntegerKind,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct List {
-    elements: Vec<Expr>,
-}
-
-impl List {
-    #[must_use]
-    pub(crate) fn new(elements: Vec<Expr>) -> Self {
-        List { elements }
-    }
-
-    #[must_use]
-    pub fn elements(&self) -> &[Expr] {
-        &self.elements
-    }
-
-    #[must_use]
-    pub fn elements_mut(&mut self) -> &mut Vec<Expr> {
-        &mut self.elements
-    }
+    pub elements: Vec<Expr>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Object {
-    fields: BTreeMap<IString, Expr>,
-}
-
-impl Object {
-    #[must_use]
-    pub(crate) fn new(fields: BTreeMap<IString, Expr>) -> Self {
-        Object { fields }
-    }
-
-    #[must_use]
-    pub fn fields(&self) -> &BTreeMap<IString, Expr> {
-        &self.fields
-    }
-
-    #[must_use]
-    pub fn fields_mut(&mut self) -> &mut BTreeMap<IString, Expr> {
-        &mut self.fields
-    }
-
-    #[must_use]
-    pub fn access(&self, key: IString) -> Option<&Expr> {
-        self.fields.get(&key)
-    }
-
-    #[must_use]
-    pub fn access_mut(&mut self, key: IString) -> Option<&mut Expr> {
-        self.fields_mut().get_mut(&key)
-    }
+    pub fields: BTreeMap<IString, Expr>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -177,35 +110,9 @@ impl TryFrom<Op> for UnaryExprOp {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct UnaryExpr {
-    operator: UnaryExprOp,
-    is_postfix: bool,
-    operand: Expr,
-}
-
-impl UnaryExpr {
-    #[must_use]
-    pub(crate) fn new(operand: Expr, operator: UnaryExprOp, is_postfix: bool) -> Self {
-        UnaryExpr {
-            operand,
-            operator,
-            is_postfix,
-        }
-    }
-
-    #[must_use]
-    pub fn operand(&self) -> &Expr {
-        &self.operand
-    }
-
-    #[must_use]
-    pub fn operator(&self) -> UnaryExprOp {
-        self.operator
-    }
-
-    #[must_use]
-    pub fn is_postfix(&self) -> bool {
-        self.is_postfix
-    }
+    pub operator: UnaryExprOp,
+    pub is_postfix: bool,
+    pub operand: Expr,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -342,130 +249,26 @@ impl TryFrom<Op> for BinExprOp {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BinExpr {
-    operator: BinExprOp,
-    left: Expr,
-    right: Expr,
-}
-
-impl BinExpr {
-    #[must_use]
-    pub(crate) fn new(left: Expr, operator: BinExprOp, right: Expr) -> Self {
-        BinExpr {
-            left,
-            right,
-            operator,
-        }
-    }
-
-    #[must_use]
-    pub fn left(&self) -> &Expr {
-        &self.left
-    }
-
-    #[must_use]
-    pub fn op(&self) -> BinExprOp {
-        self.operator
-    }
-
-    #[must_use]
-    pub fn right(&self) -> &Expr {
-        &self.right
-    }
+    pub operator: BinExprOp,
+    pub left: Expr,
+    pub right: Expr,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Block {
-    elements: Vec<Expr>,
-    ends_with_semi: bool,
-}
-
-impl Block {
-    #[must_use]
-    pub(crate) fn new(elements: Vec<Expr>, ends_with_semi: bool) -> Self {
-        Block {
-            elements,
-            ends_with_semi,
-        }
-    }
-
-    #[must_use]
-    pub fn elements(&self) -> &[Expr] {
-        &self.elements
-    }
-
-    #[must_use]
-    pub fn elements_mut(&mut self) -> &mut Vec<Expr> {
-        &mut self.elements
-    }
-
-    #[must_use]
-    pub fn ends_with_semi(&self) -> bool {
-        self.ends_with_semi
-    }
+    pub elements: Vec<Expr>,
+    pub ends_with_semi: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Function {
-    parameters: Vec<FunctionParameter>,
-    return_type: Type,
-    attributes: Vec<Expr>,
-    definition: Option<Expr>,
+    pub parameters: Vec<FunctionParameter>,
+    pub return_type: Type,
+    pub attributes: Vec<Expr>,
+    pub definition: Option<Expr>,
 }
 
 impl Function {
-    #[must_use]
-    pub(crate) fn new(
-        parameters: Vec<FunctionParameter>,
-        return_type: Type,
-        attributes: Vec<Expr>,
-        definition: Option<Expr>,
-    ) -> Self {
-        Function {
-            parameters,
-            return_type,
-            attributes,
-            definition,
-        }
-    }
-
-    #[must_use]
-    pub fn parameters(&self) -> &[FunctionParameter] {
-        &self.parameters
-    }
-
-    #[must_use]
-    pub fn parameters_mut(&mut self) -> &mut Vec<FunctionParameter> {
-        &mut self.parameters
-    }
-
-    #[must_use]
-    pub fn return_type(&self) -> &Type {
-        &self.return_type
-    }
-
-    pub fn set_return_type(&mut self, ty: Type) {
-        self.return_type = ty;
-    }
-
-    #[must_use]
-    pub fn attributes(&self) -> &[Expr] {
-        &self.attributes
-    }
-
-    #[must_use]
-    pub fn attributes_mut(&mut self) -> &mut Vec<Expr> {
-        &mut self.attributes
-    }
-
-    #[must_use]
-    pub fn definition(&self) -> Option<&Expr> {
-        self.definition.as_ref()
-    }
-
-    pub fn set_definition(&mut self, definition: Option<Expr>) {
-        self.definition = definition;
-    }
-
     #[must_use]
     pub fn is_definition(&self) -> bool {
         self.definition.is_some()
@@ -485,84 +288,12 @@ pub enum VariableKind {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Variable {
-    kind: VariableKind,
-    is_mutable: bool,
-    attributes: Vec<Expr>,
-    name: IString,
-    var_type: Type,
-    value: Option<Expr>,
-}
-
-impl Variable {
-    #[must_use]
-    pub(crate) fn new(
-        kind: VariableKind,
-        is_mutable: bool,
-        attributes: Vec<Expr>,
-        name: IString,
-        var_type: Type,
-        value: Option<Expr>,
-    ) -> Self {
-        Variable {
-            kind,
-            is_mutable,
-            attributes,
-            name,
-            var_type,
-            value,
-        }
-    }
-
-    #[must_use]
-    pub fn kind(&self) -> VariableKind {
-        self.kind
-    }
-
-    #[must_use]
-    pub fn is_mutable(&self) -> bool {
-        self.is_mutable
-    }
-
-    pub fn set_mutable(&mut self, is_mutable: bool) {
-        self.is_mutable = is_mutable;
-    }
-
-    #[must_use]
-    pub fn attributes(&self) -> &[Expr] {
-        &self.attributes
-    }
-
-    #[must_use]
-    pub fn attributes_mut(&mut self) -> &mut Vec<Expr> {
-        &mut self.attributes
-    }
-
-    #[must_use]
-    pub fn name(&self) -> &IString {
-        &self.name
-    }
-
-    pub fn set_name(&mut self, name: IString) {
-        self.name = name;
-    }
-
-    #[must_use]
-    pub fn get_type(&self) -> &Type {
-        &self.var_type
-    }
-
-    pub fn set_type(&mut self, var_type: Type) {
-        self.var_type = var_type;
-    }
-
-    #[must_use]
-    pub fn value(&self) -> Option<&Expr> {
-        self.value.as_ref()
-    }
-
-    pub fn set_value(&mut self, value: Option<Expr>) {
-        self.value = value;
-    }
+    pub kind: VariableKind,
+    pub attributes: Vec<Expr>,
+    pub is_mutable: bool,
+    pub name: IString,
+    pub var_type: Type,
+    pub initializer: Option<Expr>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -572,33 +303,8 @@ pub struct Path {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct IndexAccess {
-    collection: Expr,
-    index: Expr,
-}
-
-impl IndexAccess {
-    #[must_use]
-    pub(crate) fn new(collection: Expr, index: Expr) -> Self {
-        IndexAccess { collection, index }
-    }
-
-    #[must_use]
-    pub fn collection(&self) -> &Expr {
-        &self.collection
-    }
-
-    pub fn set_collection(&mut self, collection: Expr) {
-        self.collection = collection;
-    }
-
-    #[must_use]
-    pub fn index(&self) -> &Expr {
-        &self.index
-    }
-
-    pub fn set_index(&mut self, index: Expr) {
-        self.index = index;
-    }
+    pub collection: Expr,
+    pub index: Expr,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -660,319 +366,63 @@ impl std::fmt::Display for QualifiedScope {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct If {
-    condition: Expr,
-    then_branch: Expr,
-    else_branch: Option<Expr>,
-}
-
-impl If {
-    #[must_use]
-    pub(crate) fn new(condition: Expr, then_branch: Expr, else_branch: Option<Expr>) -> Self {
-        If {
-            condition,
-            then_branch,
-            else_branch,
-        }
-    }
-
-    #[must_use]
-    pub fn condition(&self) -> &Expr {
-        &self.condition
-    }
-
-    pub fn set_condition(&mut self, condition: Expr) {
-        self.condition = condition;
-    }
-
-    #[must_use]
-    pub fn then_branch(&self) -> &Expr {
-        &self.then_branch
-    }
-
-    pub fn set_then_branch(&mut self, then_branch: Expr) {
-        self.then_branch = then_branch;
-    }
-
-    #[must_use]
-    pub fn else_branch(&self) -> Option<&Expr> {
-        self.else_branch.as_ref()
-    }
-
-    pub fn set_else_branch(&mut self, else_branch: Option<Expr>) {
-        self.else_branch = else_branch;
-    }
+    pub condition: Expr,
+    pub then_branch: Expr,
+    pub else_branch: Option<Expr>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct WhileLoop {
-    condition: Expr,
-    body: Expr,
-}
-
-impl WhileLoop {
-    #[must_use]
-    pub(crate) fn new(condition: Expr, body: Expr) -> Self {
-        WhileLoop { condition, body }
-    }
-
-    #[must_use]
-    pub fn condition(&self) -> &Expr {
-        &self.condition
-    }
-
-    pub fn set_condition(&mut self, condition: Expr) {
-        self.condition = condition;
-    }
-
-    #[must_use]
-    pub fn body(&self) -> &Expr {
-        &self.body
-    }
-
-    pub fn set_body(&mut self, body: Expr) {
-        self.body = body;
-    }
+    pub condition: Expr,
+    pub body: Expr,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DoWhileLoop {
-    condition: Expr,
-    body: Expr,
-}
-
-impl DoWhileLoop {
-    #[must_use]
-    pub(crate) fn new(condition: Expr, body: Expr) -> Self {
-        DoWhileLoop { condition, body }
-    }
-
-    #[must_use]
-    pub fn condition(&self) -> &Expr {
-        &self.condition
-    }
-
-    pub fn set_condition(&mut self, condition: Expr) {
-        self.condition = condition;
-    }
-
-    #[must_use]
-    pub fn body(&self) -> &Expr {
-        &self.body
-    }
-
-    pub fn set_body(&mut self, body: Expr) {
-        self.body = body;
-    }
+    pub condition: Expr,
+    pub body: Expr,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Switch {
-    condition: Expr,
-    cases: Vec<(Expr, Expr)>,
-    default_case: Option<Expr>,
-}
-
-impl Switch {
-    #[must_use]
-    pub(crate) fn new(
-        condition: Expr,
-        cases: Vec<(Expr, Expr)>,
-        default_case: Option<Expr>,
-    ) -> Self {
-        Switch {
-            condition,
-            cases,
-            default_case,
-        }
-    }
-
-    #[must_use]
-    pub fn condition(&self) -> &Expr {
-        &self.condition
-    }
-
-    pub fn set_condition(&mut self, condition: Expr) {
-        self.condition = condition;
-    }
-
-    #[must_use]
-    pub fn cases(&self) -> &[(Expr, Expr)] {
-        &self.cases
-    }
-
-    #[must_use]
-    pub fn cases_mut(&mut self) -> &mut Vec<(Expr, Expr)> {
-        &mut self.cases
-    }
-
-    #[must_use]
-    pub fn default_case(&self) -> Option<&Expr> {
-        self.default_case.as_ref()
-    }
-
-    pub fn set_default_case(&mut self, default_case: Option<Expr>) {
-        self.default_case = default_case;
-    }
+    pub condition: Expr,
+    pub cases: Vec<(Expr, Expr)>,
+    pub default_case: Option<Expr>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Break {
-    label: Option<IString>,
-}
-
-impl Break {
-    #[must_use]
-    pub(crate) fn new(label: Option<IString>) -> Self {
-        Break { label }
-    }
-
-    #[must_use]
-    pub fn label(&self) -> Option<&IString> {
-        self.label.as_ref()
-    }
+    pub label: Option<IString>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Continue {
-    label: Option<IString>,
-}
-
-impl Continue {
-    #[must_use]
-    pub(crate) fn new(label: Option<IString>) -> Self {
-        Continue { label }
-    }
-
-    #[must_use]
-    pub fn label(&self) -> Option<&IString> {
-        self.label.as_ref()
-    }
+    pub label: Option<IString>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Return {
-    value: Option<Expr>,
-}
-
-impl Return {
-    #[must_use]
-    pub(crate) fn new(value: Option<Expr>) -> Self {
-        Return { value }
-    }
-
-    #[must_use]
-    pub fn value(&self) -> Option<&Expr> {
-        self.value.as_ref()
-    }
-
-    pub fn set_value(&mut self, value: Option<Expr>) {
-        self.value = value;
-    }
+    pub value: Option<Expr>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ForEach {
-    iterable: Expr,
-    bindings: Vec<(IString, Option<Type>)>,
-    body: Expr,
-}
-
-impl ForEach {
-    #[must_use]
-    pub(crate) fn new(bindings: Vec<(IString, Option<Type>)>, iterable: Expr, body: Expr) -> Self {
-        ForEach {
-            iterable,
-            bindings,
-            body,
-        }
-    }
-
-    #[must_use]
-    pub fn iterable(&self) -> &Expr {
-        &self.iterable
-    }
-
-    pub fn set_iterable(&mut self, iterable: Expr) {
-        self.iterable = iterable;
-    }
-
-    #[must_use]
-    pub fn bindings(&self) -> &[(IString, Option<Type>)] {
-        &self.bindings
-    }
-
-    #[must_use]
-    pub fn bindings_mut(&mut self) -> &mut Vec<(IString, Option<Type>)> {
-        &mut self.bindings
-    }
-
-    #[must_use]
-    pub fn body(&self) -> &Expr {
-        &self.body
-    }
-
-    pub fn set_body(&mut self, body: Expr) {
-        self.body = body;
-    }
+    pub iterable: Expr,
+    pub bindings: Vec<(IString, Option<Type>)>,
+    pub body: Expr,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Await {
-    expression: Expr,
-}
-
-impl Await {
-    #[must_use]
-    pub(crate) fn new(expression: Expr) -> Self {
-        Await { expression }
-    }
-
-    #[must_use]
-    pub fn expression(&self) -> &Expr {
-        &self.expression
-    }
-
-    pub fn set_expression(&mut self, expression: Expr) {
-        self.expression = expression;
-    }
+    pub future: Expr,
 }
 
 pub type CallArguments = Vec<(Option<IString>, Expr)>;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Call {
-    callee: Expr,
-    arguments: CallArguments,
-}
-
-impl Call {
-    #[must_use]
-    pub fn new(callee: Expr, arguments: CallArguments) -> Self {
-        Call { callee, arguments }
-    }
-
-    #[must_use]
-    pub fn callee(&self) -> &Expr {
-        &self.callee
-    }
-
-    pub fn set_callee(&mut self, callee: Expr) {
-        self.callee = callee;
-    }
-
-    #[must_use]
-    pub fn arguments(&self) -> &[(Option<IString>, Expr)] {
-        &self.arguments
-    }
-
-    #[must_use]
-    pub fn arguments_mut(&mut self) -> &mut CallArguments {
-        &mut self.arguments
-    }
-
-    pub fn set_arguments(&mut self, arguments: CallArguments) {
-        self.arguments = arguments;
-    }
+    pub callee: Expr,
+    pub arguments: CallArguments,
 }
 
 #[derive(Clone, Serialize, Deserialize)]

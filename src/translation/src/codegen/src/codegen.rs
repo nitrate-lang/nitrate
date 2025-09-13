@@ -123,7 +123,7 @@ impl Codegen {
         variable: &kind::Variable,
         module: &mut ObjectModule,
     ) -> Result<(), CodegenError> {
-        let name = variable.name();
+        let name = &variable.name;
 
         // TODO: Determine the correct linkage, and TLS status
         let linkage = Linkage::Local;
@@ -185,7 +185,7 @@ impl Codegen {
             ));
         };
 
-        for expression in block.elements() {
+        for expression in &block.elements {
             match expression {
                 Expr::Function(function) => {
                     Self::create_global_function(function, &mut module)?;

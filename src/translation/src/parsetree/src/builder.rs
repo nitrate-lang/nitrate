@@ -13,8 +13,8 @@ use crate::builder_helper::{
     ContinueBuilder, DoWhileLoopBuilder, ForEachBuilder, FunctionBuilder, FunctionTypeBuilder,
     GenericTypeBuilder, IfBuilder, IndexAccessBuilder, IntegerBuilder, ListBuilder,
     ManagedRefTypeBuilder, MapTypeBuilder, ObjectBuilder, RefinementTypeBuilder, ReturnBuilder,
-    ScopeBuilder, SliceTypeBuilder, StructTypeBuilder, SwitchBuilder, TupleTypeBuilder,
-    UnaryExprBuilder, UnmanagedRefTypeBuilder, VariableBuilder, WhileLoopBuilder,
+    SliceTypeBuilder, StructTypeBuilder, SwitchBuilder, TupleTypeBuilder, UnaryExprBuilder,
+    UnmanagedRefTypeBuilder, VariableBuilder, WhileLoopBuilder,
 };
 
 #[derive(Debug, Default)]
@@ -109,11 +109,6 @@ impl Builder {
     #[must_use]
     pub fn create_index_access() -> IndexAccessBuilder {
         IndexAccessBuilder::new()
-    }
-
-    #[must_use]
-    pub fn create_scope() -> ScopeBuilder {
-        ScopeBuilder::new()
     }
 
     #[must_use]
