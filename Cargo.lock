@@ -801,7 +801,7 @@ dependencies = [
  "cranelift",
  "interned-string",
  "log",
- "nitrate_structure",
+ "nitrate_parsetree",
  "serde",
  "target-lexicon",
 ]
@@ -810,7 +810,7 @@ dependencies = [
 name = "nitrate_diagnosis"
 version = "0.1.0"
 dependencies = [
- "nitrate_structure",
+ "nitrate_parsetree",
  "slog",
 ]
 
@@ -821,7 +821,7 @@ dependencies = [
  "hashbrown 0.16.0",
  "interned-string",
  "log",
- "nitrate_structure",
+ "nitrate_parsetree",
  "nitrate_tokenize",
  "ordered-float",
  "smallvec 1.15.1",
@@ -846,7 +846,7 @@ name = "nitrate_optimization"
 version = "0.1.0"
 dependencies = [
  "nitrate_diagnosis",
- "nitrate_structure",
+ "nitrate_parsetree",
 ]
 
 [[package]]
@@ -856,7 +856,7 @@ dependencies = [
  "hashbrown 0.16.0",
  "interned-string",
  "log",
- "nitrate_structure",
+ "nitrate_parsetree",
  "nitrate_tokenize",
  "ordered-float",
  "smallvec 1.15.1",
@@ -864,11 +864,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "nitrate_resolve"
-version = "0.1.0"
-
-[[package]]
-name = "nitrate_structure"
+name = "nitrate_parsetree"
 version = "0.1.0"
 dependencies = [
  "apint",
@@ -883,6 +879,10 @@ dependencies = [
  "smallvec 1.15.1",
  "spdx",
 ]
+
+[[package]]
+name = "nitrate_resolve"
+version = "0.1.0"
 
 [[package]]
 name = "nitrate_tokenize"
@@ -906,8 +906,8 @@ dependencies = [
  "nitrate_hir",
  "nitrate_optimization",
  "nitrate_parse",
+ "nitrate_parsetree",
  "nitrate_resolve",
- "nitrate_structure",
  "nitrate_tokenize",
  "threadpool",
  "threadpool_scope",

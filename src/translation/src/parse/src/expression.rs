@@ -1,7 +1,7 @@
 use super::parse::Parser;
 use interned_string::IString;
 use log::error;
-use nitrate_structure::{
+use nitrate_parsetree::{
     Builder,
     kind::{BinExprOp, CallArguments, Expr, UnaryExprOp},
 };

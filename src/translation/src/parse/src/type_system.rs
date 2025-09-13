@@ -3,7 +3,7 @@ use std::ops::Deref;
 use super::parse::Parser;
 use interned_string::IString;
 use log::{error, info};
-use nitrate_structure::{
+use nitrate_parsetree::{
     Builder,
     kind::{Expr, FunctionParameter, Type},
 };
@@ -983,6 +983,6 @@ fn test_parse_type() {
 
     assert_eq!(
         serialized, expected,
-        "Parsed type does not match expected structure"
+        "Parsed type does not match expected parsetree"
     );
 }

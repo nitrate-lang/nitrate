@@ -3,7 +3,7 @@ use nitrate_codegen::{Codegen, CodegenError};
 use nitrate_diagnosis::{Diagnose, DiagnosticDrain};
 use nitrate_optimization::FunctionOptimization;
 use nitrate_parse::{Parser, SymbolTable};
-use nitrate_structure::kind::Expr;
+use nitrate_parsetree::kind::Expr;
 use nitrate_tokenize::Lexer;
 use std::collections::HashMap;
 use threadpool::ThreadPool;

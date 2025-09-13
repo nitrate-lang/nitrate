@@ -545,7 +545,7 @@ mod tests {
     use interned_string::Intern;
 
     #[test]
-    fn test_name_token_structure() {
+    fn test_name_token_parsetree() {
         assert_eq!(
             enum_iterator::all::<IdentifierKind>().collect::<Vec<_>>(),
             vec![IdentifierKind::Typical, IdentifierKind::Atypical]
@@ -553,7 +553,7 @@ mod tests {
     }
 
     #[test]
-    fn test_integer_token_structure() {
+    fn test_integer_token_parsetree() {
         assert_eq!(
             enum_iterator::all::<IntegerKind>().collect::<Vec<_>>(),
             vec![
@@ -622,7 +622,7 @@ mod tests {
     }
 
     #[test]
-    fn test_comment_token_structure() {
+    fn test_comment_token_parsetree() {
         assert_eq!(
             enum_iterator::all::<CommentKind>().collect::<Vec<_>>(),
             vec![CommentKind::SingleLine]
@@ -650,7 +650,7 @@ mod tests {
     }
 
     #[test]
-    fn test_keyword_structure() {
+    fn test_keyword_parsetree() {
         for keyword in enum_iterator::all::<Keyword>() {
             let keyword_str = match keyword {
                 Keyword::Let => "let",
@@ -715,7 +715,7 @@ mod tests {
     }
 
     #[test]
-    fn test_punct_structure() {
+    fn test_punct_parsetree() {
         for punct in enum_iterator::all::<Punct>() {
             let punct_str = match punct {
                 Punct::LeftParen => "(",
@@ -736,7 +736,7 @@ mod tests {
     }
 
     #[test]
-    fn test_operator_structure() {
+    fn test_operator_parsetree() {
         for operator in enum_iterator::all::<Op>() {
             let operator_str = match operator {
                 Op::Add => "+",
@@ -794,7 +794,7 @@ mod tests {
     }
 
     #[test]
-    fn test_token_structure() {
+    fn test_token_parsetree() {
         let test_vectors = [
             (Token::Name("example".into()), "example"),
             (Token::Integer(Integer::new(42, IntegerKind::Dec)), "42"),
@@ -824,7 +824,7 @@ mod tests {
     }
 
     #[test]
-    fn test_source_position_structure() {
+    fn test_source_position_parsetree() {
         let line = 2_u32;
         let column = 5_u32;
         let offset = 15_u32;
@@ -844,7 +844,7 @@ mod tests {
     }
 
     #[test]
-    fn test_annotated_token_structure() {
+    fn test_annotated_token_parsetree() {
         let filename = "file.txt".intern();
 
         let test_vectors = [

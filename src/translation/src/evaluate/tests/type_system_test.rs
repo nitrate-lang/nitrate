@@ -1,7 +1,7 @@
 #[test]
 fn refinement_type_evaluation_basic() {
     use nitrate_evaluate::AbstractMachine;
-    use nitrate_structure::Builder;
+    use nitrate_parsetree::Builder;
 
     let mut m = AbstractMachine::new();
 
@@ -27,7 +27,7 @@ fn refinement_type_evaluation_basic() {
 #[test]
 fn refinement_type_evaluation_ordering() {
     use nitrate_evaluate::{AbstractMachine, Unwind};
-    use nitrate_structure::Builder;
+    use nitrate_parsetree::Builder;
     use std::sync::Arc;
     use std::sync::Mutex;
 

@@ -1,5 +1,5 @@
 use super::abstract_machine::{AbstractMachine, Unwind};
-use nitrate_structure::{
+use nitrate_parsetree::{
     Builder,
     kind::{Expr, Identifier, IndexAccess, Scope, Variable},
 };

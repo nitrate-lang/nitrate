@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-nitrate_structure = { path = "../structure" }
+nitrate_parsetree = { path = "../parsetree" }
 cranelift = { version = "0.123.2", features = [
     "object",
     "core",

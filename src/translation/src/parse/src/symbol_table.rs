@@ -1,7 +1,7 @@
 use interned_string::IString;
-use nitrate_structure::kind::Function;
+use nitrate_parsetree::kind::Function;
 #[allow(unused_imports)]
-use nitrate_structure::{
+use nitrate_parsetree::{
     Builder,
     kind::{Expr, QualifiedScope},
 };

@@ -12,7 +12,7 @@ harness = false
 
 [dependencies]
 nitrate_tokenize = { path = "../tokenize" }
-nitrate_structure = { path = "../structure" }
+nitrate_parsetree = { path = "../parsetree" }
 
 hashbrown = "0.16.0"
 log = "0.4.27"

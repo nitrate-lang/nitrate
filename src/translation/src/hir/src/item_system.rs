@@ -3,7 +3,19 @@ use crate::ItemStore;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]
-pub enum Item {}
+pub enum Item {
+    Module,
+    Import,
+    Function,
+    TypeAlias,
+    Struct,
+    Enum,
+    Constant,
+    Static,
+    Trait,
+    Impl,
+    ExternBlock,
+}
 
 impl Item {}
 

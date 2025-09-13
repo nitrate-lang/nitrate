@@ -1,6 +1,6 @@
 use hashbrown::HashMap;
 use interned_string::{IString, Intern};
-use nitrate_structure::{Builder, kind::Expr};
+use nitrate_parsetree::{Builder, kind::Expr};
 use std::rc::Rc;
 
 #[derive(Debug, Default)]

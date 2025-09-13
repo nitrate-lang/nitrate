@@ -1,6 +1,6 @@
 use cranelift::module::{FuncId, Linkage, Module};
 use log::{debug, trace};
-use nitrate_structure::kind::{self, Expr};
+use nitrate_parsetree::kind::{self, Expr};
 use std::ops::Deref;
 use std::sync::Arc;
 use std::{collections::HashMap, str::FromStr};

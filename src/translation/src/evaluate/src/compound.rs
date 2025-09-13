@@ -1,6 +1,6 @@
 use super::abstract_machine::{AbstractMachine, Unwind};
 use interned_string::Intern;
-use nitrate_structure::{
+use nitrate_parsetree::{
     Builder,
     kind::{BinExpr, Block, Expr, List, Object, Type, UnaryExpr},
 };

@@ -1,5 +1,5 @@
 [package]
-name = "nitrate_structure"
+name = "nitrate_parsetree"
 version = "0.1.0"
 edition = "2024"
 

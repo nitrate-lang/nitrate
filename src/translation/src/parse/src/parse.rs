@@ -1,5 +1,5 @@
 use super::symbol_table::SymbolTable;
-use nitrate_structure::{
+use nitrate_parsetree::{
     Builder,
     kind::{Expr, QualifiedScope},
 };
