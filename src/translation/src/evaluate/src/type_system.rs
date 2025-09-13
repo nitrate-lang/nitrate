@@ -2,8 +2,8 @@ use super::abstract_machine::{AbstractMachine, Unwind};
 use nitrate_parsetree::{
     Builder,
     kind::{
-        ArrayType, Expr, FunctionParameter, FunctionType, GenericType, ManagedRefType, MapType,
-        RefinementType, SliceType, StructType, TupleType, Type, UnmanagedRefType,
+        ArrayType, Block, Expr, FunctionParameter, FunctionType, GenericType, ManagedRefType,
+        MapType, RefinementType, SliceType, StructType, TupleType, Type, UnmanagedRefType,
     },
 };
 
@@ -197,10 +197,10 @@ impl AbstractMachine {
         Ok(Builder::create_struct_type().add_fields(fields).build())
     }
 
-    pub(crate) fn evaluate_latent_type(&mut self, latent_type: &Expr) -> Result<Type, Unwind> {
+    pub(crate) fn evaluate_latent_type(&mut self, producer: &Block) -> Result<Type, Unwind> {
         // TODO: Verify and write tests
 
-        let Expr::Object(_object) = self.evaluate(latent_type)? else {
+        let Expr::Object(_object) = self.evaluate_block(producer)? else {
             return Err(Unwind::TypeError);
         };
 

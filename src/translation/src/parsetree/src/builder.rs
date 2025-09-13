@@ -2,6 +2,7 @@ use std::ops::Deref;
 
 use crate::expression::VariableKind;
 use crate::expression::{Expr, Identifier};
+use crate::kind::Block;
 use crate::types::{TupleType, Type};
 use interned_string::IString;
 use nitrate_tokenize::{IntegerKind, NotNan};
@@ -342,8 +343,8 @@ impl Builder {
     }
 
     #[must_use]
-    pub fn create_latent_type(expr: Expr) -> Type {
-        Type::LatentType(Box::new(expr))
+    pub fn create_latent_type(block: Box<Block>) -> Type {
+        Type::LatentType(block)
     }
 
     #[must_use]

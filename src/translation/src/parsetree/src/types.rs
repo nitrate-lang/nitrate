@@ -1,4 +1,7 @@
-use crate::expression::{Expr, FunctionParameter};
+use crate::{
+    expression::{Expr, FunctionParameter},
+    kind::Block,
+};
 use interned_string::IString;
 use serde::{Deserialize, Serialize};
 
@@ -284,7 +287,7 @@ pub enum Type {
     GenericType(Box<GenericType>),
     OpaqueType(IString),
     StructType(Box<StructType>),
-    LatentType(Box<Expr>),
+    LatentType(Box<Block>),
     HasParenthesesType(Box<Type>),
 }
 
