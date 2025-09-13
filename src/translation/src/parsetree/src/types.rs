@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RefinementType {
-    pub base: Type,
+    pub basis_type: Type,
     pub width: Option<Expr>,
     pub minimum: Option<Expr>,
     pub maximum: Option<Expr>,
@@ -12,24 +12,24 @@ pub struct RefinementType {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TupleType {
-    pub elements: Vec<Type>,
+    pub element_types: Vec<Type>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ArrayType {
-    pub element: Type,
-    pub count: Expr,
+    pub element_type: Type,
+    pub len: Expr,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MapType {
-    pub key: Type,
-    pub value: Type,
+    pub key_type: Type,
+    pub value_type: Type,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SliceType {
-    pub element: Type,
+    pub element_type: Type,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -40,15 +40,21 @@ pub struct FunctionType {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ManagedRefType {
-    pub is_mutable: bool,
-    pub target: Type,
+pub enum Lifetime {
+    ManuallyManaged,
+    ProcessLocal,
+    CollectorManaged,
+    ThreadLocal,
+    TaskLocal,
+    StackLocal { name: IString },
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct UnmanagedRefType {
+pub struct Reference {
+    pub lifetime: Option<Lifetime>,
     pub is_mutable: bool,
-    pub target: Type,
+    pub exclusive: bool,
+    pub to: Type,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -59,7 +65,7 @@ pub struct GenericArgument {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GenericType {
-    pub base: Type,
+    pub basis_type: Type,
     pub arguments: Vec<GenericArgument>,
 }
 
@@ -95,20 +101,12 @@ pub enum Type {
     MapType(Box<MapType>),
     SliceType(Box<SliceType>),
     FunctionType(Box<FunctionType>),
-    ManagedRefType(Box<ManagedRefType>),
-    UnmanagedRefType(Box<UnmanagedRefType>),
+    Reference(Box<Reference>),
     GenericType(Box<GenericType>),
     OpaqueType(IString),
     StructType(Box<StructType>),
     LatentType(Box<Block>),
     HasParenthesesType(Box<Type>),
-}
-
-impl Type {
-    #[must_use]
-    pub fn is_known(&self) -> bool {
-        matches!(self, Type::InferType)
-    }
 }
 
 impl std::fmt::Debug for Type {
@@ -139,8 +137,7 @@ impl std::fmt::Debug for Type {
             Type::MapType(e) => e.fmt(f),
             Type::SliceType(e) => e.fmt(f),
             Type::FunctionType(e) => e.fmt(f),
-            Type::ManagedRefType(e) => e.fmt(f),
-            Type::UnmanagedRefType(e) => e.fmt(f),
+            Type::Reference(e) => e.fmt(f),
             Type::GenericType(e) => e.fmt(f),
             Type::OpaqueType(e) => f.debug_struct("OpaqueType").field("name", e).finish(),
             Type::StructType(e) => e.fmt(f),

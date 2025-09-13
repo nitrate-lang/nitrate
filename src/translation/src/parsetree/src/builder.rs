@@ -11,10 +11,10 @@ use nitrate_tokenize::{IntegerKind, NotNan};
 use crate::builder_helper::{
     ArrayTypeBuilder, AwaitBuilder, BinExprBuilder, BlockBuilder, BreakBuilder, CallBuilder,
     ContinueBuilder, DoWhileLoopBuilder, ForEachBuilder, FunctionBuilder, FunctionTypeBuilder,
-    GenericTypeBuilder, IfBuilder, IndexAccessBuilder, IntegerBuilder, ListBuilder,
-    ManagedRefTypeBuilder, MapTypeBuilder, ObjectBuilder, RefinementTypeBuilder, ReturnBuilder,
-    SliceTypeBuilder, StructTypeBuilder, SwitchBuilder, TupleTypeBuilder, UnaryExprBuilder,
-    UnmanagedRefTypeBuilder, VariableBuilder, WhileLoopBuilder,
+    GenericTypeBuilder, IfBuilder, IndexAccessBuilder, IntegerBuilder, ListBuilder, MapTypeBuilder,
+    ObjectBuilder, ReferenceTypeBuilder, RefinementTypeBuilder, ReturnBuilder, SliceTypeBuilder,
+    StructTypeBuilder, SwitchBuilder, TupleTypeBuilder, UnaryExprBuilder, VariableBuilder,
+    WhileLoopBuilder,
 };
 
 #[derive(Debug, Default)]
@@ -258,7 +258,9 @@ impl Builder {
 
     #[must_use]
     pub fn get_unit_type() -> Type {
-        Type::TupleType(Box::new(TupleType { elements: vec![] }))
+        Type::TupleType(Box::new(TupleType {
+            element_types: vec![],
+        }))
     }
 
     #[must_use]
@@ -303,13 +305,8 @@ impl Builder {
     }
 
     #[must_use]
-    pub fn create_managed_type() -> ManagedRefTypeBuilder {
-        ManagedRefTypeBuilder::new()
-    }
-
-    #[must_use]
-    pub fn create_unmanaged_type() -> UnmanagedRefTypeBuilder {
-        UnmanagedRefTypeBuilder::new()
+    pub fn create_reference_type() -> ReferenceTypeBuilder {
+        ReferenceTypeBuilder::new()
     }
 
     #[must_use]

@@ -5,7 +5,7 @@ use interned_string::IString;
 use log::{error, info};
 use nitrate_parsetree::{
     Builder,
-    kind::{Expr, FunctionParameter, GenericArgument, Type},
+    kind::{Expr, FunctionParameter, GenericArgument, Lifetime, Type},
 };
 use nitrate_tokenize::{Keyword, Op, Punct, Token};
 
@@ -417,6 +417,11 @@ impl Parser<'_, '_> {
         assert!(self.lexer.peek_t() == Token::Op(Op::BitAnd));
         self.lexer.skip_tok();
 
+        let is_shared = self.lexer.skip_if(&Token::Keyword(Keyword::Poly));
+        if !is_shared {
+            self.lexer.skip_if(&Token::Keyword(Keyword::Iso));
+        }
+
         let is_mutable = self.lexer.skip_if(&Token::Keyword(Keyword::Mut));
         if !is_mutable {
             self.lexer.skip_if(&Token::Keyword(Keyword::Const));
@@ -425,9 +430,11 @@ impl Parser<'_, '_> {
         let target = self.parse_type()?;
 
         Some(
-            Builder::create_managed_type()
-                .with_target(target)
+            Builder::create_reference_type()
+                .with_lifetime(Some(Lifetime::CollectorManaged))
                 .with_mutability(is_mutable)
+                .with_exclusivity(!is_shared)
+                .with_target(target)
                 .build(),
         )
     }
@@ -448,6 +455,11 @@ impl Parser<'_, '_> {
         assert!(self.lexer.peek_t() == Token::Op(Op::Mul));
         self.lexer.skip_tok();
 
+        let is_shared = self.lexer.skip_if(&Token::Keyword(Keyword::Poly));
+        if !is_shared {
+            self.lexer.skip_if(&Token::Keyword(Keyword::Iso));
+        }
+
         let is_mutable = self.lexer.skip_if(&Token::Keyword(Keyword::Mut));
         if !is_mutable {
             self.lexer.skip_if(&Token::Keyword(Keyword::Const));
@@ -456,9 +468,11 @@ impl Parser<'_, '_> {
         let target = self.parse_type()?;
 
         Some(
-            Builder::create_unmanaged_type()
-                .with_target(target)
+            Builder::create_reference_type()
+                .with_lifetime(None)
                 .with_mutability(is_mutable)
+                .with_exclusivity(!is_shared)
+                .with_target(target)
                 .build(),
         )
     }
