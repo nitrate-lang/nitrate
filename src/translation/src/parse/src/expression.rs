@@ -389,22 +389,22 @@ impl Parser<'_, '_> {
                 path: smallvec![name],
             })),
 
-            Token::Keyword(Keyword::Bool) => Some(Builder::get_bool()),
-            Token::Keyword(Keyword::U8) => Some(Builder::get_u8()),
-            Token::Keyword(Keyword::U16) => Some(Builder::get_u16()),
-            Token::Keyword(Keyword::U32) => Some(Builder::get_u32()),
-            Token::Keyword(Keyword::U64) => Some(Builder::get_u64()),
-            Token::Keyword(Keyword::U128) => Some(Builder::get_u128()),
-            Token::Keyword(Keyword::I8) => Some(Builder::get_i8()),
-            Token::Keyword(Keyword::I16) => Some(Builder::get_i16()),
-            Token::Keyword(Keyword::I32) => Some(Builder::get_i32()),
-            Token::Keyword(Keyword::I64) => Some(Builder::get_i64()),
-            Token::Keyword(Keyword::I128) => Some(Builder::get_i128()),
-            Token::Keyword(Keyword::F8) => Some(Builder::get_f8()),
-            Token::Keyword(Keyword::F16) => Some(Builder::get_f16()),
-            Token::Keyword(Keyword::F32) => Some(Builder::get_f32()),
-            Token::Keyword(Keyword::F64) => Some(Builder::get_f64()),
-            Token::Keyword(Keyword::F128) => Some(Builder::get_f128()),
+            Token::Keyword(Keyword::Bool) => Some(Type::Bool),
+            Token::Keyword(Keyword::U8) => Some(Type::UInt8),
+            Token::Keyword(Keyword::U16) => Some(Type::UInt16),
+            Token::Keyword(Keyword::U32) => Some(Type::UInt32),
+            Token::Keyword(Keyword::U64) => Some(Type::UInt64),
+            Token::Keyword(Keyword::U128) => Some(Type::UInt128),
+            Token::Keyword(Keyword::I8) => Some(Type::Int8),
+            Token::Keyword(Keyword::I16) => Some(Type::Int16),
+            Token::Keyword(Keyword::I32) => Some(Type::Int32),
+            Token::Keyword(Keyword::I64) => Some(Type::Int64),
+            Token::Keyword(Keyword::I128) => Some(Type::Int128),
+            Token::Keyword(Keyword::F8) => Some(Type::Float8),
+            Token::Keyword(Keyword::F16) => Some(Type::Float16),
+            Token::Keyword(Keyword::F32) => Some(Type::Float32),
+            Token::Keyword(Keyword::F64) => Some(Type::Float64),
+            Token::Keyword(Keyword::F128) => Some(Type::Float128),
 
             _ => None,
         };
@@ -737,7 +737,7 @@ impl Parser<'_, '_> {
         if self.lexer.peek_t() == Token::Punct(Punct::LeftBrace) {
             let block = Some(self.parse_block()?);
 
-            let infer_type = Builder::get_infer_type();
+            let infer_type = Type::InferType;
 
             return Some(
                 Builder::create_function()
@@ -756,7 +756,7 @@ impl Parser<'_, '_> {
         let return_type = if self.lexer.skip_if(&Token::Op(Op::Arrow)) {
             self.parse_type()?
         } else {
-            Builder::get_infer_type()
+            Type::InferType
         };
 
         let body = if self.lexer.next_is(&Token::Punct(Punct::LeftBrace)) {
@@ -802,7 +802,7 @@ impl Parser<'_, '_> {
         let type_annotation = if self.lexer.skip_if(&Token::Punct(Punct::Colon)) {
             self.parse_type()?
         } else {
-            Builder::get_infer_type()
+            Type::InferType
         };
 
         let initializer = if self.lexer.skip_if(&Token::Op(Op::Set)) {
@@ -857,7 +857,7 @@ impl Parser<'_, '_> {
         let type_annotation = if self.lexer.skip_if(&Token::Punct(Punct::Colon)) {
             self.parse_type()?
         } else {
-            Builder::get_infer_type()
+            Type::InferType
         };
 
         let initializer = if self.lexer.skip_if(&Token::Op(Op::Set)) {

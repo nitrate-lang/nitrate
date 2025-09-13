@@ -427,7 +427,6 @@ pub struct Call {
 
 #[derive(Clone, Serialize, Deserialize)]
 pub enum Expr {
-    Discard,
     HasParentheses(Box<Expr>),
 
     Boolean(bool),
@@ -463,10 +462,6 @@ pub enum Expr {
 
 impl Expr {
     #[must_use]
-    pub fn is_discard(&self) -> bool {
-        matches!(self, Expr::Discard)
-    }
-
     pub fn digest_128(&self) -> [u8; 16] {
         let mut hasher = blake3::Hasher::new();
         hasher.update(&serde_json::to_vec(self).unwrap_or_default());
@@ -482,7 +477,6 @@ impl Expr {
 impl std::fmt::Debug for Expr {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Expr::Discard => write!(f, ""),
             Expr::HasParentheses(e) => f.debug_struct("Parentheses").field("expr", e).finish(),
 
             Expr::Boolean(e) => e.fmt(f),
