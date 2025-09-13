@@ -1,7 +1,8 @@
 use super::abstract_machine::{AbstractMachine, Unwind};
+use interned_string::IString;
 use nitrate_parsetree::{
     Builder,
-    kind::{Expr, Identifier, IndexAccess, Scope, Variable},
+    kind::{Expr, IndexAccess, Scope, Variable},
 };
 
 impl AbstractMachine {
@@ -31,14 +32,14 @@ impl AbstractMachine {
         Ok(Builder::create_unit())
     }
 
-    pub(crate) fn evaluate_identifier(&mut self, identifier: &Identifier) -> Result<Expr, Unwind> {
+    pub(crate) fn evaluate_identifier(&mut self, identifier: &IString) -> Result<Expr, Unwind> {
         // TODO: Verify and write tests
 
         // FIXME: What about lvalue vs rvalue?
 
-        self.resolve(&identifier.path())
+        self.resolve(identifier)
             .cloned()
-            .ok_or(Unwind::UnresolvedIdentifier(identifier.path().to_owned()))
+            .ok_or(Unwind::UnresolvedIdentifier(identifier.to_owned()))
     }
 
     pub(crate) fn evaluate_index_access(

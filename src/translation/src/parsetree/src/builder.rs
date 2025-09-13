@@ -1,7 +1,7 @@
 use std::ops::Deref;
 
+use crate::expression::Expr;
 use crate::expression::VariableKind;
-use crate::expression::{Expr, Identifier};
 use crate::kind::Block;
 use crate::types::{TupleType, Type};
 use interned_string::IString;
@@ -57,7 +57,7 @@ impl Builder {
 
     #[must_use]
     pub fn create_type_info(inner: Type) -> Expr {
-        Expr::TypeInfo(Box::new(inner))
+        Expr::TypeInfo(inner)
     }
 
     #[must_use]
@@ -101,19 +101,14 @@ impl Builder {
     }
 
     #[must_use]
-    pub fn create_qualified_identifier(path: Vec<IString>) -> Expr {
-        Expr::Identifier(Box::new(Identifier::new(path)))
-    }
+    pub fn create_identifier(path: Vec<IString>) -> Expr {
+        let joined = path
+            .iter()
+            .map(Deref::deref)
+            .collect::<Vec<&str>>()
+            .join("::");
 
-    #[must_use]
-    pub fn create_identifier(name: IString) -> Expr {
-        let parts = name
-            .to_string()
-            .split("::")
-            .map(IString::from)
-            .collect::<Vec<IString>>();
-
-        Self::create_qualified_identifier(parts)
+        Expr::Identifier(joined.into())
     }
 
     #[must_use]

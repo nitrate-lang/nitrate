@@ -156,7 +156,7 @@ impl Parser<'_, '_> {
 
             Token::Name(name) => {
                 self.lexer.skip_tok();
-                Some(Builder::create_identifier(name))
+                Some(Builder::create_identifier([name].to_vec()))
             }
 
             Token::Keyword(Keyword::True) => {

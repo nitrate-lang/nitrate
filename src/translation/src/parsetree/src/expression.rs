@@ -590,35 +590,6 @@ impl Variable {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Identifier {
-    path: IString,
-}
-
-impl Identifier {
-    #[must_use]
-    pub(crate) fn new(path: Vec<IString>) -> Self {
-        Identifier {
-            path: path
-                .iter()
-                .map(Deref::deref)
-                .collect::<Vec<&str>>()
-                .join("::")
-                .into(),
-        }
-    }
-
-    #[must_use]
-    pub fn path(&self) -> &IString {
-        &self.path
-    }
-
-    #[must_use]
-    pub fn is_absolute(&self) -> bool {
-        self.path().starts_with("::")
-    }
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct IndexAccess {
     collection: Expr,
     index: Expr,
@@ -1080,7 +1051,7 @@ pub enum Expr {
     BString(Box<Vec<u8>>),
     Unit,
 
-    TypeInfo(Box<Type>),
+    TypeInfo(Type),
     List(Box<List>),
     Object(Box<Object>),
     UnaryExpr(Box<UnaryExpr>),
@@ -1089,7 +1060,7 @@ pub enum Expr {
 
     Function(Box<Function>),
     Variable(Box<Variable>),
-    Identifier(Box<Identifier>),
+    Identifier(IString),
     IndexAccess(Box<IndexAccess>),
     Scope(Box<Scope>),
 
@@ -1145,10 +1116,7 @@ impl std::fmt::Debug for Expr {
 
             Expr::Function(e) => e.fmt(f),
             Expr::Variable(e) => e.fmt(f),
-            Expr::Identifier(e) => f
-                .debug_struct("Identifier")
-                .field("name", &e.path())
-                .finish(),
+            Expr::Identifier(e) => f.debug_struct("Identifier").field("name", &e).finish(),
             Expr::IndexAccess(e) => e.fmt(f),
             Expr::Scope(e) => e.fmt(f),
 

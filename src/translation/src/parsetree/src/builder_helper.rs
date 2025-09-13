@@ -1,4 +1,3 @@
-use crate::Builder;
 use interned_string::IString;
 use nitrate_tokenize::IntegerKind;
 use std::collections::BTreeMap;
@@ -1125,11 +1124,6 @@ impl CallBuilder {
 
     pub fn with_callee(mut self, callee: Expr) -> Self {
         self.callee = Some(callee);
-        self
-    }
-
-    pub fn with_callee_name(mut self, callee: IString) -> Self {
-        self.callee = Some(Builder::create_identifier(callee));
         self
     }
 
