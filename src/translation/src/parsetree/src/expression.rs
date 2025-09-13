@@ -376,12 +376,16 @@ impl BinExpr {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Block {
     elements: Vec<Expr>,
+    ends_with_semi: bool,
 }
 
 impl Block {
     #[must_use]
-    pub(crate) fn new(items: Vec<Expr>) -> Self {
-        Block { elements: items }
+    pub(crate) fn new(elements: Vec<Expr>, ends_with_semi: bool) -> Self {
+        Block {
+            elements,
+            ends_with_semi,
+        }
     }
 
     #[must_use]
@@ -392,6 +396,11 @@ impl Block {
     #[must_use]
     pub fn elements_mut(&mut self) -> &mut Vec<Expr> {
         &mut self.elements
+    }
+
+    #[must_use]
+    pub fn ends_with_semi(&self) -> bool {
+        self.ends_with_semi
     }
 }
 

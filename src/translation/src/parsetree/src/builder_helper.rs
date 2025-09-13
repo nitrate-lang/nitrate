@@ -560,12 +560,14 @@ impl BinExprBuilder {
 #[derive(Debug)]
 pub struct BlockBuilder {
     elements: Vec<Expr>,
+    ends_with_semi: bool,
 }
 
 impl BlockBuilder {
     pub(crate) fn new() -> Self {
         BlockBuilder {
             elements: Vec::new(),
+            ends_with_semi: false,
         }
     }
 
@@ -582,8 +584,13 @@ impl BlockBuilder {
         self
     }
 
+    pub fn with_ends_with_semi(mut self, ends_with_semi: bool) -> Self {
+        self.ends_with_semi = ends_with_semi;
+        self
+    }
+
     pub fn build(self) -> Expr {
-        Expr::Block(Box::new(Block::new(self.elements)))
+        Expr::Block(Box::new(Block::new(self.elements, self.ends_with_semi)))
     }
 }
 
