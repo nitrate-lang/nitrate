@@ -304,7 +304,7 @@ impl UnmanagedRefTypeBuilder {
 #[derive(Debug)]
 pub struct GenericTypeBuilder {
     base: Option<Type>,
-    arguments: Vec<(IString, Expr)>,
+    arguments: Vec<(IString, Type)>,
 }
 
 impl GenericTypeBuilder {
@@ -320,14 +320,14 @@ impl GenericTypeBuilder {
         self
     }
 
-    pub fn add_argument(mut self, name: IString, value: Expr) -> Self {
+    pub fn add_argument(mut self, name: IString, value: Type) -> Self {
         self.arguments.push((name, value));
         self
     }
 
     pub fn add_arguments<I>(mut self, arguments: I) -> Self
     where
-        I: IntoIterator<Item = (IString, Expr)>,
+        I: IntoIterator<Item = (IString, Type)>,
     {
         self.arguments.extend(arguments);
         self

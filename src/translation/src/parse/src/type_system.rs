@@ -113,7 +113,7 @@ impl Parser<'_, '_> {
         })
     }
 
-    fn parse_generic_argument(&mut self) -> Option<(IString, Expr)> {
+    fn parse_generic_argument(&mut self) -> Option<(IString, Type)> {
         let mut argument_name: Option<IString> = None;
 
         if let Token::Name(name) = self.lexer.peek_t() {
@@ -134,22 +134,10 @@ impl Parser<'_, '_> {
         }
 
         let current_pos = self.lexer.sync_position();
-        let type_or_expression = match self.lexer.peek_t() {
-            Token::Integer(_) | Token::Float(_) | Token::String(_) | Token::BString(_) => {
-                self.parse_expression()
-            }
 
-            Token::Op(Op::Add) => {
-                self.lexer.skip_tok();
-                self.parse_expression()
-            }
-
-            _ => self.parse_type().map(std::convert::Into::into),
-        };
-
-        let Some(argument_value) = type_or_expression else {
+        let Some(argument_value) = self.parse_type() else {
             error!(
-                "[P0???]: generic type: expected type or expression after generic argument name\n--> {current_pos}"
+                "[P0???]: generic type: expected type after generic argument name\n--> {current_pos}"
             );
             info!(
                 "[P0???]: generic type: syntax hint: if you want to use a Refinement Type as the generic argument, wrap the type in parentheses, e.g. `Vec<(i32: [1: 10])>`"
@@ -160,7 +148,7 @@ impl Parser<'_, '_> {
         Some((argument_name.unwrap_or_default(), argument_value))
     }
 
-    fn parse_generic_arguments(&mut self) -> Option<Vec<(IString, Expr)>> {
+    fn parse_generic_arguments(&mut self) -> Option<Vec<(IString, Type)>> {
         assert!(self.lexer.peek_t() == Token::Op(Op::LogicLt));
         self.lexer.skip_tok();
 

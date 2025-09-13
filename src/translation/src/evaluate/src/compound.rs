@@ -1,5 +1,4 @@
 use super::abstract_machine::{AbstractMachine, Unwind};
-use interned_string::Intern;
 use nitrate_parsetree::{
     Builder,
     kind::{BinExpr, Block, Expr, List, Object, Type, UnaryExpr},
@@ -7,12 +6,15 @@ use nitrate_parsetree::{
 use std::collections::BTreeMap;
 
 impl AbstractMachine {
-    pub(crate) fn evaluate_type_envelop(&mut self, content: &Type) -> Result<Expr, Unwind> {
-        let evaluated_type = self.evaluate_type(content)?;
+    pub(crate) fn evaluate_type_info(&mut self, content: &Type) -> Result<Expr, Unwind> {
+        let _evaluated_type = self.evaluate_type(content)?;
 
-        Ok(Builder::create_object()
-            .add_field("inner".intern(), evaluated_type.into())
-            .build())
+        // TODO: Implement type info evaluation
+        todo!()
+
+        // Ok(Builder::create_object()
+        //     .add_field("inner".intern(), evaluated_type.into())
+        //     .build())
     }
 
     pub(crate) fn evaluate_list(&mut self, list: &List) -> Result<Expr, Unwind> {

@@ -78,8 +78,8 @@ impl Builder {
     }
 
     #[must_use]
-    pub fn create_type_envelop(inner: Type) -> Expr {
-        Expr::TypeEnvelop(Box::new(inner))
+    pub fn create_type_info(inner: Type) -> Expr {
+        Expr::TypeInfo(Box::new(inner))
     }
 
     #[must_use]

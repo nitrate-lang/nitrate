@@ -425,14 +425,16 @@ impl Parser<'_, '_> {
             _ => None,
         };
 
-        if let Some(type_name) = type_name {
+        if let Some(_type_name) = type_name {
             self.lexer.skip_tok();
 
-            Builder::create_binexpr()
-                .with_left(lit)
-                .with_operator(BinExprOp::As)
-                .with_right(type_name.into())
-                .build()
+            // TODO: Create a proper 'as' expression node
+            todo!();
+            // Builder::create_binexpr()
+            //     .with_left(lit)
+            //     .with_operator(BinExprOp::As)
+            //     .with_right(type_name.into())
+            //     .build()
         } else {
             lit
         }
@@ -506,7 +508,7 @@ impl Parser<'_, '_> {
         self.lexer.skip_tok();
 
         if self.lexer.skip_if(&Token::Punct(Punct::LeftParen)) {
-            let Some(the_type) = self.parse_type() else {
+            let Some(for_type) = self.parse_type() else {
                 self.lexer.rewind(rewind_pos);
                 return None;
             };
@@ -521,7 +523,7 @@ impl Parser<'_, '_> {
                 return None;
             }
 
-            return Some(Builder::create_type_envelop(the_type));
+            return Some(Builder::create_type_info(for_type));
         }
 
         self.lexer.rewind(rewind_pos);

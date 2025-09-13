@@ -1,5 +1,4 @@
 use super::abstract_machine::{AbstractMachine, Unwind};
-use interned_string::Intern;
 use nitrate_parsetree::{
     Builder,
     kind::{
@@ -171,8 +170,8 @@ impl AbstractMachine {
         arguments.reserve(generic.arguments().len());
 
         for (name, value) in generic.arguments() {
-            let evaluated_value = self.evaluate(value)?;
-            arguments.push((name.to_owned(), evaluated_value));
+            let evaluated_type = self.evaluate_type(value)?;
+            arguments.push((name.to_owned(), evaluated_type));
         }
 
         Ok(Builder::create_generic_type()
@@ -205,12 +204,15 @@ impl AbstractMachine {
             return Err(Unwind::TypeError);
         };
 
-        object
-            .access("inner".intern())
-            .ok_or(Unwind::TypeError)?
-            .to_owned()
-            .try_into()
-            .map_err(|_| Unwind::TypeError)
+        // TODO: Implement latent type evaluation
+        todo!()
+
+        // object
+        //     .access("inner".intern())
+        //     .ok_or(Unwind::TypeError)?
+        //     .to_owned()
+        //     .try_into()
+        //     .map_err(|_| Unwind::TypeError)
     }
 
     pub fn evaluate_type(&mut self, type_expression: &Type) -> Result<Type, Unwind> {

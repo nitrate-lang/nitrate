@@ -213,12 +213,12 @@ impl UnmanagedRefType {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GenericType {
     base: Type,
-    args: Vec<(IString, Expr)>,
+    args: Vec<(IString, Type)>,
 }
 
 impl GenericType {
     #[must_use]
-    pub(crate) fn new(base: Type, args: Vec<(IString, Expr)>) -> Self {
+    pub(crate) fn new(base: Type, args: Vec<(IString, Type)>) -> Self {
         GenericType { base, args }
     }
 
@@ -228,7 +228,7 @@ impl GenericType {
     }
 
     #[must_use]
-    pub fn arguments(&self) -> &[(IString, Expr)] {
+    pub fn arguments(&self) -> &[(IString, Type)] {
         &self.args
     }
 }
@@ -288,46 +288,6 @@ pub enum Type {
     HasParenthesesType(Box<Type>),
 }
 
-impl From<Type> for Expr {
-    fn from(val: Type) -> Expr {
-        match val {
-            Type::Bool => Expr::Bool,
-            Type::UInt8 => Expr::UInt8,
-            Type::UInt16 => Expr::UInt16,
-            Type::UInt32 => Expr::UInt32,
-            Type::UInt64 => Expr::UInt64,
-            Type::UInt128 => Expr::UInt128,
-            Type::Int8 => Expr::Int8,
-            Type::Int16 => Expr::Int16,
-            Type::Int32 => Expr::Int32,
-            Type::Int64 => Expr::Int64,
-            Type::Int128 => Expr::Int128,
-            Type::Float8 => Expr::Float8,
-            Type::Float16 => Expr::Float16,
-            Type::Float32 => Expr::Float32,
-            Type::Float64 => Expr::Float64,
-            Type::Float128 => Expr::Float128,
-            Type::UnitType => Expr::UnitType,
-
-            Type::InferType => Expr::InferType,
-            Type::TypeName(x) => Expr::TypeName(x),
-            Type::RefinementType(x) => Expr::RefinementType(x),
-            Type::TupleType(x) => Expr::TupleType(x),
-            Type::ArrayType(x) => Expr::ArrayType(x),
-            Type::MapType(x) => Expr::MapType(x),
-            Type::SliceType(x) => Expr::SliceType(x),
-            Type::FunctionType(x) => Expr::FunctionType(x),
-            Type::ManagedRefType(x) => Expr::ManagedRefType(x),
-            Type::UnmanagedRefType(x) => Expr::UnmanagedRefType(x),
-            Type::GenericType(x) => Expr::GenericType(x),
-            Type::OpaqueType(x) => Expr::OpaqueType(x),
-            Type::StructType(x) => Expr::StructType(x),
-            Type::LatentType(x) => Expr::LatentType(x),
-            Type::HasParenthesesType(x) => Expr::HasParenthesesType(x),
-        }
-    }
-}
-
 impl Type {
     #[must_use]
     pub fn is_known(&self) -> bool {
@@ -337,7 +297,42 @@ impl Type {
 
 impl std::fmt::Debug for Type {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let expr: Expr = self.to_owned().into();
-        expr.fmt(f)
+        match self {
+            Type::Bool => write!(f, "bool"),
+            Type::UInt8 => write!(f, "u8"),
+            Type::UInt16 => write!(f, "u16"),
+            Type::UInt32 => write!(f, "u32"),
+            Type::UInt64 => write!(f, "u64"),
+            Type::UInt128 => write!(f, "u128"),
+            Type::Int8 => write!(f, "i8"),
+            Type::Int16 => write!(f, "i16"),
+            Type::Int32 => write!(f, "i32"),
+            Type::Int64 => write!(f, "i64"),
+            Type::Int128 => write!(f, "i128"),
+            Type::Float8 => write!(f, "f8"),
+            Type::Float16 => write!(f, "f16"),
+            Type::Float32 => write!(f, "f32"),
+            Type::Float64 => write!(f, "f64"),
+            Type::Float128 => write!(f, "f128"),
+            Type::UnitType => write!(f, "()"),
+            Type::InferType => write!(f, "_"),
+            Type::TypeName(e) => f
+                .debug_struct("TypeName")
+                .field("name", &e.full_name())
+                .finish(),
+            Type::RefinementType(e) => e.fmt(f),
+            Type::TupleType(e) => e.fmt(f),
+            Type::ArrayType(e) => e.fmt(f),
+            Type::MapType(e) => e.fmt(f),
+            Type::SliceType(e) => e.fmt(f),
+            Type::FunctionType(e) => e.fmt(f),
+            Type::ManagedRefType(e) => e.fmt(f),
+            Type::UnmanagedRefType(e) => e.fmt(f),
+            Type::GenericType(e) => e.fmt(f),
+            Type::OpaqueType(e) => f.debug_struct("OpaqueType").field("name", e).finish(),
+            Type::StructType(e) => e.fmt(f),
+            Type::LatentType(e) => f.debug_struct("LatentType").field("type", e).finish(),
+            Type::HasParenthesesType(e) => f.debug_struct("Parentheses").field("type", e).finish(),
+        }
     }
 }

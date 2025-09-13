@@ -1,3 +1,5 @@
+use crate::kind::Type;
+
 use apint::UInt;
 use interned_string::IString;
 use nitrate_tokenize::{IntegerKind, Op};
@@ -6,11 +8,6 @@ use serde::{Deserialize, Serialize};
 use smallvec::SmallVec;
 use std::collections::BTreeMap;
 use std::ops::Deref;
-
-use super::types::{
-    ArrayType, FunctionType, GenericType, ManagedRefType, MapType, RefinementType, SliceType,
-    StructType, TupleType, Type, UnmanagedRefType,
-};
 
 #[derive(Clone, Serialize, Deserialize)]
 pub struct Integer {
@@ -1094,39 +1091,6 @@ impl Call {
 
 #[derive(Clone, Serialize, Deserialize)]
 pub enum Expr {
-    Bool,
-    UInt8,
-    UInt16,
-    UInt32,
-    UInt64,
-    UInt128,
-    Int8,
-    Int16,
-    Int32,
-    Int64,
-    Int128,
-    Float8,
-    Float16,
-    Float32,
-    Float64,
-    Float128,
-    UnitType,
-    InferType,
-    TypeName(Box<Identifier>),
-    RefinementType(Box<RefinementType>),
-    TupleType(Box<TupleType>),
-    ArrayType(Box<ArrayType>),
-    MapType(Box<MapType>),
-    SliceType(Box<SliceType>),
-    FunctionType(Box<FunctionType>),
-    ManagedRefType(Box<ManagedRefType>),
-    UnmanagedRefType(Box<UnmanagedRefType>),
-    GenericType(Box<GenericType>),
-    OpaqueType(IString),
-    StructType(Box<StructType>),
-    LatentType(Box<Expr>),
-    HasParenthesesType(Box<Type>),
-
     Discard,
     HasParentheses(Box<Expr>),
 
@@ -1137,7 +1101,7 @@ pub enum Expr {
     BString(Box<Vec<u8>>),
     Unit,
 
-    TypeEnvelop(Box<Type>),
+    TypeInfo(Box<Type>),
     List(Box<List>),
     Object(Box<Object>),
     UnaryExpr(Box<UnaryExpr>),
@@ -1162,78 +1126,6 @@ pub enum Expr {
     Call(Box<Call>),
 }
 
-impl TryInto<Type> for Expr {
-    type Error = Self;
-
-    fn try_into(self) -> Result<Type, Self::Error> {
-        match self {
-            Expr::Bool => Ok(Type::Bool),
-            Expr::UInt8 => Ok(Type::UInt8),
-            Expr::UInt16 => Ok(Type::UInt16),
-            Expr::UInt32 => Ok(Type::UInt32),
-            Expr::UInt64 => Ok(Type::UInt64),
-            Expr::UInt128 => Ok(Type::UInt128),
-            Expr::Int8 => Ok(Type::Int8),
-            Expr::Int16 => Ok(Type::Int16),
-            Expr::Int32 => Ok(Type::Int32),
-            Expr::Int64 => Ok(Type::Int64),
-            Expr::Int128 => Ok(Type::Int128),
-            Expr::Float8 => Ok(Type::Float8),
-            Expr::Float16 => Ok(Type::Float16),
-            Expr::Float32 => Ok(Type::Float32),
-            Expr::Float64 => Ok(Type::Float64),
-            Expr::Float128 => Ok(Type::Float128),
-            Expr::UnitType => Ok(Type::UnitType),
-
-            Expr::InferType => Ok(Type::InferType),
-            Expr::TypeName(x) => Ok(Type::TypeName(x)),
-            Expr::RefinementType(x) => Ok(Type::RefinementType(x)),
-            Expr::TupleType(x) => Ok(Type::TupleType(x)),
-            Expr::ArrayType(x) => Ok(Type::ArrayType(x)),
-            Expr::MapType(x) => Ok(Type::MapType(x)),
-            Expr::SliceType(x) => Ok(Type::SliceType(x)),
-            Expr::FunctionType(x) => Ok(Type::FunctionType(x)),
-            Expr::ManagedRefType(x) => Ok(Type::ManagedRefType(x)),
-            Expr::UnmanagedRefType(x) => Ok(Type::UnmanagedRefType(x)),
-            Expr::GenericType(x) => Ok(Type::GenericType(x)),
-            Expr::OpaqueType(x) => Ok(Type::OpaqueType(x)),
-            Expr::StructType(x) => Ok(Type::StructType(x)),
-            Expr::LatentType(x) => Ok(Type::LatentType(x)),
-            Expr::HasParenthesesType(x) => Ok(Type::HasParenthesesType(x)),
-
-            Expr::Discard
-            | Expr::HasParentheses(_)
-            | Expr::Boolean(_)
-            | Expr::Integer(_)
-            | Expr::Float(_)
-            | Expr::String(_)
-            | Expr::BString(_)
-            | Expr::Unit
-            | Expr::TypeEnvelop(_)
-            | Expr::List(_)
-            | Expr::Object(_)
-            | Expr::UnaryExpr(_)
-            | Expr::BinExpr(_)
-            | Expr::Block(_)
-            | Expr::Function(_)
-            | Expr::Variable(_)
-            | Expr::Identifier(_)
-            | Expr::IndexAccess(_)
-            | Expr::Scope(_)
-            | Expr::If(_)
-            | Expr::WhileLoop(_)
-            | Expr::DoWhileLoop(_)
-            | Expr::Switch(_)
-            | Expr::Break(_)
-            | Expr::Continue(_)
-            | Expr::Return(_)
-            | Expr::ForEach(_)
-            | Expr::Await(_)
-            | Expr::Call(_) => Err(self),
-        }
-    }
-}
-
 impl Expr {
     #[must_use]
     pub fn is_discard(&self) -> bool {
@@ -1255,42 +1147,6 @@ impl Expr {
 impl std::fmt::Debug for Expr {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Expr::Bool => write!(f, "bool"),
-            Expr::UInt8 => write!(f, "u8"),
-            Expr::UInt16 => write!(f, "u16"),
-            Expr::UInt32 => write!(f, "u32"),
-            Expr::UInt64 => write!(f, "u64"),
-            Expr::UInt128 => write!(f, "u128"),
-            Expr::Int8 => write!(f, "i8"),
-            Expr::Int16 => write!(f, "i16"),
-            Expr::Int32 => write!(f, "i32"),
-            Expr::Int64 => write!(f, "i64"),
-            Expr::Int128 => write!(f, "i128"),
-            Expr::Float8 => write!(f, "f8"),
-            Expr::Float16 => write!(f, "f16"),
-            Expr::Float32 => write!(f, "f32"),
-            Expr::Float64 => write!(f, "f64"),
-            Expr::Float128 => write!(f, "f128"),
-            Expr::UnitType => write!(f, "()"),
-            Expr::InferType => write!(f, "_"),
-            Expr::TypeName(e) => f
-                .debug_struct("TypeName")
-                .field("name", &e.full_name())
-                .finish(),
-            Expr::RefinementType(e) => e.fmt(f),
-            Expr::TupleType(e) => e.fmt(f),
-            Expr::ArrayType(e) => e.fmt(f),
-            Expr::MapType(e) => e.fmt(f),
-            Expr::SliceType(e) => e.fmt(f),
-            Expr::FunctionType(e) => e.fmt(f),
-            Expr::ManagedRefType(e) => e.fmt(f),
-            Expr::UnmanagedRefType(e) => e.fmt(f),
-            Expr::GenericType(e) => e.fmt(f),
-            Expr::OpaqueType(e) => f.debug_struct("OpaqueType").field("name", e).finish(),
-            Expr::StructType(e) => e.fmt(f),
-            Expr::LatentType(e) => f.debug_struct("LatentType").field("type", e).finish(),
-            Expr::HasParenthesesType(e) => f.debug_struct("Parentheses").field("type", e).finish(),
-
             Expr::Discard => write!(f, ""),
             Expr::HasParentheses(e) => f.debug_struct("Parentheses").field("expr", e).finish(),
 
@@ -1301,7 +1157,7 @@ impl std::fmt::Debug for Expr {
             Expr::BString(e) => e.fmt(f),
             Expr::Unit => write!(f, "()"),
 
-            Expr::TypeEnvelop(e) => f.debug_struct("TypeEnvelop").field("type", e).finish(),
+            Expr::TypeInfo(e) => f.debug_struct("TypeInfo").field("type", e).finish(),
             Expr::List(e) => e.fmt(f),
             Expr::Object(e) => e.fmt(f),
             Expr::UnaryExpr(e) => e.fmt(f),

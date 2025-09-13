@@ -42,7 +42,7 @@ fn refinement_type_evaluation_ordering() {
                         .add_argument(Some("o"), Builder::create_u8(6))
                         .build(),
                 )
-                .add_element(Builder::create_type_envelop(Builder::get_u8()))
+                .add_element(Builder::create_type_info(Builder::get_u8()))
                 .build(),
         ))
         .with_width(Some(

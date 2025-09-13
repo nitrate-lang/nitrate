@@ -6,7 +6,8 @@ pub enum Expr {}
 impl Expr {}
 
 impl std::fmt::Debug for Expr {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, _f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        // TODO:
         Ok(())
     }
 }
