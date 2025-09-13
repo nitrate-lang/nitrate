@@ -5,7 +5,7 @@ use nitrate_parsetree::{
     Builder,
     kind::{BinExprOp, CallArguments, Expr, UnaryExprOp},
 };
-use nitrate_tokenize::{IntegerKind, Keyword, Op, Punct, Token};
+use nitrate_tokenize::{Keyword, Op, Punct, Token};
 
 type Precedence = u32;
 
@@ -130,7 +130,7 @@ impl Parser<'_, '_> {
         match self.lexer.peek_t() {
             Token::Integer(int) => {
                 self.lexer.skip_tok();
-                let lit = Self::parse_integer_literal(int.value(), int.kind());
+                let lit = Builder::create_integer(int.value(), int.kind());
                 Some(self.parse_literal_suffix(lit))
             }
 
@@ -381,24 +381,6 @@ impl Parser<'_, '_> {
 
     pub fn parse_expression(&mut self) -> Option<Expr> {
         self.parse_expression_precedence(Precedence::MIN)
-    }
-
-    fn parse_integer_literal(value: u128, kind: IntegerKind) -> Expr {
-        let mut bb = Builder::create_integer_with_kind().with_kind(kind);
-
-        if value <= 0xff {
-            bb = bb.with_u8(value as u8);
-        } else if value <= 0xffff {
-            bb = bb.with_u16(value as u16);
-        } else if value <= 0xffff_ffff {
-            bb = bb.with_u32(value as u32);
-        } else if value <= 0xffff_ffff_ffff_ffff {
-            bb = bb.with_u64(value as u64);
-        } else {
-            bb = bb.with_u128(value);
-        }
-
-        bb.build()
     }
 
     fn parse_literal_suffix(&mut self, lit: Expr) -> Expr {

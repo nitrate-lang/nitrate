@@ -1,5 +1,4 @@
 use crate::Builder;
-use apint::UInt;
 use interned_string::IString;
 use nitrate_tokenize::IntegerKind;
 use std::collections::BTreeMap;
@@ -371,7 +370,7 @@ impl StructTypeBuilder {
 
 #[derive(Debug)]
 pub struct IntegerBuilder {
-    value: Option<UInt>,
+    value: Option<u128>,
     kind: Option<IntegerKind>,
 }
 
@@ -383,28 +382,8 @@ impl IntegerBuilder {
         }
     }
 
-    pub fn with_u8(mut self, value: u8) -> Self {
-        self.value = Some(UInt::from_u8(value));
-        self
-    }
-
-    pub fn with_u16(mut self, value: u16) -> Self {
-        self.value = Some(UInt::from_u16(value));
-        self
-    }
-
-    pub fn with_u32(mut self, value: u32) -> Self {
-        self.value = Some(UInt::from_u32(value));
-        self
-    }
-
-    pub fn with_u64(mut self, value: u64) -> Self {
-        self.value = Some(UInt::from_u64(value));
-        self
-    }
-
     pub fn with_u128(mut self, value: u128) -> Self {
-        self.value = Some(UInt::from_u128(value));
+        self.value = Some(value);
         self
     }
 

@@ -48,3 +48,4 @@ runtime/libazide-gc/target/
 translate.old
 trace.txt
 test.nit
+tree.json

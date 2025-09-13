@@ -2,7 +2,7 @@ use crate::expression::VariableKind;
 use crate::expression::{Expr, Identifier};
 use crate::types::{TupleType, Type};
 use interned_string::IString;
-use nitrate_tokenize::NotNan;
+use nitrate_tokenize::{IntegerKind, NotNan};
 
 use crate::builder_helper::{
     ArrayTypeBuilder, AwaitBuilder, BinExprBuilder, BlockBuilder, BreakBuilder, CallBuilder,
@@ -33,33 +33,8 @@ impl Builder {
     }
 
     #[must_use]
-    pub fn create_u8(x: u8) -> Expr {
-        IntegerBuilder::new().with_u8(x).build()
-    }
-
-    #[must_use]
-    pub fn create_u16(x: u16) -> Expr {
-        IntegerBuilder::new().with_u16(x).build()
-    }
-
-    #[must_use]
-    pub fn create_u32(x: u32) -> Expr {
-        IntegerBuilder::new().with_u32(x).build()
-    }
-
-    #[must_use]
-    pub fn create_u64(x: u64) -> Expr {
-        IntegerBuilder::new().with_u64(x).build()
-    }
-
-    #[must_use]
-    pub fn create_u128(x: u128) -> Expr {
-        IntegerBuilder::new().with_u128(x).build()
-    }
-
-    #[must_use]
-    pub fn create_integer_with_kind() -> IntegerBuilder {
-        IntegerBuilder::new()
+    pub fn create_integer(x: u128, kind: IntegerKind) -> Expr {
+        IntegerBuilder::new().with_u128(x).with_kind(kind).build()
     }
 
     #[must_use]

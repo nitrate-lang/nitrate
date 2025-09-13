@@ -1,6 +1,5 @@
 use crate::kind::Type;
 
-use apint::UInt;
 use interned_string::IString;
 use nitrate_tokenize::{IntegerKind, Op};
 use ordered_float::NotNan;
@@ -11,32 +10,19 @@ use std::ops::Deref;
 
 #[derive(Clone, Serialize, Deserialize)]
 pub struct Integer {
-    value: UInt,
+    value: u128,
     kind: IntegerKind,
 }
 
 impl Integer {
     #[must_use]
-    pub(crate) fn new(value: UInt, kind: IntegerKind) -> Option<Self> {
-        if value.try_to_u128().is_ok() {
-            Some(Integer { value, kind })
-        } else {
-            None
-        }
+    pub(crate) fn new(value: u128, kind: IntegerKind) -> Option<Self> {
+        Some(Integer { value, kind })
     }
 
-    #[must_use]
-    pub fn get(&self) -> &UInt {
-        &self.value
-    }
-
-    /// # Panics
-    /// This function will panic if the value cannot be represented as a `u128`.
     #[must_use]
     pub fn get_u128(&self) -> u128 {
         self.value
-            .try_to_u128()
-            .expect("IntegerLit value should fit in u128")
     }
 
     #[must_use]
