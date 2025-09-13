@@ -4,7 +4,7 @@ use log::error;
 use nitrate_parsetree::kind::{
     AnonymousFunction, Await, BinExpr, BinExprOp, Block, Break, Call, CallArguments, Continue,
     DoWhileLoop, Expr, ForEach, If, IndexAccess, Integer, List, Path, Return, Type, UnaryExpr,
-    UnaryExprOp, Variable, VariableKind, WhileLoop,
+    UnaryExprOp, WhileLoop,
 };
 use nitrate_tokenize::{Keyword, Op, Punct, Token};
 use smallvec::smallvec;
@@ -177,16 +177,11 @@ impl Parser<'_, '_> {
                 Some(Expr::Boolean(false))
             }
 
-            Token::Keyword(Keyword::Enum) => self.parse_enum(),
-            Token::Keyword(Keyword::Struct) => self.parse_struct(),
-            Token::Keyword(Keyword::Class) => self.parse_class(),
-            Token::Keyword(Keyword::Trait) => self.parse_trait(),
-            Token::Keyword(Keyword::Impl) => self.parse_implementation(),
-            Token::Keyword(Keyword::Contract) => self.parse_contract(),
-            Token::Keyword(Keyword::Let) => self.parse_let_variable(),
-            Token::Keyword(Keyword::Var) => self.parse_var_variable(),
-            Token::Keyword(Keyword::Type) => self.parse_type_or_type_alias(),
-            Token::Keyword(Keyword::Fn) | Token::Punct(Punct::LeftBrace) => self.parse_function(),
+            Token::Keyword(Keyword::Type) => self.parse_type_info(),
+
+            Token::Keyword(Keyword::Fn) | Token::Punct(Punct::LeftBrace) => {
+                self.parse_anonymous_function()
+            }
 
             Token::Keyword(Keyword::If) => self.parse_if(),
             Token::Keyword(Keyword::For) => self.parse_for(),
@@ -490,34 +485,13 @@ impl Parser<'_, '_> {
         Some(attributes)
     }
 
-    fn parse_type_or_type_alias(&mut self) -> Option<Expr> {
+    fn parse_type_info(&mut self) -> Option<Expr> {
         assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Type));
-
-        let rewind_pos = self.lexer.sync_position();
         self.lexer.skip_tok();
 
-        if self.lexer.skip_if(&Token::Punct(Punct::LeftParen)) {
-            let Some(for_type) = self.parse_type() else {
-                self.lexer.rewind(rewind_pos);
-                return None;
-            };
+        let of = self.parse_type()?;
 
-            if !self.lexer.skip_if(&Token::Punct(Punct::RightParen)) {
-                self.set_failed_bit();
-                error!(
-                    "[P????]: type expression: expected closing parenthesis\n--> {}",
-                    self.lexer.sync_position()
-                );
-
-                return None;
-            }
-
-            return Some(Expr::TypeInfo(Box::new(for_type)));
-        }
-
-        self.lexer.rewind(rewind_pos);
-
-        self.parse_type_alias()
+        Some(Expr::TypeInfo(Box::new(of)))
     }
 
     fn parse_if(&mut self) -> Option<Expr> {
@@ -759,56 +733,7 @@ impl Parser<'_, '_> {
         None
     }
 
-    fn parse_type_alias(&mut self) -> Option<Expr> {
-        // TODO: type alias parsing logic
-        self.set_failed_bit();
-        error!("Type alias parsing not implemented yet");
-        None
-    }
-
-    fn parse_enum(&mut self) -> Option<Expr> {
-        // TODO: enum parsing logic
-        self.set_failed_bit();
-        error!("Enum parsing not implemented yet");
-        None
-    }
-
-    fn parse_struct(&mut self) -> Option<Expr> {
-        // TODO: struct parsing logic
-        self.set_failed_bit();
-        error!("Struct parsing not implemented yet");
-        None
-    }
-
-    fn parse_class(&mut self) -> Option<Expr> {
-        // TODO: class parsing logic
-        self.set_failed_bit();
-        error!("Class parsing not implemented yet");
-        None
-    }
-
-    fn parse_trait(&mut self) -> Option<Expr> {
-        // TODO: trait parsing logic
-        self.set_failed_bit();
-        error!("Trait parsing not implemented yet");
-        None
-    }
-
-    fn parse_implementation(&mut self) -> Option<Expr> {
-        // TODO: implementation parsing logic
-        self.set_failed_bit();
-        error!("Implementation parsing not implemented yet");
-        None
-    }
-
-    fn parse_contract(&mut self) -> Option<Expr> {
-        // TODO: contract parsing logic
-        self.set_failed_bit();
-        error!("Contract parsing not implemented yet");
-        None
-    }
-
-    fn parse_function(&mut self) -> Option<Expr> {
+    fn parse_anonymous_function(&mut self) -> Option<Expr> {
         if self.lexer.peek_t() == Token::Punct(Punct::LeftBrace) {
             let definition = self.parse_block()?;
 
@@ -859,96 +784,6 @@ impl Parser<'_, '_> {
         }));
 
         Some(function)
-    }
-
-    fn parse_let_variable(&mut self) -> Option<Expr> {
-        assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Let));
-        self.lexer.skip_tok();
-
-        let attributes = self.parse_attributes()?;
-
-        let is_mutable = self.lexer.skip_if(&Token::Keyword(Keyword::Mut));
-        if !is_mutable {
-            self.lexer.skip_if(&Token::Keyword(Keyword::Const));
-        }
-
-        let variable_name = if let Some(name_token) = self.lexer.next_if_name() {
-            name_token
-        } else {
-            error!(
-                "[P????]: let: expected variable name\n--> {}",
-                self.lexer.sync_position()
-            );
-            return None;
-        };
-
-        let type_annotation = if self.lexer.skip_if(&Token::Punct(Punct::Colon)) {
-            self.parse_type()?
-        } else {
-            Type::InferType
-        };
-
-        let initializer = if self.lexer.skip_if(&Token::Op(Op::Set)) {
-            Some(self.parse_expression()?)
-        } else {
-            None
-        };
-
-        let variable = Expr::Variable(Box::new(Variable {
-            kind: VariableKind::Let,
-            name: variable_name.clone(),
-            var_type: type_annotation,
-            is_mutable,
-            attributes: attributes,
-            initializer: initializer,
-        }));
-
-        Some(variable)
-    }
-
-    fn parse_var_variable(&mut self) -> Option<Expr> {
-        assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Var));
-        self.lexer.skip_tok();
-
-        let attributes = self.parse_attributes()?;
-
-        let is_mutable = self.lexer.skip_if(&Token::Keyword(Keyword::Mut));
-        if !is_mutable {
-            self.lexer.skip_if(&Token::Keyword(Keyword::Const));
-        }
-
-        let variable_name = if let Some(name_token) = self.lexer.next_if_name() {
-            name_token
-        } else {
-            error!(
-                "[P????]: var: expected variable name\n--> {}",
-                self.lexer.sync_position()
-            );
-            return None;
-        };
-
-        let type_annotation = if self.lexer.skip_if(&Token::Punct(Punct::Colon)) {
-            self.parse_type()?
-        } else {
-            Type::InferType
-        };
-
-        let initializer = if self.lexer.skip_if(&Token::Op(Op::Set)) {
-            Some(self.parse_expression()?)
-        } else {
-            None
-        };
-
-        let variable = Expr::Variable(Box::new(Variable {
-            kind: VariableKind::Var,
-            name: variable_name.clone(),
-            var_type: type_annotation,
-            is_mutable,
-            attributes: attributes,
-            initializer: initializer,
-        }));
-
-        Some(variable)
     }
 
     fn parse_function_argument(&mut self) -> Option<(Option<IString>, Expr)> {
