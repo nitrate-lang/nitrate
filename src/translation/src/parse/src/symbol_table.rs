@@ -1,10 +1,7 @@
 use interned_string::IString;
 use nitrate_parsetree::kind::Function;
 #[allow(unused_imports)]
-use nitrate_parsetree::{
-    Builder,
-    kind::{Expr, QualifiedScope},
-};
+use nitrate_parsetree::kind::{Expr, QualifiedScope};
 use std::collections::HashMap;
 
 #[derive(Debug, Clone, Default)]

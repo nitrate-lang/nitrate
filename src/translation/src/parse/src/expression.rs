@@ -1,9 +1,10 @@
 use super::parse::Parser;
 use interned_string::IString;
 use log::error;
-use nitrate_parsetree::{
-    Builder,
-    kind::{BinExprOp, CallArguments, Expr, Path, Type, UnaryExprOp},
+use nitrate_parsetree::kind::{
+    Await, BinExpr, BinExprOp, Block, Break, Call, CallArguments, Continue, DoWhileLoop, Expr,
+    Function, If, IndexAccess, Integer, List, Path, Return, Type, UnaryExpr, UnaryExprOp, Variable,
+    VariableKind, WhileLoop,
 };
 use nitrate_tokenize::{Keyword, Op, Punct, Token};
 use smallvec::smallvec;
@@ -131,25 +132,29 @@ impl Parser<'_, '_> {
         match self.lexer.peek_t() {
             Token::Integer(int) => {
                 self.lexer.skip_tok();
-                let lit = Builder::create_integer(int.value(), int.kind());
+                let lit = Expr::Integer(Box::new(Integer {
+                    value: int.value(),
+                    kind: int.kind(),
+                }));
+
                 Some(self.parse_literal_suffix(lit))
             }
 
             Token::Float(float) => {
                 self.lexer.skip_tok();
-                let lit = Builder::create_float(float);
+                let lit = Expr::Float(float);
                 Some(self.parse_literal_suffix(lit))
             }
 
             Token::String(string) => {
                 self.lexer.skip_tok();
-                let lit = Builder::create_string(string);
+                let lit = Expr::String(string);
                 Some(self.parse_literal_suffix(lit))
             }
 
             Token::BString(data) => {
                 self.lexer.skip_tok();
-                let lit = Builder::create_bstring(data);
+                let lit = Expr::BString(Box::new(data));
                 Some(self.parse_literal_suffix(lit))
             }
 
@@ -157,17 +162,19 @@ impl Parser<'_, '_> {
 
             Token::Name(name) => {
                 self.lexer.skip_tok();
-                Some(Builder::create_identifier([name].to_vec()))
+                Some(Expr::Path(Path {
+                    path: smallvec![name],
+                }))
             }
 
             Token::Keyword(Keyword::True) => {
                 self.lexer.skip_tok();
-                Some(Builder::create_boolean(true))
+                Some(Expr::Boolean(true))
             }
 
             Token::Keyword(Keyword::False) => {
                 self.lexer.skip_tok();
-                Some(Builder::create_boolean(false))
+                Some(Expr::Boolean(false))
             }
 
             Token::Keyword(Keyword::Enum) => self.parse_enum(),
@@ -264,13 +271,11 @@ impl Parser<'_, '_> {
 
                 let operand = self.parse_expression_precedence(precedence)?;
 
-                return Some(
-                    Builder::create_unary_expr()
-                        .with_prefix()
-                        .with_operator(UnaryExprOp::try_from(prefix_op).expect("invalid unary_op"))
-                        .with_operand(operand)
-                        .build(),
-                );
+                return Some(Expr::UnaryExpr(Box::new(UnaryExpr {
+                    operator: UnaryExprOp::try_from(prefix_op).expect("invalid unary_op"),
+                    operand,
+                    is_postfix: false,
+                })));
             }
         }
 
@@ -286,7 +291,7 @@ impl Parser<'_, '_> {
                 return None;
             }
 
-            return Some(Builder::create_parentheses(inner));
+            return Some(Expr::HasParentheses(Box::new(inner)));
         }
 
         self.parse_expression_primary()
@@ -318,11 +323,11 @@ impl Parser<'_, '_> {
                         self.parse_expression_precedence(op_precedence)?
                     };
 
-                    sofar = Builder::create_binexpr()
-                        .with_left(sofar)
-                        .with_operator(BinExprOp::try_from(next_op).expect("invalid bin_op"))
-                        .with_right(right_expr)
-                        .build();
+                    sofar = Expr::BinExpr(Box::new(BinExpr {
+                        left: sofar,
+                        operator: BinExprOp::try_from(next_op).expect("invalid bin_op"),
+                        right: right_expr,
+                    }));
                 }
 
                 Token::Punct(Punct::LeftParen) => {
@@ -337,10 +342,10 @@ impl Parser<'_, '_> {
 
                     let call_arguments = self.parse_function_arguments()?;
 
-                    sofar = Builder::create_call()
-                        .with_callee(sofar)
-                        .add_arguments(call_arguments)
-                        .build();
+                    sofar = Expr::Call(Box::new(Call {
+                        callee: sofar,
+                        arguments: call_arguments,
+                    }));
                 }
 
                 Token::Punct(Punct::LeftBracket) => {
@@ -366,10 +371,10 @@ impl Parser<'_, '_> {
                         return None;
                     }
 
-                    sofar = Builder::create_index_access()
-                        .with_collection(sofar)
-                        .with_index(index)
-                        .build();
+                    sofar = Expr::IndexAccess(Box::new(IndexAccess {
+                        collection: sofar,
+                        index,
+                    }));
                 }
 
                 _ => {
@@ -451,7 +456,7 @@ impl Parser<'_, '_> {
             }
         }
 
-        Some(Builder::create_list().add_elements(elements).build())
+        Some(Expr::List(Box::new(List { elements })))
     }
 
     pub(crate) fn parse_attributes(&mut self) -> Option<Vec<Expr>> {
@@ -507,7 +512,7 @@ impl Parser<'_, '_> {
                 return None;
             }
 
-            return Some(Builder::create_type_info(for_type));
+            return Some(Expr::TypeInfo(for_type));
         }
 
         self.lexer.rewind(rewind_pos);
@@ -541,13 +546,11 @@ impl Parser<'_, '_> {
             None
         };
 
-        Some(
-            Builder::create_if()
-                .with_condition(condition)
-                .with_then_branch(then_branch)
-                .with_else_branch(else_branch)
-                .build(),
-        )
+        Some(Expr::If(Box::new(If {
+            condition,
+            then_branch,
+            else_branch,
+        })))
     }
 
     fn parse_for(&mut self) -> Option<Expr> {
@@ -562,19 +565,14 @@ impl Parser<'_, '_> {
         self.lexer.skip_tok();
 
         let condition = if self.lexer.next_is(&Token::Punct(Punct::LeftBrace)) {
-            Builder::create_boolean(true)
+            Expr::Boolean(true)
         } else {
             self.parse_expression()?
         };
 
         let body = self.parse_block()?;
 
-        Some(
-            Builder::create_while_loop()
-                .with_condition(condition)
-                .with_body(body)
-                .build(),
-        )
+        Some(Expr::WhileLoop(Box::new(WhileLoop { condition, body })))
     }
 
     fn parse_do(&mut self) -> Option<Expr> {
@@ -593,12 +591,7 @@ impl Parser<'_, '_> {
 
         let condition = self.parse_expression()?;
 
-        Some(
-            Builder::create_do_while_loop()
-                .with_body(body)
-                .with_condition(condition)
-                .build(),
-        )
+        Some(Expr::DoWhileLoop(Box::new(DoWhileLoop { body, condition })))
     }
 
     fn parse_switch(&mut self) -> Option<Expr> {
@@ -612,8 +605,8 @@ impl Parser<'_, '_> {
         assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Break));
         self.lexer.skip_tok();
 
-        let branch_label = if self.lexer.skip_if(&Token::Punct(Punct::SingleQuote)) {
-            let Some(label) = self.lexer.next_if_name() else {
+        let label = if self.lexer.skip_if(&Token::Punct(Punct::SingleQuote)) {
+            let Some(name) = self.lexer.next_if_name() else {
                 error!(
                     "[P????]: break: expected branch label after single quote\n--> {}",
                     self.lexer.sync_position()
@@ -622,20 +615,20 @@ impl Parser<'_, '_> {
                 return None;
             };
 
-            Some(label)
+            Some(name)
         } else {
             None
         };
 
-        Some(Builder::create_break().with_label(branch_label).build())
+        Some(Expr::Break(Box::new(Break { label })))
     }
 
     fn parse_continue(&mut self) -> Option<Expr> {
         assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Continue));
         self.lexer.skip_tok();
 
-        let branch_label = if self.lexer.skip_if(&Token::Punct(Punct::SingleQuote)) {
-            let Some(label) = self.lexer.next_if_name() else {
+        let label = if self.lexer.skip_if(&Token::Punct(Punct::SingleQuote)) {
+            let Some(name) = self.lexer.next_if_name() else {
                 error!(
                     "[P????]: continue: expected branch label after single quote\n--> {}",
                     self.lexer.sync_position()
@@ -644,12 +637,12 @@ impl Parser<'_, '_> {
                 return None;
             };
 
-            Some(label)
+            Some(name)
         } else {
             None
         };
 
-        Some(Builder::create_continue().with_label(branch_label).build())
+        Some(Expr::Continue(Box::new(Continue { label })))
     }
 
     fn parse_return(&mut self) -> Option<Expr> {
@@ -662,7 +655,7 @@ impl Parser<'_, '_> {
             Some(self.parse_expression()?)
         };
 
-        Some(Builder::create_return().with_value(value).build())
+        Some(Expr::Return(Box::new(Return { value })))
     }
 
     fn parse_await(&mut self) -> Option<Expr> {
@@ -674,7 +667,7 @@ impl Parser<'_, '_> {
             return None;
         };
 
-        Some(Builder::create_await().with_future(expr).build())
+        Some(Expr::Await(Box::new(Await { future: expr })))
     }
 
     fn parse_asm(&mut self) -> Option<Expr> {
@@ -735,16 +728,16 @@ impl Parser<'_, '_> {
 
     fn parse_function(&mut self) -> Option<Expr> {
         if self.lexer.peek_t() == Token::Punct(Punct::LeftBrace) {
-            let block = Some(self.parse_block()?);
+            let definition = Some(self.parse_block()?);
 
             let infer_type = Type::InferType;
 
-            return Some(
-                Builder::create_function()
-                    .with_definition(block)
-                    .with_return_type(infer_type)
-                    .build(),
-            );
+            return Some(Expr::Function(Box::new(Function {
+                attributes: Vec::new(),
+                parameters: Vec::new(),
+                return_type: infer_type,
+                definition,
+            })));
         }
 
         assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Fn));
@@ -759,7 +752,7 @@ impl Parser<'_, '_> {
             Type::InferType
         };
 
-        let body = if self.lexer.next_is(&Token::Punct(Punct::LeftBrace)) {
+        let definition = if self.lexer.next_is(&Token::Punct(Punct::LeftBrace)) {
             Some(self.parse_block()?)
         } else if self.lexer.skip_if(&Token::Op(Op::BlockArrow)) {
             Some(self.parse_expression()?)
@@ -767,12 +760,12 @@ impl Parser<'_, '_> {
             None
         };
 
-        let function = Builder::create_function()
-            .with_attributes(attributes)
-            .with_parameters(parameters)
-            .with_return_type(return_type)
-            .with_definition(body)
-            .build();
+        let function = Expr::Function(Box::new(Function {
+            attributes,
+            parameters,
+            return_type,
+            definition,
+        }));
 
         Some(function)
     }
@@ -811,13 +804,14 @@ impl Parser<'_, '_> {
             None
         };
 
-        let variable = Builder::create_let()
-            .with_mutability(is_mutable)
-            .with_attributes(attributes)
-            .with_name(variable_name.clone())
-            .with_type(type_annotation)
-            .with_initializer(initializer)
-            .build();
+        let variable = Expr::Variable(Box::new(Variable {
+            kind: VariableKind::Let,
+            name: variable_name.clone(),
+            var_type: type_annotation,
+            is_mutable,
+            attributes: attributes,
+            initializer: initializer,
+        }));
 
         let current_scope = self.scope.clone();
         if !self
@@ -866,13 +860,14 @@ impl Parser<'_, '_> {
             None
         };
 
-        let variable = Builder::create_var()
-            .with_mutability(is_mutable)
-            .with_attributes(attributes)
-            .with_name(variable_name.clone())
-            .with_type(type_annotation)
-            .with_initializer(initializer)
-            .build();
+        let variable = Expr::Variable(Box::new(Variable {
+            kind: VariableKind::Var,
+            name: variable_name.clone(),
+            var_type: type_annotation,
+            is_mutable,
+            attributes: attributes,
+            initializer: initializer,
+        }));
 
         let current_scope = self.scope.clone();
         if !self
@@ -1006,10 +1001,11 @@ impl Parser<'_, '_> {
     }
 
     pub(crate) fn parse_block(&mut self) -> Option<Expr> {
-        Some(
-            Builder::create_block()
-                .add_expressions(self.parse_block_as_elements()?)
-                .build(),
-        )
+        let elements = self.parse_block_as_elements()?;
+
+        Some(Expr::Block(Box::new(Block {
+            elements,
+            ends_with_semi: false,
+        })))
     }
 }

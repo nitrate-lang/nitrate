@@ -1,8 +1,5 @@
 use super::symbol_table::SymbolTable;
-use nitrate_parsetree::{
-    Builder,
-    kind::{Expr, QualifiedScope},
-};
+use nitrate_parsetree::kind::{Block, Expr, QualifiedScope};
 use nitrate_tokenize::{Lexer, Punct, Token};
 use smallvec::SmallVec;
 
@@ -52,12 +49,14 @@ impl<'a, 'symbol_table> Parser<'a, 'symbol_table> {
 
     pub fn parse(&mut self) -> Result<Expr, Expr> {
         let mut expressions = Vec::new();
+        let mut ends_with_semi = false;
+
         while !self.lexer.is_eof() {
-            if self.lexer.skip_if(&Token::Punct(Punct::Semicolon))
-                || self.lexer.next_if_comment().is_some()
-            {
+            if self.lexer.next_if_comment().is_some() {
                 continue;
             }
+
+            ends_with_semi = false;
 
             let Some(expression) = self.parse_expression() else {
                 let before_pos = self.lexer.sync_position();
@@ -81,9 +80,17 @@ impl<'a, 'symbol_table> Parser<'a, 'symbol_table> {
             };
 
             expressions.push(expression);
+
+            if self.lexer.skip_if(&Token::Punct(Punct::Semicolon)) {
+                ends_with_semi = true;
+                continue;
+            }
         }
 
-        let block = Builder::create_block().add_expressions(expressions).build();
+        let block = Expr::Block(Box::new(Block {
+            elements: expressions,
+            ends_with_semi,
+        }));
 
         if self.has_failed() {
             Err(block)
