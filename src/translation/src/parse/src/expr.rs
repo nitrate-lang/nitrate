@@ -127,7 +127,7 @@ fn get_prefix_precedence(op: Op) -> Option<Precedence> {
     Some(precedence as Precedence)
 }
 
-impl Parser<'_> {
+impl Parser<'_, '_> {
     fn parse_expression_primary(&mut self) -> Option<Expr> {
         match self.lexer.peek_t() {
             Token::Integer(int) => {

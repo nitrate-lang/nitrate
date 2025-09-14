@@ -6,7 +6,7 @@ use nitrate_parsetree::kind::{
 };
 use nitrate_tokenize::{Keyword, Op, Punct, Token};
 
-impl Parser<'_> {
+impl Parser<'_, '_> {
     fn parse_generic_parameter(&mut self) -> Option<GenericParameter> {
         let Some(name) = self.lexer.next_if_name() else {
             error!(

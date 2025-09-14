@@ -25,7 +25,7 @@ impl RefinementOptions {
     }
 }
 
-impl Parser<'_> {
+impl Parser<'_, '_> {
     fn parse_refinement_range(&mut self) -> Option<(Option<Expr>, Option<Expr>)> {
         assert!(self.lexer.peek_t() == Token::Punct(Punct::LeftBracket));
         self.lexer.skip_tok();

@@ -1,29 +1,36 @@
 use interned_string::IString;
+use nitrate_diagnosis::DiagnosticCollector;
 use nitrate_parsetree::kind::{Module, Package};
 use nitrate_tokenize::Lexer;
 
-pub struct Parser<'a> {
+use crate::bugs::SyntaxError;
+
+pub struct Parser<'a, 'chan> {
     pub(crate) lexer: Lexer<'a>,
     pub(crate) generic_type_depth: i64,
     pub(crate) generic_type_suffix_terminator_ambiguity: bool,
-    failed_bit: bool,
+    pub(crate) bugs: &'chan DiagnosticCollector,
 }
 
-impl<'a> Parser<'a> {
-    pub fn new(lexer: Lexer<'a>) -> Self {
+impl<'a, 'bugs> Parser<'a, 'bugs> {
+    pub fn new(lexer: Lexer<'a>, bugs: &'bugs DiagnosticCollector) -> Self {
         Parser {
             lexer,
             generic_type_depth: 0,
             generic_type_suffix_terminator_ambiguity: false,
-            failed_bit: false,
+            bugs,
         }
     }
 
     pub(crate) fn set_failed_bit(&mut self) {
-        self.failed_bit = true;
+        // TODO:
+
+        self.bugs.emit(&SyntaxError::Test);
+
+        todo!();
     }
 
-    pub fn parse_crate(&mut self, crate_name: IString) -> Result<Package, Package> {
+    pub fn parse_crate(&mut self, crate_name: IString) -> Package {
         let mut items = Vec::new();
 
         while !self.lexer.is_eof() {
@@ -39,19 +46,13 @@ impl<'a> Parser<'a> {
             items.push(item);
         }
 
-        let crate_item = Package {
+        Package {
             name: crate_name,
             root: Module {
                 attributes: Vec::new(),
                 name: "".into(),
                 items,
             },
-        };
-
-        if self.failed_bit {
-            Err(crate_item)
-        } else {
-            Ok(crate_item)
         }
     }
 }

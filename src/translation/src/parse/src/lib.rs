@@ -1,5 +1,6 @@
 // #![warn(clippy::pedantic)]
 
+mod bugs;
 mod expr;
 mod item;
 mod parse;

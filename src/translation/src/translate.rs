@@ -1,7 +1,7 @@
 use crate::{TranslationOptions, TranslationOptionsBuilder, options::Diagnose};
 use interned_string::IString;
 use nitrate_codegen::{Codegen, CodegenError};
-use nitrate_diagnosis::DiagnosticDrain;
+use nitrate_diagnosis::DiagnosticCollector;
 use nitrate_parse::Parser;
 use nitrate_parsetree::kind::Package;
 use nitrate_tokenize::Lexer;
@@ -60,13 +60,9 @@ fn create_lexer<'a>(
     lexer.map_err(TranslationError::LexerError)
 }
 
-fn parse_language(lexer: Lexer, crate_name: IString) -> Result<Package, TranslationError> {
-    let mut parser = Parser::new(lexer);
-    let program = parser
-        .parse_crate(crate_name)
-        .map_err(|_| TranslationError::SyntaxError)?;
-
-    Ok(program)
+fn parse_language(lexer: Lexer, crate_name: IString, bugs: &DiagnosticCollector) -> Package {
+    let mut parser = Parser::new(lexer, bugs);
+    parser.parse_crate(crate_name)
 }
 
 // fn resolve_names(_program: &mut Expr) -> Result<(), TranslationError> {
@@ -82,13 +78,13 @@ fn parse_language(lexer: Lexer, crate_name: IString) -> Result<Package, Translat
 fn diagnose_problems(
     package: &Package,
     diagnostic_passes: &[Box<dyn Diagnose + Sync>],
-    drain: &DiagnosticDrain,
+    bugs: &DiagnosticCollector,
     pool: &ThreadPool,
 ) {
     scope_with(pool, |scope| {
         for diagnostic in diagnostic_passes {
             scope.execute(|| {
-                diagnostic.diagnose(package, drain);
+                diagnostic.diagnose(package, bugs);
             });
         }
     });
@@ -97,7 +93,7 @@ fn diagnose_problems(
 // fn optimize_functions(
 //     symbols: &mut SymbolTable,
 //     function_optimization_passes: &[Box<dyn FunctionOptimization + Sync>],
-//     drain: &DiagnosticDrain,
+//     bugs: &DiagnosticCollector,
 //     pool: &ThreadPool,
 // ) {
 //     scope_with(pool, |scope| {
@@ -113,7 +109,7 @@ fn diagnose_problems(
 
 //             scope.execute(|| {
 //                 for pass in function_optimization_passes {
-//                     pass.optimize_function(function_mut, drain);
+//                     pass.optimize_function(function_mut, bugs);
 //                 }
 //             });
 //         }
@@ -139,24 +135,25 @@ pub fn compile_code(
     machine_code: &mut dyn std::io::Write,
     options: &TranslationOptions,
 ) -> Result<(), TranslationError> {
+    let bugs = &options.bugs;
     let source = scan_into_memory(source_code)?;
+
     let lexer = create_lexer(&source, &options.source_name_for_debug_messages)?;
 
-    let package = parse_language(lexer, options.crate_name.clone())?;
+    let package = parse_language(lexer, options.crate_name.clone(), bugs);
 
     // resolve_names(&mut program, &mut symtab)?;
     // type_check(&mut program)?;
 
     let pool = ThreadPool::new(options.thread_count.get());
-    let drain = &options.drain;
 
-    diagnose_problems(&package, &options.diagnostic_passes, drain, &pool);
+    diagnose_problems(&package, &options.diagnostic_passes, bugs, &pool);
 
-    if drain.error_bit() {
+    if bugs.error_bit() {
         return Err(TranslationError::DiagnosticError);
     }
 
-    // optimize_functions(&mut symtab, &options.function_optimizations, drain, &pool);
+    // optimize_functions(&mut symtab, &options.function_optimizations, bugs, &pool);
     drop(pool);
 
     generate_code(&package, machine_code)

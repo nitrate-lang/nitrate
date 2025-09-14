@@ -1,6 +1,8 @@
 use std::io::Read;
 
+use nitrate_diagnosis::DiagnosticCollector;
 use nitrate_translation::{TranslationError, parse::Parser, tokenize::Lexer};
+use slog::{Drain, o};
 
 #[derive(Debug)]
 enum Error {
@@ -51,12 +53,15 @@ fn program() -> Result<(), Error> {
         }
     };
 
-    let parse_result = match Parser::new(lexer).parse_crate(filename.to_owned().into()) {
-        Ok(r) => r,
-        Err(r) => r,
-    };
+    let decorator = slog_term::TermDecorator::new().build();
+    let drain = slog_term::FullFormat::new(decorator).build().fuse();
+    let drain = slog_async::Async::new(drain).build().fuse();
+    let log = slog::Logger::root(drain, o!());
+    let bugs = DiagnosticCollector::new(log);
 
-    if let Err(_) = serde_json::to_writer_pretty(&mut parse_tree_output, &parse_result) {
+    let package = Parser::new(lexer, &bugs).parse_crate(filename.to_owned().into());
+
+    if let Err(_) = serde_json::to_writer_pretty(&mut parse_tree_output, &package) {
         return Err(Error::ParseFailed(TranslationError::SyntaxError));
     }
 

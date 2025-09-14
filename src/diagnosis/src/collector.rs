@@ -16,7 +16,7 @@ pub enum Severity {
 }
 
 #[derive(Debug)]
-pub struct DiagnosticDrain {
+pub struct DiagnosticCollector {
     log: slog::Logger,
     code_map: HashMap<DiagnosticId, Severity>,
     info_bit: AtomicBool,
@@ -24,13 +24,13 @@ pub struct DiagnosticDrain {
     error_bit: AtomicBool,
 }
 
-impl Default for DiagnosticDrain {
+impl Default for DiagnosticCollector {
     fn default() -> Self {
         Self::new(slog::Logger::root(slog::Discard, slog::o!()))
     }
 }
 
-impl DiagnosticDrain {
+impl DiagnosticCollector {
     pub fn new(log: slog::Logger) -> Self {
         Self {
             log,
