@@ -22,8 +22,8 @@ impl FormattableDiagnosticGroup for SyntaxError {
     fn format(&self) -> nitrate_diagnosis::DiagnosticInfo {
         match self {
             SyntaxError::NamelessGenericParameter(pos) => DiagnosticInfo {
-                message: "Generic parameters must have a name".into(),
                 origin: Origin::Point(pos.to_owned()),
+                message: "Generic parameters must have a name".into(),
             },
 
             SyntaxError::Test => DiagnosticInfo {

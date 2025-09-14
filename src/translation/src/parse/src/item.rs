@@ -14,7 +14,7 @@ impl Parser<'_, '_> {
 
         let Some(name) = self.lexer.next_if_name() else {
             self.bugs.push(&SyntaxError::NamelessGenericParameter(
-                self.lexer.sync_position(),
+                self.lexer.position(),
             ));
 
             // error!(
@@ -51,7 +51,7 @@ impl Parser<'_, '_> {
                 self.set_failed_bit();
                 error!(
                     "[P????]: generic parameters: expected generic parameter\n--> {}",
-                    self.lexer.sync_position()
+                    self.lexer.position()
                 );
                 return None;
             };
@@ -64,7 +64,7 @@ impl Parser<'_, '_> {
                 self.set_failed_bit();
                 error!(
                     "[P????]: generic parameters: expected comma or closing angle bracket\n--> {}",
-                    self.lexer.sync_position()
+                    self.lexer.position()
                 );
                 return None;
             }
@@ -84,7 +84,7 @@ impl Parser<'_, '_> {
         let Some(name) = self.lexer.next_if_name() else {
             error!(
                 "[P????]: module: expected module name\n--> {}",
-                self.lexer.sync_position()
+                self.lexer.position()
             );
             return None;
         };
@@ -93,7 +93,7 @@ impl Parser<'_, '_> {
             self.set_failed_bit();
             error!(
                 "[P????]: module: expected opening brace\n--> {}",
-                self.lexer.sync_position()
+                self.lexer.position()
             );
 
             return None;
@@ -135,7 +135,7 @@ impl Parser<'_, '_> {
         let Some(name) = self.lexer.next_if_name() else {
             error!(
                 "[P????]: type alias: expected alias name\n--> {}",
-                self.lexer.sync_position()
+                self.lexer.position()
             );
             return None;
         };
@@ -158,7 +158,7 @@ impl Parser<'_, '_> {
         let Some(name) = self.lexer.next_if_name() else {
             error!(
                 "[P????]: enum variant: expected variant name\n--> {}",
-                self.lexer.sync_position()
+                self.lexer.position()
             );
             return None;
         };
@@ -193,7 +193,7 @@ impl Parser<'_, '_> {
         let Some(name) = self.lexer.next_if_name() else {
             error!(
                 "[P????]: enum: expected enum name\n--> {}",
-                self.lexer.sync_position()
+                self.lexer.position()
             );
             return None;
         };
@@ -204,7 +204,7 @@ impl Parser<'_, '_> {
             self.set_failed_bit();
             error!(
                 "[P????]: enum: expected opening brace\n--> {}",
-                self.lexer.sync_position()
+                self.lexer.position()
             );
 
             return None;
@@ -226,7 +226,7 @@ impl Parser<'_, '_> {
                 self.set_failed_bit();
                 error!(
                     "[P????]: enum: expected comma or closing brace\n--> {}",
-                    self.lexer.sync_position()
+                    self.lexer.position()
                 );
                 break;
             }
@@ -248,7 +248,7 @@ impl Parser<'_, '_> {
         let Some(name) = self.lexer.next_if_name() else {
             error!(
                 "[P????]: struct field: expected field name\n--> {}",
-                self.lexer.sync_position()
+                self.lexer.position()
             );
             return None;
         };
@@ -257,7 +257,7 @@ impl Parser<'_, '_> {
             self.set_failed_bit();
             error!(
                 "[P????]: struct field: expected colon\n--> {}",
-                self.lexer.sync_position()
+                self.lexer.position()
             );
             return None;
         }
@@ -288,7 +288,7 @@ impl Parser<'_, '_> {
         let Some(name) = self.lexer.next_if_name() else {
             error!(
                 "[P????]: struct: expected struct name\n--> {}",
-                self.lexer.sync_position()
+                self.lexer.position()
             );
             return None;
         };
@@ -299,7 +299,7 @@ impl Parser<'_, '_> {
             self.set_failed_bit();
             error!(
                 "[P????]: struct: expected opening brace\n--> {}",
-                self.lexer.sync_position()
+                self.lexer.position()
             );
 
             return None;
@@ -321,7 +321,7 @@ impl Parser<'_, '_> {
                 self.set_failed_bit();
                 error!(
                     "[P????]: struct: expected comma or closing brace\n--> {}",
-                    self.lexer.sync_position()
+                    self.lexer.position()
                 );
                 break;
             }
@@ -367,7 +367,7 @@ impl Parser<'_, '_> {
         let Some(name) = self.lexer.next_if_name() else {
             error!(
                 "[P????]: function: expected function name\n--> {}",
-                self.lexer.sync_position()
+                self.lexer.position()
             );
             return None;
         };
@@ -420,7 +420,7 @@ impl Parser<'_, '_> {
         } else {
             error!(
                 "[P????]: static: expected variable name\n--> {}",
-                self.lexer.sync_position()
+                self.lexer.position()
             );
             return None;
         };
@@ -441,7 +441,7 @@ impl Parser<'_, '_> {
             self.set_failed_bit();
             error!(
                 "[P????]: static: expected semicolon after variable declaration\n--> {}",
-                self.lexer.sync_position()
+                self.lexer.position()
             );
             return None;
         }
@@ -474,7 +474,7 @@ impl Parser<'_, '_> {
                 error!(
                     "[P????]: item: unexpected name '{}'\n--> {}",
                     name,
-                    self.lexer.sync_position()
+                    self.lexer.position()
                 );
 
                 None
@@ -485,7 +485,7 @@ impl Parser<'_, '_> {
                 error!(
                     "[P????]: item: unexpected integer '{}'\n--> {}",
                     int,
-                    self.lexer.sync_position()
+                    self.lexer.position()
                 );
 
                 None
@@ -496,7 +496,7 @@ impl Parser<'_, '_> {
                 error!(
                     "[P????]: item: unexpected float '{}'\n--> {}",
                     float,
-                    self.lexer.sync_position()
+                    self.lexer.position()
                 );
 
                 None
@@ -507,7 +507,7 @@ impl Parser<'_, '_> {
                 error!(
                     "[P????]: item: unexpected string '{}'\n--> {}",
                     string,
-                    self.lexer.sync_position()
+                    self.lexer.position()
                 );
 
                 None
@@ -517,7 +517,7 @@ impl Parser<'_, '_> {
                 self.set_failed_bit();
                 error!(
                     "[P????]: item: unexpected bstring\n--> {}",
-                    self.lexer.sync_position()
+                    self.lexer.position()
                 );
 
                 None
@@ -528,7 +528,7 @@ impl Parser<'_, '_> {
                 error!(
                     "[P????]: item: unexpected keyword '{}'\n--> {}",
                     keyword,
-                    self.lexer.sync_position()
+                    self.lexer.position()
                 );
 
                 None
@@ -539,7 +539,7 @@ impl Parser<'_, '_> {
                 error!(
                     "[P????]: item: unexpected operator '{}'\n--> {}",
                     op,
-                    self.lexer.sync_position()
+                    self.lexer.position()
                 );
 
                 None
@@ -550,7 +550,7 @@ impl Parser<'_, '_> {
                 error!(
                     "[P????]: item: unexpected punctuation '{}'\n--> {}",
                     punct,
-                    self.lexer.sync_position()
+                    self.lexer.position()
                 );
 
                 None
@@ -560,7 +560,7 @@ impl Parser<'_, '_> {
                 self.set_failed_bit();
                 error!(
                     "[P????]: item: unexpected comment\n--> {}",
-                    self.lexer.sync_position()
+                    self.lexer.position()
                 );
 
                 None
@@ -570,7 +570,7 @@ impl Parser<'_, '_> {
                 self.set_failed_bit();
                 error!(
                     "[P????]: item: unexpected end of file\n--> {}",
-                    self.lexer.sync_position()
+                    self.lexer.position()
                 );
 
                 None
@@ -580,7 +580,7 @@ impl Parser<'_, '_> {
                 self.set_failed_bit();
                 error!(
                     "[P????]: item: illegal token\n--> {}",
-                    self.lexer.sync_position()
+                    self.lexer.position()
                 );
 
                 None

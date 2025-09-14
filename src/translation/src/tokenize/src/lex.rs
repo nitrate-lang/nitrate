@@ -123,7 +123,7 @@ impl<'a> Lexer<'a> {
 
     #[inline(always)]
     #[must_use]
-    pub fn sync_position(&self) -> SourcePosition {
+    pub fn position(&self) -> SourcePosition {
         self.sync_pos.clone()
     }
 

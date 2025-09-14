@@ -41,7 +41,7 @@ impl Parser<'_, '_> {
             if !self.lexer.skip_if(&Token::Punct(Punct::Colon)) {
                 error!(
                     "[P0???]: refinement type: expected ':' after minimum range constraint\n--> {}",
-                    self.lexer.sync_position()
+                    self.lexer.position()
                 );
 
                 return None;
@@ -56,7 +56,7 @@ impl Parser<'_, '_> {
             if !self.lexer.skip_if(&Token::Punct(Punct::RightBracket)) {
                 error!(
                     "[P0???]: refinement type: expected ']' to close range constraints\n--> {}",
-                    self.lexer.sync_position()
+                    self.lexer.position()
                 );
 
                 return None;
@@ -98,7 +98,7 @@ impl Parser<'_, '_> {
         if !self.lexer.next_is(&Token::Punct(Punct::LeftBracket)) {
             error!(
                 "[P0???]: refinement type: expected '[' for range constraints\n--> {}",
-                self.lexer.sync_position()
+                self.lexer.position()
             );
 
             return None;
@@ -123,7 +123,7 @@ impl Parser<'_, '_> {
              * However, if it is not followed by a colon, the identifier is
              * to be parsed as an expression.
              */
-            let rewind_pos = self.lexer.sync_position();
+            let rewind_pos = self.lexer.position();
             self.lexer.skip_tok();
 
             if self.lexer.skip_if(&Token::Punct(Punct::Colon)) {
@@ -133,7 +133,7 @@ impl Parser<'_, '_> {
             }
         }
 
-        let current_pos = self.lexer.sync_position();
+        let current_pos = self.lexer.position();
 
         let Some(argument_value) = self.parse_type() else {
             error!(
@@ -195,7 +195,7 @@ impl Parser<'_, '_> {
                 if !any_terminator {
                     error!(
                         "[P0???]: generic type: expected ',' or '>' after generic argument\n--> {}",
-                        self.lexer.sync_position()
+                        self.lexer.position()
                     );
 
                     return None;
@@ -218,7 +218,7 @@ impl Parser<'_, '_> {
         let mut path = Vec::new();
         let mut last_was_scope = false;
 
-        let pos = self.lexer.sync_position();
+        let pos = self.lexer.position();
 
         loop {
             match self.lexer.peek_t() {
@@ -262,7 +262,7 @@ impl Parser<'_, '_> {
         if last_was_scope {
             error!(
                 "[P0???]: type name: unexpected '::' at end of type name\n--> {}",
-                self.lexer.sync_position()
+                self.lexer.position()
             );
 
             return None;
@@ -281,7 +281,7 @@ impl Parser<'_, '_> {
                 -1 => {
                     error!(
                         "[P0???]: generic type: unexpected '>' delimiter\n--> {}",
-                        self.lexer.sync_position()
+                        self.lexer.position()
                     );
 
                     return None;
@@ -289,7 +289,7 @@ impl Parser<'_, '_> {
                 _ => {
                     error!(
                         "[P0???]: generic type: unexpected '>>' delimiter\n--> {}",
-                        self.lexer.sync_position()
+                        self.lexer.position()
                     );
 
                     return None;
@@ -315,7 +315,7 @@ impl Parser<'_, '_> {
         if !self.lexer.skip_if(&Token::Punct(Punct::RightBracket)) {
             error!(
                 "[P0???]: array type: expected ']' to close\n--> {}",
-                self.lexer.sync_position()
+                self.lexer.position()
             );
 
             return None;
@@ -336,7 +336,7 @@ impl Parser<'_, '_> {
         if !self.lexer.skip_if(&Token::Punct(Punct::RightBracket)) {
             error!(
                 "[P0???]: map type: expected ']' to close\n--> {}",
-                self.lexer.sync_position()
+                self.lexer.position()
             );
 
             return None;
@@ -382,7 +382,7 @@ impl Parser<'_, '_> {
 
         error!(
             "[P0???]: type: expected ';', ']', or '->' for array, slice, and map type respectively\n--> {}",
-            self.lexer.sync_position()
+            self.lexer.position()
         );
         info!("[P0???]: array type: syntax hint: [<type>; <length>]");
         info!("[P0???]: slice type: syntax hint: [<type>]");
@@ -509,7 +509,7 @@ impl Parser<'_, '_> {
                 }
                 error!(
                     "[P0???]: function: expected ',' or ')' after parameter\n--> {}",
-                    self.lexer.sync_position()
+                    self.lexer.position()
                 );
 
                 return None;
@@ -558,7 +558,7 @@ impl Parser<'_, '_> {
         if !self.lexer.skip_if(&Token::Punct(Punct::LeftParen)) {
             error!(
                 "[P0???]: opaque type: expected '(' after 'opaque'\n--> {}",
-                self.lexer.sync_position()
+                self.lexer.position()
             );
             info!("[P0???]: opaque type: syntax hint: opaque(<string>)");
 
@@ -568,7 +568,7 @@ impl Parser<'_, '_> {
         let Some(opaque_identity) = self.lexer.next_if_string() else {
             error!(
                 "[P0???]: opaque type: expected string literal after 'opaque('\n--> {}",
-                self.lexer.sync_position()
+                self.lexer.position()
             );
             info!("[P0???]: opaque type: syntax hint: opaque(<string>)");
 
@@ -578,7 +578,7 @@ impl Parser<'_, '_> {
         if !self.lexer.skip_if(&Token::Punct(Punct::RightParen)) {
             error!(
                 "[P0???]: opaque type: expected ')' to close\n--> {}",
-                self.lexer.sync_position()
+                self.lexer.position()
             );
             info!("[P0???]: opaque type: syntax hint: opaque(<string>)");
 
@@ -779,7 +779,7 @@ impl Parser<'_, '_> {
                 self.set_failed_bit();
                 error!(
                     "[P0???]: type: expected type after '('\n--> {}",
-                    self.lexer.sync_position()
+                    self.lexer.position()
                 );
 
                 return None;
@@ -806,7 +806,7 @@ impl Parser<'_, '_> {
 
                             error!(
                                 "[P0???]: tuple type: expected ',' or ')' after element type\n--> {}",
-                                self.lexer.sync_position()
+                                self.lexer.position()
                             );
                             info!("[P0???]: tuple type: syntax hint: (<type1>, <type2>, ... )");
 
@@ -821,7 +821,7 @@ impl Parser<'_, '_> {
                     self.set_failed_bit();
                     error!(
                         "[P0???]: type: expected ')' or ',' after type \n--> {}",
-                        self.lexer.sync_position()
+                        self.lexer.position()
                     );
 
                     None

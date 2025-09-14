@@ -201,7 +201,7 @@ impl Parser<'_, '_> {
                 error!(
                     "[P????]: expr: unexpected keyword '{}'\n--> {}",
                     keyword,
-                    self.lexer.sync_position()
+                    self.lexer.position()
                 );
 
                 None
@@ -212,7 +212,7 @@ impl Parser<'_, '_> {
                 error!(
                     "[P????]: expr: unexpected operator '{}'\n--> {}",
                     op,
-                    self.lexer.sync_position()
+                    self.lexer.position()
                 );
 
                 None
@@ -223,7 +223,7 @@ impl Parser<'_, '_> {
                 error!(
                     "[P????]: expr: unexpected punctuation '{}'\n--> {}",
                     punct,
-                    self.lexer.sync_position()
+                    self.lexer.position()
                 );
 
                 None
@@ -233,7 +233,7 @@ impl Parser<'_, '_> {
                 self.set_failed_bit();
                 error!(
                     "[P????]: expr: unexpected comment\n--> {}",
-                    self.lexer.sync_position()
+                    self.lexer.position()
                 );
 
                 None
@@ -243,7 +243,7 @@ impl Parser<'_, '_> {
                 self.set_failed_bit();
                 error!(
                     "[P????]: expr: unexpected end of file\n--> {}",
-                    self.lexer.sync_position()
+                    self.lexer.position()
                 );
 
                 None
@@ -253,7 +253,7 @@ impl Parser<'_, '_> {
                 self.set_failed_bit();
                 error!(
                     "[P????]: expr: illegal token\n--> {}",
-                    self.lexer.sync_position()
+                    self.lexer.position()
                 );
 
                 None
@@ -283,7 +283,7 @@ impl Parser<'_, '_> {
                 self.set_failed_bit();
                 error!(
                     "[P????]: expr: expected closing parenthesis\n--> {}",
-                    self.lexer.sync_position()
+                    self.lexer.position()
                 );
                 return None;
             }
@@ -363,7 +363,7 @@ impl Parser<'_, '_> {
                         self.set_failed_bit();
                         error!(
                             "[P????]: expr: expected closing bracket\n--> {}",
-                            self.lexer.sync_position()
+                            self.lexer.position()
                         );
                         return None;
                     }
@@ -440,7 +440,7 @@ impl Parser<'_, '_> {
                 }
                 error!(
                     "[P0???]: list: expected ',' or ']' after element expression\n--> {}",
-                    self.lexer.sync_position()
+                    self.lexer.position()
                 );
 
                 return None;
@@ -471,7 +471,7 @@ impl Parser<'_, '_> {
                 }
                 error!(
                     "[P0???]: expected ',' or ']' after attribute expression\n--> {}",
-                    self.lexer.sync_position()
+                    self.lexer.position()
                 );
 
                 return None;
@@ -503,7 +503,7 @@ impl Parser<'_, '_> {
                     self.set_failed_bit();
                     error!(
                         "[P????]: if: expected else block after 'else if'\n--> {}",
-                        self.lexer.sync_position()
+                        self.lexer.position()
                     );
                     return None;
                 };
@@ -540,7 +540,7 @@ impl Parser<'_, '_> {
                 let Some(variable_name) = self.lexer.next_if_name() else {
                     error!(
                         "[P????]: for: expected loop variable name\n--> {}",
-                        self.lexer.sync_position()
+                        self.lexer.position()
                     );
                     return None;
                 };
@@ -558,7 +558,7 @@ impl Parser<'_, '_> {
                 {
                     error!(
                         "[P0???]: for: expected ',' or ')' after loop variable\n--> {}",
-                        self.lexer.sync_position()
+                        self.lexer.position()
                     );
 
                     return None;
@@ -568,7 +568,7 @@ impl Parser<'_, '_> {
             let Some(variable_name) = self.lexer.next_if_name() else {
                 error!(
                     "[P????]: for: expected loop variable name\n--> {}",
-                    self.lexer.sync_position()
+                    self.lexer.position()
                 );
                 return None;
             };
@@ -596,7 +596,7 @@ impl Parser<'_, '_> {
             self.set_failed_bit();
             error!(
                 "[P????]: for: expected 'in' after loop variable\n--> {}",
-                self.lexer.sync_position()
+                self.lexer.position()
             );
             return None;
         }
@@ -635,7 +635,7 @@ impl Parser<'_, '_> {
         if !self.lexer.skip_if(&Token::Keyword(Keyword::While)) {
             error!(
                 "[P????]: do-while: expected 'while' after 'do' block\n--> {}",
-                self.lexer.sync_position()
+                self.lexer.position()
             );
 
             return None;
@@ -661,7 +661,7 @@ impl Parser<'_, '_> {
             let Some(name) = self.lexer.next_if_name() else {
                 error!(
                     "[P????]: break: expected branch label after single quote\n--> {}",
-                    self.lexer.sync_position()
+                    self.lexer.position()
                 );
 
                 return None;
@@ -683,7 +683,7 @@ impl Parser<'_, '_> {
             let Some(name) = self.lexer.next_if_name() else {
                 error!(
                     "[P????]: continue: expected branch label after single quote\n--> {}",
-                    self.lexer.sync_position()
+                    self.lexer.position()
                 );
 
                 return None;
@@ -767,7 +767,7 @@ impl Parser<'_, '_> {
             self.set_failed_bit();
             error!(
                 "[P????]: function: expected function body\n--> {}",
-                self.lexer.sync_position()
+                self.lexer.position()
             );
             return None;
         };
@@ -792,7 +792,7 @@ impl Parser<'_, '_> {
              * However, if it is not followed by a colon, the identifier is
              * to be parsed as an expression.
              */
-            let rewind_pos = self.lexer.sync_position();
+            let rewind_pos = self.lexer.position();
             self.lexer.skip_tok();
 
             if self.lexer.skip_if(&Token::Punct(Punct::Colon)) {
@@ -827,7 +827,7 @@ impl Parser<'_, '_> {
             {
                 error!(
                     "[P0???]: function call: expected ',' or ')' after function argument\n--> {}",
-                    self.lexer.sync_position()
+                    self.lexer.position()
                 );
 
                 return None;
@@ -842,7 +842,7 @@ impl Parser<'_, '_> {
             self.set_failed_bit();
             error!(
                 "[P????]: expr: block: expected opening brace\n--> {}",
-                self.lexer.sync_position()
+                self.lexer.position()
             );
 
             return None;
