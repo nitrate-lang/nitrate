@@ -1,4 +1,4 @@
-use nitrate_parsetree::kind::{Block, Expr};
+use nitrate_parsetree::kind::Module;
 use nitrate_tokenize::Lexer;
 
 pub struct Parser<'a> {
@@ -32,31 +32,32 @@ impl<'a> Parser<'a> {
         matches!(language_version, (1, _))
     }
 
-    pub fn parse(&mut self) -> Result<Expr, Expr> {
-        let mut expressions = Vec::new();
+    pub fn parse(&mut self) -> Result<Module, Module> {
+        let mut items = Vec::new();
 
         while !self.lexer.is_eof() {
             if self.lexer.next_if_comment().is_some() {
                 continue;
             }
 
-            let Some(expression) = self.parse_expression() else {
+            let Some(item) = self.parse_item() else {
                 self.set_failed_bit();
                 break;
             };
 
-            expressions.push(expression);
+            items.push(item);
         }
 
-        let block = Expr::Block(Box::new(Block {
-            elements: expressions,
-            ends_with_semi: true,
-        }));
+        let module = Module {
+            attributes: Vec::new(),
+            name: "".into(),
+            items,
+        };
 
         if self.has_failed() {
-            Err(block)
+            Err(module)
         } else {
-            Ok(block)
+            Ok(module)
         }
     }
 }

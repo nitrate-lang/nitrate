@@ -1,6 +1,6 @@
 use cranelift::module::{FuncId, Linkage, Module};
 use log::{debug, trace};
-use nitrate_parsetree::kind::{self, Expr};
+use nitrate_parsetree::kind;
 use std::sync::Arc;
 use std::{collections::HashMap, str::FromStr};
 
@@ -88,16 +88,6 @@ impl Codegen {
         }
     }
 
-    fn compute_module_name(program: &Expr) -> String {
-        let name = program
-            .digest_128()
-            .iter()
-            .map(|b| format!("{:02x}", b))
-            .collect::<String>();
-
-        name
-    }
-
     fn create_module(
         isa: Arc<dyn isa::TargetIsa>,
         module_name: &str,
@@ -120,7 +110,7 @@ impl Codegen {
     }
 
     fn create_global_variable(
-        variable: &kind::Variable,
+        variable: &kind::GlobalVariable,
         module: &mut ObjectModule,
     ) -> Result<(), CodegenError> {
         let name = &variable.name;
@@ -155,7 +145,7 @@ impl Codegen {
     }
 
     fn create_global_function(
-        _function: &kind::AnonymousFunction,
+        _function: &kind::NamedFunction,
         _module: &mut ObjectModule,
     ) -> Result<FuncId, CodegenError> {
         // TODO: Generate code for the function
@@ -169,30 +159,23 @@ impl Codegen {
 
     pub fn generate(
         self,
-        program: &Expr,
+        module: &kind::Module,
         output: &mut dyn std::io::Write,
     ) -> Result<(), CodegenError> {
         let shared_flags = Self::create_shared_flags();
         let target_triple = Self::create_target_triple(&self.target_triple_string)?;
         let isa = Self::create_isa(shared_flags, target_triple, &self.isa_config)?;
 
-        let module_name = Self::compute_module_name(program);
-        let mut module = Self::create_module(isa, &module_name)?;
+        let mut obj_module = Self::create_module(isa, &module.name)?;
 
-        let Expr::Block(block) = program else {
-            return Err(CodegenError::Other(
-                "Top-level expression is not a block".to_string(),
-            ));
-        };
-
-        for expression in &block.elements {
+        for expression in &module.items {
             match expression {
-                Expr::Function(function) => {
-                    Self::create_global_function(function, &mut module)?;
+                kind::Item::NamedFunction(function) => {
+                    Self::create_global_function(function, &mut obj_module)?;
                 }
 
-                Expr::Variable(global_variable) => {
-                    Self::create_global_variable(global_variable, &mut module)?;
+                kind::Item::GlobalVariable(global_variable) => {
+                    Self::create_global_variable(global_variable, &mut obj_module)?;
                 }
 
                 _ => {
@@ -203,7 +186,7 @@ impl Codegen {
             }
         }
 
-        match module.finish().emit() {
+        match obj_module.finish().emit() {
             Ok(object_file_bytes) => output
                 .write_all(&object_file_bytes)
                 .map_err(CodegenError::IoError),

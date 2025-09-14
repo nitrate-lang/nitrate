@@ -97,6 +97,7 @@ impl NamedFunction {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GlobalVariable {
     pub attributes: Vec<Expr>,
+    pub is_mutable: bool,
     pub name: IString,
     pub var_type: Type,
     pub initializer: Option<Expr>,

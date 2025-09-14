@@ -322,6 +322,7 @@ impl<'a> Lexer<'a> {
             b"type" => Some(Keyword::Type),
             b"scope" => Some(Keyword::Scope),
             b"import" => Some(Keyword::Import),
+            b"mod" => Some(Keyword::Mod),
 
             b"safe" => Some(Keyword::Safe),
             b"unsafe" => Some(Keyword::Unsafe),

@@ -102,6 +102,7 @@ pub enum Keyword {
     Type,     /* 'type' */
     Scope,    /* 'scope' */
     Import,   /* 'import' */
+    Mod,      /* 'mod' */
 
     /* Modifiers */
     Safe,    /* 'safe' */
@@ -171,6 +172,7 @@ impl std::fmt::Display for Keyword {
             Keyword::Type => write!(f, "type"),
             Keyword::Scope => write!(f, "scope"),
             Keyword::Import => write!(f, "import"),
+            Keyword::Mod => write!(f, "mod"),
 
             Keyword::Safe => write!(f, "safe"),
             Keyword::Unsafe => write!(f, "unsafe"),
@@ -667,6 +669,7 @@ mod tests {
                 Keyword::Type => "type",
                 Keyword::Scope => "scope",
                 Keyword::Import => "import",
+                Keyword::Mod => "mod",
                 Keyword::Safe => "safe",
                 Keyword::Unsafe => "unsafe",
                 Keyword::Promise => "promise",

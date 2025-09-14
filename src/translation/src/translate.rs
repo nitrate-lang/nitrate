@@ -2,7 +2,7 @@ use crate::{TranslationOptions, TranslationOptionsBuilder};
 use nitrate_codegen::{Codegen, CodegenError};
 use nitrate_diagnosis::{Diagnose, DiagnosticDrain};
 use nitrate_parse::Parser;
-use nitrate_parsetree::kind::Expr;
+use nitrate_parsetree::kind::Module;
 use nitrate_tokenize::Lexer;
 use std::collections::HashMap;
 use threadpool::ThreadPool;
@@ -59,7 +59,7 @@ fn create_lexer<'a>(
     lexer.map_err(TranslationError::LexerError)
 }
 
-fn parse_language(lexer: Lexer) -> Result<Expr, TranslationError> {
+fn parse_language(lexer: Lexer) -> Result<Module, TranslationError> {
     let mut parser = Parser::new(lexer);
     let program = parser.parse().map_err(|_| TranslationError::SyntaxError)?;
 
@@ -77,7 +77,7 @@ fn parse_language(lexer: Lexer) -> Result<Expr, TranslationError> {
 // }
 
 fn diagnose_problems(
-    program: &Expr,
+    module: &Module,
     diagnostic_passes: &[Box<dyn Diagnose + Sync>],
     drain: &DiagnosticDrain,
     pool: &ThreadPool,
@@ -85,7 +85,7 @@ fn diagnose_problems(
     scope_with(pool, |scope| {
         for diagnostic in diagnostic_passes {
             scope.execute(|| {
-                diagnostic.diagnose(program, drain);
+                diagnostic.diagnose(module, drain);
             });
         }
     });
@@ -117,14 +117,14 @@ fn diagnose_problems(
 //     });
 // }
 
-fn generate_code(program: &Expr, object: &mut dyn std::io::Write) -> Result<(), TranslationError> {
+fn generate_code(module: &Module, object: &mut dyn std::io::Write) -> Result<(), TranslationError> {
     let target_triple_string = "x86_64"; // Example target ISA
     let isa_config = HashMap::new();
 
     let codegen = Codegen::new(target_triple_string.to_string(), isa_config);
 
     codegen
-        .generate(program, object)
+        .generate(module, object)
         .map_err(TranslationError::CodegenError)
 }
 
@@ -136,7 +136,7 @@ pub fn compile_code(
     let source = scan_into_memory(source_code)?;
     let lexer = create_lexer(&source, &options.source_name_for_debug_messages)?;
 
-    let program = parse_language(lexer)?;
+    let module = parse_language(lexer)?;
 
     // resolve_names(&mut program, &mut symtab)?;
     // type_check(&mut program)?;
@@ -144,7 +144,7 @@ pub fn compile_code(
     let pool = ThreadPool::new(options.thread_count.get());
     let drain = &options.drain;
 
-    diagnose_problems(&program, &options.diagnostic_passes, drain, &pool);
+    diagnose_problems(&module, &options.diagnostic_passes, drain, &pool);
 
     if drain.any_errors() {
         return Err(TranslationError::DiagnosticError);
@@ -153,5 +153,5 @@ pub fn compile_code(
     // optimize_functions(&mut symtab, &options.function_optimizations, drain, &pool);
     drop(pool);
 
-    generate_code(&program, machine_code)
+    generate_code(&module, machine_code)
 }

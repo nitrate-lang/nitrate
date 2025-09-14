@@ -1,6 +1,6 @@
 use crate::DiagnosticDrain;
-use nitrate_parsetree::kind::Expr;
+use nitrate_parsetree::kind::Module;
 
 pub trait Diagnose {
-    fn diagnose(&self, subject: &Expr, drain: &DiagnosticDrain);
+    fn diagnose(&self, module: &Module, drain: &DiagnosticDrain);
 }
