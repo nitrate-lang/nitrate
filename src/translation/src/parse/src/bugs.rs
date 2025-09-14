@@ -24,6 +24,8 @@ pub(crate) enum SyntaxBug {
     StructureMissingFieldName(SourcePosition),
     StructureExpectedEnd(SourcePosition),
 
+    FunctionMissingName(SourcePosition),
+
     ExpectedOpeningBrace(SourcePosition),
     ExpectedEquals(SourcePosition),
     ExpectedSemicolon(SourcePosition),

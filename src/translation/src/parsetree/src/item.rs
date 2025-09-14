@@ -83,7 +83,7 @@ pub struct Contract {}
 pub struct FunctionParameter {
     pub attributes: Vec<Expr>,
     pub name: IString,
-    pub param_type: Type,
+    pub param_type: Option<Type>,
     pub default: Option<Expr>,
 }
 
@@ -93,7 +93,7 @@ pub struct NamedFunction {
     pub name: IString,
     pub type_params: Vec<GenericParameter>,
     pub parameters: Vec<FunctionParameter>,
-    pub return_type: Type,
+    pub return_type: Option<Type>,
     pub definition: Option<Block>,
 }
 
@@ -114,7 +114,7 @@ pub struct GlobalVariable {
     pub attributes: Vec<Expr>,
     pub is_mutable: bool,
     pub name: IString,
-    pub var_type: Type,
+    pub var_type: Option<Type>,
     pub initializer: Option<Expr>,
 }
 

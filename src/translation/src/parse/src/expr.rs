@@ -779,12 +779,10 @@ impl Parser<'_, '_> {
         if self.lexer.peek_t() == Token::Punct(Punct::LeftBrace) {
             let definition = self.parse_block()?;
 
-            let infer_type = Type::InferType;
-
             return Some(Expr::Function(Box::new(AnonymousFunction {
                 attributes: Vec::new(),
                 parameters: Vec::new(),
-                return_type: infer_type,
+                return_type: None,
                 definition,
             })));
         }
@@ -796,9 +794,9 @@ impl Parser<'_, '_> {
         let parameters = self.parse_function_parameters()?;
 
         let return_type = if self.lexer.skip_if(&Token::Op(Op::Arrow)) {
-            self.parse_type()
+            Some(self.parse_type())
         } else {
-            Type::InferType
+            None
         };
 
         let definition = if self.lexer.next_is(&Token::Punct(Punct::LeftBrace)) {

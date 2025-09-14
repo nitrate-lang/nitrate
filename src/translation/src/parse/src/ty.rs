@@ -475,9 +475,9 @@ impl Parser<'_, '_> {
             let parameter_name = self.lexer.next_if_name().unwrap_or_default();
 
             let parameter_type = if self.lexer.skip_if(&Token::Punct(Punct::Colon)) {
-                self.parse_type()
+                Some(self.parse_type())
             } else {
-                Type::InferType
+                None
             };
 
             let parameter_default = if self.lexer.skip_if(&Token::Op(Op::Set)) {
@@ -524,9 +524,9 @@ impl Parser<'_, '_> {
         let parameters = self.parse_function_parameters()?;
 
         let return_type = if self.lexer.skip_if(&Token::Op(Op::Arrow)) {
-            self.parse_type()
+            Some(self.parse_type())
         } else {
-            Type::InferType
+            None
         };
 
         Some(Type::FunctionType(Box::new(FunctionType {

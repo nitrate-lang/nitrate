@@ -225,7 +225,7 @@ pub struct Block {
 pub struct AnonymousFunction {
     pub attributes: Vec<Expr>,
     pub parameters: Vec<FunctionParameter>,
-    pub return_type: Type,
+    pub return_type: Option<Type>,
     pub definition: Block,
 }
 
@@ -241,7 +241,7 @@ pub struct Variable {
     pub attributes: Vec<Expr>,
     pub is_mutable: bool,
     pub name: IString,
-    pub var_type: Type,
+    pub var_type: Option<Type>,
     pub initializer: Option<Expr>,
 }
 

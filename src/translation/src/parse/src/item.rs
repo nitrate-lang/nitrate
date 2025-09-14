@@ -359,6 +359,7 @@ impl Parser<'_, '_> {
         self.lexer.skip_tok();
 
         let attributes = self.parse_attributes();
+
         let name = self.lexer.next_if_name().unwrap_or_else(|| {
             error!(
                 "[P????]: function: expected function name\n--> {}",
@@ -372,9 +373,9 @@ impl Parser<'_, '_> {
         let parameters = self.parse_function_parameters().unwrap_or(Vec::new());
 
         let return_type = if self.lexer.skip_if(&Token::Op(Op::Arrow)) {
-            self.parse_type()
+            Some(self.parse_type())
         } else {
-            Type::InferType
+            None
         };
 
         let definition = if self.lexer.next_is(&Token::Punct(Punct::LeftBrace)) {
@@ -423,10 +424,10 @@ impl Parser<'_, '_> {
             "".into()
         });
 
-        let type_annotation = if self.lexer.skip_if(&Token::Punct(Punct::Colon)) {
-            self.parse_type()
+        let var_type = if self.lexer.skip_if(&Token::Punct(Punct::Colon)) {
+            Some(self.parse_type())
         } else {
-            Type::InferType
+            None
         };
 
         let initializer = if self.lexer.skip_if(&Token::Op(Op::Set)) {
@@ -447,7 +448,7 @@ impl Parser<'_, '_> {
             attributes: attributes,
             is_mutable,
             name: variable_name.clone(),
-            var_type: type_annotation,
+            var_type,
             initializer: initializer,
         }
     }
