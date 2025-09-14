@@ -64,7 +64,7 @@ impl FormattableDiagnosticGroup for SyntaxBug {
 
             SyntaxBug::ExpectedOpeningBrace(pos) => DiagnosticInfo {
                 origin: Origin::Point(pos.to_owned()),
-                message: "expected an opening brace".into(),
+                message: "expected '{'".into(),
             },
 
             SyntaxBug::TypeAliasMissingName(pos) => DiagnosticInfo {

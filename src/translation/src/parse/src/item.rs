@@ -3,7 +3,7 @@ use crate::bugs::SyntaxBug;
 use super::parse::Parser;
 use log::error;
 use nitrate_parsetree::kind::{
-    Block, EnumDefinition, EnumVariant, GenericParameter, GlobalVariable, Item, Module,
+    Block, EnumDefinition, EnumVariant, Expr, GenericParameter, GlobalVariable, Item, Module,
     NamedFunction, StructDefinition, StructField, Type, TypeAlias,
 };
 use nitrate_tokenize::{Keyword, Op, Punct, Token};
@@ -62,7 +62,7 @@ impl Parser<'_, '_> {
         parameters
     }
 
-    fn parse_module(&mut self) -> Option<Module> {
+    fn parse_module(&mut self) -> Module {
         let module_start_pos = self.lexer.peek_pos();
 
         assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Mod));
@@ -84,7 +84,7 @@ impl Parser<'_, '_> {
         let mut items = Vec::new();
         let mut already_reported_too_many_items = false;
 
-        while !self.lexer.skip_if(&Token::Punct(Punct::RightBrace)) {
+        while !self.lexer.skip_if_or_end(&Token::Punct(Punct::RightBrace)) {
             const MAX_ITEMS_PER_MODULE: usize = 65_536;
 
             if !already_reported_too_many_items && items.len() >= MAX_ITEMS_PER_MODULE {
@@ -94,18 +94,18 @@ impl Parser<'_, '_> {
                 self.bugs.push(&bug);
             }
 
-            let item = self.parse_item()?;
+            let item = self.parse_item();
             items.push(item);
         }
 
-        Some(Module {
+        Module {
             attributes,
             name,
             items,
-        })
+        }
     }
 
-    fn parse_type_alias(&mut self) -> Option<Item> {
+    fn parse_type_alias(&mut self) -> TypeAlias {
         assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Type));
         self.lexer.skip_tok();
 
@@ -124,19 +124,22 @@ impl Parser<'_, '_> {
             self.bugs.push(&bug);
         }
 
-        let aliased_type = self.parse_type()?;
+        let aliased_type = self.parse_type().unwrap_or_else(|| {
+            self.lexer.skip_until(&Token::Punct(Punct::Semicolon));
+            Type::InferType
+        });
 
         if !self.lexer.skip_if(&Token::Punct(Punct::Semicolon)) {
             let bug = SyntaxBug::ExpectedSemicolon(self.lexer.peek_pos());
             self.bugs.push(&bug);
         }
 
-        Some(Item::TypeAlias(Box::new(TypeAlias {
+        TypeAlias {
             attributes,
             name,
             type_params: generic_parameters,
             aliased_type,
-        })))
+        }
     }
 
     fn parse_enum_variant(&mut self) -> Option<EnumVariant> {
@@ -172,20 +175,21 @@ impl Parser<'_, '_> {
         })
     }
 
-    fn parse_enum(&mut self) -> Option<Item> {
+    fn parse_enum(&mut self) -> EnumDefinition {
         // TODO: Cleanup
 
         assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Enum));
         self.lexer.skip_tok();
 
         let attributes = self.parse_attributes();
-        let Some(name) = self.lexer.next_if_name() else {
+        let name = self.lexer.next_if_name().unwrap_or_else(|| {
             error!(
                 "[P????]: enum: expected enum name\n--> {}",
                 self.lexer.position()
             );
-            return None;
-        };
+
+            "".into()
+        });
 
         let generic_parameters = self.parse_generic_parameters();
 
@@ -195,8 +199,6 @@ impl Parser<'_, '_> {
                 "[P????]: enum: expected opening brace\n--> {}",
                 self.lexer.position()
             );
-
-            return None;
         }
 
         let mut variants = Vec::new();
@@ -221,12 +223,12 @@ impl Parser<'_, '_> {
             }
         }
 
-        Some(Item::EnumDefinition(Box::new(EnumDefinition {
+        EnumDefinition {
             attributes,
             name,
             type_params: generic_parameters,
             variants,
-        })))
+        }
     }
 
     fn parse_struct_field(&mut self) -> Option<StructField> {
@@ -267,20 +269,20 @@ impl Parser<'_, '_> {
         })
     }
 
-    fn parse_struct(&mut self) -> Option<Item> {
+    fn parse_struct(&mut self) -> StructDefinition {
         // TODO: Cleanup
 
         assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Struct));
         self.lexer.skip_tok();
 
         let attributes = self.parse_attributes();
-        let Some(name) = self.lexer.next_if_name() else {
+        let name = self.lexer.next_if_name().unwrap_or_else(|| {
             error!(
                 "[P????]: struct: expected struct name\n--> {}",
                 self.lexer.position()
             );
-            return None;
-        };
+            "".into()
+        });
 
         let generic_parameters = self.parse_generic_parameters();
 
@@ -290,8 +292,6 @@ impl Parser<'_, '_> {
                 "[P????]: struct: expected opening brace\n--> {}",
                 self.lexer.position()
             );
-
-            return None;
         }
 
         let mut fields = Vec::new();
@@ -316,13 +316,13 @@ impl Parser<'_, '_> {
             }
         }
 
-        Some(Item::StructDefinition(Box::new(StructDefinition {
+        StructDefinition {
             attributes,
             name,
             type_params: generic_parameters,
             fields,
             methods: Vec::new(),
-        })))
+        }
     }
 
     fn parse_trait(&mut self) -> Option<Item> {
@@ -346,33 +346,46 @@ impl Parser<'_, '_> {
         None
     }
 
-    fn parse_named_function(&mut self) -> Option<Item> {
+    fn parse_named_function(&mut self) -> NamedFunction {
         // TODO: Cleanup
 
         assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Fn));
         self.lexer.skip_tok();
 
         let attributes = self.parse_attributes();
-        let Some(name) = self.lexer.next_if_name() else {
+        let name = self.lexer.next_if_name().unwrap_or_else(|| {
             error!(
                 "[P????]: function: expected function name\n--> {}",
                 self.lexer.position()
             );
-            return None;
-        };
+
+            "".into()
+        });
+
         let type_params = self.parse_generic_parameters();
-        let parameters = self.parse_function_parameters()?;
+        let parameters = self.parse_function_parameters().unwrap_or(Vec::new());
 
         let return_type = if self.lexer.skip_if(&Token::Op(Op::Arrow)) {
-            self.parse_type()?
+            self.parse_type().unwrap_or(Type::InferType)
         } else {
             Type::InferType
         };
 
         let definition = if self.lexer.next_is(&Token::Punct(Punct::LeftBrace)) {
-            Some(self.parse_block()?)
+            Some(self.parse_block().unwrap_or(Block {
+                elements: Vec::new(),
+                ends_with_semi: false,
+            }))
         } else if self.lexer.skip_if(&Token::Op(Op::BlockArrow)) {
-            let expr = self.parse_expression()?;
+            let expr = self.parse_expression().unwrap_or_else(|| {
+                self.set_failed_bit();
+                error!(
+                    "[P????]: function: expected expression after '->'\n--> {}",
+                    self.lexer.position()
+                );
+
+                Expr::Unit
+            });
             Some(Block {
                 elements: vec![expr],
                 ends_with_semi: false,
@@ -381,17 +394,17 @@ impl Parser<'_, '_> {
             None
         };
 
-        Some(Item::NamedFunction(Box::new(NamedFunction {
+        NamedFunction {
             attributes,
             name,
             type_params,
             parameters,
             return_type,
             definition,
-        })))
+        }
     }
 
-    fn parse_static_variable(&mut self) -> Option<Item> {
+    fn parse_static_variable(&mut self) -> GlobalVariable {
         // TODO: Cleanup
 
         assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Static));
@@ -404,24 +417,22 @@ impl Parser<'_, '_> {
             self.lexer.skip_if(&Token::Keyword(Keyword::Const));
         }
 
-        let variable_name = if let Some(name_token) = self.lexer.next_if_name() {
-            name_token
-        } else {
+        let variable_name = self.lexer.next_if_name().unwrap_or_else(|| {
             error!(
                 "[P????]: static: expected variable name\n--> {}",
                 self.lexer.position()
             );
-            return None;
-        };
+            "".into()
+        });
 
         let type_annotation = if self.lexer.skip_if(&Token::Punct(Punct::Colon)) {
-            self.parse_type()?
+            self.parse_type().unwrap_or(Type::InferType)
         } else {
             Type::InferType
         };
 
         let initializer = if self.lexer.skip_if(&Token::Op(Op::Set)) {
-            Some(self.parse_expression()?)
+            Some(self.parse_expression().unwrap_or(Expr::Unit))
         } else {
             None
         };
@@ -432,147 +443,90 @@ impl Parser<'_, '_> {
                 "[P????]: static: expected semicolon after variable declaration\n--> {}",
                 self.lexer.position()
             );
-            return None;
         }
 
-        Some(Item::GlobalVariable(Box::new(GlobalVariable {
+        GlobalVariable {
             attributes: attributes,
             is_mutable,
             name: variable_name.clone(),
             var_type: type_annotation,
             initializer: initializer,
-        })))
+        }
     }
 
-    pub(crate) fn parse_item(&mut self) -> Option<Item> {
+    pub(crate) fn parse_item(&mut self) -> Item {
         // TODO: Cleanup
 
         match self.lexer.peek_t() {
-            Token::Keyword(Keyword::Mod) => self.parse_module().map(|m| Item::Module(Box::new(m))),
-            Token::Keyword(Keyword::Type) => self.parse_type_alias(),
-            Token::Keyword(Keyword::Enum) => self.parse_enum(),
-            Token::Keyword(Keyword::Struct) => self.parse_struct(),
-            Token::Keyword(Keyword::Trait) => self.parse_trait(),
-            Token::Keyword(Keyword::Impl) => self.parse_implementation(),
-            Token::Keyword(Keyword::Contract) => self.parse_contract(),
-            Token::Keyword(Keyword::Fn) => self.parse_named_function(),
-            Token::Keyword(Keyword::Static) => self.parse_static_variable(),
-
-            Token::Name(name) => {
-                self.set_failed_bit();
-                error!(
-                    "[P????]: item: unexpected name '{}'\n--> {}",
-                    name,
-                    self.lexer.position()
-                );
-
-                None
+            Token::Keyword(Keyword::Mod) => {
+                let module = self.parse_module();
+                Item::Module(Box::new(module))
             }
 
-            Token::Integer(int) => {
-                self.set_failed_bit();
-                error!(
-                    "[P????]: item: unexpected integer '{}'\n--> {}",
-                    int,
-                    self.lexer.position()
-                );
-
-                None
+            Token::Keyword(Keyword::Type) => {
+                let type_alias = self.parse_type_alias();
+                Item::TypeAlias(Box::new(type_alias))
             }
 
-            Token::Float(float) => {
-                self.set_failed_bit();
-                error!(
-                    "[P????]: item: unexpected float '{}'\n--> {}",
-                    float,
-                    self.lexer.position()
-                );
-
-                None
+            Token::Keyword(Keyword::Enum) => {
+                let enum_def = self.parse_enum();
+                Item::EnumDefinition(Box::new(enum_def))
             }
 
-            Token::String(string) => {
-                self.set_failed_bit();
-                error!(
-                    "[P????]: item: unexpected string '{}'\n--> {}",
-                    string,
-                    self.lexer.position()
-                );
-
-                None
+            Token::Keyword(Keyword::Struct) => {
+                let struct_def = self.parse_struct();
+                Item::StructDefinition(Box::new(struct_def))
             }
 
-            Token::BString(_) => {
-                self.set_failed_bit();
-                error!(
-                    "[P????]: item: unexpected bstring\n--> {}",
-                    self.lexer.position()
-                );
-
-                None
+            Token::Keyword(Keyword::Trait) => {
+                let trait_def = self.parse_trait();
+                todo!("Trait parsing not implemented yet")
             }
 
-            Token::Keyword(keyword) => {
-                self.set_failed_bit();
-                error!(
-                    "[P????]: item: unexpected keyword '{}'\n--> {}",
-                    keyword,
-                    self.lexer.position()
-                );
-
-                None
+            Token::Keyword(Keyword::Impl) => {
+                let impl_def = self.parse_implementation();
+                todo!("Implementation parsing not implemented yet")
             }
 
-            Token::Op(op) => {
-                self.set_failed_bit();
-                error!(
-                    "[P????]: item: unexpected operator '{}'\n--> {}",
-                    op,
-                    self.lexer.position()
-                );
-
-                None
+            Token::Keyword(Keyword::Contract) => {
+                let contract_def = self.parse_contract();
+                todo!("Contract parsing not implemented yet")
             }
 
-            Token::Punct(punct) => {
-                self.set_failed_bit();
-                error!(
-                    "[P????]: item: unexpected punctuation '{}'\n--> {}",
-                    punct,
-                    self.lexer.position()
-                );
-
-                None
+            Token::Keyword(Keyword::Fn) => {
+                let func = self.parse_named_function();
+                Item::NamedFunction(Box::new(func))
             }
 
-            Token::Comment(_) => {
-                self.set_failed_bit();
-                error!(
-                    "[P????]: item: unexpected comment\n--> {}",
-                    self.lexer.position()
-                );
-
-                None
+            Token::Keyword(Keyword::Static) => {
+                let static_var = self.parse_static_variable();
+                Item::GlobalVariable(Box::new(static_var))
             }
 
-            Token::Eof => {
+            Token::Name(_)
+            | Token::Integer(_)
+            | Token::Float(_)
+            | Token::String(_)
+            | Token::BString(_)
+            | Token::Keyword(_)
+            | Token::Op(_)
+            | Token::Punct(_)
+            | Token::Comment(_)
+            | Token::Eof
+            | Token::Illegal => {
+                self.lexer.skip_tok();
+
                 self.set_failed_bit();
                 error!(
-                    "[P????]: item: unexpected end of file\n--> {}",
+                    "[P????]: item: unexpected token\n--> {}",
                     self.lexer.position()
                 );
 
-                None
-            }
-
-            Token::Illegal => {
-                self.set_failed_bit();
-                error!(
-                    "[P????]: item: illegal token\n--> {}",
-                    self.lexer.position()
-                );
-
-                None
+                Item::Module(Box::new(Module {
+                    attributes: Vec::new(),
+                    name: "".into(),
+                    items: Vec::new(),
+                }))
             }
         }
     }

@@ -36,11 +36,7 @@ impl<'a, 'bugs> Parser<'a, 'bugs> {
                 continue;
             }
 
-            let Some(item) = self.parse_item() else {
-                self.set_failed_bit();
-                break;
-            };
-
+            let item = self.parse_item();
             items.push(item);
         }
 

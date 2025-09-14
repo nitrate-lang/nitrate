@@ -121,6 +121,18 @@ impl<'a> Lexer<'a> {
         }
     }
 
+    #[inline(always)]
+    pub fn skip_if_or_end(&mut self, matches: &Token) -> bool {
+        let tok = self.peek_t();
+
+        if &tok == matches || tok == Token::Eof {
+            self.skip_tok();
+            true
+        } else {
+            false
+        }
+    }
+
     pub fn skip_until(&mut self, matches: &Token) {
         while !self.is_eof() && &self.peek_t() != matches {
             self.skip_tok();
