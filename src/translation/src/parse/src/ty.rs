@@ -453,7 +453,7 @@ impl Parser<'_, '_> {
         })))
     }
 
-    pub(crate) fn parse_function_parameters(&mut self) -> Option<Vec<FunctionParameter>> {
+    pub(crate) fn parse_function_parameters(&mut self) -> Vec<FunctionParameter> {
         /*
          * Syntax for defining function parameters is as follows:
          *  <parameter> ::= <name>? (':' <type>)? ('=' <expression>)?
@@ -462,7 +462,7 @@ impl Parser<'_, '_> {
         let mut parameters = Vec::new();
 
         if !self.lexer.skip_if(&Token::Punct(Punct::LeftParen)) {
-            return Some(parameters);
+            return parameters;
         }
 
         self.lexer.skip_if(&Token::Punct(Punct::Comma));
@@ -502,11 +502,11 @@ impl Parser<'_, '_> {
                     self.lexer.position()
                 );
 
-                return None;
+                return parameters;
             }
         }
 
-        Some(parameters)
+        parameters
     }
 
     fn parse_function_type(&mut self) -> Option<Type> {
@@ -521,7 +521,7 @@ impl Parser<'_, '_> {
 
         let attributes = self.parse_attributes();
         let _ignored_name = self.lexer.next_if_name();
-        let parameters = self.parse_function_parameters()?;
+        let parameters = self.parse_function_parameters();
 
         let return_type = if self.lexer.skip_if(&Token::Op(Op::Arrow)) {
             Some(self.parse_type())
@@ -675,7 +675,7 @@ impl Parser<'_, '_> {
             Token::Op(Op::Mul) => self.parse_unmanaged_type(),
 
             Token::Punct(Punct::LeftBrace) => {
-                let block = self.parse_block()?;
+                let block = self.parse_block();
                 Some(Type::LatentType(Box::new(block)))
             }
 
@@ -683,54 +683,63 @@ impl Parser<'_, '_> {
             Token::Keyword(Keyword::Opaque) => self.parse_opaque_type(),
 
             Token::Integer(int) => {
+                self.lexer.skip_tok();
                 error!("[P0???]: type: unexpected integer '{int}'\n--> {current_pos}");
 
                 None
             }
 
             Token::Float(float) => {
+                self.lexer.skip_tok();
                 error!("[P0???]: type: unexpected float '{float}'\n--> {current_pos}");
 
                 None
             }
 
             Token::Keyword(func) => {
+                self.lexer.skip_tok();
                 error!("[P0???]: type: unexpected keyword '{func}'\n--> {current_pos}");
 
                 None
             }
 
             Token::String(string) => {
+                self.lexer.skip_tok();
                 error!("[P0???]: type: unexpected string '{string}'\n--> {current_pos}");
 
                 None
             }
 
             Token::BString(bstring) => {
+                self.lexer.skip_tok();
                 error!("[P0???]: type: unexpected bstring '{bstring:?}'\n--> {current_pos}");
 
                 None
             }
 
             Token::Punct(punc) => {
+                self.lexer.skip_tok();
                 error!("[P0???]: type: unexpected punctuation '{punc}'\n--> {current_pos}");
 
                 None
             }
 
             Token::Op(op) => {
+                self.lexer.skip_tok();
                 error!("[P0???]: type: unexpected operator '{op}'\n--> {current_pos}");
 
                 None
             }
 
             Token::Comment(_) => {
+                self.lexer.skip_tok();
                 error!("[P0???]: type: unexpected comment\n--> {current_pos}");
 
                 None
             }
 
             Token::Eof => {
+                self.lexer.skip_tok();
                 error!("[P0???]: type: unexpected end of file\n--> {current_pos}");
 
                 None

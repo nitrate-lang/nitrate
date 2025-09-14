@@ -25,12 +25,16 @@ pub(crate) enum SyntaxBug {
     StructureExpectedEnd(SourcePosition),
 
     FunctionMissingName(SourcePosition),
+    FunctionExpectedBody(SourcePosition),
+
+    StaticVariableMissingName(SourcePosition),
 
     ExpectedOpeningBrace(SourcePosition),
     ExpectedEquals(SourcePosition),
     ExpectedSemicolon(SourcePosition),
     ExpectedColon(SourcePosition),
     ExpectedItem(SourcePosition),
+
     Test,
 }
 
@@ -45,29 +49,35 @@ impl FormattableDiagnosticGroup for SyntaxBug {
             SyntaxBug::GenericParameterLimit(_) => 1,
             SyntaxBug::GenericParameterExpectedEnd(_) => 2,
 
-            SyntaxBug::ModuleMissingName(_) => 3,
-            SyntaxBug::ModuleItemLimit(_) => 4,
+            SyntaxBug::ModuleMissingName(_) => 20,
+            SyntaxBug::ModuleItemLimit(_) => 21,
 
-            SyntaxBug::ImportMissingAliasName(_) => 5,
+            SyntaxBug::ImportMissingAliasName(_) => 40,
 
-            SyntaxBug::TypeAliasMissingName(_) => 6,
+            SyntaxBug::TypeAliasMissingName(_) => 60,
 
-            SyntaxBug::EnumMissingName(_) => 7,
-            SyntaxBug::EnumVariantLimit(_) => 8,
-            SyntaxBug::EnumMissingVariantName(_) => 9,
-            SyntaxBug::EnumExpectedEnd(_) => 10,
+            SyntaxBug::EnumMissingName(_) => 80,
+            SyntaxBug::EnumVariantLimit(_) => 81,
+            SyntaxBug::EnumMissingVariantName(_) => 82,
+            SyntaxBug::EnumExpectedEnd(_) => 83,
 
-            SyntaxBug::StructureMissingName(_) => 11,
-            SyntaxBug::StructureFieldLimit(_) => 12,
-            SyntaxBug::StructureMissingFieldName(_) => 13,
-            SyntaxBug::StructureExpectedEnd(_) => 14,
+            SyntaxBug::StructureMissingName(_) => 100,
+            SyntaxBug::StructureFieldLimit(_) => 101,
+            SyntaxBug::StructureMissingFieldName(_) => 102,
+            SyntaxBug::StructureExpectedEnd(_) => 103,
 
-            SyntaxBug::ExpectedOpeningBrace(_) => 15,
-            SyntaxBug::ExpectedEquals(_) => 16,
-            SyntaxBug::ExpectedSemicolon(_) => 17,
-            SyntaxBug::ExpectedColon(_) => 18,
-            SyntaxBug::ExpectedItem(_) => 19,
-            SyntaxBug::Test => 20,
+            SyntaxBug::FunctionMissingName(_) => 120,
+            SyntaxBug::FunctionExpectedBody(_) => 121,
+
+            SyntaxBug::StaticVariableMissingName(_) => 140,
+
+            SyntaxBug::ExpectedOpeningBrace(_) => 1000,
+            SyntaxBug::ExpectedEquals(_) => 1001,
+            SyntaxBug::ExpectedSemicolon(_) => 1002,
+            SyntaxBug::ExpectedColon(_) => 1003,
+            SyntaxBug::ExpectedItem(_) => 1004,
+
+            SyntaxBug::Test => 9999,
         }
     }
 
@@ -146,6 +156,21 @@ impl FormattableDiagnosticGroup for SyntaxBug {
             SyntaxBug::StructureExpectedEnd(pos) => DiagnosticInfo {
                 origin: Origin::Point(pos.to_owned()),
                 message: "expected '}' or ','".into(),
+            },
+
+            SyntaxBug::FunctionMissingName(pos) => DiagnosticInfo {
+                origin: Origin::Point(pos.to_owned()),
+                message: "function name is missing".into(),
+            },
+
+            SyntaxBug::FunctionExpectedBody(pos) => DiagnosticInfo {
+                origin: Origin::Point(pos.to_owned()),
+                message: "expected function body".into(),
+            },
+
+            SyntaxBug::StaticVariableMissingName(pos) => DiagnosticInfo {
+                origin: Origin::Point(pos.to_owned()),
+                message: "static variable name is missing".into(),
             },
 
             SyntaxBug::ExpectedOpeningBrace(pos) => DiagnosticInfo {

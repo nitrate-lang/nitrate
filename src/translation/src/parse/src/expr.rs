@@ -544,7 +544,7 @@ impl Parser<'_, '_> {
         self.lexer.skip_tok();
 
         let condition = self.parse_expression();
-        let then_branch = self.parse_block()?;
+        let then_branch = self.parse_block();
 
         let else_branch = if self.lexer.skip_if(&Token::Keyword(Keyword::Else)) {
             if self.lexer.next_is(&Token::Keyword(Keyword::If)) {
@@ -562,7 +562,7 @@ impl Parser<'_, '_> {
                     ends_with_semi: false,
                 })
             } else {
-                Some(self.parse_block()?)
+                Some(self.parse_block())
             }
         } else {
             None
@@ -651,7 +651,7 @@ impl Parser<'_, '_> {
         }
 
         let iterable = self.parse_expression();
-        let body = self.parse_block()?;
+        let body = self.parse_block();
 
         Some(Expr::ForEach(Box::new(ForEach {
             attributes,
@@ -671,7 +671,7 @@ impl Parser<'_, '_> {
             self.parse_expression()
         };
 
-        let body = self.parse_block()?;
+        let body = self.parse_block();
 
         Some(Expr::WhileLoop(Box::new(WhileLoop { condition, body })))
     }
@@ -680,7 +680,7 @@ impl Parser<'_, '_> {
         assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Do));
         self.lexer.skip_tok();
 
-        let body = self.parse_block()?;
+        let body = self.parse_block();
         if !self.lexer.skip_if(&Token::Keyword(Keyword::While)) {
             error!(
                 "[P????]: do-while: expected 'while' after 'do' block\n--> {}",
@@ -777,7 +777,7 @@ impl Parser<'_, '_> {
 
     fn parse_anonymous_function(&mut self) -> Option<Expr> {
         if self.lexer.peek_t() == Token::Punct(Punct::LeftBrace) {
-            let definition = self.parse_block()?;
+            let definition = self.parse_block();
 
             return Some(Expr::Function(Box::new(AnonymousFunction {
                 attributes: Vec::new(),
@@ -791,7 +791,7 @@ impl Parser<'_, '_> {
         self.lexer.skip_tok();
 
         let attributes = self.parse_attributes();
-        let parameters = self.parse_function_parameters()?;
+        let parameters = self.parse_function_parameters();
 
         let return_type = if self.lexer.skip_if(&Token::Op(Op::Arrow)) {
             Some(self.parse_type())
@@ -800,7 +800,7 @@ impl Parser<'_, '_> {
         };
 
         let definition = if self.lexer.next_is(&Token::Punct(Punct::LeftBrace)) {
-            self.parse_block()?
+            self.parse_block()
         } else if self.lexer.skip_if(&Token::Op(Op::BlockArrow)) {
             let expr = self.parse_expression();
             Block {
@@ -881,7 +881,7 @@ impl Parser<'_, '_> {
         Some(arguments)
     }
 
-    pub(crate) fn parse_block(&mut self) -> Option<Block> {
+    pub(crate) fn parse_block(&mut self) -> Block {
         if !self.lexer.skip_if(&Token::Punct(Punct::LeftBrace)) {
             self.set_failed_bit();
             error!(
@@ -889,7 +889,10 @@ impl Parser<'_, '_> {
                 self.lexer.position()
             );
 
-            return None;
+            return Block {
+                elements: Vec::new(),
+                ends_with_semi: false,
+            };
         }
 
         let mut elements = Vec::new();
@@ -910,9 +913,9 @@ impl Parser<'_, '_> {
             ends_with_semi = self.lexer.skip_if(&Token::Punct(Punct::Semicolon));
         }
 
-        Some(Block {
+        Block {
             elements,
             ends_with_semi,
-        })
+        }
     }
 }

@@ -4,7 +4,7 @@ use crate::bugs::SyntaxBug;
 use log::error;
 use nitrate_parsetree::kind::{
     Block, Contract, Enum, EnumVariant, GenericParameter, GlobalVariable, Impl, Import, Item,
-    Module, NamedFunction, Struct, StructField, Trait, Type, TypeAlias,
+    Module, NamedFunction, Struct, StructField, Trait, TypeAlias,
 };
 use nitrate_tokenize::{Keyword, Op, Punct, Token};
 
@@ -353,24 +353,19 @@ impl Parser<'_, '_> {
     }
 
     fn parse_named_function(&mut self) -> NamedFunction {
-        // TODO: Cleanup
-
         assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Fn));
         self.lexer.skip_tok();
 
         let attributes = self.parse_attributes();
 
         let name = self.lexer.next_if_name().unwrap_or_else(|| {
-            error!(
-                "[P????]: function: expected function name\n--> {}",
-                self.lexer.position()
-            );
-
+            let bug = SyntaxBug::FunctionMissingName(self.lexer.peek_pos());
+            self.bugs.push(&bug);
             "".into()
         });
 
         let type_params = self.parse_generic_parameters();
-        let parameters = self.parse_function_parameters().unwrap_or(Vec::new());
+        let parameters = self.parse_function_parameters();
 
         let return_type = if self.lexer.skip_if(&Token::Op(Op::Arrow)) {
             Some(self.parse_type())
@@ -379,17 +374,25 @@ impl Parser<'_, '_> {
         };
 
         let definition = if self.lexer.next_is(&Token::Punct(Punct::LeftBrace)) {
-            Some(self.parse_block().unwrap_or(Block {
-                elements: Vec::new(),
-                ends_with_semi: false,
-            }))
+            let body = self.parse_block();
+            Some(body)
         } else if self.lexer.skip_if(&Token::Op(Op::BlockArrow)) {
-            let expr = self.parse_expression();
+            let single = self.parse_expression();
+
+            if !self.lexer.skip_if(&Token::Punct(Punct::Semicolon)) {
+                let bug = SyntaxBug::ExpectedSemicolon(self.lexer.peek_pos());
+                self.bugs.push(&bug);
+            }
+
             Some(Block {
-                elements: vec![expr],
+                elements: vec![single],
                 ends_with_semi: false,
             })
+        } else if self.lexer.skip_if(&Token::Punct(Punct::Semicolon)) {
+            None
         } else {
+            let bug = SyntaxBug::FunctionExpectedBody(self.lexer.peek_pos());
+            self.bugs.push(&bug);
             None
         };
 
@@ -404,8 +407,6 @@ impl Parser<'_, '_> {
     }
 
     fn parse_static_variable(&mut self) -> GlobalVariable {
-        // TODO: Cleanup
-
         assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Static));
         self.lexer.skip_tok();
 
@@ -416,11 +417,9 @@ impl Parser<'_, '_> {
             self.lexer.skip_if(&Token::Keyword(Keyword::Const));
         }
 
-        let variable_name = self.lexer.next_if_name().unwrap_or_else(|| {
-            error!(
-                "[P????]: static: expected variable name\n--> {}",
-                self.lexer.position()
-            );
+        let name = self.lexer.next_if_name().unwrap_or_else(|| {
+            let bug = SyntaxBug::StaticVariableMissingName(self.lexer.peek_pos());
+            self.bugs.push(&bug);
             "".into()
         });
 
@@ -437,19 +436,16 @@ impl Parser<'_, '_> {
         };
 
         if !self.lexer.skip_if(&Token::Punct(Punct::Semicolon)) {
-            self.set_failed_bit();
-            error!(
-                "[P????]: static: expected semicolon after variable declaration\n--> {}",
-                self.lexer.position()
-            );
+            let bug = SyntaxBug::ExpectedSemicolon(self.lexer.peek_pos());
+            self.bugs.push(&bug);
         }
 
         GlobalVariable {
-            attributes: attributes,
+            attributes,
             is_mutable,
-            name: variable_name.clone(),
+            name,
             var_type,
-            initializer: initializer,
+            initializer,
         }
     }
 
