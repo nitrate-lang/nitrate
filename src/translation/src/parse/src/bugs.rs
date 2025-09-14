@@ -5,6 +5,8 @@ use nitrate_diagnosis::{
 pub(crate) enum SyntaxBug {
     GenericParameterMissingName(SourcePosition),
     ExpectedCommaOrClosingAngleBracket(SourcePosition),
+    ModuleMissingName(SourcePosition),
+    ExpectedOpeningBrace(SourcePosition),
     Test,
 }
 
@@ -17,7 +19,9 @@ impl FormattableDiagnosticGroup for SyntaxBug {
         match self {
             SyntaxBug::GenericParameterMissingName(_) => 0,
             SyntaxBug::ExpectedCommaOrClosingAngleBracket(_) => 1,
-            SyntaxBug::Test => 2,
+            SyntaxBug::ModuleMissingName(_) => 2,
+            SyntaxBug::ExpectedOpeningBrace(_) => 3,
+            SyntaxBug::Test => 4,
         }
     }
 
@@ -25,16 +29,26 @@ impl FormattableDiagnosticGroup for SyntaxBug {
         match self {
             SyntaxBug::GenericParameterMissingName(pos) => DiagnosticInfo {
                 origin: Origin::Point(pos.to_owned()),
-                message: "Expected a name for the generic parameter".into(),
+                message: "expected a name for the generic parameter".into(),
             },
 
             SyntaxBug::ExpectedCommaOrClosingAngleBracket(pos) => DiagnosticInfo {
                 origin: Origin::Point(pos.to_owned()),
-                message: "Expected a comma or closing angle bracket".into(),
+                message: "expected a comma or closing angle bracket".into(),
+            },
+
+            SyntaxBug::ModuleMissingName(pos) => DiagnosticInfo {
+                origin: Origin::Point(pos.to_owned()),
+                message: "expected a name for the module".into(),
+            },
+
+            SyntaxBug::ExpectedOpeningBrace(pos) => DiagnosticInfo {
+                origin: Origin::Point(pos.to_owned()),
+                message: "expected an opening brace".into(),
             },
 
             SyntaxBug::Test => DiagnosticInfo {
-                message: "This is a test syntax error".into(),
+                message: "this is a test syntax error".into(),
                 origin: Origin::None,
             },
         }

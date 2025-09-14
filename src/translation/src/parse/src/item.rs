@@ -11,10 +11,8 @@ use nitrate_tokenize::{Keyword, Op, Punct, Token};
 impl Parser<'_, '_> {
     fn parse_generic_parameter(&mut self) -> Option<GenericParameter> {
         let Some(name) = self.lexer.next_if_name() else {
-            self.bugs.push(&SyntaxBug::GenericParameterMissingName(
-                self.lexer.peek_pos(),
-            ));
-
+            let bug = SyntaxBug::GenericParameterMissingName(self.lexer.peek_pos());
+            self.bugs.push(&bug);
             return None;
         };
 
@@ -41,11 +39,8 @@ impl Parser<'_, '_> {
             if !self.lexer.skip_if(&Token::Punct(Punct::Comma))
                 && !self.lexer.next_is(&Token::Op(Op::LogicGt))
             {
-                self.bugs
-                    .push(&SyntaxBug::ExpectedCommaOrClosingAngleBracket(
-                        self.lexer.peek_pos(),
-                    ));
-
+                let bug = SyntaxBug::ExpectedCommaOrClosingAngleBracket(self.lexer.peek_pos());
+                self.bugs.push(&bug);
                 return None;
             }
         }
@@ -53,56 +48,34 @@ impl Parser<'_, '_> {
         Some(params)
     }
 
-    fn parse_module(&mut self) -> Option<Item> {
-        // TODO: Cleanup
-
+    fn parse_module(&mut self) -> Option<Module> {
         assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Mod));
         self.lexer.skip_tok();
 
         let attributes = self.parse_attributes()?;
 
-        let Some(name) = self.lexer.next_if_name() else {
-            error!(
-                "[P????]: module: expected module name\n--> {}",
-                self.lexer.position()
-            );
-            return None;
-        };
+        let name = self.lexer.next_if_name().unwrap_or_else(|| {
+            let bug = SyntaxBug::ModuleMissingName(self.lexer.peek_pos());
+            self.bugs.push(&bug);
+            "".into()
+        });
 
         if !self.lexer.skip_if(&Token::Punct(Punct::LeftBrace)) {
-            self.set_failed_bit();
-            error!(
-                "[P????]: module: expected opening brace\n--> {}",
-                self.lexer.position()
-            );
-
-            return None;
+            let bug = SyntaxBug::ExpectedOpeningBrace(self.lexer.peek_pos());
+            self.bugs.push(&bug);
         }
 
         let mut items = Vec::new();
-
-        loop {
-            if self.lexer.skip_if(&Token::Punct(Punct::RightBrace)) {
-                break;
-            }
-
-            if self.lexer.next_if_comment().is_some() {
-                continue;
-            }
-
-            let Some(item) = self.parse_item() else {
-                self.set_failed_bit();
-                break;
-            };
-
+        while !self.lexer.skip_if(&Token::Punct(Punct::RightBrace)) {
+            let item = self.parse_item()?;
             items.push(item);
         }
 
-        Some(Item::Module(Box::new(Module {
+        Some(Module {
             attributes,
             name,
             items,
-        })))
+        })
     }
 
     fn parse_type_alias(&mut self) -> Option<Item> {
@@ -439,7 +412,7 @@ impl Parser<'_, '_> {
         // TODO: Cleanup
 
         match self.lexer.peek_t() {
-            Token::Keyword(Keyword::Mod) => self.parse_module(),
+            Token::Keyword(Keyword::Mod) => self.parse_module().map(|m| Item::Module(Box::new(m))),
             Token::Keyword(Keyword::Type) => self.parse_type_alias(),
             Token::Keyword(Keyword::Enum) => self.parse_enum(),
             Token::Keyword(Keyword::Struct) => self.parse_struct(),
