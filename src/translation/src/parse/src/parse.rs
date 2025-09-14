@@ -1,5 +1,5 @@
 use nitrate_parsetree::kind::{Block, Expr};
-use nitrate_tokenize::{Lexer, Punct, Token};
+use nitrate_tokenize::Lexer;
 
 pub struct Parser<'a> {
     pub(crate) lexer: Lexer<'a>,
@@ -34,47 +34,23 @@ impl<'a> Parser<'a> {
 
     pub fn parse(&mut self) -> Result<Expr, Expr> {
         let mut expressions = Vec::new();
-        let mut ends_with_semi = false;
 
         while !self.lexer.is_eof() {
             if self.lexer.next_if_comment().is_some() {
                 continue;
             }
 
-            ends_with_semi = false;
-
             let Some(expression) = self.parse_expression() else {
-                let before_pos = self.lexer.sync_position();
-                loop {
-                    match self.lexer.next_t() {
-                        Token::Punct(Punct::Semicolon) | Token::Illegal | Token::Eof => {
-                            // Resynchronize the lexer to the next semicolon
-                            break;
-                        }
-
-                        _ => {}
-                    }
-                }
-
-                if before_pos == self.lexer.sync_position() {
-                    self.set_failed_bit();
-                    break;
-                }
-
-                continue;
+                self.set_failed_bit();
+                break;
             };
 
             expressions.push(expression);
-
-            if self.lexer.skip_if(&Token::Punct(Punct::Semicolon)) {
-                ends_with_semi = true;
-                continue;
-            }
         }
 
         let block = Expr::Block(Box::new(Block {
             elements: expressions,
-            ends_with_semi,
+            ends_with_semi: true,
         }));
 
         if self.has_failed() {

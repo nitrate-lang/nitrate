@@ -860,28 +860,8 @@ impl Parser<'_> {
 
             ends_with_semi = false;
             let Some(expression) = self.parse_expression() else {
-                let before_pos = self.lexer.sync_position();
-                loop {
-                    match self.lexer.next_t() {
-                        Token::Punct(Punct::Semicolon) | Token::Illegal | Token::Eof => {
-                            // Resynchronize the lexer to the next semicolon
-                            break;
-                        }
-                        _ => {}
-                    }
-                }
-
-                if before_pos == self.lexer.sync_position() {
-                    self.set_failed_bit();
-                    error!(
-                        "[P????]: block: failed to parse expression\n--> {}",
-                        self.lexer.sync_position()
-                    );
-
-                    return None;
-                }
-
-                continue;
+                self.set_failed_bit();
+                break;
             };
 
             elements.push(expression);
