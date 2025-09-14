@@ -27,7 +27,7 @@ impl RefinementOptions {
     }
 }
 
-impl Parser<'_, '_> {
+impl Parser<'_> {
     fn parse_refinement_range(&mut self) -> Option<(Option<Expr>, Option<Expr>)> {
         assert!(self.lexer.peek_t() == Token::Punct(Punct::LeftBracket));
         self.lexer.skip_tok();
@@ -951,9 +951,8 @@ fn test_parse_type() {
 }"#;
 
     let lexer = Lexer::new(source.as_bytes(), "test").expect("Failed to create lexer");
-    let mut symtab = SymbolTable::default();
 
-    let mut parser = Parser::new(lexer, &mut symtab);
+    let mut parser = Parser::new(lexer);
     let model = parser.parse_type().expect("Failed to parse source");
     assert!(!parser.has_failed(), "Parsing failed with errors");
 

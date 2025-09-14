@@ -213,6 +213,12 @@ pub struct BinExpr {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Cast {
+    pub value: Expr,
+    pub to: Type,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Block {
     pub elements: Vec<Expr>,
     pub ends_with_semi: bool,
@@ -388,6 +394,7 @@ pub enum Expr {
     Object(Box<Object>),
     UnaryExpr(Box<UnaryExpr>),
     BinExpr(Box<BinExpr>),
+    Cast(Box<Cast>),
     Block(Box<Block>),
 
     Function(Box<AnonymousFunction>),
@@ -438,6 +445,7 @@ impl std::fmt::Debug for Expr {
             Expr::Object(e) => e.fmt(f),
             Expr::UnaryExpr(e) => e.fmt(f),
             Expr::BinExpr(e) => e.fmt(f),
+            Expr::Cast(e) => e.fmt(f),
             Expr::Block(e) => e.fmt(f),
 
             Expr::Function(e) => e.fmt(f),

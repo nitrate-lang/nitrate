@@ -1,8 +1,7 @@
 use crate::{TranslationOptions, TranslationOptionsBuilder};
 use nitrate_codegen::{Codegen, CodegenError};
 use nitrate_diagnosis::{Diagnose, DiagnosticDrain};
-use nitrate_optimization::FunctionOptimization;
-use nitrate_parse::{Parser, SymbolTable};
+use nitrate_parse::Parser;
 use nitrate_parsetree::kind::Expr;
 use nitrate_tokenize::Lexer;
 use std::collections::HashMap;
@@ -60,27 +59,22 @@ fn create_lexer<'a>(
     lexer.map_err(TranslationError::LexerError)
 }
 
-fn parse_language(lexer: Lexer) -> Result<(Expr, SymbolTable), TranslationError> {
-    let mut symbol_table = SymbolTable::default();
-
-    let mut parser = Parser::new(lexer, &mut symbol_table);
+fn parse_language(lexer: Lexer) -> Result<Expr, TranslationError> {
+    let mut parser = Parser::new(lexer);
     let program = parser.parse().map_err(|_| TranslationError::SyntaxError)?;
 
-    Ok((program, symbol_table))
+    Ok(program)
 }
 
-fn resolve_names(
-    _program: &mut Expr,
-    _symbol_table: &mut SymbolTable,
-) -> Result<(), TranslationError> {
-    // TODO: Implement name resolution logic
-    Ok(())
-}
+// fn resolve_names(_program: &mut Expr) -> Result<(), TranslationError> {
+//     // TODO: Implement name resolution logic
+//     Ok(())
+// }
 
-fn type_check(_program: &mut Expr) -> Result<(), TranslationError> {
-    // TODO: Implement type checking logic
-    Ok(())
-}
+// fn type_check(_program: &mut Expr) -> Result<(), TranslationError> {
+//     // TODO: Implement type checking logic
+//     Ok(())
+// }
 
 fn diagnose_problems(
     program: &Expr,
@@ -97,31 +91,31 @@ fn diagnose_problems(
     });
 }
 
-fn optimize_functions(
-    symbols: &mut SymbolTable,
-    function_optimization_passes: &[Box<dyn FunctionOptimization + Sync>],
-    drain: &DiagnosticDrain,
-    pool: &ThreadPool,
-) {
-    scope_with(pool, |scope| {
-        for function_mut in symbols.function_iter_mut() {
-            // We can't optimize function declarations
-            if function_mut.is_declaration() {
-                continue;
-            }
+// fn optimize_functions(
+//     symbols: &mut SymbolTable,
+//     function_optimization_passes: &[Box<dyn FunctionOptimization + Sync>],
+//     drain: &DiagnosticDrain,
+//     pool: &ThreadPool,
+// ) {
+//     scope_with(pool, |scope| {
+//         for function_mut in symbols.function_iter_mut() {
+//             // We can't optimize function declarations
+//             if function_mut.is_declaration() {
+//                 continue;
+//             }
 
-            // The RwLock race condition checking if the function is a declaration
-            // is fine, because optimization passes will check it internally
-            // and be a no-op.
+//             // The RwLock race condition checking if the function is a declaration
+//             // is fine, because optimization passes will check it internally
+//             // and be a no-op.
 
-            scope.execute(|| {
-                for pass in function_optimization_passes {
-                    pass.optimize_function(function_mut, drain);
-                }
-            });
-        }
-    });
-}
+//             scope.execute(|| {
+//                 for pass in function_optimization_passes {
+//                     pass.optimize_function(function_mut, drain);
+//                 }
+//             });
+//         }
+//     });
+// }
 
 fn generate_code(program: &Expr, object: &mut dyn std::io::Write) -> Result<(), TranslationError> {
     let target_triple_string = "x86_64"; // Example target ISA
@@ -142,10 +136,10 @@ pub fn compile_code(
     let source = scan_into_memory(source_code)?;
     let lexer = create_lexer(&source, &options.source_name_for_debug_messages)?;
 
-    let (mut program, mut symtab) = parse_language(lexer)?;
+    let program = parse_language(lexer)?;
 
-    resolve_names(&mut program, &mut symtab)?;
-    type_check(&mut program)?;
+    // resolve_names(&mut program, &mut symtab)?;
+    // type_check(&mut program)?;
 
     let pool = ThreadPool::new(options.thread_count.get());
     let drain = &options.drain;
@@ -156,7 +150,7 @@ pub fn compile_code(
         return Err(TranslationError::DiagnosticError);
     }
 
-    optimize_functions(&mut symtab, &options.function_optimizations, drain, &pool);
+    // optimize_functions(&mut symtab, &options.function_optimizations, drain, &pool);
     drop(pool);
 
     generate_code(&program, machine_code)

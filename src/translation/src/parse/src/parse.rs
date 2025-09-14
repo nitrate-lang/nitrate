@@ -1,33 +1,21 @@
-use super::symbol_table::SymbolTable;
 use nitrate_parsetree::kind::{Block, Expr};
 use nitrate_tokenize::{Lexer, Punct, Token};
 
-pub struct Parser<'a, 'symbol_table> {
+pub struct Parser<'a> {
     pub(crate) lexer: Lexer<'a>,
-    pub(crate) symtab: &'symbol_table mut SymbolTable,
     pub(crate) generic_type_depth: i64,
     pub(crate) generic_type_suffix_terminator_ambiguity: bool,
     failed_bit: bool,
 }
 
-impl<'a, 'symbol_table> Parser<'a, 'symbol_table> {
-    pub fn new(lexer: Lexer<'a>, symbol_table: &'symbol_table mut SymbolTable) -> Self {
+impl<'a> Parser<'a> {
+    pub fn new(lexer: Lexer<'a>) -> Self {
         Parser {
             lexer,
-            symtab: symbol_table,
             generic_type_depth: 0,
             generic_type_suffix_terminator_ambiguity: false,
             failed_bit: false,
         }
-    }
-
-    #[must_use]
-    pub fn get_symbol_table(&self) -> &SymbolTable {
-        self.symtab
-    }
-
-    pub fn get_symbol_table_mut(&mut self) -> &mut SymbolTable {
-        self.symtab
     }
 
     #[must_use]

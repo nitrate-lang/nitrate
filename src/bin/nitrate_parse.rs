@@ -1,10 +1,6 @@
 use std::io::Read;
 
-use nitrate_translation::{
-    TranslationError,
-    parse::{Parser, SymbolTable},
-    tokenize::Lexer,
-};
+use nitrate_translation::{TranslationError, parse::Parser, tokenize::Lexer};
 
 #[derive(Debug)]
 enum Error {
@@ -55,8 +51,7 @@ fn program() -> Result<(), Error> {
         }
     };
 
-    let mut symbol_table = SymbolTable::default();
-    let parse_result = match Parser::new(lexer, &mut symbol_table).parse() {
+    let parse_result = match Parser::new(lexer).parse() {
         Ok(r) => r,
         Err(r) => r,
     };
@@ -70,23 +65,21 @@ fn program() -> Result<(), Error> {
 
 fn main() -> () {
     match program() {
-        Ok(()) => {}
+        Ok(()) => return,
 
         Err(Error::NotEnoughArguments) => {
             eprintln!("Not enough arguments. Usage: nitrate-parse <input-file> <output-file>");
-            std::process::exit(1);
         }
         Err(Error::OpenInputFileFailed(io)) => {
             eprintln!("Failed to open input file: {}", io);
-            std::process::exit(1);
         }
         Err(Error::CreateOutputFileFailed(io)) => {
             eprintln!("Failed to create output file: {}", io);
-            std::process::exit(1);
         }
         Err(Error::ParseFailed(error)) => {
             eprintln!("Parsing failed: {:?}", error);
-            std::process::exit(1);
         }
-    }
+    };
+
+    std::process::exit(1);
 }

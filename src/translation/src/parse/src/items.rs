@@ -9,7 +9,7 @@ use nitrate_parsetree::kind::{
 use nitrate_tokenize::{Keyword, Op, Punct, Token};
 use smallvec::smallvec;
 
-impl Parser<'_, '_> {
+impl Parser<'_> {
     fn parse_generic_parameters(&mut self) -> Option<Vec<GenericParameter>> {
         // TODO:
         None

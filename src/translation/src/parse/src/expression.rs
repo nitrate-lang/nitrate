@@ -2,9 +2,9 @@ use super::parse::Parser;
 use interned_string::IString;
 use log::error;
 use nitrate_parsetree::kind::{
-    AnonymousFunction, Await, BinExpr, BinExprOp, Block, Break, Call, CallArguments, Continue,
-    DoWhileLoop, Expr, ForEach, If, IndexAccess, Integer, List, Path, Return, Type, UnaryExpr,
-    UnaryExprOp, WhileLoop,
+    AnonymousFunction, Await, BinExpr, BinExprOp, Block, Break, Call, CallArguments, Cast,
+    Continue, DoWhileLoop, Expr, ForEach, If, IndexAccess, Integer, List, Path, Return, Type,
+    UnaryExpr, UnaryExprOp, WhileLoop,
 };
 use nitrate_tokenize::{Keyword, Op, Punct, Token};
 use smallvec::smallvec;
@@ -127,7 +127,7 @@ fn get_prefix_precedence(op: Op) -> Option<Precedence> {
     Some(precedence as Precedence)
 }
 
-impl Parser<'_, '_> {
+impl Parser<'_> {
     fn parse_expression_primary(&mut self) -> Option<Expr> {
         match self.lexer.peek_t() {
             Token::Integer(int) => {
@@ -409,16 +409,10 @@ impl Parser<'_, '_> {
             _ => None,
         };
 
-        if let Some(_type_name) = type_name {
+        if let Some(to) = type_name {
             self.lexer.skip_tok();
 
-            // TODO: Create a proper 'as' expression node
-            todo!();
-            // Builder::create_binexpr()
-            //     .with_left(lit)
-            //     .with_operator(BinExprOp::As)
-            //     .with_right(type_name.into())
-            //     .build()
+            Expr::Cast(Box::new(Cast { value: lit, to: to }))
         } else {
             lit
         }
