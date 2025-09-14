@@ -60,6 +60,7 @@ pub struct EnumVariant {
     pub attributes: Vec<Expr>,
     pub name: IString,
     pub variant_type: Option<Type>,
+    pub value: Option<Expr>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

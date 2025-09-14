@@ -1,11 +1,68 @@
 use super::parse::Parser;
 use log::error;
 use nitrate_parsetree::kind::{
-    Block, GenericParameter, GlobalVariable, Item, Module, NamedFunction, Type, TypeAlias,
+    Block, EnumDefinition, EnumVariant, GenericParameter, GlobalVariable, Item, Module,
+    NamedFunction, Type, TypeAlias,
 };
 use nitrate_tokenize::{Keyword, Op, Punct, Token};
 
 impl Parser<'_> {
+    fn parse_generic_parameter(&mut self) -> Option<GenericParameter> {
+        let Some(name) = self.lexer.next_if_name() else {
+            error!(
+                "[P????]: generic parameter: expected parameter name\n--> {}",
+                self.lexer.sync_position()
+            );
+            return None;
+        };
+
+        let default = if self.lexer.skip_if(&Token::Op(Op::Set)) {
+            Some(self.parse_type()?)
+        } else {
+            None
+        };
+
+        Some(GenericParameter { name, default })
+    }
+
+    fn parse_generic_parameters(&mut self) -> Option<Vec<GenericParameter>> {
+        let mut params = Vec::new();
+
+        if !self.lexer.skip_if(&Token::Op(Op::LogicLt)) {
+            return Some(params);
+        }
+
+        loop {
+            if self.lexer.skip_if(&Token::Op(Op::LogicGt)) {
+                break;
+            }
+
+            let Some(param) = self.parse_generic_parameter() else {
+                self.set_failed_bit();
+                error!(
+                    "[P????]: generic parameters: expected generic parameter\n--> {}",
+                    self.lexer.sync_position()
+                );
+                return None;
+            };
+
+            params.push(param);
+
+            if !self.lexer.skip_if(&Token::Punct(Punct::Comma))
+                && !self.lexer.next_is(&Token::Op(Op::LogicGt))
+            {
+                self.set_failed_bit();
+                error!(
+                    "[P????]: generic parameters: expected comma or closing angle bracket\n--> {}",
+                    self.lexer.sync_position()
+                );
+                return None;
+            }
+        }
+
+        Some(params)
+    }
+
     fn parse_module(&mut self) -> Option<Item> {
         assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Mod));
         self.lexer.skip_tok();
@@ -56,11 +113,6 @@ impl Parser<'_> {
         })))
     }
 
-    fn parse_generic_parameters(&mut self) -> Option<Vec<GenericParameter>> {
-        // TODO:
-        None
-    }
-
     fn parse_type_alias(&mut self) -> Option<Item> {
         assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Type));
         self.lexer.skip_tok();
@@ -84,11 +136,90 @@ impl Parser<'_> {
         })))
     }
 
+    fn parse_enum_variant(&mut self) -> Option<EnumVariant> {
+        let attributes = self.parse_attributes()?;
+
+        let Some(name) = self.lexer.next_if_name() else {
+            error!(
+                "[P????]: enum variant: expected variant name\n--> {}",
+                self.lexer.sync_position()
+            );
+            return None;
+        };
+
+        let variant_type = if self.lexer.next_is(&Token::Punct(Punct::LeftParen)) {
+            Some(self.parse_type()?)
+        } else {
+            None
+        };
+
+        let value = if self.lexer.skip_if(&Token::Op(Op::Set)) {
+            Some(self.parse_expression()?)
+        } else {
+            None
+        };
+
+        Some(EnumVariant {
+            attributes,
+            name,
+            variant_type,
+            value,
+        })
+    }
+
     fn parse_enum(&mut self) -> Option<Item> {
-        // TODO: enum parsing logic
-        self.set_failed_bit();
-        error!("Enum parsing not implemented yet");
-        None
+        assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Enum));
+        self.lexer.skip_tok();
+
+        let attributes = self.parse_attributes()?;
+        let Some(name) = self.lexer.next_if_name() else {
+            error!(
+                "[P????]: enum: expected enum name\n--> {}",
+                self.lexer.sync_position()
+            );
+            return None;
+        };
+
+        let generic_parameters = self.parse_generic_parameters()?;
+
+        if !self.lexer.skip_if(&Token::Punct(Punct::LeftBrace)) {
+            self.set_failed_bit();
+            error!(
+                "[P????]: enum: expected opening brace\n--> {}",
+                self.lexer.sync_position()
+            );
+
+            return None;
+        }
+
+        let mut variants = Vec::new();
+
+        while !self.lexer.skip_if(&Token::Punct(Punct::RightBrace)) {
+            let Some(variant) = self.parse_enum_variant() else {
+                self.set_failed_bit();
+                break;
+            };
+
+            variants.push(variant);
+
+            if !self.lexer.skip_if(&Token::Punct(Punct::Comma))
+                && !self.lexer.next_is(&Token::Punct(Punct::RightBrace))
+            {
+                self.set_failed_bit();
+                error!(
+                    "[P????]: enum: expected comma or closing brace\n--> {}",
+                    self.lexer.sync_position()
+                );
+                break;
+            }
+        }
+
+        Some(Item::EnumDefinition(Box::new(EnumDefinition {
+            attributes,
+            name,
+            type_params: generic_parameters,
+            variants,
+        })))
     }
 
     fn parse_struct(&mut self) -> Option<Item> {
