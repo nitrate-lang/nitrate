@@ -85,17 +85,17 @@ impl FormattableDiagnosticGroup for SyntaxBug {
         match self {
             SyntaxBug::GenericMissingParameterName(pos) => DiagnosticInfo {
                 origin: Origin::Point(pos.to_owned()),
-                message: "expected a name for the generic parameter".into(),
+                message: "generic parameter name is missing".into(),
             },
 
             SyntaxBug::GenericParameterLimit(pos) => DiagnosticInfo {
                 origin: Origin::Point(pos.to_owned()),
-                message: "a type cannot have more than 65,536 generic parameters".into(),
+                message: "generic parameter limit of 65,536 exceeded".into(),
             },
 
             SyntaxBug::GenericParameterExpectedEnd(pos) => DiagnosticInfo {
                 origin: Origin::Point(pos.to_owned()),
-                message: "expected a comma or closing angle bracket".into(),
+                message: "expected a '>' or ','".into(),
             },
 
             SyntaxBug::ModuleMissingName(pos) => DiagnosticInfo {
@@ -105,7 +105,7 @@ impl FormattableDiagnosticGroup for SyntaxBug {
 
             SyntaxBug::ModuleItemLimit(pos) => DiagnosticInfo {
                 origin: Origin::Point(pos.to_owned()),
-                message: "modules cannot have more than 65,536 immediate children".into(),
+                message: "module item limit of 65,536 exceeded".into(),
             },
 
             SyntaxBug::ImportMissingAliasName(pos) => DiagnosticInfo {
@@ -125,7 +125,7 @@ impl FormattableDiagnosticGroup for SyntaxBug {
 
             SyntaxBug::EnumVariantLimit(pos) => DiagnosticInfo {
                 origin: Origin::Point(pos.to_owned()),
-                message: "enums cannot have more than 65,536 variants".into(),
+                message: "enum variant limit of 65,536 exceeded".into(),
             },
 
             SyntaxBug::EnumMissingVariantName(pos) => DiagnosticInfo {
@@ -145,7 +145,7 @@ impl FormattableDiagnosticGroup for SyntaxBug {
 
             SyntaxBug::StructureFieldLimit(pos) => DiagnosticInfo {
                 origin: Origin::Point(pos.to_owned()),
-                message: "structures cannot have more than 65,536 fields".into(),
+                message: "structure field limit of 65,536 exceeded".into(),
             },
 
             SyntaxBug::StructureMissingFieldName(pos) => DiagnosticInfo {

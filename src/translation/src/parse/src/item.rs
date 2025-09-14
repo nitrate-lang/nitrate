@@ -393,6 +393,7 @@ impl Parser<'_, '_> {
         } else {
             let bug = SyntaxBug::FunctionExpectedBody(self.lexer.peek_pos());
             self.bugs.push(&bug);
+            self.lexer.skip_while(&Token::Punct(Punct::RightBrace));
             None
         };
 
