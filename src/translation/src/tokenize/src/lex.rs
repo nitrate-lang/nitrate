@@ -121,6 +121,16 @@ impl<'a> Lexer<'a> {
         }
     }
 
+    pub fn skip_until(&mut self, matches: &Token) {
+        while !self.is_eof() && &self.peek_t() != matches {
+            self.skip_tok();
+        }
+    }
+
+    pub fn skip_until_inclusive(&mut self, matches: &Token) {
+        while !self.is_eof() && &self.next_t() != matches {}
+    }
+
     #[inline(always)]
     #[must_use]
     pub fn position(&self) -> SourcePosition {

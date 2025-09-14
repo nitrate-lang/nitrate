@@ -450,11 +450,11 @@ impl Parser<'_, '_> {
         Some(Expr::List(Box::new(List { elements })))
     }
 
-    pub(crate) fn parse_attributes(&mut self) -> Option<Vec<Expr>> {
+    pub(crate) fn parse_attributes(&mut self) -> Vec<Expr> {
         let mut attributes = Vec::new();
 
         if !self.lexer.skip_if(&Token::Punct(Punct::LeftBracket)) {
-            return Some(attributes);
+            return attributes;
         }
 
         self.lexer.skip_if(&Token::Punct(Punct::Comma));
@@ -463,7 +463,15 @@ impl Parser<'_, '_> {
                 break;
             }
 
-            attributes.push(self.parse_expression()?);
+            let attrib = match self.parse_expression() {
+                Some(expr) => expr,
+                None => {
+                    self.set_failed_bit();
+                    return attributes;
+                }
+            };
+
+            attributes.push(attrib);
 
             if !self.lexer.skip_if(&Token::Punct(Punct::Comma)) {
                 if self.lexer.skip_if(&Token::Punct(Punct::RightBracket)) {
@@ -474,11 +482,11 @@ impl Parser<'_, '_> {
                     self.lexer.position()
                 );
 
-                return None;
+                return attributes;
             }
         }
 
-        Some(attributes)
+        attributes
     }
 
     fn parse_type_info(&mut self) -> Option<Expr> {
@@ -589,7 +597,7 @@ impl Parser<'_, '_> {
         assert!(self.lexer.peek_t() == Token::Keyword(Keyword::For));
         self.lexer.skip_tok();
 
-        let attributes = self.parse_attributes()?;
+        let attributes = self.parse_attributes();
         let bindings = self.parse_for_bindings()?;
 
         if !self.lexer.skip_if(&Token::Keyword(Keyword::In)) {
@@ -746,7 +754,7 @@ impl Parser<'_, '_> {
         assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Fn));
         self.lexer.skip_tok();
 
-        let attributes = self.parse_attributes()?;
+        let attributes = self.parse_attributes();
         let parameters = self.parse_function_parameters()?;
 
         let return_type = if self.lexer.skip_if(&Token::Op(Op::Arrow)) {

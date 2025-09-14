@@ -9,50 +9,66 @@ use nitrate_parsetree::kind::{
 use nitrate_tokenize::{Keyword, Op, Punct, Token};
 
 impl Parser<'_, '_> {
-    fn parse_generic_parameter(&mut self) -> Option<GenericParameter> {
-        let Some(name) = self.lexer.next_if_name() else {
-            let bug = SyntaxBug::GenericParameterMissingName(self.lexer.peek_pos());
-            self.bugs.push(&bug);
-            return None;
-        };
+    fn parse_generic_parameters(&mut self) -> Vec<GenericParameter> {
+        fn parse_generic_parameter(this: &mut Parser) -> Option<GenericParameter> {
+            let Some(name) = this.lexer.next_if_name() else {
+                let bug = SyntaxBug::GenericParameterMissingName(this.lexer.peek_pos());
+                this.bugs.push(&bug);
+                return None;
+            };
 
-        let default = if self.lexer.skip_if(&Token::Op(Op::Set)) {
-            Some(self.parse_type()?)
-        } else {
-            None
-        };
+            let default = if this.lexer.skip_if(&Token::Op(Op::Set)) {
+                this.parse_type()
+            } else {
+                None
+            };
 
-        Some(GenericParameter { name, default })
-    }
+            Some(GenericParameter { name, default })
+        }
 
-    fn parse_generic_parameters(&mut self) -> Option<Vec<GenericParameter>> {
-        let mut params = Vec::new();
+        let mut parameters = Vec::new();
 
         if !self.lexer.skip_if(&Token::Op(Op::LogicLt)) {
-            return Some(params);
+            return parameters;
         }
 
         while !self.lexer.skip_if(&Token::Op(Op::LogicGt)) {
-            let param = self.parse_generic_parameter()?;
-            params.push(param);
+            const MAX_GENERIC_PARAMETERS: usize = 65_536;
+
+            if parameters.len() >= MAX_GENERIC_PARAMETERS {
+                let bug = SyntaxBug::TooManyGenericParameters(self.lexer.peek_pos());
+                self.bugs.push(&bug);
+                break;
+            }
+
+            let Some(param) = parse_generic_parameter(self) else {
+                self.lexer.skip_until_inclusive(&Token::Op(Op::LogicGt));
+                break;
+            };
+
+            parameters.push(param);
 
             if !self.lexer.skip_if(&Token::Punct(Punct::Comma))
                 && !self.lexer.next_is(&Token::Op(Op::LogicGt))
             {
                 let bug = SyntaxBug::ExpectedCommaOrClosingAngleBracket(self.lexer.peek_pos());
                 self.bugs.push(&bug);
-                return None;
+
+                self.lexer.skip_until_inclusive(&Token::Op(Op::LogicGt));
+                break;
             }
         }
 
-        Some(params)
+        parameters
     }
 
     fn parse_module(&mut self) -> Option<Module> {
+        let module_start_pos = self.lexer.peek_pos();
+
         assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Mod));
         self.lexer.skip_tok();
 
-        let attributes = self.parse_attributes()?;
+        let attributes = self.parse_attributes();
 
         let name = self.lexer.next_if_name().unwrap_or_else(|| {
             let bug = SyntaxBug::ModuleMissingName(self.lexer.peek_pos());
@@ -66,7 +82,18 @@ impl Parser<'_, '_> {
         }
 
         let mut items = Vec::new();
+        let mut already_reported_too_many_items = false;
+
         while !self.lexer.skip_if(&Token::Punct(Punct::RightBrace)) {
+            const MAX_ITEMS_PER_MODULE: usize = 65_536;
+
+            if !already_reported_too_many_items && items.len() >= MAX_ITEMS_PER_MODULE {
+                already_reported_too_many_items = true;
+
+                let bug = SyntaxBug::TooManyModuleItems(module_start_pos.clone());
+                self.bugs.push(&bug);
+            }
+
             let item = self.parse_item()?;
             items.push(item);
         }
@@ -79,34 +106,43 @@ impl Parser<'_, '_> {
     }
 
     fn parse_type_alias(&mut self) -> Option<Item> {
-        // TODO: Cleanup
-
         assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Type));
         self.lexer.skip_tok();
 
-        let attributes = self.parse_attributes()?;
-        let Some(name) = self.lexer.next_if_name() else {
-            error!(
-                "[P????]: type alias: expected alias name\n--> {}",
-                self.lexer.position()
-            );
-            return None;
-        };
+        let attributes = self.parse_attributes();
 
-        let generic_parameters = self.parse_generic_parameters()?;
+        let name = self.lexer.next_if_name().unwrap_or_else(|| {
+            let bug = SyntaxBug::TypeAliasMissingName(self.lexer.peek_pos());
+            self.bugs.push(&bug);
+            "".into()
+        });
+
+        let generic_parameters = self.parse_generic_parameters();
+
+        if !self.lexer.skip_if(&Token::Op(Op::Set)) {
+            let bug = SyntaxBug::ExpectedEquals(self.lexer.peek_pos());
+            self.bugs.push(&bug);
+        }
+
+        let aliased_type = self.parse_type()?;
+
+        if !self.lexer.skip_if(&Token::Punct(Punct::Semicolon)) {
+            let bug = SyntaxBug::ExpectedSemicolon(self.lexer.peek_pos());
+            self.bugs.push(&bug);
+        }
 
         Some(Item::TypeAlias(Box::new(TypeAlias {
             attributes,
             name,
             type_params: generic_parameters,
-            aliased_type: self.parse_type()?,
+            aliased_type,
         })))
     }
 
     fn parse_enum_variant(&mut self) -> Option<EnumVariant> {
         // TODO: Cleanup
 
-        let attributes = self.parse_attributes()?;
+        let attributes = self.parse_attributes();
 
         let Some(name) = self.lexer.next_if_name() else {
             error!(
@@ -142,7 +178,7 @@ impl Parser<'_, '_> {
         assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Enum));
         self.lexer.skip_tok();
 
-        let attributes = self.parse_attributes()?;
+        let attributes = self.parse_attributes();
         let Some(name) = self.lexer.next_if_name() else {
             error!(
                 "[P????]: enum: expected enum name\n--> {}",
@@ -151,7 +187,7 @@ impl Parser<'_, '_> {
             return None;
         };
 
-        let generic_parameters = self.parse_generic_parameters()?;
+        let generic_parameters = self.parse_generic_parameters();
 
         if !self.lexer.skip_if(&Token::Punct(Punct::LeftBrace)) {
             self.set_failed_bit();
@@ -196,7 +232,7 @@ impl Parser<'_, '_> {
     fn parse_struct_field(&mut self) -> Option<StructField> {
         // TODO: Cleanup
 
-        let attributes = self.parse_attributes()?;
+        let attributes = self.parse_attributes();
 
         let Some(name) = self.lexer.next_if_name() else {
             error!(
@@ -237,7 +273,7 @@ impl Parser<'_, '_> {
         assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Struct));
         self.lexer.skip_tok();
 
-        let attributes = self.parse_attributes()?;
+        let attributes = self.parse_attributes();
         let Some(name) = self.lexer.next_if_name() else {
             error!(
                 "[P????]: struct: expected struct name\n--> {}",
@@ -246,7 +282,7 @@ impl Parser<'_, '_> {
             return None;
         };
 
-        let generic_parameters = self.parse_generic_parameters()?;
+        let generic_parameters = self.parse_generic_parameters();
 
         if !self.lexer.skip_if(&Token::Punct(Punct::LeftBrace)) {
             self.set_failed_bit();
@@ -316,7 +352,7 @@ impl Parser<'_, '_> {
         assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Fn));
         self.lexer.skip_tok();
 
-        let attributes = self.parse_attributes()?;
+        let attributes = self.parse_attributes();
         let Some(name) = self.lexer.next_if_name() else {
             error!(
                 "[P????]: function: expected function name\n--> {}",
@@ -324,7 +360,7 @@ impl Parser<'_, '_> {
             );
             return None;
         };
-        let type_params = self.parse_generic_parameters()?;
+        let type_params = self.parse_generic_parameters();
         let parameters = self.parse_function_parameters()?;
 
         let return_type = if self.lexer.skip_if(&Token::Op(Op::Arrow)) {
@@ -361,7 +397,7 @@ impl Parser<'_, '_> {
         assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Static));
         self.lexer.skip_tok();
 
-        let attributes = self.parse_attributes()?;
+        let attributes = self.parse_attributes();
 
         let is_mutable = self.lexer.skip_if(&Token::Keyword(Keyword::Mut));
         if !is_mutable {
