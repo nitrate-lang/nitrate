@@ -1,6 +1,6 @@
+use super::parse::Parser;
 use crate::bugs::SyntaxBug;
 
-use super::parse::Parser;
 use log::error;
 use nitrate_parsetree::kind::{
     Block, Contract, Enum, EnumVariant, GenericParameter, GlobalVariable, Impl, Import, Item,
@@ -50,7 +50,7 @@ impl Parser<'_, '_> {
                 let bug = SyntaxBug::GenericParameterExpectedEnd(self.lexer.peek_pos());
                 self.bugs.push(&bug);
 
-                self.lexer.skip_until_inclusive(&Token::Op(Op::LogicGt));
+                self.lexer.skip_while(&Token::Op(Op::LogicGt));
                 break;
             }
         }
@@ -67,7 +67,7 @@ impl Parser<'_, '_> {
         let attributes = self.parse_attributes();
 
         let name = self.lexer.next_if_name().unwrap_or_else(|| {
-            let bug = SyntaxBug::ItemMissingName(self.lexer.peek_pos());
+            let bug = SyntaxBug::ModuleMissingName(self.lexer.peek_pos());
             self.bugs.push(&bug);
             "".into()
         });
@@ -86,7 +86,7 @@ impl Parser<'_, '_> {
             if !already_reported_too_many_items && items.len() >= MAX_ITEMS_PER_MODULE {
                 already_reported_too_many_items = true;
 
-                let bug = SyntaxBug::TooManyModuleItems(module_start_pos.clone());
+                let bug = SyntaxBug::ModuleItemLimit(module_start_pos.clone());
                 self.bugs.push(&bug);
             }
 
@@ -110,7 +110,7 @@ impl Parser<'_, '_> {
 
         let alias = if self.lexer.skip_if(&Token::Op(Op::As)) {
             Some(self.lexer.next_if_name().unwrap_or_else(|| {
-                let bug = SyntaxBug::ExpectedImportAliasName(self.lexer.peek_pos());
+                let bug = SyntaxBug::ImportMissingAliasName(self.lexer.peek_pos());
                 self.bugs.push(&bug);
                 "".into()
             }))
@@ -137,7 +137,7 @@ impl Parser<'_, '_> {
         let attributes = self.parse_attributes();
 
         let name = self.lexer.next_if_name().unwrap_or_else(|| {
-            let bug = SyntaxBug::ItemMissingName(self.lexer.peek_pos());
+            let bug = SyntaxBug::TypeAliasMissingName(self.lexer.peek_pos());
             self.bugs.push(&bug);
             "".into()
         });
@@ -164,11 +164,11 @@ impl Parser<'_, '_> {
         }
     }
 
-    fn parse_enum_variant(&mut self) -> Option<EnumVariant> {
+    fn parse_enum_variant(&mut self) -> EnumVariant {
         let attributes = self.parse_attributes();
 
         let name = self.lexer.next_if_name().unwrap_or_else(|| {
-            let bug = SyntaxBug::ItemMissingName(self.lexer.peek_pos());
+            let bug = SyntaxBug::EnumMissingVariantName(self.lexer.peek_pos());
             self.bugs.push(&bug);
             "".into()
         });
@@ -185,58 +185,56 @@ impl Parser<'_, '_> {
             None
         };
 
-        Some(EnumVariant {
+        EnumVariant {
             attributes,
             name,
             variant_type,
             value,
-        })
+        }
     }
 
     fn parse_enum(&mut self) -> Enum {
-        // TODO: Cleanup
-
         assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Enum));
         self.lexer.skip_tok();
 
         let attributes = self.parse_attributes();
-        let name = self.lexer.next_if_name().unwrap_or_else(|| {
-            error!(
-                "[P????]: enum: expected enum name\n--> {}",
-                self.lexer.position()
-            );
 
+        let name = self.lexer.next_if_name().unwrap_or_else(|| {
+            let bug = SyntaxBug::EnumMissingName(self.lexer.peek_pos());
+            self.bugs.push(&bug);
             "".into()
         });
 
-        let generic_parameters = self.parse_generic_parameters();
+        let type_params = self.parse_generic_parameters();
 
         if !self.lexer.skip_if(&Token::Punct(Punct::LeftBrace)) {
-            self.set_failed_bit();
-            error!(
-                "[P????]: enum: expected opening brace\n--> {}",
-                self.lexer.position()
-            );
+            let bug = SyntaxBug::ExpectedOpeningBrace(self.lexer.peek_pos());
+            self.bugs.push(&bug);
         }
 
         let mut variants = Vec::new();
+        let mut already_reported_too_many_variants = false;
 
-        while !self.lexer.skip_if(&Token::Punct(Punct::RightBrace)) {
-            let Some(variant) = self.parse_enum_variant() else {
-                self.set_failed_bit();
-                break;
-            };
+        while !self.lexer.skip_if_or_end(&Token::Punct(Punct::RightBrace)) {
+            const MAX_ENUM_VARIANTS: usize = 65_536;
 
+            if !already_reported_too_many_variants && variants.len() >= MAX_ENUM_VARIANTS {
+                already_reported_too_many_variants = true;
+
+                let bug = SyntaxBug::EnumVariantLimit(self.lexer.peek_pos());
+                self.bugs.push(&bug);
+            }
+
+            let variant = self.parse_enum_variant();
             variants.push(variant);
 
             if !self.lexer.skip_if(&Token::Punct(Punct::Comma))
                 && !self.lexer.next_is(&Token::Punct(Punct::RightBrace))
             {
-                self.set_failed_bit();
-                error!(
-                    "[P????]: enum: expected comma or closing brace\n--> {}",
-                    self.lexer.position()
-                );
+                let bug = SyntaxBug::EnumExpectedEnd(self.lexer.peek_pos());
+                self.bugs.push(&bug);
+                self.lexer.skip_while(&Token::Punct(Punct::RightBrace));
+
                 break;
             }
         }
@@ -244,31 +242,23 @@ impl Parser<'_, '_> {
         Enum {
             attributes,
             name,
-            type_params: generic_parameters,
+            type_params,
             variants,
         }
     }
 
-    fn parse_struct_field(&mut self) -> Option<StructField> {
-        // TODO: Cleanup
-
+    fn parse_struct_field(&mut self) -> StructField {
         let attributes = self.parse_attributes();
 
-        let Some(name) = self.lexer.next_if_name() else {
-            error!(
-                "[P????]: struct field: expected field name\n--> {}",
-                self.lexer.position()
-            );
-            return None;
-        };
+        let name = self.lexer.next_if_name().unwrap_or_else(|| {
+            let bug = SyntaxBug::StructureMissingFieldName(self.lexer.peek_pos());
+            self.bugs.push(&bug);
+            "".into()
+        });
 
         if !self.lexer.skip_if(&Token::Punct(Punct::Colon)) {
-            self.set_failed_bit();
-            error!(
-                "[P????]: struct field: expected colon\n--> {}",
-                self.lexer.position()
-            );
-            return None;
+            let bug = SyntaxBug::ExpectedColon(self.lexer.peek_pos());
+            self.bugs.push(&bug);
         }
 
         let field_type = self.parse_type();
@@ -279,57 +269,55 @@ impl Parser<'_, '_> {
             None
         };
 
-        Some(StructField {
+        StructField {
             attributes,
             name,
             field_type,
             default,
-        })
+        }
     }
 
     fn parse_struct(&mut self) -> Struct {
-        // TODO: Cleanup
-
         assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Struct));
         self.lexer.skip_tok();
 
         let attributes = self.parse_attributes();
+
         let name = self.lexer.next_if_name().unwrap_or_else(|| {
-            error!(
-                "[P????]: struct: expected struct name\n--> {}",
-                self.lexer.position()
-            );
+            let bug = SyntaxBug::StructureMissingName(self.lexer.peek_pos());
+            self.bugs.push(&bug);
             "".into()
         });
 
-        let generic_parameters = self.parse_generic_parameters();
+        let type_params = self.parse_generic_parameters();
 
         if !self.lexer.skip_if(&Token::Punct(Punct::LeftBrace)) {
-            self.set_failed_bit();
-            error!(
-                "[P????]: struct: expected opening brace\n--> {}",
-                self.lexer.position()
-            );
+            let bug = SyntaxBug::ExpectedOpeningBrace(self.lexer.peek_pos());
+            self.bugs.push(&bug);
         }
 
         let mut fields = Vec::new();
+        let mut already_reported_too_many_fields = false;
 
-        while !self.lexer.skip_if(&Token::Punct(Punct::RightBrace)) {
-            let Some(field) = self.parse_struct_field() else {
-                self.set_failed_bit();
-                break;
-            };
+        while !self.lexer.skip_if_or_end(&Token::Punct(Punct::RightBrace)) {
+            const MAX_STRUCT_FIELDS: usize = 65_536;
 
+            if !already_reported_too_many_fields && fields.len() >= MAX_STRUCT_FIELDS {
+                already_reported_too_many_fields = true;
+
+                let bug = SyntaxBug::StructureFieldLimit(self.lexer.peek_pos());
+                self.bugs.push(&bug);
+            }
+
+            let field = self.parse_struct_field();
             fields.push(field);
 
             if !self.lexer.skip_if(&Token::Punct(Punct::Comma))
                 && !self.lexer.next_is(&Token::Punct(Punct::RightBrace))
             {
-                self.set_failed_bit();
-                error!(
-                    "[P????]: struct: expected comma or closing brace\n--> {}",
-                    self.lexer.position()
-                );
+                let bug = SyntaxBug::StructureExpectedEnd(self.lexer.peek_pos());
+                self.bugs.push(&bug);
+                self.lexer.skip_while(&Token::Punct(Punct::RightBrace));
                 break;
             }
         }
@@ -337,7 +325,7 @@ impl Parser<'_, '_> {
         Struct {
             attributes,
             name,
-            type_params: generic_parameters,
+            type_params,
             fields,
             methods: Vec::new(),
         }

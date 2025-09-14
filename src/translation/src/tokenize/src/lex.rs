@@ -133,14 +133,8 @@ impl<'a> Lexer<'a> {
         }
     }
 
-    pub fn skip_until(&mut self, matches: &Token) {
-        while !self.is_eof() && &self.peek_t() != matches {
-            self.skip_tok();
-        }
-    }
-
-    pub fn skip_until_inclusive(&mut self, matches: &Token) {
-        while !self.is_eof() && &self.next_t() != matches {}
+    pub fn skip_while(&mut self, not: &Token) {
+        while !self.is_eof() && &self.next_t() != not {}
     }
 
     #[inline(always)]
