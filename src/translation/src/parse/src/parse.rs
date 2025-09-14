@@ -25,7 +25,7 @@ impl<'a, 'bugs> Parser<'a, 'bugs> {
     pub(crate) fn set_failed_bit(&mut self) {
         // TODO:
 
-        self.bugs.emit(&SyntaxError::Test);
+        self.bugs.push(&SyntaxError::Test);
     }
 
     pub fn parse_crate(&mut self, crate_name: IString) -> Package {

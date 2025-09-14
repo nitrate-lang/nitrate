@@ -1,6 +1,7 @@
 use interned_string::IString;
+use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SourcePosition {
     pub line: u32,
     pub column: u32,

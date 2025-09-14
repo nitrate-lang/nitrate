@@ -1,6 +1,9 @@
-use nitrate_diagnosis::{DiagnosticGroupId, FormattableDiagnosticGroup, Origin};
+use nitrate_diagnosis::{
+    DiagnosticGroupId, DiagnosticInfo, FormattableDiagnosticGroup, Origin, SourcePosition,
+};
 
 pub(crate) enum SyntaxError {
+    NamelessGenericParameter(SourcePosition),
     Test,
 }
 
@@ -11,13 +14,19 @@ impl FormattableDiagnosticGroup for SyntaxError {
 
     fn variant_id(&self) -> u16 {
         match self {
-            SyntaxError::Test => 0,
+            SyntaxError::NamelessGenericParameter(_) => 0,
+            SyntaxError::Test => 1,
         }
     }
 
     fn format(&self) -> nitrate_diagnosis::DiagnosticInfo {
         match self {
-            SyntaxError::Test => nitrate_diagnosis::DiagnosticInfo {
+            SyntaxError::NamelessGenericParameter(pos) => DiagnosticInfo {
+                message: "Generic parameters must have a name".into(),
+                origin: Origin::Point(pos.to_owned()),
+            },
+
+            SyntaxError::Test => DiagnosticInfo {
                 message: "This is a test syntax error".into(),
                 origin: Origin::None,
             },

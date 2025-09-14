@@ -813,7 +813,7 @@ name = "nitrate_diagnosis"
 version = "0.1.0"
 dependencies = [
  "interned-string",
- "nitrate_parsetree",
+ "serde",
  "slog",
 ]
 
@@ -881,6 +881,7 @@ dependencies = [
  "enum-iterator",
  "interned-string",
  "log",
+ "nitrate_diagnosis",
  "ordered-float",
  "serde",
  "smallvec 1.15.1",

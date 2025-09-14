@@ -1,9 +1,9 @@
 use super::token::{
-    AnnotatedToken, Comment, CommentKind, Integer, IntegerKind, Keyword, Op, Punct, SourcePosition,
-    Token,
+    AnnotatedToken, Comment, CommentKind, Integer, IntegerKind, Keyword, Op, Punct, Token,
 };
 use interned_string::{IString, Intern};
 use log::error;
+use nitrate_diagnosis::SourcePosition;
 use ordered_float::NotNan;
 use smallvec::SmallVec;
 
@@ -46,8 +46,18 @@ impl<'a> Lexer<'a> {
         } else {
             Ok(Lexer {
                 source: src,
-                current_peek_pos: SourcePosition::new(0, 0, 0, filename.clone()),
-                sync_pos: SourcePosition::new(0, 0, 0, filename),
+                current_peek_pos: SourcePosition {
+                    line: 0,
+                    column: 0,
+                    offset: 0,
+                    filename: filename.clone(),
+                },
+                sync_pos: SourcePosition {
+                    line: 0,
+                    column: 0,
+                    offset: 0,
+                    filename,
+                },
                 current: None,
             })
         }
@@ -221,19 +231,19 @@ impl<'a> Lexer<'a> {
         let current = self.reader_position();
 
         if byte == b'\n' {
-            self.current_peek_pos = SourcePosition::new(
-                current.line() + 1,
-                0,
-                current.offset() + 1,
-                current.filename().clone(),
-            );
+            self.current_peek_pos = SourcePosition {
+                line: current.line + 1,
+                column: 0,
+                offset: current.offset + 1,
+                filename: current.filename.clone(),
+            };
         } else {
-            self.current_peek_pos = SourcePosition::new(
-                current.line(),
-                current.column() + 1,
-                current.offset() + 1,
-                current.filename().clone(),
-            );
+            self.current_peek_pos = SourcePosition {
+                line: current.line,
+                column: current.column + 1,
+                offset: current.offset + 1,
+                filename: current.filename.clone(),
+            };
         }
 
         byte
@@ -243,7 +253,7 @@ impl<'a> Lexer<'a> {
     #[must_use]
     fn peek_byte(&self) -> Result<u8, ()> {
         self.source
-            .get(self.reader_position().offset() as usize)
+            .get(self.reader_position().offset as usize)
             .copied()
             .ok_or(())
     }
@@ -253,7 +263,7 @@ impl<'a> Lexer<'a> {
     where
         F: FnMut(u8) -> bool,
     {
-        let start_offset = self.reader_position().offset();
+        let start_offset = self.reader_position().offset;
         let mut end_offset = start_offset;
 
         while let Some(b) = self.source.get(end_offset as usize) {
@@ -407,7 +417,7 @@ impl<'a> Lexer<'a> {
 
                     let literal = str::from_utf8(
                         &self.source
-                            [start_pos.offset() as usize..self.reader_position().offset() as usize],
+                            [start_pos.offset as usize..self.reader_position().offset as usize],
                     )
                     .expect("Failed to convert float literal to str");
 
@@ -770,7 +780,7 @@ impl<'a> Lexer<'a> {
         assert!(self.peek_byte().expect("Failed to peek byte") == b'"');
         self.advance(b'"');
 
-        let start_offset = self.reader_position().offset();
+        let start_offset = self.reader_position().offset;
         let mut end_offset = start_offset;
         let mut storage = SmallVec::<[u8; 64]>::new();
 

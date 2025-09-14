@@ -1,3 +1,5 @@
+use crate::bugs::SyntaxError;
+
 use super::parse::Parser;
 use log::error;
 use nitrate_parsetree::kind::{
@@ -11,10 +13,14 @@ impl Parser<'_, '_> {
         // TODO: Cleanup
 
         let Some(name) = self.lexer.next_if_name() else {
-            error!(
-                "[P????]: generic parameter: expected parameter name\n--> {}",
-                self.lexer.sync_position()
-            );
+            self.bugs.push(&SyntaxError::NamelessGenericParameter(
+                self.lexer.sync_position(),
+            ));
+
+            // error!(
+            //     "[P????]: generic parameter: expected parameter name\n--> {}",
+            //     self.lexer.sync_position()
+            // );
             return None;
         };
 
@@ -365,6 +371,7 @@ impl Parser<'_, '_> {
             );
             return None;
         };
+        let type_params = self.parse_generic_parameters()?;
         let parameters = self.parse_function_parameters()?;
 
         let return_type = if self.lexer.skip_if(&Token::Op(Op::Arrow)) {
@@ -388,7 +395,7 @@ impl Parser<'_, '_> {
         Some(Item::NamedFunction(Box::new(NamedFunction {
             attributes,
             name,
-            type_params: Vec::new(),
+            type_params,
             parameters,
             return_type,
             definition,

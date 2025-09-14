@@ -134,7 +134,7 @@ impl DiagnosticCollector {
         }
     }
 
-    pub fn emit(&self, diag: &dyn FormattableDiagnosticGroup) {
+    pub fn push(&self, diag: &dyn FormattableDiagnosticGroup) {
         let id = match DiagnosticId::new(diag.group_id(), diag.variant_id()) {
             Some(id) => id,
             None => DiagnosticId::UNKNOWN,

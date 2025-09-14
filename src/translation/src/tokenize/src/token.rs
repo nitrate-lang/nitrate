@@ -1,5 +1,6 @@
 use enum_iterator::Sequence;
 use interned_string::IString;
+use nitrate_diagnosis::SourcePosition;
 pub use ordered_float::NotNan;
 use serde::{Deserialize, Serialize};
 
@@ -431,52 +432,6 @@ impl std::fmt::Display for Token {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash, Serialize, Deserialize)]
-pub struct SourcePosition {
-    line: u32,
-    column: u32,
-    offset: u32,
-    filename: IString,
-}
-
-impl SourcePosition {
-    #[must_use]
-    pub const fn new(line: u32, column: u32, offset: u32, filename: IString) -> Self {
-        SourcePosition {
-            line,
-            column,
-            offset,
-            filename,
-        }
-    }
-
-    #[must_use]
-    pub const fn line(&self) -> u32 {
-        self.line
-    }
-
-    #[must_use]
-    pub const fn column(&self) -> u32 {
-        self.column
-    }
-
-    #[must_use]
-    pub const fn offset(&self) -> u32 {
-        self.offset
-    }
-
-    #[must_use]
-    pub fn filename(&self) -> &IString {
-        &self.filename
-    }
-}
-
-impl std::fmt::Display for SourcePosition {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}:{}:{}", self.filename, self.line + 1, self.column + 1)
-    }
-}
-
 #[derive(Debug, Clone, PartialEq, PartialOrd, Serialize, Deserialize)]
 pub struct AnnotatedToken {
     token: Token,
@@ -497,13 +452,13 @@ impl AnnotatedToken {
     pub fn new(token: Token, start: SourcePosition, end: SourcePosition) -> Self {
         AnnotatedToken {
             token,
-            start_line: start.line(),
-            start_column: start.column(),
+            start_line: start.line,
+            start_column: start.column,
             start_offset: start.offset,
-            end_line: end.line(),
-            end_column: end.column(),
+            end_line: end.line,
+            end_column: end.column,
             end_offset: end.offset,
-            filename: start.filename().to_owned(),
+            filename: start.filename,
         }
     }
 
@@ -519,22 +474,22 @@ impl AnnotatedToken {
 
     #[must_use]
     pub fn start(&self) -> SourcePosition {
-        SourcePosition::new(
-            self.start_line,
-            self.start_column,
-            self.start_offset,
-            self.filename.clone(),
-        )
+        SourcePosition {
+            line: self.start_line,
+            column: self.start_column,
+            offset: self.start_offset,
+            filename: self.filename.clone(),
+        }
     }
 
     #[must_use]
     pub fn end(&self) -> SourcePosition {
-        SourcePosition::new(
-            self.end_line,
-            self.end_column,
-            self.end_offset,
-            self.filename.clone(),
-        )
+        SourcePosition {
+            line: self.end_line,
+            column: self.end_column,
+            offset: self.end_offset,
+            filename: self.filename.clone(),
+        }
     }
 
     #[must_use]
