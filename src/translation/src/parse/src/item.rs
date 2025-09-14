@@ -10,12 +10,12 @@ use nitrate_tokenize::{Keyword, Op, Punct, Token};
 
 impl Parser<'_, '_> {
     fn parse_generic_parameters(&mut self) -> Vec<GenericParameter> {
-        fn parse_generic_parameter(this: &mut Parser) -> Option<GenericParameter> {
-            let Some(name) = this.lexer.next_if_name() else {
+        fn parse_generic_parameter(this: &mut Parser) -> GenericParameter {
+            let name = this.lexer.next_if_name().unwrap_or_else(|| {
                 let bug = SyntaxBug::GenericParameterMissingName(this.lexer.peek_pos());
                 this.bugs.push(&bug);
-                return None;
-            };
+                "".into()
+            });
 
             let default = if this.lexer.skip_if(&Token::Op(Op::Set)) {
                 Some(this.parse_type())
@@ -23,7 +23,7 @@ impl Parser<'_, '_> {
                 None
             };
 
-            Some(GenericParameter { name, default })
+            GenericParameter { name, default }
         }
 
         let mut parameters = Vec::new();
@@ -32,7 +32,7 @@ impl Parser<'_, '_> {
             return parameters;
         }
 
-        while !self.lexer.skip_if(&Token::Op(Op::LogicGt)) {
+        while !self.lexer.skip_if_or_end(&Token::Op(Op::LogicGt)) {
             const MAX_GENERIC_PARAMETERS: usize = 65_536;
 
             if parameters.len() >= MAX_GENERIC_PARAMETERS {
@@ -41,11 +41,7 @@ impl Parser<'_, '_> {
                 break;
             }
 
-            let Some(param) = parse_generic_parameter(self) else {
-                self.lexer.skip_until_inclusive(&Token::Op(Op::LogicGt));
-                break;
-            };
-
+            let param = parse_generic_parameter(self);
             parameters.push(param);
 
             if !self.lexer.skip_if(&Token::Punct(Punct::Comma))
