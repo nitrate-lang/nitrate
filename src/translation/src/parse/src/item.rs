@@ -12,7 +12,7 @@ impl Parser<'_, '_> {
     fn parse_generic_parameters(&mut self) -> Vec<GenericParameter> {
         fn parse_generic_parameter(this: &mut Parser) -> GenericParameter {
             let name = this.lexer.next_if_name().unwrap_or_else(|| {
-                let bug = SyntaxBug::GenericParameterMissingName(this.lexer.peek_pos());
+                let bug = SyntaxBug::GenericMissingParameterName(this.lexer.peek_pos());
                 this.bugs.push(&bug);
                 "".into()
             });
@@ -36,7 +36,7 @@ impl Parser<'_, '_> {
             const MAX_GENERIC_PARAMETERS: usize = 65_536;
 
             if parameters.len() >= MAX_GENERIC_PARAMETERS {
-                let bug = SyntaxBug::TooManyGenericParameters(self.lexer.peek_pos());
+                let bug = SyntaxBug::GenericParameterLimit(self.lexer.peek_pos());
                 self.bugs.push(&bug);
                 break;
             }
@@ -47,7 +47,7 @@ impl Parser<'_, '_> {
             if !self.lexer.skip_if(&Token::Punct(Punct::Comma))
                 && !self.lexer.next_is(&Token::Op(Op::LogicGt))
             {
-                let bug = SyntaxBug::ExpectedCommaOrClosingAngleBracket(self.lexer.peek_pos());
+                let bug = SyntaxBug::GenericParameterExpectedEnd(self.lexer.peek_pos());
                 self.bugs.push(&bug);
 
                 self.lexer.skip_until_inclusive(&Token::Op(Op::LogicGt));
@@ -165,8 +165,6 @@ impl Parser<'_, '_> {
     }
 
     fn parse_enum_variant(&mut self) -> Option<EnumVariant> {
-        // TODO: Cleanup
-
         let attributes = self.parse_attributes();
 
         let name = self.lexer.next_if_name().unwrap_or_else(|| {

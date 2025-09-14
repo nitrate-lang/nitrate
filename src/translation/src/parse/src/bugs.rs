@@ -3,9 +3,10 @@ use nitrate_diagnosis::{
 };
 
 pub(crate) enum SyntaxBug {
-    GenericParameterMissingName(SourcePosition),
-    TooManyGenericParameters(SourcePosition),
-    ExpectedCommaOrClosingAngleBracket(SourcePosition),
+    GenericMissingParameterName(SourcePosition),
+    GenericParameterLimit(SourcePosition),
+    GenericParameterExpectedEnd(SourcePosition),
+
     TooManyModuleItems(SourcePosition),
     ExpectedOpeningBrace(SourcePosition),
     ExpectedEquals(SourcePosition),
@@ -23,9 +24,10 @@ impl FormattableDiagnosticGroup for SyntaxBug {
 
     fn variant_id(&self) -> u16 {
         match self {
-            SyntaxBug::GenericParameterMissingName(_) => 0,
-            SyntaxBug::TooManyGenericParameters(_) => 1,
-            SyntaxBug::ExpectedCommaOrClosingAngleBracket(_) => 2,
+            SyntaxBug::GenericMissingParameterName(_) => 0,
+            SyntaxBug::GenericParameterLimit(_) => 1,
+            SyntaxBug::GenericParameterExpectedEnd(_) => 2,
+
             SyntaxBug::TooManyModuleItems(_) => 4,
             SyntaxBug::ExpectedOpeningBrace(_) => 5,
             SyntaxBug::ExpectedEquals(_) => 7,
@@ -39,17 +41,17 @@ impl FormattableDiagnosticGroup for SyntaxBug {
 
     fn format(&self) -> nitrate_diagnosis::DiagnosticInfo {
         match self {
-            SyntaxBug::GenericParameterMissingName(pos) => DiagnosticInfo {
+            SyntaxBug::GenericMissingParameterName(pos) => DiagnosticInfo {
                 origin: Origin::Point(pos.to_owned()),
                 message: "expected a name for the generic parameter".into(),
             },
 
-            SyntaxBug::TooManyGenericParameters(pos) => DiagnosticInfo {
+            SyntaxBug::GenericParameterLimit(pos) => DiagnosticInfo {
                 origin: Origin::Point(pos.to_owned()),
                 message: "a type cannot have more than 65,536 generic parameters".into(),
             },
 
-            SyntaxBug::ExpectedCommaOrClosingAngleBracket(pos) => DiagnosticInfo {
+            SyntaxBug::GenericParameterExpectedEnd(pos) => DiagnosticInfo {
                 origin: Origin::Point(pos.to_owned()),
                 message: "expected a comma or closing angle bracket".into(),
             },
