@@ -31,7 +31,7 @@
       "patterns": [
         {
           "name": "keyword.control.nit",
-          "match": "\\b(if|else|for|while|do|switch|break|continue|ret|foreach|try|catch|throw|async|await|asm|assert)\\b"
+          "match": "\\b(if|else|for|while|do|switch|break|continue|ret|foreach|try|catch|throw|async|await|asm)\\b"
         },
         {
           "name": "keyword.operator.nit",
@@ -39,7 +39,7 @@
         },
         {
           "name": "storage.type.nit",
-          "match": "\\b(let|var|fn|enum|struct|class|union|contract|trait|impl|type|opaque|scope|import)\\b"
+          "match": "\\b(let|var|fn|enum|struct|class|union|contract|trait|impl|type|scope|import|mod)\\b"
         },
         {
           "name": "storage.modifier.nit",
@@ -51,7 +51,7 @@
         },
         {
           "name": "keyword.other.nit",
-          "match": "\\b(bool|u8|u16|u32|u64|u128|i8|i16|i32|i64|i128|f8|f16|f32|f64|f128|isize|usize|str|uint|int|any)\\b"
+          "match": "\\b(opaque:bool|u8|u16|u32|u64|u128|i8|i16|i32|i64|i128|f8|f16|f32|f64|f128|isize|usize|str|uint|int|any)\\b"
         }
       ]
     },
