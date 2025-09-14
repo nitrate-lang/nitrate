@@ -3,8 +3,8 @@ use crate::bugs::SyntaxBug;
 use super::parse::Parser;
 use log::error;
 use nitrate_parsetree::kind::{
-    Block, EnumDefinition, EnumVariant, Expr, GenericParameter, GlobalVariable, Item, Module,
-    NamedFunction, StructDefinition, StructField, Type, TypeAlias,
+    Block, Contract, Enum, EnumVariant, Expr, GenericParameter, GlobalVariable, Impl, Import, Item,
+    Module, NamedFunction, Struct, StructField, Trait, Type, TypeAlias,
 };
 use nitrate_tokenize::{Keyword, Op, Punct, Token};
 
@@ -105,6 +105,13 @@ impl Parser<'_, '_> {
         }
     }
 
+    fn parse_import(&mut self) -> Import {
+        // TODO: Import parsing logic
+        self.set_failed_bit();
+        error!("Import parsing not implemented yet");
+        todo!()
+    }
+
     fn parse_type_alias(&mut self) -> TypeAlias {
         assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Type));
         self.lexer.skip_tok();
@@ -175,7 +182,7 @@ impl Parser<'_, '_> {
         })
     }
 
-    fn parse_enum(&mut self) -> EnumDefinition {
+    fn parse_enum(&mut self) -> Enum {
         // TODO: Cleanup
 
         assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Enum));
@@ -223,7 +230,7 @@ impl Parser<'_, '_> {
             }
         }
 
-        EnumDefinition {
+        Enum {
             attributes,
             name,
             type_params: generic_parameters,
@@ -269,7 +276,7 @@ impl Parser<'_, '_> {
         })
     }
 
-    fn parse_struct(&mut self) -> StructDefinition {
+    fn parse_struct(&mut self) -> Struct {
         // TODO: Cleanup
 
         assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Struct));
@@ -316,7 +323,7 @@ impl Parser<'_, '_> {
             }
         }
 
-        StructDefinition {
+        Struct {
             attributes,
             name,
             type_params: generic_parameters,
@@ -325,25 +332,25 @@ impl Parser<'_, '_> {
         }
     }
 
-    fn parse_trait(&mut self) -> Option<Item> {
+    fn parse_trait(&mut self) -> Trait {
         // TODO: trait parsing logic
         self.set_failed_bit();
         error!("Trait parsing not implemented yet");
-        None
+        todo!()
     }
 
-    fn parse_implementation(&mut self) -> Option<Item> {
+    fn parse_implementation(&mut self) -> Impl {
         // TODO: implementation parsing logic
         self.set_failed_bit();
         error!("Implementation parsing not implemented yet");
-        None
+        todo!()
     }
 
-    fn parse_contract(&mut self) -> Option<Item> {
+    fn parse_contract(&mut self) -> Contract {
         // TODO: contract parsing logic
         self.set_failed_bit();
         error!("Contract parsing not implemented yet");
-        None
+        todo!()
     }
 
     fn parse_named_function(&mut self) -> NamedFunction {
@@ -455,12 +462,15 @@ impl Parser<'_, '_> {
     }
 
     pub(crate) fn parse_item(&mut self) -> Item {
-        // TODO: Cleanup
-
         match self.lexer.peek_t() {
             Token::Keyword(Keyword::Mod) => {
                 let module = self.parse_module();
                 Item::Module(Box::new(module))
+            }
+
+            Token::Keyword(Keyword::Import) => {
+                let import = self.parse_import();
+                Item::Import(Box::new(import))
             }
 
             Token::Keyword(Keyword::Type) => {
@@ -468,29 +478,29 @@ impl Parser<'_, '_> {
                 Item::TypeAlias(Box::new(type_alias))
             }
 
-            Token::Keyword(Keyword::Enum) => {
-                let enum_def = self.parse_enum();
-                Item::EnumDefinition(Box::new(enum_def))
-            }
-
             Token::Keyword(Keyword::Struct) => {
                 let struct_def = self.parse_struct();
-                Item::StructDefinition(Box::new(struct_def))
+                Item::Struct(Box::new(struct_def))
+            }
+
+            Token::Keyword(Keyword::Enum) => {
+                let enum_def = self.parse_enum();
+                Item::Enum(Box::new(enum_def))
             }
 
             Token::Keyword(Keyword::Trait) => {
                 let trait_def = self.parse_trait();
-                todo!("Trait parsing not implemented yet")
+                Item::Trait(Box::new(trait_def))
             }
 
             Token::Keyword(Keyword::Impl) => {
                 let impl_def = self.parse_implementation();
-                todo!("Implementation parsing not implemented yet")
+                Item::Impl(Box::new(impl_def))
             }
 
             Token::Keyword(Keyword::Contract) => {
                 let contract_def = self.parse_contract();
-                todo!("Contract parsing not implemented yet")
+                Item::Contract(Box::new(contract_def))
             }
 
             Token::Keyword(Keyword::Fn) => {

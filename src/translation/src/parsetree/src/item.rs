@@ -47,7 +47,7 @@ pub struct StructField {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct StructDefinition {
+pub struct Struct {
     pub attributes: Vec<Expr>,
     pub name: IString,
     pub type_params: Vec<GenericParameter>,
@@ -64,12 +64,21 @@ pub struct EnumVariant {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct EnumDefinition {
+pub struct Enum {
     pub attributes: Vec<Expr>,
     pub name: IString,
     pub type_params: Vec<GenericParameter>,
     pub variants: Vec<EnumVariant>,
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Trait {}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Impl {}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Contract {}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FunctionParameter {
@@ -116,8 +125,11 @@ pub enum Item {
     Module(Box<Module>),
     Import(Box<Import>),
     TypeAlias(Box<TypeAlias>),
-    StructDefinition(Box<StructDefinition>),
-    EnumDefinition(Box<EnumDefinition>),
+    Struct(Box<Struct>),
+    Enum(Box<Enum>),
+    Trait(Box<Trait>),
+    Impl(Box<Impl>),
+    Contract(Box<Contract>),
     NamedFunction(Box<NamedFunction>),
     GlobalVariable(Box<GlobalVariable>),
 }
@@ -129,8 +141,11 @@ impl std::fmt::Debug for Item {
             Item::Module(e) => e.fmt(f),
             Item::Import(e) => e.fmt(f),
             Item::TypeAlias(e) => e.fmt(f),
-            Item::StructDefinition(e) => e.fmt(f),
-            Item::EnumDefinition(e) => e.fmt(f),
+            Item::Struct(e) => e.fmt(f),
+            Item::Enum(e) => e.fmt(f),
+            Item::Trait(e) => e.fmt(f),
+            Item::Impl(e) => e.fmt(f),
+            Item::Contract(e) => e.fmt(f),
             Item::NamedFunction(e) => e.fmt(f),
             Item::GlobalVariable(e) => e.fmt(f),
         }
