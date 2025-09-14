@@ -73,35 +73,3 @@ pub trait FormattableDiagnosticGroup {
 
     fn format(&self) -> DiagnosticInfo;
 }
-
-enum SyntaxError {
-    UnexpectedToken,
-    MissingSemicolon,
-}
-
-impl FormattableDiagnosticGroup for SyntaxError {
-    fn group_id(&self) -> DiagnosticGroupId {
-        DiagnosticGroupId::SyntaxError
-    }
-
-    fn variant_id(&self) -> u16 {
-        match self {
-            SyntaxError::UnexpectedToken => 1,
-            SyntaxError::MissingSemicolon => 2,
-        }
-    }
-
-    fn format(&self) -> DiagnosticInfo {
-        match self {
-            SyntaxError::UnexpectedToken => DiagnosticInfo {
-                origin: Origin::Unknown,
-                message: "Unexpected token found.".to_string(),
-            },
-
-            SyntaxError::MissingSemicolon => DiagnosticInfo {
-                origin: Origin::Unknown,
-                message: "Missing semicolon.".to_string(),
-            },
-        }
-    }
-}
