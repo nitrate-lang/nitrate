@@ -36,7 +36,7 @@ impl Parser<'_, '_> {
         let mut maximum_bound = None;
 
         if !self.lexer.skip_if(&Token::Punct(Punct::Colon)) {
-            let minimum = self.parse_expression()?;
+            let minimum = self.parse_expression();
 
             if !self.lexer.skip_if(&Token::Punct(Punct::Colon)) {
                 error!(
@@ -51,7 +51,7 @@ impl Parser<'_, '_> {
         }
 
         if !self.lexer.skip_if(&Token::Punct(Punct::RightBracket)) {
-            let maximum = self.parse_expression()?;
+            let maximum = self.parse_expression();
 
             if !self.lexer.skip_if(&Token::Punct(Punct::RightBracket)) {
                 error!(
@@ -85,7 +85,7 @@ impl Parser<'_, '_> {
             });
         }
 
-        let width = self.parse_expression()?;
+        let width = self.parse_expression();
 
         if !self.lexer.skip_if(&Token::Punct(Punct::Colon)) {
             return Some(RefinementOptions {
@@ -300,7 +300,7 @@ impl Parser<'_, '_> {
         assert!(self.lexer.peek_t() == Token::Punct(Punct::Semicolon));
         self.lexer.skip_tok();
 
-        let array_count = self.parse_expression()?;
+        let array_count = self.parse_expression();
 
         if !self.lexer.skip_if(&Token::Punct(Punct::RightBracket)) {
             error!(
@@ -481,7 +481,7 @@ impl Parser<'_, '_> {
             };
 
             let parameter_default = if self.lexer.skip_if(&Token::Op(Op::Set)) {
-                Some(self.parse_expression()?)
+                Some(self.parse_expression())
             } else {
                 None
             };

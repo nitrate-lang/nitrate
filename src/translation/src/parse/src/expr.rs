@@ -267,7 +267,7 @@ impl Parser<'_, '_> {
         }
 
         if self.lexer.skip_if(&Token::Punct(Punct::LeftParen)) {
-            let inner = self.parse_expression()?;
+            let inner = self.parse_expression();
 
             if !self.lexer.skip_if(&Token::Punct(Punct::RightParen)) {
                 self.set_failed_bit();
@@ -347,7 +347,7 @@ impl Parser<'_, '_> {
 
                     self.lexer.skip_tok();
 
-                    let index = self.parse_expression()?;
+                    let index = self.parse_expression();
 
                     if !self.lexer.skip_if(&Token::Punct(Punct::RightBracket)) {
                         self.set_failed_bit();
@@ -371,8 +371,9 @@ impl Parser<'_, '_> {
         }
     }
 
-    pub(crate) fn parse_expression(&mut self) -> Option<Expr> {
+    pub(crate) fn parse_expression(&mut self) -> Expr {
         self.parse_expression_precedence(Precedence::MIN)
+            .unwrap_or(Expr::SyntaxError)
     }
 
     fn parse_literal_suffix(&mut self, lit: Expr) -> Expr {
@@ -422,7 +423,7 @@ impl Parser<'_, '_> {
                 break;
             }
 
-            elements.push(self.parse_expression()?);
+            elements.push(self.parse_expression());
 
             if !self.lexer.skip_if(&Token::Punct(Punct::Comma)) {
                 if self.lexer.skip_if(&Token::Punct(Punct::RightBracket)) {
@@ -453,14 +454,7 @@ impl Parser<'_, '_> {
                 break;
             }
 
-            let attrib = match self.parse_expression() {
-                Some(expr) => expr,
-                None => {
-                    self.set_failed_bit();
-                    return attributes;
-                }
-            };
-
+            let attrib = self.parse_expression();
             attributes.push(attrib);
 
             if !self.lexer.skip_if(&Token::Punct(Punct::Comma)) {
@@ -492,7 +486,7 @@ impl Parser<'_, '_> {
         assert!(self.lexer.peek_t() == Token::Keyword(Keyword::If));
         self.lexer.skip_tok();
 
-        let condition = self.parse_expression()?;
+        let condition = self.parse_expression();
         let then_branch = self.parse_block()?;
 
         let else_branch = if self.lexer.skip_if(&Token::Keyword(Keyword::Else)) {
@@ -599,7 +593,7 @@ impl Parser<'_, '_> {
             return None;
         }
 
-        let iterable = self.parse_expression()?;
+        let iterable = self.parse_expression();
         let body = self.parse_block()?;
 
         Some(Expr::ForEach(Box::new(ForEach {
@@ -617,7 +611,7 @@ impl Parser<'_, '_> {
         let condition = if self.lexer.next_is(&Token::Punct(Punct::LeftBrace)) {
             Expr::Boolean(true)
         } else {
-            self.parse_expression()?
+            self.parse_expression()
         };
 
         let body = self.parse_block()?;
@@ -639,7 +633,7 @@ impl Parser<'_, '_> {
             return None;
         }
 
-        let condition = self.parse_expression()?;
+        let condition = self.parse_expression();
 
         Some(Expr::DoWhileLoop(Box::new(DoWhileLoop { body, condition })))
     }
@@ -702,7 +696,7 @@ impl Parser<'_, '_> {
         let value = if self.lexer.next_is(&Token::Punct(Punct::Semicolon)) {
             None
         } else {
-            Some(self.parse_expression()?)
+            Some(self.parse_expression())
         };
 
         Some(Expr::Return(Box::new(Return { value })))
@@ -712,12 +706,9 @@ impl Parser<'_, '_> {
         assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Await));
         self.lexer.skip_tok();
 
-        let Some(expr) = self.parse_expression() else {
-            self.set_failed_bit();
-            return None;
-        };
+        let future = self.parse_expression();
 
-        Some(Expr::Await(Box::new(Await { future: expr })))
+        Some(Expr::Await(Box::new(Await { future })))
     }
 
     fn parse_asm(&mut self) -> Option<Expr> {
@@ -756,7 +747,7 @@ impl Parser<'_, '_> {
         let definition = if self.lexer.next_is(&Token::Punct(Punct::LeftBrace)) {
             self.parse_block()?
         } else if self.lexer.skip_if(&Token::Op(Op::BlockArrow)) {
-            let expr = self.parse_expression()?;
+            let expr = self.parse_expression();
             Block {
                 elements: vec![expr],
                 ends_with_semi: false,
@@ -800,7 +791,7 @@ impl Parser<'_, '_> {
             }
         }
 
-        let argument_value = self.parse_expression()?;
+        let argument_value = self.parse_expression();
 
         Some((argument_name, argument_value))
     }
@@ -858,12 +849,7 @@ impl Parser<'_, '_> {
                 continue;
             }
 
-            ends_with_semi = false;
-            let Some(expression) = self.parse_expression() else {
-                self.set_failed_bit();
-                break;
-            };
-
+            let expression = self.parse_expression();
             elements.push(expression);
 
             ends_with_semi = self.lexer.skip_if(&Token::Punct(Punct::Semicolon));

@@ -3,7 +3,7 @@ use crate::bugs::SyntaxBug;
 use super::parse::Parser;
 use log::error;
 use nitrate_parsetree::kind::{
-    Block, Contract, Enum, EnumVariant, Expr, GenericParameter, GlobalVariable, Impl, Import, Item,
+    Block, Contract, Enum, EnumVariant, GenericParameter, GlobalVariable, Impl, Import, Item,
     Module, NamedFunction, Struct, StructField, Trait, Type, TypeAlias,
 };
 use nitrate_tokenize::{Keyword, Op, Punct, Token};
@@ -102,6 +102,13 @@ impl Parser<'_, '_> {
     }
 
     fn parse_import(&mut self) -> Import {
+        assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Import));
+        self.lexer.skip_tok();
+
+        let attributes = self.parse_attributes();
+
+        let expr = self.parse_expression();
+
         // TODO: Import parsing logic
         self.set_failed_bit();
         error!("Import parsing not implemented yet");
@@ -160,7 +167,7 @@ impl Parser<'_, '_> {
         };
 
         let value = if self.lexer.skip_if(&Token::Op(Op::Set)) {
-            Some(self.parse_expression()?)
+            Some(self.parse_expression())
         } else {
             None
         };
@@ -254,7 +261,7 @@ impl Parser<'_, '_> {
         let field_type = self.parse_type();
 
         let default = if self.lexer.skip_if(&Token::Op(Op::Set)) {
-            Some(self.parse_expression()?)
+            Some(self.parse_expression())
         } else {
             None
         };
@@ -375,15 +382,7 @@ impl Parser<'_, '_> {
                 ends_with_semi: false,
             }))
         } else if self.lexer.skip_if(&Token::Op(Op::BlockArrow)) {
-            let expr = self.parse_expression().unwrap_or_else(|| {
-                self.set_failed_bit();
-                error!(
-                    "[P????]: function: expected expression after '->'\n--> {}",
-                    self.lexer.position()
-                );
-
-                Expr::Unit
-            });
+            let expr = self.parse_expression();
             Some(Block {
                 elements: vec![expr],
                 ends_with_semi: false,
@@ -430,7 +429,7 @@ impl Parser<'_, '_> {
         };
 
         let initializer = if self.lexer.skip_if(&Token::Op(Op::Set)) {
-            Some(self.parse_expression().unwrap_or(Expr::Unit))
+            Some(self.parse_expression())
         } else {
             None
         };
