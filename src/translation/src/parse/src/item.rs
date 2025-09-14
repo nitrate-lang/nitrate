@@ -18,7 +18,7 @@ impl Parser<'_, '_> {
             };
 
             let default = if this.lexer.skip_if(&Token::Op(Op::Set)) {
-                this.parse_type()
+                Some(this.parse_type())
             } else {
                 None
             };
@@ -131,10 +131,7 @@ impl Parser<'_, '_> {
             self.bugs.push(&bug);
         }
 
-        let aliased_type = self.parse_type().unwrap_or_else(|| {
-            self.lexer.skip_until(&Token::Punct(Punct::Semicolon));
-            Type::SyntaxError
-        });
+        let aliased_type = self.parse_type();
 
         if !self.lexer.skip_if(&Token::Punct(Punct::Semicolon)) {
             let bug = SyntaxBug::ExpectedSemicolon(self.lexer.peek_pos());
@@ -154,16 +151,14 @@ impl Parser<'_, '_> {
 
         let attributes = self.parse_attributes();
 
-        let Some(name) = self.lexer.next_if_name() else {
-            error!(
-                "[P????]: enum variant: expected variant name\n--> {}",
-                self.lexer.position()
-            );
-            return None;
-        };
+        let name = self.lexer.next_if_name().unwrap_or_else(|| {
+            let bug = SyntaxBug::ItemMissingName(self.lexer.peek_pos());
+            self.bugs.push(&bug);
+            "".into()
+        });
 
         let variant_type = if self.lexer.next_is(&Token::Punct(Punct::LeftParen)) {
-            Some(self.parse_type()?)
+            Some(self.parse_type())
         } else {
             None
         };
@@ -260,7 +255,7 @@ impl Parser<'_, '_> {
             return None;
         }
 
-        let field_type = self.parse_type()?;
+        let field_type = self.parse_type();
 
         let default = if self.lexer.skip_if(&Token::Op(Op::Set)) {
             Some(self.parse_expression()?)
@@ -373,7 +368,7 @@ impl Parser<'_, '_> {
         let parameters = self.parse_function_parameters().unwrap_or(Vec::new());
 
         let return_type = if self.lexer.skip_if(&Token::Op(Op::Arrow)) {
-            self.parse_type().unwrap_or(Type::InferType)
+            self.parse_type()
         } else {
             Type::InferType
         };
@@ -433,7 +428,7 @@ impl Parser<'_, '_> {
         });
 
         let type_annotation = if self.lexer.skip_if(&Token::Punct(Punct::Colon)) {
-            self.parse_type().unwrap_or(Type::InferType)
+            self.parse_type()
         } else {
             Type::InferType
         };

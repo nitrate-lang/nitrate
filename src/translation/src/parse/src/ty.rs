@@ -133,17 +133,7 @@ impl Parser<'_, '_> {
             }
         }
 
-        let current_pos = self.lexer.position();
-
-        let Some(argument_value) = self.parse_type() else {
-            error!(
-                "[P0???]: generic type: expected type after generic argument name\n--> {current_pos}"
-            );
-            info!(
-                "[P0???]: generic type: syntax hint: if you want to use a Refinement Type as the generic argument, wrap the type in parentheses, e.g. `Vec<(i32: [1: 10])>`"
-            );
-            return None;
-        };
+        let argument_value = self.parse_type();
 
         Some(GenericArgument {
             name: argument_name.unwrap_or_default(),
@@ -331,7 +321,7 @@ impl Parser<'_, '_> {
         assert!(self.lexer.peek_t() == Token::Op(Op::Arrow));
         self.lexer.skip_tok();
 
-        let value_type = self.parse_type()?;
+        let value_type = self.parse_type();
 
         if !self.lexer.skip_if(&Token::Punct(Punct::RightBracket)) {
             error!(
@@ -366,7 +356,7 @@ impl Parser<'_, '_> {
         assert!(self.lexer.peek_t() == Token::Punct(Punct::LeftBracket));
         self.lexer.skip_tok();
 
-        let something_type = self.parse_type()?;
+        let something_type = self.parse_type();
 
         if self.lexer.next_is(&Token::Punct(Punct::Semicolon)) {
             return self.parse_rest_of_array(something_type);
@@ -417,7 +407,7 @@ impl Parser<'_, '_> {
             self.lexer.skip_if(&Token::Keyword(Keyword::Const));
         }
 
-        let to = self.parse_type()?;
+        let to = self.parse_type();
 
         Some(Type::ReferenceType(Box::new(ReferenceType {
             lifetime: Some(Lifetime::CollectorManaged),
@@ -453,7 +443,7 @@ impl Parser<'_, '_> {
             self.lexer.skip_if(&Token::Keyword(Keyword::Const));
         }
 
-        let to = self.parse_type()?;
+        let to = self.parse_type();
 
         Some(Type::ReferenceType(Box::new(ReferenceType {
             lifetime: None,
@@ -485,7 +475,7 @@ impl Parser<'_, '_> {
             let parameter_name = self.lexer.next_if_name().unwrap_or_default();
 
             let parameter_type = if self.lexer.skip_if(&Token::Punct(Punct::Colon)) {
-                self.parse_type()?
+                self.parse_type()
             } else {
                 Type::InferType
             };
@@ -534,7 +524,7 @@ impl Parser<'_, '_> {
         let parameters = self.parse_function_parameters()?;
 
         let return_type = if self.lexer.skip_if(&Token::Op(Op::Arrow)) {
-            self.parse_type()?
+            self.parse_type()
         } else {
             Type::InferType
         };
@@ -760,7 +750,7 @@ impl Parser<'_, '_> {
         result
     }
 
-    pub(crate) fn parse_type(&mut self) -> Option<Type> {
+    pub(crate) fn parse_type(&mut self) -> Type {
         /*
          * The syntax for defining a type is as follows:
          * <type>
@@ -772,21 +762,13 @@ impl Parser<'_, '_> {
 
         if self.lexer.skip_if(&Token::Punct(Punct::LeftParen)) {
             if self.lexer.skip_if(&Token::Punct(Punct::RightParen)) {
-                return Some(Type::UnitType);
+                return Type::UnitType;
             }
 
-            let Some(inner) = self.parse_type() else {
-                self.set_failed_bit();
-                error!(
-                    "[P0???]: type: expected type after '('\n--> {}",
-                    self.lexer.position()
-                );
-
-                return None;
-            };
+            let inner = self.parse_type();
 
             let result = match self.lexer.next_t() {
-                Token::Punct(Punct::RightParen) => Some(Type::Parentheses(Box::new(inner))),
+                Token::Punct(Punct::RightParen) => Type::Parentheses(Box::new(inner)),
 
                 Token::Punct(Punct::Comma) => {
                     let mut element_types = Vec::from([inner]);
@@ -796,7 +778,7 @@ impl Parser<'_, '_> {
                             break;
                         }
 
-                        let element = self.parse_type()?;
+                        let element = self.parse_type();
                         element_types.push(element);
 
                         if !self.lexer.skip_if(&Token::Punct(Punct::Comma)) {
@@ -810,11 +792,11 @@ impl Parser<'_, '_> {
                             );
                             info!("[P0???]: tuple type: syntax hint: (<type1>, <type2>, ... )");
 
-                            return None;
+                            return Type::SyntaxError;
                         }
                     }
 
-                    Some(Type::TupleType(Box::new(TupleType { element_types })))
+                    Type::TupleType(Box::new(TupleType { element_types }))
                 }
 
                 _ => {
@@ -824,7 +806,7 @@ impl Parser<'_, '_> {
                         self.lexer.position()
                     );
 
-                    None
+                    Type::SyntaxError
                 }
             };
 
@@ -833,23 +815,23 @@ impl Parser<'_, '_> {
 
         let Some(the_type) = self.parse_type_primary() else {
             self.set_failed_bit();
-            return None;
+            return Type::SyntaxError;
         };
 
         let Some(refinement) = self.parse_refinement_options() else {
             self.set_failed_bit();
-            return None;
+            return Type::SyntaxError;
         };
 
         if refinement.has_any() {
-            return Some(Type::RefinementType(Box::new(RefinementType {
+            return Type::RefinementType(Box::new(RefinementType {
                 basis_type: the_type,
                 width: refinement.width,
                 minimum: refinement.minimum,
                 maximum: refinement.maximum,
-            })));
+            }));
         }
 
-        return Some(the_type);
+        the_type
     }
 }

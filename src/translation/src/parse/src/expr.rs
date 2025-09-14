@@ -493,7 +493,7 @@ impl Parser<'_, '_> {
         assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Type));
         self.lexer.skip_tok();
 
-        let of = self.parse_type()?;
+        let of = self.parse_type();
 
         Some(Expr::TypeInfo(Box::new(of)))
     }
@@ -554,7 +554,7 @@ impl Parser<'_, '_> {
                 };
 
                 let type_annotation = if self.lexer.skip_if(&Token::Punct(Punct::Colon)) {
-                    Some(self.parse_type()?)
+                    Some(self.parse_type())
                 } else {
                     None
                 };
@@ -582,7 +582,7 @@ impl Parser<'_, '_> {
             };
 
             let type_annotation = if self.lexer.skip_if(&Token::Punct(Punct::Colon)) {
-                Some(self.parse_type()?)
+                Some(self.parse_type())
             } else {
                 None
             };
@@ -758,7 +758,7 @@ impl Parser<'_, '_> {
         let parameters = self.parse_function_parameters()?;
 
         let return_type = if self.lexer.skip_if(&Token::Op(Op::Arrow)) {
-            self.parse_type()?
+            self.parse_type()
         } else {
             Type::InferType
         };
