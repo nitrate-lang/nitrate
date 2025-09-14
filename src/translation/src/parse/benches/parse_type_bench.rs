@@ -1,10 +1,8 @@
 use criterion::{Criterion, criterion_group, criterion_main};
-use nitrate_tokenize::*;
 use nitrate_parse::*;
+use nitrate_tokenize::*;
 
-struct ParserUtil {
-    symbol_table: SymbolTable<'static>,
-}
+struct ParserUtil {}
 
 fn parse_type(source_code: &'static str, util: &mut ParserUtil) {
     let lexer = Lexer::new(source_code.as_bytes(), "").expect("Failed to create lexer");
@@ -86,9 +84,7 @@ fn monster(util: &mut ParserUtil) {
 }
 
 fn parse_type_benchmark(c: &mut Criterion) {
-    let mut util = ParserUtil {
-        symbol_table: SymbolTable::default(),
-    };
+    let mut util = ParserUtil {};
 
     let mut g = c.benchmark_group("parse_type");
 
