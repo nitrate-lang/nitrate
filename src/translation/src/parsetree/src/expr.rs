@@ -82,7 +82,6 @@ impl TryFrom<Op> for UnaryExprOp {
             | Op::SetLogicOr
             | Op::SetLogicXor
             | Op::As
-            | Op::BitcastAs
             | Op::Dot
             | Op::Ellipsis
             | Op::Scope
@@ -140,7 +139,6 @@ pub enum BinExprOp {
     SetLogicOr,
     SetLogicXor,
     As,
-    BitcastAs,
     Dot,
     Ellipsis,
     Scope,
@@ -192,7 +190,6 @@ impl TryFrom<Op> for BinExprOp {
             Op::SetLogicOr => Ok(BinExprOp::SetLogicOr),
             Op::SetLogicXor => Ok(BinExprOp::SetLogicXor),
             Op::As => Ok(BinExprOp::As),
-            Op::BitcastAs => Ok(BinExprOp::BitcastAs),
             Op::Dot => Ok(BinExprOp::Dot),
             Op::Ellipsis => Ok(BinExprOp::Ellipsis),
             Op::Scope => Ok(BinExprOp::Scope),

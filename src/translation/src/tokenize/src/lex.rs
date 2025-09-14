@@ -320,7 +320,6 @@ impl<'a> Lexer<'a> {
 
         if let Some(word_like_operator) = match name {
             b"as" => Some(Op::As),
-            b"bitcast_as" => Some(Op::BitcastAs),
             b"typeof" => Some(Op::Typeof),
             _ => None,
         } {
@@ -332,6 +331,7 @@ impl<'a> Lexer<'a> {
             b"enum" => Some(Keyword::Enum),
             b"struct" => Some(Keyword::Struct),
             b"class" => Some(Keyword::Class),
+            b"union" => Some(Keyword::Union),
             b"contract" => Some(Keyword::Contract),
             b"trait" => Some(Keyword::Trait),
             b"impl" => Some(Keyword::Impl),

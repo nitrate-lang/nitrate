@@ -97,6 +97,7 @@ pub enum Keyword {
     Enum,     /* 'enum' */
     Struct,   /* 'struct' */
     Class,    /* 'class' */
+    Union,    /* 'union' */
     Contract, /* 'contract' */
     Trait,    /* 'trait' */
     Impl,     /* 'impl' */
@@ -167,6 +168,7 @@ impl std::fmt::Display for Keyword {
             Keyword::Enum => write!(f, "enum"),
             Keyword::Struct => write!(f, "struct"),
             Keyword::Class => write!(f, "class"),
+            Keyword::Union => write!(f, "union"),
             Keyword::Contract => write!(f, "contract"),
             Keyword::Trait => write!(f, "trait"),
             Keyword::Impl => write!(f, "impl"),
@@ -319,9 +321,8 @@ pub enum Op {
     /*----------------------------------------------------------------*
      * Type System Operators                                          *
      *----------------------------------------------------------------*/
-    As,        /* 'as':         "Type Cast Operator" */
-    BitcastAs, /* 'bitcast_as': "Bitcast Operator" */
-    Typeof,    /* 'typeof':     "Type Of Operator" */
+    As,     /* 'as':         "Type Cast Operator" */
+    Typeof, /* 'typeof':     "Type Of Operator" */
 
     /*----------------------------------------------------------------*
      * Syntactic Operators                                            *
@@ -385,7 +386,6 @@ impl std::fmt::Display for Op {
             Op::SetLogicXor => write!(f, "^^="),
 
             Op::As => write!(f, "as"),
-            Op::BitcastAs => write!(f, "bitcast_as"),
             Op::Typeof => write!(f, "typeof"),
 
             Op::Dot => write!(f, "."),
@@ -618,6 +618,7 @@ mod tests {
                 Keyword::Enum => "enum",
                 Keyword::Struct => "struct",
                 Keyword::Class => "class",
+                Keyword::Union => "union",
                 Keyword::Contract => "contract",
                 Keyword::Trait => "trait",
                 Keyword::Impl => "impl",
@@ -740,7 +741,6 @@ mod tests {
                 Op::SetLogicOr => "||=",
                 Op::SetLogicXor => "^^=",
                 Op::As => "as",
-                Op::BitcastAs => "bitcast_as",
                 Op::Typeof => "typeof",
                 Op::Dot => ".",
                 Op::Ellipsis => "...",

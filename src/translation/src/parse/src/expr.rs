@@ -52,7 +52,7 @@ fn get_precedence_of_operator(operator: Op) -> Option<(Associativity, Precedence
 
         Op::Dot | Op::Arrow => (Associativity::LeftToRight, PrecedenceRank::FieldAccess),
 
-        Op::As | Op::BitcastAs => (Associativity::LeftToRight, PrecedenceRank::Cast),
+        Op::As => (Associativity::LeftToRight, PrecedenceRank::Cast),
 
         Op::Mul | Op::Div | Op::Mod => (Associativity::LeftToRight, PrecedenceRank::MulDivMod),
 
