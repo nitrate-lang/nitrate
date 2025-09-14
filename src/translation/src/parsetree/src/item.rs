@@ -18,7 +18,6 @@ pub struct Module {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Import {
-    pub language: Option<IString>,
     pub attributes: Vec<Expr>,
     pub path: Path,
     pub alias: Option<IString>,

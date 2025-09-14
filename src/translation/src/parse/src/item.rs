@@ -106,13 +106,28 @@ impl Parser<'_, '_> {
         self.lexer.skip_tok();
 
         let attributes = self.parse_attributes();
+        let path = self.parse_path();
 
-        let expr = self.parse_expression();
+        let alias = if self.lexer.skip_if(&Token::Op(Op::As)) {
+            Some(self.lexer.next_if_name().unwrap_or_else(|| {
+                let bug = SyntaxBug::ExpectedImportAliasName(self.lexer.peek_pos());
+                self.bugs.push(&bug);
+                "".into()
+            }))
+        } else {
+            None
+        };
 
-        // TODO: Import parsing logic
-        self.set_failed_bit();
-        error!("Import parsing not implemented yet");
-        todo!()
+        if !self.lexer.skip_if(&Token::Punct(Punct::Semicolon)) {
+            let bug = SyntaxBug::ExpectedSemicolon(self.lexer.peek_pos());
+            self.bugs.push(&bug);
+        }
+
+        Import {
+            attributes,
+            path,
+            alias,
+        }
     }
 
     fn parse_type_alias(&mut self) -> TypeAlias {
@@ -127,7 +142,7 @@ impl Parser<'_, '_> {
             "".into()
         });
 
-        let generic_parameters = self.parse_generic_parameters();
+        let type_params = self.parse_generic_parameters();
 
         if !self.lexer.skip_if(&Token::Op(Op::Set)) {
             let bug = SyntaxBug::ExpectedEquals(self.lexer.peek_pos());
@@ -144,7 +159,7 @@ impl Parser<'_, '_> {
         TypeAlias {
             attributes,
             name,
-            type_params: generic_parameters,
+            type_params,
             aliased_type,
         }
     }

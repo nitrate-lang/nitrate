@@ -12,6 +12,7 @@ pub(crate) enum SyntaxBug {
     ExpectedSemicolon(SourcePosition),
     ExpectedItem(SourcePosition),
     ItemMissingName(SourcePosition),
+    ExpectedImportAliasName(SourcePosition),
     Test,
 }
 
@@ -31,7 +32,8 @@ impl FormattableDiagnosticGroup for SyntaxBug {
             SyntaxBug::ExpectedSemicolon(_) => 8,
             SyntaxBug::ExpectedItem(_) => 9,
             SyntaxBug::ItemMissingName(_) => 10,
-            SyntaxBug::Test => 11,
+            SyntaxBug::ExpectedImportAliasName(_) => 11,
+            SyntaxBug::Test => 12,
         }
     }
 
@@ -80,6 +82,11 @@ impl FormattableDiagnosticGroup for SyntaxBug {
             SyntaxBug::ItemMissingName(pos) => DiagnosticInfo {
                 origin: Origin::Point(pos.to_owned()),
                 message: "item name is missing".into(),
+            },
+
+            SyntaxBug::ExpectedImportAliasName(pos) => DiagnosticInfo {
+                origin: Origin::Point(pos.to_owned()),
+                message: "expected a name for the import alias".into(),
             },
 
             SyntaxBug::Test => DiagnosticInfo {

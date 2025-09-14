@@ -7,7 +7,7 @@ use nitrate_parsetree::kind::{
     UnaryExpr, UnaryExprOp, WhileLoop,
 };
 use nitrate_tokenize::{Keyword, Op, Punct, Token};
-use smallvec::smallvec;
+use smallvec::{SmallVec, smallvec};
 
 type Precedence = u32;
 
@@ -471,6 +471,63 @@ impl Parser<'_, '_> {
         }
 
         attributes
+    }
+
+    pub(crate) fn parse_path(&mut self) -> Path {
+        let mut path = SmallVec::new();
+        let mut last_was_scope = false;
+
+        loop {
+            match self.lexer.peek_t() {
+                Token::Name(name) => {
+                    if !last_was_scope && !path.is_empty() {
+                        break;
+                    }
+
+                    self.lexer.skip_tok();
+
+                    path.push(name);
+                    last_was_scope = false;
+                }
+
+                Token::Op(Op::Scope) => {
+                    if last_was_scope {
+                        error!(
+                            "[P????]: path: unexpected '::'\n--> {}",
+                            self.lexer.position()
+                        );
+                        return Path { path };
+                    }
+
+                    if path.is_empty() {
+                        path.push(IString::from(""));
+                    }
+
+                    self.lexer.skip_tok();
+                    last_was_scope = true;
+                }
+
+                _ => break,
+            }
+        }
+
+        if path.is_empty() {
+            error!(
+                "[P????]: path: expected at least one identifier in path\n--> {}",
+                self.lexer.position()
+            );
+            return Path { path };
+        }
+
+        if last_was_scope {
+            error!(
+                "[P????]: path: unexpected trailing '::'\n--> {}",
+                self.lexer.position()
+            );
+            return Path { path };
+        }
+
+        Path { path }
     }
 
     fn parse_type_info(&mut self) -> Option<Expr> {
