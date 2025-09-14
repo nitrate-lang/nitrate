@@ -515,8 +515,7 @@ impl Parser<'_, '_> {
             | Token::Op(_)
             | Token::Punct(_)
             | Token::Comment(_)
-            | Token::Eof
-            | Token::Illegal => {
+            | Token::Eof => {
                 self.lexer.skip_tok();
 
                 let bug = SyntaxBug::ExpectedItem(item_pos_begin);

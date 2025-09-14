@@ -1191,7 +1191,7 @@ impl<'a> Lexer<'a> {
                 _ => self.parse_operator_or_punctuation(),
             },
         }
-        .unwrap_or(Token::Illegal);
+        .unwrap_or(Token::Eof);
 
         let end_pos = self.reader_position();
 

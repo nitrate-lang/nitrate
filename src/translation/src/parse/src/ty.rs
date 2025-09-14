@@ -735,12 +735,6 @@ impl Parser<'_, '_> {
 
                 None
             }
-
-            Token::Illegal => {
-                error!("[P0???]: type: unexpected invalid token\n--> {current_pos}");
-
-                None
-            }
         };
 
         if must_preserve_generic_depth {

@@ -248,16 +248,6 @@ impl Parser<'_, '_> {
 
                 None
             }
-
-            Token::Illegal => {
-                self.set_failed_bit();
-                error!(
-                    "[P????]: expr: illegal token\n--> {}",
-                    self.lexer.position()
-                );
-
-                None
-            }
         }
     }
 

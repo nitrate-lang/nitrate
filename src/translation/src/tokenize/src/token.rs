@@ -411,7 +411,6 @@ pub enum Token {
     Punct(Punct),
     Op(Op),
     Eof,
-    Illegal,
 }
 
 impl std::fmt::Display for Token {
@@ -427,7 +426,6 @@ impl std::fmt::Display for Token {
             Token::Punct(p) => write!(f, "{p}"),
             Token::Op(op) => write!(f, "{op}"),
             Token::Eof => write!(f, ""),
-            Token::Illegal => write!(f, "<illegal>"),
         }
     }
 }
@@ -776,7 +774,6 @@ mod tests {
             (Token::Punct(Punct::LeftParen), "("),
             (Token::Op(Op::Add), "+"),
             (Token::Eof, ""),
-            (Token::Illegal, "<illegal>"),
         ];
 
         for (token, expected_str) in test_vectors {
@@ -871,12 +868,6 @@ mod tests {
                 SourcePosition::new(10, 0, 100, filename.clone()),
                 SourcePosition::new(10, 0, 100, filename.clone()),
                 "",
-            ),
-            (
-                Token::Illegal,
-                SourcePosition::new(11, 0, 110, filename.clone()),
-                SourcePosition::new(11, 8, 118, filename.clone()),
-                "<illegal>",
             ),
         ];
 
