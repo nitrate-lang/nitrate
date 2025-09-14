@@ -1,4 +1,4 @@
-use crate::bugs::SyntaxError;
+use crate::bugs::SyntaxBug;
 
 use super::parse::Parser;
 use log::error;
@@ -10,17 +10,11 @@ use nitrate_tokenize::{Keyword, Op, Punct, Token};
 
 impl Parser<'_, '_> {
     fn parse_generic_parameter(&mut self) -> Option<GenericParameter> {
-        // TODO: Cleanup
-
         let Some(name) = self.lexer.next_if_name() else {
-            self.bugs.push(&SyntaxError::NamelessGenericParameter(
-                self.lexer.position(),
+            self.bugs.push(&SyntaxBug::GenericParameterMissingName(
+                self.lexer.peek_pos(),
             ));
 
-            // error!(
-            //     "[P????]: generic parameter: expected parameter name\n--> {}",
-            //     self.lexer.sync_position()
-            // );
             return None;
         };
 

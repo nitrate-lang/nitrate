@@ -53,47 +53,62 @@ impl DiagnosticCollector {
         Severity::Error
     }
 
-    fn emit_info(&self, message: &str, id: &DiagnosticId, origin: &Origin) {
+    fn emit_info(&self, message: &str, id: &DiagnosticId, origin: &Origin, group: &str) {
         self.info_bit.store(true, Ordering::Release);
 
         match origin {
             Origin::None => {
-                info!(self.log, "info[E{:04X}]: {}", id.0, message);
+                info!(self.log, "info[E{:04X}]: {}: {}", id.0, group, message);
             }
 
             Origin::Unknown => {
-                info!(self.log, "info[E{:04X}]: {}\n--> ???", id.0, message);
+                info!(
+                    self.log,
+                    "info[E{:04X}]: {}: {}\n--> ???", id.0, group, message
+                );
             }
 
             Origin::Point(pos) => {
-                info!(self.log, "info[E{:04X}]: {}\n--> {}", id.0, message, pos);
+                info!(
+                    self.log,
+                    "info[E{:04X}]: {}: {}\n--> {}", id.0, group, message, pos
+                );
             }
 
             Origin::Span(span) => {
-                // TODO: Print the span nicely
-
                 info!(
                     self.log,
-                    "info[E{:04X}]: {}\n--> {}\n--> {}", id.0, message, span.start, span.end
+                    "info[E{:04X}]: {}: {}\n--> {}\n--> {}",
+                    id.0,
+                    group,
+                    message,
+                    span.start,
+                    span.end
                 );
             }
         }
     }
 
-    fn emit_warning(&self, message: &str, id: &DiagnosticId, origin: &Origin) {
+    fn emit_warning(&self, message: &str, id: &DiagnosticId, origin: &Origin, group: &str) {
         self.warning_bit.store(true, Ordering::Release);
 
         match origin {
             Origin::None => {
-                warn!(self.log, "warning[E{:04X}]: {}", id.0, message);
+                warn!(self.log, "warning[E{:04X}]: {}: {}", id.0, group, message);
             }
 
             Origin::Unknown => {
-                warn!(self.log, "warning[E{:04X}]: {}\n--> ???", id.0, message);
+                warn!(
+                    self.log,
+                    "warning[E{:04X}]: {}: {}\n--> ???", id.0, group, message
+                );
             }
 
             Origin::Point(pos) => {
-                warn!(self.log, "warning[E{:04X}]: {}\n--> {}", id.0, message, pos);
+                warn!(
+                    self.log,
+                    "warning[E{:04X}]: {}: {}\n--> {}", id.0, group, message, pos
+                );
             }
 
             Origin::Span(span) => {
@@ -101,26 +116,37 @@ impl DiagnosticCollector {
 
                 warn!(
                     self.log,
-                    "warning[E{:04X}]: {}\n--> {}\n--> {}", id.0, message, span.start, span.end
+                    "warning[E{:04X}]: {}: {}\n--> {}\n--> {}",
+                    id.0,
+                    group,
+                    message,
+                    span.start,
+                    span.end
                 );
             }
         }
     }
 
-    fn emit_error(&self, message: &str, id: &DiagnosticId, origin: &Origin) {
+    fn emit_error(&self, message: &str, id: &DiagnosticId, origin: &Origin, group: &str) {
         self.error_bit.store(true, Ordering::Release);
 
         match origin {
             Origin::None => {
-                error!(self.log, "error[E{:04X}]: {}", id.0, message);
+                error!(self.log, "error[E{:04X}]: {}: {}", id.0, group, message);
             }
 
             Origin::Unknown => {
-                error!(self.log, "error[E{:04X}]: {}\n--> ???", id.0, message);
+                error!(
+                    self.log,
+                    "error[E{:04X}]: {}: {}\n--> ???", id.0, group, message
+                );
             }
 
             Origin::Point(pos) => {
-                error!(self.log, "error[E{:04X}]: {}\n--> {}", id.0, message, pos);
+                error!(
+                    self.log,
+                    "error[E{:04X}]: {}: {}\n--> {}", id.0, group, message, pos
+                );
             }
 
             Origin::Span(span) => {
@@ -128,14 +154,20 @@ impl DiagnosticCollector {
 
                 error!(
                     self.log,
-                    "error[E{:04X}]: {}\n--> {}\n--> {}", id.0, message, span.start, span.end
+                    "error[E{:04X}]: {}: {}\n--> {}\n--> {}",
+                    id.0,
+                    group,
+                    message,
+                    span.start,
+                    span.end
                 );
             }
         }
     }
 
     pub fn push(&self, diag: &dyn FormattableDiagnosticGroup) {
-        let id = match DiagnosticId::new(diag.group_id(), diag.variant_id()) {
+        let gid = diag.group_id();
+        let id = match DiagnosticId::new(gid, diag.variant_id()) {
             Some(id) => id,
             None => DiagnosticId::UNKNOWN,
         };
@@ -145,17 +177,17 @@ impl DiagnosticCollector {
 
             Severity::Info => {
                 let fmt = diag.format();
-                self.emit_info(&fmt.message, &id, &fmt.origin);
+                self.emit_info(&fmt.message, &id, &fmt.origin, &gid.to_string());
             }
 
             Severity::Warning => {
                 let fmt = diag.format();
-                self.emit_warning(&fmt.message, &id, &fmt.origin);
+                self.emit_warning(&fmt.message, &id, &fmt.origin, &gid.to_string());
             }
 
             Severity::Error => {
                 let fmt = diag.format();
-                self.emit_error(&fmt.message, &id, &fmt.origin);
+                self.emit_error(&fmt.message, &id, &fmt.origin, &gid.to_string());
             }
         }
     }

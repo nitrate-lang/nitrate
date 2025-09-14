@@ -129,6 +129,12 @@ impl<'a> Lexer<'a> {
 
     #[inline(always)]
     #[must_use]
+    pub fn peek_pos(&mut self) -> SourcePosition {
+        self.peek_tok().start()
+    }
+
+    #[inline(always)]
+    #[must_use]
     pub fn is_eof(&mut self) -> bool {
         self.peek_t() == Token::Eof
     }

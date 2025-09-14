@@ -3,7 +3,7 @@ use nitrate_diagnosis::DiagnosticCollector;
 use nitrate_parsetree::kind::{Module, Package};
 use nitrate_tokenize::Lexer;
 
-use crate::bugs::SyntaxError;
+use crate::bugs::SyntaxBug;
 
 pub struct Parser<'a, 'bugs> {
     pub(crate) lexer: Lexer<'a>,
@@ -25,7 +25,7 @@ impl<'a, 'bugs> Parser<'a, 'bugs> {
     pub(crate) fn set_failed_bit(&mut self) {
         // TODO:
 
-        self.bugs.push(&SyntaxError::Test);
+        self.bugs.push(&SyntaxBug::Test);
     }
 
     pub fn parse_crate(&mut self, crate_name: IString) -> Package {
