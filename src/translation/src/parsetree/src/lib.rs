@@ -1,11 +1,11 @@
 #![warn(clippy::pedantic)]
 
-mod expression;
-mod items;
-mod types;
+mod expr;
+mod item;
+mod ty;
 
 pub mod kind {
-    pub use super::expression::*;
-    pub use super::types::*;
-    pub use crate::items::*;
+    pub use super::expr::*;
+    pub use super::ty::*;
+    pub use crate::item::*;
 }

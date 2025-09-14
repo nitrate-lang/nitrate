@@ -2,7 +2,7 @@ use super::parse::Parser;
 use log::error;
 use nitrate_parsetree::kind::{
     Block, EnumDefinition, EnumVariant, GenericParameter, GlobalVariable, Item, Module,
-    NamedFunction, Type, TypeAlias,
+    NamedFunction, StructDefinition, StructField, Type, TypeAlias,
 };
 use nitrate_tokenize::{Keyword, Op, Punct, Token};
 
@@ -222,18 +222,96 @@ impl Parser<'_> {
         })))
     }
 
-    fn parse_struct(&mut self) -> Option<Item> {
-        // TODO: struct parsing logic
-        self.set_failed_bit();
-        error!("Struct parsing not implemented yet");
-        None
+    fn parse_struct_field(&mut self) -> Option<StructField> {
+        let attributes = self.parse_attributes()?;
+
+        let Some(name) = self.lexer.next_if_name() else {
+            error!(
+                "[P????]: struct field: expected field name\n--> {}",
+                self.lexer.sync_position()
+            );
+            return None;
+        };
+
+        if !self.lexer.skip_if(&Token::Punct(Punct::Colon)) {
+            self.set_failed_bit();
+            error!(
+                "[P????]: struct field: expected colon\n--> {}",
+                self.lexer.sync_position()
+            );
+            return None;
+        }
+
+        let field_type = self.parse_type()?;
+
+        let default = if self.lexer.skip_if(&Token::Op(Op::Set)) {
+            Some(self.parse_expression()?)
+        } else {
+            None
+        };
+
+        Some(StructField {
+            attributes,
+            name,
+            field_type,
+            default,
+        })
     }
 
-    fn parse_class(&mut self) -> Option<Item> {
-        // TODO: class parsing logic
-        self.set_failed_bit();
-        error!("Class parsing not implemented yet");
-        None
+    fn parse_struct(&mut self) -> Option<Item> {
+        assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Struct));
+        self.lexer.skip_tok();
+
+        let attributes = self.parse_attributes()?;
+        let Some(name) = self.lexer.next_if_name() else {
+            error!(
+                "[P????]: struct: expected struct name\n--> {}",
+                self.lexer.sync_position()
+            );
+            return None;
+        };
+
+        let generic_parameters = self.parse_generic_parameters()?;
+
+        if !self.lexer.skip_if(&Token::Punct(Punct::LeftBrace)) {
+            self.set_failed_bit();
+            error!(
+                "[P????]: struct: expected opening brace\n--> {}",
+                self.lexer.sync_position()
+            );
+
+            return None;
+        }
+
+        let mut fields = Vec::new();
+
+        while !self.lexer.skip_if(&Token::Punct(Punct::RightBrace)) {
+            let Some(field) = self.parse_struct_field() else {
+                self.set_failed_bit();
+                break;
+            };
+
+            fields.push(field);
+
+            if !self.lexer.skip_if(&Token::Punct(Punct::Comma))
+                && !self.lexer.next_is(&Token::Punct(Punct::RightBrace))
+            {
+                self.set_failed_bit();
+                error!(
+                    "[P????]: struct: expected comma or closing brace\n--> {}",
+                    self.lexer.sync_position()
+                );
+                break;
+            }
+        }
+
+        Some(Item::StructDefinition(Box::new(StructDefinition {
+            attributes,
+            name,
+            type_params: generic_parameters,
+            fields,
+            methods: Vec::new(),
+        })))
     }
 
     fn parse_trait(&mut self) -> Option<Item> {
@@ -300,7 +378,7 @@ impl Parser<'_> {
     }
 
     fn parse_static_variable(&mut self) -> Option<Item> {
-        assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Let));
+        assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Static));
         self.lexer.skip_tok();
 
         let attributes = self.parse_attributes()?;
@@ -332,6 +410,15 @@ impl Parser<'_> {
             None
         };
 
+        if !self.lexer.skip_if(&Token::Punct(Punct::Semicolon)) {
+            self.set_failed_bit();
+            error!(
+                "[P????]: static: expected semicolon after variable declaration\n--> {}",
+                self.lexer.sync_position()
+            );
+            return None;
+        }
+
         Some(Item::GlobalVariable(Box::new(GlobalVariable {
             attributes: attributes,
             is_mutable,
@@ -347,7 +434,6 @@ impl Parser<'_> {
             Token::Keyword(Keyword::Type) => self.parse_type_alias(),
             Token::Keyword(Keyword::Enum) => self.parse_enum(),
             Token::Keyword(Keyword::Struct) => self.parse_struct(),
-            Token::Keyword(Keyword::Class) => self.parse_class(),
             Token::Keyword(Keyword::Trait) => self.parse_trait(),
             Token::Keyword(Keyword::Impl) => self.parse_implementation(),
             Token::Keyword(Keyword::Contract) => self.parse_contract(),
