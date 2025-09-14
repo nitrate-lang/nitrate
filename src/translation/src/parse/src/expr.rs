@@ -44,6 +44,8 @@ enum Operation {
     Index,
 }
 
+// TODO: Audit and convert diagnostics to use the bug collector
+
 fn get_precedence_of_operator(operator: Op) -> Option<(Associativity, Precedence)> {
     let (associativity, precedence) = match operator {
         Op::Scope => (Associativity::LeftToRight, PrecedenceRank::Scope),

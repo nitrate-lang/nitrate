@@ -9,6 +9,8 @@ use nitrate_parsetree::kind::{
 };
 use nitrate_tokenize::{Keyword, Op, Punct, Token};
 
+// TODO: Audit and convert diagnostics to use the bug collector
+
 #[allow(unused_imports)]
 use nitrate_tokenize::Lexer;
 

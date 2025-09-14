@@ -8,6 +8,8 @@ use nitrate_tokenize::{Keyword, Op, Punct, Token};
 
 impl Parser<'_, '_> {
     fn parse_generic_parameter(&mut self) -> Option<GenericParameter> {
+        // TODO: Cleanup
+
         let Some(name) = self.lexer.next_if_name() else {
             error!(
                 "[P????]: generic parameter: expected parameter name\n--> {}",
@@ -26,6 +28,8 @@ impl Parser<'_, '_> {
     }
 
     fn parse_generic_parameters(&mut self) -> Option<Vec<GenericParameter>> {
+        // TODO: Cleanup
+
         let mut params = Vec::new();
 
         if !self.lexer.skip_if(&Token::Op(Op::LogicLt)) {
@@ -64,6 +68,8 @@ impl Parser<'_, '_> {
     }
 
     fn parse_module(&mut self) -> Option<Item> {
+        // TODO: Cleanup
+
         assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Mod));
         self.lexer.skip_tok();
 
@@ -114,6 +120,8 @@ impl Parser<'_, '_> {
     }
 
     fn parse_type_alias(&mut self) -> Option<Item> {
+        // TODO: Cleanup
+
         assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Type));
         self.lexer.skip_tok();
 
@@ -137,6 +145,8 @@ impl Parser<'_, '_> {
     }
 
     fn parse_enum_variant(&mut self) -> Option<EnumVariant> {
+        // TODO: Cleanup
+
         let attributes = self.parse_attributes()?;
 
         let Some(name) = self.lexer.next_if_name() else {
@@ -168,6 +178,8 @@ impl Parser<'_, '_> {
     }
 
     fn parse_enum(&mut self) -> Option<Item> {
+        // TODO: Cleanup
+
         assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Enum));
         self.lexer.skip_tok();
 
@@ -223,6 +235,8 @@ impl Parser<'_, '_> {
     }
 
     fn parse_struct_field(&mut self) -> Option<StructField> {
+        // TODO: Cleanup
+
         let attributes = self.parse_attributes()?;
 
         let Some(name) = self.lexer.next_if_name() else {
@@ -259,6 +273,8 @@ impl Parser<'_, '_> {
     }
 
     fn parse_struct(&mut self) -> Option<Item> {
+        // TODO: Cleanup
+
         assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Struct));
         self.lexer.skip_tok();
 
@@ -336,6 +352,8 @@ impl Parser<'_, '_> {
     }
 
     fn parse_named_function(&mut self) -> Option<Item> {
+        // TODO: Cleanup
+
         assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Fn));
         self.lexer.skip_tok();
 
@@ -378,6 +396,8 @@ impl Parser<'_, '_> {
     }
 
     fn parse_static_variable(&mut self) -> Option<Item> {
+        // TODO: Cleanup
+
         assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Static));
         self.lexer.skip_tok();
 
@@ -429,6 +449,8 @@ impl Parser<'_, '_> {
     }
 
     pub(crate) fn parse_item(&mut self) -> Option<Item> {
+        // TODO: Cleanup
+
         match self.lexer.peek_t() {
             Token::Keyword(Keyword::Mod) => self.parse_module(),
             Token::Keyword(Keyword::Type) => self.parse_type_alias(),
