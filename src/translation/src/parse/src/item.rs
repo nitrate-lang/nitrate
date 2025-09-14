@@ -28,38 +28,24 @@ impl Parser<'_, '_> {
     }
 
     fn parse_generic_parameters(&mut self) -> Option<Vec<GenericParameter>> {
-        // TODO: Cleanup
-
         let mut params = Vec::new();
 
         if !self.lexer.skip_if(&Token::Op(Op::LogicLt)) {
             return Some(params);
         }
 
-        loop {
-            if self.lexer.skip_if(&Token::Op(Op::LogicGt)) {
-                break;
-            }
-
-            let Some(param) = self.parse_generic_parameter() else {
-                self.set_failed_bit();
-                error!(
-                    "[P????]: generic parameters: expected generic parameter\n--> {}",
-                    self.lexer.position()
-                );
-                return None;
-            };
-
+        while !self.lexer.skip_if(&Token::Op(Op::LogicGt)) {
+            let param = self.parse_generic_parameter()?;
             params.push(param);
 
             if !self.lexer.skip_if(&Token::Punct(Punct::Comma))
                 && !self.lexer.next_is(&Token::Op(Op::LogicGt))
             {
-                self.set_failed_bit();
-                error!(
-                    "[P????]: generic parameters: expected comma or closing angle bracket\n--> {}",
-                    self.lexer.position()
-                );
+                self.bugs
+                    .push(&SyntaxBug::ExpectedCommaOrClosingAngleBracket(
+                        self.lexer.peek_pos(),
+                    ));
+
                 return None;
             }
         }

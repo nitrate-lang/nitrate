@@ -4,6 +4,7 @@ use nitrate_diagnosis::{
 
 pub(crate) enum SyntaxBug {
     GenericParameterMissingName(SourcePosition),
+    ExpectedCommaOrClosingAngleBracket(SourcePosition),
     Test,
 }
 
@@ -15,7 +16,8 @@ impl FormattableDiagnosticGroup for SyntaxBug {
     fn variant_id(&self) -> u16 {
         match self {
             SyntaxBug::GenericParameterMissingName(_) => 0,
-            SyntaxBug::Test => 1,
+            SyntaxBug::ExpectedCommaOrClosingAngleBracket(_) => 1,
+            SyntaxBug::Test => 2,
         }
     }
 
@@ -23,7 +25,12 @@ impl FormattableDiagnosticGroup for SyntaxBug {
         match self {
             SyntaxBug::GenericParameterMissingName(pos) => DiagnosticInfo {
                 origin: Origin::Point(pos.to_owned()),
-                message: "Generic parameters must have a name".into(),
+                message: "Expected a name for the generic parameter".into(),
+            },
+
+            SyntaxBug::ExpectedCommaOrClosingAngleBracket(pos) => DiagnosticInfo {
+                origin: Origin::Point(pos.to_owned()),
+                message: "Expected a comma or closing angle bracket".into(),
             },
 
             SyntaxBug::Test => DiagnosticInfo {
