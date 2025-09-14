@@ -4,6 +4,12 @@ use interned_string::IString;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Package {
+    pub name: IString,
+    pub root: Module,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Module {
     pub attributes: Vec<Expr>,
     pub name: IString,
@@ -105,6 +111,7 @@ pub struct GlobalVariable {
 
 #[derive(Clone, Serialize, Deserialize)]
 pub enum Item {
+    Package(Box<Package>),
     Module(Box<Module>),
     Import(Box<Import>),
     TypeAlias(Box<TypeAlias>),
@@ -117,6 +124,7 @@ pub enum Item {
 impl std::fmt::Debug for Item {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
+            Item::Package(e) => e.fmt(f),
             Item::Module(e) => e.fmt(f),
             Item::Import(e) => e.fmt(f),
             Item::TypeAlias(e) => e.fmt(f),

@@ -51,7 +51,7 @@ fn program() -> Result<(), Error> {
         }
     };
 
-    let parse_result = match Parser::new(lexer).parse() {
+    let parse_result = match Parser::new(lexer).parse_crate(filename.to_owned().into()) {
         Ok(r) => r,
         Err(r) => r,
     };

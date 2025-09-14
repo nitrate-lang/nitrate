@@ -1,4 +1,5 @@
-use nitrate_parsetree::kind::Module;
+use interned_string::IString;
+use nitrate_parsetree::kind::{Module, Package};
 use nitrate_tokenize::Lexer;
 
 pub struct Parser<'a> {
@@ -18,21 +19,11 @@ impl<'a> Parser<'a> {
         }
     }
 
-    #[must_use]
-    pub fn has_failed(&self) -> bool {
-        self.failed_bit
-    }
-
     pub(crate) fn set_failed_bit(&mut self) {
         self.failed_bit = true;
     }
 
-    #[must_use]
-    pub fn is_supported(&self, language_version: (u32, u32)) -> bool {
-        matches!(language_version, (1, _))
-    }
-
-    pub fn parse(&mut self) -> Result<Module, Module> {
+    pub fn parse_crate(&mut self, crate_name: IString) -> Result<Package, Package> {
         let mut items = Vec::new();
 
         while !self.lexer.is_eof() {
@@ -48,16 +39,19 @@ impl<'a> Parser<'a> {
             items.push(item);
         }
 
-        let module = Module {
-            attributes: Vec::new(),
-            name: "".into(),
-            items,
+        let crate_item = Package {
+            name: crate_name,
+            root: Module {
+                attributes: Vec::new(),
+                name: "".into(),
+                items,
+            },
         };
 
-        if self.has_failed() {
-            Err(module)
+        if self.failed_bit {
+            Err(crate_item)
         } else {
-            Ok(module)
+            Ok(crate_item)
         }
     }
 }

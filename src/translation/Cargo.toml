@@ -14,3 +14,4 @@ nitrate_diagnosis = { path = "../diagnosis" }
 nitrate_optimization = { path = "../optimization" }
 threadpool_scope = "0.1.0"
 threadpool = "1.8.1"
+interned-string = { version = "0.3.0" }

@@ -888,6 +888,7 @@ dependencies = [
 name = "nitrate_translation"
 version = "0.1.0"
 dependencies = [
+ "interned-string",
  "nitrate_codegen",
  "nitrate_diagnosis",
  "nitrate_hir",

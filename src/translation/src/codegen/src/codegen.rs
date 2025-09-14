@@ -159,16 +159,16 @@ impl Codegen {
 
     pub fn generate(
         self,
-        module: &kind::Module,
+        package: &kind::Package,
         output: &mut dyn std::io::Write,
     ) -> Result<(), CodegenError> {
         let shared_flags = Self::create_shared_flags();
         let target_triple = Self::create_target_triple(&self.target_triple_string)?;
         let isa = Self::create_isa(shared_flags, target_triple, &self.isa_config)?;
 
-        let mut obj_module = Self::create_module(isa, &module.name)?;
+        let mut obj_module = Self::create_module(isa, &package.name)?;
 
-        for expression in &module.items {
+        for expression in &package.root.items {
             match expression {
                 kind::Item::NamedFunction(function) => {
                     Self::create_global_function(function, &mut obj_module)?;
