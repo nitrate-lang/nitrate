@@ -1,8 +1,9 @@
-use std::io::Read;
+use std::{fs::OpenOptions, io::Read};
 
 use nitrate_diagnosis::DiagnosticCollector;
 use nitrate_translation::{TranslationError, parse::Parser, tokenize::Lexer};
-use slog::{Drain, o};
+use slog::{Drain, Record, o};
+use slog_term::{RecordDecorator, ThreadSafeTimestampFn};
 
 #[derive(Debug)]
 enum Error {
@@ -10,6 +11,18 @@ enum Error {
     OpenInputFileFailed(std::io::Error),
     CreateOutputFileFailed(std::io::Error),
     ParseFailed(TranslationError),
+}
+
+pub fn custom_print_msg_header(
+    _fn_timestamp: &dyn ThreadSafeTimestampFn<Output = std::io::Result<()>>,
+    rd: &mut dyn RecordDecorator,
+    record: &Record,
+    _use_file_location: bool,
+) -> std::io::Result<bool> {
+    rd.start_msg()?;
+    write!(rd, "{}", record.msg())?;
+
+    Ok(true)
 }
 
 fn program() -> Result<(), Error> {
@@ -20,12 +33,13 @@ fn program() -> Result<(), Error> {
         .init();
 
     let args: Vec<String> = std::env::args().collect();
-    if args.len() < 3 {
+    if args.len() < 4 {
         return Err(Error::NotEnoughArguments);
     }
 
     let filename = &args[1];
     let target_filename = &args[2];
+    let error_filename = &args[3];
 
     let mut file = match std::fs::File::open(filename) {
         Ok(f) => f,
@@ -53,8 +67,18 @@ fn program() -> Result<(), Error> {
         }
     };
 
-    let decorator = slog_term::TermDecorator::new().build();
-    let drain = slog_term::FullFormat::new(decorator).build().fuse();
+    let file = OpenOptions::new()
+        .create(true)
+        .write(true)
+        .truncate(true)
+        .open(error_filename)
+        .unwrap();
+
+    let decorator = slog_term::PlainDecorator::new(file);
+    let drain = slog_term::FullFormat::new(decorator)
+        .use_custom_header_print(custom_print_msg_header)
+        .build()
+        .fuse();
     let drain = slog_async::Async::new(drain).build().fuse();
     let log = slog::Logger::root(drain, o!());
     let bugs = DiagnosticCollector::new(log);
@@ -73,7 +97,9 @@ fn main() -> () {
         Ok(()) => return,
 
         Err(Error::NotEnoughArguments) => {
-            eprintln!("Not enough arguments. Usage: nitrate-parse <input-file> <output-file>");
+            eprintln!(
+                "Not enough arguments. Usage: nitrate-parse <input-file> <output-ast-json> <output-error-file>"
+            );
         }
         Err(Error::OpenInputFileFailed(io)) => {
             eprintln!("Failed to open input file: {}", io);

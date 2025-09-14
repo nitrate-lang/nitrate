@@ -58,15 +58,15 @@ impl DiagnosticCollector {
 
         match origin {
             Origin::None => {
-                info!(self.log, "info[E{}]: {}", id.0, message);
+                info!(self.log, "info[E{:04X}]: {}", id.0, message);
             }
 
             Origin::Unknown => {
-                info!(self.log, "info[E{}]: {}\n--> ???", id.0, message);
+                info!(self.log, "info[E{:04X}]: {}\n--> ???", id.0, message);
             }
 
             Origin::Point(pos) => {
-                info!(self.log, "info[E{}]: {}\n--> {}", id.0, message, pos);
+                info!(self.log, "info[E{:04X}]: {}\n--> {}", id.0, message, pos);
             }
 
             Origin::Span(span) => {
@@ -74,7 +74,7 @@ impl DiagnosticCollector {
 
                 info!(
                     self.log,
-                    "info[E{}]: {}\n--> {}\n--> {}", id.0, message, span.start, span.end
+                    "info[E{:04X}]: {}\n--> {}\n--> {}", id.0, message, span.start, span.end
                 );
             }
         }
@@ -85,15 +85,15 @@ impl DiagnosticCollector {
 
         match origin {
             Origin::None => {
-                warn!(self.log, "warning[E{}]: {}", id.0, message);
+                warn!(self.log, "warning[E{:04X}]: {}", id.0, message);
             }
 
             Origin::Unknown => {
-                warn!(self.log, "warning[E{}]: {}\n--> ???", id.0, message);
+                warn!(self.log, "warning[E{:04X}]: {}\n--> ???", id.0, message);
             }
 
             Origin::Point(pos) => {
-                warn!(self.log, "warning[E{}]: {}\n--> {}", id.0, message, pos);
+                warn!(self.log, "warning[E{:04X}]: {}\n--> {}", id.0, message, pos);
             }
 
             Origin::Span(span) => {
@@ -101,7 +101,7 @@ impl DiagnosticCollector {
 
                 warn!(
                     self.log,
-                    "warning[E{}]: {}\n--> {}\n--> {}", id.0, message, span.start, span.end
+                    "warning[E{:04X}]: {}\n--> {}\n--> {}", id.0, message, span.start, span.end
                 );
             }
         }
@@ -112,15 +112,15 @@ impl DiagnosticCollector {
 
         match origin {
             Origin::None => {
-                error!(self.log, "error[E{}]: {}", id.0, message);
+                error!(self.log, "error[E{:04X}]: {}", id.0, message);
             }
 
             Origin::Unknown => {
-                error!(self.log, "error[E{}]: {}\n--> ???", id.0, message);
+                error!(self.log, "error[E{:04X}]: {}\n--> ???", id.0, message);
             }
 
             Origin::Point(pos) => {
-                error!(self.log, "error[E{}]: {}\n--> {}", id.0, message, pos);
+                error!(self.log, "error[E{:04X}]: {}\n--> {}", id.0, message, pos);
             }
 
             Origin::Span(span) => {
@@ -128,7 +128,7 @@ impl DiagnosticCollector {
 
                 error!(
                     self.log,
-                    "error[E{}]: {}\n--> {}\n--> {}", id.0, message, span.start, span.end
+                    "error[E{:04X}]: {}\n--> {}\n--> {}", id.0, message, span.start, span.end
                 );
             }
         }

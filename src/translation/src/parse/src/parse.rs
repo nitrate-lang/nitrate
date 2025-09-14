@@ -5,11 +5,11 @@ use nitrate_tokenize::Lexer;
 
 use crate::bugs::SyntaxError;
 
-pub struct Parser<'a, 'chan> {
+pub struct Parser<'a, 'bugs> {
     pub(crate) lexer: Lexer<'a>,
     pub(crate) generic_type_depth: i64,
     pub(crate) generic_type_suffix_terminator_ambiguity: bool,
-    pub(crate) bugs: &'chan DiagnosticCollector,
+    pub(crate) bugs: &'bugs DiagnosticCollector,
 }
 
 impl<'a, 'bugs> Parser<'a, 'bugs> {
@@ -26,8 +26,6 @@ impl<'a, 'bugs> Parser<'a, 'bugs> {
         // TODO:
 
         self.bugs.emit(&SyntaxError::Test);
-
-        todo!();
     }
 
     pub fn parse_crate(&mut self, crate_name: IString) -> Package {
