@@ -812,6 +812,7 @@ dependencies = [
 name = "nitrate_diagnosis"
 version = "0.1.0"
 dependencies = [
+ "interned-string",
  "nitrate_parsetree",
  "slog",
 ]
@@ -844,6 +845,7 @@ dependencies = [
  "hashbrown 0.16.0",
  "interned-string",
  "log",
+ "nitrate_diagnosis",
  "nitrate_parsetree",
  "nitrate_tokenize",
  "ordered-float",

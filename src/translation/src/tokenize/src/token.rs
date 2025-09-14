@@ -433,9 +433,9 @@ impl std::fmt::Display for Token {
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash, Serialize, Deserialize)]
 pub struct SourcePosition {
-    line: u32,   // zero-based unicode-aware line number
-    column: u32, // zero-based unicode-aware column number
-    offset: u32, // zero-based raw byte offset number
+    line: u32,
+    column: u32,
+    offset: u32,
     filename: IString,
 }
 

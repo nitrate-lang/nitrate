@@ -6,3 +6,4 @@ edition = "2024"
 [dependencies]
 nitrate_parsetree = { path = "../translation/src/parsetree" }
 slog = "2.7.0"
+interned-string = { version = "0.3.0" }

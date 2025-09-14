@@ -1,8 +1,13 @@
 use std::num::NonZero;
 
 use interned_string::IString;
-use nitrate_diagnosis::{Diagnose, DiagnosticDrain};
+use nitrate_diagnosis::DiagnosticDrain;
 use nitrate_optimization::FunctionOptimization;
+use nitrate_parsetree::kind::Package;
+
+pub trait Diagnose {
+    fn diagnose(&self, package: &Package, drain: &DiagnosticDrain);
+}
 
 #[derive(Default)]
 pub struct OptimizationOptions {}

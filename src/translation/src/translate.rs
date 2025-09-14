@@ -1,7 +1,7 @@
-use crate::{TranslationOptions, TranslationOptionsBuilder};
+use crate::{TranslationOptions, TranslationOptionsBuilder, options::Diagnose};
 use interned_string::IString;
 use nitrate_codegen::{Codegen, CodegenError};
-use nitrate_diagnosis::{Diagnose, DiagnosticDrain};
+use nitrate_diagnosis::DiagnosticDrain;
 use nitrate_parse::Parser;
 use nitrate_parsetree::kind::Package;
 use nitrate_tokenize::Lexer;
@@ -152,7 +152,7 @@ pub fn compile_code(
 
     diagnose_problems(&package, &options.diagnostic_passes, drain, &pool);
 
-    if drain.any_errors() {
+    if drain.error_bit() {
         return Err(TranslationError::DiagnosticError);
     }
 

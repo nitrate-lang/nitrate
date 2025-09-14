@@ -1,5 +1,8 @@
-mod diagnose_trait;
+mod diagnostic;
 mod drain;
 
-pub use diagnose_trait::Diagnose;
+pub use diagnostic::{
+    DiagnosticGroupId, DiagnosticId, DiagnosticInfo, FormattableDiagnosticGroup, Origin,
+    SourcePosition, Span,
+};
 pub use drain::DiagnosticDrain;
