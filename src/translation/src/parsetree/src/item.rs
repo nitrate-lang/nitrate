@@ -121,6 +121,8 @@ pub struct GlobalVariable {
 
 #[derive(Clone, Serialize, Deserialize)]
 pub enum Item {
+    SyntaxError,
+
     Package(Box<Package>),
     Module(Box<Module>),
     Import(Box<Import>),
@@ -137,6 +139,8 @@ pub enum Item {
 impl std::fmt::Debug for Item {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
+            Item::SyntaxError => write!(f, "SyntaxError"),
+
             Item::Package(e) => e.fmt(f),
             Item::Module(e) => e.fmt(f),
             Item::Import(e) => e.fmt(f),

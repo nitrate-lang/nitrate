@@ -377,6 +377,8 @@ pub struct Call {
 
 #[derive(Clone, Serialize, Deserialize)]
 pub enum Expr {
+    SyntaxError,
+
     Parentheses(Box<Expr>),
 
     Boolean(bool),
@@ -428,6 +430,8 @@ impl Expr {
 impl std::fmt::Debug for Expr {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
+            Expr::SyntaxError => write!(f, "SyntaxError"),
+
             Expr::Parentheses(e) => f.debug_struct("Parentheses").field("expr", e).finish(),
 
             Expr::Boolean(e) => e.fmt(f),

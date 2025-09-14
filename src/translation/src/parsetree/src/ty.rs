@@ -76,6 +76,8 @@ pub struct StructType {
 
 #[derive(Clone, Serialize, Deserialize)]
 pub enum Type {
+    SyntaxError,
+
     Bool,
     UInt8,
     UInt16,
@@ -112,6 +114,8 @@ pub enum Type {
 impl std::fmt::Debug for Type {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
+            Type::SyntaxError => write!(f, "SyntaxError"),
+
             Type::Bool => write!(f, "bool"),
             Type::UInt8 => write!(f, "u8"),
             Type::UInt16 => write!(f, "u16"),
