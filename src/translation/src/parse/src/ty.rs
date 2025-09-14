@@ -760,7 +760,7 @@ impl Parser<'_> {
         result
     }
 
-    pub fn parse_type(&mut self) -> Option<Type> {
+    pub(crate) fn parse_type(&mut self) -> Option<Type> {
         /*
          * The syntax for defining a type is as follows:
          * <type>

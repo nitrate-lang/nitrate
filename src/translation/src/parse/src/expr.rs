@@ -379,7 +379,7 @@ impl Parser<'_> {
         }
     }
 
-    pub fn parse_expression(&mut self) -> Option<Expr> {
+    pub(crate) fn parse_expression(&mut self) -> Option<Expr> {
         self.parse_expression_precedence(Precedence::MIN)
     }
 

@@ -1,10 +1,10 @@
 // #![warn(clippy::pedantic)]
 
-mod expression;
-mod items;
+mod expr;
+mod item;
 mod parse;
 mod symbol_table;
-mod types;
+mod ty;
 
 pub use parse::Parser;
 pub use symbol_table::SymbolTable;
