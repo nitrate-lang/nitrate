@@ -31,7 +31,6 @@ enum PrecedenceRank {
     Unary,
     FunctionCallAndIndexing,
     FieldAccess,
-    Scope,
 }
 
 #[derive(PartialEq, PartialOrd, Eq, Clone, Copy)]
@@ -48,8 +47,6 @@ enum Operation {
 
 fn get_precedence_of_binary_operator(op: BinExprOp) -> Option<(Associativity, Precedence)> {
     let (associativity, precedence) = match op {
-        BinExprOp::Scope => (Associativity::LeftToRight, PrecedenceRank::Scope),
-
         BinExprOp::Dot | BinExprOp::Arrow => {
             (Associativity::LeftToRight, PrecedenceRank::FieldAccess)
         }
@@ -101,7 +98,7 @@ fn get_precedence_of_binary_operator(op: BinExprOp) -> Option<(Associativity, Pr
         | BinExprOp::SetLogicOr
         | BinExprOp::SetLogicXor => (Associativity::RightToLeft, PrecedenceRank::Assign),
 
-        BinExprOp::Ellipsis | BinExprOp::BlockArrow => {
+        BinExprOp::Ellipsis => {
             return None;
         }
     };
@@ -122,8 +119,6 @@ fn get_precedence(operation: Operation) -> Option<(Associativity, Precedence)> {
 
 impl Parser<'_, '_> {
     fn detect_and_parse_unary_operator(&mut self) -> Option<UnaryExprOp> {
-        // TODO: Cleanup
-
         match self.lexer.peek_t() {
             Token::Plus => {
                 self.lexer.skip_tok();
@@ -162,69 +157,220 @@ impl Parser<'_, '_> {
 
             _ => None,
         }
-
-        // TODO: Implement
     }
 
     fn detect_and_parse_binary_operator(&mut self) -> Option<BinExprOp> {
-        // TODO: Cleanup
-        // TODO: Implement
-        None
+        match self.lexer.peek_t() {
+            Token::Bang => {
+                self.lexer.skip_tok();
+                Some(BinExprOp::LogicNe)
+            }
+
+            Token::Percent => {
+                self.lexer.skip_tok();
+                if self.lexer.skip_if(&Token::Eq) {
+                    Some(BinExprOp::SetPercent)
+                } else {
+                    Some(BinExprOp::Mod)
+                }
+            }
+
+            Token::And => {
+                self.lexer.skip_tok();
+                if self.lexer.skip_if(&Token::And) {
+                    if self.lexer.skip_if(&Token::Eq) {
+                        Some(BinExprOp::SetLogicAnd)
+                    } else {
+                        Some(BinExprOp::LogicAnd)
+                    }
+                } else if self.lexer.skip_if(&Token::Eq) {
+                    Some(BinExprOp::SetBitAnd)
+                } else {
+                    Some(BinExprOp::BitAnd)
+                }
+            }
+
+            Token::Star => {
+                self.lexer.skip_tok();
+                if self.lexer.skip_if(&Token::Eq) {
+                    Some(BinExprOp::SetTimes)
+                } else {
+                    Some(BinExprOp::Mul)
+                }
+            }
+
+            Token::Plus => {
+                self.lexer.skip_tok();
+                if self.lexer.skip_if(&Token::Eq) {
+                    Some(BinExprOp::SetPlus)
+                } else {
+                    Some(BinExprOp::Add)
+                }
+            }
+
+            Token::Minus => {
+                self.lexer.skip_tok();
+                if self.lexer.skip_if(&Token::Eq) {
+                    Some(BinExprOp::SetMinus)
+                } else if self.lexer.skip_if(&Token::Gt) {
+                    Some(BinExprOp::Arrow)
+                } else {
+                    Some(BinExprOp::Sub)
+                }
+            }
+
+            Token::Dot => {
+                self.lexer.skip_tok();
+                if self.lexer.skip_if(&Token::Dot) {
+                    if self.lexer.skip_if(&Token::Dot) {
+                        Some(BinExprOp::Ellipsis)
+                    } else {
+                        Some(BinExprOp::Range)
+                    }
+                } else {
+                    Some(BinExprOp::Dot)
+                }
+            }
+
+            Token::Slash => {
+                self.lexer.skip_tok();
+                if self.lexer.skip_if(&Token::Eq) {
+                    Some(BinExprOp::SetSlash)
+                } else {
+                    Some(BinExprOp::Div)
+                }
+            }
+
+            Token::Lt => {
+                self.lexer.skip_tok();
+                if self.lexer.skip_if(&Token::Lt) {
+                    if self.lexer.skip_if(&Token::Lt) {
+                        if self.lexer.skip_if(&Token::Eq) {
+                            Some(BinExprOp::SetBitRotl)
+                        } else {
+                            Some(BinExprOp::BitRol)
+                        }
+                    } else if self.lexer.skip_if(&Token::Eq) {
+                        Some(BinExprOp::SetBitShl)
+                    } else {
+                        Some(BinExprOp::BitShl)
+                    }
+                } else if self.lexer.skip_if(&Token::Eq) {
+                    Some(BinExprOp::LogicLe)
+                } else {
+                    Some(BinExprOp::LogicLt)
+                }
+            }
+
+            Token::Eq => {
+                self.lexer.skip_tok();
+                if self.lexer.skip_if(&Token::Eq) {
+                    Some(BinExprOp::LogicEq)
+                } else {
+                    Some(BinExprOp::Set)
+                }
+            }
+
+            Token::Gt => {
+                self.lexer.skip_tok();
+                if self.lexer.skip_if(&Token::Gt) {
+                    if self.lexer.skip_if(&Token::Gt) {
+                        if self.lexer.skip_if(&Token::Eq) {
+                            Some(BinExprOp::SetBitRotr)
+                        } else {
+                            Some(BinExprOp::BitRor)
+                        }
+                    } else if self.lexer.skip_if(&Token::Eq) {
+                        Some(BinExprOp::SetBitShr)
+                    } else {
+                        Some(BinExprOp::BitShr)
+                    }
+                } else if self.lexer.skip_if(&Token::Eq) {
+                    Some(BinExprOp::LogicGe)
+                } else {
+                    Some(BinExprOp::LogicGt)
+                }
+            }
+
+            Token::Caret => {
+                self.lexer.skip_tok();
+                if self.lexer.skip_if(&Token::Eq) {
+                    Some(BinExprOp::SetBitXor)
+                } else if self.lexer.skip_if(&Token::Caret) {
+                    if self.lexer.skip_if(&Token::Eq) {
+                        Some(BinExprOp::SetLogicXor)
+                    } else {
+                        Some(BinExprOp::LogicXor)
+                    }
+                } else {
+                    Some(BinExprOp::BitXor)
+                }
+            }
+
+            Token::Keyword(Keyword::As) => {
+                self.lexer.skip_tok();
+                Some(BinExprOp::As)
+            }
+
+            Token::Or => {
+                self.lexer.skip_tok();
+                if self.lexer.skip_if(&Token::Eq) {
+                    Some(BinExprOp::SetBitOr)
+                } else if self.lexer.skip_if(&Token::Or) {
+                    if self.lexer.skip_if(&Token::Eq) {
+                        Some(BinExprOp::SetLogicOr)
+                    } else {
+                        Some(BinExprOp::LogicOr)
+                    }
+                } else {
+                    Some(BinExprOp::BitOr)
+                }
+            }
+
+            _ => None,
+        }
     }
 
-    fn parse_expression_primary(&mut self) -> Option<Expr> {
-        // TODO: Cleanup
-
+    fn parse_expression_primary(&mut self) -> Expr {
         match self.lexer.peek_t() {
             Token::Integer(int) => {
                 self.lexer.skip_tok();
-                let lit = Expr::Integer(Box::new(Integer {
+                self.parse_literal_suffix(Expr::Integer(Box::new(Integer {
                     value: int.value(),
                     kind: int.kind(),
-                }));
-
-                Some(self.parse_literal_suffix(lit))
+                })))
             }
 
             Token::Float(float) => {
                 self.lexer.skip_tok();
-                let lit = Expr::Float(float);
-                Some(self.parse_literal_suffix(lit))
+                self.parse_literal_suffix(Expr::Float(float))
             }
 
             Token::String(string) => {
                 self.lexer.skip_tok();
-                let lit = Expr::String(string);
-                Some(self.parse_literal_suffix(lit))
+                self.parse_literal_suffix(Expr::String(string))
             }
 
             Token::BString(data) => {
                 self.lexer.skip_tok();
-                let lit = Expr::BString(Box::new(data));
-                Some(self.parse_literal_suffix(lit))
-            }
-
-            Token::OpenBracket => self.parse_list(),
-
-            Token::Name(_) | Token::Colon => {
-                let path = self.parse_path();
-                Some(Expr::Path(Box::new(path)))
+                self.parse_literal_suffix(Expr::BString(Box::new(data)))
             }
 
             Token::Keyword(Keyword::True) => {
                 self.lexer.skip_tok();
-                Some(Expr::Boolean(true))
+                Expr::Boolean(true)
             }
 
             Token::Keyword(Keyword::False) => {
                 self.lexer.skip_tok();
-                Some(Expr::Boolean(false))
+                Expr::Boolean(false)
             }
 
+            Token::OpenBracket => self.parse_list(),
+            Token::Name(_) | Token::Colon => Expr::Path(Box::new(self.parse_path())),
+
             Token::Keyword(Keyword::Type) => self.parse_type_info(),
-
             Token::Keyword(Keyword::Fn) | Token::OpenBrace => self.parse_anonymous_function(),
-
             Token::Keyword(Keyword::If) => self.parse_if(),
             Token::Keyword(Keyword::For) => self.parse_for(),
             Token::Keyword(Keyword::While) => self.parse_while(),
@@ -242,21 +388,17 @@ impl Parser<'_, '_> {
                 let bug = SyntaxBug::ExpectedExpr(self.lexer.peek_pos());
                 self.bugs.push(&bug);
 
-                None
+                Expr::SyntaxError
             }
         }
     }
 
-    fn parse_prefix(&mut self) -> Option<Expr> {
+    fn parse_prefix(&mut self) -> Expr {
         if let Some(operator) = self.detect_and_parse_unary_operator() {
             let precedence = PrecedenceRank::Unary as Precedence;
-            let operand = self.parse_expression_precedence(precedence)?;
+            let operand = self.parse_expression_precedence(precedence);
 
-            return Some(Expr::UnaryExpr(Box::new(UnaryExpr {
-                operator,
-                operand,
-                is_postfix: false,
-            })));
+            return Expr::UnaryExpr(Box::new(UnaryExpr { operator, operand }));
         }
 
         if self.lexer.skip_if(&Token::OpenParen) {
@@ -267,33 +409,30 @@ impl Parser<'_, '_> {
                 self.bugs.push(&bug);
             }
 
-            return Some(Expr::Parentheses(Box::new(inner)));
+            return Expr::Parentheses(Box::new(inner));
         }
 
         self.parse_expression_primary()
     }
 
-    fn parse_expression_precedence(
-        &mut self,
-        min_precedence_to_proceed: Precedence,
-    ) -> Option<Expr> {
-        let mut sofar = self.parse_prefix()?;
+    fn parse_expression_precedence(&mut self, min_precedence_to_proceed: Precedence) -> Expr {
+        let mut sofar = self.parse_prefix();
 
         loop {
             if let Some(operator) = self.detect_and_parse_binary_operator() {
                 let operation = Operation::BinOp(operator);
                 let Some((assoc, op_precedence)) = get_precedence(operation) else {
-                    return Some(sofar);
+                    return sofar;
                 };
 
                 if op_precedence < min_precedence_to_proceed {
-                    return Some(sofar);
+                    return sofar;
                 }
 
                 let right_expr = if assoc == Associativity::LeftToRight {
-                    self.parse_expression_precedence(op_precedence + 1)?
+                    self.parse_expression_precedence(op_precedence + 1)
                 } else {
-                    self.parse_expression_precedence(op_precedence)?
+                    self.parse_expression_precedence(op_precedence)
                 };
 
                 sofar = Expr::BinExpr(Box::new(BinExpr {
@@ -306,14 +445,14 @@ impl Parser<'_, '_> {
                     Token::OpenParen => {
                         let operation = Operation::FunctionCall;
                         let Some((_, new_precedence)) = get_precedence(operation) else {
-                            return Some(sofar);
+                            return sofar;
                         };
 
                         if new_precedence < min_precedence_to_proceed {
-                            return Some(sofar);
+                            return sofar;
                         }
 
-                        let arguments = self.parse_function_arguments()?;
+                        let arguments = self.parse_function_arguments();
 
                         sofar = Expr::Call(Box::new(Call {
                             callee: sofar,
@@ -324,11 +463,11 @@ impl Parser<'_, '_> {
                     Token::OpenBracket => {
                         let operation = Operation::Index;
                         let Some((_, new_precedence)) = get_precedence(operation) else {
-                            return Some(sofar);
+                            return sofar;
                         };
 
                         if new_precedence < min_precedence_to_proceed {
-                            return Some(sofar);
+                            return sofar;
                         }
 
                         self.lexer.skip_tok();
@@ -347,52 +486,46 @@ impl Parser<'_, '_> {
                     }
 
                     _ => {
-                        return Some(sofar);
+                        return sofar;
                     }
                 }
             }
         }
     }
 
-    fn parse_literal_suffix(&mut self, lit: Expr) -> Expr {
-        // TODO: Cleanup
+    fn parse_literal_suffix(&mut self, value: Expr) -> Expr {
+        let suffix = match self.lexer.peek_t() {
+            Token::Keyword(Keyword::Bool) => Type::Bool,
+            Token::Keyword(Keyword::U8) => Type::UInt8,
+            Token::Keyword(Keyword::U16) => Type::UInt16,
+            Token::Keyword(Keyword::U32) => Type::UInt32,
+            Token::Keyword(Keyword::U64) => Type::UInt64,
+            Token::Keyword(Keyword::U128) => Type::UInt128,
+            Token::Keyword(Keyword::I8) => Type::Int8,
+            Token::Keyword(Keyword::I16) => Type::Int16,
+            Token::Keyword(Keyword::I32) => Type::Int32,
+            Token::Keyword(Keyword::I64) => Type::Int64,
+            Token::Keyword(Keyword::I128) => Type::Int128,
+            Token::Keyword(Keyword::F8) => Type::Float8,
+            Token::Keyword(Keyword::F16) => Type::Float16,
+            Token::Keyword(Keyword::F32) => Type::Float32,
+            Token::Keyword(Keyword::F64) => Type::Float64,
+            Token::Keyword(Keyword::F128) => Type::Float128,
 
-        let type_name = match self.lexer.peek_t() {
-            Token::Name(name) => Some(Type::TypeName(Box::new(Path {
+            Token::Name(name) => Type::TypeName(Box::new(Path {
                 path: smallvec![name],
                 type_arguments: Vec::new(),
-            }))),
+            })),
 
-            Token::Keyword(Keyword::Bool) => Some(Type::Bool),
-            Token::Keyword(Keyword::U8) => Some(Type::UInt8),
-            Token::Keyword(Keyword::U16) => Some(Type::UInt16),
-            Token::Keyword(Keyword::U32) => Some(Type::UInt32),
-            Token::Keyword(Keyword::U64) => Some(Type::UInt64),
-            Token::Keyword(Keyword::U128) => Some(Type::UInt128),
-            Token::Keyword(Keyword::I8) => Some(Type::Int8),
-            Token::Keyword(Keyword::I16) => Some(Type::Int16),
-            Token::Keyword(Keyword::I32) => Some(Type::Int32),
-            Token::Keyword(Keyword::I64) => Some(Type::Int64),
-            Token::Keyword(Keyword::I128) => Some(Type::Int128),
-            Token::Keyword(Keyword::F8) => Some(Type::Float8),
-            Token::Keyword(Keyword::F16) => Some(Type::Float16),
-            Token::Keyword(Keyword::F32) => Some(Type::Float32),
-            Token::Keyword(Keyword::F64) => Some(Type::Float64),
-            Token::Keyword(Keyword::F128) => Some(Type::Float128),
-
-            _ => None,
+            _ => return value,
         };
 
-        if let Some(to) = type_name {
-            self.lexer.skip_tok();
+        self.lexer.skip_tok();
 
-            Expr::Cast(Box::new(Cast { value: lit, to: to }))
-        } else {
-            lit
-        }
+        Expr::Cast(Box::new(Cast { value, to: suffix }))
     }
 
-    fn parse_list(&mut self) -> Option<Expr> {
+    fn parse_list(&mut self) -> Expr {
         // TODO: Cleanup
 
         assert!(self.lexer.peek_t() == Token::OpenBracket);
@@ -417,11 +550,11 @@ impl Parser<'_, '_> {
                     self.lexer.current_pos()
                 );
 
-                return None;
+                todo!()
             }
         }
 
-        Some(Expr::List(Box::new(List { elements })))
+        Expr::List(Box::new(List { elements }))
     }
 
     pub(crate) fn parse_attributes(&mut self) -> Vec<Expr> {
@@ -595,7 +728,7 @@ impl Parser<'_, '_> {
         }
     }
 
-    fn parse_type_info(&mut self) -> Option<Expr> {
+    fn parse_type_info(&mut self) -> Expr {
         // TODO: Cleanup
 
         assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Type));
@@ -603,10 +736,10 @@ impl Parser<'_, '_> {
 
         let of = self.parse_type();
 
-        Some(Expr::TypeInfo(Box::new(of)))
+        Expr::TypeInfo(Box::new(of))
     }
 
-    fn parse_if(&mut self) -> Option<Expr> {
+    fn parse_if(&mut self) -> Expr {
         // TODO: Cleanup
 
         assert!(self.lexer.peek_t() == Token::Keyword(Keyword::If));
@@ -617,13 +750,7 @@ impl Parser<'_, '_> {
 
         let else_branch = if self.lexer.skip_if(&Token::Keyword(Keyword::Else)) {
             if self.lexer.next_is(&Token::Keyword(Keyword::If)) {
-                let Some(else_if_branch) = self.parse_if() else {
-                    error!(
-                        "[P????]: if: expected else block after 'else if'\n--> {}",
-                        self.lexer.current_pos()
-                    );
-                    return None;
-                };
+                let else_if_branch = self.parse_if();
 
                 Some(Block {
                     elements: vec![else_if_branch],
@@ -636,14 +763,14 @@ impl Parser<'_, '_> {
             None
         };
 
-        Some(Expr::If(Box::new(If {
+        Expr::If(Box::new(If {
             condition,
             then_branch,
             else_branch,
-        })))
+        }))
     }
 
-    fn parse_for_bindings(&mut self) -> Option<Vec<(IString, Option<Type>)>> {
+    fn parse_for_bindings(&mut self) -> Vec<(IString, Option<Type>)> {
         // TODO: Cleanup
 
         let mut bindings = Vec::new();
@@ -661,7 +788,7 @@ impl Parser<'_, '_> {
                         "[P????]: for: expected loop variable name\n--> {}",
                         self.lexer.current_pos()
                     );
-                    return None;
+                    todo!()
                 };
 
                 let type_annotation = if self.lexer.skip_if(&Token::Colon) {
@@ -678,7 +805,7 @@ impl Parser<'_, '_> {
                         self.lexer.current_pos()
                     );
 
-                    return None;
+                    todo!()
                 }
             }
         } else {
@@ -687,7 +814,8 @@ impl Parser<'_, '_> {
                     "[P????]: for: expected loop variable name\n--> {}",
                     self.lexer.current_pos()
                 );
-                return None;
+
+                todo!()
             };
 
             let type_annotation = if self.lexer.skip_if(&Token::Colon) {
@@ -699,38 +827,39 @@ impl Parser<'_, '_> {
             bindings.push((variable_name, type_annotation));
         }
 
-        Some(bindings)
+        bindings
     }
 
-    fn parse_for(&mut self) -> Option<Expr> {
+    fn parse_for(&mut self) -> Expr {
         // TODO: Cleanup
 
         assert!(self.lexer.peek_t() == Token::Keyword(Keyword::For));
         self.lexer.skip_tok();
 
         let attributes = self.parse_attributes();
-        let bindings = self.parse_for_bindings()?;
+        let bindings = self.parse_for_bindings();
 
         if !self.lexer.skip_if(&Token::Keyword(Keyword::In)) {
             error!(
                 "[P????]: for: expected 'in' after loop variable\n--> {}",
                 self.lexer.current_pos()
             );
-            return None;
+
+            todo!()
         }
 
         let iterable = self.parse_expression();
         let body = self.parse_block();
 
-        Some(Expr::ForEach(Box::new(ForEach {
+        Expr::ForEach(Box::new(ForEach {
             attributes,
             bindings,
             iterable,
             body,
-        })))
+        }))
     }
 
-    fn parse_while(&mut self) -> Option<Expr> {
+    fn parse_while(&mut self) -> Expr {
         // TODO: Cleanup
 
         assert!(self.lexer.peek_t() == Token::Keyword(Keyword::While));
@@ -744,10 +873,10 @@ impl Parser<'_, '_> {
 
         let body = self.parse_block();
 
-        Some(Expr::WhileLoop(Box::new(WhileLoop { condition, body })))
+        Expr::WhileLoop(Box::new(WhileLoop { condition, body }))
     }
 
-    fn parse_do(&mut self) -> Option<Expr> {
+    fn parse_do(&mut self) -> Expr {
         // TODO: Cleanup
 
         assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Do));
@@ -760,23 +889,24 @@ impl Parser<'_, '_> {
                 self.lexer.current_pos()
             );
 
-            return None;
+            todo!()
         }
 
         let condition = self.parse_expression();
 
-        Some(Expr::DoWhileLoop(Box::new(DoWhileLoop { body, condition })))
+        Expr::DoWhileLoop(Box::new(DoWhileLoop { body, condition }))
     }
 
-    fn parse_switch(&mut self) -> Option<Expr> {
+    fn parse_switch(&mut self) -> Expr {
         // TODO: Cleanup
 
         // TODO: switch expression parsing logic
         error!("Switch expression parsing not implemented yet");
-        None
+
+        todo!()
     }
 
-    fn parse_break(&mut self) -> Option<Expr> {
+    fn parse_break(&mut self) -> Expr {
         // TODO: Cleanup
 
         assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Break));
@@ -789,7 +919,7 @@ impl Parser<'_, '_> {
                     self.lexer.current_pos()
                 );
 
-                return None;
+                todo!()
             };
 
             Some(name)
@@ -797,10 +927,10 @@ impl Parser<'_, '_> {
             None
         };
 
-        Some(Expr::Break(Box::new(Break { label })))
+        Expr::Break(Box::new(Break { label }))
     }
 
-    fn parse_continue(&mut self) -> Option<Expr> {
+    fn parse_continue(&mut self) -> Expr {
         // TODO: Cleanup
 
         assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Continue));
@@ -813,7 +943,7 @@ impl Parser<'_, '_> {
                     self.lexer.current_pos()
                 );
 
-                return None;
+                todo!()
             };
 
             Some(name)
@@ -821,10 +951,10 @@ impl Parser<'_, '_> {
             None
         };
 
-        Some(Expr::Continue(Box::new(Continue { label })))
+        Expr::Continue(Box::new(Continue { label }))
     }
 
-    fn parse_return(&mut self) -> Option<Expr> {
+    fn parse_return(&mut self) -> Expr {
         // TODO: Cleanup
 
         assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Ret));
@@ -836,10 +966,10 @@ impl Parser<'_, '_> {
             Some(self.parse_expression())
         };
 
-        Some(Expr::Return(Box::new(Return { value })))
+        Expr::Return(Box::new(Return { value }))
     }
 
-    fn parse_await(&mut self) -> Option<Expr> {
+    fn parse_await(&mut self) -> Expr {
         // TODO: Cleanup
 
         assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Await));
@@ -847,15 +977,15 @@ impl Parser<'_, '_> {
 
         let future = self.parse_expression();
 
-        Some(Expr::Await(Box::new(Await { future })))
+        Expr::Await(Box::new(Await { future }))
     }
 
-    fn parse_asm(&mut self) -> Option<Expr> {
+    fn parse_asm(&mut self) -> Expr {
         // TODO: Cleanup
 
         // TODO: asm expression parsing logic
         error!("Asm expression parsing not implemented yet");
-        None
+        todo!()
     }
 
     fn parse_anonymous_function_parameter(&mut self) -> FunctionParameter {
@@ -933,18 +1063,18 @@ impl Parser<'_, '_> {
         params
     }
 
-    fn parse_anonymous_function(&mut self) -> Option<Expr> {
+    fn parse_anonymous_function(&mut self) -> Expr {
         // TODO: Cleanup
 
         if self.lexer.peek_t() == Token::OpenBrace {
             let definition = self.parse_block();
 
-            return Some(Expr::Function(Box::new(AnonymousFunction {
+            return Expr::Function(Box::new(AnonymousFunction {
                 attributes: Vec::new(),
                 parameters: Vec::new(),
                 return_type: None,
                 definition,
-            })));
+            }));
         }
 
         assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Fn));
@@ -982,7 +1112,7 @@ impl Parser<'_, '_> {
                 "[P????]: function: expected function body\n--> {}",
                 self.lexer.current_pos()
             );
-            return None;
+            todo!()
         };
 
         let function = Expr::Function(Box::new(AnonymousFunction {
@@ -992,10 +1122,10 @@ impl Parser<'_, '_> {
             definition,
         }));
 
-        Some(function)
+        function
     }
 
-    fn parse_function_argument(&mut self) -> Option<(Option<IString>, Expr)> {
+    fn parse_function_argument(&mut self) -> (Option<IString>, Expr) {
         // TODO: Cleanup
 
         let mut argument_name = None;
@@ -1019,10 +1149,10 @@ impl Parser<'_, '_> {
 
         let argument_value = self.parse_expression();
 
-        Some((argument_name, argument_value))
+        (argument_name, argument_value)
     }
 
-    fn parse_function_arguments(&mut self) -> Option<CallArguments> {
+    fn parse_function_arguments(&mut self) -> CallArguments {
         // TODO: Cleanup
 
         assert!(self.lexer.peek_t() == Token::OpenParen);
@@ -1036,7 +1166,7 @@ impl Parser<'_, '_> {
                 break;
             }
 
-            let function_argument = self.parse_function_argument()?;
+            let function_argument = self.parse_function_argument();
             arguments.push(function_argument);
 
             if !self.lexer.skip_if(&Token::Comma) && !self.lexer.next_is(&Token::CloseParen) {
@@ -1045,11 +1175,11 @@ impl Parser<'_, '_> {
                     self.lexer.current_pos()
                 );
 
-                return None;
+                todo!()
             }
         }
 
-        Some(arguments)
+        arguments
     }
 
     pub(crate) fn parse_block(&mut self) -> Block {
@@ -1092,9 +1222,6 @@ impl Parser<'_, '_> {
     }
 
     pub(crate) fn parse_expression(&mut self) -> Expr {
-        // TODO: Cleanup
-
         self.parse_expression_precedence(Precedence::MIN)
-            .unwrap_or(Expr::SyntaxError)
     }
 }

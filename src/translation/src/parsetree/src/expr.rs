@@ -46,56 +46,95 @@ pub enum UnaryExprOp {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct UnaryExpr {
     pub operator: UnaryExprOp,
-    pub is_postfix: bool,
     pub operand: Expr,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum BinExprOp {
+    /// `+`
     Add,
+    /// `-`
     Sub,
+    /// `*`
     Mul,
+    /// `/`
     Div,
+    /// `%`
     Mod,
+    /// `&`
     BitAnd,
+    /// `|`
     BitOr,
+    /// `^`
     BitXor,
+    /// `<<`
     BitShl,
+    /// `>>`
     BitShr,
+    /// `<<<`
     BitRol,
+    /// `>>>`
     BitRor,
+    /// `&&`
     LogicAnd,
+    /// `||`
     LogicOr,
+    /// `^^`
     LogicXor,
+    /// `<`
     LogicLt,
+    /// `>`
     LogicGt,
+    /// `<=`
     LogicLe,
+    /// `>=`
     LogicGe,
+    /// `==`
     LogicEq,
+    /// `!=`
     LogicNe,
+    /// `=`
     Set,
+    /// `+=`
     SetPlus,
+    /// `-=`
     SetMinus,
+    /// `*=`
     SetTimes,
+    /// `/=`
     SetSlash,
+    /// `%=`
     SetPercent,
+    /// `&=`
     SetBitAnd,
+    /// `|=`
     SetBitOr,
+    /// `^=`
     SetBitXor,
+    /// `<<=`
     SetBitShl,
+    /// `>>=`
     SetBitShr,
+    /// `<<<=`
     SetBitRotl,
+    /// `>>>=`
     SetBitRotr,
+    /// `&&=`
     SetLogicAnd,
+    /// `||=`
     SetLogicOr,
+    /// `^^=`
     SetLogicXor,
-    As,
+    /// `.`
     Dot,
-    Ellipsis,
-    Scope,
+    /// `->`
     Arrow,
-    BlockArrow,
+    /// `...`
+    Ellipsis,
+    /// `..`
     Range,
+    /// `as`
+    As,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
