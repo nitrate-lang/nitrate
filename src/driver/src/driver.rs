@@ -1,3 +1,5 @@
+use log::error;
+
 use clap::Parser;
 
 pub fn get_styles() -> clap::builder::Styles {
@@ -216,10 +218,22 @@ struct Args {
 pub struct Interpreter {}
 
 impl Interpreter {
-    pub fn execute(&self, args: &[String]) -> Result<(), ()> {
-        let _args = Args::parse_from(args);
+    pub fn execute(&self, args: &[String]) -> Result<(), Box<dyn std::error::Error>> {
+        let args = Args::parse_from(args);
 
-        println!("Executing with args: {:?}", _args);
+        if args.version {
+            println!("no3 {}", env!("CARGO_PKG_VERSION"));
+            return Ok(());
+        }
+
+        if let Some(change_dir) = &args.change_dir {
+            if let Err(e) = std::env::set_current_dir(change_dir) {
+                error!("failed to change directory: {}", e);
+                return Err(e.into());
+            }
+        }
+
+        println!("Executing with args: {:?}", args);
         Ok(())
     }
 }
