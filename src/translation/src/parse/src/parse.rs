@@ -8,7 +8,6 @@ use crate::bugs::SyntaxBug;
 pub struct Parser<'a, 'bugs> {
     pub(crate) lexer: Lexer<'a>,
     pub(crate) generic_type_depth: i64,
-    pub(crate) generic_type_suffix_terminator_ambiguity: bool,
     pub(crate) bugs: &'bugs DiagnosticCollector,
 }
 
@@ -17,7 +16,6 @@ impl<'a, 'bugs> Parser<'a, 'bugs> {
         Parser {
             lexer,
             generic_type_depth: 0,
-            generic_type_suffix_terminator_ambiguity: false,
             bugs,
         }
     }

@@ -28,93 +28,83 @@ impl RefinementOptions {
 }
 
 impl Parser<'_, '_> {
-    fn parse_refinement_range(&mut self) -> Option<(Option<Expr>, Option<Expr>)> {
-        // TODO: Cleanup
+    fn parse_refinement_options(&mut self) -> RefinementOptions {
+        fn parse_refinement_range(this: &mut Parser) -> (Option<Expr>, Option<Expr>) {
+            assert!(this.lexer.peek_t() == Token::Punct(Punct::LeftBracket));
+            this.lexer.skip_tok();
 
-        assert!(self.lexer.peek_t() == Token::Punct(Punct::LeftBracket));
-        self.lexer.skip_tok();
+            let mut minimum_bound = None;
+            let mut maximum_bound = None;
 
-        let mut minimum_bound = None;
-        let mut maximum_bound = None;
+            if !this.lexer.skip_if(&Token::Punct(Punct::Colon)) {
+                let minimum = this.parse_expression();
+
+                if !this.lexer.skip_if(&Token::Punct(Punct::Colon)) {
+                    let bug = SyntaxBug::ExpectedColon(this.lexer.peek_pos());
+                    this.bugs.push(&bug);
+                }
+
+                minimum_bound = Some(minimum);
+            }
+
+            if !this.lexer.skip_if(&Token::Punct(Punct::RightBracket)) {
+                let maximum = this.parse_expression();
+
+                if !this.lexer.skip_if(&Token::Punct(Punct::RightBracket)) {
+                    let bug = SyntaxBug::ExpectedClosedBracket(this.lexer.peek_pos());
+                    this.bugs.push(&bug);
+                }
+
+                maximum_bound = Some(maximum);
+            }
+
+            (minimum_bound, maximum_bound)
+        }
 
         if !self.lexer.skip_if(&Token::Punct(Punct::Colon)) {
-            let minimum = self.parse_expression();
-
-            if !self.lexer.skip_if(&Token::Punct(Punct::Colon)) {
-                error!(
-                    "[P0???]: refinement type: expected ':' after minimum range constraint\n--> {}",
-                    self.lexer.position()
-                );
-
-                return None;
-            }
-
-            minimum_bound = Some(minimum);
-        }
-
-        if !self.lexer.skip_if(&Token::Punct(Punct::RightBracket)) {
-            let maximum = self.parse_expression();
-
-            if !self.lexer.skip_if(&Token::Punct(Punct::RightBracket)) {
-                error!(
-                    "[P0???]: refinement type: expected ']' to close range constraints\n--> {}",
-                    self.lexer.position()
-                );
-
-                return None;
-            }
-
-            maximum_bound = Some(maximum);
-        }
-
-        Some((minimum_bound, maximum_bound))
-    }
-
-    fn parse_refinement_options(&mut self) -> Option<RefinementOptions> {
-        // TODO: Cleanup
-
-        if self.generic_type_suffix_terminator_ambiguity
-            || !self.lexer.skip_if(&Token::Punct(Punct::Colon))
-        {
-            return Some(RefinementOptions::default());
+            return RefinementOptions::default();
         }
 
         if self.lexer.next_is(&Token::Punct(Punct::LeftBracket)) {
-            let (minimum, maximum) = self.parse_refinement_range()?;
+            let (minimum, maximum) = parse_refinement_range(self);
 
-            return Some(RefinementOptions {
+            return RefinementOptions {
                 minimum,
                 maximum,
                 width: None,
-            });
+            };
         }
 
         let width = self.parse_expression();
 
         if !self.lexer.skip_if(&Token::Punct(Punct::Colon)) {
-            return Some(RefinementOptions {
+            return RefinementOptions {
                 width: Some(width),
                 minimum: None,
                 maximum: None,
-            });
+            };
         }
 
         if !self.lexer.next_is(&Token::Punct(Punct::LeftBracket)) {
-            error!(
-                "[P0???]: refinement type: expected '[' for range constraints\n--> {}",
-                self.lexer.position()
-            );
+            let bug = SyntaxBug::ExpectedOpeningBracket(self.lexer.peek_pos());
+            self.bugs.push(&bug);
 
-            return None;
+            self.parse_expression(); // Skip
+
+            return RefinementOptions {
+                width: Some(width),
+                minimum: None,
+                maximum: None,
+            };
         }
 
-        let (minimum, maximum) = self.parse_refinement_range()?;
+        let (minimum, maximum) = parse_refinement_range(self);
 
-        Some(RefinementOptions {
+        RefinementOptions {
             width: Some(width),
             minimum,
             maximum,
-        })
+        }
     }
 
     fn parse_generic_argument(&mut self) -> GenericArgument {
@@ -154,7 +144,6 @@ impl Parser<'_, '_> {
         self.lexer.skip_tok();
 
         self.generic_type_depth += 1;
-        self.generic_type_suffix_terminator_ambiguity = false;
 
         let mut arguments = Vec::new();
         self.lexer.skip_if(&Token::Punct(Punct::Comma));
@@ -167,13 +156,11 @@ impl Parser<'_, '_> {
 
             if self.lexer.skip_if(&Token::Op(Op::BitShr)) {
                 self.generic_type_depth -= 2;
-                self.generic_type_suffix_terminator_ambiguity = true;
                 break;
             }
 
             if self.lexer.skip_if(&Token::Op(Op::BitRor)) {
                 self.generic_type_depth -= 3;
-                self.generic_type_suffix_terminator_ambiguity = true;
                 break;
             }
 
@@ -289,7 +276,6 @@ impl Parser<'_, '_> {
             }
 
             self.generic_type_depth = 0;
-            self.generic_type_suffix_terminator_ambiguity = false;
         }
 
         Type::GenericType(Box::new(GenericType {
@@ -660,22 +646,18 @@ impl Parser<'_, '_> {
             return result;
         }
 
-        let the_type = self.parse_type_primary();
-
-        let Some(refinement) = self.parse_refinement_options() else {
-            self.set_failed_bit();
-            return Type::SyntaxError;
-        };
+        let basis_type = self.parse_type_primary();
+        let refinement = self.parse_refinement_options();
 
         if refinement.has_any() {
             return Type::RefinementType(Box::new(RefinementType {
-                basis_type: the_type,
+                basis_type,
                 width: refinement.width,
                 minimum: refinement.minimum,
                 maximum: refinement.maximum,
             }));
         }
 
-        the_type
+        basis_type
     }
 }
