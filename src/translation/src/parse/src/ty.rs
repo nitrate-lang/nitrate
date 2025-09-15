@@ -107,37 +107,37 @@ impl Parser<'_, '_> {
         }
     }
 
-    fn parse_generic_argument(&mut self) -> GenericArgument {
-        // TODO: Cleanup
+    fn parse_generic_arguments(&mut self) -> Vec<GenericArgument> {
+        fn parse_generic_argument(this: &mut Parser) -> GenericArgument {
+            // TODO: Cleanup
 
-        let mut argument_name: Option<IString> = None;
+            let mut argument_name: Option<IString> = None;
 
-        if let Token::Name(name) = self.lexer.peek_t() {
-            /* Named generic argument syntax is ambiguous,
-             * an identifier can be followed by a colon
-             * to indicate a named argument (followed by the expression value).
-             * However, if it is not followed by a colon, the identifier is
-             * to be parsed as an expression.
-             */
-            let rewind_pos = self.lexer.position();
-            self.lexer.skip_tok();
+            if let Token::Name(name) = this.lexer.peek_t() {
+                /* Named generic argument syntax is ambiguous,
+                 * an identifier can be followed by a colon
+                 * to indicate a named argument (followed by the expression value).
+                 * However, if it is not followed by a colon, the identifier is
+                 * to be parsed as an expression.
+                 */
+                let rewind_pos = this.lexer.position();
+                this.lexer.skip_tok();
 
-            if self.lexer.skip_if(&Token::Punct(Punct::Colon)) {
-                argument_name = Some(name);
-            } else {
-                self.lexer.rewind(rewind_pos);
+                if this.lexer.skip_if(&Token::Punct(Punct::Colon)) {
+                    argument_name = Some(name);
+                } else {
+                    this.lexer.rewind(rewind_pos);
+                }
+            }
+
+            let argument_value = this.parse_type();
+
+            GenericArgument {
+                name: argument_name,
+                value: Some(argument_value),
             }
         }
 
-        let argument_value = self.parse_type();
-
-        GenericArgument {
-            name: argument_name,
-            value: Some(argument_value),
-        }
-    }
-
-    fn parse_generic_arguments(&mut self) -> Vec<GenericArgument> {
         // TODO: Cleanup
 
         assert!(self.lexer.peek_t() == Token::Op(Op::LogicLt));
@@ -164,7 +164,7 @@ impl Parser<'_, '_> {
                 break;
             }
 
-            let generic_argument = self.parse_generic_argument();
+            let generic_argument = parse_generic_argument(self);
             arguments.push(generic_argument);
 
             if self.generic_type_depth == 0 {
@@ -371,34 +371,34 @@ impl Parser<'_, '_> {
         }
     }
 
-    fn parse_function_type_parameter(&mut self) -> FunctionTypeParameter {
-        // TODO: Cleanup
-
-        let attributes = self.parse_attributes();
-
-        let name = self.lexer.next_if_name();
-
-        let param_type = if self.lexer.skip_if(&Token::Punct(Punct::Colon)) {
-            Some(self.parse_type())
-        } else {
-            None
-        };
-
-        let default = if self.lexer.skip_if(&Token::Op(Op::Set)) {
-            Some(self.parse_expression())
-        } else {
-            None
-        };
-
-        FunctionTypeParameter {
-            name,
-            param_type,
-            default,
-            attributes,
-        }
-    }
-
     fn parse_function_type_parameters(&mut self) -> Vec<FunctionTypeParameter> {
+        fn parse_function_type_parameter(this: &mut Parser) -> FunctionTypeParameter {
+            // TODO: Cleanup
+
+            let attributes = this.parse_attributes();
+
+            let name = this.lexer.next_if_name();
+
+            let param_type = if this.lexer.skip_if(&Token::Punct(Punct::Colon)) {
+                Some(this.parse_type())
+            } else {
+                None
+            };
+
+            let default = if this.lexer.skip_if(&Token::Op(Op::Set)) {
+                Some(this.parse_expression())
+            } else {
+                None
+            };
+
+            FunctionTypeParameter {
+                name,
+                param_type,
+                default,
+                attributes,
+            }
+        }
+
         // TODO: Cleanup
 
         let mut params = Vec::new();
@@ -426,7 +426,7 @@ impl Parser<'_, '_> {
                 self.bugs.push(&bug);
             }
 
-            let param = self.parse_function_type_parameter();
+            let param = parse_function_type_parameter(self);
             params.push(param);
 
             if !self.lexer.skip_if(&Token::Punct(Punct::Comma))

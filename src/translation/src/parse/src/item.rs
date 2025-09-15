@@ -175,36 +175,36 @@ impl Parser<'_, '_> {
         }
     }
 
-    fn parse_enum_variant(&mut self) -> EnumVariant {
-        let attributes = self.parse_attributes();
-
-        let name = self.lexer.next_if_name().unwrap_or_else(|| {
-            let bug = SyntaxBug::EnumMissingVariantName(self.lexer.peek_pos());
-            self.bugs.push(&bug);
-            "".into()
-        });
-
-        let variant_type = if self.lexer.next_is(&Token::Punct(Punct::LeftParen)) {
-            Some(self.parse_type())
-        } else {
-            None
-        };
-
-        let value = if self.lexer.skip_if(&Token::Op(Op::Set)) {
-            Some(self.parse_expression())
-        } else {
-            None
-        };
-
-        EnumVariant {
-            attributes,
-            name,
-            variant_type,
-            value,
-        }
-    }
-
     fn parse_enum(&mut self) -> Enum {
+        fn parse_enum_variant(this: &mut Parser) -> EnumVariant {
+            let attributes = this.parse_attributes();
+
+            let name = this.lexer.next_if_name().unwrap_or_else(|| {
+                let bug = SyntaxBug::EnumMissingVariantName(this.lexer.peek_pos());
+                this.bugs.push(&bug);
+                "".into()
+            });
+
+            let variant_type = if this.lexer.next_is(&Token::Punct(Punct::LeftParen)) {
+                Some(this.parse_type())
+            } else {
+                None
+            };
+
+            let value = if this.lexer.skip_if(&Token::Op(Op::Set)) {
+                Some(this.parse_expression())
+            } else {
+                None
+            };
+
+            EnumVariant {
+                attributes,
+                name,
+                variant_type,
+                value,
+            }
+        }
+
         assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Enum));
         self.lexer.skip_tok();
 
@@ -242,7 +242,7 @@ impl Parser<'_, '_> {
                 self.bugs.push(&bug);
             }
 
-            let variant = self.parse_enum_variant();
+            let variant = parse_enum_variant(self);
             variants.push(variant);
 
             if !self.lexer.skip_if(&Token::Punct(Punct::Comma))
@@ -264,37 +264,37 @@ impl Parser<'_, '_> {
         }
     }
 
-    fn parse_struct_field(&mut self) -> StructField {
-        let attributes = self.parse_attributes();
-
-        let name = self.lexer.next_if_name().unwrap_or_else(|| {
-            let bug = SyntaxBug::StructureMissingFieldName(self.lexer.peek_pos());
-            self.bugs.push(&bug);
-            "".into()
-        });
-
-        if !self.lexer.skip_if(&Token::Punct(Punct::Colon)) {
-            let bug = SyntaxBug::ExpectedColon(self.lexer.peek_pos());
-            self.bugs.push(&bug);
-        }
-
-        let field_type = self.parse_type();
-
-        let default = if self.lexer.skip_if(&Token::Op(Op::Set)) {
-            Some(self.parse_expression())
-        } else {
-            None
-        };
-
-        StructField {
-            attributes,
-            name,
-            field_type,
-            default,
-        }
-    }
-
     fn parse_struct(&mut self) -> Struct {
+        fn parse_struct_field(this: &mut Parser) -> StructField {
+            let attributes = this.parse_attributes();
+
+            let name = this.lexer.next_if_name().unwrap_or_else(|| {
+                let bug = SyntaxBug::StructureMissingFieldName(this.lexer.peek_pos());
+                this.bugs.push(&bug);
+                "".into()
+            });
+
+            if !this.lexer.skip_if(&Token::Punct(Punct::Colon)) {
+                let bug = SyntaxBug::ExpectedColon(this.lexer.peek_pos());
+                this.bugs.push(&bug);
+            }
+
+            let field_type = this.parse_type();
+
+            let default = if this.lexer.skip_if(&Token::Op(Op::Set)) {
+                Some(this.parse_expression())
+            } else {
+                None
+            };
+
+            StructField {
+                attributes,
+                name,
+                field_type,
+                default,
+            }
+        }
+
         assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Struct));
         self.lexer.skip_tok();
 
@@ -332,7 +332,7 @@ impl Parser<'_, '_> {
                 self.bugs.push(&bug);
             }
 
-            let field = self.parse_struct_field();
+            let field = parse_struct_field(self);
             fields.push(field);
 
             if !self.lexer.skip_if(&Token::Punct(Punct::Comma))
@@ -492,36 +492,36 @@ impl Parser<'_, '_> {
         }
     }
 
-    fn parse_named_function_parameter(&mut self) -> FunctionParameter {
-        let attributes = self.parse_attributes();
-
-        let name = self.lexer.next_if_name().unwrap_or_else(|| {
-            let bug = SyntaxBug::FunctionParameterMissingName(self.lexer.peek_pos());
-            self.bugs.push(&bug);
-            "".into()
-        });
-
-        let param_type = if self.lexer.skip_if(&Token::Punct(Punct::Colon)) {
-            Some(self.parse_type())
-        } else {
-            None
-        };
-
-        let default = if self.lexer.skip_if(&Token::Op(Op::Set)) {
-            Some(self.parse_expression())
-        } else {
-            None
-        };
-
-        FunctionParameter {
-            name,
-            param_type,
-            default,
-            attributes,
-        }
-    }
-
     fn parse_named_function_parameters(&mut self) -> Vec<FunctionParameter> {
+        fn parse_named_function_parameter(this: &mut Parser) -> FunctionParameter {
+            let attributes = this.parse_attributes();
+
+            let name = this.lexer.next_if_name().unwrap_or_else(|| {
+                let bug = SyntaxBug::FunctionParameterMissingName(this.lexer.peek_pos());
+                this.bugs.push(&bug);
+                "".into()
+            });
+
+            let param_type = if this.lexer.skip_if(&Token::Punct(Punct::Colon)) {
+                Some(this.parse_type())
+            } else {
+                None
+            };
+
+            let default = if this.lexer.skip_if(&Token::Op(Op::Set)) {
+                Some(this.parse_expression())
+            } else {
+                None
+            };
+
+            FunctionParameter {
+                name,
+                param_type,
+                default,
+                attributes,
+            }
+        }
+
         let mut params = Vec::new();
 
         if !self.lexer.skip_if(&Token::Punct(Punct::LeftParen)) {
@@ -549,7 +549,7 @@ impl Parser<'_, '_> {
                 self.bugs.push(&bug);
             }
 
-            let param = self.parse_named_function_parameter();
+            let param = parse_named_function_parameter(self);
             params.push(param);
 
             if !self.lexer.skip_if(&Token::Punct(Punct::Comma))
