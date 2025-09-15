@@ -1,10 +1,12 @@
+use crate::bugs::SyntaxBug;
+
 use super::parse::Parser;
 use interned_string::IString;
 use log::error;
 use nitrate_parsetree::kind::{
     AnonymousFunction, Await, BinExpr, BinExprOp, Block, Break, Call, CallArguments, Cast,
-    Continue, DoWhileLoop, Expr, ForEach, If, IndexAccess, Integer, List, Path, Return, Type,
-    UnaryExpr, UnaryExprOp, WhileLoop,
+    Continue, DoWhileLoop, Expr, ForEach, FunctionParameter, If, IndexAccess, Integer, List, Path,
+    Return, Type, UnaryExpr, UnaryExprOp, WhileLoop,
 };
 use nitrate_tokenize::{Keyword, Op, Punct, Token};
 use smallvec::{SmallVec, smallvec};
@@ -775,6 +777,79 @@ impl Parser<'_, '_> {
         None
     }
 
+    fn parse_anonymous_function_parameter(&mut self) -> FunctionParameter {
+        let attributes = self.parse_attributes();
+
+        let name = self.lexer.next_if_name().unwrap_or_else(|| {
+            let bug = SyntaxBug::FunctionParameterMissingName(self.lexer.peek_pos());
+            self.bugs.push(&bug);
+            "".into()
+        });
+
+        let param_type = if self.lexer.skip_if(&Token::Punct(Punct::Colon)) {
+            Some(self.parse_type())
+        } else {
+            None
+        };
+
+        let default = if self.lexer.skip_if(&Token::Op(Op::Set)) {
+            Some(self.parse_expression())
+        } else {
+            None
+        };
+
+        FunctionParameter {
+            name,
+            param_type,
+            default,
+            attributes,
+        }
+    }
+
+    fn parse_anonymous_function_parameters(&mut self) -> Vec<FunctionParameter> {
+        let mut params = Vec::new();
+
+        if !self.lexer.skip_if(&Token::Punct(Punct::LeftParen)) {
+            let bug = SyntaxBug::ExpectedOpeningParen(self.lexer.peek_pos());
+            self.bugs.push(&bug);
+        }
+
+        self.lexer.skip_if(&Token::Punct(Punct::Comma));
+
+        let mut already_reported_too_many_parameters = false;
+
+        while !self.lexer.skip_if(&Token::Punct(Punct::RightParen)) {
+            if self.lexer.is_eof() {
+                let bug = SyntaxBug::FunctionParametersExpectedEnd(self.lexer.peek_pos());
+                self.bugs.push(&bug);
+                break;
+            }
+
+            const MAX_FUNCTION_PARAMETERS: usize = 65_536;
+
+            if !already_reported_too_many_parameters && params.len() >= MAX_FUNCTION_PARAMETERS {
+                already_reported_too_many_parameters = true;
+
+                let bug = SyntaxBug::FunctionParameterLimit(self.lexer.peek_pos());
+                self.bugs.push(&bug);
+            }
+
+            let param = self.parse_anonymous_function_parameter();
+            params.push(param);
+
+            if !self.lexer.skip_if(&Token::Punct(Punct::Comma))
+                && !self.lexer.next_is(&Token::Punct(Punct::RightParen))
+            {
+                let bug = SyntaxBug::FunctionParametersExpectedEnd(self.lexer.peek_pos());
+                self.bugs.push(&bug);
+                self.lexer.skip_while(&Token::Punct(Punct::RightParen));
+                break;
+            }
+        }
+
+        params
+    }
+
     fn parse_anonymous_function(&mut self) -> Option<Expr> {
         if self.lexer.peek_t() == Token::Punct(Punct::LeftBrace) {
             let definition = self.parse_block();
@@ -791,7 +866,7 @@ impl Parser<'_, '_> {
         self.lexer.skip_tok();
 
         let attributes = self.parse_attributes();
-        let parameters = self.parse_function_parameters();
+        let parameters = self.parse_anonymous_function_parameters();
 
         let return_type = if self.lexer.skip_if(&Token::Op(Op::Arrow)) {
             Some(self.parse_type())
