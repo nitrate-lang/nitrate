@@ -157,7 +157,7 @@ pub struct Block {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct AnonymousFunction {
+pub struct Closure {
     pub attributes: Vec<Expr>,
     pub parameters: Vec<FunctionParameter>,
     pub return_type: Option<Type>,
@@ -336,7 +336,7 @@ pub enum Expr {
     Cast(Box<Cast>),
     Block(Box<Block>),
 
-    AnonymousFunction(Box<AnonymousFunction>),
+    Closure(Box<Closure>),
     Variable(Box<Variable>),
     Path(Box<Path>),
     IndexAccess(Box<IndexAccess>),
@@ -389,7 +389,7 @@ impl std::fmt::Debug for Expr {
             Expr::Cast(e) => e.fmt(f),
             Expr::Block(e) => e.fmt(f),
 
-            Expr::AnonymousFunction(e) => e.fmt(f),
+            Expr::Closure(e) => e.fmt(f),
             Expr::Variable(e) => e.fmt(f),
             Expr::Path(e) => e.fmt(f),
             Expr::IndexAccess(e) => e.fmt(f),

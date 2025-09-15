@@ -4,7 +4,7 @@ use super::parse::Parser;
 use interned_string::IString;
 use log::error;
 use nitrate_parsetree::kind::{
-    AnonymousFunction, Await, BinExpr, BinExprOp, Block, Break, Call, CallArgument, Cast, Continue,
+    Await, BinExpr, BinExprOp, Block, Break, Call, CallArgument, Cast, Closure, Continue,
     DoWhileLoop, Expr, ForEach, FunctionParameter, GenericArgument, If, IndexAccess, Integer, List,
     Path, Return, Switch, Type, UnaryExpr, UnaryExprOp, WhileLoop,
 };
@@ -332,8 +332,6 @@ impl Parser<'_, '_> {
     }
 
     fn parse_expression_primary(&mut self) -> Expr {
-        // TODO: Cleanup
-
         match self.lexer.peek_t() {
             Token::Integer(int) => {
                 self.lexer.skip_tok();
@@ -375,7 +373,7 @@ impl Parser<'_, '_> {
             Token::Keyword(Keyword::Type) => Expr::TypeInfo(Box::new(self.parse_type_info())),
 
             Token::Keyword(Keyword::Fn) | Token::OpenBrace => {
-                Expr::AnonymousFunction(Box::new(self.parse_anonymous_function()))
+                Expr::Closure(Box::new(self.parse_closure()))
             }
 
             Token::Keyword(Keyword::If) => Expr::If(Box::new(self.parse_if())),
@@ -401,8 +399,6 @@ impl Parser<'_, '_> {
     }
 
     fn parse_prefix(&mut self) -> Expr {
-        // TODO: Cleanup
-
         if let Some(operator) = self.detect_and_parse_unary_operator() {
             let precedence = PrecedenceRank::Unary as Precedence;
             let operand = self.parse_expression_precedence(precedence);
@@ -742,8 +738,6 @@ impl Parser<'_, '_> {
     }
 
     fn parse_type_info(&mut self) -> Type {
-        // TODO: Cleanup
-
         assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Type));
         self.lexer.skip_tok();
 
@@ -751,8 +745,6 @@ impl Parser<'_, '_> {
     }
 
     fn parse_if(&mut self) -> If {
-        // TODO: Cleanup
-
         assert!(self.lexer.peek_t() == Token::Keyword(Keyword::If));
         self.lexer.skip_tok();
 
@@ -761,10 +753,10 @@ impl Parser<'_, '_> {
 
         let else_branch = if self.lexer.skip_if(&Token::Keyword(Keyword::Else)) {
             if self.lexer.next_is(&Token::Keyword(Keyword::If)) {
-                let else_if_branch = Expr::If(Box::new(self.parse_if()));
+                let else_branch = Expr::If(Box::new(self.parse_if()));
 
                 Some(Block {
-                    elements: vec![else_if_branch],
+                    elements: vec![else_branch],
                     ends_with_semi: false,
                 })
             } else {
@@ -872,8 +864,6 @@ impl Parser<'_, '_> {
     }
 
     fn parse_while(&mut self) -> WhileLoop {
-        // TODO: Cleanup
-
         assert!(self.lexer.peek_t() == Token::Keyword(Keyword::While));
         self.lexer.skip_tok();
 
@@ -910,8 +900,6 @@ impl Parser<'_, '_> {
     }
 
     fn parse_switch(&mut self) -> Switch {
-        // TODO: Cleanup
-
         // TODO: switch expression parsing logic
         error!("Switch expression parsing not implemented yet");
 
@@ -967,12 +955,10 @@ impl Parser<'_, '_> {
     }
 
     fn parse_return(&mut self) -> Return {
-        // TODO: Cleanup
-
         assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Ret));
         self.lexer.skip_tok();
 
-        let value = if self.lexer.next_is(&Token::Semi) {
+        let value = if self.lexer.skip_if(&Token::Semi) {
             None
         } else {
             Some(self.parse_expression())
@@ -982,8 +968,6 @@ impl Parser<'_, '_> {
     }
 
     fn parse_await(&mut self) -> Await {
-        // TODO: Cleanup
-
         assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Await));
         self.lexer.skip_tok();
 
@@ -993,19 +977,15 @@ impl Parser<'_, '_> {
     }
 
     fn parse_asm(&mut self) -> Expr {
-        // TODO: Cleanup
-
         // TODO: asm expression parsing logic
         error!("Asm expression parsing not implemented yet");
         todo!()
     }
 
-    fn parse_anonymous_function_parameters(&mut self) -> Vec<FunctionParameter> {
+    fn parse_closure_parameters(&mut self) -> Vec<FunctionParameter> {
         // TODO: Cleanup
 
-        fn parse_anonymous_function_parameter(this: &mut Parser) -> FunctionParameter {
-            // TODO: Cleanup
-
+        fn parse_closure_parameter(this: &mut Parser) -> FunctionParameter {
             let attributes = this.parse_attributes();
 
             let name = this.lexer.next_if_name().unwrap_or_else(|| {
@@ -1061,7 +1041,7 @@ impl Parser<'_, '_> {
                 self.bugs.push(&bug);
             }
 
-            let param = parse_anonymous_function_parameter(self);
+            let param = parse_closure_parameter(self);
             params.push(param);
 
             if !self.lexer.skip_if(&Token::Comma) && !self.lexer.next_is(&Token::CloseParen) {
@@ -1075,13 +1055,13 @@ impl Parser<'_, '_> {
         params
     }
 
-    fn parse_anonymous_function(&mut self) -> AnonymousFunction {
+    fn parse_closure(&mut self) -> Closure {
         // TODO: Cleanup
 
         if self.lexer.peek_t() == Token::OpenBrace {
             let definition = self.parse_block();
 
-            return AnonymousFunction {
+            return Closure {
                 attributes: Vec::new(),
                 parameters: Vec::new(),
                 return_type: None,
@@ -1093,7 +1073,7 @@ impl Parser<'_, '_> {
         self.lexer.skip_tok();
 
         let attributes = self.parse_attributes();
-        let parameters = self.parse_anonymous_function_parameters();
+        let parameters = self.parse_closure_parameters();
 
         let return_type = if self.lexer.skip_if(&Token::Minus) {
             if !self.lexer.skip_if(&Token::Gt) {
@@ -1127,7 +1107,7 @@ impl Parser<'_, '_> {
             todo!()
         };
 
-        AnonymousFunction {
+        Closure {
             attributes,
             parameters,
             return_type,
