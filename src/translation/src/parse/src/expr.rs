@@ -4,9 +4,9 @@ use super::parse::Parser;
 use interned_string::IString;
 use log::error;
 use nitrate_parsetree::kind::{
-    AnonymousFunction, Await, BinExpr, BinExprOp, Block, Break, Call, CallArguments, Cast,
-    Continue, DoWhileLoop, Expr, ForEach, FunctionParameter, GenericArgument, If, IndexAccess,
-    Integer, List, Path, Return, Type, UnaryExpr, UnaryExprOp, WhileLoop,
+    AnonymousFunction, Await, BinExpr, BinExprOp, Block, Break, Call, CallArgument, Cast, Continue,
+    DoWhileLoop, Expr, ForEach, FunctionParameter, GenericArgument, If, IndexAccess, Integer, List,
+    Path, Return, Switch, Type, UnaryExpr, UnaryExprOp, WhileLoop,
 };
 use nitrate_tokenize::{Keyword, Token};
 use smallvec::{SmallVec, smallvec};
@@ -368,20 +368,25 @@ impl Parser<'_, '_> {
                 Expr::Boolean(false)
             }
 
-            Token::OpenBracket => self.parse_list(),
+            Token::OpenBracket => Expr::List(Box::new(self.parse_list())),
+
             Token::Name(_) | Token::Colon => Expr::Path(Box::new(self.parse_path())),
 
-            Token::Keyword(Keyword::Type) => self.parse_type_info(),
-            Token::Keyword(Keyword::Fn) | Token::OpenBrace => self.parse_anonymous_function(),
-            Token::Keyword(Keyword::If) => self.parse_if(),
-            Token::Keyword(Keyword::For) => self.parse_for(),
-            Token::Keyword(Keyword::While) => self.parse_while(),
-            Token::Keyword(Keyword::Do) => self.parse_do(),
-            Token::Keyword(Keyword::Switch) => self.parse_switch(),
-            Token::Keyword(Keyword::Break) => self.parse_break(),
-            Token::Keyword(Keyword::Continue) => self.parse_continue(),
-            Token::Keyword(Keyword::Ret) => self.parse_return(),
-            Token::Keyword(Keyword::Await) => self.parse_await(),
+            Token::Keyword(Keyword::Type) => Expr::TypeInfo(Box::new(self.parse_type_info())),
+
+            Token::Keyword(Keyword::Fn) | Token::OpenBrace => {
+                Expr::AnonymousFunction(Box::new(self.parse_anonymous_function()))
+            }
+
+            Token::Keyword(Keyword::If) => Expr::If(Box::new(self.parse_if())),
+            Token::Keyword(Keyword::For) => Expr::For(Box::new(self.parse_for())),
+            Token::Keyword(Keyword::While) => Expr::While(Box::new(self.parse_while())),
+            Token::Keyword(Keyword::Do) => Expr::DoWhileLoop(Box::new(self.parse_do())),
+            Token::Keyword(Keyword::Switch) => Expr::Switch(Box::new(self.parse_switch())),
+            Token::Keyword(Keyword::Break) => Expr::Break(Box::new(self.parse_break())),
+            Token::Keyword(Keyword::Continue) => Expr::Continue(Box::new(self.parse_continue())),
+            Token::Keyword(Keyword::Ret) => Expr::Return(Box::new(self.parse_return())),
+            Token::Keyword(Keyword::Await) => Expr::Await(Box::new(self.parse_await())),
             Token::Keyword(Keyword::Asm) => self.parse_asm(),
 
             _ => {
@@ -533,7 +538,7 @@ impl Parser<'_, '_> {
         Expr::Cast(Box::new(Cast { value, to: suffix }))
     }
 
-    fn parse_list(&mut self) -> Expr {
+    fn parse_list(&mut self) -> List {
         // TODO: Cleanup
 
         assert!(self.lexer.peek_t() == Token::OpenBracket);
@@ -562,7 +567,7 @@ impl Parser<'_, '_> {
             }
         }
 
-        Expr::List(Box::new(List { elements }))
+        List { elements }
     }
 
     pub(crate) fn parse_attributes(&mut self) -> Vec<Expr> {
@@ -736,18 +741,16 @@ impl Parser<'_, '_> {
         }
     }
 
-    fn parse_type_info(&mut self) -> Expr {
+    fn parse_type_info(&mut self) -> Type {
         // TODO: Cleanup
 
         assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Type));
         self.lexer.skip_tok();
 
-        let of = self.parse_type();
-
-        Expr::TypeInfo(Box::new(of))
+        self.parse_type()
     }
 
-    fn parse_if(&mut self) -> Expr {
+    fn parse_if(&mut self) -> If {
         // TODO: Cleanup
 
         assert!(self.lexer.peek_t() == Token::Keyword(Keyword::If));
@@ -758,7 +761,7 @@ impl Parser<'_, '_> {
 
         let else_branch = if self.lexer.skip_if(&Token::Keyword(Keyword::Else)) {
             if self.lexer.next_is(&Token::Keyword(Keyword::If)) {
-                let else_if_branch = self.parse_if();
+                let else_if_branch = Expr::If(Box::new(self.parse_if()));
 
                 Some(Block {
                     elements: vec![else_if_branch],
@@ -771,81 +774,82 @@ impl Parser<'_, '_> {
             None
         };
 
-        Expr::If(Box::new(If {
+        If {
             condition,
             then_branch,
             else_branch,
-        }))
+        }
     }
 
-    fn parse_for_bindings(&mut self) -> Vec<(IString, Option<Type>)> {
+    fn parse_for(&mut self) -> ForEach {
         // TODO: Cleanup
 
-        let mut bindings = Vec::new();
+        fn parse_for_bindings(this: &mut Parser) -> Vec<(IString, Option<Type>)> {
+            // TODO: Cleanup
 
-        if self.lexer.skip_if(&Token::OpenParen) {
-            self.lexer.skip_if(&Token::Comma);
+            let mut bindings = Vec::new();
 
-            loop {
-                if self.lexer.skip_if(&Token::CloseParen) {
-                    break;
+            if this.lexer.skip_if(&Token::OpenParen) {
+                this.lexer.skip_if(&Token::Comma);
+
+                loop {
+                    if this.lexer.skip_if(&Token::CloseParen) {
+                        break;
+                    }
+
+                    let Some(variable_name) = this.lexer.next_if_name() else {
+                        error!(
+                            "[P????]: for: expected loop variable name\n--> {}",
+                            this.lexer.current_pos()
+                        );
+                        todo!()
+                    };
+
+                    let type_annotation = if this.lexer.skip_if(&Token::Colon) {
+                        Some(this.parse_type())
+                    } else {
+                        None
+                    };
+
+                    bindings.push((variable_name, type_annotation));
+
+                    if !this.lexer.skip_if(&Token::Comma) && !this.lexer.next_is(&Token::CloseParen)
+                    {
+                        error!(
+                            "[P0???]: for: expected ',' or ')' after loop variable\n--> {}",
+                            this.lexer.current_pos()
+                        );
+
+                        todo!()
+                    }
                 }
-
-                let Some(variable_name) = self.lexer.next_if_name() else {
+            } else {
+                let Some(variable_name) = this.lexer.next_if_name() else {
                     error!(
                         "[P????]: for: expected loop variable name\n--> {}",
-                        self.lexer.current_pos()
+                        this.lexer.current_pos()
                     );
+
                     todo!()
                 };
 
-                let type_annotation = if self.lexer.skip_if(&Token::Colon) {
-                    Some(self.parse_type())
+                let type_annotation = if this.lexer.skip_if(&Token::Colon) {
+                    Some(this.parse_type())
                 } else {
                     None
                 };
 
                 bindings.push((variable_name, type_annotation));
-
-                if !self.lexer.skip_if(&Token::Comma) && !self.lexer.next_is(&Token::CloseParen) {
-                    error!(
-                        "[P0???]: for: expected ',' or ')' after loop variable\n--> {}",
-                        self.lexer.current_pos()
-                    );
-
-                    todo!()
-                }
             }
-        } else {
-            let Some(variable_name) = self.lexer.next_if_name() else {
-                error!(
-                    "[P????]: for: expected loop variable name\n--> {}",
-                    self.lexer.current_pos()
-                );
 
-                todo!()
-            };
-
-            let type_annotation = if self.lexer.skip_if(&Token::Colon) {
-                Some(self.parse_type())
-            } else {
-                None
-            };
-
-            bindings.push((variable_name, type_annotation));
+            bindings
         }
-
-        bindings
-    }
-
-    fn parse_for(&mut self) -> Expr {
-        // TODO: Cleanup
 
         assert!(self.lexer.peek_t() == Token::Keyword(Keyword::For));
         self.lexer.skip_tok();
 
         let attributes = self.parse_attributes();
-        let bindings = self.parse_for_bindings();
+        let bindings = parse_for_bindings(self);
 
         if !self.lexer.skip_if(&Token::Keyword(Keyword::In)) {
             error!(
@@ -859,15 +863,15 @@ impl Parser<'_, '_> {
         let iterable = self.parse_expression();
         let body = self.parse_block();
 
-        Expr::ForEach(Box::new(ForEach {
+        ForEach {
             attributes,
             bindings,
             iterable,
             body,
-        }))
+        }
     }
 
-    fn parse_while(&mut self) -> Expr {
+    fn parse_while(&mut self) -> WhileLoop {
         // TODO: Cleanup
 
         assert!(self.lexer.peek_t() == Token::Keyword(Keyword::While));
@@ -881,10 +885,10 @@ impl Parser<'_, '_> {
 
         let body = self.parse_block();
 
-        Expr::WhileLoop(Box::new(WhileLoop { condition, body }))
+        WhileLoop { condition, body }
     }
 
-    fn parse_do(&mut self) -> Expr {
+    fn parse_do(&mut self) -> DoWhileLoop {
         // TODO: Cleanup
 
         assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Do));
@@ -902,10 +906,10 @@ impl Parser<'_, '_> {
 
         let condition = self.parse_expression();
 
-        Expr::DoWhileLoop(Box::new(DoWhileLoop { body, condition }))
+        DoWhileLoop { body, condition }
     }
 
-    fn parse_switch(&mut self) -> Expr {
+    fn parse_switch(&mut self) -> Switch {
         // TODO: Cleanup
 
         // TODO: switch expression parsing logic
@@ -914,7 +918,7 @@ impl Parser<'_, '_> {
         todo!()
     }
 
-    fn parse_break(&mut self) -> Expr {
+    fn parse_break(&mut self) -> Break {
         // TODO: Cleanup
 
         assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Break));
@@ -935,10 +939,10 @@ impl Parser<'_, '_> {
             None
         };
 
-        Expr::Break(Box::new(Break { label }))
+        Break { label }
     }
 
-    fn parse_continue(&mut self) -> Expr {
+    fn parse_continue(&mut self) -> Continue {
         // TODO: Cleanup
 
         assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Continue));
@@ -959,10 +963,10 @@ impl Parser<'_, '_> {
             None
         };
 
-        Expr::Continue(Box::new(Continue { label }))
+        Continue { label }
     }
 
-    fn parse_return(&mut self) -> Expr {
+    fn parse_return(&mut self) -> Return {
         // TODO: Cleanup
 
         assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Ret));
@@ -974,10 +978,10 @@ impl Parser<'_, '_> {
             Some(self.parse_expression())
         };
 
-        Expr::Return(Box::new(Return { value }))
+        Return { value }
     }
 
-    fn parse_await(&mut self) -> Expr {
+    fn parse_await(&mut self) -> Await {
         // TODO: Cleanup
 
         assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Await));
@@ -985,7 +989,7 @@ impl Parser<'_, '_> {
 
         let future = self.parse_expression();
 
-        Expr::Await(Box::new(Await { future }))
+        Await { future }
     }
 
     fn parse_asm(&mut self) -> Expr {
@@ -1071,18 +1075,18 @@ impl Parser<'_, '_> {
         params
     }
 
-    fn parse_anonymous_function(&mut self) -> Expr {
+    fn parse_anonymous_function(&mut self) -> AnonymousFunction {
         // TODO: Cleanup
 
         if self.lexer.peek_t() == Token::OpenBrace {
             let definition = self.parse_block();
 
-            return Expr::Function(Box::new(AnonymousFunction {
+            return AnonymousFunction {
                 attributes: Vec::new(),
                 parameters: Vec::new(),
                 return_type: None,
                 definition,
-            }));
+            };
         }
 
         assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Fn));
@@ -1123,50 +1127,42 @@ impl Parser<'_, '_> {
             todo!()
         };
 
-        let function = Expr::Function(Box::new(AnonymousFunction {
+        AnonymousFunction {
             attributes,
             parameters,
             return_type,
             definition,
-        }));
-
-        function
+        }
     }
 
-    fn parse_function_arguments(&mut self) -> CallArguments {
+    fn parse_function_arguments(&mut self) -> Vec<CallArgument> {
         // TODO: Cleanup
 
-        fn parse_function_argument(this: &mut Parser) -> (Option<IString>, Expr) {
+        fn parse_function_argument(this: &mut Parser) -> CallArgument {
             // TODO: Cleanup
 
-            let mut argument_name = None;
+            let mut name = None;
 
-            if let Token::Name(name) = this.lexer.peek_t() {
-                /* Named function argument syntax is ambiguous,
-                 * an identifier can be followed by a colon
-                 * to indicate a named argument (followed by the expression value).
-                 * However, if it is not followed by a colon, the identifier is
-                 * to be parsed as an expression.
-                 */
+            if let Token::Name(argument_name) = this.lexer.peek_t() {
                 let rewind_pos = this.lexer.current_pos();
                 this.lexer.skip_tok();
 
                 if this.lexer.skip_if(&Token::Colon) {
-                    argument_name = Some(name);
+                    name = Some(argument_name);
                 } else {
                     this.lexer.rewind(rewind_pos);
                 }
             }
 
-            let argument_value = this.parse_expression();
+            let value = this.parse_expression();
 
-            (argument_name, argument_value)
+            CallArgument { name, value }
         }
 
         assert!(self.lexer.peek_t() == Token::OpenParen);
         self.lexer.skip_tok();
 
-        let mut arguments = CallArguments::new();
+        let mut arguments = Vec::new();
         self.lexer.skip_if(&Token::Comma);
 
         loop {

@@ -303,12 +303,16 @@ pub struct Await {
     pub future: Expr,
 }
 
-pub type CallArguments = Vec<(Option<IString>, Expr)>;
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CallArgument {
+    pub name: Option<IString>,
+    pub value: Expr,
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Call {
     pub callee: Expr,
-    pub arguments: CallArguments,
+    pub arguments: Vec<CallArgument>,
 }
 
 #[derive(Clone, Serialize, Deserialize)]
@@ -332,19 +336,19 @@ pub enum Expr {
     Cast(Box<Cast>),
     Block(Box<Block>),
 
-    Function(Box<AnonymousFunction>),
+    AnonymousFunction(Box<AnonymousFunction>),
     Variable(Box<Variable>),
     Path(Box<Path>),
     IndexAccess(Box<IndexAccess>),
 
     If(Box<If>),
-    WhileLoop(Box<WhileLoop>),
+    While(Box<WhileLoop>),
     DoWhileLoop(Box<DoWhileLoop>),
     Switch(Box<Switch>),
     Break(Box<Break>),
     Continue(Box<Continue>),
     Return(Box<Return>),
-    ForEach(Box<ForEach>),
+    For(Box<ForEach>),
     Await(Box<Await>),
     Call(Box<Call>),
 }
@@ -385,19 +389,19 @@ impl std::fmt::Debug for Expr {
             Expr::Cast(e) => e.fmt(f),
             Expr::Block(e) => e.fmt(f),
 
-            Expr::Function(e) => e.fmt(f),
+            Expr::AnonymousFunction(e) => e.fmt(f),
             Expr::Variable(e) => e.fmt(f),
             Expr::Path(e) => e.fmt(f),
             Expr::IndexAccess(e) => e.fmt(f),
 
             Expr::If(e) => e.fmt(f),
-            Expr::WhileLoop(e) => e.fmt(f),
+            Expr::While(e) => e.fmt(f),
             Expr::DoWhileLoop(e) => e.fmt(f),
             Expr::Switch(e) => e.fmt(f),
             Expr::Break(e) => e.fmt(f),
             Expr::Continue(e) => e.fmt(f),
             Expr::Return(e) => e.fmt(f),
-            Expr::ForEach(e) => e.fmt(f),
+            Expr::For(e) => e.fmt(f),
             Expr::Await(e) => e.fmt(f),
             Expr::Call(e) => e.fmt(f),
         }
