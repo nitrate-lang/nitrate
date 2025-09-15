@@ -332,6 +332,8 @@ impl Parser<'_, '_> {
     }
 
     fn parse_expression_primary(&mut self) -> Expr {
+        // TODO: Cleanup
+
         match self.lexer.peek_t() {
             Token::Integer(int) => {
                 self.lexer.skip_tok();
@@ -394,6 +396,8 @@ impl Parser<'_, '_> {
     }
 
     fn parse_prefix(&mut self) -> Expr {
+        // TODO: Cleanup
+
         if let Some(operator) = self.detect_and_parse_unary_operator() {
             let precedence = PrecedenceRank::Unary as Precedence;
             let operand = self.parse_expression_precedence(precedence);
@@ -416,6 +420,8 @@ impl Parser<'_, '_> {
     }
 
     fn parse_expression_precedence(&mut self, min_precedence_to_proceed: Precedence) -> Expr {
+        // TODO: Cleanup
+
         let mut sofar = self.parse_prefix();
 
         loop {
@@ -494,6 +500,8 @@ impl Parser<'_, '_> {
     }
 
     fn parse_literal_suffix(&mut self, value: Expr) -> Expr {
+        // TODO: Cleanup
+
         let suffix = match self.lexer.peek_t() {
             Token::Keyword(Keyword::Bool) => Type::Bool,
             Token::Keyword(Keyword::U8) => Type::UInt8,
@@ -988,39 +996,39 @@ impl Parser<'_, '_> {
         todo!()
     }
 
-    fn parse_anonymous_function_parameter(&mut self) -> FunctionParameter {
-        // TODO: Cleanup
-
-        let attributes = self.parse_attributes();
-
-        let name = self.lexer.next_if_name().unwrap_or_else(|| {
-            let bug = SyntaxBug::FunctionParameterMissingName(self.lexer.peek_pos());
-            self.bugs.push(&bug);
-            "".into()
-        });
-
-        let param_type = if self.lexer.skip_if(&Token::Colon) {
-            Some(self.parse_type())
-        } else {
-            None
-        };
-
-        let default = if self.lexer.skip_if(&Token::Eq) {
-            Some(self.parse_expression())
-        } else {
-            None
-        };
-
-        FunctionParameter {
-            name,
-            param_type,
-            default,
-            attributes,
-        }
-    }
-
     fn parse_anonymous_function_parameters(&mut self) -> Vec<FunctionParameter> {
         // TODO: Cleanup
+
+        fn parse_anonymous_function_parameter(this: &mut Parser) -> FunctionParameter {
+            // TODO: Cleanup
+
+            let attributes = this.parse_attributes();
+
+            let name = this.lexer.next_if_name().unwrap_or_else(|| {
+                let bug = SyntaxBug::FunctionParameterMissingName(this.lexer.peek_pos());
+                this.bugs.push(&bug);
+                "".into()
+            });
+
+            let param_type = if this.lexer.skip_if(&Token::Colon) {
+                Some(this.parse_type())
+            } else {
+                None
+            };
+
+            let default = if this.lexer.skip_if(&Token::Eq) {
+                Some(this.parse_expression())
+            } else {
+                None
+            };
+
+            FunctionParameter {
+                name,
+                param_type,
+                default,
+                attributes,
+            }
+        }
 
         let mut params = Vec::new();
 
@@ -1049,7 +1057,7 @@ impl Parser<'_, '_> {
                 self.bugs.push(&bug);
             }
 
-            let param = self.parse_anonymous_function_parameter();
+            let param = parse_anonymous_function_parameter(self);
             params.push(param);
 
             if !self.lexer.skip_if(&Token::Comma) && !self.lexer.next_is(&Token::CloseParen) {
@@ -1125,35 +1133,35 @@ impl Parser<'_, '_> {
         function
     }
 
-    fn parse_function_argument(&mut self) -> (Option<IString>, Expr) {
-        // TODO: Cleanup
-
-        let mut argument_name = None;
-
-        if let Token::Name(name) = self.lexer.peek_t() {
-            /* Named function argument syntax is ambiguous,
-             * an identifier can be followed by a colon
-             * to indicate a named argument (followed by the expression value).
-             * However, if it is not followed by a colon, the identifier is
-             * to be parsed as an expression.
-             */
-            let rewind_pos = self.lexer.current_pos();
-            self.lexer.skip_tok();
-
-            if self.lexer.skip_if(&Token::Colon) {
-                argument_name = Some(name);
-            } else {
-                self.lexer.rewind(rewind_pos);
-            }
-        }
-
-        let argument_value = self.parse_expression();
-
-        (argument_name, argument_value)
-    }
-
     fn parse_function_arguments(&mut self) -> CallArguments {
         // TODO: Cleanup
+
+        fn parse_function_argument(this: &mut Parser) -> (Option<IString>, Expr) {
+            // TODO: Cleanup
+
+            let mut argument_name = None;
+
+            if let Token::Name(name) = this.lexer.peek_t() {
+                /* Named function argument syntax is ambiguous,
+                 * an identifier can be followed by a colon
+                 * to indicate a named argument (followed by the expression value).
+                 * However, if it is not followed by a colon, the identifier is
+                 * to be parsed as an expression.
+                 */
+                let rewind_pos = this.lexer.current_pos();
+                this.lexer.skip_tok();
+
+                if this.lexer.skip_if(&Token::Colon) {
+                    argument_name = Some(name);
+                } else {
+                    this.lexer.rewind(rewind_pos);
+                }
+            }
+
+            let argument_value = this.parse_expression();
+
+            (argument_name, argument_value)
+        }
 
         assert!(self.lexer.peek_t() == Token::OpenParen);
         self.lexer.skip_tok();
@@ -1166,7 +1174,7 @@ impl Parser<'_, '_> {
                 break;
             }
 
-            let function_argument = self.parse_function_argument();
+            let function_argument = parse_function_argument(self);
             arguments.push(function_argument);
 
             if !self.lexer.skip_if(&Token::Comma) && !self.lexer.next_is(&Token::CloseParen) {
