@@ -87,7 +87,13 @@ pub struct Trait {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Impl {}
+pub struct Impl {
+    pub attributes: Vec<Expr>,
+    pub type_params: Vec<GenericParameter>,
+    pub trait_path: Option<Path>,
+    pub for_type: Type,
+    pub items: Vec<AssociatedItem>,
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FunctionParameter {

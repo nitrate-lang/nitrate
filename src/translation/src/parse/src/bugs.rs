@@ -37,6 +37,10 @@ pub(crate) enum SyntaxBug {
     TraitDoesNotAllowItem(SourcePosition),
     TraitExpectedEnd(SourcePosition),
 
+    ImplMissingFor(SourcePosition),
+    ImplExpectedEnd(SourcePosition),
+    ImplItemLimit(SourcePosition),
+
     ExpectedOpeningBrace(SourcePosition),
     ExpectedSemicolon(SourcePosition),
     ExpectedColon(SourcePosition),
@@ -85,6 +89,10 @@ impl FormattableDiagnosticGroup for SyntaxBug {
             SyntaxBug::TraitItemLimit(_) => 181,
             SyntaxBug::TraitDoesNotAllowItem(_) => 182,
             SyntaxBug::TraitExpectedEnd(_) => 183,
+
+            SyntaxBug::ImplMissingFor(_) => 200,
+            SyntaxBug::ImplExpectedEnd(_) => 201,
+            SyntaxBug::ImplItemLimit(_) => 202,
 
             SyntaxBug::ExpectedOpeningBrace(_) => 1000,
             SyntaxBug::ExpectedSemicolon(_) => 1002,
@@ -216,6 +224,21 @@ impl FormattableDiagnosticGroup for SyntaxBug {
             SyntaxBug::TraitExpectedEnd(pos) => DiagnosticInfo {
                 origin: Origin::Point(pos.to_owned()),
                 message: "expected '}'".into(),
+            },
+
+            SyntaxBug::ImplMissingFor(pos) => DiagnosticInfo {
+                origin: Origin::Point(pos.to_owned()),
+                message: "expected 'for' in impl declaration".into(),
+            },
+
+            SyntaxBug::ImplExpectedEnd(pos) => DiagnosticInfo {
+                origin: Origin::Point(pos.to_owned()),
+                message: "expected '}'".into(),
+            },
+
+            SyntaxBug::ImplItemLimit(pos) => DiagnosticInfo {
+                origin: Origin::Point(pos.to_owned()),
+                message: "impl item limit of 65,536 exceeded".into(),
             },
 
             SyntaxBug::ExpectedOpeningBrace(pos) => DiagnosticInfo {

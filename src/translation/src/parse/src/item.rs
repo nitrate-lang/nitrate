@@ -1,7 +1,6 @@
 use super::parse::Parser;
 use crate::bugs::SyntaxBug;
 
-use log::error;
 use nitrate_parsetree::kind::{
     AssociatedItem, Block, ConstVariable, Enum, EnumVariant, GenericParameter, Impl, Import, Item,
     Module, NamedFunction, StaticVariable, Struct, StructField, Trait, TypeAlias,
@@ -354,7 +353,7 @@ impl Parser<'_, '_> {
         }
     }
 
-    fn parse_trait_item(&mut self) -> AssociatedItem {
+    fn parse_associated_item(&mut self) -> AssociatedItem {
         match self.lexer.peek_t() {
             Token::Keyword(Keyword::Fn) => {
                 let func = self.parse_named_function();
@@ -420,7 +419,7 @@ impl Parser<'_, '_> {
                 self.bugs.push(&bug);
             }
 
-            let item = self.parse_trait_item();
+            let item = self.parse_associated_item();
             items.push(item);
         }
 
@@ -433,10 +432,63 @@ impl Parser<'_, '_> {
     }
 
     fn parse_implementation(&mut self) -> Impl {
-        // TODO: implementation parsing logic
-        self.set_failed_bit();
-        error!("Implementation parsing not implemented yet");
-        todo!()
+        assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Impl));
+        self.lexer.skip_tok();
+
+        let attributes = self.parse_attributes();
+
+        let type_params = self.parse_generic_parameters();
+
+        let trait_path = if self.lexer.skip_if(&Token::Keyword(Keyword::Trait)) {
+            let path = self.parse_path();
+
+            if !self.lexer.skip_if(&Token::Keyword(Keyword::For)) {
+                let bug = SyntaxBug::ImplMissingFor(self.lexer.peek_pos());
+                self.bugs.push(&bug);
+            }
+
+            Some(path)
+        } else {
+            None
+        };
+
+        let for_type = self.parse_type();
+
+        if !self.lexer.skip_if(&Token::Punct(Punct::LeftBrace)) {
+            let bug = SyntaxBug::ExpectedOpeningBrace(self.lexer.peek_pos());
+            self.bugs.push(&bug);
+        }
+
+        let mut items = Vec::new();
+        let mut already_reported_too_many_items = false;
+
+        while !self.lexer.skip_if(&Token::Punct(Punct::RightBrace)) {
+            if self.lexer.is_eof() {
+                let bug = SyntaxBug::ImplExpectedEnd(self.lexer.peek_pos());
+                self.bugs.push(&bug);
+                break;
+            }
+
+            const MAX_IMPL_ITEMS: usize = 65_536;
+
+            if !already_reported_too_many_items && items.len() >= MAX_IMPL_ITEMS {
+                already_reported_too_many_items = true;
+
+                let bug = SyntaxBug::ImplItemLimit(self.lexer.peek_pos());
+                self.bugs.push(&bug);
+            }
+
+            let item = self.parse_associated_item();
+            items.push(item);
+        }
+
+        Impl {
+            attributes,
+            type_params,
+            trait_path,
+            for_type,
+            items,
+        }
     }
 
     fn parse_named_function(&mut self) -> NamedFunction {
