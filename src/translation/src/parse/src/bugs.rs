@@ -44,12 +44,18 @@ pub(crate) enum SyntaxBug {
     ImplExpectedEnd(SourcePosition),
     ImplItemLimit(SourcePosition),
 
+    ExpectedGenericArgumentEnd(SourcePosition),
+    GenericArgumentLimit(SourcePosition),
+    GenericArgumentMismatchedAngles(SourcePosition),
+
     ExpectedOpeningBrace(SourcePosition),
     ExpectedClosingBrace(SourcePosition),
     ExpectedOpeningBracket(SourcePosition),
     ExpectedClosedBracket(SourcePosition),
     ExpectedOpeningParen(SourcePosition),
     ExpectedClosingParen(SourcePosition),
+    ExpectedOpeningAngle(SourcePosition),
+    ExpectedClosingAngle(SourcePosition),
     ExpectedSemicolon(SourcePosition),
     ExpectedColon(SourcePosition),
 
@@ -108,14 +114,20 @@ impl FormattableDiagnosticGroup for SyntaxBug {
             SyntaxBug::ImplExpectedEnd(_) => 201,
             SyntaxBug::ImplItemLimit(_) => 202,
 
+            SyntaxBug::ExpectedGenericArgumentEnd(_) => 220,
+            SyntaxBug::GenericArgumentLimit(_) => 221,
+            SyntaxBug::GenericArgumentMismatchedAngles(_) => 222,
+
             SyntaxBug::ExpectedOpeningBrace(_) => 1000,
             SyntaxBug::ExpectedClosingBrace(_) => 1001,
             SyntaxBug::ExpectedOpeningBracket(_) => 1002,
             SyntaxBug::ExpectedClosedBracket(_) => 1003,
             SyntaxBug::ExpectedOpeningParen(_) => 1004,
             SyntaxBug::ExpectedClosingParen(_) => 1005,
-            SyntaxBug::ExpectedSemicolon(_) => 1006,
-            SyntaxBug::ExpectedColon(_) => 1007,
+            SyntaxBug::ExpectedOpeningAngle(_) => 1006,
+            SyntaxBug::ExpectedClosingAngle(_) => 1007,
+            SyntaxBug::ExpectedSemicolon(_) => 1008,
+            SyntaxBug::ExpectedColon(_) => 1009,
 
             SyntaxBug::ExpectedItem(_) => 2000,
             SyntaxBug::ExpectedType(_) => 2001,
@@ -300,6 +312,23 @@ impl FormattableDiagnosticGroup for SyntaxBug {
 
             /* ------------------------------------------------------------------------- */
 
+            SyntaxBug::ExpectedGenericArgumentEnd(pos) => DiagnosticInfo {
+                origin: Origin::Point(pos.to_owned()),
+                message: "expected a '>' or ','".into(),
+            },
+
+            SyntaxBug::GenericArgumentLimit(pos) => DiagnosticInfo {
+                origin: Origin::Point(pos.to_owned()),
+                message: "generic argument limit of 65,536 exceeded".into(),
+            },
+
+            SyntaxBug::GenericArgumentMismatchedAngles(pos) => DiagnosticInfo {
+                origin: Origin::Point(pos.to_owned()),
+                message: "mismatched '<' and '>' in generic arguments".into(),
+            },
+
+            /* ------------------------------------------------------------------------- */
+
             SyntaxBug::ExpectedOpeningBrace(pos) => DiagnosticInfo {
                 origin: Origin::Point(pos.to_owned()),
                 message: "expected '{'".into(),
@@ -328,6 +357,16 @@ impl FormattableDiagnosticGroup for SyntaxBug {
             SyntaxBug::ExpectedClosingParen(pos) => DiagnosticInfo {
                 origin: Origin::Point(pos.to_owned()),
                 message: "expected ')'".into(),
+            },
+
+            SyntaxBug::ExpectedOpeningAngle(pos) => DiagnosticInfo {
+                origin: Origin::Point(pos.to_owned()),
+                message: "expected '<'".into(),
+            },
+
+            SyntaxBug::ExpectedClosingAngle(pos) => DiagnosticInfo {
+                origin: Origin::Point(pos.to_owned()),
+                message: "expected '>'".into(),
             },
 
             SyntaxBug::ExpectedSemicolon(pos) => DiagnosticInfo {

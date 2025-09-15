@@ -108,58 +108,70 @@ impl Parser<'_, '_> {
     }
 
     fn parse_generic_arguments(&mut self) -> Vec<GenericArgument> {
-        fn parse_generic_argument(this: &mut Parser) -> GenericArgument {
-            // TODO: Cleanup
+        // TODO: Cleanup
 
-            let mut argument_name: Option<IString> = None;
+        fn parse_generic_argument(this: &mut Parser) -> GenericArgument {
+            let mut name: Option<IString> = None;
 
             let rewind_pos = this.lexer.current_pos();
-            if let Some(name) = this.lexer.next_if_name() {
+            if let Some(argument_name) = this.lexer.next_if_name() {
                 if this.lexer.skip_if(&Token::Punct(Punct::Colon)) {
-                    argument_name = Some(name);
+                    name = Some(argument_name);
                 } else {
                     this.lexer.rewind(rewind_pos);
                 }
             }
 
-            let argument_value = this.parse_type();
+            let value = this.parse_type();
 
-            GenericArgument {
-                name: argument_name,
-                value: Some(argument_value),
-            }
+            GenericArgument { name, value }
         }
-
-        // TODO: Cleanup
 
         assert!(self.lexer.peek_t() == Token::Op(Op::LogicLt));
         self.lexer.skip_tok();
 
-        self.generic_type_depth += 1;
+        self.generic_type_argument_depth += 1;
 
         let mut arguments = Vec::new();
+        let mut already_reported_too_many_arguments = false;
+
         self.lexer.skip_if(&Token::Punct(Punct::Comma));
 
-        while self.generic_type_depth > 0 {
+        while self.generic_type_argument_depth > 0 {
             if self.lexer.skip_if(&Token::Op(Op::LogicGt)) {
-                self.generic_type_depth -= 1;
+                self.generic_type_argument_depth -= 1;
                 break;
             }
 
             if self.lexer.skip_if(&Token::Op(Op::BitShr)) {
-                self.generic_type_depth -= 2;
+                self.generic_type_argument_depth -= 2;
                 break;
             }
 
             if self.lexer.skip_if(&Token::Op(Op::BitRor)) {
-                self.generic_type_depth -= 3;
+                self.generic_type_argument_depth -= 3;
                 break;
             }
 
-            let generic_argument = parse_generic_argument(self);
-            arguments.push(generic_argument);
+            if self.lexer.is_eof() {
+                let bug = SyntaxBug::ExpectedGenericArgumentEnd(self.lexer.peek_pos());
+                self.bugs.push(&bug);
+                break;
+            }
 
-            if self.generic_type_depth == 0 {
+            const MAX_GENERIC_ARGUMENTS: usize = 65_536;
+
+            if !already_reported_too_many_arguments && arguments.len() >= MAX_GENERIC_ARGUMENTS {
+                already_reported_too_many_arguments = true;
+
+                let bug = SyntaxBug::GenericArgumentLimit(self.lexer.peek_pos());
+                self.bugs.push(&bug);
+            }
+
+            let argument = parse_generic_argument(self);
+            arguments.push(argument);
+
+            if self.generic_type_argument_depth <= 0 {
                 break;
             }
 
@@ -169,11 +181,8 @@ impl Parser<'_, '_> {
                     || self.lexer.next_is(&Token::Op(Op::BitRor));
 
                 if !any_terminator {
-                    error!(
-                        "[P0???]: generic type: expected ',' or '>' after generic argument\n--> {}",
-                        self.lexer.current_pos()
-                    );
-
+                    let bug = SyntaxBug::ExpectedClosingAngle(self.lexer.peek_pos());
+                    self.bugs.push(&bug);
                     break;
                 }
             }
@@ -185,94 +194,35 @@ impl Parser<'_, '_> {
     fn parse_type_name(&mut self) -> Type {
         // TODO: Cleanup
 
-        match self.lexer.peek_t() {
-            Token::Name(name) if name.deref() == "_" => {
+        if let Token::Name(name) = self.lexer.peek_t() {
+            if name.deref() == "_" {
                 self.lexer.skip_tok();
                 return Type::InferType;
             }
-            _ => {}
         }
 
-        let mut path = Vec::new();
-        let mut last_was_scope = false;
-
-        let pos = self.lexer.current_pos();
-
-        loop {
-            match self.lexer.peek_t() {
-                Token::Name(name) => {
-                    if last_was_scope || path.is_empty() {
-                        self.lexer.skip_tok();
-                        path.push(name);
-
-                        last_was_scope = false;
-                    } else {
-                        break;
-                    }
-                }
-
-                Token::Op(Op::Scope) => {
-                    if last_was_scope {
-                        break;
-                    }
-
-                    self.lexer.skip_tok();
-
-                    // For absolute scoping
-                    if path.is_empty() {
-                        path.push(IString::default());
-                    }
-
-                    last_was_scope = true;
-                }
-
-                _ => {
-                    break;
-                }
-            }
-        }
-
-        if path.is_empty() {
-            error!("[P????]: type name: expected type name\n--> {pos}");
-        }
-
-        if last_was_scope {
-            error!(
-                "[P0???]: type name: unexpected '::' at end of type name\n--> {}",
-                self.lexer.current_pos()
-            );
-        }
+        let path = self.parse_path();
+        let basis_type = Type::TypeName(Box::new(path));
 
         if !self.lexer.next_is(&Token::Op(Op::LogicLt)) {
-            return Type::TypeName(Box::new(Path { path: path.into() }));
+            return basis_type;
         }
 
-        let is_already_parsing_generic_type = self.generic_type_depth != 0;
-        let generic_arguments = self.parse_generic_arguments();
+        let report_on_generic = self.generic_type_argument_depth == 0;
+        let arguments = self.parse_generic_arguments();
 
-        if !is_already_parsing_generic_type {
-            match self.generic_type_depth {
-                0 => {}
-                -1 => {
-                    error!(
-                        "[P0???]: generic type: unexpected '>' delimiter\n--> {}",
-                        self.lexer.current_pos()
-                    );
-                }
-                _ => {
-                    error!(
-                        "[P0???]: generic type: unexpected '>>' delimiter\n--> {}",
-                        self.lexer.current_pos()
-                    );
-                }
+        if report_on_generic {
+            if self.generic_type_argument_depth != 0 {
+                self.generic_type_argument_depth = 0;
+
+                let bug = SyntaxBug::ExpectedGenericArgumentEnd(self.lexer.peek_pos());
+                self.bugs.push(&bug);
             }
-
-            self.generic_type_depth = 0;
         }
 
         Type::GenericType(Box::new(GenericType {
-            basis_type: Type::TypeName(Box::new(Path { path: path.into() })),
-            arguments: generic_arguments,
+            basis_type,
+            arguments,
         }))
     }
 
@@ -523,10 +473,10 @@ impl Parser<'_, '_> {
         let first_token = self.lexer.peek_tok();
         let current_pos = first_token.start();
 
-        let old_generic_type_depth = self.generic_type_depth;
+        let old_generic_type_depth = self.generic_type_argument_depth;
         let must_preserve_generic_depth = !matches!(first_token.token(), Token::Name(_));
         if must_preserve_generic_depth {
-            self.generic_type_depth = 0;
+            self.generic_type_argument_depth = 0;
         }
 
         let result = match first_token.into_token() {
@@ -574,7 +524,7 @@ impl Parser<'_, '_> {
         };
 
         if must_preserve_generic_depth {
-            self.generic_type_depth = old_generic_type_depth;
+            self.generic_type_argument_depth = old_generic_type_depth;
         }
 
         result

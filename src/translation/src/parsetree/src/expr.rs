@@ -1,4 +1,5 @@
 use crate::kind::{FunctionParameter, Type};
+use crate::ty::GenericArgument;
 
 use interned_string::IString;
 use nitrate_tokenize::{IntegerKind, Op};
@@ -248,6 +249,7 @@ pub struct Variable {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Path {
     pub path: SmallVec<[IString; 3]>,
+    pub type_arguments: Vec<GenericArgument>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

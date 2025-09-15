@@ -62,7 +62,7 @@ pub struct ReferenceType {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GenericArgument {
     pub name: Option<IString>,
-    pub value: Option<Type>,
+    pub value: Type,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
