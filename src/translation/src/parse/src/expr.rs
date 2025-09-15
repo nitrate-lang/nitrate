@@ -110,8 +110,6 @@ fn get_precedence_of_binary_operator(op: BinExprOp) -> Option<(Associativity, Pr
 }
 
 fn get_precedence(operation: Operation) -> Option<(Associativity, Precedence)> {
-    // TODO: Cleanup
-
     match operation {
         Operation::BinOp(op) => get_precedence_of_binary_operator(op),
 
@@ -120,26 +118,6 @@ fn get_precedence(operation: Operation) -> Option<(Associativity, Precedence)> {
             PrecedenceRank::FunctionCallAndIndexing as Precedence,
         )),
     }
-}
-
-fn get_unary_precedence(_op: UnaryExprOp) -> Option<Precedence> {
-    // TODO: Cleanup
-    Some(PrecedenceRank::Unary as Precedence)
-
-    // let precedence = match op {
-
-    //     Token::Add => PrecedenceRank::Unary,
-    //     Token::Sub => PrecedenceRank::Unary,
-    //     Token::LogicNot => PrecedenceRank::Unary,
-    //     Token::BitNot => PrecedenceRank::Unary,
-    //     Token::Mul => PrecedenceRank::Unary,
-    //     Token::BitAnd => PrecedenceRank::Unary,
-    //     Token::Typeof => PrecedenceRank::Unary,
-
-    //     _ => return None,
-    // };
-
-    // Some(precedence as Precedence)
 }
 
 impl Parser<'_, '_> {
@@ -232,15 +210,14 @@ impl Parser<'_, '_> {
 
     fn parse_prefix(&mut self) -> Option<Expr> {
         if let Some(operator) = self.detect_and_parse_unary_operator() {
-            if let Some(precedence) = get_unary_precedence(operator) {
-                let operand = self.parse_expression_precedence(precedence)?;
+            let precedence = PrecedenceRank::Unary as Precedence;
+            let operand = self.parse_expression_precedence(precedence)?;
 
-                return Some(Expr::UnaryExpr(Box::new(UnaryExpr {
-                    operator,
-                    operand,
-                    is_postfix: false,
-                })));
-            }
+            return Some(Expr::UnaryExpr(Box::new(UnaryExpr {
+                operator,
+                operand,
+                is_postfix: false,
+            })));
         }
 
         if self.lexer.skip_if(&Token::OpenParen) {
