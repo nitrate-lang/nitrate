@@ -41,71 +41,69 @@ enum Associativity {
 }
 
 enum Operation {
-    Operator(Token),
+    BinOp(BinExprOp),
     FunctionCall,
     Index,
 }
 
-fn get_precedence_of_operator(operator: &Token) -> Option<(Associativity, Precedence)> {
-    // TODO: Cleanup
+fn get_precedence_of_binary_operator(op: BinExprOp) -> Option<(Associativity, Precedence)> {
+    let (associativity, precedence) = match op {
+        BinExprOp::Scope => (Associativity::LeftToRight, PrecedenceRank::Scope),
 
-    let (associativity, precedence) = match operator {
-        Token::Scope => (Associativity::LeftToRight, PrecedenceRank::Scope),
+        BinExprOp::Dot | BinExprOp::Arrow => {
+            (Associativity::LeftToRight, PrecedenceRank::FieldAccess)
+        }
 
-        Token::Dot | Token::Arrow => (Associativity::LeftToRight, PrecedenceRank::FieldAccess),
+        BinExprOp::As => (Associativity::LeftToRight, PrecedenceRank::Cast),
 
-        Token::As => (Associativity::LeftToRight, PrecedenceRank::Cast),
-
-        Token::Mul | Token::Div | Token::Mod => {
+        BinExprOp::Mul | BinExprOp::Div | BinExprOp::Mod => {
             (Associativity::LeftToRight, PrecedenceRank::MulDivMod)
         }
 
-        Token::Add | Token::Sub => (Associativity::LeftToRight, PrecedenceRank::AddSub),
+        BinExprOp::Add | BinExprOp::Sub => (Associativity::LeftToRight, PrecedenceRank::AddSub),
 
-        Token::BitShl | Token::BitShr | Token::BitRol | Token::BitRor => (
+        BinExprOp::BitShl | BinExprOp::BitShr | BinExprOp::BitRol | BinExprOp::BitRor => (
             Associativity::LeftToRight,
             PrecedenceRank::BitShiftAndRotate,
         ),
 
-        Token::BitAnd => (Associativity::LeftToRight, PrecedenceRank::BitAnd),
-        Token::BitXor => (Associativity::LeftToRight, PrecedenceRank::BitXor),
-        Token::BitOr => (Associativity::LeftToRight, PrecedenceRank::BitOr),
+        BinExprOp::BitAnd => (Associativity::LeftToRight, PrecedenceRank::BitAnd),
+        BinExprOp::BitXor => (Associativity::LeftToRight, PrecedenceRank::BitXor),
+        BinExprOp::BitOr => (Associativity::LeftToRight, PrecedenceRank::BitOr),
 
-        Token::LogicEq
-        | Token::LogicNe
-        | Token::LogicLt
-        | Token::LogicGt
-        | Token::LogicLe
-        | Token::LogicGe => (Associativity::LeftToRight, PrecedenceRank::Comparison),
+        BinExprOp::LogicEq
+        | BinExprOp::LogicNe
+        | BinExprOp::LogicLt
+        | BinExprOp::LogicGt
+        | BinExprOp::LogicLe
+        | BinExprOp::LogicGe => (Associativity::LeftToRight, PrecedenceRank::Comparison),
 
-        Token::LogicAnd => (Associativity::LeftToRight, PrecedenceRank::LogicAnd),
-        Token::LogicXor => (Associativity::LeftToRight, PrecedenceRank::LogicXor),
-        Token::LogicOr => (Associativity::LeftToRight, PrecedenceRank::LogicOr),
+        BinExprOp::LogicAnd => (Associativity::LeftToRight, PrecedenceRank::LogicAnd),
+        BinExprOp::LogicXor => (Associativity::LeftToRight, PrecedenceRank::LogicXor),
+        BinExprOp::LogicOr => (Associativity::LeftToRight, PrecedenceRank::LogicOr),
 
-        Token::Range => (Associativity::LeftToRight, PrecedenceRank::Range),
+        BinExprOp::Range => (Associativity::LeftToRight, PrecedenceRank::Range),
 
-        Token::Set
-        | Token::SetPlus
-        | Token::SetMinus
-        | Token::SetTimes
-        | Token::SetSlash
-        | Token::SetPercent
-        | Token::SetBitAnd
-        | Token::SetBitOr
-        | Token::SetBitXor
-        | Token::SetBitShl
-        | Token::SetBitShr
-        | Token::SetBitRotl
-        | Token::SetBitRotr
-        | Token::SetLogicAnd
-        | Token::SetLogicOr
-        | Token::SetLogicXor => (Associativity::RightToLeft, PrecedenceRank::Assign),
+        BinExprOp::Set
+        | BinExprOp::SetPlus
+        | BinExprOp::SetMinus
+        | BinExprOp::SetTimes
+        | BinExprOp::SetSlash
+        | BinExprOp::SetPercent
+        | BinExprOp::SetBitAnd
+        | BinExprOp::SetBitOr
+        | BinExprOp::SetBitXor
+        | BinExprOp::SetBitShl
+        | BinExprOp::SetBitShr
+        | BinExprOp::SetBitRotl
+        | BinExprOp::SetBitRotr
+        | BinExprOp::SetLogicAnd
+        | BinExprOp::SetLogicOr
+        | BinExprOp::SetLogicXor => (Associativity::RightToLeft, PrecedenceRank::Assign),
 
-        Token::BitNot | Token::LogicNot | Token::Typeof | Token::Ellipsis | Token::BlockArrow => {
+        BinExprOp::Ellipsis | BinExprOp::BlockArrow => {
             return None;
         }
-
-        _ => return None,
     };
 
     Some((associativity, precedence as Precedence))
@@ -115,7 +113,7 @@ fn get_precedence(operation: Operation) -> Option<(Associativity, Precedence)> {
     // TODO: Cleanup
 
     match operation {
-        Operation::Operator(operator) => get_precedence_of_operator(&operator),
+        Operation::BinOp(op) => get_precedence_of_binary_operator(op),
 
         Operation::FunctionCall | Operation::Index => Some((
             Associativity::LeftToRight,
@@ -124,25 +122,39 @@ fn get_precedence(operation: Operation) -> Option<(Associativity, Precedence)> {
     }
 }
 
-fn get_prefix_precedence(op: &Token) -> Option<Precedence> {
+fn get_unary_precedence(_op: UnaryExprOp) -> Option<Precedence> {
     // TODO: Cleanup
+    Some(PrecedenceRank::Unary as Precedence)
 
-    let precedence = match op {
-        Token::Add => PrecedenceRank::Unary,
-        Token::Sub => PrecedenceRank::Unary,
-        Token::LogicNot => PrecedenceRank::Unary,
-        Token::BitNot => PrecedenceRank::Unary,
-        Token::Mul => PrecedenceRank::Unary,
-        Token::BitAnd => PrecedenceRank::Unary,
-        Token::Typeof => PrecedenceRank::Unary,
+    // let precedence = match op {
 
-        _ => return None,
-    };
+    //     Token::Add => PrecedenceRank::Unary,
+    //     Token::Sub => PrecedenceRank::Unary,
+    //     Token::LogicNot => PrecedenceRank::Unary,
+    //     Token::BitNot => PrecedenceRank::Unary,
+    //     Token::Mul => PrecedenceRank::Unary,
+    //     Token::BitAnd => PrecedenceRank::Unary,
+    //     Token::Typeof => PrecedenceRank::Unary,
 
-    Some(precedence as Precedence)
+    //     _ => return None,
+    // };
+
+    // Some(precedence as Precedence)
 }
 
 impl Parser<'_, '_> {
+    fn detect_and_parse_unary_operator(&mut self) -> Option<UnaryExprOp> {
+        // TODO: Cleanup
+        // TODO: Implement
+        None
+    }
+
+    fn detect_and_parse_binary_operator(&mut self) -> Option<BinExprOp> {
+        // TODO: Cleanup
+        // TODO: Implement
+        None
+    }
+
     fn parse_expression_primary(&mut self) -> Option<Expr> {
         // TODO: Cleanup
 
@@ -177,7 +189,7 @@ impl Parser<'_, '_> {
 
             Token::OpenBracket => self.parse_list(),
 
-            Token::Name(_) | Token::Scope => {
+            Token::Name(_) | Token::Colon => {
                 let path = self.parse_path();
                 Some(Expr::Path(Box::new(path)))
             }
@@ -219,22 +231,15 @@ impl Parser<'_, '_> {
     }
 
     fn parse_prefix(&mut self) -> Option<Expr> {
-        // TODO: Cleanup
+        if let Some(operator) = self.detect_and_parse_unary_operator() {
+            if let Some(precedence) = get_unary_precedence(operator) {
+                let operand = self.parse_expression_precedence(precedence)?;
 
-        let prefix_op = self.lexer.peek_t();
-        if UnaryExprOp::try_from(prefix_op.clone()).is_ok() {
-            if prefix_op != Token::Scope {
-                if let Some(precedence) = get_prefix_precedence(&prefix_op) {
-                    self.lexer.skip_tok();
-
-                    let operand = self.parse_expression_precedence(precedence)?;
-
-                    return Some(Expr::UnaryExpr(Box::new(UnaryExpr {
-                        operator: UnaryExprOp::try_from(prefix_op).expect("invalid unary_op"),
-                        operand,
-                        is_postfix: false,
-                    })));
-                }
+                return Some(Expr::UnaryExpr(Box::new(UnaryExpr {
+                    operator,
+                    operand,
+                    is_postfix: false,
+                })));
             }
         }
 
@@ -242,11 +247,8 @@ impl Parser<'_, '_> {
             let inner = self.parse_expression();
 
             if !self.lexer.skip_if(&Token::CloseParen) {
-                error!(
-                    "[P????]: expr: expected closing parenthesis\n--> {}",
-                    self.lexer.current_pos()
-                );
-                return None;
+                let bug = SyntaxBug::ExpectedCloseParen(self.lexer.peek_pos());
+                self.bugs.push(&bug);
             }
 
             return Some(Expr::Parentheses(Box::new(inner)));
@@ -259,85 +261,78 @@ impl Parser<'_, '_> {
         &mut self,
         min_precedence_to_proceed: Precedence,
     ) -> Option<Expr> {
-        // TODO: Cleanup
-
         let mut sofar = self.parse_prefix()?;
 
         loop {
-            match self.lexer.peek_t() {
-                next_op if BinExprOp::try_from(next_op.clone()).is_ok() => {
-                    let operation = Operation::Operator(next_op.clone());
-                    let Some((assoc, op_precedence)) = get_precedence(operation) else {
-                        return Some(sofar);
-                    };
-
-                    if op_precedence < min_precedence_to_proceed {
-                        return Some(sofar);
-                    }
-
-                    self.lexer.skip_tok();
-
-                    let right_expr = if assoc == Associativity::LeftToRight {
-                        self.parse_expression_precedence(op_precedence + 1)?
-                    } else {
-                        self.parse_expression_precedence(op_precedence)?
-                    };
-
-                    sofar = Expr::BinExpr(Box::new(BinExpr {
-                        left: sofar,
-                        operator: BinExprOp::try_from(next_op).expect("invalid bin_op"),
-                        right: right_expr,
-                    }));
-                }
-
-                Token::OpenParen => {
-                    let operation = Operation::FunctionCall;
-                    let Some((_, new_precedence)) = get_precedence(operation) else {
-                        return Some(sofar);
-                    };
-
-                    if new_precedence < min_precedence_to_proceed {
-                        return Some(sofar);
-                    }
-
-                    let call_arguments = self.parse_function_arguments()?;
-
-                    sofar = Expr::Call(Box::new(Call {
-                        callee: sofar,
-                        arguments: call_arguments,
-                    }));
-                }
-
-                Token::OpenBracket => {
-                    let operation = Operation::Index;
-                    let Some((_, new_precedence)) = get_precedence(operation) else {
-                        return Some(sofar);
-                    };
-
-                    if new_precedence < min_precedence_to_proceed {
-                        return Some(sofar);
-                    }
-
-                    self.lexer.skip_tok();
-
-                    let index = self.parse_expression();
-
-                    if !self.lexer.skip_if(&Token::CloseBracket) {
-                        error!(
-                            "[P????]: expr: expected closing bracket\n--> {}",
-                            self.lexer.current_pos()
-                        );
-                        return None;
-                    }
-
-                    sofar = Expr::IndexAccess(Box::new(IndexAccess {
-                        collection: sofar,
-                        index,
-                    }));
-                }
-
-                _ => {
+            if let Some(operator) = self.detect_and_parse_binary_operator() {
+                let operation = Operation::BinOp(operator);
+                let Some((assoc, op_precedence)) = get_precedence(operation) else {
                     return Some(sofar);
+                };
+
+                if op_precedence < min_precedence_to_proceed {
+                    return Some(sofar);
+                }
+
+                let right_expr = if assoc == Associativity::LeftToRight {
+                    self.parse_expression_precedence(op_precedence + 1)?
+                } else {
+                    self.parse_expression_precedence(op_precedence)?
+                };
+
+                sofar = Expr::BinExpr(Box::new(BinExpr {
+                    left: sofar,
+                    operator,
+                    right: right_expr,
+                }));
+            } else {
+                match self.lexer.peek_t() {
+                    Token::OpenParen => {
+                        let operation = Operation::FunctionCall;
+                        let Some((_, new_precedence)) = get_precedence(operation) else {
+                            return Some(sofar);
+                        };
+
+                        if new_precedence < min_precedence_to_proceed {
+                            return Some(sofar);
+                        }
+
+                        let arguments = self.parse_function_arguments()?;
+
+                        sofar = Expr::Call(Box::new(Call {
+                            callee: sofar,
+                            arguments,
+                        }));
+                    }
+
+                    Token::OpenBracket => {
+                        let operation = Operation::Index;
+                        let Some((_, new_precedence)) = get_precedence(operation) else {
+                            return Some(sofar);
+                        };
+
+                        if new_precedence < min_precedence_to_proceed {
+                            return Some(sofar);
+                        }
+
+                        self.lexer.skip_tok();
+
+                        let index = self.parse_expression();
+
+                        if !self.lexer.skip_if(&Token::CloseBracket) {
+                            let bug = SyntaxBug::ExpectedCloseBracket(self.lexer.peek_pos());
+                            self.bugs.push(&bug);
+                        }
+
+                        sofar = Expr::IndexAccess(Box::new(IndexAccess {
+                            collection: sofar,
+                            index,
+                        }));
+                    }
+
+                    _ => {
+                        return Some(sofar);
+                    }
                 }
             }
         }
@@ -469,7 +464,7 @@ impl Parser<'_, '_> {
             GenericArgument { name, value }
         }
 
-        assert!(self.lexer.peek_t() == Token::LogicLt);
+        assert!(self.lexer.peek_t() == Token::Lt);
         self.lexer.skip_tok();
 
         let mut arguments = Vec::new();
@@ -477,28 +472,7 @@ impl Parser<'_, '_> {
 
         self.lexer.skip_if(&Token::Comma);
 
-        loop {
-            let peek = self.lexer.peek_t();
-
-            match peek {
-                Token::LogicGt => {
-                    self.lexer.skip_tok();
-                    break;
-                }
-
-                Token::BitShr => {
-                    self.lexer.modify_next_tok(Token::LogicGt);
-                    break;
-                }
-
-                Token::BitRor => {
-                    self.lexer.modify_next_tok(Token::BitShr);
-                    break;
-                }
-
-                _ => {}
-            }
-
+        while !self.lexer.skip_if(&Token::Gt) {
             if self.lexer.is_eof() {
                 let bug = SyntaxBug::ExpectedGenericArgumentEnd(self.lexer.peek_pos());
                 self.bugs.push(&bug);
@@ -517,16 +491,12 @@ impl Parser<'_, '_> {
             let argument = parse_generic_argument(self);
             arguments.push(argument);
 
-            if !self.lexer.skip_if(&Token::Comma) {
-                let any_terminator = self.lexer.next_is(&Token::LogicGt)
-                    || self.lexer.next_is(&Token::BitShr)
-                    || self.lexer.next_is(&Token::BitRor);
+            if !self.lexer.skip_if(&Token::Comma) && !self.lexer.next_is(&Token::Gt) {
+                let bug = SyntaxBug::ExpectedCloseAngle(self.lexer.peek_pos());
+                self.bugs.push(&bug);
 
-                if !any_terminator {
-                    let bug = SyntaxBug::ExpectedClosingAngle(self.lexer.peek_pos());
-                    self.bugs.push(&bug);
-                    break;
-                }
+                self.lexer.skip_while(&Token::Gt);
+                break;
             }
         }
 
@@ -536,9 +506,7 @@ impl Parser<'_, '_> {
     pub(crate) fn parse_path(&mut self) -> Path {
         // TODO: Cleanup
 
-        assert!(matches!(self.lexer.peek_t(), Token::Name(_) | Token::Scope));
-
-        // TODO: Cleanup
+        assert!(matches!(self.lexer.peek_t(), Token::Name(_) | Token::Colon));
 
         let mut path = SmallVec::new();
         let mut last_was_scope = false;
@@ -556,7 +524,11 @@ impl Parser<'_, '_> {
                     last_was_scope = false;
                 }
 
-                Token::Scope => {
+                Token::Colon => {
+                    if !self.lexer.skip_if(&Token::Colon) {
+                        break;
+                    }
+
                     if last_was_scope {
                         error!(
                             "[P????]: path: unexpected '::'\n--> {}",
@@ -592,7 +564,7 @@ impl Parser<'_, '_> {
             );
         }
 
-        if !self.lexer.next_is(&Token::LogicLt) {
+        if !self.lexer.next_is(&Token::Lt) {
             return Path {
                 path,
                 type_arguments: Vec::new(),
@@ -887,7 +859,7 @@ impl Parser<'_, '_> {
             None
         };
 
-        let default = if self.lexer.skip_if(&Token::Set) {
+        let default = if self.lexer.skip_if(&Token::Eq) {
             Some(self.parse_expression())
         } else {
             None
@@ -907,7 +879,7 @@ impl Parser<'_, '_> {
         let mut params = Vec::new();
 
         if !self.lexer.skip_if(&Token::OpenParen) {
-            let bug = SyntaxBug::ExpectedOpeningParen(self.lexer.peek_pos());
+            let bug = SyntaxBug::ExpectedOpenParen(self.lexer.peek_pos());
             self.bugs.push(&bug);
         }
 
@@ -965,7 +937,12 @@ impl Parser<'_, '_> {
         let attributes = self.parse_attributes();
         let parameters = self.parse_anonymous_function_parameters();
 
-        let return_type = if self.lexer.skip_if(&Token::Arrow) {
+        let return_type = if self.lexer.skip_if(&Token::Minus) {
+            if !self.lexer.skip_if(&Token::Gt) {
+                let bug = SyntaxBug::ExpectedArrow(self.lexer.peek_pos());
+                self.bugs.push(&bug);
+            }
+
             Some(self.parse_type())
         } else {
             None
@@ -973,7 +950,12 @@ impl Parser<'_, '_> {
 
         let definition = if self.lexer.next_is(&Token::OpenBrace) {
             self.parse_block()
-        } else if self.lexer.skip_if(&Token::BlockArrow) {
+        } else if self.lexer.skip_if(&Token::Eq) {
+            if !self.lexer.skip_if(&Token::Gt) {
+                let bug = SyntaxBug::ExpectedBlockArrow(self.lexer.peek_pos());
+                self.bugs.push(&bug);
+            }
+
             let expr = self.parse_expression();
             Block {
                 elements: vec![expr],

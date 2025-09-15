@@ -55,17 +55,18 @@ pub(crate) enum SyntaxBug {
     TupleTypeElementLimit(SourcePosition),
 
    
-    ExpectedOpeningParen(SourcePosition),
-    ExpectedClosingParen(SourcePosition),
-    ExpectedOpeningBrace(SourcePosition),
-    ExpectedClosingBrace(SourcePosition),
-    ExpectedOpeningBracket(SourcePosition),
-    ExpectedClosedBracket(SourcePosition),
-    ExpectedOpeningAngle(SourcePosition),
-    ExpectedClosingAngle(SourcePosition),
+    ExpectedOpenParen(SourcePosition),
+    ExpectedCloseParen(SourcePosition),
+    ExpectedOpenBrace(SourcePosition),
+    ExpectedCloseBrace(SourcePosition),
+    ExpectedOpenBracket(SourcePosition),
+    ExpectedCloseBracket(SourcePosition),
+    ExpectedOpenAngle(SourcePosition),
+    ExpectedCloseAngle(SourcePosition),
     ExpectedSemicolon(SourcePosition),
     ExpectedColon(SourcePosition),
     ExpectedArrow(SourcePosition),
+    ExpectedBlockArrow(SourcePosition),
 
     ExpectedItem(SourcePosition),
     ExpectedType(SourcePosition),
@@ -130,17 +131,18 @@ impl FormattableDiagnosticGroup for SyntaxBug {
             SyntaxBug::TupleTypeExpectedEnd(_) => 280,
             SyntaxBug::TupleTypeElementLimit(_) => 281,
 
-            SyntaxBug::ExpectedOpeningParen(_) => 1000,
-            SyntaxBug::ExpectedClosingParen(_) => 1001,
-            SyntaxBug::ExpectedOpeningBrace(_) => 1002,
-            SyntaxBug::ExpectedClosingBrace(_) => 1003,
-            SyntaxBug::ExpectedOpeningBracket(_) => 1004,
-            SyntaxBug::ExpectedClosedBracket(_) => 1005,
-            SyntaxBug::ExpectedOpeningAngle(_) => 1006,
-            SyntaxBug::ExpectedClosingAngle(_) => 1007,
+            SyntaxBug::ExpectedOpenParen(_) => 1000,
+            SyntaxBug::ExpectedCloseParen(_) => 1001,
+            SyntaxBug::ExpectedOpenBrace(_) => 1002,
+            SyntaxBug::ExpectedCloseBrace(_) => 1003,
+            SyntaxBug::ExpectedOpenBracket(_) => 1004,
+            SyntaxBug::ExpectedCloseBracket(_) => 1005,
+            SyntaxBug::ExpectedOpenAngle(_) => 1006,
+            SyntaxBug::ExpectedCloseAngle(_) => 1007,
             SyntaxBug::ExpectedSemicolon(_) => 1008,
             SyntaxBug::ExpectedColon(_) => 1009,
             SyntaxBug::ExpectedArrow(_) => 1010,
+            SyntaxBug::ExpectedBlockArrow(_) => 1011,
 
             SyntaxBug::ExpectedItem(_) => 2000,
             SyntaxBug::ExpectedType(_) => 2001,
@@ -361,42 +363,42 @@ impl FormattableDiagnosticGroup for SyntaxBug {
 
             /* ------------------------------------------------------------------------- */
 
-            SyntaxBug::ExpectedOpeningParen(pos) => DiagnosticInfo {
+            SyntaxBug::ExpectedOpenParen(pos) => DiagnosticInfo {
                 origin: Origin::Point(pos.to_owned()),
                 message: "expected '('".into(),
             },
 
-            SyntaxBug::ExpectedClosingParen(pos) => DiagnosticInfo {
+            SyntaxBug::ExpectedCloseParen(pos) => DiagnosticInfo {
                 origin: Origin::Point(pos.to_owned()),
                 message: "expected ')'".into(),
             },
 
-            SyntaxBug::ExpectedOpeningBrace(pos) => DiagnosticInfo {
+            SyntaxBug::ExpectedOpenBrace(pos) => DiagnosticInfo {
                 origin: Origin::Point(pos.to_owned()),
                 message: "expected '{'".into(),
             },
 
-            SyntaxBug::ExpectedClosingBrace(pos) => DiagnosticInfo {
+            SyntaxBug::ExpectedCloseBrace(pos) => DiagnosticInfo {
                 origin: Origin::Point(pos.to_owned()),
                 message: "expected '}'".into(),
             },
 
-            SyntaxBug::ExpectedOpeningBracket(pos) => DiagnosticInfo {
+            SyntaxBug::ExpectedOpenBracket(pos) => DiagnosticInfo {
                 origin: Origin::Point(pos.to_owned()),
                 message: "expected '['".into(),
             },
 
-            SyntaxBug::ExpectedClosedBracket(pos) => DiagnosticInfo {
+            SyntaxBug::ExpectedCloseBracket(pos) => DiagnosticInfo {
                 origin: Origin::Point(pos.to_owned()),
                 message: "expected ']'".into(),
             },
 
-            SyntaxBug::ExpectedOpeningAngle(pos) => DiagnosticInfo {
+            SyntaxBug::ExpectedOpenAngle(pos) => DiagnosticInfo {
                 origin: Origin::Point(pos.to_owned()),
                 message: "expected '<'".into(),
             },
 
-            SyntaxBug::ExpectedClosingAngle(pos) => DiagnosticInfo {
+            SyntaxBug::ExpectedCloseAngle(pos) => DiagnosticInfo {
                 origin: Origin::Point(pos.to_owned()),
                 message: "expected '>'".into(),
             },
@@ -414,6 +416,11 @@ impl FormattableDiagnosticGroup for SyntaxBug {
             SyntaxBug::ExpectedArrow(pos) => DiagnosticInfo {
                 origin: Origin::Point(pos.to_owned()),
                 message: "expected '->'".into(),
+            },
+
+            SyntaxBug::ExpectedBlockArrow(pos) => DiagnosticInfo {
+                origin: Origin::Point(pos.to_owned()),
+                message: "expected '=>''".into(),
             },
 
             /* ------------------------------------------------------------------------- */

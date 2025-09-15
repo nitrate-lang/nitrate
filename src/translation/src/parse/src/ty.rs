@@ -48,7 +48,7 @@ impl Parser<'_, '_> {
                 let maximum = this.parse_expression();
 
                 if !this.lexer.skip_if(&Token::CloseBracket) {
-                    let bug = SyntaxBug::ExpectedClosedBracket(this.lexer.peek_pos());
+                    let bug = SyntaxBug::ExpectedCloseBracket(this.lexer.peek_pos());
                     this.bugs.push(&bug);
                 }
 
@@ -83,7 +83,7 @@ impl Parser<'_, '_> {
         }
 
         if !self.lexer.next_is(&Token::OpenBracket) {
-            let bug = SyntaxBug::ExpectedOpeningBracket(self.lexer.peek_pos());
+            let bug = SyntaxBug::ExpectedOpenBracket(self.lexer.peek_pos());
             self.bugs.push(&bug);
 
             self.parse_expression(); // Skip
@@ -122,7 +122,7 @@ impl Parser<'_, '_> {
         let len = self.parse_expression();
 
         if !self.lexer.skip_if(&Token::CloseBracket) {
-            let bug = SyntaxBug::ExpectedClosedBracket(self.lexer.peek_pos());
+            let bug = SyntaxBug::ExpectedCloseBracket(self.lexer.peek_pos());
             self.bugs.push(&bug);
 
             self.lexer.skip_while(&Token::CloseBracket);
@@ -239,7 +239,7 @@ impl Parser<'_, '_> {
         }
 
         if !self.lexer.skip_if(&Token::OpenParen) {
-            let bug = SyntaxBug::ExpectedOpeningParen(self.lexer.peek_pos());
+            let bug = SyntaxBug::ExpectedOpenParen(self.lexer.peek_pos());
             self.bugs.push(&bug);
         }
 
@@ -309,7 +309,7 @@ impl Parser<'_, '_> {
         self.lexer.skip_tok();
 
         if !self.lexer.skip_if(&Token::OpenParen) {
-            let bug = SyntaxBug::ExpectedOpeningParen(self.lexer.peek_pos());
+            let bug = SyntaxBug::ExpectedOpenParen(self.lexer.peek_pos());
             self.bugs.push(&bug);
         }
 
@@ -320,7 +320,7 @@ impl Parser<'_, '_> {
         });
 
         if !self.lexer.skip_if(&Token::CloseParen) {
-            let bug = SyntaxBug::ExpectedClosingParen(self.lexer.peek_pos());
+            let bug = SyntaxBug::ExpectedCloseParen(self.lexer.peek_pos());
             self.bugs.push(&bug);
         }
 

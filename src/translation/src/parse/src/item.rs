@@ -77,7 +77,7 @@ impl Parser<'_, '_> {
         });
 
         if !self.lexer.skip_if(&Token::OpenBrace) {
-            let bug = SyntaxBug::ExpectedOpeningBrace(self.lexer.peek_pos());
+            let bug = SyntaxBug::ExpectedOpenBrace(self.lexer.peek_pos());
             self.bugs.push(&bug);
         }
 
@@ -118,7 +118,7 @@ impl Parser<'_, '_> {
         let attributes = self.parse_attributes();
         let path = self.parse_path();
 
-        let alias = if self.lexer.skip_if(&Token::As) {
+        let alias = if self.lexer.skip_if(&Token::Keyword(Keyword::As)) {
             Some(self.lexer.next_if_name().unwrap_or_else(|| {
                 let bug = SyntaxBug::ImportMissingAliasName(self.lexer.peek_pos());
                 self.bugs.push(&bug);
@@ -154,7 +154,7 @@ impl Parser<'_, '_> {
 
         let type_params = self.parse_generic_parameters();
 
-        let aliased_type = if self.lexer.skip_if(&Token::Set) {
+        let aliased_type = if self.lexer.skip_if(&Token::Eq) {
             Some(self.parse_type())
         } else {
             None
@@ -189,7 +189,7 @@ impl Parser<'_, '_> {
                 None
             };
 
-            let value = if this.lexer.skip_if(&Token::Set) {
+            let value = if this.lexer.skip_if(&Token::Eq) {
                 Some(this.parse_expression())
             } else {
                 None
@@ -217,7 +217,7 @@ impl Parser<'_, '_> {
         let type_params = self.parse_generic_parameters();
 
         if !self.lexer.skip_if(&Token::OpenBrace) {
-            let bug = SyntaxBug::ExpectedOpeningBrace(self.lexer.peek_pos());
+            let bug = SyntaxBug::ExpectedOpenBrace(self.lexer.peek_pos());
             self.bugs.push(&bug);
         }
 
@@ -277,7 +277,7 @@ impl Parser<'_, '_> {
 
             let field_type = this.parse_type();
 
-            let default = if this.lexer.skip_if(&Token::Set) {
+            let default = if this.lexer.skip_if(&Token::Eq) {
                 Some(this.parse_expression())
             } else {
                 None
@@ -305,7 +305,7 @@ impl Parser<'_, '_> {
         let type_params = self.parse_generic_parameters();
 
         if !self.lexer.skip_if(&Token::OpenBrace) {
-            let bug = SyntaxBug::ExpectedOpeningBrace(self.lexer.peek_pos());
+            let bug = SyntaxBug::ExpectedOpenBrace(self.lexer.peek_pos());
             self.bugs.push(&bug);
         }
 
@@ -391,7 +391,7 @@ impl Parser<'_, '_> {
         let type_params = self.parse_generic_parameters();
 
         if !self.lexer.skip_if(&Token::OpenBrace) {
-            let bug = SyntaxBug::ExpectedOpeningBrace(self.lexer.peek_pos());
+            let bug = SyntaxBug::ExpectedOpenBrace(self.lexer.peek_pos());
             self.bugs.push(&bug);
         }
 
@@ -450,7 +450,7 @@ impl Parser<'_, '_> {
         let for_type = self.parse_type();
 
         if !self.lexer.skip_if(&Token::OpenBrace) {
-            let bug = SyntaxBug::ExpectedOpeningBrace(self.lexer.peek_pos());
+            let bug = SyntaxBug::ExpectedOpenBrace(self.lexer.peek_pos());
             self.bugs.push(&bug);
         }
 
@@ -502,7 +502,7 @@ impl Parser<'_, '_> {
                 None
             };
 
-            let default = if this.lexer.skip_if(&Token::Set) {
+            let default = if this.lexer.skip_if(&Token::Eq) {
                 Some(this.parse_expression())
             } else {
                 None
@@ -519,7 +519,7 @@ impl Parser<'_, '_> {
         let mut params = Vec::new();
 
         if !self.lexer.skip_if(&Token::OpenParen) {
-            let bug = SyntaxBug::ExpectedOpeningParen(self.lexer.peek_pos());
+            let bug = SyntaxBug::ExpectedOpenParen(self.lexer.peek_pos());
             self.bugs.push(&bug);
         }
 
@@ -572,7 +572,12 @@ impl Parser<'_, '_> {
         let type_params = self.parse_generic_parameters();
         let parameters = self.parse_named_function_parameters();
 
-        let return_type = if self.lexer.skip_if(&Token::Arrow) {
+        let return_type = if self.lexer.skip_if(&Token::Minus) {
+            if !self.lexer.skip_if(&Token::Lt) {
+                let bug = SyntaxBug::ExpectedArrow(self.lexer.peek_pos());
+                self.bugs.push(&bug);
+            }
+
             Some(self.parse_type())
         } else {
             None
@@ -581,7 +586,12 @@ impl Parser<'_, '_> {
         let definition = if self.lexer.next_is(&Token::OpenBrace) {
             let body = self.parse_block();
             Some(body)
-        } else if self.lexer.skip_if(&Token::BlockArrow) {
+        } else if self.lexer.skip_if(&Token::Eq) {
+            if !self.lexer.skip_if(&Token::Gt) {
+                let bug = SyntaxBug::ExpectedBlockArrow(self.lexer.peek_pos());
+                self.bugs.push(&bug);
+            }
+
             let single = self.parse_expression();
 
             if !self.lexer.skip_if(&Token::Semi) {
@@ -635,7 +645,7 @@ impl Parser<'_, '_> {
             None
         };
 
-        let initializer = if self.lexer.skip_if(&Token::Set) {
+        let initializer = if self.lexer.skip_if(&Token::Eq) {
             Some(self.parse_expression())
         } else {
             None
@@ -673,7 +683,7 @@ impl Parser<'_, '_> {
             None
         };
 
-        let initializer = if self.lexer.skip_if(&Token::Set) {
+        let initializer = if self.lexer.skip_if(&Token::Eq) {
             Some(self.parse_expression())
         } else {
             None
