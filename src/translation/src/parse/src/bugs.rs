@@ -52,7 +52,10 @@ pub(crate) enum SyntaxBug {
     ExpectedClosingParen(SourcePosition),
     ExpectedSemicolon(SourcePosition),
     ExpectedColon(SourcePosition),
+
     ExpectedItem(SourcePosition),
+    ExpectedType(SourcePosition),
+    ExpectedExpr(SourcePosition),
 
     Test,
 }
@@ -113,7 +116,10 @@ impl FormattableDiagnosticGroup for SyntaxBug {
             SyntaxBug::ExpectedClosingParen(_) => 1005,
             SyntaxBug::ExpectedSemicolon(_) => 1006,
             SyntaxBug::ExpectedColon(_) => 1007,
-            SyntaxBug::ExpectedItem(_) => 1008,
+
+            SyntaxBug::ExpectedItem(_) => 2000,
+            SyntaxBug::ExpectedType(_) => 2001,
+            SyntaxBug::ExpectedExpr(_) => 2002,
 
             SyntaxBug::Test => 9999,
         }
@@ -136,6 +142,8 @@ impl FormattableDiagnosticGroup for SyntaxBug {
                 message: "expected a '>' or ','".into(),
             },
 
+            /* ------------------------------------------------------------------------- */
+
             SyntaxBug::ModuleMissingName(pos) => DiagnosticInfo {
                 origin: Origin::Point(pos.to_owned()),
                 message: "module name is missing".into(),
@@ -151,15 +159,21 @@ impl FormattableDiagnosticGroup for SyntaxBug {
                 message: "expected '}'".into(),
             },
 
+            /* ------------------------------------------------------------------------- */
+
             SyntaxBug::ImportMissingAliasName(pos) => DiagnosticInfo {
                 origin: Origin::Point(pos.to_owned()),
                 message: "import alias name is missing".into(),
             },
 
+            /* ------------------------------------------------------------------------- */
+
             SyntaxBug::TypeAliasMissingName(pos) => DiagnosticInfo {
                 origin: Origin::Point(pos.to_owned()),
                 message: "type alias name is missing".into(),
             },
+
+            /* ------------------------------------------------------------------------- */
 
             SyntaxBug::EnumMissingName(pos) => DiagnosticInfo {
                 origin: Origin::Point(pos.to_owned()),
@@ -181,6 +195,8 @@ impl FormattableDiagnosticGroup for SyntaxBug {
                 message: "expected '}' or ','".into(),
             },
 
+            /* ------------------------------------------------------------------------- */
+
             SyntaxBug::StructureMissingName(pos) => DiagnosticInfo {
                 origin: Origin::Point(pos.to_owned()),
                 message: "structure name is missing".into(),
@@ -200,6 +216,8 @@ impl FormattableDiagnosticGroup for SyntaxBug {
                 origin: Origin::Point(pos.to_owned()),
                 message: "expected '}' or ','".into(),
             },
+
+            /* ------------------------------------------------------------------------- */
 
             SyntaxBug::FunctionMissingName(pos) => DiagnosticInfo {
                 origin: Origin::Point(pos.to_owned()),
@@ -226,15 +244,21 @@ impl FormattableDiagnosticGroup for SyntaxBug {
                 message: "expected ')' or ','".into(),
             },
 
+            /* ------------------------------------------------------------------------- */
+
             SyntaxBug::StaticVariableMissingName(pos) => DiagnosticInfo {
                 origin: Origin::Point(pos.to_owned()),
                 message: "static variable name is missing".into(),
             },
 
+            /* ------------------------------------------------------------------------- */
+
             SyntaxBug::ConstVariableMissingName(pos) => DiagnosticInfo {
                 origin: Origin::Point(pos.to_owned()),
                 message: "const variable name is missing".into(),
             },
+
+            /* ------------------------------------------------------------------------- */
 
             SyntaxBug::TraitMissingName(pos) => DiagnosticInfo {
                 origin: Origin::Point(pos.to_owned()),
@@ -257,6 +281,8 @@ impl FormattableDiagnosticGroup for SyntaxBug {
                 message: "expected '}'".into(),
             },
 
+            /* ------------------------------------------------------------------------- */
+
             SyntaxBug::ImplMissingFor(pos) => DiagnosticInfo {
                 origin: Origin::Point(pos.to_owned()),
                 message: "expected 'for' in impl declaration".into(),
@@ -271,6 +297,8 @@ impl FormattableDiagnosticGroup for SyntaxBug {
                 origin: Origin::Point(pos.to_owned()),
                 message: "impl item limit of 65,536 exceeded".into(),
             },
+
+            /* ------------------------------------------------------------------------- */
 
             SyntaxBug::ExpectedOpeningBrace(pos) => DiagnosticInfo {
                 origin: Origin::Point(pos.to_owned()),
@@ -312,10 +340,24 @@ impl FormattableDiagnosticGroup for SyntaxBug {
                 message: "expected ':'".into(),
             },
 
+            /* ------------------------------------------------------------------------- */
+
             SyntaxBug::ExpectedItem(pos) => DiagnosticInfo {
                 origin: Origin::Point(pos.to_owned()),
                 message: "expected an item".into(),
             },
+
+            SyntaxBug::ExpectedType(pos) => DiagnosticInfo {
+                origin: Origin::Point(pos.to_owned()),
+                message: "expected a type".into(),
+            },
+
+            SyntaxBug::ExpectedExpr(pos) => DiagnosticInfo {
+                origin: Origin::Point(pos.to_owned()),
+                message: "expected an expression".into(),
+            },
+
+            /* ------------------------------------------------------------------------- */
 
             SyntaxBug::Test => DiagnosticInfo {
                 message: "this is a test syntax error".into(),

@@ -117,7 +117,7 @@ impl Parser<'_, '_> {
         })
     }
 
-    fn parse_generic_argument(&mut self) -> Option<GenericArgument> {
+    fn parse_generic_argument(&mut self) -> GenericArgument {
         // TODO: Cleanup
 
         let mut argument_name: Option<IString> = None;
@@ -141,13 +141,13 @@ impl Parser<'_, '_> {
 
         let argument_value = self.parse_type();
 
-        Some(GenericArgument {
+        GenericArgument {
             name: argument_name,
             value: Some(argument_value),
-        })
+        }
     }
 
-    fn parse_generic_arguments(&mut self) -> Option<Vec<GenericArgument>> {
+    fn parse_generic_arguments(&mut self) -> Vec<GenericArgument> {
         // TODO: Cleanup
 
         assert!(self.lexer.peek_t() == Token::Op(Op::LogicLt));
@@ -177,8 +177,7 @@ impl Parser<'_, '_> {
                 break;
             }
 
-            let generic_argument = self.parse_generic_argument()?;
-
+            let generic_argument = self.parse_generic_argument();
             arguments.push(generic_argument);
 
             if self.generic_type_depth == 0 {
@@ -196,21 +195,21 @@ impl Parser<'_, '_> {
                         self.lexer.position()
                     );
 
-                    return None;
+                    break;
                 }
             }
         }
 
-        Some(arguments)
+        arguments
     }
 
-    fn parse_type_name(&mut self) -> Option<Type> {
+    fn parse_type_name(&mut self) -> Type {
         // TODO: Cleanup
 
         match self.lexer.peek_t() {
             Token::Name(name) if name.deref() == "_" => {
                 self.lexer.skip_tok();
-                return Some(Type::InferType);
+                return Type::InferType;
             }
             _ => {}
         }
@@ -256,7 +255,6 @@ impl Parser<'_, '_> {
 
         if path.is_empty() {
             error!("[P????]: type name: expected type name\n--> {pos}");
-            return None;
         }
 
         if last_was_scope {
@@ -264,16 +262,14 @@ impl Parser<'_, '_> {
                 "[P0???]: type name: unexpected '::' at end of type name\n--> {}",
                 self.lexer.position()
             );
-
-            return None;
         }
 
         if !self.lexer.next_is(&Token::Op(Op::LogicLt)) {
-            return Some(Type::TypeName(Box::new(Path { path: path.into() })));
+            return Type::TypeName(Box::new(Path { path: path.into() }));
         }
 
         let is_already_parsing_generic_type = self.generic_type_depth != 0;
-        let generic_arguments = self.parse_generic_arguments()?;
+        let generic_arguments = self.parse_generic_arguments();
 
         if !is_already_parsing_generic_type {
             match self.generic_type_depth {
@@ -283,16 +279,12 @@ impl Parser<'_, '_> {
                         "[P0???]: generic type: unexpected '>' delimiter\n--> {}",
                         self.lexer.position()
                     );
-
-                    return None;
                 }
                 _ => {
                     error!(
                         "[P0???]: generic type: unexpected '>>' delimiter\n--> {}",
                         self.lexer.position()
                     );
-
-                    return None;
                 }
             }
 
@@ -300,20 +292,20 @@ impl Parser<'_, '_> {
             self.generic_type_suffix_terminator_ambiguity = false;
         }
 
-        Some(Type::GenericType(Box::new(GenericType {
+        Type::GenericType(Box::new(GenericType {
             basis_type: Type::TypeName(Box::new(Path { path: path.into() })),
             arguments: generic_arguments,
-        })))
+        }))
     }
 
-    fn parse_array_or_slice(&mut self) -> Option<Type> {
+    fn parse_array_or_slice(&mut self) -> Type {
         assert!(self.lexer.peek_t() == Token::Punct(Punct::LeftBracket));
         self.lexer.skip_tok();
 
         let element_type = self.parse_type();
 
         if self.lexer.skip_if(&Token::Punct(Punct::RightBracket)) {
-            return Some(Type::SliceType(Box::new(SliceType { element_type })));
+            return Type::SliceType(Box::new(SliceType { element_type }));
         }
 
         if !self.lexer.next_is(&Token::Punct(Punct::Semicolon)) {
@@ -330,10 +322,10 @@ impl Parser<'_, '_> {
             self.lexer.skip_while(&Token::Punct(Punct::RightBracket));
         }
 
-        Some(Type::ArrayType(Box::new(ArrayType { element_type, len })))
+        Type::ArrayType(Box::new(ArrayType { element_type, len }))
     }
 
-    fn parse_reference_type(&mut self) -> Option<Type> {
+    fn parse_reference_type(&mut self) -> ReferenceType {
         // TODO: Cleanup
 
         assert!(self.lexer.peek_t() == Token::Op(Op::BitAnd));
@@ -355,15 +347,15 @@ impl Parser<'_, '_> {
 
         let to = self.parse_type();
 
-        Some(Type::ReferenceType(Box::new(ReferenceType {
+        ReferenceType {
             lifetime: Some(Lifetime::CollectorManaged),
             mutability,
             exclusive,
             to,
-        })))
+        }
     }
 
-    fn parse_pointer_type(&mut self) -> Option<Type> {
+    fn parse_pointer_type(&mut self) -> ReferenceType {
         // TODO: Cleanup
 
         assert!(self.lexer.peek_t() == Token::Op(Op::Mul));
@@ -385,12 +377,12 @@ impl Parser<'_, '_> {
 
         let to = self.parse_type();
 
-        Some(Type::ReferenceType(Box::new(ReferenceType {
+        ReferenceType {
             lifetime: None,
             exclusive,
             mutability,
             to,
-        })))
+        }
     }
 
     fn parse_function_type_parameter(&mut self) -> FunctionTypeParameter {
@@ -464,7 +456,7 @@ impl Parser<'_, '_> {
         params
     }
 
-    fn parse_function_type(&mut self) -> Option<Type> {
+    fn parse_function_type(&mut self) -> FunctionType {
         // TODO: Cleanup
 
         assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Fn));
@@ -480,14 +472,14 @@ impl Parser<'_, '_> {
             None
         };
 
-        Some(Type::FunctionType(Box::new(FunctionType {
+        FunctionType {
             parameters,
             return_type,
             attributes,
-        })))
+        }
     }
 
-    fn parse_opaque_type(&mut self) -> Option<Type> {
+    fn parse_opaque_type(&mut self) -> Type {
         // TODO: Cleanup
 
         assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Opaque));
@@ -499,8 +491,6 @@ impl Parser<'_, '_> {
                 self.lexer.position()
             );
             info!("[P0???]: opaque type: syntax hint: opaque(<string>)");
-
-            return None;
         }
 
         let Some(opaque_identity) = self.lexer.next_if_string() else {
@@ -510,7 +500,7 @@ impl Parser<'_, '_> {
             );
             info!("[P0???]: opaque type: syntax hint: opaque(<string>)");
 
-            return None;
+            return Type::SyntaxError;
         };
 
         if !self.lexer.skip_if(&Token::Punct(Punct::RightParen)) {
@@ -519,14 +509,37 @@ impl Parser<'_, '_> {
                 self.lexer.position()
             );
             info!("[P0???]: opaque type: syntax hint: opaque(<string>)");
-
-            return None;
         }
 
-        Some(Type::OpaqueType(opaque_identity))
+        Type::OpaqueType(opaque_identity)
     }
 
-    fn parse_type_primary(&mut self) -> Option<Type> {
+    fn parse_type_primitive(&mut self) -> Type {
+        let keyword = self.lexer.next_if_keyword().unwrap();
+
+        match keyword {
+            Keyword::Bool => Type::Bool,
+            Keyword::U8 => Type::UInt8,
+            Keyword::U16 => Type::UInt16,
+            Keyword::U32 => Type::UInt32,
+            Keyword::U64 => Type::UInt64,
+            Keyword::U128 => Type::UInt128,
+            Keyword::I8 => Type::Int8,
+            Keyword::I16 => Type::Int16,
+            Keyword::I32 => Type::Int32,
+            Keyword::I64 => Type::Int64,
+            Keyword::I128 => Type::Int128,
+            Keyword::F8 => Type::Float8,
+            Keyword::F16 => Type::Float16,
+            Keyword::F32 => Type::Float32,
+            Keyword::F64 => Type::Float64,
+            Keyword::F128 => Type::Float128,
+
+            _ => unreachable!(),
+        }
+    }
+
+    fn parse_type_primary(&mut self) -> Type {
         // TODO: Cleanup
 
         let first_token = self.lexer.peek_tok();
@@ -539,160 +552,46 @@ impl Parser<'_, '_> {
         }
 
         let result = match first_token.into_token() {
-            Token::Keyword(Keyword::Bool) => {
-                self.lexer.skip_tok();
-                Some(Type::Bool)
-            }
-
-            Token::Keyword(Keyword::U8) => {
-                self.lexer.skip_tok();
-                Some(Type::UInt8)
-            }
-
-            Token::Keyword(Keyword::U16) => {
-                self.lexer.skip_tok();
-                Some(Type::UInt16)
-            }
-
-            Token::Keyword(Keyword::U32) => {
-                self.lexer.skip_tok();
-                Some(Type::UInt32)
-            }
-
-            Token::Keyword(Keyword::U64) => {
-                self.lexer.skip_tok();
-                Some(Type::UInt64)
-            }
-
-            Token::Keyword(Keyword::U128) => {
-                self.lexer.skip_tok();
-                Some(Type::UInt128)
-            }
-
-            Token::Keyword(Keyword::I8) => {
-                self.lexer.skip_tok();
-                Some(Type::Int8)
-            }
-
-            Token::Keyword(Keyword::I16) => {
-                self.lexer.skip_tok();
-                Some(Type::Int16)
-            }
-
-            Token::Keyword(Keyword::I32) => {
-                self.lexer.skip_tok();
-                Some(Type::Int32)
-            }
-
-            Token::Keyword(Keyword::I64) => {
-                self.lexer.skip_tok();
-                Some(Type::Int64)
-            }
-
-            Token::Keyword(Keyword::I128) => {
-                self.lexer.skip_tok();
-                Some(Type::Int128)
-            }
-
-            Token::Keyword(Keyword::F8) => {
-                self.lexer.skip_tok();
-                Some(Type::Float8)
-            }
-
-            Token::Keyword(Keyword::F16) => {
-                self.lexer.skip_tok();
-                Some(Type::Float16)
-            }
-
-            Token::Keyword(Keyword::F32) => {
-                self.lexer.skip_tok();
-                Some(Type::Float32)
-            }
-
-            Token::Keyword(Keyword::F64) => {
-                self.lexer.skip_tok();
-                Some(Type::Float64)
-            }
-
-            Token::Keyword(Keyword::F128) => {
-                self.lexer.skip_tok();
-                Some(Type::Float128)
-            }
+            Token::Keyword(Keyword::Bool)
+            | Token::Keyword(Keyword::U8)
+            | Token::Keyword(Keyword::U16)
+            | Token::Keyword(Keyword::U32)
+            | Token::Keyword(Keyword::U64)
+            | Token::Keyword(Keyword::U128)
+            | Token::Keyword(Keyword::I8)
+            | Token::Keyword(Keyword::I16)
+            | Token::Keyword(Keyword::I32)
+            | Token::Keyword(Keyword::I64)
+            | Token::Keyword(Keyword::I128)
+            | Token::Keyword(Keyword::F8)
+            | Token::Keyword(Keyword::F16)
+            | Token::Keyword(Keyword::F32)
+            | Token::Keyword(Keyword::F64)
+            | Token::Keyword(Keyword::F128) => self.parse_type_primitive(),
 
             Token::Name(_) | Token::Op(Op::Scope) => self.parse_type_name(),
             Token::Punct(Punct::LeftBracket) => self.parse_array_or_slice(),
-            Token::Op(Op::BitAnd) => self.parse_reference_type(),
-            Token::Op(Op::Mul) => self.parse_pointer_type(),
-
-            Token::Punct(Punct::LeftBrace) => {
-                let block = self.parse_block();
-                Some(Type::LatentType(Box::new(block)))
-            }
-
-            Token::Keyword(Keyword::Fn) => self.parse_function_type(),
+            Token::Op(Op::BitAnd) => Type::ReferenceType(Box::new(self.parse_reference_type())),
+            Token::Op(Op::Mul) => Type::ReferenceType(Box::new(self.parse_pointer_type())),
+            Token::Punct(Punct::LeftBrace) => Type::LatentType(Box::new(self.parse_block())),
+            Token::Keyword(Keyword::Fn) => Type::FunctionType(Box::new(self.parse_function_type())),
             Token::Keyword(Keyword::Opaque) => self.parse_opaque_type(),
 
-            Token::Integer(int) => {
+            Token::Integer(_)
+            | Token::Float(_)
+            | Token::Keyword(_)
+            | Token::String(_)
+            | Token::BString(_)
+            | Token::Punct(_)
+            | Token::Op(_)
+            | Token::Comment(_)
+            | Token::Eof => {
                 self.lexer.skip_tok();
-                error!("[P0???]: type: unexpected integer '{int}'\n--> {current_pos}");
 
-                None
-            }
+                let log = SyntaxBug::ExpectedType(current_pos);
+                self.bugs.push(&log);
 
-            Token::Float(float) => {
-                self.lexer.skip_tok();
-                error!("[P0???]: type: unexpected float '{float}'\n--> {current_pos}");
-
-                None
-            }
-
-            Token::Keyword(func) => {
-                self.lexer.skip_tok();
-                error!("[P0???]: type: unexpected keyword '{func}'\n--> {current_pos}");
-
-                None
-            }
-
-            Token::String(string) => {
-                self.lexer.skip_tok();
-                error!("[P0???]: type: unexpected string '{string}'\n--> {current_pos}");
-
-                None
-            }
-
-            Token::BString(bstring) => {
-                self.lexer.skip_tok();
-                error!("[P0???]: type: unexpected bstring '{bstring:?}'\n--> {current_pos}");
-
-                None
-            }
-
-            Token::Punct(punc) => {
-                self.lexer.skip_tok();
-                error!("[P0???]: type: unexpected punctuation '{punc}'\n--> {current_pos}");
-
-                None
-            }
-
-            Token::Op(op) => {
-                self.lexer.skip_tok();
-                error!("[P0???]: type: unexpected operator '{op}'\n--> {current_pos}");
-
-                None
-            }
-
-            Token::Comment(_) => {
-                self.lexer.skip_tok();
-                error!("[P0???]: type: unexpected comment\n--> {current_pos}");
-
-                None
-            }
-
-            Token::Eof => {
-                self.lexer.skip_tok();
-                error!("[P0???]: type: unexpected end of file\n--> {current_pos}");
-
-                None
+                Type::SyntaxError
             }
         };
 
@@ -761,10 +660,7 @@ impl Parser<'_, '_> {
             return result;
         }
 
-        let Some(the_type) = self.parse_type_primary() else {
-            self.set_failed_bit();
-            return Type::SyntaxError;
-        };
+        let the_type = self.parse_type_primary();
 
         let Some(refinement) = self.parse_refinement_options() else {
             self.set_failed_bit();
