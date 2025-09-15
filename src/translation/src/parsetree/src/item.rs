@@ -72,6 +72,7 @@ pub struct Enum {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum AssociatedItem {
+    SyntaxError,
     TypeAlias(TypeAlias),
     ConstantItem(ConstVariable),
     Method(NamedFunction),

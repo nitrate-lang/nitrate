@@ -34,10 +34,10 @@ pub(crate) enum SyntaxBug {
 
     TraitMissingName(SourcePosition),
     TraitItemLimit(SourcePosition),
+    TraitDoesNotAllowItem(SourcePosition),
     TraitExpectedEnd(SourcePosition),
 
     ExpectedOpeningBrace(SourcePosition),
-    ExpectedEquals(SourcePosition),
     ExpectedSemicolon(SourcePosition),
     ExpectedColon(SourcePosition),
     ExpectedItem(SourcePosition),
@@ -83,10 +83,10 @@ impl FormattableDiagnosticGroup for SyntaxBug {
 
             SyntaxBug::TraitMissingName(_) => 180,
             SyntaxBug::TraitItemLimit(_) => 181,
-            SyntaxBug::TraitExpectedEnd(_) => 182,
+            SyntaxBug::TraitDoesNotAllowItem(_) => 182,
+            SyntaxBug::TraitExpectedEnd(_) => 183,
 
             SyntaxBug::ExpectedOpeningBrace(_) => 1000,
-            SyntaxBug::ExpectedEquals(_) => 1001,
             SyntaxBug::ExpectedSemicolon(_) => 1002,
             SyntaxBug::ExpectedColon(_) => 1003,
             SyntaxBug::ExpectedItem(_) => 1004,
@@ -207,6 +207,12 @@ impl FormattableDiagnosticGroup for SyntaxBug {
                 message: "trait item limit of 65,536 exceeded".into(),
             },
 
+            SyntaxBug::TraitDoesNotAllowItem(pos) => DiagnosticInfo {
+                origin: Origin::Point(pos.to_owned()),
+                message: "only associated constants, type aliases, and function signatures are allowed in traits"
+                    .into(),
+            },
+
             SyntaxBug::TraitExpectedEnd(pos) => DiagnosticInfo {
                 origin: Origin::Point(pos.to_owned()),
                 message: "expected '}'".into(),
@@ -215,11 +221,6 @@ impl FormattableDiagnosticGroup for SyntaxBug {
             SyntaxBug::ExpectedOpeningBrace(pos) => DiagnosticInfo {
                 origin: Origin::Point(pos.to_owned()),
                 message: "expected '{'".into(),
-            },
-
-            SyntaxBug::ExpectedEquals(pos) => DiagnosticInfo {
-                origin: Origin::Point(pos.to_owned()),
-                message: "expected '='".into(),
             },
 
             SyntaxBug::ExpectedSemicolon(pos) => DiagnosticInfo {

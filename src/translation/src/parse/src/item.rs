@@ -355,8 +355,31 @@ impl Parser<'_, '_> {
     }
 
     fn parse_trait_item(&mut self) -> AssociatedItem {
-        // TODO:
-        todo!()
+        match self.lexer.peek_t() {
+            Token::Keyword(Keyword::Fn) => {
+                let func = self.parse_named_function();
+                AssociatedItem::Method(func)
+            }
+
+            Token::Keyword(Keyword::Const) => {
+                let const_var = self.parse_const_variable();
+                AssociatedItem::ConstantItem(const_var)
+            }
+
+            Token::Keyword(Keyword::Type) => {
+                let type_alias = self.parse_type_alias();
+                AssociatedItem::TypeAlias(type_alias)
+            }
+
+            _ => {
+                self.lexer.skip_tok();
+
+                let bug = SyntaxBug::TraitDoesNotAllowItem(self.lexer.peek_pos());
+                self.bugs.push(&bug);
+
+                AssociatedItem::SyntaxError
+            }
+        }
     }
 
     fn parse_trait(&mut self) -> Trait {
