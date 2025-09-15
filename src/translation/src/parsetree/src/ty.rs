@@ -43,12 +43,12 @@ pub struct FunctionType {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum Lifetime {
-    ManuallyManaged,
-    ProcessLocal,
-    CollectorManaged,
-    ThreadLocal,
-    TaskLocal,
-    StackLocal { name: IString },
+    Manual,
+    Static,
+    GarbageCollected,
+    Thread,
+    Task,
+    Other { name: IString },
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -63,12 +63,6 @@ pub struct ReferenceType {
 pub struct GenericArgument {
     pub name: Option<IString>,
     pub value: Type,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct GenericType {
-    pub basis_type: Type,
-    pub arguments: Vec<GenericArgument>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -105,7 +99,6 @@ pub enum Type {
     SliceType(Box<SliceType>),
     FunctionType(Box<FunctionType>),
     ReferenceType(Box<ReferenceType>),
-    GenericType(Box<GenericType>),
     OpaqueType(IString),
     StructType(Box<StructType>),
     LatentType(Box<Block>),
@@ -142,7 +135,6 @@ impl std::fmt::Debug for Type {
             Type::SliceType(e) => e.fmt(f),
             Type::FunctionType(e) => e.fmt(f),
             Type::ReferenceType(e) => e.fmt(f),
-            Type::GenericType(e) => e.fmt(f),
             Type::OpaqueType(e) => f.debug_struct("OpaqueType").field("name", e).finish(),
             Type::StructType(e) => e.fmt(f),
             Type::LatentType(e) => f.debug_struct("LatentType").field("type", e).finish(),

@@ -48,6 +48,8 @@ pub(crate) enum SyntaxBug {
     GenericArgumentLimit(SourcePosition),
     GenericArgumentMismatchedAngles(SourcePosition),
 
+    ReferenceExpectedLifetimeName(SourcePosition),
+
     ExpectedOpeningBrace(SourcePosition),
     ExpectedClosingBrace(SourcePosition),
     ExpectedOpeningBracket(SourcePosition),
@@ -117,6 +119,8 @@ impl FormattableDiagnosticGroup for SyntaxBug {
             SyntaxBug::ExpectedGenericArgumentEnd(_) => 220,
             SyntaxBug::GenericArgumentLimit(_) => 221,
             SyntaxBug::GenericArgumentMismatchedAngles(_) => 222,
+
+            SyntaxBug::ReferenceExpectedLifetimeName(_) => 240,
 
             SyntaxBug::ExpectedOpeningBrace(_) => 1000,
             SyntaxBug::ExpectedClosingBrace(_) => 1001,
@@ -325,6 +329,13 @@ impl FormattableDiagnosticGroup for SyntaxBug {
             SyntaxBug::GenericArgumentMismatchedAngles(pos) => DiagnosticInfo {
                 origin: Origin::Point(pos.to_owned()),
                 message: "mismatched '<' and '>' in generic arguments".into(),
+            },
+
+            /* ------------------------------------------------------------------------- */
+
+            SyntaxBug::ReferenceExpectedLifetimeName(pos) => DiagnosticInfo {
+                origin: Origin::Point(pos.to_owned()),
+                message: "reference lifetime is missing after '".into(),
             },
 
             /* ------------------------------------------------------------------------- */

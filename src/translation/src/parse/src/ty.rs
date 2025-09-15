@@ -1,13 +1,13 @@
 use std::ops::Deref;
 
+use super::parse::Parser;
 use crate::bugs::SyntaxBug;
 
-use super::parse::Parser;
 use interned_string::IString;
 use log::{error, info};
 use nitrate_parsetree::kind::{
-    ArrayType, Expr, FunctionType, FunctionTypeParameter, GenericArgument, GenericType, Lifetime,
-    Path, ReferenceType, RefinementType, SliceType, TupleType, Type,
+    ArrayType, Expr, FunctionType, FunctionTypeParameter, Lifetime, ReferenceType, RefinementType,
+    SliceType, TupleType, Type,
 };
 use nitrate_tokenize::{Keyword, Op, Punct, Token};
 
@@ -107,125 +107,6 @@ impl Parser<'_, '_> {
         }
     }
 
-    fn parse_generic_arguments(&mut self) -> Vec<GenericArgument> {
-        // TODO: Cleanup
-
-        fn parse_generic_argument(this: &mut Parser) -> GenericArgument {
-            let mut name: Option<IString> = None;
-
-            let rewind_pos = this.lexer.current_pos();
-            if let Some(argument_name) = this.lexer.next_if_name() {
-                if this.lexer.skip_if(&Token::Punct(Punct::Colon)) {
-                    name = Some(argument_name);
-                } else {
-                    this.lexer.rewind(rewind_pos);
-                }
-            }
-
-            let value = this.parse_type();
-
-            GenericArgument { name, value }
-        }
-
-        assert!(self.lexer.peek_t() == Token::Op(Op::LogicLt));
-        self.lexer.skip_tok();
-
-        self.generic_type_argument_depth += 1;
-
-        let mut arguments = Vec::new();
-        let mut already_reported_too_many_arguments = false;
-
-        self.lexer.skip_if(&Token::Punct(Punct::Comma));
-
-        while self.generic_type_argument_depth > 0 {
-            if self.lexer.skip_if(&Token::Op(Op::LogicGt)) {
-                self.generic_type_argument_depth -= 1;
-                break;
-            }
-
-            if self.lexer.skip_if(&Token::Op(Op::BitShr)) {
-                self.generic_type_argument_depth -= 2;
-                break;
-            }
-
-            if self.lexer.skip_if(&Token::Op(Op::BitRor)) {
-                self.generic_type_argument_depth -= 3;
-                break;
-            }
-
-            if self.lexer.is_eof() {
-                let bug = SyntaxBug::ExpectedGenericArgumentEnd(self.lexer.peek_pos());
-                self.bugs.push(&bug);
-                break;
-            }
-
-            const MAX_GENERIC_ARGUMENTS: usize = 65_536;
-
-            if !already_reported_too_many_arguments && arguments.len() >= MAX_GENERIC_ARGUMENTS {
-                already_reported_too_many_arguments = true;
-
-                let bug = SyntaxBug::GenericArgumentLimit(self.lexer.peek_pos());
-                self.bugs.push(&bug);
-            }
-
-            let argument = parse_generic_argument(self);
-            arguments.push(argument);
-
-            if self.generic_type_argument_depth <= 0 {
-                break;
-            }
-
-            if !self.lexer.skip_if(&Token::Punct(Punct::Comma)) {
-                let any_terminator = self.lexer.next_is(&Token::Op(Op::LogicGt))
-                    || self.lexer.next_is(&Token::Op(Op::BitShr))
-                    || self.lexer.next_is(&Token::Op(Op::BitRor));
-
-                if !any_terminator {
-                    let bug = SyntaxBug::ExpectedClosingAngle(self.lexer.peek_pos());
-                    self.bugs.push(&bug);
-                    break;
-                }
-            }
-        }
-
-        arguments
-    }
-
-    fn parse_type_name(&mut self) -> Type {
-        // TODO: Cleanup
-
-        if let Token::Name(name) = self.lexer.peek_t() {
-            if name.deref() == "_" {
-                self.lexer.skip_tok();
-                return Type::InferType;
-            }
-        }
-
-        let path = self.parse_path();
-        let basis_type = Type::TypeName(Box::new(path));
-
-        if !self.lexer.next_is(&Token::Op(Op::LogicLt)) {
-            return basis_type;
-        }
-
-        let report_on_generic = self.generic_type_argument_depth == 0;
-        let arguments = self.parse_generic_arguments();
-
-        if report_on_generic {
-            if self.generic_type_argument_depth != 0 {
-                self.generic_type_argument_depth = 0;
-
-                let bug = SyntaxBug::ExpectedGenericArgumentEnd(self.lexer.peek_pos());
-                self.bugs.push(&bug);
-            }
-        }
-
-        Type::GenericType(Box::new(GenericType {
-            basis_type,
-            arguments,
-        }))
-    }
-
     fn parse_array_or_slice(&mut self) -> Type {
         assert!(self.lexer.peek_t() == Token::Punct(Punct::LeftBracket));
         self.lexer.skip_tok();
@@ -254,19 +135,36 @@ impl Parser<'_, '_> {
     }
 
     fn parse_reference_type(&mut self) -> ReferenceType {
-        // TODO: Cleanup
-
         assert!(self.lexer.peek_t() == Token::Op(Op::BitAnd));
         self.lexer.skip_tok();
 
+        let mut lifetime = None;
         let mut exclusive = None;
+        let mut mutability = None;
+
+        if self.lexer.skip_if(&Token::Punct(Punct::SingleQuote)) {
+            if self.lexer.skip_if(&Token::Keyword(Keyword::Static)) {
+                lifetime = Some(Lifetime::Static);
+            } else if self.lexer.skip_if(&Token::Name(IString::from("thread"))) {
+                lifetime = Some(Lifetime::Thread);
+            } else if self.lexer.skip_if(&Token::Name(IString::from("task"))) {
+                lifetime = Some(Lifetime::Task);
+            } else if self.lexer.skip_if(&Token::Name(IString::from("gc"))) {
+                lifetime = Some(Lifetime::GarbageCollected);
+            } else if let Some(name) = self.lexer.next_if_name() {
+                lifetime = Some(Lifetime::Other { name });
+            } else {
+                let bug = SyntaxBug::ReferenceExpectedLifetimeName(self.lexer.peek_pos());
+                self.bugs.push(&bug);
+            }
+        }
+
         if self.lexer.skip_if(&Token::Keyword(Keyword::Poly)) {
             exclusive = Some(false);
         } else if self.lexer.skip_if(&Token::Keyword(Keyword::Iso)) {
             exclusive = Some(true);
         }
 
-        let mut mutability = None;
         if self.lexer.skip_if(&Token::Keyword(Keyword::Mut)) {
             mutability = Some(true);
         } else if self.lexer.skip_if(&Token::Keyword(Keyword::Const)) {
@@ -276,27 +174,26 @@ impl Parser<'_, '_> {
         let to = self.parse_type();
 
         ReferenceType {
-            lifetime: Some(Lifetime::CollectorManaged),
-            mutability,
+            lifetime,
             exclusive,
+            mutability,
             to,
         }
     }
 
     fn parse_pointer_type(&mut self) -> ReferenceType {
-        // TODO: Cleanup
-
         assert!(self.lexer.peek_t() == Token::Op(Op::Mul));
         self.lexer.skip_tok();
 
         let mut exclusive = None;
+        let mut mutability = None;
+
         if self.lexer.skip_if(&Token::Keyword(Keyword::Poly)) {
             exclusive = Some(false);
         } else if self.lexer.skip_if(&Token::Keyword(Keyword::Iso)) {
             exclusive = Some(true);
         }
 
-        let mut mutability = None;
         if self.lexer.skip_if(&Token::Keyword(Keyword::Mut)) {
             mutability = Some(true);
         } else if self.lexer.skip_if(&Token::Keyword(Keyword::Const)) {
@@ -306,7 +203,7 @@ impl Parser<'_, '_> {
         let to = self.parse_type();
 
         ReferenceType {
-            lifetime: None,
+            lifetime: Some(Lifetime::Manual),
             exclusive,
             mutability,
             to,
@@ -497,7 +394,7 @@ impl Parser<'_, '_> {
             | Token::Keyword(Keyword::F64)
             | Token::Keyword(Keyword::F128) => self.parse_type_primitive(),
 
-            Token::Name(_) | Token::Op(Op::Scope) => self.parse_type_name(),
+            Token::Name(_) | Token::Op(Op::Scope) => Type::TypeName(Box::new(self.parse_path())),
             Token::Punct(Punct::LeftBracket) => self.parse_array_or_slice(),
             Token::Op(Op::BitAnd) => Type::ReferenceType(Box::new(self.parse_reference_type())),
             Token::Op(Op::Mul) => Type::ReferenceType(Box::new(self.parse_pointer_type())),
