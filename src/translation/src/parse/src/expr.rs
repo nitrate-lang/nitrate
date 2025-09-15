@@ -8,7 +8,7 @@ use nitrate_parsetree::kind::{
     Continue, DoWhileLoop, Expr, ForEach, FunctionParameter, GenericArgument, If, IndexAccess,
     Integer, List, Path, Return, Type, UnaryExpr, UnaryExprOp, WhileLoop,
 };
-use nitrate_tokenize::{Keyword, Op, Punct, Token};
+use nitrate_tokenize::{Keyword, Op, Token};
 use smallvec::{SmallVec, smallvec};
 
 type Precedence = u32;
@@ -168,7 +168,7 @@ impl Parser<'_, '_> {
                 Some(self.parse_literal_suffix(lit))
             }
 
-            Token::Punct(Punct::LeftBracket) => self.parse_list(),
+            Token::LeftBracket => self.parse_list(),
 
             Token::Name(_) | Token::Op(Op::Scope) => {
                 let path = self.parse_path();
@@ -187,9 +187,7 @@ impl Parser<'_, '_> {
 
             Token::Keyword(Keyword::Type) => self.parse_type_info(),
 
-            Token::Keyword(Keyword::Fn) | Token::Punct(Punct::LeftBrace) => {
-                self.parse_anonymous_function()
-            }
+            Token::Keyword(Keyword::Fn) | Token::LeftBrace => self.parse_anonymous_function(),
 
             Token::Keyword(Keyword::If) => self.parse_if(),
             Token::Keyword(Keyword::For) => self.parse_for(),
@@ -202,50 +200,11 @@ impl Parser<'_, '_> {
             Token::Keyword(Keyword::Await) => self.parse_await(),
             Token::Keyword(Keyword::Asm) => self.parse_asm(),
 
-            Token::Keyword(keyword) => {
-                error!(
-                    "[P????]: expr: unexpected keyword '{}'\n--> {}",
-                    keyword,
-                    self.lexer.current_pos()
-                );
+            _ => {
+                self.lexer.skip_tok();
 
-                None
-            }
-
-            Token::Op(op) => {
-                error!(
-                    "[P????]: expr: unexpected operator '{}'\n--> {}",
-                    op,
-                    self.lexer.current_pos()
-                );
-
-                None
-            }
-
-            Token::Punct(punct) => {
-                error!(
-                    "[P????]: expr: unexpected punctuation '{}'\n--> {}",
-                    punct,
-                    self.lexer.current_pos()
-                );
-
-                None
-            }
-
-            Token::Comment(_) => {
-                error!(
-                    "[P????]: expr: unexpected comment\n--> {}",
-                    self.lexer.current_pos()
-                );
-
-                None
-            }
-
-            Token::Eof => {
-                error!(
-                    "[P????]: expr: unexpected end of file\n--> {}",
-                    self.lexer.current_pos()
-                );
+                let bug = SyntaxBug::ExpectedExpr(self.lexer.peek_pos());
+                self.bugs.push(&bug);
 
                 None
             }
@@ -271,10 +230,10 @@ impl Parser<'_, '_> {
             }
         }
 
-        if self.lexer.skip_if(&Token::Punct(Punct::LeftParen)) {
+        if self.lexer.skip_if(&Token::LeftParen) {
             let inner = self.parse_expression();
 
-            if !self.lexer.skip_if(&Token::Punct(Punct::RightParen)) {
+            if !self.lexer.skip_if(&Token::RightParen) {
                 error!(
                     "[P????]: expr: expected closing parenthesis\n--> {}",
                     self.lexer.current_pos()
@@ -323,7 +282,7 @@ impl Parser<'_, '_> {
                     }));
                 }
 
-                Token::Punct(Punct::LeftParen) => {
+                Token::LeftParen => {
                     let operation = Operation::FunctionCall;
                     let Some((_, new_precedence)) = get_precedence(operation) else {
                         return Some(sofar);
@@ -341,7 +300,7 @@ impl Parser<'_, '_> {
                     }));
                 }
 
-                Token::Punct(Punct::LeftBracket) => {
+                Token::LeftBracket => {
                     let operation = Operation::Index;
                     let Some((_, new_precedence)) = get_precedence(operation) else {
                         return Some(sofar);
@@ -355,7 +314,7 @@ impl Parser<'_, '_> {
 
                     let index = self.parse_expression();
 
-                    if !self.lexer.skip_if(&Token::Punct(Punct::RightBracket)) {
+                    if !self.lexer.skip_if(&Token::RightBracket) {
                         error!(
                             "[P????]: expr: expected closing bracket\n--> {}",
                             self.lexer.current_pos()
@@ -417,21 +376,21 @@ impl Parser<'_, '_> {
     fn parse_list(&mut self) -> Option<Expr> {
         // TODO: Cleanup
 
-        assert!(self.lexer.peek_t() == Token::Punct(Punct::LeftBracket));
+        assert!(self.lexer.peek_t() == Token::LeftBracket);
         self.lexer.skip_tok();
 
         let mut elements = Vec::new();
-        self.lexer.skip_if(&Token::Punct(Punct::Comma));
+        self.lexer.skip_if(&Token::Comma);
 
         loop {
-            if self.lexer.skip_if(&Token::Punct(Punct::RightBracket)) {
+            if self.lexer.skip_if(&Token::RightBracket) {
                 break;
             }
 
             elements.push(self.parse_expression());
 
-            if !self.lexer.skip_if(&Token::Punct(Punct::Comma)) {
-                if self.lexer.skip_if(&Token::Punct(Punct::RightBracket)) {
+            if !self.lexer.skip_if(&Token::Comma) {
+                if self.lexer.skip_if(&Token::RightBracket) {
                     break;
                 }
                 error!(
@@ -451,21 +410,21 @@ impl Parser<'_, '_> {
 
         let mut attributes = Vec::new();
 
-        if !self.lexer.skip_if(&Token::Punct(Punct::LeftBracket)) {
+        if !self.lexer.skip_if(&Token::LeftBracket) {
             return attributes;
         }
 
-        self.lexer.skip_if(&Token::Punct(Punct::Comma));
+        self.lexer.skip_if(&Token::Comma);
         loop {
-            if self.lexer.skip_if(&Token::Punct(Punct::RightBracket)) {
+            if self.lexer.skip_if(&Token::RightBracket) {
                 break;
             }
 
             let attrib = self.parse_expression();
             attributes.push(attrib);
 
-            if !self.lexer.skip_if(&Token::Punct(Punct::Comma)) {
-                if self.lexer.skip_if(&Token::Punct(Punct::RightBracket)) {
+            if !self.lexer.skip_if(&Token::Comma) {
+                if self.lexer.skip_if(&Token::RightBracket) {
                     break;
                 }
                 error!(
@@ -490,7 +449,7 @@ impl Parser<'_, '_> {
 
             let rewind_pos = this.lexer.current_pos();
             if let Some(argument_name) = this.lexer.next_if_name() {
-                if this.lexer.skip_if(&Token::Punct(Punct::Colon)) {
+                if this.lexer.skip_if(&Token::Colon) {
                     name = Some(argument_name);
                 } else {
                     this.lexer.rewind(rewind_pos);
@@ -508,7 +467,7 @@ impl Parser<'_, '_> {
         let mut arguments = Vec::new();
         let mut already_reported_too_many_arguments = false;
 
-        self.lexer.skip_if(&Token::Punct(Punct::Comma));
+        self.lexer.skip_if(&Token::Comma);
 
         loop {
             let peek = self.lexer.peek_t();
@@ -550,7 +509,7 @@ impl Parser<'_, '_> {
             let argument = parse_generic_argument(self);
             arguments.push(argument);
 
-            if !self.lexer.skip_if(&Token::Punct(Punct::Comma)) {
+            if !self.lexer.skip_if(&Token::Comma) {
                 let any_terminator = self.lexer.next_is(&Token::Op(Op::LogicGt))
                     || self.lexer.next_is(&Token::Op(Op::BitShr))
                     || self.lexer.next_is(&Token::Op(Op::BitRor));
@@ -696,11 +655,11 @@ impl Parser<'_, '_> {
 
         let mut bindings = Vec::new();
 
-        if self.lexer.skip_if(&Token::Punct(Punct::LeftParen)) {
-            self.lexer.skip_if(&Token::Punct(Punct::Comma));
+        if self.lexer.skip_if(&Token::LeftParen) {
+            self.lexer.skip_if(&Token::Comma);
 
             loop {
-                if self.lexer.skip_if(&Token::Punct(Punct::RightParen)) {
+                if self.lexer.skip_if(&Token::RightParen) {
                     break;
                 }
 
@@ -712,7 +671,7 @@ impl Parser<'_, '_> {
                     return None;
                 };
 
-                let type_annotation = if self.lexer.skip_if(&Token::Punct(Punct::Colon)) {
+                let type_annotation = if self.lexer.skip_if(&Token::Colon) {
                     Some(self.parse_type())
                 } else {
                     None
@@ -720,9 +679,7 @@ impl Parser<'_, '_> {
 
                 bindings.push((variable_name, type_annotation));
 
-                if !self.lexer.skip_if(&Token::Punct(Punct::Comma))
-                    && !self.lexer.next_is(&Token::Punct(Punct::RightParen))
-                {
+                if !self.lexer.skip_if(&Token::Comma) && !self.lexer.next_is(&Token::RightParen) {
                     error!(
                         "[P0???]: for: expected ',' or ')' after loop variable\n--> {}",
                         self.lexer.current_pos()
@@ -740,7 +697,7 @@ impl Parser<'_, '_> {
                 return None;
             };
 
-            let type_annotation = if self.lexer.skip_if(&Token::Punct(Punct::Colon)) {
+            let type_annotation = if self.lexer.skip_if(&Token::Colon) {
                 Some(self.parse_type())
             } else {
                 None
@@ -786,7 +743,7 @@ impl Parser<'_, '_> {
         assert!(self.lexer.peek_t() == Token::Keyword(Keyword::While));
         self.lexer.skip_tok();
 
-        let condition = if self.lexer.next_is(&Token::Punct(Punct::LeftBrace)) {
+        let condition = if self.lexer.next_is(&Token::LeftBrace) {
             Expr::Boolean(true)
         } else {
             self.parse_expression()
@@ -832,7 +789,7 @@ impl Parser<'_, '_> {
         assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Break));
         self.lexer.skip_tok();
 
-        let label = if self.lexer.skip_if(&Token::Punct(Punct::SingleQuote)) {
+        let label = if self.lexer.skip_if(&Token::SingleQuote) {
             let Some(name) = self.lexer.next_if_name() else {
                 error!(
                     "[P????]: break: expected branch label after single quote\n--> {}",
@@ -856,7 +813,7 @@ impl Parser<'_, '_> {
         assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Continue));
         self.lexer.skip_tok();
 
-        let label = if self.lexer.skip_if(&Token::Punct(Punct::SingleQuote)) {
+        let label = if self.lexer.skip_if(&Token::SingleQuote) {
             let Some(name) = self.lexer.next_if_name() else {
                 error!(
                     "[P????]: continue: expected branch label after single quote\n--> {}",
@@ -880,7 +837,7 @@ impl Parser<'_, '_> {
         assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Ret));
         self.lexer.skip_tok();
 
-        let value = if self.lexer.next_is(&Token::Punct(Punct::Semicolon)) {
+        let value = if self.lexer.next_is(&Token::Semicolon) {
             None
         } else {
             Some(self.parse_expression())
@@ -919,7 +876,7 @@ impl Parser<'_, '_> {
             "".into()
         });
 
-        let param_type = if self.lexer.skip_if(&Token::Punct(Punct::Colon)) {
+        let param_type = if self.lexer.skip_if(&Token::Colon) {
             Some(self.parse_type())
         } else {
             None
@@ -944,16 +901,16 @@ impl Parser<'_, '_> {
 
         let mut params = Vec::new();
 
-        if !self.lexer.skip_if(&Token::Punct(Punct::LeftParen)) {
+        if !self.lexer.skip_if(&Token::LeftParen) {
             let bug = SyntaxBug::ExpectedOpeningParen(self.lexer.peek_pos());
             self.bugs.push(&bug);
         }
 
-        self.lexer.skip_if(&Token::Punct(Punct::Comma));
+        self.lexer.skip_if(&Token::Comma);
 
         let mut already_reported_too_many_parameters = false;
 
-        while !self.lexer.skip_if(&Token::Punct(Punct::RightParen)) {
+        while !self.lexer.skip_if(&Token::RightParen) {
             if self.lexer.is_eof() {
                 let bug = SyntaxBug::FunctionParametersExpectedEnd(self.lexer.peek_pos());
                 self.bugs.push(&bug);
@@ -972,12 +929,10 @@ impl Parser<'_, '_> {
             let param = self.parse_anonymous_function_parameter();
             params.push(param);
 
-            if !self.lexer.skip_if(&Token::Punct(Punct::Comma))
-                && !self.lexer.next_is(&Token::Punct(Punct::RightParen))
-            {
+            if !self.lexer.skip_if(&Token::Comma) && !self.lexer.next_is(&Token::RightParen) {
                 let bug = SyntaxBug::FunctionParametersExpectedEnd(self.lexer.peek_pos());
                 self.bugs.push(&bug);
-                self.lexer.skip_while(&Token::Punct(Punct::RightParen));
+                self.lexer.skip_while(&Token::RightParen);
                 break;
             }
         }
@@ -988,7 +943,7 @@ impl Parser<'_, '_> {
     fn parse_anonymous_function(&mut self) -> Option<Expr> {
         // TODO: Cleanup
 
-        if self.lexer.peek_t() == Token::Punct(Punct::LeftBrace) {
+        if self.lexer.peek_t() == Token::LeftBrace {
             let definition = self.parse_block();
 
             return Some(Expr::Function(Box::new(AnonymousFunction {
@@ -1011,7 +966,7 @@ impl Parser<'_, '_> {
             None
         };
 
-        let definition = if self.lexer.next_is(&Token::Punct(Punct::LeftBrace)) {
+        let definition = if self.lexer.next_is(&Token::LeftBrace) {
             self.parse_block()
         } else if self.lexer.skip_if(&Token::Op(Op::BlockArrow)) {
             let expr = self.parse_expression();
@@ -1052,7 +1007,7 @@ impl Parser<'_, '_> {
             let rewind_pos = self.lexer.current_pos();
             self.lexer.skip_tok();
 
-            if self.lexer.skip_if(&Token::Punct(Punct::Colon)) {
+            if self.lexer.skip_if(&Token::Colon) {
                 argument_name = Some(name);
             } else {
                 self.lexer.rewind(rewind_pos);
@@ -1067,23 +1022,21 @@ impl Parser<'_, '_> {
     fn parse_function_arguments(&mut self) -> Option<CallArguments> {
         // TODO: Cleanup
 
-        assert!(self.lexer.peek_t() == Token::Punct(Punct::LeftParen));
+        assert!(self.lexer.peek_t() == Token::LeftParen);
         self.lexer.skip_tok();
 
         let mut arguments = CallArguments::new();
-        self.lexer.skip_if(&Token::Punct(Punct::Comma));
+        self.lexer.skip_if(&Token::Comma);
 
         loop {
-            if self.lexer.skip_if(&Token::Punct(Punct::RightParen)) {
+            if self.lexer.skip_if(&Token::RightParen) {
                 break;
             }
 
             let function_argument = self.parse_function_argument()?;
             arguments.push(function_argument);
 
-            if !self.lexer.skip_if(&Token::Punct(Punct::Comma))
-                && !self.lexer.next_is(&Token::Punct(Punct::RightParen))
-            {
+            if !self.lexer.skip_if(&Token::Comma) && !self.lexer.next_is(&Token::RightParen) {
                 error!(
                     "[P0???]: function call: expected ',' or ')' after function argument\n--> {}",
                     self.lexer.current_pos()
@@ -1099,7 +1052,7 @@ impl Parser<'_, '_> {
     pub(crate) fn parse_block(&mut self) -> Block {
         // TODO: Cleanup
 
-        if !self.lexer.skip_if(&Token::Punct(Punct::LeftBrace)) {
+        if !self.lexer.skip_if(&Token::LeftBrace) {
             error!(
                 "[P????]: expr: block: expected opening brace\n--> {}",
                 self.lexer.current_pos()
@@ -1115,7 +1068,7 @@ impl Parser<'_, '_> {
         let mut ends_with_semi = false;
 
         loop {
-            if self.lexer.skip_if(&Token::Punct(Punct::RightBrace)) {
+            if self.lexer.skip_if(&Token::RightBrace) {
                 break;
             }
 
@@ -1126,7 +1079,7 @@ impl Parser<'_, '_> {
             let expression = self.parse_expression();
             elements.push(expression);
 
-            ends_with_semi = self.lexer.skip_if(&Token::Punct(Punct::Semicolon));
+            ends_with_semi = self.lexer.skip_if(&Token::Semicolon);
         }
 
         Block {

@@ -1,5 +1,5 @@
 use super::token::{
-    AnnotatedToken, Comment, CommentKind, Integer, IntegerKind, Keyword, Op, Punct, Token,
+    AnnotatedToken, Comment, CommentKind, Integer, IntegerKind, Keyword, Op, Token,
 };
 use interned_string::{IString, Intern};
 use log::error;
@@ -900,16 +900,16 @@ impl<'a> Lexer<'a> {
         match b {
             b'(' | b')' | b'[' | b']' | b'{' | b'}' | b',' | b';' | b'@' | b'\'' => {
                 match self.advance(b) {
-                    b'(' => Ok(Token::Punct(Punct::LeftParen)),
-                    b')' => Ok(Token::Punct(Punct::RightParen)),
-                    b'[' => Ok(Token::Punct(Punct::LeftBracket)),
-                    b']' => Ok(Token::Punct(Punct::RightBracket)),
-                    b'{' => Ok(Token::Punct(Punct::LeftBrace)),
-                    b'}' => Ok(Token::Punct(Punct::RightBrace)),
-                    b',' => Ok(Token::Punct(Punct::Comma)),
-                    b';' => Ok(Token::Punct(Punct::Semicolon)),
-                    b'@' => Ok(Token::Punct(Punct::AtSign)),
-                    b'\'' => Ok(Token::Punct(Punct::SingleQuote)),
+                    b'(' => Ok(Token::LeftParen),
+                    b')' => Ok(Token::RightParen),
+                    b'[' => Ok(Token::LeftBracket),
+                    b']' => Ok(Token::RightBracket),
+                    b'{' => Ok(Token::LeftBrace),
+                    b'}' => Ok(Token::RightBrace),
+                    b',' => Ok(Token::Comma),
+                    b';' => Ok(Token::Semicolon),
+                    b'@' => Ok(Token::AtSign),
+                    b'\'' => Ok(Token::SingleQuote),
                     _ => unreachable!(), // All cases are handled above
                 }
             }
@@ -921,7 +921,7 @@ impl<'a> Lexer<'a> {
                         self.advance(b':');
                         Ok(Token::Op(Op::Scope))
                     }
-                    _ => Ok(Token::Punct(Punct::Colon)),
+                    _ => Ok(Token::Colon),
                 }
             }
 

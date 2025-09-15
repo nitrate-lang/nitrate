@@ -6,7 +6,7 @@ use nitrate_parsetree::kind::{
     Impl, Import, Item, Module, NamedFunction, StaticVariable, Struct, StructField, Trait,
     TypeAlias,
 };
-use nitrate_tokenize::{Keyword, Op, Punct, Token};
+use nitrate_tokenize::{Keyword, Op, Token};
 
 impl Parser<'_, '_> {
     fn parse_generic_parameters(&mut self) -> Vec<GenericParameter> {
@@ -50,9 +50,7 @@ impl Parser<'_, '_> {
             let param = parse_generic_parameter(self);
             parameters.push(param);
 
-            if !self.lexer.skip_if(&Token::Punct(Punct::Comma))
-                && !self.lexer.next_is(&Token::Op(Op::LogicGt))
-            {
+            if !self.lexer.skip_if(&Token::Comma) && !self.lexer.next_is(&Token::Op(Op::LogicGt)) {
                 let bug = SyntaxBug::GenericParameterExpectedEnd(self.lexer.peek_pos());
                 self.bugs.push(&bug);
 
@@ -78,7 +76,7 @@ impl Parser<'_, '_> {
             "".into()
         });
 
-        if !self.lexer.skip_if(&Token::Punct(Punct::LeftBrace)) {
+        if !self.lexer.skip_if(&Token::LeftBrace) {
             let bug = SyntaxBug::ExpectedOpeningBrace(self.lexer.peek_pos());
             self.bugs.push(&bug);
         }
@@ -86,7 +84,7 @@ impl Parser<'_, '_> {
         let mut items = Vec::new();
         let mut already_reported_too_many_items = false;
 
-        while !self.lexer.skip_if(&Token::Punct(Punct::RightBrace)) {
+        while !self.lexer.skip_if(&Token::RightBrace) {
             if self.lexer.is_eof() {
                 let bug = SyntaxBug::ModuleExpectedEnd(self.lexer.peek_pos());
                 self.bugs.push(&bug);
@@ -130,7 +128,7 @@ impl Parser<'_, '_> {
             None
         };
 
-        if !self.lexer.skip_if(&Token::Punct(Punct::Semicolon)) {
+        if !self.lexer.skip_if(&Token::Semicolon) {
             let bug = SyntaxBug::ExpectedSemicolon(self.lexer.peek_pos());
             self.bugs.push(&bug);
         }
@@ -162,7 +160,7 @@ impl Parser<'_, '_> {
             None
         };
 
-        if !self.lexer.skip_if(&Token::Punct(Punct::Semicolon)) {
+        if !self.lexer.skip_if(&Token::Semicolon) {
             let bug = SyntaxBug::ExpectedSemicolon(self.lexer.peek_pos());
             self.bugs.push(&bug);
         }
@@ -185,7 +183,7 @@ impl Parser<'_, '_> {
                 "".into()
             });
 
-            let variant_type = if this.lexer.next_is(&Token::Punct(Punct::LeftParen)) {
+            let variant_type = if this.lexer.next_is(&Token::LeftParen) {
                 Some(this.parse_type())
             } else {
                 None
@@ -218,7 +216,7 @@ impl Parser<'_, '_> {
 
         let type_params = self.parse_generic_parameters();
 
-        if !self.lexer.skip_if(&Token::Punct(Punct::LeftBrace)) {
+        if !self.lexer.skip_if(&Token::LeftBrace) {
             let bug = SyntaxBug::ExpectedOpeningBrace(self.lexer.peek_pos());
             self.bugs.push(&bug);
         }
@@ -226,7 +224,7 @@ impl Parser<'_, '_> {
         let mut variants = Vec::new();
         let mut already_reported_too_many_variants = false;
 
-        while !self.lexer.skip_if(&Token::Punct(Punct::RightBrace)) {
+        while !self.lexer.skip_if(&Token::RightBrace) {
             if self.lexer.is_eof() {
                 let bug = SyntaxBug::EnumExpectedEnd(self.lexer.peek_pos());
                 self.bugs.push(&bug);
@@ -245,12 +243,10 @@ impl Parser<'_, '_> {
             let variant = parse_enum_variant(self);
             variants.push(variant);
 
-            if !self.lexer.skip_if(&Token::Punct(Punct::Comma))
-                && !self.lexer.next_is(&Token::Punct(Punct::RightBrace))
-            {
+            if !self.lexer.skip_if(&Token::Comma) && !self.lexer.next_is(&Token::RightBrace) {
                 let bug = SyntaxBug::EnumExpectedEnd(self.lexer.peek_pos());
                 self.bugs.push(&bug);
-                self.lexer.skip_while(&Token::Punct(Punct::RightBrace));
+                self.lexer.skip_while(&Token::RightBrace);
 
                 break;
             }
@@ -274,7 +270,7 @@ impl Parser<'_, '_> {
                 "".into()
             });
 
-            if !this.lexer.skip_if(&Token::Punct(Punct::Colon)) {
+            if !this.lexer.skip_if(&Token::Colon) {
                 let bug = SyntaxBug::ExpectedColon(this.lexer.peek_pos());
                 this.bugs.push(&bug);
             }
@@ -308,7 +304,7 @@ impl Parser<'_, '_> {
 
         let type_params = self.parse_generic_parameters();
 
-        if !self.lexer.skip_if(&Token::Punct(Punct::LeftBrace)) {
+        if !self.lexer.skip_if(&Token::LeftBrace) {
             let bug = SyntaxBug::ExpectedOpeningBrace(self.lexer.peek_pos());
             self.bugs.push(&bug);
         }
@@ -316,7 +312,7 @@ impl Parser<'_, '_> {
         let mut fields = Vec::new();
         let mut already_reported_too_many_fields = false;
 
-        while !self.lexer.skip_if(&Token::Punct(Punct::RightBrace)) {
+        while !self.lexer.skip_if(&Token::RightBrace) {
             if self.lexer.is_eof() {
                 let bug = SyntaxBug::StructureExpectedEnd(self.lexer.peek_pos());
                 self.bugs.push(&bug);
@@ -335,12 +331,10 @@ impl Parser<'_, '_> {
             let field = parse_struct_field(self);
             fields.push(field);
 
-            if !self.lexer.skip_if(&Token::Punct(Punct::Comma))
-                && !self.lexer.next_is(&Token::Punct(Punct::RightBrace))
-            {
+            if !self.lexer.skip_if(&Token::Comma) && !self.lexer.next_is(&Token::RightBrace) {
                 let bug = SyntaxBug::StructureExpectedEnd(self.lexer.peek_pos());
                 self.bugs.push(&bug);
-                self.lexer.skip_while(&Token::Punct(Punct::RightBrace));
+                self.lexer.skip_while(&Token::RightBrace);
                 break;
             }
         }
@@ -396,7 +390,7 @@ impl Parser<'_, '_> {
 
         let type_params = self.parse_generic_parameters();
 
-        if !self.lexer.skip_if(&Token::Punct(Punct::LeftBrace)) {
+        if !self.lexer.skip_if(&Token::LeftBrace) {
             let bug = SyntaxBug::ExpectedOpeningBrace(self.lexer.peek_pos());
             self.bugs.push(&bug);
         }
@@ -404,7 +398,7 @@ impl Parser<'_, '_> {
         let mut items = Vec::new();
         let mut already_reported_too_many_items = false;
 
-        while !self.lexer.skip_if(&Token::Punct(Punct::RightBrace)) {
+        while !self.lexer.skip_if(&Token::RightBrace) {
             if self.lexer.is_eof() {
                 let bug = SyntaxBug::TraitExpectedEnd(self.lexer.peek_pos());
                 self.bugs.push(&bug);
@@ -455,7 +449,7 @@ impl Parser<'_, '_> {
 
         let for_type = self.parse_type();
 
-        if !self.lexer.skip_if(&Token::Punct(Punct::LeftBrace)) {
+        if !self.lexer.skip_if(&Token::LeftBrace) {
             let bug = SyntaxBug::ExpectedOpeningBrace(self.lexer.peek_pos());
             self.bugs.push(&bug);
         }
@@ -463,7 +457,7 @@ impl Parser<'_, '_> {
         let mut items = Vec::new();
         let mut already_reported_too_many_items = false;
 
-        while !self.lexer.skip_if(&Token::Punct(Punct::RightBrace)) {
+        while !self.lexer.skip_if(&Token::RightBrace) {
             if self.lexer.is_eof() {
                 let bug = SyntaxBug::ImplExpectedEnd(self.lexer.peek_pos());
                 self.bugs.push(&bug);
@@ -502,7 +496,7 @@ impl Parser<'_, '_> {
                 "".into()
             });
 
-            let param_type = if this.lexer.skip_if(&Token::Punct(Punct::Colon)) {
+            let param_type = if this.lexer.skip_if(&Token::Colon) {
                 Some(this.parse_type())
             } else {
                 None
@@ -524,16 +518,16 @@ impl Parser<'_, '_> {
 
         let mut params = Vec::new();
 
-        if !self.lexer.skip_if(&Token::Punct(Punct::LeftParen)) {
+        if !self.lexer.skip_if(&Token::LeftParen) {
             let bug = SyntaxBug::ExpectedOpeningParen(self.lexer.peek_pos());
             self.bugs.push(&bug);
         }
 
-        self.lexer.skip_if(&Token::Punct(Punct::Comma));
+        self.lexer.skip_if(&Token::Comma);
 
         let mut already_reported_too_many_parameters = false;
 
-        while !self.lexer.skip_if(&Token::Punct(Punct::RightParen)) {
+        while !self.lexer.skip_if(&Token::RightParen) {
             if self.lexer.is_eof() {
                 let bug = SyntaxBug::FunctionParametersExpectedEnd(self.lexer.peek_pos());
                 self.bugs.push(&bug);
@@ -552,12 +546,10 @@ impl Parser<'_, '_> {
             let param = parse_named_function_parameter(self);
             params.push(param);
 
-            if !self.lexer.skip_if(&Token::Punct(Punct::Comma))
-                && !self.lexer.next_is(&Token::Punct(Punct::RightParen))
-            {
+            if !self.lexer.skip_if(&Token::Comma) && !self.lexer.next_is(&Token::RightParen) {
                 let bug = SyntaxBug::FunctionParametersExpectedEnd(self.lexer.peek_pos());
                 self.bugs.push(&bug);
-                self.lexer.skip_while(&Token::Punct(Punct::RightParen));
+                self.lexer.skip_while(&Token::RightParen);
                 break;
             }
         }
@@ -586,13 +578,13 @@ impl Parser<'_, '_> {
             None
         };
 
-        let definition = if self.lexer.next_is(&Token::Punct(Punct::LeftBrace)) {
+        let definition = if self.lexer.next_is(&Token::LeftBrace) {
             let body = self.parse_block();
             Some(body)
         } else if self.lexer.skip_if(&Token::Op(Op::BlockArrow)) {
             let single = self.parse_expression();
 
-            if !self.lexer.skip_if(&Token::Punct(Punct::Semicolon)) {
+            if !self.lexer.skip_if(&Token::Semicolon) {
                 let bug = SyntaxBug::ExpectedSemicolon(self.lexer.peek_pos());
                 self.bugs.push(&bug);
             }
@@ -601,12 +593,12 @@ impl Parser<'_, '_> {
                 elements: vec![single],
                 ends_with_semi: false,
             })
-        } else if self.lexer.skip_if(&Token::Punct(Punct::Semicolon)) {
+        } else if self.lexer.skip_if(&Token::Semicolon) {
             None
         } else {
             let bug = SyntaxBug::FunctionExpectedBody(self.lexer.peek_pos());
             self.bugs.push(&bug);
-            self.lexer.skip_while(&Token::Punct(Punct::RightBrace));
+            self.lexer.skip_while(&Token::RightBrace);
             None
         };
 
@@ -637,7 +629,7 @@ impl Parser<'_, '_> {
             "".into()
         });
 
-        let var_type = if self.lexer.skip_if(&Token::Punct(Punct::Colon)) {
+        let var_type = if self.lexer.skip_if(&Token::Colon) {
             Some(self.parse_type())
         } else {
             None
@@ -649,7 +641,7 @@ impl Parser<'_, '_> {
             None
         };
 
-        if !self.lexer.skip_if(&Token::Punct(Punct::Semicolon)) {
+        if !self.lexer.skip_if(&Token::Semicolon) {
             let bug = SyntaxBug::ExpectedSemicolon(self.lexer.peek_pos());
             self.bugs.push(&bug);
         }
@@ -675,7 +667,7 @@ impl Parser<'_, '_> {
             "".into()
         });
 
-        let var_type = if self.lexer.skip_if(&Token::Punct(Punct::Colon)) {
+        let var_type = if self.lexer.skip_if(&Token::Colon) {
             Some(self.parse_type())
         } else {
             None
@@ -687,7 +679,7 @@ impl Parser<'_, '_> {
             None
         };
 
-        if !self.lexer.skip_if(&Token::Punct(Punct::Semicolon)) {
+        if !self.lexer.skip_if(&Token::Semicolon) {
             let bug = SyntaxBug::ExpectedSemicolon(self.lexer.peek_pos());
             self.bugs.push(&bug);
         }
@@ -754,16 +746,7 @@ impl Parser<'_, '_> {
                 Item::ConstVariable(Box::new(const_var))
             }
 
-            Token::Name(_)
-            | Token::Integer(_)
-            | Token::Float(_)
-            | Token::String(_)
-            | Token::BString(_)
-            | Token::Keyword(_)
-            | Token::Op(_)
-            | Token::Punct(_)
-            | Token::Comment(_)
-            | Token::Eof => {
+            _ => {
                 self.lexer.skip_tok();
 
                 let bug = SyntaxBug::ExpectedItem(item_pos_begin);

@@ -6,7 +6,7 @@ use nitrate_parsetree::kind::{
     ArrayType, Expr, FunctionType, FunctionTypeParameter, Lifetime, ReferenceType, RefinementType,
     SliceType, TupleType, Type,
 };
-use nitrate_tokenize::{Keyword, Op, Punct, Token};
+use nitrate_tokenize::{Keyword, Op, Token};
 
 #[allow(unused_imports)]
 use nitrate_tokenize::Lexer;
@@ -27,16 +27,16 @@ impl RefinementOptions {
 impl Parser<'_, '_> {
     fn parse_refinement_options(&mut self) -> RefinementOptions {
         fn parse_refinement_range(this: &mut Parser) -> (Option<Expr>, Option<Expr>) {
-            assert!(this.lexer.peek_t() == Token::Punct(Punct::LeftBracket));
+            assert!(this.lexer.peek_t() == Token::LeftBracket);
             this.lexer.skip_tok();
 
             let mut minimum_bound = None;
             let mut maximum_bound = None;
 
-            if !this.lexer.skip_if(&Token::Punct(Punct::Colon)) {
+            if !this.lexer.skip_if(&Token::Colon) {
                 let minimum = this.parse_expression();
 
-                if !this.lexer.skip_if(&Token::Punct(Punct::Colon)) {
+                if !this.lexer.skip_if(&Token::Colon) {
                     let bug = SyntaxBug::ExpectedColon(this.lexer.peek_pos());
                     this.bugs.push(&bug);
                 }
@@ -44,10 +44,10 @@ impl Parser<'_, '_> {
                 minimum_bound = Some(minimum);
             }
 
-            if !this.lexer.skip_if(&Token::Punct(Punct::RightBracket)) {
+            if !this.lexer.skip_if(&Token::RightBracket) {
                 let maximum = this.parse_expression();
 
-                if !this.lexer.skip_if(&Token::Punct(Punct::RightBracket)) {
+                if !this.lexer.skip_if(&Token::RightBracket) {
                     let bug = SyntaxBug::ExpectedClosedBracket(this.lexer.peek_pos());
                     this.bugs.push(&bug);
                 }
@@ -58,11 +58,11 @@ impl Parser<'_, '_> {
             (minimum_bound, maximum_bound)
         }
 
-        if !self.lexer.skip_if(&Token::Punct(Punct::Colon)) {
+        if !self.lexer.skip_if(&Token::Colon) {
             return RefinementOptions::default();
         }
 
-        if self.lexer.next_is(&Token::Punct(Punct::LeftBracket)) {
+        if self.lexer.next_is(&Token::LeftBracket) {
             let (minimum, maximum) = parse_refinement_range(self);
 
             return RefinementOptions {
@@ -74,7 +74,7 @@ impl Parser<'_, '_> {
 
         let width = self.parse_expression();
 
-        if !self.lexer.skip_if(&Token::Punct(Punct::Colon)) {
+        if !self.lexer.skip_if(&Token::Colon) {
             return RefinementOptions {
                 width: Some(width),
                 minimum: None,
@@ -82,7 +82,7 @@ impl Parser<'_, '_> {
             };
         }
 
-        if !self.lexer.next_is(&Token::Punct(Punct::LeftBracket)) {
+        if !self.lexer.next_is(&Token::LeftBracket) {
             let bug = SyntaxBug::ExpectedOpeningBracket(self.lexer.peek_pos());
             self.bugs.push(&bug);
 
@@ -105,27 +105,27 @@ impl Parser<'_, '_> {
     }
 
     fn parse_array_or_slice(&mut self) -> Type {
-        assert!(self.lexer.peek_t() == Token::Punct(Punct::LeftBracket));
+        assert!(self.lexer.peek_t() == Token::LeftBracket);
         self.lexer.skip_tok();
 
         let element_type = self.parse_type();
 
-        if self.lexer.skip_if(&Token::Punct(Punct::RightBracket)) {
+        if self.lexer.skip_if(&Token::RightBracket) {
             return Type::SliceType(Box::new(SliceType { element_type }));
         }
 
-        if !self.lexer.skip_if(&Token::Punct(Punct::Semicolon)) {
+        if !self.lexer.skip_if(&Token::Semicolon) {
             let bug = SyntaxBug::ExpectedSemicolon(self.lexer.peek_pos());
             self.bugs.push(&bug);
         }
 
         let len = self.parse_expression();
 
-        if !self.lexer.skip_if(&Token::Punct(Punct::RightBracket)) {
+        if !self.lexer.skip_if(&Token::RightBracket) {
             let bug = SyntaxBug::ExpectedClosedBracket(self.lexer.peek_pos());
             self.bugs.push(&bug);
 
-            self.lexer.skip_while(&Token::Punct(Punct::RightBracket));
+            self.lexer.skip_while(&Token::RightBracket);
         }
 
         Type::ArrayType(Box::new(ArrayType { element_type, len }))
@@ -139,7 +139,7 @@ impl Parser<'_, '_> {
         let mut exclusive = None;
         let mut mutability = None;
 
-        if self.lexer.skip_if(&Token::Punct(Punct::SingleQuote)) {
+        if self.lexer.skip_if(&Token::SingleQuote) {
             if self.lexer.skip_if(&Token::Keyword(Keyword::Static)) {
                 lifetime = Some(Lifetime::Static);
             } else if self.lexer.skip_if(&Token::Name(IString::from("thread"))) {
@@ -215,7 +215,7 @@ impl Parser<'_, '_> {
 
             let rewind_pos = this.lexer.current_pos();
             if let Some(param_name) = this.lexer.next_if_name() {
-                if this.lexer.skip_if(&Token::Punct(Punct::Colon)) {
+                if this.lexer.skip_if(&Token::Colon) {
                     name = Some(param_name);
                 } else {
                     this.lexer.rewind(rewind_pos);
@@ -238,17 +238,17 @@ impl Parser<'_, '_> {
             }
         }
 
-        if !self.lexer.skip_if(&Token::Punct(Punct::LeftParen)) {
+        if !self.lexer.skip_if(&Token::LeftParen) {
             let bug = SyntaxBug::ExpectedOpeningParen(self.lexer.peek_pos());
             self.bugs.push(&bug);
         }
 
-        self.lexer.skip_if(&Token::Punct(Punct::Comma));
+        self.lexer.skip_if(&Token::Comma);
 
         let mut params = Vec::new();
         let mut already_reported_too_many_parameters = false;
 
-        while !self.lexer.skip_if(&Token::Punct(Punct::RightParen)) {
+        while !self.lexer.skip_if(&Token::RightParen) {
             if self.lexer.is_eof() {
                 let bug = SyntaxBug::FunctionParametersExpectedEnd(self.lexer.peek_pos());
                 self.bugs.push(&bug);
@@ -267,13 +267,11 @@ impl Parser<'_, '_> {
             let param = parse_function_type_parameter(self);
             params.push(param);
 
-            if !self.lexer.skip_if(&Token::Punct(Punct::Comma))
-                && !self.lexer.next_is(&Token::Punct(Punct::RightParen))
-            {
+            if !self.lexer.skip_if(&Token::Comma) && !self.lexer.next_is(&Token::RightParen) {
                 let bug = SyntaxBug::FunctionParametersExpectedEnd(self.lexer.peek_pos());
                 self.bugs.push(&bug);
 
-                self.lexer.skip_while(&Token::Punct(Punct::RightParen));
+                self.lexer.skip_while(&Token::RightParen);
                 break;
             }
         }
@@ -305,7 +303,7 @@ impl Parser<'_, '_> {
         assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Opaque));
         self.lexer.skip_tok();
 
-        if !self.lexer.skip_if(&Token::Punct(Punct::LeftParen)) {
+        if !self.lexer.skip_if(&Token::LeftParen) {
             let bug = SyntaxBug::ExpectedOpeningParen(self.lexer.peek_pos());
             self.bugs.push(&bug);
         }
@@ -316,7 +314,7 @@ impl Parser<'_, '_> {
             "".into()
         });
 
-        if !self.lexer.skip_if(&Token::Punct(Punct::RightParen)) {
+        if !self.lexer.skip_if(&Token::RightParen) {
             let bug = SyntaxBug::ExpectedClosingParen(self.lexer.peek_pos());
             self.bugs.push(&bug);
         }
@@ -371,22 +369,14 @@ impl Parser<'_, '_> {
             | Token::Keyword(Keyword::F128) => self.parse_type_primitive(),
 
             Token::Name(_) | Token::Op(Op::Scope) => Type::TypeName(Box::new(self.parse_path())),
-            Token::Punct(Punct::LeftBracket) => self.parse_array_or_slice(),
+            Token::LeftBracket => self.parse_array_or_slice(),
             Token::Op(Op::BitAnd) => Type::ReferenceType(Box::new(self.parse_reference_type())),
             Token::Op(Op::Mul) => Type::ReferenceType(Box::new(self.parse_pointer_type())),
-            Token::Punct(Punct::LeftBrace) => Type::LatentType(Box::new(self.parse_block())),
+            Token::LeftBrace => Type::LatentType(Box::new(self.parse_block())),
             Token::Keyword(Keyword::Fn) => Type::FunctionType(Box::new(self.parse_function_type())),
             Token::Keyword(Keyword::Opaque) => self.parse_opaque_type(),
 
-            Token::Integer(_)
-            | Token::Float(_)
-            | Token::Keyword(_)
-            | Token::String(_)
-            | Token::BString(_)
-            | Token::Punct(_)
-            | Token::Op(_)
-            | Token::Comment(_)
-            | Token::Eof => {
+            _ => {
                 self.lexer.skip_tok();
 
                 let log = SyntaxBug::ExpectedType(current_pos);
@@ -401,7 +391,7 @@ impl Parser<'_, '_> {
         let mut element_types = Vec::from([first_element]);
         let mut already_reported_too_many_elements = false;
 
-        while !self.lexer.skip_if(&Token::Punct(Punct::RightParen)) {
+        while !self.lexer.skip_if(&Token::RightParen) {
             if self.lexer.is_eof() {
                 let bug = SyntaxBug::TupleTypeExpectedEnd(self.lexer.peek_pos());
                 self.bugs.push(&bug);
@@ -420,13 +410,11 @@ impl Parser<'_, '_> {
             let element = self.parse_type();
             element_types.push(element);
 
-            if !self.lexer.skip_if(&Token::Punct(Punct::Comma))
-                && !self.lexer.skip_if(&Token::Punct(Punct::RightParen))
-            {
+            if !self.lexer.skip_if(&Token::Comma) && !self.lexer.skip_if(&Token::RightParen) {
                 let bug = SyntaxBug::TupleTypeExpectedEnd(self.lexer.peek_pos());
                 self.bugs.push(&bug);
 
-                self.lexer.skip_while(&Token::Punct(Punct::RightParen));
+                self.lexer.skip_while(&Token::RightParen);
                 break;
             }
         }
@@ -435,8 +423,8 @@ impl Parser<'_, '_> {
     }
 
     pub(crate) fn parse_type(&mut self) -> Type {
-        if self.lexer.skip_if(&Token::Punct(Punct::LeftParen)) {
-            if self.lexer.skip_if(&Token::Punct(Punct::RightParen)) {
+        if self.lexer.skip_if(&Token::LeftParen) {
+            if self.lexer.skip_if(&Token::RightParen) {
                 return Type::TupleType(Box::new(TupleType {
                     element_types: Vec::new(),
                 }));
@@ -445,9 +433,9 @@ impl Parser<'_, '_> {
             let inner = self.parse_type();
 
             let result = match self.lexer.next_t() {
-                Token::Punct(Punct::RightParen) => Type::Parentheses(Box::new(inner)),
+                Token::RightParen => Type::Parentheses(Box::new(inner)),
 
-                Token::Punct(Punct::Comma) => {
+                Token::Comma => {
                     let tuple = self.parse_rest_of_tuple(inner);
                     Type::TupleType(Box::new(tuple))
                 }

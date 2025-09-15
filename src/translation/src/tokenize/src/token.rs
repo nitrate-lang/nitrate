@@ -229,39 +229,6 @@ impl std::fmt::Display for Keyword {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Hash, Sequence, Serialize, Deserialize)]
-pub enum Punct {
-    LeftParen,    /* '(' */
-    RightParen,   /* ')' */
-    LeftBracket,  /* '[' */
-    RightBracket, /* ']' */
-    LeftBrace,    /* '{' */
-    RightBrace,   /* '}' */
-    Comma,        /* ',' */
-    Semicolon,    /* ';' */
-    Colon,        /* ':' */
-    AtSign,       /* '@' */
-    SingleQuote,  /* ''' */
-}
-
-impl std::fmt::Display for Punct {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Punct::LeftParen => write!(f, "("),
-            Punct::RightParen => write!(f, ")"),
-            Punct::LeftBracket => write!(f, "["),
-            Punct::RightBracket => write!(f, "]"),
-            Punct::LeftBrace => write!(f, "{{"),
-            Punct::RightBrace => write!(f, "}}"),
-            Punct::Comma => write!(f, ","),
-            Punct::Semicolon => write!(f, ";"),
-            Punct::Colon => write!(f, ":"),
-            Punct::AtSign => write!(f, "@"),
-            Punct::SingleQuote => write!(f, "'"),
-        }
-    }
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Hash, Sequence, Serialize, Deserialize)]
 pub enum Op {
     /*----------------------------------------------------------------*
      * Arithmetic Operators                                           *
@@ -408,7 +375,19 @@ pub enum Token {
     BString(Vec<u8>),
     Comment(Comment),
     Keyword(Keyword),
-    Punct(Punct),
+
+    LeftParen,    /* '(' */
+    RightParen,   /* ')' */
+    LeftBracket,  /* '[' */
+    RightBracket, /* ']' */
+    LeftBrace,    /* '{' */
+    RightBrace,   /* '}' */
+    Comma,        /* ',' */
+    Semicolon,    /* ';' */
+    Colon,        /* ':' */
+    AtSign,       /* '@' */
+    SingleQuote,  /* ''' */
+
     Op(Op),
     Eof,
 }
@@ -423,7 +402,19 @@ impl std::fmt::Display for Token {
             Token::BString(s) => write!(f, "{s:?}"),
             Token::Comment(c) => write!(f, "{c}"),
             Token::Keyword(kw) => write!(f, "{kw}"),
-            Token::Punct(p) => write!(f, "{p}"),
+
+            Token::LeftParen => write!(f, "("),
+            Token::RightParen => write!(f, ")"),
+            Token::LeftBracket => write!(f, "["),
+            Token::RightBracket => write!(f, "]"),
+            Token::LeftBrace => write!(f, "{{"),
+            Token::RightBrace => write!(f, "}}"),
+            Token::Comma => write!(f, ","),
+            Token::Semicolon => write!(f, ";"),
+            Token::Colon => write!(f, ":"),
+            Token::AtSign => write!(f, "@"),
+            Token::SingleQuote => write!(f, "'"),
+
             Token::Op(op) => write!(f, "{op}"),
             Token::Eof => write!(f, ""),
         }
