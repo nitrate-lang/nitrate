@@ -9,6 +9,7 @@ pub(crate) enum SyntaxBug {
 
     ModuleMissingName(SourcePosition),
     ModuleItemLimit(SourcePosition),
+    ModuleExpectedEnd(SourcePosition),
 
     ImportMissingAliasName(SourcePosition),
 
@@ -28,6 +29,12 @@ pub(crate) enum SyntaxBug {
     FunctionExpectedBody(SourcePosition),
 
     StaticVariableMissingName(SourcePosition),
+
+    ConstVariableMissingName(SourcePosition),
+
+    TraitMissingName(SourcePosition),
+    TraitItemLimit(SourcePosition),
+    TraitExpectedEnd(SourcePosition),
 
     ExpectedOpeningBrace(SourcePosition),
     ExpectedEquals(SourcePosition),
@@ -51,6 +58,7 @@ impl FormattableDiagnosticGroup for SyntaxBug {
 
             SyntaxBug::ModuleMissingName(_) => 20,
             SyntaxBug::ModuleItemLimit(_) => 21,
+            SyntaxBug::ModuleExpectedEnd(_) => 22,
 
             SyntaxBug::ImportMissingAliasName(_) => 40,
 
@@ -70,6 +78,12 @@ impl FormattableDiagnosticGroup for SyntaxBug {
             SyntaxBug::FunctionExpectedBody(_) => 121,
 
             SyntaxBug::StaticVariableMissingName(_) => 140,
+
+            SyntaxBug::ConstVariableMissingName(_) => 160,
+
+            SyntaxBug::TraitMissingName(_) => 180,
+            SyntaxBug::TraitItemLimit(_) => 181,
+            SyntaxBug::TraitExpectedEnd(_) => 182,
 
             SyntaxBug::ExpectedOpeningBrace(_) => 1000,
             SyntaxBug::ExpectedEquals(_) => 1001,
@@ -106,6 +120,11 @@ impl FormattableDiagnosticGroup for SyntaxBug {
             SyntaxBug::ModuleItemLimit(pos) => DiagnosticInfo {
                 origin: Origin::Point(pos.to_owned()),
                 message: "module item limit of 65,536 exceeded".into(),
+            },
+
+            SyntaxBug::ModuleExpectedEnd(pos) => DiagnosticInfo {
+                origin: Origin::Point(pos.to_owned()),
+                message: "expected '}'".into(),
             },
 
             SyntaxBug::ImportMissingAliasName(pos) => DiagnosticInfo {
@@ -171,6 +190,26 @@ impl FormattableDiagnosticGroup for SyntaxBug {
             SyntaxBug::StaticVariableMissingName(pos) => DiagnosticInfo {
                 origin: Origin::Point(pos.to_owned()),
                 message: "static variable name is missing".into(),
+            },
+
+            SyntaxBug::ConstVariableMissingName(pos) => DiagnosticInfo {
+                origin: Origin::Point(pos.to_owned()),
+                message: "const variable name is missing".into(),
+            },
+
+            SyntaxBug::TraitMissingName(pos) => DiagnosticInfo {
+                origin: Origin::Point(pos.to_owned()),
+                message: "trait name is missing".into(),
+            },
+
+            SyntaxBug::TraitItemLimit(pos) => DiagnosticInfo {
+                origin: Origin::Point(pos.to_owned()),
+                message: "trait item limit of 65,536 exceeded".into(),
+            },
+
+            SyntaxBug::TraitExpectedEnd(pos) => DiagnosticInfo {
+                origin: Origin::Point(pos.to_owned()),
+                message: "expected '}'".into(),
             },
 
             SyntaxBug::ExpectedOpeningBrace(pos) => DiagnosticInfo {

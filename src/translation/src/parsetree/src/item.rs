@@ -34,7 +34,7 @@ pub struct TypeAlias {
     pub attributes: Vec<Expr>,
     pub name: IString,
     pub type_params: Vec<GenericParameter>,
-    pub aliased_type: Type,
+    pub aliased_type: Option<Type>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -71,13 +71,22 @@ pub struct Enum {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Trait {}
+pub enum AssociatedItem {
+    TypeAlias(TypeAlias),
+    ConstantItem(ConstVariable),
+    Method(NamedFunction),
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Trait {
+    pub attributes: Vec<Expr>,
+    pub name: IString,
+    pub type_params: Vec<GenericParameter>,
+    pub items: Vec<AssociatedItem>,
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Impl {}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Contract {}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FunctionParameter {
@@ -110,9 +119,17 @@ impl NamedFunction {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct GlobalVariable {
+pub struct StaticVariable {
     pub attributes: Vec<Expr>,
     pub is_mutable: bool,
+    pub name: IString,
+    pub var_type: Option<Type>,
+    pub initializer: Option<Expr>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ConstVariable {
+    pub attributes: Vec<Expr>,
     pub name: IString,
     pub var_type: Option<Type>,
     pub initializer: Option<Expr>,
@@ -130,9 +147,9 @@ pub enum Item {
     Enum(Box<Enum>),
     Trait(Box<Trait>),
     Impl(Box<Impl>),
-    Contract(Box<Contract>),
     NamedFunction(Box<NamedFunction>),
-    GlobalVariable(Box<GlobalVariable>),
+    StaticVariable(Box<StaticVariable>),
+    ConstVariable(Box<ConstVariable>),
 }
 
 impl std::fmt::Debug for Item {
@@ -148,9 +165,9 @@ impl std::fmt::Debug for Item {
             Item::Enum(e) => e.fmt(f),
             Item::Trait(e) => e.fmt(f),
             Item::Impl(e) => e.fmt(f),
-            Item::Contract(e) => e.fmt(f),
             Item::NamedFunction(e) => e.fmt(f),
-            Item::GlobalVariable(e) => e.fmt(f),
+            Item::StaticVariable(e) => e.fmt(f),
+            Item::ConstVariable(e) => e.fmt(f),
         }
     }
 }

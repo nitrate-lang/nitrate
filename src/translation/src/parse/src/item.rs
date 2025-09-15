@@ -3,8 +3,8 @@ use crate::bugs::SyntaxBug;
 
 use log::error;
 use nitrate_parsetree::kind::{
-    Block, Contract, Enum, EnumVariant, GenericParameter, GlobalVariable, Impl, Import, Item,
-    Module, NamedFunction, Struct, StructField, Trait, TypeAlias,
+    AssociatedItem, Block, ConstVariable, Enum, EnumVariant, GenericParameter, Impl, Import, Item,
+    Module, NamedFunction, StaticVariable, Struct, StructField, Trait, TypeAlias,
 };
 use nitrate_tokenize::{Keyword, Op, Punct, Token};
 
@@ -32,7 +32,13 @@ impl Parser<'_, '_> {
             return parameters;
         }
 
-        while !self.lexer.skip_if_or_end(&Token::Op(Op::LogicGt)) {
+        while !self.lexer.skip_if(&Token::Op(Op::LogicGt)) {
+            if self.lexer.is_eof() {
+                let bug = SyntaxBug::GenericParameterExpectedEnd(self.lexer.peek_pos());
+                self.bugs.push(&bug);
+                break;
+            }
+
             const MAX_GENERIC_PARAMETERS: usize = 65_536;
 
             if parameters.len() >= MAX_GENERIC_PARAMETERS {
@@ -80,7 +86,13 @@ impl Parser<'_, '_> {
         let mut items = Vec::new();
         let mut already_reported_too_many_items = false;
 
-        while !self.lexer.skip_if_or_end(&Token::Punct(Punct::RightBrace)) {
+        while !self.lexer.skip_if(&Token::Punct(Punct::RightBrace)) {
+            if self.lexer.is_eof() {
+                let bug = SyntaxBug::ModuleExpectedEnd(self.lexer.peek_pos());
+                self.bugs.push(&bug);
+                break;
+            }
+
             const MAX_ITEMS_PER_MODULE: usize = 65_536;
 
             if !already_reported_too_many_items && items.len() >= MAX_ITEMS_PER_MODULE {
@@ -144,12 +156,11 @@ impl Parser<'_, '_> {
 
         let type_params = self.parse_generic_parameters();
 
-        if !self.lexer.skip_if(&Token::Op(Op::Set)) {
-            let bug = SyntaxBug::ExpectedEquals(self.lexer.peek_pos());
-            self.bugs.push(&bug);
-        }
-
-        let aliased_type = self.parse_type();
+        let aliased_type = if self.lexer.skip_if(&Token::Op(Op::Set)) {
+            Some(self.parse_type())
+        } else {
+            None
+        };
 
         if !self.lexer.skip_if(&Token::Punct(Punct::Semicolon)) {
             let bug = SyntaxBug::ExpectedSemicolon(self.lexer.peek_pos());
@@ -215,7 +226,13 @@ impl Parser<'_, '_> {
         let mut variants = Vec::new();
         let mut already_reported_too_many_variants = false;
 
-        while !self.lexer.skip_if_or_end(&Token::Punct(Punct::RightBrace)) {
+        while !self.lexer.skip_if(&Token::Punct(Punct::RightBrace)) {
+            if self.lexer.is_eof() {
+                let bug = SyntaxBug::EnumExpectedEnd(self.lexer.peek_pos());
+                self.bugs.push(&bug);
+                break;
+            }
+
             const MAX_ENUM_VARIANTS: usize = 65_536;
 
             if !already_reported_too_many_variants && variants.len() >= MAX_ENUM_VARIANTS {
@@ -299,7 +316,13 @@ impl Parser<'_, '_> {
         let mut fields = Vec::new();
         let mut already_reported_too_many_fields = false;
 
-        while !self.lexer.skip_if_or_end(&Token::Punct(Punct::RightBrace)) {
+        while !self.lexer.skip_if(&Token::Punct(Punct::RightBrace)) {
+            if self.lexer.is_eof() {
+                let bug = SyntaxBug::StructureExpectedEnd(self.lexer.peek_pos());
+                self.bugs.push(&bug);
+                break;
+            }
+
             const MAX_STRUCT_FIELDS: usize = 65_536;
 
             if !already_reported_too_many_fields && fields.len() >= MAX_STRUCT_FIELDS {
@@ -331,11 +354,59 @@ impl Parser<'_, '_> {
         }
     }
 
-    fn parse_trait(&mut self) -> Trait {
-        // TODO: trait parsing logic
-        self.set_failed_bit();
-        error!("Trait parsing not implemented yet");
+    fn parse_trait_item(&mut self) -> AssociatedItem {
+        // TODO:
         todo!()
+    }
+
+    fn parse_trait(&mut self) -> Trait {
+        assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Trait));
+        self.lexer.skip_tok();
+
+        let attributes = self.parse_attributes();
+
+        let name = self.lexer.next_if_name().unwrap_or_else(|| {
+            let bug = SyntaxBug::TraitMissingName(self.lexer.peek_pos());
+            self.bugs.push(&bug);
+            "".into()
+        });
+
+        let type_params = self.parse_generic_parameters();
+
+        if !self.lexer.skip_if(&Token::Punct(Punct::LeftBrace)) {
+            let bug = SyntaxBug::ExpectedOpeningBrace(self.lexer.peek_pos());
+            self.bugs.push(&bug);
+        }
+
+        let mut items = Vec::new();
+        let mut already_reported_too_many_items = false;
+
+        while !self.lexer.skip_if(&Token::Punct(Punct::RightBrace)) {
+            if self.lexer.is_eof() {
+                let bug = SyntaxBug::TraitExpectedEnd(self.lexer.peek_pos());
+                self.bugs.push(&bug);
+                break;
+            }
+
+            const MAX_TRAIT_ITEMS: usize = 65_536;
+
+            if !already_reported_too_many_items && items.len() >= MAX_TRAIT_ITEMS {
+                already_reported_too_many_items = true;
+
+                let bug = SyntaxBug::TraitItemLimit(self.lexer.peek_pos());
+                self.bugs.push(&bug);
+            }
+
+            let item = self.parse_trait_item();
+            items.push(item);
+        }
+
+        Trait {
+            attributes,
+            name,
+            type_params,
+            items,
+        }
     }
 
     fn parse_implementation(&mut self) -> Impl {
@@ -400,7 +471,7 @@ impl Parser<'_, '_> {
         }
     }
 
-    fn parse_static_variable(&mut self) -> GlobalVariable {
+    fn parse_static_variable(&mut self) -> StaticVariable {
         assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Static));
         self.lexer.skip_tok();
 
@@ -434,9 +505,46 @@ impl Parser<'_, '_> {
             self.bugs.push(&bug);
         }
 
-        GlobalVariable {
+        StaticVariable {
             attributes,
             is_mutable,
+            name,
+            var_type,
+            initializer,
+        }
+    }
+
+    fn parse_const_variable(&mut self) -> ConstVariable {
+        assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Const));
+        self.lexer.skip_tok();
+
+        let attributes = self.parse_attributes();
+
+        let name = self.lexer.next_if_name().unwrap_or_else(|| {
+            let bug = SyntaxBug::ConstVariableMissingName(self.lexer.peek_pos());
+            self.bugs.push(&bug);
+            "".into()
+        });
+
+        let var_type = if self.lexer.skip_if(&Token::Punct(Punct::Colon)) {
+            Some(self.parse_type())
+        } else {
+            None
+        };
+
+        let initializer = if self.lexer.skip_if(&Token::Op(Op::Set)) {
+            Some(self.parse_expression())
+        } else {
+            None
+        };
+
+        if !self.lexer.skip_if(&Token::Punct(Punct::Semicolon)) {
+            let bug = SyntaxBug::ExpectedSemicolon(self.lexer.peek_pos());
+            self.bugs.push(&bug);
+        }
+
+        ConstVariable {
+            attributes,
             name,
             var_type,
             initializer,
@@ -489,7 +597,12 @@ impl Parser<'_, '_> {
 
             Token::Keyword(Keyword::Static) => {
                 let static_var = self.parse_static_variable();
-                Item::GlobalVariable(Box::new(static_var))
+                Item::StaticVariable(Box::new(static_var))
+            }
+
+            Token::Keyword(Keyword::Const) => {
+                let const_var = self.parse_const_variable();
+                Item::ConstVariable(Box::new(const_var))
             }
 
             Token::Name(_)
