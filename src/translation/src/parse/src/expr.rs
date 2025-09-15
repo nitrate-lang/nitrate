@@ -373,11 +373,6 @@ impl Parser<'_, '_> {
         }
     }
 
-    pub(crate) fn parse_expression(&mut self) -> Expr {
-        self.parse_expression_precedence(Precedence::MIN)
-            .unwrap_or(Expr::SyntaxError)
-    }
-
     fn parse_literal_suffix(&mut self, lit: Expr) -> Expr {
         let type_name = match self.lexer.peek_t() {
             Token::Name(name) => Some(Type::TypeName(Box::new(Path {
@@ -413,7 +408,7 @@ impl Parser<'_, '_> {
         }
     }
 
-    pub(crate) fn parse_list(&mut self) -> Option<Expr> {
+    fn parse_list(&mut self) -> Option<Expr> {
         assert!(self.lexer.peek_t() == Token::Punct(Punct::LeftBracket));
         self.lexer.skip_tok();
 
@@ -992,5 +987,10 @@ impl Parser<'_, '_> {
             elements,
             ends_with_semi,
         }
+    }
+
+    pub(crate) fn parse_expression(&mut self) -> Expr {
+        self.parse_expression_precedence(Precedence::MIN)
+            .unwrap_or(Expr::SyntaxError)
     }
 }

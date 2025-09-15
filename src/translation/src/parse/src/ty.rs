@@ -6,9 +6,8 @@ use super::parse::Parser;
 use interned_string::IString;
 use log::{error, info};
 use nitrate_parsetree::kind::{
-    ArrayType, Expr, FunctionParameter, FunctionType, FunctionTypeParameter, GenericArgument,
-    GenericType, Lifetime, MapType, Path, ReferenceType, RefinementType, SliceType, TupleType,
-    Type,
+    ArrayType, Expr, FunctionType, FunctionTypeParameter, GenericArgument, GenericType, Lifetime,
+    Path, ReferenceType, RefinementType, SliceType, TupleType, Type,
 };
 use nitrate_tokenize::{Keyword, Op, Punct, Token};
 
@@ -307,90 +306,31 @@ impl Parser<'_, '_> {
         })))
     }
 
-    fn parse_rest_of_array(&mut self, element_type: Type) -> Option<Type> {
-        // TODO: Cleanup
-
-        assert!(self.lexer.peek_t() == Token::Punct(Punct::Semicolon));
-        self.lexer.skip_tok();
-
-        let array_count = self.parse_expression();
-
-        if !self.lexer.skip_if(&Token::Punct(Punct::RightBracket)) {
-            error!(
-                "[P0???]: array type: expected ']' to close\n--> {}",
-                self.lexer.position()
-            );
-
-            return None;
-        }
-
-        Some(Type::ArrayType(Box::new(ArrayType {
-            element_type: element_type,
-            len: array_count,
-        })))
-    }
-
-    fn parse_rest_of_map_type(&mut self, key_type: Type) -> Option<Type> {
-        // TODO: Cleanup
-
-        assert!(self.lexer.peek_t() == Token::Op(Op::Arrow));
-        self.lexer.skip_tok();
-
-        let value_type = self.parse_type();
-
-        if !self.lexer.skip_if(&Token::Punct(Punct::RightBracket)) {
-            error!(
-                "[P0???]: map type: expected ']' to close\n--> {}",
-                self.lexer.position()
-            );
-
-            return None;
-        }
-
-        Some(Type::MapType(Box::new(MapType {
-            key_type,
-            value_type,
-        })))
-    }
-
-    fn parse_rest_of_slice_type(&mut self, element_type: Type) -> Option<Type> {
-        // TODO: Cleanup
-
-        assert!(self.lexer.peek_t() == Token::Punct(Punct::RightBracket));
-        self.lexer.skip_tok();
-
-        Some(Type::SliceType(Box::new(SliceType { element_type })))
-    }
-
-    fn parse_array_or_slice_or_map(&mut self) -> Option<Type> {
-        // TODO: Cleanup
-
+    fn parse_array_or_slice(&mut self) -> Option<Type> {
         assert!(self.lexer.peek_t() == Token::Punct(Punct::LeftBracket));
         self.lexer.skip_tok();
 
-        let something_type = self.parse_type();
+        let element_type = self.parse_type();
 
-        if self.lexer.next_is(&Token::Punct(Punct::Semicolon)) {
-            return self.parse_rest_of_array(something_type);
+        if self.lexer.skip_if(&Token::Punct(Punct::RightBracket)) {
+            return Some(Type::SliceType(Box::new(SliceType { element_type })));
         }
 
-        if self.lexer.next_is(&Token::Op(Op::Arrow)) {
-            return self.parse_rest_of_map_type(something_type);
+        if !self.lexer.next_is(&Token::Punct(Punct::Semicolon)) {
+            let bug = SyntaxBug::ExpectedSemicolon(self.lexer.peek_pos());
+            self.bugs.push(&bug);
         }
 
-        if self.lexer.next_is(&Token::Punct(Punct::RightBracket)) {
-            return self.parse_rest_of_slice_type(something_type);
+        let len = self.parse_expression();
+
+        if !self.lexer.skip_if(&Token::Punct(Punct::RightBracket)) {
+            let bug = SyntaxBug::ExpectedClosedBracket(self.lexer.peek_pos());
+            self.bugs.push(&bug);
+
+            self.lexer.skip_while(&Token::Punct(Punct::RightBracket));
         }
 
-        error!(
-            "[P0???]: type: expected ';', ']', or '->' for array, slice, and map type respectively\n--> {}",
-            self.lexer.position()
-        );
-        info!("[P0???]: array type: syntax hint: [<type>; <length>]");
-        info!("[P0???]: slice type: syntax hint: [<type>]");
-        info!("[P0???]: map   type: syntax hint: [<key_type> -> <value_type>]");
-
-        None
+        Some(Type::ArrayType(Box::new(ArrayType { element_type, len })))
     }
 
     fn parse_reference_type(&mut self) -> Option<Type> {
@@ -680,7 +620,7 @@ impl Parser<'_, '_> {
             }
 
             Token::Name(_) | Token::Op(Op::Scope) => self.parse_type_name(),
-            Token::Punct(Punct::LeftBracket) => self.parse_array_or_slice_or_map(),
+            Token::Punct(Punct::LeftBracket) => self.parse_array_or_slice(),
             Token::Op(Op::BitAnd) => self.parse_reference_type(),
             Token::Op(Op::Mul) => self.parse_pointer_type(),
 

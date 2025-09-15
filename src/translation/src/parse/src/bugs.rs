@@ -45,10 +45,14 @@ pub(crate) enum SyntaxBug {
     ImplItemLimit(SourcePosition),
 
     ExpectedOpeningBrace(SourcePosition),
+    ExpectedClosingBrace(SourcePosition),
+    ExpectedOpeningBracket(SourcePosition),
+    ExpectedClosedBracket(SourcePosition),
+    ExpectedOpeningParen(SourcePosition),
+    ExpectedClosingParen(SourcePosition),
     ExpectedSemicolon(SourcePosition),
     ExpectedColon(SourcePosition),
     ExpectedItem(SourcePosition),
-    ExpectedOpeningParen(SourcePosition),
 
     Test,
 }
@@ -102,10 +106,14 @@ impl FormattableDiagnosticGroup for SyntaxBug {
             SyntaxBug::ImplItemLimit(_) => 202,
 
             SyntaxBug::ExpectedOpeningBrace(_) => 1000,
-            SyntaxBug::ExpectedSemicolon(_) => 1002,
-            SyntaxBug::ExpectedColon(_) => 1003,
-            SyntaxBug::ExpectedItem(_) => 1004,
-            SyntaxBug::ExpectedOpeningParen(_) => 1005,
+            SyntaxBug::ExpectedClosingBrace(_) => 1001,
+            SyntaxBug::ExpectedOpeningBracket(_) => 1002,
+            SyntaxBug::ExpectedClosedBracket(_) => 1003,
+            SyntaxBug::ExpectedOpeningParen(_) => 1004,
+            SyntaxBug::ExpectedClosingParen(_) => 1005,
+            SyntaxBug::ExpectedSemicolon(_) => 1006,
+            SyntaxBug::ExpectedColon(_) => 1007,
+            SyntaxBug::ExpectedItem(_) => 1008,
 
             SyntaxBug::Test => 9999,
         }
@@ -269,6 +277,31 @@ impl FormattableDiagnosticGroup for SyntaxBug {
                 message: "expected '{'".into(),
             },
 
+            SyntaxBug::ExpectedClosingBrace(pos) => DiagnosticInfo {
+                origin: Origin::Point(pos.to_owned()),
+                message: "expected '}'".into(),
+            },
+
+            SyntaxBug::ExpectedOpeningBracket(pos) => DiagnosticInfo {
+                origin: Origin::Point(pos.to_owned()),
+                message: "expected '['".into(),
+            },
+
+            SyntaxBug::ExpectedClosedBracket(pos) => DiagnosticInfo {
+                origin: Origin::Point(pos.to_owned()),
+                message: "expected ']'".into(),
+            },
+
+            SyntaxBug::ExpectedOpeningParen(pos) => DiagnosticInfo {
+                origin: Origin::Point(pos.to_owned()),
+                message: "expected '('".into(),
+            },
+
+            SyntaxBug::ExpectedClosingParen(pos) => DiagnosticInfo {
+                origin: Origin::Point(pos.to_owned()),
+                message: "expected ')'".into(),
+            },
+
             SyntaxBug::ExpectedSemicolon(pos) => DiagnosticInfo {
                 origin: Origin::Point(pos.to_owned()),
                 message: "expected ';'".into(),
@@ -282,11 +315,6 @@ impl FormattableDiagnosticGroup for SyntaxBug {
             SyntaxBug::ExpectedItem(pos) => DiagnosticInfo {
                 origin: Origin::Point(pos.to_owned()),
                 message: "expected an item".into(),
-            },
-
-            SyntaxBug::ExpectedOpeningParen(pos) => DiagnosticInfo {
-                origin: Origin::Point(pos.to_owned()),
-                message: "expected '('".into(),
             },
 
             SyntaxBug::Test => DiagnosticInfo {

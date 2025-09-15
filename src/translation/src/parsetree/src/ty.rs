@@ -22,12 +22,6 @@ pub struct ArrayType {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct MapType {
-    pub key_type: Type,
-    pub value_type: Type,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SliceType {
     pub element_type: Type,
 }
@@ -108,7 +102,6 @@ pub enum Type {
     RefinementType(Box<RefinementType>),
     TupleType(Box<TupleType>),
     ArrayType(Box<ArrayType>),
-    MapType(Box<MapType>),
     SliceType(Box<SliceType>),
     FunctionType(Box<FunctionType>),
     ReferenceType(Box<ReferenceType>),
@@ -146,7 +139,6 @@ impl std::fmt::Debug for Type {
             Type::RefinementType(e) => e.fmt(f),
             Type::TupleType(e) => e.fmt(f),
             Type::ArrayType(e) => e.fmt(f),
-            Type::MapType(e) => e.fmt(f),
             Type::SliceType(e) => e.fmt(f),
             Type::FunctionType(e) => e.fmt(f),
             Type::ReferenceType(e) => e.fmt(f),
