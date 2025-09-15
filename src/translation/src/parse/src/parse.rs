@@ -15,11 +15,6 @@ impl<'a, 'bugs> Parser<'a, 'bugs> {
         Parser { lexer, bugs }
     }
 
-    pub(crate) fn set_failed_bit(&mut self) {
-        // TODO: Get rid of this soon
-        self.bugs.push(&SyntaxBug::Test);
-    }
-
     pub fn parse_crate(&mut self, crate_name: IString) -> Package {
         let mut items = Vec::new();
 

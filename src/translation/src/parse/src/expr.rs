@@ -46,9 +46,9 @@ enum Operation {
     Index,
 }
 
-// TODO: Audit and convert diagnostics to use the bug collector
-
 fn get_precedence_of_operator(operator: Op) -> Option<(Associativity, Precedence)> {
+    // TODO: Cleanup
+
     let (associativity, precedence) = match operator {
         Op::Scope => (Associativity::LeftToRight, PrecedenceRank::Scope),
 
@@ -105,6 +105,8 @@ fn get_precedence_of_operator(operator: Op) -> Option<(Associativity, Precedence
 }
 
 fn get_precedence(operation: Operation) -> Option<(Associativity, Precedence)> {
+    // TODO: Cleanup
+
     match operation {
         Operation::Operator(operator) => get_precedence_of_operator(operator),
 
@@ -116,6 +118,8 @@ fn get_precedence(operation: Operation) -> Option<(Associativity, Precedence)> {
 }
 
 fn get_prefix_precedence(op: Op) -> Option<Precedence> {
+    // TODO: Cleanup
+
     let precedence = match op {
         Op::Add => PrecedenceRank::Unary,
         Op::Sub => PrecedenceRank::Unary,
@@ -133,6 +137,8 @@ fn get_prefix_precedence(op: Op) -> Option<Precedence> {
 
 impl Parser<'_, '_> {
     fn parse_expression_primary(&mut self) -> Option<Expr> {
+        // TODO: Cleanup
+
         match self.lexer.peek_t() {
             Token::Integer(int) => {
                 self.lexer.skip_tok();
@@ -197,7 +203,6 @@ impl Parser<'_, '_> {
             Token::Keyword(Keyword::Asm) => self.parse_asm(),
 
             Token::Keyword(keyword) => {
-                self.set_failed_bit();
                 error!(
                     "[P????]: expr: unexpected keyword '{}'\n--> {}",
                     keyword,
@@ -208,7 +213,6 @@ impl Parser<'_, '_> {
             }
 
             Token::Op(op) => {
-                self.set_failed_bit();
                 error!(
                     "[P????]: expr: unexpected operator '{}'\n--> {}",
                     op,
@@ -219,7 +223,6 @@ impl Parser<'_, '_> {
             }
 
             Token::Punct(punct) => {
-                self.set_failed_bit();
                 error!(
                     "[P????]: expr: unexpected punctuation '{}'\n--> {}",
                     punct,
@@ -230,7 +233,6 @@ impl Parser<'_, '_> {
             }
 
             Token::Comment(_) => {
-                self.set_failed_bit();
                 error!(
                     "[P????]: expr: unexpected comment\n--> {}",
                     self.lexer.current_pos()
@@ -240,7 +242,6 @@ impl Parser<'_, '_> {
             }
 
             Token::Eof => {
-                self.set_failed_bit();
                 error!(
                     "[P????]: expr: unexpected end of file\n--> {}",
                     self.lexer.current_pos()
@@ -252,6 +253,8 @@ impl Parser<'_, '_> {
     }
 
     fn parse_prefix(&mut self) -> Option<Expr> {
+        // TODO: Cleanup
+
         if let Token::Op(prefix_op) = self.lexer.peek_t() {
             if prefix_op != Op::Scope {
                 if let Some(precedence) = get_prefix_precedence(prefix_op) {
@@ -272,7 +275,6 @@ impl Parser<'_, '_> {
             let inner = self.parse_expression();
 
             if !self.lexer.skip_if(&Token::Punct(Punct::RightParen)) {
-                self.set_failed_bit();
                 error!(
                     "[P????]: expr: expected closing parenthesis\n--> {}",
                     self.lexer.current_pos()
@@ -290,6 +292,8 @@ impl Parser<'_, '_> {
         &mut self,
         min_precedence_to_proceed: Precedence,
     ) -> Option<Expr> {
+        // TODO: Cleanup
+
         let mut sofar = self.parse_prefix()?;
 
         loop {
@@ -352,7 +356,6 @@ impl Parser<'_, '_> {
                     let index = self.parse_expression();
 
                     if !self.lexer.skip_if(&Token::Punct(Punct::RightBracket)) {
-                        self.set_failed_bit();
                         error!(
                             "[P????]: expr: expected closing bracket\n--> {}",
                             self.lexer.current_pos()
@@ -374,6 +377,8 @@ impl Parser<'_, '_> {
     }
 
     fn parse_literal_suffix(&mut self, lit: Expr) -> Expr {
+        // TODO: Cleanup
+
         let type_name = match self.lexer.peek_t() {
             Token::Name(name) => Some(Type::TypeName(Box::new(Path {
                 path: smallvec![name],
@@ -410,6 +415,8 @@ impl Parser<'_, '_> {
     }
 
     fn parse_list(&mut self) -> Option<Expr> {
+        // TODO: Cleanup
+
         assert!(self.lexer.peek_t() == Token::Punct(Punct::LeftBracket));
         self.lexer.skip_tok();
 
@@ -440,6 +447,8 @@ impl Parser<'_, '_> {
     }
 
     pub(crate) fn parse_attributes(&mut self) -> Vec<Expr> {
+        // TODO: Cleanup
+
         let mut attributes = Vec::new();
 
         if !self.lexer.skip_if(&Token::Punct(Punct::LeftBracket)) {
@@ -475,6 +484,8 @@ impl Parser<'_, '_> {
         // TODO: Cleanup
 
         fn parse_generic_argument(this: &mut Parser) -> GenericArgument {
+            // TODO: Cleanup
+
             let mut name: Option<IString> = None;
 
             let rewind_pos = this.lexer.current_pos();
@@ -556,6 +567,8 @@ impl Parser<'_, '_> {
     }
 
     pub(crate) fn parse_path(&mut self) -> Path {
+        // TODO: Cleanup
+
         assert!(matches!(
             self.lexer.peek_t(),
             Token::Name(_) | Token::Op(Op::Scope)
@@ -631,6 +644,8 @@ impl Parser<'_, '_> {
     }
 
     fn parse_type_info(&mut self) -> Option<Expr> {
+        // TODO: Cleanup
+
         assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Type));
         self.lexer.skip_tok();
 
@@ -640,6 +655,8 @@ impl Parser<'_, '_> {
     }
 
     fn parse_if(&mut self) -> Option<Expr> {
+        // TODO: Cleanup
+
         assert!(self.lexer.peek_t() == Token::Keyword(Keyword::If));
         self.lexer.skip_tok();
 
@@ -649,7 +666,6 @@ impl Parser<'_, '_> {
         let else_branch = if self.lexer.skip_if(&Token::Keyword(Keyword::Else)) {
             if self.lexer.next_is(&Token::Keyword(Keyword::If)) {
                 let Some(else_if_branch) = self.parse_if() else {
-                    self.set_failed_bit();
                     error!(
                         "[P????]: if: expected else block after 'else if'\n--> {}",
                         self.lexer.current_pos()
@@ -676,6 +692,8 @@ impl Parser<'_, '_> {
     }
 
     fn parse_for_bindings(&mut self) -> Option<Vec<(IString, Option<Type>)>> {
+        // TODO: Cleanup
+
         let mut bindings = Vec::new();
 
         if self.lexer.skip_if(&Token::Punct(Punct::LeftParen)) {
@@ -735,6 +753,8 @@ impl Parser<'_, '_> {
     }
 
     fn parse_for(&mut self) -> Option<Expr> {
+        // TODO: Cleanup
+
         assert!(self.lexer.peek_t() == Token::Keyword(Keyword::For));
         self.lexer.skip_tok();
 
@@ -742,7 +762,6 @@ impl Parser<'_, '_> {
         let bindings = self.parse_for_bindings()?;
 
         if !self.lexer.skip_if(&Token::Keyword(Keyword::In)) {
-            self.set_failed_bit();
             error!(
                 "[P????]: for: expected 'in' after loop variable\n--> {}",
                 self.lexer.current_pos()
@@ -762,6 +781,8 @@ impl Parser<'_, '_> {
     }
 
     fn parse_while(&mut self) -> Option<Expr> {
+        // TODO: Cleanup
+
         assert!(self.lexer.peek_t() == Token::Keyword(Keyword::While));
         self.lexer.skip_tok();
 
@@ -777,6 +798,8 @@ impl Parser<'_, '_> {
     }
 
     fn parse_do(&mut self) -> Option<Expr> {
+        // TODO: Cleanup
+
         assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Do));
         self.lexer.skip_tok();
 
@@ -796,13 +819,16 @@ impl Parser<'_, '_> {
     }
 
     fn parse_switch(&mut self) -> Option<Expr> {
+        // TODO: Cleanup
+
         // TODO: switch expression parsing logic
-        self.set_failed_bit();
         error!("Switch expression parsing not implemented yet");
         None
     }
 
     fn parse_break(&mut self) -> Option<Expr> {
+        // TODO: Cleanup
+
         assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Break));
         self.lexer.skip_tok();
 
@@ -825,6 +851,8 @@ impl Parser<'_, '_> {
     }
 
     fn parse_continue(&mut self) -> Option<Expr> {
+        // TODO: Cleanup
+
         assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Continue));
         self.lexer.skip_tok();
 
@@ -847,6 +875,8 @@ impl Parser<'_, '_> {
     }
 
     fn parse_return(&mut self) -> Option<Expr> {
+        // TODO: Cleanup
+
         assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Ret));
         self.lexer.skip_tok();
 
@@ -860,6 +890,8 @@ impl Parser<'_, '_> {
     }
 
     fn parse_await(&mut self) -> Option<Expr> {
+        // TODO: Cleanup
+
         assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Await));
         self.lexer.skip_tok();
 
@@ -869,13 +901,16 @@ impl Parser<'_, '_> {
     }
 
     fn parse_asm(&mut self) -> Option<Expr> {
+        // TODO: Cleanup
+
         // TODO: asm expression parsing logic
-        self.set_failed_bit();
         error!("Asm expression parsing not implemented yet");
         None
     }
 
     fn parse_anonymous_function_parameter(&mut self) -> FunctionParameter {
+        // TODO: Cleanup
+
         let attributes = self.parse_attributes();
 
         let name = self.lexer.next_if_name().unwrap_or_else(|| {
@@ -905,6 +940,8 @@ impl Parser<'_, '_> {
     }
 
     fn parse_anonymous_function_parameters(&mut self) -> Vec<FunctionParameter> {
+        // TODO: Cleanup
+
         let mut params = Vec::new();
 
         if !self.lexer.skip_if(&Token::Punct(Punct::LeftParen)) {
@@ -949,6 +986,8 @@ impl Parser<'_, '_> {
     }
 
     fn parse_anonymous_function(&mut self) -> Option<Expr> {
+        // TODO: Cleanup
+
         if self.lexer.peek_t() == Token::Punct(Punct::LeftBrace) {
             let definition = self.parse_block();
 
@@ -981,7 +1020,6 @@ impl Parser<'_, '_> {
                 ends_with_semi: false,
             }
         } else {
-            self.set_failed_bit();
             error!(
                 "[P????]: function: expected function body\n--> {}",
                 self.lexer.current_pos()
@@ -1000,6 +1038,8 @@ impl Parser<'_, '_> {
     }
 
     fn parse_function_argument(&mut self) -> Option<(Option<IString>, Expr)> {
+        // TODO: Cleanup
+
         let mut argument_name = None;
 
         if let Token::Name(name) = self.lexer.peek_t() {
@@ -1025,6 +1065,8 @@ impl Parser<'_, '_> {
     }
 
     fn parse_function_arguments(&mut self) -> Option<CallArguments> {
+        // TODO: Cleanup
+
         assert!(self.lexer.peek_t() == Token::Punct(Punct::LeftParen));
         self.lexer.skip_tok();
 
@@ -1055,8 +1097,9 @@ impl Parser<'_, '_> {
     }
 
     pub(crate) fn parse_block(&mut self) -> Block {
+        // TODO: Cleanup
+
         if !self.lexer.skip_if(&Token::Punct(Punct::LeftBrace)) {
-            self.set_failed_bit();
             error!(
                 "[P????]: expr: block: expected opening brace\n--> {}",
                 self.lexer.current_pos()
@@ -1093,6 +1136,8 @@ impl Parser<'_, '_> {
     }
 
     pub(crate) fn parse_expression(&mut self) -> Expr {
+        // TODO: Cleanup
+
         self.parse_expression_precedence(Precedence::MIN)
             .unwrap_or(Expr::SyntaxError)
     }

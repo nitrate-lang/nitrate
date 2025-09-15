@@ -68,8 +68,6 @@ pub(crate) enum SyntaxBug {
     ExpectedItem(SourcePosition),
     ExpectedType(SourcePosition),
     ExpectedExpr(SourcePosition),
-
-    Test,
 }
 
 impl FormattableDiagnosticGroup for SyntaxBug {
@@ -144,8 +142,6 @@ impl FormattableDiagnosticGroup for SyntaxBug {
             SyntaxBug::ExpectedItem(_) => 2000,
             SyntaxBug::ExpectedType(_) => 2001,
             SyntaxBug::ExpectedExpr(_) => 2002,
-
-            SyntaxBug::Test => 9999,
         }
     }
 
@@ -427,13 +423,6 @@ impl FormattableDiagnosticGroup for SyntaxBug {
             SyntaxBug::ExpectedExpr(pos) => DiagnosticInfo {
                 origin: Origin::Point(pos.to_owned()),
                 message: "expected an expression".into(),
-            },
-
-            /* ------------------------------------------------------------------------- */
-
-            SyntaxBug::Test => DiagnosticInfo {
-                message: "this is a test syntax error".into(),
-                origin: Origin::None,
             },
         }
     }
