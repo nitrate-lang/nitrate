@@ -112,16 +112,16 @@ enum Commands {
     /// Analyze the current package and report errors, but don't build object files
     Check(CheckArgs),
 
-    /// Remove the target directory
+    /// Clear the current package's caches
     Clean(CleanArgs),
 
     /// Build this package's and its dependencies' documentation
     Doc(DocArgs),
 
-    /// Create a new cargo package
+    /// Create a new no3 package
     New(NewDocs),
 
-    /// Create a new cargo package in an existing directory
+    /// Create a new no3 package in an existing directory
     Init(InitArgs),
 
     /// Add dependencies to a manifest file
@@ -139,19 +139,19 @@ enum Commands {
     /// Run the benchmarks
     Bench(BenchArgs),
 
-    /// Update dependencies listed in Cargo.lock
+    /// Update dependencies listed in no3.lock
     Update(UpdateArgs),
 
-    /// Search registry for crates
+    /// Search registry for packages
     Search(SearchArgs),
 
     /// Package and upload this package to the registry
     Publish(PublishArgs),
 
-    /// Install a Rust binary
+    /// Install a Nitrate binary
     Install(InstallArgs),
 
-    /// Uninstall a Rust binary
+    /// Uninstall a Nitrate binary
     Uninstall(UninstallArgs),
 }
 
@@ -168,27 +168,27 @@ struct Args {
     #[arg(long)]
     list: bool,
 
-    /// Provide a detailed explanation of a rustc error message
-    #[arg(long)]
+    /// Provide a detailed explanation of a nitc error message
+    #[arg(long, value_name = "CODE")]
     explain: Option<String>,
 
-    /// Use verbose output (-vv very verbose/build.rs output)
+    /// Use verbose output (-vv very verbose output)
     #[arg(short, long, action = clap::ArgAction::Count)]
     verbose: u8,
 
-    /// Do not print cargo log messages
+    /// Do not print no3 log messages
     #[arg(short, long)]
     quiet: bool,
 
     /// Coloring
-    #[arg(long, value_parser = ["auto", "always", "never"])]
+    #[arg(long, value_parser = ["auto", "always", "never"], value_name = "WHEN")]
     color: Option<String>,
 
-    /// Change to DIRECTORY before doing anything (nightly-only)
+    /// Change to DIRECTORY before doing anything
     #[arg(short = 'C', value_name = "DIRECTORY")]
     change_dir: Option<String>,
 
-    /// Assert that `Cargo.lock` will remain unchanged
+    /// Assert that `no3.lock` will remain unchanged
     #[arg(long)]
     locked: bool,
 
@@ -204,7 +204,7 @@ struct Args {
     #[arg(long, value_name = "KEY=VALUE|PATH")]
     config: Vec<String>,
 
-    /// Unstable (nightly-only) flags to Cargo, see 'cargo -Z help' for details
+    /// Unstable flags to no3, see 'no3 -Z help' for details
     #[arg(short = 'Z', value_name = "FLAG")]
     unstable_flags: Vec<String>,
 
