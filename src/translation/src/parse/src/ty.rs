@@ -9,8 +9,6 @@ use nitrate_parsetree::kind::{
 };
 use nitrate_tokenize::{Keyword, Op, Punct, Token};
 
-// TODO: Audit and convert diagnostics to use the bug collector
-
 #[allow(unused_imports)]
 use nitrate_tokenize::Lexer;
 
@@ -29,6 +27,8 @@ impl RefinementOptions {
 
 impl Parser<'_, '_> {
     fn parse_refinement_range(&mut self) -> Option<(Option<Expr>, Option<Expr>)> {
+        // TODO: Cleanup
+
         assert!(self.lexer.peek_t() == Token::Punct(Punct::LeftBracket));
         self.lexer.skip_tok();
 
@@ -69,6 +69,8 @@ impl Parser<'_, '_> {
     }
 
     fn parse_refinement_options(&mut self) -> Option<RefinementOptions> {
+        // TODO: Cleanup
+
         if self.generic_type_suffix_terminator_ambiguity
             || !self.lexer.skip_if(&Token::Punct(Punct::Colon))
         {
@@ -114,6 +116,8 @@ impl Parser<'_, '_> {
     }
 
     fn parse_generic_argument(&mut self) -> Option<GenericArgument> {
+        // TODO: Cleanup
+
         let mut argument_name: Option<IString> = None;
 
         if let Token::Name(name) = self.lexer.peek_t() {
@@ -136,12 +140,14 @@ impl Parser<'_, '_> {
         let argument_value = self.parse_type();
 
         Some(GenericArgument {
-            name: argument_name.unwrap_or_default(),
+            name: argument_name,
             value: Some(argument_value),
         })
     }
 
     fn parse_generic_arguments(&mut self) -> Option<Vec<GenericArgument>> {
+        // TODO: Cleanup
+
         assert!(self.lexer.peek_t() == Token::Op(Op::LogicLt));
         self.lexer.skip_tok();
 
@@ -197,6 +203,8 @@ impl Parser<'_, '_> {
     }
 
     fn parse_type_name(&mut self) -> Option<Type> {
+        // TODO: Cleanup
+
         match self.lexer.peek_t() {
             Token::Name(name) if name.deref() == "_" => {
                 self.lexer.skip_tok();
@@ -259,7 +267,7 @@ impl Parser<'_, '_> {
         }
 
         if !self.lexer.next_is(&Token::Op(Op::LogicLt)) {
-            return Some(Type::TypeName(Path { path: path.into() }));
+            return Some(Type::TypeName(Box::new(Path { path: path.into() })));
         }
 
         let is_already_parsing_generic_type = self.generic_type_depth != 0;
@@ -291,12 +299,14 @@ impl Parser<'_, '_> {
         }
 
         Some(Type::GenericType(Box::new(GenericType {
-            basis_type: Type::TypeName(Path { path: path.into() }),
+            basis_type: Type::TypeName(Box::new(Path { path: path.into() })),
             arguments: generic_arguments,
         })))
     }
 
     fn parse_rest_of_array(&mut self, element_type: Type) -> Option<Type> {
+        // TODO: Cleanup
+
         assert!(self.lexer.peek_t() == Token::Punct(Punct::Semicolon));
         self.lexer.skip_tok();
 
@@ -318,6 +328,8 @@ impl Parser<'_, '_> {
     }
 
     fn parse_rest_of_map_type(&mut self, key_type: Type) -> Option<Type> {
+        // TODO: Cleanup
+
         assert!(self.lexer.peek_t() == Token::Op(Op::Arrow));
         self.lexer.skip_tok();
 
@@ -339,12 +351,7 @@ impl Parser<'_, '_> {
     }
 
     fn parse_rest_of_slice_type(&mut self, element_type: Type) -> Option<Type> {
-        /*
-         * The syntax for defining a slice type is as follows:
-         * [<type>]
-         *
-         * The '[' and ']' symbols indicate that the type is a slice.
-         */
+        // TODO: Cleanup
 
         assert!(self.lexer.peek_t() == Token::Punct(Punct::RightBracket));
         self.lexer.skip_tok();
@@ -353,6 +360,8 @@ impl Parser<'_, '_> {
     }
 
     fn parse_array_or_slice_or_map(&mut self) -> Option<Type> {
+        // TODO: Cleanup
+
         assert!(self.lexer.peek_t() == Token::Punct(Punct::LeftBracket));
         self.lexer.skip_tok();
 
@@ -381,66 +390,54 @@ impl Parser<'_, '_> {
         None
     }
 
-    fn parse_managed_type(&mut self) -> Option<Type> {
-        /*
-         * The syntax for defining a managed reference type is as follows:
-         * &mut <type>
-         * &const <type>
-         * &<type>
-         *
-         * The '&' symbol indicates that the type is managed, and the 'mut' or 'const' keywords
-         * indicate whether the type is mutable or immutable.
-         * If neither 'mut' nor 'const' is specified, the type is considered immutable
-         * by default.
-         */
+    fn parse_reference_type(&mut self) -> Option<Type> {
+        // TODO: Cleanup
 
         assert!(self.lexer.peek_t() == Token::Op(Op::BitAnd));
         self.lexer.skip_tok();
 
-        let exclusive = !self.lexer.skip_if(&Token::Keyword(Keyword::Poly));
-        if exclusive {
-            self.lexer.skip_if(&Token::Keyword(Keyword::Iso));
+        let mut exclusive = None;
+        if self.lexer.skip_if(&Token::Keyword(Keyword::Poly)) {
+            exclusive = Some(false);
+        } else if self.lexer.skip_if(&Token::Keyword(Keyword::Iso)) {
+            exclusive = Some(true);
         }
 
-        let mutable = self.lexer.skip_if(&Token::Keyword(Keyword::Mut));
-        if !mutable {
-            self.lexer.skip_if(&Token::Keyword(Keyword::Const));
+        let mut mutability = None;
+        if self.lexer.skip_if(&Token::Keyword(Keyword::Mut)) {
+            mutability = Some(true);
+        } else if self.lexer.skip_if(&Token::Keyword(Keyword::Const)) {
+            mutability = Some(false);
         }
 
         let to = self.parse_type();
 
         Some(Type::ReferenceType(Box::new(ReferenceType {
             lifetime: Some(Lifetime::CollectorManaged),
+            mutability,
             exclusive,
-            mutable,
             to,
         })))
     }
 
-    fn parse_unmanaged_type(&mut self) -> Option<Type> {
-        /*
-         * The syntax for defining an unmanaged reference type is as follows:
-         * *mut <type>
-         * *const <type>
-         * *<type>
-         *
-         * The '*' symbol indicates that the type is unmanaged, and the 'mut' or 'const' keywords
-         * indicate whether the type is mutable or immutable.
-         * If neither 'mut' nor 'const' is specified, the type is considered immutable
-         * by default.
-         */
+    fn parse_pointer_type(&mut self) -> Option<Type> {
+        // TODO: Cleanup
 
         assert!(self.lexer.peek_t() == Token::Op(Op::Mul));
         self.lexer.skip_tok();
 
-        let exclusive = !self.lexer.skip_if(&Token::Keyword(Keyword::Poly));
-        if exclusive {
-            self.lexer.skip_if(&Token::Keyword(Keyword::Iso));
+        let mut exclusive = None;
+        if self.lexer.skip_if(&Token::Keyword(Keyword::Poly)) {
+            exclusive = Some(false);
+        } else if self.lexer.skip_if(&Token::Keyword(Keyword::Iso)) {
+            exclusive = Some(true);
         }
 
-        let mutable = self.lexer.skip_if(&Token::Keyword(Keyword::Mut));
-        if !mutable {
-            self.lexer.skip_if(&Token::Keyword(Keyword::Const));
+        let mut mutability = None;
+        if self.lexer.skip_if(&Token::Keyword(Keyword::Mut)) {
+            mutability = Some(true);
+        } else if self.lexer.skip_if(&Token::Keyword(Keyword::Const)) {
+            mutability = Some(false);
         }
 
         let to = self.parse_type();
@@ -448,16 +445,13 @@ impl Parser<'_, '_> {
         Some(Type::ReferenceType(Box::new(ReferenceType {
             lifetime: None,
             exclusive,
-            mutable,
+            mutability,
             to,
         })))
     }
 
     pub(crate) fn parse_function_parameters(&mut self) -> Vec<FunctionParameter> {
-        /*
-         * Syntax for defining function parameters is as follows:
-         *  <parameter> ::= <name>? (':' <type>)? ('=' <expression>)?
-         */
+        // TODO: Cleanup
 
         let mut parameters = Vec::new();
 
@@ -510,11 +504,7 @@ impl Parser<'_, '_> {
     }
 
     fn parse_function_type(&mut self) -> Option<Type> {
-        /*
-         * The syntax for defining a function type is as follows:
-         * <return_type> ::= "->" <type>
-         * <function_type> ::= fn <attributes>? <name>? <parameters>? <return_type>?
-         */
+        // TODO: Cleanup
 
         assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Fn));
         self.lexer.skip_tok();
@@ -537,10 +527,7 @@ impl Parser<'_, '_> {
     }
 
     fn parse_opaque_type(&mut self) -> Option<Type> {
-        /*
-         * The syntax for defining an opaque type is as follows:
-         * opaque(<string>)
-         */
+        // TODO: Cleanup
 
         assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Opaque));
         self.lexer.skip_tok();
@@ -579,6 +566,8 @@ impl Parser<'_, '_> {
     }
 
     fn parse_type_primary(&mut self) -> Option<Type> {
+        // TODO: Cleanup
+
         let first_token = self.lexer.peek_tok();
         let current_pos = first_token.start();
 
@@ -671,8 +660,8 @@ impl Parser<'_, '_> {
 
             Token::Name(_) | Token::Op(Op::Scope) => self.parse_type_name(),
             Token::Punct(Punct::LeftBracket) => self.parse_array_or_slice_or_map(),
-            Token::Op(Op::BitAnd) => self.parse_managed_type(),
-            Token::Op(Op::Mul) => self.parse_unmanaged_type(),
+            Token::Op(Op::BitAnd) => self.parse_reference_type(),
+            Token::Op(Op::Mul) => self.parse_pointer_type(),
 
             Token::Punct(Punct::LeftBrace) => {
                 let block = self.parse_block();
@@ -754,18 +743,13 @@ impl Parser<'_, '_> {
     }
 
     pub(crate) fn parse_type(&mut self) -> Type {
-        /*
-         * The syntax for defining a type is as follows:
-         * <type>
-         * (<type>)
-         *
-         * The parentheses may be used for type precedence or grouping,
-         * but they are not required for simple types.
-         */
+        // TODO: Cleanup
 
         if self.lexer.skip_if(&Token::Punct(Punct::LeftParen)) {
             if self.lexer.skip_if(&Token::Punct(Punct::RightParen)) {
-                return Type::UnitType;
+                return Type::TupleType(Box::new(TupleType {
+                    element_types: Vec::new(),
+                }));
             }
 
             let inner = self.parse_type();

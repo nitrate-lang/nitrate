@@ -378,9 +378,9 @@ impl Parser<'_, '_> {
 
     fn parse_literal_suffix(&mut self, lit: Expr) -> Expr {
         let type_name = match self.lexer.peek_t() {
-            Token::Name(name) => Some(Type::TypeName(Path {
+            Token::Name(name) => Some(Type::TypeName(Box::new(Path {
                 path: smallvec![name],
-            })),
+            }))),
 
             Token::Keyword(Keyword::Bool) => Some(Type::Bool),
             Token::Keyword(Keyword::U8) => Some(Type::UInt8),

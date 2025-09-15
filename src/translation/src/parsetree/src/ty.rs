@@ -52,14 +52,14 @@ pub enum Lifetime {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ReferenceType {
     pub lifetime: Option<Lifetime>,
-    pub mutable: bool,
-    pub exclusive: bool,
+    pub mutability: Option<bool>,
+    pub exclusive: Option<bool>,
     pub to: Type,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GenericArgument {
-    pub name: IString,
+    pub name: Option<IString>,
     pub value: Option<Type>,
 }
 
@@ -96,7 +96,7 @@ pub enum Type {
     Float128,
     UnitType,
     InferType,
-    TypeName(Path),
+    TypeName(Box<Path>),
     RefinementType(Box<RefinementType>),
     TupleType(Box<TupleType>),
     ArrayType(Box<ArrayType>),
