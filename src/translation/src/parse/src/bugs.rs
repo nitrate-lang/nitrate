@@ -46,9 +46,13 @@ pub(crate) enum SyntaxBug {
 
     ExpectedGenericArgumentEnd(SourcePosition),
     GenericArgumentLimit(SourcePosition),
-    GenericArgumentMismatchedAngles(SourcePosition),
 
-    ReferenceExpectedLifetimeName(SourcePosition),
+    ReferenceTypeExpectedLifetimeName(SourcePosition),
+
+    OpaqueTypeMissingName(SourcePosition),
+
+    TupleTypeExpectedEnd(SourcePosition),
+    TupleTypeElementLimit(SourcePosition),
 
     ExpectedOpeningBrace(SourcePosition),
     ExpectedClosingBrace(SourcePosition),
@@ -118,9 +122,13 @@ impl FormattableDiagnosticGroup for SyntaxBug {
 
             SyntaxBug::ExpectedGenericArgumentEnd(_) => 220,
             SyntaxBug::GenericArgumentLimit(_) => 221,
-            SyntaxBug::GenericArgumentMismatchedAngles(_) => 222,
 
-            SyntaxBug::ReferenceExpectedLifetimeName(_) => 240,
+            SyntaxBug::ReferenceTypeExpectedLifetimeName(_) => 240,
+
+            SyntaxBug::OpaqueTypeMissingName(_) => 260,
+
+            SyntaxBug::TupleTypeExpectedEnd(_) => 280,
+            SyntaxBug::TupleTypeElementLimit(_) => 281,
 
             SyntaxBug::ExpectedOpeningBrace(_) => 1000,
             SyntaxBug::ExpectedClosingBrace(_) => 1001,
@@ -326,16 +334,30 @@ impl FormattableDiagnosticGroup for SyntaxBug {
                 message: "generic argument limit of 65,536 exceeded".into(),
             },
 
-            SyntaxBug::GenericArgumentMismatchedAngles(pos) => DiagnosticInfo {
+            /* ------------------------------------------------------------------------- */
+
+            SyntaxBug::ReferenceTypeExpectedLifetimeName(pos) => DiagnosticInfo {
                 origin: Origin::Point(pos.to_owned()),
-                message: "mismatched '<' and '>' in generic arguments".into(),
+                message: "reference lifetime is missing after '".into(),
             },
 
             /* ------------------------------------------------------------------------- */
 
-            SyntaxBug::ReferenceExpectedLifetimeName(pos) => DiagnosticInfo {
+            SyntaxBug::OpaqueTypeMissingName(pos) => DiagnosticInfo {
                 origin: Origin::Point(pos.to_owned()),
-                message: "reference lifetime is missing after '".into(),
+                message: "opaque type name is missing".into(),
+            },
+            
+            /* ------------------------------------------------------------------------- */
+
+            SyntaxBug::TupleTypeExpectedEnd(pos) => DiagnosticInfo {
+                origin: Origin::Point(pos.to_owned()),
+                message: "expected ')' or ','".into(),
+            },
+
+            SyntaxBug::TupleTypeElementLimit(pos) => DiagnosticInfo {
+                origin: Origin::Point(pos.to_owned()),
+                message: "tuple element limit of 65,536 exceeded".into(),
             },
 
             /* ------------------------------------------------------------------------- */

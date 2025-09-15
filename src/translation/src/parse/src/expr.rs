@@ -494,27 +494,31 @@ impl Parser<'_, '_> {
         assert!(self.lexer.peek_t() == Token::Op(Op::LogicLt));
         self.lexer.skip_tok();
 
-        self.generic_type_argument_depth += 1;
-
         let mut arguments = Vec::new();
         let mut already_reported_too_many_arguments = false;
 
         self.lexer.skip_if(&Token::Punct(Punct::Comma));
 
-        while self.generic_type_argument_depth > 0 {
-            if self.lexer.skip_if(&Token::Op(Op::LogicGt)) {
-                self.generic_type_argument_depth -= 1;
-                break;
-            }
+        loop {
+            let peek = self.lexer.peek_t();
 
-            if self.lexer.skip_if(&Token::Op(Op::BitShr)) {
-                self.generic_type_argument_depth -= 2;
-                break;
-            }
+            match peek {
+                Token::Op(Op::LogicGt) => {
+                    self.lexer.skip_tok();
+                    break;
+                }
 
-            if self.lexer.skip_if(&Token::Op(Op::BitRor)) {
-                self.generic_type_argument_depth -= 3;
-                break;
+                Token::Op(Op::BitShr) => {
+                    self.lexer.modify_next_tok(Token::Op(Op::LogicGt));
+                    break;
+                }
+
+                Token::Op(Op::BitRor) => {
+                    self.lexer.modify_next_tok(Token::Op(Op::BitShr));
+                    break;
+                }
+
+                _ => {}
             }
 
             if self.lexer.is_eof() {
@@ -534,10 +538,6 @@ impl Parser<'_, '_> {
 
             let argument = parse_generic_argument(self);
             arguments.push(argument);
-
-            if self.generic_type_argument_depth <= 0 {
-                break;
-            }
 
             if !self.lexer.skip_if(&Token::Punct(Punct::Comma)) {
                 let any_terminator = self.lexer.next_is(&Token::Op(Op::LogicGt))
@@ -622,17 +622,7 @@ impl Parser<'_, '_> {
             };
         }
 
-        let report_on_generic = self.generic_type_argument_depth == 0;
         let type_arguments = self.parse_generic_arguments();
-
-        if report_on_generic {
-            if self.generic_type_argument_depth != 0 {
-                self.generic_type_argument_depth = 0;
-
-                let bug = SyntaxBug::ExpectedGenericArgumentEnd(self.lexer.peek_pos());
-                self.bugs.push(&bug);
-            }
-        }
 
         Path {
             path,

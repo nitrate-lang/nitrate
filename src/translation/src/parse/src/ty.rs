@@ -1,10 +1,7 @@
-use std::ops::Deref;
-
 use super::parse::Parser;
 use crate::bugs::SyntaxBug;
 
 use interned_string::IString;
-use log::{error, info};
 use nitrate_parsetree::kind::{
     ArrayType, Expr, FunctionType, FunctionTypeParameter, Lifetime, ReferenceType, RefinementType,
     SliceType, TupleType, Type,
@@ -22,8 +19,8 @@ struct RefinementOptions {
 }
 
 impl RefinementOptions {
-    fn has_any(&self) -> bool {
-        self.minimum.is_some() || self.maximum.is_some() || self.width.is_some()
+    fn is_none(&self) -> bool {
+        self.minimum.is_none() && self.maximum.is_none() && self.width.is_none()
     }
 }
 
@@ -117,7 +114,7 @@ impl Parser<'_, '_> {
             return Type::SliceType(Box::new(SliceType { element_type }));
         }
 
-        if !self.lexer.next_is(&Token::Punct(Punct::Semicolon)) {
+        if !self.lexer.skip_if(&Token::Punct(Punct::Semicolon)) {
             let bug = SyntaxBug::ExpectedSemicolon(self.lexer.peek_pos());
             self.bugs.push(&bug);
         }
@@ -154,7 +151,7 @@ impl Parser<'_, '_> {
             } else if let Some(name) = self.lexer.next_if_name() {
                 lifetime = Some(Lifetime::Other { name });
             } else {
-                let bug = SyntaxBug::ReferenceExpectedLifetimeName(self.lexer.peek_pos());
+                let bug = SyntaxBug::ReferenceTypeExpectedLifetimeName(self.lexer.peek_pos());
                 self.bugs.push(&bug);
             }
         }
@@ -212,17 +209,20 @@ impl Parser<'_, '_> {
 
     fn parse_function_type_parameters(&mut self) -> Vec<FunctionTypeParameter> {
         fn parse_function_type_parameter(this: &mut Parser) -> FunctionTypeParameter {
-            // TODO: Cleanup
-
             let attributes = this.parse_attributes();
 
-            let name = this.lexer.next_if_name();
+            let mut name = None;
 
-            let param_type = if this.lexer.skip_if(&Token::Punct(Punct::Colon)) {
-                Some(this.parse_type())
-            } else {
-                None
-            };
+            let rewind_pos = this.lexer.current_pos();
+            if let Some(param_name) = this.lexer.next_if_name() {
+                if this.lexer.skip_if(&Token::Punct(Punct::Colon)) {
+                    name = Some(param_name);
+                } else {
+                    this.lexer.rewind(rewind_pos);
+                }
+            }
+
+            let param_type = this.parse_type();
 
             let default = if this.lexer.skip_if(&Token::Op(Op::Set)) {
                 Some(this.parse_expression())
@@ -238,15 +238,14 @@ impl Parser<'_, '_> {
             }
         }
 
-        // TODO: Cleanup
-
-        let mut params = Vec::new();
         if !self.lexer.skip_if(&Token::Punct(Punct::LeftParen)) {
-            return params;
+            let bug = SyntaxBug::ExpectedOpeningParen(self.lexer.peek_pos());
+            self.bugs.push(&bug);
         }
 
         self.lexer.skip_if(&Token::Punct(Punct::Comma));
 
+        let mut params = Vec::new();
         let mut already_reported_too_many_parameters = false;
 
         while !self.lexer.skip_if(&Token::Punct(Punct::RightParen)) {
@@ -273,6 +272,7 @@ impl Parser<'_, '_> {
             {
                 let bug = SyntaxBug::FunctionParametersExpectedEnd(self.lexer.peek_pos());
                 self.bugs.push(&bug);
+
                 self.lexer.skip_while(&Token::Punct(Punct::RightParen));
                 break;
             }
@@ -282,13 +282,10 @@ impl Parser<'_, '_> {
     }
 
     fn parse_function_type(&mut self) -> FunctionType {
-        // TODO: Cleanup
-
         assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Fn));
         self.lexer.skip_tok();
 
         let attributes = self.parse_attributes();
-        let _ignored_name = self.lexer.next_if_name();
         let parameters = self.parse_function_type_parameters();
 
         let return_type = if self.lexer.skip_if(&Token::Op(Op::Arrow)) {
@@ -305,35 +302,23 @@ impl Parser<'_, '_> {
     }
 
     fn parse_opaque_type(&mut self) -> Type {
-        // TODO: Cleanup
-
         assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Opaque));
         self.lexer.skip_tok();
 
         if !self.lexer.skip_if(&Token::Punct(Punct::LeftParen)) {
-            error!(
-                "[P0???]: opaque type: expected '(' after 'opaque'\n--> {}",
-                self.lexer.current_pos()
-            );
-            info!("[P0???]: opaque type: syntax hint: opaque(<string>)");
+            let bug = SyntaxBug::ExpectedOpeningParen(self.lexer.peek_pos());
+            self.bugs.push(&bug);
         }
 
-        let Some(opaque_identity) = self.lexer.next_if_string() else {
-            error!(
-                "[P0???]: opaque type: expected string literal after 'opaque('\n--> {}",
-                self.lexer.current_pos()
-            );
-            info!("[P0???]: opaque type: syntax hint: opaque(<string>)");
-
-            return Type::SyntaxError;
-        };
+        let opaque_identity = self.lexer.next_if_string().unwrap_or_else(|| {
+            let bug = SyntaxBug::OpaqueTypeMissingName(self.lexer.peek_pos());
+            self.bugs.push(&bug);
+            "".into()
+        });
 
         if !self.lexer.skip_if(&Token::Punct(Punct::RightParen)) {
-            error!(
-                "[P0???]: opaque type: expected ')' to close\n--> {}",
-                self.lexer.current_pos()
-            );
-            info!("[P0???]: opaque type: syntax hint: opaque(<string>)");
+            let bug = SyntaxBug::ExpectedClosingParen(self.lexer.peek_pos());
+            self.bugs.push(&bug);
         }
 
         Type::OpaqueType(opaque_identity)
@@ -360,21 +345,14 @@ impl Parser<'_, '_> {
             Keyword::F64 => Type::Float64,
             Keyword::F128 => Type::Float128,
 
-            _ => unreachable!(),
+            _ => unreachable!("not a primitive type keyword"),
         }
     }
 
     fn parse_type_primary(&mut self) -> Type {
         // TODO: Cleanup
-
+        let current_pos = self.lexer.current_pos();
         let first_token = self.lexer.peek_tok();
-        let current_pos = first_token.start();
-
-        let old_generic_type_depth = self.generic_type_argument_depth;
-        let must_preserve_generic_depth = !matches!(first_token.token(), Token::Name(_));
-        if must_preserve_generic_depth {
-            self.generic_type_argument_depth = 0;
-        }
 
         let result = match first_token.into_token() {
             Token::Keyword(Keyword::Bool)
@@ -420,16 +398,47 @@ impl Parser<'_, '_> {
             }
         };
 
-        if must_preserve_generic_depth {
-            self.generic_type_argument_depth = old_generic_type_depth;
-        }
-
         result
     }
 
-    pub(crate) fn parse_type(&mut self) -> Type {
-        // TODO: Cleanup
+    fn parse_rest_of_tuple(&mut self, first_element: Type) -> TupleType {
+        let mut element_types = Vec::from([first_element]);
+        let mut already_reported_too_many_elements = false;
 
+        while !self.lexer.skip_if(&Token::Punct(Punct::RightParen)) {
+            if self.lexer.is_eof() {
+                let bug = SyntaxBug::TupleTypeExpectedEnd(self.lexer.peek_pos());
+                self.bugs.push(&bug);
+                break;
+            }
+
+            const MAX_TUPLE_ELEMENTS: usize = 65_536;
+
+            if !already_reported_too_many_elements && element_types.len() >= MAX_TUPLE_ELEMENTS {
+                already_reported_too_many_elements = true;
+
+                let bug = SyntaxBug::TupleTypeElementLimit(self.lexer.peek_pos());
+                self.bugs.push(&bug);
+            }
+
+            let element = self.parse_type();
+            element_types.push(element);
+
+            if !self.lexer.skip_if(&Token::Punct(Punct::Comma))
+                && !self.lexer.skip_if(&Token::Punct(Punct::RightParen))
+            {
+                let bug = SyntaxBug::TupleTypeExpectedEnd(self.lexer.peek_pos());
+                self.bugs.push(&bug);
+
+                self.lexer.skip_while(&Token::Punct(Punct::RightParen));
+                break;
+            }
+        }
+
+        TupleType { element_types }
+    }
+
+    pub(crate) fn parse_type(&mut self) -> Type {
         if self.lexer.skip_if(&Token::Punct(Punct::LeftParen)) {
             if self.lexer.skip_if(&Token::Punct(Punct::RightParen)) {
                 return Type::TupleType(Box::new(TupleType {
@@ -443,40 +452,13 @@ impl Parser<'_, '_> {
                 Token::Punct(Punct::RightParen) => Type::Parentheses(Box::new(inner)),
 
                 Token::Punct(Punct::Comma) => {
-                    let mut element_types = Vec::from([inner]);
-
-                    loop {
-                        if self.lexer.skip_if(&Token::Punct(Punct::RightParen)) {
-                            break;
-                        }
-
-                        let element = self.parse_type();
-                        element_types.push(element);
-
-                        if !self.lexer.skip_if(&Token::Punct(Punct::Comma)) {
-                            if self.lexer.skip_if(&Token::Punct(Punct::RightParen)) {
-                                break;
-                            }
-
-                            error!(
-                                "[P0???]: tuple type: expected ',' or ')' after element type\n--> {}",
-                                self.lexer.current_pos()
-                            );
-                            info!("[P0???]: tuple type: syntax hint: (<type1>, <type2>, ... )");
-
-                            return Type::SyntaxError;
-                        }
-                    }
-
-                    Type::TupleType(Box::new(TupleType { element_types }))
+                    let tuple = self.parse_rest_of_tuple(inner);
+                    Type::TupleType(Box::new(tuple))
                 }
 
                 _ => {
-                    self.set_failed_bit();
-                    error!(
-                        "[P0???]: type: expected ')' or ',' after type \n--> {}",
-                        self.lexer.current_pos()
-                    );
+                    let bug = SyntaxBug::TupleTypeExpectedEnd(self.lexer.peek_pos());
+                    self.bugs.push(&bug);
 
                     Type::SyntaxError
                 }
@@ -486,17 +468,17 @@ impl Parser<'_, '_> {
         }
 
         let basis_type = self.parse_type_primary();
-        let refinement = self.parse_refinement_options();
 
-        if refinement.has_any() {
-            return Type::RefinementType(Box::new(RefinementType {
-                basis_type,
-                width: refinement.width,
-                minimum: refinement.minimum,
-                maximum: refinement.maximum,
-            }));
+        let refine_options = self.parse_refinement_options();
+        if refine_options.is_none() {
+            return basis_type;
         }
 
-        basis_type
+        Type::RefinementType(Box::new(RefinementType {
+            basis_type,
+            width: refine_options.width,
+            minimum: refine_options.minimum,
+            maximum: refine_options.maximum,
+        }))
     }
 }

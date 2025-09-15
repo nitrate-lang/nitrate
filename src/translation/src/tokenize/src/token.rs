@@ -432,7 +432,7 @@ impl std::fmt::Display for Token {
 
 #[derive(Debug, Clone, PartialEq, PartialOrd, Serialize, Deserialize)]
 pub struct AnnotatedToken {
-    token: Token,
+    pub(crate) token: Token,
 
     start_line: u32,
     start_column: u32,

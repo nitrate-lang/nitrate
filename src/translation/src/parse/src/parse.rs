@@ -7,17 +7,12 @@ use crate::bugs::SyntaxBug;
 
 pub struct Parser<'a, 'bugs> {
     pub(crate) lexer: Lexer<'a>,
-    pub(crate) generic_type_argument_depth: i64,
     pub(crate) bugs: &'bugs DiagnosticCollector,
 }
 
 impl<'a, 'bugs> Parser<'a, 'bugs> {
     pub fn new(lexer: Lexer<'a>, bugs: &'bugs DiagnosticCollector) -> Self {
-        Parser {
-            lexer,
-            generic_type_argument_depth: 0,
-            bugs,
-        }
+        Parser { lexer, bugs }
     }
 
     pub(crate) fn set_failed_bit(&mut self) {

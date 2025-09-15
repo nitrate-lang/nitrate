@@ -30,7 +30,7 @@ pub struct SliceType {
 pub struct FunctionTypeParameter {
     pub attributes: Vec<Expr>,
     pub name: Option<IString>,
-    pub param_type: Option<Type>,
+    pub param_type: Type,
     pub default: Option<Expr>,
 }
 

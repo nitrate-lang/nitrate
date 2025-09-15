@@ -96,6 +96,13 @@ impl<'a> Lexer<'a> {
         self.current_pos = self.internal_getc_pos.clone();
     }
 
+    pub fn modify_next_tok(&mut self, token: Token) {
+        let mut peeked = self.peek_tok();
+        peeked.token = token;
+
+        self.preread_token = Some(peeked);
+    }
+
     #[inline(always)]
     pub fn next_t(&mut self) -> Token {
         self.next_tok().into_token()
