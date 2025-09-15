@@ -1,6 +1,8 @@
+use anstream::println;
+use anstyle::{AnsiColor, Color, Style};
 use log::error;
 
-use clap::Parser;
+use clap::{Command, CommandFactory, Parser};
 
 pub fn get_styles() -> clap::builder::Styles {
     clap::builder::Styles::styled()
@@ -168,6 +170,7 @@ struct Args {
 
     /// List installed commands
     #[arg(long)]
+    #[clap(action)]
     list: bool,
 
     /// Provide a detailed explanation of a nitc error message
@@ -218,22 +221,66 @@ struct Args {
 pub struct Interpreter {}
 
 impl Interpreter {
-    pub fn execute(&self, args: &[String]) -> Result<(), Box<dyn std::error::Error>> {
+    fn list_commands() {
+        let fg = Style::new()
+            .bold()
+            .fg_color(Some(Color::Ansi(AnsiColor::Green)));
+        let reset = fg.render_reset();
+        println!("{fg}Installed commands:{reset}");
+
+        let mut commands = Args::command()
+            .get_subcommands()
+            .cloned()
+            .collect::<Vec<_>>();
+
+        // Help is a special case
+        let help =
+            Command::new("help").about("Print this message or the help of the given subcommand(s)");
+        commands.push(help);
+
+        for cmd in commands {
+            let name = cmd.get_name();
+            let about = cmd.get_about().unwrap_or_default();
+
+            let fg = Style::new()
+                .bold()
+                .fg_color(Some(Color::Ansi(AnsiColor::Cyan)));
+
+            let reset = fg.render_reset();
+
+            println!("    {fg}{:<21}{reset}{}", name, about);
+        }
+    }
+
+    pub fn run(&self, args: &[String]) -> ! {
         let args = Args::parse_from(args);
+
+        match args.color.as_deref() {
+            Some("auto") => {}
+            Some("always") => unsafe { std::env::remove_var("NO_COLOR") },
+            Some("never") => unsafe { std::env::set_var("NO_COLOR", "1") },
+
+            Some(_) | None => {}
+        }
 
         if args.version {
             println!("no3 {}", env!("CARGO_PKG_VERSION"));
-            return Ok(());
+            std::process::exit(0);
         }
 
         if let Some(change_dir) = &args.change_dir {
             if let Err(e) = std::env::set_current_dir(change_dir) {
                 error!("failed to change directory: {}", e);
-                return Err(e.into());
+                std::process::exit(1);
             }
         }
 
+        if args.list {
+            Self::list_commands();
+            std::process::exit(0);
+        }
+
         println!("Executing with args: {:?}", args);
-        Ok(())
+        std::process::exit(0);
     }
 }

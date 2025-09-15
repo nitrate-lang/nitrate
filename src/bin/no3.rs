@@ -9,7 +9,5 @@ fn main() {
 
     let args: Vec<String> = std::env::args().collect();
 
-    if Interpreter::default().execute(&args).is_err() {
-        std::process::exit(1);
-    }
+    Interpreter::default().run(&args);
 }
