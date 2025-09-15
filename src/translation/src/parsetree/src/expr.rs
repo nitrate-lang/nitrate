@@ -27,12 +27,19 @@ pub struct Object {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum UnaryExprOp {
+    /// `+`
     Add,
+    /// `-`
     Sub,
+    /// `*`
     Deref,
+    /// `&`
     AddressOf,
+    /// `~`
     BitNot,
+    /// `!`
     LogicNot,
+    /// `typeof`
     Typeof,
 }
 

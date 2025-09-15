@@ -123,8 +123,47 @@ fn get_precedence(operation: Operation) -> Option<(Associativity, Precedence)> {
 impl Parser<'_, '_> {
     fn detect_and_parse_unary_operator(&mut self) -> Option<UnaryExprOp> {
         // TODO: Cleanup
+
+        match self.lexer.peek_t() {
+            Token::Plus => {
+                self.lexer.skip_tok();
+                Some(UnaryExprOp::Add)
+            }
+
+            Token::Minus => {
+                self.lexer.skip_tok();
+                Some(UnaryExprOp::Sub)
+            }
+
+            Token::Star => {
+                self.lexer.skip_tok();
+                Some(UnaryExprOp::Deref)
+            }
+
+            Token::And => {
+                self.lexer.skip_tok();
+                Some(UnaryExprOp::AddressOf)
+            }
+
+            Token::Tilde => {
+                self.lexer.skip_tok();
+                Some(UnaryExprOp::BitNot)
+            }
+
+            Token::Bang => {
+                self.lexer.skip_tok();
+                Some(UnaryExprOp::LogicNot)
+            }
+
+            Token::Keyword(Keyword::Typeof) => {
+                self.lexer.skip_tok();
+                Some(UnaryExprOp::Typeof)
+            }
+
+            _ => None,
+        }
+
         // TODO: Implement
-        None
     }
 
     fn detect_and_parse_binary_operator(&mut self) -> Option<BinExprOp> {
