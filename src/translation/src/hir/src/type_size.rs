@@ -1,7 +1,7 @@
 use crate::{
     TypeStore, get_align_of,
+    ty::{PointerSize, StructAttribute, Type},
     type_alignment::AlignofError,
-    type_system::{PointerSize, StructAttribute, Type},
 };
 
 pub enum SizeofError {

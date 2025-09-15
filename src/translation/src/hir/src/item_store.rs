@@ -1,4 +1,4 @@
-use crate::item_system::Item;
+use crate::item::Item;
 
 use hashbrown::HashMap;
 use serde::{Deserialize, Serialize};

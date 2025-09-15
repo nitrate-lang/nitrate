@@ -1,6 +1,6 @@
 use crate::{
     TypeStore,
-    type_system::{PointerSize, StructAttribute, Type},
+    ty::{PointerSize, StructAttribute, Type},
 };
 
 pub enum AlignofError {

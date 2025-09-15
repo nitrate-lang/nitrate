@@ -1,4 +1,4 @@
-use crate::type_system::Type;
+use crate::ty::Type;
 
 pub enum DigestError {
     SerializationError(serde_json::Error),

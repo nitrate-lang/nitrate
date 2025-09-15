@@ -1,4 +1,4 @@
-use crate::type_system::Type;
+use crate::ty::Type;
 use hashbrown::HashMap;
 use serde::{Deserialize, Serialize};
 

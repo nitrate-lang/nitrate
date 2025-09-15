@@ -1,13 +1,13 @@
 #![warn(clippy::pedantic)]
 
-mod expression;
+mod expr;
+pub mod item;
 mod item_store;
-pub mod item_system;
 mod node_digest;
+pub mod ty;
 mod type_alignment;
 mod type_size;
 mod type_store;
-pub mod type_system;
 
 pub use node_digest::NodeDigest;
 
