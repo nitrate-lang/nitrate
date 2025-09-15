@@ -2,8 +2,9 @@ use super::parse::Parser;
 use crate::bugs::SyntaxBug;
 
 use nitrate_parsetree::kind::{
-    AssociatedItem, Block, ConstVariable, Enum, EnumVariant, GenericParameter, Impl, Import, Item,
-    Module, NamedFunction, StaticVariable, Struct, StructField, Trait, TypeAlias,
+    AssociatedItem, Block, ConstVariable, Enum, EnumVariant, FunctionParameter, GenericParameter,
+    Impl, Import, Item, Module, NamedFunction, StaticVariable, Struct, StructField, Trait,
+    TypeAlias,
 };
 use nitrate_tokenize::{Keyword, Op, Punct, Token};
 
@@ -491,6 +492,79 @@ impl Parser<'_, '_> {
         }
     }
 
+    fn parse_named_function_parameter(&mut self) -> FunctionParameter {
+        let attributes = self.parse_attributes();
+
+        let name = self.lexer.next_if_name().unwrap_or_else(|| {
+            let bug = SyntaxBug::FunctionParameterMissingName(self.lexer.peek_pos());
+            self.bugs.push(&bug);
+            "".into()
+        });
+
+        let param_type = if self.lexer.skip_if(&Token::Punct(Punct::Colon)) {
+            Some(self.parse_type())
+        } else {
+            None
+        };
+
+        let default = if self.lexer.skip_if(&Token::Op(Op::Set)) {
+            Some(self.parse_expression())
+        } else {
+            None
+        };
+
+        FunctionParameter {
+            name,
+            param_type,
+            default,
+            attributes,
+        }
+    }
+
+    fn parse_named_function_parameters(&mut self) -> Vec<FunctionParameter> {
+        let mut params = Vec::new();
+
+        if !self.lexer.skip_if(&Token::Punct(Punct::LeftParen)) {
+            let bug = SyntaxBug::ExpectedOpeningParen(self.lexer.peek_pos());
+            self.bugs.push(&bug);
+        }
+
+        self.lexer.skip_if(&Token::Punct(Punct::Comma));
+
+        let mut already_reported_too_many_parameters = false;
+
+        while !self.lexer.skip_if(&Token::Punct(Punct::RightParen)) {
+            if self.lexer.is_eof() {
+                let bug = SyntaxBug::FunctionParametersExpectedEnd(self.lexer.peek_pos());
+                self.bugs.push(&bug);
+                break;
+            }
+
+            const MAX_FUNCTION_PARAMETERS: usize = 65_536;
+
+            if !already_reported_too_many_parameters && params.len() >= MAX_FUNCTION_PARAMETERS {
+                already_reported_too_many_parameters = true;
+
+                let bug = SyntaxBug::FunctionParameterLimit(self.lexer.peek_pos());
+                self.bugs.push(&bug);
+            }
+
+            let param = self.parse_named_function_parameter();
+            params.push(param);
+
+            if !self.lexer.skip_if(&Token::Punct(Punct::Comma))
+                && !self.lexer.next_is(&Token::Punct(Punct::RightParen))
+            {
+                let bug = SyntaxBug::FunctionParametersExpectedEnd(self.lexer.peek_pos());
+                self.bugs.push(&bug);
+                self.lexer.skip_while(&Token::Punct(Punct::RightParen));
+                break;
+            }
+        }
+
+        params
+    }
+
     fn parse_named_function(&mut self) -> NamedFunction {
         assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Fn));
         self.lexer.skip_tok();
@@ -504,7 +578,7 @@ impl Parser<'_, '_> {
         });
 
         let type_params = self.parse_generic_parameters();
-        let parameters = self.parse_function_parameters();
+        let parameters = self.parse_named_function_parameters();
 
         let return_type = if self.lexer.skip_if(&Token::Op(Op::Arrow)) {
             Some(self.parse_type())
