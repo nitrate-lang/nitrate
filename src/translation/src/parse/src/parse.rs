@@ -23,8 +23,7 @@ impl<'a, 'bugs> Parser<'a, 'bugs> {
     }
 
     pub(crate) fn set_failed_bit(&mut self) {
-        // TODO:
-
+        // TODO: Get rid of this soon
         self.bugs.push(&SyntaxBug::Test);
     }
 

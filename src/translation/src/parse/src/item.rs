@@ -345,13 +345,6 @@ impl Parser<'_, '_> {
         todo!()
     }
 
-    fn parse_contract(&mut self) -> Contract {
-        // TODO: contract parsing logic
-        self.set_failed_bit();
-        error!("Contract parsing not implemented yet");
-        todo!()
-    }
-
     fn parse_named_function(&mut self) -> NamedFunction {
         assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Fn));
         self.lexer.skip_tok();
@@ -487,11 +480,6 @@ impl Parser<'_, '_> {
             Token::Keyword(Keyword::Impl) => {
                 let impl_def = self.parse_implementation();
                 Item::Impl(Box::new(impl_def))
-            }
-
-            Token::Keyword(Keyword::Contract) => {
-                let contract_def = self.parse_contract();
-                Item::Contract(Box::new(contract_def))
             }
 
             Token::Keyword(Keyword::Fn) => {
