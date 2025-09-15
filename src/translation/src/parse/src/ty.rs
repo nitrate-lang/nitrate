@@ -1,11 +1,14 @@
 use std::ops::Deref;
 
+use crate::bugs::SyntaxBug;
+
 use super::parse::Parser;
 use interned_string::IString;
 use log::{error, info};
 use nitrate_parsetree::kind::{
-    ArrayType, Expr, FunctionParameter, FunctionType, GenericArgument, GenericType, Lifetime,
-    MapType, Path, ReferenceType, RefinementType, SliceType, TupleType, Type,
+    ArrayType, Expr, FunctionParameter, FunctionType, FunctionTypeParameter, GenericArgument,
+    GenericType, Lifetime, MapType, Path, ReferenceType, RefinementType, SliceType, TupleType,
+    Type,
 };
 use nitrate_tokenize::{Keyword, Op, Punct, Token};
 
@@ -450,57 +453,75 @@ impl Parser<'_, '_> {
         })))
     }
 
-    pub(crate) fn parse_function_parameters(&mut self) -> Vec<FunctionParameter> {
+    fn parse_function_type_parameter(&mut self) -> FunctionTypeParameter {
         // TODO: Cleanup
 
-        let mut parameters = Vec::new();
+        let attributes = self.parse_attributes();
 
+        let name = self.lexer.next_if_name();
+
+        let param_type = if self.lexer.skip_if(&Token::Punct(Punct::Colon)) {
+            Some(self.parse_type())
+        } else {
+            None
+        };
+
+        let default = if self.lexer.skip_if(&Token::Op(Op::Set)) {
+            Some(self.parse_expression())
+        } else {
+            None
+        };
+
+        FunctionTypeParameter {
+            name,
+            param_type,
+            default,
+            attributes,
+        }
+    }
+
+    fn parse_function_type_parameters(&mut self) -> Vec<FunctionTypeParameter> {
+        // TODO: Cleanup
+
+        let mut params = Vec::new();
         if !self.lexer.skip_if(&Token::Punct(Punct::LeftParen)) {
-            return parameters;
+            return params;
         }
 
         self.lexer.skip_if(&Token::Punct(Punct::Comma));
 
-        loop {
-            if self.lexer.skip_if(&Token::Punct(Punct::RightParen)) {
+        let mut already_reported_too_many_parameters = false;
+
+        while !self.lexer.skip_if(&Token::Punct(Punct::RightParen)) {
+            if self.lexer.is_eof() {
+                let bug = SyntaxBug::FunctionParametersExpectedEnd(self.lexer.peek_pos());
+                self.bugs.push(&bug);
                 break;
             }
 
-            let parameter_name = self.lexer.next_if_name().unwrap_or_default();
+            const MAX_FUNCTION_PARAMETERS: usize = 65_536;
 
-            let parameter_type = if self.lexer.skip_if(&Token::Punct(Punct::Colon)) {
-                Some(self.parse_type())
-            } else {
-                None
-            };
+            if !already_reported_too_many_parameters && params.len() >= MAX_FUNCTION_PARAMETERS {
+                already_reported_too_many_parameters = true;
 
-            let parameter_default = if self.lexer.skip_if(&Token::Op(Op::Set)) {
-                Some(self.parse_expression())
-            } else {
-                None
-            };
+                let bug = SyntaxBug::FunctionParameterLimit(self.lexer.peek_pos());
+                self.bugs.push(&bug);
+            }
 
-            parameters.push(FunctionParameter {
-                name: parameter_name,
-                param_type: parameter_type,
-                default: parameter_default,
-                attributes: Vec::new(),
-            });
+            let param = self.parse_function_type_parameter();
+            params.push(param);
 
-            if !self.lexer.skip_if(&Token::Punct(Punct::Comma)) {
-                if self.lexer.skip_if(&Token::Punct(Punct::RightParen)) {
-                    break;
-                }
-                error!(
-                    "[P0???]: function: expected ',' or ')' after parameter\n--> {}",
-                    self.lexer.position()
-                );
-
-                return parameters;
+            if !self.lexer.skip_if(&Token::Punct(Punct::Comma))
+                && !self.lexer.next_is(&Token::Punct(Punct::RightParen))
+            {
+                let bug = SyntaxBug::FunctionParametersExpectedEnd(self.lexer.peek_pos());
+                self.bugs.push(&bug);
+                self.lexer.skip_while(&Token::Punct(Punct::RightParen));
+                break;
             }
         }
 
-        parameters
+        params
     }
 
     fn parse_function_type(&mut self) -> Option<Type> {
@@ -511,7 +532,7 @@ impl Parser<'_, '_> {
 
         let attributes = self.parse_attributes();
         let _ignored_name = self.lexer.next_if_name();
-        let parameters = self.parse_function_parameters();
+        let parameters = self.parse_function_type_parameters();
 
         let return_type = if self.lexer.skip_if(&Token::Op(Op::Arrow)) {
             Some(self.parse_type())

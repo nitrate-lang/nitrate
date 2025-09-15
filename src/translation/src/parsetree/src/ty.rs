@@ -1,4 +1,4 @@
-use crate::kind::{Block, Expr, FunctionParameter, Path, StructField};
+use crate::kind::{Block, Expr, Path, StructField};
 use interned_string::IString;
 use serde::{Deserialize, Serialize};
 
@@ -33,9 +33,17 @@ pub struct SliceType {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct FunctionTypeParameter {
+    pub attributes: Vec<Expr>,
+    pub name: Option<IString>,
+    pub param_type: Option<Type>,
+    pub default: Option<Expr>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FunctionType {
     pub attributes: Vec<Expr>,
-    pub parameters: Vec<FunctionParameter>,
+    pub parameters: Vec<FunctionTypeParameter>,
     pub return_type: Option<Type>,
 }
 

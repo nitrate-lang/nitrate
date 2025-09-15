@@ -27,6 +27,9 @@ pub(crate) enum SyntaxBug {
 
     FunctionMissingName(SourcePosition),
     FunctionExpectedBody(SourcePosition),
+    FunctionParameterLimit(SourcePosition),
+    FunctionParameterMissingName(SourcePosition),
+    FunctionParametersExpectedEnd(SourcePosition),
 
     StaticVariableMissingName(SourcePosition),
 
@@ -45,6 +48,7 @@ pub(crate) enum SyntaxBug {
     ExpectedSemicolon(SourcePosition),
     ExpectedColon(SourcePosition),
     ExpectedItem(SourcePosition),
+    ExpectedOpeningParen(SourcePosition),
 
     Test,
 }
@@ -80,6 +84,9 @@ impl FormattableDiagnosticGroup for SyntaxBug {
 
             SyntaxBug::FunctionMissingName(_) => 120,
             SyntaxBug::FunctionExpectedBody(_) => 121,
+            SyntaxBug::FunctionParameterLimit(_) => 122,
+            SyntaxBug::FunctionParameterMissingName(_) => 123,
+            SyntaxBug::FunctionParametersExpectedEnd(_) => 124,
 
             SyntaxBug::StaticVariableMissingName(_) => 140,
 
@@ -98,6 +105,7 @@ impl FormattableDiagnosticGroup for SyntaxBug {
             SyntaxBug::ExpectedSemicolon(_) => 1002,
             SyntaxBug::ExpectedColon(_) => 1003,
             SyntaxBug::ExpectedItem(_) => 1004,
+            SyntaxBug::ExpectedOpeningParen(_) => 1005,
 
             SyntaxBug::Test => 9999,
         }
@@ -195,6 +203,21 @@ impl FormattableDiagnosticGroup for SyntaxBug {
                 message: "expected function body".into(),
             },
 
+            SyntaxBug::FunctionParameterLimit(pos) => DiagnosticInfo {
+                origin: Origin::Point(pos.to_owned()),
+                message: "function parameter limit of 65,536 exceeded".into(),
+            },
+
+            SyntaxBug::FunctionParameterMissingName(pos) => DiagnosticInfo {
+                origin: Origin::Point(pos.to_owned()),
+                message: "function parameter name is missing".into(),
+            },
+
+            SyntaxBug::FunctionParametersExpectedEnd(pos) => DiagnosticInfo {
+                origin: Origin::Point(pos.to_owned()),
+                message: "expected ')' or ','".into(),
+            },
+
             SyntaxBug::StaticVariableMissingName(pos) => DiagnosticInfo {
                 origin: Origin::Point(pos.to_owned()),
                 message: "static variable name is missing".into(),
@@ -259,6 +282,11 @@ impl FormattableDiagnosticGroup for SyntaxBug {
             SyntaxBug::ExpectedItem(pos) => DiagnosticInfo {
                 origin: Origin::Point(pos.to_owned()),
                 message: "expected an item".into(),
+            },
+
+            SyntaxBug::ExpectedOpeningParen(pos) => DiagnosticInfo {
+                origin: Origin::Point(pos.to_owned()),
+                message: "expected '('".into(),
             },
 
             SyntaxBug::Test => DiagnosticInfo {
