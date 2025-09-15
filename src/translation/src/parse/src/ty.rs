@@ -350,11 +350,9 @@ impl Parser<'_, '_> {
     }
 
     fn parse_type_primary(&mut self) -> Type {
-        // TODO: Cleanup
         let current_pos = self.lexer.current_pos();
-        let first_token = self.lexer.peek_tok();
 
-        let result = match first_token.into_token() {
+        match self.lexer.peek_t() {
             Token::Keyword(Keyword::Bool)
             | Token::Keyword(Keyword::U8)
             | Token::Keyword(Keyword::U16)
@@ -396,9 +394,7 @@ impl Parser<'_, '_> {
 
                 Type::SyntaxError
             }
-        };
-
-        result
+        }
     }
 
     fn parse_rest_of_tuple(&mut self, first_element: Type) -> TupleType {

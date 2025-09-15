@@ -1,4 +1,4 @@
-use crate::kind::{Block, Expr, Path, StructField};
+use crate::kind::{Block, Expr, Path};
 use interned_string::IString;
 use serde::{Deserialize, Serialize};
 
@@ -65,11 +65,6 @@ pub struct GenericArgument {
     pub value: Type,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct StructType {
-    pub fields: Vec<StructField>,
-}
-
 #[derive(Clone, Serialize, Deserialize)]
 pub enum Type {
     SyntaxError,
@@ -100,7 +95,6 @@ pub enum Type {
     FunctionType(Box<FunctionType>),
     ReferenceType(Box<ReferenceType>),
     OpaqueType(IString),
-    StructType(Box<StructType>),
     LatentType(Box<Block>),
     Parentheses(Box<Type>),
 }
@@ -136,7 +130,6 @@ impl std::fmt::Debug for Type {
             Type::FunctionType(e) => e.fmt(f),
             Type::ReferenceType(e) => e.fmt(f),
             Type::OpaqueType(e) => f.debug_struct("OpaqueType").field("name", e).finish(),
-            Type::StructType(e) => e.fmt(f),
             Type::LatentType(e) => f.debug_struct("LatentType").field("type", e).finish(),
             Type::Parentheses(e) => f.debug_struct("Parentheses").field("type", e).finish(),
         }
