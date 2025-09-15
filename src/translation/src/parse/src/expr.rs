@@ -8,7 +8,7 @@ use nitrate_parsetree::kind::{
     Continue, DoWhileLoop, Expr, ForEach, FunctionParameter, GenericArgument, If, IndexAccess,
     Integer, List, Path, Return, Type, UnaryExpr, UnaryExprOp, WhileLoop,
 };
-use nitrate_tokenize::{Keyword, Op, Token};
+use nitrate_tokenize::{Keyword, Token};
 use smallvec::{SmallVec, smallvec};
 
 type Precedence = u32;
@@ -41,64 +41,71 @@ enum Associativity {
 }
 
 enum Operation {
-    Operator(Op),
+    Operator(Token),
     FunctionCall,
     Index,
 }
 
-fn get_precedence_of_operator(operator: Op) -> Option<(Associativity, Precedence)> {
+fn get_precedence_of_operator(operator: &Token) -> Option<(Associativity, Precedence)> {
     // TODO: Cleanup
 
     let (associativity, precedence) = match operator {
-        Op::Scope => (Associativity::LeftToRight, PrecedenceRank::Scope),
+        Token::Scope => (Associativity::LeftToRight, PrecedenceRank::Scope),
 
-        Op::Dot | Op::Arrow => (Associativity::LeftToRight, PrecedenceRank::FieldAccess),
+        Token::Dot | Token::Arrow => (Associativity::LeftToRight, PrecedenceRank::FieldAccess),
 
-        Op::As => (Associativity::LeftToRight, PrecedenceRank::Cast),
+        Token::As => (Associativity::LeftToRight, PrecedenceRank::Cast),
 
-        Op::Mul | Op::Div | Op::Mod => (Associativity::LeftToRight, PrecedenceRank::MulDivMod),
+        Token::Mul | Token::Div | Token::Mod => {
+            (Associativity::LeftToRight, PrecedenceRank::MulDivMod)
+        }
 
-        Op::Add | Op::Sub => (Associativity::LeftToRight, PrecedenceRank::AddSub),
+        Token::Add | Token::Sub => (Associativity::LeftToRight, PrecedenceRank::AddSub),
 
-        Op::BitShl | Op::BitShr | Op::BitRol | Op::BitRor => (
+        Token::BitShl | Token::BitShr | Token::BitRol | Token::BitRor => (
             Associativity::LeftToRight,
             PrecedenceRank::BitShiftAndRotate,
         ),
 
-        Op::BitAnd => (Associativity::LeftToRight, PrecedenceRank::BitAnd),
-        Op::BitXor => (Associativity::LeftToRight, PrecedenceRank::BitXor),
-        Op::BitOr => (Associativity::LeftToRight, PrecedenceRank::BitOr),
+        Token::BitAnd => (Associativity::LeftToRight, PrecedenceRank::BitAnd),
+        Token::BitXor => (Associativity::LeftToRight, PrecedenceRank::BitXor),
+        Token::BitOr => (Associativity::LeftToRight, PrecedenceRank::BitOr),
 
-        Op::LogicEq | Op::LogicNe | Op::LogicLt | Op::LogicGt | Op::LogicLe | Op::LogicGe => {
-            (Associativity::LeftToRight, PrecedenceRank::Comparison)
-        }
+        Token::LogicEq
+        | Token::LogicNe
+        | Token::LogicLt
+        | Token::LogicGt
+        | Token::LogicLe
+        | Token::LogicGe => (Associativity::LeftToRight, PrecedenceRank::Comparison),
 
-        Op::LogicAnd => (Associativity::LeftToRight, PrecedenceRank::LogicAnd),
-        Op::LogicXor => (Associativity::LeftToRight, PrecedenceRank::LogicXor),
-        Op::LogicOr => (Associativity::LeftToRight, PrecedenceRank::LogicOr),
+        Token::LogicAnd => (Associativity::LeftToRight, PrecedenceRank::LogicAnd),
+        Token::LogicXor => (Associativity::LeftToRight, PrecedenceRank::LogicXor),
+        Token::LogicOr => (Associativity::LeftToRight, PrecedenceRank::LogicOr),
 
-        Op::Range => (Associativity::LeftToRight, PrecedenceRank::Range),
+        Token::Range => (Associativity::LeftToRight, PrecedenceRank::Range),
 
-        Op::Set
-        | Op::SetPlus
-        | Op::SetMinus
-        | Op::SetTimes
-        | Op::SetSlash
-        | Op::SetPercent
-        | Op::SetBitAnd
-        | Op::SetBitOr
-        | Op::SetBitXor
-        | Op::SetBitShl
-        | Op::SetBitShr
-        | Op::SetBitRotl
-        | Op::SetBitRotr
-        | Op::SetLogicAnd
-        | Op::SetLogicOr
-        | Op::SetLogicXor => (Associativity::RightToLeft, PrecedenceRank::Assign),
+        Token::Set
+        | Token::SetPlus
+        | Token::SetMinus
+        | Token::SetTimes
+        | Token::SetSlash
+        | Token::SetPercent
+        | Token::SetBitAnd
+        | Token::SetBitOr
+        | Token::SetBitXor
+        | Token::SetBitShl
+        | Token::SetBitShr
+        | Token::SetBitRotl
+        | Token::SetBitRotr
+        | Token::SetLogicAnd
+        | Token::SetLogicOr
+        | Token::SetLogicXor => (Associativity::RightToLeft, PrecedenceRank::Assign),
 
-        Op::BitNot | Op::LogicNot | Op::Typeof | Op::Ellipsis | Op::BlockArrow => {
+        Token::BitNot | Token::LogicNot | Token::Typeof | Token::Ellipsis | Token::BlockArrow => {
             return None;
         }
+
+        _ => return None,
     };
 
     Some((associativity, precedence as Precedence))
@@ -108,7 +115,7 @@ fn get_precedence(operation: Operation) -> Option<(Associativity, Precedence)> {
     // TODO: Cleanup
 
     match operation {
-        Operation::Operator(operator) => get_precedence_of_operator(operator),
+        Operation::Operator(operator) => get_precedence_of_operator(&operator),
 
         Operation::FunctionCall | Operation::Index => Some((
             Associativity::LeftToRight,
@@ -117,17 +124,17 @@ fn get_precedence(operation: Operation) -> Option<(Associativity, Precedence)> {
     }
 }
 
-fn get_prefix_precedence(op: Op) -> Option<Precedence> {
+fn get_prefix_precedence(op: &Token) -> Option<Precedence> {
     // TODO: Cleanup
 
     let precedence = match op {
-        Op::Add => PrecedenceRank::Unary,
-        Op::Sub => PrecedenceRank::Unary,
-        Op::LogicNot => PrecedenceRank::Unary,
-        Op::BitNot => PrecedenceRank::Unary,
-        Op::Mul => PrecedenceRank::Unary,
-        Op::BitAnd => PrecedenceRank::Unary,
-        Op::Typeof => PrecedenceRank::Unary,
+        Token::Add => PrecedenceRank::Unary,
+        Token::Sub => PrecedenceRank::Unary,
+        Token::LogicNot => PrecedenceRank::Unary,
+        Token::BitNot => PrecedenceRank::Unary,
+        Token::Mul => PrecedenceRank::Unary,
+        Token::BitAnd => PrecedenceRank::Unary,
+        Token::Typeof => PrecedenceRank::Unary,
 
         _ => return None,
     };
@@ -168,9 +175,9 @@ impl Parser<'_, '_> {
                 Some(self.parse_literal_suffix(lit))
             }
 
-            Token::LeftBracket => self.parse_list(),
+            Token::OpenBracket => self.parse_list(),
 
-            Token::Name(_) | Token::Op(Op::Scope) => {
+            Token::Name(_) | Token::Scope => {
                 let path = self.parse_path();
                 Some(Expr::Path(Box::new(path)))
             }
@@ -187,7 +194,7 @@ impl Parser<'_, '_> {
 
             Token::Keyword(Keyword::Type) => self.parse_type_info(),
 
-            Token::Keyword(Keyword::Fn) | Token::LeftBrace => self.parse_anonymous_function(),
+            Token::Keyword(Keyword::Fn) | Token::OpenBrace => self.parse_anonymous_function(),
 
             Token::Keyword(Keyword::If) => self.parse_if(),
             Token::Keyword(Keyword::For) => self.parse_for(),
@@ -214,9 +221,10 @@ impl Parser<'_, '_> {
     fn parse_prefix(&mut self) -> Option<Expr> {
         // TODO: Cleanup
 
-        if let Token::Op(prefix_op) = self.lexer.peek_t() {
-            if prefix_op != Op::Scope {
-                if let Some(precedence) = get_prefix_precedence(prefix_op) {
+        let prefix_op = self.lexer.peek_t();
+        if UnaryExprOp::try_from(prefix_op.clone()).is_ok() {
+            if prefix_op != Token::Scope {
+                if let Some(precedence) = get_prefix_precedence(&prefix_op) {
                     self.lexer.skip_tok();
 
                     let operand = self.parse_expression_precedence(precedence)?;
@@ -230,10 +238,10 @@ impl Parser<'_, '_> {
             }
         }
 
-        if self.lexer.skip_if(&Token::LeftParen) {
+        if self.lexer.skip_if(&Token::OpenParen) {
             let inner = self.parse_expression();
 
-            if !self.lexer.skip_if(&Token::RightParen) {
+            if !self.lexer.skip_if(&Token::CloseParen) {
                 error!(
                     "[P????]: expr: expected closing parenthesis\n--> {}",
                     self.lexer.current_pos()
@@ -257,8 +265,8 @@ impl Parser<'_, '_> {
 
         loop {
             match self.lexer.peek_t() {
-                Token::Op(next_op) => {
-                    let operation = Operation::Operator(next_op);
+                next_op if BinExprOp::try_from(next_op.clone()).is_ok() => {
+                    let operation = Operation::Operator(next_op.clone());
                     let Some((assoc, op_precedence)) = get_precedence(operation) else {
                         return Some(sofar);
                     };
@@ -282,7 +290,7 @@ impl Parser<'_, '_> {
                     }));
                 }
 
-                Token::LeftParen => {
+                Token::OpenParen => {
                     let operation = Operation::FunctionCall;
                     let Some((_, new_precedence)) = get_precedence(operation) else {
                         return Some(sofar);
@@ -300,7 +308,7 @@ impl Parser<'_, '_> {
                     }));
                 }
 
-                Token::LeftBracket => {
+                Token::OpenBracket => {
                     let operation = Operation::Index;
                     let Some((_, new_precedence)) = get_precedence(operation) else {
                         return Some(sofar);
@@ -314,7 +322,7 @@ impl Parser<'_, '_> {
 
                     let index = self.parse_expression();
 
-                    if !self.lexer.skip_if(&Token::RightBracket) {
+                    if !self.lexer.skip_if(&Token::CloseBracket) {
                         error!(
                             "[P????]: expr: expected closing bracket\n--> {}",
                             self.lexer.current_pos()
@@ -376,21 +384,21 @@ impl Parser<'_, '_> {
     fn parse_list(&mut self) -> Option<Expr> {
         // TODO: Cleanup
 
-        assert!(self.lexer.peek_t() == Token::LeftBracket);
+        assert!(self.lexer.peek_t() == Token::OpenBracket);
         self.lexer.skip_tok();
 
         let mut elements = Vec::new();
         self.lexer.skip_if(&Token::Comma);
 
         loop {
-            if self.lexer.skip_if(&Token::RightBracket) {
+            if self.lexer.skip_if(&Token::CloseBracket) {
                 break;
             }
 
             elements.push(self.parse_expression());
 
             if !self.lexer.skip_if(&Token::Comma) {
-                if self.lexer.skip_if(&Token::RightBracket) {
+                if self.lexer.skip_if(&Token::CloseBracket) {
                     break;
                 }
                 error!(
@@ -410,13 +418,13 @@ impl Parser<'_, '_> {
 
         let mut attributes = Vec::new();
 
-        if !self.lexer.skip_if(&Token::LeftBracket) {
+        if !self.lexer.skip_if(&Token::OpenBracket) {
             return attributes;
         }
 
         self.lexer.skip_if(&Token::Comma);
         loop {
-            if self.lexer.skip_if(&Token::RightBracket) {
+            if self.lexer.skip_if(&Token::CloseBracket) {
                 break;
             }
 
@@ -424,7 +432,7 @@ impl Parser<'_, '_> {
             attributes.push(attrib);
 
             if !self.lexer.skip_if(&Token::Comma) {
-                if self.lexer.skip_if(&Token::RightBracket) {
+                if self.lexer.skip_if(&Token::CloseBracket) {
                     break;
                 }
                 error!(
@@ -461,7 +469,7 @@ impl Parser<'_, '_> {
             GenericArgument { name, value }
         }
 
-        assert!(self.lexer.peek_t() == Token::Op(Op::LogicLt));
+        assert!(self.lexer.peek_t() == Token::LogicLt);
         self.lexer.skip_tok();
 
         let mut arguments = Vec::new();
@@ -473,18 +481,18 @@ impl Parser<'_, '_> {
             let peek = self.lexer.peek_t();
 
             match peek {
-                Token::Op(Op::LogicGt) => {
+                Token::LogicGt => {
                     self.lexer.skip_tok();
                     break;
                 }
 
-                Token::Op(Op::BitShr) => {
-                    self.lexer.modify_next_tok(Token::Op(Op::LogicGt));
+                Token::BitShr => {
+                    self.lexer.modify_next_tok(Token::LogicGt);
                     break;
                 }
 
-                Token::Op(Op::BitRor) => {
-                    self.lexer.modify_next_tok(Token::Op(Op::BitShr));
+                Token::BitRor => {
+                    self.lexer.modify_next_tok(Token::BitShr);
                     break;
                 }
 
@@ -510,9 +518,9 @@ impl Parser<'_, '_> {
             arguments.push(argument);
 
             if !self.lexer.skip_if(&Token::Comma) {
-                let any_terminator = self.lexer.next_is(&Token::Op(Op::LogicGt))
-                    || self.lexer.next_is(&Token::Op(Op::BitShr))
-                    || self.lexer.next_is(&Token::Op(Op::BitRor));
+                let any_terminator = self.lexer.next_is(&Token::LogicGt)
+                    || self.lexer.next_is(&Token::BitShr)
+                    || self.lexer.next_is(&Token::BitRor);
 
                 if !any_terminator {
                     let bug = SyntaxBug::ExpectedClosingAngle(self.lexer.peek_pos());
@@ -528,10 +536,7 @@ impl Parser<'_, '_> {
     pub(crate) fn parse_path(&mut self) -> Path {
         // TODO: Cleanup
 
-        assert!(matches!(
-            self.lexer.peek_t(),
-            Token::Name(_) | Token::Op(Op::Scope)
-        ));
+        assert!(matches!(self.lexer.peek_t(), Token::Name(_) | Token::Scope));
 
         // TODO: Cleanup
 
@@ -551,7 +556,7 @@ impl Parser<'_, '_> {
                     last_was_scope = false;
                 }
 
-                Token::Op(Op::Scope) => {
+                Token::Scope => {
                     if last_was_scope {
                         error!(
                             "[P????]: path: unexpected '::'\n--> {}",
@@ -587,7 +592,7 @@ impl Parser<'_, '_> {
             );
         }
 
-        if !self.lexer.next_is(&Token::Op(Op::LogicLt)) {
+        if !self.lexer.next_is(&Token::LogicLt) {
             return Path {
                 path,
                 type_arguments: Vec::new(),
@@ -655,11 +660,11 @@ impl Parser<'_, '_> {
 
         let mut bindings = Vec::new();
 
-        if self.lexer.skip_if(&Token::LeftParen) {
+        if self.lexer.skip_if(&Token::OpenParen) {
             self.lexer.skip_if(&Token::Comma);
 
             loop {
-                if self.lexer.skip_if(&Token::RightParen) {
+                if self.lexer.skip_if(&Token::CloseParen) {
                     break;
                 }
 
@@ -679,7 +684,7 @@ impl Parser<'_, '_> {
 
                 bindings.push((variable_name, type_annotation));
 
-                if !self.lexer.skip_if(&Token::Comma) && !self.lexer.next_is(&Token::RightParen) {
+                if !self.lexer.skip_if(&Token::Comma) && !self.lexer.next_is(&Token::CloseParen) {
                     error!(
                         "[P0???]: for: expected ',' or ')' after loop variable\n--> {}",
                         self.lexer.current_pos()
@@ -743,7 +748,7 @@ impl Parser<'_, '_> {
         assert!(self.lexer.peek_t() == Token::Keyword(Keyword::While));
         self.lexer.skip_tok();
 
-        let condition = if self.lexer.next_is(&Token::LeftBrace) {
+        let condition = if self.lexer.next_is(&Token::OpenBrace) {
             Expr::Boolean(true)
         } else {
             self.parse_expression()
@@ -837,7 +842,7 @@ impl Parser<'_, '_> {
         assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Ret));
         self.lexer.skip_tok();
 
-        let value = if self.lexer.next_is(&Token::Semicolon) {
+        let value = if self.lexer.next_is(&Token::Semi) {
             None
         } else {
             Some(self.parse_expression())
@@ -882,7 +887,7 @@ impl Parser<'_, '_> {
             None
         };
 
-        let default = if self.lexer.skip_if(&Token::Op(Op::Set)) {
+        let default = if self.lexer.skip_if(&Token::Set) {
             Some(self.parse_expression())
         } else {
             None
@@ -901,7 +906,7 @@ impl Parser<'_, '_> {
 
         let mut params = Vec::new();
 
-        if !self.lexer.skip_if(&Token::LeftParen) {
+        if !self.lexer.skip_if(&Token::OpenParen) {
             let bug = SyntaxBug::ExpectedOpeningParen(self.lexer.peek_pos());
             self.bugs.push(&bug);
         }
@@ -910,7 +915,7 @@ impl Parser<'_, '_> {
 
         let mut already_reported_too_many_parameters = false;
 
-        while !self.lexer.skip_if(&Token::RightParen) {
+        while !self.lexer.skip_if(&Token::CloseParen) {
             if self.lexer.is_eof() {
                 let bug = SyntaxBug::FunctionParametersExpectedEnd(self.lexer.peek_pos());
                 self.bugs.push(&bug);
@@ -929,10 +934,10 @@ impl Parser<'_, '_> {
             let param = self.parse_anonymous_function_parameter();
             params.push(param);
 
-            if !self.lexer.skip_if(&Token::Comma) && !self.lexer.next_is(&Token::RightParen) {
+            if !self.lexer.skip_if(&Token::Comma) && !self.lexer.next_is(&Token::CloseParen) {
                 let bug = SyntaxBug::FunctionParametersExpectedEnd(self.lexer.peek_pos());
                 self.bugs.push(&bug);
-                self.lexer.skip_while(&Token::RightParen);
+                self.lexer.skip_while(&Token::CloseParen);
                 break;
             }
         }
@@ -943,7 +948,7 @@ impl Parser<'_, '_> {
     fn parse_anonymous_function(&mut self) -> Option<Expr> {
         // TODO: Cleanup
 
-        if self.lexer.peek_t() == Token::LeftBrace {
+        if self.lexer.peek_t() == Token::OpenBrace {
             let definition = self.parse_block();
 
             return Some(Expr::Function(Box::new(AnonymousFunction {
@@ -960,15 +965,15 @@ impl Parser<'_, '_> {
         let attributes = self.parse_attributes();
         let parameters = self.parse_anonymous_function_parameters();
 
-        let return_type = if self.lexer.skip_if(&Token::Op(Op::Arrow)) {
+        let return_type = if self.lexer.skip_if(&Token::Arrow) {
             Some(self.parse_type())
         } else {
             None
         };
 
-        let definition = if self.lexer.next_is(&Token::LeftBrace) {
+        let definition = if self.lexer.next_is(&Token::OpenBrace) {
             self.parse_block()
-        } else if self.lexer.skip_if(&Token::Op(Op::BlockArrow)) {
+        } else if self.lexer.skip_if(&Token::BlockArrow) {
             let expr = self.parse_expression();
             Block {
                 elements: vec![expr],
@@ -1022,21 +1027,21 @@ impl Parser<'_, '_> {
     fn parse_function_arguments(&mut self) -> Option<CallArguments> {
         // TODO: Cleanup
 
-        assert!(self.lexer.peek_t() == Token::LeftParen);
+        assert!(self.lexer.peek_t() == Token::OpenParen);
         self.lexer.skip_tok();
 
         let mut arguments = CallArguments::new();
         self.lexer.skip_if(&Token::Comma);
 
         loop {
-            if self.lexer.skip_if(&Token::RightParen) {
+            if self.lexer.skip_if(&Token::CloseParen) {
                 break;
             }
 
             let function_argument = self.parse_function_argument()?;
             arguments.push(function_argument);
 
-            if !self.lexer.skip_if(&Token::Comma) && !self.lexer.next_is(&Token::RightParen) {
+            if !self.lexer.skip_if(&Token::Comma) && !self.lexer.next_is(&Token::CloseParen) {
                 error!(
                     "[P0???]: function call: expected ',' or ')' after function argument\n--> {}",
                     self.lexer.current_pos()
@@ -1052,7 +1057,7 @@ impl Parser<'_, '_> {
     pub(crate) fn parse_block(&mut self) -> Block {
         // TODO: Cleanup
 
-        if !self.lexer.skip_if(&Token::LeftBrace) {
+        if !self.lexer.skip_if(&Token::OpenBrace) {
             error!(
                 "[P????]: expr: block: expected opening brace\n--> {}",
                 self.lexer.current_pos()
@@ -1068,7 +1073,7 @@ impl Parser<'_, '_> {
         let mut ends_with_semi = false;
 
         loop {
-            if self.lexer.skip_if(&Token::RightBrace) {
+            if self.lexer.skip_if(&Token::CloseBrace) {
                 break;
             }
 
@@ -1079,7 +1084,7 @@ impl Parser<'_, '_> {
             let expression = self.parse_expression();
             elements.push(expression);
 
-            ends_with_semi = self.lexer.skip_if(&Token::Semicolon);
+            ends_with_semi = self.lexer.skip_if(&Token::Semi);
         }
 
         Block {

@@ -3,8 +3,6 @@ use nitrate_diagnosis::DiagnosticCollector;
 use nitrate_parsetree::kind::{Module, Package};
 use nitrate_tokenize::Lexer;
 
-use crate::bugs::SyntaxBug;
-
 pub struct Parser<'a, 'bugs> {
     pub(crate) lexer: Lexer<'a>,
     pub(crate) bugs: &'bugs DiagnosticCollector,

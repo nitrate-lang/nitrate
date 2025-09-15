@@ -2,7 +2,7 @@ use crate::kind::{FunctionParameter, Type};
 use crate::ty::GenericArgument;
 
 use interned_string::IString;
-use nitrate_tokenize::{IntegerKind, Op};
+use nitrate_tokenize::{IntegerKind, Token};
 use ordered_float::NotNan;
 use serde::{Deserialize, Serialize};
 use smallvec::SmallVec;
@@ -36,59 +36,61 @@ pub enum UnaryExprOp {
     Typeof,
 }
 
-impl TryFrom<Op> for UnaryExprOp {
+impl TryFrom<Token> for UnaryExprOp {
     type Error = ();
 
-    fn try_from(op: Op) -> Result<Self, Self::Error> {
+    fn try_from(op: Token) -> Result<Self, Self::Error> {
         match op {
-            Op::Add => Ok(UnaryExprOp::Add),
-            Op::Sub => Ok(UnaryExprOp::Sub),
-            Op::Mul => Ok(UnaryExprOp::Deref),
-            Op::BitAnd => Ok(UnaryExprOp::AddressOf),
-            Op::BitNot => Ok(UnaryExprOp::BitNot),
-            Op::LogicNot => Ok(UnaryExprOp::LogicNot),
-            Op::Typeof => Ok(UnaryExprOp::Typeof),
+            Token::Add => Ok(UnaryExprOp::Add),
+            Token::Sub => Ok(UnaryExprOp::Sub),
+            Token::Mul => Ok(UnaryExprOp::Deref),
+            Token::BitAnd => Ok(UnaryExprOp::AddressOf),
+            Token::BitNot => Ok(UnaryExprOp::BitNot),
+            Token::LogicNot => Ok(UnaryExprOp::LogicNot),
+            Token::Typeof => Ok(UnaryExprOp::Typeof),
 
-            Op::Div
-            | Op::Mod
-            | Op::BitOr
-            | Op::BitXor
-            | Op::BitShl
-            | Op::BitShr
-            | Op::BitRol
-            | Op::BitRor
-            | Op::LogicAnd
-            | Op::LogicOr
-            | Op::LogicXor
-            | Op::LogicLt
-            | Op::LogicGt
-            | Op::LogicLe
-            | Op::LogicGe
-            | Op::LogicEq
-            | Op::LogicNe
-            | Op::Set
-            | Op::SetPlus
-            | Op::SetMinus
-            | Op::SetTimes
-            | Op::SetSlash
-            | Op::SetPercent
-            | Op::SetBitAnd
-            | Op::SetBitOr
-            | Op::SetBitXor
-            | Op::SetBitShl
-            | Op::SetBitShr
-            | Op::SetBitRotl
-            | Op::SetBitRotr
-            | Op::SetLogicAnd
-            | Op::SetLogicOr
-            | Op::SetLogicXor
-            | Op::As
-            | Op::Dot
-            | Op::Ellipsis
-            | Op::Scope
-            | Op::Arrow
-            | Op::BlockArrow
-            | Op::Range => Err(()),
+            Token::Div
+            | Token::Mod
+            | Token::BitOr
+            | Token::BitXor
+            | Token::BitShl
+            | Token::BitShr
+            | Token::BitRol
+            | Token::BitRor
+            | Token::LogicAnd
+            | Token::LogicOr
+            | Token::LogicXor
+            | Token::LogicLt
+            | Token::LogicGt
+            | Token::LogicLe
+            | Token::LogicGe
+            | Token::LogicEq
+            | Token::LogicNe
+            | Token::Set
+            | Token::SetPlus
+            | Token::SetMinus
+            | Token::SetTimes
+            | Token::SetSlash
+            | Token::SetPercent
+            | Token::SetBitAnd
+            | Token::SetBitOr
+            | Token::SetBitXor
+            | Token::SetBitShl
+            | Token::SetBitShr
+            | Token::SetBitRotl
+            | Token::SetBitRotr
+            | Token::SetLogicAnd
+            | Token::SetLogicOr
+            | Token::SetLogicXor
+            | Token::As
+            | Token::Dot
+            | Token::Ellipsis
+            | Token::Scope
+            | Token::Arrow
+            | Token::BlockArrow
+            | Token::Range => Err(()),
+
+            _ => Err(()),
         }
     }
 }
@@ -148,57 +150,58 @@ pub enum BinExprOp {
     Range,
 }
 
-impl TryFrom<Op> for BinExprOp {
+impl TryFrom<Token> for BinExprOp {
     type Error = ();
 
-    fn try_from(op: Op) -> Result<Self, Self::Error> {
+    fn try_from(op: Token) -> Result<Self, Self::Error> {
         match op {
-            Op::Add => Ok(BinExprOp::Add),
-            Op::Sub => Ok(BinExprOp::Sub),
-            Op::Mul => Ok(BinExprOp::Mul),
-            Op::Div => Ok(BinExprOp::Div),
-            Op::Mod => Ok(BinExprOp::Mod),
-            Op::BitAnd => Ok(BinExprOp::BitAnd),
-            Op::BitOr => Ok(BinExprOp::BitOr),
-            Op::BitXor => Ok(BinExprOp::BitXor),
-            Op::BitShl => Ok(BinExprOp::BitShl),
-            Op::BitShr => Ok(BinExprOp::BitShr),
-            Op::BitRol => Ok(BinExprOp::BitRol),
-            Op::BitRor => Ok(BinExprOp::BitRor),
-            Op::LogicAnd => Ok(BinExprOp::LogicAnd),
-            Op::LogicOr => Ok(BinExprOp::LogicOr),
-            Op::LogicXor => Ok(BinExprOp::LogicXor),
-            Op::LogicLt => Ok(BinExprOp::LogicLt),
-            Op::LogicGt => Ok(BinExprOp::LogicGt),
-            Op::LogicLe => Ok(BinExprOp::LogicLe),
-            Op::LogicGe => Ok(BinExprOp::LogicGe),
-            Op::LogicEq => Ok(BinExprOp::LogicEq),
-            Op::LogicNe => Ok(BinExprOp::LogicNe),
-            Op::Set => Ok(BinExprOp::Set),
-            Op::SetPlus => Ok(BinExprOp::SetPlus),
-            Op::SetMinus => Ok(BinExprOp::SetMinus),
-            Op::SetTimes => Ok(BinExprOp::SetTimes),
-            Op::SetSlash => Ok(BinExprOp::SetSlash),
-            Op::SetPercent => Ok(BinExprOp::SetPercent),
-            Op::SetBitAnd => Ok(BinExprOp::SetBitAnd),
-            Op::SetBitOr => Ok(BinExprOp::SetBitOr),
-            Op::SetBitXor => Ok(BinExprOp::SetBitXor),
-            Op::SetBitShl => Ok(BinExprOp::SetBitShl),
-            Op::SetBitShr => Ok(BinExprOp::SetBitShr),
-            Op::SetBitRotl => Ok(BinExprOp::SetBitRotl),
-            Op::SetBitRotr => Ok(BinExprOp::SetBitRotr),
-            Op::SetLogicAnd => Ok(BinExprOp::SetLogicAnd),
-            Op::SetLogicOr => Ok(BinExprOp::SetLogicOr),
-            Op::SetLogicXor => Ok(BinExprOp::SetLogicXor),
-            Op::As => Ok(BinExprOp::As),
-            Op::Dot => Ok(BinExprOp::Dot),
-            Op::Ellipsis => Ok(BinExprOp::Ellipsis),
-            Op::Scope => Ok(BinExprOp::Scope),
-            Op::Arrow => Ok(BinExprOp::Arrow),
-            Op::BlockArrow => Ok(BinExprOp::BlockArrow),
-            Op::Range => Ok(BinExprOp::Range),
+            Token::Add => Ok(BinExprOp::Add),
+            Token::Sub => Ok(BinExprOp::Sub),
+            Token::Mul => Ok(BinExprOp::Mul),
+            Token::Div => Ok(BinExprOp::Div),
+            Token::Mod => Ok(BinExprOp::Mod),
+            Token::BitAnd => Ok(BinExprOp::BitAnd),
+            Token::BitOr => Ok(BinExprOp::BitOr),
+            Token::BitXor => Ok(BinExprOp::BitXor),
+            Token::BitShl => Ok(BinExprOp::BitShl),
+            Token::BitShr => Ok(BinExprOp::BitShr),
+            Token::BitRol => Ok(BinExprOp::BitRol),
+            Token::BitRor => Ok(BinExprOp::BitRor),
+            Token::LogicAnd => Ok(BinExprOp::LogicAnd),
+            Token::LogicOr => Ok(BinExprOp::LogicOr),
+            Token::LogicXor => Ok(BinExprOp::LogicXor),
+            Token::LogicLt => Ok(BinExprOp::LogicLt),
+            Token::LogicGt => Ok(BinExprOp::LogicGt),
+            Token::LogicLe => Ok(BinExprOp::LogicLe),
+            Token::LogicGe => Ok(BinExprOp::LogicGe),
+            Token::LogicEq => Ok(BinExprOp::LogicEq),
+            Token::LogicNe => Ok(BinExprOp::LogicNe),
+            Token::Set => Ok(BinExprOp::Set),
+            Token::SetPlus => Ok(BinExprOp::SetPlus),
+            Token::SetMinus => Ok(BinExprOp::SetMinus),
+            Token::SetTimes => Ok(BinExprOp::SetTimes),
+            Token::SetSlash => Ok(BinExprOp::SetSlash),
+            Token::SetPercent => Ok(BinExprOp::SetPercent),
+            Token::SetBitAnd => Ok(BinExprOp::SetBitAnd),
+            Token::SetBitOr => Ok(BinExprOp::SetBitOr),
+            Token::SetBitXor => Ok(BinExprOp::SetBitXor),
+            Token::SetBitShl => Ok(BinExprOp::SetBitShl),
+            Token::SetBitShr => Ok(BinExprOp::SetBitShr),
+            Token::SetBitRotl => Ok(BinExprOp::SetBitRotl),
+            Token::SetBitRotr => Ok(BinExprOp::SetBitRotr),
+            Token::SetLogicAnd => Ok(BinExprOp::SetLogicAnd),
+            Token::SetLogicOr => Ok(BinExprOp::SetLogicOr),
+            Token::SetLogicXor => Ok(BinExprOp::SetLogicXor),
+            Token::As => Ok(BinExprOp::As),
+            Token::Dot => Ok(BinExprOp::Dot),
+            Token::Ellipsis => Ok(BinExprOp::Ellipsis),
+            Token::Scope => Ok(BinExprOp::Scope),
+            Token::Arrow => Ok(BinExprOp::Arrow),
+            Token::BlockArrow => Ok(BinExprOp::BlockArrow),
+            Token::Range => Ok(BinExprOp::Range),
 
-            Op::BitNot | Op::LogicNot | Op::Typeof => Err(()),
+            Token::BitNot | Token::LogicNot | Token::Typeof => Err(()),
+            _ => Err(()),
         }
     }
 }

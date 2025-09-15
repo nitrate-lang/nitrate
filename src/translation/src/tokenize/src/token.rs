@@ -228,20 +228,35 @@ impl std::fmt::Display for Keyword {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Hash, Sequence, Serialize, Deserialize)]
-pub enum Op {
-    /*----------------------------------------------------------------*
-     * Arithmetic Operators                                           *
-     *----------------------------------------------------------------*/
+#[derive(Debug, Clone, PartialEq, PartialOrd, Serialize, Deserialize)]
+pub enum Token {
+    Name(IString),
+    Integer(Integer),
+    Float(NotNan<f64>),
+    String(IString),
+    BString(Vec<u8>),
+    Comment(Comment),
+    Keyword(Keyword),
+
+    /// ';'
+    Semi,
+    Comma,
+    OpenParen,
+    CloseParen,
+    OpenBrace,
+    CloseBrace,
+    OpenBracket,
+    CloseBracket,
+    At,
+    Colon,
+    SingleQuote,
+
     Add, /* '+': "Addition Operator" */
     Sub, /* '-': "Subtraction Operator" */
     Mul, /* '*': "Multiplication Operator" */
     Div, /* '/': "Division Operator" */
     Mod, /* '%': "Modulus Operator" */
 
-    /*----------------------------------------------------------------*
-     * Bitwise Operators                                              *
-     *----------------------------------------------------------------*/
     BitAnd, /* '&':   "Bitwise AND Operator" */
     BitOr,  /* '|':   "Bitwise OR Operator" */
     BitXor, /* '^':   "Bitwise XOR Operator" */
@@ -251,9 +266,6 @@ pub enum Op {
     BitRol, /* '<<<': "Bitwise Left-Rotate Operator" */
     BitRor, /* '>>>': "Bitwise Right-Rotate Operator" */
 
-    /*----------------------------------------------------------------*
-     * Logical Operators                                              *
-     *----------------------------------------------------------------*/
     LogicAnd, /* '&&': "Logical AND Operator" */
     LogicOr,  /* '||': "Logical OR Operator" */
     LogicXor, /* '^^': "Logical XOR Operator" */
@@ -265,9 +277,6 @@ pub enum Op {
     LogicEq,  /* '==': "Logical Equal-To Operator" */
     LogicNe,  /* '!=': "Logical Not Equal-To Operator" */
 
-    /*----------------------------------------------------------------*
-     * Assignment Operators                                           *
-     *----------------------------------------------------------------*/
     Set,         /* '=':    "Assignment Operator" */
     SetPlus,     /* '+=':   "Addition Assignment Operator" */
     SetMinus,    /* '-=':   "Subtraction Assignment Operator" */
@@ -285,110 +294,17 @@ pub enum Op {
     SetLogicOr,  /* '||=':  "Logical OR Assignment Operator" */
     SetLogicXor, /* '^^=':  "Logical XOR Assignment Operator" */
 
-    /*----------------------------------------------------------------*
-     * Type System Operators                                          *
-     *----------------------------------------------------------------*/
     As,     /* 'as':         "Type Cast Operator" */
     Typeof, /* 'typeof':     "Type Of Operator" */
 
-    /*----------------------------------------------------------------*
-     * Syntactic Operators                                            *
-     *----------------------------------------------------------------*/
     Dot,        /* '.':          "Dot Operator" */
     Ellipsis,   /* '...':        "Ellipsis Operator" */
     Scope,      /* '::':         "Scope Resolution Operator" */
     Arrow,      /* '->':         "Arrow Operator" */
     BlockArrow, /* '=>':         "Block Arrow Operator" */
 
-    /*----------------------------------------------------------------*
-     * Special Operators                                              *
-     *----------------------------------------------------------------*/
     Range, /* '..':         "Range Operator" */
-}
 
-impl std::fmt::Display for Op {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Op::Add => write!(f, "+"),
-            Op::Sub => write!(f, "-"),
-            Op::Mul => write!(f, "*"),
-            Op::Div => write!(f, "/"),
-            Op::Mod => write!(f, "%"),
-
-            Op::BitAnd => write!(f, "&"),
-            Op::BitOr => write!(f, "|"),
-            Op::BitXor => write!(f, "^"),
-            Op::BitNot => write!(f, "~"),
-            Op::BitShl => write!(f, "<<"),
-            Op::BitShr => write!(f, ">>"),
-            Op::BitRol => write!(f, "<<<"),
-            Op::BitRor => write!(f, ">>>"),
-
-            Op::LogicAnd => write!(f, "&&"),
-            Op::LogicOr => write!(f, "||"),
-            Op::LogicXor => write!(f, "^^"),
-            Op::LogicNot => write!(f, "!"),
-            Op::LogicLt => write!(f, "<"),
-            Op::LogicGt => write!(f, ">"),
-            Op::LogicLe => write!(f, "<="),
-            Op::LogicGe => write!(f, ">="),
-            Op::LogicEq => write!(f, "=="),
-            Op::LogicNe => write!(f, "!="),
-
-            Op::Set => write!(f, "="),
-            Op::SetPlus => write!(f, "+="),
-            Op::SetMinus => write!(f, "-="),
-            Op::SetTimes => write!(f, "*="),
-            Op::SetSlash => write!(f, "/="),
-            Op::SetPercent => write!(f, "%="),
-            Op::SetBitAnd => write!(f, "&="),
-            Op::SetBitOr => write!(f, "|="),
-            Op::SetBitXor => write!(f, "^="),
-            Op::SetBitShl => write!(f, "<<="),
-            Op::SetBitShr => write!(f, ">>="),
-            Op::SetBitRotl => write!(f, "<<<="),
-            Op::SetBitRotr => write!(f, ">>>="),
-            Op::SetLogicAnd => write!(f, "&&="),
-            Op::SetLogicOr => write!(f, "||="),
-            Op::SetLogicXor => write!(f, "^^="),
-
-            Op::As => write!(f, "as"),
-            Op::Typeof => write!(f, "typeof"),
-
-            Op::Dot => write!(f, "."),
-            Op::Ellipsis => write!(f, "..."),
-            Op::Scope => write!(f, "::"),
-            Op::Arrow => write!(f, "->"),
-            Op::BlockArrow => write!(f, "=>"),
-
-            Op::Range => write!(f, ".."),
-        }
-    }
-}
-
-#[derive(Debug, Clone, PartialEq, PartialOrd, Serialize, Deserialize)]
-pub enum Token {
-    Name(IString),
-    Integer(Integer),
-    Float(NotNan<f64>),
-    String(IString),
-    BString(Vec<u8>),
-    Comment(Comment),
-    Keyword(Keyword),
-
-    LeftParen,    /* '(' */
-    RightParen,   /* ')' */
-    LeftBracket,  /* '[' */
-    RightBracket, /* ']' */
-    LeftBrace,    /* '{' */
-    RightBrace,   /* '}' */
-    Comma,        /* ',' */
-    Semicolon,    /* ';' */
-    Colon,        /* ':' */
-    AtSign,       /* '@' */
-    SingleQuote,  /* ''' */
-
-    Op(Op),
     Eof,
 }
 
@@ -403,19 +319,72 @@ impl std::fmt::Display for Token {
             Token::Comment(c) => write!(f, "{c}"),
             Token::Keyword(kw) => write!(f, "{kw}"),
 
-            Token::LeftParen => write!(f, "("),
-            Token::RightParen => write!(f, ")"),
-            Token::LeftBracket => write!(f, "["),
-            Token::RightBracket => write!(f, "]"),
-            Token::LeftBrace => write!(f, "{{"),
-            Token::RightBrace => write!(f, "}}"),
+            Token::OpenParen => write!(f, "("),
+            Token::CloseParen => write!(f, ")"),
+            Token::OpenBracket => write!(f, "["),
+            Token::CloseBracket => write!(f, "]"),
+            Token::OpenBrace => write!(f, "{{"),
+            Token::CloseBrace => write!(f, "}}"),
             Token::Comma => write!(f, ","),
-            Token::Semicolon => write!(f, ";"),
+            Token::Semi => write!(f, ";"),
             Token::Colon => write!(f, ":"),
-            Token::AtSign => write!(f, "@"),
+            Token::At => write!(f, "@"),
             Token::SingleQuote => write!(f, "'"),
 
-            Token::Op(op) => write!(f, "{op}"),
+            Token::Add => write!(f, "+"),
+            Token::Sub => write!(f, "-"),
+            Token::Mul => write!(f, "*"),
+            Token::Div => write!(f, "/"),
+            Token::Mod => write!(f, "%"),
+
+            Token::BitAnd => write!(f, "&"),
+            Token::BitOr => write!(f, "|"),
+            Token::BitXor => write!(f, "^"),
+            Token::BitNot => write!(f, "~"),
+            Token::BitShl => write!(f, "<<"),
+            Token::BitShr => write!(f, ">>"),
+            Token::BitRol => write!(f, "<<<"),
+            Token::BitRor => write!(f, ">>>"),
+
+            Token::LogicAnd => write!(f, "&&"),
+            Token::LogicOr => write!(f, "||"),
+            Token::LogicXor => write!(f, "^^"),
+            Token::LogicNot => write!(f, "!"),
+            Token::LogicLt => write!(f, "<"),
+            Token::LogicGt => write!(f, ">"),
+            Token::LogicLe => write!(f, "<="),
+            Token::LogicGe => write!(f, ">="),
+            Token::LogicEq => write!(f, "=="),
+            Token::LogicNe => write!(f, "!="),
+
+            Token::Set => write!(f, "="),
+            Token::SetPlus => write!(f, "+="),
+            Token::SetMinus => write!(f, "-="),
+            Token::SetTimes => write!(f, "*="),
+            Token::SetSlash => write!(f, "/="),
+            Token::SetPercent => write!(f, "%="),
+            Token::SetBitAnd => write!(f, "&="),
+            Token::SetBitOr => write!(f, "|="),
+            Token::SetBitXor => write!(f, "^="),
+            Token::SetBitShl => write!(f, "<<="),
+            Token::SetBitShr => write!(f, ">>="),
+            Token::SetBitRotl => write!(f, "<<<="),
+            Token::SetBitRotr => write!(f, ">>>="),
+            Token::SetLogicAnd => write!(f, "&&="),
+            Token::SetLogicOr => write!(f, "||="),
+            Token::SetLogicXor => write!(f, "^^="),
+
+            Token::As => write!(f, "as"),
+            Token::Typeof => write!(f, "typeof"),
+
+            Token::Dot => write!(f, "."),
+            Token::Ellipsis => write!(f, "..."),
+            Token::Scope => write!(f, "::"),
+            Token::Arrow => write!(f, "->"),
+            Token::BlockArrow => write!(f, "=>"),
+
+            Token::Range => write!(f, ".."),
+
             Token::Eof => write!(f, ""),
         }
     }
@@ -762,7 +731,7 @@ mod tests {
                 "# This is a comment",
             ),
             (Token::Keyword(Keyword::Let), "let"),
-            (Token::Punct(Punct::LeftParen), "("),
+            (Token::OpenParen, "("),
             (Token::Op(Op::Add), "+"),
             (Token::Eof, ""),
         ];
@@ -843,7 +812,7 @@ mod tests {
                 "let",
             ),
             (
-                Token::Punct(Punct::LeftParen),
+                Token::OpenParen,
                 SourcePosition::new(8, 0, 80, filename.clone()),
                 SourcePosition::new(8, 1, 81, filename.clone()),
                 "(",

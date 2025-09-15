@@ -1,6 +1,4 @@
-use super::token::{
-    AnnotatedToken, Comment, CommentKind, Integer, IntegerKind, Keyword, Op, Token,
-};
+use super::token::{AnnotatedToken, Comment, CommentKind, Integer, IntegerKind, Keyword, Token};
 use interned_string::{IString, Intern};
 use log::error;
 use nitrate_diagnosis::SourcePosition;
@@ -201,16 +199,6 @@ impl<'a> Lexer<'a> {
     }
 
     #[inline(always)]
-    pub fn next_if_op(&mut self) -> Option<Op> {
-        if let Token::Op(op) = self.peek_t() {
-            self.skip_tok();
-            Some(op)
-        } else {
-            None
-        }
-    }
-
-    #[inline(always)]
     pub fn next_if_integer(&mut self) -> Option<Integer> {
         if let Token::Integer(integer) = self.peek_t() {
             self.skip_tok();
@@ -327,11 +315,11 @@ impl<'a> Lexer<'a> {
         assert!(!name.is_empty(), "Identifier should not be empty");
 
         if let Some(word_like_operator) = match name {
-            b"as" => Some(Op::As),
-            b"typeof" => Some(Op::Typeof),
+            b"as" => Some(Token::As),
+            b"typeof" => Some(Token::Typeof),
             _ => None,
         } {
-            Ok(Token::Op(word_like_operator))
+            Ok(word_like_operator)
         } else if let Some(keyword) = match name {
             b"let" => Some(Keyword::Let),
             b"var" => Some(Keyword::Var),
@@ -900,15 +888,15 @@ impl<'a> Lexer<'a> {
         match b {
             b'(' | b')' | b'[' | b']' | b'{' | b'}' | b',' | b';' | b'@' | b'\'' => {
                 match self.advance(b) {
-                    b'(' => Ok(Token::LeftParen),
-                    b')' => Ok(Token::RightParen),
-                    b'[' => Ok(Token::LeftBracket),
-                    b']' => Ok(Token::RightBracket),
-                    b'{' => Ok(Token::LeftBrace),
-                    b'}' => Ok(Token::RightBrace),
+                    b'(' => Ok(Token::OpenParen),
+                    b')' => Ok(Token::CloseParen),
+                    b'[' => Ok(Token::OpenBracket),
+                    b']' => Ok(Token::CloseBracket),
+                    b'{' => Ok(Token::OpenBrace),
+                    b'}' => Ok(Token::CloseBrace),
                     b',' => Ok(Token::Comma),
-                    b';' => Ok(Token::Semicolon),
-                    b'@' => Ok(Token::AtSign),
+                    b';' => Ok(Token::Semi),
+                    b'@' => Ok(Token::At),
                     b'\'' => Ok(Token::SingleQuote),
                     _ => unreachable!(), // All cases are handled above
                 }
@@ -919,7 +907,7 @@ impl<'a> Lexer<'a> {
                 match self.peek_byte() {
                     Ok(b':') => {
                         self.advance(b':');
-                        Ok(Token::Op(Op::Scope))
+                        Ok(Token::Scope)
                     }
                     _ => Ok(Token::Colon),
                 }
@@ -927,16 +915,16 @@ impl<'a> Lexer<'a> {
 
             b'~' => {
                 self.advance(b'~');
-                Ok(Token::Op(Op::BitNot))
+                Ok(Token::BitNot)
             }
             b'+' => {
                 self.advance(b'+');
                 match self.peek_byte() {
                     Ok(b'=') => {
                         self.advance(b'=');
-                        Ok(Token::Op(Op::SetPlus))
+                        Ok(Token::SetPlus)
                     }
-                    _ => Ok(Token::Op(Op::Add)),
+                    _ => Ok(Token::Add),
                 }
             }
             b'-' => {
@@ -944,13 +932,13 @@ impl<'a> Lexer<'a> {
                 match self.peek_byte() {
                     Ok(b'=') => {
                         self.advance(b'=');
-                        Ok(Token::Op(Op::SetMinus))
+                        Ok(Token::SetMinus)
                     }
                     Ok(b'>') => {
                         self.advance(b'>');
-                        Ok(Token::Op(Op::Arrow))
+                        Ok(Token::Arrow)
                     }
-                    _ => Ok(Token::Op(Op::Sub)),
+                    _ => Ok(Token::Sub),
                 }
             }
             b'*' => {
@@ -958,9 +946,9 @@ impl<'a> Lexer<'a> {
                 match self.peek_byte() {
                     Ok(b'=') => {
                         self.advance(b'=');
-                        Ok(Token::Op(Op::SetTimes))
+                        Ok(Token::SetTimes)
                     }
-                    _ => Ok(Token::Op(Op::Mul)),
+                    _ => Ok(Token::Mul),
                 }
             }
             b'/' => {
@@ -968,9 +956,9 @@ impl<'a> Lexer<'a> {
                 match self.peek_byte() {
                     Ok(b'=') => {
                         self.advance(b'=');
-                        Ok(Token::Op(Op::SetSlash))
+                        Ok(Token::SetSlash)
                     }
-                    _ => Ok(Token::Op(Op::Div)),
+                    _ => Ok(Token::Div),
                 }
             }
             b'%' => {
@@ -978,9 +966,9 @@ impl<'a> Lexer<'a> {
                 match self.peek_byte() {
                     Ok(b'=') => {
                         self.advance(b'=');
-                        Ok(Token::Op(Op::SetPercent))
+                        Ok(Token::SetPercent)
                     }
-                    _ => Ok(Token::Op(Op::Mod)),
+                    _ => Ok(Token::Mod),
                 }
             }
             b'&' => {
@@ -991,16 +979,16 @@ impl<'a> Lexer<'a> {
                         match self.peek_byte() {
                             Ok(b'=') => {
                                 self.advance(b'=');
-                                Ok(Token::Op(Op::SetLogicAnd))
+                                Ok(Token::SetLogicAnd)
                             }
-                            _ => Ok(Token::Op(Op::LogicAnd)),
+                            _ => Ok(Token::LogicAnd),
                         }
                     }
                     Ok(b'=') => {
                         self.advance(b'=');
-                        Ok(Token::Op(Op::SetBitAnd))
+                        Ok(Token::SetBitAnd)
                     }
-                    _ => Ok(Token::Op(Op::BitAnd)),
+                    _ => Ok(Token::BitAnd),
                 }
             }
             b'|' => {
@@ -1011,16 +999,16 @@ impl<'a> Lexer<'a> {
                         match self.peek_byte() {
                             Ok(b'=') => {
                                 self.advance(b'=');
-                                Ok(Token::Op(Op::SetLogicOr))
+                                Ok(Token::SetLogicOr)
                             }
-                            _ => Ok(Token::Op(Op::LogicOr)),
+                            _ => Ok(Token::LogicOr),
                         }
                     }
                     Ok(b'=') => {
                         self.advance(b'=');
-                        Ok(Token::Op(Op::SetBitOr))
+                        Ok(Token::SetBitOr)
                     }
-                    _ => Ok(Token::Op(Op::BitOr)),
+                    _ => Ok(Token::BitOr),
                 }
             }
             b'^' => {
@@ -1031,16 +1019,16 @@ impl<'a> Lexer<'a> {
                         match self.peek_byte() {
                             Ok(b'=') => {
                                 self.advance(b'=');
-                                Ok(Token::Op(Op::SetLogicXor))
+                                Ok(Token::SetLogicXor)
                             }
-                            _ => Ok(Token::Op(Op::LogicXor)),
+                            _ => Ok(Token::LogicXor),
                         }
                     }
                     Ok(b'=') => {
                         self.advance(b'=');
-                        Ok(Token::Op(Op::SetBitXor))
+                        Ok(Token::SetBitXor)
                     }
-                    _ => Ok(Token::Op(Op::BitXor)),
+                    _ => Ok(Token::BitXor),
                 }
             }
             b'<' => {
@@ -1048,29 +1036,29 @@ impl<'a> Lexer<'a> {
                 match self.peek_byte() {
                     Ok(b'=') => {
                         self.advance(b'=');
-                        Ok(Token::Op(Op::LogicLe))
+                        Ok(Token::LogicLe)
                     }
                     Ok(b'<') => {
                         self.advance(b'<');
                         match self.peek_byte() {
                             Ok(b'=') => {
                                 self.advance(b'=');
-                                Ok(Token::Op(Op::SetBitShl))
+                                Ok(Token::SetBitShl)
                             }
                             Ok(b'<') => {
                                 self.advance(b'<');
                                 match self.peek_byte() {
                                     Ok(b'=') => {
                                         self.advance(b'=');
-                                        Ok(Token::Op(Op::SetBitRotl))
+                                        Ok(Token::SetBitRotl)
                                     }
-                                    _ => Ok(Token::Op(Op::BitRol)),
+                                    _ => Ok(Token::BitRol),
                                 }
                             }
-                            _ => Ok(Token::Op(Op::BitShl)),
+                            _ => Ok(Token::BitShl),
                         }
                     }
-                    _ => Ok(Token::Op(Op::LogicLt)),
+                    _ => Ok(Token::LogicLt),
                 }
             }
             b'>' => {
@@ -1078,29 +1066,29 @@ impl<'a> Lexer<'a> {
                 match self.peek_byte() {
                     Ok(b'=') => {
                         self.advance(b'=');
-                        Ok(Token::Op(Op::LogicGe))
+                        Ok(Token::LogicGe)
                     }
                     Ok(b'>') => {
                         self.advance(b'>');
                         match self.peek_byte() {
                             Ok(b'=') => {
                                 self.advance(b'=');
-                                Ok(Token::Op(Op::SetBitShr))
+                                Ok(Token::SetBitShr)
                             }
                             Ok(b'>') => {
                                 self.advance(b'>');
                                 match self.peek_byte() {
                                     Ok(b'=') => {
                                         self.advance(b'=');
-                                        Ok(Token::Op(Op::SetBitRotr))
+                                        Ok(Token::SetBitRotr)
                                     }
-                                    _ => Ok(Token::Op(Op::BitRor)),
+                                    _ => Ok(Token::BitRor),
                                 }
                             }
-                            _ => Ok(Token::Op(Op::BitShr)),
+                            _ => Ok(Token::BitShr),
                         }
                     }
-                    _ => Ok(Token::Op(Op::LogicGt)),
+                    _ => Ok(Token::LogicGt),
                 }
             }
             b'!' => {
@@ -1108,9 +1096,9 @@ impl<'a> Lexer<'a> {
                 match self.peek_byte() {
                     Ok(b'=') => {
                         self.advance(b'=');
-                        Ok(Token::Op(Op::LogicNe))
+                        Ok(Token::LogicNe)
                     }
-                    _ => Ok(Token::Op(Op::LogicNot)),
+                    _ => Ok(Token::LogicNot),
                 }
             }
             b'=' => {
@@ -1118,13 +1106,13 @@ impl<'a> Lexer<'a> {
                 match self.peek_byte() {
                     Ok(b'=') => {
                         self.advance(b'=');
-                        Ok(Token::Op(Op::LogicEq))
+                        Ok(Token::LogicEq)
                     }
                     Ok(b'>') => {
                         self.advance(b'>');
-                        Ok(Token::Op(Op::BlockArrow))
+                        Ok(Token::BlockArrow)
                     }
-                    _ => Ok(Token::Op(Op::Set)),
+                    _ => Ok(Token::Set),
                 }
             }
             b'.' => {
@@ -1135,12 +1123,12 @@ impl<'a> Lexer<'a> {
                         match self.peek_byte() {
                             Ok(b'.') => {
                                 self.advance(b'.');
-                                Ok(Token::Op(Op::Ellipsis))
+                                Ok(Token::Ellipsis)
                             }
-                            _ => Ok(Token::Op(Op::Range)),
+                            _ => Ok(Token::Range),
                         }
                     }
-                    _ => Ok(Token::Op(Op::Dot)),
+                    _ => Ok(Token::Dot),
                 }
             }
 
@@ -1266,11 +1254,6 @@ mod tests {
 
     #[test]
     fn test_lex_next_if_keyword() {
-        // TODO: Write test
-    }
-
-    #[test]
-    fn test_lex_next_if_op() {
         // TODO: Write test
     }
 
