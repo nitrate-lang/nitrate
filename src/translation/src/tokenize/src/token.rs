@@ -157,6 +157,10 @@ pub enum Keyword {
     F64,    /* 'f64' */
     F128,   /* 'f128' */
     Opaque, /* 'opaque' */
+
+    /* Type System */
+    As,
+    Typeof,
 }
 
 impl std::fmt::Display for Keyword {
@@ -224,6 +228,9 @@ impl std::fmt::Display for Keyword {
             Keyword::F64 => write!(f, "f64"),
             Keyword::F128 => write!(f, "f128"),
             Keyword::Opaque => write!(f, "opaque"),
+
+            Keyword::As => write!(f, "as"),
+            Keyword::Typeof => write!(f, "typeof"),
         }
     }
 }
@@ -236,74 +243,63 @@ pub enum Token {
     String(IString),
     BString(Vec<u8>),
     Comment(Comment),
+
     Keyword(Keyword),
 
+    /// '''
+    SingleQuote,
     /// ';'
     Semi,
+    /// ','
     Comma,
+    /// '.'
+    Dot,
+    /// '('
     OpenParen,
+    /// ')'
     CloseParen,
+    /// '{'
     OpenBrace,
+    /// '}'
     CloseBrace,
+    /// '['
     OpenBracket,
+    /// ']'
     CloseBracket,
+    /// '@'
     At,
+    /// '~'
+    Tilde,
+    /// '?'
+    Question,
+    /// ':'
     Colon,
-    SingleQuote,
-
-    Add, /* '+': "Addition Operator" */
-    Sub, /* '-': "Subtraction Operator" */
-    Mul, /* '*': "Multiplication Operator" */
-    Div, /* '/': "Division Operator" */
-    Mod, /* '%': "Modulus Operator" */
-
-    BitAnd, /* '&':   "Bitwise AND Operator" */
-    BitOr,  /* '|':   "Bitwise OR Operator" */
-    BitXor, /* '^':   "Bitwise XOR Operator" */
-    BitNot, /* '~':   "Bitwise NOT Operator" */
-    BitShl, /* '<<':  "Bitwise Left-Shift Operator" */
-    BitShr, /* '>>':  "Bitwise Right-Shift Operator" */
-    BitRol, /* '<<<': "Bitwise Left-Rotate Operator" */
-    BitRor, /* '>>>': "Bitwise Right-Rotate Operator" */
-
-    LogicAnd, /* '&&': "Logical AND Operator" */
-    LogicOr,  /* '||': "Logical OR Operator" */
-    LogicXor, /* '^^': "Logical XOR Operator" */
-    LogicNot, /* '!':  "Logical NOT Operator" */
-    LogicLt,  /* '<':  "Logical Less-Than Operator" */
-    LogicGt,  /* '>':  "Logical Greater-Than Operator" */
-    LogicLe,  /* '<=': "Logical Less-Than or Equal-To Operator" */
-    LogicGe,  /* '>=': "Logical Greater-Than or Equal-To Operator" */
-    LogicEq,  /* '==': "Logical Equal-To Operator" */
-    LogicNe,  /* '!=': "Logical Not Equal-To Operator" */
-
-    Set,         /* '=':    "Assignment Operator" */
-    SetPlus,     /* '+=':   "Addition Assignment Operator" */
-    SetMinus,    /* '-=':   "Subtraction Assignment Operator" */
-    SetTimes,    /* '*=':   "Multiplication Assignment Operator" */
-    SetSlash,    /* '/=':   "Division Assignment Operator" */
-    SetPercent,  /* '%=':   "Modulus Assignment Operator" */
-    SetBitAnd,   /* '&=':   "Bitwise AND Assignment Operator" */
-    SetBitOr,    /* '|=':   "Bitwise OR Assignment Operator" */
-    SetBitXor,   /* '^=':   "Bitwise XOR Assignment Operator" */
-    SetBitShl,   /* '<<=':  "Bitwise Left-Shift Assignment Operator" */
-    SetBitShr,   /* '>>=':  "Bitwise Right-Shift Assignment Operator" */
-    SetBitRotl,  /* '<<<=': "Bitwise Rotate-Left Assignment Operator" */
-    SetBitRotr,  /* '>>>=': "Bitwise Rotate-Right Assignment Operator" */
-    SetLogicAnd, /* '&&=':  "Logical AND Assignment Operator" */
-    SetLogicOr,  /* '||=':  "Logical OR Assignment Operator" */
-    SetLogicXor, /* '^^=':  "Logical XOR Assignment Operator" */
-
-    As,     /* 'as':         "Type Cast Operator" */
-    Typeof, /* 'typeof':     "Type Of Operator" */
-
-    Dot,        /* '.':          "Dot Operator" */
-    Ellipsis,   /* '...':        "Ellipsis Operator" */
-    Scope,      /* '::':         "Scope Resolution Operator" */
-    Arrow,      /* '->':         "Arrow Operator" */
-    BlockArrow, /* '=>':         "Block Arrow Operator" */
-
-    Range, /* '..':         "Range Operator" */
+    /// '$'
+    Dollar,
+    /// `=`
+    Eq,
+    /// `!`
+    Bang,
+    /// `<`
+    Lt,
+    /// `>`
+    Gt,
+    /// `-`
+    Minus,
+    /// `&`
+    And,
+    /// `|`
+    Or,
+    /// `+`
+    Plus,
+    /// `*`
+    Star,
+    /// `/`
+    Slash,
+    /// `^`
+    Caret,
+    /// `%`
+    Percent,
 
     Eof,
 }
@@ -319,71 +315,33 @@ impl std::fmt::Display for Token {
             Token::Comment(c) => write!(f, "{c}"),
             Token::Keyword(kw) => write!(f, "{kw}"),
 
+            Token::SingleQuote => write!(f, "'"),
+            Token::Semi => write!(f, ";"),
+            Token::Comma => write!(f, ","),
+            Token::Dot => write!(f, "."),
             Token::OpenParen => write!(f, "("),
             Token::CloseParen => write!(f, ")"),
-            Token::OpenBracket => write!(f, "["),
-            Token::CloseBracket => write!(f, "]"),
             Token::OpenBrace => write!(f, "{{"),
             Token::CloseBrace => write!(f, "}}"),
-            Token::Comma => write!(f, ","),
-            Token::Semi => write!(f, ";"),
-            Token::Colon => write!(f, ":"),
+            Token::OpenBracket => write!(f, "["),
+            Token::CloseBracket => write!(f, "]"),
             Token::At => write!(f, "@"),
-            Token::SingleQuote => write!(f, "'"),
-
-            Token::Add => write!(f, "+"),
-            Token::Sub => write!(f, "-"),
-            Token::Mul => write!(f, "*"),
-            Token::Div => write!(f, "/"),
-            Token::Mod => write!(f, "%"),
-
-            Token::BitAnd => write!(f, "&"),
-            Token::BitOr => write!(f, "|"),
-            Token::BitXor => write!(f, "^"),
-            Token::BitNot => write!(f, "~"),
-            Token::BitShl => write!(f, "<<"),
-            Token::BitShr => write!(f, ">>"),
-            Token::BitRol => write!(f, "<<<"),
-            Token::BitRor => write!(f, ">>>"),
-
-            Token::LogicAnd => write!(f, "&&"),
-            Token::LogicOr => write!(f, "||"),
-            Token::LogicXor => write!(f, "^^"),
-            Token::LogicNot => write!(f, "!"),
-            Token::LogicLt => write!(f, "<"),
-            Token::LogicGt => write!(f, ">"),
-            Token::LogicLe => write!(f, "<="),
-            Token::LogicGe => write!(f, ">="),
-            Token::LogicEq => write!(f, "=="),
-            Token::LogicNe => write!(f, "!="),
-
-            Token::Set => write!(f, "="),
-            Token::SetPlus => write!(f, "+="),
-            Token::SetMinus => write!(f, "-="),
-            Token::SetTimes => write!(f, "*="),
-            Token::SetSlash => write!(f, "/="),
-            Token::SetPercent => write!(f, "%="),
-            Token::SetBitAnd => write!(f, "&="),
-            Token::SetBitOr => write!(f, "|="),
-            Token::SetBitXor => write!(f, "^="),
-            Token::SetBitShl => write!(f, "<<="),
-            Token::SetBitShr => write!(f, ">>="),
-            Token::SetBitRotl => write!(f, "<<<="),
-            Token::SetBitRotr => write!(f, ">>>="),
-            Token::SetLogicAnd => write!(f, "&&="),
-            Token::SetLogicOr => write!(f, "||="),
-            Token::SetLogicXor => write!(f, "^^="),
-
-            Token::As => write!(f, "as"),
-            Token::Typeof => write!(f, "typeof"),
-
-            Token::Dot => write!(f, "."),
-            Token::Ellipsis => write!(f, "..."),
-            Token::Scope => write!(f, "::"),
-            Token::Arrow => write!(f, "->"),
-            Token::BlockArrow => write!(f, "=>"),
-
-            Token::Range => write!(f, ".."),
+            Token::Tilde => write!(f, "~"),
+            Token::Question => write!(f, "?"),
+            Token::Colon => write!(f, ":"),
+            Token::Dollar => write!(f, "$"),
+            Token::Eq => write!(f, "="),
+            Token::Bang => write!(f, "!"),
+            Token::Lt => write!(f, "<"),
+            Token::Gt => write!(f, ">"),
+            Token::Minus => write!(f, "-"),
+            Token::And => write!(f, "&"),
+            Token::Or => write!(f, "|"),
+            Token::Plus => write!(f, "+"),
+            Token::Star => write!(f, "*"),
+            Token::Slash => write!(f, "/"),
+            Token::Caret => write!(f, "^"),
+            Token::Percent => write!(f, "%"),
 
             Token::Eof => write!(f, ""),
         }
@@ -628,6 +586,8 @@ mod tests {
                 Keyword::F64 => "f64",
                 Keyword::F128 => "f128",
                 Keyword::Opaque => "opaque",
+                Keyword::As => "as",
+                Keyword::Typeof => "typeof",
             };
 
             assert_eq!(format!("{}", keyword), keyword_str);

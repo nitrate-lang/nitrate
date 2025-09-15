@@ -17,7 +17,7 @@ impl Parser<'_, '_> {
                 "".into()
             });
 
-            let default = if this.lexer.skip_if(&Token::Set) {
+            let default = if this.lexer.skip_if(&Token::Eq) {
                 Some(this.parse_type())
             } else {
                 None
@@ -28,11 +28,11 @@ impl Parser<'_, '_> {
 
         let mut parameters = Vec::new();
 
-        if !self.lexer.skip_if(&Token::LogicLt) {
+        if !self.lexer.skip_if(&Token::Lt) {
             return parameters;
         }
 
-        while !self.lexer.skip_if(&Token::LogicGt) {
+        while !self.lexer.skip_if(&Token::Gt) {
             if self.lexer.is_eof() {
                 let bug = SyntaxBug::GenericParameterExpectedEnd(self.lexer.peek_pos());
                 self.bugs.push(&bug);
@@ -50,11 +50,11 @@ impl Parser<'_, '_> {
             let param = parse_generic_parameter(self);
             parameters.push(param);
 
-            if !self.lexer.skip_if(&Token::Comma) && !self.lexer.next_is(&Token::LogicGt) {
+            if !self.lexer.skip_if(&Token::Comma) && !self.lexer.next_is(&Token::Gt) {
                 let bug = SyntaxBug::GenericParameterExpectedEnd(self.lexer.peek_pos());
                 self.bugs.push(&bug);
 
-                self.lexer.skip_while(&Token::LogicGt);
+                self.lexer.skip_while(&Token::Gt);
                 break;
             }
         }

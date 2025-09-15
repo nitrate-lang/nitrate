@@ -132,7 +132,7 @@ impl Parser<'_, '_> {
     }
 
     fn parse_reference_type(&mut self) -> ReferenceType {
-        assert!(self.lexer.peek_t() == Token::BitAnd);
+        assert!(self.lexer.peek_t() == Token::And);
         self.lexer.skip_tok();
 
         let mut lifetime = None;
@@ -179,7 +179,7 @@ impl Parser<'_, '_> {
     }
 
     fn parse_pointer_type(&mut self) -> ReferenceType {
-        assert!(self.lexer.peek_t() == Token::Mul);
+        assert!(self.lexer.peek_t() == Token::Star);
         self.lexer.skip_tok();
 
         let mut exclusive = None;
@@ -224,7 +224,7 @@ impl Parser<'_, '_> {
 
             let param_type = this.parse_type();
 
-            let default = if this.lexer.skip_if(&Token::Set) {
+            let default = if this.lexer.skip_if(&Token::Eq) {
                 Some(this.parse_expression())
             } else {
                 None
@@ -286,7 +286,12 @@ impl Parser<'_, '_> {
         let attributes = self.parse_attributes();
         let parameters = self.parse_function_type_parameters();
 
-        let return_type = if self.lexer.skip_if(&Token::Arrow) {
+        let return_type = if self.lexer.skip_if(&Token::Minus) {
+            if !self.lexer.skip_if(&Token::Lt) {
+                let bug = SyntaxBug::ExpectedArrow(self.lexer.peek_pos());
+                self.bugs.push(&bug);
+            }
+
             Some(self.parse_type())
         } else {
             None
@@ -368,10 +373,10 @@ impl Parser<'_, '_> {
             | Token::Keyword(Keyword::F64)
             | Token::Keyword(Keyword::F128) => self.parse_type_primitive(),
 
-            Token::Name(_) | Token::Scope => Type::TypeName(Box::new(self.parse_path())),
+            Token::Name(_) | Token::Colon => Type::TypeName(Box::new(self.parse_path())),
             Token::OpenBracket => self.parse_array_or_slice(),
-            Token::BitAnd => Type::ReferenceType(Box::new(self.parse_reference_type())),
-            Token::Mul => Type::ReferenceType(Box::new(self.parse_pointer_type())),
+            Token::And => Type::ReferenceType(Box::new(self.parse_reference_type())),
+            Token::Star => Type::ReferenceType(Box::new(self.parse_pointer_type())),
             Token::OpenBrace => Type::LatentType(Box::new(self.parse_block())),
             Token::Keyword(Keyword::Fn) => Type::FunctionType(Box::new(self.parse_function_type())),
             Token::Keyword(Keyword::Opaque) => self.parse_opaque_type(),

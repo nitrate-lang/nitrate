@@ -2,7 +2,7 @@ use crate::kind::{FunctionParameter, Type};
 use crate::ty::GenericArgument;
 
 use interned_string::IString;
-use nitrate_tokenize::{IntegerKind, Token};
+use nitrate_tokenize::IntegerKind;
 use ordered_float::NotNan;
 use serde::{Deserialize, Serialize};
 use smallvec::SmallVec;
@@ -34,65 +34,6 @@ pub enum UnaryExprOp {
     BitNot,
     LogicNot,
     Typeof,
-}
-
-impl TryFrom<Token> for UnaryExprOp {
-    type Error = ();
-
-    fn try_from(op: Token) -> Result<Self, Self::Error> {
-        match op {
-            Token::Add => Ok(UnaryExprOp::Add),
-            Token::Sub => Ok(UnaryExprOp::Sub),
-            Token::Mul => Ok(UnaryExprOp::Deref),
-            Token::BitAnd => Ok(UnaryExprOp::AddressOf),
-            Token::BitNot => Ok(UnaryExprOp::BitNot),
-            Token::LogicNot => Ok(UnaryExprOp::LogicNot),
-            Token::Typeof => Ok(UnaryExprOp::Typeof),
-
-            Token::Div
-            | Token::Mod
-            | Token::BitOr
-            | Token::BitXor
-            | Token::BitShl
-            | Token::BitShr
-            | Token::BitRol
-            | Token::BitRor
-            | Token::LogicAnd
-            | Token::LogicOr
-            | Token::LogicXor
-            | Token::LogicLt
-            | Token::LogicGt
-            | Token::LogicLe
-            | Token::LogicGe
-            | Token::LogicEq
-            | Token::LogicNe
-            | Token::Set
-            | Token::SetPlus
-            | Token::SetMinus
-            | Token::SetTimes
-            | Token::SetSlash
-            | Token::SetPercent
-            | Token::SetBitAnd
-            | Token::SetBitOr
-            | Token::SetBitXor
-            | Token::SetBitShl
-            | Token::SetBitShr
-            | Token::SetBitRotl
-            | Token::SetBitRotr
-            | Token::SetLogicAnd
-            | Token::SetLogicOr
-            | Token::SetLogicXor
-            | Token::As
-            | Token::Dot
-            | Token::Ellipsis
-            | Token::Scope
-            | Token::Arrow
-            | Token::BlockArrow
-            | Token::Range => Err(()),
-
-            _ => Err(()),
-        }
-    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -148,62 +89,6 @@ pub enum BinExprOp {
     Arrow,
     BlockArrow,
     Range,
-}
-
-impl TryFrom<Token> for BinExprOp {
-    type Error = ();
-
-    fn try_from(op: Token) -> Result<Self, Self::Error> {
-        match op {
-            Token::Add => Ok(BinExprOp::Add),
-            Token::Sub => Ok(BinExprOp::Sub),
-            Token::Mul => Ok(BinExprOp::Mul),
-            Token::Div => Ok(BinExprOp::Div),
-            Token::Mod => Ok(BinExprOp::Mod),
-            Token::BitAnd => Ok(BinExprOp::BitAnd),
-            Token::BitOr => Ok(BinExprOp::BitOr),
-            Token::BitXor => Ok(BinExprOp::BitXor),
-            Token::BitShl => Ok(BinExprOp::BitShl),
-            Token::BitShr => Ok(BinExprOp::BitShr),
-            Token::BitRol => Ok(BinExprOp::BitRol),
-            Token::BitRor => Ok(BinExprOp::BitRor),
-            Token::LogicAnd => Ok(BinExprOp::LogicAnd),
-            Token::LogicOr => Ok(BinExprOp::LogicOr),
-            Token::LogicXor => Ok(BinExprOp::LogicXor),
-            Token::LogicLt => Ok(BinExprOp::LogicLt),
-            Token::LogicGt => Ok(BinExprOp::LogicGt),
-            Token::LogicLe => Ok(BinExprOp::LogicLe),
-            Token::LogicGe => Ok(BinExprOp::LogicGe),
-            Token::LogicEq => Ok(BinExprOp::LogicEq),
-            Token::LogicNe => Ok(BinExprOp::LogicNe),
-            Token::Set => Ok(BinExprOp::Set),
-            Token::SetPlus => Ok(BinExprOp::SetPlus),
-            Token::SetMinus => Ok(BinExprOp::SetMinus),
-            Token::SetTimes => Ok(BinExprOp::SetTimes),
-            Token::SetSlash => Ok(BinExprOp::SetSlash),
-            Token::SetPercent => Ok(BinExprOp::SetPercent),
-            Token::SetBitAnd => Ok(BinExprOp::SetBitAnd),
-            Token::SetBitOr => Ok(BinExprOp::SetBitOr),
-            Token::SetBitXor => Ok(BinExprOp::SetBitXor),
-            Token::SetBitShl => Ok(BinExprOp::SetBitShl),
-            Token::SetBitShr => Ok(BinExprOp::SetBitShr),
-            Token::SetBitRotl => Ok(BinExprOp::SetBitRotl),
-            Token::SetBitRotr => Ok(BinExprOp::SetBitRotr),
-            Token::SetLogicAnd => Ok(BinExprOp::SetLogicAnd),
-            Token::SetLogicOr => Ok(BinExprOp::SetLogicOr),
-            Token::SetLogicXor => Ok(BinExprOp::SetLogicXor),
-            Token::As => Ok(BinExprOp::As),
-            Token::Dot => Ok(BinExprOp::Dot),
-            Token::Ellipsis => Ok(BinExprOp::Ellipsis),
-            Token::Scope => Ok(BinExprOp::Scope),
-            Token::Arrow => Ok(BinExprOp::Arrow),
-            Token::BlockArrow => Ok(BinExprOp::BlockArrow),
-            Token::Range => Ok(BinExprOp::Range),
-
-            Token::BitNot | Token::LogicNot | Token::Typeof => Err(()),
-            _ => Err(()),
-        }
-    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

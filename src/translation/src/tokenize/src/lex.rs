@@ -314,13 +314,7 @@ impl<'a> Lexer<'a> {
         let name = self.read_while(|b| b.is_ascii_alphanumeric() || b == b'_' || !b.is_ascii());
         assert!(!name.is_empty(), "Identifier should not be empty");
 
-        if let Some(word_like_operator) = match name {
-            b"as" => Some(Token::As),
-            b"typeof" => Some(Token::Typeof),
-            _ => None,
-        } {
-            Ok(word_like_operator)
-        } else if let Some(keyword) = match name {
+        if let Some(keyword) = match name {
             b"let" => Some(Keyword::Let),
             b"var" => Some(Keyword::Var),
             b"fn" => Some(Keyword::Fn),
@@ -383,6 +377,9 @@ impl<'a> Lexer<'a> {
             b"f64" => Some(Keyword::F64),
             b"f128" => Some(Keyword::F128),
             b"opaque" => Some(Keyword::Opaque),
+
+            b"as" => Some(Keyword::As),
+            b"typeof" => Some(Keyword::Typeof),
 
             _ => None,
         } {
@@ -877,271 +874,52 @@ impl<'a> Lexer<'a> {
 
     #[inline(always)]
     fn parse_operator_or_punctuation(&mut self) -> Result<Token, ()> {
-        /*
-         * The word-like operators are not handled here, as they are ambiguous with identifiers.
-         * They are handled in `parse_typical_identifier`.
-         */
-
         let start_pos = self.internal_getc_pos.clone();
+
         let b = self.peek_byte()?;
+        let token = match b {
+            b'\'' => Some(Token::SingleQuote),
+            b';' => Some(Token::Semi),
+            b',' => Some(Token::Comma),
+            b'.' => Some(Token::Dot),
+            b'(' => Some(Token::OpenParen),
+            b')' => Some(Token::CloseParen),
+            b'{' => Some(Token::OpenBrace),
+            b'}' => Some(Token::CloseBrace),
+            b'[' => Some(Token::OpenBracket),
+            b']' => Some(Token::CloseBracket),
+            b'@' => Some(Token::At),
+            b'~' => Some(Token::Tilde),
+            b'?' => Some(Token::Question),
+            b':' => Some(Token::Colon),
+            b'$' => Some(Token::Dollar),
+            b'=' => Some(Token::Eq),
+            b'!' => Some(Token::Bang),
+            b'<' => Some(Token::Lt),
+            b'>' => Some(Token::Gt),
+            b'-' => Some(Token::Minus),
+            b'&' => Some(Token::And),
+            b'|' => Some(Token::Or),
+            b'+' => Some(Token::Plus),
+            b'*' => Some(Token::Star),
+            b'/' => Some(Token::Slash),
+            b'^' => Some(Token::Caret),
+            b'%' => Some(Token::Percent),
+            _ => None,
+        };
 
-        match b {
-            b'(' | b')' | b'[' | b']' | b'{' | b'}' | b',' | b';' | b'@' | b'\'' => {
-                match self.advance(b) {
-                    b'(' => Ok(Token::OpenParen),
-                    b')' => Ok(Token::CloseParen),
-                    b'[' => Ok(Token::OpenBracket),
-                    b']' => Ok(Token::CloseBracket),
-                    b'{' => Ok(Token::OpenBrace),
-                    b'}' => Ok(Token::CloseBrace),
-                    b',' => Ok(Token::Comma),
-                    b';' => Ok(Token::Semi),
-                    b'@' => Ok(Token::At),
-                    b'\'' => Ok(Token::SingleQuote),
-                    _ => unreachable!(), // All cases are handled above
-                }
-            }
-
-            b':' => {
-                self.advance(b':');
-                match self.peek_byte() {
-                    Ok(b':') => {
-                        self.advance(b':');
-                        Ok(Token::Scope)
-                    }
-                    _ => Ok(Token::Colon),
-                }
-            }
-
-            b'~' => {
-                self.advance(b'~');
-                Ok(Token::BitNot)
-            }
-            b'+' => {
-                self.advance(b'+');
-                match self.peek_byte() {
-                    Ok(b'=') => {
-                        self.advance(b'=');
-                        Ok(Token::SetPlus)
-                    }
-                    _ => Ok(Token::Add),
-                }
-            }
-            b'-' => {
-                self.advance(b'-');
-                match self.peek_byte() {
-                    Ok(b'=') => {
-                        self.advance(b'=');
-                        Ok(Token::SetMinus)
-                    }
-                    Ok(b'>') => {
-                        self.advance(b'>');
-                        Ok(Token::Arrow)
-                    }
-                    _ => Ok(Token::Sub),
-                }
-            }
-            b'*' => {
-                self.advance(b'*');
-                match self.peek_byte() {
-                    Ok(b'=') => {
-                        self.advance(b'=');
-                        Ok(Token::SetTimes)
-                    }
-                    _ => Ok(Token::Mul),
-                }
-            }
-            b'/' => {
-                self.advance(b'/');
-                match self.peek_byte() {
-                    Ok(b'=') => {
-                        self.advance(b'=');
-                        Ok(Token::SetSlash)
-                    }
-                    _ => Ok(Token::Div),
-                }
-            }
-            b'%' => {
-                self.advance(b'%');
-                match self.peek_byte() {
-                    Ok(b'=') => {
-                        self.advance(b'=');
-                        Ok(Token::SetPercent)
-                    }
-                    _ => Ok(Token::Mod),
-                }
-            }
-            b'&' => {
-                self.advance(b'&');
-                match self.peek_byte() {
-                    Ok(b'&') => {
-                        self.advance(b'&');
-                        match self.peek_byte() {
-                            Ok(b'=') => {
-                                self.advance(b'=');
-                                Ok(Token::SetLogicAnd)
-                            }
-                            _ => Ok(Token::LogicAnd),
-                        }
-                    }
-                    Ok(b'=') => {
-                        self.advance(b'=');
-                        Ok(Token::SetBitAnd)
-                    }
-                    _ => Ok(Token::BitAnd),
-                }
-            }
-            b'|' => {
-                self.advance(b'|');
-                match self.peek_byte() {
-                    Ok(b'|') => {
-                        self.advance(b'|');
-                        match self.peek_byte() {
-                            Ok(b'=') => {
-                                self.advance(b'=');
-                                Ok(Token::SetLogicOr)
-                            }
-                            _ => Ok(Token::LogicOr),
-                        }
-                    }
-                    Ok(b'=') => {
-                        self.advance(b'=');
-                        Ok(Token::SetBitOr)
-                    }
-                    _ => Ok(Token::BitOr),
-                }
-            }
-            b'^' => {
-                self.advance(b'^');
-                match self.peek_byte() {
-                    Ok(b'^') => {
-                        self.advance(b'^');
-                        match self.peek_byte() {
-                            Ok(b'=') => {
-                                self.advance(b'=');
-                                Ok(Token::SetLogicXor)
-                            }
-                            _ => Ok(Token::LogicXor),
-                        }
-                    }
-                    Ok(b'=') => {
-                        self.advance(b'=');
-                        Ok(Token::SetBitXor)
-                    }
-                    _ => Ok(Token::BitXor),
-                }
-            }
-            b'<' => {
-                self.advance(b'<');
-                match self.peek_byte() {
-                    Ok(b'=') => {
-                        self.advance(b'=');
-                        Ok(Token::LogicLe)
-                    }
-                    Ok(b'<') => {
-                        self.advance(b'<');
-                        match self.peek_byte() {
-                            Ok(b'=') => {
-                                self.advance(b'=');
-                                Ok(Token::SetBitShl)
-                            }
-                            Ok(b'<') => {
-                                self.advance(b'<');
-                                match self.peek_byte() {
-                                    Ok(b'=') => {
-                                        self.advance(b'=');
-                                        Ok(Token::SetBitRotl)
-                                    }
-                                    _ => Ok(Token::BitRol),
-                                }
-                            }
-                            _ => Ok(Token::BitShl),
-                        }
-                    }
-                    _ => Ok(Token::LogicLt),
-                }
-            }
-            b'>' => {
-                self.advance(b'>');
-                match self.peek_byte() {
-                    Ok(b'=') => {
-                        self.advance(b'=');
-                        Ok(Token::LogicGe)
-                    }
-                    Ok(b'>') => {
-                        self.advance(b'>');
-                        match self.peek_byte() {
-                            Ok(b'=') => {
-                                self.advance(b'=');
-                                Ok(Token::SetBitShr)
-                            }
-                            Ok(b'>') => {
-                                self.advance(b'>');
-                                match self.peek_byte() {
-                                    Ok(b'=') => {
-                                        self.advance(b'=');
-                                        Ok(Token::SetBitRotr)
-                                    }
-                                    _ => Ok(Token::BitRor),
-                                }
-                            }
-                            _ => Ok(Token::BitShr),
-                        }
-                    }
-                    _ => Ok(Token::LogicGt),
-                }
-            }
-            b'!' => {
-                self.advance(b'!');
-                match self.peek_byte() {
-                    Ok(b'=') => {
-                        self.advance(b'=');
-                        Ok(Token::LogicNe)
-                    }
-                    _ => Ok(Token::LogicNot),
-                }
-            }
-            b'=' => {
-                self.advance(b'=');
-                match self.peek_byte() {
-                    Ok(b'=') => {
-                        self.advance(b'=');
-                        Ok(Token::LogicEq)
-                    }
-                    Ok(b'>') => {
-                        self.advance(b'>');
-                        Ok(Token::BlockArrow)
-                    }
-                    _ => Ok(Token::Set),
-                }
-            }
-            b'.' => {
-                self.advance(b'.');
-                match self.peek_byte() {
-                    Ok(b'.') => {
-                        self.advance(b'.');
-                        match self.peek_byte() {
-                            Ok(b'.') => {
-                                self.advance(b'.');
-                                Ok(Token::Ellipsis)
-                            }
-                            _ => Ok(Token::Range),
-                        }
-                    }
-                    _ => Ok(Token::Dot),
-                }
-            }
-
-            _ => {
-                error!(
-                    "[L0700]: The token `{}` is not valid. Did you mistype an operator or forget some whitespace?\n--> {}",
-                    str::from_utf8(&[b]).unwrap_or("<invalid utf-8>"),
-                    start_pos
-                );
-
-                Err(())
-            }
+        if let Some(token) = token {
+            self.advance(self.peek_byte()?);
+            return Ok(token);
         }
+
+        error!(
+            "[L0700]: The token `{}` is not valid. Did you mistype an operator or forget some whitespace?\n--> {}",
+            str::from_utf8(&[b]).unwrap_or("<invalid utf-8>"),
+            start_pos
+        );
+
+        Err(())
     }
 
     #[inline(always)]
