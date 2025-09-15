@@ -164,11 +164,9 @@ impl Parser<'_, '_> {
 
             Token::Punct(Punct::LeftBracket) => self.parse_list(),
 
-            Token::Name(name) => {
-                self.lexer.skip_tok();
-                Some(Expr::Path(Box::new(Path {
-                    path: smallvec![name],
-                })))
+            Token::Name(_) | Token::Op(Op::Scope) => {
+                let path = self.parse_path();
+                Some(Expr::Path(Box::new(path)))
             }
 
             Token::Keyword(Keyword::True) => {
@@ -255,16 +253,18 @@ impl Parser<'_, '_> {
 
     fn parse_prefix(&mut self) -> Option<Expr> {
         if let Token::Op(prefix_op) = self.lexer.peek_t() {
-            if let Some(precedence) = get_prefix_precedence(prefix_op) {
-                self.lexer.skip_tok();
+            if prefix_op != Op::Scope {
+                if let Some(precedence) = get_prefix_precedence(prefix_op) {
+                    self.lexer.skip_tok();
 
-                let operand = self.parse_expression_precedence(precedence)?;
+                    let operand = self.parse_expression_precedence(precedence)?;
 
-                return Some(Expr::UnaryExpr(Box::new(UnaryExpr {
-                    operator: UnaryExprOp::try_from(prefix_op).expect("invalid unary_op"),
-                    operand,
-                    is_postfix: false,
-                })));
+                    return Some(Expr::UnaryExpr(Box::new(UnaryExpr {
+                        operator: UnaryExprOp::try_from(prefix_op).expect("invalid unary_op"),
+                        operand,
+                        is_postfix: false,
+                    })));
+                }
             }
         }
 
@@ -377,6 +377,7 @@ impl Parser<'_, '_> {
         let type_name = match self.lexer.peek_t() {
             Token::Name(name) => Some(Type::TypeName(Box::new(Path {
                 path: smallvec![name],
+                type_arguments: Vec::new(),
             }))),
 
             Token::Keyword(Keyword::Bool) => Some(Type::Bool),
@@ -471,6 +472,13 @@ impl Parser<'_, '_> {
     }
 
     pub(crate) fn parse_path(&mut self) -> Path {
+        assert!(matches!(
+            self.lexer.peek_t(),
+            Token::Name(_) | Token::Op(Op::Scope)
+        ));
+
+        // TODO: Cleanup
+
         let mut path = SmallVec::new();
         let mut last_was_scope = false;
 
@@ -493,7 +501,8 @@ impl Parser<'_, '_> {
                             "[P????]: path: unexpected '::'\n--> {}",
                             self.lexer.current_pos()
                         );
-                        return Path { path };
+
+                        break;
                     }
 
                     if path.is_empty() {
@@ -513,7 +522,6 @@ impl Parser<'_, '_> {
                 "[P????]: path: expected at least one identifier in path\n--> {}",
                 self.lexer.current_pos()
             );
-            return Path { path };
         }
 
         if last_was_scope {
@@ -521,10 +529,14 @@ impl Parser<'_, '_> {
                 "[P????]: path: unexpected trailing '::'\n--> {}",
                 self.lexer.current_pos()
             );
-            return Path { path };
         }
 
-        Path { path }
+        let mut type_arguments = Vec::new();
+
+        Path {
+            path,
+            type_arguments,
+        }
     }
 
     fn parse_type_info(&mut self) -> Option<Expr> {
