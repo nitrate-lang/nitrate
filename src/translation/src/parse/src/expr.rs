@@ -501,8 +501,6 @@ impl Parser<'_, '_> {
     }
 
     fn parse_literal_suffix(&mut self, value: Expr) -> Expr {
-        // TODO: Cleanup
-
         let suffix = match self.lexer.peek_t() {
             Token::Keyword(Keyword::Bool) => Type::Bool,
             Token::Keyword(Keyword::U8) => Type::UInt8,
@@ -535,31 +533,38 @@ impl Parser<'_, '_> {
     }
 
     fn parse_list(&mut self) -> List {
-        // TODO: Cleanup
-
         assert!(self.lexer.peek_t() == Token::OpenBracket);
         self.lexer.skip_tok();
 
         let mut elements = Vec::new();
+        let mut already_reported_too_many_elements = false;
+
         self.lexer.skip_if(&Token::Comma);
 
-        loop {
-            if self.lexer.skip_if(&Token::CloseBracket) {
+        while !self.lexer.skip_if(&Token::CloseBracket) {
+            if self.lexer.is_eof() {
+                let bug = SyntaxBug::ListExpectedEnd(self.lexer.peek_pos());
+                self.bugs.push(&bug);
                 break;
             }
 
-            elements.push(self.parse_expression());
+            const MAX_LIST_ELEMENTS: usize = 65_536;
 
-            if !self.lexer.skip_if(&Token::Comma) {
-                if self.lexer.skip_if(&Token::CloseBracket) {
-                    break;
-                }
-                error!(
-                    "[P0???]: list: expected ',' or ']' after element expression\n--> {}",
-                    self.lexer.current_pos()
-                );
+            if !already_reported_too_many_elements && elements.len() >= MAX_LIST_ELEMENTS {
+                already_reported_too_many_elements = true;
 
-                todo!()
+                let bug = SyntaxBug::ListElementLimit(self.lexer.peek_pos());
+                self.bugs.push(&bug);
+            }
+
+            let element = self.parse_expression();
+            elements.push(element);
+
+            if !self.lexer.skip_if(&Token::Comma) && !self.lexer.next_is(&Token::CloseBracket) {
+                let bug = SyntaxBug::ListExpectedEnd(self.lexer.peek_pos());
+                self.bugs.push(&bug);
+                self.lexer.skip_while(&Token::CloseBracket);
+                break;
             }
         }
 
@@ -567,33 +572,38 @@ impl Parser<'_, '_> {
     }
 
     pub(crate) fn parse_attributes(&mut self) -> Vec<Expr> {
-        // TODO: Cleanup
-
         let mut attributes = Vec::new();
+        let mut already_reported_too_many_attributes = false;
 
         if !self.lexer.skip_if(&Token::OpenBracket) {
             return attributes;
         }
 
         self.lexer.skip_if(&Token::Comma);
-        loop {
-            if self.lexer.skip_if(&Token::CloseBracket) {
+
+        while !self.lexer.skip_if(&Token::CloseBracket) {
+            if self.lexer.is_eof() {
+                let bug = SyntaxBug::AttributesExpectedEnd(self.lexer.peek_pos());
+                self.bugs.push(&bug);
                 break;
+            }
+
+            const MAX_ATTRIBUTES: usize = 65_536;
+
+            if !already_reported_too_many_attributes && attributes.len() >= MAX_ATTRIBUTES {
+                already_reported_too_many_attributes = true;
+
+                let bug = SyntaxBug::AttributesElementLimit(self.lexer.peek_pos());
+                self.bugs.push(&bug);
             }
 
             let attrib = self.parse_expression();
             attributes.push(attrib);
 
-            if !self.lexer.skip_if(&Token::Comma) {
-                if self.lexer.skip_if(&Token::CloseBracket) {
-                    break;
-                }
-                error!(
-                    "[P0???]: expected ',' or ']' after attribute expression\n--> {}",
-                    self.lexer.current_pos()
-                );
-
-                return attributes;
+            if !self.lexer.skip_if(&Token::Comma) && !self.lexer.next_is(&Token::CloseBracket) {
+                let bug = SyntaxBug::AttributesExpectedEnd(self.lexer.peek_pos());
+                self.bugs.push(&bug);
+                break;
             }
         }
 
@@ -632,7 +642,7 @@ impl Parser<'_, '_> {
 
         while !self.lexer.skip_if(&Token::Gt) {
             if self.lexer.is_eof() {
-                let bug = SyntaxBug::ExpectedGenericArgumentEnd(self.lexer.peek_pos());
+                let bug = SyntaxBug::GenericArgumentExpectedEnd(self.lexer.peek_pos());
                 self.bugs.push(&bug);
                 break;
             }
@@ -777,8 +787,6 @@ impl Parser<'_, '_> {
         // TODO: Cleanup
 
         fn parse_for_bindings(this: &mut Parser) -> Vec<(IString, Option<Type>)> {
-            // TODO: Cleanup
-
             let mut bindings = Vec::new();
 
             if this.lexer.skip_if(&Token::OpenParen) {
@@ -958,7 +966,7 @@ impl Parser<'_, '_> {
         assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Ret));
         self.lexer.skip_tok();
 
-        let value = if self.lexer.skip_if(&Token::Semi) {
+        let value = if self.lexer.next_is(&Token::Semi) {
             None
         } else {
             Some(self.parse_expression())
@@ -1170,33 +1178,44 @@ impl Parser<'_, '_> {
         // TODO: Cleanup
 
         if !self.lexer.skip_if(&Token::OpenBrace) {
-            error!(
-                "[P????]: expr: block: expected opening brace\n--> {}",
-                self.lexer.current_pos()
-            );
-
-            return Block {
-                elements: Vec::new(),
-                ends_with_semi: false,
-            };
+            let bug = SyntaxBug::ExpectedOpenBrace(self.lexer.peek_pos());
+            self.bugs.push(&bug);
         }
 
         let mut elements = Vec::new();
+        let mut already_reported_too_many_elements = false;
         let mut ends_with_semi = false;
 
-        loop {
-            if self.lexer.skip_if(&Token::CloseBrace) {
+        while !self.lexer.skip_if(&Token::CloseBrace) {
+            if self.lexer.is_eof() {
+                let bug = SyntaxBug::BlockExpectedEnd(self.lexer.peek_pos());
+                self.bugs.push(&bug);
                 break;
             }
 
-            if self.lexer.next_if_comment().is_some() {
-                continue;
+            const MAX_BLOCK_ELEMENTS: usize = 65_536;
+
+            if !already_reported_too_many_elements && elements.len() >= MAX_BLOCK_ELEMENTS {
+                already_reported_too_many_elements = true;
+
+                let bug = SyntaxBug::BlockElementLimit(self.lexer.peek_pos());
+                self.bugs.push(&bug);
             }
 
             let expression = self.parse_expression();
             elements.push(expression);
 
-            ends_with_semi = self.lexer.skip_if(&Token::Semi);
+            if self.lexer.skip_if(&Token::Semi) {
+                ends_with_semi = true;
+            } else if self.lexer.next_is(&Token::CloseBrace) {
+                ends_with_semi = false;
+            } else {
+                let bug = SyntaxBug::BlockExpectedEnd(self.lexer.current_pos());
+                self.bugs.push(&bug);
+
+                self.lexer.skip_while(&Token::CloseBrace);
+                break;
+            }
         }
 
         Block {

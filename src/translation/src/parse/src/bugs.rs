@@ -44,7 +44,7 @@ pub(crate) enum SyntaxBug {
     ImplExpectedEnd(SourcePosition),
     ImplItemLimit(SourcePosition),
 
-    ExpectedGenericArgumentEnd(SourcePosition),
+    GenericArgumentExpectedEnd(SourcePosition),
     GenericArgumentLimit(SourcePosition),
 
     ReferenceTypeExpectedLifetimeName(SourcePosition),
@@ -54,7 +54,15 @@ pub(crate) enum SyntaxBug {
     TupleTypeExpectedEnd(SourcePosition),
     TupleTypeElementLimit(SourcePosition),
 
-   
+    ListExpectedEnd(SourcePosition),
+    ListElementLimit(SourcePosition),
+
+    AttributesExpectedEnd(SourcePosition),
+    AttributesElementLimit(SourcePosition),
+
+    BlockExpectedEnd(SourcePosition),
+    BlockElementLimit(SourcePosition),
+
     ExpectedOpenParen(SourcePosition),
     ExpectedCloseParen(SourcePosition),
     ExpectedOpenBrace(SourcePosition),
@@ -121,7 +129,7 @@ impl FormattableDiagnosticGroup for SyntaxBug {
             SyntaxBug::ImplExpectedEnd(_) => 201,
             SyntaxBug::ImplItemLimit(_) => 202,
 
-            SyntaxBug::ExpectedGenericArgumentEnd(_) => 220,
+            SyntaxBug::GenericArgumentExpectedEnd(_) => 220,
             SyntaxBug::GenericArgumentLimit(_) => 221,
 
             SyntaxBug::ReferenceTypeExpectedLifetimeName(_) => 240,
@@ -130,6 +138,15 @@ impl FormattableDiagnosticGroup for SyntaxBug {
 
             SyntaxBug::TupleTypeExpectedEnd(_) => 280,
             SyntaxBug::TupleTypeElementLimit(_) => 281,
+
+            SyntaxBug::ListExpectedEnd(_) => 300,
+            SyntaxBug::ListElementLimit(_) => 301,
+
+            SyntaxBug::AttributesExpectedEnd(_) => 320,
+            SyntaxBug::AttributesElementLimit(_) => 321,
+
+            SyntaxBug::BlockExpectedEnd(_) => 340,
+            SyntaxBug::BlockElementLimit(_) => 341,
 
             SyntaxBug::ExpectedOpenParen(_) => 1000,
             SyntaxBug::ExpectedCloseParen(_) => 1001,
@@ -325,7 +342,7 @@ impl FormattableDiagnosticGroup for SyntaxBug {
 
             /* ------------------------------------------------------------------------- */
 
-            SyntaxBug::ExpectedGenericArgumentEnd(pos) => DiagnosticInfo {
+            SyntaxBug::GenericArgumentExpectedEnd(pos) => DiagnosticInfo {
                 origin: Origin::Point(pos.to_owned()),
                 message: "expected a '>' or ','".into(),
             },
@@ -359,6 +376,42 @@ impl FormattableDiagnosticGroup for SyntaxBug {
             SyntaxBug::TupleTypeElementLimit(pos) => DiagnosticInfo {
                 origin: Origin::Point(pos.to_owned()),
                 message: "tuple element limit of 65,536 exceeded".into(),
+            },
+
+            /* ------------------------------------------------------------------------- */
+
+            SyntaxBug::ListExpectedEnd(pos) => DiagnosticInfo {
+                origin: Origin::Point(pos.to_owned()),
+                message: "expected ',' or ']'".into(),
+            },
+
+            SyntaxBug::ListElementLimit(pos) => DiagnosticInfo {
+                origin: Origin::Point(pos.to_owned()),
+                message: "list element limit of 65,536 exceeded".into(),
+            },
+
+            /* ------------------------------------------------------------------------- */
+
+            SyntaxBug::AttributesExpectedEnd(pos) => DiagnosticInfo {
+                origin: Origin::Point(pos.to_owned()),
+                message: "expected ',' or ']'".into(),
+            },
+
+            SyntaxBug::AttributesElementLimit(pos) => DiagnosticInfo {
+                origin: Origin::Point(pos.to_owned()),
+                message: "attributes element limit of 65,536 exceeded".into(),
+            },
+
+            /* ------------------------------------------------------------------------- */
+
+            SyntaxBug::BlockExpectedEnd(pos) => DiagnosticInfo {
+                origin: Origin::Point(pos.to_owned()),
+                message: "expected ';' or '}'".into(),
+            },
+
+            SyntaxBug::BlockElementLimit(pos) => DiagnosticInfo {
+                origin: Origin::Point(pos.to_owned()),
+                message: "block element limit of 65,536 exceeded".into(),
             },
 
             /* ------------------------------------------------------------------------- */

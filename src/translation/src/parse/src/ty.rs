@@ -415,7 +415,7 @@ impl Parser<'_, '_> {
             let element = self.parse_type();
             element_types.push(element);
 
-            if !self.lexer.skip_if(&Token::Comma) && !self.lexer.skip_if(&Token::CloseParen) {
+            if !self.lexer.skip_if(&Token::Comma) && !self.lexer.next_is(&Token::CloseParen) {
                 let bug = SyntaxBug::TupleTypeExpectedEnd(self.lexer.peek_pos());
                 self.bugs.push(&bug);
 
