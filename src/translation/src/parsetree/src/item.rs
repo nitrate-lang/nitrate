@@ -3,6 +3,13 @@ use crate::kind::{Block, Expr, Path, Type};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum Visibility {
+    Public,
+    Private,
+    Protected,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Package {
     pub name: String,
     pub root: Module,
@@ -10,6 +17,7 @@ pub struct Package {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Module {
+    pub visibility: Option<Visibility>,
     pub attributes: Vec<Expr>,
     pub name: String,
     pub items: Vec<Item>,
@@ -17,6 +25,7 @@ pub struct Module {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Import {
+    pub visibility: Option<Visibility>,
     pub attributes: Vec<Expr>,
     pub path: Path,
     pub alias: Option<String>,
@@ -30,6 +39,7 @@ pub struct GenericParameter {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TypeAlias {
+    pub visibility: Option<Visibility>,
     pub attributes: Vec<Expr>,
     pub name: String,
     pub type_params: Vec<GenericParameter>,
@@ -38,6 +48,7 @@ pub struct TypeAlias {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct StructField {
+    pub visibility: Option<Visibility>,
     pub attributes: Vec<Expr>,
     pub name: String,
     pub field_type: Type,
@@ -46,6 +57,7 @@ pub struct StructField {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Struct {
+    pub visibility: Option<Visibility>,
     pub attributes: Vec<Expr>,
     pub name: String,
     pub type_params: Vec<GenericParameter>,
@@ -55,6 +67,7 @@ pub struct Struct {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct EnumVariant {
+    pub visibility: Option<Visibility>,
     pub attributes: Vec<Expr>,
     pub name: String,
     pub variant_type: Option<Type>,
@@ -63,6 +76,7 @@ pub struct EnumVariant {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Enum {
+    pub visibility: Option<Visibility>,
     pub attributes: Vec<Expr>,
     pub name: String,
     pub type_params: Vec<GenericParameter>,
@@ -79,6 +93,7 @@ pub enum AssociatedItem {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Trait {
+    pub visibility: Option<Visibility>,
     pub attributes: Vec<Expr>,
     pub name: String,
     pub type_params: Vec<GenericParameter>,
@@ -87,6 +102,7 @@ pub struct Trait {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Impl {
+    pub visibility: Option<Visibility>,
     pub attributes: Vec<Expr>,
     pub type_params: Vec<GenericParameter>,
     pub trait_path: Option<Path>,
@@ -104,6 +120,7 @@ pub struct FunctionParameter {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct NamedFunction {
+    pub visibility: Option<Visibility>,
     pub attributes: Vec<Expr>,
     pub name: String,
     pub type_params: Vec<GenericParameter>,
@@ -134,6 +151,7 @@ pub enum VariableKind {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Variable {
+    pub visibility: Option<Visibility>,
     pub kind: VariableKind,
     pub attributes: Vec<Expr>,
     pub is_mutable: bool,
@@ -146,7 +164,6 @@ pub struct Variable {
 pub enum Item {
     SyntaxError,
 
-    Package(Box<Package>),
     Module(Box<Module>),
     Import(Box<Import>),
     TypeAlias(Box<TypeAlias>),
@@ -163,7 +180,6 @@ impl std::fmt::Debug for Item {
         match self {
             Item::SyntaxError => write!(f, "SyntaxError"),
 
-            Item::Package(e) => e.fmt(f),
             Item::Module(e) => e.fmt(f),
             Item::Import(e) => e.fmt(f),
             Item::TypeAlias(e) => e.fmt(f),

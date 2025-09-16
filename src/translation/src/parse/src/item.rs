@@ -4,7 +4,7 @@ use crate::bugs::SyntaxBug;
 use nitrate_parsetree::kind::{
     AssociatedItem, Block, BlockItem, Enum, EnumVariant, FunctionParameter, GenericParameter, Impl,
     Import, Item, Module, NamedFunction, Struct, StructField, Trait, TypeAlias, Variable,
-    VariableKind,
+    VariableKind, Visibility,
 };
 use nitrate_tokenize::{Keyword, Token};
 
@@ -105,6 +105,7 @@ impl Parser<'_, '_> {
         }
 
         Module {
+            visibility: None,
             attributes,
             name,
             items,
@@ -134,6 +135,7 @@ impl Parser<'_, '_> {
         }
 
         Import {
+            visibility: None,
             attributes,
             path,
             alias,
@@ -166,6 +168,7 @@ impl Parser<'_, '_> {
         }
 
         TypeAlias {
+            visibility: None,
             attributes,
             name,
             type_params,
@@ -175,6 +178,7 @@ impl Parser<'_, '_> {
 
     fn parse_enum(&mut self) -> Enum {
         fn parse_enum_variant(this: &mut Parser) -> EnumVariant {
+            let visibility = this.parse_visibility();
             let attributes = this.parse_attributes();
 
             let name = this.lexer.next_if_name().unwrap_or_else(|| {
@@ -196,6 +200,7 @@ impl Parser<'_, '_> {
             };
 
             EnumVariant {
+                visibility,
                 attributes,
                 name,
                 variant_type,
@@ -253,6 +258,7 @@ impl Parser<'_, '_> {
         }
 
         Enum {
+            visibility: None,
             attributes,
             name,
             type_params,
@@ -262,6 +268,7 @@ impl Parser<'_, '_> {
 
     fn parse_struct(&mut self) -> Struct {
         fn parse_struct_field(this: &mut Parser) -> StructField {
+            let visibility = this.parse_visibility();
             let attributes = this.parse_attributes();
 
             let name = this.lexer.next_if_name().unwrap_or_else(|| {
@@ -284,6 +291,7 @@ impl Parser<'_, '_> {
             };
 
             StructField {
+                visibility,
                 attributes,
                 name,
                 field_type,
@@ -340,6 +348,7 @@ impl Parser<'_, '_> {
         }
 
         Struct {
+            visibility: None,
             attributes,
             name,
             type_params,
@@ -349,19 +358,24 @@ impl Parser<'_, '_> {
     }
 
     fn parse_associated_item(&mut self) -> AssociatedItem {
+        let visibility = self.parse_visibility();
+
         match self.lexer.peek_t() {
             Token::Keyword(Keyword::Fn) => {
-                let func = self.parse_named_function();
+                let mut func = self.parse_named_function();
+                func.visibility = visibility;
                 AssociatedItem::Method(func)
             }
 
             Token::Keyword(Keyword::Const) => {
-                let const_var = self.parse_variable();
+                let mut const_var = self.parse_variable();
+                const_var.visibility = visibility;
                 AssociatedItem::ConstantItem(const_var)
             }
 
             Token::Keyword(Keyword::Type) => {
-                let type_alias = self.parse_type_alias();
+                let mut type_alias = self.parse_type_alias();
+                type_alias.visibility = visibility;
                 AssociatedItem::TypeAlias(type_alias)
             }
 
@@ -419,6 +433,7 @@ impl Parser<'_, '_> {
         }
 
         Trait {
+            visibility: None,
             attributes,
             name,
             type_params,
@@ -478,6 +493,7 @@ impl Parser<'_, '_> {
         }
 
         Impl {
+            visibility: None,
             attributes,
             type_params,
             trait_path,
@@ -612,6 +628,7 @@ impl Parser<'_, '_> {
         };
 
         NamedFunction {
+            visibility: None,
             attributes,
             name,
             type_params,
@@ -661,6 +678,7 @@ impl Parser<'_, '_> {
         }
 
         Variable {
+            visibility: None,
             kind,
             attributes,
             is_mutable,
@@ -670,47 +688,69 @@ impl Parser<'_, '_> {
         }
     }
 
+    fn parse_visibility(&mut self) -> Option<Visibility> {
+        if self.lexer.skip_if(&Token::Keyword(Keyword::Pub)) {
+            Some(Visibility::Public)
+        } else if self.lexer.skip_if(&Token::Keyword(Keyword::Sec)) {
+            Some(Visibility::Private)
+        } else if self.lexer.skip_if(&Token::Keyword(Keyword::Pro)) {
+            Some(Visibility::Protected)
+        } else {
+            None
+        }
+    }
+
     pub(crate) fn parse_item(&mut self) -> Item {
+        let visibility = self.parse_visibility();
+
         let item_pos_begin = self.lexer.peek_pos();
 
         match self.lexer.peek_t() {
             Token::Keyword(Keyword::Mod) => {
-                let module = self.parse_module();
+                let mut module = self.parse_module();
+                module.visibility = visibility;
                 Item::Module(Box::new(module))
             }
 
             Token::Keyword(Keyword::Import) => {
-                let import = self.parse_import();
+                let mut import = self.parse_import();
+                import.visibility = visibility;
                 Item::Import(Box::new(import))
             }
 
             Token::Keyword(Keyword::Type) => {
-                let type_alias = self.parse_type_alias();
+                let mut type_alias = self.parse_type_alias();
+                type_alias.visibility = visibility;
                 Item::TypeAlias(Box::new(type_alias))
             }
 
             Token::Keyword(Keyword::Struct) => {
-                let struct_def = self.parse_struct();
+                let mut struct_def = self.parse_struct();
+                struct_def.visibility = visibility;
                 Item::Struct(Box::new(struct_def))
             }
 
             Token::Keyword(Keyword::Enum) => {
-                let enum_def = self.parse_enum();
+                let mut enum_def = self.parse_enum();
+                enum_def.visibility = visibility;
                 Item::Enum(Box::new(enum_def))
             }
 
             Token::Keyword(Keyword::Trait) => {
-                let trait_def = self.parse_trait();
+                let mut trait_def = self.parse_trait();
+                trait_def.visibility = visibility;
                 Item::Trait(Box::new(trait_def))
             }
 
             Token::Keyword(Keyword::Impl) => {
-                let impl_def = self.parse_implementation();
+                let mut impl_def = self.parse_implementation();
+                impl_def.visibility = visibility;
                 Item::Impl(Box::new(impl_def))
             }
 
             Token::Keyword(Keyword::Fn) => {
-                let func = self.parse_named_function();
+                let mut func = self.parse_named_function();
+                func.visibility = visibility;
                 Item::NamedFunction(Box::new(func))
             }
 
@@ -718,7 +758,8 @@ impl Parser<'_, '_> {
             | Token::Keyword(Keyword::Const)
             | Token::Keyword(Keyword::Let)
             | Token::Keyword(Keyword::Var) => {
-                let var = self.parse_variable();
+                let mut var = self.parse_variable();
+                var.visibility = visibility;
                 Item::Variable(Box::new(var))
             }
 
