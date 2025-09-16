@@ -938,7 +938,6 @@ name = "nitrate_tokenize"
 version = "0.1.0"
 dependencies = [
  "enum-iterator",
- "interned-string",
  "log",
  "nitrate_diagnosis",
  "ordered-float",

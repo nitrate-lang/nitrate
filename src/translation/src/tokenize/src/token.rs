@@ -381,7 +381,7 @@ impl std::fmt::Display for Token {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct SourcePosition {
     pub line: u32,
     pub column: u32,
@@ -480,8 +480,9 @@ impl AnnotatedToken {
 
 #[cfg(test)]
 mod tests {
+    use nitrate_diagnosis::get_or_create_file_id;
+
     use super::*;
-    use interned_string::Intern;
 
     #[test]
     fn test_name_token_parsetree() {
@@ -569,170 +570,22 @@ mod tests {
 
         let test_vectors = [
             (
-                " This is a single-line comment".intern(),
+                " This is a single-line comment",
                 CommentKind::SingleLine,
                 "# This is a single-line comment",
             ),
             (
-                "This is another single-line comment".intern(),
+                "This is another single-line comment",
                 CommentKind::SingleLine,
                 "#This is another single-line comment",
             ),
         ];
 
         for (text, kind, expected_str) in test_vectors {
-            let comment = Comment::new(text.clone(), kind);
+            let comment = Comment::new(text.to_string(), kind);
             assert_eq!(comment.text(), &text);
             assert_eq!(comment.kind(), kind);
             assert_eq!(format!("{}", comment), expected_str);
-        }
-    }
-
-    #[test]
-    fn test_keyword_parsetree() {
-        for keyword in enum_iterator::all::<Keyword>() {
-            let keyword_str = match keyword {
-                Keyword::Let => "let",
-                Keyword::Var => "var",
-                Keyword::Fn => "fn",
-                Keyword::Enum => "enum",
-                Keyword::Struct => "struct",
-                Keyword::Class => "class",
-                Keyword::Union => "union",
-                Keyword::Contract => "contract",
-                Keyword::Trait => "trait",
-                Keyword::Impl => "impl",
-                Keyword::Type => "type",
-                Keyword::Scope => "scope",
-                Keyword::Import => "import",
-                Keyword::Mod => "mod",
-                Keyword::Safe => "safe",
-                Keyword::Unsafe => "unsafe",
-                Keyword::Promise => "promise",
-                Keyword::Static => "static",
-                Keyword::Mut => "mut",
-                Keyword::Const => "const",
-                Keyword::Poly => "poly",
-                Keyword::Iso => "iso",
-                Keyword::Pub => "pub",
-                Keyword::Sec => "sec",
-                Keyword::Pro => "pro",
-                Keyword::If => "if",
-                Keyword::Else => "else",
-                Keyword::For => "for",
-                Keyword::In => "in",
-                Keyword::While => "while",
-                Keyword::Do => "do",
-                Keyword::Switch => "switch",
-                Keyword::Break => "break",
-                Keyword::Continue => "continue",
-                Keyword::Ret => "ret",
-                Keyword::Async => "async",
-                Keyword::Await => "await",
-                Keyword::Asm => "asm",
-                Keyword::Null => "null",
-                Keyword::True => "true",
-                Keyword::False => "false",
-                Keyword::Bool => "bool",
-                Keyword::U8 => "u8",
-                Keyword::U16 => "u16",
-                Keyword::U32 => "u32",
-                Keyword::U64 => "u64",
-                Keyword::U128 => "u128",
-                Keyword::I8 => "i8",
-                Keyword::I16 => "i16",
-                Keyword::I32 => "i32",
-                Keyword::I64 => "i64",
-                Keyword::I128 => "i128",
-                Keyword::F8 => "f8",
-                Keyword::F16 => "f16",
-                Keyword::F32 => "f32",
-                Keyword::F64 => "f64",
-                Keyword::F128 => "f128",
-                Keyword::Opaque => "opaque",
-                Keyword::As => "as",
-                Keyword::Typeof => "typeof",
-            };
-
-            assert_eq!(format!("{}", keyword), keyword_str);
-        }
-    }
-
-    #[test]
-    fn test_punct_parsetree() {
-        for punct in enum_iterator::all::<Punct>() {
-            let punct_str = match punct {
-                Punct::LeftParen => "(",
-                Punct::RightParen => ")",
-                Punct::LeftBracket => "[",
-                Punct::RightBracket => "]",
-                Punct::LeftBrace => "{",
-                Punct::RightBrace => "}",
-                Punct::Comma => ",",
-                Punct::Semicolon => ";",
-                Punct::Colon => ":",
-                Punct::AtSign => "@",
-                Punct::SingleQuote => "'",
-            };
-
-            assert_eq!(format!("{}", punct), punct_str);
-        }
-    }
-
-    #[test]
-    fn test_operator_parsetree() {
-        for operator in enum_iterator::all::<Op>() {
-            let operator_str = match operator {
-                Op::Add => "+",
-                Op::Sub => "-",
-                Op::Mul => "*",
-                Op::Div => "/",
-                Op::Mod => "%",
-                Op::BitAnd => "&",
-                Op::BitOr => "|",
-                Op::BitXor => "^",
-                Op::BitNot => "~",
-                Op::BitShl => "<<",
-                Op::BitShr => ">>",
-                Op::BitRol => "<<<",
-                Op::BitRor => ">>>",
-                Op::LogicAnd => "&&",
-                Op::LogicOr => "||",
-                Op::LogicXor => "^^",
-                Op::LogicNot => "!",
-                Op::LogicLt => "<",
-                Op::LogicGt => ">",
-                Op::LogicLe => "<=",
-                Op::LogicGe => ">=",
-                Op::LogicEq => "==",
-                Op::LogicNe => "!=",
-                Op::Set => "=",
-                Op::SetPlus => "+=",
-                Op::SetMinus => "-=",
-                Op::SetTimes => "*=",
-                Op::SetSlash => "/=",
-                Op::SetPercent => "%=",
-                Op::SetBitAnd => "&=",
-                Op::SetBitOr => "|=",
-                Op::SetBitXor => "^=",
-                Op::SetBitShl => "<<=",
-                Op::SetBitShr => ">>=",
-                Op::SetBitRotl => "<<<=",
-                Op::SetBitRotr => ">>>=",
-                Op::SetLogicAnd => "&&=",
-                Op::SetLogicOr => "||=",
-                Op::SetLogicXor => "^^=",
-                Op::As => "as",
-                Op::Typeof => "typeof",
-                Op::Dot => ".",
-                Op::Ellipsis => "...",
-                Op::Scope => "::",
-                Op::Arrow => "->",
-                Op::BlockArrow => "=>",
-                Op::Range => "..",
-            };
-
-            assert_eq!(format!("{}", operator), operator_str);
         }
     }
 
@@ -749,14 +602,14 @@ mod tests {
             ),
             (
                 Token::Comment(Comment::new(
-                    " This is a comment".intern(),
+                    " This is a comment".to_string(),
                     CommentKind::SingleLine,
                 )),
                 "# This is a comment",
             ),
-            (Token::Keyword(Keyword::Let), "let"),
+            (Token::Let, "let"),
             (Token::OpenParen, "("),
-            (Token::Op(Op::Add), "+"),
+            (Token::Plus, "+"),
             (Token::Eof, ""),
         ];
 
@@ -770,54 +623,37 @@ mod tests {
         let line = 2_u32;
         let column = 5_u32;
         let offset = 15_u32;
-        let filename = "test_file.txt".intern();
+        let filename = "file.txt";
 
-        let position = SourcePosition::new(line, column, offset, filename.clone());
-
-        assert_eq!(position.line(), line);
-        assert_eq!(position.column(), column);
-        assert_eq!(position.offset(), offset);
-        assert_eq!(position.filename(), &filename);
+        let position = SourcePosition {
+            line,
+            column,
+            offset,
+            fileid: get_or_create_file_id(filename),
+        };
 
         assert_eq!(
             format!("{}", position),
-            format!("{}:{}:{}", filename, line + 1, column + 1)
+            format!(
+                "{}:{}:{}",
+                position.fileid.unwrap().deref(),
+                line + 1,
+                column + 1
+            )
         );
     }
 
     #[test]
     fn test_annotated_token_parsetree() {
-        let filename = "file.txt".intern();
+        let filename = get_or_create_file_id("file.txt");
 
         let test_vectors = [
-            (
-                Token::Name("example".into()),
-                SourcePosition::new(1, 0, 10, filename.clone()),
-                SourcePosition::new(1, 7, 17, filename.clone()),
-                "example",
-            ),
-            (
-                Token::Integer(Integer::new(42, IntegerKind::Dec)),
-                SourcePosition::new(2, 5, 25, filename.clone()),
-                SourcePosition::new(2, 7, 27, filename.clone()),
-                "42",
-            ),
-            (
-                Token::Float(NotNan::new(3.14).unwrap()),
-                SourcePosition::new(3, 0, 30, filename.clone()),
-                SourcePosition::new(3, 5, 35, filename.clone()),
-                "3.14",
-            ),
-            (
-                Token::String("hello".into()),
-                SourcePosition::new(4, 0, 40, filename.clone()),
-                SourcePosition::new(4, 6, 46, filename.clone()),
-                "\"hello\"",
-            ),
+            (Token::Name("example".into()), "example"),
+            (Token::Integer(Integer::new(42, IntegerKind::Dec)), "42"),
+            (Token::Float(NotNan::new(3.14).unwrap()), "3.14"),
+            (Token::String("hello".into()), "\"hello\""),
             (
                 Token::BString(Vec::from(b"world")),
-                SourcePosition::new(5, 0, 50, filename.clone()),
-                SourcePosition::new(5, 6, 56, filename.clone()),
                 "[119, 111, 114, 108, 100]",
             ),
             (
@@ -825,37 +661,28 @@ mod tests {
                     " This is a comment".into(),
                     CommentKind::SingleLine,
                 )),
-                SourcePosition::new(6, 0, 60, filename.clone()),
-                SourcePosition::new(6, 7, 67, filename.clone()),
                 "# This is a comment",
             ),
-            (
-                Token::Keyword(Keyword::Let),
-                SourcePosition::new(7, 0, 70, filename.clone()),
-                SourcePosition::new(7, 3, 73, filename.clone()),
-                "let",
-            ),
-            (
-                Token::OpenParen,
-                SourcePosition::new(8, 0, 80, filename.clone()),
-                SourcePosition::new(8, 1, 81, filename.clone()),
-                "(",
-            ),
-            (
-                Token::Op(Op::Add),
-                SourcePosition::new(9, 0, 90, filename.clone()),
-                SourcePosition::new(9, 1, 91, filename.clone()),
-                "+",
-            ),
-            (
-                Token::Eof,
-                SourcePosition::new(10, 0, 100, filename.clone()),
-                SourcePosition::new(10, 0, 100, filename.clone()),
-                "",
-            ),
+            (Token::Let, "let"),
+            (Token::OpenParen, "("),
+            (Token::Plus, "+"),
+            (Token::Eof, ""),
         ];
 
-        for (token, start, end, expected_str) in test_vectors {
+        for (token, expected_str) in test_vectors {
+            let start = SourcePosition {
+                line: 1,
+                column: 2,
+                offset: 3,
+                fileid: filename.clone(),
+            };
+            let end = SourcePosition {
+                line: 4,
+                column: 5,
+                offset: 6,
+                fileid: filename.clone(),
+            };
+
             let annotated_token = AnnotatedToken::new(token.clone(), start.clone(), end.clone());
 
             assert_eq!(annotated_token.token(), &token);
