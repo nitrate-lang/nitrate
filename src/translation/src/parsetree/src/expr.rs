@@ -1,3 +1,4 @@
+use crate::item::Variable;
 use crate::kind::{FunctionParameter, Type};
 use crate::ty::GenericArgument;
 
@@ -148,8 +149,14 @@ pub struct Cast {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum BlockItem {
+    Variable(Variable),
+    Expr(Expr),
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Block {
-    pub elements: Vec<Expr>,
+    pub elements: Vec<BlockItem>,
     pub ends_with_semi: bool,
 }
 
@@ -159,22 +166,6 @@ pub struct Closure {
     pub parameters: Vec<FunctionParameter>,
     pub return_type: Option<Type>,
     pub definition: Block,
-}
-
-#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
-pub enum VariableKind {
-    Let,
-    Var,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Variable {
-    pub kind: VariableKind,
-    pub attributes: Vec<Expr>,
-    pub is_mutable: bool,
-    pub name: String,
-    pub var_type: Option<Type>,
-    pub initializer: Option<Expr>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

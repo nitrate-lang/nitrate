@@ -31,9 +31,7 @@ pub(crate) enum SyntaxBug {
     FunctionParameterMissingName(SourcePosition),
     FunctionParametersExpectedEnd(SourcePosition),
 
-    StaticVariableMissingName(SourcePosition),
-
-    ConstVariableMissingName(SourcePosition),
+    VariableMissingName(SourcePosition),
 
     TraitMissingName(SourcePosition),
     TraitItemLimit(SourcePosition),
@@ -139,9 +137,7 @@ impl FormattableDiagnosticGroup for SyntaxBug {
             SyntaxBug::FunctionParameterMissingName(_) => 123,
             SyntaxBug::FunctionParametersExpectedEnd(_) => 124,
 
-            SyntaxBug::StaticVariableMissingName(_) => 140,
-
-            SyntaxBug::ConstVariableMissingName(_) => 160,
+            SyntaxBug::VariableMissingName(_) => 140,
 
             SyntaxBug::TraitMissingName(_) => 180,
             SyntaxBug::TraitItemLimit(_) => 181,
@@ -330,16 +326,9 @@ impl FormattableDiagnosticGroup for SyntaxBug {
 
             /* ------------------------------------------------------------------------- */
 
-            SyntaxBug::StaticVariableMissingName(pos) => DiagnosticInfo {
+            SyntaxBug::VariableMissingName(pos) => DiagnosticInfo {
                 origin: Origin::Point(pos.to_owned()),
-                message: "static variable name is missing".into(),
-            },
-
-            /* ------------------------------------------------------------------------- */
-
-            SyntaxBug::ConstVariableMissingName(pos) => DiagnosticInfo {
-                origin: Origin::Point(pos.to_owned()),
-                message: "const variable name is missing".into(),
+                message: "variable name is missing".into(),
             },
 
             /* ------------------------------------------------------------------------- */

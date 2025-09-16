@@ -110,7 +110,7 @@ impl Codegen {
     }
 
     fn create_global_variable(
-        variable: &kind::StaticVariable,
+        variable: &kind::Variable,
         module: &mut ObjectModule,
     ) -> Result<(), CodegenError> {
         let name = &variable.name;
@@ -174,7 +174,7 @@ impl Codegen {
                     Self::create_global_function(function, &mut obj_module)?;
                 }
 
-                kind::Item::StaticVariable(global_variable) => {
+                kind::Item::Variable(global_variable) => {
                     Self::create_global_variable(global_variable, &mut obj_module)?;
                 }
 

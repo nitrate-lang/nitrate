@@ -2,9 +2,9 @@ use crate::bugs::SyntaxBug;
 
 use super::parse::Parser;
 use nitrate_parsetree::kind::{
-    Await, BinExpr, BinExprOp, Block, Break, Call, CallArgument, Cast, Closure, Continue,
-    DoWhileLoop, Expr, ForEach, FunctionParameter, GenericArgument, If, IndexAccess, Integer, List,
-    Path, Return, Type, UnaryExpr, UnaryExprOp, WhileLoop,
+    Await, BinExpr, BinExprOp, Block, BlockItem, Break, Call, CallArgument, Cast, Closure,
+    Continue, DoWhileLoop, Expr, ForEach, FunctionParameter, GenericArgument, If, IndexAccess,
+    Integer, List, Path, Return, Type, UnaryExpr, UnaryExprOp, WhileLoop,
 };
 use nitrate_tokenize::{Keyword, Token};
 use smallvec::{SmallVec, smallvec};
@@ -732,7 +732,7 @@ impl Parser<'_, '_> {
                 let else_branch = Expr::If(Box::new(self.parse_if()));
 
                 Some(Block {
-                    elements: vec![else_branch],
+                    elements: vec![BlockItem::Expr(else_branch)],
                     ends_with_semi: false,
                 })
             } else {
@@ -1035,7 +1035,7 @@ impl Parser<'_, '_> {
             let single = self.parse_expression();
 
             Block {
-                elements: vec![single],
+                elements: vec![BlockItem::Expr(single)],
                 ends_with_semi: false,
             }
         } else {
@@ -1134,7 +1134,7 @@ impl Parser<'_, '_> {
             }
 
             let expression = self.parse_expression();
-            elements.push(expression);
+            elements.push(BlockItem::Expr(expression));
 
             if self.lexer.skip_if(&Token::Semi) {
                 ends_with_semi = true;

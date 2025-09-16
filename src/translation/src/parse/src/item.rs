@@ -2,9 +2,9 @@ use super::parse::Parser;
 use crate::bugs::SyntaxBug;
 
 use nitrate_parsetree::kind::{
-    AssociatedItem, Block, ConstVariable, Enum, EnumVariant, FunctionParameter, GenericParameter,
-    Impl, Import, Item, Module, NamedFunction, StaticVariable, Struct, StructField, Trait,
-    TypeAlias,
+    AssociatedItem, Block, BlockItem, Enum, EnumVariant, FunctionParameter, GenericParameter, Impl,
+    Import, Item, Module, NamedFunction, Struct, StructField, Trait, TypeAlias, Variable,
+    VariableKind,
 };
 use nitrate_tokenize::{Keyword, Token};
 
@@ -356,7 +356,7 @@ impl Parser<'_, '_> {
             }
 
             Token::Keyword(Keyword::Const) => {
-                let const_var = self.parse_const_variable();
+                let const_var = self.parse_variable();
                 AssociatedItem::ConstantItem(const_var)
             }
 
@@ -600,7 +600,7 @@ impl Parser<'_, '_> {
             }
 
             Some(Block {
-                elements: vec![single],
+                elements: vec![BlockItem::Expr(single)],
                 ends_with_semi: false,
             })
         } else if self.lexer.skip_if(&Token::Semi) {
@@ -622,9 +622,14 @@ impl Parser<'_, '_> {
         }
     }
 
-    fn parse_static_variable(&mut self) -> StaticVariable {
-        assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Static));
-        self.lexer.skip_tok();
+    fn parse_variable(&mut self) -> Variable {
+        let kind = match self.lexer.next_t() {
+            Token::Keyword(Keyword::Static) => VariableKind::Static,
+            Token::Keyword(Keyword::Const) => VariableKind::Const,
+            Token::Keyword(Keyword::Let) => VariableKind::Let,
+            Token::Keyword(Keyword::Var) => VariableKind::Var,
+            _ => unreachable!(),
+        };
 
         let attributes = self.parse_attributes();
 
@@ -634,7 +639,7 @@ impl Parser<'_, '_> {
         }
 
         let name = self.lexer.next_if_name().unwrap_or_else(|| {
-            let bug = SyntaxBug::StaticVariableMissingName(self.lexer.peek_pos());
+            let bug = SyntaxBug::VariableMissingName(self.lexer.peek_pos());
             self.bugs.push(&bug);
             "".into()
         });
@@ -656,46 +661,10 @@ impl Parser<'_, '_> {
             self.bugs.push(&bug);
         }
 
-        StaticVariable {
+        Variable {
+            kind,
             attributes,
             is_mutable,
-            name,
-            var_type,
-            initializer,
-        }
-    }
-
-    fn parse_const_variable(&mut self) -> ConstVariable {
-        assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Const));
-        self.lexer.skip_tok();
-
-        let attributes = self.parse_attributes();
-
-        let name = self.lexer.next_if_name().unwrap_or_else(|| {
-            let bug = SyntaxBug::ConstVariableMissingName(self.lexer.peek_pos());
-            self.bugs.push(&bug);
-            "".into()
-        });
-
-        let var_type = if self.lexer.skip_if(&Token::Colon) {
-            Some(self.parse_type())
-        } else {
-            None
-        };
-
-        let initializer = if self.lexer.skip_if(&Token::Eq) {
-            Some(self.parse_expression())
-        } else {
-            None
-        };
-
-        if !self.lexer.skip_if(&Token::Semi) {
-            let bug = SyntaxBug::ExpectedSemicolon(self.lexer.peek_pos());
-            self.bugs.push(&bug);
-        }
-
-        ConstVariable {
-            attributes,
             name,
             var_type,
             initializer,
@@ -746,14 +715,12 @@ impl Parser<'_, '_> {
                 Item::NamedFunction(Box::new(func))
             }
 
-            Token::Keyword(Keyword::Static) => {
-                let static_var = self.parse_static_variable();
-                Item::StaticVariable(Box::new(static_var))
-            }
-
-            Token::Keyword(Keyword::Const) => {
-                let const_var = self.parse_const_variable();
-                Item::ConstVariable(Box::new(const_var))
+            Token::Keyword(Keyword::Static)
+            | Token::Keyword(Keyword::Const)
+            | Token::Keyword(Keyword::Let)
+            | Token::Keyword(Keyword::Var) => {
+                let var = self.parse_variable();
+                Item::Variable(Box::new(var))
             }
 
             _ => {

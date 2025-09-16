@@ -73,7 +73,7 @@ pub struct Enum {
 pub enum AssociatedItem {
     SyntaxError,
     TypeAlias(TypeAlias),
-    ConstantItem(ConstVariable),
+    ConstantItem(Variable),
     Method(NamedFunction),
 }
 
@@ -124,18 +124,19 @@ impl NamedFunction {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct StaticVariable {
-    pub attributes: Vec<Expr>,
-    pub is_mutable: bool,
-    pub name: String,
-    pub var_type: Option<Type>,
-    pub initializer: Option<Expr>,
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+pub enum VariableKind {
+    Static,
+    Const,
+    Let,
+    Var,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ConstVariable {
+pub struct Variable {
+    pub kind: VariableKind,
     pub attributes: Vec<Expr>,
+    pub is_mutable: bool,
     pub name: String,
     pub var_type: Option<Type>,
     pub initializer: Option<Expr>,
@@ -154,8 +155,7 @@ pub enum Item {
     Trait(Box<Trait>),
     Impl(Box<Impl>),
     NamedFunction(Box<NamedFunction>),
-    StaticVariable(Box<StaticVariable>),
-    ConstVariable(Box<ConstVariable>),
+    Variable(Box<Variable>),
 }
 
 impl std::fmt::Debug for Item {
@@ -172,8 +172,7 @@ impl std::fmt::Debug for Item {
             Item::Trait(e) => e.fmt(f),
             Item::Impl(e) => e.fmt(f),
             Item::NamedFunction(e) => e.fmt(f),
-            Item::StaticVariable(e) => e.fmt(f),
-            Item::ConstVariable(e) => e.fmt(f),
+            Item::Variable(e) => e.fmt(f),
         }
     }
 }
