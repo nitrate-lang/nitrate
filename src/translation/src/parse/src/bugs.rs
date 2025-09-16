@@ -70,9 +70,11 @@ pub(crate) enum SyntaxBug {
     ExpectedOpenParen(SourcePosition),
     ExpectedCloseParen(SourcePosition),
     ExpectedOpenBrace(SourcePosition),
+    #[allow(dead_code)]
     ExpectedCloseBrace(SourcePosition),
     ExpectedOpenBracket(SourcePosition),
     ExpectedCloseBracket(SourcePosition),
+    #[allow(dead_code)]
     ExpectedOpenAngle(SourcePosition),
     ExpectedCloseAngle(SourcePosition),
     ExpectedSemicolon(SourcePosition),
