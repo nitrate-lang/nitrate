@@ -7,7 +7,6 @@ use nitrate_parsetree::kind::{
     Integer, List, Path, Return, Safety, Type, UnaryExpr, UnaryExprOp, WhileLoop,
 };
 use nitrate_tokenize::Token;
-use smallvec::{SmallVec, smallvec};
 
 type Precedence = u32;
 
@@ -505,7 +504,7 @@ impl Parser<'_, '_> {
             Token::F128 => Type::Float128,
 
             Token::Name(name) => Type::TypeName(Box::new(Path {
-                path: smallvec![name],
+                path: vec![name],
                 type_arguments: Vec::new(),
             })),
 
@@ -656,7 +655,7 @@ impl Parser<'_, '_> {
     pub(crate) fn parse_path(&mut self) -> Path {
         assert!(matches!(self.lexer.peek_t(), Token::Name(_) | Token::Colon));
 
-        let mut path = SmallVec::new();
+        let mut path = Vec::new();
         let mut last_was_scope = false;
 
         loop {

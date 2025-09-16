@@ -9,7 +9,6 @@ use nitrate_tokenize::Token;
 
 #[allow(unused_imports)]
 use nitrate_tokenize::Lexer;
-use smallvec::SmallVec;
 
 #[derive(Default)]
 struct RefinementOptions {
@@ -353,7 +352,7 @@ impl Parser<'_, '_> {
     pub(crate) fn parse_type_path(&mut self) -> Path {
         assert!(matches!(self.lexer.peek_t(), Token::Name(_) | Token::Colon));
 
-        let mut path = SmallVec::new();
+        let mut path = Vec::new();
         let mut last_was_scope = false;
 
         loop {

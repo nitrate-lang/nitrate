@@ -17,7 +17,6 @@ nitrate_diagnosis = { path = "../../../diagnosis" }
 
 hashbrown = "0.16.0"
 log = "0.4.27"
-smallvec = "1.15.1"
 ordered-float = "5.0.0"
 spdx = "0.12.0"
 interned-string = { version = "0.3.0", features = ["serde"] }

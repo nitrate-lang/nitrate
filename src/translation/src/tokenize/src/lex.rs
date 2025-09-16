@@ -3,7 +3,6 @@ use crate::SourcePosition;
 use log::error;
 use nitrate_diagnosis::FileId;
 use ordered_float::NotNan;
-use smallvec::SmallVec;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum LexerError {
@@ -764,7 +763,7 @@ impl<'a> Lexer<'a> {
 
         let start_offset = self.internal_getc_pos.offset;
         let mut end_offset = start_offset;
-        let mut storage = SmallVec::<[u8; 64]>::new();
+        let mut storage = Vec::new();
 
         loop {
             match self.peek_byte() {

@@ -483,18 +483,18 @@ checksum = "c34f04666d835ff5d62e058c3995147c06f42fe86ff053337632bca83e42702d"
 
 [[package]]
 name = "enum-iterator"
-version = "2.1.0"
+version = "2.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c280b9e6b3ae19e152d8e31cf47f18389781e119d4013a2a2bb0180e5facc635"
+checksum = "a4549325971814bda7a44061bf3fe7e487d447cba01e4220a4b454d630d7a016"
 dependencies = [
  "enum-iterator-derive",
 ]
 
 [[package]]
 name = "enum-iterator-derive"
-version = "1.4.0"
+version = "1.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a1ab991c1362ac86c61ab6f556cff143daa22e5a15e4e189df818b2fd19fe65b"
+checksum = "685adfa4d6f3d765a26bc5dbc936577de9abf756c1feeb3089b01dd395034842"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -908,7 +908,6 @@ dependencies = [
  "nitrate_parsetree",
  "nitrate_tokenize",
  "ordered-float",
- "smallvec 1.15.1",
  "spdx",
 ]
 
@@ -925,7 +924,6 @@ dependencies = [
  "ordered-float",
  "serde",
  "serde_json",
- "smallvec 1.15.1",
  "spdx",
 ]
 
@@ -942,7 +940,6 @@ dependencies = [
  "nitrate_diagnosis",
  "ordered-float",
  "serde",
- "smallvec 1.15.1",
 ]
 
 [[package]]
@@ -1391,9 +1388,6 @@ name = "smallvec"
 version = "1.15.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "67b1b7a3b5fe4f1376887184045fcf45c69e92af734b7aaddc05fb777b6fbd03"
-dependencies = [
- "serde",
-]
 
 [[package]]
 name = "spdx"

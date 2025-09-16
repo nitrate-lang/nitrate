@@ -5,7 +5,6 @@ use crate::ty::GenericArgument;
 use nitrate_tokenize::IntegerKind;
 use ordered_float::NotNan;
 use serde::{Deserialize, Serialize};
-use smallvec::SmallVec;
 use std::collections::HashMap;
 use std::ops::Deref;
 
@@ -177,7 +176,7 @@ pub struct Closure {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Path {
-    pub path: SmallVec<[String; 3]>,
+    pub path: Vec<String>,
     pub type_arguments: Vec<GenericArgument>,
 }
 
@@ -189,12 +188,12 @@ pub struct IndexAccess {
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct QualifiedScope {
-    scopes: SmallVec<[String; 3]>,
+    scopes: Vec<String>,
 }
 
 impl QualifiedScope {
     #[must_use]
-    pub fn new(scopes: SmallVec<[String; 3]>) -> Self {
+    pub fn new(scopes: Vec<String>) -> Self {
         Self { scopes }
     }
 
@@ -204,7 +203,7 @@ impl QualifiedScope {
             .split("::")
             .filter(|s| !s.is_empty())
             .map(String::from)
-            .collect::<SmallVec<[String; 3]>>();
+            .collect::<Vec<String>>();
 
         Self { scopes: parts }
     }
