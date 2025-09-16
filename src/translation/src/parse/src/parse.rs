@@ -16,10 +16,6 @@ impl<'a, 'bugs> Parser<'a, 'bugs> {
         let mut items = Vec::new();
 
         while !self.lexer.is_eof() {
-            if self.lexer.next_if_comment().is_some() {
-                continue;
-            }
-
             let item = self.parse_item();
             items.push(item);
         }
