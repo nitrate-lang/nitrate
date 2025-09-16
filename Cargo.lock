@@ -859,7 +859,9 @@ dependencies = [
 name = "nitrate_diagnosis"
 version = "0.1.0"
 dependencies = [
+ "bimap",
  "interned-string",
+ "once_cell",
  "serde",
  "slog",
 ]
@@ -935,7 +937,6 @@ version = "0.1.0"
 name = "nitrate_tokenize"
 version = "0.1.0"
 dependencies = [
- "bimap",
  "enum-iterator",
  "interned-string",
  "log",

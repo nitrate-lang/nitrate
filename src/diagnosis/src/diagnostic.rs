@@ -1,16 +1,26 @@
+use std::ops::Deref;
+
 use serde::{Deserialize, Serialize};
+
+use crate::FileId;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SourcePosition {
     pub line: u32,
     pub column: u32,
     pub offset: u32,
-    pub filename: String,
+    pub fileid: Option<FileId>,
 }
 
 impl std::fmt::Display for SourcePosition {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}:{}:{}", self.filename, self.line + 1, self.column + 1)
+        write!(
+            f,
+            "{}:{}:{}",
+            self.fileid.as_ref().map_or("???", |fid| fid.deref()),
+            self.line + 1,
+            self.column + 1
+        )
     }
 }
 

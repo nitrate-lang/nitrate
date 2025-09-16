@@ -1,4 +1,7 @@
+use std::ops::Deref;
+
 use enum_iterator::Sequence;
+use nitrate_diagnosis::FileId;
 pub use ordered_float::NotNan;
 use serde::{Deserialize, Serialize};
 
@@ -86,7 +89,7 @@ impl std::fmt::Display for Comment {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, PartialOrd, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Token {
     Name(String),
     Integer(Integer),
@@ -383,12 +386,18 @@ pub struct SourcePosition {
     pub line: u32,
     pub column: u32,
     pub offset: u32,
-    pub filename: String,
+    pub fileid: Option<FileId>,
 }
 
 impl std::fmt::Display for SourcePosition {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}:{}:{}", self.filename, self.line + 1, self.column + 1)
+        write!(
+            f,
+            "{}:{}:{}",
+            self.fileid.as_ref().map_or("???", |fid| fid.deref()),
+            self.line + 1,
+            self.column + 1
+        )
     }
 }
 
@@ -398,12 +407,12 @@ impl From<SourcePosition> for nitrate_diagnosis::SourcePosition {
             line: pos.line,
             column: pos.column,
             offset: pos.offset,
-            filename: pos.filename,
+            fileid: pos.fileid,
         }
     }
 }
 
-#[derive(Debug, Clone, PartialEq, PartialOrd, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct AnnotatedToken {
     pub(crate) token: Token,
 
@@ -415,7 +424,7 @@ pub struct AnnotatedToken {
     end_column: u32,
     end_offset: u32,
 
-    filename: String,
+    fileid: Option<FileId>,
 }
 
 impl AnnotatedToken {
@@ -429,7 +438,7 @@ impl AnnotatedToken {
             end_line: end.line,
             end_column: end.column,
             end_offset: end.offset,
-            filename: start.filename,
+            fileid: start.fileid,
         }
     }
 
@@ -449,7 +458,7 @@ impl AnnotatedToken {
             line: self.start_line,
             column: self.start_column,
             offset: self.start_offset,
-            filename: self.filename.clone(),
+            fileid: self.fileid.clone(),
         }
     }
 
@@ -459,7 +468,7 @@ impl AnnotatedToken {
             line: self.end_line,
             column: self.end_column,
             offset: self.end_offset,
-            filename: self.filename.clone(),
+            fileid: self.fileid.clone(),
         }
     }
 

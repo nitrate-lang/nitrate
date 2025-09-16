@@ -1,6 +1,7 @@
 use super::token::{AnnotatedToken, Comment, CommentKind, Integer, IntegerKind, Token};
 use crate::SourcePosition;
 use log::error;
+use nitrate_diagnosis::FileId;
 use ordered_float::NotNan;
 use smallvec::SmallVec;
 
@@ -35,9 +36,7 @@ impl<'a> Lexer<'a> {
     /// The source code must not exceed 4 GiB in size.
     /// # Errors
     /// Returns `LexerError::SourceTooBig` if the source code exceeds 4 GiB in size.
-    pub fn new(src: &'a [u8], filename: &'a str) -> Result<Self, LexerError> {
-        let filename = filename.to_owned();
-
+    pub fn new(src: &'a [u8], fileid: Option<FileId>) -> Result<Self, LexerError> {
         if src.len() > MAX_SOURCE_SIZE {
             Err(LexerError::SourceTooBig)
         } else {
@@ -47,13 +46,13 @@ impl<'a> Lexer<'a> {
                     line: 0,
                     column: 0,
                     offset: 0,
-                    filename: filename.clone(),
+                    fileid: fileid.clone(),
                 },
                 current_pos: SourcePosition {
                     line: 0,
                     column: 0,
                     offset: 0,
-                    filename,
+                    fileid: fileid.clone(),
                 },
                 preread_token: None,
             })
@@ -226,14 +225,14 @@ impl<'a> Lexer<'a> {
                 line: current.line + 1,
                 column: 0,
                 offset: current.offset + 1,
-                filename: current.filename.clone(),
+                fileid: current.fileid.clone(),
             };
         } else {
             self.internal_getc_pos = SourcePosition {
                 line: current.line,
                 column: current.column + 1,
                 offset: current.offset + 1,
-                filename: current.filename.clone(),
+                fileid: current.fileid.clone(),
             };
         }
 

@@ -1,6 +1,6 @@
 use crate::{TranslationOptions, TranslationOptionsBuilder, options::Diagnose};
 use nitrate_codegen::{Codegen, CodegenError};
-use nitrate_diagnosis::DiagnosticCollector;
+use nitrate_diagnosis::{DiagnosticCollector, FileId, get_or_create_file_id};
 use nitrate_parse::Parser;
 use nitrate_parsetree::kind::Package;
 use nitrate_tokenize::Lexer;
@@ -53,9 +53,9 @@ fn scan_into_memory(source_code: &mut dyn std::io::Read) -> Result<String, Trans
 
 fn create_lexer<'a>(
     source_str: &'a str,
-    source_name_for_debug_messages: &'a str,
+    fileid: Option<FileId>,
 ) -> Result<Lexer<'a>, TranslationError> {
-    let lexer = Lexer::new(source_str.as_bytes(), source_name_for_debug_messages);
+    let lexer = Lexer::new(source_str.as_bytes(), fileid);
     lexer.map_err(TranslationError::LexerError)
 }
 
@@ -137,7 +137,8 @@ pub fn compile_code(
     let bugs = &options.bugs;
     let source = scan_into_memory(source_code)?;
 
-    let lexer = create_lexer(&source, &options.source_name_for_debug_messages)?;
+    let fileid = get_or_create_file_id(&options.source_name_for_debug_messages);
+    let lexer = create_lexer(&source, fileid)?;
 
     let package = parse_language(lexer, options.crate_name.clone(), bugs);
 

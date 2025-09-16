@@ -4,23 +4,27 @@ use std::num::NonZeroU32;
 use std::sync::RwLock;
 use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct FileId(NonZeroU32);
 
-impl std::fmt::Display for FileId {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "FileId({})", self.0)
+impl std::ops::Deref for FileId {
+    type Target = str;
+
+    fn deref(&self) -> &'static Self::Target {
+        FILE_ID_STORE
+            .lookup_path(self)
+            .expect("FileId should always map to a valid string")
     }
 }
 
-pub struct FileIdStore {
-    map: RwLock<BiMap<FileId, String>>,
+struct FileIdStore {
+    map: RwLock<BiMap<FileId, &'static str>>,
     next_id: AtomicU32,
     id_space_exhausted: AtomicBool,
 }
 
 impl FileIdStore {
-    pub fn new() -> Self {
+    fn new() -> Self {
         Self {
             map: RwLock::new(BiMap::new()),
             next_id: AtomicU32::new(1),
@@ -28,10 +32,10 @@ impl FileIdStore {
         }
     }
 
-    pub fn get_or_create(&self, path: &str) -> Option<FileId> {
+    fn get_or_create(&self, path: &str) -> Option<FileId> {
         // Step 1: Read lock for a quick check.
         if let Some(id) = self.map.read().unwrap().get_by_right(path) {
-            return Some(*id);
+            return Some(id.clone());
         }
 
         // Step 2: Acquire write lock for insertion logic.
@@ -39,7 +43,7 @@ impl FileIdStore {
 
         // Step 3: Check again under the write lock to prevent a race.
         if let Some(id) = map.get_by_right(path) {
-            return Some(*id);
+            return Some(id.clone());
         }
 
         // Step 4: Check if ID space is exhausted *with a strong load*.
@@ -56,7 +60,7 @@ impl FileIdStore {
             .map(FileId)
             .expect("Atomic counter generated 0, which should not happen");
 
-        map.insert(file_id, path.to_string());
+        map.insert(file_id.clone(), Box::leak(path.to_owned().into_boxed_str()));
 
         // Step 7: If this was the last ID, set the flag.
         // We use a Release store to ensure the memory writes to the map are
@@ -68,12 +72,15 @@ impl FileIdStore {
         Some(file_id)
     }
 
-    pub fn is_exhausted(&self) -> bool {
-        self.id_space_exhausted.load(Ordering::Acquire)
-    }
-
-    pub fn lookup_path(&self, id: FileId) -> Option<String> {
+    fn lookup_path(&self, id: &FileId) -> Option<&'static str> {
         let map = self.map.read().unwrap();
-        map.get_by_left(&id).cloned()
+        map.get_by_left(id).copied()
     }
+}
+
+static FILE_ID_STORE: once_cell::sync::Lazy<FileIdStore> =
+    once_cell::sync::Lazy::new(FileIdStore::new);
+
+pub fn get_or_create_file_id(path: &str) -> Option<FileId> {
+    FILE_ID_STORE.get_or_create(path)
 }

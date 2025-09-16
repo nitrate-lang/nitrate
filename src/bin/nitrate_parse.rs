@@ -1,6 +1,6 @@
 use std::{fs::OpenOptions, io::Read};
 
-use nitrate_diagnosis::DiagnosticCollector;
+use nitrate_diagnosis::{DiagnosticCollector, get_or_create_file_id};
 use nitrate_translation::{TranslationError, parse::Parser, tokenize::Lexer};
 use slog::{Drain, Record, o};
 use slog_term::{RecordDecorator, ThreadSafeTimestampFn};
@@ -60,7 +60,9 @@ fn program() -> Result<(), Error> {
         }
     };
 
-    let lexer = match Lexer::new(source_code.as_bytes(), filename.as_str()) {
+    let fileid = get_or_create_file_id(filename);
+
+    let lexer = match Lexer::new(source_code.as_bytes(), fileid) {
         Ok(l) => l,
         Err(e) => {
             return Err(Error::ParseFailed(TranslationError::LexerError(e)));
