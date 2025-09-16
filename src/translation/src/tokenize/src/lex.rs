@@ -1,4 +1,4 @@
-use super::token::{AnnotatedToken, Comment, CommentKind, Integer, IntegerKind, Keyword, Token};
+use super::token::{AnnotatedToken, Comment, CommentKind, Integer, IntegerKind, Token};
 use log::error;
 use nitrate_diagnosis::SourcePosition;
 use ordered_float::NotNan;
@@ -188,16 +188,6 @@ impl<'a> Lexer<'a> {
     }
 
     #[inline(always)]
-    pub fn next_if_keyword(&mut self) -> Option<Keyword> {
-        if let Token::Keyword(keyword) = self.peek_t() {
-            self.skip_tok();
-            Some(keyword)
-        } else {
-            None
-        }
-    }
-
-    #[inline(always)]
     pub fn next_if_integer(&mut self) -> Option<Integer> {
         if let Token::Integer(integer) = self.peek_t() {
             self.skip_tok();
@@ -314,75 +304,70 @@ impl<'a> Lexer<'a> {
         assert!(!name.is_empty(), "Identifier should not be empty");
 
         if let Some(keyword) = match name {
-            b"let" => Some(Keyword::Let),
-            b"var" => Some(Keyword::Var),
-            b"fn" => Some(Keyword::Fn),
-            b"enum" => Some(Keyword::Enum),
-            b"struct" => Some(Keyword::Struct),
-            b"class" => Some(Keyword::Class),
-            b"union" => Some(Keyword::Union),
-            b"contract" => Some(Keyword::Contract),
-            b"trait" => Some(Keyword::Trait),
-            b"impl" => Some(Keyword::Impl),
-            b"type" => Some(Keyword::Type),
-            b"scope" => Some(Keyword::Scope),
-            b"import" => Some(Keyword::Import),
-            b"mod" => Some(Keyword::Mod),
-
-            b"safe" => Some(Keyword::Safe),
-            b"unsafe" => Some(Keyword::Unsafe),
-            b"promise" => Some(Keyword::Promise),
-            b"static" => Some(Keyword::Static),
-            b"mut" => Some(Keyword::Mut),
-            b"const" => Some(Keyword::Const),
-            b"poly" => Some(Keyword::Poly),
-            b"iso" => Some(Keyword::Iso),
-            b"pub" => Some(Keyword::Pub),
-            b"sec" => Some(Keyword::Sec),
-            b"pro" => Some(Keyword::Pro),
-
-            b"if" => Some(Keyword::If),
-            b"else" => Some(Keyword::Else),
-            b"for" => Some(Keyword::For),
-            b"in" => Some(Keyword::In),
-            b"while" => Some(Keyword::While),
-            b"do" => Some(Keyword::Do),
-            b"switch" => Some(Keyword::Switch),
-            b"break" => Some(Keyword::Break),
-            b"continue" => Some(Keyword::Continue),
-            b"ret" => Some(Keyword::Ret),
-            b"async" => Some(Keyword::Async),
-            b"await" => Some(Keyword::Await),
-            b"asm" => Some(Keyword::Asm),
-
-            b"null" => Some(Keyword::Null),
-            b"true" => Some(Keyword::True),
-            b"false" => Some(Keyword::False),
-
-            b"bool" => Some(Keyword::Bool),
-            b"u8" => Some(Keyword::U8),
-            b"u16" => Some(Keyword::U16),
-            b"u32" => Some(Keyword::U32),
-            b"u64" => Some(Keyword::U64),
-            b"u128" => Some(Keyword::U128),
-            b"i8" => Some(Keyword::I8),
-            b"i16" => Some(Keyword::I16),
-            b"i32" => Some(Keyword::I32),
-            b"i64" => Some(Keyword::I64),
-            b"i128" => Some(Keyword::I128),
-            b"f8" => Some(Keyword::F8),
-            b"f16" => Some(Keyword::F16),
-            b"f32" => Some(Keyword::F32),
-            b"f64" => Some(Keyword::F64),
-            b"f128" => Some(Keyword::F128),
-            b"opaque" => Some(Keyword::Opaque),
-
-            b"as" => Some(Keyword::As),
-            b"typeof" => Some(Keyword::Typeof),
+            b"let" => Some(Token::Let),
+            b"var" => Some(Token::Var),
+            b"fn" => Some(Token::Fn),
+            b"enum" => Some(Token::Enum),
+            b"struct" => Some(Token::Struct),
+            b"class" => Some(Token::Class),
+            b"union" => Some(Token::Union),
+            b"contract" => Some(Token::Contract),
+            b"trait" => Some(Token::Trait),
+            b"impl" => Some(Token::Impl),
+            b"type" => Some(Token::Type),
+            b"scope" => Some(Token::Scope),
+            b"import" => Some(Token::Import),
+            b"mod" => Some(Token::Mod),
+            b"safe" => Some(Token::Safe),
+            b"unsafe" => Some(Token::Unsafe),
+            b"promise" => Some(Token::Promise),
+            b"static" => Some(Token::Static),
+            b"mut" => Some(Token::Mut),
+            b"const" => Some(Token::Const),
+            b"poly" => Some(Token::Poly),
+            b"iso" => Some(Token::Iso),
+            b"pub" => Some(Token::Pub),
+            b"sec" => Some(Token::Sec),
+            b"pro" => Some(Token::Pro),
+            b"if" => Some(Token::If),
+            b"else" => Some(Token::Else),
+            b"for" => Some(Token::For),
+            b"in" => Some(Token::In),
+            b"while" => Some(Token::While),
+            b"do" => Some(Token::Do),
+            b"switch" => Some(Token::Switch),
+            b"break" => Some(Token::Break),
+            b"continue" => Some(Token::Continue),
+            b"ret" => Some(Token::Ret),
+            b"async" => Some(Token::Async),
+            b"await" => Some(Token::Await),
+            b"asm" => Some(Token::Asm),
+            b"null" => Some(Token::Null),
+            b"true" => Some(Token::True),
+            b"false" => Some(Token::False),
+            b"bool" => Some(Token::Bool),
+            b"u8" => Some(Token::U8),
+            b"u16" => Some(Token::U16),
+            b"u32" => Some(Token::U32),
+            b"u64" => Some(Token::U64),
+            b"u128" => Some(Token::U128),
+            b"i8" => Some(Token::I8),
+            b"i16" => Some(Token::I16),
+            b"i32" => Some(Token::I32),
+            b"i64" => Some(Token::I64),
+            b"i128" => Some(Token::I128),
+            b"f8" => Some(Token::F8),
+            b"f16" => Some(Token::F16),
+            b"f32" => Some(Token::F32),
+            b"f64" => Some(Token::F64),
+            b"f128" => Some(Token::F128),
+            b"opaque" => Some(Token::Opaque),
+            b"as" => Some(Token::As),
+            b"typeof" => Some(Token::Typeof),
 
             _ => None,
         } {
-            Ok(Token::Keyword(keyword))
+            Ok(keyword)
         } else if let Ok(identifier) = str::from_utf8(name) {
             Ok(Token::Name(identifier.to_string()))
         } else {

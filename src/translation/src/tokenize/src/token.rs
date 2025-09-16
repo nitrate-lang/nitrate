@@ -87,153 +87,6 @@ impl std::fmt::Display for Comment {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Hash, Sequence, Serialize, Deserialize)]
-pub enum Keyword {
-    /* Storage */
-    Let,      /* 'let' */
-    Var,      /* 'var' */
-    Fn,       /* 'fn' */
-    Enum,     /* 'enum' */
-    Struct,   /* 'struct' */
-    Class,    /* 'class' */
-    Union,    /* 'union' */
-    Contract, /* 'contract' */
-    Trait,    /* 'trait' */
-    Impl,     /* 'impl' */
-    Type,     /* 'type' */
-    Scope,    /* 'scope' */
-    Import,   /* 'import' */
-    Mod,      /* 'mod' */
-
-    /* Modifiers */
-    Safe,    /* 'safe' */
-    Unsafe,  /* 'unsafe' */
-    Promise, /* 'promise' */
-    Static,  /* 'static' */
-    Mut,     /* 'mut' */
-    Const,   /* 'const' */
-    Poly,    /* 'poly' */
-    Iso,     /* 'iso' */
-    Pub,     /* 'pub' */
-    Sec,     /* 'sec' */
-    Pro,     /* 'pro' */
-
-    /* Control Flow */
-    If,       /* 'if' */
-    Else,     /* 'else' */
-    For,      /* 'for' */
-    In,       /* 'in' */
-    While,    /* 'while' */
-    Do,       /* 'do' */
-    Switch,   /* 'switch' */
-    Break,    /* 'break' */
-    Continue, /* 'continue' */
-    Ret,      /* 'ret' */
-    Async,    /* 'async' */
-    Await,    /* 'await' */
-    Asm,      /* 'asm' */
-
-    /* Literals */
-    Null,  /* 'null' */
-    True,  /* 'true' */
-    False, /* 'false' */
-
-    /* Type Keywords */
-    Bool,   /* 'bool' */
-    U8,     /* 'u8' */
-    U16,    /* 'u16' */
-    U32,    /* 'u32' */
-    U64,    /* 'u64' */
-    U128,   /* 'u128' */
-    I8,     /* 'i8' */
-    I16,    /* 'i16' */
-    I32,    /* 'i32' */
-    I64,    /* 'i64' */
-    I128,   /* 'i128' */
-    F8,     /* 'f8' */
-    F16,    /* 'f16' */
-    F32,    /* 'f32' */
-    F64,    /* 'f64' */
-    F128,   /* 'f128' */
-    Opaque, /* 'opaque' */
-
-    /* Type System */
-    As,
-    Typeof,
-}
-
-impl std::fmt::Display for Keyword {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Keyword::Let => write!(f, "let"),
-            Keyword::Var => write!(f, "var"),
-            Keyword::Fn => write!(f, "fn"),
-            Keyword::Enum => write!(f, "enum"),
-            Keyword::Struct => write!(f, "struct"),
-            Keyword::Class => write!(f, "class"),
-            Keyword::Union => write!(f, "union"),
-            Keyword::Contract => write!(f, "contract"),
-            Keyword::Trait => write!(f, "trait"),
-            Keyword::Impl => write!(f, "impl"),
-            Keyword::Type => write!(f, "type"),
-            Keyword::Scope => write!(f, "scope"),
-            Keyword::Import => write!(f, "import"),
-            Keyword::Mod => write!(f, "mod"),
-
-            Keyword::Safe => write!(f, "safe"),
-            Keyword::Unsafe => write!(f, "unsafe"),
-            Keyword::Promise => write!(f, "promise"),
-            Keyword::Static => write!(f, "static"),
-            Keyword::Mut => write!(f, "mut"),
-            Keyword::Const => write!(f, "const"),
-            Keyword::Poly => write!(f, "poly"),
-            Keyword::Iso => write!(f, "iso"),
-            Keyword::Pub => write!(f, "pub"),
-            Keyword::Sec => write!(f, "sec"),
-            Keyword::Pro => write!(f, "pro"),
-
-            Keyword::If => write!(f, "if"),
-            Keyword::Else => write!(f, "else"),
-            Keyword::For => write!(f, "for"),
-            Keyword::In => write!(f, "in"),
-            Keyword::While => write!(f, "while"),
-            Keyword::Do => write!(f, "do"),
-            Keyword::Switch => write!(f, "switch"),
-            Keyword::Break => write!(f, "break"),
-            Keyword::Continue => write!(f, "continue"),
-            Keyword::Ret => write!(f, "ret"),
-            Keyword::Async => write!(f, "async"),
-            Keyword::Await => write!(f, "await"),
-            Keyword::Asm => write!(f, "asm"),
-
-            Keyword::Null => write!(f, "null"),
-            Keyword::True => write!(f, "true"),
-            Keyword::False => write!(f, "false"),
-
-            Keyword::Bool => write!(f, "bool"),
-            Keyword::U8 => write!(f, "u8"),
-            Keyword::U16 => write!(f, "u16"),
-            Keyword::U32 => write!(f, "u32"),
-            Keyword::U64 => write!(f, "u64"),
-            Keyword::U128 => write!(f, "u128"),
-            Keyword::I8 => write!(f, "i8"),
-            Keyword::I16 => write!(f, "i16"),
-            Keyword::I32 => write!(f, "i32"),
-            Keyword::I64 => write!(f, "i64"),
-            Keyword::I128 => write!(f, "i128"),
-            Keyword::F8 => write!(f, "f8"),
-            Keyword::F16 => write!(f, "f16"),
-            Keyword::F32 => write!(f, "f32"),
-            Keyword::F64 => write!(f, "f64"),
-            Keyword::F128 => write!(f, "f128"),
-            Keyword::Opaque => write!(f, "opaque"),
-
-            Keyword::As => write!(f, "as"),
-            Keyword::Typeof => write!(f, "typeof"),
-        }
-    }
-}
-
 #[derive(Debug, Clone, PartialEq, PartialOrd, Serialize, Deserialize)]
 pub enum Token {
     Name(String),
@@ -242,8 +95,6 @@ pub enum Token {
     String(String),
     BString(Vec<u8>),
     Comment(Comment),
-
-    Keyword(Keyword),
 
     /// '''
     SingleQuote,
@@ -300,6 +151,127 @@ pub enum Token {
     /// `%`
     Percent,
 
+    /// 'let'
+    Let,
+    /// 'var'
+    Var,
+    /// 'fn'
+    Fn,
+    /// 'enum'
+    Enum,
+    /// 'struct'
+    Struct,
+    /// 'class'
+    Class,
+    /// 'union'
+    Union,
+    /// 'contract'
+    Contract,
+    /// 'trait'
+    Trait,
+    /// 'impl'
+    Impl,
+    /// 'type'
+    Type,
+    /// 'scope'
+    Scope,
+    /// 'import'
+    Import,
+    /// 'mod'
+    Mod,
+    /// 'safe'
+    Safe,
+    /// 'unsafe'
+    Unsafe,
+    /// 'promise'
+    Promise,
+    /// 'static'
+    Static,
+    /// 'mut'
+    Mut,
+    /// 'const'
+    Const,
+    /// 'poly'
+    Poly,
+    /// 'iso'
+    Iso,
+    /// 'pub'
+    Pub,
+    /// 'sec'
+    Sec,
+    /// 'pro'
+    Pro,
+    /// 'if'
+    If,
+    /// 'else'
+    Else,
+    /// 'for'
+    For,
+    /// 'in'
+    In,
+    /// 'while'
+    While,
+    /// 'do'
+    Do,
+    /// 'switch'
+    Switch,
+    /// 'break'
+    Break,
+    /// 'continue'
+    Continue,
+    /// 'ret'
+    Ret,
+    /// 'async'
+    Async,
+    /// 'await'
+    Await,
+    /// 'asm'
+    Asm,
+    /// 'null'
+    Null,
+    /// 'true'
+    True,
+    /// 'false'
+    False,
+    /// 'bool'
+    Bool,
+    /// 'u8'
+    U8,
+    /// 'u16'
+    U16,
+    /// 'u32'
+    U32,
+    /// 'u64'
+    U64,
+    /// 'u128'
+    U128,
+    /// 'i8'
+    I8,
+    /// 'i16'
+    I16,
+    /// 'i32'
+    I32,
+    /// 'i64'
+    I64,
+    /// 'i128'
+    I128,
+    /// 'f8'
+    F8,
+    /// 'f16'
+    F16,
+    /// 'f32'
+    F32,
+    /// 'f64'
+    F64,
+    /// 'f128'
+    F128,
+    /// 'opaque'
+    Opaque,
+    /// 'as'
+    As,
+    /// 'typeof'
+    Typeof,
+
     Eof,
 }
 
@@ -312,7 +284,6 @@ impl std::fmt::Display for Token {
             Token::String(s) => write!(f, "\"{s}\""),
             Token::BString(s) => write!(f, "{s:?}"),
             Token::Comment(c) => write!(f, "{c}"),
-            Token::Keyword(kw) => write!(f, "{kw}"),
 
             Token::SingleQuote => write!(f, "'"),
             Token::Semi => write!(f, ";"),
@@ -341,6 +312,67 @@ impl std::fmt::Display for Token {
             Token::Slash => write!(f, "/"),
             Token::Caret => write!(f, "^"),
             Token::Percent => write!(f, "%"),
+
+            Token::Let => write!(f, "let"),
+            Token::Var => write!(f, "var"),
+            Token::Fn => write!(f, "fn"),
+            Token::Enum => write!(f, "enum"),
+            Token::Struct => write!(f, "struct"),
+            Token::Class => write!(f, "class"),
+            Token::Union => write!(f, "union"),
+            Token::Contract => write!(f, "contract"),
+            Token::Trait => write!(f, "trait"),
+            Token::Impl => write!(f, "impl"),
+            Token::Type => write!(f, "type"),
+            Token::Scope => write!(f, "scope"),
+            Token::Import => write!(f, "import"),
+            Token::Mod => write!(f, "mod"),
+            Token::Safe => write!(f, "safe"),
+            Token::Unsafe => write!(f, "unsafe"),
+            Token::Promise => write!(f, "promise"),
+            Token::Static => write!(f, "static"),
+            Token::Mut => write!(f, "mut"),
+            Token::Const => write!(f, "const"),
+            Token::Poly => write!(f, "poly"),
+            Token::Iso => write!(f, "iso"),
+            Token::Pub => write!(f, "pub"),
+            Token::Sec => write!(f, "sec"),
+            Token::Pro => write!(f, "pro"),
+            Token::If => write!(f, "if"),
+            Token::Else => write!(f, "else"),
+            Token::For => write!(f, "for"),
+            Token::In => write!(f, "in"),
+            Token::While => write!(f, "while"),
+            Token::Do => write!(f, "do"),
+            Token::Switch => write!(f, "switch"),
+            Token::Break => write!(f, "break"),
+            Token::Continue => write!(f, "continue"),
+            Token::Ret => write!(f, "ret"),
+            Token::Async => write!(f, "async"),
+            Token::Await => write!(f, "await"),
+            Token::Asm => write!(f, "asm"),
+            Token::Null => write!(f, "null"),
+            Token::True => write!(f, "true"),
+            Token::False => write!(f, "false"),
+            Token::Bool => write!(f, "bool"),
+            Token::U8 => write!(f, "u8"),
+            Token::U16 => write!(f, "u16"),
+            Token::U32 => write!(f, "u32"),
+            Token::U64 => write!(f, "u64"),
+            Token::U128 => write!(f, "u128"),
+            Token::I8 => write!(f, "i8"),
+            Token::I16 => write!(f, "i16"),
+            Token::I32 => write!(f, "i32"),
+            Token::I64 => write!(f, "i64"),
+            Token::I128 => write!(f, "i128"),
+            Token::F8 => write!(f, "f8"),
+            Token::F16 => write!(f, "f16"),
+            Token::F32 => write!(f, "f32"),
+            Token::F64 => write!(f, "f64"),
+            Token::F128 => write!(f, "f128"),
+            Token::Opaque => write!(f, "opaque"),
+            Token::As => write!(f, "as"),
+            Token::Typeof => write!(f, "typeof"),
 
             Token::Eof => write!(f, ""),
         }

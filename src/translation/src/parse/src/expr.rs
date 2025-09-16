@@ -6,7 +6,7 @@ use nitrate_parsetree::kind::{
     Continue, DoWhileLoop, Expr, ForEach, FunctionParameter, GenericArgument, If, IndexAccess,
     Integer, List, Path, Return, Safety, Type, UnaryExpr, UnaryExprOp, WhileLoop,
 };
-use nitrate_tokenize::{Keyword, Token};
+use nitrate_tokenize::Token;
 use smallvec::{SmallVec, smallvec};
 
 type Precedence = u32;
@@ -144,7 +144,7 @@ impl Parser<'_, '_> {
                 Some(UnaryExprOp::LogicNot)
             }
 
-            Token::Keyword(Keyword::Typeof) => {
+            Token::Typeof => {
                 self.lexer.skip_tok();
                 Some(UnaryExprOp::Typeof)
             }
@@ -297,7 +297,7 @@ impl Parser<'_, '_> {
                 }
             }
 
-            Token::Keyword(Keyword::As) => {
+            Token::As => {
                 self.lexer.skip_tok();
                 Some(BinExprOp::As)
             }
@@ -346,12 +346,12 @@ impl Parser<'_, '_> {
                 self.parse_literal_suffix(Expr::BString(Box::new(data)))
             }
 
-            Token::Keyword(Keyword::True) => {
+            Token::True => {
                 self.lexer.skip_tok();
                 Expr::Boolean(true)
             }
 
-            Token::Keyword(Keyword::False) => {
+            Token::False => {
                 self.lexer.skip_tok();
                 Expr::Boolean(false)
             }
@@ -360,22 +360,21 @@ impl Parser<'_, '_> {
 
             Token::Name(_) | Token::Colon => Expr::Path(Box::new(self.parse_path())),
 
-            Token::Keyword(Keyword::Type) => Expr::TypeInfo(Box::new(self.parse_type_info())),
+            Token::Type => Expr::TypeInfo(Box::new(self.parse_type_info())),
 
-            Token::Keyword(Keyword::Fn)
-            | Token::OpenBrace
-            | Token::Keyword(Keyword::Unsafe)
-            | Token::Keyword(Keyword::Safe) => Expr::Closure(Box::new(self.parse_closure())),
+            Token::Fn | Token::OpenBrace | Token::Unsafe | Token::Safe => {
+                Expr::Closure(Box::new(self.parse_closure()))
+            }
 
-            Token::Keyword(Keyword::If) => Expr::If(Box::new(self.parse_if())),
-            Token::Keyword(Keyword::For) => Expr::For(Box::new(self.parse_for())),
-            Token::Keyword(Keyword::While) => Expr::While(Box::new(self.parse_while())),
-            Token::Keyword(Keyword::Do) => Expr::DoWhileLoop(Box::new(self.parse_do())),
-            // Token::Keyword(Keyword::Switch) => Expr::Switch(Box::new(self.parse_switch())),
-            Token::Keyword(Keyword::Break) => Expr::Break(Box::new(self.parse_break())),
-            Token::Keyword(Keyword::Continue) => Expr::Continue(Box::new(self.parse_continue())),
-            Token::Keyword(Keyword::Ret) => Expr::Return(Box::new(self.parse_return())),
-            Token::Keyword(Keyword::Await) => Expr::Await(Box::new(self.parse_await())),
+            Token::If => Expr::If(Box::new(self.parse_if())),
+            Token::For => Expr::For(Box::new(self.parse_for())),
+            Token::While => Expr::While(Box::new(self.parse_while())),
+            Token::Do => Expr::DoWhileLoop(Box::new(self.parse_do())),
+            // Token::Switch => Expr::Switch(Box::new(self.parse_switch())),
+            Token::Break => Expr::Break(Box::new(self.parse_break())),
+            Token::Continue => Expr::Continue(Box::new(self.parse_continue())),
+            Token::Ret => Expr::Return(Box::new(self.parse_return())),
+            Token::Await => Expr::Await(Box::new(self.parse_await())),
 
             _ => {
                 self.lexer.skip_tok();
@@ -488,22 +487,22 @@ impl Parser<'_, '_> {
 
     fn parse_literal_suffix(&mut self, value: Expr) -> Expr {
         let suffix = match self.lexer.peek_t() {
-            Token::Keyword(Keyword::Bool) => Type::Bool,
-            Token::Keyword(Keyword::U8) => Type::UInt8,
-            Token::Keyword(Keyword::U16) => Type::UInt16,
-            Token::Keyword(Keyword::U32) => Type::UInt32,
-            Token::Keyword(Keyword::U64) => Type::UInt64,
-            Token::Keyword(Keyword::U128) => Type::UInt128,
-            Token::Keyword(Keyword::I8) => Type::Int8,
-            Token::Keyword(Keyword::I16) => Type::Int16,
-            Token::Keyword(Keyword::I32) => Type::Int32,
-            Token::Keyword(Keyword::I64) => Type::Int64,
-            Token::Keyword(Keyword::I128) => Type::Int128,
-            Token::Keyword(Keyword::F8) => Type::Float8,
-            Token::Keyword(Keyword::F16) => Type::Float16,
-            Token::Keyword(Keyword::F32) => Type::Float32,
-            Token::Keyword(Keyword::F64) => Type::Float64,
-            Token::Keyword(Keyword::F128) => Type::Float128,
+            Token::Bool => Type::Bool,
+            Token::U8 => Type::UInt8,
+            Token::U16 => Type::UInt16,
+            Token::U32 => Type::UInt32,
+            Token::U64 => Type::UInt64,
+            Token::U128 => Type::UInt128,
+            Token::I8 => Type::Int8,
+            Token::I16 => Type::Int16,
+            Token::I32 => Type::Int32,
+            Token::I64 => Type::Int64,
+            Token::I128 => Type::Int128,
+            Token::F8 => Type::Float8,
+            Token::F16 => Type::Float16,
+            Token::F32 => Type::Float32,
+            Token::F64 => Type::Float64,
+            Token::F128 => Type::Float128,
 
             Token::Name(name) => Type::TypeName(Box::new(Path {
                 path: smallvec![name],
@@ -715,21 +714,21 @@ impl Parser<'_, '_> {
     }
 
     fn parse_type_info(&mut self) -> Type {
-        assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Type));
+        assert!(self.lexer.peek_t() == Token::Type);
         self.lexer.skip_tok();
 
         self.parse_type()
     }
 
     fn parse_if(&mut self) -> If {
-        assert!(self.lexer.peek_t() == Token::Keyword(Keyword::If));
+        assert!(self.lexer.peek_t() == Token::If);
         self.lexer.skip_tok();
 
         let condition = self.parse_expression();
         let then_branch = self.parse_block();
 
-        let else_branch = if self.lexer.skip_if(&Token::Keyword(Keyword::Else)) {
-            if self.lexer.next_is(&Token::Keyword(Keyword::If)) {
+        let else_branch = if self.lexer.skip_if(&Token::Else) {
+            if self.lexer.next_is(&Token::If) {
                 let else_branch = Expr::If(Box::new(self.parse_if()));
 
                 Some(Block {
@@ -816,13 +815,13 @@ impl Parser<'_, '_> {
             bindings
         }
 
-        assert!(self.lexer.peek_t() == Token::Keyword(Keyword::For));
+        assert!(self.lexer.peek_t() == Token::For);
         self.lexer.skip_tok();
 
         let attributes = self.parse_attributes();
         let bindings = parse_for_bindings(self);
 
-        if !self.lexer.skip_if(&Token::Keyword(Keyword::In)) {
+        if !self.lexer.skip_if(&Token::In) {
             let bug = SyntaxBug::ForExpectedInKeyword(self.lexer.peek_pos());
             self.bugs.push(&bug);
         }
@@ -839,7 +838,7 @@ impl Parser<'_, '_> {
     }
 
     fn parse_while(&mut self) -> WhileLoop {
-        assert!(self.lexer.peek_t() == Token::Keyword(Keyword::While));
+        assert!(self.lexer.peek_t() == Token::While);
         self.lexer.skip_tok();
 
         let condition = if self.lexer.next_is(&Token::OpenBrace) {
@@ -854,12 +853,12 @@ impl Parser<'_, '_> {
     }
 
     fn parse_do(&mut self) -> DoWhileLoop {
-        assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Do));
+        assert!(self.lexer.peek_t() == Token::Do);
         self.lexer.skip_tok();
 
         let body = self.parse_block();
 
-        if !self.lexer.skip_if(&Token::Keyword(Keyword::While)) {
+        if !self.lexer.skip_if(&Token::While) {
             let bug = SyntaxBug::DoWhileExpectedWhileKeyword(self.lexer.peek_pos());
             self.bugs.push(&bug);
         }
@@ -870,7 +869,7 @@ impl Parser<'_, '_> {
     }
 
     fn parse_break(&mut self) -> Break {
-        assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Break));
+        assert!(self.lexer.peek_t() == Token::Break);
         self.lexer.skip_tok();
 
         let label = if self.lexer.skip_if(&Token::SingleQuote) {
@@ -889,7 +888,7 @@ impl Parser<'_, '_> {
     }
 
     fn parse_continue(&mut self) -> Continue {
-        assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Continue));
+        assert!(self.lexer.peek_t() == Token::Continue);
         self.lexer.skip_tok();
 
         let label = if self.lexer.skip_if(&Token::SingleQuote) {
@@ -908,7 +907,7 @@ impl Parser<'_, '_> {
     }
 
     fn parse_return(&mut self) -> Return {
-        assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Ret));
+        assert!(self.lexer.peek_t() == Token::Ret);
         self.lexer.skip_tok();
 
         let value = if self.lexer.next_is(&Token::Semi) {
@@ -921,7 +920,7 @@ impl Parser<'_, '_> {
     }
 
     fn parse_await(&mut self) -> Await {
-        assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Await));
+        assert!(self.lexer.peek_t() == Token::Await);
         self.lexer.skip_tok();
 
         let future = self.parse_expression();
@@ -1002,7 +1001,7 @@ impl Parser<'_, '_> {
     fn parse_closure(&mut self) -> Closure {
         if matches!(
             self.lexer.peek_t(),
-            Token::OpenBrace | Token::Keyword(Keyword::Unsafe) | Token::Keyword(Keyword::Safe)
+            Token::OpenBrace | Token::Unsafe | Token::Safe
         ) {
             let definition = self.parse_block();
 
@@ -1014,7 +1013,7 @@ impl Parser<'_, '_> {
             };
         }
 
-        assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Fn));
+        assert!(self.lexer.peek_t() == Token::Fn);
         self.lexer.skip_tok();
 
         let attributes = self.parse_attributes();
@@ -1100,10 +1099,7 @@ impl Parser<'_, '_> {
 
     fn parse_block_item(&mut self) -> BlockItem {
         match self.lexer.peek_t() {
-            Token::Keyword(Keyword::Static)
-            | Token::Keyword(Keyword::Const)
-            | Token::Keyword(Keyword::Let)
-            | Token::Keyword(Keyword::Var) => {
+            Token::Static | Token::Const | Token::Let | Token::Var => {
                 let var = self.parse_variable();
                 BlockItem::Variable(var)
             }
@@ -1113,9 +1109,9 @@ impl Parser<'_, '_> {
     }
 
     pub(crate) fn parse_block(&mut self) -> Block {
-        let safety = if self.lexer.skip_if(&Token::Keyword(Keyword::Unsafe)) {
+        let safety = if self.lexer.skip_if(&Token::Unsafe) {
             Some(Safety::Unsafe)
-        } else if self.lexer.skip_if(&Token::Keyword(Keyword::Safe)) {
+        } else if self.lexer.skip_if(&Token::Safe) {
             Some(Safety::Safe)
         } else {
             None

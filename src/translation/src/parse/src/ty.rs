@@ -5,7 +5,7 @@ use nitrate_parsetree::kind::{
     ArrayType, Expr, FunctionType, FunctionTypeParameter, Lifetime, Path, ReferenceType,
     RefinementType, SliceType, TupleType, Type,
 };
-use nitrate_tokenize::{Keyword, Token};
+use nitrate_tokenize::Token;
 
 #[allow(unused_imports)]
 use nitrate_tokenize::Lexer;
@@ -140,7 +140,7 @@ impl Parser<'_, '_> {
         let mut mutability = None;
 
         if self.lexer.skip_if(&Token::SingleQuote) {
-            if self.lexer.skip_if(&Token::Keyword(Keyword::Static)) {
+            if self.lexer.skip_if(&Token::Static) {
                 lifetime = Some(Lifetime::Static);
             } else if self.lexer.skip_if(&Token::Name(String::from("thread"))) {
                 lifetime = Some(Lifetime::Thread);
@@ -156,15 +156,15 @@ impl Parser<'_, '_> {
             }
         }
 
-        if self.lexer.skip_if(&Token::Keyword(Keyword::Poly)) {
+        if self.lexer.skip_if(&Token::Poly) {
             exclusive = Some(false);
-        } else if self.lexer.skip_if(&Token::Keyword(Keyword::Iso)) {
+        } else if self.lexer.skip_if(&Token::Iso) {
             exclusive = Some(true);
         }
 
-        if self.lexer.skip_if(&Token::Keyword(Keyword::Mut)) {
+        if self.lexer.skip_if(&Token::Mut) {
             mutability = Some(true);
-        } else if self.lexer.skip_if(&Token::Keyword(Keyword::Const)) {
+        } else if self.lexer.skip_if(&Token::Const) {
             mutability = Some(false);
         }
 
@@ -185,15 +185,15 @@ impl Parser<'_, '_> {
         let mut exclusive = None;
         let mut mutability = None;
 
-        if self.lexer.skip_if(&Token::Keyword(Keyword::Poly)) {
+        if self.lexer.skip_if(&Token::Poly) {
             exclusive = Some(false);
-        } else if self.lexer.skip_if(&Token::Keyword(Keyword::Iso)) {
+        } else if self.lexer.skip_if(&Token::Iso) {
             exclusive = Some(true);
         }
 
-        if self.lexer.skip_if(&Token::Keyword(Keyword::Mut)) {
+        if self.lexer.skip_if(&Token::Mut) {
             mutability = Some(true);
-        } else if self.lexer.skip_if(&Token::Keyword(Keyword::Const)) {
+        } else if self.lexer.skip_if(&Token::Const) {
             mutability = Some(false);
         }
 
@@ -280,7 +280,7 @@ impl Parser<'_, '_> {
     }
 
     fn parse_function_type(&mut self) -> FunctionType {
-        assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Fn));
+        assert!(self.lexer.peek_t() == Token::Fn);
         self.lexer.skip_tok();
 
         let attributes = self.parse_attributes();
@@ -305,7 +305,7 @@ impl Parser<'_, '_> {
     }
 
     fn parse_opaque_type(&mut self) -> Type {
-        assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Opaque));
+        assert!(self.lexer.peek_t() == Token::Opaque);
         self.lexer.skip_tok();
 
         if !self.lexer.skip_if(&Token::OpenParen) {
@@ -328,27 +328,25 @@ impl Parser<'_, '_> {
     }
 
     fn parse_type_primitive(&mut self) -> Type {
-        let keyword = self.lexer.next_if_keyword().unwrap();
+        match self.lexer.next_t() {
+            Token::Bool => Type::Bool,
+            Token::U8 => Type::UInt8,
+            Token::U16 => Type::UInt16,
+            Token::U32 => Type::UInt32,
+            Token::U64 => Type::UInt64,
+            Token::U128 => Type::UInt128,
+            Token::I8 => Type::Int8,
+            Token::I16 => Type::Int16,
+            Token::I32 => Type::Int32,
+            Token::I64 => Type::Int64,
+            Token::I128 => Type::Int128,
+            Token::F8 => Type::Float8,
+            Token::F16 => Type::Float16,
+            Token::F32 => Type::Float32,
+            Token::F64 => Type::Float64,
+            Token::F128 => Type::Float128,
 
-        match keyword {
-            Keyword::Bool => Type::Bool,
-            Keyword::U8 => Type::UInt8,
-            Keyword::U16 => Type::UInt16,
-            Keyword::U32 => Type::UInt32,
-            Keyword::U64 => Type::UInt64,
-            Keyword::U128 => Type::UInt128,
-            Keyword::I8 => Type::Int8,
-            Keyword::I16 => Type::Int16,
-            Keyword::I32 => Type::Int32,
-            Keyword::I64 => Type::Int64,
-            Keyword::I128 => Type::Int128,
-            Keyword::F8 => Type::Float8,
-            Keyword::F16 => Type::Float16,
-            Keyword::F32 => Type::Float32,
-            Keyword::F64 => Type::Float64,
-            Keyword::F128 => Type::Float128,
-
-            _ => unreachable!("not a primitive type keyword"),
+            _ => Type::SyntaxError,
         }
     }
 
@@ -417,30 +415,30 @@ impl Parser<'_, '_> {
         let current_pos = self.lexer.current_pos();
 
         match self.lexer.peek_t() {
-            Token::Keyword(Keyword::Bool)
-            | Token::Keyword(Keyword::U8)
-            | Token::Keyword(Keyword::U16)
-            | Token::Keyword(Keyword::U32)
-            | Token::Keyword(Keyword::U64)
-            | Token::Keyword(Keyword::U128)
-            | Token::Keyword(Keyword::I8)
-            | Token::Keyword(Keyword::I16)
-            | Token::Keyword(Keyword::I32)
-            | Token::Keyword(Keyword::I64)
-            | Token::Keyword(Keyword::I128)
-            | Token::Keyword(Keyword::F8)
-            | Token::Keyword(Keyword::F16)
-            | Token::Keyword(Keyword::F32)
-            | Token::Keyword(Keyword::F64)
-            | Token::Keyword(Keyword::F128) => self.parse_type_primitive(),
+            Token::Bool
+            | Token::U8
+            | Token::U16
+            | Token::U32
+            | Token::U64
+            | Token::U128
+            | Token::I8
+            | Token::I16
+            | Token::I32
+            | Token::I64
+            | Token::I128
+            | Token::F8
+            | Token::F16
+            | Token::F32
+            | Token::F64
+            | Token::F128 => self.parse_type_primitive(),
 
             Token::Name(_) | Token::Colon => Type::TypeName(Box::new(self.parse_type_path())),
             Token::OpenBracket => self.parse_array_or_slice(),
             Token::And => Type::ReferenceType(Box::new(self.parse_reference_type())),
             Token::Star => Type::ReferenceType(Box::new(self.parse_pointer_type())),
-            Token::Keyword(Keyword::Fn) => Type::FunctionType(Box::new(self.parse_function_type())),
-            Token::Keyword(Keyword::Opaque) => self.parse_opaque_type(),
-            Token::OpenBrace | Token::Keyword(Keyword::Unsafe) | Token::Keyword(Keyword::Safe) => {
+            Token::Fn => Type::FunctionType(Box::new(self.parse_function_type())),
+            Token::Opaque => self.parse_opaque_type(),
+            Token::OpenBrace | Token::Unsafe | Token::Safe => {
                 Type::LatentType(Box::new(self.parse_block()))
             }
 

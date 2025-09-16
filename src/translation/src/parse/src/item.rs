@@ -6,7 +6,7 @@ use nitrate_parsetree::kind::{
     Module, NamedFunction, Struct, StructField, Trait, TypeAlias, Variable, VariableKind,
     Visibility,
 };
-use nitrate_tokenize::{Keyword, Token};
+use nitrate_tokenize::Token;
 
 impl Parser<'_, '_> {
     fn parse_generic_parameters(&mut self) -> Vec<GenericParameter> {
@@ -65,7 +65,7 @@ impl Parser<'_, '_> {
     fn parse_module(&mut self) -> Module {
         let module_start_pos = self.lexer.peek_pos();
 
-        assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Mod));
+        assert!(self.lexer.peek_t() == Token::Mod);
         self.lexer.skip_tok();
 
         let attributes = self.parse_attributes();
@@ -113,13 +113,13 @@ impl Parser<'_, '_> {
     }
 
     fn parse_import(&mut self) -> Import {
-        assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Import));
+        assert!(self.lexer.peek_t() == Token::Import);
         self.lexer.skip_tok();
 
         let attributes = self.parse_attributes();
         let path = self.parse_path();
 
-        let alias = if self.lexer.skip_if(&Token::Keyword(Keyword::As)) {
+        let alias = if self.lexer.skip_if(&Token::As) {
             Some(self.lexer.next_if_name().unwrap_or_else(|| {
                 let bug = SyntaxBug::ImportMissingAliasName(self.lexer.peek_pos());
                 self.bugs.push(&bug);
@@ -143,7 +143,7 @@ impl Parser<'_, '_> {
     }
 
     fn parse_type_alias(&mut self) -> TypeAlias {
-        assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Type));
+        assert!(self.lexer.peek_t() == Token::Type);
         self.lexer.skip_tok();
 
         let attributes = self.parse_attributes();
@@ -208,7 +208,7 @@ impl Parser<'_, '_> {
             }
         }
 
-        assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Enum));
+        assert!(self.lexer.peek_t() == Token::Enum);
         self.lexer.skip_tok();
 
         let attributes = self.parse_attributes();
@@ -299,7 +299,7 @@ impl Parser<'_, '_> {
             }
         }
 
-        assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Struct));
+        assert!(self.lexer.peek_t() == Token::Struct);
         self.lexer.skip_tok();
 
         let attributes = self.parse_attributes();
@@ -361,19 +361,19 @@ impl Parser<'_, '_> {
         let visibility = self.parse_visibility();
 
         match self.lexer.peek_t() {
-            Token::Keyword(Keyword::Fn) => {
+            Token::Fn => {
                 let mut func = self.parse_named_function();
                 func.visibility = visibility;
                 AssociatedItem::Method(func)
             }
 
-            Token::Keyword(Keyword::Const) => {
+            Token::Const => {
                 let mut const_var = self.parse_variable();
                 const_var.visibility = visibility;
                 AssociatedItem::ConstantItem(const_var)
             }
 
-            Token::Keyword(Keyword::Type) => {
+            Token::Type => {
                 let mut type_alias = self.parse_type_alias();
                 type_alias.visibility = visibility;
                 AssociatedItem::TypeAlias(type_alias)
@@ -391,7 +391,7 @@ impl Parser<'_, '_> {
     }
 
     fn parse_trait(&mut self) -> Trait {
-        assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Trait));
+        assert!(self.lexer.peek_t() == Token::Trait);
         self.lexer.skip_tok();
 
         let attributes = self.parse_attributes();
@@ -442,17 +442,17 @@ impl Parser<'_, '_> {
     }
 
     fn parse_implementation(&mut self) -> Impl {
-        assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Impl));
+        assert!(self.lexer.peek_t() == Token::Impl);
         self.lexer.skip_tok();
 
         let attributes = self.parse_attributes();
 
         let type_params = self.parse_generic_parameters();
 
-        let trait_path = if self.lexer.skip_if(&Token::Keyword(Keyword::Trait)) {
+        let trait_path = if self.lexer.skip_if(&Token::Trait) {
             let path = self.parse_type_path();
 
-            if !self.lexer.skip_if(&Token::Keyword(Keyword::For)) {
+            if !self.lexer.skip_if(&Token::For) {
                 let bug = SyntaxBug::ImplMissingFor(self.lexer.peek_pos());
                 self.bugs.push(&bug);
             }
@@ -574,7 +574,7 @@ impl Parser<'_, '_> {
     }
 
     fn parse_named_function(&mut self) -> NamedFunction {
-        assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Fn));
+        assert!(self.lexer.peek_t() == Token::Fn);
         self.lexer.skip_tok();
 
         let attributes = self.parse_attributes();
@@ -617,11 +617,11 @@ impl Parser<'_, '_> {
     }
 
     fn parse_visibility(&mut self) -> Option<Visibility> {
-        if self.lexer.skip_if(&Token::Keyword(Keyword::Pub)) {
+        if self.lexer.skip_if(&Token::Pub) {
             Some(Visibility::Public)
-        } else if self.lexer.skip_if(&Token::Keyword(Keyword::Sec)) {
+        } else if self.lexer.skip_if(&Token::Sec) {
             Some(Visibility::Private)
-        } else if self.lexer.skip_if(&Token::Keyword(Keyword::Pro)) {
+        } else if self.lexer.skip_if(&Token::Pro) {
             Some(Visibility::Protected)
         } else {
             None
@@ -630,18 +630,18 @@ impl Parser<'_, '_> {
 
     pub(crate) fn parse_variable(&mut self) -> Variable {
         let kind = match self.lexer.next_t() {
-            Token::Keyword(Keyword::Static) => VariableKind::Static,
-            Token::Keyword(Keyword::Const) => VariableKind::Const,
-            Token::Keyword(Keyword::Let) => VariableKind::Let,
-            Token::Keyword(Keyword::Var) => VariableKind::Var,
+            Token::Static => VariableKind::Static,
+            Token::Const => VariableKind::Const,
+            Token::Let => VariableKind::Let,
+            Token::Var => VariableKind::Var,
             _ => unreachable!(),
         };
 
         let attributes = self.parse_attributes();
 
-        let is_mutable = self.lexer.skip_if(&Token::Keyword(Keyword::Mut));
+        let is_mutable = self.lexer.skip_if(&Token::Mut);
         if !is_mutable {
-            self.lexer.skip_if(&Token::Keyword(Keyword::Const));
+            self.lexer.skip_if(&Token::Const);
         }
 
         let name = self.lexer.next_if_name().unwrap_or_else(|| {
@@ -684,58 +684,55 @@ impl Parser<'_, '_> {
         let item_pos_begin = self.lexer.peek_pos();
 
         match self.lexer.peek_t() {
-            Token::Keyword(Keyword::Mod) => {
+            Token::Mod => {
                 let mut module = self.parse_module();
                 module.visibility = visibility;
                 Item::Module(Box::new(module))
             }
 
-            Token::Keyword(Keyword::Import) => {
+            Token::Import => {
                 let mut import = self.parse_import();
                 import.visibility = visibility;
                 Item::Import(Box::new(import))
             }
 
-            Token::Keyword(Keyword::Type) => {
+            Token::Type => {
                 let mut type_alias = self.parse_type_alias();
                 type_alias.visibility = visibility;
                 Item::TypeAlias(Box::new(type_alias))
             }
 
-            Token::Keyword(Keyword::Struct) => {
+            Token::Struct => {
                 let mut struct_def = self.parse_struct();
                 struct_def.visibility = visibility;
                 Item::Struct(Box::new(struct_def))
             }
 
-            Token::Keyword(Keyword::Enum) => {
+            Token::Enum => {
                 let mut enum_def = self.parse_enum();
                 enum_def.visibility = visibility;
                 Item::Enum(Box::new(enum_def))
             }
 
-            Token::Keyword(Keyword::Trait) => {
+            Token::Trait => {
                 let mut trait_def = self.parse_trait();
                 trait_def.visibility = visibility;
                 Item::Trait(Box::new(trait_def))
             }
 
-            Token::Keyword(Keyword::Impl) => {
+            Token::Impl => {
                 let mut impl_def = self.parse_implementation();
                 impl_def.visibility = visibility;
                 Item::Impl(Box::new(impl_def))
             }
 
-            Token::Keyword(Keyword::Fn) => {
+            Token::Fn => {
                 let mut func = self.parse_named_function();
                 func.visibility = visibility;
                 Item::NamedFunction(Box::new(func))
             }
 
-            Token::Keyword(Keyword::Static)
-            | Token::Keyword(Keyword::Const)
-            | Token::Keyword(Keyword::Let)
-            | Token::Keyword(Keyword::Var) => {
+            Token::Static | Token::Const | Token::Let | Token::Var => {
                 let mut var = self.parse_variable();
                 var.visibility = visibility;
                 Item::Variable(Box::new(var))
