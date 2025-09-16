@@ -74,6 +74,13 @@ pub(crate) enum SyntaxBug {
     FunctionCallExpectedEnd(SourcePosition),
     FunctionCallArgumentLimit(SourcePosition),
 
+    DoWhileExpectedWhileKeyword(SourcePosition),
+
+    ForVariableBindingMissingName(SourcePosition),
+    ForVariableBindingExpectedEnd(SourcePosition),
+    ForVariableBindingLimit(SourcePosition),
+    ForExpectedInKeyword(SourcePosition),
+
     ExpectedOpenParen(SourcePosition),
     ExpectedCloseParen(SourcePosition),
     ExpectedOpenBrace(SourcePosition),
@@ -170,6 +177,13 @@ impl FormattableDiagnosticGroup for SyntaxBug {
 
             SyntaxBug::FunctionCallExpectedEnd(_) => 400,
             SyntaxBug::FunctionCallArgumentLimit(_) => 401,
+
+            SyntaxBug::DoWhileExpectedWhileKeyword(_) => 420,
+
+            SyntaxBug::ForVariableBindingMissingName(_) => 440,
+            SyntaxBug::ForVariableBindingExpectedEnd(_) => 441,
+            SyntaxBug::ForVariableBindingLimit(_) => 442,
+            SyntaxBug::ForExpectedInKeyword(_) => 443,
 
             SyntaxBug::ExpectedOpenParen(_) => 1000,
             SyntaxBug::ExpectedCloseParen(_) => 1001,
@@ -476,6 +490,35 @@ impl FormattableDiagnosticGroup for SyntaxBug {
             SyntaxBug::FunctionCallArgumentLimit(pos) => DiagnosticInfo {
                 origin: Origin::Point(pos.to_owned()),
                 message: "function call argument limit of 65,536 exceeded".into(),
+            },
+
+            /* ------------------------------------------------------------------------- */
+
+            SyntaxBug::DoWhileExpectedWhileKeyword(pos) => DiagnosticInfo {
+                origin: Origin::Point(pos.to_owned()),
+                message: "expected 'while' after 'do' block".into(),
+            },
+
+            /* ------------------------------------------------------------------------- */
+
+            SyntaxBug::ForVariableBindingMissingName(pos) => DiagnosticInfo {
+                origin: Origin::Point(pos.to_owned()),
+                message: "missing name for for-loop binding".into(),
+            },
+
+            SyntaxBug::ForVariableBindingExpectedEnd(pos) => DiagnosticInfo {
+                origin: Origin::Point(pos.to_owned()),
+                message: "expected ',' or ')' after for-loop binding".into(),
+            },
+
+            SyntaxBug::ForVariableBindingLimit(pos) => DiagnosticInfo {
+                origin: Origin::Point(pos.to_owned()),
+                message: "for-loop binding limit of 65,536 exceeded".into(),
+            },
+
+            SyntaxBug::ForExpectedInKeyword(pos) => DiagnosticInfo {
+                origin: Origin::Point(pos.to_owned()),
+                message: "expected 'in' after for-loop binding(s)".into(),
             },
 
             /* ------------------------------------------------------------------------- */

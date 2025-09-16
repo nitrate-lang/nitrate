@@ -755,54 +755,49 @@ impl Parser<'_, '_> {
     }
 
     fn parse_for(&mut self) -> ForEach {
-        // TODO: Cleanup
-
         fn parse_for_bindings(this: &mut Parser) -> Vec<(IString, Option<Type>)> {
-            let mut bindings = Vec::new();
+            if !this.lexer.skip_if(&Token::OpenParen) {
+                let variable_name = this.lexer.next_if_name().unwrap_or_else(|| {
+                    let bug = SyntaxBug::ForVariableBindingMissingName(this.lexer.peek_pos());
+                    this.bugs.push(&bug);
+                    "".into()
+                });
 
-            if this.lexer.skip_if(&Token::OpenParen) {
-                this.lexer.skip_if(&Token::Comma);
-
-                loop {
-                    if this.lexer.skip_if(&Token::CloseParen) {
-                        break;
-                    }
-
-                    let Some(variable_name) = this.lexer.next_if_name() else {
-                        error!(
-                            "[P????]: for: expected loop variable name\n--> {}",
-                            this.lexer.current_pos()
-                        );
-                        todo!()
-                    };
-
-                    let type_annotation = if this.lexer.skip_if(&Token::Colon) {
-                        Some(this.parse_type())
-                    } else {
-                        None
-                    };
-
-                    bindings.push((variable_name, type_annotation));
-
-                    if !this.lexer.skip_if(&Token::Comma) && !this.lexer.next_is(&Token::CloseParen)
-                    {
-                        error!(
-                            "[P0???]: for: expected ',' or ')' after loop variable\n--> {}",
-                            this.lexer.current_pos()
-                        );
-
-                        todo!()
-                    }
-                }
-            } else {
-                let Some(variable_name) = this.lexer.next_if_name() else {
-                    error!(
-                        "[P????]: for: expected loop variable name\n--> {}",
-                        this.lexer.current_pos()
-                    );
-
-                    todo!()
+                let type_annotation = if this.lexer.skip_if(&Token::Colon) {
+                    Some(this.parse_type())
+                } else {
+                    None
                 };
+
+                return vec![(variable_name, type_annotation)];
+            }
+
+            let mut bindings = Vec::new();
+            let mut already_reported_too_many_bindings = false;
+
+            this.lexer.skip_if(&Token::Comma);
+
+            while !this.lexer.skip_if(&Token::CloseParen) {
+                if this.lexer.is_eof() {
+                    let bug = SyntaxBug::ForVariableBindingExpectedEnd(this.lexer.peek_pos());
+                    this.bugs.push(&bug);
+                    break;
+                }
+
+                const MAX_BINDINGS: usize = 65_536;
+
+                if !already_reported_too_many_bindings && bindings.len() >= MAX_BINDINGS {
+                    already_reported_too_many_bindings = true;
+
+                    let bug = SyntaxBug::ForVariableBindingLimit(this.lexer.peek_pos());
+                    this.bugs.push(&bug);
+                }
+
+                let variable_name = this.lexer.next_if_name().unwrap_or_else(|| {
+                    let bug = SyntaxBug::ForVariableBindingMissingName(this.lexer.peek_pos());
+                    this.bugs.push(&bug);
+                    "".into()
+                });
 
                 let type_annotation = if this.lexer.skip_if(&Token::Colon) {
                     Some(this.parse_type())
@@ -811,6 +806,14 @@ impl Parser<'_, '_> {
                 };
 
                 bindings.push((variable_name, type_annotation));
+
+                if !this.lexer.skip_if(&Token::Comma) && !this.lexer.next_is(&Token::CloseParen) {
+                    let bug = SyntaxBug::ForVariableBindingExpectedEnd(this.lexer.peek_pos());
+                    this.bugs.push(&bug);
+
+                    this.lexer.skip_while(&Token::CloseParen);
+                    break;
+                }
             }
 
             bindings
@@ -823,12 +826,8 @@ impl Parser<'_, '_> {
         let bindings = parse_for_bindings(self);
 
         if !self.lexer.skip_if(&Token::Keyword(Keyword::In)) {
-            error!(
-                "[P????]: for: expected 'in' after loop variable\n--> {}",
-                self.lexer.current_pos()
-            );
-
-            todo!()
+            let bug = SyntaxBug::ForExpectedInKeyword(self.lexer.peek_pos());
+            self.bugs.push(&bug);
         }
 
         let iterable = self.parse_expression();
@@ -858,19 +857,14 @@ impl Parser<'_, '_> {
     }
 
     fn parse_do(&mut self) -> DoWhileLoop {
-        // TODO: Cleanup
-
         assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Do));
         self.lexer.skip_tok();
 
         let body = self.parse_block();
-        if !self.lexer.skip_if(&Token::Keyword(Keyword::While)) {
-            error!(
-                "[P????]: do-while: expected 'while' after 'do' block\n--> {}",
-                self.lexer.current_pos()
-            );
 
-            todo!()
+        if !self.lexer.skip_if(&Token::Keyword(Keyword::While)) {
+            let bug = SyntaxBug::DoWhileExpectedWhileKeyword(self.lexer.peek_pos());
+            self.bugs.push(&bug);
         }
 
         let condition = self.parse_expression();
@@ -952,8 +946,6 @@ impl Parser<'_, '_> {
     }
 
     fn parse_closure_parameters(&mut self) -> Vec<FunctionParameter> {
-        // TODO: Cleanup
-
         fn parse_closure_parameter(this: &mut Parser) -> FunctionParameter {
             let attributes = this.parse_attributes();
 
@@ -976,23 +968,21 @@ impl Parser<'_, '_> {
             };
 
             FunctionParameter {
+                attributes,
                 name,
                 param_type,
                 default,
-                attributes,
             }
         }
 
-        let mut params = Vec::new();
-
         if !self.lexer.skip_if(&Token::OpenParen) {
-            let bug = SyntaxBug::ExpectedOpenParen(self.lexer.peek_pos());
-            self.bugs.push(&bug);
+            return Vec::new();
         }
 
-        self.lexer.skip_if(&Token::Comma);
-
+        let mut params = Vec::new();
         let mut already_reported_too_many_parameters = false;
+
+        self.lexer.skip_if(&Token::Comma);
 
         while !self.lexer.skip_if(&Token::CloseParen) {
             if self.lexer.is_eof() {
@@ -1016,6 +1006,7 @@ impl Parser<'_, '_> {
             if !self.lexer.skip_if(&Token::Comma) && !self.lexer.next_is(&Token::CloseParen) {
                 let bug = SyntaxBug::FunctionParametersExpectedEnd(self.lexer.peek_pos());
                 self.bugs.push(&bug);
+
                 self.lexer.skip_while(&Token::CloseParen);
                 break;
             }
@@ -1025,8 +1016,6 @@ impl Parser<'_, '_> {
     }
 
     fn parse_closure(&mut self) -> Closure {
-        // TODO: Cleanup
-
         if self.lexer.peek_t() == Token::OpenBrace {
             let definition = self.parse_block();
 
@@ -1055,25 +1044,20 @@ impl Parser<'_, '_> {
             None
         };
 
-        let definition = if self.lexer.next_is(&Token::OpenBrace) {
-            self.parse_block()
-        } else if self.lexer.skip_if(&Token::Eq) {
+        let definition = if self.lexer.skip_if(&Token::Eq) {
             if !self.lexer.skip_if(&Token::Gt) {
                 let bug = SyntaxBug::ExpectedBlockArrow(self.lexer.peek_pos());
                 self.bugs.push(&bug);
             }
 
-            let expr = self.parse_expression();
+            let single = self.parse_expression();
+
             Block {
-                elements: vec![expr],
+                elements: vec![single],
                 ends_with_semi: false,
             }
         } else {
-            error!(
-                "[P????]: function: expected function body\n--> {}",
-                self.lexer.current_pos()
-            );
-            todo!()
+            self.parse_block()
         };
 
         Closure {
