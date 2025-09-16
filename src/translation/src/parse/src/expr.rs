@@ -915,22 +915,17 @@ impl Parser<'_, '_> {
     }
 
     fn parse_break(&mut self) -> Break {
-        // TODO: Cleanup
-
         assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Break));
         self.lexer.skip_tok();
 
         let label = if self.lexer.skip_if(&Token::SingleQuote) {
-            let Some(name) = self.lexer.next_if_name() else {
-                error!(
-                    "[P????]: break: expected branch label after single quote\n--> {}",
-                    self.lexer.current_pos()
-                );
-
-                todo!()
-            };
-
-            Some(name)
+            if let Some(name) = self.lexer.next_if_name() {
+                Some(name)
+            } else {
+                let bug = SyntaxBug::BreakMissingLabel(self.lexer.peek_pos());
+                self.bugs.push(&bug);
+                None
+            }
         } else {
             None
         };
@@ -939,22 +934,17 @@ impl Parser<'_, '_> {
     }
 
     fn parse_continue(&mut self) -> Continue {
-        // TODO: Cleanup
-
         assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Continue));
         self.lexer.skip_tok();
 
         let label = if self.lexer.skip_if(&Token::SingleQuote) {
-            let Some(name) = self.lexer.next_if_name() else {
-                error!(
-                    "[P????]: continue: expected branch label after single quote\n--> {}",
-                    self.lexer.current_pos()
-                );
-
-                todo!()
-            };
-
-            Some(name)
+            if let Some(name) = self.lexer.next_if_name() {
+                Some(name)
+            } else {
+                let bug = SyntaxBug::ContinueMissingLabel(self.lexer.peek_pos());
+                self.bugs.push(&bug);
+                None
+            }
         } else {
             None
         };
@@ -1175,8 +1165,6 @@ impl Parser<'_, '_> {
     }
 
     pub(crate) fn parse_block(&mut self) -> Block {
-        // TODO: Cleanup
-
         if !self.lexer.skip_if(&Token::OpenBrace) {
             let bug = SyntaxBug::ExpectedOpenBrace(self.lexer.peek_pos());
             self.bugs.push(&bug);

@@ -63,6 +63,10 @@ pub(crate) enum SyntaxBug {
     BlockExpectedEnd(SourcePosition),
     BlockElementLimit(SourcePosition),
 
+    BreakMissingLabel(SourcePosition),
+
+    ContinueMissingLabel(SourcePosition),
+
     ExpectedOpenParen(SourcePosition),
     ExpectedCloseParen(SourcePosition),
     ExpectedOpenBrace(SourcePosition),
@@ -147,6 +151,10 @@ impl FormattableDiagnosticGroup for SyntaxBug {
 
             SyntaxBug::BlockExpectedEnd(_) => 340,
             SyntaxBug::BlockElementLimit(_) => 341,
+
+            SyntaxBug::BreakMissingLabel(_) => 360,
+
+            SyntaxBug::ContinueMissingLabel(_) => 380,
 
             SyntaxBug::ExpectedOpenParen(_) => 1000,
             SyntaxBug::ExpectedCloseParen(_) => 1001,
@@ -412,6 +420,20 @@ impl FormattableDiagnosticGroup for SyntaxBug {
             SyntaxBug::BlockElementLimit(pos) => DiagnosticInfo {
                 origin: Origin::Point(pos.to_owned()),
                 message: "block element limit of 65,536 exceeded".into(),
+            },
+
+            /* ------------------------------------------------------------------------- */
+
+            SyntaxBug::BreakMissingLabel(pos) => DiagnosticInfo {
+                origin: Origin::Point(pos.to_owned()),
+                message: "break statement is missing a label".into(),
+            },
+
+            /* ------------------------------------------------------------------------- */
+
+            SyntaxBug::ContinueMissingLabel(pos) => DiagnosticInfo {
+                origin: Origin::Point(pos.to_owned()),
+                message: "continue statement is missing a label".into(),
             },
 
             /* ------------------------------------------------------------------------- */
