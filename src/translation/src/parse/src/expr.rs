@@ -2,7 +2,6 @@ use crate::bugs::SyntaxBug;
 
 use super::parse::Parser;
 use interned_string::IString;
-use log::error;
 use nitrate_parsetree::kind::{
     Await, BinExpr, BinExprOp, Block, Break, Call, CallArgument, Cast, Closure, Continue,
     DoWhileLoop, Expr, ForEach, FunctionParameter, GenericArgument, If, IndexAccess, Integer, List,
@@ -372,12 +371,11 @@ impl Parser<'_, '_> {
             Token::Keyword(Keyword::For) => Expr::For(Box::new(self.parse_for())),
             Token::Keyword(Keyword::While) => Expr::While(Box::new(self.parse_while())),
             Token::Keyword(Keyword::Do) => Expr::DoWhileLoop(Box::new(self.parse_do())),
-            Token::Keyword(Keyword::Switch) => Expr::Switch(Box::new(self.parse_switch())),
+            // Token::Keyword(Keyword::Switch) => Expr::Switch(Box::new(self.parse_switch())),
             Token::Keyword(Keyword::Break) => Expr::Break(Box::new(self.parse_break())),
             Token::Keyword(Keyword::Continue) => Expr::Continue(Box::new(self.parse_continue())),
             Token::Keyword(Keyword::Ret) => Expr::Return(Box::new(self.parse_return())),
             Token::Keyword(Keyword::Await) => Expr::Await(Box::new(self.parse_await())),
-            Token::Keyword(Keyword::Asm) => self.parse_asm(),
 
             _ => {
                 self.lexer.skip_tok();
@@ -413,8 +411,6 @@ impl Parser<'_, '_> {
     }
 
     fn parse_expression_precedence(&mut self, min_precedence_to_proceed: Precedence) -> Expr {
-        // TODO: Cleanup
-
         let mut sofar = self.parse_prefix();
 
         loop {
@@ -872,13 +868,6 @@ impl Parser<'_, '_> {
         DoWhileLoop { body, condition }
     }
 
-    fn parse_switch(&mut self) -> Switch {
-        // TODO: switch expression parsing logic
-        error!("Switch expression parsing not implemented yet");
-
-        todo!()
-    }
-
     fn parse_break(&mut self) -> Break {
         assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Break));
         self.lexer.skip_tok();
@@ -937,12 +926,6 @@ impl Parser<'_, '_> {
         let future = self.parse_expression();
 
         Await { future }
-    }
-
-    fn parse_asm(&mut self) -> Expr {
-        // TODO: asm expression parsing logic
-        error!("Asm expression parsing not implemented yet");
-        todo!()
     }
 
     fn parse_closure_parameters(&mut self) -> Vec<FunctionParameter> {

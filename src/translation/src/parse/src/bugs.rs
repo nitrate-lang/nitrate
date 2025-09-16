@@ -99,6 +99,8 @@ pub(crate) enum SyntaxBug {
     ExpectedItem(SourcePosition),
     ExpectedType(SourcePosition),
     ExpectedExpr(SourcePosition),
+
+    SyntaxNotSupported(SourcePosition),
 }
 
 impl FormattableDiagnosticGroup for SyntaxBug {
@@ -201,6 +203,8 @@ impl FormattableDiagnosticGroup for SyntaxBug {
             SyntaxBug::ExpectedItem(_) => 2000,
             SyntaxBug::ExpectedType(_) => 2001,
             SyntaxBug::ExpectedExpr(_) => 2002,
+
+            SyntaxBug::SyntaxNotSupported(_) => 2020,
         }
     }
 
@@ -599,6 +603,13 @@ impl FormattableDiagnosticGroup for SyntaxBug {
                 origin: Origin::Point(pos.to_owned()),
                 message: "expected an expression".into(),
             },
+
+            /* ------------------------------------------------------------------------- */
+
+            SyntaxBug::SyntaxNotSupported(pos) => DiagnosticInfo {
+                origin: Origin::Point(pos.to_owned()),
+                message: "this syntax is not supported".into(),
+            }
         }
     }
 }
