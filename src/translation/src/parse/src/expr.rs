@@ -45,7 +45,7 @@ enum Operation {
     Index,
 }
 
-fn get_precedence_of_binary_operator(op: BinExprOp) -> Option<(Associativity, Precedence)> {
+fn get_precedence_of_binary_operator(op: BinExprOp) -> (Associativity, Precedence) {
     let (associativity, precedence) = match op {
         BinExprOp::Dot | BinExprOp::Arrow => {
             (Associativity::LeftToRight, PrecedenceRank::FieldAccess)
@@ -97,23 +97,19 @@ fn get_precedence_of_binary_operator(op: BinExprOp) -> Option<(Associativity, Pr
         | BinExprOp::SetLogicAnd
         | BinExprOp::SetLogicOr
         | BinExprOp::SetLogicXor => (Associativity::RightToLeft, PrecedenceRank::Assign),
-
-        BinExprOp::Ellipsis => {
-            return None;
-        }
     };
 
-    Some((associativity, precedence as Precedence))
+    (associativity, precedence as Precedence)
 }
 
-fn get_precedence(operation: Operation) -> Option<(Associativity, Precedence)> {
+fn get_precedence(operation: Operation) -> (Associativity, Precedence) {
     match operation {
         Operation::BinOp(op) => get_precedence_of_binary_operator(op),
 
-        Operation::FunctionCall | Operation::Index => Some((
+        Operation::FunctionCall | Operation::Index => (
             Associativity::LeftToRight,
             PrecedenceRank::FunctionCallAndIndexing as Precedence,
-        )),
+        ),
     }
 }
 
@@ -222,11 +218,7 @@ impl Parser<'_, '_> {
             Token::Dot => {
                 self.lexer.skip_tok();
                 if self.lexer.skip_if(&Token::Dot) {
-                    if self.lexer.skip_if(&Token::Dot) {
-                        Some(BinExprOp::Ellipsis)
-                    } else {
-                        Some(BinExprOp::Range)
-                    }
+                    Some(BinExprOp::Range)
                 } else {
                     Some(BinExprOp::Dot)
                 }
@@ -426,13 +418,13 @@ impl Parser<'_, '_> {
         let mut sofar = self.parse_prefix();
 
         loop {
+            let pre_binop_pos = self.lexer.current_pos();
             if let Some(operator) = self.detect_and_parse_binary_operator() {
                 let operation = Operation::BinOp(operator);
-                let Some((assoc, op_precedence)) = get_precedence(operation) else {
-                    return sofar;
-                };
+                let (assoc, op_precedence) = get_precedence(operation);
 
                 if op_precedence < min_precedence_to_proceed {
+                    self.lexer.rewind(pre_binop_pos);
                     return sofar;
                 }
 
@@ -448,18 +440,18 @@ impl Parser<'_, '_> {
                     right: right_expr,
                 }));
             } else {
+                self.lexer.rewind(pre_binop_pos);
+
                 match self.lexer.peek_t() {
                     Token::OpenParen => {
                         let operation = Operation::FunctionCall;
-                        let Some((_, new_precedence)) = get_precedence(operation) else {
-                            return sofar;
-                        };
+                        let (_, new_precedence) = get_precedence(operation);
 
                         if new_precedence < min_precedence_to_proceed {
                             return sofar;
                         }
 
-                        let arguments = self.parse_function_arguments();
+                        let arguments = self.parse_function_call_arguments();
 
                         sofar = Expr::Call(Box::new(Call {
                             callee: sofar,
@@ -469,9 +461,7 @@ impl Parser<'_, '_> {
 
                     Token::OpenBracket => {
                         let operation = Operation::Index;
-                        let Some((_, new_precedence)) = get_precedence(operation) else {
-                            return sofar;
-                        };
+                        let (_, new_precedence) = get_precedence(operation);
 
                         if new_precedence < min_precedence_to_proceed {
                             return sofar;
@@ -610,12 +600,8 @@ impl Parser<'_, '_> {
         attributes
     }
 
-    fn parse_generic_arguments(&mut self) -> Vec<GenericArgument> {
-        // TODO: Cleanup
-
+    pub(crate) fn parse_generic_arguments(&mut self) -> Vec<GenericArgument> {
         fn parse_generic_argument(this: &mut Parser) -> GenericArgument {
-            // TODO: Cleanup
-
             let mut name: Option<IString> = None;
 
             let rewind_pos = this.lexer.current_pos();
@@ -632,8 +618,9 @@ impl Parser<'_, '_> {
             GenericArgument { name, value }
         }
 
-        assert!(self.lexer.peek_t() == Token::Lt);
-        self.lexer.skip_tok();
+        if !self.lexer.skip_if(&Token::Lt) {
+            return Vec::new();
+        }
 
         let mut arguments = Vec::new();
         let mut already_reported_too_many_arguments = false;
@@ -642,7 +629,7 @@ impl Parser<'_, '_> {
 
         while !self.lexer.skip_if(&Token::Gt) {
             if self.lexer.is_eof() {
-                let bug = SyntaxBug::GenericArgumentExpectedEnd(self.lexer.peek_pos());
+                let bug = SyntaxBug::PathGenericArgumentExpectedEnd(self.lexer.peek_pos());
                 self.bugs.push(&bug);
                 break;
             }
@@ -652,7 +639,7 @@ impl Parser<'_, '_> {
             if !already_reported_too_many_arguments && arguments.len() >= MAX_GENERIC_ARGUMENTS {
                 already_reported_too_many_arguments = true;
 
-                let bug = SyntaxBug::GenericArgumentLimit(self.lexer.peek_pos());
+                let bug = SyntaxBug::PathGenericArgumentLimit(self.lexer.peek_pos());
                 self.bugs.push(&bug);
             }
 
@@ -672,8 +659,6 @@ impl Parser<'_, '_> {
     }
 
     pub(crate) fn parse_path(&mut self) -> Path {
-        // TODO: Cleanup
-
         assert!(matches!(self.lexer.peek_t(), Token::Name(_) | Token::Colon));
 
         let mut path = SmallVec::new();
@@ -693,16 +678,15 @@ impl Parser<'_, '_> {
                 }
 
                 Token::Colon => {
+                    self.lexer.skip_tok();
                     if !self.lexer.skip_if(&Token::Colon) {
+                        last_was_scope = false;
                         break;
                     }
 
                     if last_was_scope {
-                        error!(
-                            "[P????]: path: unexpected '::'\n--> {}",
-                            self.lexer.current_pos()
-                        );
-
+                        let bug = SyntaxBug::PathUnexpectedScopeSeparator(self.lexer.peek_pos());
+                        self.bugs.push(&bug);
                         break;
                     }
 
@@ -710,7 +694,6 @@ impl Parser<'_, '_> {
                         path.push(IString::from(""));
                     }
 
-                    self.lexer.skip_tok();
                     last_was_scope = true;
                 }
 
@@ -719,27 +702,15 @@ impl Parser<'_, '_> {
         }
 
         if path.is_empty() {
-            error!(
-                "[P????]: path: expected at least one identifier in path\n--> {}",
-                self.lexer.current_pos()
-            );
+            let bug = SyntaxBug::PathIsEmpty(self.lexer.peek_pos());
+            self.bugs.push(&bug);
         }
 
-        if last_was_scope {
-            error!(
-                "[P????]: path: unexpected trailing '::'\n--> {}",
-                self.lexer.current_pos()
-            );
-        }
-
-        if !self.lexer.next_is(&Token::Lt) {
-            return Path {
-                path,
-                type_arguments: Vec::new(),
-            };
-        }
-
-        let type_arguments = self.parse_generic_arguments();
+        let type_arguments = if last_was_scope {
+            self.parse_generic_arguments()
+        } else {
+            Vec::new()
+        };
 
         Path {
             path,
@@ -1113,18 +1084,12 @@ impl Parser<'_, '_> {
         }
     }
 
-    fn parse_function_arguments(&mut self) -> Vec<CallArgument> {
-        // TODO: Cleanup
-
-        fn parse_function_argument(this: &mut Parser) -> CallArgument {
-            // TODO: Cleanup
-
+    fn parse_function_call_arguments(&mut self) -> Vec<CallArgument> {
+        fn parse_function_call_argument(this: &mut Parser) -> CallArgument {
             let mut name = None;
 
-            if let Token::Name(argument_name) = this.lexer.peek_t() {
-                let rewind_pos = this.lexer.current_pos();
-                this.lexer.skip_tok();
-
+            let rewind_pos = this.lexer.current_pos();
+            if let Some(argument_name) = this.lexer.next_if_name() {
                 if this.lexer.skip_if(&Token::Colon) {
                     name = Some(argument_name);
                 } else {
@@ -1141,23 +1106,35 @@ impl Parser<'_, '_> {
         self.lexer.skip_tok();
 
         let mut arguments = Vec::new();
+        let mut already_reported_too_many_arguments = false;
+
         self.lexer.skip_if(&Token::Comma);
 
-        loop {
-            if self.lexer.skip_if(&Token::CloseParen) {
+        while !self.lexer.skip_if(&Token::CloseParen) {
+            if self.lexer.is_eof() {
+                let bug = SyntaxBug::FunctionCallExpectedEnd(self.lexer.peek_pos());
+                self.bugs.push(&bug);
                 break;
             }
 
-            let function_argument = parse_function_argument(self);
-            arguments.push(function_argument);
+            const MAX_CALL_ARGUMENTS: usize = 65_536;
+
+            if !already_reported_too_many_arguments && arguments.len() >= MAX_CALL_ARGUMENTS {
+                already_reported_too_many_arguments = true;
+
+                let bug = SyntaxBug::FunctionCallArgumentLimit(self.lexer.peek_pos());
+                self.bugs.push(&bug);
+            }
+
+            let argument = parse_function_call_argument(self);
+            arguments.push(argument);
 
             if !self.lexer.skip_if(&Token::Comma) && !self.lexer.next_is(&Token::CloseParen) {
-                error!(
-                    "[P0???]: function call: expected ',' or ')' after function argument\n--> {}",
-                    self.lexer.current_pos()
-                );
+                let bug = SyntaxBug::FunctionCallExpectedEnd(self.lexer.peek_pos());
+                self.bugs.push(&bug);
 
-                todo!()
+                self.lexer.skip_while(&Token::CloseParen);
+                break;
             }
         }
 

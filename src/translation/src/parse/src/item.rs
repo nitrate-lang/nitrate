@@ -435,7 +435,7 @@ impl Parser<'_, '_> {
         let type_params = self.parse_generic_parameters();
 
         let trait_path = if self.lexer.skip_if(&Token::Keyword(Keyword::Trait)) {
-            let path = self.parse_path();
+            let path = self.parse_type_path();
 
             if !self.lexer.skip_if(&Token::Keyword(Keyword::For)) {
                 let bug = SyntaxBug::ImplMissingFor(self.lexer.peek_pos());

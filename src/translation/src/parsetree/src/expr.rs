@@ -129,8 +129,6 @@ pub enum BinExprOp {
     Dot,
     /// `->`
     Arrow,
-    /// `...`
-    Ellipsis,
     /// `..`
     Range,
     /// `as`

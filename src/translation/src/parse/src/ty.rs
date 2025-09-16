@@ -3,13 +3,14 @@ use crate::bugs::SyntaxBug;
 
 use interned_string::IString;
 use nitrate_parsetree::kind::{
-    ArrayType, Expr, FunctionType, FunctionTypeParameter, Lifetime, ReferenceType, RefinementType,
-    SliceType, TupleType, Type,
+    ArrayType, Expr, FunctionType, FunctionTypeParameter, Lifetime, Path, ReferenceType,
+    RefinementType, SliceType, TupleType, Type,
 };
 use nitrate_tokenize::{Keyword, Token};
 
 #[allow(unused_imports)]
 use nitrate_tokenize::Lexer;
+use smallvec::SmallVec;
 
 #[derive(Default)]
 struct RefinementOptions {
@@ -352,6 +353,67 @@ impl Parser<'_, '_> {
         }
     }
 
+    pub(crate) fn parse_type_path(&mut self) -> Path {
+        assert!(matches!(self.lexer.peek_t(), Token::Name(_) | Token::Colon));
+
+        let mut path = SmallVec::new();
+        let mut last_was_scope = false;
+
+        loop {
+            match self.lexer.peek_t() {
+                Token::Name(name) => {
+                    if !last_was_scope && !path.is_empty() {
+                        break;
+                    }
+
+                    self.lexer.skip_tok();
+
+                    path.push(name);
+                    last_was_scope = false;
+                }
+
+                Token::Colon => {
+                    self.lexer.skip_tok();
+                    if !self.lexer.skip_if(&Token::Colon) {
+                        last_was_scope = false;
+                        break;
+                    }
+
+                    if last_was_scope {
+                        let bug = SyntaxBug::PathUnexpectedScopeSeparator(self.lexer.peek_pos());
+                        self.bugs.push(&bug);
+                        break;
+                    }
+
+                    if path.is_empty() {
+                        path.push(IString::from(""));
+                    }
+
+                    last_was_scope = true;
+                }
+
+                _ => break,
+            }
+        }
+
+        if path.is_empty() {
+            let bug = SyntaxBug::PathIsEmpty(self.lexer.peek_pos());
+            self.bugs.push(&bug);
+        }
+
+        if last_was_scope {
+            let bug = SyntaxBug::PathTrailingScopeSeparator(self.lexer.peek_pos());
+            self.bugs.push(&bug);
+        }
+
+        let type_arguments = self.parse_generic_arguments();
+
+        Path {
+            path,
+            type_arguments,
+        }
+    }
+
     fn parse_type_primary(&mut self) -> Type {
         let current_pos = self.lexer.current_pos();
 
@@ -373,7 +435,7 @@ impl Parser<'_, '_> {
             | Token::Keyword(Keyword::F64)
             | Token::Keyword(Keyword::F128) => self.parse_type_primitive(),
 
-            Token::Name(_) | Token::Colon => Type::TypeName(Box::new(self.parse_path())),
+            Token::Name(_) | Token::Colon => Type::TypeName(Box::new(self.parse_type_path())),
             Token::OpenBracket => self.parse_array_or_slice(),
             Token::And => Type::ReferenceType(Box::new(self.parse_reference_type())),
             Token::Star => Type::ReferenceType(Box::new(self.parse_pointer_type())),

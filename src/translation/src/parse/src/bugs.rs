@@ -44,8 +44,12 @@ pub(crate) enum SyntaxBug {
     ImplExpectedEnd(SourcePosition),
     ImplItemLimit(SourcePosition),
 
-    GenericArgumentExpectedEnd(SourcePosition),
-    GenericArgumentLimit(SourcePosition),
+    
+    PathIsEmpty(SourcePosition),
+    PathUnexpectedScopeSeparator(SourcePosition),
+    PathTrailingScopeSeparator(SourcePosition),
+    PathGenericArgumentExpectedEnd(SourcePosition),
+    PathGenericArgumentLimit(SourcePosition),
 
     ReferenceTypeExpectedLifetimeName(SourcePosition),
 
@@ -66,6 +70,9 @@ pub(crate) enum SyntaxBug {
     BreakMissingLabel(SourcePosition),
 
     ContinueMissingLabel(SourcePosition),
+
+    FunctionCallExpectedEnd(SourcePosition),
+    FunctionCallArgumentLimit(SourcePosition),
 
     ExpectedOpenParen(SourcePosition),
     ExpectedCloseParen(SourcePosition),
@@ -135,8 +142,11 @@ impl FormattableDiagnosticGroup for SyntaxBug {
             SyntaxBug::ImplExpectedEnd(_) => 201,
             SyntaxBug::ImplItemLimit(_) => 202,
 
-            SyntaxBug::GenericArgumentExpectedEnd(_) => 220,
-            SyntaxBug::GenericArgumentLimit(_) => 221,
+            SyntaxBug::PathIsEmpty(_) => 220,
+            SyntaxBug::PathTrailingScopeSeparator(_) => 221,
+            SyntaxBug::PathGenericArgumentExpectedEnd(_) => 222,
+            SyntaxBug::PathGenericArgumentLimit(_) => 223,
+            SyntaxBug::PathUnexpectedScopeSeparator(_) => 224,
 
             SyntaxBug::ReferenceTypeExpectedLifetimeName(_) => 240,
 
@@ -157,6 +167,9 @@ impl FormattableDiagnosticGroup for SyntaxBug {
             SyntaxBug::BreakMissingLabel(_) => 360,
 
             SyntaxBug::ContinueMissingLabel(_) => 380,
+
+            SyntaxBug::FunctionCallExpectedEnd(_) => 400,
+            SyntaxBug::FunctionCallArgumentLimit(_) => 401,
 
             SyntaxBug::ExpectedOpenParen(_) => 1000,
             SyntaxBug::ExpectedCloseParen(_) => 1001,
@@ -352,12 +365,27 @@ impl FormattableDiagnosticGroup for SyntaxBug {
 
             /* ------------------------------------------------------------------------- */
 
-            SyntaxBug::GenericArgumentExpectedEnd(pos) => DiagnosticInfo {
+            SyntaxBug::PathIsEmpty(pos) => DiagnosticInfo {
                 origin: Origin::Point(pos.to_owned()),
-                message: "expected a '>' or ','".into(),
+                message: "path is empty".into(),
             },
 
-            SyntaxBug::GenericArgumentLimit(pos) => DiagnosticInfo {
+            SyntaxBug::PathUnexpectedScopeSeparator(pos) => DiagnosticInfo {
+                origin: Origin::Point(pos.to_owned()),
+                message: "unexpected '::' in path".into(),
+            },
+
+            SyntaxBug::PathTrailingScopeSeparator(pos) => DiagnosticInfo {
+                origin: Origin::Point(pos.to_owned()),
+                message: "trailing '::' in path".into(),
+            },
+
+            SyntaxBug::PathGenericArgumentExpectedEnd(pos) => DiagnosticInfo {
+                origin: Origin::Point(pos.to_owned()),
+                message: "expected '>' or ',' in generic arguments".into(),
+            },
+
+            SyntaxBug::PathGenericArgumentLimit(pos) => DiagnosticInfo {
                 origin: Origin::Point(pos.to_owned()),
                 message: "generic argument limit of 65,536 exceeded".into(),
             },
@@ -436,6 +464,18 @@ impl FormattableDiagnosticGroup for SyntaxBug {
             SyntaxBug::ContinueMissingLabel(pos) => DiagnosticInfo {
                 origin: Origin::Point(pos.to_owned()),
                 message: "continue statement is missing a label".into(),
+            },
+
+            /* ------------------------------------------------------------------------- */
+
+            SyntaxBug::FunctionCallExpectedEnd(pos) => DiagnosticInfo {
+                origin: Origin::Point(pos.to_owned()),
+                message: "expected ',' or ')' after function argument".into(),
+            },
+
+            SyntaxBug::FunctionCallArgumentLimit(pos) => DiagnosticInfo {
+                origin: Origin::Point(pos.to_owned()),
+                message: "function call argument limit of 65,536 exceeded".into(),
             },
 
             /* ------------------------------------------------------------------------- */
