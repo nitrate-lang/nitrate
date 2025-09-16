@@ -4,7 +4,7 @@ use super::parse::Parser;
 use nitrate_parsetree::kind::{
     Await, BinExpr, BinExprOp, Block, BlockItem, Break, Call, CallArgument, Cast, Closure,
     Continue, DoWhileLoop, Expr, ForEach, FunctionParameter, GenericArgument, If, IndexAccess,
-    Integer, List, Path, Return, Type, UnaryExpr, UnaryExprOp, WhileLoop,
+    Integer, List, Path, Return, Safety, Type, UnaryExpr, UnaryExprOp, WhileLoop,
 };
 use nitrate_tokenize::{Keyword, Token};
 use smallvec::{SmallVec, smallvec};
@@ -362,9 +362,10 @@ impl Parser<'_, '_> {
 
             Token::Keyword(Keyword::Type) => Expr::TypeInfo(Box::new(self.parse_type_info())),
 
-            Token::Keyword(Keyword::Fn) | Token::OpenBrace => {
-                Expr::Closure(Box::new(self.parse_closure()))
-            }
+            Token::Keyword(Keyword::Fn)
+            | Token::OpenBrace
+            | Token::Keyword(Keyword::Unsafe)
+            | Token::Keyword(Keyword::Safe) => Expr::Closure(Box::new(self.parse_closure())),
 
             Token::Keyword(Keyword::If) => Expr::If(Box::new(self.parse_if())),
             Token::Keyword(Keyword::For) => Expr::For(Box::new(self.parse_for())),
@@ -732,6 +733,7 @@ impl Parser<'_, '_> {
                 let else_branch = Expr::If(Box::new(self.parse_if()));
 
                 Some(Block {
+                    safety: None,
                     elements: vec![BlockItem::Expr(else_branch)],
                     ends_with_semi: false,
                 })
@@ -998,7 +1000,10 @@ impl Parser<'_, '_> {
     }
 
     fn parse_closure(&mut self) -> Closure {
-        if self.lexer.peek_t() == Token::OpenBrace {
+        if matches!(
+            self.lexer.peek_t(),
+            Token::OpenBrace | Token::Keyword(Keyword::Unsafe) | Token::Keyword(Keyword::Safe)
+        ) {
             let definition = self.parse_block();
 
             return Closure {
@@ -1108,6 +1113,14 @@ impl Parser<'_, '_> {
     }
 
     pub(crate) fn parse_block(&mut self) -> Block {
+        let safety = if self.lexer.skip_if(&Token::Keyword(Keyword::Unsafe)) {
+            Some(Safety::Unsafe)
+        } else if self.lexer.skip_if(&Token::Keyword(Keyword::Safe)) {
+            Some(Safety::Safe)
+        } else {
+            None
+        };
+
         if !self.lexer.skip_if(&Token::OpenBrace) {
             let bug = SyntaxBug::ExpectedOpenBrace(self.lexer.peek_pos());
             self.bugs.push(&bug);
@@ -1151,6 +1164,7 @@ impl Parser<'_, '_> {
         }
 
         Block {
+            safety,
             elements,
             ends_with_semi,
         }

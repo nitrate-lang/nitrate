@@ -438,9 +438,11 @@ impl Parser<'_, '_> {
             Token::OpenBracket => self.parse_array_or_slice(),
             Token::And => Type::ReferenceType(Box::new(self.parse_reference_type())),
             Token::Star => Type::ReferenceType(Box::new(self.parse_pointer_type())),
-            Token::OpenBrace => Type::LatentType(Box::new(self.parse_block())),
             Token::Keyword(Keyword::Fn) => Type::FunctionType(Box::new(self.parse_function_type())),
             Token::Keyword(Keyword::Opaque) => self.parse_opaque_type(),
+            Token::OpenBrace | Token::Keyword(Keyword::Unsafe) | Token::Keyword(Keyword::Safe) => {
+                Type::LatentType(Box::new(self.parse_block()))
+            }
 
             _ => {
                 self.lexer.skip_tok();

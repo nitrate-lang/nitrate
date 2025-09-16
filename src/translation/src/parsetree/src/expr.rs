@@ -155,7 +155,14 @@ pub enum BlockItem {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum Safety {
+    Safe,
+    Unsafe,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Block {
+    pub safety: Option<Safety>,
     pub elements: Vec<BlockItem>,
     pub ends_with_semi: bool,
 }
