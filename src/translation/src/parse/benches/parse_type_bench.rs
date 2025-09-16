@@ -11,6 +11,10 @@ fn parse_type(source_code: &'static str, util: &ParserUtil) {
     let lexer = Lexer::new(source_code.as_bytes(), None).expect("Failed to create lexer");
     let mut parser = Parser::new(lexer, &util.collector);
     parser.parse_type();
+
+    if util.collector.error_bit() {
+        panic!("Parsing failed");
+    }
 }
 
 #[inline(never)]
@@ -35,17 +39,12 @@ fn refinement(util: &mut ParserUtil) {
 
 #[inline(never)]
 fn tuple(util: &mut ParserUtil) {
-    parse_type("{String, u8, bool}", util);
+    parse_type("(String, u8, bool)", util);
 }
 
 #[inline(never)]
 fn array(util: &mut ParserUtil) {
     parse_type("[u8; 10]", util);
-}
-
-#[inline(never)]
-fn map(util: &mut ParserUtil) {
-    parse_type("[char -> u8]", util);
 }
 
 #[inline(never)]
@@ -70,7 +69,7 @@ fn pointer(util: &mut ParserUtil) {
 
 #[inline(never)]
 fn generic(util: &mut ParserUtil) {
-    parse_type("Vec<Point<f32>: 20, growth: 3.2>", util);
+    parse_type("Vec<element: Point<f32>, second: u8>", util);
 }
 
 #[inline(never)]
@@ -81,7 +80,7 @@ fn opaque(util: &mut ParserUtil) {
 #[inline(never)]
 fn monster(util: &mut ParserUtil) {
     parse_type(
-        "Option<[str -> Vec<{u8, str: 48, Set<Address<str>>: 2: [1:]}>]>: 1",
+        "Option<HashMap<str, Vec<u8, s: i32, Set<Address<str>>: 2: [1:]>>>: 1",
         util,
     );
 }
@@ -99,7 +98,6 @@ fn parse_type_benchmark(c: &mut Criterion) {
     g.bench_function("refinement", |b| b.iter(|| refinement(&mut util)));
     g.bench_function("tuple", |b| b.iter(|| tuple(&mut util)));
     g.bench_function("array", |b| b.iter(|| array(&mut util)));
-    g.bench_function("map", |b| b.iter(|| map(&mut util)));
     g.bench_function("slice", |b| b.iter(|| slice(&mut util)));
     g.bench_function("function", |b| b.iter(|| function(&mut util)));
     g.bench_function("reference", |b| b.iter(|| reference(&mut util)));
