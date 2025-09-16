@@ -1,6 +1,6 @@
 use super::token::{AnnotatedToken, Comment, CommentKind, Integer, IntegerKind, Token};
+use crate::SourcePosition;
 use log::error;
-use nitrate_diagnosis::SourcePosition;
 use ordered_float::NotNan;
 use smallvec::SmallVec;
 

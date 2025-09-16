@@ -1,6 +1,7 @@
 use nitrate_diagnosis::{
-    DiagnosticGroupId, DiagnosticInfo, FormattableDiagnosticGroup, Origin, SourcePosition,
+    DiagnosticGroupId, DiagnosticInfo, FormattableDiagnosticGroup, Origin, 
 };
+use nitrate_tokenize::SourcePosition;
 
 pub(crate) enum SyntaxBug {
     GenericMissingParameterName(SourcePosition),
@@ -204,386 +205,386 @@ impl FormattableDiagnosticGroup for SyntaxBug {
     fn format(&self) -> nitrate_diagnosis::DiagnosticInfo {
         match self {
             SyntaxBug::GenericMissingParameterName(pos) => DiagnosticInfo {
-                origin: Origin::Point(pos.to_owned()),
+                origin: Origin::Point(pos.to_owned().into()),
                 message: "generic parameter name is missing".into(),
             },
 
             SyntaxBug::GenericParameterLimit(pos) => DiagnosticInfo {
-                origin: Origin::Point(pos.to_owned()),
+                origin: Origin::Point(pos.to_owned().into()),
                 message: "generic parameter limit of 65,536 exceeded".into(),
             },
 
             SyntaxBug::GenericParameterExpectedEnd(pos) => DiagnosticInfo {
-                origin: Origin::Point(pos.to_owned()),
+                origin: Origin::Point(pos.to_owned().into()),
                 message: "expected a '>' or ','".into(),
             },
 
             /* ------------------------------------------------------------------------- */
 
             SyntaxBug::ModuleMissingName(pos) => DiagnosticInfo {
-                origin: Origin::Point(pos.to_owned()),
+                origin: Origin::Point(pos.to_owned().into()),
                 message: "module name is missing".into(),
             },
 
             SyntaxBug::ModuleItemLimit(pos) => DiagnosticInfo {
-                origin: Origin::Point(pos.to_owned()),
+                origin: Origin::Point(pos.to_owned().into()),
                 message: "module item limit of 65,536 exceeded".into(),
             },
 
             SyntaxBug::ModuleExpectedEnd(pos) => DiagnosticInfo {
-                origin: Origin::Point(pos.to_owned()),
+                origin: Origin::Point(pos.to_owned().into()),
                 message: "expected '}'".into(),
             },
 
             /* ------------------------------------------------------------------------- */
 
             SyntaxBug::ImportMissingAliasName(pos) => DiagnosticInfo {
-                origin: Origin::Point(pos.to_owned()),
+                origin: Origin::Point(pos.to_owned().into()),
                 message: "import alias name is missing".into(),
             },
 
             /* ------------------------------------------------------------------------- */
 
             SyntaxBug::TypeAliasMissingName(pos) => DiagnosticInfo {
-                origin: Origin::Point(pos.to_owned()),
+                origin: Origin::Point(pos.to_owned().into()),
                 message: "type alias name is missing".into(),
             },
 
             /* ------------------------------------------------------------------------- */
 
             SyntaxBug::EnumMissingName(pos) => DiagnosticInfo {
-                origin: Origin::Point(pos.to_owned()),
+                origin: Origin::Point(pos.to_owned().into()),
                 message: "enum name is missing".into(),
             },
 
             SyntaxBug::EnumVariantLimit(pos) => DiagnosticInfo {
-                origin: Origin::Point(pos.to_owned()),
+                origin: Origin::Point(pos.to_owned().into()),
                 message: "enum variant limit of 65,536 exceeded".into(),
             },
 
             SyntaxBug::EnumMissingVariantName(pos) => DiagnosticInfo {
-                origin: Origin::Point(pos.to_owned()),
+                origin: Origin::Point(pos.to_owned().into()),
                 message: "enum variant name is missing".into(),
             },
 
             SyntaxBug::EnumExpectedEnd(pos) => DiagnosticInfo {
-                origin: Origin::Point(pos.to_owned()),
+                origin: Origin::Point(pos.to_owned().into()),
                 message: "expected '}' or ','".into(),
             },
 
             /* ------------------------------------------------------------------------- */
 
             SyntaxBug::StructureMissingName(pos) => DiagnosticInfo {
-                origin: Origin::Point(pos.to_owned()),
+                origin: Origin::Point(pos.to_owned().into()),
                 message: "structure name is missing".into(),
             },
 
             SyntaxBug::StructureFieldLimit(pos) => DiagnosticInfo {
-                origin: Origin::Point(pos.to_owned()),
+                origin: Origin::Point(pos.to_owned().into()),
                 message: "structure field limit of 65,536 exceeded".into(),
             },
 
             SyntaxBug::StructureMissingFieldName(pos) => DiagnosticInfo {
-                origin: Origin::Point(pos.to_owned()),
+                origin: Origin::Point(pos.to_owned().into()),
                 message: "structure field name is missing".into(),
             },
 
             SyntaxBug::StructureExpectedEnd(pos) => DiagnosticInfo {
-                origin: Origin::Point(pos.to_owned()),
+                origin: Origin::Point(pos.to_owned().into()),
                 message: "expected '}' or ','".into(),
             },
 
             /* ------------------------------------------------------------------------- */
 
             SyntaxBug::FunctionMissingName(pos) => DiagnosticInfo {
-                origin: Origin::Point(pos.to_owned()),
+                origin: Origin::Point(pos.to_owned().into()),
                 message: "function name is missing".into(),
             },
 
             SyntaxBug::FunctionParameterLimit(pos) => DiagnosticInfo {
-                origin: Origin::Point(pos.to_owned()),
+                origin: Origin::Point(pos.to_owned().into()),
                 message: "function parameter limit of 65,536 exceeded".into(),
             },
 
             SyntaxBug::FunctionParameterMissingName(pos) => DiagnosticInfo {
-                origin: Origin::Point(pos.to_owned()),
+                origin: Origin::Point(pos.to_owned().into()),
                 message: "function parameter name is missing".into(),
             },
 
             SyntaxBug::FunctionParametersExpectedEnd(pos) => DiagnosticInfo {
-                origin: Origin::Point(pos.to_owned()),
+                origin: Origin::Point(pos.to_owned().into()),
                 message: "expected ')' or ','".into(),
             },
 
             /* ------------------------------------------------------------------------- */
 
             SyntaxBug::VariableMissingName(pos) => DiagnosticInfo {
-                origin: Origin::Point(pos.to_owned()),
+                origin: Origin::Point(pos.to_owned().into()),
                 message: "variable name is missing".into(),
             },
 
             /* ------------------------------------------------------------------------- */
 
             SyntaxBug::TraitMissingName(pos) => DiagnosticInfo {
-                origin: Origin::Point(pos.to_owned()),
+                origin: Origin::Point(pos.to_owned().into()),
                 message: "trait name is missing".into(),
             },
 
             SyntaxBug::TraitItemLimit(pos) => DiagnosticInfo {
-                origin: Origin::Point(pos.to_owned()),
+                origin: Origin::Point(pos.to_owned().into()),
                 message: "trait item limit of 65,536 exceeded".into(),
             },
 
             SyntaxBug::TraitDoesNotAllowItem(pos) => DiagnosticInfo {
-                origin: Origin::Point(pos.to_owned()),
+                origin: Origin::Point(pos.to_owned().into()),
                 message: "only associated constants, type aliases, and function signatures are allowed in traits"
                     .into(),
             },
 
             SyntaxBug::TraitExpectedEnd(pos) => DiagnosticInfo {
-                origin: Origin::Point(pos.to_owned()),
+                origin: Origin::Point(pos.to_owned().into()),
                 message: "expected '}'".into(),
             },
 
             /* ------------------------------------------------------------------------- */
 
             SyntaxBug::ImplMissingFor(pos) => DiagnosticInfo {
-                origin: Origin::Point(pos.to_owned()),
+                origin: Origin::Point(pos.to_owned().into()),
                 message: "expected 'for' in impl declaration".into(),
             },
 
             SyntaxBug::ImplExpectedEnd(pos) => DiagnosticInfo {
-                origin: Origin::Point(pos.to_owned()),
+                origin: Origin::Point(pos.to_owned().into()),
                 message: "expected '}'".into(),
             },
 
             SyntaxBug::ImplItemLimit(pos) => DiagnosticInfo {
-                origin: Origin::Point(pos.to_owned()),
+                origin: Origin::Point(pos.to_owned().into()),
                 message: "impl item limit of 65,536 exceeded".into(),
             },
 
             /* ------------------------------------------------------------------------- */
 
             SyntaxBug::PathIsEmpty(pos) => DiagnosticInfo {
-                origin: Origin::Point(pos.to_owned()),
+                origin: Origin::Point(pos.to_owned().into()),
                 message: "path is empty".into(),
             },
 
             SyntaxBug::PathUnexpectedScopeSeparator(pos) => DiagnosticInfo {
-                origin: Origin::Point(pos.to_owned()),
+                origin: Origin::Point(pos.to_owned().into()),
                 message: "unexpected '::' in path".into(),
             },
 
             SyntaxBug::PathTrailingScopeSeparator(pos) => DiagnosticInfo {
-                origin: Origin::Point(pos.to_owned()),
+                origin: Origin::Point(pos.to_owned().into()),
                 message: "trailing '::' in path".into(),
             },
 
             SyntaxBug::PathGenericArgumentExpectedEnd(pos) => DiagnosticInfo {
-                origin: Origin::Point(pos.to_owned()),
+                origin: Origin::Point(pos.to_owned().into()),
                 message: "expected '>' or ',' in generic arguments".into(),
             },
 
             SyntaxBug::PathGenericArgumentLimit(pos) => DiagnosticInfo {
-                origin: Origin::Point(pos.to_owned()),
+                origin: Origin::Point(pos.to_owned().into()),
                 message: "generic argument limit of 65,536 exceeded".into(),
             },
 
             /* ------------------------------------------------------------------------- */
 
             SyntaxBug::ReferenceTypeExpectedLifetimeName(pos) => DiagnosticInfo {
-                origin: Origin::Point(pos.to_owned()),
+                origin: Origin::Point(pos.to_owned().into()),
                 message: "reference lifetime is missing after '".into(),
             },
 
             /* ------------------------------------------------------------------------- */
 
             SyntaxBug::OpaqueTypeMissingName(pos) => DiagnosticInfo {
-                origin: Origin::Point(pos.to_owned()),
+                origin: Origin::Point(pos.to_owned().into()),
                 message: "opaque type name is missing".into(),
             },
             
             /* ------------------------------------------------------------------------- */
 
             SyntaxBug::TupleTypeExpectedEnd(pos) => DiagnosticInfo {
-                origin: Origin::Point(pos.to_owned()),
+                origin: Origin::Point(pos.to_owned().into()),
                 message: "expected ')' or ','".into(),
             },
 
             SyntaxBug::TupleTypeElementLimit(pos) => DiagnosticInfo {
-                origin: Origin::Point(pos.to_owned()),
+                origin: Origin::Point(pos.to_owned().into()),
                 message: "tuple element limit of 65,536 exceeded".into(),
             },
 
             /* ------------------------------------------------------------------------- */
 
             SyntaxBug::ListExpectedEnd(pos) => DiagnosticInfo {
-                origin: Origin::Point(pos.to_owned()),
+                origin: Origin::Point(pos.to_owned().into()),
                 message: "expected ',' or ']'".into(),
             },
 
             SyntaxBug::ListElementLimit(pos) => DiagnosticInfo {
-                origin: Origin::Point(pos.to_owned()),
+                origin: Origin::Point(pos.to_owned().into()),
                 message: "list element limit of 65,536 exceeded".into(),
             },
 
             /* ------------------------------------------------------------------------- */
 
             SyntaxBug::AttributesExpectedEnd(pos) => DiagnosticInfo {
-                origin: Origin::Point(pos.to_owned()),
+                origin: Origin::Point(pos.to_owned().into()),
                 message: "expected ',' or ']'".into(),
             },
 
             SyntaxBug::AttributesElementLimit(pos) => DiagnosticInfo {
-                origin: Origin::Point(pos.to_owned()),
+                origin: Origin::Point(pos.to_owned().into()),
                 message: "attributes element limit of 65,536 exceeded".into(),
             },
 
             /* ------------------------------------------------------------------------- */
 
             SyntaxBug::BlockExpectedEnd(pos) => DiagnosticInfo {
-                origin: Origin::Point(pos.to_owned()),
+                origin: Origin::Point(pos.to_owned().into()),
                 message: "expected ';' or '}'".into(),
             },
 
             SyntaxBug::BlockElementLimit(pos) => DiagnosticInfo {
-                origin: Origin::Point(pos.to_owned()),
+                origin: Origin::Point(pos.to_owned().into()),
                 message: "block element limit of 65,536 exceeded".into(),
             },
 
             /* ------------------------------------------------------------------------- */
 
             SyntaxBug::BreakMissingLabel(pos) => DiagnosticInfo {
-                origin: Origin::Point(pos.to_owned()),
+                origin: Origin::Point(pos.to_owned().into()),
                 message: "break statement is missing a label".into(),
             },
 
             /* ------------------------------------------------------------------------- */
 
             SyntaxBug::ContinueMissingLabel(pos) => DiagnosticInfo {
-                origin: Origin::Point(pos.to_owned()),
+                origin: Origin::Point(pos.to_owned().into()),
                 message: "continue statement is missing a label".into(),
             },
 
             /* ------------------------------------------------------------------------- */
 
             SyntaxBug::FunctionCallExpectedEnd(pos) => DiagnosticInfo {
-                origin: Origin::Point(pos.to_owned()),
+                origin: Origin::Point(pos.to_owned().into()),
                 message: "expected ',' or ')' after function argument".into(),
             },
 
             SyntaxBug::FunctionCallArgumentLimit(pos) => DiagnosticInfo {
-                origin: Origin::Point(pos.to_owned()),
+                origin: Origin::Point(pos.to_owned().into()),
                 message: "function call argument limit of 65,536 exceeded".into(),
             },
 
             /* ------------------------------------------------------------------------- */
 
             SyntaxBug::DoWhileExpectedWhileKeyword(pos) => DiagnosticInfo {
-                origin: Origin::Point(pos.to_owned()),
+                origin: Origin::Point(pos.to_owned().into()),
                 message: "expected 'while' after 'do' block".into(),
             },
 
             /* ------------------------------------------------------------------------- */
 
             SyntaxBug::ForVariableBindingMissingName(pos) => DiagnosticInfo {
-                origin: Origin::Point(pos.to_owned()),
+                origin: Origin::Point(pos.to_owned().into()),
                 message: "missing name for for-loop binding".into(),
             },
 
             SyntaxBug::ForVariableBindingExpectedEnd(pos) => DiagnosticInfo {
-                origin: Origin::Point(pos.to_owned()),
+                origin: Origin::Point(pos.to_owned().into()),
                 message: "expected ',' or ')' after for-loop binding".into(),
             },
 
             SyntaxBug::ForVariableBindingLimit(pos) => DiagnosticInfo {
-                origin: Origin::Point(pos.to_owned()),
+                origin: Origin::Point(pos.to_owned().into()),
                 message: "for-loop binding limit of 65,536 exceeded".into(),
             },
 
             SyntaxBug::ForExpectedInKeyword(pos) => DiagnosticInfo {
-                origin: Origin::Point(pos.to_owned()),
+                origin: Origin::Point(pos.to_owned().into()),
                 message: "expected 'in' after for-loop binding(s)".into(),
             },
 
             /* ------------------------------------------------------------------------- */
 
             SyntaxBug::ExpectedOpenParen(pos) => DiagnosticInfo {
-                origin: Origin::Point(pos.to_owned()),
+                origin: Origin::Point(pos.to_owned().into()),
                 message: "expected '('".into(),
             },
 
             SyntaxBug::ExpectedCloseParen(pos) => DiagnosticInfo {
-                origin: Origin::Point(pos.to_owned()),
+                origin: Origin::Point(pos.to_owned().into()),
                 message: "expected ')'".into(),
             },
 
             SyntaxBug::ExpectedOpenBrace(pos) => DiagnosticInfo {
-                origin: Origin::Point(pos.to_owned()),
+                origin: Origin::Point(pos.to_owned().into()),
                 message: "expected '{'".into(),
             },
 
             SyntaxBug::ExpectedCloseBrace(pos) => DiagnosticInfo {
-                origin: Origin::Point(pos.to_owned()),
+                origin: Origin::Point(pos.to_owned().into()),
                 message: "expected '}'".into(),
             },
 
             SyntaxBug::ExpectedOpenBracket(pos) => DiagnosticInfo {
-                origin: Origin::Point(pos.to_owned()),
+                origin: Origin::Point(pos.to_owned().into()),
                 message: "expected '['".into(),
             },
 
             SyntaxBug::ExpectedCloseBracket(pos) => DiagnosticInfo {
-                origin: Origin::Point(pos.to_owned()),
+                origin: Origin::Point(pos.to_owned().into()),
                 message: "expected ']'".into(),
             },
 
             SyntaxBug::ExpectedOpenAngle(pos) => DiagnosticInfo {
-                origin: Origin::Point(pos.to_owned()),
+                origin: Origin::Point(pos.to_owned().into()),
                 message: "expected '<'".into(),
             },
 
             SyntaxBug::ExpectedCloseAngle(pos) => DiagnosticInfo {
-                origin: Origin::Point(pos.to_owned()),
+                origin: Origin::Point(pos.to_owned().into()),
                 message: "expected '>'".into(),
             },
 
             SyntaxBug::ExpectedSemicolon(pos) => DiagnosticInfo {
-                origin: Origin::Point(pos.to_owned()),
+                origin: Origin::Point(pos.to_owned().into()),
                 message: "expected ';'".into(),
             },
 
             SyntaxBug::ExpectedColon(pos) => DiagnosticInfo {
-                origin: Origin::Point(pos.to_owned()),
+                origin: Origin::Point(pos.to_owned().into()),
                 message: "expected ':'".into(),
             },
 
             SyntaxBug::ExpectedArrow(pos) => DiagnosticInfo {
-                origin: Origin::Point(pos.to_owned()),
+                origin: Origin::Point(pos.to_owned().into()),
                 message: "expected '->'".into(),
             },
 
             /* ------------------------------------------------------------------------- */
 
             SyntaxBug::ExpectedItem(pos) => DiagnosticInfo {
-                origin: Origin::Point(pos.to_owned()),
+                origin: Origin::Point(pos.to_owned().into()),
                 message: "expected an item".into(),
             },
 
             SyntaxBug::ExpectedType(pos) => DiagnosticInfo {
-                origin: Origin::Point(pos.to_owned()),
+                origin: Origin::Point(pos.to_owned().into()),
                 message: "expected a type".into(),
             },
 
             SyntaxBug::ExpectedExpr(pos) => DiagnosticInfo {
-                origin: Origin::Point(pos.to_owned()),
+                origin: Origin::Point(pos.to_owned().into()),
                 message: "expected an expression".into(),
             },
 
             /* ------------------------------------------------------------------------- */
 
             SyntaxBug::SyntaxNotSupported(pos) => DiagnosticInfo {
-                origin: Origin::Point(pos.to_owned()),
+                origin: Origin::Point(pos.to_owned().into()),
                 message: "this syntax is not supported".into(),
             }
         }

@@ -1,5 +1,4 @@
 use enum_iterator::Sequence;
-use nitrate_diagnosis::SourcePosition;
 pub use ordered_float::NotNan;
 use serde::{Deserialize, Serialize};
 
@@ -375,6 +374,31 @@ impl std::fmt::Display for Token {
             Token::Typeof => write!(f, "typeof"),
 
             Token::Eof => write!(f, ""),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SourcePosition {
+    pub line: u32,
+    pub column: u32,
+    pub offset: u32,
+    pub filename: String,
+}
+
+impl std::fmt::Display for SourcePosition {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}:{}:{}", self.filename, self.line + 1, self.column + 1)
+    }
+}
+
+impl From<SourcePosition> for nitrate_diagnosis::SourcePosition {
+    fn from(pos: SourcePosition) -> Self {
+        nitrate_diagnosis::SourcePosition {
+            line: pos.line,
+            column: pos.column,
+            offset: pos.offset,
+            filename: pos.filename,
         }
     }
 }
