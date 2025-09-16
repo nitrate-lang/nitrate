@@ -1026,21 +1026,7 @@ impl Parser<'_, '_> {
             None
         };
 
-        let definition = if self.lexer.skip_if(&Token::Eq) {
-            if !self.lexer.skip_if(&Token::Gt) {
-                let bug = SyntaxBug::ExpectedBlockArrow(self.lexer.peek_pos());
-                self.bugs.push(&bug);
-            }
-
-            let single = self.parse_expression();
-
-            Block {
-                elements: vec![BlockItem::Expr(single)],
-                ends_with_semi: false,
-            }
-        } else {
-            self.parse_block()
-        };
+        let definition = self.parse_block();
 
         Closure {
             attributes,
@@ -1107,6 +1093,20 @@ impl Parser<'_, '_> {
         arguments
     }
 
+    fn parse_block_item(&mut self) -> BlockItem {
+        match self.lexer.peek_t() {
+            Token::Keyword(Keyword::Static)
+            | Token::Keyword(Keyword::Const)
+            | Token::Keyword(Keyword::Let)
+            | Token::Keyword(Keyword::Var) => {
+                let var = self.parse_variable();
+                BlockItem::Variable(var)
+            }
+
+            _ => BlockItem::Expr(self.parse_expression()),
+        }
+    }
+
     pub(crate) fn parse_block(&mut self) -> Block {
         if !self.lexer.skip_if(&Token::OpenBrace) {
             let bug = SyntaxBug::ExpectedOpenBrace(self.lexer.peek_pos());
@@ -1133,10 +1133,11 @@ impl Parser<'_, '_> {
                 self.bugs.push(&bug);
             }
 
-            let expression = self.parse_expression();
-            elements.push(BlockItem::Expr(expression));
+            let element = self.parse_block_item();
+            let consumed_semi = matches!(element, BlockItem::Variable(_));
+            elements.push(element);
 
-            if self.lexer.skip_if(&Token::Semi) {
+            if consumed_semi || self.lexer.skip_if(&Token::Semi) {
                 ends_with_semi = true;
             } else if self.lexer.next_is(&Token::CloseBrace) {
                 ends_with_semi = false;

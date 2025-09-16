@@ -2,9 +2,9 @@ use super::parse::Parser;
 use crate::bugs::SyntaxBug;
 
 use nitrate_parsetree::kind::{
-    AssociatedItem, Block, BlockItem, Enum, EnumVariant, FunctionParameter, GenericParameter, Impl,
-    Import, Item, Module, NamedFunction, Struct, StructField, Trait, TypeAlias, Variable,
-    VariableKind, Visibility,
+    AssociatedItem, Enum, EnumVariant, FunctionParameter, GenericParameter, Impl, Import, Item,
+    Module, NamedFunction, Struct, StructField, Trait, TypeAlias, Variable, VariableKind,
+    Visibility,
 };
 use nitrate_tokenize::{Keyword, Token};
 
@@ -599,32 +599,10 @@ impl Parser<'_, '_> {
             None
         };
 
-        let definition = if self.lexer.next_is(&Token::OpenBrace) {
-            Some(self.parse_block())
-        } else if self.lexer.skip_if(&Token::Eq) {
-            if !self.lexer.skip_if(&Token::Gt) {
-                let bug = SyntaxBug::ExpectedBlockArrow(self.lexer.peek_pos());
-                self.bugs.push(&bug);
-            }
-
-            let single = self.parse_expression();
-
-            if !self.lexer.skip_if(&Token::Semi) {
-                let bug = SyntaxBug::ExpectedSemicolon(self.lexer.peek_pos());
-                self.bugs.push(&bug);
-            }
-
-            Some(Block {
-                elements: vec![BlockItem::Expr(single)],
-                ends_with_semi: false,
-            })
-        } else if self.lexer.skip_if(&Token::Semi) {
+        let definition = if self.lexer.skip_if(&Token::Semi) {
             None
         } else {
-            let bug = SyntaxBug::FunctionExpectedBody(self.lexer.peek_pos());
-            self.bugs.push(&bug);
-            self.lexer.skip_while(&Token::CloseBrace);
-            None
+            Some(self.parse_block())
         };
 
         NamedFunction {
@@ -638,7 +616,19 @@ impl Parser<'_, '_> {
         }
     }
 
-    fn parse_variable(&mut self) -> Variable {
+    fn parse_visibility(&mut self) -> Option<Visibility> {
+        if self.lexer.skip_if(&Token::Keyword(Keyword::Pub)) {
+            Some(Visibility::Public)
+        } else if self.lexer.skip_if(&Token::Keyword(Keyword::Sec)) {
+            Some(Visibility::Private)
+        } else if self.lexer.skip_if(&Token::Keyword(Keyword::Pro)) {
+            Some(Visibility::Protected)
+        } else {
+            None
+        }
+    }
+
+    pub(crate) fn parse_variable(&mut self) -> Variable {
         let kind = match self.lexer.next_t() {
             Token::Keyword(Keyword::Static) => VariableKind::Static,
             Token::Keyword(Keyword::Const) => VariableKind::Const,
@@ -685,18 +675,6 @@ impl Parser<'_, '_> {
             name,
             var_type,
             initializer,
-        }
-    }
-
-    fn parse_visibility(&mut self) -> Option<Visibility> {
-        if self.lexer.skip_if(&Token::Keyword(Keyword::Pub)) {
-            Some(Visibility::Public)
-        } else if self.lexer.skip_if(&Token::Keyword(Keyword::Sec)) {
-            Some(Visibility::Private)
-        } else if self.lexer.skip_if(&Token::Keyword(Keyword::Pro)) {
-            Some(Visibility::Protected)
-        } else {
-            None
         }
     }
 

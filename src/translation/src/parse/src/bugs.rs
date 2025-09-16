@@ -26,7 +26,6 @@ pub(crate) enum SyntaxBug {
     StructureExpectedEnd(SourcePosition),
 
     FunctionMissingName(SourcePosition),
-    FunctionExpectedBody(SourcePosition),
     FunctionParameterLimit(SourcePosition),
     FunctionParameterMissingName(SourcePosition),
     FunctionParametersExpectedEnd(SourcePosition),
@@ -92,7 +91,6 @@ pub(crate) enum SyntaxBug {
     ExpectedSemicolon(SourcePosition),
     ExpectedColon(SourcePosition),
     ExpectedArrow(SourcePosition),
-    ExpectedBlockArrow(SourcePosition),
 
     ExpectedItem(SourcePosition),
     ExpectedType(SourcePosition),
@@ -132,7 +130,6 @@ impl FormattableDiagnosticGroup for SyntaxBug {
             SyntaxBug::StructureExpectedEnd(_) => 103,
 
             SyntaxBug::FunctionMissingName(_) => 120,
-            SyntaxBug::FunctionExpectedBody(_) => 121,
             SyntaxBug::FunctionParameterLimit(_) => 122,
             SyntaxBug::FunctionParameterMissingName(_) => 123,
             SyntaxBug::FunctionParametersExpectedEnd(_) => 124,
@@ -195,7 +192,6 @@ impl FormattableDiagnosticGroup for SyntaxBug {
             SyntaxBug::ExpectedSemicolon(_) => 1008,
             SyntaxBug::ExpectedColon(_) => 1009,
             SyntaxBug::ExpectedArrow(_) => 1010,
-            SyntaxBug::ExpectedBlockArrow(_) => 1011,
 
             SyntaxBug::ExpectedItem(_) => 2000,
             SyntaxBug::ExpectedType(_) => 2001,
@@ -302,11 +298,6 @@ impl FormattableDiagnosticGroup for SyntaxBug {
             SyntaxBug::FunctionMissingName(pos) => DiagnosticInfo {
                 origin: Origin::Point(pos.to_owned()),
                 message: "function name is missing".into(),
-            },
-
-            SyntaxBug::FunctionExpectedBody(pos) => DiagnosticInfo {
-                origin: Origin::Point(pos.to_owned()),
-                message: "expected function body".into(),
             },
 
             SyntaxBug::FunctionParameterLimit(pos) => DiagnosticInfo {
@@ -570,11 +561,6 @@ impl FormattableDiagnosticGroup for SyntaxBug {
             SyntaxBug::ExpectedArrow(pos) => DiagnosticInfo {
                 origin: Origin::Point(pos.to_owned()),
                 message: "expected '->'".into(),
-            },
-
-            SyntaxBug::ExpectedBlockArrow(pos) => DiagnosticInfo {
-                origin: Origin::Point(pos.to_owned()),
-                message: "expected '=>''".into(),
             },
 
             /* ------------------------------------------------------------------------- */
