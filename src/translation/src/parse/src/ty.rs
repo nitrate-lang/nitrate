@@ -488,7 +488,7 @@ impl Parser<'_, '_> {
         TupleType { element_types }
     }
 
-    pub(crate) fn parse_type(&mut self) -> Type {
+    pub fn parse_type(&mut self) -> Type {
         if self.lexer.skip_if(&Token::OpenParen) {
             if self.lexer.skip_if(&Token::CloseParen) {
                 return Type::TupleType(Box::new(TupleType {

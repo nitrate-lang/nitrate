@@ -50,3 +50,5 @@ trace.txt
 test.nit
 tree.json
 tree.log
+
+src/translation/src/parse/target

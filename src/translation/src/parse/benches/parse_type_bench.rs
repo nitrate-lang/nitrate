@@ -1,13 +1,16 @@
 use criterion::{Criterion, criterion_group, criterion_main};
+use nitrate_diagnosis::DiagnosticCollector;
 use nitrate_parse::*;
 use nitrate_tokenize::*;
 
-struct ParserUtil {}
+struct ParserUtil {
+    collector: DiagnosticCollector,
+}
 
-fn parse_type(source_code: &'static str, util: &mut ParserUtil) {
-    let lexer = Lexer::new(source_code.as_bytes(), "").expect("Failed to create lexer");
-    let mut parser = Parser::new(lexer, &mut util.symbol_table);
-    parser.parse_type().expect("Failed to parse type");
+fn parse_type(source_code: &'static str, util: &ParserUtil) {
+    let lexer = Lexer::new(source_code.as_bytes(), None).expect("Failed to create lexer");
+    let mut parser = Parser::new(lexer, &util.collector);
+    parser.parse_type();
 }
 
 #[inline(never)]
@@ -84,7 +87,9 @@ fn monster(util: &mut ParserUtil) {
 }
 
 fn parse_type_benchmark(c: &mut Criterion) {
-    let mut util = ParserUtil {};
+    let mut util = ParserUtil {
+        collector: DiagnosticCollector::default(),
+    };
 
     let mut g = c.benchmark_group("parse_type");
 
