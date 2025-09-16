@@ -1,11 +1,10 @@
 use crate::bugs::SyntaxBug;
 
 use super::parse::Parser;
-use interned_string::IString;
 use nitrate_parsetree::kind::{
     Await, BinExpr, BinExprOp, Block, Break, Call, CallArgument, Cast, Closure, Continue,
     DoWhileLoop, Expr, ForEach, FunctionParameter, GenericArgument, If, IndexAccess, Integer, List,
-    Path, Return, Switch, Type, UnaryExpr, UnaryExprOp, WhileLoop,
+    Path, Return, Type, UnaryExpr, UnaryExprOp, WhileLoop,
 };
 use nitrate_tokenize::{Keyword, Token};
 use smallvec::{SmallVec, smallvec};
@@ -598,7 +597,7 @@ impl Parser<'_, '_> {
 
     pub(crate) fn parse_generic_arguments(&mut self) -> Vec<GenericArgument> {
         fn parse_generic_argument(this: &mut Parser) -> GenericArgument {
-            let mut name: Option<IString> = None;
+            let mut name: Option<String> = None;
 
             let rewind_pos = this.lexer.current_pos();
             if let Some(argument_name) = this.lexer.next_if_name() {
@@ -687,7 +686,7 @@ impl Parser<'_, '_> {
                     }
 
                     if path.is_empty() {
-                        path.push(IString::from(""));
+                        path.push(String::from(""));
                     }
 
                     last_was_scope = true;
@@ -751,7 +750,7 @@ impl Parser<'_, '_> {
     }
 
     fn parse_for(&mut self) -> ForEach {
-        fn parse_for_bindings(this: &mut Parser) -> Vec<(IString, Option<Type>)> {
+        fn parse_for_bindings(this: &mut Parser) -> Vec<(String, Option<Type>)> {
             if !this.lexer.skip_if(&Token::OpenParen) {
                 let variable_name = this.lexer.next_if_name().unwrap_or_else(|| {
                     let bug = SyntaxBug::ForVariableBindingMissingName(this.lexer.peek_pos());

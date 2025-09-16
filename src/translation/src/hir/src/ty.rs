@@ -1,5 +1,4 @@
 use hashbrown::{HashMap, HashSet};
-use interned_string::IString;
 use serde::{Deserialize, Serialize};
 use std::num::NonZeroU32;
 
@@ -39,7 +38,7 @@ impl StructAttribute {
 #[derive(Serialize, Deserialize)]
 pub struct StructType {
     pub attributes: HashSet<StructAttribute>,
-    pub fields: HashMap<IString, TypeId>,
+    pub fields: HashMap<String, TypeId>,
 }
 
 #[derive(Serialize, Deserialize, PartialEq, Eq, Hash)]
@@ -56,7 +55,7 @@ impl EnumAttribute {
 #[derive(Serialize, Deserialize)]
 pub struct EnumType {
     pub attributes: HashSet<EnumAttribute>,
-    pub variants: HashMap<IString, TypeId>,
+    pub variants: HashMap<String, TypeId>,
 }
 
 #[derive(Serialize, Deserialize, PartialEq, Eq, Hash)]

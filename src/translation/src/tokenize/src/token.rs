@@ -1,5 +1,4 @@
 use enum_iterator::Sequence;
-use interned_string::IString;
 use nitrate_diagnosis::SourcePosition;
 pub use ordered_float::NotNan;
 use serde::{Deserialize, Serialize};
@@ -59,18 +58,18 @@ pub enum CommentKind {
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash, Serialize, Deserialize)]
 pub struct Comment {
-    text: IString,
+    text: String,
     kind: CommentKind,
 }
 
 impl Comment {
     #[must_use]
-    pub const fn new(text: IString, kind: CommentKind) -> Self {
+    pub const fn new(text: String, kind: CommentKind) -> Self {
         Comment { text, kind }
     }
 
     #[must_use]
-    pub fn text(&self) -> &IString {
+    pub fn text(&self) -> &String {
         &self.text
     }
 
@@ -237,10 +236,10 @@ impl std::fmt::Display for Keyword {
 
 #[derive(Debug, Clone, PartialEq, PartialOrd, Serialize, Deserialize)]
 pub enum Token {
-    Name(IString),
+    Name(String),
     Integer(Integer),
     Float(NotNan<f64>),
-    String(IString),
+    String(String),
     BString(Vec<u8>),
     Comment(Comment),
 
@@ -360,7 +359,7 @@ pub struct AnnotatedToken {
     end_column: u32,
     end_offset: u32,
 
-    filename: IString,
+    filename: String,
 }
 
 impl AnnotatedToken {

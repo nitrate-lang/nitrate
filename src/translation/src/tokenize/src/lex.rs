@@ -1,5 +1,4 @@
 use super::token::{AnnotatedToken, Comment, CommentKind, Integer, IntegerKind, Keyword, Token};
-use interned_string::{IString, Intern};
 use log::error;
 use nitrate_diagnosis::SourcePosition;
 use ordered_float::NotNan;
@@ -37,7 +36,7 @@ impl<'a> Lexer<'a> {
     /// # Errors
     /// Returns `LexerError::SourceTooBig` if the source code exceeds 4 GiB in size.
     pub fn new(src: &'a [u8], filename: &'a str) -> Result<Self, LexerError> {
-        let filename = filename.intern();
+        let filename = filename.to_owned();
 
         if src.len() > MAX_SOURCE_SIZE {
             Err(LexerError::SourceTooBig)
@@ -159,7 +158,7 @@ impl<'a> Lexer<'a> {
     }
 
     #[inline(always)]
-    pub fn next_if_string(&mut self) -> Option<IString> {
+    pub fn next_if_string(&mut self) -> Option<String> {
         if let Token::String(string_data) = self.peek_t() {
             self.skip_tok();
             Some(string_data)
@@ -179,7 +178,7 @@ impl<'a> Lexer<'a> {
     }
 
     #[inline(always)]
-    pub fn next_if_name(&mut self) -> Option<IString> {
+    pub fn next_if_name(&mut self) -> Option<String> {
         if let Token::Name(name) = self.peek_t() {
             self.skip_tok();
             Some(name)
@@ -299,7 +298,7 @@ impl<'a> Lexer<'a> {
         }
 
         if let Ok(identifier) = str::from_utf8(identifier) {
-            Ok(Token::Name(identifier.intern()))
+            Ok(Token::Name(identifier.to_string()))
         } else {
             error!("[L0001]: Identifier contains some invalid utf-8 bytes\n--> {start_pos}");
 
@@ -385,7 +384,7 @@ impl<'a> Lexer<'a> {
         } {
             Ok(Token::Keyword(keyword))
         } else if let Ok(identifier) = str::from_utf8(name) {
-            Ok(Token::Name(identifier.intern()))
+            Ok(Token::Name(identifier.to_string()))
         } else {
             error!("[L0100]: Identifier contains some invalid utf-8 bytes\n--> {start_pos}");
 
@@ -821,11 +820,11 @@ impl<'a> Lexer<'a> {
                         let buffer = &self.source[start_offset as usize..end_offset as usize];
 
                         if let Ok(utf8_str) = str::from_utf8(buffer) {
-                            return Ok(Token::String(utf8_str.intern()));
+                            return Ok(Token::String(utf8_str.to_string()));
                         }
                         return Ok(Token::BString(buffer.to_vec()));
                     } else if let Ok(utf8_str) = String::from_utf8(storage.to_vec()) {
-                        return Ok(Token::String(utf8_str.intern()));
+                        return Ok(Token::String(utf8_str.to_string()));
                     }
                     return Ok(Token::BString(storage.to_vec()));
                 }
@@ -860,7 +859,7 @@ impl<'a> Lexer<'a> {
 
         if let Ok(comment) = str::from_utf8(comment_bytes) {
             Ok(Token::Comment(Comment::new(
-                comment.intern(),
+                comment.to_string(),
                 CommentKind::SingleLine,
             )))
         } else {

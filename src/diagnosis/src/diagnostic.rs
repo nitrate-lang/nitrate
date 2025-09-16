@@ -1,4 +1,3 @@
-use interned_string::IString;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -6,7 +5,7 @@ pub struct SourcePosition {
     pub line: u32,
     pub column: u32,
     pub offset: u32,
-    pub filename: IString,
+    pub filename: String,
 }
 
 impl std::fmt::Display for SourcePosition {

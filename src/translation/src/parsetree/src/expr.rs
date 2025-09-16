@@ -1,7 +1,6 @@
 use crate::kind::{FunctionParameter, Type};
 use crate::ty::GenericArgument;
 
-use interned_string::IString;
 use nitrate_tokenize::IntegerKind;
 use ordered_float::NotNan;
 use serde::{Deserialize, Serialize};
@@ -22,7 +21,7 @@ pub struct List {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Object {
-    pub fields: HashMap<IString, Expr>,
+    pub fields: HashMap<String, Expr>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -173,14 +172,14 @@ pub struct Variable {
     pub kind: VariableKind,
     pub attributes: Vec<Expr>,
     pub is_mutable: bool,
-    pub name: IString,
+    pub name: String,
     pub var_type: Option<Type>,
     pub initializer: Option<Expr>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Path {
-    pub path: SmallVec<[IString; 3]>,
+    pub path: SmallVec<[String; 3]>,
     pub type_arguments: Vec<GenericArgument>,
 }
 
@@ -192,22 +191,22 @@ pub struct IndexAccess {
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct QualifiedScope {
-    scopes: SmallVec<[IString; 3]>,
+    scopes: SmallVec<[String; 3]>,
 }
 
 impl QualifiedScope {
     #[must_use]
-    pub fn new(scopes: SmallVec<[IString; 3]>) -> Self {
+    pub fn new(scopes: SmallVec<[String; 3]>) -> Self {
         Self { scopes }
     }
 
     #[must_use]
-    pub fn parse(qualified_scope: IString) -> Self {
+    pub fn parse(qualified_scope: String) -> Self {
         let parts = qualified_scope
             .split("::")
             .filter(|s| !s.is_empty())
-            .map(IString::from)
-            .collect::<SmallVec<[IString; 3]>>();
+            .map(String::from)
+            .collect::<SmallVec<[String; 3]>>();
 
         Self { scopes: parts }
     }
@@ -223,12 +222,12 @@ impl QualifiedScope {
         }
     }
 
-    pub fn push(&mut self, scope: IString) {
+    pub fn push(&mut self, scope: String) {
         self.scopes.push(scope);
     }
 
     #[must_use]
-    pub fn scopes(&self) -> &[IString] {
+    pub fn scopes(&self) -> &[String] {
         &self.scopes
     }
 }
@@ -275,12 +274,12 @@ pub struct Switch {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Break {
-    pub label: Option<IString>,
+    pub label: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Continue {
-    pub label: Option<IString>,
+    pub label: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -292,7 +291,7 @@ pub struct Return {
 pub struct ForEach {
     pub attributes: Vec<Expr>,
     pub iterable: Expr,
-    pub bindings: Vec<(IString, Option<Type>)>,
+    pub bindings: Vec<(String, Option<Type>)>,
     pub body: Block,
 }
 
@@ -303,7 +302,7 @@ pub struct Await {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CallArgument {
-    pub name: Option<IString>,
+    pub name: Option<String>,
     pub value: Expr,
 }
 
@@ -322,7 +321,7 @@ pub enum Expr {
     Boolean(bool),
     Integer(Box<Integer>),
     Float(NotNan<f64>),
-    String(IString),
+    String(String),
     BString(Box<Vec<u8>>),
     Unit,
 

@@ -1,4 +1,3 @@
-use interned_string::IString;
 use nitrate_diagnosis::DiagnosticCollector;
 use nitrate_parsetree::kind::{Module, Package};
 use nitrate_tokenize::Lexer;
@@ -13,7 +12,7 @@ impl<'a, 'bugs> Parser<'a, 'bugs> {
         Parser { lexer, bugs }
     }
 
-    pub fn parse_crate(&mut self, crate_name: IString) -> Package {
+    pub fn parse_crate(&mut self, crate_name: String) -> Package {
         let mut items = Vec::new();
 
         while !self.lexer.is_eof() {

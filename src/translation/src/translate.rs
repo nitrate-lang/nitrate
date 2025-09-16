@@ -1,5 +1,4 @@
 use crate::{TranslationOptions, TranslationOptionsBuilder, options::Diagnose};
-use interned_string::IString;
 use nitrate_codegen::{Codegen, CodegenError};
 use nitrate_diagnosis::DiagnosticCollector;
 use nitrate_parse::Parser;
@@ -60,7 +59,7 @@ fn create_lexer<'a>(
     lexer.map_err(TranslationError::LexerError)
 }
 
-fn parse_language(lexer: Lexer, crate_name: IString, bugs: &DiagnosticCollector) -> Package {
+fn parse_language(lexer: Lexer, crate_name: String, bugs: &DiagnosticCollector) -> Package {
     let mut parser = Parser::new(lexer, bugs);
     parser.parse_crate(crate_name)
 }

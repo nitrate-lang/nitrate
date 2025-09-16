@@ -100,6 +100,7 @@ pub(crate) enum SyntaxBug {
     ExpectedType(SourcePosition),
     ExpectedExpr(SourcePosition),
 
+    #[allow(dead_code)]
     SyntaxNotSupported(SourcePosition),
 }
 

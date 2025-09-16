@@ -1,6 +1,5 @@
 use std::num::NonZero;
 
-use interned_string::IString;
 use nitrate_diagnosis::DiagnosticCollector;
 use nitrate_optimization::FunctionOptimization;
 use nitrate_parsetree::kind::Package;
@@ -13,7 +12,7 @@ pub trait Diagnose {
 pub struct OptimizationOptions {}
 
 pub struct TranslationOptions {
-    pub crate_name: IString,
+    pub crate_name: String,
     pub source_name_for_debug_messages: String,
     pub bugs: DiagnosticCollector,
     pub thread_count: NonZero<usize>,
@@ -24,7 +23,7 @@ pub struct TranslationOptions {
 impl Default for TranslationOptions {
     fn default() -> Self {
         Self {
-            crate_name: IString::default(),
+            crate_name: String::default(),
             source_name_for_debug_messages: String::default(),
             bugs: DiagnosticCollector::default(),
             thread_count: NonZero::new(1).unwrap(),

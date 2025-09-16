@@ -1,5 +1,4 @@
 use crate::kind::{Block, Expr, Path};
-use interned_string::IString;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -29,7 +28,7 @@ pub struct SliceType {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FunctionTypeParameter {
     pub attributes: Vec<Expr>,
-    pub name: Option<IString>,
+    pub name: Option<String>,
     pub param_type: Type,
     pub default: Option<Expr>,
 }
@@ -48,7 +47,7 @@ pub enum Lifetime {
     GarbageCollected,
     Thread,
     Task,
-    Other { name: IString },
+    Other { name: String },
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -61,7 +60,7 @@ pub struct ReferenceType {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GenericArgument {
-    pub name: Option<IString>,
+    pub name: Option<String>,
     pub value: Type,
 }
 
@@ -94,7 +93,7 @@ pub enum Type {
     SliceType(Box<SliceType>),
     FunctionType(Box<FunctionType>),
     ReferenceType(Box<ReferenceType>),
-    OpaqueType(IString),
+    OpaqueType(String),
     LatentType(Box<Block>),
     Parentheses(Box<Type>),
 }

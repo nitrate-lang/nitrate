@@ -1,7 +1,6 @@
 use super::parse::Parser;
 use crate::bugs::SyntaxBug;
 
-use interned_string::IString;
 use nitrate_parsetree::kind::{
     ArrayType, Expr, FunctionType, FunctionTypeParameter, Lifetime, Path, ReferenceType,
     RefinementType, SliceType, TupleType, Type,
@@ -143,11 +142,11 @@ impl Parser<'_, '_> {
         if self.lexer.skip_if(&Token::SingleQuote) {
             if self.lexer.skip_if(&Token::Keyword(Keyword::Static)) {
                 lifetime = Some(Lifetime::Static);
-            } else if self.lexer.skip_if(&Token::Name(IString::from("thread"))) {
+            } else if self.lexer.skip_if(&Token::Name(String::from("thread"))) {
                 lifetime = Some(Lifetime::Thread);
-            } else if self.lexer.skip_if(&Token::Name(IString::from("task"))) {
+            } else if self.lexer.skip_if(&Token::Name(String::from("task"))) {
                 lifetime = Some(Lifetime::Task);
-            } else if self.lexer.skip_if(&Token::Name(IString::from("gc"))) {
+            } else if self.lexer.skip_if(&Token::Name(String::from("gc"))) {
                 lifetime = Some(Lifetime::GarbageCollected);
             } else if let Some(name) = self.lexer.next_if_name() {
                 lifetime = Some(Lifetime::Other { name });
@@ -386,7 +385,7 @@ impl Parser<'_, '_> {
                     }
 
                     if path.is_empty() {
-                        path.push(IString::from(""));
+                        path.push(String::from(""));
                     }
 
                     last_was_scope = true;

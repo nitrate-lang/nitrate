@@ -1,18 +1,17 @@
 use crate::kind::{Block, Expr, Path, Type};
 
-use interned_string::IString;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Package {
-    pub name: IString,
+    pub name: String,
     pub root: Module,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Module {
     pub attributes: Vec<Expr>,
-    pub name: IString,
+    pub name: String,
     pub items: Vec<Item>,
 }
 
@@ -20,19 +19,19 @@ pub struct Module {
 pub struct Import {
     pub attributes: Vec<Expr>,
     pub path: Path,
-    pub alias: Option<IString>,
+    pub alias: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GenericParameter {
-    pub name: IString,
+    pub name: String,
     pub default: Option<Type>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TypeAlias {
     pub attributes: Vec<Expr>,
-    pub name: IString,
+    pub name: String,
     pub type_params: Vec<GenericParameter>,
     pub aliased_type: Option<Type>,
 }
@@ -40,7 +39,7 @@ pub struct TypeAlias {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct StructField {
     pub attributes: Vec<Expr>,
-    pub name: IString,
+    pub name: String,
     pub field_type: Type,
     pub default: Option<Expr>,
 }
@@ -48,7 +47,7 @@ pub struct StructField {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Struct {
     pub attributes: Vec<Expr>,
-    pub name: IString,
+    pub name: String,
     pub type_params: Vec<GenericParameter>,
     pub fields: Vec<StructField>,
     pub methods: Vec<NamedFunction>,
@@ -57,7 +56,7 @@ pub struct Struct {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct EnumVariant {
     pub attributes: Vec<Expr>,
-    pub name: IString,
+    pub name: String,
     pub variant_type: Option<Type>,
     pub value: Option<Expr>,
 }
@@ -65,7 +64,7 @@ pub struct EnumVariant {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Enum {
     pub attributes: Vec<Expr>,
-    pub name: IString,
+    pub name: String,
     pub type_params: Vec<GenericParameter>,
     pub variants: Vec<EnumVariant>,
 }
@@ -81,7 +80,7 @@ pub enum AssociatedItem {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Trait {
     pub attributes: Vec<Expr>,
-    pub name: IString,
+    pub name: String,
     pub type_params: Vec<GenericParameter>,
     pub items: Vec<AssociatedItem>,
 }
@@ -98,7 +97,7 @@ pub struct Impl {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FunctionParameter {
     pub attributes: Vec<Expr>,
-    pub name: IString,
+    pub name: String,
     pub param_type: Option<Type>,
     pub default: Option<Expr>,
 }
@@ -106,7 +105,7 @@ pub struct FunctionParameter {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct NamedFunction {
     pub attributes: Vec<Expr>,
-    pub name: IString,
+    pub name: String,
     pub type_params: Vec<GenericParameter>,
     pub parameters: Vec<FunctionParameter>,
     pub return_type: Option<Type>,
@@ -129,7 +128,7 @@ impl NamedFunction {
 pub struct StaticVariable {
     pub attributes: Vec<Expr>,
     pub is_mutable: bool,
-    pub name: IString,
+    pub name: String,
     pub var_type: Option<Type>,
     pub initializer: Option<Expr>,
 }
@@ -137,7 +136,7 @@ pub struct StaticVariable {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ConstVariable {
     pub attributes: Vec<Expr>,
-    pub name: IString,
+    pub name: String,
     pub var_type: Option<Type>,
     pub initializer: Option<Expr>,
 }
