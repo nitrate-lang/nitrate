@@ -42,6 +42,8 @@ pub struct FunctionType {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum Lifetime {
+    SyntaxError,
+
     Manual,
     Static,
     GarbageCollected,
@@ -95,6 +97,7 @@ pub enum Type {
     ReferenceType(Box<ReferenceType>),
     OpaqueType(String),
     LatentType(Box<Block>),
+    Lifetime(Box<Lifetime>),
     Parentheses(Box<Type>),
 }
 
@@ -130,6 +133,7 @@ impl std::fmt::Debug for Type {
             Type::ReferenceType(e) => e.fmt(f),
             Type::OpaqueType(e) => f.debug_struct("OpaqueType").field("name", e).finish(),
             Type::LatentType(e) => f.debug_struct("LatentType").field("type", e).finish(),
+            Type::Lifetime(e) => e.fmt(f),
             Type::Parentheses(e) => f.debug_struct("Parentheses").field("type", e).finish(),
         }
     }

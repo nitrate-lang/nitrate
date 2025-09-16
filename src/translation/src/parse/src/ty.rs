@@ -134,26 +134,14 @@ impl Parser<'_, '_> {
         assert!(self.lexer.peek_t() == Token::And);
         self.lexer.skip_tok();
 
-        let mut lifetime = None;
         let mut exclusive = None;
         let mut mutability = None;
 
-        if self.lexer.skip_if(&Token::SingleQuote) {
-            if self.lexer.skip_if(&Token::Static) {
-                lifetime = Some(Lifetime::Static);
-            } else if self.lexer.skip_if(&Token::Name(String::from("thread"))) {
-                lifetime = Some(Lifetime::Thread);
-            } else if self.lexer.skip_if(&Token::Name(String::from("task"))) {
-                lifetime = Some(Lifetime::Task);
-            } else if self.lexer.skip_if(&Token::Name(String::from("gc"))) {
-                lifetime = Some(Lifetime::GarbageCollected);
-            } else if let Some(name) = self.lexer.next_if_name() {
-                lifetime = Some(Lifetime::Other { name });
-            } else {
-                let bug = SyntaxBug::ReferenceTypeExpectedLifetimeName(self.lexer.peek_pos());
-                self.bugs.push(&bug);
-            }
-        }
+        let lifetime = if self.lexer.next_is(&Token::SingleQuote) {
+            Some(self.parse_lifetime())
+        } else {
+            None
+        };
 
         if self.lexer.skip_if(&Token::Poly) {
             exclusive = Some(false);
@@ -326,6 +314,29 @@ impl Parser<'_, '_> {
         Type::OpaqueType(opaque_identity)
     }
 
+    fn parse_lifetime(&mut self) -> Lifetime {
+        assert!(self.lexer.peek_t() == Token::SingleQuote);
+        self.lexer.skip_tok();
+
+        if self.lexer.skip_if(&Token::Static) {
+            return Lifetime::Static;
+        }
+
+        if let Some(kind) = self.lexer.next_if_name() {
+            return match kind.as_str() {
+                "gc" => Lifetime::GarbageCollected,
+                "thread" => Lifetime::Thread,
+                "task" => Lifetime::Task,
+                _ => Lifetime::Other { name: kind },
+            };
+        }
+
+        let bug = SyntaxBug::ReferenceTypeExpectedLifetimeName(self.lexer.peek_pos());
+        self.bugs.push(&bug);
+
+        Lifetime::SyntaxError
+    }
+
     fn parse_type_primitive(&mut self) -> Type {
         match self.lexer.next_t() {
             Token::Bool => Type::Bool,
@@ -430,6 +441,8 @@ impl Parser<'_, '_> {
             | Token::F32
             | Token::F64
             | Token::F128 => self.parse_type_primitive(),
+
+            Token::SingleQuote => Type::Lifetime(Box::new(self.parse_lifetime())),
 
             Token::Name(_) | Token::Colon => Type::TypeName(Box::new(self.parse_type_path())),
             Token::OpenBracket => self.parse_array_or_slice(),
