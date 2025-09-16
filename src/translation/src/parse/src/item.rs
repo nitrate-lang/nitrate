@@ -573,7 +573,7 @@ impl Parser<'_, '_> {
         let parameters = self.parse_named_function_parameters();
 
         let return_type = if self.lexer.skip_if(&Token::Minus) {
-            if !self.lexer.skip_if(&Token::Lt) {
+            if !self.lexer.skip_if(&Token::Gt) {
                 let bug = SyntaxBug::ExpectedArrow(self.lexer.peek_pos());
                 self.bugs.push(&bug);
             }
@@ -584,8 +584,7 @@ impl Parser<'_, '_> {
         };
 
         let definition = if self.lexer.next_is(&Token::OpenBrace) {
-            let body = self.parse_block();
-            Some(body)
+            Some(self.parse_block())
         } else if self.lexer.skip_if(&Token::Eq) {
             if !self.lexer.skip_if(&Token::Gt) {
                 let bug = SyntaxBug::ExpectedBlockArrow(self.lexer.peek_pos());

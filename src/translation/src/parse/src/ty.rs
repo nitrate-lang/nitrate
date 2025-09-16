@@ -287,7 +287,7 @@ impl Parser<'_, '_> {
         let parameters = self.parse_function_type_parameters();
 
         let return_type = if self.lexer.skip_if(&Token::Minus) {
-            if !self.lexer.skip_if(&Token::Lt) {
+            if !self.lexer.skip_if(&Token::Gt) {
                 let bug = SyntaxBug::ExpectedArrow(self.lexer.peek_pos());
                 self.bugs.push(&bug);
             }
