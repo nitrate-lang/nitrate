@@ -1,6 +1,7 @@
 #![warn(clippy::pedantic)]
 
 mod expr;
+mod id_store;
 mod item;
 mod ty;
 
@@ -9,3 +10,5 @@ pub mod kind {
     pub use super::ty::*;
     pub use crate::item::*;
 }
+
+pub use crate::id_store::*;

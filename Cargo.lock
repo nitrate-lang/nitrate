@@ -916,11 +916,12 @@ name = "nitrate_parsetree"
 version = "0.1.0"
 dependencies = [
  "apint",
- "blake3",
+ "bimap",
  "hashbrown 0.16.0",
  "interned-string",
  "log",
  "nitrate_tokenize",
+ "once_cell",
  "ordered-float",
  "serde",
  "serde_json",
