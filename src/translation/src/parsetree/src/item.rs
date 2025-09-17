@@ -1,4 +1,7 @@
-use crate::kind::{Block, Expr, Path, Type};
+use crate::{
+    kind::{Block, Expr, Path, Type},
+    tag::PackageId,
+};
 
 use serde::{Deserialize, Serialize};
 
@@ -11,7 +14,7 @@ pub enum Visibility {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Package {
-    pub name: String,
+    pub name: PackageId,
     pub root: Module,
 }
 

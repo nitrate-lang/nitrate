@@ -11,4 +11,6 @@ pub mod kind {
     pub use crate::item::*;
 }
 
-pub use crate::id_store::*;
+pub mod tag {
+    pub use crate::id_store::*;
+}

@@ -1,5 +1,8 @@
 use nitrate_diagnosis::DiagnosticCollector;
-use nitrate_parsetree::kind::{Module, Package, Visibility};
+use nitrate_parsetree::{
+    kind::{Module, Package, Visibility},
+    tag::intern_package_id,
+};
 use nitrate_tokenize::Lexer;
 
 pub struct Parser<'a, 'bugs> {
@@ -20,8 +23,10 @@ impl<'a, 'bugs> Parser<'a, 'bugs> {
             items.push(item);
         }
 
+        let name = intern_package_id(crate_name);
+
         Package {
-            name: crate_name,
+            name,
             root: Module {
                 visibility: Some(Visibility::Public),
                 attributes: Vec::new(),

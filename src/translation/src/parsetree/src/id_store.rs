@@ -42,9 +42,9 @@ macro_rules! impl_interning_category  {
                 }
             }
 
-            fn get_or_create(&self, path: &str) -> Option<$key> {
+            fn get_or_create(&self, path: String) -> Option<$key> {
                 // Step 1: Read lock for a quick check.
-                if let Some(id) = self.map.read().unwrap().get_by_right(path) {
+                if let Some(id) = self.map.read().unwrap().get_by_right(path.as_str()) {
                     return Some(id.clone());
                 }
 
@@ -52,7 +52,7 @@ macro_rules! impl_interning_category  {
                 let mut map = self.map.write().unwrap();
 
                 // Step 3: Check again under the write lock to prevent a race.
-                if let Some(id) = map.get_by_right(path) {
+                if let Some(id) = map.get_by_right(path.as_str()) {
                     return Some(id.clone());
                 }
 
@@ -70,7 +70,7 @@ macro_rules! impl_interning_category  {
                     .map($key)
                     .expect("Atomic counter generated 0, which should not happen");
 
-                map.insert(file_id.clone(), Box::leak(path.to_owned().into_boxed_str()));
+                map.insert(file_id.clone(), Box::leak(path.into_boxed_str()));
 
                 // Step 7: If this was the last ID, set the flag.
                 // We use a Release store to ensure the memory writes to the map are
@@ -99,8 +99,8 @@ macro_rules! impl_interning_category  {
         static $store_global_name: once_cell::sync::Lazy<$store> =
             once_cell::sync::Lazy::new($store::new);
 
-        pub fn $create_fn(path: &str) -> Option<$key> {
-            $store_global_name.get_or_create(path)
+        pub fn $create_fn(path: String) -> $key {
+            $store_global_name.get_or_create(path).expect("ID space exhausted")
         }
     };
 }
