@@ -1,9 +1,12 @@
 use super::parse::Parser;
 use crate::bugs::SyntaxBug;
 
-use nitrate_parsetree::kind::{
-    ArrayType, Expr, FunctionType, FunctionTypeParameter, Lifetime, Path, ReferenceType,
-    RefinementType, SliceType, TupleType, Type,
+use nitrate_parsetree::{
+    kind::{
+        ArrayType, Expr, FunctionType, FunctionTypeParameter, Lifetime, Path, ReferenceType,
+        RefinementType, SliceType, TupleType, Type,
+    },
+    tag::{intern_lifetime_name_id, intern_opaque_type_name_id, intern_parameter_name_id},
 };
 use nitrate_tokenize::Token;
 
@@ -203,7 +206,7 @@ impl Parser<'_, '_> {
             let rewind_pos = this.lexer.current_pos();
             if let Some(param_name) = this.lexer.next_if_name() {
                 if this.lexer.skip_if(&Token::Colon) {
-                    name = Some(param_name);
+                    name = Some(intern_parameter_name_id(param_name));
                 } else {
                     this.lexer.rewind(rewind_pos);
                 }
@@ -306,6 +309,8 @@ impl Parser<'_, '_> {
             "".into()
         });
 
+        let opaque_identity = intern_opaque_type_name_id(opaque_identity);
+
         if !self.lexer.skip_if(&Token::CloseParen) {
             let bug = SyntaxBug::ExpectedCloseParen(self.lexer.peek_pos());
             self.bugs.push(&bug);
@@ -327,7 +332,9 @@ impl Parser<'_, '_> {
                 "gc" => Lifetime::GarbageCollected,
                 "thread" => Lifetime::Thread,
                 "task" => Lifetime::Task,
-                _ => Lifetime::Other { name: kind },
+                _ => Lifetime::Other {
+                    name: intern_lifetime_name_id(kind),
+                },
             };
         }
 

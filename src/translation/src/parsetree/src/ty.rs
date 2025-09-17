@@ -1,4 +1,7 @@
-use crate::kind::{Block, Expr, Path};
+use crate::{
+    kind::{Block, Expr, Path},
+    tag::{ArgNameId, LifetimeNameId, OpaqueTypeNameId, ParameterNameId},
+};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -28,7 +31,7 @@ pub struct SliceType {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FunctionTypeParameter {
     pub attributes: Vec<Expr>,
-    pub name: Option<String>,
+    pub name: Option<ParameterNameId>,
     pub param_type: Type,
     pub default: Option<Expr>,
 }
@@ -49,7 +52,7 @@ pub enum Lifetime {
     GarbageCollected,
     Thread,
     Task,
-    Other { name: String },
+    Other { name: LifetimeNameId },
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -62,7 +65,7 @@ pub struct ReferenceType {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GenericArgument {
-    pub name: Option<String>,
+    pub name: Option<ArgNameId>,
     pub value: Type,
 }
 
@@ -95,7 +98,7 @@ pub enum Type {
     SliceType(Box<SliceType>),
     FunctionType(Box<FunctionType>),
     ReferenceType(Box<ReferenceType>),
-    OpaqueType(String),
+    OpaqueType(OpaqueTypeNameId),
     LatentType(Box<Block>),
     Lifetime(Box<Lifetime>),
     Parentheses(Box<Type>),

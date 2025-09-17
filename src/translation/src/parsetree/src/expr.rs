@@ -1,5 +1,6 @@
 use crate::item::Variable;
 use crate::kind::{FunctionParameter, Type};
+use crate::tag::{ArgNameId, LabelNameId, StringLiteralId, StructFieldNameId, VariableNameId};
 use crate::ty::GenericArgument;
 
 use nitrate_tokenize::IntegerKind;
@@ -20,7 +21,7 @@ pub struct List {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Object {
-    pub fields: HashMap<String, Expr>,
+    pub fields: HashMap<StructFieldNameId, Expr>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -213,12 +214,12 @@ pub struct Switch {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Break {
-    pub label: Option<String>,
+    pub label: Option<LabelNameId>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Continue {
-    pub label: Option<String>,
+    pub label: Option<LabelNameId>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -230,7 +231,7 @@ pub struct Return {
 pub struct ForEach {
     pub attributes: Vec<Expr>,
     pub iterable: Expr,
-    pub bindings: Vec<(String, Option<Type>)>,
+    pub bindings: Vec<(VariableNameId, Option<Type>)>,
     pub body: Block,
 }
 
@@ -241,7 +242,7 @@ pub struct Await {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CallArgument {
-    pub name: Option<String>,
+    pub name: Option<ArgNameId>,
     pub value: Expr,
 }
 
@@ -260,7 +261,7 @@ pub enum Expr {
     Boolean(bool),
     Integer(Box<Integer>),
     Float(NotNan<f64>),
-    String(String),
+    String(StringLiteralId),
     BString(Box<Vec<u8>>),
     Unit,
 

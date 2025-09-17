@@ -235,6 +235,41 @@ impl_interning_category!(
     intern_variable_name_id
 );
 
+impl_interning_category!(
+    ArgNameId,
+    ArgNameIdStore,
+    ARG_NAME_ID_STORE,
+    intern_arg_name_id
+);
+
+impl_interning_category!(
+    OpaqueTypeNameId,
+    OpaqueTypeNameIdStore,
+    OPAQUE_TYPE_NAME_ID_STORE,
+    intern_opaque_type_name_id
+);
+
+impl_interning_category!(
+    LifetimeNameId,
+    LifetimeNameIdStore,
+    LIFETIME_NAME_ID_STORE,
+    intern_lifetime_name_id
+);
+
+impl_interning_category!(
+    LabelNameId,
+    LabelNameIdStore,
+    LABEL_NAME_ID_STORE,
+    intern_label_name_id
+);
+
+impl_interning_category!(
+    StringLiteralId,
+    StringLiteralIdStore,
+    STRING_LITERAL_ID_STORE,
+    intern_string_literal_id
+);
+
 pub fn erase_interners() {
     PACKAGE_NAME_ID_STORE.clear();
     MODULE_NAME_ID_STORE.clear();
@@ -246,4 +281,9 @@ pub fn erase_interners() {
     TRAIT_NAME_ID_STORE.clear();
     FUNCTION_NAME_ID_STORE.clear();
     VARIABLE_NAME_ID_STORE.clear();
+    ARG_NAME_ID_STORE.clear();
+    OPAQUE_TYPE_NAME_ID_STORE.clear();
+    LIFETIME_NAME_ID_STORE.clear();
+    LABEL_NAME_ID_STORE.clear();
+    STRING_LITERAL_ID_STORE.clear();
 }
