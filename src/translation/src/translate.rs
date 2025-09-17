@@ -59,9 +59,9 @@ fn create_lexer<'a>(
     lexer.map_err(TranslationError::LexerError)
 }
 
-fn parse_language(lexer: Lexer, crate_name: String, bugs: &DiagnosticCollector) -> Package {
+fn parse_language(lexer: Lexer, package_name: &str, bugs: &DiagnosticCollector) -> Package {
     let mut parser = Parser::new(lexer, bugs);
-    parser.parse_crate(crate_name)
+    parser.parse_crate(package_name)
 }
 
 // fn resolve_names(_program: &mut Expr) -> Result<(), TranslationError> {
@@ -140,7 +140,7 @@ pub fn compile_code(
     let fileid = get_or_create_file_id(&options.source_name_for_debug_messages);
     let lexer = create_lexer(&source, fileid)?;
 
-    let package = parse_language(lexer, options.crate_name.clone(), bugs);
+    let package = parse_language(lexer, &options.package_name, bugs);
 
     // resolve_names(&mut program, &mut symtab)?;
     // type_check(&mut program)?;

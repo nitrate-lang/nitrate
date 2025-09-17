@@ -1,6 +1,9 @@
 use crate::{
     kind::{Block, Expr, Path, Type},
-    tag::PackageId,
+    tag::{
+        EnumVariantNameId, FunctionNameId, ImportAliasNameId, ModuleNameId, PackageNameId,
+        ParameterNameId, StructFieldNameId, TraitNameId, TypeNameId, VariableNameId,
+    },
 };
 
 use serde::{Deserialize, Serialize};
@@ -14,7 +17,7 @@ pub enum Visibility {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Package {
-    pub name: PackageId,
+    pub name: PackageNameId,
     pub root: Module,
 }
 
@@ -22,7 +25,7 @@ pub struct Package {
 pub struct Module {
     pub visibility: Option<Visibility>,
     pub attributes: Vec<Expr>,
-    pub name: String,
+    pub name: ModuleNameId,
     pub items: Vec<Item>,
 }
 
@@ -31,12 +34,12 @@ pub struct Import {
     pub visibility: Option<Visibility>,
     pub attributes: Vec<Expr>,
     pub path: Path,
-    pub alias: Option<String>,
+    pub alias: Option<ImportAliasNameId>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GenericParameter {
-    pub name: String,
+    pub name: ParameterNameId,
     pub default: Option<Type>,
 }
 
@@ -44,7 +47,7 @@ pub struct GenericParameter {
 pub struct TypeAlias {
     pub visibility: Option<Visibility>,
     pub attributes: Vec<Expr>,
-    pub name: String,
+    pub name: TypeNameId,
     pub type_params: Vec<GenericParameter>,
     pub aliased_type: Option<Type>,
 }
@@ -53,7 +56,7 @@ pub struct TypeAlias {
 pub struct StructField {
     pub visibility: Option<Visibility>,
     pub attributes: Vec<Expr>,
-    pub name: String,
+    pub name: StructFieldNameId,
     pub field_type: Type,
     pub default: Option<Expr>,
 }
@@ -62,7 +65,7 @@ pub struct StructField {
 pub struct Struct {
     pub visibility: Option<Visibility>,
     pub attributes: Vec<Expr>,
-    pub name: String,
+    pub name: TypeNameId,
     pub type_params: Vec<GenericParameter>,
     pub fields: Vec<StructField>,
     pub methods: Vec<NamedFunction>,
@@ -72,7 +75,7 @@ pub struct Struct {
 pub struct EnumVariant {
     pub visibility: Option<Visibility>,
     pub attributes: Vec<Expr>,
-    pub name: String,
+    pub name: EnumVariantNameId,
     pub variant_type: Option<Type>,
     pub value: Option<Expr>,
 }
@@ -81,7 +84,7 @@ pub struct EnumVariant {
 pub struct Enum {
     pub visibility: Option<Visibility>,
     pub attributes: Vec<Expr>,
-    pub name: String,
+    pub name: TypeNameId,
     pub type_params: Vec<GenericParameter>,
     pub variants: Vec<EnumVariant>,
 }
@@ -98,7 +101,7 @@ pub enum AssociatedItem {
 pub struct Trait {
     pub visibility: Option<Visibility>,
     pub attributes: Vec<Expr>,
-    pub name: String,
+    pub name: TraitNameId,
     pub type_params: Vec<GenericParameter>,
     pub items: Vec<AssociatedItem>,
 }
@@ -114,9 +117,16 @@ pub struct Impl {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum Mutability {
+    Mutable,
+    Const,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FunctionParameter {
     pub attributes: Vec<Expr>,
-    pub name: String,
+    pub mutability: Option<Mutability>,
+    pub name: ParameterNameId,
     pub param_type: Option<Type>,
     pub default: Option<Expr>,
 }
@@ -125,7 +135,7 @@ pub struct FunctionParameter {
 pub struct NamedFunction {
     pub visibility: Option<Visibility>,
     pub attributes: Vec<Expr>,
-    pub name: String,
+    pub name: FunctionNameId,
     pub type_params: Vec<GenericParameter>,
     pub parameters: Vec<FunctionParameter>,
     pub return_type: Option<Type>,
@@ -157,8 +167,8 @@ pub struct Variable {
     pub visibility: Option<Visibility>,
     pub kind: VariableKind,
     pub attributes: Vec<Expr>,
-    pub is_mutable: bool,
-    pub name: String,
+    pub mutability: Option<Mutability>,
+    pub name: VariableNameId,
     pub var_type: Option<Type>,
     pub initializer: Option<Expr>,
 }

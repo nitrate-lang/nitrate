@@ -1,16 +1,18 @@
 use bimap::BiMap;
 use serde::{Deserialize, Serialize};
 use std::num::NonZeroU32;
+use std::ops::Deref;
 use std::sync::RwLock;
 use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
 
 macro_rules! impl_interning_category  {
     ($key:ident, $store:ident, $store_global_name:ident, $create_fn:ident) => {
-        #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
+        #[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
         pub struct $key(NonZeroU32);
 
         impl_interning_category!(@impl_deref $key, $store, $store_global_name);
-
+        impl_interning_category!(@impl_format $key, $store, $store_global_name);
+        impl_interning_category!(@impl_serde $key, $store, $store_global_name, $create_fn);
         impl_interning_category!(@impl_store $key, $store, $store_global_name, $create_fn);
     };
 
@@ -19,9 +21,67 @@ macro_rules! impl_interning_category  {
             type Target = str;
 
             fn deref(&self) -> &'static Self::Target {
-                $store_global_name
-                .lookup(self)
-                .expect("Inconsistent state: ID not found in storage. The interner storage was probably prematurely reset with a dangling id.")
+                let Some(result) = $store_global_name.lookup(self) else {
+                    panic!("Inconsistent state: ID not found in storage. \
+                            The string interner storage was probably prematurely \
+                            reset. Failed to dereference a dangling ID. \
+                            No memory unsafety has resulted from this.");
+
+                };
+
+                result
+            }
+        }
+    };
+
+    (@impl_format $key:ident, $store:ident, $store_global_name:ident) => {
+         impl std::fmt::Debug for $key {
+            fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+                write!(f, "{:?}", self.deref())
+            }
+        }
+
+        impl std::fmt::Display for $key {
+            fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+                write!(f, "{}", self.deref())
+            }
+        }
+    };
+
+    (@impl_serde $key:ident, $store:ident, $store_global_name:ident, $create_fn:ident) => {
+        impl Serialize for $key {
+            fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+            where
+                S: serde::Serializer,
+            {
+                let s: &str = self.deref();
+                serializer.serialize_str(s)
+            }
+        }
+
+        impl<'de> Deserialize<'de> for $key {
+            fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+            where
+                D: serde::Deserializer<'de>,
+            {
+                struct Visitor;
+
+                impl<'de> serde::de::Visitor<'de> for Visitor {
+                    type Value = $key;
+
+                    fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+                        formatter.write_str("a string representing an interned ID")
+                    }
+
+                    fn visit_str<E>(self, v: &str) -> Result<Self::Value, E>
+                    where
+                        E: serde::de::Error,
+                    {
+                        Ok($create_fn(v.to_string()))
+                    }
+                }
+
+                deserializer.deserialize_str(Visitor)
             }
         }
     };
@@ -106,12 +166,84 @@ macro_rules! impl_interning_category  {
 }
 
 impl_interning_category!(
-    PackageId,
-    PackageIdStore,
-    PACKAGE_ID_STORE,
-    intern_package_id
+    PackageNameId,
+    PackageNameIdStore,
+    PACKAGE_NAME_ID_STORE,
+    intern_package_name_id
+);
+
+impl_interning_category!(
+    ModuleNameId,
+    ModuleNameIdStore,
+    MODULE_NAME_ID_STORE,
+    intern_module_name_id
+);
+
+impl_interning_category!(
+    ImportAliasNameId,
+    ImportAliasNameIdStore,
+    IMPORT_ALIAS_NAME_ID_STORE,
+    intern_import_alias_name_id
+);
+
+impl_interning_category!(
+    ParameterNameId,
+    ParameterNameIdStore,
+    PARAMETER_NAME_ID_STORE,
+    intern_parameter_name_id
+);
+
+impl_interning_category!(
+    TypeNameId,
+    TypeNameIdStore,
+    TYPE_NAME_ID_STORE,
+    intern_type_name_id
+);
+
+impl_interning_category!(
+    StructFieldNameId,
+    StructFieldNameIdStore,
+    STRUCT_FIELD_NAME_ID_STORE,
+    intern_struct_field_name_id
+);
+
+impl_interning_category!(
+    EnumVariantNameId,
+    EnumVariantNameIdStore,
+    ENUM_VARIANT_NAME_ID_STORE,
+    intern_enum_variant_name_id
+);
+
+impl_interning_category!(
+    TraitNameId,
+    TraitNameIdStore,
+    TRAIT_NAME_ID_STORE,
+    intern_trait_name_id
+);
+
+impl_interning_category!(
+    FunctionNameId,
+    FunctionNameIdStore,
+    FUNCTION_NAME_ID_STORE,
+    intern_function_name_id
+);
+
+impl_interning_category!(
+    VariableNameId,
+    VariableNameIdStore,
+    VARIABLE_NAME_ID_STORE,
+    intern_variable_name_id
 );
 
 pub fn erase_interners() {
-    PACKAGE_ID_STORE.clear();
+    PACKAGE_NAME_ID_STORE.clear();
+    MODULE_NAME_ID_STORE.clear();
+    IMPORT_ALIAS_NAME_ID_STORE.clear();
+    PARAMETER_NAME_ID_STORE.clear();
+    TYPE_NAME_ID_STORE.clear();
+    STRUCT_FIELD_NAME_ID_STORE.clear();
+    ENUM_VARIANT_NAME_ID_STORE.clear();
+    TRAIT_NAME_ID_STORE.clear();
+    FUNCTION_NAME_ID_STORE.clear();
+    VARIABLE_NAME_ID_STORE.clear();
 }

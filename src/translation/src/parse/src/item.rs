@@ -1,10 +1,17 @@
 use super::parse::Parser;
 use crate::bugs::SyntaxBug;
 
-use nitrate_parsetree::kind::{
-    AssociatedItem, Enum, EnumVariant, FunctionParameter, GenericParameter, Impl, Import, Item,
-    Module, NamedFunction, Struct, StructField, Trait, TypeAlias, Variable, VariableKind,
-    Visibility,
+use nitrate_parsetree::{
+    kind::{
+        AssociatedItem, Enum, EnumVariant, FunctionParameter, GenericParameter, Impl, Import, Item,
+        Module, Mutability, NamedFunction, Struct, StructField, Trait, TypeAlias, Variable,
+        VariableKind, Visibility,
+    },
+    tag::{
+        intern_enum_variant_name_id, intern_function_name_id, intern_import_alias_name_id,
+        intern_module_name_id, intern_parameter_name_id, intern_struct_field_name_id,
+        intern_trait_name_id, intern_type_name_id, intern_variable_name_id,
+    },
 };
 use nitrate_tokenize::Token;
 
@@ -16,6 +23,8 @@ impl Parser<'_, '_> {
                 this.bugs.push(&bug);
                 "".into()
             });
+
+            let name = intern_parameter_name_id(name);
 
             let default = if this.lexer.skip_if(&Token::Eq) {
                 Some(this.parse_type())
@@ -76,6 +85,8 @@ impl Parser<'_, '_> {
             "".into()
         });
 
+        let name = intern_module_name_id(name);
+
         if !self.lexer.skip_if(&Token::OpenBrace) {
             let bug = SyntaxBug::ExpectedOpenBrace(self.lexer.peek_pos());
             self.bugs.push(&bug);
@@ -120,11 +131,13 @@ impl Parser<'_, '_> {
         let path = self.parse_path();
 
         let alias = if self.lexer.skip_if(&Token::As) {
-            Some(self.lexer.next_if_name().unwrap_or_else(|| {
+            let name = self.lexer.next_if_name().unwrap_or_else(|| {
                 let bug = SyntaxBug::ImportMissingAliasName(self.lexer.peek_pos());
                 self.bugs.push(&bug);
                 "".into()
-            }))
+            });
+
+            Some(intern_import_alias_name_id(name))
         } else {
             None
         };
@@ -153,6 +166,8 @@ impl Parser<'_, '_> {
             self.bugs.push(&bug);
             "".into()
         });
+
+        let name = intern_type_name_id(name);
 
         let type_params = self.parse_generic_parameters();
 
@@ -187,6 +202,8 @@ impl Parser<'_, '_> {
                 "".into()
             });
 
+            let name = intern_enum_variant_name_id(name);
+
             let variant_type = if this.lexer.next_is(&Token::OpenParen) {
                 Some(this.parse_type())
             } else {
@@ -218,6 +235,8 @@ impl Parser<'_, '_> {
             self.bugs.push(&bug);
             "".into()
         });
+
+        let name = intern_type_name_id(name);
 
         let type_params = self.parse_generic_parameters();
 
@@ -277,6 +296,8 @@ impl Parser<'_, '_> {
                 "".into()
             });
 
+            let name = intern_struct_field_name_id(name);
+
             if !this.lexer.skip_if(&Token::Colon) {
                 let bug = SyntaxBug::ExpectedColon(this.lexer.peek_pos());
                 this.bugs.push(&bug);
@@ -309,6 +330,8 @@ impl Parser<'_, '_> {
             self.bugs.push(&bug);
             "".into()
         });
+
+        let name = intern_type_name_id(name);
 
         let type_params = self.parse_generic_parameters();
 
@@ -401,6 +424,8 @@ impl Parser<'_, '_> {
             self.bugs.push(&bug);
             "".into()
         });
+
+        let name = intern_trait_name_id(name);
 
         let type_params = self.parse_generic_parameters();
 
@@ -506,11 +531,20 @@ impl Parser<'_, '_> {
         fn parse_named_function_parameter(this: &mut Parser) -> FunctionParameter {
             let attributes = this.parse_attributes();
 
+            let mut mutability = None;
+            if this.lexer.skip_if(&Token::Mut) {
+                mutability = Some(Mutability::Mutable);
+            } else if this.lexer.skip_if(&Token::Const) {
+                mutability = Some(Mutability::Const);
+            }
+
             let name = this.lexer.next_if_name().unwrap_or_else(|| {
                 let bug = SyntaxBug::FunctionParameterMissingName(this.lexer.peek_pos());
                 this.bugs.push(&bug);
                 "".into()
             });
+
+            let name = intern_parameter_name_id(name);
 
             let param_type = if this.lexer.skip_if(&Token::Colon) {
                 Some(this.parse_type())
@@ -525,10 +559,11 @@ impl Parser<'_, '_> {
             };
 
             FunctionParameter {
+                attributes,
+                mutability,
                 name,
                 param_type,
                 default,
-                attributes,
             }
         }
 
@@ -585,6 +620,8 @@ impl Parser<'_, '_> {
             "".into()
         });
 
+        let name = intern_function_name_id(name);
+
         let type_params = self.parse_generic_parameters();
         let parameters = self.parse_named_function_parameters();
 
@@ -639,9 +676,11 @@ impl Parser<'_, '_> {
 
         let attributes = self.parse_attributes();
 
-        let is_mutable = self.lexer.skip_if(&Token::Mut);
-        if !is_mutable {
-            self.lexer.skip_if(&Token::Const);
+        let mut mutability = None;
+        if self.lexer.skip_if(&Token::Mut) {
+            mutability = Some(Mutability::Mutable);
+        } else if self.lexer.skip_if(&Token::Const) {
+            mutability = Some(Mutability::Const);
         }
 
         let name = self.lexer.next_if_name().unwrap_or_else(|| {
@@ -649,6 +688,8 @@ impl Parser<'_, '_> {
             self.bugs.push(&bug);
             "".into()
         });
+
+        let name = intern_variable_name_id(name);
 
         let var_type = if self.lexer.skip_if(&Token::Colon) {
             Some(self.parse_type())
@@ -671,7 +712,7 @@ impl Parser<'_, '_> {
             visibility: None,
             kind,
             attributes,
-            is_mutable,
+            mutability,
             name,
             var_type,
             initializer,
