@@ -6,7 +6,6 @@ use nitrate_tokenize::IntegerKind;
 use ordered_float::NotNan;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use std::ops::Deref;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Integer {
@@ -184,63 +183,6 @@ pub struct Path {
 pub struct IndexAccess {
     pub collection: Expr,
     pub index: Expr,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
-pub struct QualifiedScope {
-    scopes: Vec<String>,
-}
-
-impl QualifiedScope {
-    #[must_use]
-    pub fn new(scopes: Vec<String>) -> Self {
-        Self { scopes }
-    }
-
-    #[must_use]
-    pub fn parse(qualified_scope: String) -> Self {
-        let parts = qualified_scope
-            .split("::")
-            .filter(|s| !s.is_empty())
-            .map(String::from)
-            .collect::<Vec<String>>();
-
-        Self { scopes: parts }
-    }
-
-    #[must_use]
-    pub fn is_root(&self) -> bool {
-        self.scopes.is_empty()
-    }
-
-    pub fn pop(&mut self) {
-        if !self.scopes.is_empty() {
-            self.scopes.pop();
-        }
-    }
-
-    pub fn push(&mut self, scope: String) {
-        self.scopes.push(scope);
-    }
-
-    #[must_use]
-    pub fn scopes(&self) -> &[String] {
-        &self.scopes
-    }
-}
-
-impl std::fmt::Display for QualifiedScope {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "{}",
-            self.scopes()
-                .iter()
-                .map(Deref::deref)
-                .collect::<Vec<&str>>()
-                .join("::")
-        )
-    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
