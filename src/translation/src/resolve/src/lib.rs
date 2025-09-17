@@ -1,3 +1,4 @@
+#![forbid(unsafe_code)]
 #![warn(clippy::pedantic)]
 
 pub fn add(left: u64, right: u64) -> u64 {
