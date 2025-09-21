@@ -30,7 +30,7 @@ pub struct SliceType {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FunctionTypeParameter {
-    pub attributes: Vec<Expr>,
+    pub attributes: Option<Vec<Expr>>,
     pub name: Option<ParameterNameId>,
     pub param_type: Type,
     pub default: Option<Expr>,
@@ -38,7 +38,7 @@ pub struct FunctionTypeParameter {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FunctionType {
-    pub attributes: Vec<Expr>,
+    pub attributes: Option<Vec<Expr>>,
     pub parameters: Vec<FunctionTypeParameter>,
     pub return_type: Option<Type>,
 }

@@ -168,7 +168,7 @@ pub struct Block {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Closure {
-    pub attributes: Vec<Expr>,
+    pub attributes: Option<Vec<Expr>>,
     pub parameters: Vec<FunctionParameter>,
     pub return_type: Option<Type>,
     pub definition: Block,
@@ -229,7 +229,7 @@ pub struct Return {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ForEach {
-    pub attributes: Vec<Expr>,
+    pub attributes: Option<Vec<Expr>>,
     pub iterable: Expr,
     pub bindings: Vec<(VariableNameId, Option<Type>)>,
     pub body: Block,

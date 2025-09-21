@@ -24,7 +24,7 @@ pub struct Package {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Module {
     pub visibility: Option<Visibility>,
-    pub attributes: Vec<Expr>,
+    pub attributes: Option<Vec<Expr>>,
     pub name: ModuleNameId,
     pub items: Vec<Item>,
 }
@@ -32,7 +32,7 @@ pub struct Module {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Import {
     pub visibility: Option<Visibility>,
-    pub attributes: Vec<Expr>,
+    pub attributes: Option<Vec<Expr>>,
     pub path: Path,
     pub alias: Option<ImportAliasNameId>,
 }
@@ -46,16 +46,16 @@ pub struct GenericParameter {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TypeAlias {
     pub visibility: Option<Visibility>,
-    pub attributes: Vec<Expr>,
+    pub attributes: Option<Vec<Expr>>,
     pub name: TypeNameId,
-    pub type_params: Vec<GenericParameter>,
+    pub type_params: Option<Vec<GenericParameter>>,
     pub aliased_type: Option<Type>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct StructField {
     pub visibility: Option<Visibility>,
-    pub attributes: Vec<Expr>,
+    pub attributes: Option<Vec<Expr>>,
     pub name: StructFieldNameId,
     pub field_type: Type,
     pub default: Option<Expr>,
@@ -64,9 +64,9 @@ pub struct StructField {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Struct {
     pub visibility: Option<Visibility>,
-    pub attributes: Vec<Expr>,
+    pub attributes: Option<Vec<Expr>>,
     pub name: TypeNameId,
-    pub type_params: Vec<GenericParameter>,
+    pub type_params: Option<Vec<GenericParameter>>,
     pub fields: Vec<StructField>,
     pub methods: Vec<NamedFunction>,
 }
@@ -74,7 +74,7 @@ pub struct Struct {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct EnumVariant {
     pub visibility: Option<Visibility>,
-    pub attributes: Vec<Expr>,
+    pub attributes: Option<Vec<Expr>>,
     pub name: EnumVariantNameId,
     pub variant_type: Option<Type>,
     pub value: Option<Expr>,
@@ -83,9 +83,9 @@ pub struct EnumVariant {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Enum {
     pub visibility: Option<Visibility>,
-    pub attributes: Vec<Expr>,
+    pub attributes: Option<Vec<Expr>>,
     pub name: TypeNameId,
-    pub type_params: Vec<GenericParameter>,
+    pub type_params: Option<Vec<GenericParameter>>,
     pub variants: Vec<EnumVariant>,
 }
 
@@ -100,17 +100,17 @@ pub enum AssociatedItem {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Trait {
     pub visibility: Option<Visibility>,
-    pub attributes: Vec<Expr>,
+    pub attributes: Option<Vec<Expr>>,
     pub name: TraitNameId,
-    pub type_params: Vec<GenericParameter>,
+    pub type_params: Option<Vec<GenericParameter>>,
     pub items: Vec<AssociatedItem>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Impl {
     pub visibility: Option<Visibility>,
-    pub attributes: Vec<Expr>,
-    pub type_params: Vec<GenericParameter>,
+    pub attributes: Option<Vec<Expr>>,
+    pub type_params: Option<Vec<GenericParameter>>,
     pub trait_path: Option<Path>,
     pub for_type: Type,
     pub items: Vec<AssociatedItem>,
@@ -124,7 +124,7 @@ pub enum Mutability {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FunctionParameter {
-    pub attributes: Vec<Expr>,
+    pub attributes: Option<Vec<Expr>>,
     pub mutability: Option<Mutability>,
     pub name: ParameterNameId,
     pub param_type: Option<Type>,
@@ -134,9 +134,9 @@ pub struct FunctionParameter {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct NamedFunction {
     pub visibility: Option<Visibility>,
-    pub attributes: Vec<Expr>,
+    pub attributes: Option<Vec<Expr>>,
     pub name: FunctionNameId,
-    pub type_params: Vec<GenericParameter>,
+    pub type_params: Option<Vec<GenericParameter>>,
     pub parameters: Vec<FunctionParameter>,
     pub return_type: Option<Type>,
     pub definition: Option<Block>,
@@ -166,7 +166,7 @@ pub enum VariableKind {
 pub struct Variable {
     pub visibility: Option<Visibility>,
     pub kind: VariableKind,
-    pub attributes: Vec<Expr>,
+    pub attributes: Option<Vec<Expr>>,
     pub mutability: Option<Mutability>,
     pub name: VariableNameId,
     pub var_type: Option<Type>,

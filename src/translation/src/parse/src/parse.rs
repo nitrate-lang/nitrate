@@ -30,7 +30,7 @@ impl<'a, 'bugs> Parser<'a, 'bugs> {
             name: package_name,
             root: Module {
                 visibility: Some(Visibility::Public),
-                attributes: Vec::new(),
+                attributes: None,
                 name: module_name,
                 items,
             },

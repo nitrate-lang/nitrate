@@ -16,7 +16,7 @@ use nitrate_parsetree::{
 use nitrate_tokenize::Token;
 
 impl Parser<'_, '_> {
-    fn parse_generic_parameters(&mut self) -> Vec<GenericParameter> {
+    fn parse_generic_parameters(&mut self) -> Option<Vec<GenericParameter>> {
         fn parse_generic_parameter(this: &mut Parser) -> GenericParameter {
             let name = this.lexer.next_if_name().unwrap_or_else(|| {
                 let bug = SyntaxBug::GenericMissingParameterName(this.lexer.peek_pos());
@@ -35,11 +35,11 @@ impl Parser<'_, '_> {
             GenericParameter { name, default }
         }
 
-        let mut parameters = Vec::new();
-
         if !self.lexer.skip_if(&Token::Lt) {
-            return parameters;
+            return None;
         }
+
+        let mut parameters = Vec::new();
 
         while !self.lexer.skip_if(&Token::Gt) {
             if self.lexer.is_eof() {
@@ -68,7 +68,7 @@ impl Parser<'_, '_> {
             }
         }
 
-        parameters
+        Some(parameters)
     }
 
     fn parse_module(&mut self) -> Module {

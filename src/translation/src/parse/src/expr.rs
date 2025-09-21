@@ -561,13 +561,14 @@ impl Parser<'_, '_> {
         List { elements }
     }
 
-    pub(crate) fn parse_attributes(&mut self) -> Vec<Expr> {
-        let mut attributes = Vec::new();
+    pub(crate) fn parse_attributes(&mut self) -> Option<Vec<Expr>> {
         let mut already_reported_too_many_attributes = false;
 
         if !self.lexer.skip_if(&Token::OpenBracket) {
-            return attributes;
+            return None;
         }
+
+        let mut attributes = Vec::new();
 
         self.lexer.skip_if(&Token::Comma);
 
@@ -597,7 +598,7 @@ impl Parser<'_, '_> {
             }
         }
 
-        attributes
+        Some(attributes)
     }
 
     pub(crate) fn parse_generic_arguments(&mut self) -> Vec<GenericArgument> {
@@ -1025,7 +1026,7 @@ impl Parser<'_, '_> {
             let definition = self.parse_block();
 
             return Closure {
-                attributes: Vec::new(),
+                attributes: None,
                 parameters: Vec::new(),
                 return_type: None,
                 definition,
