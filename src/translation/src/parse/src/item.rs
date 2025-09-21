@@ -4,8 +4,8 @@ use crate::bugs::SyntaxErr;
 use nitrate_parsetree::{
     kind::{
         AssociatedItem, Enum, EnumVariant, FunctionParameter, GenericParameter, Impl, Import, Item,
-        Module, Mutability, NamedFunction, Struct, StructField, Trait, TypeAlias, Variable,
-        VariableKind, Visibility,
+        ItemSyntaxError, Module, Mutability, NamedFunction, Struct, StructField, Trait, TypeAlias,
+        Variable, VariableKind, Visibility,
     },
     tag::{
         intern_enum_variant_name, intern_function_name, intern_import_alias_name,
@@ -785,7 +785,7 @@ impl Parser<'_, '_> {
                 let bug = SyntaxErr::ExpectedItem(item_pos_begin);
                 self.bugs.push(&bug);
 
-                Item::SyntaxError
+                Item::SyntaxError(ItemSyntaxError)
             }
         }
     }

@@ -1,5 +1,4 @@
 use crate::{
-    Order, ParseTreeIterMut, RefNodeMut,
     kind::{Block, Expr, Path, Type},
     tag::{
         EnumVariantNameId, FunctionNameId, ImportAliasNameId, ModuleNameId, PackageNameId,
@@ -8,6 +7,9 @@ use crate::{
 };
 
 use serde::{Deserialize, Serialize};
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ItemSyntaxError;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum Visibility {
@@ -22,24 +24,12 @@ pub struct Package {
     pub root: Module,
 }
 
-impl ParseTreeIterMut for Package {
-    fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
-        // TODO: Traverse
-    }
-}
-
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Module {
     pub visibility: Option<Visibility>,
     pub attributes: Option<Vec<Expr>>,
     pub name: ModuleNameId,
     pub items: Vec<Item>,
-}
-
-impl ParseTreeIterMut for Module {
-    fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
-        // TODO: Traverse
-    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -50,22 +40,10 @@ pub struct Import {
     pub alias: Option<ImportAliasNameId>,
 }
 
-impl ParseTreeIterMut for Import {
-    fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
-        // TODO: Traverse
-    }
-}
-
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GenericParameter {
     pub name: ParameterNameId,
     pub default: Option<Type>,
-}
-
-impl ParseTreeIterMut for GenericParameter {
-    fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
-        // TODO: Traverse
-    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -77,12 +55,6 @@ pub struct TypeAlias {
     pub aliased_type: Option<Type>,
 }
 
-impl ParseTreeIterMut for TypeAlias {
-    fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
-        // TODO: Traverse
-    }
-}
-
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct StructField {
     pub visibility: Option<Visibility>,
@@ -90,12 +62,6 @@ pub struct StructField {
     pub name: StructFieldNameId,
     pub field_type: Type,
     pub default: Option<Expr>,
-}
-
-impl ParseTreeIterMut for StructField {
-    fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
-        // TODO: Traverse
-    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -108,12 +74,6 @@ pub struct Struct {
     pub methods: Vec<NamedFunction>,
 }
 
-impl ParseTreeIterMut for Struct {
-    fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
-        // TODO: Traverse
-    }
-}
-
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct EnumVariant {
     pub visibility: Option<Visibility>,
@@ -121,12 +81,6 @@ pub struct EnumVariant {
     pub name: EnumVariantNameId,
     pub variant_type: Option<Type>,
     pub value: Option<Expr>,
-}
-
-impl ParseTreeIterMut for EnumVariant {
-    fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
-        // TODO: Traverse
-    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -138,24 +92,12 @@ pub struct Enum {
     pub variants: Vec<EnumVariant>,
 }
 
-impl ParseTreeIterMut for Enum {
-    fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
-        // TODO: Traverse
-    }
-}
-
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum AssociatedItem {
     SyntaxError,
     TypeAlias(TypeAlias),
     ConstantItem(Variable),
     Method(NamedFunction),
-}
-
-impl ParseTreeIterMut for AssociatedItem {
-    fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
-        // TODO: Traverse
-    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -167,12 +109,6 @@ pub struct Trait {
     pub items: Vec<AssociatedItem>,
 }
 
-impl ParseTreeIterMut for Trait {
-    fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
-        // TODO: Traverse
-    }
-}
-
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Impl {
     pub visibility: Option<Visibility>,
@@ -181,12 +117,6 @@ pub struct Impl {
     pub trait_path: Option<Path>,
     pub for_type: Type,
     pub items: Vec<AssociatedItem>,
-}
-
-impl ParseTreeIterMut for Impl {
-    fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
-        // TODO: Traverse
-    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -204,12 +134,6 @@ pub struct FunctionParameter {
     pub default: Option<Expr>,
 }
 
-impl ParseTreeIterMut for FunctionParameter {
-    fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
-        // TODO: Traverse
-    }
-}
-
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct NamedFunction {
     pub visibility: Option<Visibility>,
@@ -219,12 +143,6 @@ pub struct NamedFunction {
     pub parameters: Vec<FunctionParameter>,
     pub return_type: Option<Type>,
     pub definition: Option<Block>,
-}
-
-impl ParseTreeIterMut for NamedFunction {
-    fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
-        // TODO: Traverse
-    }
 }
 
 impl NamedFunction {
@@ -258,16 +176,9 @@ pub struct Variable {
     pub initializer: Option<Expr>,
 }
 
-impl ParseTreeIterMut for Variable {
-    fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
-        // TODO: Traverse
-    }
-}
-
 #[derive(Clone, Serialize, Deserialize)]
 pub enum Item {
-    SyntaxError,
-
+    SyntaxError(ItemSyntaxError),
     Module(Box<Module>),
     Import(Box<Import>),
     TypeAlias(Box<TypeAlias>),
@@ -279,32 +190,10 @@ pub enum Item {
     Variable(Box<Variable>),
 }
 
-impl ParseTreeIterMut for Item {
-    fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
-        match self {
-            Item::SyntaxError => {
-                f(Order::Pre, RefNodeMut::ItemSyntaxError);
-                f(Order::Post, RefNodeMut::ItemSyntaxError);
-            }
-
-            Item::Module(module) => module.depth_first_iter_mut(f),
-            Item::Import(import) => import.depth_first_iter_mut(f),
-            Item::TypeAlias(type_alias) => type_alias.depth_first_iter_mut(f),
-            Item::Struct(struct_) => struct_.depth_first_iter_mut(f),
-            Item::Enum(enum_) => enum_.depth_first_iter_mut(f),
-            Item::Trait(trait_) => trait_.depth_first_iter_mut(f),
-            Item::Impl(impl_) => impl_.depth_first_iter_mut(f),
-            Item::NamedFunction(func) => func.depth_first_iter_mut(f),
-            Item::Variable(var) => var.depth_first_iter_mut(f),
-        }
-    }
-}
-
 impl std::fmt::Debug for Item {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Item::SyntaxError => write!(f, "SyntaxError"),
-
+            Item::SyntaxError(e) => e.fmt(f),
             Item::Module(e) => e.fmt(f),
             Item::Import(e) => e.fmt(f),
             Item::TypeAlias(e) => e.fmt(f),

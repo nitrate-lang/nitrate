@@ -5,6 +5,7 @@ mod expr;
 mod expr_iter;
 mod id_store;
 mod item;
+mod item_iter;
 mod iter_mut;
 mod ty;
 
