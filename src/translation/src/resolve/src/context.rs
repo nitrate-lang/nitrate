@@ -2,7 +2,7 @@ use nitrate_diagnosis::{
     DiagnosticCollector, DiagnosticGroupId, DiagnosticInfo, FormattableDiagnosticGroup,
 };
 use nitrate_parsetree::{
-    Order, RefNodeMut, item_depth_first_iter_mut,
+    Order, ParseTreeIterMut, RefNodeMut,
     kind::{Item, Module, Path},
 };
 
@@ -51,11 +51,10 @@ impl FormattableDiagnosticGroup for ResolveIssue {
     }
 }
 
-pub fn resolve(module: Module, _bugs: &DiagnosticCollector) -> Module {
+pub fn resolve(mut module: Module, _bugs: &DiagnosticCollector) -> Module {
     let mut name_scope = Vec::new();
-    let mut item = Item::Module(Box::new(module));
 
-    item_depth_first_iter_mut(&mut item, &mut |order, node| {
+    module.depth_first_iter_mut(&mut |order, node| {
         if let RefNodeMut::ItemModule(module) = node {
             match order {
                 Order::Pre => {
@@ -77,8 +76,5 @@ pub fn resolve(module: Module, _bugs: &DiagnosticCollector) -> Module {
         println!("Current scope: {}", name_scope.join("::"));
     });
 
-    match item {
-        Item::Module(module) => *module,
-        _ => unreachable!(),
-    }
+    module
 }

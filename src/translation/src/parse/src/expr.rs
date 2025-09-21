@@ -5,7 +5,8 @@ use nitrate_parsetree::{
     kind::{
         Await, BinExpr, BinExprOp, Block, BlockItem, Break, Call, CallArgument, Cast, Closure,
         Continue, DoWhileLoop, Expr, ForEach, FunctionParameter, GenericArgument, If, IndexAccess,
-        Integer, List, Mutability, Path, Return, Safety, Type, UnaryExpr, UnaryExprOp, WhileLoop,
+        IntegerLit, List, Mutability, Path, Return, Safety, Type, UnaryExpr, UnaryExprOp,
+        WhileLoop,
     },
     tag::{
         VariableNameId, intern_arg_name, intern_label_name, intern_parameter_name,
@@ -330,7 +331,7 @@ impl Parser<'_, '_> {
         match self.lexer.peek_t() {
             Token::Integer(int) => {
                 self.lexer.skip_tok();
-                self.parse_literal_suffix(Expr::Integer(Box::new(Integer {
+                self.parse_literal_suffix(Expr::Integer(Box::new(IntegerLit {
                     value: int.value(),
                     kind: int.kind(),
                 })))
