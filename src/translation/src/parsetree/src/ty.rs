@@ -5,6 +5,188 @@ use crate::{
 };
 use serde::{Deserialize, Serialize};
 
+#[derive(Clone, Serialize, Deserialize)]
+pub struct SyntaxError;
+
+impl ParseTreeIterMut for SyntaxError {
+    fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
+        // TODO: Traverse
+    }
+}
+
+#[derive(Clone, Serialize, Deserialize)]
+pub struct Bool;
+
+impl ParseTreeIterMut for Bool {
+    fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
+        // TODO: Traverse
+    }
+}
+
+#[derive(Clone, Serialize, Deserialize)]
+pub struct UInt8;
+
+impl ParseTreeIterMut for UInt8 {
+    fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
+        // TODO: Traverse
+    }
+}
+
+#[derive(Clone, Serialize, Deserialize)]
+pub struct UInt16;
+
+impl ParseTreeIterMut for UInt16 {
+    fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
+        // TODO: Traverse
+    }
+}
+
+#[derive(Clone, Serialize, Deserialize)]
+pub struct UInt32;
+
+impl ParseTreeIterMut for UInt32 {
+    fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
+        // TODO: Traverse
+    }
+}
+
+#[derive(Clone, Serialize, Deserialize)]
+pub struct UInt64;
+
+impl ParseTreeIterMut for UInt64 {
+    fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
+        // TODO: Traverse
+    }
+}
+
+#[derive(Clone, Serialize, Deserialize)]
+pub struct UInt128;
+
+impl ParseTreeIterMut for UInt128 {
+    fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
+        // TODO: Traverse
+    }
+}
+
+#[derive(Clone, Serialize, Deserialize)]
+pub struct Int8;
+
+impl ParseTreeIterMut for Int8 {
+    fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
+        // TODO: Traverse
+    }
+}
+
+#[derive(Clone, Serialize, Deserialize)]
+pub struct Int16;
+
+impl ParseTreeIterMut for Int16 {
+    fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
+        // TODO: Traverse
+    }
+}
+
+#[derive(Clone, Serialize, Deserialize)]
+pub struct Int32;
+
+impl ParseTreeIterMut for Int32 {
+    fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
+        // TODO: Traverse
+    }
+}
+
+#[derive(Clone, Serialize, Deserialize)]
+pub struct Int64;
+
+impl ParseTreeIterMut for Int64 {
+    fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
+        // TODO: Traverse
+    }
+}
+
+#[derive(Clone, Serialize, Deserialize)]
+pub struct Int128;
+
+impl ParseTreeIterMut for Int128 {
+    fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
+        // TODO: Traverse
+    }
+}
+
+#[derive(Clone, Serialize, Deserialize)]
+pub struct Float8;
+
+impl ParseTreeIterMut for Float8 {
+    fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
+        // TODO: Traverse
+    }
+}
+
+#[derive(Clone, Serialize, Deserialize)]
+pub struct Float16;
+
+impl ParseTreeIterMut for Float16 {
+    fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
+        // TODO: Traverse
+    }
+}
+
+#[derive(Clone, Serialize, Deserialize)]
+pub struct Float32;
+
+impl ParseTreeIterMut for Float32 {
+    fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
+        // TODO: Traverse
+    }
+}
+
+#[derive(Clone, Serialize, Deserialize)]
+pub struct Float64;
+
+impl ParseTreeIterMut for Float64 {
+    fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
+        // TODO: Traverse
+    }
+}
+
+#[derive(Clone, Serialize, Deserialize)]
+pub struct Float128;
+
+impl ParseTreeIterMut for Float128 {
+    fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
+        // TODO: Traverse
+    }
+}
+
+#[derive(Clone, Serialize, Deserialize)]
+pub struct UnitType;
+
+impl ParseTreeIterMut for UnitType {
+    fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
+        // TODO: Traverse
+    }
+}
+
+#[derive(Clone, Serialize, Deserialize)]
+pub struct InferType;
+
+impl ParseTreeIterMut for InferType {
+    fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
+        // TODO: Traverse
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TypeName {
+    pub name: Path,
+}
+
+impl ParseTreeIterMut for TypeName {
+    fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
+        // TODO: Traverse
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RefinementType {
     pub basis_type: Type,
@@ -113,6 +295,28 @@ impl ParseTreeIterMut for ReferenceType {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct OpaqueType {
+    pub name: OpaqueTypeNameId,
+}
+
+impl ParseTreeIterMut for OpaqueType {
+    fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
+        // TODO: Traverse
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct LatentType {
+    pub body: Block,
+}
+
+impl ParseTreeIterMut for LatentType {
+    fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
+        // TODO: Traverse
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GenericArgument {
     pub name: Option<ArgNameId>,
     pub value: Type,
@@ -124,139 +328,73 @@ impl ParseTreeIterMut for GenericArgument {
     }
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TypeParentheses {
+    pub inner: Type,
+}
+
+impl ParseTreeIterMut for TypeParentheses {
+    fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
+        // TODO: Traverse
+    }
+}
+
 #[derive(Clone, Serialize, Deserialize)]
 pub enum Type {
-    SyntaxError,
-
-    Bool,
-    UInt8,
-    UInt16,
-    UInt32,
-    UInt64,
-    UInt128,
-    Int8,
-    Int16,
-    Int32,
-    Int64,
-    Int128,
-    Float8,
-    Float16,
-    Float32,
-    Float64,
-    Float128,
-    UnitType,
-    InferType,
-    TypeName(Box<Path>),
+    SyntaxError(SyntaxError),
+    Bool(Bool),
+    UInt8(UInt8),
+    UInt16(UInt16),
+    UInt32(UInt32),
+    UInt64(UInt64),
+    UInt128(UInt128),
+    Int8(Int8),
+    Int16(Int16),
+    Int32(Int32),
+    Int64(Int64),
+    Int128(Int128),
+    Float8(Float8),
+    Float16(Float16),
+    Float32(Float32),
+    Float64(Float64),
+    Float128(Float128),
+    UnitType(UnitType),
+    InferType(InferType),
+    TypeName(Box<TypeName>),
     RefinementType(Box<RefinementType>),
     TupleType(Box<TupleType>),
     ArrayType(Box<ArrayType>),
     SliceType(Box<SliceType>),
     FunctionType(Box<FunctionType>),
     ReferenceType(Box<ReferenceType>),
-    OpaqueType(OpaqueTypeNameId),
-    LatentType(Box<Block>),
+    OpaqueType(OpaqueType),
+    LatentType(Box<LatentType>),
     Lifetime(Box<Lifetime>),
-    Parentheses(Box<Type>),
+    Parentheses(Box<TypeParentheses>),
 }
 
 impl ParseTreeIterMut for Type {
     fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
         match self {
-            Type::SyntaxError => {
-                f(Order::Pre, RefNodeMut::TypeSyntaxError);
-                f(Order::Post, RefNodeMut::TypeSyntaxError);
-            }
-
-            Type::Bool => {
-                f(Order::Pre, RefNodeMut::TypeBool);
-                f(Order::Post, RefNodeMut::TypeBool);
-            }
-
-            Type::UInt8 => {
-                f(Order::Pre, RefNodeMut::TypeUInt8);
-                f(Order::Post, RefNodeMut::TypeUInt8);
-            }
-
-            Type::UInt16 => {
-                f(Order::Pre, RefNodeMut::TypeUInt16);
-                f(Order::Post, RefNodeMut::TypeUInt16);
-            }
-
-            Type::UInt32 => {
-                f(Order::Pre, RefNodeMut::TypeUInt32);
-                f(Order::Post, RefNodeMut::TypeUInt32);
-            }
-
-            Type::UInt64 => {
-                f(Order::Pre, RefNodeMut::TypeUInt64);
-                f(Order::Post, RefNodeMut::TypeUInt64);
-            }
-
-            Type::UInt128 => {
-                f(Order::Pre, RefNodeMut::TypeUInt128);
-                f(Order::Post, RefNodeMut::TypeUInt128);
-            }
-
-            Type::Int8 => {
-                f(Order::Pre, RefNodeMut::TypeInt8);
-                f(Order::Post, RefNodeMut::TypeInt8);
-            }
-
-            Type::Int16 => {
-                f(Order::Pre, RefNodeMut::TypeInt16);
-                f(Order::Post, RefNodeMut::TypeInt16);
-            }
-
-            Type::Int32 => {
-                f(Order::Pre, RefNodeMut::TypeInt32);
-                f(Order::Post, RefNodeMut::TypeInt32);
-            }
-
-            Type::Int64 => {
-                f(Order::Pre, RefNodeMut::TypeInt64);
-                f(Order::Post, RefNodeMut::TypeInt64);
-            }
-
-            Type::Int128 => {
-                f(Order::Pre, RefNodeMut::TypeInt128);
-                f(Order::Post, RefNodeMut::TypeInt128);
-            }
-
-            Type::Float8 => {
-                f(Order::Pre, RefNodeMut::TypeFloat8);
-                f(Order::Post, RefNodeMut::TypeFloat8);
-            }
-
-            Type::Float16 => {
-                f(Order::Pre, RefNodeMut::TypeFloat16);
-                f(Order::Post, RefNodeMut::TypeFloat16);
-            }
-
-            Type::Float32 => {
-                f(Order::Pre, RefNodeMut::TypeFloat32);
-                f(Order::Post, RefNodeMut::TypeFloat32);
-            }
-
-            Type::Float64 => {
-                f(Order::Pre, RefNodeMut::TypeFloat64);
-                f(Order::Post, RefNodeMut::TypeFloat64);
-            }
-
-            Type::Float128 => {
-                f(Order::Pre, RefNodeMut::TypeFloat128);
-                f(Order::Post, RefNodeMut::TypeFloat128);
-            }
-
-            Type::UnitType => {
-                f(Order::Pre, RefNodeMut::TypeUnitType);
-                f(Order::Post, RefNodeMut::TypeUnitType);
-            }
-
-            Type::InferType => {
-                f(Order::Pre, RefNodeMut::TypeInferType);
-                f(Order::Post, RefNodeMut::TypeInferType);
-            }
-
+            Type::SyntaxError(ty) => ty.depth_first_iter_mut(f),
+            Type::Bool(ty) => ty.depth_first_iter_mut(f),
+            Type::UInt8(ty) => ty.depth_first_iter_mut(f),
+            Type::UInt16(ty) => ty.depth_first_iter_mut(f),
+            Type::UInt32(ty) => ty.depth_first_iter_mut(f),
+            Type::UInt64(ty) => ty.depth_first_iter_mut(f),
+            Type::UInt128(ty) => ty.depth_first_iter_mut(f),
+            Type::Int8(ty) => ty.depth_first_iter_mut(f),
+            Type::Int16(ty) => ty.depth_first_iter_mut(f),
+            Type::Int32(ty) => ty.depth_first_iter_mut(f),
+            Type::Int64(ty) => ty.depth_first_iter_mut(f),
+            Type::Int128(ty) => ty.depth_first_iter_mut(f),
+            Type::Float8(ty) => ty.depth_first_iter_mut(f),
+            Type::Float16(ty) => ty.depth_first_iter_mut(f),
+            Type::Float32(ty) => ty.depth_first_iter_mut(f),
+            Type::Float64(ty) => ty.depth_first_iter_mut(f),
+            Type::Float128(ty) => ty.depth_first_iter_mut(f),
+            Type::UnitType(ty) => ty.depth_first_iter_mut(f),
+            Type::InferType(ty) => ty.depth_first_iter_mut(f),
             Type::TypeName(ty) => ty.depth_first_iter_mut(f),
             Type::RefinementType(ty) => ty.depth_first_iter_mut(f),
             Type::TupleType(ty) => ty.depth_first_iter_mut(f),
@@ -264,12 +402,7 @@ impl ParseTreeIterMut for Type {
             Type::SliceType(ty) => ty.depth_first_iter_mut(f),
             Type::FunctionType(ty) => ty.depth_first_iter_mut(f),
             Type::ReferenceType(ty) => ty.depth_first_iter_mut(f),
-
-            Type::OpaqueType(ty) => {
-                f(Order::Pre, RefNodeMut::TypeOpaqueType(ty));
-                f(Order::Post, RefNodeMut::TypeOpaqueType(ty));
-            }
-
+            Type::OpaqueType(ty) => ty.depth_first_iter_mut(f),
             Type::LatentType(ty) => ty.depth_first_iter_mut(f),
             Type::Lifetime(ty) => ty.depth_first_iter_mut(f),
             Type::Parentheses(ty) => ty.depth_first_iter_mut(f),
@@ -280,37 +413,36 @@ impl ParseTreeIterMut for Type {
 impl std::fmt::Debug for Type {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Type::SyntaxError => write!(f, "SyntaxError"),
-
-            Type::Bool => write!(f, "bool"),
-            Type::UInt8 => write!(f, "u8"),
-            Type::UInt16 => write!(f, "u16"),
-            Type::UInt32 => write!(f, "u32"),
-            Type::UInt64 => write!(f, "u64"),
-            Type::UInt128 => write!(f, "u128"),
-            Type::Int8 => write!(f, "i8"),
-            Type::Int16 => write!(f, "i16"),
-            Type::Int32 => write!(f, "i32"),
-            Type::Int64 => write!(f, "i64"),
-            Type::Int128 => write!(f, "i128"),
-            Type::Float8 => write!(f, "f8"),
-            Type::Float16 => write!(f, "f16"),
-            Type::Float32 => write!(f, "f32"),
-            Type::Float64 => write!(f, "f64"),
-            Type::Float128 => write!(f, "f128"),
-            Type::UnitType => write!(f, "()"),
-            Type::InferType => write!(f, "_"),
-            Type::TypeName(e) => f.debug_struct("TypeName").field("name", &e).finish(),
+            Type::SyntaxError(_) => write!(f, "SyntaxError"),
+            Type::Bool(_) => write!(f, "bool"),
+            Type::UInt8(_) => write!(f, "u8"),
+            Type::UInt16(_) => write!(f, "u16"),
+            Type::UInt32(_) => write!(f, "u32"),
+            Type::UInt64(_) => write!(f, "u64"),
+            Type::UInt128(_) => write!(f, "u128"),
+            Type::Int8(_) => write!(f, "i8"),
+            Type::Int16(_) => write!(f, "i16"),
+            Type::Int32(_) => write!(f, "i32"),
+            Type::Int64(_) => write!(f, "i64"),
+            Type::Int128(_) => write!(f, "i128"),
+            Type::Float8(_) => write!(f, "f8"),
+            Type::Float16(_) => write!(f, "f16"),
+            Type::Float32(_) => write!(f, "f32"),
+            Type::Float64(_) => write!(f, "f64"),
+            Type::Float128(_) => write!(f, "f128"),
+            Type::UnitType(_) => write!(f, "()"),
+            Type::InferType(_) => write!(f, "_"),
+            Type::TypeName(e) => e.fmt(f),
             Type::RefinementType(e) => e.fmt(f),
             Type::TupleType(e) => e.fmt(f),
             Type::ArrayType(e) => e.fmt(f),
             Type::SliceType(e) => e.fmt(f),
             Type::FunctionType(e) => e.fmt(f),
             Type::ReferenceType(e) => e.fmt(f),
-            Type::OpaqueType(e) => f.debug_struct("OpaqueType").field("name", e).finish(),
-            Type::LatentType(e) => f.debug_struct("LatentType").field("type", e).finish(),
+            Type::OpaqueType(e) => e.fmt(f),
+            Type::LatentType(e) => e.fmt(f),
             Type::Lifetime(e) => e.fmt(f),
-            Type::Parentheses(e) => f.debug_struct("Parentheses").field("type", e).finish(),
+            Type::Parentheses(e) => e.fmt(f),
         }
     }
 }

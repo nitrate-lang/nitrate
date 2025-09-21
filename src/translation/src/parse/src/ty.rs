@@ -3,8 +3,10 @@ use crate::bugs::SyntaxErr;
 
 use nitrate_parsetree::{
     kind::{
-        ArrayType, Expr, FunctionType, FunctionTypeParameter, Lifetime, Path, ReferenceType,
-        RefinementType, SliceType, TupleType, Type,
+        ArrayType, Bool, Expr, Float8, Float16, Float32, Float64, Float128, FunctionType,
+        FunctionTypeParameter, Int8, Int16, Int32, Int64, Int128, LatentType, Lifetime, OpaqueType,
+        Path, ReferenceType, RefinementType, SliceType, SyntaxError, TupleType, Type, TypeName,
+        TypeParentheses, UInt8, UInt16, UInt32, UInt64, UInt128,
     },
     tag::{intern_lifetime_name, intern_opaque_type_name, intern_parameter_name},
 };
@@ -309,14 +311,14 @@ impl Parser<'_, '_> {
             "".into()
         });
 
-        let opaque_identity = intern_opaque_type_name(opaque_identity);
+        let name = intern_opaque_type_name(opaque_identity);
 
         if !self.lexer.skip_if(&Token::CloseParen) {
             let bug = SyntaxErr::ExpectedCloseParen(self.lexer.peek_pos());
             self.bugs.push(&bug);
         }
 
-        Type::OpaqueType(opaque_identity)
+        Type::OpaqueType(OpaqueType { name })
     }
 
     fn parse_lifetime(&mut self) -> Lifetime {
@@ -346,24 +348,24 @@ impl Parser<'_, '_> {
 
     fn parse_type_primitive(&mut self) -> Type {
         match self.lexer.next_t() {
-            Token::Bool => Type::Bool,
-            Token::U8 => Type::UInt8,
-            Token::U16 => Type::UInt16,
-            Token::U32 => Type::UInt32,
-            Token::U64 => Type::UInt64,
-            Token::U128 => Type::UInt128,
-            Token::I8 => Type::Int8,
-            Token::I16 => Type::Int16,
-            Token::I32 => Type::Int32,
-            Token::I64 => Type::Int64,
-            Token::I128 => Type::Int128,
-            Token::F8 => Type::Float8,
-            Token::F16 => Type::Float16,
-            Token::F32 => Type::Float32,
-            Token::F64 => Type::Float64,
-            Token::F128 => Type::Float128,
+            Token::Bool => Type::Bool(Bool),
+            Token::U8 => Type::UInt8(UInt8),
+            Token::U16 => Type::UInt16(UInt16),
+            Token::U32 => Type::UInt32(UInt32),
+            Token::U64 => Type::UInt64(UInt64),
+            Token::U128 => Type::UInt128(UInt128),
+            Token::I8 => Type::Int8(Int8),
+            Token::I16 => Type::Int16(Int16),
+            Token::I32 => Type::Int32(Int32),
+            Token::I64 => Type::Int64(Int64),
+            Token::I128 => Type::Int128(Int128),
+            Token::F8 => Type::Float8(Float8),
+            Token::F16 => Type::Float16(Float16),
+            Token::F32 => Type::Float32(Float32),
+            Token::F64 => Type::Float64(Float64),
+            Token::F128 => Type::Float128(Float128),
 
-            _ => Type::SyntaxError,
+            _ => Type::SyntaxError(SyntaxError),
         }
     }
 
@@ -451,14 +453,20 @@ impl Parser<'_, '_> {
 
             Token::SingleQuote => Type::Lifetime(Box::new(self.parse_lifetime())),
 
-            Token::Name(_) | Token::Colon => Type::TypeName(Box::new(self.parse_type_path())),
+            Token::Name(_) | Token::Colon => Type::TypeName(Box::new(TypeName {
+                name: self.parse_type_path(),
+            })),
+
             Token::OpenBracket => self.parse_array_or_slice(),
             Token::And => Type::ReferenceType(Box::new(self.parse_reference_type())),
             Token::Star => Type::ReferenceType(Box::new(self.parse_pointer_type())),
             Token::Fn => Type::FunctionType(Box::new(self.parse_function_type())),
             Token::Opaque => self.parse_opaque_type(),
+
             Token::OpenBrace | Token::Unsafe | Token::Safe => {
-                Type::LatentType(Box::new(self.parse_block()))
+                Type::LatentType(Box::new(LatentType {
+                    body: self.parse_block(),
+                }))
             }
 
             _ => {
@@ -467,7 +475,7 @@ impl Parser<'_, '_> {
                 let log = SyntaxErr::ExpectedType(current_pos);
                 self.bugs.push(&log);
 
-                Type::SyntaxError
+                Type::SyntaxError(SyntaxError)
             }
         }
     }
@@ -518,7 +526,7 @@ impl Parser<'_, '_> {
             let inner = self.parse_type();
 
             let result = match self.lexer.next_t() {
-                Token::CloseParen => Type::Parentheses(Box::new(inner)),
+                Token::CloseParen => Type::Parentheses(Box::new(TypeParentheses { inner })),
 
                 Token::Comma => {
                     let tuple = self.parse_rest_of_tuple(inner);
@@ -529,7 +537,7 @@ impl Parser<'_, '_> {
                     let bug = SyntaxErr::TupleTypeExpectedEnd(self.lexer.peek_pos());
                     self.bugs.push(&bug);
 
-                    Type::SyntaxError
+                    Type::SyntaxError(SyntaxError)
                 }
             };
 

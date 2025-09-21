@@ -3,11 +3,12 @@ use crate::bugs::SyntaxErr;
 use super::parse::Parser;
 use nitrate_parsetree::{
     kind::{
-        Await, BStringLit, BinExpr, BinExprOp, Block, BlockItem, BooleanLit, Break, Call,
-        CallArgument, Cast, Closure, Continue, DoWhileLoop, Expr, FloatLit, ForEach,
-        FunctionParameter, GenericArgument, If, IndexAccess, IntegerLit, List, Mutability,
-        Parentheses, Path, Return, Safety, StringLit, Type, TypeInfo, UnaryExpr, UnaryExprOp,
-        WhileLoop,
+        Await, BStringLit, BinExpr, BinExprOp, Block, BlockItem, Bool, BooleanLit, Break, Call,
+        CallArgument, Cast, Closure, Continue, DoWhileLoop, Expr, Float8, Float16, Float32,
+        Float64, Float128, FloatLit, ForEach, FunctionParameter, GenericArgument, If, IndexAccess,
+        Int8, Int16, Int32, Int64, Int128, IntegerLit, List, Mutability, Parentheses, Path, Return,
+        Safety, StringLit, Type, TypeInfo, TypeName, UInt8, UInt16, UInt32, UInt64, UInt128,
+        UnaryExpr, UnaryExprOp, WhileLoop,
     },
     tag::{
         VariableNameId, intern_arg_name, intern_label_name, intern_parameter_name,
@@ -498,26 +499,28 @@ impl Parser<'_, '_> {
 
     fn parse_literal_suffix(&mut self, value: Expr) -> Expr {
         let suffix = match self.lexer.peek_t() {
-            Token::Bool => Type::Bool,
-            Token::U8 => Type::UInt8,
-            Token::U16 => Type::UInt16,
-            Token::U32 => Type::UInt32,
-            Token::U64 => Type::UInt64,
-            Token::U128 => Type::UInt128,
-            Token::I8 => Type::Int8,
-            Token::I16 => Type::Int16,
-            Token::I32 => Type::Int32,
-            Token::I64 => Type::Int64,
-            Token::I128 => Type::Int128,
-            Token::F8 => Type::Float8,
-            Token::F16 => Type::Float16,
-            Token::F32 => Type::Float32,
-            Token::F64 => Type::Float64,
-            Token::F128 => Type::Float128,
+            Token::Bool => Type::Bool(Bool {}),
+            Token::U8 => Type::UInt8(UInt8 {}),
+            Token::U16 => Type::UInt16(UInt16 {}),
+            Token::U32 => Type::UInt32(UInt32 {}),
+            Token::U64 => Type::UInt64(UInt64 {}),
+            Token::U128 => Type::UInt128(UInt128 {}),
+            Token::I8 => Type::Int8(Int8 {}),
+            Token::I16 => Type::Int16(Int16 {}),
+            Token::I32 => Type::Int32(Int32 {}),
+            Token::I64 => Type::Int64(Int64 {}),
+            Token::I128 => Type::Int128(Int128 {}),
+            Token::F8 => Type::Float8(Float8 {}),
+            Token::F16 => Type::Float16(Float16 {}),
+            Token::F32 => Type::Float32(Float32 {}),
+            Token::F64 => Type::Float64(Float64 {}),
+            Token::F128 => Type::Float128(Float128 {}),
 
-            Token::Name(name) => Type::TypeName(Box::new(Path {
-                path: vec![name],
-                type_arguments: Vec::new(),
+            Token::Name(name) => Type::TypeName(Box::new(TypeName {
+                name: Path {
+                    path: vec![name],
+                    type_arguments: Vec::new(),
+                },
             })),
 
             _ => return value,
