@@ -4,6 +4,7 @@
 mod expr;
 mod id_store;
 mod item;
+mod iter_mut;
 mod ty;
 
 pub mod kind {
@@ -15,3 +16,8 @@ pub mod kind {
 pub mod tag {
     pub use crate::id_store::*;
 }
+
+pub use iter_mut::{
+    Order, RefNodeMut, expr_depth_first_iter_mut, item_depth_first_iter_mut,
+    type_depth_first_iter_mut,
+};

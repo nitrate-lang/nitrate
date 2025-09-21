@@ -1,5 +1,5 @@
 use super::parse::Parser;
-use crate::bugs::SyntaxBug;
+use crate::bugs::SyntaxErr;
 
 use nitrate_parsetree::{
     kind::{
@@ -19,7 +19,7 @@ impl Parser<'_, '_> {
     fn parse_generic_parameters(&mut self) -> Option<Vec<GenericParameter>> {
         fn parse_generic_parameter(this: &mut Parser) -> GenericParameter {
             let name = this.lexer.next_if_name().unwrap_or_else(|| {
-                let bug = SyntaxBug::GenericMissingParameterName(this.lexer.peek_pos());
+                let bug = SyntaxErr::GenericMissingParameterName(this.lexer.peek_pos());
                 this.bugs.push(&bug);
                 "".into()
             });
@@ -43,7 +43,7 @@ impl Parser<'_, '_> {
 
         while !self.lexer.skip_if(&Token::Gt) {
             if self.lexer.is_eof() {
-                let bug = SyntaxBug::GenericParameterExpectedEnd(self.lexer.peek_pos());
+                let bug = SyntaxErr::GenericParameterExpectedEnd(self.lexer.peek_pos());
                 self.bugs.push(&bug);
                 break;
             }
@@ -51,7 +51,7 @@ impl Parser<'_, '_> {
             const MAX_GENERIC_PARAMETERS: usize = 65_536;
 
             if parameters.len() >= MAX_GENERIC_PARAMETERS {
-                let bug = SyntaxBug::GenericParameterLimit(self.lexer.peek_pos());
+                let bug = SyntaxErr::GenericParameterLimit(self.lexer.peek_pos());
                 self.bugs.push(&bug);
                 break;
             }
@@ -60,7 +60,7 @@ impl Parser<'_, '_> {
             parameters.push(param);
 
             if !self.lexer.skip_if(&Token::Comma) && !self.lexer.next_is(&Token::Gt) {
-                let bug = SyntaxBug::GenericParameterExpectedEnd(self.lexer.peek_pos());
+                let bug = SyntaxErr::GenericParameterExpectedEnd(self.lexer.peek_pos());
                 self.bugs.push(&bug);
 
                 self.lexer.skip_while(&Token::Gt);
@@ -80,7 +80,7 @@ impl Parser<'_, '_> {
         let attributes = self.parse_attributes();
 
         let name = self.lexer.next_if_name().unwrap_or_else(|| {
-            let bug = SyntaxBug::ModuleMissingName(self.lexer.peek_pos());
+            let bug = SyntaxErr::ModuleMissingName(self.lexer.peek_pos());
             self.bugs.push(&bug);
             "".into()
         });
@@ -88,7 +88,7 @@ impl Parser<'_, '_> {
         let name = intern_module_name(name);
 
         if !self.lexer.skip_if(&Token::OpenBrace) {
-            let bug = SyntaxBug::ExpectedOpenBrace(self.lexer.peek_pos());
+            let bug = SyntaxErr::ExpectedOpenBrace(self.lexer.peek_pos());
             self.bugs.push(&bug);
         }
 
@@ -97,7 +97,7 @@ impl Parser<'_, '_> {
 
         while !self.lexer.skip_if(&Token::CloseBrace) {
             if self.lexer.is_eof() {
-                let bug = SyntaxBug::ModuleExpectedEnd(self.lexer.peek_pos());
+                let bug = SyntaxErr::ModuleExpectedEnd(self.lexer.peek_pos());
                 self.bugs.push(&bug);
                 break;
             }
@@ -107,7 +107,7 @@ impl Parser<'_, '_> {
             if !already_reported_too_many_items && items.len() >= MAX_ITEMS_PER_MODULE {
                 already_reported_too_many_items = true;
 
-                let bug = SyntaxBug::ModuleItemLimit(module_start_pos.clone());
+                let bug = SyntaxErr::ModuleItemLimit(module_start_pos.clone());
                 self.bugs.push(&bug);
             }
 
@@ -132,7 +132,7 @@ impl Parser<'_, '_> {
 
         let alias = if self.lexer.skip_if(&Token::As) {
             let name = self.lexer.next_if_name().unwrap_or_else(|| {
-                let bug = SyntaxBug::ImportMissingAliasName(self.lexer.peek_pos());
+                let bug = SyntaxErr::ImportMissingAliasName(self.lexer.peek_pos());
                 self.bugs.push(&bug);
                 "".into()
             });
@@ -143,7 +143,7 @@ impl Parser<'_, '_> {
         };
 
         if !self.lexer.skip_if(&Token::Semi) {
-            let bug = SyntaxBug::ExpectedSemicolon(self.lexer.peek_pos());
+            let bug = SyntaxErr::ExpectedSemicolon(self.lexer.peek_pos());
             self.bugs.push(&bug);
         }
 
@@ -162,7 +162,7 @@ impl Parser<'_, '_> {
         let attributes = self.parse_attributes();
 
         let name = self.lexer.next_if_name().unwrap_or_else(|| {
-            let bug = SyntaxBug::TypeAliasMissingName(self.lexer.peek_pos());
+            let bug = SyntaxErr::TypeAliasMissingName(self.lexer.peek_pos());
             self.bugs.push(&bug);
             "".into()
         });
@@ -178,7 +178,7 @@ impl Parser<'_, '_> {
         };
 
         if !self.lexer.skip_if(&Token::Semi) {
-            let bug = SyntaxBug::ExpectedSemicolon(self.lexer.peek_pos());
+            let bug = SyntaxErr::ExpectedSemicolon(self.lexer.peek_pos());
             self.bugs.push(&bug);
         }
 
@@ -197,7 +197,7 @@ impl Parser<'_, '_> {
             let attributes = this.parse_attributes();
 
             let name = this.lexer.next_if_name().unwrap_or_else(|| {
-                let bug = SyntaxBug::EnumMissingVariantName(this.lexer.peek_pos());
+                let bug = SyntaxErr::EnumMissingVariantName(this.lexer.peek_pos());
                 this.bugs.push(&bug);
                 "".into()
             });
@@ -231,7 +231,7 @@ impl Parser<'_, '_> {
         let attributes = self.parse_attributes();
 
         let name = self.lexer.next_if_name().unwrap_or_else(|| {
-            let bug = SyntaxBug::EnumMissingName(self.lexer.peek_pos());
+            let bug = SyntaxErr::EnumMissingName(self.lexer.peek_pos());
             self.bugs.push(&bug);
             "".into()
         });
@@ -241,7 +241,7 @@ impl Parser<'_, '_> {
         let type_params = self.parse_generic_parameters();
 
         if !self.lexer.skip_if(&Token::OpenBrace) {
-            let bug = SyntaxBug::ExpectedOpenBrace(self.lexer.peek_pos());
+            let bug = SyntaxErr::ExpectedOpenBrace(self.lexer.peek_pos());
             self.bugs.push(&bug);
         }
 
@@ -250,7 +250,7 @@ impl Parser<'_, '_> {
 
         while !self.lexer.skip_if(&Token::CloseBrace) {
             if self.lexer.is_eof() {
-                let bug = SyntaxBug::EnumExpectedEnd(self.lexer.peek_pos());
+                let bug = SyntaxErr::EnumExpectedEnd(self.lexer.peek_pos());
                 self.bugs.push(&bug);
                 break;
             }
@@ -260,7 +260,7 @@ impl Parser<'_, '_> {
             if !already_reported_too_many_variants && variants.len() >= MAX_ENUM_VARIANTS {
                 already_reported_too_many_variants = true;
 
-                let bug = SyntaxBug::EnumVariantLimit(self.lexer.peek_pos());
+                let bug = SyntaxErr::EnumVariantLimit(self.lexer.peek_pos());
                 self.bugs.push(&bug);
             }
 
@@ -268,7 +268,7 @@ impl Parser<'_, '_> {
             variants.push(variant);
 
             if !self.lexer.skip_if(&Token::Comma) && !self.lexer.next_is(&Token::CloseBrace) {
-                let bug = SyntaxBug::EnumExpectedEnd(self.lexer.peek_pos());
+                let bug = SyntaxErr::EnumExpectedEnd(self.lexer.peek_pos());
                 self.bugs.push(&bug);
                 self.lexer.skip_while(&Token::CloseBrace);
 
@@ -291,7 +291,7 @@ impl Parser<'_, '_> {
             let attributes = this.parse_attributes();
 
             let name = this.lexer.next_if_name().unwrap_or_else(|| {
-                let bug = SyntaxBug::StructureMissingFieldName(this.lexer.peek_pos());
+                let bug = SyntaxErr::StructureMissingFieldName(this.lexer.peek_pos());
                 this.bugs.push(&bug);
                 "".into()
             });
@@ -299,7 +299,7 @@ impl Parser<'_, '_> {
             let name = intern_struct_field_name(name);
 
             if !this.lexer.skip_if(&Token::Colon) {
-                let bug = SyntaxBug::ExpectedColon(this.lexer.peek_pos());
+                let bug = SyntaxErr::ExpectedColon(this.lexer.peek_pos());
                 this.bugs.push(&bug);
             }
 
@@ -326,7 +326,7 @@ impl Parser<'_, '_> {
         let attributes = self.parse_attributes();
 
         let name = self.lexer.next_if_name().unwrap_or_else(|| {
-            let bug = SyntaxBug::StructureMissingName(self.lexer.peek_pos());
+            let bug = SyntaxErr::StructureMissingName(self.lexer.peek_pos());
             self.bugs.push(&bug);
             "".into()
         });
@@ -336,7 +336,7 @@ impl Parser<'_, '_> {
         let type_params = self.parse_generic_parameters();
 
         if !self.lexer.skip_if(&Token::OpenBrace) {
-            let bug = SyntaxBug::ExpectedOpenBrace(self.lexer.peek_pos());
+            let bug = SyntaxErr::ExpectedOpenBrace(self.lexer.peek_pos());
             self.bugs.push(&bug);
         }
 
@@ -345,7 +345,7 @@ impl Parser<'_, '_> {
 
         while !self.lexer.skip_if(&Token::CloseBrace) {
             if self.lexer.is_eof() {
-                let bug = SyntaxBug::StructureExpectedEnd(self.lexer.peek_pos());
+                let bug = SyntaxErr::StructureExpectedEnd(self.lexer.peek_pos());
                 self.bugs.push(&bug);
                 break;
             }
@@ -355,7 +355,7 @@ impl Parser<'_, '_> {
             if !already_reported_too_many_fields && fields.len() >= MAX_STRUCT_FIELDS {
                 already_reported_too_many_fields = true;
 
-                let bug = SyntaxBug::StructureFieldLimit(self.lexer.peek_pos());
+                let bug = SyntaxErr::StructureFieldLimit(self.lexer.peek_pos());
                 self.bugs.push(&bug);
             }
 
@@ -363,7 +363,7 @@ impl Parser<'_, '_> {
             fields.push(field);
 
             if !self.lexer.skip_if(&Token::Comma) && !self.lexer.next_is(&Token::CloseBrace) {
-                let bug = SyntaxBug::StructureExpectedEnd(self.lexer.peek_pos());
+                let bug = SyntaxErr::StructureExpectedEnd(self.lexer.peek_pos());
                 self.bugs.push(&bug);
                 self.lexer.skip_while(&Token::CloseBrace);
                 break;
@@ -405,7 +405,7 @@ impl Parser<'_, '_> {
             _ => {
                 self.lexer.skip_tok();
 
-                let bug = SyntaxBug::TraitDoesNotAllowItem(self.lexer.peek_pos());
+                let bug = SyntaxErr::TraitDoesNotAllowItem(self.lexer.peek_pos());
                 self.bugs.push(&bug);
 
                 AssociatedItem::SyntaxError
@@ -420,7 +420,7 @@ impl Parser<'_, '_> {
         let attributes = self.parse_attributes();
 
         let name = self.lexer.next_if_name().unwrap_or_else(|| {
-            let bug = SyntaxBug::TraitMissingName(self.lexer.peek_pos());
+            let bug = SyntaxErr::TraitMissingName(self.lexer.peek_pos());
             self.bugs.push(&bug);
             "".into()
         });
@@ -430,7 +430,7 @@ impl Parser<'_, '_> {
         let type_params = self.parse_generic_parameters();
 
         if !self.lexer.skip_if(&Token::OpenBrace) {
-            let bug = SyntaxBug::ExpectedOpenBrace(self.lexer.peek_pos());
+            let bug = SyntaxErr::ExpectedOpenBrace(self.lexer.peek_pos());
             self.bugs.push(&bug);
         }
 
@@ -439,7 +439,7 @@ impl Parser<'_, '_> {
 
         while !self.lexer.skip_if(&Token::CloseBrace) {
             if self.lexer.is_eof() {
-                let bug = SyntaxBug::TraitExpectedEnd(self.lexer.peek_pos());
+                let bug = SyntaxErr::TraitExpectedEnd(self.lexer.peek_pos());
                 self.bugs.push(&bug);
                 break;
             }
@@ -449,7 +449,7 @@ impl Parser<'_, '_> {
             if !already_reported_too_many_items && items.len() >= MAX_TRAIT_ITEMS {
                 already_reported_too_many_items = true;
 
-                let bug = SyntaxBug::TraitItemLimit(self.lexer.peek_pos());
+                let bug = SyntaxErr::TraitItemLimit(self.lexer.peek_pos());
                 self.bugs.push(&bug);
             }
 
@@ -478,7 +478,7 @@ impl Parser<'_, '_> {
             let path = self.parse_type_path();
 
             if !self.lexer.skip_if(&Token::For) {
-                let bug = SyntaxBug::ImplMissingFor(self.lexer.peek_pos());
+                let bug = SyntaxErr::ImplMissingFor(self.lexer.peek_pos());
                 self.bugs.push(&bug);
             }
 
@@ -490,7 +490,7 @@ impl Parser<'_, '_> {
         let for_type = self.parse_type();
 
         if !self.lexer.skip_if(&Token::OpenBrace) {
-            let bug = SyntaxBug::ExpectedOpenBrace(self.lexer.peek_pos());
+            let bug = SyntaxErr::ExpectedOpenBrace(self.lexer.peek_pos());
             self.bugs.push(&bug);
         }
 
@@ -499,7 +499,7 @@ impl Parser<'_, '_> {
 
         while !self.lexer.skip_if(&Token::CloseBrace) {
             if self.lexer.is_eof() {
-                let bug = SyntaxBug::ImplExpectedEnd(self.lexer.peek_pos());
+                let bug = SyntaxErr::ImplExpectedEnd(self.lexer.peek_pos());
                 self.bugs.push(&bug);
                 break;
             }
@@ -509,7 +509,7 @@ impl Parser<'_, '_> {
             if !already_reported_too_many_items && items.len() >= MAX_IMPL_ITEMS {
                 already_reported_too_many_items = true;
 
-                let bug = SyntaxBug::ImplItemLimit(self.lexer.peek_pos());
+                let bug = SyntaxErr::ImplItemLimit(self.lexer.peek_pos());
                 self.bugs.push(&bug);
             }
 
@@ -539,7 +539,7 @@ impl Parser<'_, '_> {
             }
 
             let name = this.lexer.next_if_name().unwrap_or_else(|| {
-                let bug = SyntaxBug::FunctionParameterMissingName(this.lexer.peek_pos());
+                let bug = SyntaxErr::FunctionParameterMissingName(this.lexer.peek_pos());
                 this.bugs.push(&bug);
                 "".into()
             });
@@ -570,7 +570,7 @@ impl Parser<'_, '_> {
         let mut params = Vec::new();
 
         if !self.lexer.skip_if(&Token::OpenParen) {
-            let bug = SyntaxBug::ExpectedOpenParen(self.lexer.peek_pos());
+            let bug = SyntaxErr::ExpectedOpenParen(self.lexer.peek_pos());
             self.bugs.push(&bug);
         }
 
@@ -580,7 +580,7 @@ impl Parser<'_, '_> {
 
         while !self.lexer.skip_if(&Token::CloseParen) {
             if self.lexer.is_eof() {
-                let bug = SyntaxBug::FunctionParametersExpectedEnd(self.lexer.peek_pos());
+                let bug = SyntaxErr::FunctionParametersExpectedEnd(self.lexer.peek_pos());
                 self.bugs.push(&bug);
                 break;
             }
@@ -590,7 +590,7 @@ impl Parser<'_, '_> {
             if !already_reported_too_many_parameters && params.len() >= MAX_FUNCTION_PARAMETERS {
                 already_reported_too_many_parameters = true;
 
-                let bug = SyntaxBug::FunctionParameterLimit(self.lexer.peek_pos());
+                let bug = SyntaxErr::FunctionParameterLimit(self.lexer.peek_pos());
                 self.bugs.push(&bug);
             }
 
@@ -598,7 +598,7 @@ impl Parser<'_, '_> {
             params.push(param);
 
             if !self.lexer.skip_if(&Token::Comma) && !self.lexer.next_is(&Token::CloseParen) {
-                let bug = SyntaxBug::FunctionParametersExpectedEnd(self.lexer.peek_pos());
+                let bug = SyntaxErr::FunctionParametersExpectedEnd(self.lexer.peek_pos());
                 self.bugs.push(&bug);
                 self.lexer.skip_while(&Token::CloseParen);
                 break;
@@ -615,7 +615,7 @@ impl Parser<'_, '_> {
         let attributes = self.parse_attributes();
 
         let name = self.lexer.next_if_name().unwrap_or_else(|| {
-            let bug = SyntaxBug::FunctionMissingName(self.lexer.peek_pos());
+            let bug = SyntaxErr::FunctionMissingName(self.lexer.peek_pos());
             self.bugs.push(&bug);
             "".into()
         });
@@ -627,7 +627,7 @@ impl Parser<'_, '_> {
 
         let return_type = if self.lexer.skip_if(&Token::Minus) {
             if !self.lexer.skip_if(&Token::Gt) {
-                let bug = SyntaxBug::ExpectedArrow(self.lexer.peek_pos());
+                let bug = SyntaxErr::ExpectedArrow(self.lexer.peek_pos());
                 self.bugs.push(&bug);
             }
 
@@ -684,7 +684,7 @@ impl Parser<'_, '_> {
         }
 
         let name = self.lexer.next_if_name().unwrap_or_else(|| {
-            let bug = SyntaxBug::VariableMissingName(self.lexer.peek_pos());
+            let bug = SyntaxErr::VariableMissingName(self.lexer.peek_pos());
             self.bugs.push(&bug);
             "".into()
         });
@@ -704,7 +704,7 @@ impl Parser<'_, '_> {
         };
 
         if !self.lexer.skip_if(&Token::Semi) {
-            let bug = SyntaxBug::ExpectedSemicolon(self.lexer.peek_pos());
+            let bug = SyntaxErr::ExpectedSemicolon(self.lexer.peek_pos());
             self.bugs.push(&bug);
         }
 
@@ -782,7 +782,7 @@ impl Parser<'_, '_> {
             _ => {
                 self.lexer.skip_tok();
 
-                let bug = SyntaxBug::ExpectedItem(item_pos_begin);
+                let bug = SyntaxErr::ExpectedItem(item_pos_begin);
                 self.bugs.push(&bug);
 
                 Item::SyntaxError

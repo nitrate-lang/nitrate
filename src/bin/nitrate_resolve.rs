@@ -5,6 +5,7 @@ use nitrate_translation::{
     TranslationError,
     parse::Parser,
     parsetree::{kind::Module, tag::intern_module_name},
+    resolve::resolve,
     tokenize::Lexer,
 };
 use slog::{Drain, Record, o};
@@ -91,12 +92,14 @@ fn program() -> Result<(), Error> {
     let bugs = DiagnosticCollector::new(log);
 
     let items = Parser::new(lexer, &bugs).parse_source();
-    let module = Module {
+    let mut module = Module {
         attributes: None,
         visibility: None,
         name: intern_module_name("".into()),
         items,
     };
+
+    module = resolve(module, &bugs);
 
     if let Err(_) = serde_json::to_writer_pretty(&mut parse_tree_output, &module) {
         return Err(Error::ParseFailed(TranslationError::SyntaxError));

@@ -41,17 +41,19 @@ pub enum Origin {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(u8)]
 pub enum DiagnosticGroupId {
-    ScanBug = 0,
-    TokenBug = 1,
-    SyntaxBug = 2,
+    Scan = 0,
+    Token = 1,
+    Syntax = 2,
+    Resolve = 3,
 }
 
 impl std::fmt::Display for DiagnosticGroupId {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            DiagnosticGroupId::ScanBug => write!(f, "Scanner Bug"),
-            DiagnosticGroupId::TokenBug => write!(f, "Lexical Bug"),
-            DiagnosticGroupId::SyntaxBug => write!(f, "Syntax Bug"),
+            DiagnosticGroupId::Scan => write!(f, "Scanner"),
+            DiagnosticGroupId::Token => write!(f, "Lexical"),
+            DiagnosticGroupId::Syntax => write!(f, "Syntax"),
+            DiagnosticGroupId::Resolve => write!(f, "Resolution"),
         }
     }
 }

@@ -931,6 +931,10 @@ dependencies = [
 [[package]]
 name = "nitrate_resolve"
 version = "0.1.0"
+dependencies = [
+ "nitrate_diagnosis",
+ "nitrate_parsetree",
+]
 
 [[package]]
 name = "nitrate_tokenize"
