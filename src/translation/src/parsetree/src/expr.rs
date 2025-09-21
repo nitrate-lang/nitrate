@@ -10,6 +10,15 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ExprSyntaxError;
+
+impl ParseTreeIterMut for ExprSyntaxError {
+    fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
+        // TODO: Traverse
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Parentheses {
     pub inner: Expr,
 }
@@ -462,7 +471,7 @@ impl ParseTreeIterMut for Call {
 
 #[derive(Clone, Serialize, Deserialize)]
 pub enum Expr {
-    SyntaxError,
+    SyntaxError(ExprSyntaxError),
 
     Parentheses(Box<Parentheses>),
 
@@ -501,18 +510,13 @@ pub enum Expr {
 impl ParseTreeIterMut for Expr {
     fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
         match self {
-            Expr::SyntaxError => {
-                f(Order::Pre, RefNodeMut::ExprSyntaxError);
-                f(Order::Post, RefNodeMut::ExprSyntaxError);
-            }
-
+            Expr::SyntaxError(e) => e.depth_first_iter_mut(f),
             Expr::Parentheses(e) => e.depth_first_iter_mut(f),
             Expr::Boolean(e) => e.depth_first_iter_mut(f),
             Expr::Float(e) => e.depth_first_iter_mut(f),
             Expr::String(e) => e.depth_first_iter_mut(f),
             Expr::BString(e) => e.depth_first_iter_mut(f),
             Expr::Unit(e) => e.depth_first_iter_mut(f),
-
             Expr::Integer(e) => e.depth_first_iter_mut(f),
             Expr::TypeInfo(e) => e.depth_first_iter_mut(f),
             Expr::List(e) => e.depth_first_iter_mut(f),
@@ -542,17 +546,14 @@ impl ParseTreeIterMut for Expr {
 impl std::fmt::Debug for Expr {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Expr::SyntaxError => write!(f, "SyntaxError"),
-
+            Expr::SyntaxError(_) => write!(f, "SyntaxError"),
             Expr::Parentheses(e) => f.debug_struct("Parentheses").field("expr", e).finish(),
-
             Expr::Boolean(e) => e.fmt(f),
             Expr::Integer(e) => e.fmt(f),
             Expr::Float(e) => e.fmt(f),
             Expr::String(e) => e.fmt(f),
             Expr::BString(e) => e.fmt(f),
             Expr::Unit(_) => write!(f, "()"),
-
             Expr::TypeInfo(e) => f.debug_struct("TypeInfo").field("type", e).finish(),
             Expr::List(e) => e.fmt(f),
             Expr::Object(e) => e.fmt(f),
@@ -560,12 +561,10 @@ impl std::fmt::Debug for Expr {
             Expr::BinExpr(e) => e.fmt(f),
             Expr::Cast(e) => e.fmt(f),
             Expr::Block(e) => e.fmt(f),
-
             Expr::Closure(e) => e.fmt(f),
             Expr::Variable(e) => e.fmt(f),
             Expr::Path(e) => e.fmt(f),
             Expr::IndexAccess(e) => e.fmt(f),
-
             Expr::If(e) => e.fmt(f),
             Expr::While(e) => e.fmt(f),
             Expr::DoWhileLoop(e) => e.fmt(f),

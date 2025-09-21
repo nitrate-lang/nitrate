@@ -4,11 +4,11 @@ use super::parse::Parser;
 use nitrate_parsetree::{
     kind::{
         Await, BStringLit, BinExpr, BinExprOp, Block, BlockItem, Bool, BooleanLit, Break, Call,
-        CallArgument, Cast, Closure, Continue, DoWhileLoop, Expr, Float8, Float16, Float32,
-        Float64, Float128, FloatLit, ForEach, FunctionParameter, GenericArgument, If, IndexAccess,
-        Int8, Int16, Int32, Int64, Int128, IntegerLit, List, Mutability, Parentheses, Path, Return,
-        Safety, StringLit, Type, TypeInfo, TypeName, UInt8, UInt16, UInt32, UInt64, UInt128,
-        UnaryExpr, UnaryExprOp, WhileLoop,
+        CallArgument, Cast, Closure, Continue, DoWhileLoop, Expr, ExprSyntaxError, Float8, Float16,
+        Float32, Float64, Float128, FloatLit, ForEach, FunctionParameter, GenericArgument, If,
+        IndexAccess, Int8, Int16, Int32, Int64, Int128, IntegerLit, List, Mutability, Parentheses,
+        Path, Return, Safety, StringLit, Type, TypeInfo, TypeName, UInt8, UInt16, UInt32, UInt64,
+        UInt128, UnaryExpr, UnaryExprOp, WhileLoop,
     },
     tag::{
         VariableNameId, intern_arg_name, intern_label_name, intern_parameter_name,
@@ -394,7 +394,7 @@ impl Parser<'_, '_> {
                 let bug = SyntaxErr::ExpectedExpr(self.lexer.peek_pos());
                 self.bugs.push(&bug);
 
-                Expr::SyntaxError
+                Expr::SyntaxError(ExprSyntaxError)
             }
         }
     }

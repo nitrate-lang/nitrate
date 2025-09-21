@@ -6,9 +6,9 @@ use crate::{
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Serialize, Deserialize)]
-pub struct SyntaxError;
+pub struct TypeSyntaxError;
 
-impl ParseTreeIterMut for SyntaxError {
+impl ParseTreeIterMut for TypeSyntaxError {
     fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
         // TODO: Traverse
     }
@@ -341,7 +341,7 @@ impl ParseTreeIterMut for TypeParentheses {
 
 #[derive(Clone, Serialize, Deserialize)]
 pub enum Type {
-    SyntaxError(SyntaxError),
+    SyntaxError(TypeSyntaxError),
     Bool(Bool),
     UInt8(UInt8),
     UInt16(UInt16),

@@ -5,8 +5,8 @@ use nitrate_parsetree::{
     kind::{
         ArrayType, Bool, Expr, Float8, Float16, Float32, Float64, Float128, FunctionType,
         FunctionTypeParameter, Int8, Int16, Int32, Int64, Int128, LatentType, Lifetime, OpaqueType,
-        Path, ReferenceType, RefinementType, SliceType, SyntaxError, TupleType, Type, TypeName,
-        TypeParentheses, UInt8, UInt16, UInt32, UInt64, UInt128,
+        Path, ReferenceType, RefinementType, SliceType, TupleType, Type, TypeName, TypeParentheses,
+        TypeSyntaxError, UInt8, UInt16, UInt32, UInt64, UInt128,
     },
     tag::{intern_lifetime_name, intern_opaque_type_name, intern_parameter_name},
 };
@@ -365,7 +365,7 @@ impl Parser<'_, '_> {
             Token::F64 => Type::Float64(Float64),
             Token::F128 => Type::Float128(Float128),
 
-            _ => Type::SyntaxError(SyntaxError),
+            _ => Type::SyntaxError(TypeSyntaxError),
         }
     }
 
@@ -475,7 +475,7 @@ impl Parser<'_, '_> {
                 let log = SyntaxErr::ExpectedType(current_pos);
                 self.bugs.push(&log);
 
-                Type::SyntaxError(SyntaxError)
+                Type::SyntaxError(TypeSyntaxError)
             }
         }
     }
@@ -537,7 +537,7 @@ impl Parser<'_, '_> {
                     let bug = SyntaxErr::TupleTypeExpectedEnd(self.lexer.peek_pos());
                     self.bugs.push(&bug);
 
-                    Type::SyntaxError(SyntaxError)
+                    Type::SyntaxError(TypeSyntaxError)
                 }
             };
 
