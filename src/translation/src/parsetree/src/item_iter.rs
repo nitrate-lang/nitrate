@@ -1,9 +1,10 @@
-use crate::item::{ItemSyntaxError, Package};
-use crate::{Order, ParseTreeIterMut, RefNodeMut};
-
-use crate::kind::{
-    AssociatedItem, Enum, EnumVariant, FunctionParameter, GenericParameter, Impl, Import, Item,
-    Module, NamedFunction, Struct, StructField, Trait, TypeAlias, Variable,
+use crate::{
+    Order, ParseTreeIterMut, RefNodeMut,
+    item::{ItemSyntaxError, Package},
+    kind::{
+        AssociatedItem, Enum, EnumVariant, FunctionParameter, GenericParameter, Impl, Import, Item,
+        Module, NamedFunction, Struct, StructField, Trait, TypeAlias, Variable,
+    },
 };
 
 impl ParseTreeIterMut for ItemSyntaxError {

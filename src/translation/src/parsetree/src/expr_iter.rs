@@ -1,12 +1,11 @@
 use crate::{
     Order, ParseTreeIterMut, RefNodeMut,
     expr::{Object, Switch, UnitLit},
-};
-
-use crate::kind::{
-    Await, BStringLit, BinExpr, Block, BlockItem, BooleanLit, Break, Call, CallArgument, Cast,
-    Closure, Continue, DoWhileLoop, Expr, ExprSyntaxError, FloatLit, ForEach, If, IndexAccess,
-    IntegerLit, List, Parentheses, Path, Return, StringLit, TypeInfo, UnaryExpr, WhileLoop,
+    kind::{
+        Await, BStringLit, BinExpr, Block, BlockItem, BooleanLit, Break, Call, CallArgument, Cast,
+        Closure, Continue, DoWhileLoop, Expr, ExprSyntaxError, FloatLit, ForEach, If, IndexAccess,
+        IntegerLit, List, Parentheses, Path, Return, StringLit, TypeInfo, UnaryExpr, WhileLoop,
+    },
 };
 
 impl ParseTreeIterMut for ExprSyntaxError {
