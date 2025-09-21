@@ -11,115 +11,134 @@ use crate::{
 
 impl ParseTreeIterMut for TypeSyntaxError {
     fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
-        // TODO: Traverse
+        f(Order::Pre, RefNodeMut::TypeSyntaxError);
+        f(Order::Post, RefNodeMut::TypeSyntaxError);
     }
 }
 
 impl ParseTreeIterMut for Bool {
     fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
-        // TODO: Traverse
+        f(Order::Pre, RefNodeMut::TypeBool);
+        f(Order::Post, RefNodeMut::TypeBool);
     }
 }
 
 impl ParseTreeIterMut for UInt8 {
     fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
-        // TODO: Traverse
+        f(Order::Pre, RefNodeMut::TypeUInt8);
+        f(Order::Post, RefNodeMut::TypeUInt8);
     }
 }
 
 impl ParseTreeIterMut for UInt16 {
     fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
-        // TODO: Traverse
+        f(Order::Pre, RefNodeMut::TypeUInt16);
+        f(Order::Post, RefNodeMut::TypeUInt16);
     }
 }
 
 impl ParseTreeIterMut for UInt32 {
     fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
-        // TODO: Traverse
+        f(Order::Pre, RefNodeMut::TypeUInt32);
+        f(Order::Post, RefNodeMut::TypeUInt32);
     }
 }
 
 impl ParseTreeIterMut for UInt64 {
     fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
-        // TODO: Traverse
+        f(Order::Pre, RefNodeMut::TypeUInt64);
+        f(Order::Post, RefNodeMut::TypeUInt64);
     }
 }
 
 impl ParseTreeIterMut for UInt128 {
     fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
-        // TODO: Traverse
+        f(Order::Pre, RefNodeMut::TypeUInt128);
+        f(Order::Post, RefNodeMut::TypeUInt128);
     }
 }
 
 impl ParseTreeIterMut for Int8 {
     fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
-        // TODO: Traverse
+        f(Order::Pre, RefNodeMut::TypeInt8);
+        f(Order::Post, RefNodeMut::TypeInt8);
     }
 }
 
 impl ParseTreeIterMut for Int16 {
     fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
-        // TODO: Traverse
+        f(Order::Pre, RefNodeMut::TypeInt16);
+        f(Order::Post, RefNodeMut::TypeInt16);
     }
 }
 
 impl ParseTreeIterMut for Int32 {
     fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
-        // TODO: Traverse
+        f(Order::Pre, RefNodeMut::TypeInt32);
+        f(Order::Post, RefNodeMut::TypeInt32);
     }
 }
 
 impl ParseTreeIterMut for Int64 {
     fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
-        // TODO: Traverse
+        f(Order::Pre, RefNodeMut::TypeInt64);
+        f(Order::Post, RefNodeMut::TypeInt64);
     }
 }
 
 impl ParseTreeIterMut for Int128 {
     fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
-        // TODO: Traverse
+        f(Order::Pre, RefNodeMut::TypeInt128);
+        f(Order::Post, RefNodeMut::TypeInt128);
     }
 }
 
 impl ParseTreeIterMut for Float8 {
     fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
-        // TODO: Traverse
+        f(Order::Pre, RefNodeMut::TypeFloat8);
+        f(Order::Post, RefNodeMut::TypeFloat8);
     }
 }
 
 impl ParseTreeIterMut for Float16 {
     fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
-        // TODO: Traverse
+        f(Order::Pre, RefNodeMut::TypeFloat16);
+        f(Order::Post, RefNodeMut::TypeFloat16);
     }
 }
 
 impl ParseTreeIterMut for Float32 {
     fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
-        // TODO: Traverse
+        f(Order::Pre, RefNodeMut::TypeFloat32);
+        f(Order::Post, RefNodeMut::TypeFloat32);
     }
 }
 
 impl ParseTreeIterMut for Float64 {
     fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
-        // TODO: Traverse
+        f(Order::Pre, RefNodeMut::TypeFloat64);
+        f(Order::Post, RefNodeMut::TypeFloat64);
     }
 }
 
 impl ParseTreeIterMut for Float128 {
     fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
-        // TODO: Traverse
+        f(Order::Pre, RefNodeMut::TypeFloat128);
+        f(Order::Post, RefNodeMut::TypeFloat128);
     }
 }
 
 impl ParseTreeIterMut for UnitType {
     fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
-        // TODO: Traverse
+        f(Order::Pre, RefNodeMut::TypeUnitType);
+        f(Order::Post, RefNodeMut::TypeUnitType);
     }
 }
 
 impl ParseTreeIterMut for InferType {
     fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
-        // TODO: Traverse
+        f(Order::Pre, RefNodeMut::TypeInferType);
+        f(Order::Post, RefNodeMut::TypeInferType);
     }
 }
 
