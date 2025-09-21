@@ -1,7 +1,6 @@
 use crate::item::Variable;
 use crate::kind::{FunctionParameter, Type};
 use crate::tag::{ArgNameId, LabelNameId, StringLiteralId, StructFieldNameId, VariableNameId};
-use crate::ty::GenericArgument;
 
 use nitrate_tokenize::IntegerKind;
 use ordered_float::NotNan;
@@ -208,6 +207,12 @@ pub struct Closure {
     pub parameters: Vec<FunctionParameter>,
     pub return_type: Option<Type>,
     pub definition: Block,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct GenericArgument {
+    pub name: Option<ArgNameId>,
+    pub value: Type,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

@@ -1,12 +1,10 @@
-use std::path::Path;
-
 use nitrate_tokenize::Integer;
 use ordered_float::NotNan;
 
 use crate::{
     expr::{
         Await, BinExpr, Block, Break, Call, Cast, Closure, Continue, DoWhileLoop, Expr, ForEach,
-        If, IndexAccess, List, Object, Return, Switch, UnaryExpr, WhileLoop,
+        If, IndexAccess, List, Object, Path, Return, Switch, UnaryExpr, WhileLoop,
     },
     item::{Enum, Impl, Import, Module, NamedFunction, Struct, Trait, TypeAlias, Variable},
     tag::{OpaqueTypeNameId, StringLiteralId},

@@ -1,6 +1,6 @@
 use crate::{
     Order, ParseTreeIterMut, RefNodeMut,
-    expr::{Object, Switch, UnitLit},
+    expr::{GenericArgument, Object, Switch, UnitLit},
     kind::{
         Await, BStringLit, BinExpr, Block, BlockItem, BooleanLit, Break, Call, CallArgument, Cast,
         Closure, Continue, DoWhileLoop, Expr, ExprSyntaxError, FloatLit, ForEach, If, IndexAccess,
@@ -105,6 +105,12 @@ impl ParseTreeIterMut for Block {
 }
 
 impl ParseTreeIterMut for Closure {
+    fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
+        // TODO: Traverse
+    }
+}
+
+impl ParseTreeIterMut for GenericArgument {
     fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
         // TODO: Traverse
     }

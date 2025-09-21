@@ -137,12 +137,6 @@ pub struct LatentType {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct GenericArgument {
-    pub name: Option<ArgNameId>,
-    pub value: Type,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TypeParentheses {
     pub inner: Type,
 }
