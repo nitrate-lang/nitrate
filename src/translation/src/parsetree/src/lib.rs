@@ -2,6 +2,7 @@
 #![warn(clippy::pedantic)]
 
 mod expr;
+mod expr_iter;
 mod id_store;
 mod item;
 mod iter_mut;
