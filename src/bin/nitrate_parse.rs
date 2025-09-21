@@ -85,7 +85,7 @@ fn program() -> Result<(), Error> {
     let log = slog::Logger::root(drain, o!());
     let bugs = DiagnosticCollector::new(log);
 
-    let package = Parser::new(lexer, &bugs).parse_crate(filename);
+    let package = Parser::new(lexer, &bugs).parse_source();
 
     if let Err(_) = serde_json::to_writer_pretty(&mut parse_tree_output, &package) {
         return Err(Error::ParseFailed(TranslationError::SyntaxError));

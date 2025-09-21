@@ -2,7 +2,10 @@ use crate::{TranslationOptions, TranslationOptionsBuilder, options::Diagnose};
 use nitrate_codegen::{Codegen, CodegenError};
 use nitrate_diagnosis::{DiagnosticCollector, FileId, get_or_create_file_id};
 use nitrate_parse::Parser;
-use nitrate_parsetree::kind::Package;
+use nitrate_parsetree::{
+    kind::{Module, Package, Visibility},
+    tag::{intern_module_name, intern_package_name},
+};
 use nitrate_tokenize::Lexer;
 use std::collections::HashMap;
 use threadpool::ThreadPool;
@@ -61,7 +64,17 @@ fn create_lexer<'a>(
 
 fn parse_language(lexer: Lexer, package_name: &str, bugs: &DiagnosticCollector) -> Package {
     let mut parser = Parser::new(lexer, bugs);
-    parser.parse_crate(package_name)
+    let items = parser.parse_source();
+
+    Package {
+        name: intern_package_name(package_name.to_string()),
+        root: Module {
+            attributes: None,
+            name: intern_module_name("".into()),
+            visibility: Some(Visibility::Public),
+            items,
+        },
+    }
 }
 
 // fn resolve_names(_program: &mut Expr) -> Result<(), TranslationError> {

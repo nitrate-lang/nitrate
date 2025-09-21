@@ -1,8 +1,5 @@
 use nitrate_diagnosis::DiagnosticCollector;
-use nitrate_parsetree::{
-    kind::{Module, Package, Visibility},
-    tag::{intern_module_name, intern_package_name},
-};
+use nitrate_parsetree::kind::Item;
 use nitrate_tokenize::Lexer;
 
 pub struct Parser<'a, 'bugs> {
@@ -15,7 +12,7 @@ impl<'a, 'bugs> Parser<'a, 'bugs> {
         Parser { lexer, bugs }
     }
 
-    pub fn parse_crate(&mut self, package_name: &str) -> Package {
+    pub fn parse_source(&mut self) -> Vec<Item> {
         let mut items = Vec::new();
 
         while !self.lexer.is_eof() {
@@ -23,17 +20,6 @@ impl<'a, 'bugs> Parser<'a, 'bugs> {
             items.push(item);
         }
 
-        let package_name = intern_package_name(package_name.to_string());
-        let module_name = intern_module_name("".into());
-
-        Package {
-            name: package_name,
-            root: Module {
-                visibility: Some(Visibility::Public),
-                attributes: None,
-                name: module_name,
-                items,
-            },
-        }
+        items
     }
 }
