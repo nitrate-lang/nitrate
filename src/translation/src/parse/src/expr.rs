@@ -8,8 +8,8 @@ use nitrate_parsetree::{
         Integer, List, Mutability, Path, Return, Safety, Type, UnaryExpr, UnaryExprOp, WhileLoop,
     },
     tag::{
-        VariableNameId, intern_arg_name_id, intern_label_name_id, intern_parameter_name_id,
-        intern_string_literal_id, intern_variable_name_id,
+        VariableNameId, intern_arg_name, intern_label_name, intern_parameter_name,
+        intern_string_literal, intern_variable_name,
     },
 };
 use nitrate_tokenize::Token;
@@ -343,7 +343,7 @@ impl Parser<'_, '_> {
 
             Token::String(string) => {
                 self.lexer.skip_tok();
-                self.parse_literal_suffix(Expr::String(intern_string_literal_id(string)))
+                self.parse_literal_suffix(Expr::String(intern_string_literal(string)))
             }
 
             Token::BString(data) => {
@@ -608,7 +608,7 @@ impl Parser<'_, '_> {
             let rewind_pos = this.lexer.current_pos();
             if let Some(argument_name) = this.lexer.next_if_name() {
                 if this.lexer.skip_if(&Token::Colon) {
-                    name = Some(intern_arg_name_id(argument_name));
+                    name = Some(intern_arg_name(argument_name));
                 } else {
                     this.lexer.rewind(rewind_pos);
                 }
@@ -765,7 +765,7 @@ impl Parser<'_, '_> {
                     "".into()
                 });
 
-                let variable_name = intern_variable_name_id(variable_name);
+                let variable_name = intern_variable_name(variable_name);
 
                 let type_annotation = if this.lexer.skip_if(&Token::Colon) {
                     Some(this.parse_type())
@@ -803,7 +803,7 @@ impl Parser<'_, '_> {
                     "".into()
                 });
 
-                let variable_name = intern_variable_name_id(variable_name);
+                let variable_name = intern_variable_name(variable_name);
 
                 let type_annotation = if this.lexer.skip_if(&Token::Colon) {
                     Some(this.parse_type())
@@ -884,7 +884,7 @@ impl Parser<'_, '_> {
 
         let label = if self.lexer.skip_if(&Token::SingleQuote) {
             if let Some(name) = self.lexer.next_if_name() {
-                Some(intern_label_name_id(name))
+                Some(intern_label_name(name))
             } else {
                 let bug = SyntaxBug::BreakMissingLabel(self.lexer.peek_pos());
                 self.bugs.push(&bug);
@@ -903,7 +903,7 @@ impl Parser<'_, '_> {
 
         let label = if self.lexer.skip_if(&Token::SingleQuote) {
             if let Some(name) = self.lexer.next_if_name() {
-                Some(intern_label_name_id(name))
+                Some(intern_label_name(name))
             } else {
                 let bug = SyntaxBug::ContinueMissingLabel(self.lexer.peek_pos());
                 self.bugs.push(&bug);
@@ -955,7 +955,7 @@ impl Parser<'_, '_> {
                 "".into()
             });
 
-            let name = intern_parameter_name_id(name);
+            let name = intern_parameter_name(name);
 
             let param_type = if this.lexer.skip_if(&Token::Colon) {
                 Some(this.parse_type())
@@ -1067,7 +1067,7 @@ impl Parser<'_, '_> {
             let rewind_pos = this.lexer.current_pos();
             if let Some(argument_name) = this.lexer.next_if_name() {
                 if this.lexer.skip_if(&Token::Colon) {
-                    name = Some(intern_arg_name_id(argument_name));
+                    name = Some(intern_arg_name(argument_name));
                 } else {
                     this.lexer.rewind(rewind_pos);
                 }

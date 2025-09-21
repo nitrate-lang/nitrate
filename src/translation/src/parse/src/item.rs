@@ -8,9 +8,9 @@ use nitrate_parsetree::{
         VariableKind, Visibility,
     },
     tag::{
-        intern_enum_variant_name_id, intern_function_name_id, intern_import_alias_name_id,
-        intern_module_name_id, intern_parameter_name_id, intern_struct_field_name_id,
-        intern_trait_name_id, intern_type_name_id, intern_variable_name_id,
+        intern_enum_variant_name, intern_function_name, intern_import_alias_name,
+        intern_module_name, intern_parameter_name, intern_struct_field_name, intern_trait_name,
+        intern_type_name, intern_variable_name,
     },
 };
 use nitrate_tokenize::Token;
@@ -24,7 +24,7 @@ impl Parser<'_, '_> {
                 "".into()
             });
 
-            let name = intern_parameter_name_id(name);
+            let name = intern_parameter_name(name);
 
             let default = if this.lexer.skip_if(&Token::Eq) {
                 Some(this.parse_type())
@@ -85,7 +85,7 @@ impl Parser<'_, '_> {
             "".into()
         });
 
-        let name = intern_module_name_id(name);
+        let name = intern_module_name(name);
 
         if !self.lexer.skip_if(&Token::OpenBrace) {
             let bug = SyntaxBug::ExpectedOpenBrace(self.lexer.peek_pos());
@@ -137,7 +137,7 @@ impl Parser<'_, '_> {
                 "".into()
             });
 
-            Some(intern_import_alias_name_id(name))
+            Some(intern_import_alias_name(name))
         } else {
             None
         };
@@ -167,7 +167,7 @@ impl Parser<'_, '_> {
             "".into()
         });
 
-        let name = intern_type_name_id(name);
+        let name = intern_type_name(name);
 
         let type_params = self.parse_generic_parameters();
 
@@ -202,7 +202,7 @@ impl Parser<'_, '_> {
                 "".into()
             });
 
-            let name = intern_enum_variant_name_id(name);
+            let name = intern_enum_variant_name(name);
 
             let variant_type = if this.lexer.next_is(&Token::OpenParen) {
                 Some(this.parse_type())
@@ -236,7 +236,7 @@ impl Parser<'_, '_> {
             "".into()
         });
 
-        let name = intern_type_name_id(name);
+        let name = intern_type_name(name);
 
         let type_params = self.parse_generic_parameters();
 
@@ -296,7 +296,7 @@ impl Parser<'_, '_> {
                 "".into()
             });
 
-            let name = intern_struct_field_name_id(name);
+            let name = intern_struct_field_name(name);
 
             if !this.lexer.skip_if(&Token::Colon) {
                 let bug = SyntaxBug::ExpectedColon(this.lexer.peek_pos());
@@ -331,7 +331,7 @@ impl Parser<'_, '_> {
             "".into()
         });
 
-        let name = intern_type_name_id(name);
+        let name = intern_type_name(name);
 
         let type_params = self.parse_generic_parameters();
 
@@ -425,7 +425,7 @@ impl Parser<'_, '_> {
             "".into()
         });
 
-        let name = intern_trait_name_id(name);
+        let name = intern_trait_name(name);
 
         let type_params = self.parse_generic_parameters();
 
@@ -544,7 +544,7 @@ impl Parser<'_, '_> {
                 "".into()
             });
 
-            let name = intern_parameter_name_id(name);
+            let name = intern_parameter_name(name);
 
             let param_type = if this.lexer.skip_if(&Token::Colon) {
                 Some(this.parse_type())
@@ -620,7 +620,7 @@ impl Parser<'_, '_> {
             "".into()
         });
 
-        let name = intern_function_name_id(name);
+        let name = intern_function_name(name);
 
         let type_params = self.parse_generic_parameters();
         let parameters = self.parse_named_function_parameters();
@@ -689,7 +689,7 @@ impl Parser<'_, '_> {
             "".into()
         });
 
-        let name = intern_variable_name_id(name);
+        let name = intern_variable_name(name);
 
         let var_type = if self.lexer.skip_if(&Token::Colon) {
             Some(self.parse_type())

@@ -169,105 +169,105 @@ impl_interning_category!(
     PackageNameId,
     PackageNameIdStore,
     PACKAGE_NAME_ID_STORE,
-    intern_package_name_id
+    intern_package_name
 );
 
 impl_interning_category!(
     ModuleNameId,
     ModuleNameIdStore,
     MODULE_NAME_ID_STORE,
-    intern_module_name_id
+    intern_module_name
 );
 
 impl_interning_category!(
     ImportAliasNameId,
     ImportAliasNameIdStore,
     IMPORT_ALIAS_NAME_ID_STORE,
-    intern_import_alias_name_id
+    intern_import_alias_name
 );
 
 impl_interning_category!(
     ParameterNameId,
     ParameterNameIdStore,
     PARAMETER_NAME_ID_STORE,
-    intern_parameter_name_id
+    intern_parameter_name
 );
 
 impl_interning_category!(
     TypeNameId,
     TypeNameIdStore,
     TYPE_NAME_ID_STORE,
-    intern_type_name_id
+    intern_type_name
 );
 
 impl_interning_category!(
     StructFieldNameId,
     StructFieldNameIdStore,
     STRUCT_FIELD_NAME_ID_STORE,
-    intern_struct_field_name_id
+    intern_struct_field_name
 );
 
 impl_interning_category!(
     EnumVariantNameId,
     EnumVariantNameIdStore,
     ENUM_VARIANT_NAME_ID_STORE,
-    intern_enum_variant_name_id
+    intern_enum_variant_name
 );
 
 impl_interning_category!(
     TraitNameId,
     TraitNameIdStore,
     TRAIT_NAME_ID_STORE,
-    intern_trait_name_id
+    intern_trait_name
 );
 
 impl_interning_category!(
     FunctionNameId,
     FunctionNameIdStore,
     FUNCTION_NAME_ID_STORE,
-    intern_function_name_id
+    intern_function_name
 );
 
 impl_interning_category!(
     VariableNameId,
     VariableNameIdStore,
     VARIABLE_NAME_ID_STORE,
-    intern_variable_name_id
+    intern_variable_name
 );
 
 impl_interning_category!(
     ArgNameId,
     ArgNameIdStore,
     ARG_NAME_ID_STORE,
-    intern_arg_name_id
+    intern_arg_name
 );
 
 impl_interning_category!(
     OpaqueTypeNameId,
     OpaqueTypeNameIdStore,
     OPAQUE_TYPE_NAME_ID_STORE,
-    intern_opaque_type_name_id
+    intern_opaque_type_name
 );
 
 impl_interning_category!(
     LifetimeNameId,
     LifetimeNameIdStore,
     LIFETIME_NAME_ID_STORE,
-    intern_lifetime_name_id
+    intern_lifetime_name
 );
 
 impl_interning_category!(
     LabelNameId,
     LabelNameIdStore,
     LABEL_NAME_ID_STORE,
-    intern_label_name_id
+    intern_label_name
 );
 
 impl_interning_category!(
     StringLiteralId,
     StringLiteralIdStore,
     STRING_LITERAL_ID_STORE,
-    intern_string_literal_id
+    intern_string_literal
 );
 
 pub fn erase_interners() {

@@ -1,7 +1,7 @@
 use nitrate_diagnosis::DiagnosticCollector;
 use nitrate_parsetree::{
     kind::{Module, Package, Visibility},
-    tag::{intern_module_name_id, intern_package_name_id},
+    tag::{intern_module_name, intern_package_name},
 };
 use nitrate_tokenize::Lexer;
 
@@ -23,8 +23,8 @@ impl<'a, 'bugs> Parser<'a, 'bugs> {
             items.push(item);
         }
 
-        let package_name = intern_package_name_id(package_name.to_string());
-        let module_name = intern_module_name_id("".into());
+        let package_name = intern_package_name(package_name.to_string());
+        let module_name = intern_module_name("".into());
 
         Package {
             name: package_name,
