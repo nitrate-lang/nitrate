@@ -470,7 +470,7 @@ pub enum Expr {
     Integer(Box<IntegerLit>),
     Float(FloatLit),
     String(StringLit),
-    BString(BStringLit),
+    BString(Box<BStringLit>),
     Unit(UnitLit),
 
     TypeInfo(Box<TypeInfo>),

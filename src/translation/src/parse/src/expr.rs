@@ -3,9 +3,10 @@ use crate::bugs::SyntaxErr;
 use super::parse::Parser;
 use nitrate_parsetree::{
     kind::{
-        Await, BinExpr, BinExprOp, Block, BlockItem, Break, Call, CallArgument, Cast, Closure,
-        Continue, DoWhileLoop, Expr, ForEach, FunctionParameter, GenericArgument, If, IndexAccess,
-        IntegerLit, List, Mutability, Path, Return, Safety, Type, UnaryExpr, UnaryExprOp,
+        Await, BStringLit, BinExpr, BinExprOp, Block, BlockItem, BooleanLit, Break, Call,
+        CallArgument, Cast, Closure, Continue, DoWhileLoop, Expr, FloatLit, ForEach,
+        FunctionParameter, GenericArgument, If, IndexAccess, IntegerLit, List, Mutability,
+        Parentheses, Path, Return, Safety, StringLit, Type, TypeInfo, UnaryExpr, UnaryExprOp,
         WhileLoop,
     },
     tag::{
@@ -337,36 +338,40 @@ impl Parser<'_, '_> {
                 })))
             }
 
-            Token::Float(float) => {
+            Token::Float(value) => {
                 self.lexer.skip_tok();
-                self.parse_literal_suffix(Expr::Float(float))
+                self.parse_literal_suffix(Expr::Float(FloatLit { value }))
             }
 
             Token::String(string) => {
                 self.lexer.skip_tok();
-                self.parse_literal_suffix(Expr::String(intern_string_literal(string)))
+                self.parse_literal_suffix(Expr::String(StringLit {
+                    value: intern_string_literal(string),
+                }))
             }
 
             Token::BString(data) => {
                 self.lexer.skip_tok();
-                self.parse_literal_suffix(Expr::BString(Box::new(data)))
+                self.parse_literal_suffix(Expr::BString(Box::new(BStringLit { value: data })))
             }
 
             Token::True => {
                 self.lexer.skip_tok();
-                Expr::Boolean(true)
+                Expr::Boolean(BooleanLit { value: true })
             }
 
             Token::False => {
                 self.lexer.skip_tok();
-                Expr::Boolean(false)
+                Expr::Boolean(BooleanLit { value: false })
             }
 
             Token::OpenBracket => Expr::List(Box::new(self.parse_list())),
 
             Token::Name(_) | Token::Colon => Expr::Path(Box::new(self.parse_path())),
 
-            Token::Type => Expr::TypeInfo(Box::new(self.parse_type_info())),
+            Token::Type => Expr::TypeInfo(Box::new(TypeInfo {
+                the: self.parse_type_info(),
+            })),
 
             Token::Fn | Token::OpenBrace | Token::Unsafe | Token::Safe => {
                 Expr::Closure(Box::new(self.parse_closure()))
@@ -409,7 +414,7 @@ impl Parser<'_, '_> {
                 self.bugs.push(&bug);
             }
 
-            return Expr::Parentheses(Box::new(inner));
+            return Expr::Parentheses(Box::new(Parentheses { inner }));
         }
 
         self.parse_expression_primary()
@@ -853,7 +858,7 @@ impl Parser<'_, '_> {
         self.lexer.skip_tok();
 
         let condition = if self.lexer.next_is(&Token::OpenBrace) {
-            Expr::Boolean(true)
+            Expr::Boolean(BooleanLit { value: true })
         } else {
             self.parse_expression()
         };
