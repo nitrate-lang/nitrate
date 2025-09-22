@@ -1,6 +1,6 @@
 use crate::{
     Order, ParseTreeIter, RefNode,
-    expr::{Object, ExprPath, TypeArgument, Switch, SwitchCase, UnitLit},
+    expr::{ExprPath, Object, Switch, SwitchCase, TypeArgument, UnitLit},
     kind::{
         Await, BStringLit, BinExpr, Block, BlockItem, BooleanLit, Break, Call, CallArgument, Cast,
         Closure, Continue, DoWhileLoop, Expr, ExprParentheses, ExprSyntaxError, FloatLit, ForEach,
@@ -208,6 +208,8 @@ impl ParseTreeIter for ExprPath {
                 }
             }
         }
+
+        let _ = self.to;
 
         f(Order::Leave, RefNode::ExprPath(self));
     }

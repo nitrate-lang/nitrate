@@ -4,8 +4,8 @@ use crate::{
     Order, ParseTreeIterMut, RefNodeMut,
     item::{ItemPath, ItemSyntaxError, Package},
     kind::{
-        AssociatedItem, Enum, EnumVariant, FunctionParameter, GenericParameter, Impl, Import, Item,
-        Module, Function, Struct, StructField, Trait, TypeAlias, Variable,
+        AssociatedItem, Enum, EnumVariant, Function, FunctionParameter, GenericParameter, Impl,
+        Import, Item, Module, Struct, StructField, Trait, TypeAlias, Variable,
     },
 };
 
@@ -51,6 +51,9 @@ impl ParseTreeIterMut for Module {
 impl ParseTreeIterMut for ItemPath {
     fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
         f(Order::Enter, RefNodeMut::ItemPath(self));
+
+        let _ = self.to;
+
         f(Order::Leave, RefNodeMut::ItemPath(self));
     }
 }
