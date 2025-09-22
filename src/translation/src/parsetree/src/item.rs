@@ -35,20 +35,20 @@ pub struct Module {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct SimplePathSegment {
+pub struct ItemPathSegment {
     pub segment: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct SimplePath {
-    pub segments: Vec<SimplePathSegment>,
+pub struct ItemPath {
+    pub segments: Vec<ItemPathSegment>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Import {
     pub visibility: Option<Visibility>,
     pub attributes: Option<Vec<Expr>>,
-    pub path: SimplePath,
+    pub path: ItemPath,
     pub alias: Option<ImportAliasNameId>,
 }
 
@@ -192,7 +192,7 @@ pub struct Variable {
 pub enum Item {
     SyntaxError(ItemSyntaxError),
     Module(Box<Module>),
-    SimplePath(Box<SimplePath>),
+    ItemPath(Box<ItemPath>),
     Import(Box<Import>),
     TypeAlias(Arc<RwLock<TypeAlias>>),
     Struct(Arc<RwLock<Struct>>),
@@ -208,7 +208,7 @@ impl std::fmt::Debug for Item {
         match self {
             Item::SyntaxError(e) => e.fmt(f),
             Item::Module(e) => e.fmt(f),
-            Item::SimplePath(e) => e.fmt(f),
+            Item::ItemPath(e) => e.fmt(f),
             Item::Import(e) => e.fmt(f),
             Item::TypeAlias(e) => e.fmt(f),
             Item::Struct(e) => e.fmt(f),

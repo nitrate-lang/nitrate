@@ -7,10 +7,11 @@ use nitrate_parsetree::{
     kind::{
         Await, BStringLit, BinExpr, BinExprOp, Block, BlockItem, Bool, BooleanLit, Break, Call,
         CallArgument, Cast, Closure, Continue, DoWhileLoop, Expr, ExprParentheses, ExprPath,
-        ExprPathSegment, ExprSyntaxError, Float8, Float16, Float32, Float64, Float128, FloatLit,
-        ForEach, FunctionParameter, If, IndexAccess, Int8, Int16, Int32, Int64, Int128, IntegerLit,
-        List, Mutability, Return, Safety, StringLit, Type, TypeArgument, TypeInfo, TypePath,
-        TypePathSegment, UInt8, UInt16, UInt32, UInt64, UInt128, UnaryExpr, UnaryExprOp, WhileLoop,
+        ExprPathSegment, ExprPathTarget, ExprSyntaxError, Float8, Float16, Float32, Float64,
+        Float128, FloatLit, ForEach, FunctionParameter, If, IndexAccess, Int8, Int16, Int32, Int64,
+        Int128, IntegerLit, List, Mutability, Return, Safety, StringLit, Type, TypeArgument,
+        TypeInfo, TypePath, TypePathSegment, UInt8, UInt16, UInt32, UInt64, UInt128, UnaryExpr,
+        UnaryExprOp, WhileLoop,
     },
     tag::{
         VariableNameId, intern_arg_name, intern_label_name, intern_parameter_name,
@@ -750,7 +751,10 @@ impl Parser<'_, '_> {
 
         assert_ne!(segments.len(), 0);
 
-        ExprPath { segments }
+        ExprPath {
+            segments,
+            to: ExprPathTarget::Unresolved,
+        }
     }
 
     fn parse_type_info(&mut self) -> Type {

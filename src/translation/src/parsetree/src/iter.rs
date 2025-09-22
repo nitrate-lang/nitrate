@@ -3,13 +3,13 @@ use std::sync::{Arc, RwLock};
 use crate::{
     expr::{
         Await, BStringLit, BinExpr, Block, BooleanLit, Break, Call, CallArgument, Cast, Closure,
-        Continue, DoWhileLoop, ExprParentheses, FloatLit, ForEach, If, IndexAccess, IntegerLit,
-        List, Object, ExprPath, TypeArgument, Return, StringLit, Switch, SwitchCase, TypeInfo,
+        Continue, DoWhileLoop, ExprParentheses, ExprPath, FloatLit, ForEach, If, IndexAccess,
+        IntegerLit, List, Object, Return, StringLit, Switch, SwitchCase, TypeArgument, TypeInfo,
         UnaryExpr, WhileLoop,
     },
     item::{
-        Enum, EnumVariant, FunctionParameter, GenericParameter, Impl, Import, Module,
-        NamedFunction, Package, SimplePath, Struct, StructField, Trait, TypeAlias, Variable,
+        Enum, EnumVariant, FunctionParameter, GenericParameter, Impl, Import, ItemPath, Module,
+        NamedFunction, Package, Struct, StructField, Trait, TypeAlias, Variable,
     },
     tag::OpaqueTypeNameId,
     ty::{
@@ -97,7 +97,7 @@ pub enum RefNode<'a> {
     ItemSyntaxError,
     ItemPackage(&'a Package),
     ItemModule(&'a Module),
-    ItemSimplePath(&'a SimplePath),
+    ItemItemPath(&'a ItemPath),
     ItemImport(&'a Import),
     ItemGenericParameter(&'a GenericParameter),
     ItemTypeAlias(&'a Arc<RwLock<TypeAlias>>),

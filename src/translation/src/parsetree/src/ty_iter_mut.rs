@@ -144,7 +144,7 @@ impl ParseTreeIterMut for InferType {
 
 impl ParseTreeIterMut for TypePath {
     fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
-        f(Order::Enter, RefNodeMut::TypeTypeName(self));
+        f(Order::Enter, RefNodeMut::TypePath(self));
 
         for segment in &mut self.segments {
             let _ = segment.identifier;
@@ -156,7 +156,7 @@ impl ParseTreeIterMut for TypePath {
             }
         }
 
-        f(Order::Leave, RefNodeMut::TypeTypeName(self));
+        f(Order::Leave, RefNodeMut::TypePath(self));
     }
 }
 

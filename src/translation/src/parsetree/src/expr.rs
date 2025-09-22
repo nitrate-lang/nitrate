@@ -1,4 +1,4 @@
-use crate::item::Variable;
+use crate::item::{Enum, NamedFunction, Struct, TypeAlias, Variable};
 use crate::kind::{FunctionParameter, Type};
 use crate::tag::{ArgNameId, LabelNameId, StringLiteralId, StructFieldNameId, VariableNameId};
 
@@ -6,7 +6,7 @@ use nitrate_tokenize::IntegerKind;
 use ordered_float::NotNan;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use std::sync::{Arc, RwLock};
+use std::sync::{Arc, RwLock, Weak};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ExprSyntaxError;
@@ -217,6 +217,16 @@ pub struct TypeArgument {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum ExprPathTarget {
+    Unresolved,
+    TypeAlias(Weak<RwLock<TypeAlias>>),
+    Struct(Weak<RwLock<Struct>>),
+    Enum(Weak<RwLock<Enum>>),
+    NamedFunction(Weak<RwLock<NamedFunction>>),
+    Variable(Weak<RwLock<Variable>>),
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ExprPathSegment {
     pub identifier: String,
     pub type_arguments: Option<Vec<TypeArgument>>,
@@ -225,6 +235,7 @@ pub struct ExprPathSegment {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ExprPath {
     pub segments: Vec<ExprPathSegment>,
+    pub to: ExprPathTarget,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

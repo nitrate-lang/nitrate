@@ -1,8 +1,27 @@
 use nitrate_diagnosis::DiagnosticCollector;
 
-use nitrate_parsetree::{Order, ParseTreeIterMut, RefNodeMut, kind::Module};
+use nitrate_parsetree::{
+    Order, ParseTreeIterMut, RefNodeMut,
+    kind::{ExprPath, ExprPathTarget, ItemPath, Module, TypePath},
+};
 
-use crate::build_symbol_table;
+use crate::{SymbolTable, build_symbol_table};
+
+fn resolve_item_path(path: &mut ItemPath, scope: &Vec<String>, symbol_table: &SymbolTable) {
+    // TODO: Resolve the path
+}
+
+fn resolve_expr_path(path: &mut ExprPath, scope: &Vec<String>, symbol_table: &SymbolTable) {
+    if matches!(path.to, ExprPathTarget::Unresolved) {
+        return;
+    }
+
+    // TODO: Resolve the expr path
+}
+
+fn resolve_type_path(path: &mut TypePath, scope: &Vec<String>, symbol_table: &SymbolTable) {
+    // TODO: Resolve the type path
+}
 
 pub fn resolve(module: &mut Module, _bugs: &DiagnosticCollector) {
     let symbol_table = build_symbol_table(module);
@@ -27,12 +46,12 @@ pub fn resolve(module: &mut Module, _bugs: &DiagnosticCollector) {
             return;
         }
 
-        if let RefNodeMut::ExprPath(path) = node {
-            let _ = &symbol_table;
-            let _ = &scope_vec;
-            let _ = &path;
-
-            // TODO: Resolve the path using the symbol table.
+        if let RefNodeMut::ItemPath(path) = node {
+            resolve_item_path(path, &scope_vec, &symbol_table);
+        } else if let RefNodeMut::TypePath(path) = node {
+            resolve_type_path(path, &scope_vec, &symbol_table);
+        } else if let RefNodeMut::ExprPath(path) = node {
+            resolve_expr_path(path, &scope_vec, &symbol_table);
         }
     });
 }

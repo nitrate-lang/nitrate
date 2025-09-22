@@ -6,7 +6,7 @@ use crate::bugs::SyntaxErr;
 use nitrate_parsetree::{
     kind::{
         AssociatedItem, Enum, EnumVariant, FunctionParameter, GenericParameter, Impl, Import, Item,
-        ItemSyntaxError, Module, Mutability, NamedFunction, SimplePath, SimplePathSegment, Struct,
+        ItemPath, ItemPathSegment, ItemSyntaxError, Module, Mutability, NamedFunction, Struct,
         StructField, Trait, TypeAlias, Variable, VariableKind, Visibility,
     },
     tag::{
@@ -125,7 +125,7 @@ impl Parser<'_, '_> {
         }
     }
 
-    fn parse_simple_path(&mut self) -> SimplePath {
+    fn parse_simple_path(&mut self) -> ItemPath {
         fn parse_double_colon(this: &mut Parser) -> bool {
             if !this.lexer.skip_if(&Token::Colon) {
                 return false;
@@ -143,7 +143,7 @@ impl Parser<'_, '_> {
         let mut segments = Vec::new();
 
         if parse_double_colon(self) {
-            segments.push(SimplePathSegment { segment: "".into() });
+            segments.push(ItemPathSegment { segment: "".into() });
         }
 
         while !self.lexer.is_eof() {
@@ -153,14 +153,14 @@ impl Parser<'_, '_> {
                 break;
             };
 
-            segments.push(SimplePathSegment { segment });
+            segments.push(ItemPathSegment { segment });
 
             if !parse_double_colon(self) {
                 break;
             }
         }
 
-        SimplePath { segments }
+        ItemPath { segments }
     }
 
     fn parse_import(&mut self) -> Import {
