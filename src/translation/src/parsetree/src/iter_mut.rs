@@ -11,6 +11,7 @@ use crate::{
         Enum, EnumVariant, FunctionParameter, GenericParameter, Impl, Import, Module,
         NamedFunction, Package, Struct, StructField, Trait, TypeAlias, Variable,
     },
+    iter::Order,
     tag::OpaqueTypeNameId,
     ty::{
         ArrayType, FunctionType, FunctionTypeParameter, Lifetime, ReferenceType, RefinementType,
@@ -103,10 +104,4 @@ pub enum RefNodeMut<'a> {
     ItemFunctionParameter(&'a mut FunctionParameter),
     ItemNamedFunction(&'a mut Arc<RwLock<NamedFunction>>),
     ItemVariable(&'a mut Arc<RwLock<Variable>>),
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum Order {
-    Pre,
-    Post,
 }

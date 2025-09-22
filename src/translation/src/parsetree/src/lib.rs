@@ -21,4 +21,5 @@ pub mod tag {
     pub use crate::id_store::*;
 }
 
-pub use iter_mut::{Order, ParseTreeIterMut, RefNodeMut};
+pub use iter::{Order, ParseTreeIter, RefNode};
+pub use iter_mut::{ParseTreeIterMut, RefNodeMut};
