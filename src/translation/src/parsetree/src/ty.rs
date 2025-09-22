@@ -73,6 +73,12 @@ pub enum TypePathTarget {
     Enum(Weak<RwLock<Enum>>),
 }
 
+impl Default for TypePathTarget {
+    fn default() -> Self {
+        TypePathTarget::Unresolved
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TypePathSegment {
     pub identifier: String,
@@ -82,6 +88,8 @@ pub struct TypePathSegment {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TypePath {
     pub segments: Vec<TypePathSegment>,
+
+    #[serde(skip)]
     pub to: TypePathTarget,
 }
 

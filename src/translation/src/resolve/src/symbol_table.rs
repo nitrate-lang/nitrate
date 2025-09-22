@@ -16,13 +16,13 @@ pub enum Symbol {
     Variable(Arc<RwLock<Variable>>),
 }
 
-pub fn qualify_name(scope: &[String], name: &str) -> Vec<String> {
+pub fn qualify_name(scope: &[String], name: &str) -> String {
     let mut qualified_name = scope.to_vec();
     qualified_name.push(name.to_string());
-    qualified_name
+    qualified_name.join("::")
 }
 
-pub type SymbolTable<'a> = HashMap<Vec<String>, Symbol>;
+pub type SymbolTable<'a> = HashMap<String, Symbol>;
 
 fn symbol_table_add(symbol_table: &mut SymbolTable, scope_vec: &Vec<String>, node: &RefNode) {
     match node {

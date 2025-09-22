@@ -226,6 +226,12 @@ pub enum ExprPathTarget {
     Variable(Weak<RwLock<Variable>>),
 }
 
+impl Default for ExprPathTarget {
+    fn default() -> Self {
+        ExprPathTarget::Unresolved
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ExprPathSegment {
     pub identifier: String,
@@ -235,6 +241,8 @@ pub struct ExprPathSegment {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ExprPath {
     pub segments: Vec<ExprPathSegment>,
+
+    #[serde(skip)]
     pub to: ExprPathTarget,
 }
 

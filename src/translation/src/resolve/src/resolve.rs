@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use nitrate_diagnosis::DiagnosticCollector;
 
 use nitrate_parsetree::{
@@ -5,30 +7,58 @@ use nitrate_parsetree::{
     kind::{ExprPath, ExprPathTarget, ItemPath, ItemPathTarget, Module, TypePath, TypePathTarget},
 };
 
-use crate::{SymbolTable, build_symbol_table};
+use crate::{Symbol, SymbolTable, build_symbol_table};
 
-fn resolve_item_path(path: &mut ItemPath, scope: &Vec<String>, symbol_table: &SymbolTable) {
-    if matches!(path.to, ItemPathTarget::Unresolved) {
+fn resolve_item_path(scope: &Vec<String>, path: &mut ItemPath, symbol_table: &SymbolTable) {
+    println!("Resolving item path in scope: {:?}", scope);
+
+    if !matches!(path.to, ItemPathTarget::Unresolved) {
         return;
     }
 
     // TODO: Resolve the path
 }
 
-fn resolve_expr_path(path: &mut ExprPath, scope: &Vec<String>, symbol_table: &SymbolTable) {
-    if matches!(path.to, ExprPathTarget::Unresolved) {
+fn resolve_expr_path(scope: &Vec<String>, path: &mut ExprPath, symbol_table: &SymbolTable) {
+    println!("Resolving expr path in scope: {:?}", scope);
+
+    if !matches!(path.to, ExprPathTarget::Unresolved) {
         return;
     }
 
     // TODO: Resolve the expr path
 }
 
-fn resolve_type_path(path: &mut TypePath, scope: &Vec<String>, symbol_table: &SymbolTable) {
-    if matches!(path.to, TypePathTarget::Unresolved) {
+fn resolve_type_path(scope: &Vec<String>, path: &mut TypePath, symbol_table: &SymbolTable) {
+    if !matches!(path.to, TypePathTarget::Unresolved) {
         return;
     }
 
-    // TODO: Resolve the type path
+    let pathname = path
+        .segments
+        .iter()
+        .map(|seg| seg.identifier.clone())
+        .collect::<Vec<_>>()
+        .join("::");
+
+    let mut scope = scope.to_owned();
+
+    while !scope.is_empty() {
+        let candidate = format!("{}::{}", scope.join("::"), pathname);
+
+        if let Some(ty) = symbol_table.get(&candidate) {
+            match ty.to_owned() {
+                Symbol::TypeAlias(sym) => path.to = TypePathTarget::TypeAlias(Arc::downgrade(sym)),
+                Symbol::Struct(sym) => path.to = TypePathTarget::Struct(Arc::downgrade(sym)),
+                Symbol::Enum(sym) => path.to = TypePathTarget::Enum(Arc::downgrade(sym)),
+                _ => {}
+            }
+
+            return;
+        }
+
+        scope.pop();
+    }
 }
 
 pub fn resolve(module: &mut Module, _bugs: &DiagnosticCollector) {
@@ -55,11 +85,11 @@ pub fn resolve(module: &mut Module, _bugs: &DiagnosticCollector) {
         }
 
         if let RefNodeMut::ItemPath(path) = node {
-            resolve_item_path(path, &scope_vec, &symbol_table);
+            resolve_item_path(&scope_vec, path, &symbol_table);
         } else if let RefNodeMut::TypePath(path) = node {
-            resolve_type_path(path, &scope_vec, &symbol_table);
+            resolve_type_path(&scope_vec, path, &symbol_table);
         } else if let RefNodeMut::ExprPath(path) = node {
-            resolve_expr_path(path, &scope_vec, &symbol_table);
+            resolve_expr_path(&scope_vec, path, &symbol_table);
         }
     });
 }
