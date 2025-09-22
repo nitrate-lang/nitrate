@@ -55,8 +55,6 @@ pub fn resolve(mut module: Module, _bugs: &DiagnosticCollector) -> Module {
     let mut name_scope = Vec::new();
 
     module.depth_first_iter_mut(&mut |order, node| {
-        println!("Current scope: {}", name_scope.join("::"));
-
         if let RefNodeMut::ItemModule(module) = node {
             match order {
                 Order::Pre => {
@@ -67,13 +65,11 @@ pub fn resolve(mut module: Module, _bugs: &DiagnosticCollector) -> Module {
                     name_scope.pop();
                 }
             }
-
-            return;
-        }
-
-        if let RefNodeMut::ExprPath(path) = node {
+        } else if let RefNodeMut::ExprPath(path) = node {
             // TODO: Resolve the path here.
         }
+
+        println!("Current scope: {}", name_scope.join("::"));
     });
 
     module

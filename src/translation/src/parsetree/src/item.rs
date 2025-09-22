@@ -52,7 +52,7 @@ pub struct TypeAlias {
     pub attributes: Option<Vec<Expr>>,
     pub name: TypeNameId,
     pub type_params: Option<Vec<GenericParameter>>,
-    pub aliased_type: Option<Type>,
+    pub alias_type: Option<Type>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

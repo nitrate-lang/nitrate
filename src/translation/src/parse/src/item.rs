@@ -187,7 +187,7 @@ impl Parser<'_, '_> {
             attributes,
             name,
             type_params,
-            aliased_type,
+            alias_type: aliased_type,
         }
     }
 
