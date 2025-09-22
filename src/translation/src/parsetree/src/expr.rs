@@ -247,10 +247,16 @@ pub struct DoWhileLoop {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SwitchCase {
+    pub condition: Expr,
+    pub body: Block,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Switch {
     pub condition: Expr,
-    pub cases: Vec<(Expr, Block)>,
-    pub default_case: Option<Block>,
+    pub cases: Vec<SwitchCase>,
+    pub default: Option<Block>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

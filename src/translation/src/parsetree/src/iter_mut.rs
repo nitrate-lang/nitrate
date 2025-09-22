@@ -2,7 +2,8 @@ use crate::{
     expr::{
         Await, BStringLit, BinExpr, Block, BooleanLit, Break, Call, Cast, Closure, Continue,
         DoWhileLoop, ExprParentheses, FloatLit, ForEach, If, IndexAccess, IntegerLit, List, Object,
-        Path, PathTypeArgument, Return, StringLit, Switch, TypeInfo, UnaryExpr, WhileLoop,
+        Path, PathTypeArgument, Return, StringLit, Switch, SwitchCase, TypeInfo, UnaryExpr,
+        WhileLoop,
     },
     item::{
         Enum, EnumVariant, FunctionParameter, GenericParameter, Impl, Import, Module,
@@ -43,6 +44,7 @@ pub enum RefNodeMut<'a> {
     ExprIf(&'a mut If),
     ExprWhile(&'a mut WhileLoop),
     ExprDoWhileLoop(&'a mut DoWhileLoop),
+    ExprSwitchCase(&'a mut SwitchCase),
     ExprSwitch(&'a mut Switch),
     ExprBreak(&'a mut Break),
     ExprContinue(&'a mut Continue),

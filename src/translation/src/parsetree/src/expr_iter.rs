@@ -1,6 +1,6 @@
 use crate::{
     Order, ParseTreeIterMut, RefNodeMut,
-    expr::{Object, PathTypeArgument, Switch, UnitLit},
+    expr::{Object, PathTypeArgument, Switch, SwitchCase, UnitLit},
     kind::{
         Await, BStringLit, BinExpr, Block, BlockItem, BooleanLit, Break, Call, CallArgument, Cast,
         Closure, Continue, DoWhileLoop, Expr, ExprParentheses, ExprSyntaxError, FloatLit, ForEach,
@@ -217,43 +217,88 @@ impl ParseTreeIterMut for IndexAccess {
 
 impl ParseTreeIterMut for If {
     fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
-        // TODO: Traverse
+        f(Order::Pre, RefNodeMut::ExprIf(self));
+
+        self.condition.depth_first_iter_mut(f);
+        self.then_branch.depth_first_iter_mut(f);
+        self.else_branch.as_mut().map(|e| e.depth_first_iter_mut(f));
+
+        f(Order::Post, RefNodeMut::ExprIf(self));
     }
 }
 
 impl ParseTreeIterMut for WhileLoop {
     fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
-        // TODO: Traverse
+        f(Order::Pre, RefNodeMut::ExprWhile(self));
+
+        self.condition.depth_first_iter_mut(f);
+        self.body.depth_first_iter_mut(f);
+
+        f(Order::Post, RefNodeMut::ExprWhile(self));
     }
 }
 
 impl ParseTreeIterMut for DoWhileLoop {
     fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
-        // TODO: Traverse
+        f(Order::Pre, RefNodeMut::ExprDoWhileLoop(self));
+
+        self.body.depth_first_iter_mut(f);
+        self.condition.depth_first_iter_mut(f);
+
+        f(Order::Post, RefNodeMut::ExprDoWhileLoop(self));
+    }
+}
+
+impl ParseTreeIterMut for SwitchCase {
+    fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
+        f(Order::Pre, RefNodeMut::ExprSwitchCase(self));
+
+        self.condition.depth_first_iter_mut(f);
+        self.body.depth_first_iter_mut(f);
+
+        f(Order::Post, RefNodeMut::ExprSwitchCase(self));
     }
 }
 
 impl ParseTreeIterMut for Switch {
     fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
-        // TODO: Traverse
+        f(Order::Pre, RefNodeMut::ExprSwitch(self));
+
+        self.condition.depth_first_iter_mut(f);
+
+        for case in &mut self.cases {
+            case.depth_first_iter_mut(f);
+        }
+
+        self.default.as_mut().map(|b| b.depth_first_iter_mut(f));
+
+        f(Order::Post, RefNodeMut::ExprSwitch(self));
     }
 }
 
 impl ParseTreeIterMut for Break {
     fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
-        // TODO: Traverse
+        f(Order::Pre, RefNodeMut::ExprBreak(self));
+        f(Order::Post, RefNodeMut::ExprBreak(self));
     }
 }
 
 impl ParseTreeIterMut for Continue {
     fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
-        // TODO: Traverse
+        f(Order::Pre, RefNodeMut::ExprContinue(self));
+        f(Order::Post, RefNodeMut::ExprContinue(self));
     }
 }
 
 impl ParseTreeIterMut for Return {
     fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
-        // TODO: Traverse
+        f(Order::Pre, RefNodeMut::ExprReturn(self));
+
+        if let Some(value) = &mut self.value {
+            value.depth_first_iter_mut(f);
+        }
+
+        f(Order::Post, RefNodeMut::ExprReturn(self));
     }
 }
 
