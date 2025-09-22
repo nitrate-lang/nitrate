@@ -7,7 +7,7 @@ use nitrate_parsetree::{
     kind::{
         AssociatedItem, Enum, EnumVariant, FunctionParameter, GenericParameter, Impl, Import, Item,
         ItemPath, ItemPathSegment, ItemPathTarget, ItemSyntaxError, Module, Mutability,
-        NamedFunction, Struct, StructField, Trait, TypeAlias, Variable, VariableKind, Visibility,
+        Function, Struct, StructField, Trait, TypeAlias, Variable, VariableKind, Visibility,
     },
     tag::{
         intern_enum_variant_name, intern_function_name, intern_import_alias_name,
@@ -651,7 +651,7 @@ impl Parser<'_, '_> {
         params
     }
 
-    fn parse_named_function(&mut self) -> NamedFunction {
+    fn parse_named_function(&mut self) -> Function {
         assert!(self.lexer.peek_t() == Token::Fn);
         self.lexer.skip_tok();
 
@@ -685,7 +685,7 @@ impl Parser<'_, '_> {
             Some(self.parse_block())
         };
 
-        NamedFunction {
+        Function {
             visibility: None,
             attributes,
             name,
@@ -813,7 +813,7 @@ impl Parser<'_, '_> {
             Token::Fn => {
                 let mut func = self.parse_named_function();
                 func.visibility = visibility;
-                Item::NamedFunction(Arc::new(RwLock::new(func)))
+                Item::Function(Arc::new(RwLock::new(func)))
             }
 
             Token::Static | Token::Const | Token::Let | Token::Var => {

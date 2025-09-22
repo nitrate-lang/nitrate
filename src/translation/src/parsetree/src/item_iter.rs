@@ -4,8 +4,8 @@ use crate::{
     Order, ParseTreeIter, RefNode,
     item::{ItemPath, ItemSyntaxError, Package},
     kind::{
-        AssociatedItem, Enum, EnumVariant, FunctionParameter, GenericParameter, Impl, Import, Item,
-        Module, NamedFunction, Struct, StructField, Trait, TypeAlias, Variable,
+        AssociatedItem, Enum, EnumVariant, Function, FunctionParameter, GenericParameter, Impl,
+        Import, Item, Module, Struct, StructField, Trait, TypeAlias, Variable,
     },
 };
 
@@ -324,9 +324,9 @@ impl ParseTreeIter for FunctionParameter {
     }
 }
 
-impl ParseTreeIter for Arc<RwLock<NamedFunction>> {
+impl ParseTreeIter for Arc<RwLock<Function>> {
     fn depth_first_iter(&self, f: &mut dyn FnMut(Order, RefNode)) {
-        f(Order::Enter, RefNode::ItemNamedFunction(self));
+        f(Order::Enter, RefNode::ItemFunction(self));
         let mut this = self.write().unwrap();
 
         let _ = this.visibility;
@@ -357,7 +357,7 @@ impl ParseTreeIter for Arc<RwLock<NamedFunction>> {
         }
 
         drop(this);
-        f(Order::Leave, RefNode::ItemNamedFunction(self));
+        f(Order::Leave, RefNode::ItemFunction(self));
     }
 }
 
@@ -402,7 +402,7 @@ impl ParseTreeIter for Item {
             Item::Enum(item) => item.depth_first_iter(f),
             Item::Trait(item) => item.depth_first_iter(f),
             Item::Impl(item) => item.depth_first_iter(f),
-            Item::NamedFunction(item) => item.depth_first_iter(f),
+            Item::Function(item) => item.depth_first_iter(f),
             Item::Variable(item) => item.depth_first_iter(f),
         }
     }

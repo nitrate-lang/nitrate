@@ -1,4 +1,4 @@
-use crate::item::{Enum, NamedFunction, Struct, TypeAlias, Variable};
+use crate::item::{Enum, Function, Struct, TypeAlias, Variable};
 use crate::kind::{FunctionParameter, Type};
 use crate::tag::{ArgNameId, LabelNameId, StringLiteralId, StructFieldNameId, VariableNameId};
 
@@ -222,7 +222,7 @@ pub enum ExprPathTarget {
     TypeAlias(Weak<RwLock<TypeAlias>>),
     Struct(Weak<RwLock<Struct>>),
     Enum(Weak<RwLock<Enum>>),
-    NamedFunction(Weak<RwLock<NamedFunction>>),
+    Function(Weak<RwLock<Function>>),
     Variable(Weak<RwLock<Variable>>),
 }
 

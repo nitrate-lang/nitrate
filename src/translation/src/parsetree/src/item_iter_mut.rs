@@ -5,7 +5,7 @@ use crate::{
     item::{ItemPath, ItemSyntaxError, Package},
     kind::{
         AssociatedItem, Enum, EnumVariant, FunctionParameter, GenericParameter, Impl, Import, Item,
-        Module, NamedFunction, Struct, StructField, Trait, TypeAlias, Variable,
+        Module, Function, Struct, StructField, Trait, TypeAlias, Variable,
     },
 };
 
@@ -324,9 +324,9 @@ impl ParseTreeIterMut for FunctionParameter {
     }
 }
 
-impl ParseTreeIterMut for Arc<RwLock<NamedFunction>> {
+impl ParseTreeIterMut for Arc<RwLock<Function>> {
     fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
-        f(Order::Enter, RefNodeMut::ItemNamedFunction(self));
+        f(Order::Enter, RefNodeMut::ItemFunction(self));
         let mut this = self.write().unwrap();
 
         let _ = this.visibility;
@@ -357,7 +357,7 @@ impl ParseTreeIterMut for Arc<RwLock<NamedFunction>> {
         }
 
         drop(this);
-        f(Order::Leave, RefNodeMut::ItemNamedFunction(self));
+        f(Order::Leave, RefNodeMut::ItemFunction(self));
     }
 }
 
@@ -402,7 +402,7 @@ impl ParseTreeIterMut for Item {
             Item::Enum(item) => item.depth_first_iter_mut(f),
             Item::Trait(item) => item.depth_first_iter_mut(f),
             Item::Impl(item) => item.depth_first_iter_mut(f),
-            Item::NamedFunction(item) => item.depth_first_iter_mut(f),
+            Item::Function(item) => item.depth_first_iter_mut(f),
             Item::Variable(item) => item.depth_first_iter_mut(f),
         }
     }

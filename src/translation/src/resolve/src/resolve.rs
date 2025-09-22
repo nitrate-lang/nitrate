@@ -9,7 +9,7 @@ use nitrate_parsetree::{
 
 use crate::{Symbol, SymbolTable, build_symbol_table};
 
-fn resolve_item_path(scope: &Vec<String>, path: &mut ItemPath, symbol_table: &SymbolTable) {
+fn resolve_item_path(scope: &Vec<String>, path: &mut ItemPath, _symbol_table: &SymbolTable) {
     println!("Resolving item path in scope: {:?}", scope);
 
     if !matches!(path.to, ItemPathTarget::Unresolved) {
@@ -20,13 +20,37 @@ fn resolve_item_path(scope: &Vec<String>, path: &mut ItemPath, symbol_table: &Sy
 }
 
 fn resolve_expr_path(scope: &Vec<String>, path: &mut ExprPath, symbol_table: &SymbolTable) {
-    println!("Resolving expr path in scope: {:?}", scope);
-
     if !matches!(path.to, ExprPathTarget::Unresolved) {
         return;
     }
 
-    // TODO: Resolve the expr path
+    let pathname = path
+        .segments
+        .iter()
+        .map(|seg| seg.identifier.clone())
+        .collect::<Vec<_>>()
+        .join("::");
+
+    let mut scope = scope.to_owned();
+
+    while !scope.is_empty() {
+        let candidate = format!("{}::{}", scope.join("::"), pathname);
+
+        if let Some(ty) = symbol_table.get(&candidate) {
+            match ty.to_owned() {
+                Symbol::TypeAlias(sym) => path.to = ExprPathTarget::TypeAlias(Arc::downgrade(sym)),
+                Symbol::Struct(sym) => path.to = ExprPathTarget::Struct(Arc::downgrade(sym)),
+                Symbol::Enum(sym) => path.to = ExprPathTarget::Enum(Arc::downgrade(sym)),
+                Symbol::Function(sym) => path.to = ExprPathTarget::Function(Arc::downgrade(sym)),
+                Symbol::Variable(sym) => path.to = ExprPathTarget::Variable(Arc::downgrade(sym)),
+                _ => {}
+            }
+
+            return;
+        }
+
+        scope.pop();
+    }
 }
 
 fn resolve_type_path(scope: &Vec<String>, path: &mut TypePath, symbol_table: &SymbolTable) {

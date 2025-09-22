@@ -89,7 +89,7 @@ pub struct Struct {
     pub name: TypeNameId,
     pub type_params: Option<Vec<GenericParameter>>,
     pub fields: Vec<StructField>,
-    pub methods: Vec<Arc<RwLock<NamedFunction>>>,
+    pub methods: Vec<Arc<RwLock<Function>>>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -115,7 +115,7 @@ pub enum AssociatedItem {
     SyntaxError(ItemSyntaxError),
     TypeAlias(Arc<RwLock<TypeAlias>>),
     ConstantItem(Arc<RwLock<Variable>>),
-    Method(Arc<RwLock<NamedFunction>>),
+    Method(Arc<RwLock<Function>>),
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -153,7 +153,7 @@ pub struct FunctionParameter {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct NamedFunction {
+pub struct Function {
     pub visibility: Option<Visibility>,
     pub attributes: Option<Vec<Expr>>,
     pub name: FunctionNameId,
@@ -163,7 +163,7 @@ pub struct NamedFunction {
     pub definition: Option<Block>,
 }
 
-impl NamedFunction {
+impl Function {
     #[must_use]
     pub fn is_definition(&self) -> bool {
         self.definition.is_some()
@@ -205,7 +205,7 @@ pub enum Item {
     Enum(Arc<RwLock<Enum>>),
     Trait(Arc<RwLock<Trait>>),
     Impl(Box<Impl>),
-    NamedFunction(Arc<RwLock<NamedFunction>>),
+    Function(Arc<RwLock<Function>>),
     Variable(Arc<RwLock<Variable>>),
 }
 
@@ -221,7 +221,7 @@ impl std::fmt::Debug for Item {
             Item::Enum(e) => e.fmt(f),
             Item::Trait(e) => e.fmt(f),
             Item::Impl(e) => e.fmt(f),
-            Item::NamedFunction(e) => e.fmt(f),
+            Item::Function(e) => e.fmt(f),
             Item::Variable(e) => e.fmt(f),
         }
     }

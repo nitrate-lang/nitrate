@@ -1,6 +1,6 @@
 use nitrate_parsetree::{
     Order, ParseTreeIter, RefNode,
-    kind::{Enum, Module, NamedFunction, Struct, Trait, TypeAlias, Variable},
+    kind::{Enum, Function, Module, Struct, Trait, TypeAlias, Variable},
 };
 
 use std::collections::HashMap;
@@ -12,7 +12,7 @@ pub enum Symbol {
     Struct(Arc<RwLock<Struct>>),
     Enum(Arc<RwLock<Enum>>),
     Trait(Arc<RwLock<Trait>>),
-    NamedFunction(Arc<RwLock<NamedFunction>>),
+    Function(Arc<RwLock<Function>>),
     Variable(Arc<RwLock<Variable>>),
 }
 
@@ -42,9 +42,9 @@ fn symbol_table_add(symbol_table: &mut SymbolTable, scope_vec: &Vec<String>, nod
             .entry(qualify_name(&scope_vec, &sym.read().unwrap().name))
             .or_insert_with(|| Symbol::Trait(Arc::clone(sym))),
 
-        RefNode::ItemNamedFunction(sym) => symbol_table
+        RefNode::ItemFunction(sym) => symbol_table
             .entry(qualify_name(&scope_vec, &sym.read().unwrap().name))
-            .or_insert_with(|| Symbol::NamedFunction(Arc::clone(sym))),
+            .or_insert_with(|| Symbol::Function(Arc::clone(sym))),
 
         RefNode::ItemVariable(sym) => symbol_table
             .entry(qualify_name(&scope_vec, &sym.read().unwrap().name))

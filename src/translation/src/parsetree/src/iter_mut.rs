@@ -8,8 +8,8 @@ use crate::{
         UnaryExpr, WhileLoop,
     },
     item::{
-        Enum, EnumVariant, FunctionParameter, GenericParameter, Impl, Import, ItemPath, Module,
-        NamedFunction, Package, Struct, StructField, Trait, TypeAlias, Variable,
+        Enum, EnumVariant, Function, FunctionParameter, GenericParameter, Impl, Import, ItemPath,
+        Module, Package, Struct, StructField, Trait, TypeAlias, Variable,
     },
     iter::Order,
     tag::OpaqueTypeNameId,
@@ -103,6 +103,6 @@ pub enum RefNodeMut<'a> {
     ItemTrait(&'a mut Arc<RwLock<Trait>>),
     ItemImpl(&'a mut Impl),
     ItemFunctionParameter(&'a mut FunctionParameter),
-    ItemNamedFunction(&'a mut Arc<RwLock<NamedFunction>>),
+    ItemFunction(&'a mut Arc<RwLock<Function>>),
     ItemVariable(&'a mut Arc<RwLock<Variable>>),
 }
