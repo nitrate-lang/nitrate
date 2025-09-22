@@ -1,6 +1,7 @@
 use nitrate_parsetree::{
     Order, ParseTreeIter, RefNode,
     kind::{Enum, Function, Module, Struct, Trait, TypeAlias, Variable},
+    tag::ModuleNameId,
 };
 
 use std::collections::HashMap;
@@ -16,15 +17,26 @@ pub enum Symbol {
     Variable(Arc<RwLock<Variable>>),
 }
 
-pub fn qualify_name(scope: &[String], name: &str) -> String {
-    let mut qualified_name = scope.to_vec();
-    qualified_name.push(name.to_string());
-    qualified_name.join("::")
+fn qualify_name(scope: &[ModuleNameId], name: &str) -> SymbolName {
+    let length = scope.iter().map(|s| s.len() + 2).sum::<usize>() + name.len();
+    let mut qualified = String::with_capacity(length);
+
+    for module in scope {
+        qualified.push_str(&module);
+        qualified.push_str("::");
+    }
+
+    qualified.push_str(name);
+
+    SymbolName(qualified)
 }
 
-pub type SymbolTable<'a> = HashMap<String, Symbol>;
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct SymbolName(pub String);
 
-fn symbol_table_add(symbol_table: &mut SymbolTable, scope_vec: &Vec<String>, node: &RefNode) {
+pub type SymbolTable<'a> = HashMap<SymbolName, Symbol>;
+
+fn symbol_table_add(symbol_table: &mut SymbolTable, scope_vec: &Vec<ModuleNameId>, node: &RefNode) {
     match node {
         RefNode::ItemTypeAlias(sym) => symbol_table
             .entry(qualify_name(&scope_vec, &sym.read().unwrap().name))
@@ -62,7 +74,7 @@ pub fn build_symbol_table(module: &mut Module) -> SymbolTable {
         if let RefNode::ItemModule(module) = node {
             match order {
                 Order::Enter => {
-                    scope_vec.push(module.name.to_string());
+                    scope_vec.push(module.name.clone());
                 }
 
                 Order::Leave => {

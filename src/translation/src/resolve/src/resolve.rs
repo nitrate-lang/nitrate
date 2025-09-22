@@ -1,16 +1,17 @@
-use std::sync::Arc;
+use crate::{Symbol, SymbolName, SymbolTable, build_symbol_table};
 
 use nitrate_diagnosis::DiagnosticCollector;
-
 use nitrate_parsetree::{
     Order, ParseTreeIterMut, RefNodeMut,
     kind::{ExprPath, ExprPathTarget, ItemPath, Module, TypePath, TypePathTarget},
 };
 
-use crate::{Symbol, SymbolTable, build_symbol_table};
+use std::sync::Arc;
 
 fn resolve_item_path(_scope: &Vec<String>, _path: &mut ItemPath, _symbol_table: &SymbolTable) {
-    // TODO: Resolve the path
+    // https://doc.rust-lang.org/reference/paths.html#r-paths.simple.intro
+
+    // TODO: Resolve imports here?
 }
 
 fn resolve_expr_path(scope: &Vec<String>, path: &mut ExprPath, symbol_table: &SymbolTable) {
@@ -26,7 +27,7 @@ fn resolve_expr_path(scope: &Vec<String>, path: &mut ExprPath, symbol_table: &Sy
     while !scope.is_empty() {
         let candidate = format!("{}::{}", scope.join("::"), pathname);
 
-        if let Some(ty) = symbol_table.get(&candidate) {
+        if let Some(ty) = symbol_table.get(&SymbolName(candidate)) {
             match ty.to_owned() {
                 Symbol::TypeAlias(sym) => path.to = ExprPathTarget::TypeAlias(Arc::downgrade(sym)),
                 Symbol::Struct(sym) => path.to = ExprPathTarget::Struct(Arc::downgrade(sym)),
@@ -56,7 +57,7 @@ fn resolve_type_path(scope: &Vec<String>, path: &mut TypePath, symbol_table: &Sy
     while !scope.is_empty() {
         let candidate = format!("{}::{}", scope.join("::"), pathname);
 
-        if let Some(ty) = symbol_table.get(&candidate) {
+        if let Some(ty) = symbol_table.get(&SymbolName(candidate)) {
             match ty.to_owned() {
                 Symbol::TypeAlias(sym) => path.to = TypePathTarget::TypeAlias(Arc::downgrade(sym)),
                 Symbol::Struct(sym) => path.to = TypePathTarget::Struct(Arc::downgrade(sym)),
