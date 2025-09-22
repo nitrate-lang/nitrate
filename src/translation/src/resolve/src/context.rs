@@ -65,7 +65,11 @@ pub fn resolve(mut module: Module, _bugs: &DiagnosticCollector) -> Module {
                     name_scope.pop();
                 }
             }
-        } else if let RefNodeMut::ExprPath(path) = node {
+
+            return;
+        }
+
+        if let RefNodeMut::ExprPath(path) = node {
             // TODO: Resolve the path here.
         }
 

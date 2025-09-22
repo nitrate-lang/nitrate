@@ -408,7 +408,7 @@ impl Parser<'_, '_> {
                 let bug = SyntaxErr::TraitDoesNotAllowItem(self.lexer.peek_pos());
                 self.bugs.push(&bug);
 
-                AssociatedItem::SyntaxError
+                AssociatedItem::SyntaxError(ItemSyntaxError)
             }
         }
     }

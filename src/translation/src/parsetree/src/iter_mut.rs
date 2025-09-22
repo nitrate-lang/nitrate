@@ -7,8 +7,8 @@ use crate::{
         If, IndexAccess, List, Object, Path, Return, Switch, UnaryExpr, WhileLoop,
     },
     item::{
-        Enum, GenericParameter, Impl, Import, Module, NamedFunction, Package, Struct, StructField,
-        Trait, TypeAlias, Variable,
+        Enum, EnumVariant, FunctionParameter, GenericParameter, Impl, Import, Module,
+        NamedFunction, Package, Struct, StructField, Trait, TypeAlias, Variable,
     },
     tag::{OpaqueTypeNameId, StringLiteralId},
     ty::{
@@ -92,9 +92,11 @@ pub enum RefNodeMut<'a> {
     ItemTypeAlias(&'a mut TypeAlias),
     ItemStructField(&'a mut StructField),
     ItemStruct(&'a mut Struct),
+    ItemEnumVariant(&'a mut EnumVariant),
     ItemEnum(&'a mut Enum),
     ItemTrait(&'a mut Trait),
     ItemImpl(&'a mut Impl),
+    ItemFunctionParameter(&'a mut FunctionParameter),
     ItemNamedFunction(&'a mut NamedFunction),
     ItemVariable(&'a mut Variable),
 }
