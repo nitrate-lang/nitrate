@@ -1,15 +1,14 @@
-use std::{
-    collections::HashMap,
-    sync::{Arc, RwLock},
-};
-
 use nitrate_diagnosis::{
     DiagnosticCollector, DiagnosticGroupId, DiagnosticInfo, FormattableDiagnosticGroup,
 };
+
 use nitrate_parsetree::{
-    Order, ParseTreeIterMut, RefNodeMut,
+    Order, ParseTreeIter, RefNode,
     kind::{Enum, Item, Module, NamedFunction, Path, Struct, Trait, TypeAlias, Variable},
 };
+
+use std::collections::HashMap;
+use std::sync::{Arc, RwLock};
 
 pub enum ResolveIssue {
     NotFound(Path),
@@ -74,29 +73,29 @@ fn qualify_name(scope: &[String], name: &str) -> Vec<String> {
 
 type SymbolTable<'a> = HashMap<Vec<String>, Symbol>;
 
-fn symbol_table_add(symbol_table: &mut SymbolTable, scope_vec: &Vec<String>, node: &RefNodeMut) {
+fn symbol_table_add(symbol_table: &mut SymbolTable, scope_vec: &Vec<String>, node: &RefNode) {
     match node {
-        RefNodeMut::ItemTypeAlias(sym) => symbol_table
+        RefNode::ItemTypeAlias(sym) => symbol_table
             .entry(qualify_name(&scope_vec, &sym.read().unwrap().name))
             .or_insert_with(|| Symbol::TypeAlias(Arc::clone(sym))),
 
-        RefNodeMut::ItemStruct(sym) => symbol_table
+        RefNode::ItemStruct(sym) => symbol_table
             .entry(qualify_name(&scope_vec, &sym.read().unwrap().name))
             .or_insert_with(|| Symbol::Struct(Arc::clone(sym))),
 
-        RefNodeMut::ItemEnum(sym) => symbol_table
+        RefNode::ItemEnum(sym) => symbol_table
             .entry(qualify_name(&scope_vec, &sym.read().unwrap().name))
             .or_insert_with(|| Symbol::Enum(Arc::clone(sym))),
 
-        RefNodeMut::ItemTrait(sym) => symbol_table
+        RefNode::ItemTrait(sym) => symbol_table
             .entry(qualify_name(&scope_vec, &sym.read().unwrap().name))
             .or_insert_with(|| Symbol::Trait(Arc::clone(sym))),
 
-        RefNodeMut::ItemNamedFunction(sym) => symbol_table
+        RefNode::ItemNamedFunction(sym) => symbol_table
             .entry(qualify_name(&scope_vec, &sym.read().unwrap().name))
             .or_insert_with(|| Symbol::NamedFunction(Arc::clone(sym))),
 
-        RefNodeMut::ItemVariable(sym) => symbol_table
+        RefNode::ItemVariable(sym) => symbol_table
             .entry(qualify_name(&scope_vec, &sym.read().unwrap().name))
             .or_insert_with(|| Symbol::Variable(Arc::clone(sym))),
 
@@ -108,8 +107,8 @@ fn build_symbol_table(module: &mut Module) -> SymbolTable {
     let mut symbol_table = SymbolTable::new();
     let mut scope_vec = Vec::new();
 
-    module.depth_first_iter_mut(&mut |order, node| {
-        if let RefNodeMut::ItemModule(module) = node {
+    module.depth_first_iter(&mut |order, node| {
+        if let RefNode::ItemModule(module) = node {
             match order {
                 Order::Pre => {
                     scope_vec.push(module.name.to_string());
