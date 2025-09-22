@@ -103,6 +103,7 @@ pub enum RefNodeMut<'a> {
     ItemVariable(&'a mut Variable),
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Order {
     Pre,
     Post,

@@ -69,11 +69,18 @@ pub fn resolve(mut module: Module, _bugs: &DiagnosticCollector) -> Module {
             return;
         }
 
-        if let RefNodeMut::ExprPath(path) = node {
-            // TODO: Resolve the path here.
+        if order != Order::Pre {
+            return;
         }
 
-        println!("Current scope: {}", name_scope.join("::"));
+        if let RefNodeMut::ExprPath(path) = node {
+            println!(
+                "Scope={}\t\tPath={}",
+                name_scope.join("::"),
+                path.path.join("::")
+            );
+            // TODO: Resolve the path here.
+        }
     });
 
     module
