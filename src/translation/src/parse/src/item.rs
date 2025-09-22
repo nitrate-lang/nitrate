@@ -147,11 +147,11 @@ impl Parser<'_, '_> {
         }
 
         while !self.lexer.is_eof() {
-            let segment = self.lexer.next_if_name().unwrap_or_else(|| {
-                let bug = SyntaxErr::PathIsEmpty(self.lexer.peek_pos());
+            let Some(segment) = self.lexer.next_if_name() else {
+                let bug = SyntaxErr::PathExpectedName(self.lexer.peek_pos());
                 self.bugs.push(&bug);
-                "".into()
-            });
+                break;
+            };
 
             segments.push(SimplePathSegment { segment });
 

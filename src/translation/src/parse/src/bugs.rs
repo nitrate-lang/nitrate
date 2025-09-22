@@ -43,11 +43,11 @@ pub(crate) enum SyntaxErr {
     ImplItemLimit(SourcePosition),
 
     
-    PathIsEmpty(SourcePosition),
-    PathUnexpectedScopeSeparator(SourcePosition),
-    PathTrailingScopeSeparator(SourcePosition),
     PathGenericArgumentExpectedEnd(SourcePosition),
     PathGenericArgumentLimit(SourcePosition),
+    PathExpectedNameOrSeparator(SourcePosition),
+    PathSegmentLimit(SourcePosition),
+    PathExpectedName(SourcePosition),
 
     ReferenceTypeExpectedLifetimeName(SourcePosition),
 
@@ -146,11 +146,11 @@ impl FormattableDiagnosticGroup for SyntaxErr {
             SyntaxErr::ImplExpectedEnd(_) => 201,
             SyntaxErr::ImplItemLimit(_) => 202,
 
-            SyntaxErr::PathIsEmpty(_) => 220,
-            SyntaxErr::PathTrailingScopeSeparator(_) => 221,
             SyntaxErr::PathGenericArgumentExpectedEnd(_) => 222,
             SyntaxErr::PathGenericArgumentLimit(_) => 223,
-            SyntaxErr::PathUnexpectedScopeSeparator(_) => 224,
+            SyntaxErr::PathExpectedNameOrSeparator(_) => 224,
+            SyntaxErr::PathSegmentLimit(_) => 225,
+            SyntaxErr::PathExpectedName(_) => 226,
 
             SyntaxErr::ReferenceTypeExpectedLifetimeName(_) => 240,
 
@@ -365,21 +365,6 @@ impl FormattableDiagnosticGroup for SyntaxErr {
 
             /* ------------------------------------------------------------------------- */
 
-            SyntaxErr::PathIsEmpty(pos) => DiagnosticInfo {
-                origin: Origin::Point(pos.to_owned().into()),
-                message: "path is empty".into(),
-            },
-
-            SyntaxErr::PathUnexpectedScopeSeparator(pos) => DiagnosticInfo {
-                origin: Origin::Point(pos.to_owned().into()),
-                message: "unexpected '::' in path".into(),
-            },
-
-            SyntaxErr::PathTrailingScopeSeparator(pos) => DiagnosticInfo {
-                origin: Origin::Point(pos.to_owned().into()),
-                message: "trailing '::' in path".into(),
-            },
-
             SyntaxErr::PathGenericArgumentExpectedEnd(pos) => DiagnosticInfo {
                 origin: Origin::Point(pos.to_owned().into()),
                 message: "expected '>' or ',' in generic arguments".into(),
@@ -388,6 +373,21 @@ impl FormattableDiagnosticGroup for SyntaxErr {
             SyntaxErr::PathGenericArgumentLimit(pos) => DiagnosticInfo {
                 origin: Origin::Point(pos.to_owned().into()),
                 message: "generic argument limit of 65,536 exceeded".into(),
+            },
+
+            SyntaxErr::PathExpectedNameOrSeparator(pos) => DiagnosticInfo {
+                origin: Origin::Point(pos.to_owned().into()),
+                message: "expected identifier or '::' in path".into(),
+            },
+
+            SyntaxErr::PathSegmentLimit(pos) => DiagnosticInfo {
+                origin: Origin::Point(pos.to_owned().into()),
+                message: "path segment limit of 65,536 exceeded".into(),
+            },
+
+            SyntaxErr::PathExpectedName(pos) => DiagnosticInfo {
+                origin: Origin::Point(pos.to_owned().into()),
+                message: "path segment name is missing".into(),
             },
 
             /* ------------------------------------------------------------------------- */

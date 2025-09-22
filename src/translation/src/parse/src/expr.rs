@@ -612,7 +612,7 @@ impl Parser<'_, '_> {
         Some(attributes)
     }
 
-    pub(crate) fn parse_generic_arguments(&mut self) -> Vec<TypeArgument> {
+    pub(crate) fn parse_generic_arguments(&mut self) -> Option<Vec<TypeArgument>> {
         fn parse_generic_argument(this: &mut Parser) -> TypeArgument {
             let mut name = None;
 
@@ -631,7 +631,7 @@ impl Parser<'_, '_> {
         }
 
         if !self.lexer.skip_if(&Token::Lt) {
-            return Vec::new();
+            return None;
         }
 
         let mut arguments = Vec::new();
@@ -667,73 +667,90 @@ impl Parser<'_, '_> {
             }
         }
 
-        arguments
+        Some(arguments)
     }
 
     pub(crate) fn parse_path(&mut self) -> Path {
-        // TODO: Cleanup
+        fn parse_double_colon(this: &mut Parser) -> bool {
+            if !this.lexer.skip_if(&Token::Colon) {
+                return false;
+            }
+
+            if !this.lexer.skip_if(&Token::Colon) {
+                let bug = SyntaxErr::ExpectedColon(this.lexer.peek_pos());
+                this.bugs.push(&bug);
+                return false;
+            }
+
+            true
+        }
 
         assert!(matches!(self.lexer.peek_t(), Token::Name(_) | Token::Colon));
 
-        let mut path = Vec::new();
-        let mut last_was_scope = false;
+        let mut segments = Vec::new();
+        let mut prev_scope = false;
+        let mut already_reported_too_many_segments = false;
 
-        loop {
-            match self.lexer.peek_t() {
-                Token::Name(name) => {
-                    if !last_was_scope && !path.is_empty() {
-                        break;
-                    }
+        if parse_double_colon(self) {
+            prev_scope = true;
 
-                    self.lexer.skip_tok();
+            let type_arguments = self.parse_generic_arguments();
+            if type_arguments.is_some() {
+                prev_scope = parse_double_colon(self);
+            }
 
-                    path.push(PathExprSegment {
-                        identifier: name,
-                        type_arguments: None,
-                    });
-                    last_was_scope = false;
+            segments.push(PathExprSegment {
+                identifier: "".into(),
+                type_arguments,
+            });
+        }
+
+        while prev_scope || segments.is_empty() {
+            if self.lexer.is_eof() {
+                let bug = SyntaxErr::PathExpectedNameOrSeparator(self.lexer.peek_pos());
+                self.bugs.push(&bug);
+                break;
+            }
+
+            const MAX_PATH_SEGMENTS: usize = 65_536;
+            if !already_reported_too_many_segments && segments.len() >= MAX_PATH_SEGMENTS {
+                already_reported_too_many_segments = true;
+
+                let bug = SyntaxErr::PathSegmentLimit(self.lexer.peek_pos());
+                self.bugs.push(&bug);
+            }
+
+            let Some(identifier) = self.lexer.next_if_name() else {
+                let bug = SyntaxErr::PathExpectedName(self.lexer.peek_pos());
+                self.bugs.push(&bug);
+                break;
+            };
+
+            prev_scope = parse_double_colon(self);
+
+            if prev_scope {
+                let type_arguments = self.parse_generic_arguments();
+                if type_arguments.is_some() {
+                    prev_scope = parse_double_colon(self);
                 }
 
-                Token::Colon => {
-                    self.lexer.skip_tok();
-                    if !self.lexer.skip_if(&Token::Colon) {
-                        last_was_scope = false;
-                        break;
-                    }
+                segments.push(PathExprSegment {
+                    identifier,
+                    type_arguments,
+                });
+            } else {
+                segments.push(PathExprSegment {
+                    identifier,
+                    type_arguments: None,
+                });
 
-                    if last_was_scope {
-                        let bug = SyntaxErr::PathUnexpectedScopeSeparator(self.lexer.peek_pos());
-                        self.bugs.push(&bug);
-                        break;
-                    }
-
-                    if path.is_empty() {
-                        path.push(PathExprSegment {
-                            identifier: "".into(),
-                            type_arguments: None,
-                        });
-                    }
-
-                    last_was_scope = true;
-                }
-
-                _ => break,
+                break;
             }
         }
 
-        if path.is_empty() {
-            let bug = SyntaxErr::PathIsEmpty(self.lexer.peek_pos());
-            self.bugs.push(&bug);
-        }
+        assert_ne!(segments.len(), 0);
 
-        if last_was_scope {
-            let bug = SyntaxErr::PathTrailingScopeSeparator(self.lexer.peek_pos());
-            self.bugs.push(&bug);
-        }
-
-        // TODO: Support generic type arguments in paths
-
-        Path { segments: path }
+        Path { segments }
     }
 
     fn parse_type_info(&mut self) -> Type {
