@@ -5,7 +5,7 @@ use nitrate_parsetree::{
     kind::{
         Await, BStringLit, BinExpr, BinExprOp, Block, BlockItem, Bool, BooleanLit, Break, Call,
         CallArgument, Cast, Closure, Continue, DoWhileLoop, Expr, ExprSyntaxError, Float8, Float16,
-        Float32, Float64, Float128, FloatLit, ForEach, FunctionParameter, GenericArgument, If,
+        Float32, Float64, Float128, FloatLit, ForEach, FunctionParameter, PathTypeArgument, If,
         IndexAccess, Int8, Int16, Int32, Int64, Int128, IntegerLit, List, Mutability, ExprParentheses,
         Path, Return, Safety, StringLit, Type, TypeInfo, TypeName, UInt8, UInt16, UInt32, UInt64,
         UInt128, UnaryExpr, UnaryExprOp, WhileLoop,
@@ -610,8 +610,8 @@ impl Parser<'_, '_> {
         Some(attributes)
     }
 
-    pub(crate) fn parse_generic_arguments(&mut self) -> Vec<GenericArgument> {
-        fn parse_generic_argument(this: &mut Parser) -> GenericArgument {
+    pub(crate) fn parse_generic_arguments(&mut self) -> Vec<PathTypeArgument> {
+        fn parse_generic_argument(this: &mut Parser) -> PathTypeArgument {
             let mut name = None;
 
             let rewind_pos = this.lexer.current_pos();
@@ -625,7 +625,7 @@ impl Parser<'_, '_> {
 
             let value = this.parse_type();
 
-            GenericArgument { name, value }
+            PathTypeArgument { name, value }
         }
 
         if !self.lexer.skip_if(&Token::Lt) {

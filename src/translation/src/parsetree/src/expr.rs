@@ -210,7 +210,7 @@ pub struct Closure {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct GenericArgument {
+pub struct PathTypeArgument {
     pub name: Option<ArgNameId>,
     pub value: Type,
 }
@@ -218,7 +218,7 @@ pub struct GenericArgument {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Path {
     pub path: Vec<String>,
-    pub type_arguments: Vec<GenericArgument>,
+    pub type_arguments: Vec<PathTypeArgument>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

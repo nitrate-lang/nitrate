@@ -1,6 +1,6 @@
 use crate::{
     Order, ParseTreeIterMut, RefNodeMut,
-    expr::{GenericArgument, Object, Switch, UnitLit},
+    expr::{Object, PathTypeArgument, Switch, UnitLit},
     kind::{
         Await, BStringLit, BinExpr, Block, BlockItem, BooleanLit, Break, Call, CallArgument, Cast,
         Closure, Continue, DoWhileLoop, Expr, ExprParentheses, ExprSyntaxError, FloatLit, ForEach,
@@ -181,21 +181,37 @@ impl ParseTreeIterMut for Closure {
     }
 }
 
-impl ParseTreeIterMut for GenericArgument {
+impl ParseTreeIterMut for PathTypeArgument {
     fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
-        // TODO: Traverse
+        f(Order::Pre, RefNodeMut::ExprPathTypeArgument(self));
+
+        let _ = self.name;
+        self.value.depth_first_iter_mut(f);
+
+        f(Order::Post, RefNodeMut::ExprPathTypeArgument(self));
     }
 }
 
 impl ParseTreeIterMut for Path {
     fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
-        // TODO: Traverse
+        f(Order::Pre, RefNodeMut::ExprPath(self));
+
+        for arg in &mut self.type_arguments {
+            arg.depth_first_iter_mut(f);
+        }
+
+        f(Order::Post, RefNodeMut::ExprPath(self));
     }
 }
 
 impl ParseTreeIterMut for IndexAccess {
     fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
-        // TODO: Traverse
+        f(Order::Pre, RefNodeMut::ExprIndexAccess(self));
+
+        self.collection.depth_first_iter_mut(f);
+        self.index.depth_first_iter_mut(f);
+
+        f(Order::Post, RefNodeMut::ExprIndexAccess(self));
     }
 }
 
