@@ -197,11 +197,18 @@ impl ParseTreeIterMut for SliceType {
 
 impl ParseTreeIterMut for FunctionTypeParameter {
     fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
-        // f(Order::Pre, RefNodeMut::TypeFunctionTypeParameter(self));
+        f(Order::Pre, RefNodeMut::TypeFunctionTypeParameter(self));
 
-        // TODO: Traverse
+        if let Some(attrs) = &mut self.attributes {
+            for attr in attrs {
+                attr.depth_first_iter_mut(f);
+            }
+        }
 
-        // f(Order::Post, RefNodeMut::TypeFunctionTypeParameter(self));
+        self.param_type.depth_first_iter_mut(f);
+        self.default.as_mut().map(|d| d.depth_first_iter_mut(f));
+
+        f(Order::Post, RefNodeMut::TypeFunctionTypeParameter(self));
     }
 }
 
@@ -209,7 +216,19 @@ impl ParseTreeIterMut for FunctionType {
     fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
         f(Order::Pre, RefNodeMut::TypeFunctionType(self));
 
-        // TODO: Traverse children
+        if let Some(attrs) = &mut self.attributes {
+            for attr in attrs {
+                attr.depth_first_iter_mut(f);
+            }
+        }
+
+        for param in &mut self.parameters {
+            param.depth_first_iter_mut(f);
+        }
+
+        if let Some(ret_ty) = &mut self.return_type {
+            ret_ty.depth_first_iter_mut(f);
+        }
 
         f(Order::Post, RefNodeMut::TypeFunctionType(self));
     }

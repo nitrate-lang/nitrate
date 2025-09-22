@@ -1,6 +1,6 @@
 use crate::{
     kind::{Block, Expr, Path},
-    tag::{ArgNameId, LifetimeNameId, OpaqueTypeNameId, ParameterNameId},
+    tag::{LifetimeNameId, OpaqueTypeNameId, ParameterNameId},
 };
 
 use serde::{Deserialize, Serialize};

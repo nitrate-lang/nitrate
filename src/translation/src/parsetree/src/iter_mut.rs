@@ -9,8 +9,8 @@ use crate::{
     item::{Enum, Impl, Import, Module, NamedFunction, Struct, Trait, TypeAlias, Variable},
     tag::{OpaqueTypeNameId, StringLiteralId},
     ty::{
-        ArrayType, FunctionType, Lifetime, ReferenceType, RefinementType, SliceType, TupleType,
-        Type,
+        ArrayType, FunctionType, FunctionTypeParameter, Lifetime, ReferenceType, RefinementType,
+        SliceType, TupleType, Type,
     },
 };
 
@@ -73,6 +73,7 @@ pub enum RefNodeMut<'a> {
     TypeTupleType(&'a mut TupleType),
     TypeArrayType(&'a mut ArrayType),
     TypeSliceType(&'a mut SliceType),
+    TypeFunctionTypeParameter(&'a mut FunctionTypeParameter),
     TypeFunctionType(&'a mut FunctionType),
     TypeReferenceType(&'a mut ReferenceType),
     TypeOpaqueType(&'a mut OpaqueTypeNameId),
