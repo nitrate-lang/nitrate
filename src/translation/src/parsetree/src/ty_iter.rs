@@ -154,9 +154,18 @@ impl ParseTreeIterMut for RefinementType {
         f(Order::Pre, RefNodeMut::TypeRefinementType(self));
 
         self.basis_type.depth_first_iter_mut(f);
-        self.width.as_mut().map(|w| w.depth_first_iter_mut(f));
-        self.minimum.as_mut().map(|m| m.depth_first_iter_mut(f));
-        self.maximum.as_mut().map(|m| m.depth_first_iter_mut(f));
+
+        if let Some(width) = &mut self.width {
+            width.depth_first_iter_mut(f);
+        }
+
+        if let Some(minimum) = &mut self.minimum {
+            minimum.depth_first_iter_mut(f);
+        }
+
+        if let Some(maximum) = &mut self.maximum {
+            maximum.depth_first_iter_mut(f);
+        }
 
         f(Order::Post, RefNodeMut::TypeRefinementType(self));
     }
@@ -208,7 +217,10 @@ impl ParseTreeIterMut for FunctionTypeParameter {
         }
 
         self.param_type.depth_first_iter_mut(f);
-        self.default.as_mut().map(|d| d.depth_first_iter_mut(f));
+
+        if let Some(default) = &mut self.default {
+            default.depth_first_iter_mut(f);
+        }
 
         f(Order::Post, RefNodeMut::TypeFunctionTypeParameter(self));
     }
@@ -250,7 +262,10 @@ impl ParseTreeIterMut for ReferenceType {
         let _ = self.mutability;
         let _ = self.exclusive;
 
-        self.lifetime.as_mut().map(|lt| lt.depth_first_iter_mut(f));
+        if let Some(lt) = &mut self.lifetime {
+            lt.depth_first_iter_mut(f);
+        }
+
         self.to.depth_first_iter_mut(f);
 
         f(Order::Post, RefNodeMut::TypeReferenceType(self));
