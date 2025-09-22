@@ -70,7 +70,10 @@ impl ParseTreeIterMut for GenericParameter {
         f(Order::Pre, RefNodeMut::ItemGenericParameter(self));
 
         let _ = self.name;
-        self.default.as_mut().map(|ty| ty.depth_first_iter_mut(f));
+
+        if let Some(default_val) = &mut self.default {
+            default_val.depth_first_iter_mut(f);
+        }
 
         f(Order::Post, RefNodeMut::ItemGenericParameter(self));
     }
@@ -95,9 +98,9 @@ impl ParseTreeIterMut for TypeAlias {
             }
         }
 
-        self.alias_type
-            .as_mut()
-            .map(|ty| ty.depth_first_iter_mut(f));
+        if let Some(alias_type) = &mut self.alias_type {
+            alias_type.depth_first_iter_mut(f);
+        }
 
         f(Order::Post, RefNodeMut::ItemTypeAlias(self));
     }
@@ -117,7 +120,10 @@ impl ParseTreeIterMut for StructField {
         }
 
         self.field_type.depth_first_iter_mut(f);
-        self.default.as_mut().map(|e| e.depth_first_iter_mut(f));
+
+        if let Some(default) = &mut self.default {
+            default.depth_first_iter_mut(f);
+        }
 
         f(Order::Post, RefNodeMut::ItemStructField(self));
     }
@@ -167,10 +173,13 @@ impl ParseTreeIterMut for EnumVariant {
             }
         }
 
-        self.variant_type
-            .as_mut()
-            .map(|ty| ty.depth_first_iter_mut(f));
-        self.value.as_mut().map(|e| e.depth_first_iter_mut(f));
+        if let Some(variant_type) = &mut self.variant_type {
+            variant_type.depth_first_iter_mut(f);
+        }
+
+        if let Some(value) = &mut self.value {
+            value.depth_first_iter_mut(f);
+        }
 
         f(Order::Post, RefNodeMut::ItemEnumVariant(self));
     }
@@ -259,7 +268,10 @@ impl ParseTreeIterMut for Impl {
             }
         }
 
-        self.trait_path.as_mut().map(|p| p.depth_first_iter_mut(f));
+        if let Some(trait_path) = &mut self.trait_path {
+            trait_path.depth_first_iter_mut(f);
+        }
+
         self.for_type.depth_first_iter_mut(f);
 
         for associated_item in &mut self.items {
@@ -283,10 +295,13 @@ impl ParseTreeIterMut for FunctionParameter {
             }
         }
 
-        self.param_type
-            .as_mut()
-            .map(|ty| ty.depth_first_iter_mut(f));
-        self.default.as_mut().map(|e| e.depth_first_iter_mut(f));
+        if let Some(param_type) = &mut self.param_type {
+            param_type.depth_first_iter_mut(f);
+        }
+
+        if let Some(default) = &mut self.default {
+            default.depth_first_iter_mut(f);
+        }
 
         f(Order::Post, RefNodeMut::ItemFunctionParameter(self));
     }
@@ -315,11 +330,13 @@ impl ParseTreeIterMut for NamedFunction {
             param.depth_first_iter_mut(f);
         }
 
-        self.return_type
-            .as_mut()
-            .map(|ty| ty.depth_first_iter_mut(f));
+        if let Some(return_type) = &mut self.return_type {
+            return_type.depth_first_iter_mut(f);
+        }
 
-        self.definition.as_mut().map(|b| b.depth_first_iter_mut(f));
+        if let Some(definition) = &mut self.definition {
+            definition.depth_first_iter_mut(f);
+        }
 
         f(Order::Post, RefNodeMut::ItemNamedFunction(self));
     }
@@ -340,8 +357,13 @@ impl ParseTreeIterMut for Variable {
             }
         }
 
-        self.var_type.as_mut().map(|ty| ty.depth_first_iter_mut(f));
-        self.initializer.as_mut().map(|e| e.depth_first_iter_mut(f));
+        if let Some(var_type) = &mut self.var_type {
+            var_type.depth_first_iter_mut(f);
+        }
+
+        if let Some(initializer) = &mut self.initializer {
+            initializer.depth_first_iter_mut(f);
+        }
 
         f(Order::Post, RefNodeMut::ItemVariable(self));
     }
