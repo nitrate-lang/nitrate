@@ -8,11 +8,14 @@ use crate::{
 };
 
 use serde::{Deserialize, Serialize};
+use serde_with::skip_serializing_none;
 use std::sync::{Arc, RwLock};
 
+#[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ItemSyntaxError;
 
+#[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum Visibility {
     Public,
@@ -20,12 +23,14 @@ pub enum Visibility {
     Protected,
 }
 
+#[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Package {
     pub name: PackageNameId,
     pub root: Module,
 }
 
+#[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Module {
     pub visibility: Option<Visibility>,
@@ -34,22 +39,26 @@ pub struct Module {
     pub items: Vec<Item>,
 }
 
+#[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum ItemPathTarget {
     Unresolved,
 }
 
+#[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ItemPathSegment {
     pub segment: String,
 }
 
+#[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ItemPath {
     pub segments: Vec<ItemPathSegment>,
     pub to: ItemPathTarget,
 }
 
+#[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Import {
     pub visibility: Option<Visibility>,
@@ -58,12 +67,14 @@ pub struct Import {
     pub alias: Option<ImportAliasNameId>,
 }
 
+#[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GenericParameter {
     pub name: ParameterNameId,
     pub default: Option<Type>,
 }
 
+#[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TypeAlias {
     pub visibility: Option<Visibility>,
@@ -73,6 +84,7 @@ pub struct TypeAlias {
     pub alias_type: Option<Type>,
 }
 
+#[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct StructField {
     pub visibility: Option<Visibility>,
@@ -82,6 +94,7 @@ pub struct StructField {
     pub default: Option<Expr>,
 }
 
+#[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Struct {
     pub visibility: Option<Visibility>,
@@ -92,6 +105,7 @@ pub struct Struct {
     pub methods: Vec<Arc<RwLock<Function>>>,
 }
 
+#[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct EnumVariant {
     pub visibility: Option<Visibility>,
@@ -101,6 +115,7 @@ pub struct EnumVariant {
     pub value: Option<Expr>,
 }
 
+#[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Enum {
     pub visibility: Option<Visibility>,
@@ -110,6 +125,7 @@ pub struct Enum {
     pub variants: Vec<EnumVariant>,
 }
 
+#[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum AssociatedItem {
     SyntaxError(ItemSyntaxError),
@@ -118,6 +134,7 @@ pub enum AssociatedItem {
     Method(Arc<RwLock<Function>>),
 }
 
+#[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Trait {
     pub visibility: Option<Visibility>,
@@ -127,6 +144,7 @@ pub struct Trait {
     pub items: Vec<AssociatedItem>,
 }
 
+#[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Impl {
     pub visibility: Option<Visibility>,
@@ -137,12 +155,14 @@ pub struct Impl {
     pub items: Vec<AssociatedItem>,
 }
 
+#[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum Mutability {
     Mutable,
     Const,
 }
 
+#[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FunctionParameter {
     pub attributes: Option<Vec<Expr>>,
@@ -152,6 +172,7 @@ pub struct FunctionParameter {
     pub default: Option<Expr>,
 }
 
+#[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Function {
     pub visibility: Option<Visibility>,
@@ -175,6 +196,7 @@ impl Function {
     }
 }
 
+#[skip_serializing_none]
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 pub enum VariableKind {
     Static,
@@ -183,6 +205,7 @@ pub enum VariableKind {
     Var,
 }
 
+#[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Variable {
     pub visibility: Option<Visibility>,
@@ -194,6 +217,7 @@ pub struct Variable {
     pub initializer: Option<Expr>,
 }
 
+#[skip_serializing_none]
 #[derive(Clone, Serialize, Deserialize)]
 pub enum Item {
     SyntaxError(ItemSyntaxError),
