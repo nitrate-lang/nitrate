@@ -218,8 +218,8 @@ pub enum Safety {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Block {
     pub safety: Option<Safety>,
-    pub elements: Vec<BlockItem>,
     pub ends_with_semi: bool,
+    pub elements: Vec<BlockItem>,
 }
 
 #[skip_serializing_none]
