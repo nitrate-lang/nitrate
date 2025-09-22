@@ -11,7 +11,7 @@ use std::collections::HashMap;
 pub struct ExprSyntaxError;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Parentheses {
+pub struct ExprParentheses {
     pub inner: Expr,
 }
 
@@ -297,7 +297,7 @@ pub struct Call {
 pub enum Expr {
     SyntaxError(ExprSyntaxError),
 
-    Parentheses(Box<Parentheses>),
+    Parentheses(Box<ExprParentheses>),
 
     Boolean(BooleanLit),
     Integer(Box<IntegerLit>),

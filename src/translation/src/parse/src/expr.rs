@@ -6,7 +6,7 @@ use nitrate_parsetree::{
         Await, BStringLit, BinExpr, BinExprOp, Block, BlockItem, Bool, BooleanLit, Break, Call,
         CallArgument, Cast, Closure, Continue, DoWhileLoop, Expr, ExprSyntaxError, Float8, Float16,
         Float32, Float64, Float128, FloatLit, ForEach, FunctionParameter, GenericArgument, If,
-        IndexAccess, Int8, Int16, Int32, Int64, Int128, IntegerLit, List, Mutability, Parentheses,
+        IndexAccess, Int8, Int16, Int32, Int64, Int128, IntegerLit, List, Mutability, ExprParentheses,
         Path, Return, Safety, StringLit, Type, TypeInfo, TypeName, UInt8, UInt16, UInt32, UInt64,
         UInt128, UnaryExpr, UnaryExprOp, WhileLoop,
     },
@@ -415,7 +415,7 @@ impl Parser<'_, '_> {
                 self.bugs.push(&bug);
             }
 
-            return Expr::Parentheses(Box::new(Parentheses { inner }));
+            return Expr::Parentheses(Box::new(ExprParentheses { inner }));
         }
 
         self.parse_expression_primary()

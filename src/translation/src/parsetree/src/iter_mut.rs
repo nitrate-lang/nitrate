@@ -1,16 +1,14 @@
-use nitrate_tokenize::Integer;
-use ordered_float::NotNan;
-
 use crate::{
     expr::{
-        Await, BinExpr, Block, Break, Call, Cast, Closure, Continue, DoWhileLoop, Expr, ForEach,
-        If, IndexAccess, List, Object, Path, Return, Switch, UnaryExpr, WhileLoop,
+        Await, BStringLit, BinExpr, Block, BooleanLit, Break, Call, Cast, Closure, Continue,
+        DoWhileLoop, ExprParentheses, FloatLit, ForEach, If, IndexAccess, IntegerLit, List, Object,
+        Path, Return, StringLit, Switch, UnaryExpr, WhileLoop,
     },
     item::{
         Enum, EnumVariant, FunctionParameter, GenericParameter, Impl, Import, Module,
         NamedFunction, Package, Struct, StructField, Trait, TypeAlias, Variable,
     },
-    tag::{OpaqueTypeNameId, StringLiteralId},
+    tag::OpaqueTypeNameId,
     ty::{
         ArrayType, FunctionType, FunctionTypeParameter, Lifetime, ReferenceType, RefinementType,
         SliceType, TupleType, Type,
@@ -23,13 +21,13 @@ pub trait ParseTreeIterMut {
 
 pub enum RefNodeMut<'a> {
     ExprSyntaxError,
-    ExprParentheses(&'a mut Expr),
-    ExprBoolean(&'a mut bool),
-    ExprInteger(&'a mut Integer),
-    ExprFloat(&'a mut NotNan<f64>),
-    ExprString(&'a mut StringLiteralId),
-    ExprBString(&'a mut Vec<u8>),
-    ExprUnit,
+    ExprParentheses(&'a mut ExprParentheses),
+    ExprBooleanLit(&'a mut BooleanLit),
+    ExprIntegerLit(&'a mut IntegerLit),
+    ExprFloatLit(&'a mut FloatLit),
+    ExprStringLit(&'a mut StringLit),
+    ExprBStringLit(&'a mut BStringLit),
+    ExprUnitLit,
     ExprTypeInfo(&'a mut Type),
     ExprList(&'a mut List),
     ExprObject(&'a mut Object),

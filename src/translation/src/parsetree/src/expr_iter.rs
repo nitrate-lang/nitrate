@@ -3,56 +3,67 @@ use crate::{
     expr::{GenericArgument, Object, Switch, UnitLit},
     kind::{
         Await, BStringLit, BinExpr, Block, BlockItem, BooleanLit, Break, Call, CallArgument, Cast,
-        Closure, Continue, DoWhileLoop, Expr, ExprSyntaxError, FloatLit, ForEach, If, IndexAccess,
-        IntegerLit, List, Parentheses, Path, Return, StringLit, TypeInfo, UnaryExpr, WhileLoop,
+        Closure, Continue, DoWhileLoop, Expr, ExprParentheses, ExprSyntaxError, FloatLit, ForEach,
+        If, IndexAccess, IntegerLit, List, Path, Return, StringLit, TypeInfo, UnaryExpr, WhileLoop,
     },
 };
 
 impl ParseTreeIterMut for ExprSyntaxError {
     fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
-        // TODO: Traverse
+        f(Order::Pre, RefNodeMut::ExprSyntaxError);
+        f(Order::Post, RefNodeMut::ExprSyntaxError);
     }
 }
 
-impl ParseTreeIterMut for Parentheses {
+impl ParseTreeIterMut for ExprParentheses {
     fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
-        // TODO: Traverse
+        f(Order::Pre, RefNodeMut::ExprParentheses(self));
+
+        self.inner.depth_first_iter_mut(f);
+
+        f(Order::Post, RefNodeMut::ExprParentheses(self));
     }
 }
 
 impl ParseTreeIterMut for BooleanLit {
     fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
-        // TODO: Traverse
+        f(Order::Pre, RefNodeMut::ExprBooleanLit(self));
+        f(Order::Post, RefNodeMut::ExprBooleanLit(self));
     }
 }
 
 impl ParseTreeIterMut for IntegerLit {
     fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
-        // TODO: Traverse
+        f(Order::Pre, RefNodeMut::ExprIntegerLit(self));
+        f(Order::Post, RefNodeMut::ExprIntegerLit(self));
     }
 }
 
 impl ParseTreeIterMut for FloatLit {
     fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
-        // TODO: Traverse
+        f(Order::Pre, RefNodeMut::ExprFloatLit(self));
+        f(Order::Post, RefNodeMut::ExprFloatLit(self));
     }
 }
 
 impl ParseTreeIterMut for StringLit {
     fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
-        // TODO: Traverse
+        f(Order::Pre, RefNodeMut::ExprStringLit(self));
+        f(Order::Post, RefNodeMut::ExprStringLit(self));
     }
 }
 
 impl ParseTreeIterMut for BStringLit {
     fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
-        // TODO: Traverse
+        f(Order::Pre, RefNodeMut::ExprBStringLit(self));
+        f(Order::Post, RefNodeMut::ExprBStringLit(self));
     }
 }
 
 impl ParseTreeIterMut for UnitLit {
     fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
-        // TODO: Traverse
+        f(Order::Pre, RefNodeMut::ExprUnitLit);
+        f(Order::Post, RefNodeMut::ExprUnitLit);
     }
 }
 
