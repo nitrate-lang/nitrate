@@ -78,12 +78,11 @@ pub fn resolve(module: &mut Module, _bugs: &DiagnosticCollector) {
         }
 
         if let RefNodeMut::ExprPath(path) = node {
-            // TODO: Resolve the path using the symbol table.
             let _ = &symbol_table;
             let _ = &scope_vec;
             let _ = &path;
-        }
 
-        // TODO: Implement actual resolution logic.
+            // TODO: Resolve the path using the symbol table.
+        }
     });
 }

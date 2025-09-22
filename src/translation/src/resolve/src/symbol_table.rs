@@ -73,11 +73,11 @@ pub fn build_symbol_table(module: &mut Module) -> SymbolTable {
             return;
         }
 
-        // Only add symbols on pre-order traversal.
-        if order == Order::Enter {
-            symbol_table_add(&mut symbol_table, &scope_vec, &node);
+        if order != Order::Enter {
             return;
         }
+
+        symbol_table_add(&mut symbol_table, &scope_vec, &node);
     });
 
     symbol_table
