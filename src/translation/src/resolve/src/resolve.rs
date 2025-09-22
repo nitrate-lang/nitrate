@@ -4,26 +4,16 @@ use nitrate_diagnosis::DiagnosticCollector;
 
 use nitrate_parsetree::{
     Order, ParseTreeIterMut, RefNodeMut,
-    kind::{ExprPath, ExprPathTarget, ItemPath, ItemPathTarget, Module, TypePath, TypePathTarget},
+    kind::{ExprPath, ExprPathTarget, ItemPath, Module, TypePath, TypePathTarget},
 };
 
 use crate::{Symbol, SymbolTable, build_symbol_table};
 
-fn resolve_item_path(scope: &Vec<String>, path: &mut ItemPath, _symbol_table: &SymbolTable) {
-    println!("Resolving item path in scope: {:?}", scope);
-
-    if !matches!(path.to, ItemPathTarget::Unresolved) {
-        return;
-    }
-
+fn resolve_item_path(_scope: &Vec<String>, _path: &mut ItemPath, _symbol_table: &SymbolTable) {
     // TODO: Resolve the path
 }
 
 fn resolve_expr_path(scope: &Vec<String>, path: &mut ExprPath, symbol_table: &SymbolTable) {
-    if !matches!(path.to, ExprPathTarget::Unresolved) {
-        return;
-    }
-
     let pathname = path
         .segments
         .iter()
@@ -54,10 +44,6 @@ fn resolve_expr_path(scope: &Vec<String>, path: &mut ExprPath, symbol_table: &Sy
 }
 
 fn resolve_type_path(scope: &Vec<String>, path: &mut TypePath, symbol_table: &SymbolTable) {
-    if !matches!(path.to, TypePathTarget::Unresolved) {
-        return;
-    }
-
     let pathname = path
         .segments
         .iter()
