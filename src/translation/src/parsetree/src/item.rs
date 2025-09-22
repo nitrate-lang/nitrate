@@ -35,6 +35,11 @@ pub struct Module {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum ItemPathTarget {
+    Unresolved,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ItemPathSegment {
     pub segment: String,
 }
@@ -42,6 +47,7 @@ pub struct ItemPathSegment {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ItemPath {
     pub segments: Vec<ItemPathSegment>,
+    pub to: ItemPathTarget,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

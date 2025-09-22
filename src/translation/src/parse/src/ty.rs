@@ -6,7 +6,7 @@ use nitrate_parsetree::{
         ArrayType, Bool, Expr, Float8, Float16, Float32, Float64, Float128, FunctionType,
         FunctionTypeParameter, Int8, Int16, Int32, Int64, Int128, LatentType, Lifetime, OpaqueType,
         ReferenceType, RefinementType, SliceType, TupleType, Type, TypeParentheses, TypePath,
-        TypePathSegment, TypeSyntaxError, UInt8, UInt16, UInt32, UInt64, UInt128,
+        TypePathSegment, TypePathTarget, TypeSyntaxError, UInt8, UInt16, UInt32, UInt64, UInt128,
     },
     tag::{intern_lifetime_name, intern_opaque_type_name, intern_parameter_name},
 };
@@ -432,7 +432,10 @@ impl Parser<'_, '_> {
 
         assert_ne!(segments.len(), 0);
 
-        TypePath { segments }
+        TypePath {
+            segments,
+            to: TypePathTarget::Unresolved,
+        }
     }
 
     fn parse_type_primary(&mut self) -> Type {

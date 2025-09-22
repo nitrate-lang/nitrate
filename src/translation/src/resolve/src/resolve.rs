@@ -2,12 +2,16 @@ use nitrate_diagnosis::DiagnosticCollector;
 
 use nitrate_parsetree::{
     Order, ParseTreeIterMut, RefNodeMut,
-    kind::{ExprPath, ExprPathTarget, ItemPath, Module, TypePath},
+    kind::{ExprPath, ExprPathTarget, ItemPath, ItemPathTarget, Module, TypePath, TypePathTarget},
 };
 
 use crate::{SymbolTable, build_symbol_table};
 
 fn resolve_item_path(path: &mut ItemPath, scope: &Vec<String>, symbol_table: &SymbolTable) {
+    if matches!(path.to, ItemPathTarget::Unresolved) {
+        return;
+    }
+
     // TODO: Resolve the path
 }
 
@@ -20,6 +24,10 @@ fn resolve_expr_path(path: &mut ExprPath, scope: &Vec<String>, symbol_table: &Sy
 }
 
 fn resolve_type_path(path: &mut TypePath, scope: &Vec<String>, symbol_table: &SymbolTable) {
+    if matches!(path.to, TypePathTarget::Unresolved) {
+        return;
+    }
+
     // TODO: Resolve the type path
 }
 

@@ -1,10 +1,12 @@
 use crate::{
     expr::TypeArgument,
+    item::{Enum, Struct, TypeAlias},
     kind::{Block, Expr},
     tag::{LifetimeNameId, OpaqueTypeNameId, ParameterNameId},
 };
 
 use serde::{Deserialize, Serialize};
+use std::sync::{RwLock, Weak};
 
 #[derive(Clone, Serialize, Deserialize)]
 pub struct TypeSyntaxError;
@@ -64,6 +66,14 @@ pub struct UnitType;
 pub struct InferType;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum TypePathTarget {
+    Unresolved,
+    TypeAlias(Weak<RwLock<TypeAlias>>),
+    Struct(Weak<RwLock<Struct>>),
+    Enum(Weak<RwLock<Enum>>),
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TypePathSegment {
     pub identifier: String,
     pub type_arguments: Option<Vec<TypeArgument>>,
@@ -72,6 +82,7 @@ pub struct TypePathSegment {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TypePath {
     pub segments: Vec<TypePathSegment>,
+    pub to: TypePathTarget,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

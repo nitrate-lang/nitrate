@@ -6,8 +6,8 @@ use crate::bugs::SyntaxErr;
 use nitrate_parsetree::{
     kind::{
         AssociatedItem, Enum, EnumVariant, FunctionParameter, GenericParameter, Impl, Import, Item,
-        ItemPath, ItemPathSegment, ItemSyntaxError, Module, Mutability, NamedFunction, Struct,
-        StructField, Trait, TypeAlias, Variable, VariableKind, Visibility,
+        ItemPath, ItemPathSegment, ItemPathTarget, ItemSyntaxError, Module, Mutability,
+        NamedFunction, Struct, StructField, Trait, TypeAlias, Variable, VariableKind, Visibility,
     },
     tag::{
         intern_enum_variant_name, intern_function_name, intern_import_alias_name,
@@ -125,7 +125,7 @@ impl Parser<'_, '_> {
         }
     }
 
-    fn parse_simple_path(&mut self) -> ItemPath {
+    fn parse_item_path(&mut self) -> ItemPath {
         fn parse_double_colon(this: &mut Parser) -> bool {
             if !this.lexer.skip_if(&Token::Colon) {
                 return false;
@@ -160,7 +160,10 @@ impl Parser<'_, '_> {
             }
         }
 
-        ItemPath { segments }
+        ItemPath {
+            segments,
+            to: ItemPathTarget::Unresolved,
+        }
     }
 
     fn parse_import(&mut self) -> Import {
@@ -168,7 +171,7 @@ impl Parser<'_, '_> {
         self.lexer.skip_tok();
 
         let attributes = self.parse_attributes();
-        let path = self.parse_simple_path();
+        let path = self.parse_item_path();
 
         let alias = if self.lexer.skip_if(&Token::As) {
             let name = self.lexer.next_if_name().unwrap_or_else(|| {
