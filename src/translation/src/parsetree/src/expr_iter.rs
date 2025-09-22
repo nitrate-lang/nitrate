@@ -174,7 +174,10 @@ impl ParseTreeIterMut for Closure {
             param.depth_first_iter_mut(f);
         }
 
-        self.return_type.as_mut().map(|t| t.depth_first_iter_mut(f));
+        if let Some(ret_type) = &mut self.return_type {
+            ret_type.depth_first_iter_mut(f);
+        }
+
         self.definition.depth_first_iter_mut(f);
 
         f(Order::Post, RefNodeMut::ExprClosure(self));
@@ -220,8 +223,12 @@ impl ParseTreeIterMut for If {
         f(Order::Pre, RefNodeMut::ExprIf(self));
 
         self.condition.depth_first_iter_mut(f);
+
         self.then_branch.depth_first_iter_mut(f);
-        self.else_branch.as_mut().map(|e| e.depth_first_iter_mut(f));
+
+        if let Some(else_branch) = &mut self.else_branch {
+            else_branch.depth_first_iter_mut(f);
+        }
 
         f(Order::Post, RefNodeMut::ExprIf(self));
     }
@@ -270,7 +277,9 @@ impl ParseTreeIterMut for Switch {
             case.depth_first_iter_mut(f);
         }
 
-        self.default.as_mut().map(|b| b.depth_first_iter_mut(f));
+        if let Some(default) = &mut self.default {
+            default.depth_first_iter_mut(f);
+        }
 
         f(Order::Post, RefNodeMut::ExprSwitch(self));
     }
@@ -316,7 +325,10 @@ impl ParseTreeIterMut for ForEach {
 
         for (var, ty) in &mut self.bindings {
             let _ = var;
-            ty.as_mut().map(|t| t.depth_first_iter_mut(f));
+
+            if let Some(t) = ty {
+                t.depth_first_iter_mut(f);
+            }
         }
 
         self.body.depth_first_iter_mut(f);
