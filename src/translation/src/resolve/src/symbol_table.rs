@@ -61,11 +61,11 @@ pub fn build_symbol_table(module: &mut Module) -> SymbolTable {
     module.depth_first_iter(&mut |order, node| {
         if let RefNode::ItemModule(module) = node {
             match order {
-                Order::Pre => {
+                Order::Enter => {
                     scope_vec.push(module.name.to_string());
                 }
 
-                Order::Post => {
+                Order::Leave => {
                     scope_vec.pop();
                 }
             }
@@ -74,7 +74,7 @@ pub fn build_symbol_table(module: &mut Module) -> SymbolTable {
         }
 
         // Only add symbols on pre-order traversal.
-        if order == Order::Pre {
+        if order == Order::Enter {
             symbol_table_add(&mut symbol_table, &scope_vec, &node);
             return;
         }

@@ -20,8 +20,8 @@ use crate::{
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Order {
-    Pre,
-    Post,
+    Enter,
+    Leave,
 }
 
 pub trait ParseTreeIter {

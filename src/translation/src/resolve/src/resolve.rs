@@ -61,11 +61,11 @@ pub fn resolve(module: &mut Module, _bugs: &DiagnosticCollector) {
     module.depth_first_iter_mut(&mut |order, node| {
         if let RefNodeMut::ItemModule(module) = node {
             match order {
-                Order::Pre => {
+                Order::Enter => {
                     scope_vec.push(module.name.to_string());
                 }
 
-                Order::Post => {
+                Order::Leave => {
                     scope_vec.pop();
                 }
             }
@@ -73,7 +73,7 @@ pub fn resolve(module: &mut Module, _bugs: &DiagnosticCollector) {
             return;
         }
 
-        if order != Order::Pre {
+        if order != Order::Enter {
             return;
         }
 

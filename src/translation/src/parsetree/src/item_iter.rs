@@ -11,25 +11,25 @@ use crate::{
 
 impl ParseTreeIter for ItemSyntaxError {
     fn depth_first_iter(&self, f: &mut dyn FnMut(Order, RefNode)) {
-        f(Order::Pre, RefNode::ItemSyntaxError);
-        f(Order::Post, RefNode::ItemSyntaxError);
+        f(Order::Enter, RefNode::ItemSyntaxError);
+        f(Order::Leave, RefNode::ItemSyntaxError);
     }
 }
 
 impl ParseTreeIter for Package {
     fn depth_first_iter(&self, f: &mut dyn FnMut(Order, RefNode)) {
-        f(Order::Pre, RefNode::ItemPackage(self));
+        f(Order::Enter, RefNode::ItemPackage(self));
 
         let _ = self.name;
         self.root.depth_first_iter(f);
 
-        f(Order::Post, RefNode::ItemPackage(self));
+        f(Order::Leave, RefNode::ItemPackage(self));
     }
 }
 
 impl ParseTreeIter for Module {
     fn depth_first_iter(&self, f: &mut dyn FnMut(Order, RefNode)) {
-        f(Order::Pre, RefNode::ItemModule(self));
+        f(Order::Enter, RefNode::ItemModule(self));
 
         let _ = self.visibility;
         let _ = self.name;
@@ -44,13 +44,13 @@ impl ParseTreeIter for Module {
             item.depth_first_iter(f);
         }
 
-        f(Order::Post, RefNode::ItemModule(self));
+        f(Order::Leave, RefNode::ItemModule(self));
     }
 }
 
 impl ParseTreeIter for Import {
     fn depth_first_iter(&self, f: &mut dyn FnMut(Order, RefNode)) {
-        f(Order::Pre, RefNode::ItemImport(self));
+        f(Order::Enter, RefNode::ItemImport(self));
 
         let _ = self.visibility;
         let _ = self.alias;
@@ -63,13 +63,13 @@ impl ParseTreeIter for Import {
 
         self.path.depth_first_iter(f);
 
-        f(Order::Post, RefNode::ItemImport(self));
+        f(Order::Leave, RefNode::ItemImport(self));
     }
 }
 
 impl ParseTreeIter for GenericParameter {
     fn depth_first_iter(&self, f: &mut dyn FnMut(Order, RefNode)) {
-        f(Order::Pre, RefNode::ItemGenericParameter(self));
+        f(Order::Enter, RefNode::ItemGenericParameter(self));
 
         let _ = self.name;
 
@@ -77,13 +77,13 @@ impl ParseTreeIter for GenericParameter {
             default_val.depth_first_iter(f);
         }
 
-        f(Order::Post, RefNode::ItemGenericParameter(self));
+        f(Order::Leave, RefNode::ItemGenericParameter(self));
     }
 }
 
 impl ParseTreeIter for Arc<RwLock<TypeAlias>> {
     fn depth_first_iter(&self, f: &mut dyn FnMut(Order, RefNode)) {
-        f(Order::Pre, RefNode::ItemTypeAlias(self));
+        f(Order::Enter, RefNode::ItemTypeAlias(self));
         let mut this = self.write().unwrap();
 
         let _ = this.visibility;
@@ -106,13 +106,13 @@ impl ParseTreeIter for Arc<RwLock<TypeAlias>> {
         }
 
         drop(this);
-        f(Order::Post, RefNode::ItemTypeAlias(self));
+        f(Order::Leave, RefNode::ItemTypeAlias(self));
     }
 }
 
 impl ParseTreeIter for StructField {
     fn depth_first_iter(&self, f: &mut dyn FnMut(Order, RefNode)) {
-        f(Order::Pre, RefNode::ItemStructField(self));
+        f(Order::Enter, RefNode::ItemStructField(self));
 
         let _ = self.visibility;
         let _ = self.name;
@@ -129,13 +129,13 @@ impl ParseTreeIter for StructField {
             default.depth_first_iter(f);
         }
 
-        f(Order::Post, RefNode::ItemStructField(self));
+        f(Order::Leave, RefNode::ItemStructField(self));
     }
 }
 
 impl ParseTreeIter for Arc<RwLock<Struct>> {
     fn depth_first_iter(&self, f: &mut dyn FnMut(Order, RefNode)) {
-        f(Order::Pre, RefNode::ItemStruct(self));
+        f(Order::Enter, RefNode::ItemStruct(self));
         let mut this = self.write().unwrap();
 
         let _ = this.visibility;
@@ -162,13 +162,13 @@ impl ParseTreeIter for Arc<RwLock<Struct>> {
         }
 
         drop(this);
-        f(Order::Post, RefNode::ItemStruct(self));
+        f(Order::Leave, RefNode::ItemStruct(self));
     }
 }
 
 impl ParseTreeIter for EnumVariant {
     fn depth_first_iter(&self, f: &mut dyn FnMut(Order, RefNode)) {
-        f(Order::Pre, RefNode::ItemEnumVariant(self));
+        f(Order::Enter, RefNode::ItemEnumVariant(self));
 
         let _ = self.visibility;
         let _ = self.name;
@@ -187,13 +187,13 @@ impl ParseTreeIter for EnumVariant {
             value.depth_first_iter(f);
         }
 
-        f(Order::Post, RefNode::ItemEnumVariant(self));
+        f(Order::Leave, RefNode::ItemEnumVariant(self));
     }
 }
 
 impl ParseTreeIter for Arc<RwLock<Enum>> {
     fn depth_first_iter(&self, f: &mut dyn FnMut(Order, RefNode)) {
-        f(Order::Pre, RefNode::ItemEnum(self));
+        f(Order::Enter, RefNode::ItemEnum(self));
         let mut this = self.write().unwrap();
 
         let _ = this.visibility;
@@ -216,7 +216,7 @@ impl ParseTreeIter for Arc<RwLock<Enum>> {
         }
 
         drop(this);
-        f(Order::Post, RefNode::ItemEnum(self));
+        f(Order::Leave, RefNode::ItemEnum(self));
     }
 }
 
@@ -233,7 +233,7 @@ impl ParseTreeIter for AssociatedItem {
 
 impl ParseTreeIter for Arc<RwLock<Trait>> {
     fn depth_first_iter(&self, f: &mut dyn FnMut(Order, RefNode)) {
-        f(Order::Pre, RefNode::ItemTrait(self));
+        f(Order::Enter, RefNode::ItemTrait(self));
         let mut this = self.write().unwrap();
 
         let _ = this.visibility;
@@ -256,13 +256,13 @@ impl ParseTreeIter for Arc<RwLock<Trait>> {
         }
 
         drop(this);
-        f(Order::Post, RefNode::ItemTrait(self));
+        f(Order::Leave, RefNode::ItemTrait(self));
     }
 }
 
 impl ParseTreeIter for Impl {
     fn depth_first_iter(&self, f: &mut dyn FnMut(Order, RefNode)) {
-        f(Order::Pre, RefNode::ItemImpl(self));
+        f(Order::Enter, RefNode::ItemImpl(self));
 
         let _ = self.visibility;
 
@@ -288,13 +288,13 @@ impl ParseTreeIter for Impl {
             associated_item.depth_first_iter(f);
         }
 
-        f(Order::Post, RefNode::ItemImpl(self));
+        f(Order::Leave, RefNode::ItemImpl(self));
     }
 }
 
 impl ParseTreeIter for FunctionParameter {
     fn depth_first_iter(&self, f: &mut dyn FnMut(Order, RefNode)) {
-        f(Order::Pre, RefNode::ItemFunctionParameter(self));
+        f(Order::Enter, RefNode::ItemFunctionParameter(self));
 
         let _ = self.mutability;
         let _ = self.name;
@@ -313,13 +313,13 @@ impl ParseTreeIter for FunctionParameter {
             default.depth_first_iter(f);
         }
 
-        f(Order::Post, RefNode::ItemFunctionParameter(self));
+        f(Order::Leave, RefNode::ItemFunctionParameter(self));
     }
 }
 
 impl ParseTreeIter for Arc<RwLock<NamedFunction>> {
     fn depth_first_iter(&self, f: &mut dyn FnMut(Order, RefNode)) {
-        f(Order::Pre, RefNode::ItemNamedFunction(self));
+        f(Order::Enter, RefNode::ItemNamedFunction(self));
         let mut this = self.write().unwrap();
 
         let _ = this.visibility;
@@ -350,13 +350,13 @@ impl ParseTreeIter for Arc<RwLock<NamedFunction>> {
         }
 
         drop(this);
-        f(Order::Post, RefNode::ItemNamedFunction(self));
+        f(Order::Leave, RefNode::ItemNamedFunction(self));
     }
 }
 
 impl ParseTreeIter for Arc<RwLock<Variable>> {
     fn depth_first_iter(&self, f: &mut dyn FnMut(Order, RefNode)) {
-        f(Order::Pre, RefNode::ItemVariable(self));
+        f(Order::Enter, RefNode::ItemVariable(self));
         let mut this = self.write().unwrap();
 
         let _ = this.visibility;
@@ -379,7 +379,7 @@ impl ParseTreeIter for Arc<RwLock<Variable>> {
         }
 
         drop(this);
-        f(Order::Post, RefNode::ItemVariable(self));
+        f(Order::Leave, RefNode::ItemVariable(self));
     }
 }
 
