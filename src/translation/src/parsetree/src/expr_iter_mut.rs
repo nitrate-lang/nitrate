@@ -1,6 +1,6 @@
 use crate::{
     Order, ParseTreeIterMut, RefNodeMut,
-    expr::{Object, Path, TypeArgument, Switch, SwitchCase, UnitLit},
+    expr::{Object, ExprPath, TypeArgument, Switch, SwitchCase, UnitLit},
     kind::{
         Await, BStringLit, BinExpr, Block, BlockItem, BooleanLit, Break, Call, CallArgument, Cast,
         Closure, Continue, DoWhileLoop, Expr, ExprParentheses, ExprSyntaxError, FloatLit, ForEach,
@@ -195,7 +195,7 @@ impl ParseTreeIterMut for TypeArgument {
     }
 }
 
-impl ParseTreeIterMut for Path {
+impl ParseTreeIterMut for ExprPath {
     fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
         f(Order::Enter, RefNodeMut::ExprPath(self));
 

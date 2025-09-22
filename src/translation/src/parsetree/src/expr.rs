@@ -217,14 +217,14 @@ pub struct TypeArgument {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct PathExprSegment {
+pub struct ExprPathSegment {
     pub identifier: String,
     pub type_arguments: Option<Vec<TypeArgument>>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Path {
-    pub segments: Vec<PathExprSegment>,
+pub struct ExprPath {
+    pub segments: Vec<ExprPathSegment>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -328,7 +328,7 @@ pub enum Expr {
 
     Closure(Box<Closure>),
     Variable(Arc<RwLock<Variable>>),
-    Path(Box<Path>),
+    Path(Box<ExprPath>),
     IndexAccess(Box<IndexAccess>),
 
     If(Box<If>),

@@ -1,6 +1,6 @@
 use crate::{
     Order, ParseTreeIter, RefNode,
-    expr::{Object, Path, TypeArgument, Switch, SwitchCase, UnitLit},
+    expr::{Object, ExprPath, TypeArgument, Switch, SwitchCase, UnitLit},
     kind::{
         Await, BStringLit, BinExpr, Block, BlockItem, BooleanLit, Break, Call, CallArgument, Cast,
         Closure, Continue, DoWhileLoop, Expr, ExprParentheses, ExprSyntaxError, FloatLit, ForEach,
@@ -195,7 +195,7 @@ impl ParseTreeIter for TypeArgument {
     }
 }
 
-impl ParseTreeIter for Path {
+impl ParseTreeIter for ExprPath {
     fn depth_first_iter(&self, f: &mut dyn FnMut(Order, RefNode)) {
         f(Order::Enter, RefNode::ExprPath(self));
 

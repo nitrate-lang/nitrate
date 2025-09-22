@@ -6,10 +6,10 @@ use super::parse::Parser;
 use nitrate_parsetree::{
     kind::{
         Await, BStringLit, BinExpr, BinExprOp, Block, BlockItem, Bool, BooleanLit, Break, Call,
-        CallArgument, Cast, Closure, Continue, DoWhileLoop, Expr, ExprParentheses, ExprSyntaxError,
-        Float8, Float16, Float32, Float64, Float128, FloatLit, ForEach, FunctionParameter, If,
-        IndexAccess, Int8, Int16, Int32, Int64, Int128, IntegerLit, List, Mutability, Path,
-        PathExprSegment, Return, Safety, StringLit, Type, TypeArgument, TypeInfo, TypePath,
+        CallArgument, Cast, Closure, Continue, DoWhileLoop, Expr, ExprParentheses, ExprPath,
+        ExprPathSegment, ExprSyntaxError, Float8, Float16, Float32, Float64, Float128, FloatLit,
+        ForEach, FunctionParameter, If, IndexAccess, Int8, Int16, Int32, Int64, Int128, IntegerLit,
+        List, Mutability, Return, Safety, StringLit, Type, TypeArgument, TypeInfo, TypePath,
         TypePathSegment, UInt8, UInt16, UInt32, UInt64, UInt128, UnaryExpr, UnaryExprOp, WhileLoop,
     },
     tag::{
@@ -670,7 +670,7 @@ impl Parser<'_, '_> {
         Some(arguments)
     }
 
-    pub(crate) fn parse_path(&mut self) -> Path {
+    pub(crate) fn parse_path(&mut self) -> ExprPath {
         fn parse_double_colon(this: &mut Parser) -> bool {
             if !this.lexer.skip_if(&Token::Colon) {
                 return false;
@@ -699,7 +699,7 @@ impl Parser<'_, '_> {
                 prev_scope = parse_double_colon(self);
             }
 
-            segments.push(PathExprSegment {
+            segments.push(ExprPathSegment {
                 identifier: "".into(),
                 type_arguments,
             });
@@ -734,12 +734,12 @@ impl Parser<'_, '_> {
                     prev_scope = parse_double_colon(self);
                 }
 
-                segments.push(PathExprSegment {
+                segments.push(ExprPathSegment {
                     identifier,
                     type_arguments,
                 });
             } else {
-                segments.push(PathExprSegment {
+                segments.push(ExprPathSegment {
                     identifier,
                     type_arguments: None,
                 });
@@ -750,7 +750,7 @@ impl Parser<'_, '_> {
 
         assert_ne!(segments.len(), 0);
 
-        Path { segments }
+        ExprPath { segments }
     }
 
     fn parse_type_info(&mut self) -> Type {
