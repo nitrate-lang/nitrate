@@ -9,31 +9,62 @@ use crate::{
 
 impl ParseTreeIterMut for ItemSyntaxError {
     fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
-        // TODO: Traverse
+        f(Order::Pre, RefNodeMut::ItemSyntaxError);
+        f(Order::Post, RefNodeMut::ItemSyntaxError);
     }
 }
 
 impl ParseTreeIterMut for Package {
     fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
-        // TODO: Traverse
+        f(Order::Pre, RefNodeMut::ItemPackage(self));
+
+        self.root.depth_first_iter_mut(f);
+
+        f(Order::Post, RefNodeMut::ItemPackage(self));
     }
 }
 
 impl ParseTreeIterMut for Module {
     fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
-        // TODO: Traverse
+        f(Order::Pre, RefNodeMut::ItemModule(self));
+
+        if let Some(attrs) = &mut self.attributes {
+            for attr in attrs {
+                attr.depth_first_iter_mut(f);
+            }
+        }
+
+        for item in &mut self.items {
+            item.depth_first_iter_mut(f);
+        }
+
+        f(Order::Post, RefNodeMut::ItemModule(self));
     }
 }
 
 impl ParseTreeIterMut for Import {
     fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
-        // TODO: Traverse
+        f(Order::Pre, RefNodeMut::ItemImport(self));
+
+        if let Some(attrs) = &mut self.attributes {
+            for attr in attrs {
+                attr.depth_first_iter_mut(f);
+            }
+        }
+
+        self.path.depth_first_iter_mut(f);
+
+        f(Order::Post, RefNodeMut::ItemImport(self));
     }
 }
 
 impl ParseTreeIterMut for GenericParameter {
     fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
-        // TODO: Traverse
+        f(Order::Pre, RefNodeMut::ItemGenericParameter(self));
+
+        self.default.as_mut().map(|ty| ty.depth_first_iter_mut(f));
+
+        f(Order::Post, RefNodeMut::ItemGenericParameter(self));
     }
 }
 

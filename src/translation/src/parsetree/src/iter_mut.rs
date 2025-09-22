@@ -6,7 +6,10 @@ use crate::{
         Await, BinExpr, Block, Break, Call, Cast, Closure, Continue, DoWhileLoop, Expr, ForEach,
         If, IndexAccess, List, Object, Path, Return, Switch, UnaryExpr, WhileLoop,
     },
-    item::{Enum, Impl, Import, Module, NamedFunction, Struct, Trait, TypeAlias, Variable},
+    item::{
+        Enum, GenericParameter, Impl, Import, Module, NamedFunction, Package, Struct, Trait,
+        TypeAlias, Variable,
+    },
     tag::{OpaqueTypeNameId, StringLiteralId},
     ty::{
         ArrayType, FunctionType, FunctionTypeParameter, Lifetime, ReferenceType, RefinementType,
@@ -82,8 +85,10 @@ pub enum RefNodeMut<'a> {
     TypeParentheses(&'a mut Type),
 
     ItemSyntaxError,
+    ItemPackage(&'a mut Package),
     ItemModule(&'a mut Module),
     ItemImport(&'a mut Import),
+    ItemGenericParameter(&'a mut GenericParameter),
     ItemTypeAlias(&'a mut TypeAlias),
     ItemStruct(&'a mut Struct),
     ItemEnum(&'a mut Enum),
