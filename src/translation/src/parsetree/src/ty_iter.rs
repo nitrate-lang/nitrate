@@ -199,6 +199,8 @@ impl ParseTreeIterMut for FunctionTypeParameter {
     fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
         f(Order::Pre, RefNodeMut::TypeFunctionTypeParameter(self));
 
+        let _ = self.name;
+
         if let Some(attrs) = &mut self.attributes {
             for attr in attrs {
                 attr.depth_first_iter_mut(f);
@@ -245,6 +247,9 @@ impl ParseTreeIterMut for ReferenceType {
     fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
         f(Order::Pre, RefNodeMut::TypeReferenceType(self));
 
+        let _ = self.mutability;
+        let _ = self.exclusive;
+
         self.lifetime.as_mut().map(|lt| lt.depth_first_iter_mut(f));
         self.to.depth_first_iter_mut(f);
 
@@ -255,6 +260,9 @@ impl ParseTreeIterMut for ReferenceType {
 impl ParseTreeIterMut for OpaqueType {
     fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
         f(Order::Pre, RefNodeMut::TypeOpaqueType(&mut self.name));
+
+        let _ = self.name;
+
         f(Order::Post, RefNodeMut::TypeOpaqueType(&mut self.name));
     }
 }
