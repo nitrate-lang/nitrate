@@ -16,7 +16,7 @@ pub enum Symbol {
     Variable(Arc<RwLock<Variable>>),
 }
 
-fn qualify_name(scope: &[String], name: &str) -> Vec<String> {
+pub fn qualify_name(scope: &[String], name: &str) -> Vec<String> {
     let mut qualified_name = scope.to_vec();
     qualified_name.push(name.to_string());
     qualified_name

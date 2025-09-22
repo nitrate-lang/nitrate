@@ -2,7 +2,10 @@ use nitrate_diagnosis::{
     DiagnosticCollector, DiagnosticGroupId, DiagnosticInfo, FormattableDiagnosticGroup,
 };
 
-use nitrate_parsetree::kind::{Item, Module, Path};
+use nitrate_parsetree::{
+    Order, ParseTreeIterMut, RefNodeMut,
+    kind::{Item, Module, Path},
+};
 
 use crate::build_symbol_table;
 
@@ -53,8 +56,34 @@ impl FormattableDiagnosticGroup for ResolveIssue {
 
 pub fn resolve(module: &mut Module, _bugs: &DiagnosticCollector) {
     let symbol_table = build_symbol_table(module);
+    let mut scope_vec = Vec::new();
 
-    for (entry, _) in &symbol_table {
-        println!("Symbol: {:?} => {:?}", entry, ());
-    }
+    module.depth_first_iter_mut(&mut |order, node| {
+        if let RefNodeMut::ItemModule(module) = node {
+            match order {
+                Order::Pre => {
+                    scope_vec.push(module.name.to_string());
+                }
+
+                Order::Post => {
+                    scope_vec.pop();
+                }
+            }
+
+            return;
+        }
+
+        if order != Order::Pre {
+            return;
+        }
+
+        if let RefNodeMut::ExprPath(path) = node {
+            // TODO: Resolve the path using the symbol table.
+            let _ = &symbol_table;
+            let _ = &scope_vec;
+            let _ = &path;
+        }
+
+        // TODO: Implement actual resolution logic.
+    });
 }

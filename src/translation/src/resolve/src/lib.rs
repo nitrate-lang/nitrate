@@ -4,4 +4,4 @@ mod resolve;
 mod symbol_table;
 
 pub use resolve::resolve;
-pub use symbol_table::{Symbol, SymbolTable, build_symbol_table};
+pub use symbol_table::{Symbol, SymbolTable, build_symbol_table, qualify_name};
