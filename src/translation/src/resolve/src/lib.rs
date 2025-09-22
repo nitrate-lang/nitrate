@@ -1,5 +1,7 @@
 #![forbid(unsafe_code)]
 
-mod context;
+mod resolve;
+mod symbol_table;
 
-pub use context::resolve;
+pub use resolve::resolve;
+pub use symbol_table::{Symbol, SymbolTable, build_symbol_table};

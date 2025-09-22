@@ -1,62 +1,13 @@
-use nitrate_diagnosis::{
-    DiagnosticCollector, DiagnosticGroupId, DiagnosticInfo, FormattableDiagnosticGroup,
-};
-
 use nitrate_parsetree::{
     Order, ParseTreeIter, RefNode,
-    kind::{Enum, Item, Module, NamedFunction, Path, Struct, Trait, TypeAlias, Variable},
+    kind::{Enum, Module, NamedFunction, Struct, Trait, TypeAlias, Variable},
 };
 
 use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
 
-pub enum ResolveIssue {
-    NotFound(Path),
-    Ambiguous(Path, Vec<Item>),
-}
-
-impl FormattableDiagnosticGroup for ResolveIssue {
-    fn group_id(&self) -> DiagnosticGroupId {
-        DiagnosticGroupId::Resolve
-    }
-
-    fn variant_id(&self) -> u16 {
-        match self {
-            ResolveIssue::NotFound(_) => 1,
-            ResolveIssue::Ambiguous(_, _) => 2,
-        }
-    }
-
-    fn format(&self) -> DiagnosticInfo {
-        match self {
-            ResolveIssue::NotFound(path) => DiagnosticInfo {
-                origin: nitrate_diagnosis::Origin::None,
-                message: format!("Symbol not found: {}", path.path.join("::")),
-            },
-
-            ResolveIssue::Ambiguous(path, candidates) => {
-                // FIXME: Improve formatting.
-
-                let mut message = format!(
-                    "Ambiguous symbol reference: {}\nCandidates:",
-                    path.path.join("::")
-                );
-
-                for candidate in candidates {
-                    message.push_str(&format!("\n - {:?}", candidate));
-                }
-
-                DiagnosticInfo {
-                    origin: nitrate_diagnosis::Origin::None,
-                    message,
-                }
-            }
-        }
-    }
-}
-
 #[derive(Debug)]
-enum Symbol {
+pub enum Symbol {
     TypeAlias(Arc<RwLock<TypeAlias>>),
     Struct(Arc<RwLock<Struct>>),
     Enum(Arc<RwLock<Enum>>),
@@ -71,7 +22,7 @@ fn qualify_name(scope: &[String], name: &str) -> Vec<String> {
     qualified_name
 }
 
-type SymbolTable<'a> = HashMap<Vec<String>, Symbol>;
+pub type SymbolTable<'a> = HashMap<Vec<String>, Symbol>;
 
 fn symbol_table_add(symbol_table: &mut SymbolTable, scope_vec: &Vec<String>, node: &RefNode) {
     match node {
@@ -103,7 +54,7 @@ fn symbol_table_add(symbol_table: &mut SymbolTable, scope_vec: &Vec<String>, nod
     };
 }
 
-fn build_symbol_table(module: &mut Module) -> SymbolTable {
+pub fn build_symbol_table(module: &mut Module) -> SymbolTable {
     let mut symbol_table = SymbolTable::new();
     let mut scope_vec = Vec::new();
 
@@ -130,12 +81,4 @@ fn build_symbol_table(module: &mut Module) -> SymbolTable {
     });
 
     symbol_table
-}
-
-pub fn resolve(module: &mut Module, _bugs: &DiagnosticCollector) {
-    let symbol_table = build_symbol_table(module);
-
-    for (entry, _) in &symbol_table {
-        println!("Symbol: {:?} => {:?}", entry, ());
-    }
 }
