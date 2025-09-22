@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use nitrate_diagnosis::{
     DiagnosticCollector, DiagnosticGroupId, DiagnosticInfo, FormattableDiagnosticGroup,
 };
@@ -51,7 +53,10 @@ impl FormattableDiagnosticGroup for ResolveIssue {
     }
 }
 
-pub fn resolve(mut module: Module, _bugs: &DiagnosticCollector) -> Module {
+type SymbolTable<'a> = HashMap<Vec<String>, HashMap<String, RefNodeMut<'a>>>;
+
+pub fn resolve(module: &mut Module, _bugs: &DiagnosticCollector) {
+    let mut symbol_table = SymbolTable::new();
     let mut name_scope = Vec::new();
 
     module.depth_first_iter_mut(&mut |order, node| {
@@ -73,15 +78,23 @@ pub fn resolve(mut module: Module, _bugs: &DiagnosticCollector) -> Module {
             return;
         }
 
-        if let RefNodeMut::ExprPath(path) = node {
-            println!(
-                "Scope={}\t\tPath={}",
-                name_scope.join("::"),
-                path.path.join("::")
-            );
-            // TODO: Resolve the path here.
-        }
-    });
+        // match node {
+        //     RefNodeMut::ItemTypeAlias(sym) => {
+        //         symbol_table
+        //             .entry(name_scope.clone())
+        //             .or_default()
+        //             .insert(sym.name.to_string(), node);
+        //     }
+        //     _ => {}
+        // }
 
-    module
+        // if let RefNodeMut::ExprPath(path) = node {
+        //     println!(
+        //         "Scope={}\t\tPath={}",
+        //         name_scope.join("::"),
+        //         path.path.join("::")
+        //     );
+        //     // TODO: Resolve the path here.
+        // }
+    });
 }

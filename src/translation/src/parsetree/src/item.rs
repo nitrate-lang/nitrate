@@ -7,6 +7,7 @@ use crate::{
 };
 
 use serde::{Deserialize, Serialize};
+use std::sync::{Arc, RwLock};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ItemSyntaxError;
@@ -181,13 +182,13 @@ pub enum Item {
     SyntaxError(ItemSyntaxError),
     Module(Box<Module>),
     Import(Box<Import>),
-    TypeAlias(Box<TypeAlias>),
-    Struct(Box<Struct>),
-    Enum(Box<Enum>),
-    Trait(Box<Trait>),
+    TypeAlias(Arc<RwLock<TypeAlias>>),
+    Struct(Arc<RwLock<Struct>>),
+    Enum(Arc<RwLock<Enum>>),
+    Trait(Arc<RwLock<Trait>>),
     Impl(Box<Impl>),
-    NamedFunction(Box<NamedFunction>),
-    Variable(Box<Variable>),
+    NamedFunction(Arc<RwLock<NamedFunction>>),
+    Variable(Arc<RwLock<Variable>>),
 }
 
 impl std::fmt::Debug for Item {

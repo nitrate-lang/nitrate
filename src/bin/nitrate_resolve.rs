@@ -99,7 +99,7 @@ fn program() -> Result<(), Error> {
         items,
     };
 
-    module = resolve(module, &bugs);
+    resolve(&mut module, &bugs);
 
     if let Err(_) = serde_json::to_writer_pretty(&mut parse_tree_output, &module) {
         return Err(Error::ParseFailed(TranslationError::SyntaxError));

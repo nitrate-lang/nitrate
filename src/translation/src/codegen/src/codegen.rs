@@ -1,4 +1,3 @@
-use cranelift::module::{FuncId, Linkage, Module};
 use log::{debug, trace};
 use nitrate_parsetree::kind;
 use std::sync::Arc;
@@ -109,54 +108,6 @@ impl Codegen {
         Ok(ObjectModule::new(builder))
     }
 
-    fn create_global_variable(
-        variable: &kind::Variable,
-        module: &mut ObjectModule,
-    ) -> Result<(), CodegenError> {
-        let name = &variable.name;
-
-        // TODO: Determine the correct linkage, and TLS status
-        let linkage = Linkage::Local;
-        let is_writable = true;
-        let is_tls = false;
-
-        let data_id = module
-            .declare_data(name, linkage, is_writable, is_tls)
-            .map_err(CodegenError::ModuleCreationError)?;
-
-        // TODO: Determine the correct size
-        let size = match None {
-            Some(size) => size,
-
-            None => {
-                return Err(CodegenError::Other(
-                    "Global variable type does not have a known size".to_string(),
-                ));
-            }
-        };
-
-        let mut description = cranelift::module::DataDescription::new();
-        description.set_align(1);
-        description.define_zeroinit(size);
-
-        module
-            .define_data(data_id, &description)
-            .map_err(CodegenError::ModuleCreationError)
-    }
-
-    fn create_global_function(
-        _function: &kind::NamedFunction,
-        _module: &mut ObjectModule,
-    ) -> Result<FuncId, CodegenError> {
-        // TODO: Generate code for the function
-
-        // let name = function.name();
-
-        Err(CodegenError::Other(
-            "Global function generation not yet implemented".to_string(),
-        ))
-    }
-
     pub fn generate(
         self,
         package: &kind::Package,
@@ -166,25 +117,7 @@ impl Codegen {
         let target_triple = Self::create_target_triple(&self.target_triple_string)?;
         let isa = Self::create_isa(shared_flags, target_triple, &self.isa_config)?;
 
-        let mut obj_module = Self::create_module(isa, &package.name)?;
-
-        for expression in &package.root.items {
-            match expression {
-                kind::Item::NamedFunction(function) => {
-                    Self::create_global_function(function, &mut obj_module)?;
-                }
-
-                kind::Item::Variable(global_variable) => {
-                    Self::create_global_variable(global_variable, &mut obj_module)?;
-                }
-
-                _ => {
-                    return Err(CodegenError::Other(
-                        "Top-level expression is not a function or global variable".to_string(),
-                    ));
-                }
-            }
-        }
+        let obj_module = Self::create_module(isa, &package.name)?;
 
         match obj_module.finish().emit() {
             Ok(object_file_bytes) => output

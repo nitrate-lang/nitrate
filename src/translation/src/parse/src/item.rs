@@ -1,3 +1,5 @@
+use std::sync::{Arc, RwLock};
+
 use super::parse::Parser;
 use crate::bugs::SyntaxErr;
 
@@ -740,25 +742,25 @@ impl Parser<'_, '_> {
             Token::Type => {
                 let mut type_alias = self.parse_type_alias();
                 type_alias.visibility = visibility;
-                Item::TypeAlias(Box::new(type_alias))
+                Item::TypeAlias(Arc::new(RwLock::new(type_alias)))
             }
 
             Token::Struct => {
                 let mut struct_def = self.parse_struct();
                 struct_def.visibility = visibility;
-                Item::Struct(Box::new(struct_def))
+                Item::Struct(Arc::new(RwLock::new(struct_def)))
             }
 
             Token::Enum => {
                 let mut enum_def = self.parse_enum();
                 enum_def.visibility = visibility;
-                Item::Enum(Box::new(enum_def))
+                Item::Enum(Arc::new(RwLock::new(enum_def)))
             }
 
             Token::Trait => {
                 let mut trait_def = self.parse_trait();
                 trait_def.visibility = visibility;
-                Item::Trait(Box::new(trait_def))
+                Item::Trait(Arc::new(RwLock::new(trait_def)))
             }
 
             Token::Impl => {
@@ -770,13 +772,13 @@ impl Parser<'_, '_> {
             Token::Fn => {
                 let mut func = self.parse_named_function();
                 func.visibility = visibility;
-                Item::NamedFunction(Box::new(func))
+                Item::NamedFunction(Arc::new(RwLock::new(func)))
             }
 
             Token::Static | Token::Const | Token::Let | Token::Var => {
                 let mut var = self.parse_variable();
                 var.visibility = visibility;
-                Item::Variable(Box::new(var))
+                Item::Variable(Arc::new(RwLock::new(var)))
             }
 
             _ => {

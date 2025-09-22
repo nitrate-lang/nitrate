@@ -375,13 +375,13 @@ impl ParseTreeIterMut for Item {
             Item::SyntaxError(item) => item.depth_first_iter_mut(f),
             Item::Module(item) => item.depth_first_iter_mut(f),
             Item::Import(item) => item.depth_first_iter_mut(f),
-            Item::TypeAlias(item) => item.depth_first_iter_mut(f),
-            Item::Struct(item) => item.depth_first_iter_mut(f),
-            Item::Enum(item) => item.depth_first_iter_mut(f),
-            Item::Trait(item) => item.depth_first_iter_mut(f),
+            Item::TypeAlias(item) => item.write().unwrap().depth_first_iter_mut(f),
+            Item::Struct(item) => item.write().unwrap().depth_first_iter_mut(f),
+            Item::Enum(item) => item.write().unwrap().depth_first_iter_mut(f),
+            Item::Trait(item) => item.write().unwrap().depth_first_iter_mut(f),
             Item::Impl(item) => item.depth_first_iter_mut(f),
-            Item::NamedFunction(item) => item.depth_first_iter_mut(f),
-            Item::Variable(item) => item.depth_first_iter_mut(f),
+            Item::NamedFunction(item) => item.write().unwrap().depth_first_iter_mut(f),
+            Item::Variable(item) => item.write().unwrap().depth_first_iter_mut(f),
         }
     }
 }
