@@ -6,65 +6,86 @@ use crate::{
 };
 
 use serde::{Deserialize, Serialize};
+use serde_with::skip_serializing_none;
 use std::sync::{RwLock, Weak};
 
+#[skip_serializing_none]
 #[derive(Clone, Serialize, Deserialize)]
 pub struct TypeSyntaxError;
 
+#[skip_serializing_none]
 #[derive(Clone, Serialize, Deserialize)]
 pub struct Bool;
 
+#[skip_serializing_none]
 #[derive(Clone, Serialize, Deserialize)]
 pub struct UInt8;
 
+#[skip_serializing_none]
 #[derive(Clone, Serialize, Deserialize)]
 pub struct UInt16;
 
+#[skip_serializing_none]
 #[derive(Clone, Serialize, Deserialize)]
 pub struct UInt32;
 
+#[skip_serializing_none]
 #[derive(Clone, Serialize, Deserialize)]
 pub struct UInt64;
 
+#[skip_serializing_none]
 #[derive(Clone, Serialize, Deserialize)]
 pub struct UInt128;
 
+#[skip_serializing_none]
 #[derive(Clone, Serialize, Deserialize)]
 pub struct Int8;
 
+#[skip_serializing_none]
 #[derive(Clone, Serialize, Deserialize)]
 pub struct Int16;
 
+#[skip_serializing_none]
 #[derive(Clone, Serialize, Deserialize)]
 pub struct Int32;
 
+#[skip_serializing_none]
 #[derive(Clone, Serialize, Deserialize)]
 pub struct Int64;
 
+#[skip_serializing_none]
 #[derive(Clone, Serialize, Deserialize)]
 pub struct Int128;
 
+#[skip_serializing_none]
 #[derive(Clone, Serialize, Deserialize)]
 pub struct Float8;
 
+#[skip_serializing_none]
 #[derive(Clone, Serialize, Deserialize)]
 pub struct Float16;
 
+#[skip_serializing_none]
 #[derive(Clone, Serialize, Deserialize)]
 pub struct Float32;
 
+#[skip_serializing_none]
 #[derive(Clone, Serialize, Deserialize)]
 pub struct Float64;
 
+#[skip_serializing_none]
 #[derive(Clone, Serialize, Deserialize)]
 pub struct Float128;
 
+#[skip_serializing_none]
 #[derive(Clone, Serialize, Deserialize)]
 pub struct UnitType;
 
+#[skip_serializing_none]
 #[derive(Clone, Serialize, Deserialize)]
 pub struct InferType;
 
+#[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum TypePathTarget {
     Unresolved,
@@ -79,12 +100,14 @@ impl Default for TypePathTarget {
     }
 }
 
+#[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TypePathSegment {
     pub identifier: String,
     pub type_arguments: Option<Vec<TypeArgument>>,
 }
 
+#[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TypePath {
     pub segments: Vec<TypePathSegment>,
@@ -93,6 +116,7 @@ pub struct TypePath {
     pub to: TypePathTarget,
 }
 
+#[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RefinementType {
     pub basis_type: Type,
@@ -101,22 +125,26 @@ pub struct RefinementType {
     pub maximum: Option<Expr>,
 }
 
+#[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TupleType {
     pub element_types: Vec<Type>,
 }
 
+#[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ArrayType {
     pub element_type: Type,
     pub len: Expr,
 }
 
+#[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SliceType {
     pub element_type: Type,
 }
 
+#[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FunctionTypeParameter {
     pub attributes: Option<Vec<Expr>>,
@@ -125,6 +153,7 @@ pub struct FunctionTypeParameter {
     pub default: Option<Expr>,
 }
 
+#[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FunctionType {
     pub attributes: Option<Vec<Expr>>,
@@ -132,6 +161,7 @@ pub struct FunctionType {
     pub return_type: Option<Type>,
 }
 
+#[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum Lifetime {
     SyntaxError,
@@ -144,6 +174,7 @@ pub enum Lifetime {
     Other { name: LifetimeNameId },
 }
 
+#[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ReferenceType {
     pub lifetime: Option<Lifetime>,
@@ -152,21 +183,25 @@ pub struct ReferenceType {
     pub to: Type,
 }
 
+#[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct OpaqueType {
     pub name: OpaqueTypeNameId,
 }
 
+#[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LatentType {
     pub body: Block,
 }
 
+#[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TypeParentheses {
     pub inner: Type,
 }
 
+#[skip_serializing_none]
 #[derive(Clone, Serialize, Deserialize)]
 pub enum Type {
     SyntaxError(TypeSyntaxError),
