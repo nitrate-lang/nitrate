@@ -304,25 +304,59 @@ impl ParseTreeIterMut for Return {
 
 impl ParseTreeIterMut for ForEach {
     fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
-        // TODO: Traverse
+        f(Order::Pre, RefNodeMut::ExprFor(self));
+
+        if let Some(attrs) = &mut self.attributes {
+            for attr in attrs {
+                attr.depth_first_iter_mut(f);
+            }
+        }
+
+        self.iterable.depth_first_iter_mut(f);
+
+        for (var, ty) in &mut self.bindings {
+            let _ = var;
+            ty.as_mut().map(|t| t.depth_first_iter_mut(f));
+        }
+
+        self.body.depth_first_iter_mut(f);
+
+        f(Order::Post, RefNodeMut::ExprFor(self));
     }
 }
 
 impl ParseTreeIterMut for Await {
     fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
-        // TODO: Traverse
+        f(Order::Pre, RefNodeMut::ExprAwait(self));
+
+        self.future.depth_first_iter_mut(f);
+
+        f(Order::Post, RefNodeMut::ExprAwait(self));
     }
 }
 
 impl ParseTreeIterMut for CallArgument {
     fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
-        // TODO: Traverse
+        f(Order::Pre, RefNodeMut::ExprCallArgument(self));
+
+        let _ = self.name;
+        self.value.depth_first_iter_mut(f);
+
+        f(Order::Post, RefNodeMut::ExprCallArgument(self));
     }
 }
 
 impl ParseTreeIterMut for Call {
     fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
-        // TODO: Traverse
+        f(Order::Pre, RefNodeMut::ExprCall(self));
+
+        self.callee.depth_first_iter_mut(f);
+
+        for arg in &mut self.arguments {
+            arg.depth_first_iter_mut(f);
+        }
+
+        f(Order::Post, RefNodeMut::ExprCall(self));
     }
 }
 
