@@ -3,7 +3,7 @@ use crate::{
     kind::{
         ArrayType, Bool, Float8, Float16, Float32, Float64, Float128, FunctionType,
         FunctionTypeParameter, Int8, Int16, Int32, Int64, Int128, LatentType, Lifetime, OpaqueType,
-        ReferenceType, RefinementType, SliceType, TupleType, Type, TypeName, TypeParentheses,
+        ReferenceType, RefinementType, SliceType, TupleType, Type, TypeParentheses, TypePath,
         TypeSyntaxError, UInt8, UInt16, UInt32, UInt64, UInt128,
     },
     ty::{InferType, UnitType},
@@ -142,10 +142,21 @@ impl ParseTreeIter for InferType {
     }
 }
 
-impl ParseTreeIter for TypeName {
+impl ParseTreeIter for TypePath {
     fn depth_first_iter(&self, f: &mut dyn FnMut(Order, RefNode)) {
-        f(Order::Enter, RefNode::TypeTypeName(&self.name));
-        f(Order::Leave, RefNode::TypeTypeName(&self.name));
+        f(Order::Enter, RefNode::TypeTypeName(self));
+
+        for segment in &self.segments {
+            let _ = segment.identifier;
+
+            if let Some(args) = &segment.type_arguments {
+                for arg in args {
+                    arg.depth_first_iter(f);
+                }
+            }
+        }
+
+        f(Order::Leave, RefNode::TypeTypeName(self));
     }
 }
 
@@ -324,7 +335,7 @@ impl ParseTreeIter for Type {
             Type::Float128(ty) => ty.depth_first_iter(f),
             Type::UnitType(ty) => ty.depth_first_iter(f),
             Type::InferType(ty) => ty.depth_first_iter(f),
-            Type::TypeName(ty) => ty.depth_first_iter(f),
+            Type::TypePath(ty) => ty.depth_first_iter(f),
             Type::RefinementType(ty) => ty.depth_first_iter(f),
             Type::TupleType(ty) => ty.depth_first_iter(f),
             Type::ArrayType(ty) => ty.depth_first_iter(f),

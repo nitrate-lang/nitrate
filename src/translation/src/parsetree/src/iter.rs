@@ -4,17 +4,17 @@ use crate::{
     expr::{
         Await, BStringLit, BinExpr, Block, BooleanLit, Break, Call, CallArgument, Cast, Closure,
         Continue, DoWhileLoop, ExprParentheses, FloatLit, ForEach, If, IndexAccess, IntegerLit,
-        List, Object, Path, PathTypeArgument, Return, StringLit, Switch, SwitchCase, TypeInfo,
+        List, Object, Path, TypeArgument, Return, StringLit, Switch, SwitchCase, TypeInfo,
         UnaryExpr, WhileLoop,
     },
     item::{
         Enum, EnumVariant, FunctionParameter, GenericParameter, Impl, Import, Module,
-        NamedFunction, Package, Struct, StructField, Trait, TypeAlias, Variable,
+        NamedFunction, Package, SimplePath, Struct, StructField, Trait, TypeAlias, Variable,
     },
     tag::OpaqueTypeNameId,
     ty::{
         ArrayType, FunctionType, FunctionTypeParameter, Lifetime, ReferenceType, RefinementType,
-        SliceType, TupleType, Type,
+        SliceType, TupleType, Type, TypePath,
     },
 };
 
@@ -46,7 +46,7 @@ pub enum RefNode<'a> {
     ExprBlock(&'a Block),
     ExprClosure(&'a Closure),
     ExprVariable(&'a Variable),
-    ExprPathTypeArgument(&'a PathTypeArgument),
+    ExprPathTypeArgument(&'a TypeArgument),
     ExprPath(&'a Path),
     ExprIndexAccess(&'a IndexAccess),
     ExprIf(&'a If),
@@ -81,7 +81,7 @@ pub enum RefNode<'a> {
     TypeFloat128,
     TypeUnitType,
     TypeInferType,
-    TypeTypeName(&'a Path),
+    TypeTypeName(&'a TypePath),
     TypeRefinementType(&'a RefinementType),
     TypeTupleType(&'a TupleType),
     TypeArrayType(&'a ArrayType),
@@ -97,6 +97,7 @@ pub enum RefNode<'a> {
     ItemSyntaxError,
     ItemPackage(&'a Package),
     ItemModule(&'a Module),
+    ItemSimplePath(&'a SimplePath),
     ItemImport(&'a Import),
     ItemGenericParameter(&'a GenericParameter),
     ItemTypeAlias(&'a Arc<RwLock<TypeAlias>>),

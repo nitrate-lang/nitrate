@@ -9,8 +9,8 @@ use nitrate_parsetree::{
         CallArgument, Cast, Closure, Continue, DoWhileLoop, Expr, ExprParentheses, ExprSyntaxError,
         Float8, Float16, Float32, Float64, Float128, FloatLit, ForEach, FunctionParameter, If,
         IndexAccess, Int8, Int16, Int32, Int64, Int128, IntegerLit, List, Mutability, Path,
-        PathTypeArgument, Return, Safety, StringLit, Type, TypeInfo, TypeName, UInt8, UInt16,
-        UInt32, UInt64, UInt128, UnaryExpr, UnaryExprOp, WhileLoop,
+        PathExprSegment, Return, Safety, StringLit, Type, TypeArgument, TypeInfo, TypePath,
+        TypePathSegment, UInt8, UInt16, UInt32, UInt64, UInt128, UnaryExpr, UnaryExprOp, WhileLoop,
     },
     tag::{
         VariableNameId, intern_arg_name, intern_label_name, intern_parameter_name,
@@ -518,11 +518,11 @@ impl Parser<'_, '_> {
             Token::F64 => Type::Float64(Float64 {}),
             Token::F128 => Type::Float128(Float128 {}),
 
-            Token::Name(name) => Type::TypeName(Box::new(TypeName {
-                name: Path {
-                    path: vec![name],
-                    type_arguments: Vec::new(),
-                },
+            Token::Name(name) => Type::TypePath(Box::new(TypePath {
+                segments: vec![TypePathSegment {
+                    identifier: name,
+                    type_arguments: None,
+                }],
             })),
 
             _ => return value,
@@ -612,8 +612,8 @@ impl Parser<'_, '_> {
         Some(attributes)
     }
 
-    pub(crate) fn parse_generic_arguments(&mut self) -> Vec<PathTypeArgument> {
-        fn parse_generic_argument(this: &mut Parser) -> PathTypeArgument {
+    pub(crate) fn parse_generic_arguments(&mut self) -> Vec<TypeArgument> {
+        fn parse_generic_argument(this: &mut Parser) -> TypeArgument {
             let mut name = None;
 
             let rewind_pos = this.lexer.current_pos();
@@ -627,7 +627,7 @@ impl Parser<'_, '_> {
 
             let value = this.parse_type();
 
-            PathTypeArgument { name, value }
+            TypeArgument { name, value }
         }
 
         if !self.lexer.skip_if(&Token::Lt) {
@@ -671,6 +671,8 @@ impl Parser<'_, '_> {
     }
 
     pub(crate) fn parse_path(&mut self) -> Path {
+        // TODO: Cleanup
+
         assert!(matches!(self.lexer.peek_t(), Token::Name(_) | Token::Colon));
 
         let mut path = Vec::new();
@@ -685,7 +687,10 @@ impl Parser<'_, '_> {
 
                     self.lexer.skip_tok();
 
-                    path.push(name);
+                    path.push(PathExprSegment {
+                        identifier: name,
+                        type_arguments: None,
+                    });
                     last_was_scope = false;
                 }
 
@@ -703,7 +708,10 @@ impl Parser<'_, '_> {
                     }
 
                     if path.is_empty() {
-                        path.push(String::from(""));
+                        path.push(PathExprSegment {
+                            identifier: "".into(),
+                            type_arguments: None,
+                        });
                     }
 
                     last_was_scope = true;
@@ -718,16 +726,14 @@ impl Parser<'_, '_> {
             self.bugs.push(&bug);
         }
 
-        let type_arguments = if last_was_scope {
-            self.parse_generic_arguments()
-        } else {
-            Vec::new()
-        };
-
-        Path {
-            path,
-            type_arguments,
+        if last_was_scope {
+            let bug = SyntaxErr::PathTrailingScopeSeparator(self.lexer.peek_pos());
+            self.bugs.push(&bug);
         }
+
+        // TODO: Support generic type arguments in paths
+
+        Path { segments: path }
     }
 
     fn parse_type_info(&mut self) -> Type {

@@ -1,9 +1,10 @@
 use crate::{
-    kind::{Block, Expr, Path, Type},
+    kind::{Block, Expr, Type},
     tag::{
         EnumVariantNameId, FunctionNameId, ImportAliasNameId, ModuleNameId, PackageNameId,
         ParameterNameId, StructFieldNameId, TraitNameId, TypeNameId, VariableNameId,
     },
+    ty::TypePath,
 };
 
 use serde::{Deserialize, Serialize};
@@ -34,10 +35,20 @@ pub struct Module {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SimplePathSegment {
+    pub segment: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SimplePath {
+    pub segments: Vec<SimplePathSegment>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Import {
     pub visibility: Option<Visibility>,
     pub attributes: Option<Vec<Expr>>,
-    pub path: Path,
+    pub path: SimplePath,
     pub alias: Option<ImportAliasNameId>,
 }
 
@@ -115,7 +126,7 @@ pub struct Impl {
     pub visibility: Option<Visibility>,
     pub attributes: Option<Vec<Expr>>,
     pub type_params: Option<Vec<GenericParameter>>,
-    pub trait_path: Option<Path>,
+    pub trait_path: Option<TypePath>,
     pub for_type: Type,
     pub items: Vec<AssociatedItem>,
 }
@@ -181,6 +192,7 @@ pub struct Variable {
 pub enum Item {
     SyntaxError(ItemSyntaxError),
     Module(Box<Module>),
+    SimplePath(Box<SimplePath>),
     Import(Box<Import>),
     TypeAlias(Arc<RwLock<TypeAlias>>),
     Struct(Arc<RwLock<Struct>>),
@@ -196,6 +208,7 @@ impl std::fmt::Debug for Item {
         match self {
             Item::SyntaxError(e) => e.fmt(f),
             Item::Module(e) => e.fmt(f),
+            Item::SimplePath(e) => e.fmt(f),
             Item::Import(e) => e.fmt(f),
             Item::TypeAlias(e) => e.fmt(f),
             Item::Struct(e) => e.fmt(f),

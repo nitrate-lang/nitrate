@@ -6,8 +6,8 @@ use crate::bugs::SyntaxErr;
 use nitrate_parsetree::{
     kind::{
         AssociatedItem, Enum, EnumVariant, FunctionParameter, GenericParameter, Impl, Import, Item,
-        ItemSyntaxError, Module, Mutability, NamedFunction, Struct, StructField, Trait, TypeAlias,
-        Variable, VariableKind, Visibility,
+        ItemSyntaxError, Module, Mutability, NamedFunction, SimplePath, SimplePathSegment, Struct,
+        StructField, Trait, TypeAlias, Variable, VariableKind, Visibility,
     },
     tag::{
         intern_enum_variant_name, intern_function_name, intern_import_alias_name,
@@ -125,12 +125,50 @@ impl Parser<'_, '_> {
         }
     }
 
+    fn parse_simple_path(&mut self) -> SimplePath {
+        fn parse_double_colon(this: &mut Parser) -> bool {
+            if !this.lexer.skip_if(&Token::Colon) {
+                return false;
+            }
+
+            if !this.lexer.skip_if(&Token::Colon) {
+                let bug = SyntaxErr::ExpectedColon(this.lexer.peek_pos());
+                this.bugs.push(&bug);
+                return false;
+            }
+
+            true
+        }
+
+        let mut segments = Vec::new();
+
+        if parse_double_colon(self) {
+            segments.push(SimplePathSegment { segment: "".into() });
+        }
+
+        while !self.lexer.is_eof() {
+            let segment = self.lexer.next_if_name().unwrap_or_else(|| {
+                let bug = SyntaxErr::PathIsEmpty(self.lexer.peek_pos());
+                self.bugs.push(&bug);
+                "".into()
+            });
+
+            segments.push(SimplePathSegment { segment });
+
+            if !parse_double_colon(self) {
+                break;
+            }
+        }
+
+        SimplePath { segments }
+    }
+
     fn parse_import(&mut self) -> Import {
         assert!(self.lexer.peek_t() == Token::Import);
         self.lexer.skip_tok();
 
         let attributes = self.parse_attributes();
-        let path = self.parse_path();
+        let path = self.parse_simple_path();
 
         let alias = if self.lexer.skip_if(&Token::As) {
             let name = self.lexer.next_if_name().unwrap_or_else(|| {

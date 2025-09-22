@@ -4,18 +4,18 @@ use crate::{
     expr::{
         Await, BStringLit, BinExpr, Block, BooleanLit, Break, Call, CallArgument, Cast, Closure,
         Continue, DoWhileLoop, ExprParentheses, FloatLit, ForEach, If, IndexAccess, IntegerLit,
-        List, Object, Path, PathTypeArgument, Return, StringLit, Switch, SwitchCase, TypeInfo,
+        List, Object, Path, Return, StringLit, Switch, SwitchCase, TypeArgument, TypeInfo,
         UnaryExpr, WhileLoop,
     },
     item::{
         Enum, EnumVariant, FunctionParameter, GenericParameter, Impl, Import, Module,
-        NamedFunction, Package, Struct, StructField, Trait, TypeAlias, Variable,
+        NamedFunction, Package, SimplePath, Struct, StructField, Trait, TypeAlias, Variable,
     },
     iter::Order,
     tag::OpaqueTypeNameId,
     ty::{
         ArrayType, FunctionType, FunctionTypeParameter, Lifetime, ReferenceType, RefinementType,
-        SliceType, TupleType, Type,
+        SliceType, TupleType, Type, TypePath,
     },
 };
 
@@ -41,7 +41,7 @@ pub enum RefNodeMut<'a> {
     ExprBlock(&'a mut Block),
     ExprClosure(&'a mut Closure),
     ExprVariable(&'a mut Variable),
-    ExprPathTypeArgument(&'a mut PathTypeArgument),
+    ExprPathTypeArgument(&'a mut TypeArgument),
     ExprPath(&'a mut Path),
     ExprIndexAccess(&'a mut IndexAccess),
     ExprIf(&'a mut If),
@@ -76,7 +76,7 @@ pub enum RefNodeMut<'a> {
     TypeFloat128,
     TypeUnitType,
     TypeInferType,
-    TypeTypeName(&'a mut Path),
+    TypeTypeName(&'a mut TypePath),
     TypeRefinementType(&'a mut RefinementType),
     TypeTupleType(&'a mut TupleType),
     TypeArrayType(&'a mut ArrayType),
@@ -92,6 +92,7 @@ pub enum RefNodeMut<'a> {
     ItemSyntaxError,
     ItemPackage(&'a mut Package),
     ItemModule(&'a mut Module),
+    ItemSimplePath(&'a mut SimplePath),
     ItemImport(&'a mut Import),
     ItemGenericParameter(&'a mut GenericParameter),
     ItemTypeAlias(&'a mut Arc<RwLock<TypeAlias>>),

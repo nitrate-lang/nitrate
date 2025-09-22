@@ -2,7 +2,7 @@ use std::sync::{Arc, RwLock};
 
 use crate::{
     Order, ParseTreeIterMut, RefNodeMut,
-    item::{ItemSyntaxError, Package},
+    item::{ItemSyntaxError, Package, SimplePath},
     kind::{
         AssociatedItem, Enum, EnumVariant, FunctionParameter, GenericParameter, Impl, Import, Item,
         Module, NamedFunction, Struct, StructField, Trait, TypeAlias, Variable,
@@ -45,6 +45,13 @@ impl ParseTreeIterMut for Module {
         }
 
         f(Order::Leave, RefNodeMut::ItemModule(self));
+    }
+}
+
+impl ParseTreeIterMut for SimplePath {
+    fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
+        f(Order::Enter, RefNodeMut::ItemSimplePath(self));
+        f(Order::Leave, RefNodeMut::ItemSimplePath(self));
     }
 }
 
@@ -388,6 +395,7 @@ impl ParseTreeIterMut for Item {
         match self {
             Item::SyntaxError(item) => item.depth_first_iter_mut(f),
             Item::Module(item) => item.depth_first_iter_mut(f),
+            Item::SimplePath(item) => item.depth_first_iter_mut(f),
             Item::Import(item) => item.depth_first_iter_mut(f),
             Item::TypeAlias(item) => item.depth_first_iter_mut(f),
             Item::Struct(item) => item.depth_first_iter_mut(f),

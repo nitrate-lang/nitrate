@@ -5,8 +5,8 @@ use nitrate_parsetree::{
     kind::{
         ArrayType, Bool, Expr, Float8, Float16, Float32, Float64, Float128, FunctionType,
         FunctionTypeParameter, Int8, Int16, Int32, Int64, Int128, LatentType, Lifetime, OpaqueType,
-        Path, ReferenceType, RefinementType, SliceType, TupleType, Type, TypeName, TypeParentheses,
-        TypeSyntaxError, UInt8, UInt16, UInt32, UInt64, UInt128,
+        ReferenceType, RefinementType, SliceType, TupleType, Type, TypeParentheses, TypePath,
+        TypePathSegment, TypeSyntaxError, UInt8, UInt16, UInt32, UInt64, UInt128,
     },
     tag::{intern_lifetime_name, intern_opaque_type_name, intern_parameter_name},
 };
@@ -369,22 +369,27 @@ impl Parser<'_, '_> {
         }
     }
 
-    pub(crate) fn parse_type_path(&mut self) -> Path {
+    pub(crate) fn parse_type_path(&mut self) -> TypePath {
+        // TODO: Cleanup
+
         assert!(matches!(self.lexer.peek_t(), Token::Name(_) | Token::Colon));
 
-        let mut path = Vec::new();
+        let mut segments = Vec::new();
         let mut last_was_scope = false;
 
         loop {
             match self.lexer.peek_t() {
                 Token::Name(name) => {
-                    if !last_was_scope && !path.is_empty() {
+                    if !last_was_scope && !segments.is_empty() {
                         break;
                     }
 
                     self.lexer.skip_tok();
 
-                    path.push(name);
+                    segments.push(TypePathSegment {
+                        identifier: name.clone(),
+                        type_arguments: Some(self.parse_generic_arguments()),
+                    });
                     last_was_scope = false;
                 }
 
@@ -401,8 +406,11 @@ impl Parser<'_, '_> {
                         break;
                     }
 
-                    if path.is_empty() {
-                        path.push(String::from(""));
+                    if segments.is_empty() {
+                        segments.push(TypePathSegment {
+                            identifier: "".into(),
+                            type_arguments: None,
+                        });
                     }
 
                     last_was_scope = true;
@@ -412,7 +420,7 @@ impl Parser<'_, '_> {
             }
         }
 
-        if path.is_empty() {
+        if segments.is_empty() {
             let bug = SyntaxErr::PathIsEmpty(self.lexer.peek_pos());
             self.bugs.push(&bug);
         }
@@ -422,12 +430,7 @@ impl Parser<'_, '_> {
             self.bugs.push(&bug);
         }
 
-        let type_arguments = self.parse_generic_arguments();
-
-        Path {
-            path,
-            type_arguments,
-        }
+        TypePath { segments }
     }
 
     fn parse_type_primary(&mut self) -> Type {
@@ -453,9 +456,7 @@ impl Parser<'_, '_> {
 
             Token::SingleQuote => Type::Lifetime(Box::new(self.parse_lifetime())),
 
-            Token::Name(_) | Token::Colon => Type::TypeName(Box::new(TypeName {
-                name: self.parse_type_path(),
-            })),
+            Token::Name(_) | Token::Colon => Type::TypePath(Box::new(self.parse_type_path())),
 
             Token::OpenBracket => self.parse_array_or_slice(),
             Token::And => Type::ReferenceType(Box::new(self.parse_reference_type())),

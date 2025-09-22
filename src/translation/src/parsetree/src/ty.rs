@@ -1,5 +1,6 @@
 use crate::{
-    kind::{Block, Expr, Path},
+    expr::TypeArgument,
+    kind::{Block, Expr},
     tag::{LifetimeNameId, OpaqueTypeNameId, ParameterNameId},
 };
 
@@ -63,8 +64,14 @@ pub struct UnitType;
 pub struct InferType;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct TypeName {
-    pub name: Path,
+pub struct TypePathSegment {
+    pub identifier: String,
+    pub type_arguments: Option<Vec<TypeArgument>>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TypePath {
+    pub segments: Vec<TypePathSegment>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -162,7 +169,7 @@ pub enum Type {
     Float128(Float128),
     UnitType(UnitType),
     InferType(InferType),
-    TypeName(Box<TypeName>),
+    TypePath(Box<TypePath>),
     RefinementType(Box<RefinementType>),
     TupleType(Box<TupleType>),
     ArrayType(Box<ArrayType>),
@@ -197,7 +204,7 @@ impl std::fmt::Debug for Type {
             Type::Float128(_) => write!(f, "f128"),
             Type::UnitType(_) => write!(f, "()"),
             Type::InferType(_) => write!(f, "_"),
-            Type::TypeName(e) => e.fmt(f),
+            Type::TypePath(e) => e.fmt(f),
             Type::RefinementType(e) => e.fmt(f),
             Type::TupleType(e) => e.fmt(f),
             Type::ArrayType(e) => e.fmt(f),

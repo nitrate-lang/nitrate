@@ -211,15 +211,20 @@ pub struct Closure {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct PathTypeArgument {
+pub struct TypeArgument {
     pub name: Option<ArgNameId>,
     pub value: Type,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PathExprSegment {
+    pub identifier: String,
+    pub type_arguments: Option<Vec<TypeArgument>>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Path {
-    pub path: Vec<String>,
-    pub type_arguments: Vec<PathTypeArgument>,
+    pub segments: Vec<PathExprSegment>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

@@ -1,10 +1,10 @@
 use crate::{
     Order, ParseTreeIterMut, RefNodeMut,
-    expr::{Object, PathTypeArgument, Switch, SwitchCase, UnitLit},
+    expr::{Object, Path, TypeArgument, Switch, SwitchCase, UnitLit},
     kind::{
         Await, BStringLit, BinExpr, Block, BlockItem, BooleanLit, Break, Call, CallArgument, Cast,
         Closure, Continue, DoWhileLoop, Expr, ExprParentheses, ExprSyntaxError, FloatLit, ForEach,
-        If, IndexAccess, IntegerLit, List, Path, Return, StringLit, TypeInfo, UnaryExpr, WhileLoop,
+        If, IndexAccess, IntegerLit, List, Return, StringLit, TypeInfo, UnaryExpr, WhileLoop,
     },
 };
 
@@ -184,7 +184,7 @@ impl ParseTreeIterMut for Closure {
     }
 }
 
-impl ParseTreeIterMut for PathTypeArgument {
+impl ParseTreeIterMut for TypeArgument {
     fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
         f(Order::Enter, RefNodeMut::ExprPathTypeArgument(self));
 
@@ -199,8 +199,14 @@ impl ParseTreeIterMut for Path {
     fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
         f(Order::Enter, RefNodeMut::ExprPath(self));
 
-        for arg in &mut self.type_arguments {
-            arg.depth_first_iter_mut(f);
+        for segment in &mut self.segments {
+            let _ = &segment.identifier;
+
+            if let Some(type_args) = &mut segment.type_arguments {
+                for type_arg in type_args {
+                    type_arg.depth_first_iter_mut(f);
+                }
+            }
         }
 
         f(Order::Leave, RefNodeMut::ExprPath(self));
