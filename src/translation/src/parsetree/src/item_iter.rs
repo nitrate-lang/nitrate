@@ -380,7 +380,7 @@ impl ParseTreeIter for Arc<RwLock<Variable>> {
             }
         }
 
-        if let Some(var_type) = &mut this.var_type {
+        if let Some(var_type) = &mut this.ty {
             var_type.depth_first_iter(f);
         }
 

@@ -5,9 +5,9 @@ use crate::bugs::SyntaxErr;
 
 use nitrate_parsetree::{
     kind::{
-        AssociatedItem, Enum, EnumVariant, FunctionParameter, GenericParameter, Impl, Import, Item,
-        ItemPath, ItemPathSegment, ItemPathTarget, ItemSyntaxError, Module, Mutability,
-        Function, Struct, StructField, Trait, TypeAlias, Variable, VariableKind, Visibility,
+        AssociatedItem, Enum, EnumVariant, Function, FunctionParameter, GenericParameter, Impl,
+        Import, Item, ItemPath, ItemPathSegment, ItemPathTarget, ItemSyntaxError, Module,
+        Mutability, Struct, StructField, Trait, TypeAlias, Variable, VariableKind, Visibility,
     },
     tag::{
         intern_enum_variant_name, intern_function_name, intern_import_alias_name,
@@ -757,7 +757,7 @@ impl Parser<'_, '_> {
             attributes,
             mutability,
             name,
-            var_type,
+            ty: var_type,
             initializer,
         }
     }

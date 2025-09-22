@@ -5,61 +5,74 @@ use crate::tag::{ArgNameId, LabelNameId, StringLiteralId, StructFieldNameId, Var
 use nitrate_tokenize::IntegerKind;
 use ordered_float::NotNan;
 use serde::{Deserialize, Serialize};
+use serde_with::skip_serializing_none;
 use std::collections::HashMap;
 use std::sync::{Arc, RwLock, Weak};
 
+#[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ExprSyntaxError;
 
+#[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ExprParentheses {
     pub inner: Expr,
 }
 
+#[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BooleanLit {
     pub value: bool,
 }
 
+#[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct IntegerLit {
     pub value: u128,
     pub kind: IntegerKind,
 }
 
+#[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FloatLit {
     pub value: NotNan<f64>,
 }
 
+#[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct StringLit {
     pub value: StringLiteralId,
 }
 
+#[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BStringLit {
     pub value: Vec<u8>,
 }
 
+#[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct UnitLit {}
 
+#[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TypeInfo {
     pub the: Type,
 }
 
+#[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct List {
     pub elements: Vec<Expr>,
 }
 
+#[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Object {
     pub fields: HashMap<StructFieldNameId, Expr>,
 }
 
+#[skip_serializing_none]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum UnaryExprOp {
     /// `+`
@@ -78,12 +91,14 @@ pub enum UnaryExprOp {
     Typeof,
 }
 
+#[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct UnaryExpr {
     pub operator: UnaryExprOp,
     pub operand: Expr,
 }
 
+#[skip_serializing_none]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum BinExprOp {
     /// `+`
@@ -170,6 +185,7 @@ pub enum BinExprOp {
     As,
 }
 
+#[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BinExpr {
     pub operator: BinExprOp,
@@ -177,24 +193,28 @@ pub struct BinExpr {
     pub right: Expr,
 }
 
+#[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Cast {
     pub value: Expr,
     pub to: Type,
 }
 
+#[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum BlockItem {
     Variable(Arc<RwLock<Variable>>),
     Expr(Expr),
 }
 
+#[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum Safety {
     Safe,
     Unsafe,
 }
 
+#[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Block {
     pub safety: Option<Safety>,
@@ -202,6 +222,7 @@ pub struct Block {
     pub ends_with_semi: bool,
 }
 
+#[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Closure {
     pub attributes: Option<Vec<Expr>>,
@@ -210,12 +231,14 @@ pub struct Closure {
     pub definition: Block,
 }
 
+#[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TypeArgument {
     pub name: Option<ArgNameId>,
     pub value: Type,
 }
 
+#[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum ExprPathTarget {
     Unresolved,
@@ -232,12 +255,14 @@ impl Default for ExprPathTarget {
     }
 }
 
+#[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ExprPathSegment {
     pub identifier: String,
     pub type_arguments: Option<Vec<TypeArgument>>,
 }
 
+#[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ExprPath {
     pub segments: Vec<ExprPathSegment>,
@@ -246,12 +271,14 @@ pub struct ExprPath {
     pub to: ExprPathTarget,
 }
 
+#[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct IndexAccess {
     pub collection: Expr,
     pub index: Expr,
 }
 
+#[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct If {
     pub condition: Expr,
@@ -259,24 +286,28 @@ pub struct If {
     pub else_branch: Option<Block>,
 }
 
+#[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct WhileLoop {
     pub condition: Expr,
     pub body: Block,
 }
 
+#[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DoWhileLoop {
     pub condition: Expr,
     pub body: Block,
 }
 
+#[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SwitchCase {
     pub condition: Expr,
     pub body: Block,
 }
 
+#[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Switch {
     pub condition: Expr,
@@ -284,21 +315,25 @@ pub struct Switch {
     pub default: Option<Block>,
 }
 
+#[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Break {
     pub label: Option<LabelNameId>,
 }
 
+#[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Continue {
     pub label: Option<LabelNameId>,
 }
 
+#[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Return {
     pub value: Option<Expr>,
 }
 
+#[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ForEach {
     pub attributes: Option<Vec<Expr>>,
@@ -307,23 +342,27 @@ pub struct ForEach {
     pub body: Block,
 }
 
+#[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Await {
     pub future: Expr,
 }
 
+#[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CallArgument {
     pub name: Option<ArgNameId>,
     pub value: Expr,
 }
 
+#[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Call {
     pub callee: Expr,
     pub arguments: Vec<CallArgument>,
 }
 
+#[skip_serializing_none]
 #[derive(Clone, Serialize, Deserialize)]
 pub enum Expr {
     SyntaxError(ExprSyntaxError),

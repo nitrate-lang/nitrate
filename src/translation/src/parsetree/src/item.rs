@@ -213,7 +213,7 @@ pub struct Variable {
     pub attributes: Option<Vec<Expr>>,
     pub mutability: Option<Mutability>,
     pub name: VariableNameId,
-    pub var_type: Option<Type>,
+    pub ty: Option<Type>,
     pub initializer: Option<Expr>,
 }
 
