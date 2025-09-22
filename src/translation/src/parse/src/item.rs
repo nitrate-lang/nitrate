@@ -389,19 +389,19 @@ impl Parser<'_, '_> {
             Token::Fn => {
                 let mut func = self.parse_named_function();
                 func.visibility = visibility;
-                AssociatedItem::Method(func)
+                AssociatedItem::Method(Arc::new(RwLock::new(func)))
             }
 
             Token::Const => {
                 let mut const_var = self.parse_variable();
                 const_var.visibility = visibility;
-                AssociatedItem::ConstantItem(const_var)
+                AssociatedItem::ConstantItem(Arc::new(RwLock::new(const_var)))
             }
 
             Token::Type => {
                 let mut type_alias = self.parse_type_alias();
                 type_alias.visibility = visibility;
-                AssociatedItem::TypeAlias(type_alias)
+                AssociatedItem::TypeAlias(Arc::new(RwLock::new(type_alias)))
             }
 
             _ => {

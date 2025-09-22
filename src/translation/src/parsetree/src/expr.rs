@@ -6,6 +6,7 @@ use nitrate_tokenize::IntegerKind;
 use ordered_float::NotNan;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use std::sync::{Arc, RwLock};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ExprSyntaxError;
@@ -184,7 +185,7 @@ pub struct Cast {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum BlockItem {
-    Variable(Variable),
+    Variable(Arc<RwLock<Variable>>),
     Expr(Expr),
 }
 
@@ -321,7 +322,7 @@ pub enum Expr {
     Block(Box<Block>),
 
     Closure(Box<Closure>),
-    Variable(Box<Variable>),
+    Variable(Arc<RwLock<Variable>>),
     Path(Box<Path>),
     IndexAccess(Box<IndexAccess>),
 

@@ -72,7 +72,7 @@ pub struct Struct {
     pub name: TypeNameId,
     pub type_params: Option<Vec<GenericParameter>>,
     pub fields: Vec<StructField>,
-    pub methods: Vec<NamedFunction>,
+    pub methods: Vec<Arc<RwLock<NamedFunction>>>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -96,9 +96,9 @@ pub struct Enum {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum AssociatedItem {
     SyntaxError(ItemSyntaxError),
-    TypeAlias(TypeAlias),
-    ConstantItem(Variable),
-    Method(NamedFunction),
+    TypeAlias(Arc<RwLock<TypeAlias>>),
+    ConstantItem(Arc<RwLock<Variable>>),
+    Method(Arc<RwLock<NamedFunction>>),
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

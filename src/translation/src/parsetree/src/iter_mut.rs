@@ -1,3 +1,5 @@
+use std::sync::{Arc, RwLock};
+
 use crate::{
     expr::{
         Await, BStringLit, BinExpr, Block, BooleanLit, Break, Call, CallArgument, Cast, Closure,
@@ -91,16 +93,16 @@ pub enum RefNodeMut<'a> {
     ItemModule(&'a mut Module),
     ItemImport(&'a mut Import),
     ItemGenericParameter(&'a mut GenericParameter),
-    ItemTypeAlias(&'a mut TypeAlias),
+    ItemTypeAlias(&'a mut Arc<RwLock<TypeAlias>>),
     ItemStructField(&'a mut StructField),
-    ItemStruct(&'a mut Struct),
+    ItemStruct(&'a mut Arc<RwLock<Struct>>),
     ItemEnumVariant(&'a mut EnumVariant),
-    ItemEnum(&'a mut Enum),
-    ItemTrait(&'a mut Trait),
+    ItemEnum(&'a mut Arc<RwLock<Enum>>),
+    ItemTrait(&'a mut Arc<RwLock<Trait>>),
     ItemImpl(&'a mut Impl),
     ItemFunctionParameter(&'a mut FunctionParameter),
-    ItemNamedFunction(&'a mut NamedFunction),
-    ItemVariable(&'a mut Variable),
+    ItemNamedFunction(&'a mut Arc<RwLock<NamedFunction>>),
+    ItemVariable(&'a mut Arc<RwLock<Variable>>),
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
