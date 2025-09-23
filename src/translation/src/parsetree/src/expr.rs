@@ -226,6 +226,7 @@ pub struct Block {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Closure {
     pub attributes: Option<Vec<Expr>>,
+    pub unique_id: u64,
     pub parameters: Vec<FunctionParameter>,
     pub return_type: Option<Type>,
     pub definition: Block,

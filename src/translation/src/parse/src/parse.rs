@@ -5,11 +5,16 @@ use nitrate_tokenize::Lexer;
 pub struct Parser<'a, 'bugs> {
     pub(crate) lexer: Lexer<'a>,
     pub(crate) bugs: &'bugs DiagnosticCollector,
+    pub(crate) closure_ctr: u64,
 }
 
 impl<'a, 'bugs> Parser<'a, 'bugs> {
     pub fn new(lexer: Lexer<'a>, bugs: &'bugs DiagnosticCollector) -> Self {
-        Parser { lexer, bugs }
+        Parser {
+            lexer,
+            bugs,
+            closure_ctr: 0,
+        }
     }
 
     pub fn parse_source(&mut self) -> Vec<Item> {

@@ -1057,6 +1057,9 @@ impl Parser<'_, '_> {
     }
 
     fn parse_closure(&mut self) -> Closure {
+        let unique_id = self.closure_ctr;
+        self.closure_ctr += 1;
+
         if matches!(
             self.lexer.peek_t(),
             Token::OpenBrace | Token::Unsafe | Token::Safe
@@ -1065,6 +1068,7 @@ impl Parser<'_, '_> {
 
             return Closure {
                 attributes: None,
+                unique_id,
                 parameters: Vec::new(),
                 return_type: None,
                 definition,
@@ -1092,6 +1096,7 @@ impl Parser<'_, '_> {
 
         Closure {
             attributes,
+            unique_id,
             parameters,
             return_type,
             definition,
