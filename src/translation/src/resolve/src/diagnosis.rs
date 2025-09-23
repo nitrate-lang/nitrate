@@ -34,7 +34,7 @@ impl FormattableDiagnosticGroup for ResolveIssue {
                     "Unresolved expression path: {} (candidate: {})",
                     path.segments
                         .iter()
-                        .map(|s| s.identifier.to_owned())
+                        .map(|s| s.name.to_owned())
                         .collect::<Vec<_>>()
                         .join("::"),
                     candidate
@@ -47,7 +47,7 @@ impl FormattableDiagnosticGroup for ResolveIssue {
                     "Ambiguous expression path: {} (candidate: {})",
                     path.segments
                         .iter()
-                        .map(|s| s.identifier.to_owned())
+                        .map(|s| s.name.to_owned())
                         .collect::<Vec<_>>()
                         .join("::"),
                     candidate
@@ -60,7 +60,7 @@ impl FormattableDiagnosticGroup for ResolveIssue {
                     "Unresolved type path: {} (candidate: {})",
                     path.segments
                         .iter()
-                        .map(|s| s.identifier.to_owned())
+                        .map(|s| s.name.to_owned())
                         .collect::<Vec<_>>()
                         .join("::"),
                     candidate
@@ -73,7 +73,7 @@ impl FormattableDiagnosticGroup for ResolveIssue {
                     "Ambiguous type path: {} (candidate: {})",
                     path.segments
                         .iter()
-                        .map(|s| s.identifier.to_owned())
+                        .map(|s| s.name.to_owned())
                         .collect::<Vec<_>>()
                         .join("::"),
                     candidate

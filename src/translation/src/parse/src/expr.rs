@@ -521,7 +521,7 @@ impl Parser<'_, '_> {
 
             Token::Name(name) => Type::TypePath(Box::new(TypePath {
                 segments: vec![TypePathSegment {
-                    identifier: name,
+                    name: name,
                     type_arguments: None,
                 }],
                 to: TypePathTarget::Unresolved,
@@ -702,7 +702,7 @@ impl Parser<'_, '_> {
             }
 
             segments.push(ExprPathSegment {
-                identifier: "".into(),
+                name: "".into(),
                 type_arguments,
             });
         }
@@ -737,12 +737,12 @@ impl Parser<'_, '_> {
                 }
 
                 segments.push(ExprPathSegment {
-                    identifier,
+                    name: identifier,
                     type_arguments,
                 });
             } else {
                 segments.push(ExprPathSegment {
-                    identifier,
+                    name: identifier,
                     type_arguments: None,
                 });
 

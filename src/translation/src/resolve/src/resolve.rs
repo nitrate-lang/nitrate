@@ -9,7 +9,7 @@ use nitrate_parsetree::{
 use std::sync::Arc;
 
 fn resolve_item_path(
-    mut _scope: Vec<String>,
+    _scope: &Vec<String>,
     _path: &mut ItemPath,
     _symbol_table: &SymbolTable,
     _bugs: &DiagnosticCollector,
@@ -19,8 +19,36 @@ fn resolve_item_path(
     // TODO: Resolve imports here?
 }
 
+fn resolve_expr_path_lookup(
+    path: &mut ExprPath,
+    candidate: String,
+    symbol_table: &SymbolTable,
+    bugs: &DiagnosticCollector,
+) -> bool {
+    let Some(symbols) = symbol_table.get(&candidate) else {
+        return false;
+    };
+
+    if symbols.len() > 1 {
+        let bug = ResolveIssue::ExprPathAmbiguous(path.clone(), candidate, symbols.clone());
+        bugs.push(&bug);
+        return false;
+    }
+
+    match symbols.first().expect("symbol table entry is empty") {
+        Symbol::TypeAlias(sym) => path.to = ExprPathTarget::TypeAlias(Arc::downgrade(&sym)),
+        Symbol::Struct(sym) => path.to = ExprPathTarget::Struct(Arc::downgrade(&sym)),
+        Symbol::Enum(sym) => path.to = ExprPathTarget::Enum(Arc::downgrade(&sym)),
+        Symbol::Trait(sym) => path.to = ExprPathTarget::Trait(Arc::downgrade(&sym)),
+        Symbol::Function(sym) => path.to = ExprPathTarget::Function(Arc::downgrade(&sym)),
+        Symbol::Variable(sym) => path.to = ExprPathTarget::Variable(Arc::downgrade(&sym)),
+    }
+
+    true
+}
+
 fn resolve_expr_path(
-    mut scope: Vec<String>,
+    scope: &[String],
     path: &mut ExprPath,
     symbol_table: &SymbolTable,
     bugs: &DiagnosticCollector,
@@ -28,47 +56,78 @@ fn resolve_expr_path(
     let pathname = path
         .segments
         .iter()
-        .map(|seg| seg.identifier.clone())
+        .map(|seg| seg.name.clone())
         .collect::<Vec<_>>()
         .join("::");
 
-    loop {
-        let joined_scope = scope.join("::");
-        let candidate = format!("{}::{}", joined_scope, pathname);
+    let is_root_path = path
+        .segments
+        .first()
+        .map(|seg| seg.name.is_empty())
+        .unwrap_or(false);
 
-        if scope.pop().is_none() {
-            let bug = ResolveIssue::ExprPathUnresolved(path.clone(), candidate);
-            bugs.push(&bug);
-            return false;
-        }
+    if is_root_path {
+        return resolve_expr_path_lookup(path, pathname, symbol_table, bugs);
+    }
 
-        if let Some(symbols) = symbol_table.get(&candidate) {
-            if symbols.is_empty() {
-                continue;
-            }
+    for i in (0..scope.len()).rev() {
+        let current_scope = &scope[0..=i];
+        let candidate = format!("{}::{}", current_scope.join("::"), pathname);
 
-            if symbols.len() > 1 {
-                let bug = ResolveIssue::ExprPathAmbiguous(path.clone(), candidate, symbols.clone());
-                bugs.push(&bug);
-                return false;
-            }
-
-            match symbols.first().unwrap() {
-                Symbol::TypeAlias(sym) => path.to = ExprPathTarget::TypeAlias(Arc::downgrade(&sym)),
-                Symbol::Struct(sym) => path.to = ExprPathTarget::Struct(Arc::downgrade(&sym)),
-                Symbol::Enum(sym) => path.to = ExprPathTarget::Enum(Arc::downgrade(&sym)),
-                Symbol::Trait(sym) => path.to = ExprPathTarget::Trait(Arc::downgrade(&sym)),
-                Symbol::Function(sym) => path.to = ExprPathTarget::Function(Arc::downgrade(&sym)),
-                Symbol::Variable(sym) => path.to = ExprPathTarget::Variable(Arc::downgrade(&sym)),
-            }
-
-            return true; // Successfully resolved
+        if resolve_expr_path_lookup(path, candidate, symbol_table, bugs) {
+            return true;
         }
     }
+
+    let bug = ResolveIssue::ExprPathUnresolved(path.clone(), pathname);
+    bugs.push(&bug);
+
+    false
+}
+
+fn resolve_type_path_lookup(
+    path: &mut TypePath,
+    candidate: String,
+    symbol_table: &SymbolTable,
+    bugs: &DiagnosticCollector,
+) -> bool {
+    let Some(symbols) = symbol_table.get(&candidate) else {
+        return false;
+    };
+
+    if symbols.len() > 1 {
+        let bug = ResolveIssue::TypePathAmbiguous(path.clone(), candidate, symbols.clone());
+        bugs.push(&bug);
+        return false;
+    }
+
+    match symbols.first().expect("symbol table entry is empty") {
+        Symbol::TypeAlias(sym) => {
+            path.to = TypePathTarget::TypeAlias(Arc::downgrade(&sym));
+            return true;
+        }
+
+        Symbol::Struct(sym) => {
+            path.to = TypePathTarget::Struct(Arc::downgrade(&sym));
+            return true;
+        }
+
+        Symbol::Enum(sym) => {
+            path.to = TypePathTarget::Enum(Arc::downgrade(&sym));
+            return true;
+        }
+
+        _ => {}
+    }
+
+    let bug = ResolveIssue::TypePathUnresolved(path.clone(), candidate);
+    bugs.push(&bug);
+
+    false
 }
 
 fn resolve_type_path(
-    mut scope: Vec<String>,
+    scope: &[String],
     path: &mut TypePath,
     symbol_table: &SymbolTable,
     bugs: &DiagnosticCollector,
@@ -76,51 +135,33 @@ fn resolve_type_path(
     let pathname = path
         .segments
         .iter()
-        .map(|seg| seg.identifier.clone())
+        .map(|seg| seg.name.clone())
         .collect::<Vec<_>>()
         .join("::");
 
-    loop {
-        let joined_scope = scope.join("::");
-        let candidate = format!("{}::{}", joined_scope, pathname);
+    let is_root_path = path
+        .segments
+        .first()
+        .map(|seg| seg.name.is_empty())
+        .unwrap_or(false);
 
-        if scope.pop().is_none() {
-            let bug = ResolveIssue::TypePathUnresolved(path.clone(), candidate);
-            bugs.push(&bug);
-            return false;
-        }
+    if is_root_path {
+        return resolve_type_path_lookup(path, pathname, symbol_table, bugs);
+    }
 
-        if let Some(symbols) = symbol_table.get(&candidate) {
-            if symbols.is_empty() {
-                continue;
-            }
+    for i in (0..scope.len()).rev() {
+        let current_scope = &scope[0..=i];
+        let candidate = format!("{}::{}", current_scope.join("::"), pathname);
 
-            if symbols.len() > 1 {
-                let bug = ResolveIssue::TypePathAmbiguous(path.clone(), candidate, symbols.clone());
-                bugs.push(&bug);
-                return false;
-            }
-
-            return match symbols.first().unwrap() {
-                Symbol::TypeAlias(sym) => {
-                    path.to = TypePathTarget::TypeAlias(Arc::downgrade(&sym));
-                    true
-                }
-
-                Symbol::Struct(sym) => {
-                    path.to = TypePathTarget::Struct(Arc::downgrade(&sym));
-                    true
-                }
-
-                Symbol::Enum(sym) => {
-                    path.to = TypePathTarget::Enum(Arc::downgrade(&sym));
-                    true
-                }
-
-                _ => false,
-            };
+        if resolve_type_path_lookup(path, candidate, symbol_table, bugs) {
+            return true;
         }
     }
+
+    let bug = ResolveIssue::TypePathUnresolved(path.clone(), pathname);
+    bugs.push(&bug);
+
+    false
 }
 
 pub fn resolve(module: &mut Module, bugs: &DiagnosticCollector) {
@@ -147,11 +188,11 @@ pub fn resolve(module: &mut Module, bugs: &DiagnosticCollector) {
         }
 
         if let RefNodeMut::ItemPath(path) = node {
-            resolve_item_path(scope_vec.clone(), path, &symbol_table, bugs);
+            resolve_item_path(&scope_vec, path, &symbol_table, bugs);
         } else if let RefNodeMut::TypePath(path) = node {
-            resolve_type_path(scope_vec.clone(), path, &symbol_table, bugs);
+            resolve_type_path(&scope_vec, path, &symbol_table, bugs);
         } else if let RefNodeMut::ExprPath(path) = node {
-            resolve_expr_path(scope_vec.clone(), path, &symbol_table, bugs);
+            resolve_expr_path(&scope_vec, path, &symbol_table, bugs);
         }
     });
 }

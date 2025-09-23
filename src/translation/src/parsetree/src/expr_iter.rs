@@ -212,7 +212,7 @@ impl ParseTreeIter for ExprPath {
         f(Order::Enter, RefNode::ExprPath(self));
 
         for segment in &self.segments {
-            let _ = &segment.identifier;
+            let _ = &segment.name;
 
             if let Some(type_args) = &segment.type_arguments {
                 for type_arg in type_args {

@@ -147,7 +147,7 @@ impl ParseTreeIterMut for TypePath {
         f(Order::Enter, RefNodeMut::TypePath(self));
 
         for segment in &mut self.segments {
-            let _ = segment.identifier;
+            let _ = segment.name;
 
             if let Some(args) = &mut segment.type_arguments {
                 for arg in args {

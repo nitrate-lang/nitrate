@@ -212,7 +212,7 @@ impl ParseTreeIterMut for ExprPath {
         f(Order::Enter, RefNodeMut::ExprPath(self));
 
         for segment in &mut self.segments {
-            let _ = &segment.identifier;
+            let _ = &segment.name;
 
             if let Some(type_args) = &mut segment.type_arguments {
                 for type_arg in type_args {

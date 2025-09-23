@@ -260,7 +260,7 @@ impl Default for ExprPathTarget {
 #[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ExprPathSegment {
-    pub identifier: String,
+    pub name: String,
     pub type_arguments: Option<Vec<TypeArgument>>,
 }
 

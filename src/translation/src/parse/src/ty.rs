@@ -394,7 +394,7 @@ impl Parser<'_, '_> {
             prev_scope = true;
 
             segments.push(TypePathSegment {
-                identifier: "".into(),
+                name: "".into(),
                 type_arguments: None,
             });
         }
@@ -423,7 +423,7 @@ impl Parser<'_, '_> {
             let type_arguments = self.parse_generic_arguments();
 
             segments.push(TypePathSegment {
-                identifier,
+                name: identifier,
                 type_arguments,
             });
 

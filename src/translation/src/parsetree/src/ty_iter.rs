@@ -147,7 +147,7 @@ impl ParseTreeIter for TypePath {
         f(Order::Enter, RefNode::TypeTypeName(self));
 
         for segment in &self.segments {
-            let _ = segment.identifier;
+            let _ = segment.name;
 
             if let Some(args) = &segment.type_arguments {
                 for arg in args {

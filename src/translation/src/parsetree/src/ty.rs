@@ -103,7 +103,7 @@ impl Default for TypePathTarget {
 #[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TypePathSegment {
-    pub identifier: String,
+    pub name: String,
     pub type_arguments: Option<Vec<TypeArgument>>,
 }
 
