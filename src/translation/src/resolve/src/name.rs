@@ -3,21 +3,10 @@ use crate::{ResolveIssue, Symbol, SymbolTable, build_symbol_table};
 use nitrate_diagnosis::DiagnosticCollector;
 use nitrate_parsetree::{
     Order, ParseTreeIterMut, RefNodeMut,
-    kind::{ExprPath, ExprPathTarget, ItemPath, Module, TypePath, TypePathTarget},
+    kind::{ExprPath, ExprPathTarget, Module, TypePath, TypePathTarget},
 };
 
 use std::sync::Arc;
-
-fn resolve_item_path(
-    _scope: &Vec<String>,
-    _path: &mut ItemPath,
-    _symbol_table: &SymbolTable,
-    _bugs: &DiagnosticCollector,
-) {
-    // https://doc.rust-lang.org/reference/paths.html#r-paths.simple.intro
-
-    // TODO: Resolve imports here?
-}
 
 fn resolve_expr_path_lookup(
     path: &mut ExprPath,
@@ -164,7 +153,7 @@ fn resolve_type_path(
     false
 }
 
-pub fn resolve(module: &mut Module, bugs: &DiagnosticCollector) {
+pub fn resolve_names(module: &mut Module, bugs: &DiagnosticCollector) {
     let symbol_table = build_symbol_table(module);
     let mut scope_vec = Vec::new();
 
@@ -187,9 +176,7 @@ pub fn resolve(module: &mut Module, bugs: &DiagnosticCollector) {
             return;
         }
 
-        if let RefNodeMut::ItemPath(path) = node {
-            resolve_item_path(&scope_vec, path, &symbol_table, bugs);
-        } else if let RefNodeMut::TypePath(path) = node {
+        if let RefNodeMut::TypePath(path) = node {
             resolve_type_path(&scope_vec, path, &symbol_table, bugs);
         } else if let RefNodeMut::ExprPath(path) = node {
             resolve_expr_path(&scope_vec, path, &symbol_table, bugs);
