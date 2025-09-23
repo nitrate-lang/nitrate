@@ -1,6 +1,6 @@
 #![forbid(unsafe_code)]
 
-mod bugs;
+mod diagnosis;
 mod expr;
 mod item;
 mod parse;

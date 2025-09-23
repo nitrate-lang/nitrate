@@ -1,6 +1,6 @@
 use crate::{
     Order, ParseTreeIterMut, RefNodeMut,
-    expr::{ExprPath, Object, Switch, SwitchCase, TypeArgument, UnitLit},
+    expr::{ExprPath, Object, Safety, Switch, SwitchCase, TypeArgument, UnitLit},
     kind::{
         Await, BStringLit, BinExpr, Block, BlockItem, BooleanLit, Break, Call, CallArgument, Cast,
         Closure, Continue, DoWhileLoop, Expr, ExprParentheses, ExprSyntaxError, FloatLit, ForEach,
@@ -138,11 +138,15 @@ impl ParseTreeIterMut for Cast {
 
 impl ParseTreeIterMut for BlockItem {
     fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
+        f(Order::Enter, RefNodeMut::ExprBlockItem(self));
+
         match self {
             BlockItem::Variable(v) => v.depth_first_iter_mut(f),
             BlockItem::Expr(e) => e.depth_first_iter_mut(f),
             BlockItem::Stmt(s) => s.depth_first_iter_mut(f),
         }
+
+        f(Order::Leave, RefNodeMut::ExprBlockItem(self));
     }
 }
 
@@ -150,7 +154,15 @@ impl ParseTreeIterMut for Block {
     fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
         f(Order::Enter, RefNodeMut::ExprBlock(self));
 
-        let _ = self.safety;
+        if let Some(safety) = &mut self.safety {
+            match safety {
+                Safety::Safe => {}
+
+                Safety::Unsafe(e) => {
+                    e.depth_first_iter_mut(f);
+                }
+            }
+        }
 
         for item in &mut self.elements {
             item.depth_first_iter_mut(f);

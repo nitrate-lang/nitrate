@@ -1,6 +1,6 @@
 use std::sync::{Arc, RwLock};
 
-use crate::bugs::SyntaxErr;
+use crate::diagnosis::SyntaxErr;
 
 use super::parse::Parser;
 use nitrate_parsetree::{

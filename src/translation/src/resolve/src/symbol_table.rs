@@ -7,7 +7,7 @@ use nitrate_parsetree::{
 use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Symbol {
     TypeAlias(Arc<RwLock<TypeAlias>>),
     Struct(Arc<RwLock<Struct>>),
@@ -28,42 +28,52 @@ fn qualify_name(scope: &[ModuleNameId], name: &str) -> SymbolName {
 
     qualified.push_str(name);
 
-    SymbolName(qualified)
+    qualified
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct SymbolName(pub String);
+pub type SymbolName = String;
 
-pub type SymbolTable<'a> = HashMap<SymbolName, Symbol>;
+pub type SymbolTable<'a> = HashMap<SymbolName, Vec<Symbol>>;
 
 fn symbol_table_add(symbol_table: &mut SymbolTable, scope_vec: &Vec<ModuleNameId>, node: &RefNode) {
-    match node {
-        RefNode::ItemTypeAlias(sym) => symbol_table
-            .entry(qualify_name(&scope_vec, &sym.read().unwrap().name))
-            .or_insert_with(|| Symbol::TypeAlias(Arc::clone(sym))),
+    let (name, symbol) = match node {
+        RefNode::ItemTypeAlias(sym) => (
+            qualify_name(&scope_vec, &sym.read().unwrap().name),
+            Symbol::TypeAlias(Arc::clone(sym)),
+        ),
 
-        RefNode::ItemStruct(sym) => symbol_table
-            .entry(qualify_name(&scope_vec, &sym.read().unwrap().name))
-            .or_insert_with(|| Symbol::Struct(Arc::clone(sym))),
+        RefNode::ItemStruct(sym) => (
+            qualify_name(&scope_vec, &sym.read().unwrap().name),
+            Symbol::Struct(Arc::clone(sym)),
+        ),
 
-        RefNode::ItemEnum(sym) => symbol_table
-            .entry(qualify_name(&scope_vec, &sym.read().unwrap().name))
-            .or_insert_with(|| Symbol::Enum(Arc::clone(sym))),
+        RefNode::ItemEnum(sym) => (
+            qualify_name(&scope_vec, &sym.read().unwrap().name),
+            Symbol::Enum(Arc::clone(sym)),
+        ),
 
-        RefNode::ItemTrait(sym) => symbol_table
-            .entry(qualify_name(&scope_vec, &sym.read().unwrap().name))
-            .or_insert_with(|| Symbol::Trait(Arc::clone(sym))),
+        RefNode::ItemTrait(sym) => (
+            qualify_name(&scope_vec, &sym.read().unwrap().name),
+            Symbol::Trait(Arc::clone(sym)),
+        ),
 
-        RefNode::ItemFunction(sym) => symbol_table
-            .entry(qualify_name(&scope_vec, &sym.read().unwrap().name))
-            .or_insert_with(|| Symbol::Function(Arc::clone(sym))),
+        RefNode::ItemFunction(sym) => (
+            qualify_name(&scope_vec, &sym.read().unwrap().name),
+            Symbol::Function(Arc::clone(sym)),
+        ),
 
-        RefNode::ItemVariable(sym) => symbol_table
-            .entry(qualify_name(&scope_vec, &sym.read().unwrap().name))
-            .or_insert_with(|| Symbol::Variable(Arc::clone(sym))),
+        RefNode::ItemVariable(sym) => (
+            qualify_name(&scope_vec, &sym.read().unwrap().name),
+            Symbol::Variable(Arc::clone(sym)),
+        ),
 
         _ => return,
     };
+
+    symbol_table
+        .entry(name.clone())
+        .or_insert_with(Vec::new)
+        .push(symbol);
 }
 
 pub fn build_symbol_table(module: &mut Module) -> SymbolTable {

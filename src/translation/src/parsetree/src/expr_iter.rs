@@ -1,6 +1,6 @@
 use crate::{
     Order, ParseTreeIter, RefNode,
-    expr::{ExprPath, Object, Switch, SwitchCase, TypeArgument, UnitLit},
+    expr::{ExprPath, Object, Safety, Switch, SwitchCase, TypeArgument, UnitLit},
     kind::{
         Await, BStringLit, BinExpr, Block, BlockItem, BooleanLit, Break, Call, CallArgument, Cast,
         Closure, Continue, DoWhileLoop, Expr, ExprParentheses, ExprSyntaxError, FloatLit, ForEach,
@@ -138,11 +138,15 @@ impl ParseTreeIter for Cast {
 
 impl ParseTreeIter for BlockItem {
     fn depth_first_iter(&self, f: &mut dyn FnMut(Order, RefNode)) {
+        f(Order::Enter, RefNode::ExprBlockItem(self));
+
         match self {
             BlockItem::Variable(v) => v.depth_first_iter(f),
             BlockItem::Expr(e) => e.depth_first_iter(f),
             BlockItem::Stmt(s) => s.depth_first_iter(f),
         }
+
+        f(Order::Leave, RefNode::ExprBlockItem(self));
     }
 }
 
@@ -150,7 +154,15 @@ impl ParseTreeIter for Block {
     fn depth_first_iter(&self, f: &mut dyn FnMut(Order, RefNode)) {
         f(Order::Enter, RefNode::ExprBlock(self));
 
-        let _ = self.safety;
+        if let Some(safety) = &self.safety {
+            match safety {
+                Safety::Safe => {}
+
+                Safety::Unsafe(e) => {
+                    e.depth_first_iter(f);
+                }
+            }
+        }
 
         for item in &self.elements {
             item.depth_first_iter(f);

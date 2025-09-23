@@ -1,7 +1,7 @@
 use std::sync::{Arc, RwLock};
 
 use super::parse::Parser;
-use crate::bugs::SyntaxErr;
+use crate::diagnosis::SyntaxErr;
 
 use nitrate_parsetree::{
     kind::{
