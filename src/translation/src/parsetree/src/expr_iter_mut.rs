@@ -141,6 +141,7 @@ impl ParseTreeIterMut for BlockItem {
         match self {
             BlockItem::Variable(v) => v.depth_first_iter_mut(f),
             BlockItem::Expr(e) => e.depth_first_iter_mut(f),
+            BlockItem::Stmt(s) => s.depth_first_iter_mut(f),
         }
     }
 }
@@ -150,7 +151,6 @@ impl ParseTreeIterMut for Block {
         f(Order::Enter, RefNodeMut::ExprBlock(self));
 
         let _ = self.safety;
-        let _ = self.ends_with_semi;
 
         for item in &mut self.elements {
             item.depth_first_iter_mut(f);

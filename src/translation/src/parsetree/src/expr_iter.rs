@@ -141,6 +141,7 @@ impl ParseTreeIter for BlockItem {
         match self {
             BlockItem::Variable(v) => v.depth_first_iter(f),
             BlockItem::Expr(e) => e.depth_first_iter(f),
+            BlockItem::Stmt(s) => s.depth_first_iter(f),
         }
     }
 }
@@ -150,7 +151,6 @@ impl ParseTreeIter for Block {
         f(Order::Enter, RefNode::ExprBlock(self));
 
         let _ = self.safety;
-        let _ = self.ends_with_semi;
 
         for item in &self.elements {
             item.depth_first_iter(f);

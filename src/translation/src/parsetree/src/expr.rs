@@ -205,20 +205,20 @@ pub struct Cast {
 pub enum BlockItem {
     Variable(Arc<RwLock<Variable>>),
     Expr(Expr),
+    Stmt(Expr),
 }
 
 #[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum Safety {
     Safe,
-    Unsafe,
+    Unsafe(Expr),
 }
 
 #[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Block {
     pub safety: Option<Safety>,
-    pub ends_with_semi: bool,
     pub elements: Vec<BlockItem>,
 }
 

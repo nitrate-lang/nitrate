@@ -11,7 +11,7 @@ use nitrate_parsetree::{
         Float128, FloatLit, ForEach, FunctionParameter, If, IndexAccess, Int8, Int16, Int32, Int64,
         Int128, IntegerLit, List, Mutability, Return, Safety, StringLit, Type, TypeArgument,
         TypeInfo, TypePath, TypePathSegment, TypePathTarget, UInt8, UInt16, UInt32, UInt64,
-        UInt128, UnaryExpr, UnaryExprOp, WhileLoop,
+        UInt128, UnaryExpr, UnaryExprOp, UnitLit, WhileLoop,
     },
     tag::{
         VariableNameId, intern_arg_name, intern_label_name, intern_parameter_name,
@@ -779,7 +779,6 @@ impl Parser<'_, '_> {
                 Some(Block {
                     safety: None,
                     elements: vec![BlockItem::Expr(else_branch)],
-                    ends_with_semi: false,
                 })
             } else {
                 Some(self.parse_block())
@@ -1163,18 +1162,53 @@ impl Parser<'_, '_> {
                 BlockItem::Variable(Arc::new(RwLock::new(var)))
             }
 
-            _ => BlockItem::Expr(self.parse_expression()),
+            Token::Safe | Token::Unsafe | Token::OpenBrace => {
+                let block = self.parse_block();
+
+                if self.lexer.skip_if(&Token::Semi) {
+                    BlockItem::Stmt(Expr::Block(Box::new(block)))
+                } else {
+                    BlockItem::Expr(Expr::Block(Box::new(block)))
+                }
+            }
+
+            _ => {
+                let expr = self.parse_expression();
+
+                if self.lexer.skip_if(&Token::Semi) {
+                    BlockItem::Stmt(expr)
+                } else {
+                    BlockItem::Expr(expr)
+                }
+            }
         }
     }
 
     pub(crate) fn parse_block(&mut self) -> Block {
-        let safety = if self.lexer.skip_if(&Token::Unsafe) {
-            Some(Safety::Unsafe)
-        } else if self.lexer.skip_if(&Token::Safe) {
-            Some(Safety::Safe)
-        } else {
-            None
-        };
+        fn parse_safety_modifier(this: &mut Parser) -> Option<Safety> {
+            if this.lexer.skip_if(&Token::Safe) {
+                return Some(Safety::Safe);
+            }
+
+            if !this.lexer.skip_if(&Token::Unsafe) {
+                return None;
+            }
+
+            if !this.lexer.skip_if(&Token::OpenParen) {
+                return Some(Safety::Unsafe(Expr::Unit(UnitLit {})));
+            }
+
+            let modifier = this.parse_expression();
+
+            if !this.lexer.skip_if(&Token::CloseParen) {
+                let bug = SyntaxErr::ExpectedCloseParen(this.lexer.peek_pos());
+                this.bugs.push(&bug);
+            }
+
+            Some(Safety::Unsafe(modifier))
+        }
+
+        let safety = parse_safety_modifier(self);
 
         if !self.lexer.skip_if(&Token::OpenBrace) {
             let bug = SyntaxErr::ExpectedOpenBrace(self.lexer.peek_pos());
@@ -1183,7 +1217,6 @@ impl Parser<'_, '_> {
 
         let mut elements = Vec::new();
         let mut already_reported_too_many_elements = false;
-        let mut ends_with_semi = false;
 
         while !self.lexer.skip_if(&Token::CloseBrace) {
             if self.lexer.is_eof() {
@@ -1202,27 +1235,10 @@ impl Parser<'_, '_> {
             }
 
             let element = self.parse_block_item();
-            let consumed_semi = matches!(element, BlockItem::Variable(_));
             elements.push(element);
-
-            if consumed_semi || self.lexer.skip_if(&Token::Semi) {
-                ends_with_semi = true;
-            } else if self.lexer.next_is(&Token::CloseBrace) {
-                ends_with_semi = false;
-            } else {
-                let bug = SyntaxErr::BlockExpectedEnd(self.lexer.current_pos());
-                self.bugs.push(&bug);
-
-                self.lexer.skip_while(&Token::CloseBrace);
-                break;
-            }
         }
 
-        Block {
-            safety,
-            elements,
-            ends_with_semi,
-        }
+        Block { safety, elements }
     }
 
     pub(crate) fn parse_expression(&mut self) -> Expr {
