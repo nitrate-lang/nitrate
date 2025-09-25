@@ -559,7 +559,6 @@ impl Parser<'_, '_> {
         }
 
         Impl {
-            visibility: None,
             attributes,
             type_params,
             trait_path,
@@ -803,8 +802,11 @@ impl Parser<'_, '_> {
             }
 
             Token::Impl => {
-                let mut impl_def = self.parse_implementation();
-                impl_def.visibility = visibility;
+                let impl_def = self.parse_implementation();
+                if visibility.is_some() {
+                    let bug = SyntaxErr::ImplCannotBeVisible(item_pos_begin);
+                    self.log.report(&bug);
+                }
                 Item::Impl(Box::new(impl_def))
             }
 

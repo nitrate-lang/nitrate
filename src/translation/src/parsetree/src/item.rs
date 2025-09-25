@@ -16,7 +16,7 @@ use std::sync::{Arc, RwLock};
 pub struct ItemSyntaxError;
 
 #[skip_serializing_none]
-#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Visibility {
     Public,
     Private,
@@ -141,7 +141,6 @@ pub struct Trait {
 #[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Impl {
-    pub visibility: Option<Visibility>,
     pub attributes: Option<Vec<Expr>>,
     pub type_params: Option<Vec<GenericParameter>>,
     pub trait_path: Option<TypePath>,

@@ -41,7 +41,7 @@ pub(crate) enum SyntaxErr {
     ImplMissingFor(SourcePosition),
     ImplExpectedEnd(SourcePosition),
     ImplItemLimit(SourcePosition),
-
+    ImplCannotBeVisible(SourcePosition),
     
     PathGenericArgumentExpectedEnd(SourcePosition),
     PathGenericArgumentLimit(SourcePosition),
@@ -145,6 +145,7 @@ impl FormattableDiagnosticGroup for SyntaxErr {
             SyntaxErr::ImplMissingFor(_) => 200,
             SyntaxErr::ImplExpectedEnd(_) => 201,
             SyntaxErr::ImplItemLimit(_) => 202,
+            SyntaxErr::ImplCannotBeVisible(_) => 203,
 
             SyntaxErr::PathGenericArgumentExpectedEnd(_) => 222,
             SyntaxErr::PathGenericArgumentLimit(_) => 223,
@@ -361,6 +362,11 @@ impl FormattableDiagnosticGroup for SyntaxErr {
             SyntaxErr::ImplItemLimit(pos) => DiagnosticInfo {
                 origin: Origin::Point(pos.to_owned().into()),
                 message: "impl item limit of 65,536 exceeded".into(),
+            },
+
+            SyntaxErr::ImplCannotBeVisible(pos) => DiagnosticInfo {
+                origin: Origin::Point(pos.to_owned().into()),
+                message: "impl blocks cannot have visibility modifiers".into(),
             },
 
             /* ------------------------------------------------------------------------- */

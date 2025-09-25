@@ -4,7 +4,7 @@ use nitrate_diagnosis::{CompilerLog, intern_file_id};
 use nitrate_parse::Parser;
 use nitrate_parsetree::{
     Order, ParseTreeIterMut, RefNodeMut,
-    kind::{Import, Module, Visibility},
+    kind::{Import, Item, Module, Visibility},
     tag::intern_module_name,
 };
 use nitrate_tokenize::{Lexer, LexerError};
@@ -12,7 +12,7 @@ use nitrate_tokenize::{Lexer, LexerError};
 use std::collections::HashSet;
 use std::path::{MAIN_SEPARATOR, PathBuf};
 
-fn import_module(
+fn import_module_file(
     module_path: PathBuf,
     name: String,
     visibility: Option<Visibility>,
@@ -40,20 +40,39 @@ fn import_module(
         }
     };
 
-    let mut module = Module {
-        items: Parser::new(lexer, log).parse_source(),
-        name: intern_module_name(name),
+    let all_items = Parser::new(lexer, log).parse_source();
 
+    let visible_items = all_items
+        .into_iter()
+        .filter(|item| match item {
+            Item::SyntaxError(_) | Item::ItemPath(_) => false,
+            Item::Impl(_) => true,
+
+            Item::Module(i) => i.visibility == Some(Visibility::Public),
+            Item::Import(i) => i.visibility == Some(Visibility::Public),
+
+            Item::TypeAlias(i) => i.read().unwrap().visibility == Some(Visibility::Public),
+            Item::Struct(i) => i.read().unwrap().visibility == Some(Visibility::Public),
+            Item::Enum(i) => i.read().unwrap().visibility == Some(Visibility::Public),
+            Item::Trait(i) => i.read().unwrap().visibility == Some(Visibility::Public),
+            Item::Function(i) => i.read().unwrap().visibility == Some(Visibility::Public),
+            Item::Variable(i) => i.read().unwrap().visibility == Some(Visibility::Public),
+        })
+        .collect::<Vec<_>>();
+
+    let mut module = Module {
         visibility,
         attributes: None,
+        name: intern_module_name(name),
+        items: visible_items,
     };
 
-    resolve_imports_inner(&mut module, log, visited, depth);
+    resolve_imports_guarded(&mut module, log, visited, depth);
 
     Some(module)
 }
 
-fn resolve_import(
+fn resolve_import_item(
     import: &mut Import,
     log: &CompilerLog,
     visited: &mut HashSet<PathBuf>,
@@ -96,7 +115,7 @@ fn resolve_import(
         visited.insert(module_path.clone());
     }
 
-    import.content = import_module(
+    import.content = import_module_file(
         module_path,
         parts[parts.len() - 1].segment.to_owned(),
         import.visibility.to_owned(),
@@ -108,7 +127,7 @@ fn resolve_import(
     depth.pop();
 }
 
-fn resolve_imports_inner(
+fn resolve_imports_guarded(
     module: &mut Module,
     log: &CompilerLog,
     visitied: &mut HashSet<PathBuf>,
@@ -120,7 +139,7 @@ fn resolve_imports_inner(
         }
 
         if let RefNodeMut::ItemImport(import) = node {
-            resolve_import(import, log, visitied, depth);
+            resolve_import_item(import, log, visitied, depth);
         }
     });
 }
@@ -129,5 +148,5 @@ pub fn resolve_imports(module: &mut Module, log: &CompilerLog) {
     let mut visited = HashSet::new();
     let mut depth = Vec::new();
 
-    resolve_imports_inner(module, log, &mut visited, &mut depth);
+    resolve_imports_guarded(module, log, &mut visited, &mut depth);
 }
