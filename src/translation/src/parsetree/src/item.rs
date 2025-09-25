@@ -43,6 +43,7 @@ pub struct Module {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum ItemPathTarget {
     Unresolved,
+    Module(Module),
 }
 
 #[skip_serializing_none]

@@ -89,9 +89,9 @@ fn program() -> Result<(), Error> {
         .fuse();
     let drain = slog_async::Async::new(drain).build().fuse();
     let log = slog::Logger::root(drain, o!());
-    let bugs = CompilerLog::new(log);
+    let log = CompilerLog::new(log);
 
-    let items = Parser::new(lexer, &bugs).parse_source();
+    let items = Parser::new(lexer, &log).parse_source();
     let mut module = Module {
         attributes: None,
         visibility: None,
@@ -99,8 +99,8 @@ fn program() -> Result<(), Error> {
         items,
     };
 
-    resolve_imports(&mut module, &bugs);
-    resolve_names(&mut module, &bugs);
+    resolve_imports(&mut module, &log);
+    resolve_names(&mut module, &log);
 
     if let Err(_) = serde_json::to_writer_pretty(&mut parse_tree_output, &module) {
         return Err(Error::ParseFailed(TranslationError::SyntaxError));

@@ -88,9 +88,9 @@ fn program() -> Result<(), Error> {
         .fuse();
     let drain = slog_async::Async::new(drain).build().fuse();
     let log = slog::Logger::root(drain, o!());
-    let bugs = CompilerLog::new(log);
+    let log = CompilerLog::new(log);
 
-    let items = Parser::new(lexer, &bugs).parse_source();
+    let items = Parser::new(lexer, &log).parse_source();
     let module = Module {
         attributes: None,
         visibility: None,

@@ -1,7 +1,9 @@
 use nitrate_diagnosis::{CompilerLog, intern_file_id};
+use nitrate_parse::Parser;
 use nitrate_parsetree::{
     Order, ParseTreeIterMut, RefNodeMut,
-    kind::{Import, Module},
+    kind::{Import, ItemPathTarget, Module},
+    tag::intern_module_name,
 };
 use nitrate_tokenize::Lexer;
 
@@ -39,17 +41,36 @@ fn resolve_import(import: &mut Import, log: &CompilerLog) {
         intern_file_id(&module_path.to_string_lossy()),
     );
 
-    // TODO: Implement import resolution
+    let lexer = match lexer {
+        Ok(l) => l,
+
+        Err(_e) => {
+            // TODO: Report lexer errors
+            // log.report(&e);
+            return;
+        }
+    };
+
+    let items = Parser::new(lexer, log).parse_source();
+
+    let module = Module {
+        visibility: import.visibility.clone(),
+        attributes: None,
+        name: intern_module_name(parts[parts.len() - 1].segment.to_owned()),
+        items,
+    };
+
+    import.path.to = ItemPathTarget::Module(module);
 }
 
-pub fn resolve_imports(module: &mut Module, bugs: &CompilerLog) {
+pub fn resolve_imports(module: &mut Module, log: &CompilerLog) {
     module.depth_first_iter_mut(&mut |order, node| {
         if order != Order::Enter {
             return;
         }
 
         if let RefNodeMut::ItemImport(import) = node {
-            resolve_import(import, bugs);
+            resolve_import(import, log);
         }
     });
 }

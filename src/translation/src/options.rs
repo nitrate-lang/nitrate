@@ -5,7 +5,7 @@ use nitrate_optimization::FunctionOptimization;
 use nitrate_parsetree::kind::Package;
 
 pub trait Diagnose {
-    fn diagnose(&self, package: &Package, bugs: &CompilerLog);
+    fn diagnose(&self, package: &Package, log: &CompilerLog);
 }
 
 #[derive(Default)]

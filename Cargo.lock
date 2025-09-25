@@ -1019,6 +1019,7 @@ name = "nitrate_resolve"
 version = "0.1.0"
 dependencies = [
  "nitrate_diagnosis",
+ "nitrate_parse",
  "nitrate_parsetree",
  "nitrate_tokenize",
 ]

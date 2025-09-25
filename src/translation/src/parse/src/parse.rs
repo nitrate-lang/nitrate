@@ -2,17 +2,17 @@ use nitrate_diagnosis::CompilerLog;
 use nitrate_parsetree::kind::Item;
 use nitrate_tokenize::Lexer;
 
-pub struct Parser<'a, 'bugs> {
+pub struct Parser<'a, 'log> {
     pub(crate) lexer: Lexer<'a>,
-    pub(crate) log: &'bugs CompilerLog,
+    pub(crate) log: &'log CompilerLog,
     pub(crate) closure_ctr: u64,
 }
 
-impl<'a, 'bugs> Parser<'a, 'bugs> {
-    pub fn new(lexer: Lexer<'a>, bugs: &'bugs CompilerLog) -> Self {
+impl<'a, 'log> Parser<'a, 'log> {
+    pub fn new(lexer: Lexer<'a>, log: &'log CompilerLog) -> Self {
         Parser {
             lexer,
-            log: bugs,
+            log: log,
             closure_ctr: 0,
         }
     }
