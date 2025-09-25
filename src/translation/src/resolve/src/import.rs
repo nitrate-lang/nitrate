@@ -1,20 +1,16 @@
-use nitrate_diagnosis::CompilerLog;
+use nitrate_diagnosis::{CompilerLog, intern_file_id};
 use nitrate_parsetree::{
     Order, ParseTreeIterMut, RefNodeMut,
     kind::{Import, Module},
 };
+use nitrate_tokenize::Lexer;
 
-use std::{
-    fmt::format,
-    path::{self, MAIN_SEPARATOR},
-};
+use std::path::{MAIN_SEPARATOR, PathBuf};
 
-fn resolve_import(import: &mut Import, _bugs: &CompilerLog) {
-    // take the last segment of the import path as the imported module name
-    // take the first n-1 segments as the parent module path
+use crate::ResolveIssue;
 
+fn resolve_import(import: &mut Import, log: &CompilerLog) {
     let parts = &import.path.segments;
-
     if parts.is_empty() {
         return;
     }
@@ -27,18 +23,20 @@ fn resolve_import(import: &mut Import, _bugs: &CompilerLog) {
 
     let module_filename = format!("{}.nit", parts[parts.len() - 1].segment);
 
-    let module_path = path::PathBuf::from(module_dir).join(module_filename);
+    let module_path = PathBuf::from(module_dir).join(module_filename);
 
-    println!(
-        "Resolving import: {} -> {}",
-        import
-            .path
-            .segments
-            .iter()
-            .map(|s| s.segment.as_str())
-            .collect::<Vec<_>>()
-            .join("::"),
-        module_path.display()
+    let source_code = match std::fs::read_to_string(&module_path) {
+        Ok(code) => code,
+
+        Err(err) => {
+            log.report(&ResolveIssue::ModuleNotFound((module_path, err)));
+            return;
+        }
+    };
+
+    let lexer = Lexer::new(
+        source_code.as_bytes(),
+        intern_file_id(&module_path.to_string_lossy()),
     );
 
     // TODO: Implement import resolution

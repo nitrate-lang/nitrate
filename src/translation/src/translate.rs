@@ -1,6 +1,6 @@
 use crate::{TranslationOptions, TranslationOptionsBuilder, options::Diagnose};
 use nitrate_codegen::{Codegen, CodegenError};
-use nitrate_diagnosis::{CompilerLog, FileId, get_or_create_file_id};
+use nitrate_diagnosis::{CompilerLog, FileId, intern_file_id};
 use nitrate_parse::Parser;
 use nitrate_parsetree::{
     kind::{Module, Package, Visibility},
@@ -150,7 +150,7 @@ pub fn compile_code(
     let log = &options.log;
     let source = scan_into_memory(source_code)?;
 
-    let fileid = get_or_create_file_id(&options.source_name_for_debug_messages);
+    let fileid = intern_file_id(&options.source_name_for_debug_messages);
     let lexer = create_lexer(&source, fileid)?;
 
     let package = parse_language(lexer, &options.package_name, log);

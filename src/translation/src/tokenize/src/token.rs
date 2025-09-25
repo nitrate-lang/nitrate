@@ -480,7 +480,7 @@ impl AnnotatedToken {
 
 #[cfg(test)]
 mod tests {
-    use nitrate_diagnosis::get_or_create_file_id;
+    use nitrate_diagnosis::intern_file_id;
 
     use super::*;
 
@@ -629,7 +629,7 @@ mod tests {
             line,
             column,
             offset,
-            fileid: get_or_create_file_id(filename),
+            fileid: intern_file_id(filename),
         };
 
         assert_eq!(
@@ -645,7 +645,7 @@ mod tests {
 
     #[test]
     fn test_annotated_token_parsetree() {
-        let filename = get_or_create_file_id("file.txt");
+        let filename = intern_file_id("file.txt");
 
         let test_vectors = [
             (Token::Name("example".into()), "example"),

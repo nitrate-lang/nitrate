@@ -7,4 +7,4 @@ pub use diagnostic::{
     DiagnosticGroupId, DiagnosticId, DiagnosticInfo, FormattableDiagnosticGroup, Origin,
     SourcePosition, Span,
 };
-pub use file_id::{FileId, get_or_create_file_id};
+pub use file_id::{FileId, intern_file_id};

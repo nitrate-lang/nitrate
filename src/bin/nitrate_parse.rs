@@ -1,6 +1,6 @@
 use std::{fs::OpenOptions, io::Read};
 
-use nitrate_diagnosis::{CompilerLog, get_or_create_file_id};
+use nitrate_diagnosis::{CompilerLog, intern_file_id};
 use nitrate_translation::{
     TranslationError,
     parse::Parser,
@@ -65,7 +65,7 @@ fn program() -> Result<(), Error> {
         }
     };
 
-    let fileid = get_or_create_file_id(filename);
+    let fileid = intern_file_id(filename);
 
     let lexer = match Lexer::new(source_code.as_bytes(), fileid) {
         Ok(l) => l,

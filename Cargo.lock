@@ -1020,6 +1020,7 @@ version = "0.1.0"
 dependencies = [
  "nitrate_diagnosis",
  "nitrate_parsetree",
+ "nitrate_tokenize",
 ]
 
 [[package]]

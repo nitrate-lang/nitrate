@@ -5,4 +5,5 @@ edition = "2024"
 
 [dependencies]
 nitrate_parsetree = { path = "../parsetree" }
+nitrate_tokenize = { path = "../tokenize" }
 nitrate_diagnosis = { path = "../../../diagnosis" }

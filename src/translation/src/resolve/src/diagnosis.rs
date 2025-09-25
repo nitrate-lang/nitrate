@@ -9,6 +9,8 @@ pub enum ResolveIssue {
 
     TypePathUnresolved(TypePath, SymbolName),
     TypePathAmbiguous(TypePath, SymbolName, Vec<Symbol>),
+
+    ModuleNotFound((std::path::PathBuf, std::io::Error)),
 }
 
 impl FormattableDiagnosticGroup for ResolveIssue {
@@ -23,6 +25,8 @@ impl FormattableDiagnosticGroup for ResolveIssue {
 
             ResolveIssue::TypePathUnresolved(_, _) => 20,
             ResolveIssue::TypePathAmbiguous(_, _, _) => 21,
+
+            ResolveIssue::ModuleNotFound(_) => 40,
         }
     }
 
@@ -78,6 +82,11 @@ impl FormattableDiagnosticGroup for ResolveIssue {
                         .join("::"),
                     candidate
                 ),
+            },
+
+            ResolveIssue::ModuleNotFound(path) => DiagnosticInfo {
+                origin: Origin::None,
+                message: format!("Module not found: {} ({})", path.0.display(), path.1),
             },
         }
     }
