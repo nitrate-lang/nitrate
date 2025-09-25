@@ -42,7 +42,7 @@ impl Parser<'_, '_> {
 
                 if !this.lexer.skip_if(&Token::Colon) {
                     let bug = SyntaxErr::ExpectedColon(this.lexer.peek_pos());
-                    this.bugs.push(&bug);
+                    this.log.report(&bug);
                 }
 
                 minimum_bound = Some(minimum);
@@ -53,7 +53,7 @@ impl Parser<'_, '_> {
 
                 if !this.lexer.skip_if(&Token::CloseBracket) {
                     let bug = SyntaxErr::ExpectedCloseBracket(this.lexer.peek_pos());
-                    this.bugs.push(&bug);
+                    this.log.report(&bug);
                 }
 
                 maximum_bound = Some(maximum);
@@ -88,7 +88,7 @@ impl Parser<'_, '_> {
 
         if !self.lexer.next_is(&Token::OpenBracket) {
             let bug = SyntaxErr::ExpectedOpenBracket(self.lexer.peek_pos());
-            self.bugs.push(&bug);
+            self.log.report(&bug);
 
             self.parse_expression(); // Skip
 
@@ -120,14 +120,14 @@ impl Parser<'_, '_> {
 
         if !self.lexer.skip_if(&Token::Semi) {
             let bug = SyntaxErr::ExpectedSemicolon(self.lexer.peek_pos());
-            self.bugs.push(&bug);
+            self.log.report(&bug);
         }
 
         let len = self.parse_expression();
 
         if !self.lexer.skip_if(&Token::CloseBracket) {
             let bug = SyntaxErr::ExpectedCloseBracket(self.lexer.peek_pos());
-            self.bugs.push(&bug);
+            self.log.report(&bug);
 
             self.lexer.skip_while(&Token::CloseBracket);
         }
@@ -232,7 +232,7 @@ impl Parser<'_, '_> {
 
         if !self.lexer.skip_if(&Token::OpenParen) {
             let bug = SyntaxErr::ExpectedOpenParen(self.lexer.peek_pos());
-            self.bugs.push(&bug);
+            self.log.report(&bug);
         }
 
         self.lexer.skip_if(&Token::Comma);
@@ -243,7 +243,7 @@ impl Parser<'_, '_> {
         while !self.lexer.skip_if(&Token::CloseParen) {
             if self.lexer.is_eof() {
                 let bug = SyntaxErr::FunctionParametersExpectedEnd(self.lexer.peek_pos());
-                self.bugs.push(&bug);
+                self.log.report(&bug);
                 break;
             }
 
@@ -253,7 +253,7 @@ impl Parser<'_, '_> {
                 already_reported_too_many_parameters = true;
 
                 let bug = SyntaxErr::FunctionParameterLimit(self.lexer.peek_pos());
-                self.bugs.push(&bug);
+                self.log.report(&bug);
             }
 
             let param = parse_function_type_parameter(self);
@@ -261,7 +261,7 @@ impl Parser<'_, '_> {
 
             if !self.lexer.skip_if(&Token::Comma) && !self.lexer.next_is(&Token::CloseParen) {
                 let bug = SyntaxErr::FunctionParametersExpectedEnd(self.lexer.peek_pos());
-                self.bugs.push(&bug);
+                self.log.report(&bug);
 
                 self.lexer.skip_while(&Token::CloseParen);
                 break;
@@ -281,7 +281,7 @@ impl Parser<'_, '_> {
         let return_type = if self.lexer.skip_if(&Token::Minus) {
             if !self.lexer.skip_if(&Token::Gt) {
                 let bug = SyntaxErr::ExpectedArrow(self.lexer.peek_pos());
-                self.bugs.push(&bug);
+                self.log.report(&bug);
             }
 
             Some(self.parse_type())
@@ -302,12 +302,12 @@ impl Parser<'_, '_> {
 
         if !self.lexer.skip_if(&Token::OpenParen) {
             let bug = SyntaxErr::ExpectedOpenParen(self.lexer.peek_pos());
-            self.bugs.push(&bug);
+            self.log.report(&bug);
         }
 
         let opaque_identity = self.lexer.next_if_string().unwrap_or_else(|| {
             let bug = SyntaxErr::OpaqueTypeMissingName(self.lexer.peek_pos());
-            self.bugs.push(&bug);
+            self.log.report(&bug);
             "".into()
         });
 
@@ -315,7 +315,7 @@ impl Parser<'_, '_> {
 
         if !self.lexer.skip_if(&Token::CloseParen) {
             let bug = SyntaxErr::ExpectedCloseParen(self.lexer.peek_pos());
-            self.bugs.push(&bug);
+            self.log.report(&bug);
         }
 
         Type::OpaqueType(OpaqueType { name })
@@ -341,7 +341,7 @@ impl Parser<'_, '_> {
         }
 
         let bug = SyntaxErr::ReferenceTypeExpectedLifetimeName(self.lexer.peek_pos());
-        self.bugs.push(&bug);
+        self.log.report(&bug);
 
         Lifetime::SyntaxError
     }
@@ -377,7 +377,7 @@ impl Parser<'_, '_> {
 
             if !this.lexer.skip_if(&Token::Colon) {
                 let bug = SyntaxErr::ExpectedColon(this.lexer.peek_pos());
-                this.bugs.push(&bug);
+                this.log.report(&bug);
                 return false;
             }
 
@@ -402,7 +402,7 @@ impl Parser<'_, '_> {
         while prev_scope || segments.is_empty() {
             if self.lexer.is_eof() {
                 let bug = SyntaxErr::PathExpectedNameOrSeparator(self.lexer.peek_pos());
-                self.bugs.push(&bug);
+                self.log.report(&bug);
                 break;
             }
 
@@ -411,12 +411,12 @@ impl Parser<'_, '_> {
                 already_reported_too_many_segments = true;
 
                 let bug = SyntaxErr::PathSegmentLimit(self.lexer.peek_pos());
-                self.bugs.push(&bug);
+                self.log.report(&bug);
             }
 
             let Some(identifier) = self.lexer.next_if_name() else {
                 let bug = SyntaxErr::PathExpectedName(self.lexer.peek_pos());
-                self.bugs.push(&bug);
+                self.log.report(&bug);
                 break;
             };
 
@@ -479,7 +479,7 @@ impl Parser<'_, '_> {
                 self.lexer.skip_tok();
 
                 let log = SyntaxErr::ExpectedType(current_pos);
-                self.bugs.push(&log);
+                self.log.report(&log);
 
                 Type::SyntaxError(TypeSyntaxError)
             }
@@ -493,7 +493,7 @@ impl Parser<'_, '_> {
         while !self.lexer.skip_if(&Token::CloseParen) {
             if self.lexer.is_eof() {
                 let bug = SyntaxErr::TupleTypeExpectedEnd(self.lexer.peek_pos());
-                self.bugs.push(&bug);
+                self.log.report(&bug);
                 break;
             }
 
@@ -503,7 +503,7 @@ impl Parser<'_, '_> {
                 already_reported_too_many_elements = true;
 
                 let bug = SyntaxErr::TupleTypeElementLimit(self.lexer.peek_pos());
-                self.bugs.push(&bug);
+                self.log.report(&bug);
             }
 
             let element = self.parse_type();
@@ -511,7 +511,7 @@ impl Parser<'_, '_> {
 
             if !self.lexer.skip_if(&Token::Comma) && !self.lexer.next_is(&Token::CloseParen) {
                 let bug = SyntaxErr::TupleTypeExpectedEnd(self.lexer.peek_pos());
-                self.bugs.push(&bug);
+                self.log.report(&bug);
 
                 self.lexer.skip_while(&Token::CloseParen);
                 break;
@@ -541,7 +541,7 @@ impl Parser<'_, '_> {
 
                 _ => {
                     let bug = SyntaxErr::TupleTypeExpectedEnd(self.lexer.peek_pos());
-                    self.bugs.push(&bug);
+                    self.log.report(&bug);
 
                     Type::SyntaxError(TypeSyntaxError)
                 }

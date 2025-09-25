@@ -1,6 +1,6 @@
 use crate::{TranslationOptions, TranslationOptionsBuilder, options::Diagnose};
 use nitrate_codegen::{Codegen, CodegenError};
-use nitrate_diagnosis::{DiagnosticCollector, FileId, get_or_create_file_id};
+use nitrate_diagnosis::{CompilerLog, FileId, get_or_create_file_id};
 use nitrate_parse::Parser;
 use nitrate_parsetree::{
     kind::{Module, Package, Visibility},
@@ -62,8 +62,8 @@ fn create_lexer<'a>(
     lexer.map_err(TranslationError::LexerError)
 }
 
-fn parse_language(lexer: Lexer, package_name: &str, bugs: &DiagnosticCollector) -> Package {
-    let mut parser = Parser::new(lexer, bugs);
+fn parse_language(lexer: Lexer, package_name: &str, log: &CompilerLog) -> Package {
+    let mut parser = Parser::new(lexer, log);
     let items = parser.parse_source();
 
     Package {
@@ -90,13 +90,13 @@ fn parse_language(lexer: Lexer, package_name: &str, bugs: &DiagnosticCollector) 
 fn diagnose_problems(
     package: &Package,
     diagnostic_passes: &[Box<dyn Diagnose + Sync>],
-    bugs: &DiagnosticCollector,
+    log: &CompilerLog,
     pool: &ThreadPool,
 ) {
     scope_with(pool, |scope| {
         for diagnostic in diagnostic_passes {
             scope.execute(|| {
-                diagnostic.diagnose(package, bugs);
+                diagnostic.diagnose(package, log);
             });
         }
     });
@@ -105,7 +105,7 @@ fn diagnose_problems(
 // fn optimize_functions(
 //     symbols: &mut SymbolTable,
 //     function_optimization_passes: &[Box<dyn FunctionOptimization + Sync>],
-//     bugs: &DiagnosticCollector,
+//     log: &DiagnosticCollector,
 //     pool: &ThreadPool,
 // ) {
 //     scope_with(pool, |scope| {
@@ -121,7 +121,7 @@ fn diagnose_problems(
 
 //             scope.execute(|| {
 //                 for pass in function_optimization_passes {
-//                     pass.optimize_function(function_mut, bugs);
+//                     pass.optimize_function(function_mut, log);
 //                 }
 //             });
 //         }
@@ -147,26 +147,26 @@ pub fn compile_code(
     machine_code: &mut dyn std::io::Write,
     options: &TranslationOptions,
 ) -> Result<(), TranslationError> {
-    let bugs = &options.bugs;
+    let log = &options.log;
     let source = scan_into_memory(source_code)?;
 
     let fileid = get_or_create_file_id(&options.source_name_for_debug_messages);
     let lexer = create_lexer(&source, fileid)?;
 
-    let package = parse_language(lexer, &options.package_name, bugs);
+    let package = parse_language(lexer, &options.package_name, log);
 
     // resolve_names(&mut program, &mut symtab)?;
     // type_check(&mut program)?;
 
     let pool = ThreadPool::new(options.thread_count.get());
 
-    diagnose_problems(&package, &options.diagnostic_passes, bugs, &pool);
+    diagnose_problems(&package, &options.diagnostic_passes, log, &pool);
 
-    if bugs.error_bit() {
+    if log.error_bit() {
         return Err(TranslationError::DiagnosticError);
     }
 
-    // optimize_functions(&mut symtab, &options.function_optimizations, bugs, &pool);
+    // optimize_functions(&mut symtab, &options.function_optimizations, log, &pool);
     drop(pool);
 
     generate_code(&package, machine_code)

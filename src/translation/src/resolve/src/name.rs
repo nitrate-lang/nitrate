@@ -1,6 +1,6 @@
 use crate::{ResolveIssue, Symbol, SymbolTable, build_symbol_table};
 
-use nitrate_diagnosis::DiagnosticCollector;
+use nitrate_diagnosis::CompilerLog;
 use nitrate_parsetree::{
     Order, ParseTreeIterMut, RefNodeMut,
     kind::{ExprPath, ExprPathTarget, Module, TypePath, TypePathTarget},
@@ -12,7 +12,7 @@ fn resolve_expr_path_lookup(
     path: &mut ExprPath,
     candidate: String,
     symbol_table: &SymbolTable,
-    bugs: &DiagnosticCollector,
+    log: &CompilerLog,
 ) -> bool {
     let Some(symbols) = symbol_table.get(&candidate) else {
         return false;
@@ -20,7 +20,7 @@ fn resolve_expr_path_lookup(
 
     if symbols.len() > 1 {
         let bug = ResolveIssue::ExprPathAmbiguous(path.clone(), candidate, symbols.clone());
-        bugs.push(&bug);
+        log.report(&bug);
         return false;
     }
 
@@ -40,7 +40,7 @@ fn resolve_expr_path(
     scope: &[String],
     path: &mut ExprPath,
     symbol_table: &SymbolTable,
-    bugs: &DiagnosticCollector,
+    log: &CompilerLog,
 ) -> bool {
     let pathname = path
         .segments
@@ -56,20 +56,20 @@ fn resolve_expr_path(
         .unwrap_or(false);
 
     if is_root_path {
-        return resolve_expr_path_lookup(path, pathname, symbol_table, bugs);
+        return resolve_expr_path_lookup(path, pathname, symbol_table, log);
     }
 
     for i in (0..scope.len()).rev() {
         let current_scope = &scope[0..=i];
         let candidate = format!("{}::{}", current_scope.join("::"), pathname);
 
-        if resolve_expr_path_lookup(path, candidate, symbol_table, bugs) {
+        if resolve_expr_path_lookup(path, candidate, symbol_table, log) {
             return true;
         }
     }
 
     let bug = ResolveIssue::ExprPathUnresolved(path.clone(), pathname);
-    bugs.push(&bug);
+    log.report(&bug);
 
     false
 }
@@ -78,7 +78,7 @@ fn resolve_type_path_lookup(
     path: &mut TypePath,
     candidate: String,
     symbol_table: &SymbolTable,
-    bugs: &DiagnosticCollector,
+    log: &CompilerLog,
 ) -> bool {
     let Some(symbols) = symbol_table.get(&candidate) else {
         return false;
@@ -86,7 +86,7 @@ fn resolve_type_path_lookup(
 
     if symbols.len() > 1 {
         let bug = ResolveIssue::TypePathAmbiguous(path.clone(), candidate, symbols.clone());
-        bugs.push(&bug);
+        log.report(&bug);
         return false;
     }
 
@@ -110,7 +110,7 @@ fn resolve_type_path_lookup(
     }
 
     let bug = ResolveIssue::TypePathUnresolved(path.clone(), candidate);
-    bugs.push(&bug);
+    log.report(&bug);
 
     false
 }
@@ -119,7 +119,7 @@ fn resolve_type_path(
     scope: &[String],
     path: &mut TypePath,
     symbol_table: &SymbolTable,
-    bugs: &DiagnosticCollector,
+    log: &CompilerLog,
 ) -> bool {
     let pathname = path
         .segments
@@ -135,25 +135,25 @@ fn resolve_type_path(
         .unwrap_or(false);
 
     if is_root_path {
-        return resolve_type_path_lookup(path, pathname, symbol_table, bugs);
+        return resolve_type_path_lookup(path, pathname, symbol_table, log);
     }
 
     for i in (0..scope.len()).rev() {
         let current_scope = &scope[0..=i];
         let candidate = format!("{}::{}", current_scope.join("::"), pathname);
 
-        if resolve_type_path_lookup(path, candidate, symbol_table, bugs) {
+        if resolve_type_path_lookup(path, candidate, symbol_table, log) {
             return true;
         }
     }
 
     let bug = ResolveIssue::TypePathUnresolved(path.clone(), pathname);
-    bugs.push(&bug);
+    log.report(&bug);
 
     false
 }
 
-pub fn resolve_names(module: &mut Module, bugs: &DiagnosticCollector) {
+pub fn resolve_names(module: &mut Module, log: &CompilerLog) {
     let symbol_table = build_symbol_table(module);
     let mut scope_vec = Vec::new();
 
@@ -177,9 +177,9 @@ pub fn resolve_names(module: &mut Module, bugs: &DiagnosticCollector) {
         }
 
         if let RefNodeMut::TypePath(path) = node {
-            resolve_type_path(&scope_vec, path, &symbol_table, bugs);
+            resolve_type_path(&scope_vec, path, &symbol_table, log);
         } else if let RefNodeMut::ExprPath(path) = node {
-            resolve_expr_path(&scope_vec, path, &symbol_table, bugs);
+            resolve_expr_path(&scope_vec, path, &symbol_table, log);
         }
     });
 }

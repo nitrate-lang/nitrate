@@ -16,7 +16,7 @@ pub enum Severity {
 }
 
 #[derive(Debug)]
-pub struct DiagnosticCollector {
+pub struct CompilerLog {
     log: slog::Logger,
     code_map: HashMap<DiagnosticId, Severity>,
     info_bit: AtomicBool,
@@ -24,13 +24,13 @@ pub struct DiagnosticCollector {
     error_bit: AtomicBool,
 }
 
-impl Default for DiagnosticCollector {
+impl Default for CompilerLog {
     fn default() -> Self {
         Self::new(slog::Logger::root(slog::Discard, slog::o!()))
     }
 }
 
-impl DiagnosticCollector {
+impl CompilerLog {
     pub fn new(log: slog::Logger) -> Self {
         Self {
             log,
@@ -165,7 +165,7 @@ impl DiagnosticCollector {
         }
     }
 
-    pub fn push(&self, diag: &dyn FormattableDiagnosticGroup) {
+    pub fn report(&self, diag: &dyn FormattableDiagnosticGroup) {
         let gid = diag.group_id();
         let id = match DiagnosticId::new(gid, diag.variant_id()) {
             Some(id) => id,

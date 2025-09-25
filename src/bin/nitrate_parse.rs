@@ -1,6 +1,6 @@
 use std::{fs::OpenOptions, io::Read};
 
-use nitrate_diagnosis::{DiagnosticCollector, get_or_create_file_id};
+use nitrate_diagnosis::{CompilerLog, get_or_create_file_id};
 use nitrate_translation::{
     TranslationError,
     parse::Parser,
@@ -88,7 +88,7 @@ fn program() -> Result<(), Error> {
         .fuse();
     let drain = slog_async::Async::new(drain).build().fuse();
     let log = slog::Logger::root(drain, o!());
-    let bugs = DiagnosticCollector::new(log);
+    let bugs = CompilerLog::new(log);
 
     let items = Parser::new(lexer, &bugs).parse_source();
     let module = Module {

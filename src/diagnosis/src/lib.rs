@@ -2,7 +2,7 @@ mod collector;
 mod diagnostic;
 mod file_id;
 
-pub use collector::DiagnosticCollector;
+pub use collector::CompilerLog;
 pub use diagnostic::{
     DiagnosticGroupId, DiagnosticId, DiagnosticInfo, FormattableDiagnosticGroup, Origin,
     SourcePosition, Span,
