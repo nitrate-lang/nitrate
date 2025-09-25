@@ -6,8 +6,8 @@ use crate::diagnosis::SyntaxErr;
 use nitrate_parsetree::{
     kind::{
         AssociatedItem, Enum, EnumVariant, Function, FunctionParameter, GenericParameter, Impl,
-        Import, Item, ItemPath, ItemPathSegment, ItemPathTarget, ItemSyntaxError, Module,
-        Mutability, Struct, StructField, Trait, TypeAlias, Variable, VariableKind, Visibility,
+        Import, Item, ItemPath, ItemPathSegment, ItemSyntaxError, Module, Mutability, Struct,
+        StructField, Trait, TypeAlias, Variable, VariableKind, Visibility,
     },
     tag::{
         intern_enum_variant_name, intern_function_name, intern_import_alias_name,
@@ -160,10 +160,7 @@ impl Parser<'_, '_> {
             }
         }
 
-        ItemPath {
-            segments,
-            to: ItemPathTarget::Unresolved,
-        }
+        ItemPath { segments }
     }
 
     fn parse_import(&mut self) -> Import {
@@ -195,6 +192,7 @@ impl Parser<'_, '_> {
             attributes,
             path,
             alias,
+            content: None,
         }
     }
 

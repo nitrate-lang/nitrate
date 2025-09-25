@@ -51,9 +51,6 @@ impl ParseTreeIter for Module {
 impl ParseTreeIter for ItemPath {
     fn depth_first_iter(&self, f: &mut dyn FnMut(Order, RefNode)) {
         f(Order::Enter, RefNode::ItemItemPath(self));
-
-        let _ = self.to;
-
         f(Order::Leave, RefNode::ItemItemPath(self));
     }
 }
@@ -72,6 +69,10 @@ impl ParseTreeIter for Import {
         }
 
         self.path.depth_first_iter(f);
+
+        if let Some(content) = &self.content {
+            content.depth_first_iter(f);
+        }
 
         f(Order::Leave, RefNode::ItemImport(self));
     }

@@ -51,9 +51,6 @@ impl ParseTreeIterMut for Module {
 impl ParseTreeIterMut for ItemPath {
     fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
         f(Order::Enter, RefNodeMut::ItemPath(self));
-
-        let _ = self.to;
-
         f(Order::Leave, RefNodeMut::ItemPath(self));
     }
 }
@@ -72,6 +69,10 @@ impl ParseTreeIterMut for Import {
         }
 
         self.path.depth_first_iter_mut(f);
+
+        if let Some(content) = &mut self.content {
+            content.depth_first_iter_mut(f);
+        }
 
         f(Order::Leave, RefNodeMut::ItemImport(self));
     }

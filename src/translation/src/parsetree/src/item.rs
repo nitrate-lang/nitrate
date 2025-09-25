@@ -16,7 +16,7 @@ use std::sync::{Arc, RwLock};
 pub struct ItemSyntaxError;
 
 #[skip_serializing_none]
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 pub enum Visibility {
     Public,
     Private,
@@ -41,13 +41,6 @@ pub struct Module {
 
 #[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub enum ItemPathTarget {
-    Unresolved,
-    Module(Module),
-}
-
-#[skip_serializing_none]
-#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ItemPathSegment {
     pub segment: String,
 }
@@ -56,7 +49,6 @@ pub struct ItemPathSegment {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ItemPath {
     pub segments: Vec<ItemPathSegment>,
-    pub to: ItemPathTarget,
 }
 
 #[skip_serializing_none]
@@ -66,6 +58,7 @@ pub struct Import {
     pub attributes: Option<Vec<Expr>>,
     pub path: ItemPath,
     pub alias: Option<ImportAliasNameId>,
+    pub content: Option<Module>,
 }
 
 #[skip_serializing_none]

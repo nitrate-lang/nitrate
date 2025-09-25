@@ -48,7 +48,9 @@ runtime/libazide-gc/target/
 translate.old
 trace.txt
 test.nit
+mod.nit
 tree.json
 tree.log
 src/translation/src/parse/target
 src/translation/src/tokenize/target
+module.nit

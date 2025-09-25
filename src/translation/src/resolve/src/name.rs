@@ -10,16 +10,16 @@ use std::sync::Arc;
 
 fn resolve_expr_path_lookup(
     path: &mut ExprPath,
-    candidate: String,
+    name: String,
     symbol_table: &SymbolTable,
     log: &CompilerLog,
 ) -> bool {
-    let Some(symbols) = symbol_table.get(&candidate) else {
+    let Some(symbols) = symbol_table.get(&name) else {
         return false;
     };
 
     if symbols.len() > 1 {
-        let bug = ResolveIssue::ExprPathAmbiguous(path.clone(), candidate, symbols.clone());
+        let bug = ResolveIssue::ExprPathAmbiguous(path.clone(), symbols.clone());
         log.report(&bug);
         return false;
     }
@@ -61,14 +61,14 @@ fn resolve_expr_path(
 
     for i in (0..scope.len()).rev() {
         let current_scope = &scope[0..=i];
-        let candidate = format!("{}::{}", current_scope.join("::"), pathname);
+        let name = format!("{}::{}", current_scope.join("::"), pathname);
 
-        if resolve_expr_path_lookup(path, candidate, symbol_table, log) {
+        if resolve_expr_path_lookup(path, name, symbol_table, log) {
             return true;
         }
     }
 
-    let bug = ResolveIssue::ExprPathUnresolved(path.clone(), pathname);
+    let bug = ResolveIssue::ExprPathUnresolved(path.clone());
     log.report(&bug);
 
     false
@@ -76,16 +76,16 @@ fn resolve_expr_path(
 
 fn resolve_type_path_lookup(
     path: &mut TypePath,
-    candidate: String,
+    name: String,
     symbol_table: &SymbolTable,
     log: &CompilerLog,
 ) -> bool {
-    let Some(symbols) = symbol_table.get(&candidate) else {
+    let Some(symbols) = symbol_table.get(&name) else {
         return false;
     };
 
     if symbols.len() > 1 {
-        let bug = ResolveIssue::TypePathAmbiguous(path.clone(), candidate, symbols.clone());
+        let bug = ResolveIssue::TypePathAmbiguous(path.clone(), symbols.clone());
         log.report(&bug);
         return false;
     }
@@ -109,7 +109,7 @@ fn resolve_type_path_lookup(
         _ => {}
     }
 
-    let bug = ResolveIssue::TypePathUnresolved(path.clone(), candidate);
+    let bug = ResolveIssue::TypePathUnresolved(path.clone());
     log.report(&bug);
 
     false
@@ -140,14 +140,14 @@ fn resolve_type_path(
 
     for i in (0..scope.len()).rev() {
         let current_scope = &scope[0..=i];
-        let candidate = format!("{}::{}", current_scope.join("::"), pathname);
+        let name = format!("{}::{}", current_scope.join("::"), pathname);
 
-        if resolve_type_path_lookup(path, candidate, symbol_table, log) {
+        if resolve_type_path_lookup(path, name, symbol_table, log) {
             return true;
         }
     }
 
-    let bug = ResolveIssue::TypePathUnresolved(path.clone(), pathname);
+    let bug = ResolveIssue::TypePathUnresolved(path.clone());
     log.report(&bug);
 
     false
