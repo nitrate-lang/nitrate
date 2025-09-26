@@ -112,8 +112,6 @@ impl CompilerLog {
             }
 
             Origin::Span(span) => {
-                // TODO: Print the span nicely
-
                 warn!(
                     self.log,
                     "warning[E{:04X}]: {}: {}\n--> {}\n--> {}",
@@ -150,8 +148,6 @@ impl CompilerLog {
             }
 
             Origin::Span(span) => {
-                // TODO: Print the span nicely
-
                 error!(
                     self.log,
                     "error[E{:04X}]: {}: {}\n--> {}\n--> {}",

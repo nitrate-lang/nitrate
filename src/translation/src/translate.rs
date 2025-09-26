@@ -77,16 +77,6 @@ fn parse_language(lexer: Lexer, package_name: &str, log: &CompilerLog) -> Packag
     }
 }
 
-// fn resolve_names(_program: &mut Expr) -> Result<(), TranslationError> {
-//     // TODO: Implement name resolution logic
-//     Ok(())
-// }
-
-// fn type_check(_program: &mut Expr) -> Result<(), TranslationError> {
-//     // TODO: Implement type checking logic
-//     Ok(())
-// }
-
 fn diagnose_problems(
     package: &Package,
     diagnostic_passes: &[Box<dyn Diagnose + Sync>],
