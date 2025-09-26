@@ -9,7 +9,7 @@ use crate::{
     },
     item::{
         Enum, EnumVariant, Function, FunctionParameter, GenericParameter, Impl, Import, ItemPath,
-        Module, Package, Struct, StructField, Trait, TypeAlias, Variable,
+        Module, Struct, StructField, Trait, TypeAlias, Variable,
     },
     iter::Order,
     tag::OpaqueTypeNameId,
@@ -91,7 +91,6 @@ pub enum RefNodeMut<'a> {
     TypeParentheses(&'a mut Type),
 
     ItemSyntaxError,
-    ItemPackage(&'a mut Package),
     ItemModule(&'a mut Module),
     ItemPath(&'a mut ItemPath),
     ItemImport(&'a mut Import),

@@ -2,10 +2,10 @@ use std::num::NonZero;
 
 use nitrate_diagnosis::CompilerLog;
 use nitrate_optimization::FunctionOptimization;
-use nitrate_parsetree::kind::Package;
+use nitrate_parsetree::kind::Module;
 
 pub trait Diagnose {
-    fn diagnose(&self, package: &Package, log: &CompilerLog);
+    fn diagnose(&self, module: &Module, log: &CompilerLog);
 }
 
 #[derive(Default)]

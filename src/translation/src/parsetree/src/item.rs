@@ -1,8 +1,8 @@
 use crate::{
     kind::{Block, Expr, Type},
     tag::{
-        EnumVariantNameId, FunctionNameId, ImportAliasNameId, ModuleNameId, PackageNameId,
-        ParameterNameId, StructFieldNameId, TraitNameId, TypeNameId, VariableNameId,
+        EnumVariantNameId, FunctionNameId, ImportAliasNameId, ModuleNameId, ParameterNameId,
+        StructFieldNameId, TraitNameId, TypeNameId, VariableNameId,
     },
     ty::TypePath,
 };
@@ -21,13 +21,6 @@ pub enum Visibility {
     Public,
     Private,
     Protected,
-}
-
-#[skip_serializing_none]
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Package {
-    pub name: PackageNameId,
-    pub root: Module,
 }
 
 #[skip_serializing_none]

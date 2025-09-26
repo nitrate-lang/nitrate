@@ -3,8 +3,8 @@ use nitrate_codegen::{Codegen, CodegenError};
 use nitrate_diagnosis::{CompilerLog, FileId, intern_file_id};
 use nitrate_parse::Parser;
 use nitrate_parsetree::{
-    kind::{Module, Package, Visibility},
-    tag::{intern_module_name, intern_package_name},
+    kind::{Module, Visibility},
+    tag::intern_module_name,
 };
 use nitrate_tokenize::Lexer;
 use std::collections::HashMap;
@@ -62,23 +62,20 @@ fn create_lexer<'a>(
     lexer.map_err(TranslationError::LexerError)
 }
 
-fn parse_language(lexer: Lexer, package_name: &str, log: &CompilerLog) -> Package {
+fn parse_language(lexer: Lexer, module_name: &str, log: &CompilerLog) -> Module {
     let mut parser = Parser::new(lexer, log);
     let items = parser.parse_source();
 
-    Package {
-        name: intern_package_name(package_name.to_string()),
-        root: Module {
-            attributes: None,
-            name: intern_module_name("".into()),
-            visibility: Some(Visibility::Public),
-            items,
-        },
+    Module {
+        name: intern_module_name(module_name.to_string()),
+        attributes: None,
+        visibility: Some(Visibility::Public),
+        items,
     }
 }
 
 fn diagnose_problems(
-    package: &Package,
+    module: &Module,
     diagnostic_passes: &[Box<dyn Diagnose + Sync>],
     log: &CompilerLog,
     pool: &ThreadPool,
@@ -86,7 +83,7 @@ fn diagnose_problems(
     scope_with(pool, |scope| {
         for diagnostic in diagnostic_passes {
             scope.execute(|| {
-                diagnostic.diagnose(package, log);
+                diagnostic.diagnose(module, log);
             });
         }
     });
@@ -118,17 +115,14 @@ fn diagnose_problems(
 //     });
 // }
 
-fn generate_code(
-    package: &Package,
-    object: &mut dyn std::io::Write,
-) -> Result<(), TranslationError> {
+fn generate_code(module: &Module, object: &mut dyn std::io::Write) -> Result<(), TranslationError> {
     let target_triple_string = "x86_64"; // Example target ISA
     let isa_config = HashMap::new();
 
     let codegen = Codegen::new(target_triple_string.to_string(), isa_config);
 
     codegen
-        .generate(package, object)
+        .generate(module, object)
         .map_err(TranslationError::CodegenError)
 }
 

@@ -110,14 +110,14 @@ impl Codegen {
 
     pub fn generate(
         self,
-        package: &kind::Package,
+        module: &kind::Module,
         output: &mut dyn std::io::Write,
     ) -> Result<(), CodegenError> {
         let shared_flags = Self::create_shared_flags();
         let target_triple = Self::create_target_triple(&self.target_triple_string)?;
         let isa = Self::create_isa(shared_flags, target_triple, &self.isa_config)?;
 
-        let obj_module = Self::create_module(isa, &package.name)?;
+        let obj_module = Self::create_module(isa, &module.name)?;
 
         match obj_module.finish().emit() {
             Ok(object_file_bytes) => output

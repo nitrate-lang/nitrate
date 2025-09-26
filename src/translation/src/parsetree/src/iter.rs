@@ -9,7 +9,7 @@ use crate::{
     },
     item::{
         Enum, EnumVariant, Function, FunctionParameter, GenericParameter, Impl, Import, ItemPath,
-        Module, Package, Struct, StructField, Trait, TypeAlias, Variable,
+        Module, Struct, StructField, Trait, TypeAlias, Variable,
     },
     tag::OpaqueTypeNameId,
     ty::{
@@ -96,7 +96,6 @@ pub enum RefNode<'a> {
     TypeParentheses(&'a Type),
 
     ItemSyntaxError,
-    ItemPackage(&'a Package),
     ItemModule(&'a Module),
     ItemItemPath(&'a ItemPath),
     ItemImport(&'a Import),

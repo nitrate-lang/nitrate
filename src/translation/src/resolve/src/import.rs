@@ -134,12 +134,10 @@ fn resolve_imports_guarded(
     depth: &mut Vec<PathBuf>,
 ) {
     module.depth_first_iter_mut(&mut |order, node| {
-        if order != Order::Enter {
-            return;
-        }
-
-        if let RefNodeMut::ItemImport(import) = node {
-            resolve_import_item(import, log, visitied, depth);
+        if order == Order::Leave {
+            if let RefNodeMut::ItemImport(import) = node {
+                resolve_import_item(import, log, visitied, depth);
+            }
         }
     });
 }
