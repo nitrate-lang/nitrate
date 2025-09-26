@@ -4,9 +4,12 @@ use nitrate_diagnosis::{CompilerLog, intern_file_id};
 use nitrate_translation::{
     TranslationError,
     parse::Parser,
-    parsetree::{kind::Module, tag::intern_module_name},
-    resolve::{resolve_imports, resolve_names},
-    tokenize::Lexer,
+    parsetree::{
+        kind::{Item, Module, Visibility},
+        tag::{PackageNameId, intern_module_name},
+    },
+    resolve::{ImportContext, ResolveIssue, resolve_imports, resolve_names},
+    tokenize::{Lexer, LexerError},
 };
 use slog::{Drain, Record, o};
 use slog_term::{RecordDecorator, ThreadSafeTimestampFn};
@@ -19,7 +22,7 @@ enum Error {
     ParseFailed(TranslationError),
 }
 
-pub fn custom_print_msg_header(
+fn custom_print_msg_header(
     _fn_timestamp: &dyn ThreadSafeTimestampFn<Output = std::io::Result<()>>,
     rd: &mut dyn RecordDecorator,
     record: &Record,
@@ -29,6 +32,54 @@ pub fn custom_print_msg_header(
     write!(rd, "{}", record.msg())?;
 
     Ok(true)
+}
+
+fn visibility_filter(item: &Item) -> bool {
+    match item {
+        Item::SyntaxError(_) => false,
+        Item::Impl(_) => true,
+
+        Item::Module(i) => i.visibility == Some(Visibility::Public),
+        Item::Import(i) => i.visibility == Some(Visibility::Public),
+
+        Item::TypeAlias(i) => i.read().unwrap().visibility == Some(Visibility::Public),
+        Item::Struct(i) => i.read().unwrap().visibility == Some(Visibility::Public),
+        Item::Enum(i) => i.read().unwrap().visibility == Some(Visibility::Public),
+        Item::Trait(i) => i.read().unwrap().visibility == Some(Visibility::Public),
+        Item::Function(i) => i.read().unwrap().visibility == Some(Visibility::Public),
+        Item::Variable(i) => i.read().unwrap().visibility == Some(Visibility::Public),
+    }
+}
+
+fn load_package(name: PackageNameId, log: &CompilerLog) -> Result<Module, ResolveIssue> {
+    // FIXME: Correctly resolve module into filepath.
+
+    let module_path = std::path::PathBuf::from(format!("{}.nit", name));
+
+    let source_code = std::fs::read_to_string(&module_path)
+        .map_err(|err| ResolveIssue::ImportNotFound((name.clone(), err)))?;
+
+    let file_id = intern_file_id(&module_path.to_string_lossy());
+    let lexer = Lexer::new(source_code.as_bytes(), file_id).map_err(|err| match err {
+        LexerError::SourceTooBig => ResolveIssue::ImportSourceCodeSizeLimitExceeded(module_path),
+    })?;
+
+    let all_items = Parser::new(lexer, log).parse_source();
+    drop(source_code);
+
+    let visible_items = all_items
+        .into_iter()
+        .filter(visibility_filter)
+        .collect::<Vec<_>>();
+
+    let module = Module {
+        visibility: None,
+        attributes: None,
+        name: intern_module_name(name.to_string()),
+        items: visible_items,
+    };
+
+    Ok(module)
 }
 
 fn program() -> Result<(), Error> {
@@ -67,7 +118,6 @@ fn program() -> Result<(), Error> {
     };
 
     let fileid = intern_file_id(filename);
-
     let lexer = match Lexer::new(source_code.as_bytes(), fileid) {
         Ok(l) => l,
         Err(e) => {
@@ -91,15 +141,19 @@ fn program() -> Result<(), Error> {
     let log = slog::Logger::root(drain, o!());
     let log = CompilerLog::new(log);
 
-    let items = Parser::new(lexer, &log).parse_source();
     let mut module = Module {
         attributes: None,
         visibility: None,
         name: intern_module_name("".into()),
-        items,
+        items: Parser::new(lexer, &log).parse_source(),
     };
 
-    resolve_imports(&mut module, &log);
+    let import_context = ImportContext {
+        load_package: &load_package,
+        this_package_name: None,
+    };
+
+    resolve_imports(&import_context, &mut module, &log);
     resolve_names(&mut module, &log);
 
     if let Err(_) = serde_json::to_writer_pretty(&mut parse_tree_output, &module) {

@@ -1,7 +1,10 @@
 use crate::Symbol;
 
 use nitrate_diagnosis::{DiagnosticGroupId, DiagnosticInfo, FormattableDiagnosticGroup, Origin};
-use nitrate_parsetree::kind::{ExprPath, TypePath};
+use nitrate_parsetree::{
+    kind::{ExprPath, TypePath},
+    tag::PackageNameId,
+};
 
 pub enum ResolveIssue {
     ExprPathUnresolved(ExprPath),
@@ -10,13 +13,13 @@ pub enum ResolveIssue {
     TypePathUnresolved(TypePath),
     TypePathAmbiguous(TypePath, Vec<Symbol>),
 
-    ModuleNotFound((std::path::PathBuf, std::io::Error)),
+    ImportNotFound((PackageNameId, std::io::Error)),
     CircularImport {
-        path: std::path::PathBuf,
-        depth: Vec<std::path::PathBuf>,
+        path: PackageNameId,
+        depth: Vec<PackageNameId>,
     },
     ImportSourceCodeSizeLimitExceeded(std::path::PathBuf),
-    ImportDepthLimitExceeded(std::path::PathBuf),
+    ImportDepthLimitExceeded(PackageNameId),
 }
 
 impl FormattableDiagnosticGroup for ResolveIssue {
@@ -32,7 +35,7 @@ impl FormattableDiagnosticGroup for ResolveIssue {
             ResolveIssue::TypePathUnresolved(_) => 20,
             ResolveIssue::TypePathAmbiguous(_, _) => 21,
 
-            ResolveIssue::ModuleNotFound(_) => 40,
+            ResolveIssue::ImportNotFound(_) => 40,
             ResolveIssue::CircularImport { .. } => 41,
             ResolveIssue::ImportSourceCodeSizeLimitExceeded(_) => 42,
             ResolveIssue::ImportDepthLimitExceeded(_) => 43,
@@ -89,19 +92,19 @@ impl FormattableDiagnosticGroup for ResolveIssue {
                 ),
             },
 
-            ResolveIssue::ModuleNotFound(path) => DiagnosticInfo {
+            ResolveIssue::ImportNotFound(path) => DiagnosticInfo {
                 origin: Origin::None,
-                message: format!("Module not found: {} ({})", path.0.display(), path.1),
+                message: format!("Module not found: {} ({})", path.0, path.1),
             },
 
             ResolveIssue::CircularImport { path, depth } => DiagnosticInfo {
                 origin: Origin::None,
                 message: format!(
                     "Circular import detected: {}\nImport depth:\n{}",
-                    path.display(),
+                    path,
                     depth
                         .iter()
-                        .map(|p| format!(" - {}", p.display()))
+                        .map(|p| format!(" - {}", p))
                         .collect::<Vec<_>>()
                         .join("\n")
                 ),
@@ -119,7 +122,7 @@ impl FormattableDiagnosticGroup for ResolveIssue {
                 origin: Origin::None,
                 message: format!(
                     "Import depth limit of 256 exceeded while importing module: {}",
-                    path.display()
+                    path
                 ),
             },
         }

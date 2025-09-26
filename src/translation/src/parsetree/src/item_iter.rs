@@ -2,7 +2,7 @@ use std::sync::{Arc, RwLock};
 
 use crate::{
     Order, ParseTreeIter, RefNode,
-    item::{ItemPath, ItemSyntaxError},
+    item::ItemSyntaxError,
     kind::{
         AssociatedItem, Enum, EnumVariant, Function, FunctionParameter, GenericParameter, Impl,
         Import, Item, Module, Struct, StructField, Trait, TypeAlias, Variable,
@@ -37,19 +37,13 @@ impl ParseTreeIter for Module {
     }
 }
 
-impl ParseTreeIter for ItemPath {
-    fn depth_first_iter(&self, f: &mut dyn FnMut(Order, RefNode)) {
-        f(Order::Enter, RefNode::ItemItemPath(self));
-        f(Order::Leave, RefNode::ItemItemPath(self));
-    }
-}
-
 impl ParseTreeIter for Import {
     fn depth_first_iter(&self, f: &mut dyn FnMut(Order, RefNode)) {
         f(Order::Enter, RefNode::ItemImport(self));
 
         let _ = self.visibility;
-        let _ = self.alias;
+        let _ = self.items;
+        let _ = self.package_name;
 
         if let Some(attrs) = &self.attributes {
             for attr in attrs {
@@ -57,10 +51,8 @@ impl ParseTreeIter for Import {
             }
         }
 
-        self.path.depth_first_iter(f);
-
-        if let Some(content) = &self.content {
-            content.depth_first_iter(f);
+        if let Some(module) = &self.module {
+            module.depth_first_iter(f);
         }
 
         f(Order::Leave, RefNode::ItemImport(self));
@@ -386,7 +378,6 @@ impl ParseTreeIter for Item {
         match self {
             Item::SyntaxError(item) => item.depth_first_iter(f),
             Item::Module(item) => item.depth_first_iter(f),
-            Item::ItemPath(item) => item.depth_first_iter(f),
             Item::Import(item) => item.depth_first_iter(f),
             Item::TypeAlias(item) => item.depth_first_iter(f),
             Item::Struct(item) => item.depth_first_iter(f),

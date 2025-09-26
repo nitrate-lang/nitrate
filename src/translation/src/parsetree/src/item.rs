@@ -1,7 +1,7 @@
 use crate::{
     kind::{Block, Expr, Type},
     tag::{
-        EnumVariantNameId, FunctionNameId, ImportAliasNameId, ModuleNameId, ParameterNameId,
+        EnumVariantNameId, FunctionNameId, ModuleNameId, PackageNameId, ParameterNameId,
         StructFieldNameId, TraitNameId, TypeNameId, VariableNameId,
     },
     ty::TypePath,
@@ -49,9 +49,11 @@ pub struct ItemPath {
 pub struct Import {
     pub visibility: Option<Visibility>,
     pub attributes: Option<Vec<Expr>>,
-    pub path: ItemPath,
-    pub alias: Option<ImportAliasNameId>,
-    pub content: Option<Module>,
+    pub package_name: PackageNameId,
+    pub items: Option<Vec<ItemPath>>,
+
+    // Not set until import resolution
+    pub module: Option<Module>,
 }
 
 #[skip_serializing_none]
@@ -208,7 +210,6 @@ pub struct Variable {
 pub enum Item {
     SyntaxError(ItemSyntaxError),
     Module(Box<Module>),
-    ItemPath(Box<ItemPath>),
     Import(Box<Import>),
     TypeAlias(Arc<RwLock<TypeAlias>>),
     Struct(Arc<RwLock<Struct>>),
@@ -224,7 +225,6 @@ impl std::fmt::Debug for Item {
         match self {
             Item::SyntaxError(e) => e.fmt(f),
             Item::Module(e) => e.fmt(f),
-            Item::ItemPath(e) => e.fmt(f),
             Item::Import(e) => e.fmt(f),
             Item::TypeAlias(e) => e.fmt(f),
             Item::Struct(e) => e.fmt(f),

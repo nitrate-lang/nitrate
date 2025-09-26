@@ -12,7 +12,7 @@ pub(crate) enum SyntaxErr {
     ModuleItemLimit(SourcePosition),
     ModuleExpectedEnd(SourcePosition),
 
-    ImportMissingAliasName(SourcePosition),
+    ImportMissingPackageName(SourcePosition),
 
     TypeAliasMissingName(SourcePosition),
 
@@ -116,7 +116,7 @@ impl FormattableDiagnosticGroup for SyntaxErr {
             SyntaxErr::ModuleItemLimit(_) => 21,
             SyntaxErr::ModuleExpectedEnd(_) => 22,
 
-            SyntaxErr::ImportMissingAliasName(_) => 40,
+            SyntaxErr::ImportMissingPackageName(_) => 40,
 
             SyntaxErr::TypeAliasMissingName(_) => 60,
 
@@ -239,9 +239,9 @@ impl FormattableDiagnosticGroup for SyntaxErr {
 
             /* ------------------------------------------------------------------------- */
 
-            SyntaxErr::ImportMissingAliasName(pos) => DiagnosticInfo {
+            SyntaxErr::ImportMissingPackageName(pos) => DiagnosticInfo {
                 origin: Origin::Point(pos.to_owned().into()),
-                message: "import alias name is missing".into(),
+                message: "import package name is missing".into(),
             },
 
             /* ------------------------------------------------------------------------- */

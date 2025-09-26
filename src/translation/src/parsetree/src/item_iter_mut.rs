@@ -2,7 +2,7 @@ use std::sync::{Arc, RwLock};
 
 use crate::{
     Order, ParseTreeIterMut, RefNodeMut,
-    item::{ItemPath, ItemSyntaxError},
+    item::ItemSyntaxError,
     kind::{
         AssociatedItem, Enum, EnumVariant, Function, FunctionParameter, GenericParameter, Impl,
         Import, Item, Module, Struct, StructField, Trait, TypeAlias, Variable,
@@ -37,19 +37,13 @@ impl ParseTreeIterMut for Module {
     }
 }
 
-impl ParseTreeIterMut for ItemPath {
-    fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
-        f(Order::Enter, RefNodeMut::ItemPath(self));
-        f(Order::Leave, RefNodeMut::ItemPath(self));
-    }
-}
-
 impl ParseTreeIterMut for Import {
     fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
         f(Order::Enter, RefNodeMut::ItemImport(self));
 
         let _ = self.visibility;
-        let _ = self.alias;
+        let _ = self.items;
+        let _ = self.package_name;
 
         if let Some(attrs) = &mut self.attributes {
             for attr in attrs {
@@ -57,10 +51,8 @@ impl ParseTreeIterMut for Import {
             }
         }
 
-        self.path.depth_first_iter_mut(f);
-
-        if let Some(content) = &mut self.content {
-            content.depth_first_iter_mut(f);
+        if let Some(module) = &mut self.module {
+            module.depth_first_iter_mut(f);
         }
 
         f(Order::Leave, RefNodeMut::ItemImport(self));
@@ -386,7 +378,6 @@ impl ParseTreeIterMut for Item {
         match self {
             Item::SyntaxError(item) => item.depth_first_iter_mut(f),
             Item::Module(item) => item.depth_first_iter_mut(f),
-            Item::ItemPath(item) => item.depth_first_iter_mut(f),
             Item::Import(item) => item.depth_first_iter_mut(f),
             Item::TypeAlias(item) => item.depth_first_iter_mut(f),
             Item::Struct(item) => item.depth_first_iter_mut(f),

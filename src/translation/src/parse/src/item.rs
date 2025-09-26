@@ -10,9 +10,9 @@ use nitrate_parsetree::{
         StructField, Trait, TypeAlias, Variable, VariableKind, Visibility,
     },
     tag::{
-        intern_enum_variant_name, intern_function_name, intern_import_alias_name,
-        intern_module_name, intern_parameter_name, intern_struct_field_name, intern_trait_name,
-        intern_type_name, intern_variable_name,
+        intern_enum_variant_name, intern_function_name, intern_module_name, intern_package_name,
+        intern_parameter_name, intern_struct_field_name, intern_trait_name, intern_type_name,
+        intern_variable_name,
     },
 };
 use nitrate_tokenize::Token;
@@ -168,19 +168,11 @@ impl Parser<'_, '_> {
         self.lexer.skip_tok();
 
         let attributes = self.parse_attributes();
-        let path = self.parse_item_path();
-
-        let alias = if self.lexer.skip_if(&Token::As) {
-            let name = self.lexer.next_if_name().unwrap_or_else(|| {
-                let bug = SyntaxErr::ImportMissingAliasName(self.lexer.peek_pos());
-                self.log.report(&bug);
-                "".into()
-            });
-
-            Some(intern_import_alias_name(name))
-        } else {
-            None
-        };
+        let package_name = self.lexer.next_if_name().unwrap_or_else(|| {
+            let bug = SyntaxErr::ImportMissingPackageName(self.lexer.peek_pos());
+            self.log.report(&bug);
+            "".into()
+        });
 
         if !self.lexer.skip_if(&Token::Semi) {
             let bug = SyntaxErr::ExpectedSemicolon(self.lexer.peek_pos());
@@ -190,9 +182,9 @@ impl Parser<'_, '_> {
         Import {
             visibility: None,
             attributes,
-            path,
-            alias,
-            content: None,
+            package_name: intern_package_name(package_name),
+            items: None,
+            module: None,
         }
     }
 
