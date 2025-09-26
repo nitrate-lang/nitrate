@@ -8,6 +8,7 @@ use nitrate_parsetree::{
 };
 
 use std::collections::HashSet;
+
 pub struct ImportContext<'a> {
     pub load_package: &'a dyn Fn(PackageNameId, &CompilerLog) -> Result<Module, ResolveIssue>,
     pub this_package_name: Option<PackageNameId>,
