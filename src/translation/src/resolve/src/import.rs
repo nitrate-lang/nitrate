@@ -10,7 +10,8 @@ use nitrate_parsetree::{
 use std::collections::HashSet;
 
 pub struct ImportContext<'a> {
-    pub load_package: &'a dyn Fn(PackageNameId, &CompilerLog) -> Result<Module, ResolveIssue>,
+    pub load_package:
+        &'a dyn Fn(PackageNameId, &CompilerLog, &ImportContext) -> Result<Module, ResolveIssue>,
     pub this_package_name: Option<PackageNameId>,
 }
 
@@ -44,7 +45,7 @@ fn resolve_import_item(
 
     visited.insert(package_name.clone());
 
-    let mut module = match (context.load_package)(package_name.clone(), log) {
+    let mut module = match (context.load_package)(package_name.clone(), log, context) {
         Ok(m) => m,
         Err(err) => {
             log.report(&err);

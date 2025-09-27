@@ -1,5 +1,3 @@
-use std::{fs::OpenOptions, io::Read};
-
 use nitrate_diagnosis::{CompilerLog, intern_file_id};
 use nitrate_translation::{
     TranslationError,
@@ -11,8 +9,10 @@ use nitrate_translation::{
     resolve::{ImportContext, ResolveIssue, resolve_imports, resolve_names},
     tokenize::{Lexer, LexerError},
 };
+
 use slog::{Drain, Record, o};
 use slog_term::{RecordDecorator, ThreadSafeTimestampFn};
+use std::{fs::OpenOptions, io::Read};
 
 #[derive(Debug)]
 enum Error {
@@ -34,24 +34,106 @@ fn custom_print_msg_header(
     Ok(true)
 }
 
-fn visibility_filter(item: &Item) -> bool {
-    match item {
-        Item::SyntaxError(_) => false,
-        Item::Impl(_) => true,
-
-        Item::Module(i) => i.visibility == Some(Visibility::Public),
-        Item::Import(i) => i.visibility == Some(Visibility::Public),
-
-        Item::TypeAlias(i) => i.read().unwrap().visibility == Some(Visibility::Public),
-        Item::Struct(i) => i.read().unwrap().visibility == Some(Visibility::Public),
-        Item::Enum(i) => i.read().unwrap().visibility == Some(Visibility::Public),
-        Item::Trait(i) => i.read().unwrap().visibility == Some(Visibility::Public),
-        Item::Function(i) => i.read().unwrap().visibility == Some(Visibility::Public),
-        Item::Variable(i) => i.read().unwrap().visibility == Some(Visibility::Public),
+fn is_visible(vis: Option<Visibility>, within: bool) -> bool {
+    match vis.unwrap_or(Visibility::Private) {
+        Visibility::Public => true,
+        Visibility::Protected => within,
+        Visibility::Private => false,
     }
 }
 
-fn load_package(name: PackageNameId, log: &CompilerLog) -> Result<Module, ResolveIssue> {
+fn visibility_filter(item: Item) -> Option<Item> {
+    // FIXME: Determine if the item is in the same package.
+    let within = false;
+
+    match item {
+        Item::SyntaxError(_) => None,
+
+        Item::Impl(i) => Some(Item::Impl(i)),
+
+        Item::Module(mut node) => {
+            if !is_visible(node.visibility, within) {
+                return None;
+            }
+
+            node.items = node
+                .items
+                .into_iter()
+                .filter_map(visibility_filter)
+                .collect();
+
+            Some(Item::Module(node))
+        }
+
+        Item::Import(node) => {
+            if !is_visible(node.visibility, within) {
+                return None;
+            }
+
+            Some(Item::Import(node))
+        }
+
+        Item::TypeAlias(node) => {
+            if !is_visible(node.read().unwrap().visibility, within) {
+                return None;
+            }
+
+            Some(Item::TypeAlias(node))
+        }
+
+        Item::Struct(node) => {
+            let mut lock = node.write().unwrap();
+
+            if !is_visible(lock.visibility, within) {
+                return None;
+            }
+
+            lock.methods
+                .retain(|method| is_visible(method.read().unwrap().visibility, within));
+
+            drop(lock);
+            Some(Item::Struct(node))
+        }
+
+        Item::Enum(node) => {
+            if !is_visible(node.read().unwrap().visibility, within) {
+                return None;
+            }
+
+            Some(Item::Enum(node))
+        }
+
+        Item::Trait(node) => {
+            if !is_visible(node.read().unwrap().visibility, within) {
+                return None;
+            }
+
+            Some(Item::Trait(node))
+        }
+
+        Item::Function(node) => {
+            if !is_visible(node.read().unwrap().visibility, within) {
+                return None;
+            }
+
+            Some(Item::Function(node))
+        }
+
+        Item::Variable(node) => {
+            if !is_visible(node.read().unwrap().visibility, within) {
+                return None;
+            }
+
+            Some(Item::Variable(node))
+        }
+    }
+}
+
+fn load_package(
+    name: PackageNameId,
+    log: &CompilerLog,
+    _ctx: &ImportContext,
+) -> Result<Module, ResolveIssue> {
     // FIXME: Correctly resolve module into filepath.
 
     let module_path = std::path::PathBuf::from(format!("{}.nit", name));
@@ -69,8 +151,8 @@ fn load_package(name: PackageNameId, log: &CompilerLog) -> Result<Module, Resolv
 
     let visible_items = all_items
         .into_iter()
-        .filter(visibility_filter)
-        .collect::<Vec<_>>();
+        .filter_map(visibility_filter)
+        .collect();
 
     let module = Module {
         visibility: None,
