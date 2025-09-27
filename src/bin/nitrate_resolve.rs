@@ -42,10 +42,7 @@ fn is_visible(vis: Option<Visibility>, within: bool) -> bool {
     }
 }
 
-fn visibility_filter(item: Item) -> Option<Item> {
-    // FIXME: Determine if the item is in the same package.
-    let within = false;
-
+fn visibility_filter(item: Item, within: bool) -> Option<Item> {
     match item {
         Item::SyntaxError(_) => None,
 
@@ -59,7 +56,7 @@ fn visibility_filter(item: Item) -> Option<Item> {
             node.items = node
                 .items
                 .into_iter()
-                .filter_map(visibility_filter)
+                .filter_map(|item| visibility_filter(item, within))
                 .collect();
 
             Some(Item::Module(node))
@@ -133,8 +130,12 @@ fn load_package(
     name: PackageNameId,
     log: &CompilerLog,
     _ctx: &ImportContext,
+    _source_file_dir: &std::path::Path,
 ) -> Result<Module, ResolveIssue> {
     // FIXME: Correctly resolve module into filepath.
+
+    // TODO: Determine if the item is in the same package.
+    let within = false;
 
     let module_path = std::path::PathBuf::from(format!("{}.nit", name));
 
@@ -151,7 +152,7 @@ fn load_package(
 
     let visible_items = all_items
         .into_iter()
-        .filter_map(visibility_filter)
+        .filter_map(|item| visibility_filter(item, within))
         .collect();
 
     let module = Module {
@@ -176,7 +177,7 @@ fn program() -> Result<(), Error> {
         return Err(Error::NotEnoughArguments);
     }
 
-    let filename = &args[1];
+    let filename = std::path::Path::new(&args[1]);
     let target_filename = &args[2];
     let error_filename = &args[3];
 
@@ -199,7 +200,7 @@ fn program() -> Result<(), Error> {
         }
     };
 
-    let fileid = intern_file_id(filename);
+    let fileid = intern_file_id(&filename.to_string_lossy());
     let lexer = match Lexer::new(source_code.as_bytes(), fileid) {
         Ok(l) => l,
         Err(e) => {
@@ -231,7 +232,7 @@ fn program() -> Result<(), Error> {
     };
 
     let import_context = ImportContext {
-        load_package: &load_package,
+        load_package: &|name, log, ctx| load_package(name, log, ctx, filename),
         this_package_name: None,
     };
 
