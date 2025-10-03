@@ -43,7 +43,7 @@ impl ParseTreeIterMut for Import {
 
         let _ = self.visibility;
         let _ = self.items;
-        let _ = self.package_name;
+        let _ = self.import_name;
 
         if let Some(attrs) = &mut self.attributes {
             for attr in attrs {

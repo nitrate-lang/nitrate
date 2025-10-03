@@ -10,7 +10,7 @@ use nitrate_parsetree::{
         StructField, Trait, TypeAlias, Variable, VariableKind, Visibility,
     },
     tag::{
-        intern_enum_variant_name, intern_function_name, intern_module_name, intern_package_name,
+        intern_enum_variant_name, intern_function_name, intern_import_name, intern_module_name,
         intern_parameter_name, intern_struct_field_name, intern_trait_name, intern_type_name,
         intern_variable_name,
     },
@@ -168,8 +168,8 @@ impl Parser<'_, '_> {
         self.lexer.skip_tok();
 
         let attributes = self.parse_attributes();
-        let package_name = self.lexer.next_if_name().unwrap_or_else(|| {
-            let bug = SyntaxErr::ImportMissingPackageName(self.lexer.peek_pos());
+        let import_name = self.lexer.next_if_name().unwrap_or_else(|| {
+            let bug = SyntaxErr::ImportMissingName(self.lexer.peek_pos());
             self.log.report(&bug);
             "".into()
         });
@@ -182,7 +182,7 @@ impl Parser<'_, '_> {
         Import {
             visibility: None,
             attributes,
-            package_name: intern_package_name(package_name),
+            import_name: intern_import_name(import_name),
             items: None,
             module: None,
         }

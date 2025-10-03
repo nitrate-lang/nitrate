@@ -3,7 +3,7 @@ use crate::Symbol;
 use nitrate_diagnosis::{DiagnosticGroupId, DiagnosticInfo, FormattableDiagnosticGroup, Origin};
 use nitrate_parsetree::{
     kind::{ExprPath, TypePath},
-    tag::PackageNameId,
+    tag::ImportNameId,
 };
 
 pub enum ResolveIssue {
@@ -13,13 +13,13 @@ pub enum ResolveIssue {
     TypePathUnresolved(TypePath),
     TypePathAmbiguous(TypePath, Vec<Symbol>),
 
-    ImportNotFound((PackageNameId, std::io::Error)),
+    ImportNotFound((String, std::io::Error)),
     CircularImport {
-        path: PackageNameId,
-        depth: Vec<PackageNameId>,
+        path: ImportNameId,
+        depth: Vec<ImportNameId>,
     },
     ImportSourceCodeSizeLimitExceeded(std::path::PathBuf),
-    ImportDepthLimitExceeded(PackageNameId),
+    ImportDepthLimitExceeded(String),
 }
 
 impl FormattableDiagnosticGroup for ResolveIssue {

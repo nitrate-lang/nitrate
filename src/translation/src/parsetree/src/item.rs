@@ -1,7 +1,7 @@
 use crate::{
     kind::{Block, Expr, Type},
     tag::{
-        EnumVariantNameId, FunctionNameId, ModuleNameId, PackageNameId, ParameterNameId,
+        EnumVariantNameId, FunctionNameId, ImportNameId, ModuleNameId, ParameterNameId,
         StructFieldNameId, TraitNameId, TypeNameId, VariableNameId,
     },
     ty::TypePath,
@@ -49,7 +49,7 @@ pub struct ItemPath {
 pub struct Import {
     pub visibility: Option<Visibility>,
     pub attributes: Option<Vec<Expr>>,
-    pub package_name: PackageNameId,
+    pub import_name: ImportNameId,
     pub items: Option<Vec<ItemPath>>,
 
     // Not set until import resolution

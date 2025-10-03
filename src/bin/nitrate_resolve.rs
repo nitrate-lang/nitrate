@@ -2,12 +2,9 @@ use nitrate_diagnosis::{CompilerLog, intern_file_id};
 use nitrate_translation::{
     TranslationError,
     parse::Parser,
-    parsetree::{
-        kind::{Item, Module, Visibility},
-        tag::{PackageNameId, intern_module_name},
-    },
-    resolve::{ImportContext, ResolveIssue, resolve_imports, resolve_names},
-    tokenize::{Lexer, LexerError},
+    parsetree::{kind::Module, tag::intern_module_name},
+    resolve::{ImportContext, resolve_imports, resolve_names},
+    tokenize::Lexer,
 };
 
 use slog::{Drain, Record, o};
@@ -32,137 +29,6 @@ fn custom_print_msg_header(
     write!(rd, "{}", record.msg())?;
 
     Ok(true)
-}
-
-fn is_visible(vis: Option<Visibility>, within: bool) -> bool {
-    match vis.unwrap_or(Visibility::Private) {
-        Visibility::Public => true,
-        Visibility::Protected => within,
-        Visibility::Private => false,
-    }
-}
-
-fn visibility_filter(item: Item, within: bool) -> Option<Item> {
-    match item {
-        Item::SyntaxError(_) => None,
-
-        Item::Impl(i) => Some(Item::Impl(i)),
-
-        Item::Module(mut node) => {
-            if !is_visible(node.visibility, within) {
-                return None;
-            }
-
-            node.items = node
-                .items
-                .into_iter()
-                .filter_map(|item| visibility_filter(item, within))
-                .collect();
-
-            Some(Item::Module(node))
-        }
-
-        Item::Import(node) => {
-            if !is_visible(node.visibility, within) {
-                return None;
-            }
-
-            Some(Item::Import(node))
-        }
-
-        Item::TypeAlias(node) => {
-            if !is_visible(node.read().unwrap().visibility, within) {
-                return None;
-            }
-
-            Some(Item::TypeAlias(node))
-        }
-
-        Item::Struct(node) => {
-            let mut lock = node.write().unwrap();
-
-            if !is_visible(lock.visibility, within) {
-                return None;
-            }
-
-            lock.methods
-                .retain(|method| is_visible(method.read().unwrap().visibility, within));
-
-            drop(lock);
-            Some(Item::Struct(node))
-        }
-
-        Item::Enum(node) => {
-            if !is_visible(node.read().unwrap().visibility, within) {
-                return None;
-            }
-
-            Some(Item::Enum(node))
-        }
-
-        Item::Trait(node) => {
-            if !is_visible(node.read().unwrap().visibility, within) {
-                return None;
-            }
-
-            Some(Item::Trait(node))
-        }
-
-        Item::Function(node) => {
-            if !is_visible(node.read().unwrap().visibility, within) {
-                return None;
-            }
-
-            Some(Item::Function(node))
-        }
-
-        Item::Variable(node) => {
-            if !is_visible(node.read().unwrap().visibility, within) {
-                return None;
-            }
-
-            Some(Item::Variable(node))
-        }
-    }
-}
-
-fn load_package(
-    name: PackageNameId,
-    log: &CompilerLog,
-    _ctx: &ImportContext,
-    _source_file_dir: &std::path::Path,
-) -> Result<Module, ResolveIssue> {
-    // FIXME: Correctly resolve module into filepath.
-
-    // TODO: Determine if the item is in the same package.
-    let within = false;
-
-    let module_path = std::path::PathBuf::from(format!("{}.nit", name));
-
-    let source_code = std::fs::read_to_string(&module_path)
-        .map_err(|err| ResolveIssue::ImportNotFound((name.clone(), err)))?;
-
-    let file_id = intern_file_id(&module_path.to_string_lossy());
-    let lexer = Lexer::new(source_code.as_bytes(), file_id).map_err(|err| match err {
-        LexerError::SourceTooBig => ResolveIssue::ImportSourceCodeSizeLimitExceeded(module_path),
-    })?;
-
-    let all_items = Parser::new(lexer, log).parse_source();
-    drop(source_code);
-
-    let visible_items = all_items
-        .into_iter()
-        .filter_map(|item| visibility_filter(item, within))
-        .collect();
-
-    let module = Module {
-        visibility: None,
-        attributes: None,
-        name: intern_module_name(name.to_string()),
-        items: visible_items,
-    };
-
-    Ok(module)
 }
 
 fn program() -> Result<(), Error> {
@@ -232,8 +98,8 @@ fn program() -> Result<(), Error> {
     };
 
     let import_context = ImportContext {
-        load_package: &|name, log, ctx| load_package(name, log, ctx, filename),
-        this_package_name: None,
+        package_name: None,
+        source_code_filepath: filename.to_path_buf(),
     };
 
     resolve_imports(&import_context, &mut module, &log);

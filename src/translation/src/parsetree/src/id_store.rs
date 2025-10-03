@@ -173,6 +173,13 @@ impl_interning_category!(
 );
 
 impl_interning_category!(
+    ImportNameId,
+    ImportNameIdStore,
+    IMPORT_NAME_ID_STORE,
+    intern_import_name
+);
+
+impl_interning_category!(
     ModuleNameId,
     ModuleNameIdStore,
     MODULE_NAME_ID_STORE,
@@ -272,6 +279,7 @@ impl_interning_category!(
 
 pub fn erase_interners() {
     PACKAGE_NAME_ID_STORE.clear();
+    IMPORT_NAME_ID_STORE.clear();
     MODULE_NAME_ID_STORE.clear();
     IMPORT_ALIAS_NAME_ID_STORE.clear();
     PARAMETER_NAME_ID_STORE.clear();
