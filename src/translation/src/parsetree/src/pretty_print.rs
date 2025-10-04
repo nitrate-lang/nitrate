@@ -417,13 +417,24 @@ impl PrettyPrint for Block {
             }
         }
 
-        writer.write_char('{')?;
+        if self.elements.is_empty() {
+            writer.write_str("{}")
+        } else {
+            writer.write_str("{\n")?;
 
-        for item in &self.elements {
-            item.pretty_print_fmt(ctx, writer)?;
+            for item in &self.elements {
+                ctx.tab_depth += 1;
+
+                ctx.write_indent(writer)?;
+                item.pretty_print_fmt(ctx, writer)?;
+                writer.write_char('\n')?;
+
+                ctx.tab_depth -= 1;
+            }
+
+            ctx.write_indent(writer)?;
+            writer.write_char('}')
         }
-
-        writer.write_char('}')
     }
 }
 
@@ -1970,7 +1981,7 @@ impl PrettyPrint for Variable {
             initializer.pretty_print_fmt(ctx, writer)?;
         }
 
-        Ok(())
+        writer.write_char(';')
     }
 }
 
