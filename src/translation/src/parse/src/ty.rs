@@ -387,7 +387,7 @@ impl Parser<'_, '_> {
     fn parse_rest_of_tuple(&mut self, first_element: Type) -> TupleType {
         let mut element_types = Vec::from([first_element]);
         let mut already_reported_too_many_elements = false;
-        let mut ends_with_comma = false;
+        let mut ends_with_comma = true;
 
         while !self.lexer.skip_if(&Token::CloseParen) {
             ends_with_comma = false;
