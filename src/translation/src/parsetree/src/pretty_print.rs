@@ -6,12 +6,12 @@ use crate::{
     expr::{
         AttributeList, Await, BStringLit, BinExpr, BinExprOp, Block, BlockItem, BooleanLit, Break,
         Call, CallArgument, Cast, Closure, Continue, Expr, ExprParentheses, ExprPath,
-        ExprSyntaxError, FloatLit, ForEach, If, IndexAccess, IntegerLit, List, Object, Return,
-        Safety, StringLit, Switch, TypeInfo, UnaryExpr, UnaryExprOp, WhileLoop,
+        ExprSyntaxError, FloatLit, ForEach, If, IndexAccess, IntegerLit, List, Return, Safety,
+        StringLit, StructInit, Switch, TypeInfo, UnaryExpr, UnaryExprOp, WhileLoop,
     },
     item::{
         Enum, FuncParam, FuncParams, Function, Impl, Import, Item, ItemSyntaxError, Module, Struct,
-        Trait, TypeAlias, Variable,
+        Trait, TypeAlias, Variable, Visibility,
     },
     ty::{
         ArrayType, Bool, Float8, Float16, Float32, Float64, Float128, FunctionType, InferType,
@@ -208,7 +208,7 @@ impl PrettyPrint for List {
     }
 }
 
-impl PrettyPrint for Object {
+impl PrettyPrint for StructInit {
     fn pretty_print_fmt(
         &self,
         _ctx: &PrintContext,
@@ -616,7 +616,7 @@ impl PrettyPrint for Expr {
             Expr::BString(m) => m.pretty_print_fmt(ctx, writer),
             Expr::TypeInfo(m) => m.pretty_print_fmt(ctx, writer),
             Expr::List(m) => m.pretty_print_fmt(ctx, writer),
-            Expr::Object(m) => m.pretty_print_fmt(ctx, writer),
+            Expr::StructInit(m) => m.pretty_print_fmt(ctx, writer),
             Expr::UnaryExpr(m) => m.pretty_print_fmt(ctx, writer),
             Expr::BinExpr(m) => m.pretty_print_fmt(ctx, writer),
             Expr::Cast(m) => m.pretty_print_fmt(ctx, writer),
@@ -1022,11 +1022,25 @@ impl PrettyPrint for Type {
     }
 }
 
-impl PrettyPrint for ItemSyntaxError {
+impl PrettyPrint for Visibility {
     fn pretty_print_fmt(
         &self,
         _ctx: &PrintContext,
         writer: &mut dyn std::fmt::Write,
+    ) -> std::fmt::Result {
+        match self {
+            Visibility::Public => writer.write_str("pub"),
+            Visibility::Private => writer.write_str("sec"),
+            Visibility::Protected => writer.write_str("pro"),
+        }
+    }
+}
+
+impl PrettyPrint for ItemSyntaxError {
+    fn pretty_print_fmt(
+        &self,
+        _ctx: &PrintContext,
+        _writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
         // Item syntax errors are unrepresentable
         Ok(())

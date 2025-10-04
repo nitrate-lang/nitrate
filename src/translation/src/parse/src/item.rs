@@ -128,6 +128,7 @@ impl Parser<'_, '_> {
         }
     }
 
+    #[allow(dead_code)]
     fn parse_item_path(&mut self) -> ItemPath {
         fn parse_double_colon(this: &mut Parser) -> bool {
             if !this.lexer.skip_if(&Token::Colon) {

@@ -1,12 +1,12 @@
 use crate::item::{Enum, Function, Struct, Trait, TypeAlias, Variable};
 use crate::kind::{FuncParam, Type};
 use crate::tag::{ArgNameId, LabelNameId, StringLiteralId, StructFieldNameId, VariableNameId};
+use crate::ty::TypePath;
 
 use nitrate_tokenize::IntegerKind;
 use ordered_float::NotNan;
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
-use std::collections::HashMap;
 use std::sync::{Arc, RwLock, Weak};
 
 #[skip_serializing_none]
@@ -64,8 +64,9 @@ pub struct List {
 
 #[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Object {
-    pub fields: HashMap<StructFieldNameId, Expr>,
+pub struct StructInit {
+    pub type_name: TypePath,
+    pub fields: Vec<(StructFieldNameId, Expr)>,
 }
 
 #[skip_serializing_none]
@@ -372,7 +373,7 @@ pub enum Expr {
 
     TypeInfo(Box<TypeInfo>),
     List(Box<List>),
-    Object(Box<Object>),
+    StructInit(Box<StructInit>),
     UnaryExpr(Box<UnaryExpr>),
     BinExpr(Box<BinExpr>),
     Cast(Box<Cast>),
@@ -406,7 +407,7 @@ impl std::fmt::Debug for Expr {
             Expr::BString(e) => e.fmt(f),
             Expr::TypeInfo(e) => f.debug_struct("TypeInfo").field("type", e).finish(),
             Expr::List(e) => e.fmt(f),
-            Expr::Object(e) => e.fmt(f),
+            Expr::StructInit(e) => e.fmt(f),
             Expr::UnaryExpr(e) => e.fmt(f),
             Expr::BinExpr(e) => e.fmt(f),
             Expr::Cast(e) => e.fmt(f),

@@ -1,6 +1,6 @@
 use crate::{
     Order, ParseTreeIterMut, RefNodeMut,
-    expr::{AttributeList, ExprPath, Object, Safety, Switch, SwitchCase, TypeArgument},
+    expr::{AttributeList, ExprPath, Safety, StructInit, Switch, SwitchCase, TypeArgument},
     kind::{
         Await, BStringLit, BinExpr, Block, BlockItem, BooleanLit, Break, Call, CallArgument, Cast,
         Closure, Continue, Expr, ExprParentheses, ExprSyntaxError, FloatLit, ForEach, If,
@@ -82,16 +82,18 @@ impl ParseTreeIterMut for List {
     }
 }
 
-impl ParseTreeIterMut for Object {
+impl ParseTreeIterMut for StructInit {
     fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
-        f(Order::Enter, RefNodeMut::ExprObject(self));
+        f(Order::Enter, RefNodeMut::ExprStructInit(self));
+
+        self.type_name.depth_first_iter_mut(f);
 
         for (key, value) in &mut self.fields {
             let _ = key;
             value.depth_first_iter_mut(f);
         }
 
-        f(Order::Leave, RefNodeMut::ExprObject(self));
+        f(Order::Leave, RefNodeMut::ExprStructInit(self));
     }
 }
 
@@ -394,7 +396,7 @@ impl ParseTreeIterMut for Expr {
             Expr::Integer(e) => e.depth_first_iter_mut(f),
             Expr::TypeInfo(e) => e.depth_first_iter_mut(f),
             Expr::List(e) => e.depth_first_iter_mut(f),
-            Expr::Object(e) => e.depth_first_iter_mut(f),
+            Expr::StructInit(e) => e.depth_first_iter_mut(f),
             Expr::UnaryExpr(e) => e.depth_first_iter_mut(f),
             Expr::BinExpr(e) => e.depth_first_iter_mut(f),
             Expr::Cast(e) => e.depth_first_iter_mut(f),
