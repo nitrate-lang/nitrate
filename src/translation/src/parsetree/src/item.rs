@@ -185,18 +185,6 @@ pub struct Function {
     pub definition: Option<Block>,
 }
 
-impl Function {
-    #[must_use]
-    pub fn is_definition(&self) -> bool {
-        self.definition.is_some()
-    }
-
-    #[must_use]
-    pub fn is_declaration(&self) -> bool {
-        self.definition.is_none()
-    }
-}
-
 #[skip_serializing_none]
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 pub enum VariableKind {

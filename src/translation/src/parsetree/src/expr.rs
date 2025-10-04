@@ -52,10 +52,6 @@ pub struct BStringLit {
 
 #[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct UnitLit {}
-
-#[skip_serializing_none]
-#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TypeInfo {
     pub the: Type,
 }
@@ -373,7 +369,6 @@ pub enum Expr {
     Float(FloatLit),
     String(StringLit),
     BString(Box<BStringLit>),
-    Unit(UnitLit),
 
     TypeInfo(Box<TypeInfo>),
     List(Box<List>),
@@ -409,7 +404,6 @@ impl std::fmt::Debug for Expr {
             Expr::Float(e) => e.fmt(f),
             Expr::String(e) => e.fmt(f),
             Expr::BString(e) => e.fmt(f),
-            Expr::Unit(_) => write!(f, "()"),
             Expr::TypeInfo(e) => f.debug_struct("TypeInfo").field("type", e).finish(),
             Expr::List(e) => e.fmt(f),
             Expr::Object(e) => e.fmt(f),

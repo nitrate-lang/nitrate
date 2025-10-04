@@ -7,7 +7,7 @@ use crate::{
         AttributeList, Await, BStringLit, BinExpr, BinExprOp, Block, BlockItem, BooleanLit, Break,
         Call, CallArgument, Cast, Closure, Continue, Expr, ExprParentheses, ExprPath,
         ExprSyntaxError, FloatLit, ForEach, If, IndexAccess, IntegerLit, List, Object, Return,
-        Safety, StringLit, Switch, TypeInfo, UnaryExpr, UnaryExprOp, UnitLit, WhileLoop,
+        Safety, StringLit, Switch, TypeInfo, UnaryExpr, UnaryExprOp, WhileLoop,
     },
     item::{
         Enum, FuncParam, FuncParams, Function, Impl, Import, Item, ItemSyntaxError, Module, Struct,
@@ -175,16 +175,6 @@ impl PrettyPrint for BStringLit {
         }
 
         writer.write_char('"')
-    }
-}
-
-impl PrettyPrint for UnitLit {
-    fn pretty_print_fmt(
-        &self,
-        _ctx: &PrintContext,
-        writer: &mut dyn std::fmt::Write,
-    ) -> std::fmt::Result {
-        writer.write_str("()")
     }
 }
 
@@ -624,7 +614,6 @@ impl PrettyPrint for Expr {
             Expr::Float(m) => m.pretty_print_fmt(ctx, writer),
             Expr::String(m) => m.pretty_print_fmt(ctx, writer),
             Expr::BString(m) => m.pretty_print_fmt(ctx, writer),
-            Expr::Unit(m) => m.pretty_print_fmt(ctx, writer),
             Expr::TypeInfo(m) => m.pretty_print_fmt(ctx, writer),
             Expr::List(m) => m.pretty_print_fmt(ctx, writer),
             Expr::Object(m) => m.pretty_print_fmt(ctx, writer),

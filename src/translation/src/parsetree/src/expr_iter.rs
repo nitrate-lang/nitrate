@@ -1,6 +1,6 @@
 use crate::{
     Order, ParseTreeIter, RefNode,
-    expr::{AttributeList, ExprPath, Object, Safety, Switch, SwitchCase, TypeArgument, UnitLit},
+    expr::{AttributeList, ExprPath, Object, Safety, Switch, SwitchCase, TypeArgument},
     kind::{
         Await, BStringLit, BinExpr, Block, BlockItem, BooleanLit, Break, Call, CallArgument, Cast,
         Closure, Continue, Expr, ExprParentheses, ExprSyntaxError, FloatLit, ForEach, If,
@@ -57,13 +57,6 @@ impl ParseTreeIter for BStringLit {
     fn depth_first_iter(&self, f: &mut dyn FnMut(Order, RefNode)) {
         f(Order::Enter, RefNode::ExprBStringLit(self));
         f(Order::Leave, RefNode::ExprBStringLit(self));
-    }
-}
-
-impl ParseTreeIter for UnitLit {
-    fn depth_first_iter(&self, f: &mut dyn FnMut(Order, RefNode)) {
-        f(Order::Enter, RefNode::ExprUnitLit);
-        f(Order::Leave, RefNode::ExprUnitLit);
     }
 }
 
@@ -398,7 +391,6 @@ impl ParseTreeIter for Expr {
             Expr::Float(e) => e.depth_first_iter(f),
             Expr::String(e) => e.depth_first_iter(f),
             Expr::BString(e) => e.depth_first_iter(f),
-            Expr::Unit(e) => e.depth_first_iter(f),
             Expr::Integer(e) => e.depth_first_iter(f),
             Expr::TypeInfo(e) => e.depth_first_iter(f),
             Expr::List(e) => e.depth_first_iter(f),

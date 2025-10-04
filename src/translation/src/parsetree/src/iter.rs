@@ -36,7 +36,6 @@ pub enum RefNode<'a> {
     ExprFloatLit(&'a FloatLit),
     ExprStringLit(&'a StringLit),
     ExprBStringLit(&'a BStringLit),
-    ExprUnitLit,
     ExprTypeInfo(&'a TypeInfo),
     ExprList(&'a List),
     ExprObject(&'a Object),

@@ -8,7 +8,7 @@ use crate::{
         TypeInfo, UnaryExpr, WhileLoop,
     },
     item::{
-        Enum, EnumVariant, Function, FuncParam, Impl, Import, ItemPath, Module, Struct,
+        Enum, EnumVariant, FuncParam, Function, Impl, Import, ItemPath, Module, Struct,
         StructField, Trait, TypeAlias, TypeParams, Variable,
     },
     iter::Order,
@@ -31,7 +31,6 @@ pub enum RefNodeMut<'a> {
     ExprFloatLit(&'a mut FloatLit),
     ExprStringLit(&'a mut StringLit),
     ExprBStringLit(&'a mut BStringLit),
-    ExprUnitLit,
     ExprTypeInfo(&'a mut TypeInfo),
     ExprList(&'a mut List),
     ExprObject(&'a mut Object),
