@@ -1,6 +1,6 @@
 use crate::{
     Order, ParseTreeIter, RefNode,
-    expr::{ExprPath, Object, Safety, Switch, SwitchCase, TypeArgument, UnitLit},
+    expr::{AttributeList, ExprPath, Object, Safety, Switch, SwitchCase, TypeArgument, UnitLit},
     kind::{
         Await, BStringLit, BinExpr, Block, BlockItem, BooleanLit, Break, Call, CallArgument, Cast,
         Closure, Continue, Expr, ExprParentheses, ExprSyntaxError, FloatLit, ForEach, If,
@@ -172,14 +172,24 @@ impl ParseTreeIter for Block {
     }
 }
 
+impl ParseTreeIter for AttributeList {
+    fn depth_first_iter(&self, f: &mut dyn FnMut(Order, RefNode)) {
+        f(Order::Enter, RefNode::ExprAttributeList(self));
+
+        for element in &self.elements {
+            element.depth_first_iter(f);
+        }
+
+        f(Order::Leave, RefNode::ExprAttributeList(self));
+    }
+}
+
 impl ParseTreeIter for Closure {
     fn depth_first_iter(&self, f: &mut dyn FnMut(Order, RefNode)) {
         f(Order::Enter, RefNode::ExprClosure(self));
 
-        if let Some(attrs) = &self.attributes {
-            for attr in attrs {
-                attr.depth_first_iter(f);
-            }
+        if let Some(attributes) = &self.attributes {
+            attributes.depth_first_iter(f);
         }
 
         for param in &self.parameters {
@@ -324,10 +334,8 @@ impl ParseTreeIter for ForEach {
     fn depth_first_iter(&self, f: &mut dyn FnMut(Order, RefNode)) {
         f(Order::Enter, RefNode::ExprFor(self));
 
-        if let Some(attrs) = &self.attributes {
-            for attr in attrs {
-                attr.depth_first_iter(f);
-            }
+        if let Some(attributes) = &self.attributes {
+            attributes.depth_first_iter(f);
         }
 
         self.iterable.depth_first_iter(f);

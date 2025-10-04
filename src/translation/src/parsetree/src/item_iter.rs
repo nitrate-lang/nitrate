@@ -23,10 +23,8 @@ impl ParseTreeIter for Module {
         let _ = self.visibility;
         let _ = self.name;
 
-        if let Some(attrs) = &self.attributes {
-            for attr in attrs {
-                attr.depth_first_iter(f);
-            }
+        if let Some(attributes) = &self.attributes {
+            attributes.depth_first_iter(f);
         }
 
         for item in &self.items {
@@ -45,10 +43,8 @@ impl ParseTreeIter for Import {
         let _ = self.items;
         let _ = self.import_name;
 
-        if let Some(attrs) = &self.attributes {
-            for attr in attrs {
-                attr.depth_first_iter(f);
-            }
+        if let Some(attributes) = &self.attributes {
+            attributes.depth_first_iter(f);
         }
 
         if let Some(module) = &self.module {
@@ -76,24 +72,22 @@ impl ParseTreeIter for GenericParameter {
 impl ParseTreeIter for Arc<RwLock<TypeAlias>> {
     fn depth_first_iter(&self, f: &mut dyn FnMut(Order, RefNode)) {
         f(Order::Enter, RefNode::ItemTypeAlias(self));
-        let mut this = self.write().unwrap();
+        let this = self.write().unwrap();
 
         let _ = this.visibility;
         let _ = this.name;
 
-        if let Some(attrs) = &mut this.attributes {
-            for attr in attrs {
-                attr.depth_first_iter(f);
-            }
+        if let Some(attributes) = &this.attributes {
+            attributes.depth_first_iter(f);
         }
 
-        if let Some(params) = &mut this.type_params {
+        if let Some(params) = &this.type_params {
             for param in params {
                 param.depth_first_iter(f);
             }
         }
 
-        if let Some(alias_type) = &mut this.alias_type {
+        if let Some(alias_type) = &this.alias_type {
             alias_type.depth_first_iter(f);
         }
 
@@ -109,10 +103,8 @@ impl ParseTreeIter for StructField {
         let _ = self.visibility;
         let _ = self.name;
 
-        if let Some(attrs) = &self.attributes {
-            for attr in attrs {
-                attr.depth_first_iter(f);
-            }
+        if let Some(attributes) = &self.attributes {
+            attributes.depth_first_iter(f);
         }
 
         self.field_type.depth_first_iter(f);
@@ -128,28 +120,26 @@ impl ParseTreeIter for StructField {
 impl ParseTreeIter for Arc<RwLock<Struct>> {
     fn depth_first_iter(&self, f: &mut dyn FnMut(Order, RefNode)) {
         f(Order::Enter, RefNode::ItemStruct(self));
-        let mut this = self.write().unwrap();
+        let this = self.write().unwrap();
 
         let _ = this.visibility;
         let _ = this.name;
 
-        if let Some(attrs) = &mut this.attributes {
-            for attr in attrs {
-                attr.depth_first_iter(f);
-            }
+        if let Some(attributes) = &this.attributes {
+            attributes.depth_first_iter(f);
         }
 
-        if let Some(params) = &mut this.type_params {
+        if let Some(params) = &this.type_params {
             for param in params {
                 param.depth_first_iter(f);
             }
         }
 
-        for field in &mut this.fields {
+        for field in &this.fields {
             field.depth_first_iter(f);
         }
 
-        for method in &mut this.methods {
+        for method in &this.methods {
             method.depth_first_iter(f);
         }
 
@@ -165,10 +155,8 @@ impl ParseTreeIter for EnumVariant {
         let _ = self.visibility;
         let _ = self.name;
 
-        if let Some(attrs) = &self.attributes {
-            for attr in attrs {
-                attr.depth_first_iter(f);
-            }
+        if let Some(attributes) = &self.attributes {
+            attributes.depth_first_iter(f);
         }
 
         if let Some(variant_type) = &self.variant_type {
@@ -186,24 +174,22 @@ impl ParseTreeIter for EnumVariant {
 impl ParseTreeIter for Arc<RwLock<Enum>> {
     fn depth_first_iter(&self, f: &mut dyn FnMut(Order, RefNode)) {
         f(Order::Enter, RefNode::ItemEnum(self));
-        let mut this = self.write().unwrap();
+        let this = self.write().unwrap();
 
         let _ = this.visibility;
         let _ = this.name;
 
-        if let Some(attrs) = &mut this.attributes {
-            for attr in attrs {
-                attr.depth_first_iter(f);
-            }
+        if let Some(attributes) = &this.attributes {
+            attributes.depth_first_iter(f);
         }
 
-        if let Some(params) = &mut this.type_params {
+        if let Some(params) = &this.type_params {
             for param in params {
                 param.depth_first_iter(f);
             }
         }
 
-        for variant in &mut this.variants {
+        for variant in &this.variants {
             variant.depth_first_iter(f);
         }
 
@@ -226,24 +212,22 @@ impl ParseTreeIter for AssociatedItem {
 impl ParseTreeIter for Arc<RwLock<Trait>> {
     fn depth_first_iter(&self, f: &mut dyn FnMut(Order, RefNode)) {
         f(Order::Enter, RefNode::ItemTrait(self));
-        let mut this = self.write().unwrap();
+        let this = self.write().unwrap();
 
         let _ = this.visibility;
         let _ = this.name;
 
-        if let Some(attrs) = &mut this.attributes {
-            for attr in attrs {
-                attr.depth_first_iter(f);
-            }
+        if let Some(attributes) = &this.attributes {
+            attributes.depth_first_iter(f);
         }
 
-        if let Some(params) = &mut this.type_params {
+        if let Some(params) = &this.type_params {
             for param in params {
                 param.depth_first_iter(f);
             }
         }
 
-        for associated_item in &mut this.items {
+        for associated_item in &this.items {
             associated_item.depth_first_iter(f);
         }
 
@@ -256,10 +240,8 @@ impl ParseTreeIter for Impl {
     fn depth_first_iter(&self, f: &mut dyn FnMut(Order, RefNode)) {
         f(Order::Enter, RefNode::ItemImpl(self));
 
-        if let Some(attrs) = &self.attributes {
-            for attr in attrs {
-                attr.depth_first_iter(f);
-            }
+        if let Some(attributes) = &self.attributes {
+            attributes.depth_first_iter(f);
         }
 
         if let Some(params) = &self.type_params {
@@ -289,10 +271,8 @@ impl ParseTreeIter for FunctionParameter {
         let _ = self.mutability;
         let _ = self.name;
 
-        if let Some(attrs) = &self.attributes {
-            for attr in attrs {
-                attr.depth_first_iter(f);
-            }
+        if let Some(attributes) = &self.attributes {
+            attributes.depth_first_iter(f);
         }
 
         if let Some(param_type) = &self.param_type {
@@ -310,32 +290,30 @@ impl ParseTreeIter for FunctionParameter {
 impl ParseTreeIter for Arc<RwLock<Function>> {
     fn depth_first_iter(&self, f: &mut dyn FnMut(Order, RefNode)) {
         f(Order::Enter, RefNode::ItemFunction(self));
-        let mut this = self.write().unwrap();
+        let this = self.write().unwrap();
 
         let _ = this.visibility;
         let _ = this.name;
 
-        if let Some(attrs) = &mut this.attributes {
-            for attr in attrs {
-                attr.depth_first_iter(f);
-            }
+        if let Some(attributes) = &this.attributes {
+            attributes.depth_first_iter(f);
         }
 
-        if let Some(params) = &mut this.type_params {
+        if let Some(params) = &this.type_params {
             for param in params {
                 param.depth_first_iter(f);
             }
         }
 
-        for param in &mut this.parameters {
+        for param in &this.parameters {
             param.depth_first_iter(f);
         }
 
-        if let Some(return_type) = &mut this.return_type {
+        if let Some(return_type) = &this.return_type {
             return_type.depth_first_iter(f);
         }
 
-        if let Some(definition) = &mut this.definition {
+        if let Some(definition) = &this.definition {
             definition.depth_first_iter(f);
         }
 
@@ -347,24 +325,22 @@ impl ParseTreeIter for Arc<RwLock<Function>> {
 impl ParseTreeIter for Arc<RwLock<Variable>> {
     fn depth_first_iter(&self, f: &mut dyn FnMut(Order, RefNode)) {
         f(Order::Enter, RefNode::ItemVariable(self));
-        let mut this = self.write().unwrap();
+        let this = self.write().unwrap();
 
         let _ = this.visibility;
         let _ = this.kind;
         let _ = this.mutability;
         let _ = this.name;
 
-        if let Some(attrs) = &mut this.attributes {
-            for attr in attrs {
-                attr.depth_first_iter(f);
-            }
+        if let Some(attributes) = &this.attributes {
+            attributes.depth_first_iter(f);
         }
 
-        if let Some(var_type) = &mut this.ty {
+        if let Some(var_type) = &this.ty {
             var_type.depth_first_iter(f);
         }
 
-        if let Some(initializer) = &mut this.initializer {
+        if let Some(initializer) = &this.initializer {
             initializer.depth_first_iter(f);
         }
 

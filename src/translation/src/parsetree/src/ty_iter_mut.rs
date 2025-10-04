@@ -223,10 +223,8 @@ impl ParseTreeIterMut for FunctionTypeParameter {
 
         let _ = self.name;
 
-        if let Some(attrs) = &mut self.attributes {
-            for attr in attrs {
-                attr.depth_first_iter_mut(f);
-            }
+        if let Some(attributes) = &mut self.attributes {
+            attributes.depth_first_iter_mut(f);
         }
 
         self.param_type.depth_first_iter_mut(f);
@@ -243,10 +241,8 @@ impl ParseTreeIterMut for FunctionType {
     fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
         f(Order::Enter, RefNodeMut::TypeFunctionType(self));
 
-        if let Some(attrs) = &mut self.attributes {
-            for attr in attrs {
-                attr.depth_first_iter_mut(f);
-            }
+        if let Some(attributes) = &mut self.attributes {
+            attributes.depth_first_iter_mut(f);
         }
 
         for param in &mut self.parameters {

@@ -1,4 +1,5 @@
 use crate::{
+    expr::AttributeList,
     kind::{Block, Expr, Type},
     tag::{
         EnumVariantNameId, FunctionNameId, ImportNameId, ModuleNameId, ParameterNameId,
@@ -27,7 +28,7 @@ pub enum Visibility {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Module {
     pub visibility: Option<Visibility>,
-    pub attributes: Option<Vec<Expr>>,
+    pub attributes: Option<AttributeList>,
     pub name: ModuleNameId,
     pub items: Vec<Item>,
 }
@@ -48,7 +49,7 @@ pub struct ItemPath {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Import {
     pub visibility: Option<Visibility>,
-    pub attributes: Option<Vec<Expr>>,
+    pub attributes: Option<AttributeList>,
     pub import_name: ImportNameId,
     pub items: Option<Vec<ItemPath>>,
 
@@ -67,7 +68,7 @@ pub struct GenericParameter {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TypeAlias {
     pub visibility: Option<Visibility>,
-    pub attributes: Option<Vec<Expr>>,
+    pub attributes: Option<AttributeList>,
     pub name: TypeNameId,
     pub type_params: Option<Vec<GenericParameter>>,
     pub alias_type: Option<Type>,
@@ -77,7 +78,7 @@ pub struct TypeAlias {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct StructField {
     pub visibility: Option<Visibility>,
-    pub attributes: Option<Vec<Expr>>,
+    pub attributes: Option<AttributeList>,
     pub name: StructFieldNameId,
     pub field_type: Type,
     pub default: Option<Expr>,
@@ -87,7 +88,7 @@ pub struct StructField {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Struct {
     pub visibility: Option<Visibility>,
-    pub attributes: Option<Vec<Expr>>,
+    pub attributes: Option<AttributeList>,
     pub name: TypeNameId,
     pub type_params: Option<Vec<GenericParameter>>,
     pub fields: Vec<StructField>,
@@ -98,7 +99,7 @@ pub struct Struct {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct EnumVariant {
     pub visibility: Option<Visibility>,
-    pub attributes: Option<Vec<Expr>>,
+    pub attributes: Option<AttributeList>,
     pub name: EnumVariantNameId,
     pub variant_type: Option<Type>,
     pub value: Option<Expr>,
@@ -108,7 +109,7 @@ pub struct EnumVariant {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Enum {
     pub visibility: Option<Visibility>,
-    pub attributes: Option<Vec<Expr>>,
+    pub attributes: Option<AttributeList>,
     pub name: TypeNameId,
     pub type_params: Option<Vec<GenericParameter>>,
     pub variants: Vec<EnumVariant>,
@@ -127,7 +128,7 @@ pub enum AssociatedItem {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Trait {
     pub visibility: Option<Visibility>,
-    pub attributes: Option<Vec<Expr>>,
+    pub attributes: Option<AttributeList>,
     pub name: TraitNameId,
     pub type_params: Option<Vec<GenericParameter>>,
     pub items: Vec<AssociatedItem>,
@@ -136,7 +137,7 @@ pub struct Trait {
 #[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Impl {
-    pub attributes: Option<Vec<Expr>>,
+    pub attributes: Option<AttributeList>,
     pub type_params: Option<Vec<GenericParameter>>,
     pub trait_path: Option<TypePath>,
     pub for_type: Type,
@@ -153,7 +154,7 @@ pub enum Mutability {
 #[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FunctionParameter {
-    pub attributes: Option<Vec<Expr>>,
+    pub attributes: Option<AttributeList>,
     pub mutability: Option<Mutability>,
     pub name: ParameterNameId,
     pub param_type: Option<Type>,
@@ -164,7 +165,7 @@ pub struct FunctionParameter {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Function {
     pub visibility: Option<Visibility>,
-    pub attributes: Option<Vec<Expr>>,
+    pub attributes: Option<AttributeList>,
     pub name: FunctionNameId,
     pub type_params: Option<Vec<GenericParameter>>,
     pub parameters: Vec<FunctionParameter>,
@@ -198,7 +199,7 @@ pub enum VariableKind {
 pub struct Variable {
     pub visibility: Option<Visibility>,
     pub kind: VariableKind,
-    pub attributes: Option<Vec<Expr>>,
+    pub attributes: Option<AttributeList>,
     pub mutability: Option<Mutability>,
     pub name: VariableNameId,
     pub ty: Option<Type>,

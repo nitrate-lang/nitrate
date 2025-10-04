@@ -1,6 +1,6 @@
 use crate::{
     Order, ParseTreeIterMut, RefNodeMut,
-    expr::{ExprPath, Object, Safety, Switch, SwitchCase, TypeArgument, UnitLit},
+    expr::{AttributeList, ExprPath, Object, Safety, Switch, SwitchCase, TypeArgument, UnitLit},
     kind::{
         Await, BStringLit, BinExpr, Block, BlockItem, BooleanLit, Break, Call, CallArgument, Cast,
         Closure, Continue, Expr, ExprParentheses, ExprSyntaxError, FloatLit, ForEach, If,
@@ -172,14 +172,24 @@ impl ParseTreeIterMut for Block {
     }
 }
 
+impl ParseTreeIterMut for AttributeList {
+    fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
+        f(Order::Enter, RefNodeMut::ExprAttributeList(self));
+
+        for element in &mut self.elements {
+            element.depth_first_iter_mut(f);
+        }
+
+        f(Order::Leave, RefNodeMut::ExprAttributeList(self));
+    }
+}
+
 impl ParseTreeIterMut for Closure {
     fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
         f(Order::Enter, RefNodeMut::ExprClosure(self));
 
-        if let Some(attrs) = &mut self.attributes {
-            for attr in attrs {
-                attr.depth_first_iter_mut(f);
-            }
+        if let Some(attributes) = &mut self.attributes {
+            attributes.depth_first_iter_mut(f);
         }
 
         for param in &mut self.parameters {
@@ -324,10 +334,8 @@ impl ParseTreeIterMut for ForEach {
     fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
         f(Order::Enter, RefNodeMut::ExprFor(self));
 
-        if let Some(attrs) = &mut self.attributes {
-            for attr in attrs {
-                attr.depth_first_iter_mut(f);
-            }
+        if let Some(attributes) = &mut self.attributes {
+            attributes.depth_first_iter_mut(f);
         }
 
         self.iterable.depth_first_iter_mut(f);

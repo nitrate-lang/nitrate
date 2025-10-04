@@ -223,10 +223,8 @@ impl ParseTreeIter for FunctionTypeParameter {
 
         let _ = self.name;
 
-        if let Some(attrs) = &self.attributes {
-            for attr in attrs {
-                attr.depth_first_iter(f);
-            }
+        if let Some(attributes) = &self.attributes {
+            attributes.depth_first_iter(f);
         }
 
         self.param_type.depth_first_iter(f);
@@ -243,10 +241,8 @@ impl ParseTreeIter for FunctionType {
     fn depth_first_iter(&self, f: &mut dyn FnMut(Order, RefNode)) {
         f(Order::Enter, RefNode::TypeFunctionType(self));
 
-        if let Some(attrs) = &self.attributes {
-            for attr in attrs {
-                attr.depth_first_iter(f);
-            }
+        if let Some(attributes) = &self.attributes {
+            attributes.depth_first_iter(f);
         }
 
         for param in &self.parameters {

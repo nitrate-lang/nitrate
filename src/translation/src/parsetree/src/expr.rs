@@ -222,8 +222,14 @@ pub struct Block {
 
 #[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AttributeList {
+    pub elements: Vec<Expr>,
+}
+
+#[skip_serializing_none]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Closure {
-    pub attributes: Option<Vec<Expr>>,
+    pub attributes: Option<AttributeList>,
     pub unique_id: u64,
     pub parameters: Vec<FunctionParameter>,
     pub return_type: Option<Type>,
@@ -329,7 +335,7 @@ pub struct Return {
 #[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ForEach {
-    pub attributes: Option<Vec<Expr>>,
+    pub attributes: Option<AttributeList>,
     pub iterable: Expr,
     pub bindings: Vec<(VariableNameId, Option<Type>)>,
     pub body: Block,

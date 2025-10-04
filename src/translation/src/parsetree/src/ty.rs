@@ -1,5 +1,5 @@
 use crate::{
-    expr::TypeArgument,
+    expr::{AttributeList, TypeArgument},
     item::{Enum, Struct, TypeAlias},
     kind::{Block, Expr},
     tag::{LifetimeNameId, OpaqueTypeNameId, ParameterNameId},
@@ -147,7 +147,7 @@ pub struct SliceType {
 #[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FunctionTypeParameter {
-    pub attributes: Option<Vec<Expr>>,
+    pub attributes: Option<AttributeList>,
     pub name: Option<ParameterNameId>,
     pub param_type: Type,
     pub default: Option<Expr>,
@@ -156,7 +156,7 @@ pub struct FunctionTypeParameter {
 #[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FunctionType {
-    pub attributes: Option<Vec<Expr>>,
+    pub attributes: Option<AttributeList>,
     pub parameters: Vec<FunctionTypeParameter>,
     pub return_type: Option<Type>,
 }

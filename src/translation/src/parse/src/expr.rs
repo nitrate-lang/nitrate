@@ -5,13 +5,13 @@ use crate::diagnosis::SyntaxErr;
 use super::parse::Parser;
 use nitrate_parsetree::{
     kind::{
-        Await, BStringLit, BinExpr, BinExprOp, Block, BlockItem, Bool, BooleanLit, Break, Call,
-        CallArgument, Cast, Closure, Continue, Expr, ExprParentheses, ExprPath, ExprPathSegment,
-        ExprPathTarget, ExprSyntaxError, Float8, Float16, Float32, Float64, Float128, FloatLit,
-        ForEach, FunctionParameter, If, IndexAccess, Int8, Int16, Int32, Int64, Int128, IntegerLit,
-        List, Mutability, Return, Safety, StringLit, Type, TypeArgument, TypeInfo, TypePath,
-        TypePathSegment, TypePathTarget, UInt8, UInt16, UInt32, UInt64, UInt128, UnaryExpr,
-        UnaryExprOp, WhileLoop,
+        AttributeList, Await, BStringLit, BinExpr, BinExprOp, Block, BlockItem, Bool, BooleanLit,
+        Break, Call, CallArgument, Cast, Closure, Continue, Expr, ExprParentheses, ExprPath,
+        ExprPathSegment, ExprPathTarget, ExprSyntaxError, Float8, Float16, Float32, Float64,
+        Float128, FloatLit, ForEach, FunctionParameter, If, IndexAccess, Int8, Int16, Int32, Int64,
+        Int128, IntegerLit, List, Mutability, Return, Safety, StringLit, Type, TypeArgument,
+        TypeInfo, TypePath, TypePathSegment, TypePathTarget, UInt8, UInt16, UInt32, UInt64,
+        UInt128, UnaryExpr, UnaryExprOp, WhileLoop,
     },
     tag::{
         VariableNameId, intern_arg_name, intern_label_name, intern_parameter_name,
@@ -593,14 +593,14 @@ impl Parser<'_, '_> {
         List { elements }
     }
 
-    pub(crate) fn parse_attributes(&mut self) -> Option<Vec<Expr>> {
+    pub(crate) fn parse_attributes(&mut self) -> Option<AttributeList> {
         let mut already_reported_too_many_attributes = false;
 
         if !self.lexer.skip_if(&Token::OpenBracket) {
             return None;
         }
 
-        let mut attributes = Vec::new();
+        let mut elements = Vec::new();
 
         self.lexer.skip_if(&Token::Comma);
 
@@ -613,7 +613,7 @@ impl Parser<'_, '_> {
 
             const MAX_ATTRIBUTES: usize = 65_536;
 
-            if !already_reported_too_many_attributes && attributes.len() >= MAX_ATTRIBUTES {
+            if !already_reported_too_many_attributes && elements.len() >= MAX_ATTRIBUTES {
                 already_reported_too_many_attributes = true;
 
                 let bug = SyntaxErr::AttributesElementLimit(self.lexer.peek_pos());
@@ -621,7 +621,7 @@ impl Parser<'_, '_> {
             }
 
             let attrib = self.parse_expression();
-            attributes.push(attrib);
+            elements.push(attrib);
 
             if !self.lexer.skip_if(&Token::Comma) && !self.lexer.next_is(&Token::CloseBracket) {
                 let bug = SyntaxErr::AttributesExpectedEnd(self.lexer.peek_pos());
@@ -630,7 +630,7 @@ impl Parser<'_, '_> {
             }
         }
 
-        Some(attributes)
+        Some(AttributeList { elements })
     }
 
     pub(crate) fn parse_generic_arguments(&mut self) -> Option<Vec<TypeArgument>> {
