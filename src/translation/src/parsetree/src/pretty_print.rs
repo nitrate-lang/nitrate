@@ -251,11 +251,11 @@ impl PrettyPrint for UnaryExprOp {
 impl PrettyPrint for UnaryExpr {
     fn pretty_print_fmt(
         &self,
-        _ctx: &PrintContext,
+        ctx: &PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
-        self.operator.pretty_print_fmt(_ctx, writer)?;
-        self.operand.pretty_print_fmt(_ctx, writer)
+        self.operator.pretty_print_fmt(ctx, writer)?;
+        self.operand.pretty_print_fmt(ctx, writer)
     }
 }
 
@@ -313,16 +313,16 @@ impl PrettyPrint for BinExprOp {
 impl PrettyPrint for BinExpr {
     fn pretty_print_fmt(
         &self,
-        _ctx: &PrintContext,
+        ctx: &PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
-        self.left.pretty_print_fmt(_ctx, writer)?;
+        self.left.pretty_print_fmt(ctx, writer)?;
 
         writer.write_char(' ')?;
-        self.operator.pretty_print_fmt(_ctx, writer)?;
+        self.operator.pretty_print_fmt(ctx, writer)?;
         writer.write_char(' ')?;
 
-        self.right.pretty_print_fmt(_ctx, writer)
+        self.right.pretty_print_fmt(ctx, writer)
     }
 }
 
@@ -452,7 +452,7 @@ impl PrettyPrint for TypeArgument {
 impl PrettyPrint for ExprPathSegment {
     fn pretty_print_fmt(
         &self,
-        _ctx: &PrintContext,
+        ctx: &PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
         write!(writer, "{}", self.name)?;
@@ -464,7 +464,7 @@ impl PrettyPrint for ExprPathSegment {
                     writer.write_str(", ")?;
                 }
 
-                arg.pretty_print_fmt(_ctx, writer)?;
+                arg.pretty_print_fmt(ctx, writer)?;
             }
             writer.write_char('>')?;
         }
@@ -1190,18 +1190,18 @@ impl PrettyPrint for ItemSyntaxError {
 impl PrettyPrint for Module {
     fn pretty_print_fmt(
         &self,
-        _ctx: &PrintContext,
+        ctx: &PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
         if let Some(visibility) = &self.visibility {
-            visibility.pretty_print_fmt(_ctx, writer)?;
+            visibility.pretty_print_fmt(ctx, writer)?;
             writer.write_char(' ')?;
         }
 
         writer.write_str("mod ")?;
 
         if let Some(attributes) = &self.attributes {
-            attributes.pretty_print_fmt(_ctx, writer)?;
+            attributes.pretty_print_fmt(ctx, writer)?;
             writer.write_char(' ')?;
         }
 
@@ -1209,7 +1209,7 @@ impl PrettyPrint for Module {
 
         writer.write_str(" {")?;
         for item in &self.items {
-            item.pretty_print_fmt(_ctx, writer)?;
+            item.pretty_print_fmt(ctx, writer)?;
             writer.write_str("\n")?;
         }
         writer.write_str("}")
@@ -1219,18 +1219,18 @@ impl PrettyPrint for Module {
 impl PrettyPrint for Import {
     fn pretty_print_fmt(
         &self,
-        _ctx: &PrintContext,
+        ctx: &PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
         if let Some(visibility) = &self.visibility {
-            visibility.pretty_print_fmt(_ctx, writer)?;
+            visibility.pretty_print_fmt(ctx, writer)?;
             writer.write_char(' ')?;
         }
 
         writer.write_str("use ")?;
 
         if let Some(attributes) = &self.attributes {
-            attributes.pretty_print_fmt(_ctx, writer)?;
+            attributes.pretty_print_fmt(ctx, writer)?;
             writer.write_char(' ')?;
         }
 
@@ -1278,31 +1278,31 @@ impl PrettyPrint for Generics {
 impl PrettyPrint for TypeAlias {
     fn pretty_print_fmt(
         &self,
-        _ctx: &PrintContext,
+        ctx: &PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
         if let Some(visibility) = &self.visibility {
-            visibility.pretty_print_fmt(_ctx, writer)?;
+            visibility.pretty_print_fmt(ctx, writer)?;
             writer.write_char(' ')?;
         }
 
         writer.write_str("type ")?;
 
         if let Some(attributes) = &self.attributes {
-            attributes.pretty_print_fmt(_ctx, writer)?;
+            attributes.pretty_print_fmt(ctx, writer)?;
             writer.write_char(' ')?;
         }
 
         writer.write_str(&self.name)?;
 
         if let Some(generics) = &self.generics {
-            generics.pretty_print_fmt(_ctx, writer)?;
+            generics.pretty_print_fmt(ctx, writer)?;
         }
 
         writer.write_str(" = ")?;
 
         if let Some(alias) = &self.alias_type {
-            alias.pretty_print_fmt(_ctx, writer)?;
+            alias.pretty_print_fmt(ctx, writer)?;
         }
 
         Ok(())
@@ -1534,16 +1534,16 @@ impl PrettyPrint for Mutability {
 impl PrettyPrint for FuncParam {
     fn pretty_print_fmt(
         &self,
-        _ctx: &PrintContext,
+        ctx: &PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
         if let Some(attributes) = &self.attributes {
-            attributes.pretty_print_fmt(_ctx, writer)?;
+            attributes.pretty_print_fmt(ctx, writer)?;
             writer.write_char(' ')?;
         }
 
         if let Some(mutability) = &self.mutability {
-            mutability.pretty_print_fmt(_ctx, writer)?;
+            mutability.pretty_print_fmt(ctx, writer)?;
             writer.write_char(' ')?;
         }
 
@@ -1551,12 +1551,12 @@ impl PrettyPrint for FuncParam {
 
         if let Some(param_type) = &self.param_type {
             writer.write_str(": ")?;
-            param_type.pretty_print_fmt(_ctx, writer)?;
+            param_type.pretty_print_fmt(ctx, writer)?;
         }
 
         if let Some(default_value) = &self.default_value {
             writer.write_str(" = ")?;
-            default_value.pretty_print_fmt(_ctx, writer)?;
+            default_value.pretty_print_fmt(ctx, writer)?;
         }
 
         Ok(())
@@ -1566,7 +1566,7 @@ impl PrettyPrint for FuncParam {
 impl PrettyPrint for FuncParams {
     fn pretty_print_fmt(
         &self,
-        _ctx: &PrintContext,
+        ctx: &PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
         writer.write_char('(')?;
@@ -1575,7 +1575,7 @@ impl PrettyPrint for FuncParams {
                 writer.write_str(", ")?;
             }
 
-            param.pretty_print_fmt(_ctx, writer)?;
+            param.pretty_print_fmt(ctx, writer)?;
         }
         writer.write_char(')')
     }
