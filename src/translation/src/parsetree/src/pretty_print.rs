@@ -1563,7 +1563,9 @@ impl PrettyPrint for TypeAlias {
             writer.write_char(' ')?;
         }
 
-        write_resolve_link(writer, self)?;
+        if ctx.show_resolution_links {
+            write_resolve_link(writer, self)?;
+        }
 
         writer.write_str("type ")?;
 
@@ -1632,7 +1634,9 @@ impl PrettyPrint for Struct {
             writer.write_char(' ')?;
         }
 
-        write_resolve_link(writer, self)?;
+        if ctx.show_resolution_links {
+            write_resolve_link(writer, self)?;
+        }
 
         writer.write_str("struct ")?;
 
@@ -1702,7 +1706,9 @@ impl PrettyPrint for Enum {
             writer.write_char(' ')?;
         }
 
-        write_resolve_link(writer, self)?;
+        if ctx.show_resolution_links {
+            write_resolve_link(writer, self)?;
+        }
 
         writer.write_str("enum ")?;
 
@@ -1756,7 +1762,9 @@ impl PrettyPrint for Trait {
             writer.write_char(' ')?;
         }
 
-        write_resolve_link(writer, self)?;
+        if ctx.show_resolution_links {
+            write_resolve_link(writer, self)?;
+        }
 
         writer.write_str("trait ")?;
 
@@ -1899,7 +1907,9 @@ impl PrettyPrint for Function {
             writer.write_char(' ')?;
         }
 
-        write_resolve_link(writer, self)?;
+        if ctx.show_resolution_links {
+            write_resolve_link(writer, self)?;
+        }
 
         writer.write_str("fn")?;
 
@@ -1943,7 +1953,9 @@ impl PrettyPrint for Variable {
             writer.write_char(' ')?;
         }
 
-        write_resolve_link(writer, self)?;
+        if ctx.show_resolution_links {
+            write_resolve_link(writer, self)?;
+        }
 
         match self.kind {
             VariableKind::Const => writer.write_str("const ")?,
