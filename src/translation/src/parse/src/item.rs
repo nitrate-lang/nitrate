@@ -5,7 +5,7 @@ use crate::diagnosis::SyntaxErr;
 
 use nitrate_parsetree::{
     kind::{
-        AssociatedItem, Enum, EnumVariant, Function, FunctionParameter, Impl, Import, Item,
+        AssociatedItem, Enum, EnumVariant, FuncParam, FuncParams, Function, Impl, Import, Item,
         ItemPath, ItemPathSegment, ItemSyntaxError, Module, Mutability, Struct, StructField, Trait,
         TypeAlias, TypeParam, TypeParams, Variable, VariableKind, Visibility,
     },
@@ -562,8 +562,8 @@ impl Parser<'_, '_> {
         }
     }
 
-    fn parse_named_function_parameters(&mut self) -> Vec<FunctionParameter> {
-        fn parse_named_function_parameter(this: &mut Parser) -> FunctionParameter {
+    fn parse_function_parameters(&mut self) -> FuncParams {
+        fn parse_function_parameter(this: &mut Parser) -> FuncParam {
             let attributes = this.parse_attributes();
 
             let mut mutability = None;
@@ -587,18 +587,18 @@ impl Parser<'_, '_> {
                 None
             };
 
-            let default = if this.lexer.skip_if(&Token::Eq) {
+            let default_value = if this.lexer.skip_if(&Token::Eq) {
                 Some(this.parse_expression())
             } else {
                 None
             };
 
-            FunctionParameter {
+            FuncParam {
                 attributes,
                 mutability,
                 name,
                 param_type,
-                default_value: default,
+                default_value,
             }
         }
 
@@ -629,7 +629,7 @@ impl Parser<'_, '_> {
                 self.log.report(&bug);
             }
 
-            let param = parse_named_function_parameter(self);
+            let param = parse_function_parameter(self);
             params.push(param);
 
             if !self.lexer.skip_if(&Token::Comma) && !self.lexer.next_is(&Token::CloseParen) {
@@ -640,7 +640,7 @@ impl Parser<'_, '_> {
             }
         }
 
-        params
+        FuncParams { params }
     }
 
     fn parse_named_function(&mut self) -> Function {
@@ -658,7 +658,7 @@ impl Parser<'_, '_> {
         let name = intern_function_name(name);
 
         let type_params = self.parse_type_params();
-        let parameters = self.parse_named_function_parameters();
+        let parameters = self.parse_function_parameters();
 
         let return_type = if self.lexer.skip_if(&Token::Minus) {
             if !self.lexer.skip_if(&Token::Gt) {

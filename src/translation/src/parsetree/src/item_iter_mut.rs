@@ -2,10 +2,10 @@ use std::sync::{Arc, RwLock};
 
 use crate::{
     Order, ParseTreeIterMut, RefNodeMut,
-    item::ItemSyntaxError,
+    item::{FuncParams, ItemSyntaxError},
     kind::{
-        AssociatedItem, Enum, EnumVariant, Function, FunctionParameter, Impl, Import, Item, Module,
-        Struct, StructField, Trait, TypeAlias, TypeParams, Variable,
+        AssociatedItem, Enum, EnumVariant, FuncParam, Function, Impl, Import, Item, Module, Struct,
+        StructField, Trait, TypeAlias, TypeParams, Variable,
     },
 };
 
@@ -256,7 +256,7 @@ impl ParseTreeIterMut for Impl {
     }
 }
 
-impl ParseTreeIterMut for FunctionParameter {
+impl ParseTreeIterMut for FuncParam {
     fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
         f(Order::Enter, RefNodeMut::ItemFunctionParameter(self));
 
@@ -279,6 +279,14 @@ impl ParseTreeIterMut for FunctionParameter {
     }
 }
 
+impl ParseTreeIterMut for FuncParams {
+    fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
+        for param in &mut self.params {
+            param.depth_first_iter_mut(f);
+        }
+    }
+}
+
 impl ParseTreeIterMut for Arc<RwLock<Function>> {
     fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
         f(Order::Enter, RefNodeMut::ItemFunction(self));
@@ -295,9 +303,7 @@ impl ParseTreeIterMut for Arc<RwLock<Function>> {
             params.depth_first_iter_mut(f);
         }
 
-        for param in &mut this.parameters {
-            param.depth_first_iter_mut(f);
-        }
+        this.parameters.depth_first_iter_mut(f);
 
         if let Some(return_type) = &mut this.return_type {
             return_type.depth_first_iter_mut(f);

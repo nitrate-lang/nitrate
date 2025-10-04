@@ -1,5 +1,5 @@
 use crate::item::{Enum, Function, Struct, Trait, TypeAlias, Variable};
-use crate::kind::{FunctionParameter, Type};
+use crate::kind::{FuncParam, Type};
 use crate::tag::{ArgNameId, LabelNameId, StringLiteralId, StructFieldNameId, VariableNameId};
 
 use nitrate_tokenize::IntegerKind;
@@ -231,7 +231,7 @@ pub struct AttributeList {
 pub struct Closure {
     pub attributes: Option<AttributeList>,
     pub unique_id: u64,
-    pub parameters: Vec<FunctionParameter>,
+    pub parameters: Vec<FuncParam>,
     pub return_type: Option<Type>,
     pub definition: Block,
 }

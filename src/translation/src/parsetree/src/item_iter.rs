@@ -2,10 +2,10 @@ use std::sync::{Arc, RwLock};
 
 use crate::{
     Order, ParseTreeIter, RefNode,
-    item::ItemSyntaxError,
+    item::{FuncParams, ItemSyntaxError},
     kind::{
-        AssociatedItem, Enum, EnumVariant, Function, FunctionParameter, Impl, Import, Item, Module,
-        Struct, StructField, Trait, TypeAlias, TypeParams, Variable,
+        AssociatedItem, Enum, EnumVariant, FuncParam, Function, Impl, Import, Item, Module, Struct,
+        StructField, Trait, TypeAlias, TypeParams, Variable,
     },
 };
 
@@ -256,9 +256,9 @@ impl ParseTreeIter for Impl {
     }
 }
 
-impl ParseTreeIter for FunctionParameter {
+impl ParseTreeIter for FuncParam {
     fn depth_first_iter(&self, f: &mut dyn FnMut(Order, RefNode)) {
-        f(Order::Enter, RefNode::ItemFunctionParameter(self));
+        f(Order::Enter, RefNode::ItemFuncParam(self));
 
         let _ = self.mutability;
         let _ = self.name;
@@ -275,7 +275,15 @@ impl ParseTreeIter for FunctionParameter {
             default.depth_first_iter(f);
         }
 
-        f(Order::Leave, RefNode::ItemFunctionParameter(self));
+        f(Order::Leave, RefNode::ItemFuncParam(self));
+    }
+}
+
+impl ParseTreeIter for FuncParams {
+    fn depth_first_iter(&self, f: &mut dyn FnMut(Order, RefNode)) {
+        for param in &self.params {
+            param.depth_first_iter(f);
+        }
     }
 }
 
@@ -295,9 +303,7 @@ impl ParseTreeIter for Arc<RwLock<Function>> {
             params.depth_first_iter(f);
         }
 
-        for param in &this.parameters {
-            param.depth_first_iter(f);
-        }
+        this.parameters.depth_first_iter(f);
 
         if let Some(return_type) = &this.return_type {
             return_type.depth_first_iter(f);

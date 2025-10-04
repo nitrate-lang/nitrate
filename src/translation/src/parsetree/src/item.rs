@@ -159,7 +159,7 @@ pub enum Mutability {
 
 #[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct FunctionParameter {
+pub struct FuncParam {
     pub attributes: Option<AttributeList>,
     pub mutability: Option<Mutability>,
     pub name: ParameterNameId,
@@ -169,12 +169,18 @@ pub struct FunctionParameter {
 
 #[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct FuncParams {
+    pub params: Vec<FuncParam>,
+}
+
+#[skip_serializing_none]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Function {
     pub visibility: Option<Visibility>,
     pub attributes: Option<AttributeList>,
     pub name: FunctionNameId,
     pub type_params: Option<TypeParams>,
-    pub parameters: Vec<FunctionParameter>,
+    pub parameters: FuncParams,
     pub return_type: Option<Type>,
     pub definition: Option<Block>,
 }

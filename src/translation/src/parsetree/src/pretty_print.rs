@@ -4,14 +4,14 @@ use nitrate_tokenize::IntegerKind;
 
 use crate::{
     expr::{
-        Await, BStringLit, BinExpr, BinExprOp, Block, BlockItem, BooleanLit, Break, Call,
-        CallArgument, Cast, Closure, Continue, Expr, ExprParentheses, ExprPath, ExprSyntaxError,
-        FloatLit, ForEach, If, IndexAccess, IntegerLit, List, Object, Return, Safety, StringLit,
-        Switch, TypeInfo, UnaryExpr, UnaryExprOp, UnitLit, WhileLoop,
+        AttributeList, Await, BStringLit, BinExpr, BinExprOp, Block, BlockItem, BooleanLit, Break,
+        Call, CallArgument, Cast, Closure, Continue, Expr, ExprParentheses, ExprPath,
+        ExprSyntaxError, FloatLit, ForEach, If, IndexAccess, IntegerLit, List, Object, Return,
+        Safety, StringLit, Switch, TypeInfo, UnaryExpr, UnaryExprOp, UnitLit, WhileLoop,
     },
     item::{
-        Enum, Function, Impl, Import, Item, ItemSyntaxError, Module, Struct, Trait, TypeAlias,
-        Variable,
+        Enum, FuncParam, FuncParams, Function, Impl, Import, Item, ItemSyntaxError, Module, Struct,
+        Trait, TypeAlias, Variable,
     },
     ty::{
         ArrayType, Bool, Float8, Float16, Float32, Float64, Float128, FunctionType, InferType,
@@ -386,14 +386,50 @@ impl PrettyPrint for Block {
     }
 }
 
+impl PrettyPrint for AttributeList {
+    fn pretty_print_fmt(
+        &self,
+        ctx: &PrintContext,
+        writer: &mut dyn std::fmt::Write,
+    ) -> std::fmt::Result {
+        writer.write_char('[')?;
+        for (i, attr) in self.elements.iter().enumerate() {
+            if i > 0 {
+                writer.write_str(", ")?;
+            }
+            attr.pretty_print_fmt(ctx, writer)?;
+        }
+        writer.write_char(']')
+    }
+}
+
 impl PrettyPrint for Closure {
     fn pretty_print_fmt(
         &self,
-        _ctx: &PrintContext,
+        ctx: &PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
-        // TODO: Closure pretty print
-        Ok(())
+        writer.write_str("fn")?;
+
+        if let Some(attributes) = &self.attributes {
+            attributes.pretty_print_fmt(ctx, writer)?;
+        }
+
+        writer.write_char('(')?;
+        for (i, param) in self.parameters.iter().enumerate() {
+            if i > 0 {
+                writer.write_str(", ")?;
+            }
+            param.pretty_print_fmt(ctx, writer)?;
+        }
+        writer.write_char(')')?;
+
+        if let Some(return_type) = &self.return_type {
+            writer.write_str(" -> ")?;
+            return_type.pretty_print_fmt(ctx, writer)?;
+        }
+
+        self.definition.pretty_print_fmt(ctx, writer)
     }
 }
 
@@ -1081,6 +1117,28 @@ impl PrettyPrint for Impl {
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
         // TODO: impl pretty print
+        Ok(())
+    }
+}
+
+impl PrettyPrint for FuncParam {
+    fn pretty_print_fmt(
+        &self,
+        _ctx: &PrintContext,
+        writer: &mut dyn std::fmt::Write,
+    ) -> std::fmt::Result {
+        // TODO: Function pretty print
+        Ok(())
+    }
+}
+
+impl PrettyPrint for FuncParams {
+    fn pretty_print_fmt(
+        &self,
+        _ctx: &PrintContext,
+        writer: &mut dyn std::fmt::Write,
+    ) -> std::fmt::Result {
+        // TODO: Function pretty print
         Ok(())
     }
 }
