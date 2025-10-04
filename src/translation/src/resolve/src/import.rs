@@ -147,7 +147,7 @@ fn load_source_file(
     let module = Module {
         visibility: None,
         attributes: None,
-        name: intern_module_name(import_name),
+        name: Some(intern_module_name(import_name)),
         items,
     };
 

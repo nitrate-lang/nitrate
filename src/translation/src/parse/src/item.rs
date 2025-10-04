@@ -123,7 +123,7 @@ impl Parser<'_, '_> {
         Module {
             visibility: None,
             attributes,
-            name,
+            name: Some(name),
             items,
         }
     }

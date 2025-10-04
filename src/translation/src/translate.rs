@@ -1,5 +1,4 @@
 use crate::{TranslationOptions, TranslationOptionsBuilder, options::Diagnose};
-use nitrate_codegen::{Codegen, CodegenError};
 use nitrate_diagnosis::{CompilerLog, FileId, intern_file_id};
 use nitrate_parse::Parser;
 use nitrate_parsetree::{
@@ -7,7 +6,6 @@ use nitrate_parsetree::{
     tag::intern_module_name,
 };
 use nitrate_tokenize::Lexer;
-use std::collections::HashMap;
 use threadpool::ThreadPool;
 use threadpool_scope::scope_with;
 
@@ -19,7 +17,6 @@ pub enum TranslationError {
     NameResolutionError,
     TypeCheckingError,
     DiagnosticError,
-    CodegenError(CodegenError),
 }
 
 pub fn compile_debugable_code(
@@ -67,7 +64,7 @@ fn parse_language(lexer: Lexer, module_name: &str, log: &CompilerLog) -> Module 
     let items = parser.parse_source();
 
     Module {
-        name: intern_module_name(module_name.to_string()),
+        name: Some(intern_module_name(module_name.to_string())),
         attributes: None,
         visibility: Some(Visibility::Public),
         items,
@@ -115,15 +112,11 @@ fn diagnose_problems(
 //     });
 // }
 
-fn generate_code(module: &Module, object: &mut dyn std::io::Write) -> Result<(), TranslationError> {
-    let target_triple_string = "x86_64"; // Example target ISA
-    let isa_config = HashMap::new();
-
-    let codegen = Codegen::new(target_triple_string.to_string(), isa_config);
-
-    codegen
-        .generate(module, object)
-        .map_err(TranslationError::CodegenError)
+fn generate_code(
+    _module: &Module,
+    _object: &mut dyn std::io::Write,
+) -> Result<(), TranslationError> {
+    unimplemented!()
 }
 
 pub fn compile_code(

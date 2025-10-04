@@ -9,7 +9,6 @@ nitrate_parsetree = { path = "src/parsetree" }
 nitrate_hir = { path = "src/hir" }
 nitrate_resolve = { path = "src/resolve" }
 nitrate_parse = { path = "src/parse" }
-nitrate_codegen = { path = "src/codegen" }
 nitrate_diagnosis = { path = "../diagnosis" }
 nitrate_optimization = { path = "../optimization" }
 threadpool_scope = "0.1.0"

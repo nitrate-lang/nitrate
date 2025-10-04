@@ -2,10 +2,7 @@ use std::{fs::OpenOptions, io::Read};
 
 use nitrate_diagnosis::{CompilerLog, intern_file_id};
 use nitrate_translation::{
-    TranslationError,
-    parse::Parser,
-    parsetree::{kind::Module, tag::intern_module_name},
-    tokenize::Lexer,
+    TranslationError, parse::Parser, parsetree::kind::Module, tokenize::Lexer,
 };
 use slog::{Drain, Record, o};
 use slog_term::{RecordDecorator, ThreadSafeTimestampFn};
@@ -94,7 +91,7 @@ fn program() -> Result<(), Error> {
     let module = Module {
         attributes: None,
         visibility: None,
-        name: intern_module_name("".into()),
+        name: None,
         items,
     };
 

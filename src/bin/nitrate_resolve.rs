@@ -2,7 +2,7 @@ use nitrate_diagnosis::{CompilerLog, intern_file_id};
 use nitrate_translation::{
     TranslationError,
     parse::Parser,
-    parsetree::{PrettyPrint, PrintContext, kind::Module, tag::intern_module_name},
+    parsetree::{PrettyPrint, PrintContext, kind::Module},
     resolve::{ImportContext, resolve_imports, resolve_names},
     tokenize::Lexer,
 };
@@ -96,7 +96,7 @@ fn program() -> Result<(), Error> {
     let mut module = Module {
         attributes: None,
         visibility: None,
-        name: intern_module_name("".into()),
+        name: None,
         items: Parser::new(lexer, &log).parse_source(),
     };
 

@@ -29,7 +29,7 @@ pub enum Visibility {
 pub struct Module {
     pub visibility: Option<Visibility>,
     pub attributes: Option<AttributeList>,
-    pub name: ModuleNameId,
+    pub name: Option<ModuleNameId>,
     pub items: Vec<Item>,
 }
 

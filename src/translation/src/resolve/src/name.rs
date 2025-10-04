@@ -161,7 +161,11 @@ pub fn resolve_names(module: &mut Module, log: &CompilerLog) {
         if let RefNodeMut::ItemModule(module) = node {
             match order {
                 Order::Enter => {
-                    scope_vec.push(module.name.to_string());
+                    if let Some(name) = &module.name {
+                        scope_vec.push(name.to_string());
+                    } else {
+                        scope_vec.push("".to_string());
+                    }
                 }
 
                 Order::Leave => {

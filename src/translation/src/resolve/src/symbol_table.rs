@@ -1,7 +1,7 @@
 use nitrate_parsetree::{
     Order, ParseTreeIter, RefNode,
     kind::{Enum, Function, Module, Struct, Trait, TypeAlias, Variable},
-    tag::ModuleNameId,
+    tag::{ModuleNameId, intern_module_name},
 };
 
 use std::collections::HashMap;
@@ -84,7 +84,11 @@ pub fn build_symbol_table(module: &mut Module) -> SymbolTable {
         if let RefNode::ItemModule(module) = node {
             match order {
                 Order::Enter => {
-                    scope_vec.push(module.name.clone());
+                    if let Some(name) = &module.name {
+                        scope_vec.push(name.clone());
+                    } else {
+                        scope_vec.push(intern_module_name("".to_string()));
+                    }
                 }
 
                 Order::Leave => {

@@ -1345,7 +1345,9 @@ impl PrettyPrint for Module {
             writer.write_char(' ')?;
         }
 
-        writer.write_str(&self.name)?;
+        if let Some(name) = &self.name {
+            writer.write_str(name)?;
+        }
 
         writer.write_str(" {")?;
         for item in &self.items {
