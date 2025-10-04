@@ -225,24 +225,20 @@ impl Parser<'_, '_> {
         self.lexer.skip_tok();
 
         if self.lexer.skip_if(&Token::Static) {
-            return Lifetime::Static;
-        }
-
-        if let Some(kind) = self.lexer.next_if_name() {
-            return match kind.as_str() {
-                "gc" => Lifetime::GarbageCollected,
-                "thread" => Lifetime::Thread,
-                "task" => Lifetime::Task,
-                _ => Lifetime::Other {
-                    name: intern_lifetime_name(kind),
-                },
+            return Lifetime {
+                name: intern_lifetime_name("static".to_string()),
             };
         }
 
-        let bug = SyntaxErr::ReferenceTypeExpectedLifetimeName(self.lexer.peek_pos());
-        self.log.report(&bug);
+        let name = self.lexer.next_if_name().unwrap_or_else(|| {
+            let bug = SyntaxErr::ReferenceTypeExpectedLifetimeName(self.lexer.peek_pos());
+            self.log.report(&bug);
+            "".into()
+        });
 
-        Lifetime::SyntaxError
+        Lifetime {
+            name: intern_lifetime_name(name),
+        }
     }
 
     fn parse_type_primitive(&mut self) -> Type {
