@@ -235,8 +235,15 @@ impl PrettyPrint for UnaryExprOp {
         _ctx: &PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
-        // TODO: UnaryExprOp pretty print
-        Ok(())
+        match self {
+            UnaryExprOp::Add => writer.write_str("+"),
+            UnaryExprOp::Sub => writer.write_str("-"),
+            UnaryExprOp::Deref => writer.write_str("*"),
+            UnaryExprOp::AddressOf => writer.write_str("&"),
+            UnaryExprOp::BitNot => writer.write_str("~"),
+            UnaryExprOp::LogicNot => writer.write_str("!"),
+            UnaryExprOp::Typeof => writer.write_str("typeof"),
+        }
     }
 }
 
@@ -257,8 +264,48 @@ impl PrettyPrint for BinExprOp {
         _ctx: &PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
-        // TODO: BinExprOp pretty print
-        Ok(())
+        match self {
+            BinExprOp::Add => writer.write_str("+"),
+            BinExprOp::Sub => writer.write_str("-"),
+            BinExprOp::Mul => writer.write_str("*"),
+            BinExprOp::Div => writer.write_str("/"),
+            BinExprOp::Mod => writer.write_str("%"),
+            BinExprOp::BitAnd => writer.write_str("&"),
+            BinExprOp::BitOr => writer.write_str("|"),
+            BinExprOp::BitXor => writer.write_str("^"),
+            BinExprOp::BitShl => writer.write_str("<<"),
+            BinExprOp::BitShr => writer.write_str(">>"),
+            BinExprOp::BitRol => writer.write_str("<<<"),
+            BinExprOp::BitRor => writer.write_str(">>>"),
+            BinExprOp::LogicAnd => writer.write_str("&&"),
+            BinExprOp::LogicOr => writer.write_str("||"),
+            BinExprOp::LogicXor => writer.write_str("^^"),
+            BinExprOp::LogicLt => writer.write_str("<"),
+            BinExprOp::LogicGt => writer.write_str(">"),
+            BinExprOp::LogicLe => writer.write_str("<="),
+            BinExprOp::LogicGe => writer.write_str(">="),
+            BinExprOp::LogicEq => writer.write_str("=="),
+            BinExprOp::LogicNe => writer.write_str("!="),
+            BinExprOp::Set => writer.write_str("="),
+            BinExprOp::SetPlus => writer.write_str("+="),
+            BinExprOp::SetMinus => writer.write_str("-="),
+            BinExprOp::SetTimes => writer.write_str("*="),
+            BinExprOp::SetSlash => writer.write_str("/="),
+            BinExprOp::SetPercent => writer.write_str("%="),
+            BinExprOp::SetBitAnd => writer.write_str("&="),
+            BinExprOp::SetBitOr => writer.write_str("|="),
+            BinExprOp::SetBitXor => writer.write_str("^="),
+            BinExprOp::SetBitShl => writer.write_str("<<="),
+            BinExprOp::SetBitShr => writer.write_str(">>="),
+            BinExprOp::SetBitRotl => writer.write_str("<<<="),
+            BinExprOp::SetBitRotr => writer.write_str(">>>="),
+            BinExprOp::SetLogicAnd => writer.write_str("&&="),
+            BinExprOp::SetLogicOr => writer.write_str("||="),
+            BinExprOp::SetLogicXor => writer.write_str("^^="),
+            BinExprOp::Dot => writer.write_str("."),
+            BinExprOp::Arrow => writer.write_str("->"),
+            BinExprOp::Range => writer.write_str(".."),
+        }
     }
 }
 

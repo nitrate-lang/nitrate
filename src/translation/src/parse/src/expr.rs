@@ -52,6 +52,7 @@ enum Operation {
     BinOp(BinExprOp),
     FunctionCall,
     Index,
+    Cast,
 }
 
 fn get_precedence_of_binary_operator(op: BinExprOp) -> (Associativity, Precedence) {
@@ -59,8 +60,6 @@ fn get_precedence_of_binary_operator(op: BinExprOp) -> (Associativity, Precedenc
         BinExprOp::Dot | BinExprOp::Arrow => {
             (Associativity::LeftToRight, PrecedenceRank::FieldAccess)
         }
-
-        BinExprOp::As => (Associativity::LeftToRight, PrecedenceRank::Cast),
 
         BinExprOp::Mul | BinExprOp::Div | BinExprOp::Mod => {
             (Associativity::LeftToRight, PrecedenceRank::MulDivMod)
@@ -119,6 +118,11 @@ fn get_precedence(operation: Operation) -> (Associativity, Precedence) {
             Associativity::LeftToRight,
             PrecedenceRank::FunctionCallAndIndexing as Precedence,
         ),
+
+        Operation::Cast => (
+            Associativity::LeftToRight,
+            PrecedenceRank::Cast as Precedence,
+        ),
     }
 }
 
@@ -165,7 +169,9 @@ impl Parser<'_, '_> {
     }
 
     fn detect_and_parse_binary_operator(&mut self) -> Option<BinExprOp> {
-        match self.lexer.peek_t() {
+        let rewind = self.lexer.current_pos();
+
+        let result = match self.lexer.peek_t() {
             Token::Bang => {
                 self.lexer.skip_tok();
                 Some(BinExprOp::LogicNe)
@@ -308,11 +314,6 @@ impl Parser<'_, '_> {
                 }
             }
 
-            Token::As => {
-                self.lexer.skip_tok();
-                Some(BinExprOp::As)
-            }
-
             Token::Or => {
                 self.lexer.skip_tok();
                 if self.lexer.skip_if(&Token::Eq) {
@@ -329,7 +330,13 @@ impl Parser<'_, '_> {
             }
 
             _ => None,
+        };
+
+        if result.is_none() {
+            self.lexer.rewind(rewind);
         }
+
+        result
     }
 
     fn parse_expression_primary(&mut self) -> Expr {
@@ -449,9 +456,22 @@ impl Parser<'_, '_> {
                     right: right_expr,
                 }));
             } else {
-                self.lexer.rewind(pre_binop_pos);
-
                 match self.lexer.peek_t() {
+                    Token::As => {
+                        let operation = Operation::Cast;
+                        let (_, new_precedence) = get_precedence(operation);
+
+                        if new_precedence < min_precedence_to_proceed {
+                            return sofar;
+                        }
+
+                        self.lexer.skip_tok();
+
+                        let to = self.parse_type();
+
+                        sofar = Expr::Cast(Box::new(Cast { value: sofar, to }));
+                    }
+
                     Token::OpenParen => {
                         let operation = Operation::FunctionCall;
                         let (_, new_precedence) = get_precedence(operation);

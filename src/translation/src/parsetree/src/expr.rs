@@ -181,8 +181,6 @@ pub enum BinExprOp {
     Arrow,
     /// `..`
     Range,
-    /// `as`
-    As,
 }
 
 #[skip_serializing_none]
