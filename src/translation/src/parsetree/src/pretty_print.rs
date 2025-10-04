@@ -456,8 +456,6 @@ impl PrettyPrint for Closure {
         ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
-        // TODO: Verify code
-
         if self.attributes.is_some() || self.parameters.is_some() || self.return_type.is_some() {
             writer.write_str("fn")?;
         }
@@ -809,8 +807,6 @@ impl PrettyPrint for Expr {
         ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
-        // TODO: Verify code
-
         match self {
             Expr::SyntaxError(m) => m.pretty_print_fmt(ctx, writer),
             Expr::Parentheses(m) => m.pretty_print_fmt(ctx, writer),
