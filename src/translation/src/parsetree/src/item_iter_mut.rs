@@ -4,8 +4,8 @@ use crate::{
     Order, ParseTreeIterMut, RefNodeMut,
     item::{FuncParams, ItemSyntaxError},
     kind::{
-        AssociatedItem, Enum, EnumVariant, FuncParam, Function, Impl, Import, Item, Module, Struct,
-        StructField, Trait, TypeAlias, TypeParams, Variable,
+        AssociatedItem, Enum, EnumVariant, FuncParam, Function, Generics, Impl, Import, Item,
+        Module, Struct, StructField, Trait, TypeAlias, Variable,
     },
 };
 
@@ -55,7 +55,7 @@ impl ParseTreeIterMut for Import {
     }
 }
 
-impl ParseTreeIterMut for TypeParams {
+impl ParseTreeIterMut for Generics {
     fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
         f(Order::Enter, RefNodeMut::ItemTypeParams(self));
 
@@ -83,7 +83,7 @@ impl ParseTreeIterMut for Arc<RwLock<TypeAlias>> {
             attributes.depth_first_iter_mut(f);
         }
 
-        if let Some(params) = &mut this.type_params {
+        if let Some(params) = &mut this.generics {
             params.depth_first_iter_mut(f);
         }
 
@@ -129,7 +129,7 @@ impl ParseTreeIterMut for Arc<RwLock<Struct>> {
             attributes.depth_first_iter_mut(f);
         }
 
-        if let Some(params) = &mut this.type_params {
+        if let Some(params) = &mut this.generics {
             params.depth_first_iter_mut(f);
         }
 
@@ -181,7 +181,7 @@ impl ParseTreeIterMut for Arc<RwLock<Enum>> {
             attributes.depth_first_iter_mut(f);
         }
 
-        if let Some(params) = &mut this.type_params {
+        if let Some(params) = &mut this.generics {
             params.depth_first_iter_mut(f);
         }
 
@@ -217,7 +217,7 @@ impl ParseTreeIterMut for Arc<RwLock<Trait>> {
             attributes.depth_first_iter_mut(f);
         }
 
-        if let Some(params) = &mut this.type_params {
+        if let Some(params) = &mut this.generics {
             params.depth_first_iter_mut(f);
         }
 
@@ -238,7 +238,7 @@ impl ParseTreeIterMut for Impl {
             attributes.depth_first_iter_mut(f);
         }
 
-        if let Some(params) = &mut self.type_params {
+        if let Some(params) = &mut self.generics {
             params.depth_first_iter_mut(f);
         }
 
@@ -299,7 +299,7 @@ impl ParseTreeIterMut for Arc<RwLock<Function>> {
             attributes.depth_first_iter_mut(f);
         }
 
-        if let Some(params) = &mut this.type_params {
+        if let Some(params) = &mut this.generics {
             params.depth_first_iter_mut(f);
         }
 

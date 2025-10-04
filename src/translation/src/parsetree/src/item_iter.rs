@@ -4,8 +4,8 @@ use crate::{
     Order, ParseTreeIter, RefNode,
     item::{FuncParams, ItemSyntaxError},
     kind::{
-        AssociatedItem, Enum, EnumVariant, FuncParam, Function, Impl, Import, Item, Module, Struct,
-        StructField, Trait, TypeAlias, TypeParams, Variable,
+        AssociatedItem, Enum, EnumVariant, FuncParam, Function, Generics, Impl, Import, Item,
+        Module, Struct, StructField, Trait, TypeAlias, Variable,
     },
 };
 
@@ -55,7 +55,7 @@ impl ParseTreeIter for Import {
     }
 }
 
-impl ParseTreeIter for TypeParams {
+impl ParseTreeIter for Generics {
     fn depth_first_iter(&self, f: &mut dyn FnMut(Order, RefNode)) {
         f(Order::Enter, RefNode::ItemTypeParams(self));
 
@@ -83,7 +83,7 @@ impl ParseTreeIter for Arc<RwLock<TypeAlias>> {
             attributes.depth_first_iter(f);
         }
 
-        if let Some(params) = &this.type_params {
+        if let Some(params) = &this.generics {
             params.depth_first_iter(f);
         }
 
@@ -129,7 +129,7 @@ impl ParseTreeIter for Arc<RwLock<Struct>> {
             attributes.depth_first_iter(f);
         }
 
-        if let Some(params) = &this.type_params {
+        if let Some(params) = &this.generics {
             params.depth_first_iter(f);
         }
 
@@ -181,7 +181,7 @@ impl ParseTreeIter for Arc<RwLock<Enum>> {
             attributes.depth_first_iter(f);
         }
 
-        if let Some(params) = &this.type_params {
+        if let Some(params) = &this.generics {
             params.depth_first_iter(f);
         }
 
@@ -217,7 +217,7 @@ impl ParseTreeIter for Arc<RwLock<Trait>> {
             attributes.depth_first_iter(f);
         }
 
-        if let Some(params) = &this.type_params {
+        if let Some(params) = &this.generics {
             params.depth_first_iter(f);
         }
 
@@ -238,7 +238,7 @@ impl ParseTreeIter for Impl {
             attributes.depth_first_iter(f);
         }
 
-        if let Some(params) = &self.type_params {
+        if let Some(params) = &self.generics {
             params.depth_first_iter(f);
         }
 
@@ -299,7 +299,7 @@ impl ParseTreeIter for Arc<RwLock<Function>> {
             attributes.depth_first_iter(f);
         }
 
-        if let Some(params) = &this.type_params {
+        if let Some(params) = &this.generics {
             params.depth_first_iter(f);
         }
 

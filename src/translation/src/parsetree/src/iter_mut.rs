@@ -9,7 +9,7 @@ use crate::{
     },
     item::{
         Enum, EnumVariant, FuncParam, Function, Impl, Import, ItemPath, Module, Struct,
-        StructField, Trait, TypeAlias, TypeParams, Variable,
+        StructField, Trait, TypeAlias, Generics, Variable,
     },
     iter::Order,
     tag::OpaqueTypeNameId,
@@ -93,7 +93,7 @@ pub enum RefNodeMut<'a> {
     ItemModule(&'a mut Module),
     ItemPath(&'a mut ItemPath),
     ItemImport(&'a mut Import),
-    ItemTypeParams(&'a mut TypeParams),
+    ItemTypeParams(&'a mut Generics),
     ItemTypeAlias(&'a mut Arc<RwLock<TypeAlias>>),
     ItemStructField(&'a mut StructField),
     ItemStruct(&'a mut Arc<RwLock<Struct>>),

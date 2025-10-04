@@ -6,12 +6,13 @@ use crate::{
     expr::{
         AttributeList, Await, BStringLit, BinExpr, BinExprOp, Block, BlockItem, BooleanLit, Break,
         Call, CallArgument, Cast, Closure, Continue, Expr, ExprParentheses, ExprPath,
-        ExprSyntaxError, FloatLit, ForEach, If, IndexAccess, IntegerLit, List, Return, Safety,
-        StringLit, StructInit, Switch, TypeInfo, UnaryExpr, UnaryExprOp, WhileLoop,
+        ExprPathSegment, ExprSyntaxError, FloatLit, ForEach, If, IndexAccess, IntegerLit, List,
+        Return, Safety, StringLit, StructInit, Switch, TypeArgument, TypeInfo, UnaryExpr,
+        UnaryExprOp, WhileLoop,
     },
     item::{
-        Enum, FuncParam, FuncParams, Function, Impl, Import, Item, ItemSyntaxError, Module, Struct,
-        Trait, TypeAlias, Variable, Visibility,
+        Enum, FuncParam, FuncParams, Function, Generics, Impl, Import, Item, ItemSyntaxError,
+        Module, Struct, Trait, TypeAlias, TypeParam, Variable, Visibility,
     },
     ty::{
         ArrayType, Bool, Float8, Float16, Float32, Float64, Float128, FunctionType, InferType,
@@ -423,13 +424,59 @@ impl PrettyPrint for Closure {
     }
 }
 
-impl PrettyPrint for ExprPath {
+impl PrettyPrint for TypeArgument {
+    fn pretty_print_fmt(
+        &self,
+        ctx: &PrintContext,
+        writer: &mut dyn std::fmt::Write,
+    ) -> std::fmt::Result {
+        if let Some(name) = &self.name {
+            writer.write_str(name)?;
+            writer.write_str(": ")?;
+        }
+
+        self.value.pretty_print_fmt(ctx, writer)
+    }
+}
+
+impl PrettyPrint for ExprPathSegment {
     fn pretty_print_fmt(
         &self,
         _ctx: &PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
-        // TODO: Path pretty print
+        write!(writer, "{}", self.name)?;
+
+        if let Some(type_args) = &self.type_arguments {
+            writer.write_str("::<")?;
+            for (i, arg) in type_args.iter().enumerate() {
+                if i > 0 {
+                    writer.write_str(", ")?;
+                }
+
+                arg.pretty_print_fmt(_ctx, writer)?;
+            }
+            writer.write_char('>')?;
+        }
+
+        Ok(())
+    }
+}
+
+impl PrettyPrint for ExprPath {
+    fn pretty_print_fmt(
+        &self,
+        ctx: &PrintContext,
+        writer: &mut dyn std::fmt::Write,
+    ) -> std::fmt::Result {
+        for (i, segment) in self.segments.iter().enumerate() {
+            if i > 0 {
+                writer.write_str("::")?;
+            }
+
+            segment.pretty_print_fmt(ctx, writer)?;
+        }
+
         Ok(())
     }
 }
@@ -1069,6 +1116,41 @@ impl PrettyPrint for Import {
     }
 }
 
+impl PrettyPrint for TypeParam {
+    fn pretty_print_fmt(
+        &self,
+        ctx: &PrintContext,
+        writer: &mut dyn std::fmt::Write,
+    ) -> std::fmt::Result {
+        writer.write_str(&self.name)?;
+
+        if let Some(default_value) = &self.default_value {
+            writer.write_str(" = ")?;
+            default_value.pretty_print_fmt(ctx, writer)?;
+        }
+
+        Ok(())
+    }
+}
+
+impl PrettyPrint for Generics {
+    fn pretty_print_fmt(
+        &self,
+        ctx: &PrintContext,
+        writer: &mut dyn std::fmt::Write,
+    ) -> std::fmt::Result {
+        writer.write_str("<")?;
+        for (i, param) in self.params.iter().enumerate() {
+            if i > 0 {
+                writer.write_str(", ")?;
+            }
+
+            param.pretty_print_fmt(ctx, writer)?;
+        }
+        writer.write_str(">")
+    }
+}
+
 impl PrettyPrint for TypeAlias {
     fn pretty_print_fmt(
         &self,
@@ -1149,10 +1231,39 @@ impl PrettyPrint for FuncParams {
 impl PrettyPrint for Function {
     fn pretty_print_fmt(
         &self,
-        _ctx: &PrintContext,
+        ctx: &PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
-        // TODO: Function pretty print
+        if let Some(visibility) = &self.visibility {
+            visibility.pretty_print_fmt(ctx, writer)?;
+            writer.write_char(' ')?;
+        }
+
+        writer.write_str("fn")?;
+
+        if let Some(attributes) = &self.attributes {
+            attributes.pretty_print_fmt(ctx, writer)?;
+        }
+
+        writer.write_char(' ')?;
+        writer.write_str(&self.name)?;
+
+        if let Some(generics) = &self.generics {
+            generics.pretty_print_fmt(ctx, writer)?;
+        }
+
+        self.parameters.pretty_print_fmt(ctx, writer)?;
+
+        if let Some(return_type) = &self.return_type {
+            writer.write_str(" -> ")?;
+            return_type.pretty_print_fmt(ctx, writer)?;
+        }
+
+        if let Some(definition) = &self.definition {
+            writer.write_char(' ')?;
+            definition.pretty_print_fmt(ctx, writer)?;
+        }
+
         Ok(())
     }
 }

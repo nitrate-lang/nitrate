@@ -235,13 +235,6 @@ pub struct Closure {
 
 #[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct TypeArgument {
-    pub name: Option<ArgNameId>,
-    pub value: Type,
-}
-
-#[skip_serializing_none]
-#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum ExprPathTarget {
     Unresolved,
     TypeAlias(Weak<RwLock<TypeAlias>>),
@@ -256,6 +249,13 @@ impl Default for ExprPathTarget {
     fn default() -> Self {
         ExprPathTarget::Unresolved
     }
+}
+
+#[skip_serializing_none]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TypeArgument {
+    pub name: Option<ArgNameId>,
+    pub value: Type,
 }
 
 #[skip_serializing_none]

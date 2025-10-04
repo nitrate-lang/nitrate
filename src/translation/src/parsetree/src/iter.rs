@@ -9,7 +9,7 @@ use crate::{
     },
     item::{
         Enum, EnumVariant, FuncParam, Function, Impl, Import, ItemPath, Module, Struct,
-        StructField, Trait, TypeAlias, TypeParams, Variable,
+        StructField, Trait, TypeAlias, Generics, Variable,
     },
     tag::OpaqueTypeNameId,
     ty::{
@@ -98,7 +98,7 @@ pub enum RefNode<'a> {
     ItemModule(&'a Module),
     ItemItemPath(&'a ItemPath),
     ItemImport(&'a Import),
-    ItemTypeParams(&'a TypeParams),
+    ItemTypeParams(&'a Generics),
     ItemTypeAlias(&'a Arc<RwLock<TypeAlias>>),
     ItemStructField(&'a StructField),
     ItemStruct(&'a Arc<RwLock<Struct>>),
