@@ -161,7 +161,7 @@ impl ParseTreeIterMut for EnumVariant {
             variant_type.depth_first_iter_mut(f);
         }
 
-        if let Some(value) = &mut self.value {
+        if let Some(value) = &mut self.default_value {
             value.depth_first_iter_mut(f);
         }
 

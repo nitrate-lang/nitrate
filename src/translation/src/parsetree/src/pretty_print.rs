@@ -11,8 +11,9 @@ use crate::{
         UnaryExprOp, WhileLoop,
     },
     item::{
-        Enum, FuncParam, FuncParams, Function, Generics, Impl, Import, Item, ItemSyntaxError,
-        Module, Struct, Trait, TypeAlias, TypeParam, Variable, Visibility,
+        AssociatedItem, Enum, EnumVariant, FuncParam, FuncParams, Function, Generics, Impl, Import,
+        Item, ItemSyntaxError, Module, Mutability, Struct, StructField, Trait, TypeAlias,
+        TypeParam, Variable, VariableKind, Visibility,
     },
     ty::{
         ArrayType, Bool, Float8, Float16, Float32, Float64, Float128, FunctionType, InferType,
@@ -128,8 +129,6 @@ impl PrettyPrint for StringLit {
         _ctx: &PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
-        // TODO: Test string escape logic
-
         writer.write_char('"')?;
 
         for c in self.value.chars() {
@@ -1157,7 +1156,59 @@ impl PrettyPrint for TypeAlias {
         _ctx: &PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
-        // TODO: TypeAlias pretty print
+        if let Some(visibility) = &self.visibility {
+            visibility.pretty_print_fmt(_ctx, writer)?;
+            writer.write_char(' ')?;
+        }
+
+        writer.write_str("type ")?;
+
+        if let Some(attributes) = &self.attributes {
+            attributes.pretty_print_fmt(_ctx, writer)?;
+            writer.write_char(' ')?;
+        }
+
+        writer.write_str(&self.name)?;
+
+        if let Some(generics) = &self.generics {
+            generics.pretty_print_fmt(_ctx, writer)?;
+        }
+
+        writer.write_str(" = ")?;
+
+        if let Some(alias) = &self.alias_type {
+            alias.pretty_print_fmt(_ctx, writer)?;
+        }
+
+        Ok(())
+    }
+}
+
+impl PrettyPrint for StructField {
+    fn pretty_print_fmt(
+        &self,
+        ctx: &PrintContext,
+        writer: &mut dyn std::fmt::Write,
+    ) -> std::fmt::Result {
+        if let Some(visibility) = &self.visibility {
+            visibility.pretty_print_fmt(ctx, writer)?;
+            writer.write_char(' ')?;
+        }
+
+        if let Some(attributes) = &self.attributes {
+            attributes.pretty_print_fmt(ctx, writer)?;
+            writer.write_char(' ')?;
+        }
+
+        writer.write_str(&self.name)?;
+        writer.write_str(": ")?;
+        self.field_type.pretty_print_fmt(ctx, writer)?;
+
+        if let Some(default_value) = &self.default_value {
+            writer.write_str(" = ")?;
+            default_value.pretty_print_fmt(ctx, writer)?;
+        }
+
         Ok(())
     }
 }
@@ -1165,10 +1216,63 @@ impl PrettyPrint for TypeAlias {
 impl PrettyPrint for Struct {
     fn pretty_print_fmt(
         &self,
-        _ctx: &PrintContext,
+        ctx: &PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
-        // TODO: Struct pretty print
+        if let Some(visibility) = &self.visibility {
+            visibility.pretty_print_fmt(ctx, writer)?;
+            writer.write_char(' ')?;
+        }
+
+        writer.write_str("struct ")?;
+
+        if let Some(attributes) = &self.attributes {
+            attributes.pretty_print_fmt(ctx, writer)?;
+            writer.write_char(' ')?;
+        }
+
+        writer.write_str(&self.name)?;
+
+        if let Some(generics) = &self.generics {
+            generics.pretty_print_fmt(ctx, writer)?;
+        }
+
+        writer.write_str(" {")?;
+        for field in &self.fields {
+            field.pretty_print_fmt(ctx, writer)?;
+            writer.write_str(",\n")?;
+        }
+        writer.write_str("}")
+    }
+}
+
+impl PrettyPrint for EnumVariant {
+    fn pretty_print_fmt(
+        &self,
+        ctx: &PrintContext,
+        writer: &mut dyn std::fmt::Write,
+    ) -> std::fmt::Result {
+        if let Some(visibility) = &self.visibility {
+            visibility.pretty_print_fmt(ctx, writer)?;
+            writer.write_char(' ')?;
+        }
+
+        if let Some(attributes) = &self.attributes {
+            attributes.pretty_print_fmt(ctx, writer)?;
+            writer.write_char(' ')?;
+        }
+
+        writer.write_str(&self.name)?;
+
+        if let Some(variant_type) = &self.variant_type {
+            variant_type.pretty_print_fmt(ctx, writer)?;
+        }
+
+        if let Some(default_value) = &self.default_value {
+            writer.write_str(" = ")?;
+            default_value.pretty_print_fmt(ctx, writer)?;
+        }
+
         Ok(())
     }
 }
@@ -1176,33 +1280,129 @@ impl PrettyPrint for Struct {
 impl PrettyPrint for Enum {
     fn pretty_print_fmt(
         &self,
-        _ctx: &PrintContext,
+        ctx: &PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
-        // TODO: impl pretty print
-        Ok(())
+        if let Some(visibility) = &self.visibility {
+            visibility.pretty_print_fmt(ctx, writer)?;
+            writer.write_char(' ')?;
+        }
+
+        writer.write_str("enum ")?;
+
+        if let Some(attributes) = &self.attributes {
+            attributes.pretty_print_fmt(ctx, writer)?;
+            writer.write_char(' ')?;
+        }
+
+        writer.write_str(&self.name)?;
+
+        if let Some(generics) = &self.generics {
+            generics.pretty_print_fmt(ctx, writer)?;
+        }
+
+        writer.write_str(" {")?;
+        for variant in &self.variants {
+            variant.pretty_print_fmt(ctx, writer)?;
+            writer.write_str(",\n")?;
+        }
+        writer.write_str("}")
+    }
+}
+
+impl PrettyPrint for AssociatedItem {
+    fn pretty_print_fmt(
+        &self,
+        ctx: &PrintContext,
+        writer: &mut dyn std::fmt::Write,
+    ) -> std::fmt::Result {
+        match self {
+            AssociatedItem::SyntaxError(m) => m.pretty_print_fmt(ctx, writer),
+            AssociatedItem::TypeAlias(m) => m.read().unwrap().pretty_print_fmt(ctx, writer),
+            AssociatedItem::Method(m) => m.read().unwrap().pretty_print_fmt(ctx, writer),
+            AssociatedItem::ConstantItem(m) => m.read().unwrap().pretty_print_fmt(ctx, writer),
+        }
     }
 }
 
 impl PrettyPrint for Trait {
     fn pretty_print_fmt(
         &self,
-        _ctx: &PrintContext,
+        ctx: &PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
-        // TODO: Trait pretty print
-        Ok(())
+        if let Some(visibility) = &self.visibility {
+            visibility.pretty_print_fmt(ctx, writer)?;
+            writer.write_char(' ')?;
+        }
+
+        writer.write_str("trait ")?;
+
+        if let Some(attributes) = &self.attributes {
+            attributes.pretty_print_fmt(ctx, writer)?;
+            writer.write_char(' ')?;
+        }
+
+        writer.write_str(&self.name)?;
+
+        if let Some(generics) = &self.generics {
+            generics.pretty_print_fmt(ctx, writer)?;
+        }
+
+        writer.write_str(" {")?;
+        for items in &self.items {
+            items.pretty_print_fmt(ctx, writer)?;
+            writer.write_str(";\n")?;
+        }
+        writer.write_str("}")
     }
 }
 
 impl PrettyPrint for Impl {
     fn pretty_print_fmt(
         &self,
+        ctx: &PrintContext,
+        writer: &mut dyn std::fmt::Write,
+    ) -> std::fmt::Result {
+        writer.write_str("impl ")?;
+
+        if let Some(generics) = &self.generics {
+            generics.pretty_print_fmt(ctx, writer)?;
+        }
+
+        if let Some(attributes) = &self.attributes {
+            attributes.pretty_print_fmt(ctx, writer)?;
+            writer.write_char(' ')?;
+        }
+
+        if let Some(trait_path) = &self.trait_path {
+            writer.write_str("trait ")?;
+            trait_path.pretty_print_fmt(ctx, writer)?;
+            writer.write_char(' ')?;
+            writer.write_str("for ")?;
+        }
+
+        self.for_type.pretty_print_fmt(ctx, writer)?;
+
+        writer.write_str(" {")?;
+        for item in &self.items {
+            item.pretty_print_fmt(ctx, writer)?;
+            writer.write_str(";\n")?;
+        }
+        writer.write_str("}")
+    }
+}
+
+impl PrettyPrint for Mutability {
+    fn pretty_print_fmt(
+        &self,
         _ctx: &PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
-        // TODO: impl pretty print
-        Ok(())
+        match self {
+            Mutability::Mutable => writer.write_str("mut"),
+            Mutability::Const => writer.write_str("const"),
+        }
     }
 }
 
@@ -1212,7 +1412,28 @@ impl PrettyPrint for FuncParam {
         _ctx: &PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
-        // TODO: Function pretty print
+        if let Some(attributes) = &self.attributes {
+            attributes.pretty_print_fmt(_ctx, writer)?;
+            writer.write_char(' ')?;
+        }
+
+        if let Some(mutability) = &self.mutability {
+            mutability.pretty_print_fmt(_ctx, writer)?;
+            writer.write_char(' ')?;
+        }
+
+        writer.write_str(&self.name)?;
+
+        if let Some(param_type) = &self.param_type {
+            writer.write_str(": ")?;
+            param_type.pretty_print_fmt(_ctx, writer)?;
+        }
+
+        if let Some(default_value) = &self.default_value {
+            writer.write_str(" = ")?;
+            default_value.pretty_print_fmt(_ctx, writer)?;
+        }
+
         Ok(())
     }
 }
@@ -1223,8 +1444,15 @@ impl PrettyPrint for FuncParams {
         _ctx: &PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
-        // TODO: Function pretty print
-        Ok(())
+        writer.write_char('(')?;
+        for (i, param) in self.params.iter().enumerate() {
+            if i > 0 {
+                writer.write_str(", ")?;
+            }
+
+            param.pretty_print_fmt(_ctx, writer)?;
+        }
+        writer.write_char(')')
     }
 }
 
@@ -1271,10 +1499,43 @@ impl PrettyPrint for Function {
 impl PrettyPrint for Variable {
     fn pretty_print_fmt(
         &self,
-        _ctx: &PrintContext,
+        ctx: &PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
-        // TODO: Variable pretty print
+        if let Some(visibility) = &self.visibility {
+            visibility.pretty_print_fmt(ctx, writer)?;
+            writer.write_char(' ')?;
+        }
+
+        match self.kind {
+            VariableKind::Const => writer.write_str("const ")?,
+            VariableKind::Let => writer.write_str("let ")?,
+            VariableKind::Var => writer.write_str("var ")?,
+            VariableKind::Static => writer.write_str("static ")?,
+        }
+
+        if let Some(attributes) = &self.attributes {
+            attributes.pretty_print_fmt(ctx, writer)?;
+            writer.write_char(' ')?;
+        }
+
+        if let Some(mutability) = &self.mutability {
+            mutability.pretty_print_fmt(ctx, writer)?;
+            writer.write_char(' ')?;
+        }
+
+        writer.write_str(&self.name)?;
+
+        if let Some(var_type) = &self.ty {
+            writer.write_str(": ")?;
+            var_type.pretty_print_fmt(ctx, writer)?;
+        }
+
+        if let Some(initializer) = &self.initializer {
+            writer.write_str(" = ")?;
+            initializer.pretty_print_fmt(ctx, writer)?;
+        }
+
         Ok(())
     }
 }

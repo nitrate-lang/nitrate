@@ -108,7 +108,7 @@ pub struct EnumVariant {
     pub attributes: Option<AttributeList>,
     pub name: EnumVariantNameId,
     pub variant_type: Option<Type>,
-    pub value: Option<Expr>,
+    pub default_value: Option<Expr>,
 }
 
 #[skip_serializing_none]
@@ -143,8 +143,8 @@ pub struct Trait {
 #[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Impl {
-    pub attributes: Option<AttributeList>,
     pub generics: Option<Generics>,
+    pub attributes: Option<AttributeList>,
     pub trait_path: Option<TypePath>,
     pub for_type: Type,
     pub items: Vec<AssociatedItem>,

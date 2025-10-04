@@ -161,7 +161,7 @@ impl ParseTreeIter for EnumVariant {
             variant_type.depth_first_iter(f);
         }
 
-        if let Some(value) = &self.value {
+        if let Some(value) = &self.default_value {
             value.depth_first_iter(f);
         }
 
