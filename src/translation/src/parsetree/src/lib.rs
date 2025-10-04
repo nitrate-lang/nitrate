@@ -10,6 +10,7 @@ mod item_iter;
 mod item_iter_mut;
 mod iter;
 mod iter_mut;
+mod pretty_print;
 mod ty;
 mod ty_iter;
 mod ty_iter_mut;
@@ -26,3 +27,5 @@ pub mod tag {
 
 pub use iter::{Order, ParseTreeIter, RefNode};
 pub use iter_mut::{ParseTreeIterMut, RefNodeMut};
+
+pub use pretty_print::{PrettyPrint, StyleOptions};
