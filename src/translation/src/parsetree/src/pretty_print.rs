@@ -6,9 +6,9 @@ use crate::{
     expr::{
         AttributeList, Await, BStringLit, BinExpr, BinExprOp, Block, BlockItem, BooleanLit, Break,
         Call, CallArgument, Cast, Closure, Continue, Expr, ExprParentheses, ExprPath,
-        ExprPathSegment, ExprSyntaxError, FloatLit, ForEach, If, IndexAccess, IntegerLit, List,
-        Return, Safety, StringLit, StructInit, Switch, TypeArgument, TypeInfo, UnaryExpr,
-        UnaryExprOp, WhileLoop,
+        ExprPathSegment, ExprPathTarget, ExprSyntaxError, FloatLit, ForEach, If, IndexAccess,
+        IntegerLit, List, Return, Safety, StringLit, StructInit, Switch, TypeArgument, TypeInfo,
+        UnaryExpr, UnaryExprOp, WhileLoop,
     },
     item::{
         AssociatedItem, Enum, EnumVariant, FuncParam, FuncParams, Function, Generics, Impl, Import,
@@ -19,7 +19,8 @@ use crate::{
         ArrayType, Bool, Exclusivity, Float8, Float16, Float32, Float64, Float128, FunctionType,
         InferType, Int8, Int16, Int32, Int64, Int128, LatentType, Lifetime, OpaqueType,
         ReferenceType, RefinementType, SliceType, TupleType, Type, TypeParentheses, TypePath,
-        TypePathSegment, TypeSyntaxError, UInt8, UInt16, UInt32, UInt64, UInt128, UnitType,
+        TypePathSegment, TypePathTarget, TypeSyntaxError, UInt8, UInt16, UInt32, UInt64, UInt128,
+        UnitType,
     },
 };
 
@@ -51,15 +52,11 @@ impl PrintContext {
     }
 }
 
-fn write_resolve_link<T>(
-    writer: &mut dyn std::fmt::Write,
-    resolve_target: &Option<T>,
-) -> std::fmt::Result {
-    if let Some(target) = resolve_target {
-        write!(writer, "$< 0x{:x} >$", target as *const T as usize)
-    } else {
-        writer.write_str("$< unresolved >$")
-    }
+fn write_unresolved_link(writer: &mut dyn std::fmt::Write) -> std::fmt::Result {
+    writer.write_str("$<unresolved>$ ")
+}
+fn write_resolve_link<T>(writer: &mut dyn std::fmt::Write, resolve_target: &T) -> std::fmt::Result {
+    write!(writer, "$<0x{:x}>$ ", resolve_target as *const T as usize)
 }
 
 pub trait PrettyPrint {
@@ -540,6 +537,48 @@ impl PrettyPrint for ExprPathSegment {
     }
 }
 
+impl PrettyPrint for ExprPathTarget {
+    fn pretty_print_fmt(
+        &self,
+        _ctx: &mut PrintContext,
+        writer: &mut dyn std::fmt::Write,
+    ) -> std::fmt::Result {
+        // TODO: Verify code
+
+        match self {
+            ExprPathTarget::TypeAlias(m) => {
+                let r = m.upgrade().expect("dropped");
+                write_resolve_link(writer, &r.read().unwrap() as &TypeAlias)
+            }
+
+            ExprPathTarget::Struct(m) => {
+                let r = m.upgrade().expect("dropped");
+                write_resolve_link(writer, &r.read().unwrap() as &Struct)
+            }
+
+            ExprPathTarget::Enum(m) => {
+                let r = m.upgrade().expect("dropped");
+                write_resolve_link(writer, &r.read().unwrap() as &Enum)
+            }
+
+            ExprPathTarget::Function(m) => {
+                let r = m.upgrade().expect("dropped");
+                write_resolve_link(writer, &r.read().unwrap() as &Function)
+            }
+
+            ExprPathTarget::Variable(m) => {
+                let r = m.upgrade().expect("dropped");
+                write_resolve_link(writer, &r.read().unwrap() as &Variable)
+            }
+
+            ExprPathTarget::Trait(m) => {
+                let r = m.upgrade().expect("dropped");
+                write_resolve_link(writer, &r.read().unwrap() as &Trait)
+            }
+        }
+    }
+}
+
 impl PrettyPrint for ExprPath {
     fn pretty_print_fmt(
         &self,
@@ -558,7 +597,12 @@ impl PrettyPrint for ExprPath {
 
         if ctx.show_resolution_links {
             writer.write_char(' ')?;
-            write_resolve_link(writer, &self.resolved)?;
+
+            if let Some(resolved) = &self.resolved {
+                resolved.pretty_print_fmt(ctx, writer)?;
+            } else {
+                write_unresolved_link(writer)?;
+            }
         }
 
         Ok(())
@@ -1053,6 +1097,33 @@ impl PrettyPrint for TypePathSegment {
     }
 }
 
+impl PrettyPrint for TypePathTarget {
+    fn pretty_print_fmt(
+        &self,
+        _ctx: &mut PrintContext,
+        writer: &mut dyn std::fmt::Write,
+    ) -> std::fmt::Result {
+        // TODO: Verify code
+
+        match self {
+            TypePathTarget::TypeAlias(m) => {
+                let r = m.upgrade().expect("dropped");
+                write_resolve_link(writer, &r.read().unwrap() as &TypeAlias)
+            }
+
+            TypePathTarget::Struct(m) => {
+                let r = m.upgrade().expect("dropped");
+                write_resolve_link(writer, &r.read().unwrap() as &Struct)
+            }
+
+            TypePathTarget::Enum(m) => {
+                let r = m.upgrade().expect("dropped");
+                write_resolve_link(writer, &r.read().unwrap() as &Enum)
+            }
+        }
+    }
+}
+
 impl PrettyPrint for TypePath {
     fn pretty_print_fmt(
         &self,
@@ -1071,7 +1142,12 @@ impl PrettyPrint for TypePath {
 
         if ctx.show_resolution_links {
             writer.write_char(' ')?;
-            write_resolve_link(writer, &self.resolved)?;
+
+            if let Some(resolved) = &self.resolved {
+                resolved.pretty_print_fmt(ctx, writer)?;
+            } else {
+                write_unresolved_link(writer)?;
+            }
         }
 
         Ok(())
@@ -1487,6 +1563,8 @@ impl PrettyPrint for TypeAlias {
             writer.write_char(' ')?;
         }
 
+        write_resolve_link(writer, self)?;
+
         writer.write_str("type ")?;
 
         if let Some(attributes) = &self.attributes {
@@ -1553,6 +1631,8 @@ impl PrettyPrint for Struct {
             visibility.pretty_print_fmt(ctx, writer)?;
             writer.write_char(' ')?;
         }
+
+        write_resolve_link(writer, self)?;
 
         writer.write_str("struct ")?;
 
@@ -1622,6 +1702,8 @@ impl PrettyPrint for Enum {
             writer.write_char(' ')?;
         }
 
+        write_resolve_link(writer, self)?;
+
         writer.write_str("enum ")?;
 
         if let Some(attributes) = &self.attributes {
@@ -1673,6 +1755,8 @@ impl PrettyPrint for Trait {
             visibility.pretty_print_fmt(ctx, writer)?;
             writer.write_char(' ')?;
         }
+
+        write_resolve_link(writer, self)?;
 
         writer.write_str("trait ")?;
 
@@ -1815,6 +1899,8 @@ impl PrettyPrint for Function {
             writer.write_char(' ')?;
         }
 
+        write_resolve_link(writer, self)?;
+
         writer.write_str("fn")?;
 
         if let Some(attributes) = &self.attributes {
@@ -1856,6 +1942,8 @@ impl PrettyPrint for Variable {
             visibility.pretty_print_fmt(ctx, writer)?;
             writer.write_char(' ')?;
         }
+
+        write_resolve_link(writer, self)?;
 
         match self.kind {
             VariableKind::Const => writer.write_str("const ")?,
