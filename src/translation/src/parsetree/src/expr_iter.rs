@@ -187,8 +187,10 @@ impl ParseTreeIter for Closure {
             attributes.depth_first_iter(f);
         }
 
-        for param in &self.parameters {
-            param.depth_first_iter(f);
+        if let Some(parameters) = &self.parameters {
+            for param in parameters {
+                param.depth_first_iter(f);
+            }
         }
 
         if let Some(ret_type) = &self.return_type {

@@ -187,8 +187,10 @@ impl ParseTreeIterMut for Closure {
             attributes.depth_first_iter_mut(f);
         }
 
-        for param in &mut self.parameters {
-            param.depth_first_iter_mut(f);
+        if let Some(parameters) = &mut self.parameters {
+            for param in parameters {
+                param.depth_first_iter_mut(f);
+            }
         }
 
         if let Some(ret_type) = &mut self.return_type {

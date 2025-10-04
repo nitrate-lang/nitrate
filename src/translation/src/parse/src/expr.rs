@@ -978,7 +978,7 @@ impl Parser<'_, '_> {
         Await { future }
     }
 
-    fn parse_closure_parameters(&mut self) -> Vec<FuncParam> {
+    fn parse_closure_parameters(&mut self) -> Option<Vec<FuncParam>> {
         fn parse_closure_parameter(this: &mut Parser) -> FuncParam {
             let attributes = this.parse_attributes();
 
@@ -1019,7 +1019,7 @@ impl Parser<'_, '_> {
         }
 
         if !self.lexer.skip_if(&Token::OpenParen) {
-            return Vec::new();
+            return None;
         }
 
         let mut params = Vec::new();
@@ -1055,7 +1055,7 @@ impl Parser<'_, '_> {
             }
         }
 
-        params
+        Some(params)
     }
 
     fn parse_closure(&mut self) -> Closure {
@@ -1071,7 +1071,7 @@ impl Parser<'_, '_> {
             return Closure {
                 attributes: None,
                 unique_id,
-                parameters: Vec::new(),
+                parameters: None,
                 return_type: None,
                 definition,
             };

@@ -228,7 +228,7 @@ pub struct AttributeList {
 pub struct Closure {
     pub attributes: Option<AttributeList>,
     pub unique_id: u64,
-    pub parameters: Vec<FuncParam>,
+    pub parameters: Option<Vec<FuncParam>>,
     pub return_type: Option<Type>,
     pub definition: Block,
 }

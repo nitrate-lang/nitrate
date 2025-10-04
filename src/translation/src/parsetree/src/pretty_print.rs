@@ -210,9 +210,7 @@ impl PrettyPrint for TypeInfo {
         ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
-        // TODO: Verify type info printing
-
-        writer.write_str("type")?;
+        writer.write_str("type ")?;
         self.the.pretty_print_fmt(ctx, writer)
     }
 }
@@ -380,8 +378,6 @@ impl PrettyPrint for BlockItem {
         ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
-        // TODO: Verify code
-
         match self {
             BlockItem::Variable(m) => m.read().unwrap().pretty_print_fmt(ctx, writer),
 
@@ -401,8 +397,6 @@ impl PrettyPrint for Block {
         ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
-        // TODO: Verify code
-
         if let Some(safety) = &self.safety {
             match safety {
                 Safety::Safe => writer.write_str("safe ")?,
@@ -444,13 +438,12 @@ impl PrettyPrint for AttributeList {
         ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
-        // TODO: Verify code
-
         writer.write_char('[')?;
         for (i, attr) in self.elements.iter().enumerate() {
             if i > 0 {
                 writer.write_str(", ")?;
             }
+
             attr.pretty_print_fmt(ctx, writer)?;
         }
         writer.write_char(']')
@@ -465,24 +458,37 @@ impl PrettyPrint for Closure {
     ) -> std::fmt::Result {
         // TODO: Verify code
 
-        writer.write_str("fn")?;
+        if self.attributes.is_some() || self.parameters.is_some() || self.return_type.is_some() {
+            writer.write_str("fn")?;
+        }
 
         if let Some(attributes) = &self.attributes {
+            writer.write_char(' ')?;
             attributes.pretty_print_fmt(ctx, writer)?;
         }
 
-        writer.write_char('(')?;
-        for (i, param) in self.parameters.iter().enumerate() {
-            if i > 0 {
-                writer.write_str(", ")?;
+        if let Some(parameters) = &self.parameters {
+            if self.attributes.is_some() {
+                writer.write_char(' ')?;
             }
-            param.pretty_print_fmt(ctx, writer)?;
+
+            writer.write_char('(')?;
+            for (i, param) in parameters.iter().enumerate() {
+                if i > 0 {
+                    writer.write_str(", ")?;
+                }
+                param.pretty_print_fmt(ctx, writer)?;
+            }
+            writer.write_str(")")?;
         }
-        writer.write_char(')')?;
 
         if let Some(return_type) = &self.return_type {
             writer.write_str(" -> ")?;
             return_type.pretty_print_fmt(ctx, writer)?;
+        }
+
+        if self.attributes.is_some() || self.parameters.is_some() || self.return_type.is_some() {
+            writer.write_char(' ')?;
         }
 
         self.definition.pretty_print_fmt(ctx, writer)
