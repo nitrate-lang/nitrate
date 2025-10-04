@@ -198,7 +198,7 @@ impl Type {
 impl Type {
     pub fn dump(
         &self,
-        storage: &TypeStore,
+        store: &TypeStore,
         o: &mut dyn std::fmt::Write,
     ) -> Result<(), std::fmt::Error> {
         match self {
@@ -228,7 +228,7 @@ impl Type {
 
             Type::Array { element_type, len } => {
                 write!(o, "[")?;
-                storage[element_type].dump(storage, o)?;
+                store[element_type].dump(store, o)?;
                 write!(o, "; {len}]")
             }
 
@@ -239,14 +239,14 @@ impl Type {
                         write!(o, ", ")?;
                     }
 
-                    storage[element_type].dump(storage, o)?;
+                    store[element_type].dump(store, o)?;
                 }
                 write!(o, ")")
             }
 
             Type::Slice { element_type } => {
                 write!(o, "[")?;
-                storage[element_type].dump(storage, o)?;
+                store[element_type].dump(store, o)?;
                 write!(o, "]")
             }
 
@@ -272,7 +272,7 @@ impl Type {
                     }
 
                     write!(o, "{name}: ")?;
-                    storage[field_type].dump(storage, o)?;
+                    store[field_type].dump(store, o)?;
                 }
                 write!(o, " }}")
             }
@@ -299,7 +299,7 @@ impl Type {
                     }
 
                     write!(o, "{name}: ")?;
-                    storage[variant_type].dump(storage, o)?;
+                    store[variant_type].dump(store, o)?;
                 }
                 write!(o, " }}")
             }
@@ -325,10 +325,10 @@ impl Type {
                         write!(o, ", ")?;
                     }
 
-                    storage[param_type].dump(storage, o)?;
+                    store[param_type].dump(store, o)?;
                 }
                 write!(o, ") -> ")?;
-                storage[&func_type.return_type].dump(storage, o)
+                store[&func_type.return_type].dump(store, o)
             }
 
             Type::Reference(reference) => {
@@ -353,14 +353,14 @@ impl Type {
                     write!(o, "const ")?;
                 }
 
-                storage[&reference.to].dump(storage, o)
+                store[&reference.to].dump(store, o)
             }
         }
     }
 
-    pub fn dump_string(&self, storage: &TypeStore) -> String {
+    pub fn dump_string(&self, store: &TypeStore) -> String {
         let mut buf = String::new();
-        self.dump(storage, &mut buf).ok();
+        self.dump(store, &mut buf).ok();
         buf
     }
 }

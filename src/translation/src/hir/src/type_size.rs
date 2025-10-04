@@ -10,7 +10,7 @@ pub enum SizeofError {
 
 pub fn get_size_of(
     ty: &Type,
-    storage: &TypeStore,
+    store: &TypeStore,
     ptr_size: PointerSize,
 ) -> Result<u64, SizeofError> {
     match ty {
@@ -31,14 +31,14 @@ pub fn get_size_of(
             // So the size of an array is the size of its element type
             // rounded up to the next multiple of its alignment, times the length.
 
-            let element_type = &storage[element_type];
+            let element_type = &store[element_type];
 
-            let element_align = match get_align_of(element_type, storage, ptr_size) {
+            let element_align = match get_align_of(element_type, store, ptr_size) {
                 Ok(align) => Ok(align),
                 Err(AlignofError::UnknownAlignment) => Err(SizeofError::UnknownSize),
             }?;
 
-            let element_size = get_size_of(element_type, storage, ptr_size)?;
+            let element_size = get_size_of(element_type, store, ptr_size)?;
             let element_size_with_trailing_padding = element_size.next_multiple_of(element_align);
 
             Ok(element_size_with_trailing_padding * (*len as u64))
@@ -51,14 +51,14 @@ pub fn get_size_of(
             let mut offset = 0_u64;
 
             for element in elements {
-                let element = &storage[element];
+                let element = &store[element];
 
-                let element_align = match get_align_of(element, storage, ptr_size) {
+                let element_align = match get_align_of(element, store, ptr_size) {
                     Ok(align) => Ok(align),
                     Err(AlignofError::UnknownAlignment) => Err(SizeofError::UnknownSize),
                 }?;
 
-                let element_size = get_size_of(element, storage, ptr_size)?;
+                let element_size = get_size_of(element, store, ptr_size)?;
 
                 offset = offset.next_multiple_of(element_align);
                 offset += element_size;
@@ -81,7 +81,7 @@ pub fn get_size_of(
                 let mut total_size = 0_u64;
 
                 for (_, field_type) in &struct_type.fields {
-                    let field_size = get_size_of(&storage[field_type], storage, ptr_size)?;
+                    let field_size = get_size_of(&store[field_type], store, ptr_size)?;
                     total_size += field_size;
                 }
 
@@ -91,14 +91,14 @@ pub fn get_size_of(
             let mut offset = 0_u64;
 
             for (_, field_type) in &struct_type.fields {
-                let field_type = &storage[field_type];
+                let field_type = &store[field_type];
 
-                let field_align = match get_align_of(field_type, storage, ptr_size) {
+                let field_align = match get_align_of(field_type, store, ptr_size) {
                     Ok(align) => Ok(align),
                     Err(AlignofError::UnknownAlignment) => Err(SizeofError::UnknownSize),
                 }?;
 
-                let field_size = get_size_of(field_type, storage, ptr_size)?;
+                let field_size = get_size_of(field_type, store, ptr_size)?;
 
                 offset = offset.next_multiple_of(field_align);
                 offset += field_size;
@@ -114,7 +114,7 @@ pub fn get_size_of(
             let mut max_variant_size = 0_u64;
 
             for (_, variant_type) in &enum_type.variants {
-                let variant_size = get_size_of(&storage[variant_type], storage, ptr_size)?;
+                let variant_size = get_size_of(&store[variant_type], store, ptr_size)?;
                 if variant_size > max_variant_size {
                     max_variant_size = variant_size;
                 }

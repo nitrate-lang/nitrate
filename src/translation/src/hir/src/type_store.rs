@@ -21,7 +21,12 @@ impl TypeStore {
     pub fn store(&mut self, ty: Type) -> TypeId {
         let id = self.next_id;
         self.types.insert(TypeId { id }, ty);
-        self.next_id += 1;
+
+        self.next_id = self
+            .next_id
+            .checked_add(1)
+            .expect("TypeStore overflowed u32");
+
         TypeId { id }
     }
 

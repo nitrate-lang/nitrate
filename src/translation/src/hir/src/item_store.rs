@@ -22,7 +22,12 @@ impl ItemStore {
     pub fn store(&mut self, item: Item) -> ItemId {
         let id = self.next_id;
         self.items.insert(ItemId { id }, item);
-        self.next_id += 1;
+
+        self.next_id = self
+            .next_id
+            .checked_add(1)
+            .expect("ItemStore overflowed u32");
+
         ItemId { id }
     }
 

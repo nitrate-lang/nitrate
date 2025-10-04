@@ -22,7 +22,7 @@ impl Item {}
 impl Item {
     pub fn dump(
         &self,
-        _storage: &ItemStore,
+        _store: &ItemStore,
         o: &mut dyn std::fmt::Write,
     ) -> Result<(), std::fmt::Error> {
         match self {
@@ -30,9 +30,9 @@ impl Item {
         }
     }
 
-    pub fn dump_string(&self, storage: &ItemStore) -> String {
+    pub fn dump_string(&self, store: &ItemStore) -> String {
         let mut buf = String::new();
-        self.dump(storage, &mut buf).ok();
+        self.dump(store, &mut buf).ok();
         buf
     }
 }
