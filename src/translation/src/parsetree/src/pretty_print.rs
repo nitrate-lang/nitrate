@@ -1206,8 +1206,6 @@ impl PrettyPrint for ArrayType {
         ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
-        // TODO: Verify code
-
         writer.write_char('[')?;
         self.element_type.pretty_print_fmt(ctx, writer)?;
         writer.write_str("; ")?;
@@ -1222,8 +1220,6 @@ impl PrettyPrint for SliceType {
         ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
-        // TODO: Verify code
-
         writer.write_char('[')?;
         self.element_type.pretty_print_fmt(ctx, writer)?;
         writer.write_char(']')
@@ -1236,12 +1232,12 @@ impl PrettyPrint for FunctionType {
         ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
-        // TODO: Verify code
-
-        write!(writer, "fn ")?;
+        write!(writer, "fn")?;
 
         if let Some(attributes) = &self.attributes {
+            writer.write_char(' ')?;
             attributes.pretty_print_fmt(ctx, writer)?;
+            writer.write_char(' ')?;
         }
 
         self.parameters.pretty_print_fmt(ctx, writer)?;
@@ -1261,8 +1257,6 @@ impl PrettyPrint for Exclusivity {
         _ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
-        // TODO: Verify code
-
         match self {
             Exclusivity::Iso => writer.write_str("iso"),
             Exclusivity::Poly => writer.write_str("poly"),
@@ -1276,8 +1270,6 @@ impl PrettyPrint for ReferenceType {
         ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
-        // TODO: Verify code
-
         writer.write_str("&")?;
 
         if let Some(lifetime) = &self.lifetime {
@@ -1285,13 +1277,13 @@ impl PrettyPrint for ReferenceType {
             writer.write_char(' ')?;
         }
 
-        if let Some(mutability) = &self.mutability {
-            mutability.pretty_print_fmt(ctx, writer)?;
+        if let Some(exclusivity) = &self.exclusivity {
+            exclusivity.pretty_print_fmt(ctx, writer)?;
             writer.write_char(' ')?;
         }
 
-        if let Some(exclusivity) = &self.exclusivity {
-            exclusivity.pretty_print_fmt(ctx, writer)?;
+        if let Some(mutability) = &self.mutability {
+            mutability.pretty_print_fmt(ctx, writer)?;
             writer.write_char(' ')?;
         }
 
@@ -1305,8 +1297,6 @@ impl PrettyPrint for OpaqueType {
         _ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
-        // TODO: Verify code
-
         write!(writer, "opaque(\"{}\")", self.name)
     }
 }
@@ -1317,8 +1307,6 @@ impl PrettyPrint for LatentType {
         ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
-        // TODO: Verify code
-
         self.body.pretty_print_fmt(ctx, writer)
     }
 }
@@ -1329,16 +1317,8 @@ impl PrettyPrint for Lifetime {
         _ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
-        // TODO: Verify code
-
-        match self {
-            Lifetime::SyntaxError => Ok(()),
-            Lifetime::Static => writer.write_str("'static"),
-            Lifetime::GarbageCollected => writer.write_str("'gc"),
-            Lifetime::Thread => writer.write_str("'thread"),
-            Lifetime::Task => writer.write_str("'task"),
-            Lifetime::Other { name } => write!(writer, "'{}", name),
-        }
+        writer.write_char('\'')?;
+        writer.write_str(&self.name)
     }
 }
 
@@ -1348,8 +1328,6 @@ impl PrettyPrint for TypeParentheses {
         ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
-        // TODO: Verify code
-
         writer.write_char('(')?;
         self.inner.pretty_print_fmt(ctx, writer)?;
         writer.write_char(')')

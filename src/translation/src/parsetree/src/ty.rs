@@ -144,14 +144,8 @@ pub struct FunctionType {
 
 #[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub enum Lifetime {
-    SyntaxError,
-
-    Static,
-    GarbageCollected,
-    Thread,
-    Task,
-    Other { name: LifetimeNameId },
+pub struct Lifetime {
+    pub name: LifetimeNameId,
 }
 
 #[skip_serializing_none]
@@ -165,8 +159,8 @@ pub enum Exclusivity {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ReferenceType {
     pub lifetime: Option<Lifetime>,
-    pub mutability: Option<Mutability>,
     pub exclusivity: Option<Exclusivity>,
+    pub mutability: Option<Mutability>,
     pub to: Type,
 }
 
