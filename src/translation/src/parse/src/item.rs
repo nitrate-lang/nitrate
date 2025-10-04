@@ -240,8 +240,15 @@ impl Parser<'_, '_> {
 
             let name = intern_enum_variant_name(name);
 
-            let variant_type = if this.lexer.next_is(&Token::OpenParen) {
-                Some(this.parse_type())
+            let variant_type = if this.lexer.skip_if(&Token::OpenParen) {
+                let ty = this.parse_type();
+
+                if !this.lexer.skip_if(&Token::CloseParen) {
+                    let bug = SyntaxErr::ExpectedCloseParen(this.lexer.peek_pos());
+                    this.log.report(&bug);
+                }
+
+                Some(ty)
             } else {
                 None
             };
@@ -505,9 +512,8 @@ impl Parser<'_, '_> {
         assert!(self.lexer.peek_t() == Token::Impl);
         self.lexer.skip_tok();
 
-        let attributes = self.parse_attributes();
-
         let generics = self.parse_generics();
+        let attributes = self.parse_attributes();
 
         let trait_path = if self.lexer.skip_if(&Token::Trait) {
             let path = self.parse_type_path();
