@@ -25,12 +25,18 @@ fn resolve_expr_path_lookup(
     }
 
     match symbols.first().expect("symbol table entry is empty") {
-        Symbol::TypeAlias(sym) => path.to = ExprPathTarget::TypeAlias(Arc::downgrade(&sym)),
-        Symbol::Struct(sym) => path.to = ExprPathTarget::Struct(Arc::downgrade(&sym)),
-        Symbol::Enum(sym) => path.to = ExprPathTarget::Enum(Arc::downgrade(&sym)),
-        Symbol::Trait(sym) => path.to = ExprPathTarget::Trait(Arc::downgrade(&sym)),
-        Symbol::Function(sym) => path.to = ExprPathTarget::Function(Arc::downgrade(&sym)),
-        Symbol::Variable(sym) => path.to = ExprPathTarget::Variable(Arc::downgrade(&sym)),
+        Symbol::TypeAlias(sym) => {
+            path.resolved = Some(ExprPathTarget::TypeAlias(Arc::downgrade(&sym)))
+        }
+        Symbol::Struct(sym) => path.resolved = Some(ExprPathTarget::Struct(Arc::downgrade(&sym))),
+        Symbol::Enum(sym) => path.resolved = Some(ExprPathTarget::Enum(Arc::downgrade(&sym))),
+        Symbol::Trait(sym) => path.resolved = Some(ExprPathTarget::Trait(Arc::downgrade(&sym))),
+        Symbol::Function(sym) => {
+            path.resolved = Some(ExprPathTarget::Function(Arc::downgrade(&sym)))
+        }
+        Symbol::Variable(sym) => {
+            path.resolved = Some(ExprPathTarget::Variable(Arc::downgrade(&sym)))
+        }
     }
 
     true
@@ -92,17 +98,17 @@ fn resolve_type_path_lookup(
 
     match symbols.first().expect("symbol table entry is empty") {
         Symbol::TypeAlias(sym) => {
-            path.to = TypePathTarget::TypeAlias(Arc::downgrade(&sym));
+            path.resolved = Some(TypePathTarget::TypeAlias(Arc::downgrade(&sym)));
             return true;
         }
 
         Symbol::Struct(sym) => {
-            path.to = TypePathTarget::Struct(Arc::downgrade(&sym));
+            path.resolved = Some(TypePathTarget::Struct(Arc::downgrade(&sym)));
             return true;
         }
 
         Symbol::Enum(sym) => {
-            path.to = TypePathTarget::Enum(Arc::downgrade(&sym));
+            path.resolved = Some(TypePathTarget::Enum(Arc::downgrade(&sym)));
             return true;
         }
 

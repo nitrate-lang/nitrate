@@ -88,16 +88,9 @@ pub struct InferType;
 #[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum TypePathTarget {
-    Unresolved,
     TypeAlias(Weak<RwLock<TypeAlias>>),
     Struct(Weak<RwLock<Struct>>),
     Enum(Weak<RwLock<Enum>>),
-}
-
-impl Default for TypePathTarget {
-    fn default() -> Self {
-        TypePathTarget::Unresolved
-    }
 }
 
 #[skip_serializing_none]
@@ -113,7 +106,7 @@ pub struct TypePath {
     pub segments: Vec<TypePathSegment>,
 
     #[serde(skip)]
-    pub to: TypePathTarget,
+    pub resolved: Option<TypePathTarget>,
 }
 
 #[skip_serializing_none]

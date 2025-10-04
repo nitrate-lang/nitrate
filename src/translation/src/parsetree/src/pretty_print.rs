@@ -26,6 +26,7 @@ use crate::{
 pub struct PrintContext {
     pub indent: String,
     pub max_line_length: NonZeroUsize,
+    pub show_resolution_links: bool,
 
     pub tab_depth: usize,
 }
@@ -35,6 +36,7 @@ impl Default for PrintContext {
         PrintContext {
             indent: "  ".to_string(),
             max_line_length: NonZeroUsize::new(80).unwrap(),
+            show_resolution_links: true,
             tab_depth: 0,
         }
     }
@@ -46,6 +48,17 @@ impl PrintContext {
             writer.write_str(&self.indent)?;
         }
         Ok(())
+    }
+}
+
+fn write_resolve_link<T>(
+    writer: &mut dyn std::fmt::Write,
+    resolve_target: &Option<T>,
+) -> std::fmt::Result {
+    if let Some(target) = resolve_target {
+        write!(writer, "$< 0x{:x} >$", target as *const T as usize)
+    } else {
+        writer.write_str("$< unresolved >$")
     }
 }
 
@@ -541,6 +554,11 @@ impl PrettyPrint for ExprPath {
             }
 
             segment.pretty_print_fmt(ctx, writer)?;
+        }
+
+        if ctx.show_resolution_links {
+            writer.write_char(' ')?;
+            write_resolve_link(writer, &self.resolved)?;
         }
 
         Ok(())
@@ -1051,6 +1069,11 @@ impl PrettyPrint for TypePath {
             segment.pretty_print_fmt(ctx, writer)?;
         }
 
+        if ctx.show_resolution_links {
+            writer.write_char(' ')?;
+            write_resolve_link(writer, &self.resolved)?;
+        }
+
         Ok(())
     }
 }
@@ -1402,6 +1425,12 @@ impl PrettyPrint for Import {
         }
 
         writer.write_str(&self.import_name)?;
+
+        if let Some(resolved) = &self.resolved {
+            writer.write_str(" --> ")?;
+            resolved.pretty_print_fmt(ctx, writer)?;
+        }
+
         writer.write_char(';')
     }
 }

@@ -226,7 +226,7 @@ impl ParseTreeIterMut for ExprPath {
             }
         }
 
-        let _ = self.to;
+        let _ = self.resolved;
 
         f(Order::Leave, RefNodeMut::ExprPath(self));
     }

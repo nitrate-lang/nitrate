@@ -236,19 +236,12 @@ pub struct Closure {
 #[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum ExprPathTarget {
-    Unresolved,
     TypeAlias(Weak<RwLock<TypeAlias>>),
     Struct(Weak<RwLock<Struct>>),
     Enum(Weak<RwLock<Enum>>),
     Function(Weak<RwLock<Function>>),
     Variable(Weak<RwLock<Variable>>),
     Trait(Weak<RwLock<Trait>>),
-}
-
-impl Default for ExprPathTarget {
-    fn default() -> Self {
-        ExprPathTarget::Unresolved
-    }
 }
 
 #[skip_serializing_none]
@@ -271,7 +264,7 @@ pub struct ExprPath {
     pub segments: Vec<ExprPathSegment>,
 
     #[serde(skip)]
-    pub to: ExprPathTarget,
+    pub resolved: Option<ExprPathTarget>,
 }
 
 #[skip_serializing_none]

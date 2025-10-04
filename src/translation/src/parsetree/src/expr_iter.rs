@@ -226,7 +226,7 @@ impl ParseTreeIter for ExprPath {
             }
         }
 
-        let _ = self.to;
+        let _ = self.resolved;
 
         f(Order::Leave, RefNode::ExprPath(self));
     }

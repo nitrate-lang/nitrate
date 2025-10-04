@@ -156,7 +156,7 @@ impl ParseTreeIterMut for TypePath {
             }
         }
 
-        let _ = self.to;
+        let _ = self.resolved;
 
         f(Order::Leave, RefNodeMut::TypePath(self));
     }
