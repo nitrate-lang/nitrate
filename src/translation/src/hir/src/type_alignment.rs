@@ -25,9 +25,6 @@ pub fn get_align_of(
         Type::USize | Type::ISize => Ok(ptr_size as u64),
 
         Type::Array { element_type, len } => {
-            // Array alignment is the same as its element type alignment unless its length is 0,
-            // in which case it is 1.
-
             if *len == 0 {
                 return Ok(1);
             } else {
@@ -36,8 +33,6 @@ pub fn get_align_of(
         }
 
         Type::Tuple { elements } => {
-            // Tuple alignment is the max alignment among its element types
-
             let mut max_align = 1;
 
             for element in elements {
@@ -48,15 +43,9 @@ pub fn get_align_of(
             Ok(max_align)
         }
 
-        Type::Slice { element_type } => {
-            // Slice alignment is the same as its element type alignment
-            get_align_of(&store[element_type], store, ptr_size)
-        }
+        Type::Slice { element_type } => get_align_of(&store[element_type], store, ptr_size),
 
         Type::Struct(struct_type) => {
-            // Non-packed struct alignment is the same as its largest field alignment.
-            // Packed structs have alignment 1.
-
             if struct_type.attributes.contains(&StructAttribute::Packed) {
                 return Ok(1);
             }
@@ -72,9 +61,6 @@ pub fn get_align_of(
         }
 
         Type::Enum(enum_type) => {
-            // Enum alignment is the same as its largest variant's alignment
-            // or the discriminant's alignment, whichever is larger.
-
             let mut max_align = 1;
 
             for (_, variant_type) in &enum_type.variants {
@@ -94,16 +80,7 @@ pub fn get_align_of(
             Ok(max_align)
         }
 
-        Type::Function(_) => {
-            // A Type::Function represents the literal machine code of a function,
-            // just like a slice of bytes represents the literal bytes in memory.
-            // This is not the same as a reference to a function which has an alignment.
-            // We don't know the alignment of machine code bytes, it could vary by platform.
-            // This is why the function type itself has no alignment.
-
-            Err(AlignofError::UnknownAlignment)
-        }
-
+        Type::Function(_) => Err(AlignofError::UnknownAlignment),
         Type::Reference(_) => Ok(ptr_size as u64),
     }
 }

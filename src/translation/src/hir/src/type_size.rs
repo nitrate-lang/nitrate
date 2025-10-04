@@ -1,7 +1,10 @@
+use std::cmp::max;
+
 use crate::{
-    TypeStore, get_align_of,
+    TypeStore, get_align_of, get_stride_of,
     ty::{PointerSize, StructAttribute, Type},
     type_alignment::AlignofError,
+    type_stride::StrideOfError,
 };
 
 pub enum SizeofError {
@@ -24,65 +27,41 @@ pub fn get_size_of(
         Type::USize | Type::ISize => Ok(ptr_size as u64),
 
         Type::Array { element_type, len } => {
-            // In nitrate, type sizes need not be a multiple of their alignment.
-            // However, arrays do have padding added to their elements to ensure
-            // that each element is properly aligned.
-
-            // So the size of an array is the size of its element type
-            // rounded up to the next multiple of its alignment, times the length.
-
-            let element_type = &store[element_type];
-
-            let element_align = match get_align_of(element_type, store, ptr_size) {
-                Ok(align) => Ok(align),
-                Err(AlignofError::UnknownAlignment) => Err(SizeofError::UnknownSize),
+            let element_stride = match get_stride_of(&store[element_type], store, ptr_size) {
+                Ok(stride) => Ok(stride),
+                Err(StrideOfError::UnknownStride) => Err(SizeofError::UnknownSize),
             }?;
 
-            let element_size = get_size_of(element_type, store, ptr_size)?;
-            let element_size_with_trailing_padding = element_size.next_multiple_of(element_align);
-
-            Ok(element_size_with_trailing_padding * (*len as u64))
+            Ok(element_stride * (*len as u64))
         }
 
         Type::Tuple { elements } => {
-            // The size of a tuple is the sum of the sizes of its element types,
-            // plus any padding needed to align each element type.
-
-            let mut offset = 0_u64;
+            let mut size = 0_u64;
 
             for element in elements {
                 let element = &store[element];
 
+                let element_size = get_size_of(element, store, ptr_size)?;
                 let element_align = match get_align_of(element, store, ptr_size) {
                     Ok(align) => Ok(align),
                     Err(AlignofError::UnknownAlignment) => Err(SizeofError::UnknownSize),
                 }?;
 
-                let element_size = get_size_of(element, store, ptr_size)?;
-
-                offset = offset.next_multiple_of(element_align);
-                offset += element_size;
+                size = size.next_multiple_of(element_align);
+                size += element_size;
             }
 
-            Ok(offset)
+            Ok(size)
         }
 
-        Type::Slice { element_type: _ } => {
-            // A slice itself has no complete size, just like in Rust.
-            Err(SizeofError::UnknownSize)
-        }
+        Type::Slice { element_type: _ } => Err(SizeofError::UnknownSize),
 
         Type::Struct(struct_type) => {
-            // The size of a struct is the sum of the sizes of its field types,
-            // plus any padding needed to align each field type.
-
             if struct_type.attributes.contains(&StructAttribute::Packed) {
-                // Packed structs have no padding between fields.
                 let mut total_size = 0_u64;
 
                 for (_, field_type) in &struct_type.fields {
-                    let field_size = get_size_of(&store[field_type], store, ptr_size)?;
-                    total_size += field_size;
+                    total_size += get_size_of(&store[field_type], store, ptr_size)?;
                 }
 
                 return Ok(total_size);
@@ -93,12 +72,11 @@ pub fn get_size_of(
             for (_, field_type) in &struct_type.fields {
                 let field_type = &store[field_type];
 
+                let field_size = get_size_of(field_type, store, ptr_size)?;
                 let field_align = match get_align_of(field_type, store, ptr_size) {
                     Ok(align) => Ok(align),
                     Err(AlignofError::UnknownAlignment) => Err(SizeofError::UnknownSize),
                 }?;
-
-                let field_size = get_size_of(field_type, store, ptr_size)?;
 
                 offset = offset.next_multiple_of(field_align);
                 offset += field_size;
@@ -108,30 +86,29 @@ pub fn get_size_of(
         }
 
         Type::Enum(enum_type) => {
-            // The size of an enum is the size of its largest variant,
-            // plus the size of a discriminant.
-
-            let mut max_variant_size = 0_u64;
+            let mut size = 0_u64;
 
             for (_, variant_type) in &enum_type.variants {
                 let variant_size = get_size_of(&store[variant_type], store, ptr_size)?;
-                if variant_size > max_variant_size {
-                    max_variant_size = variant_size;
-                }
+                size = max(size, variant_size);
             }
 
-            let discrim_size = match enum_type.variants.len() {
-                0..=1 => 0,
-                2..=256 => 1,
-                257..=65536 => 2,
-                65537..=4294967296 => 4,
-                4294967297.. => 8,
+            let (discrim_size, discrim_align) = match enum_type.variants.len() {
+                0..=1 => (0, 1),
+                2..=256 => (1, 1),
+                257..=65536 => (2, 2),
+                65537..=4294967296 => (4, 4),
+                4294967297.. => (8, 8),
             };
 
-            Ok(max_variant_size + discrim_size)
+            size = size.next_multiple_of(discrim_align);
+            size += discrim_size;
+
+            Ok(size)
         }
 
         Type::Function(_) => Err(SizeofError::UnknownSize),
+
         Type::Reference(_) => Ok(ptr_size as u64),
     }
 }
