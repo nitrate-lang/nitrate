@@ -3,9 +3,9 @@ use std::sync::{Arc, RwLock};
 use crate::{
     expr::{
         Await, BStringLit, BinExpr, Block, BlockItem, BooleanLit, Break, Call, CallArgument, Cast,
-        Closure, Continue, DoWhileLoop, ExprParentheses, ExprPath, FloatLit, ForEach, If,
-        IndexAccess, IntegerLit, List, Object, Return, StringLit, Switch, SwitchCase, TypeArgument,
-        TypeInfo, UnaryExpr, WhileLoop,
+        Closure, Continue, ExprParentheses, ExprPath, FloatLit, ForEach, If, IndexAccess,
+        IntegerLit, List, Object, Return, StringLit, Switch, SwitchCase, TypeArgument, TypeInfo,
+        UnaryExpr, WhileLoop,
     },
     item::{
         Enum, EnumVariant, Function, FunctionParameter, GenericParameter, Impl, Import, ItemPath,
@@ -47,7 +47,6 @@ pub enum RefNodeMut<'a> {
     ExprIndexAccess(&'a mut IndexAccess),
     ExprIf(&'a mut If),
     ExprWhile(&'a mut WhileLoop),
-    ExprDoWhileLoop(&'a mut DoWhileLoop),
     ExprSwitchCase(&'a mut SwitchCase),
     ExprSwitch(&'a mut Switch),
     ExprBreak(&'a mut Break),

@@ -3,8 +3,8 @@ use crate::{
     expr::{ExprPath, Object, Safety, Switch, SwitchCase, TypeArgument, UnitLit},
     kind::{
         Await, BStringLit, BinExpr, Block, BlockItem, BooleanLit, Break, Call, CallArgument, Cast,
-        Closure, Continue, DoWhileLoop, Expr, ExprParentheses, ExprSyntaxError, FloatLit, ForEach,
-        If, IndexAccess, IntegerLit, List, Return, StringLit, TypeInfo, UnaryExpr, WhileLoop,
+        Closure, Continue, Expr, ExprParentheses, ExprSyntaxError, FloatLit, ForEach, If,
+        IndexAccess, IntegerLit, List, Return, StringLit, TypeInfo, UnaryExpr, WhileLoop,
     },
 };
 
@@ -265,17 +265,6 @@ impl ParseTreeIterMut for WhileLoop {
     }
 }
 
-impl ParseTreeIterMut for DoWhileLoop {
-    fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
-        f(Order::Enter, RefNodeMut::ExprDoWhileLoop(self));
-
-        self.body.depth_first_iter_mut(f);
-        self.condition.depth_first_iter_mut(f);
-
-        f(Order::Leave, RefNodeMut::ExprDoWhileLoop(self));
-    }
-}
-
 impl ParseTreeIterMut for SwitchCase {
     fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
         f(Order::Enter, RefNodeMut::ExprSwitchCase(self));
@@ -416,7 +405,6 @@ impl ParseTreeIterMut for Expr {
             Expr::IndexAccess(e) => e.depth_first_iter_mut(f),
             Expr::If(e) => e.depth_first_iter_mut(f),
             Expr::While(e) => e.depth_first_iter_mut(f),
-            Expr::DoWhileLoop(e) => e.depth_first_iter_mut(f),
             Expr::Switch(e) => e.depth_first_iter_mut(f),
             Expr::Break(e) => e.depth_first_iter_mut(f),
             Expr::Continue(e) => e.depth_first_iter_mut(f),

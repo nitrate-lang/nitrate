@@ -6,12 +6,12 @@ use super::parse::Parser;
 use nitrate_parsetree::{
     kind::{
         Await, BStringLit, BinExpr, BinExprOp, Block, BlockItem, Bool, BooleanLit, Break, Call,
-        CallArgument, Cast, Closure, Continue, DoWhileLoop, Expr, ExprParentheses, ExprPath,
-        ExprPathSegment, ExprPathTarget, ExprSyntaxError, Float8, Float16, Float32, Float64,
-        Float128, FloatLit, ForEach, FunctionParameter, If, IndexAccess, Int8, Int16, Int32, Int64,
-        Int128, IntegerLit, List, Mutability, Return, Safety, StringLit, Type, TypeArgument,
-        TypeInfo, TypePath, TypePathSegment, TypePathTarget, UInt8, UInt16, UInt32, UInt64,
-        UInt128, UnaryExpr, UnaryExprOp, WhileLoop,
+        CallArgument, Cast, Closure, Continue, Expr, ExprParentheses, ExprPath, ExprPathSegment,
+        ExprPathTarget, ExprSyntaxError, Float8, Float16, Float32, Float64, Float128, FloatLit,
+        ForEach, FunctionParameter, If, IndexAccess, Int8, Int16, Int32, Int64, Int128, IntegerLit,
+        List, Mutability, Return, Safety, StringLit, Type, TypeArgument, TypeInfo, TypePath,
+        TypePathSegment, TypePathTarget, UInt8, UInt16, UInt32, UInt64, UInt128, UnaryExpr,
+        UnaryExprOp, WhileLoop,
     },
     tag::{
         VariableNameId, intern_arg_name, intern_label_name, intern_parameter_name,
@@ -384,7 +384,6 @@ impl Parser<'_, '_> {
             Token::If => Expr::If(Box::new(self.parse_if())),
             Token::For => Expr::For(Box::new(self.parse_for())),
             Token::While => Expr::While(Box::new(self.parse_while())),
-            Token::Do => Expr::DoWhileLoop(Box::new(self.parse_do())),
             // Token::Switch => Expr::Switch(Box::new(self.parse_switch())),
             Token::Break => Expr::Break(Box::new(self.parse_break())),
             Token::Continue => Expr::Continue(Box::new(self.parse_continue())),
@@ -898,22 +897,6 @@ impl Parser<'_, '_> {
         let body = self.parse_block();
 
         WhileLoop { condition, body }
-    }
-
-    fn parse_do(&mut self) -> DoWhileLoop {
-        assert!(self.lexer.peek_t() == Token::Do);
-        self.lexer.skip_tok();
-
-        let body = self.parse_block();
-
-        if !self.lexer.skip_if(&Token::While) {
-            let bug = SyntaxErr::DoWhileExpectedWhileKeyword(self.lexer.peek_pos());
-            self.log.report(&bug);
-        }
-
-        let condition = self.parse_expression();
-
-        DoWhileLoop { body, condition }
     }
 
     fn parse_break(&mut self) -> Break {

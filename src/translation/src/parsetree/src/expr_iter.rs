@@ -3,8 +3,8 @@ use crate::{
     expr::{ExprPath, Object, Safety, Switch, SwitchCase, TypeArgument, UnitLit},
     kind::{
         Await, BStringLit, BinExpr, Block, BlockItem, BooleanLit, Break, Call, CallArgument, Cast,
-        Closure, Continue, DoWhileLoop, Expr, ExprParentheses, ExprSyntaxError, FloatLit, ForEach,
-        If, IndexAccess, IntegerLit, List, Return, StringLit, TypeInfo, UnaryExpr, WhileLoop,
+        Closure, Continue, Expr, ExprParentheses, ExprSyntaxError, FloatLit, ForEach, If,
+        IndexAccess, IntegerLit, List, Return, StringLit, TypeInfo, UnaryExpr, WhileLoop,
     },
 };
 
@@ -265,17 +265,6 @@ impl ParseTreeIter for WhileLoop {
     }
 }
 
-impl ParseTreeIter for DoWhileLoop {
-    fn depth_first_iter(&self, f: &mut dyn FnMut(Order, RefNode)) {
-        f(Order::Enter, RefNode::ExprDoWhileLoop(self));
-
-        self.body.depth_first_iter(f);
-        self.condition.depth_first_iter(f);
-
-        f(Order::Leave, RefNode::ExprDoWhileLoop(self));
-    }
-}
-
 impl ParseTreeIter for SwitchCase {
     fn depth_first_iter(&self, f: &mut dyn FnMut(Order, RefNode)) {
         f(Order::Enter, RefNode::ExprSwitchCase(self));
@@ -416,7 +405,6 @@ impl ParseTreeIter for Expr {
             Expr::IndexAccess(e) => e.depth_first_iter(f),
             Expr::If(e) => e.depth_first_iter(f),
             Expr::While(e) => e.depth_first_iter(f),
-            Expr::DoWhileLoop(e) => e.depth_first_iter(f),
             Expr::Switch(e) => e.depth_first_iter(f),
             Expr::Break(e) => e.depth_first_iter(f),
             Expr::Continue(e) => e.depth_first_iter(f),

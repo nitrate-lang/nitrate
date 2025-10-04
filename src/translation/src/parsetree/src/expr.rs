@@ -297,13 +297,6 @@ pub struct WhileLoop {
 
 #[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct DoWhileLoop {
-    pub condition: Expr,
-    pub body: Block,
-}
-
-#[skip_serializing_none]
-#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SwitchCase {
     pub condition: Expr,
     pub body: Block,
@@ -393,7 +386,6 @@ pub enum Expr {
 
     If(Box<If>),
     While(Box<WhileLoop>),
-    DoWhileLoop(Box<DoWhileLoop>),
     Switch(Box<Switch>),
     Break(Box<Break>),
     Continue(Box<Continue>),
@@ -427,7 +419,6 @@ impl std::fmt::Debug for Expr {
             Expr::IndexAccess(e) => e.fmt(f),
             Expr::If(e) => e.fmt(f),
             Expr::While(e) => e.fmt(f),
-            Expr::DoWhileLoop(e) => e.fmt(f),
             Expr::Switch(e) => e.fmt(f),
             Expr::Break(e) => e.fmt(f),
             Expr::Continue(e) => e.fmt(f),
