@@ -4,10 +4,10 @@ use nitrate_tokenize::IntegerKind;
 
 use crate::{
     expr::{
-        Await, BStringLit, BinExpr, BinExprOp, Block, BlockItem, BooleanLit, Break, Call, Cast,
-        Closure, Continue, Expr, ExprParentheses, ExprPath, ExprSyntaxError, FloatLit, ForEach, If,
-        IndexAccess, IntegerLit, List, Object, Return, Safety, StringLit, Switch, TypeInfo,
-        UnaryExpr, UnaryExprOp, UnitLit, WhileLoop,
+        Await, BStringLit, BinExpr, BinExprOp, Block, BlockItem, BooleanLit, Break, Call,
+        CallArgument, Cast, Closure, Continue, Expr, ExprParentheses, ExprPath, ExprSyntaxError,
+        FloatLit, ForEach, If, IndexAccess, IntegerLit, List, Object, Return, Safety, StringLit,
+        Switch, TypeInfo, UnaryExpr, UnaryExprOp, UnitLit, WhileLoop,
     },
     item::{
         Enum, Function, Impl, Import, Item, ItemSyntaxError, Module, Struct, Trait, TypeAlias,
@@ -24,9 +24,6 @@ use crate::{
 pub struct PrintContext {
     pub indent: String,
     pub max_line_length: NonZeroUsize,
-
-    current_indent: String,
-    current_line_length: usize,
 }
 
 impl Default for PrintContext {
@@ -34,8 +31,6 @@ impl Default for PrintContext {
         PrintContext {
             indent: "  ".to_string(),
             max_line_length: NonZeroUsize::new(80).unwrap(),
-            current_indent: "".to_string(),
-            current_line_length: 0,
         }
     }
 }
@@ -130,10 +125,31 @@ impl PrettyPrint for StringLit {
     fn pretty_print_fmt(
         &self,
         _ctx: &PrintContext,
-        _writer: &mut dyn std::fmt::Write,
+        writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
-        // TODO: String pretty print
-        Ok(())
+        // TODO: Test string escape logic
+
+        writer.write_char('"')?;
+
+        for c in self.value.chars() {
+            if c.is_ascii() {
+                match c {
+                    '\0' => writer.write_str("\\0")?,
+                    '\t' => writer.write_str("\\t")?,
+                    '\n' => writer.write_str("\\n")?,
+                    '\r' => writer.write_str("\\r")?,
+                    '\"' => writer.write_str("\\\"")?,
+                    '\\' => writer.write_str("\\\\")?,
+
+                    ' '..='~' => writer.write_char(c)?,
+                    _ => write!(writer, "\\x{:02x}", c as u32)?,
+                }
+            } else {
+                write!(writer, "\\u{{{:x}}}", c as u32)?;
+            }
+        }
+
+        writer.write_char('"')
     }
 }
 
@@ -141,10 +157,24 @@ impl PrettyPrint for BStringLit {
     fn pretty_print_fmt(
         &self,
         _ctx: &PrintContext,
-        _writer: &mut dyn std::fmt::Write,
+        writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
-        // TODO: BString pretty print
-        Ok(())
+        writer.write_char('"')?;
+
+        for byte in &self.value {
+            match byte {
+                b'\0' => writer.write_str("\\0")?,
+                b'\t' => writer.write_str("\\t")?,
+                b'\n' => writer.write_str("\\n")?,
+                b'\r' => writer.write_str("\\r")?,
+                b'\"' => writer.write_str("\\\"")?,
+                b'\\' => writer.write_str("\\\\")?,
+                b' '..=b'~' => writer.write_char(*byte as char)?,
+                _ => write!(writer, "\\x{:02x}", *byte as u32)?,
+            }
+        }
+
+        writer.write_char('"')
     }
 }
 
@@ -334,11 +364,13 @@ impl PrettyPrint for ExprPath {
 impl PrettyPrint for IndexAccess {
     fn pretty_print_fmt(
         &self,
-        _ctx: &PrintContext,
+        ctx: &PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
-        // TODO: IndexAccess pretty print
-        Ok(())
+        self.collection.pretty_print_fmt(ctx, writer)?;
+        writer.write_char('[')?;
+        self.index.pretty_print_fmt(ctx, writer)?;
+        writer.write_char(']')
     }
 }
 
@@ -394,7 +426,13 @@ impl PrettyPrint for Break {
         _ctx: &PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
-        // TODO: Break pretty print
+        writer.write_str("break")?;
+
+        if let Some(label) = &self.label {
+            writer.write_str(" '")?;
+            writer.write_str(label)?;
+        }
+
         Ok(())
     }
 }
@@ -405,7 +443,13 @@ impl PrettyPrint for Continue {
         _ctx: &PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
-        // TODO: Continue pretty print
+        writer.write_str("continue")?;
+
+        if let Some(label) = &self.label {
+            writer.write_str(" '")?;
+            writer.write_str(label)?;
+        }
+
         Ok(())
     }
 }
@@ -413,10 +457,16 @@ impl PrettyPrint for Continue {
 impl PrettyPrint for Return {
     fn pretty_print_fmt(
         &self,
-        _ctx: &PrintContext,
+        ctx: &PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
-        // TODO: Return pretty print
+        writer.write_str("return")?;
+
+        if let Some(value) = &self.value {
+            writer.write_char(' ')?;
+            value.pretty_print_fmt(ctx, writer)?;
+        }
+
         Ok(())
     }
 }
@@ -425,7 +475,7 @@ impl PrettyPrint for ForEach {
     fn pretty_print_fmt(
         &self,
         _ctx: &PrintContext,
-        writer: &mut dyn std::fmt::Write,
+        _writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
         // TODO: For pretty print
         Ok(())
@@ -435,22 +485,45 @@ impl PrettyPrint for ForEach {
 impl PrettyPrint for Await {
     fn pretty_print_fmt(
         &self,
-        _ctx: &PrintContext,
+        ctx: &PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
-        // TODO: Await pretty print
-        Ok(())
+        writer.write_str("await ")?;
+        self.future.pretty_print_fmt(ctx, writer)
+    }
+}
+
+impl PrettyPrint for CallArgument {
+    fn pretty_print_fmt(
+        &self,
+        ctx: &PrintContext,
+        writer: &mut dyn std::fmt::Write,
+    ) -> std::fmt::Result {
+        if let Some(name) = &self.name {
+            writer.write_str(name)?;
+            writer.write_str(": ")?;
+        }
+
+        self.value.pretty_print_fmt(ctx, writer)
     }
 }
 
 impl PrettyPrint for Call {
     fn pretty_print_fmt(
         &self,
-        _ctx: &PrintContext,
+        ctx: &PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
-        // TODO: Call pretty print
-        Ok(())
+        self.callee.pretty_print_fmt(ctx, writer)?;
+        writer.write_char('(')?;
+        for (i, arg) in self.arguments.iter().enumerate() {
+            if i > 0 {
+                writer.write_str(", ")?;
+            }
+
+            arg.pretty_print_fmt(ctx, writer)?;
+        }
+        writer.write_char(')')
     }
 }
 
@@ -499,7 +572,7 @@ impl PrettyPrint for TypeSyntaxError {
         _ctx: &PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
-        // TODO: SyntaxError pretty print
+        // Type syntax errors are unrepresentable
         Ok(())
     }
 }
@@ -827,11 +900,12 @@ impl PrettyPrint for Lifetime {
 impl PrettyPrint for TypeParentheses {
     fn pretty_print_fmt(
         &self,
-        _ctx: &PrintContext,
+        ctx: &PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
-        // TODO: Parentheses pretty print
-        Ok(())
+        writer.write_char('(')?;
+        self.inner.pretty_print_fmt(ctx, writer)?;
+        writer.write_char(')')
     }
 }
 
@@ -882,7 +956,7 @@ impl PrettyPrint for ItemSyntaxError {
         _ctx: &PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
-        // TODO: SyntaxError pretty print
+        // Item syntax errors are unrepresentable
         Ok(())
     }
 }
