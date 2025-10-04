@@ -28,4 +28,4 @@ pub mod tag {
 pub use iter::{Order, ParseTreeIter, RefNode};
 pub use iter_mut::{ParseTreeIterMut, RefNodeMut};
 
-pub use pretty_print::{PrettyPrint, StyleOptions};
+pub use pretty_print::{PrettyPrint, PrintContext};

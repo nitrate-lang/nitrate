@@ -105,6 +105,8 @@ fn program() -> Result<(), Error> {
     resolve_imports(&import_context, &mut module, &log);
     resolve_names(&mut module, &log);
 
+    // let pretty_printed = module.pretty_print(&PrintContext::default());
+
     if let Err(_) = serde_json::to_writer_pretty(&mut parse_tree_output, &module) {
         return Err(Error::ParseFailed(TranslationError::SyntaxError));
     }
