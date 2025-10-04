@@ -5,7 +5,7 @@ use nitrate_tokenize::IntegerKind;
 use crate::{
     expr::{
         AttributeList, Await, BStringLit, BinExpr, BinExprOp, Block, BlockItem, BooleanLit, Break,
-        Call, CallArgument, Cast, Closure, Continue, Expr, ExprParentheses, ExprPath,
+        Call, CallArgument, Cast, Closure, Continue, ElseIf, Expr, ExprParentheses, ExprPath,
         ExprPathSegment, ExprPathTarget, ExprSyntaxError, FloatLit, ForEach, If, IndexAccess,
         IntegerLit, List, Return, Safety, StringLit, StructInit, Switch, TypeArgument, TypeInfo,
         UnaryExpr, UnaryExprOp, WhileLoop,
@@ -499,8 +499,6 @@ impl PrettyPrint for TypeArgument {
         ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
-        // TODO: Verify code
-
         if let Some(name) = &self.name {
             writer.write_str(name)?;
             writer.write_str(": ")?;
@@ -516,9 +514,7 @@ impl PrettyPrint for ExprPathSegment {
         ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
-        // TODO: Verify code
-
-        write!(writer, "{}", self.name)?;
+        writer.write_str(&self.name)?;
 
         if let Some(type_args) = &self.type_arguments {
             writer.write_str("::<")?;
@@ -542,8 +538,6 @@ impl PrettyPrint for ExprPathTarget {
         _ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
-        // TODO: Verify code
-
         match self {
             ExprPathTarget::TypeAlias(m) => {
                 let r = m.upgrade().expect("dropped");
@@ -584,8 +578,6 @@ impl PrettyPrint for ExprPath {
         ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
-        // TODO: Verify code
-
         for (i, segment) in self.segments.iter().enumerate() {
             if i > 0 {
                 writer.write_str("::")?;
@@ -614,8 +606,6 @@ impl PrettyPrint for IndexAccess {
         ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
-        // TODO: Verify code
-
         self.collection.pretty_print_fmt(ctx, writer)?;
         writer.write_char('[')?;
         self.index.pretty_print_fmt(ctx, writer)?;
@@ -635,11 +625,20 @@ impl PrettyPrint for If {
         self.condition.pretty_print_fmt(ctx, writer)?;
         writer.write_str(" ")?;
 
-        self.then_branch.pretty_print_fmt(ctx, writer)?;
+        self.true_branch.pretty_print_fmt(ctx, writer)?;
 
-        if let Some(else_branch) = &self.else_branch {
-            writer.write_str(" else ")?;
-            else_branch.pretty_print_fmt(ctx, writer)?;
+        match &self.false_branch {
+            None => {}
+
+            Some(ElseIf::If(else_if)) => {
+                writer.write_str(" else ")?;
+                else_if.pretty_print_fmt(ctx, writer)?;
+            }
+
+            Some(ElseIf::Block(else_block)) => {
+                writer.write_str(" else ")?;
+                else_block.pretty_print_fmt(ctx, writer)?;
+            }
         }
 
         Ok(())

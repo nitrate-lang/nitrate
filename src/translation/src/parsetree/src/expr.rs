@@ -276,10 +276,17 @@ pub struct IndexAccess {
 
 #[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum ElseIf {
+    If(Box<If>),
+    Block(Block),
+}
+
+#[skip_serializing_none]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct If {
     pub condition: Expr,
-    pub then_branch: Block,
-    pub else_branch: Option<Block>,
+    pub true_branch: Block,
+    pub false_branch: Option<ElseIf>,
 }
 
 #[skip_serializing_none]

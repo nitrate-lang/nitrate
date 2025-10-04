@@ -1,6 +1,6 @@
 use crate::{
     Order, ParseTreeIterMut, RefNodeMut,
-    expr::{AttributeList, ExprPath, Safety, StructInit, Switch, SwitchCase, TypeArgument},
+    expr::{AttributeList, ElseIf, ExprPath, Safety, StructInit, Switch, SwitchCase, TypeArgument},
     kind::{
         Await, BStringLit, BinExpr, Block, BlockItem, BooleanLit, Break, Call, CallArgument, Cast,
         Closure, Continue, Expr, ExprParentheses, ExprSyntaxError, FloatLit, ForEach, If,
@@ -251,10 +251,13 @@ impl ParseTreeIterMut for If {
 
         self.condition.depth_first_iter_mut(f);
 
-        self.then_branch.depth_first_iter_mut(f);
+        self.true_branch.depth_first_iter_mut(f);
 
-        if let Some(else_branch) = &mut self.else_branch {
-            else_branch.depth_first_iter_mut(f);
+        if let Some(else_branch) = &mut self.false_branch {
+            match else_branch {
+                ElseIf::If(else_if) => else_if.depth_first_iter_mut(f),
+                ElseIf::Block(else_block) => else_block.depth_first_iter_mut(f),
+            }
         }
 
         f(Order::Leave, RefNodeMut::ExprIf(self));

@@ -1,6 +1,6 @@
 use crate::{
     Order, ParseTreeIter, RefNode,
-    expr::{AttributeList, ExprPath, Safety, StructInit, Switch, SwitchCase, TypeArgument},
+    expr::{AttributeList, ElseIf, ExprPath, Safety, StructInit, Switch, SwitchCase, TypeArgument},
     kind::{
         Await, BStringLit, BinExpr, Block, BlockItem, BooleanLit, Break, Call, CallArgument, Cast,
         Closure, Continue, Expr, ExprParentheses, ExprSyntaxError, FloatLit, ForEach, If,
@@ -251,10 +251,13 @@ impl ParseTreeIter for If {
 
         self.condition.depth_first_iter(f);
 
-        self.then_branch.depth_first_iter(f);
+        self.true_branch.depth_first_iter(f);
 
-        if let Some(else_branch) = &self.else_branch {
-            else_branch.depth_first_iter(f);
+        if let Some(else_branch) = &self.false_branch {
+            match else_branch {
+                ElseIf::If(else_if) => else_if.depth_first_iter(f),
+                ElseIf::Block(else_block) => else_block.depth_first_iter(f),
+            }
         }
 
         f(Order::Leave, RefNode::ExprIf(self));

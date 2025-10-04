@@ -6,11 +6,12 @@ use super::parse::Parser;
 use nitrate_parsetree::{
     kind::{
         AttributeList, Await, BStringLit, BinExpr, BinExprOp, Block, BlockItem, Bool, BooleanLit,
-        Break, Call, CallArgument, Cast, Closure, Continue, Expr, ExprParentheses, ExprPath,
-        ExprPathSegment, ExprSyntaxError, Float8, Float16, Float32, Float64, Float128, FloatLit,
-        ForEach, FuncParam, If, IndexAccess, Int8, Int16, Int32, Int64, Int128, IntegerLit, List,
-        Mutability, Return, Safety, StringLit, Type, TypeArgument, TypeInfo, TypePath,
-        TypePathSegment, UInt8, UInt16, UInt32, UInt64, UInt128, UnaryExpr, UnaryExprOp, WhileLoop,
+        Break, Call, CallArgument, Cast, Closure, Continue, ElseIf, Expr, ExprParentheses,
+        ExprPath, ExprPathSegment, ExprSyntaxError, Float8, Float16, Float32, Float64, Float128,
+        FloatLit, ForEach, FuncParam, If, IndexAccess, Int8, Int16, Int32, Int64, Int128,
+        IntegerLit, List, Mutability, Return, Safety, StringLit, Type, TypeArgument, TypeInfo,
+        TypePath, TypePathSegment, UInt8, UInt16, UInt32, UInt64, UInt128, UnaryExpr, UnaryExprOp,
+        WhileLoop,
     },
     tag::{
         VariableNameId, intern_arg_name, intern_label_name, intern_parameter_name,
@@ -788,18 +789,13 @@ impl Parser<'_, '_> {
         self.lexer.skip_tok();
 
         let condition = self.parse_expression();
-        let then_branch = self.parse_block();
+        let true_branch = self.parse_block();
 
-        let else_branch = if self.lexer.skip_if(&Token::Else) {
+        let false_branch = if self.lexer.skip_if(&Token::Else) {
             if self.lexer.next_is(&Token::If) {
-                let else_branch = Expr::If(Box::new(self.parse_if()));
-
-                Some(Block {
-                    safety: None,
-                    elements: vec![BlockItem::Expr(else_branch)],
-                })
+                Some(ElseIf::If(Box::new(self.parse_if())))
             } else {
-                Some(self.parse_block())
+                Some(ElseIf::Block(self.parse_block()))
             }
         } else {
             None
@@ -807,8 +803,8 @@ impl Parser<'_, '_> {
 
         If {
             condition,
-            then_branch,
-            else_branch,
+            true_branch,
+            false_branch,
         }
     }
 
