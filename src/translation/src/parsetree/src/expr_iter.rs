@@ -268,7 +268,10 @@ impl ParseTreeIter for WhileLoop {
     fn depth_first_iter(&self, f: &mut dyn FnMut(Order, RefNode)) {
         f(Order::Enter, RefNode::ExprWhile(self));
 
-        self.condition.depth_first_iter(f);
+        if let Some(condition) = &self.condition {
+            condition.depth_first_iter(f);
+        }
+
         self.body.depth_first_iter(f);
 
         f(Order::Leave, RefNode::ExprWhile(self));
@@ -296,7 +299,7 @@ impl ParseTreeIter for Switch {
             case.depth_first_iter(f);
         }
 
-        if let Some(default) = &self.default {
+        if let Some(default) = &self.default_case {
             default.depth_first_iter(f);
         }
 
@@ -334,20 +337,13 @@ impl ParseTreeIter for ForEach {
     fn depth_first_iter(&self, f: &mut dyn FnMut(Order, RefNode)) {
         f(Order::Enter, RefNode::ExprFor(self));
 
+        let _ = &self.bindings;
+
         if let Some(attributes) = &self.attributes {
             attributes.depth_first_iter(f);
         }
 
         self.iterable.depth_first_iter(f);
-
-        for (var, ty) in &self.bindings {
-            let _ = var;
-
-            if let Some(t) = ty {
-                t.depth_first_iter(f);
-            }
-        }
-
         self.body.depth_first_iter(f);
 
         f(Order::Leave, RefNode::ExprFor(self));

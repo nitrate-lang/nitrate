@@ -7,8 +7,8 @@ use crate::{
         AttributeList, Await, BStringLit, BinExpr, BinExprOp, Block, BlockItem, BooleanLit, Break,
         Call, CallArgument, Cast, Closure, Continue, ElseIf, Expr, ExprParentheses, ExprPath,
         ExprPathSegment, ExprPathTarget, ExprSyntaxError, FloatLit, ForEach, If, IndexAccess,
-        IntegerLit, List, Return, Safety, StringLit, StructInit, Switch, TypeArgument, TypeInfo,
-        UnaryExpr, UnaryExprOp, WhileLoop,
+        IntegerLit, List, Return, Safety, StringLit, StructInit, Switch, SwitchCase, TypeArgument,
+        TypeInfo, UnaryExpr, UnaryExprOp, WhileLoop,
     },
     item::{
         AssociatedItem, Enum, EnumVariant, FuncParam, FuncParams, Function, Generics, Impl, Import,
@@ -20,7 +20,6 @@ use crate::{
         InferType, Int8, Int16, Int32, Int64, Int128, LatentType, Lifetime, OpaqueType,
         ReferenceType, RefinementType, SliceType, TupleType, Type, TypeParentheses, TypePath,
         TypePathSegment, TypePathTarget, TypeSyntaxError, UInt8, UInt16, UInt32, UInt64, UInt128,
-        UnitType,
     },
 };
 
@@ -475,6 +474,7 @@ impl PrettyPrint for Closure {
                 if i > 0 {
                     writer.write_str(", ")?;
                 }
+
                 param.pretty_print_fmt(ctx, writer)?;
             }
             writer.write_str(")")?;
@@ -619,11 +619,10 @@ impl PrettyPrint for If {
         ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
-        // TODO: Verify code
-
         writer.write_str("if ")?;
+
         self.condition.pretty_print_fmt(ctx, writer)?;
-        writer.write_str(" ")?;
+        writer.write_char(' ')?;
 
         self.true_branch.pretty_print_fmt(ctx, writer)?;
 
@@ -651,12 +650,25 @@ impl PrettyPrint for WhileLoop {
         ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
-        // TODO: Verify code
-
         writer.write_str("while ")?;
-        self.condition.pretty_print_fmt(ctx, writer)?;
-        writer.write_str(" ")?;
 
+        if let Some(condition) = &self.condition {
+            condition.pretty_print_fmt(ctx, writer)?;
+            writer.write_char(' ')?;
+        }
+
+        self.body.pretty_print_fmt(ctx, writer)
+    }
+}
+
+impl PrettyPrint for SwitchCase {
+    fn pretty_print_fmt(
+        &self,
+        ctx: &mut PrintContext,
+        writer: &mut dyn std::fmt::Write,
+    ) -> std::fmt::Result {
+        self.condition.pretty_print_fmt(ctx, writer)?;
+        writer.write_str(" => ")?;
         self.body.pretty_print_fmt(ctx, writer)
     }
 }
@@ -664,12 +676,40 @@ impl PrettyPrint for WhileLoop {
 impl PrettyPrint for Switch {
     fn pretty_print_fmt(
         &self,
-        _ctx: &mut PrintContext,
-        _writer: &mut dyn std::fmt::Write,
+        ctx: &mut PrintContext,
+        writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
         // TODO: Verify code
 
-        unimplemented!()
+        writer.write_str("match ")?;
+
+        self.condition.pretty_print_fmt(ctx, writer)?;
+
+        writer.write_str(" {\n")?;
+
+        for case in &self.cases {
+            ctx.tab_depth += 1;
+
+            ctx.write_indent(writer)?;
+            case.pretty_print_fmt(ctx, writer)?;
+            writer.write_str(",\n")?;
+
+            ctx.tab_depth -= 1;
+        }
+
+        if let Some(default) = &self.default_case {
+            ctx.tab_depth += 1;
+
+            ctx.write_indent(writer)?;
+            writer.write_str("_ => ")?;
+            default.pretty_print_fmt(ctx, writer)?;
+            writer.write_str(",\n")?;
+
+            ctx.tab_depth -= 1;
+        }
+
+        writer.write_str("}")?;
+        Ok(())
     }
 }
 
@@ -679,8 +719,6 @@ impl PrettyPrint for Break {
         _ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
-        // TODO: Verify code
-
         writer.write_str("break")?;
 
         if let Some(label) = &self.label {
@@ -698,8 +736,6 @@ impl PrettyPrint for Continue {
         _ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
-        // TODO: Verify code
-
         writer.write_str("continue")?;
 
         if let Some(label) = &self.label {
@@ -717,8 +753,6 @@ impl PrettyPrint for Return {
         ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
-        // TODO: Verify code
-
         writer.write_str("return")?;
 
         if let Some(value) = &self.value {
@@ -736,8 +770,6 @@ impl PrettyPrint for ForEach {
         ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
-        // TODO: Verify code
-
         writer.write_str("for ")?;
 
         if let Some(attributes) = &self.attributes {
@@ -745,7 +777,27 @@ impl PrettyPrint for ForEach {
             writer.write_char(' ')?;
         }
 
-        unimplemented!()
+        if self.bindings.len() == 1 {
+            writer.write_str(&self.bindings[0])?;
+        } else {
+            writer.write_char('(')?;
+            for (i, binding) in self.bindings.iter().enumerate() {
+                if i > 0 {
+                    writer.write_str(", ")?;
+                }
+
+                writer.write_str(binding)?;
+            }
+            writer.write_char(')')?;
+        }
+
+        writer.write_str(" in ")?;
+        self.iterable.pretty_print_fmt(ctx, writer)?;
+        writer.write_char(' ')?;
+
+        self.body.pretty_print_fmt(ctx, writer)?;
+
+        Ok(())
     }
 }
 
@@ -755,8 +807,6 @@ impl PrettyPrint for Await {
         ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
-        // TODO: Verify code
-
         writer.write_str("await ")?;
         self.future.pretty_print_fmt(ctx, writer)
     }
@@ -768,8 +818,6 @@ impl PrettyPrint for CallArgument {
         ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
-        // TODO: Verify code
-
         if let Some(name) = &self.name {
             writer.write_str(name)?;
             writer.write_str(": ")?;
@@ -785,9 +833,8 @@ impl PrettyPrint for Call {
         ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
-        // TODO: Verify code
-
         self.callee.pretty_print_fmt(ctx, writer)?;
+
         writer.write_char('(')?;
         for (i, arg) in self.arguments.iter().enumerate() {
             if i > 0 {
@@ -844,8 +891,6 @@ impl PrettyPrint for TypeSyntaxError {
         _ctx: &mut PrintContext,
         _writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
-        // TODO: Verify code
-
         // Type syntax errors are unrepresentable
         Ok(())
     }
@@ -857,8 +902,6 @@ impl PrettyPrint for Bool {
         _ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
-        // TODO: Verify code
-
         writer.write_str("bool")
     }
 }
@@ -869,8 +912,6 @@ impl PrettyPrint for UInt8 {
         _ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
-        // TODO: Verify code
-
         writer.write_str("u8")
     }
 }
@@ -881,8 +922,6 @@ impl PrettyPrint for UInt16 {
         _ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
-        // TODO: Verify code
-
         writer.write_str("u16")
     }
 }
@@ -893,8 +932,6 @@ impl PrettyPrint for UInt32 {
         _ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
-        // TODO: Verify code
-
         writer.write_str("u32")
     }
 }
@@ -905,8 +942,6 @@ impl PrettyPrint for UInt64 {
         _ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
-        // TODO: Verify code
-
         writer.write_str("u64")
     }
 }
@@ -917,8 +952,6 @@ impl PrettyPrint for UInt128 {
         _ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
-        // TODO: Verify code
-
         writer.write_str("u128")
     }
 }
@@ -929,8 +962,6 @@ impl PrettyPrint for Int8 {
         _ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
-        // TODO: Verify code
-
         writer.write_str("i8")
     }
 }
@@ -941,8 +972,6 @@ impl PrettyPrint for Int16 {
         _ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
-        // TODO: Verify code
-
         writer.write_str("i16")
     }
 }
@@ -953,8 +982,6 @@ impl PrettyPrint for Int32 {
         _ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
-        // TODO: Verify code
-
         writer.write_str("i32")
     }
 }
@@ -965,8 +992,6 @@ impl PrettyPrint for Int64 {
         _ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
-        // TODO: Verify code
-
         writer.write_str("i64")
     }
 }
@@ -977,8 +1002,6 @@ impl PrettyPrint for Int128 {
         _ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
-        // TODO: Verify code
-
         writer.write_str("i128")
     }
 }
@@ -989,8 +1012,6 @@ impl PrettyPrint for Float8 {
         _ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
-        // TODO: Verify code
-
         writer.write_str("f8")
     }
 }
@@ -1001,8 +1022,6 @@ impl PrettyPrint for Float16 {
         _ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
-        // TODO: Verify code
-
         writer.write_str("f16")
     }
 }
@@ -1013,8 +1032,6 @@ impl PrettyPrint for Float32 {
         _ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
-        // TODO: Verify code
-
         writer.write_str("f32")
     }
 }
@@ -1025,8 +1042,6 @@ impl PrettyPrint for Float64 {
         _ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
-        // TODO: Verify code
-
         writer.write_str("f64")
     }
 }
@@ -1037,21 +1052,7 @@ impl PrettyPrint for Float128 {
         _ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
-        // TODO: Verify code
-
         writer.write_str("f128")
-    }
-}
-
-impl PrettyPrint for UnitType {
-    fn pretty_print_fmt(
-        &self,
-        _ctx: &mut PrintContext,
-        writer: &mut dyn std::fmt::Write,
-    ) -> std::fmt::Result {
-        // TODO: Verify code
-
-        writer.write_str("()")
     }
 }
 
@@ -1061,8 +1062,6 @@ impl PrettyPrint for InferType {
         _ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
-        // TODO: Verify code
-
         writer.write_str("_")
     }
 }
@@ -1073,9 +1072,7 @@ impl PrettyPrint for TypePathSegment {
         ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
-        // TODO: Verify code
-
-        write!(writer, "{}", self.name)?;
+        writer.write_str(&self.name)?;
 
         if let Some(type_args) = &self.type_arguments {
             writer.write_str("<")?;
@@ -1099,8 +1096,6 @@ impl PrettyPrint for TypePathTarget {
         _ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
-        // TODO: Verify code
-
         match self {
             TypePathTarget::TypeAlias(m) => {
                 let r = m.upgrade().expect("dropped");
@@ -1126,8 +1121,6 @@ impl PrettyPrint for TypePath {
         ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
-        // TODO: Verify code
-
         for (i, segment) in self.segments.iter().enumerate() {
             if i > 0 {
                 writer.write_str("::")?;
@@ -1156,8 +1149,6 @@ impl PrettyPrint for RefinementType {
         ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
-        // TODO: Verify code
-
         self.basis_type.pretty_print_fmt(ctx, writer)?;
 
         if let Some(width) = &self.width {
@@ -1191,13 +1182,18 @@ impl PrettyPrint for TupleType {
         ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
-        // TODO: Verify code
-
         writer.write_str("(")?;
 
-        for element in &self.element_types {
+        for (i, element) in self.element_types.iter().enumerate() {
+            if i > 0 {
+                writer.write_str(", ")?;
+            }
+
             element.pretty_print_fmt(ctx, writer)?;
-            writer.write_str(", ")?;
+        }
+
+        if self.ends_with_comma {
+            writer.write_str(",")?;
         }
 
         writer.write_char(')')
@@ -1386,7 +1382,6 @@ impl PrettyPrint for Type {
             Type::Float32(m) => m.pretty_print_fmt(ctx, writer),
             Type::Float64(m) => m.pretty_print_fmt(ctx, writer),
             Type::Float128(m) => m.pretty_print_fmt(ctx, writer),
-            Type::UnitType(m) => m.pretty_print_fmt(ctx, writer),
             Type::InferType(m) => m.pretty_print_fmt(ctx, writer),
             Type::TypePath(m) => m.pretty_print_fmt(ctx, writer),
             Type::RefinementType(m) => m.pretty_print_fmt(ctx, writer),

@@ -74,7 +74,6 @@ pub enum RefNodeMut<'a> {
     TypeFloat32,
     TypeFloat64,
     TypeFloat128,
-    TypeUnitType,
     TypeInferType,
     TypePath(&'a mut TypePath),
     TypeRefinementType(&'a mut RefinementType),

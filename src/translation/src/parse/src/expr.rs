@@ -809,23 +809,15 @@ impl Parser<'_, '_> {
     }
 
     fn parse_for(&mut self) -> ForEach {
-        fn parse_for_bindings(this: &mut Parser) -> Vec<(VariableNameId, Option<Type>)> {
+        fn parse_for_bindings(this: &mut Parser) -> Vec<VariableNameId> {
             if !this.lexer.skip_if(&Token::OpenParen) {
-                let variable_name = this.lexer.next_if_name().unwrap_or_else(|| {
+                let binding_name = this.lexer.next_if_name().unwrap_or_else(|| {
                     let bug = SyntaxErr::ForVariableBindingMissingName(this.lexer.peek_pos());
                     this.log.report(&bug);
                     "".into()
                 });
 
-                let variable_name = intern_variable_name(variable_name);
-
-                let type_annotation = if this.lexer.skip_if(&Token::Colon) {
-                    Some(this.parse_type())
-                } else {
-                    None
-                };
-
-                return vec![(variable_name, type_annotation)];
+                return vec![intern_variable_name(binding_name)];
             }
 
             let mut bindings = Vec::new();
@@ -849,21 +841,14 @@ impl Parser<'_, '_> {
                     this.log.report(&bug);
                 }
 
-                let variable_name = this.lexer.next_if_name().unwrap_or_else(|| {
+                let binding_name = this.lexer.next_if_name().unwrap_or_else(|| {
                     let bug = SyntaxErr::ForVariableBindingMissingName(this.lexer.peek_pos());
                     this.log.report(&bug);
                     "".into()
                 });
 
-                let variable_name = intern_variable_name(variable_name);
-
-                let type_annotation = if this.lexer.skip_if(&Token::Colon) {
-                    Some(this.parse_type())
-                } else {
-                    None
-                };
-
-                bindings.push((variable_name, type_annotation));
+                let binding_name = intern_variable_name(binding_name);
+                bindings.push(binding_name);
 
                 if !this.lexer.skip_if(&Token::Comma) && !this.lexer.next_is(&Token::CloseParen) {
                     let bug = SyntaxErr::ForVariableBindingExpectedEnd(this.lexer.peek_pos());
@@ -904,9 +889,9 @@ impl Parser<'_, '_> {
         self.lexer.skip_tok();
 
         let condition = if self.lexer.next_is(&Token::OpenBrace) {
-            Expr::Boolean(BooleanLit { value: true })
+            None
         } else {
-            self.parse_expression()
+            Some(self.parse_expression())
         };
 
         let body = self.parse_block();

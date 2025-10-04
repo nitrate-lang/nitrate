@@ -268,7 +268,10 @@ impl ParseTreeIterMut for WhileLoop {
     fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
         f(Order::Enter, RefNodeMut::ExprWhile(self));
 
-        self.condition.depth_first_iter_mut(f);
+        if let Some(condition) = &mut self.condition {
+            condition.depth_first_iter_mut(f);
+        }
+
         self.body.depth_first_iter_mut(f);
 
         f(Order::Leave, RefNodeMut::ExprWhile(self));
@@ -296,7 +299,7 @@ impl ParseTreeIterMut for Switch {
             case.depth_first_iter_mut(f);
         }
 
-        if let Some(default) = &mut self.default {
+        if let Some(default) = &mut self.default_case {
             default.depth_first_iter_mut(f);
         }
 
@@ -334,19 +337,13 @@ impl ParseTreeIterMut for ForEach {
     fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
         f(Order::Enter, RefNodeMut::ExprFor(self));
 
+        let _ = &self.bindings;
+
         if let Some(attributes) = &mut self.attributes {
             attributes.depth_first_iter_mut(f);
         }
 
         self.iterable.depth_first_iter_mut(f);
-
-        for (var, ty) in &mut self.bindings {
-            let _ = var;
-
-            if let Some(t) = ty {
-                t.depth_first_iter_mut(f);
-            }
-        }
 
         self.body.depth_first_iter_mut(f);
 

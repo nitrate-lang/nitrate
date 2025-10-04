@@ -79,7 +79,6 @@ pub enum RefNode<'a> {
     TypeFloat32,
     TypeFloat64,
     TypeFloat128,
-    TypeUnitType,
     TypeInferType,
     TypeTypeName(&'a TypePath),
     TypeRefinementType(&'a RefinementType),

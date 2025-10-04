@@ -292,7 +292,7 @@ pub struct If {
 #[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct WhileLoop {
-    pub condition: Expr,
+    pub condition: Option<Expr>,
     pub body: Block,
 }
 
@@ -308,7 +308,7 @@ pub struct SwitchCase {
 pub struct Switch {
     pub condition: Expr,
     pub cases: Vec<SwitchCase>,
-    pub default: Option<Block>,
+    pub default_case: Option<Block>,
 }
 
 #[skip_serializing_none]
@@ -333,8 +333,8 @@ pub struct Return {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ForEach {
     pub attributes: Option<AttributeList>,
+    pub bindings: Vec<VariableNameId>,
     pub iterable: Expr,
-    pub bindings: Vec<(VariableNameId, Option<Type>)>,
     pub body: Block,
 }
 

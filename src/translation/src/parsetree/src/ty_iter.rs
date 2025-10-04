@@ -6,7 +6,7 @@ use crate::{
         SliceType, TupleType, Type, TypeParentheses, TypePath, TypeSyntaxError, UInt8, UInt16,
         UInt32, UInt64, UInt128,
     },
-    ty::{InferType, UnitType},
+    ty::InferType,
 };
 
 impl ParseTreeIter for TypeSyntaxError {
@@ -125,13 +125,6 @@ impl ParseTreeIter for Float128 {
     fn depth_first_iter(&self, f: &mut dyn FnMut(Order, RefNode)) {
         f(Order::Enter, RefNode::TypeFloat128);
         f(Order::Leave, RefNode::TypeFloat128);
-    }
-}
-
-impl ParseTreeIter for UnitType {
-    fn depth_first_iter(&self, f: &mut dyn FnMut(Order, RefNode)) {
-        f(Order::Enter, RefNode::TypeUnitType);
-        f(Order::Leave, RefNode::TypeUnitType);
     }
 }
 
@@ -309,7 +302,6 @@ impl ParseTreeIter for Type {
             Type::Float32(ty) => ty.depth_first_iter(f),
             Type::Float64(ty) => ty.depth_first_iter(f),
             Type::Float128(ty) => ty.depth_first_iter(f),
-            Type::UnitType(ty) => ty.depth_first_iter(f),
             Type::InferType(ty) => ty.depth_first_iter(f),
             Type::TypePath(ty) => ty.depth_first_iter(f),
             Type::RefinementType(ty) => ty.depth_first_iter(f),
