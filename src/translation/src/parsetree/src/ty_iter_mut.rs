@@ -1,10 +1,10 @@
 use crate::{
     Order, ParseTreeIterMut, RefNodeMut,
     kind::{
-        ArrayType, Bool, Float8, Float16, Float32, Float64, Float128, FunctionType,
-        FunctionTypeParameter, Int8, Int16, Int32, Int64, Int128, LatentType, Lifetime, OpaqueType,
-        ReferenceType, RefinementType, SliceType, TupleType, Type, TypeParentheses, TypePath,
-        TypeSyntaxError, UInt8, UInt16, UInt32, UInt64, UInt128,
+        ArrayType, Bool, Float8, Float16, Float32, Float64, Float128, FunctionType, Int8, Int16,
+        Int32, Int64, Int128, LatentType, Lifetime, OpaqueType, ReferenceType, RefinementType,
+        SliceType, TupleType, Type, TypeParentheses, TypePath, TypeSyntaxError, UInt8, UInt16,
+        UInt32, UInt64, UInt128,
     },
     ty::{InferType, UnitType},
 };
@@ -217,26 +217,6 @@ impl ParseTreeIterMut for SliceType {
     }
 }
 
-impl ParseTreeIterMut for FunctionTypeParameter {
-    fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
-        f(Order::Enter, RefNodeMut::TypeFunctionTypeParameter(self));
-
-        let _ = self.name;
-
-        if let Some(attributes) = &mut self.attributes {
-            attributes.depth_first_iter_mut(f);
-        }
-
-        self.param_type.depth_first_iter_mut(f);
-
-        if let Some(default) = &mut self.default_value {
-            default.depth_first_iter_mut(f);
-        }
-
-        f(Order::Leave, RefNodeMut::TypeFunctionTypeParameter(self));
-    }
-}
-
 impl ParseTreeIterMut for FunctionType {
     fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
         f(Order::Enter, RefNodeMut::TypeFunctionType(self));
@@ -245,9 +225,7 @@ impl ParseTreeIterMut for FunctionType {
             attributes.depth_first_iter_mut(f);
         }
 
-        for param in &mut self.parameters {
-            param.depth_first_iter_mut(f);
-        }
+        self.parameters.depth_first_iter_mut(f);
 
         if let Some(ret_ty) = &mut self.return_type {
             ret_ty.depth_first_iter_mut(f);
@@ -269,7 +247,7 @@ impl ParseTreeIterMut for ReferenceType {
         f(Order::Enter, RefNodeMut::TypeReferenceType(self));
 
         let _ = self.mutability;
-        let _ = self.exclusive;
+        let _ = self.exclusivity;
 
         if let Some(lt) = &mut self.lifetime {
             lt.depth_first_iter_mut(f);

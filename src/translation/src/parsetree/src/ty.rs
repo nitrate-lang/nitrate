@@ -1,8 +1,8 @@
 use crate::{
     expr::{AttributeList, TypeArgument},
-    item::{Enum, Struct, TypeAlias},
+    item::{Enum, FuncParams, Mutability, Struct, TypeAlias},
     kind::{Block, Expr},
-    tag::{LifetimeNameId, OpaqueTypeNameId, ParameterNameId},
+    tag::{LifetimeNameId, OpaqueTypeNameId},
 };
 
 use serde::{Deserialize, Serialize};
@@ -147,18 +147,9 @@ pub struct SliceType {
 
 #[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct FunctionTypeParameter {
-    pub attributes: Option<AttributeList>,
-    pub name: Option<ParameterNameId>,
-    pub param_type: Type,
-    pub default_value: Option<Expr>,
-}
-
-#[skip_serializing_none]
-#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FunctionType {
     pub attributes: Option<AttributeList>,
-    pub parameters: Vec<FunctionTypeParameter>,
+    pub parameters: FuncParams,
     pub return_type: Option<Type>,
 }
 
@@ -167,7 +158,6 @@ pub struct FunctionType {
 pub enum Lifetime {
     SyntaxError,
 
-    Manual,
     Static,
     GarbageCollected,
     Thread,
@@ -177,10 +167,17 @@ pub enum Lifetime {
 
 #[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum Exclusivity {
+    Iso,
+    Poly,
+}
+
+#[skip_serializing_none]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ReferenceType {
     pub lifetime: Option<Lifetime>,
-    pub mutability: Option<bool>,
-    pub exclusive: Option<bool>,
+    pub mutability: Option<Mutability>,
+    pub exclusivity: Option<Exclusivity>,
     pub to: Type,
 }
 

@@ -16,10 +16,10 @@ use crate::{
         TypeParam, Variable, VariableKind, Visibility,
     },
     ty::{
-        ArrayType, Bool, Float8, Float16, Float32, Float64, Float128, FunctionType, InferType,
-        Int8, Int16, Int32, Int64, Int128, LatentType, Lifetime, OpaqueType, ReferenceType,
-        RefinementType, SliceType, TupleType, Type, TypeParentheses, TypePath, TypeSyntaxError,
-        UInt8, UInt16, UInt32, UInt64, UInt128, UnitType,
+        ArrayType, Bool, Exclusivity, Float8, Float16, Float32, Float64, Float128, FunctionType,
+        InferType, Int8, Int16, Int32, Int64, Int128, LatentType, Lifetime, OpaqueType,
+        ReferenceType, RefinementType, SliceType, TupleType, Type, TypeParentheses, TypePath,
+        TypePathSegment, TypeSyntaxError, UInt8, UInt16, UInt32, UInt64, UInt128, UnitType,
     },
 };
 
@@ -211,11 +211,22 @@ impl PrettyPrint for List {
 impl PrettyPrint for StructInit {
     fn pretty_print_fmt(
         &self,
-        _ctx: &PrintContext,
-        _writer: &mut dyn std::fmt::Write,
+        ctx: &PrintContext,
+        writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
-        // TODO: Object pretty print
-        Ok(())
+        self.type_name.pretty_print_fmt(ctx, writer)?;
+
+        writer.write_char('{')?;
+        for (i, (name, value)) in self.fields.iter().enumerate() {
+            if i > 0 {
+                writer.write_str(", ")?;
+            }
+
+            write!(writer, "{}: ", name)?;
+            value.pretty_print_fmt(ctx, writer)?;
+        }
+
+        writer.write_char('}')
     }
 }
 
@@ -532,10 +543,9 @@ impl PrettyPrint for Switch {
     fn pretty_print_fmt(
         &self,
         _ctx: &PrintContext,
-        writer: &mut dyn std::fmt::Write,
+        _writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
-        // TODO: Switch pretty print
-        Ok(())
+        unimplemented!()
     }
 }
 
@@ -593,11 +603,17 @@ impl PrettyPrint for Return {
 impl PrettyPrint for ForEach {
     fn pretty_print_fmt(
         &self,
-        _ctx: &PrintContext,
-        _writer: &mut dyn std::fmt::Write,
+        ctx: &PrintContext,
+        writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
-        // TODO: For pretty print
-        Ok(())
+        writer.write_str("for ")?;
+
+        if let Some(attributes) = &self.attributes {
+            attributes.pretty_print_fmt(ctx, writer)?;
+            writer.write_char(' ')?;
+        }
+
+        unimplemented!()
     }
 }
 
@@ -688,7 +704,7 @@ impl PrettyPrint for TypeSyntaxError {
     fn pretty_print_fmt(
         &self,
         _ctx: &PrintContext,
-        writer: &mut dyn std::fmt::Write,
+        _writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
         // Type syntax errors are unrepresentable
         Ok(())
@@ -875,13 +891,44 @@ impl PrettyPrint for InferType {
     }
 }
 
+impl PrettyPrint for TypePathSegment {
+    fn pretty_print_fmt(
+        &self,
+        ctx: &PrintContext,
+        writer: &mut dyn std::fmt::Write,
+    ) -> std::fmt::Result {
+        write!(writer, "{}", self.name)?;
+
+        if let Some(type_args) = &self.type_arguments {
+            writer.write_str("<")?;
+            for (i, arg) in type_args.iter().enumerate() {
+                if i > 0 {
+                    writer.write_str(", ")?;
+                }
+
+                arg.pretty_print_fmt(ctx, writer)?;
+            }
+            writer.write_char('>')?;
+        }
+
+        Ok(())
+    }
+}
+
 impl PrettyPrint for TypePath {
     fn pretty_print_fmt(
         &self,
-        _ctx: &PrintContext,
+        ctx: &PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
-        // TODO: TypePath pretty print
+        for (i, segment) in self.segments.iter().enumerate() {
+            if i > 0 {
+                writer.write_str("::")?;
+            }
+
+            segment.pretty_print_fmt(ctx, writer)?;
+        }
+
         Ok(())
     }
 }
@@ -965,22 +1012,63 @@ impl PrettyPrint for SliceType {
 impl PrettyPrint for FunctionType {
     fn pretty_print_fmt(
         &self,
+        ctx: &PrintContext,
+        writer: &mut dyn std::fmt::Write,
+    ) -> std::fmt::Result {
+        write!(writer, "fn ")?;
+
+        if let Some(attributes) = &self.attributes {
+            attributes.pretty_print_fmt(ctx, writer)?;
+        }
+
+        self.parameters.pretty_print_fmt(ctx, writer)?;
+
+        if let Some(return_type) = &self.return_type {
+            writer.write_str(" -> ")?;
+            return_type.pretty_print_fmt(ctx, writer)?;
+        }
+
+        Ok(())
+    }
+}
+
+impl PrettyPrint for Exclusivity {
+    fn pretty_print_fmt(
+        &self,
         _ctx: &PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
-        // TODO: FunctionType pretty print
-        Ok(())
+        match self {
+            Exclusivity::Iso => writer.write_str("iso"),
+            Exclusivity::Poly => writer.write_str("poly"),
+        }
     }
 }
 
 impl PrettyPrint for ReferenceType {
     fn pretty_print_fmt(
         &self,
-        _ctx: &PrintContext,
+        ctx: &PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
-        // TODO: ReferenceType pretty print
-        Ok(())
+        writer.write_str("&")?;
+
+        if let Some(lifetime) = &self.lifetime {
+            lifetime.pretty_print_fmt(ctx, writer)?;
+            writer.write_char(' ')?;
+        }
+
+        if let Some(mutability) = &self.mutability {
+            mutability.pretty_print_fmt(ctx, writer)?;
+            writer.write_char(' ')?;
+        }
+
+        if let Some(exclusivity) = &self.exclusivity {
+            exclusivity.pretty_print_fmt(ctx, writer)?;
+            writer.write_char(' ')?;
+        }
+
+        self.to.pretty_print_fmt(ctx, writer)
     }
 }
 
@@ -1010,8 +1098,14 @@ impl PrettyPrint for Lifetime {
         _ctx: &PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
-        // TODO: Lifetime pretty print
-        Ok(())
+        match self {
+            Lifetime::SyntaxError => Ok(()),
+            Lifetime::Static => writer.write_str("'static"),
+            Lifetime::GarbageCollected => writer.write_str("'gc"),
+            Lifetime::Thread => writer.write_str("'thread"),
+            Lifetime::Task => writer.write_str("'task"),
+            Lifetime::Other { name } => write!(writer, "'{}", name),
+        }
     }
 }
 
@@ -1099,8 +1193,26 @@ impl PrettyPrint for Module {
         _ctx: &PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
-        // TODO: Module pretty print
-        Ok(())
+        if let Some(visibility) = &self.visibility {
+            visibility.pretty_print_fmt(_ctx, writer)?;
+            writer.write_char(' ')?;
+        }
+
+        writer.write_str("mod ")?;
+
+        if let Some(attributes) = &self.attributes {
+            attributes.pretty_print_fmt(_ctx, writer)?;
+            writer.write_char(' ')?;
+        }
+
+        writer.write_str(&self.name)?;
+
+        writer.write_str(" {")?;
+        for item in &self.items {
+            item.pretty_print_fmt(_ctx, writer)?;
+            writer.write_str("\n")?;
+        }
+        writer.write_str("}")
     }
 }
 
@@ -1110,7 +1222,20 @@ impl PrettyPrint for Import {
         _ctx: &PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
-        // TODO: Import pretty print
+        if let Some(visibility) = &self.visibility {
+            visibility.pretty_print_fmt(_ctx, writer)?;
+            writer.write_char(' ')?;
+        }
+
+        writer.write_str("use ")?;
+
+        if let Some(attributes) = &self.attributes {
+            attributes.pretty_print_fmt(_ctx, writer)?;
+            writer.write_char(' ')?;
+        }
+
+        writer.write_str(&self.import_name)?;
+
         Ok(())
     }
 }
@@ -1400,7 +1525,7 @@ impl PrettyPrint for Mutability {
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
         match self {
-            Mutability::Mutable => writer.write_str("mut"),
+            Mutability::Mut => writer.write_str("mut"),
             Mutability::Const => writer.write_str("const"),
         }
     }

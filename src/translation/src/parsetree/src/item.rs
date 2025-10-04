@@ -153,7 +153,7 @@ pub struct Impl {
 #[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum Mutability {
-    Mutable,
+    Mut,
     Const,
 }
 

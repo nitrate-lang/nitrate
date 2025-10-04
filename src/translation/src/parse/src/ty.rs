@@ -3,12 +3,13 @@ use crate::diagnosis::SyntaxErr;
 
 use nitrate_parsetree::{
     kind::{
-        ArrayType, Bool, Expr, Float8, Float16, Float32, Float64, Float128, FunctionType,
-        FunctionTypeParameter, Int8, Int16, Int32, Int64, Int128, LatentType, Lifetime, OpaqueType,
-        ReferenceType, RefinementType, SliceType, TupleType, Type, TypeParentheses, TypePath,
-        TypePathSegment, TypePathTarget, TypeSyntaxError, UInt8, UInt16, UInt32, UInt64, UInt128,
+        ArrayType, Bool, Exclusivity, Expr, Float8, Float16, Float32, Float64, Float128,
+        FunctionType, Int8, Int16, Int32, Int64, Int128, LatentType, Lifetime, Mutability,
+        OpaqueType, ReferenceType, RefinementType, SliceType, TupleType, Type, TypeParentheses,
+        TypePath, TypePathSegment, TypePathTarget, TypeSyntaxError, UInt8, UInt16, UInt32, UInt64,
+        UInt128,
     },
-    tag::{intern_lifetime_name, intern_opaque_type_name, intern_parameter_name},
+    tag::{intern_lifetime_name, intern_opaque_type_name},
 };
 use nitrate_tokenize::Token;
 
@@ -149,126 +150,25 @@ impl Parser<'_, '_> {
         };
 
         if self.lexer.skip_if(&Token::Poly) {
-            exclusive = Some(false);
+            exclusive = Some(Exclusivity::Poly);
         } else if self.lexer.skip_if(&Token::Iso) {
-            exclusive = Some(true);
+            exclusive = Some(Exclusivity::Iso);
         }
 
         if self.lexer.skip_if(&Token::Mut) {
-            mutability = Some(true);
+            mutability = Some(Mutability::Mut);
         } else if self.lexer.skip_if(&Token::Const) {
-            mutability = Some(false);
+            mutability = Some(Mutability::Const);
         }
 
         let to = self.parse_type();
 
         ReferenceType {
             lifetime,
-            exclusive,
+            exclusivity: exclusive,
             mutability,
             to,
         }
-    }
-
-    fn parse_pointer_type(&mut self) -> ReferenceType {
-        assert!(self.lexer.peek_t() == Token::Star);
-        self.lexer.skip_tok();
-
-        let mut exclusive = None;
-        let mut mutability = None;
-
-        if self.lexer.skip_if(&Token::Poly) {
-            exclusive = Some(false);
-        } else if self.lexer.skip_if(&Token::Iso) {
-            exclusive = Some(true);
-        }
-
-        if self.lexer.skip_if(&Token::Mut) {
-            mutability = Some(true);
-        } else if self.lexer.skip_if(&Token::Const) {
-            mutability = Some(false);
-        }
-
-        let to = self.parse_type();
-
-        ReferenceType {
-            lifetime: Some(Lifetime::Manual),
-            exclusive,
-            mutability,
-            to,
-        }
-    }
-
-    fn parse_function_type_parameters(&mut self) -> Vec<FunctionTypeParameter> {
-        fn parse_function_type_parameter(this: &mut Parser) -> FunctionTypeParameter {
-            let attributes = this.parse_attributes();
-
-            let mut name = None;
-
-            let rewind_pos = this.lexer.current_pos();
-            if let Some(param_name) = this.lexer.next_if_name() {
-                if this.lexer.skip_if(&Token::Colon) {
-                    name = Some(intern_parameter_name(param_name));
-                } else {
-                    this.lexer.rewind(rewind_pos);
-                }
-            }
-
-            let param_type = this.parse_type();
-
-            let default = if this.lexer.skip_if(&Token::Eq) {
-                Some(this.parse_expression())
-            } else {
-                None
-            };
-
-            FunctionTypeParameter {
-                name,
-                param_type,
-                default_value: default,
-                attributes,
-            }
-        }
-
-        if !self.lexer.skip_if(&Token::OpenParen) {
-            let bug = SyntaxErr::ExpectedOpenParen(self.lexer.peek_pos());
-            self.log.report(&bug);
-        }
-
-        self.lexer.skip_if(&Token::Comma);
-
-        let mut params = Vec::new();
-        let mut already_reported_too_many_parameters = false;
-
-        while !self.lexer.skip_if(&Token::CloseParen) {
-            if self.lexer.is_eof() {
-                let bug = SyntaxErr::FunctionParametersExpectedEnd(self.lexer.peek_pos());
-                self.log.report(&bug);
-                break;
-            }
-
-            const MAX_FUNCTION_PARAMETERS: usize = 65_536;
-
-            if !already_reported_too_many_parameters && params.len() >= MAX_FUNCTION_PARAMETERS {
-                already_reported_too_many_parameters = true;
-
-                let bug = SyntaxErr::FunctionParameterLimit(self.lexer.peek_pos());
-                self.log.report(&bug);
-            }
-
-            let param = parse_function_type_parameter(self);
-            params.push(param);
-
-            if !self.lexer.skip_if(&Token::Comma) && !self.lexer.next_is(&Token::CloseParen) {
-                let bug = SyntaxErr::FunctionParametersExpectedEnd(self.lexer.peek_pos());
-                self.log.report(&bug);
-
-                self.lexer.skip_while(&Token::CloseParen);
-                break;
-            }
-        }
-
-        params
     }
 
     fn parse_function_type(&mut self) -> FunctionType {
@@ -276,7 +176,7 @@ impl Parser<'_, '_> {
         self.lexer.skip_tok();
 
         let attributes = self.parse_attributes();
-        let parameters = self.parse_function_type_parameters();
+        let parameters = self.parse_function_parameters();
 
         let return_type = if self.lexer.skip_if(&Token::Minus) {
             if !self.lexer.skip_if(&Token::Gt) {
@@ -465,7 +365,6 @@ impl Parser<'_, '_> {
 
             Token::OpenBracket => self.parse_array_or_slice(),
             Token::And => Type::ReferenceType(Box::new(self.parse_reference_type())),
-            Token::Star => Type::ReferenceType(Box::new(self.parse_pointer_type())),
             Token::Fn => Type::FunctionType(Box::new(self.parse_function_type())),
             Token::Opaque => self.parse_opaque_type(),
 

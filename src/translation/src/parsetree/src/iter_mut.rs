@@ -8,14 +8,14 @@ use crate::{
         TypeArgument, TypeInfo, UnaryExpr, WhileLoop,
     },
     item::{
-        Enum, EnumVariant, FuncParam, Function, Impl, Import, ItemPath, Module, Struct,
-        StructField, Trait, TypeAlias, Generics, Variable,
+        Enum, EnumVariant, FuncParam, Function, Generics, Impl, Import, ItemPath, Module, Struct,
+        StructField, Trait, TypeAlias, Variable,
     },
     iter::Order,
     tag::OpaqueTypeNameId,
     ty::{
-        ArrayType, FunctionType, FunctionTypeParameter, Lifetime, ReferenceType, RefinementType,
-        SliceType, TupleType, Type, TypePath,
+        ArrayType, FunctionType, Lifetime, ReferenceType, RefinementType, SliceType, TupleType,
+        Type, TypePath,
     },
 };
 
@@ -81,7 +81,6 @@ pub enum RefNodeMut<'a> {
     TypeTupleType(&'a mut TupleType),
     TypeArrayType(&'a mut ArrayType),
     TypeSliceType(&'a mut SliceType),
-    TypeFunctionTypeParameter(&'a mut FunctionTypeParameter),
     TypeFunctionType(&'a mut FunctionType),
     TypeReferenceType(&'a mut ReferenceType),
     TypeOpaqueType(&'a mut OpaqueTypeNameId),

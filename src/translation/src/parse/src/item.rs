@@ -563,13 +563,13 @@ impl Parser<'_, '_> {
         }
     }
 
-    fn parse_function_parameters(&mut self) -> FuncParams {
+    pub(crate) fn parse_function_parameters(&mut self) -> FuncParams {
         fn parse_function_parameter(this: &mut Parser) -> FuncParam {
             let attributes = this.parse_attributes();
 
             let mut mutability = None;
             if this.lexer.skip_if(&Token::Mut) {
-                mutability = Some(Mutability::Mutable);
+                mutability = Some(Mutability::Mut);
             } else if this.lexer.skip_if(&Token::Const) {
                 mutability = Some(Mutability::Const);
             }
@@ -714,7 +714,7 @@ impl Parser<'_, '_> {
 
         let mut mutability = None;
         if self.lexer.skip_if(&Token::Mut) {
-            mutability = Some(Mutability::Mutable);
+            mutability = Some(Mutability::Mut);
         } else if self.lexer.skip_if(&Token::Const) {
             mutability = Some(Mutability::Const);
         }

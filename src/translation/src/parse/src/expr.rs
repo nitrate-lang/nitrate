@@ -8,10 +8,10 @@ use nitrate_parsetree::{
         AttributeList, Await, BStringLit, BinExpr, BinExprOp, Block, BlockItem, Bool, BooleanLit,
         Break, Call, CallArgument, Cast, Closure, Continue, Expr, ExprParentheses, ExprPath,
         ExprPathSegment, ExprPathTarget, ExprSyntaxError, Float8, Float16, Float32, Float64,
-        Float128, FloatLit, ForEach, FuncParam, If, IndexAccess, Int8, Int16, Int32, Int64,
-        Int128, IntegerLit, List, Mutability, Return, Safety, StringLit, Type, TypeArgument,
-        TypeInfo, TypePath, TypePathSegment, TypePathTarget, UInt8, UInt16, UInt32, UInt64,
-        UInt128, UnaryExpr, UnaryExprOp, WhileLoop,
+        Float128, FloatLit, ForEach, FuncParam, If, IndexAccess, Int8, Int16, Int32, Int64, Int128,
+        IntegerLit, List, Mutability, Return, Safety, StringLit, Type, TypeArgument, TypeInfo,
+        TypePath, TypePathSegment, TypePathTarget, UInt8, UInt16, UInt32, UInt64, UInt128,
+        UnaryExpr, UnaryExprOp, WhileLoop,
     },
     tag::{
         VariableNameId, intern_arg_name, intern_label_name, intern_parameter_name,
@@ -985,7 +985,7 @@ impl Parser<'_, '_> {
 
             let mut mutability = None;
             if this.lexer.skip_if(&Token::Mut) {
-                mutability = Some(Mutability::Mutable);
+                mutability = Some(Mutability::Mut);
             } else if this.lexer.skip_if(&Token::Const) {
                 mutability = Some(Mutability::Const);
             }

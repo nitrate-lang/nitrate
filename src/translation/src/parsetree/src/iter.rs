@@ -8,13 +8,13 @@ use crate::{
         TypeArgument, TypeInfo, UnaryExpr, WhileLoop,
     },
     item::{
-        Enum, EnumVariant, FuncParam, Function, Impl, Import, ItemPath, Module, Struct,
-        StructField, Trait, TypeAlias, Generics, Variable,
+        Enum, EnumVariant, FuncParam, Function, Generics, Impl, Import, ItemPath, Module, Struct,
+        StructField, Trait, TypeAlias, Variable,
     },
     tag::OpaqueTypeNameId,
     ty::{
-        ArrayType, FunctionType, FunctionTypeParameter, Lifetime, ReferenceType, RefinementType,
-        SliceType, TupleType, Type, TypePath,
+        ArrayType, FunctionType, Lifetime, ReferenceType, RefinementType, SliceType, TupleType,
+        Type, TypePath,
     },
 };
 
@@ -86,7 +86,6 @@ pub enum RefNode<'a> {
     TypeTupleType(&'a TupleType),
     TypeArrayType(&'a ArrayType),
     TypeSliceType(&'a SliceType),
-    TypeFunctionTypeParameter(&'a FunctionTypeParameter),
     TypeFunctionType(&'a FunctionType),
     TypeReferenceType(&'a ReferenceType),
     TypeOpaqueType(&'a OpaqueTypeNameId),
