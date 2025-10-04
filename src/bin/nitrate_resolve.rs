@@ -2,14 +2,17 @@ use nitrate_diagnosis::{CompilerLog, intern_file_id};
 use nitrate_translation::{
     TranslationError,
     parse::Parser,
-    parsetree::{kind::Module, tag::intern_module_name},
+    parsetree::{PrettyPrint, PrintContext, kind::Module, tag::intern_module_name},
     resolve::{ImportContext, resolve_imports, resolve_names},
     tokenize::Lexer,
 };
 
 use slog::{Drain, Record, o};
 use slog_term::{RecordDecorator, ThreadSafeTimestampFn};
-use std::{fs::OpenOptions, io::Read};
+use std::{
+    fs::OpenOptions,
+    io::{Read, Write},
+};
 
 #[derive(Debug)]
 enum Error {
@@ -105,11 +108,17 @@ fn program() -> Result<(), Error> {
     resolve_imports(&import_context, &mut module, &log);
     resolve_names(&mut module, &log);
 
-    // let pretty_printed = module.pretty_print(&PrintContext::default());
+    let pretty_printed = module
+        .pretty_print(&PrintContext::default())
+        .expect("Pretty print failed");
 
-    if let Err(_) = serde_json::to_writer_pretty(&mut parse_tree_output, &module) {
-        return Err(Error::ParseFailed(TranslationError::SyntaxError));
-    }
+    parse_tree_output
+        .write_all(pretty_printed.as_bytes())
+        .unwrap();
+
+    // if let Err(_) = serde_json::to_writer_pretty(&mut parse_tree_output, &module) {
+    //     return Err(Error::ParseFailed(TranslationError::SyntaxError));
+    // }
 
     Ok(())
 }
