@@ -8,8 +8,8 @@ use crate::{
         TypeInfo, UnaryExpr, WhileLoop,
     },
     item::{
-        Enum, EnumVariant, Function, FunctionParameter, GenericParameter, Impl, Import, ItemPath,
-        Module, Struct, StructField, Trait, TypeAlias, Variable,
+        Enum, EnumVariant, Function, FunctionParameter, Impl, Import, ItemPath, Module, Struct,
+        StructField, Trait, TypeAlias, TypeParams, Variable,
     },
     tag::OpaqueTypeNameId,
     ty::{
@@ -99,7 +99,7 @@ pub enum RefNode<'a> {
     ItemModule(&'a Module),
     ItemItemPath(&'a ItemPath),
     ItemImport(&'a Import),
-    ItemGenericParameter(&'a GenericParameter),
+    ItemTypeParams(&'a TypeParams),
     ItemTypeAlias(&'a Arc<RwLock<TypeAlias>>),
     ItemStructField(&'a StructField),
     ItemStruct(&'a Arc<RwLock<Struct>>),

@@ -4,8 +4,8 @@ use crate::{
     Order, ParseTreeIter, RefNode,
     item::ItemSyntaxError,
     kind::{
-        AssociatedItem, Enum, EnumVariant, Function, FunctionParameter, GenericParameter, Impl,
-        Import, Item, Module, Struct, StructField, Trait, TypeAlias, Variable,
+        AssociatedItem, Enum, EnumVariant, Function, FunctionParameter, Impl, Import, Item, Module,
+        Struct, StructField, Trait, TypeAlias, TypeParams, Variable,
     },
 };
 
@@ -47,25 +47,27 @@ impl ParseTreeIter for Import {
             attributes.depth_first_iter(f);
         }
 
-        if let Some(module) = &self.module {
-            module.depth_first_iter(f);
+        if let Some(resolved) = &self.resolved {
+            resolved.depth_first_iter(f);
         }
 
         f(Order::Leave, RefNode::ItemImport(self));
     }
 }
 
-impl ParseTreeIter for GenericParameter {
+impl ParseTreeIter for TypeParams {
     fn depth_first_iter(&self, f: &mut dyn FnMut(Order, RefNode)) {
-        f(Order::Enter, RefNode::ItemGenericParameter(self));
+        f(Order::Enter, RefNode::ItemTypeParams(self));
 
-        let _ = self.name;
+        for param in &self.params {
+            let _ = param.name;
 
-        if let Some(default_val) = &self.default {
-            default_val.depth_first_iter(f);
+            if let Some(default_val) = &param.default_value {
+                default_val.depth_first_iter(f);
+            }
         }
 
-        f(Order::Leave, RefNode::ItemGenericParameter(self));
+        f(Order::Leave, RefNode::ItemTypeParams(self));
     }
 }
 
@@ -82,9 +84,7 @@ impl ParseTreeIter for Arc<RwLock<TypeAlias>> {
         }
 
         if let Some(params) = &this.type_params {
-            for param in params {
-                param.depth_first_iter(f);
-            }
+            params.depth_first_iter(f);
         }
 
         if let Some(alias_type) = &this.alias_type {
@@ -109,7 +109,7 @@ impl ParseTreeIter for StructField {
 
         self.field_type.depth_first_iter(f);
 
-        if let Some(default) = &self.default {
+        if let Some(default) = &self.default_value {
             default.depth_first_iter(f);
         }
 
@@ -130,9 +130,7 @@ impl ParseTreeIter for Arc<RwLock<Struct>> {
         }
 
         if let Some(params) = &this.type_params {
-            for param in params {
-                param.depth_first_iter(f);
-            }
+            params.depth_first_iter(f);
         }
 
         for field in &this.fields {
@@ -184,9 +182,7 @@ impl ParseTreeIter for Arc<RwLock<Enum>> {
         }
 
         if let Some(params) = &this.type_params {
-            for param in params {
-                param.depth_first_iter(f);
-            }
+            params.depth_first_iter(f);
         }
 
         for variant in &this.variants {
@@ -222,9 +218,7 @@ impl ParseTreeIter for Arc<RwLock<Trait>> {
         }
 
         if let Some(params) = &this.type_params {
-            for param in params {
-                param.depth_first_iter(f);
-            }
+            params.depth_first_iter(f);
         }
 
         for associated_item in &this.items {
@@ -245,9 +239,7 @@ impl ParseTreeIter for Impl {
         }
 
         if let Some(params) = &self.type_params {
-            for param in params {
-                param.depth_first_iter(f);
-            }
+            params.depth_first_iter(f);
         }
 
         if let Some(trait_path) = &self.trait_path {
@@ -279,7 +271,7 @@ impl ParseTreeIter for FunctionParameter {
             param_type.depth_first_iter(f);
         }
 
-        if let Some(default) = &self.default {
+        if let Some(default) = &self.default_value {
             default.depth_first_iter(f);
         }
 
@@ -300,9 +292,7 @@ impl ParseTreeIter for Arc<RwLock<Function>> {
         }
 
         if let Some(params) = &this.type_params {
-            for param in params {
-                param.depth_first_iter(f);
-            }
+            params.depth_first_iter(f);
         }
 
         for param in &this.parameters {

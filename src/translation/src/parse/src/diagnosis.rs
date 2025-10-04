@@ -72,8 +72,6 @@ pub(crate) enum SyntaxErr {
     FunctionCallExpectedEnd(SourcePosition),
     FunctionCallArgumentLimit(SourcePosition),
 
-    DoWhileExpectedWhileKeyword(SourcePosition),
-
     ForVariableBindingMissingName(SourcePosition),
     ForVariableBindingExpectedEnd(SourcePosition),
     ForVariableBindingLimit(SourcePosition),
@@ -175,8 +173,6 @@ impl FormattableDiagnosticGroup for SyntaxErr {
 
             SyntaxErr::FunctionCallExpectedEnd(_) => 400,
             SyntaxErr::FunctionCallArgumentLimit(_) => 401,
-
-            SyntaxErr::DoWhileExpectedWhileKeyword(_) => 420,
 
             SyntaxErr::ForVariableBindingMissingName(_) => 440,
             SyntaxErr::ForVariableBindingExpectedEnd(_) => 441,
@@ -482,13 +478,6 @@ impl FormattableDiagnosticGroup for SyntaxErr {
             SyntaxErr::FunctionCallArgumentLimit(pos) => DiagnosticInfo {
                 origin: Origin::Point(pos.to_owned().into()),
                 message: "function call argument limit of 65,536 exceeded".into(),
-            },
-
-            /* ------------------------------------------------------------------------- */
-
-            SyntaxErr::DoWhileExpectedWhileKeyword(pos) => DiagnosticInfo {
-                origin: Origin::Point(pos.to_owned().into()),
-                message: "expected 'while' after 'do' block".into(),
             },
 
             /* ------------------------------------------------------------------------- */

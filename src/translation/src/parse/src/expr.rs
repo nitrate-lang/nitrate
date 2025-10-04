@@ -1015,7 +1015,7 @@ impl Parser<'_, '_> {
                 mutability,
                 name,
                 param_type,
-                default,
+                default_value: default,
             }
         }
 

@@ -231,7 +231,7 @@ fn resolve_import(
             resolve_imports_guarded(&what, &mut module, log, visited, depth);
             module.visibility = import.visibility;
 
-            import.module = Some(module);
+            import.resolved = Some(Item::Module(Box::new(module)));
         }
     }
 

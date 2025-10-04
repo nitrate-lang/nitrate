@@ -229,7 +229,7 @@ impl ParseTreeIterMut for FunctionTypeParameter {
 
         self.param_type.depth_first_iter_mut(f);
 
-        if let Some(default) = &mut self.default {
+        if let Some(default) = &mut self.default_value {
             default.depth_first_iter_mut(f);
         }
 

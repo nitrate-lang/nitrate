@@ -129,6 +129,7 @@ pub struct RefinementType {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TupleType {
     pub element_types: Vec<Type>,
+    pub ends_with_comma: bool,
 }
 
 #[skip_serializing_none]
@@ -150,7 +151,7 @@ pub struct FunctionTypeParameter {
     pub attributes: Option<AttributeList>,
     pub name: Option<ParameterNameId>,
     pub param_type: Type,
-    pub default: Option<Expr>,
+    pub default_value: Option<Expr>,
 }
 
 #[skip_serializing_none]

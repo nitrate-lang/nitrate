@@ -54,14 +54,20 @@ pub struct Import {
     pub items: Option<Vec<ItemPath>>,
 
     // Not set until import resolution
-    pub module: Option<Module>,
+    pub resolved: Option<Item>,
 }
 
 #[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct GenericParameter {
+pub struct TypeParam {
     pub name: ParameterNameId,
-    pub default: Option<Type>,
+    pub default_value: Option<Type>,
+}
+
+#[skip_serializing_none]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TypeParams {
+    pub params: Vec<TypeParam>,
 }
 
 #[skip_serializing_none]
@@ -70,7 +76,7 @@ pub struct TypeAlias {
     pub visibility: Option<Visibility>,
     pub attributes: Option<AttributeList>,
     pub name: TypeNameId,
-    pub type_params: Option<Vec<GenericParameter>>,
+    pub type_params: Option<TypeParams>,
     pub alias_type: Option<Type>,
 }
 
@@ -81,7 +87,7 @@ pub struct StructField {
     pub attributes: Option<AttributeList>,
     pub name: StructFieldNameId,
     pub field_type: Type,
-    pub default: Option<Expr>,
+    pub default_value: Option<Expr>,
 }
 
 #[skip_serializing_none]
@@ -90,7 +96,7 @@ pub struct Struct {
     pub visibility: Option<Visibility>,
     pub attributes: Option<AttributeList>,
     pub name: TypeNameId,
-    pub type_params: Option<Vec<GenericParameter>>,
+    pub type_params: Option<TypeParams>,
     pub fields: Vec<StructField>,
     pub methods: Vec<Arc<RwLock<Function>>>,
 }
@@ -111,7 +117,7 @@ pub struct Enum {
     pub visibility: Option<Visibility>,
     pub attributes: Option<AttributeList>,
     pub name: TypeNameId,
-    pub type_params: Option<Vec<GenericParameter>>,
+    pub type_params: Option<TypeParams>,
     pub variants: Vec<EnumVariant>,
 }
 
@@ -130,7 +136,7 @@ pub struct Trait {
     pub visibility: Option<Visibility>,
     pub attributes: Option<AttributeList>,
     pub name: TraitNameId,
-    pub type_params: Option<Vec<GenericParameter>>,
+    pub type_params: Option<TypeParams>,
     pub items: Vec<AssociatedItem>,
 }
 
@@ -138,7 +144,7 @@ pub struct Trait {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Impl {
     pub attributes: Option<AttributeList>,
-    pub type_params: Option<Vec<GenericParameter>>,
+    pub type_params: Option<TypeParams>,
     pub trait_path: Option<TypePath>,
     pub for_type: Type,
     pub items: Vec<AssociatedItem>,
@@ -158,7 +164,7 @@ pub struct FunctionParameter {
     pub mutability: Option<Mutability>,
     pub name: ParameterNameId,
     pub param_type: Option<Type>,
-    pub default: Option<Expr>,
+    pub default_value: Option<Expr>,
 }
 
 #[skip_serializing_none]
@@ -167,7 +173,7 @@ pub struct Function {
     pub visibility: Option<Visibility>,
     pub attributes: Option<AttributeList>,
     pub name: FunctionNameId,
-    pub type_params: Option<Vec<GenericParameter>>,
+    pub type_params: Option<TypeParams>,
     pub parameters: Vec<FunctionParameter>,
     pub return_type: Option<Type>,
     pub definition: Option<Block>,

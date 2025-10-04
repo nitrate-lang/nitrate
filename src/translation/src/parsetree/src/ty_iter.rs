@@ -229,7 +229,7 @@ impl ParseTreeIter for FunctionTypeParameter {
 
         self.param_type.depth_first_iter(f);
 
-        if let Some(default) = &self.default {
+        if let Some(default) = &self.default_value {
             default.depth_first_iter(f);
         }
 

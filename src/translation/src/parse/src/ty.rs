@@ -225,7 +225,7 @@ impl Parser<'_, '_> {
             FunctionTypeParameter {
                 name,
                 param_type,
-                default,
+                default_value: default,
                 attributes,
             }
         }
@@ -489,8 +489,11 @@ impl Parser<'_, '_> {
     fn parse_rest_of_tuple(&mut self, first_element: Type) -> TupleType {
         let mut element_types = Vec::from([first_element]);
         let mut already_reported_too_many_elements = false;
+        let mut ends_with_comma = false;
 
         while !self.lexer.skip_if(&Token::CloseParen) {
+            ends_with_comma = false;
+
             if self.lexer.is_eof() {
                 let bug = SyntaxErr::TupleTypeExpectedEnd(self.lexer.peek_pos());
                 self.log.report(&bug);
@@ -509,7 +512,9 @@ impl Parser<'_, '_> {
             let element = self.parse_type();
             element_types.push(element);
 
-            if !self.lexer.skip_if(&Token::Comma) && !self.lexer.next_is(&Token::CloseParen) {
+            if self.lexer.skip_if(&Token::Comma) {
+                ends_with_comma = true;
+            } else if !self.lexer.next_is(&Token::CloseParen) {
                 let bug = SyntaxErr::TupleTypeExpectedEnd(self.lexer.peek_pos());
                 self.log.report(&bug);
 
@@ -518,7 +523,10 @@ impl Parser<'_, '_> {
             }
         }
 
-        TupleType { element_types }
+        TupleType {
+            element_types,
+            ends_with_comma,
+        }
     }
 
     pub fn parse_type(&mut self) -> Type {
@@ -526,6 +534,7 @@ impl Parser<'_, '_> {
             if self.lexer.skip_if(&Token::CloseParen) {
                 return Type::TupleType(Box::new(TupleType {
                     element_types: Vec::new(),
+                    ends_with_comma: false,
                 }));
             }
 

@@ -4,8 +4,8 @@ use crate::{
     Order, ParseTreeIterMut, RefNodeMut,
     item::ItemSyntaxError,
     kind::{
-        AssociatedItem, Enum, EnumVariant, Function, FunctionParameter, GenericParameter, Impl,
-        Import, Item, Module, Struct, StructField, Trait, TypeAlias, Variable,
+        AssociatedItem, Enum, EnumVariant, Function, FunctionParameter, Impl, Import, Item, Module,
+        Struct, StructField, Trait, TypeAlias, TypeParams, Variable,
     },
 };
 
@@ -47,25 +47,27 @@ impl ParseTreeIterMut for Import {
             attributes.depth_first_iter_mut(f);
         }
 
-        if let Some(module) = &mut self.module {
-            module.depth_first_iter_mut(f);
+        if let Some(resolved) = &mut self.resolved {
+            resolved.depth_first_iter_mut(f);
         }
 
         f(Order::Leave, RefNodeMut::ItemImport(self));
     }
 }
 
-impl ParseTreeIterMut for GenericParameter {
+impl ParseTreeIterMut for TypeParams {
     fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
-        f(Order::Enter, RefNodeMut::ItemGenericParameter(self));
+        f(Order::Enter, RefNodeMut::ItemTypeParams(self));
 
-        let _ = self.name;
+        for param in &mut self.params {
+            let _ = param.name;
 
-        if let Some(default_val) = &mut self.default {
-            default_val.depth_first_iter_mut(f);
+            if let Some(default_val) = &mut param.default_value {
+                default_val.depth_first_iter_mut(f);
+            }
         }
 
-        f(Order::Leave, RefNodeMut::ItemGenericParameter(self));
+        f(Order::Leave, RefNodeMut::ItemTypeParams(self));
     }
 }
 
@@ -82,9 +84,7 @@ impl ParseTreeIterMut for Arc<RwLock<TypeAlias>> {
         }
 
         if let Some(params) = &mut this.type_params {
-            for param in params {
-                param.depth_first_iter_mut(f);
-            }
+            params.depth_first_iter_mut(f);
         }
 
         if let Some(alias_type) = &mut this.alias_type {
@@ -109,7 +109,7 @@ impl ParseTreeIterMut for StructField {
 
         self.field_type.depth_first_iter_mut(f);
 
-        if let Some(default) = &mut self.default {
+        if let Some(default) = &mut self.default_value {
             default.depth_first_iter_mut(f);
         }
 
@@ -130,9 +130,7 @@ impl ParseTreeIterMut for Arc<RwLock<Struct>> {
         }
 
         if let Some(params) = &mut this.type_params {
-            for param in params {
-                param.depth_first_iter_mut(f);
-            }
+            params.depth_first_iter_mut(f);
         }
 
         for field in &mut this.fields {
@@ -184,9 +182,7 @@ impl ParseTreeIterMut for Arc<RwLock<Enum>> {
         }
 
         if let Some(params) = &mut this.type_params {
-            for param in params {
-                param.depth_first_iter_mut(f);
-            }
+            params.depth_first_iter_mut(f);
         }
 
         for variant in &mut this.variants {
@@ -222,9 +218,7 @@ impl ParseTreeIterMut for Arc<RwLock<Trait>> {
         }
 
         if let Some(params) = &mut this.type_params {
-            for param in params {
-                param.depth_first_iter_mut(f);
-            }
+            params.depth_first_iter_mut(f);
         }
 
         for associated_item in &mut this.items {
@@ -245,9 +239,7 @@ impl ParseTreeIterMut for Impl {
         }
 
         if let Some(params) = &mut self.type_params {
-            for param in params {
-                param.depth_first_iter_mut(f);
-            }
+            params.depth_first_iter_mut(f);
         }
 
         if let Some(trait_path) = &mut self.trait_path {
@@ -279,7 +271,7 @@ impl ParseTreeIterMut for FunctionParameter {
             param_type.depth_first_iter_mut(f);
         }
 
-        if let Some(default) = &mut self.default {
+        if let Some(default) = &mut self.default_value {
             default.depth_first_iter_mut(f);
         }
 
@@ -300,9 +292,7 @@ impl ParseTreeIterMut for Arc<RwLock<Function>> {
         }
 
         if let Some(params) = &mut this.type_params {
-            for param in params {
-                param.depth_first_iter_mut(f);
-            }
+            params.depth_first_iter_mut(f);
         }
 
         for param in &mut this.parameters {

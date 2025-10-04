@@ -5,9 +5,9 @@ use crate::diagnosis::SyntaxErr;
 
 use nitrate_parsetree::{
     kind::{
-        AssociatedItem, Enum, EnumVariant, Function, FunctionParameter, GenericParameter, Impl,
-        Import, Item, ItemPath, ItemPathSegment, ItemSyntaxError, Module, Mutability, Struct,
-        StructField, Trait, TypeAlias, Variable, VariableKind, Visibility,
+        AssociatedItem, Enum, EnumVariant, Function, FunctionParameter, Impl, Import, Item,
+        ItemPath, ItemPathSegment, ItemSyntaxError, Module, Mutability, Struct, StructField, Trait,
+        TypeAlias, TypeParam, TypeParams, Variable, VariableKind, Visibility,
     },
     tag::{
         intern_enum_variant_name, intern_function_name, intern_import_name, intern_module_name,
@@ -18,8 +18,8 @@ use nitrate_parsetree::{
 use nitrate_tokenize::Token;
 
 impl Parser<'_, '_> {
-    fn parse_generic_parameters(&mut self) -> Option<Vec<GenericParameter>> {
-        fn parse_generic_parameter(this: &mut Parser) -> GenericParameter {
+    fn parse_type_params(&mut self) -> Option<TypeParams> {
+        fn parse_generic_parameter(this: &mut Parser) -> TypeParam {
             let name = this.lexer.next_if_name().unwrap_or_else(|| {
                 let bug = SyntaxErr::GenericMissingParameterName(this.lexer.peek_pos());
                 this.log.report(&bug);
@@ -34,14 +34,17 @@ impl Parser<'_, '_> {
                 None
             };
 
-            GenericParameter { name, default }
+            TypeParam {
+                name,
+                default_value: default,
+            }
         }
 
         if !self.lexer.skip_if(&Token::Lt) {
             return None;
         }
 
-        let mut parameters = Vec::new();
+        let mut params = Vec::new();
 
         while !self.lexer.skip_if(&Token::Gt) {
             if self.lexer.is_eof() {
@@ -52,14 +55,14 @@ impl Parser<'_, '_> {
 
             const MAX_GENERIC_PARAMETERS: usize = 65_536;
 
-            if parameters.len() >= MAX_GENERIC_PARAMETERS {
+            if params.len() >= MAX_GENERIC_PARAMETERS {
                 let bug = SyntaxErr::GenericParameterLimit(self.lexer.peek_pos());
                 self.log.report(&bug);
                 break;
             }
 
             let param = parse_generic_parameter(self);
-            parameters.push(param);
+            params.push(param);
 
             if !self.lexer.skip_if(&Token::Comma) && !self.lexer.next_is(&Token::Gt) {
                 let bug = SyntaxErr::GenericParameterExpectedEnd(self.lexer.peek_pos());
@@ -70,7 +73,7 @@ impl Parser<'_, '_> {
             }
         }
 
-        Some(parameters)
+        Some(TypeParams { params })
     }
 
     fn parse_module(&mut self) -> Module {
@@ -184,7 +187,7 @@ impl Parser<'_, '_> {
             attributes,
             import_name: intern_import_name(import_name),
             items: None,
-            module: None,
+            resolved: None,
         }
     }
 
@@ -202,7 +205,7 @@ impl Parser<'_, '_> {
 
         let name = intern_type_name(name);
 
-        let type_params = self.parse_generic_parameters();
+        let type_params = self.parse_type_params();
 
         let aliased_type = if self.lexer.skip_if(&Token::Eq) {
             Some(self.parse_type())
@@ -271,7 +274,7 @@ impl Parser<'_, '_> {
 
         let name = intern_type_name(name);
 
-        let type_params = self.parse_generic_parameters();
+        let type_params = self.parse_type_params();
 
         if !self.lexer.skip_if(&Token::OpenBrace) {
             let bug = SyntaxErr::ExpectedOpenBrace(self.lexer.peek_pos());
@@ -349,7 +352,7 @@ impl Parser<'_, '_> {
                 attributes,
                 name,
                 field_type,
-                default,
+                default_value: default,
             }
         }
 
@@ -366,7 +369,7 @@ impl Parser<'_, '_> {
 
         let name = intern_type_name(name);
 
-        let type_params = self.parse_generic_parameters();
+        let type_params = self.parse_type_params();
 
         if !self.lexer.skip_if(&Token::OpenBrace) {
             let bug = SyntaxErr::ExpectedOpenBrace(self.lexer.peek_pos());
@@ -460,7 +463,7 @@ impl Parser<'_, '_> {
 
         let name = intern_trait_name(name);
 
-        let type_params = self.parse_generic_parameters();
+        let type_params = self.parse_type_params();
 
         if !self.lexer.skip_if(&Token::OpenBrace) {
             let bug = SyntaxErr::ExpectedOpenBrace(self.lexer.peek_pos());
@@ -505,7 +508,7 @@ impl Parser<'_, '_> {
 
         let attributes = self.parse_attributes();
 
-        let type_params = self.parse_generic_parameters();
+        let type_params = self.parse_type_params();
 
         let trait_path = if self.lexer.skip_if(&Token::Trait) {
             let path = self.parse_type_path();
@@ -595,7 +598,7 @@ impl Parser<'_, '_> {
                 mutability,
                 name,
                 param_type,
-                default,
+                default_value: default,
             }
         }
 
@@ -654,7 +657,7 @@ impl Parser<'_, '_> {
 
         let name = intern_function_name(name);
 
-        let type_params = self.parse_generic_parameters();
+        let type_params = self.parse_type_params();
         let parameters = self.parse_named_function_parameters();
 
         let return_type = if self.lexer.skip_if(&Token::Minus) {
