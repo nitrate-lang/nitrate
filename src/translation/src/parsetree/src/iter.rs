@@ -4,7 +4,7 @@ use crate::{
     expr::{
         AttributeList, Await, BStringLit, BinExpr, Block, BlockItem, BooleanLit, Break, Call,
         CallArgument, Cast, Closure, Continue, ExprParentheses, ExprPath, FloatLit, ForEach, If,
-        IndexAccess, IntegerLit, List, Return, StringLit, StructInit, Switch, SwitchCase,
+        IndexAccess, IntegerLit, List, Match, MatchCase, Return, StringLit, StructInit,
         TypeArgument, TypeInfo, UnaryExpr, WhileLoop,
     },
     item::{
@@ -52,8 +52,8 @@ pub enum RefNode<'a> {
     ExprIndexAccess(&'a IndexAccess),
     ExprIf(&'a If),
     ExprWhile(&'a WhileLoop),
-    ExprSwitchCase(&'a SwitchCase),
-    ExprSwitch(&'a Switch),
+    ExprMatchCase(&'a MatchCase),
+    ExprMatch(&'a Match),
     ExprBreak(&'a Break),
     ExprContinue(&'a Continue),
     ExprReturn(&'a Return),

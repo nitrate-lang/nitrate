@@ -1,6 +1,6 @@
 use crate::{
     Order, ParseTreeIter, RefNode,
-    expr::{AttributeList, ElseIf, ExprPath, Safety, StructInit, Switch, SwitchCase, TypeArgument},
+    expr::{AttributeList, ElseIf, ExprPath, Match, MatchCase, Safety, StructInit, TypeArgument},
     kind::{
         Await, BStringLit, BinExpr, Block, BlockItem, BooleanLit, Break, Call, CallArgument, Cast,
         Closure, Continue, Expr, ExprParentheses, ExprSyntaxError, FloatLit, ForEach, If,
@@ -278,20 +278,20 @@ impl ParseTreeIter for WhileLoop {
     }
 }
 
-impl ParseTreeIter for SwitchCase {
+impl ParseTreeIter for MatchCase {
     fn depth_first_iter(&self, f: &mut dyn FnMut(Order, RefNode)) {
-        f(Order::Enter, RefNode::ExprSwitchCase(self));
+        f(Order::Enter, RefNode::ExprMatchCase(self));
 
         self.condition.depth_first_iter(f);
         self.body.depth_first_iter(f);
 
-        f(Order::Leave, RefNode::ExprSwitchCase(self));
+        f(Order::Leave, RefNode::ExprMatchCase(self));
     }
 }
 
-impl ParseTreeIter for Switch {
+impl ParseTreeIter for Match {
     fn depth_first_iter(&self, f: &mut dyn FnMut(Order, RefNode)) {
-        f(Order::Enter, RefNode::ExprSwitch(self));
+        f(Order::Enter, RefNode::ExprMatch(self));
 
         self.condition.depth_first_iter(f);
 
@@ -303,7 +303,7 @@ impl ParseTreeIter for Switch {
             default.depth_first_iter(f);
         }
 
-        f(Order::Leave, RefNode::ExprSwitch(self));
+        f(Order::Leave, RefNode::ExprMatch(self));
     }
 }
 
@@ -408,7 +408,7 @@ impl ParseTreeIter for Expr {
             Expr::IndexAccess(e) => e.depth_first_iter(f),
             Expr::If(e) => e.depth_first_iter(f),
             Expr::While(e) => e.depth_first_iter(f),
-            Expr::Switch(e) => e.depth_first_iter(f),
+            Expr::Match(e) => e.depth_first_iter(f),
             Expr::Break(e) => e.depth_first_iter(f),
             Expr::Continue(e) => e.depth_first_iter(f),
             Expr::Return(e) => e.depth_first_iter(f),

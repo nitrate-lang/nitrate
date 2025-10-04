@@ -333,7 +333,7 @@ impl<'a> Lexer<'a> {
             b"in" => Some(Token::In),
             b"while" => Some(Token::While),
             b"do" => Some(Token::Do),
-            b"switch" => Some(Token::Switch),
+            b"match" => Some(Token::Match),
             b"break" => Some(Token::Break),
             b"continue" => Some(Token::Continue),
             b"ret" => Some(Token::Ret),

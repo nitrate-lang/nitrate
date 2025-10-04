@@ -1,6 +1,6 @@
 use crate::{
     Order, ParseTreeIterMut, RefNodeMut,
-    expr::{AttributeList, ElseIf, ExprPath, Safety, StructInit, Switch, SwitchCase, TypeArgument},
+    expr::{AttributeList, ElseIf, ExprPath, Match, MatchCase, Safety, StructInit, TypeArgument},
     kind::{
         Await, BStringLit, BinExpr, Block, BlockItem, BooleanLit, Break, Call, CallArgument, Cast,
         Closure, Continue, Expr, ExprParentheses, ExprSyntaxError, FloatLit, ForEach, If,
@@ -278,20 +278,20 @@ impl ParseTreeIterMut for WhileLoop {
     }
 }
 
-impl ParseTreeIterMut for SwitchCase {
+impl ParseTreeIterMut for MatchCase {
     fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
-        f(Order::Enter, RefNodeMut::ExprSwitchCase(self));
+        f(Order::Enter, RefNodeMut::ExprMatchCase(self));
 
         self.condition.depth_first_iter_mut(f);
         self.body.depth_first_iter_mut(f);
 
-        f(Order::Leave, RefNodeMut::ExprSwitchCase(self));
+        f(Order::Leave, RefNodeMut::ExprMatchCase(self));
     }
 }
 
-impl ParseTreeIterMut for Switch {
+impl ParseTreeIterMut for Match {
     fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
-        f(Order::Enter, RefNodeMut::ExprSwitch(self));
+        f(Order::Enter, RefNodeMut::ExprMatch(self));
 
         self.condition.depth_first_iter_mut(f);
 
@@ -303,7 +303,7 @@ impl ParseTreeIterMut for Switch {
             default.depth_first_iter_mut(f);
         }
 
-        f(Order::Leave, RefNodeMut::ExprSwitch(self));
+        f(Order::Leave, RefNodeMut::ExprMatch(self));
     }
 }
 
@@ -409,7 +409,7 @@ impl ParseTreeIterMut for Expr {
             Expr::IndexAccess(e) => e.depth_first_iter_mut(f),
             Expr::If(e) => e.depth_first_iter_mut(f),
             Expr::While(e) => e.depth_first_iter_mut(f),
-            Expr::Switch(e) => e.depth_first_iter_mut(f),
+            Expr::Match(e) => e.depth_first_iter_mut(f),
             Expr::Break(e) => e.depth_first_iter_mut(f),
             Expr::Continue(e) => e.depth_first_iter_mut(f),
             Expr::Return(e) => e.depth_first_iter_mut(f),

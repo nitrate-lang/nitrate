@@ -215,8 +215,8 @@ pub enum Token {
     While,
     /// 'do'
     Do,
-    /// 'switch'
-    Switch,
+    /// 'match'
+    Match,
     /// 'break'
     Break,
     /// 'continue'
@@ -346,7 +346,7 @@ impl std::fmt::Display for Token {
             Token::In => write!(f, "in"),
             Token::While => write!(f, "while"),
             Token::Do => write!(f, "do"),
-            Token::Switch => write!(f, "switch"),
+            Token::Match => write!(f, "match"),
             Token::Break => write!(f, "break"),
             Token::Continue => write!(f, "continue"),
             Token::Ret => write!(f, "ret"),

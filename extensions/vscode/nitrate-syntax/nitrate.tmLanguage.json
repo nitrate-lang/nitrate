@@ -31,7 +31,7 @@
             "patterns": [
                 {
                     "name": "keyword.control.nit",
-                    "match": "\\b(if|else|for|while|do|switch|break|continue|ret|foreach|try|catch|throw|async|await|asm)\\b"
+                    "match": "\\b(if|else|for|while|do|match|break|continue|ret|foreach|try|catch|throw|async|await|asm)\\b"
                 },
                 {
                     "name": "keyword.operator.nit",

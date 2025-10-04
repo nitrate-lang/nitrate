@@ -7,7 +7,7 @@ use crate::{
         AttributeList, Await, BStringLit, BinExpr, BinExprOp, Block, BlockItem, BooleanLit, Break,
         Call, CallArgument, Cast, Closure, Continue, ElseIf, Expr, ExprParentheses, ExprPath,
         ExprPathSegment, ExprPathTarget, ExprSyntaxError, FloatLit, ForEach, If, IndexAccess,
-        IntegerLit, List, Return, Safety, StringLit, StructInit, Switch, SwitchCase, TypeArgument,
+        IntegerLit, List, Match, MatchCase, Return, Safety, StringLit, StructInit, TypeArgument,
         TypeInfo, UnaryExpr, UnaryExprOp, WhileLoop,
     },
     item::{
@@ -667,7 +667,7 @@ impl PrettyPrint for WhileLoop {
     }
 }
 
-impl PrettyPrint for SwitchCase {
+impl PrettyPrint for MatchCase {
     fn pretty_print_fmt(
         &self,
         ctx: &mut PrintContext,
@@ -679,7 +679,7 @@ impl PrettyPrint for SwitchCase {
     }
 }
 
-impl PrettyPrint for Switch {
+impl PrettyPrint for Match {
     fn pretty_print_fmt(
         &self,
         ctx: &mut PrintContext,
@@ -880,7 +880,7 @@ impl PrettyPrint for Expr {
             Expr::IndexAccess(m) => m.pretty_print_fmt(ctx, writer),
             Expr::If(m) => m.pretty_print_fmt(ctx, writer),
             Expr::While(m) => m.pretty_print_fmt(ctx, writer),
-            Expr::Switch(m) => m.pretty_print_fmt(ctx, writer),
+            Expr::Match(m) => m.pretty_print_fmt(ctx, writer),
             Expr::Break(m) => m.pretty_print_fmt(ctx, writer),
             Expr::Continue(m) => m.pretty_print_fmt(ctx, writer),
             Expr::Return(m) => m.pretty_print_fmt(ctx, writer),

@@ -391,7 +391,7 @@ impl Parser<'_, '_> {
             Token::If => Expr::If(Box::new(self.parse_if())),
             Token::For => Expr::For(Box::new(self.parse_for())),
             Token::While => Expr::While(Box::new(self.parse_while())),
-            // Token::Switch => Expr::Switch(Box::new(self.parse_switch())),
+            // Token::Match => Expr::Match(Box::new(self.parse_match())),
             Token::Break => Expr::Break(Box::new(self.parse_break())),
             Token::Continue => Expr::Continue(Box::new(self.parse_continue())),
             Token::Ret => Expr::Return(Box::new(self.parse_return())),

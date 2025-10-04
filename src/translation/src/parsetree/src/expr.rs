@@ -298,16 +298,16 @@ pub struct WhileLoop {
 
 #[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct SwitchCase {
+pub struct MatchCase {
     pub condition: Expr,
     pub body: Block,
 }
 
 #[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Switch {
+pub struct Match {
     pub condition: Expr,
-    pub cases: Vec<SwitchCase>,
+    pub cases: Vec<MatchCase>,
     pub default_case: Option<Block>,
 }
 
@@ -386,7 +386,7 @@ pub enum Expr {
 
     If(Box<If>),
     While(Box<WhileLoop>),
-    Switch(Box<Switch>),
+    Match(Box<Match>),
     Break(Box<Break>),
     Continue(Box<Continue>),
     Return(Box<Return>),
@@ -418,7 +418,7 @@ impl std::fmt::Debug for Expr {
             Expr::IndexAccess(e) => e.fmt(f),
             Expr::If(e) => e.fmt(f),
             Expr::While(e) => e.fmt(f),
-            Expr::Switch(e) => e.fmt(f),
+            Expr::Match(e) => e.fmt(f),
             Expr::Break(e) => e.fmt(f),
             Expr::Continue(e) => e.fmt(f),
             Expr::Return(e) => e.fmt(f),
