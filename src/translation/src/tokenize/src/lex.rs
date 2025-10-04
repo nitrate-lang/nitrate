@@ -314,7 +314,7 @@ impl<'a> Lexer<'a> {
             b"impl" => Some(Token::Impl),
             b"type" => Some(Token::Type),
             b"scope" => Some(Token::Scope),
-            b"import" => Some(Token::Import),
+            b"use" => Some(Token::Use),
             b"mod" => Some(Token::Mod),
             b"safe" => Some(Token::Safe),
             b"unsafe" => Some(Token::Unsafe),

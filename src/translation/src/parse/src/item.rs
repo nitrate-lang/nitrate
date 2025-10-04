@@ -164,7 +164,7 @@ impl Parser<'_, '_> {
     }
 
     fn parse_import(&mut self) -> Import {
-        assert!(self.lexer.peek_t() == Token::Import);
+        assert!(self.lexer.peek_t() == Token::Use);
         self.lexer.skip_tok();
 
         let attributes = self.parse_attributes();
@@ -763,7 +763,7 @@ impl Parser<'_, '_> {
                 Item::Module(Box::new(module))
             }
 
-            Token::Import => {
+            Token::Use => {
                 let mut import = self.parse_import();
                 import.visibility = visibility;
                 Item::Import(Box::new(import))

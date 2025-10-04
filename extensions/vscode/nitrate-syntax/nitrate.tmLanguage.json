@@ -39,7 +39,7 @@
                 },
                 {
                     "name": "storage.type.nit",
-                    "match": "\\b(let|var|fn|enum|struct|class|union|contract|trait|impl|type|scope|import|mod)\\b"
+                    "match": "\\b(let|var|fn|enum|struct|class|union|contract|trait|impl|type|scope|use|mod)\\b"
                 },
                 {
                     "name": "storage.modifier.nit",

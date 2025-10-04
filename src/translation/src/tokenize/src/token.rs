@@ -177,8 +177,8 @@ pub enum Token {
     Type,
     /// 'scope'
     Scope,
-    /// 'import'
-    Import,
+    /// 'use'
+    Use,
     /// 'mod'
     Mod,
     /// 'safe'
@@ -327,7 +327,7 @@ impl std::fmt::Display for Token {
             Token::Impl => write!(f, "impl"),
             Token::Type => write!(f, "type"),
             Token::Scope => write!(f, "scope"),
-            Token::Import => write!(f, "import"),
+            Token::Use => write!(f, "use"),
             Token::Mod => write!(f, "mod"),
             Token::Safe => write!(f, "safe"),
             Token::Unsafe => write!(f, "unsafe"),
