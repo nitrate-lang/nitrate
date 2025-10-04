@@ -150,16 +150,18 @@ impl PrettyPrint for StringLit {
         _ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
-        // TODO: Verify string literal printing
-
         writer.write_char('"')?;
 
         for c in self.value.chars() {
             if c.is_ascii() {
                 match c {
                     '\0' => writer.write_str("\\0")?,
+                    '\x07' => writer.write_str("\\a")?,
+                    '\x08' => writer.write_str("\\b")?,
                     '\t' => writer.write_str("\\t")?,
                     '\n' => writer.write_str("\\n")?,
+                    '\x0b' => writer.write_str("\\v")?,
+                    '\x0c' => writer.write_str("\\f")?,
                     '\r' => writer.write_str("\\r")?,
                     '\"' => writer.write_str("\\\"")?,
                     '\\' => writer.write_str("\\\\")?,
@@ -182,15 +184,17 @@ impl PrettyPrint for BStringLit {
         _ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
-        // TODO: Verify bstring literal printing
-
         writer.write_char('"')?;
 
         for byte in &self.value {
             match byte {
                 b'\0' => writer.write_str("\\0")?,
+                b'\x07' => writer.write_str("\\a")?,
+                b'\x08' => writer.write_str("\\b")?,
                 b'\t' => writer.write_str("\\t")?,
                 b'\n' => writer.write_str("\\n")?,
+                b'\x0b' => writer.write_str("\\v")?,
+                b'\x0c' => writer.write_str("\\f")?,
                 b'\r' => writer.write_str("\\r")?,
                 b'\"' => writer.write_str("\\\"")?,
                 b'\\' => writer.write_str("\\\\")?,
@@ -685,11 +689,13 @@ impl PrettyPrint for Match {
         ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
-        // TODO: Verify code
-
         writer.write_str("match ")?;
 
         self.condition.pretty_print_fmt(ctx, writer)?;
+
+        if self.cases.is_empty() && self.default_case.is_none() {
+            return writer.write_str(" {}");
+        }
 
         writer.write_str(" {\n")?;
 
@@ -714,8 +720,8 @@ impl PrettyPrint for Match {
             ctx.tab_depth -= 1;
         }
 
-        writer.write_str("}")?;
-        Ok(())
+        ctx.write_indent(writer)?;
+        writer.write_str("}")
     }
 }
 
