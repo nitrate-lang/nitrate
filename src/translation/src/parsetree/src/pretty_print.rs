@@ -26,6 +26,8 @@ use crate::{
 pub struct PrintContext {
     pub indent: String,
     pub max_line_length: NonZeroUsize,
+
+    pub tab_depth: usize,
 }
 
 impl Default for PrintContext {
@@ -33,18 +35,28 @@ impl Default for PrintContext {
         PrintContext {
             indent: "  ".to_string(),
             max_line_length: NonZeroUsize::new(80).unwrap(),
+            tab_depth: 0,
         }
+    }
+}
+
+impl PrintContext {
+    fn write_indent(&self, writer: &mut dyn std::fmt::Write) -> std::fmt::Result {
+        for _ in 0..self.tab_depth {
+            writer.write_str(&self.indent)?;
+        }
+        Ok(())
     }
 }
 
 pub trait PrettyPrint {
     fn pretty_print_fmt(
         &self,
-        ctx: &PrintContext,
+        ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result;
 
-    fn pretty_print(&self, ctx: &PrintContext) -> Result<String, std::fmt::Error> {
+    fn pretty_print(&self, ctx: &mut PrintContext) -> Result<String, std::fmt::Error> {
         let mut output = String::new();
         self.pretty_print_fmt(ctx, &mut output)?;
         Ok(output)
@@ -54,7 +66,7 @@ pub trait PrettyPrint {
 impl PrettyPrint for ExprSyntaxError {
     fn pretty_print_fmt(
         &self,
-        _ctx: &PrintContext,
+        _ctx: &mut PrintContext,
         _writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
         // TODO: Verify code
@@ -67,7 +79,7 @@ impl PrettyPrint for ExprSyntaxError {
 impl PrettyPrint for ExprParentheses {
     fn pretty_print_fmt(
         &self,
-        ctx: &PrintContext,
+        ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
         // TODO: Verify code
@@ -81,7 +93,7 @@ impl PrettyPrint for ExprParentheses {
 impl PrettyPrint for BooleanLit {
     fn pretty_print_fmt(
         &self,
-        _ctx: &PrintContext,
+        _ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
         // TODO: Verify code
@@ -96,7 +108,7 @@ impl PrettyPrint for BooleanLit {
 impl PrettyPrint for IntegerLit {
     fn pretty_print_fmt(
         &self,
-        _ctx: &PrintContext,
+        _ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
         // TODO: Verify code
@@ -124,7 +136,7 @@ impl PrettyPrint for IntegerLit {
 impl PrettyPrint for FloatLit {
     fn pretty_print_fmt(
         &self,
-        _ctx: &PrintContext,
+        _ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
         // TODO: Verify code
@@ -136,7 +148,7 @@ impl PrettyPrint for FloatLit {
 impl PrettyPrint for StringLit {
     fn pretty_print_fmt(
         &self,
-        _ctx: &PrintContext,
+        _ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
         // TODO: Verify code
@@ -168,7 +180,7 @@ impl PrettyPrint for StringLit {
 impl PrettyPrint for BStringLit {
     fn pretty_print_fmt(
         &self,
-        _ctx: &PrintContext,
+        _ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
         // TODO: Verify code
@@ -195,7 +207,7 @@ impl PrettyPrint for BStringLit {
 impl PrettyPrint for TypeInfo {
     fn pretty_print_fmt(
         &self,
-        ctx: &PrintContext,
+        ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
         // TODO: Verify code
@@ -208,7 +220,7 @@ impl PrettyPrint for TypeInfo {
 impl PrettyPrint for List {
     fn pretty_print_fmt(
         &self,
-        ctx: &PrintContext,
+        ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
         // TODO: Verify code
@@ -229,7 +241,7 @@ impl PrettyPrint for List {
 impl PrettyPrint for StructInit {
     fn pretty_print_fmt(
         &self,
-        ctx: &PrintContext,
+        ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
         // TODO: Verify code
@@ -253,7 +265,7 @@ impl PrettyPrint for StructInit {
 impl PrettyPrint for UnaryExprOp {
     fn pretty_print_fmt(
         &self,
-        _ctx: &PrintContext,
+        _ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
         // TODO: Verify code
@@ -273,7 +285,7 @@ impl PrettyPrint for UnaryExprOp {
 impl PrettyPrint for UnaryExpr {
     fn pretty_print_fmt(
         &self,
-        ctx: &PrintContext,
+        ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
         // TODO: Verify code
@@ -286,7 +298,7 @@ impl PrettyPrint for UnaryExpr {
 impl PrettyPrint for BinExprOp {
     fn pretty_print_fmt(
         &self,
-        _ctx: &PrintContext,
+        _ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
         // TODO: Verify code
@@ -339,7 +351,7 @@ impl PrettyPrint for BinExprOp {
 impl PrettyPrint for BinExpr {
     fn pretty_print_fmt(
         &self,
-        ctx: &PrintContext,
+        ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
         // TODO: Verify code
@@ -357,7 +369,7 @@ impl PrettyPrint for BinExpr {
 impl PrettyPrint for Cast {
     fn pretty_print_fmt(
         &self,
-        ctx: &PrintContext,
+        ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
         // TODO: Verify code
@@ -371,7 +383,7 @@ impl PrettyPrint for Cast {
 impl PrettyPrint for BlockItem {
     fn pretty_print_fmt(
         &self,
-        ctx: &PrintContext,
+        ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
         // TODO: Verify code
@@ -392,7 +404,7 @@ impl PrettyPrint for BlockItem {
 impl PrettyPrint for Block {
     fn pretty_print_fmt(
         &self,
-        ctx: &PrintContext,
+        ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
         // TODO: Verify code
@@ -424,7 +436,7 @@ impl PrettyPrint for Block {
 impl PrettyPrint for AttributeList {
     fn pretty_print_fmt(
         &self,
-        ctx: &PrintContext,
+        ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
         // TODO: Verify code
@@ -443,7 +455,7 @@ impl PrettyPrint for AttributeList {
 impl PrettyPrint for Closure {
     fn pretty_print_fmt(
         &self,
-        ctx: &PrintContext,
+        ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
         // TODO: Verify code
@@ -475,7 +487,7 @@ impl PrettyPrint for Closure {
 impl PrettyPrint for TypeArgument {
     fn pretty_print_fmt(
         &self,
-        ctx: &PrintContext,
+        ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
         // TODO: Verify code
@@ -492,7 +504,7 @@ impl PrettyPrint for TypeArgument {
 impl PrettyPrint for ExprPathSegment {
     fn pretty_print_fmt(
         &self,
-        ctx: &PrintContext,
+        ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
         // TODO: Verify code
@@ -518,7 +530,7 @@ impl PrettyPrint for ExprPathSegment {
 impl PrettyPrint for ExprPath {
     fn pretty_print_fmt(
         &self,
-        ctx: &PrintContext,
+        ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
         // TODO: Verify code
@@ -538,7 +550,7 @@ impl PrettyPrint for ExprPath {
 impl PrettyPrint for IndexAccess {
     fn pretty_print_fmt(
         &self,
-        ctx: &PrintContext,
+        ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
         // TODO: Verify code
@@ -553,7 +565,7 @@ impl PrettyPrint for IndexAccess {
 impl PrettyPrint for If {
     fn pretty_print_fmt(
         &self,
-        ctx: &PrintContext,
+        ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
         // TODO: Verify code
@@ -576,7 +588,7 @@ impl PrettyPrint for If {
 impl PrettyPrint for WhileLoop {
     fn pretty_print_fmt(
         &self,
-        ctx: &PrintContext,
+        ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
         // TODO: Verify code
@@ -592,7 +604,7 @@ impl PrettyPrint for WhileLoop {
 impl PrettyPrint for Switch {
     fn pretty_print_fmt(
         &self,
-        _ctx: &PrintContext,
+        _ctx: &mut PrintContext,
         _writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
         // TODO: Verify code
@@ -604,7 +616,7 @@ impl PrettyPrint for Switch {
 impl PrettyPrint for Break {
     fn pretty_print_fmt(
         &self,
-        _ctx: &PrintContext,
+        _ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
         // TODO: Verify code
@@ -623,7 +635,7 @@ impl PrettyPrint for Break {
 impl PrettyPrint for Continue {
     fn pretty_print_fmt(
         &self,
-        _ctx: &PrintContext,
+        _ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
         // TODO: Verify code
@@ -642,7 +654,7 @@ impl PrettyPrint for Continue {
 impl PrettyPrint for Return {
     fn pretty_print_fmt(
         &self,
-        ctx: &PrintContext,
+        ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
         // TODO: Verify code
@@ -661,7 +673,7 @@ impl PrettyPrint for Return {
 impl PrettyPrint for ForEach {
     fn pretty_print_fmt(
         &self,
-        ctx: &PrintContext,
+        ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
         // TODO: Verify code
@@ -680,7 +692,7 @@ impl PrettyPrint for ForEach {
 impl PrettyPrint for Await {
     fn pretty_print_fmt(
         &self,
-        ctx: &PrintContext,
+        ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
         // TODO: Verify code
@@ -693,7 +705,7 @@ impl PrettyPrint for Await {
 impl PrettyPrint for CallArgument {
     fn pretty_print_fmt(
         &self,
-        ctx: &PrintContext,
+        ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
         // TODO: Verify code
@@ -710,7 +722,7 @@ impl PrettyPrint for CallArgument {
 impl PrettyPrint for Call {
     fn pretty_print_fmt(
         &self,
-        ctx: &PrintContext,
+        ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
         // TODO: Verify code
@@ -731,7 +743,7 @@ impl PrettyPrint for Call {
 impl PrettyPrint for Expr {
     fn pretty_print_fmt(
         &self,
-        ctx: &PrintContext,
+        ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
         // TODO: Verify code
@@ -771,7 +783,7 @@ impl PrettyPrint for Expr {
 impl PrettyPrint for TypeSyntaxError {
     fn pretty_print_fmt(
         &self,
-        _ctx: &PrintContext,
+        _ctx: &mut PrintContext,
         _writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
         // TODO: Verify code
@@ -784,7 +796,7 @@ impl PrettyPrint for TypeSyntaxError {
 impl PrettyPrint for Bool {
     fn pretty_print_fmt(
         &self,
-        _ctx: &PrintContext,
+        _ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
         // TODO: Verify code
@@ -796,7 +808,7 @@ impl PrettyPrint for Bool {
 impl PrettyPrint for UInt8 {
     fn pretty_print_fmt(
         &self,
-        _ctx: &PrintContext,
+        _ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
         // TODO: Verify code
@@ -808,7 +820,7 @@ impl PrettyPrint for UInt8 {
 impl PrettyPrint for UInt16 {
     fn pretty_print_fmt(
         &self,
-        _ctx: &PrintContext,
+        _ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
         // TODO: Verify code
@@ -820,7 +832,7 @@ impl PrettyPrint for UInt16 {
 impl PrettyPrint for UInt32 {
     fn pretty_print_fmt(
         &self,
-        _ctx: &PrintContext,
+        _ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
         // TODO: Verify code
@@ -832,7 +844,7 @@ impl PrettyPrint for UInt32 {
 impl PrettyPrint for UInt64 {
     fn pretty_print_fmt(
         &self,
-        _ctx: &PrintContext,
+        _ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
         // TODO: Verify code
@@ -844,7 +856,7 @@ impl PrettyPrint for UInt64 {
 impl PrettyPrint for UInt128 {
     fn pretty_print_fmt(
         &self,
-        _ctx: &PrintContext,
+        _ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
         // TODO: Verify code
@@ -856,7 +868,7 @@ impl PrettyPrint for UInt128 {
 impl PrettyPrint for Int8 {
     fn pretty_print_fmt(
         &self,
-        _ctx: &PrintContext,
+        _ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
         // TODO: Verify code
@@ -868,7 +880,7 @@ impl PrettyPrint for Int8 {
 impl PrettyPrint for Int16 {
     fn pretty_print_fmt(
         &self,
-        _ctx: &PrintContext,
+        _ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
         // TODO: Verify code
@@ -880,7 +892,7 @@ impl PrettyPrint for Int16 {
 impl PrettyPrint for Int32 {
     fn pretty_print_fmt(
         &self,
-        _ctx: &PrintContext,
+        _ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
         // TODO: Verify code
@@ -892,7 +904,7 @@ impl PrettyPrint for Int32 {
 impl PrettyPrint for Int64 {
     fn pretty_print_fmt(
         &self,
-        _ctx: &PrintContext,
+        _ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
         // TODO: Verify code
@@ -904,7 +916,7 @@ impl PrettyPrint for Int64 {
 impl PrettyPrint for Int128 {
     fn pretty_print_fmt(
         &self,
-        _ctx: &PrintContext,
+        _ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
         // TODO: Verify code
@@ -916,7 +928,7 @@ impl PrettyPrint for Int128 {
 impl PrettyPrint for Float8 {
     fn pretty_print_fmt(
         &self,
-        _ctx: &PrintContext,
+        _ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
         // TODO: Verify code
@@ -928,7 +940,7 @@ impl PrettyPrint for Float8 {
 impl PrettyPrint for Float16 {
     fn pretty_print_fmt(
         &self,
-        _ctx: &PrintContext,
+        _ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
         // TODO: Verify code
@@ -940,7 +952,7 @@ impl PrettyPrint for Float16 {
 impl PrettyPrint for Float32 {
     fn pretty_print_fmt(
         &self,
-        _ctx: &PrintContext,
+        _ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
         // TODO: Verify code
@@ -952,7 +964,7 @@ impl PrettyPrint for Float32 {
 impl PrettyPrint for Float64 {
     fn pretty_print_fmt(
         &self,
-        _ctx: &PrintContext,
+        _ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
         // TODO: Verify code
@@ -964,7 +976,7 @@ impl PrettyPrint for Float64 {
 impl PrettyPrint for Float128 {
     fn pretty_print_fmt(
         &self,
-        _ctx: &PrintContext,
+        _ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
         // TODO: Verify code
@@ -976,7 +988,7 @@ impl PrettyPrint for Float128 {
 impl PrettyPrint for UnitType {
     fn pretty_print_fmt(
         &self,
-        _ctx: &PrintContext,
+        _ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
         // TODO: Verify code
@@ -988,7 +1000,7 @@ impl PrettyPrint for UnitType {
 impl PrettyPrint for InferType {
     fn pretty_print_fmt(
         &self,
-        _ctx: &PrintContext,
+        _ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
         // TODO: Verify code
@@ -1000,7 +1012,7 @@ impl PrettyPrint for InferType {
 impl PrettyPrint for TypePathSegment {
     fn pretty_print_fmt(
         &self,
-        ctx: &PrintContext,
+        ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
         // TODO: Verify code
@@ -1026,7 +1038,7 @@ impl PrettyPrint for TypePathSegment {
 impl PrettyPrint for TypePath {
     fn pretty_print_fmt(
         &self,
-        ctx: &PrintContext,
+        ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
         // TODO: Verify code
@@ -1046,7 +1058,7 @@ impl PrettyPrint for TypePath {
 impl PrettyPrint for RefinementType {
     fn pretty_print_fmt(
         &self,
-        ctx: &PrintContext,
+        ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
         // TODO: Verify code
@@ -1081,7 +1093,7 @@ impl PrettyPrint for RefinementType {
 impl PrettyPrint for TupleType {
     fn pretty_print_fmt(
         &self,
-        ctx: &PrintContext,
+        ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
         // TODO: Verify code
@@ -1100,7 +1112,7 @@ impl PrettyPrint for TupleType {
 impl PrettyPrint for ArrayType {
     fn pretty_print_fmt(
         &self,
-        ctx: &PrintContext,
+        ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
         // TODO: Verify code
@@ -1116,7 +1128,7 @@ impl PrettyPrint for ArrayType {
 impl PrettyPrint for SliceType {
     fn pretty_print_fmt(
         &self,
-        ctx: &PrintContext,
+        ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
         // TODO: Verify code
@@ -1130,7 +1142,7 @@ impl PrettyPrint for SliceType {
 impl PrettyPrint for FunctionType {
     fn pretty_print_fmt(
         &self,
-        ctx: &PrintContext,
+        ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
         // TODO: Verify code
@@ -1155,7 +1167,7 @@ impl PrettyPrint for FunctionType {
 impl PrettyPrint for Exclusivity {
     fn pretty_print_fmt(
         &self,
-        _ctx: &PrintContext,
+        _ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
         // TODO: Verify code
@@ -1170,7 +1182,7 @@ impl PrettyPrint for Exclusivity {
 impl PrettyPrint for ReferenceType {
     fn pretty_print_fmt(
         &self,
-        ctx: &PrintContext,
+        ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
         // TODO: Verify code
@@ -1199,7 +1211,7 @@ impl PrettyPrint for ReferenceType {
 impl PrettyPrint for OpaqueType {
     fn pretty_print_fmt(
         &self,
-        _ctx: &PrintContext,
+        _ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
         // TODO: Verify code
@@ -1211,7 +1223,7 @@ impl PrettyPrint for OpaqueType {
 impl PrettyPrint for LatentType {
     fn pretty_print_fmt(
         &self,
-        ctx: &PrintContext,
+        ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
         // TODO: Verify code
@@ -1223,7 +1235,7 @@ impl PrettyPrint for LatentType {
 impl PrettyPrint for Lifetime {
     fn pretty_print_fmt(
         &self,
-        _ctx: &PrintContext,
+        _ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
         // TODO: Verify code
@@ -1242,7 +1254,7 @@ impl PrettyPrint for Lifetime {
 impl PrettyPrint for TypeParentheses {
     fn pretty_print_fmt(
         &self,
-        ctx: &PrintContext,
+        ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
         // TODO: Verify code
@@ -1256,7 +1268,7 @@ impl PrettyPrint for TypeParentheses {
 impl PrettyPrint for Type {
     fn pretty_print_fmt(
         &self,
-        ctx: &PrintContext,
+        ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
         // TODO: Verify code
@@ -1299,7 +1311,7 @@ impl PrettyPrint for Type {
 impl PrettyPrint for Visibility {
     fn pretty_print_fmt(
         &self,
-        _ctx: &PrintContext,
+        _ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
         // TODO: Verify code
@@ -1315,7 +1327,7 @@ impl PrettyPrint for Visibility {
 impl PrettyPrint for ItemSyntaxError {
     fn pretty_print_fmt(
         &self,
-        _ctx: &PrintContext,
+        _ctx: &mut PrintContext,
         _writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
         // TODO: Verify code
@@ -1328,11 +1340,9 @@ impl PrettyPrint for ItemSyntaxError {
 impl PrettyPrint for Module {
     fn pretty_print_fmt(
         &self,
-        ctx: &PrintContext,
+        ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
-        // TODO: Verify code
-
         if let Some(visibility) = &self.visibility {
             visibility.pretty_print_fmt(ctx, writer)?;
             writer.write_char(' ')?;
@@ -1347,21 +1357,34 @@ impl PrettyPrint for Module {
 
         if let Some(name) = &self.name {
             writer.write_str(name)?;
+            writer.write_char(' ')?;
         }
 
-        writer.write_str(" {")?;
-        for item in &self.items {
-            item.pretty_print_fmt(ctx, writer)?;
-            writer.write_str("\n")?;
+        if self.items.is_empty() {
+            writer.write_str("{}")
+        } else {
+            writer.write_str("{\n")?;
+
+            for item in &self.items {
+                ctx.tab_depth += 1;
+
+                ctx.write_indent(writer)?;
+                item.pretty_print_fmt(ctx, writer)?;
+                writer.write_str("\n")?;
+
+                ctx.tab_depth -= 1;
+            }
+
+            ctx.write_indent(writer)?;
+            writer.write_str("}")
         }
-        writer.write_str("}")
     }
 }
 
 impl PrettyPrint for Import {
     fn pretty_print_fmt(
         &self,
-        ctx: &PrintContext,
+        ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
         // TODO: Verify code
@@ -1379,15 +1402,14 @@ impl PrettyPrint for Import {
         }
 
         writer.write_str(&self.import_name)?;
-
-        Ok(())
+        writer.write_char(';')
     }
 }
 
 impl PrettyPrint for TypeParam {
     fn pretty_print_fmt(
         &self,
-        ctx: &PrintContext,
+        ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
         // TODO: Verify code
@@ -1406,7 +1428,7 @@ impl PrettyPrint for TypeParam {
 impl PrettyPrint for Generics {
     fn pretty_print_fmt(
         &self,
-        ctx: &PrintContext,
+        ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
         // TODO: Verify code
@@ -1426,7 +1448,7 @@ impl PrettyPrint for Generics {
 impl PrettyPrint for TypeAlias {
     fn pretty_print_fmt(
         &self,
-        ctx: &PrintContext,
+        ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
         // TODO: Verify code
@@ -1462,7 +1484,7 @@ impl PrettyPrint for TypeAlias {
 impl PrettyPrint for StructField {
     fn pretty_print_fmt(
         &self,
-        ctx: &PrintContext,
+        ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
         // TODO: Verify code
@@ -1493,7 +1515,7 @@ impl PrettyPrint for StructField {
 impl PrettyPrint for Struct {
     fn pretty_print_fmt(
         &self,
-        ctx: &PrintContext,
+        ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
         // TODO: Verify code
@@ -1528,7 +1550,7 @@ impl PrettyPrint for Struct {
 impl PrettyPrint for EnumVariant {
     fn pretty_print_fmt(
         &self,
-        ctx: &PrintContext,
+        ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
         // TODO: Verify code
@@ -1561,7 +1583,7 @@ impl PrettyPrint for EnumVariant {
 impl PrettyPrint for Enum {
     fn pretty_print_fmt(
         &self,
-        ctx: &PrintContext,
+        ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
         // TODO: Verify code
@@ -1596,7 +1618,7 @@ impl PrettyPrint for Enum {
 impl PrettyPrint for AssociatedItem {
     fn pretty_print_fmt(
         &self,
-        ctx: &PrintContext,
+        ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
         // TODO: Verify code
@@ -1613,7 +1635,7 @@ impl PrettyPrint for AssociatedItem {
 impl PrettyPrint for Trait {
     fn pretty_print_fmt(
         &self,
-        ctx: &PrintContext,
+        ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
         // TODO: Verify code
@@ -1648,7 +1670,7 @@ impl PrettyPrint for Trait {
 impl PrettyPrint for Impl {
     fn pretty_print_fmt(
         &self,
-        ctx: &PrintContext,
+        ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
         // TODO: Verify code
@@ -1685,7 +1707,7 @@ impl PrettyPrint for Impl {
 impl PrettyPrint for Mutability {
     fn pretty_print_fmt(
         &self,
-        _ctx: &PrintContext,
+        _ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
         // TODO: Verify code
@@ -1700,7 +1722,7 @@ impl PrettyPrint for Mutability {
 impl PrettyPrint for FuncParam {
     fn pretty_print_fmt(
         &self,
-        ctx: &PrintContext,
+        ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
         // TODO: Verify code
@@ -1734,7 +1756,7 @@ impl PrettyPrint for FuncParam {
 impl PrettyPrint for FuncParams {
     fn pretty_print_fmt(
         &self,
-        ctx: &PrintContext,
+        ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
         // TODO: Verify code
@@ -1754,7 +1776,7 @@ impl PrettyPrint for FuncParams {
 impl PrettyPrint for Function {
     fn pretty_print_fmt(
         &self,
-        ctx: &PrintContext,
+        ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
         // TODO: Verify code
@@ -1796,7 +1818,7 @@ impl PrettyPrint for Function {
 impl PrettyPrint for Variable {
     fn pretty_print_fmt(
         &self,
-        ctx: &PrintContext,
+        ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
         // TODO: Verify code
@@ -1842,7 +1864,7 @@ impl PrettyPrint for Variable {
 impl PrettyPrint for Item {
     fn pretty_print_fmt(
         &self,
-        ctx: &PrintContext,
+        ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
         // TODO: Verify code

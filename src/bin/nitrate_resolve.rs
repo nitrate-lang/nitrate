@@ -109,7 +109,7 @@ fn program() -> Result<(), Error> {
     resolve_names(&mut module, &log);
 
     let pretty_printed = module
-        .pretty_print(&PrintContext::default())
+        .pretty_print(&mut PrintContext::default())
         .expect("Pretty print failed");
 
     parse_tree_output
