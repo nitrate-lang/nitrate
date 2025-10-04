@@ -212,7 +212,7 @@ pub enum BlockItem {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum Safety {
     Safe,
-    Unsafe(Expr),
+    Unsafe(Option<Expr>),
 }
 
 #[skip_serializing_none]

@@ -156,9 +156,9 @@ impl ParseTreeIterMut for Block {
 
         if let Some(safety) = &mut self.safety {
             match safety {
-                Safety::Safe => {}
+                Safety::Safe | Safety::Unsafe(None) => {}
 
-                Safety::Unsafe(e) => {
+                Safety::Unsafe(Some(e)) => {
                     e.depth_first_iter_mut(f);
                 }
             }

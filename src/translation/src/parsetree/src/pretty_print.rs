@@ -5,10 +5,10 @@ use serde::de::value;
 
 use crate::{
     expr::{
-        Await, BStringLit, BinExpr, BinExprOp, Block, BooleanLit, Break, Call, Cast, Closure,
-        Continue, DoWhileLoop, Expr, ExprParentheses, ExprPath, ExprSyntaxError, FloatLit, ForEach,
-        If, IndexAccess, IntegerLit, List, Object, Return, StringLit, Switch, TypeInfo, UnaryExpr,
-        UnaryExprOp, UnitLit, WhileLoop,
+        Await, BStringLit, BinExpr, BinExprOp, Block, BlockItem, BooleanLit, Break, Call, Cast,
+        Closure, Continue, DoWhileLoop, Expr, ExprParentheses, ExprPath, ExprSyntaxError, FloatLit,
+        ForEach, If, IndexAccess, IntegerLit, List, Object, Return, Safety, StringLit, Switch,
+        TypeInfo, UnaryExpr, UnaryExprOp, UnitLit, WhileLoop,
     },
     item::{
         Enum, Function, Impl, Import, Item, ItemSyntaxError, Module, Struct, Trait, TypeAlias,
@@ -261,14 +261,52 @@ impl PrettyPrint for Cast {
     }
 }
 
+impl PrettyPrint for BlockItem {
+    fn pretty_print_fmt(
+        &self,
+        ctx: &PrintContext,
+        writer: &mut dyn std::fmt::Write,
+    ) -> std::fmt::Result {
+        match self {
+            BlockItem::Variable(m) => m.read().unwrap().pretty_print_fmt(ctx, writer),
+
+            BlockItem::Expr(m) => m.pretty_print_fmt(ctx, writer),
+
+            BlockItem::Stmt(m) => {
+                m.pretty_print_fmt(ctx, writer)?;
+                writer.write_char(';')
+            }
+        }
+    }
+}
+
 impl PrettyPrint for Block {
     fn pretty_print_fmt(
         &self,
-        _ctx: &PrintContext,
+        ctx: &PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
-        // TODO: Block pretty print
-        Ok(())
+        if let Some(safety) = &self.safety {
+            match safety {
+                Safety::Safe => writer.write_str("safe ")?,
+
+                Safety::Unsafe(None) => writer.write_str("unsafe ")?,
+
+                Safety::Unsafe(Some(reason)) => {
+                    writer.write_str("unsafe(")?;
+                    reason.pretty_print_fmt(ctx, writer)?;
+                    writer.write_str(") ")?;
+                }
+            }
+        }
+
+        writer.write_char('{')?;
+
+        for item in &self.elements {
+            item.pretty_print_fmt(ctx, writer)?;
+        }
+
+        writer.write_char('}')
     }
 }
 

@@ -11,7 +11,7 @@ use nitrate_parsetree::{
         Float128, FloatLit, ForEach, FunctionParameter, If, IndexAccess, Int8, Int16, Int32, Int64,
         Int128, IntegerLit, List, Mutability, Return, Safety, StringLit, Type, TypeArgument,
         TypeInfo, TypePath, TypePathSegment, TypePathTarget, UInt8, UInt16, UInt32, UInt64,
-        UInt128, UnaryExpr, UnaryExprOp, UnitLit, WhileLoop,
+        UInt128, UnaryExpr, UnaryExprOp, WhileLoop,
     },
     tag::{
         VariableNameId, intern_arg_name, intern_label_name, intern_parameter_name,
@@ -1200,7 +1200,7 @@ impl Parser<'_, '_> {
             }
 
             if !this.lexer.skip_if(&Token::OpenParen) {
-                return Some(Safety::Unsafe(Expr::Unit(UnitLit {})));
+                return Some(Safety::Unsafe(None));
             }
 
             let modifier = this.parse_expression();
@@ -1210,7 +1210,7 @@ impl Parser<'_, '_> {
                 this.log.report(&bug);
             }
 
-            Some(Safety::Unsafe(modifier))
+            Some(Safety::Unsafe(Some(modifier)))
         }
 
         let safety = parse_safety_modifier(self);
