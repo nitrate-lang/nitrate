@@ -118,7 +118,6 @@ pub struct RefinementType {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TupleType {
     pub element_types: Vec<Type>,
-    pub ends_with_comma: bool,
 }
 
 #[skip_serializing_none]

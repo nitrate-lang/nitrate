@@ -150,7 +150,6 @@ impl ParseTreeIter for EnumVariant {
     fn depth_first_iter(&self, f: &mut dyn FnMut(Order, RefNode)) {
         f(Order::Enter, RefNode::ItemEnumVariant(self));
 
-        let _ = self.visibility;
         let _ = self.name;
 
         if let Some(attributes) = &self.attributes {

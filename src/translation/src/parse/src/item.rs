@@ -230,7 +230,6 @@ impl Parser<'_, '_> {
 
     fn parse_enum(&mut self) -> Enum {
         fn parse_enum_variant(this: &mut Parser) -> EnumVariant {
-            let visibility = this.parse_visibility();
             let attributes = this.parse_attributes();
 
             let name = this.lexer.next_if_name().unwrap_or_else(|| {
@@ -254,7 +253,6 @@ impl Parser<'_, '_> {
             };
 
             EnumVariant {
-                visibility,
                 attributes,
                 name,
                 variant_type,

@@ -1192,7 +1192,7 @@ impl PrettyPrint for TupleType {
             element.pretty_print_fmt(ctx, writer)?;
         }
 
-        if self.ends_with_comma {
+        if self.element_types.len() == 1 {
             writer.write_str(",")?;
         }
 
@@ -1340,8 +1340,6 @@ impl PrettyPrint for Type {
         ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
-        // TODO: Verify code
-
         match self {
             Type::SyntaxError(m) => m.pretty_print_fmt(ctx, writer),
             Type::Bool(m) => m.pretty_print_fmt(ctx, writer),
@@ -1382,8 +1380,6 @@ impl PrettyPrint for Visibility {
         _ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
-        // TODO: Verify code
-
         match self {
             Visibility::Public => writer.write_str("pub"),
             Visibility::Private => writer.write_str("sec"),
@@ -1398,8 +1394,6 @@ impl PrettyPrint for ItemSyntaxError {
         _ctx: &mut PrintContext,
         _writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
-        // TODO: Verify code
-
         // Item syntax errors are unrepresentable
         Ok(())
     }
@@ -1455,8 +1449,6 @@ impl PrettyPrint for Import {
         ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
-        // TODO: Verify code
-
         if let Some(visibility) = &self.visibility {
             visibility.pretty_print_fmt(ctx, writer)?;
             writer.write_char(' ')?;
@@ -1486,8 +1478,6 @@ impl PrettyPrint for TypeParam {
         ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
-        // TODO: Verify code
-
         writer.write_str(&self.name)?;
 
         if let Some(default_value) = &self.default_value {
@@ -1505,8 +1495,6 @@ impl PrettyPrint for Generics {
         ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
-        // TODO: Verify code
-
         writer.write_str("<")?;
         for (i, param) in self.params.iter().enumerate() {
             if i > 0 {
@@ -1555,7 +1543,7 @@ impl PrettyPrint for TypeAlias {
             alias.pretty_print_fmt(ctx, writer)?;
         }
 
-        Ok(())
+        writer.write_char(';')
     }
 }
 
@@ -1565,8 +1553,6 @@ impl PrettyPrint for StructField {
         ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
-        // TODO: Verify code
-
         if let Some(visibility) = &self.visibility {
             visibility.pretty_print_fmt(ctx, writer)?;
             writer.write_char(' ')?;
@@ -1578,6 +1564,7 @@ impl PrettyPrint for StructField {
         }
 
         writer.write_str(&self.name)?;
+
         writer.write_str(": ")?;
         self.field_type.pretty_print_fmt(ctx, writer)?;
 
@@ -1596,8 +1583,6 @@ impl PrettyPrint for Struct {
         ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
-        // TODO: Verify code
-
         if let Some(visibility) = &self.visibility {
             visibility.pretty_print_fmt(ctx, writer)?;
             writer.write_char(' ')?;
@@ -1620,12 +1605,24 @@ impl PrettyPrint for Struct {
             generics.pretty_print_fmt(ctx, writer)?;
         }
 
-        writer.write_str(" {")?;
-        for field in &self.fields {
-            field.pretty_print_fmt(ctx, writer)?;
-            writer.write_str(",\n")?;
+        if self.fields.is_empty() {
+            writer.write_str(" {}")
+        } else {
+            writer.write_str(" {\n")?;
+
+            for field in &self.fields {
+                ctx.tab_depth += 1;
+
+                ctx.write_indent(writer)?;
+                field.pretty_print_fmt(ctx, writer)?;
+                writer.write_str(",\n")?;
+
+                ctx.tab_depth -= 1;
+            }
+
+            ctx.write_indent(writer)?;
+            writer.write_str("}")
         }
-        writer.write_str("}")
     }
 }
 
@@ -1636,11 +1633,6 @@ impl PrettyPrint for EnumVariant {
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
         // TODO: Verify code
-
-        if let Some(visibility) = &self.visibility {
-            visibility.pretty_print_fmt(ctx, writer)?;
-            writer.write_char(' ')?;
-        }
 
         if let Some(attributes) = &self.attributes {
             attributes.pretty_print_fmt(ctx, writer)?;

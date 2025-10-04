@@ -104,7 +104,6 @@ pub struct Struct {
 #[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct EnumVariant {
-    pub visibility: Option<Visibility>,
     pub attributes: Option<AttributeList>,
     pub name: EnumVariantNameId,
     pub variant_type: Option<Type>,
