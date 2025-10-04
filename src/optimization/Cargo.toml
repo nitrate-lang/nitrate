@@ -1,0 +1,8 @@
+[package]
+name = "nitrate_optimization"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+nitrate_diagnosis = { path = "../diagnosis" }
+nitrate_parsetree = { path = "../translation/src/parsetree" }

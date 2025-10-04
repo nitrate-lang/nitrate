@@ -1,0 +1,22 @@
+[package]
+name = "nitrate_parse"
+version = "0.1.0"
+edition = "2024"
+
+[dev-dependencies]
+criterion = { version = "0.7.0", features = ["html_reports"] }
+
+[[bench]]
+name = "parse_type_bench"
+harness = false
+
+[dependencies]
+nitrate_tokenize = { path = "../tokenize" }
+nitrate_parsetree = { path = "../parsetree" }
+nitrate_diagnosis = { path = "../../../diagnosis" }
+
+hashbrown = "0.16.0"
+log = "0.4.27"
+ordered-float = "5.0.0"
+spdx = "0.12.0"
+interned-string = { version = "0.3.0", features = ["serde"] }

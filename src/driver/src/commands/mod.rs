@@ -1,0 +1,17 @@
+mod add;
+mod bench;
+mod build;
+mod check;
+mod clean;
+mod doc;
+mod help;
+mod init;
+mod install;
+mod new;
+mod publish;
+mod remove;
+mod run;
+mod search;
+mod test;
+mod uninstall;
+mod update;
