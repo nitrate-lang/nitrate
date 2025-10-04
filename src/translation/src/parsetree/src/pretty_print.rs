@@ -79,8 +79,6 @@ impl PrettyPrint for ExprSyntaxError {
         _ctx: &mut PrintContext,
         _writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
-        // TODO: Verify code
-
         // Expression syntax errors are unrepresentable
         Ok(())
     }
@@ -92,8 +90,6 @@ impl PrettyPrint for ExprParentheses {
         ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
-        // TODO: Verify code
-
         writer.write_char('(')?;
         self.inner.pretty_print_fmt(ctx, writer)?;
         writer.write_char(')')
@@ -106,8 +102,6 @@ impl PrettyPrint for BooleanLit {
         _ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
-        // TODO: Verify code
-
         match self.value {
             true => writer.write_str("true"),
             false => writer.write_str("false"),
@@ -121,8 +115,6 @@ impl PrettyPrint for IntegerLit {
         _ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
-        // TODO: Verify code
-
         match self.kind {
             IntegerKind::Bin => {
                 write!(writer, "0b{:b}", self.value)
@@ -149,8 +141,6 @@ impl PrettyPrint for FloatLit {
         _ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
-        // TODO: Verify code
-
         write!(writer, "{}", self.value)
     }
 }
@@ -161,7 +151,7 @@ impl PrettyPrint for StringLit {
         _ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
-        // TODO: Verify code
+        // TODO: Verify string literal printing
 
         writer.write_char('"')?;
 
@@ -193,7 +183,7 @@ impl PrettyPrint for BStringLit {
         _ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
-        // TODO: Verify code
+        // TODO: Verify bstring literal printing
 
         writer.write_char('"')?;
 
@@ -220,7 +210,7 @@ impl PrettyPrint for TypeInfo {
         ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
-        // TODO: Verify code
+        // TODO: Verify type info printing
 
         writer.write_str("type")?;
         self.the.pretty_print_fmt(ctx, writer)
@@ -233,14 +223,13 @@ impl PrettyPrint for List {
         ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
-        // TODO: Verify code
-
         writer.write_char('[')?;
 
         for (i, item) in self.elements.iter().enumerate() {
             if i > 0 {
                 writer.write_str(", ")?;
             }
+
             item.pretty_print_fmt(ctx, writer)?;
         }
 
@@ -254,7 +243,7 @@ impl PrettyPrint for StructInit {
         ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
-        // TODO: Verify code
+        // TODO: Verify struct init printing
 
         self.type_name.pretty_print_fmt(ctx, writer)?;
 
@@ -278,8 +267,6 @@ impl PrettyPrint for UnaryExprOp {
         _ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
-        // TODO: Verify code
-
         match self {
             UnaryExprOp::Add => writer.write_str("+"),
             UnaryExprOp::Sub => writer.write_str("-"),
@@ -298,9 +285,12 @@ impl PrettyPrint for UnaryExpr {
         ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
-        // TODO: Verify code
-
         self.operator.pretty_print_fmt(ctx, writer)?;
+
+        if self.operator == UnaryExprOp::Typeof {
+            writer.write_char(' ')?;
+        }
+
         self.operand.pretty_print_fmt(ctx, writer)
     }
 }
@@ -311,8 +301,6 @@ impl PrettyPrint for BinExprOp {
         _ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
-        // TODO: Verify code
-
         match self {
             BinExprOp::Add => writer.write_str("+"),
             BinExprOp::Sub => writer.write_str("-"),
@@ -364,8 +352,6 @@ impl PrettyPrint for BinExpr {
         ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
-        // TODO: Verify code
-
         self.left.pretty_print_fmt(ctx, writer)?;
 
         writer.write_char(' ')?;
@@ -382,8 +368,6 @@ impl PrettyPrint for Cast {
         ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
-        // TODO: Verify code
-
         self.value.pretty_print_fmt(ctx, writer)?;
         writer.write_str(" as ")?;
         self.to.pretty_print_fmt(ctx, writer)
