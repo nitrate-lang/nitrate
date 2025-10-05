@@ -106,16 +106,24 @@ impl Dump for Type {
                     write!(o, "]")?;
                 }
 
-                write!(o, " {{ ")?;
-                for (i, (name, field_type)) in struct_type.fields.iter().enumerate() {
-                    if i != 0 {
-                        write!(o, ", ")?;
+                if struct_type.fields.is_empty() {
+                    write!(o, " {{}}")
+                } else {
+                    write!(o, " {{\n")?;
+                    for (name, field_type) in &struct_type.fields {
+                        ctx.indent += 1;
+
+                        self.write_indent(ctx, o)?;
+                        write!(o, "{name}: ")?;
+                        ctx.store[field_type].dump(ctx, o)?;
+                        write!(o, ",\n")?;
+
+                        ctx.indent -= 1;
                     }
 
-                    write!(o, "{name}: ")?;
-                    ctx.store[field_type].dump(ctx, o)?;
+                    self.write_indent(ctx, o)?;
+                    write!(o, "}}")
                 }
-                write!(o, " }}")
             }
 
             Type::Enum(enum_type) => {
@@ -133,16 +141,24 @@ impl Dump for Type {
                     write!(o, "]")?;
                 }
 
-                write!(o, " {{ ")?;
-                for (i, (name, variant_type)) in enum_type.variants.iter().enumerate() {
-                    if i != 0 {
-                        write!(o, ", ")?;
+                if enum_type.variants.is_empty() {
+                    write!(o, " {{}}")
+                } else {
+                    write!(o, " {{\n")?;
+                    for (name, variant_type) in &enum_type.variants {
+                        ctx.indent += 1;
+
+                        self.write_indent(ctx, o)?;
+                        write!(o, "{name}: ")?;
+                        ctx.store[variant_type].dump(ctx, o)?;
+                        write!(o, ",\n")?;
+
+                        ctx.indent -= 1;
                     }
 
-                    write!(o, "{name}: ")?;
-                    ctx.store[variant_type].dump(ctx, o)?;
+                    self.write_indent(ctx, o)?;
+                    write!(o, "}}")
                 }
-                write!(o, " }}")
             }
 
             Type::Function(func_type) => {
@@ -214,7 +230,7 @@ impl Dump for Type {
             Type::InferredFloat => write!(o, "?f"),
             Type::Inferred { id } => write!(o, "?{id}"),
 
-            Type::TypeAlias { name, aliased: _ } => write!(o, "{name}"),
+            Type::TypeAlias { name, aliased: _ } => write!(o, "`{name}`"),
         }
     }
 }

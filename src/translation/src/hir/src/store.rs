@@ -103,7 +103,7 @@ impl Store {
         self.symbols.store(symbol)
     }
 
-    pub fn store_expr(&mut self, expr: Value) -> ValueId {
+    pub fn store_value(&mut self, expr: Value) -> ValueId {
         self.values.store(expr)
     }
 

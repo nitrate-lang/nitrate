@@ -16,56 +16,66 @@ pub struct QualifiedName(pub IString);
 pub struct EntityName(pub IString);
 
 #[derive(Debug, Serialize, Deserialize)]
+pub struct ExternalFunction {
+    pub visibility: Visibility,
+    pub attributes: Vec<FunctionAttribute>,
+    pub name: EntityName,
+    pub parameters: Vec<TypeId>,
+    pub return_type: TypeId,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct StaticFunction {
+    pub visibility: Visibility,
+    pub attributes: Vec<FunctionAttribute>,
+    pub name: EntityName,
+    pub parameters: Vec<TypeId>,
+    pub return_type: TypeId,
+    pub body: BlockId,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ClosureFunction {
+    pub closure_unique_id: u64,
+    pub callee: Box<Function>,
+    pub captures: Vec<ValueId>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
 pub enum Function {
-    External {
-        visibility: Visibility,
-        attributes: Vec<FunctionAttribute>,
-        name: EntityName,
-        parameters: Vec<TypeId>,
-        return_type: TypeId,
-    },
+    External(ExternalFunction),
+    Static(StaticFunction),
+    Closure(ClosureFunction),
+}
 
-    Static {
-        visibility: Visibility,
-        attributes: Vec<FunctionAttribute>,
-        name: EntityName,
-        parameters: Vec<TypeId>,
-        return_type: TypeId,
-        body: BlockId,
-    },
+#[derive(Debug, Serialize, Deserialize)]
+pub struct GlobalVariable {
+    pub visibility: Visibility,
+    pub name: EntityName,
+    pub ty: TypeId,
+    pub initializer: ValueId,
+}
 
-    Closure {
-        closure_unique_id: u64,
-        callee: Box<Function>,
-        captures: Vec<ValueId>,
-    },
+#[derive(Debug, Serialize, Deserialize)]
+pub struct LocalVariable {
+    pub name: EntityName,
+    pub ty: TypeId,
+    pub initializer: ValueId,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct Parameter {
+    pub name: EntityName,
+    pub ty: TypeId,
+    pub default_value: Option<ValueId>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub enum Symbol {
-    Unresolved {
-        name: QualifiedName,
-    },
-
-    GlobalVariable {
-        visibility: Visibility,
-        name: EntityName,
-        ty: TypeId,
-        initializer: ValueId,
-    },
-
-    LocalVariable {
-        name: EntityName,
-        ty: TypeId,
-        initializer: ValueId,
-    },
-
-    Parameter {
-        name: EntityName,
-        ty: TypeId,
-        default_value: Option<ValueId>,
-    },
-
+    Unresolved { name: QualifiedName },
+    GlobalVariable(GlobalVariable),
+    LocalVariable(LocalVariable),
+    Parameter(Parameter),
     Function(Function),
 }
 
@@ -81,21 +91,9 @@ pub struct Module {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct TraitDef {
-    // TODO:
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct ImplDef {
-    // TODO:
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct Foreign {
-    // TODO:
-}
-
-#[derive(Debug, Serialize, Deserialize)]
 pub enum Item {
-    // TODO:
+    Module(Module),
+    GlobalVariable(GlobalVariable),
+    ExternalFunction(ExternalFunction),
+    StaticFunction(StaticFunction),
 }

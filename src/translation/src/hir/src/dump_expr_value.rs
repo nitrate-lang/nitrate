@@ -31,11 +31,13 @@ impl Dump for Value {
             Value::I16(i) => write!(o, "i16 {}", i),
             Value::I32(i) => write!(o, "i32 {}", i),
             Value::I64(i) => write!(o, "i64 {}", i),
+            Value::ISize(i) => write!(o, "isize {}", i),
             Value::I128(i) => write!(o, "i128 {}", i),
             Value::U8(u) => write!(o, "u8 {}", u),
             Value::U16(u) => write!(o, "u16 {}", u),
             Value::U32(u) => write!(o, "u32 {}", u),
             Value::U64(u) => write!(o, "u64 {}", u),
+            Value::USize(u) => write!(o, "usize {}", u),
             Value::U128(u) => write!(o, "u128 {}", u),
             Value::F8(f) => write!(o, "f8 {}", f),
             Value::F16(f) => write!(o, "f16 {}", f),
@@ -146,7 +148,7 @@ impl Dump for Value {
 
             Value::List { elements } => {
                 write!(o, "[")?;
-                for (elem, i) in elements.iter().zip(0..) {
+                for (i, elem) in elements.iter().enumerate() {
                     if i != 0 {
                         write!(o, ", ")?;
                     }
@@ -207,7 +209,7 @@ impl Dump for Value {
             Value::Call { callee, arguments } => {
                 ctx.store[callee].dump(ctx, o)?;
                 write!(o, "(")?;
-                for (arg, i) in arguments.iter().zip(0..) {
+                for (i, arg) in arguments.iter().enumerate() {
                     if i != 0 {
                         write!(o, ", ")?;
                     }
