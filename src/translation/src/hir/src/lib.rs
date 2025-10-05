@@ -4,6 +4,7 @@
 mod dump;
 mod dump_expr;
 mod dump_item;
+mod dump_place;
 mod dump_ty;
 mod expr_place;
 mod expr_value;
