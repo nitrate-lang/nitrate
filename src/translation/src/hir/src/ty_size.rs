@@ -1,11 +1,5 @@
+use crate::prelude::{hir::*, *};
 use std::cmp::max;
-
-use crate::{
-    Store, get_align_of, get_stride_of,
-    ty::{PointerSize, StructAttribute, Type},
-    type_alignment::AlignofError,
-    type_stride::StrideOfError,
-};
 
 pub enum SizeofError {
     UnknownSize,

@@ -1,9 +1,5 @@
+use crate::prelude::{hir::*, *};
 use std::cmp::max;
-
-use crate::{
-    Store,
-    ty::{PointerSize, StructAttribute, Type},
-};
 
 pub enum AlignofError {
     UnknownAlignment,

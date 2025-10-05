@@ -1,4 +1,4 @@
-use crate::{Dump, DumpContext, hir::Item};
+use crate::prelude::{hir::*, *};
 
 impl Dump for Item {
     fn dump(

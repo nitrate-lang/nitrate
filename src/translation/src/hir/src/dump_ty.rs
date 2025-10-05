@@ -1,7 +1,4 @@
-use crate::{
-    Dump, DumpContext,
-    ty::{Lifetime, Type},
-};
+use crate::prelude::{hir::*, *};
 
 impl Dump for Type {
     fn dump(

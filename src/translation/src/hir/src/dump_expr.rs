@@ -1,7 +1,4 @@
-use crate::{
-    Dump, DumpContext,
-    hir::{BinaryOp, UnaryOp, Value},
-};
+use crate::prelude::{hir::*, *};
 
 impl Dump for Value {
     fn dump(
