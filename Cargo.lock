@@ -736,6 +736,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "nitrate_into_hir"
+version = "0.1.0"
+dependencies = [
+ "interned-string",
+ "nitrate_diagnosis",
+ "nitrate_hir",
+ "nitrate_parsetree",
+]
+
+[[package]]
 name = "nitrate_optimization"
 version = "0.1.0"
 dependencies = [
@@ -776,16 +786,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "nitrate_parsetree_into_hir"
-version = "0.1.0"
-dependencies = [
- "interned-string",
- "nitrate_diagnosis",
- "nitrate_hir",
- "nitrate_parsetree",
-]
-
-[[package]]
 name = "nitrate_resolve"
 version = "0.1.0"
 dependencies = [
@@ -813,10 +813,10 @@ dependencies = [
  "interned-string",
  "nitrate_diagnosis",
  "nitrate_hir",
+ "nitrate_into_hir",
  "nitrate_optimization",
  "nitrate_parse",
  "nitrate_parsetree",
- "nitrate_parsetree_into_hir",
  "nitrate_resolve",
  "nitrate_tokenize",
  "threadpool",

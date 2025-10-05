@@ -2,9 +2,9 @@ use nitrate_diagnosis::{CompilerLog, intern_file_id};
 use nitrate_translation::{
     TranslationError,
     hir::{Dump, DumpContext},
+    into_hir::*,
     parse::Parser,
     parsetree::kind::Module,
-    parsetree_into_hir::*,
     resolve::{ImportContext, resolve_imports, resolve_names},
     tokenize::Lexer,
 };
