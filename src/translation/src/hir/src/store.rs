@@ -1,10 +1,4 @@
-use crate::{
-    expr_place::{Place, Symbol},
-    expr_value::Value,
-    hir::Block,
-    item::Item,
-    ty::Type,
-};
+use crate::prelude::hir::*;
 use hashbrown::HashMap;
 use serde::{Deserialize, Serialize};
 use std::num::NonZeroU32;

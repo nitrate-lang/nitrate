@@ -1,4 +1,4 @@
-use crate::{prelude::*, store::SymbolId, ty::FunctionAttribute};
+use crate::prelude::{hir::*, *};
 use interned_string::IString;
 use serde::{Deserialize, Serialize};
 
@@ -46,26 +46,6 @@ pub enum Symbol {
     Function(Function),
 
     Unresolved { name: IString },
-}
-
-impl Symbol {
-    pub fn dump_nocycle(&self, o: &mut dyn std::fmt::Write) -> Result<(), std::fmt::Error> {
-        match self {
-            Symbol::GlobalVariable(v) => write!(o, "sym global {}", v.name),
-            Symbol::LocalVariable(v) => write!(o, "sym local {}", v.name),
-            Symbol::Parameter(p) => write!(o, "sym param {}", p.name),
-            Symbol::Function(f) => match f {
-                Function::External { name, .. } => write!(o, "sym fn {}", name),
-                Function::Static { name, .. } => write!(o, "sym fn {}", name),
-                Function::Closure {
-                    closure_unique_id, ..
-                } => {
-                    write!(o, "sym fn #{}", closure_unique_id)
-                }
-            },
-            Symbol::Unresolved { name } => write!(o, "sym nores {}", name),
-        }
-    }
 }
 
 #[derive(Debug, Serialize, Deserialize)]
