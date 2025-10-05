@@ -2,6 +2,9 @@
 #![warn(clippy::pedantic)]
 
 mod dump;
+mod dump_expr;
+mod dump_item;
+mod dump_ty;
 mod expr;
 mod item;
 mod node_digest;

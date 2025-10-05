@@ -5,7 +5,7 @@ use std::num::NonZeroU32;
 
 macro_rules! impl_store {
     ($handle_name:ident, $item_name:ident, $store_name:ident) => {
-        #[derive(Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
+        #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
         pub struct $handle_name {
             id: NonZeroU32,
         }

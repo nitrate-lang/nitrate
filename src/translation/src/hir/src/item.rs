@@ -1,8 +1,6 @@
-use crate::{DumpContext, dump::Dump};
-
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub enum Item {
     Module,
     Import,
@@ -15,18 +13,4 @@ pub enum Item {
     Trait,
     Impl,
     ExternBlock,
-}
-
-impl Item {}
-
-impl Dump for Item {
-    fn dump(
-        &self,
-        _ctx: &mut DumpContext,
-        _o: &mut dyn std::fmt::Write,
-    ) -> Result<(), std::fmt::Error> {
-        match self {
-            _ => Ok(()),
-        }
-    }
 }

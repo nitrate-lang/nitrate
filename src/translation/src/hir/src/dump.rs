@@ -2,8 +2,9 @@ use crate::Store;
 
 pub struct DumpContext<'a> {
     pub store: &'a Store,
-    pub(crate) indent: usize,
     pub indent_str: &'a str,
+
+    pub(crate) indent: usize,
 }
 
 impl<'a> DumpContext<'a> {
