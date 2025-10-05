@@ -7,6 +7,7 @@ mod dump_item;
 mod dump_ty;
 mod expr_place;
 mod expr_value;
+mod function;
 mod item;
 mod node_digest;
 mod store;
@@ -21,6 +22,7 @@ pub use store::{BlockId, ItemId, PlaceId, Store, TypeId, ValueId};
 
 pub mod hir {
     pub use super::expr_value::*;
+    pub use super::function::*;
     pub use super::item::*;
     pub use super::ty::*;
 

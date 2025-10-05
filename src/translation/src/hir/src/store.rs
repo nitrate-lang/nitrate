@@ -1,4 +1,10 @@
-use crate::{expr_place::Place, expr_value::Value, hir::Block, item::Item, ty::Type};
+use crate::{
+    expr_place::Place,
+    expr_value::Value,
+    hir::{Block, Function},
+    item::Item,
+    ty::Type,
+};
 use hashbrown::HashMap;
 use serde::{Deserialize, Serialize};
 use std::num::NonZeroU32;
@@ -64,8 +70,6 @@ macro_rules! impl_store {
         }
     };
 }
-
-type Function = ();
 
 impl_store!(TypeId, Type, TypeStore);
 impl_store!(ItemId, Item, ItemStore);
