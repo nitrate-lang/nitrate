@@ -36,7 +36,12 @@ impl Dump for Function {
                     if i != 0 {
                         write!(o, ", ")?;
                     }
-                    ctx.store[param].dump(ctx, o)?;
+                    write!(o, "{}: ", param.name.0)?;
+                    ctx.store[&param.ty].dump(ctx, o)?;
+                    if let Some(default_value) = &param.default_value {
+                        write!(o, " = ")?;
+                        ctx.store[default_value].dump(ctx, o)?;
+                    }
                 }
                 write!(o, ") -> ")?;
                 ctx.store[return_type].dump(ctx, o)
@@ -72,7 +77,13 @@ impl Dump for Function {
                     if i != 0 {
                         write!(o, ", ")?;
                     }
-                    ctx.store[param].dump(ctx, o)?;
+
+                    write!(o, "{}: ", param.name.0)?;
+                    ctx.store[&param.ty].dump(ctx, o)?;
+                    if let Some(default_value) = &param.default_value {
+                        write!(o, " = ")?;
+                        ctx.store[default_value].dump(ctx, o)?;
+                    }
                 }
                 write!(o, ") -> ")?;
                 ctx.store[return_type].dump(ctx, o)?;

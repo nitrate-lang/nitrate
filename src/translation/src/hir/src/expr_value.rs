@@ -89,13 +89,13 @@ pub enum BlockSafety {
     Unsafe,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Block {
     pub safety: BlockSafety,
     pub exprs: Vec<ValueId>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub enum Value {
     Unit,
     Bool(bool),

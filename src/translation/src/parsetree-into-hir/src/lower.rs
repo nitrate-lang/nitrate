@@ -2,11 +2,11 @@ use nitrate_diagnosis::CompilerLog;
 use nitrate_hir::{hir::QualifiedName, prelude::*};
 use std::collections::HashMap;
 
-#[derive(Clone)]
 pub struct HirCtx {
     storage: Store,
     symbol_table: HashMap<QualifiedName, SymbolId>,
     type_table: HashMap<QualifiedName, TypeId>,
+    // impl_table: HashMap<TypeId, Vec<ImplId>>,
 }
 
 impl HirCtx {

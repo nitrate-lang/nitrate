@@ -15,13 +15,13 @@ pub struct QualifiedName(pub IString);
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct EntityName(pub IString);
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub enum Function {
     External {
         visibility: Visibility,
         attributes: Vec<FunctionAttribute>,
         name: EntityName,
-        parameters: Vec<TypeId>,
+        parameters: Vec<Parameter>,
         return_type: TypeId,
     },
 
@@ -29,7 +29,7 @@ pub enum Function {
         visibility: Visibility,
         attributes: Vec<FunctionAttribute>,
         name: EntityName,
-        parameters: Vec<TypeId>,
+        parameters: Vec<Parameter>,
         return_type: TypeId,
         body: BlockId,
     },
@@ -41,26 +41,29 @@ pub enum Function {
     },
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct GlobalVariable {
     pub visibility: Visibility,
     pub name: EntityName,
     pub ty: TypeId,
+    pub initializer: ValueId,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct LocalVariable {
     pub name: EntityName,
     pub ty: TypeId,
+    pub initializer: ValueId,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Parameter {
-    pub name: EntityName,
     pub ty: TypeId,
+    pub name: EntityName,
+    pub default_value: Option<ValueId>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub enum Symbol {
     GlobalVariable(GlobalVariable),
     LocalVariable(LocalVariable),
@@ -69,10 +72,10 @@ pub enum Symbol {
     Unresolved { name: QualifiedName },
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub enum ModuleAttribute {}
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Module {
     pub visibility: Visibility,
     pub name: IString,
@@ -80,32 +83,22 @@ pub struct Module {
     pub items: Vec<ItemId>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct StructDef {
-    // TODO:
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct EnumDef {
-    // TODO:
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct TraitDef {
     // TODO:
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct ImplDef {
     // TODO:
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Foreign {
     // TODO:
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub enum Item {
     // TODO:
 }

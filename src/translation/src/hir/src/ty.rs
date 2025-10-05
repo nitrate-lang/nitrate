@@ -4,7 +4,7 @@ use interned_string::IString;
 use serde::{Deserialize, Serialize};
 use std::num::NonZeroU32;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub enum Lifetime {
     Static,
     Gc,
@@ -13,7 +13,7 @@ pub enum Lifetime {
     Stack { id: NonZeroU32 },
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Reference {
     pub lifetime: Lifetime,
     pub exclusive: bool,
@@ -21,46 +21,46 @@ pub struct Reference {
     pub to: TypeId,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Pointer {
     pub exclusive: bool,
     pub mutable: bool,
     pub to: TypeId,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub enum StructAttribute {
     Packed,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct StructType {
     pub attributes: HashSet<StructAttribute>,
     pub fields: Vec<(String, TypeId)>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub enum EnumAttribute {}
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct EnumType {
     pub attributes: HashSet<EnumAttribute>,
     pub variants: HashMap<String, TypeId>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub enum FunctionAttribute {
     Variadic,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct FunctionType {
     pub attributes: HashSet<FunctionAttribute>,
     pub parameters: Vec<TypeId>,
     pub return_type: TypeId,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub enum Type {
     /* ----------------------------------------------------- */
     /* Primitive Types                                       */
@@ -177,7 +177,7 @@ impl Type {
     }
 }
 
-#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum PointerSize {
     U8 = 1,
     U16 = 2,

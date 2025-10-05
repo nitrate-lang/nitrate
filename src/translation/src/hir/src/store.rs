@@ -8,7 +8,6 @@ macro_rules! impl_store {
         #[derive(Debug, Clone, Serialize, Deserialize)]
         pub struct $handle_name(NonZeroU32);
 
-        #[derive(Clone)]
         pub struct $store_name {
             items: HashMap<NonZeroU32, $item_name>,
             next_id: NonZeroU32,
@@ -71,7 +70,6 @@ impl_store!(ValueId, Value, ExprValueStore);
 impl_store!(BlockId, Block, ExprBlockStore);
 impl_store!(PlaceId, Place, ExprPlaceStore);
 
-#[derive(Clone)]
 pub struct Store {
     types: TypeStore,
     items: ItemStore,
