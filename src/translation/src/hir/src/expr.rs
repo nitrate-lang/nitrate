@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 use crate::{
     ExprId, TypeId,
     dump::{Dump, DumpContext},
-    store::BlockId,
+    store::{BlockId, PlaceId},
 };
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -156,17 +156,22 @@ pub enum Expr {
         field: IString,
     },
 
+    ArrayIndex {
+        expr: ExprId,
+        index: ExprId,
+    },
+
     Cast {
         expr: ExprId,
         to: TypeId,
     },
 
     GetAddressOf {
-        expr: ExprId,
+        expr: PlaceId,
     },
 
     Deref {
-        expr: ExprId,
+        expr: PlaceId,
     },
 
     GetTypeOf {

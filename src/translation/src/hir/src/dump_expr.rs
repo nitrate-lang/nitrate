@@ -80,8 +80,17 @@ impl Dump for Expr {
             }
 
             Expr::FieldAccess { expr, field } => {
+                write!(o, "(")?;
                 ctx.store[expr].dump(ctx, o)?;
-                write!(o, ".{}", field)
+                write!(o, ".{})", field)
+            }
+
+            Expr::ArrayIndex { expr, index } => {
+                write!(o, "(")?;
+                ctx.store[expr].dump(ctx, o)?;
+                write!(o, "[")?;
+                ctx.store[index].dump(ctx, o)?;
+                write!(o, "])")
             }
 
             Expr::GetAddressOf { expr } => {

@@ -6,6 +6,7 @@ mod dump_expr;
 mod dump_item;
 mod dump_ty;
 mod expr;
+mod expr_place;
 mod item;
 mod node_digest;
 mod store;

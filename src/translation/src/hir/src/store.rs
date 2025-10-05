@@ -1,4 +1,4 @@
-use crate::{expr::Expr, hir::Block, item::Item, ty::Type};
+use crate::{expr::Expr, expr_place::Place, hir::Block, item::Item, ty::Type};
 use hashbrown::HashMap;
 use serde::{Deserialize, Serialize};
 use std::num::NonZeroU32;
@@ -69,12 +69,14 @@ impl_store!(TypeId, Type, TypeStore);
 impl_store!(ItemId, Item, ItemStore);
 impl_store!(ExprId, Expr, ExprStore);
 impl_store!(BlockId, Block, BlockStore);
+impl_store!(PlaceId, Place, PlaceStore);
 
 pub struct Store {
     types: TypeStore,
     items: ItemStore,
     exprs: ExprStore,
     blocks: BlockStore,
+    places: PlaceStore,
 }
 
 impl Store {
@@ -84,6 +86,7 @@ impl Store {
             items: ItemStore::new(),
             exprs: ExprStore::new(),
             blocks: BlockStore::new(),
+            places: PlaceStore::new(),
         }
     }
 
@@ -103,11 +106,16 @@ impl Store {
         self.blocks.store(block)
     }
 
+    pub fn store_place(&mut self, place: Place) -> PlaceId {
+        self.places.store(place)
+    }
+
     pub fn reset(&mut self) {
         self.exprs.reset();
         self.types.reset();
         self.items.reset();
         self.blocks.reset();
+        self.places.reset();
     }
 }
 
@@ -164,5 +172,19 @@ impl std::ops::Index<&BlockId> for Store {
 impl std::ops::IndexMut<&BlockId> for Store {
     fn index_mut(&mut self, index: &BlockId) -> &mut Self::Output {
         &mut self.blocks[index]
+    }
+}
+
+impl std::ops::Index<&PlaceId> for Store {
+    type Output = Place;
+
+    fn index(&self, index: &PlaceId) -> &Self::Output {
+        &self.places[index]
+    }
+}
+
+impl std::ops::IndexMut<&PlaceId> for Store {
+    fn index_mut(&mut self, index: &PlaceId) -> &mut Self::Output {
+        &mut self.places[index]
     }
 }
