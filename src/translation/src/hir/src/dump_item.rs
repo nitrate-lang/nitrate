@@ -8,11 +8,18 @@ impl Dump for Function {
     ) -> Result<(), std::fmt::Error> {
         match self {
             Function::External {
+                visibility,
                 attributes,
                 name,
                 parameters,
                 return_type,
             } => {
+                match visibility {
+                    Visibility::Sec => write!(o, "sec ")?,
+                    Visibility::Pro => write!(o, "pro ")?,
+                    Visibility::Pub => write!(o, "pub ")?,
+                }
+
                 write!(o, "sym extern fn ")?;
                 if !attributes.is_empty() {
                     write!(o, "[")?;
@@ -24,7 +31,7 @@ impl Dump for Function {
                     }
                     write!(o, "] ")?;
                 }
-                write!(o, "{name}(")?;
+                write!(o, "{}(", name.0)?;
                 for (param, i) in parameters.iter().zip(0..) {
                     if i != 0 {
                         write!(o, ", ")?;
@@ -36,12 +43,19 @@ impl Dump for Function {
             }
 
             Function::Static {
+                visibility,
                 attributes,
                 name,
                 parameters,
                 return_type,
                 body,
             } => {
+                match visibility {
+                    Visibility::Sec => write!(o, "sec ")?,
+                    Visibility::Pro => write!(o, "pro ")?,
+                    Visibility::Pub => write!(o, "pub ")?,
+                }
+
                 write!(o, "sym static fn ")?;
                 if !attributes.is_empty() {
                     write!(o, "[")?;
@@ -53,7 +67,7 @@ impl Dump for Function {
                     }
                     write!(o, "] ")?;
                 }
-                write!(o, "{name}(")?;
+                write!(o, "{}(", name.0)?;
                 for (param, i) in parameters.iter().zip(0..) {
                     if i != 0 {
                         write!(o, ", ")?;

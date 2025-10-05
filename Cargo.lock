@@ -779,6 +779,7 @@ dependencies = [
 name = "nitrate_parsetree_into_hir"
 version = "0.1.0"
 dependencies = [
+ "interned-string",
  "nitrate_diagnosis",
  "nitrate_hir",
  "nitrate_parsetree",

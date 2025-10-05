@@ -5,14 +5,12 @@ use std::num::NonZeroU32;
 
 macro_rules! impl_store {
     ($handle_name:ident, $item_name:ident, $store_name:ident) => {
-        #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
-        pub struct $handle_name {
-            id: NonZeroU32,
-        }
+        #[derive(Debug, Clone, Serialize, Deserialize)]
+        pub struct $handle_name(NonZeroU32);
 
         #[derive(Clone)]
         pub struct $store_name {
-            items: HashMap<$handle_name, $item_name>,
+            items: HashMap<NonZeroU32, $item_name>,
             next_id: NonZeroU32,
         }
 
@@ -26,22 +24,22 @@ macro_rules! impl_store {
 
             pub fn store(&mut self, item: $item_name) -> $handle_name {
                 let id = self.next_id;
-                self.items.insert($handle_name { id }, item);
+                self.items.insert(id, item);
 
                 self.next_id = self
                     .next_id
                     .checked_add(1)
                     .expect("Store overflowed NonZeroU32");
 
-                $handle_name { id }
+                $handle_name(id)
             }
 
             fn get(&self, id: &$handle_name) -> &$item_name {
-                self.items.get(id).expect("Id not found in Store")
+                self.items.get(&id.0).expect("Id not found in Store")
             }
 
             fn get_mut(&mut self, id: &$handle_name) -> &mut $item_name {
-                self.items.get_mut(id).expect("Id not found in Store")
+                self.items.get_mut(&id.0).expect("Id not found in Store")
             }
 
             pub fn reset(&mut self) {

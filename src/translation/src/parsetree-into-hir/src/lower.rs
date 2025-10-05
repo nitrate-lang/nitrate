@@ -1,25 +1,20 @@
 use nitrate_diagnosis::CompilerLog;
-use nitrate_hir::prelude::*;
-
-#[derive(Clone)]
-pub struct SymbolTable {}
-
-#[derive(Clone)]
-pub struct TypeTable {}
+use nitrate_hir::{hir::QualifiedName, prelude::*};
+use std::collections::HashMap;
 
 #[derive(Clone)]
 pub struct HirCtx {
     storage: Store,
-    symbol_table: SymbolTable,
-    type_table: TypeTable,
+    symbol_table: HashMap<QualifiedName, SymbolId>,
+    type_table: HashMap<QualifiedName, TypeId>,
 }
 
 impl HirCtx {
     pub fn new() -> Self {
         Self {
             storage: Store::new(),
-            symbol_table: SymbolTable {},
-            type_table: TypeTable {},
+            symbol_table: HashMap::new(),
+            type_table: HashMap::new(),
         }
     }
 
@@ -31,25 +26,18 @@ impl HirCtx {
         &mut self.storage
     }
 
-    pub fn symbol_table(&self) -> &SymbolTable {
-        &self.symbol_table
+    pub fn resolve_symbol(&self, name: &QualifiedName) -> Option<&SymbolId> {
+        self.symbol_table.get(name)
     }
 
-    pub fn symbol_table_mut(&mut self) -> &mut SymbolTable {
-        &mut self.symbol_table
-    }
-
-    pub fn type_table(&self) -> &TypeTable {
-        &self.type_table
-    }
-
-    pub fn type_table_mut(&mut self) -> &mut TypeTable {
-        &mut self.type_table
+    pub fn resolve_type(&self, name: &QualifiedName) -> Option<&TypeId> {
+        self.type_table.get(name)
     }
 }
 
 pub trait TryIntoHir {
+    type Error;
     type Hir;
 
-    fn try_into_hir(self, ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()>;
+    fn try_into_hir(self, ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, Self::Error>;
 }
