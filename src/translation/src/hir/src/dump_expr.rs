@@ -90,15 +90,23 @@ impl Dump for Value {
                 write!(o, "])")
             }
 
-            Value::GetAddressOf { expr } => {
-                write!(o, "(address_of ")?;
-                ctx.store[expr].dump(ctx, o)?;
+            Value::Assign { place, value } => {
+                write!(o, "(")?;
+                ctx.store[place].dump(ctx, o)?;
+                write!(o, " = ")?;
+                ctx.store[value].dump(ctx, o)?;
                 write!(o, ")")
             }
 
-            Value::Deref { expr } => {
+            Value::Deref { place } => {
                 write!(o, "(deref ")?;
-                ctx.store[expr].dump(ctx, o)?;
+                ctx.store[place].dump(ctx, o)?;
+                write!(o, ")")
+            }
+
+            Value::GetAddressOf { place } => {
+                write!(o, "(address_of ")?;
+                ctx.store[place].dump(ctx, o)?;
                 write!(o, ")")
             }
 

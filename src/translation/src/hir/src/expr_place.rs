@@ -4,9 +4,10 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub enum Place {
-    FieldAccess { expr: PlaceId, field: IString },
-    ArrayIndex { expr: PlaceId, index: ValueId },
-    Deref { expr: PlaceId },
+    FieldAccess { place: PlaceId, field: IString },
+    ArrayIndex { place: PlaceId, index: ValueId },
+    Assign { place: PlaceId, value: ValueId },
+    Deref { place: PlaceId },
 }
 
 impl Dump for Place {
@@ -16,23 +17,31 @@ impl Dump for Place {
         o: &mut dyn std::fmt::Write,
     ) -> Result<(), std::fmt::Error> {
         match self {
-            Place::FieldAccess { expr, field } => {
+            Place::FieldAccess { place, field } => {
                 write!(o, "(")?;
-                ctx.store[expr].dump(ctx, o)?;
+                ctx.store[place].dump(ctx, o)?;
                 write!(o, ".{})", field)
             }
 
-            Place::ArrayIndex { expr, index } => {
+            Place::ArrayIndex { place, index } => {
                 write!(o, "(")?;
-                ctx.store[expr].dump(ctx, o)?;
+                ctx.store[place].dump(ctx, o)?;
                 write!(o, "[")?;
                 ctx.store[index].dump(ctx, o)?;
                 write!(o, "])")
             }
 
-            Place::Deref { expr } => {
+            Place::Assign { place, value } => {
+                write!(o, "(")?;
+                ctx.store[place].dump(ctx, o)?;
+                write!(o, " = ")?;
+                ctx.store[value].dump(ctx, o)?;
+                write!(o, ")")
+            }
+
+            Place::Deref { place } => {
                 write!(o, "(deref ")?;
-                ctx.store[expr].dump(ctx, o)?;
+                ctx.store[place].dump(ctx, o)?;
                 write!(o, ")")
             }
         }

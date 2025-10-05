@@ -156,17 +156,22 @@ pub enum Value {
         index: ValueId,
     },
 
+    Assign {
+        place: PlaceId,
+        value: ValueId,
+    },
+
+    Deref {
+        place: PlaceId,
+    },
+
     Cast {
         expr: ValueId,
         to: TypeId,
     },
 
     GetAddressOf {
-        expr: PlaceId,
-    },
-
-    Deref {
-        expr: PlaceId,
+        place: PlaceId,
     },
 
     GetTypeOf {
