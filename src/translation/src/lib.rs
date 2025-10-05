@@ -2,6 +2,7 @@ mod options;
 mod options_builder;
 mod translate;
 
+pub use nitrate_hir as hir;
 pub use nitrate_parse as parse;
 pub use nitrate_parsetree as parsetree;
 pub use nitrate_parsetree_into_hir as parsetree_into_hir;

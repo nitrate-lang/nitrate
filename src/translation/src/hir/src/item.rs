@@ -21,7 +21,7 @@ pub enum Function {
         visibility: Visibility,
         attributes: Vec<FunctionAttribute>,
         name: EntityName,
-        parameters: Vec<Parameter>,
+        parameters: Vec<TypeId>,
         return_type: TypeId,
     },
 
@@ -29,7 +29,7 @@ pub enum Function {
         visibility: Visibility,
         attributes: Vec<FunctionAttribute>,
         name: EntityName,
-        parameters: Vec<Parameter>,
+        parameters: Vec<TypeId>,
         return_type: TypeId,
         body: BlockId,
     },
@@ -42,34 +42,31 @@ pub enum Function {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct GlobalVariable {
-    pub visibility: Visibility,
-    pub name: EntityName,
-    pub ty: TypeId,
-    pub initializer: ValueId,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct LocalVariable {
-    pub name: EntityName,
-    pub ty: TypeId,
-    pub initializer: ValueId,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct Parameter {
-    pub ty: TypeId,
-    pub name: EntityName,
-    pub default_value: Option<ValueId>,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
 pub enum Symbol {
-    GlobalVariable(GlobalVariable),
-    LocalVariable(LocalVariable),
-    Parameter(Parameter),
+    Unresolved {
+        name: QualifiedName,
+    },
+
+    GlobalVariable {
+        visibility: Visibility,
+        name: EntityName,
+        ty: TypeId,
+        initializer: ValueId,
+    },
+
+    LocalVariable {
+        name: EntityName,
+        ty: TypeId,
+        initializer: ValueId,
+    },
+
+    Parameter {
+        name: EntityName,
+        ty: TypeId,
+        default_value: Option<ValueId>,
+    },
+
     Function(Function),
-    Unresolved { name: QualifiedName },
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -78,7 +75,7 @@ pub enum ModuleAttribute {}
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Module {
     pub visibility: Visibility,
-    pub name: IString,
+    pub name: EntityName,
     pub attributes: Vec<ModuleAttribute>,
     pub items: Vec<ItemId>,
 }

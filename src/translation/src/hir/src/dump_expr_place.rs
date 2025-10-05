@@ -1,25 +1,5 @@
 use crate::prelude::{hir::*, *};
 
-impl Symbol {
-    pub fn dump_nocycle(&self, o: &mut dyn std::fmt::Write) -> Result<(), std::fmt::Error> {
-        match self {
-            Symbol::GlobalVariable(v) => write!(o, "sym global {}", v.name.0),
-            Symbol::LocalVariable(v) => write!(o, "sym local {}", v.name.0),
-            Symbol::Parameter(p) => write!(o, "sym param {}", p.name.0),
-            Symbol::Function(f) => match f {
-                Function::External { name, .. } => write!(o, "sym fn {}", name.0),
-                Function::Static { name, .. } => write!(o, "sym fn {}", name.0),
-                Function::Closure {
-                    closure_unique_id, ..
-                } => {
-                    write!(o, "sym fn #{}", closure_unique_id)
-                }
-            },
-            Symbol::Unresolved { name } => write!(o, "sym nolink {}", name.0),
-        }
-    }
-}
-
 impl Dump for Place {
     fn dump(
         &self,
