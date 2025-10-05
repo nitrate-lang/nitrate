@@ -1,5 +1,5 @@
 use crate::{
-    TypeStore, get_align_of, get_size_of,
+    Store, get_align_of, get_size_of,
     ty::{PointerSize, Type},
     type_alignment::AlignofError,
     type_size::SizeofError,
@@ -11,7 +11,7 @@ pub enum StrideOfError {
 
 pub fn get_stride_of(
     ty: &Type,
-    store: &TypeStore,
+    store: &Store,
     ptr_size: PointerSize,
 ) -> Result<u64, StrideOfError> {
     let element_size = match get_size_of(ty, store, ptr_size) {

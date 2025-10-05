@@ -2,7 +2,7 @@ use hashbrown::{HashMap, HashSet};
 use serde::{Deserialize, Serialize};
 use std::num::NonZeroU32;
 
-use crate::{TypeId, TypeStore};
+use crate::{Store, TypeId};
 
 #[derive(Serialize, Deserialize)]
 pub enum Lifetime {
@@ -191,11 +191,7 @@ impl Type {
 }
 
 impl Type {
-    pub fn dump(
-        &self,
-        store: &TypeStore,
-        o: &mut dyn std::fmt::Write,
-    ) -> Result<(), std::fmt::Error> {
+    pub fn dump(&self, store: &Store, o: &mut dyn std::fmt::Write) -> Result<(), std::fmt::Error> {
         match self {
             Type::Never => write!(o, "!"),
             Type::Bool => write!(o, "bool"),
@@ -344,7 +340,7 @@ impl Type {
         }
     }
 
-    pub fn dump_string(&self, store: &TypeStore) -> String {
+    pub fn dump_string(&self, store: &Store) -> String {
         let mut buf = String::new();
         self.dump(store, &mut buf).ok();
         buf

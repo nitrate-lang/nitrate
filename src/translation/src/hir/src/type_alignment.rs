@@ -1,7 +1,7 @@
 use std::cmp::max;
 
 use crate::{
-    TypeStore,
+    Store,
     ty::{PointerSize, StructAttribute, Type},
 };
 
@@ -9,11 +9,7 @@ pub enum AlignofError {
     UnknownAlignment,
 }
 
-pub fn get_align_of(
-    ty: &Type,
-    store: &TypeStore,
-    ptr_size: PointerSize,
-) -> Result<u64, AlignofError> {
+pub fn get_align_of(ty: &Type, store: &Store, ptr_size: PointerSize) -> Result<u64, AlignofError> {
     match ty {
         Type::Never => Ok(1),
         Type::Bool => Ok(1),

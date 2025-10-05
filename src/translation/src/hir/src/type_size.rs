@@ -1,7 +1,7 @@
 use std::cmp::max;
 
 use crate::{
-    TypeStore, get_align_of, get_stride_of,
+    Store, get_align_of, get_stride_of,
     ty::{PointerSize, StructAttribute, Type},
     type_alignment::AlignofError,
     type_stride::StrideOfError,
@@ -11,11 +11,7 @@ pub enum SizeofError {
     UnknownSize,
 }
 
-pub fn get_size_of(
-    ty: &Type,
-    store: &TypeStore,
-    ptr_size: PointerSize,
-) -> Result<u64, SizeofError> {
+pub fn get_size_of(ty: &Type, store: &Store, ptr_size: PointerSize) -> Result<u64, SizeofError> {
     match ty {
         Type::Never => Ok(0),
         Type::Bool => Ok(1),

@@ -1,5 +1,5 @@
 use nitrate_diagnosis::CompilerLog;
-use nitrate_hir::expr as hir_expr;
+use nitrate_hir::prelude::*;
 use nitrate_parsetree::kind as ast;
 
 pub trait ConvertIntoToHir {
@@ -9,7 +9,7 @@ pub trait ConvertIntoToHir {
 }
 
 impl ConvertIntoToHir for ast::Expr {
-    type Hir = hir_expr::Expr;
+    type Hir = hir::Expr;
 
     fn try_into_hir(self, _log: &CompilerLog) -> Result<Self::Hir, ()> {
         Err(())

@@ -1,23 +1,29 @@
 #![forbid(unsafe_code)]
 #![warn(clippy::pedantic)]
 
-pub mod expr;
-mod expr_store;
-pub mod item;
-mod item_store;
+mod expr;
+mod item;
 mod node_digest;
-pub mod ty;
+mod store;
+mod ty;
 mod type_alignment;
 mod type_size;
-mod type_store;
 mod type_stride;
 
 pub use node_digest::NodeDigest;
-
-pub use expr_store::{ExprId, ExprStore};
-pub use item_store::{ItemId, ItemStore};
-pub use type_store::{TypeId, TypeStore};
+pub use store::{ExprId, ItemId, Store, TypeId};
 
 pub use type_alignment::get_align_of;
 pub use type_size::get_size_of;
 pub use type_stride::get_stride_of;
+
+pub mod hir {
+    pub use super::expr::*;
+    pub use super::item::*;
+    pub use super::ty::*;
+}
+
+pub mod prelude {
+    pub use super::hir;
+    pub use super::{ExprId, ItemId, TypeId};
+}
