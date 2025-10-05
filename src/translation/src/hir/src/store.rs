@@ -65,8 +65,11 @@ macro_rules! impl_store {
     };
 }
 
+type Function = ();
+
 impl_store!(TypeId, Type, TypeStore);
 impl_store!(ItemId, Item, ItemStore);
+impl_store!(FunctionId, Function, FunctionStore);
 impl_store!(ValueId, Value, ExprValueStore);
 impl_store!(BlockId, Block, ExprBlockStore);
 impl_store!(PlaceId, Place, ExprPlaceStore);
@@ -74,6 +77,7 @@ impl_store!(PlaceId, Place, ExprPlaceStore);
 pub struct Store {
     types: TypeStore,
     items: ItemStore,
+    functions: FunctionStore,
     values: ExprValueStore,
     blocks: ExprBlockStore,
     places: ExprPlaceStore,
@@ -84,6 +88,7 @@ impl Store {
         Self {
             types: TypeStore::new(),
             items: ItemStore::new(),
+            functions: FunctionStore::new(),
             values: ExprValueStore::new(),
             blocks: ExprBlockStore::new(),
             places: ExprPlaceStore::new(),
@@ -96,6 +101,10 @@ impl Store {
 
     pub fn store_item(&mut self, item: Item) -> ItemId {
         self.items.store(item)
+    }
+
+    pub fn store_function(&mut self, function: Function) -> FunctionId {
+        self.functions.store(function)
     }
 
     pub fn store_expr(&mut self, expr: Value) -> ValueId {
@@ -114,6 +123,7 @@ impl Store {
         self.values.reset();
         self.types.reset();
         self.items.reset();
+        self.functions.reset();
         self.blocks.reset();
         self.places.reset();
     }
@@ -144,6 +154,20 @@ impl std::ops::Index<&ItemId> for Store {
 impl std::ops::IndexMut<&ItemId> for Store {
     fn index_mut(&mut self, index: &ItemId) -> &mut Self::Output {
         &mut self.items[index]
+    }
+}
+
+impl std::ops::Index<&FunctionId> for Store {
+    type Output = Function;
+
+    fn index(&self, index: &FunctionId) -> &Self::Output {
+        &self.functions[index]
+    }
+}
+
+impl std::ops::IndexMut<&FunctionId> for Store {
+    fn index_mut(&mut self, index: &FunctionId) -> &mut Self::Output {
+        &mut self.functions[index]
     }
 }
 

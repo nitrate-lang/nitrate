@@ -210,7 +210,7 @@ pub enum Value {
     },
 
     Call {
-        function: ValueId,
+        callee: ValueId,
         arguments: Box<Vec<ValueId>>,
     },
 }

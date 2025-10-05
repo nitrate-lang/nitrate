@@ -184,11 +184,8 @@ impl Dump for Value {
                 ctx.store[value].dump(ctx, o)
             }
 
-            Value::Call {
-                function,
-                arguments,
-            } => {
-                ctx.store[function].dump(ctx, o)?;
+            Value::Call { callee, arguments } => {
+                ctx.store[callee].dump(ctx, o)?;
                 write!(o, "(")?;
                 for (arg, i) in arguments.iter().zip(0..) {
                     if i != 0 {
