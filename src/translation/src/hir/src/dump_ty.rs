@@ -42,6 +42,7 @@ impl Dump for Type {
     ) -> Result<(), std::fmt::Error> {
         match self {
             Type::Never => write!(o, "!"),
+            Type::Unit => write!(o, "()"),
             Type::Bool => write!(o, "bool"),
             Type::U8 => write!(o, "u8"),
             Type::U16 => write!(o, "u16"),
@@ -76,6 +77,11 @@ impl Dump for Type {
 
                     ctx.store[element_type].dump(ctx, o)?;
                 }
+
+                if elements.len() == 1 {
+                    write!(o, ",")?;
+                }
+
                 write!(o, ")")
             }
 
@@ -185,6 +191,30 @@ impl Dump for Type {
 
                 ctx.store[&reference.to].dump(ctx, o)
             }
+
+            Type::Pointer(pointer) => {
+                if !pointer.exclusive {
+                    write!(o, "shared ")?;
+                }
+
+                if pointer.mutable {
+                    write!(o, "mut ")?;
+                }
+
+                ctx.store[&pointer.to].dump(ctx, o)
+            }
+
+            Type::InferredInteger { signed } => {
+                if *signed {
+                    write!(o, "?i")
+                } else {
+                    write!(o, "?u")
+                }
+            }
+            Type::InferredFloat => write!(o, "?f"),
+            Type::Inferred { id } => write!(o, "?{id}"),
+
+            Type::TypeAlias { name, aliased: _ } => write!(o, "{name}"),
         }
     }
 }

@@ -1,5 +1,5 @@
 use crate::prelude::{hir::*, *};
-use std::cmp::max;
+use std::{cmp::max, ops::Deref};
 
 pub enum AlignofError {
     UnknownAlignment,
@@ -8,6 +8,7 @@ pub enum AlignofError {
 pub fn get_align_of(ty: &Type, store: &Store, ptr_size: PointerSize) -> Result<u64, AlignofError> {
     match ty {
         Type::Never => Ok(1),
+        Type::Unit => Ok(1),
         Type::Bool => Ok(1),
         Type::U8 | Type::I8 | Type::F8 => Ok(1),
         Type::U16 | Type::I16 | Type::F16 => Ok(2),
@@ -27,7 +28,7 @@ pub fn get_align_of(ty: &Type, store: &Store, ptr_size: PointerSize) -> Result<u
         Type::Tuple { elements } => {
             let mut max_align = 1;
 
-            for element in elements {
+            for element in elements.deref() {
                 let element_align = get_align_of(&store[element], store, ptr_size)?;
                 max_align = max(max_align, element_align);
             }
@@ -73,6 +74,14 @@ pub fn get_align_of(ty: &Type, store: &Store, ptr_size: PointerSize) -> Result<u
         }
 
         Type::Function(_) => Err(AlignofError::UnknownAlignment),
+
         Type::Reference(_) => Ok(ptr_size as u64),
+        Type::Pointer(_) => Ok(ptr_size as u64),
+
+        Type::InferredInteger { .. } | Type::InferredFloat | Type::Inferred { .. } => {
+            Err(AlignofError::UnknownAlignment)
+        }
+
+        Type::TypeAlias { aliased, .. } => get_align_of(&store[aliased], store, ptr_size),
     }
 }

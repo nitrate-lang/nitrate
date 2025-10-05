@@ -1,5 +1,5 @@
 use crate::prelude::{hir::*, *};
-use std::cmp::max;
+use std::{cmp::max, ops::Deref};
 
 pub enum SizeofError {
     UnknownSize,
@@ -8,6 +8,7 @@ pub enum SizeofError {
 pub fn get_size_of(ty: &Type, store: &Store, ptr_size: PointerSize) -> Result<u64, SizeofError> {
     match ty {
         Type::Never => Ok(0),
+        Type::Unit => Ok(0),
         Type::Bool => Ok(1),
         Type::U8 | Type::I8 | Type::F8 => Ok(1),
         Type::U16 | Type::I16 | Type::F16 => Ok(2),
@@ -28,7 +29,7 @@ pub fn get_size_of(ty: &Type, store: &Store, ptr_size: PointerSize) -> Result<u6
         Type::Tuple { elements } => {
             let mut size = 0_u64;
 
-            for element in elements {
+            for element in elements.deref() {
                 let element = &store[element];
 
                 let element_size = get_size_of(element, store, ptr_size)?;
@@ -100,5 +101,12 @@ pub fn get_size_of(ty: &Type, store: &Store, ptr_size: PointerSize) -> Result<u6
         Type::Function(_) => Err(SizeofError::UnknownSize),
 
         Type::Reference(_) => Ok(ptr_size as u64),
+        Type::Pointer(_) => Ok(ptr_size as u64),
+
+        Type::InferredInteger { .. } | Type::InferredFloat | Type::Inferred { .. } => {
+            Err(SizeofError::UnknownSize)
+        }
+
+        Type::TypeAlias { aliased, .. } => get_size_of(&store[aliased], store, ptr_size),
     }
 }

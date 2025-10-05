@@ -1,5 +1,6 @@
 use crate::prelude::*;
 use hashbrown::{HashMap, HashSet};
+use interned_string::IString;
 use serde::{Deserialize, Serialize};
 use std::num::NonZeroU32;
 
@@ -15,6 +16,13 @@ pub enum Lifetime {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Reference {
     pub lifetime: Lifetime,
+    pub exclusive: bool,
+    pub mutable: bool,
+    pub to: TypeId,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct Pointer {
     pub exclusive: bool,
     pub mutable: bool,
     pub to: TypeId,
@@ -57,6 +65,7 @@ pub enum Type {
     /* ----------------------------------------------------- */
     /* Primitive Types                                       */
     Never,
+    Unit,
     Bool,
     U8,
     U16,
@@ -79,7 +88,7 @@ pub enum Type {
     /* ----------------------------------------------------- */
     /* Compound Types                                        */
     Array { element_type: TypeId, len: u64 },
-    Tuple { elements: Vec<TypeId> },
+    Tuple { elements: Box<Vec<TypeId>> },
     Slice { element_type: TypeId },
     Struct(Box<StructType>),
     Enum(Box<EnumType>),
@@ -91,11 +100,14 @@ pub enum Type {
     /* ----------------------------------------------------- */
     /* Reference Type                                        */
     Reference(Box<Reference>),
-}
+    Pointer(Box<Pointer>),
 
-impl Type {
-    #[allow(non_upper_case_globals)]
-    pub const Unit: Type = Type::Tuple { elements: vec![] };
+    /* ----------------------------------------------------- */
+    /* Placeholder Types                                     */
+    InferredInteger { signed: bool },
+    InferredFloat,
+    Inferred { id: NonZeroU32 },
+    TypeAlias { name: IString, aliased: TypeId },
 }
 
 impl Type {
