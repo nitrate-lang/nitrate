@@ -1,5 +1,41 @@
 use crate::prelude::{hir::*, *};
 
+impl Dump for Block {
+    fn dump(
+        &self,
+        ctx: &mut DumpContext,
+        o: &mut dyn std::fmt::Write,
+    ) -> Result<(), std::fmt::Error> {
+        match self.safety {
+            BlockSafety::Safe => write!(o, "{{\n")?,
+            BlockSafety::Unsafe => write!(o, "unsafe {{\n")?,
+        }
+        for expr in &self.exprs {
+            ctx.store[expr].dump(ctx, o)?;
+            write!(o, ";\n")?;
+        }
+        write!(o, "}}")
+    }
+
+    fn dump_trunk(
+        &self,
+        ctx: &mut DumpContext,
+        o: &mut dyn std::fmt::Write,
+    ) -> Result<(), std::fmt::Error> {
+        match self.safety {
+            BlockSafety::Safe => write!(o, "{{\n")?,
+            BlockSafety::Unsafe => write!(o, "unsafe {{\n")?,
+        }
+
+        for expr in &self.exprs {
+            ctx.store[expr].dump_trunk(ctx, o)?;
+            write!(o, ";\n")?;
+        }
+
+        write!(o, "}}")
+    }
+}
+
 impl Dump for Value {
     fn dump(
         &self,

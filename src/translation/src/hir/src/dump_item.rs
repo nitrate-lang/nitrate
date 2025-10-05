@@ -6,8 +6,14 @@ impl Dump for Item {
         _ctx: &mut DumpContext,
         _o: &mut dyn std::fmt::Write,
     ) -> Result<(), std::fmt::Error> {
-        match self {
-            _ => Ok(()),
-        }
+        Ok(())
+    }
+
+    fn dump_trunk(
+        &self,
+        _ctx: &mut DumpContext,
+        _o: &mut dyn std::fmt::Write,
+    ) -> Result<(), std::fmt::Error> {
+        Ok(())
     }
 }

@@ -25,18 +25,6 @@ pub enum StructAttribute {
     Packed,
 }
 
-impl Dump for StructAttribute {
-    fn dump(
-        &self,
-        _ctx: &mut DumpContext,
-        o: &mut dyn std::fmt::Write,
-    ) -> Result<(), std::fmt::Error> {
-        match self {
-            StructAttribute::Packed => write!(o, "packed"),
-        }
-    }
-}
-
 #[derive(Debug, Serialize, Deserialize)]
 pub struct StructType {
     pub attributes: HashSet<StructAttribute>,
@@ -45,18 +33,6 @@ pub struct StructType {
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub enum EnumAttribute {}
-
-impl Dump for EnumAttribute {
-    fn dump(
-        &self,
-        _ctx: &mut DumpContext,
-        _o: &mut dyn std::fmt::Write,
-    ) -> Result<(), std::fmt::Error> {
-        match self {
-            _ => Ok(()),
-        }
-    }
-}
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct EnumType {
@@ -67,18 +43,6 @@ pub struct EnumType {
 #[derive(Debug, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub enum FunctionAttribute {
     Variadic,
-}
-
-impl Dump for FunctionAttribute {
-    fn dump(
-        &self,
-        _ctx: &mut DumpContext,
-        o: &mut dyn std::fmt::Write,
-    ) -> Result<(), std::fmt::Error> {
-        match self {
-            FunctionAttribute::Variadic => write!(o, "variadic"),
-        }
-    }
 }
 
 #[derive(Debug, Serialize, Deserialize)]

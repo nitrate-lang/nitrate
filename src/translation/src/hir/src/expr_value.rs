@@ -95,24 +95,6 @@ pub struct Block {
     pub exprs: Vec<ValueId>,
 }
 
-impl Dump for Block {
-    fn dump(
-        &self,
-        ctx: &mut DumpContext,
-        o: &mut dyn std::fmt::Write,
-    ) -> Result<(), std::fmt::Error> {
-        match self.safety {
-            BlockSafety::Safe => write!(o, "{{\n")?,
-            BlockSafety::Unsafe => write!(o, "unsafe {{\n")?,
-        }
-        for expr in &self.exprs {
-            ctx.store[expr].dump(ctx, o)?;
-            write!(o, ";\n")?;
-        }
-        write!(o, "}}")
-    }
-}
-
 #[derive(Debug, Serialize, Deserialize)]
 pub enum Value {
     Unit,
