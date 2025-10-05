@@ -1,4 +1,4 @@
-use crate::Store;
+use crate::{DumpContext, dump::Dump};
 
 use serde::{Deserialize, Serialize};
 
@@ -19,16 +19,14 @@ pub enum Item {
 
 impl Item {}
 
-impl Item {
-    pub fn dump(&self, _store: &Store, o: &mut dyn std::fmt::Write) -> Result<(), std::fmt::Error> {
+impl Dump for Item {
+    fn dump(
+        &self,
+        _ctx: &mut DumpContext,
+        _o: &mut dyn std::fmt::Write,
+    ) -> Result<(), std::fmt::Error> {
         match self {
-            _ => write!(o, "<unimplemented>"),
+            _ => Ok(()),
         }
-    }
-
-    pub fn dump_string(&self, store: &Store) -> String {
-        let mut buf = String::new();
-        self.dump(store, &mut buf).ok();
-        buf
     }
 }

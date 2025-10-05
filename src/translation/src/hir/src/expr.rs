@@ -1,7 +1,11 @@
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 
-use crate::{ExprId, Store, TypeId};
+use crate::{
+    ExprId, TypeId,
+    dump::{Dump, DumpContext},
+    store::BlockId,
+};
 
 #[derive(Serialize, Deserialize)]
 pub enum BinaryOp {
@@ -87,6 +91,36 @@ pub enum Literal {
 }
 
 #[derive(Serialize, Deserialize)]
+pub enum BlockSafety {
+    Safe,
+    Unsafe,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct Block {
+    pub safety: BlockSafety,
+    pub exprs: Vec<ExprId>,
+}
+
+impl Dump for Block {
+    fn dump(
+        &self,
+        ctx: &mut DumpContext,
+        o: &mut dyn std::fmt::Write,
+    ) -> Result<(), std::fmt::Error> {
+        match self.safety {
+            BlockSafety::Safe => write!(o, "{{\n")?,
+            BlockSafety::Unsafe => write!(o, "unsafe {{\n")?,
+        }
+        for expr in &self.exprs {
+            ctx.store[expr].dump(ctx, o)?;
+            write!(o, ";\n")?;
+        }
+        write!(o, "}}")
+    }
+}
+
+#[derive(Serialize, Deserialize)]
 pub enum Expr {
     Literal(Literal),
 
@@ -113,17 +147,48 @@ pub enum Expr {
     List {
         elements: Vec<ExprId>,
     },
-    // If {
-    //     condition: ExprId,
-    //     true_branch: BlockId,
-    //     false_branch: Option<BlockId>,
-    // },
+
+    If {
+        condition: ExprId,
+        true_branch: BlockId,
+        false_branch: Option<BlockId>,
+    },
+
+    While {
+        condition: ExprId,
+        body: BlockId,
+    },
+
+    Loop {
+        body: BlockId,
+    },
+
+    Break {
+        label: Option<Arc<String>>,
+    },
+
+    Continue {
+        label: Option<Arc<String>>,
+    },
+
+    Return {
+        value: ExprId,
+    },
+
+    Call {
+        function: ExprId,
+        arguments: Vec<ExprId>,
+    },
 }
 
 impl Expr {}
 
-impl Expr {
-    pub fn dump(&self, store: &Store, o: &mut dyn std::fmt::Write) -> Result<(), std::fmt::Error> {
+impl Dump for Expr {
+    fn dump(
+        &self,
+        ctx: &mut DumpContext,
+        o: &mut dyn std::fmt::Write,
+    ) -> Result<(), std::fmt::Error> {
         match self {
             Expr::Literal(lit) => match lit {
                 Literal::Unit => write!(o, "()"),
@@ -141,7 +206,7 @@ impl Expr {
 
             Expr::Binary { left, op, right } => {
                 write!(o, "(")?;
-                store[left].dump(store, o)?;
+                ctx.store[left].dump(ctx, o)?;
                 write!(
                     o,
                     " {} ",
@@ -172,7 +237,7 @@ impl Expr {
                         BinaryOp::Range => "..",
                     }
                 )?;
-                store[right].dump(store, o)?;
+                ctx.store[right].dump(ctx, o)?;
                 write!(o, ")")
             }
 
@@ -189,21 +254,21 @@ impl Expr {
                         UnaryOp::LogicNot => "!",
                     }
                 )?;
-                store[expr].dump(store, o)?;
+                ctx.store[expr].dump(ctx, o)?;
                 write!(o, ")")
             }
 
             Expr::Cast { expr, to } => {
                 write!(o, "(")?;
-                store[expr].dump(store, o)?;
+                ctx.store[expr].dump(ctx, o)?;
                 write!(o, " as ")?;
-                store[to].dump(store, o)?;
+                ctx.store[to].dump(ctx, o)?;
                 write!(o, ")")
             }
 
             Expr::GetTypeOf { expr } => {
                 write!(o, "(typeof ")?;
-                store[expr].dump(store, o)?;
+                ctx.store[expr].dump(ctx, o)?;
                 write!(o, ")")
             }
 
@@ -213,16 +278,74 @@ impl Expr {
                     if i != 0 {
                         write!(o, ", ")?;
                     }
-                    store[elem].dump(store, o)?;
+                    ctx.store[elem].dump(ctx, o)?;
                 }
                 write!(o, "]")
             }
-        }
-    }
 
-    pub fn dump_string(&self, store: &Store) -> String {
-        let mut buf = String::new();
-        self.dump(store, &mut buf).ok();
-        buf
+            Expr::If {
+                condition,
+                true_branch,
+                false_branch,
+            } => {
+                write!(o, "if ")?;
+                ctx.store[condition].dump(ctx, o)?;
+                write!(o, " ")?;
+                ctx.store[true_branch].dump(ctx, o)?;
+                if let Some(false_branch) = false_branch {
+                    write!(o, " else ")?;
+                    ctx.store[false_branch].dump(ctx, o)?;
+                }
+                Ok(())
+            }
+
+            Expr::While { condition, body } => {
+                write!(o, "while ")?;
+                ctx.store[condition].dump(ctx, o)?;
+                write!(o, " ")?;
+                ctx.store[body].dump(ctx, o)
+            }
+
+            Expr::Loop { body } => {
+                write!(o, "loop ")?;
+                ctx.store[body].dump(ctx, o)
+            }
+
+            Expr::Break { label } => {
+                write!(o, "break")?;
+                if let Some(label) = label {
+                    write!(o, " {}", label)?;
+                }
+                Ok(())
+            }
+
+            Expr::Continue { label } => {
+                write!(o, "continue")?;
+                if let Some(label) = label {
+                    write!(o, " {}", label)?;
+                }
+                Ok(())
+            }
+
+            Expr::Return { value } => {
+                write!(o, "return ")?;
+                ctx.store[value].dump(ctx, o)
+            }
+
+            Expr::Call {
+                function,
+                arguments,
+            } => {
+                ctx.store[function].dump(ctx, o)?;
+                write!(o, "(")?;
+                for (arg, i) in arguments.iter().zip(0..) {
+                    if i != 0 {
+                        write!(o, ", ")?;
+                    }
+                    ctx.store[arg].dump(ctx, o)?;
+                }
+                write!(o, ")")
+            }
+        }
     }
 }

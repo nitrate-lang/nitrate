@@ -1,4 +1,4 @@
-use crate::{expr::Expr, item::Item, ty::Type};
+use crate::{expr::Expr, hir::Block, item::Item, ty::Type};
 use hashbrown::HashMap;
 use serde::{Deserialize, Serialize};
 use std::num::NonZeroU32;
@@ -65,27 +65,26 @@ macro_rules! impl_store {
     };
 }
 
-impl_store!(ExprId, Expr, ExprStore);
 impl_store!(TypeId, Type, TypeStore);
 impl_store!(ItemId, Item, ItemStore);
+impl_store!(ExprId, Expr, ExprStore);
+impl_store!(BlockId, Block, BlockStore);
 
 pub struct Store {
-    exprs: ExprStore,
     types: TypeStore,
     items: ItemStore,
+    exprs: ExprStore,
+    blocks: BlockStore,
 }
 
 impl Store {
     pub fn new() -> Self {
         Self {
-            exprs: ExprStore::new(),
             types: TypeStore::new(),
             items: ItemStore::new(),
+            exprs: ExprStore::new(),
+            blocks: BlockStore::new(),
         }
-    }
-
-    pub fn store_expr(&mut self, expr: Expr) -> ExprId {
-        self.exprs.store(expr)
     }
 
     pub fn store_type(&mut self, ty: Type) -> TypeId {
@@ -96,24 +95,19 @@ impl Store {
         self.items.store(item)
     }
 
+    pub fn store_expr(&mut self, expr: Expr) -> ExprId {
+        self.exprs.store(expr)
+    }
+
+    pub fn store_block(&mut self, block: Block) -> BlockId {
+        self.blocks.store(block)
+    }
+
     pub fn reset(&mut self) {
         self.exprs.reset();
         self.types.reset();
         self.items.reset();
-    }
-}
-
-impl std::ops::Index<&ExprId> for Store {
-    type Output = Expr;
-
-    fn index(&self, index: &ExprId) -> &Self::Output {
-        &self.exprs[index]
-    }
-}
-
-impl std::ops::IndexMut<&ExprId> for Store {
-    fn index_mut(&mut self, index: &ExprId) -> &mut Self::Output {
-        &mut self.exprs[index]
+        self.blocks.reset();
     }
 }
 
@@ -142,5 +136,33 @@ impl std::ops::Index<&ItemId> for Store {
 impl std::ops::IndexMut<&ItemId> for Store {
     fn index_mut(&mut self, index: &ItemId) -> &mut Self::Output {
         &mut self.items[index]
+    }
+}
+
+impl std::ops::Index<&ExprId> for Store {
+    type Output = Expr;
+
+    fn index(&self, index: &ExprId) -> &Self::Output {
+        &self.exprs[index]
+    }
+}
+
+impl std::ops::IndexMut<&ExprId> for Store {
+    fn index_mut(&mut self, index: &ExprId) -> &mut Self::Output {
+        &mut self.exprs[index]
+    }
+}
+
+impl std::ops::Index<&BlockId> for Store {
+    type Output = Block;
+
+    fn index(&self, index: &BlockId) -> &Self::Output {
+        &self.blocks[index]
+    }
+}
+
+impl std::ops::IndexMut<&BlockId> for Store {
+    fn index_mut(&mut self, index: &BlockId) -> &mut Self::Output {
+        &mut self.blocks[index]
     }
 }

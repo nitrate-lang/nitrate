@@ -1,6 +1,7 @@
 #![forbid(unsafe_code)]
 #![warn(clippy::pedantic)]
 
+mod dump;
 mod expr;
 mod item;
 mod node_digest;
@@ -10,8 +11,9 @@ mod type_alignment;
 mod type_size;
 mod type_stride;
 
+pub use dump::{Dump, DumpContext};
 pub use node_digest::NodeDigest;
-pub use store::{ExprId, ItemId, Store, TypeId};
+pub use store::{BlockId, ExprId, ItemId, Store, TypeId};
 
 pub use type_alignment::get_align_of;
 pub use type_size::get_size_of;
@@ -25,5 +27,5 @@ pub mod hir {
 
 pub mod prelude {
     pub use super::hir;
-    pub use super::{ExprId, ItemId, TypeId};
+    pub use super::{BlockId, Dump, DumpContext, ExprId, ItemId, TypeId};
 }

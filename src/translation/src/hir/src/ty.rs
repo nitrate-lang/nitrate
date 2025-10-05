@@ -2,7 +2,7 @@ use hashbrown::{HashMap, HashSet};
 use serde::{Deserialize, Serialize};
 use std::num::NonZeroU32;
 
-use crate::{Store, TypeId};
+use crate::{DumpContext, TypeId, dump::Dump};
 
 #[derive(Serialize, Deserialize)]
 pub enum Lifetime {
@@ -190,8 +190,12 @@ impl Type {
     }
 }
 
-impl Type {
-    pub fn dump(&self, store: &Store, o: &mut dyn std::fmt::Write) -> Result<(), std::fmt::Error> {
+impl Dump for Type {
+    fn dump(
+        &self,
+        ctx: &mut DumpContext,
+        o: &mut dyn std::fmt::Write,
+    ) -> Result<(), std::fmt::Error> {
         match self {
             Type::Never => write!(o, "!"),
             Type::Bool => write!(o, "bool"),
@@ -215,7 +219,7 @@ impl Type {
 
             Type::Array { element_type, len } => {
                 write!(o, "[")?;
-                store[element_type].dump(store, o)?;
+                ctx.store[element_type].dump(ctx, o)?;
                 write!(o, "; {len}]")
             }
 
@@ -226,14 +230,14 @@ impl Type {
                         write!(o, ", ")?;
                     }
 
-                    store[element_type].dump(store, o)?;
+                    ctx.store[element_type].dump(ctx, o)?;
                 }
                 write!(o, ")")
             }
 
             Type::Slice { element_type } => {
                 write!(o, "[")?;
-                store[element_type].dump(store, o)?;
+                ctx.store[element_type].dump(ctx, o)?;
                 write!(o, "]")
             }
 
@@ -259,7 +263,7 @@ impl Type {
                     }
 
                     write!(o, "{name}: ")?;
-                    store[field_type].dump(store, o)?;
+                    ctx.store[field_type].dump(ctx, o)?;
                 }
                 write!(o, " }}")
             }
@@ -286,7 +290,7 @@ impl Type {
                     }
 
                     write!(o, "{name}: ")?;
-                    store[variant_type].dump(store, o)?;
+                    ctx.store[variant_type].dump(ctx, o)?;
                 }
                 write!(o, " }}")
             }
@@ -312,10 +316,10 @@ impl Type {
                         write!(o, ", ")?;
                     }
 
-                    store[param_type].dump(store, o)?;
+                    ctx.store[param_type].dump(ctx, o)?;
                 }
                 write!(o, ") -> ")?;
-                store[&func_type.return_type].dump(store, o)
+                ctx.store[&func_type.return_type].dump(ctx, o)
             }
 
             Type::Reference(reference) => {
@@ -335,15 +339,9 @@ impl Type {
                     write!(o, "mut ")?;
                 }
 
-                store[&reference.to].dump(store, o)
+                ctx.store[&reference.to].dump(ctx, o)
             }
         }
-    }
-
-    pub fn dump_string(&self, store: &Store) -> String {
-        let mut buf = String::new();
-        self.dump(store, &mut buf).ok();
-        buf
     }
 }
 
