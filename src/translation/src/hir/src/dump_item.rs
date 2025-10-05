@@ -46,7 +46,8 @@ impl Dump for ExternalFunction {
         }
 
         write!(o, ") -> ")?;
-        ctx.store[&self.return_type].dump(ctx, o)
+        ctx.store[&self.return_type].dump(ctx, o)?;
+        write!(o, ";")
     }
 }
 
@@ -153,7 +154,8 @@ impl Dump for GlobalVariable {
         write!(o, " sym global `{}`: ", self.name.0)?;
         ctx.store[&self.ty].dump(ctx, o)?;
         write!(o, " = ")?;
-        ctx.store[&self.initializer].dump(ctx, o)
+        ctx.store[&self.initializer].dump(ctx, o)?;
+        write!(o, ";")
     }
 }
 
@@ -166,7 +168,8 @@ impl Dump for LocalVariable {
         write!(o, "sym local `{}`: ", self.name.0)?;
         ctx.store[&self.ty].dump(ctx, o)?;
         write!(o, " = ")?;
-        ctx.store[&self.initializer].dump(ctx, o)
+        ctx.store[&self.initializer].dump(ctx, o)?;
+        write!(o, ";")
     }
 }
 
@@ -245,7 +248,7 @@ impl Dump for Module {
 
                 self.write_indent(ctx, o)?;
                 ctx.store[item].dump(ctx, o)?;
-                write!(o, ";\n")?;
+                write!(o, "\n")?;
 
                 ctx.indent -= 1;
             }

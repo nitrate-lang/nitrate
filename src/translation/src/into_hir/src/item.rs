@@ -1,7 +1,7 @@
 use crate::{HirCtx, TryIntoHir};
 use nitrate_diagnosis::CompilerLog;
 use nitrate_hir::{
-    hir::{EntityName, GlobalVariable, Item, Type, Value},
+    hir::{EntityName, GlobalVariable, Item, SaveToStorage, Type, Value},
     prelude::*,
 };
 use nitrate_parsetree::kind as ast;
@@ -13,21 +13,22 @@ impl TryIntoHir for ast::Module {
     fn try_into_hir(self, ctx: &mut HirCtx, _log: &CompilerLog) -> Result<Self::Hir, Self::Error> {
         // TODO: Implement conversion from AST to HIR
 
-        let global_var_type = Type::USize;
-        let global_var_init = Value::USize(0);
+        let global_var_type = Type::USize.save(ctx.store_mut());
+        let global_var_init = Value::USize(0).save(ctx.store_mut());
 
         let item = Item::GlobalVariable(GlobalVariable {
-            visibility: hir::Visibility::Pro,
+            visibility: hir::Visibility::Pub,
             name: EntityName("GLOBAL_CTR".into()),
-            ty: ctx.storage_mut().store_type(global_var_type),
-            initializer: ctx.storage_mut().store_value(global_var_init),
-        });
+            ty: global_var_type,
+            initializer: global_var_init,
+        })
+        .save(ctx.store_mut());
 
         Ok(hir::Module {
             visibility: hir::Visibility::Sec,
             attributes: vec![],
             name: EntityName("".into()),
-            items: vec![ctx.storage_mut().store_item(item)],
+            items: vec![item],
         })
     }
 }

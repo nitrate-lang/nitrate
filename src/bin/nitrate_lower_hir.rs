@@ -119,7 +119,7 @@ fn program() -> Result<(), Error> {
         return Err(Error::HirError);
     };
 
-    let pretty_printed = hir_module.dump_to_string(&mut DumpContext::new(&hir_ctx.storage()));
+    let pretty_printed = hir_module.dump_to_string(&mut DumpContext::new(&hir_ctx.store()));
 
     parse_tree_output
         .write_all(&pretty_printed.into_bytes())

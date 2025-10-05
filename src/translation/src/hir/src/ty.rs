@@ -1,4 +1,4 @@
-use crate::prelude::*;
+use crate::prelude::{hir::*, *};
 use hashbrown::{HashMap, HashSet};
 use interned_string::IString;
 use serde::{Deserialize, Serialize};
@@ -174,6 +174,14 @@ impl Type {
 
     pub fn is_reference(&self) -> bool {
         matches!(self, Type::Reference(_))
+    }
+}
+
+impl SaveToStorage for Type {
+    type Id = TypeId;
+
+    fn save_to_storage(self, ctx: &mut Store) -> Self::Id {
+        ctx.store_type(self)
     }
 }
 

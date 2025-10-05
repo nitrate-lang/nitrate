@@ -18,11 +18,11 @@ impl HirCtx {
         }
     }
 
-    pub fn storage(&self) -> &Store {
+    pub fn store(&self) -> &Store {
         &self.storage
     }
 
-    pub fn storage_mut(&mut self) -> &mut Store {
+    pub fn store_mut(&mut self) -> &mut Store {
         &mut self.storage
     }
 

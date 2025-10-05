@@ -79,6 +79,14 @@ pub enum Symbol {
     Function(Function),
 }
 
+impl SaveToStorage for Symbol {
+    type Id = SymbolId;
+
+    fn save_to_storage(self, ctx: &mut Store) -> Self::Id {
+        ctx.store_symbol(self)
+    }
+}
+
 #[derive(Debug, Serialize, Deserialize)]
 pub enum ModuleAttribute {}
 
@@ -96,4 +104,12 @@ pub enum Item {
     GlobalVariable(GlobalVariable),
     ExternalFunction(ExternalFunction),
     StaticFunction(StaticFunction),
+}
+
+impl SaveToStorage for Item {
+    type Id = ItemId;
+
+    fn save_to_storage(self, ctx: &mut Store) -> Self::Id {
+        ctx.store_item(self)
+    }
 }

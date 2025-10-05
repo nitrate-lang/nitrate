@@ -1,4 +1,4 @@
-use crate::prelude::*;
+use crate::prelude::{hir::*, *};
 use interned_string::IString;
 use serde::{Deserialize, Serialize};
 
@@ -95,6 +95,14 @@ pub enum BlockSafety {
 pub struct Block {
     pub safety: BlockSafety,
     pub exprs: Vec<ValueId>,
+}
+
+impl SaveToStorage for Block {
+    type Id = BlockId;
+
+    fn save_to_storage(self, ctx: &mut Store) -> Self::Id {
+        ctx.store_block(self)
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -261,5 +269,13 @@ impl From<Literal> for Value {
             Literal::String(s) => Value::String(s),
             Literal::BString(b) => Value::BString(b),
         }
+    }
+}
+
+impl SaveToStorage for Value {
+    type Id = ValueId;
+
+    fn save_to_storage(self, ctx: &mut Store) -> Self::Id {
+        ctx.store_value(self)
     }
 }

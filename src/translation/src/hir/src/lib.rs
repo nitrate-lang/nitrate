@@ -10,6 +10,7 @@ mod expr_place;
 mod expr_value;
 mod item;
 mod node_digest;
+mod save;
 mod store;
 mod ty;
 mod ty_alignment;
@@ -24,6 +25,7 @@ pub mod hir {
     pub use super::expr_place::*;
     pub use super::expr_value::*;
     pub use super::item::*;
+    pub use super::save::SaveToStorage;
     pub use super::ty::*;
     pub use super::ty_alignment::*;
     pub use super::ty_size::*;

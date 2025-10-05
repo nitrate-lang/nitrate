@@ -9,3 +9,11 @@ pub enum Place {
     Assign { place: PlaceId, value: ValueId },
     Deref { place: PlaceId },
 }
+
+impl SaveToStorage for Place {
+    type Id = PlaceId;
+
+    fn save_to_storage(self, ctx: &mut Store) -> Self::Id {
+        ctx.store_place(self)
+    }
+}
