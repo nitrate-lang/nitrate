@@ -25,7 +25,7 @@ pub mod hir {
     pub use super::expr_place::*;
     pub use super::expr_value::*;
     pub use super::item::*;
-    pub use super::save::SaveToStorage;
+    pub use super::save::IntoStoreId;
     pub use super::ty::*;
     pub use super::ty_alignment::*;
     pub use super::ty_size::*;

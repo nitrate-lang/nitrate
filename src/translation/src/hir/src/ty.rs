@@ -177,10 +177,10 @@ impl Type {
     }
 }
 
-impl SaveToStorage for Type {
+impl IntoStoreId for Type {
     type Id = TypeId;
 
-    fn save_to_storage(self, ctx: &mut Store) -> Self::Id {
+    fn into_id(self, ctx: &mut Store) -> Self::Id {
         ctx.store_type(self)
     }
 }

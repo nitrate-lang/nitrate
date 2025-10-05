@@ -97,10 +97,10 @@ pub struct Block {
     pub exprs: Vec<ValueId>,
 }
 
-impl SaveToStorage for Block {
+impl IntoStoreId for Block {
     type Id = BlockId;
 
-    fn save_to_storage(self, ctx: &mut Store) -> Self::Id {
+    fn into_id(self, ctx: &mut Store) -> Self::Id {
         ctx.store_block(self)
     }
 }
@@ -272,10 +272,10 @@ impl From<Literal> for Value {
     }
 }
 
-impl SaveToStorage for Value {
+impl IntoStoreId for Value {
     type Id = ValueId;
 
-    fn save_to_storage(self, ctx: &mut Store) -> Self::Id {
+    fn into_id(self, ctx: &mut Store) -> Self::Id {
         ctx.store_value(self)
     }
 }

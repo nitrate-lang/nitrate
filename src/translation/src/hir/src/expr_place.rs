@@ -10,10 +10,10 @@ pub enum Place {
     Deref { place: PlaceId },
 }
 
-impl SaveToStorage for Place {
+impl IntoStoreId for Place {
     type Id = PlaceId;
 
-    fn save_to_storage(self, ctx: &mut Store) -> Self::Id {
+    fn into_id(self, ctx: &mut Store) -> Self::Id {
         ctx.store_place(self)
     }
 }
