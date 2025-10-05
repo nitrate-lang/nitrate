@@ -2,7 +2,7 @@ use crate::prelude::{hir::*, *};
 use interned_string::IString;
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum Function {
     External {
         attributes: Vec<FunctionAttribute>,
@@ -26,29 +26,35 @@ pub enum Function {
     },
 }
 
-#[derive(Debug, Serialize, Deserialize)]
-pub struct Variable {
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct GlobalVariable {
     pub name: IString,
     pub ty: TypeId,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct LocalVariable {
+    pub name: IString,
+    pub ty: TypeId,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Parameter {
     pub name: IString,
     pub ty: TypeId,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum Symbol {
-    GlobalVariable(Variable),
-    LocalVariable(Variable),
+    GlobalVariable(GlobalVariable),
+    LocalVariable(LocalVariable),
     Parameter(Parameter),
     Function(Function),
 
     Unresolved { name: IString },
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum Place {
     Symbol { symbol: SymbolId },
     FieldAccess { place: PlaceId, field: IString },

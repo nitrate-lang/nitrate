@@ -2,7 +2,7 @@ use crate::prelude::*;
 use interned_string::IString;
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum BinaryOp {
     /// `+`
     Add,
@@ -48,7 +48,7 @@ pub enum BinaryOp {
     Ne,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum UnaryOp {
     /// `+`
     Add,
@@ -60,7 +60,7 @@ pub enum UnaryOp {
     LogicNot,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum Literal {
     Unit,
     Bool(bool),
@@ -83,19 +83,19 @@ pub enum Literal {
     BString(Box<Vec<u8>>),
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum BlockSafety {
     Safe,
     Unsafe,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Block {
     pub safety: BlockSafety,
     pub exprs: Vec<ValueId>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum Value {
     Unit,
     Bool(bool),

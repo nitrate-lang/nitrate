@@ -5,4 +5,4 @@ mod item;
 mod lower;
 mod ty;
 
-pub use lower::ConvertIntoToHir;
+pub use lower::{HirCtx, TryIntoHir};
