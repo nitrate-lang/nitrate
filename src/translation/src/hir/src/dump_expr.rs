@@ -1,6 +1,6 @@
 use crate::{
     Dump, DumpContext,
-    hir::{BinaryOp, Expr, Literal, UnaryOp},
+    hir::{BinaryOp, Expr, UnaryOp},
 };
 
 impl Dump for Expr {
@@ -10,19 +10,25 @@ impl Dump for Expr {
         o: &mut dyn std::fmt::Write,
     ) -> Result<(), std::fmt::Error> {
         match self {
-            Expr::Literal(lit) => match lit {
-                Literal::Unit => write!(o, "()"),
-                Literal::Bool(b) => write!(o, "{}", b),
-                Literal::I8(i) => write!(o, "i8 {}", i),
-                Literal::I16(i) => write!(o, "i16 {}", i),
-                Literal::I32(i) => write!(o, "i32 {}", i),
-                Literal::I64(i) => write!(o, "i64 {}", i),
-                Literal::I128(i) => write!(o, "i128 {}", i),
-                Literal::F32(f) => write!(o, "f32 {}", f),
-                Literal::F64(f) => write!(o, "f64 {}", f),
-                Literal::String(s) => write!(o, "\"{}\"", s),
-                Literal::BString(s) => write!(o, "b\"{:?}\"", s),
-            },
+            Expr::Unit => write!(o, "()"),
+            Expr::Bool(b) => write!(o, "{}", b),
+            Expr::I8(i) => write!(o, "i8 {}", i),
+            Expr::I16(i) => write!(o, "i16 {}", i),
+            Expr::I32(i) => write!(o, "i32 {}", i),
+            Expr::I64(i) => write!(o, "i64 {}", i),
+            Expr::I128(i) => write!(o, "i128 {}", i),
+            Expr::U8(u) => write!(o, "u8 {}", u),
+            Expr::U16(u) => write!(o, "u16 {}", u),
+            Expr::U32(u) => write!(o, "u32 {}", u),
+            Expr::U64(u) => write!(o, "u64 {}", u),
+            Expr::U128(u) => write!(o, "u128 {}", u),
+            Expr::F8(f) => write!(o, "f8 {}", f),
+            Expr::F16(f) => write!(o, "f16 {}", f),
+            Expr::F32(f) => write!(o, "f32 {}", f),
+            Expr::F64(f) => write!(o, "f64 {}", f),
+            Expr::F128(f) => write!(o, "f128 {}", f),
+            Expr::String(s) => write!(o, "\"{}\"", s),
+            Expr::BString(s) => write!(o, "b\"{:?}\"", s),
 
             Expr::Binary { left, op, right } => {
                 write!(o, "(")?;
@@ -52,9 +58,6 @@ impl Dump for Expr {
                         BinaryOp::Gte => ">=",
                         BinaryOp::Eq => "==",
                         BinaryOp::Ne => "!=",
-                        BinaryOp::Dot => ".",
-                        BinaryOp::Arrow => "->",
-                        BinaryOp::Range => "..",
                     }
                 )?;
                 ctx.store[right].dump(ctx, o)?;
@@ -68,12 +71,27 @@ impl Dump for Expr {
                     match op {
                         UnaryOp::Add => "+",
                         UnaryOp::Sub => "-",
-                        UnaryOp::Deref => "*",
-                        UnaryOp::AddressOf => "&",
                         UnaryOp::BitNot => "~",
                         UnaryOp::LogicNot => "!",
                     }
                 )?;
+                ctx.store[expr].dump(ctx, o)?;
+                write!(o, ")")
+            }
+
+            Expr::FieldAccess { expr, field } => {
+                ctx.store[expr].dump(ctx, o)?;
+                write!(o, ".{}", field)
+            }
+
+            Expr::GetAddressOf { expr } => {
+                write!(o, "(address_of ")?;
+                ctx.store[expr].dump(ctx, o)?;
+                write!(o, ")")
+            }
+
+            Expr::Deref { expr } => {
+                write!(o, "(deref ")?;
                 ctx.store[expr].dump(ctx, o)?;
                 write!(o, ")")
             }
