@@ -28,7 +28,9 @@ pub trait Dump {
         &self,
         ctx: &mut DumpContext,
         o: &mut dyn std::fmt::Write,
-    ) -> Result<(), std::fmt::Error>;
+    ) -> Result<(), std::fmt::Error> {
+        self.dump(ctx, o)
+    }
 
     fn write_indent(
         &self,
