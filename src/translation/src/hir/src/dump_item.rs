@@ -1,18 +1,28 @@
 use crate::prelude::{hir::*, *};
 
+impl Dump for Visibility {
+    fn dump(
+        &self,
+        _ctx: &mut DumpContext,
+        o: &mut dyn std::fmt::Write,
+    ) -> Result<(), std::fmt::Error> {
+        match self {
+            Visibility::Sec => write!(o, "sec"),
+            Visibility::Pro => write!(o, "pro"),
+            Visibility::Pub => write!(o, "pub"),
+        }
+    }
+}
+
 impl Dump for ExternalFunction {
     fn dump(
         &self,
         ctx: &mut DumpContext,
         o: &mut dyn std::fmt::Write,
     ) -> Result<(), std::fmt::Error> {
-        match self.visibility {
-            Visibility::Sec => write!(o, "sec ")?,
-            Visibility::Pro => write!(o, "pro ")?,
-            Visibility::Pub => write!(o, "pub ")?,
-        }
+        self.visibility.dump(ctx, o)?;
+        write!(o, " sym extern fn ")?;
 
-        write!(o, "sym extern fn ")?;
         if !self.attributes.is_empty() {
             write!(o, "[")?;
             for (i, attr) in self.attributes.iter().enumerate() {
@@ -24,7 +34,9 @@ impl Dump for ExternalFunction {
             }
             write!(o, "] ")?;
         }
+
         write!(o, "{}(", self.name.0)?;
+
         for (i, param) in self.parameters.iter().enumerate() {
             if i != 0 {
                 write!(o, ", ")?;
@@ -32,6 +44,7 @@ impl Dump for ExternalFunction {
 
             ctx.store[param].dump(ctx, o)?;
         }
+
         write!(o, ") -> ")?;
         ctx.store[&self.return_type].dump(ctx, o)
     }
@@ -43,13 +56,9 @@ impl Dump for StaticFunction {
         ctx: &mut DumpContext,
         o: &mut dyn std::fmt::Write,
     ) -> Result<(), std::fmt::Error> {
-        match self.visibility {
-            Visibility::Sec => write!(o, "sec ")?,
-            Visibility::Pro => write!(o, "pro ")?,
-            Visibility::Pub => write!(o, "pub ")?,
-        }
+        self.visibility.dump(ctx, o)?;
+        write!(o, " sym static fn ")?;
 
-        write!(o, "sym static fn ")?;
         if !self.attributes.is_empty() {
             write!(o, "[")?;
             for (i, attr) in self.attributes.iter().enumerate() {
@@ -61,7 +70,9 @@ impl Dump for StaticFunction {
             }
             write!(o, "] ")?;
         }
+
         write!(o, "{}(", self.name.0)?;
+
         for (i, param) in self.parameters.iter().enumerate() {
             if i != 0 {
                 write!(o, ", ")?;
@@ -69,8 +80,10 @@ impl Dump for StaticFunction {
 
             ctx.store[param].dump(ctx, o)?;
         }
+
         write!(o, ") -> ")?;
         ctx.store[&self.return_type].dump(ctx, o)?;
+
         write!(o, " ")?;
         ctx.store[&self.body].dump(ctx, o)
     }
@@ -83,14 +96,17 @@ impl Dump for ClosureFunction {
         o: &mut dyn std::fmt::Write,
     ) -> Result<(), std::fmt::Error> {
         write!(o, "sym fn #{}", self.closure_unique_id)?;
+
         write!(o, " [")?;
         for (i, capture) in self.captures.iter().enumerate() {
             if i != 0 {
                 write!(o, ", ")?;
             }
-            ctx.store[capture].dump(ctx, o)?;
+
+            ctx.store[capture].dump_nocycle(o)?;
         }
         write!(o, "] ")?;
+
         self.callee.dump(ctx, o)
     }
 }
@@ -113,14 +129,14 @@ impl Symbol {
     pub fn dump_nocycle(&self, o: &mut dyn std::fmt::Write) -> Result<(), std::fmt::Error> {
         match self {
             Symbol::Unresolved { name } => write!(o, "sym nolink `{}`", name.0),
-            Symbol::GlobalVariable(global) => write!(o, "sym global `{}`", global.name.0),
-            Symbol::LocalVariable(local) => write!(o, "sym local `{}`", local.name.0),
-            Symbol::Parameter(param) => write!(o, "sym param `{}`", param.name.0),
+            Symbol::GlobalVariable(gv) => write!(o, "sym global `{}`", gv.name.0),
+            Symbol::LocalVariable(lv) => write!(o, "sym local `{}`", lv.name.0),
+            Symbol::Parameter(fp) => write!(o, "sym param `{}`", fp.name.0),
             Symbol::Function(f) => match f {
-                Function::External(func) => write!(o, "sym fn `{}`", func.name.0),
-                Function::Static(func) => write!(o, "sym fn `{}`", func.name.0),
-                Function::Closure(closure) => {
-                    write!(o, "sym fn #{}", closure.closure_unique_id)
+                Function::External(efn) => write!(o, "sym fn `{}`", efn.name.0),
+                Function::Static(sfn) => write!(o, "sym fn `{}`", sfn.name.0),
+                Function::Closure(cfn) => {
+                    write!(o, "sym fn #{}", cfn.closure_unique_id)
                 }
             },
         }
@@ -133,13 +149,8 @@ impl Dump for GlobalVariable {
         ctx: &mut DumpContext,
         o: &mut dyn std::fmt::Write,
     ) -> Result<(), std::fmt::Error> {
-        match self.visibility {
-            Visibility::Sec => write!(o, "sec ")?,
-            Visibility::Pro => write!(o, "pro ")?,
-            Visibility::Pub => write!(o, "pub ")?,
-        }
-
-        write!(o, "sym global `{}`: ", self.name.0)?;
+        self.visibility.dump(ctx, o)?;
+        write!(o, " sym global `{}`: ", self.name.0)?;
         ctx.store[&self.ty].dump(ctx, o)?;
         write!(o, " = ")?;
         ctx.store[&self.initializer].dump(ctx, o)
@@ -183,9 +194,9 @@ impl Dump for Symbol {
     ) -> Result<(), std::fmt::Error> {
         match self {
             Symbol::Unresolved { name } => write!(o, "sym nolink `{}`", name.0),
-            Symbol::GlobalVariable(global) => global.dump(ctx, o),
-            Symbol::LocalVariable(local) => local.dump(ctx, o),
-            Symbol::Parameter(param) => param.dump(ctx, o),
+            Symbol::GlobalVariable(gv) => gv.dump(ctx, o),
+            Symbol::LocalVariable(lv) => lv.dump(ctx, o),
+            Symbol::Parameter(fp) => fp.dump(ctx, o),
             Symbol::Function(f) => f.dump(ctx, o),
         }
     }
@@ -207,19 +218,16 @@ impl Dump for Module {
         ctx: &mut DumpContext,
         o: &mut dyn std::fmt::Write,
     ) -> Result<(), std::fmt::Error> {
-        match self.visibility {
-            Visibility::Sec => write!(o, "sec ")?,
-            Visibility::Pro => write!(o, "pro ")?,
-            Visibility::Pub => write!(o, "pub ")?,
-        }
+        self.visibility.dump(ctx, o)?;
+        write!(o, " mod ")?;
 
-        write!(o, "mod ")?;
         if !self.attributes.is_empty() {
             write!(o, "[")?;
             for (i, attr) in self.attributes.iter().enumerate() {
                 if i != 0 {
                     write!(o, ", ")?;
                 }
+
                 attr.dump(ctx, o)?;
             }
             write!(o, "] ")?;
@@ -237,13 +245,13 @@ impl Dump for Module {
 
                 self.write_indent(ctx, o)?;
                 ctx.store[item].dump(ctx, o)?;
-                write!(o, "\n")?;
+                write!(o, ";\n")?;
 
                 ctx.indent -= 1;
             }
 
             self.write_indent(ctx, o)?;
-            write!(o, "\n}}")
+            write!(o, "}}")
         }
     }
 }

@@ -7,14 +7,28 @@ impl Dump for Block {
         o: &mut dyn std::fmt::Write,
     ) -> Result<(), std::fmt::Error> {
         match self.safety {
-            BlockSafety::Safe => write!(o, "{{\n")?,
-            BlockSafety::Unsafe => write!(o, "unsafe {{\n")?,
+            BlockSafety::Safe => {}
+            BlockSafety::Unsafe => write!(o, "unsafe ")?,
         }
-        for expr in &self.exprs {
-            ctx.store[expr].dump(ctx, o)?;
-            write!(o, ";\n")?;
+
+        if self.exprs.is_empty() {
+            write!(o, "{{}}")
+        } else {
+            write!(o, "{{\n")?;
+
+            for expr in &self.exprs {
+                ctx.indent += 1;
+
+                self.write_indent(ctx, o)?;
+                ctx.store[expr].dump(ctx, o)?;
+                write!(o, ";\n")?;
+
+                ctx.indent -= 1;
+            }
+
+            self.write_indent(ctx, o)?;
+            write!(o, "}}")
         }
-        write!(o, "}}")
     }
 }
 
@@ -121,7 +135,7 @@ impl Dump for Value {
             }
 
             Value::Deref { place } => {
-                write!(o, "(deref ")?;
+                write!(o, "(*")?;
                 ctx.store[place].dump(ctx, o)?;
                 write!(o, ")")
             }

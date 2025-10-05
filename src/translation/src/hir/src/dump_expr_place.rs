@@ -32,7 +32,7 @@ impl Dump for Place {
             }
 
             Place::Deref { place } => {
-                write!(o, "(deref ")?;
+                write!(o, "(*")?;
                 ctx.store[place].dump(ctx, o)?;
                 write!(o, ")")
             }
