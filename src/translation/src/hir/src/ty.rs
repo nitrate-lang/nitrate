@@ -10,7 +10,9 @@ pub enum Lifetime {
     Gc,
     ThreadLocal,
     TaskLocal,
-    Stack { id: NonZeroU32 },
+    Stack { id: EntityName },
+
+    Inferred,
 }
 
 #[derive(Debug, Serialize, Deserialize)]

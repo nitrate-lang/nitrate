@@ -194,7 +194,8 @@ impl Dump for Type {
                     Lifetime::Gc => write!(o, "&'gc ")?,
                     Lifetime::ThreadLocal => write!(o, "&'thread ")?,
                     Lifetime::TaskLocal => write!(o, "&'task ")?,
-                    Lifetime::Stack { id } => write!(o, "&'s{id} ")?,
+                    Lifetime::Stack { id } => write!(o, "&'s{} ", id.0)?,
+                    Lifetime::Inferred => write!(o, "&'_) ")?,
                 }
 
                 if !reference.exclusive {

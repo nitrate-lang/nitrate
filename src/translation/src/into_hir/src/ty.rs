@@ -2,10 +2,11 @@ use crate::{HirCtx, TryIntoHir};
 use nitrate_diagnosis::CompilerLog;
 use nitrate_hir::prelude::*;
 use nitrate_parsetree::kind as ast;
+use std::ops::Deref;
 
 impl TryIntoHir for ast::TypeSyntaxError {
     type Error = ();
-    type Hir = ();
+    type Hir = Type;
 
     fn try_into_hir(self, _ctx: &mut HirCtx, _log: &CompilerLog) -> Result<Self::Hir, Self::Error> {
         Err(())
@@ -192,6 +193,10 @@ impl TryIntoHir for ast::TupleType {
     type Hir = Type;
 
     fn try_into_hir(self, ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, Self::Error> {
+        if self.element_types.is_empty() {
+            return Ok(Type::Unit);
+        }
+
         let mut elements = Vec::with_capacity(self.element_types.len());
 
         for ast_ty in self.element_types.into_iter() {
@@ -210,8 +215,16 @@ impl TryIntoHir for ast::ArrayType {
     type Hir = Type;
 
     fn try_into_hir(self, ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, Self::Error> {
-        // TODO: Lower ast::ArrayType into hir::ArrayType
-        Err(())
+        // let hir_element_type = self.element_type.try_into_hir(ctx, log)?;
+
+        todo!("evaluate array length expression");
+
+        // let hir_length = ??;
+
+        // Ok(Type::Array {
+        //     element_type: hir_element_type.into_id(ctx.store_mut()),
+        //     len: hir_length,
+        // });
     }
 }
 
@@ -220,8 +233,11 @@ impl TryIntoHir for ast::SliceType {
     type Hir = Type;
 
     fn try_into_hir(self, ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, Self::Error> {
-        // TODO: Lower ast::SliceType into hir::SliceType
-        Err(())
+        let hir_element_type = self.element_type.try_into_hir(ctx, log)?;
+
+        Ok(Type::Slice {
+            element_type: hir_element_type.into_id(ctx.store_mut()),
+        })
     }
 }
 
@@ -240,8 +256,41 @@ impl TryIntoHir for ast::ReferenceType {
     type Hir = Type;
 
     fn try_into_hir(self, ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, Self::Error> {
-        // TODO: Lower ast::ReferenceType into hir::ReferenceType
-        Err(())
+        let to = self.to.try_into_hir(ctx, log)?.into_id(ctx.store_mut());
+
+        let lifetime = match self.lifetime {
+            None => Lifetime::Inferred,
+            Some(ast::Lifetime { name }) => match name.deref() {
+                "static" => Lifetime::Static,
+                "gc" => Lifetime::Gc,
+                "thread" => Lifetime::ThreadLocal,
+                "task" => Lifetime::TaskLocal,
+                "_" => Lifetime::Inferred,
+                name => Lifetime::Stack {
+                    id: EntityName(name.into()),
+                },
+            },
+        };
+
+        let mutable = match self.mutability {
+            Some(ast::Mutability::Mut) => true,
+            Some(ast::Mutability::Const) | None => false,
+        };
+
+        let exclusive = match self.exclusivity {
+            Some(ast::Exclusivity::Iso) => true,
+            Some(ast::Exclusivity::Poly) => false,
+            None => mutable,
+        };
+
+        let reference = Reference {
+            lifetime,
+            exclusive,
+            mutable,
+            to,
+        };
+
+        Ok(Type::Reference(Box::new(reference)))
     }
 }
 
@@ -259,9 +308,9 @@ impl TryIntoHir for ast::LatentType {
     type Error = ();
     type Hir = Type;
 
-    fn try_into_hir(self, ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, Self::Error> {
+    fn try_into_hir(self, _ctx: &mut HirCtx, _log: &CompilerLog) -> Result<Self::Hir, Self::Error> {
         // TODO: Lower ast::LatentType into hir::LatentType
-        Err(())
+        todo!("Implement latent type evaluation");
     }
 }
 
@@ -269,7 +318,7 @@ impl TryIntoHir for ast::Lifetime {
     type Error = ();
     type Hir = Type;
 
-    fn try_into_hir(self, ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, Self::Error> {
+    fn try_into_hir(self, _ctx: &mut HirCtx, _log: &CompilerLog) -> Result<Self::Hir, Self::Error> {
         // TODO: Lower ast::Lifetime into hir::Lifetime
         Err(())
     }
@@ -280,8 +329,7 @@ impl TryIntoHir for ast::TypeParentheses {
     type Hir = Type;
 
     fn try_into_hir(self, ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, Self::Error> {
-        // TODO: Lower ast::TypeParentheses into hir::TypeParentheses
-        Err(())
+        self.inner.try_into_hir(ctx, log)
     }
 }
 
@@ -290,7 +338,36 @@ impl TryIntoHir for ast::Type {
     type Hir = Type;
 
     fn try_into_hir(self, ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, Self::Error> {
-        // TODO: Lower ast::TypeParentheses into hir::TypeParentheses
-        Err(())
+        match self {
+            ast::Type::SyntaxError(ty) => ty.try_into_hir(ctx, log),
+            ast::Type::Bool(ty) => ty.try_into_hir(ctx, log),
+            ast::Type::UInt8(ty) => ty.try_into_hir(ctx, log),
+            ast::Type::UInt16(ty) => ty.try_into_hir(ctx, log),
+            ast::Type::UInt32(ty) => ty.try_into_hir(ctx, log),
+            ast::Type::UInt64(ty) => ty.try_into_hir(ctx, log),
+            ast::Type::UInt128(ty) => ty.try_into_hir(ctx, log),
+            ast::Type::Int8(ty) => ty.try_into_hir(ctx, log),
+            ast::Type::Int16(ty) => ty.try_into_hir(ctx, log),
+            ast::Type::Int32(ty) => ty.try_into_hir(ctx, log),
+            ast::Type::Int64(ty) => ty.try_into_hir(ctx, log),
+            ast::Type::Int128(ty) => ty.try_into_hir(ctx, log),
+            ast::Type::Float8(ty) => ty.try_into_hir(ctx, log),
+            ast::Type::Float16(ty) => ty.try_into_hir(ctx, log),
+            ast::Type::Float32(ty) => ty.try_into_hir(ctx, log),
+            ast::Type::Float64(ty) => ty.try_into_hir(ctx, log),
+            ast::Type::Float128(ty) => ty.try_into_hir(ctx, log),
+            ast::Type::InferType(ty) => ty.try_into_hir(ctx, log),
+            ast::Type::TypePath(ty) => ty.try_into_hir(ctx, log),
+            ast::Type::RefinementType(ty) => ty.try_into_hir(ctx, log),
+            ast::Type::TupleType(ty) => ty.try_into_hir(ctx, log),
+            ast::Type::ArrayType(ty) => ty.try_into_hir(ctx, log),
+            ast::Type::SliceType(ty) => ty.try_into_hir(ctx, log),
+            ast::Type::FunctionType(ty) => ty.try_into_hir(ctx, log),
+            ast::Type::ReferenceType(ty) => ty.try_into_hir(ctx, log),
+            ast::Type::OpaqueType(ty) => ty.try_into_hir(ctx, log),
+            ast::Type::LatentType(ty) => ty.try_into_hir(ctx, log),
+            ast::Type::Lifetime(ty) => ty.try_into_hir(ctx, log),
+            ast::Type::Parentheses(ty) => ty.try_into_hir(ctx, log),
+        }
     }
 }
