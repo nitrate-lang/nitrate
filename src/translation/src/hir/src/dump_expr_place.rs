@@ -7,6 +7,8 @@ impl Dump for Place {
         o: &mut dyn std::fmt::Write,
     ) -> Result<(), std::fmt::Error> {
         match self {
+            Place::Symbol { symbol } => ctx.store[symbol].dump_nocycle(o),
+
             Place::FieldAccess { place, field } => {
                 write!(o, "(")?;
                 ctx.store[place].dump(ctx, o)?;

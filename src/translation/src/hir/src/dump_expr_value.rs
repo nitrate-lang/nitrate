@@ -94,6 +94,8 @@ impl Dump for Value {
                 write!(o, ")")
             }
 
+            Value::Symbol { symbol } => ctx.store[symbol].dump_nocycle(o),
+
             Value::FieldAccess { expr, field } => {
                 write!(o, "(")?;
                 ctx.store[expr].dump(ctx, o)?;
@@ -203,7 +205,7 @@ impl Dump for Value {
             }
 
             Value::Call { callee, arguments } => {
-                ctx.store[callee].dump_trunk(ctx, o)?;
+                ctx.store[callee].dump(ctx, o)?;
                 write!(o, "(")?;
                 for (arg, i) in arguments.iter().zip(0..) {
                     if i != 0 {

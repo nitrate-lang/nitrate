@@ -1,7 +1,7 @@
 use crate::{
-    expr_place::Place,
+    expr_place::{Place, Symbol},
     expr_value::Value,
-    hir::{Block, Function},
+    hir::Block,
     item::Item,
     ty::Type,
 };
@@ -73,7 +73,7 @@ macro_rules! impl_store {
 
 impl_store!(TypeId, Type, TypeStore);
 impl_store!(ItemId, Item, ItemStore);
-impl_store!(FunctionId, Function, FunctionStore);
+impl_store!(SymbolId, Symbol, SymbolStore);
 impl_store!(ValueId, Value, ExprValueStore);
 impl_store!(BlockId, Block, ExprBlockStore);
 impl_store!(PlaceId, Place, ExprPlaceStore);
@@ -81,7 +81,7 @@ impl_store!(PlaceId, Place, ExprPlaceStore);
 pub struct Store {
     types: TypeStore,
     items: ItemStore,
-    functions: FunctionStore,
+    symbols: SymbolStore,
     values: ExprValueStore,
     blocks: ExprBlockStore,
     places: ExprPlaceStore,
@@ -92,7 +92,7 @@ impl Store {
         Self {
             types: TypeStore::new(),
             items: ItemStore::new(),
-            functions: FunctionStore::new(),
+            symbols: SymbolStore::new(),
             values: ExprValueStore::new(),
             blocks: ExprBlockStore::new(),
             places: ExprPlaceStore::new(),
@@ -107,8 +107,8 @@ impl Store {
         self.items.store(item)
     }
 
-    pub fn store_function(&mut self, function: Function) -> FunctionId {
-        self.functions.store(function)
+    pub fn store_symbol(&mut self, symbol: Symbol) -> SymbolId {
+        self.symbols.store(symbol)
     }
 
     pub fn store_expr(&mut self, expr: Value) -> ValueId {
@@ -127,7 +127,7 @@ impl Store {
         self.values.reset();
         self.types.reset();
         self.items.reset();
-        self.functions.reset();
+        self.symbols.reset();
         self.blocks.reset();
         self.places.reset();
     }
@@ -161,17 +161,17 @@ impl std::ops::IndexMut<&ItemId> for Store {
     }
 }
 
-impl std::ops::Index<&FunctionId> for Store {
-    type Output = Function;
+impl std::ops::Index<&SymbolId> for Store {
+    type Output = Symbol;
 
-    fn index(&self, index: &FunctionId) -> &Self::Output {
-        &self.functions[index]
+    fn index(&self, index: &SymbolId) -> &Self::Output {
+        &self.symbols[index]
     }
 }
 
-impl std::ops::IndexMut<&FunctionId> for Store {
-    fn index_mut(&mut self, index: &FunctionId) -> &mut Self::Output {
-        &mut self.functions[index]
+impl std::ops::IndexMut<&SymbolId> for Store {
+    fn index_mut(&mut self, index: &SymbolId) -> &mut Self::Output {
+        &mut self.symbols[index]
     }
 }
 

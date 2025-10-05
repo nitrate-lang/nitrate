@@ -1,4 +1,4 @@
-use crate::{prelude::*, store::FunctionId};
+use crate::prelude::*;
 use interned_string::IString;
 use serde::{Deserialize, Serialize};
 
@@ -192,8 +192,12 @@ pub enum Value {
     },
 
     Call {
-        callee: FunctionId,
+        callee: ValueId,
         arguments: Box<Vec<ValueId>>,
+    },
+
+    Symbol {
+        symbol: SymbolId,
     },
 }
 

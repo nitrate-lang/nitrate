@@ -13,7 +13,7 @@ impl Dump for Function {
                 parameters,
                 return_type,
             } => {
-                write!(o, "fn ")?;
+                write!(o, "sym extern fn ")?;
                 if !attributes.is_empty() {
                     write!(o, "[")?;
                     for (attr, i) in attributes.iter().zip(0..) {
@@ -24,7 +24,7 @@ impl Dump for Function {
                     }
                     write!(o, "] ")?;
                 }
-                write!(o, "{}(", name)?;
+                write!(o, "{name}(")?;
                 for (param, i) in parameters.iter().zip(0..) {
                     if i != 0 {
                         write!(o, ", ")?;
@@ -35,14 +35,14 @@ impl Dump for Function {
                 ctx.store[return_type].dump(ctx, o)
             }
 
-            Function::Internal {
+            Function::Static {
                 attributes,
                 name,
                 parameters,
                 return_type,
                 body,
             } => {
-                write!(o, "fn ")?;
+                write!(o, "sym static fn ")?;
                 if !attributes.is_empty() {
                     write!(o, "[")?;
                     for (attr, i) in attributes.iter().zip(0..) {
@@ -53,7 +53,7 @@ impl Dump for Function {
                     }
                     write!(o, "] ")?;
                 }
-                write!(o, "{}(", name)?;
+                write!(o, "{name}(")?;
                 for (param, i) in parameters.iter().zip(0..) {
                     if i != 0 {
                         write!(o, ", ")?;
@@ -66,8 +66,12 @@ impl Dump for Function {
                 ctx.store[body].dump(ctx, o)
             }
 
-            Function::Closure { callee, captures } => {
-                write!(o, "closure ")?;
+            Function::Closure {
+                closure_unique_id,
+                callee,
+                captures,
+            } => {
+                write!(o, "sym fn #{}", closure_unique_id)?;
                 write!(o, " [")?;
                 for (capture, i) in captures.iter().zip(0..) {
                     if i != 0 {
@@ -76,50 +80,7 @@ impl Dump for Function {
                     ctx.store[capture].dump(ctx, o)?;
                 }
                 write!(o, "] ")?;
-                ctx.store[callee].dump(ctx, o)
-            }
-
-            Function::Indirect { callee } => {
-                write!(o, "fn ")?;
-                ctx.store[callee].dump(ctx, o)
-            }
-        }
-    }
-
-    fn dump_trunk(
-        &self,
-        ctx: &mut DumpContext,
-        o: &mut dyn std::fmt::Write,
-    ) -> Result<(), std::fmt::Error> {
-        match self {
-            Function::External { name, .. } => {
-                write!(o, "fn {name}")
-            }
-
-            Function::Internal { name, .. } => {
-                write!(o, "fn {name}")
-            }
-
-            Function::Closure { captures, callee } => {
-                write!(o, "fn closure ")?;
-
-                if !captures.is_empty() {
-                    write!(o, "[")?;
-                    for (capture, i) in captures.iter().zip(0..) {
-                        if i != 0 {
-                            write!(o, ", ")?;
-                        }
-                        ctx.store[capture].dump_trunk(ctx, o)?;
-                    }
-                    write!(o, "] ")?;
-                }
-
-                ctx.store[callee].dump_trunk(ctx, o)
-            }
-
-            Function::Indirect { callee } => {
-                write!(o, "fn ")?;
-                ctx.store[callee].dump_trunk(ctx, o)
+                callee.dump(ctx, o)
             }
         }
     }
