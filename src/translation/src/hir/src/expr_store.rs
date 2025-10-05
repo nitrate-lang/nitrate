@@ -1,22 +1,25 @@
-use crate::expr::Expr;
-
 use hashbrown::HashMap;
 use serde::{Deserialize, Serialize};
+use std::num::NonZeroU32;
+
+use crate::expr::Expr;
 
 #[derive(Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct ExprId {
-    id: u32,
+    id: NonZeroU32,
 }
 
-#[derive(Default)]
 pub struct ExprStore {
     items: HashMap<ExprId, Expr>,
-    next_id: u32,
+    next_id: NonZeroU32,
 }
 
 impl ExprStore {
     pub fn new() -> Self {
-        Self::default()
+        Self {
+            items: HashMap::new(),
+            next_id: NonZeroU32::new(1).unwrap(),
+        }
     }
 
     pub fn store(&mut self, item: Expr) -> ExprId {
@@ -26,7 +29,7 @@ impl ExprStore {
         self.next_id = self
             .next_id
             .checked_add(1)
-            .expect("ExprStore overflowed u32");
+            .expect("ExprStore overflowed NonZeroU32");
 
         ExprId { id }
     }

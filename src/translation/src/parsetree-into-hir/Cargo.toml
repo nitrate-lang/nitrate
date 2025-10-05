@@ -1,0 +1,9 @@
+[package]
+name = "nitrate_parsetree_into_hir"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+nitrate_parsetree = { path = "../parsetree" }
+nitrate_hir = { path = "../hir" }
+nitrate_diagnosis = { path = "../../../diagnosis" }

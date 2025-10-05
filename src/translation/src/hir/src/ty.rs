@@ -6,18 +6,17 @@ use crate::{TypeId, TypeStore};
 
 #[derive(Serialize, Deserialize)]
 pub enum Lifetime {
-    ManuallyManaged,
-    ProcessLocal,
-    CollectorManaged,
+    Static,
+    Gc,
     ThreadLocal,
     TaskLocal,
-    StackLocal { id: NonZeroU32 },
+    Stack { id: NonZeroU32 },
 }
 
 #[derive(Serialize, Deserialize)]
 pub struct Reference {
     pub lifetime: Lifetime,
-    pub iso: bool,
+    pub exclusive: bool,
     pub mutable: bool,
     pub to: TypeId,
 }
@@ -38,7 +37,7 @@ impl StructAttribute {
 #[derive(Serialize, Deserialize)]
 pub struct StructType {
     pub attributes: HashSet<StructAttribute>,
-    pub fields: HashMap<String, TypeId>,
+    pub fields: Vec<(String, TypeId)>,
 }
 
 #[derive(Serialize, Deserialize, PartialEq, Eq, Hash)]
@@ -83,23 +82,19 @@ pub enum Type {
     /* ----------------------------------------------------- */
     /* Primitive Types                                       */
     Never,
-
     Bool,
-
     U8,
     U16,
     U32,
     U64,
     U128,
     USize,
-
     I8,
     I16,
     I32,
     I64,
     I128,
     ISize,
-
     F8,
     F16,
     F32,
@@ -120,7 +115,7 @@ pub enum Type {
 
     /* ----------------------------------------------------- */
     /* Reference Type                                        */
-    Reference(Reference),
+    Reference(Box<Reference>),
 }
 
 impl Type {
@@ -203,23 +198,19 @@ impl Type {
     ) -> Result<(), std::fmt::Error> {
         match self {
             Type::Never => write!(o, "!"),
-
             Type::Bool => write!(o, "bool"),
-
             Type::U8 => write!(o, "u8"),
             Type::U16 => write!(o, "u16"),
             Type::U32 => write!(o, "u32"),
             Type::U64 => write!(o, "u64"),
             Type::U128 => write!(o, "u128"),
             Type::USize => write!(o, "usize"),
-
             Type::I8 => write!(o, "i8"),
             Type::I16 => write!(o, "i16"),
             Type::I32 => write!(o, "i32"),
             Type::I64 => write!(o, "i64"),
             Type::I128 => write!(o, "i128"),
             Type::ISize => write!(o, "isize"),
-
             Type::F8 => write!(o, "f8"),
             Type::F16 => write!(o, "f16"),
             Type::F32 => write!(o, "f32"),
@@ -333,24 +324,19 @@ impl Type {
 
             Type::Reference(reference) => {
                 match &reference.lifetime {
-                    Lifetime::ManuallyManaged => write!(o, "*")?,
-                    Lifetime::ProcessLocal => write!(o, "&'static ")?,
-                    Lifetime::CollectorManaged => write!(o, "%")?,
+                    Lifetime::Static => write!(o, "&'static ")?,
+                    Lifetime::Gc => write!(o, "&'gc ")?,
                     Lifetime::ThreadLocal => write!(o, "&'thread ")?,
                     Lifetime::TaskLocal => write!(o, "&'task ")?,
-                    Lifetime::StackLocal { id } => write!(o, "&'s{id} ")?,
+                    Lifetime::Stack { id } => write!(o, "&'s{id} ")?,
                 }
 
-                if reference.iso {
-                    write!(o, "iso ")?;
-                } else {
-                    write!(o, "poly ")?;
+                if !reference.exclusive {
+                    write!(o, "shared ")?;
                 }
 
                 if reference.mutable {
                     write!(o, "mut ")?;
-                } else {
-                    write!(o, "const ")?;
                 }
 
                 store[&reference.to].dump(store, o)

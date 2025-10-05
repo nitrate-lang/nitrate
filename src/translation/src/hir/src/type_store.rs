@@ -1,41 +1,45 @@
-use crate::ty::Type;
 use hashbrown::HashMap;
 use serde::{Deserialize, Serialize};
+use std::num::NonZeroU32;
+
+use crate::ty::Type;
 
 #[derive(Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct TypeId {
-    id: u32,
+    id: NonZeroU32,
 }
 
-#[derive(Default)]
 pub struct TypeStore {
-    types: HashMap<TypeId, Type>,
-    next_id: u32,
+    items: HashMap<TypeId, Type>,
+    next_id: NonZeroU32,
 }
 
 impl TypeStore {
     pub fn new() -> Self {
-        Self::default()
+        Self {
+            items: HashMap::new(),
+            next_id: NonZeroU32::new(1).unwrap(),
+        }
     }
 
-    pub fn store(&mut self, ty: Type) -> TypeId {
+    pub fn store(&mut self, item: Type) -> TypeId {
         let id = self.next_id;
-        self.types.insert(TypeId { id }, ty);
+        self.items.insert(TypeId { id }, item);
 
         self.next_id = self
             .next_id
             .checked_add(1)
-            .expect("TypeStore overflowed u32");
+            .expect("TypeStore overflowed NonZeroU32");
 
         TypeId { id }
     }
 
     fn get(&self, id: &TypeId) -> &Type {
-        self.types.get(id).expect("TypeId not found in TypeStore")
+        self.items.get(id).expect("TypeId not found in TypeStore")
     }
 
     fn get_mut(&mut self, id: &TypeId) -> &mut Type {
-        self.types
+        self.items
             .get_mut(id)
             .expect("TypeId not found in TypeStore")
     }

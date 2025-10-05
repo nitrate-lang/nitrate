@@ -4,6 +4,7 @@ mod translate;
 
 pub use nitrate_parse as parse;
 pub use nitrate_parsetree as parsetree;
+pub use nitrate_parsetree_into_hir as parsetree_into_hir;
 pub use nitrate_resolve as resolve;
 pub use nitrate_tokenize as tokenize;
 
