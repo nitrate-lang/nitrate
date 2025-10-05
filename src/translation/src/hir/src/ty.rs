@@ -1,4 +1,4 @@
-use crate::prelude::{hir::*, *};
+use crate::prelude::*;
 use hashbrown::{HashMap, HashSet};
 use interned_string::IString;
 use serde::{Deserialize, Serialize};

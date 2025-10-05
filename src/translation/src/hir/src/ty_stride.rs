@@ -1,4 +1,4 @@
-use crate::prelude::{hir::*, *};
+use crate::prelude::*;
 
 pub enum StrideOfError {
     UnknownStride,

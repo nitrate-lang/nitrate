@@ -1,4 +1,4 @@
-use crate::prelude::{hir::*, *};
+use crate::prelude::*;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]

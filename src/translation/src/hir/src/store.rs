@@ -1,4 +1,4 @@
-use crate::prelude::hir::*;
+use crate::prelude::*;
 use hashbrown::HashMap;
 use serde::{Deserialize, Serialize};
 use std::num::NonZeroU32;

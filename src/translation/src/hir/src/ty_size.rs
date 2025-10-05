@@ -1,4 +1,4 @@
-use crate::prelude::{hir::*, *};
+use crate::prelude::*;
 use std::{cmp::max, ops::Deref};
 
 pub enum SizeofError {

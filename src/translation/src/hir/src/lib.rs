@@ -33,7 +33,7 @@ pub mod hir {
 }
 
 pub mod prelude {
-    pub use super::hir;
+    pub use super::hir::*;
     pub use super::{
         BlockId, Dump, DumpContext, ItemId, PlaceId, Store, SymbolId, TypeId, ValueId,
     };

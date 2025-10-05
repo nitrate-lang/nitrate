@@ -1,4 +1,4 @@
-use crate::prelude::{hir::*, *};
+use crate::prelude::*;
 use interned_string::IString;
 use serde::{Deserialize, Serialize};
 
