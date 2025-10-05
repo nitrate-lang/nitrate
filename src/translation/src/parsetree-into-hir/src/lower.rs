@@ -9,7 +9,7 @@ pub trait ConvertIntoToHir {
 }
 
 impl ConvertIntoToHir for ast::Expr {
-    type Hir = hir::Expr;
+    type Hir = hir::Value;
 
     fn try_into_hir(self, _log: &CompilerLog) -> Result<Self::Hir, ()> {
         Err(())

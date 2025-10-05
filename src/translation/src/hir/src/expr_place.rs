@@ -2,7 +2,7 @@ use interned_string::IString;
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    ExprId,
+    ValueId,
     dump::{Dump, DumpContext},
     store::PlaceId,
 };
@@ -10,7 +10,7 @@ use crate::{
 #[derive(Debug, Serialize, Deserialize)]
 pub enum Place {
     FieldAccess { expr: PlaceId, field: IString },
-    ArrayIndex { expr: PlaceId, index: ExprId },
+    ArrayIndex { expr: PlaceId, index: ValueId },
     Deref { expr: PlaceId },
 }
 

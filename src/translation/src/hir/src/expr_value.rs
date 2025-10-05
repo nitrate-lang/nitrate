@@ -2,7 +2,7 @@ use interned_string::IString;
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    ExprId, TypeId,
+    TypeId, ValueId,
     dump::{Dump, DumpContext},
     store::{BlockId, PlaceId},
 };
@@ -97,7 +97,7 @@ pub enum BlockSafety {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Block {
     pub safety: BlockSafety,
-    pub exprs: Vec<ExprId>,
+    pub exprs: Vec<ValueId>,
 }
 
 impl Dump for Block {
@@ -119,7 +119,7 @@ impl Dump for Block {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub enum Expr {
+pub enum Value {
     Unit,
     Bool(bool),
     I8(i8),
@@ -141,28 +141,28 @@ pub enum Expr {
     BString(Box<Vec<u8>>),
 
     Binary {
-        left: ExprId,
+        left: ValueId,
         op: BinaryOp,
-        right: ExprId,
+        right: ValueId,
     },
 
     Unary {
         op: UnaryOp,
-        expr: ExprId,
+        expr: ValueId,
     },
 
     FieldAccess {
-        expr: ExprId,
+        expr: ValueId,
         field: IString,
     },
 
     ArrayIndex {
-        expr: ExprId,
-        index: ExprId,
+        expr: ValueId,
+        index: ValueId,
     },
 
     Cast {
-        expr: ExprId,
+        expr: ValueId,
         to: TypeId,
     },
 
@@ -175,21 +175,21 @@ pub enum Expr {
     },
 
     GetTypeOf {
-        expr: ExprId,
+        expr: ValueId,
     },
 
     List {
-        elements: Box<Vec<ExprId>>,
+        elements: Box<Vec<ValueId>>,
     },
 
     If {
-        condition: ExprId,
+        condition: ValueId,
         true_branch: BlockId,
         false_branch: Option<BlockId>,
     },
 
     While {
-        condition: ExprId,
+        condition: ValueId,
         body: BlockId,
     },
 
@@ -206,66 +206,66 @@ pub enum Expr {
     },
 
     Return {
-        value: ExprId,
+        value: ValueId,
     },
 
     Call {
-        function: ExprId,
-        arguments: Box<Vec<ExprId>>,
+        function: ValueId,
+        arguments: Box<Vec<ValueId>>,
     },
 }
 
-impl TryFrom<Expr> for Literal {
-    type Error = Expr;
+impl TryFrom<Value> for Literal {
+    type Error = Value;
 
-    fn try_from(value: Expr) -> Result<Self, Self::Error> {
+    fn try_from(value: Value) -> Result<Self, Self::Error> {
         match value {
-            Expr::Unit => Ok(Literal::Unit),
-            Expr::Bool(b) => Ok(Literal::Bool(b)),
-            Expr::I8(i) => Ok(Literal::I8(i)),
-            Expr::I16(i) => Ok(Literal::I16(i)),
-            Expr::I32(i) => Ok(Literal::I32(i)),
-            Expr::I64(i) => Ok(Literal::I64(i)),
-            Expr::I128(i) => Ok(Literal::I128(i)),
-            Expr::U8(u) => Ok(Literal::U8(u)),
-            Expr::U16(u) => Ok(Literal::U16(u)),
-            Expr::U32(u) => Ok(Literal::U32(u)),
-            Expr::U64(u) => Ok(Literal::U64(u)),
-            Expr::U128(u) => Ok(Literal::U128(u)),
-            Expr::F8(f) => Ok(Literal::F8(f)),
-            Expr::F16(f) => Ok(Literal::F16(f)),
-            Expr::F32(f) => Ok(Literal::F32(f)),
-            Expr::F64(f) => Ok(Literal::F64(f)),
-            Expr::F128(f) => Ok(Literal::F128(f)),
-            Expr::String(s) => Ok(Literal::String(s)),
-            Expr::BString(b) => Ok(Literal::BString(b)),
+            Value::Unit => Ok(Literal::Unit),
+            Value::Bool(b) => Ok(Literal::Bool(b)),
+            Value::I8(i) => Ok(Literal::I8(i)),
+            Value::I16(i) => Ok(Literal::I16(i)),
+            Value::I32(i) => Ok(Literal::I32(i)),
+            Value::I64(i) => Ok(Literal::I64(i)),
+            Value::I128(i) => Ok(Literal::I128(i)),
+            Value::U8(u) => Ok(Literal::U8(u)),
+            Value::U16(u) => Ok(Literal::U16(u)),
+            Value::U32(u) => Ok(Literal::U32(u)),
+            Value::U64(u) => Ok(Literal::U64(u)),
+            Value::U128(u) => Ok(Literal::U128(u)),
+            Value::F8(f) => Ok(Literal::F8(f)),
+            Value::F16(f) => Ok(Literal::F16(f)),
+            Value::F32(f) => Ok(Literal::F32(f)),
+            Value::F64(f) => Ok(Literal::F64(f)),
+            Value::F128(f) => Ok(Literal::F128(f)),
+            Value::String(s) => Ok(Literal::String(s)),
+            Value::BString(b) => Ok(Literal::BString(b)),
             other => Err(other),
         }
     }
 }
 
-impl From<Literal> for Expr {
+impl From<Literal> for Value {
     fn from(value: Literal) -> Self {
         match value {
-            Literal::Unit => Expr::Unit,
-            Literal::Bool(b) => Expr::Bool(b),
-            Literal::I8(i) => Expr::I8(i),
-            Literal::I16(i) => Expr::I16(i),
-            Literal::I32(i) => Expr::I32(i),
-            Literal::I64(i) => Expr::I64(i),
-            Literal::I128(i) => Expr::I128(i),
-            Literal::U8(u) => Expr::U8(u),
-            Literal::U16(u) => Expr::U16(u),
-            Literal::U32(u) => Expr::U32(u),
-            Literal::U64(u) => Expr::U64(u),
-            Literal::U128(u) => Expr::U128(u),
-            Literal::F8(f) => Expr::F8(f),
-            Literal::F16(f) => Expr::F16(f),
-            Literal::F32(f) => Expr::F32(f),
-            Literal::F64(f) => Expr::F64(f),
-            Literal::F128(f) => Expr::F128(f),
-            Literal::String(s) => Expr::String(s),
-            Literal::BString(b) => Expr::BString(b),
+            Literal::Unit => Value::Unit,
+            Literal::Bool(b) => Value::Bool(b),
+            Literal::I8(i) => Value::I8(i),
+            Literal::I16(i) => Value::I16(i),
+            Literal::I32(i) => Value::I32(i),
+            Literal::I64(i) => Value::I64(i),
+            Literal::I128(i) => Value::I128(i),
+            Literal::U8(u) => Value::U8(u),
+            Literal::U16(u) => Value::U16(u),
+            Literal::U32(u) => Value::U32(u),
+            Literal::U64(u) => Value::U64(u),
+            Literal::U128(u) => Value::U128(u),
+            Literal::F8(f) => Value::F8(f),
+            Literal::F16(f) => Value::F16(f),
+            Literal::F32(f) => Value::F32(f),
+            Literal::F64(f) => Value::F64(f),
+            Literal::F128(f) => Value::F128(f),
+            Literal::String(s) => Value::String(s),
+            Literal::BString(b) => Value::BString(b),
         }
     }
 }

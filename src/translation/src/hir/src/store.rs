@@ -1,4 +1,4 @@
-use crate::{expr::Expr, expr_place::Place, hir::Block, item::Item, ty::Type};
+use crate::{expr_place::Place, expr_value::Value, hir::Block, item::Item, ty::Type};
 use hashbrown::HashMap;
 use serde::{Deserialize, Serialize};
 use std::num::NonZeroU32;
@@ -67,16 +67,16 @@ macro_rules! impl_store {
 
 impl_store!(TypeId, Type, TypeStore);
 impl_store!(ItemId, Item, ItemStore);
-impl_store!(ExprId, Expr, ExprStore);
-impl_store!(BlockId, Block, BlockStore);
-impl_store!(PlaceId, Place, PlaceStore);
+impl_store!(ValueId, Value, ExprValueStore);
+impl_store!(BlockId, Block, ExprBlockStore);
+impl_store!(PlaceId, Place, ExprPlaceStore);
 
 pub struct Store {
     types: TypeStore,
     items: ItemStore,
-    exprs: ExprStore,
-    blocks: BlockStore,
-    places: PlaceStore,
+    values: ExprValueStore,
+    blocks: ExprBlockStore,
+    places: ExprPlaceStore,
 }
 
 impl Store {
@@ -84,9 +84,9 @@ impl Store {
         Self {
             types: TypeStore::new(),
             items: ItemStore::new(),
-            exprs: ExprStore::new(),
-            blocks: BlockStore::new(),
-            places: PlaceStore::new(),
+            values: ExprValueStore::new(),
+            blocks: ExprBlockStore::new(),
+            places: ExprPlaceStore::new(),
         }
     }
 
@@ -98,8 +98,8 @@ impl Store {
         self.items.store(item)
     }
 
-    pub fn store_expr(&mut self, expr: Expr) -> ExprId {
-        self.exprs.store(expr)
+    pub fn store_expr(&mut self, expr: Value) -> ValueId {
+        self.values.store(expr)
     }
 
     pub fn store_block(&mut self, block: Block) -> BlockId {
@@ -111,7 +111,7 @@ impl Store {
     }
 
     pub fn reset(&mut self) {
-        self.exprs.reset();
+        self.values.reset();
         self.types.reset();
         self.items.reset();
         self.blocks.reset();
@@ -147,17 +147,17 @@ impl std::ops::IndexMut<&ItemId> for Store {
     }
 }
 
-impl std::ops::Index<&ExprId> for Store {
-    type Output = Expr;
+impl std::ops::Index<&ValueId> for Store {
+    type Output = Value;
 
-    fn index(&self, index: &ExprId) -> &Self::Output {
-        &self.exprs[index]
+    fn index(&self, index: &ValueId) -> &Self::Output {
+        &self.values[index]
     }
 }
 
-impl std::ops::IndexMut<&ExprId> for Store {
-    fn index_mut(&mut self, index: &ExprId) -> &mut Self::Output {
-        &mut self.exprs[index]
+impl std::ops::IndexMut<&ValueId> for Store {
+    fn index_mut(&mut self, index: &ValueId) -> &mut Self::Output {
+        &mut self.values[index]
     }
 }
 
