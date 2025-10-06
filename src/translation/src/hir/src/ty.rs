@@ -1,8 +1,68 @@
 use crate::prelude::*;
 use interned_string::IString;
 use serde::{Deserialize, Serialize};
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::num::NonZeroU32;
+
+pub type TypeList = Vec<TypeId>;
+
+impl IntoStoreId for TypeList {
+    type Id = TypeListId;
+
+    fn into_id(self, ctx: &mut Store) -> Self::Id {
+        ctx.store_type_list(self)
+    }
+}
+
+pub type StructFields = Vec<(String, TypeId)>;
+
+impl IntoStoreId for StructFields {
+    type Id = StructFieldsId;
+
+    fn into_id(self, ctx: &mut Store) -> Self::Id {
+        ctx.store_struct_fields(self)
+    }
+}
+
+pub type EnumVariants = HashMap<String, TypeId>;
+
+impl IntoStoreId for EnumVariants {
+    type Id = EnumVariantsId;
+
+    fn into_id(self, ctx: &mut Store) -> Self::Id {
+        ctx.store_enum_variants(self)
+    }
+}
+
+pub type StructAttributes = HashSet<StructAttribute>;
+
+impl IntoStoreId for StructAttributes {
+    type Id = StructAttributesId;
+
+    fn into_id(self, ctx: &mut Store) -> Self::Id {
+        ctx.store_struct_attributes(self)
+    }
+}
+
+pub type EnumAttributes = HashSet<EnumAttribute>;
+
+impl IntoStoreId for EnumAttributes {
+    type Id = EnumAttributesId;
+
+    fn into_id(self, ctx: &mut Store) -> Self::Id {
+        ctx.store_enum_attributes(self)
+    }
+}
+
+pub type FunctionAttributes = HashSet<FunctionAttribute>;
+
+impl IntoStoreId for FunctionAttributes {
+    type Id = FunctionAttributesId;
+
+    fn into_id(self, ctx: &mut Store) -> Self::Id {
+        ctx.store_function_attributes(self)
+    }
+}
 
 #[derive(Debug, Serialize, Deserialize)]
 pub enum Lifetime {
@@ -56,7 +116,7 @@ pub enum Type {
     },
 
     Tuple {
-        elements: Vec<TypeId>,
+        elements: TypeListId,
     },
 
     Slice {
@@ -64,18 +124,18 @@ pub enum Type {
     },
 
     Struct {
-        attributes: Box<HashSet<StructAttribute>>,
-        fields: Vec<(String, TypeId)>,
+        attributes: StructAttributesId,
+        fields: StructFieldsId,
     },
 
     Enum {
-        attributes: Box<HashSet<EnumAttribute>>,
-        variants: Vec<(String, TypeId)>,
+        attributes: EnumAttributesId,
+        variants: EnumVariantsId,
     },
 
     Function {
-        attributes: Box<HashSet<FunctionAttribute>>,
-        parameters: Vec<TypeId>,
+        attributes: FunctionAttributesId,
+        parameters: TypeListId,
         return_type: TypeId,
     },
 
@@ -111,10 +171,6 @@ pub enum Type {
 impl Type {
     pub fn is_never(&self) -> bool {
         matches!(self, Type::Never)
-    }
-
-    pub fn is_unit(&self) -> bool {
-        matches!(self, Type::Tuple { elements } if elements.is_empty())
     }
 
     pub fn is_bool(&self) -> bool {

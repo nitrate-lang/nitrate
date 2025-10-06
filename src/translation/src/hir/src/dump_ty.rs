@@ -69,6 +69,8 @@ impl Dump for Type {
             }
 
             Type::Tuple { elements } => {
+                let elements = &ctx.store[elements];
+
                 write!(o, "(")?;
                 for (i, element_type) in elements.iter().enumerate() {
                     if i != 0 {
@@ -94,6 +96,7 @@ impl Dump for Type {
             Type::Struct { attributes, fields } => {
                 write!(o, "struct")?;
 
+                let attributes = &ctx.store[attributes];
                 if !attributes.is_empty() {
                     write!(o, " [")?;
                     for (i, attribute) in attributes.iter().enumerate() {
@@ -105,6 +108,8 @@ impl Dump for Type {
                     }
                     write!(o, "]")?;
                 }
+
+                let fields = &ctx.store[fields];
 
                 if fields.is_empty() {
                     write!(o, " {{}}")
@@ -132,6 +137,7 @@ impl Dump for Type {
             } => {
                 write!(o, "enum")?;
 
+                let attributes = &ctx.store[attributes];
                 if !attributes.is_empty() {
                     write!(o, " [")?;
                     for (i, attribute) in attributes.iter().enumerate() {
@@ -143,6 +149,8 @@ impl Dump for Type {
                     }
                     write!(o, "]")?;
                 }
+
+                let variants = &ctx.store[variants];
 
                 if variants.is_empty() {
                     write!(o, " {{}}")
@@ -171,6 +179,7 @@ impl Dump for Type {
             } => {
                 write!(o, "fn")?;
 
+                let attributes = &ctx.store[attributes];
                 if !attributes.is_empty() {
                     write!(o, " [")?;
                     for (i, attribute) in attributes.iter().enumerate() {
@@ -184,7 +193,7 @@ impl Dump for Type {
                 }
 
                 write!(o, "(")?;
-                for (i, param_type) in parameters.iter().enumerate() {
+                for (i, param_type) in ctx.store[parameters].iter().enumerate() {
                     if i != 0 {
                         write!(o, ", ")?;
                     }

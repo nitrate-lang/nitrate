@@ -1,5 +1,5 @@
 use crate::prelude::*;
-use std::{cmp::max, ops::Deref};
+use std::cmp::max;
 
 pub enum SizeofError {
     UnknownSize,
@@ -29,7 +29,7 @@ pub fn get_size_of(ty: &Type, store: &Store, ptr_size: PointerSize) -> Result<u6
         Type::Tuple { elements } => {
             let mut size = 0_u64;
 
-            for element in elements.deref() {
+            for element in &store[elements] {
                 let element = &store[element];
 
                 let element_size = get_size_of(element, store, ptr_size)?;
@@ -48,10 +48,10 @@ pub fn get_size_of(ty: &Type, store: &Store, ptr_size: PointerSize) -> Result<u6
         Type::Slice { element_type: _ } => Err(SizeofError::UnknownSize),
 
         Type::Struct { attributes, fields } => {
-            if attributes.contains(&StructAttribute::Packed) {
+            if store[attributes].contains(&StructAttribute::Packed) {
                 let mut total_size = 0_u64;
 
-                for (_, field_type) in fields {
+                for (_, field_type) in &store[fields] {
                     total_size += get_size_of(&store[field_type], store, ptr_size)?;
                 }
 
@@ -60,7 +60,7 @@ pub fn get_size_of(ty: &Type, store: &Store, ptr_size: PointerSize) -> Result<u6
 
             let mut offset = 0_u64;
 
-            for (_, field_type) in fields {
+            for (_, field_type) in &store[fields] {
                 let field_type = &store[field_type];
 
                 let field_size = get_size_of(field_type, store, ptr_size)?;
@@ -77,6 +77,7 @@ pub fn get_size_of(ty: &Type, store: &Store, ptr_size: PointerSize) -> Result<u6
         }
 
         Type::Enum { variants, .. } => {
+            let variants = &store[variants];
             let mut size = 0_u64;
 
             for (_, variant_type) in variants {

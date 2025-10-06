@@ -1,5 +1,5 @@
 use crate::prelude::*;
-use std::{cmp::max, ops::Deref};
+use std::cmp::max;
 
 pub enum AlignofError {
     UnknownAlignment,
@@ -28,7 +28,7 @@ pub fn get_align_of(ty: &Type, store: &Store, ptr_size: PointerSize) -> Result<u
         Type::Tuple { elements } => {
             let mut max_align = 1;
 
-            for element in elements.deref() {
+            for element in &store[elements] {
                 let element_align = get_align_of(&store[element], store, ptr_size)?;
                 max_align = max(max_align, element_align);
             }
@@ -39,13 +39,13 @@ pub fn get_align_of(ty: &Type, store: &Store, ptr_size: PointerSize) -> Result<u
         Type::Slice { element_type } => get_align_of(&store[element_type], store, ptr_size),
 
         Type::Struct { attributes, fields } => {
-            if attributes.contains(&StructAttribute::Packed) {
+            if store[attributes].contains(&StructAttribute::Packed) {
                 return Ok(1);
             }
 
             let mut max_align = 1;
 
-            for (_, field_type) in fields {
+            for (_, field_type) in &store[fields] {
                 let field_align = get_align_of(&store[field_type], store, ptr_size)?;
                 max_align = max(max_align, field_align);
             }
@@ -54,6 +54,7 @@ pub fn get_align_of(ty: &Type, store: &Store, ptr_size: PointerSize) -> Result<u
         }
 
         Type::Enum { variants, .. } => {
+            let variants = &store[variants];
             let mut max_align = 1;
 
             for (_, variant_type) in variants {

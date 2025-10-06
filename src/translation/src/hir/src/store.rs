@@ -64,14 +64,41 @@ macro_rules! impl_store {
 }
 
 impl_store!(TypeId, Type, TypeStore);
+
+impl_store!(TypeListId, TypeList, TypeListStore);
+
+impl_store!(StructFieldsId, StructFields, StructFieldsStore);
+
+impl_store!(EnumVariantsId, EnumVariants, EnumVariantsStore);
+
+impl_store!(StructAttributesId, StructAttributes, StructAttributesStore);
+
+impl_store!(EnumAttributesId, EnumAttributes, EnumAttributesStore);
+
+impl_store!(
+    FunctionAttributesId,
+    FunctionAttributes,
+    FunctionAttributesStore
+);
+
 impl_store!(ItemId, Item, ItemStore);
+
 impl_store!(SymbolId, Symbol, SymbolStore);
+
 impl_store!(ValueId, Value, ExprValueStore);
+
 impl_store!(BlockId, Block, ExprBlockStore);
+
 impl_store!(PlaceId, Place, ExprPlaceStore);
 
 pub struct Store {
     types: TypeStore,
+    type_lists: TypeListStore,
+    struct_fields: StructFieldsStore,
+    enum_variants: EnumVariantsStore,
+    struct_attributes: StructAttributesStore,
+    enum_attributes: EnumAttributesStore,
+    function_attributes: FunctionAttributesStore,
     items: ItemStore,
     symbols: SymbolStore,
     values: ExprValueStore,
@@ -83,6 +110,13 @@ impl Store {
     pub fn new() -> Self {
         Self {
             types: TypeStore::new(),
+            type_lists: TypeListStore::new(),
+            struct_fields: StructFieldsStore::new(),
+            enum_variants: EnumVariantsStore::new(),
+            struct_attributes: StructAttributesStore::new(),
+            enum_attributes: EnumAttributesStore::new(),
+            function_attributes: FunctionAttributesStore::new(),
+
             items: ItemStore::new(),
             symbols: SymbolStore::new(),
             values: ExprValueStore::new(),
@@ -93,6 +127,30 @@ impl Store {
 
     pub fn store_type(&mut self, ty: Type) -> TypeId {
         self.types.store(ty)
+    }
+
+    pub fn store_type_list(&mut self, ty_list: TypeList) -> TypeListId {
+        self.type_lists.store(ty_list)
+    }
+
+    pub fn store_struct_fields(&mut self, fields: StructFields) -> StructFieldsId {
+        self.struct_fields.store(fields)
+    }
+
+    pub fn store_enum_variants(&mut self, variants: EnumVariants) -> EnumVariantsId {
+        self.enum_variants.store(variants)
+    }
+
+    pub fn store_struct_attributes(&mut self, attrs: StructAttributes) -> StructAttributesId {
+        self.struct_attributes.store(attrs)
+    }
+
+    pub fn store_enum_attributes(&mut self, attrs: EnumAttributes) -> EnumAttributesId {
+        self.enum_attributes.store(attrs)
+    }
+
+    pub fn store_function_attributes(&mut self, attrs: FunctionAttributes) -> FunctionAttributesId {
+        self.function_attributes.store(attrs)
     }
 
     pub fn store_item(&mut self, item: Item) -> ItemId {
@@ -117,6 +175,12 @@ impl Store {
 
     pub fn reset(&mut self) {
         self.values.reset();
+        self.type_lists.reset();
+        self.struct_fields.reset();
+        self.enum_variants.reset();
+        self.struct_attributes.reset();
+        self.enum_attributes.reset();
+        self.function_attributes.reset();
         self.types.reset();
         self.items.reset();
         self.symbols.reset();
@@ -136,6 +200,90 @@ impl std::ops::Index<&TypeId> for Store {
 impl std::ops::IndexMut<&TypeId> for Store {
     fn index_mut(&mut self, index: &TypeId) -> &mut Self::Output {
         &mut self.types[index]
+    }
+}
+
+impl std::ops::Index<&TypeListId> for Store {
+    type Output = TypeList;
+
+    fn index(&self, index: &TypeListId) -> &Self::Output {
+        &self.type_lists[index]
+    }
+}
+
+impl std::ops::IndexMut<&TypeListId> for Store {
+    fn index_mut(&mut self, index: &TypeListId) -> &mut Self::Output {
+        &mut self.type_lists[index]
+    }
+}
+
+impl std::ops::Index<&StructFieldsId> for Store {
+    type Output = StructFields;
+
+    fn index(&self, index: &StructFieldsId) -> &Self::Output {
+        &self.struct_fields[index]
+    }
+}
+
+impl std::ops::IndexMut<&StructFieldsId> for Store {
+    fn index_mut(&mut self, index: &StructFieldsId) -> &mut Self::Output {
+        &mut self.struct_fields[index]
+    }
+}
+
+impl std::ops::Index<&EnumVariantsId> for Store {
+    type Output = EnumVariants;
+
+    fn index(&self, index: &EnumVariantsId) -> &Self::Output {
+        &self.enum_variants[index]
+    }
+}
+
+impl std::ops::IndexMut<&EnumVariantsId> for Store {
+    fn index_mut(&mut self, index: &EnumVariantsId) -> &mut Self::Output {
+        &mut self.enum_variants[index]
+    }
+}
+
+impl std::ops::Index<&StructAttributesId> for Store {
+    type Output = StructAttributes;
+
+    fn index(&self, index: &StructAttributesId) -> &Self::Output {
+        &self.struct_attributes[index]
+    }
+}
+
+impl std::ops::IndexMut<&StructAttributesId> for Store {
+    fn index_mut(&mut self, index: &StructAttributesId) -> &mut Self::Output {
+        &mut self.struct_attributes[index]
+    }
+}
+
+impl std::ops::Index<&EnumAttributesId> for Store {
+    type Output = EnumAttributes;
+
+    fn index(&self, index: &EnumAttributesId) -> &Self::Output {
+        &self.enum_attributes[index]
+    }
+}
+
+impl std::ops::IndexMut<&EnumAttributesId> for Store {
+    fn index_mut(&mut self, index: &EnumAttributesId) -> &mut Self::Output {
+        &mut self.enum_attributes[index]
+    }
+}
+
+impl std::ops::Index<&FunctionAttributesId> for Store {
+    type Output = FunctionAttributes;
+
+    fn index(&self, index: &FunctionAttributesId) -> &Self::Output {
+        &self.function_attributes[index]
+    }
+}
+
+impl std::ops::IndexMut<&FunctionAttributesId> for Store {
+    fn index_mut(&mut self, index: &FunctionAttributesId) -> &mut Self::Output {
+        &mut self.function_attributes[index]
     }
 }
 
