@@ -1,4 +1,4 @@
-use crate::HirEvaluate;
+use crate::{EvalFail, HirEvaluate};
 use nitrate_hir::prelude::*;
 
 impl HirEvaluate for Literal {
@@ -120,12 +120,31 @@ impl HirEvaluate for Value {
                 condition,
                 true_branch,
                 false_branch,
-            } => {
-                todo!()
-            }
+            } => match ctx.store[condition].evaluate(ctx)? {
+                Value::Bool(true) => ctx.store[true_branch].evaluate(ctx),
+
+                Value::Bool(false) => {
+                    if let Some(false_branch) = false_branch {
+                        ctx.store[false_branch].evaluate(ctx)
+                    } else {
+                        Ok(Value::Unit)
+                    }
+                }
+
+                _ => Err(EvalFail::TypeError),
+            },
 
             Value::While { condition, body } => {
-                todo!()
+                while let Value::Bool(true) = ctx.store[condition].evaluate(ctx)? {
+                    if ctx.loop_iter_count >= ctx.loop_iter_limit {
+                        return Err(EvalFail::LoopLimitExceeded);
+                    }
+
+                    ctx.store[body].evaluate(ctx)?;
+                    ctx.loop_iter_count += 1;
+                }
+
+                Ok(Value::Unit)
             }
 
             Value::Loop { body } => {
