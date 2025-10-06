@@ -65,42 +65,52 @@ impl HirEvaluate for Value {
             Value::BString(s) => Ok(Value::BString(s.clone())),
 
             Value::Binary { left, op, right } => {
+                // TODO: Evaluate binary expressions
                 todo!()
             }
 
             Value::Unary { op, expr } => {
+                // TODO: Evaluate unary expressions
                 todo!()
             }
 
             Value::Symbol { symbol } => {
+                // TODO: Evaluate symbol expressions
                 todo!()
             }
 
             Value::FieldAccess { expr, field } => {
+                // TODO: Evaluate field access expressions
                 todo!()
             }
 
             Value::ArrayIndex { expr, index } => {
+                // TODO: Evaluate array index expressions
                 todo!()
             }
 
             Value::Assign { place, value } => {
+                // TODO: Evaluate assignment expressions
                 todo!()
             }
 
             Value::Deref { place } => {
+                // TODO: Evaluate dereference expressions
                 todo!()
             }
 
             Value::GetAddressOf { place } => {
+                // TODO: Evaluate address-of expressions
                 todo!()
             }
 
             Value::Cast { expr, to } => {
+                // TODO: Evaluate cast expressions
                 todo!()
             }
 
             Value::GetTypeOf { expr } => {
+                // TODO: Evaluate typeof expressions
                 todo!()
             }
 
@@ -147,23 +157,32 @@ impl HirEvaluate for Value {
                 Ok(Value::Unit)
             }
 
-            Value::Loop { body } => {
-                todo!()
-            }
+            Value::Loop { body } => loop {
+                if ctx.loop_iter_count >= ctx.loop_iter_limit {
+                    return Err(EvalFail::LoopLimitExceeded);
+                }
+
+                ctx.store[body].evaluate(ctx)?;
+                ctx.loop_iter_count += 1;
+            },
 
             Value::Break { label } => {
+                // TODO: Evaluate break expressions
                 todo!()
             }
 
             Value::Continue { label } => {
+                // TODO: Evaluate continue expressions
                 todo!()
             }
 
             Value::Return { value } => {
+                // TODO: Evaluate return expressions
                 todo!()
             }
 
             Value::Call { callee, arguments } => {
+                // TODO: Evaluate function call expressions
                 todo!()
             }
         }
