@@ -645,7 +645,7 @@ impl Parser<'_, '_> {
             }
         }
 
-        FuncParams { params }
+        params
     }
 
     fn parse_named_function(&mut self) -> Function {

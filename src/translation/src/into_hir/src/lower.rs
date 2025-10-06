@@ -14,11 +14,11 @@ pub struct HirCtx {
     symbol_table: HashMap<QualifiedName, SymbolId>,
     type_table: HashMap<QualifiedName, TypeId>,
     type_infer_id_ctr: NonZeroU32,
-    ptr_size: PointerSize,
+    ptr_size: PtrSize,
 }
 
 impl HirCtx {
-    pub fn new(ptr_size: PointerSize) -> Self {
+    pub fn new(ptr_size: PtrSize) -> Self {
         Self {
             storage: Store::new(),
             symbol_table: HashMap::new(),
@@ -42,7 +42,7 @@ impl HirCtx {
         &mut self.storage
     }
 
-    pub fn ptr_size(&self) -> PointerSize {
+    pub fn ptr_size(&self) -> PtrSize {
         self.ptr_size
     }
 

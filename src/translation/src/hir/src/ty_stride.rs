@@ -4,11 +4,7 @@ pub enum StrideOfError {
     UnknownStride,
 }
 
-pub fn get_stride_of(
-    ty: &Type,
-    store: &Store,
-    ptr_size: PointerSize,
-) -> Result<u64, StrideOfError> {
+pub fn get_stride_of(ty: &Type, store: &Store, ptr_size: PtrSize) -> Result<u64, StrideOfError> {
     let element_size = match get_size_of(ty, store, ptr_size) {
         Ok(size) => Ok(size),
         Err(SizeofError::UnknownSize) => Err(StrideOfError::UnknownStride),

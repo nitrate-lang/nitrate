@@ -111,6 +111,10 @@ pub enum Type {
     F64,
     F128,
 
+    Opaque {
+        name: IString,
+    },
+
     Array {
         element_type: TypeId,
         len: u64,
@@ -252,7 +256,7 @@ impl IntoStoreId for Type {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
-pub enum PointerSize {
+pub enum PtrSize {
     U8 = 1,
     U16 = 2,
     U32 = 4,

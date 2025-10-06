@@ -314,7 +314,7 @@ impl TryIntoHir for ast::FunctionType {
             None => Type::Unit.into_id(ctx.store_mut()),
         };
 
-        let mut parameter_types = Vec::with_capacity(self.parameters.len());
+        // let mut parameter_types = Vec::with_capacity(self.parameters.len());
 
         for param in self.parameters.into_iter() {
             if !param.attributes.unwrap_or_default().elements.is_empty() {
@@ -390,9 +390,10 @@ impl TryIntoHir for ast::OpaqueType {
     type Error = ();
     type Hir = Type;
 
-    fn try_into_hir(self, ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, Self::Error> {
-        // TODO: Lower ast::OpaqueType into hir::OpaqueType
-        Err(())
+    fn try_into_hir(self, _ctx: &mut HirCtx, _log: &CompilerLog) -> Result<Self::Hir, Self::Error> {
+        Ok(Type::Opaque {
+            name: self.name.deref().into(),
+        })
     }
 }
 

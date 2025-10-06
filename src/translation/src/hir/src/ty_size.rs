@@ -5,7 +5,7 @@ pub enum SizeofError {
     UnknownSize,
 }
 
-pub fn get_size_of(ty: &Type, store: &Store, ptr_size: PointerSize) -> Result<u64, SizeofError> {
+pub fn get_size_of(ty: &Type, store: &Store, ptr_size: PtrSize) -> Result<u64, SizeofError> {
     match ty {
         Type::Never => Ok(0),
         Type::Unit => Ok(0),
@@ -16,6 +16,7 @@ pub fn get_size_of(ty: &Type, store: &Store, ptr_size: PointerSize) -> Result<u6
         Type::U64 | Type::I64 | Type::F64 => Ok(8),
         Type::U128 | Type::I128 | Type::F128 => Ok(16),
         Type::USize | Type::ISize => Ok(ptr_size as u64),
+        Type::Opaque { .. } => Ok(0),
 
         Type::Array { element_type, len } => {
             let element_stride = match get_stride_of(&store[element_type], store, ptr_size) {

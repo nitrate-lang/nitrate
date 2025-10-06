@@ -113,7 +113,7 @@ fn program() -> Result<(), Error> {
     resolve_imports(&import_context, &mut module, &log);
     resolve_names(&mut module, &log);
 
-    let mut hir_ctx = HirCtx::new();
+    let mut hir_ctx = HirCtx::new(PtrSize::U64);
 
     let Ok(hir_module) = module.try_into_hir(&mut hir_ctx, &log) else {
         return Err(Error::HirError);

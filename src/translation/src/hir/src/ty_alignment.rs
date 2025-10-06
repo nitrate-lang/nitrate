@@ -5,7 +5,7 @@ pub enum AlignofError {
     UnknownAlignment,
 }
 
-pub fn get_align_of(ty: &Type, store: &Store, ptr_size: PointerSize) -> Result<u64, AlignofError> {
+pub fn get_align_of(ty: &Type, store: &Store, ptr_size: PtrSize) -> Result<u64, AlignofError> {
     match ty {
         Type::Never => Ok(1),
         Type::Unit => Ok(1),
@@ -16,6 +16,7 @@ pub fn get_align_of(ty: &Type, store: &Store, ptr_size: PointerSize) -> Result<u
         Type::U64 | Type::I64 | Type::F64 => Ok(8),
         Type::U128 | Type::I128 | Type::F128 => Ok(16),
         Type::USize | Type::ISize => Ok(ptr_size as u64),
+        Type::Opaque { .. } => Ok(1),
 
         Type::Array { element_type, len } => {
             if *len == 0 {
