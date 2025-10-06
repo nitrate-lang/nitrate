@@ -20,7 +20,7 @@ mod ty_stride;
 pub use dump::{Dump, DumpContext};
 pub use node_digest::NodeDigest;
 pub use store::{
-    BlockId, EnumAttributesId, EnumVariantsId, FunctionAttributesId, ItemId, PlaceId, Store,
+    BlockId, EnumAttributesId, EnumVariantsId, FuncAttributesId, ItemId, PlaceId, Store,
     StructAttributesId, StructFieldsId, SymbolId, TypeId, TypeListId, ValueId,
 };
 
@@ -38,7 +38,7 @@ pub mod hir {
 pub mod prelude {
     pub use super::hir::*;
     pub use super::{
-        BlockId, Dump, DumpContext, EnumAttributesId, EnumVariantsId, FunctionAttributesId, ItemId,
+        BlockId, Dump, DumpContext, EnumAttributesId, EnumVariantsId, FuncAttributesId, ItemId,
         PlaceId, Store, StructAttributesId, StructFieldsId, SymbolId, TypeId, TypeListId, ValueId,
     };
 }

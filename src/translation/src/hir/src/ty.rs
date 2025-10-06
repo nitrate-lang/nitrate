@@ -1,7 +1,7 @@
 use crate::prelude::*;
 use interned_string::IString;
 use serde::{Deserialize, Serialize};
-use std::collections::{HashMap, HashSet};
+use std::collections::{BTreeMap, BTreeSet};
 use std::num::NonZeroU32;
 
 pub type TypeList = Vec<TypeId>;
@@ -24,7 +24,7 @@ impl IntoStoreId for StructFields {
     }
 }
 
-pub type EnumVariants = HashMap<String, TypeId>;
+pub type EnumVariants = BTreeMap<String, TypeId>;
 
 impl IntoStoreId for EnumVariants {
     type Id = EnumVariantsId;
@@ -34,7 +34,7 @@ impl IntoStoreId for EnumVariants {
     }
 }
 
-pub type StructAttributes = HashSet<StructAttribute>;
+pub type StructAttributes = BTreeSet<StructAttribute>;
 
 impl IntoStoreId for StructAttributes {
     type Id = StructAttributesId;
@@ -44,7 +44,7 @@ impl IntoStoreId for StructAttributes {
     }
 }
 
-pub type EnumAttributes = HashSet<EnumAttribute>;
+pub type EnumAttributes = BTreeSet<EnumAttribute>;
 
 impl IntoStoreId for EnumAttributes {
     type Id = EnumAttributesId;
@@ -54,17 +54,17 @@ impl IntoStoreId for EnumAttributes {
     }
 }
 
-pub type FunctionAttributes = HashSet<FunctionAttribute>;
+pub type FunctionAttributes = BTreeSet<FunctionAttribute>;
 
 impl IntoStoreId for FunctionAttributes {
-    type Id = FunctionAttributesId;
+    type Id = FuncAttributesId;
 
     fn into_id(self, ctx: &mut Store) -> Self::Id {
         ctx.store_function_attributes(self)
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub enum Lifetime {
     Static,
     Gc,
@@ -74,20 +74,20 @@ pub enum Lifetime {
     Inferred,
 }
 
-#[derive(Debug, Serialize, Deserialize, PartialEq, Eq, Hash)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum StructAttribute {
     Packed,
 }
 
-#[derive(Debug, Serialize, Deserialize, PartialEq, Eq, Hash)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum EnumAttribute {}
 
-#[derive(Debug, Serialize, Deserialize, PartialEq, Eq, Hash)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum FunctionAttribute {
     Variadic,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub enum Type {
     Never,
     Unit,
@@ -134,7 +134,7 @@ pub enum Type {
     },
 
     Function {
-        attributes: FunctionAttributesId,
+        attributes: FuncAttributesId,
         parameters: TypeListId,
         return_type: TypeId,
     },

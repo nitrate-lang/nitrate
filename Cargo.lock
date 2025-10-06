@@ -726,6 +726,7 @@ dependencies = [
 name = "nitrate_hir"
 version = "0.1.0"
 dependencies = [
+ "bimap",
  "blake3",
  "hashbrown 0.16.0",
  "interned-string",

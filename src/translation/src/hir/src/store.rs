@@ -1,49 +1,101 @@
 use crate::prelude::*;
-use hashbrown::HashMap;
+use bimap::BiMap;
 use serde::{Deserialize, Serialize};
 use std::num::NonZeroU32;
 
-macro_rules! impl_store {
+macro_rules! impl_dedup_store {
     ($handle_name:ident, $item_name:ident, $store_name:ident) => {
-        #[derive(Debug, Clone, Serialize, Deserialize)]
+        #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
         pub struct $handle_name(NonZeroU32);
 
         pub struct $store_name {
-            items: HashMap<NonZeroU32, $item_name>,
+            map: BiMap<$handle_name, $item_name>,
             next_id: NonZeroU32,
         }
 
         impl $store_name {
             pub fn new() -> Self {
                 Self {
-                    items: HashMap::new(),
+                    map: BiMap::new(),
                     next_id: NonZeroU32::new(1).unwrap(),
                 }
             }
 
             pub fn store(&mut self, item: $item_name) -> $handle_name {
-                let id = self.next_id;
-                self.items.insert(id, item);
+                if let Some(id) = self.map.get_by_right(&item) {
+                    return id.clone();
+                }
 
-                self.next_id = self
-                    .next_id
-                    .checked_add(1)
-                    .expect("Store overflowed NonZeroU32");
+                let current_id = self.next_id;
+                self.next_id = current_id.checked_add(1).expect("Store overflowed");
 
+                let handle = $handle_name(current_id);
+                self.map.insert(handle.clone(), item);
+                handle
+            }
+
+            fn get(&self, id: &$handle_name) -> &$item_name {
+                self.map.get_by_left(id).expect("Id not found in Store")
+            }
+
+            pub fn reset(&mut self) {
+                self.map = BiMap::new();
+                self.next_id = NonZeroU32::new(1).unwrap();
+            }
+
+            pub fn shrink_to_fit(&mut self) {
+                self.map.shrink_to_fit();
+            }
+        }
+
+        impl std::ops::Index<&$handle_name> for $store_name {
+            type Output = $item_name;
+
+            fn index(&self, index: &$handle_name) -> &Self::Output {
+                self.get(index)
+            }
+        }
+    };
+}
+
+macro_rules! impl_store_mut {
+    ($handle_name:ident, $item_name:ident, $store_name:ident) => {
+        #[derive(Debug, Clone, Serialize, Deserialize)]
+        pub struct $handle_name(NonZeroU32);
+
+        pub struct $store_name {
+            items: Vec<$item_name>,
+        }
+
+        impl $store_name {
+            pub fn new() -> Self {
+                Self { items: Vec::new() }
+            }
+
+            pub fn store(&mut self, item: $item_name) -> $handle_name {
+                self.items.push(item);
+                let id = NonZeroU32::new(self.items.len() as u32).unwrap();
                 $handle_name(id)
             }
 
             fn get(&self, id: &$handle_name) -> &$item_name {
-                self.items.get(&id.0).expect("Id not found in Store")
+                self.items
+                    .get(id.0.get() as usize - 1)
+                    .expect("Id not found in Store")
             }
 
             fn get_mut(&mut self, id: &$handle_name) -> &mut $item_name {
-                self.items.get_mut(&id.0).expect("Id not found in Store")
+                self.items
+                    .get_mut(id.0.get() as usize - 1)
+                    .expect("Id not found in Store")
             }
 
             pub fn reset(&mut self) {
-                self.items = HashMap::new();
-                self.next_id = NonZeroU32::new(1).unwrap();
+                self.items = Vec::new();
+            }
+
+            pub fn shrink_to_fit(&mut self) {
+                self.items.shrink_to_fit();
             }
         }
 
@@ -63,33 +115,29 @@ macro_rules! impl_store {
     };
 }
 
-impl_store!(TypeId, Type, TypeStore);
+impl_dedup_store!(TypeId, Type, TypeStore);
 
-impl_store!(TypeListId, TypeList, TypeListStore);
+impl_dedup_store!(TypeListId, TypeList, TypeListStore);
 
-impl_store!(StructFieldsId, StructFields, StructFieldsStore);
+impl_dedup_store!(StructFieldsId, StructFields, StructFieldsStore);
 
-impl_store!(EnumVariantsId, EnumVariants, EnumVariantsStore);
+impl_dedup_store!(EnumVariantsId, EnumVariants, EnumVariantsStore);
 
-impl_store!(StructAttributesId, StructAttributes, StructAttributesStore);
+impl_dedup_store!(StructAttributesId, StructAttributes, StructAttributesStore);
 
-impl_store!(EnumAttributesId, EnumAttributes, EnumAttributesStore);
+impl_dedup_store!(EnumAttributesId, EnumAttributes, EnumAttributesStore);
 
-impl_store!(
-    FunctionAttributesId,
-    FunctionAttributes,
-    FunctionAttributesStore
-);
+impl_dedup_store!(FuncAttributesId, FunctionAttributes, FuncAttributesStore);
 
-impl_store!(ItemId, Item, ItemStore);
+impl_store_mut!(ItemId, Item, ItemStore);
 
-impl_store!(SymbolId, Symbol, SymbolStore);
+impl_store_mut!(SymbolId, Symbol, SymbolStore);
 
-impl_store!(ValueId, Value, ExprValueStore);
+impl_store_mut!(ValueId, Value, ExprValueStore);
 
-impl_store!(BlockId, Block, ExprBlockStore);
+impl_store_mut!(BlockId, Block, ExprBlockStore);
 
-impl_store!(PlaceId, Place, ExprPlaceStore);
+impl_store_mut!(PlaceId, Place, ExprPlaceStore);
 
 pub struct Store {
     types: TypeStore,
@@ -98,7 +146,7 @@ pub struct Store {
     enum_variants: EnumVariantsStore,
     struct_attributes: StructAttributesStore,
     enum_attributes: EnumAttributesStore,
-    function_attributes: FunctionAttributesStore,
+    function_attributes: FuncAttributesStore,
     items: ItemStore,
     symbols: SymbolStore,
     values: ExprValueStore,
@@ -115,7 +163,7 @@ impl Store {
             enum_variants: EnumVariantsStore::new(),
             struct_attributes: StructAttributesStore::new(),
             enum_attributes: EnumAttributesStore::new(),
-            function_attributes: FunctionAttributesStore::new(),
+            function_attributes: FuncAttributesStore::new(),
 
             items: ItemStore::new(),
             symbols: SymbolStore::new(),
@@ -149,7 +197,7 @@ impl Store {
         self.enum_attributes.store(attrs)
     }
 
-    pub fn store_function_attributes(&mut self, attrs: FunctionAttributes) -> FunctionAttributesId {
+    pub fn store_function_attributes(&mut self, attrs: FunctionAttributes) -> FuncAttributesId {
         self.function_attributes.store(attrs)
     }
 
@@ -187,6 +235,21 @@ impl Store {
         self.blocks.reset();
         self.places.reset();
     }
+
+    pub fn shrink_to_fit(&mut self) {
+        self.values.shrink_to_fit();
+        self.type_lists.shrink_to_fit();
+        self.struct_fields.shrink_to_fit();
+        self.enum_variants.shrink_to_fit();
+        self.struct_attributes.shrink_to_fit();
+        self.enum_attributes.shrink_to_fit();
+        self.function_attributes.shrink_to_fit();
+        self.types.shrink_to_fit();
+        self.items.shrink_to_fit();
+        self.symbols.shrink_to_fit();
+        self.blocks.shrink_to_fit();
+        self.places.shrink_to_fit();
+    }
 }
 
 impl std::ops::Index<&TypeId> for Store {
@@ -194,12 +257,6 @@ impl std::ops::Index<&TypeId> for Store {
 
     fn index(&self, index: &TypeId) -> &Self::Output {
         &self.types[index]
-    }
-}
-
-impl std::ops::IndexMut<&TypeId> for Store {
-    fn index_mut(&mut self, index: &TypeId) -> &mut Self::Output {
-        &mut self.types[index]
     }
 }
 
@@ -211,23 +268,11 @@ impl std::ops::Index<&TypeListId> for Store {
     }
 }
 
-impl std::ops::IndexMut<&TypeListId> for Store {
-    fn index_mut(&mut self, index: &TypeListId) -> &mut Self::Output {
-        &mut self.type_lists[index]
-    }
-}
-
 impl std::ops::Index<&StructFieldsId> for Store {
     type Output = StructFields;
 
     fn index(&self, index: &StructFieldsId) -> &Self::Output {
         &self.struct_fields[index]
-    }
-}
-
-impl std::ops::IndexMut<&StructFieldsId> for Store {
-    fn index_mut(&mut self, index: &StructFieldsId) -> &mut Self::Output {
-        &mut self.struct_fields[index]
     }
 }
 
@@ -239,23 +284,11 @@ impl std::ops::Index<&EnumVariantsId> for Store {
     }
 }
 
-impl std::ops::IndexMut<&EnumVariantsId> for Store {
-    fn index_mut(&mut self, index: &EnumVariantsId) -> &mut Self::Output {
-        &mut self.enum_variants[index]
-    }
-}
-
 impl std::ops::Index<&StructAttributesId> for Store {
     type Output = StructAttributes;
 
     fn index(&self, index: &StructAttributesId) -> &Self::Output {
         &self.struct_attributes[index]
-    }
-}
-
-impl std::ops::IndexMut<&StructAttributesId> for Store {
-    fn index_mut(&mut self, index: &StructAttributesId) -> &mut Self::Output {
-        &mut self.struct_attributes[index]
     }
 }
 
@@ -267,23 +300,11 @@ impl std::ops::Index<&EnumAttributesId> for Store {
     }
 }
 
-impl std::ops::IndexMut<&EnumAttributesId> for Store {
-    fn index_mut(&mut self, index: &EnumAttributesId) -> &mut Self::Output {
-        &mut self.enum_attributes[index]
-    }
-}
-
-impl std::ops::Index<&FunctionAttributesId> for Store {
+impl std::ops::Index<&FuncAttributesId> for Store {
     type Output = FunctionAttributes;
 
-    fn index(&self, index: &FunctionAttributesId) -> &Self::Output {
+    fn index(&self, index: &FuncAttributesId) -> &Self::Output {
         &self.function_attributes[index]
-    }
-}
-
-impl std::ops::IndexMut<&FunctionAttributesId> for Store {
-    fn index_mut(&mut self, index: &FunctionAttributesId) -> &mut Self::Output {
-        &mut self.function_attributes[index]
     }
 }
 

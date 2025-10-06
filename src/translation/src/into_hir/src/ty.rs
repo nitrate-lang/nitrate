@@ -215,16 +215,15 @@ impl TryIntoHir for ast::ArrayType {
     type Hir = Type;
 
     fn try_into_hir(self, ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, Self::Error> {
-        // let hir_element_type = self.element_type.try_into_hir(ctx, log)?;
+        let hir_element_type = self.element_type.try_into_hir(ctx, log)?;
 
-        todo!("evaluate array length expression");
+        // TODO: Evaluate the length expression to a constant u64 value
+        let hir_length = 0;
 
-        // let hir_length = ??;
-
-        // Ok(Type::Array {
-        //     element_type: hir_element_type.into_id(ctx.store_mut()),
-        //     len: hir_length,
-        // });
+        Ok(Type::Array {
+            element_type: hir_element_type.into_id(ctx.store_mut()),
+            len: hir_length,
+        })
     }
 }
 
