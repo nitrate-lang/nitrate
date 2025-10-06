@@ -1,9 +1,10 @@
 use nitrate_diagnosis::CompilerLog;
-use nitrate_hir::hir::{QualifiedName, Value};
+use nitrate_hir::prelude::*;
 use ordered_float::NotNan;
 use std::{collections::HashMap, sync::LazyLock};
 
-type BuiltinFunction = dyn Fn(&mut HirEvalCtx, &[Value]) -> Result<Value, EvalFail> + Send + Sync;
+type BuiltinFunction =
+    dyn Fn(&mut HirEvalCtx, &Store, &[Value]) -> Result<Value, EvalFail> + Send + Sync;
 
 static DEFAULT_BUILTIN_FUNCTIONS: LazyLock<HashMap<QualifiedName, Box<BuiltinFunction>>> =
     LazyLock::new(|| {
@@ -12,7 +13,7 @@ static DEFAULT_BUILTIN_FUNCTIONS: LazyLock<HashMap<QualifiedName, Box<BuiltinFun
         // Just an example builtin function
         m.insert(
             QualifiedName::from("std::math::abs"),
-            Box::new(|_ctx, args| {
+            Box::new(|_, _, args| {
                 if args.len() != 1 {
                     return Err(EvalFail::TypeError);
                 }
@@ -42,17 +43,21 @@ pub struct HirEvalCtx<'log> {
     pub(crate) loop_iter_count: usize,
     pub(crate) function_call_limit: usize,
     pub(crate) function_call_count: usize,
+    pub(crate) current_safety: BlockSafety,
+    pub(crate) unsafe_operations_performed: usize,
     added_builtin_functions: HashMap<QualifiedName, Box<BuiltinFunction>>,
 }
 
-impl<'a> HirEvalCtx<'a> {
-    pub fn new(log: &'a CompilerLog) -> HirEvalCtx<'a> {
+impl<'log> HirEvalCtx<'log> {
+    pub fn new(log: &'log CompilerLog) -> HirEvalCtx<'log> {
         HirEvalCtx {
             log,
             loop_iter_limit: 4096,
             loop_iter_count: 0,
             function_call_limit: 4096,
             function_call_count: 0,
+            current_safety: BlockSafety::Safe,
+            unsafe_operations_performed: 0,
             added_builtin_functions: HashMap::new(),
         }
     }
@@ -72,10 +77,26 @@ impl<'a> HirEvalCtx<'a> {
         self
     }
 
-    pub(crate) fn lookup_builtin(&self, name: &QualifiedName) -> Option<&Box<BuiltinFunction>> {
+    pub fn lookup_builtin(&self, name: &QualifiedName) -> Option<&Box<BuiltinFunction>> {
         self.added_builtin_functions
             .get(name)
             .or_else(|| DEFAULT_BUILTIN_FUNCTIONS.get(name))
+    }
+
+    pub fn unsafe_operations_performed(&self) -> usize {
+        self.unsafe_operations_performed
+    }
+
+    pub fn loop_iter_count(&self) -> usize {
+        self.loop_iter_count
+    }
+
+    pub fn function_call_count(&self) -> usize {
+        self.function_call_count
+    }
+
+    pub fn get_logger(&self) -> &CompilerLog {
+        self.log
     }
 }
 
@@ -89,5 +110,5 @@ pub enum EvalFail {
 pub trait HirEvaluate {
     type Output;
 
-    fn evaluate(&self, ctx: &mut HirEvalCtx) -> Result<Self::Output, EvalFail>;
+    fn evaluate(&self, ctx: &mut HirEvalCtx, store: &Store) -> Result<Self::Output, EvalFail>;
 }

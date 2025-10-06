@@ -89,12 +89,12 @@ pub enum Literal {
 impl IntoStoreId for Literal {
     type Id = LiteralId;
 
-    fn into_id(self, ctx: &mut Store) -> Self::Id {
+    fn into_id(self, ctx: &Store) -> Self::Id {
         ctx.store_literal(self)
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum BlockSafety {
     Safe,
     Unsafe,
@@ -109,7 +109,7 @@ pub struct Block {
 impl IntoStoreId for Block {
     type Id = BlockId;
 
-    fn into_id(self, ctx: &mut Store) -> Self::Id {
+    fn into_id(self, ctx: &Store) -> Self::Id {
         ctx.store_block(self)
     }
 }
@@ -284,7 +284,7 @@ impl From<Literal> for Value {
 impl IntoStoreId for Value {
     type Id = ValueId;
 
-    fn into_id(self, ctx: &mut Store) -> Self::Id {
+    fn into_id(self, ctx: &Store) -> Self::Id {
         ctx.store_value(self)
     }
 }

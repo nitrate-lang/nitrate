@@ -188,16 +188,10 @@ impl TryIntoHir for ast::RefinementType {
 
     fn try_into_hir(self, ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, Self::Error> {
         let base = match self.width {
-            None => self
-                .basis_type
-                .try_into_hir(ctx, log)?
-                .into_id(ctx.store_mut()),
+            None => self.basis_type.try_into_hir(ctx, log)?.into_id(ctx.store()),
 
             Some(expr) => {
-                let base = self
-                    .basis_type
-                    .try_into_hir(ctx, log)?
-                    .into_id(ctx.store_mut());
+                let base = self.basis_type.try_into_hir(ctx, log)?.into_id(ctx.store());
 
                 let hir_expr = expr.try_into_hir(ctx, log)?;
                 let literal = Literal::try_from(hir_expr).map_err(|_| ())?;
@@ -218,7 +212,7 @@ impl TryIntoHir for ast::RefinementType {
                     _ => return Err(()),
                 };
 
-                Type::Bitfield { base, bits }.into_id(ctx.store_mut())
+                Type::Bitfield { base, bits }.into_id(ctx.store())
             }
         };
 
@@ -231,7 +225,7 @@ impl TryIntoHir for ast::RefinementType {
             Some(expr) => {
                 let hir_expr = expr.try_into_hir(ctx, log)?;
                 let literal = Literal::try_from(hir_expr).map_err(|_| ())?;
-                literal.into_id(ctx.store_mut())
+                literal.into_id(ctx.store())
             }
         };
 
@@ -244,7 +238,7 @@ impl TryIntoHir for ast::RefinementType {
             Some(expr) => {
                 let hir_expr = expr.try_into_hir(ctx, log)?;
                 let literal = Literal::try_from(hir_expr).map_err(|_| ())?;
-                literal.into_id(ctx.store_mut())
+                literal.into_id(ctx.store())
             }
         };
 
@@ -265,11 +259,11 @@ impl TryIntoHir for ast::TupleType {
 
         for ast_ty in self.element_types.into_iter() {
             let hir_ty = ast_ty.try_into_hir(ctx, log)?;
-            elements.push(hir_ty.into_id(ctx.store_mut()));
+            elements.push(hir_ty.into_id(ctx.store()));
         }
 
         Ok(Type::Tuple {
-            elements: elements.into_id(ctx.store_mut()),
+            elements: elements.into_id(ctx.store()),
         })
     }
 }
@@ -285,7 +279,7 @@ impl TryIntoHir for ast::ArrayType {
         let hir_length = 0;
 
         Ok(Type::Array {
-            element_type: hir_element_type.into_id(ctx.store_mut()),
+            element_type: hir_element_type.into_id(ctx.store()),
             len: hir_length,
         })
     }
@@ -299,7 +293,7 @@ impl TryIntoHir for ast::SliceType {
         let hir_element_type = self.element_type.try_into_hir(ctx, log)?;
 
         Ok(Type::Slice {
-            element_type: hir_element_type.into_id(ctx.store_mut()),
+            element_type: hir_element_type.into_id(ctx.store()),
         })
     }
 }
@@ -310,8 +304,8 @@ impl TryIntoHir for ast::FunctionType {
 
     fn try_into_hir(self, ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, Self::Error> {
         let return_type = match self.return_type {
-            Some(ty) => ty.try_into_hir(ctx, log)?.into_id(ctx.store_mut()),
-            None => Type::Unit.into_id(ctx.store_mut()),
+            Some(ty) => ty.try_into_hir(ctx, log)?.into_id(ctx.store()),
+            None => Type::Unit.into_id(ctx.store()),
         };
 
         // let mut parameter_types = Vec::with_capacity(self.parameters.len());
@@ -328,12 +322,12 @@ impl TryIntoHir for ast::FunctionType {
             }
 
             let param_type = match param.param_type {
-                Some(ty) => ty.try_into_hir(ctx, log)?.into_id(ctx.store_mut()),
-                None => create_inference_variable(ctx).into_id(ctx.store_mut()),
+                Some(ty) => ty.try_into_hir(ctx, log)?.into_id(ctx.store()),
+                None => create_inference_variable(ctx).into_id(ctx.store()),
             };
 
             let default_value = match param.default_value {
-                Some(expr) => Some(expr.try_into_hir(ctx, log)?.into_id(ctx.store_mut())),
+                Some(expr) => Some(expr.try_into_hir(ctx, log)?.into_id(ctx.store())),
                 None => None,
             };
 
@@ -350,7 +344,7 @@ impl TryIntoHir for ast::ReferenceType {
     type Hir = Type;
 
     fn try_into_hir(self, ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, Self::Error> {
-        let to = self.to.try_into_hir(ctx, log)?.into_id(ctx.store_mut());
+        let to = self.to.try_into_hir(ctx, log)?.into_id(ctx.store());
 
         let lifetime = match self.lifetime {
             None => Lifetime::Inferred,

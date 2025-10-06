@@ -13,7 +13,7 @@ pub enum Place {
 impl IntoStoreId for Place {
     type Id = PlaceId;
 
-    fn into_id(self, ctx: &mut Store) -> Self::Id {
+    fn into_id(self, ctx: &Store) -> Self::Id {
         ctx.store_place(self)
     }
 }

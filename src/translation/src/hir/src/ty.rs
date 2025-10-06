@@ -10,7 +10,7 @@ pub type TypeList = Vec<TypeId>;
 impl IntoStoreId for TypeList {
     type Id = TypeListId;
 
-    fn into_id(self, ctx: &mut Store) -> Self::Id {
+    fn into_id(self, ctx: &Store) -> Self::Id {
         ctx.store_type_list(self)
     }
 }
@@ -20,7 +20,7 @@ pub type StructFields = Vec<(String, TypeId)>;
 impl IntoStoreId for StructFields {
     type Id = StructFieldsId;
 
-    fn into_id(self, ctx: &mut Store) -> Self::Id {
+    fn into_id(self, ctx: &Store) -> Self::Id {
         ctx.store_struct_fields(self)
     }
 }
@@ -30,7 +30,7 @@ pub type EnumVariants = BTreeMap<String, TypeId>;
 impl IntoStoreId for EnumVariants {
     type Id = EnumVariantsId;
 
-    fn into_id(self, ctx: &mut Store) -> Self::Id {
+    fn into_id(self, ctx: &Store) -> Self::Id {
         ctx.store_enum_variants(self)
     }
 }
@@ -40,7 +40,7 @@ pub type StructAttributes = BTreeSet<StructAttribute>;
 impl IntoStoreId for StructAttributes {
     type Id = StructAttributesId;
 
-    fn into_id(self, ctx: &mut Store) -> Self::Id {
+    fn into_id(self, ctx: &Store) -> Self::Id {
         ctx.store_struct_attributes(self)
     }
 }
@@ -50,7 +50,7 @@ pub type EnumAttributes = BTreeSet<EnumAttribute>;
 impl IntoStoreId for EnumAttributes {
     type Id = EnumAttributesId;
 
-    fn into_id(self, ctx: &mut Store) -> Self::Id {
+    fn into_id(self, ctx: &Store) -> Self::Id {
         ctx.store_enum_attributes(self)
     }
 }
@@ -60,7 +60,7 @@ pub type FunctionAttributes = BTreeSet<FunctionAttribute>;
 impl IntoStoreId for FunctionAttributes {
     type Id = FuncAttributesId;
 
-    fn into_id(self, ctx: &mut Store) -> Self::Id {
+    fn into_id(self, ctx: &Store) -> Self::Id {
         ctx.store_function_attributes(self)
     }
 }
@@ -250,7 +250,7 @@ impl Type {
 impl IntoStoreId for Type {
     type Id = TypeId;
 
-    fn into_id(self, ctx: &mut Store) -> Self::Id {
+    fn into_id(self, ctx: &Store) -> Self::Id {
         ctx.store_type(self)
     }
 }

@@ -38,10 +38,6 @@ impl HirCtx {
         &self.storage
     }
 
-    pub fn store_mut(&mut self) -> &mut Store {
-        &mut self.storage
-    }
-
     pub fn ptr_size(&self) -> PtrSize {
         self.ptr_size
     }

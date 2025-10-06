@@ -1,8 +1,9 @@
 use crate::prelude::*;
+use append_only_vec::AppendOnlyVec;
+use bimap::BiMap;
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 use std::num::NonZeroU32;
-use std::sync::Arc;
+use std::sync::{Arc, RwLock};
 
 macro_rules! impl_dedup_store {
     ($handle_name:ident, $item_name:ident, $store_name:ident) => {
@@ -10,20 +11,25 @@ macro_rules! impl_dedup_store {
         pub struct $handle_name(NonZeroU32);
 
         pub struct $store_name {
-            map: HashMap<Arc<$item_name>, $handle_name>,
-            quick_vec: Vec<Arc<$item_name>>,
+            bimap: RwLock<BiMap<Arc<$item_name>, $handle_name>>,
+            quick_vec: AppendOnlyVec<Arc<$item_name>>,
         }
 
         impl $store_name {
             pub fn new() -> Self {
                 Self {
-                    map: HashMap::new(),
-                    quick_vec: Vec::new(),
+                    bimap: RwLock::new(BiMap::new()),
+                    quick_vec: AppendOnlyVec::new(),
                 }
             }
 
-            pub fn store(&mut self, item: $item_name) -> $handle_name {
-                if let Some(id) = self.map.get(&item) {
+            pub fn store(&self, item: $item_name) -> $handle_name {
+                if let Some(id) = self.bimap.read().unwrap().get_by_left(&item) {
+                    return id.clone();
+                }
+
+                let mut bimap = self.bimap.write().unwrap();
+                if let Some(id) = bimap.get_by_left(&item) {
                     return id.clone();
                 }
 
@@ -32,25 +38,23 @@ macro_rules! impl_dedup_store {
 
                 let id = NonZeroU32::new(self.quick_vec.len() as u32).expect("Store overflowed");
                 let handle = $handle_name(id);
-                self.map.insert(arc_item, handle.clone());
+                bimap.insert(arc_item, handle.clone());
 
                 handle
             }
 
             fn get(&self, id: &$handle_name) -> &$item_name {
-                self.quick_vec
-                    .get(id.0.get() as usize - 1)
-                    .expect("Id not found in Store")
+                &self.quick_vec[id.0.get() as usize - 1]
             }
 
             pub fn reset(&mut self) {
-                self.map = HashMap::new();
-                self.quick_vec = Vec::new();
+                self.bimap = RwLock::new(BiMap::new());
+                self.quick_vec = AppendOnlyVec::new();
             }
 
-            pub fn shrink_to_fit(&mut self) {
-                self.map.shrink_to_fit();
-                self.quick_vec.shrink_to_fit();
+            pub fn shrink_to_fit(&self) {
+                self.bimap.write().unwrap().shrink_to_fit();
+                // AppendOnlyVec does not have a shrink_to_fit method
             }
         }
 
@@ -70,38 +74,36 @@ macro_rules! impl_store_mut {
         pub struct $handle_name(NonZeroU32);
 
         pub struct $store_name {
-            items: Vec<$item_name>,
+            vec: AppendOnlyVec<$item_name>,
         }
 
         impl $store_name {
             pub fn new() -> Self {
-                Self { items: Vec::new() }
+                Self {
+                    vec: AppendOnlyVec::new(),
+                }
             }
 
-            pub fn store(&mut self, item: $item_name) -> $handle_name {
-                self.items.push(item);
-                let id = NonZeroU32::new(self.items.len() as u32).unwrap();
+            pub fn store(&self, item: $item_name) -> $handle_name {
+                self.vec.push(item);
+                let id = NonZeroU32::new(self.vec.len() as u32).unwrap();
                 $handle_name(id)
             }
 
             fn get(&self, id: &$handle_name) -> &$item_name {
-                self.items
-                    .get(id.0.get() as usize - 1)
-                    .expect("Id not found in Store")
+                &self.vec[id.0.get() as usize - 1]
             }
 
             fn get_mut(&mut self, id: &$handle_name) -> &mut $item_name {
-                self.items
-                    .get_mut(id.0.get() as usize - 1)
-                    .expect("Id not found in Store")
+                &mut self.vec[id.0.get() as usize - 1]
             }
 
             pub fn reset(&mut self) {
-                self.items = Vec::new();
+                self.vec = AppendOnlyVec::new();
             }
 
             pub fn shrink_to_fit(&mut self) {
-                self.items.shrink_to_fit();
+                // AppendOnlyVec does not have a shrink_to_fit method
             }
         }
 
@@ -183,55 +185,55 @@ impl Store {
         }
     }
 
-    pub fn store_type(&mut self, ty: Type) -> TypeId {
+    pub fn store_type(&self, ty: Type) -> TypeId {
         self.types.store(ty)
     }
 
-    pub fn store_type_list(&mut self, ty_list: TypeList) -> TypeListId {
+    pub fn store_type_list(&self, ty_list: TypeList) -> TypeListId {
         self.type_lists.store(ty_list)
     }
 
-    pub fn store_struct_fields(&mut self, fields: StructFields) -> StructFieldsId {
+    pub fn store_struct_fields(&self, fields: StructFields) -> StructFieldsId {
         self.struct_fields.store(fields)
     }
 
-    pub fn store_enum_variants(&mut self, variants: EnumVariants) -> EnumVariantsId {
+    pub fn store_enum_variants(&self, variants: EnumVariants) -> EnumVariantsId {
         self.enum_variants.store(variants)
     }
 
-    pub fn store_struct_attributes(&mut self, attrs: StructAttributes) -> StructAttributesId {
+    pub fn store_struct_attributes(&self, attrs: StructAttributes) -> StructAttributesId {
         self.struct_attributes.store(attrs)
     }
 
-    pub fn store_enum_attributes(&mut self, attrs: EnumAttributes) -> EnumAttributesId {
+    pub fn store_enum_attributes(&self, attrs: EnumAttributes) -> EnumAttributesId {
         self.enum_attributes.store(attrs)
     }
 
-    pub fn store_function_attributes(&mut self, attrs: FunctionAttributes) -> FuncAttributesId {
+    pub fn store_function_attributes(&self, attrs: FunctionAttributes) -> FuncAttributesId {
         self.function_attributes.store(attrs)
     }
 
-    pub fn store_item(&mut self, item: Item) -> ItemId {
+    pub fn store_item(&self, item: Item) -> ItemId {
         self.items.store(item)
     }
 
-    pub fn store_symbol(&mut self, symbol: Symbol) -> SymbolId {
+    pub fn store_symbol(&self, symbol: Symbol) -> SymbolId {
         self.symbols.store(symbol)
     }
 
-    pub fn store_value(&mut self, expr: Value) -> ValueId {
+    pub fn store_value(&self, expr: Value) -> ValueId {
         self.values.store(expr)
     }
 
-    pub fn store_literal(&mut self, literal: Literal) -> LiteralId {
+    pub fn store_literal(&self, literal: Literal) -> LiteralId {
         self.literals.store(literal)
     }
 
-    pub fn store_block(&mut self, block: Block) -> BlockId {
+    pub fn store_block(&self, block: Block) -> BlockId {
         self.blocks.store(block)
     }
 
-    pub fn store_place(&mut self, place: Place) -> PlaceId {
+    pub fn store_place(&self, place: Place) -> PlaceId {
         self.places.store(place)
     }
 

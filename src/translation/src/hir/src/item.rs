@@ -91,7 +91,7 @@ pub enum Symbol {
 impl IntoStoreId for Symbol {
     type Id = SymbolId;
 
-    fn into_id(self, ctx: &mut Store) -> Self::Id {
+    fn into_id(self, ctx: &Store) -> Self::Id {
         ctx.store_symbol(self)
     }
 }
@@ -118,7 +118,7 @@ pub enum Item {
 impl IntoStoreId for Item {
     type Id = ItemId;
 
-    fn into_id(self, ctx: &mut Store) -> Self::Id {
+    fn into_id(self, ctx: &Store) -> Self::Id {
         ctx.store_item(self)
     }
 }
