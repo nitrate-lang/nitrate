@@ -1,7 +1,7 @@
 use crate::prelude::*;
 use interned_string::IString;
 use serde::{Deserialize, Serialize};
-use std::collections::{HashMap, HashSet};
+use std::collections::HashSet;
 use std::num::NonZeroU32;
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -56,7 +56,7 @@ pub enum Type {
     },
 
     Tuple {
-        elements: Box<Vec<TypeId>>,
+        elements: Vec<TypeId>,
     },
 
     Slice {
@@ -64,23 +64,17 @@ pub enum Type {
     },
 
     Struct {
-        attributes: HashSet<StructAttribute>,
+        attributes: Box<HashSet<StructAttribute>>,
         fields: Vec<(String, TypeId)>,
     },
 
     Enum {
-        attributes: HashSet<EnumAttribute>,
-        variants: HashMap<String, TypeId>,
+        attributes: Box<HashSet<EnumAttribute>>,
+        variants: Vec<(String, TypeId)>,
     },
 
-    // Refine {
-    //     base: TypeId,
-    //     width: ValueId,
-    //     min: ValueId,
-    //     max: ValueId,
-    // },
     Function {
-        attributes: HashSet<FunctionAttribute>,
+        attributes: Box<HashSet<FunctionAttribute>>,
         parameters: Vec<TypeId>,
         return_type: TypeId,
     },
