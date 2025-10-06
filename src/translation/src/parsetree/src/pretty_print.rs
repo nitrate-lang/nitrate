@@ -1876,7 +1876,7 @@ impl PrettyPrint for FuncParams {
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
         writer.write_char('(')?;
-        for (i, param) in self.params.iter().enumerate() {
+        for (i, param) in self.iter().enumerate() {
             if i > 0 {
                 writer.write_str(", ")?;
             }

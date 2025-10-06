@@ -4,6 +4,12 @@ use nitrate_hir::prelude::*;
 use nitrate_parsetree::kind as ast;
 use std::ops::Deref;
 
+fn create_inference_variable(ctx: &mut HirCtx) -> Type {
+    Type::Inferred {
+        id: ctx.next_type_infer_id(),
+    }
+}
+
 impl TryIntoHir for ast::TypeSyntaxError {
     type Error = ();
     type Hir = Type;
@@ -162,9 +168,7 @@ impl TryIntoHir for ast::InferType {
     type Hir = Type;
 
     fn try_into_hir(self, ctx: &mut HirCtx, _log: &CompilerLog) -> Result<Self::Hir, Self::Error> {
-        Ok(Type::Inferred {
-            id: ctx.next_type_infer_id(),
-        })
+        Ok(create_inference_variable(ctx))
     }
 }
 
@@ -305,6 +309,37 @@ impl TryIntoHir for ast::FunctionType {
     type Hir = Type;
 
     fn try_into_hir(self, ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, Self::Error> {
+        let return_type = match self.return_type {
+            Some(ty) => ty.try_into_hir(ctx, log)?.into_id(ctx.store_mut()),
+            None => Type::Unit.into_id(ctx.store_mut()),
+        };
+
+        let mut parameter_types = Vec::with_capacity(self.parameters.len());
+
+        for param in self.parameters.into_iter() {
+            if !param.attributes.unwrap_or_default().elements.is_empty() {
+                // TODO: Handle parameter attributes
+                return Err(());
+            }
+
+            if param.mutability.is_some() {
+                // TODO: Print error
+                return Err(());
+            }
+
+            let param_type = match param.param_type {
+                Some(ty) => ty.try_into_hir(ctx, log)?.into_id(ctx.store_mut()),
+                None => create_inference_variable(ctx).into_id(ctx.store_mut()),
+            };
+
+            let default_value = match param.default_value {
+                Some(expr) => Some(expr.try_into_hir(ctx, log)?.into_id(ctx.store_mut())),
+                None => None,
+            };
+
+            let _ = param.name;
+        }
+
         // TODO: Lower ast::FunctionType into hir::FunctionType
         Err(())
     }

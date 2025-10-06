@@ -218,7 +218,7 @@ pub struct Block {
 }
 
 #[skip_serializing_none]
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct AttributeList {
     pub elements: Vec<Expr>,
 }

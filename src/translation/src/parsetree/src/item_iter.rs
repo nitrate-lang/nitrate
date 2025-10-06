@@ -280,7 +280,7 @@ impl ParseTreeIter for FuncParam {
 
 impl ParseTreeIter for FuncParams {
     fn depth_first_iter(&self, f: &mut dyn FnMut(Order, RefNode)) {
-        for param in &self.params {
+        for param in self {
             param.depth_first_iter(f);
         }
     }

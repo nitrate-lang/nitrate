@@ -280,7 +280,7 @@ impl ParseTreeIterMut for FuncParam {
 
 impl ParseTreeIterMut for FuncParams {
     fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
-        for param in &mut self.params {
+        for param in self {
             param.depth_first_iter_mut(f);
         }
     }
