@@ -2,7 +2,7 @@ use nitrate_diagnosis::{CompilerLog, intern_file_id};
 use nitrate_translation::{
     TranslationError,
     hir::prelude::*,
-    into_hir::{HirCtx, TryIntoHir},
+    hir_into::{HirCtx, TryIntoHir},
     parse::Parser,
     parsetree::kind::Module,
     resolve::{ImportContext, resolve_imports, resolve_names},

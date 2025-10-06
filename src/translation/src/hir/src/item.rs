@@ -12,6 +12,15 @@ pub enum Visibility {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct QualifiedName(pub IString);
 
+impl<T> From<T> for QualifiedName
+where
+    T: Into<IString>,
+{
+    fn from(value: T) -> Self {
+        QualifiedName(value.into())
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct EntityName(pub IString);
 
