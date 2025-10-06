@@ -183,8 +183,68 @@ impl TryIntoHir for ast::RefinementType {
     type Hir = Type;
 
     fn try_into_hir(self, ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, Self::Error> {
-        // TODO: Lower ast::RefinementType into hir::RefinementType
-        Err(())
+        let base = match self.width {
+            None => self
+                .basis_type
+                .try_into_hir(ctx, log)?
+                .into_id(ctx.store_mut()),
+
+            Some(expr) => {
+                let base = self
+                    .basis_type
+                    .try_into_hir(ctx, log)?
+                    .into_id(ctx.store_mut());
+
+                let hir_expr = expr.try_into_hir(ctx, log)?;
+                let literal = Literal::try_from(hir_expr).map_err(|_| ())?;
+
+                let bits = match literal {
+                    Literal::U8(x) => x,
+                    Literal::U16(x) => u8::try_from(x).map_err(|_| ())?,
+                    Literal::U32(x) => u8::try_from(x).map_err(|_| ())?,
+                    Literal::U64(x) => u8::try_from(x).map_err(|_| ())?,
+                    Literal::U128(x) => u8::try_from(x).map_err(|_| ())?,
+                    Literal::ISize(x) => u8::try_from(x).map_err(|_| ())?,
+                    Literal::I8(x) => u8::try_from(x).map_err(|_| ())?,
+                    Literal::I16(x) => u8::try_from(x).map_err(|_| ())?,
+                    Literal::I32(x) => u8::try_from(x).map_err(|_| ())?,
+                    Literal::I64(x) => u8::try_from(x).map_err(|_| ())?,
+                    Literal::I128(x) => u8::try_from(x).map_err(|_| ())?,
+                    Literal::USize(x) => u8::try_from(x).map_err(|_| ())?,
+                    _ => return Err(()),
+                };
+
+                Type::Bitfield { base, bits }.into_id(ctx.store_mut())
+            }
+        };
+
+        let min = match self.minimum {
+            None => {
+                // TODO: Do type inference to find the minimum value for the base type
+                todo!("Implement type inference for refinement type minimum deduction");
+            }
+
+            Some(expr) => {
+                let hir_expr = expr.try_into_hir(ctx, log)?;
+                let literal = Literal::try_from(hir_expr).map_err(|_| ())?;
+                literal.into_id(ctx.store_mut())
+            }
+        };
+
+        let max = match self.maximum {
+            None => {
+                // TODO: Do type inference to find the maximum value for the base type
+                todo!("Implement type inference for refinement type maximum deduction");
+            }
+
+            Some(expr) => {
+                let hir_expr = expr.try_into_hir(ctx, log)?;
+                let literal = Literal::try_from(hir_expr).map_err(|_| ())?;
+                literal.into_id(ctx.store_mut())
+            }
+        };
+
+        Ok(Type::Refine { base, min, max })
     }
 }
 

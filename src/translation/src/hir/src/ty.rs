@@ -140,6 +140,11 @@ pub enum Type {
         max: LiteralId,
     },
 
+    Bitfield {
+        base: TypeId,
+        bits: u8,
+    },
+
     Function {
         attributes: FuncAttributesId,
         parameters: TypeListId,

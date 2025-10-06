@@ -100,6 +100,7 @@ pub fn get_size_of(ty: &Type, store: &Store, ptr_size: PointerSize) -> Result<u6
         }
 
         Type::Refine { base, .. } => Ok(get_size_of(&store[base], store, ptr_size)?),
+        Type::Bitfield { bits, .. } => Ok(bits.div_ceil(8) as u64),
 
         Type::Function { .. } => Err(SizeofError::UnknownSize),
         Type::Reference { .. } => Ok(ptr_size as u64),

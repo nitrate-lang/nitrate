@@ -1,4 +1,4 @@
-use crate::prelude::*;
+use crate::{prelude::*, store::LiteralId};
 use interned_string::IString;
 use ordered_float::NotNan;
 use serde::{Deserialize, Serialize};
@@ -84,6 +84,14 @@ pub enum Literal {
     F128(NotNan<f64>),
     String(String),
     BString(Vec<u8>),
+}
+
+impl IntoStoreId for Literal {
+    type Id = LiteralId;
+
+    fn into_id(self, ctx: &mut Store) -> Self::Id {
+        ctx.store_literal(self)
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
