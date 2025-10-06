@@ -91,12 +91,12 @@ impl Dump for Type {
                 write!(o, "]")
             }
 
-            Type::Struct(struct_type) => {
+            Type::Struct { attributes, fields } => {
                 write!(o, "struct")?;
 
-                if !struct_type.attributes.is_empty() {
+                if !attributes.is_empty() {
                     write!(o, " [")?;
-                    for (i, attribute) in struct_type.attributes.iter().enumerate() {
+                    for (i, attribute) in attributes.iter().enumerate() {
                         if i != 0 {
                             write!(o, ", ")?;
                         }
@@ -106,11 +106,11 @@ impl Dump for Type {
                     write!(o, "]")?;
                 }
 
-                if struct_type.fields.is_empty() {
+                if fields.is_empty() {
                     write!(o, " {{}}")
                 } else {
                     write!(o, " {{\n")?;
-                    for (name, field_type) in &struct_type.fields {
+                    for (name, field_type) in fields {
                         ctx.indent += 1;
 
                         self.write_indent(ctx, o)?;
@@ -126,12 +126,15 @@ impl Dump for Type {
                 }
             }
 
-            Type::Enum(enum_type) => {
+            Type::Enum {
+                attributes,
+                variants,
+            } => {
                 write!(o, "enum")?;
 
-                if !enum_type.attributes.is_empty() {
+                if !attributes.is_empty() {
                     write!(o, " [")?;
-                    for (i, attribute) in enum_type.attributes.iter().enumerate() {
+                    for (i, attribute) in attributes.iter().enumerate() {
                         if i != 0 {
                             write!(o, ", ")?;
                         }
@@ -141,11 +144,11 @@ impl Dump for Type {
                     write!(o, "]")?;
                 }
 
-                if enum_type.variants.is_empty() {
+                if variants.is_empty() {
                     write!(o, " {{}}")
                 } else {
                     write!(o, " {{\n")?;
-                    for (name, variant_type) in &enum_type.variants {
+                    for (name, variant_type) in variants {
                         ctx.indent += 1;
 
                         self.write_indent(ctx, o)?;
@@ -161,12 +164,16 @@ impl Dump for Type {
                 }
             }
 
-            Type::Function(func_type) => {
+            Type::Function {
+                attributes,
+                parameters,
+                return_type,
+            } => {
                 write!(o, "fn")?;
 
-                if !func_type.attributes.is_empty() {
+                if !attributes.is_empty() {
                     write!(o, " [")?;
-                    for (i, attribute) in func_type.attributes.iter().enumerate() {
+                    for (i, attribute) in attributes.iter().enumerate() {
                         if i != 0 {
                             write!(o, ", ")?;
                         }
@@ -177,7 +184,7 @@ impl Dump for Type {
                 }
 
                 write!(o, "(")?;
-                for (i, param_type) in func_type.parameters.iter().enumerate() {
+                for (i, param_type) in parameters.iter().enumerate() {
                     if i != 0 {
                         write!(o, ", ")?;
                     }
@@ -185,11 +192,16 @@ impl Dump for Type {
                     ctx.store[param_type].dump(ctx, o)?;
                 }
                 write!(o, ") -> ")?;
-                ctx.store[&func_type.return_type].dump(ctx, o)
+                ctx.store[return_type].dump(ctx, o)
             }
 
-            Type::Reference(reference) => {
-                match &reference.lifetime {
+            Type::Reference {
+                lifetime,
+                exclusive,
+                mutable,
+                to,
+            } => {
+                match lifetime {
                     Lifetime::Static => write!(o, "&'static ")?,
                     Lifetime::Gc => write!(o, "&'gc ")?,
                     Lifetime::ThreadLocal => write!(o, "&'thread ")?,
@@ -198,27 +210,31 @@ impl Dump for Type {
                     Lifetime::Inferred => write!(o, "&'_) ")?,
                 }
 
-                if !reference.exclusive {
+                if !exclusive {
                     write!(o, "shared ")?;
                 }
 
-                if reference.mutable {
+                if *mutable {
                     write!(o, "mut ")?;
                 }
 
-                ctx.store[&reference.to].dump(ctx, o)
+                ctx.store[to].dump(ctx, o)
             }
 
-            Type::Pointer(pointer) => {
-                if !pointer.exclusive {
+            Type::Pointer {
+                exclusive,
+                mutable,
+                to,
+            } => {
+                if !exclusive {
                     write!(o, "shared ")?;
                 }
 
-                if pointer.mutable {
+                if *mutable {
                     write!(o, "mut ")?;
                 }
 
-                ctx.store[&pointer.to].dump(ctx, o)
+                ctx.store[to].dump(ctx, o)
             }
 
             Type::InferredInteger { signed } => {

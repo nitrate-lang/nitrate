@@ -283,14 +283,12 @@ impl TryIntoHir for ast::ReferenceType {
             None => mutable,
         };
 
-        let reference = Reference {
+        Ok(Type::Reference {
             lifetime,
             exclusive,
             mutable,
             to,
-        };
-
-        Ok(Type::Reference(Box::new(reference)))
+        })
     }
 }
 

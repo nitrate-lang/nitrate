@@ -38,14 +38,14 @@ pub fn get_align_of(ty: &Type, store: &Store, ptr_size: PointerSize) -> Result<u
 
         Type::Slice { element_type } => get_align_of(&store[element_type], store, ptr_size),
 
-        Type::Struct(struct_type) => {
-            if struct_type.attributes.contains(&StructAttribute::Packed) {
+        Type::Struct { attributes, fields } => {
+            if attributes.contains(&StructAttribute::Packed) {
                 return Ok(1);
             }
 
             let mut max_align = 1;
 
-            for (_, field_type) in &struct_type.fields {
+            for (_, field_type) in fields {
                 let field_align = get_align_of(&store[field_type], store, ptr_size)?;
                 max_align = max(max_align, field_align);
             }
@@ -53,15 +53,15 @@ pub fn get_align_of(ty: &Type, store: &Store, ptr_size: PointerSize) -> Result<u
             Ok(max_align)
         }
 
-        Type::Enum(enum_type) => {
+        Type::Enum { variants, .. } => {
             let mut max_align = 1;
 
-            for (_, variant_type) in &enum_type.variants {
+            for (_, variant_type) in variants {
                 let variant_align = get_align_of(&store[variant_type], store, ptr_size)?;
                 max_align = max(max_align, variant_align);
             }
 
-            let discrim_align = match enum_type.variants.len() {
+            let discrim_align = match variants.len() {
                 0..=256 => 1,
                 257..=65536 => 2,
                 65537..=4294967296 => 4,
@@ -73,10 +73,9 @@ pub fn get_align_of(ty: &Type, store: &Store, ptr_size: PointerSize) -> Result<u
             Ok(max_align)
         }
 
-        Type::Function(_) => Err(AlignofError::UnknownAlignment),
-
-        Type::Reference(_) => Ok(ptr_size as u64),
-        Type::Pointer(_) => Ok(ptr_size as u64),
+        Type::Function { .. } => Err(AlignofError::UnknownAlignment),
+        Type::Reference { .. } => Ok(ptr_size as u64),
+        Type::Pointer { .. } => Ok(ptr_size as u64),
 
         Type::InferredInteger { .. } | Type::InferredFloat | Type::Inferred { .. } => {
             Err(AlignofError::UnknownAlignment)

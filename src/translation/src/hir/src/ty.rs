@@ -1,7 +1,7 @@
 use crate::prelude::*;
-use hashbrown::{HashMap, HashSet};
 use interned_string::IString;
 use serde::{Deserialize, Serialize};
+use std::collections::{HashMap, HashSet};
 use std::num::NonZeroU32;
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -11,23 +11,7 @@ pub enum Lifetime {
     ThreadLocal,
     TaskLocal,
     Stack { id: EntityName },
-
     Inferred,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct Reference {
-    pub lifetime: Lifetime,
-    pub exclusive: bool,
-    pub mutable: bool,
-    pub to: TypeId,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct Pointer {
-    pub exclusive: bool,
-    pub mutable: bool,
-    pub to: TypeId,
 }
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Eq, Hash)]
@@ -35,20 +19,8 @@ pub enum StructAttribute {
     Packed,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
-pub struct StructType {
-    pub attributes: HashSet<StructAttribute>,
-    pub fields: Vec<(String, TypeId)>,
-}
-
 #[derive(Debug, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub enum EnumAttribute {}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct EnumType {
-    pub attributes: HashSet<EnumAttribute>,
-    pub variants: HashMap<String, TypeId>,
-}
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub enum FunctionAttribute {
@@ -56,16 +28,7 @@ pub enum FunctionAttribute {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct FunctionType {
-    pub attributes: HashSet<FunctionAttribute>,
-    pub parameters: Vec<TypeId>,
-    pub return_type: TypeId,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
 pub enum Type {
-    /* ----------------------------------------------------- */
-    /* Primitive Types                                       */
     Never,
     Unit,
     Bool,
@@ -87,29 +50,68 @@ pub enum Type {
     F64,
     F128,
 
-    /* ----------------------------------------------------- */
-    /* Compound Types                                        */
-    Array { element_type: TypeId, len: u64 },
-    Tuple { elements: Box<Vec<TypeId>> },
-    Slice { element_type: TypeId },
-    Struct(Box<StructType>),
-    Enum(Box<EnumType>),
+    Array {
+        element_type: TypeId,
+        len: u64,
+    },
 
-    /* ----------------------------------------------------- */
-    /* Function Type                                         */
-    Function(Box<FunctionType>),
+    Tuple {
+        elements: Box<Vec<TypeId>>,
+    },
 
-    /* ----------------------------------------------------- */
-    /* Reference Type                                        */
-    Reference(Box<Reference>),
-    Pointer(Box<Pointer>),
+    Slice {
+        element_type: TypeId,
+    },
 
-    /* ----------------------------------------------------- */
-    /* Placeholder Types                                     */
-    InferredInteger { signed: bool },
+    Struct {
+        attributes: HashSet<StructAttribute>,
+        fields: Vec<(String, TypeId)>,
+    },
+
+    Enum {
+        attributes: HashSet<EnumAttribute>,
+        variants: HashMap<String, TypeId>,
+    },
+
+    // Refine {
+    //     base: TypeId,
+    //     width: ValueId,
+    //     min: ValueId,
+    //     max: ValueId,
+    // },
+    Function {
+        attributes: HashSet<FunctionAttribute>,
+        parameters: Vec<TypeId>,
+        return_type: TypeId,
+    },
+
+    Reference {
+        lifetime: Lifetime,
+        exclusive: bool,
+        mutable: bool,
+        to: TypeId,
+    },
+
+    Pointer {
+        exclusive: bool,
+        mutable: bool,
+        to: TypeId,
+    },
+
     InferredFloat,
-    Inferred { id: NonZeroU32 },
-    TypeAlias { name: IString, aliased: TypeId },
+
+    InferredInteger {
+        signed: bool,
+    },
+
+    Inferred {
+        id: NonZeroU32,
+    },
+
+    TypeAlias {
+        name: IString,
+        aliased: TypeId,
+    },
 }
 
 impl Type {
@@ -171,11 +173,11 @@ impl Type {
     }
 
     pub fn is_function(&self) -> bool {
-        matches!(self, Type::Function(_))
+        matches!(self, Type::Function { .. })
     }
 
     pub fn is_reference(&self) -> bool {
-        matches!(self, Type::Reference(_))
+        matches!(self, Type::Reference { .. })
     }
 }
 

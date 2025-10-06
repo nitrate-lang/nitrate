@@ -47,11 +47,11 @@ pub fn get_size_of(ty: &Type, store: &Store, ptr_size: PointerSize) -> Result<u6
 
         Type::Slice { element_type: _ } => Err(SizeofError::UnknownSize),
 
-        Type::Struct(struct_type) => {
-            if struct_type.attributes.contains(&StructAttribute::Packed) {
+        Type::Struct { attributes, fields } => {
+            if attributes.contains(&StructAttribute::Packed) {
                 let mut total_size = 0_u64;
 
-                for (_, field_type) in &struct_type.fields {
+                for (_, field_type) in fields {
                     total_size += get_size_of(&store[field_type], store, ptr_size)?;
                 }
 
@@ -60,7 +60,7 @@ pub fn get_size_of(ty: &Type, store: &Store, ptr_size: PointerSize) -> Result<u6
 
             let mut offset = 0_u64;
 
-            for (_, field_type) in &struct_type.fields {
+            for (_, field_type) in fields {
                 let field_type = &store[field_type];
 
                 let field_size = get_size_of(field_type, store, ptr_size)?;
@@ -76,15 +76,15 @@ pub fn get_size_of(ty: &Type, store: &Store, ptr_size: PointerSize) -> Result<u6
             Ok(offset)
         }
 
-        Type::Enum(enum_type) => {
+        Type::Enum { variants, .. } => {
             let mut size = 0_u64;
 
-            for (_, variant_type) in &enum_type.variants {
+            for (_, variant_type) in variants {
                 let variant_size = get_size_of(&store[variant_type], store, ptr_size)?;
                 size = max(size, variant_size);
             }
 
-            let (discrim_size, discrim_align) = match enum_type.variants.len() {
+            let (discrim_size, discrim_align) = match variants.len() {
                 0..=1 => (0, 1),
                 2..=256 => (1, 1),
                 257..=65536 => (2, 2),
@@ -98,10 +98,9 @@ pub fn get_size_of(ty: &Type, store: &Store, ptr_size: PointerSize) -> Result<u6
             Ok(size)
         }
 
-        Type::Function(_) => Err(SizeofError::UnknownSize),
-
-        Type::Reference(_) => Ok(ptr_size as u64),
-        Type::Pointer(_) => Ok(ptr_size as u64),
+        Type::Function { .. } => Err(SizeofError::UnknownSize),
+        Type::Reference { .. } => Ok(ptr_size as u64),
+        Type::Pointer { .. } => Ok(ptr_size as u64),
 
         Type::InferredInteger { .. } | Type::InferredFloat | Type::Inferred { .. } => {
             Err(SizeofError::UnknownSize)
