@@ -74,6 +74,8 @@ pub fn get_align_of(ty: &Type, store: &Store, ptr_size: PointerSize) -> Result<u
             Ok(max_align)
         }
 
+        Type::Refine { base, .. } => Ok(get_align_of(&store[base], store, ptr_size)?),
+
         Type::Function { .. } => Err(AlignofError::UnknownAlignment),
         Type::Reference { .. } => Ok(ptr_size as u64),
         Type::Pointer { .. } => Ok(ptr_size as u64),

@@ -1,7 +1,8 @@
 use crate::prelude::*;
-use bimap::BiMap;
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 use std::num::NonZeroU32;
+use std::sync::Arc;
 
 macro_rules! impl_dedup_store {
     ($handle_name:ident, $item_name:ident, $store_name:ident) => {
@@ -9,42 +10,47 @@ macro_rules! impl_dedup_store {
         pub struct $handle_name(NonZeroU32);
 
         pub struct $store_name {
-            map: BiMap<$handle_name, $item_name>,
-            next_id: NonZeroU32,
+            map: HashMap<Arc<$item_name>, $handle_name>,
+            quick_vec: Vec<Arc<$item_name>>,
         }
 
         impl $store_name {
             pub fn new() -> Self {
                 Self {
-                    map: BiMap::new(),
-                    next_id: NonZeroU32::new(1).unwrap(),
+                    map: HashMap::new(),
+                    quick_vec: Vec::new(),
                 }
             }
 
             pub fn store(&mut self, item: $item_name) -> $handle_name {
-                if let Some(id) = self.map.get_by_right(&item) {
+                if let Some(id) = self.map.get(&item) {
                     return id.clone();
                 }
 
-                let current_id = self.next_id;
-                self.next_id = current_id.checked_add(1).expect("Store overflowed");
+                let arc_item = Arc::new(item);
+                self.quick_vec.push(arc_item.clone());
 
-                let handle = $handle_name(current_id);
-                self.map.insert(handle.clone(), item);
+                let id = NonZeroU32::new(self.quick_vec.len() as u32).expect("Store overflowed");
+                let handle = $handle_name(id);
+                self.map.insert(arc_item, handle.clone());
+
                 handle
             }
 
             fn get(&self, id: &$handle_name) -> &$item_name {
-                self.map.get_by_left(id).expect("Id not found in Store")
+                self.quick_vec
+                    .get(id.0.get() as usize - 1)
+                    .expect("Id not found in Store")
             }
 
             pub fn reset(&mut self) {
-                self.map = BiMap::new();
-                self.next_id = NonZeroU32::new(1).unwrap();
+                self.map = HashMap::new();
+                self.quick_vec = Vec::new();
             }
 
             pub fn shrink_to_fit(&mut self) {
                 self.map.shrink_to_fit();
+                self.quick_vec.shrink_to_fit();
             }
         }
 
@@ -135,6 +141,8 @@ impl_store_mut!(SymbolId, Symbol, SymbolStore);
 
 impl_store_mut!(ValueId, Value, ExprValueStore);
 
+impl_dedup_store!(LiteralId, Literal, ExprLiteralStore);
+
 impl_store_mut!(BlockId, Block, ExprBlockStore);
 
 impl_store_mut!(PlaceId, Place, ExprPlaceStore);
@@ -150,6 +158,7 @@ pub struct Store {
     items: ItemStore,
     symbols: SymbolStore,
     values: ExprValueStore,
+    literals: ExprLiteralStore,
     blocks: ExprBlockStore,
     places: ExprPlaceStore,
 }
@@ -168,6 +177,7 @@ impl Store {
             items: ItemStore::new(),
             symbols: SymbolStore::new(),
             values: ExprValueStore::new(),
+            literals: ExprLiteralStore::new(),
             blocks: ExprBlockStore::new(),
             places: ExprPlaceStore::new(),
         }
@@ -213,6 +223,10 @@ impl Store {
         self.values.store(expr)
     }
 
+    pub fn store_literal(&mut self, literal: Literal) -> LiteralId {
+        self.literals.store(literal)
+    }
+
     pub fn store_block(&mut self, block: Block) -> BlockId {
         self.blocks.store(block)
     }
@@ -222,31 +236,33 @@ impl Store {
     }
 
     pub fn reset(&mut self) {
-        self.values.reset();
+        self.types.reset();
         self.type_lists.reset();
         self.struct_fields.reset();
         self.enum_variants.reset();
         self.struct_attributes.reset();
         self.enum_attributes.reset();
         self.function_attributes.reset();
-        self.types.reset();
         self.items.reset();
         self.symbols.reset();
+        self.values.reset();
+        self.literals.reset();
         self.blocks.reset();
         self.places.reset();
     }
 
     pub fn shrink_to_fit(&mut self) {
-        self.values.shrink_to_fit();
+        self.types.shrink_to_fit();
         self.type_lists.shrink_to_fit();
         self.struct_fields.shrink_to_fit();
         self.enum_variants.shrink_to_fit();
         self.struct_attributes.shrink_to_fit();
         self.enum_attributes.shrink_to_fit();
         self.function_attributes.shrink_to_fit();
-        self.types.shrink_to_fit();
         self.items.shrink_to_fit();
         self.symbols.shrink_to_fit();
+        self.values.shrink_to_fit();
+        self.literals.shrink_to_fit();
         self.blocks.shrink_to_fit();
         self.places.shrink_to_fit();
     }
@@ -347,6 +363,14 @@ impl std::ops::Index<&ValueId> for Store {
 impl std::ops::IndexMut<&ValueId> for Store {
     fn index_mut(&mut self, index: &ValueId) -> &mut Self::Output {
         &mut self.values[index]
+    }
+}
+
+impl std::ops::Index<&LiteralId> for Store {
+    type Output = Literal;
+
+    fn index(&self, index: &LiteralId) -> &Self::Output {
+        &self.literals[index]
     }
 }
 

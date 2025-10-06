@@ -32,6 +32,38 @@ impl Dump for Block {
     }
 }
 
+impl Dump for Literal {
+    fn dump(
+        &self,
+        _ctx: &mut DumpContext,
+        o: &mut dyn std::fmt::Write,
+    ) -> Result<(), std::fmt::Error> {
+        match self {
+            Literal::Unit => write!(o, "()"),
+            Literal::Bool(b) => write!(o, "{}", b),
+            Literal::I8(i) => write!(o, "i8 {}", i),
+            Literal::I16(i) => write!(o, "i16 {}", i),
+            Literal::I32(i) => write!(o, "i32 {}", i),
+            Literal::I64(i) => write!(o, "i64 {}", i),
+            Literal::ISize(i) => write!(o, "isize {}", i),
+            Literal::I128(i) => write!(o, "i128 {}", i),
+            Literal::U8(u) => write!(o, "u8 {}", u),
+            Literal::U16(u) => write!(o, "u16 {}", u),
+            Literal::U32(u) => write!(o, "u32 {}", u),
+            Literal::U64(u) => write!(o, "u64 {}", u),
+            Literal::USize(u) => write!(o, "usize {}", u),
+            Literal::U128(u) => write!(o, "u128 {}", u),
+            Literal::F8(f) => write!(o, "f8 {}", f),
+            Literal::F16(f) => write!(o, "f16 {}", f),
+            Literal::F32(f) => write!(o, "f32 {}", f),
+            Literal::F64(f) => write!(o, "f64 {}", f),
+            Literal::F128(f) => write!(o, "f128 {}", f),
+            Literal::String(s) => write!(o, "\"{}\"", s),
+            Literal::BString(s) => write!(o, "b\"{:?}\"", s),
+        }
+    }
+}
+
 impl Dump for Value {
     fn dump(
         &self,

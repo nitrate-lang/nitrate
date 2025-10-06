@@ -1,4 +1,5 @@
 use crate::prelude::*;
+use crate::store::LiteralId;
 use interned_string::IString;
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, BTreeSet};
@@ -131,6 +132,12 @@ pub enum Type {
     Enum {
         attributes: EnumAttributesId,
         variants: EnumVariantsId,
+    },
+
+    Refine {
+        base: TypeId,
+        min: LiteralId,
+        max: LiteralId,
     },
 
     Function {

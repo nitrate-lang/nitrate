@@ -172,6 +172,15 @@ impl Dump for Type {
                 }
             }
 
+            Type::Refine { base, min, max } => {
+                ctx.store[base].dump(ctx, o)?;
+                write!(o, ": [")?;
+                ctx.store[min].dump(ctx, o)?;
+                write!(o, ":")?;
+                ctx.store[max].dump(ctx, o)?;
+                write!(o, "]")
+            }
+
             Type::Function {
                 attributes,
                 parameters,

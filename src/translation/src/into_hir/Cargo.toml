@@ -8,3 +8,4 @@ nitrate_parsetree = { path = "../parsetree" }
 nitrate_hir = { path = "../hir" }
 nitrate_diagnosis = { path = "../../../diagnosis" }
 interned-string = { version = "0.3.0", features = ["serde"] }
+ordered-float = { version = "5.0.0", features = ["serde"] }
