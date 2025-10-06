@@ -4,11 +4,7 @@ use nitrate_hir::prelude::*;
 impl HirEvaluate for Literal {
     type Output = Literal;
 
-    fn evaluate(
-        &self,
-        _ctx: &mut crate::HirEvalCtx,
-        _store: &Store,
-    ) -> Result<Self::Output, crate::EvalFail> {
+    fn evaluate(&self, _ctx: &mut crate::HirEvalCtx) -> Result<Self::Output, crate::EvalFail> {
         Ok(self.clone())
     }
 }
@@ -16,11 +12,7 @@ impl HirEvaluate for Literal {
 impl HirEvaluate for Block {
     type Output = Value;
 
-    fn evaluate(
-        &self,
-        ctx: &mut crate::HirEvalCtx,
-        store: &Store,
-    ) -> Result<Self::Output, crate::EvalFail> {
+    fn evaluate(&self, ctx: &mut crate::HirEvalCtx) -> Result<Self::Output, crate::EvalFail> {
         if ctx.current_safety != BlockSafety::Safe {
             ctx.unsafe_operations_performed += 1;
         }
@@ -30,7 +22,7 @@ impl HirEvaluate for Block {
 
         let mut last_value = Value::Unit;
         for expr in &self.exprs {
-            last_value = store[expr].evaluate(ctx, store)?;
+            last_value = ctx.store[expr].evaluate(ctx)?;
         }
 
         ctx.current_safety = before_safety;
@@ -42,11 +34,7 @@ impl HirEvaluate for Block {
 impl HirEvaluate for Value {
     type Output = Value;
 
-    fn evaluate(
-        &self,
-        ctx: &mut crate::HirEvalCtx,
-        store: &Store,
-    ) -> Result<Self::Output, crate::EvalFail> {
+    fn evaluate(&self, ctx: &mut crate::HirEvalCtx) -> Result<Self::Output, crate::EvalFail> {
         if ctx.current_safety != BlockSafety::Safe {
             ctx.unsafe_operations_performed += 1;
         }
@@ -119,7 +107,7 @@ impl HirEvaluate for Value {
             Value::List { elements } => {
                 let mut evaluated_elements = Vec::with_capacity(elements.len());
                 for element in &**elements {
-                    let evaluated_element = store[element].evaluate(ctx, store)?.into_id(store);
+                    let evaluated_element = ctx.store[element].evaluate(ctx)?.into_id(ctx.store);
                     evaluated_elements.push(evaluated_element);
                 }
 

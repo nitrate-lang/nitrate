@@ -37,7 +37,8 @@ static DEFAULT_BUILTIN_FUNCTIONS: LazyLock<HashMap<QualifiedName, Box<BuiltinFun
         m
     });
 
-pub struct HirEvalCtx<'log> {
+pub struct HirEvalCtx<'store, 'log> {
+    pub(crate) store: &'store Store,
     pub(crate) log: &'log CompilerLog,
     pub(crate) loop_iter_limit: usize,
     pub(crate) loop_iter_count: usize,
@@ -48,9 +49,10 @@ pub struct HirEvalCtx<'log> {
     added_builtin_functions: HashMap<QualifiedName, Box<BuiltinFunction>>,
 }
 
-impl<'log> HirEvalCtx<'log> {
-    pub fn new(log: &'log CompilerLog) -> HirEvalCtx<'log> {
+impl<'store, 'log> HirEvalCtx<'store, 'log> {
+    pub fn new(store: &'store Store, log: &'log CompilerLog) -> HirEvalCtx<'store, 'log> {
         HirEvalCtx {
+            store,
             log,
             loop_iter_limit: 4096,
             loop_iter_count: 0,
@@ -110,5 +112,5 @@ pub enum EvalFail {
 pub trait HirEvaluate {
     type Output;
 
-    fn evaluate(&self, ctx: &mut HirEvalCtx, store: &Store) -> Result<Self::Output, EvalFail>;
+    fn evaluate(&self, ctx: &mut HirEvalCtx) -> Result<Self::Output, EvalFail>;
 }
