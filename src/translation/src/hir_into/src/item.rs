@@ -11,7 +11,7 @@ impl TryIntoHir for ast::Module {
         // TODO: Implement conversion from AST to HIR
 
         let global_var_type = Type::USize.into_id(ctx.store());
-        let global_var_init = Value::USize(0).into_id(ctx.store());
+        let global_var_init = Value::U32(0).into_id(ctx.store());
 
         let item = Item::GlobalVariable(GlobalVariable {
             visibility: Visibility::Pub,

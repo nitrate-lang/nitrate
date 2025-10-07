@@ -1,6 +1,6 @@
 use crate::{EvalFail, HirEvaluate};
 use nitrate_hir::prelude::*;
-use std::ops::{Add, Div, Mul, Neg, Not, Rem, Sub};
+use std::ops::{Add, BitAnd, BitOr, BitXor, Div, Mul, Neg, Not, Rem, Shl, Shr, Sub};
 
 impl HirEvaluate for Literal {
     type Output = Literal;
@@ -47,13 +47,11 @@ impl HirEvaluate for Value {
             Value::I16(i) => Ok(Value::I16(*i)),
             Value::I32(i) => Ok(Value::I32(*i)),
             Value::I64(i) => Ok(Value::I64(*i)),
-            Value::ISize(i) => Ok(Value::ISize(*i)),
             Value::I128(i) => Ok(Value::I128(i.clone())),
             Value::U8(u) => Ok(Value::U8(*u)),
             Value::U16(u) => Ok(Value::U16(*u)),
             Value::U32(u) => Ok(Value::U32(*u)),
             Value::U64(u) => Ok(Value::U64(*u)),
-            Value::USize(u) => Ok(Value::USize(*u)),
             Value::U128(u) => Ok(Value::U128(u.clone())),
             Value::F8(f) => Ok(Value::F8(*f)),
             Value::F16(f) => Ok(Value::F16(*f)),
@@ -98,40 +96,42 @@ impl HirEvaluate for Value {
                         Err(LiteralRemError::ModuloByZero) => Err(EvalFail::ModuloByZero),
                     },
 
-                    BinaryOp::And => {
-                        // TODO: Impl op
-                        todo!()
-                    }
+                    BinaryOp::And => match left.bitand(right) {
+                        Ok(lit) => Ok(lit.into()),
+                        Err(LiteralBitAndError::TypeError) => Err(EvalFail::TypeError),
+                    },
 
-                    BinaryOp::Or => {
-                        // TODO: Impl op
-                        todo!()
-                    }
+                    BinaryOp::Or => match left.bitor(right) {
+                        Ok(lit) => Ok(lit.into()),
+                        Err(LiteralBitOrError::TypeError) => Err(EvalFail::TypeError),
+                    },
 
-                    BinaryOp::Xor => {
-                        // TODO: Impl op
-                        todo!()
-                    }
+                    BinaryOp::Xor => match left.bitxor(right) {
+                        Ok(lit) => Ok(lit.into()),
+                        Err(LiteralBitXorError::TypeError) => Err(EvalFail::TypeError),
+                    },
 
-                    BinaryOp::Shl => {
-                        // TODO: Impl op
-                        todo!()
-                    }
+                    BinaryOp::Shl => match left.shl(right) {
+                        Ok(lit) => Ok(lit.into()),
+                        Err(LiteralShlError::TypeError) => Err(EvalFail::TypeError),
+                        Err(LiteralShlError::ShiftAmountError) => Err(EvalFail::ShiftAmountError),
+                    },
 
-                    BinaryOp::Shr => {
-                        // TODO: Impl op
-                        todo!()
-                    }
+                    BinaryOp::Shr => match left.shr(right) {
+                        Ok(lit) => Ok(lit.into()),
+                        Err(LiteralShrError::TypeError) => Err(EvalFail::TypeError),
+                        Err(LiteralShrError::ShiftAmountError) => Err(EvalFail::ShiftAmountError),
+                    },
 
-                    BinaryOp::Rol => {
-                        // TODO: Impl op
-                        todo!()
-                    }
+                    BinaryOp::Rol => match left.rotate_left(right) {
+                        Ok(lit) => Ok(lit.into()),
+                        Err(LiteralRolError::TypeError) => Err(EvalFail::TypeError),
+                    },
 
-                    BinaryOp::Ror => {
-                        // TODO: Impl op
-                        todo!()
-                    }
+                    BinaryOp::Ror => match left.rotate_right(right) {
+                        Ok(lit) => Ok(lit.into()),
+                        Err(LiteralRorError::TypeError) => Err(EvalFail::TypeError),
+                    },
 
                     BinaryOp::LogicAnd => {
                         // TODO: Impl op

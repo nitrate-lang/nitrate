@@ -202,13 +202,11 @@ impl TryIntoHir for ast::RefinementType {
                     Literal::U32(x) => u8::try_from(x).map_err(|_| ())?,
                     Literal::U64(x) => u8::try_from(x).map_err(|_| ())?,
                     Literal::U128(x) => u8::try_from(x).map_err(|_| ())?,
-                    Literal::ISize(x) => u8::try_from(x).map_err(|_| ())?,
                     Literal::I8(x) => u8::try_from(x).map_err(|_| ())?,
                     Literal::I16(x) => u8::try_from(x).map_err(|_| ())?,
                     Literal::I32(x) => u8::try_from(x).map_err(|_| ())?,
                     Literal::I64(x) => u8::try_from(x).map_err(|_| ())?,
                     Literal::I128(x) => u8::try_from(x).map_err(|_| ())?,
-                    Literal::USize(x) => u8::try_from(x).map_err(|_| ())?,
                     _ => return Err(()),
                 };
 

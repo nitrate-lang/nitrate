@@ -107,6 +107,7 @@ pub enum EvalFail {
 
     DivisionByZero,
     ModuloByZero,
+    ShiftAmountError,
 
     TypeError,
 }

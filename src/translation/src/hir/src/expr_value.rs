@@ -62,7 +62,7 @@ pub enum UnaryOp {
     LogicNot,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, PartialOrd)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, PartialOrd)]
 pub enum Literal {
     Unit,
     Bool(bool),
@@ -71,18 +71,98 @@ pub enum Literal {
     I32(i32),
     I64(i64),
     I128(i128),
-    ISize(isize),
     U8(u8),
     U16(u16),
     U32(u32),
     U64(u64),
     U128(u128),
-    USize(usize),
     F8(f32),
     F16(f32),
     F32(f32),
     F64(f64),
     F128(f64),
+}
+
+impl Literal {
+    pub fn size_of(&self) -> usize {
+        match self {
+            Literal::Unit => 0,
+            Literal::Bool(_) => 1,
+            Literal::I8(_) => 1,
+            Literal::I16(_) => 2,
+            Literal::I32(_) => 4,
+            Literal::I64(_) => 8,
+            Literal::I128(_) => 16,
+            Literal::U8(_) => 1,
+            Literal::U16(_) => 2,
+            Literal::U32(_) => 4,
+            Literal::U64(_) => 8,
+            Literal::U128(_) => 16,
+            Literal::F8(_) => 1,
+            Literal::F16(_) => 2,
+            Literal::F32(_) => 4,
+            Literal::F64(_) => 8,
+            Literal::F128(_) => 16,
+        }
+    }
+
+    pub fn new_integer<T>(ty: &Literal, value: T) -> Option<Self>
+    where
+        T: TryInto<i8>
+            + TryInto<i16>
+            + TryInto<i32>
+            + TryInto<i64>
+            + TryInto<i128>
+            + TryInto<u8>
+            + TryInto<u16>
+            + TryInto<u32>
+            + TryInto<u64>
+            + TryInto<u128>,
+    {
+        match ty {
+            Literal::Unit | Literal::Bool(_) => None,
+            Literal::I8(_) => value.try_into().map(Literal::I8).ok(),
+            Literal::I16(_) => value.try_into().map(Literal::I16).ok(),
+            Literal::I32(_) => value.try_into().map(Literal::I32).ok(),
+            Literal::I64(_) => value.try_into().map(Literal::I64).ok(),
+            Literal::I128(_) => value.try_into().map(Literal::I128).ok(),
+            Literal::U8(_) => value.try_into().map(Literal::U8).ok(),
+            Literal::U16(_) => value.try_into().map(Literal::U16).ok(),
+            Literal::U32(_) => value.try_into().map(Literal::U32).ok(),
+            Literal::U64(_) => value.try_into().map(Literal::U64).ok(),
+            Literal::U128(_) => value.try_into().map(Literal::U128).ok(),
+            Literal::F8(_)
+            | Literal::F16(_)
+            | Literal::F32(_)
+            | Literal::F64(_)
+            | Literal::F128(_) => None,
+        }
+    }
+
+    pub fn new_float<T>(ty: &Literal, value: T) -> Option<Self>
+    where
+        T: TryInto<f32> + TryInto<f64>,
+    {
+        match ty {
+            Literal::Unit
+            | Literal::Bool(_)
+            | Literal::I8(_)
+            | Literal::I16(_)
+            | Literal::I32(_)
+            | Literal::I64(_)
+            | Literal::I128(_)
+            | Literal::U8(_)
+            | Literal::U16(_)
+            | Literal::U32(_)
+            | Literal::U64(_)
+            | Literal::U128(_) => None,
+            Literal::F8(_) => value.try_into().map(Literal::F8).ok(),
+            Literal::F16(_) => value.try_into().map(Literal::F16).ok(),
+            Literal::F32(_) => value.try_into().map(Literal::F32).ok(),
+            Literal::F64(_) => value.try_into().map(Literal::F64).ok(),
+            Literal::F128(_) => value.try_into().map(Literal::F128).ok(),
+        }
+    }
 }
 
 impl Eq for Literal {}
@@ -117,52 +197,44 @@ impl std::hash::Hash for Literal {
                 6u8.hash(state);
                 i.hash(state);
             }
-            Literal::ISize(i) => {
-                7u8.hash(state);
-                i.hash(state);
-            }
             Literal::U8(u) => {
-                8u8.hash(state);
+                7u8.hash(state);
                 u.hash(state);
             }
             Literal::U16(u) => {
-                9u8.hash(state);
+                8u8.hash(state);
                 u.hash(state);
             }
             Literal::U32(u) => {
-                10u8.hash(state);
+                9u8.hash(state);
                 u.hash(state);
             }
             Literal::U64(u) => {
-                11u8.hash(state);
+                10u8.hash(state);
                 u.hash(state);
             }
             Literal::U128(u) => {
-                12u8.hash(state);
-                u.hash(state);
-            }
-            Literal::USize(u) => {
-                13u8.hash(state);
+                11u8.hash(state);
                 u.hash(state);
             }
             Literal::F8(f) => {
-                14u8.hash(state);
+                12u8.hash(state);
                 f.to_bits().hash(state);
             }
             Literal::F16(f) => {
-                15u8.hash(state);
+                13u8.hash(state);
                 f.to_bits().hash(state);
             }
             Literal::F32(f) => {
-                16u8.hash(state);
+                14u8.hash(state);
                 f.to_bits().hash(state);
             }
             Literal::F64(f) => {
-                17u8.hash(state);
+                15u8.hash(state);
                 f.to_bits().hash(state);
             }
             Literal::F128(f) => {
-                18u8.hash(state);
+                16u8.hash(state);
                 f.to_bits().hash(state);
             }
         }
@@ -206,12 +278,10 @@ pub enum Value {
     I32(i32),
     I64(i64),
     I128(Box<i128>),
-    ISize(isize),
     U8(u8),
     U16(u16),
     U32(u32),
     U64(u64),
-    USize(usize),
     U128(Box<u128>),
     F8(f32),  // Stored as f32 because Rust does not have a native f8 type
     F16(f32), // Stored as f32 because Rust does not have a native f16 type
@@ -317,13 +387,11 @@ impl TryFrom<Value> for Literal {
             Value::I32(i) => Ok(Literal::I32(i)),
             Value::I64(i) => Ok(Literal::I64(i)),
             Value::I128(i) => Ok(Literal::I128(*i)),
-            Value::ISize(i) => Ok(Literal::ISize(i)),
             Value::U8(u) => Ok(Literal::U8(u)),
             Value::U16(u) => Ok(Literal::U16(u)),
             Value::U32(u) => Ok(Literal::U32(u)),
             Value::U64(u) => Ok(Literal::U64(u)),
             Value::U128(u) => Ok(Literal::U128(*u)),
-            Value::USize(u) => Ok(Literal::USize(u)),
             Value::F8(f) => Ok(Literal::F8(f)),
             Value::F16(f) => Ok(Literal::F16(f)),
             Value::F32(f) => Ok(Literal::F32(f)),
@@ -344,13 +412,11 @@ impl From<Literal> for Value {
             Literal::I32(i) => Value::I32(i),
             Literal::I64(i) => Value::I64(i),
             Literal::I128(i) => Value::I128(Box::new(i)),
-            Literal::ISize(i) => Value::ISize(i),
             Literal::U8(u) => Value::U8(u),
             Literal::U16(u) => Value::U16(u),
             Literal::U32(u) => Value::U32(u),
             Literal::U64(u) => Value::U64(u),
             Literal::U128(u) => Value::U128(Box::new(u)),
-            Literal::USize(u) => Value::USize(u),
             Literal::F8(f) => Value::F8(f),
             Literal::F16(f) => Value::F16(f),
             Literal::F32(f) => Value::F32(f),
