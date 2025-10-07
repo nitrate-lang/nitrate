@@ -13,3 +13,5 @@ serde_json = "1.0.143"
 blake3 = "1.8.2"
 bimap = "0.6.3"
 append-only-vec = "0.1.7"
+thin-vec = { version = "0.2.14", features = ["serde"] }
+thin_str = { version = "0.1.0", features = ["serde", "serde_support"] }

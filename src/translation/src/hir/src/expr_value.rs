@@ -2,6 +2,8 @@ use crate::{prelude::*, store::LiteralId};
 use interned_string::IString;
 use ordered_float::NotNan;
 use serde::{Deserialize, Serialize};
+use thin_str::ThinStr;
+use thin_vec::ThinVec;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum BinaryOp {
@@ -82,8 +84,8 @@ pub enum Literal {
     F32(NotNan<f32>),
     F64(NotNan<f64>),
     F128(NotNan<f64>),
-    String(String),
-    BString(Vec<u8>),
+    String(ThinStr),
+    BString(ThinVec<u8>),
 }
 
 impl IntoStoreId for Literal {
@@ -135,8 +137,8 @@ pub enum Value {
     F32(NotNan<f32>),
     F64(NotNan<f64>),
     F128(NotNan<f64>), // Stored as f64 because Rust does not have a native f128 type
-    String(Box<String>),
-    BString(Box<Vec<u8>>),
+    String(ThinStr),
+    BString(ThinVec<u8>),
 
     Binary {
         left: ValueId,
@@ -246,8 +248,8 @@ impl TryFrom<Value> for Literal {
             Value::F32(f) => Ok(Literal::F32(f)),
             Value::F64(f) => Ok(Literal::F64(f)),
             Value::F128(f) => Ok(Literal::F128(f)),
-            Value::String(s) => Ok(Literal::String(*s)),
-            Value::BString(b) => Ok(Literal::BString(*b)),
+            Value::String(s) => Ok(Literal::String(s)),
+            Value::BString(b) => Ok(Literal::BString(b)),
             other => Err(other),
         }
     }
@@ -275,8 +277,8 @@ impl From<Literal> for Value {
             Literal::F32(f) => Value::F32(f),
             Literal::F64(f) => Value::F64(f),
             Literal::F128(f) => Value::F128(f),
-            Literal::String(s) => Value::String(Box::new(s)),
-            Literal::BString(b) => Value::BString(Box::new(b)),
+            Literal::String(s) => Value::String(s),
+            Literal::BString(b) => Value::BString(b),
         }
     }
 }

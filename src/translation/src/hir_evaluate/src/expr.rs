@@ -39,8 +39,6 @@ impl HirEvaluate for Value {
             ctx.unsafe_operations_performed += 1;
         }
 
-        // TODO:
-
         match self {
             Value::Unit => Ok(Value::Unit),
             Value::Bool(b) => Ok(Value::Bool(*b)),
@@ -70,8 +68,29 @@ impl HirEvaluate for Value {
             }
 
             Value::Unary { op, expr } => {
-                // TODO: Evaluate unary expressions
-                todo!()
+                let evaluated_expr = ctx.store[expr].evaluate(ctx)?;
+
+                match op {
+                    UnaryOp::Add => {
+                        // TODO: Evaluate unary plus
+                        todo!()
+                    }
+
+                    UnaryOp::Sub => {
+                        // TODO: Evaluate unary minus
+                        todo!()
+                    }
+
+                    UnaryOp::BitNot => {
+                        // TODO: Evaluate unary bitwise not
+                        todo!()
+                    }
+
+                    UnaryOp::LogicNot => {
+                        // TODO: Evaluate unary not
+                        todo!()
+                    }
+                }
             }
 
             Value::Symbol { symbol } => {
