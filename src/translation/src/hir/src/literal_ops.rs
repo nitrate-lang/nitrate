@@ -2,7 +2,7 @@ use crate::hir::Literal;
 use ordered_float::NotNan;
 
 pub enum LiteralNegError {
-    IncompatibleType,
+    TypeError,
 }
 
 impl std::ops::Neg for Literal {
@@ -27,13 +27,45 @@ impl std::ops::Neg for Literal {
             Literal::F32(a) => Ok(Literal::F32(a.neg())),
             Literal::F64(a) => Ok(Literal::F64(a.neg())),
             Literal::F128(a) => Ok(Literal::F128(a.neg())),
-            Literal::Bool(_) | Literal::Unit => Err(LiteralNegError::IncompatibleType),
+            Literal::Bool(_) | Literal::Unit => Err(LiteralNegError::TypeError),
+        }
+    }
+}
+
+pub enum LiteralNotError {
+    TypeError,
+}
+
+impl std::ops::Not for Literal {
+    type Output = Result<Literal, LiteralNotError>;
+
+    fn not(self) -> Self::Output {
+        match self {
+            Literal::Bool(b) => Ok(Literal::Bool(b.not())),
+            Literal::I8(a) => Ok(Literal::I8(a.not())),
+            Literal::I16(a) => Ok(Literal::I16(a.not())),
+            Literal::I32(a) => Ok(Literal::I32(a.not())),
+            Literal::I64(a) => Ok(Literal::I64(a.not())),
+            Literal::I128(a) => Ok(Literal::I128(a.not())),
+            Literal::ISize(a) => Ok(Literal::ISize(a.not())),
+            Literal::U8(a) => Ok(Literal::U8(a.not())),
+            Literal::U16(a) => Ok(Literal::U16(a.not())),
+            Literal::U32(a) => Ok(Literal::U32(a.not())),
+            Literal::U64(a) => Ok(Literal::U64(a.not())),
+            Literal::U128(a) => Ok(Literal::U128(a.not())),
+            Literal::USize(a) => Ok(Literal::USize(a.not())),
+            Literal::F8(_)
+            | Literal::F16(_)
+            | Literal::F32(_)
+            | Literal::F64(_)
+            | Literal::F128(_)
+            | Literal::Unit => Err(LiteralNotError::TypeError),
         }
     }
 }
 
 pub enum LiteralAddError {
-    IncompatibleTypes,
+    TypeError,
 }
 
 impl std::ops::Add for Literal {
@@ -63,13 +95,13 @@ impl std::ops::Add for Literal {
             (Literal::F64(a), Literal::F64(b)) => Ok(Literal::F64(a.add(b))),
             (Literal::F128(a), Literal::F128(b)) => Ok(Literal::F128(a.add(b))),
 
-            _ => Err(LiteralAddError::IncompatibleTypes),
+            _ => Err(LiteralAddError::TypeError),
         }
     }
 }
 
 pub enum LiteralSubError {
-    IncompatibleTypes,
+    TypeError,
 }
 
 impl std::ops::Sub for Literal {
@@ -94,13 +126,13 @@ impl std::ops::Sub for Literal {
             (Literal::F32(a), Literal::F32(b)) => Ok(Literal::F32(a.sub(b))),
             (Literal::F64(a), Literal::F64(b)) => Ok(Literal::F64(a.sub(b))),
             (Literal::F128(a), Literal::F128(b)) => Ok(Literal::F128(a.sub(b))),
-            _ => Err(LiteralSubError::IncompatibleTypes),
+            _ => Err(LiteralSubError::TypeError),
         }
     }
 }
 
 pub enum LiteralMulError {
-    IncompatibleTypes,
+    TypeError,
 }
 
 impl std::ops::Mul for Literal {
@@ -125,13 +157,13 @@ impl std::ops::Mul for Literal {
             (Literal::F32(a), Literal::F32(b)) => Ok(Literal::F32(a.mul(b))),
             (Literal::F64(a), Literal::F64(b)) => Ok(Literal::F64(a.mul(b))),
             (Literal::F128(a), Literal::F128(b)) => Ok(Literal::F128(a.mul(b))),
-            _ => Err(LiteralMulError::IncompatibleTypes),
+            _ => Err(LiteralMulError::TypeError),
         }
     }
 }
 
 pub enum LiteralDivError {
-    IncompatibleTypes,
+    TypeError,
     DivisionByZero,
     FloatIsNan,
 }
@@ -204,7 +236,7 @@ impl std::ops::Div for Literal {
             (Literal::F128(a), Literal::F128(b)) => NotNan::new(a.into_inner() / b.into_inner())
                 .map(Literal::F128)
                 .map_err(|_| LiteralDivError::FloatIsNan),
-            _ => Err(LiteralDivError::IncompatibleTypes),
+            _ => Err(LiteralDivError::TypeError),
         }
     }
 }
