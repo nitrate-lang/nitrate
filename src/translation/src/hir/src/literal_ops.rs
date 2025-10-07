@@ -550,3 +550,168 @@ impl Literal {
         Ok(result)
     }
 }
+
+pub enum LiteralCmpError {
+    TypeError,
+}
+
+impl Literal {
+    pub fn lt(&self, other: &Self) -> Result<bool, LiteralCmpError> {
+        match (self, other) {
+            (Literal::Unit, Literal::Unit) => Ok(false),
+            (Literal::Bool(a), Literal::Bool(b)) => Ok(a.lt(b)),
+            (Literal::I8(a), Literal::I8(b)) => Ok(a.lt(b)),
+            (Literal::I16(a), Literal::I16(b)) => Ok(a.lt(b)),
+            (Literal::I32(a), Literal::I32(b)) => Ok(a.lt(b)),
+            (Literal::I64(a), Literal::I64(b)) => Ok(a.lt(b)),
+            (Literal::I128(a), Literal::I128(b)) => Ok(a.lt(b)),
+            (Literal::U8(a), Literal::U8(b)) => Ok(a.lt(b)),
+            (Literal::U16(a), Literal::U16(b)) => Ok(a.lt(b)),
+            (Literal::U32(a), Literal::U32(b)) => Ok(a.lt(b)),
+            (Literal::U64(a), Literal::U64(b)) => Ok(a.lt(b)),
+            (Literal::U128(a), Literal::U128(b)) => Ok(a.lt(b)),
+            (Literal::F8(a), Literal::F8(b)) => Ok(a.lt(b)),
+            (Literal::F16(a), Literal::F16(b)) => Ok(a.lt(b)),
+            (Literal::F32(a), Literal::F32(b)) => Ok(a.lt(b)),
+            (Literal::F64(a), Literal::F64(b)) => Ok(a.lt(b)),
+            (Literal::F128(a), Literal::F128(b)) => Ok(a.lt(b)),
+            _ => Err(LiteralCmpError::TypeError),
+        }
+    }
+
+    pub fn gt(&self, other: &Self) -> Result<bool, LiteralCmpError> {
+        match (self, other) {
+            (Literal::Unit, Literal::Unit) => Ok(false),
+            (Literal::Bool(a), Literal::Bool(b)) => Ok(a.gt(b)),
+            (Literal::I8(a), Literal::I8(b)) => Ok(a.gt(b)),
+            (Literal::I16(a), Literal::I16(b)) => Ok(a.gt(b)),
+            (Literal::I32(a), Literal::I32(b)) => Ok(a.gt(b)),
+            (Literal::I64(a), Literal::I64(b)) => Ok(a.gt(b)),
+            (Literal::I128(a), Literal::I128(b)) => Ok(a.gt(b)),
+            (Literal::U8(a), Literal::U8(b)) => Ok(a.gt(b)),
+            (Literal::U16(a), Literal::U16(b)) => Ok(a.gt(b)),
+            (Literal::U32(a), Literal::U32(b)) => Ok(a.gt(b)),
+            (Literal::U64(a), Literal::U64(b)) => Ok(a.gt(b)),
+            (Literal::U128(a), Literal::U128(b)) => Ok(a.gt(b)),
+            (Literal::F8(a), Literal::F8(b)) => Ok(a.gt(b)),
+            (Literal::F16(a), Literal::F16(b)) => Ok(a.gt(b)),
+            (Literal::F32(a), Literal::F32(b)) => Ok(a.gt(b)),
+            (Literal::F64(a), Literal::F64(b)) => Ok(a.gt(b)),
+            (Literal::F128(a), Literal::F128(b)) => Ok(a.gt(b)),
+            _ => Err(LiteralCmpError::TypeError),
+        }
+    }
+
+    pub fn le(&self, other: &Self) -> Result<bool, LiteralCmpError> {
+        match (self, other) {
+            (Literal::Unit, Literal::Unit) => Ok(true),
+            (Literal::Bool(a), Literal::Bool(b)) => Ok(a.le(b)),
+            (Literal::I8(a), Literal::I8(b)) => Ok(a.le(b)),
+            (Literal::I16(a), Literal::I16(b)) => Ok(a.le(b)),
+            (Literal::I32(a), Literal::I32(b)) => Ok(a.le(b)),
+            (Literal::I64(a), Literal::I64(b)) => Ok(a.le(b)),
+            (Literal::I128(a), Literal::I128(b)) => Ok(a.le(b)),
+            (Literal::U8(a), Literal::U8(b)) => Ok(a.le(b)),
+            (Literal::U16(a), Literal::U16(b)) => Ok(a.le(b)),
+            (Literal::U32(a), Literal::U32(b)) => Ok(a.le(b)),
+            (Literal::U64(a), Literal::U64(b)) => Ok(a.le(b)),
+            (Literal::U128(a), Literal::U128(b)) => Ok(a.le(b)),
+            (Literal::F8(a), Literal::F8(b)) => Ok(a.le(b)),
+            (Literal::F16(a), Literal::F16(b)) => Ok(a.le(b)),
+            (Literal::F32(a), Literal::F32(b)) => Ok(a.le(b)),
+            (Literal::F64(a), Literal::F64(b)) => Ok(a.le(b)),
+            (Literal::F128(a), Literal::F128(b)) => Ok(a.le(b)),
+            _ => Err(LiteralCmpError::TypeError),
+        }
+    }
+
+    pub fn ge(&self, other: &Self) -> Result<bool, LiteralCmpError> {
+        match (self, other) {
+            (Literal::Unit, Literal::Unit) => Ok(true),
+            (Literal::Bool(a), Literal::Bool(b)) => Ok(a.ge(b)),
+            (Literal::I8(a), Literal::I8(b)) => Ok(a.ge(b)),
+            (Literal::I16(a), Literal::I16(b)) => Ok(a.ge(b)),
+            (Literal::I32(a), Literal::I32(b)) => Ok(a.ge(b)),
+            (Literal::I64(a), Literal::I64(b)) => Ok(a.ge(b)),
+            (Literal::I128(a), Literal::I128(b)) => Ok(a.ge(b)),
+            (Literal::U8(a), Literal::U8(b)) => Ok(a.ge(b)),
+            (Literal::U16(a), Literal::U16(b)) => Ok(a.ge(b)),
+            (Literal::U32(a), Literal::U32(b)) => Ok(a.ge(b)),
+            (Literal::U64(a), Literal::U64(b)) => Ok(a.ge(b)),
+            (Literal::U128(a), Literal::U128(b)) => Ok(a.ge(b)),
+            (Literal::F8(a), Literal::F8(b)) => Ok(a.ge(b)),
+            (Literal::F16(a), Literal::F16(b)) => Ok(a.ge(b)),
+            (Literal::F32(a), Literal::F32(b)) => Ok(a.ge(b)),
+            (Literal::F64(a), Literal::F64(b)) => Ok(a.ge(b)),
+            (Literal::F128(a), Literal::F128(b)) => Ok(a.ge(b)),
+            _ => Err(LiteralCmpError::TypeError),
+        }
+    }
+
+    pub fn eq(&self, other: &Self) -> Result<bool, LiteralCmpError> {
+        match (self, other) {
+            (Literal::Unit, Literal::Unit) => Ok(true),
+            (Literal::Bool(a), Literal::Bool(b)) => Ok(a.eq(b)),
+            (Literal::I8(a), Literal::I8(b)) => Ok(a.eq(b)),
+            (Literal::I16(a), Literal::I16(b)) => Ok(a.eq(b)),
+            (Literal::I32(a), Literal::I32(b)) => Ok(a.eq(b)),
+            (Literal::I64(a), Literal::I64(b)) => Ok(a.eq(b)),
+            (Literal::I128(a), Literal::I128(b)) => Ok(a.eq(b)),
+            (Literal::U8(a), Literal::U8(b)) => Ok(a.eq(b)),
+            (Literal::U16(a), Literal::U16(b)) => Ok(a.eq(b)),
+            (Literal::U32(a), Literal::U32(b)) => Ok(a.eq(b)),
+            (Literal::U64(a), Literal::U64(b)) => Ok(a.eq(b)),
+            (Literal::U128(a), Literal::U128(b)) => Ok(a.eq(b)),
+            (Literal::F8(a), Literal::F8(b)) => Ok(a.eq(b) || (a.is_nan() && b.is_nan())),
+            (Literal::F16(a), Literal::F16(b)) => Ok(a.eq(b) || (a.is_nan() && b.is_nan())),
+            (Literal::F32(a), Literal::F32(b)) => Ok(a.eq(b) || (a.is_nan() && b.is_nan())),
+            (Literal::F64(a), Literal::F64(b)) => Ok(a.eq(b) || (a.is_nan() && b.is_nan())),
+            (Literal::F128(a), Literal::F128(b)) => Ok(a.eq(b) || (a.is_nan() && b.is_nan())),
+            _ => Err(LiteralCmpError::TypeError),
+        }
+    }
+
+    pub fn ne(&self, other: &Self) -> Result<bool, LiteralCmpError> {
+        match (self, other) {
+            (Literal::Unit, Literal::Unit) => Ok(false),
+            (Literal::Bool(a), Literal::Bool(b)) => Ok(a.ne(b)),
+            (Literal::I8(a), Literal::I8(b)) => Ok(a.ne(b)),
+            (Literal::I16(a), Literal::I16(b)) => Ok(a.ne(b)),
+            (Literal::I32(a), Literal::I32(b)) => Ok(a.ne(b)),
+            (Literal::I64(a), Literal::I64(b)) => Ok(a.ne(b)),
+            (Literal::I128(a), Literal::I128(b)) => Ok(a.ne(b)),
+            (Literal::U8(a), Literal::U8(b)) => Ok(a.ne(b)),
+            (Literal::U16(a), Literal::U16(b)) => Ok(a.ne(b)),
+            (Literal::U32(a), Literal::U32(b)) => Ok(a.ne(b)),
+            (Literal::U64(a), Literal::U64(b)) => Ok(a.ne(b)),
+            (Literal::U128(a), Literal::U128(b)) => Ok(a.ne(b)),
+            (Literal::F8(a), Literal::F8(b)) => Ok(a.ne(b) && !(a.is_nan() && b.is_nan())),
+            (Literal::F16(a), Literal::F16(b)) => Ok(a.ne(b) && !(a.is_nan() && b.is_nan())),
+            (Literal::F32(a), Literal::F32(b)) => Ok(a.ne(b) && !(a.is_nan() && b.is_nan())),
+            (Literal::F64(a), Literal::F64(b)) => Ok(a.ne(b) && !(a.is_nan() && b.is_nan())),
+            (Literal::F128(a), Literal::F128(b)) => Ok(a.ne(b) && !(a.is_nan() && b.is_nan())),
+            _ => Err(LiteralCmpError::TypeError),
+        }
+    }
+
+    pub fn logical_and(self, other: Self) -> Result<bool, LiteralCmpError> {
+        match (self, other) {
+            (Literal::Bool(a), Literal::Bool(b)) => Ok(a && b),
+            _ => Err(LiteralCmpError::TypeError),
+        }
+    }
+
+    pub fn logical_or(self, other: Self) -> Result<bool, LiteralCmpError> {
+        match (self, other) {
+            (Literal::Bool(a), Literal::Bool(b)) => Ok(a || b),
+            _ => Err(LiteralCmpError::TypeError),
+        }
+    }
+
+    pub fn logical_xor(self, other: Self) -> Result<bool, LiteralCmpError> {
+        match (self, other) {
+            (Literal::Bool(a), Literal::Bool(b)) => Ok(a ^ b),
+            _ => Err(LiteralCmpError::TypeError),
+        }
+    }
+}

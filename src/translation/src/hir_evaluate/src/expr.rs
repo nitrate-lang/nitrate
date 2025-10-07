@@ -133,50 +133,50 @@ impl HirEvaluate for Value {
                         Err(LiteralRorError::TypeError) => Err(EvalFail::TypeError),
                     },
 
-                    BinaryOp::LogicAnd => {
-                        // TODO: Impl op
-                        todo!()
-                    }
+                    BinaryOp::LogicAnd => match left.logical_and(right) {
+                        Ok(lit) => Ok(Value::Bool(lit)),
+                        Err(LiteralCmpError::TypeError) => Err(EvalFail::TypeError),
+                    },
 
-                    BinaryOp::LogicOr => {
-                        // TODO: Impl op
-                        todo!()
-                    }
+                    BinaryOp::LogicOr => match left.logical_or(right) {
+                        Ok(lit) => Ok(Value::Bool(lit)),
+                        Err(LiteralCmpError::TypeError) => Err(EvalFail::TypeError),
+                    },
 
-                    BinaryOp::LogicXor => {
-                        // TODO: Impl op
-                        todo!()
-                    }
+                    BinaryOp::LogicXor => match left.logical_xor(right) {
+                        Ok(lit) => Ok(Value::Bool(lit)),
+                        Err(LiteralCmpError::TypeError) => Err(EvalFail::TypeError),
+                    },
 
-                    BinaryOp::Lt => {
-                        // TODO: Impl op
-                        todo!()
-                    }
+                    BinaryOp::Lt => match left.lt(&right) {
+                        Ok(lit) => Ok(Value::Bool(lit)),
+                        Err(LiteralCmpError::TypeError) => Err(EvalFail::TypeError),
+                    },
 
-                    BinaryOp::Gt => {
-                        // TODO: Impl op
-                        todo!()
-                    }
+                    BinaryOp::Gt => match left.lt(&right) {
+                        Ok(lit) => Ok(Value::Bool(!lit)),
+                        Err(LiteralCmpError::TypeError) => Err(EvalFail::TypeError),
+                    },
 
-                    BinaryOp::Lte => {
-                        // TODO: Impl op
-                        todo!()
-                    }
+                    BinaryOp::Lte => match left.le(&right) {
+                        Ok(lit) => Ok(Value::Bool(lit)),
+                        Err(LiteralCmpError::TypeError) => Err(EvalFail::TypeError),
+                    },
 
-                    BinaryOp::Gte => {
-                        // TODO: Impl op
-                        todo!()
-                    }
+                    BinaryOp::Gte => match left.ge(&right) {
+                        Ok(lit) => Ok(Value::Bool(lit)),
+                        Err(LiteralCmpError::TypeError) => Err(EvalFail::TypeError),
+                    },
 
-                    BinaryOp::Eq => {
-                        // TODO: Impl op
-                        todo!()
-                    }
+                    BinaryOp::Eq => match left.eq(&right) {
+                        Ok(lit) => Ok(Value::Bool(lit)),
+                        Err(LiteralCmpError::TypeError) => Err(EvalFail::TypeError),
+                    },
 
-                    BinaryOp::Ne => {
-                        // TODO: Impl op
-                        todo!()
-                    }
+                    BinaryOp::Ne => match left.ne(&right) {
+                        Ok(lit) => Ok(Value::Bool(lit)),
+                        Err(LiteralCmpError::TypeError) => Err(EvalFail::TypeError),
+                    },
                 }
             }
 
