@@ -1,5 +1,4 @@
 use crate::hir::Literal;
-use ordered_float::NotNan;
 
 pub enum LiteralNegError {
     TypeError,
@@ -165,7 +164,6 @@ impl std::ops::Mul for Literal {
 pub enum LiteralDivError {
     TypeError,
     DivisionByZero,
-    FloatIsNan,
 }
 
 impl std::ops::Div for Literal {
@@ -221,21 +219,11 @@ impl std::ops::Div for Literal {
                 .checked_div(b)
                 .map(Literal::USize)
                 .ok_or(LiteralDivError::DivisionByZero),
-            (Literal::F8(a), Literal::F8(b)) => NotNan::new(a.into_inner() / b.into_inner())
-                .map(Literal::F8)
-                .map_err(|_| LiteralDivError::FloatIsNan),
-            (Literal::F16(a), Literal::F16(b)) => NotNan::new(a.into_inner() / b.into_inner())
-                .map(Literal::F16)
-                .map_err(|_| LiteralDivError::FloatIsNan),
-            (Literal::F32(a), Literal::F32(b)) => NotNan::new(a.into_inner() / b.into_inner())
-                .map(Literal::F32)
-                .map_err(|_| LiteralDivError::FloatIsNan),
-            (Literal::F64(a), Literal::F64(b)) => NotNan::new(a.into_inner() / b.into_inner())
-                .map(Literal::F64)
-                .map_err(|_| LiteralDivError::FloatIsNan),
-            (Literal::F128(a), Literal::F128(b)) => NotNan::new(a.into_inner() / b.into_inner())
-                .map(Literal::F128)
-                .map_err(|_| LiteralDivError::FloatIsNan),
+            (Literal::F8(a), Literal::F8(b)) => Ok(Literal::F8(a.div(b))),
+            (Literal::F16(a), Literal::F16(b)) => Ok(Literal::F16(a.div(b))),
+            (Literal::F32(a), Literal::F32(b)) => Ok(Literal::F32(a.div(b))),
+            (Literal::F64(a), Literal::F64(b)) => Ok(Literal::F64(a.div(b))),
+            (Literal::F128(a), Literal::F128(b)) => Ok(Literal::F128(a.div(b))),
             _ => Err(LiteralDivError::TypeError),
         }
     }

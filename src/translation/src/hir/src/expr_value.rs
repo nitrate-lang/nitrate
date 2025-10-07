@@ -1,6 +1,5 @@
 use crate::{prelude::*, store::LiteralId};
 use interned_string::IString;
-use ordered_float::NotNan;
 use serde::{Deserialize, Serialize};
 use thin_str::ThinStr;
 use thin_vec::ThinVec;
@@ -63,7 +62,7 @@ pub enum UnaryOp {
     LogicNot,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, PartialOrd)]
 pub enum Literal {
     Unit,
     Bool(bool),
@@ -79,11 +78,95 @@ pub enum Literal {
     U64(u64),
     U128(u128),
     USize(usize),
-    F8(NotNan<f32>),
-    F16(NotNan<f32>),
-    F32(NotNan<f32>),
-    F64(NotNan<f64>),
-    F128(NotNan<f64>),
+    F8(f32),
+    F16(f32),
+    F32(f32),
+    F64(f64),
+    F128(f64),
+}
+
+impl Eq for Literal {}
+
+impl std::hash::Hash for Literal {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        match self {
+            Literal::Unit => {
+                0u8.hash(state);
+            }
+            Literal::Bool(b) => {
+                1u8.hash(state);
+                b.hash(state);
+            }
+            Literal::I8(i) => {
+                2u8.hash(state);
+                i.hash(state);
+            }
+            Literal::I16(i) => {
+                3u8.hash(state);
+                i.hash(state);
+            }
+            Literal::I32(i) => {
+                4u8.hash(state);
+                i.hash(state);
+            }
+            Literal::I64(i) => {
+                5u8.hash(state);
+                i.hash(state);
+            }
+            Literal::I128(i) => {
+                6u8.hash(state);
+                i.hash(state);
+            }
+            Literal::ISize(i) => {
+                7u8.hash(state);
+                i.hash(state);
+            }
+            Literal::U8(u) => {
+                8u8.hash(state);
+                u.hash(state);
+            }
+            Literal::U16(u) => {
+                9u8.hash(state);
+                u.hash(state);
+            }
+            Literal::U32(u) => {
+                10u8.hash(state);
+                u.hash(state);
+            }
+            Literal::U64(u) => {
+                11u8.hash(state);
+                u.hash(state);
+            }
+            Literal::U128(u) => {
+                12u8.hash(state);
+                u.hash(state);
+            }
+            Literal::USize(u) => {
+                13u8.hash(state);
+                u.hash(state);
+            }
+            Literal::F8(f) => {
+                14u8.hash(state);
+                f.to_bits().hash(state);
+            }
+            Literal::F16(f) => {
+                15u8.hash(state);
+                f.to_bits().hash(state);
+            }
+            Literal::F32(f) => {
+                16u8.hash(state);
+                f.to_bits().hash(state);
+            }
+            Literal::F64(f) => {
+                17u8.hash(state);
+                f.to_bits().hash(state);
+            }
+            Literal::F128(f) => {
+                18u8.hash(state);
+                f.to_bits().hash(state);
+            }
+        }
+    }
 }
 
 impl IntoStoreId for Literal {
@@ -130,11 +213,11 @@ pub enum Value {
     U64(u64),
     USize(usize),
     U128(Box<u128>),
-    F8(NotNan<f32>),  // Stored as f32 because Rust does not have a native f8 type
-    F16(NotNan<f32>), // Stored as f32 because Rust does not have a native f16 type
-    F32(NotNan<f32>),
-    F64(NotNan<f64>),
-    F128(NotNan<f64>), // Stored as f64 because Rust does not have a native f128 type
+    F8(f32),  // Stored as f32 because Rust does not have a native f8 type
+    F16(f32), // Stored as f32 because Rust does not have a native f16 type
+    F32(f32),
+    F64(f64),
+    F128(f64), // Stored as f64 because Rust does not have a native f128 type
     String(ThinStr),
     BString(ThinVec<u8>),
 

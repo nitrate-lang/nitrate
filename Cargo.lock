@@ -738,7 +738,6 @@ dependencies = [
  "hashbrown 0.16.0",
  "interned-string",
  "log",
- "ordered-float",
  "serde",
  "serde_json",
  "thin-vec",
@@ -751,7 +750,6 @@ version = "0.1.0"
 dependencies = [
  "nitrate_diagnosis",
  "nitrate_hir",
- "ordered-float",
 ]
 
 [[package]]

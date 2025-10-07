@@ -6,4 +6,3 @@ edition = "2024"
 [dependencies]
 nitrate_hir = { path = "../hir" }
 nitrate_diagnosis = { path = "../../../diagnosis" }
-ordered-float = "5.0.0"

@@ -1,6 +1,5 @@
 use nitrate_diagnosis::CompilerLog;
 use nitrate_hir::prelude::*;
-use ordered_float::NotNan;
 use std::{collections::HashMap, sync::LazyLock};
 
 type BuiltinFunction =
@@ -24,11 +23,11 @@ static DEFAULT_BUILTIN_FUNCTIONS: LazyLock<HashMap<QualifiedName, Box<BuiltinFun
                     Value::I32(i) => Ok(Value::I32(i.abs())),
                     Value::I64(i) => Ok(Value::I64(i.abs())),
                     Value::I128(i) => Ok(Value::I128(Box::new(i.abs()))),
-                    Value::F8(i) => Ok(Value::F8(NotNan::new(i.abs()).unwrap())),
-                    Value::F16(i) => Ok(Value::F16(NotNan::new(i.abs()).unwrap())),
-                    Value::F32(i) => Ok(Value::F32(NotNan::new(i.abs()).unwrap())),
-                    Value::F64(i) => Ok(Value::F64(NotNan::new(i.abs()).unwrap())),
-                    Value::F128(i) => Ok(Value::F128(NotNan::new(i.abs()).unwrap())),
+                    Value::F8(i) => Ok(Value::F8(i.abs())),
+                    Value::F16(i) => Ok(Value::F16(i.abs())),
+                    Value::F32(i) => Ok(Value::F32(i.abs())),
+                    Value::F64(i) => Ok(Value::F64(i.abs())),
+                    Value::F128(i) => Ok(Value::F128(i.abs())),
                     _ => Err(EvalFail::TypeError),
                 }
             }),
@@ -105,6 +104,8 @@ impl<'store, 'log> HirEvalCtx<'store, 'log> {
 pub enum EvalFail {
     LoopLimitExceeded,
     FunctionCallLimitExceeded,
+
+    DivisionByZero,
 
     TypeError,
 }

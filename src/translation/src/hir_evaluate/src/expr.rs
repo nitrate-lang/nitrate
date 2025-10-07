@@ -1,6 +1,6 @@
 use crate::{EvalFail, HirEvaluate};
 use nitrate_hir::prelude::*;
-use std::ops::{Neg, Not};
+use std::ops::{Add, Div, Mul, Neg, Not, Sub};
 
 impl HirEvaluate for Literal {
     type Output = Literal;
@@ -64,8 +64,119 @@ impl HirEvaluate for Value {
             Value::BString(s) => Ok(Value::BString(s.clone())),
 
             Value::Binary { left, op, right } => {
-                // TODO: Evaluate binary expressions
-                todo!()
+                let left = Literal::try_from(ctx.store[left].evaluate(ctx)?)
+                    .map_err(|_| EvalFail::TypeError)?;
+
+                let right = Literal::try_from(ctx.store[right].evaluate(ctx)?)
+                    .map_err(|_| EvalFail::TypeError)?;
+
+                match op {
+                    BinaryOp::Add => match left.add(right) {
+                        Ok(lit) => Ok(lit.into()),
+                        Err(LiteralAddError::TypeError) => Err(EvalFail::TypeError),
+                    },
+
+                    BinaryOp::Sub => match left.sub(right) {
+                        Ok(lit) => Ok(lit.into()),
+                        Err(LiteralSubError::TypeError) => Err(EvalFail::TypeError),
+                    },
+
+                    BinaryOp::Mul => match left.mul(right) {
+                        Ok(lit) => Ok(lit.into()),
+                        Err(LiteralMulError::TypeError) => Err(EvalFail::TypeError),
+                    },
+
+                    BinaryOp::Div => match left.div(right) {
+                        Ok(lit) => Ok(lit.into()),
+                        Err(LiteralDivError::TypeError) => Err(EvalFail::TypeError),
+                        Err(LiteralDivError::DivisionByZero) => Err(EvalFail::DivisionByZero),
+                    },
+
+                    BinaryOp::Mod => {
+                        // TODO: Impl op
+                        todo!()
+                    }
+
+                    BinaryOp::And => {
+                        // TODO: Impl op
+                        todo!()
+                    }
+
+                    BinaryOp::Or => {
+                        // TODO: Impl op
+                        todo!()
+                    }
+
+                    BinaryOp::Xor => {
+                        // TODO: Impl op
+                        todo!()
+                    }
+
+                    BinaryOp::Shl => {
+                        // TODO: Impl op
+                        todo!()
+                    }
+
+                    BinaryOp::Shr => {
+                        // TODO: Impl op
+                        todo!()
+                    }
+
+                    BinaryOp::Rol => {
+                        // TODO: Impl op
+                        todo!()
+                    }
+
+                    BinaryOp::Ror => {
+                        // TODO: Impl op
+                        todo!()
+                    }
+
+                    BinaryOp::LogicAnd => {
+                        // TODO: Impl op
+                        todo!()
+                    }
+
+                    BinaryOp::LogicOr => {
+                        // TODO: Impl op
+                        todo!()
+                    }
+
+                    BinaryOp::LogicXor => {
+                        // TODO: Impl op
+                        todo!()
+                    }
+
+                    BinaryOp::Lt => {
+                        // TODO: Impl op
+                        todo!()
+                    }
+
+                    BinaryOp::Gt => {
+                        // TODO: Impl op
+                        todo!()
+                    }
+
+                    BinaryOp::Lte => {
+                        // TODO: Impl op
+                        todo!()
+                    }
+
+                    BinaryOp::Gte => {
+                        // TODO: Impl op
+                        todo!()
+                    }
+
+                    BinaryOp::Eq => {
+                        // TODO: Impl op
+                        todo!()
+                    }
+
+                    BinaryOp::Ne => {
+                        // TODO: Impl op
+                        todo!()
+                    }
+                }
             }
 
             Value::Unary { op, expr } => {
