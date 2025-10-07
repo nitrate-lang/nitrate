@@ -228,3 +228,71 @@ impl std::ops::Div for Literal {
         }
     }
 }
+
+pub enum LiteralRemError {
+    TypeError,
+    ModuloByZero,
+}
+
+impl std::ops::Rem for Literal {
+    type Output = Result<Literal, LiteralRemError>;
+
+    fn rem(self, rhs: Self) -> Self::Output {
+        match (self, rhs) {
+            (Literal::I8(a), Literal::I8(b)) => match b {
+                0 => Err(LiteralRemError::ModuloByZero),
+                _ => Ok(Literal::I8(a.wrapping_rem(b))),
+            },
+            (Literal::I16(a), Literal::I16(b)) => match b {
+                0 => Err(LiteralRemError::ModuloByZero),
+                _ => Ok(Literal::I16(a.wrapping_rem(b))),
+            },
+            (Literal::I32(a), Literal::I32(b)) => match b {
+                0 => Err(LiteralRemError::ModuloByZero),
+                _ => Ok(Literal::I32(a.wrapping_rem(b))),
+            },
+            (Literal::I64(a), Literal::I64(b)) => match b {
+                0 => Err(LiteralRemError::ModuloByZero),
+                _ => Ok(Literal::I64(a.wrapping_rem(b))),
+            },
+            (Literal::I128(a), Literal::I128(b)) => match b {
+                0 => Err(LiteralRemError::ModuloByZero),
+                _ => Ok(Literal::I128(a.wrapping_rem(b))),
+            },
+            (Literal::ISize(a), Literal::ISize(b)) => match b {
+                0 => Err(LiteralRemError::ModuloByZero),
+                _ => Ok(Literal::ISize(a.wrapping_rem(b))),
+            },
+            (Literal::U8(a), Literal::U8(b)) => match b {
+                0 => Err(LiteralRemError::ModuloByZero),
+                _ => Ok(Literal::U8(a.wrapping_rem(b))),
+            },
+            (Literal::U16(a), Literal::U16(b)) => match b {
+                0 => Err(LiteralRemError::ModuloByZero),
+                _ => Ok(Literal::U16(a.wrapping_rem(b))),
+            },
+            (Literal::U32(a), Literal::U32(b)) => match b {
+                0 => Err(LiteralRemError::ModuloByZero),
+                _ => Ok(Literal::U32(a.wrapping_rem(b))),
+            },
+            (Literal::U64(a), Literal::U64(b)) => match b {
+                0 => Err(LiteralRemError::ModuloByZero),
+                _ => Ok(Literal::U64(a.wrapping_rem(b))),
+            },
+            (Literal::U128(a), Literal::U128(b)) => match b {
+                0 => Err(LiteralRemError::ModuloByZero),
+                _ => Ok(Literal::U128(a.wrapping_rem(b))),
+            },
+            (Literal::USize(a), Literal::USize(b)) => match b {
+                0 => Err(LiteralRemError::ModuloByZero),
+                _ => Ok(Literal::USize(a.wrapping_rem(b))),
+            },
+            (Literal::F8(a), Literal::F8(b)) => Ok(Literal::F8(a.rem(b))),
+            (Literal::F16(a), Literal::F16(b)) => Ok(Literal::F16(a.rem(b))),
+            (Literal::F32(a), Literal::F32(b)) => Ok(Literal::F32(a.rem(b))),
+            (Literal::F64(a), Literal::F64(b)) => Ok(Literal::F64(a.rem(b))),
+            (Literal::F128(a), Literal::F128(b)) => Ok(Literal::F128(a.rem(b))),
+            _ => Err(LiteralRemError::TypeError),
+        }
+    }
+}

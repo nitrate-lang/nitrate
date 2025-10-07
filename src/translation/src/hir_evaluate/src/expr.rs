@@ -1,6 +1,6 @@
 use crate::{EvalFail, HirEvaluate};
 use nitrate_hir::prelude::*;
-use std::ops::{Add, Div, Mul, Neg, Not, Sub};
+use std::ops::{Add, Div, Mul, Neg, Not, Rem, Sub};
 
 impl HirEvaluate for Literal {
     type Output = Literal;
@@ -92,10 +92,11 @@ impl HirEvaluate for Value {
                         Err(LiteralDivError::DivisionByZero) => Err(EvalFail::DivisionByZero),
                     },
 
-                    BinaryOp::Mod => {
-                        // TODO: Impl op
-                        todo!()
-                    }
+                    BinaryOp::Mod => match left.rem(right) {
+                        Ok(lit) => Ok(lit.into()),
+                        Err(LiteralRemError::TypeError) => Err(EvalFail::TypeError),
+                        Err(LiteralRemError::ModuloByZero) => Err(EvalFail::ModuloByZero),
+                    },
 
                     BinaryOp::And => {
                         // TODO: Impl op

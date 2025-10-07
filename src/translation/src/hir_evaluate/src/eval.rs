@@ -106,6 +106,7 @@ pub enum EvalFail {
     FunctionCallLimitExceeded,
 
     DivisionByZero,
+    ModuloByZero,
 
     TypeError,
 }
