@@ -1,5 +1,6 @@
 use crate::{EvalFail, HirEvaluate};
 use nitrate_hir::prelude::*;
+use std::ops::Neg;
 
 impl HirEvaluate for Literal {
     type Output = Literal;
@@ -68,18 +69,16 @@ impl HirEvaluate for Value {
             }
 
             Value::Unary { op, expr } => {
-                let evaluated_expr = ctx.store[expr].evaluate(ctx)?;
+                let operand = Literal::try_from(ctx.store[expr].evaluate(ctx)?)
+                    .map_err(|_| EvalFail::TypeError)?;
 
                 match op {
-                    UnaryOp::Add => {
-                        // TODO: Evaluate unary plus
-                        todo!()
-                    }
+                    UnaryOp::Add => Ok(operand.into()),
 
-                    UnaryOp::Sub => {
-                        // TODO: Evaluate unary minus
-                        todo!()
-                    }
+                    UnaryOp::Sub => operand
+                        .neg()
+                        .map(Into::into)
+                        .map_err(|_| EvalFail::TypeError),
 
                     UnaryOp::BitNot => {
                         // TODO: Evaluate unary bitwise not

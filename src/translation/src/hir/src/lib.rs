@@ -9,6 +9,7 @@ mod dump_ty;
 mod expr_place;
 mod expr_value;
 mod item;
+mod literal_ops;
 mod node_digest;
 mod save;
 mod store;
@@ -33,6 +34,7 @@ pub mod hir {
     pub use super::ty_alignment::*;
     pub use super::ty_size::*;
     pub use super::ty_stride::*;
+    pub use crate::literal_ops::*;
 }
 
 pub mod prelude {
