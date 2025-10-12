@@ -9,13 +9,15 @@ use nitrate_parsetree::{
 };
 use nitrate_tokenize::{Lexer, LexerError};
 
-use std::collections::HashSet;
+use std::{collections::HashSet, sync::Arc};
 
 pub type SourceFilePath = std::path::PathBuf;
+pub type FolderPath = std::path::PathBuf;
 
 pub struct ImportContext {
-    package_name: Option<PackageNameId>,
-    source_filepath: SourceFilePath,
+    pub package_name: Option<PackageNameId>,
+    pub source_filepath: SourceFilePath,
+    pub package_search_paths: Arc<Vec<FolderPath>>,
 }
 
 impl ImportContext {
@@ -23,6 +25,7 @@ impl ImportContext {
         Self {
             package_name: None,
             source_filepath,
+            package_search_paths: Arc::new(Vec::new()),
         }
     }
 
@@ -31,8 +34,19 @@ impl ImportContext {
         self
     }
 
-    fn find_package(&self, _package_name: &str) -> Option<SourceFilePath> {
-        // TODO: Implement package lookup.
+    pub fn with_package_search_paths(mut self, paths: Vec<FolderPath>) -> Self {
+        self.package_search_paths = Arc::new(paths);
+        self
+    }
+
+    fn find_package(&self, package_name: &str) -> Option<SourceFilePath> {
+        for folder in &*self.package_search_paths {
+            let candidate = folder.join(package_name).join("src").join("mod.nit");
+            if candidate.exists() {
+                return Some(candidate);
+            }
+        }
+
         None
     }
 }
@@ -187,6 +201,7 @@ fn decide_what_to_import(
         return Some(ImportContext {
             package_name: ctx.package_name.clone(),
             source_filepath,
+            package_search_paths: ctx.package_search_paths.clone(),
         });
     }
 
@@ -195,6 +210,7 @@ fn decide_what_to_import(
         return Some(ImportContext {
             package_name: ctx.package_name.clone(),
             source_filepath,
+            package_search_paths: ctx.package_search_paths.clone(),
         });
     }
 
@@ -204,6 +220,7 @@ fn decide_what_to_import(
             return Some(ImportContext {
                 package_name,
                 source_filepath,
+                package_search_paths: ctx.package_search_paths.clone(),
             });
         }
     }
