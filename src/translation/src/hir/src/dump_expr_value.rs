@@ -32,30 +32,32 @@ impl Dump for Block {
     }
 }
 
-impl Dump for Literal {
+impl Dump for Lit {
     fn dump(
         &self,
         _ctx: &mut DumpContext,
         o: &mut dyn std::fmt::Write,
     ) -> Result<(), std::fmt::Error> {
         match self {
-            Literal::Unit => write!(o, "()"),
-            Literal::Bool(b) => write!(o, "{}", b),
-            Literal::I8(i) => write!(o, "i8 {}", i),
-            Literal::I16(i) => write!(o, "i16 {}", i),
-            Literal::I32(i) => write!(o, "i32 {}", i),
-            Literal::I64(i) => write!(o, "i64 {}", i),
-            Literal::I128(i) => write!(o, "i128 {}", i),
-            Literal::U8(u) => write!(o, "u8 {}", u),
-            Literal::U16(u) => write!(o, "u16 {}", u),
-            Literal::U32(u) => write!(o, "u32 {}", u),
-            Literal::U64(u) => write!(o, "u64 {}", u),
-            Literal::U128(u) => write!(o, "u128 {}", u),
-            Literal::F8(f) => write!(o, "f8 {}", f),
-            Literal::F16(f) => write!(o, "f16 {}", f),
-            Literal::F32(f) => write!(o, "f32 {}", f),
-            Literal::F64(f) => write!(o, "f64 {}", f),
-            Literal::F128(f) => write!(o, "f128 {}", f),
+            Lit::Unit => write!(o, "()"),
+            Lit::Bool(b) => write!(o, "{}", b),
+            Lit::I8(i) => write!(o, "i8 {}", i),
+            Lit::I16(i) => write!(o, "i16 {}", i),
+            Lit::I32(i) => write!(o, "i32 {}", i),
+            Lit::I64(i) => write!(o, "i64 {}", i),
+            Lit::I128(i) => write!(o, "i128 {}", i),
+            Lit::U8(u) => write!(o, "u8 {}", u),
+            Lit::U16(u) => write!(o, "u16 {}", u),
+            Lit::U32(u) => write!(o, "u32 {}", u),
+            Lit::U64(u) => write!(o, "u64 {}", u),
+            Lit::U128(u) => write!(o, "u128 {}", u),
+            Lit::F8(f) => write!(o, "f8 {}", f),
+            Lit::F16(f) => write!(o, "f16 {}", f),
+            Lit::F32(f) => write!(o, "f32 {}", f),
+            Lit::F64(f) => write!(o, "f64 {}", f),
+            Lit::F128(f) => write!(o, "f128 {}", f),
+            Lit::USize32(u) => write!(o, "usize {}", u),
+            Lit::USize64(u) => write!(o, "usize {}", u),
         }
     }
 }
@@ -84,6 +86,8 @@ impl Dump for Value {
             Value::F32(f) => write!(o, "f32 {}", f),
             Value::F64(f) => write!(o, "f64 {}", f),
             Value::F128(f) => write!(o, "f128 {}", f),
+            Value::USize32(u) => write!(o, "usize {}", u),
+            Value::USize64(u) => write!(o, "usize {}", u),
             Value::String(s) => write!(o, "\"{}\"", s),
             Value::BString(s) => write!(o, "b\"{:?}\"", s),
 

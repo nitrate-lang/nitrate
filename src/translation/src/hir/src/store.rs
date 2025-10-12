@@ -143,7 +143,7 @@ impl_store_mut!(SymbolId, Symbol, SymbolStore);
 
 impl_store_mut!(ValueId, Value, ExprValueStore);
 
-impl_dedup_store!(LiteralId, Literal, ExprLiteralStore);
+impl_dedup_store!(LiteralId, Lit, ExprLiteralStore);
 
 impl_store_mut!(BlockId, Block, ExprBlockStore);
 
@@ -225,7 +225,7 @@ impl Store {
         self.values.store(expr)
     }
 
-    pub fn store_literal(&self, literal: Literal) -> LiteralId {
+    pub fn store_literal(&self, literal: Lit) -> LiteralId {
         self.literals.store(literal)
     }
 
@@ -369,7 +369,7 @@ impl std::ops::IndexMut<&ValueId> for Store {
 }
 
 impl std::ops::Index<&LiteralId> for Store {
-    type Output = Literal;
+    type Output = Lit;
 
     fn index(&self, index: &LiteralId) -> &Self::Output {
         &self.literals[index]

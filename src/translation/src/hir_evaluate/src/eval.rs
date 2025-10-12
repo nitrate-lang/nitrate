@@ -119,8 +119,8 @@ pub trait HirEvaluate {
 }
 
 impl HirEvalCtx<'_, '_> {
-    pub fn evaluate_to_literal(&mut self, value: &Value) -> Result<Literal, EvalFail> {
-        match Literal::try_from(value.evaluate(self)?) {
+    pub fn evaluate_to_literal(&mut self, value: &Value) -> Result<Lit, EvalFail> {
+        match Lit::try_from(value.evaluate(self)?) {
             Ok(lit) => Ok(lit),
             Err(_) => Err(EvalFail::TypeError),
         }

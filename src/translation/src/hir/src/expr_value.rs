@@ -64,7 +64,7 @@ pub enum UnaryOp {
 }
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, PartialOrd)]
-pub enum Literal {
+pub enum Lit {
     Unit,
     Bool(bool),
     I8(i8),
@@ -82,32 +82,36 @@ pub enum Literal {
     F32(f32),
     F64(f64),
     F128(f64),
+    USize32(u32),
+    USize64(u64),
 }
 
-impl Literal {
+impl Lit {
     pub fn size_of(&self) -> usize {
         match self {
-            Literal::Unit => 0,
-            Literal::Bool(_) => 1,
-            Literal::I8(_) => 1,
-            Literal::I16(_) => 2,
-            Literal::I32(_) => 4,
-            Literal::I64(_) => 8,
-            Literal::I128(_) => 16,
-            Literal::U8(_) => 1,
-            Literal::U16(_) => 2,
-            Literal::U32(_) => 4,
-            Literal::U64(_) => 8,
-            Literal::U128(_) => 16,
-            Literal::F8(_) => 1,
-            Literal::F16(_) => 2,
-            Literal::F32(_) => 4,
-            Literal::F64(_) => 8,
-            Literal::F128(_) => 16,
+            Lit::Unit => 0,
+            Lit::Bool(_) => 1,
+            Lit::I8(_) => 1,
+            Lit::I16(_) => 2,
+            Lit::I32(_) => 4,
+            Lit::I64(_) => 8,
+            Lit::I128(_) => 16,
+            Lit::U8(_) => 1,
+            Lit::U16(_) => 2,
+            Lit::U32(_) => 4,
+            Lit::U64(_) => 8,
+            Lit::U128(_) => 16,
+            Lit::F8(_) => 1,
+            Lit::F16(_) => 2,
+            Lit::F32(_) => 4,
+            Lit::F64(_) => 8,
+            Lit::F128(_) => 16,
+            Lit::USize32(_) => 4,
+            Lit::USize64(_) => 8,
         }
     }
 
-    pub fn new_integer<T>(ty: &Literal, value: T) -> Option<Self>
+    pub fn new_integer<T>(ty: &Lit, value: T) -> Option<Self>
     where
         T: TryInto<i8>
             + TryInto<i16>
@@ -121,128 +125,143 @@ impl Literal {
             + TryInto<u128>,
     {
         match ty {
-            Literal::Unit | Literal::Bool(_) => None,
-            Literal::I8(_) => value.try_into().map(Literal::I8).ok(),
-            Literal::I16(_) => value.try_into().map(Literal::I16).ok(),
-            Literal::I32(_) => value.try_into().map(Literal::I32).ok(),
-            Literal::I64(_) => value.try_into().map(Literal::I64).ok(),
-            Literal::I128(_) => value.try_into().map(Literal::I128).ok(),
-            Literal::U8(_) => value.try_into().map(Literal::U8).ok(),
-            Literal::U16(_) => value.try_into().map(Literal::U16).ok(),
-            Literal::U32(_) => value.try_into().map(Literal::U32).ok(),
-            Literal::U64(_) => value.try_into().map(Literal::U64).ok(),
-            Literal::U128(_) => value.try_into().map(Literal::U128).ok(),
-            Literal::F8(_)
-            | Literal::F16(_)
-            | Literal::F32(_)
-            | Literal::F64(_)
-            | Literal::F128(_) => None,
+            Lit::I8(_) => value.try_into().map(Lit::I8).ok(),
+            Lit::I16(_) => value.try_into().map(Lit::I16).ok(),
+            Lit::I32(_) => value.try_into().map(Lit::I32).ok(),
+            Lit::I64(_) => value.try_into().map(Lit::I64).ok(),
+            Lit::I128(_) => value.try_into().map(Lit::I128).ok(),
+            Lit::U8(_) => value.try_into().map(Lit::U8).ok(),
+            Lit::U16(_) => value.try_into().map(Lit::U16).ok(),
+            Lit::U32(_) => value.try_into().map(Lit::U32).ok(),
+            Lit::U64(_) => value.try_into().map(Lit::U64).ok(),
+            Lit::U128(_) => value.try_into().map(Lit::U128).ok(),
+
+            Lit::Unit
+            | Lit::Bool(_)
+            | Lit::F8(_)
+            | Lit::F16(_)
+            | Lit::F32(_)
+            | Lit::F64(_)
+            | Lit::F128(_)
+            | Lit::USize32(_)
+            | Lit::USize64(_) => None,
         }
     }
 
-    pub fn new_float<T>(ty: &Literal, value: T) -> Option<Self>
+    pub fn new_float<T>(ty: &Lit, value: T) -> Option<Self>
     where
         T: TryInto<f32> + TryInto<f64>,
     {
         match ty {
-            Literal::Unit
-            | Literal::Bool(_)
-            | Literal::I8(_)
-            | Literal::I16(_)
-            | Literal::I32(_)
-            | Literal::I64(_)
-            | Literal::I128(_)
-            | Literal::U8(_)
-            | Literal::U16(_)
-            | Literal::U32(_)
-            | Literal::U64(_)
-            | Literal::U128(_) => None,
-            Literal::F8(_) => value.try_into().map(Literal::F8).ok(),
-            Literal::F16(_) => value.try_into().map(Literal::F16).ok(),
-            Literal::F32(_) => value.try_into().map(Literal::F32).ok(),
-            Literal::F64(_) => value.try_into().map(Literal::F64).ok(),
-            Literal::F128(_) => value.try_into().map(Literal::F128).ok(),
+            Lit::Unit
+            | Lit::Bool(_)
+            | Lit::I8(_)
+            | Lit::I16(_)
+            | Lit::I32(_)
+            | Lit::I64(_)
+            | Lit::I128(_)
+            | Lit::U8(_)
+            | Lit::U16(_)
+            | Lit::U32(_)
+            | Lit::U64(_)
+            | Lit::U128(_)
+            | Lit::USize32(_)
+            | Lit::USize64(_) => None,
+
+            Lit::F8(_) => value.try_into().map(Lit::F8).ok(),
+            Lit::F16(_) => value.try_into().map(Lit::F16).ok(),
+            Lit::F32(_) => value.try_into().map(Lit::F32).ok(),
+            Lit::F64(_) => value.try_into().map(Lit::F64).ok(),
+            Lit::F128(_) => value.try_into().map(Lit::F128).ok(),
         }
     }
 }
 
-impl Eq for Literal {}
+impl Eq for Lit {}
 
-impl std::hash::Hash for Literal {
+impl std::hash::Hash for Lit {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
         match self {
-            Literal::Unit => {
+            Lit::Unit => {
                 0u8.hash(state);
             }
-            Literal::Bool(b) => {
+            Lit::Bool(b) => {
                 1u8.hash(state);
                 b.hash(state);
             }
-            Literal::I8(i) => {
+            Lit::I8(i) => {
                 2u8.hash(state);
                 i.hash(state);
             }
-            Literal::I16(i) => {
+            Lit::I16(i) => {
                 3u8.hash(state);
                 i.hash(state);
             }
-            Literal::I32(i) => {
+            Lit::I32(i) => {
                 4u8.hash(state);
                 i.hash(state);
             }
-            Literal::I64(i) => {
+            Lit::I64(i) => {
                 5u8.hash(state);
                 i.hash(state);
             }
-            Literal::I128(i) => {
+            Lit::I128(i) => {
                 6u8.hash(state);
                 i.hash(state);
             }
-            Literal::U8(u) => {
+            Lit::U8(u) => {
                 7u8.hash(state);
                 u.hash(state);
             }
-            Literal::U16(u) => {
+            Lit::U16(u) => {
                 8u8.hash(state);
                 u.hash(state);
             }
-            Literal::U32(u) => {
+            Lit::U32(u) => {
                 9u8.hash(state);
                 u.hash(state);
             }
-            Literal::U64(u) => {
+            Lit::U64(u) => {
                 10u8.hash(state);
                 u.hash(state);
             }
-            Literal::U128(u) => {
+            Lit::U128(u) => {
                 11u8.hash(state);
                 u.hash(state);
             }
-            Literal::F8(f) => {
+            Lit::F8(f) => {
                 12u8.hash(state);
                 f.to_bits().hash(state);
             }
-            Literal::F16(f) => {
+            Lit::F16(f) => {
                 13u8.hash(state);
                 f.to_bits().hash(state);
             }
-            Literal::F32(f) => {
+            Lit::F32(f) => {
                 14u8.hash(state);
                 f.to_bits().hash(state);
             }
-            Literal::F64(f) => {
+            Lit::F64(f) => {
                 15u8.hash(state);
                 f.to_bits().hash(state);
             }
-            Literal::F128(f) => {
+            Lit::F128(f) => {
                 16u8.hash(state);
                 f.to_bits().hash(state);
+            }
+            Lit::USize32(u) => {
+                17u8.hash(state);
+                u.hash(state);
+            }
+            Lit::USize64(u) => {
+                18u8.hash(state);
+                u.hash(state);
             }
         }
     }
 }
 
-impl IntoStoreId for Literal {
+impl IntoStoreId for Lit {
     type Id = LiteralId;
 
     fn into_id(self, ctx: &Store) -> Self::Id {
@@ -289,6 +308,8 @@ pub enum Value {
     F32(f32),
     F64(f64),
     F128(f64), // Stored as f64 because Rust does not have a native f128 type
+    USize32(u32),
+    USize64(u64),
     String(ThinStr),
     BString(ThinVec<u8>),
 
@@ -391,53 +412,57 @@ pub enum Value {
     },
 }
 
-impl TryFrom<Value> for Literal {
+impl TryFrom<Value> for Lit {
     type Error = Value;
 
     fn try_from(value: Value) -> Result<Self, Self::Error> {
         match value {
-            Value::Unit => Ok(Literal::Unit),
-            Value::Bool(b) => Ok(Literal::Bool(b)),
-            Value::I8(i) => Ok(Literal::I8(i)),
-            Value::I16(i) => Ok(Literal::I16(i)),
-            Value::I32(i) => Ok(Literal::I32(i)),
-            Value::I64(i) => Ok(Literal::I64(i)),
-            Value::I128(i) => Ok(Literal::I128(*i)),
-            Value::U8(u) => Ok(Literal::U8(u)),
-            Value::U16(u) => Ok(Literal::U16(u)),
-            Value::U32(u) => Ok(Literal::U32(u)),
-            Value::U64(u) => Ok(Literal::U64(u)),
-            Value::U128(u) => Ok(Literal::U128(*u)),
-            Value::F8(f) => Ok(Literal::F8(f)),
-            Value::F16(f) => Ok(Literal::F16(f)),
-            Value::F32(f) => Ok(Literal::F32(f)),
-            Value::F64(f) => Ok(Literal::F64(f)),
-            Value::F128(f) => Ok(Literal::F128(f)),
+            Value::Unit => Ok(Lit::Unit),
+            Value::Bool(b) => Ok(Lit::Bool(b)),
+            Value::I8(i) => Ok(Lit::I8(i)),
+            Value::I16(i) => Ok(Lit::I16(i)),
+            Value::I32(i) => Ok(Lit::I32(i)),
+            Value::I64(i) => Ok(Lit::I64(i)),
+            Value::I128(i) => Ok(Lit::I128(*i)),
+            Value::U8(u) => Ok(Lit::U8(u)),
+            Value::U16(u) => Ok(Lit::U16(u)),
+            Value::U32(u) => Ok(Lit::U32(u)),
+            Value::U64(u) => Ok(Lit::U64(u)),
+            Value::U128(u) => Ok(Lit::U128(*u)),
+            Value::F8(f) => Ok(Lit::F8(f)),
+            Value::F16(f) => Ok(Lit::F16(f)),
+            Value::F32(f) => Ok(Lit::F32(f)),
+            Value::F64(f) => Ok(Lit::F64(f)),
+            Value::F128(f) => Ok(Lit::F128(f)),
+            Value::USize32(u) => Ok(Lit::USize32(u)),
+            Value::USize64(u) => Ok(Lit::USize64(u)),
             other => Err(other),
         }
     }
 }
 
-impl From<Literal> for Value {
-    fn from(value: Literal) -> Self {
+impl From<Lit> for Value {
+    fn from(value: Lit) -> Self {
         match value {
-            Literal::Unit => Value::Unit,
-            Literal::Bool(b) => Value::Bool(b),
-            Literal::I8(i) => Value::I8(i),
-            Literal::I16(i) => Value::I16(i),
-            Literal::I32(i) => Value::I32(i),
-            Literal::I64(i) => Value::I64(i),
-            Literal::I128(i) => Value::I128(Box::new(i)),
-            Literal::U8(u) => Value::U8(u),
-            Literal::U16(u) => Value::U16(u),
-            Literal::U32(u) => Value::U32(u),
-            Literal::U64(u) => Value::U64(u),
-            Literal::U128(u) => Value::U128(Box::new(u)),
-            Literal::F8(f) => Value::F8(f),
-            Literal::F16(f) => Value::F16(f),
-            Literal::F32(f) => Value::F32(f),
-            Literal::F64(f) => Value::F64(f),
-            Literal::F128(f) => Value::F128(f),
+            Lit::Unit => Value::Unit,
+            Lit::Bool(b) => Value::Bool(b),
+            Lit::I8(i) => Value::I8(i),
+            Lit::I16(i) => Value::I16(i),
+            Lit::I32(i) => Value::I32(i),
+            Lit::I64(i) => Value::I64(i),
+            Lit::I128(i) => Value::I128(Box::new(i)),
+            Lit::U8(u) => Value::U8(u),
+            Lit::U16(u) => Value::U16(u),
+            Lit::U32(u) => Value::U32(u),
+            Lit::U64(u) => Value::U64(u),
+            Lit::U128(u) => Value::U128(Box::new(u)),
+            Lit::F8(f) => Value::F8(f),
+            Lit::F16(f) => Value::F16(f),
+            Lit::F32(f) => Value::F32(f),
+            Lit::F64(f) => Value::F64(f),
+            Lit::F128(f) => Value::F128(f),
+            Lit::USize32(u) => Value::USize32(u),
+            Lit::USize64(u) => Value::USize64(u),
         }
     }
 }

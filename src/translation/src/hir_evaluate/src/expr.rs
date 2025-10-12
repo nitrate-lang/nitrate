@@ -2,8 +2,8 @@ use crate::{EvalFail, HirEvaluate};
 use nitrate_hir::prelude::*;
 use std::ops::{Add, BitAnd, BitOr, BitXor, Div, Mul, Neg, Not, Rem, Shl, Shr, Sub};
 
-impl HirEvaluate for Literal {
-    type Output = Literal;
+impl HirEvaluate for Lit {
+    type Output = Lit;
 
     fn evaluate(&self, _ctx: &mut crate::HirEvalCtx) -> Result<Self::Output, crate::EvalFail> {
         Ok(self.clone())
@@ -58,6 +58,8 @@ impl HirEvaluate for Value {
             Value::F32(f) => Ok(Value::F32(*f)),
             Value::F64(f) => Ok(Value::F64(*f)),
             Value::F128(f) => Ok(Value::F128(*f)),
+            Value::USize32(u) => Ok(Value::USize32(*u)),
+            Value::USize64(u) => Ok(Value::USize64(*u)),
             Value::String(s) => Ok(Value::String(s.clone())),
             Value::BString(s) => Ok(Value::BString(s.clone())),
 
@@ -95,10 +97,10 @@ impl HirEvaluate for Value {
             }
 
             Value::Binary { left, op, right } => {
-                let left = Literal::try_from(ctx.store[left].evaluate(ctx)?)
+                let left = Lit::try_from(ctx.store[left].evaluate(ctx)?)
                     .map_err(|_| EvalFail::TypeError)?;
 
-                let right = Literal::try_from(ctx.store[right].evaluate(ctx)?)
+                let right = Lit::try_from(ctx.store[right].evaluate(ctx)?)
                     .map_err(|_| EvalFail::TypeError)?;
 
                 match op {
@@ -214,7 +216,7 @@ impl HirEvaluate for Value {
             }
 
             Value::Unary { op, expr } => {
-                let operand = Literal::try_from(ctx.store[expr].evaluate(ctx)?)
+                let operand = Lit::try_from(ctx.store[expr].evaluate(ctx)?)
                     .map_err(|_| EvalFail::TypeError)?;
 
                 match op {

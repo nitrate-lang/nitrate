@@ -160,7 +160,7 @@ impl TryIntoHir for ast::TypePath {
 
     fn try_into_hir(self, _ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
         // TODO: Lower ast::TypePath into hir::TypePath
-        log.report(&HirErr::UnsupportedConstruct);
+        log.report(&HirErr::UnspecifiedError);
         Err(())
     }
 }
@@ -170,7 +170,7 @@ impl TryIntoHir for ast::RefinementType {
 
     fn try_into_hir(self, _ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
         // TODO: Lower ast::RefinementType into hir::RefinementType
-        log.report(&HirErr::UnsupportedConstruct);
+        log.report(&HirErr::UnspecifiedError);
         Err(())
     }
 }
@@ -184,10 +184,9 @@ impl TryIntoHir for ast::TupleType {
         }
 
         let mut elements = Vec::with_capacity(self.element_types.len());
-
-        for ast_ty in self.element_types.into_iter() {
-            let hir_ty = ast_ty.try_into_hir(ctx, log)?;
-            elements.push(hir_ty.into_id(ctx.store()));
+        for ast_elem_ty in self.element_types.into_iter() {
+            let hir_elem_ty = ast_elem_ty.try_into_hir(ctx, log)?;
+            elements.push(hir_elem_ty.into_id(ctx.store()));
         }
 
         Ok(Type::Tuple {
@@ -200,20 +199,45 @@ impl TryIntoHir for ast::ArrayType {
     type Hir = Type;
 
     fn try_into_hir(self, ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
-        let hir_element_type = self.element_type.try_into_hir(ctx, log)?;
+        let element_type = self
+            .element_type
+            .try_into_hir(ctx, log)?
+            .into_id(ctx.store());
+
         let hir_length = self.len.try_into_hir(ctx, log)?;
 
-        let len = match HirEvalCtx::new(ctx.store(), log).evaluate_to_literal(&hir_length) {
-            Ok(Literal::U32(val)) => val as u64,
-            Ok(Literal::U64(val)) => val,
-            Ok(_) => return Err(()),
-            Err(_) => return Err(()),
+        let mut eval = HirEvalCtx::new(ctx.store(), log);
+        let len = match eval.evaluate_to_literal(&hir_length) {
+            Ok(Lit::USize32(val)) => {
+                if ctx.ptr_size() != PtrSize::U32 {
+                    log.report(&HirErr::UnspecifiedError);
+                    return Err(());
+                }
+
+                val as u64
+            }
+
+            Ok(Lit::USize64(val)) => {
+                if ctx.ptr_size() != PtrSize::U64 {
+                    log.report(&HirErr::UnspecifiedError);
+                    return Err(());
+                }
+
+                val
+            }
+
+            Ok(_) => {
+                log.report(&HirErr::UnspecifiedError);
+                return Err(());
+            }
+
+            Err(_) => {
+                log.report(&HirErr::UnspecifiedError);
+                return Err(());
+            }
         };
 
-        Ok(Type::Array {
-            element_type: hir_element_type.into_id(ctx.store()),
-            len,
-        })
+        Ok(Type::Array { element_type, len })
     }
 }
 
@@ -221,11 +245,12 @@ impl TryIntoHir for ast::SliceType {
     type Hir = Type;
 
     fn try_into_hir(self, ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
-        let hir_element_type = self.element_type.try_into_hir(ctx, log)?;
+        let element_type = self
+            .element_type
+            .try_into_hir(ctx, log)?
+            .into_id(ctx.store());
 
-        Ok(Type::Slice {
-            element_type: hir_element_type.into_id(ctx.store()),
-        })
+        Ok(Type::Slice { element_type })
     }
 }
 
@@ -297,7 +322,11 @@ impl TryIntoHir for ast::LatentType {
         let mut eval = HirEvalCtx::new(ctx.store(), log);
         let hir_type = match eval.evaluate_into_type(&Value::Block { block }) {
             Ok(ty) => ty,
-            Err(_) => return Err(()),
+
+            Err(_) => {
+                log.report(&HirErr::UnspecifiedError);
+                return Err(());
+            }
         };
 
         Ok(hir_type)

@@ -45,6 +45,7 @@ pub enum DiagnosticGroupId {
     Token = 1,
     Syntax = 2,
     Resolve = 3,
+    Hir = 4,
 }
 
 impl std::fmt::Display for DiagnosticGroupId {
@@ -54,6 +55,7 @@ impl std::fmt::Display for DiagnosticGroupId {
             DiagnosticGroupId::Token => write!(f, "Lexical"),
             DiagnosticGroupId::Syntax => write!(f, "Syntax"),
             DiagnosticGroupId::Resolve => write!(f, "Resolution"),
+            DiagnosticGroupId::Hir => write!(f, "HIR"),
         }
     }
 }

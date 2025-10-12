@@ -149,7 +149,7 @@ impl std::ops::IndexMut<&ValueId> for HirCtx {
 }
 
 impl std::ops::Index<&LiteralId> for HirCtx {
-    type Output = Literal;
+    type Output = Lit;
 
     fn index(&self, index: &LiteralId) -> &Self::Output {
         &self.storage[index]

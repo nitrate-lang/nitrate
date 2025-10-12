@@ -1,4 +1,4 @@
-use crate::{HirCtx, TryIntoHir};
+use crate::{HirCtx, TryIntoHir, diagnosis::HirErr};
 use nitrate_diagnosis::CompilerLog;
 use nitrate_hir::prelude::*;
 use nitrate_parsetree::kind as ast;
@@ -6,8 +6,9 @@ use nitrate_parsetree::kind as ast;
 impl TryIntoHir for ast::Module {
     type Hir = Module;
 
-    fn try_into_hir(self, ctx: &mut HirCtx, _log: &CompilerLog) -> Result<Self::Hir, ()> {
+    fn try_into_hir(self, ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
         // TODO: Implement conversion from AST to HIR
+        log.report(&HirErr::UnspecifiedError);
 
         let global_var_type = Type::USize.into_id(ctx.store());
         let global_var_init = Value::U32(0).into_id(ctx.store());
