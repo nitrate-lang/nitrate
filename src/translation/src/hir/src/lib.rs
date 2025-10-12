@@ -2,12 +2,10 @@
 #![warn(clippy::pedantic)]
 
 mod dump;
-mod dump_expr_place;
-mod dump_expr_value;
+mod dump_expr;
 mod dump_item;
 mod dump_ty;
-mod expr_place;
-mod expr_value;
+mod expr;
 mod item;
 mod literal_ops;
 mod node_digest;
@@ -21,13 +19,12 @@ mod ty_stride;
 pub use dump::{Dump, DumpContext};
 pub use node_digest::NodeDigest;
 pub use store::{
-    BlockId, EnumAttributesId, EnumVariantsId, FuncAttributesId, ItemId, LiteralId, PlaceId, Store,
+    BlockId, EnumAttributesId, EnumVariantsId, FuncAttributesId, ItemId, LiteralId, Store,
     StructAttributesId, StructFieldsId, SymbolId, TypeId, TypeListId, ValueId,
 };
 
 pub mod hir {
-    pub use super::expr_place::*;
-    pub use super::expr_value::*;
+    pub use super::expr::*;
     pub use super::item::*;
     pub use super::save::IntoStoreId;
     pub use super::ty::*;
@@ -41,7 +38,7 @@ pub mod prelude {
     pub use super::hir::*;
     pub use super::{
         BlockId, Dump, DumpContext, EnumAttributesId, EnumVariantsId, FuncAttributesId, ItemId,
-        LiteralId, PlaceId, Store, StructAttributesId, StructFieldsId, SymbolId, TypeId,
-        TypeListId, ValueId,
+        LiteralId, Store, StructAttributesId, StructFieldsId, SymbolId, TypeId, TypeListId,
+        ValueId,
     };
 }

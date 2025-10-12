@@ -1,7 +1,7 @@
 use crate::{HirCtx, TryIntoHir, diagnosis::HirErr};
 use nitrate_diagnosis::CompilerLog;
 use nitrate_hir::prelude::*;
-use nitrate_parsetree::kind as ast;
+use nitrate_parsetree::kind::{self as ast, UnaryExprOp};
 
 impl TryIntoHir for ast::ExprSyntaxError {
     type Hir = Value;
@@ -49,20 +49,16 @@ impl TryIntoHir for ast::FloatLit {
 impl TryIntoHir for ast::StringLit {
     type Hir = Value;
 
-    fn try_into_hir(self, _ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
-        // TODO: Lower ast::String to HIR
-        log.report(&HirErr::UnimplementedFeature("ast::Expr::String".into()));
-        Err(())
+    fn try_into_hir(self, _ctx: &mut HirCtx, _log: &CompilerLog) -> Result<Self::Hir, ()> {
+        Ok(Value::String(self.value.to_string().into()))
     }
 }
 
 impl TryIntoHir for ast::BStringLit {
     type Hir = Value;
 
-    fn try_into_hir(self, _ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
-        // TODO: Lower ast::BString to HIR
-        log.report(&HirErr::UnimplementedFeature("ast::Expr::BString".into()));
-        Err(())
+    fn try_into_hir(self, _ctx: &mut HirCtx, _log: &CompilerLog) -> Result<Self::Hir, ()> {
+        Ok(Value::BString(self.value.into()))
     }
 }
 
@@ -79,20 +75,32 @@ impl TryIntoHir for ast::TypeInfo {
 impl TryIntoHir for ast::List {
     type Hir = Value;
 
-    fn try_into_hir(self, _ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
-        // TODO: Lower ast::List to HIR
-        log.report(&HirErr::UnimplementedFeature("ast::Expr::List".into()));
-        Err(())
+    fn try_into_hir(self, ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
+        let mut elements = Vec::with_capacity(self.elements.len());
+        for element in self.elements {
+            let hir_element = element.try_into_hir(ctx, log)?;
+            elements.push(hir_element.into_id(ctx.store()));
+        }
+
+        Ok(Value::List {
+            elements: Box::new(elements),
+        })
     }
 }
 
 impl TryIntoHir for ast::Tuple {
     type Hir = Value;
 
-    fn try_into_hir(self, _ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
-        // TODO: Lower ast::Tuple to HIR
-        log.report(&HirErr::UnimplementedFeature("ast::Expr::Tuple".into()));
-        Err(())
+    fn try_into_hir(self, ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
+        let mut elements = Vec::with_capacity(self.elements.len());
+        for element in self.elements {
+            let hir_element = element.try_into_hir(ctx, log)?;
+            elements.push(hir_element.into_id(ctx.store()));
+        }
+
+        Ok(Value::Tuple {
+            elements: Box::new(elements),
+        })
     }
 }
 
@@ -111,10 +119,34 @@ impl TryIntoHir for ast::StructInit {
 impl TryIntoHir for ast::UnaryExpr {
     type Hir = Value;
 
-    fn try_into_hir(self, _ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
-        // TODO: Lower ast::Unary to HIR
-        log.report(&HirErr::UnimplementedFeature("ast::Expr::UnaryExpr".into()));
-        Err(())
+    fn try_into_hir(self, ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
+        let expr = self.operand.try_into_hir(ctx, log)?.into_id(ctx.store());
+
+        match self.operator {
+            UnaryExprOp::Add => Ok(Value::Unary {
+                op: UnaryOp::Add,
+                expr,
+            }),
+
+            UnaryExprOp::Sub => Ok(Value::Unary {
+                op: UnaryOp::Sub,
+                expr,
+            }),
+
+            UnaryExprOp::LogicNot => Ok(Value::Unary {
+                op: UnaryOp::LogicNot,
+                expr,
+            }),
+
+            UnaryExprOp::BitNot => Ok(Value::Unary {
+                op: UnaryOp::BitNot,
+                expr,
+            }),
+
+            UnaryExprOp::Deref => Ok(Value::Deref { place: expr }),
+            UnaryExprOp::AddressOf => Ok(Value::GetAddressOf { place: expr }),
+            UnaryExprOp::Typeof => Ok(Value::GetTypeOf { expr }),
+        }
     }
 }
 
@@ -274,7 +306,7 @@ impl TryIntoHir for ast::BinExpr {
             | ast::BinExprOp::SetLogicAnd
             | ast::BinExprOp::SetLogicOr
             | ast::BinExprOp::SetLogicXor => {
-                // TODO: Lower ast::Binary to HIR
+                // TODO: Lower assignment ops to HIR
                 log.report(&HirErr::UnimplementedFeature(
                     "ast::Expr::BinExpr with assignment op".into(),
                 ));

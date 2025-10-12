@@ -138,8 +138,6 @@ impl_dedup_store!(LiteralId, Lit, ExprLiteralStore);
 
 impl_store_mut!(BlockId, Block, ExprBlockStore);
 
-impl_store_mut!(PlaceId, Place, ExprPlaceStore);
-
 pub struct Store {
     types: TypeStore,
     type_lists: TypeListStore,
@@ -153,7 +151,6 @@ pub struct Store {
     values: ExprValueStore,
     literals: ExprLiteralStore,
     blocks: ExprBlockStore,
-    places: ExprPlaceStore,
 }
 
 impl Store {
@@ -172,7 +169,6 @@ impl Store {
             values: ExprValueStore::new(),
             literals: ExprLiteralStore::new(),
             blocks: ExprBlockStore::new(),
-            places: ExprPlaceStore::new(),
         }
     }
 
@@ -224,10 +220,6 @@ impl Store {
         self.blocks.store(block)
     }
 
-    pub fn store_place(&self, place: Place) -> PlaceId {
-        self.places.store(place)
-    }
-
     pub fn reset(&mut self) {
         self.types.reset();
         self.type_lists.reset();
@@ -241,7 +233,6 @@ impl Store {
         self.values.reset();
         self.literals.reset();
         self.blocks.reset();
-        self.places.reset();
     }
 
     pub fn shrink_to_fit(&mut self) {
@@ -257,7 +248,6 @@ impl Store {
         self.values.shrink_to_fit();
         self.literals.shrink_to_fit();
         self.blocks.shrink_to_fit();
-        self.places.shrink_to_fit();
     }
 }
 
@@ -354,13 +344,5 @@ impl std::ops::Index<&BlockId> for Store {
 
     fn index(&self, index: &BlockId) -> &Self::Output {
         &self.blocks[index]
-    }
-}
-
-impl std::ops::Index<&PlaceId> for Store {
-    type Output = RefCell<Place>;
-
-    fn index(&self, index: &PlaceId) -> &Self::Output {
-        &self.places[index]
     }
 }

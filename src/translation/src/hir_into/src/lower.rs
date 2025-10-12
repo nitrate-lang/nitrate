@@ -159,11 +159,3 @@ impl std::ops::Index<&BlockId> for HirCtx {
         &self.storage[index]
     }
 }
-
-impl std::ops::Index<&PlaceId> for HirCtx {
-    type Output = RefCell<Place>;
-
-    fn index(&self, index: &PlaceId) -> &Self::Output {
-        &self.storage[index]
-    }
-}

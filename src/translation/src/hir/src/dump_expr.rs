@@ -235,6 +235,15 @@ impl Dump for Value {
                 write!(o, "]")
             }
 
+            Value::Tuple { elements } => {
+                write!(o, "(")?;
+                for elem in &**elements {
+                    ctx.store[elem].borrow().dump(ctx, o)?;
+                    write!(o, ", ")?;
+                }
+                write!(o, ")")
+            }
+
             Value::If {
                 condition,
                 true_branch,

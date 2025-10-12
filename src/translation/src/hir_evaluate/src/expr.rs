@@ -536,10 +536,27 @@ impl HirEvaluate for Value {
                         .borrow()
                         .evaluate(ctx)?
                         .into_id(ctx.store);
+
                     evaluated_elements.push(evaluated_element);
                 }
 
                 Ok(Value::List {
+                    elements: Box::new(evaluated_elements),
+                })
+            }
+
+            Value::Tuple { elements } => {
+                let mut evaluated_elements = Vec::with_capacity(elements.len());
+                for element in &**elements {
+                    let evaluated_element = ctx.store[element]
+                        .borrow()
+                        .evaluate(ctx)?
+                        .into_id(ctx.store);
+
+                    evaluated_elements.push(evaluated_element);
+                }
+
+                Ok(Value::Tuple {
                     elements: Box::new(evaluated_elements),
                 })
             }

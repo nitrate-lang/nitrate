@@ -348,12 +348,12 @@ pub enum Value {
     },
 
     Assign {
-        place: PlaceId,
+        place: ValueId,
         value: ValueId,
     },
 
     Deref {
-        place: PlaceId,
+        place: ValueId,
     },
 
     Cast {
@@ -362,7 +362,7 @@ pub enum Value {
     },
 
     GetAddressOf {
-        place: PlaceId,
+        place: ValueId,
     },
 
     GetTypeOf {
@@ -370,6 +370,10 @@ pub enum Value {
     },
 
     List {
+        elements: Box<Vec<ValueId>>,
+    },
+
+    Tuple {
         elements: Box<Vec<ValueId>>,
     },
 
