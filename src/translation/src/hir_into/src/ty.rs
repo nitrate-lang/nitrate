@@ -2,7 +2,7 @@ use crate::{HirCtx, TryIntoHir, diagnosis::HirErr};
 use nitrate_diagnosis::CompilerLog;
 use nitrate_hir::prelude::*;
 use nitrate_hir_evaluate::HirEvalCtx;
-use nitrate_parsetree::kind as ast;
+use nitrate_parsetree::kind::{self as ast, TypePathTarget};
 use std::ops::Deref;
 
 fn create_inference_variable(ctx: &mut HirCtx) -> Type {
@@ -161,7 +161,50 @@ impl TryIntoHir for ast::TypePath {
     fn try_into_hir(self, _ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
         // TODO: Lower ast::TypePath into hir::TypePath
         log.report(&HirErr::UnspecifiedError);
-        Err(())
+
+        match self.resolved {
+            Some(TypePathTarget::Enum(target)) => {
+                // let hir_enum = target
+                //     .upgrade()
+                //     .unwrap()
+                //     .read()
+                //     .unwrap()
+                //     .try_into_hir(_ctx, log)?;
+
+                log.report(&HirErr::UnspecifiedError);
+                Err(())
+            }
+
+            Some(TypePathTarget::Struct(target)) => {
+                // let hir_struct = target
+                //     .upgrade()
+                //     .unwrap()
+                //     .read()
+                //     .unwrap()
+                //     .try_into_hir(_ctx, log)?;
+
+                log.report(&HirErr::UnspecifiedError);
+                Err(())
+            }
+
+            Some(TypePathTarget::TypeAlias(target)) => {
+                // let hir_type_alias = match &target.upgrade().unwrap().read().unwrap().alias_type {
+                //     Some(ty) => ty.to_owned().try_into_hir(_ctx, log)?,
+                //     None => {
+                //         log.report(&HirErr::UnspecifiedError);
+                //         return Err(());
+                //     }
+                // };
+
+                log.report(&HirErr::UnspecifiedError);
+                Err(())
+            }
+
+            None => {
+                log.report(&HirErr::UnspecifiedError);
+                Err(())
+            }
+        }
     }
 }
 
@@ -336,8 +379,9 @@ impl TryIntoHir for ast::LatentType {
 impl TryIntoHir for ast::Lifetime {
     type Hir = Type;
 
-    fn try_into_hir(self, _ctx: &mut HirCtx, _log: &CompilerLog) -> Result<Self::Hir, ()> {
+    fn try_into_hir(self, _ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
         // TODO: Lower ast::Lifetime into hir::Lifetime
+        log.report(&HirErr::UnspecifiedError);
         Err(())
     }
 }

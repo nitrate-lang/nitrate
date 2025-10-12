@@ -8,24 +8,44 @@ impl TryIntoHir for ast::Module {
 
     fn try_into_hir(self, ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
         // TODO: Implement conversion from AST to HIR
-        log.report(&HirErr::UnspecifiedError);
 
-        let global_var_type = Type::USize.into_id(ctx.store());
-        let global_var_init = Value::U32(0).into_id(ctx.store());
+        let name = EntityName(self.name.map(|n| n.to_string()).unwrap_or_default().into());
+        let ast_attributes = self.attributes.unwrap_or_default();
 
-        let item = Item::GlobalVariable(GlobalVariable {
-            visibility: Visibility::Pub,
-            name: EntityName("GLOBAL_CTR".into()),
-            ty: global_var_type,
-            initializer: global_var_init,
-        })
-        .into_id(ctx.store());
+        let mut items = Vec::with_capacity(self.items.len());
+        for item in self.items {
+            let hir_item = item.try_into_hir(ctx, log)?.into_id(ctx.store());
+            items.push(hir_item);
+        }
 
-        Ok(Module {
-            visibility: Visibility::Sec,
-            attributes: vec![],
-            name: EntityName("".into()),
-            items: vec![item],
-        })
+        let attributes = Vec::with_capacity(ast_attributes.len());
+        for _attr in ast_attributes {
+            // TODO: Lower AST module-level attributes
+            log.report(&HirErr::UnspecifiedError);
+        }
+
+        let visibility = match self.visibility {
+            Some(ast::Visibility::Public) => Visibility::Pub,
+            Some(ast::Visibility::Protected) => Visibility::Pro,
+            Some(ast::Visibility::Private) | None => Visibility::Sec,
+        };
+
+        let module = Module {
+            name,
+            visibility,
+            attributes,
+            items,
+        };
+
+        Ok(module)
+    }
+}
+
+impl TryIntoHir for ast::Item {
+    type Hir = Item;
+
+    fn try_into_hir(self, _ctx: &mut HirCtx, _log: &CompilerLog) -> Result<Self::Hir, ()> {
+        // TODO: Implement conversion from AST to HIR
+        Err(())
     }
 }

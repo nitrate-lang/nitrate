@@ -448,7 +448,7 @@ impl PrettyPrint for AttributeList {
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
         writer.write_char('[')?;
-        for (i, attr) in self.elements.iter().enumerate() {
+        for (i, attr) in self.iter().enumerate() {
             if i > 0 {
                 writer.write_str(", ")?;
             }

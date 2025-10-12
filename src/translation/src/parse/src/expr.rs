@@ -630,7 +630,7 @@ impl Parser<'_, '_> {
             }
         }
 
-        Some(AttributeList { elements })
+        Some(elements)
     }
 
     pub(crate) fn parse_generic_arguments(&mut self) -> Option<Vec<TypeArgument>> {

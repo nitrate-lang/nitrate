@@ -171,7 +171,7 @@ impl ParseTreeIterMut for AttributeList {
     fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
         f(Order::Enter, RefNodeMut::ExprAttributeList(self));
 
-        for element in &mut self.elements {
+        for element in self.iter_mut() {
             element.depth_first_iter_mut(f);
         }
 
