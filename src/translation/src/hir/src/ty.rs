@@ -104,7 +104,6 @@ pub enum Type {
     I32,
     I64,
     I128,
-    ISize,
     F8,
     F16,
     F32,
@@ -203,7 +202,7 @@ impl Type {
     pub fn is_signed_primitive(&self) -> bool {
         matches!(
             self,
-            Type::I8 | Type::I16 | Type::I32 | Type::I64 | Type::I128 | Type::ISize
+            Type::I8 | Type::I16 | Type::I32 | Type::I64 | Type::I128
         )
     }
 
@@ -257,9 +256,6 @@ impl IntoStoreId for Type {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum PtrSize {
-    U8 = 1,
-    U16 = 2,
     U32 = 4,
     U64 = 8,
-    U128 = 16,
 }

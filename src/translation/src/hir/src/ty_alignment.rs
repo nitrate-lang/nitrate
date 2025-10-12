@@ -15,7 +15,7 @@ pub fn get_align_of(ty: &Type, store: &Store, ptr_size: PtrSize) -> Result<u64, 
         Type::U32 | Type::I32 | Type::F32 => Ok(4),
         Type::U64 | Type::I64 | Type::F64 => Ok(8),
         Type::U128 | Type::I128 | Type::F128 => Ok(16),
-        Type::USize | Type::ISize => Ok(ptr_size as u64),
+        Type::USize => Ok(ptr_size as u64),
         Type::Opaque { .. } => Ok(1),
 
         Type::Array { element_type, len } => {

@@ -90,6 +90,7 @@ impl Dump for Value {
             Value::USize64(u) => write!(o, "usize {}", u),
             Value::String(s) => write!(o, "\"{}\"", s),
             Value::BString(s) => write!(o, "b\"{:?}\"", s),
+            Value::InferredInteger(i) => write!(o, "? {}", i),
 
             Value::Struct {
                 struct_type,

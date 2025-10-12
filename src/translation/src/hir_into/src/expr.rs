@@ -42,9 +42,7 @@ impl TryIntoHir for ast::IntegerLit {
     type Hir = Value;
 
     fn try_into_hir(self, _ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
-        // TODO: Lower ast::Int to HIR
-        log.report(&HirErr::UnimplementedFeature("ast::Expr::Integer".into()));
-        Err(())
+        Ok(Value::InferredInteger(Box::new(self.value)))
     }
 }
 

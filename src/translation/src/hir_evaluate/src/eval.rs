@@ -47,10 +47,15 @@ pub struct HirEvalCtx<'store, 'log> {
     pub(crate) current_safety: BlockSafety,
     pub(crate) unsafe_operations_performed: usize,
     added_builtin_functions: HashMap<QualifiedName, Box<BuiltinFunction>>,
+    pub(crate) ptr_size: PtrSize,
 }
 
 impl<'store, 'log> HirEvalCtx<'store, 'log> {
-    pub fn new(store: &'store Store, log: &'log CompilerLog) -> HirEvalCtx<'store, 'log> {
+    pub fn new(
+        store: &'store Store,
+        log: &'log CompilerLog,
+        ptr_size: PtrSize,
+    ) -> HirEvalCtx<'store, 'log> {
         HirEvalCtx {
             store,
             log,
@@ -61,6 +66,7 @@ impl<'store, 'log> HirEvalCtx<'store, 'log> {
             current_safety: BlockSafety::Safe,
             unsafe_operations_performed: 0,
             added_builtin_functions: HashMap::new(),
+            ptr_size,
         }
     }
 

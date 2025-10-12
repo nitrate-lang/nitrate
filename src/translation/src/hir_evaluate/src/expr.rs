@@ -2,6 +2,206 @@ use crate::{HirEvaluate, Unwind};
 use nitrate_hir::prelude::*;
 use std::ops::{Add, BitAnd, BitOr, BitXor, Div, Mul, Neg, Not, Rem, Shl, Shr, Sub};
 
+enum CastLitBridge {
+    Unit,
+    I128(i128),
+    U128(u128),
+    F128(f64),
+}
+
+impl TryFrom<Value> for CastLitBridge {
+    type Error = ();
+
+    fn try_from(lit: Value) -> Result<Self, Self::Error> {
+        match lit {
+            Value::Unit => Ok(CastLitBridge::Unit),
+            Value::Bool(b) => Ok(CastLitBridge::U128(b as u128)),
+            Value::I8(i) => Ok(CastLitBridge::I128(i as i128)),
+            Value::I16(i) => Ok(CastLitBridge::I128(i as i128)),
+            Value::I32(i) => Ok(CastLitBridge::I128(i as i128)),
+            Value::I64(i) => Ok(CastLitBridge::I128(i as i128)),
+            Value::I128(i) => Ok(CastLitBridge::I128(*i)),
+            Value::U8(u) => Ok(CastLitBridge::U128(u as u128)),
+            Value::U16(u) => Ok(CastLitBridge::U128(u as u128)),
+            Value::U32(u) => Ok(CastLitBridge::U128(u as u128)),
+            Value::U64(u) => Ok(CastLitBridge::U128(u as u128)),
+            Value::U128(u) => Ok(CastLitBridge::U128(*u)),
+            Value::F8(f) => Ok(CastLitBridge::F128(f as f64)),
+            Value::F16(f) => Ok(CastLitBridge::F128(f as f64)),
+            Value::F32(f) => Ok(CastLitBridge::F128(f as f64)),
+            Value::F64(f) => Ok(CastLitBridge::F128(f)),
+            Value::F128(f) => Ok(CastLitBridge::F128(f as f64)),
+            Value::USize32(u) => Ok(CastLitBridge::U128(u as u128)),
+            Value::USize64(u) => Ok(CastLitBridge::U128(u as u128)),
+            Value::InferredInteger(u) => Ok(CastLitBridge::U128(*u)),
+            _ => Err(()),
+        }
+    }
+}
+
+impl CastLitBridge {
+    fn to_unit(self) -> Result<Value, Unwind> {
+        match self {
+            CastLitBridge::Unit => Ok(Value::Unit),
+            CastLitBridge::I128(_) | CastLitBridge::U128(_) | CastLitBridge::F128(_) => {
+                Err(Unwind::TypeError)
+            }
+        }
+    }
+
+    fn to_u8(self) -> Result<Value, Unwind> {
+        match self {
+            CastLitBridge::I128(i) => Ok(Value::U8(i as u8)),
+            CastLitBridge::U128(u) => Ok(Value::U8(u as u8)),
+            CastLitBridge::F128(f) => Ok(Value::U8(f as u8)),
+            CastLitBridge::Unit => Err(Unwind::TypeError),
+        }
+    }
+
+    fn to_u16(self) -> Result<Value, Unwind> {
+        match self {
+            CastLitBridge::I128(i) => Ok(Value::U16(i as u16)),
+            CastLitBridge::U128(u) => Ok(Value::U16(u as u16)),
+            CastLitBridge::F128(f) => Ok(Value::U16(f as u16)),
+            CastLitBridge::Unit => Err(Unwind::TypeError),
+        }
+    }
+
+    fn to_u32(self) -> Result<Value, Unwind> {
+        match self {
+            CastLitBridge::I128(i) => Ok(Value::U32(i as u32)),
+            CastLitBridge::U128(u) => Ok(Value::U32(u as u32)),
+            CastLitBridge::F128(f) => Ok(Value::U32(f as u32)),
+            CastLitBridge::Unit => Err(Unwind::TypeError),
+        }
+    }
+
+    fn to_u64(self) -> Result<Value, Unwind> {
+        match self {
+            CastLitBridge::I128(i) => Ok(Value::U64(i as u64)),
+            CastLitBridge::U128(u) => Ok(Value::U64(u as u64)),
+            CastLitBridge::F128(f) => Ok(Value::U64(f as u64)),
+            CastLitBridge::Unit => Err(Unwind::TypeError),
+        }
+    }
+
+    fn to_u128(self) -> Result<Value, Unwind> {
+        match self {
+            CastLitBridge::I128(i) => Ok(Value::U128(Box::new(i as u128))),
+            CastLitBridge::U128(u) => Ok(Value::U128(Box::new(u))),
+            CastLitBridge::F128(f) => Ok(Value::U128(Box::new(f as u128))),
+            CastLitBridge::Unit => Err(Unwind::TypeError),
+        }
+    }
+
+    fn to_usize(self, ptr_size: PtrSize) -> Result<Value, Unwind> {
+        match ptr_size {
+            PtrSize::U32 => match self {
+                CastLitBridge::I128(i) => Ok(Value::USize32(i as u32)),
+                CastLitBridge::U128(u) => Ok(Value::USize32(u as u32)),
+                CastLitBridge::F128(f) => Ok(Value::USize32(f as u32)),
+                CastLitBridge::Unit => Err(Unwind::TypeError),
+            },
+            PtrSize::U64 => match self {
+                CastLitBridge::I128(i) => Ok(Value::USize64(i as u64)),
+                CastLitBridge::U128(u) => Ok(Value::USize64(u as u64)),
+                CastLitBridge::F128(f) => Ok(Value::USize64(f as u64)),
+                CastLitBridge::Unit => Err(Unwind::TypeError),
+            },
+        }
+    }
+
+    fn to_i8(self) -> Result<Value, Unwind> {
+        match self {
+            CastLitBridge::I128(i) => Ok(Value::I8(i as i8)),
+            CastLitBridge::U128(u) => Ok(Value::I8(u as i8)),
+            CastLitBridge::F128(f) => Ok(Value::I8(f as i8)),
+            CastLitBridge::Unit => Err(Unwind::TypeError),
+        }
+    }
+
+    fn to_i16(self) -> Result<Value, Unwind> {
+        match self {
+            CastLitBridge::I128(i) => Ok(Value::I16(i as i16)),
+            CastLitBridge::U128(u) => Ok(Value::I16(u as i16)),
+            CastLitBridge::F128(f) => Ok(Value::I16(f as i16)),
+            CastLitBridge::Unit => Err(Unwind::TypeError),
+        }
+    }
+
+    fn to_i32(self) -> Result<Value, Unwind> {
+        match self {
+            CastLitBridge::I128(i) => Ok(Value::I32(i as i32)),
+            CastLitBridge::U128(u) => Ok(Value::I32(u as i32)),
+            CastLitBridge::F128(f) => Ok(Value::I32(f as i32)),
+            CastLitBridge::Unit => Err(Unwind::TypeError),
+        }
+    }
+
+    fn to_i64(self) -> Result<Value, Unwind> {
+        match self {
+            CastLitBridge::I128(i) => Ok(Value::I64(i as i64)),
+            CastLitBridge::U128(u) => Ok(Value::I64(u as i64)),
+            CastLitBridge::F128(f) => Ok(Value::I64(f as i64)),
+            CastLitBridge::Unit => Err(Unwind::TypeError),
+        }
+    }
+
+    fn to_i128(self) -> Result<Value, Unwind> {
+        match self {
+            CastLitBridge::I128(i) => Ok(Value::I128(Box::new(i))),
+            CastLitBridge::U128(u) => Ok(Value::I128(Box::new(u as i128))),
+            CastLitBridge::F128(f) => Ok(Value::I128(Box::new(f as i128))),
+            CastLitBridge::Unit => Err(Unwind::TypeError),
+        }
+    }
+
+    fn to_f8(self) -> Result<Value, Unwind> {
+        match self {
+            CastLitBridge::I128(i) => Ok(Value::F8(i as f32)),
+            CastLitBridge::U128(u) => Ok(Value::F8(u as f32)),
+            CastLitBridge::F128(f) => Ok(Value::F8(f as f32)),
+            CastLitBridge::Unit => Err(Unwind::TypeError),
+        }
+    }
+
+    fn to_f16(self) -> Result<Value, Unwind> {
+        match self {
+            CastLitBridge::I128(i) => Ok(Value::F16(i as f32)),
+            CastLitBridge::U128(u) => Ok(Value::F16(u as f32)),
+            CastLitBridge::F128(f) => Ok(Value::F16(f as f32)),
+            CastLitBridge::Unit => Err(Unwind::TypeError),
+        }
+    }
+
+    fn to_f32(self) -> Result<Value, Unwind> {
+        match self {
+            CastLitBridge::I128(i) => Ok(Value::F32(i as f32)),
+            CastLitBridge::U128(u) => Ok(Value::F32(u as f32)),
+            CastLitBridge::F128(f) => Ok(Value::F32(f as f32)),
+            CastLitBridge::Unit => Err(Unwind::TypeError),
+        }
+    }
+
+    fn to_f64(self) -> Result<Value, Unwind> {
+        match self {
+            CastLitBridge::I128(i) => Ok(Value::F64(i as f64)),
+            CastLitBridge::U128(u) => Ok(Value::F64(u as f64)),
+            CastLitBridge::F128(f) => Ok(Value::F64(f)),
+            CastLitBridge::Unit => Err(Unwind::TypeError),
+        }
+    }
+
+    fn to_f128(self) -> Result<Value, Unwind> {
+        match self {
+            CastLitBridge::I128(i) => Ok(Value::F128(i as f64)),
+            CastLitBridge::U128(u) => Ok(Value::F128(u as f64)),
+            CastLitBridge::F128(f) => Ok(Value::F128(f)),
+            CastLitBridge::Unit => Err(Unwind::TypeError),
+        }
+    }
+}
+
 impl HirEvaluate for Lit {
     type Output = Lit;
 
@@ -62,6 +262,7 @@ impl HirEvaluate for Value {
             Value::USize64(u) => Ok(Value::USize64(*u)),
             Value::String(s) => Ok(Value::String(s.clone())),
             Value::BString(s) => Ok(Value::BString(s.clone())),
+            Value::InferredInteger(i) => Ok(Value::InferredInteger(i.clone())),
 
             Value::Struct {
                 struct_type,
@@ -283,9 +484,38 @@ impl HirEvaluate for Value {
                 todo!()
             }
 
-            Value::Cast { expr: _, to: _ } => {
-                // TODO: Evaluate cast expressions
-                todo!()
+            Value::Cast { expr, to } => {
+                let expr = ctx.store[expr].evaluate(ctx)?;
+
+                if expr.is_literal() {
+                    let bridge = CastLitBridge::try_from(expr).expect("into cast bridge");
+                    let result = match &ctx.store[to] {
+                        Type::Unit => bridge.to_unit(),
+                        Type::U8 => bridge.to_u8(),
+                        Type::U16 => bridge.to_u16(),
+                        Type::U32 => bridge.to_u32(),
+                        Type::U64 => bridge.to_u64(),
+                        Type::U128 => bridge.to_u128(),
+                        Type::USize => bridge.to_usize(ctx.ptr_size),
+                        Type::I8 => bridge.to_i8(),
+                        Type::I16 => bridge.to_i16(),
+                        Type::I32 => bridge.to_i32(),
+                        Type::I64 => bridge.to_i64(),
+                        Type::I128 => bridge.to_i128(),
+                        Type::F8 => bridge.to_f8(),
+                        Type::F16 => bridge.to_f16(),
+                        Type::F32 => bridge.to_f32(),
+                        Type::F64 => bridge.to_f64(),
+                        Type::F128 => bridge.to_f128(),
+                        _ => Err(Unwind::TypeError),
+                    };
+
+                    return result;
+                }
+
+                // TODO: Handle non-literal casts
+
+                return Err(Unwind::TypeError);
             }
 
             Value::GetTypeOf { expr: _ } => {

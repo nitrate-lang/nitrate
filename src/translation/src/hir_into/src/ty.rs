@@ -198,9 +198,12 @@ impl TryIntoHir for ast::ArrayType {
             .try_into_hir(ctx, log)?
             .into_id(ctx.store());
 
-        let hir_length = self.len.try_into_hir(ctx, log)?;
+        let hir_length = Value::Cast {
+            expr: self.len.try_into_hir(ctx, log)?.into_id(ctx.store()),
+            to: Type::USize.into_id(ctx.store()),
+        };
 
-        let mut eval = HirEvalCtx::new(ctx.store(), log);
+        let mut eval = HirEvalCtx::new(ctx.store(), log, ctx.ptr_size());
         let len = match eval.evaluate_to_literal(&hir_length) {
             Ok(Lit::USize32(val)) => {
                 if ctx.ptr_size() != PtrSize::U32 {
@@ -313,7 +316,7 @@ impl TryIntoHir for ast::LatentType {
     fn try_into_hir(self, ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
         let block = self.body.try_into_hir(ctx, log)?.into_id(ctx.store());
 
-        let mut eval = HirEvalCtx::new(ctx.store(), log);
+        let mut eval = HirEvalCtx::new(ctx.store(), log, ctx.ptr_size());
         let hir_type = match eval.evaluate_into_type(&Value::Block { block }) {
             Ok(ty) => ty,
 

@@ -312,6 +312,7 @@ pub enum Value {
     USize64(u64),
     String(ThinStr),
     BString(ThinVec<u8>),
+    InferredInteger(Box<u128>),
 
     Struct {
         struct_type: TypeId,
@@ -472,5 +473,33 @@ impl IntoStoreId for Value {
 
     fn into_id(self, ctx: &Store) -> Self::Id {
         ctx.store_value(self)
+    }
+}
+
+impl Value {
+    pub fn is_literal(&self) -> bool {
+        matches!(
+            self,
+            Value::Unit
+                | Value::Bool(_)
+                | Value::I8(_)
+                | Value::I16(_)
+                | Value::I32(_)
+                | Value::I64(_)
+                | Value::I128(_)
+                | Value::U8(_)
+                | Value::U16(_)
+                | Value::U32(_)
+                | Value::U64(_)
+                | Value::U128(_)
+                | Value::F8(_)
+                | Value::F16(_)
+                | Value::F32(_)
+                | Value::F64(_)
+                | Value::F128(_)
+                | Value::USize32(_)
+                | Value::USize64(_)
+                | Value::InferredInteger(_)
+        )
     }
 }

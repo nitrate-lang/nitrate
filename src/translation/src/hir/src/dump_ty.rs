@@ -55,7 +55,6 @@ impl Dump for Type {
             Type::I32 => write!(o, "i32"),
             Type::I64 => write!(o, "i64"),
             Type::I128 => write!(o, "i128"),
-            Type::ISize => write!(o, "isize"),
             Type::F8 => write!(o, "f8"),
             Type::F16 => write!(o, "f16"),
             Type::F32 => write!(o, "f32"),
