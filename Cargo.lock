@@ -759,6 +759,7 @@ dependencies = [
  "interned-string",
  "nitrate_diagnosis",
  "nitrate_hir",
+ "nitrate_hir_evaluate",
  "nitrate_parsetree",
  "ordered-float",
 ]

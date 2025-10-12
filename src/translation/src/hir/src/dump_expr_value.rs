@@ -246,6 +246,8 @@ impl Dump for Value {
                 ctx.store[value].dump(ctx, o)
             }
 
+            Value::Block { block } => ctx.store[block].dump(ctx, o),
+
             Value::Call { callee, arguments } => {
                 ctx.store[callee].dump(ctx, o)?;
                 write!(o, "(")?;

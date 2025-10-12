@@ -365,6 +365,10 @@ pub enum Value {
         value: ValueId,
     },
 
+    Block {
+        block: BlockId,
+    },
+
     Call {
         callee: ValueId,
         arguments: Box<Vec<ValueId>>,

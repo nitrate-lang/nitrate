@@ -1,6 +1,7 @@
 use crate::{HirCtx, TryIntoHir};
 use nitrate_diagnosis::CompilerLog;
 use nitrate_hir::prelude::*;
+use nitrate_hir_evaluate::HirEvalCtx;
 use nitrate_parsetree::kind as ast;
 use std::ops::Deref;
 
@@ -176,7 +177,7 @@ impl TryIntoHir for ast::TypePath {
     type Error = ();
     type Hir = Type;
 
-    fn try_into_hir(self, ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, Self::Error> {
+    fn try_into_hir(self, _ctx: &mut HirCtx, _log: &CompilerLog) -> Result<Self::Hir, Self::Error> {
         // TODO: Lower ast::TypePath into hir::TypePath
         Err(())
     }
@@ -186,61 +187,9 @@ impl TryIntoHir for ast::RefinementType {
     type Error = ();
     type Hir = Type;
 
-    fn try_into_hir(self, ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, Self::Error> {
-        let base = match self.width {
-            None => self.basis_type.try_into_hir(ctx, log)?.into_id(ctx.store()),
-
-            Some(expr) => {
-                let base = self.basis_type.try_into_hir(ctx, log)?.into_id(ctx.store());
-
-                let hir_expr = expr.try_into_hir(ctx, log)?;
-                let literal = Literal::try_from(hir_expr).map_err(|_| ())?;
-
-                let bits = match literal {
-                    Literal::U8(x) => x,
-                    Literal::U16(x) => u8::try_from(x).map_err(|_| ())?,
-                    Literal::U32(x) => u8::try_from(x).map_err(|_| ())?,
-                    Literal::U64(x) => u8::try_from(x).map_err(|_| ())?,
-                    Literal::U128(x) => u8::try_from(x).map_err(|_| ())?,
-                    Literal::I8(x) => u8::try_from(x).map_err(|_| ())?,
-                    Literal::I16(x) => u8::try_from(x).map_err(|_| ())?,
-                    Literal::I32(x) => u8::try_from(x).map_err(|_| ())?,
-                    Literal::I64(x) => u8::try_from(x).map_err(|_| ())?,
-                    Literal::I128(x) => u8::try_from(x).map_err(|_| ())?,
-                    _ => return Err(()),
-                };
-
-                Type::Bitfield { base, bits }.into_id(ctx.store())
-            }
-        };
-
-        let min = match self.minimum {
-            None => {
-                // TODO: Do type inference to find the minimum value for the base type
-                todo!("Implement type inference for refinement type minimum deduction");
-            }
-
-            Some(expr) => {
-                let hir_expr = expr.try_into_hir(ctx, log)?;
-                let literal = Literal::try_from(hir_expr).map_err(|_| ())?;
-                literal.into_id(ctx.store())
-            }
-        };
-
-        let max = match self.maximum {
-            None => {
-                // TODO: Do type inference to find the maximum value for the base type
-                todo!("Implement type inference for refinement type maximum deduction");
-            }
-
-            Some(expr) => {
-                let hir_expr = expr.try_into_hir(ctx, log)?;
-                let literal = Literal::try_from(hir_expr).map_err(|_| ())?;
-                literal.into_id(ctx.store())
-            }
-        };
-
-        Ok(Type::Refine { base, min, max })
+    fn try_into_hir(self, _ctx: &mut HirCtx, _log: &CompilerLog) -> Result<Self::Hir, Self::Error> {
+        // TODO: Lower ast::RefinementType into hir::RefinementType
+        Err(())
     }
 }
 
@@ -272,13 +221,18 @@ impl TryIntoHir for ast::ArrayType {
 
     fn try_into_hir(self, ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, Self::Error> {
         let hir_element_type = self.element_type.try_into_hir(ctx, log)?;
+        let hir_length = self.len.try_into_hir(ctx, log)?;
 
-        // TODO: Evaluate the length expression to a constant u64 value
-        let hir_length = 0;
+        let len = match HirEvalCtx::new(ctx.store(), log).evaluate_to_literal(&hir_length) {
+            Ok(Literal::U32(val)) => val as u64,
+            Ok(Literal::U64(val)) => val,
+            Ok(_) => return Err(()),
+            Err(_) => return Err(()),
+        };
 
         Ok(Type::Array {
             element_type: hir_element_type.into_id(ctx.store()),
-            len: hir_length,
+            len,
         })
     }
 }
@@ -300,38 +254,7 @@ impl TryIntoHir for ast::FunctionType {
     type Error = ();
     type Hir = Type;
 
-    fn try_into_hir(self, ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, Self::Error> {
-        let return_type = match self.return_type {
-            Some(ty) => ty.try_into_hir(ctx, log)?.into_id(ctx.store()),
-            None => Type::Unit.into_id(ctx.store()),
-        };
-
-        // let mut parameter_types = Vec::with_capacity(self.parameters.len());
-
-        for param in self.parameters.into_iter() {
-            if !param.attributes.unwrap_or_default().elements.is_empty() {
-                // TODO: Handle parameter attributes
-                return Err(());
-            }
-
-            if param.mutability.is_some() {
-                // TODO: Print error
-                return Err(());
-            }
-
-            let param_type = match param.param_type {
-                Some(ty) => ty.try_into_hir(ctx, log)?.into_id(ctx.store()),
-                None => create_inference_variable(ctx).into_id(ctx.store()),
-            };
-
-            let default_value = match param.default_value {
-                Some(expr) => Some(expr.try_into_hir(ctx, log)?.into_id(ctx.store())),
-                None => None,
-            };
-
-            let _ = param.name;
-        }
-
+    fn try_into_hir(self, _ctx: &mut HirCtx, _log: &CompilerLog) -> Result<Self::Hir, Self::Error> {
         // TODO: Lower ast::FunctionType into hir::FunctionType
         Err(())
     }
@@ -393,9 +316,16 @@ impl TryIntoHir for ast::LatentType {
     type Error = ();
     type Hir = Type;
 
-    fn try_into_hir(self, _ctx: &mut HirCtx, _log: &CompilerLog) -> Result<Self::Hir, Self::Error> {
-        // TODO: Lower ast::LatentType into hir::LatentType
-        todo!("Implement latent type evaluation");
+    fn try_into_hir(self, ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, Self::Error> {
+        let block = self.body.try_into_hir(ctx, log)?.into_id(ctx.store());
+
+        let mut eval = HirEvalCtx::new(ctx.store(), log);
+        let hir_type = match eval.evaluate_into_type(&Value::Block { block }) {
+            Ok(ty) => ty,
+            Err(_) => return Err(()),
+        };
+
+        Ok(hir_type)
     }
 }
 

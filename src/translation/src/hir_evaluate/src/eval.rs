@@ -117,3 +117,19 @@ pub trait HirEvaluate {
 
     fn evaluate(&self, ctx: &mut HirEvalCtx) -> Result<Self::Output, EvalFail>;
 }
+
+impl HirEvalCtx<'_, '_> {
+    pub fn evaluate_to_literal(&mut self, value: &Value) -> Result<Literal, EvalFail> {
+        match Literal::try_from(value.evaluate(self)?) {
+            Ok(lit) => Ok(lit),
+            Err(_) => Err(EvalFail::TypeError),
+        }
+    }
+
+    pub fn evaluate_into_type(&mut self, value: &Value) -> Result<Type, EvalFail> {
+        match value.evaluate(self)? {
+            // TODO: Convert from nitrate's `std::meta::Type` into nitrate_hir::Type
+            _ => Err(EvalFail::TypeError),
+        }
+    }
+}

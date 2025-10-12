@@ -306,6 +306,8 @@ impl HirEvaluate for Value {
                 todo!()
             }
 
+            Value::Block { block } => ctx.store[block].evaluate(ctx),
+
             Value::Call { callee, arguments } => {
                 // TODO: Evaluate function call expressions
                 todo!()

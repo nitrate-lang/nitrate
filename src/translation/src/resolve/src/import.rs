@@ -31,7 +31,7 @@ impl ImportContext {
         self
     }
 
-    fn find_package(&self, package_name: &str) -> Option<SourceFilePath> {
+    fn find_package(&self, _package_name: &str) -> Option<SourceFilePath> {
         // TODO: Implement package lookup.
         None
     }
