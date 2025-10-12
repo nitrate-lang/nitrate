@@ -51,7 +51,7 @@ pub fn get_type(value: &Value, store: &Store) -> Result<Type, TypeInferenceError
             struct_type,
             fields,
         } => {
-            // TODO: Get type of struct
+            // TODO: inference for struct
             todo!()
         }
 
@@ -60,52 +60,52 @@ pub fn get_type(value: &Value, store: &Store) -> Result<Type, TypeInferenceError
             variant,
             value,
         } => {
-            // TODO: Get type of enum
+            // TODO: inference for enum
             todo!()
         }
 
         Value::Binary { left, op, right } => {
-            // TODO: Implement type inference for binary operations
+            // TODO: inference for binary operations
             todo!()
         }
 
         Value::Unary { op, expr } => {
-            // TODO: Implement type inference for unary operations
+            // TODO: inference for unary operations
             todo!()
         }
 
         Value::FieldAccess { expr, field } => {
-            // TODO: Implement type inference for field access
+            // TODO: inference for field access
             todo!()
         }
 
         Value::IndexAccess { collection, index } => {
-            // TODO: Implement type inference for index access
+            // TODO: inference for index access
             todo!()
         }
 
         Value::Assign { place, value } => {
-            // TODO: Implement type inference for assignment
+            // TODO: inference for assignment
             todo!()
         }
 
         Value::Deref { place } => {
-            // TODO: Implement type inference for dereference
+            // TODO: inference for dereference
             todo!()
         }
 
         Value::Cast { expr, to } => {
-            // TODO: Implement type inference for cast
+            // TODO: inference for cast
             todo!()
         }
 
         Value::GetAddressOf { place } => {
-            // TODO: Implement type inference for address-of
+            // TODO: inference for address-of
             todo!()
         }
 
         Value::GetTypeOf { expr } => {
-            // TODO: Implement type inference for type-of
+            // TODO: inference for type-of
             todo!()
         }
 
@@ -114,7 +114,7 @@ pub fn get_type(value: &Value, store: &Store) -> Result<Type, TypeInferenceError
         }
 
         Value::Tuple { elements } => {
-            // TODO: Implement type inference for tuple
+            // TODO: inference for tuple
             todo!()
         }
 
@@ -123,47 +123,47 @@ pub fn get_type(value: &Value, store: &Store) -> Result<Type, TypeInferenceError
             true_branch,
             false_branch,
         } => {
-            // TODO: Implement type inference for if expressions
+            // TODO: inference for if expressions
             todo!()
         }
 
         Value::While { condition, body } => {
-            // TODO: Implement type inference for while loops
+            // TODO: inference for while loops
             todo!()
         }
 
         Value::Loop { body } => {
-            // TODO: Implement type inference for loop
+            // TODO: inference for loop
             todo!()
         }
 
         Value::Break { label } => {
-            // TODO: Implement type inference for break
+            // TODO: inference for break
             todo!()
         }
 
         Value::Continue { label } => {
-            // TODO: Implement type inference for continue
+            // TODO: inference for continue
             todo!()
         }
 
         Value::Return { value } => {
-            // TODO: Implement type inference for return
+            // TODO: inference for return
             todo!()
         }
 
         Value::Block { block } => {
-            // TODO: Implement type inference for block
+            // TODO: inference for block
             todo!()
         }
 
         Value::Call { callee, arguments } => {
-            // TODO: Implement type inference for function calls
+            // TODO: inference for function calls
             todo!()
         }
 
         Value::Symbol { symbol } => {
-            // TODO: Implement type inference for symbols
+            // TODO: inference for symbols
             todo!()
         }
     }
