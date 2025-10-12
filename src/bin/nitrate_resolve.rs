@@ -100,11 +100,7 @@ fn program() -> Result<(), Error> {
         items: Parser::new(lexer, &log).parse_source(),
     };
 
-    let import_context = ImportContext {
-        package_name: None,
-        source_code_filepath: filename.to_path_buf(),
-    };
-
+    let import_context = ImportContext::new(filename.to_path_buf());
     resolve_imports(&import_context, &mut module, &log);
     resolve_names(&mut module, &log);
 

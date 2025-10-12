@@ -477,6 +477,7 @@ pub enum LiteralRolError {
     TypeError,
 }
 
+#[derive(Debug)]
 pub enum LiteralRorError {
     TypeError,
 }
@@ -551,11 +552,13 @@ impl Literal {
     }
 }
 
+#[derive(Debug)]
 pub enum LiteralCmpError {
     TypeError,
 }
 
 impl Literal {
+    #[inline(always)]
     pub fn lt(&self, other: &Self) -> Result<bool, LiteralCmpError> {
         match (self, other) {
             (Literal::Unit, Literal::Unit) => Ok(false),
@@ -579,6 +582,7 @@ impl Literal {
         }
     }
 
+    #[inline(always)]
     pub fn gt(&self, other: &Self) -> Result<bool, LiteralCmpError> {
         match (self, other) {
             (Literal::Unit, Literal::Unit) => Ok(false),
@@ -602,6 +606,7 @@ impl Literal {
         }
     }
 
+    #[inline(always)]
     pub fn le(&self, other: &Self) -> Result<bool, LiteralCmpError> {
         match (self, other) {
             (Literal::Unit, Literal::Unit) => Ok(true),
@@ -625,6 +630,7 @@ impl Literal {
         }
     }
 
+    #[inline(always)]
     pub fn ge(&self, other: &Self) -> Result<bool, LiteralCmpError> {
         match (self, other) {
             (Literal::Unit, Literal::Unit) => Ok(true),
@@ -648,6 +654,7 @@ impl Literal {
         }
     }
 
+    #[inline(always)]
     pub fn eq(&self, other: &Self) -> Result<bool, LiteralCmpError> {
         match (self, other) {
             (Literal::Unit, Literal::Unit) => Ok(true),
@@ -671,6 +678,7 @@ impl Literal {
         }
     }
 
+    #[inline(always)]
     pub fn ne(&self, other: &Self) -> Result<bool, LiteralCmpError> {
         match (self, other) {
             (Literal::Unit, Literal::Unit) => Ok(false),
@@ -694,6 +702,7 @@ impl Literal {
         }
     }
 
+    #[inline(always)]
     pub fn logical_and(self, other: Self) -> Result<bool, LiteralCmpError> {
         match (self, other) {
             (Literal::Bool(a), Literal::Bool(b)) => Ok(a && b),
@@ -701,6 +710,7 @@ impl Literal {
         }
     }
 
+    #[inline(always)]
     pub fn logical_or(self, other: Self) -> Result<bool, LiteralCmpError> {
         match (self, other) {
             (Literal::Bool(a), Literal::Bool(b)) => Ok(a || b),
@@ -708,6 +718,7 @@ impl Literal {
         }
     }
 
+    #[inline(always)]
     pub fn logical_xor(self, other: Self) -> Result<bool, LiteralCmpError> {
         match (self, other) {
             (Literal::Bool(a), Literal::Bool(b)) => Ok(a ^ b),

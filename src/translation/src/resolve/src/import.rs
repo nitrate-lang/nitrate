@@ -5,26 +5,47 @@ use nitrate_parse::Parser;
 use nitrate_parsetree::{
     Order, ParseTreeIterMut, RefNodeMut,
     kind::{Import, Item, Module, Visibility},
-    tag::{ImportNameId, PackageNameId, intern_module_name},
+    tag::{ImportNameId, PackageNameId, intern_module_name, intern_package_name},
 };
 use nitrate_tokenize::{Lexer, LexerError};
 
 use std::collections::HashSet;
 
+pub type SourceFilePath = std::path::PathBuf;
+
 pub struct ImportContext {
-    pub package_name: Option<PackageNameId>,
-    pub source_code_filepath: std::path::PathBuf,
+    package_name: Option<PackageNameId>,
+    source_filepath: SourceFilePath,
 }
 
-fn is_visible(vis: Option<Visibility>, is_same_package: bool) -> bool {
-    match vis.unwrap_or(Visibility::Private) {
-        Visibility::Public => true,
-        Visibility::Protected => is_same_package,
-        Visibility::Private => false,
+impl ImportContext {
+    pub fn new(source_filepath: SourceFilePath) -> Self {
+        Self {
+            package_name: None,
+            source_filepath,
+        }
+    }
+
+    pub fn with_current_package_name(mut self, package_name: PackageNameId) -> Self {
+        self.package_name = Some(package_name);
+        self
+    }
+
+    fn find_package(&self, package_name: &str) -> Option<SourceFilePath> {
+        // TODO: Implement package lookup.
+        None
     }
 }
 
 fn visibility_filter(item: Item, is_same_package: bool) -> Option<Item> {
+    fn is_visible(vis: Option<Visibility>, is_same_package: bool) -> bool {
+        match vis.unwrap_or(Visibility::Private) {
+            Visibility::Public => true,
+            Visibility::Protected => is_same_package,
+            Visibility::Private => false,
+        }
+    }
+
     match item {
         Item::SyntaxError(_) => None,
 
@@ -159,26 +180,33 @@ fn decide_what_to_import(
     import_name: &str,
     log: &CompilerLog,
 ) -> Option<ImportContext> {
-    let folder = ctx.source_code_filepath.parent()?;
+    let folder = ctx.source_filepath.parent()?;
 
-    let sibling_path = folder.join(format!("{}.nit", import_name));
-    if sibling_path.exists() {
+    let source_filepath = folder.join(format!("{}.nit", import_name));
+    if source_filepath.exists() {
         return Some(ImportContext {
             package_name: ctx.package_name.clone(),
-            source_code_filepath: sibling_path,
+            source_filepath,
         });
     }
 
-    let subfolder_path = folder.join(import_name).join("mod.nit");
-    if subfolder_path.exists() {
+    let source_filepath = folder.join(import_name).join("mod.nit");
+    if source_filepath.exists() {
         return Some(ImportContext {
             package_name: ctx.package_name.clone(),
-            source_code_filepath: subfolder_path,
+            source_filepath,
         });
     }
 
-    // TODO: Handle package lookup: search in packages PATH.
-    // For now, just report not found.
+    if let Some(source_filepath) = ctx.find_package(import_name) {
+        if source_filepath.exists() {
+            let package_name = Some(intern_package_name(import_name.to_string()));
+            return Some(ImportContext {
+                package_name,
+                source_filepath,
+            });
+        }
+    }
 
     log.report(&ResolveIssue::ImportNotFound((
         import_name.to_string(),
@@ -225,7 +253,7 @@ fn resolve_import(
             _ => false,
         };
 
-        let content = load_source_file(&what.source_code_filepath, import_name, inside, log);
+        let content = load_source_file(&what.source_filepath, import_name, inside, log);
 
         if let Some(mut module) = content {
             resolve_imports_guarded(&what, &mut module, log, visited, depth);
