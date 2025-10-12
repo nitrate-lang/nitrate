@@ -22,8 +22,8 @@ impl HirEvaluate for Block {
         ctx.current_safety = self.safety;
 
         let mut last_value = Value::Unit;
-        for expr in &self.exprs {
-            last_value = ctx.store[expr].evaluate(ctx)?;
+        for expr in &self.elements {
+            last_value = expr.evaluate(ctx)?;
         }
 
         ctx.current_safety = before_safety;

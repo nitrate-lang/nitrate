@@ -11,16 +11,16 @@ impl Dump for Block {
             BlockSafety::Unsafe => write!(o, "unsafe ")?,
         }
 
-        if self.exprs.is_empty() {
+        if self.elements.is_empty() {
             write!(o, "{{}}")
         } else {
             write!(o, "{{\n")?;
 
-            for expr in &self.exprs {
+            for expr in &self.elements {
                 ctx.indent += 1;
 
                 self.write_indent(ctx, o)?;
-                ctx.store[expr].dump(ctx, o)?;
+                expr.dump(ctx, o)?;
                 write!(o, ";\n")?;
 
                 ctx.indent -= 1;

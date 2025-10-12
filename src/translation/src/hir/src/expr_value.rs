@@ -278,7 +278,7 @@ pub enum BlockSafety {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Block {
     pub safety: BlockSafety,
-    pub exprs: Vec<ValueId>,
+    pub elements: Vec<Value>,
 }
 
 impl IntoStoreId for Block {
