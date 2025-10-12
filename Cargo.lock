@@ -766,6 +766,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "nitrate_hir_type_inference"
+version = "0.1.0"
+dependencies = [
+ "interned-string",
+ "nitrate_diagnosis",
+ "nitrate_hir",
+]
+
+[[package]]
 name = "nitrate_optimization"
 version = "0.1.0"
 dependencies = [
@@ -835,6 +844,7 @@ dependencies = [
  "nitrate_hir",
  "nitrate_hir_evaluate",
  "nitrate_hir_into",
+ "nitrate_hir_type_inference",
  "nitrate_optimization",
  "nitrate_parse",
  "nitrate_parsetree",

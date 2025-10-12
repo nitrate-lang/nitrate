@@ -46,8 +46,8 @@ pub struct StaticFunction {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ClosureFunction {
     pub closure_unique_id: u64,
-    pub callee: Box<Function>,
     pub captures: Vec<SymbolId>,
+    pub callee: Box<StaticFunction>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]

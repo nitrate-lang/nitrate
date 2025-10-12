@@ -9,6 +9,7 @@ nitrate_parsetree = { path = "src/parsetree" }
 nitrate_hir = { path = "src/hir" }
 nitrate_hir_into = { path = "src/hir_into" }
 nitrate_hir_evaluate = { path = "src/hir_evaluate" }
+nitrate_hir_type_inference = { path = "src/hir_type_inference" }
 nitrate_resolve = { path = "src/resolve" }
 nitrate_parse = { path = "src/parse" }
 nitrate_diagnosis = { path = "../diagnosis" }

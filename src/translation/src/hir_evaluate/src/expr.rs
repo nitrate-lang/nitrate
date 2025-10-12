@@ -234,7 +234,7 @@ impl HirEvaluate for Value {
                 }
             }
 
-            Value::Symbol { symbol } => {
+            Value::Symbol { symbol: _ } => {
                 // TODO: Evaluate symbol expressions
                 todo!()
             }
@@ -268,27 +268,27 @@ impl HirEvaluate for Value {
                 }
             }
 
-            Value::Assign { place, value } => {
+            Value::Assign { place: _, value: _ } => {
                 // TODO: Evaluate assignment expressions
                 todo!()
             }
 
-            Value::Deref { place } => {
+            Value::Deref { place: _ } => {
                 // TODO: Evaluate dereference expressions
                 todo!()
             }
 
-            Value::GetAddressOf { place } => {
+            Value::GetAddressOf { place: _ } => {
                 // TODO: Evaluate address-of expressions
                 todo!()
             }
 
-            Value::Cast { expr, to } => {
+            Value::Cast { expr: _, to: _ } => {
                 // TODO: Evaluate cast expressions
                 todo!()
             }
 
-            Value::GetTypeOf { expr } => {
+            Value::GetTypeOf { expr: _ } => {
                 // TODO: Evaluate typeof expressions
                 todo!()
             }
@@ -360,7 +360,10 @@ impl HirEvaluate for Value {
 
             Value::Block { block } => ctx.store[block].evaluate(ctx),
 
-            Value::Call { callee, arguments } => {
+            Value::Call {
+                callee: _,
+                arguments: _,
+            } => {
                 // TODO: Evaluate function call expressions
                 todo!()
             }
