@@ -4,10 +4,9 @@ use nitrate_hir::prelude::*;
 use nitrate_parsetree::kind as ast;
 
 impl TryIntoHir for ast::Module {
-    type Error = Self;
     type Hir = Module;
 
-    fn try_into_hir(self, ctx: &mut HirCtx, _log: &CompilerLog) -> Result<Self::Hir, Self::Error> {
+    fn try_into_hir(self, ctx: &mut HirCtx, _log: &CompilerLog) -> Result<Self::Hir, ()> {
         // TODO: Implement conversion from AST to HIR
 
         let global_var_type = Type::USize.into_id(ctx.store());

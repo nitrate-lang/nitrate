@@ -61,6 +61,39 @@ impl HirEvaluate for Value {
             Value::String(s) => Ok(Value::String(s.clone())),
             Value::BString(s) => Ok(Value::BString(s.clone())),
 
+            Value::Struct {
+                struct_type,
+                fields,
+            } => {
+                let mut fields = fields.to_owned();
+                for field_value in fields.values_mut() {
+                    let eval_value = ctx.store[field_value as &ValueId]
+                        .evaluate(ctx)?
+                        .into_id(ctx.store);
+
+                    *field_value = eval_value;
+                }
+
+                Ok(Value::Struct {
+                    struct_type: struct_type.clone(),
+                    fields,
+                })
+            }
+
+            Value::Enum {
+                enum_type,
+                variant,
+                value,
+            } => {
+                let evaluated_value = ctx.store[value].evaluate(ctx)?.into_id(ctx.store);
+
+                Ok(Value::Enum {
+                    enum_type: enum_type.clone(),
+                    variant: variant.clone(),
+                    value: evaluated_value,
+                })
+            }
+
             Value::Binary { left, op, right } => {
                 let left = Literal::try_from(ctx.store[left].evaluate(ctx)?)
                     .map_err(|_| EvalFail::TypeError)?;

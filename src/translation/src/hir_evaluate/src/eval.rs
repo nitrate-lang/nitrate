@@ -128,7 +128,17 @@ impl HirEvalCtx<'_, '_> {
 
     pub fn evaluate_into_type(&mut self, value: &Value) -> Result<Type, EvalFail> {
         match value.evaluate(self)? {
-            // TODO: Convert from nitrate's `std::meta::Type` into nitrate_hir::Type
+            Value::Struct {
+                struct_type,
+                fields,
+            } => {
+                // TODO: Convert from nitrate's `std::meta::Type` into nitrate_hir::Type
+
+                self.store[&struct_type].is_struct();
+
+                Err(EvalFail::TypeError)
+            }
+
             _ => Err(EvalFail::TypeError),
         }
     }

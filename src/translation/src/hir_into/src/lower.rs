@@ -3,10 +3,9 @@ use nitrate_hir::{hir::QualifiedName, prelude::*};
 use std::{collections::HashMap, num::NonZeroU32};
 
 pub trait TryIntoHir {
-    type Error;
     type Hir;
 
-    fn try_into_hir(self, ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, Self::Error>;
+    fn try_into_hir(self, ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()>;
 }
 
 pub struct HirCtx {

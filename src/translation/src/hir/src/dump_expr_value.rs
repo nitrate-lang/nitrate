@@ -87,6 +87,35 @@ impl Dump for Value {
             Value::String(s) => write!(o, "\"{}\"", s),
             Value::BString(s) => write!(o, "b\"{:?}\"", s),
 
+            Value::Struct {
+                struct_type,
+                fields,
+            } => {
+                ctx.store[struct_type].dump(ctx, o)?;
+                write!(o, " {{ ")?;
+                for (i, (field_name, field_value)) in fields.iter().enumerate() {
+                    if i != 0 {
+                        write!(o, ", ")?;
+                    }
+
+                    write!(o, "{}: ", field_name)?;
+                    ctx.store[field_value].dump(ctx, o)?;
+                }
+                write!(o, " }}")
+            }
+
+            Value::Enum {
+                enum_type,
+                variant,
+                value,
+            } => {
+                ctx.store[enum_type].dump(ctx, o)?;
+                write!(o, "::{}", variant)?;
+                write!(o, "(")?;
+                ctx.store[value].dump(ctx, o)?;
+                write!(o, ")")
+            }
+
             Value::Binary { left, op, right } => {
                 write!(o, "(")?;
                 ctx.store[left].dump(ctx, o)?;

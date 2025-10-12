@@ -1,4 +1,5 @@
 use crate::{prelude::*, store::LiteralId};
+use hashbrown::HashMap;
 use interned_string::IString;
 use serde::{Deserialize, Serialize};
 use thin_str::ThinStr;
@@ -290,6 +291,17 @@ pub enum Value {
     F128(f64), // Stored as f64 because Rust does not have a native f128 type
     String(ThinStr),
     BString(ThinVec<u8>),
+
+    Struct {
+        struct_type: TypeId,
+        fields: Box<HashMap<IString, ValueId>>,
+    },
+
+    Enum {
+        enum_type: TypeId,
+        variant: IString,
+        value: ValueId,
+    },
 
     Binary {
         left: ValueId,
