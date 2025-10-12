@@ -418,7 +418,6 @@ impl ParseTreeIter for Expr {
             Expr::Cast(e) => e.depth_first_iter(f),
             Expr::Block(e) => e.depth_first_iter(f),
             Expr::Closure(e) => e.depth_first_iter(f),
-            Expr::Variable(e) => e.depth_first_iter(f),
             Expr::Path(e) => e.depth_first_iter(f),
             Expr::IndexAccess(e) => e.depth_first_iter(f),
             Expr::If(e) => e.depth_first_iter(f),

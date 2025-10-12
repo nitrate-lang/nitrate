@@ -899,7 +899,6 @@ impl PrettyPrint for Expr {
             Expr::Cast(m) => m.pretty_print_fmt(ctx, writer),
             Expr::Block(m) => m.pretty_print_fmt(ctx, writer),
             Expr::Closure(m) => m.pretty_print_fmt(ctx, writer),
-            Expr::Variable(m) => m.read().unwrap().pretty_print_fmt(ctx, writer),
             Expr::Path(m) => m.pretty_print_fmt(ctx, writer),
             Expr::IndexAccess(m) => m.pretty_print_fmt(ctx, writer),
             Expr::If(m) => m.pretty_print_fmt(ctx, writer),

@@ -42,7 +42,6 @@ pub enum RefNodeMut<'a> {
     ExprBlock(&'a mut Block),
     ExprAttributeList(&'a mut AttributeList),
     ExprClosure(&'a mut Closure),
-    ExprVariable(&'a mut Variable),
     ExprPathTypeArgument(&'a mut TypeArgument),
     ExprPath(&'a mut ExprPath),
     ExprIndexAccess(&'a mut IndexAccess),

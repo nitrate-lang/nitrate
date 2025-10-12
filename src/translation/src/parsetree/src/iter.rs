@@ -47,7 +47,6 @@ pub enum RefNode<'a> {
     ExprBlock(&'a Block),
     ExprAttributeList(&'a AttributeList),
     ExprClosure(&'a Closure),
-    ExprVariable(&'a Variable),
     ExprPathTypeArgument(&'a TypeArgument),
     ExprPath(&'a ExprPath),
     ExprIndexAccess(&'a IndexAccess),

@@ -419,7 +419,6 @@ impl ParseTreeIterMut for Expr {
             Expr::Cast(e) => e.depth_first_iter_mut(f),
             Expr::Block(e) => e.depth_first_iter_mut(f),
             Expr::Closure(e) => e.depth_first_iter_mut(f),
-            Expr::Variable(e) => e.depth_first_iter_mut(f),
             Expr::Path(e) => e.depth_first_iter_mut(f),
             Expr::IndexAccess(e) => e.depth_first_iter_mut(f),
             Expr::If(e) => e.depth_first_iter_mut(f),

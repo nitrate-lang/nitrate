@@ -364,15 +364,12 @@ pub struct Call {
 #[derive(Clone, Serialize, Deserialize)]
 pub enum Expr {
     SyntaxError(ExprSyntaxError),
-
     Parentheses(Box<ExprParentheses>),
-
     Boolean(BooleanLit),
     Integer(Box<IntegerLit>),
     Float(FloatLit),
     String(StringLit),
     BString(Box<BStringLit>),
-
     TypeInfo(Box<TypeInfo>),
     List(Box<List>),
     Tuple(Box<Tuple>),
@@ -381,12 +378,9 @@ pub enum Expr {
     BinExpr(Box<BinExpr>),
     Cast(Box<Cast>),
     Block(Box<Block>),
-
     Closure(Box<Closure>),
-    Variable(Arc<RwLock<Variable>>),
     Path(Box<ExprPath>),
     IndexAccess(Box<IndexAccess>),
-
     If(Box<If>),
     While(Box<WhileLoop>),
     Match(Box<Match>),
@@ -417,7 +411,6 @@ impl std::fmt::Debug for Expr {
             Expr::Cast(e) => e.fmt(f),
             Expr::Block(e) => e.fmt(f),
             Expr::Closure(e) => e.fmt(f),
-            Expr::Variable(e) => e.fmt(f),
             Expr::Path(e) => e.fmt(f),
             Expr::IndexAccess(e) => e.fmt(f),
             Expr::If(e) => e.fmt(f),
