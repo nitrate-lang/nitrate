@@ -1,11 +1,11 @@
-use crate::{EvalFail, HirEvaluate};
+use crate::{HirEvaluate, Unwind};
 use nitrate_hir::prelude::*;
 use std::ops::{Add, BitAnd, BitOr, BitXor, Div, Mul, Neg, Not, Rem, Shl, Shr, Sub};
 
 impl HirEvaluate for Lit {
     type Output = Lit;
 
-    fn evaluate(&self, _ctx: &mut crate::HirEvalCtx) -> Result<Self::Output, crate::EvalFail> {
+    fn evaluate(&self, _ctx: &mut crate::HirEvalCtx) -> Result<Self::Output, crate::Unwind> {
         Ok(self.clone())
     }
 }
@@ -13,7 +13,7 @@ impl HirEvaluate for Lit {
 impl HirEvaluate for Block {
     type Output = Value;
 
-    fn evaluate(&self, ctx: &mut crate::HirEvalCtx) -> Result<Self::Output, crate::EvalFail> {
+    fn evaluate(&self, ctx: &mut crate::HirEvalCtx) -> Result<Self::Output, crate::Unwind> {
         if ctx.current_safety != BlockSafety::Safe {
             ctx.unsafe_operations_performed += 1;
         }
@@ -35,7 +35,7 @@ impl HirEvaluate for Block {
 impl HirEvaluate for Value {
     type Output = Value;
 
-    fn evaluate(&self, ctx: &mut crate::HirEvalCtx) -> Result<Self::Output, crate::EvalFail> {
+    fn evaluate(&self, ctx: &mut crate::HirEvalCtx) -> Result<Self::Output, crate::Unwind> {
         if ctx.current_safety != BlockSafety::Safe {
             ctx.unsafe_operations_performed += 1;
         }
@@ -97,139 +97,139 @@ impl HirEvaluate for Value {
             }
 
             Value::Binary { left, op, right } => {
-                let left = Lit::try_from(ctx.store[left].evaluate(ctx)?)
-                    .map_err(|_| EvalFail::TypeError)?;
+                let left =
+                    Lit::try_from(ctx.store[left].evaluate(ctx)?).map_err(|_| Unwind::TypeError)?;
 
                 let right = Lit::try_from(ctx.store[right].evaluate(ctx)?)
-                    .map_err(|_| EvalFail::TypeError)?;
+                    .map_err(|_| Unwind::TypeError)?;
 
                 match op {
                     BinaryOp::Add => match left.add(right) {
                         Ok(lit) => Ok(lit.into()),
-                        Err(LiteralAddError::TypeError) => Err(EvalFail::TypeError),
+                        Err(LiteralAddError::TypeError) => Err(Unwind::TypeError),
                     },
 
                     BinaryOp::Sub => match left.sub(right) {
                         Ok(lit) => Ok(lit.into()),
-                        Err(LiteralSubError::TypeError) => Err(EvalFail::TypeError),
+                        Err(LiteralSubError::TypeError) => Err(Unwind::TypeError),
                     },
 
                     BinaryOp::Mul => match left.mul(right) {
                         Ok(lit) => Ok(lit.into()),
-                        Err(LiteralMulError::TypeError) => Err(EvalFail::TypeError),
+                        Err(LiteralMulError::TypeError) => Err(Unwind::TypeError),
                     },
 
                     BinaryOp::Div => match left.div(right) {
                         Ok(lit) => Ok(lit.into()),
-                        Err(LiteralDivError::TypeError) => Err(EvalFail::TypeError),
-                        Err(LiteralDivError::DivisionByZero) => Err(EvalFail::DivisionByZero),
+                        Err(LiteralDivError::TypeError) => Err(Unwind::TypeError),
+                        Err(LiteralDivError::DivisionByZero) => Err(Unwind::DivisionByZero),
                     },
 
                     BinaryOp::Mod => match left.rem(right) {
                         Ok(lit) => Ok(lit.into()),
-                        Err(LiteralRemError::TypeError) => Err(EvalFail::TypeError),
-                        Err(LiteralRemError::ModuloByZero) => Err(EvalFail::ModuloByZero),
+                        Err(LiteralRemError::TypeError) => Err(Unwind::TypeError),
+                        Err(LiteralRemError::ModuloByZero) => Err(Unwind::ModuloByZero),
                     },
 
                     BinaryOp::And => match left.bitand(right) {
                         Ok(lit) => Ok(lit.into()),
-                        Err(LiteralBitAndError::TypeError) => Err(EvalFail::TypeError),
+                        Err(LiteralBitAndError::TypeError) => Err(Unwind::TypeError),
                     },
 
                     BinaryOp::Or => match left.bitor(right) {
                         Ok(lit) => Ok(lit.into()),
-                        Err(LiteralBitOrError::TypeError) => Err(EvalFail::TypeError),
+                        Err(LiteralBitOrError::TypeError) => Err(Unwind::TypeError),
                     },
 
                     BinaryOp::Xor => match left.bitxor(right) {
                         Ok(lit) => Ok(lit.into()),
-                        Err(LiteralBitXorError::TypeError) => Err(EvalFail::TypeError),
+                        Err(LiteralBitXorError::TypeError) => Err(Unwind::TypeError),
                     },
 
                     BinaryOp::Shl => match left.shl(right) {
                         Ok(lit) => Ok(lit.into()),
-                        Err(LiteralShlError::TypeError) => Err(EvalFail::TypeError),
-                        Err(LiteralShlError::ShiftAmountError) => Err(EvalFail::ShiftAmountError),
+                        Err(LiteralShlError::TypeError) => Err(Unwind::TypeError),
+                        Err(LiteralShlError::ShiftAmountError) => Err(Unwind::ShiftAmountError),
                     },
 
                     BinaryOp::Shr => match left.shr(right) {
                         Ok(lit) => Ok(lit.into()),
-                        Err(LiteralShrError::TypeError) => Err(EvalFail::TypeError),
-                        Err(LiteralShrError::ShiftAmountError) => Err(EvalFail::ShiftAmountError),
+                        Err(LiteralShrError::TypeError) => Err(Unwind::TypeError),
+                        Err(LiteralShrError::ShiftAmountError) => Err(Unwind::ShiftAmountError),
                     },
 
                     BinaryOp::Rol => match left.rotate_left(right) {
                         Ok(lit) => Ok(lit.into()),
-                        Err(LiteralRolError::TypeError) => Err(EvalFail::TypeError),
+                        Err(LiteralRolError::TypeError) => Err(Unwind::TypeError),
                     },
 
                     BinaryOp::Ror => match left.rotate_right(right) {
                         Ok(lit) => Ok(lit.into()),
-                        Err(LiteralRorError::TypeError) => Err(EvalFail::TypeError),
+                        Err(LiteralRorError::TypeError) => Err(Unwind::TypeError),
                     },
 
                     BinaryOp::LogicAnd => match left.logical_and(right) {
                         Ok(lit) => Ok(Value::Bool(lit)),
-                        Err(LiteralCmpError::TypeError) => Err(EvalFail::TypeError),
+                        Err(LiteralCmpError::TypeError) => Err(Unwind::TypeError),
                     },
 
                     BinaryOp::LogicOr => match left.logical_or(right) {
                         Ok(lit) => Ok(Value::Bool(lit)),
-                        Err(LiteralCmpError::TypeError) => Err(EvalFail::TypeError),
+                        Err(LiteralCmpError::TypeError) => Err(Unwind::TypeError),
                     },
 
                     BinaryOp::LogicXor => match left.logical_xor(right) {
                         Ok(lit) => Ok(Value::Bool(lit)),
-                        Err(LiteralCmpError::TypeError) => Err(EvalFail::TypeError),
+                        Err(LiteralCmpError::TypeError) => Err(Unwind::TypeError),
                     },
 
                     BinaryOp::Lt => match left.lt(&right) {
                         Ok(lit) => Ok(Value::Bool(lit)),
-                        Err(LiteralCmpError::TypeError) => Err(EvalFail::TypeError),
+                        Err(LiteralCmpError::TypeError) => Err(Unwind::TypeError),
                     },
 
                     BinaryOp::Gt => match left.lt(&right) {
                         Ok(lit) => Ok(Value::Bool(!lit)),
-                        Err(LiteralCmpError::TypeError) => Err(EvalFail::TypeError),
+                        Err(LiteralCmpError::TypeError) => Err(Unwind::TypeError),
                     },
 
                     BinaryOp::Lte => match left.le(&right) {
                         Ok(lit) => Ok(Value::Bool(lit)),
-                        Err(LiteralCmpError::TypeError) => Err(EvalFail::TypeError),
+                        Err(LiteralCmpError::TypeError) => Err(Unwind::TypeError),
                     },
 
                     BinaryOp::Gte => match left.ge(&right) {
                         Ok(lit) => Ok(Value::Bool(lit)),
-                        Err(LiteralCmpError::TypeError) => Err(EvalFail::TypeError),
+                        Err(LiteralCmpError::TypeError) => Err(Unwind::TypeError),
                     },
 
                     BinaryOp::Eq => match left.eq(&right) {
                         Ok(lit) => Ok(Value::Bool(lit)),
-                        Err(LiteralCmpError::TypeError) => Err(EvalFail::TypeError),
+                        Err(LiteralCmpError::TypeError) => Err(Unwind::TypeError),
                     },
 
                     BinaryOp::Ne => match left.ne(&right) {
                         Ok(lit) => Ok(Value::Bool(lit)),
-                        Err(LiteralCmpError::TypeError) => Err(EvalFail::TypeError),
+                        Err(LiteralCmpError::TypeError) => Err(Unwind::TypeError),
                     },
                 }
             }
 
             Value::Unary { op, expr } => {
-                let operand = Lit::try_from(ctx.store[expr].evaluate(ctx)?)
-                    .map_err(|_| EvalFail::TypeError)?;
+                let operand =
+                    Lit::try_from(ctx.store[expr].evaluate(ctx)?).map_err(|_| Unwind::TypeError)?;
 
                 match op {
                     UnaryOp::Add => Ok(operand.into()),
 
                     UnaryOp::Sub => match operand.neg() {
                         Ok(lit) => Ok(lit.into()),
-                        Err(LiteralNegError::TypeError) => Err(EvalFail::TypeError),
+                        Err(LiteralNegError::TypeError) => Err(Unwind::TypeError),
                     },
 
                     UnaryOp::BitNot | UnaryOp::LogicNot => match operand.not() {
                         Ok(lit) => Ok(lit.into()),
-                        Err(LiteralNotError::TypeError) => Err(EvalFail::TypeError),
+                        Err(LiteralNotError::TypeError) => Err(Unwind::TypeError),
                     },
                 }
             }
@@ -239,14 +239,33 @@ impl HirEvaluate for Value {
                 todo!()
             }
 
-            Value::FieldAccess { expr, field } => {
-                // TODO: Evaluate field access expressions
-                todo!()
-            }
+            Value::FieldAccess { expr, field } => match ctx.store[expr].evaluate(ctx)? {
+                Value::Struct { fields, .. } => {
+                    if let Some(field_value) = fields.get(field) {
+                        Ok(ctx.store[field_value].evaluate(ctx)?)
+                    } else {
+                        Err(Unwind::TypeError)
+                    }
+                }
+
+                _ => Err(Unwind::TypeError),
+            },
 
             Value::ArrayIndex { expr, index } => {
-                // TODO: Evaluate array index expressions
-                todo!()
+                let index = match ctx.evaluate_to_literal(&ctx.store[index])? {
+                    Lit::USize32(i) => i as usize,
+                    Lit::USize64(i) => i as usize,
+                    _ => return Err(Unwind::TypeError),
+                };
+
+                match ctx.store[expr].evaluate(ctx)? {
+                    Value::List { elements } => match elements.get(index) {
+                        Some(elem) => Ok(ctx.store[elem].evaluate(ctx)?),
+                        None => Err(Unwind::IndexOutOfBounds),
+                    },
+
+                    _ => Err(Unwind::TypeError),
+                }
             }
 
             Value::Assign { place, value } => {
@@ -301,13 +320,13 @@ impl HirEvaluate for Value {
                     }
                 }
 
-                _ => Err(EvalFail::TypeError),
+                _ => Err(Unwind::TypeError),
             },
 
             Value::While { condition, body } => {
                 while let Value::Bool(true) = ctx.store[condition].evaluate(ctx)? {
                     if ctx.loop_iter_count >= ctx.loop_iter_limit {
-                        return Err(EvalFail::LoopLimitExceeded);
+                        return Err(Unwind::LoopLimitExceeded);
                     }
 
                     ctx.store[body].evaluate(ctx)?;
@@ -319,26 +338,24 @@ impl HirEvaluate for Value {
 
             Value::Loop { body } => loop {
                 if ctx.loop_iter_count >= ctx.loop_iter_limit {
-                    return Err(EvalFail::LoopLimitExceeded);
+                    return Err(Unwind::LoopLimitExceeded);
                 }
 
                 ctx.store[body].evaluate(ctx)?;
                 ctx.loop_iter_count += 1;
             },
 
-            Value::Break { label } => {
-                // TODO: Evaluate break expressions
-                todo!()
-            }
+            Value::Break { label } => Err(Unwind::Break {
+                label: label.to_owned(),
+            }),
 
-            Value::Continue { label } => {
-                // TODO: Evaluate continue expressions
-                todo!()
-            }
+            Value::Continue { label } => Err(Unwind::Continue {
+                label: label.to_owned(),
+            }),
 
             Value::Return { value } => {
-                // TODO: Evaluate return expressions
-                todo!()
+                let value = ctx.store[value].evaluate(ctx)?;
+                Err(Unwind::Return(value))
             }
 
             Value::Block { block } => ctx.store[block].evaluate(ctx),

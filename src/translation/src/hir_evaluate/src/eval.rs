@@ -1,9 +1,10 @@
+use interned_string::IString;
 use nitrate_diagnosis::CompilerLog;
 use nitrate_hir::prelude::*;
 use std::{collections::HashMap, sync::LazyLock};
 
 type BuiltinFunction =
-    dyn Fn(&mut HirEvalCtx, &Store, &[Value]) -> Result<Value, EvalFail> + Send + Sync;
+    dyn Fn(&mut HirEvalCtx, &Store, &[Value]) -> Result<Value, Unwind> + Send + Sync;
 
 static DEFAULT_BUILTIN_FUNCTIONS: LazyLock<HashMap<QualifiedName, Box<BuiltinFunction>>> =
     LazyLock::new(|| {
@@ -14,7 +15,7 @@ static DEFAULT_BUILTIN_FUNCTIONS: LazyLock<HashMap<QualifiedName, Box<BuiltinFun
             QualifiedName::from("std::math::abs"),
             Box::new(|_, _, args| {
                 if args.len() != 1 {
-                    return Err(EvalFail::TypeError);
+                    return Err(Unwind::TypeError);
                 }
 
                 match &args[0] {
@@ -28,7 +29,7 @@ static DEFAULT_BUILTIN_FUNCTIONS: LazyLock<HashMap<QualifiedName, Box<BuiltinFun
                     Value::F32(i) => Ok(Value::F32(i.abs())),
                     Value::F64(i) => Ok(Value::F64(i.abs())),
                     Value::F128(i) => Ok(Value::F128(i.abs())),
-                    _ => Err(EvalFail::TypeError),
+                    _ => Err(Unwind::TypeError),
                 }
             }),
         );
@@ -101,13 +102,18 @@ impl<'store, 'log> HirEvalCtx<'store, 'log> {
     }
 }
 
-pub enum EvalFail {
+pub enum Unwind {
     LoopLimitExceeded,
     FunctionCallLimitExceeded,
 
     DivisionByZero,
     ModuloByZero,
     ShiftAmountError,
+    IndexOutOfBounds,
+
+    Break { label: Option<IString> },
+    Continue { label: Option<IString> },
+    Return(Value),
 
     TypeError,
 }
@@ -115,18 +121,18 @@ pub enum EvalFail {
 pub trait HirEvaluate {
     type Output;
 
-    fn evaluate(&self, ctx: &mut HirEvalCtx) -> Result<Self::Output, EvalFail>;
+    fn evaluate(&self, ctx: &mut HirEvalCtx) -> Result<Self::Output, Unwind>;
 }
 
 impl HirEvalCtx<'_, '_> {
-    pub fn evaluate_to_literal(&mut self, value: &Value) -> Result<Lit, EvalFail> {
+    pub fn evaluate_to_literal(&mut self, value: &Value) -> Result<Lit, Unwind> {
         match Lit::try_from(value.evaluate(self)?) {
             Ok(lit) => Ok(lit),
-            Err(_) => Err(EvalFail::TypeError),
+            Err(_) => Err(Unwind::TypeError),
         }
     }
 
-    pub fn evaluate_into_type(&mut self, value: &Value) -> Result<Type, EvalFail> {
+    pub fn evaluate_into_type(&mut self, value: &Value) -> Result<Type, Unwind> {
         match value.evaluate(self)? {
             Value::Struct {
                 struct_type,
@@ -136,10 +142,10 @@ impl HirEvalCtx<'_, '_> {
 
                 self.store[&struct_type].is_struct();
 
-                Err(EvalFail::TypeError)
+                Err(Unwind::TypeError)
             }
 
-            _ => Err(EvalFail::TypeError),
+            _ => Err(Unwind::TypeError),
         }
     }
 }
