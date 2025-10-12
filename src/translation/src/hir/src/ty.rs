@@ -167,19 +167,15 @@ pub enum Type {
         to: TypeId,
     },
 
-    InferredFloat,
-
-    InferredInteger {
-        signed: bool,
-    },
-
-    Inferred {
-        id: NonZeroU32,
-    },
-
     TypeAlias {
         name: IString,
         aliased: TypeId,
+    },
+
+    InferredFloat,
+    InferredInteger,
+    Inferred {
+        id: NonZeroU32,
     },
 }
 

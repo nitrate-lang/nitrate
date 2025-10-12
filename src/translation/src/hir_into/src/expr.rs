@@ -1,5 +1,4 @@
 use crate::{HirCtx, TryIntoHir, diagnosis::HirErr};
-use interned_string::IString;
 use nitrate_diagnosis::CompilerLog;
 use nitrate_hir::prelude::*;
 use nitrate_parsetree::kind as ast;
@@ -7,7 +6,7 @@ use nitrate_parsetree::kind as ast;
 impl TryIntoHir for ast::ExprSyntaxError {
     type Hir = Value;
 
-    fn try_into_hir(self, _ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
+    fn try_into_hir(self, _ctx: &mut HirCtx, _log: &CompilerLog) -> Result<Self::Hir, ()> {
         Err(())
     }
 }

@@ -81,11 +81,10 @@ pub fn get_align_of(ty: &Type, store: &Store, ptr_size: PtrSize) -> Result<u64, 
         Type::Function { .. } => Err(AlignofError::UnknownAlignment),
         Type::Reference { .. } => Ok(ptr_size as u64),
         Type::Pointer { .. } => Ok(ptr_size as u64),
+        Type::TypeAlias { aliased, .. } => get_align_of(&store[aliased], store, ptr_size),
 
         Type::InferredInteger { .. } | Type::InferredFloat | Type::Inferred { .. } => {
             Err(AlignofError::UnknownAlignment)
         }
-
-        Type::TypeAlias { aliased, .. } => get_align_of(&store[aliased], store, ptr_size),
     }
 }

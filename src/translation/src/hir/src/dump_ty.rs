@@ -260,17 +260,11 @@ impl Dump for Type {
                 ctx.store[to].dump(ctx, o)
             }
 
-            Type::InferredInteger { signed } => {
-                if *signed {
-                    write!(o, "?i")
-                } else {
-                    write!(o, "?u")
-                }
-            }
-            Type::InferredFloat => write!(o, "?f"),
-            Type::Inferred { id } => write!(o, "?{id}"),
-
             Type::TypeAlias { name, aliased: _ } => write!(o, "`{name}`"),
+
+            Type::InferredFloat => write!(o, "?f"),
+            Type::InferredInteger => write!(o, "?u"),
+            Type::Inferred { id } => write!(o, "?{id}"),
         }
     }
 }

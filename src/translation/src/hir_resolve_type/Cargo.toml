@@ -1,5 +1,5 @@
 [package]
-name = "nitrate_hir_type_inference"
+name = "nitrate_hir_resolve_type"
 version = "0.1.0"
 edition = "2024"
 

@@ -106,11 +106,10 @@ pub fn get_size_of(ty: &Type, store: &Store, ptr_size: PtrSize) -> Result<u64, S
         Type::Function { .. } => Err(SizeofError::UnknownSize),
         Type::Reference { .. } => Ok(ptr_size as u64),
         Type::Pointer { .. } => Ok(ptr_size as u64),
+        Type::TypeAlias { aliased, .. } => get_size_of(&store[aliased], store, ptr_size),
 
         Type::InferredInteger { .. } | Type::InferredFloat | Type::Inferred { .. } => {
             Err(SizeofError::UnknownSize)
         }
-
-        Type::TypeAlias { aliased, .. } => get_size_of(&store[aliased], store, ptr_size),
     }
 }
