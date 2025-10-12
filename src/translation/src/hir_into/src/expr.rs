@@ -159,74 +159,74 @@ impl TryIntoHir for ast::BinExpr {
 
         match self.operator {
             ast::BinExprOp::Add => Ok(Value::Binary {
-                op: BinaryOp::Add,
                 left,
+                op: BinaryOp::Add,
                 right,
             }),
 
             ast::BinExprOp::Sub => Ok(Value::Binary {
-                op: BinaryOp::Sub,
                 left,
+                op: BinaryOp::Sub,
                 right,
             }),
 
             ast::BinExprOp::Mul => Ok(Value::Binary {
-                op: BinaryOp::Mul,
                 left,
+                op: BinaryOp::Mul,
                 right,
             }),
 
             ast::BinExprOp::Div => Ok(Value::Binary {
-                op: BinaryOp::Div,
                 left,
+                op: BinaryOp::Div,
                 right,
             }),
 
             ast::BinExprOp::Mod => Ok(Value::Binary {
-                op: BinaryOp::Mod,
                 left,
+                op: BinaryOp::Mod,
                 right,
             }),
 
             ast::BinExprOp::BitAnd => Ok(Value::Binary {
-                op: BinaryOp::And,
                 left,
+                op: BinaryOp::And,
                 right,
             }),
 
             ast::BinExprOp::BitOr => Ok(Value::Binary {
-                op: BinaryOp::Or,
                 left,
+                op: BinaryOp::Or,
                 right,
             }),
 
             ast::BinExprOp::BitXor => Ok(Value::Binary {
-                op: BinaryOp::Xor,
                 left,
+                op: BinaryOp::Xor,
                 right,
             }),
 
             ast::BinExprOp::BitShl => Ok(Value::Binary {
-                op: BinaryOp::Shl,
                 left,
+                op: BinaryOp::Shl,
                 right,
             }),
 
             ast::BinExprOp::BitShr => Ok(Value::Binary {
-                op: BinaryOp::Shr,
                 left,
+                op: BinaryOp::Shr,
                 right,
             }),
 
             ast::BinExprOp::BitRol => Ok(Value::Binary {
-                op: BinaryOp::Rol,
                 left,
+                op: BinaryOp::Rol,
                 right,
             }),
 
             ast::BinExprOp::BitRor => Ok(Value::Binary {
-                op: BinaryOp::Ror,
                 left,
+                op: BinaryOp::Ror,
                 right,
             }),
 
@@ -255,63 +255,195 @@ impl TryIntoHir for ast::BinExpr {
             }
 
             ast::BinExprOp::LogicLt => Ok(Value::Binary {
-                op: BinaryOp::Lt,
                 left,
+                op: BinaryOp::Lt,
                 right,
             }),
 
             ast::BinExprOp::LogicGt => Ok(Value::Binary {
-                op: BinaryOp::Gt,
                 left,
+                op: BinaryOp::Gt,
                 right,
             }),
 
             ast::BinExprOp::LogicLe => Ok(Value::Binary {
-                op: BinaryOp::Lte,
                 left,
+                op: BinaryOp::Lte,
                 right,
             }),
 
             ast::BinExprOp::LogicGe => Ok(Value::Binary {
-                op: BinaryOp::Gte,
                 left,
+                op: BinaryOp::Gte,
                 right,
             }),
 
             ast::BinExprOp::LogicEq => Ok(Value::Binary {
-                op: BinaryOp::Eq,
                 left,
+                op: BinaryOp::Eq,
                 right,
             }),
 
             ast::BinExprOp::LogicNe => Ok(Value::Binary {
-                op: BinaryOp::Ne,
                 left,
+                op: BinaryOp::Ne,
                 right,
             }),
 
-            ast::BinExprOp::Set
-            | ast::BinExprOp::SetPlus
-            | ast::BinExprOp::SetMinus
-            | ast::BinExprOp::SetTimes
-            | ast::BinExprOp::SetSlash
-            | ast::BinExprOp::SetPercent
-            | ast::BinExprOp::SetBitAnd
-            | ast::BinExprOp::SetBitOr
-            | ast::BinExprOp::SetBitXor
-            | ast::BinExprOp::SetBitShl
-            | ast::BinExprOp::SetBitShr
-            | ast::BinExprOp::SetBitRotl
-            | ast::BinExprOp::SetBitRotr
-            | ast::BinExprOp::SetLogicAnd
-            | ast::BinExprOp::SetLogicOr
-            | ast::BinExprOp::SetLogicXor => {
-                // TODO: Lower assignment ops to HIR
-                log.report(&HirErr::UnimplementedFeature(
-                    "ast::Expr::BinExpr with assignment op".into(),
-                ));
-                Err(())
-            }
+            ast::BinExprOp::Set => Ok(Value::Assign {
+                place: left,
+                value: right,
+            }),
+
+            ast::BinExprOp::SetPlus => Ok(Value::Assign {
+                place: left.clone(),
+                value: Value::Binary {
+                    left,
+                    op: BinaryOp::Add,
+                    right,
+                }
+                .into_id(ctx.store()),
+            }),
+
+            ast::BinExprOp::SetMinus => Ok(Value::Assign {
+                place: left.clone(),
+                value: Value::Binary {
+                    left,
+                    op: BinaryOp::Sub,
+                    right,
+                }
+                .into_id(ctx.store()),
+            }),
+
+            ast::BinExprOp::SetTimes => Ok(Value::Assign {
+                place: left.clone(),
+                value: Value::Binary {
+                    left,
+                    op: BinaryOp::Mul,
+                    right,
+                }
+                .into_id(ctx.store()),
+            }),
+
+            ast::BinExprOp::SetSlash => Ok(Value::Assign {
+                place: left.clone(),
+                value: Value::Binary {
+                    left,
+                    op: BinaryOp::Div,
+                    right,
+                }
+                .into_id(ctx.store()),
+            }),
+
+            ast::BinExprOp::SetPercent => Ok(Value::Assign {
+                place: left.clone(),
+                value: Value::Binary {
+                    left,
+                    op: BinaryOp::Mod,
+                    right,
+                }
+                .into_id(ctx.store()),
+            }),
+
+            ast::BinExprOp::SetBitAnd => Ok(Value::Assign {
+                place: left.clone(),
+                value: Value::Binary {
+                    left,
+                    op: BinaryOp::And,
+                    right,
+                }
+                .into_id(ctx.store()),
+            }),
+
+            ast::BinExprOp::SetBitOr => Ok(Value::Assign {
+                place: left.clone(),
+                value: Value::Binary {
+                    left,
+                    op: BinaryOp::Or,
+                    right,
+                }
+                .into_id(ctx.store()),
+            }),
+
+            ast::BinExprOp::SetBitXor => Ok(Value::Assign {
+                place: left.clone(),
+                value: Value::Binary {
+                    left,
+                    op: BinaryOp::Xor,
+                    right,
+                }
+                .into_id(ctx.store()),
+            }),
+
+            ast::BinExprOp::SetBitShl => Ok(Value::Assign {
+                place: left.clone(),
+                value: Value::Binary {
+                    left,
+                    op: BinaryOp::Shl,
+                    right,
+                }
+                .into_id(ctx.store()),
+            }),
+
+            ast::BinExprOp::SetBitShr => Ok(Value::Assign {
+                place: left.clone(),
+                value: Value::Binary {
+                    left,
+                    op: BinaryOp::Shr,
+                    right,
+                }
+                .into_id(ctx.store()),
+            }),
+
+            ast::BinExprOp::SetBitRotl => Ok(Value::Assign {
+                place: left.clone(),
+                value: Value::Binary {
+                    left,
+                    op: BinaryOp::Rol,
+                    right,
+                }
+                .into_id(ctx.store()),
+            }),
+
+            ast::BinExprOp::SetBitRotr => Ok(Value::Assign {
+                place: left.clone(),
+                value: Value::Binary {
+                    left,
+                    op: BinaryOp::Ror,
+                    right,
+                }
+                .into_id(ctx.store()),
+            }),
+
+            ast::BinExprOp::SetLogicAnd => Ok(Value::Assign {
+                place: left.clone(),
+                value: Value::Binary {
+                    left,
+                    op: BinaryOp::And,
+                    right,
+                }
+                .into_id(ctx.store()),
+            }),
+
+            ast::BinExprOp::SetLogicOr => Ok(Value::Assign {
+                place: left.clone(),
+                value: Value::Binary {
+                    left,
+                    op: BinaryOp::Or,
+                    right,
+                }
+                .into_id(ctx.store()),
+            }),
+
+            ast::BinExprOp::SetLogicXor => Ok(Value::Assign {
+                place: left.clone(),
+                value: Value::Binary {
+                    left,
+                    op: BinaryOp::Xor,
+                    right,
+                }
+                .into_id(ctx.store()),
+            }),
 
             ast::BinExprOp::Dot => {
                 // TODO: Lower field access to HIR
