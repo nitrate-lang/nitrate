@@ -41,7 +41,7 @@ impl TryIntoHir for ast::BooleanLit {
 impl TryIntoHir for ast::IntegerLit {
     type Hir = Value;
 
-    fn try_into_hir(self, _ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
+    fn try_into_hir(self, _ctx: &mut HirCtx, _log: &CompilerLog) -> Result<Self::Hir, ()> {
         Ok(Value::InferredInteger(Box::new(self.value)))
     }
 }
@@ -131,10 +131,190 @@ impl TryIntoHir for ast::UnaryExpr {
 impl TryIntoHir for ast::BinExpr {
     type Hir = Value;
 
-    fn try_into_hir(self, _ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
-        // TODO: Lower ast::Binary to HIR
-        log.report(&HirErr::UnimplementedFeature("ast::Expr::BinExpr".into()));
-        Err(())
+    fn try_into_hir(self, ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
+        let left = self.left.try_into_hir(ctx, log)?.into_id(ctx.store());
+        let right = self.right.try_into_hir(ctx, log)?.into_id(ctx.store());
+
+        match self.operator {
+            ast::BinExprOp::Add => Ok(Value::Binary {
+                op: BinaryOp::Add,
+                left,
+                right,
+            }),
+
+            ast::BinExprOp::Sub => Ok(Value::Binary {
+                op: BinaryOp::Sub,
+                left,
+                right,
+            }),
+
+            ast::BinExprOp::Mul => Ok(Value::Binary {
+                op: BinaryOp::Mul,
+                left,
+                right,
+            }),
+
+            ast::BinExprOp::Div => Ok(Value::Binary {
+                op: BinaryOp::Div,
+                left,
+                right,
+            }),
+
+            ast::BinExprOp::Mod => Ok(Value::Binary {
+                op: BinaryOp::Mod,
+                left,
+                right,
+            }),
+
+            ast::BinExprOp::BitAnd => Ok(Value::Binary {
+                op: BinaryOp::And,
+                left,
+                right,
+            }),
+
+            ast::BinExprOp::BitOr => Ok(Value::Binary {
+                op: BinaryOp::Or,
+                left,
+                right,
+            }),
+
+            ast::BinExprOp::BitXor => Ok(Value::Binary {
+                op: BinaryOp::Xor,
+                left,
+                right,
+            }),
+
+            ast::BinExprOp::BitShl => Ok(Value::Binary {
+                op: BinaryOp::Shl,
+                left,
+                right,
+            }),
+
+            ast::BinExprOp::BitShr => Ok(Value::Binary {
+                op: BinaryOp::Shr,
+                left,
+                right,
+            }),
+
+            ast::BinExprOp::BitRol => Ok(Value::Binary {
+                op: BinaryOp::Rol,
+                left,
+                right,
+            }),
+
+            ast::BinExprOp::BitRor => Ok(Value::Binary {
+                op: BinaryOp::Ror,
+                left,
+                right,
+            }),
+
+            ast::BinExprOp::LogicAnd => {
+                // TODO: Short-circuiting logic ops
+                log.report(&HirErr::UnimplementedFeature(
+                    "short-circuiting logic ops".into(),
+                ));
+                Err(())
+            }
+
+            ast::BinExprOp::LogicOr => {
+                // TODO: Short-circuiting logic ops
+                log.report(&HirErr::UnimplementedFeature(
+                    "short-circuiting logic ops".into(),
+                ));
+                Err(())
+            }
+
+            ast::BinExprOp::LogicXor => {
+                // TODO: Short-circuiting logic ops
+                log.report(&HirErr::UnimplementedFeature(
+                    "short-circuiting logic ops".into(),
+                ));
+                Err(())
+            }
+
+            ast::BinExprOp::LogicLt => Ok(Value::Binary {
+                op: BinaryOp::Lt,
+                left,
+                right,
+            }),
+
+            ast::BinExprOp::LogicGt => Ok(Value::Binary {
+                op: BinaryOp::Gt,
+                left,
+                right,
+            }),
+
+            ast::BinExprOp::LogicLe => Ok(Value::Binary {
+                op: BinaryOp::Lte,
+                left,
+                right,
+            }),
+
+            ast::BinExprOp::LogicGe => Ok(Value::Binary {
+                op: BinaryOp::Gte,
+                left,
+                right,
+            }),
+
+            ast::BinExprOp::LogicEq => Ok(Value::Binary {
+                op: BinaryOp::Eq,
+                left,
+                right,
+            }),
+
+            ast::BinExprOp::LogicNe => Ok(Value::Binary {
+                op: BinaryOp::Ne,
+                left,
+                right,
+            }),
+
+            ast::BinExprOp::Set
+            | ast::BinExprOp::SetPlus
+            | ast::BinExprOp::SetMinus
+            | ast::BinExprOp::SetTimes
+            | ast::BinExprOp::SetSlash
+            | ast::BinExprOp::SetPercent
+            | ast::BinExprOp::SetBitAnd
+            | ast::BinExprOp::SetBitOr
+            | ast::BinExprOp::SetBitXor
+            | ast::BinExprOp::SetBitShl
+            | ast::BinExprOp::SetBitShr
+            | ast::BinExprOp::SetBitRotl
+            | ast::BinExprOp::SetBitRotr
+            | ast::BinExprOp::SetLogicAnd
+            | ast::BinExprOp::SetLogicOr
+            | ast::BinExprOp::SetLogicXor => {
+                // TODO: Lower ast::Binary to HIR
+                log.report(&HirErr::UnimplementedFeature(
+                    "ast::Expr::BinExpr with assignment op".into(),
+                ));
+                Err(())
+            }
+
+            ast::BinExprOp::Dot => {
+                // TODO: Lower field access to HIR
+                log.report(&HirErr::UnimplementedFeature(
+                    "field access with . operator".into(),
+                ));
+                Err(())
+            }
+
+            ast::BinExprOp::Arrow => {
+                // TODO: Lower field access to HIR
+                log.report(&HirErr::UnimplementedFeature(
+                    "method call with -> operator".into(),
+                ));
+                Err(())
+            }
+
+            ast::BinExprOp::Range => {
+                // TODO: Lower range to HIR
+                log.report(&HirErr::UnimplementedFeature(
+                    "range with .. operator".into(),
+                ));
+                Err(())
+            }
+        }
     }
 }
 
