@@ -105,7 +105,7 @@ impl Dump for Value {
                     }
 
                     write!(o, "{}: ", field_name)?;
-                    ctx.store[field_value].dump(ctx, o)?;
+                    ctx.store[field_value].borrow().dump(ctx, o)?;
                 }
                 write!(o, " }}")
             }
@@ -118,13 +118,13 @@ impl Dump for Value {
                 ctx.store[enum_type].dump(ctx, o)?;
                 write!(o, "::{}", variant)?;
                 write!(o, "(")?;
-                ctx.store[value].dump(ctx, o)?;
+                ctx.store[value].borrow().dump(ctx, o)?;
                 write!(o, ")")
             }
 
             Value::Binary { left, op, right } => {
                 write!(o, "(")?;
-                ctx.store[left].dump(ctx, o)?;
+                ctx.store[left].borrow().dump(ctx, o)?;
                 write!(
                     o,
                     " {} ",
@@ -152,7 +152,7 @@ impl Dump for Value {
                         BinaryOp::Ne => "!=",
                     }
                 )?;
-                ctx.store[right].dump(ctx, o)?;
+                ctx.store[right].borrow().dump(ctx, o)?;
                 write!(o, ")")
             }
 
@@ -167,15 +167,15 @@ impl Dump for Value {
                         UnaryOp::LogicNot => "!",
                     }
                 )?;
-                ctx.store[expr].dump(ctx, o)?;
+                ctx.store[expr].borrow().dump(ctx, o)?;
                 write!(o, ")")
             }
 
-            Value::Symbol { symbol } => ctx.store[symbol].dump_nocycle(o),
+            Value::Symbol { symbol } => ctx.store[symbol].borrow().dump_nocycle(o),
 
             Value::FieldAccess { expr, field } => {
                 write!(o, "(")?;
-                ctx.store[expr].dump(ctx, o)?;
+                ctx.store[expr].borrow().dump(ctx, o)?;
                 write!(o, ".{})", field)
             }
 
@@ -184,35 +184,35 @@ impl Dump for Value {
                 index,
             } => {
                 write!(o, "(")?;
-                ctx.store[expr].dump(ctx, o)?;
+                ctx.store[expr].borrow().dump(ctx, o)?;
                 write!(o, "[")?;
-                ctx.store[index].dump(ctx, o)?;
+                ctx.store[index].borrow().dump(ctx, o)?;
                 write!(o, "])")
             }
 
             Value::Assign { place, value } => {
                 write!(o, "(")?;
-                ctx.store[place].dump(ctx, o)?;
+                ctx.store[place].borrow().dump(ctx, o)?;
                 write!(o, " = ")?;
-                ctx.store[value].dump(ctx, o)?;
+                ctx.store[value].borrow().dump(ctx, o)?;
                 write!(o, ")")
             }
 
             Value::Deref { place } => {
                 write!(o, "(*")?;
-                ctx.store[place].dump(ctx, o)?;
+                ctx.store[place].borrow().dump(ctx, o)?;
                 write!(o, ")")
             }
 
             Value::GetAddressOf { place } => {
                 write!(o, "(address_of ")?;
-                ctx.store[place].dump(ctx, o)?;
+                ctx.store[place].borrow().dump(ctx, o)?;
                 write!(o, ")")
             }
 
             Value::Cast { expr, to } => {
                 write!(o, "(")?;
-                ctx.store[expr].dump(ctx, o)?;
+                ctx.store[expr].borrow().dump(ctx, o)?;
                 write!(o, " as ")?;
                 ctx.store[to].dump(ctx, o)?;
                 write!(o, ")")
@@ -220,7 +220,7 @@ impl Dump for Value {
 
             Value::GetTypeOf { expr } => {
                 write!(o, "(typeof ")?;
-                ctx.store[expr].dump(ctx, o)?;
+                ctx.store[expr].borrow().dump(ctx, o)?;
                 write!(o, ")")
             }
 
@@ -230,7 +230,7 @@ impl Dump for Value {
                     if i != 0 {
                         write!(o, ", ")?;
                     }
-                    ctx.store[elem].dump(ctx, o)?;
+                    ctx.store[elem].borrow().dump(ctx, o)?;
                 }
                 write!(o, "]")
             }
@@ -241,26 +241,26 @@ impl Dump for Value {
                 false_branch,
             } => {
                 write!(o, "if ")?;
-                ctx.store[condition].dump(ctx, o)?;
+                ctx.store[condition].borrow().dump(ctx, o)?;
                 write!(o, " ")?;
-                ctx.store[true_branch].dump(ctx, o)?;
+                ctx.store[true_branch].borrow().dump(ctx, o)?;
                 if let Some(false_branch) = false_branch {
                     write!(o, " else ")?;
-                    ctx.store[false_branch].dump(ctx, o)?;
+                    ctx.store[false_branch].borrow().dump(ctx, o)?;
                 }
                 Ok(())
             }
 
             Value::While { condition, body } => {
                 write!(o, "while ")?;
-                ctx.store[condition].dump(ctx, o)?;
+                ctx.store[condition].borrow().dump(ctx, o)?;
                 write!(o, " ")?;
-                ctx.store[body].dump(ctx, o)
+                ctx.store[body].borrow().dump(ctx, o)
             }
 
             Value::Loop { body } => {
                 write!(o, "loop ")?;
-                ctx.store[body].dump(ctx, o)
+                ctx.store[body].borrow().dump(ctx, o)
             }
 
             Value::Break { label } => {
@@ -281,19 +281,19 @@ impl Dump for Value {
 
             Value::Return { value } => {
                 write!(o, "return ")?;
-                ctx.store[value].dump(ctx, o)
+                ctx.store[value].borrow().dump(ctx, o)
             }
 
-            Value::Block { block } => ctx.store[block].dump(ctx, o),
+            Value::Block { block } => ctx.store[block].borrow().dump(ctx, o),
 
             Value::Call { callee, arguments } => {
-                ctx.store[callee].dump(ctx, o)?;
+                ctx.store[callee].borrow().dump(ctx, o)?;
                 write!(o, "(")?;
                 for (i, arg) in arguments.iter().enumerate() {
                     if i != 0 {
                         write!(o, ", ")?;
                     }
-                    ctx.store[arg].dump(ctx, o)?;
+                    ctx.store[arg].borrow().dump(ctx, o)?;
                 }
                 write!(o, ")")
             }

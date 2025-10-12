@@ -86,7 +86,7 @@ impl Dump for StaticFunction {
         ctx.store[&self.return_type].dump(ctx, o)?;
 
         write!(o, " ")?;
-        ctx.store[&self.body].dump(ctx, o)
+        ctx.store[&self.body].borrow().dump(ctx, o)
     }
 }
 
@@ -104,7 +104,7 @@ impl Dump for ClosureFunction {
                 write!(o, ", ")?;
             }
 
-            ctx.store[capture].dump_nocycle(o)?;
+            ctx.store[capture].borrow().dump_nocycle(o)?;
         }
         write!(o, "] ")?;
 
@@ -158,7 +158,7 @@ impl Dump for GlobalVariable {
         write!(o, "`{}`: ", self.name.0)?;
         ctx.store[&self.ty].dump(ctx, o)?;
         write!(o, " = ")?;
-        ctx.store[&self.initializer].dump(ctx, o)?;
+        ctx.store[&self.initializer].borrow().dump(ctx, o)?;
         write!(o, ";")
     }
 }
@@ -172,7 +172,7 @@ impl Dump for LocalVariable {
         write!(o, "sym local `{}`: ", self.name.0)?;
         ctx.store[&self.ty].dump(ctx, o)?;
         write!(o, " = ")?;
-        ctx.store[&self.initializer].dump(ctx, o)?;
+        ctx.store[&self.initializer].borrow().dump(ctx, o)?;
         write!(o, ";")
     }
 }
@@ -187,7 +187,7 @@ impl Dump for Parameter {
         ctx.store[&self.ty].dump(ctx, o)?;
         if let Some(default_value) = &self.default_value {
             write!(o, " = ")?;
-            ctx.store[default_value].dump(ctx, o)?;
+            ctx.store[default_value].borrow().dump(ctx, o)?;
         }
         Ok(())
     }
@@ -251,7 +251,7 @@ impl Dump for Module {
                 ctx.indent += 1;
 
                 self.write_indent(ctx, o)?;
-                ctx.store[item].dump(ctx, o)?;
+                ctx.store[item].borrow().dump(ctx, o)?;
                 write!(o, "\n")?;
 
                 ctx.indent -= 1;

@@ -2,6 +2,7 @@ use crate::prelude::*;
 use append_only_vec::AppendOnlyVec;
 use bimap::BiMap;
 use serde::{Deserialize, Serialize};
+use std::cell::RefCell;
 use std::num::NonZeroU32;
 use std::sync::{Arc, RwLock};
 
@@ -74,7 +75,7 @@ macro_rules! impl_store_mut {
         pub struct $handle_name(NonZeroU32);
 
         pub struct $store_name {
-            vec: AppendOnlyVec<$item_name>,
+            vec: AppendOnlyVec<RefCell<$item_name>>,
         }
 
         impl $store_name {
@@ -85,17 +86,13 @@ macro_rules! impl_store_mut {
             }
 
             pub fn store(&self, item: $item_name) -> $handle_name {
-                self.vec.push(item);
+                self.vec.push(RefCell::new(item));
                 let id = NonZeroU32::new(self.vec.len() as u32).unwrap();
                 $handle_name(id)
             }
 
-            fn get(&self, id: &$handle_name) -> &$item_name {
+            fn get(&self, id: &$handle_name) -> &RefCell<$item_name> {
                 &self.vec[id.0.get() as usize - 1]
-            }
-
-            fn get_mut(&mut self, id: &$handle_name) -> &mut $item_name {
-                &mut self.vec[id.0.get() as usize - 1]
             }
 
             pub fn reset(&mut self) {
@@ -108,16 +105,10 @@ macro_rules! impl_store_mut {
         }
 
         impl std::ops::Index<&$handle_name> for $store_name {
-            type Output = $item_name;
+            type Output = RefCell<$item_name>;
 
             fn index(&self, index: &$handle_name) -> &Self::Output {
                 self.get(index)
-            }
-        }
-
-        impl std::ops::IndexMut<&$handle_name> for $store_name {
-            fn index_mut(&mut self, index: &$handle_name) -> &mut Self::Output {
-                self.get_mut(index)
             }
         }
     };
@@ -327,44 +318,26 @@ impl std::ops::Index<&FuncAttributesId> for Store {
 }
 
 impl std::ops::Index<&ItemId> for Store {
-    type Output = Item;
+    type Output = RefCell<Item>;
 
     fn index(&self, index: &ItemId) -> &Self::Output {
         &self.items[index]
     }
 }
 
-impl std::ops::IndexMut<&ItemId> for Store {
-    fn index_mut(&mut self, index: &ItemId) -> &mut Self::Output {
-        &mut self.items[index]
-    }
-}
-
 impl std::ops::Index<&SymbolId> for Store {
-    type Output = Symbol;
+    type Output = RefCell<Symbol>;
 
     fn index(&self, index: &SymbolId) -> &Self::Output {
         &self.symbols[index]
     }
 }
 
-impl std::ops::IndexMut<&SymbolId> for Store {
-    fn index_mut(&mut self, index: &SymbolId) -> &mut Self::Output {
-        &mut self.symbols[index]
-    }
-}
-
 impl std::ops::Index<&ValueId> for Store {
-    type Output = Value;
+    type Output = RefCell<Value>;
 
     fn index(&self, index: &ValueId) -> &Self::Output {
         &self.values[index]
-    }
-}
-
-impl std::ops::IndexMut<&ValueId> for Store {
-    fn index_mut(&mut self, index: &ValueId) -> &mut Self::Output {
-        &mut self.values[index]
     }
 }
 
@@ -377,29 +350,17 @@ impl std::ops::Index<&LiteralId> for Store {
 }
 
 impl std::ops::Index<&BlockId> for Store {
-    type Output = Block;
+    type Output = RefCell<Block>;
 
     fn index(&self, index: &BlockId) -> &Self::Output {
         &self.blocks[index]
     }
 }
 
-impl std::ops::IndexMut<&BlockId> for Store {
-    fn index_mut(&mut self, index: &BlockId) -> &mut Self::Output {
-        &mut self.blocks[index]
-    }
-}
-
 impl std::ops::Index<&PlaceId> for Store {
-    type Output = Place;
+    type Output = RefCell<Place>;
 
     fn index(&self, index: &PlaceId) -> &Self::Output {
         &self.places[index]
-    }
-}
-
-impl std::ops::IndexMut<&PlaceId> for Store {
-    fn index_mut(&mut self, index: &PlaceId) -> &mut Self::Output {
-        &mut self.places[index]
     }
 }

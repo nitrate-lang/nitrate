@@ -1,13 +1,16 @@
 use nitrate_diagnosis::CompilerLog;
+use nitrate_hir::Store;
 
-pub struct TyCtx {}
+pub struct TyCtx<'store> {
+    pub(crate) store: &'store mut Store,
+}
 
-impl TyCtx {
-    pub fn new() -> Self {
-        Self {}
+impl<'store> TyCtx<'store> {
+    pub fn new(store: &'store mut Store) -> Self {
+        Self { store }
     }
 }
 
 pub trait TypeResolver {
-    fn resolve_type(&mut self, ctx: &TyCtx, log: &CompilerLog);
+    fn resolve_type(&self, ctx: &mut TyCtx, log: &CompilerLog);
 }

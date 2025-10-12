@@ -7,33 +7,33 @@ impl Dump for Place {
         o: &mut dyn std::fmt::Write,
     ) -> Result<(), std::fmt::Error> {
         match self {
-            Place::Symbol { symbol } => ctx.store[symbol].dump_nocycle(o),
+            Place::Symbol { symbol } => ctx.store[symbol].borrow().dump_nocycle(o),
 
             Place::FieldAccess { place, field } => {
                 write!(o, "(")?;
-                ctx.store[place].dump(ctx, o)?;
+                ctx.store[place].borrow().dump(ctx, o)?;
                 write!(o, ".{})", field.0)
             }
 
             Place::ArrayIndex { place, index } => {
                 write!(o, "(")?;
-                ctx.store[place].dump(ctx, o)?;
+                ctx.store[place].borrow().dump(ctx, o)?;
                 write!(o, "[")?;
-                ctx.store[index].dump(ctx, o)?;
+                ctx.store[index].borrow().dump(ctx, o)?;
                 write!(o, "])")
             }
 
             Place::Assign { place, value } => {
                 write!(o, "(")?;
-                ctx.store[place].dump(ctx, o)?;
+                ctx.store[place].borrow().dump(ctx, o)?;
                 write!(o, " = ")?;
-                ctx.store[value].dump(ctx, o)?;
+                ctx.store[value].borrow().dump(ctx, o)?;
                 write!(o, ")")
             }
 
             Place::Deref { place } => {
                 write!(o, "(*")?;
-                ctx.store[place].dump(ctx, o)?;
+                ctx.store[place].borrow().dump(ctx, o)?;
                 write!(o, ")")
             }
         }

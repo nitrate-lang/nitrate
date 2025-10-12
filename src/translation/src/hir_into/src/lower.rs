@@ -1,6 +1,6 @@
 use nitrate_diagnosis::CompilerLog;
 use nitrate_hir::{hir::QualifiedName, prelude::*};
-use std::{collections::HashMap, num::NonZeroU32};
+use std::{cell::RefCell, collections::HashMap, num::NonZeroU32};
 
 pub trait TryIntoHir {
     type Hir;
@@ -121,44 +121,26 @@ impl std::ops::Index<&FuncAttributesId> for HirCtx {
 }
 
 impl std::ops::Index<&ItemId> for HirCtx {
-    type Output = Item;
+    type Output = RefCell<Item>;
 
     fn index(&self, index: &ItemId) -> &Self::Output {
         &self.storage[index]
     }
 }
 
-impl std::ops::IndexMut<&ItemId> for HirCtx {
-    fn index_mut(&mut self, index: &ItemId) -> &mut Self::Output {
-        &mut self.storage[index]
-    }
-}
-
 impl std::ops::Index<&SymbolId> for HirCtx {
-    type Output = Symbol;
+    type Output = RefCell<Symbol>;
 
     fn index(&self, index: &SymbolId) -> &Self::Output {
         &self.storage[index]
     }
 }
 
-impl std::ops::IndexMut<&SymbolId> for HirCtx {
-    fn index_mut(&mut self, index: &SymbolId) -> &mut Self::Output {
-        &mut self.storage[index]
-    }
-}
-
 impl std::ops::Index<&ValueId> for HirCtx {
-    type Output = Value;
+    type Output = RefCell<Value>;
 
     fn index(&self, index: &ValueId) -> &Self::Output {
         &self.storage[index]
-    }
-}
-
-impl std::ops::IndexMut<&ValueId> for HirCtx {
-    fn index_mut(&mut self, index: &ValueId) -> &mut Self::Output {
-        &mut self.storage[index]
     }
 }
 
@@ -171,29 +153,17 @@ impl std::ops::Index<&LiteralId> for HirCtx {
 }
 
 impl std::ops::Index<&BlockId> for HirCtx {
-    type Output = Block;
+    type Output = RefCell<Block>;
 
     fn index(&self, index: &BlockId) -> &Self::Output {
         &self.storage[index]
     }
 }
 
-impl std::ops::IndexMut<&BlockId> for HirCtx {
-    fn index_mut(&mut self, index: &BlockId) -> &mut Self::Output {
-        &mut self.storage[index]
-    }
-}
-
 impl std::ops::Index<&PlaceId> for HirCtx {
-    type Output = Place;
+    type Output = RefCell<Place>;
 
     fn index(&self, index: &PlaceId) -> &Self::Output {
         &self.storage[index]
-    }
-}
-
-impl std::ops::IndexMut<&PlaceId> for HirCtx {
-    fn index_mut(&mut self, index: &PlaceId) -> &mut Self::Output {
-        &mut self.storage[index]
     }
 }

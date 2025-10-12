@@ -273,6 +273,7 @@ impl HirEvaluate for Value {
                 let mut fields = fields.to_owned();
                 for field_value in fields.values_mut() {
                     let eval_value = ctx.store[field_value as &ValueId]
+                        .borrow()
                         .evaluate(ctx)?
                         .into_id(ctx.store);
 
@@ -290,7 +291,7 @@ impl HirEvaluate for Value {
                 variant,
                 value,
             } => {
-                let evaluated_value = ctx.store[value].evaluate(ctx)?.into_id(ctx.store);
+                let evaluated_value = ctx.store[value].borrow().evaluate(ctx)?.into_id(ctx.store);
 
                 Ok(Value::Enum {
                     enum_type: enum_type.clone(),
@@ -300,10 +301,10 @@ impl HirEvaluate for Value {
             }
 
             Value::Binary { left, op, right } => {
-                let left =
-                    Lit::try_from(ctx.store[left].evaluate(ctx)?).map_err(|_| Unwind::TypeError)?;
+                let left = Lit::try_from(ctx.store[left].borrow().evaluate(ctx)?)
+                    .map_err(|_| Unwind::TypeError)?;
 
-                let right = Lit::try_from(ctx.store[right].evaluate(ctx)?)
+                let right = Lit::try_from(ctx.store[right].borrow().evaluate(ctx)?)
                     .map_err(|_| Unwind::TypeError)?;
 
                 match op {
@@ -419,8 +420,8 @@ impl HirEvaluate for Value {
             }
 
             Value::Unary { op, expr } => {
-                let operand =
-                    Lit::try_from(ctx.store[expr].evaluate(ctx)?).map_err(|_| Unwind::TypeError)?;
+                let operand = Lit::try_from(ctx.store[expr].borrow().evaluate(ctx)?)
+                    .map_err(|_| Unwind::TypeError)?;
 
                 match op {
                     UnaryOp::Add => Ok(operand.into()),
@@ -442,10 +443,10 @@ impl HirEvaluate for Value {
                 todo!()
             }
 
-            Value::FieldAccess { expr, field } => match ctx.store[expr].evaluate(ctx)? {
+            Value::FieldAccess { expr, field } => match ctx.store[expr].borrow().evaluate(ctx)? {
                 Value::Struct { fields, .. } => {
                     if let Some(field_value) = fields.get(field) {
-                        Ok(ctx.store[field_value].evaluate(ctx)?)
+                        Ok(ctx.store[field_value].borrow().evaluate(ctx)?)
                     } else {
                         Err(Unwind::TypeError)
                     }
@@ -458,15 +459,15 @@ impl HirEvaluate for Value {
                 collection: expr,
                 index,
             } => {
-                let index = match ctx.evaluate_to_literal(&ctx.store[index])? {
+                let index = match ctx.evaluate_to_literal(&ctx.store[index].borrow())? {
                     Lit::USize32(i) => i as usize,
                     Lit::USize64(i) => i as usize,
                     _ => return Err(Unwind::TypeError),
                 };
 
-                match ctx.store[expr].evaluate(ctx)? {
+                match ctx.store[expr].borrow().evaluate(ctx)? {
                     Value::List { elements } => match elements.get(index) {
-                        Some(elem) => Ok(ctx.store[elem].evaluate(ctx)?),
+                        Some(elem) => Ok(ctx.store[elem].borrow().evaluate(ctx)?),
                         None => Err(Unwind::IndexOutOfBounds),
                     },
 
@@ -490,7 +491,7 @@ impl HirEvaluate for Value {
             }
 
             Value::Cast { expr, to } => {
-                let expr = ctx.store[expr].evaluate(ctx)?;
+                let expr = ctx.store[expr].borrow().evaluate(ctx)?;
 
                 if expr.is_literal() {
                     let bridge = CastLitBridge::try_from(expr).expect("into cast bridge");
@@ -531,7 +532,10 @@ impl HirEvaluate for Value {
             Value::List { elements } => {
                 let mut evaluated_elements = Vec::with_capacity(elements.len());
                 for element in &**elements {
-                    let evaluated_element = ctx.store[element].evaluate(ctx)?.into_id(ctx.store);
+                    let evaluated_element = ctx.store[element]
+                        .borrow()
+                        .evaluate(ctx)?
+                        .into_id(ctx.store);
                     evaluated_elements.push(evaluated_element);
                 }
 
@@ -544,12 +548,12 @@ impl HirEvaluate for Value {
                 condition,
                 true_branch,
                 false_branch,
-            } => match ctx.store[condition].evaluate(ctx)? {
-                Value::Bool(true) => ctx.store[true_branch].evaluate(ctx),
+            } => match ctx.store[condition].borrow().evaluate(ctx)? {
+                Value::Bool(true) => ctx.store[true_branch].borrow().evaluate(ctx),
 
                 Value::Bool(false) => {
                     if let Some(false_branch) = false_branch {
-                        ctx.store[false_branch].evaluate(ctx)
+                        ctx.store[false_branch].borrow().evaluate(ctx)
                     } else {
                         Ok(Value::Unit)
                     }
@@ -559,12 +563,12 @@ impl HirEvaluate for Value {
             },
 
             Value::While { condition, body } => {
-                while let Value::Bool(true) = ctx.store[condition].evaluate(ctx)? {
+                while let Value::Bool(true) = ctx.store[condition].borrow().evaluate(ctx)? {
                     if ctx.loop_iter_count >= ctx.loop_iter_limit {
                         return Err(Unwind::LoopLimitExceeded);
                     }
 
-                    ctx.store[body].evaluate(ctx)?;
+                    ctx.store[body].borrow().evaluate(ctx)?;
                     ctx.loop_iter_count += 1;
                 }
 
@@ -576,7 +580,7 @@ impl HirEvaluate for Value {
                     return Err(Unwind::LoopLimitExceeded);
                 }
 
-                ctx.store[body].evaluate(ctx)?;
+                ctx.store[body].borrow().evaluate(ctx)?;
                 ctx.loop_iter_count += 1;
             },
 
@@ -589,11 +593,11 @@ impl HirEvaluate for Value {
             }),
 
             Value::Return { value } => {
-                let value = ctx.store[value].evaluate(ctx)?;
+                let value = ctx.store[value].borrow().evaluate(ctx)?;
                 Err(Unwind::Return(value))
             }
 
-            Value::Block { block } => ctx.store[block].evaluate(ctx),
+            Value::Block { block } => ctx.store[block].borrow().evaluate(ctx),
 
             Value::Call {
                 callee: _,
