@@ -13,6 +13,7 @@ pub struct HirCtx {
     symbol_table: HashMap<QualifiedName, SymbolId>,
     type_table: HashMap<QualifiedName, TypeId>,
     type_infer_id_ctr: NonZeroU32,
+    unique_name_ctr: u32,
     ptr_size: PtrSize,
 }
 
@@ -23,6 +24,7 @@ impl HirCtx {
             symbol_table: HashMap::new(),
             type_table: HashMap::new(),
             type_infer_id_ctr: NonZeroU32::new(1).unwrap(),
+            unique_name_ctr: 0,
             ptr_size,
         }
     }
@@ -31,6 +33,12 @@ impl HirCtx {
         let id = self.type_infer_id_ctr;
         self.type_infer_id_ctr = id.checked_add(1).expect("Type infer ID overflow");
         id
+    }
+
+    pub(crate) fn next_unique_name(&mut self) -> EntityName {
+        let name = format!("⚙️{}", self.unique_name_ctr);
+        self.unique_name_ctr += 1;
+        EntityName(name.into())
     }
 
     pub fn store(&self) -> &Store {

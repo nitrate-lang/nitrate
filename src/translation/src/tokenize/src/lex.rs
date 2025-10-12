@@ -4,6 +4,8 @@ use log::error;
 use nitrate_diagnosis::FileId;
 use ordered_float::NotNan;
 
+const RESERVED_PREFIX: &str = "⚙️";
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum LexerError {
     SourceTooBig,
@@ -286,6 +288,14 @@ impl<'a> Lexer<'a> {
         }
 
         if let Ok(identifier) = str::from_utf8(identifier) {
+            if identifier.starts_with(RESERVED_PREFIX) {
+                error!(
+                    "[L0002]: Identifiers starting with '{}' are reserved for compiler-generated names.\n--> {start_pos}",
+                    RESERVED_PREFIX
+                );
+                return Err(());
+            }
+
             Ok(Token::Name(identifier.to_string()))
         } else {
             error!("[L0001]: Identifier contains some invalid utf-8 bytes\n--> {start_pos}");
@@ -367,6 +377,14 @@ impl<'a> Lexer<'a> {
         } {
             Ok(keyword)
         } else if let Ok(identifier) = str::from_utf8(name) {
+            if identifier.starts_with(RESERVED_PREFIX) {
+                error!(
+                    "[L0002]: Identifiers starting with '{}' are reserved for compiler-generated names.\n--> {start_pos}",
+                    RESERVED_PREFIX
+                );
+                return Err(());
+            }
+
             Ok(Token::Name(identifier.to_string()))
         } else {
             error!("[L0100]: Identifier contains some invalid utf-8 bytes\n--> {start_pos}");
