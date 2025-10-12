@@ -154,7 +154,7 @@ impl TryIntoHir for ast::TypePath {
 
     fn try_into_hir(self, _ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
         // TODO: Lower ast::TypePath into hir::TypePath
-        log.report(&HirErr::UnspecifiedError);
+        log.report(&HirErr::UnimplementedFeature("type path".into()));
         Err(())
     }
 }
@@ -164,7 +164,7 @@ impl TryIntoHir for ast::RefinementType {
 
     fn try_into_hir(self, _ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
         // TODO: Lower ast::RefinementType into hir::RefinementType
-        log.report(&HirErr::UnspecifiedError);
+        log.report(&HirErr::UnimplementedFeature("refinement type".into()));
         Err(())
     }
 }
@@ -204,7 +204,7 @@ impl TryIntoHir for ast::ArrayType {
         let len = match eval.evaluate_to_literal(&hir_length) {
             Ok(Lit::USize32(val)) => {
                 if ctx.ptr_size() != PtrSize::U32 {
-                    log.report(&HirErr::UnspecifiedError);
+                    log.report(&HirErr::FoundUSize32InNon32BitTarget);
                     return Err(());
                 }
 
@@ -213,7 +213,7 @@ impl TryIntoHir for ast::ArrayType {
 
             Ok(Lit::USize64(val)) => {
                 if ctx.ptr_size() != PtrSize::U64 {
-                    log.report(&HirErr::UnspecifiedError);
+                    log.report(&HirErr::FoundUSize64InNon64BitTarget);
                     return Err(());
                 }
 
@@ -221,12 +221,12 @@ impl TryIntoHir for ast::ArrayType {
             }
 
             Ok(_) => {
-                log.report(&HirErr::UnspecifiedError);
+                log.report(&HirErr::ArrayLengthExpectedUSize);
                 return Err(());
             }
 
             Err(_) => {
-                log.report(&HirErr::UnspecifiedError);
+                log.report(&HirErr::ArrayTypeLengthEvalError);
                 return Err(());
             }
         };
@@ -318,7 +318,7 @@ impl TryIntoHir for ast::LatentType {
             Ok(ty) => ty,
 
             Err(_) => {
-                log.report(&HirErr::UnspecifiedError);
+                log.report(&HirErr::LatentTypeEvaluationError);
                 return Err(());
             }
         };
@@ -332,7 +332,7 @@ impl TryIntoHir for ast::Lifetime {
 
     fn try_into_hir(self, _ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
         // TODO: Lower ast::Lifetime into hir::Lifetime
-        log.report(&HirErr::UnspecifiedError);
+        log.report(&HirErr::UnimplementedFeature("ast::Lifetime".into()));
         Err(())
     }
 }

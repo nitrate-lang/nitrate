@@ -7,6 +7,11 @@ pub(crate) enum HirErr {
     UnrecognizedGlobalVariableAttribute,
     GlobalVariableMustBeConstOrStatic,
     GlobalVariableMustHaveInitializer,
+    LatentTypeEvaluationError,
+    FoundUSize32InNon32BitTarget,
+    FoundUSize64InNon64BitTarget,
+    ArrayLengthExpectedUSize,
+    ArrayTypeLengthEvalError,
 }
 
 impl FormattableDiagnosticGroup for HirErr {
@@ -22,6 +27,11 @@ impl FormattableDiagnosticGroup for HirErr {
             HirErr::UnrecognizedGlobalVariableAttribute => 3,
             HirErr::GlobalVariableMustBeConstOrStatic => 4,
             HirErr::GlobalVariableMustHaveInitializer => 5,
+            HirErr::LatentTypeEvaluationError => 6,
+            HirErr::FoundUSize32InNon32BitTarget => 7,
+            HirErr::FoundUSize64InNon64BitTarget => 8,
+            HirErr::ArrayLengthExpectedUSize => 9,
+            HirErr::ArrayTypeLengthEvalError => 10,
         }
     }
 
@@ -54,6 +64,31 @@ impl FormattableDiagnosticGroup for HirErr {
 
             HirErr::GlobalVariableMustHaveInitializer => DiagnosticInfo {
                 message: "global variable must have an initializer".to_string(),
+                origin: Origin::None,
+            },
+
+            HirErr::LatentTypeEvaluationError => DiagnosticInfo {
+                message: "latent type evaluation error".to_string(),
+                origin: Origin::None,
+            },
+
+            HirErr::FoundUSize32InNon32BitTarget => DiagnosticInfo {
+                message: "found 32-bit 'usize' in non-32-bit target".to_string(),
+                origin: Origin::None,
+            },
+
+            HirErr::FoundUSize64InNon64BitTarget => DiagnosticInfo {
+                message: "found 64-bit 'usize' in non-64-bit target".to_string(),
+                origin: Origin::None,
+            },
+
+            HirErr::ArrayLengthExpectedUSize => DiagnosticInfo {
+                message: "array length expected to be 'usize'".to_string(),
+                origin: Origin::None,
+            },
+
+            HirErr::ArrayTypeLengthEvalError => DiagnosticInfo {
+                message: "array type length evaluation error".to_string(),
                 origin: Origin::None,
             },
         }

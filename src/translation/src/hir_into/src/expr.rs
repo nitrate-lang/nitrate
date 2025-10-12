@@ -30,10 +30,11 @@ impl TryIntoHir for ast::ExprParentheses {
 impl TryIntoHir for ast::BooleanLit {
     type Hir = Value;
 
-    fn try_into_hir(self, _ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
-        // TODO: Lower ast::Boo to HIR
-        log.report(&HirErr::UnimplementedFeature("ast::Expr::Boolean".into()));
-        Err(())
+    fn try_into_hir(self, _ctx: &mut HirCtx, _log: &CompilerLog) -> Result<Self::Hir, ()> {
+        match self.value {
+            true => Ok(Value::Bool(true)),
+            false => Ok(Value::Bool(false)),
+        }
     }
 }
 
