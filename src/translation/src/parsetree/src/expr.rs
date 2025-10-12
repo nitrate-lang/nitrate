@@ -64,6 +64,12 @@ pub struct List {
 
 #[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Tuple {
+    pub elements: Vec<Expr>,
+}
+
+#[skip_serializing_none]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct StructInit {
     pub type_name: TypePath,
     pub fields: Vec<(StructFieldNameId, Expr)>,
@@ -369,6 +375,7 @@ pub enum Expr {
 
     TypeInfo(Box<TypeInfo>),
     List(Box<List>),
+    Tuple(Box<Tuple>),
     StructInit(Box<StructInit>),
     UnaryExpr(Box<UnaryExpr>),
     BinExpr(Box<BinExpr>),
@@ -403,6 +410,7 @@ impl std::fmt::Debug for Expr {
             Expr::BString(e) => e.fmt(f),
             Expr::TypeInfo(e) => f.debug_struct("TypeInfo").field("type", e).finish(),
             Expr::List(e) => e.fmt(f),
+            Expr::Tuple(e) => e.fmt(f),
             Expr::StructInit(e) => e.fmt(f),
             Expr::UnaryExpr(e) => e.fmt(f),
             Expr::BinExpr(e) => e.fmt(f),

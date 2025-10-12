@@ -9,9 +9,9 @@ use nitrate_parsetree::{
         Break, Call, CallArgument, Cast, Closure, Continue, ElseIf, Expr, ExprParentheses,
         ExprPath, ExprPathSegment, ExprSyntaxError, Float8, Float16, Float32, Float64, Float128,
         FloatLit, ForEach, FuncParam, If, IndexAccess, Int8, Int16, Int32, Int64, Int128,
-        IntegerLit, List, Mutability, Return, Safety, StringLit, Type, TypeArgument, TypeInfo,
-        TypePath, TypePathSegment, UInt8, UInt16, UInt32, UInt64, UInt128, UnaryExpr, UnaryExprOp,
-        WhileLoop,
+        IntegerLit, List, Mutability, Return, Safety, StringLit, Tuple, Type, TypeArgument,
+        TypeInfo, TypePath, TypePathSegment, UInt8, UInt16, UInt32, UInt64, UInt128, UnaryExpr,
+        UnaryExprOp, WhileLoop,
     },
     tag::{
         VariableNameId, intern_arg_name, intern_label_name, intern_parameter_name,
@@ -419,12 +419,39 @@ impl Parser<'_, '_> {
         if self.lexer.skip_if(&Token::OpenParen) {
             let inner = self.parse_expression();
 
-            if !self.lexer.skip_if(&Token::CloseParen) {
-                let bug = SyntaxErr::ExpectedCloseParen(self.lexer.peek_pos());
-                self.log.report(&bug);
+            if !self.lexer.skip_if(&Token::Comma) {
+                if !self.lexer.skip_if(&Token::CloseParen) {
+                    let bug = SyntaxErr::ExpectedCloseParen(self.lexer.peek_pos());
+                    self.log.report(&bug);
+                }
+
+                return Expr::Parentheses(Box::new(ExprParentheses { inner }));
             }
 
-            return Expr::Parentheses(Box::new(ExprParentheses { inner }));
+            let mut tuple_elements = vec![inner];
+
+            while !self.lexer.skip_if(&Token::CloseParen) {
+                if self.lexer.is_eof() {
+                    let bug = SyntaxErr::ExpectedCloseParen(self.lexer.peek_pos());
+                    self.log.report(&bug);
+                    break;
+                }
+
+                let element = self.parse_expression();
+                tuple_elements.push(element);
+
+                if !self.lexer.skip_if(&Token::Comma) && !self.lexer.next_is(&Token::CloseParen) {
+                    let bug = SyntaxErr::ExpectedCloseParen(self.lexer.peek_pos());
+                    self.log.report(&bug);
+
+                    self.lexer.skip_while(&Token::CloseParen);
+                    break;
+                }
+            }
+
+            return Expr::Tuple(Box::new(Tuple {
+                elements: tuple_elements,
+            }));
         }
 
         self.parse_expression_primary()

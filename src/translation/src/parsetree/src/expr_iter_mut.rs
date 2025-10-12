@@ -1,6 +1,8 @@
 use crate::{
     Order, ParseTreeIterMut, RefNodeMut,
-    expr::{AttributeList, ElseIf, ExprPath, Match, MatchCase, Safety, StructInit, TypeArgument},
+    expr::{
+        AttributeList, ElseIf, ExprPath, Match, MatchCase, Safety, StructInit, Tuple, TypeArgument,
+    },
     kind::{
         Await, BStringLit, BinExpr, Block, BlockItem, BooleanLit, Break, Call, CallArgument, Cast,
         Closure, Continue, Expr, ExprParentheses, ExprSyntaxError, FloatLit, ForEach, If,
@@ -79,6 +81,18 @@ impl ParseTreeIterMut for List {
         }
 
         f(Order::Leave, RefNodeMut::ExprList(self));
+    }
+}
+
+impl ParseTreeIterMut for Tuple {
+    fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
+        f(Order::Enter, RefNodeMut::ExprTuple(self));
+
+        for item in &mut self.elements {
+            item.depth_first_iter_mut(f);
+        }
+
+        f(Order::Leave, RefNodeMut::ExprTuple(self));
     }
 }
 
@@ -398,6 +412,7 @@ impl ParseTreeIterMut for Expr {
             Expr::Integer(e) => e.depth_first_iter_mut(f),
             Expr::TypeInfo(e) => e.depth_first_iter_mut(f),
             Expr::List(e) => e.depth_first_iter_mut(f),
+            Expr::Tuple(e) => e.depth_first_iter_mut(f),
             Expr::StructInit(e) => e.depth_first_iter_mut(f),
             Expr::UnaryExpr(e) => e.depth_first_iter_mut(f),
             Expr::BinExpr(e) => e.depth_first_iter_mut(f),

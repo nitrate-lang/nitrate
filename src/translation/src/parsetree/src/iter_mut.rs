@@ -4,7 +4,7 @@ use crate::{
     expr::{
         AttributeList, Await, BStringLit, BinExpr, Block, BlockItem, BooleanLit, Break, Call,
         CallArgument, Cast, Closure, Continue, ExprParentheses, ExprPath, FloatLit, ForEach, If,
-        IndexAccess, IntegerLit, List, Match, MatchCase, Return, StringLit, StructInit,
+        IndexAccess, IntegerLit, List, Match, MatchCase, Return, StringLit, StructInit, Tuple,
         TypeArgument, TypeInfo, UnaryExpr, WhileLoop,
     },
     item::{
@@ -33,6 +33,7 @@ pub enum RefNodeMut<'a> {
     ExprBStringLit(&'a mut BStringLit),
     ExprTypeInfo(&'a mut TypeInfo),
     ExprList(&'a mut List),
+    ExprTuple(&'a mut Tuple),
     ExprStructInit(&'a mut StructInit),
     ExprUnaryExpr(&'a mut UnaryExpr),
     ExprBinExpr(&'a mut BinExpr),

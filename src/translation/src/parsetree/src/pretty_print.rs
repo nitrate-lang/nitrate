@@ -7,8 +7,8 @@ use crate::{
         AttributeList, Await, BStringLit, BinExpr, BinExprOp, Block, BlockItem, BooleanLit, Break,
         Call, CallArgument, Cast, Closure, Continue, ElseIf, Expr, ExprParentheses, ExprPath,
         ExprPathSegment, ExprPathTarget, ExprSyntaxError, FloatLit, ForEach, If, IndexAccess,
-        IntegerLit, List, Match, MatchCase, Return, Safety, StringLit, StructInit, TypeArgument,
-        TypeInfo, UnaryExpr, UnaryExprOp, WhileLoop,
+        IntegerLit, List, Match, MatchCase, Return, Safety, StringLit, StructInit, Tuple,
+        TypeArgument, TypeInfo, UnaryExpr, UnaryExprOp, WhileLoop,
     },
     item::{
         AssociatedItem, Enum, EnumVariant, FuncParam, FuncParams, Function, Generics, Impl, Import,
@@ -235,6 +235,23 @@ impl PrettyPrint for List {
         }
 
         writer.write_char(']')
+    }
+}
+
+impl PrettyPrint for Tuple {
+    fn pretty_print_fmt(
+        &self,
+        ctx: &mut PrintContext,
+        writer: &mut dyn std::fmt::Write,
+    ) -> std::fmt::Result {
+        writer.write_char('(')?;
+
+        for item in &self.elements {
+            item.pretty_print_fmt(ctx, writer)?;
+            writer.write_str(", ")?;
+        }
+
+        writer.write_char(')')
     }
 }
 
@@ -875,6 +892,7 @@ impl PrettyPrint for Expr {
             Expr::BString(m) => m.pretty_print_fmt(ctx, writer),
             Expr::TypeInfo(m) => m.pretty_print_fmt(ctx, writer),
             Expr::List(m) => m.pretty_print_fmt(ctx, writer),
+            Expr::Tuple(m) => m.pretty_print_fmt(ctx, writer),
             Expr::StructInit(m) => m.pretty_print_fmt(ctx, writer),
             Expr::UnaryExpr(m) => m.pretty_print_fmt(ctx, writer),
             Expr::BinExpr(m) => m.pretty_print_fmt(ctx, writer),
