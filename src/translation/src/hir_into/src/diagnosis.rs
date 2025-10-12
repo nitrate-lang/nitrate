@@ -4,6 +4,9 @@ pub(crate) enum HirErr {
     UnspecifiedError,
     UnrecognizedModuleAttribute,
     UnimplementedFeature(String),
+    UnrecognizedGlobalVariableAttribute,
+    GlobalVariableMustBeConstOrStatic,
+    GlobalVariableMustHaveInitializer,
 }
 
 impl FormattableDiagnosticGroup for HirErr {
@@ -16,6 +19,9 @@ impl FormattableDiagnosticGroup for HirErr {
             HirErr::UnspecifiedError => 0,
             HirErr::UnrecognizedModuleAttribute => 1,
             HirErr::UnimplementedFeature(_) => 2,
+            HirErr::UnrecognizedGlobalVariableAttribute => 3,
+            HirErr::GlobalVariableMustBeConstOrStatic => 4,
+            HirErr::GlobalVariableMustHaveInitializer => 5,
         }
     }
 
@@ -33,6 +39,21 @@ impl FormattableDiagnosticGroup for HirErr {
 
             HirErr::UnimplementedFeature(feature) => DiagnosticInfo {
                 message: format!("unimplemented feature: {}", feature),
+                origin: Origin::None,
+            },
+
+            HirErr::UnrecognizedGlobalVariableAttribute => DiagnosticInfo {
+                message: "unrecognized global variable attribute".to_string(),
+                origin: Origin::None,
+            },
+
+            HirErr::GlobalVariableMustBeConstOrStatic => DiagnosticInfo {
+                message: "global variable must be 'const' or 'static'".to_string(),
+                origin: Origin::None,
+            },
+
+            HirErr::GlobalVariableMustHaveInitializer => DiagnosticInfo {
+                message: "global variable must have an initializer".to_string(),
                 origin: Origin::None,
             },
         }

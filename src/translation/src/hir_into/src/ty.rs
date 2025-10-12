@@ -5,12 +5,6 @@ use nitrate_hir_evaluate::HirEvalCtx;
 use nitrate_parsetree::kind::{self as ast};
 use std::ops::Deref;
 
-fn create_inference_variable(ctx: &mut HirCtx) -> Type {
-    Type::Inferred {
-        id: ctx.next_type_infer_id(),
-    }
-}
-
 impl TryIntoHir for ast::TypeSyntaxError {
     type Hir = Type;
 
@@ -151,7 +145,7 @@ impl TryIntoHir for ast::InferType {
     type Hir = Type;
 
     fn try_into_hir(self, ctx: &mut HirCtx, _log: &CompilerLog) -> Result<Self::Hir, ()> {
-        Ok(create_inference_variable(ctx))
+        Ok(ctx.create_inference_placeholder())
     }
 }
 

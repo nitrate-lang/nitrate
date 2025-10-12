@@ -60,6 +60,7 @@ pub enum Function {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct GlobalVariable {
     pub visibility: Visibility,
+    pub is_mutable: bool,
     pub name: EntityName,
     pub ty: TypeId,
     pub initializer: ValueId,
@@ -67,6 +68,7 @@ pub struct GlobalVariable {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct LocalVariable {
+    pub is_mutable: bool,
     pub name: EntityName,
     pub ty: TypeId,
     pub initializer: ValueId,

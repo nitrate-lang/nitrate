@@ -41,6 +41,12 @@ impl HirCtx {
         EntityName(name.into())
     }
 
+    pub(crate) fn create_inference_placeholder(&mut self) -> Type {
+        Type::Inferred {
+            id: self.next_type_infer_id(),
+        }
+    }
+
     pub fn store(&self) -> &Store {
         &self.storage
     }

@@ -151,7 +151,11 @@ impl Dump for GlobalVariable {
         o: &mut dyn std::fmt::Write,
     ) -> Result<(), std::fmt::Error> {
         self.visibility.dump(ctx, o)?;
-        write!(o, " sym global `{}`: ", self.name.0)?;
+        write!(o, " sym global ",)?;
+        if self.is_mutable {
+            write!(o, "mut ")?;
+        }
+        write!(o, "`{}`: ", self.name.0)?;
         ctx.store[&self.ty].dump(ctx, o)?;
         write!(o, " = ")?;
         ctx.store[&self.initializer].dump(ctx, o)?;
