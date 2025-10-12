@@ -313,6 +313,7 @@ pub enum Value {
     String(ThinStr),
     BString(ThinVec<u8>),
     InferredInteger(Box<u128>),
+    InferredFloat(f64),
 
     Struct {
         struct_type: TypeId,
@@ -341,8 +342,8 @@ pub enum Value {
         field: IString,
     },
 
-    ArrayIndex {
-        expr: ValueId,
+    IndexAccess {
+        collection: ValueId,
         index: ValueId,
     },
 

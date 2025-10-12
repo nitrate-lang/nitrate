@@ -34,6 +34,7 @@ impl TryFrom<Value> for CastLitBridge {
             Value::USize32(u) => Ok(CastLitBridge::U128(u as u128)),
             Value::USize64(u) => Ok(CastLitBridge::U128(u as u128)),
             Value::InferredInteger(u) => Ok(CastLitBridge::U128(*u)),
+            Value::InferredFloat(f) => Ok(CastLitBridge::F128(f)),
             _ => Err(()),
         }
     }
@@ -263,6 +264,7 @@ impl HirEvaluate for Value {
             Value::String(s) => Ok(Value::String(s.clone())),
             Value::BString(s) => Ok(Value::BString(s.clone())),
             Value::InferredInteger(i) => Ok(Value::InferredInteger(i.clone())),
+            Value::InferredFloat(f) => Ok(Value::InferredFloat(*f)),
 
             Value::Struct {
                 struct_type,
@@ -452,7 +454,10 @@ impl HirEvaluate for Value {
                 _ => Err(Unwind::TypeError),
             },
 
-            Value::ArrayIndex { expr, index } => {
+            Value::IndexAccess {
+                collection: expr,
+                index,
+            } => {
                 let index = match ctx.evaluate_to_literal(&ctx.store[index])? {
                     Lit::USize32(i) => i as usize,
                     Lit::USize64(i) => i as usize,

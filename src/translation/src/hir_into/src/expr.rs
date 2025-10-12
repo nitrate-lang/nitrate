@@ -1,4 +1,5 @@
 use crate::{HirCtx, TryIntoHir, diagnosis::HirErr};
+use interned_string::IString;
 use nitrate_diagnosis::CompilerLog;
 use nitrate_hir::prelude::*;
 use nitrate_parsetree::kind as ast;
@@ -7,10 +8,6 @@ impl TryIntoHir for ast::ExprSyntaxError {
     type Hir = Value;
 
     fn try_into_hir(self, _ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
-        // TODO: Lower ast::SyntaxError to HIR
-        log.report(&HirErr::UnimplementedFeature(
-            "ast::Expr::SyntaxError".into(),
-        ));
         Err(())
     }
 }
@@ -18,12 +15,8 @@ impl TryIntoHir for ast::ExprSyntaxError {
 impl TryIntoHir for ast::ExprParentheses {
     type Hir = Value;
 
-    fn try_into_hir(self, _ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
-        // TODO: Lower ast::Parentheses to HIR
-        log.report(&HirErr::UnimplementedFeature(
-            "ast::Expr::Parentheses".into(),
-        ));
-        Err(())
+    fn try_into_hir(self, ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
+        self.inner.try_into_hir(ctx, log)
     }
 }
 
@@ -49,10 +42,8 @@ impl TryIntoHir for ast::IntegerLit {
 impl TryIntoHir for ast::FloatLit {
     type Hir = Value;
 
-    fn try_into_hir(self, _ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
-        // TODO: Lower ast::Float to HIR
-        log.report(&HirErr::UnimplementedFeature("ast::Expr::Float".into()));
-        Err(())
+    fn try_into_hir(self, _ctx: &mut HirCtx, _log: &CompilerLog) -> Result<Self::Hir, ()> {
+        Ok(Value::InferredFloat(self.value.into()))
     }
 }
 
@@ -321,10 +312,10 @@ impl TryIntoHir for ast::BinExpr {
 impl TryIntoHir for ast::Cast {
     type Hir = Value;
 
-    fn try_into_hir(self, _ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
-        // TODO: Lower ast::Cast to HIR
-        log.report(&HirErr::UnimplementedFeature("ast::Expr::Cast".into()));
-        Err(())
+    fn try_into_hir(self, ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
+        let expr = self.value.try_into_hir(ctx, log)?.into_id(ctx.store());
+        let to = self.to.try_into_hir(ctx, log)?.into_id(ctx.store());
+        Ok(Value::Cast { expr, to })
     }
 }
 
@@ -403,22 +394,46 @@ impl TryIntoHir for ast::ExprPath {
 impl TryIntoHir for ast::IndexAccess {
     type Hir = Value;
 
-    fn try_into_hir(self, _ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
-        // TODO: Lower ast::IndexAccess to HIR
-        log.report(&HirErr::UnimplementedFeature(
-            "ast::Expr::IndexAccess".into(),
-        ));
-        Err(())
+    fn try_into_hir(self, ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
+        let collection = self.collection.try_into_hir(ctx, log)?.into_id(ctx.store());
+        let index = self.index.try_into_hir(ctx, log)?.into_id(ctx.store());
+        Ok(Value::IndexAccess { collection, index })
     }
 }
 
 impl TryIntoHir for ast::If {
     type Hir = Value;
 
-    fn try_into_hir(self, _ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
-        // TODO: Lower ast::If to HIR
-        log.report(&HirErr::UnimplementedFeature("ast::Expr::owIfer".into()));
-        Err(())
+    fn try_into_hir(self, ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
+        let condition = self.condition.try_into_hir(ctx, log)?.into_id(ctx.store());
+
+        let true_branch = self
+            .true_branch
+            .try_into_hir(ctx, log)?
+            .into_id(ctx.store());
+
+        let false_branch = match self.false_branch {
+            Some(ast::ElseIf::If(else_if)) => {
+                let else_if_value = else_if.try_into_hir(ctx, log)?;
+                let block = Block {
+                    safety: BlockSafety::Safe,
+                    elements: vec![else_if_value],
+                }
+                .into_id(ctx.store());
+                Some(block)
+            }
+            Some(ast::ElseIf::Block(block)) => {
+                let block = block.try_into_hir(ctx, log)?.into_id(ctx.store());
+                Some(block)
+            }
+            None => None,
+        };
+
+        Ok(Value::If {
+            condition,
+            true_branch,
+            false_branch,
+        })
     }
 }
 
@@ -426,9 +441,14 @@ impl TryIntoHir for ast::WhileLoop {
     type Hir = Value;
 
     fn try_into_hir(self, _ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
-        // TODO: Lower ast::While to HIR
-        log.report(&HirErr::UnimplementedFeature("ast::Expr::While".into()));
-        Err(())
+        let condition = match self.condition {
+            Some(cond) => cond.try_into_hir(_ctx, log)?.into_id(_ctx.store()),
+            None => Value::Bool(true).into_id(_ctx.store()),
+        };
+
+        let body = self.body.try_into_hir(_ctx, log)?.into_id(_ctx.store());
+
+        Ok(Value::While { condition, body })
     }
 }
 
@@ -445,20 +465,20 @@ impl TryIntoHir for ast::Match {
 impl TryIntoHir for ast::Break {
     type Hir = Value;
 
-    fn try_into_hir(self, _ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
-        // TODO: Lower ast::Break to HIR
-        log.report(&HirErr::UnimplementedFeature("ast::Expr::Break".into()));
-        Err(())
+    fn try_into_hir(self, _ctx: &mut HirCtx, _log: &CompilerLog) -> Result<Self::Hir, ()> {
+        Ok(Value::Break {
+            label: self.label.map(|l| l.to_string().into()),
+        })
     }
 }
 
 impl TryIntoHir for ast::Continue {
     type Hir = Value;
 
-    fn try_into_hir(self, _ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
-        // TODO: Lower ast::Continue to HIR
-        log.report(&HirErr::UnimplementedFeature("ast::Expr::Continue".into()));
-        Err(())
+    fn try_into_hir(self, _ctx: &mut HirCtx, _log: &CompilerLog) -> Result<Self::Hir, ()> {
+        Ok(Value::Continue {
+            label: self.label.map(|l| l.to_string().into()),
+        })
     }
 }
 
@@ -466,9 +486,12 @@ impl TryIntoHir for ast::Return {
     type Hir = Value;
 
     fn try_into_hir(self, _ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
-        // TODO: Lower ast::Return to HIR
-        log.report(&HirErr::UnimplementedFeature("ast::Expr::Return".into()));
-        Err(())
+        let value = match self.value {
+            Some(v) => v.try_into_hir(_ctx, log)?.into_id(_ctx.store()),
+            None => Value::Unit.into_id(_ctx.store()),
+        };
+
+        Ok(Value::Return { value })
     }
 }
 

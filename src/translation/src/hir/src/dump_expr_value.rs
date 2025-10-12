@@ -91,6 +91,7 @@ impl Dump for Value {
             Value::String(s) => write!(o, "\"{}\"", s),
             Value::BString(s) => write!(o, "b\"{:?}\"", s),
             Value::InferredInteger(i) => write!(o, "? {}", i),
+            Value::InferredFloat(f) => write!(o, "? {}", f),
 
             Value::Struct {
                 struct_type,
@@ -178,7 +179,10 @@ impl Dump for Value {
                 write!(o, ".{})", field)
             }
 
-            Value::ArrayIndex { expr, index } => {
+            Value::IndexAccess {
+                collection: expr,
+                index,
+            } => {
                 write!(o, "(")?;
                 ctx.store[expr].dump(ctx, o)?;
                 write!(o, "[")?;
