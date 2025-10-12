@@ -27,7 +27,6 @@ enum PrecedenceRank {
     Assign,
     Range,
     LogicOr,
-    LogicXor,
     LogicAnd,
     Comparison,
     BitOr,
@@ -84,7 +83,6 @@ fn get_precedence_of_binary_operator(op: BinExprOp) -> (Associativity, Precedenc
         | BinExprOp::LogicGe => (Associativity::LeftToRight, PrecedenceRank::Comparison),
 
         BinExprOp::LogicAnd => (Associativity::LeftToRight, PrecedenceRank::LogicAnd),
-        BinExprOp::LogicXor => (Associativity::LeftToRight, PrecedenceRank::LogicXor),
         BinExprOp::LogicOr => (Associativity::LeftToRight, PrecedenceRank::LogicOr),
 
         BinExprOp::Range => (Associativity::LeftToRight, PrecedenceRank::Range),
@@ -103,8 +101,7 @@ fn get_precedence_of_binary_operator(op: BinExprOp) -> (Associativity, Precedenc
         | BinExprOp::SetBitRotl
         | BinExprOp::SetBitRotr
         | BinExprOp::SetLogicAnd
-        | BinExprOp::SetLogicOr
-        | BinExprOp::SetLogicXor => (Associativity::RightToLeft, PrecedenceRank::Assign),
+        | BinExprOp::SetLogicOr => (Associativity::RightToLeft, PrecedenceRank::Assign),
     };
 
     (associativity, precedence as Precedence)
@@ -303,12 +300,6 @@ impl Parser<'_, '_> {
                 self.lexer.skip_tok();
                 if self.lexer.skip_if(&Token::Eq) {
                     Some(BinExprOp::SetBitXor)
-                } else if self.lexer.skip_if(&Token::Caret) {
-                    if self.lexer.skip_if(&Token::Eq) {
-                        Some(BinExprOp::SetLogicXor)
-                    } else {
-                        Some(BinExprOp::LogicXor)
-                    }
                 } else {
                     Some(BinExprOp::BitXor)
                 }

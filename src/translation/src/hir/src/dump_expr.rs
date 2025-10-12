@@ -143,7 +143,6 @@ impl Dump for Value {
                         BinaryOp::Ror => ">>>",
                         BinaryOp::LogicAnd => "&&",
                         BinaryOp::LogicOr => "||",
-                        BinaryOp::LogicXor => "^^",
                         BinaryOp::Lt => "<",
                         BinaryOp::Gt => ">",
                         BinaryOp::Lte => "<=",

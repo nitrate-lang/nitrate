@@ -382,11 +382,6 @@ impl HirEvaluate for Value {
                         Err(LiteralCmpError::TypeError) => Err(Unwind::TypeError),
                     },
 
-                    BinaryOp::LogicXor => match left.logical_xor(right) {
-                        Ok(lit) => Ok(Value::Bool(lit)),
-                        Err(LiteralCmpError::TypeError) => Err(Unwind::TypeError),
-                    },
-
                     BinaryOp::Lt => match left.lt(&right) {
                         Ok(lit) => Ok(Value::Bool(lit)),
                         Err(LiteralCmpError::TypeError) => Err(Unwind::TypeError),

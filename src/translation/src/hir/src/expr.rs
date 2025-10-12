@@ -35,8 +35,6 @@ pub enum BinaryOp {
     LogicAnd,
     /// `||`
     LogicOr,
-    /// `^^`
-    LogicXor,
     /// `<`
     Lt,
     /// `>`

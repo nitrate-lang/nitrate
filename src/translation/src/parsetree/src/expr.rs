@@ -132,8 +132,6 @@ pub enum BinExprOp {
     LogicAnd,
     /// `||`
     LogicOr,
-    /// `^^`
-    LogicXor,
     /// `<`
     LogicLt,
     /// `>`
@@ -176,8 +174,6 @@ pub enum BinExprOp {
     SetLogicAnd,
     /// `||=`
     SetLogicOr,
-    /// `^^=`
-    SetLogicXor,
     /// `.`
     Dot,
     /// `->`

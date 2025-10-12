@@ -246,14 +246,6 @@ impl TryIntoHir for ast::BinExpr {
                 Err(())
             }
 
-            ast::BinExprOp::LogicXor => {
-                // TODO: Short-circuiting logic ops
-                log.report(&HirErr::UnimplementedFeature(
-                    "short-circuiting logic ops".into(),
-                ));
-                Err(())
-            }
-
             ast::BinExprOp::LogicLt => Ok(Value::Binary {
                 left,
                 op: BinaryOp::Lt,
@@ -430,16 +422,6 @@ impl TryIntoHir for ast::BinExpr {
                 value: Value::Binary {
                     left,
                     op: BinaryOp::Or,
-                    right,
-                }
-                .into_id(ctx.store()),
-            }),
-
-            ast::BinExprOp::SetLogicXor => Ok(Value::Assign {
-                place: left.clone(),
-                value: Value::Binary {
-                    left,
-                    op: BinaryOp::Xor,
                     right,
                 }
                 .into_id(ctx.store()),
