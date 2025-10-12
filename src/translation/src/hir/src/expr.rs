@@ -308,8 +308,8 @@ pub enum Value {
     F128(f64), // Stored as f64 because Rust does not have a native f128 type
     USize32(u32),
     USize64(u64),
-    String(ThinStr),
-    BString(ThinVec<u8>),
+    StringLit(ThinStr),
+    BStringLit(ThinVec<u8>),
     InferredInteger(Box<u128>),
     InferredFloat(f64),
 

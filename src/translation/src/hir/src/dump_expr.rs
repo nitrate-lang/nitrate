@@ -88,8 +88,8 @@ impl Dump for Value {
             Value::F128(f) => write!(o, "f128 {}", f),
             Value::USize32(u) => write!(o, "usize {}", u),
             Value::USize64(u) => write!(o, "usize {}", u),
-            Value::String(s) => write!(o, "\"{}\"", s),
-            Value::BString(s) => write!(o, "b\"{:?}\"", s),
+            Value::StringLit(s) => write!(o, "\"{}\"", s),
+            Value::BStringLit(s) => write!(o, "b\"{:?}\"", s),
             Value::InferredInteger(i) => write!(o, "? {}", i),
             Value::InferredFloat(f) => write!(o, "? {}", f),
 

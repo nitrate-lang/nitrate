@@ -261,8 +261,8 @@ impl HirEvaluate for Value {
             Value::F128(f) => Ok(Value::F128(*f)),
             Value::USize32(u) => Ok(Value::USize32(*u)),
             Value::USize64(u) => Ok(Value::USize64(*u)),
-            Value::String(s) => Ok(Value::String(s.clone())),
-            Value::BString(s) => Ok(Value::BString(s.clone())),
+            Value::StringLit(s) => Ok(Value::StringLit(s.clone())),
+            Value::BStringLit(s) => Ok(Value::BStringLit(s.clone())),
             Value::InferredInteger(i) => Ok(Value::InferredInteger(i.clone())),
             Value::InferredFloat(f) => Ok(Value::InferredFloat(*f)),
 

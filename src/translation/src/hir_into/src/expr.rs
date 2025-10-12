@@ -50,7 +50,7 @@ impl TryIntoHir for ast::StringLit {
     type Hir = Value;
 
     fn try_into_hir(self, _ctx: &mut HirCtx, _log: &CompilerLog) -> Result<Self::Hir, ()> {
-        Ok(Value::String(self.value.to_string().into()))
+        Ok(Value::StringLit(self.value.to_string().into()))
     }
 }
 
@@ -58,7 +58,7 @@ impl TryIntoHir for ast::BStringLit {
     type Hir = Value;
 
     fn try_into_hir(self, _ctx: &mut HirCtx, _log: &CompilerLog) -> Result<Self::Hir, ()> {
-        Ok(Value::BString(self.value.into()))
+        Ok(Value::BStringLit(self.value.into()))
     }
 }
 

@@ -10,6 +10,7 @@ nitrate_hir = { path = "src/hir" }
 nitrate_hir_into = { path = "src/hir_into" }
 nitrate_hir_evaluate = { path = "src/hir_evaluate" }
 nitrate_hir_resolve_type = { path = "src/hir_resolve_type" }
+nitrate_hir_get_type = { path = "src/hir_get_type" }
 nitrate_resolve = { path = "src/resolve" }
 nitrate_parse = { path = "src/parse" }
 nitrate_diagnosis = { path = "../diagnosis" }
