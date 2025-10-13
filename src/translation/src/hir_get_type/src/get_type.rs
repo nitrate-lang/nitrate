@@ -1,14 +1,12 @@
 use nitrate_hir::{
     Store,
-    hir::{BinaryOp, IntoStoreId, Lifetime, Type, UnaryOp, Value},
+    hir::{BinaryOp, IntoStoreId, Type, UnaryOp, Value},
 };
 
 pub enum TypeInferenceError {
-    NonHomogeneousList,
-    IfElseBranchTypeMismatch,
-    BinaryOpTypeMismatch,
-    ShiftOrRotateByNonU32,
     EnumVariantNotPresent,
+    FieldAccessOnNonStruct,
+    IndexAccessOnNonCollection,
 }
 
 pub fn get_type(value: &Value, store: &Store) -> Result<Type, TypeInferenceError> {
@@ -71,7 +69,7 @@ pub fn get_type(value: &Value, store: &Store) -> Result<Type, TypeInferenceError
             None => Err(TypeInferenceError::EnumVariantNotPresent),
         },
 
-        Value::Binary { left, op, right } => match op {
+        Value::Binary { left, op, right: _ } => match op {
             BinaryOp::Add
             | BinaryOp::Sub
             | BinaryOp::Mul
@@ -79,30 +77,10 @@ pub fn get_type(value: &Value, store: &Store) -> Result<Type, TypeInferenceError
             | BinaryOp::Mod
             | BinaryOp::And
             | BinaryOp::Or
-            | BinaryOp::Xor => {
-                let left = &store[left].borrow();
-                let right = &store[right].borrow();
-
-                let left_type = get_type(left, store)?;
-                let right_type = get_type(right, store)?;
-
-                if left_type != right_type {
-                    return Err(TypeInferenceError::BinaryOpTypeMismatch);
-                }
-
-                Ok(left_type)
-            }
+            | BinaryOp::Xor => Ok(get_type(&store[left].borrow(), store)?),
 
             BinaryOp::Shl | BinaryOp::Shr | BinaryOp::Rol | BinaryOp::Ror => {
-                let left = &store[left].borrow();
-                let right = &store[right].borrow();
-
-                if get_type(right, store)? != Type::U32 {
-                    return Err(TypeInferenceError::ShiftOrRotateByNonU32);
-                }
-
-                let left_type = get_type(left, store)?;
-                Ok(left_type)
+                Ok(get_type(&store[left].borrow(), store)?)
             }
 
             BinaryOp::LogicAnd
@@ -116,10 +94,7 @@ pub fn get_type(value: &Value, store: &Store) -> Result<Type, TypeInferenceError
         },
 
         Value::Unary { op, expr } => match op {
-            UnaryOp::Add | UnaryOp::Sub | UnaryOp::BitNot => {
-                let expr = &store[expr].borrow();
-                get_type(expr, store)
-            }
+            UnaryOp::Add | UnaryOp::Sub | UnaryOp::BitNot => get_type(&store[expr].borrow(), store),
             UnaryOp::LogicNot => Ok(Type::Bool),
         },
 
@@ -132,18 +107,25 @@ pub fn get_type(value: &Value, store: &Store) -> Result<Type, TypeInferenceError
                     return Ok(field_type.clone());
                 }
             }
-            // TODO: inference for field access
-            todo!()
+
+            Err(TypeInferenceError::FieldAccessOnNonStruct)
         }
 
-        Value::IndexAccess { collection, index } => {
-            // TODO: inference for index access
-            todo!()
+        Value::IndexAccess {
+            collection,
+            index: _,
+        } => {
+            let collection = &store[collection].borrow();
+            if let Type::Array { element_type, .. } = get_type(collection, store)? {
+                return Ok((&store[&element_type]).clone());
+            }
+
+            Err(TypeInferenceError::IndexAccessOnNonCollection)
         }
 
         Value::Assign { place: _, value: _ } => Ok(Type::Unit),
 
-        Value::Deref { place } => {
+        Value::Deref { place: _ } => {
             // TODO: inference for dereference
             todo!()
         }
@@ -155,7 +137,7 @@ pub fn get_type(value: &Value, store: &Store) -> Result<Type, TypeInferenceError
             todo!()
         }
 
-        Value::GetTypeOf { expr } => {
+        Value::GetTypeOf { expr: _ } => {
             // TODO: inference for type-of
             todo!()
         }
@@ -164,15 +146,7 @@ pub fn get_type(value: &Value, store: &Store) -> Result<Type, TypeInferenceError
             let element_type = if elements.is_empty() {
                 Type::Unit.into_id(store)
             } else {
-                let first_type = get_type(&elements[0], store)?;
-                for elem in &elements[1..] {
-                    let elem_type = get_type(elem, store)?;
-                    if elem_type != first_type {
-                        return Err(TypeInferenceError::NonHomogeneousList);
-                    }
-                }
-
-                first_type.into_id(store)
+                get_type(&elements[0], store)?.into_id(store)
             };
 
             let array = Type::Array {
@@ -204,22 +178,12 @@ pub fn get_type(value: &Value, store: &Store) -> Result<Type, TypeInferenceError
         } => match false_branch {
             None => Ok(Type::Unit),
 
-            Some(false_branch) => {
+            Some(_) => {
                 let block = &store[true_branch].borrow();
                 let true_branch_type = match block.elements.last() {
                     Some(last) => get_type(last, store)?,
                     None => Type::Unit,
                 };
-
-                let block = &store[false_branch].borrow();
-                let false_branch_type = match block.elements.last() {
-                    Some(last) => get_type(last, store)?,
-                    None => Type::Unit,
-                };
-
-                if true_branch_type != false_branch_type {
-                    return Err(TypeInferenceError::IfElseBranchTypeMismatch);
-                }
 
                 Ok(true_branch_type)
             }
@@ -241,14 +205,14 @@ pub fn get_type(value: &Value, store: &Store) -> Result<Type, TypeInferenceError
         },
 
         Value::Call {
-            callee,
+            callee: _,
             arguments: _,
         } => {
             // TODO: inference for function calls
             todo!()
         }
 
-        Value::Symbol { symbol } => {
+        Value::Symbol { symbol: _ } => {
             // TODO: inference for symbols
             todo!()
         }
