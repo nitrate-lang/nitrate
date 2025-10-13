@@ -65,7 +65,7 @@ impl IntoStoreId for FunctionAttributes {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub enum Lifetime {
     Static,
     Gc,
@@ -88,7 +88,7 @@ pub enum FunctionAttribute {
     Variadic,
 }
 
-#[derive(Debug, Serialize, Deserialize, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub enum Type {
     Never,
     Unit,

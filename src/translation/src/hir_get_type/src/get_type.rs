@@ -1,5 +1,5 @@
 use nitrate_hir::{
-    Store, TypeId,
+    Store,
     hir::{BinaryOp, IntoStoreId, Type, UnaryOp, Value},
 };
 
@@ -10,29 +10,29 @@ pub enum TypeInferenceError {
     ShiftOrRotateByNonU32,
 }
 
-pub fn get_type(value: &Value, store: &Store) -> Result<TypeId, TypeInferenceError> {
+pub fn get_type(value: &Value, store: &Store) -> Result<Type, TypeInferenceError> {
     match value {
-        Value::Unit => Ok(Type::Unit.into_id(store)),
-        Value::Bool(_) => Ok(Type::Bool.into_id(store)),
-        Value::I8(_) => Ok(Type::I8.into_id(store)),
-        Value::I16(_) => Ok(Type::I16.into_id(store)),
-        Value::I32(_) => Ok(Type::I32.into_id(store)),
-        Value::I64(_) => Ok(Type::I64.into_id(store)),
-        Value::I128(_) => Ok(Type::I128.into_id(store)),
-        Value::U8(_) => Ok(Type::U8.into_id(store)),
-        Value::U16(_) => Ok(Type::U16.into_id(store)),
-        Value::U32(_) => Ok(Type::U32.into_id(store)),
-        Value::U64(_) => Ok(Type::U64.into_id(store)),
-        Value::U128(_) => Ok(Type::U128.into_id(store)),
-        Value::F8(_) => Ok(Type::F8.into_id(store)),
-        Value::F16(_) => Ok(Type::F16.into_id(store)),
-        Value::F32(_) => Ok(Type::F32.into_id(store)),
-        Value::F64(_) => Ok(Type::F64.into_id(store)),
-        Value::F128(_) => Ok(Type::F128.into_id(store)),
-        Value::USize32(_) => Ok(Type::USize.into_id(store)),
-        Value::USize64(_) => Ok(Type::USize.into_id(store)),
-        Value::InferredInteger(_) => Ok(Type::InferredInteger.into_id(store)),
-        Value::InferredFloat(_) => Ok(Type::InferredFloat.into_id(store)),
+        Value::Unit => Ok(Type::Unit),
+        Value::Bool(_) => Ok(Type::Bool),
+        Value::I8(_) => Ok(Type::I8),
+        Value::I16(_) => Ok(Type::I16),
+        Value::I32(_) => Ok(Type::I32),
+        Value::I64(_) => Ok(Type::I64),
+        Value::I128(_) => Ok(Type::I128),
+        Value::U8(_) => Ok(Type::U8),
+        Value::U16(_) => Ok(Type::U16),
+        Value::U32(_) => Ok(Type::U32),
+        Value::U64(_) => Ok(Type::U64),
+        Value::U128(_) => Ok(Type::U128),
+        Value::F8(_) => Ok(Type::F8),
+        Value::F16(_) => Ok(Type::F16),
+        Value::F32(_) => Ok(Type::F32),
+        Value::F64(_) => Ok(Type::F64),
+        Value::F128(_) => Ok(Type::F128),
+        Value::USize32(_) => Ok(Type::USize),
+        Value::USize64(_) => Ok(Type::USize),
+        Value::InferredInteger(_) => Ok(Type::InferredInteger),
+        Value::InferredFloat(_) => Ok(Type::InferredFloat),
 
         Value::StringLit(str) => {
             let element_type = Type::U8.into_id(store);
@@ -41,7 +41,7 @@ pub fn get_type(value: &Value, store: &Store) -> Result<TypeId, TypeInferenceErr
                 len: str.len() as u64,
             };
 
-            Ok(array.into_id(store))
+            Ok(array)
         }
 
         Value::BStringLit(vec) => {
@@ -51,7 +51,7 @@ pub fn get_type(value: &Value, store: &Store) -> Result<TypeId, TypeInferenceErr
                 len: vec.len() as u64,
             };
 
-            Ok(array.into_id(store))
+            Ok(array)
         }
 
         Value::Struct {
@@ -97,13 +97,11 @@ pub fn get_type(value: &Value, store: &Store) -> Result<TypeId, TypeInferenceErr
                 let left = &store[left].borrow();
                 let right = &store[right].borrow();
 
-                let left_type = get_type(left, store)?;
-                let right_type = get_type(right, store)?;
-
-                if right_type != Type::U32.into_id(store) {
+                if get_type(right, store)? != Type::U32 {
                     return Err(TypeInferenceError::ShiftOrRotateByNonU32);
                 }
 
+                let left_type = get_type(left, store)?;
                 Ok(left_type)
             }
 
@@ -114,7 +112,7 @@ pub fn get_type(value: &Value, store: &Store) -> Result<TypeId, TypeInferenceErr
             | BinaryOp::Lte
             | BinaryOp::Gte
             | BinaryOp::Eq
-            | BinaryOp::Ne => Ok(Type::Bool.into_id(store)),
+            | BinaryOp::Ne => Ok(Type::Bool),
         },
 
         Value::Unary { op, expr } => match op {
@@ -122,7 +120,7 @@ pub fn get_type(value: &Value, store: &Store) -> Result<TypeId, TypeInferenceErr
                 let expr = &store[expr].borrow();
                 get_type(expr, store)
             }
-            UnaryOp::LogicNot => Ok(Type::Bool.into_id(store)),
+            UnaryOp::LogicNot => Ok(Type::Bool),
         },
 
         Value::FieldAccess { expr, field } => {
@@ -135,14 +133,14 @@ pub fn get_type(value: &Value, store: &Store) -> Result<TypeId, TypeInferenceErr
             todo!()
         }
 
-        Value::Assign { place: _, value: _ } => Ok(Type::Unit.into_id(store)),
+        Value::Assign { place: _, value: _ } => Ok(Type::Unit),
 
         Value::Deref { place } => {
             // TODO: inference for dereference
             todo!()
         }
 
-        Value::Cast { expr, to } => Ok(to.to_owned()),
+        Value::Cast { expr, to } => Ok((&store[to]).clone()),
 
         Value::GetAddressOf { place } => {
             // TODO: inference for address-of
@@ -166,7 +164,7 @@ pub fn get_type(value: &Value, store: &Store) -> Result<TypeId, TypeInferenceErr
                     }
                 }
 
-                first_type
+                first_type.into_id(store)
             };
 
             let array = Type::Array {
@@ -174,13 +172,13 @@ pub fn get_type(value: &Value, store: &Store) -> Result<TypeId, TypeInferenceErr
                 len: elements.len() as u64,
             };
 
-            Ok(array.into_id(store))
+            Ok(array)
         }
 
         Value::Tuple { elements } => {
             let mut element_types = Vec::with_capacity(elements.len());
             for elem in elements {
-                let elem_type = get_type(elem, store)?;
+                let elem_type = get_type(elem, store)?.into_id(store);
                 element_types.push(elem_type);
             }
 
@@ -188,7 +186,7 @@ pub fn get_type(value: &Value, store: &Store) -> Result<TypeId, TypeInferenceErr
                 element_types: element_types.into_id(store),
             };
 
-            Ok(tuple_type.into_id(store))
+            Ok(tuple_type)
         }
 
         Value::If {
@@ -196,19 +194,19 @@ pub fn get_type(value: &Value, store: &Store) -> Result<TypeId, TypeInferenceErr
             false_branch,
             condition: _,
         } => match false_branch {
-            None => Ok(Type::Unit.into_id(store)),
+            None => Ok(Type::Unit),
 
             Some(false_branch) => {
                 let block = &store[true_branch].borrow();
                 let true_branch_type = match block.elements.last() {
                     Some(last) => get_type(last, store)?,
-                    None => Type::Unit.into_id(store),
+                    None => Type::Unit,
                 };
 
                 let block = &store[false_branch].borrow();
                 let false_branch_type = match block.elements.last() {
                     Some(last) => get_type(last, store)?,
-                    None => Type::Unit.into_id(store),
+                    None => Type::Unit,
                 };
 
                 if true_branch_type != false_branch_type {
@@ -222,17 +220,16 @@ pub fn get_type(value: &Value, store: &Store) -> Result<TypeId, TypeInferenceErr
         Value::While {
             condition: _,
             body: _,
-        } => Ok(Type::Unit.into_id(store)),
+        } => Ok(Type::Unit),
 
-        Value::Loop { body: _ } => Ok(Type::Unit.into_id(store)),
-
-        Value::Break { label: _ } => Ok(Type::Never.into_id(store)),
-        Value::Continue { label: _ } => Ok(Type::Never.into_id(store)),
-        Value::Return { value: _ } => Ok(Type::Never.into_id(store)),
+        Value::Loop { body: _ } => Ok(Type::Unit),
+        Value::Break { label: _ } => Ok(Type::Never),
+        Value::Continue { label: _ } => Ok(Type::Never),
+        Value::Return { value: _ } => Ok(Type::Never),
 
         Value::Block { block } => match store[block].borrow().elements.last() {
             Some(last) => get_type(last, store),
-            None => Ok(Type::Unit.into_id(store)),
+            None => Ok(Type::Unit),
         },
 
         Value::Call {

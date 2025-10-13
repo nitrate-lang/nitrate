@@ -79,42 +79,42 @@ impl TryIntoHir for ast::Module {
         for item in self.items {
             match item {
                 ast::Item::Module(m) => {
-                    // TODO: Lower nested modules
+                    // TODO: lower nested modules
                     log.report(&HirErr::UnimplementedFeature("nested modules".into()));
                 }
 
                 ast::Item::Import(i) => {
-                    // TODO: Lower import statements
+                    // TODO: lower import statements
                     log.report(&HirErr::UnimplementedFeature("import statements".into()));
                 }
 
                 ast::Item::TypeAlias(ta) => {
-                    // TODO: Lower type aliases
+                    // TODO: lower type aliases
                     log.report(&HirErr::UnimplementedFeature("type aliases".into()));
                 }
 
                 ast::Item::Struct(s) => {
-                    // TODO: Lower struct definitions
+                    // TODO: lower struct definitions
                     log.report(&HirErr::UnimplementedFeature("structs".into()));
                 }
 
                 ast::Item::Enum(e) => {
-                    // TODO: Lower enum definitions
+                    // TODO: lower enum definitions
                     log.report(&HirErr::UnimplementedFeature("enums".into()));
                 }
 
                 ast::Item::Trait(t) => {
-                    // TODO: Lower trait definitions
+                    // TODO: lower trait definitions
                     log.report(&HirErr::UnimplementedFeature("traits".into()));
                 }
 
                 ast::Item::Impl(i) => {
-                    // TODO: Lower impl blocks
+                    // TODO: lower impl blocks
                     log.report(&HirErr::UnimplementedFeature("impl blocks".into()));
                 }
 
                 ast::Item::Function(f) => {
-                    // TODO: Lower function definitions
+                    // TODO: lower function definitions
                     log.report(&HirErr::UnimplementedFeature("functions".into()));
                 }
 

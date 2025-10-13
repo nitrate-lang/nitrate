@@ -66,7 +66,7 @@ impl TryIntoHir for ast::TypeInfo {
     type Hir = Value;
 
     fn try_into_hir(self, _ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
-        // TODO: Lower ast::TypeInfo to HIR
+        // TODO: lower ast::TypeInfo to HIR
         log.report(&HirErr::UnimplementedFeature("ast::Expr::TypeInfo".into()));
         Err(())
     }
@@ -108,7 +108,7 @@ impl TryIntoHir for ast::StructInit {
     type Hir = Value;
 
     fn try_into_hir(self, _ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
-        // TODO: Lower ast::StructInit to HIR
+        // TODO: lower ast::StructInit to HIR
         log.report(&HirErr::UnimplementedFeature(
             "ast::Expr::StructInit".into(),
         ));
@@ -424,7 +424,7 @@ impl TryIntoHir for ast::BinExpr {
             }),
 
             ast::BinExprOp::Dot => {
-                // TODO: Lower field access to HIR
+                // TODO: lower field access to HIR
                 log.report(&HirErr::UnimplementedFeature(
                     "field access with . operator".into(),
                 ));
@@ -432,7 +432,7 @@ impl TryIntoHir for ast::BinExpr {
             }
 
             ast::BinExprOp::Arrow => {
-                // TODO: Lower field access to HIR
+                // TODO: lower field access to HIR
                 log.report(&HirErr::UnimplementedFeature(
                     "method call with -> operator".into(),
                 ));
@@ -440,7 +440,7 @@ impl TryIntoHir for ast::BinExpr {
             }
 
             ast::BinExprOp::Range => {
-                // TODO: Lower range to HIR
+                // TODO: lower range to HIR
                 log.report(&HirErr::UnimplementedFeature(
                     "range with .. operator".into(),
                 ));
@@ -516,7 +516,7 @@ impl TryIntoHir for ast::Closure {
     type Hir = Value;
 
     fn try_into_hir(self, _ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
-        // TODO: Lower ast::Closure to HIR
+        // TODO: lower ast::Closure to HIR
         log.report(&HirErr::UnimplementedFeature("ast::Expr::Closure".into()));
         Err(())
     }
@@ -526,7 +526,7 @@ impl TryIntoHir for ast::ExprPath {
     type Hir = Value;
 
     fn try_into_hir(self, _ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
-        // TODO: Lower ast::ExprPath to HIR
+        // TODO: lower ast::ExprPath to HIR
         log.report(&HirErr::UnimplementedFeature("ast::Expr::Path".into()));
         Err(())
     }
@@ -597,7 +597,7 @@ impl TryIntoHir for ast::Match {
     type Hir = Value;
 
     fn try_into_hir(self, _ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
-        // TODO: Lower ast::Match to HIR
+        // TODO: lower ast::Match to HIR
         log.report(&HirErr::UnimplementedFeature("ast::Expr::Match".into()));
         Err(())
     }
@@ -640,7 +640,7 @@ impl TryIntoHir for ast::ForEach {
     type Hir = Value;
 
     fn try_into_hir(self, _ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
-        // TODO: Lower ast::ForEach to HIR
+        // TODO: lower ast::ForEach to HIR
         log.report(&HirErr::UnimplementedFeature("ast::Expr::erFor".into()));
         Err(())
     }
@@ -650,7 +650,7 @@ impl TryIntoHir for ast::Await {
     type Hir = Value;
 
     fn try_into_hir(self, _ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
-        // TODO: Lower ast::Await to HIR
+        // TODO: lower ast::Await to HIR
         log.report(&HirErr::UnimplementedFeature("ast::Expr::Await".into()));
         Err(())
     }
@@ -660,7 +660,7 @@ impl TryIntoHir for ast::Call {
     type Hir = Value;
 
     fn try_into_hir(self, _ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
-        // TODO: Lower ast::Call to HIR
+        // TODO: lower ast::Call to HIR
         log.report(&HirErr::UnimplementedFeature("ast::Expr::Call".into()));
         Err(())
     }

@@ -434,7 +434,7 @@ impl HirEvaluate for Value {
             }
 
             Value::Symbol { symbol: _ } => {
-                // TODO: Evaluate symbol expressions
+                // TODO: evaluate symbol expressions
                 todo!()
             }
 
@@ -471,17 +471,17 @@ impl HirEvaluate for Value {
             }
 
             Value::Assign { place: _, value: _ } => {
-                // TODO: Evaluate assignment expressions
+                // TODO: evaluate assignment expressions
                 todo!()
             }
 
             Value::Deref { place: _ } => {
-                // TODO: Evaluate dereference expressions
+                // TODO: evaluate dereference expressions
                 todo!()
             }
 
             Value::GetAddressOf { place: _ } => {
-                // TODO: Evaluate address-of expressions
+                // TODO: evaluate address-of expressions
                 todo!()
             }
 
@@ -514,13 +514,13 @@ impl HirEvaluate for Value {
                     return result;
                 }
 
-                // TODO: Handle non-literal casts
+                // TODO: handle non-literal type casts
 
                 return Err(Unwind::TypeError);
             }
 
             Value::GetTypeOf { expr: _ } => {
-                // TODO: Evaluate typeof expressions
+                // TODO: evaluate typeof expressions
                 todo!()
             }
 
@@ -607,7 +607,7 @@ impl HirEvaluate for Value {
                 callee: _,
                 arguments: _,
             } => {
-                // TODO: Evaluate function call expressions
+                // TODO: evaluate function call expressions
                 todo!()
             }
         }

@@ -12,19 +12,19 @@ impl TypeResolver for Module {
 
 impl TypeResolver for GlobalVariable {
     fn resolve_type(&mut self, _ctx: &mut TyCtx, _log: &CompilerLog) {
-        // TODO: Implement type resolution for GlobalVariable
+        // TODO: resolution for GlobalVariable
     }
 }
 
 impl TypeResolver for ExternalFunction {
     fn resolve_type(&mut self, _ctx: &mut TyCtx, _log: &CompilerLog) {
-        // TODO: Implement type resolution for ExternalFunction
+        // TODO: resolution for ExternalFunction
     }
 }
 
 impl TypeResolver for StaticFunction {
     fn resolve_type(&mut self, _ctx: &mut TyCtx, _log: &CompilerLog) {
-        // TODO: Implement type resolution for StaticFunction
+        // TODO: resolution for StaticFunction
     }
 }
 

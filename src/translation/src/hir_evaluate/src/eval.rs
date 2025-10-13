@@ -144,7 +144,7 @@ impl HirEvalCtx<'_, '_> {
                 struct_type,
                 fields: _,
             } => {
-                // TODO: Convert from nitrate's `std::meta::Type` into nitrate_hir::Type
+                // TODO: convert from nitrate's `std::meta::Type` into nitrate_hir::Type
 
                 self.store[&struct_type].is_struct();
 
