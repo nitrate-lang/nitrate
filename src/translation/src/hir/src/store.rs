@@ -116,17 +116,11 @@ macro_rules! impl_store_mut {
 
 impl_dedup_store!(TypeId, Type, TypeStore);
 
-impl_dedup_store!(TypeListId, TypeList, TypeListStore);
+impl_dedup_store!(StructTypeId, StructType, StructTypeStore);
 
-impl_dedup_store!(StructFieldsId, StructFields, StructFieldsStore);
+impl_dedup_store!(EnumTypeId, EnumType, EnumTypeStore);
 
-impl_dedup_store!(EnumVariantsId, EnumVariants, EnumVariantsStore);
-
-impl_dedup_store!(StructAttributesId, StructAttributes, StructAttributesStore);
-
-impl_dedup_store!(EnumAttributesId, EnumAttributes, EnumAttributesStore);
-
-impl_dedup_store!(FuncAttributesId, FunctionAttributes, FuncAttributesStore);
+impl_dedup_store!(FunctionTypeId, FunctionType, FunctionTypeStore);
 
 impl_store_mut!(ItemId, Item, ItemStore);
 
@@ -140,12 +134,9 @@ impl_store_mut!(BlockId, Block, ExprBlockStore);
 
 pub struct Store {
     types: TypeStore,
-    type_lists: TypeListStore,
-    struct_fields: StructFieldsStore,
-    enum_variants: EnumVariantsStore,
-    struct_attributes: StructAttributesStore,
-    enum_attributes: EnumAttributesStore,
-    function_attributes: FuncAttributesStore,
+    struct_types: StructTypeStore,
+    enum_types: EnumTypeStore,
+    function_types: FunctionTypeStore,
     items: ItemStore,
     symbols: SymbolStore,
     values: ExprValueStore,
@@ -157,12 +148,9 @@ impl Store {
     pub fn new() -> Self {
         Self {
             types: TypeStore::new(),
-            type_lists: TypeListStore::new(),
-            struct_fields: StructFieldsStore::new(),
-            enum_variants: EnumVariantsStore::new(),
-            struct_attributes: StructAttributesStore::new(),
-            enum_attributes: EnumAttributesStore::new(),
-            function_attributes: FuncAttributesStore::new(),
+            struct_types: StructTypeStore::new(),
+            enum_types: EnumTypeStore::new(),
+            function_types: FunctionTypeStore::new(),
 
             items: ItemStore::new(),
             symbols: SymbolStore::new(),
@@ -176,28 +164,16 @@ impl Store {
         self.types.store(ty)
     }
 
-    pub fn store_type_list(&self, ty_list: TypeList) -> TypeListId {
-        self.type_lists.store(ty_list)
+    pub fn store_struct_type(&self, struct_type: StructType) -> StructTypeId {
+        self.struct_types.store(struct_type)
     }
 
-    pub fn store_struct_fields(&self, fields: StructFields) -> StructFieldsId {
-        self.struct_fields.store(fields)
+    pub fn store_enum_type(&self, enum_type: EnumType) -> EnumTypeId {
+        self.enum_types.store(enum_type)
     }
 
-    pub fn store_enum_variants(&self, variants: EnumVariants) -> EnumVariantsId {
-        self.enum_variants.store(variants)
-    }
-
-    pub fn store_struct_attributes(&self, attrs: StructAttributes) -> StructAttributesId {
-        self.struct_attributes.store(attrs)
-    }
-
-    pub fn store_enum_attributes(&self, attrs: EnumAttributes) -> EnumAttributesId {
-        self.enum_attributes.store(attrs)
-    }
-
-    pub fn store_function_attributes(&self, attrs: FunctionAttributes) -> FuncAttributesId {
-        self.function_attributes.store(attrs)
+    pub fn store_function_type(&self, func_type: FunctionType) -> FunctionTypeId {
+        self.function_types.store(func_type)
     }
 
     pub fn store_item(&self, item: Item) -> ItemId {
@@ -222,12 +198,9 @@ impl Store {
 
     pub fn reset(&mut self) {
         self.types.reset();
-        self.type_lists.reset();
-        self.struct_fields.reset();
-        self.enum_variants.reset();
-        self.struct_attributes.reset();
-        self.enum_attributes.reset();
-        self.function_attributes.reset();
+        self.struct_types.reset();
+        self.enum_types.reset();
+        self.function_types.reset();
         self.items.reset();
         self.symbols.reset();
         self.values.reset();
@@ -237,12 +210,9 @@ impl Store {
 
     pub fn shrink_to_fit(&mut self) {
         self.types.shrink_to_fit();
-        self.type_lists.shrink_to_fit();
-        self.struct_fields.shrink_to_fit();
-        self.enum_variants.shrink_to_fit();
-        self.struct_attributes.shrink_to_fit();
-        self.enum_attributes.shrink_to_fit();
-        self.function_attributes.shrink_to_fit();
+        self.struct_types.shrink_to_fit();
+        self.enum_types.shrink_to_fit();
+        self.function_types.shrink_to_fit();
         self.items.shrink_to_fit();
         self.symbols.shrink_to_fit();
         self.values.shrink_to_fit();
@@ -259,51 +229,27 @@ impl std::ops::Index<&TypeId> for Store {
     }
 }
 
-impl std::ops::Index<&TypeListId> for Store {
-    type Output = TypeList;
+impl std::ops::Index<&StructTypeId> for Store {
+    type Output = StructType;
 
-    fn index(&self, index: &TypeListId) -> &Self::Output {
-        &self.type_lists[index]
+    fn index(&self, index: &StructTypeId) -> &Self::Output {
+        &self.struct_types[index]
     }
 }
 
-impl std::ops::Index<&StructFieldsId> for Store {
-    type Output = StructFields;
+impl std::ops::Index<&EnumTypeId> for Store {
+    type Output = EnumType;
 
-    fn index(&self, index: &StructFieldsId) -> &Self::Output {
-        &self.struct_fields[index]
+    fn index(&self, index: &EnumTypeId) -> &Self::Output {
+        &self.enum_types[index]
     }
 }
 
-impl std::ops::Index<&EnumVariantsId> for Store {
-    type Output = EnumVariants;
+impl std::ops::Index<&FunctionTypeId> for Store {
+    type Output = FunctionType;
 
-    fn index(&self, index: &EnumVariantsId) -> &Self::Output {
-        &self.enum_variants[index]
-    }
-}
-
-impl std::ops::Index<&StructAttributesId> for Store {
-    type Output = StructAttributes;
-
-    fn index(&self, index: &StructAttributesId) -> &Self::Output {
-        &self.struct_attributes[index]
-    }
-}
-
-impl std::ops::Index<&EnumAttributesId> for Store {
-    type Output = EnumAttributes;
-
-    fn index(&self, index: &EnumAttributesId) -> &Self::Output {
-        &self.enum_attributes[index]
-    }
-}
-
-impl std::ops::Index<&FuncAttributesId> for Store {
-    type Output = FunctionAttributes;
-
-    fn index(&self, index: &FuncAttributesId) -> &Self::Output {
-        &self.function_attributes[index]
+    fn index(&self, index: &FunctionTypeId) -> &Self::Output {
+        &self.function_types[index]
     }
 }
 

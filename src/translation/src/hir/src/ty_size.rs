@@ -27,12 +27,12 @@ pub fn get_size_of(ty: &Type, store: &Store, ptr_size: PtrSize) -> Result<u64, S
             Ok(element_stride * (*len as u64))
         }
 
-        Type::Tuple { element_types: elements } => {
+        Type::Tuple {
+            element_types: elements,
+        } => {
             let mut size = 0_u64;
 
-            for element in &store[elements] {
-                let element = &store[element];
-
+            for element in &*elements {
                 let element_size = get_size_of(element, store, ptr_size)?;
                 let element_align = match get_align_of(element, store, ptr_size) {
                     Ok(align) => Ok(align),
@@ -48,12 +48,16 @@ pub fn get_size_of(ty: &Type, store: &Store, ptr_size: PtrSize) -> Result<u64, S
 
         Type::Slice { element_type: _ } => Err(SizeofError::UnknownSize),
 
-        Type::Struct { attributes, fields } => {
-            if store[attributes].contains(&StructAttribute::Packed) {
+        Type::Struct { struct_type } => {
+            let StructType {
+                fields, attributes, ..
+            } = &store[struct_type];
+
+            if attributes.contains(&StructAttribute::Packed) {
                 let mut total_size = 0_u64;
 
-                for (_, field_type) in &store[fields] {
-                    total_size += get_size_of(&store[field_type], store, ptr_size)?;
+                for (_, field_type) in fields {
+                    total_size += get_size_of(field_type, store, ptr_size)?;
                 }
 
                 return Ok(total_size);
@@ -61,9 +65,7 @@ pub fn get_size_of(ty: &Type, store: &Store, ptr_size: PtrSize) -> Result<u64, S
 
             let mut offset = 0_u64;
 
-            for (_, field_type) in &store[fields] {
-                let field_type = &store[field_type];
-
+            for (_, field_type) in fields {
                 let field_size = get_size_of(field_type, store, ptr_size)?;
                 let field_align = match get_align_of(field_type, store, ptr_size) {
                     Ok(align) => Ok(align),
@@ -77,12 +79,13 @@ pub fn get_size_of(ty: &Type, store: &Store, ptr_size: PtrSize) -> Result<u64, S
             Ok(offset)
         }
 
-        Type::Enum { variants, .. } => {
-            let variants = &store[variants];
+        Type::Enum { enum_type } => {
+            let EnumType { variants, .. } = &store[enum_type];
+
             let mut size = 0_u64;
 
             for (_, variant_type) in variants {
-                let variant_size = get_size_of(&store[variant_type], store, ptr_size)?;
+                let variant_size = get_size_of(variant_type, store, ptr_size)?;
                 size = max(size, variant_size);
             }
 

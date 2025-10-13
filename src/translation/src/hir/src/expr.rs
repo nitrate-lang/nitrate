@@ -314,12 +314,12 @@ pub enum Value {
     InferredFloat(f64),
 
     Struct {
-        struct_type: TypeId,
+        struct_type: StructTypeId,
         fields: Box<HashMap<IString, ValueId>>,
     },
 
     Enum {
-        enum_type: TypeId,
+        enum_type: EnumTypeId,
         variant: IString,
         value: ValueId,
     },

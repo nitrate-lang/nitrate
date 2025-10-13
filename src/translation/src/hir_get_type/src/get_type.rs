@@ -1,6 +1,6 @@
 use nitrate_hir::{
     Store,
-    hir::{BinaryOp, IntoStoreId, Type, UnaryOp, Value},
+    hir::{BinaryOp, IntoStoreId, Lifetime, Type, UnaryOp, Value},
 };
 
 pub enum TypeInferenceError {
@@ -58,22 +58,17 @@ pub fn get_type(value: &Value, store: &Store) -> Result<Type, TypeInferenceError
         Value::Struct {
             struct_type,
             fields: _,
-        } => Ok(store[struct_type].clone()),
+        } => Ok(Type::Struct {
+            struct_type: struct_type.to_owned(),
+        }),
 
         Value::Enum {
             enum_type,
             variant,
             value: _,
-        } => match &store[enum_type] {
-            Type::Enum {
-                variants,
-                attributes: _,
-            } => match store[variants].get(variant) {
-                Some(variant_type) => Ok(store[variant_type].clone()),
-                None => Err(TypeInferenceError::EnumVariantNotPresent),
-            },
-
-            _ => return Err(TypeInferenceError::EnumVariantNotPresent),
+        } => match store[enum_type].variants.get(variant) {
+            Some(variant_type) => Ok(variant_type.clone()),
+            None => Err(TypeInferenceError::EnumVariantNotPresent),
         },
 
         Value::Binary { left, op, right } => match op {
@@ -129,6 +124,14 @@ pub fn get_type(value: &Value, store: &Store) -> Result<Type, TypeInferenceError
         },
 
         Value::FieldAccess { expr, field } => {
+            let expr = &store[expr].borrow();
+
+            if let Type::Struct { struct_type } = get_type(expr, store)? {
+                let struct_def = &store[&struct_type];
+                if let Some(field_type) = struct_def.fields.get(field) {
+                    return Ok(field_type.clone());
+                }
+            }
             // TODO: inference for field access
             todo!()
         }
@@ -145,9 +148,9 @@ pub fn get_type(value: &Value, store: &Store) -> Result<Type, TypeInferenceError
             todo!()
         }
 
-        Value::Cast { expr, to } => Ok((&store[to]).clone()),
+        Value::Cast { expr: _, to } => Ok((&store[to]).clone()),
 
-        Value::GetAddressOf { place } => {
+        Value::GetAddressOf { place: _ } => {
             // TODO: inference for address-of
             todo!()
         }
@@ -183,12 +186,12 @@ pub fn get_type(value: &Value, store: &Store) -> Result<Type, TypeInferenceError
         Value::Tuple { elements } => {
             let mut element_types = Vec::with_capacity(elements.len());
             for elem in elements {
-                let elem_type = get_type(elem, store)?.into_id(store);
+                let elem_type = get_type(elem, store)?;
                 element_types.push(elem_type);
             }
 
             let tuple_type = Type::Tuple {
-                element_types: element_types.into_id(store),
+                element_types: element_types.into(),
             };
 
             Ok(tuple_type)

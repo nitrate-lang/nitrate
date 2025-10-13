@@ -34,6 +34,80 @@ impl Dump for FunctionAttribute {
     }
 }
 
+impl Dump for StructType {
+    fn dump(
+        &self,
+        ctx: &mut DumpContext,
+        o: &mut dyn std::fmt::Write,
+    ) -> Result<(), std::fmt::Error> {
+        write!(o, "struct ")?;
+        if !self.attributes.is_empty() {
+            write!(o, "[")?;
+            for (i, attribute) in self.attributes.iter().enumerate() {
+                if i != 0 {
+                    write!(o, ", ")?;
+                }
+
+                attribute.dump(ctx, o)?;
+            }
+            write!(o, "] ")?;
+        }
+
+        if self.fields.is_empty() {
+            write!(o, "{{}}")
+        } else {
+            write!(o, "{{\n")?;
+            ctx.indent += 1;
+            for (name, field_type) in &self.fields {
+                self.write_indent(ctx, o)?;
+                write!(o, "{name}: ")?;
+                field_type.dump(ctx, o)?;
+                write!(o, ",\n")?;
+            }
+            ctx.indent -= 1;
+            self.write_indent(ctx, o)?;
+            write!(o, "}}")
+        }
+    }
+}
+
+impl Dump for EnumType {
+    fn dump(
+        &self,
+        ctx: &mut DumpContext,
+        o: &mut dyn std::fmt::Write,
+    ) -> Result<(), std::fmt::Error> {
+        write!(o, "enum ")?;
+        if !self.attributes.is_empty() {
+            write!(o, "[")?;
+            for (i, attribute) in self.attributes.iter().enumerate() {
+                if i != 0 {
+                    write!(o, ", ")?;
+                }
+
+                attribute.dump(ctx, o)?;
+            }
+            write!(o, "] ")?;
+        }
+
+        if self.variants.is_empty() {
+            write!(o, "{{}}")
+        } else {
+            write!(o, "{{\n")?;
+            ctx.indent += 1;
+            for (name, variant_type) in &self.variants {
+                self.write_indent(ctx, o)?;
+                write!(o, "{name}: ")?;
+                variant_type.dump(ctx, o)?;
+                write!(o, ",\n")?;
+            }
+            ctx.indent -= 1;
+            self.write_indent(ctx, o)?;
+            write!(o, "}}")
+        }
+    }
+}
+
 impl Dump for Type {
     fn dump(
         &self,
@@ -68,19 +142,17 @@ impl Dump for Type {
                 write!(o, "; {len}]")
             }
 
-            Type::Tuple { element_types: elements } => {
-                let elements = &ctx.store[elements];
-
+            Type::Tuple { element_types } => {
                 write!(o, "(")?;
-                for (i, element_type) in elements.iter().enumerate() {
+                for (i, element_type) in element_types.iter().enumerate() {
                     if i != 0 {
                         write!(o, ", ")?;
                     }
 
-                    ctx.store[element_type].dump(ctx, o)?;
+                    element_type.dump(ctx, o)?;
                 }
 
-                if elements.len() == 1 {
+                if element_types.len() == 1 {
                     write!(o, ",")?;
                 }
 
@@ -93,10 +165,11 @@ impl Dump for Type {
                 write!(o, "]")
             }
 
-            Type::Struct { attributes, fields } => {
+            Type::Struct { struct_type } => {
+                let StructType { attributes, fields } = &ctx.store[struct_type];
+
                 write!(o, "struct")?;
 
-                let attributes = &ctx.store[attributes];
                 if !attributes.is_empty() {
                     write!(o, " [")?;
                     for (i, attribute) in attributes.iter().enumerate() {
@@ -108,8 +181,6 @@ impl Dump for Type {
                     }
                     write!(o, "]")?;
                 }
-
-                let fields = &ctx.store[fields];
 
                 if fields.is_empty() {
                     write!(o, " {{}}")
@@ -120,7 +191,7 @@ impl Dump for Type {
 
                         self.write_indent(ctx, o)?;
                         write!(o, "{name}: ")?;
-                        ctx.store[field_type].dump(ctx, o)?;
+                        field_type.dump(ctx, o)?;
                         write!(o, ",\n")?;
 
                         ctx.indent -= 1;
@@ -131,13 +202,14 @@ impl Dump for Type {
                 }
             }
 
-            Type::Enum {
-                attributes,
-                variants,
-            } => {
+            Type::Enum { enum_type } => {
+                let EnumType {
+                    attributes,
+                    variants,
+                } = &ctx.store[enum_type];
+
                 write!(o, "enum")?;
 
-                let attributes = &ctx.store[attributes];
                 if !attributes.is_empty() {
                     write!(o, " [")?;
                     for (i, attribute) in attributes.iter().enumerate() {
@@ -150,8 +222,6 @@ impl Dump for Type {
                     write!(o, "]")?;
                 }
 
-                let variants = &ctx.store[variants];
-
                 if variants.is_empty() {
                     write!(o, " {{}}")
                 } else {
@@ -161,7 +231,7 @@ impl Dump for Type {
 
                         self.write_indent(ctx, o)?;
                         write!(o, "{name}: ")?;
-                        ctx.store[variant_type].dump(ctx, o)?;
+                        variant_type.dump(ctx, o)?;
                         write!(o, ",\n")?;
 
                         ctx.indent -= 1;
@@ -186,14 +256,15 @@ impl Dump for Type {
                 write!(o, ": {bits}")
             }
 
-            Type::Function {
-                attributes,
-                parameters,
-                return_type,
-            } => {
+            Type::Function { function_type } => {
+                let FunctionType {
+                    attributes,
+                    parameters,
+                    return_type,
+                } = &ctx.store[function_type];
+
                 write!(o, "fn")?;
 
-                let attributes = &ctx.store[attributes];
                 if !attributes.is_empty() {
                     write!(o, " [")?;
                     for (i, attribute) in attributes.iter().enumerate() {
@@ -207,12 +278,12 @@ impl Dump for Type {
                 }
 
                 write!(o, "(")?;
-                for (i, param_type) in ctx.store[parameters].iter().enumerate() {
+                for (i, param_type) in parameters.iter().enumerate() {
                     if i != 0 {
                         write!(o, ", ")?;
                     }
 
-                    ctx.store[param_type].dump(ctx, o)?;
+                    param_type.dump(ctx, o)?;
                 }
                 write!(o, ") -> ")?;
                 ctx.store[return_type].dump(ctx, o)

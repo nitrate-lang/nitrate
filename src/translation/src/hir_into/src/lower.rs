@@ -72,50 +72,26 @@ impl std::ops::Index<&TypeId> for HirCtx {
     }
 }
 
-impl std::ops::Index<&TypeListId> for HirCtx {
-    type Output = TypeList;
+impl std::ops::Index<&StructTypeId> for HirCtx {
+    type Output = StructType;
 
-    fn index(&self, index: &TypeListId) -> &Self::Output {
+    fn index(&self, index: &StructTypeId) -> &Self::Output {
         &self.storage[index]
     }
 }
 
-impl std::ops::Index<&StructFieldsId> for HirCtx {
-    type Output = StructFields;
+impl std::ops::Index<&EnumTypeId> for HirCtx {
+    type Output = EnumType;
 
-    fn index(&self, index: &StructFieldsId) -> &Self::Output {
+    fn index(&self, index: &EnumTypeId) -> &Self::Output {
         &self.storage[index]
     }
 }
 
-impl std::ops::Index<&EnumVariantsId> for HirCtx {
-    type Output = EnumVariants;
+impl std::ops::Index<&FunctionTypeId> for HirCtx {
+    type Output = FunctionType;
 
-    fn index(&self, index: &EnumVariantsId) -> &Self::Output {
-        &self.storage[index]
-    }
-}
-
-impl std::ops::Index<&StructAttributesId> for HirCtx {
-    type Output = StructAttributes;
-
-    fn index(&self, index: &StructAttributesId) -> &Self::Output {
-        &self.storage[index]
-    }
-}
-
-impl std::ops::Index<&EnumAttributesId> for HirCtx {
-    type Output = EnumAttributes;
-
-    fn index(&self, index: &EnumAttributesId) -> &Self::Output {
-        &self.storage[index]
-    }
-}
-
-impl std::ops::Index<&FuncAttributesId> for HirCtx {
-    type Output = FunctionAttributes;
-
-    fn index(&self, index: &FuncAttributesId) -> &Self::Output {
+    fn index(&self, index: &FunctionTypeId) -> &Self::Output {
         &self.storage[index]
     }
 }

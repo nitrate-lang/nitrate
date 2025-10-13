@@ -26,11 +26,13 @@ pub fn get_align_of(ty: &Type, store: &Store, ptr_size: PtrSize) -> Result<u64, 
             }
         }
 
-        Type::Tuple { element_types: elements } => {
+        Type::Tuple {
+            element_types: elements,
+        } => {
             let mut max_align = 1;
 
-            for element in &store[elements] {
-                let element_align = get_align_of(&store[element], store, ptr_size)?;
+            for element in &*elements {
+                let element_align = get_align_of(element, store, ptr_size)?;
                 max_align = max(max_align, element_align);
             }
 
@@ -39,27 +41,32 @@ pub fn get_align_of(ty: &Type, store: &Store, ptr_size: PtrSize) -> Result<u64, 
 
         Type::Slice { element_type } => get_align_of(&store[element_type], store, ptr_size),
 
-        Type::Struct { attributes, fields } => {
-            if store[attributes].contains(&StructAttribute::Packed) {
+        Type::Struct { struct_type } => {
+            let StructType {
+                fields, attributes, ..
+            } = &store[struct_type];
+
+            if attributes.contains(&StructAttribute::Packed) {
                 return Ok(1);
             }
 
             let mut max_align = 1;
 
-            for (_, field_type) in &store[fields] {
-                let field_align = get_align_of(&store[field_type], store, ptr_size)?;
+            for (_, field_type) in fields {
+                let field_align = get_align_of(field_type, store, ptr_size)?;
                 max_align = max(max_align, field_align);
             }
 
             Ok(max_align)
         }
 
-        Type::Enum { variants, .. } => {
-            let variants = &store[variants];
+        Type::Enum { enum_type } => {
+            let EnumType { variants, .. } = &store[enum_type];
+
             let mut max_align = 1;
 
             for (_, variant_type) in variants {
-                let variant_align = get_align_of(&store[variant_type], store, ptr_size)?;
+                let variant_align = get_align_of(variant_type, store, ptr_size)?;
                 max_align = max(max_align, variant_align);
             }
 

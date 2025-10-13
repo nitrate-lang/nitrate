@@ -180,11 +180,11 @@ impl TryIntoHir for ast::TupleType {
         let mut elements = Vec::with_capacity(self.element_types.len());
         for ast_elem_ty in self.element_types.into_iter() {
             let hir_elem_ty = ast_elem_ty.try_into_hir(ctx, log)?;
-            elements.push(hir_elem_ty.into_id(ctx.store()));
+            elements.push(hir_elem_ty);
         }
 
         Ok(Type::Tuple {
-            element_types: elements.into_id(ctx.store()),
+            element_types: elements.into(),
         })
     }
 }
