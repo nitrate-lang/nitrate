@@ -259,14 +259,6 @@ impl std::hash::Hash for Lit {
     }
 }
 
-impl IntoStoreId for Lit {
-    type Id = LiteralId;
-
-    fn into_id(self, ctx: &Store) -> Self::Id {
-        ctx.store_literal(self)
-    }
-}
-
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum BlockSafety {
     Safe,
@@ -277,14 +269,6 @@ pub enum BlockSafety {
 pub struct Block {
     pub safety: BlockSafety,
     pub elements: Vec<Value>,
-}
-
-impl IntoStoreId for Block {
-    type Id = BlockId;
-
-    fn into_id(self, ctx: &Store) -> Self::Id {
-        ctx.store_block(self)
-    }
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -471,14 +455,6 @@ impl From<Lit> for Value {
     }
 }
 
-impl IntoStoreId for Value {
-    type Id = ValueId;
-
-    fn into_id(self, ctx: &Store) -> Self::Id {
-        ctx.store_value(self)
-    }
-}
-
 impl Value {
     pub fn is_literal(&self) -> bool {
         matches!(
@@ -504,5 +480,29 @@ impl Value {
                 | Value::USize64(_)
                 | Value::InferredInteger(_)
         )
+    }
+}
+
+impl IntoStoreId for Lit {
+    type Id = LiteralId;
+
+    fn into_id(self, store: &Store) -> Self::Id {
+        store.store_literal(self)
+    }
+}
+
+impl IntoStoreId for Block {
+    type Id = BlockId;
+
+    fn into_id(self, store: &Store) -> Self::Id {
+        store.store_block(self)
+    }
+}
+
+impl IntoStoreId for Value {
+    type Id = ValueId;
+
+    fn into_id(self, store: &Store) -> Self::Id {
+        store.store_value(self)
     }
 }

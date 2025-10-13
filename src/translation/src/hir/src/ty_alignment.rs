@@ -53,7 +53,7 @@ pub fn get_align_of(ty: &Type, store: &Store, ptr_size: PtrSize) -> Result<u64, 
             let mut max_align = 1;
 
             for (_, field_type) in fields {
-                let field_align = get_align_of(field_type, store, ptr_size)?;
+                let field_align = get_align_of(&store[field_type], store, ptr_size)?;
                 max_align = max(max_align, field_align);
             }
 
@@ -66,7 +66,7 @@ pub fn get_align_of(ty: &Type, store: &Store, ptr_size: PtrSize) -> Result<u64, 
             let mut max_align = 1;
 
             for (_, variant_type) in variants {
-                let variant_align = get_align_of(variant_type, store, ptr_size)?;
+                let variant_align = get_align_of(&store[variant_type], store, ptr_size)?;
                 max_align = max(max_align, variant_align);
             }
 

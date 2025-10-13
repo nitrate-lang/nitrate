@@ -1,6 +1,6 @@
 use nitrate_hir::{
     Store,
-    hir::{BinaryOp, IntoStoreId, Type, UnaryOp, Value},
+    hir::{BinaryOp, FunctionType, IntoStoreId, Symbol, Type, UnaryOp, Value},
 };
 
 pub enum TypeInferenceError {
@@ -8,6 +8,7 @@ pub enum TypeInferenceError {
     FieldAccessOnNonStruct,
     IndexAccessOnNonCollection,
     CalleeIsNotFunctionType,
+    UnresolvedSymbol,
 }
 
 pub fn get_type(value: &Value, store: &Store) -> Result<Type, TypeInferenceError> {
@@ -66,7 +67,7 @@ pub fn get_type(value: &Value, store: &Store) -> Result<Type, TypeInferenceError
             variant,
             value: _,
         } => match store[enum_type].variants.get(variant) {
-            Some(variant_type) => Ok(variant_type.clone()),
+            Some(variant_type) => Ok(store[variant_type].clone()),
             None => Err(TypeInferenceError::EnumVariantNotPresent),
         },
 
@@ -105,7 +106,7 @@ pub fn get_type(value: &Value, store: &Store) -> Result<Type, TypeInferenceError
             if let Type::Struct { struct_type } = get_type(expr, store)? {
                 let struct_def = &store[&struct_type];
                 if let Some(field_type) = struct_def.fields.get(field) {
-                    return Ok(field_type.clone());
+                    return Ok(store[field_type].clone());
                 }
             }
 
@@ -212,15 +213,26 @@ pub fn get_type(value: &Value, store: &Store) -> Result<Type, TypeInferenceError
             let callee = &store[callee].borrow();
             if let Type::Function { function_type } = get_type(callee, store)? {
                 let func = &store[&function_type];
-                return Ok(func.return_type.clone());
+                return Ok(store[&func.return_type].clone());
             }
 
             Err(TypeInferenceError::CalleeIsNotFunctionType)
         }
 
-        Value::Symbol { symbol: _ } => {
-            // TODO: inference for symbols
-            todo!()
-        }
+        Value::Symbol { symbol } => match &*store[symbol].borrow() {
+            Symbol::Unresolved { name: _ } => Err(TypeInferenceError::UnresolvedSymbol),
+            Symbol::GlobalVariable(global_variable) => Ok(store[&global_variable.ty].clone()),
+            Symbol::LocalVariable(local_variable) => Ok(store[&local_variable.ty].clone()),
+            Symbol::Parameter(parameter) => Ok(store[&parameter.ty].clone()),
+
+            Symbol::Function(function) => Ok(Type::Function {
+                function_type: FunctionType {
+                    attributes: function.attributes().to_owned(),
+                    parameters: function.parameters().to_owned(),
+                    return_type: function.return_type().to_owned(),
+                }
+                .into_id(store),
+            }),
+        },
     }
 }

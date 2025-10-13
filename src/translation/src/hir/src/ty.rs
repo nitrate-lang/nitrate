@@ -32,20 +32,20 @@ pub enum Lifetime {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct StructType {
     pub attributes: BTreeSet<StructAttribute>,
-    pub fields: BTreeMap<IString, Type>,
+    pub fields: BTreeMap<IString, TypeId>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct EnumType {
     pub attributes: BTreeSet<EnumAttribute>,
-    pub variants: BTreeMap<IString, Type>,
+    pub variants: BTreeMap<IString, TypeId>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct FunctionType {
     pub attributes: BTreeSet<FunctionAttribute>,
-    pub parameters: Vec<Type>,
-    pub return_type: Type,
+    pub parameters: Vec<TypeId>,
+    pub return_type: TypeId,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
@@ -198,16 +198,40 @@ impl Type {
     }
 }
 
-impl IntoStoreId for Type {
-    type Id = TypeId;
-
-    fn into_id(self, ctx: &Store) -> Self::Id {
-        ctx.store_type(self)
-    }
-}
-
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum PtrSize {
     U32 = 4,
     U64 = 8,
+}
+
+impl IntoStoreId for StructType {
+    type Id = StructTypeId;
+
+    fn into_id(self, store: &Store) -> Self::Id {
+        store.store_struct_type(self)
+    }
+}
+
+impl IntoStoreId for EnumType {
+    type Id = EnumTypeId;
+
+    fn into_id(self, store: &Store) -> Self::Id {
+        store.store_enum_type(self)
+    }
+}
+
+impl IntoStoreId for FunctionType {
+    type Id = FunctionTypeId;
+
+    fn into_id(self, store: &Store) -> Self::Id {
+        store.store_function_type(self)
+    }
+}
+
+impl IntoStoreId for Type {
+    type Id = TypeId;
+
+    fn into_id(self, store: &Store) -> Self::Id {
+        store.store_type(self)
+    }
 }

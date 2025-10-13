@@ -57,7 +57,7 @@ pub fn get_size_of(ty: &Type, store: &Store, ptr_size: PtrSize) -> Result<u64, S
                 let mut total_size = 0_u64;
 
                 for (_, field_type) in fields {
-                    total_size += get_size_of(field_type, store, ptr_size)?;
+                    total_size += get_size_of(&store[field_type], store, ptr_size)?;
                 }
 
                 return Ok(total_size);
@@ -66,6 +66,8 @@ pub fn get_size_of(ty: &Type, store: &Store, ptr_size: PtrSize) -> Result<u64, S
             let mut offset = 0_u64;
 
             for (_, field_type) in fields {
+                let field_type = &store[field_type];
+
                 let field_size = get_size_of(field_type, store, ptr_size)?;
                 let field_align = match get_align_of(field_type, store, ptr_size) {
                     Ok(align) => Ok(align),
@@ -85,7 +87,7 @@ pub fn get_size_of(ty: &Type, store: &Store, ptr_size: PtrSize) -> Result<u64, S
             let mut size = 0_u64;
 
             for (_, variant_type) in variants {
-                let variant_size = get_size_of(variant_type, store, ptr_size)?;
+                let variant_size = get_size_of(&store[variant_type], store, ptr_size)?;
                 size = max(size, variant_size);
             }
 

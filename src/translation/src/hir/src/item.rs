@@ -1,3 +1,5 @@
+use std::collections::BTreeSet;
+
 use crate::prelude::*;
 use interned_string::IString;
 use serde::{Deserialize, Serialize};
@@ -27,7 +29,7 @@ pub struct EntityName(pub IString);
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ExternalFunction {
     pub visibility: Visibility,
-    pub attributes: Vec<FunctionAttribute>,
+    pub attributes: BTreeSet<FunctionAttribute>,
     pub name: EntityName,
     pub parameters: Vec<TypeId>,
     pub return_type: TypeId,
@@ -36,7 +38,7 @@ pub struct ExternalFunction {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct StaticFunction {
     pub visibility: Visibility,
-    pub attributes: Vec<FunctionAttribute>,
+    pub attributes: BTreeSet<FunctionAttribute>,
     pub name: EntityName,
     pub parameters: Vec<TypeId>,
     pub return_type: TypeId,
@@ -55,6 +57,32 @@ pub enum Function {
     External(ExternalFunction),
     Static(StaticFunction),
     Closure(ClosureFunction),
+}
+
+impl Function {
+    pub fn attributes(&self) -> &BTreeSet<FunctionAttribute> {
+        match self {
+            Function::External(func) => &func.attributes,
+            Function::Static(func) => &func.attributes,
+            Function::Closure(func) => &func.callee.attributes,
+        }
+    }
+
+    pub fn parameters(&self) -> &Vec<TypeId> {
+        match self {
+            Function::External(func) => &func.parameters,
+            Function::Static(func) => &func.parameters,
+            Function::Closure(func) => &func.callee.parameters,
+        }
+    }
+
+    pub fn return_type(&self) -> &TypeId {
+        match self {
+            Function::External(func) => &func.return_type,
+            Function::Static(func) => &func.return_type,
+            Function::Closure(func) => &func.callee.return_type,
+        }
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -93,8 +121,8 @@ pub enum Symbol {
 impl IntoStoreId for Symbol {
     type Id = SymbolId;
 
-    fn into_id(self, ctx: &Store) -> Self::Id {
-        ctx.store_symbol(self)
+    fn into_id(self, store: &Store) -> Self::Id {
+        store.store_symbol(self)
     }
 }
 
@@ -120,7 +148,7 @@ pub enum Item {
 impl IntoStoreId for Item {
     type Id = ItemId;
 
-    fn into_id(self, ctx: &Store) -> Self::Id {
-        ctx.store_item(self)
+    fn into_id(self, store: &Store) -> Self::Id {
+        store.store_item(self)
     }
 }

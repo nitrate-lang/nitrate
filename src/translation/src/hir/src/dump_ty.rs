@@ -61,7 +61,7 @@ impl Dump for StructType {
             for (name, field_type) in &self.fields {
                 self.write_indent(ctx, o)?;
                 write!(o, "{name}: ")?;
-                field_type.dump(ctx, o)?;
+                ctx.store[field_type].dump(ctx, o)?;
                 write!(o, ",\n")?;
             }
             ctx.indent -= 1;
@@ -98,7 +98,7 @@ impl Dump for EnumType {
             for (name, variant_type) in &self.variants {
                 self.write_indent(ctx, o)?;
                 write!(o, "{name}: ")?;
-                variant_type.dump(ctx, o)?;
+                ctx.store[variant_type].dump(ctx, o)?;
                 write!(o, ",\n")?;
             }
             ctx.indent -= 1;
@@ -191,7 +191,7 @@ impl Dump for Type {
 
                         self.write_indent(ctx, o)?;
                         write!(o, "{name}: ")?;
-                        field_type.dump(ctx, o)?;
+                        ctx.store[field_type].dump(ctx, o)?;
                         write!(o, ",\n")?;
 
                         ctx.indent -= 1;
@@ -231,7 +231,7 @@ impl Dump for Type {
 
                         self.write_indent(ctx, o)?;
                         write!(o, "{name}: ")?;
-                        variant_type.dump(ctx, o)?;
+                        ctx.store[variant_type].dump(ctx, o)?;
                         write!(o, ",\n")?;
 
                         ctx.indent -= 1;
@@ -283,10 +283,10 @@ impl Dump for Type {
                         write!(o, ", ")?;
                     }
 
-                    param_type.dump(ctx, o)?;
+                    ctx.store[param_type].dump(ctx, o)?;
                 }
                 write!(o, ") -> ")?;
-                return_type.dump(ctx, o)
+                ctx.store[return_type].dump(ctx, o)
             }
 
             Type::Reference {
