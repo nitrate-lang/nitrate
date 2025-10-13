@@ -1,16 +1,14 @@
 use crate::prelude::*;
-use std::{cell::RefCell, collections::HashMap, num::NonZeroU32};
-
-struct Impls {
-    traits: HashMap<TraitId, Vec<Function>>,
-    unambiguous_methods: HashMap<String, Function>,
-}
+use std::cell::RefCell;
+use std::collections::{HashMap, HashSet};
+use std::num::NonZeroU32;
+use std::ops::Deref;
 
 pub struct HirCtx {
     store: Store,
     symbol_map: HashMap<QualifiedName, SymbolId>,
     type_map: HashMap<QualifiedName, TypeId>,
-    impl_map: HashMap<TypeId, Impls>,
+    impl_map: HashMap<TypeId, HashSet<TraitId>>,
     type_infer_id_ctr: NonZeroU32,
     unique_name_ctr: u32,
     ptr_size: PtrSize,
@@ -49,12 +47,44 @@ impl HirCtx {
         self.type_map.get(name)
     }
 
-    pub fn implements_trait(&self, ty: &TypeId, trait_id: TraitId) -> bool {
+    pub fn has_trait(&self, ty: &TypeId, trait_id: &TraitId) -> bool {
         if let Some(impls) = self.impl_map.get(ty) {
-            impls.traits.contains_key(&trait_id)
+            impls.contains(trait_id)
         } else {
             false
         }
+    }
+
+    pub fn find_unambiguous_trait_method(
+        &self,
+        ty: &TypeId,
+        method_name: &str,
+    ) -> Option<FunctionId> {
+        let trait_set = match self.impl_map.get(ty) {
+            Some(trait_set) => trait_set,
+            None => return None,
+        };
+
+        let mut found: Option<FunctionId> = None;
+
+        for trait_id in trait_set {
+            let trait_def = &self[trait_id].borrow();
+
+            for method_id in &trait_def.methods {
+                let method_def = &self[method_id].borrow();
+
+                if method_def.name.deref() == method_name {
+                    if found.is_some() {
+                        // Ambiguous, multiple traits have the same method
+                        return None;
+                    } else {
+                        found = Some(method_id.clone());
+                    }
+                }
+            }
+        }
+
+        found
     }
 
     pub fn get_unique_name(&mut self) -> EntityName {
@@ -62,7 +92,7 @@ impl HirCtx {
 
         let name = format!("{}{}", COMPILER_RESERVED_PREFIX, self.unique_name_ctr);
         self.unique_name_ctr += 1;
-        EntityName(name.into())
+        name.into()
     }
 
     pub fn create_inference_placeholder(&mut self) -> Type {

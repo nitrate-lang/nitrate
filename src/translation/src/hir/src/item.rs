@@ -5,8 +5,7 @@ use std::collections::BTreeSet;
 
 pub type QualifiedName = IString;
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
-pub struct EntityName(pub IString);
+pub type EntityName = IString;
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub enum Visibility {

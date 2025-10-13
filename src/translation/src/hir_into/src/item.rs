@@ -33,7 +33,7 @@ fn global_variable_try_into_hir(
         Some(ast::Mutability::Const) | None => false,
     };
 
-    let name = EntityName(glb.name.to_string().into());
+    let name = glb.name.to_string().into();
 
     let ty = match glb.ty.to_owned() {
         None => ctx.create_inference_placeholder().into_id(ctx.store()),
@@ -70,7 +70,7 @@ impl TryIntoHir for ast::Module {
     fn try_into_hir(self, ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
         let ast_attributes = self.attributes.unwrap_or_default();
         let name = match self.name {
-            Some(n) => EntityName(n.to_string().into()),
+            Some(n) => n.to_string().into(),
             None => ctx.get_unique_name(),
         };
 

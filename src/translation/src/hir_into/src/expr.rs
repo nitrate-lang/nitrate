@@ -778,7 +778,7 @@ fn construct_call(
     let mut name_to_pos = HashMap::new();
     for (index, param) in function_type.params.iter().enumerate() {
         let param = ctx[param].borrow();
-        name_to_pos.insert(param.name.0.to_string(), index);
+        name_to_pos.insert(param.name.to_string(), index);
     }
 
     let mut next_pos = 0;

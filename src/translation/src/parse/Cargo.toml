@@ -15,7 +15,6 @@ nitrate_tokenize = { path = "../tokenize" }
 nitrate_parsetree = { path = "../parsetree" }
 nitrate_diagnosis = { path = "../../../diagnosis" }
 
-hashbrown = "0.16.0"
 log = "0.4.27"
 ordered-float = "5.0.0"
 spdx = "0.12.0"

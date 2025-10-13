@@ -35,7 +35,7 @@ impl Dump for Function {
             write!(o, "] ")?;
         }
 
-        write!(o, "{}(", self.name.0)?;
+        write!(o, "{}(", self.name)?;
 
         for (i, param) in self.parameters.iter().enumerate() {
             let param = &ctx.store[param].borrow();
@@ -44,7 +44,7 @@ impl Dump for Function {
                 write!(o, ", ")?;
             }
 
-            write!(o, "{}: ", param.name.0)?;
+            write!(o, "{}: ", param.name)?;
             ctx.store[&param.ty].dump(ctx, o)?;
             if let Some(default_value) = &param.default_value {
                 write!(o, " = ")?;
@@ -69,12 +69,12 @@ impl Symbol {
         match self {
             Symbol::Unresolved { name } => write!(o, "sym nolink `{}`", name),
             Symbol::GlobalVariable(gv) => {
-                write!(o, "sym global `{}`", ctx.store[gv].borrow().name.0)
+                write!(o, "sym global `{}`", ctx.store[gv].borrow().name)
             }
-            Symbol::LocalVariable(lv) => write!(o, "sym local `{}`", ctx.store[lv].borrow().name.0),
-            Symbol::Trait(tr) => write!(o, "sym trait `{}`", ctx.store[tr].borrow().name.0),
-            Symbol::Parameter(fp) => write!(o, "sym param `{}`", ctx.store[fp].borrow().name.0),
-            Symbol::Function(f) => write!(o, "sym fn `{}`", ctx.store[f].borrow().name.0),
+            Symbol::LocalVariable(lv) => write!(o, "sym local `{}`", ctx.store[lv].borrow().name),
+            Symbol::Trait(tr) => write!(o, "sym trait `{}`", ctx.store[tr].borrow().name),
+            Symbol::Parameter(fp) => write!(o, "sym param `{}`", ctx.store[fp].borrow().name),
+            Symbol::Function(f) => write!(o, "sym fn `{}`", ctx.store[f].borrow().name),
         }
     }
 }
@@ -90,7 +90,7 @@ impl Dump for GlobalVariable {
         if self.is_mutable {
             write!(o, "mut ")?;
         }
-        write!(o, "`{}`: ", self.name.0)?;
+        write!(o, "`{}`: ", self.name)?;
         ctx.store[&self.ty].dump(ctx, o)?;
         write!(o, " = ")?;
         ctx.store[&self.initializer].borrow().dump(ctx, o)?;
@@ -104,7 +104,7 @@ impl Dump for LocalVariable {
         ctx: &mut DumpContext,
         o: &mut dyn std::fmt::Write,
     ) -> Result<(), std::fmt::Error> {
-        write!(o, "sym local `{}`: ", self.name.0)?;
+        write!(o, "sym local `{}`: ", self.name)?;
         ctx.store[&self.ty].dump(ctx, o)?;
         write!(o, " = ")?;
         ctx.store[&self.initializer].borrow().dump(ctx, o)?;
@@ -119,7 +119,7 @@ impl Dump for Trait {
         o: &mut dyn std::fmt::Write,
     ) -> Result<(), std::fmt::Error> {
         self.visibility.dump(ctx, o)?;
-        write!(o, " sym trait `{}` {{\n", self.name.0)?;
+        write!(o, " sym trait `{}` {{\n", self.name)?;
 
         ctx.indent += 1;
 
@@ -143,7 +143,7 @@ impl Dump for Parameter {
         ctx: &mut DumpContext,
         o: &mut dyn std::fmt::Write,
     ) -> Result<(), std::fmt::Error> {
-        write!(o, "sym param `{}`: ", self.name.0)?;
+        write!(o, "sym param `{}`: ", self.name)?;
         ctx.store[&self.ty].dump(ctx, o)?;
         if let Some(default_value) = &self.default_value {
             write!(o, " = ")?;
@@ -201,7 +201,7 @@ impl Dump for Module {
             write!(o, "] ")?;
         }
 
-        write!(o, "`{}` ", self.name.0)?;
+        write!(o, "`{}` ", self.name)?;
 
         if self.items.is_empty() {
             write!(o, "{{}}")

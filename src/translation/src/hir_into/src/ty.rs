@@ -274,7 +274,7 @@ impl TryIntoHir for ast::FunctionType {
                 log.report(&HirErr::CannotSpecifyMutabilityOnFunctionTypeParameter);
             }
 
-            let name = EntityName(IString::from(param.name.deref()));
+            let name = IString::from(param.name.deref());
 
             let ty = match param.param_type {
                 Some(ty) => ty.try_into_hir(ctx, log)?.into_id(ctx.store()),
@@ -326,9 +326,7 @@ impl TryIntoHir for ast::ReferenceType {
                 "thread" => Lifetime::ThreadLocal,
                 "task" => Lifetime::TaskLocal,
                 "_" => Lifetime::Inferred,
-                name => Lifetime::Stack {
-                    id: EntityName(name.into()),
-                },
+                name => Lifetime::Stack { id: name.into() },
             },
         };
 

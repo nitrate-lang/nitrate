@@ -285,7 +285,7 @@ impl Dump for Type {
                         write!(o, ", ")?;
                     }
 
-                    write!(o, "{}: ", param.name.0)?;
+                    write!(o, "{}: ", param.name)?;
                     ctx.store[&param.ty].dump(ctx, o)?;
                     if let Some(default) = &param.default_value {
                         write!(o, " = ")?;
@@ -307,7 +307,7 @@ impl Dump for Type {
                     Lifetime::Gc => write!(o, "&'gc ")?,
                     Lifetime::ThreadLocal => write!(o, "&'thread ")?,
                     Lifetime::TaskLocal => write!(o, "&'task ")?,
-                    Lifetime::Stack { id } => write!(o, "&'s{} ", id.0)?,
+                    Lifetime::Stack { id } => write!(o, "&'s{} ", id)?,
                     Lifetime::Inferred => write!(o, "&'_) ")?,
                 }
 
