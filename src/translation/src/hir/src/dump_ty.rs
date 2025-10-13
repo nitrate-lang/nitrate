@@ -286,7 +286,7 @@ impl Dump for Type {
                     param_type.dump(ctx, o)?;
                 }
                 write!(o, ") -> ")?;
-                ctx.store[return_type].dump(ctx, o)
+                return_type.dump(ctx, o)
             }
 
             Type::Reference {

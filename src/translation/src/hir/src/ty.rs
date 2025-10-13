@@ -45,7 +45,7 @@ pub struct EnumType {
 pub struct FunctionType {
     pub attributes: BTreeSet<FunctionAttribute>,
     pub parameters: Vec<Type>,
-    pub return_type: TypeId,
+    pub return_type: Type,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]

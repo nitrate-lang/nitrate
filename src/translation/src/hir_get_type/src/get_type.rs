@@ -7,6 +7,7 @@ pub enum TypeInferenceError {
     EnumVariantNotPresent,
     FieldAccessOnNonStruct,
     IndexAccessOnNonCollection,
+    CalleeIsNotFunctionType,
 }
 
 pub fn get_type(value: &Value, store: &Store) -> Result<Type, TypeInferenceError> {
@@ -205,11 +206,16 @@ pub fn get_type(value: &Value, store: &Store) -> Result<Type, TypeInferenceError
         },
 
         Value::Call {
-            callee: _,
+            callee,
             arguments: _,
         } => {
-            // TODO: inference for function calls
-            todo!()
+            let callee = &store[callee].borrow();
+            if let Type::Function { function_type } = get_type(callee, store)? {
+                let func = &store[&function_type];
+                return Ok(func.return_type.clone());
+            }
+
+            Err(TypeInferenceError::CalleeIsNotFunctionType)
         }
 
         Value::Symbol { symbol: _ } => {
