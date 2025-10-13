@@ -1246,7 +1246,7 @@ impl Parser<'_, '_> {
         Block { safety, elements }
     }
 
-    pub(crate) fn parse_expression(&mut self) -> Expr {
+    pub fn parse_expression(&mut self) -> Expr {
         self.parse_expression_precedence(Precedence::MIN)
     }
 }
