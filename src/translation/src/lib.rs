@@ -6,6 +6,7 @@ pub use nitrate_hir as hir;
 pub use nitrate_hir_evaluate as hir_evaluate;
 pub use nitrate_hir_get_type as hir_get_type;
 pub use nitrate_hir_into as hir_into;
+pub use nitrate_hir_meta as hir_meta;
 pub use nitrate_hir_resolve_type as hir_resolve_type;
 pub use nitrate_parse as parse;
 pub use nitrate_parsetree as parsetree;

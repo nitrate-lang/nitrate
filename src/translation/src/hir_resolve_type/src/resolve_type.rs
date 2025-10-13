@@ -1,5 +1,5 @@
 use nitrate_diagnosis::CompilerLog;
-use nitrate_hir::{Store, TypeId};
+use nitrate_hir::Store;
 
 pub struct TyCtx<'store> {
     pub(crate) store: &'store Store,
@@ -11,7 +11,7 @@ impl<'store> TyCtx<'store> {
         Self { store, ok: true }
     }
 
-    pub(crate) fn set_failed_bit(&mut self) {
+    pub fn set_failed_bit(&mut self) {
         self.ok = false;
     }
 

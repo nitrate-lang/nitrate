@@ -7,6 +7,7 @@ edition = "2024"
 nitrate_tokenize = { path = "src/tokenize" }
 nitrate_parsetree = { path = "src/parsetree" }
 nitrate_hir = { path = "src/hir" }
+nitrate_hir_meta = { path = "src/hir_meta" }
 nitrate_hir_into = { path = "src/hir_into" }
 nitrate_hir_evaluate = { path = "src/hir_evaluate" }
 nitrate_hir_resolve_type = { path = "src/hir_resolve_type" }

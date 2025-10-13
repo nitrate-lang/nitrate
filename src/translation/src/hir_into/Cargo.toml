@@ -7,6 +7,7 @@ edition = "2024"
 nitrate_diagnosis = { path = "../../../diagnosis" }
 nitrate_parsetree = { path = "../parsetree" }
 nitrate_hir = { path = "../hir" }
+nitrate_hir_meta = { path = "../hir_meta" }
 nitrate_hir_evaluate = { path = "../hir_evaluate" }
 nitrate_hir_get_type = { path = "../hir_get_type" }
 interned-string = { version = "0.3.0", features = ["serde"] }

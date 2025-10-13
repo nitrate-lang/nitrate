@@ -78,42 +78,42 @@ impl TryIntoHir for ast::Module {
 
         for item in self.items {
             match item {
-                ast::Item::Module(m) => {
+                ast::Item::Module(_) => {
                     // TODO: lower nested modules
                     log.report(&HirErr::UnimplementedFeature("nested modules".into()));
                 }
 
-                ast::Item::Import(i) => {
+                ast::Item::Import(_) => {
                     // TODO: lower import statements
                     log.report(&HirErr::UnimplementedFeature("import statements".into()));
                 }
 
-                ast::Item::TypeAlias(ta) => {
+                ast::Item::TypeAlias(_) => {
                     // TODO: lower type aliases
                     log.report(&HirErr::UnimplementedFeature("type aliases".into()));
                 }
 
-                ast::Item::Struct(s) => {
+                ast::Item::Struct(_) => {
                     // TODO: lower struct definitions
                     log.report(&HirErr::UnimplementedFeature("structs".into()));
                 }
 
-                ast::Item::Enum(e) => {
+                ast::Item::Enum(_) => {
                     // TODO: lower enum definitions
                     log.report(&HirErr::UnimplementedFeature("enums".into()));
                 }
 
-                ast::Item::Trait(t) => {
+                ast::Item::Trait(_) => {
                     // TODO: lower trait definitions
                     log.report(&HirErr::UnimplementedFeature("traits".into()));
                 }
 
-                ast::Item::Impl(i) => {
+                ast::Item::Impl(_) => {
                     // TODO: lower impl blocks
                     log.report(&HirErr::UnimplementedFeature("impl blocks".into()));
                 }
 
-                ast::Item::Function(f) => {
+                ast::Item::Function(_) => {
                     // TODO: lower function definitions
                     log.report(&HirErr::UnimplementedFeature("functions".into()));
                 }

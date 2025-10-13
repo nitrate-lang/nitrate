@@ -746,8 +746,16 @@ dependencies = [
  "nitrate_hir",
  "nitrate_hir_evaluate",
  "nitrate_hir_get_type",
+ "nitrate_hir_meta",
  "nitrate_parsetree",
  "ordered-float",
+]
+
+[[package]]
+name = "nitrate_hir_meta"
+version = "0.1.0"
+dependencies = [
+ "nitrate_hir",
 ]
 
 [[package]]
@@ -828,6 +836,7 @@ dependencies = [
  "nitrate_hir_evaluate",
  "nitrate_hir_get_type",
  "nitrate_hir_into",
+ "nitrate_hir_meta",
  "nitrate_hir_resolve_type",
  "nitrate_optimization",
  "nitrate_parse",
