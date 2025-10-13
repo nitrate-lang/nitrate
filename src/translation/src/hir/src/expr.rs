@@ -343,7 +343,8 @@ pub enum Value {
         to: TypeId,
     },
 
-    GetAddressOf {
+    Borrow {
+        mutable: bool,
         place: ValueId,
     },
 

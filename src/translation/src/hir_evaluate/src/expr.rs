@@ -480,7 +480,10 @@ impl HirEvaluate for Value {
                 todo!()
             }
 
-            Value::GetAddressOf { place: _ } => {
+            Value::Borrow {
+                mutable: _,
+                place: _,
+            } => {
                 // TODO: evaluate address-of expressions
                 todo!()
             }

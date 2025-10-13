@@ -134,7 +134,10 @@ pub fn get_type(value: &Value, store: &Store) -> Result<Type, TypeInferenceError
 
         Value::Cast { expr: _, to } => Ok((&store[to]).clone()),
 
-        Value::GetAddressOf { place: _ } => {
+        Value::Borrow {
+            mutable: _,
+            place: _,
+        } => {
             // TODO: inference for address-of
             todo!()
         }

@@ -295,7 +295,7 @@ impl PrettyPrint for UnaryExprOp {
             UnaryExprOp::Add => writer.write_str("+"),
             UnaryExprOp::Sub => writer.write_str("-"),
             UnaryExprOp::Deref => writer.write_str("*"),
-            UnaryExprOp::AddressOf => writer.write_str("&"),
+            UnaryExprOp::Borrow => writer.write_str("&"),
             UnaryExprOp::BitNot => writer.write_str("~"),
             UnaryExprOp::LogicNot => writer.write_str("!"),
             UnaryExprOp::Typeof => writer.write_str("typeof"),

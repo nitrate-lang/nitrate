@@ -144,7 +144,10 @@ impl TryIntoHir for ast::UnaryExpr {
             }),
 
             UnaryExprOp::Deref => Ok(Value::Deref { place: expr }),
-            UnaryExprOp::AddressOf => Ok(Value::GetAddressOf { place: expr }),
+            UnaryExprOp::Borrow => Ok(Value::Borrow {
+                mutable: false,
+                place: expr,
+            }),
             UnaryExprOp::Typeof => Ok(Value::GetTypeOf { expr }),
         }
     }

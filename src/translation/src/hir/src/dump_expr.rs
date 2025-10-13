@@ -203,8 +203,11 @@ impl Dump for Value {
                 write!(o, ")")
             }
 
-            Value::GetAddressOf { place } => {
-                write!(o, "(address_of ")?;
+            Value::Borrow { mutable, place } => {
+                write!(o, "(&")?;
+                if *mutable {
+                    write!(o, "mut ")?;
+                }
                 ctx.store[place].borrow().dump(ctx, o)?;
                 write!(o, ")")
             }

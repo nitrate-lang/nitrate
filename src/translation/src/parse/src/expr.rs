@@ -143,7 +143,7 @@ impl Parser<'_, '_> {
 
             Token::And => {
                 self.lexer.skip_tok();
-                Some(UnaryExprOp::AddressOf)
+                Some(UnaryExprOp::Borrow)
             }
 
             Token::Tilde => {
