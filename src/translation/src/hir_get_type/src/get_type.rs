@@ -55,14 +55,14 @@ pub fn get_type(value: &Value, store: &Store) -> Result<Type, TypeInferenceError
             Ok(array)
         }
 
-        Value::Struct {
+        Value::StructObject {
             struct_type,
             fields: _,
         } => Ok(Type::Struct {
             struct_type: struct_type.to_owned(),
         }),
 
-        Value::Enum {
+        Value::EnumVariant {
             enum_type,
             variant,
             value: _,
@@ -139,11 +139,6 @@ pub fn get_type(value: &Value, store: &Store) -> Result<Type, TypeInferenceError
             place: _,
         } => {
             // TODO: inference for address-of
-            todo!()
-        }
-
-        Value::GetTypeOf { expr: _ } => {
-            // TODO: inference for type-of
             todo!()
         }
 

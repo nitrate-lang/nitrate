@@ -1,4 +1,4 @@
-use crate::{HirCtx, TryIntoHir, diagnosis::HirErr};
+use crate::{TryIntoHir, diagnosis::HirErr};
 use nitrate_diagnosis::CompilerLog;
 use nitrate_hir::prelude::*;
 use nitrate_parsetree::kind as ast;
@@ -71,7 +71,7 @@ impl TryIntoHir for ast::Module {
         let ast_attributes = self.attributes.unwrap_or_default();
         let name = match self.name {
             Some(n) => EntityName(n.to_string().into()),
-            None => ctx.next_unique_name(),
+            None => ctx.get_unique_name(),
         };
 
         let mut items = Vec::with_capacity(self.items.len());

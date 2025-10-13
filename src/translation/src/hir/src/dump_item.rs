@@ -129,7 +129,7 @@ impl Dump for Function {
 impl Symbol {
     pub fn dump_nocycle(&self, o: &mut dyn std::fmt::Write) -> Result<(), std::fmt::Error> {
         match self {
-            Symbol::Unresolved { name } => write!(o, "sym nolink `{}`", name.0),
+            Symbol::Unresolved { name } => write!(o, "sym nolink `{}`", name),
             Symbol::GlobalVariable(gv) => write!(o, "sym global `{}`", gv.name.0),
             Symbol::LocalVariable(lv) => write!(o, "sym local `{}`", lv.name.0),
             Symbol::Parameter(fp) => write!(o, "sym param `{}`", fp.name.0),
@@ -200,7 +200,7 @@ impl Dump for Symbol {
         o: &mut dyn std::fmt::Write,
     ) -> Result<(), std::fmt::Error> {
         match self {
-            Symbol::Unresolved { name } => write!(o, "sym nolink `{}`", name.0),
+            Symbol::Unresolved { name } => write!(o, "sym nolink `{}`", name),
             Symbol::GlobalVariable(gv) => gv.dump(ctx, o),
             Symbol::LocalVariable(lv) => lv.dump(ctx, o),
             Symbol::Parameter(fp) => fp.dump(ctx, o),

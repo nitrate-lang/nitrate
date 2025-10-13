@@ -768,6 +768,7 @@ dependencies = [
  "nitrate_diagnosis",
  "nitrate_hir",
  "nitrate_hir_evaluate",
+ "nitrate_hir_get_type",
  "nitrate_parsetree",
  "ordered-float",
 ]

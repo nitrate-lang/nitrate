@@ -1,4 +1,4 @@
-use crate::{HirCtx, TryIntoHir, diagnosis::HirErr};
+use crate::{TryIntoHir, diagnosis::HirErr};
 use nitrate_diagnosis::CompilerLog;
 use nitrate_hir::prelude::*;
 use nitrate_hir_evaluate::HirEvalCtx;

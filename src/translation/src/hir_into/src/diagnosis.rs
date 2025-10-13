@@ -12,6 +12,7 @@ pub(crate) enum HirErr {
     FoundUSize64InNon64BitTarget,
     ArrayLengthExpectedUSize,
     ArrayTypeLengthEvalError,
+    TypeInferenceError,
 }
 
 impl FormattableDiagnosticGroup for HirErr {
@@ -32,6 +33,7 @@ impl FormattableDiagnosticGroup for HirErr {
             HirErr::FoundUSize64InNon64BitTarget => 8,
             HirErr::ArrayLengthExpectedUSize => 9,
             HirErr::ArrayTypeLengthEvalError => 10,
+            HirErr::TypeInferenceError => 11,
         }
     }
 
@@ -89,6 +91,11 @@ impl FormattableDiagnosticGroup for HirErr {
 
             HirErr::ArrayTypeLengthEvalError => DiagnosticInfo {
                 message: "array type length evaluation error".to_string(),
+                origin: Origin::None,
+            },
+
+            HirErr::TypeInferenceError => DiagnosticInfo {
+                message: "type inference error".to_string(),
                 origin: Origin::None,
             },
         }

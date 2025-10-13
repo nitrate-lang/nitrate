@@ -140,7 +140,7 @@ impl HirEvalCtx<'_, '_> {
 
     pub fn evaluate_into_type(&mut self, value: &Value) -> Result<Type, Unwind> {
         match value.evaluate(self)? {
-            Value::Struct {
+            Value::StructObject {
                 struct_type: _,
                 fields: _,
             } => {

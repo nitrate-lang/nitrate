@@ -1,6 +1,7 @@
 #![forbid(unsafe_code)]
 #![warn(clippy::pedantic)]
 
+mod context;
 mod dump;
 mod dump_expr;
 mod dump_item;
@@ -24,6 +25,7 @@ pub use store::{
 };
 
 pub mod hir {
+    pub use super::context::HirCtx;
     pub use super::expr::*;
     pub use super::item::*;
     pub use super::save::IntoStoreId;

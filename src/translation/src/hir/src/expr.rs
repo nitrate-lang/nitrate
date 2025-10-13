@@ -297,12 +297,12 @@ pub enum Value {
     InferredInteger(Box<u128>),
     InferredFloat(f64),
 
-    Struct {
+    StructObject {
         struct_type: StructTypeId,
         fields: Box<HashMap<IString, ValueId>>,
     },
 
-    Enum {
+    EnumVariant {
         enum_type: EnumTypeId,
         variant: IString,
         value: ValueId,
@@ -346,10 +346,6 @@ pub enum Value {
     Borrow {
         mutable: bool,
         place: ValueId,
-    },
-
-    GetTypeOf {
-        expr: ValueId,
     },
 
     List {

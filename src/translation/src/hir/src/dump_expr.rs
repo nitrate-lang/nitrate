@@ -93,7 +93,7 @@ impl Dump for Value {
             Value::InferredInteger(i) => write!(o, "? {}", i),
             Value::InferredFloat(f) => write!(o, "? {}", f),
 
-            Value::Struct {
+            Value::StructObject {
                 struct_type,
                 fields,
             } => {
@@ -110,7 +110,7 @@ impl Dump for Value {
                 write!(o, " }}")
             }
 
-            Value::Enum {
+            Value::EnumVariant {
                 enum_type,
                 variant,
                 value,
@@ -217,12 +217,6 @@ impl Dump for Value {
                 ctx.store[expr].borrow().dump(ctx, o)?;
                 write!(o, " as ")?;
                 ctx.store[to].dump(ctx, o)?;
-                write!(o, ")")
-            }
-
-            Value::GetTypeOf { expr } => {
-                write!(o, "(typeof ")?;
-                ctx.store[expr].borrow().dump(ctx, o)?;
                 write!(o, ")")
             }
 

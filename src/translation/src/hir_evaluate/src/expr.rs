@@ -266,7 +266,7 @@ impl HirEvaluate for Value {
             Value::InferredInteger(i) => Ok(Value::InferredInteger(i.clone())),
             Value::InferredFloat(f) => Ok(Value::InferredFloat(*f)),
 
-            Value::Struct {
+            Value::StructObject {
                 struct_type,
                 fields,
             } => {
@@ -280,20 +280,20 @@ impl HirEvaluate for Value {
                     *field_value = eval_value;
                 }
 
-                Ok(Value::Struct {
+                Ok(Value::StructObject {
                     struct_type: struct_type.clone(),
                     fields,
                 })
             }
 
-            Value::Enum {
+            Value::EnumVariant {
                 enum_type,
                 variant,
                 value,
             } => {
                 let evaluated_value = ctx.store[value].borrow().evaluate(ctx)?.into_id(ctx.store);
 
-                Ok(Value::Enum {
+                Ok(Value::EnumVariant {
                     enum_type: enum_type.clone(),
                     variant: variant.clone(),
                     value: evaluated_value,
@@ -439,7 +439,7 @@ impl HirEvaluate for Value {
             }
 
             Value::FieldAccess { expr, field } => match ctx.store[expr].borrow().evaluate(ctx)? {
-                Value::Struct { fields, .. } => {
+                Value::StructObject { fields, .. } => {
                     if let Some(field_value) = fields.get(field) {
                         Ok(ctx.store[field_value].borrow().evaluate(ctx)?)
                     } else {
@@ -520,11 +520,6 @@ impl HirEvaluate for Value {
                 // TODO: handle non-literal type casts
 
                 return Err(Unwind::TypeError);
-            }
-
-            Value::GetTypeOf { expr: _ } => {
-                // TODO: evaluate typeof expressions
-                todo!()
             }
 
             Value::List { elements } => {

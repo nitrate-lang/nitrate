@@ -6,4 +6,4 @@ mod item;
 mod lower;
 mod ty;
 
-pub use lower::{HirCtx, TryIntoHir};
+pub use lower::TryIntoHir;

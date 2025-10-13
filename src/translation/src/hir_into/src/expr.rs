@@ -1,6 +1,7 @@
-use crate::{HirCtx, TryIntoHir, diagnosis::HirErr};
+use crate::{TryIntoHir, diagnosis::HirErr};
 use nitrate_diagnosis::CompilerLog;
 use nitrate_hir::prelude::*;
+use nitrate_hir_get_type::get_type;
 use nitrate_parsetree::kind::{self as ast, UnaryExprOp};
 
 impl TryIntoHir for ast::ExprSyntaxError {
@@ -120,35 +121,45 @@ impl TryIntoHir for ast::UnaryExpr {
     type Hir = Value;
 
     fn try_into_hir(self, ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
-        let expr = self.operand.try_into_hir(ctx, log)?.into_id(ctx.store());
+        let expr = self.operand.try_into_hir(ctx, log)?;
 
         match self.operator {
             UnaryExprOp::Add => Ok(Value::Unary {
                 op: UnaryOp::Add,
-                expr,
+                expr: expr.into_id(ctx.store()),
             }),
 
             UnaryExprOp::Sub => Ok(Value::Unary {
                 op: UnaryOp::Sub,
-                expr,
+                expr: expr.into_id(ctx.store()),
             }),
 
             UnaryExprOp::LogicNot => Ok(Value::Unary {
                 op: UnaryOp::LogicNot,
-                expr,
+                expr: expr.into_id(ctx.store()),
             }),
 
             UnaryExprOp::BitNot => Ok(Value::Unary {
                 op: UnaryOp::BitNot,
-                expr,
+                expr: expr.into_id(ctx.store()),
             }),
 
-            UnaryExprOp::Deref => Ok(Value::Deref { place: expr }),
+            UnaryExprOp::Deref => Ok(Value::Deref {
+                place: expr.into_id(ctx.store()),
+            }),
+
             UnaryExprOp::Borrow => Ok(Value::Borrow {
                 mutable: false,
-                place: expr,
+                place: expr.into_id(ctx.store()),
             }),
-            UnaryExprOp::Typeof => Ok(Value::GetTypeOf { expr }),
+
+            UnaryExprOp::Typeof => match get_type(&expr, ctx.store()) {
+                Ok(t) => Ok(ctx.create_std_meta_type_instance(t)),
+                Err(_) => {
+                    log.report(&HirErr::TypeInferenceError);
+                    Err(())
+                }
+            },
         }
     }
 }
