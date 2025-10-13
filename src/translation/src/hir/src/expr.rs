@@ -389,6 +389,11 @@ pub enum Value {
         block: BlockId,
     },
 
+    Closure {
+        captures: ThinVec<SymbolId>,
+        callee: FunctionId,
+    },
+
     Call {
         callee: ValueId,
         arguments: Box<Vec<ValueId>>,

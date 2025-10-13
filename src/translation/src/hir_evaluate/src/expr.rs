@@ -602,6 +602,14 @@ impl HirEvaluate for Value {
 
             Value::Block { block } => ctx.store[block].borrow().evaluate(ctx),
 
+            Value::Closure {
+                captures: _,
+                callee: _,
+            } => {
+                // TODO: evaluate closure expressions
+                todo!()
+            }
+
             Value::Call {
                 callee: _,
                 arguments: _,

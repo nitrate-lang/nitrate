@@ -50,13 +50,6 @@ pub struct Function {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
-pub struct Closure {
-    pub closure_unique_id: u64,
-    pub captures: Vec<SymbolId>,
-    pub callee: FunctionId,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct Trait {
     pub visibility: Visibility,
     pub name: EntityName,

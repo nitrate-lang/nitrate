@@ -60,28 +60,6 @@ impl Dump for Function {
     }
 }
 
-impl Dump for Closure {
-    fn dump(
-        &self,
-        ctx: &mut DumpContext,
-        o: &mut dyn std::fmt::Write,
-    ) -> Result<(), std::fmt::Error> {
-        write!(o, "sym fn #{}", self.closure_unique_id)?;
-
-        write!(o, " [")?;
-        for (i, capture) in self.captures.iter().enumerate() {
-            if i != 0 {
-                write!(o, ", ")?;
-            }
-
-            ctx.store[capture].borrow().dump_nocycle(ctx, o)?;
-        }
-        write!(o, "] ")?;
-
-        ctx.store[&self.callee].borrow().dump(ctx, o)
-    }
-}
-
 impl Symbol {
     pub fn dump_nocycle(
         &self,

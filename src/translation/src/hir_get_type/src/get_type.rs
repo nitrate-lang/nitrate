@@ -205,6 +205,14 @@ pub fn get_type(value: &Value, store: &Store) -> Result<Type, TypeInferenceError
             None => Ok(Type::Unit),
         },
 
+        Value::Closure {
+            captures: _,
+            callee: _,
+        } => {
+            // TODO: Determine the type of the closure
+            todo!()
+        }
+
         Value::Call {
             callee,
             arguments: _,

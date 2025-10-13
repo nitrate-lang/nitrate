@@ -291,6 +291,22 @@ impl Dump for Value {
 
             Value::Block { block } => ctx.store[block].borrow().dump(ctx, o),
 
+            Value::Closure { captures, callee } => {
+                write!(o, "fn ")?;
+
+                write!(o, " [")?;
+                for (i, capture) in captures.iter().enumerate() {
+                    if i != 0 {
+                        write!(o, ", ")?;
+                    }
+
+                    ctx.store[capture].borrow().dump_nocycle(ctx, o)?;
+                }
+                write!(o, "] ")?;
+
+                ctx.store[callee].borrow().dump(ctx, o)
+            }
+
             Value::Call { callee, arguments } => {
                 ctx.store[callee].borrow().dump(ctx, o)?;
                 write!(o, "(")?;
