@@ -259,7 +259,7 @@ impl Dump for Type {
             Type::Function { function_type } => {
                 let FunctionType {
                     attributes,
-                    parameters,
+                    params: parameters,
                     return_type,
                 } = &ctx.store[function_type];
 

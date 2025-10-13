@@ -789,13 +789,13 @@ impl TryIntoHir for ast::Call {
         };
 
         let mut name_to_pos = HashMap::new();
-        for (index, (name, _, _)) in function_type.parameters.iter().enumerate() {
+        for (index, (name, _, _)) in function_type.params.iter().enumerate() {
             name_to_pos.insert(name.to_string(), index);
         }
 
         let mut next_pos = 0;
         let mut call_arguments: Vec<Option<ValueId>> = Vec::new();
-        call_arguments.resize(function_type.parameters.len(), None);
+        call_arguments.resize(function_type.params.len(), None);
 
         for CallArgument { name, value } in self.arguments {
             match name {
@@ -818,8 +818,17 @@ impl TryIntoHir for ast::Call {
             };
         }
 
-        for arg in call_arguments.iter_mut() {
+        for (i, arg) in call_arguments.iter_mut().enumerate() {
             if arg.is_none() {
+                if let Some(parameter) = function_type.params.get(i) {
+                    if let Some(default_value) = parameter.2.as_ref() {
+                        if arg.is_none() {
+                            *arg = Some(default_value.clone());
+                            continue;
+                        }
+                    }
+                }
+
                 log.report(&HirErr::MissingFunctionArguments);
                 return Err(());
             }
@@ -829,7 +838,7 @@ impl TryIntoHir for ast::Call {
             .attributes
             .contains(&FunctionAttribute::Variadic)
         {
-            if call_arguments.len() > function_type.parameters.len() {
+            if call_arguments.len() > function_type.params.len() {
                 log.report(&HirErr::TooManyFunctionArguments);
                 return Err(());
             }

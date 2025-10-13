@@ -296,7 +296,7 @@ impl TryIntoHir for ast::FunctionType {
 
         let function_type = FunctionType {
             attributes,
-            parameters,
+            params: parameters,
             return_type: return_type.into_id(ctx.store()),
         };
 

@@ -226,7 +226,7 @@ pub fn get_type(value: &Value, store: &Store) -> Result<Type, TypeInferenceError
             Symbol::Function(function) => Ok(Type::Function {
                 function_type: FunctionType {
                     attributes: function.attributes().to_owned(),
-                    parameters: function.parameters().to_owned(),
+                    params: function.parameters().to_owned(),
                     return_type: function.return_type().to_owned(),
                 }
                 .into_id(store),
