@@ -77,11 +77,8 @@ pub enum Lit {
     U32(u32),
     U64(u64),
     U128(u128),
-    F8(OrderedFloat<f32>),
-    F16(OrderedFloat<f32>),
     F32(OrderedFloat<f32>),
     F64(OrderedFloat<f64>),
-    F128(OrderedFloat<f64>),
     USize32(u32),
     USize64(u64),
 }
@@ -101,11 +98,8 @@ impl Lit {
             Lit::U32(_) => 4,
             Lit::U64(_) => 8,
             Lit::U128(_) => 16,
-            Lit::F8(_) => 1,
-            Lit::F16(_) => 2,
             Lit::F32(_) => 4,
             Lit::F64(_) => 8,
-            Lit::F128(_) => 16,
             Lit::USize32(_) => 4,
             Lit::USize64(_) => 8,
         }
@@ -138,11 +132,8 @@ impl Lit {
 
             Lit::Unit
             | Lit::Bool(_)
-            | Lit::F8(_)
-            | Lit::F16(_)
             | Lit::F32(_)
             | Lit::F64(_)
-            | Lit::F128(_)
             | Lit::USize32(_)
             | Lit::USize64(_) => None,
         }
@@ -168,11 +159,8 @@ impl Lit {
             | Lit::USize32(_)
             | Lit::USize64(_) => None,
 
-            Lit::F8(_) => value.try_into().map(Lit::F8).ok(),
-            Lit::F16(_) => value.try_into().map(Lit::F16).ok(),
             Lit::F32(_) => value.try_into().map(Lit::F32).ok(),
             Lit::F64(_) => value.try_into().map(Lit::F64).ok(),
-            Lit::F128(_) => value.try_into().map(Lit::F128).ok(),
         }
     }
 }
@@ -229,24 +217,12 @@ impl std::hash::Hash for Lit {
                 11u8.hash(state);
                 u.hash(state);
             }
-            Lit::F8(f) => {
-                12u8.hash(state);
-                f.to_bits().hash(state);
-            }
-            Lit::F16(f) => {
-                13u8.hash(state);
-                f.to_bits().hash(state);
-            }
             Lit::F32(f) => {
                 14u8.hash(state);
                 f.to_bits().hash(state);
             }
             Lit::F64(f) => {
                 15u8.hash(state);
-                f.to_bits().hash(state);
-            }
-            Lit::F128(f) => {
-                16u8.hash(state);
                 f.to_bits().hash(state);
             }
             Lit::USize32(u) => {
@@ -287,11 +263,8 @@ pub enum Value {
     U32(u32),
     U64(u64),
     U128(Box<u128>),
-    F8(OrderedFloat<f32>), // Stored as f32 because Rust does not have a native f8 type
-    F16(OrderedFloat<f32>), // Stored as f32 because Rust does not have a native f16 type
     F32(OrderedFloat<f32>),
     F64(OrderedFloat<f64>),
-    F128(OrderedFloat<f64>), // Stored as f64 because Rust does not have a native f128 type
     USize32(u32),
     USize64(u64),
     StringLit(ThinStr),
@@ -421,11 +394,8 @@ impl TryFrom<Value> for Lit {
             Value::U32(u) => Ok(Lit::U32(u)),
             Value::U64(u) => Ok(Lit::U64(u)),
             Value::U128(u) => Ok(Lit::U128(*u)),
-            Value::F8(f) => Ok(Lit::F8(f)),
-            Value::F16(f) => Ok(Lit::F16(f)),
             Value::F32(f) => Ok(Lit::F32(f)),
             Value::F64(f) => Ok(Lit::F64(f)),
-            Value::F128(f) => Ok(Lit::F128(f)),
             Value::USize32(u) => Ok(Lit::USize32(u)),
             Value::USize64(u) => Ok(Lit::USize64(u)),
             other => Err(other),
@@ -448,11 +418,8 @@ impl From<Lit> for Value {
             Lit::U32(u) => Value::U32(u),
             Lit::U64(u) => Value::U64(u),
             Lit::U128(u) => Value::U128(Box::new(u)),
-            Lit::F8(f) => Value::F8(f),
-            Lit::F16(f) => Value::F16(f),
             Lit::F32(f) => Value::F32(f),
             Lit::F64(f) => Value::F64(f),
-            Lit::F128(f) => Value::F128(f),
             Lit::USize32(u) => Value::USize32(u),
             Lit::USize64(u) => Value::USize64(u),
         }
@@ -475,11 +442,8 @@ impl Value {
                 | Value::U32(_)
                 | Value::U64(_)
                 | Value::U128(_)
-                | Value::F8(_)
-                | Value::F16(_)
                 | Value::F32(_)
                 | Value::F64(_)
-                | Value::F128(_)
                 | Value::USize32(_)
                 | Value::USize64(_)
                 | Value::InferredInteger(_)

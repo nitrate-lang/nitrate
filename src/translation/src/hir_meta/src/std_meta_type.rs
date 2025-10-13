@@ -101,18 +101,6 @@ pub fn create_std_meta_type_instance(ctx: &HirCtx, from: Type) -> Value {
             value: Value::Unit.into_id(ctx.store()),
         },
 
-        Type::F8 => Value::EnumVariant {
-            enum_type,
-            variant: "F8".into(),
-            value: Value::Unit.into_id(ctx.store()),
-        },
-
-        Type::F16 => Value::EnumVariant {
-            enum_type,
-            variant: "F16".into(),
-            value: Value::Unit.into_id(ctx.store()),
-        },
-
         Type::F32 => Value::EnumVariant {
             enum_type,
             variant: "F32".into(),
@@ -122,12 +110,6 @@ pub fn create_std_meta_type_instance(ctx: &HirCtx, from: Type) -> Value {
         Type::F64 => Value::EnumVariant {
             enum_type,
             variant: "F64".into(),
-            value: Value::Unit.into_id(ctx.store()),
-        },
-
-        Type::F128 => Value::EnumVariant {
-            enum_type,
-            variant: "F128".into(),
             value: Value::Unit.into_id(ctx.store()),
         },
 

@@ -102,22 +102,6 @@ impl TryIntoHir for ast::Int128 {
     }
 }
 
-impl TryIntoHir for ast::Float8 {
-    type Hir = Type;
-
-    fn try_into_hir(self, _ctx: &mut HirCtx, _log: &CompilerLog) -> Result<Self::Hir, ()> {
-        Ok(Type::F8)
-    }
-}
-
-impl TryIntoHir for ast::Float16 {
-    type Hir = Type;
-
-    fn try_into_hir(self, _ctx: &mut HirCtx, _log: &CompilerLog) -> Result<Self::Hir, ()> {
-        Ok(Type::F16)
-    }
-}
-
 impl TryIntoHir for ast::Float32 {
     type Hir = Type;
 
@@ -131,14 +115,6 @@ impl TryIntoHir for ast::Float64 {
 
     fn try_into_hir(self, _ctx: &mut HirCtx, _log: &CompilerLog) -> Result<Self::Hir, ()> {
         Ok(Type::F64)
-    }
-}
-
-impl TryIntoHir for ast::Float128 {
-    type Hir = Type;
-
-    fn try_into_hir(self, _ctx: &mut HirCtx, _log: &CompilerLog) -> Result<Self::Hir, ()> {
-        Ok(Type::F128)
     }
 }
 
@@ -415,11 +391,8 @@ impl TryIntoHir for ast::Type {
             ast::Type::Int32(ty) => ty.try_into_hir(ctx, log),
             ast::Type::Int64(ty) => ty.try_into_hir(ctx, log),
             ast::Type::Int128(ty) => ty.try_into_hir(ctx, log),
-            ast::Type::Float8(ty) => ty.try_into_hir(ctx, log),
-            ast::Type::Float16(ty) => ty.try_into_hir(ctx, log),
             ast::Type::Float32(ty) => ty.try_into_hir(ctx, log),
             ast::Type::Float64(ty) => ty.try_into_hir(ctx, log),
-            ast::Type::Float128(ty) => ty.try_into_hir(ctx, log),
             ast::Type::InferType(ty) => ty.try_into_hir(ctx, log),
             ast::Type::TypePath(ty) => ty.try_into_hir(ctx, log),
             ast::Type::RefinementType(ty) => ty.try_into_hir(ctx, log),

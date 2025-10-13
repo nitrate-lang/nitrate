@@ -25,11 +25,8 @@ static DEFAULT_BUILTIN_FUNCTIONS: LazyLock<HashMap<QualifiedName, Box<BuiltinFun
                     Value::I32(i) => Ok(Value::I32(i.abs())),
                     Value::I64(i) => Ok(Value::I64(i.abs())),
                     Value::I128(i) => Ok(Value::I128(Box::new(i.abs()))),
-                    Value::F8(i) => Ok(Value::F8(OrderedFloat(i.abs()))),
-                    Value::F16(i) => Ok(Value::F16(OrderedFloat(i.abs()))),
                     Value::F32(i) => Ok(Value::F32(OrderedFloat(i.abs()))),
                     Value::F64(i) => Ok(Value::F64(OrderedFloat(i.abs()))),
-                    Value::F128(i) => Ok(Value::F128(OrderedFloat(i.abs()))),
                     _ => Err(Unwind::TypeError),
                 }
             }),

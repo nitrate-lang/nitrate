@@ -59,23 +59,11 @@ pub struct Int128;
 
 #[skip_serializing_none]
 #[derive(Clone, Serialize, Deserialize)]
-pub struct Float8;
-
-#[skip_serializing_none]
-#[derive(Clone, Serialize, Deserialize)]
-pub struct Float16;
-
-#[skip_serializing_none]
-#[derive(Clone, Serialize, Deserialize)]
 pub struct Float32;
 
 #[skip_serializing_none]
 #[derive(Clone, Serialize, Deserialize)]
 pub struct Float64;
-
-#[skip_serializing_none]
-#[derive(Clone, Serialize, Deserialize)]
-pub struct Float128;
 
 #[skip_serializing_none]
 #[derive(Clone, Serialize, Deserialize)]
@@ -196,11 +184,8 @@ pub enum Type {
     Int32(Int32),
     Int64(Int64),
     Int128(Int128),
-    Float8(Float8),
-    Float16(Float16),
     Float32(Float32),
     Float64(Float64),
-    Float128(Float128),
     InferType(InferType),
     TypePath(Box<TypePath>),
     RefinementType(Box<RefinementType>),
@@ -230,11 +215,8 @@ impl std::fmt::Debug for Type {
             Type::Int32(_) => write!(f, "i32"),
             Type::Int64(_) => write!(f, "i64"),
             Type::Int128(_) => write!(f, "i128"),
-            Type::Float8(_) => write!(f, "f8"),
-            Type::Float16(_) => write!(f, "f16"),
             Type::Float32(_) => write!(f, "f32"),
             Type::Float64(_) => write!(f, "f64"),
-            Type::Float128(_) => write!(f, "f128"),
             Type::InferType(_) => write!(f, "_"),
             Type::TypePath(e) => e.fmt(f),
             Type::RefinementType(e) => e.fmt(f),

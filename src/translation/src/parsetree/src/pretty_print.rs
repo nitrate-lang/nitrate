@@ -16,10 +16,10 @@ use crate::{
         TypeParam, Variable, VariableKind, Visibility,
     },
     ty::{
-        ArrayType, Bool, Exclusivity, Float8, Float16, Float32, Float64, Float128, FunctionType,
-        InferType, Int8, Int16, Int32, Int64, Int128, LatentType, Lifetime, OpaqueType,
-        ReferenceType, RefinementType, SliceType, TupleType, Type, TypeParentheses, TypePath,
-        TypePathSegment, TypePathTarget, TypeSyntaxError, UInt8, UInt16, UInt32, UInt64, UInt128,
+        ArrayType, Bool, Exclusivity, Float32, Float64, FunctionType, InferType, Int8, Int16,
+        Int32, Int64, Int128, LatentType, Lifetime, OpaqueType, ReferenceType, RefinementType,
+        SliceType, TupleType, Type, TypeParentheses, TypePath, TypePathSegment, TypePathTarget,
+        TypeSyntaxError, UInt8, UInt16, UInt32, UInt64, UInt128,
     },
 };
 
@@ -1056,26 +1056,6 @@ impl PrettyPrint for Int128 {
     }
 }
 
-impl PrettyPrint for Float8 {
-    fn pretty_print_fmt(
-        &self,
-        _ctx: &mut PrintContext,
-        writer: &mut dyn std::fmt::Write,
-    ) -> std::fmt::Result {
-        writer.write_str("f8")
-    }
-}
-
-impl PrettyPrint for Float16 {
-    fn pretty_print_fmt(
-        &self,
-        _ctx: &mut PrintContext,
-        writer: &mut dyn std::fmt::Write,
-    ) -> std::fmt::Result {
-        writer.write_str("f16")
-    }
-}
-
 impl PrettyPrint for Float32 {
     fn pretty_print_fmt(
         &self,
@@ -1093,16 +1073,6 @@ impl PrettyPrint for Float64 {
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
         writer.write_str("f64")
-    }
-}
-
-impl PrettyPrint for Float128 {
-    fn pretty_print_fmt(
-        &self,
-        _ctx: &mut PrintContext,
-        writer: &mut dyn std::fmt::Write,
-    ) -> std::fmt::Result {
-        writer.write_str("f128")
     }
 }
 
@@ -1403,11 +1373,8 @@ impl PrettyPrint for Type {
             Type::Int32(m) => m.pretty_print_fmt(ctx, writer),
             Type::Int64(m) => m.pretty_print_fmt(ctx, writer),
             Type::Int128(m) => m.pretty_print_fmt(ctx, writer),
-            Type::Float8(m) => m.pretty_print_fmt(ctx, writer),
-            Type::Float16(m) => m.pretty_print_fmt(ctx, writer),
             Type::Float32(m) => m.pretty_print_fmt(ctx, writer),
             Type::Float64(m) => m.pretty_print_fmt(ctx, writer),
-            Type::Float128(m) => m.pretty_print_fmt(ctx, writer),
             Type::InferType(m) => m.pretty_print_fmt(ctx, writer),
             Type::TypePath(m) => m.pretty_print_fmt(ctx, writer),
             Type::RefinementType(m) => m.pretty_print_fmt(ctx, writer),

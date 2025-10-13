@@ -530,11 +530,8 @@ impl TryIntoHir for ast::Cast {
                 Err(_) => failed_to_cast(log),
             },
 
-            (Value::InferredFloat(v), Type::F8) => Ok(Value::F8(OrderedFloat::from(*v as f32))),
-            (Value::InferredFloat(v), Type::F16) => Ok(Value::F16(OrderedFloat::from(*v as f32))),
             (Value::InferredFloat(v), Type::F32) => Ok(Value::F32(OrderedFloat::from(*v as f32))),
             (Value::InferredFloat(v), Type::F64) => Ok(Value::F64(OrderedFloat::from(*v as f64))),
-            (Value::InferredFloat(v), Type::F128) => Ok(Value::F128(OrderedFloat::from(*v as f64))),
 
             (expr, to) => Ok(Value::Cast {
                 expr: expr.into_id(ctx.store()),

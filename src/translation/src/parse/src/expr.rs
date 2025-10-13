@@ -6,12 +6,11 @@ use super::parse::Parser;
 use nitrate_parsetree::{
     kind::{
         AttributeList, Await, BStringLit, BinExpr, BinExprOp, Block, BlockItem, Bool, BooleanLit,
-        Break, FunctionCall, CallArgument, Cast, Closure, Continue, ElseIf, Expr, ExprParentheses,
-        ExprPath, ExprPathSegment, ExprSyntaxError, Float8, Float16, Float32, Float64, Float128,
-        FloatLit, ForEach, FuncParam, If, IndexAccess, Int8, Int16, Int32, Int64, Int128,
-        IntegerLit, List, Mutability, Return, Safety, StringLit, Tuple, Type, TypeArgument,
-        TypeInfo, TypePath, TypePathSegment, UInt8, UInt16, UInt32, UInt64, UInt128, UnaryExpr,
-        UnaryExprOp, WhileLoop,
+        Break, CallArgument, Cast, Closure, Continue, ElseIf, Expr, ExprParentheses, ExprPath,
+        ExprPathSegment, ExprSyntaxError, Float32, Float64, FloatLit, ForEach, FuncParam,
+        FunctionCall, If, IndexAccess, Int8, Int16, Int32, Int64, Int128, IntegerLit, List,
+        Mutability, Return, Safety, StringLit, Tuple, Type, TypeArgument, TypeInfo, TypePath,
+        TypePathSegment, UInt8, UInt16, UInt32, UInt64, UInt128, UnaryExpr, UnaryExprOp, WhileLoop,
     },
     tag::{
         VariableNameId, intern_arg_name, intern_label_name, intern_parameter_name,
@@ -550,11 +549,11 @@ impl Parser<'_, '_> {
             Token::I32 => Type::Int32(Int32 {}),
             Token::I64 => Type::Int64(Int64 {}),
             Token::I128 => Type::Int128(Int128 {}),
-            Token::F8 => Type::Float8(Float8 {}),
-            Token::F16 => Type::Float16(Float16 {}),
+            Token::F8 => Type::TypePath(Box::new(self.create_type_path("f8".to_string()))),
+            Token::F16 => Type::TypePath(Box::new(self.create_type_path("f16".to_string()))),
             Token::F32 => Type::Float32(Float32 {}),
             Token::F64 => Type::Float64(Float64 {}),
-            Token::F128 => Type::Float128(Float128 {}),
+            Token::F128 => Type::TypePath(Box::new(self.create_type_path("f128".to_string()))),
 
             Token::Name(name) => Type::TypePath(Box::new(TypePath {
                 segments: vec![TypePathSegment {

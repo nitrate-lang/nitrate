@@ -3,10 +3,10 @@ use crate::diagnosis::SyntaxErr;
 
 use nitrate_parsetree::{
     kind::{
-        ArrayType, Bool, Exclusivity, Expr, Float8, Float16, Float32, Float64, Float128,
-        FunctionType, Int8, Int16, Int32, Int64, Int128, LatentType, Lifetime, Mutability,
-        OpaqueType, ReferenceType, RefinementType, SliceType, TupleType, Type, TypeParentheses,
-        TypePath, TypePathSegment, TypeSyntaxError, UInt8, UInt16, UInt32, UInt64, UInt128,
+        ArrayType, Bool, Exclusivity, Expr, Float32, Float64, FunctionType, Int8, Int16, Int32,
+        Int64, Int128, LatentType, Lifetime, Mutability, OpaqueType, ReferenceType, RefinementType,
+        SliceType, TupleType, Type, TypeParentheses, TypePath, TypePathSegment, TypeSyntaxError,
+        UInt8, UInt16, UInt32, UInt64, UInt128,
     },
     tag::{intern_lifetime_name, intern_opaque_type_name},
 };
@@ -241,6 +241,16 @@ impl Parser<'_, '_> {
         }
     }
 
+    pub(crate) fn create_type_path(&mut self, segment_name: String) -> TypePath {
+        TypePath {
+            segments: Vec::from([TypePathSegment {
+                name: segment_name,
+                type_arguments: None,
+            }]),
+            resolved: None,
+        }
+    }
+
     fn parse_type_primitive(&mut self) -> Type {
         match self.lexer.next_t() {
             Token::Bool => Type::Bool(Bool),
@@ -254,11 +264,11 @@ impl Parser<'_, '_> {
             Token::I32 => Type::Int32(Int32),
             Token::I64 => Type::Int64(Int64),
             Token::I128 => Type::Int128(Int128),
-            Token::F8 => Type::Float8(Float8),
-            Token::F16 => Type::Float16(Float16),
+            Token::F8 => Type::TypePath(Box::new(self.create_type_path("f8".to_string()))),
+            Token::F16 => Type::TypePath(Box::new(self.create_type_path("f16".to_string()))),
             Token::F32 => Type::Float32(Float32),
             Token::F64 => Type::Float64(Float64),
-            Token::F128 => Type::Float128(Float128),
+            Token::F128 => Type::TypePath(Box::new(self.create_type_path("f128".to_string()))),
 
             _ => Type::SyntaxError(TypeSyntaxError),
         }

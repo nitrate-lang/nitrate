@@ -64,11 +64,8 @@ pub enum Type {
     I32,
     I64,
     I128,
-    F8,
-    F16,
     F32,
     F64,
-    F128,
 
     Opaque {
         name: IString,
@@ -163,10 +160,7 @@ impl Type {
     }
 
     pub fn is_float_primitive(&self) -> bool {
-        matches!(
-            self,
-            Type::F8 | Type::F16 | Type::F32 | Type::F64 | Type::F128
-        )
+        matches!(self, Type::F32 | Type::F64)
     }
 
     pub fn is_array(&self) -> bool {

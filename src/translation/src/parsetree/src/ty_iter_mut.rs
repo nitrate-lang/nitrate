@@ -1,10 +1,9 @@
 use crate::{
     Order, ParseTreeIterMut, RefNodeMut,
     kind::{
-        ArrayType, Bool, Float8, Float16, Float32, Float64, Float128, FunctionType, Int8, Int16,
-        Int32, Int64, Int128, LatentType, Lifetime, OpaqueType, ReferenceType, RefinementType,
-        SliceType, TupleType, Type, TypeParentheses, TypePath, TypeSyntaxError, UInt8, UInt16,
-        UInt32, UInt64, UInt128,
+        ArrayType, Bool, Float32, Float64, FunctionType, Int8, Int16, Int32, Int64, Int128,
+        LatentType, Lifetime, OpaqueType, ReferenceType, RefinementType, SliceType, TupleType,
+        Type, TypeParentheses, TypePath, TypeSyntaxError, UInt8, UInt16, UInt32, UInt64, UInt128,
     },
     ty::InferType,
 };
@@ -93,20 +92,6 @@ impl ParseTreeIterMut for Int128 {
     }
 }
 
-impl ParseTreeIterMut for Float8 {
-    fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
-        f(Order::Enter, RefNodeMut::TypeFloat8);
-        f(Order::Leave, RefNodeMut::TypeFloat8);
-    }
-}
-
-impl ParseTreeIterMut for Float16 {
-    fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
-        f(Order::Enter, RefNodeMut::TypeFloat16);
-        f(Order::Leave, RefNodeMut::TypeFloat16);
-    }
-}
-
 impl ParseTreeIterMut for Float32 {
     fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
         f(Order::Enter, RefNodeMut::TypeFloat32);
@@ -118,13 +103,6 @@ impl ParseTreeIterMut for Float64 {
     fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
         f(Order::Enter, RefNodeMut::TypeFloat64);
         f(Order::Leave, RefNodeMut::TypeFloat64);
-    }
-}
-
-impl ParseTreeIterMut for Float128 {
-    fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
-        f(Order::Enter, RefNodeMut::TypeFloat128);
-        f(Order::Leave, RefNodeMut::TypeFloat128);
     }
 }
 
@@ -297,11 +275,8 @@ impl ParseTreeIterMut for Type {
             Type::Int32(ty) => ty.depth_first_iter_mut(f),
             Type::Int64(ty) => ty.depth_first_iter_mut(f),
             Type::Int128(ty) => ty.depth_first_iter_mut(f),
-            Type::Float8(ty) => ty.depth_first_iter_mut(f),
-            Type::Float16(ty) => ty.depth_first_iter_mut(f),
             Type::Float32(ty) => ty.depth_first_iter_mut(f),
             Type::Float64(ty) => ty.depth_first_iter_mut(f),
-            Type::Float128(ty) => ty.depth_first_iter_mut(f),
             Type::InferType(ty) => ty.depth_first_iter_mut(f),
             Type::TypePath(ty) => ty.depth_first_iter_mut(f),
             Type::RefinementType(ty) => ty.depth_first_iter_mut(f),
