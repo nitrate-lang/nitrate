@@ -1,12 +1,13 @@
 use crate::{
     Order, ParseTreeIterMut, RefNodeMut,
     expr::{
-        AttributeList, ElseIf, ExprPath, Match, MatchCase, Safety, StructInit, Tuple, TypeArgument,
+        AttributeList, ElseIf, ExprPath, Match, MatchCase, MethodCall, Safety, StructInit, Tuple,
+        TypeArgument,
     },
     kind::{
-        Await, BStringLit, BinExpr, Block, BlockItem, BooleanLit, Break, Call, CallArgument, Cast,
-        Closure, Continue, Expr, ExprParentheses, ExprSyntaxError, FloatLit, ForEach, If,
-        IndexAccess, IntegerLit, List, Return, StringLit, TypeInfo, UnaryExpr, WhileLoop,
+        Await, BStringLit, BinExpr, Block, BlockItem, BooleanLit, Break, CallArgument, Cast,
+        Closure, Continue, Expr, ExprParentheses, ExprSyntaxError, FloatLit, ForEach, FunctionCall,
+        If, IndexAccess, IntegerLit, List, Return, StringLit, TypeInfo, UnaryExpr, WhileLoop,
     },
 };
 
@@ -386,9 +387,9 @@ impl ParseTreeIterMut for CallArgument {
     }
 }
 
-impl ParseTreeIterMut for Call {
+impl ParseTreeIterMut for FunctionCall {
     fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
-        f(Order::Enter, RefNodeMut::ExprCall(self));
+        f(Order::Enter, RefNodeMut::ExprFunctionCall(self));
 
         self.callee.depth_first_iter_mut(f);
 
@@ -396,7 +397,23 @@ impl ParseTreeIterMut for Call {
             arg.depth_first_iter_mut(f);
         }
 
-        f(Order::Leave, RefNodeMut::ExprCall(self));
+        f(Order::Leave, RefNodeMut::ExprFunctionCall(self));
+    }
+}
+
+impl ParseTreeIterMut for MethodCall {
+    fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
+        f(Order::Enter, RefNodeMut::ExprMethodCall(self));
+
+        self.object.depth_first_iter_mut(f);
+
+        let _ = &self.method_name;
+
+        for arg in &mut self.arguments {
+            arg.depth_first_iter_mut(f);
+        }
+
+        f(Order::Leave, RefNodeMut::ExprMethodCall(self));
     }
 }
 
@@ -429,7 +446,8 @@ impl ParseTreeIterMut for Expr {
             Expr::Return(e) => e.depth_first_iter_mut(f),
             Expr::For(e) => e.depth_first_iter_mut(f),
             Expr::Await(e) => e.depth_first_iter_mut(f),
-            Expr::Call(e) => e.depth_first_iter_mut(f),
+            Expr::FunctionCall(e) => e.depth_first_iter_mut(f),
+            Expr::MethodCall(e) => e.depth_first_iter_mut(f),
         }
     }
 }

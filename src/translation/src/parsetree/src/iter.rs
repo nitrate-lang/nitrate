@@ -2,10 +2,10 @@ use std::sync::{Arc, RwLock};
 
 use crate::{
     expr::{
-        AttributeList, Await, BStringLit, BinExpr, Block, BlockItem, BooleanLit, Break, Call,
-        CallArgument, Cast, Closure, Continue, ExprParentheses, ExprPath, FloatLit, ForEach, If,
-        IndexAccess, IntegerLit, List, Match, MatchCase, Return, StringLit, StructInit, Tuple,
-        TypeArgument, TypeInfo, UnaryExpr, WhileLoop,
+        AttributeList, Await, BStringLit, BinExpr, Block, BlockItem, BooleanLit, Break,
+        CallArgument, Cast, Closure, Continue, ExprParentheses, ExprPath, FloatLit, ForEach,
+        FunctionCall, If, IndexAccess, IntegerLit, List, Match, MatchCase, MethodCall, Return,
+        StringLit, StructInit, Tuple, TypeArgument, TypeInfo, UnaryExpr, WhileLoop,
     },
     item::{
         Enum, EnumVariant, FuncParam, Function, Generics, Impl, Import, ItemPath, Module, Struct,
@@ -60,7 +60,8 @@ pub enum RefNode<'a> {
     ExprFor(&'a ForEach),
     ExprAwait(&'a Await),
     ExprCallArgument(&'a CallArgument),
-    ExprCall(&'a Call),
+    ExprFunctionCall(&'a FunctionCall),
+    ExprMethodCall(&'a MethodCall),
 
     TypeSyntaxError,
     TypeBool,

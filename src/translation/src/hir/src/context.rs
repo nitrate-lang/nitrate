@@ -1,10 +1,18 @@
 use crate::{hir::QualifiedName, prelude::*};
 use std::{cell::RefCell, collections::HashMap, num::NonZeroU32};
 
+type TraitId = u32;
+
+struct Impls {
+    traits: HashMap<TraitId, Vec<Function>>,
+    unambiguous_methods: HashMap<String, Function>,
+}
+
 pub struct HirCtx {
     store: Store,
-    symbol_table: HashMap<QualifiedName, SymbolId>,
-    type_table: HashMap<QualifiedName, TypeId>,
+    symbol_map: HashMap<QualifiedName, SymbolId>,
+    type_map: HashMap<QualifiedName, TypeId>,
+    impl_map: HashMap<TypeId, Impls>,
     type_infer_id_ctr: NonZeroU32,
     unique_name_ctr: u32,
     ptr_size: PtrSize,
@@ -14,8 +22,9 @@ impl HirCtx {
     pub fn new(ptr_size: PtrSize) -> Self {
         Self {
             store: Store::new(),
-            symbol_table: HashMap::new(),
-            type_table: HashMap::new(),
+            symbol_map: HashMap::new(),
+            type_map: HashMap::new(),
+            impl_map: HashMap::new(),
             type_infer_id_ctr: NonZeroU32::new(1).unwrap(),
             unique_name_ctr: 0,
             ptr_size,
@@ -35,11 +44,11 @@ impl HirCtx {
     }
 
     pub fn resolve_symbol(&self, name: &QualifiedName) -> Option<&SymbolId> {
-        self.symbol_table.get(name)
+        self.symbol_map.get(name)
     }
 
     pub fn resolve_type(&self, name: &QualifiedName) -> Option<&TypeId> {
-        self.type_table.get(name)
+        self.type_map.get(name)
     }
 
     pub fn get_unique_name(&mut self) -> EntityName {

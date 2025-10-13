@@ -1,6 +1,6 @@
 use crate::{TyCtx, TypeResolver};
 use nitrate_diagnosis::CompilerLog;
-use nitrate_hir::hir::{ExternalFunction, GlobalVariable, Item, Module, StaticFunction};
+use nitrate_hir::hir::{ExternalFunction, Function, GlobalVariable, Item, Module};
 
 impl TypeResolver for Module {
     fn resolve_type(&mut self, ctx: &mut TyCtx, log: &CompilerLog) {
@@ -22,7 +22,7 @@ impl TypeResolver for ExternalFunction {
     }
 }
 
-impl TypeResolver for StaticFunction {
+impl TypeResolver for Function {
     fn resolve_type(&mut self, _ctx: &mut TyCtx, _log: &CompilerLog) {
         // TODO: resolution for StaticFunction
     }

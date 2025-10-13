@@ -351,8 +351,16 @@ pub struct CallArgument {
 
 #[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Call {
+pub struct FunctionCall {
     pub callee: Expr,
+    pub arguments: Vec<CallArgument>,
+}
+
+#[skip_serializing_none]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct MethodCall {
+    pub object: Expr,
+    pub method_name: String,
     pub arguments: Vec<CallArgument>,
 }
 
@@ -385,7 +393,8 @@ pub enum Expr {
     Return(Box<Return>),
     For(Box<ForEach>),
     Await(Box<Await>),
-    Call(Box<Call>),
+    FunctionCall(Box<FunctionCall>),
+    MethodCall(Box<MethodCall>),
 }
 
 impl std::fmt::Debug for Expr {
@@ -417,7 +426,8 @@ impl std::fmt::Debug for Expr {
             Expr::Return(e) => e.fmt(f),
             Expr::For(e) => e.fmt(f),
             Expr::Await(e) => e.fmt(f),
-            Expr::Call(e) => e.fmt(f),
+            Expr::FunctionCall(e) => e.fmt(f),
+            Expr::MethodCall(e) => e.fmt(f),
         }
     }
 }

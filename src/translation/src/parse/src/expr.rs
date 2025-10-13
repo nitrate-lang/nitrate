@@ -6,7 +6,7 @@ use super::parse::Parser;
 use nitrate_parsetree::{
     kind::{
         AttributeList, Await, BStringLit, BinExpr, BinExprOp, Block, BlockItem, Bool, BooleanLit,
-        Break, Call, CallArgument, Cast, Closure, Continue, ElseIf, Expr, ExprParentheses,
+        Break, FunctionCall, CallArgument, Cast, Closure, Continue, ElseIf, Expr, ExprParentheses,
         ExprPath, ExprPathSegment, ExprSyntaxError, Float8, Float16, Float32, Float64, Float128,
         FloatLit, ForEach, FuncParam, If, IndexAccess, Int8, Int16, Int32, Int64, Int128,
         IntegerLit, List, Mutability, Return, Safety, StringLit, Tuple, Type, TypeArgument,
@@ -500,7 +500,7 @@ impl Parser<'_, '_> {
 
                         let arguments = self.parse_function_call_arguments();
 
-                        sofar = Expr::Call(Box::new(Call {
+                        sofar = Expr::FunctionCall(Box::new(FunctionCall {
                             callee: sofar,
                             arguments,
                         }));

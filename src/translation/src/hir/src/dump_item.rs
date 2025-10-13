@@ -56,7 +56,7 @@ impl Dump for ExternalFunction {
     }
 }
 
-impl Dump for StaticFunction {
+impl Dump for Function {
     fn dump(
         &self,
         ctx: &mut DumpContext,
@@ -122,16 +122,16 @@ impl Dump for ClosureFunction {
     }
 }
 
-impl Dump for Function {
+impl Dump for FunctionSymbol {
     fn dump(
         &self,
         ctx: &mut DumpContext,
         o: &mut dyn std::fmt::Write,
     ) -> Result<(), std::fmt::Error> {
         match self {
-            Function::External(efn) => efn.dump(ctx, o),
-            Function::Static(sfn) => sfn.dump(ctx, o),
-            Function::Closure(cfn) => cfn.dump(ctx, o),
+            FunctionSymbol::External(efn) => efn.dump(ctx, o),
+            FunctionSymbol::Static(sfn) => sfn.dump(ctx, o),
+            FunctionSymbol::Closure(cfn) => cfn.dump(ctx, o),
         }
     }
 }
@@ -144,9 +144,9 @@ impl Symbol {
             Symbol::LocalVariable(lv) => write!(o, "sym local `{}`", lv.name.0),
             Symbol::Parameter(fp) => write!(o, "sym param `{}`", fp.name.0),
             Symbol::Function(f) => match f {
-                Function::External(efn) => write!(o, "sym fn `{}`", efn.name.0),
-                Function::Static(sfn) => write!(o, "sym fn `{}`", sfn.name.0),
-                Function::Closure(cfn) => {
+                FunctionSymbol::External(efn) => write!(o, "sym fn `{}`", efn.name.0),
+                FunctionSymbol::Static(sfn) => write!(o, "sym fn `{}`", sfn.name.0),
+                FunctionSymbol::Closure(cfn) => {
                     write!(o, "sym fn #{}", cfn.closure_unique_id)
                 }
             },

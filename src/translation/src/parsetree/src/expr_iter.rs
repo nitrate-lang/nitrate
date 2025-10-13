@@ -1,12 +1,13 @@
 use crate::{
     Order, ParseTreeIter, RefNode,
     expr::{
-        AttributeList, ElseIf, ExprPath, Match, MatchCase, Safety, StructInit, Tuple, TypeArgument,
+        AttributeList, ElseIf, ExprPath, Match, MatchCase, MethodCall, Safety, StructInit, Tuple,
+        TypeArgument,
     },
     kind::{
-        Await, BStringLit, BinExpr, Block, BlockItem, BooleanLit, Break, Call, CallArgument, Cast,
-        Closure, Continue, Expr, ExprParentheses, ExprSyntaxError, FloatLit, ForEach, If,
-        IndexAccess, IntegerLit, List, Return, StringLit, TypeInfo, UnaryExpr, WhileLoop,
+        Await, BStringLit, BinExpr, Block, BlockItem, BooleanLit, Break, CallArgument, Cast,
+        Closure, Continue, Expr, ExprParentheses, ExprSyntaxError, FloatLit, ForEach, FunctionCall,
+        If, IndexAccess, IntegerLit, List, Return, StringLit, TypeInfo, UnaryExpr, WhileLoop,
     },
 };
 
@@ -385,9 +386,9 @@ impl ParseTreeIter for CallArgument {
     }
 }
 
-impl ParseTreeIter for Call {
+impl ParseTreeIter for FunctionCall {
     fn depth_first_iter(&self, f: &mut dyn FnMut(Order, RefNode)) {
-        f(Order::Enter, RefNode::ExprCall(self));
+        f(Order::Enter, RefNode::ExprFunctionCall(self));
 
         self.callee.depth_first_iter(f);
 
@@ -395,7 +396,23 @@ impl ParseTreeIter for Call {
             arg.depth_first_iter(f);
         }
 
-        f(Order::Leave, RefNode::ExprCall(self));
+        f(Order::Leave, RefNode::ExprFunctionCall(self));
+    }
+}
+
+impl ParseTreeIter for MethodCall {
+    fn depth_first_iter(&self, f: &mut dyn FnMut(Order, RefNode)) {
+        f(Order::Enter, RefNode::ExprMethodCall(self));
+
+        self.object.depth_first_iter(f);
+
+        let _ = &self.method_name;
+
+        for arg in &self.arguments {
+            arg.depth_first_iter(f);
+        }
+
+        f(Order::Leave, RefNode::ExprMethodCall(self));
     }
 }
 
@@ -428,7 +445,8 @@ impl ParseTreeIter for Expr {
             Expr::Return(e) => e.depth_first_iter(f),
             Expr::For(e) => e.depth_first_iter(f),
             Expr::Await(e) => e.depth_first_iter(f),
-            Expr::Call(e) => e.depth_first_iter(f),
+            Expr::FunctionCall(e) => e.depth_first_iter(f),
+            Expr::MethodCall(e) => e.depth_first_iter(f),
         }
     }
 }

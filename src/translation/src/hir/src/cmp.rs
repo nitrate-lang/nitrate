@@ -10,7 +10,7 @@ pub fn using_storage<R>(store: &Store, f: impl FnOnce() -> R) -> R {
         let old = tls.take();
         tls.set(Some(store));
         let result = f();
-        tls.set(old);
+        tls.set(old); // Ensure panic when misused
         result
     })
 }
@@ -50,7 +50,7 @@ impl PartialEq for SymbolId {
         TLS_STORE.with(|tls| {
             let store_ptr = tls
                 .get()
-                .expect("call to ItemId::eq outside of `using_storage(...)`");
+                .expect("call to SymbolId::eq outside of `using_storage(...)`");
 
             let store = unsafe { &*store_ptr };
             let lhs = store[self].borrow();
@@ -67,7 +67,7 @@ impl std::hash::Hash for SymbolId {
         TLS_STORE.with(|tls| {
             let store_ptr = tls
                 .get()
-                .expect("call to ItemId::eq outside of `using_storage(...)`");
+                .expect("call to SymbolId::eq outside of `using_storage(...)`");
 
             let store = unsafe { &*store_ptr };
             store[self].borrow().hash(state)
@@ -80,7 +80,7 @@ impl PartialEq for ValueId {
         TLS_STORE.with(|tls| {
             let store_ptr = tls
                 .get()
-                .expect("call to ItemId::eq outside of `using_storage(...)`");
+                .expect("call to ValueId::eq outside of `using_storage(...)`");
 
             let store = unsafe { &*store_ptr };
             let lhs = store[self].borrow();
@@ -97,7 +97,7 @@ impl std::hash::Hash for ValueId {
         TLS_STORE.with(|tls| {
             let store_ptr = tls
                 .get()
-                .expect("call to ItemId::eq outside of `using_storage(...)`");
+                .expect("call to ValueId::eq outside of `using_storage(...)`");
 
             let store = unsafe { &*store_ptr };
             store[self].borrow().hash(state)
@@ -110,7 +110,7 @@ impl PartialEq for BlockId {
         TLS_STORE.with(|tls| {
             let store_ptr = tls
                 .get()
-                .expect("call to ItemId::eq outside of `using_storage(...)`");
+                .expect("call to BlockId::eq outside of `using_storage(...)`");
 
             let store = unsafe { &*store_ptr };
             let lhs = store[self].borrow();
@@ -127,7 +127,7 @@ impl std::hash::Hash for BlockId {
         TLS_STORE.with(|tls| {
             let store_ptr = tls
                 .get()
-                .expect("call to ItemId::eq outside of `using_storage(...)`");
+                .expect("call to BlockId::eq outside of `using_storage(...)`");
 
             let store = unsafe { &*store_ptr };
             store[self].borrow().hash(state)

@@ -5,10 +5,10 @@ use nitrate_tokenize::IntegerKind;
 use crate::{
     expr::{
         AttributeList, Await, BStringLit, BinExpr, BinExprOp, Block, BlockItem, BooleanLit, Break,
-        Call, CallArgument, Cast, Closure, Continue, ElseIf, Expr, ExprParentheses, ExprPath,
-        ExprPathSegment, ExprPathTarget, ExprSyntaxError, FloatLit, ForEach, If, IndexAccess,
-        IntegerLit, List, Match, MatchCase, Return, Safety, StringLit, StructInit, Tuple,
-        TypeArgument, TypeInfo, UnaryExpr, UnaryExprOp, WhileLoop,
+        CallArgument, Cast, Closure, Continue, ElseIf, Expr, ExprParentheses, ExprPath,
+        ExprPathSegment, ExprPathTarget, ExprSyntaxError, FloatLit, ForEach, FunctionCall, If,
+        IndexAccess, IntegerLit, List, Match, MatchCase, MethodCall, Return, Safety, StringLit,
+        StructInit, Tuple, TypeArgument, TypeInfo, UnaryExpr, UnaryExprOp, WhileLoop,
     },
     item::{
         AssociatedItem, Enum, EnumVariant, FuncParam, FuncParams, Function, Generics, Impl, Import,
@@ -854,13 +854,35 @@ impl PrettyPrint for CallArgument {
     }
 }
 
-impl PrettyPrint for Call {
+impl PrettyPrint for FunctionCall {
     fn pretty_print_fmt(
         &self,
         ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
         self.callee.pretty_print_fmt(ctx, writer)?;
+
+        writer.write_char('(')?;
+        for (i, arg) in self.arguments.iter().enumerate() {
+            if i > 0 {
+                writer.write_str(", ")?;
+            }
+
+            arg.pretty_print_fmt(ctx, writer)?;
+        }
+        writer.write_char(')')
+    }
+}
+
+impl PrettyPrint for MethodCall {
+    fn pretty_print_fmt(
+        &self,
+        ctx: &mut PrintContext,
+        writer: &mut dyn std::fmt::Write,
+    ) -> std::fmt::Result {
+        self.object.pretty_print_fmt(ctx, writer)?;
+        writer.write_str(".")?;
+        writer.write_str(&self.method_name)?;
 
         writer.write_char('(')?;
         for (i, arg) in self.arguments.iter().enumerate() {
@@ -907,7 +929,8 @@ impl PrettyPrint for Expr {
             Expr::Return(m) => m.pretty_print_fmt(ctx, writer),
             Expr::For(m) => m.pretty_print_fmt(ctx, writer),
             Expr::Await(m) => m.pretty_print_fmt(ctx, writer),
-            Expr::Call(m) => m.pretty_print_fmt(ctx, writer),
+            Expr::FunctionCall(m) => m.pretty_print_fmt(ctx, writer),
+            Expr::MethodCall(m) => m.pretty_print_fmt(ctx, writer),
         }
     }
 }

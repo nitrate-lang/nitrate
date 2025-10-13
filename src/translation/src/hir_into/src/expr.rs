@@ -1,4 +1,7 @@
-use std::{collections::HashMap, ops::Deref};
+use std::{
+    collections::{HashMap, HashSet},
+    ops::Deref,
+};
 
 use crate::{TryIntoHir, diagnosis::HirErr};
 use nitrate_diagnosis::CompilerLog;
@@ -739,40 +742,108 @@ impl TryIntoHir for ast::Await {
     }
 }
 
-impl TryIntoHir for ast::Call {
+fn construct_call(
+    ctx: &mut HirCtx,
+    log: &CompilerLog,
+    function_type: &FunctionType,
+    arguments: Vec<CallArgument>,
+) -> Result<Vec<ValueId>, ()> {
+    fn find_first_hole(arguments: &Vec<Option<ValueId>>) -> usize {
+        if let Some((index, _)) = arguments.iter().enumerate().find(|x| x.1.is_none()) {
+            return index;
+        }
+
+        // Must be a variadic argument
+        arguments.len()
+    }
+
+    fn place_argument(
+        position: usize,
+        value: ValueId,
+        log: &CompilerLog,
+        call_arguments: &mut Vec<Option<ValueId>>,
+    ) -> Result<(), ()> {
+        // Push variadic argument
+        if position == call_arguments.len() {
+            call_arguments.push(Some(value));
+            return Ok(());
+        }
+
+        if let Some(_) = call_arguments[position] {
+            log.report(&HirErr::DuplicateFunctionArguments);
+            return Err(());
+        }
+
+        call_arguments[position] = Some(value);
+        Ok(())
+    }
+
+    let mut name_to_pos = HashMap::new();
+    for (index, (name, _, _)) in function_type.params.iter().enumerate() {
+        name_to_pos.insert(name.to_string(), index);
+    }
+
+    let mut next_pos = 0;
+    let mut call_arguments: Vec<Option<ValueId>> = Vec::new();
+    call_arguments.resize(function_type.params.len(), None);
+
+    for CallArgument { name, value } in arguments {
+        match name {
+            Some(name) => {
+                if let Some(position) = name_to_pos.get(name.deref()) {
+                    let value = value.try_into_hir(ctx, log)?.into_id(ctx.store());
+                    place_argument(position.to_owned(), value, log, &mut call_arguments)?;
+                    next_pos = find_first_hole(&call_arguments);
+                } else {
+                    log.report(&HirErr::NoSuchParameter(name.to_string()));
+                    return Err(());
+                }
+            }
+
+            None => {
+                let value = value.try_into_hir(ctx, log)?.into_id(ctx.store());
+                place_argument(next_pos, value, log, &mut call_arguments)?;
+                next_pos = find_first_hole(&call_arguments);
+            }
+        };
+    }
+
+    for (i, arg) in call_arguments.iter_mut().enumerate() {
+        if arg.is_none() {
+            if let Some(parameter) = function_type.params.get(i) {
+                if let Some(default_value) = parameter.2.as_ref() {
+                    if arg.is_none() {
+                        *arg = Some(default_value.clone());
+                        continue;
+                    }
+                }
+            }
+
+            log.report(&HirErr::MissingFunctionArguments);
+            return Err(());
+        }
+    }
+
+    if !function_type
+        .attributes
+        .contains(&FunctionAttribute::Variadic)
+    {
+        if call_arguments.len() > function_type.params.len() {
+            log.report(&HirErr::TooManyFunctionArguments);
+            return Err(());
+        }
+    }
+
+    Ok(call_arguments
+        .into_iter()
+        .map(|v| v.unwrap())
+        .collect::<Vec<ValueId>>())
+}
+
+impl TryIntoHir for ast::FunctionCall {
     type Hir = Value;
 
     fn try_into_hir(self, ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
-        fn find_first_hole(arguments: &Vec<Option<ValueId>>) -> usize {
-            if let Some((index, _)) = arguments.iter().enumerate().find(|x| x.1.is_none()) {
-                return index;
-            }
-
-            // Must be a variadic argument
-            arguments.len()
-        }
-
-        fn place_argument(
-            position: usize,
-            value: ValueId,
-            log: &CompilerLog,
-            call_arguments: &mut Vec<Option<ValueId>>,
-        ) -> Result<(), ()> {
-            // Push variadic argument
-            if position == call_arguments.len() {
-                call_arguments.push(Some(value));
-                return Ok(());
-            }
-
-            if let Some(_) = call_arguments[position] {
-                log.report(&HirErr::DuplicateFunctionArguments);
-                return Err(());
-            }
-
-            call_arguments[position] = Some(value);
-            Ok(())
-        }
-
         let callee = self.callee.try_into_hir(ctx, log)?;
         let callee_type = get_type(&callee, ctx.store()).map_err(|_| {
             log.report(&HirErr::TypeInferenceError);
@@ -788,68 +859,32 @@ impl TryIntoHir for ast::Call {
             _ => unreachable!(),
         };
 
-        let mut name_to_pos = HashMap::new();
-        for (index, (name, _, _)) in function_type.params.iter().enumerate() {
-            name_to_pos.insert(name.to_string(), index);
-        }
-
-        let mut next_pos = 0;
-        let mut call_arguments: Vec<Option<ValueId>> = Vec::new();
-        call_arguments.resize(function_type.params.len(), None);
-
-        for CallArgument { name, value } in self.arguments {
-            match name {
-                Some(name) => {
-                    if let Some(position) = name_to_pos.get(name.deref()) {
-                        let value = value.try_into_hir(ctx, log)?.into_id(ctx.store());
-                        place_argument(position.to_owned(), value, log, &mut call_arguments)?;
-                        next_pos = find_first_hole(&call_arguments);
-                    } else {
-                        log.report(&HirErr::NoSuchParameter(name.to_string()));
-                        return Err(());
-                    }
-                }
-
-                None => {
-                    let value = value.try_into_hir(ctx, log)?.into_id(ctx.store());
-                    place_argument(next_pos, value, log, &mut call_arguments)?;
-                    next_pos = find_first_hole(&call_arguments);
-                }
-            };
-        }
-
-        for (i, arg) in call_arguments.iter_mut().enumerate() {
-            if arg.is_none() {
-                if let Some(parameter) = function_type.params.get(i) {
-                    if let Some(default_value) = parameter.2.as_ref() {
-                        if arg.is_none() {
-                            *arg = Some(default_value.clone());
-                            continue;
-                        }
-                    }
-                }
-
-                log.report(&HirErr::MissingFunctionArguments);
-                return Err(());
-            }
-        }
-
-        if !function_type
-            .attributes
-            .contains(&FunctionAttribute::Variadic)
-        {
-            if call_arguments.len() > function_type.params.len() {
-                log.report(&HirErr::TooManyFunctionArguments);
-                return Err(());
-            }
-        }
-
-        let call_arguments: Vec<ValueId> = call_arguments.into_iter().map(|v| v.unwrap()).collect();
+        let call_arguments = construct_call(ctx, log, &function_type, self.arguments)?;
 
         Ok(Value::Call {
             callee: callee.into_id(ctx.store()),
             arguments: call_arguments.into(),
         })
+    }
+}
+
+impl TryIntoHir for ast::MethodCall {
+    type Hir = Value;
+
+    fn try_into_hir(self, ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
+        let object = self.object.try_into_hir(ctx, log)?;
+        let _object_type = get_type(&object, ctx.store()).map_err(|_| {
+            log.report(&HirErr::TypeInferenceError);
+        })?;
+
+        todo!()
+
+        // let call_arguments = construct_call(ctx, log, &function_type, self.arguments)?;
+
+        // Ok(Value::Call {
+        //     callee: callee.into_id(ctx.store()),
+        //     arguments: call_arguments.into(),
+        // })
     }
 }
 
@@ -886,7 +921,8 @@ impl TryIntoHir for ast::Expr {
             ast::Expr::Return(e) => e.try_into_hir(ctx, log),
             ast::Expr::For(e) => e.try_into_hir(ctx, log),
             ast::Expr::Await(e) => e.try_into_hir(ctx, log),
-            ast::Expr::Call(e) => e.try_into_hir(ctx, log),
+            ast::Expr::FunctionCall(e) => e.try_into_hir(ctx, log),
+            ast::Expr::MethodCall(e) => e.try_into_hir(ctx, log),
         }
     }
 }

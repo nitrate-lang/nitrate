@@ -26,7 +26,7 @@ pub struct ExternalFunction {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
-pub struct StaticFunction {
+pub struct Function {
     pub visibility: Visibility,
     pub attributes: BTreeSet<FunctionAttribute>,
     pub name: EntityName,
@@ -39,38 +39,38 @@ pub struct StaticFunction {
 pub struct ClosureFunction {
     pub closure_unique_id: u64,
     pub captures: Vec<SymbolId>,
-    pub callee: Box<StaticFunction>,
+    pub callee: Box<Function>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
-pub enum Function {
+pub enum FunctionSymbol {
     External(ExternalFunction),
-    Static(StaticFunction),
+    Static(Function),
     Closure(ClosureFunction),
 }
 
-impl Function {
+impl FunctionSymbol {
     pub fn attributes(&self) -> &BTreeSet<FunctionAttribute> {
         match self {
-            Function::External(func) => &func.attributes,
-            Function::Static(func) => &func.attributes,
-            Function::Closure(func) => &func.callee.attributes,
+            FunctionSymbol::External(func) => &func.attributes,
+            FunctionSymbol::Static(func) => &func.attributes,
+            FunctionSymbol::Closure(func) => &func.callee.attributes,
         }
     }
 
     pub fn parameters(&self) -> &Vec<(IString, TypeId, Option<ValueId>)> {
         match self {
-            Function::External(func) => &func.parameters,
-            Function::Static(func) => &func.parameters,
-            Function::Closure(func) => &func.callee.parameters,
+            FunctionSymbol::External(func) => &func.parameters,
+            FunctionSymbol::Static(func) => &func.parameters,
+            FunctionSymbol::Closure(func) => &func.callee.parameters,
         }
     }
 
     pub fn return_type(&self) -> &TypeId {
         match self {
-            Function::External(func) => &func.return_type,
-            Function::Static(func) => &func.return_type,
-            Function::Closure(func) => &func.callee.return_type,
+            FunctionSymbol::External(func) => &func.return_type,
+            FunctionSymbol::Static(func) => &func.return_type,
+            FunctionSymbol::Closure(func) => &func.callee.return_type,
         }
     }
 }
@@ -105,7 +105,7 @@ pub enum Symbol {
     GlobalVariable(GlobalVariable),
     LocalVariable(LocalVariable),
     Parameter(Parameter),
-    Function(Function),
+    Function(FunctionSymbol),
 }
 
 impl IntoStoreId for Symbol {
@@ -132,7 +132,7 @@ pub enum Item {
     Module(Module),
     GlobalVariable(GlobalVariable),
     ExternalFunction(ExternalFunction),
-    StaticFunction(StaticFunction),
+    StaticFunction(Function),
 }
 
 impl IntoStoreId for Item {
