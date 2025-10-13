@@ -68,7 +68,7 @@ impl Dump for Type {
                 write!(o, "; {len}]")
             }
 
-            Type::Tuple { elements } => {
+            Type::Tuple { element_types: elements } => {
                 let elements = &ctx.store[elements];
 
                 write!(o, "(")?;

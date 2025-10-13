@@ -1,50 +1,57 @@
 use nitrate_hir::{
     Store, TypeId,
-    hir::{IntoStoreId, Type, Value},
+    hir::{BinaryOp, IntoStoreId, Type, UnaryOp, Value},
 };
 
 pub enum TypeInferenceError {
-    CannotInfer,
+    NonHomogeneousList,
+    IfElseBranchTypeMismatch,
+    BinaryOpTypeMismatch,
+    ShiftOrRotateByNonU32,
 }
 
-pub fn get_type(value: &Value, store: &Store) -> Result<Type, TypeInferenceError> {
+pub fn get_type(value: &Value, store: &Store) -> Result<TypeId, TypeInferenceError> {
     match value {
-        Value::Unit => Ok(Type::Unit),
-        Value::Bool(_) => Ok(Type::Bool),
-        Value::I8(_) => Ok(Type::I8),
-        Value::I16(_) => Ok(Type::I16),
-        Value::I32(_) => Ok(Type::I32),
-        Value::I64(_) => Ok(Type::I64),
-        Value::I128(_) => Ok(Type::I128),
-        Value::U8(_) => Ok(Type::U8),
-        Value::U16(_) => Ok(Type::U16),
-        Value::U32(_) => Ok(Type::U32),
-        Value::U64(_) => Ok(Type::U64),
-        Value::U128(_) => Ok(Type::U128),
-        Value::F8(_) => Ok(Type::F8),
-        Value::F16(_) => Ok(Type::F16),
-        Value::F32(_) => Ok(Type::F32),
-        Value::F64(_) => Ok(Type::F64),
-        Value::F128(_) => Ok(Type::F128),
-        Value::USize32(_) => Ok(Type::USize),
-        Value::USize64(_) => Ok(Type::USize),
-        Value::InferredInteger(_) => Ok(Type::InferredInteger),
-        Value::InferredFloat(_) => Ok(Type::InferredFloat),
+        Value::Unit => Ok(Type::Unit.into_id(store)),
+        Value::Bool(_) => Ok(Type::Bool.into_id(store)),
+        Value::I8(_) => Ok(Type::I8.into_id(store)),
+        Value::I16(_) => Ok(Type::I16.into_id(store)),
+        Value::I32(_) => Ok(Type::I32.into_id(store)),
+        Value::I64(_) => Ok(Type::I64.into_id(store)),
+        Value::I128(_) => Ok(Type::I128.into_id(store)),
+        Value::U8(_) => Ok(Type::U8.into_id(store)),
+        Value::U16(_) => Ok(Type::U16.into_id(store)),
+        Value::U32(_) => Ok(Type::U32.into_id(store)),
+        Value::U64(_) => Ok(Type::U64.into_id(store)),
+        Value::U128(_) => Ok(Type::U128.into_id(store)),
+        Value::F8(_) => Ok(Type::F8.into_id(store)),
+        Value::F16(_) => Ok(Type::F16.into_id(store)),
+        Value::F32(_) => Ok(Type::F32.into_id(store)),
+        Value::F64(_) => Ok(Type::F64.into_id(store)),
+        Value::F128(_) => Ok(Type::F128.into_id(store)),
+        Value::USize32(_) => Ok(Type::USize.into_id(store)),
+        Value::USize64(_) => Ok(Type::USize.into_id(store)),
+        Value::InferredInteger(_) => Ok(Type::InferredInteger.into_id(store)),
+        Value::InferredFloat(_) => Ok(Type::InferredFloat.into_id(store)),
 
-        Value::StringLit(thin_str) => {
+        Value::StringLit(str) => {
             let element_type = Type::U8.into_id(store);
-            Ok(Type::Array {
+            let array = Type::Array {
                 element_type,
-                len: thin_str.len() as u64,
-            })
+                len: str.len() as u64,
+            };
+
+            Ok(array.into_id(store))
         }
 
-        Value::BStringLit(thin_vec) => {
+        Value::BStringLit(vec) => {
             let element_type = Type::U8.into_id(store);
-            Ok(Type::Array {
+            let array = Type::Array {
                 element_type,
-                len: thin_vec.len() as u64,
-            })
+                len: vec.len() as u64,
+            };
+
+            Ok(array.into_id(store))
         }
 
         Value::Struct {
@@ -64,15 +71,59 @@ pub fn get_type(value: &Value, store: &Store) -> Result<Type, TypeInferenceError
             todo!()
         }
 
-        Value::Binary { left, op, right } => {
-            // TODO: inference for binary operations
-            todo!()
-        }
+        Value::Binary { left, op, right } => match op {
+            BinaryOp::Add
+            | BinaryOp::Sub
+            | BinaryOp::Mul
+            | BinaryOp::Div
+            | BinaryOp::Mod
+            | BinaryOp::And
+            | BinaryOp::Or
+            | BinaryOp::Xor => {
+                let left = &store[left].borrow();
+                let right = &store[right].borrow();
 
-        Value::Unary { op, expr } => {
-            // TODO: inference for unary operations
-            todo!()
-        }
+                let left_type = get_type(left, store)?;
+                let right_type = get_type(right, store)?;
+
+                if left_type != right_type {
+                    return Err(TypeInferenceError::BinaryOpTypeMismatch);
+                }
+
+                Ok(left_type)
+            }
+
+            BinaryOp::Shl | BinaryOp::Shr | BinaryOp::Rol | BinaryOp::Ror => {
+                let left = &store[left].borrow();
+                let right = &store[right].borrow();
+
+                let left_type = get_type(left, store)?;
+                let right_type = get_type(right, store)?;
+
+                if right_type != Type::U32.into_id(store) {
+                    return Err(TypeInferenceError::ShiftOrRotateByNonU32);
+                }
+
+                Ok(left_type)
+            }
+
+            BinaryOp::LogicAnd
+            | BinaryOp::LogicOr
+            | BinaryOp::Lt
+            | BinaryOp::Gt
+            | BinaryOp::Lte
+            | BinaryOp::Gte
+            | BinaryOp::Eq
+            | BinaryOp::Ne => Ok(Type::Bool.into_id(store)),
+        },
+
+        Value::Unary { op, expr } => match op {
+            UnaryOp::Add | UnaryOp::Sub | UnaryOp::BitNot => {
+                let expr = &store[expr].borrow();
+                get_type(expr, store)
+            }
+            UnaryOp::LogicNot => Ok(Type::Bool.into_id(store)),
+        },
 
         Value::FieldAccess { expr, field } => {
             // TODO: inference for field access
@@ -84,20 +135,14 @@ pub fn get_type(value: &Value, store: &Store) -> Result<Type, TypeInferenceError
             todo!()
         }
 
-        Value::Assign { place, value } => {
-            // TODO: inference for assignment
-            todo!()
-        }
+        Value::Assign { place: _, value: _ } => Ok(Type::Unit.into_id(store)),
 
         Value::Deref { place } => {
             // TODO: inference for dereference
             todo!()
         }
 
-        Value::Cast { expr, to } => {
-            // TODO: inference for cast
-            todo!()
-        }
+        Value::Cast { expr, to } => Ok(to.to_owned()),
 
         Value::GetAddressOf { place } => {
             // TODO: inference for address-of
@@ -110,54 +155,90 @@ pub fn get_type(value: &Value, store: &Store) -> Result<Type, TypeInferenceError
         }
 
         Value::List { elements } => {
-            todo!()
+            let element_type = if elements.is_empty() {
+                Type::Unit.into_id(store)
+            } else {
+                let first_type = get_type(&elements[0], store)?;
+                for elem in &elements[1..] {
+                    let elem_type = get_type(elem, store)?;
+                    if elem_type != first_type {
+                        return Err(TypeInferenceError::NonHomogeneousList);
+                    }
+                }
+
+                first_type
+            };
+
+            let array = Type::Array {
+                element_type,
+                len: elements.len() as u64,
+            };
+
+            Ok(array.into_id(store))
         }
 
         Value::Tuple { elements } => {
-            // TODO: inference for tuple
-            todo!()
+            let mut element_types = Vec::with_capacity(elements.len());
+            for elem in elements {
+                let elem_type = get_type(elem, store)?;
+                element_types.push(elem_type);
+            }
+
+            let tuple_type = Type::Tuple {
+                element_types: element_types.into_id(store),
+            };
+
+            Ok(tuple_type.into_id(store))
         }
 
         Value::If {
-            condition,
             true_branch,
             false_branch,
+            condition: _,
+        } => match false_branch {
+            None => Ok(Type::Unit.into_id(store)),
+
+            Some(false_branch) => {
+                let block = &store[true_branch].borrow();
+                let true_branch_type = match block.elements.last() {
+                    Some(last) => get_type(last, store)?,
+                    None => Type::Unit.into_id(store),
+                };
+
+                let block = &store[false_branch].borrow();
+                let false_branch_type = match block.elements.last() {
+                    Some(last) => get_type(last, store)?,
+                    None => Type::Unit.into_id(store),
+                };
+
+                if true_branch_type != false_branch_type {
+                    return Err(TypeInferenceError::IfElseBranchTypeMismatch);
+                }
+
+                Ok(true_branch_type)
+            }
+        },
+
+        Value::While {
+            condition: _,
+            body: _,
+        } => Ok(Type::Unit.into_id(store)),
+
+        Value::Loop { body: _ } => Ok(Type::Unit.into_id(store)),
+
+        Value::Break { label: _ } => Ok(Type::Never.into_id(store)),
+        Value::Continue { label: _ } => Ok(Type::Never.into_id(store)),
+        Value::Return { value: _ } => Ok(Type::Never.into_id(store)),
+
+        Value::Block { block } => match store[block].borrow().elements.last() {
+            Some(last) => get_type(last, store),
+            None => Ok(Type::Unit.into_id(store)),
+        },
+
+        Value::Call {
+            callee,
+            arguments: _,
         } => {
-            // TODO: inference for if expressions
-            todo!()
-        }
-
-        Value::While { condition, body } => {
-            // TODO: inference for while loops
-            todo!()
-        }
-
-        Value::Loop { body } => {
-            // TODO: inference for loop
-            todo!()
-        }
-
-        Value::Break { label } => {
-            // TODO: inference for break
-            todo!()
-        }
-
-        Value::Continue { label } => {
-            // TODO: inference for continue
-            todo!()
-        }
-
-        Value::Return { value } => {
-            // TODO: inference for return
-            todo!()
-        }
-
-        Value::Block { block } => {
-            // TODO: inference for block
-            todo!()
-        }
-
-        Value::Call { callee, arguments } => {
             // TODO: inference for function calls
             todo!()
         }

@@ -229,7 +229,7 @@ impl Dump for Value {
                     if i != 0 {
                         write!(o, ", ")?;
                     }
-                    ctx.store[elem].borrow().dump(ctx, o)?;
+                    elem.dump(ctx, o)?;
                 }
                 write!(o, "]")
             }
@@ -237,7 +237,7 @@ impl Dump for Value {
             Value::Tuple { elements } => {
                 write!(o, "(")?;
                 for elem in &**elements {
-                    ctx.store[elem].borrow().dump(ctx, o)?;
+                    elem.dump(ctx, o)?;
                     write!(o, ", ")?;
                 }
                 write!(o, ")")

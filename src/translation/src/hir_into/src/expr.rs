@@ -79,11 +79,11 @@ impl TryIntoHir for ast::List {
         let mut elements = Vec::with_capacity(self.elements.len());
         for element in self.elements {
             let hir_element = element.try_into_hir(ctx, log)?;
-            elements.push(hir_element.into_id(ctx.store()));
+            elements.push(hir_element);
         }
 
         Ok(Value::List {
-            elements: Box::new(elements),
+            elements: elements.into(),
         })
     }
 }
@@ -95,11 +95,11 @@ impl TryIntoHir for ast::Tuple {
         let mut elements = Vec::with_capacity(self.elements.len());
         for element in self.elements {
             let hir_element = element.try_into_hir(ctx, log)?;
-            elements.push(hir_element.into_id(ctx.store()));
+            elements.push(hir_element);
         }
 
         Ok(Value::Tuple {
-            elements: Box::new(elements),
+            elements: elements.into(),
         })
     }
 }
@@ -230,21 +230,17 @@ impl TryIntoHir for ast::BinExpr {
                 right,
             }),
 
-            ast::BinExprOp::LogicAnd => {
-                // TODO: Short-circuiting logic ops
-                log.report(&HirErr::UnimplementedFeature(
-                    "short-circuiting logic ops".into(),
-                ));
-                Err(())
-            }
+            ast::BinExprOp::LogicAnd => Ok(Value::Binary {
+                left,
+                op: BinaryOp::LogicAnd,
+                right,
+            }),
 
-            ast::BinExprOp::LogicOr => {
-                // TODO: Short-circuiting logic ops
-                log.report(&HirErr::UnimplementedFeature(
-                    "short-circuiting logic ops".into(),
-                ));
-                Err(())
-            }
+            ast::BinExprOp::LogicOr => Ok(Value::Binary {
+                left,
+                op: BinaryOp::LogicOr,
+                right,
+            }),
 
             ast::BinExprOp::LogicLt => Ok(Value::Binary {
                 left,

@@ -368,11 +368,11 @@ pub enum Value {
     },
 
     List {
-        elements: Box<Vec<ValueId>>,
+        elements: ThinVec<Value>,
     },
 
     Tuple {
-        elements: Box<Vec<ValueId>>,
+        elements: ThinVec<Value>,
     },
 
     If {

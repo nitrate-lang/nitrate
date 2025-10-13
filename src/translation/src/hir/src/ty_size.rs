@@ -27,7 +27,7 @@ pub fn get_size_of(ty: &Type, store: &Store, ptr_size: PtrSize) -> Result<u64, S
             Ok(element_stride * (*len as u64))
         }
 
-        Type::Tuple { elements } => {
+        Type::Tuple { element_types: elements } => {
             let mut size = 0_u64;
 
             for element in &store[elements] {

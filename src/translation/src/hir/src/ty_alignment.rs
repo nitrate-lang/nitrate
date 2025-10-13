@@ -26,7 +26,7 @@ pub fn get_align_of(ty: &Type, store: &Store, ptr_size: PtrSize) -> Result<u64, 
             }
         }
 
-        Type::Tuple { elements } => {
+        Type::Tuple { element_types: elements } => {
             let mut max_align = 1;
 
             for element in &store[elements] {

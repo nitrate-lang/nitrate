@@ -184,7 +184,7 @@ impl TryIntoHir for ast::TupleType {
         }
 
         Ok(Type::Tuple {
-            elements: elements.into_id(ctx.store()),
+            element_types: elements.into_id(ctx.store()),
         })
     }
 }

@@ -462,7 +462,7 @@ impl HirEvaluate for Value {
 
                 match ctx.store[expr].borrow().evaluate(ctx)? {
                     Value::List { elements } => match elements.get(index) {
-                        Some(elem) => Ok(ctx.store[elem].borrow().evaluate(ctx)?),
+                        Some(elem) => Ok(elem.evaluate(ctx)?),
                         None => Err(Unwind::IndexOutOfBounds),
                     },
 
@@ -527,32 +527,24 @@ impl HirEvaluate for Value {
             Value::List { elements } => {
                 let mut evaluated_elements = Vec::with_capacity(elements.len());
                 for element in &**elements {
-                    let evaluated_element = ctx.store[element]
-                        .borrow()
-                        .evaluate(ctx)?
-                        .into_id(ctx.store);
-
+                    let evaluated_element = element.evaluate(ctx)?;
                     evaluated_elements.push(evaluated_element);
                 }
 
                 Ok(Value::List {
-                    elements: Box::new(evaluated_elements),
+                    elements: evaluated_elements.into(),
                 })
             }
 
             Value::Tuple { elements } => {
                 let mut evaluated_elements = Vec::with_capacity(elements.len());
                 for element in &**elements {
-                    let evaluated_element = ctx.store[element]
-                        .borrow()
-                        .evaluate(ctx)?
-                        .into_id(ctx.store);
-
+                    let evaluated_element = element.evaluate(ctx)?;
                     evaluated_elements.push(evaluated_element);
                 }
 
                 Ok(Value::Tuple {
-                    elements: Box::new(evaluated_elements),
+                    elements: evaluated_elements.into(),
                 })
             }
 

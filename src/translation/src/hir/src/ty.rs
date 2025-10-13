@@ -120,7 +120,7 @@ pub enum Type {
     },
 
     Tuple {
-        elements: TypeListId,
+        element_types: TypeListId,
     },
 
     Slice {
