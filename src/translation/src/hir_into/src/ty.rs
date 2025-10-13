@@ -274,9 +274,9 @@ impl TryIntoHir for ast::FunctionType {
                 log.report(&HirErr::CannotSpecifyMutabilityOnFunctionTypeParameter);
             }
 
-            let name = IString::from(param.name.deref());
+            let name = EntityName(IString::from(param.name.deref()));
 
-            let param_type = match param.param_type {
+            let ty = match param.param_type {
                 Some(ty) => ty.try_into_hir(ctx, log)?.into_id(ctx.store()),
                 None => Type::Unit.into_id(ctx.store()),
             };
@@ -286,7 +286,13 @@ impl TryIntoHir for ast::FunctionType {
                 None => None,
             };
 
-            parameters.push((name, param_type, default_value));
+            let parameter = Parameter {
+                name,
+                ty,
+                default_value,
+            };
+
+            parameters.push(parameter.into_id(ctx.store()));
         }
 
         let return_type = match self.return_type {

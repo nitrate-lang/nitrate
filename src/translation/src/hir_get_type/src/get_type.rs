@@ -9,6 +9,7 @@ pub enum TypeInferenceError {
     IndexAccessOnNonCollection,
     CalleeIsNotFunctionType,
     UnresolvedSymbol,
+    TraitHasNoType,
 }
 
 pub fn get_type(value: &Value, store: &Store) -> Result<Type, TypeInferenceError> {
@@ -219,18 +220,21 @@ pub fn get_type(value: &Value, store: &Store) -> Result<Type, TypeInferenceError
 
         Value::Symbol { symbol } => match &*store[symbol].borrow() {
             Symbol::Unresolved { name: _ } => Err(TypeInferenceError::UnresolvedSymbol),
-            Symbol::GlobalVariable(global_variable) => Ok(store[&global_variable.ty].clone()),
-            Symbol::LocalVariable(local_variable) => Ok(store[&local_variable.ty].clone()),
-            Symbol::Parameter(parameter) => Ok(store[&parameter.ty].clone()),
-
-            Symbol::Function(function) => Ok(Type::Function {
-                function_type: FunctionType {
-                    attributes: function.attributes().to_owned(),
-                    params: function.parameters().to_owned(),
-                    return_type: function.return_type().to_owned(),
-                }
-                .into_id(store),
-            }),
+            Symbol::GlobalVariable(glb) => Ok(store[&store[glb].borrow().ty].clone()),
+            Symbol::LocalVariable(loc) => Ok(store[&store[loc].borrow().ty].clone()),
+            Symbol::Trait(_) => Err(TypeInferenceError::TraitHasNoType),
+            Symbol::Parameter(param) => Ok(store[&store[param].borrow().ty].clone()),
+            Symbol::Function(function) => {
+                let function = &store[function].borrow();
+                Ok(Type::Function {
+                    function_type: FunctionType {
+                        attributes: function.attributes.to_owned(),
+                        params: function.parameters.to_owned(),
+                        return_type: function.return_type.to_owned(),
+                    }
+                    .into_id(store),
+                })
+            }
         },
     }
 }

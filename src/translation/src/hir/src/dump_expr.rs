@@ -170,7 +170,7 @@ impl Dump for Value {
                 write!(o, ")")
             }
 
-            Value::Symbol { symbol } => ctx.store[symbol].borrow().dump_nocycle(o),
+            Value::Symbol { symbol } => ctx.store[symbol].borrow().dump_nocycle(ctx, o),
 
             Value::FieldAccess { expr, field } => {
                 write!(o, "(")?;

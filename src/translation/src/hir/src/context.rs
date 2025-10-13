@@ -1,7 +1,5 @@
-use crate::{hir::QualifiedName, prelude::*};
+use crate::prelude::*;
 use std::{cell::RefCell, collections::HashMap, num::NonZeroU32};
-
-type TraitId = u32;
 
 struct Impls {
     traits: HashMap<TraitId, Vec<Function>>,
@@ -49,6 +47,14 @@ impl HirCtx {
 
     pub fn resolve_type(&self, name: &QualifiedName) -> Option<&TypeId> {
         self.type_map.get(name)
+    }
+
+    pub fn implements_trait(&self, ty: &TypeId, trait_id: TraitId) -> bool {
+        if let Some(impls) = self.impl_map.get(ty) {
+            impls.traits.contains_key(&trait_id)
+        } else {
+            false
+        }
     }
 
     pub fn get_unique_name(&mut self) -> EntityName {
@@ -270,18 +276,58 @@ impl std::ops::Index<&FunctionTypeId> for HirCtx {
     }
 }
 
-impl std::ops::Index<&ItemId> for HirCtx {
-    type Output = RefCell<Item>;
-
-    fn index(&self, index: &ItemId) -> &Self::Output {
-        &self.store[index]
-    }
-}
-
 impl std::ops::Index<&SymbolId> for HirCtx {
     type Output = RefCell<Symbol>;
 
     fn index(&self, index: &SymbolId) -> &Self::Output {
+        &self.store[index]
+    }
+}
+
+impl std::ops::Index<&GlobalVariableId> for HirCtx {
+    type Output = RefCell<GlobalVariable>;
+
+    fn index(&self, index: &GlobalVariableId) -> &Self::Output {
+        &self.store[index]
+    }
+}
+
+impl std::ops::Index<&LocalVariableId> for HirCtx {
+    type Output = RefCell<LocalVariable>;
+
+    fn index(&self, index: &LocalVariableId) -> &Self::Output {
+        &self.store[index]
+    }
+}
+
+impl std::ops::Index<&ParameterId> for HirCtx {
+    type Output = RefCell<Parameter>;
+
+    fn index(&self, index: &ParameterId) -> &Self::Output {
+        &self.store[index]
+    }
+}
+
+impl std::ops::Index<&FunctionId> for HirCtx {
+    type Output = RefCell<Function>;
+
+    fn index(&self, index: &FunctionId) -> &Self::Output {
+        &self.store[index]
+    }
+}
+
+impl std::ops::Index<&TraitId> for HirCtx {
+    type Output = RefCell<Trait>;
+
+    fn index(&self, index: &TraitId) -> &Self::Output {
+        &self.store[index]
+    }
+}
+
+impl std::ops::Index<&ModuleId> for HirCtx {
+    type Output = RefCell<Module>;
+
+    fn index(&self, index: &ModuleId) -> &Self::Output {
         &self.store[index]
     }
 }

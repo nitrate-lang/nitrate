@@ -278,14 +278,16 @@ impl Dump for Type {
                 }
 
                 write!(o, "(")?;
-                for (i, (param_name, param_type, default)) in parameters.iter().enumerate() {
+                for (i, param) in parameters.iter().enumerate() {
+                    let param = &ctx.store[param].borrow();
+
                     if i != 0 {
                         write!(o, ", ")?;
                     }
 
-                    write!(o, "{}: ", param_name)?;
-                    ctx.store[param_type].dump(ctx, o)?;
-                    if let Some(default) = default {
+                    write!(o, "{}: ", param.name.0)?;
+                    ctx.store[&param.ty].dump(ctx, o)?;
+                    if let Some(default) = &param.default_value {
                         write!(o, " = ")?;
                         ctx.store[default].borrow().dump(ctx, o)?;
                     }

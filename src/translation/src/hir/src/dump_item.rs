@@ -14,48 +14,6 @@ impl Dump for Visibility {
     }
 }
 
-impl Dump for ExternalFunction {
-    fn dump(
-        &self,
-        ctx: &mut DumpContext,
-        o: &mut dyn std::fmt::Write,
-    ) -> Result<(), std::fmt::Error> {
-        self.visibility.dump(ctx, o)?;
-        write!(o, " sym extern fn ")?;
-
-        if !self.attributes.is_empty() {
-            write!(o, "[")?;
-            for (i, attr) in self.attributes.iter().enumerate() {
-                if i != 0 {
-                    write!(o, ", ")?;
-                }
-
-                attr.dump(ctx, o)?;
-            }
-            write!(o, "] ")?;
-        }
-
-        write!(o, "{}(", self.name.0)?;
-
-        for (i, (param_name, param_type, default_value)) in self.parameters.iter().enumerate() {
-            if i != 0 {
-                write!(o, ", ")?;
-            }
-
-            write!(o, "{}: ", param_name)?;
-            ctx.store[param_type].dump(ctx, o)?;
-            if let Some(default_value) = default_value {
-                write!(o, " = ")?;
-                ctx.store[default_value].borrow().dump(ctx, o)?;
-            }
-        }
-
-        write!(o, ") -> ")?;
-        ctx.store[&self.return_type].dump(ctx, o)?;
-        write!(o, ";")
-    }
-}
-
 impl Dump for Function {
     fn dump(
         &self,
@@ -79,14 +37,16 @@ impl Dump for Function {
 
         write!(o, "{}(", self.name.0)?;
 
-        for (i, (param_name, param_type, default_value)) in self.parameters.iter().enumerate() {
+        for (i, param) in self.parameters.iter().enumerate() {
+            let param = &ctx.store[param].borrow();
+
             if i != 0 {
                 write!(o, ", ")?;
             }
 
-            write!(o, "{}: ", param_name)?;
-            ctx.store[param_type].dump(ctx, o)?;
-            if let Some(default_value) = default_value {
+            write!(o, "{}: ", param.name.0)?;
+            ctx.store[&param.ty].dump(ctx, o)?;
+            if let Some(default_value) = &param.default_value {
                 write!(o, " = ")?;
                 ctx.store[default_value].borrow().dump(ctx, o)?;
             }
@@ -100,7 +60,7 @@ impl Dump for Function {
     }
 }
 
-impl Dump for ClosureFunction {
+impl Dump for Closure {
     fn dump(
         &self,
         ctx: &mut DumpContext,
@@ -114,42 +74,29 @@ impl Dump for ClosureFunction {
                 write!(o, ", ")?;
             }
 
-            ctx.store[capture].borrow().dump_nocycle(o)?;
+            ctx.store[capture].borrow().dump_nocycle(ctx, o)?;
         }
         write!(o, "] ")?;
 
-        self.callee.dump(ctx, o)
+        ctx.store[&self.callee].borrow().dump(ctx, o)
     }
 }
 
-impl Dump for FunctionSymbol {
-    fn dump(
+impl Symbol {
+    pub fn dump_nocycle(
         &self,
         ctx: &mut DumpContext,
         o: &mut dyn std::fmt::Write,
     ) -> Result<(), std::fmt::Error> {
         match self {
-            FunctionSymbol::External(efn) => efn.dump(ctx, o),
-            FunctionSymbol::Static(sfn) => sfn.dump(ctx, o),
-            FunctionSymbol::Closure(cfn) => cfn.dump(ctx, o),
-        }
-    }
-}
-
-impl Symbol {
-    pub fn dump_nocycle(&self, o: &mut dyn std::fmt::Write) -> Result<(), std::fmt::Error> {
-        match self {
             Symbol::Unresolved { name } => write!(o, "sym nolink `{}`", name),
-            Symbol::GlobalVariable(gv) => write!(o, "sym global `{}`", gv.name.0),
-            Symbol::LocalVariable(lv) => write!(o, "sym local `{}`", lv.name.0),
-            Symbol::Parameter(fp) => write!(o, "sym param `{}`", fp.name.0),
-            Symbol::Function(f) => match f {
-                FunctionSymbol::External(efn) => write!(o, "sym fn `{}`", efn.name.0),
-                FunctionSymbol::Static(sfn) => write!(o, "sym fn `{}`", sfn.name.0),
-                FunctionSymbol::Closure(cfn) => {
-                    write!(o, "sym fn #{}", cfn.closure_unique_id)
-                }
-            },
+            Symbol::GlobalVariable(gv) => {
+                write!(o, "sym global `{}`", ctx.store[gv].borrow().name.0)
+            }
+            Symbol::LocalVariable(lv) => write!(o, "sym local `{}`", ctx.store[lv].borrow().name.0),
+            Symbol::Trait(tr) => write!(o, "sym trait `{}`", ctx.store[tr].borrow().name.0),
+            Symbol::Parameter(fp) => write!(o, "sym param `{}`", ctx.store[fp].borrow().name.0),
+            Symbol::Function(f) => write!(o, "sym fn `{}`", ctx.store[f].borrow().name.0),
         }
     }
 }
@@ -187,6 +134,31 @@ impl Dump for LocalVariable {
     }
 }
 
+impl Dump for Trait {
+    fn dump(
+        &self,
+        ctx: &mut DumpContext,
+        o: &mut dyn std::fmt::Write,
+    ) -> Result<(), std::fmt::Error> {
+        self.visibility.dump(ctx, o)?;
+        write!(o, " sym trait `{}` {{\n", self.name.0)?;
+
+        ctx.indent += 1;
+
+        for method in &self.methods {
+            ctx.indent += 1;
+            self.write_indent(ctx, o)?;
+            ctx.store[method].borrow().dump(ctx, o)?;
+            write!(o, "\n")?;
+            ctx.indent -= 1;
+        }
+
+        ctx.indent -= 1;
+        self.write_indent(ctx, o)?;
+        write!(o, "}}")
+    }
+}
+
 impl Dump for Parameter {
     fn dump(
         &self,
@@ -211,10 +183,11 @@ impl Dump for Symbol {
     ) -> Result<(), std::fmt::Error> {
         match self {
             Symbol::Unresolved { name } => write!(o, "sym nolink `{}`", name),
-            Symbol::GlobalVariable(gv) => gv.dump(ctx, o),
-            Symbol::LocalVariable(lv) => lv.dump(ctx, o),
-            Symbol::Parameter(fp) => fp.dump(ctx, o),
-            Symbol::Function(f) => f.dump(ctx, o),
+            Symbol::Parameter(fp) => ctx.store[fp].borrow().dump(ctx, o),
+            Symbol::Function(f) => ctx.store[f].borrow().dump(ctx, o),
+            Symbol::GlobalVariable(gv) => ctx.store[gv].borrow().dump(ctx, o),
+            Symbol::LocalVariable(lv) => ctx.store[lv].borrow().dump(ctx, o),
+            Symbol::Trait(tr) => ctx.store[tr].borrow().dump(ctx, o),
         }
     }
 }
@@ -261,7 +234,7 @@ impl Dump for Module {
                 ctx.indent += 1;
 
                 self.write_indent(ctx, o)?;
-                ctx.store[item].borrow().dump(ctx, o)?;
+                item.dump(ctx, o)?;
                 write!(o, "\n")?;
 
                 ctx.indent -= 1;
@@ -280,10 +253,10 @@ impl Dump for Item {
         o: &mut dyn std::fmt::Write,
     ) -> Result<(), std::fmt::Error> {
         match self {
-            Item::Module(module) => module.dump(ctx, o),
-            Item::GlobalVariable(gv) => gv.dump(ctx, o),
-            Item::ExternalFunction(efn) => efn.dump(ctx, o),
-            Item::StaticFunction(sfn) => sfn.dump(ctx, o),
+            Item::Module(module) => ctx.store[module].borrow().dump(ctx, o),
+            Item::GlobalVariable(gv) => ctx.store[gv].borrow().dump(ctx, o),
+            Item::Function(f) => ctx.store[f].borrow().dump(ctx, o),
+            Item::Trait(tr) => ctx.store[tr].borrow().dump(ctx, o),
         }
     }
 }

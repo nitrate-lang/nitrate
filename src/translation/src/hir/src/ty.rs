@@ -44,7 +44,7 @@ pub struct EnumType {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct FunctionType {
     pub attributes: BTreeSet<FunctionAttribute>,
-    pub params: Vec<(IString, TypeId, Option<ValueId>)>,
+    pub params: Vec<ParameterId>,
     pub return_type: TypeId,
 }
 

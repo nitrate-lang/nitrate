@@ -122,9 +122,19 @@ impl_dedup_store!(EnumTypeId, EnumType, EnumTypeStore);
 
 impl_dedup_store!(FunctionTypeId, FunctionType, FunctionTypeStore);
 
-impl_store_mut!(ItemId, Item, ItemStore);
-
 impl_store_mut!(SymbolId, Symbol, SymbolStore);
+
+impl_store_mut!(GlobalVariableId, GlobalVariable, GlobalVariableStore);
+
+impl_store_mut!(LocalVariableId, LocalVariable, LocalVariableStore);
+
+impl_store_mut!(ParameterId, Parameter, ParameterStore);
+
+impl_store_mut!(FunctionId, Function, FunctionStore);
+
+impl_store_mut!(TraitId, Trait, TraitStore);
+
+impl_store_mut!(ModuleId, Module, ModuleStore);
 
 impl_store_mut!(ValueId, Value, ExprValueStore);
 
@@ -137,8 +147,13 @@ pub struct Store {
     struct_types: StructTypeStore,
     enum_types: EnumTypeStore,
     function_types: FunctionTypeStore,
-    items: ItemStore,
     symbols: SymbolStore,
+    global_variables: GlobalVariableStore,
+    local_variables: LocalVariableStore,
+    parameters: ParameterStore,
+    functions: FunctionStore,
+    traits: TraitStore,
+    modules: ModuleStore,
     values: ExprValueStore,
     literals: ExprLiteralStore,
     blocks: ExprBlockStore,
@@ -151,9 +166,13 @@ impl Store {
             struct_types: StructTypeStore::new(),
             enum_types: EnumTypeStore::new(),
             function_types: FunctionTypeStore::new(),
-
-            items: ItemStore::new(),
             symbols: SymbolStore::new(),
+            global_variables: GlobalVariableStore::new(),
+            local_variables: LocalVariableStore::new(),
+            parameters: ParameterStore::new(),
+            functions: FunctionStore::new(),
+            traits: TraitStore::new(),
+            modules: ModuleStore::new(),
             values: ExprValueStore::new(),
             literals: ExprLiteralStore::new(),
             blocks: ExprBlockStore::new(),
@@ -176,12 +195,32 @@ impl Store {
         using_storage(self, || self.function_types.store(func_type))
     }
 
-    pub fn store_item(&self, item: Item) -> ItemId {
-        using_storage(self, || self.items.store(item))
-    }
-
     pub fn store_symbol(&self, symbol: Symbol) -> SymbolId {
         using_storage(self, || self.symbols.store(symbol))
+    }
+
+    pub fn store_global_variable(&self, var: GlobalVariable) -> GlobalVariableId {
+        using_storage(self, || self.global_variables.store(var))
+    }
+
+    pub fn store_local_variable(&self, var: LocalVariable) -> LocalVariableId {
+        using_storage(self, || self.local_variables.store(var))
+    }
+
+    pub fn store_parameter(&self, param: Parameter) -> ParameterId {
+        using_storage(self, || self.parameters.store(param))
+    }
+
+    pub fn store_function(&self, func: Function) -> FunctionId {
+        using_storage(self, || self.functions.store(func))
+    }
+
+    pub fn store_trait(&self, tr: Trait) -> TraitId {
+        using_storage(self, || self.traits.store(tr))
+    }
+
+    pub fn store_module(&self, module: Module) -> ModuleId {
+        using_storage(self, || self.modules.store(module))
     }
 
     pub fn store_value(&self, expr: Value) -> ValueId {
@@ -201,8 +240,13 @@ impl Store {
         self.struct_types.reset();
         self.enum_types.reset();
         self.function_types.reset();
-        self.items.reset();
         self.symbols.reset();
+        self.global_variables.reset();
+        self.local_variables.reset();
+        self.parameters.reset();
+        self.functions.reset();
+        self.traits.reset();
+        self.modules.reset();
         self.values.reset();
         self.literals.reset();
         self.blocks.reset();
@@ -213,8 +257,13 @@ impl Store {
         self.struct_types.shrink_to_fit();
         self.enum_types.shrink_to_fit();
         self.function_types.shrink_to_fit();
-        self.items.shrink_to_fit();
         self.symbols.shrink_to_fit();
+        self.global_variables.shrink_to_fit();
+        self.local_variables.shrink_to_fit();
+        self.parameters.shrink_to_fit();
+        self.functions.shrink_to_fit();
+        self.traits.shrink_to_fit();
+        self.modules.shrink_to_fit();
         self.values.shrink_to_fit();
         self.literals.shrink_to_fit();
         self.blocks.shrink_to_fit();
@@ -253,19 +302,59 @@ impl std::ops::Index<&FunctionTypeId> for Store {
     }
 }
 
-impl std::ops::Index<&ItemId> for Store {
-    type Output = RefCell<Item>;
-
-    fn index(&self, index: &ItemId) -> &Self::Output {
-        &self.items[index]
-    }
-}
-
 impl std::ops::Index<&SymbolId> for Store {
     type Output = RefCell<Symbol>;
 
     fn index(&self, index: &SymbolId) -> &Self::Output {
         &self.symbols[index]
+    }
+}
+
+impl std::ops::Index<&GlobalVariableId> for Store {
+    type Output = RefCell<GlobalVariable>;
+
+    fn index(&self, index: &GlobalVariableId) -> &Self::Output {
+        &self.global_variables[index]
+    }
+}
+
+impl std::ops::Index<&LocalVariableId> for Store {
+    type Output = RefCell<LocalVariable>;
+
+    fn index(&self, index: &LocalVariableId) -> &Self::Output {
+        &self.local_variables[index]
+    }
+}
+
+impl std::ops::Index<&ParameterId> for Store {
+    type Output = RefCell<Parameter>;
+
+    fn index(&self, index: &ParameterId) -> &Self::Output {
+        &self.parameters[index]
+    }
+}
+
+impl std::ops::Index<&FunctionId> for Store {
+    type Output = RefCell<Function>;
+
+    fn index(&self, index: &FunctionId) -> &Self::Output {
+        &self.functions[index]
+    }
+}
+
+impl std::ops::Index<&TraitId> for Store {
+    type Output = RefCell<Trait>;
+
+    fn index(&self, index: &TraitId) -> &Self::Output {
+        &self.traits[index]
+    }
+}
+
+impl std::ops::Index<&ModuleId> for Store {
+    type Output = RefCell<Module>;
+
+    fn index(&self, index: &ModuleId) -> &Self::Output {
+        &self.modules[index]
     }
 }
 

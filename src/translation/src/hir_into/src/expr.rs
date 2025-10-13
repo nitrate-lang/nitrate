@@ -1,7 +1,4 @@
-use std::{
-    collections::{HashMap, HashSet},
-    ops::Deref,
-};
+use std::{collections::HashMap, ops::Deref};
 
 use crate::{TryIntoHir, diagnosis::HirErr};
 use nitrate_diagnosis::CompilerLog;
@@ -779,8 +776,9 @@ fn construct_call(
     }
 
     let mut name_to_pos = HashMap::new();
-    for (index, (name, _, _)) in function_type.params.iter().enumerate() {
-        name_to_pos.insert(name.to_string(), index);
+    for (index, param) in function_type.params.iter().enumerate() {
+        let param = ctx[param].borrow();
+        name_to_pos.insert(param.name.0.to_string(), index);
     }
 
     let mut next_pos = 0;
@@ -811,7 +809,8 @@ fn construct_call(
     for (i, arg) in call_arguments.iter_mut().enumerate() {
         if arg.is_none() {
             if let Some(parameter) = function_type.params.get(i) {
-                if let Some(default_value) = parameter.2.as_ref() {
+                let parameter = ctx[parameter].borrow();
+                if let Some(default_value) = &parameter.default_value {
                     if arg.is_none() {
                         *arg = Some(default_value.clone());
                         continue;

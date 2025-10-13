@@ -120,9 +120,8 @@ impl TryIntoHir for ast::Module {
 
                 ast::Item::Variable(v) => {
                     let variable = v.read().unwrap();
-                    let hir_global = global_variable_try_into_hir(&variable, ctx, log)?;
-                    let item = Item::GlobalVariable(hir_global).into_id(ctx.store());
-                    items.push(item);
+                    let g = global_variable_try_into_hir(&variable, ctx, log)?.into_id(ctx.store());
+                    items.push(Item::GlobalVariable(g));
                 }
 
                 ast::Item::SyntaxError(_) => {

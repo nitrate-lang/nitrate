@@ -1,4 +1,7 @@
-use crate::{BlockId, ItemId, Store, SymbolId, ValueId};
+use crate::{
+    BlockId, FunctionId, GlobalVariableId, LocalVariableId, ModuleId, ParameterId, Store, SymbolId,
+    TraitId, ValueId,
+};
 use std::cell::Cell;
 
 thread_local! {
@@ -13,36 +16,6 @@ pub fn using_storage<R>(store: &Store, f: impl FnOnce() -> R) -> R {
         tls.set(old); // Ensure panic when misused
         result
     })
-}
-
-impl PartialEq for ItemId {
-    fn eq(&self, other: &Self) -> bool {
-        TLS_STORE.with(|tls| {
-            let store_ptr = tls
-                .get()
-                .expect("call to ItemId::eq outside of `using_storage(...)`");
-
-            let store = unsafe { &*store_ptr };
-            let lhs = store[self].borrow();
-            let rhs = store[other].borrow();
-            lhs.eq(&*rhs)
-        })
-    }
-}
-
-impl Eq for ItemId {}
-
-impl std::hash::Hash for ItemId {
-    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
-        TLS_STORE.with(|tls| {
-            let store_ptr = tls
-                .get()
-                .expect("call to ItemId::eq outside of `using_storage(...)`");
-
-            let store = unsafe { &*store_ptr };
-            store[self].borrow().hash(state)
-        })
-    }
 }
 
 impl PartialEq for SymbolId {
@@ -68,6 +41,186 @@ impl std::hash::Hash for SymbolId {
             let store_ptr = tls
                 .get()
                 .expect("call to SymbolId::eq outside of `using_storage(...)`");
+
+            let store = unsafe { &*store_ptr };
+            store[self].borrow().hash(state)
+        })
+    }
+}
+
+impl PartialEq for GlobalVariableId {
+    fn eq(&self, other: &Self) -> bool {
+        TLS_STORE.with(|tls| {
+            let store_ptr = tls
+                .get()
+                .expect("call to GlobalVariableId::eq outside of `using_storage(...)`");
+
+            let store = unsafe { &*store_ptr };
+            let lhs = store[self].borrow();
+            let rhs = store[other].borrow();
+            lhs.eq(&*rhs)
+        })
+    }
+}
+
+impl Eq for GlobalVariableId {}
+
+impl std::hash::Hash for GlobalVariableId {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        TLS_STORE.with(|tls| {
+            let store_ptr = tls
+                .get()
+                .expect("call to GlobalVariableId::eq outside of `using_storage(...)`");
+
+            let store = unsafe { &*store_ptr };
+            store[self].borrow().hash(state)
+        })
+    }
+}
+
+impl PartialEq for LocalVariableId {
+    fn eq(&self, other: &Self) -> bool {
+        TLS_STORE.with(|tls| {
+            let store_ptr = tls
+                .get()
+                .expect("call to LocalVariableId::eq outside of `using_storage(...)`");
+
+            let store = unsafe { &*store_ptr };
+            let lhs = store[self].borrow();
+            let rhs = store[other].borrow();
+            lhs.eq(&*rhs)
+        })
+    }
+}
+
+impl Eq for LocalVariableId {}
+
+impl std::hash::Hash for LocalVariableId {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        TLS_STORE.with(|tls| {
+            let store_ptr = tls
+                .get()
+                .expect("call to LocalVariableId::eq outside of `using_storage(...)`");
+
+            let store = unsafe { &*store_ptr };
+            store[self].borrow().hash(state)
+        })
+    }
+}
+
+impl PartialEq for ParameterId {
+    fn eq(&self, other: &Self) -> bool {
+        TLS_STORE.with(|tls| {
+            let store_ptr = tls
+                .get()
+                .expect("call to ParameterId::eq outside of `using_storage(...)`");
+
+            let store = unsafe { &*store_ptr };
+            let lhs = store[self].borrow();
+            let rhs = store[other].borrow();
+            lhs.eq(&*rhs)
+        })
+    }
+}
+
+impl Eq for ParameterId {}
+
+impl std::hash::Hash for ParameterId {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        TLS_STORE.with(|tls| {
+            let store_ptr = tls
+                .get()
+                .expect("call to ParameterId::eq outside of `using_storage(...)`");
+
+            let store = unsafe { &*store_ptr };
+            store[self].borrow().hash(state)
+        })
+    }
+}
+
+impl PartialEq for FunctionId {
+    fn eq(&self, other: &Self) -> bool {
+        TLS_STORE.with(|tls| {
+            let store_ptr = tls
+                .get()
+                .expect("call to FunctionId::eq outside of `using_storage(...)`");
+
+            let store = unsafe { &*store_ptr };
+            let lhs = store[self].borrow();
+            let rhs = store[other].borrow();
+            lhs.eq(&*rhs)
+        })
+    }
+}
+
+impl Eq for FunctionId {}
+
+impl std::hash::Hash for FunctionId {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        TLS_STORE.with(|tls| {
+            let store_ptr = tls
+                .get()
+                .expect("call to FunctionId::eq outside of `using_storage(...)`");
+
+            let store = unsafe { &*store_ptr };
+            store[self].borrow().hash(state)
+        })
+    }
+}
+
+impl PartialEq for TraitId {
+    fn eq(&self, other: &Self) -> bool {
+        TLS_STORE.with(|tls| {
+            let store_ptr = tls
+                .get()
+                .expect("call to TraitId::eq outside of `using_storage(...)`");
+
+            let store = unsafe { &*store_ptr };
+            let lhs = store[self].borrow();
+            let rhs = store[other].borrow();
+            lhs.eq(&*rhs)
+        })
+    }
+}
+
+impl Eq for TraitId {}
+
+impl std::hash::Hash for TraitId {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        TLS_STORE.with(|tls| {
+            let store_ptr = tls
+                .get()
+                .expect("call to TraitId::eq outside of `using_storage(...)`");
+
+            let store = unsafe { &*store_ptr };
+            store[self].borrow().hash(state)
+        })
+    }
+}
+
+impl PartialEq for ModuleId {
+    fn eq(&self, other: &Self) -> bool {
+        TLS_STORE.with(|tls| {
+            let store_ptr = tls
+                .get()
+                .expect("call to ModuleId::eq outside of `using_storage(...)`");
+
+            let store = unsafe { &*store_ptr };
+            let lhs = store[self].borrow();
+            let rhs = store[other].borrow();
+            lhs.eq(&*rhs)
+        })
+    }
+}
+
+impl Eq for ModuleId {}
+
+impl std::hash::Hash for ModuleId {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        TLS_STORE.with(|tls| {
+            let store_ptr = tls
+                .get()
+                .expect("call to ModuleId::eq outside of `using_storage(...)`");
 
             let store = unsafe { &*store_ptr };
             store[self].borrow().hash(state)

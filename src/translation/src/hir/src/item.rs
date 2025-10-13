@@ -1,15 +1,7 @@
-use std::collections::BTreeSet;
-
 use crate::prelude::*;
 use interned_string::IString;
 use serde::{Deserialize, Serialize};
-
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
-pub enum Visibility {
-    Sec,
-    Pro,
-    Pub,
-}
+use std::collections::BTreeSet;
 
 pub type QualifiedName = IString;
 
@@ -17,62 +9,10 @@ pub type QualifiedName = IString;
 pub struct EntityName(pub IString);
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
-pub struct ExternalFunction {
-    pub visibility: Visibility,
-    pub attributes: BTreeSet<FunctionAttribute>,
-    pub name: EntityName,
-    pub parameters: Vec<(IString, TypeId, Option<ValueId>)>,
-    pub return_type: TypeId,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
-pub struct Function {
-    pub visibility: Visibility,
-    pub attributes: BTreeSet<FunctionAttribute>,
-    pub name: EntityName,
-    pub parameters: Vec<(IString, TypeId, Option<ValueId>)>,
-    pub return_type: TypeId,
-    pub body: BlockId,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
-pub struct ClosureFunction {
-    pub closure_unique_id: u64,
-    pub captures: Vec<SymbolId>,
-    pub callee: Box<Function>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
-pub enum FunctionSymbol {
-    External(ExternalFunction),
-    Static(Function),
-    Closure(ClosureFunction),
-}
-
-impl FunctionSymbol {
-    pub fn attributes(&self) -> &BTreeSet<FunctionAttribute> {
-        match self {
-            FunctionSymbol::External(func) => &func.attributes,
-            FunctionSymbol::Static(func) => &func.attributes,
-            FunctionSymbol::Closure(func) => &func.callee.attributes,
-        }
-    }
-
-    pub fn parameters(&self) -> &Vec<(IString, TypeId, Option<ValueId>)> {
-        match self {
-            FunctionSymbol::External(func) => &func.parameters,
-            FunctionSymbol::Static(func) => &func.parameters,
-            FunctionSymbol::Closure(func) => &func.callee.parameters,
-        }
-    }
-
-    pub fn return_type(&self) -> &TypeId {
-        match self {
-            FunctionSymbol::External(func) => &func.return_type,
-            FunctionSymbol::Static(func) => &func.return_type,
-            FunctionSymbol::Closure(func) => &func.callee.return_type,
-        }
-    }
+pub enum Visibility {
+    Sec,
+    Pro,
+    Pub,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
@@ -100,20 +40,27 @@ pub struct Parameter {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
-pub enum Symbol {
-    Unresolved { name: QualifiedName },
-    GlobalVariable(GlobalVariable),
-    LocalVariable(LocalVariable),
-    Parameter(Parameter),
-    Function(FunctionSymbol),
+pub struct Function {
+    pub visibility: Visibility,
+    pub attributes: BTreeSet<FunctionAttribute>,
+    pub name: EntityName,
+    pub parameters: Vec<ParameterId>,
+    pub return_type: TypeId,
+    pub body: BlockId,
 }
 
-impl IntoStoreId for Symbol {
-    type Id = SymbolId;
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
+pub struct Closure {
+    pub closure_unique_id: u64,
+    pub captures: Vec<SymbolId>,
+    pub callee: FunctionId,
+}
 
-    fn into_id(self, store: &Store) -> Self::Id {
-        store.store_symbol(self)
-    }
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
+pub struct Trait {
+    pub visibility: Visibility,
+    pub name: EntityName,
+    pub methods: Vec<FunctionId>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
@@ -124,21 +71,71 @@ pub struct Module {
     pub visibility: Visibility,
     pub name: EntityName,
     pub attributes: Vec<ModuleAttribute>,
-    pub items: Vec<ItemId>,
+    pub items: Vec<Item>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
+pub enum Symbol {
+    Unresolved { name: QualifiedName },
+    GlobalVariable(GlobalVariableId),
+    LocalVariable(LocalVariableId),
+    Trait(TraitId),
+    Parameter(ParameterId),
+    Function(FunctionId),
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub enum Item {
-    Module(Module),
-    GlobalVariable(GlobalVariable),
-    ExternalFunction(ExternalFunction),
-    StaticFunction(Function),
+    Module(ModuleId),
+    GlobalVariable(GlobalVariableId),
+    Function(FunctionId),
+    Trait(TraitId),
 }
 
-impl IntoStoreId for Item {
-    type Id = ItemId;
+impl IntoStoreId for GlobalVariable {
+    type Id = GlobalVariableId;
 
     fn into_id(self, store: &Store) -> Self::Id {
-        store.store_item(self)
+        store.store_global_variable(self)
+    }
+}
+
+impl IntoStoreId for LocalVariable {
+    type Id = LocalVariableId;
+
+    fn into_id(self, store: &Store) -> Self::Id {
+        store.store_local_variable(self)
+    }
+}
+
+impl IntoStoreId for Parameter {
+    type Id = ParameterId;
+
+    fn into_id(self, store: &Store) -> Self::Id {
+        store.store_parameter(self)
+    }
+}
+
+impl IntoStoreId for Function {
+    type Id = FunctionId;
+
+    fn into_id(self, store: &Store) -> Self::Id {
+        store.store_function(self)
+    }
+}
+
+impl IntoStoreId for Trait {
+    type Id = TraitId;
+
+    fn into_id(self, store: &Store) -> Self::Id {
+        store.store_trait(self)
+    }
+}
+
+impl IntoStoreId for Module {
+    type Id = ModuleId;
+
+    fn into_id(self, store: &Store) -> Self::Id {
+        store.store_module(self)
     }
 }
