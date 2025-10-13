@@ -13,6 +13,15 @@ pub(crate) enum HirErr {
     ArrayLengthExpectedUSize,
     ArrayTypeLengthEvalError,
     TypeInferenceError,
+    CalleeIsNotFunctionType,
+    NoSuchParameter(String),
+    UnrecognizedFunctionAttribute,
+    UnrecognizedFunctionParameterAttribute,
+    CannotSpecifyMutabilityOnFunctionTypeParameter,
+    IntegerCastOutOfRange,
+    MissingFunctionArguments,
+    DuplicateFunctionArguments,
+    TooManyFunctionArguments,
 }
 
 impl FormattableDiagnosticGroup for HirErr {
@@ -34,6 +43,15 @@ impl FormattableDiagnosticGroup for HirErr {
             HirErr::ArrayLengthExpectedUSize => 9,
             HirErr::ArrayTypeLengthEvalError => 10,
             HirErr::TypeInferenceError => 11,
+            HirErr::CalleeIsNotFunctionType => 12,
+            HirErr::NoSuchParameter(_) => 13,
+            HirErr::UnrecognizedFunctionAttribute => 14,
+            HirErr::UnrecognizedFunctionParameterAttribute => 15,
+            HirErr::CannotSpecifyMutabilityOnFunctionTypeParameter => 16,
+            HirErr::IntegerCastOutOfRange => 17,
+            HirErr::MissingFunctionArguments => 18,
+            HirErr::DuplicateFunctionArguments => 19,
+            HirErr::TooManyFunctionArguments => 20,
         }
     }
 
@@ -96,6 +114,51 @@ impl FormattableDiagnosticGroup for HirErr {
 
             HirErr::TypeInferenceError => DiagnosticInfo {
                 message: "type inference error".to_string(),
+                origin: Origin::None,
+            },
+
+            HirErr::CalleeIsNotFunctionType => DiagnosticInfo {
+                message: "callee is not a function type".to_string(),
+                origin: Origin::None,
+            },
+
+            HirErr::NoSuchParameter(param_name) => DiagnosticInfo {
+                message: format!("no such parameter: {}", param_name),
+                origin: Origin::None,
+            },
+
+            HirErr::UnrecognizedFunctionAttribute => DiagnosticInfo {
+                message: "unrecognized function attribute".to_string(),
+                origin: Origin::None,
+            },
+
+            HirErr::UnrecognizedFunctionParameterAttribute => DiagnosticInfo {
+                message: "unrecognized function parameter attribute".to_string(),
+                origin: Origin::None,
+            },
+
+            HirErr::CannotSpecifyMutabilityOnFunctionTypeParameter => DiagnosticInfo {
+                message: "cannot specify mutability on function type parameter".to_string(),
+                origin: Origin::None,
+            },
+
+            HirErr::IntegerCastOutOfRange => DiagnosticInfo {
+                message: "integer cast out of range".to_string(),
+                origin: Origin::None,
+            },
+
+            HirErr::MissingFunctionArguments => DiagnosticInfo {
+                message: "missing function arguments".to_string(),
+                origin: Origin::None,
+            },
+
+            HirErr::DuplicateFunctionArguments => DiagnosticInfo {
+                message: "duplicate function arguments".to_string(),
+                origin: Origin::None,
+            },
+
+            HirErr::TooManyFunctionArguments => DiagnosticInfo {
+                message: "too many function arguments".to_string(),
                 origin: Origin::None,
             },
         }

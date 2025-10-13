@@ -37,12 +37,13 @@ impl Dump for ExternalFunction {
 
         write!(o, "{}(", self.name.0)?;
 
-        for (i, param) in self.parameters.iter().enumerate() {
+        for (i, (param_name, param_type)) in self.parameters.iter().enumerate() {
             if i != 0 {
                 write!(o, ", ")?;
             }
 
-            ctx.store[param].dump(ctx, o)?;
+            write!(o, "{}: ", param_name)?;
+            ctx.store[param_type].dump(ctx, o)?;
         }
 
         write!(o, ") -> ")?;
@@ -74,12 +75,13 @@ impl Dump for StaticFunction {
 
         write!(o, "{}(", self.name.0)?;
 
-        for (i, param) in self.parameters.iter().enumerate() {
+        for (i, (param_name, param_type)) in self.parameters.iter().enumerate() {
             if i != 0 {
                 write!(o, ", ")?;
             }
 
-            ctx.store[param].dump(ctx, o)?;
+            write!(o, "{}: ", param_name)?;
+            ctx.store[param_type].dump(ctx, o)?;
         }
 
         write!(o, ") -> ")?;

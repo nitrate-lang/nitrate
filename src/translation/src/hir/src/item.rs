@@ -21,7 +21,7 @@ pub struct ExternalFunction {
     pub visibility: Visibility,
     pub attributes: BTreeSet<FunctionAttribute>,
     pub name: EntityName,
-    pub parameters: Vec<TypeId>,
+    pub parameters: Vec<(IString, TypeId)>,
     pub return_type: TypeId,
 }
 
@@ -30,7 +30,7 @@ pub struct StaticFunction {
     pub visibility: Visibility,
     pub attributes: BTreeSet<FunctionAttribute>,
     pub name: EntityName,
-    pub parameters: Vec<TypeId>,
+    pub parameters: Vec<(IString, TypeId)>,
     pub return_type: TypeId,
     pub body: BlockId,
 }
@@ -58,7 +58,7 @@ impl Function {
         }
     }
 
-    pub fn parameters(&self) -> &Vec<TypeId> {
+    pub fn parameters(&self) -> &Vec<(IString, TypeId)> {
         match self {
             Function::External(func) => &func.parameters,
             Function::Static(func) => &func.parameters,

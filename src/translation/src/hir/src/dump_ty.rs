@@ -278,11 +278,12 @@ impl Dump for Type {
                 }
 
                 write!(o, "(")?;
-                for (i, param_type) in parameters.iter().enumerate() {
+                for (i, (param_name, param_type)) in parameters.iter().enumerate() {
                     if i != 0 {
                         write!(o, ", ")?;
                     }
 
+                    write!(o, "{}: ", param_name)?;
                     ctx.store[param_type].dump(ctx, o)?;
                 }
                 write!(o, ") -> ")?;

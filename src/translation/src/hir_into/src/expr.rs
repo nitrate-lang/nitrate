@@ -1,8 +1,10 @@
+use std::{collections::HashMap, ops::Deref};
+
 use crate::{TryIntoHir, diagnosis::HirErr};
 use nitrate_diagnosis::CompilerLog;
 use nitrate_hir::prelude::*;
 use nitrate_hir_get_type::get_type;
-use nitrate_parsetree::kind::{self as ast, UnaryExprOp};
+use nitrate_parsetree::kind::{self as ast, CallArgument, UnaryExprOp};
 
 impl TryIntoHir for ast::ExprSyntaxError {
     type Hir = Value;
@@ -66,10 +68,9 @@ impl TryIntoHir for ast::BStringLit {
 impl TryIntoHir for ast::TypeInfo {
     type Hir = Value;
 
-    fn try_into_hir(self, _ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
-        // TODO: lower ast::TypeInfo to HIR
-        log.report(&HirErr::UnimplementedFeature("ast::Expr::TypeInfo".into()));
-        Err(())
+    fn try_into_hir(self, ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
+        let hir_type = self.the.try_into_hir(ctx, log)?;
+        Ok(ctx.create_std_meta_type_instance(hir_type))
     }
 }
 
@@ -468,9 +469,76 @@ impl TryIntoHir for ast::Cast {
     type Hir = Value;
 
     fn try_into_hir(self, ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
-        let expr = self.value.try_into_hir(ctx, log)?.into_id(ctx.store());
-        let to = self.to.try_into_hir(ctx, log)?.into_id(ctx.store());
-        Ok(Value::Cast { expr, to })
+        fn failed_to_cast(log: &CompilerLog) -> Result<Value, ()> {
+            log.report(&HirErr::IntegerCastOutOfRange);
+            Err(())
+        }
+
+        let expr = self.value.try_into_hir(ctx, log)?;
+        let to = self.to.try_into_hir(ctx, log)?;
+
+        match (expr, to) {
+            (Value::InferredInteger(value), Type::U8) => match u8::try_from(*value) {
+                Ok(v) => Ok(Value::U8(v)),
+                Err(_) => failed_to_cast(log),
+            },
+
+            (Value::InferredInteger(value), Type::U16) => match u16::try_from(*value) {
+                Ok(v) => Ok(Value::U16(v)),
+                Err(_) => failed_to_cast(log),
+            },
+
+            (Value::InferredInteger(value), Type::U32) => match u32::try_from(*value) {
+                Ok(v) => Ok(Value::U32(v)),
+                Err(_) => failed_to_cast(log),
+            },
+
+            (Value::InferredInteger(value), Type::U64) => match u64::try_from(*value) {
+                Ok(v) => Ok(Value::U64(v)),
+                Err(_) => failed_to_cast(log),
+            },
+
+            (Value::InferredInteger(value), Type::U128) => match u128::try_from(*value) {
+                Ok(v) => Ok(Value::U128(Box::new(v))),
+                Err(_) => failed_to_cast(log),
+            },
+
+            (Value::InferredInteger(value), Type::I8) => match i8::try_from(*value) {
+                Ok(v) => Ok(Value::I8(v)),
+                Err(_) => failed_to_cast(log),
+            },
+
+            (Value::InferredInteger(value), Type::I16) => match i16::try_from(*value) {
+                Ok(v) => Ok(Value::I16(v)),
+                Err(_) => failed_to_cast(log),
+            },
+
+            (Value::InferredInteger(value), Type::I32) => match i32::try_from(*value) {
+                Ok(v) => Ok(Value::I32(v)),
+                Err(_) => failed_to_cast(log),
+            },
+
+            (Value::InferredInteger(value), Type::I64) => match i64::try_from(*value) {
+                Ok(v) => Ok(Value::I64(v)),
+                Err(_) => failed_to_cast(log),
+            },
+
+            (Value::InferredInteger(value), Type::I128) => match i128::try_from(*value) {
+                Ok(v) => Ok(Value::I128(Box::new(v))),
+                Err(_) => failed_to_cast(log),
+            },
+
+            (Value::InferredFloat(value), Type::F8) => Ok(Value::F8(value as f32)),
+            (Value::InferredFloat(value), Type::F16) => Ok(Value::F16(value as f32)),
+            (Value::InferredFloat(value), Type::F32) => Ok(Value::F32(value as f32)),
+            (Value::InferredFloat(value), Type::F64) => Ok(Value::F64(value as f64)),
+            (Value::InferredFloat(value), Type::F128) => Ok(Value::F128(value)),
+
+            (expr, to) => Ok(Value::Cast {
+                expr: expr.into_id(ctx.store()),
+                to: to.into_id(ctx.store()),
+            }),
+        }
     }
 }
 
@@ -673,10 +741,105 @@ impl TryIntoHir for ast::Await {
 impl TryIntoHir for ast::Call {
     type Hir = Value;
 
-    fn try_into_hir(self, _ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
-        // TODO: lower ast::Call to HIR
-        log.report(&HirErr::UnimplementedFeature("ast::Expr::Call".into()));
-        Err(())
+    fn try_into_hir(self, ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
+        fn find_first_hole(arguments: &Vec<Option<ValueId>>) -> usize {
+            if let Some((index, _)) = arguments.iter().enumerate().find(|x| x.1.is_none()) {
+                return index;
+            }
+
+            // Must be a variadic argument
+            arguments.len()
+        }
+
+        fn place_argument(
+            position: usize,
+            value: ValueId,
+            log: &CompilerLog,
+            call_arguments: &mut Vec<Option<ValueId>>,
+        ) -> Result<(), ()> {
+            // Push variadic argument
+            if position == call_arguments.len() {
+                call_arguments.push(Some(value));
+                return Ok(());
+            }
+
+            if let Some(_) = call_arguments[position] {
+                log.report(&HirErr::DuplicateFunctionArguments);
+                return Err(());
+            }
+
+            call_arguments[position] = Some(value);
+            Ok(())
+        }
+
+        let callee = self.callee.try_into_hir(ctx, log)?;
+        let callee_type = get_type(&callee, ctx.store()).map_err(|_| {
+            log.report(&HirErr::TypeInferenceError);
+        })?;
+
+        if !callee_type.is_function() {
+            log.report(&HirErr::CalleeIsNotFunctionType);
+            return Err(());
+        }
+
+        let function_type = match callee_type {
+            Type::Function { function_type } => ctx[&function_type].to_owned(),
+            _ => unreachable!(),
+        };
+
+        let mut name_to_pos = HashMap::new();
+        for (index, (name, _)) in function_type.parameters.iter().enumerate() {
+            name_to_pos.insert(name.to_string(), index);
+        }
+
+        let mut next_pos = 0;
+        let mut call_arguments: Vec<Option<ValueId>> = Vec::new();
+        call_arguments.resize(function_type.parameters.len(), None);
+
+        for CallArgument { name, value } in self.arguments {
+            match name {
+                Some(name) => {
+                    if let Some(position) = name_to_pos.get(name.deref()) {
+                        let value = value.try_into_hir(ctx, log)?.into_id(ctx.store());
+                        place_argument(position.to_owned(), value, log, &mut call_arguments)?;
+                        next_pos = find_first_hole(&call_arguments);
+                    } else {
+                        log.report(&HirErr::NoSuchParameter(name.to_string()));
+                        return Err(());
+                    }
+                }
+
+                None => {
+                    let value = value.try_into_hir(ctx, log)?.into_id(ctx.store());
+                    place_argument(next_pos, value, log, &mut call_arguments)?;
+                    next_pos = find_first_hole(&call_arguments);
+                }
+            };
+        }
+
+        for arg in call_arguments.iter_mut() {
+            if arg.is_none() {
+                log.report(&HirErr::MissingFunctionArguments);
+                return Err(());
+            }
+        }
+
+        if !function_type
+            .attributes
+            .contains(&FunctionAttribute::Variadic)
+        {
+            if call_arguments.len() > function_type.parameters.len() {
+                log.report(&HirErr::TooManyFunctionArguments);
+                return Err(());
+            }
+        }
+
+        let call_arguments: Vec<ValueId> = call_arguments.into_iter().map(|v| v.unwrap()).collect();
+
+        Ok(Value::Call {
+            callee: callee.into_id(ctx.store()),
+            arguments: call_arguments.into(),
+        })
     }
 }
 

@@ -1,9 +1,10 @@
 use crate::{TryIntoHir, diagnosis::HirErr};
+use interned_string::IString;
 use nitrate_diagnosis::CompilerLog;
 use nitrate_hir::prelude::*;
 use nitrate_hir_evaluate::HirEvalCtx;
 use nitrate_parsetree::kind::{self as ast};
-use std::ops::Deref;
+use std::{collections::BTreeSet, ops::Deref};
 
 impl TryIntoHir for ast::TypeSyntaxError {
     type Hir = Type;
@@ -254,9 +255,56 @@ impl TryIntoHir for ast::SliceType {
 impl TryIntoHir for ast::FunctionType {
     type Hir = Type;
 
-    fn try_into_hir(self, _ctx: &mut HirCtx, _log: &CompilerLog) -> Result<Self::Hir, ()> {
-        // TODO: lower ast::FunctionType
-        Err(())
+    fn try_into_hir(self, ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
+        let ast_attributes = self.attributes.unwrap_or_default();
+
+        let attributes = BTreeSet::new();
+        for _attr in ast_attributes {
+            log.report(&HirErr::UnrecognizedFunctionAttribute);
+        }
+
+        let mut parameters = Vec::with_capacity(self.parameters.len());
+        for param in self.parameters {
+            let parameter_attributes = param.attributes.unwrap_or_default();
+            for _attr in parameter_attributes {
+                log.report(&HirErr::UnrecognizedFunctionParameterAttribute);
+            }
+
+            if let Some(_) = param.mutability {
+                log.report(&HirErr::CannotSpecifyMutabilityOnFunctionTypeParameter);
+            }
+
+            let name = IString::from(param.name.deref());
+
+            let param_type = match param.param_type {
+                Some(ty) => ty.try_into_hir(ctx, log)?,
+                None => Type::Unit,
+            };
+
+            if let Some(default_value) = param.default_value {
+                log.report(&HirErr::UnimplementedFeature(format!(
+                    "function parameter default value: {:?}",
+                    default_value
+                )));
+            }
+
+            parameters.push((name, param_type.into_id(ctx.store())));
+        }
+
+        let return_type = match self.return_type {
+            Some(ret_ty) => ret_ty.try_into_hir(ctx, log)?,
+            None => Type::Unit,
+        };
+
+        let function_type = FunctionType {
+            attributes,
+            parameters,
+            return_type: return_type.into_id(ctx.store()),
+        };
+
+        Ok(Type::Function {
+            function_type: function_type.into_id(ctx.store()),
+        })
     }
 }
 
