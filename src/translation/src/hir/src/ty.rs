@@ -15,7 +15,7 @@ impl IntoStoreId for TypeList {
     }
 }
 
-pub type StructFields = Vec<(String, TypeId)>;
+pub type StructFields = Vec<(IString, TypeId)>;
 
 impl IntoStoreId for StructFields {
     type Id = StructFieldsId;
@@ -25,7 +25,7 @@ impl IntoStoreId for StructFields {
     }
 }
 
-pub type EnumVariants = BTreeMap<String, TypeId>;
+pub type EnumVariants = BTreeMap<IString, TypeId>;
 
 impl IntoStoreId for EnumVariants {
     type Id = EnumVariantsId;

@@ -153,7 +153,7 @@ impl TryIntoHir for ast::TypePath {
     type Hir = Type;
 
     fn try_into_hir(self, _ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
-        // TODO: Lower ast::TypePath into hir::TypePath
+        // TODO: lower ast::TypePath
         log.report(&HirErr::UnimplementedFeature("type path".into()));
         Err(())
     }
@@ -163,7 +163,7 @@ impl TryIntoHir for ast::RefinementType {
     type Hir = Type;
 
     fn try_into_hir(self, _ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
-        // TODO: Lower ast::RefinementType into hir::RefinementType
+        // TODO: lower ast::RefinementType
         log.report(&HirErr::UnimplementedFeature("refinement type".into()));
         Err(())
     }
@@ -255,7 +255,7 @@ impl TryIntoHir for ast::FunctionType {
     type Hir = Type;
 
     fn try_into_hir(self, _ctx: &mut HirCtx, _log: &CompilerLog) -> Result<Self::Hir, ()> {
-        // TODO: Lower ast::FunctionType into hir::FunctionType
+        // TODO: lower ast::FunctionType
         Err(())
     }
 }
@@ -334,7 +334,7 @@ impl TryIntoHir for ast::Lifetime {
     type Hir = Type;
 
     fn try_into_hir(self, _ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
-        // TODO: Lower ast::Lifetime into hir::Lifetime
+        // TODO: lower ast::Lifetime
         log.report(&HirErr::UnimplementedFeature("ast::Lifetime".into()));
         Err(())
     }

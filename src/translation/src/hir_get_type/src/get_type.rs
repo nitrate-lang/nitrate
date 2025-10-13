@@ -8,6 +8,7 @@ pub enum TypeInferenceError {
     IfElseBranchTypeMismatch,
     BinaryOpTypeMismatch,
     ShiftOrRotateByNonU32,
+    EnumVariantNotPresent,
 }
 
 pub fn get_type(value: &Value, store: &Store) -> Result<Type, TypeInferenceError> {
@@ -56,20 +57,24 @@ pub fn get_type(value: &Value, store: &Store) -> Result<Type, TypeInferenceError
 
         Value::Struct {
             struct_type,
-            fields,
-        } => {
-            // TODO: inference for struct
-            todo!()
-        }
+            fields: _,
+        } => Ok(store[struct_type].clone()),
 
         Value::Enum {
             enum_type,
             variant,
-            value,
-        } => {
-            // TODO: inference for enum
-            todo!()
-        }
+            value: _,
+        } => match &store[enum_type] {
+            Type::Enum {
+                variants,
+                attributes: _,
+            } => match store[variants].get(variant) {
+                Some(variant_type) => Ok(store[variant_type].clone()),
+                None => Err(TypeInferenceError::EnumVariantNotPresent),
+            },
+
+            _ => return Err(TypeInferenceError::EnumVariantNotPresent),
+        },
 
         Value::Binary { left, op, right } => match op {
             BinaryOp::Add
