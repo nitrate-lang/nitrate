@@ -1,11 +1,13 @@
+use std::collections::BTreeMap;
+
 use crate::{prelude::*, store::LiteralId};
-use hashbrown::HashMap;
 use interned_string::IString;
+use ordered_float::OrderedFloat;
 use serde::{Deserialize, Serialize};
 use thin_str::ThinStr;
 use thin_vec::ThinVec;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub enum BinaryOp {
     /// `+`
     Add,
@@ -49,7 +51,7 @@ pub enum BinaryOp {
     Ne,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub enum UnaryOp {
     /// `+`
     Add,
@@ -75,11 +77,11 @@ pub enum Lit {
     U32(u32),
     U64(u64),
     U128(u128),
-    F8(f32),
-    F16(f32),
-    F32(f32),
-    F64(f64),
-    F128(f64),
+    F8(OrderedFloat<f32>),
+    F16(OrderedFloat<f32>),
+    F32(OrderedFloat<f32>),
+    F64(OrderedFloat<f64>),
+    F128(OrderedFloat<f64>),
     USize32(u32),
     USize64(u64),
 }
@@ -148,7 +150,7 @@ impl Lit {
 
     pub fn new_float<T>(ty: &Lit, value: T) -> Option<Self>
     where
-        T: TryInto<f32> + TryInto<f64>,
+        T: TryInto<OrderedFloat<f32>> + TryInto<OrderedFloat<f64>>,
     {
         match ty {
             Lit::Unit
@@ -259,19 +261,19 @@ impl std::hash::Hash for Lit {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub enum BlockSafety {
     Safe,
     Unsafe,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct Block {
     pub safety: BlockSafety,
     pub elements: Vec<Value>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub enum Value {
     Unit,
     Bool(bool),
@@ -285,21 +287,21 @@ pub enum Value {
     U32(u32),
     U64(u64),
     U128(Box<u128>),
-    F8(f32),  // Stored as f32 because Rust does not have a native f8 type
-    F16(f32), // Stored as f32 because Rust does not have a native f16 type
-    F32(f32),
-    F64(f64),
-    F128(f64), // Stored as f64 because Rust does not have a native f128 type
+    F8(OrderedFloat<f32>), // Stored as f32 because Rust does not have a native f8 type
+    F16(OrderedFloat<f32>), // Stored as f32 because Rust does not have a native f16 type
+    F32(OrderedFloat<f32>),
+    F64(OrderedFloat<f64>),
+    F128(OrderedFloat<f64>), // Stored as f64 because Rust does not have a native f128 type
     USize32(u32),
     USize64(u64),
     StringLit(ThinStr),
     BStringLit(ThinVec<u8>),
     InferredInteger(Box<u128>),
-    InferredFloat(f64),
+    InferredFloat(OrderedFloat<f64>),
 
     StructObject {
         struct_type: StructTypeId,
-        fields: Box<HashMap<IString, ValueId>>,
+        fields: Box<BTreeMap<IString, ValueId>>,
     },
 
     EnumVariant {

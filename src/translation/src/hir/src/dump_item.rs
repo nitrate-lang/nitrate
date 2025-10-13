@@ -37,13 +37,17 @@ impl Dump for ExternalFunction {
 
         write!(o, "{}(", self.name.0)?;
 
-        for (i, (param_name, param_type)) in self.parameters.iter().enumerate() {
+        for (i, (param_name, param_type, default_value)) in self.parameters.iter().enumerate() {
             if i != 0 {
                 write!(o, ", ")?;
             }
 
             write!(o, "{}: ", param_name)?;
             ctx.store[param_type].dump(ctx, o)?;
+            if let Some(default_value) = default_value {
+                write!(o, " = ")?;
+                ctx.store[default_value].borrow().dump(ctx, o)?;
+            }
         }
 
         write!(o, ") -> ")?;
@@ -75,13 +79,17 @@ impl Dump for StaticFunction {
 
         write!(o, "{}(", self.name.0)?;
 
-        for (i, (param_name, param_type)) in self.parameters.iter().enumerate() {
+        for (i, (param_name, param_type, default_value)) in self.parameters.iter().enumerate() {
             if i != 0 {
                 write!(o, ", ")?;
             }
 
             write!(o, "{}: ", param_name)?;
             ctx.store[param_type].dump(ctx, o)?;
+            if let Some(default_value) = default_value {
+                write!(o, " = ")?;
+                ctx.store[default_value].borrow().dump(ctx, o)?;
+            }
         }
 
         write!(o, ") -> ")?;

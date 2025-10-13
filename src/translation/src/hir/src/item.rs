@@ -4,7 +4,7 @@ use crate::prelude::*;
 use interned_string::IString;
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub enum Visibility {
     Sec,
     Pro,
@@ -16,33 +16,33 @@ pub type QualifiedName = IString;
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct EntityName(pub IString);
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct ExternalFunction {
     pub visibility: Visibility,
     pub attributes: BTreeSet<FunctionAttribute>,
     pub name: EntityName,
-    pub parameters: Vec<(IString, TypeId)>,
+    pub parameters: Vec<(IString, TypeId, Option<ValueId>)>,
     pub return_type: TypeId,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct StaticFunction {
     pub visibility: Visibility,
     pub attributes: BTreeSet<FunctionAttribute>,
     pub name: EntityName,
-    pub parameters: Vec<(IString, TypeId)>,
+    pub parameters: Vec<(IString, TypeId, Option<ValueId>)>,
     pub return_type: TypeId,
     pub body: BlockId,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct ClosureFunction {
     pub closure_unique_id: u64,
     pub captures: Vec<SymbolId>,
     pub callee: Box<StaticFunction>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub enum Function {
     External(ExternalFunction),
     Static(StaticFunction),
@@ -58,7 +58,7 @@ impl Function {
         }
     }
 
-    pub fn parameters(&self) -> &Vec<(IString, TypeId)> {
+    pub fn parameters(&self) -> &Vec<(IString, TypeId, Option<ValueId>)> {
         match self {
             Function::External(func) => &func.parameters,
             Function::Static(func) => &func.parameters,
@@ -75,7 +75,7 @@ impl Function {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct GlobalVariable {
     pub visibility: Visibility,
     pub is_mutable: bool,
@@ -84,7 +84,7 @@ pub struct GlobalVariable {
     pub initializer: ValueId,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct LocalVariable {
     pub is_mutable: bool,
     pub name: EntityName,
@@ -92,14 +92,14 @@ pub struct LocalVariable {
     pub initializer: ValueId,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct Parameter {
     pub name: EntityName,
     pub ty: TypeId,
     pub default_value: Option<ValueId>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub enum Symbol {
     Unresolved { name: QualifiedName },
     GlobalVariable(GlobalVariable),
@@ -116,10 +116,10 @@ impl IntoStoreId for Symbol {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub enum ModuleAttribute {}
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct Module {
     pub visibility: Visibility,
     pub name: EntityName,
@@ -127,7 +127,7 @@ pub struct Module {
     pub items: Vec<ItemId>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub enum Item {
     Module(Module),
     GlobalVariable(GlobalVariable),

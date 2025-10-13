@@ -5,6 +5,7 @@ use nitrate_diagnosis::CompilerLog;
 use nitrate_hir::prelude::*;
 use nitrate_hir_get_type::get_type;
 use nitrate_parsetree::kind::{self as ast, CallArgument, UnaryExprOp};
+use ordered_float::OrderedFloat;
 
 impl TryIntoHir for ast::ExprSyntaxError {
     type Hir = Value;
@@ -45,7 +46,7 @@ impl TryIntoHir for ast::FloatLit {
     type Hir = Value;
 
     fn try_into_hir(self, _ctx: &mut HirCtx, _log: &CompilerLog) -> Result<Self::Hir, ()> {
-        Ok(Value::InferredFloat(self.value.into()))
+        Ok(Value::InferredFloat(OrderedFloat::from(*self.value)))
     }
 }
 
@@ -528,11 +529,11 @@ impl TryIntoHir for ast::Cast {
                 Err(_) => failed_to_cast(log),
             },
 
-            (Value::InferredFloat(value), Type::F8) => Ok(Value::F8(value as f32)),
-            (Value::InferredFloat(value), Type::F16) => Ok(Value::F16(value as f32)),
-            (Value::InferredFloat(value), Type::F32) => Ok(Value::F32(value as f32)),
-            (Value::InferredFloat(value), Type::F64) => Ok(Value::F64(value as f64)),
-            (Value::InferredFloat(value), Type::F128) => Ok(Value::F128(value)),
+            (Value::InferredFloat(v), Type::F8) => Ok(Value::F8(OrderedFloat::from(*v as f32))),
+            (Value::InferredFloat(v), Type::F16) => Ok(Value::F16(OrderedFloat::from(*v as f32))),
+            (Value::InferredFloat(v), Type::F32) => Ok(Value::F32(OrderedFloat::from(*v as f32))),
+            (Value::InferredFloat(v), Type::F64) => Ok(Value::F64(OrderedFloat::from(*v as f64))),
+            (Value::InferredFloat(v), Type::F128) => Ok(Value::F128(OrderedFloat::from(*v as f64))),
 
             (expr, to) => Ok(Value::Cast {
                 expr: expr.into_id(ctx.store()),
@@ -788,7 +789,7 @@ impl TryIntoHir for ast::Call {
         };
 
         let mut name_to_pos = HashMap::new();
-        for (index, (name, _)) in function_type.parameters.iter().enumerate() {
+        for (index, (name, _, _)) in function_type.parameters.iter().enumerate() {
             name_to_pos.insert(name.to_string(), index);
         }
 

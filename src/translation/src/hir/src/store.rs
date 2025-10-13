@@ -161,39 +161,39 @@ impl Store {
     }
 
     pub fn store_type(&self, ty: Type) -> TypeId {
-        self.types.store(ty)
+        using_storage(self, || self.types.store(ty))
     }
 
     pub fn store_struct_type(&self, struct_type: StructType) -> StructTypeId {
-        self.struct_types.store(struct_type)
+        using_storage(self, || self.struct_types.store(struct_type))
     }
 
     pub fn store_enum_type(&self, enum_type: EnumType) -> EnumTypeId {
-        self.enum_types.store(enum_type)
+        using_storage(self, || self.enum_types.store(enum_type))
     }
 
     pub fn store_function_type(&self, func_type: FunctionType) -> FunctionTypeId {
-        self.function_types.store(func_type)
+        using_storage(self, || self.function_types.store(func_type))
     }
 
     pub fn store_item(&self, item: Item) -> ItemId {
-        self.items.store(item)
+        using_storage(self, || self.items.store(item))
     }
 
     pub fn store_symbol(&self, symbol: Symbol) -> SymbolId {
-        self.symbols.store(symbol)
+        using_storage(self, || self.symbols.store(symbol))
     }
 
     pub fn store_value(&self, expr: Value) -> ValueId {
-        self.values.store(expr)
+        using_storage(self, || self.values.store(expr))
     }
 
     pub fn store_literal(&self, literal: Lit) -> LiteralId {
-        self.literals.store(literal)
+        using_storage(self, || self.literals.store(literal))
     }
 
     pub fn store_block(&self, block: Block) -> BlockId {
-        self.blocks.store(block)
+        using_storage(self, || self.blocks.store(block))
     }
 
     pub fn reset(&mut self) {

@@ -1,12 +1,13 @@
 use crate::{HirEvaluate, Unwind};
 use nitrate_hir::prelude::*;
+use ordered_float::OrderedFloat;
 use std::ops::{Add, BitAnd, BitOr, BitXor, Div, Mul, Neg, Not, Rem, Shl, Shr, Sub};
 
 enum CastLitBridge {
     Unit,
     I128(i128),
     U128(u128),
-    F128(f64),
+    F128(OrderedFloat<f64>),
 }
 
 impl TryFrom<Value> for CastLitBridge {
@@ -26,11 +27,11 @@ impl TryFrom<Value> for CastLitBridge {
             Value::U32(u) => Ok(CastLitBridge::U128(u as u128)),
             Value::U64(u) => Ok(CastLitBridge::U128(u as u128)),
             Value::U128(u) => Ok(CastLitBridge::U128(*u)),
-            Value::F8(f) => Ok(CastLitBridge::F128(f as f64)),
-            Value::F16(f) => Ok(CastLitBridge::F128(f as f64)),
-            Value::F32(f) => Ok(CastLitBridge::F128(f as f64)),
-            Value::F64(f) => Ok(CastLitBridge::F128(f)),
-            Value::F128(f) => Ok(CastLitBridge::F128(f as f64)),
+            Value::F8(f) => Ok(CastLitBridge::F128(OrderedFloat::from(*f as f64))),
+            Value::F16(f) => Ok(CastLitBridge::F128(OrderedFloat::from(*f as f64))),
+            Value::F32(f) => Ok(CastLitBridge::F128(OrderedFloat::from(*f as f64))),
+            Value::F64(f) => Ok(CastLitBridge::F128(OrderedFloat::from(*f))),
+            Value::F128(f) => Ok(CastLitBridge::F128(OrderedFloat::from(*f))),
             Value::USize32(u) => Ok(CastLitBridge::U128(u as u128)),
             Value::USize64(u) => Ok(CastLitBridge::U128(u as u128)),
             Value::InferredInteger(u) => Ok(CastLitBridge::U128(*u)),
@@ -54,7 +55,7 @@ impl CastLitBridge {
         match self {
             CastLitBridge::I128(i) => Ok(Value::U8(i as u8)),
             CastLitBridge::U128(u) => Ok(Value::U8(u as u8)),
-            CastLitBridge::F128(f) => Ok(Value::U8(f as u8)),
+            CastLitBridge::F128(f) => Ok(Value::U8(*f as u8)),
             CastLitBridge::Unit => Err(Unwind::TypeError),
         }
     }
@@ -63,7 +64,7 @@ impl CastLitBridge {
         match self {
             CastLitBridge::I128(i) => Ok(Value::U16(i as u16)),
             CastLitBridge::U128(u) => Ok(Value::U16(u as u16)),
-            CastLitBridge::F128(f) => Ok(Value::U16(f as u16)),
+            CastLitBridge::F128(f) => Ok(Value::U16(*f as u16)),
             CastLitBridge::Unit => Err(Unwind::TypeError),
         }
     }
@@ -72,7 +73,7 @@ impl CastLitBridge {
         match self {
             CastLitBridge::I128(i) => Ok(Value::U32(i as u32)),
             CastLitBridge::U128(u) => Ok(Value::U32(u as u32)),
-            CastLitBridge::F128(f) => Ok(Value::U32(f as u32)),
+            CastLitBridge::F128(f) => Ok(Value::U32(*f as u32)),
             CastLitBridge::Unit => Err(Unwind::TypeError),
         }
     }
@@ -81,7 +82,7 @@ impl CastLitBridge {
         match self {
             CastLitBridge::I128(i) => Ok(Value::U64(i as u64)),
             CastLitBridge::U128(u) => Ok(Value::U64(u as u64)),
-            CastLitBridge::F128(f) => Ok(Value::U64(f as u64)),
+            CastLitBridge::F128(f) => Ok(Value::U64(*f as u64)),
             CastLitBridge::Unit => Err(Unwind::TypeError),
         }
     }
@@ -90,7 +91,7 @@ impl CastLitBridge {
         match self {
             CastLitBridge::I128(i) => Ok(Value::U128(Box::new(i as u128))),
             CastLitBridge::U128(u) => Ok(Value::U128(Box::new(u))),
-            CastLitBridge::F128(f) => Ok(Value::U128(Box::new(f as u128))),
+            CastLitBridge::F128(f) => Ok(Value::U128(Box::new(*f as u128))),
             CastLitBridge::Unit => Err(Unwind::TypeError),
         }
     }
@@ -100,13 +101,13 @@ impl CastLitBridge {
             PtrSize::U32 => match self {
                 CastLitBridge::I128(i) => Ok(Value::USize32(i as u32)),
                 CastLitBridge::U128(u) => Ok(Value::USize32(u as u32)),
-                CastLitBridge::F128(f) => Ok(Value::USize32(f as u32)),
+                CastLitBridge::F128(f) => Ok(Value::USize32(*f as u32)),
                 CastLitBridge::Unit => Err(Unwind::TypeError),
             },
             PtrSize::U64 => match self {
                 CastLitBridge::I128(i) => Ok(Value::USize64(i as u64)),
                 CastLitBridge::U128(u) => Ok(Value::USize64(u as u64)),
-                CastLitBridge::F128(f) => Ok(Value::USize64(f as u64)),
+                CastLitBridge::F128(f) => Ok(Value::USize64(*f as u64)),
                 CastLitBridge::Unit => Err(Unwind::TypeError),
             },
         }
@@ -116,7 +117,7 @@ impl CastLitBridge {
         match self {
             CastLitBridge::I128(i) => Ok(Value::I8(i as i8)),
             CastLitBridge::U128(u) => Ok(Value::I8(u as i8)),
-            CastLitBridge::F128(f) => Ok(Value::I8(f as i8)),
+            CastLitBridge::F128(f) => Ok(Value::I8(*f as i8)),
             CastLitBridge::Unit => Err(Unwind::TypeError),
         }
     }
@@ -125,7 +126,7 @@ impl CastLitBridge {
         match self {
             CastLitBridge::I128(i) => Ok(Value::I16(i as i16)),
             CastLitBridge::U128(u) => Ok(Value::I16(u as i16)),
-            CastLitBridge::F128(f) => Ok(Value::I16(f as i16)),
+            CastLitBridge::F128(f) => Ok(Value::I16(*f as i16)),
             CastLitBridge::Unit => Err(Unwind::TypeError),
         }
     }
@@ -134,7 +135,7 @@ impl CastLitBridge {
         match self {
             CastLitBridge::I128(i) => Ok(Value::I32(i as i32)),
             CastLitBridge::U128(u) => Ok(Value::I32(u as i32)),
-            CastLitBridge::F128(f) => Ok(Value::I32(f as i32)),
+            CastLitBridge::F128(f) => Ok(Value::I32(*f as i32)),
             CastLitBridge::Unit => Err(Unwind::TypeError),
         }
     }
@@ -143,7 +144,7 @@ impl CastLitBridge {
         match self {
             CastLitBridge::I128(i) => Ok(Value::I64(i as i64)),
             CastLitBridge::U128(u) => Ok(Value::I64(u as i64)),
-            CastLitBridge::F128(f) => Ok(Value::I64(f as i64)),
+            CastLitBridge::F128(f) => Ok(Value::I64(*f as i64)),
             CastLitBridge::Unit => Err(Unwind::TypeError),
         }
     }
@@ -152,52 +153,52 @@ impl CastLitBridge {
         match self {
             CastLitBridge::I128(i) => Ok(Value::I128(Box::new(i))),
             CastLitBridge::U128(u) => Ok(Value::I128(Box::new(u as i128))),
-            CastLitBridge::F128(f) => Ok(Value::I128(Box::new(f as i128))),
+            CastLitBridge::F128(f) => Ok(Value::I128(Box::new(*f as i128))),
             CastLitBridge::Unit => Err(Unwind::TypeError),
         }
     }
 
     fn to_f8(self) -> Result<Value, Unwind> {
         match self {
-            CastLitBridge::I128(i) => Ok(Value::F8(i as f32)),
-            CastLitBridge::U128(u) => Ok(Value::F8(u as f32)),
-            CastLitBridge::F128(f) => Ok(Value::F8(f as f32)),
+            CastLitBridge::I128(i) => Ok(Value::F8(OrderedFloat::from(i as f32))),
+            CastLitBridge::U128(u) => Ok(Value::F8(OrderedFloat::from(u as f32))),
+            CastLitBridge::F128(f) => Ok(Value::F8(OrderedFloat::from(*f as f32))),
             CastLitBridge::Unit => Err(Unwind::TypeError),
         }
     }
 
     fn to_f16(self) -> Result<Value, Unwind> {
         match self {
-            CastLitBridge::I128(i) => Ok(Value::F16(i as f32)),
-            CastLitBridge::U128(u) => Ok(Value::F16(u as f32)),
-            CastLitBridge::F128(f) => Ok(Value::F16(f as f32)),
+            CastLitBridge::I128(i) => Ok(Value::F16(OrderedFloat::from(i as f32))),
+            CastLitBridge::U128(u) => Ok(Value::F16(OrderedFloat::from(u as f32))),
+            CastLitBridge::F128(f) => Ok(Value::F16(OrderedFloat::from(*f as f32))),
             CastLitBridge::Unit => Err(Unwind::TypeError),
         }
     }
 
     fn to_f32(self) -> Result<Value, Unwind> {
         match self {
-            CastLitBridge::I128(i) => Ok(Value::F32(i as f32)),
-            CastLitBridge::U128(u) => Ok(Value::F32(u as f32)),
-            CastLitBridge::F128(f) => Ok(Value::F32(f as f32)),
+            CastLitBridge::I128(i) => Ok(Value::F32(OrderedFloat::from(i as f32))),
+            CastLitBridge::U128(u) => Ok(Value::F32(OrderedFloat::from(u as f32))),
+            CastLitBridge::F128(f) => Ok(Value::F32(OrderedFloat::from(*f as f32))),
             CastLitBridge::Unit => Err(Unwind::TypeError),
         }
     }
 
     fn to_f64(self) -> Result<Value, Unwind> {
         match self {
-            CastLitBridge::I128(i) => Ok(Value::F64(i as f64)),
-            CastLitBridge::U128(u) => Ok(Value::F64(u as f64)),
-            CastLitBridge::F128(f) => Ok(Value::F64(f)),
+            CastLitBridge::I128(i) => Ok(Value::F64(OrderedFloat::from(i as f64))),
+            CastLitBridge::U128(u) => Ok(Value::F64(OrderedFloat::from(u as f64))),
+            CastLitBridge::F128(f) => Ok(Value::F64(OrderedFloat::from(*f as f64))),
             CastLitBridge::Unit => Err(Unwind::TypeError),
         }
     }
 
     fn to_f128(self) -> Result<Value, Unwind> {
         match self {
-            CastLitBridge::I128(i) => Ok(Value::F128(i as f64)),
-            CastLitBridge::U128(u) => Ok(Value::F128(u as f64)),
-            CastLitBridge::F128(f) => Ok(Value::F128(f)),
+            CastLitBridge::I128(i) => Ok(Value::F128(OrderedFloat::from(i as f64))),
+            CastLitBridge::U128(u) => Ok(Value::F128(OrderedFloat::from(u as f64))),
+            CastLitBridge::F128(f) => Ok(Value::F128(OrderedFloat::from(*f as f64))),
             CastLitBridge::Unit => Err(Unwind::TypeError),
         }
     }

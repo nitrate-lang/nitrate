@@ -57,6 +57,7 @@ impl HirCtx {
     }
 
     pub fn create_std_meta_type_instance(&mut self, of: Type) -> Value {
+        // TODO: Finish this function
         let std_meta_type = self
             .resolve_type(&"::std::meta::Type".into())
             .expect("compiler prelude is missing the defintion of `::std::meta::Type`")

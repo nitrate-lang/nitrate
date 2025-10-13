@@ -1,6 +1,6 @@
-#![forbid(unsafe_code)]
 #![warn(clippy::pedantic)]
 
+mod cmp;
 mod context;
 mod dump;
 mod dump_expr;
@@ -25,15 +25,16 @@ pub use store::{
 };
 
 pub mod hir {
+    pub use super::cmp::*;
     pub use super::context::HirCtx;
     pub use super::expr::*;
     pub use super::item::*;
+    pub use super::literal_ops::*;
     pub use super::save::IntoStoreId;
     pub use super::ty::*;
     pub use super::ty_alignment::*;
     pub use super::ty_size::*;
     pub use super::ty_stride::*;
-    pub use crate::literal_ops::*;
 }
 
 pub mod prelude {

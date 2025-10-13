@@ -277,18 +277,16 @@ impl TryIntoHir for ast::FunctionType {
             let name = IString::from(param.name.deref());
 
             let param_type = match param.param_type {
-                Some(ty) => ty.try_into_hir(ctx, log)?,
-                None => Type::Unit,
+                Some(ty) => ty.try_into_hir(ctx, log)?.into_id(ctx.store()),
+                None => Type::Unit.into_id(ctx.store()),
             };
 
-            if let Some(default_value) = param.default_value {
-                log.report(&HirErr::UnimplementedFeature(format!(
-                    "function parameter default value: {:?}",
-                    default_value
-                )));
-            }
+            let default_value = match param.default_value {
+                Some(def_val) => Some(def_val.try_into_hir(ctx, log)?.into_id(ctx.store())),
+                None => None,
+            };
 
-            parameters.push((name, param_type.into_id(ctx.store())));
+            parameters.push((name, param_type, default_value));
         }
 
         let return_type = match self.return_type {
