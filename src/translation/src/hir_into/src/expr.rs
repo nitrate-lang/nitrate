@@ -1,10 +1,9 @@
 use std::{collections::HashMap, ops::Deref};
 
-use crate::{TryIntoHir, diagnosis::HirErr};
+use crate::{TryIntoHir, diagnosis::HirErr, std_meta_type::metatype_encode};
 use nitrate_diagnosis::CompilerLog;
 use nitrate_hir::prelude::*;
 use nitrate_hir_get_type::get_type;
-use nitrate_hir_meta::create_std_meta_type_instance;
 use nitrate_parsetree::kind::{self as ast, CallArgument, UnaryExprOp};
 use ordered_float::OrderedFloat;
 
@@ -72,7 +71,7 @@ impl TryIntoHir for ast::TypeInfo {
 
     fn try_into_hir(self, ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
         let hir_type = self.the.try_into_hir(ctx, log)?;
-        Ok(create_std_meta_type_instance(ctx, hir_type))
+        Ok(metatype_encode(ctx, hir_type))
     }
 }
 
@@ -157,7 +156,7 @@ impl TryIntoHir for ast::UnaryExpr {
             }),
 
             UnaryExprOp::Typeof => match get_type(&expr, ctx.store()) {
-                Ok(t) => Ok(create_std_meta_type_instance(ctx, t)),
+                Ok(t) => Ok(metatype_encode(ctx, t)),
                 Err(_) => {
                     log.report(&HirErr::TypeInferenceError);
                     Err(())

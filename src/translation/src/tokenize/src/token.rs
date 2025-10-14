@@ -6,12 +6,6 @@ pub use ordered_float::NotNan;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Hash, Sequence, Serialize, Deserialize)]
-pub enum IdentifierKind {
-    Typical,
-    Atypical,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Hash, Sequence, Serialize, Deserialize)]
 pub enum IntegerKind {
     Bin,
     Oct,
@@ -87,6 +81,44 @@ impl std::fmt::Display for Comment {
             CommentKind::SingleLine => write!(f, "#{}", self.text()),
         }
     }
+}
+
+pub fn escape_string(s: &str, quotes: bool) -> String {
+    let mut escaped = String::with_capacity(s.len() + if quotes { 2 } else { 0 });
+
+    if quotes {
+        escaped.push('\"');
+    }
+
+    for c in s.chars() {
+        match c {
+            '\0' => escaped.push_str("\\0"),
+            '\\' => escaped.push_str("\\\\"),
+            '\"' => escaped.push_str("\\\""),
+            '\x07' => escaped.push_str("\\a"),
+            '\x08' => escaped.push_str("\\b"),
+            '\t' => escaped.push_str("\\t"),
+            '\n' => escaped.push_str("\\n"),
+            '\x0b' => escaped.push_str("\\v"),
+            '\x0c' => escaped.push_str("\\f"),
+            '\r' => escaped.push_str("\\r"),
+            '\x20'..='\x7E' => escaped.push(c),
+
+            c if c.is_ascii() => {
+                escaped.push_str(&format!("\\x{:02x}", c as u8));
+            }
+
+            c => {
+                escaped.push_str(&format!("\\u{{{:04x}}}", c as u32));
+            }
+        }
+    }
+
+    if quotes {
+        escaped.push('\"');
+    }
+
+    escaped
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -483,14 +515,6 @@ mod tests {
     use nitrate_diagnosis::intern_file_id;
 
     use super::*;
-
-    #[test]
-    fn test_name_token_parsetree() {
-        assert_eq!(
-            enum_iterator::all::<IdentifierKind>().collect::<Vec<_>>(),
-            vec![IdentifierKind::Typical, IdentifierKind::Atypical]
-        );
-    }
 
     #[test]
     fn test_integer_token_parsetree() {

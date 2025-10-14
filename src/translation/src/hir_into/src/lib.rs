@@ -5,6 +5,7 @@ mod expr;
 mod item;
 mod lower;
 mod prepare;
+mod std_meta_type;
 mod ty;
 
 pub use lower::TryIntoHir;
