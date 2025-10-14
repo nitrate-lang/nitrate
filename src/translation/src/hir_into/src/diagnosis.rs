@@ -22,6 +22,7 @@ pub(crate) enum HirErr {
     MissingFunctionArguments,
     DuplicateFunctionArguments,
     TooManyFunctionArguments,
+    UnrecognizedLifetime,
 }
 
 impl FormattableDiagnosticGroup for HirErr {
@@ -52,6 +53,7 @@ impl FormattableDiagnosticGroup for HirErr {
             HirErr::MissingFunctionArguments => 18,
             HirErr::DuplicateFunctionArguments => 19,
             HirErr::TooManyFunctionArguments => 20,
+            HirErr::UnrecognizedLifetime => 21,
         }
     }
 
@@ -159,6 +161,11 @@ impl FormattableDiagnosticGroup for HirErr {
 
             HirErr::TooManyFunctionArguments => DiagnosticInfo {
                 message: "too many function arguments".to_string(),
+                origin: Origin::None,
+            },
+
+            HirErr::UnrecognizedLifetime => DiagnosticInfo {
+                message: "unrecognized lifetime".to_string(),
                 origin: Origin::None,
             },
         }

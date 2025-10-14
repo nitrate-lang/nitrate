@@ -1,6 +1,10 @@
 use std::{collections::HashMap, ops::Deref};
 
-use crate::{TryIntoHir, diagnosis::HirErr, std_meta_type::metatype_encode};
+use crate::{
+    TryIntoHir,
+    diagnosis::HirErr,
+    std_meta_type::{EncodeErr, metatype_encode},
+};
 use nitrate_diagnosis::CompilerLog;
 use nitrate_hir::prelude::*;
 use nitrate_hir_get_type::get_type;
@@ -71,7 +75,15 @@ impl TryIntoHir for ast::TypeInfo {
 
     fn try_into_hir(self, ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
         let hir_type = self.the.try_into_hir(ctx, log)?;
-        Ok(metatype_encode(ctx, hir_type))
+        let encoded = match metatype_encode(ctx, hir_type) {
+            Ok(v) => v,
+            Err(EncodeErr::CannotEncodeInferredType) => {
+                log.report(&HirErr::TypeInferenceError);
+                return Err(());
+            }
+        };
+
+        Ok(encoded)
     }
 }
 
@@ -156,7 +168,17 @@ impl TryIntoHir for ast::UnaryExpr {
             }),
 
             UnaryExprOp::Typeof => match get_type(&expr, ctx.store()) {
-                Ok(t) => Ok(metatype_encode(ctx, t)),
+                Ok(t) => {
+                    let encoded = match metatype_encode(ctx, t) {
+                        Ok(v) => v,
+                        Err(EncodeErr::CannotEncodeInferredType) => {
+                            log.report(&HirErr::TypeInferenceError);
+                            return Err(());
+                        }
+                    };
+
+                    Ok(encoded)
+                }
                 Err(_) => {
                     log.report(&HirErr::TypeInferenceError);
                     Err(())

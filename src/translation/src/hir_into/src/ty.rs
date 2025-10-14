@@ -302,7 +302,10 @@ impl TryIntoHir for ast::ReferenceType {
                 "thread" => Lifetime::ThreadLocal,
                 "task" => Lifetime::TaskLocal,
                 "_" => Lifetime::Inferred,
-                name => Lifetime::Stack { id: name.into() },
+                _ => {
+                    log.report(&HirErr::UnrecognizedLifetime);
+                    return Err(());
+                }
             },
         };
 

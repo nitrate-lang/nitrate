@@ -27,7 +27,6 @@ pub enum Lifetime {
     Gc,
     ThreadLocal,
     TaskLocal,
-    Stack { id: EntityName },
     Inferred,
 }
 

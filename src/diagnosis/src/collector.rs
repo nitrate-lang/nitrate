@@ -3,7 +3,7 @@ use std::{
     sync::atomic::{AtomicBool, Ordering},
 };
 
-use slog::{error, info, warn};
+use slog::{Drain, error, info, warn};
 
 use crate::{DiagnosticId, FormattableDiagnosticGroup, Origin};
 
@@ -39,6 +39,22 @@ impl CompilerLog {
             warning_bit: AtomicBool::new(false),
             error_bit: AtomicBool::new(false),
         }
+    }
+
+    pub fn default_stdout() -> Self {
+        let decorator = slog_term::TermDecorator::new().stdout().build();
+        let drain = slog_term::FullFormat::new(decorator).build().fuse();
+        let drain = slog_async::Async::new(drain).build().fuse();
+        let slog_stdout = slog::Logger::root(drain, slog::o!());
+        Self::new(slog_stdout)
+    }
+
+    pub fn default_stderr() -> Self {
+        let decorator = slog_term::TermDecorator::new().stderr().build();
+        let drain = slog_term::FullFormat::new(decorator).build().fuse();
+        let drain = slog_async::Async::new(drain).build().fuse();
+        let slog_stderr = slog::Logger::root(drain, slog::o!());
+        Self::new(slog_stderr)
     }
 
     pub fn set_severity(&mut self, id: DiagnosticId, severity: Severity) {

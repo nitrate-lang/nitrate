@@ -237,6 +237,29 @@ impl std::hash::Hash for Lit {
     }
 }
 
+impl std::fmt::Display for Lit {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Lit::Unit => write!(f, "()"),
+            Lit::Bool(b) => write!(f, "{}", b),
+            Lit::I8(i) => write!(f, "{}_i8", i),
+            Lit::I16(i) => write!(f, "{}_i16", i),
+            Lit::I32(i) => write!(f, "{}_i32", i),
+            Lit::I64(i) => write!(f, "{}_i64", i),
+            Lit::I128(i) => write!(f, "{}_i128", i),
+            Lit::U8(u) => write!(f, "{}_u8", u),
+            Lit::U16(u) => write!(f, "{}_u16", u),
+            Lit::U32(u) => write!(f, "{}_u32", u),
+            Lit::U64(u) => write!(f, "{}_u64", u),
+            Lit::U128(u) => write!(f, "{}_u128", u),
+            Lit::F32(fl) => write!(f, "{}_f32", fl),
+            Lit::F64(fl) => write!(f, "{}_f64", fl),
+            Lit::USize32(u) => write!(f, "{}_usize", u),
+            Lit::USize64(u) => write!(f, "{}_usize", u),
+        }
+    }
+}
+
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub enum BlockSafety {
     Safe,

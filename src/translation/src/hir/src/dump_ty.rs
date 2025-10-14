@@ -304,7 +304,6 @@ impl Dump for Type {
                     Lifetime::Gc => write!(o, "&'gc ")?,
                     Lifetime::ThreadLocal => write!(o, "&'thread ")?,
                     Lifetime::TaskLocal => write!(o, "&'task ")?,
-                    Lifetime::Stack { id } => write!(o, "&'s{} ", id)?,
                     Lifetime::Inferred => write!(o, "&'_) ")?,
                 }
 
