@@ -1,14 +1,64 @@
+use crate::diagnosis::HirErr;
 use crate::lower::lower::Ast2Hir;
-use crate::{diagnosis::HirErr, from_nitrate_expression};
+use crate::passover::{passover_expr, passover_type};
 use nitrate_diagnosis::CompilerLog;
 use nitrate_hir::prelude::*;
 use nitrate_hir_get_type::get_type;
+use nitrate_parse::Parser;
 use nitrate_parsetree::ast::{self as ast, CallArgument, UnaryExprOp};
-use nitrate_tokenize::escape_string;
+use nitrate_tokenize::{Lexer, LexerError, escape_string};
 use ordered_float::OrderedFloat;
 use std::collections::HashMap;
 use std::fmt::Write;
 use std::ops::Deref;
+
+fn from_nitrate_expression(ctx: &mut HirCtx, nitrate_expr: &str) -> Result<Value, ()> {
+    let lexer = match Lexer::new(nitrate_expr.as_bytes(), None) {
+        Ok(lexer) => lexer,
+        Err(LexerError::SourceTooBig) => return Err(()),
+    };
+
+    let trash = CompilerLog::default();
+    let mut parser = Parser::new(lexer, &trash);
+
+    let expression = parser.parse_expression();
+    if trash.error_bit() {
+        return Err(());
+    }
+
+    passover_expr(&expression, ctx, &trash);
+
+    let hir_value = expression.ast2hir(ctx, &trash)?;
+    if trash.error_bit() {
+        return Err(());
+    }
+
+    Ok(hir_value)
+}
+
+fn from_nitrate_type(ctx: &mut HirCtx, nitrate_type: &str) -> Result<Type, ()> {
+    let lexer = match Lexer::new(nitrate_type.as_bytes(), None) {
+        Ok(lexer) => lexer,
+        Err(LexerError::SourceTooBig) => return Err(()),
+    };
+
+    let trash = CompilerLog::default();
+    let mut parser = Parser::new(lexer, &trash);
+
+    let ty = parser.parse_type();
+    if trash.error_bit() {
+        return Err(());
+    }
+
+    passover_type(&ty, ctx, &trash);
+
+    let hir_type = ty.ast2hir(ctx, &trash)?;
+    if trash.error_bit() {
+        return Err(());
+    }
+
+    Ok(hir_type)
+}
 
 pub(crate) enum EncodeErr {
     CannotEncodeInferredType,

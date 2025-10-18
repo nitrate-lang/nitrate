@@ -3,9 +3,9 @@ use nitrate_translation::{
     TranslationError,
     hir::{
         Dump, DumpContext,
-        hir::{self, HirCtx, PtrSize},
+        hir::{HirCtx, PtrSize},
     },
-    hir_into::ModulePrep,
+    hir_into::astmod2hir,
     parse::Parser,
     parsetree::ast,
     resolve::{ImportContext, resolve_imports, resolve_names},
@@ -113,9 +113,7 @@ fn program() -> Result<(), Error> {
     resolve_names(&mut module, &log);
 
     let mut hir_ctx = HirCtx::new(PtrSize::U64);
-    let module = ModulePrep::new(module, &log, &mut hir_ctx);
-
-    let Ok(hir_module) = hir::Module::try_from(module) else {
+    let Ok(hir_module) = astmod2hir(module, &mut hir_ctx, &log) else {
         return Err(Error::HirError);
     };
 
