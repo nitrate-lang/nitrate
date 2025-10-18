@@ -1,3 +1,8 @@
+use crate::{
+    lower::Ast2Hir,
+    passover::{passover_expr, passover_item, passover_type},
+};
+
 use nitrate_diagnosis::CompilerLog;
 use nitrate_hir::hir::{self, HirCtx};
 use nitrate_parsetree::ast;
@@ -41,26 +46,28 @@ impl<'log, 'ctx> TypePrep<'log, 'ctx> {
 impl TryFrom<ModulePrep<'_, '_>> for hir::Module {
     type Error = ();
 
-    fn try_from(_value: ModulePrep<'_, '_>) -> Result<Self, Self::Error> {
-        // TODO: Implement the conversion logic from AstPrep to Module
-        Err(())
+    fn try_from(value: ModulePrep<'_, '_>) -> Result<Self, Self::Error> {
+        for item in &value.module.items {
+            passover_item(item, value.ctx, value.log);
+        }
+        value.module.ast2hir(value.ctx, value.log)
     }
 }
 
 impl TryFrom<ExprPrep<'_, '_>> for hir::Value {
     type Error = ();
 
-    fn try_from(_value: ExprPrep<'_, '_>) -> Result<Self, Self::Error> {
-        // TODO: Implement the conversion logic from AstPrep to Module
-        Err(())
+    fn try_from(value: ExprPrep<'_, '_>) -> Result<Self, Self::Error> {
+        passover_expr(&value.expr, value.ctx, value.log);
+        value.expr.ast2hir(value.ctx, value.log)
     }
 }
 
 impl TryFrom<TypePrep<'_, '_>> for hir::Type {
     type Error = ();
 
-    fn try_from(_value: TypePrep<'_, '_>) -> Result<Self, Self::Error> {
-        // TODO: Implement the conversion logic from AstPrep to Hir
-        Err(())
+    fn try_from(value: TypePrep<'_, '_>) -> Result<Self, Self::Error> {
+        passover_type(&value.ty, value.ctx, value.log);
+        value.ty.ast2hir(value.ctx, value.log)
     }
 }
