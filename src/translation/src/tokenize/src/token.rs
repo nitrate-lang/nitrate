@@ -121,6 +121,40 @@ pub fn escape_string(s: &str, quotes: bool) -> String {
     escaped
 }
 
+pub fn escape_bstring(s: &[u8], quotes: bool) -> String {
+    let mut escaped = String::with_capacity(s.len() + if quotes { 2 } else { 0 });
+
+    if quotes {
+        escaped.push('\"');
+    }
+
+    for c in s {
+        match c {
+            b'\0' => escaped.push_str("\\0"),
+            b'\\' => escaped.push_str("\\\\"),
+            b'\"' => escaped.push_str("\\\""),
+            b'\x07' => escaped.push_str("\\a"),
+            b'\x08' => escaped.push_str("\\b"),
+            b'\t' => escaped.push_str("\\t"),
+            b'\n' => escaped.push_str("\\n"),
+            b'\x0b' => escaped.push_str("\\v"),
+            b'\x0c' => escaped.push_str("\\f"),
+            b'\r' => escaped.push_str("\\r"),
+            b'\x20'..=b'\x7E' => escaped.push(*c as char),
+
+            c => {
+                escaped.push_str(&format!("\\x{:02x}", *c));
+            }
+        }
+    }
+
+    if quotes {
+        escaped.push('\"');
+    }
+
+    escaped
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Token {
     Name(String),

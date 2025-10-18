@@ -1,3 +1,5 @@
+use nitrate_tokenize::{escape_bstring, escape_string};
+
 use crate::{dump::write_indent, prelude::*};
 
 impl Dump for Block {
@@ -82,17 +84,19 @@ impl Dump for Value {
             Value::F64(f) => write!(o, "f64 {}", f),
             Value::USize32(u) => write!(o, "usize {}", u),
             Value::USize64(u) => write!(o, "usize {}", u),
-            Value::StringLit(s) => write!(o, "\"{}\"", s),
-            Value::BStringLit(s) => write!(o, "b\"{:?}\"", s),
-            Value::InferredInteger(i) => write!(o, "? {}", i),
-            Value::InferredFloat(f) => write!(o, "? {}", f),
+            Value::StringLit(s) => write!(o, "{}", escape_string(s, true)),
+            Value::BStringLit(s) => write!(o, "{}", escape_bstring(s, true)),
+            Value::InferredInteger(i) => write!(o, "?i {}", i),
+            Value::InferredFloat(f) => write!(o, "?f {}", f),
 
             Value::StructObject {
                 struct_type,
                 fields,
             } => {
                 ctx.store[struct_type].dump(ctx, o)?;
+
                 write!(o, " {{ ")?;
+
                 for (i, (field_name, field_value)) in fields.iter().enumerate() {
                     if i != 0 {
                         write!(o, ", ")?;
@@ -101,6 +105,7 @@ impl Dump for Value {
                     write!(o, "{}: ", field_name)?;
                     ctx.store[field_value].borrow().dump(ctx, o)?;
                 }
+
                 write!(o, " }}")
             }
 

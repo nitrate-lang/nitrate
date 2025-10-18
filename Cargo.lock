@@ -716,6 +716,7 @@ dependencies = [
  "blake3",
  "interned-string",
  "log",
+ "nitrate_tokenize",
  "ordered-float",
  "serde",
  "serde_json",
