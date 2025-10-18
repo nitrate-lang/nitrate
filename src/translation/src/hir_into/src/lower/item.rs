@@ -146,9 +146,11 @@ fn ast_variable2hir(
         }
     }
 
-    let ast_attributes = var.attributes.to_owned().unwrap_or_default();
-    for _attr in ast_attributes {
-        log.report(&HirErr::UnrecognizedGlobalVariableAttribute);
+    let attributes = BTreeSet::new();
+    if let Some(ast_attributes) = &var.attributes {
+        for _attr in ast_attributes {
+            log.report(&HirErr::UnrecognizedGlobalVariableAttribute);
+        }
     }
 
     let is_mutable = match var.mutability {
@@ -180,6 +182,7 @@ fn ast_variable2hir(
 
     Ok(GlobalVariable {
         visibility,
+        attributes,
         is_mutable,
         name,
         ty,

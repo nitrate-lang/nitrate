@@ -10,17 +10,25 @@ pub enum Visibility {
     Pub,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum GlobalVariableAttribute {}
+
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct GlobalVariable {
     pub visibility: Visibility,
+    pub attributes: BTreeSet<GlobalVariableAttribute>,
     pub is_mutable: bool,
     pub name: IString,
     pub ty: TypeId,
     pub initializer: ValueId,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum LocalVariableAttribute {}
+
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct LocalVariable {
+    pub attributes: BTreeSet<LocalVariableAttribute>,
     pub is_mutable: bool,
     pub name: IString,
     pub ty: TypeId,

@@ -14,6 +14,18 @@ impl Dump for Visibility {
     }
 }
 
+impl Dump for GlobalVariableAttribute {
+    fn dump(
+        &self,
+        _ctx: &mut DumpContext,
+        _o: &mut dyn std::fmt::Write,
+    ) -> Result<(), std::fmt::Error> {
+        match self {
+            _ => Ok(()),
+        }
+    }
+}
+
 impl Dump for GlobalVariableId {
     fn dump(
         &self,
@@ -23,15 +35,44 @@ impl Dump for GlobalVariableId {
         let this = ctx.store[self].borrow();
 
         this.visibility.dump(ctx, o)?;
-        write!(o, " sym[{}] global ", self.as_usize())?;
+
+        write!(o, " global[{}] ", self.as_usize())?;
+
+        if !this.attributes.is_empty() {
+            write!(o, "[")?;
+            for (i, attr) in this.attributes.iter().enumerate() {
+                if i != 0 {
+                    write!(o, ", ")?;
+                }
+
+                attr.dump(ctx, o)?;
+            }
+            write!(o, "] ")?;
+        }
+
         if this.is_mutable {
             write!(o, "mut ")?;
         }
+
         write!(o, "`{}`: ", this.name)?;
         ctx.store[&this.ty].dump(ctx, o)?;
+
         write!(o, " = ")?;
         ctx.store[&this.initializer].borrow().dump(ctx, o)?;
+
         write!(o, ";")
+    }
+}
+
+impl Dump for LocalVariableAttribute {
+    fn dump(
+        &self,
+        _ctx: &mut DumpContext,
+        _o: &mut dyn std::fmt::Write,
+    ) -> Result<(), std::fmt::Error> {
+        match self {
+            _ => Ok(()),
+        }
     }
 }
 
@@ -43,10 +84,30 @@ impl Dump for LocalVariableId {
     ) -> Result<(), std::fmt::Error> {
         let this = ctx.store[self].borrow();
 
-        write!(o, "sym[{}] local `{}`: ", self.as_usize(), this.name)?;
+        write!(o, "local[{}] ", self.as_usize())?;
+
+        if !this.attributes.is_empty() {
+            write!(o, "[")?;
+            for (i, attr) in this.attributes.iter().enumerate() {
+                if i != 0 {
+                    write!(o, ", ")?;
+                }
+
+                attr.dump(ctx, o)?;
+            }
+            write!(o, "] ")?;
+        }
+
+        if this.is_mutable {
+            write!(o, "mut ")?;
+        }
+
+        write!(o, "`{}`: ", this.name)?;
         ctx.store[&this.ty].dump(ctx, o)?;
+
         write!(o, " = ")?;
         ctx.store[&this.initializer].borrow().dump(ctx, o)?;
+
         write!(o, ";")
     }
 }
@@ -71,7 +132,8 @@ impl Dump for ParameterId {
     ) -> Result<(), std::fmt::Error> {
         let this = ctx.store[self].borrow();
 
-        write!(o, "sym[{}] param ", self.as_usize())?;
+        write!(o, "param[{}] ", self.as_usize())?;
+
         if !this.attributes.is_empty() {
             write!(o, "[")?;
             for (i, attr) in this.attributes.iter().enumerate() {
@@ -87,13 +149,15 @@ impl Dump for ParameterId {
         if this.is_mutable {
             write!(o, "mut ")?;
         }
-        write!(o, "`{}`: ", this.name)?;
 
+        write!(o, "`{}`: ", this.name)?;
         ctx.store[&this.ty].dump(ctx, o)?;
+
         if let Some(default_value) = &this.default_value {
             write!(o, " = ")?;
             ctx.store[default_value].borrow().dump(ctx, o)?;
         }
+
         Ok(())
     }
 }
@@ -107,7 +171,8 @@ impl Dump for FunctionId {
         let this = ctx.store[self].borrow();
 
         this.visibility.dump(ctx, o)?;
-        write!(o, " sym[{}] fn ", self.as_usize())?;
+
+        write!(o, " fn[{}] ", self.as_usize())?;
 
         if !this.attributes.is_empty() {
             write!(o, "[")?;
@@ -160,7 +225,8 @@ impl Dump for TraitId {
         let this = ctx.store[self].borrow();
 
         this.visibility.dump(ctx, o)?;
-        write!(o, " sym[{}] trait `{}` {{\n", self.as_usize(), this.name)?;
+
+        write!(o, " trait[{}] `{}` {{\n", self.as_usize(), this.name)?;
 
         ctx.indent += 1;
 
@@ -184,7 +250,9 @@ impl Dump for ModuleAttribute {
         _ctx: &mut DumpContext,
         _o: &mut dyn std::fmt::Write,
     ) -> Result<(), std::fmt::Error> {
-        Ok(())
+        match self {
+            _ => Ok(()),
+        }
     }
 }
 
@@ -195,6 +263,7 @@ impl Dump for Module {
         o: &mut dyn std::fmt::Write,
     ) -> Result<(), std::fmt::Error> {
         self.visibility.dump(ctx, o)?;
+
         write!(o, " mod ")?;
 
         if !self.attributes.is_empty() {
@@ -244,7 +313,7 @@ impl SymbolId {
             Symbol::GlobalVariable(gv) => {
                 write!(
                     o,
-                    "sym[{}] global `{}`",
+                    "global[{}] `{}`",
                     gv.as_usize(),
                     ctx.store[gv].borrow().name
                 )
@@ -252,31 +321,28 @@ impl SymbolId {
 
             Symbol::LocalVariable(lv) => write!(
                 o,
-                "sym[{}] local `{}`",
+                "local[{}] `{}`",
                 lv.as_usize(),
                 ctx.store[lv].borrow().name
             ),
 
             Symbol::Trait(tr) => write!(
                 o,
-                "sym[{}] trait `{}`",
+                "trait[{}] `{}`",
                 tr.as_usize(),
                 ctx.store[tr].borrow().name
             ),
 
             Symbol::Parameter(fp) => write!(
                 o,
-                "sym[{}] param `{}`",
+                "param[{}] `{}`",
                 fp.as_usize(),
                 ctx.store[fp].borrow().name
             ),
 
-            Symbol::Function(f) => write!(
-                o,
-                "sym[{}] fn `{}`",
-                f.as_usize(),
-                ctx.store[f].borrow().name
-            ),
+            Symbol::Function(f) => {
+                write!(o, "fn[{}] `{}`", f.as_usize(), ctx.store[f].borrow().name)
+            }
         }
     }
 }
