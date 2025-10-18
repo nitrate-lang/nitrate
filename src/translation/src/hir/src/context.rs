@@ -1,5 +1,3 @@
-use interned_string::IString;
-
 use crate::prelude::*;
 use std::cell::RefCell;
 use std::collections::{HashMap, HashSet};

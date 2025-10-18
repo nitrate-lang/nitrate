@@ -3,6 +3,5 @@
 mod diagnosis;
 mod into;
 mod lower;
-mod passover;
 
-pub use into::astmod2hir;
+pub use into::{ast_expr2hir, ast_mod2hir, ast_type2hir};

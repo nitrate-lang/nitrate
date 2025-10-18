@@ -1,6 +1,6 @@
+use crate::ast_expr2hir;
 use crate::diagnosis::HirErr;
 use crate::lower::lower::Ast2Hir;
-use crate::passover::passover_expr;
 use nitrate_diagnosis::CompilerLog;
 use nitrate_hir::prelude::*;
 use nitrate_hir_get_type::get_type;
@@ -21,14 +21,12 @@ fn from_nitrate_expression(ctx: &mut HirCtx, nitrate_expr: &str) -> Result<Value
     let trash = CompilerLog::default();
     let mut parser = Parser::new(lexer, &trash);
 
-    let mut expression = parser.parse_expression();
+    let expression = parser.parse_expression();
     if trash.error_bit() {
         return Err(());
     }
 
-    expression = passover_expr(expression, ctx, &trash);
-
-    let hir_value = expression.ast2hir(ctx, &trash)?;
+    let hir_value = ast_expr2hir(expression, ctx, &trash)?;
     if trash.error_bit() {
         return Err(());
     }

@@ -1,4 +1,4 @@
-use crate::{astmod2hir, diagnosis::HirErr, lower::lower::Ast2Hir};
+use crate::{ast_mod2hir, diagnosis::HirErr, lower::lower::Ast2Hir};
 use interned_string::IString;
 use nitrate_diagnosis::CompilerLog;
 use nitrate_hir::prelude::*;
@@ -85,7 +85,7 @@ impl Ast2Hir for ast::Module {
             for item in this.items {
                 match item {
                     ast::Item::Module(submodule) => {
-                        let hir_submodule = astmod2hir(*submodule, ctx, log)?.into_id(ctx.store());
+                        let hir_submodule = ast_mod2hir(*submodule, ctx, log)?.into_id(ctx.store());
                         items.push(Item::Module(hir_submodule));
                     }
 

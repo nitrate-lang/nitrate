@@ -5,7 +5,7 @@ use nitrate_translation::{
         Dump, DumpContext,
         hir::{HirCtx, PtrSize},
     },
-    hir_into::astmod2hir,
+    hir_into::ast_mod2hir,
     parse::Parser,
     parsetree::ast,
     resolve::{ImportContext, resolve_imports, resolve_names},
@@ -113,7 +113,7 @@ fn program() -> Result<(), Error> {
     resolve_names(&mut module, &log);
 
     let mut hir_ctx = HirCtx::new(PtrSize::U64);
-    let Ok(hir_module) = astmod2hir(module, &mut hir_ctx, &log) else {
+    let Ok(hir_module) = ast_mod2hir(module, &mut hir_ctx, &log) else {
         return Err(Error::HirError);
     };
 
