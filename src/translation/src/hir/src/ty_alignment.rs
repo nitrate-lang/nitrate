@@ -1,11 +1,7 @@
 use crate::prelude::*;
 use std::cmp::max;
 
-pub enum AlignofError {
-    UnknownAlignment,
-}
-
-pub fn get_align_of(ty: &Type, store: &Store, ptr_size: PtrSize) -> Result<u64, AlignofError> {
+pub fn get_align_of(ty: &Type, store: &Store, ptr_size: PtrSize) -> Result<u64, LayoutError> {
     match ty {
         Type::Never => Ok(1),
         Type::Unit => Ok(1),
@@ -85,13 +81,17 @@ pub fn get_align_of(ty: &Type, store: &Store, ptr_size: PtrSize) -> Result<u64, 
         Type::Refine { base, .. } => Ok(get_align_of(&store[base], store, ptr_size)?),
         Type::Bitfield { base, .. } => Ok(get_align_of(&store[base], store, ptr_size)?),
 
-        Type::Function { .. } => Err(AlignofError::UnknownAlignment),
+        Type::Function { .. } => Err(LayoutError::Undefined),
         Type::Reference { .. } => Ok(ptr_size as u64),
         Type::Pointer { .. } => Ok(ptr_size as u64),
-        Type::TypeAlias { aliased, .. } => get_align_of(&store[aliased], store, ptr_size),
+
+        Type::Symbol { link, .. } => match link {
+            Some(type_id) => get_align_of(&store[type_id], store, ptr_size),
+            None => Err(LayoutError::UnresolvedSymbol),
+        },
 
         Type::InferredInteger { .. } | Type::InferredFloat | Type::Inferred { .. } => {
-            Err(AlignofError::UnknownAlignment)
+            Err(LayoutError::NotInferred)
         }
     }
 }

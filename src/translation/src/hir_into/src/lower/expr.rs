@@ -38,6 +38,7 @@ fn from_nitrate_expression(ctx: &mut HirCtx, nitrate_expr: &str) -> Result<Value
 
 pub(crate) enum EncodeErr {
     CannotEncodeInferredType,
+    UnresolvedSymbol,
 }
 
 fn metatype_source_encode(store: &Store, from: &Type, o: &mut dyn Write) -> Result<(), EncodeErr> {
@@ -290,7 +291,10 @@ fn metatype_source_encode(store: &Store, from: &Type, o: &mut dyn Write) -> Resu
             Ok(())
         }
 
-        Type::TypeAlias { name: _, aliased } => metatype_source_encode(store, &store[aliased], o),
+        Type::Symbol { name: _, link } => match link {
+            Some(type_id) => metatype_source_encode(store, &store[type_id], o),
+            None => Err(EncodeErr::UnresolvedSymbol),
+        },
 
         Type::InferredFloat => Err(EncodeErr::CannotEncodeInferredType),
         Type::InferredInteger => Err(EncodeErr::CannotEncodeInferredType),
@@ -374,7 +378,7 @@ impl Ast2Hir for ast::TypeInfo {
         let hir_type = self.the.ast2hir(ctx, log)?;
         let encoded = match metatype_encode(ctx, hir_type) {
             Ok(v) => v,
-            Err(EncodeErr::CannotEncodeInferredType) => {
+            Err(_) => {
                 log.report(&HirErr::TypeInferenceError);
                 return Err(());
             }
@@ -468,7 +472,7 @@ impl Ast2Hir for ast::UnaryExpr {
                 Ok(t) => {
                     let encoded = match metatype_encode(ctx, t) {
                         Ok(v) => v,
-                        Err(EncodeErr::CannotEncodeInferredType) => {
+                        Err(_) => {
                             log.report(&HirErr::TypeInferenceError);
                             return Err(());
                         }

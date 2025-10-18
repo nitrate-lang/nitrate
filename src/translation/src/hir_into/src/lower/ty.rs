@@ -130,6 +130,7 @@ impl Ast2Hir for ast::TypePath {
     type Hir = Type;
 
     fn ast2hir(self, _ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
+        // Type::TypeAlias { name: (), aliased: () }
         // TODO: lower ast::TypePath
         log.report(&HirErr::UnimplementedFeature("type path".into()));
         Err(())

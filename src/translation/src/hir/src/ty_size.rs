@@ -1,11 +1,13 @@
 use crate::prelude::*;
 use std::cmp::max;
 
-pub enum SizeofError {
-    UnknownSize,
+pub enum LayoutError {
+    Undefined,
+    NotInferred,
+    UnresolvedSymbol,
 }
 
-pub fn get_size_of(ty: &Type, store: &Store, ptr_size: PtrSize) -> Result<u64, SizeofError> {
+pub fn get_size_of(ty: &Type, store: &Store, ptr_size: PtrSize) -> Result<u64, LayoutError> {
     match ty {
         Type::Never => Ok(0),
         Type::Unit => Ok(0),
@@ -19,11 +21,7 @@ pub fn get_size_of(ty: &Type, store: &Store, ptr_size: PtrSize) -> Result<u64, S
         Type::Opaque { .. } => Ok(0),
 
         Type::Array { element_type, len } => {
-            let element_stride = match get_stride_of(&store[element_type], store, ptr_size) {
-                Ok(stride) => Ok(stride),
-                Err(StrideOfError::UnknownStride) => Err(SizeofError::UnknownSize),
-            }?;
-
+            let element_stride = get_stride_of(&store[element_type], store, ptr_size)?;
             Ok(element_stride * (*len as u64))
         }
 
@@ -34,10 +32,7 @@ pub fn get_size_of(ty: &Type, store: &Store, ptr_size: PtrSize) -> Result<u64, S
 
             for element in &*elements {
                 let element_size = get_size_of(element, store, ptr_size)?;
-                let element_align = match get_align_of(element, store, ptr_size) {
-                    Ok(align) => Ok(align),
-                    Err(AlignofError::UnknownAlignment) => Err(SizeofError::UnknownSize),
-                }?;
+                let element_align = get_align_of(element, store, ptr_size)?;
 
                 size = size.next_multiple_of(element_align);
                 size += element_size;
@@ -46,7 +41,7 @@ pub fn get_size_of(ty: &Type, store: &Store, ptr_size: PtrSize) -> Result<u64, S
             Ok(size)
         }
 
-        Type::Slice { element_type: _ } => Err(SizeofError::UnknownSize),
+        Type::Slice { element_type: _ } => Err(LayoutError::Undefined),
 
         Type::Struct { struct_type } => {
             let StructType {
@@ -69,10 +64,7 @@ pub fn get_size_of(ty: &Type, store: &Store, ptr_size: PtrSize) -> Result<u64, S
                 let field_type = &store[field_type];
 
                 let field_size = get_size_of(field_type, store, ptr_size)?;
-                let field_align = match get_align_of(field_type, store, ptr_size) {
-                    Ok(align) => Ok(align),
-                    Err(AlignofError::UnknownAlignment) => Err(SizeofError::UnknownSize),
-                }?;
+                let field_align = get_align_of(field_type, store, ptr_size)?;
 
                 offset = offset.next_multiple_of(field_align);
                 offset += field_size;
@@ -108,13 +100,17 @@ pub fn get_size_of(ty: &Type, store: &Store, ptr_size: PtrSize) -> Result<u64, S
         Type::Refine { base, .. } => Ok(get_size_of(&store[base], store, ptr_size)?),
         Type::Bitfield { bits, .. } => Ok(bits.div_ceil(8) as u64),
 
-        Type::Function { .. } => Err(SizeofError::UnknownSize),
+        Type::Function { .. } => Err(LayoutError::Undefined),
         Type::Reference { .. } => Ok(ptr_size as u64),
         Type::Pointer { .. } => Ok(ptr_size as u64),
-        Type::TypeAlias { aliased, .. } => get_size_of(&store[aliased], store, ptr_size),
+
+        Type::Symbol { link, .. } => match link {
+            Some(type_id) => get_size_of(&store[type_id], store, ptr_size),
+            None => Err(LayoutError::UnresolvedSymbol),
+        },
 
         Type::InferredInteger { .. } | Type::InferredFloat | Type::Inferred { .. } => {
-            Err(SizeofError::UnknownSize)
+            Err(LayoutError::NotInferred)
         }
     }
 }

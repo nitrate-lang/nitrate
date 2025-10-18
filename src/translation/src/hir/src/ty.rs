@@ -121,9 +121,9 @@ pub enum Type {
         to: TypeId,
     },
 
-    TypeAlias {
-        name: IString,
-        aliased: TypeId,
+    Symbol {
+        name: EntityName,
+        link: Option<TypeId>,
     },
 
     InferredFloat,

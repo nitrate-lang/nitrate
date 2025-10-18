@@ -68,86 +68,102 @@ impl Ast2Hir for ast::Module {
     type Hir = Module;
 
     fn ast2hir(self, ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
-        let ast_attributes = self.attributes.unwrap_or_default();
-        let name = match self.name {
-            Some(n) => n.to_string().into(),
-            None => ctx.get_unique_name(),
-        };
+        fn lower_module(
+            this: ast::Module,
+            ctx: &mut HirCtx,
+            log: &CompilerLog,
+        ) -> Result<Module, ()> {
+            let ast_attributes = this.attributes.unwrap_or_default();
+            let name = match this.name {
+                Some(n) => n.to_string().into(),
+                None => ctx.get_unique_name(),
+            };
 
-        let mut items = Vec::with_capacity(self.items.len());
+            let mut items = Vec::with_capacity(this.items.len());
 
-        for item in self.items {
-            match item {
-                ast::Item::Module(_) => {
-                    // TODO: lower nested modules
-                    log.report(&HirErr::UnimplementedFeature("nested modules".into()));
-                }
+            for item in this.items {
+                match item {
+                    ast::Item::Module(_) => {
+                        // TODO: lower nested modules
+                        log.report(&HirErr::UnimplementedFeature("nested modules".into()));
+                    }
 
-                ast::Item::Import(_) => {
-                    // TODO: lower import statements
-                    log.report(&HirErr::UnimplementedFeature("import statements".into()));
-                }
+                    ast::Item::Import(_) => {
+                        // TODO: lower import statements
+                        log.report(&HirErr::UnimplementedFeature("import statements".into()));
+                    }
 
-                ast::Item::TypeAlias(_) => {
-                    // TODO: lower type aliases
-                    log.report(&HirErr::UnimplementedFeature("type aliases".into()));
-                }
+                    ast::Item::TypeAlias(_) => {
+                        // TODO: lower type aliases
+                        log.report(&HirErr::UnimplementedFeature("type aliases".into()));
+                    }
 
-                ast::Item::Struct(_) => {
-                    // TODO: lower struct definitions
-                    log.report(&HirErr::UnimplementedFeature("structs".into()));
-                }
+                    ast::Item::Struct(_) => {
+                        // TODO: lower struct definitions
+                        log.report(&HirErr::UnimplementedFeature("structs".into()));
+                    }
 
-                ast::Item::Enum(_) => {
-                    // TODO: lower enum definitions
-                    log.report(&HirErr::UnimplementedFeature("enums".into()));
-                }
+                    ast::Item::Enum(_) => {
+                        // TODO: lower enum definitions
+                        log.report(&HirErr::UnimplementedFeature("enums".into()));
+                    }
 
-                ast::Item::Trait(_) => {
-                    // TODO: lower trait definitions
-                    log.report(&HirErr::UnimplementedFeature("traits".into()));
-                }
+                    ast::Item::Trait(_) => {
+                        // TODO: lower trait definitions
+                        log.report(&HirErr::UnimplementedFeature("traits".into()));
+                    }
 
-                ast::Item::Impl(_) => {
-                    // TODO: lower impl blocks
-                    log.report(&HirErr::UnimplementedFeature("impl blocks".into()));
-                }
+                    ast::Item::Impl(_) => {
+                        // TODO: lower impl blocks
+                        log.report(&HirErr::UnimplementedFeature("impl blocks".into()));
+                    }
 
-                ast::Item::Function(_) => {
-                    // TODO: lower function definitions
-                    log.report(&HirErr::UnimplementedFeature("functions".into()));
-                }
+                    ast::Item::Function(_) => {
+                        // TODO: lower function definitions
+                        log.report(&HirErr::UnimplementedFeature("functions".into()));
+                    }
 
-                ast::Item::Variable(v) => {
-                    let variable = v.read().unwrap();
-                    let g = global_variable_ast2hir(&variable, ctx, log)?.into_id(ctx.store());
-                    items.push(Item::GlobalVariable(g));
-                }
+                    ast::Item::Variable(v) => {
+                        let variable = v.read().unwrap();
+                        let g = global_variable_ast2hir(&variable, ctx, log)?.into_id(ctx.store());
+                        items.push(Item::GlobalVariable(g));
+                    }
 
-                ast::Item::SyntaxError(_) => {
-                    continue;
+                    ast::Item::SyntaxError(_) => {
+                        continue;
+                    }
                 }
             }
+
+            let attributes = Vec::with_capacity(ast_attributes.len());
+            for _attr in ast_attributes {
+                log.report(&HirErr::UnrecognizedModuleAttribute);
+            }
+
+            let visibility = match this.visibility {
+                Some(ast::Visibility::Public) => Visibility::Pub,
+                Some(ast::Visibility::Protected) => Visibility::Pro,
+                Some(ast::Visibility::Private) | None => Visibility::Sec,
+            };
+
+            let module = Module {
+                name,
+                visibility,
+                attributes,
+                items,
+            };
+
+            Ok(module)
         }
 
-        let attributes = Vec::with_capacity(ast_attributes.len());
-        for _attr in ast_attributes {
-            log.report(&HirErr::UnrecognizedModuleAttribute);
+        match self.name {
+            Some(ref name) => ctx.push_current_scope(name.to_string()),
+            None => ctx.push_current_scope(String::default()),
         }
 
-        let visibility = match self.visibility {
-            Some(ast::Visibility::Public) => Visibility::Pub,
-            Some(ast::Visibility::Protected) => Visibility::Pro,
-            Some(ast::Visibility::Private) | None => Visibility::Sec,
-        };
+        let result = lower_module(self, ctx, log);
+        ctx.pop_current_scope();
 
-        let module = Module {
-            name,
-            visibility,
-            attributes,
-            items,
-        };
-
-        Ok(module)
+        result
     }
 }

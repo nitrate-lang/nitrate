@@ -7,8 +7,7 @@ use std::ops::Deref;
 #[derive(Debug)]
 pub struct HirCtx {
     store: Store,
-    symbol_map: HashMap<QualifiedName, SymbolId>,
-    type_map: HashMap<QualifiedName, TypeId>,
+    current_scope: Vec<String>,
     impl_map: HashMap<TypeId, HashSet<TraitId>>,
     type_infer_id_ctr: NonZeroU32,
     unique_name_ctr: u32,
@@ -19,8 +18,7 @@ impl HirCtx {
     pub fn new(ptr_size: PtrSize) -> Self {
         Self {
             store: Store::new(),
-            symbol_map: HashMap::new(),
-            type_map: HashMap::new(),
+            current_scope: Vec::new(),
             impl_map: HashMap::new(),
             type_infer_id_ctr: NonZeroU32::new(1).unwrap(),
             unique_name_ctr: 0,
@@ -38,14 +36,6 @@ impl HirCtx {
 
     pub fn ptr_size(&self) -> PtrSize {
         self.ptr_size
-    }
-
-    pub fn resolve_symbol(&self, name: &QualifiedName) -> Option<&SymbolId> {
-        self.symbol_map.get(name)
-    }
-
-    pub fn resolve_type(&self, name: &QualifiedName) -> Option<&TypeId> {
-        self.type_map.get(name)
     }
 
     pub fn has_trait(&self, ty: &TypeId, trait_id: &TraitId) -> bool {
@@ -100,6 +90,18 @@ impl HirCtx {
         let id = self.type_infer_id_ctr;
         self.type_infer_id_ctr = id.checked_add(1).expect("Type infer ID overflow");
         Type::Inferred { id }
+    }
+
+    pub fn push_current_scope(&mut self, part: String) {
+        self.current_scope.push(part);
+    }
+
+    pub fn pop_current_scope(&mut self) {
+        self.current_scope.pop();
+    }
+
+    pub fn current_scope(&self) -> &Vec<String> {
+        &self.current_scope
     }
 }
 

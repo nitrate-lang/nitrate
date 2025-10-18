@@ -2,25 +2,10 @@ use nitrate_diagnosis::CompilerLog;
 use nitrate_hir::hir::HirCtx;
 use nitrate_parsetree::{
     Order, ParseTreeIter, RefNode,
-    ast::{self, Enum, Function, Item, Struct, Trait, TypeAlias, Variable},
+    ast::{self, Item},
 };
-use std::collections::HashMap;
-use std::sync::{Arc, RwLock};
 
-#[derive(Debug, Clone)]
-enum Symbol {
-    TypeAlias(Arc<RwLock<ast::TypeAlias>>),
-    Struct(Arc<RwLock<ast::Struct>>),
-    Enum(Arc<RwLock<ast::Enum>>),
-    Trait(Arc<RwLock<ast::Trait>>),
-    Function(Arc<RwLock<ast::Function>>),
-    Variable(Arc<RwLock<ast::Variable>>),
-}
-
-type SymbolName = String;
-type SymbolTable<'a> = HashMap<SymbolName, Vec<Symbol>>;
-
-fn qualify_name(scope: &[String], name: &str) -> SymbolName {
+fn qualify_name(scope: &[String], name: &str) -> String {
     let length = scope.iter().map(|s| s.len() + 2).sum::<usize>() + name.len();
     let mut qualified = String::with_capacity(length);
 
@@ -30,53 +15,42 @@ fn qualify_name(scope: &[String], name: &str) -> SymbolName {
     }
 
     qualified.push_str(name);
-
     qualified
 }
 
-fn symbol_table_add(symbol_table: &mut SymbolTable, scope_vec: &Vec<String>, node: &Item) {
-    let (name, symbol) = match node {
-        Item::TypeAlias(sym) => (
-            qualify_name(&scope_vec, &sym.read().unwrap().name),
-            Symbol::TypeAlias(Arc::clone(sym)),
-        ),
+fn visit_item(_ctx: &mut HirCtx, scope_vec: &Vec<String>, node: &Item) {
+    match node {
+        Item::TypeAlias(sym) => {
+            let _name = qualify_name(&scope_vec, &sym.read().unwrap().name);
+        }
 
-        Item::Struct(sym) => (
-            qualify_name(&scope_vec, &sym.read().unwrap().name),
-            Symbol::Struct(Arc::clone(sym)),
-        ),
+        Item::Struct(sym) => {
+            let _name = qualify_name(&scope_vec, &sym.read().unwrap().name);
+        }
 
-        Item::Enum(sym) => (
-            qualify_name(&scope_vec, &sym.read().unwrap().name),
-            Symbol::Enum(Arc::clone(sym)),
-        ),
+        Item::Enum(sym) => {
+            let _name = qualify_name(&scope_vec, &sym.read().unwrap().name);
+        }
 
-        Item::Trait(sym) => (
-            qualify_name(&scope_vec, &sym.read().unwrap().name),
-            Symbol::Trait(Arc::clone(sym)),
-        ),
+        Item::Trait(sym) => {
+            let _name = qualify_name(&scope_vec, &sym.read().unwrap().name);
+        }
 
-        Item::Function(sym) => (
-            qualify_name(&scope_vec, &sym.read().unwrap().name),
-            Symbol::Function(Arc::clone(sym)),
-        ),
+        Item::Function(sym) => {
+            let _name = qualify_name(&scope_vec, &sym.read().unwrap().name);
+        }
 
-        Item::Variable(sym) => (
-            qualify_name(&scope_vec, &sym.read().unwrap().name),
-            Symbol::Variable(Arc::clone(sym)),
-        ),
+        Item::Variable(sym) => {
+            let _name = qualify_name(&scope_vec, &sym.read().unwrap().name);
+        }
 
         _ => return,
-    };
-
-    symbol_table
-        .entry(name.clone())
-        .or_insert_with(Vec::new)
-        .push(symbol);
+    }
 }
 
-fn build_symbol_table(module: &mut ast::Module) -> SymbolTable {
-    let mut symbol_table = SymbolTable::new();
+pub fn passover_module(module: &mut ast::Module, ctx: &mut HirCtx, _log: &CompilerLog) {
+    // TODO: Implement the first pass logic over items
+
     let mut scope_vec = Vec::new();
 
     module.depth_first_iter(&mut |order, node| {
@@ -90,7 +64,7 @@ fn build_symbol_table(module: &mut ast::Module) -> SymbolTable {
                     }
 
                     for item in &module.items {
-                        symbol_table_add(&mut symbol_table, &scope_vec, item);
+                        visit_item(ctx, &scope_vec, item);
                     }
                 }
 
@@ -100,14 +74,4 @@ fn build_symbol_table(module: &mut ast::Module) -> SymbolTable {
             }
         }
     });
-
-    symbol_table
-}
-
-pub fn passover_module(module: &mut ast::Module, _ctx: &mut HirCtx, _log: &CompilerLog) {
-    // TODO: Implement the first pass logic over items
-
-    for (name, symbol) in build_symbol_table(module) {
-        println!("Symbol: {} => {:#?}", name, symbol);
-    }
 }
