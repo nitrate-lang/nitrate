@@ -68,7 +68,6 @@ pub struct Module {
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub enum Symbol {
-    Unresolved { name: QualifiedName },
     GlobalVariable(GlobalVariableId),
     LocalVariable(LocalVariableId),
     Trait(TraitId),

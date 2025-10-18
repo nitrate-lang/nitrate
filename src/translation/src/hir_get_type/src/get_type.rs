@@ -8,7 +8,6 @@ pub enum TypeInferenceError {
     FieldAccessOnNonStruct,
     IndexAccessOnNonCollection,
     CalleeIsNotFunctionType,
-    UnresolvedSymbol,
     TraitHasNoType,
 }
 
@@ -224,7 +223,6 @@ pub fn get_type(value: &Value, store: &Store) -> Result<Type, TypeInferenceError
         }
 
         Value::Symbol { symbol } => match &*store[symbol].borrow() {
-            Symbol::Unresolved { name: _ } => Err(TypeInferenceError::UnresolvedSymbol),
             Symbol::GlobalVariable(glb) => Ok(store[&store[glb].borrow().ty].clone()),
             Symbol::LocalVariable(loc) => Ok(store[&store[loc].borrow().ty].clone()),
             Symbol::Trait(_) => Err(TypeInferenceError::TraitHasNoType),

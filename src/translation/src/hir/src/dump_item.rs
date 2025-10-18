@@ -67,7 +67,6 @@ impl Symbol {
         o: &mut dyn std::fmt::Write,
     ) -> Result<(), std::fmt::Error> {
         match self {
-            Symbol::Unresolved { name } => write!(o, "sym nolink `{}`", name),
             Symbol::GlobalVariable(gv) => {
                 write!(o, "sym global `{}`", ctx.store[gv].borrow().name)
             }
@@ -160,7 +159,6 @@ impl Dump for Symbol {
         o: &mut dyn std::fmt::Write,
     ) -> Result<(), std::fmt::Error> {
         match self {
-            Symbol::Unresolved { name } => write!(o, "sym nolink `{}`", name),
             Symbol::Parameter(fp) => ctx.store[fp].borrow().dump(ctx, o),
             Symbol::Function(f) => ctx.store[f].borrow().dump(ctx, o),
             Symbol::GlobalVariable(gv) => ctx.store[gv].borrow().dump(ctx, o),
