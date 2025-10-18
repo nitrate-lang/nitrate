@@ -27,8 +27,13 @@ pub struct LocalVariable {
     pub initializer: ValueId,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum ParameterAttribute {}
+
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct Parameter {
+    pub attributes: BTreeSet<ParameterAttribute>,
+    pub is_mutable: bool,
     pub name: IString,
     pub ty: TypeId,
     pub default_value: Option<ValueId>,
@@ -41,7 +46,7 @@ pub struct Function {
     pub name: IString,
     pub parameters: Vec<ParameterId>,
     pub return_type: TypeId,
-    pub body: BlockId,
+    pub body: Option<BlockId>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
@@ -51,14 +56,14 @@ pub struct Trait {
     pub methods: Vec<FunctionId>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum ModuleAttribute {}
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct Module {
     pub visibility: Visibility,
     pub name: Option<IString>,
-    pub attributes: Vec<ModuleAttribute>,
+    pub attributes: BTreeSet<ModuleAttribute>,
     pub items: Vec<Item>,
 }
 

@@ -586,11 +586,12 @@ impl Parser<'_, '_> {
 
             let name = intern_parameter_name(name);
 
-            let param_type = if this.lexer.skip_if(&Token::Colon) {
-                Some(this.parse_type())
-            } else {
-                None
-            };
+            if !this.lexer.skip_if(&Token::Colon) {
+                let bug = SyntaxErr::FunctionParameterExpectedType(this.lexer.peek_pos());
+                this.log.report(&bug);
+            }
+
+            let ty = this.parse_type();
 
             let default_value = if this.lexer.skip_if(&Token::Eq) {
                 Some(this.parse_expression())
@@ -602,7 +603,7 @@ impl Parser<'_, '_> {
                 attributes,
                 mutability,
                 name,
-                param_type,
+                ty,
                 default_value,
             }
         }

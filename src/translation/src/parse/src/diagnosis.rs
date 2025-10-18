@@ -30,6 +30,7 @@ pub(crate) enum SyntaxErr {
     FunctionParameterLimit(SourcePosition),
     FunctionParameterMissingName(SourcePosition),
     FunctionParametersExpectedEnd(SourcePosition),
+    FunctionParameterExpectedType(SourcePosition),
 
     VariableMissingName(SourcePosition),
 
@@ -132,6 +133,7 @@ impl FormattableDiagnosticGroup for SyntaxErr {
             SyntaxErr::FunctionParameterLimit(_) => 122,
             SyntaxErr::FunctionParameterMissingName(_) => 123,
             SyntaxErr::FunctionParametersExpectedEnd(_) => 124,
+            SyntaxErr::FunctionParameterExpectedType(_) => 125,
 
             SyntaxErr::VariableMissingName(_) => 140,
 
@@ -311,6 +313,11 @@ impl FormattableDiagnosticGroup for SyntaxErr {
             SyntaxErr::FunctionParametersExpectedEnd(pos) => DiagnosticInfo {
                 origin: Origin::Point(pos.to_owned().into()),
                 message: "expected ')' or ','".into(),
+            },
+
+            SyntaxErr::FunctionParameterExpectedType(pos) => DiagnosticInfo {
+                origin: Origin::Point(pos.to_owned().into()),
+                message: "function parameter type is missing".into(),
             },
 
             /* ------------------------------------------------------------------------- */

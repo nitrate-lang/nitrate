@@ -2,11 +2,11 @@ use std::sync::{Arc, RwLock};
 
 use crate::{
     Order, ParseTreeIter, RefNode,
-    item::{FuncParams, ItemSyntaxError},
     ast::{
         AssociatedItem, Enum, EnumVariant, FuncParam, Function, Generics, Impl, Import, Item,
         Module, Struct, StructField, Trait, TypeAlias, Variable,
     },
+    item::{FuncParams, ItemSyntaxError},
 };
 
 impl ParseTreeIter for ItemSyntaxError {
@@ -266,9 +266,7 @@ impl ParseTreeIter for FuncParam {
             attributes.depth_first_iter(f);
         }
 
-        if let Some(param_type) = &self.param_type {
-            param_type.depth_first_iter(f);
-        }
+        self.ty.depth_first_iter(f);
 
         if let Some(default) = &self.default_value {
             default.depth_first_iter(f);

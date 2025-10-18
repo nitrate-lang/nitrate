@@ -2,11 +2,11 @@ use std::sync::{Arc, RwLock};
 
 use crate::{
     Order, ParseTreeIterMut, RefNodeMut,
-    item::{FuncParams, ItemSyntaxError},
     ast::{
         AssociatedItem, Enum, EnumVariant, FuncParam, Function, Generics, Impl, Import, Item,
         Module, Struct, StructField, Trait, TypeAlias, Variable,
     },
+    item::{FuncParams, ItemSyntaxError},
 };
 
 impl ParseTreeIterMut for ItemSyntaxError {
@@ -266,9 +266,7 @@ impl ParseTreeIterMut for FuncParam {
             attributes.depth_first_iter_mut(f);
         }
 
-        if let Some(param_type) = &mut self.param_type {
-            param_type.depth_first_iter_mut(f);
-        }
+        self.ty.depth_first_iter_mut(f);
 
         if let Some(default) = &mut self.default_value {
             default.depth_first_iter_mut(f);

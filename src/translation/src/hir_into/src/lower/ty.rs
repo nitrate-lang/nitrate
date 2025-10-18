@@ -246,9 +246,11 @@ impl Ast2Hir for ast::FunctionType {
 
         let mut parameters = Vec::with_capacity(self.parameters.len());
         for param in self.parameters {
-            let parameter_attributes = param.attributes.unwrap_or_default();
-            for _attr in parameter_attributes {
-                log.report(&HirErr::UnrecognizedFunctionParameterAttribute);
+            let attributes = BTreeSet::new();
+            if let Some(ast_attributes) = &param.attributes {
+                for _attr in ast_attributes {
+                    log.report(&HirErr::UnrecognizedFunctionParameterAttribute);
+                }
             }
 
             if let Some(_) = param.mutability {
@@ -256,11 +258,7 @@ impl Ast2Hir for ast::FunctionType {
             }
 
             let name = IString::from(param.name.deref());
-
-            let ty = match param.param_type {
-                Some(ty) => ty.ast2hir(ctx, log)?.into_id(ctx.store()),
-                None => Type::Unit.into_id(ctx.store()),
-            };
+            let ty = param.ty.ast2hir(ctx, log)?.into_id(ctx.store());
 
             let default_value = match param.default_value {
                 Some(def_val) => Some(def_val.ast2hir(ctx, log)?.into_id(ctx.store())),
@@ -268,6 +266,8 @@ impl Ast2Hir for ast::FunctionType {
             };
 
             let parameter = Parameter {
+                attributes,
+                is_mutable: false,
                 name,
                 ty,
                 default_value,

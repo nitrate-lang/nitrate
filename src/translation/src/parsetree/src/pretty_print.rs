@@ -1860,10 +1860,8 @@ impl PrettyPrint for FuncParam {
 
         writer.write_str(&self.name)?;
 
-        if let Some(param_type) = &self.param_type {
-            writer.write_str(": ")?;
-            param_type.pretty_print_fmt(ctx, writer)?;
-        }
+        writer.write_str(": ")?;
+        self.ty.pretty_print_fmt(ctx, writer)?;
 
         if let Some(default_value) = &self.default_value {
             writer.write_str(" = ")?;

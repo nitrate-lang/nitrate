@@ -1,4 +1,5 @@
 use crate::prelude::*;
+use interned_string::IString;
 use std::cell::RefCell;
 use std::collections::{HashMap, HashSet};
 use std::num::NonZeroU32;
@@ -8,6 +9,7 @@ use std::ops::Deref;
 pub struct HirCtx {
     store: Store,
     current_scope: Vec<String>,
+    type_map: HashMap<IString, TypeId>,
     impl_map: HashMap<TypeId, HashSet<TraitId>>,
     type_infer_id_ctr: NonZeroU32,
     unique_name_ctr: u32,
@@ -18,6 +20,7 @@ impl HirCtx {
     pub fn new(ptr_size: PtrSize) -> Self {
         Self {
             store: Store::new(),
+            type_map: HashMap::new(),
             current_scope: Vec::new(),
             impl_map: HashMap::new(),
             type_infer_id_ctr: NonZeroU32::new(1).unwrap(),

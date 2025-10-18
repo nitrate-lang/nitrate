@@ -162,7 +162,7 @@ pub struct FuncParam {
     pub attributes: Option<AttributeList>,
     pub mutability: Option<Mutability>,
     pub name: ParameterNameId,
-    pub param_type: Option<Type>,
+    pub ty: Type,
     pub default_value: Option<Expr>,
 }
 
