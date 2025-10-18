@@ -129,11 +129,21 @@ impl Ast2Hir for ast::InferType {
 impl Ast2Hir for ast::TypePath {
     type Hir = Type;
 
-    fn ast2hir(self, _ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
-        // Type::TypeAlias { name: (), aliased: () }
-        // TODO: lower ast::TypePath
-        log.report(&HirErr::UnimplementedFeature("type path".into()));
-        Err(())
+    fn ast2hir(self, ctx: &mut HirCtx, _log: &CompilerLog) -> Result<Self::Hir, ()> {
+        // TODO: Support generic type arguments
+        // TODO: Resolve type paths
+
+        let unqualified_path = self
+            .segments
+            .into_iter()
+            .map(|seg| seg.name)
+            .collect::<Vec<_>>()
+            .join("::");
+
+        Ok(Type::Symbol {
+            name: IString::from(ctx.join_path(&unqualified_path)),
+            link: None,
+        })
     }
 }
 

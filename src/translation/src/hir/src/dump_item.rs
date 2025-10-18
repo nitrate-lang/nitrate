@@ -199,7 +199,9 @@ impl Dump for Module {
             write!(o, "] ")?;
         }
 
-        write!(o, "`{}` ", self.name)?;
+        if let Some(name) = &self.name {
+            write!(o, "`{}` ", name)?;
+        }
 
         if self.items.is_empty() {
             write!(o, "{{}}")

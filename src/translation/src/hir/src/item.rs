@@ -3,10 +3,6 @@ use interned_string::IString;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeSet;
 
-pub type QualifiedName = IString;
-
-pub type EntityName = IString;
-
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub enum Visibility {
     Sec,
@@ -18,7 +14,7 @@ pub enum Visibility {
 pub struct GlobalVariable {
     pub visibility: Visibility,
     pub is_mutable: bool,
-    pub name: EntityName,
+    pub name: IString,
     pub ty: TypeId,
     pub initializer: ValueId,
 }
@@ -26,14 +22,14 @@ pub struct GlobalVariable {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct LocalVariable {
     pub is_mutable: bool,
-    pub name: EntityName,
+    pub name: IString,
     pub ty: TypeId,
     pub initializer: ValueId,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct Parameter {
-    pub name: EntityName,
+    pub name: IString,
     pub ty: TypeId,
     pub default_value: Option<ValueId>,
 }
@@ -42,7 +38,7 @@ pub struct Parameter {
 pub struct Function {
     pub visibility: Visibility,
     pub attributes: BTreeSet<FunctionAttribute>,
-    pub name: EntityName,
+    pub name: IString,
     pub parameters: Vec<ParameterId>,
     pub return_type: TypeId,
     pub body: BlockId,
@@ -51,7 +47,7 @@ pub struct Function {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct Trait {
     pub visibility: Visibility,
-    pub name: EntityName,
+    pub name: IString,
     pub methods: Vec<FunctionId>,
 }
 
@@ -61,7 +57,7 @@ pub enum ModuleAttribute {}
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct Module {
     pub visibility: Visibility,
-    pub name: EntityName,
+    pub name: Option<IString>,
     pub attributes: Vec<ModuleAttribute>,
     pub items: Vec<Item>,
 }

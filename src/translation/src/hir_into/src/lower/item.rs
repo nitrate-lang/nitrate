@@ -1,4 +1,5 @@
-use crate::{diagnosis::HirErr, lower::lower::Ast2Hir};
+use crate::{astmod2hir, diagnosis::HirErr, lower::lower::Ast2Hir};
+use interned_string::IString;
 use nitrate_diagnosis::CompilerLog;
 use nitrate_hir::prelude::*;
 use nitrate_parsetree::ast;
@@ -75,17 +76,17 @@ impl Ast2Hir for ast::Module {
         ) -> Result<Module, ()> {
             let ast_attributes = this.attributes.unwrap_or_default();
             let name = match this.name {
-                Some(n) => n.to_string().into(),
-                None => ctx.get_unique_name(),
+                Some(n) => Some(IString::from(n.to_string())),
+                None => None,
             };
 
             let mut items = Vec::with_capacity(this.items.len());
 
             for item in this.items {
                 match item {
-                    ast::Item::Module(_) => {
-                        // TODO: lower nested modules
-                        log.report(&HirErr::UnimplementedFeature("nested modules".into()));
+                    ast::Item::Module(submodule) => {
+                        let hir_submodule = astmod2hir(*submodule, ctx, log)?.into_id(ctx.store());
+                        items.push(Item::Module(hir_submodule));
                     }
 
                     ast::Item::Import(_) => {

@@ -1,3 +1,5 @@
+use interned_string::IString;
+
 use crate::prelude::*;
 use std::cell::RefCell;
 use std::collections::{HashMap, HashSet};
@@ -78,12 +80,12 @@ impl HirCtx {
         found
     }
 
-    pub fn get_unique_name(&mut self) -> EntityName {
+    pub fn get_unique_name(&mut self) -> String {
         const COMPILER_RESERVED_PREFIX: &str = "⚙️";
 
         let name = format!("{}{}", COMPILER_RESERVED_PREFIX, self.unique_name_ctr);
         self.unique_name_ctr += 1;
-        name.into()
+        name
     }
 
     pub fn create_inference_placeholder(&mut self) -> Type {
@@ -102,6 +104,21 @@ impl HirCtx {
 
     pub fn current_scope(&self) -> &Vec<String> {
         &self.current_scope
+    }
+
+    pub fn join_path(&self, name: &str) -> String {
+        let scope = &self.current_scope;
+
+        let length = scope.iter().map(|s| s.len() + 2).sum::<usize>() + name.len();
+        let mut qualified = String::with_capacity(length);
+
+        for module in scope {
+            qualified.push_str(&module);
+            qualified.push_str("::");
+        }
+
+        qualified.push_str(name);
+        qualified
     }
 }
 

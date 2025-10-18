@@ -7,13 +7,13 @@ use std::{collections::HashMap, sync::LazyLock};
 type BuiltinFunction =
     dyn Fn(&mut HirEvalCtx, &Store, &[Value]) -> Result<Value, Unwind> + Send + Sync;
 
-static DEFAULT_BUILTIN_FUNCTIONS: LazyLock<HashMap<QualifiedName, Box<BuiltinFunction>>> =
+static DEFAULT_BUILTIN_FUNCTIONS: LazyLock<HashMap<IString, Box<BuiltinFunction>>> =
     LazyLock::new(|| {
-        let mut m: HashMap<QualifiedName, Box<BuiltinFunction>> = HashMap::new();
+        let mut m: HashMap<IString, Box<BuiltinFunction>> = HashMap::new();
 
         // Just an example builtin function
         m.insert(
-            QualifiedName::from("std::math::abs"),
+            IString::from("std::math::abs"),
             Box::new(|_, _, args| {
                 if args.len() != 1 {
                     return Err(Unwind::TypeError);
@@ -44,7 +44,7 @@ pub struct HirEvalCtx<'store, 'log> {
     pub(crate) function_call_count: usize,
     pub(crate) current_safety: BlockSafety,
     pub(crate) unsafe_operations_performed: usize,
-    added_builtin_functions: HashMap<QualifiedName, Box<BuiltinFunction>>,
+    added_builtin_functions: HashMap<IString, Box<BuiltinFunction>>,
     pub(crate) ptr_size: PtrSize,
 }
 
@@ -78,12 +78,12 @@ impl<'store, 'log> HirEvalCtx<'store, 'log> {
         self
     }
 
-    pub fn add_builtin(mut self, name: QualifiedName, func: Box<BuiltinFunction>) -> Self {
+    pub fn add_builtin(mut self, name: IString, func: Box<BuiltinFunction>) -> Self {
         self.added_builtin_functions.insert(name, func);
         self
     }
 
-    pub fn lookup_builtin(&self, name: &QualifiedName) -> Option<&Box<BuiltinFunction>> {
+    pub fn lookup_builtin(&self, name: &IString) -> Option<&Box<BuiltinFunction>> {
         self.added_builtin_functions
             .get(name)
             .or_else(|| DEFAULT_BUILTIN_FUNCTIONS.get(name))

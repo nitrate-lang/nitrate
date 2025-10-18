@@ -122,7 +122,7 @@ pub enum Type {
     },
 
     Symbol {
-        name: EntityName,
+        name: IString,
         link: Option<TypeId>,
     },
 
