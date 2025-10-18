@@ -16,7 +16,7 @@ impl Dump for Visibility {
     }
 }
 
-fn dump_attributes<T: Dump>(
+pub(crate) fn dump_attributes<T: Dump>(
     attributes: &BTreeSet<T>,
     ctx: &mut DumpContext,
     o: &mut dyn std::fmt::Write,

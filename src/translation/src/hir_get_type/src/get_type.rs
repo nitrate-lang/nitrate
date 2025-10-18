@@ -103,7 +103,7 @@ pub fn get_type(value: &Value, store: &Store) -> Result<Type, TypeInferenceError
 
             if let Type::Struct { struct_type } = get_type(expr, store)? {
                 let struct_def = &store[&struct_type];
-                if let Some(field_type) = struct_def.fields.get(field) {
+                if let Some((field_type, _)) = struct_def.fields.get(field) {
                     return Ok(store[field_type].clone());
                 }
             }

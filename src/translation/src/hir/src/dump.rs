@@ -3,7 +3,6 @@ use crate::Store;
 pub struct DumpContext<'a> {
     pub store: &'a Store,
     pub indent_str: &'a str,
-
     pub(crate) indent: usize,
 }
 
