@@ -1,10 +1,13 @@
 use nitrate_diagnosis::{CompilerLog, intern_file_id};
 use nitrate_translation::{
     TranslationError,
-    hir::prelude::*,
-    hir_into::TryIntoHir,
+    hir::{
+        Dump, DumpContext,
+        hir::{self, HirCtx, PtrSize},
+    },
+    hir_into::ModulePrep,
     parse::Parser,
-    parsetree::ast::Module,
+    parsetree::ast,
     resolve::{ImportContext, resolve_imports, resolve_names},
     tokenize::Lexer,
 };
@@ -98,7 +101,7 @@ fn program() -> Result<(), Error> {
     let log = slog::Logger::root(drain, o!());
     let log = CompilerLog::new(log);
 
-    let mut module = Module {
+    let mut module = ast::Module {
         attributes: None,
         visibility: None,
         name: None,
@@ -110,8 +113,9 @@ fn program() -> Result<(), Error> {
     resolve_names(&mut module, &log);
 
     let mut hir_ctx = HirCtx::new(PtrSize::U64);
+    let module = ModulePrep::new(module, &log, &mut hir_ctx);
 
-    let Ok(hir_module) = module.try_into_hir(&mut hir_ctx, &log) else {
+    let Ok(hir_module) = hir::Module::try_from(module) else {
         return Err(Error::HirError);
     };
 
