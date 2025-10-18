@@ -76,7 +76,6 @@ pub enum Item {
     Module(ModuleId),
     GlobalVariable(GlobalVariableId),
     Function(FunctionId),
-    Trait(TraitId),
 }
 
 impl IntoStoreId for GlobalVariable {

@@ -34,7 +34,6 @@ impl TypeResolver for Item {
             Item::Module(m) => ctx.store[m].borrow_mut().resolve_type(ctx, log),
             Item::GlobalVariable(gv) => ctx.store[gv].borrow_mut().resolve_type(ctx, log),
             Item::Function(f) => ctx.store[f].borrow_mut().resolve_type(ctx, log),
-            Item::Trait(t) => ctx.store[t].borrow_mut().resolve_type(ctx, log),
         }
     }
 }

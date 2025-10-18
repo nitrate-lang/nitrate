@@ -273,7 +273,6 @@ impl Dump for Item {
             Item::Function(f) => f.dump(ctx, o),
             Item::GlobalVariable(gv) => gv.dump(ctx, o),
             Item::Module(m) => ctx.store[m].borrow().dump(ctx, o),
-            Item::Trait(tr) => tr.dump(ctx, o),
         }
     }
 }
