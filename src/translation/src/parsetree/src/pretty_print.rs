@@ -19,7 +19,7 @@ use crate::{
         ArrayType, Bool, Exclusivity, Float32, Float64, FunctionType, InferType, Int8, Int16,
         Int32, Int64, Int128, LatentType, Lifetime, OpaqueType, ReferenceType, RefinementType,
         SliceType, TupleType, Type, TypeParentheses, TypePath, TypePathSegment, TypePathTarget,
-        TypeSyntaxError, UInt8, UInt16, UInt32, UInt64, UInt128,
+        TypeSyntaxError, UInt8, UInt16, UInt32, UInt64, UInt128, USize,
     },
 };
 
@@ -1006,6 +1006,16 @@ impl PrettyPrint for UInt128 {
     }
 }
 
+impl PrettyPrint for USize {
+    fn pretty_print_fmt(
+        &self,
+        _ctx: &mut PrintContext,
+        writer: &mut dyn std::fmt::Write,
+    ) -> std::fmt::Result {
+        writer.write_str("usize")
+    }
+}
+
 impl PrettyPrint for Int8 {
     fn pretty_print_fmt(
         &self,
@@ -1368,6 +1378,7 @@ impl PrettyPrint for Type {
             Type::UInt32(m) => m.pretty_print_fmt(ctx, writer),
             Type::UInt64(m) => m.pretty_print_fmt(ctx, writer),
             Type::UInt128(m) => m.pretty_print_fmt(ctx, writer),
+            Type::USize(m) => m.pretty_print_fmt(ctx, writer),
             Type::Int8(m) => m.pretty_print_fmt(ctx, writer),
             Type::Int16(m) => m.pretty_print_fmt(ctx, writer),
             Type::Int32(m) => m.pretty_print_fmt(ctx, writer),

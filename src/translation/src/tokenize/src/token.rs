@@ -313,6 +313,8 @@ pub enum Token {
     U64,
     /// 'u128'
     U128,
+    /// 'usize'
+    USize,
     /// 'i8'
     I8,
     /// 'i16'
@@ -428,6 +430,7 @@ impl std::fmt::Display for Token {
             Token::U32 => write!(f, "u32"),
             Token::U64 => write!(f, "u64"),
             Token::U128 => write!(f, "u128"),
+            Token::USize => write!(f, "usize"),
             Token::I8 => write!(f, "i8"),
             Token::I16 => write!(f, "i16"),
             Token::I32 => write!(f, "i32"),

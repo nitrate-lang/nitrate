@@ -39,6 +39,10 @@ pub struct UInt128;
 
 #[skip_serializing_none]
 #[derive(Clone, Serialize, Deserialize)]
+pub struct USize;
+
+#[skip_serializing_none]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct Int8;
 
 #[skip_serializing_none]
@@ -179,6 +183,7 @@ pub enum Type {
     UInt32(UInt32),
     UInt64(UInt64),
     UInt128(UInt128),
+    USize(USize),
     Int8(Int8),
     Int16(Int16),
     Int32(Int32),
@@ -210,6 +215,7 @@ impl std::fmt::Debug for Type {
             Type::UInt32(_) => write!(f, "u32"),
             Type::UInt64(_) => write!(f, "u64"),
             Type::UInt128(_) => write!(f, "u128"),
+            Type::USize(_) => write!(f, "usize"),
             Type::Int8(_) => write!(f, "i8"),
             Type::Int16(_) => write!(f, "i16"),
             Type::Int32(_) => write!(f, "i32"),

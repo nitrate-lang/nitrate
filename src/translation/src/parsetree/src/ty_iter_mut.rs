@@ -4,6 +4,7 @@ use crate::{
         ArrayType, Bool, Float32, Float64, FunctionType, Int8, Int16, Int32, Int64, Int128,
         LatentType, Lifetime, OpaqueType, ReferenceType, RefinementType, SliceType, TupleType,
         Type, TypeParentheses, TypePath, TypeSyntaxError, UInt8, UInt16, UInt32, UInt64, UInt128,
+        USize,
     },
     ty::InferType,
 };
@@ -54,6 +55,13 @@ impl ParseTreeIterMut for UInt128 {
     fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
         f(Order::Enter, RefNodeMut::TypeUInt128);
         f(Order::Leave, RefNodeMut::TypeUInt128);
+    }
+}
+
+impl ParseTreeIterMut for USize {
+    fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
+        f(Order::Enter, RefNodeMut::TypeUSize);
+        f(Order::Leave, RefNodeMut::TypeUSize);
     }
 }
 
@@ -270,6 +278,7 @@ impl ParseTreeIterMut for Type {
             Type::UInt32(ty) => ty.depth_first_iter_mut(f),
             Type::UInt64(ty) => ty.depth_first_iter_mut(f),
             Type::UInt128(ty) => ty.depth_first_iter_mut(f),
+            Type::USize(ty) => ty.depth_first_iter_mut(f),
             Type::Int8(ty) => ty.depth_first_iter_mut(f),
             Type::Int16(ty) => ty.depth_first_iter_mut(f),
             Type::Int32(ty) => ty.depth_first_iter_mut(f),

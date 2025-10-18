@@ -70,6 +70,7 @@ pub enum RefNode<'a> {
     TypeUInt32,
     TypeUInt64,
     TypeUInt128,
+    TypeUSize,
     TypeInt8,
     TypeInt16,
     TypeInt32,

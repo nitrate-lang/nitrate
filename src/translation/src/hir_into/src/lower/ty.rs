@@ -62,6 +62,14 @@ impl Ast2Hir for ast::UInt128 {
     }
 }
 
+impl Ast2Hir for ast::USize {
+    type Hir = Type;
+
+    fn ast2hir(self, _ctx: &mut HirCtx, _log: &CompilerLog) -> Result<Self::Hir, ()> {
+        Ok(Type::USize)
+    }
+}
+
 impl Ast2Hir for ast::Int8 {
     type Hir = Type;
 
@@ -394,6 +402,7 @@ impl Ast2Hir for ast::Type {
             ast::Type::UInt32(ty) => ty.ast2hir(ctx, log),
             ast::Type::UInt64(ty) => ty.ast2hir(ctx, log),
             ast::Type::UInt128(ty) => ty.ast2hir(ctx, log),
+            ast::Type::USize(ty) => ty.ast2hir(ctx, log),
             ast::Type::Int8(ty) => ty.ast2hir(ctx, log),
             ast::Type::Int16(ty) => ty.ast2hir(ctx, log),
             ast::Type::Int32(ty) => ty.ast2hir(ctx, log),

@@ -359,6 +359,7 @@ impl<'a> Lexer<'a> {
             b"u32" => Some(Token::U32),
             b"u64" => Some(Token::U64),
             b"u128" => Some(Token::U128),
+            b"usize" => Some(Token::USize),
             b"i8" => Some(Token::I8),
             b"i16" => Some(Token::I16),
             b"i32" => Some(Token::I32),

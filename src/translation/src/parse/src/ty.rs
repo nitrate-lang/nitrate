@@ -6,7 +6,7 @@ use nitrate_parsetree::{
         ArrayType, Bool, Exclusivity, Expr, Float32, Float64, FunctionType, Int8, Int16, Int32,
         Int64, Int128, LatentType, Lifetime, Mutability, OpaqueType, ReferenceType, RefinementType,
         SliceType, TupleType, Type, TypeParentheses, TypePath, TypePathSegment, TypeSyntaxError,
-        UInt8, UInt16, UInt32, UInt64, UInt128,
+        UInt8, UInt16, UInt32, UInt64, UInt128, USize,
     },
     tag::{intern_lifetime_name, intern_opaque_type_name},
 };
@@ -259,6 +259,7 @@ impl Parser<'_, '_> {
             Token::U32 => Type::UInt32(UInt32),
             Token::U64 => Type::UInt64(UInt64),
             Token::U128 => Type::UInt128(UInt128),
+            Token::USize => Type::USize(USize),
             Token::I8 => Type::Int8(Int8),
             Token::I16 => Type::Int16(Int16),
             Token::I32 => Type::Int32(Int32),
@@ -353,6 +354,7 @@ impl Parser<'_, '_> {
             | Token::U32
             | Token::U64
             | Token::U128
+            | Token::USize
             | Token::I8
             | Token::I16
             | Token::I32
