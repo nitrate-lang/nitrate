@@ -314,7 +314,7 @@ pub enum Value {
 
     Unary {
         op: UnaryOp,
-        expr: ValueId,
+        operand: ValueId,
     },
 
     FieldAccess {

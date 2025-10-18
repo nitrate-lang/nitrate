@@ -382,7 +382,7 @@ impl HirEvaluate for Value {
                 }
             }
 
-            Value::Unary { op, expr } => {
+            Value::Unary { op, operand: expr } => {
                 let operand = Lit::try_from(ctx.store[expr].borrow().evaluate(ctx)?)
                     .map_err(|_| Unwind::TypeError)?;
 

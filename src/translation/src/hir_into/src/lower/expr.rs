@@ -406,39 +406,39 @@ impl Ast2Hir for ast::UnaryExpr {
     type Hir = Value;
 
     fn ast2hir(self, ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
-        let expr = self.operand.ast2hir(ctx, log)?;
+        let operand = self.operand.ast2hir(ctx, log)?;
 
         match self.operator {
             UnaryExprOp::Add => Ok(Value::Unary {
                 op: UnaryOp::Add,
-                expr: expr.into_id(ctx.store()),
+                operand: operand.into_id(ctx.store()),
             }),
 
             UnaryExprOp::Sub => Ok(Value::Unary {
                 op: UnaryOp::Sub,
-                expr: expr.into_id(ctx.store()),
+                operand: operand.into_id(ctx.store()),
             }),
 
             UnaryExprOp::LogicNot => Ok(Value::Unary {
                 op: UnaryOp::LogicNot,
-                expr: expr.into_id(ctx.store()),
+                operand: operand.into_id(ctx.store()),
             }),
 
             UnaryExprOp::BitNot => Ok(Value::Unary {
                 op: UnaryOp::BitNot,
-                expr: expr.into_id(ctx.store()),
+                operand: operand.into_id(ctx.store()),
             }),
 
             UnaryExprOp::Deref => Ok(Value::Deref {
-                place: expr.into_id(ctx.store()),
+                place: operand.into_id(ctx.store()),
             }),
 
             UnaryExprOp::Borrow => Ok(Value::Borrow {
                 mutable: false,
-                place: expr.into_id(ctx.store()),
+                place: operand.into_id(ctx.store()),
             }),
 
-            UnaryExprOp::Typeof => match get_type(&expr, ctx.store()) {
+            UnaryExprOp::Typeof => match get_type(&operand, ctx.store()) {
                 Ok(t) => {
                     let encoded = match metatype_encode(ctx, t) {
                         Ok(v) => v,

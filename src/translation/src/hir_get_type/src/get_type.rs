@@ -93,7 +93,7 @@ pub fn get_type(value: &Value, store: &Store) -> Result<Type, TypeInferenceError
             | BinaryOp::Ne => Ok(Type::Bool),
         },
 
-        Value::Unary { op, expr } => match op {
+        Value::Unary { op, operand: expr } => match op {
             UnaryOp::Add | UnaryOp::Sub | UnaryOp::BitNot => get_type(&store[expr].borrow(), store),
             UnaryOp::LogicNot => Ok(Type::Bool),
         },

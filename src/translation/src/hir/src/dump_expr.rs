@@ -149,7 +149,7 @@ impl Dump for Value {
                 write!(o, ")")
             }
 
-            Value::Unary { op, expr } => {
+            Value::Unary { op, operand: expr } => {
                 write!(
                     o,
                     "({} ",
