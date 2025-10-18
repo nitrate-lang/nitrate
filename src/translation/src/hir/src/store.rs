@@ -11,6 +11,12 @@ macro_rules! impl_dedup_store {
         #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
         pub struct $handle_name(NonZeroU32);
 
+        impl $handle_name {
+            pub fn as_usize(&self) -> usize {
+                self.0.get() as usize
+            }
+        }
+
         #[derive(Debug)]
         pub struct $store_name {
             bimap: RwLock<BiMap<Arc<$item_name>, $handle_name>>,
@@ -74,6 +80,12 @@ macro_rules! impl_store_mut {
     ($handle_name:ident, $item_name:ident, $store_name:ident) => {
         #[derive(Debug, Clone, Serialize, Deserialize)]
         pub struct $handle_name(NonZeroU32);
+
+        impl $handle_name {
+            pub fn as_usize(&self) -> usize {
+                self.0.get() as usize
+            }
+        }
 
         #[derive(Debug)]
         pub struct $store_name {

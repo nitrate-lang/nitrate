@@ -396,7 +396,8 @@ pub enum Value {
     },
 
     Symbol {
-        symbol: SymbolId,
+        name: IString,
+        link: Option<SymbolId>,
     },
 }
 

@@ -164,7 +164,10 @@ impl Dump for Value {
                 write!(o, ")")
             }
 
-            Value::Symbol { symbol } => ctx.store[symbol].borrow().dump_nocycle(ctx, o),
+            Value::Symbol { name, link } => match link {
+                Some(link) => write!(o, "sym[{}] `{}`", link.as_usize(), name),
+                None => write!(o, "sym[?] `{}`", name),
+            },
 
             Value::FieldAccess { expr, field } => {
                 write!(o, "(")?;
@@ -294,11 +297,11 @@ impl Dump for Value {
                         write!(o, ", ")?;
                     }
 
-                    ctx.store[capture].borrow().dump_nocycle(ctx, o)?;
+                    capture.dump_nocycle(ctx, o)?;
                 }
                 write!(o, "] ")?;
 
-                ctx.store[callee].borrow().dump(ctx, o)
+                callee.dump(ctx, o)
             }
 
             Value::Call { callee, arguments } => {

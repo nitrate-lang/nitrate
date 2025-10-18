@@ -401,7 +401,7 @@ impl HirEvaluate for Value {
                 }
             }
 
-            Value::Symbol { symbol: _ } => {
+            Value::Symbol { name: _, link: _ } => {
                 // TODO: evaluate symbol expressions
                 todo!()
             }

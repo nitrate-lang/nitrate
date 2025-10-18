@@ -9,6 +9,7 @@ pub enum TypeInferenceError {
     IndexAccessOnNonCollection,
     CalleeIsNotFunctionType,
     TraitHasNoType,
+    UnresolvedSymbol,
 }
 
 pub fn get_type(value: &Value, store: &Store) -> Result<Type, TypeInferenceError> {
@@ -222,22 +223,25 @@ pub fn get_type(value: &Value, store: &Store) -> Result<Type, TypeInferenceError
             Err(TypeInferenceError::CalleeIsNotFunctionType)
         }
 
-        Value::Symbol { symbol } => match &*store[symbol].borrow() {
-            Symbol::GlobalVariable(glb) => Ok(store[&store[glb].borrow().ty].clone()),
-            Symbol::LocalVariable(loc) => Ok(store[&store[loc].borrow().ty].clone()),
-            Symbol::Trait(_) => Err(TypeInferenceError::TraitHasNoType),
-            Symbol::Parameter(param) => Ok(store[&store[param].borrow().ty].clone()),
-            Symbol::Function(function) => {
-                let function = &store[function].borrow();
-                Ok(Type::Function {
-                    function_type: FunctionType {
-                        attributes: function.attributes.to_owned(),
-                        params: function.parameters.to_owned(),
-                        return_type: function.return_type.to_owned(),
-                    }
-                    .into_id(store),
-                })
-            }
+        Value::Symbol { name: _, link } => match link {
+            None => Err(TypeInferenceError::UnresolvedSymbol),
+            Some(symbol) => match &*store[symbol].borrow() {
+                Symbol::GlobalVariable(glb) => Ok(store[&store[glb].borrow().ty].clone()),
+                Symbol::LocalVariable(loc) => Ok(store[&store[loc].borrow().ty].clone()),
+                Symbol::Trait(_) => Err(TypeInferenceError::TraitHasNoType),
+                Symbol::Parameter(param) => Ok(store[&store[param].borrow().ty].clone()),
+                Symbol::Function(function) => {
+                    let function = &store[function].borrow();
+                    Ok(Type::Function {
+                        function_type: FunctionType {
+                            attributes: function.attributes.to_owned(),
+                            params: function.parameters.to_owned(),
+                            return_type: function.return_type.to_owned(),
+                        }
+                        .into_id(store),
+                    })
+                }
+            },
         },
     }
 }

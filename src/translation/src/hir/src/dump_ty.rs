@@ -334,7 +334,10 @@ impl Dump for Type {
                 ctx.store[to].dump(ctx, o)
             }
 
-            Type::Symbol { name, link: _ } => write!(o, "`{name}`"),
+            Type::Symbol { name, link } => match link {
+                Some(link) => write!(o, "sym[{}] `{}`", link.as_usize(), name),
+                None => write!(o, "sym[?] `{}`", name),
+            },
 
             Type::InferredFloat => write!(o, "?f"),
             Type::InferredInteger => write!(o, "?u"),
