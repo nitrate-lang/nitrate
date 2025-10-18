@@ -1,4 +1,4 @@
-use crate::prelude::*;
+use crate::{dump::write_indent, prelude::*};
 
 impl Dump for StructAttribute {
     fn dump(
@@ -59,13 +59,13 @@ impl Dump for StructType {
             write!(o, "{{\n")?;
             ctx.indent += 1;
             for (name, field_type) in &self.fields {
-                self.write_indent(ctx, o)?;
+                write_indent(ctx, o)?;
                 write!(o, "{name}: ")?;
                 ctx.store[field_type].dump(ctx, o)?;
                 write!(o, ",\n")?;
             }
             ctx.indent -= 1;
-            self.write_indent(ctx, o)?;
+            write_indent(ctx, o)?;
             write!(o, "}}")
         }
     }
@@ -96,13 +96,13 @@ impl Dump for EnumType {
             write!(o, "{{\n")?;
             ctx.indent += 1;
             for (name, variant_type) in &self.variants {
-                self.write_indent(ctx, o)?;
+                write_indent(ctx, o)?;
                 write!(o, "{name}: ")?;
                 ctx.store[variant_type].dump(ctx, o)?;
                 write!(o, ",\n")?;
             }
             ctx.indent -= 1;
-            self.write_indent(ctx, o)?;
+            write_indent(ctx, o)?;
             write!(o, "}}")
         }
     }
@@ -186,7 +186,7 @@ impl Dump for Type {
                     for (name, field_type) in fields {
                         ctx.indent += 1;
 
-                        self.write_indent(ctx, o)?;
+                        write_indent(ctx, o)?;
                         write!(o, "{name}: ")?;
                         ctx.store[field_type].dump(ctx, o)?;
                         write!(o, ",\n")?;
@@ -194,7 +194,7 @@ impl Dump for Type {
                         ctx.indent -= 1;
                     }
 
-                    self.write_indent(ctx, o)?;
+                    write_indent(ctx, o)?;
                     write!(o, "}}")
                 }
             }
@@ -226,7 +226,7 @@ impl Dump for Type {
                     for (name, variant_type) in variants {
                         ctx.indent += 1;
 
-                        self.write_indent(ctx, o)?;
+                        write_indent(ctx, o)?;
                         write!(o, "{name}: ")?;
                         ctx.store[variant_type].dump(ctx, o)?;
                         write!(o, ",\n")?;
@@ -234,7 +234,7 @@ impl Dump for Type {
                         ctx.indent -= 1;
                     }
 
-                    self.write_indent(ctx, o)?;
+                    write_indent(ctx, o)?;
                     write!(o, "}}")
                 }
             }

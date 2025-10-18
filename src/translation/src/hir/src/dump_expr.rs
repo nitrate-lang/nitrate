@@ -1,4 +1,4 @@
-use crate::prelude::*;
+use crate::{dump::write_indent, prelude::*};
 
 impl Dump for Block {
     fn dump(
@@ -19,14 +19,14 @@ impl Dump for Block {
             for expr in &self.elements {
                 ctx.indent += 1;
 
-                self.write_indent(ctx, o)?;
+                write_indent(ctx, o)?;
                 expr.dump(ctx, o)?;
                 write!(o, ";\n")?;
 
                 ctx.indent -= 1;
             }
 
-            self.write_indent(ctx, o)?;
+            write_indent(ctx, o)?;
             write!(o, "}}")
         }
     }

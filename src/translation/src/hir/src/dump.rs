@@ -24,20 +24,19 @@ pub trait Dump {
         o: &mut dyn std::fmt::Write,
     ) -> Result<(), std::fmt::Error>;
 
-    fn write_indent(
-        &self,
-        ctx: &DumpContext,
-        o: &mut dyn std::fmt::Write,
-    ) -> Result<(), std::fmt::Error> {
-        for _ in 0..ctx.indent {
-            write!(o, "{}", ctx.indent_str)?;
-        }
-        Ok(())
-    }
-
     fn dump_to_string(&self, ctx: &mut DumpContext) -> String {
         let mut s = String::new();
         self.dump(ctx, &mut s).expect("Failed to dump");
         s
     }
+}
+
+pub(crate) fn write_indent(
+    ctx: &DumpContext,
+    o: &mut dyn std::fmt::Write,
+) -> Result<(), std::fmt::Error> {
+    for _ in 0..ctx.indent {
+        write!(o, "{}", ctx.indent_str)?;
+    }
+    Ok(())
 }

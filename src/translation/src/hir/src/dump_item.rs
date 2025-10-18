@@ -1,4 +1,6 @@
-use crate::prelude::*;
+use std::collections::BTreeSet;
+
+use crate::{dump::write_indent, prelude::*};
 
 impl Dump for Visibility {
     fn dump(
@@ -12,6 +14,25 @@ impl Dump for Visibility {
             Visibility::Pub => write!(o, "pub"),
         }
     }
+}
+
+fn dump_attributes<T: Dump>(
+    attributes: &BTreeSet<T>,
+    ctx: &mut DumpContext,
+    o: &mut dyn std::fmt::Write,
+) -> Result<(), std::fmt::Error> {
+    if !attributes.is_empty() {
+        write!(o, "[\n")?;
+
+        for attr in attributes {
+            write_indent(ctx, o)?;
+            attr.dump(ctx, o)?;
+            write!(o, ",\n")?;
+        }
+        write!(o, "] ")?;
+    }
+
+    Ok(())
 }
 
 impl Dump for GlobalVariableAttribute {
@@ -195,12 +216,12 @@ impl Dump for FunctionId {
             ctx.indent += 1;
 
             for param in this.parameters.iter() {
-                self.write_indent(ctx, o)?;
+                write_indent(ctx, o)?;
                 param.dump(ctx, o)?;
                 write!(o, ",\n")?;
             }
             ctx.indent -= 1;
-            self.write_indent(ctx, o)?;
+            write_indent(ctx, o)?;
             write!(o, ")")?;
         }
 
@@ -232,14 +253,14 @@ impl Dump for TraitId {
 
         for method in &this.methods {
             ctx.indent += 1;
-            self.write_indent(ctx, o)?;
+            write_indent(ctx, o)?;
             method.dump(ctx, o)?;
             write!(o, "\n")?;
             ctx.indent -= 1;
         }
 
         ctx.indent -= 1;
-        self.write_indent(ctx, o)?;
+        write_indent(ctx, o)?;
         write!(o, "}}")
     }
 }
@@ -266,17 +287,7 @@ impl Dump for Module {
 
         write!(o, " mod ")?;
 
-        if !self.attributes.is_empty() {
-            write!(o, "[")?;
-            for (i, attr) in self.attributes.iter().enumerate() {
-                if i != 0 {
-                    write!(o, ", ")?;
-                }
-
-                attr.dump(ctx, o)?;
-            }
-            write!(o, "] ")?;
-        }
+        dump_attributes(&self.attributes, ctx, o)?;
 
         if let Some(name) = &self.name {
             write!(o, "`{}` ", name)?;
@@ -287,17 +298,21 @@ impl Dump for Module {
         } else {
             write!(o, "{{\n")?;
 
-            for item in &self.items {
+            for (i, item) in self.items.iter().enumerate() {
+                if i != 0 {
+                    write!(o, "\n")?;
+                }
+
                 ctx.indent += 1;
 
-                self.write_indent(ctx, o)?;
+                write_indent(ctx, o)?;
                 item.dump(ctx, o)?;
                 write!(o, "\n")?;
 
                 ctx.indent -= 1;
             }
 
-            self.write_indent(ctx, o)?;
+            write_indent(ctx, o)?;
             write!(o, "}}")
         }
     }
