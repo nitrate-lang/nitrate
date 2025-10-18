@@ -1,16 +1,16 @@
-use crate::{lower::Ast2Hir, passover::passover_item};
+use crate::{lower::Ast2Hir, passover::passover_module};
 use nitrate_diagnosis::CompilerLog;
 use nitrate_hir::hir::{self, HirCtx};
 use nitrate_parsetree::ast;
 
 pub fn astmod2hir(
-    module: ast::Module,
+    mut module: ast::Module,
     ctx: &mut HirCtx,
     log: &CompilerLog,
 ) -> Result<hir::Module, ()> {
-    for item in &module.items {
-        passover_item(item, ctx, log);
-    }
+    passover_module(&mut module, ctx, log);
+    let hir_module = module.ast2hir(ctx, log);
 
-    module.ast2hir(ctx, log)
+    println!("ctx = {:#?}", ctx);
+    hir_module
 }

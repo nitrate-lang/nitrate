@@ -1,7 +1,7 @@
 use crate::{
+    ast::{Block, Expr},
     expr::{AttributeList, TypeArgument},
     item::{Enum, FuncParams, Mutability, Struct, TypeAlias},
-    ast::{Block, Expr},
     tag::{LifetimeNameId, OpaqueTypeNameId},
 };
 
@@ -229,6 +229,183 @@ impl std::fmt::Debug for Type {
             Type::LatentType(e) => e.fmt(f),
             Type::Lifetime(e) => e.fmt(f),
             Type::Parentheses(e) => e.fmt(f),
+        }
+    }
+}
+
+impl Type {
+    pub fn as_bool(self) -> Option<Bool> {
+        match self {
+            Type::Bool(b) => Some(b),
+            _ => None,
+        }
+    }
+
+    pub fn as_uint8(self) -> Option<UInt8> {
+        match self {
+            Type::UInt8(b) => Some(b),
+            _ => None,
+        }
+    }
+
+    pub fn as_uint16(self) -> Option<UInt16> {
+        match self {
+            Type::UInt16(b) => Some(b),
+            _ => None,
+        }
+    }
+
+    pub fn as_uint32(self) -> Option<UInt32> {
+        match self {
+            Type::UInt32(b) => Some(b),
+            _ => None,
+        }
+    }
+
+    pub fn as_uint64(self) -> Option<UInt64> {
+        match self {
+            Type::UInt64(b) => Some(b),
+            _ => None,
+        }
+    }
+
+    pub fn as_uint128(self) -> Option<UInt128> {
+        match self {
+            Type::UInt128(b) => Some(b),
+            _ => None,
+        }
+    }
+
+    pub fn as_int8(self) -> Option<Int8> {
+        match self {
+            Type::Int8(b) => Some(b),
+            _ => None,
+        }
+    }
+
+    pub fn as_int16(self) -> Option<Int16> {
+        match self {
+            Type::Int16(b) => Some(b),
+            _ => None,
+        }
+    }
+
+    pub fn as_int32(self) -> Option<Int32> {
+        match self {
+            Type::Int32(b) => Some(b),
+            _ => None,
+        }
+    }
+
+    pub fn as_int64(self) -> Option<Int64> {
+        match self {
+            Type::Int64(b) => Some(b),
+            _ => None,
+        }
+    }
+
+    pub fn as_int128(self) -> Option<Int128> {
+        match self {
+            Type::Int128(b) => Some(b),
+            _ => None,
+        }
+    }
+
+    pub fn as_float32(self) -> Option<Float32> {
+        match self {
+            Type::Float32(b) => Some(b),
+            _ => None,
+        }
+    }
+
+    pub fn as_float64(self) -> Option<Float64> {
+        match self {
+            Type::Float64(b) => Some(b),
+            _ => None,
+        }
+    }
+
+    pub fn as_infer_type(self) -> Option<InferType> {
+        match self {
+            Type::InferType(b) => Some(b),
+            _ => None,
+        }
+    }
+
+    pub fn as_type_path(self) -> Option<TypePath> {
+        match self {
+            Type::TypePath(b) => Some(*b),
+            _ => None,
+        }
+    }
+
+    pub fn as_refinement_type(self) -> Option<RefinementType> {
+        match self {
+            Type::RefinementType(b) => Some(*b),
+            _ => None,
+        }
+    }
+
+    pub fn as_tuple_type(self) -> Option<TupleType> {
+        match self {
+            Type::TupleType(b) => Some(*b),
+            _ => None,
+        }
+    }
+
+    pub fn as_array_type(self) -> Option<ArrayType> {
+        match self {
+            Type::ArrayType(b) => Some(*b),
+            _ => None,
+        }
+    }
+
+    pub fn as_slice_type(self) -> Option<SliceType> {
+        match self {
+            Type::SliceType(b) => Some(*b),
+            _ => None,
+        }
+    }
+
+    pub fn as_function_type(self) -> Option<FunctionType> {
+        match self {
+            Type::FunctionType(b) => Some(*b),
+            _ => None,
+        }
+    }
+
+    pub fn as_reference_type(self) -> Option<ReferenceType> {
+        match self {
+            Type::ReferenceType(b) => Some(*b),
+            _ => None,
+        }
+    }
+
+    pub fn as_opaque_type(self) -> Option<OpaqueType> {
+        match self {
+            Type::OpaqueType(b) => Some(b),
+            _ => None,
+        }
+    }
+
+    pub fn as_latent_type(self) -> Option<LatentType> {
+        match self {
+            Type::LatentType(b) => Some(*b),
+            _ => None,
+        }
+    }
+
+    pub fn as_lifetime(self) -> Option<Lifetime> {
+        match self {
+            Type::Lifetime(b) => Some(*b),
+            _ => None,
+        }
+    }
+
+    pub fn as_parentheses(self) -> Option<TypeParentheses> {
+        match self {
+            Type::Parentheses(b) => Some(*b),
+            _ => None,
         }
     }
 }

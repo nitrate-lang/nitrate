@@ -1,5 +1,5 @@
-use crate::item::{Enum, Function, Struct, Trait, TypeAlias, Variable};
 use crate::ast::{FuncParam, Type};
+use crate::item::{Enum, Function, Struct, Trait, TypeAlias, Variable};
 use crate::tag::{ArgNameId, LabelNameId, StringLiteralId, StructFieldNameId, VariableNameId};
 use crate::ty::TypePath;
 
@@ -203,6 +203,29 @@ pub enum BlockItem {
     Variable(Arc<RwLock<Variable>>),
     Expr(Expr),
     Stmt(Expr),
+}
+
+impl BlockItem {
+    pub fn as_variable(self) -> Option<Arc<RwLock<Variable>>> {
+        match self {
+            BlockItem::Variable(v) => Some(v),
+            _ => None,
+        }
+    }
+
+    pub fn as_expr(self) -> Option<Expr> {
+        match self {
+            BlockItem::Expr(e) => Some(e),
+            _ => None,
+        }
+    }
+
+    pub fn as_stmt(self) -> Option<Expr> {
+        match self {
+            BlockItem::Stmt(s) => Some(s),
+            _ => None,
+        }
+    }
 }
 
 #[skip_serializing_none]
@@ -428,6 +451,197 @@ impl std::fmt::Debug for Expr {
             Expr::Await(e) => e.fmt(f),
             Expr::FunctionCall(e) => e.fmt(f),
             Expr::MethodCall(e) => e.fmt(f),
+        }
+    }
+}
+
+impl Expr {
+    pub fn as_parentheses(self) -> Option<ExprParentheses> {
+        match self {
+            Expr::Parentheses(e) => Some(*e),
+            _ => None,
+        }
+    }
+
+    pub fn as_boolean(self) -> Option<BooleanLit> {
+        match self {
+            Expr::Boolean(e) => Some(e),
+            _ => None,
+        }
+    }
+
+    pub fn as_integer(self) -> Option<IntegerLit> {
+        match self {
+            Expr::Integer(e) => Some(*e),
+            _ => None,
+        }
+    }
+
+    pub fn as_float(self) -> Option<FloatLit> {
+        match self {
+            Expr::Float(e) => Some(e),
+            _ => None,
+        }
+    }
+
+    pub fn as_string(self) -> Option<StringLit> {
+        match self {
+            Expr::String(e) => Some(e),
+            _ => None,
+        }
+    }
+
+    pub fn as_bstring(self) -> Option<BStringLit> {
+        match self {
+            Expr::BString(e) => Some(*e),
+            _ => None,
+        }
+    }
+
+    pub fn as_type_info(self) -> Option<TypeInfo> {
+        match self {
+            Expr::TypeInfo(e) => Some(*e),
+            _ => None,
+        }
+    }
+
+    pub fn as_list(self) -> Option<List> {
+        match self {
+            Expr::List(e) => Some(*e),
+            _ => None,
+        }
+    }
+
+    pub fn as_tuple(self) -> Option<Tuple> {
+        match self {
+            Expr::Tuple(e) => Some(*e),
+            _ => None,
+        }
+    }
+
+    pub fn as_struct_init(self) -> Option<StructInit> {
+        match self {
+            Expr::StructInit(e) => Some(*e),
+            _ => None,
+        }
+    }
+
+    pub fn as_unary_expr(self) -> Option<UnaryExpr> {
+        match self {
+            Expr::UnaryExpr(e) => Some(*e),
+            _ => None,
+        }
+    }
+
+    pub fn as_bin_expr(self) -> Option<BinExpr> {
+        match self {
+            Expr::BinExpr(e) => Some(*e),
+            _ => None,
+        }
+    }
+
+    pub fn as_cast(self) -> Option<Cast> {
+        match self {
+            Expr::Cast(e) => Some(*e),
+            _ => None,
+        }
+    }
+
+    pub fn as_block(self) -> Option<Block> {
+        match self {
+            Expr::Block(e) => Some(*e),
+            _ => None,
+        }
+    }
+
+    pub fn as_closure(self) -> Option<Closure> {
+        match self {
+            Expr::Closure(e) => Some(*e),
+            _ => None,
+        }
+    }
+
+    pub fn as_path(self) -> Option<ExprPath> {
+        match self {
+            Expr::Path(e) => Some(*e),
+            _ => None,
+        }
+    }
+
+    pub fn as_index_access(self) -> Option<IndexAccess> {
+        match self {
+            Expr::IndexAccess(e) => Some(*e),
+            _ => None,
+        }
+    }
+
+    pub fn as_if(self) -> Option<If> {
+        match self {
+            Expr::If(e) => Some(*e),
+            _ => None,
+        }
+    }
+
+    pub fn as_while(self) -> Option<WhileLoop> {
+        match self {
+            Expr::While(e) => Some(*e),
+            _ => None,
+        }
+    }
+
+    pub fn as_match(self) -> Option<Match> {
+        match self {
+            Expr::Match(e) => Some(*e),
+            _ => None,
+        }
+    }
+
+    pub fn as_break(self) -> Option<Break> {
+        match self {
+            Expr::Break(e) => Some(*e),
+            _ => None,
+        }
+    }
+
+    pub fn as_continue(self) -> Option<Continue> {
+        match self {
+            Expr::Continue(e) => Some(*e),
+            _ => None,
+        }
+    }
+
+    pub fn as_return(self) -> Option<Return> {
+        match self {
+            Expr::Return(e) => Some(*e),
+            _ => None,
+        }
+    }
+
+    pub fn as_for(self) -> Option<ForEach> {
+        match self {
+            Expr::For(e) => Some(*e),
+            _ => None,
+        }
+    }
+
+    pub fn as_await(self) -> Option<Await> {
+        match self {
+            Expr::Await(e) => Some(*e),
+            _ => None,
+        }
+    }
+
+    pub fn as_function_call(self) -> Option<FunctionCall> {
+        match self {
+            Expr::FunctionCall(e) => Some(*e),
+            _ => None,
+        }
+    }
+
+    pub fn as_method_call(self) -> Option<MethodCall> {
+        match self {
+            Expr::MethodCall(e) => Some(*e),
+            _ => None,
         }
     }
 }

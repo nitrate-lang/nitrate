@@ -1,6 +1,6 @@
 use crate::{
-    expr::AttributeList,
     ast::{Block, Expr, Type},
+    expr::AttributeList,
     tag::{
         EnumVariantNameId, FunctionNameId, ImportNameId, ModuleNameId, ParameterNameId,
         StructFieldNameId, TraitNameId, TypeNameId, VariableNameId,
@@ -229,6 +229,71 @@ impl std::fmt::Debug for Item {
             Item::Impl(e) => e.fmt(f),
             Item::Function(e) => e.fmt(f),
             Item::Variable(e) => e.fmt(f),
+        }
+    }
+}
+
+impl Item {
+    pub fn as_module(self) -> Option<Module> {
+        match self {
+            Item::Module(m) => Some(*m),
+            _ => None,
+        }
+    }
+
+    pub fn as_import(self) -> Option<Import> {
+        match self {
+            Item::Import(i) => Some(*i),
+            _ => None,
+        }
+    }
+
+    pub fn as_type_alias(self) -> Option<Arc<RwLock<TypeAlias>>> {
+        match self {
+            Item::TypeAlias(t) => Some(t),
+            _ => None,
+        }
+    }
+
+    pub fn as_struct(self) -> Option<Arc<RwLock<Struct>>> {
+        match self {
+            Item::Struct(s) => Some(s),
+            _ => None,
+        }
+    }
+
+    pub fn as_enum(self) -> Option<Arc<RwLock<Enum>>> {
+        match self {
+            Item::Enum(e) => Some(e),
+            _ => None,
+        }
+    }
+
+    pub fn as_trait(self) -> Option<Arc<RwLock<Trait>>> {
+        match self {
+            Item::Trait(t) => Some(t),
+            _ => None,
+        }
+    }
+
+    pub fn as_impl(self) -> Option<Impl> {
+        match self {
+            Item::Impl(i) => Some(*i),
+            _ => None,
+        }
+    }
+
+    pub fn as_function(self) -> Option<Arc<RwLock<Function>>> {
+        match self {
+            Item::Function(f) => Some(f),
+            _ => None,
+        }
+    }
+
+    pub fn as_variable(self) -> Option<Arc<RwLock<Variable>>> {
+        match self {
+            Item::Variable(v) => Some(v),
+            _ => None,
         }
     }
 }

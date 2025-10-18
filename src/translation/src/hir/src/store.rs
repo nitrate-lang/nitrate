@@ -11,6 +11,7 @@ macro_rules! impl_dedup_store {
         #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
         pub struct $handle_name(NonZeroU32);
 
+        #[derive(Debug)]
         pub struct $store_name {
             bimap: RwLock<BiMap<Arc<$item_name>, $handle_name>>,
             quick_vec: AppendOnlyVec<Arc<$item_name>>,
@@ -74,6 +75,7 @@ macro_rules! impl_store_mut {
         #[derive(Debug, Clone, Serialize, Deserialize)]
         pub struct $handle_name(NonZeroU32);
 
+        #[derive(Debug)]
         pub struct $store_name {
             vec: AppendOnlyVec<RefCell<$item_name>>,
         }
@@ -142,6 +144,7 @@ impl_dedup_store!(LiteralId, Lit, ExprLiteralStore);
 
 impl_store_mut!(BlockId, Block, ExprBlockStore);
 
+#[derive(Debug)]
 pub struct Store {
     types: TypeStore,
     struct_types: StructTypeStore,

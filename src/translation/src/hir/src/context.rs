@@ -4,6 +4,7 @@ use std::collections::{HashMap, HashSet};
 use std::num::NonZeroU32;
 use std::ops::Deref;
 
+#[derive(Debug)]
 pub struct HirCtx {
     store: Store,
     symbol_map: HashMap<QualifiedName, SymbolId>,
