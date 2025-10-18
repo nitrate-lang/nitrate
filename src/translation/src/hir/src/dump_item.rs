@@ -21,18 +21,24 @@ fn dump_attributes<T: Dump>(
     ctx: &mut DumpContext,
     o: &mut dyn std::fmt::Write,
 ) -> Result<(), std::fmt::Error> {
-    if !attributes.is_empty() {
-        write!(o, "[\n")?;
-
-        for attr in attributes {
-            write_indent(ctx, o)?;
-            attr.dump(ctx, o)?;
-            write!(o, ",\n")?;
-        }
-        write!(o, "] ")?;
+    if attributes.is_empty() {
+        return Ok(());
     }
 
-    Ok(())
+    write!(o, "[\n")?;
+
+    for attr in attributes {
+        ctx.indent += 1;
+
+        write_indent(ctx, o)?;
+        attr.dump(ctx, o)?;
+        write!(o, ",\n")?;
+
+        ctx.indent -= 1;
+    }
+
+    write_indent(ctx, o)?;
+    write!(o, "] ")
 }
 
 impl Dump for GlobalVariableAttribute {
@@ -55,27 +61,22 @@ impl Dump for GlobalVariableId {
     ) -> Result<(), std::fmt::Error> {
         let this = ctx.store[self].borrow();
 
-        this.visibility.dump(ctx, o)?;
-
-        write!(o, " global[{}] ", self.as_usize())?;
-
-        if !this.attributes.is_empty() {
-            write!(o, "[")?;
-            for (i, attr) in this.attributes.iter().enumerate() {
-                if i != 0 {
-                    write!(o, ", ")?;
-                }
-
-                attr.dump(ctx, o)?;
-            }
-            write!(o, "] ")?;
+        if this.visibility != Visibility::Sec {
+            this.visibility.dump(ctx, o)?;
+            write!(o, " ")?;
         }
+
+        write!(o, "static::{} ", self.as_usize())?;
+
+        dump_attributes(&this.attributes, ctx, o)?;
 
         if this.is_mutable {
             write!(o, "mut ")?;
         }
 
-        write!(o, "`{}`: ", this.name)?;
+        write!(o, "`{}`", this.name)?;
+
+        write!(o, ": ")?;
         ctx.store[&this.ty].dump(ctx, o)?;
 
         write!(o, " = ")?;
@@ -105,25 +106,17 @@ impl Dump for LocalVariableId {
     ) -> Result<(), std::fmt::Error> {
         let this = ctx.store[self].borrow();
 
-        write!(o, "local[{}] ", self.as_usize())?;
+        write!(o, "let::{} ", self.as_usize())?;
 
-        if !this.attributes.is_empty() {
-            write!(o, "[")?;
-            for (i, attr) in this.attributes.iter().enumerate() {
-                if i != 0 {
-                    write!(o, ", ")?;
-                }
-
-                attr.dump(ctx, o)?;
-            }
-            write!(o, "] ")?;
-        }
+        dump_attributes(&this.attributes, ctx, o)?;
 
         if this.is_mutable {
             write!(o, "mut ")?;
         }
 
-        write!(o, "`{}`: ", this.name)?;
+        write!(o, "`{}`", this.name)?;
+
+        write!(o, ": ")?;
         ctx.store[&this.ty].dump(ctx, o)?;
 
         write!(o, " = ")?;
@@ -153,25 +146,17 @@ impl Dump for ParameterId {
     ) -> Result<(), std::fmt::Error> {
         let this = ctx.store[self].borrow();
 
-        write!(o, "param[{}] ", self.as_usize())?;
+        write!(o, "param::{} ", self.as_usize())?;
 
-        if !this.attributes.is_empty() {
-            write!(o, "[")?;
-            for (i, attr) in this.attributes.iter().enumerate() {
-                if i != 0 {
-                    write!(o, ", ")?;
-                }
-
-                attr.dump(ctx, o)?;
-            }
-            write!(o, "] ")?;
-        }
+        dump_attributes(&this.attributes, ctx, o)?;
 
         if this.is_mutable {
             write!(o, "mut ")?;
         }
 
-        write!(o, "`{}`: ", this.name)?;
+        write!(o, "`{}`", this.name)?;
+
+        write!(o, ": ")?;
         ctx.store[&this.ty].dump(ctx, o)?;
 
         if let Some(default_value) = &this.default_value {
@@ -191,21 +176,14 @@ impl Dump for FunctionId {
     ) -> Result<(), std::fmt::Error> {
         let this = ctx.store[self].borrow();
 
-        this.visibility.dump(ctx, o)?;
-
-        write!(o, " fn[{}] ", self.as_usize())?;
-
-        if !this.attributes.is_empty() {
-            write!(o, "[")?;
-            for (i, attr) in this.attributes.iter().enumerate() {
-                if i != 0 {
-                    write!(o, ", ")?;
-                }
-
-                attr.dump(ctx, o)?;
-            }
-            write!(o, "] ")?;
+        if this.visibility != Visibility::Sec {
+            this.visibility.dump(ctx, o)?;
+            write!(o, " ")?;
         }
+
+        write!(o, "fn::{} ", self.as_usize())?;
+
+        dump_attributes(&this.attributes, ctx, o)?;
 
         write!(o, "{}", this.name)?;
 
@@ -213,14 +191,17 @@ impl Dump for FunctionId {
             write!(o, "()")?;
         } else {
             write!(o, "(\n")?;
-            ctx.indent += 1;
 
             for param in this.parameters.iter() {
+                ctx.indent += 1;
+
                 write_indent(ctx, o)?;
                 param.dump(ctx, o)?;
                 write!(o, ",\n")?;
+
+                ctx.indent -= 1;
             }
-            ctx.indent -= 1;
+
             write_indent(ctx, o)?;
             write!(o, ")")?;
         }
@@ -245,23 +226,33 @@ impl Dump for TraitId {
     ) -> Result<(), std::fmt::Error> {
         let this = ctx.store[self].borrow();
 
-        this.visibility.dump(ctx, o)?;
-
-        write!(o, " trait[{}] `{}` {{\n", self.as_usize(), this.name)?;
-
-        ctx.indent += 1;
-
-        for method in &this.methods {
-            ctx.indent += 1;
-            write_indent(ctx, o)?;
-            method.dump(ctx, o)?;
-            write!(o, "\n")?;
-            ctx.indent -= 1;
+        if this.visibility != Visibility::Sec {
+            this.visibility.dump(ctx, o)?;
+            write!(o, " ")?;
         }
 
-        ctx.indent -= 1;
-        write_indent(ctx, o)?;
-        write!(o, "}}")
+        write!(o, "trait::{} ", self.as_usize())?;
+
+        write!(o, "`{}`", this.name)?;
+
+        if this.methods.is_empty() {
+            write!(o, " {{}}")
+        } else {
+            write!(o, " {{\n")?;
+
+            for method in &this.methods {
+                ctx.indent += 1;
+
+                write_indent(ctx, o)?;
+                method.dump(ctx, o)?;
+                write!(o, "\n")?;
+
+                ctx.indent -= 1;
+            }
+
+            write_indent(ctx, o)?;
+            write!(o, "}}")
+        }
     }
 }
 
@@ -277,15 +268,64 @@ impl Dump for ModuleAttribute {
     }
 }
 
+impl Dump for ModuleId {
+    fn dump(
+        &self,
+        ctx: &mut DumpContext,
+        o: &mut dyn std::fmt::Write,
+    ) -> Result<(), std::fmt::Error> {
+        let this = ctx.store[self].borrow();
+
+        if this.visibility != Visibility::Sec {
+            this.visibility.dump(ctx, o)?;
+            write!(o, " ")?;
+        }
+
+        write!(o, "mod::{} ", self.as_usize())?;
+
+        dump_attributes(&this.attributes, ctx, o)?;
+
+        if let Some(name) = &this.name {
+            write!(o, "`{}` ", name)?;
+        }
+
+        if this.items.is_empty() {
+            write!(o, "{{}}")
+        } else {
+            write!(o, "{{\n")?;
+
+            for (i, item) in this.items.iter().enumerate() {
+                if i != 0 {
+                    write!(o, "\n")?;
+                }
+
+                ctx.indent += 1;
+
+                write_indent(ctx, o)?;
+                item.dump(ctx, o)?;
+                write!(o, "\n")?;
+
+                ctx.indent -= 1;
+            }
+
+            write_indent(ctx, o)?;
+            write!(o, "}}")
+        }
+    }
+}
+
 impl Dump for Module {
     fn dump(
         &self,
         ctx: &mut DumpContext,
         o: &mut dyn std::fmt::Write,
     ) -> Result<(), std::fmt::Error> {
-        self.visibility.dump(ctx, o)?;
+        if self.visibility != Visibility::Sec {
+            self.visibility.dump(ctx, o)?;
+            write!(o, " ")?;
+        }
 
-        write!(o, " mod ")?;
+        write!(o, "mod ")?;
 
         dump_attributes(&self.attributes, ctx, o)?;
 
@@ -387,7 +427,7 @@ impl Dump for Item {
         match self {
             Item::Function(f) => f.dump(ctx, o),
             Item::GlobalVariable(gv) => gv.dump(ctx, o),
-            Item::Module(m) => ctx.store[m].borrow().dump(ctx, o),
+            Item::Module(m) => m.dump(ctx, o),
         }
     }
 }
