@@ -1,6 +1,6 @@
 use nitrate_parsetree::{
     Order, ParseTreeIter, RefNode,
-    kind::{Enum, Function, Module, Struct, Trait, TypeAlias, Variable},
+    ast::{Enum, Function, Module, Struct, Trait, TypeAlias, Variable},
     tag::{ModuleNameId, intern_module_name},
 };
 

@@ -15,7 +15,7 @@ mod ty;
 mod ty_iter;
 mod ty_iter_mut;
 
-pub mod kind {
+pub mod ast {
     pub use super::expr::*;
     pub use super::ty::*;
     pub use crate::item::*;

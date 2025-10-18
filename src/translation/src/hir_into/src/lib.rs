@@ -1,12 +1,10 @@
 #![forbid(unsafe_code)]
 
 mod diagnosis;
-mod expr;
-mod item;
+mod into;
 mod lower;
+mod passover;
 mod prepare;
-mod std_meta_type;
-mod ty;
 
-pub use lower::TryIntoHir;
+pub use into::{ExprPrep, ModulePrep, TypePrep};
 pub use prepare::{from_nitrate_expression, from_nitrate_type};

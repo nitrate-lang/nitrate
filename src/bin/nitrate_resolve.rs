@@ -2,7 +2,7 @@ use nitrate_diagnosis::{CompilerLog, intern_file_id};
 use nitrate_translation::{
     TranslationError,
     parse::Parser,
-    parsetree::{PrettyPrint, PrintContext, kind::Module},
+    parsetree::{PrettyPrint, PrintContext, ast::Module},
     resolve::{ImportContext, resolve_imports, resolve_names},
     tokenize::Lexer,
 };

@@ -4,7 +4,7 @@ use nitrate_diagnosis::{CompilerLog, intern_file_id};
 use nitrate_parse::Parser;
 use nitrate_parsetree::{
     Order, ParseTreeIterMut, RefNodeMut,
-    kind::{Import, Item, Module, Visibility},
+    ast::{Import, Item, Module, Visibility},
     tag::{ImportNameId, PackageNameId, intern_module_name, intern_package_name},
 };
 use nitrate_tokenize::{Lexer, LexerError};

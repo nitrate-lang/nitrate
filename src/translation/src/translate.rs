@@ -2,7 +2,7 @@ use crate::{TranslationOptions, TranslationOptionsBuilder, options::Diagnose};
 use nitrate_diagnosis::{CompilerLog, FileId, intern_file_id};
 use nitrate_parse::Parser;
 use nitrate_parsetree::{
-    kind::{Module, Visibility},
+    ast::{Module, Visibility},
     tag::intern_module_name,
 };
 use nitrate_tokenize::Lexer;

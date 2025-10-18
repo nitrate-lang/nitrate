@@ -1,7 +1,7 @@
 use crate::{
     expr::{AttributeList, TypeArgument},
     item::{Enum, FuncParams, Mutability, Struct, TypeAlias},
-    kind::{Block, Expr},
+    ast::{Block, Expr},
     tag::{LifetimeNameId, OpaqueTypeNameId},
 };
 

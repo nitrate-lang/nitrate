@@ -2,7 +2,7 @@ use crate::Symbol;
 
 use nitrate_diagnosis::{DiagnosticGroupId, DiagnosticInfo, FormattableDiagnosticGroup, Origin};
 use nitrate_parsetree::{
-    kind::{ExprPath, TypePath},
+    ast::{ExprPath, TypePath},
     tag::ImportNameId,
 };
 

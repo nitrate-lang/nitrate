@@ -4,7 +4,7 @@ use super::parse::Parser;
 use crate::diagnosis::SyntaxErr;
 
 use nitrate_parsetree::{
-    kind::{
+    ast::{
         AssociatedItem, Enum, EnumVariant, FuncParam, FuncParams, Function, Generics, Impl, Import,
         Item, ItemPath, ItemPathSegment, ItemSyntaxError, Module, Mutability, Struct, StructField,
         Trait, TypeAlias, TypeParam, Variable, VariableKind, Visibility,

@@ -4,7 +4,7 @@ use nitrate_translation::{
     hir::prelude::*,
     hir_into::TryIntoHir,
     parse::Parser,
-    parsetree::kind::Module,
+    parsetree::ast::Module,
     resolve::{ImportContext, resolve_imports, resolve_names},
     tokenize::Lexer,
 };

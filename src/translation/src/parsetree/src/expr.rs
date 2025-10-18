@@ -1,5 +1,5 @@
 use crate::item::{Enum, Function, Struct, Trait, TypeAlias, Variable};
-use crate::kind::{FuncParam, Type};
+use crate::ast::{FuncParam, Type};
 use crate::tag::{ArgNameId, LabelNameId, StringLiteralId, StructFieldNameId, VariableNameId};
 use crate::ty::TypePath;
 

@@ -1,36 +1,307 @@
-use std::{collections::HashMap, ops::Deref};
-
-use crate::{
-    TryIntoHir,
-    diagnosis::HirErr,
-    std_meta_type::{EncodeErr, metatype_encode},
-};
+use crate::lower::lower::Ast2Hir;
+use crate::{diagnosis::HirErr, from_nitrate_expression};
 use nitrate_diagnosis::CompilerLog;
 use nitrate_hir::prelude::*;
 use nitrate_hir_get_type::get_type;
-use nitrate_parsetree::kind::{self as ast, CallArgument, UnaryExprOp};
+use nitrate_parsetree::ast::{self as ast, CallArgument, UnaryExprOp};
+use nitrate_tokenize::escape_string;
 use ordered_float::OrderedFloat;
+use std::collections::HashMap;
+use std::fmt::Write;
+use std::ops::Deref;
 
-impl TryIntoHir for ast::ExprSyntaxError {
+pub(crate) enum EncodeErr {
+    CannotEncodeInferredType,
+}
+
+fn metatype_source_encode(store: &Store, from: &Type, o: &mut dyn Write) -> Result<(), EncodeErr> {
+    // FIXME: std::meta::Type transcoding | code is stringy => perform manual testing
+    // FIXME: Update implementation in accordance with the ratified definition of std::meta::Type within standard library.
+
+    match from {
+        Type::Never => {
+            write!(o, "::std::meta::Type::Never").unwrap();
+            Ok(())
+        }
+
+        Type::Unit => {
+            write!(o, "::std::meta::Type::Unit").unwrap();
+            Ok(())
+        }
+
+        Type::Bool => {
+            write!(o, "::std::meta::Type::Bool").unwrap();
+            Ok(())
+        }
+
+        Type::U8 => {
+            write!(o, "::std::meta::Type::U8").unwrap();
+            Ok(())
+        }
+
+        Type::U16 => {
+            write!(o, "::std::meta::Type::U16").unwrap();
+            Ok(())
+        }
+
+        Type::U32 => {
+            write!(o, "::std::meta::Type::U32").unwrap();
+            Ok(())
+        }
+
+        Type::U64 => {
+            write!(o, "::std::meta::Type::U64").unwrap();
+            Ok(())
+        }
+
+        Type::U128 => {
+            write!(o, "::std::meta::Type::U128").unwrap();
+            Ok(())
+        }
+
+        Type::I8 => {
+            write!(o, "::std::meta::Type::I8").unwrap();
+            Ok(())
+        }
+
+        Type::I16 => {
+            write!(o, "::std::meta::Type::I16").unwrap();
+            Ok(())
+        }
+
+        Type::I32 => {
+            write!(o, "::std::meta::Type::I32").unwrap();
+            Ok(())
+        }
+
+        Type::I64 => {
+            write!(o, "::std::meta::Type::I64").unwrap();
+            Ok(())
+        }
+
+        Type::I128 => {
+            write!(o, "::std::meta::Type::I128").unwrap();
+            Ok(())
+        }
+
+        Type::F32 => {
+            write!(o, "::std::meta::Type::F32").unwrap();
+            Ok(())
+        }
+
+        Type::F64 => {
+            write!(o, "::std::meta::Type::F64").unwrap();
+            Ok(())
+        }
+
+        Type::USize => {
+            write!(o, "::std::meta::Type::USize").unwrap();
+            Ok(())
+        }
+
+        Type::Opaque { name } => {
+            write!(
+                o,
+                "::std::meta::Type::Opaque {{ name: String::from({}) }}",
+                escape_string(name, true)
+            )
+            .unwrap();
+            Ok(())
+        }
+
+        Type::Array { element_type, len } => {
+            write!(o, "::std::meta::Type::Array {{ element_type: ").unwrap();
+            metatype_source_encode(store, &store[element_type], o)?;
+            write!(o, ", len: {} }}", len).unwrap();
+            Ok(())
+        }
+
+        Type::Tuple { element_types } => {
+            write!(o, "::std::meta::Type::Tuple {{ element_types: Vec::from([").unwrap();
+            for elem in element_types {
+                metatype_source_encode(store, elem, o)?;
+                write!(o, ",").unwrap();
+            }
+            write!(o, "]) }}").unwrap();
+            Ok(())
+        }
+
+        Type::Slice { element_type } => {
+            write!(o, "::std::meta::Type::Slice {{ element_type: ").unwrap();
+            metatype_source_encode(store, &store[element_type], o)?;
+            write!(o, " }}").unwrap();
+            Ok(())
+        }
+
+        Type::Struct { struct_type } => {
+            let struct_type = &store[struct_type];
+            write!(o, "::std::meta::Type::Struct {{ fields: Vec::from([").unwrap();
+            for field in &struct_type.fields {
+                write!(
+                    o,
+                    "::std::meta::StructField {{ name: String::from({}), ty: ",
+                    escape_string(&field.0, true)
+                )
+                .unwrap();
+                metatype_source_encode(store, &store[field.1], o)?;
+                write!(o, " }},").unwrap();
+            }
+            write!(o, "]), attributes: Vec::from([").unwrap();
+            for attr in &struct_type.attributes {
+                match attr {
+                    StructAttribute::Packed => {
+                        write!(o, "::std::meta::StructAttribute::Packed,").unwrap()
+                    }
+                };
+                write!(o, ",").unwrap();
+            }
+            write!(o, "]) }}").unwrap();
+            Ok(())
+        }
+
+        Type::Enum { enum_type } => {
+            let enum_type = &store[enum_type];
+            write!(o, "::std::meta::Type::Enum {{ variants: Vec::from([").unwrap();
+            for variant in &enum_type.variants {
+                write!(
+                    o,
+                    "::std::meta::EnumVariant {{ name: String::from({}), ty: ",
+                    escape_string(&variant.0, true)
+                )
+                .unwrap();
+                metatype_source_encode(store, &store[variant.1], o)?;
+                write!(o, " }},").unwrap();
+            }
+            write!(o, "]), attributes: Vec::from([").unwrap();
+            for attr in &enum_type.attributes {
+                match attr {
+                    EnumAttribute::Placeholder => {
+                        write!(o, "::std::meta::EnumAttribute::Placeholder,").unwrap()
+                    }
+                };
+                write!(o, ",").unwrap();
+            }
+            write!(o, "]) }}").unwrap();
+            Ok(())
+        }
+
+        Type::Refine { base, min, max } => {
+            write!(o, "::std::meta::Type::Refine {{ base: ").unwrap();
+            metatype_source_encode(store, &store[base], o)?;
+            write!(o, ", min: {}, max: {} }}", &store[min], &store[max]).unwrap();
+            Ok(())
+        }
+
+        Type::Bitfield { base, bits } => {
+            write!(o, "::std::meta::Type::Bitfield {{ base: ").unwrap();
+            metatype_source_encode(store, &store[base], o)?;
+            write!(o, ", bits: {} }}", bits).unwrap();
+            Ok(())
+        }
+
+        Type::Function { function_type } => {
+            let function_type = &store[function_type];
+            write!(o, "::std::meta::Type::Function {{ parameters: Vec::from([").unwrap();
+            for param_id in &function_type.params {
+                let param = &store[param_id].borrow();
+                write!(
+                    o,
+                    "::std::meta::FunctionParameter {{ name: String::from({}) , ty: ",
+                    escape_string(&param.name, true)
+                )
+                .unwrap();
+                metatype_source_encode(store, &store[&param.ty], o)?;
+                write!(o, " }},").unwrap();
+            }
+            write!(o, "]), return_type: ").unwrap();
+            metatype_source_encode(store, &store[&function_type.return_type], o)?;
+            write!(o, ", attributes: Vec::from([").unwrap();
+            for attr in &function_type.attributes {
+                match attr {
+                    FunctionAttribute::Variadic => {
+                        write!(o, "::std::meta::FunctionAttribute::Variadic,").unwrap()
+                    }
+                };
+                write!(o, ",").unwrap();
+            }
+            write!(o, "]) }}").unwrap();
+            Ok(())
+        }
+
+        Type::Reference {
+            lifetime,
+            exclusive,
+            mutable,
+            to,
+        } => {
+            write!(o, "::std::meta::Type::Reference {{ lifetime: ").unwrap();
+            match lifetime {
+                Lifetime::Static => write!(o, "::std::meta::Lifetime::Static").unwrap(),
+                Lifetime::Gc => write!(o, "::std::meta::Lifetime::Gc").unwrap(),
+                Lifetime::ThreadLocal => write!(o, "::std::meta::Lifetime::ThreadLocal").unwrap(),
+                Lifetime::TaskLocal => write!(o, "::std::meta::Lifetime::TaskLocal").unwrap(),
+                Lifetime::Inferred => write!(o, "::std::meta::Lifetime::Inferred").unwrap(),
+            };
+            write!(o, ", exclusive: {}, mutable: {}, to: ", exclusive, mutable).unwrap();
+            metatype_source_encode(store, &store[to], o)?;
+            write!(o, " }}").unwrap();
+            Ok(())
+        }
+
+        Type::Pointer {
+            exclusive,
+            mutable,
+            to,
+        } => {
+            write!(
+                o,
+                "::std::meta::Type::Pointer {{ exclusive: {}, mutable: {}, to: ",
+                exclusive, mutable
+            )
+            .unwrap();
+            metatype_source_encode(store, &store[to], o)?;
+            write!(o, " }}").unwrap();
+            Ok(())
+        }
+
+        Type::TypeAlias { name: _, aliased } => metatype_source_encode(store, &store[aliased], o),
+
+        Type::InferredFloat => Err(EncodeErr::CannotEncodeInferredType),
+        Type::InferredInteger => Err(EncodeErr::CannotEncodeInferredType),
+        Type::Inferred { id: _ } => Err(EncodeErr::CannotEncodeInferredType),
+    }
+}
+
+fn metatype_encode(ctx: &mut HirCtx, from: Type) -> Result<Value, EncodeErr> {
+    let mut repr = String::new();
+    metatype_source_encode(ctx.store(), &from, &mut repr)?;
+
+    let hir_meta_object = from_nitrate_expression(ctx, &repr)
+        .expect("failed to lower auto-generated std::meta::Type expression");
+
+    Ok(hir_meta_object)
+}
+
+impl Ast2Hir for ast::ExprSyntaxError {
     type Hir = Value;
 
-    fn try_into_hir(self, _ctx: &mut HirCtx, _log: &CompilerLog) -> Result<Self::Hir, ()> {
+    fn ast2hir(self, _ctx: &mut HirCtx, _log: &CompilerLog) -> Result<Self::Hir, ()> {
         Err(())
     }
 }
 
-impl TryIntoHir for ast::ExprParentheses {
+impl Ast2Hir for ast::ExprParentheses {
     type Hir = Value;
 
-    fn try_into_hir(self, ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
-        self.inner.try_into_hir(ctx, log)
+    fn ast2hir(self, ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
+        self.inner.ast2hir(ctx, log)
     }
 }
 
-impl TryIntoHir for ast::BooleanLit {
+impl Ast2Hir for ast::BooleanLit {
     type Hir = Value;
 
-    fn try_into_hir(self, _ctx: &mut HirCtx, _log: &CompilerLog) -> Result<Self::Hir, ()> {
+    fn ast2hir(self, _ctx: &mut HirCtx, _log: &CompilerLog) -> Result<Self::Hir, ()> {
         match self.value {
             true => Ok(Value::Bool(true)),
             false => Ok(Value::Bool(false)),
@@ -38,43 +309,43 @@ impl TryIntoHir for ast::BooleanLit {
     }
 }
 
-impl TryIntoHir for ast::IntegerLit {
+impl Ast2Hir for ast::IntegerLit {
     type Hir = Value;
 
-    fn try_into_hir(self, _ctx: &mut HirCtx, _log: &CompilerLog) -> Result<Self::Hir, ()> {
+    fn ast2hir(self, _ctx: &mut HirCtx, _log: &CompilerLog) -> Result<Self::Hir, ()> {
         Ok(Value::InferredInteger(Box::new(self.value)))
     }
 }
 
-impl TryIntoHir for ast::FloatLit {
+impl Ast2Hir for ast::FloatLit {
     type Hir = Value;
 
-    fn try_into_hir(self, _ctx: &mut HirCtx, _log: &CompilerLog) -> Result<Self::Hir, ()> {
+    fn ast2hir(self, _ctx: &mut HirCtx, _log: &CompilerLog) -> Result<Self::Hir, ()> {
         Ok(Value::InferredFloat(OrderedFloat::from(*self.value)))
     }
 }
 
-impl TryIntoHir for ast::StringLit {
+impl Ast2Hir for ast::StringLit {
     type Hir = Value;
 
-    fn try_into_hir(self, _ctx: &mut HirCtx, _log: &CompilerLog) -> Result<Self::Hir, ()> {
+    fn ast2hir(self, _ctx: &mut HirCtx, _log: &CompilerLog) -> Result<Self::Hir, ()> {
         Ok(Value::StringLit(self.value.to_string().into()))
     }
 }
 
-impl TryIntoHir for ast::BStringLit {
+impl Ast2Hir for ast::BStringLit {
     type Hir = Value;
 
-    fn try_into_hir(self, _ctx: &mut HirCtx, _log: &CompilerLog) -> Result<Self::Hir, ()> {
+    fn ast2hir(self, _ctx: &mut HirCtx, _log: &CompilerLog) -> Result<Self::Hir, ()> {
         Ok(Value::BStringLit(self.value.into()))
     }
 }
 
-impl TryIntoHir for ast::TypeInfo {
+impl Ast2Hir for ast::TypeInfo {
     type Hir = Value;
 
-    fn try_into_hir(self, ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
-        let hir_type = self.the.try_into_hir(ctx, log)?;
+    fn ast2hir(self, ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
+        let hir_type = self.the.ast2hir(ctx, log)?;
         let encoded = match metatype_encode(ctx, hir_type) {
             Ok(v) => v,
             Err(EncodeErr::CannotEncodeInferredType) => {
@@ -87,13 +358,13 @@ impl TryIntoHir for ast::TypeInfo {
     }
 }
 
-impl TryIntoHir for ast::List {
+impl Ast2Hir for ast::List {
     type Hir = Value;
 
-    fn try_into_hir(self, ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
+    fn ast2hir(self, ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
         let mut elements = Vec::with_capacity(self.elements.len());
         for element in self.elements {
-            let hir_element = element.try_into_hir(ctx, log)?;
+            let hir_element = element.ast2hir(ctx, log)?;
             elements.push(hir_element);
         }
 
@@ -103,13 +374,13 @@ impl TryIntoHir for ast::List {
     }
 }
 
-impl TryIntoHir for ast::Tuple {
+impl Ast2Hir for ast::Tuple {
     type Hir = Value;
 
-    fn try_into_hir(self, ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
+    fn ast2hir(self, ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
         let mut elements = Vec::with_capacity(self.elements.len());
         for element in self.elements {
-            let hir_element = element.try_into_hir(ctx, log)?;
+            let hir_element = element.ast2hir(ctx, log)?;
             elements.push(hir_element);
         }
 
@@ -119,10 +390,10 @@ impl TryIntoHir for ast::Tuple {
     }
 }
 
-impl TryIntoHir for ast::StructInit {
+impl Ast2Hir for ast::StructInit {
     type Hir = Value;
 
-    fn try_into_hir(self, _ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
+    fn ast2hir(self, _ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
         // TODO: lower ast::StructInit to HIR
         log.report(&HirErr::UnimplementedFeature(
             "ast::Expr::StructInit".into(),
@@ -131,11 +402,11 @@ impl TryIntoHir for ast::StructInit {
     }
 }
 
-impl TryIntoHir for ast::UnaryExpr {
+impl Ast2Hir for ast::UnaryExpr {
     type Hir = Value;
 
-    fn try_into_hir(self, ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
-        let expr = self.operand.try_into_hir(ctx, log)?;
+    fn ast2hir(self, ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
+        let expr = self.operand.ast2hir(ctx, log)?;
 
         match self.operator {
             UnaryExprOp::Add => Ok(Value::Unary {
@@ -188,12 +459,12 @@ impl TryIntoHir for ast::UnaryExpr {
     }
 }
 
-impl TryIntoHir for ast::BinExpr {
+impl Ast2Hir for ast::BinExpr {
     type Hir = Value;
 
-    fn try_into_hir(self, ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
-        let left = self.left.try_into_hir(ctx, log)?.into_id(ctx.store());
-        let right = self.right.try_into_hir(ctx, log)?.into_id(ctx.store());
+    fn ast2hir(self, ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
+        let left = self.left.ast2hir(ctx, log)?.into_id(ctx.store());
+        let right = self.right.ast2hir(ctx, log)?.into_id(ctx.store());
 
         match self.operator {
             ast::BinExprOp::Add => Ok(Value::Binary {
@@ -488,17 +759,17 @@ impl TryIntoHir for ast::BinExpr {
     }
 }
 
-impl TryIntoHir for ast::Cast {
+impl Ast2Hir for ast::Cast {
     type Hir = Value;
 
-    fn try_into_hir(self, ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
+    fn ast2hir(self, ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
         fn failed_to_cast(log: &CompilerLog) -> Result<Value, ()> {
             log.report(&HirErr::IntegerCastOutOfRange);
             Err(())
         }
 
-        let expr = self.value.try_into_hir(ctx, log)?;
-        let to = self.to.try_into_hir(ctx, log)?;
+        let expr = self.value.ast2hir(ctx, log)?;
+        let to = self.to.ast2hir(ctx, log)?;
 
         match (expr, to) {
             (Value::InferredInteger(value), Type::U8) => match u8::try_from(*value) {
@@ -562,23 +833,23 @@ impl TryIntoHir for ast::Cast {
     }
 }
 
-impl TryIntoHir for ast::Block {
+impl Ast2Hir for ast::Block {
     type Hir = Block;
 
-    fn try_into_hir(self, ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
+    fn ast2hir(self, ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
         let mut elements = Vec::with_capacity(self.elements.len());
         let mut ends_with_unit = false;
 
         for element in self.elements {
             match element {
                 ast::BlockItem::Expr(e) => {
-                    let hir_element = e.try_into_hir(ctx, log)?;
+                    let hir_element = e.ast2hir(ctx, log)?;
                     elements.push(hir_element);
                     ends_with_unit = false;
                 }
 
                 ast::BlockItem::Stmt(s) => {
-                    let hir_element = s.try_into_hir(ctx, log)?;
+                    let hir_element = s.ast2hir(ctx, log)?;
                     elements.push(hir_element);
                     ends_with_unit = true;
                 }
@@ -614,50 +885,47 @@ impl TryIntoHir for ast::Block {
     }
 }
 
-impl TryIntoHir for ast::Closure {
+impl Ast2Hir for ast::Closure {
     type Hir = Value;
 
-    fn try_into_hir(self, _ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
+    fn ast2hir(self, _ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
         // TODO: lower ast::Closure to HIR
         log.report(&HirErr::UnimplementedFeature("ast::Expr::Closure".into()));
         Err(())
     }
 }
 
-impl TryIntoHir for ast::ExprPath {
+impl Ast2Hir for ast::ExprPath {
     type Hir = Value;
 
-    fn try_into_hir(self, _ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
+    fn ast2hir(self, _ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
         // TODO: lower ast::ExprPath to HIR
         log.report(&HirErr::UnimplementedFeature("ast::Expr::Path".into()));
         Err(())
     }
 }
 
-impl TryIntoHir for ast::IndexAccess {
+impl Ast2Hir for ast::IndexAccess {
     type Hir = Value;
 
-    fn try_into_hir(self, ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
-        let collection = self.collection.try_into_hir(ctx, log)?.into_id(ctx.store());
-        let index = self.index.try_into_hir(ctx, log)?.into_id(ctx.store());
+    fn ast2hir(self, ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
+        let collection = self.collection.ast2hir(ctx, log)?.into_id(ctx.store());
+        let index = self.index.ast2hir(ctx, log)?.into_id(ctx.store());
         Ok(Value::IndexAccess { collection, index })
     }
 }
 
-impl TryIntoHir for ast::If {
+impl Ast2Hir for ast::If {
     type Hir = Value;
 
-    fn try_into_hir(self, ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
-        let condition = self.condition.try_into_hir(ctx, log)?.into_id(ctx.store());
+    fn ast2hir(self, ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
+        let condition = self.condition.ast2hir(ctx, log)?.into_id(ctx.store());
 
-        let true_branch = self
-            .true_branch
-            .try_into_hir(ctx, log)?
-            .into_id(ctx.store());
+        let true_branch = self.true_branch.ast2hir(ctx, log)?.into_id(ctx.store());
 
         let false_branch = match self.false_branch {
             Some(ast::ElseIf::If(else_if)) => {
-                let else_if_value = else_if.try_into_hir(ctx, log)?;
+                let else_if_value = else_if.ast2hir(ctx, log)?;
                 let block = Block {
                     safety: BlockSafety::Safe,
                     elements: vec![else_if_value],
@@ -666,7 +934,7 @@ impl TryIntoHir for ast::If {
                 Some(block)
             }
             Some(ast::ElseIf::Block(block)) => {
-                let block = block.try_into_hir(ctx, log)?.into_id(ctx.store());
+                let block = block.ast2hir(ctx, log)?.into_id(ctx.store());
                 Some(block)
             }
             None => None,
@@ -680,57 +948,57 @@ impl TryIntoHir for ast::If {
     }
 }
 
-impl TryIntoHir for ast::WhileLoop {
+impl Ast2Hir for ast::WhileLoop {
     type Hir = Value;
 
-    fn try_into_hir(self, _ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
+    fn ast2hir(self, _ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
         let condition = match self.condition {
-            Some(cond) => cond.try_into_hir(_ctx, log)?.into_id(_ctx.store()),
+            Some(cond) => cond.ast2hir(_ctx, log)?.into_id(_ctx.store()),
             None => Value::Bool(true).into_id(_ctx.store()),
         };
 
-        let body = self.body.try_into_hir(_ctx, log)?.into_id(_ctx.store());
+        let body = self.body.ast2hir(_ctx, log)?.into_id(_ctx.store());
 
         Ok(Value::While { condition, body })
     }
 }
 
-impl TryIntoHir for ast::Match {
+impl Ast2Hir for ast::Match {
     type Hir = Value;
 
-    fn try_into_hir(self, _ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
+    fn ast2hir(self, _ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
         // TODO: lower ast::Match to HIR
         log.report(&HirErr::UnimplementedFeature("ast::Expr::Match".into()));
         Err(())
     }
 }
 
-impl TryIntoHir for ast::Break {
+impl Ast2Hir for ast::Break {
     type Hir = Value;
 
-    fn try_into_hir(self, _ctx: &mut HirCtx, _log: &CompilerLog) -> Result<Self::Hir, ()> {
+    fn ast2hir(self, _ctx: &mut HirCtx, _log: &CompilerLog) -> Result<Self::Hir, ()> {
         Ok(Value::Break {
             label: self.label.map(|l| l.to_string().into()),
         })
     }
 }
 
-impl TryIntoHir for ast::Continue {
+impl Ast2Hir for ast::Continue {
     type Hir = Value;
 
-    fn try_into_hir(self, _ctx: &mut HirCtx, _log: &CompilerLog) -> Result<Self::Hir, ()> {
+    fn ast2hir(self, _ctx: &mut HirCtx, _log: &CompilerLog) -> Result<Self::Hir, ()> {
         Ok(Value::Continue {
             label: self.label.map(|l| l.to_string().into()),
         })
     }
 }
 
-impl TryIntoHir for ast::Return {
+impl Ast2Hir for ast::Return {
     type Hir = Value;
 
-    fn try_into_hir(self, _ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
+    fn ast2hir(self, _ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
         let value = match self.value {
-            Some(v) => v.try_into_hir(_ctx, log)?.into_id(_ctx.store()),
+            Some(v) => v.ast2hir(_ctx, log)?.into_id(_ctx.store()),
             None => Value::Unit.into_id(_ctx.store()),
         };
 
@@ -738,20 +1006,20 @@ impl TryIntoHir for ast::Return {
     }
 }
 
-impl TryIntoHir for ast::ForEach {
+impl Ast2Hir for ast::ForEach {
     type Hir = Value;
 
-    fn try_into_hir(self, _ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
+    fn ast2hir(self, _ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
         // TODO: lower ast::ForEach to HIR
         log.report(&HirErr::UnimplementedFeature("ast::Expr::erFor".into()));
         Err(())
     }
 }
 
-impl TryIntoHir for ast::Await {
+impl Ast2Hir for ast::Await {
     type Hir = Value;
 
-    fn try_into_hir(self, _ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
+    fn ast2hir(self, _ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
         // TODO: lower ast::Await to HIR
         log.report(&HirErr::UnimplementedFeature("ast::Expr::Await".into()));
         Err(())
@@ -808,7 +1076,7 @@ fn construct_call(
         match name {
             Some(name) => {
                 if let Some(position) = name_to_pos.get(name.deref()) {
-                    let value = value.try_into_hir(ctx, log)?.into_id(ctx.store());
+                    let value = value.ast2hir(ctx, log)?.into_id(ctx.store());
                     place_argument(position.to_owned(), value, log, &mut call_arguments)?;
                     next_pos = find_first_hole(&call_arguments);
                 } else {
@@ -818,7 +1086,7 @@ fn construct_call(
             }
 
             None => {
-                let value = value.try_into_hir(ctx, log)?.into_id(ctx.store());
+                let value = value.ast2hir(ctx, log)?.into_id(ctx.store());
                 place_argument(next_pos, value, log, &mut call_arguments)?;
                 next_pos = find_first_hole(&call_arguments);
             }
@@ -858,11 +1126,11 @@ fn construct_call(
         .collect::<Vec<ValueId>>())
 }
 
-impl TryIntoHir for ast::FunctionCall {
+impl Ast2Hir for ast::FunctionCall {
     type Hir = Value;
 
-    fn try_into_hir(self, ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
-        let callee = self.callee.try_into_hir(ctx, log)?;
+    fn ast2hir(self, ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
+        let callee = self.callee.ast2hir(ctx, log)?;
         let callee_type = get_type(&callee, ctx.store()).map_err(|_| {
             log.report(&HirErr::TypeInferenceError);
         })?;
@@ -886,11 +1154,11 @@ impl TryIntoHir for ast::FunctionCall {
     }
 }
 
-impl TryIntoHir for ast::MethodCall {
+impl Ast2Hir for ast::MethodCall {
     type Hir = Value;
 
-    fn try_into_hir(self, ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
-        let object = self.object.try_into_hir(ctx, log)?;
+    fn ast2hir(self, ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
+        let object = self.object.ast2hir(ctx, log)?;
         let _object_type = get_type(&object, ctx.store()).map_err(|_| {
             log.report(&HirErr::TypeInferenceError);
         })?;
@@ -906,41 +1174,41 @@ impl TryIntoHir for ast::MethodCall {
     }
 }
 
-impl TryIntoHir for ast::Expr {
+impl Ast2Hir for ast::Expr {
     type Hir = Value;
 
-    fn try_into_hir(self, ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
+    fn ast2hir(self, ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
         match self {
-            ast::Expr::SyntaxError(e) => e.try_into_hir(ctx, log),
-            ast::Expr::Parentheses(e) => e.try_into_hir(ctx, log),
-            ast::Expr::Boolean(e) => e.try_into_hir(ctx, log),
-            ast::Expr::Integer(e) => e.try_into_hir(ctx, log),
-            ast::Expr::Float(e) => e.try_into_hir(ctx, log),
-            ast::Expr::String(e) => e.try_into_hir(ctx, log),
-            ast::Expr::BString(e) => e.try_into_hir(ctx, log),
-            ast::Expr::TypeInfo(e) => e.try_into_hir(ctx, log),
-            ast::Expr::List(e) => e.try_into_hir(ctx, log),
-            ast::Expr::Tuple(e) => e.try_into_hir(ctx, log),
-            ast::Expr::StructInit(e) => e.try_into_hir(ctx, log),
-            ast::Expr::UnaryExpr(e) => e.try_into_hir(ctx, log),
-            ast::Expr::BinExpr(e) => e.try_into_hir(ctx, log),
-            ast::Expr::Cast(e) => e.try_into_hir(ctx, log),
+            ast::Expr::SyntaxError(e) => e.ast2hir(ctx, log),
+            ast::Expr::Parentheses(e) => e.ast2hir(ctx, log),
+            ast::Expr::Boolean(e) => e.ast2hir(ctx, log),
+            ast::Expr::Integer(e) => e.ast2hir(ctx, log),
+            ast::Expr::Float(e) => e.ast2hir(ctx, log),
+            ast::Expr::String(e) => e.ast2hir(ctx, log),
+            ast::Expr::BString(e) => e.ast2hir(ctx, log),
+            ast::Expr::TypeInfo(e) => e.ast2hir(ctx, log),
+            ast::Expr::List(e) => e.ast2hir(ctx, log),
+            ast::Expr::Tuple(e) => e.ast2hir(ctx, log),
+            ast::Expr::StructInit(e) => e.ast2hir(ctx, log),
+            ast::Expr::UnaryExpr(e) => e.ast2hir(ctx, log),
+            ast::Expr::BinExpr(e) => e.ast2hir(ctx, log),
+            ast::Expr::Cast(e) => e.ast2hir(ctx, log),
             ast::Expr::Block(e) => Ok(Value::Block {
-                block: e.try_into_hir(ctx, log)?.into_id(ctx.store()),
+                block: e.ast2hir(ctx, log)?.into_id(ctx.store()),
             }),
-            ast::Expr::Closure(e) => e.try_into_hir(ctx, log),
-            ast::Expr::Path(e) => e.try_into_hir(ctx, log),
-            ast::Expr::IndexAccess(e) => e.try_into_hir(ctx, log),
-            ast::Expr::If(e) => e.try_into_hir(ctx, log),
-            ast::Expr::While(e) => e.try_into_hir(ctx, log),
-            ast::Expr::Match(e) => e.try_into_hir(ctx, log),
-            ast::Expr::Break(e) => e.try_into_hir(ctx, log),
-            ast::Expr::Continue(e) => e.try_into_hir(ctx, log),
-            ast::Expr::Return(e) => e.try_into_hir(ctx, log),
-            ast::Expr::For(e) => e.try_into_hir(ctx, log),
-            ast::Expr::Await(e) => e.try_into_hir(ctx, log),
-            ast::Expr::FunctionCall(e) => e.try_into_hir(ctx, log),
-            ast::Expr::MethodCall(e) => e.try_into_hir(ctx, log),
+            ast::Expr::Closure(e) => e.ast2hir(ctx, log),
+            ast::Expr::Path(e) => e.ast2hir(ctx, log),
+            ast::Expr::IndexAccess(e) => e.ast2hir(ctx, log),
+            ast::Expr::If(e) => e.ast2hir(ctx, log),
+            ast::Expr::While(e) => e.ast2hir(ctx, log),
+            ast::Expr::Match(e) => e.ast2hir(ctx, log),
+            ast::Expr::Break(e) => e.ast2hir(ctx, log),
+            ast::Expr::Continue(e) => e.ast2hir(ctx, log),
+            ast::Expr::Return(e) => e.ast2hir(ctx, log),
+            ast::Expr::For(e) => e.ast2hir(ctx, log),
+            ast::Expr::Await(e) => e.ast2hir(ctx, log),
+            ast::Expr::FunctionCall(e) => e.ast2hir(ctx, log),
+            ast::Expr::MethodCall(e) => e.ast2hir(ctx, log),
         }
     }
 }

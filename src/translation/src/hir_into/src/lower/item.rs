@@ -1,9 +1,9 @@
-use crate::{TryIntoHir, diagnosis::HirErr};
+use crate::{diagnosis::HirErr, lower::lower::Ast2Hir};
 use nitrate_diagnosis::CompilerLog;
 use nitrate_hir::prelude::*;
-use nitrate_parsetree::kind as ast;
+use nitrate_parsetree::ast;
 
-fn global_variable_try_into_hir(
+fn global_variable_ast2hir(
     glb: &ast::Variable,
     ctx: &mut HirCtx,
     log: &CompilerLog,
@@ -38,14 +38,14 @@ fn global_variable_try_into_hir(
     let ty = match glb.ty.to_owned() {
         None => ctx.create_inference_placeholder().into_id(ctx.store()),
         Some(t) => {
-            let ty_hir = t.try_into_hir(ctx, log)?.into_id(ctx.store());
+            let ty_hir = t.ast2hir(ctx, log)?.into_id(ctx.store());
             ty_hir
         }
     };
 
     let initializer = match glb.initializer.to_owned() {
         Some(expr) => {
-            let expr_hir = expr.try_into_hir(ctx, log)?.into_id(ctx.store());
+            let expr_hir = expr.ast2hir(ctx, log)?.into_id(ctx.store());
             expr_hir
         }
 
@@ -64,10 +64,10 @@ fn global_variable_try_into_hir(
     })
 }
 
-impl TryIntoHir for ast::Module {
+impl Ast2Hir for ast::Module {
     type Hir = Module;
 
-    fn try_into_hir(self, ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
+    fn ast2hir(self, ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
         let ast_attributes = self.attributes.unwrap_or_default();
         let name = match self.name {
             Some(n) => n.to_string().into(),
@@ -120,7 +120,7 @@ impl TryIntoHir for ast::Module {
 
                 ast::Item::Variable(v) => {
                     let variable = v.read().unwrap();
-                    let g = global_variable_try_into_hir(&variable, ctx, log)?.into_id(ctx.store());
+                    let g = global_variable_ast2hir(&variable, ctx, log)?.into_id(ctx.store());
                     items.push(Item::GlobalVariable(g));
                 }
 

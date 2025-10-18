@@ -1,6 +1,6 @@
 use crate::{
     expr::AttributeList,
-    kind::{Block, Expr, Type},
+    ast::{Block, Expr, Type},
     tag::{
         EnumVariantNameId, FunctionNameId, ImportNameId, ModuleNameId, ParameterNameId,
         StructFieldNameId, TraitNameId, TypeNameId, VariableNameId,

@@ -3,7 +3,7 @@ use std::sync::{Arc, RwLock};
 use crate::{
     Order, ParseTreeIterMut, RefNodeMut,
     item::{FuncParams, ItemSyntaxError},
-    kind::{
+    ast::{
         AssociatedItem, Enum, EnumVariant, FuncParam, Function, Generics, Impl, Import, Item,
         Module, Struct, StructField, Trait, TypeAlias, Variable,
     },

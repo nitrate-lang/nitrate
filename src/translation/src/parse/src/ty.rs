@@ -2,7 +2,7 @@ use super::parse::Parser;
 use crate::diagnosis::SyntaxErr;
 
 use nitrate_parsetree::{
-    kind::{
+    ast::{
         ArrayType, Bool, Exclusivity, Expr, Float32, Float64, FunctionType, Int8, Int16, Int32,
         Int64, Int128, LatentType, Lifetime, Mutability, OpaqueType, ReferenceType, RefinementType,
         SliceType, TupleType, Type, TypeParentheses, TypePath, TypePathSegment, TypeSyntaxError,

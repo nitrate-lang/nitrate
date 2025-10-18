@@ -1,4 +1,4 @@
-use crate::TryIntoHir;
+use crate::{ExprPrep, TypePrep};
 use nitrate_diagnosis::CompilerLog;
 use nitrate_hir::hir::{HirCtx, Type, Value};
 use nitrate_parse::Parser;
@@ -10,16 +10,16 @@ pub fn from_nitrate_expression(ctx: &mut HirCtx, nitrate_expr: &str) -> Result<V
         Err(LexerError::SourceTooBig) => return Err(()),
     };
 
-    let tmp_log = CompilerLog::default();
-    let mut parser = Parser::new(lexer, &tmp_log);
+    let trash = CompilerLog::default();
+    let mut parser = Parser::new(lexer, &trash);
 
     let expression = parser.parse_expression();
-    if tmp_log.error_bit() {
+    if trash.error_bit() {
         return Err(());
     }
 
-    let hir_value = expression.try_into_hir(ctx, &tmp_log)?;
-    if tmp_log.error_bit() {
+    let hir_value = ExprPrep::new(expression, &trash, ctx).try_into()?;
+    if trash.error_bit() {
         return Err(());
     }
 
@@ -32,18 +32,18 @@ pub fn from_nitrate_type(ctx: &mut HirCtx, nitrate_type: &str) -> Result<Type, (
         Err(LexerError::SourceTooBig) => return Err(()),
     };
 
-    let tmp_log = CompilerLog::default();
-    let mut parser = Parser::new(lexer, &tmp_log);
+    let trash = CompilerLog::default();
+    let mut parser = Parser::new(lexer, &trash);
 
     let expression = parser.parse_type();
-    if tmp_log.error_bit() {
+    if trash.error_bit() {
         return Err(());
     }
 
-    let hir_value = expression.try_into_hir(ctx, &tmp_log)?;
-    if tmp_log.error_bit() {
+    let hir_type = TypePrep::new(expression, &trash, ctx).try_into()?;
+    if trash.error_bit() {
         return Err(());
     }
 
-    Ok(hir_value)
+    Ok(hir_type)
 }

@@ -3,7 +3,7 @@ use crate::{ResolveIssue, Symbol, SymbolTable, build_symbol_table};
 use nitrate_diagnosis::CompilerLog;
 use nitrate_parsetree::{
     Order, ParseTreeIterMut, RefNodeMut,
-    kind::{ExprPath, ExprPathTarget, Module, TypePath, TypePathTarget},
+    ast::{ExprPath, ExprPathTarget, Module, TypePath, TypePathTarget},
 };
 
 use std::sync::Arc;
