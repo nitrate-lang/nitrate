@@ -14,4 +14,4 @@ harness = false
 nitrate_diagnosis = { path = "../../../diagnosis" }
 nitrate_token = { path = "../token" }
 log = "0.4.27"
-ordered-float = { version = "5.0.0", features = ["serde"] }
+ordered-float = { version = "5.0.0" }

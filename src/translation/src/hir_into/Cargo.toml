@@ -13,7 +13,7 @@ nitrate_hir = { path = "../hir" }
 nitrate_hir_visitor = { path = "../hir_visitor" }
 nitrate_hir_evaluate = { path = "../hir_evaluate" }
 nitrate_hir_get_type = { path = "../hir_get_type" }
-interned-string = { version = "0.3.0", features = ["serde"] }
-ordered-float = { version = "5.0.0", features = ["serde"] }
-thin-vec = { version = "0.2.14", features = ["serde"] }
+interned-string = { version = "0.3.0" }
+ordered-float = { version = "5.0.0" }
+thin-vec = { version = "0.2.14" }
 once_cell_serde = { version = "1.20.3" }
