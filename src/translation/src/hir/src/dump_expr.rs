@@ -188,9 +188,9 @@ impl Dump for Value {
                 write!(o, ")")
             }
 
-            Value::Symbol { path: name, link } => match link {
-                Some(link) => write!(o, "sym[{}] `{}`", link.as_usize(), name),
-                None => write!(o, "sym[?] `{}`", name),
+            Value::Symbol { path, link } => match link {
+                Some(link) => write!(o, "`{}`::{}", path, link.as_usize()),
+                None => write!(o, "? `{}`", path),
             },
 
             Value::FieldAccess { expr, field } => {

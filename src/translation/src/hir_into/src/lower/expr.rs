@@ -430,13 +430,8 @@ impl Ast2Hir for ast::StructInit {
             .collect::<Vec<_>>()
             .join("::");
 
-        let name = IString::from(HirCtx::join_path(ctx.current_scope(), &unqualified_path));
-
-        let struct_type = Type::Symbol {
-            path: name,
-            link: None,
-        }
-        .into_id(ctx.store());
+        let path = IString::from(HirCtx::join_path(ctx.current_scope(), &unqualified_path));
+        let struct_type = Type::Symbol { path, link: None }.into_id(ctx.store());
 
         let mut fields = Vec::with_capacity(self.fields.len());
         for field in self.fields {
