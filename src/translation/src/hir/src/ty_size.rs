@@ -51,8 +51,8 @@ pub fn get_size_of(ty: &Type, store: &Store, ptr_size: PtrSize) -> Result<u64, L
             if attributes.contains(&StructAttribute::Packed) {
                 let mut total_size = 0_u64;
 
-                for (_, field_type, _) in fields {
-                    total_size += get_size_of(&store[field_type], store, ptr_size)?;
+                for field in fields {
+                    total_size += get_size_of(&store[&field.ty], store, ptr_size)?;
                 }
 
                 return Ok(total_size);
@@ -60,8 +60,8 @@ pub fn get_size_of(ty: &Type, store: &Store, ptr_size: PtrSize) -> Result<u64, L
 
             let mut offset = 0_u64;
 
-            for (_, field_type, _) in fields {
-                let field_type = &store[field_type];
+            for field in fields {
+                let field_type = &store[&field.ty];
 
                 let field_size = get_size_of(field_type, store, ptr_size)?;
                 let field_align = get_align_of(field_type, store, ptr_size)?;

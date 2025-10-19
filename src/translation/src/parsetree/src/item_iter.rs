@@ -107,7 +107,7 @@ impl ParseTreeIter for StructField {
             attributes.depth_first_iter(f);
         }
 
-        self.field_type.depth_first_iter(f);
+        self.ty.depth_first_iter(f);
 
         if let Some(default) = &self.default_value {
             default.depth_first_iter(f);

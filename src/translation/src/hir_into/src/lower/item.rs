@@ -49,8 +49,6 @@ fn ast_typealias2hir(
 }
 
 fn ast_struct2hir(struct_def: &ast::Struct, ctx: &mut HirCtx, log: &CompilerLog) -> Result<(), ()> {
-    // TODO: implement struct lowering
-
     let visibility = match struct_def.visibility {
         Some(ast::Visibility::Public) => Visibility::Pub,
         Some(ast::Visibility::Protected) => Visibility::Pro,
@@ -71,10 +69,39 @@ fn ast_struct2hir(struct_def: &ast::Struct, ctx: &mut HirCtx, log: &CompilerLog)
         log.report(&HirErr::UnimplementedFeature("generic structs".into()));
     }
 
-    let fields = Vec::new();
-    for _field in &struct_def.fields {
-        // TODO: implement struct field lowering
-        log.report(&HirErr::UnimplementedFeature("struct fields".into()));
+    let mut field_extras = Vec::new();
+    let mut fields = Vec::new();
+
+    for field in &struct_def.fields {
+        let field_visibility = match field.visibility {
+            Some(ast::Visibility::Public) => Visibility::Pub,
+            Some(ast::Visibility::Protected) => Visibility::Pro,
+            Some(ast::Visibility::Private) | None => Visibility::Sec,
+        };
+
+        let field_attributes = BTreeSet::new();
+        if let Some(ast_attributes) = &field.attributes {
+            for _attr in ast_attributes {
+                log.report(&HirErr::UnrecognizedStructFieldAttribute);
+            }
+        }
+
+        let field_name = IString::from(field.name.to_string());
+        let field_type = field.ty.to_owned().ast2hir(ctx, log)?.into_id(ctx.store());
+
+        let field_default = match field.default_value.to_owned() {
+            Some(expr) => Some(expr.ast2hir(ctx, log)?.into_id(ctx.store())),
+            None => None,
+        };
+
+        let struct_field = StructField {
+            attributes: field_attributes,
+            name: field_name,
+            ty: field_type,
+        };
+
+        field_extras.push((field_visibility, field_default));
+        fields.push(struct_field);
     }
 
     let struct_id = StructType { attributes, fields }.into_id(ctx.store());
@@ -82,6 +109,7 @@ fn ast_struct2hir(struct_def: &ast::Struct, ctx: &mut HirCtx, log: &CompilerLog)
     let definition = TypeDefinition::StructDef(StructDef {
         visibility,
         name,
+        field_extras,
         struct_id,
     });
 

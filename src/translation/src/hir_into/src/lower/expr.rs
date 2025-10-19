@@ -165,10 +165,10 @@ fn metatype_source_encode(store: &Store, from: &Type, o: &mut dyn Write) -> Resu
                 write!(
                     o,
                     "::std::meta::StructField {{ name: String::from({}), ty: ",
-                    escape_string(&field.0, true)
+                    escape_string(&field.name, true)
                 )
                 .unwrap();
-                metatype_source_encode(store, &store[&field.1], o)?;
+                metatype_source_encode(store, &store[&field.ty], o)?;
                 write!(o, " }},").unwrap();
             }
             write!(o, "]), attributes: Vec::from([").unwrap();

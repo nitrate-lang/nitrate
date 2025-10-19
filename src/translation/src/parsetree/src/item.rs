@@ -86,7 +86,7 @@ pub struct StructField {
     pub visibility: Option<Visibility>,
     pub attributes: Option<AttributeList>,
     pub name: StructFieldNameId,
-    pub field_type: Type,
+    pub ty: Type,
     pub default_value: Option<Expr>,
 }
 

@@ -1,7 +1,7 @@
 use crate::prelude::*;
 use interned_string::IString;
 use std::cell::RefCell;
-use std::collections::{BTreeSet, HashMap, HashSet};
+use std::collections::{HashMap, HashSet};
 use std::num::NonZeroU32;
 use std::ops::Deref;
 
@@ -16,6 +16,7 @@ pub struct TypeAliasDef {
 pub struct StructDef {
     pub visibility: Visibility,
     pub name: IString,
+    pub field_extras: Vec<(Visibility, Option<ValueId>)>,
     pub struct_id: StructTypeId,
 }
 

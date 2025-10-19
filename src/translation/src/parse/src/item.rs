@@ -357,7 +357,7 @@ impl Parser<'_, '_> {
                 visibility,
                 attributes,
                 name,
-                field_type,
+                ty: field_type,
                 default_value: default,
             }
         }

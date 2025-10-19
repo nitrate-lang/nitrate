@@ -65,19 +65,14 @@ impl Dump for StructType {
         } else {
             write!(o, "{{\n")?;
 
-            for (name, field_type, field_default) in &self.fields {
+            for field in &self.fields {
                 ctx.indent += 1;
 
                 write_indent(ctx, o)?;
-                write!(o, "{name}")?;
+                write!(o, "{}", field.name)?;
 
                 write!(o, ": ")?;
-                ctx.store[field_type].dump(ctx, o)?;
-
-                if let Some(default) = field_default {
-                    write!(o, " = ")?;
-                    ctx.store[default].borrow().dump(ctx, o)?;
-                }
+                ctx.store[&field.ty].dump(ctx, o)?;
 
                 write!(o, ",\n")?;
 

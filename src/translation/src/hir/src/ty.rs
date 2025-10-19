@@ -6,21 +6,6 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::num::NonZeroU32;
 use thin_vec::ThinVec;
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub enum StructAttribute {
-    Packed,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub enum EnumAttribute {
-    Placeholder,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub enum FunctionAttribute {
-    Variadic,
-}
-
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub enum Lifetime {
     Static,
@@ -30,16 +15,41 @@ pub enum Lifetime {
     Inferred,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum StructAttribute {
+    Packed,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum StructFieldAttribute {}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
+pub struct StructField {
+    pub attributes: BTreeSet<StructFieldAttribute>,
+    pub name: IString,
+    pub ty: TypeId,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct StructType {
     pub attributes: BTreeSet<StructAttribute>,
-    pub fields: Vec<(IString, TypeId, Option<ValueId>)>,
+    pub fields: Vec<StructField>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum EnumAttribute {
+    Placeholder,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct EnumType {
     pub attributes: BTreeSet<EnumAttribute>,
     pub variants: BTreeMap<IString, TypeId>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum FunctionAttribute {
+    Variadic,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]

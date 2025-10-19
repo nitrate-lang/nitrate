@@ -1591,7 +1591,7 @@ impl PrettyPrint for StructField {
         writer.write_str(&self.name)?;
 
         writer.write_str(": ")?;
-        self.field_type.pretty_print_fmt(ctx, writer)?;
+        self.ty.pretty_print_fmt(ctx, writer)?;
 
         if let Some(default_value) = &self.default_value {
             writer.write_str(" = ")?;

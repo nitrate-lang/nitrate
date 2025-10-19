@@ -103,9 +103,9 @@ pub fn get_type(value: &Value, store: &Store) -> Result<Type, TypeInferenceError
 
             if let Type::Struct { struct_type } = get_type(expr, store)? {
                 let struct_def = &store[&struct_type];
-                let field = struct_def.fields.iter().find(|(name, _, _)| name == field);
-                if let Some((_, field_type, _)) = field {
-                    return Ok(store[field_type].clone());
+                let found_field = struct_def.fields.iter().find(|x| &x.name == field);
+                if let Some(field) = found_field {
+                    return Ok(store[&field.ty].clone());
                 }
             }
 

@@ -25,6 +25,7 @@ pub(crate) enum HirErr {
     UnrecognizedTypeAliasAttribute,
     TypeAliasMustHaveType,
     UnrecognizedStructAttribute,
+    UnrecognizedStructFieldAttribute,
 }
 
 impl FormattableDiagnosticGroup for HirErr {
@@ -58,6 +59,7 @@ impl FormattableDiagnosticGroup for HirErr {
             HirErr::UnrecognizedTypeAliasAttribute => 22,
             HirErr::TypeAliasMustHaveType => 23,
             HirErr::UnrecognizedStructAttribute => 24,
+            HirErr::UnrecognizedStructFieldAttribute => 25,
         }
     }
 
@@ -180,6 +182,11 @@ impl FormattableDiagnosticGroup for HirErr {
 
             HirErr::UnrecognizedStructAttribute => DiagnosticInfo {
                 message: "unrecognized struct attribute".to_string(),
+                origin: Origin::None,
+            },
+
+            HirErr::UnrecognizedStructFieldAttribute => DiagnosticInfo {
+                message: "unrecognized struct field attribute".to_string(),
                 origin: Origin::None,
             },
         }

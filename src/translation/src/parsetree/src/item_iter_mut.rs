@@ -107,7 +107,7 @@ impl ParseTreeIterMut for StructField {
             attributes.depth_first_iter_mut(f);
         }
 
-        self.field_type.depth_first_iter_mut(f);
+        self.ty.depth_first_iter_mut(f);
 
         if let Some(default) = &mut self.default_value {
             default.depth_first_iter_mut(f);
