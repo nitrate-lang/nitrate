@@ -21,23 +21,23 @@ pub trait HirTypeVisitor<T> {
     fn visit_f32(&mut self) -> T;
     fn visit_f64(&mut self) -> T;
     fn visit_opaque(&mut self, name: &str) -> T;
-    fn visit_array(&mut self, element_type: &TypeId, len: u64) -> T;
+    fn visit_array(&mut self, element_type: &Type, len: u64) -> T;
     fn visit_tuple(&mut self, element_types: &[TypeId]) -> T;
-    fn visit_slice(&mut self, element_type: &TypeId) -> T;
+    fn visit_slice(&mut self, element_type: &Type) -> T;
     fn visit_struct(&mut self, attrs: &BTreeSet<StructAttribute>, fields: &[StructField]) -> T;
     fn visit_enum(&mut self, attrs: &BTreeSet<EnumAttribute>, variants: &[EnumVariant]) -> T;
-    fn visit_refine(&mut self, base: &TypeId, min: &LiteralId, max: &LiteralId) -> T;
-    fn visit_bitfield(&mut self, base: &TypeId, len: u8) -> T;
+    fn visit_refine(&mut self, base: &Type, min: &LiteralId, max: &LiteralId) -> T;
+    fn visit_bitfield(&mut self, base: &Type, len: u8) -> T;
 
     fn visit_function(
         &mut self,
         attrs: &BTreeSet<FunctionAttribute>,
         params: &[ParameterId],
-        ret: &TypeId,
+        ret: &Type,
     ) -> T;
 
-    fn visit_reference(&mut self, life: &Lifetime, excl: bool, mutable: bool, to: &TypeId) -> T;
-    fn visit_pointer(&mut self, excl: bool, mutable: bool, to: &TypeId) -> T;
+    fn visit_reference(&mut self, life: &Lifetime, excl: bool, mutable: bool, to: &Type) -> T;
+    fn visit_pointer(&mut self, excl: bool, mutable: bool, to: &Type) -> T;
     fn visit_symbol(&mut self, path: &str, link: &Option<TypeId>) -> T;
     fn visit_inferred_float(&mut self) -> T;
     fn visit_inferred_integer(&mut self) -> T;
@@ -62,9 +62,9 @@ pub trait HirTypeVisitor<T> {
             Type::F32 => self.visit_f32(),
             Type::F64 => self.visit_f64(),
             Type::Opaque { name } => self.visit_opaque(name),
-            Type::Array { element_type, len } => self.visit_array(element_type, *len),
+            Type::Array { element_type, len } => self.visit_array(&store[element_type], *len),
             Type::Tuple { element_types } => self.visit_tuple(element_types),
-            Type::Slice { element_type } => self.visit_slice(element_type),
+            Type::Slice { element_type } => self.visit_slice(&store[element_type]),
 
             Type::Struct { struct_type } => {
                 let struct_type = &store[struct_type];
@@ -76,16 +76,12 @@ pub trait HirTypeVisitor<T> {
                 self.visit_enum(&enum_type.attributes, &enum_type.variants)
             }
 
-            Type::Refine { base, min, max } => self.visit_refine(base, min, max),
-            Type::Bitfield { base, bits } => self.visit_bitfield(base, *bits),
+            Type::Refine { base, min, max } => self.visit_refine(&store[base], min, max),
+            Type::Bitfield { base, bits } => self.visit_bitfield(&store[base], *bits),
 
             Type::Function { function_type } => {
-                let function_type = &store[function_type];
-                self.visit_function(
-                    &function_type.attributes,
-                    &function_type.params,
-                    &function_type.return_type,
-                )
+                let func = &store[function_type];
+                self.visit_function(&func.attributes, &func.params, &store[&func.return_type])
             }
 
             Type::Reference {
@@ -93,13 +89,13 @@ pub trait HirTypeVisitor<T> {
                 exclusive,
                 mutable,
                 to,
-            } => self.visit_reference(lifetime, *exclusive, *mutable, to),
+            } => self.visit_reference(lifetime, *exclusive, *mutable, &store[to]),
 
             Type::Pointer {
                 exclusive,
                 mutable,
                 to,
-            } => self.visit_pointer(*exclusive, *mutable, to),
+            } => self.visit_pointer(*exclusive, *mutable, &store[to]),
 
             Type::Symbol { path, link } => self.visit_symbol(path, link),
             Type::InferredFloat => self.visit_inferred_float(),
@@ -130,27 +126,27 @@ pub trait HirValueVisitor<T> {
     fn visit_bstring_lit(&mut self, value: &[u8]) -> T;
     fn visit_inferred_integer(&mut self, value: u128) -> T;
     fn visit_inferred_float(&mut self, value: OrderedFloat<f64>) -> T;
-    fn visit_struct_object(&mut self, ty: &TypeId, fields: &[(IString, ValueId)]) -> T;
-    fn visit_enum_variant(&mut self, ty: &TypeId, var: &IString, val: &ValueId) -> T;
-    fn visit_binary(&mut self, left: &ValueId, op: &BinaryOp, right: &ValueId) -> T;
-    fn visit_unary(&mut self, op: &UnaryOp, operand: &ValueId) -> T;
-    fn visit_field_access(&mut self, expr: &ValueId, field: &IString) -> T;
-    fn visit_index_access(&mut self, collection: &ValueId, index: &ValueId) -> T;
-    fn visit_assign(&mut self, place: &ValueId, value: &ValueId) -> T;
-    fn visit_deref(&mut self, place: &ValueId) -> T;
-    fn visit_cast(&mut self, expr: &ValueId, to: &TypeId) -> T;
-    fn visit_borrow(&mut self, mutable: bool, place: &ValueId) -> T;
+    fn visit_struct_object(&mut self, ty: &Type, fields: &[(IString, ValueId)]) -> T;
+    fn visit_enum_variant(&mut self, ty: &Type, var: &IString, val: &Value) -> T;
+    fn visit_binary(&mut self, left: &Value, op: &BinaryOp, right: &Value) -> T;
+    fn visit_unary(&mut self, op: &UnaryOp, operand: &Value) -> T;
+    fn visit_field_access(&mut self, expr: &Value, field: &IString) -> T;
+    fn visit_index_access(&mut self, collection: &Value, index: &Value) -> T;
+    fn visit_assign(&mut self, place: &Value, value: &Value) -> T;
+    fn visit_deref(&mut self, place: &Value) -> T;
+    fn visit_cast(&mut self, expr: &Value, to: &Type) -> T;
+    fn visit_borrow(&mut self, mutable: bool, place: &Value) -> T;
     fn visit_list(&mut self, elements: &[Value]) -> T;
     fn visit_tuple(&mut self, elements: &[Value]) -> T;
-    fn visit_if(&mut self, cond: &ValueId, true_blk: &BlockId, false_blk: &Option<BlockId>) -> T;
-    fn visit_while(&mut self, condition: &ValueId, body: &BlockId) -> T;
-    fn visit_loop(&mut self, body: &BlockId) -> T;
+    fn visit_if(&mut self, cond: &Value, true_blk: &Block, false_blk: Option<&Block>) -> T;
+    fn visit_while(&mut self, condition: &Value, body: &Block) -> T;
+    fn visit_loop(&mut self, body: &Block) -> T;
     fn visit_break(&mut self, label: &Option<IString>) -> T;
     fn visit_continue(&mut self, label: &Option<IString>) -> T;
-    fn visit_return(&mut self, value: &ValueId) -> T;
+    fn visit_return(&mut self, value: &Value) -> T;
     fn visit_block(&mut self, safety: BlockSafety, elements: &[BlockElement]) -> T;
-    fn visit_closure(&mut self, captures: &[SymbolId], callee: &FunctionId) -> T;
-    fn visit_call(&mut self, callee: &ValueId, arguments: &[ValueId]) -> T;
+    fn visit_closure(&mut self, captures: &[SymbolId], callee: &Function) -> T;
+    fn visit_call(&mut self, callee: &Value, arguments: &[ValueId]) -> T;
     fn visit_symbol(&mut self, path: &IString, link: &Option<SymbolId>) -> T;
 
     fn visit_value(&mut self, value: &Value, store: &Store) -> T {
@@ -179,44 +175,85 @@ pub trait HirValueVisitor<T> {
             Value::StructObject {
                 struct_type,
                 fields,
-            } => self.visit_struct_object(struct_type, fields),
+            } => self.visit_struct_object(&store[struct_type], fields),
 
             Value::EnumVariant {
                 enum_type,
                 variant,
                 value,
-            } => self.visit_enum_variant(enum_type, variant, value),
+            } => self.visit_enum_variant(&store[enum_type], variant, &store[value].borrow()),
 
-            Value::Binary { left, op, right } => self.visit_binary(left, op, right),
-            Value::Unary { op, operand } => self.visit_unary(op, operand),
-            Value::FieldAccess { expr, field } => self.visit_field_access(expr, field),
-            Value::IndexAccess { collection, index } => self.visit_index_access(collection, index),
-            Value::Assign { place, value } => self.visit_assign(place, value),
-            Value::Deref { place } => self.visit_deref(place),
-            Value::Cast { expr, to } => self.visit_cast(expr, to),
-            Value::Borrow { mutable, place } => self.visit_borrow(*mutable, place),
+            Value::Binary { left, op, right } => {
+                self.visit_binary(&store[left].borrow(), op, &store[right].borrow())
+            }
+
+            Value::Unary { op, operand } => self.visit_unary(op, &store[operand].borrow()),
+
+            Value::FieldAccess { expr, field } => {
+                self.visit_field_access(&store[expr].borrow(), field)
+            }
+
+            Value::IndexAccess { collection, index } => {
+                self.visit_index_access(&store[collection].borrow(), &store[index].borrow())
+            }
+
+            Value::Assign { place, value } => {
+                self.visit_assign(&store[place].borrow(), &store[value].borrow())
+            }
+
+            Value::Deref { place } => self.visit_deref(&store[place].borrow()),
+
+            Value::Cast { expr, to } => self.visit_cast(&store[expr].borrow(), &store[to]),
+
+            Value::Borrow { mutable, place } => self.visit_borrow(*mutable, &store[place].borrow()),
+
             Value::List { elements } => self.visit_list(elements),
+
             Value::Tuple { elements } => self.visit_tuple(elements),
 
             Value::If {
                 condition,
                 true_branch,
                 false_branch,
-            } => self.visit_if(condition, true_branch, false_branch),
+            } => match false_branch {
+                Some(else_blk) => self.visit_if(
+                    &store[condition].borrow(),
+                    &store[true_branch].borrow(),
+                    Some(&store[else_blk].borrow()),
+                ),
 
-            Value::While { condition, body } => self.visit_while(condition, body),
-            Value::Loop { body } => self.visit_loop(body),
+                None => self.visit_if(
+                    &store[condition].borrow(),
+                    &store[true_branch].borrow(),
+                    None,
+                ),
+            },
+
+            Value::While { condition, body } => {
+                self.visit_while(&store[condition].borrow(), &store[body].borrow())
+            }
+
+            Value::Loop { body } => self.visit_loop(&store[body].borrow()),
+
             Value::Break { label } => self.visit_break(label),
+
             Value::Continue { label } => self.visit_continue(label),
-            Value::Return { value } => self.visit_return(value),
+
+            Value::Return { value } => self.visit_return(&store[value].borrow()),
 
             Value::Block { block } => {
                 let block = &store[block].borrow();
                 self.visit_block(block.safety, &block.elements)
             }
 
-            Value::Closure { captures, callee } => self.visit_closure(captures, callee),
-            Value::Call { callee, arguments } => self.visit_call(callee, arguments),
+            Value::Closure { captures, callee } => {
+                self.visit_closure(captures, &store[callee].borrow())
+            }
+
+            Value::Call { callee, arguments } => {
+                self.visit_call(&store[callee].borrow(), arguments)
+            }
+
             Value::Symbol { path, link } => self.visit_symbol(path, link),
         }
     }
