@@ -3,7 +3,7 @@ use nitrate_translation::{
     TranslationError,
     parse::Parser,
     parsetree::{PrettyPrint, PrintContext, ast::Module},
-    resolve::{ImportContext, resolve_imports, resolve_names},
+    resolve::{ImportContext, resolve_imports, resolve_paths},
     token_lexer::Lexer,
 };
 
@@ -102,7 +102,7 @@ fn program() -> Result<(), Error> {
 
     let import_context = ImportContext::new(filename.to_path_buf());
     resolve_imports(&import_context, &mut module, &log);
-    resolve_names(&mut module, &log);
+    resolve_paths(&mut module, &log);
 
     let pretty_printed = module
         .pretty_print(&mut PrintContext::default())

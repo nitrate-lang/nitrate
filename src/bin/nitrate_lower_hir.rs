@@ -8,7 +8,7 @@ use nitrate_translation::{
     hir_into::ast_mod2hir,
     parse::Parser,
     parsetree::ast,
-    resolve::{ImportContext, resolve_imports, resolve_names},
+    resolve::{ImportContext, resolve_imports, resolve_paths},
     token_lexer::Lexer,
 };
 
@@ -110,7 +110,7 @@ fn program() -> Result<(), Error> {
 
     let import_context = ImportContext::new(filename.to_path_buf());
     resolve_imports(&import_context, &mut module, &log);
-    resolve_names(&mut module, &log);
+    resolve_paths(&mut module, &log);
 
     let mut hir_ctx = HirCtx::new(PtrSize::U64);
     let Ok(hir_module) = ast_mod2hir(module, &mut hir_ctx, &log) else {

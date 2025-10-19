@@ -93,7 +93,7 @@ fn resolve_type_path(
     false
 }
 
-pub fn resolve_names(module: &mut Module, log: &CompilerLog) {
+pub fn resolve_paths(module: &mut Module, log: &CompilerLog) {
     let symbol_set = discover_symbols(module);
     let mut scope_vec = Vec::new();
 
