@@ -106,7 +106,11 @@ impl Dump for LocalVariableId {
     ) -> Result<(), std::fmt::Error> {
         let this = ctx.store[self].borrow();
 
-        write!(o, "let::{} ", self.as_usize())?;
+        match this.kind {
+            LocalVariableKind::Stack => write!(o, "stack::{} ", self.as_usize())?,
+            LocalVariableKind::Dynamic => write!(o, "dynamic::{} ", self.as_usize())?,
+            LocalVariableKind::Static => write!(o, "static::{} ", self.as_usize())?,
+        }
 
         dump_attributes(&this.attributes, ctx, o)?;
 
@@ -119,8 +123,10 @@ impl Dump for LocalVariableId {
         write!(o, ": ")?;
         ctx.store[&this.ty].dump(ctx, o)?;
 
-        write!(o, " = ")?;
-        ctx.store[&this.initializer].borrow().dump(ctx, o)?;
+        if let Some(initializer) = &this.initializer {
+            write!(o, " = ")?;
+            ctx.store[initializer].borrow().dump(ctx, o)?;
+        }
 
         write!(o, ";")
     }

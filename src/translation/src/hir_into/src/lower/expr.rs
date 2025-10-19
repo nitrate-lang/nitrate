@@ -10,7 +10,7 @@ use nitrate_source_parse::Parser;
 use nitrate_token::escape_string;
 use nitrate_token_lexer::{Lexer, LexerError};
 use ordered_float::OrderedFloat;
-use std::collections::HashMap;
+use std::collections::{BTreeSet, HashMap};
 use std::fmt::Write;
 use std::ops::Deref;
 
@@ -886,6 +886,59 @@ impl Ast2Hir for ast::Cast {
     }
 }
 
+fn ast_localvar2hir(
+    var: &ast::Variable,
+    ctx: &mut HirCtx,
+    log: &CompilerLog,
+) -> Result<LocalVariable, ()> {
+    if var.visibility.is_some() {
+        log.report(&HirErr::LocalVariableCannotBeVisible);
+    }
+
+    let kind = match var.kind {
+        ast::VariableKind::Const => LocalVariableKind::Stack,
+        ast::VariableKind::Let => LocalVariableKind::Stack,
+        ast::VariableKind::Var => LocalVariableKind::Dynamic,
+        ast::VariableKind::Static => LocalVariableKind::Static,
+    };
+
+    let attributes = BTreeSet::new();
+    if let Some(ast_attributes) = &var.attributes {
+        for _attr in ast_attributes {
+            log.report(&HirErr::UnrecognizedLocalVariableAttribute);
+        }
+    }
+
+    let is_mutable = match var.mutability {
+        Some(ast::Mutability::Mut) => true,
+        Some(ast::Mutability::Const) | None => false,
+    };
+
+    let name = var.name.to_string().into();
+
+    let ty = match var.ty.to_owned() {
+        None => ctx.create_inference_placeholder().into_id(ctx.store()),
+        Some(t) => {
+            let ty_hir = t.ast2hir(ctx, log)?.into_id(ctx.store());
+            ty_hir
+        }
+    };
+
+    let initializer = match var.initializer.to_owned() {
+        Some(expr) => Some(expr.ast2hir(ctx, log)?.into_id(ctx.store())),
+        None => None,
+    };
+
+    Ok(LocalVariable {
+        kind,
+        attributes,
+        is_mutable,
+        name,
+        ty,
+        initializer,
+    })
+}
+
 impl Ast2Hir for ast::Block {
     type Hir = Block;
 
@@ -904,11 +957,9 @@ impl Ast2Hir for ast::Block {
                     elements.push(BlockElement::Stmt(hir_element));
                 }
 
-                ast::BlockItem::Variable(_v) => {
-                    // TODO: Handle variable declarations properly
-                    log.report(&HirErr::UnimplementedFeature(
-                        "variable declaration in block".into(),
-                    ));
+                ast::BlockItem::Variable(var) => {
+                    let var_hir = ast_localvar2hir(&var, ctx, log)?.into_id(ctx.store());
+                    elements.push(BlockElement::Local(var_hir));
                 }
             }
         }
@@ -943,9 +994,24 @@ impl Ast2Hir for ast::ExprPath {
     type Hir = Value;
 
     fn ast2hir(self, _ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
-        // TODO: lower ast::ExprPath to HIR
-        log.report(&HirErr::UnimplementedFeature("ast::Expr::Path".into()));
-        Err(())
+        if self.segments.iter().any(|seg| seg.type_arguments.is_some()) {
+            // TODO: Support generic type arguments
+            log.report(&HirErr::UnimplementedFeature(
+                "generic type arguments in type paths".into(),
+            ));
+        }
+
+        match self.resolved_path {
+            None => {
+                log.report(&HirErr::UnresolvedTypePath);
+                Err(())
+            }
+
+            Some(p) => Ok(Value::Symbol {
+                path: IString::from(p),
+                link: None,
+            }),
+        }
     }
 }
 

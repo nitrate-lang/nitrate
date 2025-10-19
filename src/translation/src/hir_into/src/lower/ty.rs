@@ -138,7 +138,12 @@ impl Ast2Hir for ast::TypePath {
     type Hir = Type;
 
     fn ast2hir(self, _ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
-        // TODO: Support generic type arguments
+        if self.segments.iter().any(|seg| seg.type_arguments.is_some()) {
+            // TODO: Support generic type arguments
+            log.report(&HirErr::UnimplementedFeature(
+                "generic type arguments in type paths".into(),
+            ));
+        }
 
         match self.resolved_path {
             None => {

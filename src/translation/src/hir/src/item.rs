@@ -27,12 +27,20 @@ pub struct GlobalVariable {
 pub enum LocalVariableAttribute {}
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
+pub enum LocalVariableKind {
+    Stack,
+    Dynamic,
+    Static,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct LocalVariable {
+    pub kind: LocalVariableKind,
     pub attributes: BTreeSet<LocalVariableAttribute>,
     pub is_mutable: bool,
     pub name: IString,
     pub ty: TypeId,
-    pub initializer: ValueId,
+    pub initializer: Option<ValueId>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]

@@ -29,6 +29,8 @@ pub(crate) enum HirErr {
     UnrecognizedEnumAttribute,
     UnrecognizedEnumVariantAttribute,
     UnresolvedTypePath,
+    LocalVariableCannotBeVisible,
+    UnrecognizedLocalVariableAttribute,
 }
 
 impl FormattableDiagnosticGroup for HirErr {
@@ -66,6 +68,8 @@ impl FormattableDiagnosticGroup for HirErr {
             HirErr::UnrecognizedEnumAttribute => 26,
             HirErr::UnrecognizedEnumVariantAttribute => 27,
             HirErr::UnresolvedTypePath => 28,
+            HirErr::LocalVariableCannotBeVisible => 29,
+            HirErr::UnrecognizedLocalVariableAttribute => 30,
         }
     }
 
@@ -208,6 +212,16 @@ impl FormattableDiagnosticGroup for HirErr {
 
             HirErr::UnresolvedTypePath => DiagnosticInfo {
                 message: "unresolved type path".to_string(),
+                origin: Origin::None,
+            },
+
+            HirErr::LocalVariableCannotBeVisible => DiagnosticInfo {
+                message: "local variable cannot have visibility modifier".to_string(),
+                origin: Origin::None,
+            },
+
+            HirErr::UnrecognizedLocalVariableAttribute => DiagnosticInfo {
+                message: "unrecognized local variable attribute".to_string(),
                 origin: Origin::None,
             },
         }
