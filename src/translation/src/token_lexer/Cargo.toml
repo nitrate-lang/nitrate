@@ -11,9 +11,7 @@ name = "lex_bench"
 harness = false
 
 [dependencies]
-enum-iterator = "2.1.0"
-log = "0.4.27"
-ordered-float = { version = "5.0.0", features = ["serde"] }
-serde = { version = "1.0.219", features = ["derive"] }
 nitrate_diagnosis = { path = "../../../diagnosis" }
 nitrate_token = { path = "../token" }
+log = "0.4.27"
+ordered-float = { version = "5.0.0", features = ["serde"] }
