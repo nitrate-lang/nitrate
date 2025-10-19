@@ -1,7 +1,7 @@
 use super::parse::Parser;
 use crate::diagnosis::SyntaxErr;
 
-use nitrate_parsetree::{
+use nitrate_source::{
     ast::{
         ArrayType, Bool, Exclusivity, Expr, Float32, Float64, FunctionType, Int8, Int16, Int32,
         Int64, Int128, LatentType, Lifetime, Mutability, OpaqueType, ReferenceType, RefinementType,

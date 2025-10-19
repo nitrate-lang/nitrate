@@ -1,6 +1,6 @@
 use criterion::{Criterion, criterion_group, criterion_main};
 use nitrate_diagnosis::DiagnosticCollector;
-use nitrate_parse::*;
+use nitrate_source_parse::*;
 use nitrate_token::*;
 
 struct ParserUtil {

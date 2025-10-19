@@ -1,6 +1,6 @@
 use std::collections::HashSet;
 
-use nitrate_parsetree::{
+use nitrate_source::{
     Order, ParseTreeIter, RefNode,
     ast::Module,
     tag::{ModuleNameId, intern_module_name},

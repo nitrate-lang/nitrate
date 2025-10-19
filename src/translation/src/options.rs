@@ -2,7 +2,7 @@ use std::num::NonZero;
 
 use nitrate_diagnosis::CompilerLog;
 use nitrate_optimization::FunctionOptimization;
-use nitrate_parsetree::ast::Module;
+use nitrate_source::ast::Module;
 
 pub trait Diagnose {
     fn diagnose(&self, module: &Module, log: &CompilerLog);

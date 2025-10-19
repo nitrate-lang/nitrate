@@ -1,5 +1,5 @@
 use nitrate_diagnosis::CompilerLog;
-use nitrate_parsetree::ast::Item;
+use nitrate_source::ast::Item;
 use nitrate_token_lexer::Lexer;
 
 pub struct Parser<'a, 'log> {

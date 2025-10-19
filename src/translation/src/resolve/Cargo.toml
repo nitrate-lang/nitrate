@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-nitrate_parsetree = { path = "../parsetree" }
+nitrate_source = { path = "../source" }
 nitrate_token_lexer = { path = "../token_lexer" }
-nitrate_parse = { path = "../parse" }
+nitrate_source_parse = { path = "../source_parse" }
 nitrate_diagnosis = { path = "../../../diagnosis" }

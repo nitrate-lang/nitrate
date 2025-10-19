@@ -1,7 +1,7 @@
 use crate::lower::Ast2Hir;
 use nitrate_diagnosis::CompilerLog;
 use nitrate_hir::hir::{self, HirCtx};
-use nitrate_parsetree::ast;
+use nitrate_source::ast;
 
 pub fn ast_mod2hir(
     module: ast::Module,

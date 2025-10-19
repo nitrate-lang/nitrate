@@ -1,6 +1,6 @@
 use crate::{ResolveIssue, SymbolSet, discover_symbols};
 use nitrate_diagnosis::CompilerLog;
-use nitrate_parsetree::{
+use nitrate_source::{
     Order, ParseTreeIterMut, RefNodeMut,
     ast::{ExprPath, Module, TypePath},
 };

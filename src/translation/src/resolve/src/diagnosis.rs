@@ -1,5 +1,5 @@
 use nitrate_diagnosis::{DiagnosticGroupId, DiagnosticInfo, FormattableDiagnosticGroup, Origin};
-use nitrate_parsetree::{
+use nitrate_source::{
     ast::{ExprPath, TypePath},
     tag::ImportNameId,
 };

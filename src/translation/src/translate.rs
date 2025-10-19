@@ -1,10 +1,10 @@
 use crate::{TranslationOptions, TranslationOptionsBuilder, options::Diagnose};
 use nitrate_diagnosis::{CompilerLog, FileId, intern_file_id};
-use nitrate_parse::Parser;
-use nitrate_parsetree::{
+use nitrate_source::{
     ast::{Module, Visibility},
     tag::intern_module_name,
 };
+use nitrate_source_parse::Parser;
 use nitrate_token_lexer::{Lexer, LexerError};
 use threadpool::ThreadPool;
 use threadpool_scope::scope_with;

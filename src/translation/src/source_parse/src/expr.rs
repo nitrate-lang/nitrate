@@ -1,7 +1,7 @@
 use crate::diagnosis::SyntaxErr;
 
 use super::parse::Parser;
-use nitrate_parsetree::{
+use nitrate_source::{
     ast::{
         AttributeList, Await, BStringLit, BinExpr, BinExprOp, Block, BlockItem, Bool, BooleanLit,
         Break, CallArgument, Cast, Closure, Continue, ElseIf, Expr, ExprParentheses, ExprPath,
