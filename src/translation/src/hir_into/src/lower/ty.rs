@@ -137,20 +137,20 @@ impl Ast2Hir for ast::InferType {
 impl Ast2Hir for ast::TypePath {
     type Hir = Type;
 
-    fn ast2hir(self, ctx: &mut HirCtx, _log: &CompilerLog) -> Result<Self::Hir, ()> {
+    fn ast2hir(self, _ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
         // TODO: Support generic type arguments
-        // TODO: Resolve type paths
 
-        let unqualified_path = self
-            .segments
-            .into_iter()
-            .map(|seg| seg.name)
-            .collect::<Vec<_>>()
-            .join("::");
+        match self.resolved_path {
+            None => {
+                log.report(&HirErr::UnresolvedTypePath);
+                Err(())
+            }
 
-        let path = IString::from(HirCtx::join_path(ctx.current_scope(), &unqualified_path));
-
-        Ok(Type::Symbol { path, link: None })
+            Some(p) => Ok(Type::Symbol {
+                path: IString::from(p),
+                link: None,
+            }),
+        }
     }
 }
 

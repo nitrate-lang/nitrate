@@ -2,6 +2,25 @@ use nitrate_token::{escape_bstring, escape_string};
 
 use crate::{dump::write_indent, prelude::*};
 
+impl Dump for BlockElement {
+    fn dump(
+        &self,
+        ctx: &mut DumpContext,
+        o: &mut dyn std::fmt::Write,
+    ) -> Result<(), std::fmt::Error> {
+        match self {
+            BlockElement::Expr(expr_id) => ctx.store[expr_id].borrow().dump(ctx, o),
+
+            BlockElement::Stmt(stmt_id) => {
+                ctx.store[stmt_id].borrow().dump(ctx, o)?;
+                write!(o, ";")
+            }
+
+            BlockElement::Local(local_id) => local_id.dump(ctx, o),
+        }
+    }
+}
+
 impl Dump for Block {
     fn dump(
         &self,
@@ -23,7 +42,7 @@ impl Dump for Block {
 
                 write_indent(ctx, o)?;
                 expr.dump(ctx, o)?;
-                write!(o, ";\n")?;
+                write!(o, "\n")?;
 
                 ctx.indent -= 1;
             }

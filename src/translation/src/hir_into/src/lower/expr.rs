@@ -891,20 +891,17 @@ impl Ast2Hir for ast::Block {
 
     fn ast2hir(self, ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
         let mut elements = Vec::with_capacity(self.elements.len());
-        let mut ends_with_unit = false;
 
         for element in self.elements {
             match element {
                 ast::BlockItem::Expr(e) => {
-                    let hir_element = e.ast2hir(ctx, log)?;
-                    elements.push(hir_element);
-                    ends_with_unit = false;
+                    let hir_element = e.ast2hir(ctx, log)?.into_id(ctx.store());
+                    elements.push(BlockElement::Expr(hir_element));
                 }
 
                 ast::BlockItem::Stmt(s) => {
-                    let hir_element = s.ast2hir(ctx, log)?;
-                    elements.push(hir_element);
-                    ends_with_unit = true;
+                    let hir_element = s.ast2hir(ctx, log)?.into_id(ctx.store());
+                    elements.push(BlockElement::Stmt(hir_element));
                 }
 
                 ast::BlockItem::Variable(_v) => {
@@ -912,14 +909,8 @@ impl Ast2Hir for ast::Block {
                     log.report(&HirErr::UnimplementedFeature(
                         "variable declaration in block".into(),
                     ));
-
-                    ends_with_unit = true;
                 }
             }
-        }
-
-        if ends_with_unit {
-            elements.push(Value::Unit);
         }
 
         let safety = match self.safety {
@@ -981,7 +972,7 @@ impl Ast2Hir for ast::If {
                 let else_if_value = else_if.ast2hir(ctx, log)?;
                 let block = Block {
                     safety: BlockSafety::Safe,
-                    elements: vec![else_if_value],
+                    elements: vec![BlockElement::Expr(else_if_value.into_id(ctx.store()))],
                 }
                 .into_id(ctx.store());
                 Some(block)

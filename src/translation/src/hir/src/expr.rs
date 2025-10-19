@@ -265,9 +265,16 @@ pub enum BlockSafety {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
+pub enum BlockElement {
+    Expr(ValueId),
+    Stmt(ValueId),
+    Local(LocalVariableId),
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct Block {
     pub safety: BlockSafety,
-    pub elements: Vec<Value>,
+    pub elements: Vec<BlockElement>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]

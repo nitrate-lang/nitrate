@@ -28,6 +28,7 @@ pub(crate) enum HirErr {
     UnrecognizedStructFieldAttribute,
     UnrecognizedEnumAttribute,
     UnrecognizedEnumVariantAttribute,
+    UnresolvedTypePath,
 }
 
 impl FormattableDiagnosticGroup for HirErr {
@@ -64,6 +65,7 @@ impl FormattableDiagnosticGroup for HirErr {
             HirErr::UnrecognizedStructFieldAttribute => 25,
             HirErr::UnrecognizedEnumAttribute => 26,
             HirErr::UnrecognizedEnumVariantAttribute => 27,
+            HirErr::UnresolvedTypePath => 28,
         }
     }
 
@@ -201,6 +203,11 @@ impl FormattableDiagnosticGroup for HirErr {
 
             HirErr::UnrecognizedEnumVariantAttribute => DiagnosticInfo {
                 message: "unrecognized enum variant attribute".to_string(),
+                origin: Origin::None,
+            },
+
+            HirErr::UnresolvedTypePath => DiagnosticInfo {
+                message: "unresolved type path".to_string(),
                 origin: Origin::None,
             },
         }

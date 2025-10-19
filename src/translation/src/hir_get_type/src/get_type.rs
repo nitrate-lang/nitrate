@@ -1,6 +1,6 @@
 use nitrate_hir::{
     Store,
-    hir::{BinaryOp, FunctionType, IntoStoreId, Symbol, Type, UnaryOp, Value},
+    hir::{BinaryOp, BlockElement, FunctionType, IntoStoreId, Symbol, Type, UnaryOp, Value},
 };
 
 pub enum TypeInferenceError {
@@ -183,10 +183,10 @@ pub fn get_type(value: &Value, store: &Store) -> Result<Type, TypeInferenceError
             None => Ok(Type::Unit),
 
             Some(_) => {
-                let block = &store[true_branch].borrow();
-                let true_branch_type = match block.elements.last() {
-                    Some(last) => get_type(last, store)?,
-                    None => Type::Unit,
+                let true_block = &store[true_branch].borrow();
+                let true_branch_type = match true_block.elements.last() {
+                    Some(BlockElement::Expr(last)) => get_type(&store[last].borrow(), store)?,
+                    Some(BlockElement::Stmt(_)) | Some(BlockElement::Local(_)) | None => Type::Unit,
                 };
 
                 Ok(true_branch_type)
@@ -204,8 +204,8 @@ pub fn get_type(value: &Value, store: &Store) -> Result<Type, TypeInferenceError
         Value::Return { value: _ } => Ok(Type::Never),
 
         Value::Block { block } => match store[block].borrow().elements.last() {
-            Some(last) => get_type(last, store),
-            None => Ok(Type::Unit),
+            Some(BlockElement::Expr(last)) => get_type(&store[last].borrow(), store),
+            Some(BlockElement::Stmt(_)) | Some(BlockElement::Local(_)) | None => Ok(Type::Unit),
         },
 
         Value::Closure {

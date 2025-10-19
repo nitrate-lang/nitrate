@@ -182,6 +182,26 @@ impl HirEvaluate for Lit {
     }
 }
 
+impl HirEvaluate for BlockElement {
+    type Output = Value;
+
+    fn evaluate(&self, ctx: &mut crate::HirEvalCtx) -> Result<Self::Output, crate::Unwind> {
+        match self {
+            BlockElement::Expr(expr) => ctx.store[expr].borrow().evaluate(ctx),
+
+            BlockElement::Stmt(expr) => {
+                ctx.store[expr].borrow().evaluate(ctx)?;
+                Ok(Value::Unit)
+            }
+
+            BlockElement::Local(_local) => {
+                // TODO: handle local variable declarations
+                unimplemented!()
+            }
+        }
+    }
+}
+
 impl HirEvaluate for Block {
     type Output = Value;
 
