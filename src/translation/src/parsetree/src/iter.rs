@@ -1,5 +1,3 @@
-use std::sync::{Arc, RwLock};
-
 use crate::{
     expr::{
         AttributeList, Await, BStringLit, BinExpr, Block, BlockItem, BooleanLit, Break,
@@ -96,14 +94,14 @@ pub enum RefNode<'a> {
     ItemItemPath(&'a ItemPath),
     ItemImport(&'a Import),
     ItemTypeParams(&'a Generics),
-    ItemTypeAlias(&'a Arc<RwLock<TypeAlias>>),
+    ItemTypeAlias(&'a TypeAlias),
     ItemStructField(&'a StructField),
-    ItemStruct(&'a Arc<RwLock<Struct>>),
+    ItemStruct(&'a Struct),
     ItemEnumVariant(&'a EnumVariant),
-    ItemEnum(&'a Arc<RwLock<Enum>>),
-    ItemTrait(&'a Arc<RwLock<Trait>>),
+    ItemEnum(&'a Enum),
+    ItemTrait(&'a Trait),
     ItemImpl(&'a Impl),
     ItemFuncParam(&'a FuncParam),
-    ItemFunction(&'a Arc<RwLock<Function>>),
-    ItemVariable(&'a Arc<RwLock<Variable>>),
+    ItemFunction(&'a Function),
+    ItemVariable(&'a Variable),
 }

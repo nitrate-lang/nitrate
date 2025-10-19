@@ -1,23 +1,12 @@
+use std::collections::HashSet;
+
 use nitrate_parsetree::{
     Order, ParseTreeIter, RefNode,
-    ast::{Enum, Function, Module, Struct, Trait, TypeAlias, Variable},
+    ast::Module,
     tag::{ModuleNameId, intern_module_name},
 };
 
-use std::collections::HashMap;
-use std::sync::{Arc, RwLock};
-
-#[derive(Debug, Clone)]
-pub enum Symbol {
-    TypeAlias(Arc<RwLock<TypeAlias>>),
-    Struct(Arc<RwLock<Struct>>),
-    Enum(Arc<RwLock<Enum>>),
-    Trait(Arc<RwLock<Trait>>),
-    Function(Arc<RwLock<Function>>),
-    Variable(Arc<RwLock<Variable>>),
-}
-
-fn qualify_name(scope: &[ModuleNameId], name: &str) -> SymbolName {
+fn qualify_name(scope: &[ModuleNameId], name: &str) -> String {
     let length = scope.iter().map(|s| s.len() + 2).sum::<usize>() + name.len();
     let mut qualified = String::with_capacity(length);
 
@@ -27,57 +16,27 @@ fn qualify_name(scope: &[ModuleNameId], name: &str) -> SymbolName {
     }
 
     qualified.push_str(name);
-
     qualified
 }
 
-pub type SymbolName = String;
+pub type SymbolSet = HashSet<String>;
 
-pub type SymbolTable<'a> = HashMap<SymbolName, Vec<Symbol>>;
-
-fn symbol_table_add(symbol_table: &mut SymbolTable, scope_vec: &Vec<ModuleNameId>, node: &RefNode) {
-    let (name, symbol) = match node {
-        RefNode::ItemTypeAlias(sym) => (
-            qualify_name(&scope_vec, &sym.read().unwrap().name),
-            Symbol::TypeAlias(Arc::clone(sym)),
-        ),
-
-        RefNode::ItemStruct(sym) => (
-            qualify_name(&scope_vec, &sym.read().unwrap().name),
-            Symbol::Struct(Arc::clone(sym)),
-        ),
-
-        RefNode::ItemEnum(sym) => (
-            qualify_name(&scope_vec, &sym.read().unwrap().name),
-            Symbol::Enum(Arc::clone(sym)),
-        ),
-
-        RefNode::ItemTrait(sym) => (
-            qualify_name(&scope_vec, &sym.read().unwrap().name),
-            Symbol::Trait(Arc::clone(sym)),
-        ),
-
-        RefNode::ItemFunction(sym) => (
-            qualify_name(&scope_vec, &sym.read().unwrap().name),
-            Symbol::Function(Arc::clone(sym)),
-        ),
-
-        RefNode::ItemVariable(sym) => (
-            qualify_name(&scope_vec, &sym.read().unwrap().name),
-            Symbol::Variable(Arc::clone(sym)),
-        ),
-
+fn visit_node(symbol_set: &mut SymbolSet, scope_vec: &Vec<ModuleNameId>, node: &RefNode) {
+    let name = match node {
+        RefNode::ItemTypeAlias(sym) => qualify_name(&scope_vec, &sym.name),
+        RefNode::ItemStruct(sym) => qualify_name(&scope_vec, &sym.name),
+        RefNode::ItemEnum(sym) => qualify_name(&scope_vec, &sym.name),
+        RefNode::ItemTrait(sym) => qualify_name(&scope_vec, &sym.name),
+        RefNode::ItemFunction(sym) => qualify_name(&scope_vec, &sym.name),
+        RefNode::ItemVariable(sym) => qualify_name(&scope_vec, &sym.name),
         _ => return,
     };
 
-    symbol_table
-        .entry(name.clone())
-        .or_insert_with(Vec::new)
-        .push(symbol);
+    symbol_set.insert(name);
 }
 
-pub fn build_symbol_table(module: &mut Module) -> SymbolTable {
-    let mut symbol_table = SymbolTable::new();
+pub fn discover_symbols(module: &mut Module) -> SymbolSet {
+    let mut symbol_set = SymbolSet::new();
     let mut scope_vec = Vec::new();
 
     module.depth_first_iter(&mut |order, node| {
@@ -103,8 +62,8 @@ pub fn build_symbol_table(module: &mut Module) -> SymbolTable {
             return;
         }
 
-        symbol_table_add(&mut symbol_table, &scope_vec, &node);
+        visit_node(&mut symbol_set, &scope_vec, &node);
     });
 
-    symbol_table
+    symbol_set
 }

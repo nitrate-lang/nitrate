@@ -1,5 +1,3 @@
-use std::sync::{Arc, RwLock};
-
 use super::parse::Parser;
 use crate::diagnosis::SyntaxErr;
 
@@ -428,19 +426,19 @@ impl Parser<'_, '_> {
             Token::Fn => {
                 let mut func = self.parse_named_function();
                 func.visibility = visibility;
-                AssociatedItem::Method(Arc::new(RwLock::new(func)))
+                AssociatedItem::Method(func)
             }
 
             Token::Const => {
                 let mut const_var = self.parse_variable();
                 const_var.visibility = visibility;
-                AssociatedItem::ConstantItem(Arc::new(RwLock::new(const_var)))
+                AssociatedItem::ConstantItem(const_var)
             }
 
             Token::Type => {
                 let mut type_alias = self.parse_type_alias();
                 type_alias.visibility = visibility;
-                AssociatedItem::TypeAlias(Arc::new(RwLock::new(type_alias)))
+                AssociatedItem::TypeAlias(type_alias)
             }
 
             _ => {
@@ -780,25 +778,25 @@ impl Parser<'_, '_> {
             Token::Type => {
                 let mut type_alias = self.parse_type_alias();
                 type_alias.visibility = visibility;
-                Item::TypeAlias(Arc::new(RwLock::new(type_alias)))
+                Item::TypeAlias(type_alias)
             }
 
             Token::Struct => {
                 let mut struct_def = self.parse_struct();
                 struct_def.visibility = visibility;
-                Item::Struct(Arc::new(RwLock::new(struct_def)))
+                Item::Struct(struct_def)
             }
 
             Token::Enum => {
                 let mut enum_def = self.parse_enum();
                 enum_def.visibility = visibility;
-                Item::Enum(Arc::new(RwLock::new(enum_def)))
+                Item::Enum(enum_def)
             }
 
             Token::Trait => {
                 let mut trait_def = self.parse_trait();
                 trait_def.visibility = visibility;
-                Item::Trait(Arc::new(RwLock::new(trait_def)))
+                Item::Trait(trait_def)
             }
 
             Token::Impl => {
@@ -813,13 +811,13 @@ impl Parser<'_, '_> {
             Token::Fn => {
                 let mut func = self.parse_named_function();
                 func.visibility = visibility;
-                Item::Function(Arc::new(RwLock::new(func)))
+                Item::Function(func)
             }
 
             Token::Static | Token::Const | Token::Let | Token::Var => {
                 let mut var = self.parse_variable();
                 var.visibility = visibility;
-                Item::Variable(Arc::new(RwLock::new(var)))
+                Item::Variable(var)
             }
 
             _ => {

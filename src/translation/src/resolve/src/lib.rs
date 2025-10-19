@@ -8,4 +8,4 @@ mod symbol_table;
 pub use diagnosis::ResolveIssue;
 pub use import::{ImportContext, resolve_imports};
 pub use name::resolve_names;
-pub use symbol_table::{Symbol, SymbolName, SymbolTable, build_symbol_table};
+pub use symbol_table::{SymbolSet, discover_symbols};

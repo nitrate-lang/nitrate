@@ -7,7 +7,6 @@ use nitrate_tokenize::IntegerKind;
 use ordered_float::NotNan;
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
-use std::sync::{Arc, RwLock};
 
 #[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -200,13 +199,13 @@ pub struct Cast {
 #[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum BlockItem {
-    Variable(Arc<RwLock<Variable>>),
+    Variable(Variable),
     Expr(Expr),
     Stmt(Expr),
 }
 
 impl BlockItem {
-    pub fn as_variable(self) -> Option<Arc<RwLock<Variable>>> {
+    pub fn as_variable(self) -> Option<Variable> {
         match self {
             BlockItem::Variable(v) => Some(v),
             _ => None,

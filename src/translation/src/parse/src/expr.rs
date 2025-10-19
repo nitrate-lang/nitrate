@@ -1,5 +1,3 @@
-use std::sync::{Arc, RwLock};
-
 use crate::diagnosis::SyntaxErr;
 
 use super::parse::Parser;
@@ -1165,7 +1163,7 @@ impl Parser<'_, '_> {
         match self.lexer.peek_t() {
             Token::Static | Token::Const | Token::Let | Token::Var => {
                 let var = self.parse_variable();
-                BlockItem::Variable(Arc::new(RwLock::new(var)))
+                BlockItem::Variable(var)
             }
 
             Token::Safe | Token::Unsafe | Token::OpenBrace => {

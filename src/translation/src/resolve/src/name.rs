@@ -1,36 +1,14 @@
-use crate::{ResolveIssue, Symbol, SymbolTable, build_symbol_table};
-
+use crate::{ResolveIssue, SymbolSet, discover_symbols};
 use nitrate_diagnosis::CompilerLog;
 use nitrate_parsetree::{
     Order, ParseTreeIterMut, RefNodeMut,
     ast::{ExprPath, Module, TypePath},
 };
 
-fn resolve_expr_path_lookup(
-    path: &mut ExprPath,
-    name: String,
-    symbol_table: &SymbolTable,
-    log: &CompilerLog,
-) -> bool {
-    let Some(symbols) = symbol_table.get(&name) else {
-        return false;
-    };
-
-    if symbols.len() > 1 {
-        let bug = ResolveIssue::ExprPathAmbiguous(path.clone(), symbols.clone());
-        log.report(&bug);
-        return false;
-    }
-
-    path.resolved_path = Some(name);
-
-    true
-}
-
 fn resolve_expr_path(
     scope: &[String],
     path: &mut ExprPath,
-    symbol_table: &SymbolTable,
+    symbol_set: &SymbolSet,
     log: &CompilerLog,
 ) -> bool {
     let pathname = path
@@ -47,14 +25,20 @@ fn resolve_expr_path(
         .unwrap_or(false);
 
     if is_root_path {
-        return resolve_expr_path_lookup(path, pathname, symbol_table, log);
+        if symbol_set.contains(&pathname) {
+            path.resolved_path = Some(pathname);
+            return true;
+        }
+
+        return false;
     }
 
     for i in (0..scope.len()).rev() {
         let current_scope = &scope[0..=i];
         let name = format!("{}::{}", current_scope.join("::"), pathname);
 
-        if resolve_expr_path_lookup(path, name, symbol_table, log) {
+        if symbol_set.contains(&name) {
+            path.resolved_path = Some(name);
             return true;
         }
     }
@@ -65,41 +49,10 @@ fn resolve_expr_path(
     false
 }
 
-fn resolve_type_path_lookup(
-    path: &mut TypePath,
-    name: String,
-    symbol_table: &SymbolTable,
-    log: &CompilerLog,
-) -> bool {
-    let Some(symbols) = symbol_table.get(&name) else {
-        return false;
-    };
-
-    if symbols.len() > 1 {
-        let bug = ResolveIssue::TypePathAmbiguous(path.clone(), symbols.clone());
-        log.report(&bug);
-        return false;
-    }
-
-    match symbols.first().expect("symbol table entry is empty") {
-        Symbol::TypeAlias(_) | Symbol::Struct(_) | Symbol::Enum(_) => {
-            path.resolved_path = Some(name);
-            return true;
-        }
-
-        _ => {}
-    }
-
-    let bug = ResolveIssue::TypePathUnresolved(path.clone());
-    log.report(&bug);
-
-    false
-}
-
 fn resolve_type_path(
     scope: &[String],
     path: &mut TypePath,
-    symbol_table: &SymbolTable,
+    symbol_set: &SymbolSet,
     log: &CompilerLog,
 ) -> bool {
     let pathname = path
@@ -116,14 +69,20 @@ fn resolve_type_path(
         .unwrap_or(false);
 
     if is_root_path {
-        return resolve_type_path_lookup(path, pathname, symbol_table, log);
+        if symbol_set.contains(&pathname) {
+            path.resolved_path = Some(pathname);
+            return true;
+        }
+
+        return false;
     }
 
     for i in (0..scope.len()).rev() {
         let current_scope = &scope[0..=i];
         let name = format!("{}::{}", current_scope.join("::"), pathname);
 
-        if resolve_type_path_lookup(path, name, symbol_table, log) {
+        if symbol_set.contains(&name) {
+            path.resolved_path = Some(name);
             return true;
         }
     }
@@ -135,7 +94,7 @@ fn resolve_type_path(
 }
 
 pub fn resolve_names(module: &mut Module, log: &CompilerLog) {
-    let symbol_table = build_symbol_table(module);
+    let symbol_set = discover_symbols(module);
     let mut scope_vec = Vec::new();
 
     module.depth_first_iter_mut(&mut |order, node| {
@@ -162,9 +121,9 @@ pub fn resolve_names(module: &mut Module, log: &CompilerLog) {
         }
 
         if let RefNodeMut::TypePath(path) = node {
-            resolve_type_path(&scope_vec, path, &symbol_table, log);
+            resolve_type_path(&scope_vec, path, &symbol_set, log);
         } else if let RefNodeMut::ExprPath(path) = node {
-            resolve_expr_path(&scope_vec, path, &symbol_table, log);
+            resolve_expr_path(&scope_vec, path, &symbol_set, log);
         }
     });
 }

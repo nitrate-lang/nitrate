@@ -392,19 +392,19 @@ impl Ast2Hir for ast::Module {
                     }
 
                     ast::Item::TypeAlias(type_alias) => {
-                        ast_typealias2hir(&type_alias.read().unwrap(), ctx, log)?;
+                        ast_typealias2hir(&type_alias, ctx, log)?;
                     }
 
                     ast::Item::Struct(struct_def) => {
-                        ast_struct2hir(&struct_def.read().unwrap(), ctx, log)?;
+                        ast_struct2hir(&struct_def, ctx, log)?;
                     }
 
                     ast::Item::Enum(enum_def) => {
-                        ast_enum2hir(&enum_def.read().unwrap(), ctx, log)?;
+                        ast_enum2hir(&enum_def, ctx, log)?;
                     }
 
                     ast::Item::Trait(trait_def) => {
-                        ast_trait2hir(&trait_def.read().unwrap(), ctx, log)?;
+                        ast_trait2hir(&trait_def, ctx, log)?;
                     }
 
                     ast::Item::Impl(impl_def) => {
@@ -412,12 +412,12 @@ impl Ast2Hir for ast::Module {
                     }
 
                     ast::Item::Function(func_def) => {
-                        let f = ast_function2hir(&func_def.read().unwrap(), ctx, log)?;
+                        let f = ast_function2hir(&func_def, ctx, log)?;
                         items.push(Item::Function(f.into_id(ctx.store())));
                     }
 
                     ast::Item::Variable(v) => {
-                        let g = ast_variable2hir(&v.read().unwrap(), ctx, log)?;
+                        let g = ast_variable2hir(&v, ctx, log)?;
                         items.push(Item::GlobalVariable(g.into_id(ctx.store())));
                     }
 

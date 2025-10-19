@@ -10,7 +10,6 @@ use crate::{
 
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
-use std::sync::{Arc, RwLock};
 
 #[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -123,9 +122,9 @@ pub struct Enum {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum AssociatedItem {
     SyntaxError(ItemSyntaxError),
-    TypeAlias(Arc<RwLock<TypeAlias>>),
-    ConstantItem(Arc<RwLock<Variable>>),
-    Method(Arc<RwLock<Function>>),
+    TypeAlias(TypeAlias),
+    ConstantItem(Variable),
+    Method(Function),
 }
 
 #[skip_serializing_none]
@@ -206,13 +205,13 @@ pub enum Item {
     SyntaxError(ItemSyntaxError),
     Module(Box<Module>),
     Import(Box<Import>),
-    TypeAlias(Arc<RwLock<TypeAlias>>),
-    Struct(Arc<RwLock<Struct>>),
-    Enum(Arc<RwLock<Enum>>),
-    Trait(Arc<RwLock<Trait>>),
+    TypeAlias(TypeAlias),
+    Struct(Struct),
+    Enum(Enum),
+    Trait(Trait),
     Impl(Box<Impl>),
-    Function(Arc<RwLock<Function>>),
-    Variable(Arc<RwLock<Variable>>),
+    Function(Function),
+    Variable(Variable),
 }
 
 impl std::fmt::Debug for Item {
@@ -247,28 +246,28 @@ impl Item {
         }
     }
 
-    pub fn as_type_alias(self) -> Option<Arc<RwLock<TypeAlias>>> {
+    pub fn as_type_alias(self) -> Option<TypeAlias> {
         match self {
             Item::TypeAlias(t) => Some(t),
             _ => None,
         }
     }
 
-    pub fn as_struct(self) -> Option<Arc<RwLock<Struct>>> {
+    pub fn as_struct(self) -> Option<Struct> {
         match self {
             Item::Struct(s) => Some(s),
             _ => None,
         }
     }
 
-    pub fn as_enum(self) -> Option<Arc<RwLock<Enum>>> {
+    pub fn as_enum(self) -> Option<Enum> {
         match self {
             Item::Enum(e) => Some(e),
             _ => None,
         }
     }
 
-    pub fn as_trait(self) -> Option<Arc<RwLock<Trait>>> {
+    pub fn as_trait(self) -> Option<Trait> {
         match self {
             Item::Trait(t) => Some(t),
             _ => None,
@@ -282,14 +281,14 @@ impl Item {
         }
     }
 
-    pub fn as_function(self) -> Option<Arc<RwLock<Function>>> {
+    pub fn as_function(self) -> Option<Function> {
         match self {
             Item::Function(f) => Some(f),
             _ => None,
         }
     }
 
-    pub fn as_variable(self) -> Option<Arc<RwLock<Variable>>> {
+    pub fn as_variable(self) -> Option<Variable> {
         match self {
             Item::Variable(v) => Some(v),
             _ => None,

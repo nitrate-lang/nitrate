@@ -88,7 +88,7 @@ fn visibility_filter(item: Item, is_same_package: bool) -> Option<Item> {
         }
 
         Item::TypeAlias(node) => {
-            if !is_visible(node.read().unwrap().visibility, is_same_package) {
+            if !is_visible(node.visibility, is_same_package) {
                 return None;
             }
 
@@ -96,18 +96,15 @@ fn visibility_filter(item: Item, is_same_package: bool) -> Option<Item> {
         }
 
         Item::Struct(node) => {
-            let lock = node.write().unwrap();
-
-            if !is_visible(lock.visibility, is_same_package) {
+            if !is_visible(node.visibility, is_same_package) {
                 return None;
             }
 
-            drop(lock);
             Some(Item::Struct(node))
         }
 
         Item::Enum(node) => {
-            if !is_visible(node.read().unwrap().visibility, is_same_package) {
+            if !is_visible(node.visibility, is_same_package) {
                 return None;
             }
 
@@ -115,7 +112,7 @@ fn visibility_filter(item: Item, is_same_package: bool) -> Option<Item> {
         }
 
         Item::Trait(node) => {
-            if !is_visible(node.read().unwrap().visibility, is_same_package) {
+            if !is_visible(node.visibility, is_same_package) {
                 return None;
             }
 
@@ -123,7 +120,7 @@ fn visibility_filter(item: Item, is_same_package: bool) -> Option<Item> {
         }
 
         Item::Function(node) => {
-            if !is_visible(node.read().unwrap().visibility, is_same_package) {
+            if !is_visible(node.visibility, is_same_package) {
                 return None;
             }
 
@@ -131,7 +128,7 @@ fn visibility_filter(item: Item, is_same_package: bool) -> Option<Item> {
         }
 
         Item::Variable(node) => {
-            if !is_visible(node.read().unwrap().visibility, is_same_package) {
+            if !is_visible(node.visibility, is_same_package) {
                 return None;
             }
 

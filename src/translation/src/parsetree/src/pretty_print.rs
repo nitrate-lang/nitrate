@@ -403,7 +403,7 @@ impl PrettyPrint for BlockItem {
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
         match self {
-            BlockItem::Variable(m) => m.read().unwrap().pretty_print_fmt(ctx, writer),
+            BlockItem::Variable(m) => m.pretty_print_fmt(ctx, writer),
 
             BlockItem::Expr(m) => m.pretty_print_fmt(ctx, writer),
 
@@ -1675,9 +1675,9 @@ impl PrettyPrint for AssociatedItem {
     ) -> std::fmt::Result {
         match self {
             AssociatedItem::SyntaxError(m) => m.pretty_print_fmt(ctx, writer),
-            AssociatedItem::TypeAlias(m) => m.read().unwrap().pretty_print_fmt(ctx, writer),
-            AssociatedItem::Method(m) => m.read().unwrap().pretty_print_fmt(ctx, writer),
-            AssociatedItem::ConstantItem(m) => m.read().unwrap().pretty_print_fmt(ctx, writer),
+            AssociatedItem::TypeAlias(m) => m.pretty_print_fmt(ctx, writer),
+            AssociatedItem::Method(m) => m.pretty_print_fmt(ctx, writer),
+            AssociatedItem::ConstantItem(m) => m.pretty_print_fmt(ctx, writer),
         }
     }
 }
@@ -1944,13 +1944,13 @@ impl PrettyPrint for Item {
             Item::SyntaxError(m) => m.pretty_print_fmt(ctx, writer),
             Item::Module(m) => m.pretty_print_fmt(ctx, writer),
             Item::Import(m) => m.pretty_print_fmt(ctx, writer),
-            Item::TypeAlias(m) => m.read().unwrap().pretty_print_fmt(ctx, writer),
-            Item::Struct(m) => m.read().unwrap().pretty_print_fmt(ctx, writer),
-            Item::Enum(m) => m.read().unwrap().pretty_print_fmt(ctx, writer),
-            Item::Trait(m) => m.read().unwrap().pretty_print_fmt(ctx, writer),
+            Item::TypeAlias(m) => m.pretty_print_fmt(ctx, writer),
+            Item::Struct(m) => m.pretty_print_fmt(ctx, writer),
+            Item::Enum(m) => m.pretty_print_fmt(ctx, writer),
+            Item::Trait(m) => m.pretty_print_fmt(ctx, writer),
             Item::Impl(m) => m.pretty_print_fmt(ctx, writer),
-            Item::Function(m) => m.read().unwrap().pretty_print_fmt(ctx, writer),
-            Item::Variable(m) => m.read().unwrap().pretty_print_fmt(ctx, writer),
+            Item::Function(m) => m.pretty_print_fmt(ctx, writer),
+            Item::Variable(m) => m.pretty_print_fmt(ctx, writer),
         }
     }
 }

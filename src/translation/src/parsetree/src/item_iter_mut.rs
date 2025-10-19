@@ -1,5 +1,3 @@
-use std::sync::{Arc, RwLock};
-
 use crate::{
     Order, ParseTreeIterMut, RefNodeMut,
     ast::{
@@ -71,27 +69,25 @@ impl ParseTreeIterMut for Generics {
     }
 }
 
-impl ParseTreeIterMut for Arc<RwLock<TypeAlias>> {
+impl ParseTreeIterMut for TypeAlias {
     fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
         f(Order::Enter, RefNodeMut::ItemTypeAlias(self));
-        let mut this = self.write().unwrap();
 
-        let _ = this.visibility;
-        let _ = this.name;
+        let _ = self.visibility;
+        let _ = self.name;
 
-        if let Some(attributes) = &mut this.attributes {
+        if let Some(attributes) = &mut self.attributes {
             attributes.depth_first_iter_mut(f);
         }
 
-        if let Some(params) = &mut this.generics {
+        if let Some(params) = &mut self.generics {
             params.depth_first_iter_mut(f);
         }
 
-        if let Some(alias_type) = &mut this.alias_type {
+        if let Some(alias_type) = &mut self.alias_type {
             alias_type.depth_first_iter_mut(f);
         }
 
-        drop(this);
         f(Order::Leave, RefNodeMut::ItemTypeAlias(self));
     }
 }
@@ -117,27 +113,25 @@ impl ParseTreeIterMut for StructField {
     }
 }
 
-impl ParseTreeIterMut for Arc<RwLock<Struct>> {
+impl ParseTreeIterMut for Struct {
     fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
         f(Order::Enter, RefNodeMut::ItemStruct(self));
-        let mut this = self.write().unwrap();
 
-        let _ = this.visibility;
-        let _ = this.name;
+        let _ = self.visibility;
+        let _ = self.name;
 
-        if let Some(attributes) = &mut this.attributes {
+        if let Some(attributes) = &mut self.attributes {
             attributes.depth_first_iter_mut(f);
         }
 
-        if let Some(params) = &mut this.generics {
+        if let Some(params) = &mut self.generics {
             params.depth_first_iter_mut(f);
         }
 
-        for field in &mut this.fields {
+        for field in &mut self.fields {
             field.depth_first_iter_mut(f);
         }
 
-        drop(this);
         f(Order::Leave, RefNodeMut::ItemStruct(self));
     }
 }
@@ -164,27 +158,25 @@ impl ParseTreeIterMut for EnumVariant {
     }
 }
 
-impl ParseTreeIterMut for Arc<RwLock<Enum>> {
+impl ParseTreeIterMut for Enum {
     fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
         f(Order::Enter, RefNodeMut::ItemEnum(self));
-        let mut this = self.write().unwrap();
 
-        let _ = this.visibility;
-        let _ = this.name;
+        let _ = self.visibility;
+        let _ = self.name;
 
-        if let Some(attributes) = &mut this.attributes {
+        if let Some(attributes) = &mut self.attributes {
             attributes.depth_first_iter_mut(f);
         }
 
-        if let Some(params) = &mut this.generics {
+        if let Some(params) = &mut self.generics {
             params.depth_first_iter_mut(f);
         }
 
-        for variant in &mut this.variants {
+        for variant in &mut self.variants {
             variant.depth_first_iter_mut(f);
         }
 
-        drop(this);
         f(Order::Leave, RefNodeMut::ItemEnum(self));
     }
 }
@@ -200,27 +192,25 @@ impl ParseTreeIterMut for AssociatedItem {
     }
 }
 
-impl ParseTreeIterMut for Arc<RwLock<Trait>> {
+impl ParseTreeIterMut for Trait {
     fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
         f(Order::Enter, RefNodeMut::ItemTrait(self));
-        let mut this = self.write().unwrap();
 
-        let _ = this.visibility;
-        let _ = this.name;
+        let _ = self.visibility;
+        let _ = self.name;
 
-        if let Some(attributes) = &mut this.attributes {
+        if let Some(attributes) = &mut self.attributes {
             attributes.depth_first_iter_mut(f);
         }
 
-        if let Some(params) = &mut this.generics {
+        if let Some(params) = &mut self.generics {
             params.depth_first_iter_mut(f);
         }
 
-        for associated_item in &mut this.items {
+        for associated_item in &mut self.items {
             associated_item.depth_first_iter_mut(f);
         }
 
-        drop(this);
         f(Order::Leave, RefNodeMut::ItemTrait(self));
     }
 }
@@ -280,60 +270,56 @@ impl ParseTreeIterMut for FuncParams {
     }
 }
 
-impl ParseTreeIterMut for Arc<RwLock<Function>> {
+impl ParseTreeIterMut for Function {
     fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
         f(Order::Enter, RefNodeMut::ItemFunction(self));
-        let mut this = self.write().unwrap();
 
-        let _ = this.visibility;
-        let _ = this.name;
+        let _ = self.visibility;
+        let _ = self.name;
 
-        if let Some(attributes) = &mut this.attributes {
+        if let Some(attributes) = &mut self.attributes {
             attributes.depth_first_iter_mut(f);
         }
 
-        if let Some(params) = &mut this.generics {
+        if let Some(params) = &mut self.generics {
             params.depth_first_iter_mut(f);
         }
 
-        this.parameters.depth_first_iter_mut(f);
+        self.parameters.depth_first_iter_mut(f);
 
-        if let Some(return_type) = &mut this.return_type {
+        if let Some(return_type) = &mut self.return_type {
             return_type.depth_first_iter_mut(f);
         }
 
-        if let Some(definition) = &mut this.definition {
+        if let Some(definition) = &mut self.definition {
             definition.depth_first_iter_mut(f);
         }
 
-        drop(this);
         f(Order::Leave, RefNodeMut::ItemFunction(self));
     }
 }
 
-impl ParseTreeIterMut for Arc<RwLock<Variable>> {
+impl ParseTreeIterMut for Variable {
     fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
         f(Order::Enter, RefNodeMut::ItemVariable(self));
-        let mut this = self.write().unwrap();
 
-        let _ = this.visibility;
-        let _ = this.kind;
-        let _ = this.mutability;
-        let _ = this.name;
+        let _ = self.visibility;
+        let _ = self.kind;
+        let _ = self.mutability;
+        let _ = self.name;
 
-        if let Some(attributes) = &mut this.attributes {
+        if let Some(attributes) = &mut self.attributes {
             attributes.depth_first_iter_mut(f);
         }
 
-        if let Some(var_type) = &mut this.ty {
+        if let Some(var_type) = &mut self.ty {
             var_type.depth_first_iter_mut(f);
         }
 
-        if let Some(initializer) = &mut this.initializer {
+        if let Some(initializer) = &mut self.initializer {
             initializer.depth_first_iter_mut(f);
         }
 
-        drop(this);
         f(Order::Leave, RefNodeMut::ItemVariable(self));
     }
 }

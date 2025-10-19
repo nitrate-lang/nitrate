@@ -1,5 +1,3 @@
-use std::sync::{Arc, RwLock};
-
 use crate::{
     Order, ParseTreeIter, RefNode,
     ast::{
@@ -71,27 +69,25 @@ impl ParseTreeIter for Generics {
     }
 }
 
-impl ParseTreeIter for Arc<RwLock<TypeAlias>> {
+impl ParseTreeIter for TypeAlias {
     fn depth_first_iter(&self, f: &mut dyn FnMut(Order, RefNode)) {
         f(Order::Enter, RefNode::ItemTypeAlias(self));
-        let this = self.write().unwrap();
 
-        let _ = this.visibility;
-        let _ = this.name;
+        let _ = self.visibility;
+        let _ = self.name;
 
-        if let Some(attributes) = &this.attributes {
+        if let Some(attributes) = &self.attributes {
             attributes.depth_first_iter(f);
         }
 
-        if let Some(params) = &this.generics {
+        if let Some(params) = &self.generics {
             params.depth_first_iter(f);
         }
 
-        if let Some(alias_type) = &this.alias_type {
+        if let Some(alias_type) = &self.alias_type {
             alias_type.depth_first_iter(f);
         }
 
-        drop(this);
         f(Order::Leave, RefNode::ItemTypeAlias(self));
     }
 }
@@ -117,27 +113,25 @@ impl ParseTreeIter for StructField {
     }
 }
 
-impl ParseTreeIter for Arc<RwLock<Struct>> {
+impl ParseTreeIter for Struct {
     fn depth_first_iter(&self, f: &mut dyn FnMut(Order, RefNode)) {
         f(Order::Enter, RefNode::ItemStruct(self));
-        let this = self.write().unwrap();
 
-        let _ = this.visibility;
-        let _ = this.name;
+        let _ = self.visibility;
+        let _ = self.name;
 
-        if let Some(attributes) = &this.attributes {
+        if let Some(attributes) = &self.attributes {
             attributes.depth_first_iter(f);
         }
 
-        if let Some(params) = &this.generics {
+        if let Some(params) = &self.generics {
             params.depth_first_iter(f);
         }
 
-        for field in &this.fields {
+        for field in &self.fields {
             field.depth_first_iter(f);
         }
 
-        drop(this);
         f(Order::Leave, RefNode::ItemStruct(self));
     }
 }
@@ -164,27 +158,25 @@ impl ParseTreeIter for EnumVariant {
     }
 }
 
-impl ParseTreeIter for Arc<RwLock<Enum>> {
+impl ParseTreeIter for Enum {
     fn depth_first_iter(&self, f: &mut dyn FnMut(Order, RefNode)) {
         f(Order::Enter, RefNode::ItemEnum(self));
-        let this = self.write().unwrap();
 
-        let _ = this.visibility;
-        let _ = this.name;
+        let _ = self.visibility;
+        let _ = self.name;
 
-        if let Some(attributes) = &this.attributes {
+        if let Some(attributes) = &self.attributes {
             attributes.depth_first_iter(f);
         }
 
-        if let Some(params) = &this.generics {
+        if let Some(params) = &self.generics {
             params.depth_first_iter(f);
         }
 
-        for variant in &this.variants {
+        for variant in &self.variants {
             variant.depth_first_iter(f);
         }
 
-        drop(this);
         f(Order::Leave, RefNode::ItemEnum(self));
     }
 }
@@ -200,27 +192,25 @@ impl ParseTreeIter for AssociatedItem {
     }
 }
 
-impl ParseTreeIter for Arc<RwLock<Trait>> {
+impl ParseTreeIter for Trait {
     fn depth_first_iter(&self, f: &mut dyn FnMut(Order, RefNode)) {
         f(Order::Enter, RefNode::ItemTrait(self));
-        let this = self.write().unwrap();
 
-        let _ = this.visibility;
-        let _ = this.name;
+        let _ = self.visibility;
+        let _ = self.name;
 
-        if let Some(attributes) = &this.attributes {
+        if let Some(attributes) = &self.attributes {
             attributes.depth_first_iter(f);
         }
 
-        if let Some(params) = &this.generics {
+        if let Some(params) = &self.generics {
             params.depth_first_iter(f);
         }
 
-        for associated_item in &this.items {
+        for associated_item in &self.items {
             associated_item.depth_first_iter(f);
         }
 
-        drop(this);
         f(Order::Leave, RefNode::ItemTrait(self));
     }
 }
@@ -280,60 +270,56 @@ impl ParseTreeIter for FuncParams {
     }
 }
 
-impl ParseTreeIter for Arc<RwLock<Function>> {
+impl ParseTreeIter for Function {
     fn depth_first_iter(&self, f: &mut dyn FnMut(Order, RefNode)) {
         f(Order::Enter, RefNode::ItemFunction(self));
-        let this = self.write().unwrap();
 
-        let _ = this.visibility;
-        let _ = this.name;
+        let _ = self.visibility;
+        let _ = self.name;
 
-        if let Some(attributes) = &this.attributes {
+        if let Some(attributes) = &self.attributes {
             attributes.depth_first_iter(f);
         }
 
-        if let Some(params) = &this.generics {
+        if let Some(params) = &self.generics {
             params.depth_first_iter(f);
         }
 
-        this.parameters.depth_first_iter(f);
+        self.parameters.depth_first_iter(f);
 
-        if let Some(return_type) = &this.return_type {
+        if let Some(return_type) = &self.return_type {
             return_type.depth_first_iter(f);
         }
 
-        if let Some(definition) = &this.definition {
+        if let Some(definition) = &self.definition {
             definition.depth_first_iter(f);
         }
 
-        drop(this);
         f(Order::Leave, RefNode::ItemFunction(self));
     }
 }
 
-impl ParseTreeIter for Arc<RwLock<Variable>> {
+impl ParseTreeIter for Variable {
     fn depth_first_iter(&self, f: &mut dyn FnMut(Order, RefNode)) {
         f(Order::Enter, RefNode::ItemVariable(self));
-        let this = self.write().unwrap();
 
-        let _ = this.visibility;
-        let _ = this.kind;
-        let _ = this.mutability;
-        let _ = this.name;
+        let _ = self.visibility;
+        let _ = self.kind;
+        let _ = self.mutability;
+        let _ = self.name;
 
-        if let Some(attributes) = &this.attributes {
+        if let Some(attributes) = &self.attributes {
             attributes.depth_first_iter(f);
         }
 
-        if let Some(var_type) = &this.ty {
+        if let Some(var_type) = &self.ty {
             var_type.depth_first_iter(f);
         }
 
-        if let Some(initializer) = &this.initializer {
+        if let Some(initializer) = &self.initializer {
             initializer.depth_first_iter(f);
         }
 
-        drop(this);
         f(Order::Leave, RefNode::ItemVariable(self));
     }
 }

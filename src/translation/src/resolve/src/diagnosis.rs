@@ -1,5 +1,3 @@
-use crate::Symbol;
-
 use nitrate_diagnosis::{DiagnosticGroupId, DiagnosticInfo, FormattableDiagnosticGroup, Origin};
 use nitrate_parsetree::{
     ast::{ExprPath, TypePath},
@@ -8,10 +6,10 @@ use nitrate_parsetree::{
 
 pub enum ResolveIssue {
     ExprPathUnresolved(ExprPath),
-    ExprPathAmbiguous(ExprPath, Vec<Symbol>),
+    ExprPathAmbiguous(ExprPath),
 
     TypePathUnresolved(TypePath),
-    TypePathAmbiguous(TypePath, Vec<Symbol>),
+    TypePathAmbiguous(TypePath),
 
     ImportNotFound((String, std::io::Error)),
     CircularImport {
@@ -30,10 +28,10 @@ impl FormattableDiagnosticGroup for ResolveIssue {
     fn variant_id(&self) -> u16 {
         match self {
             ResolveIssue::ExprPathUnresolved(_) => 1,
-            ResolveIssue::ExprPathAmbiguous(_, _) => 2,
+            ResolveIssue::ExprPathAmbiguous(_) => 2,
 
             ResolveIssue::TypePathUnresolved(_) => 20,
-            ResolveIssue::TypePathAmbiguous(_, _) => 21,
+            ResolveIssue::TypePathAmbiguous(_) => 21,
 
             ResolveIssue::ImportNotFound(_) => 40,
             ResolveIssue::CircularImport { .. } => 41,
@@ -56,7 +54,7 @@ impl FormattableDiagnosticGroup for ResolveIssue {
                 ),
             },
 
-            ResolveIssue::ExprPathAmbiguous(path, _) => DiagnosticInfo {
+            ResolveIssue::ExprPathAmbiguous(path) => DiagnosticInfo {
                 origin: Origin::None,
                 message: format!(
                     "Ambiguous expression path: {}",
@@ -80,7 +78,7 @@ impl FormattableDiagnosticGroup for ResolveIssue {
                 ),
             },
 
-            ResolveIssue::TypePathAmbiguous(path, _) => DiagnosticInfo {
+            ResolveIssue::TypePathAmbiguous(path) => DiagnosticInfo {
                 origin: Origin::None,
                 message: format!(
                     "Ambiguous type path: {}",
