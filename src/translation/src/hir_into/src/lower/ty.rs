@@ -179,7 +179,7 @@ impl Ast2Hir for ast::TupleType {
 
         let mut elements = Vec::with_capacity(self.element_types.len());
         for ast_elem_ty in self.element_types.into_iter() {
-            let hir_elem_ty = ast_elem_ty.ast2hir(ctx, log)?;
+            let hir_elem_ty = ast_elem_ty.ast2hir(ctx, log)?.into_id(ctx.store());
             elements.push(hir_elem_ty);
         }
 

@@ -1,7 +1,11 @@
 use crate::lower::Ast2Hir;
 use nitrate_diagnosis::CompilerLog;
-use nitrate_hir::hir::{self, HirCtx};
+use nitrate_hir::hir::{self, HirCtx, Type};
 use nitrate_source::ast;
+
+fn visit_type(ty: &hir::Type) {
+    //
+}
 
 pub fn ast_mod2hir(
     module: ast::Module,
@@ -22,6 +26,9 @@ pub fn ast_expr2hir(
 }
 
 pub fn ast_type2hir(ty: ast::Type, ctx: &mut HirCtx, log: &CompilerLog) -> Result<hir::Type, ()> {
-    ty.ast2hir(ctx, log)
+    let hir_ty = ty.ast2hir(ctx, log)?;
+
     // TODO: Finalize by resolving symbol links
+
+    Ok(hir_ty)
 }

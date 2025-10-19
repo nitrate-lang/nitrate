@@ -96,7 +96,7 @@ pub enum Type {
     },
 
     Tuple {
-        element_types: ThinVec<Type>,
+        element_types: ThinVec<TypeId>,
     },
 
     Slice {

@@ -31,6 +31,7 @@ pub fn get_size_of(ty: &Type, store: &Store, ptr_size: PtrSize) -> Result<u64, L
             let mut size = 0_u64;
 
             for element in &*elements {
+                let element = &store[element];
                 let element_size = get_size_of(element, store, ptr_size)?;
                 let element_align = get_align_of(element, store, ptr_size)?;
 

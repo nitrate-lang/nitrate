@@ -28,7 +28,7 @@ pub fn get_align_of(ty: &Type, store: &Store, ptr_size: PtrSize) -> Result<u64, 
             let mut max_align = 1;
 
             for element in &*elements {
-                let element_align = get_align_of(element, store, ptr_size)?;
+                let element_align = get_align_of(&store[element], store, ptr_size)?;
                 max_align = max(max_align, element_align);
             }
 

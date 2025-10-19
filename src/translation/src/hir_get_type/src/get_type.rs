@@ -164,7 +164,7 @@ pub fn get_type(value: &Value, store: &Store) -> Result<Type, TypeInferenceError
         Value::Tuple { elements } => {
             let mut element_types = Vec::with_capacity(elements.len());
             for elem in elements {
-                let elem_type = get_type(elem, store)?;
+                let elem_type = get_type(elem, store)?.into_id(store);
                 element_types.push(elem_type);
             }
 

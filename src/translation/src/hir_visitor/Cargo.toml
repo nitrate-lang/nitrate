@@ -1,0 +1,7 @@
+[package]
+name = "nitrate_hir_visitor"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+nitrate_hir = { path = "../hir" }

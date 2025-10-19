@@ -146,7 +146,7 @@ fn metatype_source_encode(store: &Store, from: &Type, o: &mut dyn Write) -> Resu
         Type::Tuple { element_types } => {
             write!(o, "::std::meta::Type::Tuple {{ element_types: Vec::from([").unwrap();
             for elem in element_types {
-                metatype_source_encode(store, elem, o)?;
+                metatype_source_encode(store, &store[elem], o)?;
                 write!(o, ",").unwrap();
             }
             write!(o, "]) }}").unwrap();

@@ -192,7 +192,7 @@ impl Dump for Type {
                         write!(o, ", ")?;
                     }
 
-                    element_type.dump(ctx, o)?;
+                    ctx.store[element_type].dump(ctx, o)?;
                 }
 
                 if element_types.len() == 1 {
