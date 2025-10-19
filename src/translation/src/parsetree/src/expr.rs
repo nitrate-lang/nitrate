@@ -3,7 +3,7 @@ use crate::item::Variable;
 use crate::tag::{ArgNameId, LabelNameId, StringLiteralId, StructFieldNameId, VariableNameId};
 use crate::ty::TypePath;
 
-use nitrate_tokenize::IntegerKind;
+use nitrate_token::IntegerKind;
 use ordered_float::NotNan;
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;

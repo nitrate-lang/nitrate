@@ -716,7 +716,7 @@ dependencies = [
  "blake3",
  "interned-string",
  "log",
- "nitrate_tokenize",
+ "nitrate_token",
  "ordered-float",
  "serde",
  "serde_json",
@@ -752,7 +752,8 @@ dependencies = [
  "nitrate_hir_get_type",
  "nitrate_parse",
  "nitrate_parsetree",
- "nitrate_tokenize",
+ "nitrate_token",
+ "nitrate_token_lexer",
  "ordered-float",
  "thin-vec",
 ]
@@ -782,7 +783,8 @@ dependencies = [
  "log",
  "nitrate_diagnosis",
  "nitrate_parsetree",
- "nitrate_tokenize",
+ "nitrate_token",
+ "nitrate_token_lexer",
  "ordered-float",
  "spdx",
 ]
@@ -795,7 +797,7 @@ dependencies = [
  "bimap",
  "interned-string",
  "log",
- "nitrate_tokenize",
+ "nitrate_token",
  "once_cell",
  "ordered-float",
  "serde",
@@ -811,16 +813,27 @@ dependencies = [
  "nitrate_diagnosis",
  "nitrate_parse",
  "nitrate_parsetree",
- "nitrate_tokenize",
+ "nitrate_token_lexer",
 ]
 
 [[package]]
-name = "nitrate_tokenize"
+name = "nitrate_token"
+version = "0.1.0"
+dependencies = [
+ "enum-iterator",
+ "nitrate_diagnosis",
+ "ordered-float",
+ "serde",
+]
+
+[[package]]
+name = "nitrate_token_lexer"
 version = "0.1.0"
 dependencies = [
  "enum-iterator",
  "log",
  "nitrate_diagnosis",
+ "nitrate_token",
  "ordered-float",
  "serde",
 ]
@@ -840,7 +853,8 @@ dependencies = [
  "nitrate_parse",
  "nitrate_parsetree",
  "nitrate_resolve",
- "nitrate_tokenize",
+ "nitrate_token",
+ "nitrate_token_lexer",
  "threadpool",
  "threadpool_scope",
 ]

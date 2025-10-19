@@ -10,7 +10,8 @@ pub use nitrate_hir_resolve_type as hir_resolve_type;
 pub use nitrate_parse as parse;
 pub use nitrate_parsetree as parsetree;
 pub use nitrate_resolve as resolve;
-pub use nitrate_tokenize as tokenize;
+pub use nitrate_token as token;
+pub use nitrate_token_lexer as token_lexer;
 
 pub use options::TranslationOptions;
 pub use options_builder::TranslationOptionsBuilder;

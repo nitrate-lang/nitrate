@@ -1,18 +1,10 @@
 [package]
-name = "nitrate_tokenize"
+name = "nitrate_token"
 version = "0.1.0"
 edition = "2024"
 
-[dev-dependencies]
-criterion = { version = "0.7.0", features = ["html_reports"] }
-
-[[bench]]
-name = "lex_bench"
-harness = false
-
 [dependencies]
 enum-iterator = "2.1.0"
-log = "0.4.27"
 ordered-float = { version = "5.0.0", features = ["serde"] }
 serde = { version = "1.0.219", features = ["derive"] }
 nitrate_diagnosis = { path = "../../../diagnosis" }

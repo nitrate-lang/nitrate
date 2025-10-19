@@ -1,6 +1,6 @@
 use std::num::NonZeroUsize;
 
-use nitrate_tokenize::IntegerKind;
+use nitrate_token::IntegerKind;
 
 use crate::{
     expr::{

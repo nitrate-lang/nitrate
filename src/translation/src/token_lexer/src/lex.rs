@@ -1,7 +1,8 @@
-use super::token::{AnnotatedToken, Comment, CommentKind, Integer, IntegerKind, Token};
-use crate::SourcePosition;
 use log::error;
 use nitrate_diagnosis::FileId;
+use nitrate_token::{
+    AnnotatedToken, Comment, CommentKind, Integer, IntegerKind, SourcePosition, Token,
+};
 use ordered_float::NotNan;
 
 const RESERVED_PREFIX: &str = "⚙️";
@@ -102,13 +103,13 @@ impl<'a> Lexer<'a> {
 
     #[inline(always)]
     pub fn next_t(&mut self) -> Token {
-        self.next_tok().into_token()
+        self.next_tok().token
     }
 
     #[inline(always)]
     #[must_use]
     pub fn peek_t(&mut self) -> Token {
-        self.peek_tok().into_token()
+        self.peek_tok().token
     }
 
     #[inline(always)]

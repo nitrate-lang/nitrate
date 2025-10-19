@@ -46,5 +46,5 @@ runtime/libazide-gc/target/
 
 /target
 src/translation/src/parse/target
-src/translation/src/tokenize/target
+src/translation/src/token/target
 tmp/

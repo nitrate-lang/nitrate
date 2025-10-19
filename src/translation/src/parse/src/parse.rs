@@ -1,6 +1,6 @@
 use nitrate_diagnosis::CompilerLog;
 use nitrate_parsetree::ast::Item;
-use nitrate_tokenize::Lexer;
+use nitrate_token_lexer::Lexer;
 
 pub struct Parser<'a, 'log> {
     pub(crate) lexer: Lexer<'a>,

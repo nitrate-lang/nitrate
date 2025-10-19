@@ -1,5 +1,5 @@
 use criterion::{Criterion, criterion_group, criterion_main};
-use nitrate_tokenize::*;
+use nitrate_token::*;
 
 struct LexerUtil {}
 

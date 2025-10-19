@@ -1,7 +1,7 @@
 use nitrate_diagnosis::{
     DiagnosticGroupId, DiagnosticInfo, FormattableDiagnosticGroup, Origin, 
 };
-use nitrate_tokenize::SourcePosition;
+use nitrate_token::SourcePosition;
 
 pub(crate) enum SyntaxErr {
     GenericMissingParameterName(SourcePosition),

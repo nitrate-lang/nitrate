@@ -11,7 +11,8 @@ name = "parse_type_bench"
 harness = false
 
 [dependencies]
-nitrate_tokenize = { path = "../tokenize" }
+nitrate_token = { path = "../token" }
+nitrate_token_lexer = { path = "../token_lexer" }
 nitrate_parsetree = { path = "../parsetree" }
 nitrate_diagnosis = { path = "../../../diagnosis" }
 

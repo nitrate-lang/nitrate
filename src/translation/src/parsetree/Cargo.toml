@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-nitrate_tokenize = { path = "../tokenize" }
+nitrate_token = { path = "../token" }
 
 spdx = { version = "0.12.0" }
 apint = "0.2.0"

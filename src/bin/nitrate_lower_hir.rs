@@ -9,7 +9,7 @@ use nitrate_translation::{
     parse::Parser,
     parsetree::ast,
     resolve::{ImportContext, resolve_imports, resolve_names},
-    tokenize::Lexer,
+    token_lexer::Lexer,
 };
 
 use slog::{Drain, Record, o};

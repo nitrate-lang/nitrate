@@ -1,4 +1,4 @@
-use nitrate_tokenize::{escape_bstring, escape_string};
+use nitrate_token::{escape_bstring, escape_string};
 
 use crate::{dump::write_indent, prelude::*};
 

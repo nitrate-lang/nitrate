@@ -13,7 +13,7 @@ use nitrate_parsetree::{
         intern_variable_name,
     },
 };
-use nitrate_tokenize::Token;
+use nitrate_token::Token;
 
 impl Parser<'_, '_> {
     fn parse_generics(&mut self) -> Option<Generics> {

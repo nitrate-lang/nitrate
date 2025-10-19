@@ -10,10 +10,7 @@ use nitrate_parsetree::{
     },
     tag::{intern_lifetime_name, intern_opaque_type_name},
 };
-use nitrate_tokenize::Token;
-
-#[allow(unused_imports)]
-use nitrate_tokenize::Lexer;
+use nitrate_token::Token;
 
 #[derive(Default)]
 struct RefinementOptions {

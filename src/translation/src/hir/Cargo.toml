@@ -14,4 +14,4 @@ append-only-vec = "0.1.7"
 thin-vec = { version = "0.2.14", features = ["serde"] }
 thin_str = { version = "0.1.0", features = ["serde", "serde_support"] }
 ordered-float = "5.1.0"
-nitrate_tokenize = { path = "../tokenize" }
+nitrate_token = { path = "../token" }

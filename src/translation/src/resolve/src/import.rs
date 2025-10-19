@@ -7,7 +7,7 @@ use nitrate_parsetree::{
     ast::{Import, Item, Module, Visibility},
     tag::{ImportNameId, PackageNameId, intern_module_name, intern_package_name},
 };
-use nitrate_tokenize::{Lexer, LexerError};
+use nitrate_token_lexer::{Lexer, LexerError};
 
 use std::{collections::HashSet, sync::Arc};
 

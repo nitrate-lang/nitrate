@@ -15,7 +15,7 @@ use nitrate_parsetree::{
         intern_string_literal, intern_variable_name,
     },
 };
-use nitrate_tokenize::Token;
+use nitrate_token::Token;
 
 type Precedence = u32;
 

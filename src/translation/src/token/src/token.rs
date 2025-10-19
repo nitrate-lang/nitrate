@@ -483,17 +483,17 @@ impl From<SourcePosition> for nitrate_diagnosis::SourcePosition {
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct AnnotatedToken {
-    pub(crate) token: Token,
+    pub token: Token,
 
-    start_line: u32,
-    start_column: u32,
-    start_offset: u32,
+    pub start_line: u32,
+    pub start_column: u32,
+    pub start_offset: u32,
 
-    end_line: u32,
-    end_column: u32,
-    end_offset: u32,
+    pub end_line: u32,
+    pub end_column: u32,
+    pub end_offset: u32,
 
-    fileid: Option<FileId>,
+    pub fileid: Option<FileId>,
 }
 
 impl AnnotatedToken {
@@ -509,16 +509,6 @@ impl AnnotatedToken {
             end_offset: end.offset,
             fileid: start.fileid,
         }
-    }
-
-    #[must_use]
-    pub const fn token(&self) -> &Token {
-        &self.token
-    }
-
-    #[must_use]
-    pub fn into_token(self) -> Token {
-        self.token
     }
 
     #[must_use]

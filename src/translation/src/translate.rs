@@ -5,14 +5,14 @@ use nitrate_parsetree::{
     ast::{Module, Visibility},
     tag::intern_module_name,
 };
-use nitrate_tokenize::Lexer;
+use nitrate_token_lexer::{Lexer, LexerError};
 use threadpool::ThreadPool;
 use threadpool_scope::scope_with;
 
 #[derive(Debug)]
 pub enum TranslationError {
     ScannerError(std::io::Error),
-    LexerError(nitrate_tokenize::LexerError),
+    LexerError(LexerError),
     SyntaxError,
     NameResolutionError,
     TypeCheckingError,

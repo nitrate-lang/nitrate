@@ -4,7 +4,8 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-nitrate_tokenize = { path = "src/tokenize" }
+nitrate_token = { path = "src/token" }
+nitrate_token_lexer = { path = "src/token_lexer" }
 nitrate_parsetree = { path = "src/parsetree" }
 nitrate_hir = { path = "src/hir" }
 nitrate_hir_into = { path = "src/hir_into" }

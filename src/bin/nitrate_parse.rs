@@ -2,7 +2,7 @@ use std::{fs::OpenOptions, io::Read};
 
 use nitrate_diagnosis::{CompilerLog, intern_file_id};
 use nitrate_translation::{
-    TranslationError, parse::Parser, parsetree::ast::Module, tokenize::Lexer,
+    TranslationError, parse::Parser, parsetree::ast::Module, token_lexer::Lexer,
 };
 use slog::{Drain, Record, o};
 use slog_term::{RecordDecorator, ThreadSafeTimestampFn};
