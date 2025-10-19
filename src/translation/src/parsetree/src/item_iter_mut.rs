@@ -152,7 +152,7 @@ impl ParseTreeIterMut for EnumVariant {
             attributes.depth_first_iter_mut(f);
         }
 
-        if let Some(variant_type) = &mut self.variant_type {
+        if let Some(variant_type) = &mut self.ty {
             variant_type.depth_first_iter_mut(f);
         }
 

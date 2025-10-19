@@ -2,7 +2,7 @@ use crate::prelude::*;
 use crate::store::LiteralId;
 use interned_string::IString;
 use serde::{Deserialize, Serialize};
-use std::collections::{BTreeMap, BTreeSet};
+use std::collections::BTreeSet;
 use std::num::NonZeroU32;
 use thin_vec::ThinVec;
 
@@ -37,14 +37,22 @@ pub struct StructType {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub enum EnumAttribute {
-    Placeholder,
+pub enum EnumAttribute {}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum EnumVariantAttribute {}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
+pub struct EnumVariant {
+    pub attributes: BTreeSet<EnumVariantAttribute>,
+    pub name: IString,
+    pub ty: TypeId,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct EnumType {
     pub attributes: BTreeSet<EnumAttribute>,
-    pub variants: BTreeMap<IString, TypeId>,
+    pub variants: Vec<EnumVariant>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]

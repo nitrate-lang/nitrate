@@ -64,10 +64,17 @@ pub fn get_type(value: &Value, store: &Store) -> Result<Type, TypeInferenceError
             enum_type,
             variant,
             value: _,
-        } => match store[enum_type].variants.get(variant) {
-            Some(variant_type) => Ok(store[variant_type].clone()),
-            None => Err(TypeInferenceError::EnumVariantNotPresent),
-        },
+        } => {
+            let found = store[enum_type]
+                .variants
+                .iter()
+                .find(|x| &x.name == variant);
+
+            match found {
+                Some(variant) => Ok(store[&variant.ty].clone()),
+                None => Err(TypeInferenceError::EnumVariantNotPresent),
+            }
+        }
 
         Value::Binary { left, op, right: _ } => match op {
             BinaryOp::Add

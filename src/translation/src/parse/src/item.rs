@@ -262,7 +262,7 @@ impl Parser<'_, '_> {
             EnumVariant {
                 attributes,
                 name,
-                variant_type,
+                ty: variant_type,
                 default_value: value,
             }
         }

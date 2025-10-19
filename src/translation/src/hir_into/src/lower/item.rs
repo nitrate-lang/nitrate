@@ -118,10 +118,76 @@ fn ast_struct2hir(struct_def: &ast::Struct, ctx: &mut HirCtx, log: &CompilerLog)
     Ok(())
 }
 
-fn ast_enum2hir(_enum: &ast::Enum, _ctx: &mut HirCtx, log: &CompilerLog) -> Result<(), ()> {
-    // TODO: implement enum lowering
-    log.report(&HirErr::UnimplementedFeature("enum definitions".into()));
-    Err(())
+fn ast_enum2hir(enum_def: &ast::Enum, ctx: &mut HirCtx, log: &CompilerLog) -> Result<(), ()> {
+    let visibility = match enum_def.visibility {
+        Some(ast::Visibility::Public) => Visibility::Pub,
+        Some(ast::Visibility::Protected) => Visibility::Pro,
+        Some(ast::Visibility::Private) | None => Visibility::Sec,
+    };
+
+    let attributes = BTreeSet::new();
+    if let Some(ast_attributes) = &enum_def.attributes {
+        for _attr in ast_attributes {
+            log.report(&HirErr::UnrecognizedEnumAttribute);
+        }
+    }
+
+    let name = HirCtx::join_path(ctx.current_scope(), &enum_def.name).into();
+
+    if enum_def.generics.is_some() {
+        // TODO: support generic enums
+        log.report(&HirErr::UnimplementedFeature("generic enums".into()));
+    }
+
+    let mut variants = Vec::new();
+    let mut variant_extras = Vec::new();
+
+    for variant in &enum_def.variants {
+        let variant_attributes = BTreeSet::new();
+        if let Some(ast_attributes) = &variant.attributes {
+            for _attr in ast_attributes {
+                log.report(&HirErr::UnrecognizedEnumVariantAttribute);
+            }
+        }
+
+        let variant_name = IString::from(variant.name.to_string());
+
+        let variant_type = match variant.ty.to_owned() {
+            Some(ty) => ty.ast2hir(ctx, log)?.into_id(ctx.store()),
+            None => Type::Unit.into_id(ctx.store()),
+        };
+
+        let field_default = match variant.default_value.to_owned() {
+            Some(expr) => Some(expr.ast2hir(ctx, log)?.into_id(ctx.store())),
+            None => None,
+        };
+
+        let variant = EnumVariant {
+            attributes: variant_attributes,
+            name: variant_name,
+            ty: variant_type,
+        };
+
+        variants.push(variant);
+        variant_extras.push(field_default);
+    }
+
+    let enum_id = EnumType {
+        attributes,
+        variants,
+    }
+    .into_id(ctx.store());
+
+    let definition = TypeDefinition::EnumDef(EnumDef {
+        visibility,
+        name,
+        variant_extras,
+        enum_id,
+    });
+
+    ctx.register_type(definition);
+
+    Ok(())
 }
 
 fn ast_trait2hir(_trait: &ast::Trait, _ctx: &mut HirCtx, log: &CompilerLog) -> Result<(), ()> {

@@ -100,14 +100,14 @@ impl Dump for EnumType {
         } else {
             write!(o, "{{\n")?;
 
-            for (name, variant_type) in &self.variants {
+            for variant in &self.variants {
                 ctx.indent += 1;
 
                 write_indent(ctx, o)?;
-                write!(o, "{name}")?;
+                write!(o, "{}", variant.name)?;
 
                 write!(o, ": ")?;
-                ctx.store[variant_type].dump(ctx, o)?;
+                ctx.store[&variant.ty].dump(ctx, o)?;
 
                 write!(o, ",\n")?;
 

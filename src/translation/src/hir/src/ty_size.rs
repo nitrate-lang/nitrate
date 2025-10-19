@@ -78,8 +78,8 @@ pub fn get_size_of(ty: &Type, store: &Store, ptr_size: PtrSize) -> Result<u64, L
 
             let mut size = 0_u64;
 
-            for (_, variant_type) in variants {
-                let variant_size = get_size_of(&store[variant_type], store, ptr_size)?;
+            for variant in variants {
+                let variant_size = get_size_of(&store[&variant.ty], store, ptr_size)?;
                 size = max(size, variant_size);
             }
 

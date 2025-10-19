@@ -21,9 +21,18 @@ pub struct StructDef {
 }
 
 #[derive(Debug)]
+pub struct EnumDef {
+    pub visibility: Visibility,
+    pub name: IString,
+    pub variant_extras: Vec<Option<ValueId>>,
+    pub enum_id: EnumTypeId,
+}
+
+#[derive(Debug)]
 pub enum TypeDefinition {
     TypeAliasDef(TypeAliasDef),
     StructDef(StructDef),
+    EnumDef(EnumDef),
 }
 
 impl TypeDefinition {
@@ -31,6 +40,7 @@ impl TypeDefinition {
         match self {
             TypeDefinition::TypeAliasDef(def) => &def.name,
             TypeDefinition::StructDef(def) => &def.name,
+            TypeDefinition::EnumDef(def) => &def.name,
         }
     }
 }

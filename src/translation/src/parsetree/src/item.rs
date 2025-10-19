@@ -105,7 +105,7 @@ pub struct Struct {
 pub struct EnumVariant {
     pub attributes: Option<AttributeList>,
     pub name: EnumVariantNameId,
-    pub variant_type: Option<Type>,
+    pub ty: Option<Type>,
     pub default_value: Option<Expr>,
 }
 

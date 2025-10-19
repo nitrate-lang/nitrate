@@ -61,8 +61,8 @@ pub fn get_align_of(ty: &Type, store: &Store, ptr_size: PtrSize) -> Result<u64, 
 
             let mut max_align = 1;
 
-            for (_, variant_type) in variants {
-                let variant_align = get_align_of(&store[variant_type], store, ptr_size)?;
+            for variant in variants {
+                let variant_align = get_align_of(&store[&variant.ty], store, ptr_size)?;
                 max_align = max(max_align, variant_align);
             }
 

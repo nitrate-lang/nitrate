@@ -1664,7 +1664,7 @@ impl PrettyPrint for EnumVariant {
 
         writer.write_str(&self.name)?;
 
-        if let Some(variant_type) = &self.variant_type {
+        if let Some(variant_type) = &self.ty {
             writer.write_char('(')?;
             variant_type.pretty_print_fmt(ctx, writer)?;
             writer.write_char(')')?;

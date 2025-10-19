@@ -152,7 +152,7 @@ impl ParseTreeIter for EnumVariant {
             attributes.depth_first_iter(f);
         }
 
-        if let Some(variant_type) = &self.variant_type {
+        if let Some(variant_type) = &self.ty {
             variant_type.depth_first_iter(f);
         }
 
