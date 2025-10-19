@@ -1,0 +1,79 @@
+use interned_string::IString;
+use nitrate_hir::prelude::*;
+use std::collections::BTreeSet;
+
+pub trait HirItemVisitor<T> {
+    fn visit_module(
+        &mut self,
+        vis: Visibility,
+        name: Option<&IString>,
+        attrs: &BTreeSet<ModuleAttribute>,
+        items: &[Item],
+    ) -> T;
+
+    fn visit_global_variable(
+        &mut self,
+        vis: Visibility,
+        attrs: &BTreeSet<GlobalVariableAttribute>,
+        is_mutable: bool,
+        name: &IString,
+        ty: &Type,
+        init: &Value,
+    ) -> T;
+
+    fn visit_function(
+        &mut self,
+        vis: Visibility,
+        attrs: &BTreeSet<FunctionAttribute>,
+        name: &IString,
+        params: &[ParameterId],
+        ret: &Type,
+        body: Option<&Block>,
+    ) -> T;
+
+    fn visit_item(&mut self, item: &Item, store: &Store) -> T {
+        match item {
+            Item::Module(module_id) => {
+                let m = store[module_id].borrow();
+                self.visit_module(m.visibility, m.name.as_ref(), &m.attributes, &m.items)
+            }
+
+            Item::GlobalVariable(global_variable_id) => {
+                let gv = store[global_variable_id].borrow();
+                self.visit_global_variable(
+                    gv.visibility,
+                    &gv.attributes,
+                    gv.is_mutable,
+                    &gv.name,
+                    &store[&gv.ty],
+                    &store[&gv.initializer].borrow(),
+                )
+            }
+
+            Item::Function(function_id) => {
+                let f = store[function_id].borrow();
+                match &f.body {
+                    Some(body_id) => {
+                        let body = &store[body_id].borrow();
+                        self.visit_function(
+                            f.visibility,
+                            &f.attributes,
+                            &f.name,
+                            &f.params,
+                            &store[&f.return_type],
+                            Some(body),
+                        )
+                    }
+                    None => self.visit_function(
+                        f.visibility,
+                        &f.attributes,
+                        &f.name,
+                        &f.params,
+                        &store[&f.return_type],
+                        None,
+                    ),
+                }
+            }
+        }
+    }
+}

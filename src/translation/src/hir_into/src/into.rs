@@ -2,7 +2,7 @@ use crate::lower::Ast2Hir;
 use interned_string::IString;
 use nitrate_diagnosis::CompilerLog;
 use nitrate_hir::prelude::*;
-use nitrate_hir_visitor::{HirTypeVisitor, HirValueVisitor, HirVisitor};
+use nitrate_hir_visitor::{HirItemVisitor, HirTypeVisitor, HirValueVisitor, HirVisitor};
 use nitrate_source::ast;
 use ordered_float::OrderedFloat;
 
@@ -71,7 +71,7 @@ impl HirTypeVisitor<()> for LinkResolver<'_> {
         self.visit_type(base, self.store);
     }
 
-    fn visit_function(
+    fn visit_function_type(
         &mut self,
         _attrs: &std::collections::BTreeSet<FunctionAttribute>,
         params: &[ParameterId],
@@ -97,7 +97,11 @@ impl HirTypeVisitor<()> for LinkResolver<'_> {
         self.visit_type(to, self.store);
     }
 
-    fn visit_symbol(&mut self, _path: &str, _link: Option<&TypeId>) -> () {
+    fn visit_symbol(&mut self, _path: &str, link: Option<&TypeId>) -> () {
+        if link.is_some() {
+            return;
+        }
+
         // TODO: Resolve symbol link
         unimplemented!()
     }
@@ -226,20 +230,41 @@ impl HirValueVisitor<()> for LinkResolver<'_> {
                 }
 
                 BlockElement::Local(local) => {
-                    // TODO: Handle local initializers
-                    let _local = &self.store[local].borrow();
-                    unimplemented!("local variable visitation in link resolver");
+                    let local = &self.store[local].borrow();
+                    self.visit_type(&self.store[&local.ty], self.store);
+                    if let Some(init) = &local.initializer {
+                        let init = &self.store[init].borrow();
+                        self.visit_value(init, self.store);
+                    }
                 }
             }
         }
     }
 
     fn visit_closure(&mut self, _captures: &[SymbolId], callee: &Function) -> () {
-        self.visit_function(
-            &callee.attributes,
-            &callee.params,
-            &self.store[&callee.return_type],
-        );
+        match &callee.body {
+            Some(body_id) => {
+                self.visit_function(
+                    callee.visibility,
+                    &callee.attributes,
+                    &callee.name,
+                    &callee.params,
+                    &self.store[&callee.return_type],
+                    Some(&self.store[body_id].borrow()),
+                );
+            }
+
+            None => {
+                self.visit_function(
+                    callee.visibility,
+                    &callee.attributes,
+                    &callee.name,
+                    &callee.params,
+                    &self.store[&callee.return_type],
+                    None,
+                );
+            }
+        }
     }
 
     fn visit_call(&mut self, callee: &Value, arguments: &[ValueId]) -> () {
@@ -249,17 +274,83 @@ impl HirValueVisitor<()> for LinkResolver<'_> {
         }
     }
 
-    fn visit_symbol(&mut self, _path: &IString, _link: Option<&SymbolId>) -> () {
+    fn visit_symbol(&mut self, _path: &IString, link: Option<&SymbolId>) -> () {
+        if link.is_some() {
+            return;
+        }
+
         // TODO: Resolve symbol link
         unimplemented!()
+    }
+}
+
+impl HirItemVisitor<()> for LinkResolver<'_> {
+    fn visit_module(
+        &mut self,
+        _vis: Visibility,
+        _name: Option<&IString>,
+        _attrs: &std::collections::BTreeSet<ModuleAttribute>,
+        items: &[Item],
+    ) -> () {
+        for item in items {
+            self.visit_item(item, self.store);
+        }
+    }
+
+    fn visit_global_variable(
+        &mut self,
+        _vis: Visibility,
+        _attrs: &std::collections::BTreeSet<GlobalVariableAttribute>,
+        _is_mutable: bool,
+        _name: &IString,
+        ty: &Type,
+        init: &Value,
+    ) -> () {
+        self.visit_type(ty, self.store);
+        self.visit_value(init, self.store);
+    }
+
+    fn visit_function(
+        &mut self,
+        _vis: Visibility,
+        _attrs: &std::collections::BTreeSet<FunctionAttribute>,
+        _name: &IString,
+        params: &[ParameterId],
+        ret: &Type,
+        body: Option<&Block>,
+    ) -> () {
+        for param in params {
+            let param = &self.store[param].borrow();
+            self.visit_type(&self.store[&param.ty], self.store);
+
+            if let Some(default_value) = &param.default_value {
+                let default = &self.store[default_value].borrow();
+                self.visit_value(default, self.store);
+            }
+        }
+
+        self.visit_type(ret, self.store);
+
+        if let Some(body) = body {
+            self.visit_block(body.safety, &body.elements);
+        }
     }
 }
 
 impl HirVisitor<()> for LinkResolver<'_> {}
 
 pub fn ast_mod2hir(module: ast::Module, ctx: &mut HirCtx, log: &CompilerLog) -> Result<Module, ()> {
-    module.ast2hir(ctx, log)
-    // TODO: Finalize by resolving symbol links
+    let hir_module = module.ast2hir(ctx, log)?;
+
+    let mut resolver = LinkResolver { store: ctx.store() };
+    resolver.visit_module(
+        hir_module.visibility,
+        hir_module.name.as_ref(),
+        &hir_module.attributes,
+        &hir_module.items,
+    );
+
+    Ok(hir_module)
 }
 
 pub fn ast_expr2hir(expr: ast::Expr, ctx: &mut HirCtx, log: &CompilerLog) -> Result<Value, ()> {
