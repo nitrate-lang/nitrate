@@ -264,9 +264,9 @@ impl Dump for Type {
                 ctx.store[to].dump(ctx, o)
             }
 
-            Type::Symbol { path, link } => match link {
-                Some(link) => write!(o, "`{}`::{}", path, link.as_usize()),
-                None => write!(o, "? `{}`", path),
+            Type::Symbol(symbol) => match symbol.link.get() {
+                Some(link) => write!(o, "`{}`::{}", symbol.path, link.as_usize()),
+                None => write!(o, "? `{}`", symbol.path),
             },
 
             Type::InferredFloat => write!(o, "?f"),

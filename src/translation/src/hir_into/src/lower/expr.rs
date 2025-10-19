@@ -9,6 +9,7 @@ use nitrate_source::ast::{self as ast, CallArgument, UnaryExprOp};
 use nitrate_source_parse::Parser;
 use nitrate_token::escape_string;
 use nitrate_token_lexer::{Lexer, LexerError};
+use once_cell_serde::sync::OnceCell;
 use ordered_float::OrderedFloat;
 use std::collections::{BTreeSet, HashMap};
 use std::fmt::Write;
@@ -289,7 +290,7 @@ fn metatype_source_encode(store: &Store, from: &Type, o: &mut dyn Write) -> Resu
             Ok(())
         }
 
-        Type::Symbol { path: _, link } => match link {
+        Type::Symbol(symbol) => match symbol.link.get() {
             Some(type_id) => metatype_source_encode(store, &store[type_id], o),
             None => Err(EncodeErr::UnresolvedSymbol),
         },
@@ -431,7 +432,11 @@ impl Ast2Hir for ast::StructInit {
             .join("::");
 
         let path = IString::from(HirCtx::join_path(ctx.current_scope(), &unqualified_path));
-        let struct_type = Type::Symbol { path, link: None }.into_id(ctx.store());
+        let struct_type = Type::Symbol(TypeSymbol {
+            path,
+            link: OnceCell::new(),
+        })
+        .into_id(ctx.store());
 
         let mut fields = Vec::with_capacity(self.fields.len());
         for field in self.fields {

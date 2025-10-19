@@ -4,6 +4,7 @@ use nitrate_diagnosis::CompilerLog;
 use nitrate_hir::prelude::*;
 use nitrate_hir_evaluate::HirEvalCtx;
 use nitrate_source::ast::{self as ast};
+use once_cell_serde::sync::OnceCell;
 use std::{collections::BTreeSet, ops::Deref};
 
 impl Ast2Hir for ast::TypeSyntaxError {
@@ -151,10 +152,10 @@ impl Ast2Hir for ast::TypePath {
                 Err(())
             }
 
-            Some(p) => Ok(Type::Symbol {
+            Some(p) => Ok(Type::Symbol(TypeSymbol {
                 path: IString::from(p),
-                link: None,
-            }),
+                link: OnceCell::new(),
+            })),
         }
     }
 }

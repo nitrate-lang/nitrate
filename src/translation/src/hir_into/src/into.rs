@@ -97,7 +97,7 @@ impl HirTypeVisitor<()> for LinkResolver<'_> {
         self.visit_type(to, self.store);
     }
 
-    fn visit_symbol(&mut self, _path: &str, _link: &Option<TypeId>) -> () {
+    fn visit_symbol(&mut self, _path: &str, _link: Option<&TypeId>) -> () {
         // TODO: Resolve symbol link
         unimplemented!()
     }

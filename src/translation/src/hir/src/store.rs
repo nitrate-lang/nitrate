@@ -8,7 +8,7 @@ use std::sync::{Arc, RwLock};
 
 macro_rules! impl_dedup_store {
     ($handle_name:ident, $item_name:ident, $store_name:ident) => {
-        #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
+        #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, Hash)]
         pub struct $handle_name(NonZeroU32);
 
         impl $handle_name {

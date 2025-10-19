@@ -105,7 +105,7 @@ pub fn get_size_of(ty: &Type, store: &Store, ptr_size: PtrSize) -> Result<u64, L
         Type::Reference { .. } => Ok(ptr_size as u64),
         Type::Pointer { .. } => Ok(ptr_size as u64),
 
-        Type::Symbol { link, .. } => match link {
+        Type::Symbol(symbol) => match symbol.link.get() {
             Some(type_id) => get_size_of(&store[type_id], store, ptr_size),
             None => Err(LayoutError::UnresolvedSymbol),
         },
