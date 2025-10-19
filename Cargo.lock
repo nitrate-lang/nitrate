@@ -748,7 +748,9 @@ dependencies = [
 name = "nitrate_hir_visitor"
 version = "0.1.0"
 dependencies = [
+ "interned-string",
  "nitrate_hir",
+ "ordered-float",
 ]
 
 [[package]]

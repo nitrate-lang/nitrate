@@ -63,10 +63,12 @@ pub fn get_type(value: &Value, store: &Store) -> Result<Type, TypeInferenceError
             variant,
             value: _,
         } => {
-            let found = store[enum_type]
-                .variants
-                .iter()
-                .find(|x| &x.name == variant);
+            let enum_type = match store[enum_type] {
+                Type::Enum { ref enum_type } => &store[enum_type],
+                _ => return Err(TypeInferenceError::EnumVariantNotPresent),
+            };
+
+            let found = enum_type.variants.iter().find(|x| &x.name == variant);
 
             match found {
                 Some(variant) => Ok(store[&variant.ty].clone()),
