@@ -1,5 +1,6 @@
 use interned_string::IString;
 use nitrate_hir::prelude::*;
+use once_cell_serde::sync::OnceCell;
 use ordered_float::OrderedFloat;
 
 pub trait HirValueVisitor<T> {
@@ -44,7 +45,7 @@ pub trait HirValueVisitor<T> {
     fn visit_block(&mut self, safety: BlockSafety, elements: &[BlockElement]) -> T;
     fn visit_closure(&mut self, captures: &[SymbolId], callee: &Function) -> T;
     fn visit_call(&mut self, callee: &Value, arguments: &[ValueId]) -> T;
-    fn visit_symbol(&mut self, path: &IString, link: Option<&SymbolId>) -> T;
+    fn visit_symbol(&mut self, path: &IString, link: &OnceCell<SymbolId>) -> T;
 
     fn visit_value(&mut self, value: &Value, store: &Store) -> T {
         match value {
@@ -151,7 +152,7 @@ pub trait HirValueVisitor<T> {
                 self.visit_call(&store[callee].borrow(), arguments)
             }
 
-            Value::Symbol(symbol) => self.visit_symbol(&symbol.path, symbol.link.get()),
+            Value::Symbol(symbol) => self.visit_symbol(&symbol.path, &symbol.link),
         }
     }
 }

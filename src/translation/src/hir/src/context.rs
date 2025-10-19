@@ -163,6 +163,10 @@ impl HirCtx {
     pub fn register_type(&mut self, definition: TypeDefinition) {
         self.type_map.insert(definition.name().clone(), definition);
     }
+
+    pub fn lookup_type(&self, name: &IString) -> Option<&TypeDefinition> {
+        self.type_map.get(name)
+    }
 }
 
 impl std::ops::Index<&TypeId> for HirCtx {

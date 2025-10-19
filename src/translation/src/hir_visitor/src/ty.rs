@@ -1,4 +1,6 @@
+use interned_string::IString;
 use nitrate_hir::prelude::*;
+use once_cell_serde::sync::OnceCell;
 use std::{collections::BTreeSet, num::NonZero};
 
 pub trait HirTypeVisitor<T> {
@@ -18,7 +20,7 @@ pub trait HirTypeVisitor<T> {
     fn visit_i128(&mut self) -> T;
     fn visit_f32(&mut self) -> T;
     fn visit_f64(&mut self) -> T;
-    fn visit_opaque(&mut self, name: &str) -> T;
+    fn visit_opaque(&mut self, name: &IString) -> T;
     fn visit_array(&mut self, element_type: &Type, len: u64) -> T;
     fn visit_tuple(&mut self, element_types: &[TypeId]) -> T;
     fn visit_slice(&mut self, element_type: &Type) -> T;
@@ -36,7 +38,7 @@ pub trait HirTypeVisitor<T> {
 
     fn visit_reference(&mut self, life: &Lifetime, excl: bool, mutable: bool, to: &Type) -> T;
     fn visit_pointer(&mut self, excl: bool, mutable: bool, to: &Type) -> T;
-    fn visit_symbol(&mut self, path: &str, link: Option<&TypeId>) -> T;
+    fn visit_symbol(&mut self, path: &IString, link: &OnceCell<TypeId>) -> T;
     fn visit_inferred_float(&mut self) -> T;
     fn visit_inferred_integer(&mut self) -> T;
     fn visit_inferred(&mut self, id: NonZero<u32>) -> T;
@@ -95,7 +97,7 @@ pub trait HirTypeVisitor<T> {
                 to,
             } => self.visit_pointer(*exclusive, *mutable, &store[to]),
 
-            Type::Symbol(symbol) => self.visit_symbol(&symbol.path, symbol.link.get()),
+            Type::Symbol(symbol) => self.visit_symbol(&symbol.path, &symbol.link),
             Type::InferredFloat => self.visit_inferred_float(),
             Type::InferredInteger => self.visit_inferred_integer(),
             Type::Inferred { id } => self.visit_inferred(*id),

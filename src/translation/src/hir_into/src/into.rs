@@ -1,16 +1,18 @@
-use crate::lower::Ast2Hir;
+use crate::{diagnosis::HirErr, lower::Ast2Hir};
 use interned_string::IString;
 use nitrate_diagnosis::CompilerLog;
 use nitrate_hir::prelude::*;
 use nitrate_hir_visitor::{HirItemVisitor, HirTypeVisitor, HirValueVisitor, HirVisitor};
 use nitrate_source::ast;
+use once_cell_serde::sync::OnceCell;
 use ordered_float::OrderedFloat;
 
-struct LinkResolver<'store> {
-    store: &'store Store,
+struct LinkResolver<'ctx, 'log> {
+    ctx: &'ctx HirCtx,
+    log: &'log CompilerLog,
 }
 
-impl HirTypeVisitor<()> for LinkResolver<'_> {
+impl HirTypeVisitor<()> for LinkResolver<'_, '_> {
     fn visit_never(&mut self) -> () {}
     fn visit_unit(&mut self) -> () {}
     fn visit_bool(&mut self) -> () {}
@@ -27,20 +29,20 @@ impl HirTypeVisitor<()> for LinkResolver<'_> {
     fn visit_i128(&mut self) -> () {}
     fn visit_f32(&mut self) -> () {}
     fn visit_f64(&mut self) -> () {}
-    fn visit_opaque(&mut self, _name: &str) -> () {}
+    fn visit_opaque(&mut self, _name: &IString) -> () {}
 
     fn visit_array(&mut self, element_type: &Type, _len: u64) -> () {
-        self.visit_type(element_type, self.store)
+        self.visit_type(element_type, self.ctx.store())
     }
 
     fn visit_tuple(&mut self, element_types: &[TypeId]) -> () {
         for ty in element_types {
-            self.visit_type(&self.store[ty], self.store);
+            self.visit_type(&self.ctx[ty], self.ctx.store());
         }
     }
 
     fn visit_slice(&mut self, element_type: &Type) -> () {
-        self.visit_type(element_type, self.store)
+        self.visit_type(element_type, self.ctx.store())
     }
 
     fn visit_struct(
@@ -49,7 +51,7 @@ impl HirTypeVisitor<()> for LinkResolver<'_> {
         fields: &[StructField],
     ) -> () {
         for field in fields {
-            self.visit_type(&self.store[&field.ty], self.store);
+            self.visit_type(&self.ctx[&field.ty], self.ctx.store());
         }
     }
 
@@ -59,16 +61,16 @@ impl HirTypeVisitor<()> for LinkResolver<'_> {
         variants: &[EnumVariant],
     ) -> () {
         for variant in variants {
-            self.visit_type(&self.store[&variant.ty], self.store);
+            self.visit_type(&self.ctx[&variant.ty], self.ctx.store());
         }
     }
 
     fn visit_refine(&mut self, base: &Type, _min: &LiteralId, _max: &LiteralId) -> () {
-        self.visit_type(base, self.store);
+        self.visit_type(base, self.ctx.store());
     }
 
     fn visit_bitfield(&mut self, base: &Type, _len: u8) -> () {
-        self.visit_type(base, self.store);
+        self.visit_type(base, self.ctx.store());
     }
 
     fn visit_function_type(
@@ -78,32 +80,62 @@ impl HirTypeVisitor<()> for LinkResolver<'_> {
         ret: &Type,
     ) -> () {
         for param in params {
-            let param = &self.store[param].borrow();
-            self.visit_type(&self.store[&param.ty], self.store);
+            let param = &self.ctx[param].borrow();
+            self.visit_type(&self.ctx[&param.ty], self.ctx.store());
             if let Some(default_value) = &param.default_value {
-                let default = &self.store[default_value].borrow();
-                self.visit_value(default, self.store);
+                let default = &self.ctx[default_value].borrow();
+                self.visit_value(default, self.ctx.store());
             }
         }
 
-        self.visit_type(ret, self.store);
+        self.visit_type(ret, self.ctx.store());
     }
 
     fn visit_reference(&mut self, _life: &Lifetime, _excl: bool, _mutable: bool, to: &Type) -> () {
-        self.visit_type(to, self.store);
+        self.visit_type(to, self.ctx.store());
     }
 
     fn visit_pointer(&mut self, _excl: bool, _mutable: bool, to: &Type) -> () {
-        self.visit_type(to, self.store);
+        self.visit_type(to, self.ctx.store());
     }
 
-    fn visit_symbol(&mut self, _path: &str, link: Option<&TypeId>) -> () {
-        if link.is_some() {
+    fn visit_symbol(&mut self, path: &IString, link: &OnceCell<TypeId>) -> () {
+        if link.get().is_some() {
             return;
         }
 
-        // TODO: Resolve symbol link
-        unimplemented!()
+        match self.ctx.lookup_type(path) {
+            None => self.log.report(&HirErr::UnresolvedTypePath),
+
+            Some(TypeDefinition::EnumDef(enum_def)) => {
+                // TODO: check visibility
+
+                let enum_type = Type::Enum {
+                    enum_type: enum_def.enum_id,
+                };
+
+                link.set(enum_type.into_id(self.ctx.store()))
+                    .expect("unexpected value in cell");
+            }
+
+            Some(TypeDefinition::StructDef(struct_def)) => {
+                // TODO: check visibility
+
+                let struct_type = Type::Struct {
+                    struct_type: struct_def.struct_id,
+                };
+
+                link.set(struct_type.into_id(self.ctx.store()))
+                    .expect("unexpected value in cell");
+            }
+
+            Some(TypeDefinition::TypeAliasDef(type_alias_def)) => {
+                // TODO: check visibility
+
+                link.set(type_alias_def.type_id)
+                    .expect("unexpected value in cell");
+            }
+        }
     }
 
     fn visit_inferred_float(&mut self) -> () {}
@@ -111,7 +143,7 @@ impl HirTypeVisitor<()> for LinkResolver<'_> {
     fn visit_inferred(&mut self, _id: std::num::NonZero<u32>) -> () {}
 }
 
-impl HirValueVisitor<()> for LinkResolver<'_> {
+impl HirValueVisitor<()> for LinkResolver<'_, '_> {
     fn visit_unit(&mut self) -> () {}
     fn visit_bool(&mut self, _value: bool) -> () {}
     fn visit_i8(&mut self, _value: i8) -> () {}
@@ -134,67 +166,67 @@ impl HirValueVisitor<()> for LinkResolver<'_> {
     fn visit_inferred_float(&mut self, _value: OrderedFloat<f64>) -> () {}
 
     fn visit_struct_object(&mut self, ty: &Type, fields: &[(IString, ValueId)]) -> () {
-        self.visit_type(ty, self.store);
+        self.visit_type(ty, self.ctx.store());
         for (_name, val) in fields {
-            self.visit_value(&self.store[val].borrow(), self.store);
+            self.visit_value(&self.ctx[val].borrow(), self.ctx.store());
         }
     }
 
     fn visit_enum_variant(&mut self, ty: &Type, _var: &IString, val: &Value) -> () {
-        self.visit_type(ty, self.store);
-        self.visit_value(val, self.store);
+        self.visit_type(ty, self.ctx.store());
+        self.visit_value(val, self.ctx.store());
     }
 
     fn visit_binary(&mut self, left: &Value, _op: &BinaryOp, right: &Value) -> () {
-        self.visit_value(left, self.store);
-        self.visit_value(right, self.store);
+        self.visit_value(left, self.ctx.store());
+        self.visit_value(right, self.ctx.store());
     }
 
     fn visit_unary(&mut self, _op: &UnaryOp, operand: &Value) -> () {
-        self.visit_value(operand, self.store);
+        self.visit_value(operand, self.ctx.store());
     }
 
     fn visit_field_access(&mut self, expr: &Value, _field: &IString) -> () {
-        self.visit_value(expr, self.store);
+        self.visit_value(expr, self.ctx.store());
     }
 
     fn visit_index_access(&mut self, collection: &Value, index: &Value) -> () {
-        self.visit_value(collection, self.store);
-        self.visit_value(index, self.store);
+        self.visit_value(collection, self.ctx.store());
+        self.visit_value(index, self.ctx.store());
     }
 
     fn visit_assign(&mut self, place: &Value, value: &Value) -> () {
-        self.visit_value(place, self.store);
-        self.visit_value(value, self.store);
+        self.visit_value(place, self.ctx.store());
+        self.visit_value(value, self.ctx.store());
     }
 
     fn visit_deref(&mut self, place: &Value) -> () {
-        self.visit_value(place, self.store);
+        self.visit_value(place, self.ctx.store());
     }
 
     fn visit_cast(&mut self, expr: &Value, to: &Type) -> () {
-        self.visit_value(expr, self.store);
-        self.visit_type(to, self.store);
+        self.visit_value(expr, self.ctx.store());
+        self.visit_type(to, self.ctx.store());
     }
 
     fn visit_borrow(&mut self, _mutable: bool, place: &Value) -> () {
-        self.visit_value(place, self.store);
+        self.visit_value(place, self.ctx.store());
     }
 
     fn visit_list(&mut self, elements: &[Value]) -> () {
         for element in elements {
-            self.visit_value(element, self.store);
+            self.visit_value(element, self.ctx.store());
         }
     }
 
     fn visit_tuple(&mut self, elements: &[Value]) -> () {
         for element in elements {
-            self.visit_value(element, self.store);
+            self.visit_value(element, self.ctx.store());
         }
     }
 
     fn visit_if(&mut self, cond: &Value, true_blk: &Block, false_blk: Option<&Block>) -> () {
-        self.visit_value(cond, self.store);
+        self.visit_value(cond, self.ctx.store());
         self.visit_block(true_blk.safety, &true_blk.elements);
 
         if let Some(false_blk) = false_blk {
@@ -203,7 +235,7 @@ impl HirValueVisitor<()> for LinkResolver<'_> {
     }
 
     fn visit_while(&mut self, condition: &Value, body: &Block) -> () {
-        self.visit_value(condition, self.store);
+        self.visit_value(condition, self.ctx.store());
         self.visit_block(body.safety, &body.elements);
     }
 
@@ -215,26 +247,26 @@ impl HirValueVisitor<()> for LinkResolver<'_> {
     fn visit_continue(&mut self, _label: &Option<IString>) -> () {}
 
     fn visit_return(&mut self, value: &Value) -> () {
-        self.visit_value(value, self.store);
+        self.visit_value(value, self.ctx.store());
     }
 
     fn visit_block(&mut self, _safety: BlockSafety, elements: &[BlockElement]) -> () {
         for element in elements {
             match element {
                 BlockElement::Expr(expr) => {
-                    self.visit_value(&self.store[expr].borrow(), self.store);
+                    self.visit_value(&self.ctx[expr].borrow(), self.ctx.store());
                 }
 
                 BlockElement::Stmt(expr) => {
-                    self.visit_value(&self.store[expr].borrow(), self.store);
+                    self.visit_value(&self.ctx[expr].borrow(), self.ctx.store());
                 }
 
                 BlockElement::Local(local) => {
-                    let local = &self.store[local].borrow();
-                    self.visit_type(&self.store[&local.ty], self.store);
+                    let local = &self.ctx[local].borrow();
+                    self.visit_type(&self.ctx[&local.ty], self.ctx.store());
                     if let Some(init) = &local.initializer {
-                        let init = &self.store[init].borrow();
-                        self.visit_value(init, self.store);
+                        let init = &self.ctx[init].borrow();
+                        self.visit_value(init, self.ctx.store());
                     }
                 }
             }
@@ -249,8 +281,8 @@ impl HirValueVisitor<()> for LinkResolver<'_> {
                     &callee.attributes,
                     &callee.name,
                     &callee.params,
-                    &self.store[&callee.return_type],
-                    Some(&self.store[body_id].borrow()),
+                    &self.ctx[&callee.return_type],
+                    Some(&self.ctx[body_id].borrow()),
                 );
             }
 
@@ -260,7 +292,7 @@ impl HirValueVisitor<()> for LinkResolver<'_> {
                     &callee.attributes,
                     &callee.name,
                     &callee.params,
-                    &self.store[&callee.return_type],
+                    &self.ctx[&callee.return_type],
                     None,
                 );
             }
@@ -268,23 +300,24 @@ impl HirValueVisitor<()> for LinkResolver<'_> {
     }
 
     fn visit_call(&mut self, callee: &Value, arguments: &[ValueId]) -> () {
-        self.visit_value(callee, self.store);
+        self.visit_value(callee, self.ctx.store());
         for arg in arguments {
-            self.visit_value(&self.store[arg].borrow(), self.store);
+            self.visit_value(&self.ctx[arg].borrow(), self.ctx.store());
         }
     }
 
-    fn visit_symbol(&mut self, _path: &IString, link: Option<&SymbolId>) -> () {
-        if link.is_some() {
+    fn visit_symbol(&mut self, _path: &IString, link: &OnceCell<SymbolId>) -> () {
+        if link.get().is_some() {
             return;
         }
 
         // TODO: Resolve symbol link
-        unimplemented!()
+        // unimplemented!()
+        println!("Unresolved symbol encountered during HIR visiting.");
     }
 }
 
-impl HirItemVisitor<()> for LinkResolver<'_> {
+impl HirItemVisitor<()> for LinkResolver<'_, '_> {
     fn visit_module(
         &mut self,
         _vis: Visibility,
@@ -293,7 +326,7 @@ impl HirItemVisitor<()> for LinkResolver<'_> {
         items: &[Item],
     ) -> () {
         for item in items {
-            self.visit_item(item, self.store);
+            self.visit_item(item, self.ctx.store());
         }
     }
 
@@ -306,8 +339,8 @@ impl HirItemVisitor<()> for LinkResolver<'_> {
         ty: &Type,
         init: &Value,
     ) -> () {
-        self.visit_type(ty, self.store);
-        self.visit_value(init, self.store);
+        self.visit_type(ty, self.ctx.store());
+        self.visit_value(init, self.ctx.store());
     }
 
     fn visit_function(
@@ -320,16 +353,16 @@ impl HirItemVisitor<()> for LinkResolver<'_> {
         body: Option<&Block>,
     ) -> () {
         for param in params {
-            let param = &self.store[param].borrow();
-            self.visit_type(&self.store[&param.ty], self.store);
+            let param = &self.ctx[param].borrow();
+            self.visit_type(&self.ctx[&param.ty], self.ctx.store());
 
             if let Some(default_value) = &param.default_value {
-                let default = &self.store[default_value].borrow();
-                self.visit_value(default, self.store);
+                let default = &self.ctx[default_value].borrow();
+                self.visit_value(default, self.ctx.store());
             }
         }
 
-        self.visit_type(ret, self.store);
+        self.visit_type(ret, self.ctx.store());
 
         if let Some(body) = body {
             self.visit_block(body.safety, &body.elements);
@@ -337,12 +370,12 @@ impl HirItemVisitor<()> for LinkResolver<'_> {
     }
 }
 
-impl HirVisitor<()> for LinkResolver<'_> {}
+impl HirVisitor<()> for LinkResolver<'_, '_> {}
 
 pub fn ast_mod2hir(module: ast::Module, ctx: &mut HirCtx, log: &CompilerLog) -> Result<Module, ()> {
     let hir_module = module.ast2hir(ctx, log)?;
 
-    let mut resolver = LinkResolver { store: ctx.store() };
+    let mut resolver = LinkResolver { ctx, log };
     resolver.visit_module(
         hir_module.visibility,
         hir_module.name.as_ref(),
@@ -356,7 +389,7 @@ pub fn ast_mod2hir(module: ast::Module, ctx: &mut HirCtx, log: &CompilerLog) -> 
 pub fn ast_expr2hir(expr: ast::Expr, ctx: &mut HirCtx, log: &CompilerLog) -> Result<Value, ()> {
     let hir_value = expr.ast2hir(ctx, log)?;
 
-    let mut resolver = LinkResolver { store: ctx.store() };
+    let mut resolver = LinkResolver { ctx, log };
     resolver.visit_value(&hir_value, ctx.store());
 
     Ok(hir_value)
@@ -365,7 +398,7 @@ pub fn ast_expr2hir(expr: ast::Expr, ctx: &mut HirCtx, log: &CompilerLog) -> Res
 pub fn ast_type2hir(ty: ast::Type, ctx: &mut HirCtx, log: &CompilerLog) -> Result<Type, ()> {
     let hir_ty = ty.ast2hir(ctx, log)?;
 
-    let mut resolver = LinkResolver { store: ctx.store() };
+    let mut resolver = LinkResolver { ctx, log };
     resolver.visit_type(&hir_ty, ctx.store());
 
     Ok(hir_ty)

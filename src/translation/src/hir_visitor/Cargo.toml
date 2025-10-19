@@ -7,3 +7,4 @@ edition = "2024"
 nitrate_hir = { path = "../hir" }
 ordered-float = "5.1.0"
 interned-string = { version = "0.3.0" }
+once_cell_serde = { version = "1.20.3" }
