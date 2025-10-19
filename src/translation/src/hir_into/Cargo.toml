@@ -10,6 +10,7 @@ nitrate_token = { path = "../token" }
 nitrate_source = { path = "../source" }
 nitrate_source_parse = { path = "../source_parse" }
 nitrate_hir = { path = "../hir" }
+nitrate_hir_visitor = { path = "../hir_visitor" }
 nitrate_hir_evaluate = { path = "../hir_evaluate" }
 nitrate_hir_get_type = { path = "../hir_get_type" }
 interned-string = { version = "0.3.0", features = ["serde"] }
