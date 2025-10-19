@@ -60,7 +60,7 @@ pub struct Function {
     pub visibility: Visibility,
     pub attributes: BTreeSet<FunctionAttribute>,
     pub name: IString,
-    pub parameters: Vec<ParameterId>,
+    pub params: Vec<ParameterId>,
     pub return_type: TypeId,
     pub body: Option<BlockId>,
 }

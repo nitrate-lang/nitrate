@@ -281,7 +281,7 @@ fn ast_function2hir(
         visibility,
         attributes,
         name,
-        parameters,
+        params: parameters,
         return_type,
         body,
     };

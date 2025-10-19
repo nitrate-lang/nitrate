@@ -193,12 +193,12 @@ impl Dump for FunctionId {
 
         write!(o, "{}", this.name)?;
 
-        if this.parameters.is_empty() {
+        if this.params.is_empty() {
             write!(o, "()")?;
         } else {
             write!(o, "(\n")?;
 
-            for param in this.parameters.iter() {
+            for param in this.params.iter() {
                 ctx.indent += 1;
 
                 write_indent(ctx, o)?;

@@ -1,8 +1,10 @@
 use crate::lower::Ast2Hir;
+use interned_string::IString;
 use nitrate_diagnosis::CompilerLog;
 use nitrate_hir::prelude::*;
 use nitrate_hir_visitor::{HirTypeVisitor, HirValueVisitor, HirVisitor};
 use nitrate_source::ast;
+use ordered_float::OrderedFloat;
 
 struct LinkResolver<'store> {
     store: &'store Store,
@@ -101,9 +103,9 @@ impl HirTypeVisitor<()> for LinkResolver<'_> {
         self.visit_type(&self.store[to], self.store);
     }
 
-    fn visit_symbol(&mut self, path: &str, link: &Option<TypeId>) -> () {
+    fn visit_symbol(&mut self, _path: &str, _link: &Option<TypeId>) -> () {
         // TODO: Resolve symbol link
-        todo!()
+        unimplemented!()
     }
 
     fn visit_inferred_float(&mut self) -> () {}
@@ -112,181 +114,155 @@ impl HirTypeVisitor<()> for LinkResolver<'_> {
 }
 
 impl HirValueVisitor<()> for LinkResolver<'_> {
-    fn visit_unit(&mut self) -> () {
-        todo!()
+    fn visit_unit(&mut self) -> () {}
+    fn visit_bool(&mut self, _value: bool) -> () {}
+    fn visit_i8(&mut self, _value: i8) -> () {}
+    fn visit_i16(&mut self, _value: i16) -> () {}
+    fn visit_i32(&mut self, _value: i32) -> () {}
+    fn visit_i64(&mut self, _value: i64) -> () {}
+    fn visit_i128(&mut self, _value: i128) -> () {}
+    fn visit_u8(&mut self, _value: u8) -> () {}
+    fn visit_u16(&mut self, _value: u16) -> () {}
+    fn visit_u32(&mut self, _value: u32) -> () {}
+    fn visit_u64(&mut self, _value: u64) -> () {}
+    fn visit_u128(&mut self, _value: u128) -> () {}
+    fn visit_f32(&mut self, _value: OrderedFloat<f32>) -> () {}
+    fn visit_f64(&mut self, _value: OrderedFloat<f64>) -> () {}
+    fn visit_usize32(&mut self, _value: u32) -> () {}
+    fn visit_usize64(&mut self, _value: u64) -> () {}
+    fn visit_string_lit(&mut self, _value: &str) -> () {}
+    fn visit_bstring_lit(&mut self, _value: &[u8]) -> () {}
+    fn visit_inferred_integer(&mut self, _value: u128) -> () {}
+    fn visit_inferred_float(&mut self, _value: OrderedFloat<f64>) -> () {}
+
+    fn visit_struct_object(&mut self, ty: &TypeId, fields: &[(IString, ValueId)]) -> () {
+        self.visit_type(&self.store[ty], self.store);
+
+        for (_name, val) in fields {
+            self.visit_value(&self.store[val].borrow(), self.store);
+        }
     }
 
-    fn visit_bool(&mut self, value: bool) -> () {
-        todo!()
+    fn visit_enum_variant(&mut self, ty: &TypeId, _var: &IString, val: &ValueId) -> () {
+        self.visit_type(&self.store[ty], self.store);
+        self.visit_value(&self.store[val].borrow(), self.store);
     }
 
-    fn visit_i8(&mut self, value: i8) -> () {
-        todo!()
+    fn visit_binary(&mut self, left: &ValueId, _op: &BinaryOp, right: &ValueId) -> () {
+        self.visit_value(&self.store[left].borrow(), self.store);
+        self.visit_value(&self.store[right].borrow(), self.store);
     }
 
-    fn visit_i16(&mut self, value: i16) -> () {
-        todo!()
+    fn visit_unary(&mut self, _op: &UnaryOp, operand: &ValueId) -> () {
+        self.visit_value(&self.store[operand].borrow(), self.store);
     }
 
-    fn visit_i32(&mut self, value: i32) -> () {
-        todo!()
-    }
-
-    fn visit_i64(&mut self, value: i64) -> () {
-        todo!()
-    }
-
-    fn visit_i128(&mut self, value: i128) -> () {
-        todo!()
-    }
-
-    fn visit_u8(&mut self, value: u8) -> () {
-        todo!()
-    }
-
-    fn visit_u16(&mut self, value: u16) -> () {
-        todo!()
-    }
-
-    fn visit_u32(&mut self, value: u32) -> () {
-        todo!()
-    }
-
-    fn visit_u64(&mut self, value: u64) -> () {
-        todo!()
-    }
-
-    fn visit_u128(&mut self, value: u128) -> () {
-        todo!()
-    }
-
-    fn visit_f32(&mut self, value: ordered_float::OrderedFloat<f32>) -> () {
-        todo!()
-    }
-
-    fn visit_f64(&mut self, value: ordered_float::OrderedFloat<f64>) -> () {
-        todo!()
-    }
-
-    fn visit_usize32(&mut self, value: u32) -> () {
-        todo!()
-    }
-
-    fn visit_usize64(&mut self, value: u64) -> () {
-        todo!()
-    }
-
-    fn visit_string_lit(&mut self, value: &str) -> () {
-        todo!()
-    }
-
-    fn visit_bstring_lit(&mut self, value: &[u8]) -> () {
-        todo!()
-    }
-
-    fn visit_inferred_integer(&mut self, value: u128) -> () {
-        todo!()
-    }
-
-    fn visit_inferred_float(&mut self, value: ordered_float::OrderedFloat<f64>) -> () {
-        todo!()
-    }
-
-    fn visit_struct_object(
-        &mut self,
-        ty: &TypeId,
-        fields: &[(interned_string::IString, ValueId)],
-    ) -> () {
-        todo!()
-    }
-
-    fn visit_enum_variant(
-        &mut self,
-        ty: &TypeId,
-        var: &interned_string::IString,
-        val: &ValueId,
-    ) -> () {
-        todo!()
-    }
-
-    fn visit_binary(&mut self, left: &ValueId, op: &BinaryOp, right: &ValueId) -> () {
-        todo!()
-    }
-
-    fn visit_unary(&mut self, op: &UnaryOp, operand: &ValueId) -> () {
-        todo!()
-    }
-
-    fn visit_field_access(&mut self, expr: &ValueId, field: &interned_string::IString) -> () {
-        todo!()
+    fn visit_field_access(&mut self, expr: &ValueId, _field: &IString) -> () {
+        self.visit_value(&self.store[expr].borrow(), self.store);
     }
 
     fn visit_index_access(&mut self, collection: &ValueId, index: &ValueId) -> () {
-        todo!()
+        self.visit_value(&self.store[collection].borrow(), self.store);
+        self.visit_value(&self.store[index].borrow(), self.store);
     }
 
     fn visit_assign(&mut self, place: &ValueId, value: &ValueId) -> () {
-        todo!()
+        self.visit_value(&self.store[place].borrow(), self.store);
+        self.visit_value(&self.store[value].borrow(), self.store);
     }
 
     fn visit_deref(&mut self, place: &ValueId) -> () {
-        todo!()
+        self.visit_value(&self.store[place].borrow(), self.store);
     }
 
     fn visit_cast(&mut self, expr: &ValueId, to: &TypeId) -> () {
-        todo!()
+        self.visit_value(&self.store[expr].borrow(), self.store);
+        self.visit_type(&self.store[to], self.store);
     }
 
-    fn visit_borrow(&mut self, mutable: bool, place: &ValueId) -> () {
-        todo!()
+    fn visit_borrow(&mut self, _mutable: bool, place: &ValueId) -> () {
+        self.visit_value(&self.store[place].borrow(), self.store);
     }
 
     fn visit_list(&mut self, elements: &[Value]) -> () {
-        todo!()
+        for element in elements {
+            self.visit_value(element, self.store);
+        }
     }
 
     fn visit_tuple(&mut self, elements: &[Value]) -> () {
-        todo!()
+        for element in elements {
+            self.visit_value(element, self.store);
+        }
     }
 
     fn visit_if(&mut self, cond: &ValueId, true_blk: &BlockId, false_blk: &Option<BlockId>) -> () {
-        todo!()
+        self.visit_value(&self.store[cond].borrow(), self.store);
+
+        let true_blk = &self.store[true_blk].borrow();
+        self.visit_block(true_blk.safety, &true_blk.elements);
+
+        if let Some(false_blk) = false_blk {
+            let false_blk = &self.store[false_blk].borrow();
+            self.visit_block(false_blk.safety, &false_blk.elements);
+        }
     }
 
     fn visit_while(&mut self, condition: &ValueId, body: &BlockId) -> () {
-        todo!()
+        self.visit_value(&self.store[condition].borrow(), self.store);
+
+        let body = &self.store[body].borrow();
+        self.visit_block(body.safety, &body.elements);
     }
 
     fn visit_loop(&mut self, body: &BlockId) -> () {
-        todo!()
+        let body = &self.store[body].borrow();
+        self.visit_block(body.safety, &body.elements);
     }
 
-    fn visit_break(&mut self, label: &Option<interned_string::IString>) -> () {
-        todo!()
-    }
-
-    fn visit_continue(&mut self, label: &Option<interned_string::IString>) -> () {
-        todo!()
-    }
+    fn visit_break(&mut self, _label: &Option<IString>) -> () {}
+    fn visit_continue(&mut self, _label: &Option<IString>) -> () {}
 
     fn visit_return(&mut self, value: &ValueId) -> () {
-        todo!()
+        self.visit_value(&self.store[value].borrow(), self.store);
     }
 
-    fn visit_block(&mut self, safety: BlockSafety, elements: &[BlockElement]) -> () {
-        todo!()
+    fn visit_block(&mut self, _safety: BlockSafety, elements: &[BlockElement]) -> () {
+        for element in elements {
+            match element {
+                BlockElement::Expr(expr) => {
+                    self.visit_value(&self.store[expr].borrow(), self.store);
+                }
+
+                BlockElement::Stmt(expr) => {
+                    self.visit_value(&self.store[expr].borrow(), self.store);
+                }
+
+                BlockElement::Local(local) => {
+                    // TODO: Handle local initializers
+                    let _local = &self.store[local].borrow();
+                    unimplemented!("local variable visitation in link resolver");
+                }
+            }
+        }
     }
 
-    fn visit_closure(&mut self, captures: &[SymbolId], callee: &FunctionId) -> () {
-        todo!()
+    fn visit_closure(&mut self, _captures: &[SymbolId], callee: &FunctionId) -> () {
+        let callee = &self.store[callee].borrow();
+        self.visit_function(&callee.attributes, &callee.params, &callee.return_type);
     }
 
     fn visit_call(&mut self, callee: &ValueId, arguments: &[ValueId]) -> () {
-        todo!()
+        self.visit_value(&self.store[callee].borrow(), self.store);
+
+        for arg in arguments {
+            self.visit_value(&self.store[arg].borrow(), self.store);
+        }
     }
 
-    fn visit_symbol(&mut self, path: &interned_string::IString, link: &Option<SymbolId>) -> () {
-        todo!()
+    fn visit_symbol(&mut self, _path: &IString, _link: &Option<SymbolId>) -> () {
+        // TODO: Resolve symbol link
+        unimplemented!()
     }
 }
 
