@@ -1007,10 +1007,10 @@ impl Ast2Hir for ast::ExprPath {
                 Err(())
             }
 
-            Some(p) => Ok(Value::Symbol {
+            Some(p) => Ok(Value::Symbol(ValueSymbol {
                 path: IString::from(p),
-                link: None,
-            }),
+                link: OnceCell::new(),
+            })),
         }
     }
 }

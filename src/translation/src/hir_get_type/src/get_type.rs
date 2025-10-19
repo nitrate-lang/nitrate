@@ -231,7 +231,7 @@ pub fn get_type(value: &Value, store: &Store) -> Result<Type, TypeInferenceError
             Err(TypeInferenceError::CalleeIsNotFunctionType)
         }
 
-        Value::Symbol { path: _, link } => match link {
+        Value::Symbol(symbol) => match symbol.link.get() {
             None => Err(TypeInferenceError::UnresolvedSymbol),
             Some(symbol) => match &*store[symbol].borrow() {
                 Symbol::GlobalVariable(glb) => Ok(store[&store[glb].borrow().ty].clone()),

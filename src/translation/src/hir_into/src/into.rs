@@ -249,7 +249,7 @@ impl HirValueVisitor<()> for LinkResolver<'_> {
         }
     }
 
-    fn visit_symbol(&mut self, _path: &IString, _link: &Option<SymbolId>) -> () {
+    fn visit_symbol(&mut self, _path: &IString, _link: Option<&SymbolId>) -> () {
         // TODO: Resolve symbol link
         unimplemented!()
     }
