@@ -98,7 +98,6 @@ pub struct Struct {
     pub name: TypeNameId,
     pub generics: Option<Generics>,
     pub fields: Vec<StructField>,
-    pub methods: Vec<Arc<RwLock<Function>>>,
 }
 
 #[skip_serializing_none]

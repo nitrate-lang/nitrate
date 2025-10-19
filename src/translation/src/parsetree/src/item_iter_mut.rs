@@ -137,10 +137,6 @@ impl ParseTreeIterMut for Arc<RwLock<Struct>> {
             field.depth_first_iter_mut(f);
         }
 
-        for method in &mut this.methods {
-            method.depth_first_iter_mut(f);
-        }
-
         drop(this);
         f(Order::Leave, RefNodeMut::ItemStruct(self));
     }

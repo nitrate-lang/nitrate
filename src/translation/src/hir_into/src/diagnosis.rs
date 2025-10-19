@@ -22,6 +22,9 @@ pub(crate) enum HirErr {
     DuplicateFunctionArguments,
     TooManyFunctionArguments,
     UnrecognizedLifetime,
+    UnrecognizedTypeAliasAttribute,
+    TypeAliasMustHaveType,
+    UnrecognizedStructAttribute,
 }
 
 impl FormattableDiagnosticGroup for HirErr {
@@ -52,6 +55,9 @@ impl FormattableDiagnosticGroup for HirErr {
             HirErr::DuplicateFunctionArguments => 19,
             HirErr::TooManyFunctionArguments => 20,
             HirErr::UnrecognizedLifetime => 21,
+            HirErr::UnrecognizedTypeAliasAttribute => 22,
+            HirErr::TypeAliasMustHaveType => 23,
+            HirErr::UnrecognizedStructAttribute => 24,
         }
     }
 
@@ -159,6 +165,21 @@ impl FormattableDiagnosticGroup for HirErr {
 
             HirErr::UnrecognizedLifetime => DiagnosticInfo {
                 message: "unrecognized lifetime".to_string(),
+                origin: Origin::None,
+            },
+
+            HirErr::UnrecognizedTypeAliasAttribute => DiagnosticInfo {
+                message: "unrecognized type alias attribute".to_string(),
+                origin: Origin::None,
+            },
+
+            HirErr::TypeAliasMustHaveType => DiagnosticInfo {
+                message: "type alias must have a type".to_string(),
+                origin: Origin::None,
+            },
+
+            HirErr::UnrecognizedStructAttribute => DiagnosticInfo {
+                message: "unrecognized struct attribute".to_string(),
                 origin: Origin::None,
             },
         }

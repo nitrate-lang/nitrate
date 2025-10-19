@@ -137,10 +137,6 @@ impl ParseTreeIter for Arc<RwLock<Struct>> {
             field.depth_first_iter(f);
         }
 
-        for method in &this.methods {
-            method.depth_first_iter(f);
-        }
-
         drop(this);
         f(Order::Leave, RefNode::ItemStruct(self));
     }

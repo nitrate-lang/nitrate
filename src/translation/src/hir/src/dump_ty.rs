@@ -65,7 +65,7 @@ impl Dump for StructType {
         } else {
             write!(o, "{{\n")?;
 
-            for (name, (field_type, field_default)) in &self.fields {
+            for (name, field_type, field_default) in &self.fields {
                 ctx.indent += 1;
 
                 write_indent(ctx, o)?;

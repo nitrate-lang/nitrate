@@ -1,15 +1,44 @@
 use crate::prelude::*;
 use interned_string::IString;
 use std::cell::RefCell;
-use std::collections::{HashMap, HashSet};
+use std::collections::{BTreeSet, HashMap, HashSet};
 use std::num::NonZeroU32;
 use std::ops::Deref;
+
+#[derive(Debug)]
+pub struct TypeAliasDef {
+    pub visibility: Visibility,
+    pub name: IString,
+    pub type_id: TypeId,
+}
+
+#[derive(Debug)]
+pub struct StructDef {
+    pub visibility: Visibility,
+    pub name: IString,
+    pub struct_id: StructTypeId,
+}
+
+#[derive(Debug)]
+pub enum TypeDefinition {
+    TypeAliasDef(TypeAliasDef),
+    StructDef(StructDef),
+}
+
+impl TypeDefinition {
+    pub fn name(&self) -> &IString {
+        match self {
+            TypeDefinition::TypeAliasDef(def) => &def.name,
+            TypeDefinition::StructDef(def) => &def.name,
+        }
+    }
+}
 
 #[derive(Debug)]
 pub struct HirCtx {
     store: Store,
     current_scope: Vec<String>,
-    type_map: HashMap<IString, TypeId>,
+    type_map: HashMap<IString, TypeDefinition>,
     impl_map: HashMap<TypeId, HashSet<TraitId>>,
     type_infer_id_ctr: NonZeroU32,
     unique_name_ctr: u32,
@@ -107,9 +136,7 @@ impl HirCtx {
         &self.current_scope
     }
 
-    pub fn join_path(&self, name: &str) -> String {
-        let scope = &self.current_scope;
-
+    pub fn join_path(scope: &[String], name: &str) -> String {
         let length = scope.iter().map(|s| s.len() + 2).sum::<usize>() + name.len();
         let mut qualified = String::with_capacity(length);
 
@@ -120,6 +147,10 @@ impl HirCtx {
 
         qualified.push_str(name);
         qualified
+    }
+
+    pub fn register_type(&mut self, definition: TypeDefinition) {
+        self.type_map.insert(definition.name().clone(), definition);
     }
 }
 

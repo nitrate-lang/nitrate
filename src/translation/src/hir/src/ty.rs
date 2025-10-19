@@ -33,7 +33,7 @@ pub enum Lifetime {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct StructType {
     pub attributes: BTreeSet<StructAttribute>,
-    pub fields: BTreeMap<IString, (TypeId, Option<ValueId>)>,
+    pub fields: Vec<(IString, TypeId, Option<ValueId>)>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]

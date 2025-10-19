@@ -96,14 +96,11 @@ fn visibility_filter(item: Item, is_same_package: bool) -> Option<Item> {
         }
 
         Item::Struct(node) => {
-            let mut lock = node.write().unwrap();
+            let lock = node.write().unwrap();
 
             if !is_visible(lock.visibility, is_same_package) {
                 return None;
             }
-
-            lock.methods
-                .retain(|method| is_visible(method.read().unwrap().visibility, is_same_package));
 
             drop(lock);
             Some(Item::Struct(node))

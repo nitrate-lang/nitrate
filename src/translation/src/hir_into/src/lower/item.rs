@@ -1,25 +1,93 @@
-use std::collections::BTreeSet;
-
 use crate::{ast_mod2hir, diagnosis::HirErr, lower::lower::Ast2Hir};
 use interned_string::IString;
 use nitrate_diagnosis::CompilerLog;
 use nitrate_hir::prelude::*;
 use nitrate_parsetree::ast::{self};
+use std::collections::BTreeSet;
 
 fn ast_typealias2hir(
-    _type_alias: &ast::TypeAlias,
-    _ctx: &mut HirCtx,
+    type_alias: &ast::TypeAlias,
+    ctx: &mut HirCtx,
     log: &CompilerLog,
 ) -> Result<(), ()> {
-    // TODO: implement type alias lowering
-    log.report(&HirErr::UnimplementedFeature("type aliases".into()));
-    Err(())
+    let visibility = match type_alias.visibility {
+        Some(ast::Visibility::Public) => Visibility::Pub,
+        Some(ast::Visibility::Protected) => Visibility::Pro,
+        Some(ast::Visibility::Private) | None => Visibility::Sec,
+    };
+
+    if let Some(ast_attributes) = &type_alias.attributes {
+        for _attr in ast_attributes {
+            log.report(&HirErr::UnrecognizedTypeAliasAttribute);
+        }
+    }
+
+    let name = IString::from(HirCtx::join_path(ctx.current_scope(), &type_alias.name));
+
+    if type_alias.generics.is_some() {
+        // TODO: support generic type aliases
+        log.report(&HirErr::UnimplementedFeature("generic type aliases".into()));
+    }
+
+    let type_id = match &type_alias.alias_type {
+        Some(ty) => ty.to_owned().ast2hir(ctx, log)?.into_id(ctx.store()),
+        None => {
+            log.report(&HirErr::TypeAliasMustHaveType);
+            return Err(());
+        }
+    };
+
+    let definition = TypeDefinition::TypeAliasDef(TypeAliasDef {
+        visibility,
+        name,
+        type_id,
+    });
+
+    ctx.register_type(definition);
+
+    Ok(())
 }
 
-fn ast_struct2hir(_struct: &ast::Struct, _ctx: &mut HirCtx, log: &CompilerLog) -> Result<(), ()> {
+fn ast_struct2hir(struct_def: &ast::Struct, ctx: &mut HirCtx, log: &CompilerLog) -> Result<(), ()> {
     // TODO: implement struct lowering
-    log.report(&HirErr::UnimplementedFeature("struct definitions".into()));
-    Err(())
+
+    let visibility = match struct_def.visibility {
+        Some(ast::Visibility::Public) => Visibility::Pub,
+        Some(ast::Visibility::Protected) => Visibility::Pro,
+        Some(ast::Visibility::Private) | None => Visibility::Sec,
+    };
+
+    let attributes = BTreeSet::new();
+    if let Some(ast_attributes) = &struct_def.attributes {
+        for _attr in ast_attributes {
+            log.report(&HirErr::UnrecognizedStructAttribute);
+        }
+    }
+
+    let name = HirCtx::join_path(ctx.current_scope(), &struct_def.name).into();
+
+    if struct_def.generics.is_some() {
+        // TODO: support generic structs
+        log.report(&HirErr::UnimplementedFeature("generic structs".into()));
+    }
+
+    let fields = Vec::new();
+    for _field in &struct_def.fields {
+        // TODO: implement struct field lowering
+        log.report(&HirErr::UnimplementedFeature("struct fields".into()));
+    }
+
+    let struct_id = StructType { attributes, fields }.into_id(ctx.store());
+
+    let definition = TypeDefinition::StructDef(StructDef {
+        visibility,
+        name,
+        struct_id,
+    });
+
+    ctx.register_type(definition);
+
+    Ok(())
 }
 
 fn ast_enum2hir(_enum: &ast::Enum, _ctx: &mut HirCtx, log: &CompilerLog) -> Result<(), ()> {

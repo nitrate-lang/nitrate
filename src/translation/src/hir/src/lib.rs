@@ -26,7 +26,7 @@ pub use store::{
 
 pub mod hir {
     pub use super::cmp::*;
-    pub use super::context::HirCtx;
+    pub use super::context::*;
     pub use super::expr::*;
     pub use super::item::*;
     pub use super::literal_ops::*;

@@ -418,7 +418,6 @@ impl Parser<'_, '_> {
             name,
             generics,
             fields,
-            methods: Vec::new(),
         }
     }
 

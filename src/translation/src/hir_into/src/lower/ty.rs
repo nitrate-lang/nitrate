@@ -149,7 +149,7 @@ impl Ast2Hir for ast::TypePath {
             .join("::");
 
         Ok(Type::Symbol {
-            name: IString::from(ctx.join_path(&unqualified_path)),
+            name: IString::from(HirCtx::join_path(ctx.current_scope(), &unqualified_path)),
             link: None,
         })
     }
