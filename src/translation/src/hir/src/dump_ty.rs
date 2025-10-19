@@ -264,7 +264,7 @@ impl Dump for Type {
                 ctx.store[to].dump(ctx, o)
             }
 
-            Type::Symbol { name, link } => match link {
+            Type::Symbol { path: name, link } => match link {
                 Some(link) => write!(o, "`{}`::{}", name, link.as_usize()),
                 None => write!(o, "? `{}`", name),
             },

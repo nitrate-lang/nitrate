@@ -239,7 +239,7 @@ impl HirEvaluate for Value {
                 fields,
             } => {
                 let mut fields = fields.to_owned();
-                for field_value in fields.values_mut() {
+                for (_, field_value) in &mut fields {
                     let eval_value = ctx.store[field_value as &ValueId]
                         .borrow()
                         .evaluate(ctx)?
@@ -403,12 +403,12 @@ impl HirEvaluate for Value {
 
             Value::Symbol { name: _, link: _ } => {
                 // TODO: evaluate symbol expressions
-                todo!()
+                unimplemented!()
             }
 
             Value::FieldAccess { expr, field } => match ctx.store[expr].borrow().evaluate(ctx)? {
                 Value::StructObject { fields, .. } => {
-                    if let Some(field_value) = fields.get(field) {
+                    if let Some((_, field_value)) = fields.iter().find(|x| &x.0 == field) {
                         Ok(ctx.store[field_value].borrow().evaluate(ctx)?)
                     } else {
                         Err(Unwind::TypeError)
@@ -440,12 +440,12 @@ impl HirEvaluate for Value {
 
             Value::Assign { place: _, value: _ } => {
                 // TODO: evaluate assignment expressions
-                todo!()
+                unimplemented!()
             }
 
             Value::Deref { place: _ } => {
                 // TODO: evaluate dereference expressions
-                todo!()
+                unimplemented!()
             }
 
             Value::Borrow {
@@ -453,7 +453,7 @@ impl HirEvaluate for Value {
                 place: _,
             } => {
                 // TODO: evaluate address-of expressions
-                todo!()
+                unimplemented!()
             }
 
             Value::Cast { expr, to } => {
@@ -571,7 +571,7 @@ impl HirEvaluate for Value {
                 callee: _,
             } => {
                 // TODO: evaluate closure expressions
-                todo!()
+                unimplemented!()
             }
 
             Value::Call {
@@ -579,7 +579,7 @@ impl HirEvaluate for Value {
                 arguments: _,
             } => {
                 // TODO: evaluate function call expressions
-                todo!()
+                unimplemented!()
             }
         }
     }

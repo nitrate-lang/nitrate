@@ -1,6 +1,7 @@
 use crate::ast_expr2hir;
 use crate::diagnosis::HirErr;
 use crate::lower::lower::Ast2Hir;
+use interned_string::IString;
 use nitrate_diagnosis::CompilerLog;
 use nitrate_hir::prelude::*;
 use nitrate_hir_get_type::get_type;
@@ -287,7 +288,7 @@ fn metatype_source_encode(store: &Store, from: &Type, o: &mut dyn Write) -> Resu
             Ok(())
         }
 
-        Type::Symbol { name: _, link } => match link {
+        Type::Symbol { path: _, link } => match link {
             Some(type_id) => metatype_source_encode(store, &store[type_id], o),
             None => Err(EncodeErr::UnresolvedSymbol),
         },
@@ -419,12 +420,37 @@ impl Ast2Hir for ast::Tuple {
 impl Ast2Hir for ast::StructInit {
     type Hir = Value;
 
-    fn ast2hir(self, _ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
-        // TODO: lower ast::StructInit to HIR
-        log.report(&HirErr::UnimplementedFeature(
-            "ast::Expr::StructInit".into(),
-        ));
-        Err(())
+    fn ast2hir(self, ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
+        let unqualified_path = self
+            .type_name
+            .segments
+            .into_iter()
+            .map(|seg| seg.name)
+            .collect::<Vec<_>>()
+            .join("::");
+
+        let name = IString::from(HirCtx::join_path(ctx.current_scope(), &unqualified_path));
+
+        let struct_type = Type::Symbol {
+            path: name,
+            link: None,
+        }
+        .into_id(ctx.store());
+
+        let mut fields = Vec::with_capacity(self.fields.len());
+        for field in self.fields {
+            let field_name = IString::from(field.0.to_string());
+            let field_value = field.1.ast2hir(ctx, log)?.into_id(ctx.store());
+
+            fields.push((field_name, field_value));
+        }
+
+        let struct_object = Value::StructObject {
+            struct_type,
+            fields: fields.into(),
+        };
+
+        Ok(struct_object)
     }
 }
 
@@ -1189,7 +1215,7 @@ impl Ast2Hir for ast::MethodCall {
             log.report(&HirErr::TypeInferenceError);
         })?;
 
-        todo!()
+        unimplemented!()
 
         // let call_arguments = construct_call(ctx, log, &function_type, self.arguments)?;
 

@@ -247,7 +247,7 @@ impl Parser<'_, '_> {
                 name: segment_name,
                 type_arguments: None,
             }]),
-            resolved: None,
+            resolved_path: None,
         }
     }
 
@@ -340,7 +340,7 @@ impl Parser<'_, '_> {
 
         TypePath {
             segments,
-            resolved: None,
+            resolved_path: None,
         }
     }
 

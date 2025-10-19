@@ -116,7 +116,7 @@ fn generate_code(
     _module: &Module,
     _object: &mut dyn std::io::Write,
 ) -> Result<(), TranslationError> {
-    todo!()
+    unimplemented!()
 }
 
 pub fn compile_code(

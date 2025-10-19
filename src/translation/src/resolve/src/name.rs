@@ -3,10 +3,8 @@ use crate::{ResolveIssue, Symbol, SymbolTable, build_symbol_table};
 use nitrate_diagnosis::CompilerLog;
 use nitrate_parsetree::{
     Order, ParseTreeIterMut, RefNodeMut,
-    ast::{ExprPath, ExprPathTarget, Module, TypePath, TypePathTarget},
+    ast::{ExprPath, Module, TypePath},
 };
-
-use std::sync::Arc;
 
 fn resolve_expr_path_lookup(
     path: &mut ExprPath,
@@ -24,20 +22,7 @@ fn resolve_expr_path_lookup(
         return false;
     }
 
-    match symbols.first().expect("symbol table entry is empty") {
-        Symbol::TypeAlias(sym) => {
-            path.resolved = Some(ExprPathTarget::TypeAlias(Arc::downgrade(&sym)))
-        }
-        Symbol::Struct(sym) => path.resolved = Some(ExprPathTarget::Struct(Arc::downgrade(&sym))),
-        Symbol::Enum(sym) => path.resolved = Some(ExprPathTarget::Enum(Arc::downgrade(&sym))),
-        Symbol::Trait(sym) => path.resolved = Some(ExprPathTarget::Trait(Arc::downgrade(&sym))),
-        Symbol::Function(sym) => {
-            path.resolved = Some(ExprPathTarget::Function(Arc::downgrade(&sym)))
-        }
-        Symbol::Variable(sym) => {
-            path.resolved = Some(ExprPathTarget::Variable(Arc::downgrade(&sym)))
-        }
-    }
+    path.resolved_path = Some(name);
 
     true
 }
@@ -97,18 +82,8 @@ fn resolve_type_path_lookup(
     }
 
     match symbols.first().expect("symbol table entry is empty") {
-        Symbol::TypeAlias(sym) => {
-            path.resolved = Some(TypePathTarget::TypeAlias(Arc::downgrade(&sym)));
-            return true;
-        }
-
-        Symbol::Struct(sym) => {
-            path.resolved = Some(TypePathTarget::Struct(Arc::downgrade(&sym)));
-            return true;
-        }
-
-        Symbol::Enum(sym) => {
-            path.resolved = Some(TypePathTarget::Enum(Arc::downgrade(&sym)));
+        Symbol::TypeAlias(_) | Symbol::Struct(_) | Symbol::Enum(_) => {
+            path.resolved_path = Some(name);
             return true;
         }
 

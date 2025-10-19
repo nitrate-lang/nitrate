@@ -1,5 +1,3 @@
-use std::collections::BTreeMap;
-
 use crate::{prelude::*, store::LiteralId};
 use interned_string::IString;
 use ordered_float::OrderedFloat;
@@ -296,8 +294,8 @@ pub enum Value {
     InferredFloat(OrderedFloat<f64>),
 
     StructObject {
-        struct_type: StructTypeId,
-        fields: Box<BTreeMap<IString, ValueId>>,
+        struct_type: TypeId,
+        fields: ThinVec<(IString, ValueId)>,
     },
 
     EnumVariant {

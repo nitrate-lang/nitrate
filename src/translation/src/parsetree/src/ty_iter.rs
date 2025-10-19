@@ -135,7 +135,7 @@ impl ParseTreeIter for TypePath {
             }
         }
 
-        let _ = self.resolved;
+        let _ = self.resolved_path;
 
         f(Order::Leave, RefNode::TypeTypeName(self));
     }

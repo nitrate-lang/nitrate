@@ -754,6 +754,7 @@ dependencies = [
  "nitrate_parsetree",
  "nitrate_tokenize",
  "ordered-float",
+ "thin-vec",
 ]
 
 [[package]]

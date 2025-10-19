@@ -148,10 +148,9 @@ impl Ast2Hir for ast::TypePath {
             .collect::<Vec<_>>()
             .join("::");
 
-        Ok(Type::Symbol {
-            name: IString::from(HirCtx::join_path(ctx.current_scope(), &unqualified_path)),
-            link: None,
-        })
+        let path = IString::from(HirCtx::join_path(ctx.current_scope(), &unqualified_path));
+
+        Ok(Type::Symbol { path, link: None })
     }
 }
 

@@ -560,7 +560,7 @@ impl Parser<'_, '_> {
                     name: name,
                     type_arguments: None,
                 }],
-                resolved: None,
+                resolved_path: None,
             })),
 
             _ => return value,
@@ -790,7 +790,7 @@ impl Parser<'_, '_> {
 
         ExprPath {
             segments,
-            resolved: None,
+            resolved_path: None,
         }
     }
 

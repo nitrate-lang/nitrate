@@ -140,7 +140,7 @@ pub enum Type {
     },
 
     Symbol {
-        name: IString,
+        path: IString,
         link: Option<TypeId>,
     },
 

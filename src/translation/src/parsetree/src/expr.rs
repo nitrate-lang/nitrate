@@ -1,5 +1,5 @@
 use crate::ast::{FuncParam, Type};
-use crate::item::{Enum, Function, Struct, Trait, TypeAlias, Variable};
+use crate::item::Variable;
 use crate::tag::{ArgNameId, LabelNameId, StringLiteralId, StructFieldNameId, VariableNameId};
 use crate::ty::TypePath;
 
@@ -7,7 +7,7 @@ use nitrate_tokenize::IntegerKind;
 use ordered_float::NotNan;
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
-use std::sync::{Arc, RwLock, Weak};
+use std::sync::{Arc, RwLock};
 
 #[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -256,17 +256,6 @@ pub struct Closure {
 
 #[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub enum ExprPathTarget {
-    TypeAlias(Weak<RwLock<TypeAlias>>),
-    Struct(Weak<RwLock<Struct>>),
-    Enum(Weak<RwLock<Enum>>),
-    Function(Weak<RwLock<Function>>),
-    Variable(Weak<RwLock<Variable>>),
-    Trait(Weak<RwLock<Trait>>),
-}
-
-#[skip_serializing_none]
-#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TypeArgument {
     pub name: Option<ArgNameId>,
     pub value: Type,
@@ -283,9 +272,7 @@ pub struct ExprPathSegment {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ExprPath {
     pub segments: Vec<ExprPathSegment>,
-
-    #[serde(skip)]
-    pub resolved: Option<ExprPathTarget>,
+    pub resolved_path: Option<String>,
 }
 
 #[skip_serializing_none]

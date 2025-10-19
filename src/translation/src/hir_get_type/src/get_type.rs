@@ -56,9 +56,7 @@ pub fn get_type(value: &Value, store: &Store) -> Result<Type, TypeInferenceError
         Value::StructObject {
             struct_type,
             fields: _,
-        } => Ok(Type::Struct {
-            struct_type: struct_type.to_owned(),
-        }),
+        } => Ok(store[struct_type].clone()),
 
         Value::EnumVariant {
             enum_type,
@@ -135,7 +133,7 @@ pub fn get_type(value: &Value, store: &Store) -> Result<Type, TypeInferenceError
 
         Value::Deref { place: _ } => {
             // TODO: inference for dereference
-            todo!()
+            unimplemented!()
         }
 
         Value::Cast { expr: _, to } => Ok((&store[to]).clone()),
@@ -145,7 +143,7 @@ pub fn get_type(value: &Value, store: &Store) -> Result<Type, TypeInferenceError
             place: _,
         } => {
             // TODO: inference for address-of
-            todo!()
+            unimplemented!()
         }
 
         Value::List { elements } => {
@@ -215,7 +213,7 @@ pub fn get_type(value: &Value, store: &Store) -> Result<Type, TypeInferenceError
             callee: _,
         } => {
             // TODO: Determine the type of the closure
-            todo!()
+            unimplemented!()
         }
 
         Value::Call {

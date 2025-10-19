@@ -6,9 +6,9 @@ use crate::{
     expr::{
         AttributeList, Await, BStringLit, BinExpr, BinExprOp, Block, BlockItem, BooleanLit, Break,
         CallArgument, Cast, Closure, Continue, ElseIf, Expr, ExprParentheses, ExprPath,
-        ExprPathSegment, ExprPathTarget, ExprSyntaxError, FloatLit, ForEach, FunctionCall, If,
-        IndexAccess, IntegerLit, List, Match, MatchCase, MethodCall, Return, Safety, StringLit,
-        StructInit, Tuple, TypeArgument, TypeInfo, UnaryExpr, UnaryExprOp, WhileLoop,
+        ExprPathSegment, ExprSyntaxError, FloatLit, ForEach, FunctionCall, If, IndexAccess,
+        IntegerLit, List, Match, MatchCase, MethodCall, Return, Safety, StringLit, StructInit,
+        Tuple, TypeArgument, TypeInfo, UnaryExpr, UnaryExprOp, WhileLoop,
     },
     item::{
         AssociatedItem, Enum, EnumVariant, FuncParam, FuncParams, Function, Generics, Impl, Import,
@@ -18,8 +18,8 @@ use crate::{
     ty::{
         ArrayType, Bool, Exclusivity, Float32, Float64, FunctionType, InferType, Int8, Int16,
         Int32, Int64, Int128, LatentType, Lifetime, OpaqueType, ReferenceType, RefinementType,
-        SliceType, TupleType, Type, TypeParentheses, TypePath, TypePathSegment, TypePathTarget,
-        TypeSyntaxError, UInt8, UInt16, UInt32, UInt64, UInt128, USize,
+        SliceType, TupleType, Type, TypeParentheses, TypePath, TypePathSegment, TypeSyntaxError,
+        UInt8, UInt16, UInt32, UInt64, UInt128, USize,
     },
 };
 
@@ -557,46 +557,6 @@ impl PrettyPrint for ExprPathSegment {
     }
 }
 
-impl PrettyPrint for ExprPathTarget {
-    fn pretty_print_fmt(
-        &self,
-        _ctx: &mut PrintContext,
-        writer: &mut dyn std::fmt::Write,
-    ) -> std::fmt::Result {
-        match self {
-            ExprPathTarget::TypeAlias(m) => {
-                let r = m.upgrade().expect("dropped");
-                write_resolve_link(writer, &r.read().unwrap() as &TypeAlias)
-            }
-
-            ExprPathTarget::Struct(m) => {
-                let r = m.upgrade().expect("dropped");
-                write_resolve_link(writer, &r.read().unwrap() as &Struct)
-            }
-
-            ExprPathTarget::Enum(m) => {
-                let r = m.upgrade().expect("dropped");
-                write_resolve_link(writer, &r.read().unwrap() as &Enum)
-            }
-
-            ExprPathTarget::Function(m) => {
-                let r = m.upgrade().expect("dropped");
-                write_resolve_link(writer, &r.read().unwrap() as &Function)
-            }
-
-            ExprPathTarget::Variable(m) => {
-                let r = m.upgrade().expect("dropped");
-                write_resolve_link(writer, &r.read().unwrap() as &Variable)
-            }
-
-            ExprPathTarget::Trait(m) => {
-                let r = m.upgrade().expect("dropped");
-                write_resolve_link(writer, &r.read().unwrap() as &Trait)
-            }
-        }
-    }
-}
-
 impl PrettyPrint for ExprPath {
     fn pretty_print_fmt(
         &self,
@@ -614,8 +574,10 @@ impl PrettyPrint for ExprPath {
         if ctx.show_resolution_links {
             writer.write_char(' ')?;
 
-            if let Some(resolved) = &self.resolved {
-                resolved.pretty_print_fmt(ctx, writer)?;
+            if let Some(resolved_path) = &self.resolved_path {
+                writer.write_str("$<")?;
+                writer.write_str(resolved_path)?;
+                writer.write_str(">$ ")?;
             } else {
                 write_unresolved_link(writer)?;
             }
@@ -1120,31 +1082,6 @@ impl PrettyPrint for TypePathSegment {
     }
 }
 
-impl PrettyPrint for TypePathTarget {
-    fn pretty_print_fmt(
-        &self,
-        _ctx: &mut PrintContext,
-        writer: &mut dyn std::fmt::Write,
-    ) -> std::fmt::Result {
-        match self {
-            TypePathTarget::TypeAlias(m) => {
-                let r = m.upgrade().expect("dropped");
-                write_resolve_link(writer, &r.read().unwrap() as &TypeAlias)
-            }
-
-            TypePathTarget::Struct(m) => {
-                let r = m.upgrade().expect("dropped");
-                write_resolve_link(writer, &r.read().unwrap() as &Struct)
-            }
-
-            TypePathTarget::Enum(m) => {
-                let r = m.upgrade().expect("dropped");
-                write_resolve_link(writer, &r.read().unwrap() as &Enum)
-            }
-        }
-    }
-}
-
 impl PrettyPrint for TypePath {
     fn pretty_print_fmt(
         &self,
@@ -1162,8 +1099,10 @@ impl PrettyPrint for TypePath {
         if ctx.show_resolution_links {
             writer.write_char(' ')?;
 
-            if let Some(resolved) = &self.resolved {
-                resolved.pretty_print_fmt(ctx, writer)?;
+            if let Some(resolved_path) = &self.resolved_path {
+                writer.write_str("$<")?;
+                writer.write_str(resolved_path)?;
+                writer.write_str(">$ ")?;
             } else {
                 write_unresolved_link(writer)?;
             }

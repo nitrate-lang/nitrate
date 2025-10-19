@@ -1,13 +1,12 @@
 use crate::{
     ast::{Block, Expr},
     expr::{AttributeList, TypeArgument},
-    item::{Enum, FuncParams, Mutability, Struct, TypeAlias},
+    item::{FuncParams, Mutability},
     tag::{LifetimeNameId, OpaqueTypeNameId},
 };
 
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
-use std::sync::{RwLock, Weak};
 
 #[skip_serializing_none]
 #[derive(Clone, Serialize, Deserialize)]
@@ -75,14 +74,6 @@ pub struct InferType;
 
 #[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub enum TypePathTarget {
-    TypeAlias(Weak<RwLock<TypeAlias>>),
-    Struct(Weak<RwLock<Struct>>),
-    Enum(Weak<RwLock<Enum>>),
-}
-
-#[skip_serializing_none]
-#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TypePathSegment {
     pub name: String,
     pub type_arguments: Option<Vec<TypeArgument>>,
@@ -92,9 +83,7 @@ pub struct TypePathSegment {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TypePath {
     pub segments: Vec<TypePathSegment>,
-
-    #[serde(skip)]
-    pub resolved: Option<TypePathTarget>,
+    pub resolved_path: Option<String>,
 }
 
 #[skip_serializing_none]

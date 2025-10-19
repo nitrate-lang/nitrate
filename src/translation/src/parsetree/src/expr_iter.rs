@@ -1,13 +1,13 @@
 use crate::{
     Order, ParseTreeIter, RefNode,
-    expr::{
-        AttributeList, ElseIf, ExprPath, Match, MatchCase, MethodCall, Safety, StructInit, Tuple,
-        TypeArgument,
-    },
     ast::{
         Await, BStringLit, BinExpr, Block, BlockItem, BooleanLit, Break, CallArgument, Cast,
         Closure, Continue, Expr, ExprParentheses, ExprSyntaxError, FloatLit, ForEach, FunctionCall,
         If, IndexAccess, IntegerLit, List, Return, StringLit, TypeInfo, UnaryExpr, WhileLoop,
+    },
+    expr::{
+        AttributeList, ElseIf, ExprPath, Match, MatchCase, MethodCall, Safety, StructInit, Tuple,
+        TypeArgument,
     },
 };
 
@@ -243,7 +243,7 @@ impl ParseTreeIter for ExprPath {
             }
         }
 
-        let _ = self.resolved;
+        let _ = self.resolved_path;
 
         f(Order::Leave, RefNode::ExprPath(self));
     }
