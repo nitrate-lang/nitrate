@@ -467,16 +467,10 @@ impl Ast2Hir for ast::StructInit {
         }
 
         if let Some(resolved_path) = self.type_name.resolved_path {
-            let path = IString::from(resolved_path);
-
-            if let Some(TypeDefinition::StructDef(struct_def)) = ctx.lookup_type(&path) {
-                let struct_object = Value::StructObject {
-                    struct_type: ctx[struct_def].borrow().struct_id,
-                    fields: fields.into(),
-                };
-
-                return Ok(struct_object);
-            }
+            return Ok(Value::StructObject {
+                struct_path: IString::from(resolved_path),
+                fields: fields.into(),
+            });
         }
 
         log.report(&HirErr::UnresolvedTypePath);

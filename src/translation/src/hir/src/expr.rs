@@ -301,7 +301,7 @@ pub enum Value {
     InferredFloat(OrderedFloat<f64>),
 
     StructObject {
-        struct_type: StructTypeId,
+        struct_path: IString,
         fields: ThinVec<(IString, ValueId)>,
     },
 

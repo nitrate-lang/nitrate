@@ -109,10 +109,10 @@ impl Dump for Value {
             Value::InferredFloat(f) => write!(o, "?f {}", f),
 
             Value::StructObject {
-                struct_type,
+                struct_path,
                 fields,
             } => {
-                ctx.store[struct_type].dump(ctx, o)?;
+                write!(o, "{}", struct_path)?;
 
                 write!(o, " {{ ")?;
 

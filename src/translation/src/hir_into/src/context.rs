@@ -1,4 +1,3 @@
-use interned_string::IString;
 use nitrate_hir::{SymbolTab, prelude::*};
 use std::cell::RefCell;
 use std::collections::{HashMap, HashSet};
@@ -100,10 +99,6 @@ impl Ast2HirCtx {
         self.symbol_tab
             .types
             .insert(definition.name(&self.store), definition);
-    }
-
-    pub(crate) fn lookup_type(&self, name: &IString) -> Option<&TypeDefinition> {
-        self.symbol_tab.types.get(name)
     }
 
     pub(crate) fn register_symbol(&mut self, symbol_id: SymbolId) {

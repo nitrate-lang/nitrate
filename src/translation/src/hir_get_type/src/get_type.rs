@@ -1,6 +1,9 @@
 use nitrate_hir::{
     Store, SymbolTab,
-    hir::{BinaryOp, BlockElement, FunctionType, IntoStoreId, SymbolId, Type, UnaryOp, Value},
+    hir::{
+        BinaryOp, BlockElement, FunctionType, IntoStoreId, SymbolId, Type, TypeDefinition, UnaryOp,
+        Value,
+    },
 };
 
 pub enum TypeInferenceError {
@@ -10,6 +13,7 @@ pub enum TypeInferenceError {
     CalleeIsNotFunctionType,
     TraitHasNoType,
     UnresolvedSymbol,
+    StructObjectDoesNotHaveStructType,
 }
 
 pub struct TypeInferenceCtx<'a> {
@@ -59,11 +63,19 @@ pub fn get_type(value: &Value, ctx: &TypeInferenceCtx) -> Result<Type, TypeInfer
         }
 
         Value::StructObject {
-            struct_type,
+            struct_path,
             fields: _,
-        } => Ok(Type::Struct {
-            struct_type: *struct_type,
-        }),
+        } => match ctx.symbol_tab.types.get(struct_path) {
+            None => Err(TypeInferenceError::UnresolvedSymbol),
+
+            Some(TypeDefinition::StructDef(struct_def)) => Ok(Type::Struct {
+                struct_type: ctx.store[struct_def].borrow().struct_id.to_owned(),
+            }),
+
+            Some(TypeDefinition::EnumDef(_)) | Some(TypeDefinition::TypeAliasDef(_)) => {
+                Err(TypeInferenceError::StructObjectDoesNotHaveStructType)
+            }
+        },
 
         Value::EnumVariant {
             enum_type,

@@ -255,7 +255,7 @@ impl HirEvaluate for Value {
             Value::InferredFloat(f) => Ok(Value::InferredFloat(*f)),
 
             Value::StructObject {
-                struct_type,
+                struct_path,
                 fields,
             } => {
                 let mut fields = fields.to_owned();
@@ -269,7 +269,7 @@ impl HirEvaluate for Value {
                 }
 
                 Ok(Value::StructObject {
-                    struct_type: struct_type.clone(),
+                    struct_path: struct_path.clone(),
                     fields,
                 })
             }

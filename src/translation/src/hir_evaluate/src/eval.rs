@@ -139,7 +139,7 @@ impl HirEvalCtx<'_, '_> {
     pub fn evaluate_into_type(&mut self, value: &Value) -> Result<Type, Unwind> {
         match value.evaluate(self)? {
             Value::StructObject {
-                struct_type: _,
+                struct_path: _,
                 fields: _,
             } => {
                 // TODO: convert from nitrate's `std::meta::Type` into nitrate_hir::Type
