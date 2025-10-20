@@ -72,7 +72,7 @@ pub struct FunctionType {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TypeSymbol {
     pub path: IString,
-    pub link: OnceCell<TypeId>,
+    pub link: OnceCell<TypeDefinition>,
 }
 
 impl PartialEq for TypeSymbol {

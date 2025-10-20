@@ -9,7 +9,7 @@ fn ast_typealias2hir(
     type_alias: &ast::TypeAlias,
     ctx: &mut HirCtx,
     log: &CompilerLog,
-) -> Result<TypeAliasDef, ()> {
+) -> Result<TypeAliasDefId, ()> {
     let visibility = match type_alias.visibility {
         Some(ast::Visibility::Public) => Visibility::Pub,
         Some(ast::Visibility::Protected) => Visibility::Pro,
@@ -37,23 +37,24 @@ fn ast_typealias2hir(
         }
     };
 
-    let type_alias = TypeAliasDef {
+    let type_alias_id = TypeAliasDef {
         visibility,
         name,
         type_id,
-    };
+    }
+    .into_id(ctx.store());
 
-    let definition = TypeDefinition::TypeAliasDef(type_alias.clone().into_id(ctx.store()));
+    let definition = TypeDefinition::TypeAliasDef(type_alias_id.clone());
     ctx.register_type(definition);
 
-    Ok(type_alias)
+    Ok(type_alias_id)
 }
 
 fn ast_struct2hir(
     struct_def: &ast::Struct,
     ctx: &mut HirCtx,
     log: &CompilerLog,
-) -> Result<StructDef, ()> {
+) -> Result<StructDefId, ()> {
     let visibility = match struct_def.visibility {
         Some(ast::Visibility::Public) => Visibility::Pub,
         Some(ast::Visibility::Protected) => Visibility::Pro,
@@ -110,20 +111,26 @@ fn ast_struct2hir(
     }
 
     let struct_id = StructType { attributes, fields }.into_id(ctx.store());
-    let struct_def = StructDef {
+
+    let struct_def_id = StructDef {
         visibility,
         name,
         field_extras,
         struct_id,
-    };
+    }
+    .into_id(ctx.store());
 
-    let definition = TypeDefinition::StructDef(struct_def.clone().into_id(ctx.store()));
+    let definition = TypeDefinition::StructDef(struct_def_id.clone());
     ctx.register_type(definition);
 
-    Ok(struct_def)
+    Ok(struct_def_id)
 }
 
-fn ast_enum2hir(enum_def: &ast::Enum, ctx: &mut HirCtx, log: &CompilerLog) -> Result<EnumDef, ()> {
+fn ast_enum2hir(
+    enum_def: &ast::Enum,
+    ctx: &mut HirCtx,
+    log: &CompilerLog,
+) -> Result<EnumDefId, ()> {
     let visibility = match enum_def.visibility {
         Some(ast::Visibility::Public) => Visibility::Pub,
         Some(ast::Visibility::Protected) => Visibility::Pro,
@@ -183,17 +190,18 @@ fn ast_enum2hir(enum_def: &ast::Enum, ctx: &mut HirCtx, log: &CompilerLog) -> Re
     }
     .into_id(ctx.store());
 
-    let enum_def = EnumDef {
+    let enum_def_id = EnumDef {
         visibility,
         name,
         variant_extras,
         enum_id,
-    };
+    }
+    .into_id(ctx.store());
 
-    let definition = TypeDefinition::EnumDef(enum_def.clone().into_id(ctx.store()));
+    let definition = TypeDefinition::EnumDef(enum_def_id.clone());
     ctx.register_type(definition);
 
-    Ok(enum_def)
+    Ok(enum_def_id)
 }
 
 fn ast_trait2hir(_trait: &ast::Trait, _ctx: &mut HirCtx, log: &CompilerLog) -> Result<(), ()> {
@@ -399,17 +407,17 @@ impl Ast2Hir for ast::Module {
 
                     ast::Item::TypeAlias(type_alias) => {
                         let t = ast_typealias2hir(&type_alias, ctx, log)?;
-                        items.push(Item::TypeAliasDef(t.into_id(ctx.store())));
+                        items.push(Item::TypeAliasDef(t));
                     }
 
                     ast::Item::Struct(struct_def) => {
                         let s = ast_struct2hir(&struct_def, ctx, log)?;
-                        items.push(Item::StructDef(s.into_id(ctx.store())));
+                        items.push(Item::StructDef(s));
                     }
 
                     ast::Item::Enum(enum_def) => {
                         let e = ast_enum2hir(&enum_def, ctx, log)?;
-                        items.push(Item::EnumDef(e.into_id(ctx.store())));
+                        items.push(Item::EnumDef(e));
                     }
 
                     ast::Item::Trait(trait_def) => {

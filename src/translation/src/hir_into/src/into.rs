@@ -99,41 +99,35 @@ impl HirTypeVisitor<()> for LinkResolver<'_, '_> {
         self.visit_type(to, self.ctx.store());
     }
 
-    fn visit_symbol(&mut self, path: &IString, link: &OnceCell<TypeId>) -> () {
+    fn visit_symbol(&mut self, path: &IString, link: &OnceCell<TypeDefinition>) -> () {
         if link.get().is_some() {
             return;
         }
 
+        let id = match self.ctx.lookup_type(path) {
+            Some(id) => id.to_owned(),
+            None => {
+                self.log.report(&HirErr::UnresolvedTypePath);
+                return;
+            }
+        };
+
         match self.ctx.lookup_type(path) {
             None => self.log.report(&HirErr::UnresolvedTypePath),
 
-            Some(TypeDefinition::EnumDef(enum_def)) => {
+            Some(TypeDefinition::EnumDef(_enum_def)) => {
                 // TODO: check visibility
-
-                let enum_type = Type::Enum {
-                    enum_type: self.ctx[enum_def].borrow().enum_id,
-                };
-
-                link.set(enum_type.into_id(self.ctx.store()))
-                    .expect("unexpected value in cell");
+                link.set(id).expect("unexpected value in cell");
             }
 
-            Some(TypeDefinition::StructDef(struct_def)) => {
+            Some(TypeDefinition::StructDef(_struct_def)) => {
                 // TODO: check visibility
-
-                let struct_type = Type::Struct {
-                    struct_type: self.ctx[struct_def].borrow().struct_id,
-                };
-
-                link.set(struct_type.into_id(self.ctx.store()))
-                    .expect("unexpected value in cell");
+                link.set(id).expect("unexpected value in cell");
             }
 
-            Some(TypeDefinition::TypeAliasDef(type_alias_def)) => {
+            Some(TypeDefinition::TypeAliasDef(_type_alias_def)) => {
                 // TODO: check visibility
-
-                let aliased_type = self.ctx[type_alias_def].borrow().type_id;
-                link.set(aliased_type).expect("unexpected value in cell");
+                link.set(id).expect("unexpected value in cell");
             }
         }
     }

@@ -38,7 +38,7 @@ pub trait HirTypeVisitor<T> {
 
     fn visit_reference(&mut self, life: &Lifetime, excl: bool, mutable: bool, to: &Type) -> T;
     fn visit_pointer(&mut self, excl: bool, mutable: bool, to: &Type) -> T;
-    fn visit_symbol(&mut self, path: &IString, link: &OnceCell<TypeId>) -> T;
+    fn visit_symbol(&mut self, path: &IString, link: &OnceCell<TypeDefinition>) -> T;
     fn visit_inferred_float(&mut self) -> T;
     fn visit_inferred_integer(&mut self) -> T;
     fn visit_inferred(&mut self, id: NonZero<u32>) -> T;

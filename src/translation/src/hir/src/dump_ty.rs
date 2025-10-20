@@ -234,15 +234,19 @@ impl Dump for Type {
                 mutable,
                 to,
             } => {
-                lifetime.dump(ctx, o)?;
-                write!(o, " ")?;
+                write!(o, "&")?;
 
-                if !exclusive {
-                    write!(o, "shared ")?;
+                if lifetime != &Lifetime::Inferred {
+                    write!(o, " ")?;
+                    lifetime.dump(ctx, o)?;
+                    write!(o, " ")?;
                 }
 
-                if *mutable {
-                    write!(o, "mut ")?;
+                match (exclusive, mutable) {
+                    (true, true) => write!(o, "mut ")?,
+                    (true, false) => write!(o, "iso ")?,
+                    (false, true) => write!(o, "poly mut ")?,
+                    (false, false) => write!(o, "")?,
                 }
 
                 ctx.store[to].dump(ctx, o)
@@ -253,6 +257,7 @@ impl Dump for Type {
                 mutable,
                 to,
             } => {
+                write!(o, "*")?;
                 if !exclusive {
                     write!(o, "shared ")?;
                 }

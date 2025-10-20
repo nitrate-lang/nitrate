@@ -291,7 +291,25 @@ fn metatype_source_encode(store: &Store, from: &Type, o: &mut dyn Write) -> Resu
         }
 
         Type::Symbol(symbol) => match symbol.link.get() {
-            Some(type_id) => metatype_source_encode(store, &store[type_id], o),
+            Some(TypeDefinition::TypeAliasDef(type_alias_id)) => {
+                let type_id = store[type_alias_id].borrow().type_id;
+                metatype_source_encode(store, &store[&type_id], o)
+            }
+
+            Some(TypeDefinition::EnumDef(enum_id)) => {
+                let enum_type = Type::Enum {
+                    enum_type: store[enum_id].borrow().enum_id,
+                };
+                metatype_source_encode(store, &enum_type, o)
+            }
+
+            Some(TypeDefinition::StructDef(struct_id)) => {
+                let struct_type = Type::Struct {
+                    struct_type: store[struct_id].borrow().struct_id,
+                };
+                metatype_source_encode(store, &struct_type, o)
+            }
+
             None => Err(EncodeErr::UnresolvedSymbol),
         },
 

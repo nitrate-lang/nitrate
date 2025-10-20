@@ -5,13 +5,6 @@ use std::collections::{HashMap, HashSet};
 use std::num::NonZeroU32;
 use std::ops::Deref;
 
-#[derive(Debug)]
-pub enum TypeDefinition {
-    TypeAliasDef(TypeAliasDefId),
-    StructDef(StructDefId),
-    EnumDef(EnumDefId),
-}
-
 impl TypeDefinition {
     pub fn name(&self, ctx: &HirCtx) -> IString {
         match self {

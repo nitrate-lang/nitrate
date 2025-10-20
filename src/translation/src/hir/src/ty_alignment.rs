@@ -86,7 +86,25 @@ pub fn get_align_of(ty: &Type, store: &Store, ptr_size: PtrSize) -> Result<u64, 
         Type::Pointer { .. } => Ok(ptr_size as u64),
 
         Type::Symbol(symbol) => match symbol.link.get() {
-            Some(type_id) => get_align_of(&store[type_id], store, ptr_size),
+            Some(TypeDefinition::TypeAliasDef(type_alias_id)) => {
+                let type_id = store[type_alias_id].borrow().type_id;
+                get_align_of(&store[&type_id], store, ptr_size)
+            }
+
+            Some(TypeDefinition::EnumDef(enum_id)) => {
+                let enum_type = Type::Enum {
+                    enum_type: store[enum_id].borrow().enum_id,
+                };
+                get_align_of(&enum_type, store, ptr_size)
+            }
+
+            Some(TypeDefinition::StructDef(struct_id)) => {
+                let struct_type = Type::Struct {
+                    struct_type: store[struct_id].borrow().struct_id,
+                };
+                get_align_of(&struct_type, store, ptr_size)
+            }
+
             None => Err(LayoutError::UnresolvedSymbol),
         },
 
