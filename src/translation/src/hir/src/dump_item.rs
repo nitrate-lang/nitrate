@@ -66,15 +66,13 @@ impl Dump for GlobalVariableId {
             write!(o, " ")?;
         }
 
-        write!(o, "static::{} ", self.as_usize())?;
-
-        dump_attributes(&this.attributes, ctx, o)?;
+        write!(o, "static::{}::`{}`", self.as_usize(), this.name)?;
 
         if this.is_mutable {
-            write!(o, "mut ")?;
+            write!(o, " mut")?;
         }
 
-        write!(o, "`{}`", this.name)?;
+        dump_attributes(&this.attributes, ctx, o)?;
 
         write!(o, ": ")?;
         ctx.store[&this.ty].dump(ctx, o)?;
@@ -107,18 +105,16 @@ impl Dump for LocalVariableId {
         let this = ctx.store[self].borrow();
 
         match this.kind {
-            LocalVariableKind::Stack => write!(o, "stack::{} ", self.as_usize())?,
-            LocalVariableKind::Dynamic => write!(o, "dynamic::{} ", self.as_usize())?,
-            LocalVariableKind::Static => write!(o, "static::{} ", self.as_usize())?,
+            LocalVariableKind::Stack => write!(o, "let::{}::`{}`", self.as_usize(), this.name)?,
+            LocalVariableKind::Dynamic => write!(o, "var::{}::`{}`", self.as_usize(), this.name)?,
+            LocalVariableKind::Static => write!(o, "static::{}::`{}`", self.as_usize(), this.name)?,
+        }
+
+        if this.is_mutable {
+            write!(o, " mut")?;
         }
 
         dump_attributes(&this.attributes, ctx, o)?;
-
-        if this.is_mutable {
-            write!(o, "mut ")?;
-        }
-
-        write!(o, "`{}`", this.name)?;
 
         write!(o, ": ")?;
         ctx.store[&this.ty].dump(ctx, o)?;
@@ -152,15 +148,13 @@ impl Dump for ParameterId {
     ) -> Result<(), std::fmt::Error> {
         let this = ctx.store[self].borrow();
 
-        write!(o, "param::{} ", self.as_usize())?;
-
-        dump_attributes(&this.attributes, ctx, o)?;
+        write!(o, "param::{}::`{}`", self.as_usize(), this.name)?;
 
         if this.is_mutable {
-            write!(o, "mut ")?;
+            write!(o, " mut")?;
         }
 
-        write!(o, "`{}`", this.name)?;
+        dump_attributes(&this.attributes, ctx, o)?;
 
         write!(o, ": ")?;
         ctx.store[&this.ty].dump(ctx, o)?;
@@ -187,11 +181,9 @@ impl Dump for FunctionId {
             write!(o, " ")?;
         }
 
-        write!(o, "fn::{} ", self.as_usize())?;
+        write!(o, "fn::{}::`{}`", self.as_usize(), this.name)?;
 
         dump_attributes(&this.attributes, ctx, o)?;
-
-        write!(o, "{}", this.name)?;
 
         if this.params.is_empty() {
             write!(o, "()")?;
@@ -237,9 +229,7 @@ impl Dump for TraitId {
             write!(o, " ")?;
         }
 
-        write!(o, "trait::{} ", self.as_usize())?;
-
-        write!(o, "`{}`", this.name)?;
+        write!(o, "trait::{}::`{}`", self.as_usize(), this.name)?;
 
         if this.methods.is_empty() {
             write!(o, " {{}}")
@@ -287,13 +277,13 @@ impl Dump for ModuleId {
             write!(o, " ")?;
         }
 
-        write!(o, "mod::{} ", self.as_usize())?;
+        if let Some(name) = &this.name {
+            write!(o, "mod::{}::`{}` ", self.as_usize(), name)?;
+        } else {
+            write!(o, "mod::{} ", self.as_usize())?;
+        }
 
         dump_attributes(&this.attributes, ctx, o)?;
-
-        if let Some(name) = &this.name {
-            write!(o, "`{}` ", name)?;
-        }
 
         if this.items.is_empty() {
             write!(o, "{{}}")
@@ -331,13 +321,13 @@ impl Dump for Module {
             write!(o, " ")?;
         }
 
-        write!(o, "mod ")?;
+        if let Some(name) = &self.name {
+            write!(o, "mod::`{}` ", name)?;
+        } else {
+            write!(o, "mod ")?;
+        }
 
         dump_attributes(&self.attributes, ctx, o)?;
-
-        if let Some(name) = &self.name {
-            write!(o, "`{}` ", name)?;
-        }
 
         if self.items.is_empty() {
             write!(o, "{{}}")
@@ -377,10 +367,9 @@ impl Dump for TypeAliasDefId {
             write!(o, " ")?;
         }
 
-        write!(o, "typealias::{} ", self.as_usize())?;
+        write!(o, "typealias::{}::`{}`", self.as_usize(), this.name)?;
 
-        write!(o, "`{}` = ", this.name)?;
-
+        write!(o, "= ")?;
         ctx.store[&this.type_id].dump(ctx, o)?;
 
         write!(o, ";")
@@ -400,8 +389,7 @@ impl Dump for StructDefId {
             write!(o, " ")?;
         }
 
-        write!(o, "struct::{} ", self.as_usize())?;
-        write!(o, "`{}` ", this.name)?;
+        write!(o, "struct::{}::`{}`", self.as_usize(), this.name)?;
 
         ctx.store[&this.struct_id].dump(ctx, o)?;
 
@@ -422,8 +410,7 @@ impl Dump for EnumDefId {
             write!(o, " ")?;
         }
 
-        write!(o, "enum::{} ", self.as_usize())?;
-        write!(o, "`{}` ", this.name)?;
+        write!(o, "enum::{}::`{}`", self.as_usize(), this.name)?;
 
         ctx.store[&this.enum_id].dump(ctx, o)?;
 
@@ -438,31 +425,24 @@ impl SymbolId {
         o: &mut dyn std::fmt::Write,
     ) -> Result<(), std::fmt::Error> {
         match self {
-            SymbolId::GlobalVariable(gv) => {
-                write!(
-                    o,
-                    "global[{}] `{}`",
-                    gv.as_usize(),
-                    ctx.store[gv].borrow().name
-                )
+            SymbolId::Function(func_id) => {
+                let symbol = ctx.store[func_id].borrow();
+                write!(o, "fn::{}::`{}`", func_id.as_usize(), symbol.name)
             }
 
-            SymbolId::LocalVariable(lv) => write!(
-                o,
-                "local[{}] `{}`",
-                lv.as_usize(),
-                ctx.store[lv].borrow().name
-            ),
+            SymbolId::GlobalVariable(global_id) => {
+                let symbol = ctx.store[global_id].borrow();
+                write!(o, "global::{}::`{}`", global_id.as_usize(), symbol.name)
+            }
 
-            SymbolId::Parameter(fp) => write!(
-                o,
-                "param[{}] `{}`",
-                fp.as_usize(),
-                ctx.store[fp].borrow().name
-            ),
+            SymbolId::LocalVariable(local_id) => {
+                let symbol = ctx.store[local_id].borrow();
+                write!(o, "local::{}::`{}`", local_id.as_usize(), symbol.name)
+            }
 
-            SymbolId::Function(f) => {
-                write!(o, "fn[{}] `{}`", f.as_usize(), ctx.store[f].borrow().name)
+            SymbolId::Parameter(param_id) => {
+                let symbol = ctx.store[param_id].borrow();
+                write!(o, "param::{}::`{}`", param_id.as_usize(), symbol.name)
             }
         }
     }

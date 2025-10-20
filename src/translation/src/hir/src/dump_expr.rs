@@ -189,7 +189,7 @@ impl Dump for Value {
             }
 
             Value::Symbol(symbol) => match symbol.link.get() {
-                Some(link) => write!(o, "`{}`::{}", symbol.path, link.as_usize()),
+                Some(symbol) => symbol.dump_nocycle(ctx, o),
                 None => write!(o, "? `{}`", symbol.path),
             },
 

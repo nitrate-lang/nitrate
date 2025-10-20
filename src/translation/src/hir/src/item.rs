@@ -116,33 +116,12 @@ pub enum TypeDefinition {
     EnumDef(EnumDefId),
 }
 
-impl TypeDefinition {
-    pub fn as_usize(&self) -> usize {
-        match self {
-            TypeDefinition::TypeAliasDef(id) => id.as_usize(),
-            TypeDefinition::StructDef(id) => id.as_usize(),
-            TypeDefinition::EnumDef(id) => id.as_usize(),
-        }
-    }
-}
-
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub enum SymbolId {
     GlobalVariable(GlobalVariableId),
     LocalVariable(LocalVariableId),
     Parameter(ParameterId),
     Function(FunctionId),
-}
-
-impl SymbolId {
-    pub fn as_usize(&self) -> usize {
-        match self {
-            SymbolId::GlobalVariable(id) => id.as_usize(),
-            SymbolId::LocalVariable(id) => id.as_usize(),
-            SymbolId::Parameter(id) => id.as_usize(),
-            SymbolId::Function(id) => id.as_usize(),
-        }
-    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]

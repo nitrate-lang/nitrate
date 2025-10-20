@@ -270,7 +270,18 @@ impl Dump for Type {
             }
 
             Type::Symbol(symbol) => match symbol.link.get() {
-                Some(link) => write!(o, "`{}`::{}", symbol.path, link.as_usize()),
+                Some(TypeDefinition::TypeAliasDef(alias_id)) => {
+                    write!(o, "typealias::{}::`{}`", alias_id.as_usize(), symbol.path)
+                }
+
+                Some(TypeDefinition::StructDef(struct_id)) => {
+                    write!(o, "struct::{}::`{}`", struct_id.as_usize(), symbol.path)
+                }
+
+                Some(TypeDefinition::EnumDef(enum_id)) => {
+                    write!(o, "enum::{}::`{}`", enum_id.as_usize(), symbol.path)
+                }
+
                 None => write!(o, "? `{}`", symbol.path),
             },
 
