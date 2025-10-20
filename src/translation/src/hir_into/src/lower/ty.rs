@@ -4,7 +4,6 @@ use nitrate_diagnosis::CompilerLog;
 use nitrate_hir::prelude::*;
 use nitrate_hir_evaluate::HirEvalCtx;
 use nitrate_source::ast::{self as ast};
-use once_cell_serde::sync::OnceCell;
 use std::{collections::BTreeSet, ops::Deref};
 
 impl Ast2Hir for ast::TypeSyntaxError {
@@ -138,7 +137,7 @@ impl Ast2Hir for ast::InferType {
 impl Ast2Hir for ast::TypePath {
     type Hir = Type;
 
-    fn ast2hir(self, _ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
+    fn ast2hir(self, ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
         if self.segments.iter().any(|seg| seg.type_arguments.is_some()) {
             // TODO: Support generic type arguments
             log.report(&HirErr::UnimplementedFeature(
@@ -146,17 +145,19 @@ impl Ast2Hir for ast::TypePath {
             ));
         }
 
-        match self.resolved_path {
-            None => {
-                log.report(&HirErr::UnresolvedTypePath);
-                Err(())
-            }
+        if let Some(resolved_path) = self.resolved_path {
+            let path = IString::from(resolved_path);
 
-            Some(p) => Ok(Type::Symbol(TypeSymbol {
-                path: IString::from(p),
-                link: OnceCell::new(),
-            })),
+            if let Some(type_id) = ctx.lookup_type(&path) {
+                return Ok(Type::Symbol {
+                    path,
+                    link: type_id.to_owned(),
+                });
+            }
         }
+
+        log.report(&HirErr::UnresolvedTypePath);
+        Err(())
     }
 }
 

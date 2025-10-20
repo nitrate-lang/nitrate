@@ -1,6 +1,5 @@
 use interned_string::IString;
 use nitrate_hir::prelude::*;
-use once_cell_serde::sync::OnceCell;
 use ordered_float::OrderedFloat;
 
 pub trait HirValueVisitor<T> {
@@ -24,8 +23,8 @@ pub trait HirValueVisitor<T> {
     fn visit_bstring_lit(&mut self, value: &[u8]) -> T;
     fn visit_inferred_integer(&mut self, value: u128) -> T;
     fn visit_inferred_float(&mut self, value: OrderedFloat<f64>) -> T;
-    fn visit_struct_object(&mut self, ty: &Type, fields: &[(IString, ValueId)]) -> T;
-    fn visit_enum_variant(&mut self, ty: &Type, var: &IString, val: &Value) -> T;
+    fn visit_struct_object(&mut self, ty: &StructType, fields: &[(IString, ValueId)]) -> T;
+    fn visit_enum_variant(&mut self, ty: &EnumType, var: &IString, val: &Value) -> T;
     fn visit_binary(&mut self, left: &Value, op: &BinaryOp, right: &Value) -> T;
     fn visit_unary(&mut self, op: &UnaryOp, operand: &Value) -> T;
     fn visit_field_access(&mut self, expr: &Value, field: &IString) -> T;
@@ -45,7 +44,7 @@ pub trait HirValueVisitor<T> {
     fn visit_block(&mut self, safety: BlockSafety, elements: &[BlockElement]) -> T;
     fn visit_closure(&mut self, captures: &[SymbolId], callee: &Function) -> T;
     fn visit_call(&mut self, callee: &Value, arguments: &[ValueId]) -> T;
-    fn visit_symbol(&mut self, path: &IString, link: &OnceCell<SymbolId>) -> T;
+    fn visit_symbol(&mut self, path: &IString, link: &SymbolId) -> T;
 
     fn visit_value(&mut self, value: &Value, store: &Store) -> T {
         match value {
@@ -152,7 +151,7 @@ pub trait HirValueVisitor<T> {
                 self.visit_call(&store[callee].borrow(), arguments)
             }
 
-            Value::Symbol(symbol) => self.visit_symbol(&symbol.path, &symbol.link),
+            Value::Symbol { path, link } => self.visit_symbol(path, link),
         }
     }
 }

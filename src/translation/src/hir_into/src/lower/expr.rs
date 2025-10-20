@@ -9,7 +9,6 @@ use nitrate_source::ast::{self as ast, CallArgument, UnaryExprOp};
 use nitrate_source_parse::Parser;
 use nitrate_token::escape_string;
 use nitrate_token_lexer::{Lexer, LexerError};
-use once_cell_serde::sync::OnceCell;
 use ordered_float::OrderedFloat;
 use std::collections::{BTreeSet, HashMap};
 use std::fmt::Write;
@@ -39,7 +38,6 @@ fn from_nitrate_expression(ctx: &mut HirCtx, nitrate_expr: &str) -> Result<Value
 
 pub(crate) enum EncodeErr {
     CannotEncodeInferredType,
-    UnresolvedSymbol,
 }
 
 fn metatype_source_encode(store: &Store, from: &Type, o: &mut dyn Write) -> Result<(), EncodeErr> {
@@ -290,27 +288,25 @@ fn metatype_source_encode(store: &Store, from: &Type, o: &mut dyn Write) -> Resu
             Ok(())
         }
 
-        Type::Symbol(symbol) => match symbol.link.get() {
-            Some(TypeDefinition::TypeAliasDef(type_alias_id)) => {
+        Type::Symbol { path: _, link } => match link {
+            TypeDefinition::TypeAliasDef(type_alias_id) => {
                 let type_id = store[type_alias_id].borrow().type_id;
                 metatype_source_encode(store, &store[&type_id], o)
             }
 
-            Some(TypeDefinition::EnumDef(enum_id)) => {
+            TypeDefinition::EnumDef(enum_id) => {
                 let enum_type = Type::Enum {
                     enum_type: store[enum_id].borrow().enum_id,
                 };
                 metatype_source_encode(store, &enum_type, o)
             }
 
-            Some(TypeDefinition::StructDef(struct_id)) => {
+            TypeDefinition::StructDef(struct_id) => {
                 let struct_type = Type::Struct {
                     struct_type: store[struct_id].borrow().struct_id,
                 };
                 metatype_source_encode(store, &struct_type, o)
             }
-
-            None => Err(EncodeErr::UnresolvedSymbol),
         },
 
         Type::InferredFloat => Err(EncodeErr::CannotEncodeInferredType),
@@ -441,20 +437,17 @@ impl Ast2Hir for ast::StructInit {
     type Hir = Value;
 
     fn ast2hir(self, ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
-        let unqualified_path = self
+        if self
             .type_name
             .segments
-            .into_iter()
-            .map(|seg| seg.name)
-            .collect::<Vec<_>>()
-            .join("::");
-
-        let path = IString::from(HirCtx::join_path(ctx.current_scope(), &unqualified_path));
-        let struct_type = Type::Symbol(TypeSymbol {
-            path,
-            link: OnceCell::new(),
-        })
-        .into_id(ctx.store());
+            .iter()
+            .any(|seg| seg.type_arguments.is_some())
+        {
+            // TODO: Support generic type arguments
+            log.report(&HirErr::UnimplementedFeature(
+                "generic type arguments in type paths".into(),
+            ));
+        }
 
         let mut fields = Vec::with_capacity(self.fields.len());
         for field in self.fields {
@@ -464,12 +457,21 @@ impl Ast2Hir for ast::StructInit {
             fields.push((field_name, field_value));
         }
 
-        let struct_object = Value::StructObject {
-            struct_type,
-            fields: fields.into(),
-        };
+        if let Some(resolved_path) = self.type_name.resolved_path {
+            let path = IString::from(resolved_path);
 
-        Ok(struct_object)
+            if let Some(TypeDefinition::StructDef(struct_def)) = ctx.lookup_type(&path) {
+                let struct_object = Value::StructObject {
+                    struct_type: ctx[struct_def].borrow().struct_id,
+                    fields: fields.into(),
+                };
+
+                return Ok(struct_object);
+            }
+        }
+
+        log.report(&HirErr::UnresolvedTypePath);
+        Err(())
     }
 }
 
@@ -1011,25 +1013,27 @@ impl Ast2Hir for ast::Closure {
 impl Ast2Hir for ast::ExprPath {
     type Hir = Value;
 
-    fn ast2hir(self, _ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
+    fn ast2hir(self, ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
         if self.segments.iter().any(|seg| seg.type_arguments.is_some()) {
             // TODO: Support generic type arguments
             log.report(&HirErr::UnimplementedFeature(
-                "generic type arguments in type paths".into(),
+                "generic type arguments in expr paths".into(),
             ));
         }
 
-        match self.resolved_path {
-            None => {
-                log.report(&HirErr::UnresolvedTypePath);
-                Err(())
-            }
+        if let Some(resolved_path) = self.resolved_path {
+            let path = IString::from(resolved_path);
 
-            Some(p) => Ok(Value::Symbol(ValueSymbol {
-                path: IString::from(p),
-                link: OnceCell::new(),
-            })),
+            if let Some(symbol_id) = ctx.lookup_symbol(&path) {
+                return Ok(Value::Symbol {
+                    path,
+                    link: symbol_id.to_owned(),
+                });
+            }
         }
+
+        log.report(&HirErr::UnresolvedSymbol);
+        Err(())
     }
 }
 

@@ -56,19 +56,19 @@ pub fn get_type(value: &Value, store: &Store) -> Result<Type, TypeInferenceError
         Value::StructObject {
             struct_type,
             fields: _,
-        } => Ok(store[struct_type].clone()),
+        } => Ok(Type::Struct {
+            struct_type: *struct_type,
+        }),
 
         Value::EnumVariant {
             enum_type,
             variant,
             value: _,
         } => {
-            let enum_type = match store[enum_type] {
-                Type::Enum { ref enum_type } => &store[enum_type],
-                _ => return Err(TypeInferenceError::EnumVariantNotPresent),
-            };
-
-            let found = enum_type.variants.iter().find(|x| &x.name == variant);
+            let found = store[enum_type]
+                .variants
+                .iter()
+                .find(|x| &x.name == variant);
 
             match found {
                 Some(variant) => Ok(store[&variant.ty].clone()),
@@ -231,24 +231,21 @@ pub fn get_type(value: &Value, store: &Store) -> Result<Type, TypeInferenceError
             Err(TypeInferenceError::CalleeIsNotFunctionType)
         }
 
-        Value::Symbol(symbol) => match symbol.link.get() {
-            None => Err(TypeInferenceError::UnresolvedSymbol),
-            Some(symbol) => match symbol {
-                SymbolId::GlobalVariable(glb) => Ok(store[&store[glb].borrow().ty].clone()),
-                SymbolId::LocalVariable(loc) => Ok(store[&store[loc].borrow().ty].clone()),
-                SymbolId::Parameter(param) => Ok(store[&store[param].borrow().ty].clone()),
-                SymbolId::Function(function) => {
-                    let function = &store[function].borrow();
-                    Ok(Type::Function {
-                        function_type: FunctionType {
-                            attributes: function.attributes.to_owned(),
-                            params: function.params.to_owned(),
-                            return_type: function.return_type.to_owned(),
-                        }
-                        .into_id(store),
-                    })
-                }
-            },
+        Value::Symbol { path: _, link } => match link {
+            SymbolId::GlobalVariable(glb) => Ok(store[&store[glb].borrow().ty].clone()),
+            SymbolId::LocalVariable(loc) => Ok(store[&store[loc].borrow().ty].clone()),
+            SymbolId::Parameter(param) => Ok(store[&store[param].borrow().ty].clone()),
+            SymbolId::Function(function) => {
+                let function = &store[function].borrow();
+                Ok(Type::Function {
+                    function_type: FunctionType {
+                        attributes: function.attributes.to_owned(),
+                        params: function.params.to_owned(),
+                        return_type: function.return_type.to_owned(),
+                    }
+                    .into_id(store),
+                })
+            }
         },
     }
 }

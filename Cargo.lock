@@ -693,7 +693,6 @@ dependencies = [
  "interned-string",
  "log",
  "nitrate_token",
- "once_cell_serde",
  "ordered-float",
  "serde",
  "serde_json",
@@ -732,7 +731,6 @@ dependencies = [
  "nitrate_source_parse",
  "nitrate_token",
  "nitrate_token_lexer",
- "once_cell_serde",
  "ordered-float",
  "thin-vec",
 ]
@@ -752,7 +750,6 @@ version = "0.1.0"
 dependencies = [
  "interned-string",
  "nitrate_hir",
- "once_cell_serde",
  "ordered-float",
 ]
 
@@ -889,15 +886,6 @@ name = "once_cell_polyfill"
 version = "1.70.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a4895175b425cb1f87721b59f0f286c2092bd4af812243672510e1ac53e2e0ad"
-
-[[package]]
-name = "once_cell_serde"
-version = "1.20.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "31eb2b876bcc8deb7b571062a7960499a710e89b0645f974aa0f070e91ba4c4e"
-dependencies = [
- "serde",
-]
 
 [[package]]
 name = "ordered-float"

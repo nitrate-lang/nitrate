@@ -1,10 +1,8 @@
 use crate::prelude::*;
 use crate::store::LiteralId;
 use interned_string::IString;
-use once_cell_serde::sync::OnceCell;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeSet;
-use std::hash::{Hash, Hasher};
 use std::num::NonZeroU32;
 use thin_vec::ThinVec;
 
@@ -67,26 +65,6 @@ pub struct FunctionType {
     pub attributes: BTreeSet<FunctionAttribute>,
     pub params: Vec<ParameterId>,
     pub return_type: TypeId,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct TypeSymbol {
-    pub path: IString,
-    pub link: OnceCell<TypeDefinition>,
-}
-
-impl PartialEq for TypeSymbol {
-    fn eq(&self, other: &Self) -> bool {
-        self.path == other.path
-    }
-}
-
-impl Eq for TypeSymbol {}
-
-impl std::hash::Hash for TypeSymbol {
-    fn hash<H: Hasher>(&self, state: &mut H) {
-        self.path.hash(state);
-    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
@@ -161,7 +139,10 @@ pub enum Type {
         to: TypeId,
     },
 
-    Symbol(TypeSymbol),
+    Symbol {
+        path: IString,
+        link: TypeDefinition,
+    },
 
     InferredFloat,
     InferredInteger,

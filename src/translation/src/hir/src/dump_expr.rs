@@ -188,10 +188,7 @@ impl Dump for Value {
                 write!(o, ")")
             }
 
-            Value::Symbol(symbol) => match symbol.link.get() {
-                Some(symbol) => symbol.dump_nocycle(ctx, o),
-                None => write!(o, "? `{}`", symbol.path),
-            },
+            Value::Symbol { path: _, link } => link.dump_nocycle(ctx, o),
 
             Value::FieldAccess { expr, field } => {
                 write!(o, "(")?;

@@ -1,8 +1,5 @@
-use std::hash::Hasher;
-
 use crate::{prelude::*, store::LiteralId};
 use interned_string::IString;
-use once_cell_serde::sync::OnceCell;
 use ordered_float::OrderedFloat;
 use serde::{Deserialize, Serialize};
 use thin_str::ThinStr;
@@ -280,26 +277,6 @@ pub struct Block {
     pub elements: Vec<BlockElement>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ValueSymbol {
-    pub path: IString,
-    pub link: OnceCell<SymbolId>,
-}
-
-impl PartialEq for ValueSymbol {
-    fn eq(&self, other: &Self) -> bool {
-        self.path == other.path
-    }
-}
-
-impl Eq for ValueSymbol {}
-
-impl std::hash::Hash for ValueSymbol {
-    fn hash<H: Hasher>(&self, state: &mut H) {
-        self.path.hash(state);
-    }
-}
-
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub enum Value {
     Unit,
@@ -324,12 +301,12 @@ pub enum Value {
     InferredFloat(OrderedFloat<f64>),
 
     StructObject {
-        struct_type: TypeId,
+        struct_type: StructTypeId,
         fields: ThinVec<(IString, ValueId)>,
     },
 
     EnumVariant {
-        enum_type: TypeId,
+        enum_type: EnumTypeId,
         variant: IString,
         value: ValueId,
     },
@@ -423,7 +400,10 @@ pub enum Value {
         arguments: Box<Vec<ValueId>>,
     },
 
-    Symbol(ValueSymbol),
+    Symbol {
+        path: IString,
+        link: SymbolId,
+    },
 }
 
 impl TryFrom<Value> for Lit {
