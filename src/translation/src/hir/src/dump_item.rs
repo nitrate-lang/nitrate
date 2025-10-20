@@ -66,10 +66,10 @@ impl Dump for GlobalVariableId {
             write!(o, " ")?;
         }
 
-        write!(o, "static::{}::`{}`", self.as_usize(), this.name)?;
+        write!(o, "static::{}::`{}` ", self.as_usize(), this.name)?;
 
         if this.is_mutable {
-            write!(o, " mut")?;
+            write!(o, "mut ")?;
         }
 
         dump_attributes(&this.attributes, ctx, o)?;
@@ -105,13 +105,15 @@ impl Dump for LocalVariableId {
         let this = ctx.store[self].borrow();
 
         match this.kind {
-            LocalVariableKind::Stack => write!(o, "let::{}::`{}`", self.as_usize(), this.name)?,
-            LocalVariableKind::Dynamic => write!(o, "var::{}::`{}`", self.as_usize(), this.name)?,
-            LocalVariableKind::Static => write!(o, "static::{}::`{}`", self.as_usize(), this.name)?,
+            LocalVariableKind::Stack => write!(o, "let::{}::`{}` ", self.as_usize(), this.name)?,
+            LocalVariableKind::Dynamic => write!(o, "var::{}::`{}` ", self.as_usize(), this.name)?,
+            LocalVariableKind::Static => {
+                write!(o, "static::{}::`{}` ", self.as_usize(), this.name)?
+            }
         }
 
         if this.is_mutable {
-            write!(o, " mut")?;
+            write!(o, "mut ")?;
         }
 
         dump_attributes(&this.attributes, ctx, o)?;
@@ -148,10 +150,10 @@ impl Dump for ParameterId {
     ) -> Result<(), std::fmt::Error> {
         let this = ctx.store[self].borrow();
 
-        write!(o, "param::{}::`{}`", self.as_usize(), this.name)?;
+        write!(o, "param::{}::`{}` ", self.as_usize(), this.name)?;
 
         if this.is_mutable {
-            write!(o, " mut")?;
+            write!(o, "mut ")?;
         }
 
         dump_attributes(&this.attributes, ctx, o)?;
@@ -181,7 +183,7 @@ impl Dump for FunctionId {
             write!(o, " ")?;
         }
 
-        write!(o, "fn::{}::`{}`", self.as_usize(), this.name)?;
+        write!(o, "fn::{}::`{}` ", self.as_usize(), this.name)?;
 
         dump_attributes(&this.attributes, ctx, o)?;
 
@@ -229,7 +231,7 @@ impl Dump for TraitId {
             write!(o, " ")?;
         }
 
-        write!(o, "trait::{}::`{}`", self.as_usize(), this.name)?;
+        write!(o, "trait::{}::`{}` ", self.as_usize(), this.name)?;
 
         if this.methods.is_empty() {
             write!(o, " {{}}")
@@ -367,7 +369,7 @@ impl Dump for TypeAliasDefId {
             write!(o, " ")?;
         }
 
-        write!(o, "typealias::{}::`{}`", self.as_usize(), this.name)?;
+        write!(o, "typealias::{}::`{}` ", self.as_usize(), this.name)?;
 
         write!(o, "= ")?;
         ctx.store[&this.type_id].dump(ctx, o)?;
@@ -389,8 +391,9 @@ impl Dump for StructDefId {
             write!(o, " ")?;
         }
 
-        write!(o, "struct::{}::`{}`", self.as_usize(), this.name)?;
+        write!(o, "struct::{}::`{}` ", self.as_usize(), this.name)?;
 
+        write!(o, "= ")?;
         ctx.store[&this.struct_id].dump(ctx, o)?;
 
         write!(o, ";")
@@ -410,8 +413,9 @@ impl Dump for EnumDefId {
             write!(o, " ")?;
         }
 
-        write!(o, "enum::{}::`{}`", self.as_usize(), this.name)?;
+        write!(o, "enum::{}::`{}` ", self.as_usize(), this.name)?;
 
+        write!(o, "= ")?;
         ctx.store[&this.enum_id].dump(ctx, o)?;
 
         write!(o, ";")
