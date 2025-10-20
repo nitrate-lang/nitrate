@@ -1,5 +1,5 @@
 use interned_string::IString;
-use nitrate_hir::prelude::*;
+use nitrate_hir::{SymbolTab, prelude::*};
 use std::cell::RefCell;
 use std::collections::{HashMap, HashSet};
 use std::num::NonZeroU32;
@@ -8,9 +8,8 @@ use std::ops::Deref;
 #[derive(Debug)]
 pub struct Ast2HirCtx {
     pub store: Store,
+    pub symbol_tab: SymbolTab,
     pub(crate) current_scope: Vec<String>,
-    type_map: HashMap<IString, TypeDefinition>,
-    symbol_map: HashMap<IString, SymbolId>,
     impl_map: HashMap<TypeId, HashSet<TraitId>>,
     type_infer_id_ctr: NonZeroU32,
     unique_name_ctr: u32,
@@ -21,8 +20,7 @@ impl Ast2HirCtx {
     pub fn new(ptr_size: PtrSize) -> Self {
         Self {
             store: Store::new(),
-            type_map: HashMap::new(),
-            symbol_map: HashMap::new(),
+            symbol_tab: SymbolTab::default(),
             current_scope: Vec::new(),
             impl_map: HashMap::new(),
             type_infer_id_ctr: NonZeroU32::new(1).unwrap(),
@@ -31,7 +29,7 @@ impl Ast2HirCtx {
         }
     }
 
-    pub fn has_trait(&self, ty: &TypeId, trait_id: &TraitId) -> bool {
+    pub(crate) fn _has_trait(&self, ty: &TypeId, trait_id: &TraitId) -> bool {
         if let Some(impls) = self.impl_map.get(ty) {
             impls.contains(trait_id)
         } else {
@@ -39,7 +37,7 @@ impl Ast2HirCtx {
         }
     }
 
-    pub fn find_unambiguous_trait_method(
+    pub(crate) fn _find_unambiguous_trait_method(
         &self,
         ty: &TypeId,
         method_name: &str,
@@ -71,7 +69,7 @@ impl Ast2HirCtx {
         found
     }
 
-    pub fn get_unique_name(&mut self) -> String {
+    pub(crate) fn _get_unique_name(&mut self) -> String {
         const COMPILER_RESERVED_PREFIX: &str = "⚙️";
 
         let name = format!("{}{}", COMPILER_RESERVED_PREFIX, self.unique_name_ctr);
@@ -79,13 +77,13 @@ impl Ast2HirCtx {
         name
     }
 
-    pub fn create_inference_placeholder(&mut self) -> Type {
+    pub(crate) fn create_inference_placeholder(&mut self) -> Type {
         let id = self.type_infer_id_ctr;
         self.type_infer_id_ctr = id.checked_add(1).expect("Type infer ID overflow");
         Type::Inferred { id }
     }
 
-    pub fn join_path(scope: &[String], name: &str) -> String {
+    pub(crate) fn join_path(scope: &[String], name: &str) -> String {
         let length = scope.iter().map(|s| s.len() + 2).sum::<usize>() + name.len();
         let mut qualified = String::with_capacity(length);
 
@@ -98,22 +96,20 @@ impl Ast2HirCtx {
         qualified
     }
 
-    pub fn register_type(&mut self, definition: TypeDefinition) {
-        self.type_map
+    pub(crate) fn register_type(&mut self, definition: TypeDefinition) {
+        self.symbol_tab
+            .types
             .insert(definition.name(&self.store), definition);
     }
 
-    pub fn lookup_type(&self, name: &IString) -> Option<&TypeDefinition> {
-        self.type_map.get(name)
+    pub(crate) fn lookup_type(&self, name: &IString) -> Option<&TypeDefinition> {
+        self.symbol_tab.types.get(name)
     }
 
-    pub fn register_symbol(&mut self, symbol_id: SymbolId) {
-        self.symbol_map
+    pub(crate) fn register_symbol(&mut self, symbol_id: SymbolId) {
+        self.symbol_tab
+            .symbols
             .insert(symbol_id.name(&self.store), symbol_id);
-    }
-
-    pub fn lookup_symbol(&self, name: &IString) -> Option<&SymbolId> {
-        self.symbol_map.get(name)
     }
 }
 

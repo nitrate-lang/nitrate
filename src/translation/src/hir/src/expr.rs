@@ -402,7 +402,6 @@ pub enum Value {
 
     Symbol {
         path: IString,
-        link: SymbolId,
     },
 }
 

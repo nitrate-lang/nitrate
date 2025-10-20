@@ -421,7 +421,7 @@ impl HirEvaluate for Value {
                 }
             }
 
-            Value::Symbol { path: _, link: _ } => {
+            Value::Symbol { path: _ } => {
                 // TODO: evaluate symbol expressions
                 unimplemented!()
             }

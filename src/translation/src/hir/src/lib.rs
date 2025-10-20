@@ -11,6 +11,7 @@ mod literal_ops;
 mod node_digest;
 mod save;
 mod store;
+mod table;
 mod ty;
 mod ty_alignment;
 mod ty_size;
@@ -23,6 +24,7 @@ pub use store::{
     LocalVariableId, ModuleId, ParameterId, Store, StructDefId, StructTypeId, TraitId,
     TypeAliasDefId, TypeId, ValueId,
 };
+pub use table::SymbolTab;
 
 pub mod hir {
     pub use super::cmp::*;

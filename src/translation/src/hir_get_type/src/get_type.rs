@@ -1,5 +1,5 @@
 use nitrate_hir::{
-    Store,
+    Store, SymbolTab,
     hir::{BinaryOp, BlockElement, FunctionType, IntoStoreId, SymbolId, Type, UnaryOp, Value},
 };
 
@@ -12,7 +12,12 @@ pub enum TypeInferenceError {
     UnresolvedSymbol,
 }
 
-pub fn get_type(value: &Value, store: &Store) -> Result<Type, TypeInferenceError> {
+pub struct TypeInferenceCtx<'a> {
+    pub store: &'a Store,
+    pub symbol_tab: &'a SymbolTab,
+}
+
+pub fn get_type(value: &Value, ctx: &TypeInferenceCtx) -> Result<Type, TypeInferenceError> {
     match value {
         Value::Unit => Ok(Type::Unit),
         Value::Bool(_) => Ok(Type::Bool),
@@ -34,7 +39,7 @@ pub fn get_type(value: &Value, store: &Store) -> Result<Type, TypeInferenceError
         Value::InferredFloat(_) => Ok(Type::InferredFloat),
 
         Value::StringLit(str) => {
-            let element_type = Type::U8.into_id(store);
+            let element_type = Type::U8.into_id(ctx.store);
             let array = Type::Array {
                 element_type,
                 len: str.len() as u64,
@@ -44,7 +49,7 @@ pub fn get_type(value: &Value, store: &Store) -> Result<Type, TypeInferenceError
         }
 
         Value::BStringLit(vec) => {
-            let element_type = Type::U8.into_id(store);
+            let element_type = Type::U8.into_id(ctx.store);
             let array = Type::Array {
                 element_type,
                 len: vec.len() as u64,
@@ -65,13 +70,13 @@ pub fn get_type(value: &Value, store: &Store) -> Result<Type, TypeInferenceError
             variant,
             value: _,
         } => {
-            let found = store[enum_type]
+            let found = ctx.store[enum_type]
                 .variants
                 .iter()
                 .find(|x| &x.name == variant);
 
             match found {
-                Some(variant) => Ok(store[&variant.ty].clone()),
+                Some(variant) => Ok(ctx.store[&variant.ty].clone()),
                 None => Err(TypeInferenceError::EnumVariantNotPresent),
             }
         }
@@ -84,10 +89,10 @@ pub fn get_type(value: &Value, store: &Store) -> Result<Type, TypeInferenceError
             | BinaryOp::Mod
             | BinaryOp::And
             | BinaryOp::Or
-            | BinaryOp::Xor => Ok(get_type(&store[left].borrow(), store)?),
+            | BinaryOp::Xor => Ok(get_type(&ctx.store[left].borrow(), ctx)?),
 
             BinaryOp::Shl | BinaryOp::Shr | BinaryOp::Rol | BinaryOp::Ror => {
-                Ok(get_type(&store[left].borrow(), store)?)
+                Ok(get_type(&ctx.store[left].borrow(), ctx)?)
             }
 
             BinaryOp::LogicAnd
@@ -101,18 +106,20 @@ pub fn get_type(value: &Value, store: &Store) -> Result<Type, TypeInferenceError
         },
 
         Value::Unary { op, operand: expr } => match op {
-            UnaryOp::Add | UnaryOp::Sub | UnaryOp::BitNot => get_type(&store[expr].borrow(), store),
+            UnaryOp::Add | UnaryOp::Sub | UnaryOp::BitNot => {
+                get_type(&ctx.store[expr].borrow(), ctx)
+            }
             UnaryOp::LogicNot => Ok(Type::Bool),
         },
 
         Value::FieldAccess { expr, field } => {
-            let expr = &store[expr].borrow();
+            let expr = &ctx.store[expr].borrow();
 
-            if let Type::Struct { struct_type } = get_type(expr, store)? {
-                let struct_def = &store[&struct_type];
+            if let Type::Struct { struct_type } = get_type(expr, ctx)? {
+                let struct_def = &ctx.store[&struct_type];
                 let found_field = struct_def.fields.iter().find(|x| &x.name == field);
                 if let Some(field) = found_field {
-                    return Ok(store[&field.ty].clone());
+                    return Ok(ctx.store[&field.ty].clone());
                 }
             }
 
@@ -123,9 +130,9 @@ pub fn get_type(value: &Value, store: &Store) -> Result<Type, TypeInferenceError
             collection,
             index: _,
         } => {
-            let collection = &store[collection].borrow();
-            if let Type::Array { element_type, .. } = get_type(collection, store)? {
-                return Ok((&store[&element_type]).clone());
+            let collection = &ctx.store[collection].borrow();
+            if let Type::Array { element_type, .. } = get_type(collection, ctx)? {
+                return Ok((&ctx.store[&element_type]).clone());
             }
 
             Err(TypeInferenceError::IndexAccessOnNonCollection)
@@ -138,7 +145,7 @@ pub fn get_type(value: &Value, store: &Store) -> Result<Type, TypeInferenceError
             unimplemented!()
         }
 
-        Value::Cast { expr: _, to } => Ok((&store[to]).clone()),
+        Value::Cast { expr: _, to } => Ok((&ctx.store[to]).clone()),
 
         Value::Borrow {
             mutable: _,
@@ -150,9 +157,9 @@ pub fn get_type(value: &Value, store: &Store) -> Result<Type, TypeInferenceError
 
         Value::List { elements } => {
             let element_type = if elements.is_empty() {
-                Type::Unit.into_id(store)
+                Type::Unit.into_id(ctx.store)
             } else {
-                get_type(&elements[0], store)?.into_id(store)
+                get_type(&elements[0], ctx)?.into_id(ctx.store)
             };
 
             let array = Type::Array {
@@ -166,7 +173,7 @@ pub fn get_type(value: &Value, store: &Store) -> Result<Type, TypeInferenceError
         Value::Tuple { elements } => {
             let mut element_types = Vec::with_capacity(elements.len());
             for elem in elements {
-                let elem_type = get_type(elem, store)?.into_id(store);
+                let elem_type = get_type(elem, ctx)?.into_id(ctx.store);
                 element_types.push(elem_type);
             }
 
@@ -185,9 +192,9 @@ pub fn get_type(value: &Value, store: &Store) -> Result<Type, TypeInferenceError
             None => Ok(Type::Unit),
 
             Some(_) => {
-                let true_block = &store[true_branch].borrow();
+                let true_block = &ctx.store[true_branch].borrow();
                 let true_branch_type = match true_block.elements.last() {
-                    Some(BlockElement::Expr(last)) => get_type(&store[last].borrow(), store)?,
+                    Some(BlockElement::Expr(last)) => get_type(&ctx.store[last].borrow(), ctx)?,
                     Some(BlockElement::Stmt(_)) | Some(BlockElement::Local(_)) | None => Type::Unit,
                 };
 
@@ -205,8 +212,8 @@ pub fn get_type(value: &Value, store: &Store) -> Result<Type, TypeInferenceError
         Value::Continue { label: _ } => Ok(Type::Never),
         Value::Return { value: _ } => Ok(Type::Never),
 
-        Value::Block { block } => match store[block].borrow().elements.last() {
-            Some(BlockElement::Expr(last)) => get_type(&store[last].borrow(), store),
+        Value::Block { block } => match ctx.store[block].borrow().elements.last() {
+            Some(BlockElement::Expr(last)) => get_type(&ctx.store[last].borrow(), ctx),
             Some(BlockElement::Stmt(_)) | Some(BlockElement::Local(_)) | None => Ok(Type::Unit),
         },
 
@@ -222,30 +229,41 @@ pub fn get_type(value: &Value, store: &Store) -> Result<Type, TypeInferenceError
             callee,
             arguments: _,
         } => {
-            let callee = &store[callee].borrow();
-            if let Type::Function { function_type } = get_type(callee, store)? {
-                let func = &store[&function_type];
-                return Ok(store[&func.return_type].clone());
+            let callee = &ctx.store[callee].borrow();
+            if let Type::Function { function_type } = get_type(callee, ctx)? {
+                let func = &ctx.store[&function_type];
+                return Ok(ctx.store[&func.return_type].clone());
             }
 
             Err(TypeInferenceError::CalleeIsNotFunctionType)
         }
 
-        Value::Symbol { path: _, link } => match link {
-            SymbolId::GlobalVariable(glb) => Ok(store[&store[glb].borrow().ty].clone()),
-            SymbolId::LocalVariable(loc) => Ok(store[&store[loc].borrow().ty].clone()),
-            SymbolId::Parameter(param) => Ok(store[&store[param].borrow().ty].clone()),
-            SymbolId::Function(function) => {
-                let function = &store[function].borrow();
+        Value::Symbol { path } => match ctx.symbol_tab.symbols.get(path) {
+            Some(SymbolId::GlobalVariable(glb)) => {
+                Ok(ctx.store[&ctx.store[glb].borrow().ty].clone())
+            }
+
+            Some(SymbolId::LocalVariable(loc)) => {
+                Ok(ctx.store[&ctx.store[loc].borrow().ty].clone())
+            }
+
+            Some(SymbolId::Parameter(param)) => {
+                Ok(ctx.store[&ctx.store[param].borrow().ty].clone())
+            }
+
+            Some(SymbolId::Function(function)) => {
+                let function = &ctx.store[function].borrow();
                 Ok(Type::Function {
                     function_type: FunctionType {
                         attributes: function.attributes.to_owned(),
                         params: function.params.to_owned(),
                         return_type: function.return_type.to_owned(),
                     }
-                    .into_id(store),
+                    .into_id(ctx.store),
                 })
             }
+
+            None => Err(TypeInferenceError::UnresolvedSymbol),
         },
     }
 }

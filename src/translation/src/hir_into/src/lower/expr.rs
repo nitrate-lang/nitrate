@@ -5,7 +5,7 @@ use crate::lower::lower::Ast2Hir;
 use interned_string::IString;
 use nitrate_diagnosis::CompilerLog;
 use nitrate_hir::prelude::*;
-use nitrate_hir_get_type::get_type;
+use nitrate_hir_get_type::{TypeInferenceCtx, get_type};
 use nitrate_source::ast::{self as ast, CallArgument, UnaryExprOp};
 use nitrate_source_parse::Parser;
 use nitrate_token::escape_string;
@@ -512,7 +512,13 @@ impl Ast2Hir for ast::UnaryExpr {
                 place: operand.into_id(&ctx.store),
             }),
 
-            UnaryExprOp::Typeof => match get_type(&operand, &ctx.store) {
+            UnaryExprOp::Typeof => match get_type(
+                &operand,
+                &TypeInferenceCtx {
+                    store: &ctx.store,
+                    symbol_tab: &ctx.symbol_tab,
+                },
+            ) {
                 Ok(t) => {
                     let encoded = match metatype_encode(ctx, t) {
                         Ok(v) => v,
@@ -1014,7 +1020,7 @@ impl Ast2Hir for ast::Closure {
 impl Ast2Hir for ast::ExprPath {
     type Hir = Value;
 
-    fn ast2hir(self, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
+    fn ast2hir(self, _ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
         if self.segments.iter().any(|seg| seg.type_arguments.is_some()) {
             // TODO: Support generic type arguments
             log.report(&HirErr::UnimplementedFeature(
@@ -1024,13 +1030,7 @@ impl Ast2Hir for ast::ExprPath {
 
         if let Some(resolved_path) = self.resolved_path {
             let path = IString::from(resolved_path);
-
-            if let Some(symbol_id) = ctx.lookup_symbol(&path) {
-                return Ok(Value::Symbol {
-                    path,
-                    link: symbol_id.to_owned(),
-                });
-            }
+            return Ok(Value::Symbol { path });
         }
 
         log.report(&HirErr::UnresolvedSymbol);
@@ -1264,7 +1264,14 @@ impl Ast2Hir for ast::FunctionCall {
 
     fn ast2hir(self, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
         let callee = self.callee.ast2hir(ctx, log)?;
-        let callee_type = get_type(&callee, &ctx.store).map_err(|_| {
+        let callee_type = get_type(
+            &callee,
+            &TypeInferenceCtx {
+                store: &ctx.store,
+                symbol_tab: &ctx.symbol_tab,
+            },
+        )
+        .map_err(|_| {
             log.report(&HirErr::TypeInferenceError);
         })?;
 
@@ -1292,7 +1299,14 @@ impl Ast2Hir for ast::MethodCall {
 
     fn ast2hir(self, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
         let object = self.object.ast2hir(ctx, log)?;
-        let _object_type = get_type(&object, &ctx.store).map_err(|_| {
+        let _object_type = get_type(
+            &object,
+            &TypeInferenceCtx {
+                store: &ctx.store,
+                symbol_tab: &ctx.symbol_tab,
+            },
+        )
+        .map_err(|_| {
             log.report(&HirErr::TypeInferenceError);
         })?;
 
