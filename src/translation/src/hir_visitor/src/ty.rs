@@ -37,7 +37,7 @@ pub trait HirTypeVisitor<T> {
 
     fn visit_reference(&mut self, life: &Lifetime, excl: bool, mutable: bool, to: &Type) -> T;
     fn visit_pointer(&mut self, excl: bool, mutable: bool, to: &Type) -> T;
-    fn visit_symbol(&mut self, path: &IString, link: &TypeDefinition) -> T;
+    fn visit_symbol(&mut self, path: &IString) -> T;
     fn visit_inferred_float(&mut self) -> T;
     fn visit_inferred_integer(&mut self) -> T;
     fn visit_inferred(&mut self, id: NonZero<u32>) -> T;
@@ -96,7 +96,7 @@ pub trait HirTypeVisitor<T> {
                 to,
             } => self.visit_pointer(*exclusive, *mutable, &store[to]),
 
-            Type::Symbol { path, link } => self.visit_symbol(path, link),
+            Type::Symbol { path } => self.visit_symbol(path),
             Type::InferredFloat => self.visit_inferred_float(),
             Type::InferredInteger => self.visit_inferred_integer(),
             Type::Inferred { id } => self.visit_inferred(*id),

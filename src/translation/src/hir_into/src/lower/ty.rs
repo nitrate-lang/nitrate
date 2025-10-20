@@ -137,7 +137,7 @@ impl Ast2Hir for ast::InferType {
 impl Ast2Hir for ast::TypePath {
     type Hir = Type;
 
-    fn ast2hir(self, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
+    fn ast2hir(self, _ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
         if self.segments.iter().any(|seg| seg.type_arguments.is_some()) {
             // TODO: Support generic type arguments
             log.report(&HirErr::UnimplementedFeature(
@@ -147,13 +147,7 @@ impl Ast2Hir for ast::TypePath {
 
         if let Some(resolved_path) = self.resolved_path {
             let path = IString::from(resolved_path);
-
-            if let Some(type_id) = ctx.lookup_type(&path) {
-                return Ok(Type::Symbol {
-                    path,
-                    link: type_id.to_owned(),
-                });
-            }
+            return Ok(Type::Symbol { path });
         }
 
         log.report(&HirErr::UnresolvedTypePath);

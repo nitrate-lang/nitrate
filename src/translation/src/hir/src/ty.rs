@@ -141,7 +141,6 @@ pub enum Type {
 
     Symbol {
         path: IString,
-        link: TypeDefinition,
     },
 
     InferredFloat,

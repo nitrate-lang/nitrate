@@ -4,7 +4,7 @@ use crate::diagnosis::HirErr;
 use crate::lower::lower::Ast2Hir;
 use interned_string::IString;
 use nitrate_diagnosis::CompilerLog;
-use nitrate_hir::prelude::*;
+use nitrate_hir::{SymbolTab, prelude::*};
 use nitrate_hir_get_type::{TypeInferenceCtx, get_type};
 use nitrate_source::ast::{self as ast, CallArgument, UnaryExprOp};
 use nitrate_source_parse::Parser;
@@ -39,9 +39,15 @@ fn from_nitrate_expression(ctx: &mut Ast2HirCtx, nitrate_expr: &str) -> Result<V
 
 pub(crate) enum EncodeErr {
     CannotEncodeInferredType,
+    UnresolvedTypePath,
 }
 
-fn metatype_source_encode(store: &Store, from: &Type, o: &mut dyn Write) -> Result<(), EncodeErr> {
+fn metatype_source_encode(
+    store: &Store,
+    tab: &SymbolTab,
+    from: &Type,
+    o: &mut dyn Write,
+) -> Result<(), EncodeErr> {
     // FIXME: std::meta::Type transcoding | code is stringy => perform manual testing
     // FIXME: Update implementation in accordance with the ratified definition of std::meta::Type within standard library.
 
@@ -138,7 +144,7 @@ fn metatype_source_encode(store: &Store, from: &Type, o: &mut dyn Write) -> Resu
 
         Type::Array { element_type, len } => {
             write!(o, "::std::meta::Type::Array {{ element_type: ").unwrap();
-            metatype_source_encode(store, &store[element_type], o)?;
+            metatype_source_encode(store, tab, &store[element_type], o)?;
             write!(o, ", len: {} }}", len).unwrap();
             Ok(())
         }
@@ -146,7 +152,7 @@ fn metatype_source_encode(store: &Store, from: &Type, o: &mut dyn Write) -> Resu
         Type::Tuple { element_types } => {
             write!(o, "::std::meta::Type::Tuple {{ element_types: Vec::from([").unwrap();
             for elem in element_types {
-                metatype_source_encode(store, &store[elem], o)?;
+                metatype_source_encode(store, tab, &store[elem], o)?;
                 write!(o, ",").unwrap();
             }
             write!(o, "]) }}").unwrap();
@@ -155,7 +161,7 @@ fn metatype_source_encode(store: &Store, from: &Type, o: &mut dyn Write) -> Resu
 
         Type::Slice { element_type } => {
             write!(o, "::std::meta::Type::Slice {{ element_type: ").unwrap();
-            metatype_source_encode(store, &store[element_type], o)?;
+            metatype_source_encode(store, tab, &store[element_type], o)?;
             write!(o, " }}").unwrap();
             Ok(())
         }
@@ -170,7 +176,7 @@ fn metatype_source_encode(store: &Store, from: &Type, o: &mut dyn Write) -> Resu
                     escape_string(&field.name, true)
                 )
                 .unwrap();
-                metatype_source_encode(store, &store[&field.ty], o)?;
+                metatype_source_encode(store, tab, &store[&field.ty], o)?;
                 write!(o, " }},").unwrap();
             }
             write!(o, "]), attributes: Vec::from([").unwrap();
@@ -196,7 +202,7 @@ fn metatype_source_encode(store: &Store, from: &Type, o: &mut dyn Write) -> Resu
                     escape_string(&variant.name, true)
                 )
                 .unwrap();
-                metatype_source_encode(store, &store[&variant.ty], o)?;
+                metatype_source_encode(store, tab, &store[&variant.ty], o)?;
                 write!(o, " }},").unwrap();
             }
             write!(o, "]), attributes: Vec::from([").unwrap();
@@ -212,14 +218,14 @@ fn metatype_source_encode(store: &Store, from: &Type, o: &mut dyn Write) -> Resu
 
         Type::Refine { base, min, max } => {
             write!(o, "::std::meta::Type::Refine {{ base: ").unwrap();
-            metatype_source_encode(store, &store[base], o)?;
+            metatype_source_encode(store, tab, &store[base], o)?;
             write!(o, ", min: {}, max: {} }}", &store[min], &store[max]).unwrap();
             Ok(())
         }
 
         Type::Bitfield { base, bits } => {
             write!(o, "::std::meta::Type::Bitfield {{ base: ").unwrap();
-            metatype_source_encode(store, &store[base], o)?;
+            metatype_source_encode(store, tab, &store[base], o)?;
             write!(o, ", bits: {} }}", bits).unwrap();
             Ok(())
         }
@@ -235,11 +241,11 @@ fn metatype_source_encode(store: &Store, from: &Type, o: &mut dyn Write) -> Resu
                     escape_string(&param.name, true)
                 )
                 .unwrap();
-                metatype_source_encode(store, &store[&param.ty], o)?;
+                metatype_source_encode(store, tab, &store[&param.ty], o)?;
                 write!(o, " }},").unwrap();
             }
             write!(o, "]), return_type: ").unwrap();
-            metatype_source_encode(store, &store[&function_type.return_type], o)?;
+            metatype_source_encode(store, tab, &store[&function_type.return_type], o)?;
             write!(o, ", attributes: Vec::from([").unwrap();
             for attr in &function_type.attributes {
                 match attr {
@@ -268,7 +274,7 @@ fn metatype_source_encode(store: &Store, from: &Type, o: &mut dyn Write) -> Resu
                 Lifetime::Inferred => write!(o, "::std::meta::Lifetime::Inferred").unwrap(),
             };
             write!(o, ", exclusive: {}, mutable: {}, to: ", exclusive, mutable).unwrap();
-            metatype_source_encode(store, &store[to], o)?;
+            metatype_source_encode(store, tab, &store[to], o)?;
             write!(o, " }}").unwrap();
             Ok(())
         }
@@ -284,30 +290,32 @@ fn metatype_source_encode(store: &Store, from: &Type, o: &mut dyn Write) -> Resu
                 exclusive, mutable
             )
             .unwrap();
-            metatype_source_encode(store, &store[to], o)?;
+            metatype_source_encode(store, tab, &store[to], o)?;
             write!(o, " }}").unwrap();
             Ok(())
         }
 
-        Type::Symbol { path: _, link } => match link {
-            TypeDefinition::TypeAliasDef(type_alias_id) => {
+        Type::Symbol { path } => match tab.types.get(path) {
+            Some(TypeDefinition::TypeAliasDef(type_alias_id)) => {
                 let type_id = store[type_alias_id].borrow().type_id;
-                metatype_source_encode(store, &store[&type_id], o)
+                metatype_source_encode(store, tab, &store[&type_id], o)
             }
 
-            TypeDefinition::EnumDef(enum_id) => {
+            Some(TypeDefinition::EnumDef(enum_id)) => {
                 let enum_type = Type::Enum {
                     enum_type: store[enum_id].borrow().enum_id,
                 };
-                metatype_source_encode(store, &enum_type, o)
+                metatype_source_encode(store, tab, &enum_type, o)
             }
 
-            TypeDefinition::StructDef(struct_id) => {
+            Some(TypeDefinition::StructDef(struct_id)) => {
                 let struct_type = Type::Struct {
                     struct_type: store[struct_id].borrow().struct_id,
                 };
-                metatype_source_encode(store, &struct_type, o)
+                metatype_source_encode(store, tab, &struct_type, o)
             }
+
+            _ => Err(EncodeErr::UnresolvedTypePath),
         },
 
         Type::InferredFloat => Err(EncodeErr::CannotEncodeInferredType),
@@ -318,7 +326,7 @@ fn metatype_source_encode(store: &Store, from: &Type, o: &mut dyn Write) -> Resu
 
 fn metatype_encode(ctx: &mut Ast2HirCtx, from: Type) -> Result<Value, EncodeErr> {
     let mut repr = String::new();
-    metatype_source_encode(&ctx.store, &from, &mut repr)?;
+    metatype_source_encode(&ctx.store, &ctx.symbol_tab, &from, &mut repr)?;
 
     let hir_meta_object = from_nitrate_expression(ctx, &repr)
         .expect("failed to lower auto-generated std::meta::Type expression");

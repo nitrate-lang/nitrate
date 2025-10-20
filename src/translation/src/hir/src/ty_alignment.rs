@@ -1,7 +1,7 @@
 use crate::prelude::*;
 use std::cmp::max;
 
-pub fn get_align_of(ty: &Type, store: &Store, ptr_size: PtrSize) -> Result<u64, LayoutError> {
+pub fn get_align_of(ty: &Type, ctx: &LayoutCtx) -> Result<u64, LayoutError> {
     match ty {
         Type::Never => Ok(1),
         Type::Unit => Ok(1),
@@ -11,14 +11,14 @@ pub fn get_align_of(ty: &Type, store: &Store, ptr_size: PtrSize) -> Result<u64, 
         Type::U32 | Type::I32 | Type::F32 => Ok(4),
         Type::U64 | Type::I64 | Type::F64 => Ok(8),
         Type::U128 | Type::I128 => Ok(16),
-        Type::USize => Ok(ptr_size as u64),
+        Type::USize => Ok(ctx.ptr_size as u64),
         Type::Opaque { .. } => Ok(1),
 
         Type::Array { element_type, len } => {
             if *len == 0 {
                 return Ok(1);
             } else {
-                get_align_of(&store[element_type], store, ptr_size)
+                get_align_of(&ctx.store[element_type], ctx)
             }
         }
 
@@ -28,19 +28,19 @@ pub fn get_align_of(ty: &Type, store: &Store, ptr_size: PtrSize) -> Result<u64, 
             let mut max_align = 1;
 
             for element in &*elements {
-                let element_align = get_align_of(&store[element], store, ptr_size)?;
+                let element_align = get_align_of(&ctx.store[element], ctx)?;
                 max_align = max(max_align, element_align);
             }
 
             Ok(max_align)
         }
 
-        Type::Slice { element_type } => get_align_of(&store[element_type], store, ptr_size),
+        Type::Slice { element_type } => get_align_of(&ctx.store[element_type], ctx),
 
         Type::Struct { struct_type } => {
             let StructType {
                 fields, attributes, ..
-            } = &store[struct_type];
+            } = &ctx.store[struct_type];
 
             if attributes.contains(&StructAttribute::Packed) {
                 return Ok(1);
@@ -49,7 +49,7 @@ pub fn get_align_of(ty: &Type, store: &Store, ptr_size: PtrSize) -> Result<u64, 
             let mut max_align = 1;
 
             for field in fields {
-                let field_align = get_align_of(&store[&field.ty], store, ptr_size)?;
+                let field_align = get_align_of(&ctx.store[&field.ty], ctx)?;
                 max_align = max(max_align, field_align);
             }
 
@@ -57,12 +57,12 @@ pub fn get_align_of(ty: &Type, store: &Store, ptr_size: PtrSize) -> Result<u64, 
         }
 
         Type::Enum { enum_type } => {
-            let EnumType { variants, .. } = &store[enum_type];
+            let EnumType { variants, .. } = &ctx.store[enum_type];
 
             let mut max_align = 1;
 
             for variant in variants {
-                let variant_align = get_align_of(&store[&variant.ty], store, ptr_size)?;
+                let variant_align = get_align_of(&ctx.store[&variant.ty], ctx)?;
                 max_align = max(max_align, variant_align);
             }
 
@@ -78,32 +78,34 @@ pub fn get_align_of(ty: &Type, store: &Store, ptr_size: PtrSize) -> Result<u64, 
             Ok(max_align)
         }
 
-        Type::Refine { base, .. } => Ok(get_align_of(&store[base], store, ptr_size)?),
-        Type::Bitfield { base, .. } => Ok(get_align_of(&store[base], store, ptr_size)?),
+        Type::Refine { base, .. } => Ok(get_align_of(&ctx.store[base], ctx)?),
+        Type::Bitfield { base, .. } => Ok(get_align_of(&ctx.store[base], ctx)?),
 
         Type::Function { .. } => Err(LayoutError::Undefined),
-        Type::Reference { .. } => Ok(ptr_size as u64),
-        Type::Pointer { .. } => Ok(ptr_size as u64),
+        Type::Reference { .. } => Ok(ctx.ptr_size as u64),
+        Type::Pointer { .. } => Ok(ctx.ptr_size as u64),
 
-        Type::Symbol { path: _, link } => match link {
-            TypeDefinition::TypeAliasDef(type_alias_id) => {
-                let type_id = store[type_alias_id].borrow().type_id;
-                get_align_of(&store[&type_id], store, ptr_size)
+        Type::Symbol { path } => match ctx.tab.types.get(path) {
+            Some(TypeDefinition::TypeAliasDef(type_alias_id)) => {
+                let type_id = ctx.store[type_alias_id].borrow().type_id;
+                get_align_of(&ctx.store[&type_id], ctx)
             }
 
-            TypeDefinition::EnumDef(enum_id) => {
+            Some(TypeDefinition::EnumDef(enum_id)) => {
                 let enum_type = Type::Enum {
-                    enum_type: store[enum_id].borrow().enum_id,
+                    enum_type: ctx.store[enum_id].borrow().enum_id,
                 };
-                get_align_of(&enum_type, store, ptr_size)
+                get_align_of(&enum_type, ctx)
             }
 
-            TypeDefinition::StructDef(struct_id) => {
+            Some(TypeDefinition::StructDef(struct_id)) => {
                 let struct_type = Type::Struct {
-                    struct_type: store[struct_id].borrow().struct_id,
+                    struct_type: ctx.store[struct_id].borrow().struct_id,
                 };
-                get_align_of(&struct_type, store, ptr_size)
+                get_align_of(&struct_type, ctx)
             }
+
+            None => Err(LayoutError::UnresolvedSymbol),
         },
 
         Type::InferredInteger { .. } | Type::InferredFloat | Type::Inferred { .. } => {

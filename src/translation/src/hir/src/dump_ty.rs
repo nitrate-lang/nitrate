@@ -269,19 +269,7 @@ impl Dump for Type {
                 ctx.store[to].dump(ctx, o)
             }
 
-            Type::Symbol { path, link } => match link {
-                TypeDefinition::TypeAliasDef(alias_id) => {
-                    write!(o, "typealias::{}::`{}`", alias_id.as_usize(), path)
-                }
-
-                TypeDefinition::StructDef(struct_id) => {
-                    write!(o, "struct::{}::`{}`", struct_id.as_usize(), path)
-                }
-
-                TypeDefinition::EnumDef(enum_id) => {
-                    write!(o, "enum::{}::`{}`", enum_id.as_usize(), path)
-                }
-            },
+            Type::Symbol { path } => write!(o, "{}", path),
 
             Type::InferredFloat => write!(o, "?f"),
             Type::InferredInteger => write!(o, "?i"),
