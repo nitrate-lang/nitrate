@@ -136,8 +136,6 @@ impl_dedup_store!(EnumTypeId, EnumType, EnumTypeStore);
 
 impl_dedup_store!(FunctionTypeId, FunctionType, FunctionTypeStore);
 
-impl_store_mut!(SymbolId, Symbol, SymbolStore);
-
 impl_store_mut!(GlobalVariableId, GlobalVariable, GlobalVariableStore);
 
 impl_store_mut!(LocalVariableId, LocalVariable, LocalVariableStore);
@@ -168,7 +166,6 @@ pub struct Store {
     struct_types: StructTypeStore,
     enum_types: EnumTypeStore,
     function_types: FunctionTypeStore,
-    symbols: SymbolStore,
     global_variables: GlobalVariableStore,
     local_variables: LocalVariableStore,
     parameters: ParameterStore,
@@ -190,7 +187,6 @@ impl Store {
             struct_types: StructTypeStore::new(),
             enum_types: EnumTypeStore::new(),
             function_types: FunctionTypeStore::new(),
-            symbols: SymbolStore::new(),
             global_variables: GlobalVariableStore::new(),
             local_variables: LocalVariableStore::new(),
             parameters: ParameterStore::new(),
@@ -220,10 +216,6 @@ impl Store {
 
     pub fn store_function_type(&self, func_type: FunctionType) -> FunctionTypeId {
         using_storage(self, || self.function_types.store(func_type))
-    }
-
-    pub fn store_symbol(&self, symbol: Symbol) -> SymbolId {
-        using_storage(self, || self.symbols.store(symbol))
     }
 
     pub fn store_global_variable(&self, var: GlobalVariable) -> GlobalVariableId {
@@ -279,7 +271,6 @@ impl Store {
         self.struct_types.reset();
         self.enum_types.reset();
         self.function_types.reset();
-        self.symbols.reset();
         self.global_variables.reset();
         self.local_variables.reset();
         self.parameters.reset();
@@ -299,7 +290,6 @@ impl Store {
         self.struct_types.shrink_to_fit();
         self.enum_types.shrink_to_fit();
         self.function_types.shrink_to_fit();
-        self.symbols.shrink_to_fit();
         self.global_variables.shrink_to_fit();
         self.local_variables.shrink_to_fit();
         self.parameters.shrink_to_fit();
@@ -344,14 +334,6 @@ impl std::ops::Index<&FunctionTypeId> for Store {
 
     fn index(&self, index: &FunctionTypeId) -> &Self::Output {
         &self.function_types[index]
-    }
-}
-
-impl std::ops::Index<&SymbolId> for Store {
-    type Output = RefCell<Symbol>;
-
-    fn index(&self, index: &SymbolId) -> &Self::Output {
-        &self.symbols[index]
     }
 }
 

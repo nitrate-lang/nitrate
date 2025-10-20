@@ -21,7 +21,7 @@ pub use dump::{Dump, DumpContext};
 pub use node_digest::NodeDigest;
 pub use store::{
     BlockId, EnumDefId, EnumTypeId, FunctionId, FunctionTypeId, GlobalVariableId, LiteralId,
-    LocalVariableId, ModuleId, ParameterId, Store, StructDefId, StructTypeId, SymbolId, TraitId,
+    LocalVariableId, ModuleId, ParameterId, Store, StructDefId, StructTypeId, TraitId,
     TypeAliasDefId, TypeId, ValueId,
 };
 
@@ -43,6 +43,6 @@ pub mod prelude {
     pub use super::{
         BlockId, Dump, DumpContext, EnumDefId, EnumTypeId, FunctionId, FunctionTypeId,
         GlobalVariableId, LiteralId, LocalVariableId, ModuleId, ParameterId, Store, StructDefId,
-        StructTypeId, SymbolId, TraitId, TypeAliasDefId, TypeId, ValueId,
+        StructTypeId, TraitId, TypeAliasDefId, TypeId, ValueId,
     };
 }

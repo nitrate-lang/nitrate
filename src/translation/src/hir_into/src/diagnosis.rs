@@ -31,6 +31,7 @@ pub(crate) enum HirErr {
     UnresolvedTypePath,
     LocalVariableCannotBeVisible,
     UnrecognizedLocalVariableAttribute,
+    UnresolvedSymbol,
 }
 
 impl FormattableDiagnosticGroup for HirErr {
@@ -70,6 +71,7 @@ impl FormattableDiagnosticGroup for HirErr {
             HirErr::UnresolvedTypePath => 28,
             HirErr::LocalVariableCannotBeVisible => 29,
             HirErr::UnrecognizedLocalVariableAttribute => 30,
+            HirErr::UnresolvedSymbol => 31,
         }
     }
 
@@ -222,6 +224,11 @@ impl FormattableDiagnosticGroup for HirErr {
 
             HirErr::UnrecognizedLocalVariableAttribute => DiagnosticInfo {
                 message: "unrecognized local variable attribute".to_string(),
+                origin: Origin::None,
+            },
+
+            HirErr::UnresolvedSymbol => DiagnosticInfo {
+                message: "unresolved symbol".to_string(),
                 origin: Origin::None,
             },
         }

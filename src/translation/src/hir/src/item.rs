@@ -110,12 +110,22 @@ pub struct EnumDef {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
-pub enum Symbol {
+pub enum SymbolId {
     GlobalVariable(GlobalVariableId),
     LocalVariable(LocalVariableId),
-    Trait(TraitId),
     Parameter(ParameterId),
     Function(FunctionId),
+}
+
+impl SymbolId {
+    pub fn as_usize(&self) -> usize {
+        match self {
+            SymbolId::GlobalVariable(id) => id.as_usize(),
+            SymbolId::LocalVariable(id) => id.as_usize(),
+            SymbolId::Parameter(id) => id.as_usize(),
+            SymbolId::Function(id) => id.as_usize(),
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]

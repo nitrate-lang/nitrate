@@ -1,6 +1,6 @@
 use nitrate_hir::{
     Store,
-    hir::{BinaryOp, BlockElement, FunctionType, IntoStoreId, Symbol, Type, UnaryOp, Value},
+    hir::{BinaryOp, BlockElement, FunctionType, IntoStoreId, SymbolId, Type, UnaryOp, Value},
 };
 
 pub enum TypeInferenceError {
@@ -233,12 +233,11 @@ pub fn get_type(value: &Value, store: &Store) -> Result<Type, TypeInferenceError
 
         Value::Symbol(symbol) => match symbol.link.get() {
             None => Err(TypeInferenceError::UnresolvedSymbol),
-            Some(symbol) => match &*store[symbol].borrow() {
-                Symbol::GlobalVariable(glb) => Ok(store[&store[glb].borrow().ty].clone()),
-                Symbol::LocalVariable(loc) => Ok(store[&store[loc].borrow().ty].clone()),
-                Symbol::Trait(_) => Err(TypeInferenceError::TraitHasNoType),
-                Symbol::Parameter(param) => Ok(store[&store[param].borrow().ty].clone()),
-                Symbol::Function(function) => {
+            Some(symbol) => match symbol {
+                SymbolId::GlobalVariable(glb) => Ok(store[&store[glb].borrow().ty].clone()),
+                SymbolId::LocalVariable(loc) => Ok(store[&store[loc].borrow().ty].clone()),
+                SymbolId::Parameter(param) => Ok(store[&store[param].borrow().ty].clone()),
+                SymbolId::Function(function) => {
                     let function = &store[function].borrow();
                     Ok(Type::Function {
                         function_type: FunctionType {

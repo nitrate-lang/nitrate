@@ -306,14 +306,40 @@ impl HirValueVisitor<()> for LinkResolver<'_, '_> {
         }
     }
 
-    fn visit_symbol(&mut self, _path: &IString, link: &OnceCell<SymbolId>) -> () {
+    fn visit_symbol(&mut self, path: &IString, link: &OnceCell<SymbolId>) -> () {
         if link.get().is_some() {
             return;
         }
 
-        // TODO: Resolve symbol link
-        // unimplemented!()
-        println!("Unresolved symbol encountered during HIR visiting.");
+        let id = match self.ctx.lookup_symbol(path) {
+            Some(id) => id.to_owned(),
+            None => {
+                self.log.report(&HirErr::UnresolvedSymbol);
+                return;
+            }
+        };
+
+        match &id {
+            SymbolId::Function(_function) => {
+                // TODO: check visibility
+                link.set(id).expect("unexpected value in cell");
+            }
+
+            SymbolId::GlobalVariable(_global) => {
+                // TODO: check visibility
+                link.set(id).expect("unexpected value in cell");
+            }
+
+            SymbolId::LocalVariable(_local) => {
+                // TODO: check visibility
+                link.set(id).expect("unexpected value in cell");
+            }
+
+            SymbolId::Parameter(_parameter) => {
+                // TODO: check visibility
+                link.set(id).expect("unexpected value in cell");
+            }
+        }
     }
 }
 

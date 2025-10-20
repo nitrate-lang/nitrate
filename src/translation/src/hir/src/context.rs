@@ -27,6 +27,7 @@ pub struct HirCtx {
     store: Store,
     current_scope: Vec<String>,
     type_map: HashMap<IString, TypeDefinition>,
+    symbol_map: HashMap<IString, SymbolId>,
     impl_map: HashMap<TypeId, HashSet<TraitId>>,
     type_infer_id_ctr: NonZeroU32,
     unique_name_ctr: u32,
@@ -38,6 +39,7 @@ impl HirCtx {
         Self {
             store: Store::new(),
             type_map: HashMap::new(),
+            symbol_map: HashMap::new(),
             current_scope: Vec::new(),
             impl_map: HashMap::new(),
             type_infer_id_ctr: NonZeroU32::new(1).unwrap(),
@@ -144,6 +146,14 @@ impl HirCtx {
     pub fn lookup_type(&self, name: &IString) -> Option<&TypeDefinition> {
         self.type_map.get(name)
     }
+
+    pub fn register_symbol(&mut self, name: IString, symbol_id: SymbolId) {
+        self.symbol_map.insert(name, symbol_id);
+    }
+
+    pub fn lookup_symbol(&self, name: &IString) -> Option<&SymbolId> {
+        self.symbol_map.get(name)
+    }
 }
 
 impl std::ops::Index<&TypeId> for HirCtx {
@@ -174,14 +184,6 @@ impl std::ops::Index<&FunctionTypeId> for HirCtx {
     type Output = FunctionType;
 
     fn index(&self, index: &FunctionTypeId) -> &Self::Output {
-        &self.store[index]
-    }
-}
-
-impl std::ops::Index<&SymbolId> for HirCtx {
-    type Output = RefCell<Symbol>;
-
-    fn index(&self, index: &SymbolId) -> &Self::Output {
         &self.store[index]
     }
 }

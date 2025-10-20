@@ -437,8 +437,8 @@ impl SymbolId {
         ctx: &mut DumpContext,
         o: &mut dyn std::fmt::Write,
     ) -> Result<(), std::fmt::Error> {
-        match &*ctx.store[self].borrow() {
-            Symbol::GlobalVariable(gv) => {
+        match self {
+            SymbolId::GlobalVariable(gv) => {
                 write!(
                     o,
                     "global[{}] `{}`",
@@ -447,28 +447,21 @@ impl SymbolId {
                 )
             }
 
-            Symbol::LocalVariable(lv) => write!(
+            SymbolId::LocalVariable(lv) => write!(
                 o,
                 "local[{}] `{}`",
                 lv.as_usize(),
                 ctx.store[lv].borrow().name
             ),
 
-            Symbol::Trait(tr) => write!(
-                o,
-                "trait[{}] `{}`",
-                tr.as_usize(),
-                ctx.store[tr].borrow().name
-            ),
-
-            Symbol::Parameter(fp) => write!(
+            SymbolId::Parameter(fp) => write!(
                 o,
                 "param[{}] `{}`",
                 fp.as_usize(),
                 ctx.store[fp].borrow().name
             ),
 
-            Symbol::Function(f) => {
+            SymbolId::Function(f) => {
                 write!(o, "fn[{}] `{}`", f.as_usize(), ctx.store[f].borrow().name)
             }
         }
@@ -481,12 +474,11 @@ impl Dump for SymbolId {
         ctx: &mut DumpContext,
         o: &mut dyn std::fmt::Write,
     ) -> Result<(), std::fmt::Error> {
-        match &*ctx.store[self].borrow() {
-            Symbol::Parameter(fp) => fp.dump(ctx, o),
-            Symbol::Function(f) => f.dump(ctx, o),
-            Symbol::GlobalVariable(gv) => gv.dump(ctx, o),
-            Symbol::LocalVariable(lv) => lv.dump(ctx, o),
-            Symbol::Trait(tr) => tr.dump(ctx, o),
+        match self {
+            SymbolId::Parameter(fp) => fp.dump(ctx, o),
+            SymbolId::Function(f) => f.dump(ctx, o),
+            SymbolId::GlobalVariable(gv) => gv.dump(ctx, o),
+            SymbolId::LocalVariable(lv) => lv.dump(ctx, o),
         }
     }
 }
