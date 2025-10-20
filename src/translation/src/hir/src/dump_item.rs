@@ -436,12 +436,12 @@ impl SymbolId {
 
             SymbolId::GlobalVariable(global_id) => {
                 let symbol = ctx.store[global_id].borrow();
-                write!(o, "global::{}::`{}`", global_id.as_usize(), symbol.name)
+                write!(o, "static::{}::`{}`", global_id.as_usize(), symbol.name)
             }
 
             SymbolId::LocalVariable(local_id) => {
                 let symbol = ctx.store[local_id].borrow();
-                write!(o, "local::{}::`{}`", local_id.as_usize(), symbol.name)
+                write!(o, "let::{}::`{}`", local_id.as_usize(), symbol.name)
             }
 
             SymbolId::Parameter(param_id) => {

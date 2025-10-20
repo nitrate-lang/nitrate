@@ -254,7 +254,7 @@ fn ast_function2hir(
     function: &ast::Function,
     ctx: &mut HirCtx,
     log: &CompilerLog,
-) -> Result<Function, ()> {
+) -> Result<FunctionId, ()> {
     let visibility = match function.visibility {
         Some(ast::Visibility::Public) => Visibility::Pub,
         Some(ast::Visibility::Protected) => Visibility::Pro,
@@ -268,7 +268,7 @@ fn ast_function2hir(
         }
     }
 
-    let name = IString::from(function.name.to_string());
+    let name = IString::from(HirCtx::join_path(ctx.current_scope(), &function.name));
 
     if function.generics.is_some() {
         // TODO: support generic functions
@@ -291,23 +291,27 @@ fn ast_function2hir(
         None => None,
     };
 
-    let hir_function = Function {
+    let function_id = Function {
         visibility,
         attributes,
         name,
         params: parameters,
         return_type,
         body,
-    };
+    }
+    .into_id(ctx.store());
 
-    Ok(hir_function)
+    let function = SymbolId::Function(function_id.clone());
+    ctx.register_symbol(function);
+
+    Ok(function_id)
 }
 
 fn ast_variable2hir(
     var: &ast::Variable,
     ctx: &mut HirCtx,
     log: &CompilerLog,
-) -> Result<GlobalVariable, ()> {
+) -> Result<GlobalVariableId, ()> {
     let visibility = match var.visibility {
         Some(ast::Visibility::Public) => Visibility::Pub,
         Some(ast::Visibility::Protected) => Visibility::Pro,
@@ -334,7 +338,7 @@ fn ast_variable2hir(
         Some(ast::Mutability::Const) | None => false,
     };
 
-    let name = var.name.to_string().into();
+    let name = IString::from(HirCtx::join_path(ctx.current_scope(), &var.name));
 
     let ty = match var.ty.to_owned() {
         None => ctx.create_inference_placeholder().into_id(ctx.store()),
@@ -356,14 +360,20 @@ fn ast_variable2hir(
         }
     };
 
-    Ok(GlobalVariable {
+    let global_variable_id = GlobalVariable {
         visibility,
         attributes,
         is_mutable,
         name,
         ty,
         initializer,
-    })
+    }
+    .into_id(ctx.store());
+
+    let variable = SymbolId::GlobalVariable(global_variable_id.clone());
+    ctx.register_symbol(variable);
+
+    Ok(global_variable_id)
 }
 
 impl Ast2Hir for ast::Module {
@@ -430,12 +440,12 @@ impl Ast2Hir for ast::Module {
 
                     ast::Item::Function(func_def) => {
                         let f = ast_function2hir(&func_def, ctx, log)?;
-                        items.push(Item::Function(f.into_id(ctx.store())));
+                        items.push(Item::Function(f));
                     }
 
                     ast::Item::Variable(v) => {
                         let g = ast_variable2hir(&v, ctx, log)?;
-                        items.push(Item::GlobalVariable(g.into_id(ctx.store())));
+                        items.push(Item::GlobalVariable(g));
                     }
 
                     ast::Item::SyntaxError(_) => {

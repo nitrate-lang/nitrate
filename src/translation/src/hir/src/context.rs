@@ -15,6 +15,17 @@ impl TypeDefinition {
     }
 }
 
+impl SymbolId {
+    pub fn name(&self, ctx: &HirCtx) -> IString {
+        match self {
+            SymbolId::Function(id) => ctx[id].borrow().name.clone(),
+            SymbolId::GlobalVariable(id) => ctx[id].borrow().name.clone(),
+            SymbolId::LocalVariable(id) => ctx[id].borrow().name.clone(),
+            SymbolId::Parameter(id) => ctx[id].borrow().name.clone(),
+        }
+    }
+}
+
 #[derive(Debug)]
 pub struct HirCtx {
     store: Store,
@@ -140,8 +151,8 @@ impl HirCtx {
         self.type_map.get(name)
     }
 
-    pub fn register_symbol(&mut self, name: IString, symbol_id: SymbolId) {
-        self.symbol_map.insert(name, symbol_id);
+    pub fn register_symbol(&mut self, symbol_id: SymbolId) {
+        self.symbol_map.insert(symbol_id.name(self), symbol_id);
     }
 
     pub fn lookup_symbol(&self, name: &IString) -> Option<&SymbolId> {
