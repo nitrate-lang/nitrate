@@ -5,203 +5,203 @@ use nitrate_hir::prelude::*;
 use nitrate_source::ast::{self};
 use std::collections::BTreeSet;
 
-fn ast_typealias2hir(
-    type_alias: &ast::TypeAlias,
-    ctx: &mut HirCtx,
-    log: &CompilerLog,
-) -> Result<TypeAliasDefId, ()> {
-    let visibility = match type_alias.visibility {
-        Some(ast::Visibility::Public) => Visibility::Pub,
-        Some(ast::Visibility::Protected) => Visibility::Pro,
-        Some(ast::Visibility::Private) | None => Visibility::Sec,
-    };
+impl Ast2Hir for ast::TypeAlias {
+    type Hir = TypeAliasDefId;
 
-    if let Some(ast_attributes) = &type_alias.attributes {
-        for _attr in ast_attributes {
-            log.report(&HirErr::UnrecognizedTypeAliasAttribute);
-        }
-    }
-
-    let name = IString::from(HirCtx::join_path(ctx.current_scope(), &type_alias.name));
-
-    if type_alias.generics.is_some() {
-        // TODO: support generic type aliases
-        log.report(&HirErr::UnimplementedFeature("generic type aliases".into()));
-    }
-
-    let type_id = match &type_alias.alias_type {
-        Some(ty) => ty.to_owned().ast2hir(ctx, log)?.into_id(ctx.store()),
-        None => {
-            log.report(&HirErr::TypeAliasMustHaveType);
-            return Err(());
-        }
-    };
-
-    let type_alias_id = TypeAliasDef {
-        visibility,
-        name,
-        type_id,
-    }
-    .into_id(ctx.store());
-
-    let definition = TypeDefinition::TypeAliasDef(type_alias_id.clone());
-    ctx.register_type(definition);
-
-    Ok(type_alias_id)
-}
-
-fn ast_struct2hir(
-    struct_def: &ast::Struct,
-    ctx: &mut HirCtx,
-    log: &CompilerLog,
-) -> Result<StructDefId, ()> {
-    let visibility = match struct_def.visibility {
-        Some(ast::Visibility::Public) => Visibility::Pub,
-        Some(ast::Visibility::Protected) => Visibility::Pro,
-        Some(ast::Visibility::Private) | None => Visibility::Sec,
-    };
-
-    let attributes = BTreeSet::new();
-    if let Some(ast_attributes) = &struct_def.attributes {
-        for _attr in ast_attributes {
-            log.report(&HirErr::UnrecognizedStructAttribute);
-        }
-    }
-
-    let name = HirCtx::join_path(ctx.current_scope(), &struct_def.name).into();
-
-    if struct_def.generics.is_some() {
-        // TODO: support generic structs
-        log.report(&HirErr::UnimplementedFeature("generic structs".into()));
-    }
-
-    let mut field_extras = Vec::new();
-    let mut fields = Vec::new();
-
-    for field in &struct_def.fields {
-        let field_visibility = match field.visibility {
+    fn ast2hir(self, ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
+        let visibility = match self.visibility {
             Some(ast::Visibility::Public) => Visibility::Pub,
             Some(ast::Visibility::Protected) => Visibility::Pro,
             Some(ast::Visibility::Private) | None => Visibility::Sec,
         };
 
-        let field_attributes = BTreeSet::new();
-        if let Some(ast_attributes) = &field.attributes {
+        if let Some(ast_attributes) = &self.attributes {
             for _attr in ast_attributes {
-                log.report(&HirErr::UnrecognizedStructFieldAttribute);
+                log.report(&HirErr::UnrecognizedTypeAliasAttribute);
             }
         }
 
-        let field_name = IString::from(field.name.to_string());
-        let field_type = field.ty.to_owned().ast2hir(ctx, log)?.into_id(ctx.store());
+        let name = IString::from(HirCtx::join_path(ctx.current_scope(), &self.name));
 
-        let field_default = match field.default_value.to_owned() {
-            Some(expr) => Some(expr.ast2hir(ctx, log)?.into_id(ctx.store())),
-            None => None,
+        if self.generics.is_some() {
+            // TODO: support generic type aliases
+            log.report(&HirErr::UnimplementedFeature("generic type aliases".into()));
+        }
+
+        let type_id = match &self.alias_type {
+            Some(ty) => ty.to_owned().ast2hir(ctx, log)?.into_id(ctx.store()),
+            None => {
+                log.report(&HirErr::TypeAliasMustHaveType);
+                return Err(());
+            }
         };
 
-        let struct_field = StructField {
-            attributes: field_attributes,
-            name: field_name,
-            ty: field_type,
-        };
+        let type_alias_id = TypeAliasDef {
+            visibility,
+            name,
+            type_id,
+        }
+        .into_id(ctx.store());
 
-        field_extras.push((field_visibility, field_default));
-        fields.push(struct_field);
+        let definition = TypeDefinition::TypeAliasDef(type_alias_id.clone());
+        ctx.register_type(definition);
+
+        Ok(type_alias_id)
     }
-
-    let struct_id = StructType { attributes, fields }.into_id(ctx.store());
-
-    let struct_def_id = StructDef {
-        visibility,
-        name,
-        field_extras,
-        struct_id,
-    }
-    .into_id(ctx.store());
-
-    let definition = TypeDefinition::StructDef(struct_def_id.clone());
-    ctx.register_type(definition);
-
-    Ok(struct_def_id)
 }
 
-fn ast_enum2hir(
-    enum_def: &ast::Enum,
-    ctx: &mut HirCtx,
-    log: &CompilerLog,
-) -> Result<EnumDefId, ()> {
-    let visibility = match enum_def.visibility {
-        Some(ast::Visibility::Public) => Visibility::Pub,
-        Some(ast::Visibility::Protected) => Visibility::Pro,
-        Some(ast::Visibility::Private) | None => Visibility::Sec,
-    };
+impl Ast2Hir for ast::Struct {
+    type Hir = StructDefId;
 
-    let attributes = BTreeSet::new();
-    if let Some(ast_attributes) = &enum_def.attributes {
-        for _attr in ast_attributes {
-            log.report(&HirErr::UnrecognizedEnumAttribute);
-        }
-    }
+    fn ast2hir(self, ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
+        let visibility = match self.visibility {
+            Some(ast::Visibility::Public) => Visibility::Pub,
+            Some(ast::Visibility::Protected) => Visibility::Pro,
+            Some(ast::Visibility::Private) | None => Visibility::Sec,
+        };
 
-    let name = HirCtx::join_path(ctx.current_scope(), &enum_def.name).into();
-
-    if enum_def.generics.is_some() {
-        // TODO: support generic enums
-        log.report(&HirErr::UnimplementedFeature("generic enums".into()));
-    }
-
-    let mut variants = Vec::new();
-    let mut variant_extras = Vec::new();
-
-    for variant in &enum_def.variants {
-        let variant_attributes = BTreeSet::new();
-        if let Some(ast_attributes) = &variant.attributes {
+        let attributes = BTreeSet::new();
+        if let Some(ast_attributes) = &self.attributes {
             for _attr in ast_attributes {
-                log.report(&HirErr::UnrecognizedEnumVariantAttribute);
+                log.report(&HirErr::UnrecognizedStructAttribute);
             }
         }
 
-        let variant_name = IString::from(variant.name.to_string());
+        let name = HirCtx::join_path(ctx.current_scope(), &self.name).into();
 
-        let variant_type = match variant.ty.to_owned() {
-            Some(ty) => ty.ast2hir(ctx, log)?.into_id(ctx.store()),
-            None => Type::Unit.into_id(ctx.store()),
+        if self.generics.is_some() {
+            // TODO: support generic structs
+            log.report(&HirErr::UnimplementedFeature("generic structs".into()));
+        }
+
+        let mut field_extras = Vec::new();
+        let mut fields = Vec::new();
+
+        for field in &self.fields {
+            let field_visibility = match field.visibility {
+                Some(ast::Visibility::Public) => Visibility::Pub,
+                Some(ast::Visibility::Protected) => Visibility::Pro,
+                Some(ast::Visibility::Private) | None => Visibility::Sec,
+            };
+
+            let field_attributes = BTreeSet::new();
+            if let Some(ast_attributes) = &field.attributes {
+                for _attr in ast_attributes {
+                    log.report(&HirErr::UnrecognizedStructFieldAttribute);
+                }
+            }
+
+            let field_name = IString::from(field.name.to_string());
+            let field_type = field.ty.to_owned().ast2hir(ctx, log)?.into_id(ctx.store());
+
+            let field_default = match field.default_value.to_owned() {
+                Some(expr) => Some(expr.ast2hir(ctx, log)?.into_id(ctx.store())),
+                None => None,
+            };
+
+            let struct_field = StructField {
+                attributes: field_attributes,
+                name: field_name,
+                ty: field_type,
+            };
+
+            field_extras.push((field_visibility, field_default));
+            fields.push(struct_field);
+        }
+
+        let struct_id = StructType { attributes, fields }.into_id(ctx.store());
+
+        let struct_def_id = StructDef {
+            visibility,
+            name,
+            field_extras,
+            struct_id,
+        }
+        .into_id(ctx.store());
+
+        let definition = TypeDefinition::StructDef(struct_def_id.clone());
+        ctx.register_type(definition);
+
+        Ok(struct_def_id)
+    }
+}
+
+impl Ast2Hir for ast::Enum {
+    type Hir = EnumDefId;
+
+    fn ast2hir(self, ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
+        let visibility = match self.visibility {
+            Some(ast::Visibility::Public) => Visibility::Pub,
+            Some(ast::Visibility::Protected) => Visibility::Pro,
+            Some(ast::Visibility::Private) | None => Visibility::Sec,
         };
 
-        let field_default = match variant.default_value.to_owned() {
-            Some(expr) => Some(expr.ast2hir(ctx, log)?.into_id(ctx.store())),
-            None => None,
-        };
+        let attributes = BTreeSet::new();
+        if let Some(ast_attributes) = &self.attributes {
+            for _attr in ast_attributes {
+                log.report(&HirErr::UnrecognizedEnumAttribute);
+            }
+        }
 
-        let variant = EnumVariant {
-            attributes: variant_attributes,
-            name: variant_name,
-            ty: variant_type,
-        };
+        let name = HirCtx::join_path(ctx.current_scope(), &self.name).into();
 
-        variants.push(variant);
-        variant_extras.push(field_default);
+        if self.generics.is_some() {
+            // TODO: support generic enums
+            log.report(&HirErr::UnimplementedFeature("generic enums".into()));
+        }
+
+        let mut variants = Vec::new();
+        let mut variant_extras = Vec::new();
+
+        for variant in &self.variants {
+            let variant_attributes = BTreeSet::new();
+            if let Some(ast_attributes) = &variant.attributes {
+                for _attr in ast_attributes {
+                    log.report(&HirErr::UnrecognizedEnumVariantAttribute);
+                }
+            }
+
+            let variant_name = IString::from(variant.name.to_string());
+
+            let variant_type = match variant.ty.to_owned() {
+                Some(ty) => ty.ast2hir(ctx, log)?.into_id(ctx.store()),
+                None => Type::Unit.into_id(ctx.store()),
+            };
+
+            let field_default = match variant.default_value.to_owned() {
+                Some(expr) => Some(expr.ast2hir(ctx, log)?.into_id(ctx.store())),
+                None => None,
+            };
+
+            let variant = EnumVariant {
+                attributes: variant_attributes,
+                name: variant_name,
+                ty: variant_type,
+            };
+
+            variants.push(variant);
+            variant_extras.push(field_default);
+        }
+
+        let enum_id = EnumType {
+            attributes,
+            variants,
+        }
+        .into_id(ctx.store());
+
+        let enum_def_id = EnumDef {
+            visibility,
+            name,
+            variant_extras,
+            enum_id,
+        }
+        .into_id(ctx.store());
+
+        let definition = TypeDefinition::EnumDef(enum_def_id.clone());
+        ctx.register_type(definition);
+
+        Ok(enum_def_id)
     }
-
-    let enum_id = EnumType {
-        attributes,
-        variants,
-    }
-    .into_id(ctx.store());
-
-    let enum_def_id = EnumDef {
-        visibility,
-        name,
-        variant_extras,
-        enum_id,
-    }
-    .into_id(ctx.store());
-
-    let definition = TypeDefinition::EnumDef(enum_def_id.clone());
-    ctx.register_type(definition);
-
-    Ok(enum_def_id)
 }
 
 fn ast_trait2hir(_trait: &ast::Trait, _ctx: &mut HirCtx, log: &CompilerLog) -> Result<(), ()> {
@@ -250,61 +250,61 @@ fn ast_param2hir(
     })
 }
 
-fn ast_function2hir(
-    function: &ast::Function,
-    ctx: &mut HirCtx,
-    log: &CompilerLog,
-) -> Result<FunctionId, ()> {
-    let visibility = match function.visibility {
-        Some(ast::Visibility::Public) => Visibility::Pub,
-        Some(ast::Visibility::Protected) => Visibility::Pro,
-        Some(ast::Visibility::Private) | None => Visibility::Sec,
-    };
+impl Ast2Hir for ast::Function {
+    type Hir = FunctionId;
 
-    let attributes = BTreeSet::new();
-    if let Some(ast_attributes) = &function.attributes {
-        for _attr in ast_attributes {
-            log.report(&HirErr::UnrecognizedFunctionAttribute);
+    fn ast2hir(self, ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
+        let visibility = match self.visibility {
+            Some(ast::Visibility::Public) => Visibility::Pub,
+            Some(ast::Visibility::Protected) => Visibility::Pro,
+            Some(ast::Visibility::Private) | None => Visibility::Sec,
+        };
+
+        let attributes = BTreeSet::new();
+        if let Some(ast_attributes) = &self.attributes {
+            for _attr in ast_attributes {
+                log.report(&HirErr::UnrecognizedFunctionAttribute);
+            }
         }
+
+        let name = IString::from(HirCtx::join_path(ctx.current_scope(), &self.name));
+
+        if self.generics.is_some() {
+            // TODO: support generic functions
+            log.report(&HirErr::UnimplementedFeature("generic functions".into()));
+        }
+
+        let mut parameters = Vec::with_capacity(self.parameters.len());
+        for param in &self.parameters {
+            let param_hir = ast_param2hir(param, ctx, log)?;
+            parameters.push(param_hir.into_id(ctx.store()));
+        }
+
+        let return_type = match &self.return_type {
+            Some(ty) => ty.to_owned().ast2hir(ctx, log)?.into_id(ctx.store()),
+            None => Type::Unit.into_id(ctx.store()),
+        };
+
+        let body = match &self.definition {
+            Some(block) => Some(block.to_owned().ast2hir(ctx, log)?.into_id(ctx.store())),
+            None => None,
+        };
+
+        let function_id = Function {
+            visibility,
+            attributes,
+            name,
+            params: parameters,
+            return_type,
+            body,
+        }
+        .into_id(ctx.store());
+
+        let function = SymbolId::Function(function_id.clone());
+        ctx.register_symbol(function);
+
+        Ok(function_id)
     }
-
-    let name = IString::from(HirCtx::join_path(ctx.current_scope(), &function.name));
-
-    if function.generics.is_some() {
-        // TODO: support generic functions
-        log.report(&HirErr::UnimplementedFeature("generic functions".into()));
-    }
-
-    let mut parameters = Vec::with_capacity(function.parameters.len());
-    for param in &function.parameters {
-        let param_hir = ast_param2hir(param, ctx, log)?;
-        parameters.push(param_hir.into_id(ctx.store()));
-    }
-
-    let return_type = match &function.return_type {
-        Some(ty) => ty.to_owned().ast2hir(ctx, log)?.into_id(ctx.store()),
-        None => Type::Unit.into_id(ctx.store()),
-    };
-
-    let body = match &function.definition {
-        Some(block) => Some(block.to_owned().ast2hir(ctx, log)?.into_id(ctx.store())),
-        None => None,
-    };
-
-    let function_id = Function {
-        visibility,
-        attributes,
-        name,
-        params: parameters,
-        return_type,
-        body,
-    }
-    .into_id(ctx.store());
-
-    let function = SymbolId::Function(function_id.clone());
-    ctx.register_symbol(function);
-
-    Ok(function_id)
 }
 
 fn ast_variable2hir(
@@ -416,17 +416,17 @@ impl Ast2Hir for ast::Module {
                     }
 
                     ast::Item::TypeAlias(type_alias) => {
-                        let t = ast_typealias2hir(&type_alias, ctx, log)?;
+                        let t = type_alias.ast2hir(ctx, log)?;
                         items.push(Item::TypeAliasDef(t));
                     }
 
                     ast::Item::Struct(struct_def) => {
-                        let s = ast_struct2hir(&struct_def, ctx, log)?;
+                        let s = struct_def.ast2hir(ctx, log)?;
                         items.push(Item::StructDef(s));
                     }
 
                     ast::Item::Enum(enum_def) => {
-                        let e = ast_enum2hir(&enum_def, ctx, log)?;
+                        let e = enum_def.ast2hir(ctx, log)?;
                         items.push(Item::EnumDef(e));
                     }
 
@@ -439,7 +439,7 @@ impl Ast2Hir for ast::Module {
                     }
 
                     ast::Item::Function(func_def) => {
-                        let f = ast_function2hir(&func_def, ctx, log)?;
+                        let f = func_def.ast2hir(ctx, log)?;
                         items.push(Item::Function(f));
                     }
 

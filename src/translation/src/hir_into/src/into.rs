@@ -1,13 +1,9 @@
-use std::{any::type_name, cell::Ref};
-
 use crate::lower::Ast2Hir;
 use nitrate_diagnosis::CompilerLog;
 use nitrate_hir::prelude::*;
 use nitrate_source::{Order, ParseTreeIter, RefNode, ast};
 
 fn visit_node(node: RefNode, ctx: &mut HirCtx, log: &CompilerLog) {
-    // TODO: implement
-
     match node {
         RefNode::ExprSyntaxError
         | RefNode::ExprParentheses(_)
@@ -80,18 +76,24 @@ fn visit_node(node: RefNode, ctx: &mut HirCtx, log: &CompilerLog) {
         | RefNode::ItemModule(_) => {}
 
         RefNode::ItemTypeAlias(type_alias) => {
-            // TODO: implement
-            println!("scope = {:?}", ctx.current_scope());
+            if let Ok(type_alias) = type_alias.to_owned().ast2hir(ctx, log) {
+                let defintion = TypeDefinition::TypeAliasDef(type_alias);
+                ctx.register_type(defintion);
+            }
         }
 
-        RefNode::ItemStruct(_) => {
-            // TODO: implement
-            println!("scope = {:?}", ctx.current_scope());
+        RefNode::ItemStruct(struct_def) => {
+            if let Ok(struct_def) = struct_def.to_owned().ast2hir(ctx, log) {
+                let defintion = TypeDefinition::StructDef(struct_def);
+                ctx.register_type(defintion);
+            }
         }
 
-        RefNode::ItemEnum(_) => {
-            // TODO: implement
-            println!("scope = {:?}", ctx.current_scope());
+        RefNode::ItemEnum(enum_def) => {
+            if let Ok(enum_def) = enum_def.to_owned().ast2hir(ctx, log) {
+                let defintion = TypeDefinition::EnumDef(enum_def);
+                ctx.register_type(defintion);
+            }
         }
 
         RefNode::ItemTrait(_) => {
@@ -100,12 +102,14 @@ fn visit_node(node: RefNode, ctx: &mut HirCtx, log: &CompilerLog) {
         }
 
         RefNode::ItemFunction(function) => {
-            // TODO: implement
-            println!("scope = {:?}", ctx.current_scope());
+            if let Ok(function) = function.to_owned().ast2hir(ctx, log) {
+                let defintion = SymbolId::Function(function);
+                ctx.register_symbol(defintion);
+            }
         }
 
         RefNode::ItemVariable(variable) => {
-            // TODO: implement
+            // TODO: implement. is it local or global?
             println!("scope = {:?}", ctx.current_scope());
         }
     }
