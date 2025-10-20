@@ -364,6 +364,73 @@ impl Dump for Module {
     }
 }
 
+impl Dump for TypeAliasDefId {
+    fn dump(
+        &self,
+        ctx: &mut DumpContext,
+        o: &mut dyn std::fmt::Write,
+    ) -> Result<(), std::fmt::Error> {
+        let this = ctx.store[self].borrow();
+
+        if this.visibility != Visibility::Sec {
+            this.visibility.dump(ctx, o)?;
+            write!(o, " ")?;
+        }
+
+        write!(o, "typealias::{} ", self.as_usize())?;
+
+        write!(o, "`{}` = ", this.name)?;
+
+        ctx.store[&this.type_id].dump(ctx, o)?;
+
+        write!(o, ";")
+    }
+}
+
+impl Dump for StructDefId {
+    fn dump(
+        &self,
+        ctx: &mut DumpContext,
+        o: &mut dyn std::fmt::Write,
+    ) -> Result<(), std::fmt::Error> {
+        let this = ctx.store[self].borrow();
+
+        if this.visibility != Visibility::Sec {
+            this.visibility.dump(ctx, o)?;
+            write!(o, " ")?;
+        }
+
+        write!(o, "struct::{} ", self.as_usize())?;
+        write!(o, "`{}` ", this.name)?;
+
+        ctx.store[&this.struct_id].dump(ctx, o)?;
+
+        write!(o, ";")
+    }
+}
+
+impl Dump for EnumDefId {
+    fn dump(
+        &self,
+        ctx: &mut DumpContext,
+        o: &mut dyn std::fmt::Write,
+    ) -> Result<(), std::fmt::Error> {
+        let this = ctx.store[self].borrow();
+
+        if this.visibility != Visibility::Sec {
+            this.visibility.dump(ctx, o)?;
+            write!(o, " ")?;
+        }
+
+        write!(o, "enum::{} ", self.as_usize())?;
+        write!(o, "`{}` ", this.name)?;
+
+        ctx.store[&this.enum_id].dump(ctx, o)?;
+
+        write!(o, ";")
+    }
+}
+
 impl SymbolId {
     pub fn dump_nocycle(
         &self,
@@ -434,6 +501,9 @@ impl Dump for Item {
             Item::Function(f) => f.dump(ctx, o),
             Item::GlobalVariable(gv) => gv.dump(ctx, o),
             Item::Module(m) => m.dump(ctx, o),
+            Item::TypeAliasDef(ta) => ta.dump(ctx, o),
+            Item::StructDef(sd) => sd.dump(ctx, o),
+            Item::EnumDef(ed) => ed.dump(ctx, o),
         }
     }
 }

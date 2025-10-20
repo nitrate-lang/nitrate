@@ -111,7 +111,7 @@ impl HirTypeVisitor<()> for LinkResolver<'_, '_> {
                 // TODO: check visibility
 
                 let enum_type = Type::Enum {
-                    enum_type: enum_def.enum_id,
+                    enum_type: self.ctx[enum_def].borrow().enum_id,
                 };
 
                 link.set(enum_type.into_id(self.ctx.store()))
@@ -122,7 +122,7 @@ impl HirTypeVisitor<()> for LinkResolver<'_, '_> {
                 // TODO: check visibility
 
                 let struct_type = Type::Struct {
-                    struct_type: struct_def.struct_id,
+                    struct_type: self.ctx[struct_def].borrow().struct_id,
                 };
 
                 link.set(struct_type.into_id(self.ctx.store()))
@@ -132,8 +132,8 @@ impl HirTypeVisitor<()> for LinkResolver<'_, '_> {
             Some(TypeDefinition::TypeAliasDef(type_alias_def)) => {
                 // TODO: check visibility
 
-                link.set(type_alias_def.type_id)
-                    .expect("unexpected value in cell");
+                let aliased_type = self.ctx[type_alias_def].borrow().type_id;
+                link.set(aliased_type).expect("unexpected value in cell");
             }
         }
     }
@@ -366,6 +366,50 @@ impl HirItemVisitor<()> for LinkResolver<'_, '_> {
 
         if let Some(body) = body {
             self.visit_block(body.safety, &body.elements);
+        }
+    }
+
+    fn visit_type_alias(&mut self, _vis: Visibility, _name: &IString, ty: &Type) -> () {
+        self.visit_type(ty, self.ctx.store());
+    }
+
+    fn visit_struct_def(
+        &mut self,
+        _vis: Visibility,
+        _name: &IString,
+        fields_extra: &[(Visibility, Option<ValueId>)],
+        struct_ty: &StructTypeId,
+    ) -> () {
+        for (_vis, initializer) in fields_extra {
+            if let Some(initializer) = initializer {
+                let init = &self.ctx[initializer].borrow();
+                self.visit_value(init, self.ctx.store());
+            }
+        }
+
+        let struct_def = &self.ctx[struct_ty];
+        for field in &struct_def.fields {
+            self.visit_type(&self.ctx[&field.ty], self.ctx.store());
+        }
+    }
+
+    fn visit_enum_def(
+        &mut self,
+        _vis: Visibility,
+        _name: &IString,
+        variants: &[Option<ValueId>],
+        enum_ty: &EnumTypeId,
+    ) -> () {
+        for variant_initializer in variants {
+            if let Some(initializer) = variant_initializer {
+                let init = &self.ctx[initializer].borrow();
+                self.visit_value(init, self.ctx.store());
+            }
+        }
+
+        let enum_def = &self.ctx[enum_ty];
+        for variant in &enum_def.variants {
+            self.visit_type(&self.ctx[&variant.ty], self.ctx.store());
         }
     }
 }

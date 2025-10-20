@@ -20,8 +20,9 @@ mod ty_stride;
 pub use dump::{Dump, DumpContext};
 pub use node_digest::NodeDigest;
 pub use store::{
-    BlockId, EnumTypeId, FunctionId, FunctionTypeId, GlobalVariableId, LiteralId, LocalVariableId,
-    ModuleId, ParameterId, Store, StructTypeId, SymbolId, TraitId, TypeId, ValueId,
+    BlockId, EnumDefId, EnumTypeId, FunctionId, FunctionTypeId, GlobalVariableId, LiteralId,
+    LocalVariableId, ModuleId, ParameterId, Store, StructDefId, StructTypeId, SymbolId, TraitId,
+    TypeAliasDefId, TypeId, ValueId,
 };
 
 pub mod hir {
@@ -40,8 +41,8 @@ pub mod hir {
 pub mod prelude {
     pub use super::hir::*;
     pub use super::{
-        BlockId, Dump, DumpContext, EnumTypeId, FunctionId, FunctionTypeId, GlobalVariableId,
-        LiteralId, LocalVariableId, ModuleId, ParameterId, Store, StructTypeId, SymbolId, TraitId,
-        TypeId, ValueId,
+        BlockId, Dump, DumpContext, EnumDefId, EnumTypeId, FunctionId, FunctionTypeId,
+        GlobalVariableId, LiteralId, LocalVariableId, ModuleId, ParameterId, Store, StructDefId,
+        StructTypeId, SymbolId, TraitId, TypeAliasDefId, TypeId, ValueId,
     };
 }

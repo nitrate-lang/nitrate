@@ -6,41 +6,18 @@ use std::num::NonZeroU32;
 use std::ops::Deref;
 
 #[derive(Debug)]
-pub struct TypeAliasDef {
-    pub visibility: Visibility,
-    pub name: IString,
-    pub type_id: TypeId,
-}
-
-#[derive(Debug)]
-pub struct StructDef {
-    pub visibility: Visibility,
-    pub name: IString,
-    pub field_extras: Vec<(Visibility, Option<ValueId>)>,
-    pub struct_id: StructTypeId,
-}
-
-#[derive(Debug)]
-pub struct EnumDef {
-    pub visibility: Visibility,
-    pub name: IString,
-    pub variant_extras: Vec<Option<ValueId>>,
-    pub enum_id: EnumTypeId,
-}
-
-#[derive(Debug)]
 pub enum TypeDefinition {
-    TypeAliasDef(TypeAliasDef),
-    StructDef(StructDef),
-    EnumDef(EnumDef),
+    TypeAliasDef(TypeAliasDefId),
+    StructDef(StructDefId),
+    EnumDef(EnumDefId),
 }
 
 impl TypeDefinition {
-    pub fn name(&self) -> &IString {
+    pub fn name(&self, ctx: &HirCtx) -> IString {
         match self {
-            TypeDefinition::TypeAliasDef(def) => &def.name,
-            TypeDefinition::StructDef(def) => &def.name,
-            TypeDefinition::EnumDef(def) => &def.name,
+            TypeDefinition::TypeAliasDef(def) => ctx[def].borrow().name.clone(),
+            TypeDefinition::StructDef(def) => ctx[def].borrow().name.clone(),
+            TypeDefinition::EnumDef(def) => ctx[def].borrow().name.clone(),
         }
     }
 }
@@ -161,7 +138,7 @@ impl HirCtx {
     }
 
     pub fn register_type(&mut self, definition: TypeDefinition) {
-        self.type_map.insert(definition.name().clone(), definition);
+        self.type_map.insert(definition.name(self), definition);
     }
 
     pub fn lookup_type(&self, name: &IString) -> Option<&TypeDefinition> {
@@ -253,6 +230,30 @@ impl std::ops::Index<&ModuleId> for HirCtx {
     type Output = RefCell<Module>;
 
     fn index(&self, index: &ModuleId) -> &Self::Output {
+        &self.store[index]
+    }
+}
+
+impl std::ops::Index<&TypeAliasDefId> for HirCtx {
+    type Output = RefCell<TypeAliasDef>;
+
+    fn index(&self, index: &TypeAliasDefId) -> &Self::Output {
+        &self.store[index]
+    }
+}
+
+impl std::ops::Index<&StructDefId> for HirCtx {
+    type Output = RefCell<StructDef>;
+
+    fn index(&self, index: &StructDefId) -> &Self::Output {
+        &self.store[index]
+    }
+}
+
+impl std::ops::Index<&EnumDefId> for HirCtx {
+    type Output = RefCell<EnumDef>;
+
+    fn index(&self, index: &EnumDefId) -> &Self::Output {
         &self.store[index]
     }
 }

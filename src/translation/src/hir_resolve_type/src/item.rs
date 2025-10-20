@@ -1,6 +1,6 @@
 use crate::{TyCtx, TypeResolver};
 use nitrate_diagnosis::CompilerLog;
-use nitrate_hir::hir::{Function, GlobalVariable, Item, Module, Trait};
+use nitrate_hir::hir::{EnumDef, Function, GlobalVariable, Item, Module, StructDef, TypeAliasDef};
 
 impl TypeResolver for Module {
     fn resolve_type(&mut self, ctx: &mut TyCtx, log: &CompilerLog) {
@@ -22,18 +22,33 @@ impl TypeResolver for Function {
     }
 }
 
-impl TypeResolver for Trait {
+impl TypeResolver for TypeAliasDef {
     fn resolve_type(&mut self, _ctx: &mut TyCtx, _log: &CompilerLog) {
-        // TODO: resolution for Trait
+        // TODO: resolution for TypeAlias
+    }
+}
+
+impl TypeResolver for StructDef {
+    fn resolve_type(&mut self, _ctx: &mut TyCtx, _log: &CompilerLog) {
+        // TODO: resolution for StructDef
+    }
+}
+
+impl TypeResolver for EnumDef {
+    fn resolve_type(&mut self, _ctx: &mut TyCtx, _log: &CompilerLog) {
+        // TODO: resolution for EnumDef
     }
 }
 
 impl TypeResolver for Item {
     fn resolve_type(&mut self, ctx: &mut TyCtx, log: &CompilerLog) {
         match self as &Item {
-            Item::Module(m) => ctx.store[m].borrow_mut().resolve_type(ctx, log),
-            Item::GlobalVariable(gv) => ctx.store[gv].borrow_mut().resolve_type(ctx, log),
-            Item::Function(f) => ctx.store[f].borrow_mut().resolve_type(ctx, log),
+            Item::Module(id) => ctx.store[id].borrow_mut().resolve_type(ctx, log),
+            Item::GlobalVariable(id) => ctx.store[id].borrow_mut().resolve_type(ctx, log),
+            Item::Function(id) => ctx.store[id].borrow_mut().resolve_type(ctx, log),
+            Item::TypeAliasDef(id) => ctx.store[id].borrow_mut().resolve_type(ctx, log),
+            Item::StructDef(id) => ctx.store[id].borrow_mut().resolve_type(ctx, log),
+            Item::EnumDef(id) => ctx.store[id].borrow_mut().resolve_type(ctx, log),
         }
     }
 }

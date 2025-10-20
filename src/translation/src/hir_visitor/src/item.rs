@@ -31,6 +31,24 @@ pub trait HirItemVisitor<T> {
         body: Option<&Block>,
     ) -> T;
 
+    fn visit_type_alias(&mut self, vis: Visibility, name: &IString, ty: &Type) -> T;
+
+    fn visit_struct_def(
+        &mut self,
+        vis: Visibility,
+        name: &IString,
+        fields_extra: &[(Visibility, Option<ValueId>)],
+        struct_ty: &StructTypeId,
+    ) -> T;
+
+    fn visit_enum_def(
+        &mut self,
+        vis: Visibility,
+        name: &IString,
+        variants: &[Option<ValueId>],
+        enum_ty: &EnumTypeId,
+    ) -> T;
+
     fn visit_item(&mut self, item: &Item, store: &Store) -> T {
         match item {
             Item::Module(module_id) => {
@@ -73,6 +91,21 @@ pub trait HirItemVisitor<T> {
                         None,
                     ),
                 }
+            }
+
+            Item::TypeAliasDef(type_alias_id) => {
+                let ta = store[type_alias_id].borrow();
+                self.visit_type_alias(ta.visibility, &ta.name, &store[&ta.type_id])
+            }
+
+            Item::StructDef(struct_def_id) => {
+                let sd = store[struct_def_id].borrow();
+                self.visit_struct_def(sd.visibility, &sd.name, &sd.field_extras, &sd.struct_id)
+            }
+
+            Item::EnumDef(enum_def_id) => {
+                let ed = store[enum_def_id].borrow();
+                self.visit_enum_def(ed.visibility, &ed.name, &ed.variant_extras, &ed.enum_id)
             }
         }
     }

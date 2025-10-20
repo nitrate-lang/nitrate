@@ -150,6 +150,12 @@ impl_store_mut!(TraitId, Trait, TraitStore);
 
 impl_store_mut!(ModuleId, Module, ModuleStore);
 
+impl_store_mut!(TypeAliasDefId, TypeAliasDef, TypeAliasStore);
+
+impl_store_mut!(StructDefId, StructDef, StructDefStore);
+
+impl_store_mut!(EnumDefId, EnumDef, EnumDefStore);
+
 impl_store_mut!(ValueId, Value, ExprValueStore);
 
 impl_dedup_store!(LiteralId, Lit, ExprLiteralStore);
@@ -169,6 +175,9 @@ pub struct Store {
     functions: FunctionStore,
     traits: TraitStore,
     modules: ModuleStore,
+    type_aliases: TypeAliasStore,
+    struct_defs: StructDefStore,
+    enum_defs: EnumDefStore,
     values: ExprValueStore,
     literals: ExprLiteralStore,
     blocks: ExprBlockStore,
@@ -188,6 +197,9 @@ impl Store {
             functions: FunctionStore::new(),
             traits: TraitStore::new(),
             modules: ModuleStore::new(),
+            type_aliases: TypeAliasStore::new(),
+            struct_defs: StructDefStore::new(),
+            enum_defs: EnumDefStore::new(),
             values: ExprValueStore::new(),
             literals: ExprLiteralStore::new(),
             blocks: ExprBlockStore::new(),
@@ -238,6 +250,18 @@ impl Store {
         using_storage(self, || self.modules.store(module))
     }
 
+    pub fn store_type_alias(&self, type_alias: TypeAliasDef) -> TypeAliasDefId {
+        using_storage(self, || self.type_aliases.store(type_alias))
+    }
+
+    pub fn store_struct_def(&self, struct_def: StructDef) -> StructDefId {
+        using_storage(self, || self.struct_defs.store(struct_def))
+    }
+
+    pub fn store_enum_def(&self, enum_def: EnumDef) -> EnumDefId {
+        using_storage(self, || self.enum_defs.store(enum_def))
+    }
+
     pub fn store_value(&self, expr: Value) -> ValueId {
         using_storage(self, || self.values.store(expr))
     }
@@ -262,6 +286,9 @@ impl Store {
         self.functions.reset();
         self.traits.reset();
         self.modules.reset();
+        self.type_aliases.reset();
+        self.struct_defs.reset();
+        self.enum_defs.reset();
         self.values.reset();
         self.literals.reset();
         self.blocks.reset();
@@ -279,6 +306,9 @@ impl Store {
         self.functions.shrink_to_fit();
         self.traits.shrink_to_fit();
         self.modules.shrink_to_fit();
+        self.type_aliases.shrink_to_fit();
+        self.struct_defs.shrink_to_fit();
+        self.enum_defs.shrink_to_fit();
         self.values.shrink_to_fit();
         self.literals.shrink_to_fit();
         self.blocks.shrink_to_fit();
@@ -370,6 +400,30 @@ impl std::ops::Index<&ModuleId> for Store {
 
     fn index(&self, index: &ModuleId) -> &Self::Output {
         &self.modules[index]
+    }
+}
+
+impl std::ops::Index<&TypeAliasDefId> for Store {
+    type Output = RefCell<TypeAliasDef>;
+
+    fn index(&self, index: &TypeAliasDefId) -> &Self::Output {
+        &self.type_aliases[index]
+    }
+}
+
+impl std::ops::Index<&StructDefId> for Store {
+    type Output = RefCell<StructDef>;
+
+    fn index(&self, index: &StructDefId) -> &Self::Output {
+        &self.struct_defs[index]
+    }
+}
+
+impl std::ops::Index<&EnumDefId> for Store {
+    type Output = RefCell<EnumDef>;
+
+    fn index(&self, index: &EnumDefId) -> &Self::Output {
+        &self.enum_defs[index]
     }
 }
 

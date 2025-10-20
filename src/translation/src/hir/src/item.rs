@@ -1,4 +1,7 @@
-use crate::prelude::*;
+use crate::{
+    prelude::*,
+    store::{EnumDefId, StructDefId, TypeAliasDefId},
+};
 use interned_string::IString;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeSet;
@@ -84,6 +87,29 @@ pub struct Module {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
+pub struct TypeAliasDef {
+    pub visibility: Visibility,
+    pub name: IString,
+    pub type_id: TypeId,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
+pub struct StructDef {
+    pub visibility: Visibility,
+    pub name: IString,
+    pub field_extras: Vec<(Visibility, Option<ValueId>)>,
+    pub struct_id: StructTypeId,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
+pub struct EnumDef {
+    pub visibility: Visibility,
+    pub name: IString,
+    pub variant_extras: Vec<Option<ValueId>>,
+    pub enum_id: EnumTypeId,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub enum Symbol {
     GlobalVariable(GlobalVariableId),
     LocalVariable(LocalVariableId),
@@ -97,6 +123,9 @@ pub enum Item {
     Module(ModuleId),
     GlobalVariable(GlobalVariableId),
     Function(FunctionId),
+    TypeAliasDef(TypeAliasDefId),
+    StructDef(StructDefId),
+    EnumDef(EnumDefId),
 }
 
 impl IntoStoreId for GlobalVariable {
@@ -144,5 +173,29 @@ impl IntoStoreId for Module {
 
     fn into_id(self, store: &Store) -> Self::Id {
         store.store_module(self)
+    }
+}
+
+impl IntoStoreId for TypeAliasDef {
+    type Id = TypeAliasDefId;
+
+    fn into_id(self, store: &Store) -> Self::Id {
+        store.store_type_alias(self)
+    }
+}
+
+impl IntoStoreId for StructDef {
+    type Id = StructDefId;
+
+    fn into_id(self, store: &Store) -> Self::Id {
+        store.store_struct_def(self)
+    }
+}
+
+impl IntoStoreId for EnumDef {
+    type Id = EnumDefId;
+
+    fn into_id(self, store: &Store) -> Self::Id {
+        store.store_enum_def(self)
     }
 }
