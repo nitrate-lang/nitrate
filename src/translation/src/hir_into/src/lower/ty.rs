@@ -1,4 +1,4 @@
-use crate::{context::HirCtx, diagnosis::HirErr, lower::lower::Ast2Hir};
+use crate::{context::Ast2HirCtx, diagnosis::HirErr, lower::lower::Ast2Hir};
 use interned_string::IString;
 use nitrate_diagnosis::CompilerLog;
 use nitrate_hir::prelude::*;
@@ -9,7 +9,7 @@ use std::{collections::BTreeSet, ops::Deref};
 impl Ast2Hir for ast::TypeSyntaxError {
     type Hir = Type;
 
-    fn ast2hir(self, _ctx: &mut HirCtx, _log: &CompilerLog) -> Result<Self::Hir, ()> {
+    fn ast2hir(self, _ctx: &mut Ast2HirCtx, _log: &CompilerLog) -> Result<Self::Hir, ()> {
         Err(())
     }
 }
@@ -17,7 +17,7 @@ impl Ast2Hir for ast::TypeSyntaxError {
 impl Ast2Hir for ast::Bool {
     type Hir = Type;
 
-    fn ast2hir(self, _ctx: &mut HirCtx, _log: &CompilerLog) -> Result<Self::Hir, ()> {
+    fn ast2hir(self, _ctx: &mut Ast2HirCtx, _log: &CompilerLog) -> Result<Self::Hir, ()> {
         Ok(Type::Bool)
     }
 }
@@ -25,7 +25,7 @@ impl Ast2Hir for ast::Bool {
 impl Ast2Hir for ast::UInt8 {
     type Hir = Type;
 
-    fn ast2hir(self, _ctx: &mut HirCtx, _log: &CompilerLog) -> Result<Self::Hir, ()> {
+    fn ast2hir(self, _ctx: &mut Ast2HirCtx, _log: &CompilerLog) -> Result<Self::Hir, ()> {
         Ok(Type::U8)
     }
 }
@@ -33,7 +33,7 @@ impl Ast2Hir for ast::UInt8 {
 impl Ast2Hir for ast::UInt16 {
     type Hir = Type;
 
-    fn ast2hir(self, _ctx: &mut HirCtx, _log: &CompilerLog) -> Result<Self::Hir, ()> {
+    fn ast2hir(self, _ctx: &mut Ast2HirCtx, _log: &CompilerLog) -> Result<Self::Hir, ()> {
         Ok(Type::U16)
     }
 }
@@ -41,7 +41,7 @@ impl Ast2Hir for ast::UInt16 {
 impl Ast2Hir for ast::UInt32 {
     type Hir = Type;
 
-    fn ast2hir(self, _ctx: &mut HirCtx, _log: &CompilerLog) -> Result<Self::Hir, ()> {
+    fn ast2hir(self, _ctx: &mut Ast2HirCtx, _log: &CompilerLog) -> Result<Self::Hir, ()> {
         Ok(Type::U32)
     }
 }
@@ -49,7 +49,7 @@ impl Ast2Hir for ast::UInt32 {
 impl Ast2Hir for ast::UInt64 {
     type Hir = Type;
 
-    fn ast2hir(self, _ctx: &mut HirCtx, _log: &CompilerLog) -> Result<Self::Hir, ()> {
+    fn ast2hir(self, _ctx: &mut Ast2HirCtx, _log: &CompilerLog) -> Result<Self::Hir, ()> {
         Ok(Type::U64)
     }
 }
@@ -57,7 +57,7 @@ impl Ast2Hir for ast::UInt64 {
 impl Ast2Hir for ast::UInt128 {
     type Hir = Type;
 
-    fn ast2hir(self, _ctx: &mut HirCtx, _log: &CompilerLog) -> Result<Self::Hir, ()> {
+    fn ast2hir(self, _ctx: &mut Ast2HirCtx, _log: &CompilerLog) -> Result<Self::Hir, ()> {
         Ok(Type::U128)
     }
 }
@@ -65,7 +65,7 @@ impl Ast2Hir for ast::UInt128 {
 impl Ast2Hir for ast::USize {
     type Hir = Type;
 
-    fn ast2hir(self, _ctx: &mut HirCtx, _log: &CompilerLog) -> Result<Self::Hir, ()> {
+    fn ast2hir(self, _ctx: &mut Ast2HirCtx, _log: &CompilerLog) -> Result<Self::Hir, ()> {
         Ok(Type::USize)
     }
 }
@@ -73,7 +73,7 @@ impl Ast2Hir for ast::USize {
 impl Ast2Hir for ast::Int8 {
     type Hir = Type;
 
-    fn ast2hir(self, _ctx: &mut HirCtx, _log: &CompilerLog) -> Result<Self::Hir, ()> {
+    fn ast2hir(self, _ctx: &mut Ast2HirCtx, _log: &CompilerLog) -> Result<Self::Hir, ()> {
         Ok(Type::I8)
     }
 }
@@ -81,7 +81,7 @@ impl Ast2Hir for ast::Int8 {
 impl Ast2Hir for ast::Int16 {
     type Hir = Type;
 
-    fn ast2hir(self, _ctx: &mut HirCtx, _log: &CompilerLog) -> Result<Self::Hir, ()> {
+    fn ast2hir(self, _ctx: &mut Ast2HirCtx, _log: &CompilerLog) -> Result<Self::Hir, ()> {
         Ok(Type::I16)
     }
 }
@@ -89,7 +89,7 @@ impl Ast2Hir for ast::Int16 {
 impl Ast2Hir for ast::Int32 {
     type Hir = Type;
 
-    fn ast2hir(self, _ctx: &mut HirCtx, _log: &CompilerLog) -> Result<Self::Hir, ()> {
+    fn ast2hir(self, _ctx: &mut Ast2HirCtx, _log: &CompilerLog) -> Result<Self::Hir, ()> {
         Ok(Type::I32)
     }
 }
@@ -97,7 +97,7 @@ impl Ast2Hir for ast::Int32 {
 impl Ast2Hir for ast::Int64 {
     type Hir = Type;
 
-    fn ast2hir(self, _ctx: &mut HirCtx, _log: &CompilerLog) -> Result<Self::Hir, ()> {
+    fn ast2hir(self, _ctx: &mut Ast2HirCtx, _log: &CompilerLog) -> Result<Self::Hir, ()> {
         Ok(Type::I64)
     }
 }
@@ -105,7 +105,7 @@ impl Ast2Hir for ast::Int64 {
 impl Ast2Hir for ast::Int128 {
     type Hir = Type;
 
-    fn ast2hir(self, _ctx: &mut HirCtx, _log: &CompilerLog) -> Result<Self::Hir, ()> {
+    fn ast2hir(self, _ctx: &mut Ast2HirCtx, _log: &CompilerLog) -> Result<Self::Hir, ()> {
         Ok(Type::I128)
     }
 }
@@ -113,7 +113,7 @@ impl Ast2Hir for ast::Int128 {
 impl Ast2Hir for ast::Float32 {
     type Hir = Type;
 
-    fn ast2hir(self, _ctx: &mut HirCtx, _log: &CompilerLog) -> Result<Self::Hir, ()> {
+    fn ast2hir(self, _ctx: &mut Ast2HirCtx, _log: &CompilerLog) -> Result<Self::Hir, ()> {
         Ok(Type::F32)
     }
 }
@@ -121,7 +121,7 @@ impl Ast2Hir for ast::Float32 {
 impl Ast2Hir for ast::Float64 {
     type Hir = Type;
 
-    fn ast2hir(self, _ctx: &mut HirCtx, _log: &CompilerLog) -> Result<Self::Hir, ()> {
+    fn ast2hir(self, _ctx: &mut Ast2HirCtx, _log: &CompilerLog) -> Result<Self::Hir, ()> {
         Ok(Type::F64)
     }
 }
@@ -129,7 +129,7 @@ impl Ast2Hir for ast::Float64 {
 impl Ast2Hir for ast::InferType {
     type Hir = Type;
 
-    fn ast2hir(self, ctx: &mut HirCtx, _log: &CompilerLog) -> Result<Self::Hir, ()> {
+    fn ast2hir(self, ctx: &mut Ast2HirCtx, _log: &CompilerLog) -> Result<Self::Hir, ()> {
         Ok(ctx.create_inference_placeholder())
     }
 }
@@ -137,7 +137,7 @@ impl Ast2Hir for ast::InferType {
 impl Ast2Hir for ast::TypePath {
     type Hir = Type;
 
-    fn ast2hir(self, ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
+    fn ast2hir(self, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
         if self.segments.iter().any(|seg| seg.type_arguments.is_some()) {
             // TODO: Support generic type arguments
             log.report(&HirErr::UnimplementedFeature(
@@ -164,7 +164,7 @@ impl Ast2Hir for ast::TypePath {
 impl Ast2Hir for ast::RefinementType {
     type Hir = Type;
 
-    fn ast2hir(self, _ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
+    fn ast2hir(self, _ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
         // TODO: lower ast::RefinementType
         log.report(&HirErr::UnimplementedFeature("refinement type".into()));
         Err(())
@@ -174,14 +174,14 @@ impl Ast2Hir for ast::RefinementType {
 impl Ast2Hir for ast::TupleType {
     type Hir = Type;
 
-    fn ast2hir(self, ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
+    fn ast2hir(self, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
         if self.element_types.is_empty() {
             return Ok(Type::Unit);
         }
 
         let mut elements = Vec::with_capacity(self.element_types.len());
         for ast_elem_ty in self.element_types.into_iter() {
-            let hir_elem_ty = ast_elem_ty.ast2hir(ctx, log)?.into_id(ctx.store());
+            let hir_elem_ty = ast_elem_ty.ast2hir(ctx, log)?.into_id(&ctx.store);
             elements.push(hir_elem_ty);
         }
 
@@ -194,18 +194,18 @@ impl Ast2Hir for ast::TupleType {
 impl Ast2Hir for ast::ArrayType {
     type Hir = Type;
 
-    fn ast2hir(self, ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
-        let element_type = self.element_type.ast2hir(ctx, log)?.into_id(ctx.store());
+    fn ast2hir(self, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
+        let element_type = self.element_type.ast2hir(ctx, log)?.into_id(&ctx.store);
 
         let hir_length = Value::Cast {
-            expr: self.len.ast2hir(ctx, log)?.into_id(ctx.store()),
-            to: Type::USize.into_id(ctx.store()),
+            expr: self.len.ast2hir(ctx, log)?.into_id(&ctx.store),
+            to: Type::USize.into_id(&ctx.store),
         };
 
-        let mut eval = HirEvalCtx::new(ctx.store(), log, ctx.ptr_size());
+        let mut eval = HirEvalCtx::new(&ctx.store, log, ctx.ptr_size);
         let len = match eval.evaluate_to_literal(&hir_length) {
             Ok(Lit::USize32(val)) => {
-                if ctx.ptr_size() != PtrSize::U32 {
+                if ctx.ptr_size != PtrSize::U32 {
                     log.report(&HirErr::FoundUSize32InNon32BitTarget);
                     return Err(());
                 }
@@ -214,7 +214,7 @@ impl Ast2Hir for ast::ArrayType {
             }
 
             Ok(Lit::USize64(val)) => {
-                if ctx.ptr_size() != PtrSize::U64 {
+                if ctx.ptr_size != PtrSize::U64 {
                     log.report(&HirErr::FoundUSize64InNon64BitTarget);
                     return Err(());
                 }
@@ -240,8 +240,8 @@ impl Ast2Hir for ast::ArrayType {
 impl Ast2Hir for ast::SliceType {
     type Hir = Type;
 
-    fn ast2hir(self, ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
-        let element_type = self.element_type.ast2hir(ctx, log)?.into_id(ctx.store());
+    fn ast2hir(self, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
+        let element_type = self.element_type.ast2hir(ctx, log)?.into_id(&ctx.store);
 
         Ok(Type::Slice { element_type })
     }
@@ -250,7 +250,7 @@ impl Ast2Hir for ast::SliceType {
 impl Ast2Hir for ast::FunctionType {
     type Hir = Type;
 
-    fn ast2hir(self, ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
+    fn ast2hir(self, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
         let ast_attributes = self.attributes.unwrap_or_default();
 
         let attributes = BTreeSet::new();
@@ -272,10 +272,10 @@ impl Ast2Hir for ast::FunctionType {
             }
 
             let name = IString::from(param.name.deref());
-            let ty = param.ty.ast2hir(ctx, log)?.into_id(ctx.store());
+            let ty = param.ty.ast2hir(ctx, log)?.into_id(&ctx.store);
 
             let default_value = match param.default_value {
-                Some(def_val) => Some(def_val.ast2hir(ctx, log)?.into_id(ctx.store())),
+                Some(def_val) => Some(def_val.ast2hir(ctx, log)?.into_id(&ctx.store)),
                 None => None,
             };
 
@@ -287,7 +287,7 @@ impl Ast2Hir for ast::FunctionType {
                 default_value,
             };
 
-            parameters.push(parameter.into_id(ctx.store()));
+            parameters.push(parameter.into_id(&ctx.store));
         }
 
         let return_type = match self.return_type {
@@ -298,11 +298,11 @@ impl Ast2Hir for ast::FunctionType {
         let function_type = FunctionType {
             attributes,
             params: parameters,
-            return_type: return_type.into_id(ctx.store()),
+            return_type: return_type.into_id(&ctx.store),
         };
 
         Ok(Type::Function {
-            function_type: function_type.into_id(ctx.store()),
+            function_type: function_type.into_id(&ctx.store),
         })
     }
 }
@@ -310,8 +310,8 @@ impl Ast2Hir for ast::FunctionType {
 impl Ast2Hir for ast::ReferenceType {
     type Hir = Type;
 
-    fn ast2hir(self, ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
-        let to = self.to.ast2hir(ctx, log)?.into_id(ctx.store());
+    fn ast2hir(self, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
+        let to = self.to.ast2hir(ctx, log)?.into_id(&ctx.store);
 
         let lifetime = match self.lifetime {
             None => Lifetime::Inferred,
@@ -351,7 +351,7 @@ impl Ast2Hir for ast::ReferenceType {
 impl Ast2Hir for ast::OpaqueType {
     type Hir = Type;
 
-    fn ast2hir(self, _ctx: &mut HirCtx, _log: &CompilerLog) -> Result<Self::Hir, ()> {
+    fn ast2hir(self, _ctx: &mut Ast2HirCtx, _log: &CompilerLog) -> Result<Self::Hir, ()> {
         Ok(Type::Opaque {
             name: self.name.deref().into(),
         })
@@ -361,10 +361,10 @@ impl Ast2Hir for ast::OpaqueType {
 impl Ast2Hir for ast::LatentType {
     type Hir = Type;
 
-    fn ast2hir(self, ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
-        let block = self.body.ast2hir(ctx, log)?.into_id(ctx.store());
+    fn ast2hir(self, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
+        let block = self.body.ast2hir(ctx, log)?.into_id(&ctx.store);
 
-        let mut eval = HirEvalCtx::new(ctx.store(), log, ctx.ptr_size());
+        let mut eval = HirEvalCtx::new(&ctx.store, log, ctx.ptr_size);
         let hir_type = match eval.evaluate_into_type(&Value::Block { block }) {
             Ok(ty) => ty,
 
@@ -381,7 +381,7 @@ impl Ast2Hir for ast::LatentType {
 impl Ast2Hir for ast::Lifetime {
     type Hir = Type;
 
-    fn ast2hir(self, _ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
+    fn ast2hir(self, _ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
         // TODO: lower ast::Lifetime
         log.report(&HirErr::UnimplementedFeature("ast::Lifetime".into()));
         Err(())
@@ -391,7 +391,7 @@ impl Ast2Hir for ast::Lifetime {
 impl Ast2Hir for ast::TypeParentheses {
     type Hir = Type;
 
-    fn ast2hir(self, ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
+    fn ast2hir(self, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
         self.inner.ast2hir(ctx, log)
     }
 }
@@ -399,7 +399,7 @@ impl Ast2Hir for ast::TypeParentheses {
 impl Ast2Hir for ast::Type {
     type Hir = Type;
 
-    fn ast2hir(self, ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
+    fn ast2hir(self, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
         match self {
             ast::Type::SyntaxError(ty) => ty.ast2hir(ctx, log),
             ast::Type::Bool(ty) => ty.ast2hir(ctx, log),

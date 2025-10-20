@@ -6,18 +6,18 @@ use std::num::NonZeroU32;
 use std::ops::Deref;
 
 #[derive(Debug)]
-pub struct HirCtx {
-    store: Store,
-    current_scope: Vec<String>,
+pub struct Ast2HirCtx {
+    pub store: Store,
+    pub(crate) current_scope: Vec<String>,
     type_map: HashMap<IString, TypeDefinition>,
     symbol_map: HashMap<IString, SymbolId>,
     impl_map: HashMap<TypeId, HashSet<TraitId>>,
     type_infer_id_ctr: NonZeroU32,
     unique_name_ctr: u32,
-    ptr_size: PtrSize,
+    pub(crate) ptr_size: PtrSize,
 }
 
-impl HirCtx {
+impl Ast2HirCtx {
     pub fn new(ptr_size: PtrSize) -> Self {
         Self {
             store: Store::new(),
@@ -29,18 +29,6 @@ impl HirCtx {
             unique_name_ctr: 0,
             ptr_size,
         }
-    }
-
-    pub fn store(&self) -> &Store {
-        &self.store
-    }
-
-    pub fn store_mut(&mut self) -> &mut Store {
-        &mut self.store
-    }
-
-    pub fn ptr_size(&self) -> PtrSize {
-        self.ptr_size
     }
 
     pub fn has_trait(&self, ty: &TypeId, trait_id: &TraitId) -> bool {
@@ -97,18 +85,6 @@ impl HirCtx {
         Type::Inferred { id }
     }
 
-    pub fn push_current_scope(&mut self, part: String) {
-        self.current_scope.push(part);
-    }
-
-    pub fn pop_current_scope(&mut self) {
-        self.current_scope.pop();
-    }
-
-    pub fn current_scope(&self) -> &Vec<String> {
-        &self.current_scope
-    }
-
     pub fn join_path(scope: &[String], name: &str) -> String {
         let length = scope.iter().map(|s| s.len() + 2).sum::<usize>() + name.len();
         let mut qualified = String::with_capacity(length);
@@ -141,7 +117,7 @@ impl HirCtx {
     }
 }
 
-impl std::ops::Index<&TypeId> for HirCtx {
+impl std::ops::Index<&TypeId> for Ast2HirCtx {
     type Output = Type;
 
     fn index(&self, index: &TypeId) -> &Self::Output {
@@ -149,7 +125,7 @@ impl std::ops::Index<&TypeId> for HirCtx {
     }
 }
 
-impl std::ops::Index<&StructTypeId> for HirCtx {
+impl std::ops::Index<&StructTypeId> for Ast2HirCtx {
     type Output = StructType;
 
     fn index(&self, index: &StructTypeId) -> &Self::Output {
@@ -157,7 +133,7 @@ impl std::ops::Index<&StructTypeId> for HirCtx {
     }
 }
 
-impl std::ops::Index<&EnumTypeId> for HirCtx {
+impl std::ops::Index<&EnumTypeId> for Ast2HirCtx {
     type Output = EnumType;
 
     fn index(&self, index: &EnumTypeId) -> &Self::Output {
@@ -165,7 +141,7 @@ impl std::ops::Index<&EnumTypeId> for HirCtx {
     }
 }
 
-impl std::ops::Index<&FunctionTypeId> for HirCtx {
+impl std::ops::Index<&FunctionTypeId> for Ast2HirCtx {
     type Output = FunctionType;
 
     fn index(&self, index: &FunctionTypeId) -> &Self::Output {
@@ -173,7 +149,7 @@ impl std::ops::Index<&FunctionTypeId> for HirCtx {
     }
 }
 
-impl std::ops::Index<&GlobalVariableId> for HirCtx {
+impl std::ops::Index<&GlobalVariableId> for Ast2HirCtx {
     type Output = RefCell<GlobalVariable>;
 
     fn index(&self, index: &GlobalVariableId) -> &Self::Output {
@@ -181,7 +157,7 @@ impl std::ops::Index<&GlobalVariableId> for HirCtx {
     }
 }
 
-impl std::ops::Index<&LocalVariableId> for HirCtx {
+impl std::ops::Index<&LocalVariableId> for Ast2HirCtx {
     type Output = RefCell<LocalVariable>;
 
     fn index(&self, index: &LocalVariableId) -> &Self::Output {
@@ -189,7 +165,7 @@ impl std::ops::Index<&LocalVariableId> for HirCtx {
     }
 }
 
-impl std::ops::Index<&ParameterId> for HirCtx {
+impl std::ops::Index<&ParameterId> for Ast2HirCtx {
     type Output = RefCell<Parameter>;
 
     fn index(&self, index: &ParameterId) -> &Self::Output {
@@ -197,7 +173,7 @@ impl std::ops::Index<&ParameterId> for HirCtx {
     }
 }
 
-impl std::ops::Index<&FunctionId> for HirCtx {
+impl std::ops::Index<&FunctionId> for Ast2HirCtx {
     type Output = RefCell<Function>;
 
     fn index(&self, index: &FunctionId) -> &Self::Output {
@@ -205,7 +181,7 @@ impl std::ops::Index<&FunctionId> for HirCtx {
     }
 }
 
-impl std::ops::Index<&TraitId> for HirCtx {
+impl std::ops::Index<&TraitId> for Ast2HirCtx {
     type Output = RefCell<Trait>;
 
     fn index(&self, index: &TraitId) -> &Self::Output {
@@ -213,7 +189,7 @@ impl std::ops::Index<&TraitId> for HirCtx {
     }
 }
 
-impl std::ops::Index<&ModuleId> for HirCtx {
+impl std::ops::Index<&ModuleId> for Ast2HirCtx {
     type Output = RefCell<Module>;
 
     fn index(&self, index: &ModuleId) -> &Self::Output {
@@ -221,7 +197,7 @@ impl std::ops::Index<&ModuleId> for HirCtx {
     }
 }
 
-impl std::ops::Index<&TypeAliasDefId> for HirCtx {
+impl std::ops::Index<&TypeAliasDefId> for Ast2HirCtx {
     type Output = RefCell<TypeAliasDef>;
 
     fn index(&self, index: &TypeAliasDefId) -> &Self::Output {
@@ -229,7 +205,7 @@ impl std::ops::Index<&TypeAliasDefId> for HirCtx {
     }
 }
 
-impl std::ops::Index<&StructDefId> for HirCtx {
+impl std::ops::Index<&StructDefId> for Ast2HirCtx {
     type Output = RefCell<StructDef>;
 
     fn index(&self, index: &StructDefId) -> &Self::Output {
@@ -237,7 +213,7 @@ impl std::ops::Index<&StructDefId> for HirCtx {
     }
 }
 
-impl std::ops::Index<&EnumDefId> for HirCtx {
+impl std::ops::Index<&EnumDefId> for Ast2HirCtx {
     type Output = RefCell<EnumDef>;
 
     fn index(&self, index: &EnumDefId) -> &Self::Output {
@@ -245,7 +221,7 @@ impl std::ops::Index<&EnumDefId> for HirCtx {
     }
 }
 
-impl std::ops::Index<&ValueId> for HirCtx {
+impl std::ops::Index<&ValueId> for Ast2HirCtx {
     type Output = RefCell<Value>;
 
     fn index(&self, index: &ValueId) -> &Self::Output {
@@ -253,7 +229,7 @@ impl std::ops::Index<&ValueId> for HirCtx {
     }
 }
 
-impl std::ops::Index<&LiteralId> for HirCtx {
+impl std::ops::Index<&LiteralId> for Ast2HirCtx {
     type Output = Lit;
 
     fn index(&self, index: &LiteralId) -> &Self::Output {
@@ -261,7 +237,7 @@ impl std::ops::Index<&LiteralId> for HirCtx {
     }
 }
 
-impl std::ops::Index<&BlockId> for HirCtx {
+impl std::ops::Index<&BlockId> for Ast2HirCtx {
     type Output = RefCell<Block>;
 
     fn index(&self, index: &BlockId) -> &Self::Output {

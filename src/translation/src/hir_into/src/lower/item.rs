@@ -1,4 +1,4 @@
-use crate::{ast_mod2hir, context::HirCtx, diagnosis::HirErr, lower::lower::Ast2Hir};
+use crate::{ast_mod2hir, context::Ast2HirCtx, diagnosis::HirErr, lower::lower::Ast2Hir};
 use interned_string::IString;
 use nitrate_diagnosis::CompilerLog;
 use nitrate_hir::prelude::*;
@@ -8,7 +8,7 @@ use std::collections::BTreeSet;
 impl Ast2Hir for ast::TypeAlias {
     type Hir = TypeAliasDefId;
 
-    fn ast2hir(self, ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
+    fn ast2hir(self, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
         let visibility = match self.visibility {
             Some(ast::Visibility::Public) => Visibility::Pub,
             Some(ast::Visibility::Protected) => Visibility::Pro,
@@ -21,7 +21,7 @@ impl Ast2Hir for ast::TypeAlias {
             }
         }
 
-        let name = IString::from(HirCtx::join_path(ctx.current_scope(), &self.name));
+        let name = IString::from(Ast2HirCtx::join_path(&ctx.current_scope, &self.name));
 
         if self.generics.is_some() {
             // TODO: support generic type aliases
@@ -29,7 +29,7 @@ impl Ast2Hir for ast::TypeAlias {
         }
 
         let type_id = match &self.alias_type {
-            Some(ty) => ty.to_owned().ast2hir(ctx, log)?.into_id(ctx.store()),
+            Some(ty) => ty.to_owned().ast2hir(ctx, log)?.into_id(&ctx.store),
             None => {
                 log.report(&HirErr::TypeAliasMustHaveType);
                 return Err(());
@@ -41,7 +41,7 @@ impl Ast2Hir for ast::TypeAlias {
             name,
             type_id,
         }
-        .into_id(ctx.store());
+        .into_id(&ctx.store);
 
         let definition = TypeDefinition::TypeAliasDef(type_alias_id.clone());
         ctx.register_type(definition);
@@ -53,7 +53,7 @@ impl Ast2Hir for ast::TypeAlias {
 impl Ast2Hir for ast::Struct {
     type Hir = StructDefId;
 
-    fn ast2hir(self, ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
+    fn ast2hir(self, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
         let visibility = match self.visibility {
             Some(ast::Visibility::Public) => Visibility::Pub,
             Some(ast::Visibility::Protected) => Visibility::Pro,
@@ -67,7 +67,7 @@ impl Ast2Hir for ast::Struct {
             }
         }
 
-        let name = HirCtx::join_path(ctx.current_scope(), &self.name).into();
+        let name = Ast2HirCtx::join_path(&ctx.current_scope, &self.name).into();
 
         if self.generics.is_some() {
             // TODO: support generic structs
@@ -92,10 +92,10 @@ impl Ast2Hir for ast::Struct {
             }
 
             let field_name = IString::from(field.name.to_string());
-            let field_type = field.ty.to_owned().ast2hir(ctx, log)?.into_id(ctx.store());
+            let field_type = field.ty.to_owned().ast2hir(ctx, log)?.into_id(&ctx.store);
 
             let field_default = match field.default_value.to_owned() {
-                Some(expr) => Some(expr.ast2hir(ctx, log)?.into_id(ctx.store())),
+                Some(expr) => Some(expr.ast2hir(ctx, log)?.into_id(&ctx.store)),
                 None => None,
             };
 
@@ -109,7 +109,7 @@ impl Ast2Hir for ast::Struct {
             fields.push(struct_field);
         }
 
-        let struct_id = StructType { attributes, fields }.into_id(ctx.store());
+        let struct_id = StructType { attributes, fields }.into_id(&ctx.store);
 
         let struct_def_id = StructDef {
             visibility,
@@ -117,7 +117,7 @@ impl Ast2Hir for ast::Struct {
             field_extras,
             struct_id,
         }
-        .into_id(ctx.store());
+        .into_id(&ctx.store);
 
         let definition = TypeDefinition::StructDef(struct_def_id.clone());
         ctx.register_type(definition);
@@ -129,7 +129,7 @@ impl Ast2Hir for ast::Struct {
 impl Ast2Hir for ast::Enum {
     type Hir = EnumDefId;
 
-    fn ast2hir(self, ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
+    fn ast2hir(self, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
         let visibility = match self.visibility {
             Some(ast::Visibility::Public) => Visibility::Pub,
             Some(ast::Visibility::Protected) => Visibility::Pro,
@@ -143,7 +143,7 @@ impl Ast2Hir for ast::Enum {
             }
         }
 
-        let name = HirCtx::join_path(ctx.current_scope(), &self.name).into();
+        let name = Ast2HirCtx::join_path(&ctx.current_scope, &self.name).into();
 
         if self.generics.is_some() {
             // TODO: support generic enums
@@ -164,12 +164,12 @@ impl Ast2Hir for ast::Enum {
             let variant_name = IString::from(variant.name.to_string());
 
             let variant_type = match variant.ty.to_owned() {
-                Some(ty) => ty.ast2hir(ctx, log)?.into_id(ctx.store()),
-                None => Type::Unit.into_id(ctx.store()),
+                Some(ty) => ty.ast2hir(ctx, log)?.into_id(&ctx.store),
+                None => Type::Unit.into_id(&ctx.store),
             };
 
             let field_default = match variant.default_value.to_owned() {
-                Some(expr) => Some(expr.ast2hir(ctx, log)?.into_id(ctx.store())),
+                Some(expr) => Some(expr.ast2hir(ctx, log)?.into_id(&ctx.store)),
                 None => None,
             };
 
@@ -187,7 +187,7 @@ impl Ast2Hir for ast::Enum {
             attributes,
             variants,
         }
-        .into_id(ctx.store());
+        .into_id(&ctx.store);
 
         let enum_def_id = EnumDef {
             visibility,
@@ -195,7 +195,7 @@ impl Ast2Hir for ast::Enum {
             variant_extras,
             enum_id,
         }
-        .into_id(ctx.store());
+        .into_id(&ctx.store);
 
         let definition = TypeDefinition::EnumDef(enum_def_id.clone());
         ctx.register_type(definition);
@@ -204,13 +204,13 @@ impl Ast2Hir for ast::Enum {
     }
 }
 
-fn ast_trait2hir(_trait: &ast::Trait, _ctx: &mut HirCtx, log: &CompilerLog) -> Result<(), ()> {
+fn ast_trait2hir(_trait: &ast::Trait, _ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<(), ()> {
     // TODO: implement trait lowering
     log.report(&HirErr::UnimplementedFeature("trait definitions".into()));
     Err(())
 }
 
-fn ast_impl2hir(_impl: &ast::Impl, _ctx: &mut HirCtx, log: &CompilerLog) -> Result<(), ()> {
+fn ast_impl2hir(_impl: &ast::Impl, _ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<(), ()> {
     // TODO: implement impl block lowering
     log.report(&HirErr::UnimplementedFeature("impl blocks".into()));
     Err(())
@@ -218,7 +218,7 @@ fn ast_impl2hir(_impl: &ast::Impl, _ctx: &mut HirCtx, log: &CompilerLog) -> Resu
 
 fn ast_param2hir(
     param: &ast::FuncParam,
-    ctx: &mut HirCtx,
+    ctx: &mut Ast2HirCtx,
     log: &CompilerLog,
 ) -> Result<Parameter, ()> {
     let attributes = BTreeSet::new();
@@ -234,10 +234,10 @@ fn ast_param2hir(
     };
 
     let name = IString::from(param.name.to_string());
-    let ty = param.ty.to_owned().ast2hir(ctx, log)?.into_id(ctx.store());
+    let ty = param.ty.to_owned().ast2hir(ctx, log)?.into_id(&ctx.store);
 
     let default_value = match param.default_value.to_owned() {
-        Some(expr) => Some(expr.ast2hir(ctx, log)?.into_id(ctx.store())),
+        Some(expr) => Some(expr.ast2hir(ctx, log)?.into_id(&ctx.store)),
         None => None,
     };
 
@@ -253,7 +253,7 @@ fn ast_param2hir(
 impl Ast2Hir for ast::Function {
     type Hir = FunctionId;
 
-    fn ast2hir(self, ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
+    fn ast2hir(self, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
         let visibility = match self.visibility {
             Some(ast::Visibility::Public) => Visibility::Pub,
             Some(ast::Visibility::Protected) => Visibility::Pro,
@@ -267,7 +267,7 @@ impl Ast2Hir for ast::Function {
             }
         }
 
-        let name = IString::from(HirCtx::join_path(ctx.current_scope(), &self.name));
+        let name = IString::from(Ast2HirCtx::join_path(&ctx.current_scope, &self.name));
 
         if self.generics.is_some() {
             // TODO: support generic functions
@@ -277,16 +277,16 @@ impl Ast2Hir for ast::Function {
         let mut parameters = Vec::with_capacity(self.parameters.len());
         for param in &self.parameters {
             let param_hir = ast_param2hir(param, ctx, log)?;
-            parameters.push(param_hir.into_id(ctx.store()));
+            parameters.push(param_hir.into_id(&ctx.store));
         }
 
         let return_type = match &self.return_type {
-            Some(ty) => ty.to_owned().ast2hir(ctx, log)?.into_id(ctx.store()),
-            None => Type::Unit.into_id(ctx.store()),
+            Some(ty) => ty.to_owned().ast2hir(ctx, log)?.into_id(&ctx.store),
+            None => Type::Unit.into_id(&ctx.store),
         };
 
         let body = match &self.definition {
-            Some(block) => Some(block.to_owned().ast2hir(ctx, log)?.into_id(ctx.store())),
+            Some(block) => Some(block.to_owned().ast2hir(ctx, log)?.into_id(&ctx.store)),
             None => None,
         };
 
@@ -298,7 +298,7 @@ impl Ast2Hir for ast::Function {
             return_type,
             body,
         }
-        .into_id(ctx.store());
+        .into_id(&ctx.store);
 
         let function = SymbolId::Function(function_id.clone());
         ctx.register_symbol(function);
@@ -309,7 +309,7 @@ impl Ast2Hir for ast::Function {
 
 fn ast_variable2hir(
     var: &ast::Variable,
-    ctx: &mut HirCtx,
+    ctx: &mut Ast2HirCtx,
     log: &CompilerLog,
 ) -> Result<GlobalVariableId, ()> {
     let visibility = match var.visibility {
@@ -338,19 +338,19 @@ fn ast_variable2hir(
         Some(ast::Mutability::Const) | None => false,
     };
 
-    let name = IString::from(HirCtx::join_path(ctx.current_scope(), &var.name));
+    let name = IString::from(Ast2HirCtx::join_path(&ctx.current_scope, &var.name));
 
     let ty = match var.ty.to_owned() {
-        None => ctx.create_inference_placeholder().into_id(ctx.store()),
+        None => ctx.create_inference_placeholder().into_id(&ctx.store),
         Some(t) => {
-            let ty_hir = t.ast2hir(ctx, log)?.into_id(ctx.store());
+            let ty_hir = t.ast2hir(ctx, log)?.into_id(&ctx.store);
             ty_hir
         }
     };
 
     let initializer = match var.initializer.to_owned() {
         Some(expr) => {
-            let expr_hir = expr.ast2hir(ctx, log)?.into_id(ctx.store());
+            let expr_hir = expr.ast2hir(ctx, log)?.into_id(&ctx.store);
             expr_hir
         }
 
@@ -368,7 +368,7 @@ fn ast_variable2hir(
         ty,
         initializer,
     }
-    .into_id(ctx.store());
+    .into_id(&ctx.store);
 
     let variable = SymbolId::GlobalVariable(global_variable_id.clone());
     ctx.register_symbol(variable);
@@ -379,10 +379,10 @@ fn ast_variable2hir(
 impl Ast2Hir for ast::Module {
     type Hir = Module;
 
-    fn ast2hir(self, ctx: &mut HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
+    fn ast2hir(self, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
         fn lower_module(
             this: ast::Module,
-            ctx: &mut HirCtx,
+            ctx: &mut Ast2HirCtx,
             log: &CompilerLog,
         ) -> Result<Module, ()> {
             let visibility = match this.visibility {
@@ -406,7 +406,7 @@ impl Ast2Hir for ast::Module {
             for item in this.items {
                 match item {
                     ast::Item::Module(submodule) => {
-                        let hir_submodule = ast_mod2hir(*submodule, ctx, log)?.into_id(ctx.store());
+                        let hir_submodule = ast_mod2hir(*submodule, ctx, log)?.into_id(&ctx.store);
                         items.push(Item::Module(hir_submodule));
                     }
 
@@ -465,12 +465,12 @@ impl Ast2Hir for ast::Module {
         }
 
         match self.name {
-            Some(ref name) => ctx.push_current_scope(name.to_string()),
-            None => ctx.push_current_scope(String::default()),
+            Some(ref name) => ctx.current_scope.push(name.to_string()),
+            None => ctx.current_scope.push(String::default()),
         }
 
         let result = lower_module(self, ctx, log);
-        ctx.pop_current_scope();
+        ctx.current_scope.pop();
 
         result
     }

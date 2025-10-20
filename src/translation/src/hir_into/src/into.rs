@@ -1,9 +1,9 @@
-use crate::{context::HirCtx, lower::Ast2Hir};
+use crate::{context::Ast2HirCtx, lower::Ast2Hir};
 use nitrate_diagnosis::CompilerLog;
 use nitrate_hir::prelude::*;
 use nitrate_source::{Order, ParseTreeIter, RefNode, ast};
 
-fn visit_node(node: RefNode, ctx: &mut HirCtx, log: &CompilerLog) {
+fn visit_node(node: RefNode, ctx: &mut Ast2HirCtx, log: &CompilerLog) {
     match node {
         RefNode::ExprSyntaxError
         | RefNode::ExprParentheses(_)
@@ -98,7 +98,7 @@ fn visit_node(node: RefNode, ctx: &mut HirCtx, log: &CompilerLog) {
 
         RefNode::ItemTrait(_) => {
             // TODO: implement
-            println!("scope = {:?}", ctx.current_scope());
+            println!("scope = {:?}", ctx.current_scope);
         }
 
         RefNode::ItemFunction(function) => {
@@ -108,24 +108,28 @@ fn visit_node(node: RefNode, ctx: &mut HirCtx, log: &CompilerLog) {
             }
         }
 
-        RefNode::ItemVariable(variable) => {
+        RefNode::ItemVariable(_variable) => {
             // TODO: implement. is it local or global?
-            println!("scope = {:?}", ctx.current_scope());
+            println!("scope = {:?}", ctx.current_scope);
         }
     }
 }
 
-pub fn ast_mod2hir(module: ast::Module, ctx: &mut HirCtx, log: &CompilerLog) -> Result<Module, ()> {
+pub fn ast_mod2hir(
+    module: ast::Module,
+    ctx: &mut Ast2HirCtx,
+    log: &CompilerLog,
+) -> Result<Module, ()> {
     module.depth_first_iter(&mut |order, node| match order {
         Order::Enter => {
             if let RefNode::ItemModule(module) = node {
                 if let Some(name) = &module.name {
-                    ctx.push_current_scope(name.to_string());
+                    ctx.current_scope.push(name.to_string());
                 } else {
-                    ctx.push_current_scope("".to_string());
+                    ctx.current_scope.push("".to_string());
                 }
             } else if let RefNode::ItemFunction(function) = node {
-                ctx.push_current_scope(function.name.to_string());
+                ctx.current_scope.push(function.name.to_string());
             }
 
             visit_node(node, ctx, log);
@@ -133,7 +137,7 @@ pub fn ast_mod2hir(module: ast::Module, ctx: &mut HirCtx, log: &CompilerLog) -> 
 
         Order::Leave => {
             if let RefNode::ItemModule(_) | RefNode::ItemFunction(_) = node {
-                ctx.pop_current_scope();
+                ctx.current_scope.pop();
             }
         }
     });
@@ -141,7 +145,7 @@ pub fn ast_mod2hir(module: ast::Module, ctx: &mut HirCtx, log: &CompilerLog) -> 
     module.ast2hir(ctx, log)
 }
 
-pub fn ast_expr2hir(expr: ast::Expr, ctx: &mut HirCtx, log: &CompilerLog) -> Result<Value, ()> {
+pub fn ast_expr2hir(expr: ast::Expr, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
     expr.depth_first_iter(&mut |order, node| match order {
         Order::Enter => visit_node(node, ctx, log),
         Order::Leave => {}
@@ -150,7 +154,7 @@ pub fn ast_expr2hir(expr: ast::Expr, ctx: &mut HirCtx, log: &CompilerLog) -> Res
     expr.ast2hir(ctx, log)
 }
 
-pub fn ast_type2hir(ty: ast::Type, ctx: &mut HirCtx, log: &CompilerLog) -> Result<Type, ()> {
+pub fn ast_type2hir(ty: ast::Type, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Type, ()> {
     ty.depth_first_iter(&mut |order, node| match order {
         Order::Enter => visit_node(node, ctx, log),
         Order::Leave => {}

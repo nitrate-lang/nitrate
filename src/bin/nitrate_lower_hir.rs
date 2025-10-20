@@ -2,7 +2,7 @@ use nitrate_diagnosis::{CompilerLog, intern_file_id};
 use nitrate_translation::{
     TranslationError,
     hir::{Dump, DumpContext, hir::PtrSize},
-    hir_into::{HirCtx, ast_mod2hir},
+    hir_into::{Ast2HirCtx, ast_mod2hir},
     parse::Parser,
     parsetree::ast,
     resolve::{ImportContext, resolve_imports, resolve_paths},
@@ -109,12 +109,12 @@ fn program() -> Result<(), Error> {
     resolve_imports(&import_context, &mut module, &log);
     resolve_paths(&mut module, &log);
 
-    let mut hir_ctx = HirCtx::new(PtrSize::U64);
+    let mut hir_ctx = Ast2HirCtx::new(PtrSize::U64);
     let Ok(hir_module) = ast_mod2hir(module, &mut hir_ctx, &log) else {
         return Err(Error::HirError);
     };
 
-    let pretty_printed = hir_module.dump_to_string(&mut DumpContext::new(&hir_ctx.store()));
+    let pretty_printed = hir_module.dump_to_string(&mut DumpContext::new(&hir_ctx.store));
 
     parse_tree_output
         .write_all(&pretty_printed.into_bytes())
