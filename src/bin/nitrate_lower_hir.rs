@@ -1,11 +1,8 @@
 use nitrate_diagnosis::{CompilerLog, intern_file_id};
 use nitrate_translation::{
     TranslationError,
-    hir::{
-        Dump, DumpContext,
-        hir::{HirCtx, PtrSize},
-    },
-    hir_into::ast_mod2hir,
+    hir::{Dump, DumpContext, hir::PtrSize},
+    hir_into::{HirCtx, ast_mod2hir},
     parse::Parser,
     parsetree::ast,
     resolve::{ImportContext, resolve_imports, resolve_paths},

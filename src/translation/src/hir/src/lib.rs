@@ -1,7 +1,6 @@
 #![warn(clippy::pedantic)]
 
 mod cmp;
-mod context;
 mod dump;
 mod dump_expr;
 mod dump_item;
@@ -27,7 +26,6 @@ pub use store::{
 
 pub mod hir {
     pub use super::cmp::*;
-    pub use super::context::*;
     pub use super::expr::*;
     pub use super::item::*;
     pub use super::literal_ops::*;

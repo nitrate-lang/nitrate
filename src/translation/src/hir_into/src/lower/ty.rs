@@ -1,4 +1,4 @@
-use crate::{diagnosis::HirErr, lower::lower::Ast2Hir};
+use crate::{context::HirCtx, diagnosis::HirErr, lower::lower::Ast2Hir};
 use interned_string::IString;
 use nitrate_diagnosis::CompilerLog;
 use nitrate_hir::prelude::*;

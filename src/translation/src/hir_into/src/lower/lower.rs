@@ -1,5 +1,5 @@
+use crate::context::HirCtx;
 use nitrate_diagnosis::CompilerLog;
-use nitrate_hir::hir::HirCtx;
 
 pub trait Ast2Hir {
     type Hir;

@@ -1,4 +1,4 @@
-use crate::lower::Ast2Hir;
+use crate::{context::HirCtx, lower::Ast2Hir};
 use nitrate_diagnosis::CompilerLog;
 use nitrate_hir::prelude::*;
 use nitrate_source::{Order, ParseTreeIter, RefNode, ast};

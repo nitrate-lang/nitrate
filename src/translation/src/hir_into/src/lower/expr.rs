@@ -1,4 +1,5 @@
 use crate::ast_expr2hir;
+use crate::context::HirCtx;
 use crate::diagnosis::HirErr;
 use crate::lower::lower::Ast2Hir;
 use interned_string::IString;

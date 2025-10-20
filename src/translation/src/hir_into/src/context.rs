@@ -1,5 +1,5 @@
-use crate::prelude::*;
 use interned_string::IString;
+use nitrate_hir::prelude::*;
 use std::cell::RefCell;
 use std::collections::{HashMap, HashSet};
 use std::num::NonZeroU32;
