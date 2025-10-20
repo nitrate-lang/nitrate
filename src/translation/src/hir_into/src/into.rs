@@ -78,21 +78,21 @@ fn visit_node(node: RefNode, ctx: &mut Ast2HirCtx, log: &CompilerLog) {
         RefNode::ItemTypeAlias(type_alias) => {
             if let Ok(type_alias) = type_alias.to_owned().ast2hir(ctx, log) {
                 let defintion = TypeDefinition::TypeAliasDef(type_alias);
-                ctx.register_type(defintion);
+                ctx.symbol_tab.add_type(defintion, &ctx.store);
             }
         }
 
         RefNode::ItemStruct(struct_def) => {
             if let Ok(struct_def) = struct_def.to_owned().ast2hir(ctx, log) {
                 let defintion = TypeDefinition::StructDef(struct_def);
-                ctx.register_type(defintion);
+                ctx.symbol_tab.add_type(defintion, &ctx.store);
             }
         }
 
         RefNode::ItemEnum(enum_def) => {
             if let Ok(enum_def) = enum_def.to_owned().ast2hir(ctx, log) {
                 let defintion = TypeDefinition::EnumDef(enum_def);
-                ctx.register_type(defintion);
+                ctx.symbol_tab.add_type(defintion, &ctx.store);
             }
         }
 
@@ -104,7 +104,7 @@ fn visit_node(node: RefNode, ctx: &mut Ast2HirCtx, log: &CompilerLog) {
         RefNode::ItemFunction(function) => {
             if let Ok(function) = function.to_owned().ast2hir(ctx, log) {
                 let defintion = SymbolId::Function(function);
-                ctx.register_symbol(defintion);
+                ctx.symbol_tab.add_symbol(defintion, &ctx.store);
             }
         }
 

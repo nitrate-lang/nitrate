@@ -94,18 +94,6 @@ impl Ast2HirCtx {
         qualified.push_str(name);
         qualified
     }
-
-    pub(crate) fn register_type(&mut self, definition: TypeDefinition) {
-        self.symbol_tab
-            .types
-            .insert(definition.name(&self.store), definition);
-    }
-
-    pub(crate) fn register_symbol(&mut self, symbol_id: SymbolId) {
-        self.symbol_tab
-            .symbols
-            .insert(symbol_id.name(&self.store), symbol_id);
-    }
 }
 
 impl std::ops::Index<&TypeId> for Ast2HirCtx {

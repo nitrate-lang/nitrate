@@ -295,7 +295,7 @@ fn metatype_source_encode(
             Ok(())
         }
 
-        Type::Symbol { path } => match tab.types.get(path) {
+        Type::Symbol { path } => match tab.get_type(path) {
             Some(TypeDefinition::TypeAliasDef(type_alias_id)) => {
                 let type_id = store[type_alias_id].borrow().type_id;
                 metatype_source_encode(store, tab, &store[&type_id], o)

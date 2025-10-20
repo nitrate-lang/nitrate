@@ -111,7 +111,7 @@ pub fn get_size_of(ty: &Type, ctx: &LayoutCtx) -> Result<u64, LayoutError> {
         Type::Reference { .. } => Ok(ctx.ptr_size as u64),
         Type::Pointer { .. } => Ok(ctx.ptr_size as u64),
 
-        Type::Symbol { path } => match ctx.tab.types.get(&path) {
+        Type::Symbol { path } => match ctx.tab.get_type(&path) {
             Some(TypeDefinition::TypeAliasDef(type_alias_id)) => {
                 let type_id = ctx.store[type_alias_id].borrow().type_id;
                 get_size_of(&ctx.store[&type_id], ctx)

@@ -65,7 +65,7 @@ pub fn get_type(value: &Value, ctx: &TypeInferenceCtx) -> Result<Type, TypeInfer
         Value::StructObject {
             struct_path,
             fields: _,
-        } => match ctx.symbol_tab.types.get(struct_path) {
+        } => match ctx.symbol_tab.get_type(struct_path) {
             None => Err(TypeInferenceError::UnresolvedSymbol),
 
             Some(TypeDefinition::StructDef(struct_def)) => Ok(Type::Struct {
@@ -250,7 +250,7 @@ pub fn get_type(value: &Value, ctx: &TypeInferenceCtx) -> Result<Type, TypeInfer
             Err(TypeInferenceError::CalleeIsNotFunctionType)
         }
 
-        Value::Symbol { path } => match ctx.symbol_tab.symbols.get(path) {
+        Value::Symbol { path } => match ctx.symbol_tab.get_symbol(path) {
             Some(SymbolId::GlobalVariable(glb)) => {
                 Ok(ctx.store[&ctx.store[glb].borrow().ty].clone())
             }
