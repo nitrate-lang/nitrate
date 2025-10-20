@@ -5,27 +5,6 @@ use std::collections::{HashMap, HashSet};
 use std::num::NonZeroU32;
 use std::ops::Deref;
 
-impl TypeDefinition {
-    pub fn name(&self, ctx: &HirCtx) -> IString {
-        match self {
-            TypeDefinition::TypeAliasDef(def) => ctx[def].borrow().name.clone(),
-            TypeDefinition::StructDef(def) => ctx[def].borrow().name.clone(),
-            TypeDefinition::EnumDef(def) => ctx[def].borrow().name.clone(),
-        }
-    }
-}
-
-impl SymbolId {
-    pub fn name(&self, ctx: &HirCtx) -> IString {
-        match self {
-            SymbolId::Function(id) => ctx[id].borrow().name.clone(),
-            SymbolId::GlobalVariable(id) => ctx[id].borrow().name.clone(),
-            SymbolId::LocalVariable(id) => ctx[id].borrow().name.clone(),
-            SymbolId::Parameter(id) => ctx[id].borrow().name.clone(),
-        }
-    }
-}
-
 #[derive(Debug)]
 pub struct HirCtx {
     store: Store,
@@ -144,7 +123,8 @@ impl HirCtx {
     }
 
     pub fn register_type(&mut self, definition: TypeDefinition) {
-        self.type_map.insert(definition.name(self), definition);
+        self.type_map
+            .insert(definition.name(&self.store), definition);
     }
 
     pub fn lookup_type(&self, name: &IString) -> Option<&TypeDefinition> {
@@ -152,7 +132,8 @@ impl HirCtx {
     }
 
     pub fn register_symbol(&mut self, symbol_id: SymbolId) {
-        self.symbol_map.insert(symbol_id.name(self), symbol_id);
+        self.symbol_map
+            .insert(symbol_id.name(&self.store), symbol_id);
     }
 
     pub fn lookup_symbol(&self, name: &IString) -> Option<&SymbolId> {

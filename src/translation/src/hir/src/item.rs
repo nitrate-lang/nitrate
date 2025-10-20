@@ -116,12 +116,33 @@ pub enum TypeDefinition {
     EnumDef(EnumDefId),
 }
 
+impl TypeDefinition {
+    pub fn name(&self, store: &Store) -> IString {
+        match self {
+            TypeDefinition::TypeAliasDef(def) => store[def].borrow().name.clone(),
+            TypeDefinition::StructDef(def) => store[def].borrow().name.clone(),
+            TypeDefinition::EnumDef(def) => store[def].borrow().name.clone(),
+        }
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub enum SymbolId {
     GlobalVariable(GlobalVariableId),
     LocalVariable(LocalVariableId),
     Parameter(ParameterId),
     Function(FunctionId),
+}
+
+impl SymbolId {
+    pub fn name(&self, store: &Store) -> IString {
+        match self {
+            SymbolId::Function(id) => store[id].borrow().name.clone(),
+            SymbolId::GlobalVariable(id) => store[id].borrow().name.clone(),
+            SymbolId::LocalVariable(id) => store[id].borrow().name.clone(),
+            SymbolId::Parameter(id) => store[id].borrow().name.clone(),
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
