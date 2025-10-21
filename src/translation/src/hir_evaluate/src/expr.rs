@@ -591,7 +591,8 @@ impl HirEvaluate for Value {
 
             Value::Call {
                 callee: _,
-                arguments: _,
+                positional_arguments: _,
+                named_arguments: _,
             } => {
                 // TODO: evaluate function call expressions
                 unimplemented!()
