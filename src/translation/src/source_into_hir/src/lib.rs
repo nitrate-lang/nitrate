@@ -2,6 +2,7 @@
 
 mod context;
 mod diagnosis;
+mod forward_decl;
 mod into;
 mod lower;
 

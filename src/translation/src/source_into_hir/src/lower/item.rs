@@ -49,7 +49,7 @@ impl Ast2Hir for ast::Module {
                         let t = ctx
                             .symbol_tab
                             .get_type_alias(&IString::from(type_alias.name.deref()))
-                            .expect("type alias symbol not found")
+                            .ok_or(())?
                             .to_owned();
 
                         items.push(Item::TypeAliasDef(t));
@@ -59,7 +59,7 @@ impl Ast2Hir for ast::Module {
                         let s = ctx
                             .symbol_tab
                             .get_struct(&IString::from(struct_def.name.deref()))
-                            .expect("struct symbol not found")
+                            .ok_or(())?
                             .to_owned();
 
                         items.push(Item::StructDef(s));
@@ -69,7 +69,7 @@ impl Ast2Hir for ast::Module {
                         let e = ctx
                             .symbol_tab
                             .get_enum(&IString::from(enum_def.name.deref()))
-                            .expect("enum symbol not found")
+                            .ok_or(())?
                             .to_owned();
 
                         items.push(Item::EnumDef(e));
@@ -89,7 +89,7 @@ impl Ast2Hir for ast::Module {
                         let f = ctx
                             .symbol_tab
                             .get_function(&IString::from(func_def.name.deref()))
-                            .expect("function symbol not found")
+                            .ok_or(())?
                             .to_owned();
 
                         items.push(Item::Function(f));
@@ -99,7 +99,7 @@ impl Ast2Hir for ast::Module {
                         let g = ctx
                             .symbol_tab
                             .get_global_variable(&IString::from(v.name.deref()))
-                            .expect("global variable symbol not found")
+                            .ok_or(())?
                             .to_owned();
 
                         items.push(Item::GlobalVariable(g));
