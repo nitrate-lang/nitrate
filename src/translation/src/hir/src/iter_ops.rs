@@ -1,14 +1,19 @@
-use crate::{
-    Store,
-    hir::{Block, BlockElement, Function, Value},
-    ty::Type,
-};
+use crate::prelude::*;
 use std::ops::ControlFlow;
 
-impl Type {}
+impl TypeIter<'_> {
+    pub fn for_each(&self, store: &Store, vcb: &mut dyn FnMut(&Value), tcb: &mut dyn FnMut(&Type)) {
+        let mut vcb_wrapper = move |value: &Value| -> ControlFlow<()> {
+            vcb(value);
+            ControlFlow::Continue(())
+        };
 
-impl Block {}
+        let mut tcb_wrapper = move |ty: &Type| -> ControlFlow<()> {
+            tcb(ty);
+            ControlFlow::Continue(())
+        };
 
-impl Value {}
-
-impl Function {}
+        self.try_for_each(store, &mut vcb_wrapper, &mut tcb_wrapper)
+            .is_continue(); // ignore cf signal
+    }
+}

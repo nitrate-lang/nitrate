@@ -1,27 +1,14 @@
-use crate::{
-    Store,
-    hir::{Block, BlockElement, Function, Value},
-    ty::Type,
-};
+use crate::prelude::*;
 use std::ops::ControlFlow;
 
-pub struct TypeIter<'a> {
-    node: &'a Type,
-}
-
 impl TypeIter<'_> {
-    pub fn try_for_each<T, Expr, Ty, Item>(
+    pub fn try_for_each<T>(
         &self,
         store: &Store,
-        mut vcb: Expr,
-        mut tcb: Ty,
-        mut icb: Item,
+        vcb: &mut dyn FnMut(&Value) -> ControlFlow<T>,
+        tcb: &mut dyn FnMut(&Type) -> ControlFlow<T>,
     ) -> ControlFlow<T>
-    where
-        Expr: FnMut(&Value) -> ControlFlow<T>,
-        Ty: FnMut(&Type) -> ControlFlow<T>,
-        Item: FnMut(&Value) -> ControlFlow<T>,
-    {
+where {
         tcb(self.node)?;
 
         match self.node {
@@ -47,38 +34,28 @@ impl TypeIter<'_> {
                 element_type,
                 len: _,
             } => {
-                store[element_type]
-                    .iter()
-                    .try_for_each(store, &mut vcb, &mut tcb, &mut icb)?;
+                store[element_type].iter().try_for_each(store, vcb, tcb)?;
             }
 
             Type::Tuple { element_types } => {
                 for element_type in element_types {
-                    store[element_type]
-                        .iter()
-                        .try_for_each(store, &mut vcb, &mut tcb, &mut icb)?;
+                    store[element_type].iter().try_for_each(store, vcb, tcb)?;
                 }
             }
 
             Type::Slice { element_type } => {
-                store[element_type]
-                    .iter()
-                    .try_for_each(store, &mut vcb, &mut tcb, &mut icb)?;
+                store[element_type].iter().try_for_each(store, vcb, tcb)?;
             }
 
             Type::Struct { struct_type } => {
                 for field in &store[struct_type].fields {
-                    store[&field.ty]
-                        .iter()
-                        .try_for_each(store, &mut vcb, &mut tcb, &mut icb)?;
+                    store[&field.ty].iter().try_for_each(store, vcb, tcb)?;
                 }
             }
 
             Type::Enum { enum_type } => {
                 for variant in &store[enum_type].variants {
-                    store[&variant.ty]
-                        .iter()
-                        .try_for_each(store, &mut vcb, &mut tcb, &mut icb)?;
+                    store[&variant.ty].iter().try_for_each(store, vcb, tcb)?;
                 }
             }
 
@@ -87,15 +64,11 @@ impl TypeIter<'_> {
                 min: _,
                 max: _,
             } => {
-                store[base]
-                    .iter()
-                    .try_for_each(store, &mut vcb, &mut tcb, &mut icb)?;
+                store[base].iter().try_for_each(store, vcb, tcb)?;
             }
 
             Type::Bitfield { base, bits: _ } => {
-                store[base]
-                    .iter()
-                    .try_for_each(store, &mut vcb, &mut tcb, &mut icb)?;
+                store[base].iter().try_for_each(store, vcb, tcb)?;
             }
 
             Type::Function { function_type } => {
@@ -103,21 +76,19 @@ impl TypeIter<'_> {
                 for param in &function.params {
                     let parameter = store[param].borrow();
 
-                    store[&parameter.ty]
-                        .iter()
-                        .try_for_each(store, &mut vcb, &mut tcb, &mut icb)?;
+                    store[&parameter.ty].iter().try_for_each(store, vcb, tcb)?;
 
                     if let Some(default_value) = &parameter.default_value {
                         store[default_value]
                             .borrow()
                             .iter()
-                            .try_for_each(store, &mut vcb, &mut tcb, &mut icb)?;
+                            .try_for_each(store, vcb, tcb)?;
                     }
                 }
 
                 store[&function.return_type]
                     .iter()
-                    .try_for_each(store, &mut vcb, &mut tcb, &mut icb)?;
+                    .try_for_each(store, vcb, tcb)?;
             }
 
             Type::Reference {
@@ -126,9 +97,7 @@ impl TypeIter<'_> {
                 mutable: _,
                 to,
             } => {
-                store[to]
-                    .iter()
-                    .try_for_each(store, &mut vcb, &mut tcb, &mut icb)?;
+                store[to].iter().try_for_each(store, vcb, tcb)?;
             }
 
             Type::Pointer {
@@ -136,9 +105,7 @@ impl TypeIter<'_> {
                 mutable: _,
                 to,
             } => {
-                store[to]
-                    .iter()
-                    .try_for_each(store, &mut vcb, &mut tcb, &mut icb)?;
+                store[to].iter().try_for_each(store, vcb, tcb)?;
             }
 
             Type::Symbol { path: _ } => {}
@@ -151,37 +118,21 @@ impl TypeIter<'_> {
     }
 }
 
-pub struct BlockIter<'a> {
-    node: &'a Block,
-}
-
 impl BlockIter<'_> {
-    pub fn try_for_each<T, Expr, Ty, Item>(
+    pub fn try_for_each<T>(
         &self,
         store: &Store,
-        mut vcb: Expr,
-        mut tcb: Ty,
-        mut icb: Item,
-    ) -> ControlFlow<T>
-    where
-        Expr: FnMut(&Value) -> ControlFlow<T>,
-        Ty: FnMut(&Type) -> ControlFlow<T>,
-        Item: FnMut(&Value) -> ControlFlow<T>,
-    {
+        vcb: &mut dyn FnMut(&Value) -> ControlFlow<T>,
+        tcb: &mut dyn FnMut(&Type) -> ControlFlow<T>,
+    ) -> ControlFlow<T> {
         for element in &self.node.elements {
             match element {
                 BlockElement::Expr(id) => {
-                    store[id]
-                        .borrow()
-                        .iter()
-                        .try_for_each(store, &mut vcb, &mut tcb, &mut icb)?;
+                    store[id].borrow().iter().try_for_each(store, vcb, tcb)?;
                 }
 
                 BlockElement::Stmt(id) => {
-                    store[id]
-                        .borrow()
-                        .iter()
-                        .try_for_each(store, &mut vcb, &mut tcb, &mut icb)?;
+                    store[id].borrow().iter().try_for_each(store, vcb, tcb)?;
                 }
 
                 BlockElement::Local(id) => {
@@ -189,13 +140,10 @@ impl BlockIter<'_> {
 
                     store[&local_variable.ty]
                         .iter()
-                        .try_for_each(store, &mut vcb, &mut tcb, &mut icb)?;
+                        .try_for_each(store, vcb, tcb)?;
 
                     if let Some(init) = &local_variable.init {
-                        store[init]
-                            .borrow()
-                            .iter()
-                            .try_for_each(store, &mut vcb, &mut tcb, &mut icb)?;
+                        store[init].borrow().iter().try_for_each(store, vcb, tcb)?;
                     }
                 }
             }
@@ -205,23 +153,13 @@ impl BlockIter<'_> {
     }
 }
 
-pub struct ValueIter<'a> {
-    node: &'a Value,
-}
-
 impl ValueIter<'_> {
-    pub fn try_for_each<T, Expr, Ty, Item>(
+    pub fn try_for_each<T>(
         &self,
         store: &Store,
-        mut vcb: Expr,
-        mut tcb: Ty,
-        mut icb: Item,
-    ) -> ControlFlow<T>
-    where
-        Expr: FnMut(&Value) -> ControlFlow<T>,
-        Ty: FnMut(&Type) -> ControlFlow<T>,
-        Item: FnMut(&Value) -> ControlFlow<T>,
-    {
+        vcb: &mut dyn FnMut(&Value) -> ControlFlow<T>,
+        tcb: &mut dyn FnMut(&Type) -> ControlFlow<T>,
+    ) -> ControlFlow<T> {
         vcb(self.node)?;
 
         match self.node {
@@ -254,7 +192,7 @@ impl ValueIter<'_> {
                     store[field_value]
                         .borrow()
                         .iter()
-                        .try_for_each(store, &mut vcb, &mut tcb, &mut icb)?;
+                        .try_for_each(store, vcb, tcb)?;
                 }
             }
 
@@ -263,100 +201,64 @@ impl ValueIter<'_> {
                 variant: _,
                 value,
             } => {
-                store[value]
-                    .borrow()
-                    .iter()
-                    .try_for_each(store, &mut vcb, &mut tcb, &mut icb)?;
+                store[value].borrow().iter().try_for_each(store, vcb, tcb)?;
             }
 
             Value::Binary { left, op: _, right } => {
-                store[left]
-                    .borrow()
-                    .iter()
-                    .try_for_each(store, &mut vcb, &mut tcb, &mut icb)?;
+                store[left].borrow().iter().try_for_each(store, vcb, tcb)?;
 
-                store[right]
-                    .borrow()
-                    .iter()
-                    .try_for_each(store, &mut vcb, &mut tcb, &mut icb)?;
+                store[right].borrow().iter().try_for_each(store, vcb, tcb)?;
             }
 
             Value::Unary { op: _, operand } => {
                 store[operand]
                     .borrow()
                     .iter()
-                    .try_for_each(store, &mut vcb, &mut tcb, &mut icb)?;
+                    .try_for_each(store, vcb, tcb)?;
             }
 
             Value::FieldAccess { expr, field: _ } => {
-                store[expr]
-                    .borrow()
-                    .iter()
-                    .try_for_each(store, &mut vcb, &mut tcb, &mut icb)?;
+                store[expr].borrow().iter().try_for_each(store, vcb, tcb)?;
             }
 
             Value::IndexAccess { collection, index } => {
                 store[collection]
                     .borrow()
                     .iter()
-                    .try_for_each(store, &mut vcb, &mut tcb, &mut icb)?;
+                    .try_for_each(store, vcb, tcb)?;
 
-                store[index]
-                    .borrow()
-                    .iter()
-                    .try_for_each(store, &mut vcb, &mut tcb, &mut icb)?;
+                store[index].borrow().iter().try_for_each(store, vcb, tcb)?;
             }
 
             Value::Assign { place, value } => {
-                store[place]
-                    .borrow()
-                    .iter()
-                    .try_for_each(store, &mut vcb, &mut tcb, &mut icb)?;
+                store[place].borrow().iter().try_for_each(store, vcb, tcb)?;
 
-                store[value]
-                    .borrow()
-                    .iter()
-                    .try_for_each(store, &mut vcb, &mut tcb, &mut icb)?;
+                store[value].borrow().iter().try_for_each(store, vcb, tcb)?;
             }
 
             Value::Deref { place } => {
-                store[place]
-                    .borrow()
-                    .iter()
-                    .try_for_each(store, &mut vcb, &mut tcb, &mut icb)?;
+                store[place].borrow().iter().try_for_each(store, vcb, tcb)?;
             }
 
             Value::Cast { expr, to } => {
-                store[expr]
-                    .borrow()
-                    .iter()
-                    .try_for_each(store, &mut vcb, &mut tcb, &mut icb)?;
+                store[expr].borrow().iter().try_for_each(store, vcb, tcb)?;
 
-                store[to]
-                    .iter()
-                    .try_for_each(store, &mut vcb, &mut tcb, &mut icb)?;
+                store[to].iter().try_for_each(store, vcb, tcb)?;
             }
 
             Value::Borrow { mutable: _, place } => {
-                store[place]
-                    .borrow()
-                    .iter()
-                    .try_for_each(store, &mut vcb, &mut tcb, &mut icb)?;
+                store[place].borrow().iter().try_for_each(store, vcb, tcb)?;
             }
 
             Value::List { elements } => {
                 for element in elements {
-                    element
-                        .iter()
-                        .try_for_each(store, &mut vcb, &mut tcb, &mut icb)?;
+                    element.iter().try_for_each(store, vcb, tcb)?;
                 }
             }
 
             Value::Tuple { elements } => {
                 for element in elements {
-                    element
-                        .iter()
-                        .try_for_each(store, &mut vcb, &mut tcb, &mut icb)?;
+                    element.iter().try_for_each(store, vcb, tcb)?;
                 }
             }
 
@@ -368,18 +270,18 @@ impl ValueIter<'_> {
                 store[condition]
                     .borrow()
                     .iter()
-                    .try_for_each(store, &mut vcb, &mut tcb, &mut icb)?;
+                    .try_for_each(store, vcb, tcb)?;
 
                 store[true_branch]
                     .borrow()
                     .iter()
-                    .try_for_each(store, &mut vcb, &mut tcb, &mut icb)?;
+                    .try_for_each(store, vcb, tcb)?;
 
                 if let Some(false_branch) = false_branch {
                     store[false_branch]
                         .borrow()
                         .iter()
-                        .try_for_each(store, &mut vcb, &mut tcb, &mut icb)?;
+                        .try_for_each(store, vcb, tcb)?;
                 }
             }
 
@@ -387,19 +289,13 @@ impl ValueIter<'_> {
                 store[condition]
                     .borrow()
                     .iter()
-                    .try_for_each(store, &mut vcb, &mut tcb, &mut icb)?;
+                    .try_for_each(store, vcb, tcb)?;
 
-                store[body]
-                    .borrow()
-                    .iter()
-                    .try_for_each(store, &mut vcb, &mut tcb, &mut icb)?;
+                store[body].borrow().iter().try_for_each(store, vcb, tcb)?;
             }
 
             Value::Loop { body } => {
-                store[body]
-                    .borrow()
-                    .iter()
-                    .try_for_each(store, &mut vcb, &mut tcb, &mut icb)?;
+                store[body].borrow().iter().try_for_each(store, vcb, tcb)?;
             }
 
             Value::Break { label: _ } => {}
@@ -407,17 +303,11 @@ impl ValueIter<'_> {
             Value::Continue { label: _ } => {}
 
             Value::Return { value } => {
-                store[value]
-                    .borrow()
-                    .iter()
-                    .try_for_each(store, &mut vcb, &mut tcb, &mut icb)?;
+                store[value].borrow().iter().try_for_each(store, vcb, tcb)?;
             }
 
             Value::Block { block } => {
-                store[block]
-                    .borrow()
-                    .iter()
-                    .try_for_each(store, &mut vcb, &mut tcb, &mut icb)?;
+                store[block].borrow().iter().try_for_each(store, vcb, tcb)?;
             }
 
             Value::Closure {
@@ -427,20 +317,20 @@ impl ValueIter<'_> {
                 store[callee]
                     .borrow()
                     .iter()
-                    .try_for_each(store, &mut vcb, &mut tcb, &mut icb)?;
+                    .try_for_each(store, vcb, tcb)?;
             }
 
             Value::Call { callee, arguments } => {
                 store[callee]
                     .borrow()
                     .iter()
-                    .try_for_each(store, &mut vcb, &mut tcb, &mut icb)?;
+                    .try_for_each(store, vcb, tcb)?;
 
                 for (_name, argument) in arguments {
                     store[argument]
                         .borrow()
                         .iter()
-                        .try_for_each(store, &mut vcb, &mut tcb, &mut icb)?;
+                        .try_for_each(store, vcb, tcb)?;
                 }
             }
 
@@ -452,13 +342,13 @@ impl ValueIter<'_> {
                 store[object]
                     .borrow()
                     .iter()
-                    .try_for_each(store, &mut vcb, &mut tcb, &mut icb)?;
+                    .try_for_each(store, vcb, tcb)?;
 
                 for (_name, argument) in arguments {
                     store[argument]
                         .borrow()
                         .iter()
-                        .try_for_each(store, &mut vcb, &mut tcb, &mut icb)?;
+                        .try_for_each(store, vcb, tcb)?;
                 }
             }
 
@@ -469,73 +359,34 @@ impl ValueIter<'_> {
     }
 }
 
-pub struct FunctionIter<'a> {
-    node: &'a Function,
-}
-
 impl FunctionIter<'_> {
-    pub fn try_for_each<T, Expr, Ty, Item>(
+    pub fn try_for_each<T>(
         &self,
         store: &Store,
-        mut vcb: Expr,
-        mut tcb: Ty,
-        mut icb: Item,
-    ) -> ControlFlow<T>
-    where
-        Expr: FnMut(&Value) -> ControlFlow<T>,
-        Ty: FnMut(&Type) -> ControlFlow<T>,
-        Item: FnMut(&Value) -> ControlFlow<T>,
-    {
+        vcb: &mut dyn FnMut(&Value) -> ControlFlow<T>,
+        tcb: &mut dyn FnMut(&Type) -> ControlFlow<T>,
+    ) -> ControlFlow<T> {
         for param in &self.node.params {
             let parameter = store[param].borrow();
 
-            store[&parameter.ty]
-                .iter()
-                .try_for_each(store, &mut vcb, &mut tcb, &mut icb)?;
+            store[&parameter.ty].iter().try_for_each(store, vcb, tcb)?;
 
             if let Some(default_value) = &parameter.default_value {
                 store[default_value]
                     .borrow()
                     .iter()
-                    .try_for_each(store, &mut vcb, &mut tcb, &mut icb)?;
+                    .try_for_each(store, vcb, tcb)?;
             }
         }
 
         store[&self.node.return_type]
             .iter()
-            .try_for_each(store, &mut vcb, &mut tcb, &mut icb)?;
+            .try_for_each(store, vcb, tcb)?;
 
         if let Some(body) = &self.node.body {
-            store[body]
-                .borrow()
-                .iter()
-                .try_for_each(store, &mut vcb, &mut tcb, &mut icb)?;
+            store[body].borrow().iter().try_for_each(store, vcb, tcb)?;
         }
 
         ControlFlow::Continue(())
-    }
-}
-
-impl Type {
-    pub fn iter(&self) -> TypeIter<'_> {
-        TypeIter { node: self }
-    }
-}
-
-impl Block {
-    pub fn iter(&self) -> BlockIter<'_> {
-        BlockIter { node: self }
-    }
-}
-
-impl Value {
-    pub fn iter(&self) -> ValueIter<'_> {
-        ValueIter { node: self }
-    }
-}
-
-impl Function {
-    pub fn iter(&self) -> FunctionIter<'_> {
-        FunctionIter { node: self }
     }
 }
