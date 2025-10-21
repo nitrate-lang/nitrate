@@ -1,8 +1,13 @@
+use crate::{
+    Ast2HirCtx,
+    forward_decl::generate_forward_declarations,
+    lower::Ast2Hir,
+    put_defaults::{module_put_defaults, type_put_defaults, value_put_defaults},
+};
+
 use nitrate_diagnosis::CompilerLog;
 use nitrate_hir::hir::{Module, Type, Value};
 use nitrate_source::ast;
-
-use crate::{Ast2HirCtx, forward_decl::generate_forward_declarations, lower::Ast2Hir};
 
 pub fn ast_mod2hir(
     mut module: ast::Module,
@@ -10,7 +15,9 @@ pub fn ast_mod2hir(
     log: &CompilerLog,
 ) -> Result<Module, ()> {
     generate_forward_declarations(&mut module, ctx, log);
-    module.ast2hir(ctx, log)
+    let mut module = module.ast2hir(ctx, log)?;
+    module_put_defaults(&mut module, ctx, log);
+    Ok(module)
 }
 
 pub fn ast_expr2hir(
@@ -19,7 +26,9 @@ pub fn ast_expr2hir(
     log: &CompilerLog,
 ) -> Result<Value, ()> {
     generate_forward_declarations(&mut expr, ctx, log);
-    expr.ast2hir(ctx, log)
+    let mut value = expr.ast2hir(ctx, log)?;
+    value_put_defaults(&mut value, ctx, log);
+    Ok(value)
 }
 
 pub fn ast_type2hir(
@@ -28,5 +37,7 @@ pub fn ast_type2hir(
     log: &CompilerLog,
 ) -> Result<Type, ()> {
     generate_forward_declarations(&mut ty, ctx, log);
-    ty.ast2hir(ctx, log)
+    let mut ty = ty.ast2hir(ctx, log)?;
+    type_put_defaults(&mut ty, ctx, log);
+    Ok(ty)
 }

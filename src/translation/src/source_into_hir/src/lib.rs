@@ -5,6 +5,7 @@ mod diagnosis;
 mod forward_decl;
 mod into;
 mod lower;
+mod put_defaults;
 
 pub use context::Ast2HirCtx;
 pub use into::{ast_expr2hir, ast_mod2hir, ast_type2hir};

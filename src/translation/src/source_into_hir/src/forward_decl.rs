@@ -321,22 +321,16 @@ fn gendecl_for_function(
         None => Type::Unit.into_id(&ctx.store),
     };
 
-    let body = match &function.definition {
-        Some(block) => Some(block.to_owned().ast2hir(ctx, log)?.into_id(&ctx.store)),
-        None => None,
-    };
-
     let function_id = Function {
         visibility,
         attributes,
         name,
         params: parameters,
         return_type,
-        body,
-    }
-    .into_id(&ctx.store);
+        body: None,
+    };
 
-    let function = SymbolId::Function(function_id.clone());
+    let function = SymbolId::Function(function_id.into_id(&ctx.store));
     ctx.symbol_tab.add_symbol(function, &ctx.store);
 
     Ok(())
