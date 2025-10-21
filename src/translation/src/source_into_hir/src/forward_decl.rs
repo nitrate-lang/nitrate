@@ -9,11 +9,11 @@ use nitrate_source::{
     tag::{intern_function_name, intern_type_name, intern_variable_name},
 };
 
-fn ast_typealias2hir(
+fn gendecl_for_typealias(
     type_alias: &ast::TypeAlias,
     ctx: &mut Ast2HirCtx,
     log: &CompilerLog,
-) -> Result<TypeAliasDefId, ()> {
+) -> Result<(), ()> {
     let visibility = match type_alias.visibility {
         Some(ast::Visibility::Public) => Visibility::Pub,
         Some(ast::Visibility::Protected) => Visibility::Pro,
@@ -37,7 +37,7 @@ fn ast_typealias2hir(
         Some(ty) => ty.to_owned().ast2hir(ctx, log)?.into_id(&ctx.store),
         None => {
             log.report(&HirErr::TypeAliasMustHaveType);
-            return Err(());
+            return Ok(());
         }
     };
 
@@ -51,14 +51,14 @@ fn ast_typealias2hir(
     let definition = TypeDefinition::TypeAliasDef(type_alias_id.clone());
     ctx.symbol_tab.add_type(definition, &ctx.store);
 
-    Ok(type_alias_id)
+    Ok(())
 }
 
-fn ast_structdef2hir(
+fn gendecl_for_structdef(
     struct_def: &ast::Struct,
     ctx: &mut Ast2HirCtx,
     log: &CompilerLog,
-) -> Result<StructDefId, ()> {
+) -> Result<(), ()> {
     let visibility = match struct_def.visibility {
         Some(ast::Visibility::Public) => Visibility::Pub,
         Some(ast::Visibility::Protected) => Visibility::Pro,
@@ -127,14 +127,14 @@ fn ast_structdef2hir(
     let definition = TypeDefinition::StructDef(struct_def_id.clone());
     ctx.symbol_tab.add_type(definition, &ctx.store);
 
-    Ok(struct_def_id)
+    Ok(())
 }
 
-fn ast_enumdef2hir(
+fn gendecl_for_enumdef(
     enum_def: &ast::Enum,
     ctx: &mut Ast2HirCtx,
     log: &CompilerLog,
-) -> Result<EnumDefId, ()> {
+) -> Result<(), ()> {
     let visibility = match enum_def.visibility {
         Some(ast::Visibility::Public) => Visibility::Pub,
         Some(ast::Visibility::Protected) => Visibility::Pro,
@@ -205,14 +205,14 @@ fn ast_enumdef2hir(
     let definition = TypeDefinition::EnumDef(enum_def_id.clone());
     ctx.symbol_tab.add_type(definition, &ctx.store);
 
-    Ok(enum_def_id)
+    Ok(())
 }
 
-fn ast_globalvar2hir(
+fn gendecl_for_globalvar(
     var: &ast::GlobalVariable,
     ctx: &mut Ast2HirCtx,
     log: &CompilerLog,
-) -> Result<GlobalVariableId, ()> {
+) -> Result<(), ()> {
     let visibility = match var.visibility {
         Some(ast::Visibility::Public) => Visibility::Pub,
         Some(ast::Visibility::Protected) => Visibility::Pro,
@@ -241,73 +241,27 @@ fn ast_globalvar2hir(
         }
     };
 
-    let initializer = match var.initializer.to_owned() {
-        Some(expr) => {
-            let expr_hir = expr.ast2hir(ctx, log)?.into_id(&ctx.store);
-            expr_hir
-        }
-
-        None => {
-            log.report(&HirErr::GlobalVariableMustHaveInitializer);
-            return Err(());
-        }
-    };
-
     let global_variable_id = GlobalVariable {
         visibility,
         attributes,
         is_mutable,
         name,
         ty,
-        initializer,
+        init: None,
     }
     .into_id(&ctx.store);
 
     let variable = SymbolId::GlobalVariable(global_variable_id.clone());
     ctx.symbol_tab.add_symbol(variable, &ctx.store);
 
-    Ok(global_variable_id)
+    Ok(())
 }
 
-fn ast_param2hir(
-    param: &ast::FuncParam,
-    ctx: &mut Ast2HirCtx,
-    log: &CompilerLog,
-) -> Result<Parameter, ()> {
-    let attributes = BTreeSet::new();
-    if let Some(ast_attributes) = &param.attributes {
-        for _attr in ast_attributes {
-            log.report(&HirErr::UnrecognizedFunctionParameterAttribute);
-        }
-    }
-
-    let is_mutable = match param.mutability {
-        Some(ast::Mutability::Mut) => true,
-        Some(ast::Mutability::Const) | None => false,
-    };
-
-    let name = IString::from(param.name.to_string());
-    let ty = param.ty.to_owned().ast2hir(ctx, log)?.into_id(&ctx.store);
-
-    let default_value = match param.default_value.to_owned() {
-        Some(expr) => Some(expr.ast2hir(ctx, log)?.into_id(&ctx.store)),
-        None => None,
-    };
-
-    Ok(Parameter {
-        attributes,
-        is_mutable,
-        name,
-        ty,
-        default_value,
-    })
-}
-
-fn ast_function2hir(
+fn gendecl_for_function(
     function: &ast::Function,
     ctx: &mut Ast2HirCtx,
     log: &CompilerLog,
-) -> Result<FunctionId, ()> {
+) -> Result<(), ()> {
     let visibility = match function.visibility {
         Some(ast::Visibility::Public) => Visibility::Pub,
         Some(ast::Visibility::Protected) => Visibility::Pro,
@@ -330,8 +284,36 @@ fn ast_function2hir(
 
     let mut parameters = Vec::with_capacity(function.parameters.len());
     for param in &function.parameters {
-        let param_hir = ast_param2hir(param, ctx, log)?;
-        parameters.push(param_hir.into_id(&ctx.store));
+        let param_attributes = BTreeSet::new();
+        if let Some(ast_attributes) = &param.attributes {
+            for _attr in ast_attributes {
+                log.report(&HirErr::UnrecognizedFunctionParameterAttribute);
+            }
+        }
+
+        let param_is_mutable = match param.mutability {
+            Some(ast::Mutability::Mut) => true,
+            Some(ast::Mutability::Const) | None => false,
+        };
+
+        let param_name = IString::from(param.name.to_string());
+        let param_ty = param.ty.to_owned().ast2hir(ctx, log)?.into_id(&ctx.store);
+
+        let param_default_value = match param.default_value.to_owned() {
+            Some(expr) => Some(expr.ast2hir(ctx, log)?.into_id(&ctx.store)),
+            None => None,
+        };
+
+        let parameter = Parameter {
+            attributes: param_attributes,
+            is_mutable: param_is_mutable,
+            name: param_name,
+            ty: param_ty,
+            default_value: param_default_value,
+        }
+        .into_id(&ctx.store);
+
+        parameters.push(parameter);
     }
 
     let return_type = match &function.return_type {
@@ -357,15 +339,10 @@ fn ast_function2hir(
     let function = SymbolId::Function(function_id.clone());
     ctx.symbol_tab.add_symbol(function, &ctx.store);
 
-    Ok(function_id)
+    Ok(())
 }
 
-fn visit_node_forward_decls(
-    order: Order,
-    node: RefNodeMut,
-    ctx: &mut Ast2HirCtx,
-    log: &CompilerLog,
-) {
+fn gendecl_visit_node(order: Order, node: RefNodeMut, ctx: &mut Ast2HirCtx, log: &CompilerLog) {
     match node {
         RefNodeMut::ExprSyntaxError
         | RefNodeMut::ExprParentheses(_)
@@ -453,10 +430,7 @@ fn visit_node_forward_decls(
                 type_alias.name =
                     intern_type_name(Ast2HirCtx::join_path(&ctx.current_scope, &type_alias.name));
 
-                if let Ok(type_alias) = ast_typealias2hir(type_alias, ctx, log) {
-                    let defintion = TypeDefinition::TypeAliasDef(type_alias);
-                    ctx.symbol_tab.add_type(defintion, &ctx.store);
-                }
+                gendecl_for_typealias(type_alias, ctx, log).ok();
             }
 
             Order::Leave => {}
@@ -467,10 +441,7 @@ fn visit_node_forward_decls(
                 struct_def.name =
                     intern_type_name(Ast2HirCtx::join_path(&ctx.current_scope, &struct_def.name));
 
-                if let Ok(struct_def) = ast_structdef2hir(struct_def, ctx, log) {
-                    let defintion = TypeDefinition::StructDef(struct_def);
-                    ctx.symbol_tab.add_type(defintion, &ctx.store);
-                }
+                gendecl_for_structdef(struct_def, ctx, log).ok();
             }
 
             Order::Leave => {}
@@ -481,10 +452,7 @@ fn visit_node_forward_decls(
                 enum_def.name =
                     intern_type_name(Ast2HirCtx::join_path(&ctx.current_scope, &enum_def.name));
 
-                if let Ok(enum_def) = ast_enumdef2hir(enum_def, ctx, log) {
-                    let defintion = TypeDefinition::EnumDef(enum_def);
-                    ctx.symbol_tab.add_type(defintion, &ctx.store);
-                }
+                gendecl_for_enumdef(enum_def, ctx, log).ok();
             }
 
             Order::Leave => {}
@@ -504,10 +472,7 @@ fn visit_node_forward_decls(
                 function.name =
                     intern_function_name(Ast2HirCtx::join_path(&ctx.current_scope, &function.name));
 
-                if let Ok(function) = ast_function2hir(function, ctx, log) {
-                    let defintion = SymbolId::Function(function);
-                    ctx.symbol_tab.add_symbol(defintion, &ctx.store);
-                }
+                gendecl_for_function(function, ctx, log).ok();
             }
 
             Order::Leave => {}
@@ -518,10 +483,7 @@ fn visit_node_forward_decls(
                 variable.name =
                     intern_variable_name(Ast2HirCtx::join_path(&ctx.current_scope, &variable.name));
 
-                if let Ok(variable) = ast_globalvar2hir(variable, ctx, log) {
-                    let defintion = SymbolId::GlobalVariable(variable);
-                    ctx.symbol_tab.add_symbol(defintion, &ctx.store);
-                }
+                gendecl_for_globalvar(variable, ctx, log).ok();
             }
 
             Order::Leave => {}
@@ -534,5 +496,5 @@ pub(crate) fn generate_forward_declarations<T: ParseTreeIterMut>(
     ctx: &mut Ast2HirCtx,
     log: &CompilerLog,
 ) {
-    node.depth_first_iter_mut(&mut |order, node| visit_node_forward_decls(order, node, ctx, log));
+    node.depth_first_iter_mut(&mut |order, node| gendecl_visit_node(order, node, ctx, log));
 }

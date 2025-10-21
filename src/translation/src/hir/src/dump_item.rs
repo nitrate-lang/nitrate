@@ -77,8 +77,10 @@ impl Dump for GlobalVariableId {
         write!(o, ": ")?;
         ctx.store[&this.ty].dump(ctx, o)?;
 
-        write!(o, " = ")?;
-        ctx.store[&this.initializer].borrow().dump(ctx, o)?;
+        if let Some(initializer) = &this.init {
+            write!(o, " = ")?;
+            ctx.store[initializer].borrow().dump(ctx, o)?;
+        }
 
         write!(o, ";")
     }

@@ -23,7 +23,7 @@ pub struct GlobalVariable {
     pub is_mutable: bool,
     pub name: IString,
     pub ty: TypeId,
-    pub initializer: ValueId,
+    pub init: Option<ValueId>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]

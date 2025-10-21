@@ -18,7 +18,7 @@ pub trait HirItemVisitor<T> {
         is_mutable: bool,
         name: &IString,
         ty: &Type,
-        init: &Value,
+        init: Option<&Value>,
     ) -> T;
 
     fn visit_function(
@@ -58,14 +58,25 @@ pub trait HirItemVisitor<T> {
 
             Item::GlobalVariable(global_variable_id) => {
                 let gv = store[global_variable_id].borrow();
-                self.visit_global_variable(
-                    gv.visibility,
-                    &gv.attributes,
-                    gv.is_mutable,
-                    &gv.name,
-                    &store[&gv.ty],
-                    &store[&gv.initializer].borrow(),
-                )
+                match &gv.init {
+                    Some(init) => self.visit_global_variable(
+                        gv.visibility,
+                        &gv.attributes,
+                        gv.is_mutable,
+                        &gv.name,
+                        &store[&gv.ty],
+                        Some(&store[init].borrow()),
+                    ),
+
+                    None => self.visit_global_variable(
+                        gv.visibility,
+                        &gv.attributes,
+                        gv.is_mutable,
+                        &gv.name,
+                        &store[&gv.ty],
+                        None,
+                    ),
+                }
             }
 
             Item::Function(function_id) => {
