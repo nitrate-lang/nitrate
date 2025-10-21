@@ -123,7 +123,7 @@ impl ParseTreeIter for InferType {
 
 impl ParseTreeIter for TypePath {
     fn depth_first_iter(&self, f: &mut dyn FnMut(Order, RefNode)) {
-        f(Order::Enter, RefNode::TypeTypeName(self));
+        f(Order::Enter, RefNode::TypePath(self));
 
         for segment in &self.segments {
             let _ = segment.name;
@@ -137,7 +137,7 @@ impl ParseTreeIter for TypePath {
 
         let _ = self.resolved_path;
 
-        f(Order::Leave, RefNode::TypeTypeName(self));
+        f(Order::Leave, RefNode::TypePath(self));
     }
 }
 

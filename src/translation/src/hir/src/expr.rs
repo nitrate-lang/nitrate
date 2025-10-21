@@ -397,7 +397,13 @@ pub enum Value {
 
     Call {
         callee: ValueId,
-        arguments: Box<Vec<ValueId>>,
+        arguments: ThinVec<(IString, ValueId)>,
+    },
+
+    MethodCall {
+        object: ValueId,
+        method: IString,
+        arguments: ThinVec<(IString, ValueId)>,
     },
 
     Symbol {

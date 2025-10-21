@@ -243,7 +243,7 @@ impl ParseTreeIterMut for Impl {
 
 impl ParseTreeIterMut for FuncParam {
     fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
-        f(Order::Enter, RefNodeMut::ItemFunctionParameter(self));
+        f(Order::Enter, RefNodeMut::ItemFuncParam(self));
 
         let _ = self.mutability;
         let _ = self.name;
@@ -258,7 +258,7 @@ impl ParseTreeIterMut for FuncParam {
             default.depth_first_iter_mut(f);
         }
 
-        f(Order::Leave, RefNodeMut::ItemFunctionParameter(self));
+        f(Order::Leave, RefNodeMut::ItemFuncParam(self));
     }
 }
 

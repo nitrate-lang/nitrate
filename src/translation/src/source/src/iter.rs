@@ -77,7 +77,7 @@ pub enum RefNode<'a> {
     TypeFloat32,
     TypeFloat64,
     TypeInferType,
-    TypeTypeName(&'a TypePath),
+    TypePath(&'a TypePath),
     TypeRefinementType(&'a RefinementType),
     TypeTupleType(&'a TupleType),
     TypeArrayType(&'a ArrayType),
@@ -91,7 +91,7 @@ pub enum RefNode<'a> {
 
     ItemSyntaxError,
     ItemModule(&'a Module),
-    ItemItemPath(&'a ItemPath),
+    ItemPath(&'a ItemPath),
     ItemImport(&'a Import),
     ItemTypeParams(&'a Generics),
     ItemTypeAlias(&'a TypeAlias),

@@ -421,11 +421,6 @@ impl HirEvaluate for Value {
                 }
             }
 
-            Value::Symbol { path: _ } => {
-                // TODO: evaluate symbol expressions
-                unimplemented!()
-            }
-
             Value::FieldAccess { expr, field } => match ctx.store[expr].borrow().evaluate(ctx)? {
                 Value::StructObject { fields, .. } => {
                     if let Some((_, field_value)) = fields.iter().find(|x| &x.0 == field) {
@@ -599,6 +594,20 @@ impl HirEvaluate for Value {
                 arguments: _,
             } => {
                 // TODO: evaluate function call expressions
+                unimplemented!()
+            }
+
+            Value::MethodCall {
+                object: _,
+                method: _,
+                arguments: _,
+            } => {
+                // TODO: evaluate method call expressions
+                unimplemented!()
+            }
+
+            Value::Symbol { path: _ } => {
+                // TODO: evaluate symbol expressions
                 unimplemented!()
             }
         }

@@ -96,7 +96,7 @@ pub enum RefNodeMut<'a> {
     ItemEnum(&'a mut Enum),
     ItemTrait(&'a mut Trait),
     ItemImpl(&'a mut Impl),
-    ItemFunctionParameter(&'a mut FuncParam),
+    ItemFuncParam(&'a mut FuncParam),
     ItemFunction(&'a mut Function),
     ItemVariable(&'a mut Variable),
 }

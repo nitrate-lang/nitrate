@@ -1161,7 +1161,7 @@ impl Ast2Hir for ast::Await {
     }
 }
 
-fn construct_call(
+fn _construct_call(
     ctx: &mut Ast2HirCtx,
     log: &CompilerLog,
     function_type: &FunctionType,
@@ -1266,32 +1266,26 @@ impl Ast2Hir for ast::FunctionCall {
 
     fn ast2hir(self, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
         let callee = self.callee.ast2hir(ctx, log)?;
-        let callee_type = get_type(
-            &callee,
-            &TypeInferenceCtx {
-                store: &ctx.store,
-                symbol_tab: &ctx.symbol_tab,
-            },
-        )
-        .map_err(|_| {
-            log.report(&HirErr::TypeInferenceError);
-        })?;
+        let mut arguments = Vec::with_capacity(self.arguments.len());
+        let mut pos_n = 0_u32;
 
-        if !callee_type.is_function() {
-            log.report(&HirErr::CalleeIsNotFunctionType);
-            return Err(());
+        for CallArgument { name, value } in self.arguments {
+            let name = match name {
+                Some(n) => IString::from(n.to_string()),
+                None => {
+                    let pos_name = format!("${}", pos_n);
+                    pos_n += 1;
+                    IString::from(pos_name)
+                }
+            };
+
+            let value = value.ast2hir(ctx, log)?.into_id(&ctx.store);
+            arguments.push((name, value));
         }
-
-        let function_type = match callee_type {
-            Type::Function { function_type } => ctx[&function_type].to_owned(),
-            _ => unreachable!(),
-        };
-
-        let call_arguments = construct_call(ctx, log, &function_type, self.arguments)?;
 
         Ok(Value::Call {
             callee: callee.into_id(&ctx.store),
-            arguments: call_arguments.into(),
+            arguments: arguments.into(),
         })
     }
 }
@@ -1300,26 +1294,29 @@ impl Ast2Hir for ast::MethodCall {
     type Hir = Value;
 
     fn ast2hir(self, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
-        let object = self.object.ast2hir(ctx, log)?;
-        let _object_type = get_type(
-            &object,
-            &TypeInferenceCtx {
-                store: &ctx.store,
-                symbol_tab: &ctx.symbol_tab,
-            },
-        )
-        .map_err(|_| {
-            log.report(&HirErr::TypeInferenceError);
-        })?;
+        let callee = self.object.ast2hir(ctx, log)?;
 
-        unimplemented!()
+        let mut arguments = Vec::with_capacity(self.arguments.len());
+        let mut pos_n = 0_u32;
 
-        // let call_arguments = construct_call(ctx, log, &function_type, self.arguments)?;
+        for CallArgument { name, value } in self.arguments {
+            let name = match name {
+                Some(n) => IString::from(n.to_string()),
+                None => {
+                    let pos_name = format!("${}", pos_n);
+                    pos_n += 1;
+                    IString::from(pos_name)
+                }
+            };
 
-        // Ok(Value::Call {
-        //     callee: callee.into_id(&ctx.store),
-        //     arguments: call_arguments.into(),
-        // })
+            let value = value.ast2hir(ctx, log)?.into_id(&ctx.store);
+            arguments.push((name, value));
+        }
+
+        Ok(Value::Call {
+            callee: callee.into_id(&ctx.store),
+            arguments: arguments.into(),
+        })
     }
 }
 

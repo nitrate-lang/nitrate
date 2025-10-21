@@ -1,164 +1,557 @@
-use crate::{context::Ast2HirCtx, lower::Ast2Hir};
+use std::collections::BTreeSet;
+
+use crate::{context::Ast2HirCtx, diagnosis::HirErr, lower::Ast2Hir};
+use interned_string::IString;
 use nitrate_diagnosis::CompilerLog;
 use nitrate_hir::prelude::*;
-use nitrate_source::{Order, ParseTreeIter, RefNode, ast};
+use nitrate_source::{
+    Order, ParseTreeIter, ParseTreeIterMut, RefNodeMut, ast,
+    tag::{intern_function_name, intern_type_name, intern_variable_name},
+};
 
-fn visit_node(node: RefNode, ctx: &mut Ast2HirCtx, log: &CompilerLog) {
+fn ast_typealias2hir(
+    type_alias: &ast::TypeAlias,
+    ctx: &mut Ast2HirCtx,
+    log: &CompilerLog,
+) -> Result<TypeAliasDefId, ()> {
+    let visibility = match type_alias.visibility {
+        Some(ast::Visibility::Public) => Visibility::Pub,
+        Some(ast::Visibility::Protected) => Visibility::Pro,
+        Some(ast::Visibility::Private) | None => Visibility::Sec,
+    };
+
+    if let Some(ast_attributes) = &type_alias.attributes {
+        for _attr in ast_attributes {
+            log.report(&HirErr::UnrecognizedTypeAliasAttribute);
+        }
+    }
+
+    let name = type_alias.name.to_string().into();
+
+    if type_alias.generics.is_some() {
+        // TODO: support generic type aliases
+        log.report(&HirErr::UnimplementedFeature("generic type aliases".into()));
+    }
+
+    let type_id = match &type_alias.alias_type {
+        Some(ty) => ty.to_owned().ast2hir(ctx, log)?.into_id(&ctx.store),
+        None => {
+            log.report(&HirErr::TypeAliasMustHaveType);
+            return Err(());
+        }
+    };
+
+    let type_alias_id = TypeAliasDef {
+        visibility,
+        name,
+        type_id,
+    }
+    .into_id(&ctx.store);
+
+    let definition = TypeDefinition::TypeAliasDef(type_alias_id.clone());
+    ctx.symbol_tab.add_type(definition, &ctx.store);
+
+    Ok(type_alias_id)
+}
+
+fn ast_structdef2hir(
+    struct_def: &ast::Struct,
+    ctx: &mut Ast2HirCtx,
+    log: &CompilerLog,
+) -> Result<StructDefId, ()> {
+    let visibility = match struct_def.visibility {
+        Some(ast::Visibility::Public) => Visibility::Pub,
+        Some(ast::Visibility::Protected) => Visibility::Pro,
+        Some(ast::Visibility::Private) | None => Visibility::Sec,
+    };
+
+    let attributes = BTreeSet::new();
+    if let Some(ast_attributes) = &struct_def.attributes {
+        for _attr in ast_attributes {
+            log.report(&HirErr::UnrecognizedStructAttribute);
+        }
+    }
+
+    let name = struct_def.name.to_string().into();
+
+    if struct_def.generics.is_some() {
+        // TODO: support generic structs
+        log.report(&HirErr::UnimplementedFeature("generic structs".into()));
+    }
+
+    let mut field_extras = Vec::new();
+    let mut fields = Vec::new();
+
+    for field in &struct_def.fields {
+        let field_visibility = match field.visibility {
+            Some(ast::Visibility::Public) => Visibility::Pub,
+            Some(ast::Visibility::Protected) => Visibility::Pro,
+            Some(ast::Visibility::Private) | None => Visibility::Sec,
+        };
+
+        let field_attributes = BTreeSet::new();
+        if let Some(ast_attributes) = &field.attributes {
+            for _attr in ast_attributes {
+                log.report(&HirErr::UnrecognizedStructFieldAttribute);
+            }
+        }
+
+        let field_name = IString::from(field.name.to_string());
+        let field_type = field.ty.to_owned().ast2hir(ctx, log)?.into_id(&ctx.store);
+
+        let field_default = match field.default_value.to_owned() {
+            Some(expr) => Some(expr.ast2hir(ctx, log)?.into_id(&ctx.store)),
+            None => None,
+        };
+
+        let struct_field = StructField {
+            attributes: field_attributes,
+            name: field_name,
+            ty: field_type,
+        };
+
+        field_extras.push((field_visibility, field_default));
+        fields.push(struct_field);
+    }
+
+    let struct_id = StructType { attributes, fields }.into_id(&ctx.store);
+
+    let struct_def_id = StructDef {
+        visibility,
+        name,
+        field_extras,
+        struct_id,
+    }
+    .into_id(&ctx.store);
+
+    let definition = TypeDefinition::StructDef(struct_def_id.clone());
+    ctx.symbol_tab.add_type(definition, &ctx.store);
+
+    Ok(struct_def_id)
+}
+
+fn ast_enumdef2hir(
+    enum_def: &ast::Enum,
+    ctx: &mut Ast2HirCtx,
+    log: &CompilerLog,
+) -> Result<EnumDefId, ()> {
+    let visibility = match enum_def.visibility {
+        Some(ast::Visibility::Public) => Visibility::Pub,
+        Some(ast::Visibility::Protected) => Visibility::Pro,
+        Some(ast::Visibility::Private) | None => Visibility::Sec,
+    };
+
+    let attributes = BTreeSet::new();
+    if let Some(ast_attributes) = &enum_def.attributes {
+        for _attr in ast_attributes {
+            log.report(&HirErr::UnrecognizedEnumAttribute);
+        }
+    }
+
+    let name = enum_def.name.to_string().into();
+
+    if enum_def.generics.is_some() {
+        // TODO: support generic enums
+        log.report(&HirErr::UnimplementedFeature("generic enums".into()));
+    }
+
+    let mut variants = Vec::new();
+    let mut variant_extras = Vec::new();
+
+    for variant in &enum_def.variants {
+        let variant_attributes = BTreeSet::new();
+        if let Some(ast_attributes) = &variant.attributes {
+            for _attr in ast_attributes {
+                log.report(&HirErr::UnrecognizedEnumVariantAttribute);
+            }
+        }
+
+        let variant_name = IString::from(variant.name.to_string());
+
+        let variant_type = match variant.ty.to_owned() {
+            Some(ty) => ty.ast2hir(ctx, log)?.into_id(&ctx.store),
+            None => Type::Unit.into_id(&ctx.store),
+        };
+
+        let field_default = match variant.default_value.to_owned() {
+            Some(expr) => Some(expr.ast2hir(ctx, log)?.into_id(&ctx.store)),
+            None => None,
+        };
+
+        let variant = EnumVariant {
+            attributes: variant_attributes,
+            name: variant_name,
+            ty: variant_type,
+        };
+
+        variants.push(variant);
+        variant_extras.push(field_default);
+    }
+
+    let enum_id = EnumType {
+        attributes,
+        variants,
+    }
+    .into_id(&ctx.store);
+
+    let enum_def_id = EnumDef {
+        visibility,
+        name,
+        variant_extras,
+        enum_id,
+    }
+    .into_id(&ctx.store);
+
+    let definition = TypeDefinition::EnumDef(enum_def_id.clone());
+    ctx.symbol_tab.add_type(definition, &ctx.store);
+
+    Ok(enum_def_id)
+}
+
+fn ast_variable2hir(
+    var: &ast::Variable,
+    ctx: &mut Ast2HirCtx,
+    log: &CompilerLog,
+) -> Result<GlobalVariableId, ()> {
+    let visibility = match var.visibility {
+        Some(ast::Visibility::Public) => Visibility::Pub,
+        Some(ast::Visibility::Protected) => Visibility::Pro,
+        Some(ast::Visibility::Private) | None => Visibility::Sec,
+    };
+
+    match var.kind {
+        ast::VariableKind::Const | ast::VariableKind::Static => {}
+        ast::VariableKind::Let | ast::VariableKind::Var => {
+            log.report(&HirErr::GlobalVariableMustBeConstOrStatic);
+            return Err(());
+        }
+    }
+
+    let attributes = BTreeSet::new();
+    if let Some(ast_attributes) = &var.attributes {
+        for _attr in ast_attributes {
+            log.report(&HirErr::UnrecognizedGlobalVariableAttribute);
+        }
+    }
+
+    let is_mutable = match var.mutability {
+        Some(ast::Mutability::Mut) => true,
+        Some(ast::Mutability::Const) | None => false,
+    };
+
+    let name = var.name.to_string().into();
+
+    let ty = match var.ty.to_owned() {
+        None => ctx.create_inference_placeholder().into_id(&ctx.store),
+        Some(t) => {
+            let ty_hir = t.ast2hir(ctx, log)?.into_id(&ctx.store);
+            ty_hir
+        }
+    };
+
+    let initializer = match var.initializer.to_owned() {
+        Some(expr) => {
+            let expr_hir = expr.ast2hir(ctx, log)?.into_id(&ctx.store);
+            expr_hir
+        }
+
+        None => {
+            log.report(&HirErr::GlobalVariableMustHaveInitializer);
+            return Err(());
+        }
+    };
+
+    let global_variable_id = GlobalVariable {
+        visibility,
+        attributes,
+        is_mutable,
+        name,
+        ty,
+        initializer,
+    }
+    .into_id(&ctx.store);
+
+    let variable = SymbolId::GlobalVariable(global_variable_id.clone());
+    ctx.symbol_tab.add_symbol(variable, &ctx.store);
+
+    Ok(global_variable_id)
+}
+
+fn ast_param2hir(
+    param: &ast::FuncParam,
+    ctx: &mut Ast2HirCtx,
+    log: &CompilerLog,
+) -> Result<Parameter, ()> {
+    let attributes = BTreeSet::new();
+    if let Some(ast_attributes) = &param.attributes {
+        for _attr in ast_attributes {
+            log.report(&HirErr::UnrecognizedFunctionParameterAttribute);
+        }
+    }
+
+    let is_mutable = match param.mutability {
+        Some(ast::Mutability::Mut) => true,
+        Some(ast::Mutability::Const) | None => false,
+    };
+
+    let name = IString::from(param.name.to_string());
+    let ty = param.ty.to_owned().ast2hir(ctx, log)?.into_id(&ctx.store);
+
+    let default_value = match param.default_value.to_owned() {
+        Some(expr) => Some(expr.ast2hir(ctx, log)?.into_id(&ctx.store)),
+        None => None,
+    };
+
+    Ok(Parameter {
+        attributes,
+        is_mutable,
+        name,
+        ty,
+        default_value,
+    })
+}
+
+fn ast_function2hir(
+    function: &ast::Function,
+    ctx: &mut Ast2HirCtx,
+    log: &CompilerLog,
+) -> Result<FunctionId, ()> {
+    let visibility = match function.visibility {
+        Some(ast::Visibility::Public) => Visibility::Pub,
+        Some(ast::Visibility::Protected) => Visibility::Pro,
+        Some(ast::Visibility::Private) | None => Visibility::Sec,
+    };
+
+    let attributes = BTreeSet::new();
+    if let Some(ast_attributes) = &function.attributes {
+        for _attr in ast_attributes {
+            log.report(&HirErr::UnrecognizedFunctionAttribute);
+        }
+    }
+
+    let name = function.name.to_string().into();
+
+    if function.generics.is_some() {
+        // TODO: support generic functions
+        log.report(&HirErr::UnimplementedFeature("generic functions".into()));
+    }
+
+    let mut parameters = Vec::with_capacity(function.parameters.len());
+    for param in &function.parameters {
+        let param_hir = ast_param2hir(param, ctx, log)?;
+        parameters.push(param_hir.into_id(&ctx.store));
+    }
+
+    let return_type = match &function.return_type {
+        Some(ty) => ty.to_owned().ast2hir(ctx, log)?.into_id(&ctx.store),
+        None => Type::Unit.into_id(&ctx.store),
+    };
+
+    let body = match &function.definition {
+        Some(block) => Some(block.to_owned().ast2hir(ctx, log)?.into_id(&ctx.store)),
+        None => None,
+    };
+
+    let function_id = Function {
+        visibility,
+        attributes,
+        name,
+        params: parameters,
+        return_type,
+        body,
+    }
+    .into_id(&ctx.store);
+
+    let function = SymbolId::Function(function_id.clone());
+    ctx.symbol_tab.add_symbol(function, &ctx.store);
+
+    Ok(function_id)
+}
+
+fn visit_node(order: Order, node: RefNodeMut, ctx: &mut Ast2HirCtx, log: &CompilerLog) {
     match node {
-        RefNode::ExprSyntaxError
-        | RefNode::ExprParentheses(_)
-        | RefNode::ExprBooleanLit(_)
-        | RefNode::ExprIntegerLit(_)
-        | RefNode::ExprFloatLit(_)
-        | RefNode::ExprStringLit(_)
-        | RefNode::ExprBStringLit(_)
-        | RefNode::ExprTypeInfo(_)
-        | RefNode::ExprList(_)
-        | RefNode::ExprTuple(_)
-        | RefNode::ExprStructInit(_)
-        | RefNode::ExprUnaryExpr(_)
-        | RefNode::ExprBinExpr(_)
-        | RefNode::ExprCast(_)
-        | RefNode::ExprBlockItem(_)
-        | RefNode::ExprBlock(_)
-        | RefNode::ExprAttributeList(_)
-        | RefNode::ExprClosure(_)
-        | RefNode::ExprPathTypeArgument(_)
-        | RefNode::ExprPath(_)
-        | RefNode::ExprIndexAccess(_)
-        | RefNode::ExprIf(_)
-        | RefNode::ExprWhile(_)
-        | RefNode::ExprMatchCase(_)
-        | RefNode::ExprMatch(_)
-        | RefNode::ExprBreak(_)
-        | RefNode::ExprContinue(_)
-        | RefNode::ExprReturn(_)
-        | RefNode::ExprFor(_)
-        | RefNode::ExprAwait(_)
-        | RefNode::ExprCallArgument(_)
-        | RefNode::ExprFunctionCall(_)
-        | RefNode::ExprMethodCall(_)
-        | RefNode::TypeSyntaxError
-        | RefNode::TypeBool
-        | RefNode::TypeUInt8
-        | RefNode::TypeUInt16
-        | RefNode::TypeUInt32
-        | RefNode::TypeUInt64
-        | RefNode::TypeUInt128
-        | RefNode::TypeUSize
-        | RefNode::TypeInt8
-        | RefNode::TypeInt16
-        | RefNode::TypeInt32
-        | RefNode::TypeInt64
-        | RefNode::TypeInt128
-        | RefNode::TypeFloat32
-        | RefNode::TypeFloat64
-        | RefNode::TypeInferType
-        | RefNode::TypeTypeName(_)
-        | RefNode::TypeRefinementType(_)
-        | RefNode::TypeTupleType(_)
-        | RefNode::TypeArrayType(_)
-        | RefNode::TypeSliceType(_)
-        | RefNode::TypeFunctionType(_)
-        | RefNode::TypeReferenceType(_)
-        | RefNode::TypeOpaqueType(_)
-        | RefNode::TypeLatentType(_)
-        | RefNode::TypeLifetime(_)
-        | RefNode::TypeParentheses(_)
-        | RefNode::ItemSyntaxError
-        | RefNode::ItemItemPath(_)
-        | RefNode::ItemTypeParams(_)
-        | RefNode::ItemImport(_)
-        | RefNode::ItemStructField(_)
-        | RefNode::ItemEnumVariant(_)
-        | RefNode::ItemImpl(_)
-        | RefNode::ItemFuncParam(_)
-        | RefNode::ItemModule(_) => {}
+        RefNodeMut::ExprSyntaxError
+        | RefNodeMut::ExprParentheses(_)
+        | RefNodeMut::ExprBooleanLit(_)
+        | RefNodeMut::ExprIntegerLit(_)
+        | RefNodeMut::ExprFloatLit(_)
+        | RefNodeMut::ExprStringLit(_)
+        | RefNodeMut::ExprBStringLit(_)
+        | RefNodeMut::ExprTypeInfo(_)
+        | RefNodeMut::ExprList(_)
+        | RefNodeMut::ExprTuple(_)
+        | RefNodeMut::ExprStructInit(_)
+        | RefNodeMut::ExprUnaryExpr(_)
+        | RefNodeMut::ExprBinExpr(_)
+        | RefNodeMut::ExprCast(_)
+        | RefNodeMut::ExprBlockItem(_)
+        | RefNodeMut::ExprBlock(_)
+        | RefNodeMut::ExprAttributeList(_)
+        | RefNodeMut::ExprClosure(_)
+        | RefNodeMut::ExprPathTypeArgument(_)
+        | RefNodeMut::ExprPath(_)
+        | RefNodeMut::ExprIndexAccess(_)
+        | RefNodeMut::ExprIf(_)
+        | RefNodeMut::ExprWhile(_)
+        | RefNodeMut::ExprMatchCase(_)
+        | RefNodeMut::ExprMatch(_)
+        | RefNodeMut::ExprBreak(_)
+        | RefNodeMut::ExprContinue(_)
+        | RefNodeMut::ExprReturn(_)
+        | RefNodeMut::ExprFor(_)
+        | RefNodeMut::ExprAwait(_)
+        | RefNodeMut::ExprCallArgument(_)
+        | RefNodeMut::ExprFunctionCall(_)
+        | RefNodeMut::ExprMethodCall(_)
+        | RefNodeMut::TypeSyntaxError
+        | RefNodeMut::TypeBool
+        | RefNodeMut::TypeUInt8
+        | RefNodeMut::TypeUInt16
+        | RefNodeMut::TypeUInt32
+        | RefNodeMut::TypeUInt64
+        | RefNodeMut::TypeUInt128
+        | RefNodeMut::TypeUSize
+        | RefNodeMut::TypeInt8
+        | RefNodeMut::TypeInt16
+        | RefNodeMut::TypeInt32
+        | RefNodeMut::TypeInt64
+        | RefNodeMut::TypeInt128
+        | RefNodeMut::TypeFloat32
+        | RefNodeMut::TypeFloat64
+        | RefNodeMut::TypeInferType
+        | RefNodeMut::TypePath(_)
+        | RefNodeMut::TypeRefinementType(_)
+        | RefNodeMut::TypeTupleType(_)
+        | RefNodeMut::TypeArrayType(_)
+        | RefNodeMut::TypeSliceType(_)
+        | RefNodeMut::TypeFunctionType(_)
+        | RefNodeMut::TypeReferenceType(_)
+        | RefNodeMut::TypeOpaqueType(_)
+        | RefNodeMut::TypeLatentType(_)
+        | RefNodeMut::TypeLifetime(_)
+        | RefNodeMut::TypeParentheses(_)
+        | RefNodeMut::ItemSyntaxError
+        | RefNodeMut::ItemPath(_)
+        | RefNodeMut::ItemTypeParams(_)
+        | RefNodeMut::ItemImport(_)
+        | RefNodeMut::ItemStructField(_)
+        | RefNodeMut::ItemEnumVariant(_)
+        | RefNodeMut::ItemImpl(_)
+        | RefNodeMut::ItemFuncParam(_) => {}
 
-        RefNode::ItemTypeAlias(type_alias) => {
-            if let Ok(type_alias) = type_alias.to_owned().ast2hir(ctx, log) {
-                let defintion = TypeDefinition::TypeAliasDef(type_alias);
-                ctx.symbol_tab.add_type(defintion, &ctx.store);
+        RefNodeMut::ItemModule(module) => match order {
+            Order::Enter => match &module.name {
+                Some(name) => ctx.current_scope.push(name.to_string()),
+                None => ctx.current_scope.push(String::default()),
+            },
+
+            Order::Leave => {
+                ctx.current_scope.pop();
             }
-        }
+        },
 
-        RefNode::ItemStruct(struct_def) => {
-            if let Ok(struct_def) = struct_def.to_owned().ast2hir(ctx, log) {
-                let defintion = TypeDefinition::StructDef(struct_def);
-                ctx.symbol_tab.add_type(defintion, &ctx.store);
+        RefNodeMut::ItemTypeAlias(type_alias) => match order {
+            Order::Enter => {
+                type_alias.name =
+                    intern_type_name(Ast2HirCtx::join_path(&ctx.current_scope, &type_alias.name));
+
+                if let Ok(type_alias) = ast_typealias2hir(type_alias, ctx, log) {
+                    let defintion = TypeDefinition::TypeAliasDef(type_alias);
+                    ctx.symbol_tab.add_type(defintion, &ctx.store);
+                }
             }
-        }
 
-        RefNode::ItemEnum(enum_def) => {
-            if let Ok(enum_def) = enum_def.to_owned().ast2hir(ctx, log) {
-                let defintion = TypeDefinition::EnumDef(enum_def);
-                ctx.symbol_tab.add_type(defintion, &ctx.store);
+            Order::Leave => {}
+        },
+
+        RefNodeMut::ItemStruct(struct_def) => match order {
+            Order::Enter => {
+                struct_def.name =
+                    intern_type_name(Ast2HirCtx::join_path(&ctx.current_scope, &struct_def.name));
+
+                if let Ok(struct_def) = ast_structdef2hir(struct_def, ctx, log) {
+                    let defintion = TypeDefinition::StructDef(struct_def);
+                    ctx.symbol_tab.add_type(defintion, &ctx.store);
+                }
             }
-        }
 
-        RefNode::ItemTrait(_) => {
-            // TODO: implement
-            println!("scope = {:?}", ctx.current_scope);
-        }
+            Order::Leave => {}
+        },
 
-        RefNode::ItemFunction(function) => {
-            if let Ok(function) = function.to_owned().ast2hir(ctx, log) {
-                let defintion = SymbolId::Function(function);
-                ctx.symbol_tab.add_symbol(defintion, &ctx.store);
+        RefNodeMut::ItemEnum(enum_def) => match order {
+            Order::Enter => {
+                enum_def.name =
+                    intern_type_name(Ast2HirCtx::join_path(&ctx.current_scope, &enum_def.name));
+
+                if let Ok(enum_def) = ast_enumdef2hir(enum_def, ctx, log) {
+                    let defintion = TypeDefinition::EnumDef(enum_def);
+                    ctx.symbol_tab.add_type(defintion, &ctx.store);
+                }
             }
-        }
 
-        RefNode::ItemVariable(_variable) => {
-            // TODO: implement. is it local or global?
-            println!("scope = {:?}", ctx.current_scope);
-        }
+            Order::Leave => {}
+        },
+
+        RefNodeMut::ItemTrait(_) => match order {
+            Order::Enter => {
+                // TODO: implement
+                println!("scope = {:?}", ctx.current_scope);
+            }
+
+            Order::Leave => {}
+        },
+
+        RefNodeMut::ItemFunction(function) => match order {
+            Order::Enter => {
+                function.name =
+                    intern_function_name(Ast2HirCtx::join_path(&ctx.current_scope, &function.name));
+
+                if let Ok(function) = ast_function2hir(function, ctx, log) {
+                    let defintion = SymbolId::Function(function);
+                    ctx.symbol_tab.add_symbol(defintion, &ctx.store);
+                }
+            }
+
+            Order::Leave => {}
+        },
+
+        RefNodeMut::ItemVariable(variable) => match order {
+            Order::Enter => {
+                variable.name =
+                    intern_variable_name(Ast2HirCtx::join_path(&ctx.current_scope, &variable.name));
+
+                // TODO: implement. is it local or global?
+                println!("scope = {:?}", ctx.current_scope);
+            }
+
+            Order::Leave => {}
+        },
     }
 }
 
 pub fn ast_mod2hir(
-    module: ast::Module,
+    mut module: ast::Module,
     ctx: &mut Ast2HirCtx,
     log: &CompilerLog,
 ) -> Result<Module, ()> {
-    module.depth_first_iter(&mut |order, node| match order {
-        Order::Enter => {
-            if let RefNode::ItemModule(module) = node {
-                if let Some(name) = &module.name {
-                    ctx.current_scope.push(name.to_string());
-                } else {
-                    ctx.current_scope.push("".to_string());
-                }
-            } else if let RefNode::ItemFunction(function) = node {
-                ctx.current_scope.push(function.name.to_string());
-            }
-
-            visit_node(node, ctx, log);
-        }
-
-        Order::Leave => {
-            if let RefNode::ItemModule(_) | RefNode::ItemFunction(_) = node {
-                ctx.current_scope.pop();
-            }
-        }
-    });
-
+    module.depth_first_iter_mut(&mut |order, node| visit_node(order, node, ctx, log));
     module.ast2hir(ctx, log)
 }
 
-pub fn ast_expr2hir(expr: ast::Expr, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
-    expr.depth_first_iter(&mut |order, node| match order {
-        Order::Enter => visit_node(node, ctx, log),
-        Order::Leave => {}
-    });
-
+pub fn ast_expr2hir(
+    mut expr: ast::Expr,
+    ctx: &mut Ast2HirCtx,
+    log: &CompilerLog,
+) -> Result<Value, ()> {
+    expr.depth_first_iter_mut(&mut |order, node| visit_node(order, node, ctx, log));
     expr.ast2hir(ctx, log)
 }
 
-pub fn ast_type2hir(ty: ast::Type, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Type, ()> {
-    ty.depth_first_iter(&mut |order, node| match order {
-        Order::Enter => visit_node(node, ctx, log),
-        Order::Leave => {}
-    });
-
+pub fn ast_type2hir(
+    mut ty: ast::Type,
+    ctx: &mut Ast2HirCtx,
+    log: &CompilerLog,
+) -> Result<Type, ()> {
+    ty.depth_first_iter_mut(&mut |order, node| visit_node(order, node, ctx, log));
     ty.ast2hir(ctx, log)
 }

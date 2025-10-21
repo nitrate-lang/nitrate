@@ -43,7 +43,8 @@ pub trait HirValueVisitor<T> {
     fn visit_return(&mut self, value: &Value) -> T;
     fn visit_block(&mut self, safety: BlockSafety, elements: &[BlockElement]) -> T;
     fn visit_closure(&mut self, captures: &[SymbolId], callee: &Function) -> T;
-    fn visit_call(&mut self, callee: &Value, arguments: &[ValueId]) -> T;
+    fn visit_call(&mut self, callee: &Value, arguments: &[(IString, ValueId)]) -> T;
+    fn visit_method_call(&mut self, obj: &Value, name: &IString, args: &[(IString, ValueId)]) -> T;
     fn visit_symbol(&mut self, path: &IString) -> T;
 
     fn visit_value(&mut self, value: &Value, store: &Store) -> T {
@@ -150,6 +151,12 @@ pub trait HirValueVisitor<T> {
             Value::Call { callee, arguments } => {
                 self.visit_call(&store[callee].borrow(), arguments)
             }
+
+            Value::MethodCall {
+                object,
+                method,
+                arguments,
+            } => self.visit_method_call(&store[object].borrow(), method, arguments),
 
             Value::Symbol { path } => self.visit_symbol(path),
         }

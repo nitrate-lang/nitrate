@@ -188,8 +188,6 @@ impl Dump for Value {
                 write!(o, ")")
             }
 
-            Value::Symbol { path } => write!(o, "{}", path),
-
             Value::FieldAccess { expr, field } => {
                 write!(o, "(")?;
                 ctx.store[expr].borrow().dump(ctx, o)?;
@@ -328,14 +326,36 @@ impl Dump for Value {
             Value::Call { callee, arguments } => {
                 ctx.store[callee].borrow().dump(ctx, o)?;
                 write!(o, "(")?;
-                for (i, arg) in arguments.iter().enumerate() {
+                for (i, (name, arg)) in arguments.iter().enumerate() {
                     if i != 0 {
                         write!(o, ", ")?;
                     }
+
+                    write!(o, "{}: ", name)?;
                     ctx.store[arg].borrow().dump(ctx, o)?;
                 }
                 write!(o, ")")
             }
+
+            Value::MethodCall {
+                object,
+                method,
+                arguments,
+            } => {
+                ctx.store[object].borrow().dump(ctx, o)?;
+                write!(o, ".{}(", method)?;
+                for (i, (name, arg)) in arguments.iter().enumerate() {
+                    if i != 0 {
+                        write!(o, ", ")?;
+                    }
+
+                    write!(o, "{}: ", name)?;
+                    ctx.store[arg].borrow().dump(ctx, o)?;
+                }
+                write!(o, ")")
+            }
+
+            Value::Symbol { path } => write!(o, "{}", path),
         }
     }
 }

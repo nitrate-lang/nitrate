@@ -250,6 +250,18 @@ pub fn get_type(value: &Value, ctx: &TypeInferenceCtx) -> Result<Type, TypeInfer
             Err(TypeInferenceError::CalleeIsNotFunctionType)
         }
 
+        Value::MethodCall {
+            object,
+            method: _,
+            arguments: _,
+        } => {
+            let object = &ctx.store[object].borrow();
+            let _object_type = get_type(object, ctx)?;
+
+            // TODO: Implement method resolution
+            unimplemented!()
+        }
+
         Value::Symbol { path } => match ctx.symbol_tab.get_symbol(path) {
             Some(SymbolId::GlobalVariable(glb)) => {
                 Ok(ctx.store[&ctx.store[glb].borrow().ty].clone())
