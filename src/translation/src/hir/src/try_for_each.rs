@@ -1,14 +1,71 @@
 use crate::prelude::*;
 use std::ops::ControlFlow;
 
-impl TypeIter<'_> {
-    pub fn try_for_each<T>(
+impl StructTypeIter<'_> {
+    pub(crate) fn try_for_each<T>(
         &self,
         store: &Store,
         vcb: &mut dyn FnMut(&Value) -> ControlFlow<T>,
         tcb: &mut dyn FnMut(&Type) -> ControlFlow<T>,
-    ) -> ControlFlow<T>
-where {
+    ) -> ControlFlow<T> {
+        for field in &self.node.fields {
+            store[&field.ty].iter().try_for_each(store, vcb, tcb)?;
+        }
+
+        ControlFlow::Continue(())
+    }
+}
+
+impl EnumTypeIter<'_> {
+    pub(crate) fn try_for_each<T>(
+        &self,
+        store: &Store,
+        vcb: &mut dyn FnMut(&Value) -> ControlFlow<T>,
+        tcb: &mut dyn FnMut(&Type) -> ControlFlow<T>,
+    ) -> ControlFlow<T> {
+        for variant in &self.node.variants {
+            store[&variant.ty].iter().try_for_each(store, vcb, tcb)?;
+        }
+
+        ControlFlow::Continue(())
+    }
+}
+
+impl FunctionTypeIter<'_> {
+    pub(crate) fn try_for_each<T>(
+        &self,
+        store: &Store,
+        vcb: &mut dyn FnMut(&Value) -> ControlFlow<T>,
+        tcb: &mut dyn FnMut(&Type) -> ControlFlow<T>,
+    ) -> ControlFlow<T> {
+        for param in &self.node.params {
+            let parameter = store[param].borrow();
+
+            store[&parameter.ty].iter().try_for_each(store, vcb, tcb)?;
+
+            if let Some(default_value) = &parameter.default_value {
+                store[default_value]
+                    .borrow()
+                    .iter()
+                    .try_for_each(store, vcb, tcb)?;
+            }
+        }
+
+        store[&self.node.return_type]
+            .iter()
+            .try_for_each(store, vcb, tcb)?;
+
+        ControlFlow::Continue(())
+    }
+}
+
+impl TypeIter<'_> {
+    pub(crate) fn try_for_each<T>(
+        &self,
+        store: &Store,
+        vcb: &mut dyn FnMut(&Value) -> ControlFlow<T>,
+        tcb: &mut dyn FnMut(&Type) -> ControlFlow<T>,
+    ) -> ControlFlow<T> {
         tcb(self.node)?;
 
         match self.node {
@@ -119,7 +176,7 @@ where {
 }
 
 impl BlockIter<'_> {
-    pub fn try_for_each<T>(
+    pub(crate) fn try_for_each<T>(
         &self,
         store: &Store,
         vcb: &mut dyn FnMut(&Value) -> ControlFlow<T>,
@@ -154,7 +211,7 @@ impl BlockIter<'_> {
 }
 
 impl ValueIter<'_> {
-    pub fn try_for_each<T>(
+    pub(crate) fn try_for_each<T>(
         &self,
         store: &Store,
         vcb: &mut dyn FnMut(&Value) -> ControlFlow<T>,
@@ -360,7 +417,7 @@ impl ValueIter<'_> {
 }
 
 impl FunctionIter<'_> {
-    pub fn try_for_each<T>(
+    pub(crate) fn try_for_each<T>(
         &self,
         store: &Store,
         vcb: &mut dyn FnMut(&Value) -> ControlFlow<T>,

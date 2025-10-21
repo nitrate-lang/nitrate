@@ -34,7 +34,6 @@ pub mod hir {
     pub use super::expr::*;
     pub use super::item::*;
     pub use super::iter::*;
-    pub use super::iter_ops::*;
     pub use super::literal_ops::*;
     pub use super::save::IntoStoreId;
     pub use super::ty::*;
