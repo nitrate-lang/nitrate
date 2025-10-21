@@ -7,9 +7,9 @@ use nitrate_source::{
         Break, Cast, Closure, Continue, ElseIf, Expr, ExprParentheses, ExprPath, ExprPathSegment,
         ExprSyntaxError, FieldAccess, Float32, Float64, FloatLit, ForEach, FuncParam, FunctionCall,
         If, IndexAccess, Int8, Int16, Int32, Int64, Int128, IntegerLit, List, LocalVariable,
-        LocalVariableKind, Mutability, Return, Safety, StringLit, Tuple, Type, TypeArgument,
-        TypeInfo, TypePath, TypePathSegment, UInt8, UInt16, UInt32, UInt64, UInt128, UnaryExpr,
-        UnaryExprOp, WhileLoop,
+        LocalVariableKind, MethodCall, Mutability, Return, Safety, StringLit, Tuple, Type,
+        TypeArgument, TypeInfo, TypePath, TypePathSegment, UInt8, UInt16, UInt32, UInt64, UInt128,
+        UnaryExpr, UnaryExprOp, WhileLoop,
     },
     tag::{
         ArgNameId, VariableNameId, intern_arg_name, intern_label_name, intern_parameter_name,
@@ -489,10 +489,23 @@ impl Parser<'_, '_> {
                             "".into()
                         });
 
-                        sofar = Expr::FieldAccess(Box::new(FieldAccess {
-                            object: sofar,
-                            field: member_name,
-                        }))
+                        if self.lexer.next_is(&Token::OpenParen) {
+                            let (positional, named) = self.parse_function_call_arguments();
+
+                            sofar = Expr::MethodCall(Box::new(MethodCall {
+                                object: sofar,
+                                method_name: member_name,
+                                positional,
+                                named,
+                            }));
+
+                            continue;
+                        } else {
+                            sofar = Expr::FieldAccess(Box::new(FieldAccess {
+                                object: sofar,
+                                field: member_name,
+                            }))
+                        }
                     }
 
                     Token::As => {
