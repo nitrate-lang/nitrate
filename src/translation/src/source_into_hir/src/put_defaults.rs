@@ -223,7 +223,7 @@ impl HirValueVisitor<()> for DefaultCallArguments<'_, '_> {
                 BlockElement::Local(local) => {
                     let local = &self.ctx[local].borrow();
                     self.visit_type(&self.ctx[&local.ty], &self.ctx.store);
-                    if let Some(init) = &local.initializer {
+                    if let Some(init) = &local.init {
                         let init = &self.ctx[init].borrow();
                         self.visit_value(init, &self.ctx.store);
                     }

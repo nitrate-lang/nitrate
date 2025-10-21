@@ -958,7 +958,7 @@ fn ast_localvar2hir(
         is_mutable,
         name,
         ty,
-        initializer,
+        init: initializer,
     })
 }
 

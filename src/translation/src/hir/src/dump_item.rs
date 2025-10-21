@@ -123,7 +123,7 @@ impl Dump for LocalVariableId {
         write!(o, ": ")?;
         ctx.store[&this.ty].dump(ctx, o)?;
 
-        if let Some(initializer) = &this.initializer {
+        if let Some(initializer) = &this.init {
             write!(o, " = ")?;
             ctx.store[initializer].borrow().dump(ctx, o)?;
         }

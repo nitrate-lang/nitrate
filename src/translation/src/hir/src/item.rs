@@ -43,7 +43,7 @@ pub struct LocalVariable {
     pub is_mutable: bool,
     pub name: IString,
     pub ty: TypeId,
-    pub initializer: Option<ValueId>,
+    pub init: Option<ValueId>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
