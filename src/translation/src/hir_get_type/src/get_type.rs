@@ -14,6 +14,7 @@ pub enum TypeInferenceError {
     TraitHasNoType,
     UnresolvedSymbol,
     StructObjectDoesNotHaveStructType,
+    EnumVariantDoesNotHaveEnumType,
 }
 
 pub struct TypeInferenceCtx<'a> {
@@ -78,20 +79,28 @@ pub fn get_type(value: &Value, ctx: &TypeInferenceCtx) -> Result<Type, TypeInfer
         },
 
         Value::EnumVariant {
-            enum_type,
+            enum_path,
             variant,
             value: _,
-        } => {
-            let found = ctx.store[enum_type]
-                .variants
-                .iter()
-                .find(|x| &x.name == variant);
+        } => match ctx.symbol_tab.get_type(enum_path) {
+            None => return Err(TypeInferenceError::UnresolvedSymbol),
 
-            match found {
-                Some(variant) => Ok(ctx.store[&variant.ty].clone()),
-                None => Err(TypeInferenceError::EnumVariantNotPresent),
+            Some(TypeDefinition::EnumDef(enum_def)) => {
+                let enum_type = ctx.store[enum_def].borrow().enum_id;
+                let found = ctx.store[&enum_type]
+                    .variants
+                    .iter()
+                    .find(|x| &x.name == variant);
+                match found {
+                    Some(variant) => Ok(ctx.store[&variant.ty].clone()),
+                    None => Err(TypeInferenceError::EnumVariantNotPresent),
+                }
             }
-        }
+
+            Some(TypeDefinition::StructDef(_)) | Some(TypeDefinition::TypeAliasDef(_)) => {
+                return Err(TypeInferenceError::EnumVariantDoesNotHaveEnumType);
+            }
+        },
 
         Value::Binary { left, op, right: _ } => match op {
             BinaryOp::Add

@@ -24,7 +24,7 @@ pub trait HirValueVisitor<T> {
     fn visit_inferred_integer(&mut self, value: u128) -> T;
     fn visit_inferred_float(&mut self, value: OrderedFloat<f64>) -> T;
     fn visit_struct_object(&mut self, struct_path: &IString, fields: &[(IString, ValueId)]) -> T;
-    fn visit_enum_variant(&mut self, ty: &EnumType, var: &IString, val: &Value) -> T;
+    fn visit_enum_variant(&mut self, enum_path: &IString, var: &IString, val: &Value) -> T;
     fn visit_binary(&mut self, left: &Value, op: &BinaryOp, right: &Value) -> T;
     fn visit_unary(&mut self, op: &UnaryOp, operand: &Value) -> T;
     fn visit_field_access(&mut self, expr: &Value, field: &IString) -> T;
@@ -76,10 +76,10 @@ pub trait HirValueVisitor<T> {
             } => self.visit_struct_object(struct_path, fields),
 
             Value::EnumVariant {
-                enum_type,
+                enum_path,
                 variant,
                 value,
-            } => self.visit_enum_variant(&store[enum_type], variant, &store[value].borrow()),
+            } => self.visit_enum_variant(enum_path, variant, &store[value].borrow()),
 
             Value::Binary { left, op, right } => {
                 self.visit_binary(&store[left].borrow(), op, &store[right].borrow())

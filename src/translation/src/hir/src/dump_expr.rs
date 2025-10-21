@@ -129,11 +129,11 @@ impl Dump for Value {
             }
 
             Value::EnumVariant {
-                enum_type,
+                enum_path,
                 variant,
                 value,
             } => {
-                ctx.store[enum_type].dump(ctx, o)?;
+                write!(o, "{}", enum_path)?;
                 write!(o, "::{}", variant)?;
                 write!(o, "(")?;
                 ctx.store[value].borrow().dump(ctx, o)?;

@@ -126,14 +126,13 @@ impl HirValueVisitor<()> for DefaultCallArguments<'_, '_> {
     fn visit_inferred_integer(&mut self, _value: u128) -> () {}
     fn visit_inferred_float(&mut self, _value: OrderedFloat<f64>) -> () {}
 
-    fn visit_struct_object(&mut self, _name: &IString, fields: &[(IString, ValueId)]) -> () {
+    fn visit_struct_object(&mut self, _path: &IString, fields: &[(IString, ValueId)]) -> () {
         for (_name, val) in fields {
             self.visit_value(&self.ctx[val].borrow(), &self.ctx.store);
         }
     }
 
-    fn visit_enum_variant(&mut self, ty: &EnumType, _var: &IString, val: &Value) -> () {
-        self.visit_enum(&ty.attributes, &ty.variants);
+    fn visit_enum_variant(&mut self, _path: &IString, _var: &IString, val: &Value) -> () {
         self.visit_value(val, &self.ctx.store);
     }
 

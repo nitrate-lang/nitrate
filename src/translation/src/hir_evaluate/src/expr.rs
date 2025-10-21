@@ -275,14 +275,14 @@ impl HirEvaluate for Value {
             }
 
             Value::EnumVariant {
-                enum_type,
+                enum_path: enum_type,
                 variant,
                 value,
             } => {
                 let evaluated_value = ctx.store[value].borrow().evaluate(ctx)?.into_id(ctx.store);
 
                 Ok(Value::EnumVariant {
-                    enum_type: enum_type.clone(),
+                    enum_path: enum_type.clone(),
                     variant: variant.clone(),
                     value: evaluated_value,
                 })

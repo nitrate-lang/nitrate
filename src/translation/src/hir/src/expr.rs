@@ -306,7 +306,7 @@ pub enum Value {
     },
 
     EnumVariant {
-        enum_type: EnumTypeId,
+        enum_path: IString,
         variant: IString,
         value: ValueId,
     },
