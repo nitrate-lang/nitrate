@@ -2,8 +2,9 @@ use crate::{
     Order, ParseTreeIter, RefNode,
     ast::{
         Await, BStringLit, BinExpr, Block, BlockItem, BooleanLit, Break, Cast, Closure, Continue,
-        Expr, ExprParentheses, ExprSyntaxError, FloatLit, ForEach, FunctionCall, If, IndexAccess,
-        IntegerLit, List, LocalVariable, Return, StringLit, TypeInfo, UnaryExpr, WhileLoop,
+        Expr, ExprParentheses, ExprSyntaxError, FieldAccess, FloatLit, ForEach, FunctionCall, If,
+        IndexAccess, IntegerLit, List, LocalVariable, Return, StringLit, TypeInfo, UnaryExpr,
+        WhileLoop,
     },
     expr::{
         AttributeList, ElseIf, ExprPath, Match, MatchCase, MethodCall, Safety, StructInit, Tuple,
@@ -284,6 +285,17 @@ impl ParseTreeIter for IndexAccess {
     }
 }
 
+impl ParseTreeIter for FieldAccess {
+    fn depth_first_iter(&self, f: &mut dyn FnMut(Order, RefNode)) {
+        f(Order::Enter, RefNode::ExprFieldAccess(self));
+
+        let _ = &self.field;
+        self.object.depth_first_iter(f);
+
+        f(Order::Leave, RefNode::ExprFieldAccess(self));
+    }
+}
+
 impl ParseTreeIter for If {
     fn depth_first_iter(&self, f: &mut dyn FnMut(Order, RefNode)) {
         f(Order::Enter, RefNode::ExprIf(self));
@@ -458,6 +470,7 @@ impl ParseTreeIter for Expr {
             Expr::Closure(e) => e.depth_first_iter(f),
             Expr::Path(e) => e.depth_first_iter(f),
             Expr::IndexAccess(e) => e.depth_first_iter(f),
+            Expr::FieldAccess(e) => e.depth_first_iter(f),
             Expr::If(e) => e.depth_first_iter(f),
             Expr::While(e) => e.depth_first_iter(f),
             Expr::Match(e) => e.depth_first_iter(f),

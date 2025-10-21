@@ -807,22 +807,6 @@ impl Ast2Hir for ast::BinExpr {
                 .into_id(&ctx.store),
             }),
 
-            ast::BinExprOp::Dot => {
-                // TODO: lower field access to HIR
-                log.report(&HirErr::UnimplementedFeature(
-                    "field access with . operator".into(),
-                ));
-                Err(())
-            }
-
-            ast::BinExprOp::Arrow => {
-                // TODO: lower field access to HIR
-                log.report(&HirErr::UnimplementedFeature(
-                    "method call with -> operator".into(),
-                ));
-                Err(())
-            }
-
             ast::BinExprOp::Range => {
                 // TODO: lower range to HIR
                 log.report(&HirErr::UnimplementedFeature(
@@ -1037,6 +1021,20 @@ impl Ast2Hir for ast::IndexAccess {
     }
 }
 
+impl Ast2Hir for ast::FieldAccess {
+    type Hir = Value;
+
+    fn ast2hir(self, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
+        let object = self.object.ast2hir(ctx, log)?.into_id(&ctx.store);
+        let field = self.field.to_string().into();
+
+        Ok(Value::FieldAccess {
+            expr: object,
+            field,
+        })
+    }
+}
+
 impl Ast2Hir for ast::If {
     type Hir = Value;
 
@@ -1231,6 +1229,7 @@ impl Ast2Hir for ast::Expr {
             ast::Expr::Closure(e) => e.ast2hir(ctx, log),
             ast::Expr::Path(e) => e.ast2hir(ctx, log),
             ast::Expr::IndexAccess(e) => e.ast2hir(ctx, log),
+            ast::Expr::FieldAccess(e) => e.ast2hir(ctx, log),
             ast::Expr::If(e) => e.ast2hir(ctx, log),
             ast::Expr::While(e) => e.ast2hir(ctx, log),
             ast::Expr::Match(e) => e.ast2hir(ctx, log),

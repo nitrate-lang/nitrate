@@ -79,6 +79,8 @@ pub(crate) enum SyntaxErr {
     ForVariableBindingLimit(SourcePosition),
     ForExpectedInKeyword(SourcePosition),
 
+    ExpectedFieldOrMethodName(SourcePosition),
+
     ExpectedOpenParen(SourcePosition),
     ExpectedCloseParen(SourcePosition),
     ExpectedOpenBrace(SourcePosition),
@@ -182,6 +184,8 @@ impl FormattableDiagnosticGroup for SyntaxErr {
             SyntaxErr::ForVariableBindingExpectedEnd(_) => 441,
             SyntaxErr::ForVariableBindingLimit(_) => 442,
             SyntaxErr::ForExpectedInKeyword(_) => 443,
+
+            SyntaxErr::ExpectedFieldOrMethodName(_) => 500,
 
             SyntaxErr::ExpectedOpenParen(_) => 1000,
             SyntaxErr::ExpectedCloseParen(_) => 1001,
@@ -514,6 +518,13 @@ impl FormattableDiagnosticGroup for SyntaxErr {
             SyntaxErr::ForExpectedInKeyword(pos) => DiagnosticInfo {
                 origin: Origin::Point(pos.to_owned().into()),
                 message: "expected 'in' after for-loop binding(s)".into(),
+            },
+
+            /* ------------------------------------------------------------------------- */
+
+            SyntaxErr::ExpectedFieldOrMethodName(pos) => DiagnosticInfo {
+                origin: Origin::Point(pos.to_owned().into()),
+                message: "expected field or method name".into(),
             },
 
             /* ------------------------------------------------------------------------- */

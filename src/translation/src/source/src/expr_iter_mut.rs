@@ -2,8 +2,9 @@ use crate::{
     Order, ParseTreeIterMut, RefNodeMut,
     ast::{
         Await, BStringLit, BinExpr, Block, BlockItem, BooleanLit, Break, Cast, Closure, Continue,
-        Expr, ExprParentheses, ExprSyntaxError, FloatLit, ForEach, FunctionCall, If, IndexAccess,
-        IntegerLit, List, LocalVariable, Return, StringLit, TypeInfo, UnaryExpr, WhileLoop,
+        Expr, ExprParentheses, ExprSyntaxError, FieldAccess, FloatLit, ForEach, FunctionCall, If,
+        IndexAccess, IntegerLit, List, LocalVariable, Return, StringLit, TypeInfo, UnaryExpr,
+        WhileLoop,
     },
     expr::{
         AttributeList, ElseIf, ExprPath, Match, MatchCase, MethodCall, Safety, StructInit, Tuple,
@@ -284,6 +285,17 @@ impl ParseTreeIterMut for IndexAccess {
     }
 }
 
+impl ParseTreeIterMut for FieldAccess {
+    fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
+        f(Order::Enter, RefNodeMut::ExprFieldAccess(self));
+
+        let _ = &self.field;
+        self.object.depth_first_iter_mut(f);
+
+        f(Order::Leave, RefNodeMut::ExprFieldAccess(self));
+    }
+}
+
 impl ParseTreeIterMut for If {
     fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
         f(Order::Enter, RefNodeMut::ExprIf(self));
@@ -459,6 +471,7 @@ impl ParseTreeIterMut for Expr {
             Expr::Closure(e) => e.depth_first_iter_mut(f),
             Expr::Path(e) => e.depth_first_iter_mut(f),
             Expr::IndexAccess(e) => e.depth_first_iter_mut(f),
+            Expr::FieldAccess(e) => e.depth_first_iter_mut(f),
             Expr::If(e) => e.depth_first_iter_mut(f),
             Expr::While(e) => e.depth_first_iter_mut(f),
             Expr::Match(e) => e.depth_first_iter_mut(f),

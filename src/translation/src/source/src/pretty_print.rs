@@ -3,7 +3,7 @@ use std::num::NonZeroUsize;
 use nitrate_token::IntegerKind;
 
 use crate::{
-    ast::{LocalVariable, LocalVariableKind},
+    ast::{FieldAccess, LocalVariable, LocalVariableKind},
     expr::{
         AttributeList, Await, BStringLit, BinExpr, BinExprOp, Block, BlockItem, BooleanLit, Break,
         Cast, Closure, Continue, ElseIf, Expr, ExprParentheses, ExprPath, ExprPathSegment,
@@ -362,8 +362,6 @@ impl PrettyPrint for BinExprOp {
             BinExprOp::SetBitRotr => writer.write_str(">>>="),
             BinExprOp::SetLogicAnd => writer.write_str("&&="),
             BinExprOp::SetLogicOr => writer.write_str("||="),
-            BinExprOp::Dot => writer.write_str("."),
-            BinExprOp::Arrow => writer.write_str("->"),
             BinExprOp::Range => writer.write_str(".."),
         }
     }
@@ -639,6 +637,18 @@ impl PrettyPrint for IndexAccess {
         writer.write_char('[')?;
         self.index.pretty_print_fmt(ctx, writer)?;
         writer.write_char(']')
+    }
+}
+
+impl PrettyPrint for FieldAccess {
+    fn pretty_print_fmt(
+        &self,
+        ctx: &mut PrintContext,
+        writer: &mut dyn std::fmt::Write,
+    ) -> std::fmt::Result {
+        self.object.pretty_print_fmt(ctx, writer)?;
+        writer.write_char('.')?;
+        writer.write_str(&self.field)
     }
 }
 
@@ -928,6 +938,7 @@ impl PrettyPrint for Expr {
             Expr::Closure(m) => m.pretty_print_fmt(ctx, writer),
             Expr::Path(m) => m.pretty_print_fmt(ctx, writer),
             Expr::IndexAccess(m) => m.pretty_print_fmt(ctx, writer),
+            Expr::FieldAccess(m) => m.pretty_print_fmt(ctx, writer),
             Expr::If(m) => m.pretty_print_fmt(ctx, writer),
             Expr::While(m) => m.pretty_print_fmt(ctx, writer),
             Expr::Match(m) => m.pretty_print_fmt(ctx, writer),

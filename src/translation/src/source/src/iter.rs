@@ -1,5 +1,5 @@
 use crate::{
-    ast::LocalVariable,
+    ast::{FieldAccess, LocalVariable},
     expr::{
         AttributeList, Await, BStringLit, BinExpr, Block, BlockItem, BooleanLit, Break, Cast,
         Closure, Continue, ExprParentheses, ExprPath, FloatLit, ForEach, FunctionCall, If,
@@ -50,6 +50,7 @@ pub enum RefNode<'a> {
     ExprPathTypeArgument(&'a TypeArgument),
     ExprPath(&'a ExprPath),
     ExprIndexAccess(&'a IndexAccess),
+    ExprFieldAccess(&'a FieldAccess),
     ExprIf(&'a If),
     ExprWhile(&'a WhileLoop),
     ExprMatchCase(&'a MatchCase),

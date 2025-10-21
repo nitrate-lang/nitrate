@@ -172,10 +172,6 @@ pub enum BinExprOp {
     SetLogicAnd,
     /// `||=`
     SetLogicOr,
-    /// `.`
-    Dot,
-    /// `->`
-    Arrow,
     /// `..`
     Range,
 }
@@ -300,6 +296,13 @@ pub struct IndexAccess {
 
 #[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct FieldAccess {
+    pub object: Expr,
+    pub field: String,
+}
+
+#[skip_serializing_none]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum ElseIf {
     If(Box<If>),
     Block(Block),
@@ -406,6 +409,7 @@ pub enum Expr {
     Closure(Box<Closure>),
     Path(Box<ExprPath>),
     IndexAccess(Box<IndexAccess>),
+    FieldAccess(Box<FieldAccess>),
     If(Box<If>),
     While(Box<WhileLoop>),
     Match(Box<Match>),
@@ -439,6 +443,7 @@ impl std::fmt::Debug for Expr {
             Expr::Closure(e) => e.fmt(f),
             Expr::Path(e) => e.fmt(f),
             Expr::IndexAccess(e) => e.fmt(f),
+            Expr::FieldAccess(e) => e.fmt(f),
             Expr::If(e) => e.fmt(f),
             Expr::While(e) => e.fmt(f),
             Expr::Match(e) => e.fmt(f),

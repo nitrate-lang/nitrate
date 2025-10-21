@@ -5,8 +5,8 @@ use nitrate_source::{
     ast::{
         AttributeList, Await, BStringLit, BinExpr, BinExprOp, Block, BlockItem, Bool, BooleanLit,
         Break, Cast, Closure, Continue, ElseIf, Expr, ExprParentheses, ExprPath, ExprPathSegment,
-        ExprSyntaxError, Float32, Float64, FloatLit, ForEach, FuncParam, FunctionCall, If,
-        IndexAccess, Int8, Int16, Int32, Int64, Int128, IntegerLit, List, LocalVariable,
+        ExprSyntaxError, FieldAccess, Float32, Float64, FloatLit, ForEach, FuncParam, FunctionCall,
+        If, IndexAccess, Int8, Int16, Int32, Int64, Int128, IntegerLit, List, LocalVariable,
         LocalVariableKind, Mutability, Return, Safety, StringLit, Tuple, Type, TypeArgument,
         TypeInfo, TypePath, TypePathSegment, UInt8, UInt16, UInt32, UInt64, UInt128, UnaryExpr,
         UnaryExprOp, WhileLoop,
@@ -50,14 +50,11 @@ enum Operation {
     FunctionCall,
     Index,
     Cast,
+    FieldAccessOrMethodCall,
 }
 
 fn get_precedence_of_binary_operator(op: BinExprOp) -> (Associativity, Precedence) {
     let (associativity, precedence) = match op {
-        BinExprOp::Dot | BinExprOp::Arrow => {
-            (Associativity::LeftToRight, PrecedenceRank::FieldAccess)
-        }
-
         BinExprOp::Mul | BinExprOp::Div | BinExprOp::Mod => {
             (Associativity::LeftToRight, PrecedenceRank::MulDivMod)
         }
@@ -117,6 +114,11 @@ fn get_precedence(operation: Operation) -> (Associativity, Precedence) {
         Operation::Cast => (
             Associativity::LeftToRight,
             PrecedenceRank::Cast as Precedence,
+        ),
+
+        Operation::FieldAccessOrMethodCall => (
+            Associativity::LeftToRight,
+            PrecedenceRank::FieldAccess as Precedence,
         ),
     }
 }
@@ -218,8 +220,6 @@ impl Parser<'_, '_> {
                 self.lexer.skip_tok();
                 if self.lexer.skip_if(&Token::Eq) {
                     Some(BinExprOp::SetMinus)
-                } else if self.lexer.skip_if(&Token::Gt) {
-                    Some(BinExprOp::Arrow)
                 } else {
                     Some(BinExprOp::Sub)
                 }
@@ -230,7 +230,7 @@ impl Parser<'_, '_> {
                 if self.lexer.skip_if(&Token::Dot) {
                     Some(BinExprOp::Range)
                 } else {
-                    Some(BinExprOp::Dot)
+                    None
                 }
             }
 
@@ -473,6 +473,28 @@ impl Parser<'_, '_> {
                 }));
             } else {
                 match self.lexer.peek_t() {
+                    Token::Dot => {
+                        let operation = Operation::FieldAccessOrMethodCall;
+                        let (_, new_precedence) = get_precedence(operation);
+
+                        if new_precedence < min_precedence_to_proceed {
+                            return sofar;
+                        }
+
+                        self.lexer.skip_tok();
+
+                        let member_name = self.lexer.next_if_name().unwrap_or_else(|| {
+                            let bug = SyntaxErr::ExpectedFieldOrMethodName(self.lexer.peek_pos());
+                            self.log.report(&bug);
+                            "".into()
+                        });
+
+                        sofar = Expr::FieldAccess(Box::new(FieldAccess {
+                            object: sofar,
+                            field: member_name,
+                        }))
+                    }
+
                     Token::As => {
                         let operation = Operation::Cast;
                         let (_, new_precedence) = get_precedence(operation);
