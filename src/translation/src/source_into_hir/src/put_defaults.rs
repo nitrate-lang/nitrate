@@ -4,7 +4,6 @@ use crate::{Ast2HirCtx, diagnosis::HirErr, lower::Ast2Hir};
 use interned_string::IString;
 use nitrate_diagnosis::CompilerLog;
 use nitrate_hir::prelude::*;
-use nitrate_source::ast::CallArgument;
 
 // fn construct_call(
 //     ctx: &mut Ast2HirCtx,
@@ -111,13 +110,18 @@ pub(crate) fn module_put_defaults(module: &mut Module, ctx: &mut Ast2HirCtx, _lo
         .iter_mut()
         .for_each_value_mut(&ctx.store, &mut |value| match value {
             Value::Call {
-                callee: _,
+                callee,
                 positional: _,
                 named: _,
-            } => {
-                // arguments
-                // TODO: Place default values for arguments
-            }
+            } => match &*ctx[callee as &ValueId].borrow() {
+                Value::Symbol { path } => {
+                    if let Some(function) = ctx.symbol_tab.get_function(path) {
+                        let function = ctx[function].borrow();
+                        // TODO: Place default values for function calls
+                    }
+                }
+                _ => {}
+            },
 
             Value::MethodCall {
                 object: _,

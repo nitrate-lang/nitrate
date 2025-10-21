@@ -288,10 +288,19 @@ pub fn get_type(value: &Value, ctx: &TypeInferenceCtx) -> Result<Type, TypeInfer
 
             Some(SymbolId::Function(function)) => {
                 let function = &ctx.store[function].borrow();
+                let parameters = function
+                    .params
+                    .iter()
+                    .map(|param_id| {
+                        let param = ctx.store[param_id].borrow();
+                        (param.name.clone(), param.ty.clone())
+                    })
+                    .collect::<Vec<_>>();
+
                 Ok(Type::Function {
                     function_type: FunctionType {
                         attributes: function.attributes.to_owned(),
-                        params: function.params.to_owned(),
+                        params: parameters,
                         return_type: function.return_type.to_owned(),
                     }
                     .into_id(ctx.store),

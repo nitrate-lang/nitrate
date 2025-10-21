@@ -3,12 +3,12 @@ use crate::diagnosis::SyntaxErr;
 
 use nitrate_source::{
     ast::{
-        ArrayType, Bool, Exclusivity, Expr, Float32, Float64, FunctionType, Int8, Int16, Int32,
-        Int64, Int128, LatentType, Lifetime, Mutability, OpaqueType, ReferenceType, RefinementType,
-        SliceType, TupleType, Type, TypeParentheses, TypePath, TypePathSegment, TypeSyntaxError,
-        UInt8, UInt16, UInt32, UInt64, UInt128, USize,
+        ArrayType, Bool, Exclusivity, Expr, Float32, Float64, FuncTypeParam, FuncTypeParams,
+        FunctionType, Int8, Int16, Int32, Int64, Int128, LatentType, Lifetime, Mutability,
+        OpaqueType, ReferenceType, RefinementType, SliceType, TupleType, Type, TypeParentheses,
+        TypePath, TypePathSegment, TypeSyntaxError, UInt8, UInt16, UInt32, UInt64, UInt128, USize,
     },
-    tag::{intern_lifetime_name, intern_opaque_type_name},
+    tag::{intern_lifetime_name, intern_opaque_type_name, intern_parameter_name},
 };
 use nitrate_token::Token;
 
@@ -167,12 +167,79 @@ impl Parser<'_, '_> {
         }
     }
 
+    fn parse_function_type_parameters(&mut self) -> FuncTypeParams {
+        fn parse_function_parameter(this: &mut Parser) -> FuncTypeParam {
+            let attributes = this.parse_attributes();
+
+            let name = this.lexer.next_if_name().unwrap_or_else(|| {
+                let bug = SyntaxErr::FunctionParameterMissingName(this.lexer.peek_pos());
+                this.log.report(&bug);
+                "".into()
+            });
+
+            let name = intern_parameter_name(name);
+
+            if !this.lexer.skip_if(&Token::Colon) {
+                let bug = SyntaxErr::FunctionParameterExpectedType(this.lexer.peek_pos());
+                this.log.report(&bug);
+            }
+
+            let ty = this.parse_type();
+
+            FuncTypeParam {
+                attributes,
+                name,
+                ty,
+            }
+        }
+
+        let mut params = Vec::new();
+
+        if !self.lexer.skip_if(&Token::OpenParen) {
+            let bug = SyntaxErr::ExpectedOpenParen(self.lexer.peek_pos());
+            self.log.report(&bug);
+        }
+
+        self.lexer.skip_if(&Token::Comma);
+
+        let mut already_reported_too_many_parameters = false;
+
+        while !self.lexer.skip_if(&Token::CloseParen) {
+            if self.lexer.is_eof() {
+                let bug = SyntaxErr::FunctionParametersExpectedEnd(self.lexer.peek_pos());
+                self.log.report(&bug);
+                break;
+            }
+
+            const MAX_FUNCTION_PARAMETERS: usize = 65_536;
+
+            if !already_reported_too_many_parameters && params.len() >= MAX_FUNCTION_PARAMETERS {
+                already_reported_too_many_parameters = true;
+
+                let bug = SyntaxErr::FunctionParameterLimit(self.lexer.peek_pos());
+                self.log.report(&bug);
+            }
+
+            let param = parse_function_parameter(self);
+            params.push(param);
+
+            if !self.lexer.skip_if(&Token::Comma) && !self.lexer.next_is(&Token::CloseParen) {
+                let bug = SyntaxErr::FunctionParametersExpectedEnd(self.lexer.peek_pos());
+                self.log.report(&bug);
+                self.lexer.skip_while(&Token::CloseParen);
+                break;
+            }
+        }
+
+        params
+    }
+
     fn parse_function_type(&mut self) -> FunctionType {
         assert!(self.lexer.peek_t() == Token::Fn);
         self.lexer.skip_tok();
 
         let attributes = self.parse_attributes();
-        let parameters = self.parse_function_parameters();
+        let parameters = self.parse_function_type_parameters();
 
         let return_type = if self.lexer.skip_if(&Token::Minus) {
             if !self.lexer.skip_if(&Token::Gt) {

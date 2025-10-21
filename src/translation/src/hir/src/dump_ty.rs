@@ -139,7 +139,8 @@ impl Dump for FunctionType {
                 ctx.indent += 1;
 
                 write_indent(ctx, o)?;
-                param.dump(ctx, o)?;
+                write!(o, "{}: ", param.0)?;
+                ctx.store[&param.1].dump(ctx, o)?;
                 write!(o, ",\n")?;
 
                 ctx.indent -= 1;

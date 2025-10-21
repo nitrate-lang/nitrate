@@ -1,15 +1,6 @@
 use crate::prelude::*;
 use std::ops::ControlFlow;
 
-impl FunctionTypeIterMut<'_> {
-    pub fn for_each_value_mut(&mut self, store: &Store, f: &mut dyn FnMut(&mut Value)) {
-        let _ = self.try_for_each_mut(store, &mut |value: &mut Value| -> ControlFlow<()> {
-            f(value);
-            ControlFlow::Continue(())
-        });
-    }
-}
-
 impl BlockIterMut<'_> {
     pub fn for_each_value_mut(&mut self, store: &Store, f: &mut dyn FnMut(&mut Value)) {
         let _ = self.try_for_each_mut(store, &mut |value: &mut Value| -> ControlFlow<()> {

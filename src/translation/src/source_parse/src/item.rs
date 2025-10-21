@@ -565,7 +565,7 @@ impl Parser<'_, '_> {
         }
     }
 
-    pub(crate) fn parse_function_parameters(&mut self) -> FuncParams {
+    fn parse_function_parameters(&mut self) -> FuncParams {
         fn parse_function_parameter(this: &mut Parser) -> FuncParam {
             let attributes = this.parse_attributes();
 

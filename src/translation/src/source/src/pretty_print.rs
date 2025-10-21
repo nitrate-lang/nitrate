@@ -6,10 +6,10 @@ use crate::{
     ast::{LocalVariable, LocalVariableKind},
     expr::{
         AttributeList, Await, BStringLit, BinExpr, BinExprOp, Block, BlockItem, BooleanLit, Break,
-        CallArgument, Cast, Closure, Continue, ElseIf, Expr, ExprParentheses, ExprPath,
-        ExprPathSegment, ExprSyntaxError, FloatLit, ForEach, FunctionCall, If, IndexAccess,
-        IntegerLit, List, Match, MatchCase, MethodCall, Return, Safety, StringLit, StructInit,
-        Tuple, TypeArgument, TypeInfo, UnaryExpr, UnaryExprOp, WhileLoop,
+        Cast, Closure, Continue, ElseIf, Expr, ExprParentheses, ExprPath, ExprPathSegment,
+        ExprSyntaxError, FloatLit, ForEach, FunctionCall, If, IndexAccess, IntegerLit, List, Match,
+        MatchCase, MethodCall, Return, Safety, StringLit, StructInit, Tuple, TypeArgument,
+        TypeInfo, UnaryExpr, UnaryExprOp, WhileLoop,
     },
     item::{
         AssociatedItem, Enum, EnumVariant, FuncParam, FuncParams, Function, Generics,
@@ -17,10 +17,10 @@ use crate::{
         Mutability, Struct, StructField, Trait, TypeAlias, TypeParam, Visibility,
     },
     ty::{
-        ArrayType, Bool, Exclusivity, Float32, Float64, FunctionType, InferType, Int8, Int16,
-        Int32, Int64, Int128, LatentType, Lifetime, OpaqueType, ReferenceType, RefinementType,
-        SliceType, TupleType, Type, TypeParentheses, TypePath, TypePathSegment, TypeSyntaxError,
-        UInt8, UInt16, UInt32, UInt64, UInt128, USize,
+        ArrayType, Bool, Exclusivity, Float32, Float64, FuncTypeParam, FuncTypeParams,
+        FunctionType, InferType, Int8, Int16, Int32, Int64, Int128, LatentType, Lifetime,
+        OpaqueType, ReferenceType, RefinementType, SliceType, TupleType, Type, TypeParentheses,
+        TypePath, TypePathSegment, TypeSyntaxError, UInt8, UInt16, UInt32, UInt64, UInt128, USize,
     },
 };
 
@@ -843,21 +843,6 @@ impl PrettyPrint for Await {
     }
 }
 
-impl PrettyPrint for CallArgument {
-    fn pretty_print_fmt(
-        &self,
-        ctx: &mut PrintContext,
-        writer: &mut dyn std::fmt::Write,
-    ) -> std::fmt::Result {
-        if let Some(name) = &self.name {
-            writer.write_str(name)?;
-            writer.write_str(": ")?;
-        }
-
-        self.value.pretty_print_fmt(ctx, writer)
-    }
-}
-
 impl PrettyPrint for FunctionCall {
     fn pretty_print_fmt(
         &self,
@@ -867,11 +852,20 @@ impl PrettyPrint for FunctionCall {
         self.callee.pretty_print_fmt(ctx, writer)?;
 
         writer.write_char('(')?;
-        for (i, arg) in self.arguments.iter().enumerate() {
+        for (i, arg) in self.positional.iter().enumerate() {
             if i > 0 {
                 writer.write_str(", ")?;
             }
 
+            arg.pretty_print_fmt(ctx, writer)?;
+        }
+        for (i, (name, arg)) in self.named.iter().enumerate() {
+            if i > 0 || !self.positional.is_empty() {
+                writer.write_str(", ")?;
+            }
+
+            writer.write_str(name)?;
+            writer.write_str(": ")?;
             arg.pretty_print_fmt(ctx, writer)?;
         }
         writer.write_char(')')
@@ -889,11 +883,20 @@ impl PrettyPrint for MethodCall {
         writer.write_str(&self.method_name)?;
 
         writer.write_char('(')?;
-        for (i, arg) in self.arguments.iter().enumerate() {
+        for (i, arg) in self.positional.iter().enumerate() {
             if i > 0 {
                 writer.write_str(", ")?;
             }
 
+            arg.pretty_print_fmt(ctx, writer)?;
+        }
+        for (i, (name, arg)) in self.named.iter().enumerate() {
+            if i > 0 || !self.positional.is_empty() {
+                writer.write_str(", ")?;
+            }
+
+            writer.write_str(name)?;
+            writer.write_str(": ")?;
             arg.pretty_print_fmt(ctx, writer)?;
         }
         writer.write_char(')')
@@ -1234,6 +1237,44 @@ impl PrettyPrint for SliceType {
         writer.write_char('[')?;
         self.element_type.pretty_print_fmt(ctx, writer)?;
         writer.write_char(']')
+    }
+}
+
+impl PrettyPrint for FuncTypeParam {
+    fn pretty_print_fmt(
+        &self,
+        ctx: &mut PrintContext,
+        writer: &mut dyn std::fmt::Write,
+    ) -> std::fmt::Result {
+        if let Some(attributes) = &self.attributes {
+            attributes.pretty_print_fmt(ctx, writer)?;
+            writer.write_char(' ')?;
+        }
+
+        writer.write_str(&self.name)?;
+
+        writer.write_str(": ")?;
+        self.ty.pretty_print_fmt(ctx, writer)?;
+
+        Ok(())
+    }
+}
+
+impl PrettyPrint for FuncTypeParams {
+    fn pretty_print_fmt(
+        &self,
+        ctx: &mut PrintContext,
+        writer: &mut dyn std::fmt::Write,
+    ) -> std::fmt::Result {
+        writer.write_char('(')?;
+        for (i, param) in self.iter().enumerate() {
+            if i > 0 {
+                writer.write_str(", ")?;
+            }
+
+            param.pretty_print_fmt(ctx, writer)?;
+        }
+        writer.write_char(')')
     }
 }
 

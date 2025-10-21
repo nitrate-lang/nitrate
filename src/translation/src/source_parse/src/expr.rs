@@ -4,15 +4,15 @@ use super::parse::Parser;
 use nitrate_source::{
     ast::{
         AttributeList, Await, BStringLit, BinExpr, BinExprOp, Block, BlockItem, Bool, BooleanLit,
-        Break, CallArgument, Cast, Closure, Continue, ElseIf, Expr, ExprParentheses, ExprPath,
-        ExprPathSegment, ExprSyntaxError, Float32, Float64, FloatLit, ForEach, FuncParam,
-        FunctionCall, If, IndexAccess, Int8, Int16, Int32, Int64, Int128, IntegerLit, List,
-        LocalVariable, LocalVariableKind, Mutability, Return, Safety, StringLit, Tuple, Type,
-        TypeArgument, TypeInfo, TypePath, TypePathSegment, UInt8, UInt16, UInt32, UInt64, UInt128,
-        UnaryExpr, UnaryExprOp, WhileLoop,
+        Break, Cast, Closure, Continue, ElseIf, Expr, ExprParentheses, ExprPath, ExprPathSegment,
+        ExprSyntaxError, Float32, Float64, FloatLit, ForEach, FuncParam, FunctionCall, If,
+        IndexAccess, Int8, Int16, Int32, Int64, Int128, IntegerLit, List, LocalVariable,
+        LocalVariableKind, Mutability, Return, Safety, StringLit, Tuple, Type, TypeArgument,
+        TypeInfo, TypePath, TypePathSegment, UInt8, UInt16, UInt32, UInt64, UInt128, UnaryExpr,
+        UnaryExprOp, WhileLoop,
     },
     tag::{
-        VariableNameId, intern_arg_name, intern_label_name, intern_parameter_name,
+        ArgNameId, VariableNameId, intern_arg_name, intern_label_name, intern_parameter_name,
         intern_string_literal, intern_variable_name,
     },
 };
@@ -496,11 +496,12 @@ impl Parser<'_, '_> {
                             return sofar;
                         }
 
-                        let arguments = self.parse_function_call_arguments();
+                        let (positional, named) = self.parse_function_call_arguments();
 
                         sofar = Expr::FunctionCall(Box::new(FunctionCall {
                             callee: sofar,
-                            arguments,
+                            positional,
+                            named,
                         }));
                     }
 
@@ -1103,29 +1104,38 @@ impl Parser<'_, '_> {
         }
     }
 
-    fn parse_function_call_arguments(&mut self) -> Vec<CallArgument> {
-        fn parse_function_call_argument(this: &mut Parser) -> CallArgument {
+    fn parse_function_call_arguments(&mut self) -> (Vec<Expr>, Vec<(ArgNameId, Expr)>) {
+        struct ParsedArgument {
+            name: Option<ArgNameId>,
+            value: Expr,
+        }
+
+        fn parse_function_call_argument(this: &mut Parser) -> ParsedArgument {
             let mut name = None;
 
             let rewind_pos = this.lexer.current_pos();
             if let Some(argument_name) = this.lexer.next_if_name() {
                 if this.lexer.skip_if(&Token::Colon) {
+                    // Successfully parsed a named argument
                     name = Some(intern_arg_name(argument_name));
                 } else {
+                    // It was just an identifier that wasn't followed by a colon,
+                    // so we treat it as the start of a positional expression.
                     this.lexer.rewind(rewind_pos);
                 }
             }
 
             let value = this.parse_expression();
 
-            CallArgument { name, value }
+            ParsedArgument { name, value }
         }
 
         assert!(self.lexer.peek_t() == Token::OpenParen);
         self.lexer.skip_tok();
 
-        let mut arguments = Vec::new();
+        let mut parsed_arguments = Vec::new();
         let mut already_reported_too_many_arguments = false;
+        let mut named_argument_seen = false;
 
         self.lexer.skip_if(&Token::Comma);
 
@@ -1136,9 +1146,9 @@ impl Parser<'_, '_> {
                 break;
             }
 
-            const MAX_CALL_ARGUMENTS: usize = 65_536;
+            const MAX_CARGUMENTS: usize = 65_536;
 
-            if !already_reported_too_many_arguments && arguments.len() >= MAX_CALL_ARGUMENTS {
+            if !already_reported_too_many_arguments && parsed_arguments.len() >= MAX_CARGUMENTS {
                 already_reported_too_many_arguments = true;
 
                 let bug = SyntaxErr::FunctionCallArgumentLimit(self.lexer.peek_pos());
@@ -1146,7 +1156,19 @@ impl Parser<'_, '_> {
             }
 
             let argument = parse_function_call_argument(self);
-            arguments.push(argument);
+
+            // 1. Enforce Positional-before-Named rule
+            if argument.name.is_some() {
+                named_argument_seen = true;
+            } else {
+                if named_argument_seen {
+                    // Error: Positional argument follows a named argument
+                    let bug = SyntaxErr::FunctionCallPositionFollowsNamed(self.lexer.peek_pos());
+                    self.log.report(&bug);
+                }
+            }
+
+            parsed_arguments.push(argument);
 
             if !self.lexer.skip_if(&Token::Comma) && !self.lexer.next_is(&Token::CloseParen) {
                 let bug = SyntaxErr::FunctionCallExpectedEnd(self.lexer.peek_pos());
@@ -1157,7 +1179,18 @@ impl Parser<'_, '_> {
             }
         }
 
-        arguments
+        // 2. Separate into positional and named vectors for the return type
+        let mut positional_args = Vec::new();
+        let mut named_args = Vec::new();
+
+        for arg in parsed_arguments {
+            match arg.name {
+                Some(name_id) => named_args.push((name_id, arg.value)),
+                None => positional_args.push(arg.value),
+            }
+        }
+
+        (positional_args, named_args)
     }
 
     fn parse_local_variable(&mut self) -> LocalVariable {

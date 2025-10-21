@@ -39,16 +39,7 @@ impl FunctionTypeIter<'_> {
         tcb: &mut dyn FnMut(&Type) -> ControlFlow<T>,
     ) -> ControlFlow<T> {
         for param in &self.node.params {
-            let parameter = store[param].borrow();
-
-            store[&parameter.ty].iter().try_for_each(store, vcb, tcb)?;
-
-            if let Some(default_value) = &parameter.default_value {
-                store[default_value]
-                    .borrow()
-                    .iter()
-                    .try_for_each(store, vcb, tcb)?;
-            }
+            store[&param.1].iter().try_for_each(store, vcb, tcb)?;
         }
 
         store[&self.node.return_type]
@@ -131,16 +122,7 @@ impl TypeIter<'_> {
             Type::Function { function_type } => {
                 let function = &store[function_type];
                 for param in &function.params {
-                    let parameter = store[param].borrow();
-
-                    store[&parameter.ty].iter().try_for_each(store, vcb, tcb)?;
-
-                    if let Some(default_value) = &parameter.default_value {
-                        store[default_value]
-                            .borrow()
-                            .iter()
-                            .try_for_each(store, vcb, tcb)?;
-                    }
+                    store[&param.1].iter().try_for_each(store, vcb, tcb)?;
                 }
 
                 store[&function.return_type]

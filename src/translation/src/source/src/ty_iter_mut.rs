@@ -6,7 +6,7 @@ use crate::{
         Type, TypeParentheses, TypePath, TypeSyntaxError, UInt8, UInt16, UInt32, UInt64, UInt128,
         USize,
     },
-    ty::InferType,
+    ty::{FuncTypeParam, FuncTypeParams, InferType},
 };
 
 impl ParseTreeIterMut for TypeSyntaxError {
@@ -193,6 +193,30 @@ impl ParseTreeIterMut for SliceType {
         self.element_type.depth_first_iter_mut(f);
 
         f(Order::Leave, RefNodeMut::TypeSliceType(self));
+    }
+}
+
+impl ParseTreeIterMut for FuncTypeParam {
+    fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
+        f(Order::Enter, RefNodeMut::TypeFuncParam(self));
+
+        let _ = self.name;
+
+        if let Some(attributes) = &mut self.attributes {
+            attributes.depth_first_iter_mut(f);
+        }
+
+        self.ty.depth_first_iter_mut(f);
+
+        f(Order::Leave, RefNodeMut::TypeFuncParam(self));
+    }
+}
+
+impl ParseTreeIterMut for FuncTypeParams {
+    fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
+        for param in self {
+            param.depth_first_iter_mut(f);
+        }
     }
 }
 

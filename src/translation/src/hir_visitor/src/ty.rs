@@ -31,7 +31,7 @@ pub trait HirTypeVisitor<T> {
     fn visit_function_type(
         &mut self,
         attrs: &BTreeSet<FunctionAttribute>,
-        params: &[ParameterId],
+        params: &[(IString, TypeId)],
         ret: &Type,
     ) -> T;
 

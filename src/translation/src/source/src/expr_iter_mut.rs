@@ -1,10 +1,9 @@
 use crate::{
     Order, ParseTreeIterMut, RefNodeMut,
     ast::{
-        Await, BStringLit, BinExpr, Block, BlockItem, BooleanLit, Break, CallArgument, Cast,
-        Closure, Continue, Expr, ExprParentheses, ExprSyntaxError, FloatLit, ForEach, FunctionCall,
-        If, IndexAccess, IntegerLit, List, LocalVariable, Return, StringLit, TypeInfo, UnaryExpr,
-        WhileLoop,
+        Await, BStringLit, BinExpr, Block, BlockItem, BooleanLit, Break, Cast, Closure, Continue,
+        Expr, ExprParentheses, ExprSyntaxError, FloatLit, ForEach, FunctionCall, If, IndexAccess,
+        IntegerLit, List, LocalVariable, Return, StringLit, TypeInfo, UnaryExpr, WhileLoop,
     },
     expr::{
         AttributeList, ElseIf, ExprPath, Match, MatchCase, MethodCall, Safety, StructInit, Tuple,
@@ -401,25 +400,18 @@ impl ParseTreeIterMut for Await {
     }
 }
 
-impl ParseTreeIterMut for CallArgument {
-    fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
-        f(Order::Enter, RefNodeMut::ExprCallArgument(self));
-
-        let _ = self.name;
-        self.value.depth_first_iter_mut(f);
-
-        f(Order::Leave, RefNodeMut::ExprCallArgument(self));
-    }
-}
-
 impl ParseTreeIterMut for FunctionCall {
     fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
         f(Order::Enter, RefNodeMut::ExprFunctionCall(self));
 
         self.callee.depth_first_iter_mut(f);
 
-        for arg in &mut self.arguments {
+        for arg in &mut self.positional {
             arg.depth_first_iter_mut(f);
+        }
+
+        for (_, value) in &mut self.named {
+            value.depth_first_iter_mut(f);
         }
 
         f(Order::Leave, RefNodeMut::ExprFunctionCall(self));
@@ -434,8 +426,12 @@ impl ParseTreeIterMut for MethodCall {
 
         let _ = &self.method_name;
 
-        for arg in &mut self.arguments {
+        for arg in &mut self.positional {
             arg.depth_first_iter_mut(f);
+        }
+
+        for (_, value) in &mut self.named {
+            value.depth_first_iter_mut(f);
         }
 
         f(Order::Leave, RefNodeMut::ExprMethodCall(self));

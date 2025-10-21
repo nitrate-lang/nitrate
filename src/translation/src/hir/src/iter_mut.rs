@@ -1,15 +1,5 @@
 use crate::prelude::*;
 
-pub struct FunctionTypeIterMut<'a> {
-    pub(crate) node: &'a mut FunctionType,
-}
-
-impl FunctionType {
-    pub fn iter_mut(&mut self) -> FunctionTypeIterMut<'_> {
-        FunctionTypeIterMut { node: self }
-    }
-}
-
 pub struct BlockIterMut<'a> {
     pub(crate) node: &'a mut Block,
 }

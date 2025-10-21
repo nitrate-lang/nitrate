@@ -1,10 +1,10 @@
 use crate::{
     ast::LocalVariable,
     expr::{
-        AttributeList, Await, BStringLit, BinExpr, Block, BlockItem, BooleanLit, Break,
-        CallArgument, Cast, Closure, Continue, ExprParentheses, ExprPath, FloatLit, ForEach,
-        FunctionCall, If, IndexAccess, IntegerLit, List, Match, MatchCase, MethodCall, Return,
-        StringLit, StructInit, Tuple, TypeArgument, TypeInfo, UnaryExpr, WhileLoop,
+        AttributeList, Await, BStringLit, BinExpr, Block, BlockItem, BooleanLit, Break, Cast,
+        Closure, Continue, ExprParentheses, ExprPath, FloatLit, ForEach, FunctionCall, If,
+        IndexAccess, IntegerLit, List, Match, MatchCase, MethodCall, Return, StringLit, StructInit,
+        Tuple, TypeArgument, TypeInfo, UnaryExpr, WhileLoop,
     },
     item::{
         Enum, EnumVariant, FuncParam, Function, Generics, GlobalVariable, Impl, Import, ItemPath,
@@ -13,8 +13,8 @@ use crate::{
     iter::Order,
     tag::OpaqueTypeNameId,
     ty::{
-        ArrayType, FunctionType, Lifetime, ReferenceType, RefinementType, SliceType, TupleType,
-        Type, TypePath,
+        ArrayType, FuncTypeParam, FunctionType, Lifetime, ReferenceType, RefinementType, SliceType,
+        TupleType, Type, TypePath,
     },
 };
 
@@ -54,7 +54,6 @@ pub enum RefNodeMut<'a> {
     ExprReturn(&'a mut Return),
     ExprFor(&'a mut ForEach),
     ExprAwait(&'a mut Await),
-    ExprCallArgument(&'a mut CallArgument),
     ExprFunctionCall(&'a mut FunctionCall),
     ExprMethodCall(&'a mut MethodCall),
 
@@ -79,6 +78,7 @@ pub enum RefNodeMut<'a> {
     TypeTupleType(&'a mut TupleType),
     TypeArrayType(&'a mut ArrayType),
     TypeSliceType(&'a mut SliceType),
+    TypeFuncParam(&'a mut FuncTypeParam),
     TypeFunctionType(&'a mut FunctionType),
     TypeReferenceType(&'a mut ReferenceType),
     TypeOpaqueType(&'a mut OpaqueTypeNameId),

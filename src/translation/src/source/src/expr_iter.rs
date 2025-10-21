@@ -1,10 +1,9 @@
 use crate::{
     Order, ParseTreeIter, RefNode,
     ast::{
-        Await, BStringLit, BinExpr, Block, BlockItem, BooleanLit, Break, CallArgument, Cast,
-        Closure, Continue, Expr, ExprParentheses, ExprSyntaxError, FloatLit, ForEach, FunctionCall,
-        If, IndexAccess, IntegerLit, List, LocalVariable, Return, StringLit, TypeInfo, UnaryExpr,
-        WhileLoop,
+        Await, BStringLit, BinExpr, Block, BlockItem, BooleanLit, Break, Cast, Closure, Continue,
+        Expr, ExprParentheses, ExprSyntaxError, FloatLit, ForEach, FunctionCall, If, IndexAccess,
+        IntegerLit, List, LocalVariable, Return, StringLit, TypeInfo, UnaryExpr, WhileLoop,
     },
     expr::{
         AttributeList, ElseIf, ExprPath, Match, MatchCase, MethodCall, Safety, StructInit, Tuple,
@@ -400,25 +399,18 @@ impl ParseTreeIter for Await {
     }
 }
 
-impl ParseTreeIter for CallArgument {
-    fn depth_first_iter(&self, f: &mut dyn FnMut(Order, RefNode)) {
-        f(Order::Enter, RefNode::ExprCallArgument(self));
-
-        let _ = self.name;
-        self.value.depth_first_iter(f);
-
-        f(Order::Leave, RefNode::ExprCallArgument(self));
-    }
-}
-
 impl ParseTreeIter for FunctionCall {
     fn depth_first_iter(&self, f: &mut dyn FnMut(Order, RefNode)) {
         f(Order::Enter, RefNode::ExprFunctionCall(self));
 
         self.callee.depth_first_iter(f);
 
-        for arg in &self.arguments {
+        for arg in &self.positional {
             arg.depth_first_iter(f);
+        }
+
+        for (_, value) in &self.named {
+            value.depth_first_iter(f);
         }
 
         f(Order::Leave, RefNode::ExprFunctionCall(self));
@@ -433,8 +425,12 @@ impl ParseTreeIter for MethodCall {
 
         let _ = &self.method_name;
 
-        for arg in &self.arguments {
+        for arg in &self.positional {
             arg.depth_first_iter(f);
+        }
+
+        for (_, value) in &self.named {
+            value.depth_first_iter(f);
         }
 
         f(Order::Leave, RefNode::ExprMethodCall(self));

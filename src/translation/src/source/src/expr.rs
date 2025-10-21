@@ -370,16 +370,10 @@ pub struct Await {
 
 #[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct CallArgument {
-    pub name: Option<ArgNameId>,
-    pub value: Expr,
-}
-
-#[skip_serializing_none]
-#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FunctionCall {
     pub callee: Expr,
-    pub arguments: Vec<CallArgument>,
+    pub positional: Vec<Expr>,
+    pub named: Vec<(ArgNameId, Expr)>,
 }
 
 #[skip_serializing_none]
@@ -387,7 +381,8 @@ pub struct FunctionCall {
 pub struct MethodCall {
     pub object: Expr,
     pub method_name: String,
-    pub arguments: Vec<CallArgument>,
+    pub positional: Vec<Expr>,
+    pub named: Vec<(ArgNameId, Expr)>,
 }
 
 #[skip_serializing_none]

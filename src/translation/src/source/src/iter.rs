@@ -1,10 +1,10 @@
 use crate::{
     ast::LocalVariable,
     expr::{
-        AttributeList, Await, BStringLit, BinExpr, Block, BlockItem, BooleanLit, Break,
-        CallArgument, Cast, Closure, Continue, ExprParentheses, ExprPath, FloatLit, ForEach,
-        FunctionCall, If, IndexAccess, IntegerLit, List, Match, MatchCase, MethodCall, Return,
-        StringLit, StructInit, Tuple, TypeArgument, TypeInfo, UnaryExpr, WhileLoop,
+        AttributeList, Await, BStringLit, BinExpr, Block, BlockItem, BooleanLit, Break, Cast,
+        Closure, Continue, ExprParentheses, ExprPath, FloatLit, ForEach, FunctionCall, If,
+        IndexAccess, IntegerLit, List, Match, MatchCase, MethodCall, Return, StringLit, StructInit,
+        Tuple, TypeArgument, TypeInfo, UnaryExpr, WhileLoop,
     },
     item::{
         Enum, EnumVariant, FuncParam, Function, Generics, GlobalVariable, Impl, Import, ItemPath,
@@ -12,8 +12,8 @@ use crate::{
     },
     tag::OpaqueTypeNameId,
     ty::{
-        ArrayType, FunctionType, Lifetime, ReferenceType, RefinementType, SliceType, TupleType,
-        Type, TypePath,
+        ArrayType, FuncTypeParam, FunctionType, Lifetime, ReferenceType, RefinementType, SliceType,
+        TupleType, Type, TypePath,
     },
 };
 
@@ -59,7 +59,6 @@ pub enum RefNode<'a> {
     ExprReturn(&'a Return),
     ExprFor(&'a ForEach),
     ExprAwait(&'a Await),
-    ExprCallArgument(&'a CallArgument),
     ExprFunctionCall(&'a FunctionCall),
     ExprMethodCall(&'a MethodCall),
 
@@ -84,6 +83,7 @@ pub enum RefNode<'a> {
     TypeTupleType(&'a TupleType),
     TypeArrayType(&'a ArrayType),
     TypeSliceType(&'a SliceType),
+    TypeFuncParam(&'a FuncTypeParam),
     TypeFunctionType(&'a FunctionType),
     TypeReferenceType(&'a ReferenceType),
     TypeOpaqueType(&'a OpaqueTypeNameId),

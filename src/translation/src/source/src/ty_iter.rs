@@ -6,7 +6,7 @@ use crate::{
         Type, TypeParentheses, TypePath, TypeSyntaxError, UInt8, UInt16, UInt32, UInt64, UInt128,
         USize,
     },
-    ty::InferType,
+    ty::{FuncTypeParam, FuncTypeParams, InferType},
 };
 
 impl ParseTreeIter for TypeSyntaxError {
@@ -193,6 +193,30 @@ impl ParseTreeIter for SliceType {
         self.element_type.depth_first_iter(f);
 
         f(Order::Leave, RefNode::TypeSliceType(self));
+    }
+}
+
+impl ParseTreeIter for FuncTypeParam {
+    fn depth_first_iter(&self, f: &mut dyn FnMut(Order, RefNode)) {
+        f(Order::Enter, RefNode::TypeFuncParam(self));
+
+        let _ = self.name;
+
+        if let Some(attributes) = &self.attributes {
+            attributes.depth_first_iter(f);
+        }
+
+        self.ty.depth_first_iter(f);
+
+        f(Order::Leave, RefNode::TypeFuncParam(self));
+    }
+}
+
+impl ParseTreeIter for FuncTypeParams {
+    fn depth_first_iter(&self, f: &mut dyn FnMut(Order, RefNode)) {
+        for param in self {
+            param.depth_first_iter(f);
+        }
     }
 }
 

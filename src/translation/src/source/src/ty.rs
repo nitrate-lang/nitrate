@@ -1,8 +1,8 @@
 use crate::{
     ast::{Block, Expr},
     expr::{AttributeList, TypeArgument},
-    item::{FuncParams, Mutability},
-    tag::{LifetimeNameId, OpaqueTypeNameId},
+    item::Mutability,
+    tag::{LifetimeNameId, OpaqueTypeNameId, ParameterNameId},
 };
 
 use serde::{Deserialize, Serialize};
@@ -116,9 +116,19 @@ pub struct SliceType {
 
 #[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct FuncTypeParam {
+    pub attributes: Option<AttributeList>,
+    pub name: ParameterNameId,
+    pub ty: Type,
+}
+
+pub type FuncTypeParams = Vec<FuncTypeParam>;
+
+#[skip_serializing_none]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FunctionType {
     pub attributes: Option<AttributeList>,
-    pub parameters: FuncParams,
+    pub parameters: FuncTypeParams,
     pub return_type: Option<Type>,
 }
 

@@ -1,27 +1,6 @@
 use crate::prelude::*;
 use std::ops::ControlFlow;
 
-impl FunctionTypeIterMut<'_> {
-    pub(crate) fn try_for_each_mut<T>(
-        &mut self,
-        store: &Store,
-        vcb: &mut dyn FnMut(&mut Value) -> ControlFlow<T>,
-    ) -> ControlFlow<T> {
-        for param in &self.node.params {
-            let parameter = store[param].borrow_mut();
-
-            if let Some(default_value) = &parameter.default_value {
-                store[default_value]
-                    .borrow_mut()
-                    .iter_mut()
-                    .try_for_each_mut(store, vcb)?;
-            }
-        }
-
-        ControlFlow::Continue(())
-    }
-}
-
 impl BlockIterMut<'_> {
     pub(crate) fn try_for_each_mut<T>(
         &mut self,

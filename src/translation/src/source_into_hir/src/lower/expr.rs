@@ -5,14 +5,13 @@ use interned_string::IString;
 use nitrate_diagnosis::CompilerLog;
 use nitrate_hir::{SymbolTab, prelude::*};
 use nitrate_hir_get_type::{TypeInferenceCtx, get_type};
-use nitrate_source::ast::{self as ast, CallArgument, UnaryExprOp};
+use nitrate_source::ast::{self as ast, UnaryExprOp};
 use nitrate_source_parse::Parser;
 use nitrate_token::escape_string;
 use nitrate_token_lexer::{Lexer, LexerError};
 use ordered_float::OrderedFloat;
-use std::collections::{BTreeSet, HashMap};
+use std::collections::BTreeSet;
 use std::fmt::Write;
-use std::ops::Deref;
 
 fn from_nitrate_expression(_ctx: &mut Ast2HirCtx, nitrate_expr: &str) -> Result<Value, ()> {
     let lexer = match Lexer::new(nitrate_expr.as_bytes(), None) {
@@ -228,15 +227,14 @@ fn metatype_source_encode(
         Type::Function { function_type } => {
             let function_type = &store[function_type];
             write!(o, "::std::meta::Type::Function {{ parameters: Vec::from([").unwrap();
-            for param_id in &function_type.params {
-                let param = &store[param_id].borrow();
+            for param in &function_type.params {
                 write!(
                     o,
                     "::std::meta::FunctionParameter {{ name: String::from({}) , ty: ",
-                    escape_string(&param.name, true)
+                    escape_string(&param.0, true)
                 )
                 .unwrap();
-                metatype_source_encode(store, tab, &store[&param.ty], o)?;
+                metatype_source_encode(store, tab, &store[&param.1], o)?;
                 write!(o, " }},").unwrap();
             }
             write!(o, "]), return_type: ").unwrap();
@@ -1155,31 +1153,26 @@ impl Ast2Hir for ast::FunctionCall {
 
     fn ast2hir(self, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
         let callee = self.callee.ast2hir(ctx, log)?;
-        let mut arguments = Vec::with_capacity(self.arguments.len());
-        let mut pos_n = 0_u32;
 
-        for CallArgument { name, value } in self.arguments {
-            let name = match name {
-                Some(n) => IString::from(n.to_string()),
-                None => {
-                    let pos_name = format!("${}", pos_n);
-                    pos_n += 1;
-                    IString::from(pos_name)
-                }
-            };
+        let mut positional = Vec::with_capacity(self.positional.len());
+        let mut named = Vec::with_capacity(self.named.len());
 
-            let value = value.ast2hir(ctx, log)?.into_id(&ctx.store);
-            arguments.push((name, value));
+        for arg in self.positional {
+            let value = arg.ast2hir(ctx, log)?.into_id(&ctx.store);
+            positional.push(value);
         }
 
-        // TODO: Fix positional and named arguments distinction
+        for (name, arg) in self.named {
+            let name = IString::from(name.to_string());
+            let value = arg.ast2hir(ctx, log)?.into_id(&ctx.store);
+            named.push((name, value));
+        }
 
-        unimplemented!()
-
-        // Ok(Value::Call {
-        //     callee: callee.into_id(&ctx.store),
-        //     arguments: arguments.into(),
-        // })
+        Ok(Value::Call {
+            callee: callee.into_id(&ctx.store),
+            positional: positional.into(),
+            named: named.into(),
+        })
     }
 }
 
@@ -1187,32 +1180,29 @@ impl Ast2Hir for ast::MethodCall {
     type Hir = Value;
 
     fn ast2hir(self, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
-        let callee = self.object.ast2hir(ctx, log)?;
+        let object = self.object.ast2hir(ctx, log)?.into_id(&ctx.store);
+        let method = IString::from(self.method_name);
 
-        let mut arguments = Vec::with_capacity(self.arguments.len());
-        let mut pos_n = 0_u32;
+        let mut positional = Vec::with_capacity(self.positional.len());
+        let mut named = Vec::with_capacity(self.named.len());
 
-        for CallArgument { name, value } in self.arguments {
-            let name = match name {
-                Some(n) => IString::from(n.to_string()),
-                None => {
-                    let pos_name = format!("${}", pos_n);
-                    pos_n += 1;
-                    IString::from(pos_name)
-                }
-            };
-
-            let value = value.ast2hir(ctx, log)?.into_id(&ctx.store);
-            arguments.push((name, value));
+        for arg in self.positional {
+            let value = arg.ast2hir(ctx, log)?.into_id(&ctx.store);
+            positional.push(value);
         }
 
-        // TODO: Fix positional and named arguments distinction
-        unimplemented!()
+        for (name, arg) in self.named {
+            let name = IString::from(name.to_string());
+            let value = arg.ast2hir(ctx, log)?.into_id(&ctx.store);
+            named.push((name, value));
+        }
 
-        // Ok(Value::Call {
-        //     callee: callee.into_id(&ctx.store),
-        //     arguments: arguments.into(),
-        // })
+        Ok(Value::MethodCall {
+            object,
+            method,
+            positional: positional.into(),
+            named: named.into(),
+        })
     }
 }
 
