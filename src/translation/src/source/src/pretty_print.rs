@@ -3,6 +3,7 @@ use std::num::NonZeroUsize;
 use nitrate_token::IntegerKind;
 
 use crate::{
+    ast::{LocalVariable, LocalVariableKind},
     expr::{
         AttributeList, Await, BStringLit, BinExpr, BinExprOp, Block, BlockItem, BooleanLit, Break,
         CallArgument, Cast, Closure, Continue, ElseIf, Expr, ExprParentheses, ExprPath,
@@ -11,9 +12,9 @@ use crate::{
         Tuple, TypeArgument, TypeInfo, UnaryExpr, UnaryExprOp, WhileLoop,
     },
     item::{
-        AssociatedItem, Enum, EnumVariant, FuncParam, FuncParams, Function, Generics, Impl, Import,
-        Item, ItemSyntaxError, Module, Mutability, Struct, StructField, Trait, TypeAlias,
-        TypeParam, Variable, VariableKind, Visibility,
+        AssociatedItem, Enum, EnumVariant, FuncParam, FuncParams, Function, Generics,
+        GlobalVariable, GlobalVariableKind, Impl, Import, Item, ItemSyntaxError, Module,
+        Mutability, Struct, StructField, Trait, TypeAlias, TypeParam, Visibility,
     },
     ty::{
         ArrayType, Bool, Exclusivity, Float32, Float64, FunctionType, InferType, Int8, Int16,
@@ -393,6 +394,47 @@ impl PrettyPrint for Cast {
         self.value.pretty_print_fmt(ctx, writer)?;
         writer.write_str(" as ")?;
         self.to.pretty_print_fmt(ctx, writer)
+    }
+}
+
+impl PrettyPrint for LocalVariable {
+    fn pretty_print_fmt(
+        &self,
+        ctx: &mut PrintContext,
+        writer: &mut dyn std::fmt::Write,
+    ) -> std::fmt::Result {
+        if ctx.show_resolution_links {
+            write_resolve_link(writer, self)?;
+        }
+
+        match self.kind {
+            LocalVariableKind::Let => writer.write_str("let ")?,
+            LocalVariableKind::Var => writer.write_str("var ")?,
+        }
+
+        if let Some(attributes) = &self.attributes {
+            attributes.pretty_print_fmt(ctx, writer)?;
+            writer.write_char(' ')?;
+        }
+
+        if let Some(mutability) = &self.mutability {
+            mutability.pretty_print_fmt(ctx, writer)?;
+            writer.write_char(' ')?;
+        }
+
+        writer.write_str(&self.name)?;
+
+        if let Some(var_type) = &self.ty {
+            writer.write_str(": ")?;
+            var_type.pretty_print_fmt(ctx, writer)?;
+        }
+
+        if let Some(initializer) = &self.initializer {
+            writer.write_str(" = ")?;
+            initializer.pretty_print_fmt(ctx, writer)?;
+        }
+
+        writer.write_char(';')
     }
 }
 
@@ -1886,7 +1928,7 @@ impl PrettyPrint for Function {
     }
 }
 
-impl PrettyPrint for Variable {
+impl PrettyPrint for GlobalVariable {
     fn pretty_print_fmt(
         &self,
         ctx: &mut PrintContext,
@@ -1902,10 +1944,8 @@ impl PrettyPrint for Variable {
         }
 
         match self.kind {
-            VariableKind::Const => writer.write_str("const ")?,
-            VariableKind::Let => writer.write_str("let ")?,
-            VariableKind::Var => writer.write_str("var ")?,
-            VariableKind::Static => writer.write_str("static ")?,
+            GlobalVariableKind::Const => writer.write_str("const ")?,
+            GlobalVariableKind::Static => writer.write_str("static ")?,
         }
 
         if let Some(attributes) = &self.attributes {

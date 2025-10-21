@@ -1,5 +1,4 @@
-use crate::ast::{FuncParam, Type};
-use crate::item::Variable;
+use crate::ast::{FuncParam, Mutability, Type};
 use crate::tag::{ArgNameId, LabelNameId, StringLiteralId, StructFieldNameId, VariableNameId};
 use crate::ty::TypePath;
 
@@ -197,15 +196,33 @@ pub struct Cast {
 }
 
 #[skip_serializing_none]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+pub enum LocalVariableKind {
+    Let,
+    Var,
+}
+
+#[skip_serializing_none]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct LocalVariable {
+    pub kind: LocalVariableKind,
+    pub attributes: Option<AttributeList>,
+    pub mutability: Option<Mutability>,
+    pub name: VariableNameId,
+    pub ty: Option<Type>,
+    pub initializer: Option<Expr>,
+}
+
+#[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum BlockItem {
-    Variable(Variable),
+    Variable(LocalVariable),
     Expr(Expr),
     Stmt(Expr),
 }
 
 impl BlockItem {
-    pub fn as_variable(self) -> Option<Variable> {
+    pub fn as_variable(self) -> Option<LocalVariable> {
         match self {
             BlockItem::Variable(v) => Some(v),
             _ => None,

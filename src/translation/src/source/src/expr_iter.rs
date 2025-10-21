@@ -3,7 +3,8 @@ use crate::{
     ast::{
         Await, BStringLit, BinExpr, Block, BlockItem, BooleanLit, Break, CallArgument, Cast,
         Closure, Continue, Expr, ExprParentheses, ExprSyntaxError, FloatLit, ForEach, FunctionCall,
-        If, IndexAccess, IntegerLit, List, Return, StringLit, TypeInfo, UnaryExpr, WhileLoop,
+        If, IndexAccess, IntegerLit, List, LocalVariable, Return, StringLit, TypeInfo, UnaryExpr,
+        WhileLoop,
     },
     expr::{
         AttributeList, ElseIf, ExprPath, Match, MatchCase, MethodCall, Safety, StructInit, Tuple,
@@ -143,6 +144,30 @@ impl ParseTreeIter for Cast {
         self.to.depth_first_iter(f);
 
         f(Order::Leave, RefNode::ExprCast(self));
+    }
+}
+
+impl ParseTreeIter for LocalVariable {
+    fn depth_first_iter(&self, f: &mut dyn FnMut(Order, RefNode)) {
+        f(Order::Enter, RefNode::ExprLocalVariable(self));
+
+        let _ = self.kind;
+        let _ = self.mutability;
+        let _ = self.name;
+
+        if let Some(attributes) = &self.attributes {
+            attributes.depth_first_iter(f);
+        }
+
+        if let Some(var_type) = &self.ty {
+            var_type.depth_first_iter(f);
+        }
+
+        if let Some(initializer) = &self.initializer {
+            initializer.depth_first_iter(f);
+        }
+
+        f(Order::Leave, RefNode::ExprLocalVariable(self));
     }
 }
 

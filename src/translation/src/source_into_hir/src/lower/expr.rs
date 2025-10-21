@@ -916,19 +916,13 @@ impl Ast2Hir for ast::Cast {
 }
 
 fn ast_localvar2hir(
-    var: &ast::Variable,
+    var: &ast::LocalVariable,
     ctx: &mut Ast2HirCtx,
     log: &CompilerLog,
 ) -> Result<LocalVariable, ()> {
-    if var.visibility.is_some() {
-        log.report(&HirErr::LocalVariableCannotBeVisible);
-    }
-
     let kind = match var.kind {
-        ast::VariableKind::Const => LocalVariableKind::Stack,
-        ast::VariableKind::Let => LocalVariableKind::Stack,
-        ast::VariableKind::Var => LocalVariableKind::Dynamic,
-        ast::VariableKind::Static => LocalVariableKind::Static,
+        ast::LocalVariableKind::Let => LocalVariableKind::Stack,
+        ast::LocalVariableKind::Var => LocalVariableKind::Dynamic,
     };
 
     let attributes = BTreeSet::new();

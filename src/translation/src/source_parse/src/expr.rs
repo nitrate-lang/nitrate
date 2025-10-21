@@ -7,8 +7,9 @@ use nitrate_source::{
         Break, CallArgument, Cast, Closure, Continue, ElseIf, Expr, ExprParentheses, ExprPath,
         ExprPathSegment, ExprSyntaxError, Float32, Float64, FloatLit, ForEach, FuncParam,
         FunctionCall, If, IndexAccess, Int8, Int16, Int32, Int64, Int128, IntegerLit, List,
-        Mutability, Return, Safety, StringLit, Tuple, Type, TypeArgument, TypeInfo, TypePath,
-        TypePathSegment, UInt8, UInt16, UInt32, UInt64, UInt128, UnaryExpr, UnaryExprOp, WhileLoop,
+        LocalVariable, LocalVariableKind, Mutability, Return, Safety, StringLit, Tuple, Type,
+        TypeArgument, TypeInfo, TypePath, TypePathSegment, UInt8, UInt16, UInt32, UInt64, UInt128,
+        UnaryExpr, UnaryExprOp, WhileLoop,
     },
     tag::{
         VariableNameId, intern_arg_name, intern_label_name, intern_parameter_name,
@@ -1159,10 +1160,61 @@ impl Parser<'_, '_> {
         arguments
     }
 
+    fn parse_local_variable(&mut self) -> LocalVariable {
+        let kind = match self.lexer.next_t() {
+            Token::Let => LocalVariableKind::Let,
+            Token::Var => LocalVariableKind::Var,
+            _ => unreachable!(),
+        };
+
+        let attributes = self.parse_attributes();
+
+        let mut mutability = None;
+        if self.lexer.skip_if(&Token::Mut) {
+            mutability = Some(Mutability::Mut);
+        } else if self.lexer.skip_if(&Token::Const) {
+            mutability = Some(Mutability::Const);
+        }
+
+        let name = self.lexer.next_if_name().unwrap_or_else(|| {
+            let bug = SyntaxErr::VariableMissingName(self.lexer.peek_pos());
+            self.log.report(&bug);
+            "".into()
+        });
+
+        let name = intern_variable_name(name);
+
+        let var_type = if self.lexer.skip_if(&Token::Colon) {
+            Some(self.parse_type())
+        } else {
+            None
+        };
+
+        let initializer = if self.lexer.skip_if(&Token::Eq) {
+            Some(self.parse_expression())
+        } else {
+            None
+        };
+
+        if !self.lexer.skip_if(&Token::Semi) {
+            let bug = SyntaxErr::ExpectedSemicolon(self.lexer.peek_pos());
+            self.log.report(&bug);
+        }
+
+        LocalVariable {
+            kind,
+            attributes,
+            mutability,
+            name,
+            ty: var_type,
+            initializer,
+        }
+    }
+
     fn parse_block_item(&mut self) -> BlockItem {
         match self.lexer.peek_t() {
-            Token::Static | Token::Const | Token::Let | Token::Var => {
-                let var = self.parse_variable();
+            Token::Let | Token::Var => {
+                let var = self.parse_local_variable();
                 BlockItem::Variable(var)
             }
 

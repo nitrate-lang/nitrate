@@ -28,7 +28,7 @@ fn visit_node(symbol_set: &mut SymbolSet, scope_vec: &Vec<ModuleNameId>, node: &
         RefNode::ItemEnum(sym) => qualify_name(&scope_vec, &sym.name),
         RefNode::ItemTrait(sym) => qualify_name(&scope_vec, &sym.name),
         RefNode::ItemFunction(sym) => qualify_name(&scope_vec, &sym.name),
-        RefNode::ItemVariable(sym) => qualify_name(&scope_vec, &sym.name),
+        RefNode::ItemGlobalVariable(sym) => qualify_name(&scope_vec, &sym.name),
         _ => return,
     };
 

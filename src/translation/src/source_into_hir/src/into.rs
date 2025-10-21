@@ -5,7 +5,7 @@ use interned_string::IString;
 use nitrate_diagnosis::CompilerLog;
 use nitrate_hir::prelude::*;
 use nitrate_source::{
-    Order, ParseTreeIter, ParseTreeIterMut, RefNodeMut, ast,
+    Order, ParseTreeIterMut, RefNodeMut, ast,
     tag::{intern_function_name, intern_type_name, intern_variable_name},
 };
 
@@ -208,8 +208,8 @@ fn ast_enumdef2hir(
     Ok(enum_def_id)
 }
 
-fn ast_variable2hir(
-    var: &ast::Variable,
+fn ast_globalvar2hir(
+    var: &ast::GlobalVariable,
     ctx: &mut Ast2HirCtx,
     log: &CompilerLog,
 ) -> Result<GlobalVariableId, ()> {
@@ -218,14 +218,6 @@ fn ast_variable2hir(
         Some(ast::Visibility::Protected) => Visibility::Pro,
         Some(ast::Visibility::Private) | None => Visibility::Sec,
     };
-
-    match var.kind {
-        ast::VariableKind::Const | ast::VariableKind::Static => {}
-        ast::VariableKind::Let | ast::VariableKind::Var => {
-            log.report(&HirErr::GlobalVariableMustBeConstOrStatic);
-            return Err(());
-        }
-    }
 
     let attributes = BTreeSet::new();
     if let Some(ast_attributes) = &var.attributes {
@@ -384,6 +376,7 @@ fn visit_node(order: Order, node: RefNodeMut, ctx: &mut Ast2HirCtx, log: &Compil
         | RefNodeMut::ExprUnaryExpr(_)
         | RefNodeMut::ExprBinExpr(_)
         | RefNodeMut::ExprCast(_)
+        | RefNodeMut::ExprLocalVariable(_)
         | RefNodeMut::ExprBlockItem(_)
         | RefNodeMut::ExprBlock(_)
         | RefNodeMut::ExprAttributeList(_)
@@ -494,7 +487,7 @@ fn visit_node(order: Order, node: RefNodeMut, ctx: &mut Ast2HirCtx, log: &Compil
 
         RefNodeMut::ItemTrait(_) => match order {
             Order::Enter => {
-                // TODO: implement
+                // TODO: implement traits
                 println!("scope = {:?}", ctx.current_scope);
             }
 
@@ -515,13 +508,15 @@ fn visit_node(order: Order, node: RefNodeMut, ctx: &mut Ast2HirCtx, log: &Compil
             Order::Leave => {}
         },
 
-        RefNodeMut::ItemVariable(variable) => match order {
+        RefNodeMut::ItemGlobalVariable(variable) => match order {
             Order::Enter => {
                 variable.name =
                     intern_variable_name(Ast2HirCtx::join_path(&ctx.current_scope, &variable.name));
 
-                // TODO: implement. is it local or global?
-                println!("scope = {:?}", ctx.current_scope);
+                if let Ok(variable) = ast_globalvar2hir(variable, ctx, log) {
+                    let defintion = SymbolId::GlobalVariable(variable);
+                    ctx.symbol_tab.add_symbol(defintion, &ctx.store);
+                }
             }
 
             Order::Leave => {}

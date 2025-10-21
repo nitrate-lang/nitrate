@@ -1,8 +1,8 @@
 use crate::{
     Order, ParseTreeIterMut, RefNodeMut,
     ast::{
-        AssociatedItem, Enum, EnumVariant, FuncParam, Function, Generics, Impl, Import, Item,
-        Module, Struct, StructField, Trait, TypeAlias, Variable,
+        AssociatedItem, Enum, EnumVariant, FuncParam, Function, Generics, GlobalVariable, Impl,
+        Import, Item, Module, Struct, StructField, Trait, TypeAlias,
     },
     item::{FuncParams, ItemSyntaxError},
 };
@@ -299,9 +299,9 @@ impl ParseTreeIterMut for Function {
     }
 }
 
-impl ParseTreeIterMut for Variable {
+impl ParseTreeIterMut for GlobalVariable {
     fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
-        f(Order::Enter, RefNodeMut::ItemVariable(self));
+        f(Order::Enter, RefNodeMut::ItemGlobalVariable(self));
 
         let _ = self.visibility;
         let _ = self.kind;
@@ -320,7 +320,7 @@ impl ParseTreeIterMut for Variable {
             initializer.depth_first_iter_mut(f);
         }
 
-        f(Order::Leave, RefNodeMut::ItemVariable(self));
+        f(Order::Leave, RefNodeMut::ItemGlobalVariable(self));
     }
 }
 

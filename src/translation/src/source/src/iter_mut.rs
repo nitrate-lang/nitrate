@@ -1,4 +1,5 @@
 use crate::{
+    ast::LocalVariable,
     expr::{
         AttributeList, Await, BStringLit, BinExpr, Block, BlockItem, BooleanLit, Break,
         CallArgument, Cast, Closure, Continue, ExprParentheses, ExprPath, FloatLit, ForEach,
@@ -6,8 +7,8 @@ use crate::{
         StringLit, StructInit, Tuple, TypeArgument, TypeInfo, UnaryExpr, WhileLoop,
     },
     item::{
-        Enum, EnumVariant, FuncParam, Function, Generics, Impl, Import, ItemPath, Module, Struct,
-        StructField, Trait, TypeAlias, Variable,
+        Enum, EnumVariant, FuncParam, Function, Generics, GlobalVariable, Impl, Import, ItemPath,
+        Module, Struct, StructField, Trait, TypeAlias,
     },
     iter::Order,
     tag::OpaqueTypeNameId,
@@ -36,6 +37,7 @@ pub enum RefNodeMut<'a> {
     ExprUnaryExpr(&'a mut UnaryExpr),
     ExprBinExpr(&'a mut BinExpr),
     ExprCast(&'a mut Cast),
+    ExprLocalVariable(&'a mut LocalVariable),
     ExprBlockItem(&'a mut BlockItem),
     ExprBlock(&'a mut Block),
     ExprAttributeList(&'a mut AttributeList),
@@ -98,5 +100,5 @@ pub enum RefNodeMut<'a> {
     ItemImpl(&'a mut Impl),
     ItemFuncParam(&'a mut FuncParam),
     ItemFunction(&'a mut Function),
-    ItemVariable(&'a mut Variable),
+    ItemGlobalVariable(&'a mut GlobalVariable),
 }

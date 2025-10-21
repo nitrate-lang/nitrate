@@ -123,7 +123,7 @@ pub struct Enum {
 pub enum AssociatedItem {
     SyntaxError(ItemSyntaxError),
     TypeAlias(TypeAlias),
-    ConstantItem(Variable),
+    ConstantItem(GlobalVariable),
     Method(Function),
 }
 
@@ -180,18 +180,16 @@ pub struct Function {
 
 #[skip_serializing_none]
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
-pub enum VariableKind {
+pub enum GlobalVariableKind {
     Static,
     Const,
-    Let,
-    Var,
 }
 
 #[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Variable {
+pub struct GlobalVariable {
     pub visibility: Option<Visibility>,
-    pub kind: VariableKind,
+    pub kind: GlobalVariableKind,
     pub attributes: Option<AttributeList>,
     pub mutability: Option<Mutability>,
     pub name: VariableNameId,
@@ -211,7 +209,7 @@ pub enum Item {
     Trait(Trait),
     Impl(Box<Impl>),
     Function(Function),
-    Variable(Variable),
+    Variable(GlobalVariable),
 }
 
 impl std::fmt::Debug for Item {
@@ -288,7 +286,7 @@ impl Item {
         }
     }
 
-    pub fn as_variable(self) -> Option<Variable> {
+    pub fn as_variable(self) -> Option<GlobalVariable> {
         match self {
             Item::Variable(v) => Some(v),
             _ => None,

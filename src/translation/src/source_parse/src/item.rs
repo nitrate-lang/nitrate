@@ -3,9 +3,10 @@ use crate::diagnosis::SyntaxErr;
 
 use nitrate_source::{
     ast::{
-        AssociatedItem, Enum, EnumVariant, FuncParam, FuncParams, Function, Generics, Impl, Import,
-        Item, ItemPath, ItemPathSegment, ItemSyntaxError, Module, Mutability, Struct, StructField,
-        Trait, TypeAlias, TypeParam, Variable, VariableKind, Visibility,
+        AssociatedItem, Enum, EnumVariant, FuncParam, FuncParams, Function, Generics,
+        GlobalVariable, GlobalVariableKind, Impl, Import, Item, ItemPath, ItemPathSegment,
+        ItemSyntaxError, Module, Mutability, Struct, StructField, Trait, TypeAlias, TypeParam,
+        Visibility,
     },
     tag::{
         intern_enum_variant_name, intern_function_name, intern_import_name, intern_module_name,
@@ -430,7 +431,7 @@ impl Parser<'_, '_> {
             }
 
             Token::Const => {
-                let mut const_var = self.parse_variable();
+                let mut const_var = self.parse_global_variable();
                 const_var.visibility = visibility;
                 AssociatedItem::ConstantItem(const_var)
             }
@@ -703,12 +704,10 @@ impl Parser<'_, '_> {
         }
     }
 
-    pub(crate) fn parse_variable(&mut self) -> Variable {
+    fn parse_global_variable(&mut self) -> GlobalVariable {
         let kind = match self.lexer.next_t() {
-            Token::Static => VariableKind::Static,
-            Token::Const => VariableKind::Const,
-            Token::Let => VariableKind::Let,
-            Token::Var => VariableKind::Var,
+            Token::Static => GlobalVariableKind::Static,
+            Token::Const => GlobalVariableKind::Const,
             _ => unreachable!(),
         };
 
@@ -746,7 +745,7 @@ impl Parser<'_, '_> {
             self.log.report(&bug);
         }
 
-        Variable {
+        GlobalVariable {
             visibility: None,
             kind,
             attributes,
@@ -814,8 +813,8 @@ impl Parser<'_, '_> {
                 Item::Function(func)
             }
 
-            Token::Static | Token::Const | Token::Let | Token::Var => {
-                let mut var = self.parse_variable();
+            Token::Static | Token::Const => {
+                let mut var = self.parse_global_variable();
                 var.visibility = visibility;
                 Item::Variable(var)
             }

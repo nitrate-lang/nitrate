@@ -3,7 +3,8 @@ use crate::{
     ast::{
         Await, BStringLit, BinExpr, Block, BlockItem, BooleanLit, Break, CallArgument, Cast,
         Closure, Continue, Expr, ExprParentheses, ExprSyntaxError, FloatLit, ForEach, FunctionCall,
-        If, IndexAccess, IntegerLit, List, Return, StringLit, TypeInfo, UnaryExpr, WhileLoop,
+        If, IndexAccess, IntegerLit, List, LocalVariable, Return, StringLit, TypeInfo, UnaryExpr,
+        WhileLoop,
     },
     expr::{
         AttributeList, ElseIf, ExprPath, Match, MatchCase, MethodCall, Safety, StructInit, Tuple,
@@ -143,6 +144,30 @@ impl ParseTreeIterMut for Cast {
         self.to.depth_first_iter_mut(f);
 
         f(Order::Leave, RefNodeMut::ExprCast(self));
+    }
+}
+
+impl ParseTreeIterMut for LocalVariable {
+    fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
+        f(Order::Enter, RefNodeMut::ExprLocalVariable(self));
+
+        let _ = self.kind;
+        let _ = self.mutability;
+        let _ = self.name;
+
+        if let Some(attributes) = &mut self.attributes {
+            attributes.depth_first_iter_mut(f);
+        }
+
+        if let Some(var_type) = &mut self.ty {
+            var_type.depth_first_iter_mut(f);
+        }
+
+        if let Some(initializer) = &mut self.initializer {
+            initializer.depth_first_iter_mut(f);
+        }
+
+        f(Order::Leave, RefNodeMut::ExprLocalVariable(self));
     }
 }
 
