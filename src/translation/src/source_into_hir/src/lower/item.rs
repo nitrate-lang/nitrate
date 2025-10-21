@@ -21,7 +21,7 @@ impl Ast2Hir for ast::TypeAlias {
             }
         }
 
-        let name = self.name.to_string().into();
+        let name = IString::from(Ast2HirCtx::join_path(&ctx.current_scope, &self.name));
 
         if self.generics.is_some() {
             // TODO: support generic type aliases
@@ -67,7 +67,7 @@ impl Ast2Hir for ast::Struct {
             }
         }
 
-        let name = self.name.to_string().into();
+        let name = IString::from(Ast2HirCtx::join_path(&ctx.current_scope, &self.name));
 
         if self.generics.is_some() {
             // TODO: support generic structs
@@ -143,7 +143,7 @@ impl Ast2Hir for ast::Enum {
             }
         }
 
-        let name = self.name.to_string().into();
+        let name = IString::from(Ast2HirCtx::join_path(&ctx.current_scope, &self.name));
 
         if self.generics.is_some() {
             // TODO: support generic enums
@@ -238,7 +238,7 @@ impl Ast2Hir for ast::GlobalVariable {
             Some(ast::Mutability::Const) | None => false,
         };
 
-        let name = self.name.to_string().into();
+        let name = IString::from(Ast2HirCtx::join_path(&ctx.current_scope, &self.name));
 
         let ty = match self.ty.to_owned() {
             None => ctx.create_inference_placeholder().into_id(&ctx.store),
@@ -329,7 +329,7 @@ impl Ast2Hir for ast::Function {
             }
         }
 
-        let name = self.name.to_string().into();
+        let name = IString::from(Ast2HirCtx::join_path(&ctx.current_scope, &self.name));
 
         if self.generics.is_some() {
             // TODO: support generic functions
