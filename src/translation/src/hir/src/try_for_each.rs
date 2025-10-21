@@ -416,6 +416,125 @@ impl ValueIter<'_> {
     }
 }
 
+impl GlobalVariableIter<'_> {
+    pub(crate) fn try_for_each<T>(
+        &self,
+        store: &Store,
+        vcb: &mut dyn FnMut(&Value) -> ControlFlow<T>,
+        tcb: &mut dyn FnMut(&Type) -> ControlFlow<T>,
+    ) -> ControlFlow<T> {
+        store[&self.node.ty].iter().try_for_each(store, vcb, tcb)?;
+
+        if let Some(init) = &self.node.init {
+            store[init].borrow().iter().try_for_each(store, vcb, tcb)?;
+        }
+
+        ControlFlow::Continue(())
+    }
+}
+
+impl ModuleIter<'_> {
+    pub(crate) fn try_for_each<T>(
+        &self,
+        store: &Store,
+        vcb: &mut dyn FnMut(&Value) -> ControlFlow<T>,
+        tcb: &mut dyn FnMut(&Type) -> ControlFlow<T>,
+    ) -> ControlFlow<T> {
+        for item in &self.node.items {
+            match item {
+                Item::Module(id) => {
+                    store[id].borrow().iter().try_for_each(store, vcb, tcb)?;
+                }
+
+                Item::GlobalVariable(id) => {
+                    store[id].borrow().iter().try_for_each(store, vcb, tcb)?;
+                }
+
+                Item::Function(id) => {
+                    store[id].borrow().iter().try_for_each(store, vcb, tcb)?;
+                }
+
+                Item::TypeAliasDef(id) => {
+                    store[id].borrow().iter().try_for_each(store, vcb, tcb)?;
+                }
+
+                Item::StructDef(id) => {
+                    store[id].borrow().iter().try_for_each(store, vcb, tcb)?;
+                }
+
+                Item::EnumDef(id) => {
+                    store[id].borrow().iter().try_for_each(store, vcb, tcb)?;
+                }
+            }
+        }
+
+        ControlFlow::Continue(())
+    }
+}
+
+impl TypeAliasDefIter<'_> {
+    pub(crate) fn try_for_each<T>(
+        &self,
+        store: &Store,
+        vcb: &mut dyn FnMut(&Value) -> ControlFlow<T>,
+        tcb: &mut dyn FnMut(&Type) -> ControlFlow<T>,
+    ) -> ControlFlow<T> {
+        store[&self.node.type_id]
+            .iter()
+            .try_for_each(store, vcb, tcb)?;
+
+        ControlFlow::Continue(())
+    }
+}
+
+impl StructDefIter<'_> {
+    pub(crate) fn try_for_each<T>(
+        &self,
+        store: &Store,
+        vcb: &mut dyn FnMut(&Value) -> ControlFlow<T>,
+        tcb: &mut dyn FnMut(&Type) -> ControlFlow<T>,
+    ) -> ControlFlow<T> {
+        for (_vis, default) in &self.node.field_extras {
+            if let Some(default_value) = default {
+                store[default_value]
+                    .borrow()
+                    .iter()
+                    .try_for_each(store, vcb, tcb)?;
+            }
+        }
+
+        store[&self.node.struct_id]
+            .iter()
+            .try_for_each(store, vcb, tcb)?;
+
+        ControlFlow::Continue(())
+    }
+}
+
+impl EnumDefIter<'_> {
+    pub(crate) fn try_for_each<T>(
+        &self,
+        store: &Store,
+        vcb: &mut dyn FnMut(&Value) -> ControlFlow<T>,
+        tcb: &mut dyn FnMut(&Type) -> ControlFlow<T>,
+    ) -> ControlFlow<T> {
+        for default in &self.node.variant_extras {
+            if let Some(default_value) = default {
+                store[default_value]
+                    .borrow()
+                    .iter()
+                    .try_for_each(store, vcb, tcb)?;
+            }
+        }
+
+        store[&self.node.enum_id]
+            .iter()
+            .try_for_each(store, vcb, tcb)?;
+
+        ControlFlow::Continue(())
+    }
+}
+
 impl FunctionIter<'_> {
     pub(crate) fn try_for_each<T>(
         &self,

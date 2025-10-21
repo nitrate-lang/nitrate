@@ -145,6 +145,126 @@ impl ValueIter<'_> {
     }
 }
 
+impl GlobalVariableIter<'_> {
+    pub fn for_each_type(&self, store: &Store, f: &mut dyn FnMut(&Type)) {
+        let _ = self.try_for_each(
+            store,
+            &mut |_| ControlFlow::Continue(()),
+            &mut |ty: &Type| -> ControlFlow<()> {
+                f(ty);
+                ControlFlow::Continue(())
+            },
+        );
+    }
+
+    pub fn for_each_value(&self, store: &Store, f: &mut dyn FnMut(&Value)) {
+        let _ = self.try_for_each(
+            store,
+            &mut |value: &Value| -> ControlFlow<()> {
+                f(value);
+                ControlFlow::Continue(())
+            },
+            &mut |_| ControlFlow::Continue(()),
+        );
+    }
+}
+
+impl ModuleIter<'_> {
+    pub fn for_each_type(&self, store: &Store, f: &mut dyn FnMut(&Type)) {
+        let _ = self.try_for_each(
+            store,
+            &mut |_| ControlFlow::Continue(()),
+            &mut |ty: &Type| -> ControlFlow<()> {
+                f(ty);
+                ControlFlow::Continue(())
+            },
+        );
+    }
+
+    pub fn for_each_value(&self, store: &Store, f: &mut dyn FnMut(&Value)) {
+        let _ = self.try_for_each(
+            store,
+            &mut |value: &Value| -> ControlFlow<()> {
+                f(value);
+                ControlFlow::Continue(())
+            },
+            &mut |_| ControlFlow::Continue(()),
+        );
+    }
+}
+
+impl TypeAliasDefIter<'_> {
+    pub fn for_each_type(&self, store: &Store, f: &mut dyn FnMut(&Type)) {
+        let _ = self.try_for_each(
+            store,
+            &mut |_| ControlFlow::Continue(()),
+            &mut |ty: &Type| -> ControlFlow<()> {
+                f(ty);
+                ControlFlow::Continue(())
+            },
+        );
+    }
+
+    pub fn for_each_value(&self, store: &Store, f: &mut dyn FnMut(&Value)) {
+        let _ = self.try_for_each(
+            store,
+            &mut |value: &Value| -> ControlFlow<()> {
+                f(value);
+                ControlFlow::Continue(())
+            },
+            &mut |_| ControlFlow::Continue(()),
+        );
+    }
+}
+
+impl StructDefIter<'_> {
+    pub fn for_each_type(&self, store: &Store, f: &mut dyn FnMut(&Type)) {
+        let _ = self.try_for_each(
+            store,
+            &mut |_| ControlFlow::Continue(()),
+            &mut |ty: &Type| -> ControlFlow<()> {
+                f(ty);
+                ControlFlow::Continue(())
+            },
+        );
+    }
+
+    pub fn for_each_value(&self, store: &Store, f: &mut dyn FnMut(&Value)) {
+        let _ = self.try_for_each(
+            store,
+            &mut |value: &Value| -> ControlFlow<()> {
+                f(value);
+                ControlFlow::Continue(())
+            },
+            &mut |_| ControlFlow::Continue(()),
+        );
+    }
+}
+
+impl EnumDefIter<'_> {
+    pub fn for_each_type(&self, store: &Store, f: &mut dyn FnMut(&Type)) {
+        let _ = self.try_for_each(
+            store,
+            &mut |_| ControlFlow::Continue(()),
+            &mut |ty: &Type| -> ControlFlow<()> {
+                f(ty);
+                ControlFlow::Continue(())
+            },
+        );
+    }
+
+    pub fn for_each_value(&self, store: &Store, f: &mut dyn FnMut(&Value)) {
+        let _ = self.try_for_each(
+            store,
+            &mut |value: &Value| -> ControlFlow<()> {
+                f(value);
+                ControlFlow::Continue(())
+            },
+            &mut |_| ControlFlow::Continue(()),
+        );
+    }
+}
+
 impl FunctionIter<'_> {
     pub fn for_each_type(&self, store: &Store, f: &mut dyn FnMut(&Type)) {
         let _ = self.try_for_each(

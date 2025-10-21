@@ -60,6 +60,56 @@ impl Value {
     }
 }
 
+pub struct GlobalVariableIter<'a> {
+    pub(crate) node: &'a GlobalVariable,
+}
+
+impl GlobalVariable {
+    pub fn iter(&self) -> GlobalVariableIter<'_> {
+        GlobalVariableIter { node: self }
+    }
+}
+
+pub struct ModuleIter<'a> {
+    pub(crate) node: &'a Module,
+}
+
+impl Module {
+    pub fn iter(&self) -> ModuleIter<'_> {
+        ModuleIter { node: self }
+    }
+}
+
+pub struct TypeAliasDefIter<'a> {
+    pub(crate) node: &'a TypeAliasDef,
+}
+
+impl TypeAliasDef {
+    pub fn iter(&self) -> TypeAliasDefIter<'_> {
+        TypeAliasDefIter { node: self }
+    }
+}
+
+pub struct StructDefIter<'a> {
+    pub(crate) node: &'a StructDef,
+}
+
+impl StructDef {
+    pub fn iter(&self) -> StructDefIter<'_> {
+        StructDefIter { node: self }
+    }
+}
+
+pub struct EnumDefIter<'a> {
+    pub(crate) node: &'a EnumDef,
+}
+
+impl EnumDef {
+    pub fn iter(&self) -> EnumDefIter<'_> {
+        EnumDefIter { node: self }
+    }
+}
+
 pub struct FunctionIter<'a> {
     pub(crate) node: &'a Function,
 }
