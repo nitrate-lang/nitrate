@@ -1,4 +1,3 @@
-use crate::ast_expr2hir;
 use crate::context::Ast2HirCtx;
 use crate::diagnosis::HirErr;
 use crate::lower::lower::Ast2Hir;
@@ -15,7 +14,7 @@ use std::collections::{BTreeSet, HashMap};
 use std::fmt::Write;
 use std::ops::Deref;
 
-fn from_nitrate_expression(ctx: &mut Ast2HirCtx, nitrate_expr: &str) -> Result<Value, ()> {
+fn from_nitrate_expression(_ctx: &mut Ast2HirCtx, nitrate_expr: &str) -> Result<Value, ()> {
     let lexer = match Lexer::new(nitrate_expr.as_bytes(), None) {
         Ok(lexer) => lexer,
         Err(LexerError::SourceTooBig) => return Err(()),
@@ -24,17 +23,13 @@ fn from_nitrate_expression(ctx: &mut Ast2HirCtx, nitrate_expr: &str) -> Result<V
     let trash = CompilerLog::default();
     let mut parser = Parser::new(lexer, &trash);
 
-    let expression = parser.parse_expression();
+    let _expression = parser.parse_expression();
     if trash.error_bit() {
         return Err(());
     }
 
-    let hir_value = ast_expr2hir(expression, ctx, &trash)?;
-    if trash.error_bit() {
-        return Err(());
-    }
-
-    Ok(hir_value)
+    unimplemented!();
+    // TODO: Lower the parsed expression into HIR
 }
 
 pub(crate) enum EncodeErr {
