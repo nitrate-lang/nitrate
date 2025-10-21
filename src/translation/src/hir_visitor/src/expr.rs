@@ -157,13 +157,9 @@ pub trait HirValueVisitor<T> {
 
             Value::Call {
                 callee,
-                positional_arguments,
-                named_arguments,
-            } => self.visit_call(
-                &store[callee].borrow(),
-                positional_arguments,
-                named_arguments,
-            ),
+                positional,
+                named,
+            } => self.visit_call(&store[callee].borrow(), positional, named),
 
             Value::MethodCall {
                 object,

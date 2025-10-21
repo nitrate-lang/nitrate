@@ -269,22 +269,22 @@ impl ValueIterMut<'_> {
 
             Value::Call {
                 callee,
-                positional_arguments,
-                named_arguments,
+                positional,
+                named,
             } => {
                 store[callee as &ValueId]
                     .borrow_mut()
                     .iter_mut()
                     .try_for_each_mut(store, vcb)?;
 
-                for argument in positional_arguments {
+                for argument in positional {
                     store[argument as &ValueId]
                         .borrow_mut()
                         .iter_mut()
                         .try_for_each_mut(store, vcb)?;
                 }
 
-                for (_name, argument) in named_arguments {
+                for (_name, argument) in named {
                     store[argument as &ValueId]
                         .borrow_mut()
                         .iter_mut()

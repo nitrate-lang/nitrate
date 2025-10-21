@@ -397,8 +397,8 @@ pub enum Value {
 
     Call {
         callee: ValueId,
-        positional_arguments: ThinVec<ValueId>,
-        named_arguments: ThinVec<(IString, ValueId)>,
+        positional: ThinVec<ValueId>,
+        named: ThinVec<(IString, ValueId)>,
     },
 
     MethodCall {

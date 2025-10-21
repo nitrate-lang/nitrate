@@ -112,8 +112,8 @@ pub(crate) fn module_put_defaults(module: &mut Module, ctx: &mut Ast2HirCtx, _lo
         .for_each_value_mut(&ctx.store, &mut |value| match value {
             Value::Call {
                 callee: _,
-                positional_arguments: _,
-                named_arguments: _,
+                positional: _,
+                named: _,
             } => {
                 // arguments
                 // TODO: Place default values for arguments

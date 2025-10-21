@@ -248,8 +248,8 @@ pub fn get_type(value: &Value, ctx: &TypeInferenceCtx) -> Result<Type, TypeInfer
 
         Value::Call {
             callee,
-            positional_arguments: _,
-            named_arguments: _,
+            positional: _,
+            named: _,
         } => {
             let callee = &ctx.store[callee].borrow();
             if let Type::Function { function_type } = get_type(callee, ctx)? {

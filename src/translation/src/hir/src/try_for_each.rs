@@ -379,22 +379,22 @@ impl ValueIter<'_> {
 
             Value::Call {
                 callee,
-                positional_arguments,
-                named_arguments,
+                positional,
+                named,
             } => {
                 store[callee]
                     .borrow()
                     .iter()
                     .try_for_each(store, vcb, tcb)?;
 
-                for argument in positional_arguments {
+                for argument in positional {
                     store[argument]
                         .borrow()
                         .iter()
                         .try_for_each(store, vcb, tcb)?;
                 }
 
-                for (_name, argument) in named_arguments {
+                for (_name, argument) in named {
                     store[argument]
                         .borrow()
                         .iter()

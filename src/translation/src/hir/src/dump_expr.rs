@@ -325,20 +325,20 @@ impl Dump for Value {
 
             Value::Call {
                 callee,
-                positional_arguments,
-                named_arguments,
+                positional,
+                named,
             } => {
                 ctx.store[callee].borrow().dump(ctx, o)?;
                 write!(o, "(")?;
-                for (i, arg) in positional_arguments.iter().enumerate() {
+                for (i, arg) in positional.iter().enumerate() {
                     if i != 0 {
                         write!(o, ", ")?;
                     }
 
                     ctx.store[arg].borrow().dump(ctx, o)?;
                 }
-                for (i, (name, arg)) in named_arguments.iter().enumerate() {
-                    if !positional_arguments.is_empty() || i != 0 {
+                for (i, (name, arg)) in named.iter().enumerate() {
+                    if !named.is_empty() || i != 0 {
                         write!(o, ", ")?;
                     }
 
