@@ -351,12 +351,20 @@ impl Dump for Value {
             Value::MethodCall {
                 object,
                 method,
-                arguments,
+                positional,
+                named,
             } => {
                 ctx.store[object].borrow().dump(ctx, o)?;
                 write!(o, ".{}(", method)?;
-                for (i, (name, arg)) in arguments.iter().enumerate() {
+                for (i, arg) in positional.iter().enumerate() {
                     if i != 0 {
+                        write!(o, ", ")?;
+                    }
+
+                    ctx.store[arg].borrow().dump(ctx, o)?;
+                }
+                for (i, (name, arg)) in named.iter().enumerate() {
+                    if !named.is_empty() || i != 0 {
                         write!(o, ", ")?;
                     }
 

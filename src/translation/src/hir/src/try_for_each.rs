@@ -405,14 +405,22 @@ impl ValueIter<'_> {
             Value::MethodCall {
                 object,
                 method: _,
-                arguments,
+                positional,
+                named,
             } => {
                 store[object]
                     .borrow()
                     .iter()
                     .try_for_each(store, vcb, tcb)?;
 
-                for (_name, argument) in arguments {
+                for argument in positional {
+                    store[argument]
+                        .borrow()
+                        .iter()
+                        .try_for_each(store, vcb, tcb)?;
+                }
+
+                for (_name, argument) in named {
                     store[argument]
                         .borrow()
                         .iter()

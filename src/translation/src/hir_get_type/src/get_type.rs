@@ -263,7 +263,8 @@ pub fn get_type(value: &Value, ctx: &TypeInferenceCtx) -> Result<Type, TypeInfer
         Value::MethodCall {
             object,
             method: _,
-            arguments: _,
+            positional: _,
+            named: _,
         } => {
             let object = &ctx.store[object].borrow();
             let _object_type = get_type(object, ctx)?;

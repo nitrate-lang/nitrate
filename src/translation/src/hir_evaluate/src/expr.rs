@@ -601,7 +601,8 @@ impl HirEvaluate for Value {
             Value::MethodCall {
                 object: _,
                 method: _,
-                arguments: _,
+                positional: _,
+                named: _,
             } => {
                 // TODO: evaluate method call expressions
                 unimplemented!()

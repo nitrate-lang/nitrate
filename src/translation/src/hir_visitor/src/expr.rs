@@ -51,7 +51,14 @@ pub trait HirValueVisitor<T> {
         named: &[(IString, ValueId)],
     ) -> T;
 
-    fn visit_method_call(&mut self, obj: &Value, name: &IString, args: &[(IString, ValueId)]) -> T;
+    fn visit_method_call(
+        &mut self,
+        obj: &Value,
+        name: &IString,
+        positional: &[ValueId],
+        named: &[(IString, ValueId)],
+    ) -> T;
+
     fn visit_symbol(&mut self, path: &IString) -> T;
 
     fn visit_value(&mut self, value: &Value, store: &Store) -> T {
@@ -164,8 +171,9 @@ pub trait HirValueVisitor<T> {
             Value::MethodCall {
                 object,
                 method,
-                arguments,
-            } => self.visit_method_call(&store[object].borrow(), method, arguments),
+                positional,
+                named,
+            } => self.visit_method_call(&store[object].borrow(), method, positional, named),
 
             Value::Symbol { path } => self.visit_symbol(path),
         }

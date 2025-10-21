@@ -122,7 +122,8 @@ pub(crate) fn module_put_defaults(module: &mut Module, ctx: &mut Ast2HirCtx, _lo
             Value::MethodCall {
                 object: _,
                 method: _,
-                arguments: _,
+                positional: _,
+                named: _,
             } => {
                 // TODO: Place default values for arguments
             }

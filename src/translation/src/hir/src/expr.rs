@@ -404,7 +404,8 @@ pub enum Value {
     MethodCall {
         object: ValueId,
         method: IString,
-        arguments: ThinVec<(IString, ValueId)>,
+        positional: ThinVec<ValueId>,
+        named: ThinVec<(IString, ValueId)>,
     },
 
     Symbol {
