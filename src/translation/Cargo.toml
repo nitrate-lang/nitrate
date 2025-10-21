@@ -9,7 +9,7 @@ nitrate_token_lexer = { path = "src/token_lexer" }
 nitrate_source = { path = "src/source" }
 nitrate_hir = { path = "src/hir" }
 nitrate_hir_visitor = { path = "src/hir_visitor" }
-nitrate_hir_into = { path = "src/hir_into" }
+nitrate_source_into_hir = { path = "src/source_into_hir" }
 nitrate_hir_evaluate = { path = "src/hir_evaluate" }
 nitrate_hir_resolve_type = { path = "src/hir_resolve_type" }
 nitrate_hir_get_type = { path = "src/hir_get_type" }

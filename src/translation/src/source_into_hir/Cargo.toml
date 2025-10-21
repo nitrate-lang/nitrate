@@ -1,5 +1,5 @@
 [package]
-name = "nitrate_hir_into"
+name = "nitrate_source_into_hir"
 version = "0.1.0"
 edition = "2024"
 
