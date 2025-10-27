@@ -7,7 +7,7 @@ use slog::info;
 pub struct CheckArgs {}
 
 impl Interpreter<'_> {
-    pub fn sc_check(&mut self, _args: &CheckArgs) -> Result<(), InterpreterError> {
+    pub(crate) fn sc_check(&mut self, _args: &CheckArgs) -> Result<(), InterpreterError> {
         info!(self.log, "package check sub-command invoked");
         // TODO: check logic here
         Ok(())

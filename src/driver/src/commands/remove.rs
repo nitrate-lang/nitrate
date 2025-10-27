@@ -7,7 +7,7 @@ use slog::info;
 pub struct RemoveArgs {}
 
 impl Interpreter<'_> {
-    pub fn sc_remove(&mut self, _args: &RemoveArgs) -> Result<(), InterpreterError> {
+    pub(crate) fn sc_remove(&mut self, _args: &RemoveArgs) -> Result<(), InterpreterError> {
         info!(self.log, "package remove sub-command invoked");
         // TODO: remove logic here
         Ok(())

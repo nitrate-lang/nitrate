@@ -7,7 +7,7 @@ use slog::info;
 pub struct CleanArgs {}
 
 impl Interpreter<'_> {
-    pub fn sc_clean(&mut self, _args: &CleanArgs) -> Result<(), InterpreterError> {
+    pub(crate) fn sc_clean(&mut self, _args: &CleanArgs) -> Result<(), InterpreterError> {
         info!(self.log, "package clean sub-command invoked");
         // TODO: clean logic here
         Ok(())

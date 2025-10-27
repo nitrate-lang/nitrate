@@ -7,7 +7,7 @@ use slog::info;
 pub struct UpdateArgs {}
 
 impl Interpreter<'_> {
-    pub fn sc_update(&mut self, _args: &UpdateArgs) -> Result<(), InterpreterError> {
+    pub(crate) fn sc_update(&mut self, _args: &UpdateArgs) -> Result<(), InterpreterError> {
         info!(self.log, "package update sub-command invoked");
         // TODO: update logic here
         Ok(())

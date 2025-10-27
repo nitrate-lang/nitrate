@@ -7,7 +7,7 @@ use slog::info;
 pub struct InitArgs {}
 
 impl Interpreter<'_> {
-    pub fn sc_init(&mut self, _args: &InitArgs) -> Result<(), InterpreterError> {
+    pub(crate) fn sc_init(&mut self, _args: &InitArgs) -> Result<(), InterpreterError> {
         info!(self.log, "package init sub-command invoked");
         // TODO: init logic here
         Ok(())

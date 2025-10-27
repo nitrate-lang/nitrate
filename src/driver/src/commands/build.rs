@@ -7,7 +7,7 @@ use slog::info;
 pub struct BuildArgs {}
 
 impl Interpreter<'_> {
-    pub fn sc_build(&mut self, _args: &BuildArgs) -> Result<(), InterpreterError> {
+    pub(crate) fn sc_build(&mut self, _args: &BuildArgs) -> Result<(), InterpreterError> {
         info!(self.log, "package build sub-command invoked");
         // TODO: build logic here
         Ok(())
