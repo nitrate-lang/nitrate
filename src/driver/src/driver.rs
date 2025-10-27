@@ -1,10 +1,11 @@
+use crate::commands::*;
 use anstream::println;
 use anstyle::{AnsiColor, Color, Style};
-use log::error;
-
 use clap::{Command, CommandFactory, Parser};
+use slog::Logger;
+use slog::{error, info};
 
-pub fn get_styles() -> clap::builder::Styles {
+fn get_styles() -> clap::builder::Styles {
     clap::builder::Styles::styled()
         .usage(
             anstyle::Style::new()
@@ -45,70 +46,6 @@ pub fn get_styles() -> clap::builder::Styles {
 }
 
 #[derive(Parser, Debug)]
-#[command(about, long_about = None)]
-struct BuildArgs {}
-
-#[derive(Parser, Debug)]
-#[command(about, long_about = None)]
-struct CheckArgs {}
-
-#[derive(Parser, Debug)]
-#[command(about, long_about = None)]
-struct CleanArgs {}
-
-#[derive(Parser, Debug)]
-#[command(about, long_about = None)]
-struct DocArgs {}
-
-#[derive(Parser, Debug)]
-#[command(about, long_about = None)]
-struct NewDocs {}
-
-#[derive(Parser, Debug)]
-#[command(about, long_about = None)]
-struct InitArgs {}
-
-#[derive(Parser, Debug)]
-#[command(about, long_about = None)]
-struct AddArgs {}
-
-#[derive(Parser, Debug)]
-#[command(about, long_about = None)]
-struct RemoveArgs {}
-
-#[derive(Parser, Debug)]
-#[command(about, long_about = None)]
-struct RunArgs {}
-
-#[derive(Parser, Debug)]
-#[command(about, long_about = None)]
-struct TestArgs {}
-
-#[derive(Parser, Debug)]
-#[command(about, long_about = None)]
-struct BenchArgs {}
-
-#[derive(Parser, Debug)]
-#[command(about, long_about = None)]
-struct UpdateArgs {}
-
-#[derive(Parser, Debug)]
-#[command(about, long_about = None)]
-struct SearchArgs {}
-
-#[derive(Parser, Debug)]
-#[command(about, long_about = None)]
-struct PublishArgs {}
-
-#[derive(Parser, Debug)]
-#[command(about, long_about = None)]
-struct InstallArgs {}
-
-#[derive(Parser, Debug)]
-#[command(about, long_about = None)]
-struct UninstallArgs {}
-
-#[derive(Parser, Debug)]
 enum Commands {
     /// Compile the current package
     Build(BuildArgs),
@@ -123,7 +60,7 @@ enum Commands {
     Doc(DocArgs),
 
     /// Create a new no3 package
-    New(NewDocs),
+    New(NewArgs),
 
     /// Create a new no3 package in an existing directory
     Init(InitArgs),
@@ -217,15 +154,33 @@ struct Args {
     command: Option<Commands>,
 }
 
-#[derive(Debug, Default)]
-pub struct Interpreter {}
+pub enum InterpreterError {
+    UnknownCommand,
+    IoError(std::io::Error),
+}
 
-impl Interpreter {
-    fn list_commands() {
+impl From<std::io::Error> for InterpreterError {
+    fn from(err: std::io::Error) -> Self {
+        InterpreterError::IoError(err)
+    }
+}
+
+pub struct Interpreter<'log> {
+    pub(crate) log: &'log Logger,
+}
+
+impl<'log> Interpreter<'log> {
+    pub fn new(log: &'log Logger) -> Interpreter<'log> {
+        Interpreter { log }
+    }
+
+    fn list_commands() -> Result<(), InterpreterError> {
         let fg = Style::new()
             .bold()
             .fg_color(Some(Color::Ansi(AnsiColor::Green)));
+
         let reset = fg.render_reset();
+
         println!("{fg}Installed commands:{reset}");
 
         let mut commands = Args::command()
@@ -233,9 +188,8 @@ impl Interpreter {
             .cloned()
             .collect::<Vec<_>>();
 
-        // Help is a special case
-        let help =
-            Command::new("help").about("Print this message or the help of the given subcommand(s)");
+        let help = Command::new("help") // Help is a special case
+            .about("Print this message or the help of the given subcommand(s)");
         commands.push(help);
 
         for cmd in commands {
@@ -250,37 +204,83 @@ impl Interpreter {
 
             println!("    {fg}{:<21}{reset}{}", name, about);
         }
+
+        Ok(())
     }
 
-    pub fn run(&self, args: &[String]) -> ! {
+    pub fn run(&mut self, args: &[String]) -> Result<(), InterpreterError> {
         let args = Args::parse_from(args);
 
-        match args.color.as_deref() {
-            Some("auto") => {}
-            Some("always") => unsafe { std::env::remove_var("NO_COLOR") },
-            Some("never") => unsafe { std::env::set_var("NO_COLOR", "1") },
-
-            Some(_) | None => {}
+        /* Output color environment configuration override */
+        if let Some(color_config) = &args.color {
+            match color_config.as_str() {
+                "always" => unsafe { std::env::remove_var("NO_COLOR") },
+                "never" => unsafe { std::env::set_var("NO_COLOR", "1") },
+                "auto" | _ => {}
+            }
         }
 
         if args.version {
             println!("no3 {}", env!("CARGO_PKG_VERSION"));
-            std::process::exit(0);
+            return Ok(());
         }
 
-        if let Some(change_dir) = &args.change_dir {
-            if let Err(e) = std::env::set_current_dir(change_dir) {
-                error!("failed to change directory: {}", e);
-                std::process::exit(1);
+        if let Some(change_dir_path) = &args.change_dir {
+            if let Err(e) = std::env::set_current_dir(change_dir_path) {
+                error!(self.log, "failed to change directory: {}", e);
+                return Err(InterpreterError::IoError(e));
             }
         }
 
         if args.list {
-            Self::list_commands();
-            std::process::exit(0);
+            return Self::list_commands();
         }
 
-        println!("Executing with args: {:?}", args);
-        std::process::exit(0);
+        if let Some(explain_code) = &args.explain {
+            // TODO: Implement error code explanations
+            println!("Explaining error code: {}", explain_code);
+            return Ok(());
+        }
+
+        /* TODO: Configure logger level */
+        let _verbosity_level = match (args.quiet, args.verbose) {
+            (true, _) => slog::Level::Critical,
+            (false, 0) => slog::Level::Info,
+            (false, 1) => slog::Level::Debug,
+            (false, 2..) => slog::Level::Trace,
+        };
+
+        let (_no_internet, _no_lockfile_change) = match (args.frozen, args.offline, args.locked) {
+            (true, _, _) => (true, true),
+            (false, true, _) => (true, false),
+            (false, false, true) => (false, true),
+            (false, false, false) => (false, false),
+        };
+
+        if let Some(subcommand) = &args.command {
+            return match subcommand {
+                Commands::Build(build_args) => self.sc_build(build_args),
+                Commands::Check(check_args) => self.sc_check(check_args),
+                Commands::Clean(clean_args) => self.sc_clean(clean_args),
+                Commands::Doc(doc_args) => self.sc_doc(doc_args),
+                Commands::New(new_args) => self.sc_new(new_args),
+                Commands::Init(init_args) => self.sc_init(init_args),
+                Commands::Add(add_args) => self.sc_add(add_args),
+                Commands::Remove(remove_args) => self.sc_remove(remove_args),
+                Commands::Run(run_args) => self.sc_run(run_args),
+                Commands::Test(test_args) => self.sc_test(test_args),
+                Commands::Bench(bench_args) => self.sc_bench(bench_args),
+                Commands::Update(update_args) => self.sc_update(update_args),
+                Commands::Search(search_args) => self.sc_search(search_args),
+                Commands::Publish(publish_args) => self.sc_publish(publish_args),
+                Commands::Install(install_args) => self.sc_install(install_args),
+                Commands::Uninstall(uninstall_args) => self.sc_uninstall(uninstall_args),
+            };
+        }
+
+        let mut cmd = Args::command();
+        cmd.print_help().unwrap();
+
+        Err(InterpreterError::UnknownCommand)
     }
 }

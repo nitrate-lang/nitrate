@@ -1,4 +1,4 @@
 mod commands;
 mod driver;
 
-pub use driver::Interpreter;
+pub use driver::{Interpreter, InterpreterError};
