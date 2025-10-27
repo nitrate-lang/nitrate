@@ -4,7 +4,7 @@ use slog::info;
 
 #[derive(Parser, Debug)]
 #[command(about, long_about = None)]
-pub struct BenchArgs {}
+pub(crate) struct BenchArgs {}
 
 impl Interpreter<'_> {
     pub(crate) fn sc_bench(&mut self, _args: &BenchArgs) -> Result<(), InterpreterError> {

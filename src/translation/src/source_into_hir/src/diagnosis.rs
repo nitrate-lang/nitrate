@@ -4,7 +4,6 @@ pub(crate) enum HirErr {
     UnrecognizedModuleAttribute,
     UnimplementedFeature(String),
     UnrecognizedGlobalVariableAttribute,
-    GlobalVariableMustBeConstOrStatic,
     GlobalVariableMustHaveInitializer,
     LatentTypeEvaluationError,
     FoundUSize32InNon32BitTarget,
@@ -12,15 +11,9 @@ pub(crate) enum HirErr {
     ArrayLengthExpectedUSize,
     ArrayTypeLengthEvalError,
     TypeInferenceError,
-    CalleeIsNotFunctionType,
-    NoSuchParameter(String),
     UnrecognizedFunctionAttribute,
     UnrecognizedFunctionParameterAttribute,
-    CannotSpecifyMutabilityOnFunctionTypeParameter,
     IntegerCastOutOfRange,
-    MissingFunctionArguments,
-    DuplicateFunctionArguments,
-    TooManyFunctionArguments,
     UnrecognizedLifetime,
     UnrecognizedTypeAliasAttribute,
     TypeAliasMustHaveType,
@@ -29,7 +22,6 @@ pub(crate) enum HirErr {
     UnrecognizedEnumAttribute,
     UnrecognizedEnumVariantAttribute,
     UnresolvedTypePath,
-    LocalVariableCannotBeVisible,
     UnrecognizedLocalVariableAttribute,
     UnresolvedSymbol,
 }
@@ -44,7 +36,6 @@ impl FormattableDiagnosticGroup for HirErr {
             HirErr::UnrecognizedModuleAttribute => 1,
             HirErr::UnimplementedFeature(_) => 2,
             HirErr::UnrecognizedGlobalVariableAttribute => 3,
-            HirErr::GlobalVariableMustBeConstOrStatic => 4,
             HirErr::GlobalVariableMustHaveInitializer => 5,
             HirErr::LatentTypeEvaluationError => 6,
             HirErr::FoundUSize32InNon32BitTarget => 7,
@@ -52,15 +43,9 @@ impl FormattableDiagnosticGroup for HirErr {
             HirErr::ArrayLengthExpectedUSize => 9,
             HirErr::ArrayTypeLengthEvalError => 10,
             HirErr::TypeInferenceError => 11,
-            HirErr::CalleeIsNotFunctionType => 12,
-            HirErr::NoSuchParameter(_) => 13,
             HirErr::UnrecognizedFunctionAttribute => 14,
             HirErr::UnrecognizedFunctionParameterAttribute => 15,
-            HirErr::CannotSpecifyMutabilityOnFunctionTypeParameter => 16,
             HirErr::IntegerCastOutOfRange => 17,
-            HirErr::MissingFunctionArguments => 18,
-            HirErr::DuplicateFunctionArguments => 19,
-            HirErr::TooManyFunctionArguments => 20,
             HirErr::UnrecognizedLifetime => 21,
             HirErr::UnrecognizedTypeAliasAttribute => 22,
             HirErr::TypeAliasMustHaveType => 23,
@@ -69,7 +54,6 @@ impl FormattableDiagnosticGroup for HirErr {
             HirErr::UnrecognizedEnumAttribute => 26,
             HirErr::UnrecognizedEnumVariantAttribute => 27,
             HirErr::UnresolvedTypePath => 28,
-            HirErr::LocalVariableCannotBeVisible => 29,
             HirErr::UnrecognizedLocalVariableAttribute => 30,
             HirErr::UnresolvedSymbol => 31,
         }
@@ -89,11 +73,6 @@ impl FormattableDiagnosticGroup for HirErr {
 
             HirErr::UnrecognizedGlobalVariableAttribute => DiagnosticInfo {
                 message: "unrecognized global variable attribute".to_string(),
-                origin: Origin::None,
-            },
-
-            HirErr::GlobalVariableMustBeConstOrStatic => DiagnosticInfo {
-                message: "global variable must be 'const' or 'static'".to_string(),
                 origin: Origin::None,
             },
 
@@ -132,16 +111,6 @@ impl FormattableDiagnosticGroup for HirErr {
                 origin: Origin::None,
             },
 
-            HirErr::CalleeIsNotFunctionType => DiagnosticInfo {
-                message: "callee is not a function type".to_string(),
-                origin: Origin::None,
-            },
-
-            HirErr::NoSuchParameter(param_name) => DiagnosticInfo {
-                message: format!("no such parameter: {}", param_name),
-                origin: Origin::None,
-            },
-
             HirErr::UnrecognizedFunctionAttribute => DiagnosticInfo {
                 message: "unrecognized function attribute".to_string(),
                 origin: Origin::None,
@@ -152,28 +121,8 @@ impl FormattableDiagnosticGroup for HirErr {
                 origin: Origin::None,
             },
 
-            HirErr::CannotSpecifyMutabilityOnFunctionTypeParameter => DiagnosticInfo {
-                message: "cannot specify mutability on function type parameter".to_string(),
-                origin: Origin::None,
-            },
-
             HirErr::IntegerCastOutOfRange => DiagnosticInfo {
                 message: "integer cast out of range".to_string(),
-                origin: Origin::None,
-            },
-
-            HirErr::MissingFunctionArguments => DiagnosticInfo {
-                message: "missing function arguments".to_string(),
-                origin: Origin::None,
-            },
-
-            HirErr::DuplicateFunctionArguments => DiagnosticInfo {
-                message: "duplicate function arguments".to_string(),
-                origin: Origin::None,
-            },
-
-            HirErr::TooManyFunctionArguments => DiagnosticInfo {
-                message: "too many function arguments".to_string(),
                 origin: Origin::None,
             },
 
@@ -214,11 +163,6 @@ impl FormattableDiagnosticGroup for HirErr {
 
             HirErr::UnresolvedTypePath => DiagnosticInfo {
                 message: "unresolved type path".to_string(),
-                origin: Origin::None,
-            },
-
-            HirErr::LocalVariableCannotBeVisible => DiagnosticInfo {
-                message: "local variable cannot have visibility modifier".to_string(),
                 origin: Origin::None,
             },
 

@@ -4,7 +4,7 @@ use slog::info;
 
 #[derive(Parser, Debug)]
 #[command(about, long_about = None)]
-pub struct UpdateArgs {}
+pub(crate) struct UpdateArgs {}
 
 impl Interpreter<'_> {
     pub(crate) fn sc_update(&mut self, _args: &UpdateArgs) -> Result<(), InterpreterError> {

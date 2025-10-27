@@ -9,7 +9,7 @@ pub struct Ast2HirCtx {
     pub store: Store,
     pub symbol_tab: SymbolTab,
     pub(crate) current_scope: Vec<String>,
-    impl_map: HashMap<TypeId, HashSet<TraitId>>,
+    _impl_map: HashMap<TypeId, HashSet<TraitId>>,
     type_infer_id_ctr: NonZeroU32,
     unique_name_ctr: u32,
     pub(crate) ptr_size: PtrSize,
@@ -21,7 +21,7 @@ impl Ast2HirCtx {
             store: Store::new(),
             symbol_tab: SymbolTab::default(),
             current_scope: Vec::new(),
-            impl_map: HashMap::new(),
+            _impl_map: HashMap::new(),
             type_infer_id_ctr: NonZeroU32::new(1).unwrap(),
             unique_name_ctr: 0,
             ptr_size,
@@ -29,7 +29,7 @@ impl Ast2HirCtx {
     }
 
     pub(crate) fn _has_trait(&self, ty: &TypeId, trait_id: &TraitId) -> bool {
-        if let Some(impls) = self.impl_map.get(ty) {
+        if let Some(impls) = self._impl_map.get(ty) {
             impls.contains(trait_id)
         } else {
             false
@@ -41,7 +41,7 @@ impl Ast2HirCtx {
         ty: &TypeId,
         method_name: &str,
     ) -> Option<FunctionId> {
-        let trait_set = match self.impl_map.get(ty) {
+        let trait_set = match self._impl_map.get(ty) {
             Some(trait_set) => trait_set,
             None => return None,
         };
@@ -68,7 +68,7 @@ impl Ast2HirCtx {
         found
     }
 
-    pub(crate) fn _get_unique_name(&mut self) -> String {
+    pub fn get_unique_name(&mut self) -> String {
         const COMPILER_RESERVED_PREFIX: &str = "⚙️";
 
         let name = format!("{}{}", COMPILER_RESERVED_PREFIX, self.unique_name_ctr);

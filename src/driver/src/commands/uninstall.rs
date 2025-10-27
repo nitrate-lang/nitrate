@@ -4,7 +4,7 @@ use slog::info;
 
 #[derive(Parser, Debug)]
 #[command(about, long_about = None)]
-pub struct UninstallArgs {}
+pub(crate) struct UninstallArgs {}
 
 impl Interpreter<'_> {
     pub(crate) fn sc_uninstall(&mut self, _args: &UninstallArgs) -> Result<(), InterpreterError> {
