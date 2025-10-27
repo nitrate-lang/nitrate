@@ -259,12 +259,12 @@ impl Dump for Type {
                 to,
             } => {
                 write!(o, "*")?;
-                if !exclusive {
-                    write!(o, "shared ")?;
-                }
 
-                if *mutable {
-                    write!(o, "mut ")?;
+                match (exclusive, mutable) {
+                    (true, true) => write!(o, "mut ")?,
+                    (true, false) => write!(o, "iso ")?,
+                    (false, true) => write!(o, "poly mut ")?,
+                    (false, false) => write!(o, "")?,
                 }
 
                 ctx.store[to].dump(ctx, o)
