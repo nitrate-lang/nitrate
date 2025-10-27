@@ -5,8 +5,9 @@ use nitrate_source::{
     ast::{
         ArrayType, Bool, Exclusivity, Expr, Float32, Float64, FuncTypeParam, FuncTypeParams,
         FunctionType, Int8, Int16, Int32, Int64, Int128, LatentType, Lifetime, Mutability,
-        OpaqueType, ReferenceType, RefinementType, SliceType, TupleType, Type, TypeParentheses,
-        TypePath, TypePathSegment, TypeSyntaxError, UInt8, UInt16, UInt32, UInt64, UInt128, USize,
+        OpaqueType, PointerType, ReferenceType, RefinementType, SliceType, TupleType, Type,
+        TypeParentheses, TypePath, TypePathSegment, TypeSyntaxError, UInt8, UInt16, UInt32, UInt64,
+        UInt128, USize,
     },
     tag::{intern_lifetime_name, intern_opaque_type_name, intern_parameter_name},
 };
@@ -162,6 +163,34 @@ impl Parser<'_, '_> {
         ReferenceType {
             lifetime,
             exclusivity: exclusive,
+            mutability,
+            to,
+        }
+    }
+
+    fn parse_pointer_type(&mut self) -> PointerType {
+        assert!(self.lexer.peek_t() == Token::Star);
+        self.lexer.skip_tok();
+
+        let mut exclusivity = None;
+        let mut mutability = None;
+
+        if self.lexer.skip_if(&Token::Poly) {
+            exclusivity = Some(Exclusivity::Poly);
+        } else if self.lexer.skip_if(&Token::Iso) {
+            exclusivity = Some(Exclusivity::Iso);
+        }
+
+        if self.lexer.skip_if(&Token::Mut) {
+            mutability = Some(Mutability::Mut);
+        } else if self.lexer.skip_if(&Token::Const) {
+            mutability = Some(Mutability::Const);
+        }
+
+        let to = self.parse_type();
+
+        PointerType {
+            exclusivity,
             mutability,
             to,
         }
@@ -436,6 +465,7 @@ impl Parser<'_, '_> {
 
             Token::OpenBracket => self.parse_array_or_slice(),
             Token::And => Type::ReferenceType(Box::new(self.parse_reference_type())),
+            Token::Star => Type::PointerType(Box::new(self.parse_pointer_type())),
             Token::Fn => Type::FunctionType(Box::new(self.parse_function_type())),
             Token::Opaque => self.parse_opaque_type(),
 

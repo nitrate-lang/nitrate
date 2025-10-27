@@ -156,6 +156,14 @@ pub struct ReferenceType {
 
 #[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PointerType {
+    pub exclusivity: Option<Exclusivity>,
+    pub mutability: Option<Mutability>,
+    pub to: Type,
+}
+
+#[skip_serializing_none]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct OpaqueType {
     pub name: OpaqueTypeNameId,
 }
@@ -198,6 +206,7 @@ pub enum Type {
     SliceType(Box<SliceType>),
     FunctionType(Box<FunctionType>),
     ReferenceType(Box<ReferenceType>),
+    PointerType(Box<PointerType>),
     OpaqueType(OpaqueType),
     LatentType(Box<LatentType>),
     Lifetime(Box<Lifetime>),
@@ -230,6 +239,7 @@ impl std::fmt::Debug for Type {
             Type::SliceType(e) => e.fmt(f),
             Type::FunctionType(e) => e.fmt(f),
             Type::ReferenceType(e) => e.fmt(f),
+            Type::PointerType(e) => e.fmt(f),
             Type::OpaqueType(e) => e.fmt(f),
             Type::LatentType(e) => e.fmt(f),
             Type::Lifetime(e) => e.fmt(f),

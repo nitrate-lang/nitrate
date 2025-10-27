@@ -13,8 +13,8 @@ use crate::{
     iter::Order,
     tag::OpaqueTypeNameId,
     ty::{
-        ArrayType, FuncTypeParam, FunctionType, Lifetime, ReferenceType, RefinementType, SliceType,
-        TupleType, Type, TypePath,
+        ArrayType, FuncTypeParam, FunctionType, Lifetime, PointerType, ReferenceType,
+        RefinementType, SliceType, TupleType, Type, TypePath,
     },
 };
 
@@ -82,6 +82,7 @@ pub enum RefNodeMut<'a> {
     TypeFuncParam(&'a mut FuncTypeParam),
     TypeFunctionType(&'a mut FunctionType),
     TypeReferenceType(&'a mut ReferenceType),
+    TypePointerType(&'a mut PointerType),
     TypeOpaqueType(&'a mut OpaqueTypeNameId),
     TypeLatentType(&'a mut Block),
     TypeLifetime(&'a mut Lifetime),

@@ -19,8 +19,9 @@ use crate::{
     ty::{
         ArrayType, Bool, Exclusivity, Float32, Float64, FuncTypeParam, FuncTypeParams,
         FunctionType, InferType, Int8, Int16, Int32, Int64, Int128, LatentType, Lifetime,
-        OpaqueType, ReferenceType, RefinementType, SliceType, TupleType, Type, TypeParentheses,
-        TypePath, TypePathSegment, TypeSyntaxError, UInt8, UInt16, UInt32, UInt64, UInt128, USize,
+        OpaqueType, PointerType, ReferenceType, RefinementType, SliceType, TupleType, Type,
+        TypeParentheses, TypePath, TypePathSegment, TypeSyntaxError, UInt8, UInt16, UInt32, UInt64,
+        UInt128, USize,
     },
 };
 
@@ -1354,6 +1355,28 @@ impl PrettyPrint for ReferenceType {
     }
 }
 
+impl PrettyPrint for PointerType {
+    fn pretty_print_fmt(
+        &self,
+        ctx: &mut PrintContext,
+        writer: &mut dyn std::fmt::Write,
+    ) -> std::fmt::Result {
+        writer.write_str("*")?;
+
+        if let Some(exclusivity) = &self.exclusivity {
+            exclusivity.pretty_print_fmt(ctx, writer)?;
+            writer.write_char(' ')?;
+        }
+
+        if let Some(mutability) = &self.mutability {
+            mutability.pretty_print_fmt(ctx, writer)?;
+            writer.write_char(' ')?;
+        }
+
+        self.to.pretty_print_fmt(ctx, writer)
+    }
+}
+
 impl PrettyPrint for OpaqueType {
     fn pretty_print_fmt(
         &self,
@@ -1427,6 +1450,7 @@ impl PrettyPrint for Type {
             Type::SliceType(m) => m.pretty_print_fmt(ctx, writer),
             Type::FunctionType(m) => m.pretty_print_fmt(ctx, writer),
             Type::ReferenceType(m) => m.pretty_print_fmt(ctx, writer),
+            Type::PointerType(m) => m.pretty_print_fmt(ctx, writer),
             Type::OpaqueType(m) => m.pretty_print_fmt(ctx, writer),
             Type::LatentType(m) => m.pretty_print_fmt(ctx, writer),
             Type::Lifetime(m) => m.pretty_print_fmt(ctx, writer),

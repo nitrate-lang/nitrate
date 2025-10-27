@@ -12,8 +12,8 @@ use crate::{
     },
     tag::OpaqueTypeNameId,
     ty::{
-        ArrayType, FuncTypeParam, FunctionType, Lifetime, ReferenceType, RefinementType, SliceType,
-        TupleType, Type, TypePath,
+        ArrayType, FuncTypeParam, FunctionType, Lifetime, PointerType, ReferenceType,
+        RefinementType, SliceType, TupleType, Type, TypePath,
     },
 };
 
@@ -87,6 +87,7 @@ pub enum RefNode<'a> {
     TypeFuncParam(&'a FuncTypeParam),
     TypeFunctionType(&'a FunctionType),
     TypeReferenceType(&'a ReferenceType),
+    TypePointerType(&'a PointerType),
     TypeOpaqueType(&'a OpaqueTypeNameId),
     TypeLatentType(&'a Block),
     TypeLifetime(&'a Lifetime),

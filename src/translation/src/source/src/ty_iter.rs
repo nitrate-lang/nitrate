@@ -6,7 +6,7 @@ use crate::{
         Type, TypeParentheses, TypePath, TypeSyntaxError, UInt8, UInt16, UInt32, UInt64, UInt128,
         USize,
     },
-    ty::{FuncTypeParam, FuncTypeParams, InferType},
+    ty::{FuncTypeParam, FuncTypeParams, InferType, PointerType},
 };
 
 impl ParseTreeIter for TypeSyntaxError {
@@ -262,6 +262,19 @@ impl ParseTreeIter for ReferenceType {
     }
 }
 
+impl ParseTreeIter for PointerType {
+    fn depth_first_iter(&self, f: &mut dyn FnMut(Order, RefNode)) {
+        f(Order::Enter, RefNode::TypePointerType(self));
+
+        let _ = self.mutability;
+        let _ = self.exclusivity;
+
+        self.to.depth_first_iter(f);
+
+        f(Order::Leave, RefNode::TypePointerType(self));
+    }
+}
+
 impl ParseTreeIter for OpaqueType {
     fn depth_first_iter(&self, f: &mut dyn FnMut(Order, RefNode)) {
         f(Order::Enter, RefNode::TypeOpaqueType(&self.name));
@@ -318,6 +331,7 @@ impl ParseTreeIter for Type {
             Type::SliceType(ty) => ty.depth_first_iter(f),
             Type::FunctionType(ty) => ty.depth_first_iter(f),
             Type::ReferenceType(ty) => ty.depth_first_iter(f),
+            Type::PointerType(ty) => ty.depth_first_iter(f),
             Type::OpaqueType(ty) => ty.depth_first_iter(f),
             Type::LatentType(ty) => ty.depth_first_iter(f),
             Type::Lifetime(ty) => ty.depth_first_iter(f),

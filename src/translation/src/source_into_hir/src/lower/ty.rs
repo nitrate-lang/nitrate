@@ -325,6 +325,31 @@ impl Ast2Hir for ast::ReferenceType {
     }
 }
 
+impl Ast2Hir for ast::PointerType {
+    type Hir = Type;
+
+    fn ast2hir(self, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
+        let to = self.to.ast2hir(ctx, log)?.into_id(&ctx.store);
+
+        let mutable = match self.mutability {
+            Some(ast::Mutability::Mut) => true,
+            Some(ast::Mutability::Const) | None => false,
+        };
+
+        let exclusive = match self.exclusivity {
+            Some(ast::Exclusivity::Iso) => true,
+            Some(ast::Exclusivity::Poly) => false,
+            None => mutable,
+        };
+
+        Ok(Type::Pointer {
+            exclusive,
+            mutable,
+            to,
+        })
+    }
+}
+
 impl Ast2Hir for ast::OpaqueType {
     type Hir = Type;
 
@@ -401,6 +426,7 @@ impl Ast2Hir for ast::Type {
             ast::Type::SliceType(ty) => ty.ast2hir(ctx, log),
             ast::Type::FunctionType(ty) => ty.ast2hir(ctx, log),
             ast::Type::ReferenceType(ty) => ty.ast2hir(ctx, log),
+            ast::Type::PointerType(ty) => ty.ast2hir(ctx, log),
             ast::Type::OpaqueType(ty) => ty.ast2hir(ctx, log),
             ast::Type::LatentType(ty) => ty.ast2hir(ctx, log),
             ast::Type::Lifetime(ty) => ty.ast2hir(ctx, log),
