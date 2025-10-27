@@ -1,7 +1,7 @@
 use nitrate_driver::Interpreter;
 use slog::{Drain, Record, o};
 use slog_term::{FullFormat, RecordDecorator, TermDecorator, ThreadSafeTimestampFn};
-use std::io::Error;
+use std::process::ExitCode;
 
 fn custom_print_msg_header(
     _fn_timestamp: &dyn ThreadSafeTimestampFn<Output = std::io::Result<()>>,
@@ -20,7 +20,9 @@ fn custom_print_msg_header(
     Ok(true)
 }
 
-fn main() -> Result<(), Error> {
+fn main() -> ExitCode {
+    env_logger::init();
+
     let args: Vec<String> = std::env::args().collect();
 
     let decorator = TermDecorator::new().build();
@@ -33,7 +35,7 @@ fn main() -> Result<(), Error> {
 
     let mut cli = Interpreter::new(&log);
     match cli.run(&args) {
-        Ok(()) => Ok(()),
-        Err(_) => std::process::exit(1),
+        Ok(()) => ExitCode::SUCCESS,
+        Err(_) => ExitCode::FAILURE,
     }
 }

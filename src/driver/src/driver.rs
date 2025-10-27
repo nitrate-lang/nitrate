@@ -3,7 +3,7 @@ use anstream::println;
 use anstyle::{AnsiColor, Color, Style};
 use clap::{Command, CommandFactory, Parser};
 use slog::Logger;
-use slog::{error, info};
+use slog::error;
 
 fn get_styles() -> clap::builder::Styles {
     clap::builder::Styles::styled()
@@ -157,6 +157,7 @@ struct Args {
 pub enum InterpreterError {
     UnknownCommand,
     IoError(std::io::Error),
+    ExplainErrorUnrecognizedCode,
 }
 
 impl From<std::io::Error> for InterpreterError {
@@ -237,9 +238,7 @@ impl<'log> Interpreter<'log> {
         }
 
         if let Some(explain_code) = &args.explain {
-            // TODO: Implement error code explanations
-            println!("Explaining error code: {}", explain_code);
-            return Ok(());
+            return self.explain_error_code(explain_code);
         }
 
         /* TODO: Configure logger level */
