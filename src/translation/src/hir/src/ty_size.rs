@@ -3,7 +3,6 @@ use std::cmp::max;
 
 #[derive(Debug, Clone, Copy)]
 pub enum LayoutError {
-    Undefined,
     NotInferred,
     UnresolvedSymbol,
 }
@@ -47,8 +46,6 @@ pub fn get_size_of(ty: &Type, ctx: &LayoutCtx) -> Result<u64, LayoutError> {
 
             Ok(size)
         }
-
-        Type::Slice { element_type: _ } => Err(LayoutError::Undefined),
 
         Type::Struct { struct_type } => {
             let StructType {
@@ -106,8 +103,9 @@ pub fn get_size_of(ty: &Type, ctx: &LayoutCtx) -> Result<u64, LayoutError> {
 
         Type::Refine { base, .. } => Ok(get_size_of(&ctx.store[base], ctx)?),
 
-        Type::Function { .. } => Err(LayoutError::Undefined),
+        Type::Function { .. } => Ok(ctx.ptr_size as u64),
         Type::Reference { .. } => Ok(ctx.ptr_size as u64),
+        Type::SliceRef { .. } => Ok(ctx.ptr_size as u64 * 2),
         Type::Pointer { .. } => Ok(ctx.ptr_size as u64),
 
         Type::Symbol { path } => match ctx.tab.get_type(&path) {

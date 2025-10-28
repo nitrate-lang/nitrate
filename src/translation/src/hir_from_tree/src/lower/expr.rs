@@ -143,13 +143,6 @@ fn metatype_source_encode(
             Ok(())
         }
 
-        Type::Slice { element_type } => {
-            write!(o, "::std::meta::Type::Slice {{ element_type: ").unwrap();
-            metatype_source_encode(store, tab, &store[element_type], o)?;
-            write!(o, " }}").unwrap();
-            Ok(())
-        }
-
         Type::Struct { struct_type } => {
             let struct_type = &store[struct_type];
             write!(o, "::std::meta::Type::Struct {{ fields: Vec::from([").unwrap();
@@ -251,6 +244,31 @@ fn metatype_source_encode(
             };
             write!(o, ", exclusive: {}, mutable: {}, to: ", exclusive, mutable).unwrap();
             metatype_source_encode(store, tab, &store[to], o)?;
+            write!(o, " }}").unwrap();
+            Ok(())
+        }
+
+        Type::SliceRef {
+            lifetime,
+            exclusive,
+            mutable,
+            element_type,
+        } => {
+            write!(o, "::std::meta::Type::SliceRef {{ lifetime: ").unwrap();
+            match lifetime {
+                Lifetime::Static => write!(o, "::std::meta::Lifetime::Static").unwrap(),
+                Lifetime::Gc => write!(o, "::std::meta::Lifetime::Gc").unwrap(),
+                Lifetime::ThreadLocal => write!(o, "::std::meta::Lifetime::ThreadLocal").unwrap(),
+                Lifetime::TaskLocal => write!(o, "::std::meta::Lifetime::TaskLocal").unwrap(),
+                Lifetime::Inferred => write!(o, "::std::meta::Lifetime::Inferred").unwrap(),
+            };
+            write!(
+                o,
+                ", exclusive: {}, mutable: {}, element_type: ",
+                exclusive, mutable
+            )
+            .unwrap();
+            metatype_source_encode(store, tab, &store[element_type], o)?;
             write!(o, " }}").unwrap();
             Ok(())
         }

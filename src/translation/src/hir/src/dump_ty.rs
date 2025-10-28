@@ -202,12 +202,6 @@ impl Dump for Type {
                 write!(o, ")")
             }
 
-            Type::Slice { element_type } => {
-                write!(o, "[")?;
-                ctx.store[element_type].dump(ctx, o)?;
-                write!(o, "]")
-            }
-
             Type::Struct { struct_type } => ctx.store[struct_type].dump(ctx, o),
 
             Type::Enum { enum_type } => ctx.store[enum_type].dump(ctx, o),
@@ -245,6 +239,32 @@ impl Dump for Type {
                 }
 
                 ctx.store[to].dump(ctx, o)
+            }
+
+            Type::SliceRef {
+                lifetime,
+                exclusive,
+                mutable,
+                element_type,
+            } => {
+                write!(o, "&")?;
+
+                if lifetime != &Lifetime::Inferred {
+                    write!(o, " ")?;
+                    lifetime.dump(ctx, o)?;
+                    write!(o, " ")?;
+                }
+
+                match (exclusive, mutable) {
+                    (true, true) => write!(o, "mut ")?,
+                    (true, false) => write!(o, "iso ")?,
+                    (false, true) => write!(o, "poly mut ")?,
+                    (false, false) => write!(o, "")?,
+                }
+
+                write!(o, "[")?;
+                ctx.store[element_type].dump(ctx, o)?;
+                write!(o, "]")
             }
 
             Type::Pointer {

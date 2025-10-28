@@ -169,8 +169,6 @@ impl ValidateHir for Type {
                 Ok(())
             }
 
-            Type::Slice { element_type } => store[element_type].verify(store, symtab),
-
             Type::Struct { struct_type } => store[struct_type].verify(store, symtab),
 
             Type::Enum { enum_type } => store[enum_type].verify(store, symtab),
@@ -201,6 +199,23 @@ impl ValidateHir for Type {
                 }
 
                 store[to].verify(store, symtab)
+            }
+
+            Type::SliceRef {
+                lifetime,
+                element_type,
+                ..
+            } => {
+                match lifetime {
+                    Lifetime::Static
+                    | Lifetime::Gc
+                    | Lifetime::ThreadLocal
+                    | Lifetime::TaskLocal => {}
+
+                    Lifetime::Inferred => return Err(()),
+                }
+
+                store[element_type].verify(store, symtab)
             }
 
             Type::Pointer { to, .. } => store[to].verify(store, symtab),

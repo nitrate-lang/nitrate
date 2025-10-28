@@ -21,7 +21,6 @@ pub trait HirTypeVisitor<T> {
     fn visit_f64(&mut self) -> T;
     fn visit_array(&mut self, element_type: &Type, len: u32) -> T;
     fn visit_tuple(&mut self, element_types: &[TypeId]) -> T;
-    fn visit_slice(&mut self, element_type: &Type) -> T;
     fn visit_struct(&mut self, attrs: &BTreeSet<StructAttribute>, fields: &[StructField]) -> T;
     fn visit_enum(&mut self, attrs: &BTreeSet<EnumAttribute>, variants: &[EnumVariant]) -> T;
     fn visit_refine(&mut self, base: &Type, min: &LiteralId, max: &LiteralId) -> T;
@@ -34,6 +33,8 @@ pub trait HirTypeVisitor<T> {
     ) -> T;
 
     fn visit_reference(&mut self, life: &Lifetime, excl: bool, mutable: bool, to: &Type) -> T;
+    fn visit_slice(&mut self, life: &Lifetime, excl: bool, mutable: bool, element_type: &Type)
+    -> T;
     fn visit_pointer(&mut self, excl: bool, mutable: bool, to: &Type) -> T;
     fn visit_symbol(&mut self, path: &IString) -> T;
     fn visit_inferred_float(&mut self) -> T;
@@ -60,7 +61,6 @@ pub trait HirTypeVisitor<T> {
             Type::F64 => self.visit_f64(),
             Type::Array { element_type, len } => self.visit_array(&store[element_type], *len),
             Type::Tuple { element_types } => self.visit_tuple(element_types),
-            Type::Slice { element_type } => self.visit_slice(&store[element_type]),
 
             Type::Struct { struct_type } => {
                 let struct_type = &store[struct_type];
@@ -85,6 +85,13 @@ pub trait HirTypeVisitor<T> {
                 mutable,
                 to,
             } => self.visit_reference(lifetime, *exclusive, *mutable, &store[to]),
+
+            Type::SliceRef {
+                lifetime,
+                exclusive,
+                mutable,
+                element_type,
+            } => self.visit_slice(lifetime, *exclusive, *mutable, &store[element_type]),
 
             Type::Pointer {
                 exclusive,

@@ -95,10 +95,6 @@ pub enum Type {
         element_types: ThinVec<TypeId>,
     },
 
-    Slice {
-        element_type: TypeId,
-    },
-
     Struct {
         struct_type: StructTypeId,
     },
@@ -122,6 +118,13 @@ pub enum Type {
         exclusive: bool,
         mutable: bool,
         to: TypeId,
+    },
+
+    SliceRef {
+        lifetime: Lifetime,
+        exclusive: bool,
+        mutable: bool,
+        element_type: TypeId,
     },
 
     Pointer {
@@ -176,10 +179,6 @@ impl Type {
         matches!(self, Type::Array { .. })
     }
 
-    pub fn is_slice(&self) -> bool {
-        matches!(self, Type::Slice { .. })
-    }
-
     pub fn is_tuple(&self) -> bool {
         matches!(self, Type::Tuple { .. })
     }
@@ -198,6 +197,10 @@ impl Type {
 
     pub fn is_reference(&self) -> bool {
         matches!(self, Type::Reference { .. })
+    }
+
+    pub fn is_slice_ref(&self) -> bool {
+        matches!(self, Type::SliceRef { .. })
     }
 
     fn is_known_inner(

@@ -77,11 +77,6 @@ impl<'ctx> CodeGen<'ctx> for hir::Type {
                 ctx.struct_type(&llvm_element_types, false).into()
             }
 
-            hir::Type::Slice { element_type } => {
-                // TODO: implement slice type
-                unimplemented!()
-            }
-
             hir::Type::Struct { struct_type } => {
                 store[struct_type].generate(ctx, store, tab).into()
             }
@@ -98,6 +93,12 @@ impl<'ctx> CodeGen<'ctx> for hir::Type {
             }
 
             hir::Type::Refine { base, .. } => store[base].generate(ctx, store, tab).into(),
+
+            hir::Type::SliceRef { .. } => {
+                let ptr = ctx.ptr_type(AddressSpace::default());
+                let size = ctx.ptr_sized_int_type(&ctx.target_data(), None);
+                ctx.struct_type(&[ptr.into(), size.into()], false).into()
+            }
 
             hir::Type::Function { .. }
             | hir::Type::Reference { .. }

@@ -34,8 +34,6 @@ pub fn get_align_of(ty: &Type, ctx: &LayoutCtx) -> Result<u64, LayoutError> {
             Ok(max_align)
         }
 
-        Type::Slice { element_type } => get_align_of(&ctx.store[element_type], ctx),
-
         Type::Struct { struct_type } => {
             let StructType {
                 fields, attributes, ..
@@ -79,8 +77,9 @@ pub fn get_align_of(ty: &Type, ctx: &LayoutCtx) -> Result<u64, LayoutError> {
 
         Type::Refine { base, .. } => Ok(get_align_of(&ctx.store[base], ctx)?),
 
-        Type::Function { .. } => Err(LayoutError::Undefined),
+        Type::Function { .. } => Ok(ctx.ptr_size as u64),
         Type::Reference { .. } => Ok(ctx.ptr_size as u64),
+        Type::SliceRef { .. } => Ok(ctx.ptr_size as u64),
         Type::Pointer { .. } => Ok(ctx.ptr_size as u64),
 
         Type::Symbol { path } => match ctx.tab.get_type(path) {

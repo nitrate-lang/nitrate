@@ -90,10 +90,6 @@ impl TypeIter<'_> {
                 }
             }
 
-            Type::Slice { element_type } => {
-                store[element_type].iter().try_for_each(store, vcb, tcb)?;
-            }
-
             Type::Struct { struct_type } => {
                 for field in &store[struct_type].fields {
                     store[&field.ty].iter().try_for_each(store, vcb, tcb)?;
@@ -125,20 +121,15 @@ impl TypeIter<'_> {
                     .try_for_each(store, vcb, tcb)?;
             }
 
-            Type::Reference {
-                lifetime: _,
-                exclusive: _,
-                mutable: _,
-                to,
-            } => {
+            Type::Reference { to, .. } => {
                 store[to].iter().try_for_each(store, vcb, tcb)?;
             }
 
-            Type::Pointer {
-                exclusive: _,
-                mutable: _,
-                to,
-            } => {
+            Type::SliceRef { element_type, .. } => {
+                store[element_type].iter().try_for_each(store, vcb, tcb)?;
+            }
+
+            Type::Pointer { to, .. } => {
                 store[to].iter().try_for_each(store, vcb, tcb)?;
             }
 

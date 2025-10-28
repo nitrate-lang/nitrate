@@ -231,16 +231,6 @@ impl Ast2Hir for ast::ArrayType {
     }
 }
 
-impl Ast2Hir for ast::SliceType {
-    type Hir = Type;
-
-    fn ast2hir(self, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
-        let element_type = self.element_type.ast2hir(ctx, log)?.into_id(&ctx.store);
-
-        Ok(Type::Slice { element_type })
-    }
-}
-
 impl Ast2Hir for ast::FunctionType {
     type Hir = Type;
 
@@ -322,6 +312,15 @@ impl Ast2Hir for ast::ReferenceType {
             mutable,
             to,
         })
+    }
+}
+
+impl Ast2Hir for ast::SliceType {
+    type Hir = Type;
+
+    fn ast2hir(self, _ctx: &mut Ast2HirCtx, _log: &CompilerLog) -> Result<Self::Hir, ()> {
+        // Only allowed to appear in reference types
+        Err(())
     }
 }
 
