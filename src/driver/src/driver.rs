@@ -159,6 +159,8 @@ pub enum InterpreterError {
     InvalidPackageConfig,
     IoError(std::io::Error),
     ExplainErrorUnrecognizedCode,
+    UnsupportedPackageEdition(u16),
+    BuildError,
 }
 
 impl From<std::io::Error> for InterpreterError {

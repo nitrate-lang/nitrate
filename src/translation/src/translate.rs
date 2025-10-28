@@ -1,5 +1,6 @@
 use crate::{TranslationOptions, TranslationOptionsBuilder, options::Diagnose};
 use nitrate_diagnosis::{CompilerLog, FileId, intern_file_id};
+use nitrate_resolve::{ImportContext, resolve_imports, resolve_paths};
 use nitrate_source::{
     ast::{Module, Visibility},
     tag::intern_module_name,
@@ -86,37 +87,12 @@ fn diagnose_problems(
     });
 }
 
-// fn optimize_functions(
-//     symbols: &mut SymbolTable,
-//     function_optimization_passes: &[Box<dyn FunctionOptimization + Sync>],
-//     log: &DiagnosticCollector,
-//     pool: &ThreadPool,
-// ) {
-//     scope_with(pool, |scope| {
-//         for function_mut in symbols.function_iter_mut() {
-//             // We can't optimize function declarations
-//             if function_mut.is_declaration() {
-//                 continue;
-//             }
-
-//             // The RwLock race condition checking if the function is a declaration
-//             // is fine, because optimization passes will check it internally
-//             // and be a no-op.
-
-//             scope.execute(|| {
-//                 for pass in function_optimization_passes {
-//                     pass.optimize_function(function_mut, log);
-//                 }
-//             });
-//         }
-//     });
-// }
-
 fn generate_code(
     _module: &Module,
     _object: &mut dyn std::io::Write,
 ) -> Result<(), TranslationError> {
-    unimplemented!()
+    // TODO: Implement code generation here
+    Ok(())
 }
 
 pub fn compile_code(
@@ -125,26 +101,39 @@ pub fn compile_code(
     options: &TranslationOptions,
 ) -> Result<(), TranslationError> {
     let log = &options.log;
-    let source = scan_into_memory(source_code)?;
+    let source_code = scan_into_memory(source_code)?;
 
     let fileid = intern_file_id(&options.source_name_for_debug_messages);
-    let lexer = create_lexer(&source, fileid)?;
+    let lexer = create_lexer(&source_code, fileid)?;
+    let mut ast = parse_language(lexer, &options.package_name, log);
+    drop(source_code);
 
-    let package = parse_language(lexer, &options.package_name, log);
+    if log.error_bit() {
+        return Err(TranslationError::SyntaxError);
+    }
 
-    // resolve_names(&mut program, &mut symtab)?;
-    // type_check(&mut program)?;
+    if let Some(source_path) = &options.source_path {
+        let import_context = ImportContext::new(source_path.clone());
+        resolve_imports(&import_context, &mut ast, &log);
+
+        if log.error_bit() {
+            return Err(TranslationError::NameResolutionError);
+        }
+    }
+
+    resolve_paths(&mut ast, &log);
+
+    if log.error_bit() {
+        return Err(TranslationError::NameResolutionError);
+    }
 
     let pool = ThreadPool::new(options.thread_count.get());
-
-    diagnose_problems(&package, &options.diagnostic_passes, log, &pool);
+    diagnose_problems(&ast, &options.diagnostic_passes, log, &pool);
+    drop(pool);
 
     if log.error_bit() {
         return Err(TranslationError::DiagnosticError);
     }
 
-    // optimize_functions(&mut symtab, &options.function_optimizations, log, &pool);
-    drop(pool);
-
-    generate_code(&package, machine_code)
+    generate_code(&ast, machine_code)
 }

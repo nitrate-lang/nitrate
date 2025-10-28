@@ -3,49 +3,65 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Serialize, Deserialize, PartialEq)]
 pub struct Dependency {
     #[serde(rename = "@name")]
-    pub name: String,
+    name: String,
     #[serde(rename = "@major")]
-    pub major: u32,
+    major: u32,
     #[serde(rename = "@minor")]
-    pub minor: u32,
+    minor: u32,
     #[serde(rename = "@patch")]
-    pub patch: u32,
+    patch: u32,
 }
 
 #[derive(Debug, Serialize, Deserialize, PartialEq)]
 pub struct Dependencies {
     #[serde(rename = "dependency")]
-    pub dependency: Option<Vec<Dependency>>,
+    dependency: Option<Vec<Dependency>>,
 }
 
 #[derive(Debug, Serialize, Deserialize, PartialEq)]
 pub struct Version {
     #[serde(rename = "@major")]
-    pub major: u32,
+    major: u32,
     #[serde(rename = "@minor")]
-    pub minor: u32,
+    minor: u32,
     #[serde(rename = "@patch")]
-    pub patch: u32,
+    patch: u32,
 }
 
 #[derive(Debug, Serialize, Deserialize, PartialEq)]
 #[serde(rename = "package")]
 pub struct Package {
     #[serde(rename = "name")]
-    pub name: String,
+    name: String,
 
     #[serde(rename = "version")]
-    pub version: Version,
+    version: Version,
 
     #[serde(rename = "edition")]
-    pub edition: u16,
+    edition: u16,
 
     #[serde(rename = "dependencies")]
-    pub dependencies: Dependencies,
+    dependencies: Dependencies,
 }
 
 impl Package {
     pub fn from_xml(xml: &str) -> Result<Self, serde_xml_rs::Error> {
         serde_xml_rs::from_str(xml)
+    }
+
+    pub fn name(&self) -> &str {
+        &self.name
+    }
+
+    pub fn version(&self) -> (u32, u32, u32) {
+        (self.version.major, self.version.minor, self.version.patch)
+    }
+
+    pub fn edition(&self) -> u16 {
+        self.edition
+    }
+
+    pub fn entrypoint(&self) -> std::path::PathBuf {
+        std::path::Path::new("src").join("main.nit")
     }
 }
