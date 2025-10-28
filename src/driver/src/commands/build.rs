@@ -164,7 +164,7 @@ impl Interpreter<'_> {
         let ast_module = self.parse_source_code(&entrypoint_path, package.name(), &log)?;
         let (hir_module, store, symbol_tab) = self.lower_to_hir(ast_module, &log)?;
 
-        let Ok(valid_hir_module) = hir_module.validate(&store) else {
+        let Ok(valid_hir_module) = hir_module.validate(&store, &symbol_tab) else {
             error!(
                 self.log,
                 "HIR validation failed for package '{}'.",
