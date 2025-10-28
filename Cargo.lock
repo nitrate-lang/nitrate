@@ -764,6 +764,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "nitrate_hir_validate"
+version = "0.1.0"
+dependencies = [
+ "nitrate_hir",
+]
+
+[[package]]
 name = "nitrate_hir_visitor"
 version = "0.1.0"
 dependencies = [
@@ -856,6 +863,7 @@ dependencies = [
  "nitrate_hir_evaluate",
  "nitrate_hir_get_type",
  "nitrate_hir_resolve_type",
+ "nitrate_hir_validate",
  "nitrate_hir_visitor",
  "nitrate_optimization",
  "nitrate_source",
