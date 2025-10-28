@@ -1,11 +1,7 @@
 use crate::{TranslationOptions, TranslationOptionsBuilder, options::Diagnose};
 use nitrate_diagnosis::{CompilerLog, FileId, intern_file_id};
-use nitrate_resolve::{ImportContext, resolve_imports, resolve_paths};
-use nitrate_source::{
-    ast::{Module, Visibility},
-    tag::intern_module_name,
-};
-use nitrate_source_parse::Parser;
+use nitrate_source::ast::Module;
+use nitrate_source_parse::{Parser, ResolveCtx};
 use nitrate_token_lexer::{Lexer, LexerError};
 use threadpool::ThreadPool;
 use threadpool_scope::scope_with;
@@ -60,16 +56,11 @@ fn create_lexer<'a>(
     lexer.map_err(TranslationError::LexerError)
 }
 
-fn parse_language(lexer: Lexer, module_name: &str, log: &CompilerLog) -> Module {
-    let mut parser = Parser::new(lexer, log);
-    let items = parser.parse_source();
-
-    Module {
-        name: Some(intern_module_name(module_name.to_string())),
-        attributes: None,
-        visibility: Some(Visibility::Public),
-        items,
-    }
+fn parse_language(lexer: Lexer, package_name: &str, log: &CompilerLog) -> Module {
+    Parser::new(lexer, log).parse_source(Some(ResolveCtx {
+        package_name: package_name.to_string(),
+        package_search_paths: Vec::new(),
+    }))
 }
 
 fn diagnose_problems(
@@ -105,23 +96,12 @@ pub fn compile_code(
 
     let fileid = intern_file_id(&options.source_name_for_debug_messages);
     let lexer = create_lexer(&source_code, fileid)?;
-    let mut ast = parse_language(lexer, &options.package_name, log);
+    let ast = parse_language(lexer, &options.package_name, log);
     drop(source_code);
 
     if log.error_bit() {
         return Err(TranslationError::SyntaxError);
     }
-
-    if let Some(source_path) = &options.source_path {
-        let import_context = ImportContext::new(source_path.clone());
-        resolve_imports(&import_context, &mut ast, &log);
-
-        if log.error_bit() {
-            return Err(TranslationError::NameResolutionError);
-        }
-    }
-
-    resolve_paths(&mut ast, &log);
 
     if log.error_bit() {
         return Err(TranslationError::NameResolutionError);

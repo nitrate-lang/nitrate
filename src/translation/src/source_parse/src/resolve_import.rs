@@ -1,12 +1,10 @@
-use crate::ResolveIssue;
-
+use crate::{Parser, diagnosis::ResolveIssue};
 use nitrate_diagnosis::{CompilerLog, intern_file_id};
 use nitrate_source::{
     Order, ParseTreeIterMut, RefNodeMut,
     ast::{Import, Item, Module, Visibility},
-    tag::{ImportNameId, PackageNameId, intern_module_name, intern_package_name},
+    tag::{ImportNameId, intern_module_name},
 };
-use nitrate_source_parse::Parser;
 use nitrate_token_lexer::{Lexer, LexerError};
 
 use std::{collections::HashSet, sync::Arc};
@@ -15,7 +13,7 @@ pub type SourceFilePath = std::path::PathBuf;
 pub type FolderPath = std::path::PathBuf;
 
 pub struct ImportContext {
-    pub package_name: Option<PackageNameId>,
+    pub package_name: Option<String>,
     pub source_filepath: SourceFilePath,
     pub package_search_paths: Arc<Vec<FolderPath>>,
 }
@@ -29,7 +27,7 @@ impl ImportContext {
         }
     }
 
-    pub fn with_current_package_name(mut self, package_name: PackageNameId) -> Self {
+    pub fn with_current_package_name(mut self, package_name: String) -> Self {
         self.package_name = Some(package_name);
         self
     }
@@ -165,20 +163,14 @@ fn load_source_file(
         }
     };
 
-    let all_items = Parser::new(lexer, log).parse_source();
-    drop(source_code);
+    let mut module = Parser::new(lexer, log).parse_source(None);
+    module.name = Some(intern_module_name(import_name.clone()));
 
-    let items = all_items
+    module.items = module
+        .items
         .into_iter()
         .filter_map(|item| visibility_filter(item, is_same_package))
         .collect();
-
-    let module = Module {
-        visibility: None,
-        attributes: None,
-        name: Some(intern_module_name(import_name)),
-        items,
-    };
 
     Some(module)
 }
@@ -210,9 +202,8 @@ fn decide_what_to_import(
 
     if let Some(source_filepath) = ctx.find_package(import_name) {
         if source_filepath.exists() {
-            let package_name = Some(intern_package_name(import_name.to_string()));
             return Some(ImportContext {
-                package_name,
+                package_name: Some(import_name.to_string()),
                 source_filepath,
                 package_search_paths: ctx.package_search_paths.clone(),
             });

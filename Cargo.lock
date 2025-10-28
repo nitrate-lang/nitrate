@@ -781,16 +781,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "nitrate_resolve"
-version = "0.1.0"
-dependencies = [
- "nitrate_diagnosis",
- "nitrate_source",
- "nitrate_source_parse",
- "nitrate_token_lexer",
-]
-
-[[package]]
 name = "nitrate_source"
 version = "0.1.0"
 dependencies = [
@@ -868,7 +858,6 @@ dependencies = [
  "nitrate_hir_resolve_type",
  "nitrate_hir_visitor",
  "nitrate_optimization",
- "nitrate_resolve",
  "nitrate_source",
  "nitrate_source_into_hir",
  "nitrate_source_parse",

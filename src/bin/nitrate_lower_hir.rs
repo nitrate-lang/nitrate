@@ -2,9 +2,7 @@ use nitrate_diagnosis::{CompilerLog, intern_file_id};
 use nitrate_translation::{
     TranslationError,
     hir::{Dump, DumpContext, hir::PtrSize},
-    parse::Parser,
-    parsetree::ast,
-    resolve::{ImportContext, resolve_imports, resolve_paths},
+    parse::{Parser, ResolveCtx},
     source_into_hir::{Ast2HirCtx, ast_mod2hir},
     token_lexer::Lexer,
 };
@@ -98,16 +96,10 @@ fn program() -> Result<(), Error> {
     let log = slog::Logger::root(drain, o!());
     let log = CompilerLog::new(log);
 
-    let mut module = ast::Module {
-        attributes: None,
-        visibility: None,
-        name: None,
-        items: Parser::new(lexer, &log).parse_source(),
-    };
-
-    let import_context = ImportContext::new(filename.to_path_buf());
-    resolve_imports(&import_context, &mut module, &log);
-    resolve_paths(&mut module, &log);
+    let module = Parser::new(lexer, &log).parse_source(Some(ResolveCtx {
+        package_name: String::new(),
+        package_search_paths: Vec::new(),
+    }));
 
     let mut hir_ctx = Ast2HirCtx::new(PtrSize::U64);
     let Ok(hir_module) = ast_mod2hir(module, &mut hir_ctx, &log) else {

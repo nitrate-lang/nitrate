@@ -1,9 +1,7 @@
 use std::{fs::OpenOptions, io::Read};
 
 use nitrate_diagnosis::{CompilerLog, intern_file_id};
-use nitrate_translation::{
-    TranslationError, parse::Parser, parsetree::ast::Module, token_lexer::Lexer,
-};
+use nitrate_translation::{TranslationError, parse::Parser, token_lexer::Lexer};
 use slog::{Drain, Record, o};
 use slog_term::{RecordDecorator, ThreadSafeTimestampFn};
 
@@ -87,13 +85,7 @@ fn program() -> Result<(), Error> {
     let log = slog::Logger::root(drain, o!());
     let log = CompilerLog::new(log);
 
-    let items = Parser::new(lexer, &log).parse_source();
-    let module = Module {
-        attributes: None,
-        visibility: None,
-        name: None,
-        items,
-    };
+    let module = Parser::new(lexer, &log).parse_source(None);
 
     if let Err(_) = serde_json::to_writer_pretty(&mut parse_tree_output, &module) {
         return Err(Error::ParseFailed(TranslationError::SyntaxError));

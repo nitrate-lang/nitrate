@@ -1,10 +1,9 @@
-use std::collections::HashSet;
-
 use crate::{Interpreter, InterpreterError, package::Package};
 use clap::Parser;
 use nitrate_diagnosis::CompilerLog;
 use nitrate_translation::{TranslationOptions, compile_code};
 use slog::{error, info};
+use std::collections::HashSet;
 
 #[derive(Parser, Debug)]
 #[command(about, long_about = None)]
@@ -102,6 +101,8 @@ impl Interpreter<'_> {
 
         let mut translation_options = TranslationOptions::default();
         translation_options.package_name = package.name().to_string();
+        translation_options.source_name_for_debug_messages =
+            entrypoint_path.to_string_lossy().to_string();
         translation_options.source_path = Some(entrypoint_path);
         translation_options.log = CompilerLog::new(self.log.clone());
 
