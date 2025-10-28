@@ -755,6 +755,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "nitrate_hir_into_llvm"
+version = "0.1.0"
+dependencies = [
+ "nitrate_hir",
+]
+
+[[package]]
 name = "nitrate_hir_resolve_type"
 version = "0.1.0"
 dependencies = [
@@ -862,6 +869,7 @@ dependencies = [
  "nitrate_hir",
  "nitrate_hir_evaluate",
  "nitrate_hir_get_type",
+ "nitrate_hir_into_llvm",
  "nitrate_hir_resolve_type",
  "nitrate_hir_validate",
  "nitrate_hir_visitor",

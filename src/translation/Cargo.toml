@@ -19,6 +19,7 @@ nitrate_hir_validate = { path = "src/hir_validate" }
 nitrate_hir_evaluate = { path = "src/hir_evaluate" }
 nitrate_hir_resolve_type = { path = "src/hir_resolve_type" }
 nitrate_hir_get_type = { path = "src/hir_get_type" }
+nitrate_hir_into_llvm = { path = "src/hir_into_llvm" }
 
 nitrate_optimization = { path = "../optimization" }
 threadpool_scope = "0.1.0"
