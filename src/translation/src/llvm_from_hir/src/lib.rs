@@ -1,6 +1,8 @@
 #![forbid(unsafe_code)]
 
+mod codegen;
 mod expr;
-mod into_llvm;
 mod item;
 mod ty;
+
+pub use codegen::generate_code;

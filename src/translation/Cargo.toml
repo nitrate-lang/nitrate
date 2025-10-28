@@ -19,6 +19,8 @@ nitrate_hir_validate = { path = "src/hir_validate" }
 nitrate_hir_evaluate = { path = "src/hir_evaluate" }
 nitrate_hir_resolve_type = { path = "src/hir_resolve_type" }
 nitrate_hir_get_type = { path = "src/hir_get_type" }
+
+nitrate_llvm = { path = "src/llvm" }
 nitrate_llvm_from_hir = { path = "src/llvm_from_hir" }
 
 nitrate_optimization = { path = "../optimization" }
