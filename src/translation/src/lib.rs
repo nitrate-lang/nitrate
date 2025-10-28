@@ -8,6 +8,8 @@ pub use nitrate_hir_from_tree as hir_from_tree;
 pub use nitrate_hir_get_type as hir_get_type;
 pub use nitrate_hir_resolve_type as hir_resolve_type;
 pub use nitrate_hir_validate as hir_validate;
+pub use nitrate_llvm as llvm;
+pub use nitrate_llvm_from_hir as llvm_from_hir;
 pub use nitrate_token as token;
 pub use nitrate_token_lexer as token_lexer;
 pub use nitrate_tree as parsetree;

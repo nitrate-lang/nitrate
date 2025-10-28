@@ -110,9 +110,16 @@ impl ValidateHir for ModuleAttribute {
 }
 
 impl ValidateHir for Module {
-    fn verify(&self, _store: &Store) -> Result<(), ()> {
-        // TODO: implement
-        unimplemented!()
+    fn verify(&self, store: &Store) -> Result<(), ()> {
+        for attr in &self.attributes {
+            attr.verify(store)?;
+        }
+
+        for item in &self.items {
+            item.verify(store)?;
+        }
+
+        Ok(())
     }
 
     fn validate(self, store: &Store) -> Result<ValidHir<Self>, ()> {
@@ -182,9 +189,15 @@ impl ValidateHir for SymbolId {
 }
 
 impl ValidateHir for Item {
-    fn verify(&self, _store: &Store) -> Result<(), ()> {
-        // TODO: implement
-        unimplemented!()
+    fn verify(&self, store: &Store) -> Result<(), ()> {
+        match self {
+            Item::Module(id) => store[id].borrow().verify(store),
+            Item::GlobalVariable(id) => store[id].borrow().verify(store),
+            Item::Function(id) => store[id].borrow().verify(store),
+            Item::TypeAliasDef(id) => store[id].borrow().verify(store),
+            Item::StructDef(id) => store[id].borrow().verify(store),
+            Item::EnumDef(id) => store[id].borrow().verify(store),
+        }
     }
 
     fn validate(self, store: &Store) -> Result<ValidHir<Self>, ()> {

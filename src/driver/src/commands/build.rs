@@ -5,6 +5,8 @@ use nitrate_translation::{
     hir::{Store, SymbolTab, hir::PtrSize, prelude as hir},
     hir_from_tree::{Ast2HirCtx, convert_ast_to_hir},
     hir_validate::ValidateHir,
+    llvm::LLVMContext,
+    llvm_from_hir::generate_code,
     parse::ResolveCtx,
     parsetree::ast,
     token_lexer::{Lexer, LexerError},
@@ -160,9 +162,9 @@ impl Interpreter<'_> {
 
         let log = CompilerLog::new(self.log.clone());
         let ast_module = self.parse_source_code(&entrypoint_path, package.name(), &log)?;
-        let (module, store, _symbol_tab) = self.lower_to_hir(ast_module, &log)?;
+        let (hir_module, store, _symbol_tab) = self.lower_to_hir(ast_module, &log)?;
 
-        if module.validate(&store).is_err() {
+        let Ok(valid_hir_module) = hir_module.validate(&store) else {
             error!(
                 self.log,
                 "HIR validation failed for package '{}'.",
@@ -170,9 +172,23 @@ impl Interpreter<'_> {
             );
 
             return Err(InterpreterError::BuildError);
-        }
+        };
 
-        /* TODO: Lower to LLVM IR */
+        let llvm_ctx = LLVMContext::new();
+        let llvm_module = generate_code(valid_hir_module, &llvm_ctx);
+
+        let target_file = format!(
+            "{}-{}.{}.{}.ll",
+            package.name(),
+            package.version().0,
+            package.version().1,
+            package.version().2
+        );
+
+        llvm_module
+            .print_to_file(target_file)
+            .expect("failed to write to file");
+
         /* TODO: Link LLVM IR into final binary or shared library */
 
         info!(
