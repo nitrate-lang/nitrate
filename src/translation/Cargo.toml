@@ -9,9 +9,9 @@ nitrate_diagnosis = { path = "../diagnosis" }
 nitrate_token = { path = "src/token" }
 nitrate_token_lexer = { path = "src/token_lexer" }
 
-nitrate_source = { path = "src/source" }
-nitrate_source_parse = { path = "src/source_parse" }
-nitrate_source_into_hir = { path = "src/source_into_hir" }
+nitrate_tree = { path = "src/tree" }
+nitrate_tree_parse = { path = "src/tree_parse" }
+nitrate_hir_from_tree = { path = "src/hir_from_tree" }
 
 nitrate_hir = { path = "src/hir" }
 nitrate_hir_visitor = { path = "src/hir_visitor" }

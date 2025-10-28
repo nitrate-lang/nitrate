@@ -1,7 +1,8 @@
 use super::parse::Parser;
 use crate::diagnosis::SyntaxErr;
 
-use nitrate_source::{
+use nitrate_token::Token;
+use nitrate_tree::{
     ast::{
         ArrayType, Bool, Exclusivity, Expr, Float32, Float64, FuncTypeParam, FuncTypeParams,
         FunctionType, Int8, Int16, Int32, Int64, Int128, LatentType, Lifetime, Mutability,
@@ -11,7 +12,6 @@ use nitrate_source::{
     },
     tag::{intern_lifetime_name, intern_opaque_type_name, intern_parameter_name},
 };
-use nitrate_token::Token;
 
 #[derive(Default)]
 struct RefinementOptions {

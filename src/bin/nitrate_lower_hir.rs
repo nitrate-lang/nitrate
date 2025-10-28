@@ -2,8 +2,8 @@ use nitrate_diagnosis::{CompilerLog, intern_file_id};
 use nitrate_translation::{
     TranslationError,
     hir::{Dump, DumpContext, hir::PtrSize},
+    hir_from_tree::{Ast2HirCtx, convert_ast_to_hir},
     parse::{Parser, ResolveCtx},
-    source_into_hir::{Ast2HirCtx, convert_ast_to_hir},
     token_lexer::Lexer,
 };
 

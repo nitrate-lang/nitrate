@@ -1,5 +1,5 @@
 use nitrate_diagnosis::CompilerLog;
-use nitrate_source::{
+use nitrate_tree::{
     Order, ParseTreeIterMut, RefNodeMut,
     ast::{ExprPath, Module, TypePath},
 };

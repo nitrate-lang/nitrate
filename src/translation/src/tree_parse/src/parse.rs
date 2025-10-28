@@ -3,8 +3,8 @@ use crate::{
     resolve_path::resolve_paths,
 };
 use nitrate_diagnosis::CompilerLog;
-use nitrate_source::ast::Module;
 use nitrate_token_lexer::Lexer;
+use nitrate_tree::ast::Module;
 use std::{ops::Deref, path::PathBuf};
 
 pub struct Parser<'a, 'log> {

@@ -1,5 +1,5 @@
 [package]
-name = "nitrate_source_into_hir"
+name = "nitrate_hir_from_tree"
 version = "0.1.0"
 edition = "2024"
 
@@ -7,8 +7,8 @@ edition = "2024"
 nitrate_diagnosis = { path = "../../../diagnosis" }
 nitrate_token_lexer = { path = "../token_lexer" }
 nitrate_token = { path = "../token" }
-nitrate_source = { path = "../source" }
-nitrate_source_parse = { path = "../source_parse" }
+nitrate_tree = { path = "../tree" }
+nitrate_tree_parse = { path = "../tree_parse" }
 nitrate_hir = { path = "../hir" }
 nitrate_hir_visitor = { path = "../hir_visitor" }
 nitrate_hir_evaluate = { path = "../hir_evaluate" }

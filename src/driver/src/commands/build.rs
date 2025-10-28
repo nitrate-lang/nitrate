@@ -3,10 +3,10 @@ use clap::Parser;
 use nitrate_diagnosis::{CompilerLog, intern_file_id};
 use nitrate_translation::{
     hir::{Store, SymbolTab, hir::PtrSize, prelude as hir},
+    hir_from_tree::{Ast2HirCtx, convert_ast_to_hir},
     hir_validate::ValidateHir,
     parse::ResolveCtx,
     parsetree::ast,
-    source_into_hir::{Ast2HirCtx, convert_ast_to_hir},
     token_lexer::{Lexer, LexerError},
 };
 use slog::{error, info};

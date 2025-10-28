@@ -1,7 +1,7 @@
 use super::parse::Parser;
 use crate::diagnosis::SyntaxErr;
 
-use nitrate_source::{
+use nitrate_tree::{
     ast::{
         AssociatedItem, Enum, EnumVariant, FuncParam, FuncParams, Function, Generics,
         GlobalVariable, GlobalVariableKind, Impl, Import, Item, ItemPath, ItemPathSegment,

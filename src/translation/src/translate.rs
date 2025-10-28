@@ -1,8 +1,8 @@
 use crate::{TranslationOptions, TranslationOptionsBuilder, options::Diagnose};
 use nitrate_diagnosis::{CompilerLog, FileId, intern_file_id};
-use nitrate_source::ast::Module;
-use nitrate_source_parse::{Parser, ResolveCtx};
 use nitrate_token_lexer::{Lexer, LexerError};
+use nitrate_tree::ast::Module;
+use nitrate_tree_parse::{Parser, ResolveCtx};
 use threadpool::ThreadPool;
 use threadpool_scope::scope_with;
 

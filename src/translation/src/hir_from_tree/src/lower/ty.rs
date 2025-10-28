@@ -3,7 +3,7 @@ use interned_string::IString;
 use nitrate_diagnosis::CompilerLog;
 use nitrate_hir::prelude::*;
 use nitrate_hir_evaluate::HirEvalCtx;
-use nitrate_source::ast::{self as ast};
+use nitrate_tree::ast::{self as ast};
 use std::{collections::BTreeSet, ops::Deref};
 
 impl Ast2Hir for ast::TypeSyntaxError {

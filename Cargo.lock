@@ -748,6 +748,24 @@ dependencies = [
 ]
 
 [[package]]
+name = "nitrate_hir_from_tree"
+version = "0.1.0"
+dependencies = [
+ "interned-string",
+ "nitrate_diagnosis",
+ "nitrate_hir",
+ "nitrate_hir_evaluate",
+ "nitrate_hir_get_type",
+ "nitrate_hir_visitor",
+ "nitrate_token",
+ "nitrate_token_lexer",
+ "nitrate_tree",
+ "nitrate_tree_parse",
+ "ordered-float",
+ "thin-vec",
+]
+
+[[package]]
 name = "nitrate_hir_get_type"
 version = "0.1.0"
 dependencies = [
@@ -791,53 +809,7 @@ name = "nitrate_optimization"
 version = "0.1.0"
 dependencies = [
  "nitrate_diagnosis",
- "nitrate_source",
-]
-
-[[package]]
-name = "nitrate_source"
-version = "0.1.0"
-dependencies = [
- "bimap",
- "interned-string",
- "nitrate_token",
- "once_cell",
- "ordered-float",
- "serde",
- "serde_json",
- "serde_with",
-]
-
-[[package]]
-name = "nitrate_source_into_hir"
-version = "0.1.0"
-dependencies = [
- "interned-string",
- "nitrate_diagnosis",
- "nitrate_hir",
- "nitrate_hir_evaluate",
- "nitrate_hir_get_type",
- "nitrate_hir_visitor",
- "nitrate_source",
- "nitrate_source_parse",
- "nitrate_token",
- "nitrate_token_lexer",
- "ordered-float",
- "thin-vec",
-]
-
-[[package]]
-name = "nitrate_source_parse"
-version = "0.1.0"
-dependencies = [
- "interned-string",
- "log",
- "nitrate_diagnosis",
- "nitrate_source",
- "nitrate_token",
- "nitrate_token_lexer",
- "ordered-float",
- "spdx",
+ "nitrate_tree",
 ]
 
 [[package]]
@@ -868,19 +840,47 @@ dependencies = [
  "nitrate_diagnosis",
  "nitrate_hir",
  "nitrate_hir_evaluate",
+ "nitrate_hir_from_tree",
  "nitrate_hir_get_type",
  "nitrate_hir_into_llvm",
  "nitrate_hir_resolve_type",
  "nitrate_hir_validate",
  "nitrate_hir_visitor",
  "nitrate_optimization",
- "nitrate_source",
- "nitrate_source_into_hir",
- "nitrate_source_parse",
  "nitrate_token",
  "nitrate_token_lexer",
+ "nitrate_tree",
+ "nitrate_tree_parse",
  "threadpool",
  "threadpool_scope",
+]
+
+[[package]]
+name = "nitrate_tree"
+version = "0.1.0"
+dependencies = [
+ "bimap",
+ "interned-string",
+ "nitrate_token",
+ "once_cell",
+ "ordered-float",
+ "serde",
+ "serde_json",
+ "serde_with",
+]
+
+[[package]]
+name = "nitrate_tree_parse"
+version = "0.1.0"
+dependencies = [
+ "interned-string",
+ "log",
+ "nitrate_diagnosis",
+ "nitrate_token",
+ "nitrate_token_lexer",
+ "nitrate_tree",
+ "ordered-float",
+ "spdx",
 ]
 
 [[package]]

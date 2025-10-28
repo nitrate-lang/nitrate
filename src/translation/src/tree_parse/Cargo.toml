@@ -1,5 +1,5 @@
 [package]
-name = "nitrate_source_parse"
+name = "nitrate_tree_parse"
 version = "0.1.0"
 edition = "2024"
 
@@ -13,7 +13,7 @@ harness = false
 [dependencies]
 nitrate_token = { path = "../token" }
 nitrate_token_lexer = { path = "../token_lexer" }
-nitrate_source = { path = "../source" }
+nitrate_tree = { path = "../tree" }
 nitrate_diagnosis = { path = "../../../diagnosis" }
 
 log = "0.4.27"

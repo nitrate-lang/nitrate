@@ -1,7 +1,7 @@
 use crate::{Ast2HirCtx, lower::Ast2Hir, put_defaults::module_put_defaults};
 use nitrate_diagnosis::CompilerLog;
 use nitrate_hir::hir::Module;
-use nitrate_source::ast;
+use nitrate_tree::ast;
 
 pub fn convert_ast_to_hir(
     module: ast::Module,

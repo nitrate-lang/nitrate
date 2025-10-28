@@ -1,7 +1,7 @@
 use nitrate_diagnosis::{
     DiagnosticGroupId, DiagnosticInfo, FormattableDiagnosticGroup, Origin, 
 };
-use nitrate_source::{ast::{ExprPath, TypePath}, tag::ImportNameId};
+use nitrate_tree::{ast::{ExprPath, TypePath}, tag::ImportNameId};
 use nitrate_token::SourcePosition;
 
 pub(crate) enum SyntaxErr {

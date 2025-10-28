@@ -2,7 +2,7 @@ use crate::{context::Ast2HirCtx, convert_ast_to_hir, diagnosis::HirErr, lower::l
 use interned_string::IString;
 use nitrate_diagnosis::CompilerLog;
 use nitrate_hir::prelude::*;
-use nitrate_source::ast::{self};
+use nitrate_tree::ast::{self};
 use std::collections::BTreeSet;
 
 impl Ast2Hir for ast::TypeAlias {

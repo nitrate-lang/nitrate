@@ -1,7 +1,8 @@
 use crate::diagnosis::SyntaxErr;
 
 use super::parse::Parser;
-use nitrate_source::{
+use nitrate_token::Token;
+use nitrate_tree::{
     ast::{
         AttributeList, Await, BStringLit, BinExpr, BinExprOp, Block, BlockItem, Bool, BooleanLit,
         Break, Cast, Closure, Continue, ElseIf, Expr, ExprParentheses, ExprPath, ExprPathSegment,
@@ -16,7 +17,6 @@ use nitrate_source::{
         intern_string_literal, intern_variable_name,
     },
 };
-use nitrate_token::Token;
 
 type Precedence = u32;
 

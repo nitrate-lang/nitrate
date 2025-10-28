@@ -1,11 +1,11 @@
 use crate::{Parser, diagnosis::ResolveIssue};
 use nitrate_diagnosis::{CompilerLog, intern_file_id};
-use nitrate_source::{
+use nitrate_token_lexer::{Lexer, LexerError};
+use nitrate_tree::{
     Order, ParseTreeIterMut, RefNodeMut,
     ast::{Import, Item, Module, Visibility},
     tag::{ImportNameId, intern_module_name},
 };
-use nitrate_token_lexer::{Lexer, LexerError};
 
 use std::{collections::HashSet, sync::Arc};
 
