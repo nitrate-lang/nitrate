@@ -142,7 +142,9 @@ impl<'ctx> CodeGen<'ctx> for hir::Module {
         let bb = ctx.create_builder();
 
         // TODO: implement
-        unimplemented!()
+        // unimplemented!()
+
+        module
     }
 }
 

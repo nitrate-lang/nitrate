@@ -1,8 +1,8 @@
-use crate::prelude::*;
 use crate::store::LiteralId;
+use crate::{SymbolTab, prelude::*};
 use interned_string::IString;
 use serde::{Deserialize, Serialize};
-use std::collections::BTreeSet;
+use std::collections::{BTreeSet, HashSet};
 use std::num::NonZeroU32;
 use thin_vec::ThinVec;
 
@@ -207,6 +207,75 @@ impl Type {
 
     pub fn is_reference(&self) -> bool {
         matches!(self, Type::Reference { .. })
+    }
+
+    fn is_known_inner(
+        &self,
+        store: &Store,
+        symtab: &SymbolTab,
+        visited: &mut HashSet<IString>,
+    ) -> bool {
+        self.iter().all(store, &mut |ty| {
+            if let Type::Inferred { .. } | Type::InferredFloat | Type::InferredInteger = ty {
+                return false;
+            }
+
+            if let Type::Reference { lifetime, .. } = ty {
+                let ok = match lifetime {
+                    Lifetime::Static
+                    | Lifetime::Gc
+                    | Lifetime::ThreadLocal
+                    | Lifetime::TaskLocal => true,
+
+                    Lifetime::Inferred => false,
+                };
+
+                return ok;
+            }
+
+            if let Type::Symbol { path } = ty {
+                if visited.contains(path) {
+                    return true;
+                }
+
+                visited.insert(path.clone());
+
+                match symtab.get_type(path) {
+                    Some(TypeDefinition::EnumDef(id)) => {
+                        let enum_def = store[id].borrow();
+                        let enum_type = Type::Enum {
+                            enum_type: enum_def.enum_id,
+                        };
+
+                        return enum_type.is_known_inner(store, symtab, visited);
+                    }
+
+                    Some(TypeDefinition::StructDef(id)) => {
+                        let struct_def = store[id].borrow();
+                        let struct_type = Type::Struct {
+                            struct_type: struct_def.struct_id,
+                        };
+
+                        return struct_type.is_known_inner(store, symtab, visited);
+                    }
+
+                    Some(TypeDefinition::TypeAliasDef(id)) => {
+                        let type_alias_def = store[id].borrow();
+                        let aliased_type = &store[&type_alias_def.type_id];
+                        return aliased_type.is_known_inner(store, symtab, visited);
+                    }
+
+                    None => return false,
+                };
+            }
+
+            true
+        })
+    }
+
+    pub fn is_known(&self, store: &Store, symtab: &SymbolTab) -> bool {
+        let mut visited = HashSet::new();
+        self.is_known_inner(store, symtab, &mut visited)
     }
 }
 

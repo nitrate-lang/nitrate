@@ -74,9 +74,10 @@ impl ValidateHir for Parameter {
 }
 
 impl ValidateHir for Function {
-    fn verify(&self, _store: &Store) -> Result<(), ()> {
+    fn verify(&self, store: &Store) -> Result<(), ()> {
         // TODO: implement
         unimplemented!()
+        // if &store[self.return_type].is
     }
 
     fn validate(self, store: &Store) -> Result<ValidHir<Self>, ()> {

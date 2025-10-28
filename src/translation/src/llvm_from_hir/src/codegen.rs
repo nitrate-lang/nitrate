@@ -9,8 +9,8 @@ pub(crate) trait CodeGen<'ctx> {
     fn generate(
         self,
         ctx: &'ctx LLVMContext,
-        _store: &Store,
-        _symbol_table: &SymbolTab,
+        store: &Store,
+        symbol_table: &SymbolTab,
     ) -> Self::Output;
 }
 
