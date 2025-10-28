@@ -1,6 +1,5 @@
 mod options;
 mod options_builder;
-mod translate;
 
 pub use nitrate_hir as hir;
 pub use nitrate_hir_evaluate as hir_evaluate;
@@ -17,5 +16,3 @@ pub use nitrate_tree_parse as parse;
 
 pub use options::TranslationOptions;
 pub use options_builder::TranslationOptionsBuilder;
-
-pub use translate::{TranslationError, compile_code, compile_debugable_code, compile_fast_code};

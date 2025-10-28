@@ -1,9 +1,8 @@
 use nitrate_diagnosis::{CompilerLog, intern_file_id};
 use nitrate_translation::{
-    TranslationError,
     parse::{Parser, ResolveCtx},
     parsetree::{PrettyPrint, PrintContext},
-    token_lexer::Lexer,
+    token_lexer::{Lexer, LexerError},
 };
 
 use slog::{Drain, Record, o};
@@ -18,7 +17,7 @@ enum Error {
     NotEnoughArguments,
     OpenInputFileFailed(std::io::Error),
     CreateOutputFileFailed(std::io::Error),
-    ParseFailed(TranslationError),
+    ParseFailed(LexerError),
 }
 
 fn custom_print_msg_header(
@@ -71,9 +70,7 @@ fn program() -> Result<(), Error> {
     let fileid = intern_file_id(&filename.to_string_lossy());
     let lexer = match Lexer::new(source_code.as_bytes(), fileid) {
         Ok(l) => l,
-        Err(e) => {
-            return Err(Error::ParseFailed(TranslationError::LexerError(e)));
-        }
+        Err(e) => return Err(Error::ParseFailed(e)),
     };
 
     let file = OpenOptions::new()

@@ -1,8 +1,9 @@
 use crate::codegen::CodeGen;
+use inkwell::llvm_sys::core::LLVMBuildAlloca;
 use inkwell::module::{Linkage, Module};
-use inkwell::types::{BasicType, BasicTypeEnum};
-use inkwell::values::FunctionValue;
-use nitrate_hir::hir::PtrSize;
+use inkwell::types::BasicType;
+use inkwell::values::{FunctionValue, GlobalValue};
+use nitrate_hir::hir::{LayoutCtx, PtrSize, get_align_of};
 use nitrate_hir::{Store, SymbolTab, hir::Visibility, prelude as hir};
 use nitrate_llvm::LLVMContext;
 
@@ -15,24 +16,82 @@ pub(crate) fn get_ptr_size(ctx: &LLVMContext) -> PtrSize {
     }
 }
 
-impl<'ctx> CodeGen<'ctx> for hir::GlobalVariable {
-    type Output = ();
+fn generate_global<'ctx>(
+    hir_global: &hir::GlobalVariable,
+    llvm_global: &mut GlobalValue<'ctx>,
+    _ctx: &'ctx LLVMContext,
+    _store: &Store,
+    _tab: &SymbolTab,
+) {
+    let linkage = match hir_global.visibility {
+        Visibility::Pub => Linkage::External,
+        Visibility::Pro => Linkage::Internal,
+        Visibility::Sec => Linkage::Private,
+    };
 
-    fn generate(&self, _ctx: &'ctx LLVMContext, _store: &Store, _tab: &SymbolTab) -> Self::Output {
-        // TODO: implement global variable
-        unimplemented!()
-    }
+    llvm_global.set_linkage(linkage);
+
+    // TODO: insert constructor with LLVM appendToGlobalCtors
 }
 
-fn generate_function<'ctx>(
-    hir_function: &hir::Function,
-    llvm_function: &mut FunctionValue<'ctx>,
+pub(crate) fn generate_function_body<'ctx>(
+    hir_block: &hir::Block,
+    builder: inkwell::builder::Builder<'ctx>,
+    return_value: inkwell::values::PointerValue<'ctx>,
+    end_block: inkwell::basic_block::BasicBlock<'ctx>,
     ctx: &'ctx LLVMContext,
     store: &Store,
     tab: &SymbolTab,
 ) {
-    // TODO: implement function body generation
-    // unimplemented!()
+    builder.build_unconditional_branch(end_block).unwrap();
+    // TODO: implement block generation
+}
+
+fn generate_function<'ctx>(
+    hir_function: &hir::Function,
+    llvm_function: &FunctionValue<'ctx>,
+    ctx: &'ctx LLVMContext,
+    store: &Store,
+    tab: &SymbolTab,
+) {
+    let linkage = match hir_function.visibility {
+        Visibility::Pub => Linkage::External,
+        Visibility::Pro => Linkage::Internal,
+        Visibility::Sec => Linkage::Private,
+    };
+
+    llvm_function.set_linkage(linkage);
+
+    if let Some(body) = &hir_function.body {
+        let builder = ctx.create_builder();
+
+        /*******************************************************/
+        /* Entry Block */
+        let entry = ctx.append_basic_block(*llvm_function, "entry");
+        builder.position_at_end(entry);
+
+        /* Allocate space for the return value */
+        let return_type = llvm_function.get_type().get_return_type().unwrap();
+        let return_value_storage = builder.build_alloca(return_type, "ret_val").unwrap();
+
+        /*******************************************************/
+        /* End Block */
+        let end = ctx.append_basic_block(*llvm_function, "end");
+        builder.position_at_end(end);
+
+        let ret_value = builder
+            .build_load(return_type, return_value_storage, "ret_val_load")
+            .unwrap();
+
+        builder.build_return(Some(&ret_value)).unwrap();
+
+        /*******************************************************/
+        /* Generate Body */
+        builder.position_at_end(entry);
+
+        let block = store[body].borrow();
+        generate_function_body(&block, builder, return_value_storage, end, ctx, store, tab);
+    }
 }
 
 impl<'ctx> CodeGen<'ctx> for hir::Module {
@@ -58,22 +117,15 @@ impl<'ctx> CodeGen<'ctx> for hir::Module {
                 }
 
                 hir::Item::GlobalVariable(id) => {
-                    // TODO: Handle global variables
-                    unimplemented!()
+                    let hir_global = store[id].borrow();
+                    let ty = store[&hir_global.ty].generate(ctx, store, tab);
+                    let llvm_global = module.add_global(ty, None, &hir_global.name);
+
+                    generate_global(&hir_global, &mut llvm_global.clone(), ctx, store, tab);
                 }
 
                 hir::Item::Function(id) => {
                     let hir_function = store[id].borrow();
-
-                    let linkage = match hir_function.visibility {
-                        Visibility::Pub => Linkage::External,
-                        Visibility::Pro => Linkage::Internal,
-                        Visibility::Sec => Linkage::Private,
-                    };
-
-                    let return_type = &store[&hir_function.return_type];
-                    let return_type = return_type.generate(ctx, store, tab);
-                    let return_type = BasicTypeEnum::try_from(return_type).unwrap();
 
                     let mut param_types = Vec::with_capacity(hir_function.params.len());
                     for param in &hir_function.params {
@@ -86,10 +138,9 @@ impl<'ctx> CodeGen<'ctx> for hir::Module {
                         .attributes
                         .contains(&hir::FunctionAttribute::Variadic);
 
-                    let function_type = return_type.fn_type(&param_types, variadic);
-
-                    let llvm_function =
-                        module.add_function(&hir_function.name, function_type, Some(linkage));
+                    let return_type = &store[&hir_function.return_type].generate(ctx, store, tab);
+                    let fn_type = return_type.fn_type(&param_types, variadic);
+                    let llvm_function = module.add_function(&hir_function.name, fn_type, None);
 
                     generate_function(&hir_function, &mut llvm_function.clone(), ctx, store, tab);
                 }

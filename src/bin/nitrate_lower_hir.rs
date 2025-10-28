@@ -1,10 +1,9 @@
 use nitrate_diagnosis::{CompilerLog, intern_file_id};
 use nitrate_translation::{
-    TranslationError,
     hir::{Dump, DumpContext, hir::PtrSize},
     hir_from_tree::{Ast2HirCtx, convert_ast_to_hir},
     parse::{Parser, ResolveCtx},
-    token_lexer::Lexer,
+    token_lexer::{Lexer, LexerError},
 };
 
 use slog::{Drain, Record, o};
@@ -19,7 +18,7 @@ enum Error {
     NotEnoughArguments,
     OpenInputFileFailed(std::io::Error),
     CreateOutputFileFailed(std::io::Error),
-    ParseFailed(TranslationError),
+    ParseFailed(LexerError),
     HirError,
 }
 
@@ -75,9 +74,7 @@ fn program() -> Result<(), Error> {
         intern_file_id(&filename.to_string_lossy()),
     ) {
         Ok(l) => l,
-        Err(e) => {
-            return Err(Error::ParseFailed(TranslationError::LexerError(e)));
-        }
+        Err(e) => return Err(Error::ParseFailed(e)),
     };
 
     let diagnostic_output_file = OpenOptions::new()
