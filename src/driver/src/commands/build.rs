@@ -2,7 +2,8 @@ use crate::{Interpreter, InterpreterError, package::Package};
 use clap::Parser;
 use nitrate_diagnosis::{CompilerLog, intern_file_id};
 use nitrate_translation::{
-    hir::{self, hir::PtrSize},
+    hir::{Store, SymbolTab, hir::PtrSize, prelude as hir},
+    hir_validate::ValidateHir,
     parse::ResolveCtx,
     parsetree::ast,
     source_into_hir::{Ast2HirCtx, convert_ast_to_hir},
@@ -125,12 +126,17 @@ impl Interpreter<'_> {
         &self,
         module: ast::Module,
         log: &CompilerLog,
-    ) -> Result<hir::prelude::Module, InterpreterError> {
+    ) -> Result<(hir::Module, Store, SymbolTab), InterpreterError> {
         /* FIXME: Parameterize this */
         const PTR_SIZE: PtrSize = PtrSize::U32;
 
         let mut ctx = Ast2HirCtx::new(PTR_SIZE);
-        convert_ast_to_hir(module, &mut ctx, log).map_err(|_| InterpreterError::BuildError)
+        let module = match convert_ast_to_hir(module, &mut ctx, log) {
+            Err(_) => return Err(InterpreterError::BuildError),
+            Ok(module) => module,
+        };
+
+        Ok((module, ctx.store, ctx.symbol_tab))
     }
 
     pub(crate) fn sc_build(&mut self, _args: &BuildArgs) -> Result<(), InterpreterError> {
@@ -153,10 +159,19 @@ impl Interpreter<'_> {
         }
 
         let log = CompilerLog::new(self.log.clone());
-        let module = self.parse_source_code(&entrypoint_path, package.name(), &log)?;
-        let module_hir = self.lower_to_hir(module, &log)?;
+        let ast_module = self.parse_source_code(&entrypoint_path, package.name(), &log)?;
+        let (module, store, _symbol_tab) = self.lower_to_hir(ast_module, &log)?;
 
-        /* TODO: Perform mandatory checks on the HIR */
+        if module.validate(&store).is_err() {
+            error!(
+                self.log,
+                "HIR validation failed for package '{}'.",
+                package.name(),
+            );
+
+            return Err(InterpreterError::BuildError);
+        }
+
         /* TODO: Lower to LLVM IR */
         /* TODO: Link LLVM IR into final binary or shared library */
 
