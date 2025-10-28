@@ -156,6 +156,7 @@ struct Args {
 
 pub enum InterpreterError {
     UnknownCommand,
+    InvalidPackageConfig,
     IoError(std::io::Error),
     ExplainErrorUnrecognizedCode,
 }
