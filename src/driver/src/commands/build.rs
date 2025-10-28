@@ -162,7 +162,7 @@ impl Interpreter<'_> {
 
         let log = CompilerLog::new(self.log.clone());
         let ast_module = self.parse_source_code(&entrypoint_path, package.name(), &log)?;
-        let (hir_module, store, _symbol_tab) = self.lower_to_hir(ast_module, &log)?;
+        let (hir_module, store, symbol_tab) = self.lower_to_hir(ast_module, &log)?;
 
         let Ok(valid_hir_module) = hir_module.validate(&store) else {
             error!(
@@ -175,7 +175,7 @@ impl Interpreter<'_> {
         };
 
         let llvm_ctx = LLVMContext::new();
-        let llvm_module = generate_code(valid_hir_module, &llvm_ctx);
+        let llvm_module = generate_code(valid_hir_module, &llvm_ctx, &store, &symbol_tab);
 
         let target_file = format!(
             "{}-{}.{}.{}.ll",

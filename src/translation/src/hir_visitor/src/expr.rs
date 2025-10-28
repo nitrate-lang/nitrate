@@ -42,7 +42,7 @@ pub trait HirValueVisitor<T> {
     fn visit_continue(&mut self, label: &Option<IString>) -> T;
     fn visit_return(&mut self, value: &Value) -> T;
     fn visit_block(&mut self, safety: BlockSafety, elements: &[BlockElement]) -> T;
-    fn visit_closure(&mut self, captures: &[SymbolId], callee: &Function) -> T;
+    fn visit_closure(&mut self, captures: &[IString], callee: &Function) -> T;
 
     fn visit_call(
         &mut self,

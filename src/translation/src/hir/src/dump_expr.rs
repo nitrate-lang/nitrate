@@ -323,7 +323,7 @@ impl Dump for Value {
                         write!(o, ", ")?;
                     }
 
-                    capture.dump_nocycle(ctx, o)?;
+                    write!(o, "{}", capture)?;
                 }
                 write!(o, "] ")?;
 

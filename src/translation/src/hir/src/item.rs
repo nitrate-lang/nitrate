@@ -1,7 +1,4 @@
-use crate::{
-    prelude::*,
-    store::{EnumDefId, StructDefId, TypeAliasDefId},
-};
+use crate::prelude::*;
 use interned_string::IString;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeSet;

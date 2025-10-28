@@ -1,34 +1,30 @@
-// use crate::ValidateHir;
-// use nitrate_hir::prelude::*;
+use crate::codegen::CodeGen;
+use inkwell::values::BasicValueEnum;
+use nitrate_hir::{Store, SymbolTab, prelude as hir};
+use nitrate_llvm::LLVMContext;
 
-// impl ValidateHir for BlockElement {
-//     fn validate(&self, store: &Store) -> Result<(), ()> {
-//         match self {
-//             BlockElement::Expr(expr) => store[expr].borrow().validate(store),
-//             BlockElement::Stmt(expr) => store[expr].borrow().validate(store),
-//             BlockElement::Local(local) => store[local].borrow().validate(store),
-//         }
-//     }
-// }
+impl<'ctx> CodeGen<'ctx> for hir::Block {
+    type Output = BasicValueEnum<'ctx>;
 
-// impl ValidateHir for Block {
-//     fn validate(&self, store: &Store) -> Result<(), ()> {
-//         for (i, elem) in self.elements.iter().enumerate() {
-//             let is_last = i == self.elements.len() - 1;
-//             if matches!(elem, BlockElement::Expr(_)) && !is_last {
-//                 return Err(());
-//             }
+    fn generate(
+        self,
+        _ctx: &'ctx LLVMContext,
+        _store: &Store,
+        _symbol_table: &SymbolTab,
+    ) -> Self::Output {
+        unimplemented!()
+    }
+}
 
-//             elem.validate(store)?;
-//         }
+impl<'ctx> CodeGen<'ctx> for hir::Value {
+    type Output = BasicValueEnum<'ctx>;
 
-//         Ok(())
-//     }
-// }
-
-// impl ValidateHir for Value {
-//     fn validate(&self, _store: &Store) -> Result<(), ()> {
-//         // TODO: Validate expressions
-//         unimplemented!()
-//     }
-// }
+    fn generate(
+        self,
+        _ctx: &'ctx LLVMContext,
+        _store: &Store,
+        _symbol_table: &SymbolTab,
+    ) -> Self::Output {
+        unimplemented!()
+    }
+}

@@ -392,7 +392,7 @@ pub enum Value {
     },
 
     Closure {
-        captures: ThinVec<SymbolId>,
+        captures: ThinVec<IString>,
         callee: FunctionId,
     },
 

@@ -1,114 +1,231 @@
-// use crate::ValidateHir;
-// use nitrate_hir::prelude::*;
+use crate::codegen::CodeGen;
+use inkwell::module::Module;
+use nitrate_hir::{Store, SymbolTab, prelude as hir};
+use nitrate_llvm::LLVMContext;
 
-// impl ValidateHir for GlobalVariableAttribute {
-//     fn validate(&self, _store: &Store) -> Result<(), ()> {
-//         // TODO: implement
-//         unimplemented!()
-//     }
-// }
+impl<'ctx> CodeGen<'ctx> for hir::GlobalVariableAttribute {
+    type Output = ();
 
-// impl ValidateHir for GlobalVariable {
-//     fn validate(&self, _store: &Store) -> Result<(), ()> {
-//         // TODO: implement
-//         unimplemented!()
-//     }
-// }
+    fn generate(
+        self,
+        _ctx: &'ctx LLVMContext,
+        _store: &Store,
+        _symbol_table: &SymbolTab,
+    ) -> Self::Output {
+        // TODO: implement
+        unimplemented!()
+    }
+}
 
-// impl ValidateHir for LocalVariableAttribute {
-//     fn validate(&self, _store: &Store) -> Result<(), ()> {
-//         // TODO: implement
-//         unimplemented!()
-//     }
-// }
+impl<'ctx> CodeGen<'ctx> for hir::GlobalVariable {
+    type Output = ();
 
-// impl ValidateHir for LocalVariable {
-//     fn validate(&self, _store: &Store) -> Result<(), ()> {
-//         // TODO: implement
-//         unimplemented!()
-//     }
-// }
+    fn generate(
+        self,
+        _ctx: &'ctx LLVMContext,
+        _store: &Store,
+        _symbol_table: &SymbolTab,
+    ) -> Self::Output {
+        // TODO: implement
+        unimplemented!()
+    }
+}
 
-// impl ValidateHir for ParameterAttribute {
-//     fn validate(&self, _store: &Store) -> Result<(), ()> {
-//         // TODO: implement
-//         unimplemented!()
-//     }
-// }
+impl<'ctx> CodeGen<'ctx> for hir::LocalVariableAttribute {
+    type Output = ();
 
-// impl ValidateHir for Parameter {
-//     fn validate(&self, _store: &Store) -> Result<(), ()> {
-//         // TODO: implement
-//         unimplemented!()
-//     }
-// }
+    fn generate(
+        self,
+        _ctx: &'ctx LLVMContext,
+        _store: &Store,
+        _symbol_table: &SymbolTab,
+    ) -> Self::Output {
+        // TODO: implement
+        unimplemented!()
+    }
+}
 
-// impl ValidateHir for Function {
-//     fn validate(&self, _store: &Store) -> Result<(), ()> {
-//         // TODO: implement
-//         unimplemented!()
-//     }
-// }
+impl<'ctx> CodeGen<'ctx> for hir::LocalVariable {
+    type Output = ();
 
-// impl ValidateHir for Trait {
-//     fn validate(&self, _store: &Store) -> Result<(), ()> {
-//         // TODO: implement
-//         unimplemented!()
-//     }
-// }
+    fn generate(
+        self,
+        _ctx: &'ctx LLVMContext,
+        _store: &Store,
+        _symbol_table: &SymbolTab,
+    ) -> Self::Output {
+        // TODO: implement
+        unimplemented!()
+    }
+}
 
-// impl ValidateHir for ModuleAttribute {
-//     fn validate(&self, _store: &Store) -> Result<(), ()> {
-//         // TODO: implement
-//         unimplemented!()
-//     }
-// }
+impl<'ctx> CodeGen<'ctx> for hir::ParameterAttribute {
+    type Output = ();
 
-// impl ValidateHir for Module {
-//     fn validate(&self, _store: &Store) -> Result<(), ()> {
-//         // TODO: implement
-//         unimplemented!()
-//     }
-// }
+    fn generate(
+        self,
+        _ctx: &'ctx LLVMContext,
+        _store: &Store,
+        _symbol_table: &SymbolTab,
+    ) -> Self::Output {
+        // TODO: implement
+        unimplemented!()
+    }
+}
 
-// impl ValidateHir for TypeAliasDef {
-//     fn validate(&self, _store: &Store) -> Result<(), ()> {
-//         // TODO: implement
-//         unimplemented!()
-//     }
-// }
+impl<'ctx> CodeGen<'ctx> for hir::Parameter {
+    type Output = ();
 
-// impl ValidateHir for StructDef {
-//     fn validate(&self, _store: &Store) -> Result<(), ()> {
-//         // TODO: implement
-//         unimplemented!()
-//     }
-// }
+    fn generate(
+        self,
+        _ctx: &'ctx LLVMContext,
+        _store: &Store,
+        _symbol_table: &SymbolTab,
+    ) -> Self::Output {
+        // TODO: implement
+        unimplemented!()
+    }
+}
 
-// impl ValidateHir for EnumDef {
-//     fn validate(&self, _store: &Store) -> Result<(), ()> {
-//         // TODO: implement
-//         unimplemented!()
-//     }
-// }
+impl<'ctx> CodeGen<'ctx> for hir::Function {
+    type Output = ();
 
-// impl ValidateHir for TypeDefinition {
-//     fn validate(&self, _store: &Store) -> Result<(), ()> {
-//         // TODO: implement
-//         unimplemented!()
-//     }
-// }
+    fn generate(
+        self,
+        _ctx: &'ctx LLVMContext,
+        _store: &Store,
+        _symbol_table: &SymbolTab,
+    ) -> Self::Output {
+        // TODO: implement
+        unimplemented!()
+    }
+}
 
-// impl ValidateHir for SymbolId {
-//     fn validate(&self, _store: &Store) -> Result<(), ()> {
-//         // TODO: implement
-//         unimplemented!()
-//     }
-// }
+impl<'ctx> CodeGen<'ctx> for hir::Trait {
+    type Output = ();
 
-// impl ValidateHir for Item {
-//     fn validate(&self, _store: &Store) -> Result<(), ()> {
-//         // TODO: implement
-//         unimplemented!()
-//     }
-// }
+    fn generate(
+        self,
+        _ctx: &'ctx LLVMContext,
+        _store: &Store,
+        _symbol_table: &SymbolTab,
+    ) -> Self::Output {
+        // TODO: implement
+        unimplemented!()
+    }
+}
+
+impl<'ctx> CodeGen<'ctx> for hir::ModuleAttribute {
+    type Output = ();
+
+    fn generate(
+        self,
+        _ctx: &'ctx LLVMContext,
+        _store: &Store,
+        _symbol_table: &SymbolTab,
+    ) -> Self::Output {
+        // TODO: implement
+        unimplemented!()
+    }
+}
+
+impl<'ctx> CodeGen<'ctx> for hir::Module {
+    type Output = Module<'ctx>;
+
+    fn generate(
+        self,
+        ctx: &'ctx LLVMContext,
+        _store: &Store,
+        _symbol_table: &SymbolTab,
+    ) -> Self::Output {
+        let module = ctx.create_module(self.name.unwrap_or_default().to_string().as_str());
+        let bb = ctx.create_builder();
+
+        // TODO: implement
+        unimplemented!()
+    }
+}
+
+impl<'ctx> CodeGen<'ctx> for hir::TypeAliasDef {
+    type Output = ();
+
+    fn generate(
+        self,
+        _ctx: &'ctx LLVMContext,
+        _store: &Store,
+        _symbol_table: &SymbolTab,
+    ) -> Self::Output {
+        // TODO: implement
+        unimplemented!()
+    }
+}
+
+impl<'ctx> CodeGen<'ctx> for hir::StructDef {
+    type Output = ();
+
+    fn generate(
+        self,
+        _ctx: &'ctx LLVMContext,
+        _store: &Store,
+        _symbol_table: &SymbolTab,
+    ) -> Self::Output {
+        // TODO: implement
+        unimplemented!()
+    }
+}
+
+impl<'ctx> CodeGen<'ctx> for hir::EnumDef {
+    type Output = ();
+
+    fn generate(
+        self,
+        _ctx: &'ctx LLVMContext,
+        _store: &Store,
+        _symbol_table: &SymbolTab,
+    ) -> Self::Output {
+        // TODO: implement
+        unimplemented!()
+    }
+}
+
+impl<'ctx> CodeGen<'ctx> for hir::TypeDefinition {
+    type Output = ();
+
+    fn generate(
+        self,
+        _ctx: &'ctx LLVMContext,
+        _store: &Store,
+        _symbol_table: &SymbolTab,
+    ) -> Self::Output {
+        // TODO: implement
+        unimplemented!()
+    }
+}
+
+impl<'ctx> CodeGen<'ctx> for hir::SymbolId {
+    type Output = ();
+
+    fn generate(
+        self,
+        _ctx: &'ctx LLVMContext,
+        _store: &Store,
+        _symbol_table: &SymbolTab,
+    ) -> Self::Output {
+        // TODO: implement
+        unimplemented!()
+    }
+}
+
+impl<'ctx> CodeGen<'ctx> for hir::Item {
+    type Output = ();
+
+    fn generate(
+        self,
+        _ctx: &'ctx LLVMContext,
+        _store: &Store,
+        _symbol_table: &SymbolTab,
+    ) -> Self::Output {
+        // TODO: implement
+        unimplemented!()
+    }
+}
