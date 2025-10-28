@@ -7,7 +7,7 @@ impl<'ctx> CodeGen<'ctx> for hir::Block {
     type Output = BasicValueEnum<'ctx>;
 
     fn generate(
-        self,
+        &self,
         _ctx: &'ctx LLVMContext,
         _store: &Store,
         _symbol_table: &SymbolTab,
@@ -20,7 +20,7 @@ impl<'ctx> CodeGen<'ctx> for hir::Value {
     type Output = BasicValueEnum<'ctx>;
 
     fn generate(
-        self,
+        &self,
         _ctx: &'ctx LLVMContext,
         _store: &Store,
         _symbol_table: &SymbolTab,

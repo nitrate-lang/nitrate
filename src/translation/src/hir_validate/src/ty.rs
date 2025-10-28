@@ -122,9 +122,86 @@ impl ValidateHir for FunctionType {
 }
 
 impl ValidateHir for Type {
-    fn verify(&self, _store: &Store, _symtab: &SymbolTab) -> Result<(), ()> {
+    fn verify(&self, store: &Store, symtab: &SymbolTab) -> Result<(), ()> {
         // TODO: implement
-        unimplemented!()
+
+        match self {
+            Type::Never
+            | Type::Unit
+            | Type::Bool
+            | Type::U8
+            | Type::U16
+            | Type::U32
+            | Type::U64
+            | Type::U128
+            | Type::USize
+            | Type::I8
+            | Type::I16
+            | Type::I32
+            | Type::I64
+            | Type::I128
+            | Type::F32
+            | Type::F64
+            | Type::Opaque { .. } => Ok(()),
+
+            Type::Array { element_type, .. } => store[element_type].verify(store, symtab),
+
+            Type::Tuple { element_types } => {
+                for elem_type in element_types {
+                    store[elem_type].verify(store, symtab)?;
+                }
+
+                Ok(())
+            }
+
+            Type::Slice { element_type } => store[element_type].verify(store, symtab),
+
+            Type::Struct { struct_type } => store[struct_type].verify(store, symtab),
+
+            Type::Enum { enum_type } => store[enum_type].verify(store, symtab),
+
+            Type::Refine { base, min, max } => {
+                store[base].verify(store, symtab)?;
+
+                let min = store[min];
+                let max = store[max];
+
+                if min > max {
+                    return Err(());
+                }
+
+                Ok(())
+            }
+
+            Type::Bitfield { base, bits: _ } => {
+                // FIXME: Validate bits against base type
+                store[base].verify(store, symtab)
+            }
+
+            Type::Function { function_type } => store[function_type].verify(store, symtab),
+
+            Type::Reference { lifetime, to, .. } => {
+                match lifetime {
+                    Lifetime::Static
+                    | Lifetime::Gc
+                    | Lifetime::ThreadLocal
+                    | Lifetime::TaskLocal => {}
+
+                    Lifetime::Inferred => return Err(()),
+                }
+
+                store[to].verify(store, symtab)
+            }
+
+            Type::Pointer { to, .. } => store[to].verify(store, symtab),
+
+            Type::Symbol { path: _ } => {
+                // TODO: Resolve symbol paths
+                unimplemented!()
+            }
+
+            Type::InferredFloat | Type::InferredInteger | Type::Inferred { .. } => Err(()),
+        }
     }
 
     fn validate(self, store: &Store, symtab: &SymbolTab) -> Result<ValidHir<Self>, ()> {
