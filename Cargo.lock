@@ -849,6 +849,7 @@ version = "0.1.0"
 dependencies = [
  "inkwell",
  "nitrate_hir",
+ "nitrate_hir_validate",
  "nitrate_llvm",
 ]
 

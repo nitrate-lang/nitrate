@@ -1,79 +1,134 @@
-use crate::ValidateHir;
+use crate::{ValidHir, ValidateHir};
 use nitrate_hir::prelude::*;
 
 impl ValidateHir for StructAttribute {
-    fn validate(&self, _store: &Store) -> Result<(), ()> {
+    fn verify(&self, _store: &Store) -> Result<(), ()> {
         // TODO: implement
         unimplemented!()
+    }
+
+    fn validate(self, store: &Store) -> Result<ValidHir<Self>, ()> {
+        self.verify(store)?;
+        Ok(ValidHir::new(self))
     }
 }
 
 impl ValidateHir for StructFieldAttribute {
-    fn validate(&self, _store: &Store) -> Result<(), ()> {
+    fn verify(&self, _store: &Store) -> Result<(), ()> {
         // TODO: implement
         unimplemented!()
+    }
+
+    fn validate(self, store: &Store) -> Result<ValidHir<Self>, ()> {
+        self.verify(store)?;
+        Ok(ValidHir::new(self))
     }
 }
 
 impl ValidateHir for StructField {
-    fn validate(&self, _store: &Store) -> Result<(), ()> {
+    fn verify(&self, _store: &Store) -> Result<(), ()> {
         // TODO: implement
         unimplemented!()
+    }
+
+    fn validate(self, store: &Store) -> Result<ValidHir<Self>, ()> {
+        self.verify(store)?;
+        Ok(ValidHir::new(self))
     }
 }
 
 impl ValidateHir for StructType {
-    fn validate(&self, _store: &Store) -> Result<(), ()> {
+    fn verify(&self, _store: &Store) -> Result<(), ()> {
         // TODO: implement
         unimplemented!()
+    }
+
+    fn validate(self, store: &Store) -> Result<ValidHir<Self>, ()> {
+        self.verify(store)?;
+        Ok(ValidHir::new(self))
     }
 }
 
 impl ValidateHir for EnumAttribute {
-    fn validate(&self, _store: &Store) -> Result<(), ()> {
+    fn verify(&self, _store: &Store) -> Result<(), ()> {
         // TODO: implement
         unimplemented!()
+    }
+
+    fn validate(self, store: &Store) -> Result<ValidHir<Self>, ()> {
+        self.verify(store)?;
+        Ok(ValidHir::new(self))
     }
 }
 
 impl ValidateHir for EnumVariantAttribute {
-    fn validate(&self, _store: &Store) -> Result<(), ()> {
+    fn verify(&self, _store: &Store) -> Result<(), ()> {
         // TODO: implement
         unimplemented!()
+    }
+
+    fn validate(self, store: &Store) -> Result<ValidHir<Self>, ()> {
+        self.verify(store)?;
+        Ok(ValidHir::new(self))
     }
 }
 
 impl ValidateHir for EnumVariant {
-    fn validate(&self, _store: &Store) -> Result<(), ()> {
+    fn verify(&self, _store: &Store) -> Result<(), ()> {
         // TODO: implement
         unimplemented!()
+    }
+
+    fn validate(self, store: &Store) -> Result<ValidHir<Self>, ()> {
+        self.verify(store)?;
+        Ok(ValidHir::new(self))
     }
 }
 
 impl ValidateHir for EnumType {
-    fn validate(&self, _store: &Store) -> Result<(), ()> {
+    fn verify(&self, _store: &Store) -> Result<(), ()> {
         // TODO: implement
         unimplemented!()
+    }
+
+    fn validate(self, store: &Store) -> Result<ValidHir<Self>, ()> {
+        self.verify(store)?;
+        Ok(ValidHir::new(self))
     }
 }
 
 impl ValidateHir for FunctionAttribute {
-    fn validate(&self, _store: &Store) -> Result<(), ()> {
+    fn verify(&self, _store: &Store) -> Result<(), ()> {
         // TODO: implement
         unimplemented!()
+    }
+
+    fn validate(self, store: &Store) -> Result<ValidHir<Self>, ()> {
+        self.verify(store)?;
+        Ok(ValidHir::new(self))
     }
 }
 
 impl ValidateHir for FunctionType {
-    fn validate(&self, _store: &Store) -> Result<(), ()> {
+    fn verify(&self, _store: &Store) -> Result<(), ()> {
         // TODO: implement
         unimplemented!()
+    }
+
+    fn validate(self, store: &Store) -> Result<ValidHir<Self>, ()> {
+        self.verify(store)?;
+        Ok(ValidHir::new(self))
     }
 }
 
 impl ValidateHir for Type {
-    fn validate(&self, _store: &Store) -> Result<(), ()> {
+    fn verify(&self, _store: &Store) -> Result<(), ()> {
         // TODO: implement
         unimplemented!()
+    }
+
+    fn validate(self, store: &Store) -> Result<ValidHir<Self>, ()> {
+        self.verify(store)?;
+        Ok(ValidHir::new(self))
     }
 }

@@ -1,114 +1,194 @@
-use crate::ValidateHir;
+use crate::{ValidHir, ValidateHir};
 use nitrate_hir::prelude::*;
 
 impl ValidateHir for GlobalVariableAttribute {
-    fn validate(&self, _store: &Store) -> Result<(), ()> {
+    fn verify(&self, _store: &Store) -> Result<(), ()> {
         // TODO: implement
         unimplemented!()
+    }
+
+    fn validate(self, store: &Store) -> Result<ValidHir<Self>, ()> {
+        self.verify(store)?;
+        Ok(ValidHir::new(self))
     }
 }
 
 impl ValidateHir for GlobalVariable {
-    fn validate(&self, _store: &Store) -> Result<(), ()> {
+    fn verify(&self, _store: &Store) -> Result<(), ()> {
         // TODO: implement
         unimplemented!()
+    }
+
+    fn validate(self, store: &Store) -> Result<ValidHir<Self>, ()> {
+        self.verify(store)?;
+        Ok(ValidHir::new(self))
     }
 }
 
 impl ValidateHir for LocalVariableAttribute {
-    fn validate(&self, _store: &Store) -> Result<(), ()> {
+    fn verify(&self, _store: &Store) -> Result<(), ()> {
         // TODO: implement
         unimplemented!()
+    }
+
+    fn validate(self, store: &Store) -> Result<ValidHir<Self>, ()> {
+        self.verify(store)?;
+        Ok(ValidHir::new(self))
     }
 }
 
 impl ValidateHir for LocalVariable {
-    fn validate(&self, _store: &Store) -> Result<(), ()> {
+    fn verify(&self, _store: &Store) -> Result<(), ()> {
         // TODO: implement
         unimplemented!()
+    }
+
+    fn validate(self, store: &Store) -> Result<ValidHir<Self>, ()> {
+        self.verify(store)?;
+        Ok(ValidHir::new(self))
     }
 }
 
 impl ValidateHir for ParameterAttribute {
-    fn validate(&self, _store: &Store) -> Result<(), ()> {
+    fn verify(&self, _store: &Store) -> Result<(), ()> {
         // TODO: implement
         unimplemented!()
+    }
+
+    fn validate(self, store: &Store) -> Result<ValidHir<Self>, ()> {
+        self.verify(store)?;
+        Ok(ValidHir::new(self))
     }
 }
 
 impl ValidateHir for Parameter {
-    fn validate(&self, _store: &Store) -> Result<(), ()> {
+    fn verify(&self, _store: &Store) -> Result<(), ()> {
         // TODO: implement
         unimplemented!()
+    }
+
+    fn validate(self, store: &Store) -> Result<ValidHir<Self>, ()> {
+        self.verify(store)?;
+        Ok(ValidHir::new(self))
     }
 }
 
 impl ValidateHir for Function {
-    fn validate(&self, _store: &Store) -> Result<(), ()> {
+    fn verify(&self, _store: &Store) -> Result<(), ()> {
         // TODO: implement
         unimplemented!()
+    }
+
+    fn validate(self, store: &Store) -> Result<ValidHir<Self>, ()> {
+        self.verify(store)?;
+        Ok(ValidHir::new(self))
     }
 }
 
 impl ValidateHir for Trait {
-    fn validate(&self, _store: &Store) -> Result<(), ()> {
+    fn verify(&self, _store: &Store) -> Result<(), ()> {
         // TODO: implement
         unimplemented!()
+    }
+
+    fn validate(self, store: &Store) -> Result<ValidHir<Self>, ()> {
+        self.verify(store)?;
+        Ok(ValidHir::new(self))
     }
 }
 
 impl ValidateHir for ModuleAttribute {
-    fn validate(&self, _store: &Store) -> Result<(), ()> {
+    fn verify(&self, _store: &Store) -> Result<(), ()> {
         // TODO: implement
         unimplemented!()
+    }
+
+    fn validate(self, store: &Store) -> Result<ValidHir<Self>, ()> {
+        self.verify(store)?;
+        Ok(ValidHir::new(self))
     }
 }
 
 impl ValidateHir for Module {
-    fn validate(&self, _store: &Store) -> Result<(), ()> {
+    fn verify(&self, _store: &Store) -> Result<(), ()> {
         // TODO: implement
         unimplemented!()
+    }
+
+    fn validate(self, store: &Store) -> Result<ValidHir<Self>, ()> {
+        self.verify(store)?;
+        Ok(ValidHir::new(self))
     }
 }
 
 impl ValidateHir for TypeAliasDef {
-    fn validate(&self, _store: &Store) -> Result<(), ()> {
+    fn verify(&self, _store: &Store) -> Result<(), ()> {
         // TODO: implement
         unimplemented!()
+    }
+
+    fn validate(self, store: &Store) -> Result<ValidHir<Self>, ()> {
+        self.verify(store)?;
+        Ok(ValidHir::new(self))
     }
 }
 
 impl ValidateHir for StructDef {
-    fn validate(&self, _store: &Store) -> Result<(), ()> {
+    fn verify(&self, _store: &Store) -> Result<(), ()> {
         // TODO: implement
         unimplemented!()
+    }
+
+    fn validate(self, store: &Store) -> Result<ValidHir<Self>, ()> {
+        self.verify(store)?;
+        Ok(ValidHir::new(self))
     }
 }
 
 impl ValidateHir for EnumDef {
-    fn validate(&self, _store: &Store) -> Result<(), ()> {
+    fn verify(&self, _store: &Store) -> Result<(), ()> {
         // TODO: implement
         unimplemented!()
+    }
+
+    fn validate(self, store: &Store) -> Result<ValidHir<Self>, ()> {
+        self.verify(store)?;
+        Ok(ValidHir::new(self))
     }
 }
 
 impl ValidateHir for TypeDefinition {
-    fn validate(&self, _store: &Store) -> Result<(), ()> {
+    fn verify(&self, _store: &Store) -> Result<(), ()> {
         // TODO: implement
         unimplemented!()
+    }
+
+    fn validate(self, store: &Store) -> Result<ValidHir<Self>, ()> {
+        self.verify(store)?;
+        Ok(ValidHir::new(self))
     }
 }
 
 impl ValidateHir for SymbolId {
-    fn validate(&self, _store: &Store) -> Result<(), ()> {
+    fn verify(&self, _store: &Store) -> Result<(), ()> {
         // TODO: implement
         unimplemented!()
+    }
+
+    fn validate(self, store: &Store) -> Result<ValidHir<Self>, ()> {
+        self.verify(store)?;
+        Ok(ValidHir::new(self))
     }
 }
 
 impl ValidateHir for Item {
-    fn validate(&self, _store: &Store) -> Result<(), ()> {
+    fn verify(&self, _store: &Store) -> Result<(), ()> {
         // TODO: implement
         unimplemented!()
+    }
+
+    fn validate(self, store: &Store) -> Result<ValidHir<Self>, ()> {
+        self.verify(store)?;
+        Ok(ValidHir::new(self))
     }
 }

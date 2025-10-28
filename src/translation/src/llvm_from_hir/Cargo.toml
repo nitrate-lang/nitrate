@@ -6,5 +6,6 @@ edition = "2024"
 [dependencies]
 nitrate_llvm = { path = "../llvm" }
 nitrate_hir = { path = "../hir" }
+nitrate_hir_validate = { path = "../hir_validate" }
 
 inkwell = { version = "0.6.0", features = ["llvm18-1"] }
