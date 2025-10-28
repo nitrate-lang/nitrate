@@ -1,5 +1,5 @@
 [package]
-name = "nitrate_hir_into_llvm"
+name = "nitrate_llvm_from_hir"
 version = "0.1.0"
 edition = "2024"
 

@@ -615,10 +615,8 @@ impl FormattableDiagnosticGroup for SyntaxErr {
 
 pub enum ResolveIssue {
     ExprPathUnresolved(ExprPath),
-    ExprPathAmbiguous(ExprPath),
 
     TypePathUnresolved(TypePath),
-    TypePathAmbiguous(TypePath),
 
     ImportNotFound((String, std::io::Error)),
     
@@ -639,11 +637,7 @@ impl FormattableDiagnosticGroup for ResolveIssue {
     fn variant_id(&self) -> u16 {
         match self {
             ResolveIssue::ExprPathUnresolved(_) => 1,
-            ResolveIssue::ExprPathAmbiguous(_) => 2,
-
             ResolveIssue::TypePathUnresolved(_) => 20,
-            ResolveIssue::TypePathAmbiguous(_) => 21,
-
             ResolveIssue::ImportNotFound(_) => 40,
             ResolveIssue::CircularImport { .. } => 41,
             ResolveIssue::ImportSourceCodeSizeLimitExceeded(_) => 42,
@@ -665,34 +659,10 @@ impl FormattableDiagnosticGroup for ResolveIssue {
                 ),
             },
 
-            ResolveIssue::ExprPathAmbiguous(path) => DiagnosticInfo {
-                origin: Origin::None,
-                message: format!(
-                    "Ambiguous expression path: {}",
-                    path.segments
-                        .iter()
-                        .map(|s| s.name.to_owned())
-                        .collect::<Vec<_>>()
-                        .join("::"),
-                ),
-            },
-
             ResolveIssue::TypePathUnresolved(path) => DiagnosticInfo {
                 origin: Origin::None,
                 message: format!(
                     "Unresolved type path: {}",
-                    path.segments
-                        .iter()
-                        .map(|s| s.name.to_owned())
-                        .collect::<Vec<_>>()
-                        .join("::"),
-                ),
-            },
-
-            ResolveIssue::TypePathAmbiguous(path) => DiagnosticInfo {
-                origin: Origin::None,
-                message: format!(
-                    "Ambiguous type path: {}",
                     path.segments
                         .iter()
                         .map(|s| s.name.to_owned())
