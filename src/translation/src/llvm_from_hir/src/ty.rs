@@ -15,7 +15,7 @@ impl<'ctx> CodeGen<'ctx> for hir::StructType {
         _store: &Store,
         _symbol_table: &SymbolTab,
     ) -> Self::Output {
-        // TODO: implement
+        // TODO: implement struct type
         unimplemented!()
     }
 }
@@ -29,22 +29,33 @@ impl<'ctx> CodeGen<'ctx> for hir::EnumType {
         _store: &Store,
         _symbol_table: &SymbolTab,
     ) -> Self::Output {
-        // TODO: implement
+        // TODO: implement enum type
         unimplemented!()
     }
 }
 
 impl<'ctx> CodeGen<'ctx> for hir::FunctionType {
-    type Output = PointerType<'ctx>;
+    type Output = FunctionType<'ctx>;
 
     fn generate(
         &self,
-        _ctx: &'ctx LLVMContext,
-        _store: &Store,
-        _symbol_table: &SymbolTab,
+        ctx: &'ctx LLVMContext,
+        store: &Store,
+        symbol_table: &SymbolTab,
     ) -> Self::Output {
-        // TODO: implement
-        unimplemented!()
+        let return_type = &store[&self.return_type];
+        let return_type = return_type.generate(ctx, store, symbol_table);
+        let return_type = BasicTypeEnum::try_from(return_type).unwrap();
+
+        let mut param_types = Vec::with_capacity(self.params.len());
+        for param in &self.params {
+            let param_type = store[&param.1].generate(ctx, store, symbol_table);
+            param_types.push(param_type.into());
+        }
+
+        let variadic = self.attributes.contains(&hir::FunctionAttribute::Variadic);
+
+        return_type.fn_type(&param_types, variadic)
     }
 }
 
@@ -57,8 +68,6 @@ impl<'ctx> CodeGen<'ctx> for hir::Type {
         store: &Store,
         symbol_table: &SymbolTab,
     ) -> Self::Output {
-        // TODO: implement
-
         match self {
             hir::Type::Never | hir::Type::Unit => ctx.struct_type(&[], false).into(),
 
@@ -107,11 +116,9 @@ impl<'ctx> CodeGen<'ctx> for hir::Type {
                 unimplemented!()
             }
 
-            hir::Type::Function { function_type } => store[function_type]
-                .generate(ctx, store, symbol_table)
-                .into(),
-
-            hir::Type::Reference { .. } | hir::Type::Pointer { .. } => {
+            hir::Type::Function { .. }
+            | hir::Type::Reference { .. }
+            | hir::Type::Pointer { .. } => {
                 /* LLVM doesn't distinguish between pointer types anymore */
                 ctx.ptr_type(AddressSpace::default()).into()
             }

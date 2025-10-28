@@ -82,8 +82,11 @@ impl<'ctx> CodeGen<'ctx> for hir::Module {
                         param_types.push(param_type.into());
                     }
 
-                    /* TODO: Support variadic functions */
-                    let function_type = return_type.fn_type(&param_types, false);
+                    let variadic = hir_function
+                        .attributes
+                        .contains(&hir::FunctionAttribute::Variadic);
+
+                    let function_type = return_type.fn_type(&param_types, variadic);
 
                     let llvm_function =
                         module.add_function(&hir_function.name, function_type, Some(linkage));

@@ -110,9 +110,13 @@ impl ValidateHir for FunctionAttribute {
 }
 
 impl ValidateHir for FunctionType {
-    fn verify(&self, _store: &Store, _symtab: &SymbolTab) -> Result<(), ()> {
-        // TODO: implement
-        unimplemented!()
+    fn verify(&self, store: &Store, symtab: &SymbolTab) -> Result<(), ()> {
+        store[&self.return_type].verify(store, symtab)?;
+
+        for param in &self.params {
+            store[&param.1].verify(store, symtab)?;
+        }
+        Ok(())
     }
 
     fn validate(self, store: &Store, symtab: &SymbolTab) -> Result<ValidHir<Self>, ()> {
