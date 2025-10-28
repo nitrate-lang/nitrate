@@ -347,6 +347,7 @@ pub enum Value {
     },
 
     Borrow {
+        exclusive: bool,
         mutable: bool,
         place: ValueId,
     },
@@ -403,7 +404,7 @@ pub enum Value {
 
     MethodCall {
         object: ValueId,
-        method: IString,
+        method_name: IString,
         positional: ThinVec<ValueId>,
         named: ThinVec<(IString, ValueId)>,
     },

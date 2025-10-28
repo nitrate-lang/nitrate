@@ -1,8 +1,8 @@
 use nitrate_hir::{
     Store, SymbolTab,
     hir::{
-        BinaryOp, BlockElement, FunctionType, IntoStoreId, SymbolId, Type, TypeDefinition, UnaryOp,
-        Value,
+        BinaryOp, BlockElement, FunctionType, IntoStoreId, Lifetime, SymbolId, Type,
+        TypeDefinition, UnaryOp, Value,
     },
 };
 
@@ -15,6 +15,8 @@ pub enum TypeInferenceError {
     UnresolvedSymbol,
     StructObjectDoesNotHaveStructType,
     EnumVariantDoesNotHaveEnumType,
+    MethodNotFound,
+    CannotDeref,
 }
 
 pub struct TypeInferenceCtx<'a> {
@@ -161,19 +163,33 @@ pub fn get_type(value: &Value, ctx: &TypeInferenceCtx) -> Result<Type, TypeInfer
 
         Value::Assign { place: _, value: _ } => Ok(Type::Unit),
 
-        Value::Deref { place: _ } => {
-            // TODO: inference for dereference
-            unimplemented!()
+        Value::Deref { place } => {
+            let place = &ctx.store[place].borrow();
+            let place_type = get_type(place, ctx)?;
+
+            match place_type {
+                Type::Reference { to, .. } | Type::Pointer { to, .. } => {
+                    return Ok((&ctx.store[&to]).clone());
+                }
+
+                _ => Err(TypeInferenceError::CannotDeref),
+            }
         }
 
         Value::Cast { expr: _, to } => Ok((&ctx.store[to]).clone()),
 
         Value::Borrow {
-            mutable: _,
-            place: _,
+            mutable,
+            exclusive,
+            place,
         } => {
-            // TODO: inference for address-of
-            unimplemented!()
+            let place_type = get_type(&ctx.store[place].borrow(), ctx)?;
+            Ok(Type::Reference {
+                lifetime: Lifetime::Inferred,
+                exclusive: *exclusive,
+                mutable: *mutable,
+                to: place_type.into_id(ctx.store),
+            })
         }
 
         Value::List { elements } => {
@@ -242,7 +258,7 @@ pub fn get_type(value: &Value, ctx: &TypeInferenceCtx) -> Result<Type, TypeInfer
             captures: _,
             callee: _,
         } => {
-            // TODO: Determine the type of the closure
+            // TODO: Determine the type of a closure
             unimplemented!()
         }
 
@@ -262,15 +278,20 @@ pub fn get_type(value: &Value, ctx: &TypeInferenceCtx) -> Result<Type, TypeInfer
 
         Value::MethodCall {
             object,
-            method: _,
+            method_name,
             positional: _,
             named: _,
         } => {
             let object = &ctx.store[object].borrow();
-            let _object_type = get_type(object, ctx)?;
+            let object_type = get_type(object, ctx)?.into_id(ctx.store);
 
-            // TODO: Implement method resolution
-            unimplemented!()
+            let method = ctx
+                .symbol_tab
+                .get_method(&object_type, method_name)
+                .ok_or(TypeInferenceError::MethodNotFound)?;
+
+            let method = &ctx.store[method].borrow();
+            Ok(ctx.store[&method.return_type].clone())
         }
 
         Value::Symbol { path } => match ctx.symbol_tab.get_symbol(path) {

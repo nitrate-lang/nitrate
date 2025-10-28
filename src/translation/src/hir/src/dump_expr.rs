@@ -219,10 +219,17 @@ impl Dump for Value {
                 write!(o, ")")
             }
 
-            Value::Borrow { mutable, place } => {
+            Value::Borrow {
+                exclusive,
+                mutable,
+                place,
+            } => {
                 write!(o, "(&")?;
-                if *mutable {
-                    write!(o, "mut ")?;
+                match (exclusive, mutable) {
+                    (true, true) => write!(o, "mut ")?,
+                    (true, false) => write!(o, "iso ")?,
+                    (false, true) => write!(o, "poly mut ")?,
+                    (false, false) => write!(o, "")?,
                 }
                 ctx.store[place].borrow().dump(ctx, o)?;
                 write!(o, ")")
@@ -350,7 +357,7 @@ impl Dump for Value {
 
             Value::MethodCall {
                 object,
-                method,
+                method_name: method,
                 positional,
                 named,
             } => {

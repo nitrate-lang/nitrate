@@ -503,6 +503,7 @@ impl Ast2Hir for ast::UnaryExpr {
             }),
 
             UnaryExprOp::Borrow => Ok(Value::Borrow {
+                exclusive: false,
                 mutable: false,
                 place: operand.into_id(&ctx.store),
             }),
@@ -1197,7 +1198,7 @@ impl Ast2Hir for ast::MethodCall {
 
         Ok(Value::MethodCall {
             object,
-            method,
+            method_name: method,
             positional: positional.into(),
             named: named.into(),
         })

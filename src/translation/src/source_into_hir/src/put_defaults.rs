@@ -46,7 +46,7 @@ pub(crate) fn module_put_defaults(module: &mut Module, ctx: &mut Ast2HirCtx, _lo
 
             Value::MethodCall {
                 object: _,
-                method: _,
+                method_name: _,
                 positional: _,
                 named: _,
             } => {

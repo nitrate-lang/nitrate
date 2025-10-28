@@ -157,7 +157,11 @@ impl ValueIterMut<'_> {
                     .try_for_each_mut(store, vcb)?;
             }
 
-            Value::Borrow { mutable: _, place } => {
+            Value::Borrow {
+                exclusive: _,
+                mutable: _,
+                place,
+            } => {
                 store[place as &ValueId]
                     .borrow_mut()
                     .iter_mut()
@@ -273,7 +277,7 @@ impl ValueIterMut<'_> {
 
             Value::MethodCall {
                 object,
-                method: _,
+                method_name: _,
                 positional,
                 named,
             } => {

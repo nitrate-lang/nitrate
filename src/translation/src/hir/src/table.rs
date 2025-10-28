@@ -1,8 +1,4 @@
-use crate::{
-    EnumDefId, FunctionId, GlobalVariableId, LocalVariableId, ParameterId, Store, StructDefId,
-    TypeAliasDefId,
-    hir::{SymbolId, TypeDefinition},
-};
+use crate::prelude::*;
 use interned_string::IString;
 use std::collections::HashMap;
 
@@ -10,6 +6,7 @@ use std::collections::HashMap;
 pub struct SymbolTab {
     symbols: HashMap<IString, SymbolId>,
     types: HashMap<IString, TypeDefinition>,
+    methods: HashMap<(TypeId, IString), FunctionId>,
 }
 
 impl SymbolTab {
@@ -17,15 +14,12 @@ impl SymbolTab {
         Self {
             symbols: HashMap::new(),
             types: HashMap::new(),
+            methods: HashMap::new(),
         }
     }
 
-    pub fn clear_symbols(&mut self) {
-        self.symbols.clear();
-    }
-
-    pub fn clear_types(&mut self) {
-        self.types.clear();
+    pub fn reset(&mut self) {
+        *self = Self::default();
     }
 
     pub fn add_symbol(&mut self, symbol: SymbolId, store: &Store) {
@@ -91,5 +85,13 @@ impl SymbolTab {
             Some(SymbolId::Function(func_id)) => Some(func_id),
             _ => None,
         }
+    }
+
+    pub fn add_method(&mut self, type_id: TypeId, method_name: IString, function_id: FunctionId) {
+        self.methods.insert((type_id, method_name), function_id);
+    }
+
+    pub fn get_method(&self, type_def: &TypeId, method_name: &IString) -> Option<&FunctionId> {
+        self.methods.get(&(*type_def, method_name.clone()))
     }
 }

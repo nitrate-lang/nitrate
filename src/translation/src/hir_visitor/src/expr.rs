@@ -32,7 +32,7 @@ pub trait HirValueVisitor<T> {
     fn visit_assign(&mut self, place: &Value, value: &Value) -> T;
     fn visit_deref(&mut self, place: &Value) -> T;
     fn visit_cast(&mut self, expr: &Value, to: &Type) -> T;
-    fn visit_borrow(&mut self, mutable: bool, place: &Value) -> T;
+    fn visit_borrow(&mut self, exclusive: bool, mutable: bool, place: &Value) -> T;
     fn visit_list(&mut self, elements: &[Value]) -> T;
     fn visit_tuple(&mut self, elements: &[Value]) -> T;
     fn visit_if(&mut self, cond: &Value, true_blk: &Block, false_blk: Option<&Block>) -> T;
@@ -117,7 +117,11 @@ pub trait HirValueVisitor<T> {
 
             Value::Cast { expr, to } => self.visit_cast(&store[expr].borrow(), &store[to]),
 
-            Value::Borrow { mutable, place } => self.visit_borrow(*mutable, &store[place].borrow()),
+            Value::Borrow {
+                exclusive,
+                mutable,
+                place,
+            } => self.visit_borrow(*exclusive, *mutable, &store[place].borrow()),
 
             Value::List { elements } => self.visit_list(elements),
 
@@ -170,7 +174,7 @@ pub trait HirValueVisitor<T> {
 
             Value::MethodCall {
                 object,
-                method,
+                method_name: method,
                 positional,
                 named,
             } => self.visit_method_call(&store[object].borrow(), method, positional, named),

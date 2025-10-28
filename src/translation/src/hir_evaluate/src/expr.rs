@@ -464,6 +464,7 @@ impl HirEvaluate for Value {
             }
 
             Value::Borrow {
+                exclusive: _,
                 mutable: _,
                 place: _,
             } => {
@@ -600,7 +601,7 @@ impl HirEvaluate for Value {
 
             Value::MethodCall {
                 object: _,
-                method: _,
+                method_name: _,
                 positional: _,
                 named: _,
             } => {

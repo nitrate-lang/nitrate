@@ -285,7 +285,11 @@ impl ValueIter<'_> {
                 store[to].iter().try_for_each(store, vcb, tcb)?;
             }
 
-            Value::Borrow { mutable: _, place } => {
+            Value::Borrow {
+                exclusive: _,
+                mutable: _,
+                place,
+            } => {
                 store[place].borrow().iter().try_for_each(store, vcb, tcb)?;
             }
 
@@ -386,7 +390,7 @@ impl ValueIter<'_> {
 
             Value::MethodCall {
                 object,
-                method: _,
+                method_name: _,
                 positional,
                 named,
             } => {
