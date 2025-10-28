@@ -88,7 +88,7 @@ pub enum Type {
 
     Array {
         element_type: TypeId,
-        len: u64,
+        len: u32,
     },
 
     Tuple {

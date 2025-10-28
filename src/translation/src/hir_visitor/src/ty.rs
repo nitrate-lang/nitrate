@@ -19,7 +19,7 @@ pub trait HirTypeVisitor<T> {
     fn visit_i128(&mut self) -> T;
     fn visit_f32(&mut self) -> T;
     fn visit_f64(&mut self) -> T;
-    fn visit_array(&mut self, element_type: &Type, len: u64) -> T;
+    fn visit_array(&mut self, element_type: &Type, len: u32) -> T;
     fn visit_tuple(&mut self, element_types: &[TypeId]) -> T;
     fn visit_slice(&mut self, element_type: &Type) -> T;
     fn visit_struct(&mut self, attrs: &BTreeSet<StructAttribute>, fields: &[StructField]) -> T;

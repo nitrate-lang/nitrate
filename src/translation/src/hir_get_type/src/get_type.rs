@@ -49,7 +49,7 @@ pub fn get_type(value: &Value, ctx: &TypeInferenceCtx) -> Result<Type, TypeInfer
             let element_type = Type::U8.into_id(ctx.store);
             let array = Type::Array {
                 element_type,
-                len: str.len() as u64,
+                len: str.len() as u32,
             };
 
             Ok(array)
@@ -59,7 +59,7 @@ pub fn get_type(value: &Value, ctx: &TypeInferenceCtx) -> Result<Type, TypeInfer
             let element_type = Type::U8.into_id(ctx.store);
             let array = Type::Array {
                 element_type,
-                len: vec.len() as u64,
+                len: vec.len() as u32,
             };
 
             Ok(array)
@@ -201,7 +201,7 @@ pub fn get_type(value: &Value, ctx: &TypeInferenceCtx) -> Result<Type, TypeInfer
 
             let array = Type::Array {
                 element_type,
-                len: elements.len() as u64,
+                len: elements.len() as u32,
             };
 
             Ok(array)

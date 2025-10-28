@@ -79,7 +79,7 @@ impl<'ctx> CodeGen<'ctx> for hir::Module {
                     for param in &hir_function.params {
                         let param_type_id = store[param].borrow().ty;
                         let param_type = store[&param_type_id].generate(ctx, store, symbol_table);
-                        param_types.push(param_type);
+                        param_types.push(param_type.into());
                     }
 
                     /* TODO: Support variadic functions */

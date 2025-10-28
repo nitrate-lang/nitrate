@@ -1,94 +1,13 @@
 use crate::codegen::CodeGen;
-use inkwell::types::{AnyTypeEnum, BasicMetadataTypeEnum, BasicTypeEnum};
-use nitrate_hir::{Store, SymbolTab, prelude as hir};
+use inkwell::{
+    AddressSpace,
+    types::{ArrayType, BasicType, BasicTypeEnum, FunctionType, PointerType, StructType},
+};
+use nitrate_hir::{Store, SymbolTab, hir::TypeDefinition, prelude as hir};
 use nitrate_llvm::LLVMContext;
 
-impl<'ctx> CodeGen<'ctx> for hir::StructAttribute {
-    type Output = ();
-
-    fn generate(
-        &self,
-        _ctx: &'ctx LLVMContext,
-        _store: &Store,
-        _symbol_table: &SymbolTab,
-    ) -> Self::Output {
-        // TODO: implement
-        unimplemented!()
-    }
-}
-
-impl<'ctx> CodeGen<'ctx> for hir::StructFieldAttribute {
-    type Output = ();
-
-    fn generate(
-        &self,
-        _ctx: &'ctx LLVMContext,
-        _store: &Store,
-        _symbol_table: &SymbolTab,
-    ) -> Self::Output {
-        // TODO: implement
-        unimplemented!()
-    }
-}
-
-impl<'ctx> CodeGen<'ctx> for hir::StructField {
-    type Output = ();
-
-    fn generate(
-        &self,
-        _ctx: &'ctx LLVMContext,
-        _store: &Store,
-        _symbol_table: &SymbolTab,
-    ) -> Self::Output {
-        // TODO: implement
-        unimplemented!()
-    }
-}
-
 impl<'ctx> CodeGen<'ctx> for hir::StructType {
-    type Output = ();
-
-    fn generate(
-        &self,
-        _ctx: &'ctx LLVMContext,
-        _store: &Store,
-        _symbol_table: &SymbolTab,
-    ) -> Self::Output {
-        // TODO: implement
-        unimplemented!()
-    }
-}
-
-impl<'ctx> CodeGen<'ctx> for hir::EnumAttribute {
-    type Output = ();
-
-    fn generate(
-        &self,
-        _ctx: &'ctx LLVMContext,
-        _store: &Store,
-        _symbol_table: &SymbolTab,
-    ) -> Self::Output {
-        // TODO: implement
-        unimplemented!()
-    }
-}
-
-impl<'ctx> CodeGen<'ctx> for hir::EnumVariantAttribute {
-    type Output = ();
-
-    fn generate(
-        &self,
-        _ctx: &'ctx LLVMContext,
-        _store: &Store,
-        _symbol_table: &SymbolTab,
-    ) -> Self::Output {
-        // TODO: implement
-        unimplemented!()
-    }
-}
-
-impl<'ctx> CodeGen<'ctx> for hir::EnumVariant {
-    type Output = ();
+    type Output = StructType<'ctx>;
 
     fn generate(
         &self,
@@ -102,21 +21,7 @@ impl<'ctx> CodeGen<'ctx> for hir::EnumVariant {
 }
 
 impl<'ctx> CodeGen<'ctx> for hir::EnumType {
-    type Output = ();
-
-    fn generate(
-        &self,
-        _ctx: &'ctx LLVMContext,
-        _store: &Store,
-        _symbol_table: &SymbolTab,
-    ) -> Self::Output {
-        // TODO: implement
-        unimplemented!()
-    }
-}
-
-impl<'ctx> CodeGen<'ctx> for hir::FunctionAttribute {
-    type Output = ();
+    type Output = ArrayType<'ctx>;
 
     fn generate(
         &self,
@@ -130,7 +35,7 @@ impl<'ctx> CodeGen<'ctx> for hir::FunctionAttribute {
 }
 
 impl<'ctx> CodeGen<'ctx> for hir::FunctionType {
-    type Output = ();
+    type Output = PointerType<'ctx>;
 
     fn generate(
         &self,
@@ -144,7 +49,7 @@ impl<'ctx> CodeGen<'ctx> for hir::FunctionType {
 }
 
 impl<'ctx> CodeGen<'ctx> for hir::Type {
-    type Output = BasicMetadataTypeEnum<'ctx>;
+    type Output = BasicTypeEnum<'ctx>;
 
     fn generate(
         &self,
@@ -167,42 +72,84 @@ impl<'ctx> CodeGen<'ctx> for hir::Type {
             hir::Type::F32 => ctx.f32_type().into(),
             hir::Type::F64 => ctx.f64_type().into(),
 
-            hir::Type::Array { element_type, len } => todo!(),
+            hir::Type::Array { element_type, len } => {
+                let llvm_element_type = store[element_type].generate(ctx, store, symbol_table);
+                llvm_element_type.array_type(*len).into()
+            }
 
-            hir::Type::Tuple { element_types } => todo!(),
+            hir::Type::Tuple { element_types } => {
+                let mut llvm_element_types = Vec::with_capacity(element_types.len());
+                for element_type in element_types {
+                    let llvm_element_type = store[element_type].generate(ctx, store, symbol_table);
+                    llvm_element_types.push(llvm_element_type);
+                }
 
-            hir::Type::Slice { element_type } => todo!(),
+                ctx.struct_type(&llvm_element_types, false).into()
+            }
 
-            hir::Type::Struct { struct_type } => todo!(),
+            hir::Type::Slice { element_type } => {
+                // TODO: implement slice type
+                unimplemented!()
+            }
 
-            hir::Type::Enum { enum_type } => todo!(),
+            hir::Type::Struct { struct_type } => {
+                store[struct_type].generate(ctx, store, symbol_table).into()
+            }
 
-            hir::Type::Refine { base, min, max } => todo!(),
+            hir::Type::Enum { enum_type } => {
+                store[enum_type].generate(ctx, store, symbol_table).into()
+            }
 
-            hir::Type::Bitfield { base, bits } => todo!(),
+            hir::Type::Refine { base, .. } => store[base].generate(ctx, store, symbol_table).into(),
 
-            hir::Type::Function { function_type } => todo!(),
+            hir::Type::Bitfield { base, bits } => {
+                // TODO: implement bitfield type
+                unimplemented!()
+            }
 
-            hir::Type::Reference {
-                lifetime,
-                exclusive,
-                mutable,
-                to,
-            } => todo!(),
+            hir::Type::Function { function_type } => store[function_type]
+                .generate(ctx, store, symbol_table)
+                .into(),
 
-            hir::Type::Pointer {
-                exclusive,
-                mutable,
-                to,
-            } => todo!(),
+            hir::Type::Reference { .. } | hir::Type::Pointer { .. } => {
+                /* LLVM doesn't distinguish between pointer types anymore */
+                ctx.ptr_type(AddressSpace::default()).into()
+            }
 
-            hir::Type::Symbol { path } => todo!(),
+            hir::Type::Symbol { path } => {
+                match symbol_table
+                    .get_type(path)
+                    .expect("Unknown type name encountered during code generation")
+                {
+                    TypeDefinition::EnumDef(id) => {
+                        let enum_def = store[id].borrow();
+                        let enum_type = hir::Type::Enum {
+                            enum_type: enum_def.enum_id,
+                        };
 
-            hir::Type::InferredFloat => todo!(),
+                        enum_type.generate(ctx, store, symbol_table)
+                    }
 
-            hir::Type::InferredInteger => todo!(),
+                    TypeDefinition::StructDef(id) => {
+                        let struct_def = store[id].borrow();
+                        let struct_type = hir::Type::Struct {
+                            struct_type: struct_def.struct_id,
+                        };
 
-            hir::Type::Inferred { id } => todo!(),
+                        struct_type.generate(ctx, store, symbol_table)
+                    }
+
+                    TypeDefinition::TypeAliasDef(id) => {
+                        let type_alias_def = store[id].borrow();
+                        let aliased_type = &store[&type_alias_def.type_id];
+                        aliased_type.generate(ctx, store, symbol_table)
+                    }
+                }
+            }
+
+            hir::Type::InferredFloat | hir::Type::InferredInteger | hir::Type::Inferred { .. } => {
+                panic!("Inferred types should have been resolved before code generation")
+            }
         }
     }
 }

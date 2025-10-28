@@ -204,7 +204,7 @@ impl Ast2Hir for ast::ArrayType {
                     return Err(());
                 }
 
-                val as u64
+                val as u32
             }
 
             Ok(Lit::USize64(val)) => {
@@ -213,7 +213,7 @@ impl Ast2Hir for ast::ArrayType {
                     return Err(());
                 }
 
-                val
+                val as u32
             }
 
             Ok(_) => {

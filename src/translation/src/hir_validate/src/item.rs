@@ -138,9 +138,8 @@ impl ValidateHir for Module {
 }
 
 impl ValidateHir for TypeAliasDef {
-    fn verify(&self, _store: &Store, _symtab: &SymbolTab) -> Result<(), ()> {
-        // TODO: implement
-        unimplemented!()
+    fn verify(&self, store: &Store, symtab: &SymbolTab) -> Result<(), ()> {
+        store[&self.type_id].verify(store, symtab)
     }
 
     fn validate(self, store: &Store, symtab: &SymbolTab) -> Result<ValidHir<Self>, ()> {

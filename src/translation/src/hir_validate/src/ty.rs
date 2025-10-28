@@ -195,8 +195,8 @@ impl ValidateHir for Type {
             Type::Pointer { to, .. } => store[to].verify(store, symtab),
 
             Type::Symbol { path: _ } => {
-                // TODO: Resolve symbol paths
-                unimplemented!()
+                // TODO: cyclic analysis of types
+                Ok(())
             }
 
             Type::InferredFloat | Type::InferredInteger | Type::Inferred { .. } => Err(()),
