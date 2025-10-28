@@ -3,7 +3,7 @@ use nitrate_translation::{
     TranslationError,
     hir::{Dump, DumpContext, hir::PtrSize},
     parse::{Parser, ResolveCtx},
-    source_into_hir::{Ast2HirCtx, ast_mod2hir},
+    source_into_hir::{Ast2HirCtx, convert_ast_to_hir},
     token_lexer::Lexer,
 };
 
@@ -102,7 +102,7 @@ fn program() -> Result<(), Error> {
     }));
 
     let mut hir_ctx = Ast2HirCtx::new(PtrSize::U64);
-    let Ok(hir_module) = ast_mod2hir(module, &mut hir_ctx, &log) else {
+    let Ok(hir_module) = convert_ast_to_hir(module, &mut hir_ctx, &log) else {
         return Err(Error::HirError);
     };
 
