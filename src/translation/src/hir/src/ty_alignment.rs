@@ -78,7 +78,6 @@ pub fn get_align_of(ty: &Type, ctx: &LayoutCtx) -> Result<u64, LayoutError> {
         }
 
         Type::Refine { base, .. } => Ok(get_align_of(&ctx.store[base], ctx)?),
-        Type::Bitfield { base, .. } => Ok(get_align_of(&ctx.store[base], ctx)?),
 
         Type::Function { .. } => Err(LayoutError::Undefined),
         Type::Reference { .. } => Ok(ctx.ptr_size as u64),

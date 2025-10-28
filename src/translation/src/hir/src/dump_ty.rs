@@ -221,11 +221,6 @@ impl Dump for Type {
                 write!(o, "]")
             }
 
-            Type::Bitfield { base, bits } => {
-                ctx.store[base].dump(ctx, o)?;
-                write!(o, ": {bits}")
-            }
-
             Type::Function { function_type } => ctx.store[function_type].dump(ctx, o),
 
             Type::Reference {

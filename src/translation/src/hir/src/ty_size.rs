@@ -105,7 +105,6 @@ pub fn get_size_of(ty: &Type, ctx: &LayoutCtx) -> Result<u64, LayoutError> {
         }
 
         Type::Refine { base, .. } => Ok(get_size_of(&ctx.store[base], ctx)?),
-        Type::Bitfield { bits, .. } => Ok(bits.div_ceil(8) as u64),
 
         Type::Function { .. } => Err(LayoutError::Undefined),
         Type::Reference { .. } => Ok(ctx.ptr_size as u64),

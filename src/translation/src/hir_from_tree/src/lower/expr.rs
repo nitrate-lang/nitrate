@@ -207,13 +207,6 @@ fn metatype_source_encode(
             Ok(())
         }
 
-        Type::Bitfield { base, bits } => {
-            write!(o, "::std::meta::Type::Bitfield {{ base: ").unwrap();
-            metatype_source_encode(store, tab, &store[base], o)?;
-            write!(o, ", bits: {} }}", bits).unwrap();
-            Ok(())
-        }
-
         Type::Function { function_type } => {
             let function_type = &store[function_type];
             write!(o, "::std::meta::Type::Function {{ parameters: Vec::from([").unwrap();

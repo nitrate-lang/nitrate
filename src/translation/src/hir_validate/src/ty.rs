@@ -188,11 +188,6 @@ impl ValidateHir for Type {
                 Ok(())
             }
 
-            Type::Bitfield { base, bits: _ } => {
-                // FIXME: Validate bits against base type
-                store[base].verify(store, symtab)
-            }
-
             Type::Function { function_type } => store[function_type].verify(store, symtab),
 
             Type::Reference { lifetime, to, .. } => {

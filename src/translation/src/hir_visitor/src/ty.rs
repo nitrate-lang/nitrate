@@ -25,7 +25,6 @@ pub trait HirTypeVisitor<T> {
     fn visit_struct(&mut self, attrs: &BTreeSet<StructAttribute>, fields: &[StructField]) -> T;
     fn visit_enum(&mut self, attrs: &BTreeSet<EnumAttribute>, variants: &[EnumVariant]) -> T;
     fn visit_refine(&mut self, base: &Type, min: &LiteralId, max: &LiteralId) -> T;
-    fn visit_bitfield(&mut self, base: &Type, len: u8) -> T;
 
     fn visit_function_type(
         &mut self,
@@ -74,7 +73,6 @@ pub trait HirTypeVisitor<T> {
             }
 
             Type::Refine { base, min, max } => self.visit_refine(&store[base], min, max),
-            Type::Bitfield { base, bits } => self.visit_bitfield(&store[base], *bits),
 
             Type::Function { function_type } => {
                 let func = &store[function_type];

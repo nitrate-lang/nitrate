@@ -19,7 +19,7 @@ impl<'ctx> CodeGen<'ctx> for hir::GlobalVariable {
     type Output = ();
 
     fn generate(&self, _ctx: &'ctx LLVMContext, _store: &Store, _tab: &SymbolTab) -> Self::Output {
-        // TODO: implement
+        // TODO: implement global variable
         unimplemented!()
     }
 }
@@ -31,7 +31,7 @@ fn generate_function<'ctx>(
     store: &Store,
     tab: &SymbolTab,
 ) {
-    // TODO: implement
+    // TODO: implement function body generation
     // unimplemented!()
 }
 

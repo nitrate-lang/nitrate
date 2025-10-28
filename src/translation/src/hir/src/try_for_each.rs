@@ -114,10 +114,6 @@ impl TypeIter<'_> {
                 store[base].iter().try_for_each(store, vcb, tcb)?;
             }
 
-            Type::Bitfield { base, bits: _ } => {
-                store[base].iter().try_for_each(store, vcb, tcb)?;
-            }
-
             Type::Function { function_type } => {
                 let function = &store[function_type];
                 for param in &function.params {

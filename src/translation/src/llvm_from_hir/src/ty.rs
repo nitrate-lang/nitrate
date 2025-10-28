@@ -99,11 +99,6 @@ impl<'ctx> CodeGen<'ctx> for hir::Type {
 
             hir::Type::Refine { base, .. } => store[base].generate(ctx, store, tab).into(),
 
-            hir::Type::Bitfield { base, bits } => {
-                // TODO: implement bitfield type
-                unimplemented!()
-            }
-
             hir::Type::Function { .. }
             | hir::Type::Reference { .. }
             | hir::Type::Pointer { .. } => {
