@@ -1,6 +1,7 @@
 use crate::{SymbolTab, prelude::*};
 use std::cmp::max;
 
+#[derive(Debug, Clone, Copy)]
 pub enum LayoutError {
     Undefined,
     NotInferred,

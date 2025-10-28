@@ -161,9 +161,12 @@ impl ValidateHir for StructDef {
 }
 
 impl ValidateHir for EnumDef {
-    fn verify(&self, _store: &Store, _symtab: &SymbolTab) -> Result<(), ()> {
-        // TODO: implement
-        unimplemented!()
+    fn verify(&self, store: &Store, symtab: &SymbolTab) -> Result<(), ()> {
+        let enum_type = Type::Enum {
+            enum_type: self.enum_id,
+        };
+
+        enum_type.verify(store, symtab)
     }
 
     fn validate(self, store: &Store, symtab: &SymbolTab) -> Result<ValidHir<Self>, ()> {

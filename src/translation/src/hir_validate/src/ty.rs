@@ -74,9 +74,12 @@ impl ValidateHir for EnumVariantAttribute {
 }
 
 impl ValidateHir for EnumVariant {
-    fn verify(&self, _store: &Store, _symtab: &SymbolTab) -> Result<(), ()> {
-        // TODO: implement
-        unimplemented!()
+    fn verify(&self, store: &Store, symtab: &SymbolTab) -> Result<(), ()> {
+        for attr in &self.attributes {
+            attr.verify(store, symtab)?;
+        }
+
+        store[&self.ty].verify(store, symtab)
     }
 
     fn validate(self, store: &Store, symtab: &SymbolTab) -> Result<ValidHir<Self>, ()> {
@@ -86,9 +89,16 @@ impl ValidateHir for EnumVariant {
 }
 
 impl ValidateHir for EnumType {
-    fn verify(&self, _store: &Store, _symtab: &SymbolTab) -> Result<(), ()> {
-        // TODO: implement
-        unimplemented!()
+    fn verify(&self, store: &Store, symtab: &SymbolTab) -> Result<(), ()> {
+        for attr in &self.attributes {
+            attr.verify(store, symtab)?;
+        }
+
+        for variant in &self.variants {
+            variant.verify(store, symtab)?;
+        }
+
+        Ok(())
     }
 
     fn validate(self, store: &Store, symtab: &SymbolTab) -> Result<ValidHir<Self>, ()> {
@@ -111,6 +121,10 @@ impl ValidateHir for FunctionAttribute {
 
 impl ValidateHir for FunctionType {
     fn verify(&self, store: &Store, symtab: &SymbolTab) -> Result<(), ()> {
+        for attr in &self.attributes {
+            attr.verify(store, symtab)?;
+        }
+
         store[&self.return_type].verify(store, symtab)?;
 
         for param in &self.params {
@@ -127,8 +141,6 @@ impl ValidateHir for FunctionType {
 
 impl ValidateHir for Type {
     fn verify(&self, store: &Store, symtab: &SymbolTab) -> Result<(), ()> {
-        // TODO: implement
-
         match self {
             Type::Never
             | Type::Unit

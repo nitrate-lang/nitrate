@@ -1,55 +1,41 @@
-use crate::codegen::CodeGen;
+use crate::{codegen::CodeGen, item::get_ptr_size};
 use inkwell::{
     AddressSpace,
-    types::{ArrayType, BasicType, BasicTypeEnum, FunctionType, PointerType, StructType},
+    types::{BasicType, BasicTypeEnum, FunctionType, StructType},
 };
-use nitrate_hir::{Store, SymbolTab, hir::TypeDefinition, prelude as hir};
+use nitrate_hir::{
+    Store, SymbolTab,
+    hir::{LayoutCtx, TypeDefinition, get_size_of},
+    prelude as hir,
+};
 use nitrate_llvm::LLVMContext;
 
 impl<'ctx> CodeGen<'ctx> for hir::StructType {
     type Output = StructType<'ctx>;
 
-    fn generate(
-        &self,
-        _ctx: &'ctx LLVMContext,
-        _store: &Store,
-        _symbol_table: &SymbolTab,
-    ) -> Self::Output {
-        // TODO: implement struct type
-        unimplemented!()
-    }
-}
+    fn generate(&self, ctx: &'ctx LLVMContext, store: &Store, tab: &SymbolTab) -> Self::Output {
+        let mut field_types = Vec::with_capacity(self.fields.len());
+        for field in &self.fields {
+            let field_type = store[&field.ty].generate(ctx, store, tab);
+            field_types.push(field_type);
+        }
 
-impl<'ctx> CodeGen<'ctx> for hir::EnumType {
-    type Output = ArrayType<'ctx>;
-
-    fn generate(
-        &self,
-        _ctx: &'ctx LLVMContext,
-        _store: &Store,
-        _symbol_table: &SymbolTab,
-    ) -> Self::Output {
-        // TODO: implement enum type
-        unimplemented!()
+        let packed = self.attributes.contains(&hir::StructAttribute::Packed);
+        ctx.struct_type(&field_types, packed)
     }
 }
 
 impl<'ctx> CodeGen<'ctx> for hir::FunctionType {
     type Output = FunctionType<'ctx>;
 
-    fn generate(
-        &self,
-        ctx: &'ctx LLVMContext,
-        store: &Store,
-        symbol_table: &SymbolTab,
-    ) -> Self::Output {
+    fn generate(&self, ctx: &'ctx LLVMContext, store: &Store, tab: &SymbolTab) -> Self::Output {
         let return_type = &store[&self.return_type];
-        let return_type = return_type.generate(ctx, store, symbol_table);
+        let return_type = return_type.generate(ctx, store, tab);
         let return_type = BasicTypeEnum::try_from(return_type).unwrap();
 
         let mut param_types = Vec::with_capacity(self.params.len());
         for param in &self.params {
-            let param_type = store[&param.1].generate(ctx, store, symbol_table);
+            let param_type = store[&param.1].generate(ctx, store, tab);
             param_types.push(param_type.into());
         }
 
@@ -62,12 +48,7 @@ impl<'ctx> CodeGen<'ctx> for hir::FunctionType {
 impl<'ctx> CodeGen<'ctx> for hir::Type {
     type Output = BasicTypeEnum<'ctx>;
 
-    fn generate(
-        &self,
-        ctx: &'ctx LLVMContext,
-        store: &Store,
-        symbol_table: &SymbolTab,
-    ) -> Self::Output {
+    fn generate(&self, ctx: &'ctx LLVMContext, store: &Store, tab: &SymbolTab) -> Self::Output {
         match self {
             hir::Type::Never | hir::Type::Unit => ctx.struct_type(&[], false).into(),
 
@@ -82,14 +63,14 @@ impl<'ctx> CodeGen<'ctx> for hir::Type {
             hir::Type::F64 => ctx.f64_type().into(),
 
             hir::Type::Array { element_type, len } => {
-                let llvm_element_type = store[element_type].generate(ctx, store, symbol_table);
+                let llvm_element_type = store[element_type].generate(ctx, store, tab);
                 llvm_element_type.array_type(*len).into()
             }
 
             hir::Type::Tuple { element_types } => {
                 let mut llvm_element_types = Vec::with_capacity(element_types.len());
                 for element_type in element_types {
-                    let llvm_element_type = store[element_type].generate(ctx, store, symbol_table);
+                    let llvm_element_type = store[element_type].generate(ctx, store, tab);
                     llvm_element_types.push(llvm_element_type);
                 }
 
@@ -102,14 +83,21 @@ impl<'ctx> CodeGen<'ctx> for hir::Type {
             }
 
             hir::Type::Struct { struct_type } => {
-                store[struct_type].generate(ctx, store, symbol_table).into()
+                store[struct_type].generate(ctx, store, tab).into()
             }
 
-            hir::Type::Enum { enum_type } => {
-                store[enum_type].generate(ctx, store, symbol_table).into()
+            hir::Type::Enum { .. } => {
+                let layout_ctx = LayoutCtx {
+                    store,
+                    tab,
+                    ptr_size: get_ptr_size(ctx),
+                };
+
+                let size = get_size_of(self, &layout_ctx).expect("Failed to get size of enum type");
+                ctx.i8_type().array_type(size as u32).into()
             }
 
-            hir::Type::Refine { base, .. } => store[base].generate(ctx, store, symbol_table).into(),
+            hir::Type::Refine { base, .. } => store[base].generate(ctx, store, tab).into(),
 
             hir::Type::Bitfield { base, bits } => {
                 // TODO: implement bitfield type
@@ -124,7 +112,7 @@ impl<'ctx> CodeGen<'ctx> for hir::Type {
             }
 
             hir::Type::Symbol { path } => {
-                match symbol_table
+                match tab
                     .get_type(path)
                     .expect("Unknown type name encountered during code generation")
                 {
@@ -134,7 +122,7 @@ impl<'ctx> CodeGen<'ctx> for hir::Type {
                             enum_type: enum_def.enum_id,
                         };
 
-                        enum_type.generate(ctx, store, symbol_table)
+                        enum_type.generate(ctx, store, tab)
                     }
 
                     TypeDefinition::StructDef(id) => {
@@ -143,13 +131,13 @@ impl<'ctx> CodeGen<'ctx> for hir::Type {
                             struct_type: struct_def.struct_id,
                         };
 
-                        struct_type.generate(ctx, store, symbol_table)
+                        struct_type.generate(ctx, store, tab)
                     }
 
                     TypeDefinition::TypeAliasDef(id) => {
                         let type_alias_def = store[id].borrow();
                         let aliased_type = &store[&type_alias_def.type_id];
-                        aliased_type.generate(ctx, store, symbol_table)
+                        aliased_type.generate(ctx, store, tab)
                     }
                 }
             }

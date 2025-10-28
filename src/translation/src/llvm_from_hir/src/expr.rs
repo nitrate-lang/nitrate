@@ -6,12 +6,7 @@ use nitrate_llvm::LLVMContext;
 impl<'ctx> CodeGen<'ctx> for hir::Block {
     type Output = BasicValueEnum<'ctx>;
 
-    fn generate(
-        &self,
-        _ctx: &'ctx LLVMContext,
-        _store: &Store,
-        _symbol_table: &SymbolTab,
-    ) -> Self::Output {
+    fn generate(&self, _ctx: &'ctx LLVMContext, _store: &Store, _tab: &SymbolTab) -> Self::Output {
         unimplemented!()
     }
 }
@@ -19,12 +14,7 @@ impl<'ctx> CodeGen<'ctx> for hir::Block {
 impl<'ctx> CodeGen<'ctx> for hir::Value {
     type Output = BasicValueEnum<'ctx>;
 
-    fn generate(
-        &self,
-        _ctx: &'ctx LLVMContext,
-        _store: &Store,
-        _symbol_table: &SymbolTab,
-    ) -> Self::Output {
+    fn generate(&self, _ctx: &'ctx LLVMContext, _store: &Store, _tab: &SymbolTab) -> Self::Output {
         unimplemented!()
     }
 }
