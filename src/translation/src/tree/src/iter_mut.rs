@@ -11,7 +11,6 @@ use crate::{
         Module, Struct, StructField, Trait, TypeAlias,
     },
     iter::Order,
-    tag::OpaqueTypeNameId,
     ty::{
         ArrayType, FuncTypeParam, FunctionType, Lifetime, PointerType, ReferenceType,
         RefinementType, SliceType, TupleType, Type, TypePath,
@@ -83,7 +82,6 @@ pub enum RefNodeMut<'a> {
     TypeFunctionType(&'a mut FunctionType),
     TypeReferenceType(&'a mut ReferenceType),
     TypePointerType(&'a mut PointerType),
-    TypeOpaqueType(&'a mut OpaqueTypeNameId),
     TypeLatentType(&'a mut Block),
     TypeLifetime(&'a mut Lifetime),
     TypeParentheses(&'a mut Type),

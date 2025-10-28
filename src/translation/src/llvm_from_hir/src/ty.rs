@@ -163,11 +163,9 @@ impl<'ctx> CodeGen<'ctx> for hir::Type {
             hir::Type::U32 | hir::Type::I32 => ctx.i32_type().into(),
             hir::Type::U64 | hir::Type::I64 => ctx.i64_type().into(),
             hir::Type::U128 | hir::Type::I128 => ctx.i128_type().into(),
-            hir::Type::USize => todo!(),
+            hir::Type::USize => ctx.ptr_sized_int_type(&ctx.target_data(), None).into(),
             hir::Type::F32 => ctx.f32_type().into(),
             hir::Type::F64 => ctx.f64_type().into(),
-
-            hir::Type::Opaque { name } => todo!(),
 
             hir::Type::Array { element_type, len } => todo!(),
 

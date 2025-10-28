@@ -1,16 +1,21 @@
+use inkwell::{context::Context, targets::TargetData};
 use std::ops::{Deref, DerefMut};
-
-use inkwell::context::Context;
 
 pub struct LLVMContext {
     pub context: Context,
+    pub target_data: TargetData,
 }
 
 impl LLVMContext {
     pub fn new() -> Self {
         LLVMContext {
             context: Context::create(),
+            target_data: TargetData::create(""),
         }
+    }
+
+    pub fn target_data(&self) -> &TargetData {
+        &self.target_data
     }
 }
 

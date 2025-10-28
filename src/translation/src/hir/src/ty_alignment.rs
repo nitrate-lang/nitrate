@@ -12,7 +12,6 @@ pub fn get_align_of(ty: &Type, ctx: &LayoutCtx) -> Result<u64, LayoutError> {
         Type::U64 | Type::I64 | Type::F64 => Ok(8),
         Type::U128 | Type::I128 => Ok(16),
         Type::USize => Ok(ctx.ptr_size as u64),
-        Type::Opaque { .. } => Ok(1),
 
         Type::Array { element_type, len } => {
             if *len == 0 {

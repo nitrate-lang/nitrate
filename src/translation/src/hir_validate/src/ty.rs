@@ -141,8 +141,7 @@ impl ValidateHir for Type {
             | Type::I64
             | Type::I128
             | Type::F32
-            | Type::F64
-            | Type::Opaque { .. } => Ok(()),
+            | Type::F64 => Ok(()),
 
             Type::Array { element_type, .. } => store[element_type].verify(store, symtab),
 

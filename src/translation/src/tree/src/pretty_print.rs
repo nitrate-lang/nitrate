@@ -19,9 +19,8 @@ use crate::{
     ty::{
         ArrayType, Bool, Exclusivity, Float32, Float64, FuncTypeParam, FuncTypeParams,
         FunctionType, InferType, Int8, Int16, Int32, Int64, Int128, LatentType, Lifetime,
-        OpaqueType, PointerType, ReferenceType, RefinementType, SliceType, TupleType, Type,
-        TypeParentheses, TypePath, TypePathSegment, TypeSyntaxError, UInt8, UInt16, UInt32, UInt64,
-        UInt128, USize,
+        PointerType, ReferenceType, RefinementType, SliceType, TupleType, Type, TypeParentheses,
+        TypePath, TypePathSegment, TypeSyntaxError, UInt8, UInt16, UInt32, UInt64, UInt128, USize,
     },
 };
 
@@ -1377,16 +1376,6 @@ impl PrettyPrint for PointerType {
     }
 }
 
-impl PrettyPrint for OpaqueType {
-    fn pretty_print_fmt(
-        &self,
-        _ctx: &mut PrintContext,
-        writer: &mut dyn std::fmt::Write,
-    ) -> std::fmt::Result {
-        write!(writer, "opaque(\"{}\")", self.name)
-    }
-}
-
 impl PrettyPrint for LatentType {
     fn pretty_print_fmt(
         &self,
@@ -1451,7 +1440,6 @@ impl PrettyPrint for Type {
             Type::FunctionType(m) => m.pretty_print_fmt(ctx, writer),
             Type::ReferenceType(m) => m.pretty_print_fmt(ctx, writer),
             Type::PointerType(m) => m.pretty_print_fmt(ctx, writer),
-            Type::OpaqueType(m) => m.pretty_print_fmt(ctx, writer),
             Type::LatentType(m) => m.pretty_print_fmt(ctx, writer),
             Type::Lifetime(m) => m.pretty_print_fmt(ctx, writer),
             Type::Parentheses(m) => m.pretty_print_fmt(ctx, writer),

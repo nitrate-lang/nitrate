@@ -178,7 +178,6 @@ impl Dump for Type {
             Type::I128 => write!(o, "i128"),
             Type::F32 => write!(o, "f32"),
             Type::F64 => write!(o, "f64"),
-            Type::Opaque { name } => write!(o, "opaque(`{name}`)"),
 
             Type::Array { element_type, len } => {
                 write!(o, "[")?;

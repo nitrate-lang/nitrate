@@ -10,7 +10,6 @@ use crate::{
         Enum, EnumVariant, FuncParam, Function, Generics, GlobalVariable, Impl, Import, ItemPath,
         Module, Struct, StructField, Trait, TypeAlias,
     },
-    tag::OpaqueTypeNameId,
     ty::{
         ArrayType, FuncTypeParam, FunctionType, Lifetime, PointerType, ReferenceType,
         RefinementType, SliceType, TupleType, Type, TypePath,
@@ -88,7 +87,6 @@ pub enum RefNode<'a> {
     TypeFunctionType(&'a FunctionType),
     TypeReferenceType(&'a ReferenceType),
     TypePointerType(&'a PointerType),
-    TypeOpaqueType(&'a OpaqueTypeNameId),
     TypeLatentType(&'a Block),
     TypeLifetime(&'a Lifetime),
     TypeParentheses(&'a Type),

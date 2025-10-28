@@ -250,13 +250,6 @@ impl_interning_category!(
 );
 
 impl_interning_category!(
-    OpaqueTypeNameId,
-    OpaqueTypeNameIdStore,
-    OPAQUE_TYPE_NAME_ID_STORE,
-    intern_opaque_type_name
-);
-
-impl_interning_category!(
     LifetimeNameId,
     LifetimeNameIdStore,
     LIFETIME_NAME_ID_STORE,
@@ -290,7 +283,6 @@ pub fn erase_interners() {
     FUNCTION_NAME_ID_STORE.clear();
     VARIABLE_NAME_ID_STORE.clear();
     ARG_NAME_ID_STORE.clear();
-    OPAQUE_TYPE_NAME_ID_STORE.clear();
     LIFETIME_NAME_ID_STORE.clear();
     LABEL_NAME_ID_STORE.clear();
     STRING_LITERAL_ID_STORE.clear();

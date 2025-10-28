@@ -5,10 +5,10 @@ use interned_string::IString;
 use nitrate_diagnosis::CompilerLog;
 use nitrate_hir::{SymbolTab, prelude::*};
 use nitrate_hir_get_type::{TypeInferenceCtx, get_type};
-use nitrate_tree::ast::{self as ast, UnaryExprOp};
-use nitrate_tree_parse::Parser;
 use nitrate_token::escape_string;
 use nitrate_token_lexer::{Lexer, LexerError};
+use nitrate_tree::ast::{self as ast, UnaryExprOp};
+use nitrate_tree_parse::Parser;
 use ordered_float::OrderedFloat;
 use std::collections::BTreeSet;
 use std::fmt::Write;
@@ -123,16 +123,6 @@ fn metatype_source_encode(
 
         Type::USize => {
             write!(o, "::std::meta::Type::USize").unwrap();
-            Ok(())
-        }
-
-        Type::Opaque { name } => {
-            write!(
-                o,
-                "::std::meta::Type::Opaque {{ name: String::from({}) }}",
-                escape_string(name, true)
-            )
-            .unwrap();
             Ok(())
         }
 

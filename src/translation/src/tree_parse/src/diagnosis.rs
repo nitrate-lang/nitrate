@@ -53,7 +53,6 @@ pub(crate) enum SyntaxErr {
 
     ReferenceTypeExpectedLifetimeName(SourcePosition),
 
-    OpaqueTypeMissingName(SourcePosition),
 
     TupleTypeExpectedEnd(SourcePosition),
     TupleTypeElementLimit(SourcePosition),
@@ -159,7 +158,6 @@ impl FormattableDiagnosticGroup for SyntaxErr {
 
             SyntaxErr::ReferenceTypeExpectedLifetimeName(_) => 240,
 
-            SyntaxErr::OpaqueTypeMissingName(_) => 260,
 
             SyntaxErr::TupleTypeExpectedEnd(_) => 280,
             SyntaxErr::TupleTypeElementLimit(_) => 281,
@@ -411,13 +409,6 @@ impl FormattableDiagnosticGroup for SyntaxErr {
             SyntaxErr::ReferenceTypeExpectedLifetimeName(pos) => DiagnosticInfo {
                 origin: Origin::Point(pos.to_owned().into()),
                 message: "reference lifetime is missing after '".into(),
-            },
-
-            /* ------------------------------------------------------------------------- */
-
-            SyntaxErr::OpaqueTypeMissingName(pos) => DiagnosticInfo {
-                origin: Origin::Point(pos.to_owned().into()),
-                message: "opaque type name is missing".into(),
             },
             
             /* ------------------------------------------------------------------------- */

@@ -350,16 +350,6 @@ impl Ast2Hir for ast::PointerType {
     }
 }
 
-impl Ast2Hir for ast::OpaqueType {
-    type Hir = Type;
-
-    fn ast2hir(self, _ctx: &mut Ast2HirCtx, _log: &CompilerLog) -> Result<Self::Hir, ()> {
-        Ok(Type::Opaque {
-            name: self.name.deref().into(),
-        })
-    }
-}
-
 impl Ast2Hir for ast::LatentType {
     type Hir = Type;
 
@@ -427,7 +417,6 @@ impl Ast2Hir for ast::Type {
             ast::Type::FunctionType(ty) => ty.ast2hir(ctx, log),
             ast::Type::ReferenceType(ty) => ty.ast2hir(ctx, log),
             ast::Type::PointerType(ty) => ty.ast2hir(ctx, log),
-            ast::Type::OpaqueType(ty) => ty.ast2hir(ctx, log),
             ast::Type::LatentType(ty) => ty.ast2hir(ctx, log),
             ast::Type::Lifetime(ty) => ty.ast2hir(ctx, log),
             ast::Type::Parentheses(ty) => ty.ast2hir(ctx, log),

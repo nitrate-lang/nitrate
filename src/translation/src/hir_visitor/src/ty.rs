@@ -19,7 +19,6 @@ pub trait HirTypeVisitor<T> {
     fn visit_i128(&mut self) -> T;
     fn visit_f32(&mut self) -> T;
     fn visit_f64(&mut self) -> T;
-    fn visit_opaque(&mut self, name: &IString) -> T;
     fn visit_array(&mut self, element_type: &Type, len: u64) -> T;
     fn visit_tuple(&mut self, element_types: &[TypeId]) -> T;
     fn visit_slice(&mut self, element_type: &Type) -> T;
@@ -60,7 +59,6 @@ pub trait HirTypeVisitor<T> {
             Type::I128 => self.visit_i128(),
             Type::F32 => self.visit_f32(),
             Type::F64 => self.visit_f64(),
-            Type::Opaque { name } => self.visit_opaque(name),
             Type::Array { element_type, len } => self.visit_array(&store[element_type], *len),
             Type::Tuple { element_types } => self.visit_tuple(element_types),
             Type::Slice { element_type } => self.visit_slice(&store[element_type]),

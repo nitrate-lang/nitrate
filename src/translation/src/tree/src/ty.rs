@@ -2,7 +2,7 @@ use crate::{
     ast::{Block, Expr},
     expr::{AttributeList, TypeArgument},
     item::Mutability,
-    tag::{LifetimeNameId, OpaqueTypeNameId, ParameterNameId},
+    tag::{LifetimeNameId, ParameterNameId},
 };
 
 use serde::{Deserialize, Serialize};
@@ -164,12 +164,6 @@ pub struct PointerType {
 
 #[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct OpaqueType {
-    pub name: OpaqueTypeNameId,
-}
-
-#[skip_serializing_none]
-#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LatentType {
     pub body: Block,
 }
@@ -207,7 +201,6 @@ pub enum Type {
     FunctionType(Box<FunctionType>),
     ReferenceType(Box<ReferenceType>),
     PointerType(Box<PointerType>),
-    OpaqueType(OpaqueType),
     LatentType(Box<LatentType>),
     Lifetime(Box<Lifetime>),
     Parentheses(Box<TypeParentheses>),
@@ -240,7 +233,6 @@ impl std::fmt::Debug for Type {
             Type::FunctionType(e) => e.fmt(f),
             Type::ReferenceType(e) => e.fmt(f),
             Type::PointerType(e) => e.fmt(f),
-            Type::OpaqueType(e) => e.fmt(f),
             Type::LatentType(e) => e.fmt(f),
             Type::Lifetime(e) => e.fmt(f),
             Type::Parentheses(e) => e.fmt(f),
@@ -392,13 +384,6 @@ impl Type {
     pub fn as_reference_type(self) -> Option<ReferenceType> {
         match self {
             Type::ReferenceType(b) => Some(*b),
-            _ => None,
-        }
-    }
-
-    pub fn as_opaque_type(self) -> Option<OpaqueType> {
-        match self {
-            Type::OpaqueType(b) => Some(b),
             _ => None,
         }
     }

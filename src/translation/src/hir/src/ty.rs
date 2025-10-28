@@ -86,10 +86,6 @@ pub enum Type {
     F32,
     F64,
 
-    Opaque {
-        name: IString,
-    },
-
     Array {
         element_type: TypeId,
         len: u64,

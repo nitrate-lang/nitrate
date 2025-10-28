@@ -75,8 +75,7 @@ impl TypeIter<'_> {
             | Type::I64
             | Type::I128
             | Type::F32
-            | Type::F64
-            | Type::Opaque { name: _ } => {}
+            | Type::F64 => {}
 
             Type::Array {
                 element_type,

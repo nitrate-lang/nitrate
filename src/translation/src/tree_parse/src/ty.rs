@@ -6,11 +6,10 @@ use nitrate_tree::{
     ast::{
         ArrayType, Bool, Exclusivity, Expr, Float32, Float64, FuncTypeParam, FuncTypeParams,
         FunctionType, Int8, Int16, Int32, Int64, Int128, LatentType, Lifetime, Mutability,
-        OpaqueType, PointerType, ReferenceType, RefinementType, SliceType, TupleType, Type,
-        TypeParentheses, TypePath, TypePathSegment, TypeSyntaxError, UInt8, UInt16, UInt32, UInt64,
-        UInt128, USize,
+        PointerType, ReferenceType, RefinementType, SliceType, TupleType, Type, TypeParentheses,
+        TypePath, TypePathSegment, TypeSyntaxError, UInt8, UInt16, UInt32, UInt64, UInt128, USize,
     },
-    tag::{intern_lifetime_name, intern_opaque_type_name, intern_parameter_name},
+    tag::{intern_lifetime_name, intern_parameter_name},
 };
 
 #[derive(Default)]
@@ -288,31 +287,6 @@ impl Parser<'_, '_> {
         }
     }
 
-    fn parse_opaque_type(&mut self) -> Type {
-        assert!(self.lexer.peek_t() == Token::Opaque);
-        self.lexer.skip_tok();
-
-        if !self.lexer.skip_if(&Token::OpenParen) {
-            let bug = SyntaxErr::ExpectedOpenParen(self.lexer.peek_pos());
-            self.log.report(&bug);
-        }
-
-        let opaque_identity = self.lexer.next_if_string().unwrap_or_else(|| {
-            let bug = SyntaxErr::OpaqueTypeMissingName(self.lexer.peek_pos());
-            self.log.report(&bug);
-            "".into()
-        });
-
-        let name = intern_opaque_type_name(opaque_identity);
-
-        if !self.lexer.skip_if(&Token::CloseParen) {
-            let bug = SyntaxErr::ExpectedCloseParen(self.lexer.peek_pos());
-            self.log.report(&bug);
-        }
-
-        Type::OpaqueType(OpaqueType { name })
-    }
-
     fn parse_lifetime(&mut self) -> Lifetime {
         assert!(self.lexer.peek_t() == Token::SingleQuote);
         self.lexer.skip_tok();
@@ -467,7 +441,6 @@ impl Parser<'_, '_> {
             Token::And => Type::ReferenceType(Box::new(self.parse_reference_type())),
             Token::Star => Type::PointerType(Box::new(self.parse_pointer_type())),
             Token::Fn => Type::FunctionType(Box::new(self.parse_function_type())),
-            Token::Opaque => self.parse_opaque_type(),
 
             Token::OpenBrace | Token::Unsafe | Token::Safe => {
                 Type::LatentType(Box::new(LatentType {
