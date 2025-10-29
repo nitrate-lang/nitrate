@@ -27,7 +27,7 @@ fn gen_struct_ty<'ctx>(
     ctx.struct_type(&field_types, is_packed)
 }
 
-fn gen_function_ty<'ctx>(
+fn _gen_function_ty<'ctx>(
     hir_func_type: &hir::FunctionType,
     ctx: &'ctx LLVMContext,
     store: &hir::Store,

@@ -850,36 +850,59 @@ fn gen_rval_ne<'ctx>(
     }
 }
 
-/*
-hir::Value::If {
-           condition,
-           true_branch,
-           false_branch,
-       } => {
-           // TODO: implement if expression codegen
-           unimplemented!()
-       }
+fn gen_if<'ctx>(
+    ctx: &'ctx RvalGenCtx,
+    condition: &hir::Value,
+    true_branch: &hir::Block,
+    false_branch: Option<&hir::Block>,
+) -> BasicValueEnum<'ctx> {
+    /*
+     * // TODO: add documentation
+     * // TODO: implement if-else codegen
+     */
 
-       hir::Value::While { condition, body } => {
-           // TODO: implement while loop codegen
-           unimplemented!()
-       }
+    unimplemented!()
+}
 
-       hir::Value::Loop { body } => {
-           // TODO: implement loop codegen
-           unimplemented!()
-       }
+fn gen_while<'ctx>(
+    ctx: &'ctx RvalGenCtx,
+    condition: &hir::Value,
+    body: &hir::Block,
+) -> BasicValueEnum<'ctx> {
+    /*
+     * // TODO: add documentation
+     * // TODO: implement while loop codegen
+     */
 
-       hir::Value::Break { label } => {
-           // TODO: implement break codegen
-           unimplemented!()
-       }
+    unimplemented!()
+}
 
-       hir::Value::Continue { label } => {
-           // TODO: implement continue codegen
-           unimplemented!()
-       }
-        */
+fn gen_loop<'ctx>(ctx: &'ctx RvalGenCtx, body: &hir::Block) -> BasicValueEnum<'ctx> {
+    /*
+     * // TODO: add documentation
+     * // TODO: implement loop codegen
+     */
+
+    unimplemented!()
+}
+
+fn gen_break<'ctx>(ctx: &'ctx RvalGenCtx, label: Option<&str>) {
+    /*
+     * // TODO: add documentation
+     * // TODO: implement break codegen
+     */
+
+    unimplemented!()
+}
+
+fn gen_continue<'ctx>(ctx: &'ctx RvalGenCtx, label: Option<&str>) {
+    /*
+     * // TODO: add documentation
+     * // TODO: implement continue codegen
+     */
+
+    unimplemented!()
+}
 
 fn gen_return<'ctx>(ctx: &'ctx RvalGenCtx, value: &hir::Value) {
     /*
@@ -1019,28 +1042,37 @@ pub(crate) fn gen_rval<'ctx>(
             true_branch,
             false_branch,
         } => {
-            // TODO: implement if expression codegen
-            unimplemented!()
+            let condition = &ctx.store[condition].borrow();
+            let true_branch = &ctx.store[true_branch].borrow();
+
+            match false_branch {
+                None => gen_if(ctx, condition, true_branch, None),
+                Some(fb) => {
+                    let fb = &ctx.store[fb].borrow();
+                    gen_if(ctx, condition, true_branch, Some(fb))
+                }
+            }
         }
 
         hir::Value::While { condition, body } => {
-            // TODO: implement while loop codegen
-            unimplemented!()
+            let condition = &ctx.store[condition].borrow();
+            let body = &ctx.store[body].borrow();
+            gen_while(ctx, condition, body)
         }
 
         hir::Value::Loop { body } => {
-            // TODO: implement loop codegen
-            unimplemented!()
+            let body = &ctx.store[body].borrow();
+            gen_loop(ctx, body)
         }
 
         hir::Value::Break { label } => {
-            // TODO: implement break codegen
-            unimplemented!()
+            gen_break(ctx, label.as_deref());
+            gen_rval_lit_unit(ctx)
         }
 
         hir::Value::Continue { label } => {
-            // TODO: implement continue codegen
-            unimplemented!()
+            gen_continue(ctx, label.as_deref());
+            gen_rval_lit_unit(ctx)
         }
 
         hir::Value::Return { value } => {

@@ -125,19 +125,17 @@ fn gen_function<'ctx>(
     body: Option<&hir::BlockId>,
     llvm_function: &FunctionValue<'ctx>,
 ) {
-    let linkage = match visibility {
+    /***********************************************************************/
+    // 1. Set Linkage
+    llvm_function.set_linkage(match visibility {
         hir::Visibility::Pub => Linkage::External,
         hir::Visibility::Pro => Linkage::Internal,
         hir::Visibility::Sec => Linkage::Private,
-    };
-
-    llvm_function.set_linkage(linkage);
+    });
 
     if let Some(body) = body {
         let bb = ctx.llvm.create_builder();
 
-        /*******************************************************/
-        /* Entry Block */
         let entry = ctx.llvm.append_basic_block(*llvm_function, "entry");
         bb.position_at_end(entry);
 
@@ -145,22 +143,26 @@ fn gen_function<'ctx>(
         let return_type = llvm_function.get_type().get_return_type().unwrap();
         let ret = bb.build_alloca(return_type, "ret_val").unwrap();
 
-        /*******************************************************/
-        /* End Block */
+        /*******************************************************************/
         let end = ctx.llvm.append_basic_block(*llvm_function, "end");
         bb.position_at_end(end);
 
+        // Load and return the return value
         let ret_value = bb.build_load(return_type, ret, "ret_val_load").unwrap();
-
         bb.build_return(Some(&ret_value)).unwrap();
 
-        /*******************************************************/
+        /*******************************************************************/
         /* Generate Body */
         bb.position_at_end(entry);
 
         for element in &ctx.store[body].borrow().elements {
             match element {
-                hir::BlockElement::Local(_id) => {
+                hir::BlockElement::Local(id) => {
+                    let local = &ctx.store[id].borrow();
+                    let hir_local_ty = &ctx.store[&local.ty];
+                    let local_ty = gen_ty(hir_local_ty, ctx.llvm, ctx.store, ctx.tab);
+                    let llvm_local = bb.build_alloca(local_ty, &local.name).unwrap();
+
                     // TODO: Create local variable
                 }
 
