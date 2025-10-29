@@ -8,7 +8,155 @@ use nitrate_hir::{Store, SymbolTab, prelude as hir};
 use nitrate_hir_get_type::{TypeInferenceCtx, get_type};
 use nitrate_llvm::LLVMContext;
 
-fn codegen_add<'ctx>(
+fn gen_rval_lit_unit<'ctx>(ctx: &'ctx LLVMContext) -> BasicValueEnum<'ctx> {
+    /*
+     * The Unit Type is an empty struct
+     */
+
+    ctx.const_struct(&[], false).into()
+}
+
+fn gen_rval_lit_bool<'ctx>(ctx: &'ctx LLVMContext, value: bool) -> BasicValueEnum<'ctx> {
+    /*
+     * The Bool Type is represented as an i1.
+     * No sign extension is performed.
+     */
+
+    match value {
+        true => ctx.bool_type().const_int(1, false).into(),
+        false => ctx.bool_type().const_int(0, false).into(),
+    }
+}
+
+fn gen_rval_lit_i8<'ctx>(ctx: &'ctx LLVMContext, value: i8) -> BasicValueEnum<'ctx> {
+    /*
+     * Direct correspondence to LLVM i8 type.
+     * Sign extension is performed.
+     */
+
+    ctx.i8_type().const_int(value as u64, true).into()
+}
+
+fn gen_rval_lit_i16<'ctx>(ctx: &'ctx LLVMContext, value: i16) -> BasicValueEnum<'ctx> {
+    /*
+     * Direct correspondence to LLVM i16 type.
+     * Sign extension is performed.
+     */
+
+    ctx.i16_type().const_int(value as u64, true).into()
+}
+
+fn gen_rval_lit_i32<'ctx>(ctx: &'ctx LLVMContext, value: i32) -> BasicValueEnum<'ctx> {
+    /*
+     * Direct correspondence to LLVM i32 type.
+     * Sign extension is performed.
+     */
+
+    ctx.i32_type().const_int(value as u64, true).into()
+}
+
+fn gen_rval_lit_i64<'ctx>(ctx: &'ctx LLVMContext, value: i64) -> BasicValueEnum<'ctx> {
+    /*
+     * Direct correspondence to LLVM i64 type.
+     * Sign extension is performed.
+     */
+
+    ctx.i64_type().const_int(value as u64, true).into()
+}
+
+fn gen_rval_lit_i128<'ctx>(ctx: &'ctx LLVMContext, value: i128) -> BasicValueEnum<'ctx> {
+    /*
+     * // TODO: add documentation
+     */
+
+    let low = (value & 0xFFFFFFFFFFFFFFFF) as u64;
+    let high = ((value >> 64) & 0xFFFFFFFFFFFFFFFF) as u64;
+    let i128 = ctx.i128_type().const_int_arbitrary_precision(&[low, high]);
+    i128.into()
+}
+
+fn gen_rval_lit_u8<'ctx>(ctx: &'ctx LLVMContext, value: u8) -> BasicValueEnum<'ctx> {
+    /*
+     * Direct correspondence to LLVM i8 type.
+     * No sign extension is performed.
+     */
+
+    ctx.i8_type().const_int(value as u64, false).into()
+}
+
+fn gen_rval_lit_u16<'ctx>(ctx: &'ctx LLVMContext, value: u16) -> BasicValueEnum<'ctx> {
+    /*
+     * Direct correspondence to LLVM i16 type.
+     * No sign extension is performed.
+     */
+
+    ctx.i16_type().const_int(value as u64, false).into()
+}
+
+fn gen_rval_lit_u32<'ctx>(ctx: &'ctx LLVMContext, value: u32) -> BasicValueEnum<'ctx> {
+    /*
+     * Direct correspondence to LLVM i32 type.
+     * No sign extension is performed.
+     */
+
+    ctx.i32_type().const_int(value as u64, false).into()
+}
+
+fn gen_rval_lit_u64<'ctx>(ctx: &'ctx LLVMContext, value: u64) -> BasicValueEnum<'ctx> {
+    /*
+     * Direct correspondence to LLVM i64 type.
+     * No sign extension is performed.
+     */
+
+    ctx.i64_type().const_int(value, false).into()
+}
+
+fn gen_rval_lit_u128<'ctx>(ctx: &'ctx LLVMContext, value: u128) -> BasicValueEnum<'ctx> {
+    /*
+     * // TODO: add documentation
+     */
+
+    let low = (value & 0xFFFFFFFFFFFFFFFF) as u64;
+    let high = ((value >> 64) & 0xFFFFFFFFFFFFFFFF) as u64;
+    let u128 = ctx.i128_type().const_int_arbitrary_precision(&[low, high]);
+    u128.into()
+}
+
+fn gen_rval_lit_f32<'ctx>(ctx: &'ctx LLVMContext, value: f32) -> BasicValueEnum<'ctx> {
+    /*
+     * Direct correspondence to LLVM f32 type.
+     */
+
+    ctx.f32_type().const_float(value as f64).into()
+}
+
+fn gen_rval_lit_f64<'ctx>(ctx: &'ctx LLVMContext, value: f64) -> BasicValueEnum<'ctx> {
+    /*
+     * Direct correspondence to LLVM f64 type.
+     */
+
+    ctx.f64_type().const_float(value).into()
+}
+
+fn gen_rval_lit_string<'ctx>(ctx: &'ctx LLVMContext, value: &str) -> BasicValueEnum<'ctx> {
+    /*
+     * Intern the string literal in the LLVM module's global string table.
+     * No null terminator is added.
+     */
+
+    ctx.const_string(value.as_bytes(), false).into()
+}
+
+fn gen_rval_lit_bstring<'ctx>(ctx: &'ctx LLVMContext, value: &[u8]) -> BasicValueEnum<'ctx> {
+    /*
+     * Intern the byte string literal in the LLVM module's global string table.
+     * No null terminator is added. It is treated as a raw byte array.
+     */
+
+    ctx.const_string(value, false).into()
+}
+
+fn gen_rval_add<'ctx>(
     lhs: &hir::Value,
     rhs: &hir::Value,
     bb: &inkwell::builder::Builder<'ctx>,
@@ -18,8 +166,12 @@ fn codegen_add<'ctx>(
     store: &Store,
     tab: &SymbolTab,
 ) -> BasicValueEnum<'ctx> {
-    let lhs = expr_codegen(lhs, bb, ret_alloc, end_block, ctx, store, tab);
-    let rhs = expr_codegen(rhs, bb, ret_alloc, end_block, ctx, store, tab);
+    /*
+     * // TODO: add documentation
+     */
+
+    let lhs = gen_rval(lhs, bb, ret_alloc, end_block, ctx, store, tab);
+    let rhs = gen_rval(rhs, bb, ret_alloc, end_block, ctx, store, tab);
     let lhs_ty = lhs.get_type();
     let rhs_ty = rhs.get_type();
 
@@ -34,7 +186,7 @@ fn codegen_add<'ctx>(
     }
 }
 
-fn codegen_sub<'ctx>(
+fn gen_rval_sub<'ctx>(
     lhs: &hir::Value,
     rhs: &hir::Value,
     bb: &inkwell::builder::Builder<'ctx>,
@@ -44,8 +196,12 @@ fn codegen_sub<'ctx>(
     store: &Store,
     tab: &SymbolTab,
 ) -> BasicValueEnum<'ctx> {
-    let lhs = expr_codegen(lhs, bb, ret_alloc, end_block, ctx, store, tab);
-    let rhs = expr_codegen(rhs, bb, ret_alloc, end_block, ctx, store, tab);
+    /*
+     * // TODO: add documentation
+     */
+
+    let lhs = gen_rval(lhs, bb, ret_alloc, end_block, ctx, store, tab);
+    let rhs = gen_rval(rhs, bb, ret_alloc, end_block, ctx, store, tab);
     let lhs_ty = lhs.get_type();
     let rhs_ty = rhs.get_type();
 
@@ -60,7 +216,7 @@ fn codegen_sub<'ctx>(
     }
 }
 
-fn codegen_mul<'ctx>(
+fn gen_rval_mul<'ctx>(
     lhs: &hir::Value,
     rhs: &hir::Value,
     bb: &inkwell::builder::Builder<'ctx>,
@@ -70,8 +226,12 @@ fn codegen_mul<'ctx>(
     store: &Store,
     tab: &SymbolTab,
 ) -> BasicValueEnum<'ctx> {
-    let lhs = expr_codegen(lhs, bb, ret_alloc, end_block, ctx, store, tab);
-    let rhs = expr_codegen(rhs, bb, ret_alloc, end_block, ctx, store, tab);
+    /*
+     * // TODO: add documentation
+     */
+
+    let lhs = gen_rval(lhs, bb, ret_alloc, end_block, ctx, store, tab);
+    let rhs = gen_rval(rhs, bb, ret_alloc, end_block, ctx, store, tab);
     let lhs_ty = lhs.get_type();
     let rhs_ty = rhs.get_type();
 
@@ -86,7 +246,7 @@ fn codegen_mul<'ctx>(
     }
 }
 
-fn codegen_div<'ctx>(
+fn gen_rval_div<'ctx>(
     lhs: &hir::Value,
     rhs: &hir::Value,
     bb: &inkwell::builder::Builder<'ctx>,
@@ -96,8 +256,12 @@ fn codegen_div<'ctx>(
     store: &Store,
     tab: &SymbolTab,
 ) -> BasicValueEnum<'ctx> {
-    let llvm_lhs = expr_codegen(lhs, bb, ret_alloc, end_block, ctx, store, tab);
-    let llvm_rhs = expr_codegen(rhs, bb, ret_alloc, end_block, ctx, store, tab);
+    /*
+     * // TODO: add documentation
+     */
+
+    let llvm_lhs = gen_rval(lhs, bb, ret_alloc, end_block, ctx, store, tab);
+    let llvm_rhs = gen_rval(rhs, bb, ret_alloc, end_block, ctx, store, tab);
     let lhs_ty = llvm_lhs.get_type();
     let rhs_ty = llvm_rhs.get_type();
 
@@ -121,7 +285,7 @@ fn codegen_div<'ctx>(
     }
 }
 
-fn codegen_rem<'ctx>(
+fn gen_rval_rem<'ctx>(
     lhs: &hir::Value,
     rhs: &hir::Value,
     bb: &inkwell::builder::Builder<'ctx>,
@@ -131,8 +295,12 @@ fn codegen_rem<'ctx>(
     store: &Store,
     tab: &SymbolTab,
 ) -> BasicValueEnum<'ctx> {
-    let llvm_lhs = expr_codegen(lhs, bb, ret_alloc, end_block, ctx, store, tab);
-    let llvm_rhs = expr_codegen(rhs, bb, ret_alloc, end_block, ctx, store, tab);
+    /*
+     * // TODO: add documentation
+     */
+
+    let llvm_lhs = gen_rval(lhs, bb, ret_alloc, end_block, ctx, store, tab);
+    let llvm_rhs = gen_rval(rhs, bb, ret_alloc, end_block, ctx, store, tab);
     let lhs_ty = llvm_lhs.get_type();
     let rhs_ty = llvm_rhs.get_type();
 
@@ -156,7 +324,7 @@ fn codegen_rem<'ctx>(
     }
 }
 
-fn codegen_and<'ctx>(
+fn gen_rval_and<'ctx>(
     lhs: &hir::Value,
     rhs: &hir::Value,
     bb: &inkwell::builder::Builder<'ctx>,
@@ -166,14 +334,18 @@ fn codegen_and<'ctx>(
     store: &Store,
     tab: &SymbolTab,
 ) -> BasicValueEnum<'ctx> {
-    let lhs = expr_codegen(lhs, bb, ret_alloc, end_block, ctx, store, tab);
-    let rhs = expr_codegen(rhs, bb, ret_alloc, end_block, ctx, store, tab);
+    /*
+     * // TODO: add documentation
+     */
+
+    let lhs = gen_rval(lhs, bb, ret_alloc, end_block, ctx, store, tab);
+    let rhs = gen_rval(rhs, bb, ret_alloc, end_block, ctx, store, tab);
 
     let and = bb.build_and(lhs.into_int_value(), rhs.into_int_value(), "");
     return and.unwrap().into();
 }
 
-fn codegen_or<'ctx>(
+fn gen_rval_or<'ctx>(
     lhs: &hir::Value,
     rhs: &hir::Value,
     bb: &inkwell::builder::Builder<'ctx>,
@@ -183,14 +355,18 @@ fn codegen_or<'ctx>(
     store: &Store,
     tab: &SymbolTab,
 ) -> BasicValueEnum<'ctx> {
-    let lhs = expr_codegen(lhs, bb, ret_alloc, end_block, ctx, store, tab);
-    let rhs = expr_codegen(rhs, bb, ret_alloc, end_block, ctx, store, tab);
+    /*
+     * // TODO: add documentation
+     */
+
+    let lhs = gen_rval(lhs, bb, ret_alloc, end_block, ctx, store, tab);
+    let rhs = gen_rval(rhs, bb, ret_alloc, end_block, ctx, store, tab);
 
     let or = bb.build_or(lhs.into_int_value(), rhs.into_int_value(), "");
     return or.unwrap().into();
 }
 
-fn codegen_xor<'ctx>(
+fn gen_rval_xor<'ctx>(
     lhs: &hir::Value,
     rhs: &hir::Value,
     bb: &inkwell::builder::Builder<'ctx>,
@@ -200,14 +376,18 @@ fn codegen_xor<'ctx>(
     store: &Store,
     tab: &SymbolTab,
 ) -> BasicValueEnum<'ctx> {
-    let lhs = expr_codegen(lhs, bb, ret_alloc, end_block, ctx, store, tab);
-    let rhs = expr_codegen(rhs, bb, ret_alloc, end_block, ctx, store, tab);
+    /*
+     * // TODO: add documentation
+     */
+
+    let lhs = gen_rval(lhs, bb, ret_alloc, end_block, ctx, store, tab);
+    let rhs = gen_rval(rhs, bb, ret_alloc, end_block, ctx, store, tab);
 
     let xor = bb.build_xor(lhs.into_int_value(), rhs.into_int_value(), "");
     return xor.unwrap().into();
 }
 
-fn codegen_shl<'ctx>(
+fn gen_rval_shl<'ctx>(
     lhs: &hir::Value,
     rhs: &hir::Value,
     bb: &inkwell::builder::Builder<'ctx>,
@@ -217,14 +397,18 @@ fn codegen_shl<'ctx>(
     store: &Store,
     tab: &SymbolTab,
 ) -> BasicValueEnum<'ctx> {
-    let lhs = expr_codegen(lhs, bb, ret_alloc, end_block, ctx, store, tab);
-    let rhs = expr_codegen(rhs, bb, ret_alloc, end_block, ctx, store, tab);
+    /*
+     * // TODO: add documentation
+     */
+
+    let lhs = gen_rval(lhs, bb, ret_alloc, end_block, ctx, store, tab);
+    let rhs = gen_rval(rhs, bb, ret_alloc, end_block, ctx, store, tab);
 
     let shl = bb.build_left_shift(lhs.into_int_value(), rhs.into_int_value(), "");
     return shl.unwrap().into();
 }
 
-fn codegen_shr<'ctx>(
+fn gen_rval_shr<'ctx>(
     lhs: &hir::Value,
     rhs: &hir::Value,
     bb: &inkwell::builder::Builder<'ctx>,
@@ -234,18 +418,22 @@ fn codegen_shr<'ctx>(
     store: &Store,
     tab: &SymbolTab,
 ) -> BasicValueEnum<'ctx> {
+    /*
+     * // TODO: add documentation
+     */
+
     let sign_extend = get_type(lhs, &TypeInferenceCtx { store, tab })
         .expect("Failed to get type")
         .is_signed_primitive();
 
-    let lhs = expr_codegen(lhs, bb, ret_alloc, end_block, ctx, store, tab);
-    let rhs = expr_codegen(rhs, bb, ret_alloc, end_block, ctx, store, tab);
+    let lhs = gen_rval(lhs, bb, ret_alloc, end_block, ctx, store, tab);
+    let rhs = gen_rval(rhs, bb, ret_alloc, end_block, ctx, store, tab);
 
     let shr = bb.build_right_shift(lhs.into_int_value(), rhs.into_int_value(), sign_extend, "");
     return shr.unwrap().into();
 }
 
-fn codegen_rol<'ctx>(
+fn gen_rval_rol<'ctx>(
     lhs: &hir::Value,
     rhs: &hir::Value,
     bb: &inkwell::builder::Builder<'ctx>,
@@ -255,14 +443,18 @@ fn codegen_rol<'ctx>(
     store: &Store,
     tab: &SymbolTab,
 ) -> BasicValueEnum<'ctx> {
-    let _lhs = expr_codegen(lhs, bb, ret_alloc, end_block, ctx, store, tab);
-    let _rhs = expr_codegen(rhs, bb, ret_alloc, end_block, ctx, store, tab);
+    /*
+     * // TODO: add documentation
+     */
+
+    let _lhs = gen_rval(lhs, bb, ret_alloc, end_block, ctx, store, tab);
+    let _rhs = gen_rval(rhs, bb, ret_alloc, end_block, ctx, store, tab);
 
     // TODO: implement rotate left
     unimplemented!()
 }
 
-fn codegen_ror<'ctx>(
+fn gen_rval_ror<'ctx>(
     lhs: &hir::Value,
     rhs: &hir::Value,
     bb: &inkwell::builder::Builder<'ctx>,
@@ -272,14 +464,18 @@ fn codegen_ror<'ctx>(
     store: &Store,
     tab: &SymbolTab,
 ) -> BasicValueEnum<'ctx> {
-    let _lhs = expr_codegen(lhs, bb, ret_alloc, end_block, ctx, store, tab);
-    let _rhs = expr_codegen(rhs, bb, ret_alloc, end_block, ctx, store, tab);
+    /*
+     * // TODO: add documentation
+     */
+
+    let _lhs = gen_rval(lhs, bb, ret_alloc, end_block, ctx, store, tab);
+    let _rhs = gen_rval(rhs, bb, ret_alloc, end_block, ctx, store, tab);
 
     // TODO: implement rotate right
     unimplemented!()
 }
 
-fn codegen_land<'ctx>(
+fn gen_rval_land<'ctx>(
     lhs: &hir::Value,
     rhs: &hir::Value,
     bb: &inkwell::builder::Builder<'ctx>,
@@ -289,6 +485,10 @@ fn codegen_land<'ctx>(
     store: &Store,
     tab: &SymbolTab,
 ) -> BasicValueEnum<'ctx> {
+    /*
+     * // TODO: add documentation
+     */
+
     let parent_function = bb.get_insert_block().unwrap().get_parent().unwrap();
     let bool = ctx.bool_type();
 
@@ -301,7 +501,7 @@ fn codegen_land<'ctx>(
 
     /**************************************************************************/
     // 2. Evaluate LHS; if true, skip RHS
-    let lhs_val = expr_codegen(lhs, bb, ret_alloc, end_block, ctx, store, tab);
+    let lhs_val = gen_rval(lhs, bb, ret_alloc, end_block, ctx, store, tab);
     bb.build_store(land_result, lhs_val).unwrap();
     bb.build_conditional_branch(lhs_val.into_int_value(), rhs_bb, end_bb)
         .unwrap();
@@ -309,7 +509,7 @@ fn codegen_land<'ctx>(
     /**************************************************************************/
     // 3. Evaluate RHS
     bb.position_at_end(rhs_bb);
-    let rhs_val = expr_codegen(rhs, bb, ret_alloc, end_block, ctx, store, tab);
+    let rhs_val = gen_rval(rhs, bb, ret_alloc, end_block, ctx, store, tab);
     bb.build_store(land_result, rhs_val).unwrap();
     bb.build_unconditional_branch(end_bb).unwrap();
 
@@ -320,7 +520,7 @@ fn codegen_land<'ctx>(
     load.into()
 }
 
-fn codegen_lor<'ctx>(
+fn gen_rval_lor<'ctx>(
     lhs: &hir::Value,
     rhs: &hir::Value,
     bb: &inkwell::builder::Builder<'ctx>,
@@ -330,6 +530,10 @@ fn codegen_lor<'ctx>(
     store: &Store,
     tab: &SymbolTab,
 ) -> BasicValueEnum<'ctx> {
+    /*
+     * // TODO: add documentation
+     */
+
     let parent_function = bb.get_insert_block().unwrap().get_parent().unwrap();
     let bool = ctx.bool_type();
 
@@ -342,7 +546,7 @@ fn codegen_lor<'ctx>(
 
     /**************************************************************************/
     // 2. Evaluate LHS; if true, skip RHS
-    let lhs_val = expr_codegen(lhs, bb, ret_alloc, end_block, ctx, store, tab);
+    let lhs_val = gen_rval(lhs, bb, ret_alloc, end_block, ctx, store, tab);
     bb.build_store(lor_result, lhs_val).unwrap();
     bb.build_conditional_branch(lhs_val.into_int_value(), end_bb, rhs_bb)
         .unwrap();
@@ -350,7 +554,7 @@ fn codegen_lor<'ctx>(
     /**************************************************************************/
     // 3. Evaluate RHS
     bb.position_at_end(rhs_bb);
-    let rhs_val = expr_codegen(rhs, bb, ret_alloc, end_block, ctx, store, tab);
+    let rhs_val = gen_rval(rhs, bb, ret_alloc, end_block, ctx, store, tab);
     bb.build_store(lor_result, rhs_val).unwrap();
     bb.build_unconditional_branch(end_bb).unwrap();
 
@@ -361,7 +565,7 @@ fn codegen_lor<'ctx>(
     load.into()
 }
 
-fn codegen_lt<'ctx>(
+fn gen_rval_lt<'ctx>(
     lhs: &hir::Value,
     rhs: &hir::Value,
     bb: &inkwell::builder::Builder<'ctx>,
@@ -371,8 +575,12 @@ fn codegen_lt<'ctx>(
     store: &Store,
     tab: &SymbolTab,
 ) -> BasicValueEnum<'ctx> {
-    let llvm_lhs = expr_codegen(lhs, bb, ret_alloc, end_block, ctx, store, tab);
-    let llvm_rhs = expr_codegen(rhs, bb, ret_alloc, end_block, ctx, store, tab);
+    /*
+     * // TODO: add documentation
+     */
+
+    let llvm_lhs = gen_rval(lhs, bb, ret_alloc, end_block, ctx, store, tab);
+    let llvm_rhs = gen_rval(rhs, bb, ret_alloc, end_block, ctx, store, tab);
     let lhs_ty = llvm_lhs.get_type();
     let rhs_ty = llvm_rhs.get_type();
 
@@ -411,7 +619,7 @@ fn codegen_lt<'ctx>(
     }
 }
 
-fn codegen_gt<'ctx>(
+fn gen_rval_gt<'ctx>(
     lhs: &hir::Value,
     rhs: &hir::Value,
     bb: &inkwell::builder::Builder<'ctx>,
@@ -421,8 +629,12 @@ fn codegen_gt<'ctx>(
     store: &Store,
     tab: &SymbolTab,
 ) -> BasicValueEnum<'ctx> {
-    let llvm_lhs = expr_codegen(lhs, bb, ret_alloc, end_block, ctx, store, tab);
-    let llvm_rhs = expr_codegen(rhs, bb, ret_alloc, end_block, ctx, store, tab);
+    /*
+     * // TODO: add documentation
+     */
+
+    let llvm_lhs = gen_rval(lhs, bb, ret_alloc, end_block, ctx, store, tab);
+    let llvm_rhs = gen_rval(rhs, bb, ret_alloc, end_block, ctx, store, tab);
     let lhs_ty = llvm_lhs.get_type();
     let rhs_ty = llvm_rhs.get_type();
 
@@ -461,7 +673,7 @@ fn codegen_gt<'ctx>(
     }
 }
 
-fn codegen_lte<'ctx>(
+fn gen_rval_lte<'ctx>(
     lhs: &hir::Value,
     rhs: &hir::Value,
     bb: &inkwell::builder::Builder<'ctx>,
@@ -471,8 +683,12 @@ fn codegen_lte<'ctx>(
     store: &Store,
     tab: &SymbolTab,
 ) -> BasicValueEnum<'ctx> {
-    let llvm_lhs = expr_codegen(lhs, bb, ret_alloc, end_block, ctx, store, tab);
-    let llvm_rhs = expr_codegen(rhs, bb, ret_alloc, end_block, ctx, store, tab);
+    /*
+     * // TODO: add documentation
+     */
+
+    let llvm_lhs = gen_rval(lhs, bb, ret_alloc, end_block, ctx, store, tab);
+    let llvm_rhs = gen_rval(rhs, bb, ret_alloc, end_block, ctx, store, tab);
     let lhs_ty = llvm_lhs.get_type();
     let rhs_ty = llvm_rhs.get_type();
 
@@ -511,7 +727,7 @@ fn codegen_lte<'ctx>(
     }
 }
 
-fn codegen_gte<'ctx>(
+fn gen_rval_gte<'ctx>(
     lhs: &hir::Value,
     rhs: &hir::Value,
     bb: &inkwell::builder::Builder<'ctx>,
@@ -521,8 +737,12 @@ fn codegen_gte<'ctx>(
     store: &Store,
     tab: &SymbolTab,
 ) -> BasicValueEnum<'ctx> {
-    let llvm_lhs = expr_codegen(lhs, bb, ret_alloc, end_block, ctx, store, tab);
-    let llvm_rhs = expr_codegen(rhs, bb, ret_alloc, end_block, ctx, store, tab);
+    /*
+     * // TODO: add documentation
+     */
+
+    let llvm_lhs = gen_rval(lhs, bb, ret_alloc, end_block, ctx, store, tab);
+    let llvm_rhs = gen_rval(rhs, bb, ret_alloc, end_block, ctx, store, tab);
     let lhs_ty = llvm_lhs.get_type();
     let rhs_ty = llvm_rhs.get_type();
 
@@ -561,7 +781,7 @@ fn codegen_gte<'ctx>(
     }
 }
 
-fn codegen_eq<'ctx>(
+fn gen_rval_eq<'ctx>(
     lhs: &hir::Value,
     rhs: &hir::Value,
     bb: &inkwell::builder::Builder<'ctx>,
@@ -571,8 +791,12 @@ fn codegen_eq<'ctx>(
     store: &Store,
     tab: &SymbolTab,
 ) -> BasicValueEnum<'ctx> {
-    let lhs = expr_codegen(lhs, bb, ret_alloc, end_block, ctx, store, tab);
-    let rhs = expr_codegen(rhs, bb, ret_alloc, end_block, ctx, store, tab);
+    /*
+     * // TODO: add documentation
+     */
+
+    let lhs = gen_rval(lhs, bb, ret_alloc, end_block, ctx, store, tab);
+    let rhs = gen_rval(rhs, bb, ret_alloc, end_block, ctx, store, tab);
     let lhs_ty = lhs.get_type();
     let rhs_ty = rhs.get_type();
 
@@ -597,7 +821,7 @@ fn codegen_eq<'ctx>(
     }
 }
 
-fn codegen_ne<'ctx>(
+fn gen_rval_ne<'ctx>(
     lhs: &hir::Value,
     rhs: &hir::Value,
     bb: &inkwell::builder::Builder<'ctx>,
@@ -607,8 +831,12 @@ fn codegen_ne<'ctx>(
     store: &Store,
     tab: &SymbolTab,
 ) -> BasicValueEnum<'ctx> {
-    let lhs = expr_codegen(lhs, bb, ret_alloc, end_block, ctx, store, tab);
-    let rhs = expr_codegen(rhs, bb, ret_alloc, end_block, ctx, store, tab);
+    /*
+     * // TODO: add documentation
+     */
+
+    let lhs = gen_rval(lhs, bb, ret_alloc, end_block, ctx, store, tab);
+    let rhs = gen_rval(rhs, bb, ret_alloc, end_block, ctx, store, tab);
     let lhs_ty = lhs.get_type();
     let rhs_ty = rhs.get_type();
 
@@ -633,7 +861,7 @@ fn codegen_ne<'ctx>(
     }
 }
 
-pub(crate) fn expr_codegen<'ctx>(
+pub(crate) fn gen_rval<'ctx>(
     hir_value: &hir::Value,
     bb: &inkwell::builder::Builder<'ctx>,
     ret: Option<&PointerValue<'ctx>>,
@@ -643,50 +871,24 @@ pub(crate) fn expr_codegen<'ctx>(
     tab: &SymbolTab,
 ) -> BasicValueEnum<'ctx> {
     match hir_value {
-        hir::Value::Unit => ctx.const_struct(&[], false).into(),
-        hir::Value::Bool(true) => ctx.bool_type().const_int(1, false).into(),
-        hir::Value::Bool(false) => ctx.bool_type().const_int(0, false).into(),
-        hir::Value::I8(x) => ctx.i8_type().const_int(*x as u64, true).into(),
-        hir::Value::I16(x) => ctx.i16_type().const_int(*x as u64, true).into(),
-        hir::Value::I32(x) => ctx.i32_type().const_int(*x as u64, true).into(),
-        hir::Value::I64(x) => ctx.i64_type().const_int(*x as u64, true).into(),
-
-        hir::Value::I128(x) => {
-            let x = **x;
-            let low = (x & 0xFFFFFFFFFFFFFFFF) as u64;
-            let high = ((x >> 64) & 0xFFFFFFFFFFFFFFFF) as u64;
-            let i128 = ctx.i128_type().const_int_arbitrary_precision(&[low, high]);
-            i128.into()
-        }
-
-        hir::Value::U8(x) => ctx.i8_type().const_int(*x as u64, false).into(),
-        hir::Value::U16(x) => ctx.i16_type().const_int(*x as u64, false).into(),
-        hir::Value::U32(x) => ctx.i32_type().const_int(*x as u64, false).into(),
-        hir::Value::U64(x) => ctx.i64_type().const_int(*x as u64, false).into(),
-
-        hir::Value::U128(x) => {
-            let x = **x;
-            let low = (x & 0xFFFFFFFFFFFFFFFF) as u64;
-            let high = ((x >> 64) & 0xFFFFFFFFFFFFFFFF) as u64;
-            let u128 = ctx.i128_type().const_int_arbitrary_precision(&[low, high]);
-            u128.into()
-        }
-
-        hir::Value::F32(x) => ctx.f32_type().const_float(x.into_inner() as f64).into(),
-        hir::Value::F64(x) => ctx.f64_type().const_float(x.into_inner()).into(),
-
-        hir::Value::USize32(x) => ctx
-            .ptr_sized_int_type(ctx.target_data(), None)
-            .const_int(*x as u64, false)
-            .into(),
-
-        hir::Value::USize64(x) => ctx
-            .ptr_sized_int_type(ctx.target_data(), None)
-            .const_int(*x as u64, false)
-            .into(),
-
-        hir::Value::StringLit(x) => ctx.const_string(x.as_bytes(), false).into(),
-        hir::Value::BStringLit(x) => ctx.const_string(x.as_slice(), false).into(),
+        hir::Value::Unit => gen_rval_lit_unit(ctx),
+        hir::Value::Bool(x) => gen_rval_lit_bool(ctx, *x),
+        hir::Value::I8(x) => gen_rval_lit_i8(ctx, *x),
+        hir::Value::I16(x) => gen_rval_lit_i16(ctx, *x),
+        hir::Value::I32(x) => gen_rval_lit_i32(ctx, *x),
+        hir::Value::I64(x) => gen_rval_lit_i64(ctx, *x),
+        hir::Value::I128(x) => gen_rval_lit_i128(ctx, **x),
+        hir::Value::U8(x) => gen_rval_lit_u8(ctx, *x),
+        hir::Value::U16(x) => gen_rval_lit_u16(ctx, *x),
+        hir::Value::U32(x) => gen_rval_lit_u32(ctx, *x),
+        hir::Value::U64(x) => gen_rval_lit_u64(ctx, *x),
+        hir::Value::U128(x) => gen_rval_lit_u128(ctx, **x),
+        hir::Value::F32(x) => gen_rval_lit_f32(ctx, x.into_inner()),
+        hir::Value::F64(x) => gen_rval_lit_f64(ctx, x.into_inner()),
+        hir::Value::USize32(x) => gen_rval_lit_u32(ctx, *x),
+        hir::Value::USize64(x) => gen_rval_lit_u64(ctx, *x),
+        hir::Value::StringLit(x) => gen_rval_lit_string(ctx, x),
+        hir::Value::BStringLit(x) => gen_rval_lit_bstring(ctx, x.as_slice()),
 
         hir::Value::InferredInteger(_) | hir::Value::InferredFloat(_) => {
             panic!("Inferred values should have been resolved before code generation")
@@ -714,26 +916,26 @@ pub(crate) fn expr_codegen<'ctx>(
             let rhs = &store[right].borrow();
 
             match op {
-                hir::BinaryOp::Add => codegen_add(lhs, rhs, bb, ret, endb, ctx, store, tab),
-                hir::BinaryOp::Sub => codegen_sub(lhs, rhs, bb, ret, endb, ctx, store, tab),
-                hir::BinaryOp::Mul => codegen_mul(lhs, rhs, bb, ret, endb, ctx, store, tab),
-                hir::BinaryOp::Div => codegen_div(lhs, rhs, bb, ret, endb, ctx, store, tab),
-                hir::BinaryOp::Mod => codegen_rem(lhs, rhs, bb, ret, endb, ctx, store, tab),
-                hir::BinaryOp::And => codegen_and(lhs, rhs, bb, ret, endb, ctx, store, tab),
-                hir::BinaryOp::Or => codegen_or(lhs, rhs, bb, ret, endb, ctx, store, tab),
-                hir::BinaryOp::Xor => codegen_xor(lhs, rhs, bb, ret, endb, ctx, store, tab),
-                hir::BinaryOp::Shl => codegen_shl(lhs, rhs, bb, ret, endb, ctx, store, tab),
-                hir::BinaryOp::Shr => codegen_shr(lhs, rhs, bb, ret, endb, ctx, store, tab),
-                hir::BinaryOp::Rol => codegen_rol(lhs, rhs, bb, ret, endb, ctx, store, tab),
-                hir::BinaryOp::Ror => codegen_ror(lhs, rhs, bb, ret, endb, ctx, store, tab),
-                hir::BinaryOp::LogicAnd => codegen_land(lhs, rhs, bb, ret, endb, ctx, store, tab),
-                hir::BinaryOp::LogicOr => codegen_lor(lhs, rhs, bb, ret, endb, ctx, store, tab),
-                hir::BinaryOp::Lt => codegen_lt(lhs, rhs, bb, ret, endb, ctx, store, tab),
-                hir::BinaryOp::Gt => codegen_gt(lhs, rhs, bb, ret, endb, ctx, store, tab),
-                hir::BinaryOp::Lte => codegen_lte(lhs, rhs, bb, ret, endb, ctx, store, tab),
-                hir::BinaryOp::Gte => codegen_gte(lhs, rhs, bb, ret, endb, ctx, store, tab),
-                hir::BinaryOp::Eq => codegen_eq(lhs, rhs, bb, ret, endb, ctx, store, tab),
-                hir::BinaryOp::Ne => codegen_ne(lhs, rhs, bb, ret, endb, ctx, store, tab),
+                hir::BinaryOp::Add => gen_rval_add(lhs, rhs, bb, ret, endb, ctx, store, tab),
+                hir::BinaryOp::Sub => gen_rval_sub(lhs, rhs, bb, ret, endb, ctx, store, tab),
+                hir::BinaryOp::Mul => gen_rval_mul(lhs, rhs, bb, ret, endb, ctx, store, tab),
+                hir::BinaryOp::Div => gen_rval_div(lhs, rhs, bb, ret, endb, ctx, store, tab),
+                hir::BinaryOp::Mod => gen_rval_rem(lhs, rhs, bb, ret, endb, ctx, store, tab),
+                hir::BinaryOp::And => gen_rval_and(lhs, rhs, bb, ret, endb, ctx, store, tab),
+                hir::BinaryOp::Or => gen_rval_or(lhs, rhs, bb, ret, endb, ctx, store, tab),
+                hir::BinaryOp::Xor => gen_rval_xor(lhs, rhs, bb, ret, endb, ctx, store, tab),
+                hir::BinaryOp::Shl => gen_rval_shl(lhs, rhs, bb, ret, endb, ctx, store, tab),
+                hir::BinaryOp::Shr => gen_rval_shr(lhs, rhs, bb, ret, endb, ctx, store, tab),
+                hir::BinaryOp::Rol => gen_rval_rol(lhs, rhs, bb, ret, endb, ctx, store, tab),
+                hir::BinaryOp::Ror => gen_rval_ror(lhs, rhs, bb, ret, endb, ctx, store, tab),
+                hir::BinaryOp::LogicAnd => gen_rval_land(lhs, rhs, bb, ret, endb, ctx, store, tab),
+                hir::BinaryOp::LogicOr => gen_rval_lor(lhs, rhs, bb, ret, endb, ctx, store, tab),
+                hir::BinaryOp::Lt => gen_rval_lt(lhs, rhs, bb, ret, endb, ctx, store, tab),
+                hir::BinaryOp::Gt => gen_rval_gt(lhs, rhs, bb, ret, endb, ctx, store, tab),
+                hir::BinaryOp::Lte => gen_rval_lte(lhs, rhs, bb, ret, endb, ctx, store, tab),
+                hir::BinaryOp::Gte => gen_rval_gte(lhs, rhs, bb, ret, endb, ctx, store, tab),
+                hir::BinaryOp::Eq => gen_rval_eq(lhs, rhs, bb, ret, endb, ctx, store, tab),
+                hir::BinaryOp::Ne => gen_rval_ne(lhs, rhs, bb, ret, endb, ctx, store, tab),
             }
         }
 

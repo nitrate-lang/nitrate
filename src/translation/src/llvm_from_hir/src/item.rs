@@ -1,7 +1,7 @@
 use std::collections::BTreeSet;
 
 use crate::codegen::CodeGen;
-use crate::expr::expr_codegen;
+use crate::expr::gen_rval;
 use inkwell::llvm_sys::prelude::{LLVMModuleRef, LLVMValueRef};
 use inkwell::module::{Linkage, Module};
 use inkwell::types::BasicType;
@@ -76,7 +76,7 @@ fn generate_global<'ctx>(
     builder.position_at_end(entry);
 
     let init_value = store[init.expect("Initial value missing")].borrow();
-    let llvm_init_value = expr_codegen(&init_value, &builder, None, None, ctx, store, tab);
+    let llvm_init_value = gen_rval(&init_value, &builder, None, None, ctx, store, tab);
 
     let global_ptr = llvm_global.as_pointer_value();
     builder.build_store(global_ptr, llvm_init_value).unwrap();
