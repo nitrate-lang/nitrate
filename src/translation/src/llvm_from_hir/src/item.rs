@@ -68,18 +68,18 @@ fn generate_global<'ctx>(
         Some(Linkage::Private),
     );
 
-    let builder = ctx.create_builder();
+    let bb = ctx.create_builder();
 
     let entry = ctx.append_basic_block(llvm_constructor_function, "entry");
-    builder.position_at_end(entry);
+    bb.position_at_end(entry);
 
     let init_value = store[init.expect("Initial value missing")].borrow();
-    let llvm_init_value = gen_rval(&init_value, &builder, None, None, ctx, store, tab);
+    let llvm_init_value = gen_rval(&init_value, &bb, None, None, ctx, store, tab);
 
     let global_ptr = llvm_global.as_pointer_value();
-    builder.build_store(global_ptr, llvm_init_value).unwrap();
+    bb.build_store(global_ptr, llvm_init_value).unwrap();
 
-    builder.build_return(None).unwrap();
+    bb.build_return(None).unwrap();
 
     unsafe {
         nitrate_llvm_appendToGlobalCtors(
@@ -92,15 +92,29 @@ fn generate_global<'ctx>(
 
 pub(crate) fn generate_function_body<'ctx>(
     hir_block: &hir::Block,
-    builder: inkwell::builder::Builder<'ctx>,
-    return_value: inkwell::values::PointerValue<'ctx>,
-    end_block: inkwell::basic_block::BasicBlock<'ctx>,
+    bb: &inkwell::builder::Builder<'ctx>,
+    ret: inkwell::values::PointerValue<'ctx>,
+    endb: inkwell::basic_block::BasicBlock<'ctx>,
     ctx: &'ctx LLVMContext,
     store: &hir::Store,
     tab: &hir::SymbolTab,
 ) {
-    builder.build_unconditional_branch(end_block).unwrap();
-    // TODO: implement block generation
+    for element in &hir_block.elements {
+        match element {
+            hir::BlockElement::Local(_id) => {
+                // TODO: Create local variable
+            }
+
+            hir::BlockElement::Expr(_) => {
+                panic!("Non-statement expression cannot appear in block during code generation");
+            }
+
+            hir::BlockElement::Stmt(id) => {
+                let stmt = &store[id].borrow();
+                gen_rval(stmt, bb, Some(&ret), Some(&endb), ctx, store, tab);
+            }
+        }
+    }
 }
 
 fn generate_function<'ctx>(
@@ -120,34 +134,32 @@ fn generate_function<'ctx>(
     llvm_function.set_linkage(linkage);
 
     if let Some(body) = body {
-        let builder = ctx.create_builder();
+        let bb = ctx.create_builder();
 
         /*******************************************************/
         /* Entry Block */
         let entry = ctx.append_basic_block(*llvm_function, "entry");
-        builder.position_at_end(entry);
+        bb.position_at_end(entry);
 
         /* Allocate space for the return value */
         let return_type = llvm_function.get_type().get_return_type().unwrap();
-        let return_value_storage = builder.build_alloca(return_type, "ret_val").unwrap();
+        let ret = bb.build_alloca(return_type, "ret_val").unwrap();
 
         /*******************************************************/
         /* End Block */
         let end = ctx.append_basic_block(*llvm_function, "end");
-        builder.position_at_end(end);
+        bb.position_at_end(end);
 
-        let ret_value = builder
-            .build_load(return_type, return_value_storage, "ret_val_load")
-            .unwrap();
+        let ret_value = bb.build_load(return_type, ret, "ret_val_load").unwrap();
 
-        builder.build_return(Some(&ret_value)).unwrap();
+        bb.build_return(Some(&ret_value)).unwrap();
 
         /*******************************************************/
         /* Generate Body */
-        builder.position_at_end(entry);
+        bb.position_at_end(entry);
 
-        let block = store[body].borrow();
-        generate_function_body(&block, builder, return_value_storage, end, ctx, store, tab);
+        let body = store[body].borrow();
+        generate_function_body(&body, &bb, ret, end, ctx, store, tab);
     }
 }
 

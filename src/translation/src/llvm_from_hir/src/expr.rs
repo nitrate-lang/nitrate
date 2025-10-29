@@ -7,7 +7,7 @@ use nitrate_hir::prelude as hir;
 use nitrate_hir_get_type::{TypeInferenceCtx, get_type};
 use nitrate_llvm::LLVMContext;
 
-fn gen_rval_lit_unit<'ctx>(ctx: &'ctx LLVMContext) -> BasicValueEnum<'ctx> {
+pub(crate) fn gen_rval_lit_unit<'ctx>(ctx: &'ctx LLVMContext) -> BasicValueEnum<'ctx> {
     /*
      * The Unit Type is an empty struct
      */
@@ -159,8 +159,8 @@ fn gen_rval_add<'ctx>(
     lhs: &hir::Value,
     rhs: &hir::Value,
     bb: &inkwell::builder::Builder<'ctx>,
-    ret_alloc: Option<&PointerValue<'ctx>>,
-    end_block: Option<&BasicBlock<'ctx>>,
+    ret: Option<&PointerValue<'ctx>>,
+    endb: Option<&BasicBlock<'ctx>>,
     ctx: &'ctx LLVMContext,
     store: &hir::Store,
     tab: &hir::SymbolTab,
@@ -169,8 +169,8 @@ fn gen_rval_add<'ctx>(
      * // TODO: add documentation
      */
 
-    let lhs = gen_rval(lhs, bb, ret_alloc, end_block, ctx, store, tab);
-    let rhs = gen_rval(rhs, bb, ret_alloc, end_block, ctx, store, tab);
+    let lhs = gen_rval(lhs, bb, ret, endb, ctx, store, tab);
+    let rhs = gen_rval(rhs, bb, ret, endb, ctx, store, tab);
     let lhs_ty = lhs.get_type();
     let rhs_ty = rhs.get_type();
 
@@ -189,8 +189,8 @@ fn gen_rval_sub<'ctx>(
     lhs: &hir::Value,
     rhs: &hir::Value,
     bb: &inkwell::builder::Builder<'ctx>,
-    ret_alloc: Option<&PointerValue<'ctx>>,
-    end_block: Option<&BasicBlock<'ctx>>,
+    ret: Option<&PointerValue<'ctx>>,
+    endb: Option<&BasicBlock<'ctx>>,
     ctx: &'ctx LLVMContext,
     store: &hir::Store,
     tab: &hir::SymbolTab,
@@ -199,8 +199,8 @@ fn gen_rval_sub<'ctx>(
      * // TODO: add documentation
      */
 
-    let lhs = gen_rval(lhs, bb, ret_alloc, end_block, ctx, store, tab);
-    let rhs = gen_rval(rhs, bb, ret_alloc, end_block, ctx, store, tab);
+    let lhs = gen_rval(lhs, bb, ret, endb, ctx, store, tab);
+    let rhs = gen_rval(rhs, bb, ret, endb, ctx, store, tab);
     let lhs_ty = lhs.get_type();
     let rhs_ty = rhs.get_type();
 
@@ -219,8 +219,8 @@ fn gen_rval_mul<'ctx>(
     lhs: &hir::Value,
     rhs: &hir::Value,
     bb: &inkwell::builder::Builder<'ctx>,
-    ret_alloc: Option<&PointerValue<'ctx>>,
-    end_block: Option<&BasicBlock<'ctx>>,
+    ret: Option<&PointerValue<'ctx>>,
+    endb: Option<&BasicBlock<'ctx>>,
     ctx: &'ctx LLVMContext,
     store: &hir::Store,
     tab: &hir::SymbolTab,
@@ -229,8 +229,8 @@ fn gen_rval_mul<'ctx>(
      * // TODO: add documentation
      */
 
-    let lhs = gen_rval(lhs, bb, ret_alloc, end_block, ctx, store, tab);
-    let rhs = gen_rval(rhs, bb, ret_alloc, end_block, ctx, store, tab);
+    let lhs = gen_rval(lhs, bb, ret, endb, ctx, store, tab);
+    let rhs = gen_rval(rhs, bb, ret, endb, ctx, store, tab);
     let lhs_ty = lhs.get_type();
     let rhs_ty = rhs.get_type();
 
@@ -249,8 +249,8 @@ fn gen_rval_div<'ctx>(
     lhs: &hir::Value,
     rhs: &hir::Value,
     bb: &inkwell::builder::Builder<'ctx>,
-    ret_alloc: Option<&PointerValue<'ctx>>,
-    end_block: Option<&BasicBlock<'ctx>>,
+    ret: Option<&PointerValue<'ctx>>,
+    endb: Option<&BasicBlock<'ctx>>,
     ctx: &'ctx LLVMContext,
     store: &hir::Store,
     tab: &hir::SymbolTab,
@@ -259,8 +259,8 @@ fn gen_rval_div<'ctx>(
      * // TODO: add documentation
      */
 
-    let llvm_lhs = gen_rval(lhs, bb, ret_alloc, end_block, ctx, store, tab);
-    let llvm_rhs = gen_rval(rhs, bb, ret_alloc, end_block, ctx, store, tab);
+    let llvm_lhs = gen_rval(lhs, bb, ret, endb, ctx, store, tab);
+    let llvm_rhs = gen_rval(rhs, bb, ret, endb, ctx, store, tab);
     let lhs_ty = llvm_lhs.get_type();
     let rhs_ty = llvm_rhs.get_type();
 
@@ -288,8 +288,8 @@ fn gen_rval_rem<'ctx>(
     lhs: &hir::Value,
     rhs: &hir::Value,
     bb: &inkwell::builder::Builder<'ctx>,
-    ret_alloc: Option<&PointerValue<'ctx>>,
-    end_block: Option<&BasicBlock<'ctx>>,
+    ret: Option<&PointerValue<'ctx>>,
+    endb: Option<&BasicBlock<'ctx>>,
     ctx: &'ctx LLVMContext,
     store: &hir::Store,
     tab: &hir::SymbolTab,
@@ -298,8 +298,8 @@ fn gen_rval_rem<'ctx>(
      * // TODO: add documentation
      */
 
-    let llvm_lhs = gen_rval(lhs, bb, ret_alloc, end_block, ctx, store, tab);
-    let llvm_rhs = gen_rval(rhs, bb, ret_alloc, end_block, ctx, store, tab);
+    let llvm_lhs = gen_rval(lhs, bb, ret, endb, ctx, store, tab);
+    let llvm_rhs = gen_rval(rhs, bb, ret, endb, ctx, store, tab);
     let lhs_ty = llvm_lhs.get_type();
     let rhs_ty = llvm_rhs.get_type();
 
@@ -327,8 +327,8 @@ fn gen_rval_and<'ctx>(
     lhs: &hir::Value,
     rhs: &hir::Value,
     bb: &inkwell::builder::Builder<'ctx>,
-    ret_alloc: Option<&PointerValue<'ctx>>,
-    end_block: Option<&BasicBlock<'ctx>>,
+    ret: Option<&PointerValue<'ctx>>,
+    endb: Option<&BasicBlock<'ctx>>,
     ctx: &'ctx LLVMContext,
     store: &hir::Store,
     tab: &hir::SymbolTab,
@@ -337,8 +337,8 @@ fn gen_rval_and<'ctx>(
      * // TODO: add documentation
      */
 
-    let lhs = gen_rval(lhs, bb, ret_alloc, end_block, ctx, store, tab);
-    let rhs = gen_rval(rhs, bb, ret_alloc, end_block, ctx, store, tab);
+    let lhs = gen_rval(lhs, bb, ret, endb, ctx, store, tab);
+    let rhs = gen_rval(rhs, bb, ret, endb, ctx, store, tab);
 
     let and = bb.build_and(lhs.into_int_value(), rhs.into_int_value(), "");
     return and.unwrap().into();
@@ -348,8 +348,8 @@ fn gen_rval_or<'ctx>(
     lhs: &hir::Value,
     rhs: &hir::Value,
     bb: &inkwell::builder::Builder<'ctx>,
-    ret_alloc: Option<&PointerValue<'ctx>>,
-    end_block: Option<&BasicBlock<'ctx>>,
+    ret: Option<&PointerValue<'ctx>>,
+    endb: Option<&BasicBlock<'ctx>>,
     ctx: &'ctx LLVMContext,
     store: &hir::Store,
     tab: &hir::SymbolTab,
@@ -358,8 +358,8 @@ fn gen_rval_or<'ctx>(
      * // TODO: add documentation
      */
 
-    let lhs = gen_rval(lhs, bb, ret_alloc, end_block, ctx, store, tab);
-    let rhs = gen_rval(rhs, bb, ret_alloc, end_block, ctx, store, tab);
+    let lhs = gen_rval(lhs, bb, ret, endb, ctx, store, tab);
+    let rhs = gen_rval(rhs, bb, ret, endb, ctx, store, tab);
 
     let or = bb.build_or(lhs.into_int_value(), rhs.into_int_value(), "");
     return or.unwrap().into();
@@ -369,8 +369,8 @@ fn gen_rval_xor<'ctx>(
     lhs: &hir::Value,
     rhs: &hir::Value,
     bb: &inkwell::builder::Builder<'ctx>,
-    ret_alloc: Option<&PointerValue<'ctx>>,
-    end_block: Option<&BasicBlock<'ctx>>,
+    ret: Option<&PointerValue<'ctx>>,
+    endb: Option<&BasicBlock<'ctx>>,
     ctx: &'ctx LLVMContext,
     store: &hir::Store,
     tab: &hir::SymbolTab,
@@ -379,8 +379,8 @@ fn gen_rval_xor<'ctx>(
      * // TODO: add documentation
      */
 
-    let lhs = gen_rval(lhs, bb, ret_alloc, end_block, ctx, store, tab);
-    let rhs = gen_rval(rhs, bb, ret_alloc, end_block, ctx, store, tab);
+    let lhs = gen_rval(lhs, bb, ret, endb, ctx, store, tab);
+    let rhs = gen_rval(rhs, bb, ret, endb, ctx, store, tab);
 
     let xor = bb.build_xor(lhs.into_int_value(), rhs.into_int_value(), "");
     return xor.unwrap().into();
@@ -390,8 +390,8 @@ fn gen_rval_shl<'ctx>(
     lhs: &hir::Value,
     rhs: &hir::Value,
     bb: &inkwell::builder::Builder<'ctx>,
-    ret_alloc: Option<&PointerValue<'ctx>>,
-    end_block: Option<&BasicBlock<'ctx>>,
+    ret: Option<&PointerValue<'ctx>>,
+    endb: Option<&BasicBlock<'ctx>>,
     ctx: &'ctx LLVMContext,
     store: &hir::Store,
     tab: &hir::SymbolTab,
@@ -400,8 +400,8 @@ fn gen_rval_shl<'ctx>(
      * // TODO: add documentation
      */
 
-    let lhs = gen_rval(lhs, bb, ret_alloc, end_block, ctx, store, tab);
-    let rhs = gen_rval(rhs, bb, ret_alloc, end_block, ctx, store, tab);
+    let lhs = gen_rval(lhs, bb, ret, endb, ctx, store, tab);
+    let rhs = gen_rval(rhs, bb, ret, endb, ctx, store, tab);
 
     let shl = bb.build_left_shift(lhs.into_int_value(), rhs.into_int_value(), "");
     return shl.unwrap().into();
@@ -411,8 +411,8 @@ fn gen_rval_shr<'ctx>(
     lhs: &hir::Value,
     rhs: &hir::Value,
     bb: &inkwell::builder::Builder<'ctx>,
-    ret_alloc: Option<&PointerValue<'ctx>>,
-    end_block: Option<&BasicBlock<'ctx>>,
+    ret: Option<&PointerValue<'ctx>>,
+    endb: Option<&BasicBlock<'ctx>>,
     ctx: &'ctx LLVMContext,
     store: &hir::Store,
     tab: &hir::SymbolTab,
@@ -425,8 +425,8 @@ fn gen_rval_shr<'ctx>(
         .expect("Failed to get type")
         .is_signed_primitive();
 
-    let lhs = gen_rval(lhs, bb, ret_alloc, end_block, ctx, store, tab);
-    let rhs = gen_rval(rhs, bb, ret_alloc, end_block, ctx, store, tab);
+    let lhs = gen_rval(lhs, bb, ret, endb, ctx, store, tab);
+    let rhs = gen_rval(rhs, bb, ret, endb, ctx, store, tab);
 
     let shr = bb.build_right_shift(lhs.into_int_value(), rhs.into_int_value(), sign_extend, "");
     return shr.unwrap().into();
@@ -436,8 +436,8 @@ fn gen_rval_rol<'ctx>(
     lhs: &hir::Value,
     rhs: &hir::Value,
     bb: &inkwell::builder::Builder<'ctx>,
-    ret_alloc: Option<&PointerValue<'ctx>>,
-    end_block: Option<&BasicBlock<'ctx>>,
+    ret: Option<&PointerValue<'ctx>>,
+    endb: Option<&BasicBlock<'ctx>>,
     ctx: &'ctx LLVMContext,
     store: &hir::Store,
     tab: &hir::SymbolTab,
@@ -446,8 +446,8 @@ fn gen_rval_rol<'ctx>(
      * // TODO: add documentation
      */
 
-    let _lhs = gen_rval(lhs, bb, ret_alloc, end_block, ctx, store, tab);
-    let _rhs = gen_rval(rhs, bb, ret_alloc, end_block, ctx, store, tab);
+    let _lhs = gen_rval(lhs, bb, ret, endb, ctx, store, tab);
+    let _rhs = gen_rval(rhs, bb, ret, endb, ctx, store, tab);
 
     // TODO: implement rotate left
     unimplemented!()
@@ -457,8 +457,8 @@ fn gen_rval_ror<'ctx>(
     lhs: &hir::Value,
     rhs: &hir::Value,
     bb: &inkwell::builder::Builder<'ctx>,
-    ret_alloc: Option<&PointerValue<'ctx>>,
-    end_block: Option<&BasicBlock<'ctx>>,
+    ret: Option<&PointerValue<'ctx>>,
+    endb: Option<&BasicBlock<'ctx>>,
     ctx: &'ctx LLVMContext,
     store: &hir::Store,
     tab: &hir::SymbolTab,
@@ -467,8 +467,8 @@ fn gen_rval_ror<'ctx>(
      * // TODO: add documentation
      */
 
-    let _lhs = gen_rval(lhs, bb, ret_alloc, end_block, ctx, store, tab);
-    let _rhs = gen_rval(rhs, bb, ret_alloc, end_block, ctx, store, tab);
+    let _lhs = gen_rval(lhs, bb, ret, endb, ctx, store, tab);
+    let _rhs = gen_rval(rhs, bb, ret, endb, ctx, store, tab);
 
     // TODO: implement rotate right
     unimplemented!()
@@ -478,8 +478,8 @@ fn gen_rval_land<'ctx>(
     lhs: &hir::Value,
     rhs: &hir::Value,
     bb: &inkwell::builder::Builder<'ctx>,
-    ret_alloc: Option<&PointerValue<'ctx>>,
-    end_block: Option<&BasicBlock<'ctx>>,
+    ret: Option<&PointerValue<'ctx>>,
+    endb: Option<&BasicBlock<'ctx>>,
     ctx: &'ctx LLVMContext,
     store: &hir::Store,
     tab: &hir::SymbolTab,
@@ -500,7 +500,7 @@ fn gen_rval_land<'ctx>(
 
     /**************************************************************************/
     // 2. Evaluate LHS; if true, skip RHS
-    let lhs_val = gen_rval(lhs, bb, ret_alloc, end_block, ctx, store, tab);
+    let lhs_val = gen_rval(lhs, bb, ret, endb, ctx, store, tab);
     bb.build_store(land_result, lhs_val).unwrap();
     bb.build_conditional_branch(lhs_val.into_int_value(), rhs_bb, end_bb)
         .unwrap();
@@ -508,7 +508,7 @@ fn gen_rval_land<'ctx>(
     /**************************************************************************/
     // 3. Evaluate RHS
     bb.position_at_end(rhs_bb);
-    let rhs_val = gen_rval(rhs, bb, ret_alloc, end_block, ctx, store, tab);
+    let rhs_val = gen_rval(rhs, bb, ret, endb, ctx, store, tab);
     bb.build_store(land_result, rhs_val).unwrap();
     bb.build_unconditional_branch(end_bb).unwrap();
 
@@ -523,8 +523,8 @@ fn gen_rval_lor<'ctx>(
     lhs: &hir::Value,
     rhs: &hir::Value,
     bb: &inkwell::builder::Builder<'ctx>,
-    ret_alloc: Option<&PointerValue<'ctx>>,
-    end_block: Option<&BasicBlock<'ctx>>,
+    ret: Option<&PointerValue<'ctx>>,
+    endb: Option<&BasicBlock<'ctx>>,
     ctx: &'ctx LLVMContext,
     store: &hir::Store,
     tab: &hir::SymbolTab,
@@ -545,7 +545,7 @@ fn gen_rval_lor<'ctx>(
 
     /**************************************************************************/
     // 2. Evaluate LHS; if true, skip RHS
-    let lhs_val = gen_rval(lhs, bb, ret_alloc, end_block, ctx, store, tab);
+    let lhs_val = gen_rval(lhs, bb, ret, endb, ctx, store, tab);
     bb.build_store(lor_result, lhs_val).unwrap();
     bb.build_conditional_branch(lhs_val.into_int_value(), end_bb, rhs_bb)
         .unwrap();
@@ -553,7 +553,7 @@ fn gen_rval_lor<'ctx>(
     /**************************************************************************/
     // 3. Evaluate RHS
     bb.position_at_end(rhs_bb);
-    let rhs_val = gen_rval(rhs, bb, ret_alloc, end_block, ctx, store, tab);
+    let rhs_val = gen_rval(rhs, bb, ret, endb, ctx, store, tab);
     bb.build_store(lor_result, rhs_val).unwrap();
     bb.build_unconditional_branch(end_bb).unwrap();
 
@@ -568,8 +568,8 @@ fn gen_rval_lt<'ctx>(
     lhs: &hir::Value,
     rhs: &hir::Value,
     bb: &inkwell::builder::Builder<'ctx>,
-    ret_alloc: Option<&PointerValue<'ctx>>,
-    end_block: Option<&BasicBlock<'ctx>>,
+    ret: Option<&PointerValue<'ctx>>,
+    endb: Option<&BasicBlock<'ctx>>,
     ctx: &'ctx LLVMContext,
     store: &hir::Store,
     tab: &hir::SymbolTab,
@@ -578,8 +578,8 @@ fn gen_rval_lt<'ctx>(
      * // TODO: add documentation
      */
 
-    let llvm_lhs = gen_rval(lhs, bb, ret_alloc, end_block, ctx, store, tab);
-    let llvm_rhs = gen_rval(rhs, bb, ret_alloc, end_block, ctx, store, tab);
+    let llvm_lhs = gen_rval(lhs, bb, ret, endb, ctx, store, tab);
+    let llvm_rhs = gen_rval(rhs, bb, ret, endb, ctx, store, tab);
     let lhs_ty = llvm_lhs.get_type();
     let rhs_ty = llvm_rhs.get_type();
 
@@ -622,8 +622,8 @@ fn gen_rval_gt<'ctx>(
     lhs: &hir::Value,
     rhs: &hir::Value,
     bb: &inkwell::builder::Builder<'ctx>,
-    ret_alloc: Option<&PointerValue<'ctx>>,
-    end_block: Option<&BasicBlock<'ctx>>,
+    ret: Option<&PointerValue<'ctx>>,
+    endb: Option<&BasicBlock<'ctx>>,
     ctx: &'ctx LLVMContext,
     store: &hir::Store,
     tab: &hir::SymbolTab,
@@ -632,8 +632,8 @@ fn gen_rval_gt<'ctx>(
      * // TODO: add documentation
      */
 
-    let llvm_lhs = gen_rval(lhs, bb, ret_alloc, end_block, ctx, store, tab);
-    let llvm_rhs = gen_rval(rhs, bb, ret_alloc, end_block, ctx, store, tab);
+    let llvm_lhs = gen_rval(lhs, bb, ret, endb, ctx, store, tab);
+    let llvm_rhs = gen_rval(rhs, bb, ret, endb, ctx, store, tab);
     let lhs_ty = llvm_lhs.get_type();
     let rhs_ty = llvm_rhs.get_type();
 
@@ -676,8 +676,8 @@ fn gen_rval_lte<'ctx>(
     lhs: &hir::Value,
     rhs: &hir::Value,
     bb: &inkwell::builder::Builder<'ctx>,
-    ret_alloc: Option<&PointerValue<'ctx>>,
-    end_block: Option<&BasicBlock<'ctx>>,
+    ret: Option<&PointerValue<'ctx>>,
+    endb: Option<&BasicBlock<'ctx>>,
     ctx: &'ctx LLVMContext,
     store: &hir::Store,
     tab: &hir::SymbolTab,
@@ -686,8 +686,8 @@ fn gen_rval_lte<'ctx>(
      * // TODO: add documentation
      */
 
-    let llvm_lhs = gen_rval(lhs, bb, ret_alloc, end_block, ctx, store, tab);
-    let llvm_rhs = gen_rval(rhs, bb, ret_alloc, end_block, ctx, store, tab);
+    let llvm_lhs = gen_rval(lhs, bb, ret, endb, ctx, store, tab);
+    let llvm_rhs = gen_rval(rhs, bb, ret, endb, ctx, store, tab);
     let lhs_ty = llvm_lhs.get_type();
     let rhs_ty = llvm_rhs.get_type();
 
@@ -730,8 +730,8 @@ fn gen_rval_gte<'ctx>(
     lhs: &hir::Value,
     rhs: &hir::Value,
     bb: &inkwell::builder::Builder<'ctx>,
-    ret_alloc: Option<&PointerValue<'ctx>>,
-    end_block: Option<&BasicBlock<'ctx>>,
+    ret: Option<&PointerValue<'ctx>>,
+    endb: Option<&BasicBlock<'ctx>>,
     ctx: &'ctx LLVMContext,
     store: &hir::Store,
     tab: &hir::SymbolTab,
@@ -740,8 +740,8 @@ fn gen_rval_gte<'ctx>(
      * // TODO: add documentation
      */
 
-    let llvm_lhs = gen_rval(lhs, bb, ret_alloc, end_block, ctx, store, tab);
-    let llvm_rhs = gen_rval(rhs, bb, ret_alloc, end_block, ctx, store, tab);
+    let llvm_lhs = gen_rval(lhs, bb, ret, endb, ctx, store, tab);
+    let llvm_rhs = gen_rval(rhs, bb, ret, endb, ctx, store, tab);
     let lhs_ty = llvm_lhs.get_type();
     let rhs_ty = llvm_rhs.get_type();
 
@@ -784,8 +784,8 @@ fn gen_rval_eq<'ctx>(
     lhs: &hir::Value,
     rhs: &hir::Value,
     bb: &inkwell::builder::Builder<'ctx>,
-    ret_alloc: Option<&PointerValue<'ctx>>,
-    end_block: Option<&BasicBlock<'ctx>>,
+    ret: Option<&PointerValue<'ctx>>,
+    endb: Option<&BasicBlock<'ctx>>,
     ctx: &'ctx LLVMContext,
     store: &hir::Store,
     tab: &hir::SymbolTab,
@@ -794,8 +794,8 @@ fn gen_rval_eq<'ctx>(
      * // TODO: add documentation
      */
 
-    let lhs = gen_rval(lhs, bb, ret_alloc, end_block, ctx, store, tab);
-    let rhs = gen_rval(rhs, bb, ret_alloc, end_block, ctx, store, tab);
+    let lhs = gen_rval(lhs, bb, ret, endb, ctx, store, tab);
+    let rhs = gen_rval(rhs, bb, ret, endb, ctx, store, tab);
     let lhs_ty = lhs.get_type();
     let rhs_ty = rhs.get_type();
 
@@ -824,8 +824,8 @@ fn gen_rval_ne<'ctx>(
     lhs: &hir::Value,
     rhs: &hir::Value,
     bb: &inkwell::builder::Builder<'ctx>,
-    ret_alloc: Option<&PointerValue<'ctx>>,
-    end_block: Option<&BasicBlock<'ctx>>,
+    ret: Option<&PointerValue<'ctx>>,
+    endb: Option<&BasicBlock<'ctx>>,
     ctx: &'ctx LLVMContext,
     store: &hir::Store,
     tab: &hir::SymbolTab,
@@ -834,8 +834,8 @@ fn gen_rval_ne<'ctx>(
      * // TODO: add documentation
      */
 
-    let lhs = gen_rval(lhs, bb, ret_alloc, end_block, ctx, store, tab);
-    let rhs = gen_rval(rhs, bb, ret_alloc, end_block, ctx, store, tab);
+    let lhs = gen_rval(lhs, bb, ret, endb, ctx, store, tab);
+    let rhs = gen_rval(rhs, bb, ret, endb, ctx, store, tab);
     let lhs_ty = lhs.get_type();
     let rhs_ty = rhs.get_type();
 
@@ -858,6 +858,28 @@ fn gen_rval_ne<'ctx>(
     } else {
         panic!("Comparison not implemented for this type");
     }
+}
+
+fn gen_return<'ctx>(
+    value: &hir::Value,
+    bb: &inkwell::builder::Builder<'ctx>,
+    ret: Option<&PointerValue<'ctx>>,
+    endb: Option<&BasicBlock<'ctx>>,
+    ctx: &'ctx LLVMContext,
+    store: &hir::Store,
+    tab: &hir::SymbolTab,
+) {
+    /*
+     * // TODO: add documentation
+     */
+
+    let llvm_value = gen_rval(value, &bb, ret, endb, ctx, store, tab);
+
+    bb.build_store(*ret.expect("return outside function"), llvm_value)
+        .unwrap();
+
+    bb.build_unconditional_branch(*endb.expect("return outside function"))
+        .unwrap();
 }
 
 pub(crate) fn gen_rval<'ctx>(
@@ -1017,8 +1039,9 @@ pub(crate) fn gen_rval<'ctx>(
         }
 
         hir::Value::Return { value } => {
-            // TODO: implement return codegen
-            unimplemented!()
+            let value = &store[value].borrow();
+            gen_return(value, bb, ret, endb, ctx, store, tab);
+            gen_rval_lit_unit(ctx)
         }
 
         hir::Value::Block { block } => {
