@@ -1,6 +1,6 @@
 use crate::{TyCtx, TypeResolver};
 use nitrate_diagnosis::CompilerLog;
-use nitrate_hir::hir::{Block, Value};
+use nitrate_hir::prelude::*;
 
 impl TypeResolver for Block {
     fn resolve_type(&mut self, _ctx: &mut TyCtx, _log: &CompilerLog) {

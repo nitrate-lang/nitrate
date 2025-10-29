@@ -1,19 +1,21 @@
-use crate::{codegen::CodeGen, item::get_ptr_size};
 use inkwell::{
     AddressSpace,
     types::{BasicType, BasicTypeEnum, FunctionType, StructType},
 };
-use nitrate_hir::{
-    Store, SymbolTab,
-    hir::{LayoutCtx, TypeDefinition, get_size_of},
-    prelude as hir,
-};
+
+use crate::{codegen::CodeGen, item::get_ptr_size};
+use nitrate_hir::prelude as hir;
 use nitrate_llvm::LLVMContext;
 
 impl<'ctx> CodeGen<'ctx> for hir::StructType {
     type Output = StructType<'ctx>;
 
-    fn generate(&self, ctx: &'ctx LLVMContext, store: &Store, tab: &SymbolTab) -> Self::Output {
+    fn generate(
+        &self,
+        ctx: &'ctx LLVMContext,
+        store: &hir::Store,
+        tab: &hir::SymbolTab,
+    ) -> Self::Output {
         let mut field_types = Vec::with_capacity(self.fields.len());
         for field in &self.fields {
             let field_type = store[&field.ty].generate(ctx, store, tab);
@@ -28,7 +30,12 @@ impl<'ctx> CodeGen<'ctx> for hir::StructType {
 impl<'ctx> CodeGen<'ctx> for hir::FunctionType {
     type Output = FunctionType<'ctx>;
 
-    fn generate(&self, ctx: &'ctx LLVMContext, store: &Store, tab: &SymbolTab) -> Self::Output {
+    fn generate(
+        &self,
+        ctx: &'ctx LLVMContext,
+        store: &hir::Store,
+        tab: &hir::SymbolTab,
+    ) -> Self::Output {
         let return_type = &store[&self.return_type];
         let return_type = return_type.generate(ctx, store, tab);
         let return_type = BasicTypeEnum::try_from(return_type).unwrap();
@@ -48,7 +55,12 @@ impl<'ctx> CodeGen<'ctx> for hir::FunctionType {
 impl<'ctx> CodeGen<'ctx> for hir::Type {
     type Output = BasicTypeEnum<'ctx>;
 
-    fn generate(&self, ctx: &'ctx LLVMContext, store: &Store, tab: &SymbolTab) -> Self::Output {
+    fn generate(
+        &self,
+        ctx: &'ctx LLVMContext,
+        store: &hir::Store,
+        tab: &hir::SymbolTab,
+    ) -> Self::Output {
         match self {
             hir::Type::Never | hir::Type::Unit => ctx.struct_type(&[], false).into(),
 
@@ -82,13 +94,14 @@ impl<'ctx> CodeGen<'ctx> for hir::Type {
             }
 
             hir::Type::Enum { .. } => {
-                let layout_ctx = LayoutCtx {
+                let layout_ctx = hir::LayoutCtx {
                     store,
                     tab,
                     ptr_size: get_ptr_size(ctx),
                 };
 
-                let size = get_size_of(self, &layout_ctx).expect("Failed to get size of enum type");
+                let size =
+                    hir::get_size_of(self, &layout_ctx).expect("Failed to get size of enum type");
                 ctx.i8_type().array_type(size as u32).into()
             }
 
@@ -112,7 +125,7 @@ impl<'ctx> CodeGen<'ctx> for hir::Type {
                     .get_type(path)
                     .expect("Unknown type name encountered during code generation")
                 {
-                    TypeDefinition::EnumDef(id) => {
+                    hir::TypeDefinition::EnumDef(id) => {
                         let enum_def = store[id].borrow();
                         let enum_type = hir::Type::Enum {
                             enum_type: enum_def.enum_id,
@@ -121,7 +134,7 @@ impl<'ctx> CodeGen<'ctx> for hir::Type {
                         enum_type.generate(ctx, store, tab)
                     }
 
-                    TypeDefinition::StructDef(id) => {
+                    hir::TypeDefinition::StructDef(id) => {
                         let struct_def = store[id].borrow();
                         let struct_type = hir::Type::Struct {
                             struct_type: struct_def.struct_id,
@@ -130,7 +143,7 @@ impl<'ctx> CodeGen<'ctx> for hir::Type {
                         struct_type.generate(ctx, store, tab)
                     }
 
-                    TypeDefinition::TypeAliasDef(id) => {
+                    hir::TypeDefinition::TypeAliasDef(id) => {
                         let type_alias_def = store[id].borrow();
                         let aliased_type = &store[&type_alias_def.type_id];
                         aliased_type.generate(ctx, store, tab)

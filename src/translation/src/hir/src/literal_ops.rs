@@ -1,4 +1,4 @@
-use crate::hir::Lit;
+use crate::prelude::*;
 
 #[derive(Debug)]
 pub enum LiteralNegError {

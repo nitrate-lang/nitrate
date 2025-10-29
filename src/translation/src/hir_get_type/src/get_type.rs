@@ -1,10 +1,4 @@
-use nitrate_hir::{
-    Store, SymbolTab,
-    hir::{
-        BinaryOp, BlockElement, FunctionType, IntoStoreId, Lifetime, SymbolId, Type,
-        TypeDefinition, UnaryOp, Value,
-    },
-};
+use nitrate_hir::prelude::*;
 
 #[derive(Debug)]
 pub enum TypeInferenceError {

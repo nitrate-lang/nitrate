@@ -2,7 +2,7 @@ use crate::{Interpreter, InterpreterError, package::Package};
 use clap::Parser;
 use nitrate_diagnosis::{CompilerLog, intern_file_id};
 use nitrate_translation::{
-    hir::{Store, SymbolTab, hir::PtrSize, prelude as hir},
+    hir::prelude as hir,
     hir_from_tree::{Ast2HirCtx, convert_ast_to_hir},
     hir_validate::ValidateHir,
     llvm::LLVMContext,
@@ -128,9 +128,9 @@ impl Interpreter<'_> {
         &self,
         module: ast::Module,
         log: &CompilerLog,
-    ) -> Result<(hir::Module, Store, SymbolTab), InterpreterError> {
+    ) -> Result<(hir::Module, hir::Store, hir::SymbolTab), InterpreterError> {
         /* FIXME: Parameterize this */
-        const PTR_SIZE: PtrSize = PtrSize::U32;
+        const PTR_SIZE: hir::PtrSize = hir::PtrSize::U32;
 
         let mut ctx = Ast2HirCtx::new(PTR_SIZE);
         let module = match convert_ast_to_hir(module, &mut ctx, log) {

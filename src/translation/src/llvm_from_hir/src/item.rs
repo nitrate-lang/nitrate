@@ -1,15 +1,13 @@
-use std::collections::BTreeSet;
-
-use crate::codegen::CodeGen;
-use crate::expr::gen_rval;
 use inkwell::llvm_sys::prelude::{LLVMModuleRef, LLVMValueRef};
 use inkwell::module::{Linkage, Module};
 use inkwell::types::BasicType;
 use inkwell::values::{AsValueRef, FunctionValue, GlobalValue};
-use nitrate_hir::hir::{IntoStoreId, PtrSize};
-use nitrate_hir::{Store, SymbolTab, hir::Visibility, prelude as hir};
+
+use crate::{codegen::CodeGen, expr::gen_rval};
+use nitrate_hir::{IntoStoreId, prelude as hir};
 use nitrate_hir_mangle::mangle_name;
 use nitrate_llvm::LLVMContext;
+use std::collections::BTreeSet;
 
 #[link(name = "nitrate_extra_llvm_ffi", kind = "static")]
 unsafe extern "C" {
@@ -20,30 +18,30 @@ unsafe extern "C" {
     ) -> ();
 }
 
-pub(crate) fn get_ptr_size(ctx: &LLVMContext) -> PtrSize {
+pub(crate) fn get_ptr_size(ctx: &LLVMContext) -> hir::PtrSize {
     let int_type = ctx.ptr_sized_int_type(&ctx.target_data(), None);
     match int_type.get_bit_width() {
-        32 => PtrSize::U32,
-        64 => PtrSize::U64,
+        32 => hir::PtrSize::U32,
+        64 => hir::PtrSize::U64,
         bits => panic!("Unsupported pointer size: {} bits", bits),
     }
 }
 
 fn generate_global<'ctx>(
     package_name: &str,
-    visibility: Visibility,
+    visibility: hir::Visibility,
     name: &str,
     init: Option<&hir::ValueId>,
     llvm_global: &mut GlobalValue<'ctx>,
     llvm_module: &Module<'ctx>,
     ctx: &'ctx LLVMContext,
-    store: &Store,
-    tab: &SymbolTab,
+    store: &hir::Store,
+    tab: &hir::SymbolTab,
 ) {
     let linkage = match visibility {
-        Visibility::Pub => Linkage::External,
-        Visibility::Pro => Linkage::Internal,
-        Visibility::Sec => Linkage::Private,
+        hir::Visibility::Pub => Linkage::External,
+        hir::Visibility::Pro => Linkage::Internal,
+        hir::Visibility::Sec => Linkage::Private,
     };
 
     llvm_global.set_linkage(linkage);
@@ -98,25 +96,25 @@ pub(crate) fn generate_function_body<'ctx>(
     return_value: inkwell::values::PointerValue<'ctx>,
     end_block: inkwell::basic_block::BasicBlock<'ctx>,
     ctx: &'ctx LLVMContext,
-    store: &Store,
-    tab: &SymbolTab,
+    store: &hir::Store,
+    tab: &hir::SymbolTab,
 ) {
     builder.build_unconditional_branch(end_block).unwrap();
     // TODO: implement block generation
 }
 
 fn generate_function<'ctx>(
-    visibility: Visibility,
+    visibility: hir::Visibility,
     body: Option<&hir::BlockId>,
     llvm_function: &FunctionValue<'ctx>,
     ctx: &'ctx LLVMContext,
-    store: &Store,
-    tab: &SymbolTab,
+    store: &hir::Store,
+    tab: &hir::SymbolTab,
 ) {
     let linkage = match visibility {
-        Visibility::Pub => Linkage::External,
-        Visibility::Pro => Linkage::Internal,
-        Visibility::Sec => Linkage::Private,
+        hir::Visibility::Pub => Linkage::External,
+        hir::Visibility::Pro => Linkage::Internal,
+        hir::Visibility::Sec => Linkage::Private,
     };
 
     llvm_function.set_linkage(linkage);
@@ -156,7 +154,12 @@ fn generate_function<'ctx>(
 impl<'ctx> CodeGen<'ctx> for hir::Module {
     type Output = Module<'ctx>;
 
-    fn generate(&self, ctx: &'ctx LLVMContext, store: &Store, tab: &SymbolTab) -> Self::Output {
+    fn generate(
+        &self,
+        ctx: &'ctx LLVMContext,
+        store: &hir::Store,
+        tab: &hir::SymbolTab,
+    ) -> Self::Output {
         let module = ctx.create_module(
             self.name
                 .to_owned()

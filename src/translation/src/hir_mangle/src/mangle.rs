@@ -2,7 +2,7 @@ use crate::{
     string::{demangle_string, mangle_string},
     ty::{demangle_type, mangle_type},
 };
-use nitrate_hir::{Store, hir::Type};
+use nitrate_hir::prelude::*;
 
 pub fn mangle_name(package: &str, name: &str, ty: &Type, store: &Store) -> String {
     format!(

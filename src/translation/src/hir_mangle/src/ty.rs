@@ -1,11 +1,6 @@
-use core::panic;
-
-use nitrate_hir::{
-    Store,
-    hir::{Lifetime, Type},
-};
-
 use crate::string::mangle_string;
+use core::panic;
+use nitrate_hir::prelude::*;
 
 pub(crate) fn mangle_type(ty: &Type, store: &Store) -> String {
     match ty {

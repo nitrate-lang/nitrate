@@ -1,6 +1,6 @@
 use crate::{TyCtx, TypeResolver};
 use nitrate_diagnosis::CompilerLog;
-use nitrate_hir::hir::{EnumDef, Function, GlobalVariable, Item, Module, StructDef, TypeAliasDef};
+use nitrate_hir::prelude::*;
 
 impl TypeResolver for Module {
     fn resolve_type(&mut self, ctx: &mut TyCtx, log: &CompilerLog) {

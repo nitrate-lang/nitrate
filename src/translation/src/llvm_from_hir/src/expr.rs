@@ -1,10 +1,9 @@
-use core::panic;
-
 use inkwell::{
     basic_block::BasicBlock,
     values::{BasicValueEnum, PointerValue},
 };
-use nitrate_hir::{Store, SymbolTab, prelude as hir};
+
+use nitrate_hir::prelude as hir;
 use nitrate_hir_get_type::{TypeInferenceCtx, get_type};
 use nitrate_llvm::LLVMContext;
 
@@ -163,8 +162,8 @@ fn gen_rval_add<'ctx>(
     ret_alloc: Option<&PointerValue<'ctx>>,
     end_block: Option<&BasicBlock<'ctx>>,
     ctx: &'ctx LLVMContext,
-    store: &Store,
-    tab: &SymbolTab,
+    store: &hir::Store,
+    tab: &hir::SymbolTab,
 ) -> BasicValueEnum<'ctx> {
     /*
      * // TODO: add documentation
@@ -193,8 +192,8 @@ fn gen_rval_sub<'ctx>(
     ret_alloc: Option<&PointerValue<'ctx>>,
     end_block: Option<&BasicBlock<'ctx>>,
     ctx: &'ctx LLVMContext,
-    store: &Store,
-    tab: &SymbolTab,
+    store: &hir::Store,
+    tab: &hir::SymbolTab,
 ) -> BasicValueEnum<'ctx> {
     /*
      * // TODO: add documentation
@@ -223,8 +222,8 @@ fn gen_rval_mul<'ctx>(
     ret_alloc: Option<&PointerValue<'ctx>>,
     end_block: Option<&BasicBlock<'ctx>>,
     ctx: &'ctx LLVMContext,
-    store: &Store,
-    tab: &SymbolTab,
+    store: &hir::Store,
+    tab: &hir::SymbolTab,
 ) -> BasicValueEnum<'ctx> {
     /*
      * // TODO: add documentation
@@ -253,8 +252,8 @@ fn gen_rval_div<'ctx>(
     ret_alloc: Option<&PointerValue<'ctx>>,
     end_block: Option<&BasicBlock<'ctx>>,
     ctx: &'ctx LLVMContext,
-    store: &Store,
-    tab: &SymbolTab,
+    store: &hir::Store,
+    tab: &hir::SymbolTab,
 ) -> BasicValueEnum<'ctx> {
     /*
      * // TODO: add documentation
@@ -292,8 +291,8 @@ fn gen_rval_rem<'ctx>(
     ret_alloc: Option<&PointerValue<'ctx>>,
     end_block: Option<&BasicBlock<'ctx>>,
     ctx: &'ctx LLVMContext,
-    store: &Store,
-    tab: &SymbolTab,
+    store: &hir::Store,
+    tab: &hir::SymbolTab,
 ) -> BasicValueEnum<'ctx> {
     /*
      * // TODO: add documentation
@@ -331,8 +330,8 @@ fn gen_rval_and<'ctx>(
     ret_alloc: Option<&PointerValue<'ctx>>,
     end_block: Option<&BasicBlock<'ctx>>,
     ctx: &'ctx LLVMContext,
-    store: &Store,
-    tab: &SymbolTab,
+    store: &hir::Store,
+    tab: &hir::SymbolTab,
 ) -> BasicValueEnum<'ctx> {
     /*
      * // TODO: add documentation
@@ -352,8 +351,8 @@ fn gen_rval_or<'ctx>(
     ret_alloc: Option<&PointerValue<'ctx>>,
     end_block: Option<&BasicBlock<'ctx>>,
     ctx: &'ctx LLVMContext,
-    store: &Store,
-    tab: &SymbolTab,
+    store: &hir::Store,
+    tab: &hir::SymbolTab,
 ) -> BasicValueEnum<'ctx> {
     /*
      * // TODO: add documentation
@@ -373,8 +372,8 @@ fn gen_rval_xor<'ctx>(
     ret_alloc: Option<&PointerValue<'ctx>>,
     end_block: Option<&BasicBlock<'ctx>>,
     ctx: &'ctx LLVMContext,
-    store: &Store,
-    tab: &SymbolTab,
+    store: &hir::Store,
+    tab: &hir::SymbolTab,
 ) -> BasicValueEnum<'ctx> {
     /*
      * // TODO: add documentation
@@ -394,8 +393,8 @@ fn gen_rval_shl<'ctx>(
     ret_alloc: Option<&PointerValue<'ctx>>,
     end_block: Option<&BasicBlock<'ctx>>,
     ctx: &'ctx LLVMContext,
-    store: &Store,
-    tab: &SymbolTab,
+    store: &hir::Store,
+    tab: &hir::SymbolTab,
 ) -> BasicValueEnum<'ctx> {
     /*
      * // TODO: add documentation
@@ -415,8 +414,8 @@ fn gen_rval_shr<'ctx>(
     ret_alloc: Option<&PointerValue<'ctx>>,
     end_block: Option<&BasicBlock<'ctx>>,
     ctx: &'ctx LLVMContext,
-    store: &Store,
-    tab: &SymbolTab,
+    store: &hir::Store,
+    tab: &hir::SymbolTab,
 ) -> BasicValueEnum<'ctx> {
     /*
      * // TODO: add documentation
@@ -440,8 +439,8 @@ fn gen_rval_rol<'ctx>(
     ret_alloc: Option<&PointerValue<'ctx>>,
     end_block: Option<&BasicBlock<'ctx>>,
     ctx: &'ctx LLVMContext,
-    store: &Store,
-    tab: &SymbolTab,
+    store: &hir::Store,
+    tab: &hir::SymbolTab,
 ) -> BasicValueEnum<'ctx> {
     /*
      * // TODO: add documentation
@@ -461,8 +460,8 @@ fn gen_rval_ror<'ctx>(
     ret_alloc: Option<&PointerValue<'ctx>>,
     end_block: Option<&BasicBlock<'ctx>>,
     ctx: &'ctx LLVMContext,
-    store: &Store,
-    tab: &SymbolTab,
+    store: &hir::Store,
+    tab: &hir::SymbolTab,
 ) -> BasicValueEnum<'ctx> {
     /*
      * // TODO: add documentation
@@ -482,8 +481,8 @@ fn gen_rval_land<'ctx>(
     ret_alloc: Option<&PointerValue<'ctx>>,
     end_block: Option<&BasicBlock<'ctx>>,
     ctx: &'ctx LLVMContext,
-    store: &Store,
-    tab: &SymbolTab,
+    store: &hir::Store,
+    tab: &hir::SymbolTab,
 ) -> BasicValueEnum<'ctx> {
     /*
      * // TODO: add documentation
@@ -527,8 +526,8 @@ fn gen_rval_lor<'ctx>(
     ret_alloc: Option<&PointerValue<'ctx>>,
     end_block: Option<&BasicBlock<'ctx>>,
     ctx: &'ctx LLVMContext,
-    store: &Store,
-    tab: &SymbolTab,
+    store: &hir::Store,
+    tab: &hir::SymbolTab,
 ) -> BasicValueEnum<'ctx> {
     /*
      * // TODO: add documentation
@@ -572,8 +571,8 @@ fn gen_rval_lt<'ctx>(
     ret_alloc: Option<&PointerValue<'ctx>>,
     end_block: Option<&BasicBlock<'ctx>>,
     ctx: &'ctx LLVMContext,
-    store: &Store,
-    tab: &SymbolTab,
+    store: &hir::Store,
+    tab: &hir::SymbolTab,
 ) -> BasicValueEnum<'ctx> {
     /*
      * // TODO: add documentation
@@ -626,8 +625,8 @@ fn gen_rval_gt<'ctx>(
     ret_alloc: Option<&PointerValue<'ctx>>,
     end_block: Option<&BasicBlock<'ctx>>,
     ctx: &'ctx LLVMContext,
-    store: &Store,
-    tab: &SymbolTab,
+    store: &hir::Store,
+    tab: &hir::SymbolTab,
 ) -> BasicValueEnum<'ctx> {
     /*
      * // TODO: add documentation
@@ -680,8 +679,8 @@ fn gen_rval_lte<'ctx>(
     ret_alloc: Option<&PointerValue<'ctx>>,
     end_block: Option<&BasicBlock<'ctx>>,
     ctx: &'ctx LLVMContext,
-    store: &Store,
-    tab: &SymbolTab,
+    store: &hir::Store,
+    tab: &hir::SymbolTab,
 ) -> BasicValueEnum<'ctx> {
     /*
      * // TODO: add documentation
@@ -734,8 +733,8 @@ fn gen_rval_gte<'ctx>(
     ret_alloc: Option<&PointerValue<'ctx>>,
     end_block: Option<&BasicBlock<'ctx>>,
     ctx: &'ctx LLVMContext,
-    store: &Store,
-    tab: &SymbolTab,
+    store: &hir::Store,
+    tab: &hir::SymbolTab,
 ) -> BasicValueEnum<'ctx> {
     /*
      * // TODO: add documentation
@@ -788,8 +787,8 @@ fn gen_rval_eq<'ctx>(
     ret_alloc: Option<&PointerValue<'ctx>>,
     end_block: Option<&BasicBlock<'ctx>>,
     ctx: &'ctx LLVMContext,
-    store: &Store,
-    tab: &SymbolTab,
+    store: &hir::Store,
+    tab: &hir::SymbolTab,
 ) -> BasicValueEnum<'ctx> {
     /*
      * // TODO: add documentation
@@ -828,8 +827,8 @@ fn gen_rval_ne<'ctx>(
     ret_alloc: Option<&PointerValue<'ctx>>,
     end_block: Option<&BasicBlock<'ctx>>,
     ctx: &'ctx LLVMContext,
-    store: &Store,
-    tab: &SymbolTab,
+    store: &hir::Store,
+    tab: &hir::SymbolTab,
 ) -> BasicValueEnum<'ctx> {
     /*
      * // TODO: add documentation
@@ -867,8 +866,8 @@ pub(crate) fn gen_rval<'ctx>(
     ret: Option<&PointerValue<'ctx>>,
     endb: Option<&BasicBlock<'ctx>>,
     ctx: &'ctx LLVMContext,
-    store: &Store,
-    tab: &SymbolTab,
+    store: &hir::Store,
+    tab: &hir::SymbolTab,
 ) -> BasicValueEnum<'ctx> {
     match hir_value {
         hir::Value::Unit => gen_rval_lit_unit(ctx),
