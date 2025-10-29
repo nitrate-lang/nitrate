@@ -3,8 +3,9 @@ use nitrate_hir::{SymbolTab, prelude::*};
 
 impl ValidateHir for GlobalVariableAttribute {
     fn verify(&self, _store: &Store, _symtab: &SymbolTab) -> Result<(), ()> {
-        // TODO: implement
-        unimplemented!()
+        match self {
+            GlobalVariableAttribute::Invalid => return Err(()),
+        }
     }
 
     fn validate(self, store: &Store, symtab: &SymbolTab) -> Result<ValidHir<Self>, ()> {
@@ -36,8 +37,9 @@ impl ValidateHir for GlobalVariable {
 
 impl ValidateHir for LocalVariableAttribute {
     fn verify(&self, _store: &Store, _symtab: &SymbolTab) -> Result<(), ()> {
-        // TODO: implement
-        unimplemented!()
+        match self {
+            LocalVariableAttribute::Invalid => return Err(()),
+        }
     }
 
     fn validate(self, store: &Store, symtab: &SymbolTab) -> Result<ValidHir<Self>, ()> {
@@ -47,9 +49,18 @@ impl ValidateHir for LocalVariableAttribute {
 }
 
 impl ValidateHir for LocalVariable {
-    fn verify(&self, _store: &Store, _symtab: &SymbolTab) -> Result<(), ()> {
-        // TODO: implement
-        unimplemented!()
+    fn verify(&self, store: &Store, symtab: &SymbolTab) -> Result<(), ()> {
+        for attr in &self.attributes {
+            attr.verify(store, symtab)?;
+        }
+
+        store[&self.ty].verify(store, symtab)?;
+
+        if let Some(init_expr) = &self.init {
+            store[init_expr].borrow().verify(store, symtab)?;
+        }
+
+        Ok(())
     }
 
     fn validate(self, store: &Store, symtab: &SymbolTab) -> Result<ValidHir<Self>, ()> {
@@ -60,8 +71,9 @@ impl ValidateHir for LocalVariable {
 
 impl ValidateHir for ParameterAttribute {
     fn verify(&self, _store: &Store, _symtab: &SymbolTab) -> Result<(), ()> {
-        // TODO: implement
-        unimplemented!()
+        match self {
+            ParameterAttribute::Invalid => return Err(()),
+        }
     }
 
     fn validate(self, store: &Store, symtab: &SymbolTab) -> Result<ValidHir<Self>, ()> {
@@ -71,9 +83,18 @@ impl ValidateHir for ParameterAttribute {
 }
 
 impl ValidateHir for Parameter {
-    fn verify(&self, _store: &Store, _symtab: &SymbolTab) -> Result<(), ()> {
-        // TODO: implement
-        unimplemented!()
+    fn verify(&self, store: &Store, symtab: &SymbolTab) -> Result<(), ()> {
+        for attr in &self.attributes {
+            attr.verify(store, symtab)?;
+        }
+
+        store[&self.ty].verify(store, symtab)?;
+
+        if let Some(default_value) = &self.default_value {
+            store[default_value].borrow().verify(store, symtab)?;
+        }
+
+        Ok(())
     }
 
     fn validate(self, store: &Store, symtab: &SymbolTab) -> Result<ValidHir<Self>, ()> {
@@ -84,11 +105,15 @@ impl ValidateHir for Parameter {
 
 impl ValidateHir for Function {
     fn verify(&self, store: &Store, symtab: &SymbolTab) -> Result<(), ()> {
-        store[&self.return_type].verify(store, symtab)?;
+        for attr in &self.attributes {
+            attr.verify(store, symtab)?;
+        }
 
         for param in &self.params {
             store[param].borrow().verify(store, symtab)?;
         }
+
+        store[&self.return_type].verify(store, symtab)?;
 
         if let Some(body) = &self.body {
             store[body].borrow().verify(store, symtab)?;
@@ -105,7 +130,7 @@ impl ValidateHir for Function {
 
 impl ValidateHir for Trait {
     fn verify(&self, _store: &Store, _symtab: &SymbolTab) -> Result<(), ()> {
-        // TODO: implement
+        // TODO: verify trait
         unimplemented!()
     }
 
@@ -117,8 +142,9 @@ impl ValidateHir for Trait {
 
 impl ValidateHir for ModuleAttribute {
     fn verify(&self, _store: &Store, _symtab: &SymbolTab) -> Result<(), ()> {
-        // TODO: implement
-        unimplemented!()
+        match self {
+            ModuleAttribute::Invalid => return Err(()),
+        }
     }
 
     fn validate(self, store: &Store, symtab: &SymbolTab) -> Result<ValidHir<Self>, ()> {
@@ -158,9 +184,16 @@ impl ValidateHir for TypeAliasDef {
 }
 
 impl ValidateHir for StructDef {
-    fn verify(&self, _store: &Store, _symtab: &SymbolTab) -> Result<(), ()> {
-        // TODO: implement
-        unimplemented!()
+    fn verify(&self, store: &Store, symtab: &SymbolTab) -> Result<(), ()> {
+        for (_, default_value) in &self.field_extras {
+            if let Some(expr) = default_value {
+                store[expr].borrow().verify(store, symtab)?;
+            }
+        }
+
+        store[&self.struct_id].verify(store, symtab)?;
+
+        Ok(())
     }
 
     fn validate(self, store: &Store, symtab: &SymbolTab) -> Result<ValidHir<Self>, ()> {
@@ -171,35 +204,15 @@ impl ValidateHir for StructDef {
 
 impl ValidateHir for EnumDef {
     fn verify(&self, store: &Store, symtab: &SymbolTab) -> Result<(), ()> {
-        let enum_type = Type::Enum {
-            enum_type: self.enum_id,
-        };
+        for value in &self.variant_extras {
+            if let Some(expr) = value {
+                store[expr].borrow().verify(store, symtab)?;
+            }
+        }
 
-        enum_type.verify(store, symtab)
-    }
+        store[&self.enum_id].verify(store, symtab)?;
 
-    fn validate(self, store: &Store, symtab: &SymbolTab) -> Result<ValidHir<Self>, ()> {
-        self.verify(store, symtab)?;
-        Ok(ValidHir::new(self))
-    }
-}
-
-impl ValidateHir for TypeDefinition {
-    fn verify(&self, _store: &Store, _symtab: &SymbolTab) -> Result<(), ()> {
-        // TODO: implement
-        unimplemented!()
-    }
-
-    fn validate(self, store: &Store, symtab: &SymbolTab) -> Result<ValidHir<Self>, ()> {
-        self.verify(store, symtab)?;
-        Ok(ValidHir::new(self))
-    }
-}
-
-impl ValidateHir for SymbolId {
-    fn verify(&self, _store: &Store, _symtab: &SymbolTab) -> Result<(), ()> {
-        // TODO: implement
-        unimplemented!()
+        Ok(())
     }
 
     fn validate(self, store: &Store, symtab: &SymbolTab) -> Result<ValidHir<Self>, ()> {

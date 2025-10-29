@@ -21,7 +21,9 @@ pub enum StructAttribute {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub enum StructFieldAttribute {}
+pub enum StructFieldAttribute {
+    Invalid,
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct StructField {
@@ -37,10 +39,14 @@ pub struct StructType {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub enum EnumAttribute {}
+pub enum EnumAttribute {
+    Invalid,
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub enum EnumVariantAttribute {}
+pub enum EnumVariantAttribute {
+    Invalid,
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct EnumVariant {

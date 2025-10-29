@@ -1,3 +1,5 @@
+use core::panic;
+
 use crate::codegen::CodeGen;
 use inkwell::values::BasicValueEnum;
 use nitrate_hir::{Store, SymbolTab, prelude as hir};
@@ -50,30 +52,24 @@ impl<'ctx> CodeGen<'ctx> for hir::Value {
                 .into(),
 
             hir::Value::StringLit(thin_str) => {
-                // TODO: implement
+                // TODO: implement string literal codegen
                 unimplemented!()
             }
 
             hir::Value::BStringLit(thin_vec) => {
-                // TODO: implement
+                // TODO: implement binary string literal codegen
                 unimplemented!()
             }
 
-            hir::Value::InferredInteger(_) => {
-                // TODO: implement
-                unimplemented!()
-            }
-
-            hir::Value::InferredFloat(ordered_float) => {
-                // TODO: implement
-                unimplemented!()
+            hir::Value::InferredInteger(_) | hir::Value::InferredFloat(_) => {
+                panic!("Inferred values should have been resolved before code generation")
             }
 
             hir::Value::StructObject {
                 struct_path,
                 fields,
             } => {
-                // TODO: implement
+                // TODO: implement struct object codegen
                 unimplemented!()
             }
 
@@ -82,42 +78,42 @@ impl<'ctx> CodeGen<'ctx> for hir::Value {
                 variant,
                 value,
             } => {
-                // TODO: implement
+                // TODO: implement enum variant codegen
                 unimplemented!()
             }
 
             hir::Value::Binary { left, op, right } => {
-                // TODO: implement
+                // TODO: implement binary operation codegen
                 unimplemented!()
             }
 
             hir::Value::Unary { op, operand } => {
-                // TODO: implement
+                // TODO: implement unary operation codegen
                 unimplemented!()
             }
 
             hir::Value::FieldAccess { expr, field } => {
-                // TODO: implement
+                // TODO: implement field access codegen
                 unimplemented!()
             }
 
             hir::Value::IndexAccess { collection, index } => {
-                // TODO: implement
+                // TODO: implement index access codegen
                 unimplemented!()
             }
 
             hir::Value::Assign { place, value } => {
-                // TODO: implement
+                // TODO: implement assignment codegen
                 unimplemented!()
             }
 
             hir::Value::Deref { place } => {
-                // TODO: implement
+                // TODO: implement dereference codegen
                 unimplemented!()
             }
 
             hir::Value::Cast { expr, to } => {
-                // TODO: implement
+                // TODO: implement cast codegen
                 unimplemented!()
             }
 
@@ -126,17 +122,17 @@ impl<'ctx> CodeGen<'ctx> for hir::Value {
                 mutable,
                 place,
             } => {
-                // TODO: implement
+                // TODO: implement borrow codegen
                 unimplemented!()
             }
 
             hir::Value::List { elements } => {
-                // TODO: implement
+                // TODO: implement list codegen
                 unimplemented!()
             }
 
             hir::Value::Tuple { elements } => {
-                // TODO: implement
+                // TODO: implement tuple codegen
                 unimplemented!()
             }
 
@@ -145,42 +141,42 @@ impl<'ctx> CodeGen<'ctx> for hir::Value {
                 true_branch,
                 false_branch,
             } => {
-                // TODO: implement
+                // TODO: implement if expression codegen
                 unimplemented!()
             }
 
             hir::Value::While { condition, body } => {
-                // TODO: implement
+                // TODO: implement while loop codegen
                 unimplemented!()
             }
 
             hir::Value::Loop { body } => {
-                // TODO: implement
+                // TODO: implement loop codegen
                 unimplemented!()
             }
 
             hir::Value::Break { label } => {
-                // TODO: implement
+                // TODO: implement break codegen
                 unimplemented!()
             }
 
             hir::Value::Continue { label } => {
-                // TODO: implement
+                // TODO: implement continue codegen
                 unimplemented!()
             }
 
             hir::Value::Return { value } => {
-                // TODO: implement
+                // TODO: implement return codegen
                 unimplemented!()
             }
 
             hir::Value::Block { block } => {
-                // TODO: implement
+                // TODO: implement block codegen
                 unimplemented!()
             }
 
             hir::Value::Closure { captures, callee } => {
-                // TODO: implement
+                // TODO: implement closure codegen
                 unimplemented!()
             }
 
@@ -189,7 +185,7 @@ impl<'ctx> CodeGen<'ctx> for hir::Value {
                 positional,
                 named,
             } => {
-                // TODO: implement
+                // TODO: implement function call codegen
                 unimplemented!()
             }
 
@@ -199,12 +195,12 @@ impl<'ctx> CodeGen<'ctx> for hir::Value {
                 positional,
                 named,
             } => {
-                // TODO: implement
+                // TODO: implement method call codegen
                 unimplemented!()
             }
 
             hir::Value::Symbol { path } => {
-                // TODO: implement
+                // TODO: implement symbol reference codegen
                 unimplemented!()
             }
         }

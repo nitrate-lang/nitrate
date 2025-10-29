@@ -3,8 +3,9 @@ use nitrate_hir::{SymbolTab, prelude::*};
 
 impl ValidateHir for StructAttribute {
     fn verify(&self, _store: &Store, _symtab: &SymbolTab) -> Result<(), ()> {
-        // TODO: implement
-        unimplemented!()
+        match self {
+            StructAttribute::Packed => Ok(()),
+        }
     }
 
     fn validate(self, store: &Store, symtab: &SymbolTab) -> Result<ValidHir<Self>, ()> {
@@ -15,8 +16,9 @@ impl ValidateHir for StructAttribute {
 
 impl ValidateHir for StructFieldAttribute {
     fn verify(&self, _store: &Store, _symtab: &SymbolTab) -> Result<(), ()> {
-        // TODO: implement
-        unimplemented!()
+        match self {
+            StructFieldAttribute::Invalid => Err(()),
+        }
     }
 
     fn validate(self, store: &Store, symtab: &SymbolTab) -> Result<ValidHir<Self>, ()> {
@@ -26,9 +28,14 @@ impl ValidateHir for StructFieldAttribute {
 }
 
 impl ValidateHir for StructField {
-    fn verify(&self, _store: &Store, _symtab: &SymbolTab) -> Result<(), ()> {
-        // TODO: implement
-        unimplemented!()
+    fn verify(&self, store: &Store, symtab: &SymbolTab) -> Result<(), ()> {
+        for attr in &self.attributes {
+            attr.verify(store, symtab)?;
+        }
+
+        store[&self.ty].verify(store, symtab)?;
+
+        Ok(())
     }
 
     fn validate(self, store: &Store, symtab: &SymbolTab) -> Result<ValidHir<Self>, ()> {
@@ -38,9 +45,16 @@ impl ValidateHir for StructField {
 }
 
 impl ValidateHir for StructType {
-    fn verify(&self, _store: &Store, _symtab: &SymbolTab) -> Result<(), ()> {
-        // TODO: implement
-        unimplemented!()
+    fn verify(&self, store: &Store, symtab: &SymbolTab) -> Result<(), ()> {
+        for attr in &self.attributes {
+            attr.verify(store, symtab)?;
+        }
+
+        for field in &self.fields {
+            field.verify(store, symtab)?;
+        }
+
+        Ok(())
     }
 
     fn validate(self, store: &Store, symtab: &SymbolTab) -> Result<ValidHir<Self>, ()> {
@@ -51,8 +65,9 @@ impl ValidateHir for StructType {
 
 impl ValidateHir for EnumAttribute {
     fn verify(&self, _store: &Store, _symtab: &SymbolTab) -> Result<(), ()> {
-        // TODO: implement
-        unimplemented!()
+        match self {
+            EnumAttribute::Invalid => Err(()),
+        }
     }
 
     fn validate(self, store: &Store, symtab: &SymbolTab) -> Result<ValidHir<Self>, ()> {
@@ -63,8 +78,9 @@ impl ValidateHir for EnumAttribute {
 
 impl ValidateHir for EnumVariantAttribute {
     fn verify(&self, _store: &Store, _symtab: &SymbolTab) -> Result<(), ()> {
-        // TODO: implement
-        unimplemented!()
+        match self {
+            EnumVariantAttribute::Invalid => Err(()),
+        }
     }
 
     fn validate(self, store: &Store, symtab: &SymbolTab) -> Result<ValidHir<Self>, ()> {
@@ -109,8 +125,9 @@ impl ValidateHir for EnumType {
 
 impl ValidateHir for FunctionAttribute {
     fn verify(&self, _store: &Store, _symtab: &SymbolTab) -> Result<(), ()> {
-        // TODO: implement
-        unimplemented!()
+        match self {
+            FunctionAttribute::Variadic => Ok(()),
+        }
     }
 
     fn validate(self, store: &Store, symtab: &SymbolTab) -> Result<ValidHir<Self>, ()> {

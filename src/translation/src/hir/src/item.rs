@@ -11,7 +11,9 @@ pub enum Visibility {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub enum GlobalVariableAttribute {}
+pub enum GlobalVariableAttribute {
+    Invalid,
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct GlobalVariable {
@@ -24,7 +26,9 @@ pub struct GlobalVariable {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub enum LocalVariableAttribute {}
+pub enum LocalVariableAttribute {
+    Invalid,
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub enum LocalVariableKind {
@@ -44,7 +48,9 @@ pub struct LocalVariable {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub enum ParameterAttribute {}
+pub enum ParameterAttribute {
+    Invalid,
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct Parameter {
@@ -65,6 +71,25 @@ pub struct Function {
     pub body: Option<BlockId>,
 }
 
+impl Function {
+    pub fn get_type(&self, store: &Store) -> FunctionType {
+        let params: Vec<(IString, TypeId)> = self
+            .params
+            .iter()
+            .map(|param_id| {
+                let p = store[param_id].borrow();
+                (p.name.clone(), p.ty)
+            })
+            .collect();
+
+        FunctionType {
+            attributes: self.attributes.clone(),
+            params,
+            return_type: self.return_type,
+        }
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct Trait {
     pub visibility: Visibility,
@@ -73,7 +98,9 @@ pub struct Trait {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub enum ModuleAttribute {}
+pub enum ModuleAttribute {
+    Invalid,
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct Module {

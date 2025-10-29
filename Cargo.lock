@@ -812,6 +812,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "nitrate_hir_mangle"
+version = "0.1.0"
+dependencies = [
+ "nitrate_hir",
+]
+
+[[package]]
 name = "nitrate_hir_resolve_type"
 version = "0.1.0"
 dependencies = [
@@ -850,6 +857,7 @@ dependencies = [
  "cc",
  "inkwell",
  "nitrate_hir",
+ "nitrate_hir_mangle",
  "nitrate_hir_validate",
  "nitrate_llvm",
 ]
@@ -892,6 +900,7 @@ dependencies = [
  "nitrate_hir_evaluate",
  "nitrate_hir_from_tree",
  "nitrate_hir_get_type",
+ "nitrate_hir_mangle",
  "nitrate_hir_resolve_type",
  "nitrate_hir_validate",
  "nitrate_hir_visitor",

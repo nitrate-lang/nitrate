@@ -1,30 +1,21 @@
 use crate::{ValidHir, ValidateHir};
 use nitrate_hir::{SymbolTab, prelude::*};
 
-impl ValidateHir for BlockElement {
-    fn verify(&self, store: &Store, symtab: &SymbolTab) -> Result<(), ()> {
-        match self {
-            BlockElement::Expr(expr) => store[expr].borrow().verify(store, symtab),
-            BlockElement::Stmt(expr) => store[expr].borrow().verify(store, symtab),
-            BlockElement::Local(local) => store[local].borrow().verify(store, symtab),
-        }
-    }
-
-    fn validate(self, store: &Store, symtab: &SymbolTab) -> Result<ValidHir<Self>, ()> {
-        self.verify(store, symtab)?;
-        Ok(ValidHir::new(self))
-    }
-}
-
 impl ValidateHir for Block {
     fn verify(&self, store: &Store, symtab: &SymbolTab) -> Result<(), ()> {
+        // TODO: Ensure unconditional branches are only at the end of the block
+
         for (i, elem) in self.elements.iter().enumerate() {
             let is_last = i == self.elements.len() - 1;
             if matches!(elem, BlockElement::Expr(_)) && !is_last {
                 return Err(());
             }
 
-            elem.verify(store, symtab)?;
+            match elem {
+                BlockElement::Expr(expr) => store[expr].borrow().verify(store, symtab)?,
+                BlockElement::Stmt(expr) => store[expr].borrow().verify(store, symtab)?,
+                BlockElement::Local(local) => store[local].borrow().verify(store, symtab)?,
+            }
         }
 
         Ok(())
@@ -65,7 +56,7 @@ impl ValidateHir for Value {
                 fields,
             } => {
                 // TODO: verify struct object
-                unimplemented!()
+                Ok(())
             }
 
             Value::EnumVariant {
@@ -74,42 +65,42 @@ impl ValidateHir for Value {
                 value,
             } => {
                 // TODO: verify enum variant
-                unimplemented!()
+                Ok(())
             }
 
             Value::Binary { left, op, right } => {
                 // TODO: verify binary expression
-                unimplemented!()
+                Ok(())
             }
 
             Value::Unary { op, operand } => {
                 // TODO: verify unary expression
-                unimplemented!()
+                Ok(())
             }
 
             Value::FieldAccess { expr, field } => {
                 // TODO: verify field access
-                unimplemented!()
+                Ok(())
             }
 
             Value::IndexAccess { collection, index } => {
                 // TODO: verify index access
-                unimplemented!()
+                Ok(())
             }
 
             Value::Assign { place, value } => {
                 // TODO: verify assignment
-                unimplemented!()
+                Ok(())
             }
 
             Value::Deref { place } => {
                 // TODO: verify dereference
-                unimplemented!()
+                Ok(())
             }
 
             Value::Cast { expr, to } => {
                 // TODO: verify cast
-                unimplemented!()
+                Ok(())
             }
 
             Value::Borrow {
@@ -118,17 +109,17 @@ impl ValidateHir for Value {
                 place,
             } => {
                 // TODO: verify borrow
-                unimplemented!()
+                Ok(())
             }
 
             Value::List { elements } => {
                 // TODO: verify list
-                unimplemented!()
+                Ok(())
             }
 
             Value::Tuple { elements } => {
                 // TODO: verify tuple
-                unimplemented!()
+                Ok(())
             }
 
             Value::If {
@@ -137,42 +128,42 @@ impl ValidateHir for Value {
                 false_branch,
             } => {
                 // TODO: verify if expression
-                unimplemented!()
+                Ok(())
             }
 
             Value::While { condition, body } => {
                 // TODO: verify while expression
-                unimplemented!()
+                Ok(())
             }
 
             Value::Loop { body } => {
                 // TODO: verify loop expression
-                unimplemented!()
+                Ok(())
             }
 
             Value::Break { label } => {
                 // TODO: verify break expression
-                unimplemented!()
+                Ok(())
             }
 
             Value::Continue { label } => {
                 // TODO: verify continue expression
-                unimplemented!()
+                Ok(())
             }
 
             Value::Return { value } => {
                 // TODO: verify return expression
-                unimplemented!()
+                Ok(())
             }
 
             Value::Block { block } => {
                 // TODO: verify block expression
-                unimplemented!()
+                Ok(())
             }
 
             Value::Closure { captures, callee } => {
                 // TODO: verify closure expression
-                unimplemented!()
+                Ok(())
             }
 
             Value::Call {
@@ -181,7 +172,7 @@ impl ValidateHir for Value {
                 named,
             } => {
                 // TODO: verify call expression
-                unimplemented!()
+                Ok(())
             }
 
             Value::MethodCall {
@@ -191,12 +182,12 @@ impl ValidateHir for Value {
                 named,
             } => {
                 // TODO: verify method call expression
-                unimplemented!()
+                Ok(())
             }
 
             Value::Symbol { path } => {
                 // TODO: verify symbol
-                unimplemented!()
+                Ok(())
             }
         }
     }
