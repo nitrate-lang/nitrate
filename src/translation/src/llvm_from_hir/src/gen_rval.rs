@@ -7,178 +7,193 @@ use nitrate_hir::prelude as hir;
 use nitrate_hir_get_type::{TypeInferenceCtx, get_type};
 use nitrate_llvm::LLVMContext;
 
-pub(crate) fn gen_rval_lit_unit<'ctx>(ctx: &'ctx LLVMContext) -> BasicValueEnum<'ctx> {
+pub struct RvalGenCtx<'ctx, 'store, 'tab, 'builder, 'ret, 'endb> {
+    pub store: &'store hir::Store,
+    pub tab: &'tab hir::SymbolTab,
+    pub llvm: &'ctx LLVMContext,
+
+    pub bb: &'builder inkwell::builder::Builder<'ctx>,
+    pub ret: &'ret PointerValue<'ctx>,
+    pub endb: &'endb BasicBlock<'ctx>,
+}
+
+pub(crate) fn gen_rval_lit_unit<'ctx>(ctx: &'ctx RvalGenCtx) -> BasicValueEnum<'ctx> {
     /*
      * The Unit Type is an empty struct
      */
 
-    ctx.const_struct(&[], false).into()
+    ctx.llvm.const_struct(&[], false).into()
 }
 
-fn gen_rval_lit_bool<'ctx>(ctx: &'ctx LLVMContext, value: bool) -> BasicValueEnum<'ctx> {
+fn gen_rval_lit_bool<'ctx>(ctx: &'ctx RvalGenCtx, value: bool) -> BasicValueEnum<'ctx> {
     /*
      * The Bool Type is represented as an i1.
      * No sign extension is performed.
      */
 
     match value {
-        true => ctx.bool_type().const_int(1, false).into(),
-        false => ctx.bool_type().const_int(0, false).into(),
+        true => ctx.llvm.bool_type().const_int(1, false).into(),
+        false => ctx.llvm.bool_type().const_int(0, false).into(),
     }
 }
 
-fn gen_rval_lit_i8<'ctx>(ctx: &'ctx LLVMContext, value: i8) -> BasicValueEnum<'ctx> {
+fn gen_rval_lit_i8<'ctx>(ctx: &'ctx RvalGenCtx, value: i8) -> BasicValueEnum<'ctx> {
     /*
      * Direct correspondence to LLVM i8 type.
      * Sign extension is performed.
      */
 
-    ctx.i8_type().const_int(value as u64, true).into()
+    ctx.llvm.i8_type().const_int(value as u64, true).into()
 }
 
-fn gen_rval_lit_i16<'ctx>(ctx: &'ctx LLVMContext, value: i16) -> BasicValueEnum<'ctx> {
+fn gen_rval_lit_i16<'ctx>(ctx: &'ctx RvalGenCtx, value: i16) -> BasicValueEnum<'ctx> {
     /*
      * Direct correspondence to LLVM i16 type.
      * Sign extension is performed.
      */
 
-    ctx.i16_type().const_int(value as u64, true).into()
+    ctx.llvm.i16_type().const_int(value as u64, true).into()
 }
 
-fn gen_rval_lit_i32<'ctx>(ctx: &'ctx LLVMContext, value: i32) -> BasicValueEnum<'ctx> {
+fn gen_rval_lit_i32<'ctx>(ctx: &'ctx RvalGenCtx, value: i32) -> BasicValueEnum<'ctx> {
     /*
      * Direct correspondence to LLVM i32 type.
      * Sign extension is performed.
      */
 
-    ctx.i32_type().const_int(value as u64, true).into()
+    ctx.llvm.i32_type().const_int(value as u64, true).into()
 }
 
-fn gen_rval_lit_i64<'ctx>(ctx: &'ctx LLVMContext, value: i64) -> BasicValueEnum<'ctx> {
+fn gen_rval_lit_i64<'ctx>(ctx: &'ctx RvalGenCtx, value: i64) -> BasicValueEnum<'ctx> {
     /*
      * Direct correspondence to LLVM i64 type.
      * Sign extension is performed.
      */
 
-    ctx.i64_type().const_int(value as u64, true).into()
+    ctx.llvm.i64_type().const_int(value as u64, true).into()
 }
 
-fn gen_rval_lit_i128<'ctx>(ctx: &'ctx LLVMContext, value: i128) -> BasicValueEnum<'ctx> {
+fn gen_rval_lit_i128<'ctx>(ctx: &'ctx RvalGenCtx, value: i128) -> BasicValueEnum<'ctx> {
     /*
      * // TODO: add documentation
      */
 
     let low = (value & 0xFFFFFFFFFFFFFFFF) as u64;
     let high = ((value >> 64) & 0xFFFFFFFFFFFFFFFF) as u64;
-    let i128 = ctx.i128_type().const_int_arbitrary_precision(&[low, high]);
+    let i128 = ctx
+        .llvm
+        .i128_type()
+        .const_int_arbitrary_precision(&[low, high]);
     i128.into()
 }
 
-fn gen_rval_lit_u8<'ctx>(ctx: &'ctx LLVMContext, value: u8) -> BasicValueEnum<'ctx> {
+fn gen_rval_lit_u8<'ctx>(ctx: &'ctx RvalGenCtx, value: u8) -> BasicValueEnum<'ctx> {
     /*
      * Direct correspondence to LLVM i8 type.
      * No sign extension is performed.
      */
 
-    ctx.i8_type().const_int(value as u64, false).into()
+    ctx.llvm.i8_type().const_int(value as u64, false).into()
 }
 
-fn gen_rval_lit_u16<'ctx>(ctx: &'ctx LLVMContext, value: u16) -> BasicValueEnum<'ctx> {
+fn gen_rval_lit_u16<'ctx>(ctx: &'ctx RvalGenCtx, value: u16) -> BasicValueEnum<'ctx> {
     /*
      * Direct correspondence to LLVM i16 type.
      * No sign extension is performed.
      */
 
-    ctx.i16_type().const_int(value as u64, false).into()
+    ctx.llvm.i16_type().const_int(value as u64, false).into()
 }
 
-fn gen_rval_lit_u32<'ctx>(ctx: &'ctx LLVMContext, value: u32) -> BasicValueEnum<'ctx> {
+fn gen_rval_lit_u32<'ctx>(ctx: &'ctx RvalGenCtx, value: u32) -> BasicValueEnum<'ctx> {
     /*
      * Direct correspondence to LLVM i32 type.
      * No sign extension is performed.
      */
 
-    ctx.i32_type().const_int(value as u64, false).into()
+    ctx.llvm.i32_type().const_int(value as u64, false).into()
 }
 
-fn gen_rval_lit_u64<'ctx>(ctx: &'ctx LLVMContext, value: u64) -> BasicValueEnum<'ctx> {
+fn gen_rval_lit_u64<'ctx>(ctx: &'ctx RvalGenCtx, value: u64) -> BasicValueEnum<'ctx> {
     /*
      * Direct correspondence to LLVM i64 type.
      * No sign extension is performed.
      */
 
-    ctx.i64_type().const_int(value, false).into()
+    ctx.llvm.i64_type().const_int(value, false).into()
 }
 
-fn gen_rval_lit_u128<'ctx>(ctx: &'ctx LLVMContext, value: u128) -> BasicValueEnum<'ctx> {
+fn gen_rval_lit_u128<'ctx>(ctx: &'ctx RvalGenCtx, value: u128) -> BasicValueEnum<'ctx> {
     /*
      * // TODO: add documentation
      */
 
     let low = (value & 0xFFFFFFFFFFFFFFFF) as u64;
     let high = ((value >> 64) & 0xFFFFFFFFFFFFFFFF) as u64;
-    let u128 = ctx.i128_type().const_int_arbitrary_precision(&[low, high]);
+    let u128 = ctx
+        .llvm
+        .i128_type()
+        .const_int_arbitrary_precision(&[low, high]);
     u128.into()
 }
 
-fn gen_rval_lit_f32<'ctx>(ctx: &'ctx LLVMContext, value: f32) -> BasicValueEnum<'ctx> {
+fn gen_rval_lit_f32<'ctx>(ctx: &'ctx RvalGenCtx, value: f32) -> BasicValueEnum<'ctx> {
     /*
      * Direct correspondence to LLVM f32 type.
      */
 
-    ctx.f32_type().const_float(value as f64).into()
+    ctx.llvm.f32_type().const_float(value as f64).into()
 }
 
-fn gen_rval_lit_f64<'ctx>(ctx: &'ctx LLVMContext, value: f64) -> BasicValueEnum<'ctx> {
+fn gen_rval_lit_f64<'ctx>(ctx: &'ctx RvalGenCtx, value: f64) -> BasicValueEnum<'ctx> {
     /*
      * Direct correspondence to LLVM f64 type.
      */
 
-    ctx.f64_type().const_float(value).into()
+    ctx.llvm.f64_type().const_float(value).into()
 }
 
-fn gen_rval_lit_string<'ctx>(ctx: &'ctx LLVMContext, value: &str) -> BasicValueEnum<'ctx> {
+fn gen_rval_lit_string<'ctx>(ctx: &'ctx RvalGenCtx, value: &str) -> BasicValueEnum<'ctx> {
     /*
      * Intern the string literal in the LLVM module's global string table.
      * No null terminator is added.
      */
 
-    ctx.const_string(value.as_bytes(), false).into()
+    ctx.llvm.const_string(value.as_bytes(), false).into()
 }
 
-fn gen_rval_lit_bstring<'ctx>(ctx: &'ctx LLVMContext, value: &[u8]) -> BasicValueEnum<'ctx> {
+fn gen_rval_lit_bstring<'ctx>(ctx: &'ctx RvalGenCtx, value: &[u8]) -> BasicValueEnum<'ctx> {
     /*
      * Intern the byte string literal in the LLVM module's global string table.
      * No null terminator is added. It is treated as a raw byte array.
      */
 
-    ctx.const_string(value, false).into()
+    ctx.llvm.const_string(value, false).into()
 }
 
 fn gen_rval_add<'ctx>(
+    ctx: &'ctx RvalGenCtx,
     lhs: &hir::Value,
     rhs: &hir::Value,
-    bb: &inkwell::builder::Builder<'ctx>,
-    ret: Option<&PointerValue<'ctx>>,
-    endb: Option<&BasicBlock<'ctx>>,
-    ctx: &'ctx LLVMContext,
-    store: &hir::Store,
-    tab: &hir::SymbolTab,
 ) -> BasicValueEnum<'ctx> {
     /*
      * // TODO: add documentation
      */
 
-    let lhs = gen_rval(lhs, bb, ret, endb, ctx, store, tab);
-    let rhs = gen_rval(rhs, bb, ret, endb, ctx, store, tab);
+    let lhs = gen_rval(ctx, lhs);
+    let rhs = gen_rval(ctx, rhs);
     let lhs_ty = lhs.get_type();
     let rhs_ty = rhs.get_type();
 
     if lhs_ty.is_float_type() && rhs_ty.is_float_type() {
-        let fadd = bb.build_float_add(lhs.into_float_value(), rhs.into_float_value(), "");
+        let fadd = ctx
+            .bb
+            .build_float_add(lhs.into_float_value(), rhs.into_float_value(), "");
         return fadd.unwrap().into();
     } else if lhs_ty.is_int_type() && rhs_ty.is_int_type() {
-        let iadd = bb.build_int_add(lhs.into_int_value(), rhs.into_int_value(), "");
+        let iadd = ctx
+            .bb
+            .build_int_add(lhs.into_int_value(), rhs.into_int_value(), "");
         return iadd.unwrap().into();
     } else {
         panic!("Addition not implemented for this type");
@@ -186,29 +201,28 @@ fn gen_rval_add<'ctx>(
 }
 
 fn gen_rval_sub<'ctx>(
+    ctx: &'ctx RvalGenCtx,
     lhs: &hir::Value,
     rhs: &hir::Value,
-    bb: &inkwell::builder::Builder<'ctx>,
-    ret: Option<&PointerValue<'ctx>>,
-    endb: Option<&BasicBlock<'ctx>>,
-    ctx: &'ctx LLVMContext,
-    store: &hir::Store,
-    tab: &hir::SymbolTab,
 ) -> BasicValueEnum<'ctx> {
     /*
      * // TODO: add documentation
      */
 
-    let lhs = gen_rval(lhs, bb, ret, endb, ctx, store, tab);
-    let rhs = gen_rval(rhs, bb, ret, endb, ctx, store, tab);
+    let lhs = gen_rval(ctx, lhs);
+    let rhs = gen_rval(ctx, rhs);
     let lhs_ty = lhs.get_type();
     let rhs_ty = rhs.get_type();
 
     if lhs_ty.is_float_type() && rhs_ty.is_float_type() {
-        let fsub = bb.build_float_sub(lhs.into_float_value(), rhs.into_float_value(), "");
+        let fsub = ctx
+            .bb
+            .build_float_sub(lhs.into_float_value(), rhs.into_float_value(), "");
         return fsub.unwrap().into();
     } else if lhs_ty.is_int_type() && rhs_ty.is_int_type() {
-        let isub = bb.build_int_sub(lhs.into_int_value(), rhs.into_int_value(), "");
+        let isub = ctx
+            .bb
+            .build_int_sub(lhs.into_int_value(), rhs.into_int_value(), "");
         return isub.unwrap().into();
     } else {
         panic!("Subtraction not implemented for this type");
@@ -216,29 +230,28 @@ fn gen_rval_sub<'ctx>(
 }
 
 fn gen_rval_mul<'ctx>(
+    ctx: &'ctx RvalGenCtx,
     lhs: &hir::Value,
     rhs: &hir::Value,
-    bb: &inkwell::builder::Builder<'ctx>,
-    ret: Option<&PointerValue<'ctx>>,
-    endb: Option<&BasicBlock<'ctx>>,
-    ctx: &'ctx LLVMContext,
-    store: &hir::Store,
-    tab: &hir::SymbolTab,
 ) -> BasicValueEnum<'ctx> {
     /*
      * // TODO: add documentation
      */
 
-    let lhs = gen_rval(lhs, bb, ret, endb, ctx, store, tab);
-    let rhs = gen_rval(rhs, bb, ret, endb, ctx, store, tab);
+    let lhs = gen_rval(ctx, lhs);
+    let rhs = gen_rval(ctx, rhs);
     let lhs_ty = lhs.get_type();
     let rhs_ty = rhs.get_type();
 
     if lhs_ty.is_float_type() && rhs_ty.is_float_type() {
-        let fmul = bb.build_float_mul(lhs.into_float_value(), rhs.into_float_value(), "");
+        let fmul = ctx
+            .bb
+            .build_float_mul(lhs.into_float_value(), rhs.into_float_value(), "");
         return fmul.unwrap().into();
     } else if lhs_ty.is_int_type() && rhs_ty.is_int_type() {
-        let imul = bb.build_int_mul(lhs.into_int_value(), rhs.into_int_value(), "");
+        let imul = ctx
+            .bb
+            .build_int_mul(lhs.into_int_value(), rhs.into_int_value(), "");
         return imul.unwrap().into();
     } else {
         panic!("Multiplication not implemented for this type");
@@ -246,36 +259,41 @@ fn gen_rval_mul<'ctx>(
 }
 
 fn gen_rval_div<'ctx>(
+    ctx: &'ctx RvalGenCtx,
     lhs: &hir::Value,
     rhs: &hir::Value,
-    bb: &inkwell::builder::Builder<'ctx>,
-    ret: Option<&PointerValue<'ctx>>,
-    endb: Option<&BasicBlock<'ctx>>,
-    ctx: &'ctx LLVMContext,
-    store: &hir::Store,
-    tab: &hir::SymbolTab,
 ) -> BasicValueEnum<'ctx> {
     /*
      * // TODO: add documentation
      */
 
-    let llvm_lhs = gen_rval(lhs, bb, ret, endb, ctx, store, tab);
-    let llvm_rhs = gen_rval(rhs, bb, ret, endb, ctx, store, tab);
+    let llvm_lhs = gen_rval(ctx, lhs);
+    let llvm_rhs = gen_rval(ctx, rhs);
     let lhs_ty = llvm_lhs.get_type();
     let rhs_ty = llvm_rhs.get_type();
 
     if lhs_ty.is_float_type() && rhs_ty.is_float_type() {
-        let fdiv = bb.build_float_div(llvm_lhs.into_float_value(), llvm_rhs.into_float_value(), "");
+        let fdiv =
+            ctx.bb
+                .build_float_div(llvm_lhs.into_float_value(), llvm_rhs.into_float_value(), "");
         return fdiv.unwrap().into();
     } else if lhs_ty.is_int_type() && rhs_ty.is_int_type() {
-        let is_signed = get_type(lhs, &TypeInferenceCtx { store, tab })
-            .expect("Failed to get type")
-            .is_signed_primitive();
+        let is_signed = get_type(
+            lhs,
+            &TypeInferenceCtx {
+                store: ctx.store,
+                tab: ctx.tab,
+            },
+        )
+        .expect("Failed to get type")
+        .is_signed_primitive();
 
         let div = if is_signed {
-            bb.build_int_signed_div(llvm_lhs.into_int_value(), llvm_rhs.into_int_value(), "")
+            ctx.bb
+                .build_int_signed_div(llvm_lhs.into_int_value(), llvm_rhs.into_int_value(), "")
         } else {
-            bb.build_int_unsigned_div(llvm_lhs.into_int_value(), llvm_rhs.into_int_value(), "")
+            ctx.bb
+                .build_int_unsigned_div(llvm_lhs.into_int_value(), llvm_rhs.into_int_value(), "")
         };
 
         return div.unwrap().into();
@@ -285,36 +303,41 @@ fn gen_rval_div<'ctx>(
 }
 
 fn gen_rval_rem<'ctx>(
+    ctx: &'ctx RvalGenCtx,
     lhs: &hir::Value,
     rhs: &hir::Value,
-    bb: &inkwell::builder::Builder<'ctx>,
-    ret: Option<&PointerValue<'ctx>>,
-    endb: Option<&BasicBlock<'ctx>>,
-    ctx: &'ctx LLVMContext,
-    store: &hir::Store,
-    tab: &hir::SymbolTab,
 ) -> BasicValueEnum<'ctx> {
     /*
      * // TODO: add documentation
      */
 
-    let llvm_lhs = gen_rval(lhs, bb, ret, endb, ctx, store, tab);
-    let llvm_rhs = gen_rval(rhs, bb, ret, endb, ctx, store, tab);
+    let llvm_lhs = gen_rval(ctx, lhs);
+    let llvm_rhs = gen_rval(ctx, rhs);
     let lhs_ty = llvm_lhs.get_type();
     let rhs_ty = llvm_rhs.get_type();
 
     if lhs_ty.is_float_type() && rhs_ty.is_float_type() {
-        let frem = bb.build_float_rem(llvm_lhs.into_float_value(), llvm_rhs.into_float_value(), "");
+        let frem =
+            ctx.bb
+                .build_float_rem(llvm_lhs.into_float_value(), llvm_rhs.into_float_value(), "");
         return frem.unwrap().into();
     } else if lhs_ty.is_int_type() && rhs_ty.is_int_type() {
-        let is_signed = get_type(lhs, &TypeInferenceCtx { store, tab })
-            .expect("Failed to get type")
-            .is_signed_primitive();
+        let is_signed = get_type(
+            lhs,
+            &TypeInferenceCtx {
+                store: ctx.store,
+                tab: ctx.tab,
+            },
+        )
+        .expect("Failed to get type")
+        .is_signed_primitive();
 
         let rem = if is_signed {
-            bb.build_int_signed_rem(llvm_lhs.into_int_value(), llvm_rhs.into_int_value(), "")
+            ctx.bb
+                .build_int_signed_rem(llvm_lhs.into_int_value(), llvm_rhs.into_int_value(), "")
         } else {
-            bb.build_int_unsigned_rem(llvm_lhs.into_int_value(), llvm_rhs.into_int_value(), "")
+            ctx.bb
+                .build_int_unsigned_rem(llvm_lhs.into_int_value(), llvm_rhs.into_int_value(), "")
         };
 
         return rem.unwrap().into();
@@ -324,267 +347,235 @@ fn gen_rval_rem<'ctx>(
 }
 
 fn gen_rval_and<'ctx>(
+    ctx: &'ctx RvalGenCtx,
     lhs: &hir::Value,
     rhs: &hir::Value,
-    bb: &inkwell::builder::Builder<'ctx>,
-    ret: Option<&PointerValue<'ctx>>,
-    endb: Option<&BasicBlock<'ctx>>,
-    ctx: &'ctx LLVMContext,
-    store: &hir::Store,
-    tab: &hir::SymbolTab,
 ) -> BasicValueEnum<'ctx> {
     /*
      * // TODO: add documentation
      */
 
-    let lhs = gen_rval(lhs, bb, ret, endb, ctx, store, tab);
-    let rhs = gen_rval(rhs, bb, ret, endb, ctx, store, tab);
+    let lhs = gen_rval(ctx, lhs);
+    let rhs = gen_rval(ctx, rhs);
 
-    let and = bb.build_and(lhs.into_int_value(), rhs.into_int_value(), "");
+    let and = ctx
+        .bb
+        .build_and(lhs.into_int_value(), rhs.into_int_value(), "");
     return and.unwrap().into();
 }
 
 fn gen_rval_or<'ctx>(
+    ctx: &'ctx RvalGenCtx,
     lhs: &hir::Value,
     rhs: &hir::Value,
-    bb: &inkwell::builder::Builder<'ctx>,
-    ret: Option<&PointerValue<'ctx>>,
-    endb: Option<&BasicBlock<'ctx>>,
-    ctx: &'ctx LLVMContext,
-    store: &hir::Store,
-    tab: &hir::SymbolTab,
 ) -> BasicValueEnum<'ctx> {
     /*
      * // TODO: add documentation
      */
 
-    let lhs = gen_rval(lhs, bb, ret, endb, ctx, store, tab);
-    let rhs = gen_rval(rhs, bb, ret, endb, ctx, store, tab);
+    let lhs = gen_rval(ctx, lhs);
+    let rhs = gen_rval(ctx, rhs);
 
-    let or = bb.build_or(lhs.into_int_value(), rhs.into_int_value(), "");
+    let or = ctx
+        .bb
+        .build_or(lhs.into_int_value(), rhs.into_int_value(), "");
     return or.unwrap().into();
 }
 
 fn gen_rval_xor<'ctx>(
+    ctx: &'ctx RvalGenCtx,
     lhs: &hir::Value,
     rhs: &hir::Value,
-    bb: &inkwell::builder::Builder<'ctx>,
-    ret: Option<&PointerValue<'ctx>>,
-    endb: Option<&BasicBlock<'ctx>>,
-    ctx: &'ctx LLVMContext,
-    store: &hir::Store,
-    tab: &hir::SymbolTab,
 ) -> BasicValueEnum<'ctx> {
     /*
      * // TODO: add documentation
      */
 
-    let lhs = gen_rval(lhs, bb, ret, endb, ctx, store, tab);
-    let rhs = gen_rval(rhs, bb, ret, endb, ctx, store, tab);
+    let lhs = gen_rval(ctx, lhs);
+    let rhs = gen_rval(ctx, rhs);
 
-    let xor = bb.build_xor(lhs.into_int_value(), rhs.into_int_value(), "");
+    let xor = ctx
+        .bb
+        .build_xor(lhs.into_int_value(), rhs.into_int_value(), "");
     return xor.unwrap().into();
 }
 
 fn gen_rval_shl<'ctx>(
+    ctx: &'ctx RvalGenCtx,
     lhs: &hir::Value,
     rhs: &hir::Value,
-    bb: &inkwell::builder::Builder<'ctx>,
-    ret: Option<&PointerValue<'ctx>>,
-    endb: Option<&BasicBlock<'ctx>>,
-    ctx: &'ctx LLVMContext,
-    store: &hir::Store,
-    tab: &hir::SymbolTab,
 ) -> BasicValueEnum<'ctx> {
     /*
      * // TODO: add documentation
      */
 
-    let lhs = gen_rval(lhs, bb, ret, endb, ctx, store, tab);
-    let rhs = gen_rval(rhs, bb, ret, endb, ctx, store, tab);
+    let lhs = gen_rval(ctx, lhs);
+    let rhs = gen_rval(ctx, rhs);
 
-    let shl = bb.build_left_shift(lhs.into_int_value(), rhs.into_int_value(), "");
+    let shl = ctx
+        .bb
+        .build_left_shift(lhs.into_int_value(), rhs.into_int_value(), "");
     return shl.unwrap().into();
 }
 
 fn gen_rval_shr<'ctx>(
+    ctx: &'ctx RvalGenCtx,
     lhs: &hir::Value,
     rhs: &hir::Value,
-    bb: &inkwell::builder::Builder<'ctx>,
-    ret: Option<&PointerValue<'ctx>>,
-    endb: Option<&BasicBlock<'ctx>>,
-    ctx: &'ctx LLVMContext,
-    store: &hir::Store,
-    tab: &hir::SymbolTab,
 ) -> BasicValueEnum<'ctx> {
     /*
      * // TODO: add documentation
      */
 
-    let sign_extend = get_type(lhs, &TypeInferenceCtx { store, tab })
-        .expect("Failed to get type")
-        .is_signed_primitive();
+    let sign_extend = get_type(
+        lhs,
+        &TypeInferenceCtx {
+            store: ctx.store,
+            tab: ctx.tab,
+        },
+    )
+    .expect("Failed to get type")
+    .is_signed_primitive();
 
-    let lhs = gen_rval(lhs, bb, ret, endb, ctx, store, tab);
-    let rhs = gen_rval(rhs, bb, ret, endb, ctx, store, tab);
+    let lhs = gen_rval(ctx, lhs);
+    let rhs = gen_rval(ctx, rhs);
 
-    let shr = bb.build_right_shift(lhs.into_int_value(), rhs.into_int_value(), sign_extend, "");
+    let shr = ctx
+        .bb
+        .build_right_shift(lhs.into_int_value(), rhs.into_int_value(), sign_extend, "");
     return shr.unwrap().into();
 }
 
 fn gen_rval_rol<'ctx>(
+    ctx: &'ctx RvalGenCtx,
     lhs: &hir::Value,
     rhs: &hir::Value,
-    bb: &inkwell::builder::Builder<'ctx>,
-    ret: Option<&PointerValue<'ctx>>,
-    endb: Option<&BasicBlock<'ctx>>,
-    ctx: &'ctx LLVMContext,
-    store: &hir::Store,
-    tab: &hir::SymbolTab,
 ) -> BasicValueEnum<'ctx> {
     /*
      * // TODO: add documentation
      */
 
-    let _lhs = gen_rval(lhs, bb, ret, endb, ctx, store, tab);
-    let _rhs = gen_rval(rhs, bb, ret, endb, ctx, store, tab);
+    let _lhs = gen_rval(ctx, lhs);
+    let _rhs = gen_rval(ctx, rhs);
 
     // TODO: implement rotate left
     unimplemented!()
 }
 
 fn gen_rval_ror<'ctx>(
+    ctx: &'ctx RvalGenCtx,
     lhs: &hir::Value,
     rhs: &hir::Value,
-    bb: &inkwell::builder::Builder<'ctx>,
-    ret: Option<&PointerValue<'ctx>>,
-    endb: Option<&BasicBlock<'ctx>>,
-    ctx: &'ctx LLVMContext,
-    store: &hir::Store,
-    tab: &hir::SymbolTab,
 ) -> BasicValueEnum<'ctx> {
     /*
      * // TODO: add documentation
      */
 
-    let _lhs = gen_rval(lhs, bb, ret, endb, ctx, store, tab);
-    let _rhs = gen_rval(rhs, bb, ret, endb, ctx, store, tab);
+    let _lhs = gen_rval(ctx, lhs);
+    let _rhs = gen_rval(ctx, rhs);
 
     // TODO: implement rotate right
     unimplemented!()
 }
 
 fn gen_rval_land<'ctx>(
+    ctx: &'ctx RvalGenCtx,
     lhs: &hir::Value,
     rhs: &hir::Value,
-    bb: &inkwell::builder::Builder<'ctx>,
-    ret: Option<&PointerValue<'ctx>>,
-    endb: Option<&BasicBlock<'ctx>>,
-    ctx: &'ctx LLVMContext,
-    store: &hir::Store,
-    tab: &hir::SymbolTab,
 ) -> BasicValueEnum<'ctx> {
     /*
      * // TODO: add documentation
      */
 
-    let parent_function = bb.get_insert_block().unwrap().get_parent().unwrap();
-    let bool = ctx.bool_type();
+    let parent_function = ctx.bb.get_insert_block().unwrap().get_parent().unwrap();
+    let bool = ctx.llvm.bool_type();
 
-    let rhs_bb = ctx.append_basic_block(parent_function, "land_rhs");
-    let end_bb = ctx.append_basic_block(parent_function, "land_join");
+    let rhs_bb = ctx.llvm.append_basic_block(parent_function, "land_rhs");
+    let end_bb = ctx.llvm.append_basic_block(parent_function, "land_join");
 
     /**************************************************************************/
     // 1. Allocate space for the result
-    let land_result = bb.build_alloca(bool, "land_result").unwrap();
+    let land_result = ctx.bb.build_alloca(bool, "land_result").unwrap();
 
     /**************************************************************************/
     // 2. Evaluate LHS; if true, skip RHS
-    let lhs_val = gen_rval(lhs, bb, ret, endb, ctx, store, tab);
-    bb.build_store(land_result, lhs_val).unwrap();
-    bb.build_conditional_branch(lhs_val.into_int_value(), rhs_bb, end_bb)
+    let lhs_val = gen_rval(ctx, lhs);
+    ctx.bb.build_store(land_result, lhs_val).unwrap();
+    ctx.bb
+        .build_conditional_branch(lhs_val.into_int_value(), rhs_bb, end_bb)
         .unwrap();
 
     /**************************************************************************/
     // 3. Evaluate RHS
-    bb.position_at_end(rhs_bb);
-    let rhs_val = gen_rval(rhs, bb, ret, endb, ctx, store, tab);
-    bb.build_store(land_result, rhs_val).unwrap();
-    bb.build_unconditional_branch(end_bb).unwrap();
+    ctx.bb.position_at_end(rhs_bb);
+    let rhs_val = gen_rval(ctx, rhs);
+    ctx.bb.build_store(land_result, rhs_val).unwrap();
+    ctx.bb.build_unconditional_branch(end_bb).unwrap();
 
     /**************************************************************************/
     // 4. Join block and load result
-    bb.position_at_end(end_bb);
-    let load = bb.build_load(bool, land_result, "land_load").unwrap();
+    ctx.bb.position_at_end(end_bb);
+    let load = ctx.bb.build_load(bool, land_result, "land_load").unwrap();
     load.into()
 }
 
 fn gen_rval_lor<'ctx>(
+    ctx: &'ctx RvalGenCtx,
     lhs: &hir::Value,
     rhs: &hir::Value,
-    bb: &inkwell::builder::Builder<'ctx>,
-    ret: Option<&PointerValue<'ctx>>,
-    endb: Option<&BasicBlock<'ctx>>,
-    ctx: &'ctx LLVMContext,
-    store: &hir::Store,
-    tab: &hir::SymbolTab,
 ) -> BasicValueEnum<'ctx> {
     /*
      * // TODO: add documentation
      */
 
-    let parent_function = bb.get_insert_block().unwrap().get_parent().unwrap();
-    let bool = ctx.bool_type();
+    let parent_function = ctx.bb.get_insert_block().unwrap().get_parent().unwrap();
+    let bool = ctx.llvm.bool_type();
 
-    let rhs_bb = ctx.append_basic_block(parent_function, "lor_rhs");
-    let end_bb = ctx.append_basic_block(parent_function, "lor_join");
+    let rhs_bb = ctx.llvm.append_basic_block(parent_function, "lor_rhs");
+    let end_bb = ctx.llvm.append_basic_block(parent_function, "lor_join");
 
     /**************************************************************************/
     // 1. Allocate space for the result
-    let lor_result = bb.build_alloca(bool, "lor_result").unwrap();
+    let lor_result = ctx.bb.build_alloca(bool, "lor_result").unwrap();
 
     /**************************************************************************/
     // 2. Evaluate LHS; if true, skip RHS
-    let lhs_val = gen_rval(lhs, bb, ret, endb, ctx, store, tab);
-    bb.build_store(lor_result, lhs_val).unwrap();
-    bb.build_conditional_branch(lhs_val.into_int_value(), end_bb, rhs_bb)
+    let lhs_val = gen_rval(ctx, lhs);
+    ctx.bb.build_store(lor_result, lhs_val).unwrap();
+    ctx.bb
+        .build_conditional_branch(lhs_val.into_int_value(), end_bb, rhs_bb)
         .unwrap();
 
     /**************************************************************************/
     // 3. Evaluate RHS
-    bb.position_at_end(rhs_bb);
-    let rhs_val = gen_rval(rhs, bb, ret, endb, ctx, store, tab);
-    bb.build_store(lor_result, rhs_val).unwrap();
-    bb.build_unconditional_branch(end_bb).unwrap();
+    ctx.bb.position_at_end(rhs_bb);
+    let rhs_val = gen_rval(ctx, rhs);
+    ctx.bb.build_store(lor_result, rhs_val).unwrap();
+    ctx.bb.build_unconditional_branch(end_bb).unwrap();
 
     /**************************************************************************/
     // 4. Join block and load result
-    bb.position_at_end(end_bb);
-    let load = bb.build_load(bool, lor_result, "lor_load").unwrap();
+    ctx.bb.position_at_end(end_bb);
+    let load = ctx.bb.build_load(bool, lor_result, "lor_load").unwrap();
     load.into()
 }
 
 fn gen_rval_lt<'ctx>(
+    ctx: &'ctx RvalGenCtx,
     lhs: &hir::Value,
     rhs: &hir::Value,
-    bb: &inkwell::builder::Builder<'ctx>,
-    ret: Option<&PointerValue<'ctx>>,
-    endb: Option<&BasicBlock<'ctx>>,
-    ctx: &'ctx LLVMContext,
-    store: &hir::Store,
-    tab: &hir::SymbolTab,
 ) -> BasicValueEnum<'ctx> {
     /*
      * // TODO: add documentation
      */
 
-    let llvm_lhs = gen_rval(lhs, bb, ret, endb, ctx, store, tab);
-    let llvm_rhs = gen_rval(rhs, bb, ret, endb, ctx, store, tab);
+    let llvm_lhs = gen_rval(ctx, lhs);
+    let llvm_rhs = gen_rval(ctx, rhs);
     let lhs_ty = llvm_lhs.get_type();
     let rhs_ty = llvm_rhs.get_type();
 
     if lhs_ty.is_float_type() && rhs_ty.is_float_type() {
-        let fcmp = bb.build_float_compare(
+        let fcmp = ctx.bb.build_float_compare(
             inkwell::FloatPredicate::OLT,
             llvm_lhs.into_float_value(),
             llvm_rhs.into_float_value(),
@@ -592,19 +583,25 @@ fn gen_rval_lt<'ctx>(
         );
         return fcmp.unwrap().into();
     } else if lhs_ty.is_int_type() && rhs_ty.is_int_type() {
-        let is_signed = get_type(lhs, &TypeInferenceCtx { store, tab })
-            .expect("Failed to get type")
-            .is_signed_primitive();
+        let is_signed = get_type(
+            lhs,
+            &TypeInferenceCtx {
+                store: ctx.store,
+                tab: ctx.tab,
+            },
+        )
+        .expect("Failed to get type")
+        .is_signed_primitive();
 
         let cmp = if is_signed {
-            bb.build_int_compare(
+            ctx.bb.build_int_compare(
                 inkwell::IntPredicate::SLT,
                 llvm_lhs.into_int_value(),
                 llvm_rhs.into_int_value(),
                 "",
             )
         } else {
-            bb.build_int_compare(
+            ctx.bb.build_int_compare(
                 inkwell::IntPredicate::ULT,
                 llvm_lhs.into_int_value(),
                 llvm_rhs.into_int_value(),
@@ -619,26 +616,21 @@ fn gen_rval_lt<'ctx>(
 }
 
 fn gen_rval_gt<'ctx>(
+    ctx: &'ctx RvalGenCtx,
     lhs: &hir::Value,
     rhs: &hir::Value,
-    bb: &inkwell::builder::Builder<'ctx>,
-    ret: Option<&PointerValue<'ctx>>,
-    endb: Option<&BasicBlock<'ctx>>,
-    ctx: &'ctx LLVMContext,
-    store: &hir::Store,
-    tab: &hir::SymbolTab,
 ) -> BasicValueEnum<'ctx> {
     /*
      * // TODO: add documentation
      */
 
-    let llvm_lhs = gen_rval(lhs, bb, ret, endb, ctx, store, tab);
-    let llvm_rhs = gen_rval(rhs, bb, ret, endb, ctx, store, tab);
+    let llvm_lhs = gen_rval(ctx, lhs);
+    let llvm_rhs = gen_rval(ctx, rhs);
     let lhs_ty = llvm_lhs.get_type();
     let rhs_ty = llvm_rhs.get_type();
 
     if lhs_ty.is_float_type() && rhs_ty.is_float_type() {
-        let fcmp = bb.build_float_compare(
+        let fcmp = ctx.bb.build_float_compare(
             inkwell::FloatPredicate::OGT,
             llvm_lhs.into_float_value(),
             llvm_rhs.into_float_value(),
@@ -646,19 +638,25 @@ fn gen_rval_gt<'ctx>(
         );
         return fcmp.unwrap().into();
     } else if lhs_ty.is_int_type() && rhs_ty.is_int_type() {
-        let is_signed = get_type(lhs, &TypeInferenceCtx { store, tab })
-            .expect("Failed to get type")
-            .is_signed_primitive();
+        let is_signed = get_type(
+            lhs,
+            &TypeInferenceCtx {
+                store: ctx.store,
+                tab: ctx.tab,
+            },
+        )
+        .expect("Failed to get type")
+        .is_signed_primitive();
 
         let cmp = if is_signed {
-            bb.build_int_compare(
+            ctx.bb.build_int_compare(
                 inkwell::IntPredicate::SGT,
                 llvm_lhs.into_int_value(),
                 llvm_rhs.into_int_value(),
                 "",
             )
         } else {
-            bb.build_int_compare(
+            ctx.bb.build_int_compare(
                 inkwell::IntPredicate::UGT,
                 llvm_lhs.into_int_value(),
                 llvm_rhs.into_int_value(),
@@ -673,26 +671,21 @@ fn gen_rval_gt<'ctx>(
 }
 
 fn gen_rval_lte<'ctx>(
+    ctx: &'ctx RvalGenCtx,
     lhs: &hir::Value,
     rhs: &hir::Value,
-    bb: &inkwell::builder::Builder<'ctx>,
-    ret: Option<&PointerValue<'ctx>>,
-    endb: Option<&BasicBlock<'ctx>>,
-    ctx: &'ctx LLVMContext,
-    store: &hir::Store,
-    tab: &hir::SymbolTab,
 ) -> BasicValueEnum<'ctx> {
     /*
      * // TODO: add documentation
      */
 
-    let llvm_lhs = gen_rval(lhs, bb, ret, endb, ctx, store, tab);
-    let llvm_rhs = gen_rval(rhs, bb, ret, endb, ctx, store, tab);
+    let llvm_lhs = gen_rval(ctx, lhs);
+    let llvm_rhs = gen_rval(ctx, rhs);
     let lhs_ty = llvm_lhs.get_type();
     let rhs_ty = llvm_rhs.get_type();
 
     if lhs_ty.is_float_type() && rhs_ty.is_float_type() {
-        let fcmp = bb.build_float_compare(
+        let fcmp = ctx.bb.build_float_compare(
             inkwell::FloatPredicate::OLE,
             llvm_lhs.into_float_value(),
             llvm_rhs.into_float_value(),
@@ -700,19 +693,25 @@ fn gen_rval_lte<'ctx>(
         );
         return fcmp.unwrap().into();
     } else if lhs_ty.is_int_type() && rhs_ty.is_int_type() {
-        let is_signed = get_type(lhs, &TypeInferenceCtx { store, tab })
-            .expect("Failed to get type")
-            .is_signed_primitive();
+        let is_signed = get_type(
+            lhs,
+            &TypeInferenceCtx {
+                store: ctx.store,
+                tab: ctx.tab,
+            },
+        )
+        .expect("Failed to get type")
+        .is_signed_primitive();
 
         let cmp = if is_signed {
-            bb.build_int_compare(
+            ctx.bb.build_int_compare(
                 inkwell::IntPredicate::SLE,
                 llvm_lhs.into_int_value(),
                 llvm_rhs.into_int_value(),
                 "",
             )
         } else {
-            bb.build_int_compare(
+            ctx.bb.build_int_compare(
                 inkwell::IntPredicate::ULE,
                 llvm_lhs.into_int_value(),
                 llvm_rhs.into_int_value(),
@@ -727,26 +726,21 @@ fn gen_rval_lte<'ctx>(
 }
 
 fn gen_rval_gte<'ctx>(
+    ctx: &'ctx RvalGenCtx,
     lhs: &hir::Value,
     rhs: &hir::Value,
-    bb: &inkwell::builder::Builder<'ctx>,
-    ret: Option<&PointerValue<'ctx>>,
-    endb: Option<&BasicBlock<'ctx>>,
-    ctx: &'ctx LLVMContext,
-    store: &hir::Store,
-    tab: &hir::SymbolTab,
 ) -> BasicValueEnum<'ctx> {
     /*
      * // TODO: add documentation
      */
 
-    let llvm_lhs = gen_rval(lhs, bb, ret, endb, ctx, store, tab);
-    let llvm_rhs = gen_rval(rhs, bb, ret, endb, ctx, store, tab);
+    let llvm_lhs = gen_rval(ctx, lhs);
+    let llvm_rhs = gen_rval(ctx, rhs);
     let lhs_ty = llvm_lhs.get_type();
     let rhs_ty = llvm_rhs.get_type();
 
     if lhs_ty.is_float_type() && rhs_ty.is_float_type() {
-        let fcmp = bb.build_float_compare(
+        let fcmp = ctx.bb.build_float_compare(
             inkwell::FloatPredicate::OGE,
             llvm_lhs.into_float_value(),
             llvm_rhs.into_float_value(),
@@ -754,19 +748,25 @@ fn gen_rval_gte<'ctx>(
         );
         return fcmp.unwrap().into();
     } else if lhs_ty.is_int_type() && rhs_ty.is_int_type() {
-        let is_signed = get_type(lhs, &TypeInferenceCtx { store, tab })
-            .expect("Failed to get type")
-            .is_signed_primitive();
+        let is_signed = get_type(
+            lhs,
+            &TypeInferenceCtx {
+                store: ctx.store,
+                tab: ctx.tab,
+            },
+        )
+        .expect("Failed to get type")
+        .is_signed_primitive();
 
         let cmp = if is_signed {
-            bb.build_int_compare(
+            ctx.bb.build_int_compare(
                 inkwell::IntPredicate::SGE,
                 llvm_lhs.into_int_value(),
                 llvm_rhs.into_int_value(),
                 "",
             )
         } else {
-            bb.build_int_compare(
+            ctx.bb.build_int_compare(
                 inkwell::IntPredicate::UGE,
                 llvm_lhs.into_int_value(),
                 llvm_rhs.into_int_value(),
@@ -781,26 +781,21 @@ fn gen_rval_gte<'ctx>(
 }
 
 fn gen_rval_eq<'ctx>(
+    ctx: &'ctx RvalGenCtx,
     lhs: &hir::Value,
     rhs: &hir::Value,
-    bb: &inkwell::builder::Builder<'ctx>,
-    ret: Option<&PointerValue<'ctx>>,
-    endb: Option<&BasicBlock<'ctx>>,
-    ctx: &'ctx LLVMContext,
-    store: &hir::Store,
-    tab: &hir::SymbolTab,
 ) -> BasicValueEnum<'ctx> {
     /*
      * // TODO: add documentation
      */
 
-    let lhs = gen_rval(lhs, bb, ret, endb, ctx, store, tab);
-    let rhs = gen_rval(rhs, bb, ret, endb, ctx, store, tab);
+    let lhs = gen_rval(ctx, lhs);
+    let rhs = gen_rval(ctx, rhs);
     let lhs_ty = lhs.get_type();
     let rhs_ty = rhs.get_type();
 
     if lhs_ty.is_float_type() && rhs_ty.is_float_type() {
-        let fcmp = bb.build_float_compare(
+        let fcmp = ctx.bb.build_float_compare(
             inkwell::FloatPredicate::OEQ,
             lhs.into_float_value(),
             rhs.into_float_value(),
@@ -808,7 +803,7 @@ fn gen_rval_eq<'ctx>(
         );
         return fcmp.unwrap().into();
     } else if lhs_ty.is_int_type() && rhs_ty.is_int_type() {
-        let icmp = bb.build_int_compare(
+        let icmp = ctx.bb.build_int_compare(
             inkwell::IntPredicate::EQ,
             lhs.into_int_value(),
             rhs.into_int_value(),
@@ -821,26 +816,21 @@ fn gen_rval_eq<'ctx>(
 }
 
 fn gen_rval_ne<'ctx>(
+    ctx: &'ctx RvalGenCtx,
     lhs: &hir::Value,
     rhs: &hir::Value,
-    bb: &inkwell::builder::Builder<'ctx>,
-    ret: Option<&PointerValue<'ctx>>,
-    endb: Option<&BasicBlock<'ctx>>,
-    ctx: &'ctx LLVMContext,
-    store: &hir::Store,
-    tab: &hir::SymbolTab,
 ) -> BasicValueEnum<'ctx> {
     /*
      * // TODO: add documentation
      */
 
-    let lhs = gen_rval(lhs, bb, ret, endb, ctx, store, tab);
-    let rhs = gen_rval(rhs, bb, ret, endb, ctx, store, tab);
+    let lhs = gen_rval(ctx, lhs);
+    let rhs = gen_rval(ctx, rhs);
     let lhs_ty = lhs.get_type();
     let rhs_ty = rhs.get_type();
 
     if lhs_ty.is_float_type() && rhs_ty.is_float_type() {
-        let fcmp = bb.build_float_compare(
+        let fcmp = ctx.bb.build_float_compare(
             inkwell::FloatPredicate::ONE,
             lhs.into_float_value(),
             rhs.into_float_value(),
@@ -848,7 +838,7 @@ fn gen_rval_ne<'ctx>(
         );
         return fcmp.unwrap().into();
     } else if lhs_ty.is_int_type() && rhs_ty.is_int_type() {
-        let icmp = bb.build_int_compare(
+        let icmp = ctx.bb.build_int_compare(
             inkwell::IntPredicate::NE,
             lhs.into_int_value(),
             rhs.into_int_value(),
@@ -860,36 +850,51 @@ fn gen_rval_ne<'ctx>(
     }
 }
 
-fn gen_return<'ctx>(
-    value: &hir::Value,
-    bb: &inkwell::builder::Builder<'ctx>,
-    ret: Option<&PointerValue<'ctx>>,
-    endb: Option<&BasicBlock<'ctx>>,
-    ctx: &'ctx LLVMContext,
-    store: &hir::Store,
-    tab: &hir::SymbolTab,
-) {
+/*
+hir::Value::If {
+           condition,
+           true_branch,
+           false_branch,
+       } => {
+           // TODO: implement if expression codegen
+           unimplemented!()
+       }
+
+       hir::Value::While { condition, body } => {
+           // TODO: implement while loop codegen
+           unimplemented!()
+       }
+
+       hir::Value::Loop { body } => {
+           // TODO: implement loop codegen
+           unimplemented!()
+       }
+
+       hir::Value::Break { label } => {
+           // TODO: implement break codegen
+           unimplemented!()
+       }
+
+       hir::Value::Continue { label } => {
+           // TODO: implement continue codegen
+           unimplemented!()
+       }
+        */
+
+fn gen_return<'ctx>(ctx: &'ctx RvalGenCtx, value: &hir::Value) {
     /*
      * // TODO: add documentation
      */
 
-    let llvm_value = gen_rval(value, &bb, ret, endb, ctx, store, tab);
+    let llvm_value = gen_rval(ctx, value);
 
-    bb.build_store(*ret.expect("return outside function"), llvm_value)
-        .unwrap();
-
-    bb.build_unconditional_branch(*endb.expect("return outside function"))
-        .unwrap();
+    ctx.bb.build_store(*ctx.ret, llvm_value).unwrap();
+    ctx.bb.build_unconditional_branch(*ctx.endb).unwrap();
 }
 
 pub(crate) fn gen_rval<'ctx>(
+    ctx: &'ctx RvalGenCtx,
     hir_value: &hir::Value,
-    bb: &inkwell::builder::Builder<'ctx>,
-    ret: Option<&PointerValue<'ctx>>,
-    endb: Option<&BasicBlock<'ctx>>,
-    ctx: &'ctx LLVMContext,
-    store: &hir::Store,
-    tab: &hir::SymbolTab,
 ) -> BasicValueEnum<'ctx> {
     match hir_value {
         hir::Value::Unit => gen_rval_lit_unit(ctx),
@@ -933,30 +938,30 @@ pub(crate) fn gen_rval<'ctx>(
         }
 
         hir::Value::Binary { left, op, right } => {
-            let lhs = &store[left].borrow();
-            let rhs = &store[right].borrow();
+            let lhs = &ctx.store[left].borrow();
+            let rhs = &ctx.store[right].borrow();
 
             match op {
-                hir::BinaryOp::Add => gen_rval_add(lhs, rhs, bb, ret, endb, ctx, store, tab),
-                hir::BinaryOp::Sub => gen_rval_sub(lhs, rhs, bb, ret, endb, ctx, store, tab),
-                hir::BinaryOp::Mul => gen_rval_mul(lhs, rhs, bb, ret, endb, ctx, store, tab),
-                hir::BinaryOp::Div => gen_rval_div(lhs, rhs, bb, ret, endb, ctx, store, tab),
-                hir::BinaryOp::Mod => gen_rval_rem(lhs, rhs, bb, ret, endb, ctx, store, tab),
-                hir::BinaryOp::And => gen_rval_and(lhs, rhs, bb, ret, endb, ctx, store, tab),
-                hir::BinaryOp::Or => gen_rval_or(lhs, rhs, bb, ret, endb, ctx, store, tab),
-                hir::BinaryOp::Xor => gen_rval_xor(lhs, rhs, bb, ret, endb, ctx, store, tab),
-                hir::BinaryOp::Shl => gen_rval_shl(lhs, rhs, bb, ret, endb, ctx, store, tab),
-                hir::BinaryOp::Shr => gen_rval_shr(lhs, rhs, bb, ret, endb, ctx, store, tab),
-                hir::BinaryOp::Rol => gen_rval_rol(lhs, rhs, bb, ret, endb, ctx, store, tab),
-                hir::BinaryOp::Ror => gen_rval_ror(lhs, rhs, bb, ret, endb, ctx, store, tab),
-                hir::BinaryOp::LogicAnd => gen_rval_land(lhs, rhs, bb, ret, endb, ctx, store, tab),
-                hir::BinaryOp::LogicOr => gen_rval_lor(lhs, rhs, bb, ret, endb, ctx, store, tab),
-                hir::BinaryOp::Lt => gen_rval_lt(lhs, rhs, bb, ret, endb, ctx, store, tab),
-                hir::BinaryOp::Gt => gen_rval_gt(lhs, rhs, bb, ret, endb, ctx, store, tab),
-                hir::BinaryOp::Lte => gen_rval_lte(lhs, rhs, bb, ret, endb, ctx, store, tab),
-                hir::BinaryOp::Gte => gen_rval_gte(lhs, rhs, bb, ret, endb, ctx, store, tab),
-                hir::BinaryOp::Eq => gen_rval_eq(lhs, rhs, bb, ret, endb, ctx, store, tab),
-                hir::BinaryOp::Ne => gen_rval_ne(lhs, rhs, bb, ret, endb, ctx, store, tab),
+                hir::BinaryOp::Add => gen_rval_add(ctx, lhs, rhs),
+                hir::BinaryOp::Sub => gen_rval_sub(ctx, lhs, rhs),
+                hir::BinaryOp::Mul => gen_rval_mul(ctx, lhs, rhs),
+                hir::BinaryOp::Div => gen_rval_div(ctx, lhs, rhs),
+                hir::BinaryOp::Mod => gen_rval_rem(ctx, lhs, rhs),
+                hir::BinaryOp::And => gen_rval_and(ctx, lhs, rhs),
+                hir::BinaryOp::Or => gen_rval_or(ctx, lhs, rhs),
+                hir::BinaryOp::Xor => gen_rval_xor(ctx, lhs, rhs),
+                hir::BinaryOp::Shl => gen_rval_shl(ctx, lhs, rhs),
+                hir::BinaryOp::Shr => gen_rval_shr(ctx, lhs, rhs),
+                hir::BinaryOp::Rol => gen_rval_rol(ctx, lhs, rhs),
+                hir::BinaryOp::Ror => gen_rval_ror(ctx, lhs, rhs),
+                hir::BinaryOp::LogicAnd => gen_rval_land(ctx, lhs, rhs),
+                hir::BinaryOp::LogicOr => gen_rval_lor(ctx, lhs, rhs),
+                hir::BinaryOp::Lt => gen_rval_lt(ctx, lhs, rhs),
+                hir::BinaryOp::Gt => gen_rval_gt(ctx, lhs, rhs),
+                hir::BinaryOp::Lte => gen_rval_lte(ctx, lhs, rhs),
+                hir::BinaryOp::Gte => gen_rval_gte(ctx, lhs, rhs),
+                hir::BinaryOp::Eq => gen_rval_eq(ctx, lhs, rhs),
+                hir::BinaryOp::Ne => gen_rval_ne(ctx, lhs, rhs),
             }
         }
 
@@ -1039,8 +1044,8 @@ pub(crate) fn gen_rval<'ctx>(
         }
 
         hir::Value::Return { value } => {
-            let value = &store[value].borrow();
-            gen_return(value, bb, ret, endb, ctx, store, tab);
+            let value = &ctx.store[value].borrow();
+            gen_return(ctx, value);
             gen_rval_lit_unit(ctx)
         }
 
