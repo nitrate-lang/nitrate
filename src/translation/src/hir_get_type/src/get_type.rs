@@ -6,6 +6,7 @@ use nitrate_hir::{
     },
 };
 
+#[derive(Debug)]
 pub enum TypeInferenceError {
     EnumVariantNotPresent,
     FieldAccessOnNonStruct,
@@ -21,7 +22,7 @@ pub enum TypeInferenceError {
 
 pub struct TypeInferenceCtx<'a> {
     pub store: &'a Store,
-    pub symbol_tab: &'a SymbolTab,
+    pub tab: &'a SymbolTab,
 }
 
 pub fn get_type(value: &Value, ctx: &TypeInferenceCtx) -> Result<Type, TypeInferenceError> {
@@ -68,7 +69,7 @@ pub fn get_type(value: &Value, ctx: &TypeInferenceCtx) -> Result<Type, TypeInfer
         Value::StructObject {
             struct_path,
             fields: _,
-        } => match ctx.symbol_tab.get_type(struct_path) {
+        } => match ctx.tab.get_type(struct_path) {
             None => Err(TypeInferenceError::UnresolvedSymbol),
 
             Some(TypeDefinition::StructDef(struct_def)) => Ok(Type::Struct {
@@ -84,7 +85,7 @@ pub fn get_type(value: &Value, ctx: &TypeInferenceCtx) -> Result<Type, TypeInfer
             enum_path,
             variant,
             value: _,
-        } => match ctx.symbol_tab.get_type(enum_path) {
+        } => match ctx.tab.get_type(enum_path) {
             None => return Err(TypeInferenceError::UnresolvedSymbol),
 
             Some(TypeDefinition::EnumDef(enum_def)) => {
@@ -286,7 +287,7 @@ pub fn get_type(value: &Value, ctx: &TypeInferenceCtx) -> Result<Type, TypeInfer
             let object_type = get_type(object, ctx)?.into_id(ctx.store);
 
             let method = ctx
-                .symbol_tab
+                .tab
                 .get_method(&object_type, method_name)
                 .ok_or(TypeInferenceError::MethodNotFound)?;
 
@@ -294,7 +295,7 @@ pub fn get_type(value: &Value, ctx: &TypeInferenceCtx) -> Result<Type, TypeInfer
             Ok(ctx.store[&method.return_type].clone())
         }
 
-        Value::Symbol { path } => match ctx.symbol_tab.get_symbol(path) {
+        Value::Symbol { path } => match ctx.tab.get_symbol(path) {
             Some(SymbolId::GlobalVariable(glb)) => {
                 Ok(ctx.store[&ctx.store[glb].borrow().ty].clone())
             }

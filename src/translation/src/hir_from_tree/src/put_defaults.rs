@@ -54,7 +54,7 @@ pub(crate) fn module_put_defaults(module: &mut Module, ctx: &mut Ast2HirCtx, _lo
                 let object = &ctx.store[object as &ValueId].borrow();
                 let tyctx = TypeInferenceCtx {
                     store: &ctx.store,
-                    symbol_tab: &ctx.symbol_tab,
+                    tab: &ctx.symbol_tab,
                 };
 
                 if let Ok(object_type) = get_type(object, &tyctx).map(|t| t.into_id(&ctx.store)) {

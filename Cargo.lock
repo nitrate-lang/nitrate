@@ -857,6 +857,7 @@ dependencies = [
  "cc",
  "inkwell",
  "nitrate_hir",
+ "nitrate_hir_get_type",
  "nitrate_hir_mangle",
  "nitrate_hir_validate",
  "nitrate_llvm",

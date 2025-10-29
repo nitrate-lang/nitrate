@@ -513,7 +513,7 @@ impl Ast2Hir for ast::UnaryExpr {
                 &operand,
                 &TypeInferenceCtx {
                     store: &ctx.store,
-                    symbol_tab: &ctx.symbol_tab,
+                    tab: &ctx.symbol_tab,
                 },
             ) {
                 Ok(t) => {

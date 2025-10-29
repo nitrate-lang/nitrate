@@ -1,6 +1,7 @@
 use std::collections::BTreeSet;
 
 use crate::codegen::CodeGen;
+use crate::expr::expr_codegen;
 use inkwell::llvm_sys::prelude::{LLVMModuleRef, LLVMValueRef};
 use inkwell::module::{Linkage, Module};
 use inkwell::types::BasicType;
@@ -63,7 +64,7 @@ fn generate_global<'ctx>(
         store,
     );
 
-    let constructor_function = llvm_module.add_function(
+    let llvm_constructor_function = llvm_module.add_function(
         constructor_name.as_str(),
         ctx.void_type().fn_type(&[], false),
         Some(Linkage::Private),
@@ -71,21 +72,21 @@ fn generate_global<'ctx>(
 
     let builder = ctx.create_builder();
 
-    let entry_block = ctx.append_basic_block(constructor_function, "entry");
-    builder.position_at_end(entry_block);
+    let entry = ctx.append_basic_block(llvm_constructor_function, "entry");
+    builder.position_at_end(entry);
 
-    let initial_value = init.expect("Initial value missing");
-    let initial_value = store[initial_value].borrow().generate(ctx, store, tab);
+    let init_value = store[init.expect("Initial value missing")].borrow();
+    let llvm_init_value = expr_codegen(&init_value, &builder, None, None, ctx, store, tab);
 
     let global_ptr = llvm_global.as_pointer_value();
-    builder.build_store(global_ptr, initial_value).unwrap();
+    builder.build_store(global_ptr, llvm_init_value).unwrap();
 
     builder.build_return(None).unwrap();
 
     unsafe {
         nitrate_llvm_appendToGlobalCtors(
             llvm_module.as_mut_ptr(),
-            constructor_function.as_value_ref(),
+            llvm_constructor_function.as_value_ref(),
             65535,
         );
     }
