@@ -10,7 +10,7 @@ use nitrate_tree::{
         If, IndexAccess, Int8, Int16, Int32, Int64, Int128, IntegerLit, List, LocalVariable,
         LocalVariableKind, MethodCall, Mutability, Return, Safety, StringLit, Tuple, Type,
         TypeArgument, TypeInfo, TypePath, TypePathSegment, UInt8, UInt16, UInt32, UInt64, UInt128,
-        UnaryExpr, UnaryExprOp, WhileLoop,
+        USize, UnaryExpr, UnaryExprOp, WhileLoop,
     },
     tag::{
         ArgNameId, VariableNameId, intern_arg_name, intern_label_name, intern_parameter_name,
@@ -579,6 +579,7 @@ impl Parser<'_, '_> {
             Token::U32 => Type::UInt32(UInt32 {}),
             Token::U64 => Type::UInt64(UInt64 {}),
             Token::U128 => Type::UInt128(UInt128 {}),
+            Token::USize => Type::USize(USize {}),
             Token::I8 => Type::Int8(Int8 {}),
             Token::I16 => Type::Int16(Int16 {}),
             Token::I32 => Type::Int32(Int32 {}),

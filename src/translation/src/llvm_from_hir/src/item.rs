@@ -1,9 +1,9 @@
 use crate::codegen::CodeGen;
-use inkwell::llvm_sys::core::LLVMBuildAlloca;
+use inkwell::llvm_sys::prelude::{LLVMModuleRef, LLVMValueRef};
 use inkwell::module::{Linkage, Module};
 use inkwell::types::BasicType;
-use inkwell::values::{FunctionValue, GlobalValue};
-use nitrate_hir::hir::{LayoutCtx, PtrSize, get_align_of};
+use inkwell::values::{AsValueRef, FunctionValue, GlobalValue};
+use nitrate_hir::hir::PtrSize;
 use nitrate_hir::{Store, SymbolTab, hir::Visibility, prelude as hir};
 use nitrate_llvm::LLVMContext;
 
@@ -16,12 +16,22 @@ pub(crate) fn get_ptr_size(ctx: &LLVMContext) -> PtrSize {
     }
 }
 
+#[link(name = "nitrate_extra_llvm_ffi", kind = "static")]
+unsafe extern "C" {
+    fn nitrate_llvm_appendToGlobalCtors(
+        module: LLVMModuleRef,
+        function: LLVMValueRef,
+        priority: u32,
+    ) -> ();
+}
+
 fn generate_global<'ctx>(
     hir_global: &hir::GlobalVariable,
     llvm_global: &mut GlobalValue<'ctx>,
-    _ctx: &'ctx LLVMContext,
-    _store: &Store,
-    _tab: &SymbolTab,
+    llvm_module: &Module<'ctx>,
+    ctx: &'ctx LLVMContext,
+    store: &Store,
+    tab: &SymbolTab,
 ) {
     let linkage = match hir_global.visibility {
         Visibility::Pub => Linkage::External,
@@ -31,7 +41,35 @@ fn generate_global<'ctx>(
 
     llvm_global.set_linkage(linkage);
 
+    let constructor_type = ctx.void_type().fn_type(&[], false);
+    let constructor_function = llvm_module.add_function(
+        format!("{}_ctor", hir_global.name).as_str(),
+        constructor_type,
+        None,
+    );
+
     // TODO: insert constructor with LLVM appendToGlobalCtors
+
+    let builder = ctx.create_builder();
+
+    let entry_block = ctx.append_basic_block(constructor_function, "entry");
+    builder.position_at_end(entry_block);
+
+    let initial_value = hir_global.init.as_ref().expect("Initial value missing");
+    let initial_value = store[initial_value].borrow().generate(ctx, store, tab);
+
+    let global_ptr = llvm_global.as_pointer_value();
+    builder.build_store(global_ptr, initial_value).unwrap();
+
+    builder.build_return(None).unwrap();
+
+    unsafe {
+        nitrate_llvm_appendToGlobalCtors(
+            llvm_module.as_mut_ptr(),
+            constructor_function.as_value_ref(),
+            65535,
+        );
+    }
 }
 
 pub(crate) fn generate_function_body<'ctx>(
@@ -119,9 +157,9 @@ impl<'ctx> CodeGen<'ctx> for hir::Module {
                 hir::Item::GlobalVariable(id) => {
                     let hir_global = store[id].borrow();
                     let ty = store[&hir_global.ty].generate(ctx, store, tab);
-                    let llvm_global = module.add_global(ty, None, &hir_global.name);
+                    let mut llvm_global = module.add_global(ty, None, &hir_global.name);
 
-                    generate_global(&hir_global, &mut llvm_global.clone(), ctx, store, tab);
+                    generate_global(&hir_global, &mut llvm_global, &module, ctx, store, tab);
                 }
 
                 hir::Item::Function(id) => {

@@ -847,6 +847,7 @@ dependencies = [
 name = "nitrate_llvm_from_hir"
 version = "0.1.0"
 dependencies = [
+ "cc",
  "inkwell",
  "nitrate_hir",
  "nitrate_hir_validate",

@@ -14,9 +14,18 @@ impl ValidateHir for GlobalVariableAttribute {
 }
 
 impl ValidateHir for GlobalVariable {
-    fn verify(&self, _store: &Store, _symtab: &SymbolTab) -> Result<(), ()> {
-        // TODO: implement
-        unimplemented!()
+    fn verify(&self, store: &Store, symtab: &SymbolTab) -> Result<(), ()> {
+        for attr in &self.attributes {
+            attr.verify(store, symtab)?;
+        }
+
+        store[&self.ty].verify(store, symtab)?;
+
+        if let Some(init_expr) = &self.init {
+            store[init_expr].borrow().verify(store, symtab)?;
+        }
+
+        Ok(())
     }
 
     fn validate(self, store: &Store, symtab: &SymbolTab) -> Result<ValidHir<Self>, ()> {

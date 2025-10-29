@@ -1,5 +1,3 @@
-#![forbid(unsafe_code)]
-
 mod codegen;
 mod expr;
 mod item;

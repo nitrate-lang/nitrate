@@ -858,6 +858,18 @@ impl Ast2Hir for ast::Cast {
                 Err(_) => failed_to_cast(log),
             },
 
+            (Value::InferredInteger(value), Type::USize) => match ctx.ptr_size {
+                PtrSize::U32 => match u32::try_from(*value) {
+                    Ok(v) => Ok(Value::USize32(v)),
+                    Err(_) => failed_to_cast(log),
+                },
+
+                PtrSize::U64 => match u64::try_from(*value) {
+                    Ok(v) => Ok(Value::USize64(v)),
+                    Err(_) => failed_to_cast(log),
+                },
+            },
+
             (Value::InferredInteger(value), Type::I8) => match i8::try_from(*value) {
                 Ok(v) => Ok(Value::I8(v)),
                 Err(_) => failed_to_cast(log),
