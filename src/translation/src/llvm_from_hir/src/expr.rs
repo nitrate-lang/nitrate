@@ -644,7 +644,8 @@ pub(crate) fn expr_codegen<'ctx>(
 ) -> BasicValueEnum<'ctx> {
     match hir_value {
         hir::Value::Unit => ctx.const_struct(&[], false).into(),
-        hir::Value::Bool(x) => ctx.bool_type().const_int(*x as u64, false).into(),
+        hir::Value::Bool(true) => ctx.bool_type().const_int(1, false).into(),
+        hir::Value::Bool(false) => ctx.bool_type().const_int(0, false).into(),
         hir::Value::I8(x) => ctx.i8_type().const_int(*x as u64, true).into(),
         hir::Value::I16(x) => ctx.i16_type().const_int(*x as u64, true).into(),
         hir::Value::I32(x) => ctx.i32_type().const_int(*x as u64, true).into(),
