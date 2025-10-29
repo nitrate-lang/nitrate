@@ -3,7 +3,7 @@ use inkwell::module::{Linkage, Module};
 use inkwell::types::BasicType;
 use inkwell::values::{AsValueRef, FunctionValue, GlobalValue};
 
-use crate::{codegen::CodeGen, expr::gen_rval};
+use crate::{gen_rval::gen_rval, gencode::CodeGen};
 use nitrate_hir::{IntoStoreId, prelude as hir};
 use nitrate_hir_mangle::mangle_name;
 use nitrate_llvm::LLVMContext;
