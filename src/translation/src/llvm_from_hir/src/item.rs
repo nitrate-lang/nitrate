@@ -186,6 +186,7 @@ impl<'ctx> CodeGen<'ctx> for hir::Module {
 
                     let global_ty = hir_global_ty.generate(ctx, store, tab);
                     let mut llvm_global = module.add_global(global_ty, None, global_name.as_str());
+                    llvm_global.set_initializer(&global_ty.const_zero());
 
                     generate_global(
                         package_name,
