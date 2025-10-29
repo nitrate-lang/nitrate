@@ -45,10 +45,8 @@ fn generate_global<'ctx>(
     let constructor_function = llvm_module.add_function(
         format!("{}_ctor", hir_global.name).as_str(),
         constructor_type,
-        None,
+        Some(Linkage::Private),
     );
-
-    // TODO: insert constructor with LLVM appendToGlobalCtors
 
     let builder = ctx.create_builder();
 

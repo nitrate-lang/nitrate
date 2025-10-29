@@ -49,57 +49,164 @@ impl<'ctx> CodeGen<'ctx> for hir::Value {
                 .const_int(*x as u64, false)
                 .into(),
 
-            hir::Value::StringLit(thin_str) => todo!(),
-            hir::Value::BStringLit(thin_vec) => todo!(),
-            hir::Value::InferredInteger(_) => todo!(),
-            hir::Value::InferredFloat(ordered_float) => todo!(),
+            hir::Value::StringLit(thin_str) => {
+                // TODO: implement
+                unimplemented!()
+            }
+
+            hir::Value::BStringLit(thin_vec) => {
+                // TODO: implement
+                unimplemented!()
+            }
+
+            hir::Value::InferredInteger(_) => {
+                // TODO: implement
+                unimplemented!()
+            }
+
+            hir::Value::InferredFloat(ordered_float) => {
+                // TODO: implement
+                unimplemented!()
+            }
+
             hir::Value::StructObject {
                 struct_path,
                 fields,
-            } => todo!(),
+            } => {
+                // TODO: implement
+                unimplemented!()
+            }
+
             hir::Value::EnumVariant {
                 enum_path,
                 variant,
                 value,
-            } => todo!(),
-            hir::Value::Binary { left, op, right } => todo!(),
-            hir::Value::Unary { op, operand } => todo!(),
-            hir::Value::FieldAccess { expr, field } => todo!(),
-            hir::Value::IndexAccess { collection, index } => todo!(),
-            hir::Value::Assign { place, value } => todo!(),
-            hir::Value::Deref { place } => todo!(),
-            hir::Value::Cast { expr, to } => todo!(),
+            } => {
+                // TODO: implement
+                unimplemented!()
+            }
+
+            hir::Value::Binary { left, op, right } => {
+                // TODO: implement
+                unimplemented!()
+            }
+
+            hir::Value::Unary { op, operand } => {
+                // TODO: implement
+                unimplemented!()
+            }
+
+            hir::Value::FieldAccess { expr, field } => {
+                // TODO: implement
+                unimplemented!()
+            }
+
+            hir::Value::IndexAccess { collection, index } => {
+                // TODO: implement
+                unimplemented!()
+            }
+
+            hir::Value::Assign { place, value } => {
+                // TODO: implement
+                unimplemented!()
+            }
+
+            hir::Value::Deref { place } => {
+                // TODO: implement
+                unimplemented!()
+            }
+
+            hir::Value::Cast { expr, to } => {
+                // TODO: implement
+                unimplemented!()
+            }
+
             hir::Value::Borrow {
                 exclusive,
                 mutable,
                 place,
-            } => todo!(),
-            hir::Value::List { elements } => todo!(),
-            hir::Value::Tuple { elements } => todo!(),
+            } => {
+                // TODO: implement
+                unimplemented!()
+            }
+
+            hir::Value::List { elements } => {
+                // TODO: implement
+                unimplemented!()
+            }
+
+            hir::Value::Tuple { elements } => {
+                // TODO: implement
+                unimplemented!()
+            }
+
             hir::Value::If {
                 condition,
                 true_branch,
                 false_branch,
-            } => todo!(),
-            hir::Value::While { condition, body } => todo!(),
-            hir::Value::Loop { body } => todo!(),
-            hir::Value::Break { label } => todo!(),
-            hir::Value::Continue { label } => todo!(),
-            hir::Value::Return { value } => todo!(),
-            hir::Value::Block { block } => todo!(),
-            hir::Value::Closure { captures, callee } => todo!(),
+            } => {
+                // TODO: implement
+                unimplemented!()
+            }
+
+            hir::Value::While { condition, body } => {
+                // TODO: implement
+                unimplemented!()
+            }
+
+            hir::Value::Loop { body } => {
+                // TODO: implement
+                unimplemented!()
+            }
+
+            hir::Value::Break { label } => {
+                // TODO: implement
+                unimplemented!()
+            }
+
+            hir::Value::Continue { label } => {
+                // TODO: implement
+                unimplemented!()
+            }
+
+            hir::Value::Return { value } => {
+                // TODO: implement
+                unimplemented!()
+            }
+
+            hir::Value::Block { block } => {
+                // TODO: implement
+                unimplemented!()
+            }
+
+            hir::Value::Closure { captures, callee } => {
+                // TODO: implement
+                unimplemented!()
+            }
+
             hir::Value::Call {
                 callee,
                 positional,
                 named,
-            } => todo!(),
+            } => {
+                // TODO: implement
+                unimplemented!()
+            }
+
             hir::Value::MethodCall {
                 object,
                 method_name,
                 positional,
                 named,
-            } => todo!(),
-            hir::Value::Symbol { path } => todo!(),
+            } => {
+                // TODO: implement
+                unimplemented!()
+            }
+
+            hir::Value::Symbol { path } => {
+                // TODO: implement
+                unimplemented!()
+            }
         }
     }
 }
