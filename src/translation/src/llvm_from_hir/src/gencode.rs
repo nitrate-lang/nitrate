@@ -7,6 +7,7 @@ use nitrate_llvm::LLVMContext;
 use crate::gen_symbol::{SymbolGenCtx, gen_module};
 
 pub fn generate_code<'ctx>(
+    package_name: &str,
     hir: ValidHir<hir::Module>,
     llvm: &'ctx LLVMContext,
     store: &hir::Store,
@@ -21,6 +22,7 @@ pub fn generate_code<'ctx>(
         tab,
         llvm,
         module,
+        package_name,
     };
 
     gen_module(&ctx, &hir);

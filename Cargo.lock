@@ -856,6 +856,7 @@ version = "0.1.0"
 dependencies = [
  "cc",
  "inkwell",
+ "interned-string",
  "nitrate_hir",
  "nitrate_hir_get_type",
  "nitrate_hir_mangle",

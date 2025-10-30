@@ -16,6 +16,8 @@ fn gen_struct_ty<'ctx>(
     let mut field_types = Vec::with_capacity(hir_struct.fields.len());
 
     for hir_field in &hir_struct.fields {
+        // FIXME: insert padding
+
         let hir_field_ty = &store[&hir_field.ty];
         field_types.push(gen_ty(hir_field_ty, ctx, store, tab));
     }
@@ -74,6 +76,8 @@ pub(crate) fn gen_ty<'ctx>(
         hir::Type::Tuple { element_types } => {
             let mut llvm_element_types = Vec::with_capacity(element_types.len());
             for element_type in element_types {
+                // FIXME: insert padding
+
                 let hir_element_type = &store[element_type];
                 llvm_element_types.push(gen_ty(hir_element_type, ctx, store, tab));
             }
@@ -86,8 +90,8 @@ pub(crate) fn gen_ty<'ctx>(
             gen_struct_ty(hir_struct, ctx, store, tab).into()
         }
 
-        hir::Type::Enum { .. } => {
-            // TODO: Handle alignment and padding properly
+        hir::Type::Enum { enum_type } => {
+            let hir_enum = &store[enum_type];
 
             let layout_ctx = hir::LayoutCtx {
                 ptr_size: get_ptr_size(ctx),
@@ -95,10 +99,20 @@ pub(crate) fn gen_ty<'ctx>(
                 tab,
             };
 
-            let size =
-                hir::get_size_of(hir_type, &layout_ctx).expect("Failed to get size of enum type");
+            let payload_size = hir::get_size_of(hir_type, &layout_ctx).expect("enum size error");
+            let payload_type = ctx.i8_type().array_type(payload_size as u32);
 
-            ctx.i8_type().array_type(size as u32).into()
+            let tag_type = match hir_enum.variants.len() {
+                ..=256 => ctx.i8_type(),
+                ..=65_536 => ctx.i16_type(),
+                ..=4_294_967_296 => ctx.i32_type(),
+                _ => ctx.i64_type(),
+            };
+
+            // FIXME: insert padding
+
+            ctx.struct_type(&[payload_type.into(), tag_type.into()], false)
+                .into()
         }
 
         hir::Type::Refine { base, .. } => {

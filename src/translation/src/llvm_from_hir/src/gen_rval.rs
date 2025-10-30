@@ -1,8 +1,11 @@
+use std::collections::HashMap;
+
 use inkwell::{
     basic_block::BasicBlock,
     values::{BasicValueEnum, PointerValue},
 };
 
+use interned_string::IString;
 use nitrate_hir::prelude as hir;
 use nitrate_hir_get_type::{TypeInferenceCtx, get_type};
 use nitrate_llvm::LLVMContext;
@@ -15,6 +18,7 @@ pub struct RvalGenCtx<'ctx, 'store, 'tab, 'builder, 'ret, 'endb> {
     pub bb: &'builder inkwell::builder::Builder<'ctx>,
     pub ret: &'ret PointerValue<'ctx>,
     pub endb: &'endb BasicBlock<'ctx>,
+    pub locals: HashMap<IString, PointerValue<'ctx>>,
 }
 
 pub(crate) fn gen_rval_lit_unit<'ctx>(ctx: &'ctx RvalGenCtx) -> BasicValueEnum<'ctx> {

@@ -9,7 +9,7 @@ use crate::ty::gen_ty;
 use nitrate_hir::{IntoStoreId, prelude as hir};
 use nitrate_hir_mangle::mangle_name;
 use nitrate_llvm::LLVMContext;
-use std::collections::BTreeSet;
+use std::collections::{BTreeSet, HashMap};
 
 #[link(name = "nitrate_extra_llvm_ffi", kind = "static")]
 unsafe extern "C" {
@@ -20,11 +20,12 @@ unsafe extern "C" {
     ) -> ();
 }
 
-pub struct SymbolGenCtx<'ctx, 'store, 'tab> {
+pub struct SymbolGenCtx<'ctx, 'store, 'tab, 'package_name> {
     pub store: &'store hir::Store,
     pub tab: &'tab hir::SymbolTab,
     pub llvm: &'ctx LLVMContext,
     pub module: Module<'ctx>,
+    pub package_name: &'package_name str,
 }
 
 pub(crate) fn get_ptr_size(ctx: &LLVMContext) -> hir::PtrSize {
@@ -38,7 +39,6 @@ pub(crate) fn get_ptr_size(ctx: &LLVMContext) -> hir::PtrSize {
 
 fn gen_global<'ctx>(
     ctx: &'ctx SymbolGenCtx,
-    package_name: &str,
     visibility: hir::Visibility,
     name: &str,
     init: Option<&hir::ValueId>,
@@ -64,7 +64,7 @@ fn gen_global<'ctx>(
     };
 
     let ctor_name = mangle_name(
-        package_name,
+        ctx.package_name,
         &format!("{}_ctor", name),
         &hir_ctor_type,
         ctx.store,
@@ -96,6 +96,7 @@ fn gen_global<'ctx>(
         bb: &bb,
         ret: &ret,
         endb: &endb,
+        locals: HashMap::new(),
     };
 
     let init_value = ctx.store[init.expect("Initial value missing")].borrow();
@@ -155,15 +156,30 @@ fn gen_function<'ctx>(
         /* Generate Body */
         bb.position_at_end(entry);
 
+        let mut rval_ctx = RvalGenCtx {
+            store: ctx.store,
+            tab: ctx.tab,
+            llvm: ctx.llvm,
+            bb: &bb,
+            ret: &ret,
+            endb: &end,
+            locals: HashMap::new(),
+        };
+
         for element in &ctx.store[body].borrow().elements {
             match element {
                 hir::BlockElement::Local(id) => {
-                    let local = &ctx.store[id].borrow();
-                    let hir_local_ty = &ctx.store[&local.ty];
-                    let local_ty = gen_ty(hir_local_ty, ctx.llvm, ctx.store, ctx.tab);
-                    let llvm_local = bb.build_alloca(local_ty, &local.name).unwrap();
+                    let hir_local = &ctx.store[id].borrow();
+                    let local_name = hir_local.name.to_owned();
+                    let hir_local_ty = &ctx.store[&hir_local.ty];
+                    let hir_local_init = &ctx.store[hir_local.init.as_ref().unwrap()].borrow();
 
-                    // TODO: Create local variable
+                    let llvm_local_ty = gen_ty(hir_local_ty, ctx.llvm, ctx.store, ctx.tab);
+                    let llvm_local = bb.build_alloca(llvm_local_ty, &local_name).unwrap();
+                    let llvm_init_value = gen_rval(&rval_ctx, hir_local_init);
+                    bb.build_store(llvm_local, llvm_init_value).unwrap();
+
+                    rval_ctx.locals.insert(local_name, llvm_local);
                 }
 
                 hir::BlockElement::Expr(_) => {
@@ -174,15 +190,6 @@ fn gen_function<'ctx>(
 
                 hir::BlockElement::Stmt(id) => {
                     let stmt = &ctx.store[id].borrow();
-                    let rval_ctx = RvalGenCtx {
-                        store: ctx.store,
-                        tab: ctx.tab,
-                        llvm: ctx.llvm,
-                        bb: &bb,
-                        ret: &ret,
-                        endb: &end,
-                    };
-
                     gen_rval(&rval_ctx, stmt);
                 }
             }
@@ -191,23 +198,18 @@ fn gen_function<'ctx>(
 }
 
 pub(crate) fn gen_module<'ctx>(ctx: &'ctx SymbolGenCtx, module: &hir::Module) {
-    let package_name = "";
-
     for item in &module.items {
         match item {
             hir::Item::TypeAliasDef(_) | hir::Item::StructDef(_) | hir::Item::EnumDef(_) => {}
 
-            hir::Item::Module(id) => {
-                let _submodule = gen_module(ctx, &ctx.store[id].borrow());
-                // TODO: Handle submodules
-            }
+            hir::Item::Module(id) => gen_module(ctx, &ctx.store[id].borrow()),
 
             hir::Item::GlobalVariable(id) => {
                 let hir_global = ctx.store[id].borrow();
                 let hir_global_ty = &ctx.store[&hir_global.ty];
 
                 let global_name =
-                    mangle_name(package_name, &hir_global.name, hir_global_ty, ctx.store);
+                    mangle_name(ctx.package_name, &hir_global.name, hir_global_ty, ctx.store);
 
                 let global_ty = gen_ty(hir_global_ty, ctx.llvm, ctx.store, ctx.tab);
                 let mut llvm_global = ctx.module.add_global(global_ty, None, global_name.as_str());
@@ -215,7 +217,6 @@ pub(crate) fn gen_module<'ctx>(ctx: &'ctx SymbolGenCtx, module: &hir::Module) {
 
                 gen_global(
                     ctx,
-                    package_name,
                     hir_global.visibility,
                     global_name.as_ref(),
                     hir_global.init.as_ref(),
@@ -249,7 +250,7 @@ pub(crate) fn gen_module<'ctx>(ctx: &'ctx SymbolGenCtx, module: &hir::Module) {
                 );
 
                 let llvm_fn_type = return_type.fn_type(&param_types, variadic);
-                let fn_name = mangle_name(package_name, &hir_fn.name, &hir_fn_type, ctx.store);
+                let fn_name = mangle_name(ctx.package_name, &hir_fn.name, &hir_fn_type, ctx.store);
                 let llvm_function = ctx
                     .module
                     .add_function(fn_name.as_str(), llvm_fn_type, None);
