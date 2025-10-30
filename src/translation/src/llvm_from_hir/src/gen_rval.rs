@@ -2,6 +2,7 @@ use std::collections::HashMap;
 
 use inkwell::{
     basic_block::BasicBlock,
+    types::BasicType,
     values::{BasicValueEnum, PointerValue},
 };
 
@@ -79,16 +80,18 @@ fn gen_rval_lit_i64<'ctx>(ctx: &'ctx RvalGenCtx, value: i64) -> BasicValueEnum<'
 
 fn gen_rval_lit_i128<'ctx>(ctx: &'ctx RvalGenCtx, value: i128) -> BasicValueEnum<'ctx> {
     /*
-     * // TODO: add documentation
+     * Direct correspondence to LLVM i128 type.
+     * Sign extension is not performed because the value is constructed
+     * from its low and high parts directly.
      */
 
     let low = (value & 0xFFFFFFFFFFFFFFFF) as u64;
     let high = ((value >> 64) & 0xFFFFFFFFFFFFFFFF) as u64;
-    let i128 = ctx
-        .llvm
+
+    ctx.llvm
         .i128_type()
-        .const_int_arbitrary_precision(&[low, high]);
-    i128.into()
+        .const_int_arbitrary_precision(&[low, high])
+        .into()
 }
 
 fn gen_rval_lit_u8<'ctx>(ctx: &'ctx RvalGenCtx, value: u8) -> BasicValueEnum<'ctx> {
@@ -129,16 +132,18 @@ fn gen_rval_lit_u64<'ctx>(ctx: &'ctx RvalGenCtx, value: u64) -> BasicValueEnum<'
 
 fn gen_rval_lit_u128<'ctx>(ctx: &'ctx RvalGenCtx, value: u128) -> BasicValueEnum<'ctx> {
     /*
-     * // TODO: add documentation
+     * Direct correspondence to LLVM i128 type.
+     * Sign extension is not performed because the value is constructed
+     * from its low and high parts directly.
      */
 
     let low = (value & 0xFFFFFFFFFFFFFFFF) as u64;
     let high = ((value >> 64) & 0xFFFFFFFFFFFFFFFF) as u64;
-    let u128 = ctx
-        .llvm
+
+    ctx.llvm
         .i128_type()
-        .const_int_arbitrary_precision(&[low, high]);
-    u128.into()
+        .const_int_arbitrary_precision(&[low, high])
+        .into()
 }
 
 fn gen_rval_lit_f32<'ctx>(ctx: &'ctx RvalGenCtx, value: f32) -> BasicValueEnum<'ctx> {
@@ -181,7 +186,11 @@ fn gen_rval_add<'ctx>(
     rhs: &hir::Value,
 ) -> BasicValueEnum<'ctx> {
     /*
-     * // TODO: add documentation
+     * Unsigned integer addition:
+     * - The result is modulo 2^n, where n is the bit width of the type.
+     *
+     * Floating-point addition:
+     * - Follows the IEEE 754 standard for floating-point arithmetic.
      */
 
     let lhs = gen_rval(ctx, lhs);
@@ -192,13 +201,17 @@ fn gen_rval_add<'ctx>(
     if lhs_ty.is_float_type() && rhs_ty.is_float_type() {
         let fadd = ctx
             .bb
-            .build_float_add(lhs.into_float_value(), rhs.into_float_value(), "");
-        return fadd.unwrap().into();
+            .build_float_add(lhs.into_float_value(), rhs.into_float_value(), "")
+            .unwrap();
+
+        return fadd.into();
     } else if lhs_ty.is_int_type() && rhs_ty.is_int_type() {
         let iadd = ctx
             .bb
-            .build_int_add(lhs.into_int_value(), rhs.into_int_value(), "");
-        return iadd.unwrap().into();
+            .build_int_add(lhs.into_int_value(), rhs.into_int_value(), "")
+            .unwrap();
+
+        return iadd.into();
     } else {
         panic!("Addition not implemented for this type");
     }
@@ -210,7 +223,11 @@ fn gen_rval_sub<'ctx>(
     rhs: &hir::Value,
 ) -> BasicValueEnum<'ctx> {
     /*
-     * // TODO: add documentation
+     * Signed and unsigned integer subtraction:
+     * - The result is modulo 2^n, where n is the bit width of the type.
+     *
+     * Floating-point subtraction:
+     * - Follows the IEEE 754 standard for floating-point arithmetic.
      */
 
     let lhs = gen_rval(ctx, lhs);
@@ -221,13 +238,17 @@ fn gen_rval_sub<'ctx>(
     if lhs_ty.is_float_type() && rhs_ty.is_float_type() {
         let fsub = ctx
             .bb
-            .build_float_sub(lhs.into_float_value(), rhs.into_float_value(), "");
-        return fsub.unwrap().into();
+            .build_float_sub(lhs.into_float_value(), rhs.into_float_value(), "")
+            .unwrap();
+
+        return fsub.into();
     } else if lhs_ty.is_int_type() && rhs_ty.is_int_type() {
         let isub = ctx
             .bb
-            .build_int_sub(lhs.into_int_value(), rhs.into_int_value(), "");
-        return isub.unwrap().into();
+            .build_int_sub(lhs.into_int_value(), rhs.into_int_value(), "")
+            .unwrap();
+
+        return isub.into();
     } else {
         panic!("Subtraction not implemented for this type");
     }
@@ -456,14 +477,33 @@ fn gen_rval_rol<'ctx>(
     rhs: &hir::Value,
 ) -> BasicValueEnum<'ctx> {
     /*
-     * // TODO: add documentation
+     * Bitwise rotate left operation formula:
+     * rol(x, n) = (x << n) | (x >> (bit_width - n))
      */
 
-    let _lhs = gen_rval(ctx, lhs);
-    let _rhs = gen_rval(ctx, rhs);
+    let lhs = gen_rval(ctx, lhs);
+    let rhs = gen_rval(ctx, rhs);
+    let bit_width = ctx.llvm.target_data().get_store_size(&lhs.get_type());
+    let bit_width_i32 = ctx.llvm.i32_type().const_int(bit_width as u64, false);
 
-    // TODO: implement rotate left
-    unimplemented!()
+    let shl = ctx
+        .bb
+        .build_left_shift(lhs.into_int_value(), rhs.into_int_value(), "")
+        .unwrap();
+
+    let sub = ctx
+        .bb
+        .build_int_sub(bit_width_i32, rhs.into_int_value(), "")
+        .unwrap();
+
+    let shr = ctx
+        .bb
+        .build_right_shift(lhs.into_int_value(), sub, false, "")
+        .unwrap();
+
+    let or = ctx.bb.build_or(shl, shr, "").unwrap();
+
+    or.into()
 }
 
 fn gen_rval_ror<'ctx>(
@@ -472,14 +512,33 @@ fn gen_rval_ror<'ctx>(
     rhs: &hir::Value,
 ) -> BasicValueEnum<'ctx> {
     /*
-     * // TODO: add documentation
+     * Bitwise rotate right operation formula:
+     * ror(x, n) = (x >> n) | (x << (bit_width - n))
      */
 
-    let _lhs = gen_rval(ctx, lhs);
-    let _rhs = gen_rval(ctx, rhs);
+    let lhs = gen_rval(ctx, lhs);
+    let rhs = gen_rval(ctx, rhs);
+    let bit_width = ctx.llvm.target_data().get_store_size(&lhs.get_type());
+    let bit_width_i32 = ctx.llvm.i32_type().const_int(bit_width as u64, false);
 
-    // TODO: implement rotate right
-    unimplemented!()
+    let shr = ctx
+        .bb
+        .build_right_shift(lhs.into_int_value(), rhs.into_int_value(), false, "")
+        .unwrap();
+
+    let sub = ctx
+        .bb
+        .build_int_sub(bit_width_i32, rhs.into_int_value(), "")
+        .unwrap();
+
+    let shl = ctx
+        .bb
+        .build_left_shift(lhs.into_int_value(), sub, "")
+        .unwrap();
+
+    let or = ctx.bb.build_or(shr, shl, "").unwrap();
+
+    or.into()
 }
 
 fn gen_rval_land<'ctx>(

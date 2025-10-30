@@ -175,7 +175,13 @@ impl Interpreter<'_> {
         };
 
         let llvm_ctx = LLVMContext::new();
-        let llvm_module = generate_code(valid_hir_module, &llvm_ctx, &store, &symbol_tab);
+        let llvm_module = generate_code(
+            package.name(),
+            valid_hir_module,
+            &llvm_ctx,
+            &store,
+            &symbol_tab,
+        );
 
         let target_file = format!(
             "{}-{}.{}.{}.ll",
