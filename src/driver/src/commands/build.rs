@@ -138,7 +138,7 @@ impl Interpreter<'_> {
             Ok(module) => module,
         };
 
-        Ok((module, ctx.store, ctx.symbol_tab))
+        Ok((module, ctx.store, ctx.tab))
     }
 
     pub(crate) fn sc_build(&mut self, _args: &BuildArgs) -> Result<(), InterpreterError> {

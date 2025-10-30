@@ -2,14 +2,16 @@ use std::collections::HashMap;
 
 use inkwell::{
     basic_block::BasicBlock,
-    types::BasicType,
+    types::{BasicType, BasicTypeEnum},
     values::{BasicValueEnum, PointerValue},
 };
 
 use interned_string::IString;
 use nitrate_hir::prelude as hir;
-use nitrate_hir_get_type::{TypeInferenceCtx, get_type};
+use nitrate_hir_get_type::HirGetType;
 use nitrate_llvm::LLVMContext;
+
+use crate::ty::gen_ty;
 
 pub struct RvalGenCtx<'ctx, 'store, 'tab, 'builder, 'ret, 'endb> {
     pub store: &'store hir::Store,
@@ -303,15 +305,10 @@ fn gen_rval_div<'ctx>(
                 .build_float_div(llvm_lhs.into_float_value(), llvm_rhs.into_float_value(), "");
         return fdiv.unwrap().into();
     } else if lhs_ty.is_int_type() && rhs_ty.is_int_type() {
-        let is_signed = get_type(
-            lhs,
-            &TypeInferenceCtx {
-                store: ctx.store,
-                tab: ctx.tab,
-            },
-        )
-        .expect("Failed to get type")
-        .is_signed_primitive();
+        let is_signed = lhs
+            .get_type(&ctx.store, &ctx.tab)
+            .expect("Failed to get type")
+            .is_signed_primitive();
 
         let div = if is_signed {
             ctx.bb
@@ -347,15 +344,10 @@ fn gen_rval_rem<'ctx>(
                 .build_float_rem(llvm_lhs.into_float_value(), llvm_rhs.into_float_value(), "");
         return frem.unwrap().into();
     } else if lhs_ty.is_int_type() && rhs_ty.is_int_type() {
-        let is_signed = get_type(
-            lhs,
-            &TypeInferenceCtx {
-                store: ctx.store,
-                tab: ctx.tab,
-            },
-        )
-        .expect("Failed to get type")
-        .is_signed_primitive();
+        let is_signed = lhs
+            .get_type(&ctx.store, &ctx.tab)
+            .expect("Failed to get type")
+            .is_signed_primitive();
 
         let rem = if is_signed {
             ctx.bb
@@ -452,15 +444,10 @@ fn gen_rval_shr<'ctx>(
      * // TODO: add documentation
      */
 
-    let sign_extend = get_type(
-        lhs,
-        &TypeInferenceCtx {
-            store: ctx.store,
-            tab: ctx.tab,
-        },
-    )
-    .expect("Failed to get type")
-    .is_signed_primitive();
+    let sign_extend = lhs
+        .get_type(&ctx.store, &ctx.tab)
+        .expect("Failed to get type")
+        .is_signed_primitive();
 
     let lhs = gen_rval(ctx, lhs);
     let rhs = gen_rval(ctx, rhs);
@@ -660,15 +647,10 @@ fn gen_rval_lt<'ctx>(
         );
         return fcmp.unwrap().into();
     } else if lhs_ty.is_int_type() && rhs_ty.is_int_type() {
-        let is_signed = get_type(
-            lhs,
-            &TypeInferenceCtx {
-                store: ctx.store,
-                tab: ctx.tab,
-            },
-        )
-        .expect("Failed to get type")
-        .is_signed_primitive();
+        let is_signed = lhs
+            .get_type(&ctx.store, &ctx.tab)
+            .expect("Failed to get type")
+            .is_signed_primitive();
 
         let cmp = if is_signed {
             ctx.bb.build_int_compare(
@@ -715,15 +697,10 @@ fn gen_rval_gt<'ctx>(
         );
         return fcmp.unwrap().into();
     } else if lhs_ty.is_int_type() && rhs_ty.is_int_type() {
-        let is_signed = get_type(
-            lhs,
-            &TypeInferenceCtx {
-                store: ctx.store,
-                tab: ctx.tab,
-            },
-        )
-        .expect("Failed to get type")
-        .is_signed_primitive();
+        let is_signed = lhs
+            .get_type(&ctx.store, &ctx.tab)
+            .expect("Failed to get type")
+            .is_signed_primitive();
 
         let cmp = if is_signed {
             ctx.bb.build_int_compare(
@@ -770,15 +747,10 @@ fn gen_rval_lte<'ctx>(
         );
         return fcmp.unwrap().into();
     } else if lhs_ty.is_int_type() && rhs_ty.is_int_type() {
-        let is_signed = get_type(
-            lhs,
-            &TypeInferenceCtx {
-                store: ctx.store,
-                tab: ctx.tab,
-            },
-        )
-        .expect("Failed to get type")
-        .is_signed_primitive();
+        let is_signed = lhs
+            .get_type(&ctx.store, &ctx.tab)
+            .expect("Failed to get type")
+            .is_signed_primitive();
 
         let cmp = if is_signed {
             ctx.bb.build_int_compare(
@@ -825,15 +797,10 @@ fn gen_rval_gte<'ctx>(
         );
         return fcmp.unwrap().into();
     } else if lhs_ty.is_int_type() && rhs_ty.is_int_type() {
-        let is_signed = get_type(
-            lhs,
-            &TypeInferenceCtx {
-                store: ctx.store,
-                tab: ctx.tab,
-            },
-        )
-        .expect("Failed to get type")
-        .is_signed_primitive();
+        let is_signed = lhs
+            .get_type(&ctx.store, &ctx.tab)
+            .expect("Failed to get type")
+            .is_signed_primitive();
 
         let cmp = if is_signed {
             ctx.bb.build_int_compare(
@@ -935,10 +902,60 @@ fn gen_if<'ctx>(
 ) -> BasicValueEnum<'ctx> {
     /*
      * // TODO: add documentation
-     * // TODO: implement if-else codegen
      */
 
-    unimplemented!()
+    let top_block = ctx.bb.get_insert_block().unwrap();
+    let current_function = top_block.get_parent().unwrap();
+
+    if let Some(false_branch) = false_branch {
+        let then_bb = ctx.llvm.append_basic_block(current_function, "if_then");
+        let else_bb = ctx.llvm.append_basic_block(current_function, "if_else");
+        let merge_bb = ctx.llvm.append_basic_block(current_function, "if_join");
+
+        let result_ty = gen_ty(
+            &true_branch.get_type(ctx.store, ctx.tab).unwrap(),
+            ctx.llvm,
+            ctx.store,
+            ctx.tab,
+        );
+
+        let result = ctx.bb.build_alloca(result_ty, "if_result").unwrap();
+        let cond_val = gen_rval(ctx, condition);
+
+        ctx.bb
+            .build_conditional_branch(cond_val.into_int_value(), then_bb, else_bb)
+            .unwrap();
+
+        ctx.bb.position_at_end(then_bb);
+        let result_val = gen_block(ctx, true_branch);
+        ctx.bb.build_store(result, result_val).unwrap();
+        ctx.bb.build_unconditional_branch(merge_bb).unwrap();
+
+        ctx.bb.position_at_end(else_bb);
+        let result_val = gen_block(ctx, false_branch);
+        ctx.bb.build_store(result, result_val).unwrap();
+        ctx.bb.build_unconditional_branch(merge_bb).unwrap();
+
+        ctx.bb.position_at_end(merge_bb);
+        let load = ctx.bb.build_load(result_ty, result, "if_load").unwrap();
+        load.into()
+    } else {
+        let then_bb = ctx.llvm.append_basic_block(current_function, "if_then");
+        let merge_bb = ctx.llvm.append_basic_block(current_function, "if_join");
+
+        let cond_val = gen_rval(ctx, condition);
+        ctx.bb
+            .build_conditional_branch(cond_val.into_int_value(), then_bb, merge_bb)
+            .unwrap();
+
+        ctx.bb.position_at_end(then_bb);
+        gen_block(ctx, true_branch);
+        ctx.bb.build_unconditional_branch(merge_bb).unwrap();
+
+        ctx.bb.position_at_end(merge_bb);
+
+        gen_rval_lit_unit(ctx)
+    }
 }
 
 fn gen_while<'ctx>(
@@ -990,6 +1007,14 @@ fn gen_return<'ctx>(ctx: &'ctx RvalGenCtx, value: &hir::Value) {
 
     ctx.bb.build_store(*ctx.ret, llvm_value).unwrap();
     ctx.bb.build_unconditional_branch(*ctx.endb).unwrap();
+}
+
+pub(crate) fn gen_block<'ctx>(
+    ctx: &'ctx RvalGenCtx,
+    hir_block: &hir::Block,
+) -> BasicValueEnum<'ctx> {
+    // TODO: implement block codegen
+    unimplemented!()
 }
 
 pub(crate) fn gen_rval<'ctx>(
@@ -1124,9 +1149,9 @@ pub(crate) fn gen_rval<'ctx>(
 
             match false_branch {
                 None => gen_if(ctx, condition, true_branch, None),
-                Some(fb) => {
-                    let fb = &ctx.store[fb].borrow();
-                    gen_if(ctx, condition, true_branch, Some(fb))
+                Some(false_branch) => {
+                    let false_branch = &ctx.store[false_branch].borrow();
+                    gen_if(ctx, condition, true_branch, Some(&false_branch))
                 }
             }
         }

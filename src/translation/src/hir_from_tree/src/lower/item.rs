@@ -44,7 +44,7 @@ impl Ast2Hir for ast::TypeAlias {
         .into_id(&ctx.store);
 
         let definition = TypeDefinition::TypeAliasDef(type_alias_id.clone());
-        ctx.symbol_tab.add_type(definition, &ctx.store);
+        ctx.tab.add_type(definition, &ctx.store);
 
         Ok(type_alias_id)
     }
@@ -120,7 +120,7 @@ impl Ast2Hir for ast::Struct {
         .into_id(&ctx.store);
 
         let definition = TypeDefinition::StructDef(struct_def_id.clone());
-        ctx.symbol_tab.add_type(definition, &ctx.store);
+        ctx.tab.add_type(definition, &ctx.store);
 
         Ok(struct_def_id)
     }
@@ -198,7 +198,7 @@ impl Ast2Hir for ast::Enum {
         .into_id(&ctx.store);
 
         let definition = TypeDefinition::EnumDef(enum_def_id.clone());
-        ctx.symbol_tab.add_type(definition, &ctx.store);
+        ctx.tab.add_type(definition, &ctx.store);
 
         Ok(enum_def_id)
     }
@@ -271,7 +271,7 @@ impl Ast2Hir for ast::GlobalVariable {
         .into_id(&ctx.store);
 
         let variable = SymbolId::GlobalVariable(global_variable_id.clone());
-        ctx.symbol_tab.add_symbol(variable, &ctx.store);
+        ctx.tab.add_symbol(variable, &ctx.store);
 
         Ok(global_variable_id)
     }
@@ -363,7 +363,7 @@ impl Ast2Hir for ast::Function {
         .into_id(&ctx.store);
 
         let function = SymbolId::Function(function_id.clone());
-        ctx.symbol_tab.add_symbol(function, &ctx.store);
+        ctx.tab.add_symbol(function, &ctx.store);
 
         Ok(function_id)
     }

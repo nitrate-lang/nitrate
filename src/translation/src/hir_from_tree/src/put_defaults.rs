@@ -1,7 +1,7 @@
 use crate::Ast2HirCtx;
 use nitrate_diagnosis::CompilerLog;
 use nitrate_hir::prelude::*;
-use nitrate_hir_get_type::{TypeInferenceCtx, get_type};
+use nitrate_hir_get_type::HirGetType;
 use std::collections::HashMap;
 
 pub(crate) fn module_put_defaults(module: &mut Module, ctx: &mut Ast2HirCtx, _log: &CompilerLog) {
@@ -14,7 +14,7 @@ pub(crate) fn module_put_defaults(module: &mut Module, ctx: &mut Ast2HirCtx, _lo
                 named,
             } => match &*ctx[callee as &ValueId].borrow() {
                 Value::Symbol { path } => {
-                    if let Some(function) = ctx.symbol_tab.get_function(path) {
+                    if let Some(function) = ctx.tab.get_function(path) {
                         let function = ctx[function].borrow();
 
                         let mut augmented = Vec::new();
@@ -52,13 +52,12 @@ pub(crate) fn module_put_defaults(module: &mut Module, ctx: &mut Ast2HirCtx, _lo
                 named,
             } => {
                 let object = &ctx.store[object as &ValueId].borrow();
-                let tyctx = TypeInferenceCtx {
-                    store: &ctx.store,
-                    tab: &ctx.symbol_tab,
-                };
 
-                if let Ok(object_type) = get_type(object, &tyctx).map(|t| t.into_id(&ctx.store)) {
-                    if let Some(method) = ctx.symbol_tab.get_method(&object_type, method_name) {
+                if let Ok(object_type) = object
+                    .get_type(&ctx.store, &ctx.tab)
+                    .map(|t| t.into_id(&ctx.store))
+                {
+                    if let Some(method) = ctx.tab.get_method(&object_type, method_name) {
                         let function = &ctx.store[method].borrow();
 
                         let mut augmented = Vec::new();

@@ -4,7 +4,7 @@ use crate::lower::lower::Ast2Hir;
 use interned_string::IString;
 use nitrate_diagnosis::CompilerLog;
 use nitrate_hir::{SymbolTab, prelude::*};
-use nitrate_hir_get_type::{TypeInferenceCtx, get_type};
+use nitrate_hir_get_type::HirGetType;
 use nitrate_token::escape_string;
 use nitrate_token_lexer::{Lexer, LexerError};
 use nitrate_tree::ast::{self as ast, UnaryExprOp};
@@ -320,7 +320,7 @@ fn metatype_source_encode(
 
 fn metatype_encode(ctx: &mut Ast2HirCtx, from: Type) -> Result<Value, EncodeErr> {
     let mut repr = String::new();
-    metatype_source_encode(&ctx.store, &ctx.symbol_tab, &from, &mut repr)?;
+    metatype_source_encode(&ctx.store, &ctx.tab, &from, &mut repr)?;
 
     let hir_meta_object = from_nitrate_expression(ctx, &repr)
         .expect("failed to lower auto-generated std::meta::Type expression");
@@ -509,13 +509,7 @@ impl Ast2Hir for ast::UnaryExpr {
                 place: operand.into_id(&ctx.store),
             }),
 
-            UnaryExprOp::Typeof => match get_type(
-                &operand,
-                &TypeInferenceCtx {
-                    store: &ctx.store,
-                    tab: &ctx.symbol_tab,
-                },
-            ) {
+            UnaryExprOp::Typeof => match operand.get_type(&ctx.store, &ctx.tab) {
                 Ok(t) => {
                     let encoded = match metatype_encode(ctx, t) {
                         Ok(v) => v,

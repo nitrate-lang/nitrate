@@ -7,7 +7,7 @@ use std::ops::Deref;
 #[derive(Debug)]
 pub struct Ast2HirCtx {
     pub store: Store,
-    pub symbol_tab: SymbolTab,
+    pub tab: SymbolTab,
     pub(crate) current_scope: Vec<String>,
     _impl_map: HashMap<TypeId, HashSet<TraitId>>,
     type_infer_id_ctr: NonZeroU32,
@@ -19,7 +19,7 @@ impl Ast2HirCtx {
     pub fn new(ptr_size: PtrSize) -> Self {
         Self {
             store: Store::new(),
-            symbol_tab: SymbolTab::default(),
+            tab: SymbolTab::default(),
             current_scope: Vec::new(),
             _impl_map: HashMap::new(),
             type_infer_id_ctr: NonZeroU32::new(1).unwrap(),

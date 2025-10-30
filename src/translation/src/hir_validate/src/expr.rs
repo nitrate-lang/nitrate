@@ -5,12 +5,7 @@ impl ValidateHir for Block {
     fn verify(&self, store: &Store, symtab: &SymbolTab) -> Result<(), ()> {
         // TODO: Ensure unconditional branches are only at the end of the block
 
-        for (i, elem) in self.elements.iter().enumerate() {
-            let is_last = i == self.elements.len() - 1;
-            if matches!(elem, BlockElement::Expr(_)) && !is_last {
-                return Err(());
-            }
-
+        for elem in &self.elements {
             match elem {
                 BlockElement::Expr(expr) => store[expr].borrow().verify(store, symtab)?,
                 BlockElement::Stmt(expr) => store[expr].borrow().verify(store, symtab)?,
