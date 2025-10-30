@@ -478,27 +478,34 @@ fn gen_rval_rol<'ctx>(
 ) -> BasicValueEnum<'ctx> {
     /*
      * Bitwise rotate left operation formula:
-     * rol(x, n) = (x << n) | (x >> (bit_width - n))
+     * rol(x, n) = (x << (n % bit_width)) | (x >> ((bit_width - (n % bit_width)) % bit_width))
      */
 
     let lhs = gen_rval(ctx, lhs);
     let rhs = gen_rval(ctx, rhs);
-    let bit_width = ctx.llvm.target_data().get_store_size(&lhs.get_type());
+    let bit_width = ctx.llvm.target_data().get_store_size(&lhs.get_type()) * 8;
     let bit_width_i32 = ctx.llvm.i32_type().const_int(bit_width as u64, false);
+
+    let reduced_n = ctx
+        .bb
+        .build_int_unsigned_rem(rhs.into_int_value(), bit_width_i32, "")
+        .unwrap();
 
     let shl = ctx
         .bb
-        .build_left_shift(lhs.into_int_value(), rhs.into_int_value(), "")
+        .build_left_shift(lhs.into_int_value(), reduced_n, "")
         .unwrap();
 
-    let sub = ctx
+    let sub = ctx.bb.build_int_sub(bit_width_i32, reduced_n, "").unwrap();
+
+    let sub_reduced = ctx
         .bb
-        .build_int_sub(bit_width_i32, rhs.into_int_value(), "")
+        .build_int_unsigned_rem(sub, bit_width_i32, "")
         .unwrap();
 
     let shr = ctx
         .bb
-        .build_right_shift(lhs.into_int_value(), sub, false, "")
+        .build_right_shift(lhs.into_int_value(), sub_reduced, false, "")
         .unwrap();
 
     let or = ctx.bb.build_or(shl, shr, "").unwrap();
@@ -513,27 +520,34 @@ fn gen_rval_ror<'ctx>(
 ) -> BasicValueEnum<'ctx> {
     /*
      * Bitwise rotate right operation formula:
-     * ror(x, n) = (x >> n) | (x << (bit_width - n))
+     * ror(x, n) = (x >> (n % bit_width)) | (x << ((bit_width - (n % bit_width)) % bit_width))
      */
 
     let lhs = gen_rval(ctx, lhs);
     let rhs = gen_rval(ctx, rhs);
-    let bit_width = ctx.llvm.target_data().get_store_size(&lhs.get_type());
+    let bit_width = ctx.llvm.target_data().get_store_size(&lhs.get_type()) * 8;
     let bit_width_i32 = ctx.llvm.i32_type().const_int(bit_width as u64, false);
+
+    let reduced_n = ctx
+        .bb
+        .build_int_unsigned_rem(rhs.into_int_value(), bit_width_i32, "")
+        .unwrap();
 
     let shr = ctx
         .bb
-        .build_right_shift(lhs.into_int_value(), rhs.into_int_value(), false, "")
+        .build_right_shift(lhs.into_int_value(), reduced_n, false, "")
         .unwrap();
 
-    let sub = ctx
+    let sub = ctx.bb.build_int_sub(bit_width_i32, reduced_n, "").unwrap();
+
+    let sub_reduced = ctx
         .bb
-        .build_int_sub(bit_width_i32, rhs.into_int_value(), "")
+        .build_int_unsigned_rem(sub, bit_width_i32, "")
         .unwrap();
 
     let shl = ctx
         .bb
-        .build_left_shift(lhs.into_int_value(), sub, "")
+        .build_left_shift(lhs.into_int_value(), sub_reduced, "")
         .unwrap();
 
     let or = ctx.bb.build_or(shr, shl, "").unwrap();
