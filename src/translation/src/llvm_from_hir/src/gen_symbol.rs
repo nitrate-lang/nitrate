@@ -76,31 +76,23 @@ fn gen_global<'ctx>(
         Some(Linkage::Private),
     );
 
-    /***********************************************************************/
-    // 3. Generate Constructor Body
     let bb = ctx.llvm.create_builder();
-
-    let entry = ctx.llvm.append_basic_block(llvm_ctor_function, "entry");
-    let endb = ctx.llvm.append_basic_block(llvm_ctor_function, "end");
-
-    bb.position_at_end(entry);
-
-    let ret = bb
-        .build_alloca(ctx.llvm.struct_type(&[], false), "ret_val")
-        .unwrap();
-
     let mut rval_ctx = RvalGenCtx {
         store: ctx.store,
         tab: ctx.tab,
         llvm: ctx.llvm,
         bb: &bb,
-        ret: &ret,
-        endb: &endb,
         locals: HashMap::new(),
         default_continue_target: Vec::new(),
         default_break_target: Vec::new(),
     };
 
+    /***********************************************************************/
+    // 3. Generate Constructor Body
+    let entry = ctx.llvm.append_basic_block(llvm_ctor_function, "entry");
+    let endb = ctx.llvm.append_basic_block(llvm_ctor_function, "end");
+
+    bb.position_at_end(entry);
     let init_value = ctx.store[init.expect("Initial value missing")].borrow();
     let llvm_init_value = gen_rval(&mut rval_ctx, &init_value);
 
@@ -140,23 +132,16 @@ fn gen_function<'ctx>(
         let bb = ctx.llvm.create_builder();
 
         let entry = ctx.llvm.append_basic_block(*llvm_function, "entry");
-        let end = ctx.llvm.append_basic_block(*llvm_function, "end");
 
         /*******************************************************************/
         /* Generate Body */
         bb.position_at_end(entry);
-
-        /* Allocate space for the return value */
-        let return_type = llvm_function.get_type().get_return_type().unwrap();
-        let ret = bb.build_alloca(return_type, "ret_val").unwrap();
 
         let mut rval_ctx = RvalGenCtx {
             store: ctx.store,
             tab: ctx.tab,
             llvm: ctx.llvm,
             bb: &bb,
-            ret: &ret,
-            endb: &end,
             locals: HashMap::new(),
             default_continue_target: Vec::new(),
             default_break_target: Vec::new(),
@@ -164,15 +149,6 @@ fn gen_function<'ctx>(
 
         let body = &ctx.store[body].borrow();
         gen_block(&mut rval_ctx, body);
-
-        /*******************************************************************/
-
-        end.move_after(bb.get_insert_block().unwrap()).unwrap();
-        bb.position_at_end(end);
-
-        // Load and return the return value
-        let ret_value = bb.build_load(return_type, ret, "ret_val_load").unwrap();
-        bb.build_return(Some(&ret_value)).unwrap();
     }
 }
 

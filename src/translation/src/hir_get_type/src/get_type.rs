@@ -45,7 +45,16 @@ impl HirGetType for Block {
     fn get_type(&self, store: &Store, tab: &SymbolTab) -> Result<Type, TypeInferenceError> {
         match self.elements.last() {
             Some(BlockElement::Expr(last)) => store[last].borrow().get_type(store, tab),
-            Some(BlockElement::Stmt(_)) | Some(BlockElement::Local(_)) | None => Ok(Type::Unit),
+
+            Some(BlockElement::Stmt(stmt)) => match &*store[stmt].borrow() {
+                Value::Break { label: _ }
+                | Value::Continue { label: _ }
+                | Value::Return { value: _ } => Ok(Type::Never),
+
+                _ => Ok(Type::Unit),
+            },
+
+            Some(BlockElement::Local(_)) | None => Ok(Type::Unit),
         }
     }
 }
@@ -255,18 +264,13 @@ impl HirGetType for Value {
             } => match false_branch {
                 None => Ok(Type::Unit),
 
-                Some(_) => {
-                    let true_block = &store[true_branch].borrow();
-                    let true_branch_type = match true_block.elements.last() {
-                        Some(BlockElement::Expr(last)) => {
-                            store[last].borrow().get_type(store, tab)?
-                        }
-                        Some(BlockElement::Stmt(_)) | Some(BlockElement::Local(_)) | None => {
-                            Type::Unit
-                        }
-                    };
+                Some(false_branch) => {
+                    let true_block = store[true_branch].borrow().get_type(store, tab)?;
+                    if !true_block.is_diverging() {
+                        return Ok(true_block);
+                    }
 
-                    Ok(true_branch_type)
+                    store[false_branch].borrow().get_type(store, tab)
                 }
             },
 
