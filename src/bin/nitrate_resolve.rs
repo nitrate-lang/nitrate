@@ -1,22 +1,23 @@
 use nitrate_diagnosis::{CompilerLog, intern_file_id};
 use nitrate_translation::{
-    TranslationError,
-    parse::Parser,
-    parsetree::{kind::Module, tag::intern_module_name},
-    resolve::{ImportContext, resolve_imports, resolve_names},
-    tokenize::Lexer,
+    parse::{Parser, ResolveCtx},
+    parsetree::{PrettyPrint, PrintContext},
+    token_lexer::{Lexer, LexerError},
 };
 
 use slog::{Drain, Record, o};
 use slog_term::{RecordDecorator, ThreadSafeTimestampFn};
-use std::{fs::OpenOptions, io::Read};
+use std::{
+    fs::OpenOptions,
+    io::{Read, Write},
+};
 
 #[derive(Debug)]
 enum Error {
     NotEnoughArguments,
     OpenInputFileFailed(std::io::Error),
     CreateOutputFileFailed(std::io::Error),
-    ParseFailed(TranslationError),
+    ParseFailed(LexerError),
 }
 
 fn custom_print_msg_header(
@@ -69,9 +70,7 @@ fn program() -> Result<(), Error> {
     let fileid = intern_file_id(&filename.to_string_lossy());
     let lexer = match Lexer::new(source_code.as_bytes(), fileid) {
         Ok(l) => l,
-        Err(e) => {
-            return Err(Error::ParseFailed(TranslationError::LexerError(e)));
-        }
+        Err(e) => return Err(Error::ParseFailed(e)),
     };
 
     let file = OpenOptions::new()
@@ -90,24 +89,18 @@ fn program() -> Result<(), Error> {
     let log = slog::Logger::root(drain, o!());
     let log = CompilerLog::new(log);
 
-    let mut module = Module {
-        attributes: None,
-        visibility: None,
-        name: intern_module_name("".into()),
-        items: Parser::new(lexer, &log).parse_source(),
-    };
+    let module = Parser::new(lexer, &log).parse_source(Some(ResolveCtx {
+        package_name: String::new(),
+        package_search_paths: Vec::new(),
+    }));
 
-    let import_context = ImportContext {
-        package_name: None,
-        source_code_filepath: filename.to_path_buf(),
-    };
+    let pretty_printed = module
+        .pretty_print(&mut PrintContext::default())
+        .expect("Pretty print failed");
 
-    resolve_imports(&import_context, &mut module, &log);
-    resolve_names(&mut module, &log);
-
-    if let Err(_) = serde_json::to_writer_pretty(&mut parse_tree_output, &module) {
-        return Err(Error::ParseFailed(TranslationError::SyntaxError));
-    }
+    parse_tree_output
+        .write_all(pretty_printed.as_bytes())
+        .unwrap();
 
     Ok(())
 }

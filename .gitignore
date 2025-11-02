@@ -45,6 +45,5 @@ runtime/libazide-gc/target/
 # Added by cargo
 
 /target
-src/translation/src/parse/target
-src/translation/src/tokenize/target
+src/translation/src/*/target
 tmp/

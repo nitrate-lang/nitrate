@@ -2,10 +2,8 @@ use std::{fs::OpenOptions, io::Read};
 
 use nitrate_diagnosis::{CompilerLog, intern_file_id};
 use nitrate_translation::{
-    TranslationError,
     parse::Parser,
-    parsetree::{kind::Module, tag::intern_module_name},
-    tokenize::Lexer,
+    token_lexer::{Lexer, LexerError},
 };
 use slog::{Drain, Record, o};
 use slog_term::{RecordDecorator, ThreadSafeTimestampFn};
@@ -15,7 +13,7 @@ enum Error {
     NotEnoughArguments,
     OpenInputFileFailed(std::io::Error),
     CreateOutputFileFailed(std::io::Error),
-    ParseFailed(TranslationError),
+    ParseFailed(LexerError),
 }
 
 pub fn custom_print_msg_header(
@@ -69,9 +67,7 @@ fn program() -> Result<(), Error> {
 
     let lexer = match Lexer::new(source_code.as_bytes(), fileid) {
         Ok(l) => l,
-        Err(e) => {
-            return Err(Error::ParseFailed(TranslationError::LexerError(e)));
-        }
+        Err(e) => return Err(Error::ParseFailed(e)),
     };
 
     let file = OpenOptions::new()
@@ -90,17 +86,9 @@ fn program() -> Result<(), Error> {
     let log = slog::Logger::root(drain, o!());
     let log = CompilerLog::new(log);
 
-    let items = Parser::new(lexer, &log).parse_source();
-    let module = Module {
-        attributes: None,
-        visibility: None,
-        name: intern_module_name("".into()),
-        items,
-    };
+    let module = Parser::new(lexer, &log).parse_source(None);
 
-    if let Err(_) = serde_json::to_writer_pretty(&mut parse_tree_output, &module) {
-        return Err(Error::ParseFailed(TranslationError::SyntaxError));
-    }
+    serde_json::to_writer_pretty(&mut parse_tree_output, &module).unwrap();
 
     Ok(())
 }

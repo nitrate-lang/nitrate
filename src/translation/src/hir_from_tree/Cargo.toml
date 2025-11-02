@@ -1,0 +1,18 @@
+[package]
+name = "nitrate_hir_from_tree"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+nitrate_diagnosis = { path = "../../../diagnosis" }
+nitrate_token_lexer = { path = "../token_lexer" }
+nitrate_token = { path = "../token" }
+nitrate_tree = { path = "../tree" }
+nitrate_tree_parse = { path = "../tree_parse" }
+nitrate_hir = { path = "../hir" }
+nitrate_hir_visitor = { path = "../hir_visitor" }
+nitrate_hir_evaluate = { path = "../hir_evaluate" }
+nitrate_hir_get_type = { path = "../hir_get_type" }
+interned-string = { version = "0.3.0" }
+ordered-float = { version = "5.0.0" }
+thin-vec = { version = "0.2.14" }

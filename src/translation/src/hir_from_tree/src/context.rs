@@ -1,0 +1,225 @@
+use nitrate_hir::{SymbolTab, prelude::*};
+use std::cell::RefCell;
+use std::collections::{HashMap, HashSet};
+use std::num::NonZeroU32;
+use std::ops::Deref;
+
+#[derive(Debug)]
+pub struct Ast2HirCtx {
+    pub store: Store,
+    pub tab: SymbolTab,
+    pub(crate) current_scope: Vec<String>,
+    _impl_map: HashMap<TypeId, HashSet<TraitId>>,
+    type_infer_id_ctr: NonZeroU32,
+    unique_name_ctr: u32,
+    pub(crate) ptr_size: PtrSize,
+}
+
+impl Ast2HirCtx {
+    pub fn new(ptr_size: PtrSize) -> Self {
+        Self {
+            store: Store::new(),
+            tab: SymbolTab::default(),
+            current_scope: Vec::new(),
+            _impl_map: HashMap::new(),
+            type_infer_id_ctr: NonZeroU32::new(1).unwrap(),
+            unique_name_ctr: 0,
+            ptr_size,
+        }
+    }
+
+    pub(crate) fn _has_trait(&self, ty: &TypeId, trait_id: &TraitId) -> bool {
+        if let Some(impls) = self._impl_map.get(ty) {
+            impls.contains(trait_id)
+        } else {
+            false
+        }
+    }
+
+    pub(crate) fn _find_unambiguous_trait_method(
+        &self,
+        ty: &TypeId,
+        method_name: &str,
+    ) -> Option<FunctionId> {
+        let trait_set = match self._impl_map.get(ty) {
+            Some(trait_set) => trait_set,
+            None => return None,
+        };
+
+        let mut found: Option<FunctionId> = None;
+
+        for trait_id in trait_set {
+            let trait_def = &self[trait_id].borrow();
+
+            for method_id in &trait_def.methods {
+                let method_def = &self[method_id].borrow();
+
+                if method_def.name.deref() == method_name {
+                    if found.is_some() {
+                        // Ambiguous, multiple traits have the same method
+                        return None;
+                    } else {
+                        found = Some(method_id.clone());
+                    }
+                }
+            }
+        }
+
+        found
+    }
+
+    pub fn get_unique_name(&mut self) -> String {
+        const COMPILER_RESERVED_PREFIX: &str = "⚙️";
+
+        let name = format!("{}{}", COMPILER_RESERVED_PREFIX, self.unique_name_ctr);
+        self.unique_name_ctr += 1;
+        name
+    }
+
+    pub(crate) fn create_inference_placeholder(&mut self) -> Type {
+        let id = self.type_infer_id_ctr;
+        self.type_infer_id_ctr = id.checked_add(1).expect("Type infer ID overflow");
+        Type::Inferred { id }
+    }
+
+    pub(crate) fn join_path(scope: &[String], name: &str) -> String {
+        let length = scope.iter().map(|s| s.len() + 2).sum::<usize>() + name.len();
+        let mut qualified = String::with_capacity(length);
+
+        for module in scope {
+            qualified.push_str(&module);
+            qualified.push_str("::");
+        }
+
+        qualified.push_str(name);
+        qualified
+    }
+}
+
+impl std::ops::Index<&TypeId> for Ast2HirCtx {
+    type Output = Type;
+
+    fn index(&self, index: &TypeId) -> &Self::Output {
+        &self.store[index]
+    }
+}
+
+impl std::ops::Index<&StructTypeId> for Ast2HirCtx {
+    type Output = StructType;
+
+    fn index(&self, index: &StructTypeId) -> &Self::Output {
+        &self.store[index]
+    }
+}
+
+impl std::ops::Index<&EnumTypeId> for Ast2HirCtx {
+    type Output = EnumType;
+
+    fn index(&self, index: &EnumTypeId) -> &Self::Output {
+        &self.store[index]
+    }
+}
+
+impl std::ops::Index<&FunctionTypeId> for Ast2HirCtx {
+    type Output = FunctionType;
+
+    fn index(&self, index: &FunctionTypeId) -> &Self::Output {
+        &self.store[index]
+    }
+}
+
+impl std::ops::Index<&GlobalVariableId> for Ast2HirCtx {
+    type Output = RefCell<GlobalVariable>;
+
+    fn index(&self, index: &GlobalVariableId) -> &Self::Output {
+        &self.store[index]
+    }
+}
+
+impl std::ops::Index<&LocalVariableId> for Ast2HirCtx {
+    type Output = RefCell<LocalVariable>;
+
+    fn index(&self, index: &LocalVariableId) -> &Self::Output {
+        &self.store[index]
+    }
+}
+
+impl std::ops::Index<&ParameterId> for Ast2HirCtx {
+    type Output = RefCell<Parameter>;
+
+    fn index(&self, index: &ParameterId) -> &Self::Output {
+        &self.store[index]
+    }
+}
+
+impl std::ops::Index<&FunctionId> for Ast2HirCtx {
+    type Output = RefCell<Function>;
+
+    fn index(&self, index: &FunctionId) -> &Self::Output {
+        &self.store[index]
+    }
+}
+
+impl std::ops::Index<&TraitId> for Ast2HirCtx {
+    type Output = RefCell<Trait>;
+
+    fn index(&self, index: &TraitId) -> &Self::Output {
+        &self.store[index]
+    }
+}
+
+impl std::ops::Index<&ModuleId> for Ast2HirCtx {
+    type Output = RefCell<Module>;
+
+    fn index(&self, index: &ModuleId) -> &Self::Output {
+        &self.store[index]
+    }
+}
+
+impl std::ops::Index<&TypeAliasDefId> for Ast2HirCtx {
+    type Output = RefCell<TypeAliasDef>;
+
+    fn index(&self, index: &TypeAliasDefId) -> &Self::Output {
+        &self.store[index]
+    }
+}
+
+impl std::ops::Index<&StructDefId> for Ast2HirCtx {
+    type Output = RefCell<StructDef>;
+
+    fn index(&self, index: &StructDefId) -> &Self::Output {
+        &self.store[index]
+    }
+}
+
+impl std::ops::Index<&EnumDefId> for Ast2HirCtx {
+    type Output = RefCell<EnumDef>;
+
+    fn index(&self, index: &EnumDefId) -> &Self::Output {
+        &self.store[index]
+    }
+}
+
+impl std::ops::Index<&ValueId> for Ast2HirCtx {
+    type Output = RefCell<Value>;
+
+    fn index(&self, index: &ValueId) -> &Self::Output {
+        &self.store[index]
+    }
+}
+
+impl std::ops::Index<&LiteralId> for Ast2HirCtx {
+    type Output = Lit;
+
+    fn index(&self, index: &LiteralId) -> &Self::Output {
+        &self.store[index]
+    }
+}
+
+impl std::ops::Index<&BlockId> for Ast2HirCtx {
+    type Output = RefCell<Block>;
+
+    fn index(&self, index: &BlockId) -> &Self::Output {
+        &self.store[index]
+    }
+}

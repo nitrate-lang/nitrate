@@ -4,13 +4,26 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-nitrate_tokenize = { path = "src/tokenize" }
-nitrate_parsetree = { path = "src/parsetree" }
-nitrate_hir = { path = "src/hir" }
-nitrate_resolve = { path = "src/resolve" }
-nitrate_parse = { path = "src/parse" }
-nitrate_codegen = { path = "src/codegen" }
 nitrate_diagnosis = { path = "../diagnosis" }
+
+nitrate_token = { path = "src/token" }
+nitrate_token_lexer = { path = "src/token_lexer" }
+
+nitrate_tree = { path = "src/tree" }
+nitrate_tree_parse = { path = "src/tree_parse" }
+nitrate_hir_from_tree = { path = "src/hir_from_tree" }
+
+nitrate_hir = { path = "src/hir" }
+nitrate_hir_visitor = { path = "src/hir_visitor" }
+nitrate_hir_validate = { path = "src/hir_validate" }
+nitrate_hir_evaluate = { path = "src/hir_evaluate" }
+nitrate_hir_resolve_type = { path = "src/hir_resolve_type" }
+nitrate_hir_get_type = { path = "src/hir_get_type" }
+nitrate_hir_mangle = { path = "src/hir_mangle" }
+
+nitrate_llvm = { path = "src/llvm" }
+nitrate_llvm_from_hir = { path = "src/llvm_from_hir" }
+
 nitrate_optimization = { path = "../optimization" }
 threadpool_scope = "0.1.0"
 threadpool = "1.8.1"

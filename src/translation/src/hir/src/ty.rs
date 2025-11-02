@@ -1,140 +1,158 @@
-use hashbrown::{HashMap, HashSet};
+use crate::store::LiteralId;
+use crate::{SymbolTab, prelude::*};
+use interned_string::IString;
 use serde::{Deserialize, Serialize};
+use std::collections::{BTreeSet, HashSet};
 use std::num::NonZeroU32;
+use thin_vec::ThinVec;
 
-use crate::{TypeId, TypeStore};
-
-#[derive(Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub enum Lifetime {
-    ManuallyManaged,
-    ProcessLocal,
-    CollectorManaged,
+    Static,
+    Gc,
     ThreadLocal,
     TaskLocal,
-    StackLocal { id: NonZeroU32 },
+    Inferred,
 }
 
-#[derive(Serialize, Deserialize)]
-pub struct Reference {
-    pub lifetime: Lifetime,
-    pub iso: bool,
-    pub mutable: bool,
-    pub to: TypeId,
-}
-
-#[derive(Serialize, Deserialize, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum StructAttribute {
     Packed,
 }
 
-impl StructAttribute {
-    fn dump(&self, o: &mut dyn std::fmt::Write) -> Result<(), std::fmt::Error> {
-        match self {
-            StructAttribute::Packed => write!(o, "packed"),
-        }
-    }
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum StructFieldAttribute {
+    Invalid,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
+pub struct StructField {
+    pub attributes: BTreeSet<StructFieldAttribute>,
+    pub name: IString,
+    pub ty: TypeId,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct StructType {
-    pub attributes: HashSet<StructAttribute>,
-    pub fields: HashMap<String, TypeId>,
+    pub attributes: BTreeSet<StructAttribute>,
+    pub fields: Vec<StructField>,
 }
 
-#[derive(Serialize, Deserialize, PartialEq, Eq, Hash)]
-pub enum EnumAttribute {}
-
-impl EnumAttribute {
-    fn dump(&self, _o: &mut dyn std::fmt::Write) -> Result<(), std::fmt::Error> {
-        match self {
-            _ => Ok(()),
-        }
-    }
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum EnumAttribute {
+    Invalid,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum EnumVariantAttribute {
+    Invalid,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
+pub struct EnumVariant {
+    pub attributes: BTreeSet<EnumVariantAttribute>,
+    pub name: IString,
+    pub ty: TypeId,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct EnumType {
-    pub attributes: HashSet<EnumAttribute>,
-    pub variants: HashMap<String, TypeId>,
+    pub attributes: BTreeSet<EnumAttribute>,
+    pub variants: Vec<EnumVariant>,
 }
 
-#[derive(Serialize, Deserialize, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum FunctionAttribute {
     Variadic,
 }
 
-impl FunctionAttribute {
-    fn dump(&self, o: &mut dyn std::fmt::Write) -> Result<(), std::fmt::Error> {
-        match self {
-            FunctionAttribute::Variadic => write!(o, "variadic"),
-        }
-    }
-}
-
-#[derive(Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct FunctionType {
-    pub attributes: HashSet<FunctionAttribute>,
-    pub parameters: Vec<TypeId>,
+    pub attributes: BTreeSet<FunctionAttribute>,
+    pub params: Vec<(IString, TypeId)>,
     pub return_type: TypeId,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub enum Type {
-    /* ----------------------------------------------------- */
-    /* Primitive Types                                       */
     Never,
-
+    Unit,
     Bool,
-
     U8,
     U16,
     U32,
     U64,
     U128,
     USize,
-
     I8,
     I16,
     I32,
     I64,
     I128,
-    ISize,
-
-    F8,
-    F16,
     F32,
     F64,
-    F128,
 
-    /* ----------------------------------------------------- */
-    /* Compound Types                                        */
-    Array { element_type: TypeId, len: u64 },
-    Tuple { elements: Vec<TypeId> },
-    Slice { element_type: TypeId },
-    Struct(Box<StructType>),
-    Enum(Box<EnumType>),
+    Array {
+        element_type: TypeId,
+        len: u32,
+    },
 
-    /* ----------------------------------------------------- */
-    /* Function Type                                         */
-    Function(Box<FunctionType>),
+    Tuple {
+        element_types: ThinVec<TypeId>,
+    },
 
-    /* ----------------------------------------------------- */
-    /* Reference Type                                        */
-    Reference(Reference),
+    Struct {
+        struct_type: StructTypeId,
+    },
+
+    Enum {
+        enum_type: EnumTypeId,
+    },
+
+    Refine {
+        base: TypeId,
+        min: LiteralId,
+        max: LiteralId,
+    },
+
+    Function {
+        function_type: FunctionTypeId,
+    },
+
+    Reference {
+        lifetime: Lifetime,
+        exclusive: bool,
+        mutable: bool,
+        to: TypeId,
+    },
+
+    SliceRef {
+        lifetime: Lifetime,
+        exclusive: bool,
+        mutable: bool,
+        element_type: TypeId,
+    },
+
+    Pointer {
+        exclusive: bool,
+        mutable: bool,
+        to: TypeId,
+    },
+
+    Symbol {
+        path: IString,
+    },
+
+    InferredFloat,
+    InferredInteger,
+    Inferred {
+        id: NonZeroU32,
+    },
 }
 
 impl Type {
-    #[allow(non_upper_case_globals)]
-    pub const Unit: Type = Type::Tuple { elements: vec![] };
-}
-
-impl Type {
-    pub fn is_never(&self) -> bool {
+    pub fn is_diverging(&self) -> bool {
         matches!(self, Type::Never)
-    }
-
-    pub fn is_unit(&self) -> bool {
-        matches!(self, Type::Tuple { elements } if elements.is_empty())
     }
 
     pub fn is_bool(&self) -> bool {
@@ -151,7 +169,7 @@ impl Type {
     pub fn is_signed_primitive(&self) -> bool {
         matches!(
             self,
-            Type::I8 | Type::I16 | Type::I32 | Type::I64 | Type::I128 | Type::ISize
+            Type::I8 | Type::I16 | Type::I32 | Type::I64 | Type::I128
         )
     }
 
@@ -160,18 +178,11 @@ impl Type {
     }
 
     pub fn is_float_primitive(&self) -> bool {
-        matches!(
-            self,
-            Type::F8 | Type::F16 | Type::F32 | Type::F64 | Type::F128
-        )
+        matches!(self, Type::F32 | Type::F64)
     }
 
     pub fn is_array(&self) -> bool {
         matches!(self, Type::Array { .. })
-    }
-
-    pub fn is_slice(&self) -> bool {
-        matches!(self, Type::Slice { .. })
     }
 
     pub fn is_tuple(&self) -> bool {
@@ -187,189 +198,121 @@ impl Type {
     }
 
     pub fn is_function(&self) -> bool {
-        matches!(self, Type::Function(_))
+        matches!(self, Type::Function { .. })
     }
 
     pub fn is_reference(&self) -> bool {
-        matches!(self, Type::Reference(_))
+        matches!(self, Type::Reference { .. })
     }
-}
 
-impl Type {
-    pub fn dump(
+    pub fn is_slice_ref(&self) -> bool {
+        matches!(self, Type::SliceRef { .. })
+    }
+
+    fn is_known_inner(
         &self,
-        storage: &TypeStore,
-        o: &mut dyn std::fmt::Write,
-    ) -> Result<(), std::fmt::Error> {
-        match self {
-            Type::Never => write!(o, "!"),
-
-            Type::Bool => write!(o, "bool"),
-
-            Type::U8 => write!(o, "u8"),
-            Type::U16 => write!(o, "u16"),
-            Type::U32 => write!(o, "u32"),
-            Type::U64 => write!(o, "u64"),
-            Type::U128 => write!(o, "u128"),
-            Type::USize => write!(o, "usize"),
-
-            Type::I8 => write!(o, "i8"),
-            Type::I16 => write!(o, "i16"),
-            Type::I32 => write!(o, "i32"),
-            Type::I64 => write!(o, "i64"),
-            Type::I128 => write!(o, "i128"),
-            Type::ISize => write!(o, "isize"),
-
-            Type::F8 => write!(o, "f8"),
-            Type::F16 => write!(o, "f16"),
-            Type::F32 => write!(o, "f32"),
-            Type::F64 => write!(o, "f64"),
-            Type::F128 => write!(o, "f128"),
-
-            Type::Array { element_type, len } => {
-                write!(o, "[")?;
-                storage[element_type].dump(storage, o)?;
-                write!(o, "; {len}]")
+        store: &Store,
+        symtab: &SymbolTab,
+        visited: &mut HashSet<IString>,
+    ) -> bool {
+        self.iter().all(store, &mut |ty| {
+            if let Type::Inferred { .. } | Type::InferredFloat | Type::InferredInteger = ty {
+                return false;
             }
 
-            Type::Tuple { elements } => {
-                write!(o, "(")?;
-                for (i, element_type) in elements.iter().enumerate() {
-                    if i != 0 {
-                        write!(o, ", ")?;
-                    }
+            if let Type::Reference { lifetime, .. } = ty {
+                let ok = match lifetime {
+                    Lifetime::Static
+                    | Lifetime::Gc
+                    | Lifetime::ThreadLocal
+                    | Lifetime::TaskLocal => true,
 
-                    storage[element_type].dump(storage, o)?;
-                }
-                write!(o, ")")
+                    Lifetime::Inferred => false,
+                };
+
+                return ok;
             }
 
-            Type::Slice { element_type } => {
-                write!(o, "[")?;
-                storage[element_type].dump(storage, o)?;
-                write!(o, "]")
+            if let Type::Symbol { path } = ty {
+                if visited.contains(path) {
+                    return true;
+                }
+
+                visited.insert(path.clone());
+
+                match symtab.get_type(path) {
+                    Some(TypeDefinition::EnumDef(id)) => {
+                        let enum_def = store[id].borrow();
+                        let enum_type = Type::Enum {
+                            enum_type: enum_def.enum_id,
+                        };
+
+                        return enum_type.is_known_inner(store, symtab, visited);
+                    }
+
+                    Some(TypeDefinition::StructDef(id)) => {
+                        let struct_def = store[id].borrow();
+                        let struct_type = Type::Struct {
+                            struct_type: struct_def.struct_id,
+                        };
+
+                        return struct_type.is_known_inner(store, symtab, visited);
+                    }
+
+                    Some(TypeDefinition::TypeAliasDef(id)) => {
+                        let type_alias_def = store[id].borrow();
+                        let aliased_type = &store[&type_alias_def.type_id];
+                        return aliased_type.is_known_inner(store, symtab, visited);
+                    }
+
+                    None => return false,
+                };
             }
 
-            Type::Struct(struct_type) => {
-                write!(o, "struct")?;
-
-                if !struct_type.attributes.is_empty() {
-                    write!(o, " [")?;
-                    for (i, attribute) in struct_type.attributes.iter().enumerate() {
-                        if i != 0 {
-                            write!(o, ", ")?;
-                        }
-
-                        attribute.dump(o)?;
-                    }
-                    write!(o, "]")?;
-                }
-
-                write!(o, " {{ ")?;
-                for (i, (name, field_type)) in struct_type.fields.iter().enumerate() {
-                    if i != 0 {
-                        write!(o, ", ")?;
-                    }
-
-                    write!(o, "{name}: ")?;
-                    storage[field_type].dump(storage, o)?;
-                }
-                write!(o, " }}")
-            }
-
-            Type::Enum(enum_type) => {
-                write!(o, "enum")?;
-
-                if !enum_type.attributes.is_empty() {
-                    write!(o, " [")?;
-                    for (i, attribute) in enum_type.attributes.iter().enumerate() {
-                        if i != 0 {
-                            write!(o, ", ")?;
-                        }
-
-                        attribute.dump(o)?;
-                    }
-                    write!(o, "]")?;
-                }
-
-                write!(o, " {{ ")?;
-                for (i, (name, variant_type)) in enum_type.variants.iter().enumerate() {
-                    if i != 0 {
-                        write!(o, ", ")?;
-                    }
-
-                    write!(o, "{name}: ")?;
-                    storage[variant_type].dump(storage, o)?;
-                }
-                write!(o, " }}")
-            }
-
-            Type::Function(func_type) => {
-                write!(o, "fn")?;
-
-                if !func_type.attributes.is_empty() {
-                    write!(o, " [")?;
-                    for (i, attribute) in func_type.attributes.iter().enumerate() {
-                        if i != 0 {
-                            write!(o, ", ")?;
-                        }
-
-                        attribute.dump(o)?;
-                    }
-                    write!(o, "]")?;
-                }
-
-                write!(o, "(")?;
-                for (i, param_type) in func_type.parameters.iter().enumerate() {
-                    if i != 0 {
-                        write!(o, ", ")?;
-                    }
-
-                    storage[param_type].dump(storage, o)?;
-                }
-                write!(o, ") -> ")?;
-                storage[&func_type.return_type].dump(storage, o)
-            }
-
-            Type::Reference(reference) => {
-                match &reference.lifetime {
-                    Lifetime::ManuallyManaged => write!(o, "*")?,
-                    Lifetime::ProcessLocal => write!(o, "&'static ")?,
-                    Lifetime::CollectorManaged => write!(o, "%")?,
-                    Lifetime::ThreadLocal => write!(o, "&'thread ")?,
-                    Lifetime::TaskLocal => write!(o, "&'task ")?,
-                    Lifetime::StackLocal { id } => write!(o, "&'s{id} ")?,
-                }
-
-                if reference.iso {
-                    write!(o, "iso ")?;
-                } else {
-                    write!(o, "poly ")?;
-                }
-
-                if reference.mutable {
-                    write!(o, "mut ")?;
-                } else {
-                    write!(o, "const ")?;
-                }
-
-                storage[&reference.to].dump(storage, o)
-            }
-        }
+            true
+        })
     }
 
-    pub fn dump_string(&self, storage: &TypeStore) -> String {
-        let mut buf = String::new();
-        self.dump(storage, &mut buf).ok();
-        buf
+    pub fn is_known(&self, store: &Store, symtab: &SymbolTab) -> bool {
+        let mut visited = HashSet::new();
+        self.is_known_inner(store, symtab, &mut visited)
     }
 }
 
-#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
-pub enum PointerSize {
-    U8 = 1,
-    U16 = 2,
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+pub enum PtrSize {
     U32 = 4,
     U64 = 8,
-    U128 = 16,
+}
+
+impl IntoStoreId for StructType {
+    type Id = StructTypeId;
+
+    fn into_id(self, store: &Store) -> Self::Id {
+        store.store_struct_type(self)
+    }
+}
+
+impl IntoStoreId for EnumType {
+    type Id = EnumTypeId;
+
+    fn into_id(self, store: &Store) -> Self::Id {
+        store.store_enum_type(self)
+    }
+}
+
+impl IntoStoreId for FunctionType {
+    type Id = FunctionTypeId;
+
+    fn into_id(self, store: &Store) -> Self::Id {
+        store.store_function_type(self)
+    }
+}
+
+impl IntoStoreId for Type {
+    type Id = TypeId;
+
+    fn into_id(self, store: &Store) -> Self::Id {
+        store.store_type(self)
+    }
 }

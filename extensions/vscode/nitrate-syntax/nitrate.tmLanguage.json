@@ -31,7 +31,7 @@
             "patterns": [
                 {
                     "name": "keyword.control.nit",
-                    "match": "\\b(if|else|for|while|do|switch|break|continue|ret|foreach|try|catch|throw|async|await|asm)\\b"
+                    "match": "\\b(if|else|for|while|do|match|break|continue|ret|foreach|try|catch|throw|async|await|asm)\\b"
                 },
                 {
                     "name": "keyword.operator.nit",
@@ -39,7 +39,7 @@
                 },
                 {
                     "name": "storage.type.nit",
-                    "match": "\\b(let|var|fn|enum|struct|class|union|contract|trait|impl|type|scope|import|mod)\\b"
+                    "match": "\\b(let|var|fn|enum|struct|class|union|contract|trait|impl|type|scope|use|mod)\\b"
                 },
                 {
                     "name": "storage.modifier.nit",
