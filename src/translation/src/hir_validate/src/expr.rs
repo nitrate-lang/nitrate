@@ -23,7 +23,7 @@ impl ValidateHir for Block {
 }
 
 impl ValidateHir for Value {
-    fn verify(&self, store: &Store, symtab: &SymbolTab) -> Result<(), ()> {
+    fn verify(&self, _store: &Store, _symtab: &SymbolTab) -> Result<(), ()> {
         match self {
             Value::Unit
             | Value::Bool(_)
@@ -47,140 +47,153 @@ impl ValidateHir for Value {
             Value::InferredInteger(_) | Value::InferredFloat(_) => Err(()),
 
             Value::StructObject {
-                struct_path,
-                fields,
+                struct_path: _,
+                fields: _,
             } => {
                 // TODO: verify struct object
                 Ok(())
             }
 
             Value::EnumVariant {
-                enum_path,
-                variant,
-                value,
+                enum_path: _,
+                variant: _,
+                value: _,
             } => {
                 // TODO: verify enum variant
                 Ok(())
             }
 
-            Value::Binary { left, op, right } => {
+            Value::Binary {
+                left: _,
+                op: _,
+                right: _,
+            } => {
                 // TODO: verify binary expression
                 Ok(())
             }
 
-            Value::Unary { op, operand } => {
+            Value::Unary { op: _, operand: _ } => {
                 // TODO: verify unary expression
                 Ok(())
             }
 
-            Value::FieldAccess { expr, field } => {
+            Value::FieldAccess { expr: _, field: _ } => {
                 // TODO: verify field access
                 Ok(())
             }
 
-            Value::IndexAccess { collection, index } => {
+            Value::IndexAccess {
+                collection: _,
+                index: _,
+            } => {
                 // TODO: verify index access
                 Ok(())
             }
 
-            Value::Assign { place, value } => {
+            Value::Assign { place: _, value: _ } => {
                 // TODO: verify assignment
                 Ok(())
             }
 
-            Value::Deref { place } => {
+            Value::Deref { place: _ } => {
                 // TODO: verify dereference
                 Ok(())
             }
 
-            Value::Cast { expr, to } => {
+            Value::Cast { expr: _, to: _ } => {
                 // TODO: verify cast
                 Ok(())
             }
 
             Value::Borrow {
-                exclusive,
-                mutable,
-                place,
+                exclusive: _,
+                mutable: _,
+                place: _,
             } => {
                 // TODO: verify borrow
                 Ok(())
             }
 
-            Value::List { elements } => {
+            Value::List { elements: _ } => {
                 // TODO: verify list
                 Ok(())
             }
 
-            Value::Tuple { elements } => {
+            Value::Tuple { elements: _ } => {
                 // TODO: verify tuple
                 Ok(())
             }
 
             Value::If {
-                condition,
-                true_branch,
-                false_branch,
+                condition: _,
+                true_branch: _,
+                false_branch: _,
             } => {
                 // TODO: verify if expression
                 Ok(())
             }
 
-            Value::While { condition, body } => {
+            Value::While {
+                condition: _,
+                body: _,
+            } => {
                 // TODO: verify while expression
                 Ok(())
             }
 
-            Value::Loop { body } => {
+            Value::Loop { body: _ } => {
                 // TODO: verify loop expression
                 Ok(())
             }
 
-            Value::Break { label } => {
+            Value::Break { label: _ } => {
                 // TODO: verify break expression
                 Ok(())
             }
 
-            Value::Continue { label } => {
+            Value::Continue { label: _ } => {
                 // TODO: verify continue expression
                 Ok(())
             }
 
-            Value::Return { value } => {
+            Value::Return { value: _ } => {
                 // TODO: verify return expression
                 Ok(())
             }
 
-            Value::Block { block } => {
+            Value::Block { block: _ } => {
                 // TODO: verify block expression
                 Ok(())
             }
 
-            Value::Closure { captures, callee } => {
+            Value::Closure {
+                captures: _,
+                callee: _,
+            } => {
                 // TODO: verify closure expression
                 Ok(())
             }
 
             Value::Call {
-                callee,
-                positional,
-                named,
+                callee: _,
+                positional: _,
+                named: _,
             } => {
                 // TODO: verify call expression
                 Ok(())
             }
 
             Value::MethodCall {
-                object,
-                method_name,
-                positional,
-                named,
+                object: _,
+                method_name: _,
+                positional: _,
+                named: _,
             } => {
                 // TODO: verify method call expression
                 Ok(())
             }
 
-            Value::Symbol { path } => {
+            Value::Symbol { path: _ } => {
                 // TODO: verify symbol
                 Ok(())
             }

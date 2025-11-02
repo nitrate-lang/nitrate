@@ -94,7 +94,7 @@ fn gen_global<'ctx>(
 
     bb.position_at_end(entry);
     let init_value = ctx.store[init.expect("Initial value missing")].borrow();
-    let llvm_init_value = gen_rval(&mut rval_ctx, &init_value);
+    let llvm_init_value = gen_rval(&mut rval_ctx, &init_value).expect("rvalue lowering err");
 
     let global_ptr = llvm_global.as_pointer_value();
     bb.build_store(global_ptr, llvm_init_value).unwrap();
@@ -148,7 +148,7 @@ fn gen_function<'ctx>(
         };
 
         let body = &ctx.store[body].borrow();
-        gen_block(&mut rval_ctx, body);
+        gen_block(&mut rval_ctx, body).expect("rvalue lowering err");
     }
 }
 
