@@ -23,12 +23,14 @@ pub struct RvalGenCtx<'ctx, 'store, 'tab, 'builder> {
 }
 
 #[derive(Debug)]
-pub enum RvalError {}
+pub enum RvalError {
+    OperandTypeCombinationError { operation_name: &'static str },
+}
 
 /**
  * The Unit Value is an empty struct
  */
-pub(crate) fn gen_rval_lit_unit<'ctx>(
+fn gen_rval_lit_unit<'ctx>(
     ctx: &mut RvalGenCtx<'ctx, '_, '_, '_>,
 ) -> Result<BasicValueEnum<'ctx>, RvalError> {
     Ok(ctx.llvm.const_struct(&[], false).into())
@@ -38,7 +40,6 @@ pub(crate) fn gen_rval_lit_unit<'ctx>(
  * Direct correspondence to LLVM i1 type.
  * No sign extension is performed.
  */
-
 fn gen_rval_lit_bool<'ctx>(
     ctx: &mut RvalGenCtx<'ctx, '_, '_, '_>,
     value: bool,
@@ -115,7 +116,7 @@ fn gen_rval_lit_i128<'ctx>(
 }
 
 /**
- * Direct correspondence to LLVM i8 type.
+ * Direct correspondence to LLVM i8 type (2's complement).
  * No sign extension is performed.
  */
 fn gen_rval_lit_u8<'ctx>(
@@ -126,7 +127,7 @@ fn gen_rval_lit_u8<'ctx>(
 }
 
 /**
- * Direct correspondence to LLVM i16 type.
+ * Direct correspondence to LLVM i16 type (2's complement).
  * No sign extension is performed.
  */
 fn gen_rval_lit_u16<'ctx>(
@@ -137,7 +138,7 @@ fn gen_rval_lit_u16<'ctx>(
 }
 
 /**
- * Direct correspondence to LLVM i32 type.
+ * Direct correspondence to LLVM i32 type (2's complement).
  * No sign extension is performed.
  */
 fn gen_rval_lit_u32<'ctx>(
@@ -148,7 +149,7 @@ fn gen_rval_lit_u32<'ctx>(
 }
 
 /**
- * Direct correspondence to LLVM i64 type.
+ * Direct correspondence to LLVM i64 type (2's complement).
  * No sign extension is performed.
  */
 fn gen_rval_lit_u64<'ctx>(
@@ -159,7 +160,7 @@ fn gen_rval_lit_u64<'ctx>(
 }
 
 /**
- * Direct correspondence to LLVM i128 type.
+ * Direct correspondence to LLVM i128 type (2's complement).
  * Sign extension is not performed because the value is constructed
  * from its low and high parts directly.
  */
@@ -200,7 +201,7 @@ fn gen_rval_lit_f64<'ctx>(
 }
 
 /**
- * Intern the string literal in the LLVM module's global string table.
+ * Create a LLVM string constant byte-array.
  * No null terminator is added.
  */
 fn gen_rval_lit_string<'ctx>(
@@ -211,8 +212,8 @@ fn gen_rval_lit_string<'ctx>(
 }
 
 /**
- * Intern the byte string literal in the LLVM module's global string table.
- * No null terminator is added. It is treated as a raw byte array.
+ * Create a LLVM string constant byte-array.
+ * No null terminator is added.
  */
 fn gen_rval_lit_bstring<'ctx>(
     ctx: &mut RvalGenCtx<'ctx, '_, '_, '_>,
@@ -222,13 +223,15 @@ fn gen_rval_lit_bstring<'ctx>(
 }
 
 /**
- * Unsigned integer addition:
+ * Addition:
+ *
+ * Integers:
  * - The result is modulo 2^n, where n is the bit width of the type.
  * - https://llvm.org/docs/LangRef.html#add-instruction
  *
- * Floating-point addition:
+ * Floating-point:
  * - Follows the IEEE 754 standard for floating-point arithmetic.
- * - https://llvm.org/docs/LangRef.html#add-instruction
+ * - https://llvm.org/docs/LangRef.html#fadd-instruction
  *
  * This operation has left-to-right evaluation order.
  */
@@ -248,25 +251,33 @@ fn gen_rval_add<'ctx>(
             .build_float_add(lhs.into_float_value(), rhs.into_float_value(), "")
             .unwrap();
 
-        return Ok(fadd.into());
+        Ok(fadd.into())
     } else if lhs_ty.is_int_type() && rhs_ty.is_int_type() {
         let iadd = ctx
             .bb
             .build_int_add(lhs.into_int_value(), rhs.into_int_value(), "")
             .unwrap();
 
-        return Ok(iadd.into());
+        Ok(iadd.into())
     } else {
-        panic!("Addition not implemented for this type");
+        Err(RvalError::OperandTypeCombinationError {
+            operation_name: "addition",
+        })
     }
 }
 
 /**
- * Signed and unsigned integer subtraction:
- * - The result is modulo 2^n, where n is the bit width of the type.
+ * Subtraction:
  *
- * Floating-point subtraction:
+ * Integers:
+ * - The result is modulo 2^n, where n is the bit width of the type.
+ * - https://llvm.org/docs/LangRef.html#sub-instruction
+ *
+ * Floating-point:
  * - Follows the IEEE 754 standard for floating-point arithmetic.
+ * - https://llvm.org/docs/LangRef.html#fsub-instruction
+ *
+ * This operation has left-to-right evaluation order.
  */
 fn gen_rval_sub<'ctx>(
     ctx: &mut RvalGenCtx<'ctx, '_, '_, '_>,
@@ -284,23 +295,34 @@ fn gen_rval_sub<'ctx>(
             .build_float_sub(lhs.into_float_value(), rhs.into_float_value(), "")
             .unwrap();
 
-        return Ok(fsub.into());
+        Ok(fsub.into())
     } else if lhs_ty.is_int_type() && rhs_ty.is_int_type() {
         let isub = ctx
             .bb
             .build_int_sub(lhs.into_int_value(), rhs.into_int_value(), "")
             .unwrap();
 
-        return Ok(isub.into());
+        Ok(isub.into())
     } else {
-        panic!("Subtraction not implemented for this type");
+        Err(RvalError::OperandTypeCombinationError {
+            operation_name: "subtraction",
+        })
     }
 }
 
 /**
- * // TODO: add documentation
+ * Multiplication:
+ *
+ * Integers:
+ * - The result is modulo 2^n, where n is the bit width of the type.
+ * - https://llvm.org/docs/LangRef.html#mul-instruction
+ *
+ * Floating-point:
+ * - Follows the IEEE 754 standard for floating-point arithmetic.
+ * - https://llvm.org/docs/LangRef.html#fmul-instruction
+ *
+ * This operation has left-to-right evaluation order.
  */
-
 fn gen_rval_mul<'ctx>(
     ctx: &mut RvalGenCtx<'ctx, '_, '_, '_>,
     lhs: &hir::Value,
@@ -316,21 +338,39 @@ fn gen_rval_mul<'ctx>(
             .bb
             .build_float_mul(lhs.into_float_value(), rhs.into_float_value(), "")
             .unwrap();
-        return Ok(fmul.into());
+
+        Ok(fmul.into())
     } else if lhs_ty.is_int_type() && rhs_ty.is_int_type() {
         let imul = ctx
             .bb
             .build_int_mul(lhs.into_int_value(), rhs.into_int_value(), "")
             .unwrap();
 
-        return Ok(imul.into());
+        Ok(imul.into())
     } else {
-        panic!("Multiplication not implemented for this type");
+        Err(RvalError::OperandTypeCombinationError {
+            operation_name: "multiplication",
+        })
     }
 }
 
 /**
- * // TODO: add documentation
+ * Division:
+ *
+ * Signed Integers:
+ * - // TODO: define behavior for division by zero
+ * - // TODO: define behavior for overflow
+ * - https://llvm.org/docs/LangRef.html#sdiv-instruction
+ *
+ * Unsigned Integers:
+ * - // TODO: define behavior for division by zero
+ * - https://llvm.org/docs/LangRef.html#udiv-instruction
+ *
+ * Floating-point:
+ * - Follows the IEEE 754 standard for floating-point arithmetic.
+ * - https://llvm.org/docs/LangRef.html#fdiv-instruction
+ *
+ * This operation has left-to-right evaluation order.
  */
 fn gen_rval_div<'ctx>(
     ctx: &mut RvalGenCtx<'ctx, '_, '_, '_>,
@@ -348,7 +388,7 @@ fn gen_rval_div<'ctx>(
             .build_float_div(llvm_lhs.into_float_value(), llvm_rhs.into_float_value(), "")
             .unwrap();
 
-        return Ok(fdiv.into());
+        Ok(fdiv.into())
     } else if lhs_ty.is_int_type() && rhs_ty.is_int_type() {
         let is_signed = lhs
             .get_type(&ctx.store, &ctx.tab)
@@ -365,9 +405,11 @@ fn gen_rval_div<'ctx>(
                 .unwrap()
         };
 
-        return Ok(div.into());
+        Ok(div.into())
     } else {
-        panic!("Division not implemented for this type");
+        Err(RvalError::OperandTypeCombinationError {
+            operation_name: "division",
+        })
     }
 }
 
