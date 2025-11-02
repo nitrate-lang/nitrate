@@ -414,7 +414,22 @@ fn gen_rval_div<'ctx>(
 }
 
 /**
- * // TODO: add documentation
+ * Remainder:
+ *
+ * Signed Integers:
+ * - // TODO: define behavior for remainder by zero
+ * - // TODO: define behavior for overflow
+ * - https://llvm.org/docs/LangRef.html#srem-instruction
+ *
+ * Unsigned Integers:
+ * - // TODO: define behavior for remainder by zero
+ * - https://llvm.org/docs/LangRef.html#urem-instruction
+ *
+ * Floating-point:
+ * - Follows the IEEE 754 standard for floating-point arithmetic.
+ * - https://llvm.org/docs/LangRef.html#frem-instruction
+ *
+ * This operation has left-to-right evaluation order.
  */
 fn gen_rval_rem<'ctx>(
     ctx: &mut RvalGenCtx<'ctx, '_, '_, '_>,
@@ -432,7 +447,7 @@ fn gen_rval_rem<'ctx>(
             .build_float_rem(llvm_lhs.into_float_value(), llvm_rhs.into_float_value(), "")
             .unwrap();
 
-        return Ok(frem.into());
+        Ok(frem.into())
     } else if lhs_ty.is_int_type() && rhs_ty.is_int_type() {
         let is_signed = lhs
             .get_type(&ctx.store, &ctx.tab)
@@ -449,9 +464,11 @@ fn gen_rval_rem<'ctx>(
                 .unwrap()
         };
 
-        return Ok(rem.into());
+        Ok(rem.into())
     } else {
-        panic!("Remainder not implemented for this type");
+        Err(RvalError::OperandTypeCombinationError {
+            operation_name: "remainder",
+        })
     }
 }
 
