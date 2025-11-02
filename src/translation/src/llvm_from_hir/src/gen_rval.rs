@@ -473,7 +473,13 @@ fn gen_rval_rem<'ctx>(
 }
 
 /**
- * // TODO: add documentation
+ * Bitwise AND operation.
+ *
+ * Integers:
+ * - Performs a bitwise AND operation on each corresponding bit of the operands.
+ * - https://llvm.org/docs/LangRef.html#and-instruction
+ *
+ * This operation has left-to-right evaluation order.
  */
 fn gen_rval_and<'ctx>(
     ctx: &mut RvalGenCtx<'ctx, '_, '_, '_>,
@@ -482,17 +488,31 @@ fn gen_rval_and<'ctx>(
 ) -> Result<BasicValueEnum<'ctx>, RvalError> {
     let lhs = gen_rval(ctx, lhs)?;
     let rhs = gen_rval(ctx, rhs)?;
+    let lhs_ty = lhs.get_type();
+    let rhs_ty = rhs.get_type();
 
-    let and = ctx
-        .bb
-        .build_and(lhs.into_int_value(), rhs.into_int_value(), "")
-        .unwrap();
+    if lhs_ty.is_int_type() && rhs_ty.is_int_type() {
+        let and = ctx
+            .bb
+            .build_and(lhs.into_int_value(), rhs.into_int_value(), "")
+            .unwrap();
 
-    Ok(and.into())
+        Ok(and.into())
+    } else {
+        Err(RvalError::OperandTypeCombinationError {
+            operation_name: "bitwise and",
+        })
+    }
 }
 
 /**
- * // TODO: add documentation
+ * Bitwise OR operation.
+ *
+ * Integers:
+ * - Performs a bitwise OR operation on each corresponding bit of the operands.
+ * - https://llvm.org/docs/LangRef.html#or-instruction
+ *
+ * This operation has left-to-right evaluation order.
  */
 fn gen_rval_or<'ctx>(
     ctx: &mut RvalGenCtx<'ctx, '_, '_, '_>,
@@ -501,17 +521,31 @@ fn gen_rval_or<'ctx>(
 ) -> Result<BasicValueEnum<'ctx>, RvalError> {
     let lhs = gen_rval(ctx, lhs)?;
     let rhs = gen_rval(ctx, rhs)?;
+    let lhs_ty = lhs.get_type();
+    let rhs_ty = rhs.get_type();
 
-    let or = ctx
-        .bb
-        .build_or(lhs.into_int_value(), rhs.into_int_value(), "")
-        .unwrap();
+    if lhs_ty.is_int_type() && rhs_ty.is_int_type() {
+        let or = ctx
+            .bb
+            .build_or(lhs.into_int_value(), rhs.into_int_value(), "")
+            .unwrap();
 
-    Ok(or.into())
+        Ok(or.into())
+    } else {
+        Err(RvalError::OperandTypeCombinationError {
+            operation_name: "bitwise or",
+        })
+    }
 }
 
 /**
- * // TODO: add documentation
+ * Bitwise XOR operation.
+ *
+ * Integers:
+ * - Performs a bitwise XOR operation on each corresponding bit of the operands.
+ * - https://llvm.org/docs/LangRef.html#xor-instruction
+ *
+ * This operation has left-to-right evaluation order.
  */
 fn gen_rval_xor<'ctx>(
     ctx: &mut RvalGenCtx<'ctx, '_, '_, '_>,
@@ -520,13 +554,21 @@ fn gen_rval_xor<'ctx>(
 ) -> Result<BasicValueEnum<'ctx>, RvalError> {
     let lhs = gen_rval(ctx, lhs)?;
     let rhs = gen_rval(ctx, rhs)?;
+    let lhs_ty = lhs.get_type();
+    let rhs_ty = rhs.get_type();
 
-    let xor = ctx
-        .bb
-        .build_xor(lhs.into_int_value(), rhs.into_int_value(), "")
-        .unwrap();
+    if lhs_ty.is_int_type() && rhs_ty.is_int_type() {
+        let xor = ctx
+            .bb
+            .build_xor(lhs.into_int_value(), rhs.into_int_value(), "")
+            .unwrap();
 
-    Ok(xor.into())
+        Ok(xor.into())
+    } else {
+        Err(RvalError::OperandTypeCombinationError {
+            operation_name: "bitwise xor",
+        })
+    }
 }
 
 /**
