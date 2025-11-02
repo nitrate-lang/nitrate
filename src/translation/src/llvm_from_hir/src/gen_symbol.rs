@@ -3,8 +3,8 @@ use inkwell::module::{Linkage, Module};
 use inkwell::types::BasicType;
 use inkwell::values::{AsValueRef, FunctionValue, GlobalValue};
 
-use crate::gen_rval::RvalGenCtx;
 use crate::gen_rval::gen_rval;
+use crate::gen_rval::{RvalGenCtx, gen_block};
 use crate::ty::gen_ty;
 use nitrate_hir::{IntoStoreId, prelude as hir};
 use nitrate_hir_mangle::mangle_name;
@@ -89,7 +89,7 @@ fn gen_global<'ctx>(
         .build_alloca(ctx.llvm.struct_type(&[], false), "ret_val")
         .unwrap();
 
-    let rval_ctx = RvalGenCtx {
+    let mut rval_ctx = RvalGenCtx {
         store: ctx.store,
         tab: ctx.tab,
         llvm: ctx.llvm,
@@ -97,10 +97,12 @@ fn gen_global<'ctx>(
         ret: &ret,
         endb: &endb,
         locals: HashMap::new(),
+        default_continue_target: Vec::new(),
+        default_break_target: Vec::new(),
     };
 
     let init_value = ctx.store[init.expect("Initial value missing")].borrow();
-    let llvm_init_value = gen_rval(&rval_ctx, &init_value);
+    let llvm_init_value = gen_rval(&mut rval_ctx, &init_value);
 
     let global_ptr = llvm_global.as_pointer_value();
     bb.build_store(global_ptr, llvm_init_value).unwrap();
@@ -138,23 +140,15 @@ fn gen_function<'ctx>(
         let bb = ctx.llvm.create_builder();
 
         let entry = ctx.llvm.append_basic_block(*llvm_function, "entry");
+        let end = ctx.llvm.append_basic_block(*llvm_function, "end");
+
+        /*******************************************************************/
+        /* Generate Body */
         bb.position_at_end(entry);
 
         /* Allocate space for the return value */
         let return_type = llvm_function.get_type().get_return_type().unwrap();
         let ret = bb.build_alloca(return_type, "ret_val").unwrap();
-
-        /*******************************************************************/
-        let end = ctx.llvm.append_basic_block(*llvm_function, "end");
-        bb.position_at_end(end);
-
-        // Load and return the return value
-        let ret_value = bb.build_load(return_type, ret, "ret_val_load").unwrap();
-        bb.build_return(Some(&ret_value)).unwrap();
-
-        /*******************************************************************/
-        /* Generate Body */
-        bb.position_at_end(entry);
 
         let mut rval_ctx = RvalGenCtx {
             store: ctx.store,
@@ -164,36 +158,21 @@ fn gen_function<'ctx>(
             ret: &ret,
             endb: &end,
             locals: HashMap::new(),
+            default_continue_target: Vec::new(),
+            default_break_target: Vec::new(),
         };
 
-        for element in &ctx.store[body].borrow().elements {
-            match element {
-                hir::BlockElement::Local(id) => {
-                    let hir_local = &ctx.store[id].borrow();
-                    let local_name = hir_local.name.to_owned();
-                    let hir_local_ty = &ctx.store[&hir_local.ty];
-                    let hir_local_init = &ctx.store[hir_local.init.as_ref().unwrap()].borrow();
+        let body = &ctx.store[body].borrow();
+        gen_block(&mut rval_ctx, body);
 
-                    let llvm_local_ty = gen_ty(hir_local_ty, ctx.llvm, ctx.store, ctx.tab);
-                    let llvm_local = bb.build_alloca(llvm_local_ty, &local_name).unwrap();
-                    let llvm_init_value = gen_rval(&rval_ctx, hir_local_init);
-                    bb.build_store(llvm_local, llvm_init_value).unwrap();
+        /*******************************************************************/
 
-                    rval_ctx.locals.insert(local_name, llvm_local);
-                }
+        end.move_after(bb.get_insert_block().unwrap()).unwrap();
+        bb.position_at_end(end);
 
-                hir::BlockElement::Expr(_) => {
-                    panic!(
-                        "Non-statement expression cannot appear in block during code generation"
-                    );
-                }
-
-                hir::BlockElement::Stmt(id) => {
-                    let stmt = &ctx.store[id].borrow();
-                    gen_rval(&rval_ctx, stmt);
-                }
-            }
-        }
+        // Load and return the return value
+        let ret_value = bb.build_load(return_type, ret, "ret_val_load").unwrap();
+        bb.build_return(Some(&ret_value)).unwrap();
     }
 }
 

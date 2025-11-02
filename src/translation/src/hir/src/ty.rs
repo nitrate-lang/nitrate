@@ -151,7 +151,7 @@ pub enum Type {
 }
 
 impl Type {
-    pub fn is_never(&self) -> bool {
+    pub fn is_diverging(&self) -> bool {
         matches!(self, Type::Never)
     }
 
