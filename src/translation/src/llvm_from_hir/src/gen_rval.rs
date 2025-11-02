@@ -25,89 +25,83 @@ pub struct RvalGenCtx<'ctx, 'store, 'tab, 'builder> {
 #[derive(Debug)]
 pub enum RvalError {}
 
+/**
+ * The Unit Value is an empty struct
+ */
 pub(crate) fn gen_rval_lit_unit<'ctx>(
     ctx: &mut RvalGenCtx<'ctx, '_, '_, '_>,
 ) -> Result<BasicValueEnum<'ctx>, RvalError> {
-    /*
-     * The Unit Value is an empty struct
-     */
-
     Ok(ctx.llvm.const_struct(&[], false).into())
 }
+
+/**
+ * Direct correspondence to LLVM i1 type.
+ * No sign extension is performed.
+ */
 
 fn gen_rval_lit_bool<'ctx>(
     ctx: &mut RvalGenCtx<'ctx, '_, '_, '_>,
     value: bool,
 ) -> Result<BasicValueEnum<'ctx>, RvalError> {
-    /*
-     * Direct correspondence to LLVM i1 type.
-     * No sign extension is performed.
-     */
-
     match value {
         true => Ok(ctx.llvm.bool_type().const_int(1, false).into()),
         false => Ok(ctx.llvm.bool_type().const_int(0, false).into()),
     }
 }
 
+/**
+ * Direct correspondence to LLVM i8 type.
+ * Sign extension is performed.
+ */
 fn gen_rval_lit_i8<'ctx>(
     ctx: &mut RvalGenCtx<'ctx, '_, '_, '_>,
     value: i8,
 ) -> Result<BasicValueEnum<'ctx>, RvalError> {
-    /*
-     * Direct correspondence to LLVM i8 type.
-     * Sign extension is performed.
-     */
-
     Ok(ctx.llvm.i8_type().const_int(value as u64, true).into())
 }
 
+/**
+ * Direct correspondence to LLVM i16 type.
+ * Sign extension is performed.
+ */
 fn gen_rval_lit_i16<'ctx>(
     ctx: &mut RvalGenCtx<'ctx, '_, '_, '_>,
     value: i16,
 ) -> Result<BasicValueEnum<'ctx>, RvalError> {
-    /*
-     * Direct correspondence to LLVM i16 type.
-     * Sign extension is performed.
-     */
-
     Ok(ctx.llvm.i16_type().const_int(value as u64, true).into())
 }
 
+/**
+ * Direct correspondence to LLVM i32 type.
+ * Sign extension is performed.
+ */
 fn gen_rval_lit_i32<'ctx>(
     ctx: &mut RvalGenCtx<'ctx, '_, '_, '_>,
     value: i32,
 ) -> Result<BasicValueEnum<'ctx>, RvalError> {
-    /*
-     * Direct correspondence to LLVM i32 type.
-     * Sign extension is performed.
-     */
-
     Ok(ctx.llvm.i32_type().const_int(value as u64, true).into())
 }
 
+/**
+ * Direct correspondence to LLVM i64 type.
+ * Sign extension is performed.
+ */
 fn gen_rval_lit_i64<'ctx>(
     ctx: &mut RvalGenCtx<'ctx, '_, '_, '_>,
     value: i64,
 ) -> Result<BasicValueEnum<'ctx>, RvalError> {
-    /*
-     * Direct correspondence to LLVM i64 type.
-     * Sign extension is performed.
-     */
-
     Ok(ctx.llvm.i64_type().const_int(value as u64, true).into())
 }
 
+/**
+ * Direct correspondence to LLVM i128 type.
+ * Sign extension is not performed because the value is constructed
+ * from its low and high parts directly.
+ */
 fn gen_rval_lit_i128<'ctx>(
     ctx: &mut RvalGenCtx<'ctx, '_, '_, '_>,
     value: i128,
 ) -> Result<BasicValueEnum<'ctx>, RvalError> {
-    /*
-     * Direct correspondence to LLVM i128 type.
-     * Sign extension is not performed because the value is constructed
-     * from its low and high parts directly.
-     */
-
     let low = (value & 0xFFFFFFFFFFFFFFFF) as u64;
     let high = ((value >> 64) & 0xFFFFFFFFFFFFFFFF) as u64;
 
@@ -120,64 +114,59 @@ fn gen_rval_lit_i128<'ctx>(
     Ok(value)
 }
 
+/**
+ * Direct correspondence to LLVM i8 type.
+ * No sign extension is performed.
+ */
 fn gen_rval_lit_u8<'ctx>(
     ctx: &mut RvalGenCtx<'ctx, '_, '_, '_>,
     value: u8,
 ) -> Result<BasicValueEnum<'ctx>, RvalError> {
-    /*
-     * Direct correspondence to LLVM i8 type.
-     * No sign extension is performed.
-     */
-
     Ok(ctx.llvm.i8_type().const_int(value as u64, false).into())
 }
 
+/**
+ * Direct correspondence to LLVM i16 type.
+ * No sign extension is performed.
+ */
 fn gen_rval_lit_u16<'ctx>(
     ctx: &mut RvalGenCtx<'ctx, '_, '_, '_>,
     value: u16,
 ) -> Result<BasicValueEnum<'ctx>, RvalError> {
-    /*
-     * Direct correspondence to LLVM i16 type.
-     * No sign extension is performed.
-     */
-
     Ok(ctx.llvm.i16_type().const_int(value as u64, false).into())
 }
 
+/**
+ * Direct correspondence to LLVM i32 type.
+ * No sign extension is performed.
+ */
 fn gen_rval_lit_u32<'ctx>(
     ctx: &mut RvalGenCtx<'ctx, '_, '_, '_>,
     value: u32,
 ) -> Result<BasicValueEnum<'ctx>, RvalError> {
-    /*
-     * Direct correspondence to LLVM i32 type.
-     * No sign extension is performed.
-     */
-
     Ok(ctx.llvm.i32_type().const_int(value as u64, false).into())
 }
 
+/**
+ * Direct correspondence to LLVM i64 type.
+ * No sign extension is performed.
+ */
 fn gen_rval_lit_u64<'ctx>(
     ctx: &mut RvalGenCtx<'ctx, '_, '_, '_>,
     value: u64,
 ) -> Result<BasicValueEnum<'ctx>, RvalError> {
-    /*
-     * Direct correspondence to LLVM i64 type.
-     * No sign extension is performed.
-     */
-
     Ok(ctx.llvm.i64_type().const_int(value, false).into())
 }
 
+/**
+ * Direct correspondence to LLVM i128 type.
+ * Sign extension is not performed because the value is constructed
+ * from its low and high parts directly.
+ */
 fn gen_rval_lit_u128<'ctx>(
     ctx: &mut RvalGenCtx<'ctx, '_, '_, '_>,
     value: u128,
 ) -> Result<BasicValueEnum<'ctx>, RvalError> {
-    /*
-     * Direct correspondence to LLVM i128 type.
-     * Sign extension is not performed because the value is constructed
-     * from its low and high parts directly.
-     */
-
     let low = (value & 0xFFFFFFFFFFFFFFFF) as u64;
     let high = ((value >> 64) & 0xFFFFFFFFFFFFFFFF) as u64;
 
@@ -190,49 +179,45 @@ fn gen_rval_lit_u128<'ctx>(
     Ok(value)
 }
 
+/**
+ * Direct correspondence to LLVM f32 type.
+ */
 fn gen_rval_lit_f32<'ctx>(
     ctx: &mut RvalGenCtx<'ctx, '_, '_, '_>,
     value: f32,
 ) -> Result<BasicValueEnum<'ctx>, RvalError> {
-    /*
-     * Direct correspondence to LLVM f32 type.
-     */
-
     Ok(ctx.llvm.f32_type().const_float(value as f64).into())
 }
 
+/**
+ * Direct correspondence to LLVM f64 type.
+ */
 fn gen_rval_lit_f64<'ctx>(
     ctx: &mut RvalGenCtx<'ctx, '_, '_, '_>,
     value: f64,
 ) -> Result<BasicValueEnum<'ctx>, RvalError> {
-    /*
-     * Direct correspondence to LLVM f64 type.
-     */
-
     Ok(ctx.llvm.f64_type().const_float(value).into())
 }
 
+/**
+ * Intern the string literal in the LLVM module's global string table.
+ * No null terminator is added.
+ */
 fn gen_rval_lit_string<'ctx>(
     ctx: &mut RvalGenCtx<'ctx, '_, '_, '_>,
     value: &str,
 ) -> Result<BasicValueEnum<'ctx>, RvalError> {
-    /*
-     * Intern the string literal in the LLVM module's global string table.
-     * No null terminator is added.
-     */
-
     Ok(ctx.llvm.const_string(value.as_bytes(), false).into())
 }
 
+/**
+ * Intern the byte string literal in the LLVM module's global string table.
+ * No null terminator is added. It is treated as a raw byte array.
+ */
 fn gen_rval_lit_bstring<'ctx>(
     ctx: &mut RvalGenCtx<'ctx, '_, '_, '_>,
     value: &[u8],
 ) -> Result<BasicValueEnum<'ctx>, RvalError> {
-    /*
-     * Intern the byte string literal in the LLVM module's global string table.
-     * No null terminator is added. It is treated as a raw byte array.
-     */
-
     Ok(ctx.llvm.const_string(value, false).into())
 }
 
@@ -255,15 +240,16 @@ fn gen_rval_add<'ctx>(
     let lhs = gen_rval(ctx, lhs)?;
     let rhs = gen_rval(ctx, rhs)?;
     let lhs_ty = lhs.get_type();
+    let rhs_ty = rhs.get_type();
 
-    if lhs_ty.is_float_type() {
+    if lhs_ty.is_float_type() && rhs_ty.is_float_type() {
         let fadd = ctx
             .bb
             .build_float_add(lhs.into_float_value(), rhs.into_float_value(), "")
             .unwrap();
 
         return Ok(fadd.into());
-    } else if lhs_ty.is_int_type() {
+    } else if lhs_ty.is_int_type() && rhs_ty.is_int_type() {
         let iadd = ctx
             .bb
             .build_int_add(lhs.into_int_value(), rhs.into_int_value(), "")
@@ -275,19 +261,18 @@ fn gen_rval_add<'ctx>(
     }
 }
 
+/**
+ * Signed and unsigned integer subtraction:
+ * - The result is modulo 2^n, where n is the bit width of the type.
+ *
+ * Floating-point subtraction:
+ * - Follows the IEEE 754 standard for floating-point arithmetic.
+ */
 fn gen_rval_sub<'ctx>(
     ctx: &mut RvalGenCtx<'ctx, '_, '_, '_>,
     lhs: &hir::Value,
     rhs: &hir::Value,
 ) -> Result<BasicValueEnum<'ctx>, RvalError> {
-    /*
-     * Signed and unsigned integer subtraction:
-     * - The result is modulo 2^n, where n is the bit width of the type.
-     *
-     * Floating-point subtraction:
-     * - Follows the IEEE 754 standard for floating-point arithmetic.
-     */
-
     let lhs = gen_rval(ctx, lhs)?;
     let rhs = gen_rval(ctx, rhs)?;
     let lhs_ty = lhs.get_type();
@@ -312,15 +297,15 @@ fn gen_rval_sub<'ctx>(
     }
 }
 
+/**
+ * // TODO: add documentation
+ */
+
 fn gen_rval_mul<'ctx>(
     ctx: &mut RvalGenCtx<'ctx, '_, '_, '_>,
     lhs: &hir::Value,
     rhs: &hir::Value,
 ) -> Result<BasicValueEnum<'ctx>, RvalError> {
-    /*
-     * // TODO: add documentation
-     */
-
     let lhs = gen_rval(ctx, lhs)?;
     let rhs = gen_rval(ctx, rhs)?;
     let lhs_ty = lhs.get_type();
@@ -344,15 +329,14 @@ fn gen_rval_mul<'ctx>(
     }
 }
 
+/**
+ * // TODO: add documentation
+ */
 fn gen_rval_div<'ctx>(
     ctx: &mut RvalGenCtx<'ctx, '_, '_, '_>,
     lhs: &hir::Value,
     rhs: &hir::Value,
 ) -> Result<BasicValueEnum<'ctx>, RvalError> {
-    /*
-     * // TODO: add documentation
-     */
-
     let llvm_lhs = gen_rval(ctx, lhs)?;
     let llvm_rhs = gen_rval(ctx, rhs)?;
     let lhs_ty = llvm_lhs.get_type();
@@ -387,15 +371,14 @@ fn gen_rval_div<'ctx>(
     }
 }
 
+/**
+ * // TODO: add documentation
+ */
 fn gen_rval_rem<'ctx>(
     ctx: &mut RvalGenCtx<'ctx, '_, '_, '_>,
     lhs: &hir::Value,
     rhs: &hir::Value,
 ) -> Result<BasicValueEnum<'ctx>, RvalError> {
-    /*
-     * // TODO: add documentation
-     */
-
     let llvm_lhs = gen_rval(ctx, lhs)?;
     let llvm_rhs = gen_rval(ctx, rhs)?;
     let lhs_ty = llvm_lhs.get_type();
@@ -430,15 +413,14 @@ fn gen_rval_rem<'ctx>(
     }
 }
 
+/**
+ * // TODO: add documentation
+ */
 fn gen_rval_and<'ctx>(
     ctx: &mut RvalGenCtx<'ctx, '_, '_, '_>,
     lhs: &hir::Value,
     rhs: &hir::Value,
 ) -> Result<BasicValueEnum<'ctx>, RvalError> {
-    /*
-     * // TODO: add documentation
-     */
-
     let lhs = gen_rval(ctx, lhs)?;
     let rhs = gen_rval(ctx, rhs)?;
 
@@ -450,15 +432,14 @@ fn gen_rval_and<'ctx>(
     Ok(and.into())
 }
 
+/**
+ * // TODO: add documentation
+ */
 fn gen_rval_or<'ctx>(
     ctx: &mut RvalGenCtx<'ctx, '_, '_, '_>,
     lhs: &hir::Value,
     rhs: &hir::Value,
 ) -> Result<BasicValueEnum<'ctx>, RvalError> {
-    /*
-     * // TODO: add documentation
-     */
-
     let lhs = gen_rval(ctx, lhs)?;
     let rhs = gen_rval(ctx, rhs)?;
 
@@ -470,15 +451,14 @@ fn gen_rval_or<'ctx>(
     Ok(or.into())
 }
 
+/**
+ * // TODO: add documentation
+ */
 fn gen_rval_xor<'ctx>(
     ctx: &mut RvalGenCtx<'ctx, '_, '_, '_>,
     lhs: &hir::Value,
     rhs: &hir::Value,
 ) -> Result<BasicValueEnum<'ctx>, RvalError> {
-    /*
-     * // TODO: add documentation
-     */
-
     let lhs = gen_rval(ctx, lhs)?;
     let rhs = gen_rval(ctx, rhs)?;
 
@@ -490,15 +470,14 @@ fn gen_rval_xor<'ctx>(
     Ok(xor.into())
 }
 
+/**
+ * // TODO: add documentation
+ */
 fn gen_rval_shl<'ctx>(
     ctx: &mut RvalGenCtx<'ctx, '_, '_, '_>,
     lhs: &hir::Value,
     rhs: &hir::Value,
 ) -> Result<BasicValueEnum<'ctx>, RvalError> {
-    /*
-     * // TODO: add documentation
-     */
-
     let lhs = gen_rval(ctx, lhs)?;
     let rhs = gen_rval(ctx, rhs)?;
 
@@ -510,15 +489,14 @@ fn gen_rval_shl<'ctx>(
     Ok(shl.into())
 }
 
+/**
+ * // TODO: add documentation
+ */
 fn gen_rval_shr<'ctx>(
     ctx: &mut RvalGenCtx<'ctx, '_, '_, '_>,
     lhs: &hir::Value,
     rhs: &hir::Value,
 ) -> Result<BasicValueEnum<'ctx>, RvalError> {
-    /*
-     * // TODO: add documentation
-     */
-
     let sign_extend = lhs
         .get_type(&ctx.store, &ctx.tab)
         .expect("Failed to get type")
@@ -535,16 +513,15 @@ fn gen_rval_shr<'ctx>(
     Ok(shr.into())
 }
 
+/**
+ * Bitwise rotate left operation formula:
+ * rol(x, n) = (x << (n % bit_width)) | (x >> ((bit_width - (n % bit_width)) % bit_width))
+ */
 fn gen_rval_rol<'ctx>(
     ctx: &mut RvalGenCtx<'ctx, '_, '_, '_>,
     lhs: &hir::Value,
     rhs: &hir::Value,
 ) -> Result<BasicValueEnum<'ctx>, RvalError> {
-    /*
-     * Bitwise rotate left operation formula:
-     * rol(x, n) = (x << (n % bit_width)) | (x >> ((bit_width - (n % bit_width)) % bit_width))
-     */
-
     let lhs = gen_rval(ctx, lhs)?;
     let rhs = gen_rval(ctx, rhs)?;
     let bit_width = ctx.llvm.target_data().get_store_size(&lhs.get_type()) * 8;
@@ -577,16 +554,15 @@ fn gen_rval_rol<'ctx>(
     Ok(or.into())
 }
 
+/**
+ * Bitwise rotate right operation formula:
+ * ror(x, n) = (x >> (n % bit_width)) | (x << ((bit_width - (n % bit_width)) % bit_width))
+ */
 fn gen_rval_ror<'ctx>(
     ctx: &mut RvalGenCtx<'ctx, '_, '_, '_>,
     lhs: &hir::Value,
     rhs: &hir::Value,
 ) -> Result<BasicValueEnum<'ctx>, RvalError> {
-    /*
-     * Bitwise rotate right operation formula:
-     * ror(x, n) = (x >> (n % bit_width)) | (x << ((bit_width - (n % bit_width)) % bit_width))
-     */
-
     let lhs = gen_rval(ctx, lhs)?;
     let rhs = gen_rval(ctx, rhs)?;
     let bit_width = ctx.llvm.target_data().get_store_size(&lhs.get_type()) * 8;
@@ -619,15 +595,14 @@ fn gen_rval_ror<'ctx>(
     Ok(or.into())
 }
 
+/**
+ * // TODO: add documentation
+ */
 fn gen_rval_land<'ctx>(
     ctx: &mut RvalGenCtx<'ctx, '_, '_, '_>,
     lhs: &hir::Value,
     rhs: &hir::Value,
 ) -> Result<BasicValueEnum<'ctx>, RvalError> {
-    /*
-     * // TODO: add documentation
-     */
-
     let parent_function = ctx.bb.get_insert_block().unwrap().get_parent().unwrap();
     let bool = ctx.llvm.bool_type();
 
@@ -660,15 +635,14 @@ fn gen_rval_land<'ctx>(
     Ok(load.into())
 }
 
+/**
+ * // TODO: add documentation
+ */
 fn gen_rval_lor<'ctx>(
     ctx: &mut RvalGenCtx<'ctx, '_, '_, '_>,
     lhs: &hir::Value,
     rhs: &hir::Value,
 ) -> Result<BasicValueEnum<'ctx>, RvalError> {
-    /*
-     * // TODO: add documentation
-     */
-
     let parent_function = ctx.bb.get_insert_block().unwrap().get_parent().unwrap();
     let bool = ctx.llvm.bool_type();
 
@@ -701,15 +675,14 @@ fn gen_rval_lor<'ctx>(
     Ok(load.into())
 }
 
+/**
+ * // TODO: add documentation
+ */
 fn gen_rval_lt<'ctx>(
     ctx: &mut RvalGenCtx<'ctx, '_, '_, '_>,
     lhs: &hir::Value,
     rhs: &hir::Value,
 ) -> Result<BasicValueEnum<'ctx>, RvalError> {
-    /*
-     * // TODO: add documentation
-     */
-
     let llvm_lhs = gen_rval(ctx, lhs)?;
     let llvm_rhs = gen_rval(ctx, rhs)?;
     let lhs_ty = llvm_lhs.get_type();
@@ -759,15 +732,14 @@ fn gen_rval_lt<'ctx>(
     }
 }
 
+/**
+ * // TODO: add documentation
+ */
 fn gen_rval_gt<'ctx>(
     ctx: &mut RvalGenCtx<'ctx, '_, '_, '_>,
     lhs: &hir::Value,
     rhs: &hir::Value,
 ) -> Result<BasicValueEnum<'ctx>, RvalError> {
-    /*
-     * // TODO: add documentation
-     */
-
     let llvm_lhs = gen_rval(ctx, lhs)?;
     let llvm_rhs = gen_rval(ctx, rhs)?;
     let lhs_ty = llvm_lhs.get_type();
@@ -817,15 +789,14 @@ fn gen_rval_gt<'ctx>(
     }
 }
 
+/**
+ * // TODO: add documentation
+ */
 fn gen_rval_lte<'ctx>(
     ctx: &mut RvalGenCtx<'ctx, '_, '_, '_>,
     lhs: &hir::Value,
     rhs: &hir::Value,
 ) -> Result<BasicValueEnum<'ctx>, RvalError> {
-    /*
-     * // TODO: add documentation
-     */
-
     let llvm_lhs = gen_rval(ctx, lhs)?;
     let llvm_rhs = gen_rval(ctx, rhs)?;
     let lhs_ty = llvm_lhs.get_type();
@@ -875,15 +846,14 @@ fn gen_rval_lte<'ctx>(
     }
 }
 
+/**
+ * // TODO: add documentation
+ */
 fn gen_rval_gte<'ctx>(
     ctx: &mut RvalGenCtx<'ctx, '_, '_, '_>,
     lhs: &hir::Value,
     rhs: &hir::Value,
 ) -> Result<BasicValueEnum<'ctx>, RvalError> {
-    /*
-     * // TODO: add documentation
-     */
-
     let llvm_lhs = gen_rval(ctx, lhs)?;
     let llvm_rhs = gen_rval(ctx, rhs)?;
     let lhs_ty = llvm_lhs.get_type();
@@ -933,15 +903,14 @@ fn gen_rval_gte<'ctx>(
     }
 }
 
+/**
+ * // TODO: add documentation
+ */
 fn gen_rval_eq<'ctx>(
     ctx: &mut RvalGenCtx<'ctx, '_, '_, '_>,
     lhs: &hir::Value,
     rhs: &hir::Value,
 ) -> Result<BasicValueEnum<'ctx>, RvalError> {
-    /*
-     * // TODO: add documentation
-     */
-
     let lhs = gen_rval(ctx, lhs)?;
     let rhs = gen_rval(ctx, rhs)?;
     let lhs_ty = lhs.get_type();
@@ -976,15 +945,14 @@ fn gen_rval_eq<'ctx>(
     }
 }
 
+/**
+ * // TODO: add documentation
+ */
 fn gen_rval_ne<'ctx>(
     ctx: &mut RvalGenCtx<'ctx, '_, '_, '_>,
     lhs: &hir::Value,
     rhs: &hir::Value,
 ) -> Result<BasicValueEnum<'ctx>, RvalError> {
-    /*
-     * // TODO: add documentation
-     */
-
     let lhs = gen_rval(ctx, lhs)?;
     let rhs = gen_rval(ctx, rhs)?;
     let lhs_ty = lhs.get_type();
@@ -1019,16 +987,15 @@ fn gen_rval_ne<'ctx>(
     }
 }
 
+/**
+ * // TODO: add documentation
+ */
 fn gen_if<'ctx>(
     ctx: &mut RvalGenCtx<'ctx, '_, '_, '_>,
     condition: &hir::Value,
     true_branch: &hir::Block,
     false_branch: Option<&hir::Block>,
 ) -> Result<BasicValueEnum<'ctx>, RvalError> {
-    /*
-     * // TODO: add documentation
-     */
-
     let top_block = ctx.bb.get_insert_block().unwrap();
     let current_function = top_block.get_parent().unwrap();
 
@@ -1103,15 +1070,14 @@ fn gen_if<'ctx>(
     gen_rval_lit_unit(ctx)
 }
 
+/**
+ * // TODO: add documentation
+ */
 fn gen_while<'ctx>(
     ctx: &mut RvalGenCtx<'ctx, '_, '_, '_>,
     condition: &hir::Value,
     body: &hir::Block,
 ) -> Result<(), RvalError> {
-    /*
-     * // TODO: add documentation
-     */
-
     let top_block = ctx.bb.get_insert_block().unwrap();
     let current_function = top_block.get_parent().unwrap();
 
@@ -1146,14 +1112,13 @@ fn gen_while<'ctx>(
     Ok(())
 }
 
+/**
+ * // TODO: add documentation
+ */
 fn gen_loop<'ctx>(
     ctx: &mut RvalGenCtx<'ctx, '_, '_, '_>,
     body: &hir::Block,
 ) -> Result<(), RvalError> {
-    /*
-     * // TODO: add documentation
-     */
-
     let top_block = ctx.bb.get_insert_block().unwrap();
     let current_function = top_block.get_parent().unwrap();
 
@@ -1179,14 +1144,13 @@ fn gen_loop<'ctx>(
     Ok(())
 }
 
+/**
+ * // TODO: add documentation
+ */
 fn gen_break<'ctx>(
     ctx: &mut RvalGenCtx<'ctx, '_, '_, '_>,
     label: Option<&str>,
 ) -> Result<(), RvalError> {
-    /*
-     * // TODO: add documentation
-     */
-
     if let Some(label) = label {
         let target_bb = ctx
             .default_break_target
@@ -1213,14 +1177,13 @@ fn gen_break<'ctx>(
     }
 }
 
+/**
+ * // TODO: add documentation
+ */
 fn gen_continue<'ctx>(
     ctx: &mut RvalGenCtx<'ctx, '_, '_, '_>,
     label: Option<&str>,
 ) -> Result<(), RvalError> {
-    /*
-     * // TODO: add documentation
-     */
-
     if let Some(label) = label {
         let target_bb = ctx
             .default_continue_target
@@ -1247,20 +1210,22 @@ fn gen_continue<'ctx>(
     }
 }
 
+/**
+ * // TODO: add documentation
+ */
 fn gen_return<'ctx>(
     ctx: &mut RvalGenCtx<'ctx, '_, '_, '_>,
     value: &hir::Value,
 ) -> Result<(), RvalError> {
-    /*
-     * // TODO: add documentation
-     */
-
     let llvm_value = gen_rval(ctx, value)?;
     ctx.bb.build_return(Some(&llvm_value)).unwrap();
 
     Ok(())
 }
 
+/**
+ * // TODO: add documentation
+ */
 fn gen_block_rval<'ctx>(
     ctx: &mut RvalGenCtx<'ctx, '_, '_, '_>,
     hir_block: &hir::Block,
@@ -1319,6 +1284,9 @@ fn gen_block_rval<'ctx>(
     Ok(result)
 }
 
+/**
+ * // TODO: add documentation
+ */
 pub(crate) fn gen_block<'ctx>(
     ctx: &mut RvalGenCtx<'ctx, '_, '_, '_>,
     hir_block: &hir::Block,
@@ -1354,6 +1322,9 @@ pub(crate) fn gen_block<'ctx>(
     Ok(())
 }
 
+/**
+ * // TODO: add documentation
+ */
 pub(crate) fn gen_rval<'ctx>(
     ctx: &mut RvalGenCtx<'ctx, '_, '_, '_>,
     hir_value: &hir::Value,
