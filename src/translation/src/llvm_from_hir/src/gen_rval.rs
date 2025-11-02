@@ -1287,44 +1287,6 @@ fn gen_block_rval<'ctx>(
 /**
  * // TODO: add documentation
  */
-pub(crate) fn gen_block<'ctx>(
-    ctx: &mut RvalGenCtx<'ctx, '_, '_, '_>,
-    hir_block: &hir::Block,
-) -> Result<(), RvalError> {
-    for element in &hir_block.elements {
-        match element {
-            hir::BlockElement::Stmt(expr) => {
-                let expr = &ctx.store[expr].borrow();
-                gen_rval(ctx, expr)?;
-            }
-
-            hir::BlockElement::Expr(expr) => {
-                let expr = &ctx.store[expr].borrow();
-                gen_rval(ctx, expr)?;
-            }
-
-            hir::BlockElement::Local(local) => {
-                let hir_local = &ctx.store[local].borrow();
-                let local_name = hir_local.name.to_owned();
-                let hir_local_ty = &ctx.store[&hir_local.ty];
-                let hir_local_init = &ctx.store[hir_local.init.as_ref().unwrap()].borrow();
-
-                let llvm_local_ty = gen_ty(hir_local_ty, ctx.llvm, ctx.store, ctx.tab);
-                let llvm_local = ctx.bb.build_alloca(llvm_local_ty, &local_name).unwrap();
-                let llvm_init_value = gen_rval(ctx, hir_local_init)?;
-                ctx.bb.build_store(llvm_local, llvm_init_value).unwrap();
-
-                ctx.locals.insert(local_name, llvm_local);
-            }
-        };
-    }
-
-    Ok(())
-}
-
-/**
- * // TODO: add documentation
- */
 pub(crate) fn gen_rval<'ctx>(
     ctx: &mut RvalGenCtx<'ctx, '_, '_, '_>,
     hir_value: &hir::Value,
@@ -1532,4 +1494,42 @@ pub(crate) fn gen_rval<'ctx>(
             unimplemented!()
         }
     }
+}
+
+/**
+ * // TODO: add documentation
+ */
+pub(crate) fn gen_block<'ctx>(
+    ctx: &mut RvalGenCtx<'ctx, '_, '_, '_>,
+    hir_block: &hir::Block,
+) -> Result<(), RvalError> {
+    for element in &hir_block.elements {
+        match element {
+            hir::BlockElement::Stmt(expr) => {
+                let expr = &ctx.store[expr].borrow();
+                gen_rval(ctx, expr)?;
+            }
+
+            hir::BlockElement::Expr(expr) => {
+                let expr = &ctx.store[expr].borrow();
+                gen_rval(ctx, expr)?;
+            }
+
+            hir::BlockElement::Local(local) => {
+                let hir_local = &ctx.store[local].borrow();
+                let local_name = hir_local.name.to_owned();
+                let hir_local_ty = &ctx.store[&hir_local.ty];
+                let hir_local_init = &ctx.store[hir_local.init.as_ref().unwrap()].borrow();
+
+                let llvm_local_ty = gen_ty(hir_local_ty, ctx.llvm, ctx.store, ctx.tab);
+                let llvm_local = ctx.bb.build_alloca(llvm_local_ty, &local_name).unwrap();
+                let llvm_init_value = gen_rval(ctx, hir_local_init)?;
+                ctx.bb.build_store(llvm_local, llvm_init_value).unwrap();
+
+                ctx.locals.insert(local_name, llvm_local);
+            }
+        };
+    }
+
+    Ok(())
 }
