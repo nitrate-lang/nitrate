@@ -3,7 +3,7 @@ use crate::{
     package::{Package, PackageBuilder},
 };
 use clap::Parser;
-use slog::{debug, error, info, warn};
+use slog::{error, info, warn};
 use std::{fs::OpenOptions, io::Write};
 
 #[derive(Parser, Debug)]
