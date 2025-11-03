@@ -1,0 +1,39 @@
+name: nitrate
+base: core24
+version: "0.0.0"
+title: Nitrate Package and Build System
+contact: contact@nitrate.dev
+license: LGPL-3.0-or-later
+website: https://nitrate.dev
+source-code: https://github.com/nitrate-lang/nitrate
+summary: A tool to manage Nitrate packages and builds
+description: |
+  Nitrate is a comprehensive tool to install, create, compile, analyze, recompose, and
+  distribute software packages using the Nitrate Programming Language. It integrates
+  the entire Nitrate Toolchain and provides a consistent way to interact with Nitrate 
+  packages.
+
+confinement: classic
+
+parts:
+  nitrate:
+    plugin: rust
+    source: .
+    rust-channel: stable
+    build-packages:
+      - llvm-18-dev
+      - libpolly-18-dev
+      - libzstd-dev
+    build-attributes:
+      - enable-patchelf
+    override-stage: |
+      snapcraftctl stage
+      mv $SNAPCRAFT_PART_INSTALL/bin/no3 $SNAPCRAFT_PART_INSTALL/tmp
+      rm -rf $SNAPCRAFT_PART_INSTALL/bin/*
+      mv $SNAPCRAFT_PART_INSTALL/tmp $SNAPCRAFT_PART_INSTALL/bin/no3
+      strip $SNAPCRAFT_PART_INSTALL/bin/no3
+
+apps:
+  nitrate:
+    command: bin/no3
+    
