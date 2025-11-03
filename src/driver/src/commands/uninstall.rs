@@ -7,7 +7,7 @@ use slog::info;
 pub(crate) struct UninstallArgs {}
 
 impl Interpreter<'_> {
-    pub(crate) fn sc_uninstall(&mut self, _args: &UninstallArgs) -> Result<(), InterpreterError> {
+    pub(crate) fn sc_uninstall(&mut self, _args: UninstallArgs) -> Result<(), InterpreterError> {
         info!(self.log, "package uninstall sub-command invoked");
         // TODO: uninstall logic here
         Ok(())

@@ -51,7 +51,7 @@ impl Interpreter<'_> {
             Ok(())
         } else {
             error!(self.log, "'{}' is not a recognized error code.", code);
-            Err(InterpreterError::ExplainErrorUnrecognizedCode)
+            Err(InterpreterError::OperationalError)
         }
     }
 }

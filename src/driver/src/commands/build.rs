@@ -11,8 +11,8 @@ use nitrate_translation::{
     parsetree::ast,
     token_lexer::{Lexer, LexerError},
 };
-use slog::{error, info};
-use std::{collections::HashSet, io::Read};
+use slog::{debug, error, info};
+use std::{collections::HashSet, io::Read, path::PathBuf};
 
 #[derive(Parser, Debug)]
 #[command(about, long_about = None)]
@@ -36,7 +36,7 @@ impl Interpreter<'_> {
                 supported,
             );
 
-            return Err(InterpreterError::UnsupportedPackageEdition(edition));
+            return Err(InterpreterError::OperationalError);
         }
 
         Ok(())
@@ -65,9 +65,18 @@ impl Interpreter<'_> {
                     "Failed to load package config from 'no3.xml': {}", e
                 );
 
-                return Err(InterpreterError::InvalidPackageConfig);
+                return Err(InterpreterError::OperationalError);
             }
         }
+    }
+
+    fn get_search_paths(&self) -> Vec<PathBuf> {
+        let mut search_paths = Vec::new();
+
+        search_paths.push(std::env::current_dir().unwrap().join("no3_modules"));
+        debug!(self.log, "Package search paths: {:?}", search_paths);
+
+        search_paths
     }
 
     fn parse_source_code(
@@ -76,9 +85,6 @@ impl Interpreter<'_> {
         package_name: &str,
         log: &CompilerLog,
     ) -> Result<ast::Module, InterpreterError> {
-        /* FIXME: Implement package search paths */
-        let package_search_paths = Vec::new();
-
         let mut source_code_file = match std::fs::File::open(&entrypoint_path) {
             Ok(file) => file,
 
@@ -112,7 +118,7 @@ impl Interpreter<'_> {
                     entrypoint_path.display(),
                 );
 
-                return Err(InterpreterError::BuildError);
+                return Err(InterpreterError::OperationalError);
             }
         };
 
@@ -120,7 +126,7 @@ impl Interpreter<'_> {
 
         Ok(parser.parse_source(Some(ResolveCtx {
             package_name: package_name.to_string(),
-            package_search_paths,
+            package_search_paths: self.get_search_paths(),
         })))
     }
 
@@ -134,14 +140,14 @@ impl Interpreter<'_> {
 
         let mut ctx = Ast2HirCtx::new(PTR_SIZE);
         let module = match convert_ast_to_hir(module, &mut ctx, log) {
-            Err(_) => return Err(InterpreterError::BuildError),
+            Err(_) => return Err(InterpreterError::OperationalError),
             Ok(module) => module,
         };
 
         Ok((module, ctx.store, ctx.tab))
     }
 
-    pub(crate) fn sc_build(&mut self, _args: &BuildArgs) -> Result<(), InterpreterError> {
+    pub(crate) fn sc_build(&mut self, _args: BuildArgs) -> Result<(), InterpreterError> {
         let package = self.get_package_config()?;
 
         self.validate_package_edition(package.edition())?;
@@ -171,7 +177,7 @@ impl Interpreter<'_> {
                 package.name(),
             );
 
-            return Err(InterpreterError::BuildError);
+            return Err(InterpreterError::OperationalError);
         };
 
         let llvm_ctx = LLVMContext::new();

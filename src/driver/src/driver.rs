@@ -156,11 +156,10 @@ struct Args {
 
 pub enum InterpreterError {
     UnknownCommand,
-    InvalidPackageConfig,
+    CLISemanticError,
+
     IoError(std::io::Error),
-    ExplainErrorUnrecognizedCode,
-    UnsupportedPackageEdition(u16),
-    BuildError,
+    OperationalError,
 }
 
 impl From<std::io::Error> for InterpreterError {
@@ -259,7 +258,7 @@ impl<'log> Interpreter<'log> {
             (false, false, false) => (false, false),
         };
 
-        if let Some(subcommand) = &args.command {
+        if let Some(subcommand) = args.command {
             return match subcommand {
                 Commands::Build(build_args) => self.sc_build(build_args),
                 Commands::Check(check_args) => self.sc_check(check_args),

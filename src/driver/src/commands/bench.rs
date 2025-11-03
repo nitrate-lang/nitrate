@@ -7,7 +7,7 @@ use slog::info;
 pub(crate) struct BenchArgs {}
 
 impl Interpreter<'_> {
-    pub(crate) fn sc_bench(&mut self, _args: &BenchArgs) -> Result<(), InterpreterError> {
+    pub(crate) fn sc_bench(&mut self, _args: BenchArgs) -> Result<(), InterpreterError> {
         info!(self.log, "package benchmark sub-command invoked");
         // TODO: benchmark logic here
         Ok(())
