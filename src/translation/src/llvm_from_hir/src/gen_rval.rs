@@ -572,7 +572,13 @@ fn gen_rval_xor<'ctx>(
 }
 
 /**
- * // TODO: add documentation
+ * Bitwise left-shift operation.
+ *
+ * Integers:
+ * - Performs a bitwise left-shift operation on each corresponding bit of the operands.
+ * - https://llvm.org/docs/LangRef.html#shl-instruction
+ *
+ * This operation has left-to-right evaluation order.
  */
 fn gen_rval_shl<'ctx>(
     ctx: &mut RvalGenCtx<'ctx, '_, '_, '_>,
@@ -581,42 +587,71 @@ fn gen_rval_shl<'ctx>(
 ) -> Result<BasicValueEnum<'ctx>, RvalError> {
     let lhs = gen_rval(ctx, lhs)?;
     let rhs = gen_rval(ctx, rhs)?;
+    let lhs_ty = lhs.get_type();
+    let rhs_ty = rhs.get_type();
 
-    let shl = ctx
-        .bb
-        .build_left_shift(lhs.into_int_value(), rhs.into_int_value(), "")
-        .unwrap();
+    if lhs_ty.is_int_type() && rhs_ty.is_int_type() {
+        let shl = ctx
+            .bb
+            .build_left_shift(lhs.into_int_value(), rhs.into_int_value(), "")
+            .unwrap();
 
-    Ok(shl.into())
+        Ok(shl.into())
+    } else {
+        Err(RvalError::OperandTypeCombinationError {
+            operation_name: "bitwise left-shift",
+        })
+    }
 }
 
 /**
- * // TODO: add documentation
+ * Bitwise right-shift operation.
+ *
+ * Integers:
+ * - Performs a bitwise right-shift operation on each corresponding bit of the operands.
+ * - https://llvm.org/docs/LangRef.html#shr-instruction
+ *
+ * This operation has left-to-right evaluation order.
  */
 fn gen_rval_shr<'ctx>(
     ctx: &mut RvalGenCtx<'ctx, '_, '_, '_>,
     lhs: &hir::Value,
     rhs: &hir::Value,
 ) -> Result<BasicValueEnum<'ctx>, RvalError> {
-    let sign_extend = lhs
-        .get_type(&ctx.store, &ctx.tab)
-        .expect("Failed to get type")
-        .is_signed_primitive();
+    let llvm_lhs = gen_rval(ctx, lhs)?;
+    let llvm_rhs = gen_rval(ctx, rhs)?;
+    let lhs_ty = llvm_lhs.get_type();
+    let rhs_ty = llvm_rhs.get_type();
 
-    let lhs = gen_rval(ctx, lhs)?;
-    let rhs = gen_rval(ctx, rhs)?;
+    if lhs_ty.is_int_type() && rhs_ty.is_int_type() {
+        let sign_extend = lhs
+            .get_type(&ctx.store, &ctx.tab)
+            .expect("Failed to get type")
+            .is_signed_primitive();
 
-    let shr = ctx
-        .bb
-        .build_right_shift(lhs.into_int_value(), rhs.into_int_value(), sign_extend, "")
-        .unwrap();
+        let shr = ctx
+            .bb
+            .build_right_shift(
+                llvm_lhs.into_int_value(),
+                llvm_rhs.into_int_value(),
+                sign_extend,
+                "",
+            )
+            .unwrap();
 
-    Ok(shr.into())
+        Ok(shr.into())
+    } else {
+        Err(RvalError::OperandTypeCombinationError {
+            operation_name: "bitwise right-shift",
+        })
+    }
 }
 
 /**
  * Bitwise rotate left operation formula:
  * rol(x, n) = (x << (n % bit_width)) | (x >> ((bit_width - (n % bit_width)) % bit_width))
+ *
+ * This operation has left-to-right evaluation order.
  */
 fn gen_rval_rol<'ctx>(
     ctx: &mut RvalGenCtx<'ctx, '_, '_, '_>,
@@ -625,6 +660,15 @@ fn gen_rval_rol<'ctx>(
 ) -> Result<BasicValueEnum<'ctx>, RvalError> {
     let lhs = gen_rval(ctx, lhs)?;
     let rhs = gen_rval(ctx, rhs)?;
+    let lhs_ty = lhs.get_type();
+    let rhs_ty = rhs.get_type();
+
+    if !lhs_ty.is_int_type() || !rhs_ty.is_int_type() {
+        return Err(RvalError::OperandTypeCombinationError {
+            operation_name: "bitwise rotate left",
+        });
+    }
+
     let bit_width = ctx.llvm.target_data().get_store_size(&lhs.get_type()) * 8;
     let bit_width_i32 = ctx.llvm.i32_type().const_int(bit_width as u64, false);
 
@@ -658,6 +702,8 @@ fn gen_rval_rol<'ctx>(
 /**
  * Bitwise rotate right operation formula:
  * ror(x, n) = (x >> (n % bit_width)) | (x << ((bit_width - (n % bit_width)) % bit_width))
+ *
+ * This operation has left-to-right evaluation order.
  */
 fn gen_rval_ror<'ctx>(
     ctx: &mut RvalGenCtx<'ctx, '_, '_, '_>,
@@ -666,6 +712,15 @@ fn gen_rval_ror<'ctx>(
 ) -> Result<BasicValueEnum<'ctx>, RvalError> {
     let lhs = gen_rval(ctx, lhs)?;
     let rhs = gen_rval(ctx, rhs)?;
+    let lhs_ty = lhs.get_type();
+    let rhs_ty = rhs.get_type();
+
+    if !lhs_ty.is_int_type() || !rhs_ty.is_int_type() {
+        return Err(RvalError::OperandTypeCombinationError {
+            operation_name: "bitwise rotate right",
+        });
+    }
+
     let bit_width = ctx.llvm.target_data().get_store_size(&lhs.get_type()) * 8;
     let bit_width_i32 = ctx.llvm.i32_type().const_int(bit_width as u64, false);
 
@@ -697,7 +752,11 @@ fn gen_rval_ror<'ctx>(
 }
 
 /**
- * // TODO: add documentation
+ * Logical AND operation:
+ *
+ * Evaluates the LHS; if true, evaluates the RHS; otherwise, returns false.
+ *
+ * This operation has left-to-right evaluation order.
  */
 fn gen_rval_land<'ctx>(
     ctx: &mut RvalGenCtx<'ctx, '_, '_, '_>,
@@ -717,6 +776,13 @@ fn gen_rval_land<'ctx>(
     /**************************************************************************/
     // 2. Evaluate LHS; if true, skip RHS
     let lhs_val = gen_rval(ctx, lhs)?;
+    let lhs_val_ty = lhs_val.get_type();
+    if !lhs_val_ty.is_int_type() {
+        return Err(RvalError::OperandTypeCombinationError {
+            operation_name: "logical AND",
+        });
+    }
+
     ctx.bb.build_store(land_result, lhs_val).unwrap();
     ctx.bb
         .build_conditional_branch(lhs_val.into_int_value(), rhs_bb, end_bb)
@@ -737,7 +803,11 @@ fn gen_rval_land<'ctx>(
 }
 
 /**
- * // TODO: add documentation
+ * Logical OR operation:
+ *
+ * Evaluates the LHS; if false, evaluates the RHS; otherwise, returns true.
+ *
+ * This operation has left-to-right evaluation order.
  */
 fn gen_rval_lor<'ctx>(
     ctx: &mut RvalGenCtx<'ctx, '_, '_, '_>,
@@ -757,6 +827,13 @@ fn gen_rval_lor<'ctx>(
     /**************************************************************************/
     // 2. Evaluate LHS; if true, skip RHS
     let lhs_val = gen_rval(ctx, lhs)?;
+    let lhs_val_ty = lhs_val.get_type();
+    if !lhs_val_ty.is_int_type() {
+        return Err(RvalError::OperandTypeCombinationError {
+            operation_name: "logical OR",
+        });
+    }
+
     ctx.bb.build_store(lor_result, lhs_val).unwrap();
     ctx.bb
         .build_conditional_branch(lhs_val.into_int_value(), end_bb, rhs_bb)
@@ -777,7 +854,19 @@ fn gen_rval_lor<'ctx>(
 }
 
 /**
- * // TODO: add documentation
+ * Less than operation:
+ *
+ * Signed integers:
+ * - Signed integers use signed less-than comparison.
+ * - https://llvm.org/docs/LangRef.html#icmp-instruction with predicate 'slt'
+ *
+ * Unsigned integers:
+ * - Unsigned integers use unsigned less-than comparison.
+ * - https://llvm.org/docs/LangRef.html#icmp-instruction with predicate 'ult'
+ *
+ * Floating-point:
+ * - Floating-point numbers use ordered less-than comparison.
+ * - https://llvm.org/docs/LangRef.html#fcmp-instruction with predicate 'olt'
  */
 fn gen_rval_lt<'ctx>(
     ctx: &mut RvalGenCtx<'ctx, '_, '_, '_>,
@@ -800,7 +889,7 @@ fn gen_rval_lt<'ctx>(
             )
             .unwrap();
 
-        return Ok(fcmp.into());
+        Ok(fcmp.into())
     } else if lhs_ty.is_int_type() && rhs_ty.is_int_type() {
         let is_signed = lhs
             .get_type(&ctx.store, &ctx.tab)
@@ -827,14 +916,28 @@ fn gen_rval_lt<'ctx>(
                 .unwrap()
         };
 
-        return Ok(cmp.into());
+        Ok(cmp.into())
     } else {
-        panic!("Comparison not implemented for this type");
+        Err(RvalError::OperandTypeCombinationError {
+            operation_name: "less than comparison",
+        })
     }
 }
 
 /**
- * // TODO: add documentation
+ * Greater than operation:
+ *
+ * Signed integers:
+ * - Signed integers use signed greater-than comparison.
+ * - https://llvm.org/docs/LangRef.html#icmp-instruction with predicate 'sgt'
+ *
+ * Unsigned integers:
+ * - Unsigned integers use unsigned greater-than comparison.
+ * - https://llvm.org/docs/LangRef.html#icmp-instruction with predicate 'ugt'
+ *
+ * Floating-point:
+ * - Floating-point numbers use ordered greater-than comparison.
+ * - https://llvm.org/docs/LangRef.html#fcmp-instruction with predicate 'ogt'
  */
 fn gen_rval_gt<'ctx>(
     ctx: &mut RvalGenCtx<'ctx, '_, '_, '_>,
@@ -857,7 +960,7 @@ fn gen_rval_gt<'ctx>(
             )
             .unwrap();
 
-        return Ok(fcmp.into());
+        Ok(fcmp.into())
     } else if lhs_ty.is_int_type() && rhs_ty.is_int_type() {
         let is_signed = lhs
             .get_type(&ctx.store, &ctx.tab)
@@ -884,14 +987,28 @@ fn gen_rval_gt<'ctx>(
                 .unwrap()
         };
 
-        return Ok(cmp.into());
+        Ok(cmp.into())
     } else {
-        panic!("Comparison not implemented for this type");
+        Err(RvalError::OperandTypeCombinationError {
+            operation_name: "greater than comparison",
+        })
     }
 }
 
 /**
- * // TODO: add documentation
+ * Less than or equal operation:
+ *
+ * Signed integers:
+ * - Signed integers use signed less-than-or-equal comparison.
+ * - https://llvm.org/docs/LangRef.html#icmp-instruction with predicate 'sle'
+ *
+ * Unsigned integers:
+ * - Unsigned integers use unsigned less-than-or-equal comparison.
+ * - https://llvm.org/docs/LangRef.html#icmp-instruction with predicate 'ule'
+ *
+ * Floating-point:
+ * - Floating-point numbers use ordered less-than-or-equal comparison.
+ * - https://llvm.org/docs/LangRef.html#fcmp-instruction with predicate 'ole'
  */
 fn gen_rval_lte<'ctx>(
     ctx: &mut RvalGenCtx<'ctx, '_, '_, '_>,
@@ -914,7 +1031,7 @@ fn gen_rval_lte<'ctx>(
             )
             .unwrap();
 
-        return Ok(fcmp.into());
+        Ok(fcmp.into())
     } else if lhs_ty.is_int_type() && rhs_ty.is_int_type() {
         let is_signed = lhs
             .get_type(&ctx.store, &ctx.tab)
@@ -941,14 +1058,28 @@ fn gen_rval_lte<'ctx>(
                 .unwrap()
         };
 
-        return Ok(cmp.into());
+        Ok(cmp.into())
     } else {
-        panic!("Comparison not implemented for this type");
+        Err(RvalError::OperandTypeCombinationError {
+            operation_name: "less than or equal comparison",
+        })
     }
 }
 
 /**
- * // TODO: add documentation
+ * Greater than or equal operation:
+ *
+ * Signed integers:
+ * - Signed integers use signed greater-than-or-equal comparison.
+ * - https://llvm.org/docs/LangRef.html#icmp-instruction with predicate 'sge'
+ *
+ * Unsigned integers:
+ * - Unsigned integers use unsigned greater-than-or-equal comparison.
+ * - https://llvm.org/docs/LangRef.html#icmp-instruction with predicate 'uge'
+ *
+ * Floating-point:
+ * - Floating-point numbers use ordered greater-than-or-equal comparison.
+ * - https://llvm.org/docs/LangRef.html#fcmp-instruction with predicate 'oge'
  */
 fn gen_rval_gte<'ctx>(
     ctx: &mut RvalGenCtx<'ctx, '_, '_, '_>,
@@ -971,7 +1102,7 @@ fn gen_rval_gte<'ctx>(
             )
             .unwrap();
 
-        return Ok(fcmp.into());
+        Ok(fcmp.into())
     } else if lhs_ty.is_int_type() && rhs_ty.is_int_type() {
         let is_signed = lhs
             .get_type(&ctx.store, &ctx.tab)
@@ -998,14 +1129,24 @@ fn gen_rval_gte<'ctx>(
                 .unwrap()
         };
 
-        return Ok(cmp.into());
+        Ok(cmp.into())
     } else {
-        panic!("Comparison not implemented for this type");
+        Err(RvalError::OperandTypeCombinationError {
+            operation_name: "greater than or equal comparison",
+        })
     }
 }
 
 /**
- * // TODO: add documentation
+ * Equality operation:
+ *
+ * Signed and unsigned integers:
+ * - Signed integers use signed equality comparison.
+ * - https://llvm.org/docs/LangRef.html#icmp-instruction with predicate 'eq'
+ *
+ * Floating-point:
+ * - Floating-point numbers use ordered equality comparison.
+ * - https://llvm.org/docs/LangRef.html#fcmp-instruction with predicate 'oeq'
  */
 fn gen_rval_eq<'ctx>(
     ctx: &mut RvalGenCtx<'ctx, '_, '_, '_>,
@@ -1028,7 +1169,7 @@ fn gen_rval_eq<'ctx>(
             )
             .unwrap();
 
-        return Ok(fcmp.into());
+        Ok(fcmp.into())
     } else if lhs_ty.is_int_type() && rhs_ty.is_int_type() {
         let icmp = ctx
             .bb
@@ -1040,14 +1181,24 @@ fn gen_rval_eq<'ctx>(
             )
             .unwrap();
 
-        return Ok(icmp.into());
+        Ok(icmp.into())
     } else {
-        panic!("Comparison not implemented for this type");
+        Err(RvalError::OperandTypeCombinationError {
+            operation_name: "equality comparison",
+        })
     }
 }
 
 /**
- * // TODO: add documentation
+ * Inequality operation:
+ *
+ * Signed and unsigned integers:
+ * - Signed integers use signed inequality comparison.
+ * - https://llvm.org/docs/LangRef.html#icmp-instruction with predicate 'ne'
+ *
+ * Floating-point:
+ * - Floating-point numbers use ordered inequality comparison.
+ * - https://llvm.org/docs/LangRef.html#fcmp-instruction with predicate 'one'
  */
 fn gen_rval_ne<'ctx>(
     ctx: &mut RvalGenCtx<'ctx, '_, '_, '_>,
@@ -1070,7 +1221,7 @@ fn gen_rval_ne<'ctx>(
             )
             .unwrap();
 
-        return Ok(fcmp.into());
+        Ok(fcmp.into())
     } else if lhs_ty.is_int_type() && rhs_ty.is_int_type() {
         let icmp = ctx
             .bb
@@ -1082,9 +1233,11 @@ fn gen_rval_ne<'ctx>(
             )
             .unwrap();
 
-        return Ok(icmp.into());
+        Ok(icmp.into())
     } else {
-        panic!("Comparison not implemented for this type");
+        Err(RvalError::OperandTypeCombinationError {
+            operation_name: "inequality comparison",
+        })
     }
 }
 
