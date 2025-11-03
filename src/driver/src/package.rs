@@ -63,7 +63,7 @@ impl Package {
     }
 
     pub fn entrypoint(&self) -> std::path::PathBuf {
-        std::path::Path::new("src").join("main.nit")
+        std::path::Path::new("src").join("entry.nit")
     }
 
     pub fn xml_serialize(&self) -> String {
