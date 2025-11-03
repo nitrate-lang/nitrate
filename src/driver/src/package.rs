@@ -1,15 +1,16 @@
 use serde::{Deserialize, Serialize};
+use xml_doc::ReadOptions;
 
 #[derive(Debug, Serialize, Deserialize, PartialEq)]
 pub struct Dependency {
     #[serde(rename = "@name")]
-    name: String,
+    pub name: String,
     #[serde(rename = "@major")]
-    major: u32,
+    pub major: u32,
     #[serde(rename = "@minor")]
-    minor: u32,
+    pub minor: u32,
     #[serde(rename = "@patch")]
-    patch: u32,
+    pub patch: u32,
 }
 
 #[derive(Debug, Serialize, Deserialize, PartialEq)]
@@ -21,11 +22,11 @@ pub struct Dependencies {
 #[derive(Debug, Serialize, Deserialize, PartialEq)]
 pub struct Version {
     #[serde(rename = "@major")]
-    major: u32,
+    pub major: u32,
     #[serde(rename = "@minor")]
-    minor: u32,
+    pub minor: u32,
     #[serde(rename = "@patch")]
-    patch: u32,
+    pub patch: u32,
 }
 
 #[derive(Debug, Serialize, Deserialize, PartialEq)]
@@ -63,5 +64,77 @@ impl Package {
 
     pub fn entrypoint(&self) -> std::path::PathBuf {
         std::path::Path::new("src").join("main.nit")
+    }
+
+    pub fn xml_serialize(&self) -> String {
+        const XMLNS_XSI: &str = "http://www.w3.org/2001/XMLSchema-instance";
+        const XSI_NO_NAMESPACE_SCHEMA_LOCATION: &str =
+            "https://static.nitrate.dev/no3_package_config.xsd";
+
+        let serialized = serde_xml_rs::to_string(self).unwrap();
+        let mut document =
+            xml_doc::Document::parse_str_with_opts(&serialized, ReadOptions::default()).unwrap();
+
+        let root = document.root_element().unwrap();
+        root.set_attribute(&mut document, "xmlns:xsi", XMLNS_XSI);
+        root.set_attribute(
+            &mut document,
+            "xsi:noNamespaceSchemaLocation",
+            XSI_NO_NAMESPACE_SCHEMA_LOCATION,
+        );
+
+        document.write_str().unwrap()
+    }
+}
+
+pub struct PackageBuilder {
+    name: String,
+    version: Version,
+    edition: u16,
+    dependencies: Vec<Dependency>,
+}
+
+impl PackageBuilder {
+    pub fn new(name: String) -> Self {
+        Self {
+            name,
+            version: Version {
+                major: 0,
+                minor: 1,
+                patch: 0,
+            },
+            edition: 2025,
+            dependencies: Vec::new(),
+        }
+    }
+
+    pub fn version(mut self, version: Version) -> Self {
+        self.version = version;
+        self
+    }
+
+    pub fn edition(mut self, edition: u16) -> Self {
+        self.edition = edition;
+        self
+    }
+
+    pub fn add_dependency(mut self, dependency: Dependency) -> Self {
+        self.dependencies.push(dependency);
+        self
+    }
+
+    pub fn build(self) -> Package {
+        Package {
+            name: self.name,
+            version: self.version,
+            edition: self.edition,
+            dependencies: Dependencies {
+                dependency: if self.dependencies.is_empty() {
+                    None
+                } else {
+                    Some(self.dependencies)
+                },
+            },
+        }
     }
 }

@@ -47,3 +47,6 @@ runtime/libazide-gc/target/
 /target
 src/translation/src/*/target
 tmp/
+# Nitrate NO3 files
+no3_modules/
+
