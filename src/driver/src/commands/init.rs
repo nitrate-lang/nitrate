@@ -142,15 +142,38 @@ impl Interpreter<'_> {
             /***************************************************************************/
             // Append to ".gitignore" file
 
-            let gitignore_content = "\n# Nitrate NO3 files\nno3_modules/\n\n";
+            let gitignore_content = "# Nitrate NO3 files\nno3_modules/\n\n";
 
             let mut gitignore = OpenOptions::new()
                 .write(true)
                 .create(true)
                 .append(true)
-                .open(".gitignore")?;
+                .open(containing_dir.join(".gitignore"))?;
 
             gitignore.write_all(gitignore_content.as_bytes())?;
+        }
+
+        {
+            /***************************************************************************/
+            // Create README.md file
+
+            let readme_content = "# Nitrate Package\n\n";
+            let readme_path = containing_dir.join("README.md");
+
+            if readme_path.exists() {
+                warn!(
+                    self.log,
+                    "README.md already exists at {}, skipping creation.",
+                    readme_path.display()
+                );
+            } else {
+                let mut readme = std::fs::File::create(&readme_path).map_err(|e| {
+                    error!(self.log, "Failed to create README.md file: {}", e);
+                    InterpreterError::IoError(e)
+                })?;
+
+                readme.write_all(readme_content.as_bytes())?;
+            }
         }
 
         info!(
