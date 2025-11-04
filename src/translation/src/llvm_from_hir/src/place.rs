@@ -5,7 +5,7 @@ use interned_string::IString;
 use nitrate_hir::prelude as hir;
 
 fn gen_place_field_access<'ctx>(
-    _ctx: &mut CodegenCtx<'ctx, '_, '_, '_>,
+    _ctx: &mut CodegenCtx<'ctx, '_, '_, '_, '_>,
     _struct_value: &hir::Value,
     _field_name: &IString,
 ) -> Result<PointerValue<'ctx>, CodegenError> {
@@ -14,7 +14,7 @@ fn gen_place_field_access<'ctx>(
 }
 
 fn gen_place_index_access<'ctx>(
-    _ctx: &mut CodegenCtx<'ctx, '_, '_, '_>,
+    _ctx: &mut CodegenCtx<'ctx, '_, '_, '_, '_>,
     _collection: &hir::Value,
     _index: &hir::Value,
 ) -> Result<PointerValue<'ctx>, CodegenError> {
@@ -23,7 +23,7 @@ fn gen_place_index_access<'ctx>(
 }
 
 fn gen_place_deref<'ctx>(
-    _ctx: &mut CodegenCtx<'ctx, '_, '_, '_>,
+    _ctx: &mut CodegenCtx<'ctx, '_, '_, '_, '_>,
     _place: &hir::Value,
 ) -> Result<PointerValue<'ctx>, CodegenError> {
     // TODO: implement dereference codegen
@@ -31,7 +31,7 @@ fn gen_place_deref<'ctx>(
 }
 
 fn gen_place_symbol<'ctx>(
-    _ctx: &mut CodegenCtx<'ctx, '_, '_, '_>,
+    _ctx: &mut CodegenCtx<'ctx, '_, '_, '_, '_>,
     _symbol_name: &IString,
 ) -> Result<PointerValue<'ctx>, CodegenError> {
     // TODO: implement symbol codegen
@@ -39,7 +39,7 @@ fn gen_place_symbol<'ctx>(
 }
 
 pub(crate) fn gen_place<'ctx>(
-    ctx: &mut CodegenCtx<'ctx, '_, '_, '_>,
+    ctx: &mut CodegenCtx<'ctx, '_, '_, '_, '_>,
     hir_value: &hir::Value,
 ) -> Result<PointerValue<'ctx>, CodegenError> {
     match hir_value {

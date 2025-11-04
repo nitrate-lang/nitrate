@@ -15,7 +15,6 @@ pub struct Parser<'a, 'log> {
 }
 
 pub struct ResolveCtx {
-    pub current_package: String,
     pub package_search_paths: Vec<PathBuf>,
 }
 
@@ -39,7 +38,7 @@ impl<'a, 'log> Parser<'a, 'log> {
         }
 
         let mut module = Module {
-            name: package_name,
+            name: package_name.clone(),
             visibility: None,
             items,
             attributes: None,
@@ -47,12 +46,8 @@ impl<'a, 'log> Parser<'a, 'log> {
 
         if let Some(resolve_ctx) = resolve {
             if let Some(fileid) = current_file {
-                let import_ctx = ImportContext::new(
-                    resolve_ctx.current_package.into(),
-                    PathBuf::from(fileid.deref()),
-                )
-                .with_package_search_paths(resolve_ctx.package_search_paths);
-
+                let import_ctx = ImportContext::new(package_name, PathBuf::from(fileid.deref()))
+                    .with_package_search_paths(resolve_ctx.package_search_paths);
                 resolve_imports(&import_ctx, &mut module, self.log);
             }
 

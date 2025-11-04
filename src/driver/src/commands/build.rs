@@ -8,7 +8,7 @@ use nitrate_translation::{
     llvm::{LLVMContext, OptLevel},
     llvm_from_hir::generate_llvmir,
     parse::ResolveCtx,
-    parsetree::{PrettyPrint, PrintContext, ast},
+    parsetree::ast,
     token_lexer::{Lexer, LexerError},
 };
 use slog::{debug, error, info};
@@ -167,7 +167,6 @@ impl Interpreter<'_> {
         Ok(parser.parse_source(
             package_name.into(),
             Some(ResolveCtx {
-                current_package: package_name.to_string(),
                 package_search_paths: self.get_search_paths(),
             }),
         ))
@@ -300,6 +299,11 @@ impl Interpreter<'_> {
             &store,
             &symbol_tab,
         );
+
+        if args.show_llvmir {
+            println!("{}", llvm_module.print_to_string().to_string());
+            return Ok(());
+        }
 
         llvm_ctx.optimize_module(&mut llvm_module);
 

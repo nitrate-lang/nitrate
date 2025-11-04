@@ -4,7 +4,10 @@ use inkwell::{
     values::{BasicValueEnum, PointerValue},
 };
 
-use crate::{place::gen_place, ty::gen_ty};
+use crate::{
+    place::gen_place,
+    ty::{gen_function_ty, gen_ty},
+};
 use interned_string::IString;
 use nitrate_hir::{ValueId, prelude as hir};
 use nitrate_hir_get_type::HirGetType;
@@ -12,10 +15,11 @@ use nitrate_llvm::LLVMContext;
 use std::collections::HashMap;
 use std::ops::Deref;
 
-pub struct CodegenCtx<'ctx, 'store, 'tab, 'builder> {
+pub struct CodegenCtx<'ctx, 'module, 'store, 'tab, 'builder> {
     pub store: &'store hir::Store,
     pub tab: &'tab hir::SymbolTab,
     pub llvm: &'ctx LLVMContext,
+    pub module: &'module inkwell::module::Module<'ctx>,
 
     pub bb: &'builder inkwell::builder::Builder<'ctx>,
     pub locals: HashMap<IString, PointerValue<'ctx>>,
@@ -38,7 +42,7 @@ pub enum CodegenError {
  * The Unit Value is an empty struct
  */
 fn gen_rval_lit_unit<'ctx>(
-    ctx: &mut CodegenCtx<'ctx, '_, '_, '_>,
+    ctx: &mut CodegenCtx<'ctx, '_, '_, '_, '_>,
 ) -> Result<BasicValueEnum<'ctx>, CodegenError> {
     Ok(ctx.llvm.const_struct(&[], false).into())
 }
@@ -48,7 +52,7 @@ fn gen_rval_lit_unit<'ctx>(
  * No sign extension is performed.
  */
 fn gen_rval_lit_bool<'ctx>(
-    ctx: &mut CodegenCtx<'ctx, '_, '_, '_>,
+    ctx: &mut CodegenCtx<'ctx, '_, '_, '_, '_>,
     value: bool,
 ) -> Result<BasicValueEnum<'ctx>, CodegenError> {
     match value {
@@ -62,7 +66,7 @@ fn gen_rval_lit_bool<'ctx>(
  * Sign extension is performed.
  */
 fn gen_rval_lit_i8<'ctx>(
-    ctx: &mut CodegenCtx<'ctx, '_, '_, '_>,
+    ctx: &mut CodegenCtx<'ctx, '_, '_, '_, '_>,
     value: i8,
 ) -> Result<BasicValueEnum<'ctx>, CodegenError> {
     Ok(ctx.llvm.i8_type().const_int(value as u64, true).into())
@@ -73,7 +77,7 @@ fn gen_rval_lit_i8<'ctx>(
  * Sign extension is performed.
  */
 fn gen_rval_lit_i16<'ctx>(
-    ctx: &mut CodegenCtx<'ctx, '_, '_, '_>,
+    ctx: &mut CodegenCtx<'ctx, '_, '_, '_, '_>,
     value: i16,
 ) -> Result<BasicValueEnum<'ctx>, CodegenError> {
     Ok(ctx.llvm.i16_type().const_int(value as u64, true).into())
@@ -84,7 +88,7 @@ fn gen_rval_lit_i16<'ctx>(
  * Sign extension is performed.
  */
 fn gen_rval_lit_i32<'ctx>(
-    ctx: &mut CodegenCtx<'ctx, '_, '_, '_>,
+    ctx: &mut CodegenCtx<'ctx, '_, '_, '_, '_>,
     value: i32,
 ) -> Result<BasicValueEnum<'ctx>, CodegenError> {
     Ok(ctx.llvm.i32_type().const_int(value as u64, true).into())
@@ -95,7 +99,7 @@ fn gen_rval_lit_i32<'ctx>(
  * Sign extension is performed.
  */
 fn gen_rval_lit_i64<'ctx>(
-    ctx: &mut CodegenCtx<'ctx, '_, '_, '_>,
+    ctx: &mut CodegenCtx<'ctx, '_, '_, '_, '_>,
     value: i64,
 ) -> Result<BasicValueEnum<'ctx>, CodegenError> {
     Ok(ctx.llvm.i64_type().const_int(value as u64, true).into())
@@ -107,7 +111,7 @@ fn gen_rval_lit_i64<'ctx>(
  * from its low and high parts directly.
  */
 fn gen_rval_lit_i128<'ctx>(
-    ctx: &mut CodegenCtx<'ctx, '_, '_, '_>,
+    ctx: &mut CodegenCtx<'ctx, '_, '_, '_, '_>,
     value: i128,
 ) -> Result<BasicValueEnum<'ctx>, CodegenError> {
     let low = (value & 0xFFFFFFFFFFFFFFFF) as u64;
@@ -127,7 +131,7 @@ fn gen_rval_lit_i128<'ctx>(
  * No sign extension is performed.
  */
 fn gen_rval_lit_u8<'ctx>(
-    ctx: &mut CodegenCtx<'ctx, '_, '_, '_>,
+    ctx: &mut CodegenCtx<'ctx, '_, '_, '_, '_>,
     value: u8,
 ) -> Result<BasicValueEnum<'ctx>, CodegenError> {
     Ok(ctx.llvm.i8_type().const_int(value as u64, false).into())
@@ -138,7 +142,7 @@ fn gen_rval_lit_u8<'ctx>(
  * No sign extension is performed.
  */
 fn gen_rval_lit_u16<'ctx>(
-    ctx: &mut CodegenCtx<'ctx, '_, '_, '_>,
+    ctx: &mut CodegenCtx<'ctx, '_, '_, '_, '_>,
     value: u16,
 ) -> Result<BasicValueEnum<'ctx>, CodegenError> {
     Ok(ctx.llvm.i16_type().const_int(value as u64, false).into())
@@ -149,7 +153,7 @@ fn gen_rval_lit_u16<'ctx>(
  * No sign extension is performed.
  */
 fn gen_rval_lit_u32<'ctx>(
-    ctx: &mut CodegenCtx<'ctx, '_, '_, '_>,
+    ctx: &mut CodegenCtx<'ctx, '_, '_, '_, '_>,
     value: u32,
 ) -> Result<BasicValueEnum<'ctx>, CodegenError> {
     Ok(ctx.llvm.i32_type().const_int(value as u64, false).into())
@@ -160,7 +164,7 @@ fn gen_rval_lit_u32<'ctx>(
  * No sign extension is performed.
  */
 fn gen_rval_lit_u64<'ctx>(
-    ctx: &mut CodegenCtx<'ctx, '_, '_, '_>,
+    ctx: &mut CodegenCtx<'ctx, '_, '_, '_, '_>,
     value: u64,
 ) -> Result<BasicValueEnum<'ctx>, CodegenError> {
     Ok(ctx.llvm.i64_type().const_int(value, false).into())
@@ -172,7 +176,7 @@ fn gen_rval_lit_u64<'ctx>(
  * from its low and high parts directly.
  */
 fn gen_rval_lit_u128<'ctx>(
-    ctx: &mut CodegenCtx<'ctx, '_, '_, '_>,
+    ctx: &mut CodegenCtx<'ctx, '_, '_, '_, '_>,
     value: u128,
 ) -> Result<BasicValueEnum<'ctx>, CodegenError> {
     let low = (value & 0xFFFFFFFFFFFFFFFF) as u64;
@@ -191,7 +195,7 @@ fn gen_rval_lit_u128<'ctx>(
  * Direct correspondence to LLVM f32 type.
  */
 fn gen_rval_lit_f32<'ctx>(
-    ctx: &mut CodegenCtx<'ctx, '_, '_, '_>,
+    ctx: &mut CodegenCtx<'ctx, '_, '_, '_, '_>,
     value: f32,
 ) -> Result<BasicValueEnum<'ctx>, CodegenError> {
     Ok(ctx.llvm.f32_type().const_float(value as f64).into())
@@ -201,7 +205,7 @@ fn gen_rval_lit_f32<'ctx>(
  * Direct correspondence to LLVM f64 type.
  */
 fn gen_rval_lit_f64<'ctx>(
-    ctx: &mut CodegenCtx<'ctx, '_, '_, '_>,
+    ctx: &mut CodegenCtx<'ctx, '_, '_, '_, '_>,
     value: f64,
 ) -> Result<BasicValueEnum<'ctx>, CodegenError> {
     Ok(ctx.llvm.f64_type().const_float(value).into())
@@ -212,7 +216,7 @@ fn gen_rval_lit_f64<'ctx>(
  * No null terminator is added.
  */
 fn gen_rval_lit_string<'ctx>(
-    ctx: &mut CodegenCtx<'ctx, '_, '_, '_>,
+    ctx: &mut CodegenCtx<'ctx, '_, '_, '_, '_>,
     value: &str,
 ) -> Result<BasicValueEnum<'ctx>, CodegenError> {
     Ok(ctx.llvm.const_string(value.as_bytes(), false).into())
@@ -223,7 +227,7 @@ fn gen_rval_lit_string<'ctx>(
  * No null terminator is added.
  */
 fn gen_rval_lit_bstring<'ctx>(
-    ctx: &mut CodegenCtx<'ctx, '_, '_, '_>,
+    ctx: &mut CodegenCtx<'ctx, '_, '_, '_, '_>,
     value: &[u8],
 ) -> Result<BasicValueEnum<'ctx>, CodegenError> {
     Ok(ctx.llvm.const_string(value, false).into())
@@ -243,7 +247,7 @@ fn gen_rval_lit_bstring<'ctx>(
  * This operation has left-to-right evaluation order.
  */
 fn gen_rval_add<'ctx>(
-    ctx: &mut CodegenCtx<'ctx, '_, '_, '_>,
+    ctx: &mut CodegenCtx<'ctx, '_, '_, '_, '_>,
     lhs: &hir::Value,
     rhs: &hir::Value,
 ) -> Result<BasicValueEnum<'ctx>, CodegenError> {
@@ -287,7 +291,7 @@ fn gen_rval_add<'ctx>(
  * This operation has left-to-right evaluation order.
  */
 fn gen_rval_sub<'ctx>(
-    ctx: &mut CodegenCtx<'ctx, '_, '_, '_>,
+    ctx: &mut CodegenCtx<'ctx, '_, '_, '_, '_>,
     lhs: &hir::Value,
     rhs: &hir::Value,
 ) -> Result<BasicValueEnum<'ctx>, CodegenError> {
@@ -331,7 +335,7 @@ fn gen_rval_sub<'ctx>(
  * This operation has left-to-right evaluation order.
  */
 fn gen_rval_mul<'ctx>(
-    ctx: &mut CodegenCtx<'ctx, '_, '_, '_>,
+    ctx: &mut CodegenCtx<'ctx, '_, '_, '_, '_>,
     lhs: &hir::Value,
     rhs: &hir::Value,
 ) -> Result<BasicValueEnum<'ctx>, CodegenError> {
@@ -380,7 +384,7 @@ fn gen_rval_mul<'ctx>(
  * This operation has left-to-right evaluation order.
  */
 fn gen_rval_div<'ctx>(
-    ctx: &mut CodegenCtx<'ctx, '_, '_, '_>,
+    ctx: &mut CodegenCtx<'ctx, '_, '_, '_, '_>,
     lhs: &hir::Value,
     rhs: &hir::Value,
 ) -> Result<BasicValueEnum<'ctx>, CodegenError> {
@@ -439,7 +443,7 @@ fn gen_rval_div<'ctx>(
  * This operation has left-to-right evaluation order.
  */
 fn gen_rval_rem<'ctx>(
-    ctx: &mut CodegenCtx<'ctx, '_, '_, '_>,
+    ctx: &mut CodegenCtx<'ctx, '_, '_, '_, '_>,
     lhs: &hir::Value,
     rhs: &hir::Value,
 ) -> Result<BasicValueEnum<'ctx>, CodegenError> {
@@ -489,7 +493,7 @@ fn gen_rval_rem<'ctx>(
  * This operation has left-to-right evaluation order.
  */
 fn gen_rval_and<'ctx>(
-    ctx: &mut CodegenCtx<'ctx, '_, '_, '_>,
+    ctx: &mut CodegenCtx<'ctx, '_, '_, '_, '_>,
     lhs: &hir::Value,
     rhs: &hir::Value,
 ) -> Result<BasicValueEnum<'ctx>, CodegenError> {
@@ -522,7 +526,7 @@ fn gen_rval_and<'ctx>(
  * This operation has left-to-right evaluation order.
  */
 fn gen_rval_or<'ctx>(
-    ctx: &mut CodegenCtx<'ctx, '_, '_, '_>,
+    ctx: &mut CodegenCtx<'ctx, '_, '_, '_, '_>,
     lhs: &hir::Value,
     rhs: &hir::Value,
 ) -> Result<BasicValueEnum<'ctx>, CodegenError> {
@@ -555,7 +559,7 @@ fn gen_rval_or<'ctx>(
  * This operation has left-to-right evaluation order.
  */
 fn gen_rval_xor<'ctx>(
-    ctx: &mut CodegenCtx<'ctx, '_, '_, '_>,
+    ctx: &mut CodegenCtx<'ctx, '_, '_, '_, '_>,
     lhs: &hir::Value,
     rhs: &hir::Value,
 ) -> Result<BasicValueEnum<'ctx>, CodegenError> {
@@ -588,7 +592,7 @@ fn gen_rval_xor<'ctx>(
  * This operation has left-to-right evaluation order.
  */
 fn gen_rval_shl<'ctx>(
-    ctx: &mut CodegenCtx<'ctx, '_, '_, '_>,
+    ctx: &mut CodegenCtx<'ctx, '_, '_, '_, '_>,
     lhs: &hir::Value,
     rhs: &hir::Value,
 ) -> Result<BasicValueEnum<'ctx>, CodegenError> {
@@ -621,7 +625,7 @@ fn gen_rval_shl<'ctx>(
  * This operation has left-to-right evaluation order.
  */
 fn gen_rval_shr<'ctx>(
-    ctx: &mut CodegenCtx<'ctx, '_, '_, '_>,
+    ctx: &mut CodegenCtx<'ctx, '_, '_, '_, '_>,
     lhs: &hir::Value,
     rhs: &hir::Value,
 ) -> Result<BasicValueEnum<'ctx>, CodegenError> {
@@ -661,7 +665,7 @@ fn gen_rval_shr<'ctx>(
  * This operation has left-to-right evaluation order.
  */
 fn gen_rval_rol<'ctx>(
-    ctx: &mut CodegenCtx<'ctx, '_, '_, '_>,
+    ctx: &mut CodegenCtx<'ctx, '_, '_, '_, '_>,
     lhs: &hir::Value,
     rhs: &hir::Value,
 ) -> Result<BasicValueEnum<'ctx>, CodegenError> {
@@ -713,7 +717,7 @@ fn gen_rval_rol<'ctx>(
  * This operation has left-to-right evaluation order.
  */
 fn gen_rval_ror<'ctx>(
-    ctx: &mut CodegenCtx<'ctx, '_, '_, '_>,
+    ctx: &mut CodegenCtx<'ctx, '_, '_, '_, '_>,
     lhs: &hir::Value,
     rhs: &hir::Value,
 ) -> Result<BasicValueEnum<'ctx>, CodegenError> {
@@ -766,7 +770,7 @@ fn gen_rval_ror<'ctx>(
  * This operation has left-to-right evaluation order.
  */
 fn gen_rval_land<'ctx>(
-    ctx: &mut CodegenCtx<'ctx, '_, '_, '_>,
+    ctx: &mut CodegenCtx<'ctx, '_, '_, '_, '_>,
     lhs: &hir::Value,
     rhs: &hir::Value,
 ) -> Result<BasicValueEnum<'ctx>, CodegenError> {
@@ -817,7 +821,7 @@ fn gen_rval_land<'ctx>(
  * This operation has left-to-right evaluation order.
  */
 fn gen_rval_lor<'ctx>(
-    ctx: &mut CodegenCtx<'ctx, '_, '_, '_>,
+    ctx: &mut CodegenCtx<'ctx, '_, '_, '_, '_>,
     lhs: &hir::Value,
     rhs: &hir::Value,
 ) -> Result<BasicValueEnum<'ctx>, CodegenError> {
@@ -876,7 +880,7 @@ fn gen_rval_lor<'ctx>(
  * - https://llvm.org/docs/LangRef.html#fcmp-instruction with predicate 'olt'
  */
 fn gen_rval_lt<'ctx>(
-    ctx: &mut CodegenCtx<'ctx, '_, '_, '_>,
+    ctx: &mut CodegenCtx<'ctx, '_, '_, '_, '_>,
     lhs: &hir::Value,
     rhs: &hir::Value,
 ) -> Result<BasicValueEnum<'ctx>, CodegenError> {
@@ -947,7 +951,7 @@ fn gen_rval_lt<'ctx>(
  * - https://llvm.org/docs/LangRef.html#fcmp-instruction with predicate 'ogt'
  */
 fn gen_rval_gt<'ctx>(
-    ctx: &mut CodegenCtx<'ctx, '_, '_, '_>,
+    ctx: &mut CodegenCtx<'ctx, '_, '_, '_, '_>,
     lhs: &hir::Value,
     rhs: &hir::Value,
 ) -> Result<BasicValueEnum<'ctx>, CodegenError> {
@@ -1018,7 +1022,7 @@ fn gen_rval_gt<'ctx>(
  * - https://llvm.org/docs/LangRef.html#fcmp-instruction with predicate 'ole'
  */
 fn gen_rval_lte<'ctx>(
-    ctx: &mut CodegenCtx<'ctx, '_, '_, '_>,
+    ctx: &mut CodegenCtx<'ctx, '_, '_, '_, '_>,
     lhs: &hir::Value,
     rhs: &hir::Value,
 ) -> Result<BasicValueEnum<'ctx>, CodegenError> {
@@ -1089,7 +1093,7 @@ fn gen_rval_lte<'ctx>(
  * - https://llvm.org/docs/LangRef.html#fcmp-instruction with predicate 'oge'
  */
 fn gen_rval_gte<'ctx>(
-    ctx: &mut CodegenCtx<'ctx, '_, '_, '_>,
+    ctx: &mut CodegenCtx<'ctx, '_, '_, '_, '_>,
     lhs: &hir::Value,
     rhs: &hir::Value,
 ) -> Result<BasicValueEnum<'ctx>, CodegenError> {
@@ -1156,7 +1160,7 @@ fn gen_rval_gte<'ctx>(
  * - https://llvm.org/docs/LangRef.html#fcmp-instruction with predicate 'oeq'
  */
 fn gen_rval_eq<'ctx>(
-    ctx: &mut CodegenCtx<'ctx, '_, '_, '_>,
+    ctx: &mut CodegenCtx<'ctx, '_, '_, '_, '_>,
     lhs: &hir::Value,
     rhs: &hir::Value,
 ) -> Result<BasicValueEnum<'ctx>, CodegenError> {
@@ -1208,7 +1212,7 @@ fn gen_rval_eq<'ctx>(
  * - https://llvm.org/docs/LangRef.html#fcmp-instruction with predicate 'one'
  */
 fn gen_rval_ne<'ctx>(
-    ctx: &mut CodegenCtx<'ctx, '_, '_, '_>,
+    ctx: &mut CodegenCtx<'ctx, '_, '_, '_, '_>,
     lhs: &hir::Value,
     rhs: &hir::Value,
 ) -> Result<BasicValueEnum<'ctx>, CodegenError> {
@@ -1254,7 +1258,7 @@ fn gen_rval_ne<'ctx>(
  * This operation is effectively a no-op and simply returns the operand as is.
  */
 fn gen_rval_unary_add<'ctx>(
-    ctx: &mut CodegenCtx<'ctx, '_, '_, '_>,
+    ctx: &mut CodegenCtx<'ctx, '_, '_, '_, '_>,
     operand: &hir::Value,
 ) -> Result<BasicValueEnum<'ctx>, CodegenError> {
     let llvm_operand = gen_rval(ctx, operand)?;
@@ -1269,7 +1273,7 @@ fn gen_rval_unary_add<'ctx>(
  * - For integer types, it subtracts the operand from zero.
  */
 fn gen_rval_unary_sub<'ctx>(
-    ctx: &mut CodegenCtx<'ctx, '_, '_, '_>,
+    ctx: &mut CodegenCtx<'ctx, '_, '_, '_, '_>,
     operand: &hir::Value,
 ) -> Result<BasicValueEnum<'ctx>, CodegenError> {
     let llvm_operand = gen_rval(ctx, operand)?;
@@ -1305,7 +1309,7 @@ fn gen_rval_unary_sub<'ctx>(
  * - For integer types, it uses the LLVM `not` instruction.
  */
 fn gen_rval_unary_not<'ctx>(
-    ctx: &mut CodegenCtx<'ctx, '_, '_, '_>,
+    ctx: &mut CodegenCtx<'ctx, '_, '_, '_, '_>,
     operand: &hir::Value,
 ) -> Result<BasicValueEnum<'ctx>, CodegenError> {
     let llvm_operand = gen_rval(ctx, operand)?;
@@ -1323,7 +1327,7 @@ fn gen_rval_unary_not<'ctx>(
 }
 
 fn gen_rval_struct_object<'ctx>(
-    _ctx: &mut CodegenCtx<'ctx, '_, '_, '_>,
+    _ctx: &mut CodegenCtx<'ctx, '_, '_, '_, '_>,
     _struct_path: &IString,
     _fields: &[(IString, ValueId)],
 ) -> Result<BasicValueEnum<'ctx>, CodegenError> {
@@ -1332,7 +1336,7 @@ fn gen_rval_struct_object<'ctx>(
 }
 
 fn gen_rval_enum_variant<'ctx>(
-    _ctx: &mut CodegenCtx<'ctx, '_, '_, '_>,
+    _ctx: &mut CodegenCtx<'ctx, '_, '_, '_, '_>,
     _enum_path: &IString,
     _variant_name: &IString,
     _value: &hir::Value,
@@ -1342,7 +1346,7 @@ fn gen_rval_enum_variant<'ctx>(
 }
 
 fn gen_rval_field_access<'ctx>(
-    _ctx: &mut CodegenCtx<'ctx, '_, '_, '_>,
+    _ctx: &mut CodegenCtx<'ctx, '_, '_, '_, '_>,
     _struct_value: &hir::Value,
     _field_name: &IString,
 ) -> Result<BasicValueEnum<'ctx>, CodegenError> {
@@ -1351,7 +1355,7 @@ fn gen_rval_field_access<'ctx>(
 }
 
 fn gen_rval_index_access<'ctx>(
-    _ctx: &mut CodegenCtx<'ctx, '_, '_, '_>,
+    _ctx: &mut CodegenCtx<'ctx, '_, '_, '_, '_>,
     _collection: &hir::Value,
     _index: &hir::Value,
 ) -> Result<BasicValueEnum<'ctx>, CodegenError> {
@@ -1360,7 +1364,7 @@ fn gen_rval_index_access<'ctx>(
 }
 
 fn gen_rval_assign<'ctx>(
-    _ctx: &mut CodegenCtx<'ctx, '_, '_, '_>,
+    _ctx: &mut CodegenCtx<'ctx, '_, '_, '_, '_>,
     _place: &hir::Value,
     _value: &hir::Value,
 ) -> Result<BasicValueEnum<'ctx>, CodegenError> {
@@ -1369,7 +1373,7 @@ fn gen_rval_assign<'ctx>(
 }
 
 fn gen_rval_deref<'ctx>(
-    ctx: &mut CodegenCtx<'ctx, '_, '_, '_>,
+    ctx: &mut CodegenCtx<'ctx, '_, '_, '_, '_>,
     place: &hir::Value,
 ) -> Result<BasicValueEnum<'ctx>, CodegenError> {
     let llvm_value = gen_rval(ctx, place)?;
@@ -1399,7 +1403,7 @@ fn gen_rval_deref<'ctx>(
 }
 
 fn gen_rval_cast<'ctx>(
-    _ctx: &mut CodegenCtx<'ctx, '_, '_, '_>,
+    _ctx: &mut CodegenCtx<'ctx, '_, '_, '_, '_>,
     _value: &hir::Value,
     _target_type: &hir::Type,
 ) -> Result<BasicValueEnum<'ctx>, CodegenError> {
@@ -1408,7 +1412,7 @@ fn gen_rval_cast<'ctx>(
 }
 
 fn gen_rval_borrow<'ctx>(
-    ctx: &mut CodegenCtx<'ctx, '_, '_, '_>,
+    ctx: &mut CodegenCtx<'ctx, '_, '_, '_, '_>,
     _exclusive: bool,
     _mutable: bool,
     place: &hir::Value,
@@ -1419,7 +1423,7 @@ fn gen_rval_borrow<'ctx>(
 }
 
 fn gen_rval_list<'ctx>(
-    ctx: &mut CodegenCtx<'ctx, '_, '_, '_>,
+    ctx: &mut CodegenCtx<'ctx, '_, '_, '_, '_>,
     elements: &[hir::Value],
 ) -> Result<BasicValueEnum<'ctx>, CodegenError> {
     if elements.is_empty() {
@@ -1462,7 +1466,7 @@ fn gen_rval_list<'ctx>(
 }
 
 fn gen_rval_tuple<'ctx>(
-    ctx: &mut CodegenCtx<'ctx, '_, '_, '_>,
+    ctx: &mut CodegenCtx<'ctx, '_, '_, '_, '_>,
     elements: &[hir::Value],
 ) -> Result<BasicValueEnum<'ctx>, CodegenError> {
     if elements.is_empty() {
@@ -1503,7 +1507,7 @@ fn gen_rval_tuple<'ctx>(
 }
 
 fn gen_rval_if<'ctx>(
-    ctx: &mut CodegenCtx<'ctx, '_, '_, '_>,
+    ctx: &mut CodegenCtx<'ctx, '_, '_, '_, '_>,
     condition: &hir::Value,
     true_branch: &hir::Block,
     false_branch: Option<&hir::Block>,
@@ -1583,7 +1587,7 @@ fn gen_rval_if<'ctx>(
 }
 
 fn gen_rval_while<'ctx>(
-    ctx: &mut CodegenCtx<'ctx, '_, '_, '_>,
+    ctx: &mut CodegenCtx<'ctx, '_, '_, '_, '_>,
     condition: &hir::Value,
     body: &hir::Block,
 ) -> Result<(), CodegenError> {
@@ -1624,7 +1628,7 @@ fn gen_rval_while<'ctx>(
 }
 
 fn gen_rval_loop<'ctx>(
-    ctx: &mut CodegenCtx<'ctx, '_, '_, '_>,
+    ctx: &mut CodegenCtx<'ctx, '_, '_, '_, '_>,
     body: &hir::Block,
 ) -> Result<(), CodegenError> {
     let top_block = ctx.bb.get_insert_block().unwrap();
@@ -1658,7 +1662,7 @@ fn gen_rval_loop<'ctx>(
  * Generates a break statement.
  */
 fn gen_rval_break<'ctx>(
-    ctx: &mut CodegenCtx<'ctx, '_, '_, '_>,
+    ctx: &mut CodegenCtx<'ctx, '_, '_, '_, '_>,
     label: Option<&str>,
 ) -> Result<(), CodegenError> {
     if let Some(label) = label {
@@ -1688,7 +1692,7 @@ fn gen_rval_break<'ctx>(
 }
 
 fn gen_rval_continue<'ctx>(
-    ctx: &mut CodegenCtx<'ctx, '_, '_, '_>,
+    ctx: &mut CodegenCtx<'ctx, '_, '_, '_, '_>,
     label: Option<&str>,
 ) -> Result<(), CodegenError> {
     if let Some(label) = label {
@@ -1718,7 +1722,7 @@ fn gen_rval_continue<'ctx>(
 }
 
 fn gen_rval_return<'ctx>(
-    ctx: &mut CodegenCtx<'ctx, '_, '_, '_>,
+    ctx: &mut CodegenCtx<'ctx, '_, '_, '_, '_>,
     value: &hir::Value,
 ) -> Result<(), CodegenError> {
     let llvm_value = gen_rval(ctx, value)?;
@@ -1727,7 +1731,7 @@ fn gen_rval_return<'ctx>(
 }
 
 fn gen_rval_block<'ctx>(
-    ctx: &mut CodegenCtx<'ctx, '_, '_, '_>,
+    ctx: &mut CodegenCtx<'ctx, '_, '_, '_, '_>,
     hir_block: &hir::Block,
 ) -> Result<BasicValueEnum<'ctx>, CodegenError> {
     for (i, element) in hir_block.elements.iter().enumerate() {
@@ -1768,7 +1772,7 @@ fn gen_rval_block<'ctx>(
 }
 
 fn gen_rval_closure<'ctx>(
-    _ctx: &mut CodegenCtx<'ctx, '_, '_, '_>,
+    _ctx: &mut CodegenCtx<'ctx, '_, '_, '_, '_>,
     _captures: &[IString],
     _callee: &hir::FunctionId,
 ) -> Result<BasicValueEnum<'ctx>, CodegenError> {
@@ -1777,16 +1781,85 @@ fn gen_rval_closure<'ctx>(
 }
 
 fn gen_rval_call<'ctx>(
-    _ctx: &mut CodegenCtx<'ctx, '_, '_, '_>,
-    _callee: &hir::Value,
-    _arguments: &[hir::ValueId],
+    ctx: &mut CodegenCtx<'ctx, '_, '_, '_, '_>,
+    callee: &hir::Value,
+    arguments: &[hir::ValueId],
 ) -> Result<BasicValueEnum<'ctx>, CodegenError> {
-    // TODO: implement function call codegen
-    unimplemented!()
+    if let hir::Value::Symbol { path } = callee {
+        let mut llvm_arguments = Vec::new();
+        for arg_id in arguments {
+            let arg_hir = &ctx.store[arg_id].borrow();
+            let llvm_arg = gen_rval(ctx, arg_hir)?;
+            llvm_arguments.push(llvm_arg.into());
+        }
+
+        let function = match ctx.module.get_function(path) {
+            Some(f) => f,
+            None => {
+                let function_id = ctx.tab.get_function(path).expect("undefined function");
+                let function = &ctx.store[function_id].borrow();
+                function.get_type(ctx.store);
+
+                unimplemented!()
+            }
+        };
+
+        let result = ctx
+            .bb
+            .build_direct_call(function, &llvm_arguments, "")
+            .unwrap()
+            .try_as_basic_value()
+            .expect_left("missing value");
+
+        Ok(result)
+    } else {
+        let function_ty = match callee
+            .get_type(&ctx.store, &ctx.tab)
+            .expect("Failed to get callee type")
+        {
+            hir::Type::Function { function_type } => &ctx.store[&function_type],
+
+            _ => {
+                return Err(CodegenError::OperandTypeCombinationError {
+                    operation_name: "function call",
+                });
+            }
+        };
+
+        let llvm_function_ty = gen_function_ty(&function_ty, ctx.llvm, ctx.store, ctx.tab);
+
+        let callee_val = gen_rval(ctx, callee)?;
+        if !callee_val.is_pointer_value() {
+            return Err(CodegenError::OperandTypeCombinationError {
+                operation_name: "function call",
+            });
+        }
+
+        let mut llvm_arguments = Vec::new();
+        for arg_id in arguments {
+            let arg_hir = &ctx.store[arg_id].borrow();
+            let llvm_arg = gen_rval(ctx, arg_hir)?;
+            llvm_arguments.push(llvm_arg.into());
+        }
+
+        let result = ctx
+            .bb
+            .build_indirect_call(
+                llvm_function_ty,
+                callee_val.into_pointer_value(),
+                &llvm_arguments,
+                "",
+            )
+            .unwrap()
+            .try_as_basic_value()
+            .expect_left("missing value");
+
+        Ok(result)
+    }
 }
 
 fn gen_rval_method_call<'ctx>(
-    _ctx: &mut CodegenCtx<'ctx, '_, '_, '_>,
+    _ctx: &mut CodegenCtx<'ctx, '_, '_, '_, '_>,
     _callee: &hir::Value,
     _method_name: &IString,
     _arguments: &[hir::ValueId],
@@ -1796,7 +1869,7 @@ fn gen_rval_method_call<'ctx>(
 }
 
 fn gen_rval_symbol<'ctx>(
-    _ctx: &mut CodegenCtx<'ctx, '_, '_, '_>,
+    _ctx: &mut CodegenCtx<'ctx, '_, '_, '_, '_>,
     _symbol_name: &IString,
 ) -> Result<BasicValueEnum<'ctx>, CodegenError> {
     // TODO: implement symbol codegen
@@ -1804,7 +1877,7 @@ fn gen_rval_symbol<'ctx>(
 }
 
 pub(crate) fn gen_rval<'ctx>(
-    ctx: &mut CodegenCtx<'ctx, '_, '_, '_>,
+    ctx: &mut CodegenCtx<'ctx, '_, '_, '_, '_>,
     hir_value: &hir::Value,
 ) -> Result<BasicValueEnum<'ctx>, CodegenError> {
     match hir_value {
@@ -1998,7 +2071,7 @@ pub(crate) fn gen_rval<'ctx>(
 }
 
 pub(crate) fn gen_block<'ctx>(
-    ctx: &mut CodegenCtx<'ctx, '_, '_, '_>,
+    ctx: &mut CodegenCtx<'ctx, '_, '_, '_, '_>,
     hir_block: &hir::Block,
 ) -> Result<(), CodegenError> {
     for element in &hir_block.elements {

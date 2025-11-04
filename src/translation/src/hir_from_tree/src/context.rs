@@ -94,7 +94,6 @@ impl Ast2HirCtx {
             + item_name.len();
         let mut qualified = String::with_capacity(length);
 
-        qualified.push_str("::");
         for module in &self.current_scope {
             qualified.push_str(&module);
             qualified.push_str("::");
