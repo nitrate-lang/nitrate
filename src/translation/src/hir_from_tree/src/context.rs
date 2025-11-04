@@ -1,6 +1,5 @@
 use interned_string::IString;
 use nitrate_hir::{SymbolTab, prelude::*};
-use nitrate_hir_mangle::mangle_name;
 use std::cell::RefCell;
 use std::collections::{HashMap, HashSet};
 use std::num::NonZeroU32;
