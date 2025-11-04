@@ -211,7 +211,7 @@ impl Interpreter<'_> {
             &symbol_tab,
         );
 
-        llvm_ctx.optimize_module(&mut llvm_module);
+        // llvm_ctx.optimize_module(&mut llvm_module);
 
         let target_file_ll = format!(
             ".no3/build/{}-{}.{}.{}.ll",
