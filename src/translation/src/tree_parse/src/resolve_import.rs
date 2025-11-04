@@ -39,7 +39,7 @@ impl ImportContext {
 
     fn find_package(&self, package_name: &str) -> Option<SourceFilePath> {
         for folder in &*self.package_search_paths {
-            let candidate = folder.join(package_name).join("src").join("mod.nit");
+            let candidate = folder.join(package_name).join("src").join("entry.nit");
             if candidate.exists() {
                 return Some(candidate);
             }

@@ -1,3 +1,4 @@
+mod place;
 mod rvalue;
 mod symbol;
 mod ty;

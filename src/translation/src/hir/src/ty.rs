@@ -205,6 +205,10 @@ impl Type {
         matches!(self, Type::Reference { .. })
     }
 
+    pub fn is_pointer(&self) -> bool {
+        matches!(self, Type::Pointer { .. })
+    }
+
     pub fn is_slice_ref(&self) -> bool {
         matches!(self, Type::SliceRef { .. })
     }

@@ -5,7 +5,7 @@ use inkwell::values::{AsValueRef, FunctionValue, GlobalValue};
 use nitrate_hir_validate::ValidHir;
 
 use crate::rvalue::gen_rval;
-use crate::rvalue::{RvalGenCtx, gen_block};
+use crate::rvalue::{CodegenCtx, gen_block};
 use crate::ty::gen_ty;
 use nitrate_hir::{IntoStoreId, prelude as hir};
 use nitrate_hir_mangle::mangle_name;
@@ -78,7 +78,7 @@ fn gen_global<'ctx>(
     );
 
     let bb = ctx.llvm.create_builder();
-    let mut rval_ctx = RvalGenCtx {
+    let mut rval_ctx = CodegenCtx {
         store: ctx.store,
         tab: ctx.tab,
         llvm: ctx.llvm,
@@ -138,7 +138,7 @@ fn gen_function<'ctx>(
         /* Generate Body */
         bb.position_at_end(entry);
 
-        let mut rval_ctx = RvalGenCtx {
+        let mut rval_ctx = CodegenCtx {
             store: ctx.store,
             tab: ctx.tab,
             llvm: ctx.llvm,
