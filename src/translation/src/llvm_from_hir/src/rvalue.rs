@@ -1754,7 +1754,7 @@ fn gen_rval_method_call<'ctx>(
     _method_name: &IString,
     _arguments: &[hir::ValueId],
 ) -> Result<BasicValueEnum<'ctx>, RvalError> {
-    // TODO: implement
+    // TODO: implement method call codegen
     unimplemented!()
 }
 
@@ -1765,7 +1765,7 @@ fn gen_rval_symbol<'ctx>(
     _ctx: &mut RvalGenCtx<'ctx, '_, '_, '_>,
     _symbol_name: &IString,
 ) -> Result<BasicValueEnum<'ctx>, RvalError> {
-    // TODO: implement
+    // TODO: implement symbol codegen
     unimplemented!()
 }
 

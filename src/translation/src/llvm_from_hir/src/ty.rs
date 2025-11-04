@@ -3,7 +3,7 @@ use inkwell::{
     types::{BasicType, BasicTypeEnum, FunctionType, StructType},
 };
 
-use crate::gen_symbol::get_ptr_size;
+use crate::symbol::get_ptr_size;
 use nitrate_hir::prelude as hir;
 use nitrate_llvm::LLVMContext;
 

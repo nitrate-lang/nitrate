@@ -2,9 +2,10 @@ use inkwell::llvm_sys::prelude::{LLVMModuleRef, LLVMValueRef};
 use inkwell::module::{Linkage, Module};
 use inkwell::types::BasicType;
 use inkwell::values::{AsValueRef, FunctionValue, GlobalValue};
+use nitrate_hir_validate::ValidHir;
 
-use crate::gen_rval::gen_rval;
-use crate::gen_rval::{RvalGenCtx, gen_block};
+use crate::rvalue::gen_rval;
+use crate::rvalue::{RvalGenCtx, gen_block};
 use crate::ty::gen_ty;
 use nitrate_hir::{IntoStoreId, prelude as hir};
 use nitrate_hir_mangle::mangle_name;
@@ -219,4 +220,32 @@ pub(crate) fn gen_module<'ctx>(ctx: &'ctx SymbolGenCtx, module: &hir::Module) {
             }
         }
     }
+}
+
+pub fn generate_code<'ctx>(
+    package_name: &str,
+    hir: ValidHir<hir::Module>,
+    llvm: &'ctx LLVMContext,
+    store: &hir::Store,
+    tab: &hir::SymbolTab,
+) -> Module<'ctx> {
+    let hir = hir.into_inner();
+    let module_name = hir.name.to_owned().unwrap_or_default().to_string();
+    let module = llvm.create_module(&module_name);
+
+    let ctx = SymbolGenCtx {
+        store,
+        tab,
+        llvm,
+        module,
+        package_name,
+    };
+
+    gen_module(&ctx, &hir);
+
+    if ctx.module.verify().is_err() {
+        panic!("Generated LLVM module is invalid");
+    }
+
+    ctx.module
 }
