@@ -63,7 +63,7 @@ pub fn get_align_of(ty: &Type, ctx: &LayoutCtx) -> Result<u64, LayoutError> {
                 max_align = max(max_align, variant_align);
             }
 
-            let discrim_align = match variants.len() {
+            let discrim_align = match variants.len() as u64 {
                 0..=256 => 1,
                 257..=65536 => 2,
                 65537..=4294967296 => 4,

@@ -87,7 +87,7 @@ pub fn get_size_of(ty: &Type, ctx: &LayoutCtx) -> Result<u64, LayoutError> {
                 size = max(size, variant_size);
             }
 
-            let (discrim_size, discrim_align) = match variants.len() {
+            let (discrim_size, discrim_align) = match variants.len() as u64 {
                 0..=1 => (0, 1),
                 2..=256 => (1, 1),
                 257..=65536 => (2, 2),
