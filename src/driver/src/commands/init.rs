@@ -53,7 +53,7 @@ impl Interpreter<'_> {
     }
 
     fn put_default_gitignore(&self, dir: &std::path::Path) -> Result<(), InterpreterError> {
-        let gitignore_content = "# Nitrate NO3 files\nno3_modules/\n\n";
+        let gitignore_content = "# Nitrate NO3 files\n.no3/\n\n";
 
         let mut gitignore = OpenOptions::new()
             .write(true)
@@ -191,7 +191,7 @@ impl Interpreter<'_> {
     }
 
     fn contains_conflicting_package_files(&self, dir: &std::path::Path) -> bool {
-        let conflicting_files = ["no3.xml", "src", "no3_modules"];
+        let conflicting_files = ["no3.xml", "src", ".no3", "README.md"];
 
         for file in &conflicting_files {
             let joined = dir.join(file);

@@ -74,6 +74,10 @@ impl LLVMContext {
     pub fn target_data(&self) -> &TargetData {
         &self.target_data
     }
+
+    pub fn ptr_size(&self) -> u32 {
+        self.target_data.get_pointer_byte_size(None)
+    }
 }
 
 impl Deref for LLVMContext {

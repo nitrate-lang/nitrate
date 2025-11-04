@@ -73,7 +73,7 @@ impl Interpreter<'_> {
     fn get_search_paths(&self) -> Vec<PathBuf> {
         let mut search_paths = Vec::new();
 
-        search_paths.push(std::env::current_dir().unwrap().join("no3_modules"));
+        search_paths.push(std::env::current_dir().unwrap().join(".no3/modules"));
         debug!(self.log, "Package search paths: {:?}", search_paths);
 
         search_paths
@@ -133,12 +133,19 @@ impl Interpreter<'_> {
     fn lower_to_hir(
         &self,
         module: ast::Module,
+        ptr_size: u32,
         log: &CompilerLog,
     ) -> Result<(hir::Module, hir::Store, hir::SymbolTab), InterpreterError> {
-        /* FIXME: Parameterize this */
-        const PTR_SIZE: hir::PtrSize = hir::PtrSize::U32;
+        let ptr_size = match ptr_size {
+            4 => hir::PtrSize::U32,
+            8 => hir::PtrSize::U64,
+            _ => {
+                error!(self.log, "Unsupported pointer size: {} bytes", ptr_size);
+                return Err(InterpreterError::OperationalError);
+            }
+        };
 
-        let mut ctx = Ast2HirCtx::new(PTR_SIZE);
+        let mut ctx = Ast2HirCtx::new(ptr_size);
         let module = match convert_ast_to_hir(module, &mut ctx, log) {
             Err(_) => return Err(InterpreterError::OperationalError),
             Ok(module) => module,
@@ -169,20 +176,6 @@ impl Interpreter<'_> {
             return Err(InterpreterError::OperationalError);
         }
 
-        let log = CompilerLog::new(self.log.clone());
-        let ast_module = self.parse_source_code(&entrypoint_path, package.name(), &log)?;
-        let (hir_module, store, symbol_tab) = self.lower_to_hir(ast_module, &log)?;
-
-        let Ok(valid_hir_module) = hir_module.validate(&store, &symbol_tab) else {
-            error!(
-                self.log,
-                "HIR validation failed for package '{}'.",
-                package.name(),
-            );
-
-            return Err(InterpreterError::OperationalError);
-        };
-
         let opt_level = OptLevel::Aggressive;
         let target_triple = "x86_64-pc-linux-gnu";
 
@@ -195,6 +188,21 @@ impl Interpreter<'_> {
             InterpreterError::OperationalError
         })?;
 
+        let log = CompilerLog::new(self.log.clone());
+        let ast_module = self.parse_source_code(&entrypoint_path, package.name(), &log)?;
+        let ptr_size = llvm_ctx.target_data.get_pointer_byte_size(None);
+        let (hir_module, store, symbol_tab) = self.lower_to_hir(ast_module, ptr_size, &log)?;
+
+        let Ok(valid_hir_module) = hir_module.validate(&store, &symbol_tab) else {
+            error!(
+                self.log,
+                "HIR validation failed for package '{}'.",
+                package.name(),
+            );
+
+            return Err(InterpreterError::OperationalError);
+        };
+
         let mut llvm_module = generate_code(
             package.name(),
             valid_hir_module,
@@ -205,8 +213,24 @@ impl Interpreter<'_> {
 
         llvm_ctx.optimize_module(&mut llvm_module);
 
-        let target_file = format!(
-            "{}-{}.{}.{}.ll",
+        let target_file_ll = format!(
+            ".no3/build/{}-{}.{}.{}.ll",
+            package.name(),
+            package.version().0,
+            package.version().1,
+            package.version().2
+        );
+
+        let target_file_s = format!(
+            ".no3/build/{}-{}.{}.{}.s",
+            package.name(),
+            package.version().0,
+            package.version().1,
+            package.version().2
+        );
+
+        let target_file_o = format!(
+            ".no3/build/{}-{}.{}.{}.o",
             package.name(),
             package.version().0,
             package.version().1,
@@ -214,8 +238,32 @@ impl Interpreter<'_> {
         );
 
         llvm_module
-            .print_to_file(target_file)
+            .print_to_file(target_file_ll)
             .expect("failed to write to file");
+
+        if let Err(e) = llvm_ctx.write_asm(&mut llvm_module, std::path::Path::new(&target_file_s)) {
+            error!(
+                self.log,
+                "Failed to write assembly file for package '{}': {}",
+                package.name(),
+                e
+            );
+
+            return Err(InterpreterError::OperationalError);
+        }
+
+        if let Err(e) =
+            llvm_ctx.write_object_file(&mut llvm_module, std::path::Path::new(&target_file_o))
+        {
+            error!(
+                self.log,
+                "Failed to write object file for package '{}': {}",
+                package.name(),
+                e
+            );
+
+            return Err(InterpreterError::OperationalError);
+        }
 
         /* TODO: Link LLVM IR into final binary or shared library */
 
