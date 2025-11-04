@@ -1318,9 +1318,6 @@ fn gen_rval_unary_not<'ctx>(
     }
 }
 
-/**
- * // TODO: add documentation
- */
 fn gen_rval_struct_object<'ctx>(
     _ctx: &mut RvalGenCtx<'ctx, '_, '_, '_>,
     _struct_path: &IString,
@@ -1330,9 +1327,6 @@ fn gen_rval_struct_object<'ctx>(
     unimplemented!()
 }
 
-/**
- * // TODO: add documentation
- */
 fn gen_rval_enum_variant<'ctx>(
     _ctx: &mut RvalGenCtx<'ctx, '_, '_, '_>,
     _enum_path: &IString,
@@ -1343,9 +1337,6 @@ fn gen_rval_enum_variant<'ctx>(
     unimplemented!()
 }
 
-/**
- * // TODO: add documentation
- */
 fn gen_rval_field_access<'ctx>(
     _ctx: &mut RvalGenCtx<'ctx, '_, '_, '_>,
     _struct_value: &hir::Value,
@@ -1355,9 +1346,6 @@ fn gen_rval_field_access<'ctx>(
     unimplemented!()
 }
 
-/**
- * // TODO: add documentation
- */
 fn gen_rval_index_access<'ctx>(
     _ctx: &mut RvalGenCtx<'ctx, '_, '_, '_>,
     _collection: &hir::Value,
@@ -1367,9 +1355,6 @@ fn gen_rval_index_access<'ctx>(
     unimplemented!()
 }
 
-/**
- * // TODO: add documentation
- */
 fn gen_rval_assign<'ctx>(
     _ctx: &mut RvalGenCtx<'ctx, '_, '_, '_>,
     _place: &hir::Value,
@@ -1379,9 +1364,6 @@ fn gen_rval_assign<'ctx>(
     unimplemented!()
 }
 
-/**
- * // TODO: add documentation
- */
 fn gen_rval_deref<'ctx>(
     _ctx: &mut RvalGenCtx<'ctx, '_, '_, '_>,
     _place: &hir::Value,
@@ -1390,21 +1372,15 @@ fn gen_rval_deref<'ctx>(
     unimplemented!()
 }
 
-/**
- * // TODO: add documentation
- */
 fn gen_rval_cast<'ctx>(
     _ctx: &mut RvalGenCtx<'ctx, '_, '_, '_>,
     _value: &hir::Value,
     _target_type: &hir::Type,
 ) -> Result<BasicValueEnum<'ctx>, RvalError> {
-    // TODO: implement
+    // TODO: implement cast codegen
     unimplemented!()
 }
 
-/**
- * // TODO: add documentation
- */
 fn gen_rval_borrow<'ctx>(
     _ctx: &mut RvalGenCtx<'ctx, '_, '_, '_>,
     _exclusive: bool,
@@ -1415,9 +1391,6 @@ fn gen_rval_borrow<'ctx>(
     unimplemented!()
 }
 
-/**
- * // TODO: add documentation
- */
 fn gen_rval_list<'ctx>(
     _ctx: &mut RvalGenCtx<'ctx, '_, '_, '_>,
     _elements: &[hir::Value],
@@ -1426,9 +1399,6 @@ fn gen_rval_list<'ctx>(
     unimplemented!()
 }
 
-/**
- * // TODO: add documentation
- */
 fn gen_rval_tuple<'ctx>(
     _ctx: &mut RvalGenCtx<'ctx, '_, '_, '_>,
     _elements: &[hir::Value],
@@ -1437,9 +1407,6 @@ fn gen_rval_tuple<'ctx>(
     unimplemented!()
 }
 
-/**
- * // TODO: add documentation
- */
 fn gen_if<'ctx>(
     ctx: &mut RvalGenCtx<'ctx, '_, '_, '_>,
     condition: &hir::Value,
@@ -1520,9 +1487,6 @@ fn gen_if<'ctx>(
     gen_rval_lit_unit(ctx)
 }
 
-/**
- * // TODO: add documentation
- */
 fn gen_while<'ctx>(
     ctx: &mut RvalGenCtx<'ctx, '_, '_, '_>,
     condition: &hir::Value,
@@ -1564,9 +1528,6 @@ fn gen_while<'ctx>(
     Ok(())
 }
 
-/**
- * // TODO: add documentation
- */
 fn gen_loop<'ctx>(
     ctx: &mut RvalGenCtx<'ctx, '_, '_, '_>,
     body: &hir::Block,
@@ -1599,7 +1560,7 @@ fn gen_loop<'ctx>(
 }
 
 /**
- * // TODO: add documentation
+ * Generates a break statement.
  */
 fn gen_break<'ctx>(
     ctx: &mut RvalGenCtx<'ctx, '_, '_, '_>,
@@ -1631,9 +1592,6 @@ fn gen_break<'ctx>(
     }
 }
 
-/**
- * // TODO: add documentation
- */
 fn gen_continue<'ctx>(
     ctx: &mut RvalGenCtx<'ctx, '_, '_, '_>,
     label: Option<&str>,
@@ -1664,22 +1622,15 @@ fn gen_continue<'ctx>(
     }
 }
 
-/**
- * // TODO: add documentation
- */
 fn gen_return<'ctx>(
     ctx: &mut RvalGenCtx<'ctx, '_, '_, '_>,
     value: &hir::Value,
 ) -> Result<(), RvalError> {
     let llvm_value = gen_rval(ctx, value)?;
     ctx.bb.build_return(Some(&llvm_value)).unwrap();
-
     Ok(())
 }
 
-/**
- * // TODO: add documentation
- */
 fn gen_block_rval<'ctx>(
     ctx: &mut RvalGenCtx<'ctx, '_, '_, '_>,
     hir_block: &hir::Block,
@@ -1721,9 +1672,6 @@ fn gen_block_rval<'ctx>(
     gen_rval_lit_unit(ctx)
 }
 
-/**
- * // TODO: add documentation
- */
 fn gen_rval_closure<'ctx>(
     _ctx: &mut RvalGenCtx<'ctx, '_, '_, '_>,
     _captures: &[IString],
@@ -1733,9 +1681,6 @@ fn gen_rval_closure<'ctx>(
     unimplemented!()
 }
 
-/**
- * // TODO: add documentation
- */
 fn gen_rval_call<'ctx>(
     _ctx: &mut RvalGenCtx<'ctx, '_, '_, '_>,
     _callee: &hir::Value,
@@ -1745,9 +1690,6 @@ fn gen_rval_call<'ctx>(
     unimplemented!()
 }
 
-/**
- * // TODO: add documentation
- */
 fn gen_rval_method_call<'ctx>(
     _ctx: &mut RvalGenCtx<'ctx, '_, '_, '_>,
     _callee: &hir::Value,
@@ -1758,9 +1700,6 @@ fn gen_rval_method_call<'ctx>(
     unimplemented!()
 }
 
-/**
- * // TODO: add documentation
- */
 fn gen_rval_symbol<'ctx>(
     _ctx: &mut RvalGenCtx<'ctx, '_, '_, '_>,
     _symbol_name: &IString,
@@ -1769,9 +1708,6 @@ fn gen_rval_symbol<'ctx>(
     unimplemented!()
 }
 
-/**
- * // TODO: add documentation
- */
 pub(crate) fn gen_rval<'ctx>(
     ctx: &mut RvalGenCtx<'ctx, '_, '_, '_>,
     hir_value: &hir::Value,
@@ -1966,9 +1902,6 @@ pub(crate) fn gen_rval<'ctx>(
     }
 }
 
-/**
- * // TODO: add documentation
- */
 pub(crate) fn gen_block<'ctx>(
     ctx: &mut RvalGenCtx<'ctx, '_, '_, '_>,
     hir_block: &hir::Block,
