@@ -103,7 +103,7 @@ impl PackageBuilder {
                 minor: 1,
                 patch: 0,
             },
-            edition: 2025,
+            edition: 2026,
             dependencies: Vec::new(),
         }
     }

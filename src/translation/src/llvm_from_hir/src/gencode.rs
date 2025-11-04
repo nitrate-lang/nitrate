@@ -26,5 +26,10 @@ pub fn generate_code<'ctx>(
     };
 
     gen_module(&ctx, &hir);
+
+    if ctx.module.verify().is_err() {
+        panic!("Generated LLVM module is invalid");
+    }
+
     ctx.module
 }

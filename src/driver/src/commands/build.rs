@@ -5,7 +5,7 @@ use nitrate_translation::{
     hir::prelude as hir,
     hir_from_tree::{Ast2HirCtx, convert_ast_to_hir},
     hir_validate::ValidateHir,
-    llvm::LLVMContext,
+    llvm::{LLVMContext, OptLevel},
     llvm_from_hir::generate_code,
     parse::ResolveCtx,
     parsetree::ast,
@@ -148,8 +148,15 @@ impl Interpreter<'_> {
     }
 
     pub(crate) fn sc_build(&mut self, _args: BuildArgs) -> Result<(), InterpreterError> {
-        let package = self.get_package_config()?;
+        std::fs::create_dir_all(".no3/build").map_err(|e| {
+            error!(
+                self.log,
+                "Failed to create build directory '.no3/build': {}", e
+            );
+            InterpreterError::IoError(e)
+        })?;
 
+        let package = self.get_package_config()?;
         self.validate_package_edition(package.edition())?;
 
         let entrypoint_path = package.entrypoint();
@@ -159,11 +166,7 @@ impl Interpreter<'_> {
                 "Package entrypoint '{}' does not exist.",
                 entrypoint_path.display()
             );
-
-            return Err(InterpreterError::IoError(std::io::Error::new(
-                std::io::ErrorKind::NotFound,
-                "package entrypoint not found",
-            )));
+            return Err(InterpreterError::OperationalError);
         }
 
         let log = CompilerLog::new(self.log.clone());
@@ -180,14 +183,27 @@ impl Interpreter<'_> {
             return Err(InterpreterError::OperationalError);
         };
 
-        let llvm_ctx = LLVMContext::new();
-        let llvm_module = generate_code(
+        let opt_level = OptLevel::Aggressive;
+        let target_triple = "x86_64-pc-linux-gnu";
+
+        let llvm_ctx = LLVMContext::new(target_triple, opt_level).map_err(|e| {
+            error!(
+                self.log,
+                "Failed to create LLVM context for target '{}': {}", target_triple, e
+            );
+
+            InterpreterError::OperationalError
+        })?;
+
+        let mut llvm_module = generate_code(
             package.name(),
             valid_hir_module,
             &llvm_ctx,
             &store,
             &symbol_tab,
         );
+
+        llvm_ctx.optimize_module(&mut llvm_module);
 
         let target_file = format!(
             "{}-{}.{}.{}.ll",

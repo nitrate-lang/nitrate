@@ -14,7 +14,7 @@ pub(crate) struct NewArgs {
     lib: bool,
 
     /// Specify the edition for the new package
-    #[arg(long, default_value = "2025")]
+    #[arg(long, default_value = "2026")]
     edition: u16,
 
     /// Set the resulting package name, defaults to the directory name
