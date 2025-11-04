@@ -322,7 +322,7 @@ pub enum Value {
 
     FieldAccess {
         expr: ValueId,
-        field: IString,
+        field_name: IString,
     },
 
     IndexAccess {
@@ -340,8 +340,8 @@ pub enum Value {
     },
 
     Cast {
-        expr: ValueId,
-        to: TypeId,
+        value: ValueId,
+        target_type: TypeId,
     },
 
     Borrow {

@@ -192,8 +192,8 @@ impl Ast2Hir for ast::ArrayType {
         let element_type = self.element_type.ast2hir(ctx, log)?.into_id(&ctx.store);
 
         let hir_length = Value::Cast {
-            expr: self.len.ast2hir(ctx, log)?.into_id(&ctx.store),
-            to: Type::USize.into_id(&ctx.store),
+            value: self.len.ast2hir(ctx, log)?.into_id(&ctx.store),
+            target_type: Type::USize.into_id(&ctx.store),
         };
 
         let mut eval = HirEvalCtx::new(&ctx.store, log, ctx.ptr_size);

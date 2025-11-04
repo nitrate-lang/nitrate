@@ -421,7 +421,7 @@ impl HirEvaluate for Value {
                 }
             }
 
-            Value::FieldAccess { expr, field } => match ctx.store[expr].borrow().evaluate(ctx)? {
+            Value::FieldAccess { expr, field_name: field } => match ctx.store[expr].borrow().evaluate(ctx)? {
                 Value::StructObject { fields, .. } => {
                     if let Some((_, field_value)) = fields.iter().find(|x| &x.0 == field) {
                         Ok(ctx.store[field_value].borrow().evaluate(ctx)?)
@@ -472,7 +472,7 @@ impl HirEvaluate for Value {
                 unimplemented!()
             }
 
-            Value::Cast { expr, to } => {
+            Value::Cast { value: expr, target_type: to } => {
                 let expr = ctx.store[expr].borrow().evaluate(ctx)?;
 
                 if expr.is_literal() {

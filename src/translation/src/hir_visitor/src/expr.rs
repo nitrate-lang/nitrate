@@ -101,7 +101,7 @@ pub trait HirValueVisitor<T> {
 
             Value::Unary { op, operand } => self.visit_unary(op, &store[operand].borrow()),
 
-            Value::FieldAccess { expr, field } => {
+            Value::FieldAccess { expr, field_name: field } => {
                 self.visit_field_access(&store[expr].borrow(), field)
             }
 
@@ -115,7 +115,7 @@ pub trait HirValueVisitor<T> {
 
             Value::Deref { place } => self.visit_deref(&store[place].borrow()),
 
-            Value::Cast { expr, to } => self.visit_cast(&store[expr].borrow(), &store[to]),
+            Value::Cast { value: expr, target_type: to } => self.visit_cast(&store[expr].borrow(), &store[to]),
 
             Value::Borrow {
                 exclusive,

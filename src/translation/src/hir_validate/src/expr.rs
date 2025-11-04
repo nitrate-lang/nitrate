@@ -77,7 +77,10 @@ impl ValidateHir for Value {
                 Ok(())
             }
 
-            Value::FieldAccess { expr: _, field: _ } => {
+            Value::FieldAccess {
+                expr: _,
+                field_name: _,
+            } => {
                 // TODO: verify field access
                 Ok(())
             }
@@ -100,7 +103,7 @@ impl ValidateHir for Value {
                 Ok(())
             }
 
-            Value::Cast { expr: _, to: _ } => {
+            Value::Cast { value: _, target_type: _ } => {
                 // TODO: verify cast
                 Ok(())
             }

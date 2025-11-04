@@ -5,7 +5,7 @@ use inkwell::{
 
 use crate::ty::gen_ty;
 use interned_string::IString;
-use nitrate_hir::prelude as hir;
+use nitrate_hir::{ValueId, prelude as hir};
 use nitrate_hir_get_type::HirGetType;
 use nitrate_llvm::LLVMContext;
 use std::collections::HashMap;
@@ -24,7 +24,10 @@ pub struct RvalGenCtx<'ctx, 'store, 'tab, 'builder> {
 
 #[derive(Debug)]
 pub enum RvalError {
-    OperandTypeCombinationError { operation_name: &'static str },
+    OperandTypeCombinationError {
+        #[allow(dead_code)]
+        operation_name: &'static str,
+    },
 }
 
 /**
@@ -1318,6 +1321,125 @@ fn gen_rval_unary_not<'ctx>(
 /**
  * // TODO: add documentation
  */
+fn gen_rval_struct_object<'ctx>(
+    _ctx: &mut RvalGenCtx<'ctx, '_, '_, '_>,
+    _struct_path: &IString,
+    _fields: &[(IString, ValueId)],
+) -> Result<BasicValueEnum<'ctx>, RvalError> {
+    // TODO: implement struct object codegen
+    todo!()
+}
+
+/**
+ * // TODO: add documentation
+ */
+fn gen_rval_enum_variant<'ctx>(
+    _ctx: &mut RvalGenCtx<'ctx, '_, '_, '_>,
+    _enum_path: &IString,
+    _variant_name: &IString,
+    _value: &hir::Value,
+) -> Result<BasicValueEnum<'ctx>, RvalError> {
+    // TODO: implement enum variant codegen
+    todo!()
+}
+
+/**
+ * // TODO: add documentation
+ */
+fn gen_rval_field_access<'ctx>(
+    _ctx: &mut RvalGenCtx<'ctx, '_, '_, '_>,
+    _struct_value: &hir::Value,
+    _field_name: &IString,
+) -> Result<BasicValueEnum<'ctx>, RvalError> {
+    // TODO: implement field access codegen
+    todo!()
+}
+
+/**
+ * // TODO: add documentation
+ */
+fn gen_rval_index_access<'ctx>(
+    _ctx: &mut RvalGenCtx<'ctx, '_, '_, '_>,
+    _collection: &hir::Value,
+    _index: &hir::Value,
+) -> Result<BasicValueEnum<'ctx>, RvalError> {
+    // TODO: implement index access codegen
+    todo!()
+}
+
+/**
+ * // TODO: add documentation
+ */
+fn gen_rval_assign<'ctx>(
+    _ctx: &mut RvalGenCtx<'ctx, '_, '_, '_>,
+    _place: &hir::Value,
+    _value: &hir::Value,
+) -> Result<BasicValueEnum<'ctx>, RvalError> {
+    // TODO: implement assignment codegen
+    todo!()
+}
+
+/**
+ * // TODO: add documentation
+ */
+fn gen_rval_deref<'ctx>(
+    _ctx: &mut RvalGenCtx<'ctx, '_, '_, '_>,
+    _place: &hir::Value,
+) -> Result<BasicValueEnum<'ctx>, RvalError> {
+    // TODO: implement dereference codegen
+    todo!()
+}
+
+/**
+ * // TODO: add documentation
+ */
+fn gen_rval_cast<'ctx>(
+    _ctx: &mut RvalGenCtx<'ctx, '_, '_, '_>,
+    _value: &hir::Value,
+    _target_type: &hir::Type,
+) -> Result<BasicValueEnum<'ctx>, RvalError> {
+    // TODO: implement
+    todo!()
+}
+
+/**
+ * // TODO: add documentation
+ */
+fn gen_rval_borrow<'ctx>(
+    _ctx: &mut RvalGenCtx<'ctx, '_, '_, '_>,
+    _exclusive: bool,
+    _mutable: bool,
+    _place: &hir::Value,
+) -> Result<BasicValueEnum<'ctx>, RvalError> {
+    // TODO: implement borrow codegen
+    todo!()
+}
+
+/**
+ * // TODO: add documentation
+ */
+fn gen_rval_list<'ctx>(
+    _ctx: &mut RvalGenCtx<'ctx, '_, '_, '_>,
+    _elements: &[hir::Value],
+) -> Result<BasicValueEnum<'ctx>, RvalError> {
+    // TODO: implement list codegen
+    todo!()
+}
+
+/**
+ * // TODO: add documentation
+ */
+fn gen_rval_tuple<'ctx>(
+    _ctx: &mut RvalGenCtx<'ctx, '_, '_, '_>,
+    _elements: &[hir::Value],
+) -> Result<BasicValueEnum<'ctx>, RvalError> {
+    // TODO: implement tuple codegen
+    todo!()
+}
+
+/**
+ * // TODO: add documentation
+ */
 fn gen_if<'ctx>(
     ctx: &mut RvalGenCtx<'ctx, '_, '_, '_>,
     condition: &hir::Value,
@@ -1430,7 +1552,9 @@ fn gen_while<'ctx>(
     // 2. While loop body
     ctx.bb.position_at_end(body_bb);
     gen_block(ctx, body)?;
-    /* HIR block should end with a continue statement */
+    if !body.get_type(&ctx.store, &ctx.tab).unwrap().is_diverging() {
+        ctx.bb.build_unconditional_branch(cond_bb).unwrap();
+    }
 
     ctx.bb.position_at_end(join_bb);
 
@@ -1460,7 +1584,9 @@ fn gen_loop<'ctx>(
     // 1. Loop body
     ctx.bb.position_at_end(body_bb);
     gen_block(ctx, body)?;
-    /* HIR block should end with a continue statement */
+    if !body.get_type(&ctx.store, &ctx.tab).unwrap().is_diverging() {
+        ctx.bb.build_unconditional_branch(body_bb).unwrap();
+    }
 
     /************************************************************************/
     // 2. Join block
@@ -1558,17 +1684,6 @@ fn gen_block_rval<'ctx>(
     ctx: &mut RvalGenCtx<'ctx, '_, '_, '_>,
     hir_block: &hir::Block,
 ) -> Result<BasicValueEnum<'ctx>, RvalError> {
-    if hir_block.elements.is_empty() {
-        return gen_rval_lit_unit(ctx);
-    }
-
-    let result_ty = hir_block
-        .get_type(&ctx.store, &ctx.tab)
-        .expect("Failed to get block type");
-    let llvm_result_ty = gen_ty(&result_ty, ctx.llvm, &ctx.store, &ctx.tab);
-
-    let result = ctx.bb.build_alloca(llvm_result_ty, "block_result").unwrap();
-
     for (i, element) in hir_block.elements.iter().enumerate() {
         let element_val = match element {
             hir::BlockElement::Stmt(expr) => {
@@ -1599,17 +1714,59 @@ fn gen_block_rval<'ctx>(
         };
 
         if i == hir_block.elements.len() - 1 {
-            ctx.bb.build_store(result, element_val).unwrap();
+            return Ok(element_val);
         }
     }
 
-    let result = ctx
-        .bb
-        .build_load(llvm_result_ty, result, "block_load")
-        .unwrap()
-        .into();
+    gen_rval_lit_unit(ctx)
+}
 
-    Ok(result)
+/**
+ * // TODO: add documentation
+ */
+fn gen_rval_closure<'ctx>(
+    _ctx: &mut RvalGenCtx<'ctx, '_, '_, '_>,
+    _captures: &[IString],
+    _callee: &hir::FunctionId,
+) -> Result<BasicValueEnum<'ctx>, RvalError> {
+    // TODO: implement closure codegen
+    todo!()
+}
+
+/**
+ * // TODO: add documentation
+ */
+fn gen_rval_call<'ctx>(
+    _ctx: &mut RvalGenCtx<'ctx, '_, '_, '_>,
+    _callee: &hir::Value,
+    _arguments: &[hir::ValueId],
+) -> Result<BasicValueEnum<'ctx>, RvalError> {
+    // TODO: implement function call codegen
+    todo!()
+}
+
+/**
+ * // TODO: add documentation
+ */
+fn gen_rval_method_call<'ctx>(
+    _ctx: &mut RvalGenCtx<'ctx, '_, '_, '_>,
+    _callee: &hir::Value,
+    _method_name: &IString,
+    _arguments: &[hir::ValueId],
+) -> Result<BasicValueEnum<'ctx>, RvalError> {
+    // TODO: implement
+    todo!()
+}
+
+/**
+ * // TODO: add documentation
+ */
+fn gen_rval_symbol<'ctx>(
+    _ctx: &mut RvalGenCtx<'ctx, '_, '_, '_>,
+    _symbol_name: &IString,
+) -> Result<BasicValueEnum<'ctx>, RvalError> {
+    // TODO: implement
+    todo!()
 }
 
 /**
@@ -1641,23 +1798,6 @@ pub(crate) fn gen_rval<'ctx>(
 
         hir::Value::InferredInteger(_) | hir::Value::InferredFloat(_) => {
             panic!("Inferred values should have been resolved before code generation")
-        }
-
-        hir::Value::StructObject {
-            struct_path: _,
-            fields: _,
-        } => {
-            // TODO: implement struct object codegen
-            unimplemented!()
-        }
-
-        hir::Value::EnumVariant {
-            enum_path: _,
-            variant: _,
-            value: _,
-        } => {
-            // TODO: implement enum variant codegen
-            unimplemented!()
         }
 
         hir::Value::Binary { left, op, right } => {
@@ -1697,52 +1837,59 @@ pub(crate) fn gen_rval<'ctx>(
             }
         }
 
-        hir::Value::FieldAccess { expr: _, field: _ } => {
-            // TODO: implement field access codegen
-            unimplemented!()
-        }
+        hir::Value::StructObject {
+            struct_path,
+            fields,
+        } => gen_rval_struct_object(ctx, struct_path, fields),
 
-        hir::Value::IndexAccess {
-            collection: _,
-            index: _,
+        hir::Value::EnumVariant {
+            enum_path,
+            variant,
+            value,
         } => {
-            // TODO: implement index access codegen
-            unimplemented!()
+            let value = &ctx.store[value].borrow();
+            gen_rval_enum_variant(ctx, enum_path, variant, value)
         }
 
-        hir::Value::Assign { place: _, value: _ } => {
-            // TODO: implement assignment codegen
-            unimplemented!()
+        hir::Value::FieldAccess { expr, field_name } => {
+            let expr = &ctx.store[expr].borrow();
+            gen_rval_field_access(ctx, expr, field_name)
         }
 
-        hir::Value::Deref { place: _ } => {
-            // TODO: implement dereference codegen
-            unimplemented!()
+        hir::Value::IndexAccess { collection, index } => {
+            let collection = &ctx.store[collection].borrow();
+            let index = &ctx.store[index].borrow();
+            gen_rval_index_access(ctx, collection, index)
         }
 
-        hir::Value::Cast { expr: _, to: _ } => {
-            // TODO: implement cast codegen
-            unimplemented!()
+        hir::Value::Assign { place, value } => {
+            let place = &ctx.store[place].borrow();
+            let value = &ctx.store[value].borrow();
+            gen_rval_assign(ctx, place, value)
+        }
+
+        hir::Value::Deref { place } => {
+            let place = &ctx.store[place].borrow();
+            gen_rval_deref(ctx, place)
+        }
+
+        hir::Value::Cast { value, target_type } => {
+            let value = &ctx.store[value].borrow();
+            let target_type = &ctx.store[target_type];
+            gen_rval_cast(ctx, value, target_type)
         }
 
         hir::Value::Borrow {
-            exclusive: _,
-            mutable: _,
-            place: _,
+            exclusive,
+            mutable,
+            place,
         } => {
-            // TODO: implement borrow codegen
-            unimplemented!()
+            let place = &ctx.store[place].borrow();
+            gen_rval_borrow(ctx, *exclusive, *mutable, place)
         }
 
-        hir::Value::List { elements: _ } => {
-            // TODO: implement list codegen
-            unimplemented!()
-        }
-
-        hir::Value::Tuple { elements: _ } => {
-            // TODO: implement tuple codegen
-            unimplemented!()
-        }
+        hir::Value::List { elements } => gen_rval_list(ctx, elements),
+        hir::Value::Tuple { elements } => gen_rval_tuple(ctx, elements),
 
         hir::Value::If {
             condition,
@@ -1789,42 +1936,33 @@ pub(crate) fn gen_rval<'ctx>(
             gen_rval_lit_unit(ctx)
         }
 
-        hir::Value::Block { block: _ } => {
-            // TODO: implement block codegen
-            unimplemented!()
+        hir::Value::Block { block } => {
+            let block = &ctx.store[block].borrow();
+            gen_block_rval(ctx, block)
         }
 
-        hir::Value::Closure {
-            captures: _,
-            callee: _,
-        } => {
-            // TODO: implement closure codegen
-            unimplemented!()
-        }
+        hir::Value::Closure { captures, callee } => gen_rval_closure(ctx, captures, callee),
 
         hir::Value::Call {
-            callee: _,
-            positional: _,
+            callee,
+            positional,
             named: _,
         } => {
-            // TODO: implement function call codegen
-            unimplemented!()
+            let callee = &ctx.store[callee].borrow();
+            gen_rval_call(ctx, callee, positional)
         }
 
         hir::Value::MethodCall {
-            object: _,
-            method_name: _,
-            positional: _,
+            object,
+            method_name,
+            positional,
             named: _,
         } => {
-            // TODO: implement method call codegen
-            unimplemented!()
+            let object = &ctx.store[object].borrow();
+            gen_rval_method_call(ctx, object, method_name, positional)
         }
 
-        hir::Value::Symbol { path: _ } => {
-            // TODO: implement symbol reference codegen
-            unimplemented!()
-        }
+        hir::Value::Symbol { path } => gen_rval_symbol(ctx, path),
     }
 }
 

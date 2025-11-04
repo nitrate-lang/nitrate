@@ -170,7 +170,10 @@ impl HirGetType for Value {
                 }
             },
 
-            Value::FieldAccess { expr, field } => {
+            Value::FieldAccess {
+                expr,
+                field_name: field,
+            } => {
                 let expr = &store[expr].borrow();
 
                 if let Type::Struct { struct_type } = expr.get_type(store, tab)? {
@@ -211,7 +214,7 @@ impl HirGetType for Value {
                 }
             }
 
-            Value::Cast { expr: _, to } => Ok((&store[to]).clone()),
+            Value::Cast { value: _, target_type: to } => Ok((&store[to]).clone()),
 
             Value::Borrow {
                 mutable,

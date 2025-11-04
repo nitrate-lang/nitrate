@@ -112,7 +112,10 @@ impl ValueIterMut<'_> {
                     .try_for_each_mut(store, vcb)?;
             }
 
-            Value::FieldAccess { expr, field: _ } => {
+            Value::FieldAccess {
+                expr,
+                field_name: _,
+            } => {
                 store[expr as &ValueId]
                     .borrow_mut()
                     .iter_mut()
@@ -150,7 +153,7 @@ impl ValueIterMut<'_> {
                     .try_for_each_mut(store, vcb)?;
             }
 
-            Value::Cast { expr, to: _ } => {
+            Value::Cast { value: expr, target_type: _ } => {
                 store[expr as &ValueId]
                     .borrow_mut()
                     .iter_mut()

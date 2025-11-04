@@ -888,8 +888,8 @@ impl Ast2Hir for ast::Cast {
             (Value::InferredFloat(v), Type::F64) => Ok(Value::F64(OrderedFloat::from(*v as f64))),
 
             (expr, to) => Ok(Value::Cast {
-                expr: expr.into_id(&ctx.store),
-                to: to.into_id(&ctx.store),
+                value: expr.into_id(&ctx.store),
+                target_type: to.into_id(&ctx.store),
             }),
         }
     }
@@ -1033,7 +1033,7 @@ impl Ast2Hir for ast::FieldAccess {
 
         Ok(Value::FieldAccess {
             expr: object,
-            field,
+            field_name: field,
         })
     }
 }

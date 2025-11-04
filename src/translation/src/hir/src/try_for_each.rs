@@ -242,7 +242,7 @@ impl ValueIter<'_> {
                     .try_for_each(store, vcb, tcb)?;
             }
 
-            Value::FieldAccess { expr, field: _ } => {
+            Value::FieldAccess { expr, field_name: _ } => {
                 store[expr].borrow().iter().try_for_each(store, vcb, tcb)?;
             }
 
@@ -265,7 +265,7 @@ impl ValueIter<'_> {
                 store[place].borrow().iter().try_for_each(store, vcb, tcb)?;
             }
 
-            Value::Cast { expr, to } => {
+            Value::Cast { value: expr, target_type: to } => {
                 store[expr].borrow().iter().try_for_each(store, vcb, tcb)?;
 
                 store[to].iter().try_for_each(store, vcb, tcb)?;

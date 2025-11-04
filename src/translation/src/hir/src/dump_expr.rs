@@ -187,7 +187,10 @@ impl Dump for Value {
                 write!(o, ")")
             }
 
-            Value::FieldAccess { expr, field } => {
+            Value::FieldAccess {
+                expr,
+                field_name: field,
+            } => {
                 write!(o, "(")?;
                 ctx.store[expr].borrow().dump(ctx, o)?;
                 write!(o, ".{})", field)
@@ -234,7 +237,10 @@ impl Dump for Value {
                 write!(o, ")")
             }
 
-            Value::Cast { expr, to } => {
+            Value::Cast {
+                value: expr,
+                target_type: to,
+            } => {
                 write!(o, "(")?;
                 ctx.store[expr].borrow().dump(ctx, o)?;
                 write!(o, " as ")?;
