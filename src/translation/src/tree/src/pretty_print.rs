@@ -3,7 +3,7 @@ use std::num::NonZeroUsize;
 use nitrate_token::IntegerKind;
 
 use crate::{
-    ast::{FieldAccess, LocalVariable, LocalVariableKind},
+    ast::{FieldAccess, ItemPath, LocalVariable, LocalVariableKind, UseTree},
     expr::{
         AttributeList, Await, BStringLit, BinExpr, BinExprOp, Block, BlockItem, BooleanLit, Break,
         Cast, Closure, Continue, ElseIf, Expr, ExprParentheses, ExprPath, ExprPathSegment,
@@ -1515,6 +1515,66 @@ impl PrettyPrint for Module {
     }
 }
 
+impl PrettyPrint for ItemPath {
+    fn pretty_print_fmt(
+        &self,
+        _ctx: &mut PrintContext,
+        writer: &mut dyn std::fmt::Write,
+    ) -> std::fmt::Result {
+        for (i, segment) in self.segments.iter().enumerate() {
+            if i > 0 {
+                writer.write_str("::")?;
+            }
+
+            writer.write_str(&segment.segment)?;
+        }
+
+        Ok(())
+    }
+}
+
+impl PrettyPrint for UseTree {
+    fn pretty_print_fmt(
+        &self,
+        ctx: &mut PrintContext,
+        writer: &mut dyn std::fmt::Write,
+    ) -> std::fmt::Result {
+        match self {
+            UseTree::Single { path } => {
+                path.pretty_print_fmt(ctx, writer)?;
+            }
+
+            UseTree::Alias { path, alias: name } => {
+                path.pretty_print_fmt(ctx, writer)?;
+                writer.write_str(" as ")?;
+                writer.write_str(name)?;
+            }
+
+            UseTree::UseAll { path } => {
+                path.pretty_print_fmt(ctx, writer)?;
+                writer.write_str("::*")?;
+            }
+
+            UseTree::Group { path, group } => {
+                path.pretty_print_fmt(ctx, writer)?;
+                writer.write_str("::{")?;
+
+                for (i, item) in group.iter().enumerate() {
+                    if i > 0 {
+                        writer.write_str(", ")?;
+                    }
+
+                    item.pretty_print_fmt(ctx, writer)?;
+                }
+
+                writer.write_char('}')?;
+            }
+        }
+
+        Ok(())
+    }
+}
+
 impl PrettyPrint for Import {
     fn pretty_print_fmt(
         &self,
@@ -1533,11 +1593,16 @@ impl PrettyPrint for Import {
             writer.write_char(' ')?;
         }
 
-        writer.write_str(&self.import_name)?;
+        self.use_tree.pretty_print_fmt(ctx, writer)?;
 
         if let Some(resolved) = &self.resolved {
-            writer.write_str(" --> ")?;
-            resolved.pretty_print_fmt(ctx, writer)?;
+            writer.write_str(" --> [")?;
+
+            for item in resolved {
+                item.pretty_print_fmt(ctx, writer)?;
+                writer.write_str(", ")?;
+            }
+            writer.write_str("]")?;
         }
 
         writer.write_char(';')

@@ -398,10 +398,9 @@ impl Ast2Hir for ast::Module {
             let mut items = Vec::with_capacity(this.items.len());
             for item in this.items {
                 match item {
-                    ast::Item::Module(submodule) => {
-                        let hir_submodule =
-                            convert_ast_to_hir(*submodule, ctx, log)?.into_id(&ctx.store);
-                        items.push(Item::Module(hir_submodule));
+                    ast::Item::Module(module) => {
+                        let hir_module = convert_ast_to_hir(*module, ctx, log)?.into_id(&ctx.store);
+                        items.push(Item::Module(hir_module));
                     }
 
                     ast::Item::Import(_) => {

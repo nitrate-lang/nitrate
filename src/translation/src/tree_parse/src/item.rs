@@ -1,12 +1,13 @@
 use super::parse::Parser;
 use crate::diagnosis::SyntaxErr;
 
+use nitrate_token::Token;
 use nitrate_tree::{
     ast::{
         AssociatedItem, Enum, EnumVariant, FuncParam, FuncParams, Function, Generics,
         GlobalVariable, GlobalVariableKind, Impl, Import, Item, ItemPath, ItemPathSegment,
         ItemSyntaxError, Module, Mutability, Struct, StructField, Trait, TypeAlias, TypeParam,
-        Visibility,
+        UseTree, Visibility,
     },
     tag::{
         intern_enum_variant_name, intern_function_name, intern_import_name, intern_module_name,
@@ -14,7 +15,6 @@ use nitrate_tree::{
         intern_variable_name,
     },
 };
-use nitrate_token::Token;
 
 impl Parser<'_, '_> {
     fn parse_generics(&mut self) -> Option<Generics> {
@@ -127,55 +127,112 @@ impl Parser<'_, '_> {
         }
     }
 
-    #[allow(dead_code)]
-    fn parse_item_path(&mut self) -> ItemPath {
-        fn parse_double_colon(this: &mut Parser) -> bool {
-            if !this.lexer.skip_if(&Token::Colon) {
-                return false;
-            }
+    fn consume_double_colon(&mut self) -> bool {
+        let pos = self.lexer.peek_pos();
 
-            if !this.lexer.skip_if(&Token::Colon) {
-                let bug = SyntaxErr::ExpectedColon(this.lexer.peek_pos());
-                this.log.report(&bug);
-                return false;
-            }
-
-            true
+        if !self.lexer.skip_if(&Token::Colon) {
+            return false;
         }
 
+        if !self.lexer.skip_if(&Token::Colon) {
+            self.lexer.rewind(pos);
+            return false;
+        }
+
+        true
+    }
+
+    #[allow(dead_code)]
+    fn parse_item_path(&mut self) -> ItemPath {
         let mut segments = Vec::new();
 
-        if parse_double_colon(self) {
-            segments.push(ItemPathSegment { segment: "".into() });
+        if !self.lexer.next_is(&Token::Colon) {
+            let segment = self.lexer.next_if_name().unwrap_or_else(|| {
+                let bug = SyntaxErr::PathExpectedName(self.lexer.peek_pos());
+                self.log.report(&bug);
+                "".into()
+            });
+
+            segments.push(ItemPathSegment { segment });
         }
 
         while !self.lexer.is_eof() {
+            let rewind_pos = self.lexer.peek_pos();
+
+            if !self.consume_double_colon() {
+                if segments.is_empty() {
+                    let bug = SyntaxErr::PathExpectedName(self.lexer.peek_pos());
+                    self.log.report(&bug);
+                }
+                break;
+            }
+
             let Some(segment) = self.lexer.next_if_name() else {
-                let bug = SyntaxErr::PathExpectedName(self.lexer.peek_pos());
-                self.log.report(&bug);
+                self.lexer.rewind(rewind_pos);
                 break;
             };
 
             segments.push(ItemPathSegment { segment });
-
-            if !parse_double_colon(self) {
-                break;
-            }
         }
 
         ItemPath { segments }
     }
 
-    fn parse_import(&mut self) -> Import {
+    fn parse_use(&mut self) -> Import {
+        fn parse_use_tree(this: &mut Parser) -> UseTree {
+            let path = this.parse_item_path();
+
+            if this.consume_double_colon() {
+                if this.lexer.skip_if(&Token::Star) {
+                    return UseTree::UseAll { path };
+                } else if this.lexer.skip_if(&Token::OpenBrace) {
+                    let mut group = Vec::new();
+
+                    while !this.lexer.is_eof() {
+                        if this.lexer.skip_if(&Token::CloseBrace) {
+                            break;
+                        }
+
+                        let subtree = parse_use_tree(this);
+                        group.push(subtree);
+
+                        if !this.lexer.skip_if(&Token::Comma)
+                            && !this.lexer.next_is(&Token::CloseBrace)
+                        {
+                            let bug = SyntaxErr::ImportGroupExpectedEnd(this.lexer.peek_pos());
+                            this.log.report(&bug);
+                            this.lexer.skip_while(&Token::CloseBrace);
+                            break;
+                        }
+                    }
+
+                    UseTree::Group { path, group }
+                } else {
+                    let bug = SyntaxErr::ImportExpectedStarOrGroup(this.lexer.peek_pos());
+                    this.log.report(&bug);
+                    UseTree::Single { path }
+                }
+            } else if this.lexer.skip_if(&Token::As) {
+                let alias = this.lexer.next_if_name().unwrap_or_else(|| {
+                    let bug = SyntaxErr::ImportAliasMissingName(this.lexer.peek_pos());
+                    this.log.report(&bug);
+                    "".into()
+                });
+
+                UseTree::Alias {
+                    path,
+                    alias: intern_import_name(alias),
+                }
+            } else {
+                UseTree::Single { path }
+            }
+        }
+
         assert!(self.lexer.peek_t() == Token::Use);
         self.lexer.skip_tok();
 
         let attributes = self.parse_attributes();
-        let import_name = self.lexer.next_if_name().unwrap_or_else(|| {
-            let bug = SyntaxErr::ImportMissingName(self.lexer.peek_pos());
-            self.log.report(&bug);
-            "".into()
-        });
+        let use_tree = parse_use_tree(self);
 
         if !self.lexer.skip_if(&Token::Semi) {
             let bug = SyntaxErr::ExpectedSemicolon(self.lexer.peek_pos());
@@ -185,8 +242,7 @@ impl Parser<'_, '_> {
         Import {
             visibility: None,
             attributes,
-            import_name: intern_import_name(import_name),
-            items: None,
+            use_tree,
             resolved: None,
         }
     }
@@ -769,7 +825,7 @@ impl Parser<'_, '_> {
             }
 
             Token::Use => {
-                let mut import = self.parse_import();
+                let mut import = self.parse_use();
                 import.visibility = visibility;
                 Item::Import(Box::new(import))
             }

@@ -38,15 +38,16 @@ impl ParseTreeIter for Import {
         f(Order::Enter, RefNode::ItemImport(self));
 
         let _ = self.visibility;
-        let _ = self.items;
-        let _ = self.import_name;
+        let _ = self.use_tree;
 
         if let Some(attributes) = &self.attributes {
             attributes.depth_first_iter(f);
         }
 
         if let Some(resolved) = &self.resolved {
-            resolved.depth_first_iter(f);
+            for item in resolved {
+                item.depth_first_iter(f);
+            }
         }
 
         f(Order::Leave, RefNode::ItemImport(self));

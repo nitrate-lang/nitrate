@@ -38,15 +38,16 @@ impl ParseTreeIterMut for Import {
         f(Order::Enter, RefNodeMut::ItemImport(self));
 
         let _ = self.visibility;
-        let _ = self.items;
-        let _ = self.import_name;
+        let _ = self.use_tree;
 
         if let Some(attributes) = &mut self.attributes {
             attributes.depth_first_iter_mut(f);
         }
 
         if let Some(resolved) = &mut self.resolved {
-            resolved.depth_first_iter_mut(f);
+            for item in resolved {
+                item.depth_first_iter_mut(f);
+            }
         }
 
         f(Order::Leave, RefNodeMut::ItemImport(self));

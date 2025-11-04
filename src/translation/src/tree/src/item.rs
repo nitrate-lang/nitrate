@@ -46,14 +46,33 @@ pub struct ItemPath {
 
 #[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum UseTree {
+    Single { path: ItemPath },
+    Alias { path: ItemPath, alias: ImportNameId },
+    UseAll { path: ItemPath },
+    Group { path: ItemPath, group: Vec<UseTree> },
+}
+
+impl UseTree {
+    pub fn path(&self) -> &ItemPath {
+        match self {
+            UseTree::Single { path } => path,
+            UseTree::Alias { path, .. } => path,
+            UseTree::UseAll { path } => path,
+            UseTree::Group { path, .. } => path,
+        }
+    }
+}
+
+#[skip_serializing_none]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Import {
     pub visibility: Option<Visibility>,
     pub attributes: Option<AttributeList>,
-    pub import_name: ImportNameId,
-    pub items: Option<Vec<ItemPath>>,
+    pub use_tree: UseTree,
 
     // Not set until import resolution
-    pub resolved: Option<Item>,
+    pub resolved: Option<Vec<Item>>,
 }
 
 #[skip_serializing_none]

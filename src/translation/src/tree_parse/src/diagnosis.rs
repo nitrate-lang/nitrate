@@ -14,6 +14,9 @@ pub(crate) enum SyntaxErr {
     ModuleExpectedEnd(SourcePosition),
 
     ImportMissingName(SourcePosition),
+    ImportAliasMissingName(SourcePosition),
+    ImportExpectedStarOrGroup(SourcePosition),
+    ImportGroupExpectedEnd(SourcePosition),
 
     TypeAliasMissingName(SourcePosition),
 
@@ -119,6 +122,9 @@ impl FormattableDiagnosticGroup for SyntaxErr {
             SyntaxErr::ModuleExpectedEnd(_) => 22,
 
             SyntaxErr::ImportMissingName(_) => 40,
+            SyntaxErr::ImportAliasMissingName(_) => 41,
+            SyntaxErr::ImportExpectedStarOrGroup(_) => 42,
+            SyntaxErr::ImportGroupExpectedEnd(_) => 43,
 
             SyntaxErr::TypeAliasMissingName(_) => 60,
 
@@ -244,7 +250,22 @@ impl FormattableDiagnosticGroup for SyntaxErr {
 
             SyntaxErr::ImportMissingName(pos) => DiagnosticInfo {
                 origin: Origin::Point(pos.to_owned().into()),
-                message: "import package name is missing".into(),
+                message: "use package name is missing".into(),
+            },
+
+            SyntaxErr::ImportAliasMissingName(pos) => DiagnosticInfo {
+                origin: Origin::Point(pos.to_owned().into()),
+                message: "use alias name is missing".into(),
+            },
+
+            SyntaxErr::ImportExpectedStarOrGroup(pos) => DiagnosticInfo {
+                origin: Origin::Point(pos.to_owned().into()),
+                message: "expected '*' or '{' after '::' in use statement".into(),
+            },
+
+            SyntaxErr::ImportGroupExpectedEnd(pos) => DiagnosticInfo {
+                origin: Origin::Point(pos.to_owned().into()),
+                message: "expected '}' at the end of use group".into(),
             },
 
             /* ------------------------------------------------------------------------- */
@@ -612,8 +633,8 @@ pub enum ResolveIssue {
     ImportNotFound((String, std::io::Error)),
     
     CircularImport {
-        path: ImportNameId,
-        depth: Vec<ImportNameId>,
+        path: String,
+        depth: Vec<String>,
     },
 
     ImportSourceCodeSizeLimitExceeded(std::path::PathBuf),

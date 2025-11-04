@@ -4,7 +4,7 @@ use nitrate_token_lexer::{Lexer, LexerError};
 use nitrate_tree::{
     Order, ParseTreeIterMut, RefNodeMut,
     ast::{Import, Item, Module, Visibility},
-    tag::{ImportNameId, intern_module_name},
+    tag::intern_module_name,
 };
 
 use std::{collections::HashSet, sync::Arc};
@@ -222,11 +222,14 @@ fn resolve_import(
     ctx: &ImportContext,
     import: &mut Import,
     log: &CompilerLog,
-    visited: &mut HashSet<ImportNameId>,
-    depth: &mut Vec<ImportNameId>,
+    visited: &mut HashSet<String>,
+    depth: &mut Vec<String>,
 ) {
-    let import_name_id = import.import_name.clone();
-    let import_name = import_name_id.to_string();
+    let import_path = import.use_tree.path();
+    let import_name = match import_path.segments.first().map(|s| s.segment.clone()) {
+        Some(name) => name,
+        None => return,
+    };
 
     const MAX_IMPORT_DEPTH: usize = 256;
     if depth.len() >= MAX_IMPORT_DEPTH {
@@ -235,18 +238,18 @@ fn resolve_import(
         log.report(&ResolveIssue::ImportDepthLimitExceeded(import_name));
         return;
     } else {
-        depth.push(import_name_id.clone());
+        depth.push(import_name.clone());
     }
 
-    if visited.contains(&import_name_id) {
+    if visited.contains(&import_name) {
         log.report(&ResolveIssue::CircularImport {
-            path: import_name_id,
+            path: import_name.clone(),
             depth: depth.clone(),
         });
         depth.pop();
         return;
     } else {
-        visited.insert(import_name_id.clone());
+        visited.insert(import_name.clone());
     }
 
     if let Some(what) = decide_what_to_import(ctx, &import_name, log) {
@@ -255,17 +258,17 @@ fn resolve_import(
             _ => false,
         };
 
-        let content = load_source_file(&what.source_filepath, import_name, inside, log);
+        let content = load_source_file(&what.source_filepath, import_name.clone(), inside, log);
 
         if let Some(mut module) = content {
             resolve_imports_guarded(&what, &mut module, log, visited, depth);
             module.visibility = import.visibility;
 
-            import.resolved = Some(Item::Module(Box::new(module)));
+            import.resolved = Some(vec![Item::Module(Box::new(module))]);
         }
     }
 
-    visited.remove(&import_name_id);
+    visited.remove(&import_name);
     depth.pop();
 }
 
@@ -273,8 +276,8 @@ fn resolve_imports_guarded(
     ctx: &ImportContext,
     module: &mut Module,
     log: &CompilerLog,
-    visited: &mut HashSet<ImportNameId>,
-    depth: &mut Vec<ImportNameId>,
+    visited: &mut HashSet<String>,
+    depth: &mut Vec<String>,
 ) {
     module.depth_first_iter_mut(&mut |order, node| {
         if order == Order::Leave {
