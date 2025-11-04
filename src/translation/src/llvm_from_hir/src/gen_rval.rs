@@ -1327,7 +1327,7 @@ fn gen_rval_struct_object<'ctx>(
     _fields: &[(IString, ValueId)],
 ) -> Result<BasicValueEnum<'ctx>, RvalError> {
     // TODO: implement struct object codegen
-    todo!()
+    unimplemented!()
 }
 
 /**
@@ -1340,7 +1340,7 @@ fn gen_rval_enum_variant<'ctx>(
     _value: &hir::Value,
 ) -> Result<BasicValueEnum<'ctx>, RvalError> {
     // TODO: implement enum variant codegen
-    todo!()
+    unimplemented!()
 }
 
 /**
@@ -1352,7 +1352,7 @@ fn gen_rval_field_access<'ctx>(
     _field_name: &IString,
 ) -> Result<BasicValueEnum<'ctx>, RvalError> {
     // TODO: implement field access codegen
-    todo!()
+    unimplemented!()
 }
 
 /**
@@ -1364,7 +1364,7 @@ fn gen_rval_index_access<'ctx>(
     _index: &hir::Value,
 ) -> Result<BasicValueEnum<'ctx>, RvalError> {
     // TODO: implement index access codegen
-    todo!()
+    unimplemented!()
 }
 
 /**
@@ -1376,7 +1376,7 @@ fn gen_rval_assign<'ctx>(
     _value: &hir::Value,
 ) -> Result<BasicValueEnum<'ctx>, RvalError> {
     // TODO: implement assignment codegen
-    todo!()
+    unimplemented!()
 }
 
 /**
@@ -1387,7 +1387,7 @@ fn gen_rval_deref<'ctx>(
     _place: &hir::Value,
 ) -> Result<BasicValueEnum<'ctx>, RvalError> {
     // TODO: implement dereference codegen
-    todo!()
+    unimplemented!()
 }
 
 /**
@@ -1399,7 +1399,7 @@ fn gen_rval_cast<'ctx>(
     _target_type: &hir::Type,
 ) -> Result<BasicValueEnum<'ctx>, RvalError> {
     // TODO: implement
-    todo!()
+    unimplemented!()
 }
 
 /**
@@ -1412,7 +1412,7 @@ fn gen_rval_borrow<'ctx>(
     _place: &hir::Value,
 ) -> Result<BasicValueEnum<'ctx>, RvalError> {
     // TODO: implement borrow codegen
-    todo!()
+    unimplemented!()
 }
 
 /**
@@ -1423,7 +1423,7 @@ fn gen_rval_list<'ctx>(
     _elements: &[hir::Value],
 ) -> Result<BasicValueEnum<'ctx>, RvalError> {
     // TODO: implement list codegen
-    todo!()
+    unimplemented!()
 }
 
 /**
@@ -1434,7 +1434,7 @@ fn gen_rval_tuple<'ctx>(
     _elements: &[hir::Value],
 ) -> Result<BasicValueEnum<'ctx>, RvalError> {
     // TODO: implement tuple codegen
-    todo!()
+    unimplemented!()
 }
 
 /**
@@ -1730,7 +1730,7 @@ fn gen_rval_closure<'ctx>(
     _callee: &hir::FunctionId,
 ) -> Result<BasicValueEnum<'ctx>, RvalError> {
     // TODO: implement closure codegen
-    todo!()
+    unimplemented!()
 }
 
 /**
@@ -1742,7 +1742,7 @@ fn gen_rval_call<'ctx>(
     _arguments: &[hir::ValueId],
 ) -> Result<BasicValueEnum<'ctx>, RvalError> {
     // TODO: implement function call codegen
-    todo!()
+    unimplemented!()
 }
 
 /**
@@ -1755,7 +1755,7 @@ fn gen_rval_method_call<'ctx>(
     _arguments: &[hir::ValueId],
 ) -> Result<BasicValueEnum<'ctx>, RvalError> {
     // TODO: implement
-    todo!()
+    unimplemented!()
 }
 
 /**
@@ -1766,7 +1766,7 @@ fn gen_rval_symbol<'ctx>(
     _symbol_name: &IString,
 ) -> Result<BasicValueEnum<'ctx>, RvalError> {
     // TODO: implement
-    todo!()
+    unimplemented!()
 }
 
 /**
