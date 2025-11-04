@@ -116,6 +116,28 @@ impl Interpreter<'_> {
         Ok(())
     }
 
+    fn initialize_git_repo(&self, dir: &std::path::Path) -> Result<(), ()> {
+        match std::process::Command::new("git")
+            .arg("init")
+            .arg("-q")
+            .arg(dir)
+            .status()
+        {
+            Ok(status) if status.success() => Ok(()),
+            Ok(status) => {
+                error!(
+                    self.log,
+                    "Git initialization failed with status: {}", status
+                );
+                Err(())
+            }
+            Err(e) => {
+                error!(self.log, "Failed to execute git command: {}", e);
+                Err(())
+            }
+        }
+    }
+
     pub(crate) fn create_package_dir_structure(
         &self,
         containing_dir: &std::path::Path,
@@ -157,6 +179,13 @@ impl Interpreter<'_> {
                 .edition(edition)
                 .build(),
         )?;
+
+        if self.initialize_git_repo(containing_dir).is_err() {
+            warn!(
+                self.log,
+                "Git repository initialization failed, but continuing package creation."
+            );
+        };
 
         Ok(())
     }
