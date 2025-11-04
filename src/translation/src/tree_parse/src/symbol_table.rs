@@ -1,12 +1,8 @@
+use interned_string::IString;
+use nitrate_tree::{Order, ParseTreeIter, RefNode, ast::Module};
 use std::collections::HashSet;
 
-use nitrate_tree::{
-    Order, ParseTreeIter, RefNode,
-    ast::Module,
-    tag::{ModuleNameId, intern_module_name},
-};
-
-fn qualify_name(scope: &[ModuleNameId], name: &str) -> String {
+fn qualify_name(scope: &[IString], name: &str) -> String {
     let length = scope.iter().map(|s| s.len() + 2).sum::<usize>() + name.len();
     let mut qualified = String::with_capacity(length);
 
@@ -21,7 +17,7 @@ fn qualify_name(scope: &[ModuleNameId], name: &str) -> String {
 
 pub type SymbolSet = HashSet<String>;
 
-fn visit_node(symbol_set: &mut SymbolSet, scope_vec: &Vec<ModuleNameId>, node: &RefNode) {
+fn visit_node(symbol_set: &mut SymbolSet, scope_vec: &Vec<IString>, node: &RefNode) {
     let name = match node {
         RefNode::ItemTypeAlias(sym) => qualify_name(&scope_vec, &sym.name),
         RefNode::ItemStruct(sym) => qualify_name(&scope_vec, &sym.name),
@@ -43,11 +39,7 @@ pub fn discover_symbols(module: &mut Module) -> SymbolSet {
         if let RefNode::ItemModule(module) = node {
             match order {
                 Order::Enter => {
-                    if let Some(name) = &module.name {
-                        scope_vec.push(name.clone());
-                    } else {
-                        scope_vec.push(intern_module_name("".to_string()));
-                    }
+                    scope_vec.push(module.name.clone());
                 }
 
                 Order::Leave => {

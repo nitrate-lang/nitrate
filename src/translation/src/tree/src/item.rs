@@ -2,12 +2,13 @@ use crate::{
     ast::{Block, Expr, Type},
     expr::AttributeList,
     tag::{
-        EnumVariantNameId, FunctionNameId, ImportNameId, ModuleNameId, ParameterNameId,
-        StructFieldNameId, TraitNameId, TypeNameId, VariableNameId,
+        EnumVariantNameId, FunctionNameId, ImportNameId, ParameterNameId, StructFieldNameId,
+        TraitNameId, TypeNameId, VariableNameId,
     },
     ty::TypePath,
 };
 
+use interned_string::IString;
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
 
@@ -28,7 +29,7 @@ pub enum Visibility {
 pub struct Module {
     pub visibility: Option<Visibility>,
     pub attributes: Option<AttributeList>,
-    pub name: Option<ModuleNameId>,
+    pub name: IString,
     pub items: Vec<Item>,
 }
 

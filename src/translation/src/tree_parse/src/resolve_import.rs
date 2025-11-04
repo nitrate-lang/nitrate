@@ -1,10 +1,10 @@
 use crate::{Parser, diagnosis::ResolveIssue};
+use interned_string::IString;
 use nitrate_diagnosis::{CompilerLog, intern_file_id};
 use nitrate_token_lexer::{Lexer, LexerError};
 use nitrate_tree::{
     Order, ParseTreeIterMut, RefNodeMut,
     ast::{Import, Item, Module, Visibility},
-    tag::intern_module_name,
 };
 
 use std::{collections::HashSet, sync::Arc};
@@ -13,23 +13,18 @@ pub type SourceFilePath = std::path::PathBuf;
 pub type FolderPath = std::path::PathBuf;
 
 pub struct ImportContext {
-    pub package_name: Option<String>,
+    pub package_name: IString,
     pub source_filepath: SourceFilePath,
     pub package_search_paths: Arc<Vec<FolderPath>>,
 }
 
 impl ImportContext {
-    pub fn new(source_filepath: SourceFilePath) -> Self {
+    pub fn new(package_name: IString, source_filepath: SourceFilePath) -> Self {
         Self {
-            package_name: None,
+            package_name,
             source_filepath,
             package_search_paths: Arc::new(Vec::new()),
         }
-    }
-
-    pub fn with_current_package_name(mut self, package_name: String) -> Self {
-        self.package_name = Some(package_name);
-        self
     }
 
     pub fn with_package_search_paths(mut self, paths: Vec<FolderPath>) -> Self {
@@ -137,14 +132,17 @@ fn visibility_filter(item: Item, is_same_package: bool) -> Option<Item> {
 
 fn load_source_file(
     path: &std::path::Path,
-    import_name: String,
+    source_from_package_name: IString,
     is_same_package: bool,
     log: &CompilerLog,
 ) -> Option<Module> {
     let source_code = match std::fs::read_to_string(&path) {
         Ok(code) => code,
         Err(err) => {
-            log.report(&ResolveIssue::ImportNotFound((import_name, err)));
+            log.report(&ResolveIssue::ImportNotFound((
+                source_from_package_name.clone(),
+                err,
+            )));
             return None;
         }
     };
@@ -163,8 +161,8 @@ fn load_source_file(
         }
     };
 
-    let mut module = Parser::new(lexer, log).parse_source(None);
-    module.name = Some(intern_module_name(import_name.clone()));
+    let mut module = Parser::new(lexer, log).parse_source(source_from_package_name.clone(), None);
+    module.name = source_from_package_name;
 
     module.items = module
         .items
@@ -177,7 +175,7 @@ fn load_source_file(
 
 fn decide_what_to_import(
     ctx: &ImportContext,
-    import_name: &str,
+    import_name: IString,
     log: &CompilerLog,
 ) -> Option<ImportContext> {
     let folder = ctx.source_filepath.parent()?;
@@ -191,7 +189,7 @@ fn decide_what_to_import(
         });
     }
 
-    let source_filepath = folder.join(import_name).join("mod.nit");
+    let source_filepath = folder.join(import_name.to_string()).join("mod.nit");
     if source_filepath.exists() {
         return Some(ImportContext {
             package_name: ctx.package_name.clone(),
@@ -200,10 +198,10 @@ fn decide_what_to_import(
         });
     }
 
-    if let Some(source_filepath) = ctx.find_package(import_name) {
+    if let Some(source_filepath) = ctx.find_package(&import_name) {
         if source_filepath.exists() {
             return Some(ImportContext {
-                package_name: Some(import_name.to_string()),
+                package_name: import_name,
                 source_filepath,
                 package_search_paths: ctx.package_search_paths.clone(),
             });
@@ -211,7 +209,7 @@ fn decide_what_to_import(
     }
 
     log.report(&ResolveIssue::ImportNotFound((
-        import_name.to_string(),
+        import_name.clone(),
         std::io::Error::from(std::io::ErrorKind::NotFound),
     )));
 
@@ -222,12 +220,12 @@ fn resolve_import(
     ctx: &ImportContext,
     import: &mut Import,
     log: &CompilerLog,
-    visited: &mut HashSet<String>,
-    depth: &mut Vec<String>,
+    visited: &mut HashSet<IString>,
+    depth: &mut Vec<IString>,
 ) {
     let import_path = import.use_tree.path();
     let import_name = match import_path.segments.first().map(|s| s.segment.clone()) {
-        Some(name) => name,
+        Some(name) => IString::from(name),
         None => return,
     };
 
@@ -252,13 +250,14 @@ fn resolve_import(
         visited.insert(import_name.clone());
     }
 
-    if let Some(what) = decide_what_to_import(ctx, &import_name, log) {
-        let inside = match (&ctx.package_name, &what.package_name) {
-            (Some(a), Some(b)) => a == b,
-            _ => false,
-        };
-
-        let content = load_source_file(&what.source_filepath, import_name.clone(), inside, log);
+    if let Some(what) = decide_what_to_import(ctx, import_name.clone(), log) {
+        let inside = ctx.package_name == what.package_name;
+        let content = load_source_file(
+            &what.source_filepath,
+            what.package_name.clone(),
+            inside,
+            log,
+        );
 
         if let Some(mut module) = content {
             resolve_imports_guarded(&what, &mut module, log, visited, depth);
@@ -276,8 +275,8 @@ fn resolve_imports_guarded(
     ctx: &ImportContext,
     module: &mut Module,
     log: &CompilerLog,
-    visited: &mut HashSet<String>,
-    depth: &mut Vec<String>,
+    visited: &mut HashSet<IString>,
+    depth: &mut Vec<IString>,
 ) {
     module.depth_first_iter_mut(&mut |order, node| {
         if order == Order::Leave {

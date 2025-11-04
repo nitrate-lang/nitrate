@@ -2,13 +2,13 @@ use crate::{Interpreter, InterpreterError, package::Package};
 use clap::Parser;
 use nitrate_diagnosis::{CompilerLog, intern_file_id};
 use nitrate_translation::{
-    hir::prelude as hir,
+    hir::{Dump, DumpContext, prelude as hir},
     hir_from_tree::{Ast2HirCtx, convert_ast_to_hir},
     hir_validate::ValidateHir,
     llvm::{LLVMContext, OptLevel},
-    llvm_from_hir::generate_code,
+    llvm_from_hir::generate_llvmir,
     parse::ResolveCtx,
-    parsetree::ast,
+    parsetree::{PrettyPrint, PrintContext, ast},
     token_lexer::{Lexer, LexerError},
 };
 use slog::{debug, error, info};
@@ -16,7 +16,47 @@ use std::{collections::HashSet, io::Read, path::PathBuf};
 
 #[derive(Parser, Debug)]
 #[command(about, long_about = None)]
-pub(crate) struct BuildArgs {}
+pub(crate) struct BuildArgs {
+    /// Pretty-print the Abstract Syntax Tree (AST)
+    #[arg(long, group = "output")]
+    show_ast: bool,
+
+    /// Pretty-print the High-Level Intermediate Representation (HIR)
+    #[arg(long, group = "output")]
+    show_hir: bool,
+
+    /// Pretty-print the LLVM Intermediate Representation
+    #[arg(long, group = "output")]
+    show_llvmir: bool,
+
+    /// Pretty-print the Assembly Code
+    #[arg(long, group = "output")]
+    show_asm: bool,
+
+    /// Dump the Object Code
+    #[arg(long, group = "output")]
+    show_obj: bool,
+
+    /// Format mode for printed output
+    #[arg(long, value_parser = ["minify", "pretty"])]
+    format_mode: Option<String>,
+
+    /// Build artifacts in release mode, with optimizations
+    #[arg(long, short = 'r', group = "build-profile")]
+    release: bool,
+
+    /// Build artifacts with the specified profile
+    #[arg(long, group = "build-profile", value_name = "PROFILE-NAME")]
+    profile: Option<String>,
+
+    /// Build for the LLVM target triple
+    #[arg(long, value_name = "TRIPLE")]
+    target: Option<String>,
+
+    /// Directory for all generated artifacts
+    #[arg(long, value_name = "DIRECTORY", default_value = ".no3/build")]
+    target_dir: PathBuf,
+}
 
 impl Interpreter<'_> {
     fn validate_package_edition(&self, edition: u16) -> Result<(), InterpreterError> {
@@ -70,21 +110,21 @@ impl Interpreter<'_> {
         }
     }
 
-    fn get_search_paths(&self) -> Vec<PathBuf> {
-        let mut search_paths = Vec::new();
-
-        search_paths.push(std::env::current_dir().unwrap().join(".no3/modules"));
-        debug!(self.log, "Package search paths: {:?}", search_paths);
-
-        search_paths
-    }
-
     fn parse_source_code(
         &self,
         entrypoint_path: &std::path::Path,
         package_name: &str,
         log: &CompilerLog,
     ) -> Result<ast::Module, InterpreterError> {
+        if !entrypoint_path.exists() {
+            error!(
+                self.log,
+                "Package entrypoint '{}' does not exist.",
+                entrypoint_path.display()
+            );
+            return Err(InterpreterError::OperationalError);
+        }
+
         let mut source_code_file = match std::fs::File::open(&entrypoint_path) {
             Ok(file) => file,
 
@@ -124,10 +164,80 @@ impl Interpreter<'_> {
 
         let mut parser = nitrate_translation::parse::Parser::new(lexer, &log);
 
-        Ok(parser.parse_source(Some(ResolveCtx {
-            package_name: package_name.to_string(),
-            package_search_paths: self.get_search_paths(),
-        })))
+        Ok(parser.parse_source(
+            package_name.into(),
+            Some(ResolveCtx {
+                current_package: package_name.to_string(),
+                package_search_paths: self.get_search_paths(),
+            }),
+        ))
+    }
+
+    fn show_ast(&self, module: &ast::Module, format_mode: &Option<String>) {
+        match format_mode {
+            Some(mode) if mode == "minify" => {
+                serde_json::to_writer(&mut std::io::stdout(), &module)
+                    .expect("Failed to write AST to stdout");
+            }
+
+            Some(mode) if mode == "pretty" => {
+                serde_json::to_writer_pretty(&mut std::io::stdout(), &module)
+                    .expect("Failed to write AST to stdout");
+            }
+
+            _ => {
+                serde_json::to_writer_pretty(&mut std::io::stdout(), &module)
+                    .expect("Failed to write AST to stdout");
+            }
+        }
+    }
+
+    fn create_target_dir(&self, dir: &PathBuf) -> Result<(), InterpreterError> {
+        if let Err(e) = std::fs::create_dir_all(dir) {
+            error!(
+                self.log,
+                "Failed to create build target directory '{}': {}",
+                dir.display(),
+                e
+            );
+
+            return Err(InterpreterError::IoError(e));
+        }
+
+        Ok(())
+    }
+
+    fn get_llvm_context(
+        &self,
+        triple: Option<String>,
+        opt_level: OptLevel,
+    ) -> Result<LLVMContext, InterpreterError> {
+        let triple = match triple {
+            Some(t) => t,
+            None => LLVMContext::default_target_triple(),
+        };
+
+        match LLVMContext::new(&triple, opt_level) {
+            Ok(ctx) => Ok(ctx),
+
+            Err(e) => {
+                error!(
+                    self.log,
+                    "Failed to create LLVM context for target '{}': {}", triple, e
+                );
+
+                Err(InterpreterError::OperationalError)
+            }
+        }
+    }
+
+    fn get_search_paths(&self) -> Vec<PathBuf> {
+        let mut search_paths = Vec::new();
+
+        search_paths.push(std::env::current_dir().unwrap().join(".no3/modules"));
+        debug!(self.log, "Package search paths: {:?}", search_paths);
+
+        search_paths
     }
 
     fn lower_to_hir(
@@ -155,57 +265,35 @@ impl Interpreter<'_> {
         Ok((module, ctx.store, ctx.tab))
     }
 
-    pub(crate) fn sc_build(&mut self, _args: BuildArgs) -> Result<(), InterpreterError> {
-        std::fs::create_dir_all(".no3/build").map_err(|e| {
-            error!(
-                self.log,
-                "Failed to create build directory '.no3/build': {}", e
-            );
-            InterpreterError::IoError(e)
-        })?;
+    pub(crate) fn sc_build(&mut self, args: BuildArgs) -> Result<(), InterpreterError> {
+        self.create_target_dir(&args.target_dir)?;
+        let log = CompilerLog::new(self.log.clone());
 
         let package = self.get_package_config()?;
         self.validate_package_edition(package.edition())?;
 
-        let entrypoint_path = package.entrypoint();
-        if !entrypoint_path.exists() {
-            error!(
-                self.log,
-                "Package entrypoint '{}' does not exist.",
-                entrypoint_path.display()
-            );
-            return Err(InterpreterError::OperationalError);
+        let ast_module = self.parse_source_code(&package.entrypoint(), package.name(), &log)?;
+        if args.show_ast {
+            self.show_ast(&ast_module, &args.format_mode);
+            return Ok(());
         }
 
-        let opt_level = OptLevel::Aggressive;
-        let target_triple = "x86_64-pc-linux-gnu";
-
-        let llvm_ctx = LLVMContext::new(target_triple, opt_level).map_err(|e| {
-            error!(
-                self.log,
-                "Failed to create LLVM context for target '{}': {}", target_triple, e
-            );
-
-            InterpreterError::OperationalError
-        })?;
-
-        let log = CompilerLog::new(self.log.clone());
-        let ast_module = self.parse_source_code(&entrypoint_path, package.name(), &log)?;
+        let llvm_ctx = self.get_llvm_context(args.target, package.optimization_level())?;
         let ptr_size = llvm_ctx.target_data.get_pointer_byte_size(None);
+
         let (hir_module, store, symbol_tab) =
             self.lower_to_hir(ast_module, ptr_size, package.name(), &log)?;
+        if args.show_hir {
+            hir_module.dump(&mut DumpContext::new(&store), &mut std::io::stdout())?;
+            return Ok(());
+        }
 
-        let Ok(valid_hir_module) = hir_module.validate(&store, &symbol_tab) else {
-            error!(
-                self.log,
-                "HIR validation failed for package '{}'.",
-                package.name(),
-            );
-
-            return Err(InterpreterError::OperationalError);
+        let valid_hir_module = match hir_module.validate(&store, &symbol_tab) {
+            Ok(m) => m,
+            Err(_) => return Err(InterpreterError::OperationalError),
         };
 
-        let mut llvm_module = generate_code(
+        let mut llvm_module = generate_llvmir(
             package.name(),
             valid_hir_module,
             &llvm_ctx,
@@ -213,7 +301,7 @@ impl Interpreter<'_> {
             &symbol_tab,
         );
 
-        // llvm_ctx.optimize_module(&mut llvm_module);
+        llvm_ctx.optimize_module(&mut llvm_module);
 
         let target_file_ll = format!(
             ".no3/build/{}-{}.{}.{}.ll",

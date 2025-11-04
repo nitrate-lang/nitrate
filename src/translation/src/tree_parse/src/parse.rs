@@ -2,6 +2,7 @@ use crate::{
     resolve_import::{ImportContext, resolve_imports},
     resolve_path::resolve_paths,
 };
+use interned_string::IString;
 use nitrate_diagnosis::CompilerLog;
 use nitrate_token_lexer::Lexer;
 use nitrate_tree::ast::Module;
@@ -14,7 +15,7 @@ pub struct Parser<'a, 'log> {
 }
 
 pub struct ResolveCtx {
-    pub package_name: String,
+    pub current_package: String,
     pub package_search_paths: Vec<PathBuf>,
 }
 
@@ -27,7 +28,7 @@ impl<'a, 'log> Parser<'a, 'log> {
         }
     }
 
-    pub fn parse_source(&mut self, resolve: Option<ResolveCtx>) -> Module {
+    pub fn parse_source(&mut self, package_name: IString, resolve: Option<ResolveCtx>) -> Module {
         let current_file = self.lexer.peek_tok().fileid;
 
         let mut items = Vec::new();
@@ -38,7 +39,7 @@ impl<'a, 'log> Parser<'a, 'log> {
         }
 
         let mut module = Module {
-            name: None,
+            name: package_name,
             visibility: None,
             items,
             attributes: None,
@@ -46,9 +47,11 @@ impl<'a, 'log> Parser<'a, 'log> {
 
         if let Some(resolve_ctx) = resolve {
             if let Some(fileid) = current_file {
-                let import_ctx = ImportContext::new(PathBuf::from(fileid.deref()))
-                    .with_current_package_name(resolve_ctx.package_name)
-                    .with_package_search_paths(resolve_ctx.package_search_paths);
+                let import_ctx = ImportContext::new(
+                    resolve_ctx.current_package.into(),
+                    PathBuf::from(fileid.deref()),
+                )
+                .with_package_search_paths(resolve_ctx.package_search_paths);
 
                 resolve_imports(&import_ctx, &mut module, self.log);
             }

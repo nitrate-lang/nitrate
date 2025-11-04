@@ -71,6 +71,14 @@ impl LLVMContext {
         })
     }
 
+    pub fn default_target_triple() -> String {
+        TargetMachine::get_default_triple()
+            .as_str()
+            .to_str()
+            .unwrap()
+            .to_string()
+    }
+
     pub fn target_data(&self) -> &TargetData {
         &self.target_data
     }

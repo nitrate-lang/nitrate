@@ -4,8 +4,8 @@ impl Dump for StructAttribute {
     fn dump(
         &self,
         _ctx: &mut DumpContext,
-        o: &mut dyn std::fmt::Write,
-    ) -> Result<(), std::fmt::Error> {
+        o: &mut dyn std::io::Write,
+    ) -> Result<(), std::io::Error> {
         match self {
             StructAttribute::Packed => write!(o, "packed"),
         }
@@ -16,8 +16,8 @@ impl Dump for EnumAttribute {
     fn dump(
         &self,
         _ctx: &mut DumpContext,
-        _o: &mut dyn std::fmt::Write,
-    ) -> Result<(), std::fmt::Error> {
+        _o: &mut dyn std::io::Write,
+    ) -> Result<(), std::io::Error> {
         Ok(())
     }
 }
@@ -26,8 +26,8 @@ impl Dump for FunctionAttribute {
     fn dump(
         &self,
         _ctx: &mut DumpContext,
-        o: &mut dyn std::fmt::Write,
-    ) -> Result<(), std::fmt::Error> {
+        o: &mut dyn std::io::Write,
+    ) -> Result<(), std::io::Error> {
         match self {
             FunctionAttribute::Variadic => write!(o, "variadic"),
         }
@@ -38,8 +38,8 @@ impl Dump for Lifetime {
     fn dump(
         &self,
         _ctx: &mut DumpContext,
-        o: &mut dyn std::fmt::Write,
-    ) -> Result<(), std::fmt::Error> {
+        o: &mut dyn std::io::Write,
+    ) -> Result<(), std::io::Error> {
         match self {
             Lifetime::Static => write!(o, "'static"),
             Lifetime::Gc => write!(o, "'gc"),
@@ -54,8 +54,8 @@ impl Dump for StructType {
     fn dump(
         &self,
         ctx: &mut DumpContext,
-        o: &mut dyn std::fmt::Write,
-    ) -> Result<(), std::fmt::Error> {
+        o: &mut dyn std::io::Write,
+    ) -> Result<(), std::io::Error> {
         write!(o, "struct ")?;
 
         dump_attributes(&self.attributes, ctx, o)?;
@@ -89,8 +89,8 @@ impl Dump for EnumType {
     fn dump(
         &self,
         ctx: &mut DumpContext,
-        o: &mut dyn std::fmt::Write,
-    ) -> Result<(), std::fmt::Error> {
+        o: &mut dyn std::io::Write,
+    ) -> Result<(), std::io::Error> {
         write!(o, "enum ")?;
 
         dump_attributes(&self.attributes, ctx, o)?;
@@ -124,8 +124,8 @@ impl Dump for FunctionType {
     fn dump(
         &self,
         ctx: &mut DumpContext,
-        o: &mut dyn std::fmt::Write,
-    ) -> Result<(), std::fmt::Error> {
+        o: &mut dyn std::io::Write,
+    ) -> Result<(), std::io::Error> {
         write!(o, "fn")?;
 
         dump_attributes(&self.attributes, ctx, o)?;
@@ -159,8 +159,8 @@ impl Dump for Type {
     fn dump(
         &self,
         ctx: &mut DumpContext,
-        o: &mut dyn std::fmt::Write,
-    ) -> Result<(), std::fmt::Error> {
+        o: &mut dyn std::io::Write,
+    ) -> Result<(), std::io::Error> {
         match self {
             Type::Never => write!(o, "!"),
             Type::Unit => write!(o, "()"),

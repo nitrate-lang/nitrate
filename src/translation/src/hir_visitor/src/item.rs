@@ -6,7 +6,7 @@ pub trait HirItemVisitor<T> {
     fn visit_module(
         &mut self,
         vis: Visibility,
-        name: Option<&IString>,
+        name: &IString,
         attrs: &BTreeSet<ModuleAttribute>,
         items: &[Item],
     ) -> T;
@@ -53,7 +53,7 @@ pub trait HirItemVisitor<T> {
         match item {
             Item::Module(module_id) => {
                 let m = store[module_id].borrow();
-                self.visit_module(m.visibility, m.name.as_ref(), &m.attributes, &m.items)
+                self.visit_module(m.visibility, &m.name, &m.attributes, &m.items)
             }
 
             Item::GlobalVariable(global_variable_id) => {

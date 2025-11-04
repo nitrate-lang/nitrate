@@ -105,7 +105,7 @@ pub enum ModuleAttribute {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct Module {
     pub visibility: Visibility,
-    pub name: Option<IString>,
+    pub name: IString,
     pub attributes: BTreeSet<ModuleAttribute>,
     pub items: Vec<Item>,
 }

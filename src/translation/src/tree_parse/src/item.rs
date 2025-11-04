@@ -1,6 +1,7 @@
 use super::parse::Parser;
 use crate::diagnosis::SyntaxErr;
 
+use interned_string::IString;
 use nitrate_token::Token;
 use nitrate_tree::{
     ast::{
@@ -10,9 +11,8 @@ use nitrate_tree::{
         UseTree, Visibility,
     },
     tag::{
-        intern_enum_variant_name, intern_function_name, intern_import_name, intern_module_name,
-        intern_parameter_name, intern_struct_field_name, intern_trait_name, intern_type_name,
-        intern_variable_name,
+        intern_enum_variant_name, intern_function_name, intern_import_name, intern_parameter_name,
+        intern_struct_field_name, intern_trait_name, intern_type_name, intern_variable_name,
     },
 };
 
@@ -83,13 +83,15 @@ impl Parser<'_, '_> {
 
         let attributes = self.parse_attributes();
 
-        let name = self.lexer.next_if_name().unwrap_or_else(|| {
-            let bug = SyntaxErr::ModuleMissingName(self.lexer.peek_pos());
-            self.log.report(&bug);
-            "".into()
-        });
-
-        let name = intern_module_name(name);
+        let name = self
+            .lexer
+            .next_if_name()
+            .unwrap_or_else(|| {
+                let bug = SyntaxErr::ModuleMissingName(self.lexer.peek_pos());
+                self.log.report(&bug);
+                String::default()
+            })
+            .into();
 
         if !self.lexer.skip_if(&Token::OpenBrace) {
             let bug = SyntaxErr::ExpectedOpenBrace(self.lexer.peek_pos());
@@ -122,7 +124,7 @@ impl Parser<'_, '_> {
         Module {
             visibility: None,
             attributes,
-            name: Some(name),
+            name,
             items,
         }
     }

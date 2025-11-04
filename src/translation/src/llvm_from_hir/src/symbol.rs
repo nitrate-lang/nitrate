@@ -215,7 +215,7 @@ pub(crate) fn gen_module<'ctx>(ctx: &'ctx SymbolGenCtx, module: &hir::Module) {
     }
 }
 
-pub fn generate_code<'ctx>(
+pub fn generate_llvmir<'ctx>(
     package_name: &str,
     hir: ValidHir<hir::Module>,
     llvm: &'ctx LLVMContext,
@@ -223,7 +223,7 @@ pub fn generate_code<'ctx>(
     tab: &hir::SymbolTab,
 ) -> Module<'ctx> {
     let hir = hir.into_inner();
-    let module_name = hir.name.to_owned().unwrap_or_default().to_string();
+    let module_name = hir.name.to_string();
     let module = llvm.create_module(&module_name);
 
     let ctx = SymbolGenCtx {

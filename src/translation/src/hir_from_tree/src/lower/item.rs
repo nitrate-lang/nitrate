@@ -456,11 +456,6 @@ impl Ast2Hir for ast::Module {
                 log.report(&HirErr::UnrecognizedModuleAttribute);
             }
 
-            let name = match this.name {
-                Some(n) => Some(IString::from(n.to_string())),
-                None => None,
-            };
-
             let mut items = Vec::with_capacity(this.items.len());
             for item in this.items {
                 lower_item(ctx, &mut items, item, log)?;
@@ -469,20 +464,16 @@ impl Ast2Hir for ast::Module {
             let module = Module {
                 visibility,
                 attributes,
-                name,
+                name: this.name,
                 items,
             };
 
             Ok(module)
         }
 
-        if let Some(name) = &self.name {
-            ctx.current_scope.push(name.to_string());
-            let result = lower_module(self, ctx, log);
-            ctx.current_scope.pop();
-            result
-        } else {
-            lower_module(self, ctx, log)
-        }
+        ctx.current_scope.push(self.name.to_string());
+        let result = lower_module(self, ctx, log);
+        ctx.current_scope.pop();
+        result
     }
 }
