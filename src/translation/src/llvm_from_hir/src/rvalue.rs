@@ -1,5 +1,6 @@
 use inkwell::{
     basic_block::BasicBlock,
+    types::BasicType,
     values::{BasicValueEnum, PointerValue},
 };
 
@@ -1392,11 +1393,46 @@ fn gen_rval_borrow<'ctx>(
 }
 
 fn gen_rval_list<'ctx>(
-    _ctx: &mut RvalGenCtx<'ctx, '_, '_, '_>,
-    _elements: &[hir::Value],
+    ctx: &mut RvalGenCtx<'ctx, '_, '_, '_>,
+    elements: &[hir::Value],
 ) -> Result<BasicValueEnum<'ctx>, RvalError> {
-    // TODO: implement list codegen
-    unimplemented!()
+    if elements.is_empty() {
+        // TODO: implement empty list codegen
+        unimplemented!()
+    }
+
+    let mut llvm_elements = Vec::new();
+    for element in elements {
+        let llvm_element = gen_rval(ctx, element)?;
+        llvm_elements.push(llvm_element);
+    }
+
+    let list_ty = llvm_elements[0]
+        .get_type()
+        .array_type(llvm_elements.len() as u32);
+
+    let list_alloca = ctx.bb.build_alloca(list_ty, "list_alloca").unwrap();
+    for (i, llvm_element) in llvm_elements.iter().enumerate() {
+        let index = ctx.llvm.i32_type().const_int(i as u64, false);
+        let gep = unsafe {
+            // SAFETY: ** I don't know if this is safe or not
+            ctx.bb.build_in_bounds_gep(
+                list_ty,
+                list_alloca,
+                &[ctx.llvm.i32_type().const_int(0, false), index],
+                "list_elem_gep",
+            )
+        }
+        .unwrap();
+        ctx.bb.build_store(gep, *llvm_element).unwrap();
+    }
+
+    let load = ctx
+        .bb
+        .build_load(list_ty, list_alloca, "list_load")
+        .unwrap();
+
+    Ok(load.into())
 }
 
 fn gen_rval_tuple<'ctx>(
@@ -1407,7 +1443,7 @@ fn gen_rval_tuple<'ctx>(
     unimplemented!()
 }
 
-fn gen_if<'ctx>(
+fn gen_rval_if<'ctx>(
     ctx: &mut RvalGenCtx<'ctx, '_, '_, '_>,
     condition: &hir::Value,
     true_branch: &hir::Block,
@@ -1443,7 +1479,7 @@ fn gen_if<'ctx>(
         if true_branch_ty.is_diverging() {
             gen_block(ctx, true_branch)?;
         } else {
-            let result_val = gen_block_rval(ctx, true_branch)?;
+            let result_val = gen_rval_block(ctx, true_branch)?;
             ctx.bb.build_store(result, result_val).unwrap();
             ctx.bb.build_unconditional_branch(join_bb).unwrap();
         }
@@ -1454,7 +1490,7 @@ fn gen_if<'ctx>(
         if false_branch_ty.is_diverging() {
             gen_block(ctx, false_branch)?;
         } else {
-            let result_val = gen_block_rval(ctx, false_branch)?;
+            let result_val = gen_rval_block(ctx, false_branch)?;
             ctx.bb.build_store(result, result_val).unwrap();
             ctx.bb.build_unconditional_branch(join_bb).unwrap();
         }
@@ -1487,7 +1523,7 @@ fn gen_if<'ctx>(
     gen_rval_lit_unit(ctx)
 }
 
-fn gen_while<'ctx>(
+fn gen_rval_while<'ctx>(
     ctx: &mut RvalGenCtx<'ctx, '_, '_, '_>,
     condition: &hir::Value,
     body: &hir::Block,
@@ -1528,7 +1564,7 @@ fn gen_while<'ctx>(
     Ok(())
 }
 
-fn gen_loop<'ctx>(
+fn gen_rval_loop<'ctx>(
     ctx: &mut RvalGenCtx<'ctx, '_, '_, '_>,
     body: &hir::Block,
 ) -> Result<(), RvalError> {
@@ -1562,7 +1598,7 @@ fn gen_loop<'ctx>(
 /**
  * Generates a break statement.
  */
-fn gen_break<'ctx>(
+fn gen_rval_break<'ctx>(
     ctx: &mut RvalGenCtx<'ctx, '_, '_, '_>,
     label: Option<&str>,
 ) -> Result<(), RvalError> {
@@ -1592,7 +1628,7 @@ fn gen_break<'ctx>(
     }
 }
 
-fn gen_continue<'ctx>(
+fn gen_rval_continue<'ctx>(
     ctx: &mut RvalGenCtx<'ctx, '_, '_, '_>,
     label: Option<&str>,
 ) -> Result<(), RvalError> {
@@ -1622,7 +1658,7 @@ fn gen_continue<'ctx>(
     }
 }
 
-fn gen_return<'ctx>(
+fn gen_rval_return<'ctx>(
     ctx: &mut RvalGenCtx<'ctx, '_, '_, '_>,
     value: &hir::Value,
 ) -> Result<(), RvalError> {
@@ -1631,7 +1667,7 @@ fn gen_return<'ctx>(
     Ok(())
 }
 
-fn gen_block_rval<'ctx>(
+fn gen_rval_block<'ctx>(
     ctx: &mut RvalGenCtx<'ctx, '_, '_, '_>,
     hir_block: &hir::Block,
 ) -> Result<BasicValueEnum<'ctx>, RvalError> {
@@ -1835,10 +1871,10 @@ pub(crate) fn gen_rval<'ctx>(
             let condition = &ctx.store[condition].borrow();
             let true_branch = &ctx.store[true_branch].borrow();
             match false_branch {
-                None => gen_if(ctx, condition, true_branch, None),
+                None => gen_rval_if(ctx, condition, true_branch, None),
                 Some(false_branch) => {
                     let false_branch = &ctx.store[false_branch].borrow();
-                    gen_if(ctx, condition, true_branch, Some(&false_branch))
+                    gen_rval_if(ctx, condition, true_branch, Some(&false_branch))
                 }
             }
         }
@@ -1846,35 +1882,35 @@ pub(crate) fn gen_rval<'ctx>(
         hir::Value::While { condition, body } => {
             let condition = &ctx.store[condition].borrow();
             let body = &ctx.store[body].borrow();
-            gen_while(ctx, condition, body)?;
+            gen_rval_while(ctx, condition, body)?;
             gen_rval_lit_unit(ctx)
         }
 
         hir::Value::Loop { body } => {
             let body = &ctx.store[body].borrow();
-            gen_loop(ctx, body)?;
+            gen_rval_loop(ctx, body)?;
             gen_rval_lit_unit(ctx)
         }
 
         hir::Value::Break { label } => {
-            gen_break(ctx, label.as_deref())?;
+            gen_rval_break(ctx, label.as_deref())?;
             gen_rval_lit_unit(ctx)
         }
 
         hir::Value::Continue { label } => {
-            gen_continue(ctx, label.as_deref())?;
+            gen_rval_continue(ctx, label.as_deref())?;
             gen_rval_lit_unit(ctx)
         }
 
         hir::Value::Return { value } => {
             let value = &ctx.store[value].borrow();
-            gen_return(ctx, value)?;
+            gen_rval_return(ctx, value)?;
             gen_rval_lit_unit(ctx)
         }
 
         hir::Value::Block { block } => {
             let block = &ctx.store[block].borrow();
-            gen_block_rval(ctx, block)
+            gen_rval_block(ctx, block)
         }
 
         hir::Value::Closure { captures, callee } => gen_rval_closure(ctx, captures, callee),
