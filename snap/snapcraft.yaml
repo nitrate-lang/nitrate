@@ -24,6 +24,7 @@ parts:
       - llvm-18-dev
       - libpolly-18-dev
       - libzstd-dev
+      - libz-dev
     build-attributes:
       - enable-patchelf
     override-stage: |
