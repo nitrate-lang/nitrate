@@ -489,13 +489,8 @@ impl Ast2Hir for ast::UnaryExpr {
                 operand: operand.into_id(&ctx.store),
             }),
 
-            UnaryExprOp::LogicNot => Ok(Value::Unary {
-                op: UnaryOp::LogicNot,
-                operand: operand.into_id(&ctx.store),
-            }),
-
-            UnaryExprOp::BitNot => Ok(Value::Unary {
-                op: UnaryOp::BitNot,
+            UnaryExprOp::Not => Ok(Value::Unary {
+                op: UnaryOp::Not,
                 operand: operand.into_id(&ctx.store),
             }),
 

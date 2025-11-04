@@ -146,14 +146,9 @@ impl Parser<'_, '_> {
                 Some(UnaryExprOp::Borrow)
             }
 
-            Token::Tilde => {
-                self.lexer.skip_tok();
-                Some(UnaryExprOp::BitNot)
-            }
-
             Token::Bang => {
                 self.lexer.skip_tok();
-                Some(UnaryExprOp::LogicNot)
+                Some(UnaryExprOp::Not)
             }
 
             Token::Typeof => {

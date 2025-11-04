@@ -414,7 +414,7 @@ impl HirEvaluate for Value {
                         Err(LiteralNegError::TypeError) => Err(Unwind::TypeError),
                     },
 
-                    UnaryOp::BitNot | UnaryOp::LogicNot => match operand.not() {
+                    UnaryOp::Not => match operand.not() {
                         Ok(lit) => Ok(lit.into()),
                         Err(LiteralNotError::TypeError) => Err(Unwind::TypeError),
                     },

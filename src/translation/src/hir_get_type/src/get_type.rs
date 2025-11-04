@@ -165,10 +165,9 @@ impl HirGetType for Value {
             },
 
             Value::Unary { op, operand: expr } => match op {
-                UnaryOp::Add | UnaryOp::Sub | UnaryOp::BitNot => {
+                UnaryOp::Add | UnaryOp::Sub | UnaryOp::Not => {
                     store[expr].borrow().get_type(store, tab)
                 }
-                UnaryOp::LogicNot => Ok(Type::Bool),
             },
 
             Value::FieldAccess { expr, field } => {

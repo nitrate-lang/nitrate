@@ -55,10 +55,8 @@ pub enum UnaryOp {
     Add,
     /// `-`
     Sub,
-    /// `~`
-    BitNot,
     /// `!`
-    LogicNot,
+    Not,
 }
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, PartialOrd)]

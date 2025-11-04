@@ -180,8 +180,7 @@ impl Dump for Value {
                     match op {
                         UnaryOp::Add => "+",
                         UnaryOp::Sub => "-",
-                        UnaryOp::BitNot => "~",
-                        UnaryOp::LogicNot => "!",
+                        UnaryOp::Not => "!",
                     }
                 )?;
                 ctx.store[expr].borrow().dump(ctx, o)?;

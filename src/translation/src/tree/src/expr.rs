@@ -84,10 +84,8 @@ pub enum UnaryExprOp {
     Deref,
     /// `&`
     Borrow,
-    /// `~`
-    BitNot,
     /// `!`
-    LogicNot,
+    Not,
     /// `typeof`
     Typeof,
 }

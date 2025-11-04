@@ -1242,6 +1242,80 @@ fn gen_rval_ne<'ctx>(
 }
 
 /**
+ * Unary addition operation.
+ *
+ * This operation is effectively a no-op and simply returns the operand as is.
+ */
+fn gen_rval_unary_add<'ctx>(
+    ctx: &mut RvalGenCtx<'ctx, '_, '_, '_>,
+    operand: &hir::Value,
+) -> Result<BasicValueEnum<'ctx>, RvalError> {
+    let llvm_operand = gen_rval(ctx, operand)?;
+    Ok(llvm_operand)
+}
+
+/**
+ * Unary subtraction operation.
+ *
+ * This operation negates the operand.
+ * - For floating-point types, it uses the LLVM `fneg` instruction.
+ * - For integer types, it subtracts the operand from zero.
+ */
+fn gen_rval_unary_sub<'ctx>(
+    ctx: &mut RvalGenCtx<'ctx, '_, '_, '_>,
+    operand: &hir::Value,
+) -> Result<BasicValueEnum<'ctx>, RvalError> {
+    let llvm_operand = gen_rval(ctx, operand)?;
+    let operand_ty = llvm_operand.get_type();
+
+    if operand_ty.is_float_type() {
+        let fneg = ctx
+            .bb
+            .build_float_neg(llvm_operand.into_float_value(), "")
+            .unwrap();
+
+        Ok(fneg.into())
+    } else if operand_ty.is_int_type() {
+        let zero = operand_ty.into_int_type().const_int(0, false);
+
+        let neg = ctx
+            .bb
+            .build_int_sub(zero, llvm_operand.into_int_value(), "")
+            .unwrap();
+
+        Ok(neg.into())
+    } else {
+        Err(RvalError::OperandTypeCombinationError {
+            operation_name: "unary subtraction",
+        })
+    }
+}
+
+/**
+ * Unary logical NOT operation.
+ *
+ * This operation inverts the boolean value of the operand.
+ * - For integer types, it uses the LLVM `not` instruction.
+ */
+fn gen_rval_unary_not<'ctx>(
+    ctx: &mut RvalGenCtx<'ctx, '_, '_, '_>,
+    operand: &hir::Value,
+) -> Result<BasicValueEnum<'ctx>, RvalError> {
+    let llvm_operand = gen_rval(ctx, operand)?;
+    let operand_ty = llvm_operand.get_type();
+
+    if operand_ty.is_int_type() {
+        let not = ctx.bb.build_not(llvm_operand.into_int_value(), "").unwrap();
+
+        Ok(not.into())
+    } else {
+        Err(RvalError::OperandTypeCombinationError {
+            operation_name: "unary not",
+        })
+    }
+}
+
+/**
  * // TODO: add documentation
  */
 fn gen_if<'ctx>(
@@ -1614,9 +1688,13 @@ pub(crate) fn gen_rval<'ctx>(
             }
         }
 
-        hir::Value::Unary { op: _, operand: _ } => {
-            // TODO: implement unary operation codegen
-            unimplemented!()
+        hir::Value::Unary { op, operand } => {
+            let operand = &ctx.store[operand].borrow();
+            match op {
+                hir::UnaryOp::Add => gen_rval_unary_add(ctx, operand),
+                hir::UnaryOp::Sub => gen_rval_unary_sub(ctx, operand),
+                hir::UnaryOp::Not => gen_rval_unary_not(ctx, operand),
+            }
         }
 
         hir::Value::FieldAccess { expr: _, field: _ } => {
