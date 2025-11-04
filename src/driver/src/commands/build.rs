@@ -134,6 +134,7 @@ impl Interpreter<'_> {
         &self,
         module: ast::Module,
         ptr_size: u32,
+        package_name: &str,
         log: &CompilerLog,
     ) -> Result<(hir::Module, hir::Store, hir::SymbolTab), InterpreterError> {
         let ptr_size = match ptr_size {
@@ -145,7 +146,7 @@ impl Interpreter<'_> {
             }
         };
 
-        let mut ctx = Ast2HirCtx::new(ptr_size);
+        let mut ctx = Ast2HirCtx::new(ptr_size, package_name.into());
         let module = match convert_ast_to_hir(module, &mut ctx, log) {
             Err(_) => return Err(InterpreterError::OperationalError),
             Ok(module) => module,
@@ -191,7 +192,8 @@ impl Interpreter<'_> {
         let log = CompilerLog::new(self.log.clone());
         let ast_module = self.parse_source_code(&entrypoint_path, package.name(), &log)?;
         let ptr_size = llvm_ctx.target_data.get_pointer_byte_size(None);
-        let (hir_module, store, symbol_tab) = self.lower_to_hir(ast_module, ptr_size, &log)?;
+        let (hir_module, store, symbol_tab) =
+            self.lower_to_hir(ast_module, ptr_size, package.name(), &log)?;
 
         let Ok(valid_hir_module) = hir_module.validate(&store, &symbol_tab) else {
             error!(

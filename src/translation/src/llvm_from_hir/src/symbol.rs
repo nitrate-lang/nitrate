@@ -164,11 +164,10 @@ pub(crate) fn gen_module<'ctx>(ctx: &'ctx SymbolGenCtx, module: &hir::Module) {
                 let hir_global = ctx.store[id].borrow();
                 let hir_global_ty = &ctx.store[&hir_global.ty];
 
-                let global_name =
-                    mangle_name(ctx.package_name, &hir_global.name, hir_global_ty, ctx.store);
+                let global_name = &hir_global.name;
 
                 let global_ty = gen_ty(hir_global_ty, ctx.llvm, ctx.store, ctx.tab);
-                let mut llvm_global = ctx.module.add_global(global_ty, None, global_name.as_str());
+                let mut llvm_global = ctx.module.add_global(global_ty, None, global_name);
                 llvm_global.set_initializer(&global_ty.const_zero());
 
                 gen_global(
@@ -182,9 +181,6 @@ pub(crate) fn gen_module<'ctx>(ctx: &'ctx SymbolGenCtx, module: &hir::Module) {
 
             hir::Item::Function(id) => {
                 let hir_fn = ctx.store[id].borrow();
-                let hir_fn_type = hir::Type::Function {
-                    function_type: hir_fn.get_type(ctx.store).into_id(ctx.store),
-                };
 
                 let mut param_types = Vec::with_capacity(hir_fn.params.len());
                 for param in &hir_fn.params {
@@ -206,10 +202,7 @@ pub(crate) fn gen_module<'ctx>(ctx: &'ctx SymbolGenCtx, module: &hir::Module) {
                 );
 
                 let llvm_fn_type = return_type.fn_type(&param_types, variadic);
-                let fn_name = mangle_name(ctx.package_name, &hir_fn.name, &hir_fn_type, ctx.store);
-                let llvm_function = ctx
-                    .module
-                    .add_function(fn_name.as_str(), llvm_fn_type, None);
+                let llvm_function = ctx.module.add_function(&hir_fn.name, llvm_fn_type, None);
 
                 gen_function(
                     ctx,

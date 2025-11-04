@@ -1,4 +1,6 @@
+use interned_string::IString;
 use nitrate_hir::{SymbolTab, prelude::*};
+use nitrate_hir_mangle::mangle_name;
 use std::cell::RefCell;
 use std::collections::{HashMap, HashSet};
 use std::num::NonZeroU32;
@@ -13,10 +15,11 @@ pub struct Ast2HirCtx {
     type_infer_id_ctr: NonZeroU32,
     unique_name_ctr: u32,
     pub(crate) ptr_size: PtrSize,
+    pub(crate) current_package_name: IString,
 }
 
 impl Ast2HirCtx {
-    pub fn new(ptr_size: PtrSize) -> Self {
+    pub fn new(ptr_size: PtrSize, current_package_name: IString) -> Self {
         Self {
             store: Store::new(),
             tab: SymbolTab::default(),
@@ -25,6 +28,7 @@ impl Ast2HirCtx {
             type_infer_id_ctr: NonZeroU32::new(1).unwrap(),
             unique_name_ctr: 0,
             ptr_size,
+            current_package_name,
         }
     }
 
@@ -82,16 +86,22 @@ impl Ast2HirCtx {
         Type::Inferred { id }
     }
 
-    pub(crate) fn join_path(scope: &[String], name: &str) -> String {
-        let length = scope.iter().map(|s| s.len() + 2).sum::<usize>() + name.len();
+    pub(crate) fn qualify_name(&self, item_name: &str) -> String {
+        let length = self
+            .current_scope
+            .iter()
+            .map(|s| s.len() + 2)
+            .sum::<usize>()
+            + item_name.len();
         let mut qualified = String::with_capacity(length);
 
-        for module in scope {
+        qualified.push_str("::");
+        for module in &self.current_scope {
             qualified.push_str(&module);
             qualified.push_str("::");
         }
 
-        qualified.push_str(name);
+        qualified.push_str(item_name);
         qualified
     }
 }

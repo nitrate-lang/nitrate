@@ -834,6 +834,7 @@ dependencies = [
  "nitrate_hir",
  "nitrate_hir_evaluate",
  "nitrate_hir_get_type",
+ "nitrate_hir_mangle",
  "nitrate_hir_visitor",
  "nitrate_token",
  "nitrate_token_lexer",

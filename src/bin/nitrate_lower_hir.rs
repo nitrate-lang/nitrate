@@ -1,3 +1,4 @@
+use interned_string::IString;
 use nitrate_diagnosis::{CompilerLog, intern_file_id};
 use nitrate_translation::{
     hir::{Dump, DumpContext, PtrSize},
@@ -98,7 +99,7 @@ fn program() -> Result<(), Error> {
         package_search_paths: Vec::new(),
     }));
 
-    let mut hir_ctx = Ast2HirCtx::new(PtrSize::U64);
+    let mut hir_ctx = Ast2HirCtx::new(PtrSize::U64, IString::from(""));
     let Ok(hir_module) = convert_ast_to_hir(module, &mut hir_ctx, &log) else {
         return Err(Error::HirError);
     };

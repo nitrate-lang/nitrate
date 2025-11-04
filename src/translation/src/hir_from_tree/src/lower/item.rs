@@ -21,7 +21,7 @@ impl Ast2Hir for ast::TypeAlias {
             }
         }
 
-        let name = IString::from(Ast2HirCtx::join_path(&ctx.current_scope, &self.name));
+        let name = ctx.qualify_name(&self.name).into();
 
         if self.generics.is_some() {
             // TODO: support generic type aliases
@@ -67,7 +67,7 @@ impl Ast2Hir for ast::Struct {
             }
         }
 
-        let name = IString::from(Ast2HirCtx::join_path(&ctx.current_scope, &self.name));
+        let name = ctx.qualify_name(&self.name).into();
 
         if self.generics.is_some() {
             // TODO: support generic structs
@@ -143,7 +143,7 @@ impl Ast2Hir for ast::Enum {
             }
         }
 
-        let name = IString::from(Ast2HirCtx::join_path(&ctx.current_scope, &self.name));
+        let name = ctx.qualify_name(&self.name).into();
 
         if self.generics.is_some() {
             // TODO: support generic enums
@@ -238,7 +238,7 @@ impl Ast2Hir for ast::GlobalVariable {
             Some(ast::Mutability::Const) | None => false,
         };
 
-        let name = IString::from(Ast2HirCtx::join_path(&ctx.current_scope, &self.name));
+        let name = ctx.qualify_name(&self.name).into();
 
         let ty = match self.ty.to_owned() {
             None => ctx.create_inference_placeholder().into_id(&ctx.store),
@@ -329,7 +329,7 @@ impl Ast2Hir for ast::Function {
             }
         }
 
-        let name = IString::from(Ast2HirCtx::join_path(&ctx.current_scope, &self.name));
+        let name = ctx.qualify_name(&self.name).into();
 
         if self.generics.is_some() {
             // TODO: support generic functions
@@ -369,6 +369,72 @@ impl Ast2Hir for ast::Function {
     }
 }
 
+fn lower_item(
+    ctx: &mut Ast2HirCtx,
+    current_module_items: &mut Vec<Item>,
+    item: ast::Item,
+    log: &CompilerLog,
+) -> Result<(), ()> {
+    match item {
+        ast::Item::Module(module) => {
+            let hir_module = convert_ast_to_hir(*module, ctx, log)?.into_id(&ctx.store);
+            current_module_items.push(Item::Module(hir_module));
+            Ok(())
+        }
+
+        ast::Item::Import(import) => {
+            if let Some(resolved_items) = import.resolved {
+                for item in resolved_items {
+                    lower_item(ctx, current_module_items, item, log)?;
+                }
+            }
+            Ok(())
+        }
+
+        ast::Item::TypeAlias(type_alias) => {
+            let t = type_alias.ast2hir(ctx, log)?;
+            current_module_items.push(Item::TypeAliasDef(t));
+            Ok(())
+        }
+
+        ast::Item::Struct(struct_def) => {
+            let s = struct_def.ast2hir(ctx, log)?;
+            current_module_items.push(Item::StructDef(s));
+            Ok(())
+        }
+
+        ast::Item::Enum(enum_def) => {
+            let e = enum_def.ast2hir(ctx, log)?;
+            current_module_items.push(Item::EnumDef(e));
+            Ok(())
+        }
+
+        ast::Item::Trait(trait_def) => {
+            ast_trait2hir(&trait_def, ctx, log)?;
+            Ok(())
+        }
+
+        ast::Item::Impl(impl_def) => {
+            ast_impl2hir(&impl_def, ctx, log)?;
+            Ok(())
+        }
+
+        ast::Item::Function(func_def) => {
+            let f = func_def.ast2hir(ctx, log)?;
+            current_module_items.push(Item::Function(f));
+            Ok(())
+        }
+
+        ast::Item::Variable(v) => {
+            let g = v.ast2hir(ctx, log)?;
+            current_module_items.push(Item::GlobalVariable(g));
+            Ok(())
+        }
+
+        ast::Item::SyntaxError(_) => Ok(()),
+    }
+}
+
 impl Ast2Hir for ast::Module {
     type Hir = Module;
 
@@ -397,54 +463,7 @@ impl Ast2Hir for ast::Module {
 
             let mut items = Vec::with_capacity(this.items.len());
             for item in this.items {
-                match item {
-                    ast::Item::Module(module) => {
-                        let hir_module = convert_ast_to_hir(*module, ctx, log)?.into_id(&ctx.store);
-                        items.push(Item::Module(hir_module));
-                    }
-
-                    ast::Item::Import(_) => {
-                        // TODO: lower import statements
-                        log.report(&HirErr::UnimplementedFeature("import statements".into()));
-                    }
-
-                    ast::Item::TypeAlias(type_alias) => {
-                        let t = type_alias.ast2hir(ctx, log)?;
-                        items.push(Item::TypeAliasDef(t));
-                    }
-
-                    ast::Item::Struct(struct_def) => {
-                        let s = struct_def.ast2hir(ctx, log)?;
-                        items.push(Item::StructDef(s));
-                    }
-
-                    ast::Item::Enum(enum_def) => {
-                        let e = enum_def.ast2hir(ctx, log)?;
-                        items.push(Item::EnumDef(e));
-                    }
-
-                    ast::Item::Trait(trait_def) => {
-                        ast_trait2hir(&trait_def, ctx, log)?;
-                    }
-
-                    ast::Item::Impl(impl_def) => {
-                        ast_impl2hir(&impl_def, ctx, log)?;
-                    }
-
-                    ast::Item::Function(func_def) => {
-                        let f = func_def.ast2hir(ctx, log)?;
-                        items.push(Item::Function(f));
-                    }
-
-                    ast::Item::Variable(v) => {
-                        let g = v.ast2hir(ctx, log)?;
-                        items.push(Item::GlobalVariable(g));
-                    }
-
-                    ast::Item::SyntaxError(_) => {
-                        continue;
-                    }
-                }
+                lower_item(ctx, &mut items, item, log)?;
             }
 
             let module = Module {
@@ -457,14 +476,13 @@ impl Ast2Hir for ast::Module {
             Ok(module)
         }
 
-        match self.name {
-            Some(ref name) => ctx.current_scope.push(name.to_string()),
-            None => ctx.current_scope.push(String::default()),
+        if let Some(name) = &self.name {
+            ctx.current_scope.push(name.to_string());
+            let result = lower_module(self, ctx, log);
+            ctx.current_scope.pop();
+            result
+        } else {
+            lower_module(self, ctx, log)
         }
-
-        let result = lower_module(self, ctx, log);
-        ctx.current_scope.pop();
-
-        result
     }
 }
