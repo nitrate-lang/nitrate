@@ -384,6 +384,26 @@ impl Dump for Value {
                 write!(o, ")")
             }
 
+            Value::FunctionSymbol { id } => {
+                let func = ctx.store[id].borrow();
+                write!(o, "fn {}", func.name)
+            }
+
+            Value::GlobalVariableSymbol { id } => {
+                let global = ctx.store[id].borrow();
+                write!(o, "global {}", global.name)
+            }
+
+            Value::LocalVariableSymbol { id } => {
+                let local = ctx.store[id].borrow();
+                write!(o, "local {}", local.name)
+            }
+
+            Value::ParameterSymbol { id } => {
+                let param = ctx.store[id].borrow();
+                write!(o, "param {}", param.name)
+            }
+
             Value::Symbol { path } => write!(o, "{}", path),
         }
     }

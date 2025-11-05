@@ -135,7 +135,7 @@ fn gen_function_decl<'ctx>(
 
     let variadic = hir_function
         .attributes
-        .contains(&hir::FunctionAttribute::Variadic);
+        .contains(&hir::FunctionAttribute::CVariadic);
 
     let llvm_fn_type = return_type.fn_type(&param_types, variadic);
     let llvm_function = ctx

@@ -63,7 +63,7 @@ pub struct EnumType {
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum FunctionAttribute {
-    Variadic,
+    CVariadic,
     NoMangle,
 }
 

@@ -43,7 +43,7 @@ pub(crate) fn gen_function_ty<'ctx>(
 
     let variadic = hir_func_type
         .attributes
-        .contains(&hir::FunctionAttribute::Variadic);
+        .contains(&hir::FunctionAttribute::CVariadic);
 
     let return_type = gen_ty(&store[&hir_func_type.return_type], ctx, store, tab);
     return_type.fn_type(&param_types, variadic)

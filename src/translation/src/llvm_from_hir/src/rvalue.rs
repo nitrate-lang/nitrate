@@ -2136,6 +2136,26 @@ pub(crate) fn gen_rval<'ctx>(
             gen_rval_method_call(ctx, object, method_name, positional)
         }
 
+        hir::Value::FunctionSymbol { id: _ } => {
+            // TODO: implement function symbol codegen
+            unimplemented!()
+        }
+
+        hir::Value::GlobalVariableSymbol { id: _ } => {
+            // TODO: implement global variable symbol codegen
+            unimplemented!()
+        }
+
+        hir::Value::LocalVariableSymbol { id: _ } => {
+            // TODO: implement local variable symbol codegen
+            unimplemented!()
+        }
+
+        hir::Value::ParameterSymbol { id: _ } => {
+            // TODO: implement parameter symbol codegen
+            unimplemented!()
+        }
+
         hir::Value::Symbol { path } => gen_rval_symbol(ctx, path),
     }
 }

@@ -321,6 +321,28 @@ impl HirGetType for Value {
                 Ok(store[&method.return_type].clone())
             }
 
+            Value::FunctionSymbol { id } => {
+                let function = &store[id].borrow();
+                Ok(Type::Function {
+                    function_type: function.get_type(store).into_id(store),
+                })
+            }
+
+            Value::GlobalVariableSymbol { id } => {
+                let glb = &store[id].borrow();
+                Ok(store[&glb.ty].clone())
+            }
+
+            Value::LocalVariableSymbol { id } => {
+                let loc = &store[id].borrow();
+                Ok(store[&loc.ty].clone())
+            }
+
+            Value::ParameterSymbol { id } => {
+                let param = &store[id].borrow();
+                Ok(store[&param.ty].clone())
+            }
+
             Value::Symbol { path } => match tab.get_symbol(path) {
                 Some(SymbolId::GlobalVariable(glb)) => Ok(store[&store[glb].borrow().ty].clone()),
 

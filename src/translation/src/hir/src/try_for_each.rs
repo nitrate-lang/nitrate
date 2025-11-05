@@ -402,7 +402,11 @@ impl ValueIter<'_> {
                 }
             }
 
-            Value::Symbol { path: _ } => {}
+            Value::FunctionSymbol { .. }
+            | Value::GlobalVariableSymbol { .. }
+            | Value::LocalVariableSymbol { .. }
+            | Value::ParameterSymbol { .. }
+            | Value::Symbol { .. } => {}
         }
 
         ControlFlow::Continue(())

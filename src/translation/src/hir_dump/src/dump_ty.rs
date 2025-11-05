@@ -30,7 +30,7 @@ impl Dump for FunctionAttribute {
         o: &mut dyn std::io::Write,
     ) -> Result<(), std::io::Error> {
         match self {
-            FunctionAttribute::Variadic => write!(o, "variadic"),
+            FunctionAttribute::CVariadic => write!(o, "c_variadic"),
             FunctionAttribute::NoMangle => write!(o, "no_mangle"),
         }
     }

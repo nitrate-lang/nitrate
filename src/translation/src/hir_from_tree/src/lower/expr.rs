@@ -218,7 +218,7 @@ fn metatype_source_encode(
             write!(o, ", attributes: Vec::from([").unwrap();
             for attr in &function_type.attributes {
                 match attr {
-                    FunctionAttribute::Variadic => {
+                    FunctionAttribute::CVariadic => {
                         write!(o, "::std::meta::FunctionAttribute::Variadic,").unwrap()
                     }
                     FunctionAttribute::NoMangle => {

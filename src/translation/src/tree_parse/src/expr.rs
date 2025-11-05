@@ -401,6 +401,10 @@ impl Parser<'_, '_> {
         }
 
         if self.lexer.skip_if(&Token::OpenParen) {
+            if self.lexer.skip_if(&Token::CloseParen) {
+                return Expr::Tuple(Box::new(Tuple { elements: vec![] }));
+            }
+
             let inner = self.parse_expression();
 
             if !self.lexer.skip_if(&Token::Comma) {

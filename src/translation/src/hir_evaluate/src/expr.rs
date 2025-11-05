@@ -610,6 +610,26 @@ impl HirEvaluate for Value {
                 unimplemented!()
             }
 
+            Value::FunctionSymbol { id: _ } => {
+                // TODO: evaluate symbol expressions
+                unimplemented!()
+            }
+
+            Value::GlobalVariableSymbol { id: _ } => {
+                // TODO: evaluate symbol expressions
+                unimplemented!()
+            }
+
+            Value::LocalVariableSymbol { id: _ } => {
+                // TODO: evaluate symbol expressions
+                unimplemented!()
+            }
+
+            Value::ParameterSymbol { id: _ } => {
+                // TODO: evaluate symbol expressions
+                unimplemented!()
+            }
+
             Value::Symbol { path: _ } => {
                 // TODO: evaluate symbol expressions
                 unimplemented!()

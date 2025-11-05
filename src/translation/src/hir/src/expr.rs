@@ -406,6 +406,22 @@ pub enum Value {
         named: ThinVec<(NString, ValueId)>,
     },
 
+    FunctionSymbol {
+        id: FunctionId,
+    },
+
+    GlobalVariableSymbol {
+        id: GlobalVariableId,
+    },
+
+    LocalVariableSymbol {
+        id: LocalVariableId,
+    },
+
+    ParameterSymbol {
+        id: ParameterId,
+    },
+
     Symbol {
         path: NString,
     },

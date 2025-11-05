@@ -198,6 +198,26 @@ impl ValidateHir for Value {
                 Ok(())
             }
 
+            Value::FunctionSymbol { id: _ } => {
+                // TODO: verify symbol
+                Ok(())
+            }
+
+            Value::GlobalVariableSymbol { id: _ } => {
+                // TODO: verify symbol
+                Ok(())
+            }
+
+            Value::LocalVariableSymbol { id: _ } => {
+                // TODO: verify symbol
+                Ok(())
+            }
+
+            Value::ParameterSymbol { id: _ } => {
+                // TODO: verify symbol
+                Ok(())
+            }
+
             Value::Symbol { path: _ } => {
                 // TODO: verify symbol
                 Ok(())

@@ -99,6 +99,26 @@ pub(crate) fn gen_place<'ctx>(
             gen_place_deref(ctx, &place)
         }
 
+        hir::Value::FunctionSymbol { id: _ } => {
+            // TODO: implement function symbol codegen
+            unimplemented!()
+        }
+
+        hir::Value::GlobalVariableSymbol { id: _ } => {
+            // TODO: implement global variable symbol codegen
+            unimplemented!()
+        }
+
+        hir::Value::LocalVariableSymbol { id: _ } => {
+            // TODO: implement local variable symbol codegen
+            unimplemented!()
+        }
+
+        hir::Value::ParameterSymbol { id: _ } => {
+            // TODO: implement parameter symbol codegen
+            unimplemented!()
+        }
+
         hir::Value::Symbol { path } => gen_place_symbol(ctx, path),
     }
 }

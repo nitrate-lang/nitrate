@@ -343,6 +343,11 @@ impl Ast2Hir for ast::Function {
                             continue;
                         }
 
+                        "c_variadic" => {
+                            attributes.insert(FunctionAttribute::CVariadic);
+                            continue;
+                        }
+
                         _ => {}
                     }
                 }
