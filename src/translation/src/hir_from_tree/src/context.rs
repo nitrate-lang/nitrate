@@ -9,7 +9,7 @@ use std::ops::Deref;
 pub struct Ast2HirCtx {
     pub store: Store,
     pub tab: SymbolTab,
-    pub(crate) current_scope: Vec<String>,
+    pub(crate) current_scope: Vec<NString>,
     _impl_map: HashMap<TypeId, HashSet<TraitId>>,
     type_infer_id_ctr: NonZeroU32,
     unique_name_ctr: u32,

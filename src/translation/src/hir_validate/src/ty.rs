@@ -127,6 +127,7 @@ impl ValidateHir for FunctionAttribute {
     fn verify(&self, _store: &Store, _symtab: &SymbolTab) -> Result<(), ()> {
         match self {
             FunctionAttribute::Variadic => Ok(()),
+            FunctionAttribute::NoMangle => Ok(()),
         }
     }
 

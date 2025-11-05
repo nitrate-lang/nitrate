@@ -31,6 +31,7 @@ impl Dump for FunctionAttribute {
     ) -> Result<(), std::io::Error> {
         match self {
             FunctionAttribute::Variadic => write!(o, "variadic"),
+            FunctionAttribute::NoMangle => write!(o, "no_mangle"),
         }
     }
 }

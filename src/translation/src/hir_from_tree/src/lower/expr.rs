@@ -221,6 +221,9 @@ fn metatype_source_encode(
                     FunctionAttribute::Variadic => {
                         write!(o, "::std::meta::FunctionAttribute::Variadic,").unwrap()
                     }
+                    FunctionAttribute::NoMangle => {
+                        write!(o, "::std::meta::FunctionAttribute::NoMangle,").unwrap()
+                    }
                 };
                 write!(o, ",").unwrap();
             }

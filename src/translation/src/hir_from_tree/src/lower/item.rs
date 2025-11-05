@@ -138,7 +138,7 @@ impl Ast2Hir for ast::Enum {
 
         let attributes = BTreeSet::new();
         if let Some(ast_attributes) = &self.attributes {
-            for _attr in ast_attributes {
+            for attr in ast_attributes {
                 log.report(&HirErr::UnrecognizedEnumAttribute);
             }
         }
@@ -322,16 +322,38 @@ impl Ast2Hir for ast::Function {
             Some(ast::Visibility::Private) | None => Visibility::Sec,
         };
 
-        let attributes = BTreeSet::new();
+        let mut attributes = BTreeSet::new();
         if let Some(ast_attributes) = &self.attributes {
-            for _attr in ast_attributes {
-                log.report(&HirErr::UnrecognizedFunctionAttribute);
+            for attr in ast_attributes {
+                if let ast::Expr::Path(path) = &attr {
+                    let ident = path
+                        .segments
+                        .iter()
+                        .map(|seg| seg.name.to_string())
+                        .collect::<Vec<_>>()
+                        .join("::");
+
+                    match ident.as_str() {
+                        "no_mangle" => {
+                            attributes.insert(FunctionAttribute::NoMangle);
+                            continue;
+                        }
+
+                        _ => {}
+                    }
+                }
+
+                log.report(&HirErr::UnrecognizedEnumAttribute);
             }
         }
 
-        let name = ctx.qualify_name(&self.name).into();
+        let name: NString = if attributes.contains(&FunctionAttribute::NoMangle) {
+            self.name.into()
+        } else {
+            ctx.qualify_name(&self.name).into()
+        };
 
-        ctx.current_scope.push(self.name.to_string());
+        ctx.current_scope.push(name.clone());
 
         if self.generics.is_some() {
             // TODO: support generic functions
@@ -500,7 +522,7 @@ impl Ast2Hir for ast::Module {
             Ok(module)
         }
 
-        ctx.current_scope.push(self.name.to_string());
+        ctx.current_scope.push(self.name.clone());
         let result = lower_module(self, ctx, log);
         ctx.current_scope.pop();
         result
