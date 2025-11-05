@@ -8,9 +8,9 @@ use nitrate_tree::ast::{
     Break, Cast, Closure, Continue, ElseIf, Expr, ExprParentheses, ExprPath, ExprPathSegment,
     ExprSyntaxError, FieldAccess, Float32, Float64, FloatLit, ForEach, FuncParam, FunctionCall, If,
     IndexAccess, Int8, Int16, Int32, Int64, Int128, IntegerLit, List, LocalVariable,
-    LocalVariableKind, MethodCall, Mutability, Return, Safety, StringLit, StructField, StructInit,
-    Tuple, Type, TypeArgument, TypeInfo, TypePath, TypePathSegment, UInt8, UInt16, UInt32, UInt64,
-    UInt128, USize, UnaryExpr, UnaryExprOp, WhileLoop,
+    LocalVariableKind, MethodCall, Mutability, Return, Safety, StringLit, StructInit, Tuple, Type,
+    TypeArgument, TypeInfo, TypePath, TypePathSegment, UInt8, UInt16, UInt32, UInt64, UInt128,
+    USize, UnaryExpr, UnaryExprOp, WhileLoop,
 };
 
 type Precedence = u32;

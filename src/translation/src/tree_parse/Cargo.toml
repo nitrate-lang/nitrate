@@ -20,4 +20,3 @@ nitrate_diagnosis = { path = "../../../diagnosis" }
 log = "0.4.27"
 ordered-float = "5.0.0"
 spdx = "0.12.0"
-interned-string = { version = "0.3.0" }

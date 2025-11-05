@@ -7,5 +7,4 @@ edition = "2024"
 nitrate_nstring = { path = "../nstring" }
 nitrate_hir = { path = "../hir" }
 nitrate_diagnosis = { path = "../../../diagnosis" }
-interned-string = { version = "0.3.0" }
 ordered-float = "5.1.0"
