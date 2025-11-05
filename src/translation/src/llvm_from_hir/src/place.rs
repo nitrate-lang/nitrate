@@ -1,13 +1,13 @@
 use inkwell::values::PointerValue;
 
 use crate::rvalue::{CodegenCtx, CodegenError};
-use interned_string::IString;
+use nitrate_nstring::NString;
 use nitrate_hir::prelude as hir;
 
 fn gen_place_field_access<'ctx>(
     _ctx: &mut CodegenCtx<'ctx, '_, '_, '_, '_>,
     _struct_value: &hir::Value,
-    _field_name: &IString,
+    _field_name: &NString,
 ) -> Result<PointerValue<'ctx>, CodegenError> {
     // TODO: implement field access codegen
     unimplemented!()
@@ -32,7 +32,7 @@ fn gen_place_deref<'ctx>(
 
 fn gen_place_symbol<'ctx>(
     _ctx: &mut CodegenCtx<'ctx, '_, '_, '_, '_>,
-    _symbol_name: &IString,
+    _symbol_name: &NString,
 ) -> Result<PointerValue<'ctx>, CodegenError> {
     // TODO: implement symbol codegen
     unimplemented!()

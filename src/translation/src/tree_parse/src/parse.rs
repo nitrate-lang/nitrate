@@ -2,8 +2,8 @@ use crate::{
     resolve_import::{ImportContext, resolve_imports},
     resolve_path::resolve_paths,
 };
-use interned_string::IString;
 use nitrate_diagnosis::CompilerLog;
+use nitrate_nstring::NString;
 use nitrate_token_lexer::Lexer;
 use nitrate_tree::ast::Module;
 use std::{ops::Deref, path::PathBuf};
@@ -22,7 +22,7 @@ impl<'a, 'log> Parser<'a, 'log> {
         Parser { lexer, log: log }
     }
 
-    pub fn parse_source(&mut self, package_name: IString, resolve: Option<ResolveCtx>) -> Module {
+    pub fn parse_source(&mut self, package_name: NString, resolve: Option<ResolveCtx>) -> Module {
         let current_file = self.lexer.peek_tok().fileid;
 
         let mut items = Vec::new();

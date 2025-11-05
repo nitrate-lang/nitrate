@@ -1,6 +1,6 @@
 use crate::{Parser, diagnosis::ResolveIssue};
-use interned_string::IString;
 use nitrate_diagnosis::{CompilerLog, intern_file_id};
+use nitrate_nstring::NString;
 use nitrate_token_lexer::{Lexer, LexerError};
 use nitrate_tree::{
     Order, ParseTreeIterMut, RefNodeMut,
@@ -13,13 +13,13 @@ pub type SourceFilePath = std::path::PathBuf;
 pub type FolderPath = std::path::PathBuf;
 
 pub struct ImportContext {
-    pub package_name: IString,
+    pub package_name: NString,
     pub source_filepath: SourceFilePath,
     pub package_search_paths: Arc<Vec<FolderPath>>,
 }
 
 impl ImportContext {
-    pub fn new(package_name: IString, source_filepath: SourceFilePath) -> Self {
+    pub fn new(package_name: NString, source_filepath: SourceFilePath) -> Self {
         Self {
             package_name,
             source_filepath,
@@ -132,7 +132,7 @@ fn visibility_filter(item: Item, is_same_package: bool) -> Option<Item> {
 
 fn load_source_file(
     path: &std::path::Path,
-    source_from_package_name: IString,
+    source_from_package_name: NString,
     is_same_package: bool,
     log: &CompilerLog,
 ) -> Option<Module> {
@@ -175,7 +175,7 @@ fn load_source_file(
 
 fn decide_what_to_import(
     ctx: &ImportContext,
-    import_name: IString,
+    import_name: NString,
     log: &CompilerLog,
 ) -> Option<ImportContext> {
     let folder = ctx.source_filepath.parent()?;
@@ -220,12 +220,12 @@ fn resolve_import(
     ctx: &ImportContext,
     import: &mut Import,
     log: &CompilerLog,
-    visited: &mut HashSet<IString>,
-    depth: &mut Vec<IString>,
+    visited: &mut HashSet<NString>,
+    depth: &mut Vec<NString>,
 ) {
     let import_path = import.use_tree.path();
     let import_name = match import_path.segments.first().map(|s| s.segment.clone()) {
-        Some(name) => IString::from(name),
+        Some(name) => NString::from(name),
         None => return,
     };
 
@@ -275,8 +275,8 @@ fn resolve_imports_guarded(
     ctx: &ImportContext,
     module: &mut Module,
     log: &CompilerLog,
-    visited: &mut HashSet<IString>,
-    depth: &mut Vec<IString>,
+    visited: &mut HashSet<NString>,
+    depth: &mut Vec<NString>,
 ) {
     module.depth_first_iter_mut(&mut |order, node| {
         if order == Order::Leave {

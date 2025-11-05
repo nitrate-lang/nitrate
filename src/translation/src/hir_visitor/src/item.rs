@@ -1,4 +1,4 @@
-use interned_string::IString;
+use nitrate_nstring::NString;
 use nitrate_hir::prelude::*;
 use std::collections::BTreeSet;
 
@@ -6,7 +6,7 @@ pub trait HirItemVisitor<T> {
     fn visit_module(
         &mut self,
         vis: Visibility,
-        name: &IString,
+        name: &NString,
         attrs: &BTreeSet<ModuleAttribute>,
         items: &[Item],
     ) -> T;
@@ -16,7 +16,7 @@ pub trait HirItemVisitor<T> {
         vis: Visibility,
         attrs: &BTreeSet<GlobalVariableAttribute>,
         is_mutable: bool,
-        name: &IString,
+        name: &NString,
         ty: &Type,
         init: Option<&Value>,
     ) -> T;
@@ -25,18 +25,18 @@ pub trait HirItemVisitor<T> {
         &mut self,
         vis: Visibility,
         attrs: &BTreeSet<FunctionAttribute>,
-        name: &IString,
+        name: &NString,
         params: &[ParameterId],
         ret: &Type,
         body: Option<&Block>,
     ) -> T;
 
-    fn visit_type_alias(&mut self, vis: Visibility, name: &IString, ty: &Type) -> T;
+    fn visit_type_alias(&mut self, vis: Visibility, name: &NString, ty: &Type) -> T;
 
     fn visit_struct_def(
         &mut self,
         vis: Visibility,
-        name: &IString,
+        name: &NString,
         fields_extra: &[(Visibility, Option<ValueId>)],
         struct_ty: &StructTypeId,
     ) -> T;
@@ -44,7 +44,7 @@ pub trait HirItemVisitor<T> {
     fn visit_enum_def(
         &mut self,
         vis: Visibility,
-        name: &IString,
+        name: &NString,
         variants: &[Option<ValueId>],
         enum_ty: &EnumTypeId,
     ) -> T;

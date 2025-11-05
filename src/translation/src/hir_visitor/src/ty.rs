@@ -1,4 +1,4 @@
-use interned_string::IString;
+use nitrate_nstring::NString;
 use nitrate_hir::prelude::*;
 use std::{collections::BTreeSet, num::NonZero};
 
@@ -28,7 +28,7 @@ pub trait HirTypeVisitor<T> {
     fn visit_function_type(
         &mut self,
         attrs: &BTreeSet<FunctionAttribute>,
-        params: &[(IString, TypeId)],
+        params: &[(NString, TypeId)],
         ret: &Type,
     ) -> T;
 
@@ -36,7 +36,7 @@ pub trait HirTypeVisitor<T> {
     fn visit_slice(&mut self, life: &Lifetime, excl: bool, mutable: bool, element_type: &Type)
     -> T;
     fn visit_pointer(&mut self, excl: bool, mutable: bool, to: &Type) -> T;
-    fn visit_symbol(&mut self, path: &IString) -> T;
+    fn visit_symbol(&mut self, path: &NString) -> T;
     fn visit_inferred_float(&mut self) -> T;
     fn visit_inferred_integer(&mut self) -> T;
     fn visit_inferred(&mut self, id: NonZero<u32>) -> T;

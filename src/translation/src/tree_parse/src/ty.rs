@@ -1,7 +1,7 @@
 use super::parse::Parser;
 use crate::diagnosis::SyntaxErr;
 
-use interned_string::IString;
+use nitrate_nstring::NString;
 use nitrate_token::Token;
 use nitrate_tree::ast::{
     ArrayType, Bool, Exclusivity, Expr, Float32, Float64, FuncTypeParam, FuncTypeParams,
@@ -203,7 +203,7 @@ impl Parser<'_, '_> {
                 "".into()
             });
 
-            let name = IString::from(name);
+            let name = NString::from(name);
 
             if !this.lexer.skip_if(&Token::Colon) {
                 let bug = SyntaxErr::FunctionParameterExpectedType(this.lexer.peek_pos());
@@ -291,7 +291,7 @@ impl Parser<'_, '_> {
 
         if self.lexer.skip_if(&Token::Static) {
             return Lifetime {
-                name: IString::from("static".to_string()),
+                name: NString::from("static".to_string()),
             };
         }
 
@@ -302,7 +302,7 @@ impl Parser<'_, '_> {
         });
 
         Lifetime {
-            name: IString::from(name),
+            name: NString::from(name),
         }
     }
 

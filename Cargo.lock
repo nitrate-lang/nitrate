@@ -807,6 +807,7 @@ dependencies = [
  "internal-iterator",
  "interned-string",
  "log",
+ "nitrate_nstring",
  "nitrate_token",
  "ordered-float",
  "serde",
@@ -822,6 +823,7 @@ dependencies = [
  "interned-string",
  "nitrate_diagnosis",
  "nitrate_hir",
+ "nitrate_nstring",
  "ordered-float",
 ]
 
@@ -836,6 +838,7 @@ dependencies = [
  "nitrate_hir_get_type",
  "nitrate_hir_mangle",
  "nitrate_hir_visitor",
+ "nitrate_nstring",
  "nitrate_token",
  "nitrate_token_lexer",
  "nitrate_tree",
@@ -880,6 +883,7 @@ version = "0.1.0"
 dependencies = [
  "interned-string",
  "nitrate_hir",
+ "nitrate_nstring",
  "ordered-float",
 ]
 
@@ -903,6 +907,7 @@ dependencies = [
  "nitrate_hir_mangle",
  "nitrate_hir_validate",
  "nitrate_llvm",
+ "nitrate_nstring",
 ]
 
 [[package]]
@@ -973,7 +978,7 @@ name = "nitrate_tree"
 version = "0.1.0"
 dependencies = [
  "bimap",
- "interned-string",
+ "nitrate_nstring",
  "nitrate_token",
  "once_cell",
  "ordered-float",
@@ -989,6 +994,7 @@ dependencies = [
  "interned-string",
  "log",
  "nitrate_diagnosis",
+ "nitrate_nstring",
  "nitrate_token",
  "nitrate_token_lexer",
  "nitrate_tree",

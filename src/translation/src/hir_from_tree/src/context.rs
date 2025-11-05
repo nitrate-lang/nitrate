@@ -1,5 +1,5 @@
-use interned_string::IString;
 use nitrate_hir::{SymbolTab, prelude::*};
+use nitrate_nstring::NString;
 use std::cell::RefCell;
 use std::collections::{HashMap, HashSet};
 use std::num::NonZeroU32;
@@ -14,11 +14,11 @@ pub struct Ast2HirCtx {
     type_infer_id_ctr: NonZeroU32,
     unique_name_ctr: u32,
     pub(crate) ptr_size: PtrSize,
-    pub(crate) current_package_name: IString,
+    pub(crate) current_package_name: NString,
 }
 
 impl Ast2HirCtx {
-    pub fn new(ptr_size: PtrSize, current_package_name: IString) -> Self {
+    pub fn new(ptr_size: PtrSize, current_package_name: NString) -> Self {
         Self {
             store: Store::new(),
             tab: SymbolTab::default(),

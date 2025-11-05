@@ -1,4 +1,4 @@
-use interned_string::IString;
+use nitrate_nstring::NString;
 use nitrate_diagnosis::CompilerLog;
 use nitrate_hir::prelude::*;
 use ordered_float::OrderedFloat;
@@ -7,13 +7,13 @@ use std::{collections::HashMap, sync::LazyLock};
 type BuiltinFunction =
     dyn Fn(&mut HirEvalCtx, &Store, &[Value]) -> Result<Value, Unwind> + Send + Sync;
 
-static DEFAULT_BUILTIN_FUNCTIONS: LazyLock<HashMap<IString, Box<BuiltinFunction>>> =
+static DEFAULT_BUILTIN_FUNCTIONS: LazyLock<HashMap<NString, Box<BuiltinFunction>>> =
     LazyLock::new(|| {
-        let mut m: HashMap<IString, Box<BuiltinFunction>> = HashMap::new();
+        let mut m: HashMap<NString, Box<BuiltinFunction>> = HashMap::new();
 
         // Just an example builtin function
         m.insert(
-            IString::from("std::math::abs"),
+            NString::from("std::math::abs"),
             Box::new(|_, _, args| {
                 if args.len() != 1 {
                     return Err(Unwind::TypeError);
@@ -44,7 +44,7 @@ pub struct HirEvalCtx<'store, 'log> {
     pub(crate) function_call_count: usize,
     pub(crate) current_safety: BlockSafety,
     pub(crate) unsafe_operations_performed: usize,
-    added_builtin_functions: HashMap<IString, Box<BuiltinFunction>>,
+    added_builtin_functions: HashMap<NString, Box<BuiltinFunction>>,
     pub(crate) ptr_size: PtrSize,
 }
 
@@ -78,12 +78,12 @@ impl<'store, 'log> HirEvalCtx<'store, 'log> {
         self
     }
 
-    pub fn add_builtin(mut self, name: IString, func: Box<BuiltinFunction>) -> Self {
+    pub fn add_builtin(mut self, name: NString, func: Box<BuiltinFunction>) -> Self {
         self.added_builtin_functions.insert(name, func);
         self
     }
 
-    pub fn lookup_builtin(&self, name: &IString) -> Option<&Box<BuiltinFunction>> {
+    pub fn lookup_builtin(&self, name: &NString) -> Option<&Box<BuiltinFunction>> {
         self.added_builtin_functions
             .get(name)
             .or_else(|| DEFAULT_BUILTIN_FUNCTIONS.get(name))
@@ -115,8 +115,8 @@ pub enum Unwind {
     ShiftAmountError,
     IndexOutOfBounds,
 
-    Break { label: Option<IString> },
-    Continue { label: Option<IString> },
+    Break { label: Option<NString> },
+    Continue { label: Option<NString> },
     Return(Value),
 
     TypeError,

@@ -8,7 +8,7 @@ use crate::{
     place::gen_place,
     ty::{gen_function_ty, gen_ty},
 };
-use interned_string::IString;
+use nitrate_nstring::NString;
 use nitrate_hir::{ValueId, prelude as hir};
 use nitrate_hir_get_type::HirGetType;
 use nitrate_llvm::LLVMContext;
@@ -22,9 +22,9 @@ pub struct CodegenCtx<'ctx, 'module, 'store, 'tab, 'builder> {
     pub module: &'module inkwell::module::Module<'ctx>,
 
     pub bb: &'builder inkwell::builder::Builder<'ctx>,
-    pub locals: HashMap<IString, PointerValue<'ctx>>,
-    pub default_continue_target: Vec<(Option<IString>, BasicBlock<'ctx>)>,
-    pub default_break_target: Vec<(Option<IString>, BasicBlock<'ctx>)>,
+    pub locals: HashMap<NString, PointerValue<'ctx>>,
+    pub default_continue_target: Vec<(Option<NString>, BasicBlock<'ctx>)>,
+    pub default_break_target: Vec<(Option<NString>, BasicBlock<'ctx>)>,
 }
 
 #[derive(Debug)]
@@ -1328,8 +1328,8 @@ fn gen_rval_unary_not<'ctx>(
 
 fn gen_rval_struct_object<'ctx>(
     _ctx: &mut CodegenCtx<'ctx, '_, '_, '_, '_>,
-    _struct_path: &IString,
-    _fields: &[(IString, ValueId)],
+    _struct_path: &NString,
+    _fields: &[(NString, ValueId)],
 ) -> Result<BasicValueEnum<'ctx>, CodegenError> {
     // TODO: implement struct object codegen
     unimplemented!()
@@ -1337,8 +1337,8 @@ fn gen_rval_struct_object<'ctx>(
 
 fn gen_rval_enum_variant<'ctx>(
     _ctx: &mut CodegenCtx<'ctx, '_, '_, '_, '_>,
-    _enum_path: &IString,
-    _variant_name: &IString,
+    _enum_path: &NString,
+    _variant_name: &NString,
     _value: &hir::Value,
 ) -> Result<BasicValueEnum<'ctx>, CodegenError> {
     // TODO: implement enum variant codegen
@@ -1348,7 +1348,7 @@ fn gen_rval_enum_variant<'ctx>(
 fn gen_rval_field_access<'ctx>(
     _ctx: &mut CodegenCtx<'ctx, '_, '_, '_, '_>,
     _struct_value: &hir::Value,
-    _field_name: &IString,
+    _field_name: &NString,
 ) -> Result<BasicValueEnum<'ctx>, CodegenError> {
     // TODO: implement field access codegen
     unimplemented!()
@@ -1773,7 +1773,7 @@ fn gen_rval_block<'ctx>(
 
 fn gen_rval_closure<'ctx>(
     _ctx: &mut CodegenCtx<'ctx, '_, '_, '_, '_>,
-    _captures: &[IString],
+    _captures: &[NString],
     _callee: &hir::FunctionId,
 ) -> Result<BasicValueEnum<'ctx>, CodegenError> {
     // TODO: implement closure codegen
@@ -1861,7 +1861,7 @@ fn gen_rval_call<'ctx>(
 fn gen_rval_method_call<'ctx>(
     _ctx: &mut CodegenCtx<'ctx, '_, '_, '_, '_>,
     _callee: &hir::Value,
-    _method_name: &IString,
+    _method_name: &NString,
     _arguments: &[hir::ValueId],
 ) -> Result<BasicValueEnum<'ctx>, CodegenError> {
     // TODO: implement method call codegen
@@ -1870,7 +1870,7 @@ fn gen_rval_method_call<'ctx>(
 
 fn gen_rval_symbol<'ctx>(
     _ctx: &mut CodegenCtx<'ctx, '_, '_, '_, '_>,
-    _symbol_name: &IString,
+    _symbol_name: &NString,
 ) -> Result<BasicValueEnum<'ctx>, CodegenError> {
     // TODO: implement symbol codegen
     unimplemented!()

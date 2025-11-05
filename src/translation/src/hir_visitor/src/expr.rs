@@ -1,4 +1,4 @@
-use interned_string::IString;
+use nitrate_nstring::NString;
 use nitrate_hir::prelude::*;
 use ordered_float::OrderedFloat;
 
@@ -23,11 +23,11 @@ pub trait HirValueVisitor<T> {
     fn visit_bstring_lit(&mut self, value: &[u8]) -> T;
     fn visit_inferred_integer(&mut self, value: u128) -> T;
     fn visit_inferred_float(&mut self, value: OrderedFloat<f64>) -> T;
-    fn visit_struct_object(&mut self, struct_path: &IString, fields: &[(IString, ValueId)]) -> T;
-    fn visit_enum_variant(&mut self, enum_path: &IString, var: &IString, val: &Value) -> T;
+    fn visit_struct_object(&mut self, struct_path: &NString, fields: &[(NString, ValueId)]) -> T;
+    fn visit_enum_variant(&mut self, enum_path: &NString, var: &NString, val: &Value) -> T;
     fn visit_binary(&mut self, left: &Value, op: &BinaryOp, right: &Value) -> T;
     fn visit_unary(&mut self, op: &UnaryOp, operand: &Value) -> T;
-    fn visit_field_access(&mut self, expr: &Value, field: &IString) -> T;
+    fn visit_field_access(&mut self, expr: &Value, field: &NString) -> T;
     fn visit_index_access(&mut self, collection: &Value, index: &Value) -> T;
     fn visit_assign(&mut self, place: &Value, value: &Value) -> T;
     fn visit_deref(&mut self, place: &Value) -> T;
@@ -38,28 +38,28 @@ pub trait HirValueVisitor<T> {
     fn visit_if(&mut self, cond: &Value, true_blk: &Block, false_blk: Option<&Block>) -> T;
     fn visit_while(&mut self, condition: &Value, body: &Block) -> T;
     fn visit_loop(&mut self, body: &Block) -> T;
-    fn visit_break(&mut self, label: &Option<IString>) -> T;
-    fn visit_continue(&mut self, label: &Option<IString>) -> T;
+    fn visit_break(&mut self, label: &Option<NString>) -> T;
+    fn visit_continue(&mut self, label: &Option<NString>) -> T;
     fn visit_return(&mut self, value: &Value) -> T;
     fn visit_block(&mut self, safety: BlockSafety, elements: &[BlockElement]) -> T;
-    fn visit_closure(&mut self, captures: &[IString], callee: &Function) -> T;
+    fn visit_closure(&mut self, captures: &[NString], callee: &Function) -> T;
 
     fn visit_call(
         &mut self,
         callee: &Value,
         positional: &[ValueId],
-        named: &[(IString, ValueId)],
+        named: &[(NString, ValueId)],
     ) -> T;
 
     fn visit_method_call(
         &mut self,
         obj: &Value,
-        name: &IString,
+        name: &NString,
         positional: &[ValueId],
-        named: &[(IString, ValueId)],
+        named: &[(NString, ValueId)],
     ) -> T;
 
-    fn visit_symbol(&mut self, path: &IString) -> T;
+    fn visit_symbol(&mut self, path: &NString) -> T;
 
     fn visit_value(&mut self, value: &Value, store: &Store) -> T {
         match value {
@@ -101,9 +101,10 @@ pub trait HirValueVisitor<T> {
 
             Value::Unary { op, operand } => self.visit_unary(op, &store[operand].borrow()),
 
-            Value::FieldAccess { expr, field_name: field } => {
-                self.visit_field_access(&store[expr].borrow(), field)
-            }
+            Value::FieldAccess {
+                expr,
+                field_name: field,
+            } => self.visit_field_access(&store[expr].borrow(), field),
 
             Value::IndexAccess { collection, index } => {
                 self.visit_index_access(&store[collection].borrow(), &store[index].borrow())
@@ -115,7 +116,10 @@ pub trait HirValueVisitor<T> {
 
             Value::Deref { place } => self.visit_deref(&store[place].borrow()),
 
-            Value::Cast { value: expr, target_type: to } => self.visit_cast(&store[expr].borrow(), &store[to]),
+            Value::Cast {
+                value: expr,
+                target_type: to,
+            } => self.visit_cast(&store[expr].borrow(), &store[to]),
 
             Value::Borrow {
                 exclusive,

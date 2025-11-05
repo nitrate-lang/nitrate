@@ -1,6 +1,6 @@
 use crate::store::LiteralId;
 use crate::{SymbolTab, prelude::*};
-use interned_string::IString;
+use nitrate_nstring::NString;
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeSet, HashSet};
 use std::num::NonZeroU32;
@@ -28,7 +28,7 @@ pub enum StructFieldAttribute {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct StructField {
     pub attributes: BTreeSet<StructFieldAttribute>,
-    pub name: IString,
+    pub name: NString,
     pub ty: TypeId,
 }
 
@@ -51,7 +51,7 @@ pub enum EnumVariantAttribute {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct EnumVariant {
     pub attributes: BTreeSet<EnumVariantAttribute>,
-    pub name: IString,
+    pub name: NString,
     pub ty: TypeId,
 }
 
@@ -69,7 +69,7 @@ pub enum FunctionAttribute {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct FunctionType {
     pub attributes: BTreeSet<FunctionAttribute>,
-    pub params: Vec<(IString, TypeId)>,
+    pub params: Vec<(NString, TypeId)>,
     pub return_type: TypeId,
 }
 
@@ -140,7 +140,7 @@ pub enum Type {
     },
 
     Symbol {
-        path: IString,
+        path: NString,
     },
 
     InferredFloat,
@@ -217,7 +217,7 @@ impl Type {
         &self,
         store: &Store,
         symtab: &SymbolTab,
-        visited: &mut HashSet<IString>,
+        visited: &mut HashSet<NString>,
     ) -> bool {
         self.iter().all(store, &mut |ty| {
             if let Type::Inferred { .. } | Type::InferredFloat | Type::InferredInteger = ty {

@@ -1,5 +1,5 @@
 use crate::{prelude::*, store::LiteralId};
-use interned_string::IString;
+use nitrate_nstring::NString;
 use ordered_float::OrderedFloat;
 use serde::{Deserialize, Serialize};
 use thin_str::ThinStr;
@@ -299,13 +299,13 @@ pub enum Value {
     InferredFloat(OrderedFloat<f64>),
 
     StructObject {
-        struct_path: IString,
-        fields: ThinVec<(IString, ValueId)>,
+        struct_path: NString,
+        fields: ThinVec<(NString, ValueId)>,
     },
 
     EnumVariant {
-        enum_path: IString,
-        variant: IString,
+        enum_path: NString,
+        variant: NString,
         value: ValueId,
     },
 
@@ -322,7 +322,7 @@ pub enum Value {
 
     FieldAccess {
         expr: ValueId,
-        field_name: IString,
+        field_name: NString,
     },
 
     IndexAccess {
@@ -374,11 +374,11 @@ pub enum Value {
     },
 
     Break {
-        label: Option<IString>,
+        label: Option<NString>,
     },
 
     Continue {
-        label: Option<IString>,
+        label: Option<NString>,
     },
 
     Return {
@@ -390,25 +390,25 @@ pub enum Value {
     },
 
     Closure {
-        captures: ThinVec<IString>,
+        captures: ThinVec<NString>,
         callee: FunctionId,
     },
 
     Call {
         callee: ValueId,
         positional: ThinVec<ValueId>,
-        named: ThinVec<(IString, ValueId)>,
+        named: ThinVec<(NString, ValueId)>,
     },
 
     MethodCall {
         object: ValueId,
-        method_name: IString,
+        method_name: NString,
         positional: ThinVec<ValueId>,
-        named: ThinVec<(IString, ValueId)>,
+        named: ThinVec<(NString, ValueId)>,
     },
 
     Symbol {
-        path: IString,
+        path: NString,
     },
 }
 

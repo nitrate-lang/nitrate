@@ -1,5 +1,5 @@
 use crate::prelude::*;
-use interned_string::IString;
+use nitrate_nstring::NString;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeSet;
 
@@ -20,7 +20,7 @@ pub struct GlobalVariable {
     pub visibility: Visibility,
     pub attributes: BTreeSet<GlobalVariableAttribute>,
     pub is_mutable: bool,
-    pub name: IString,
+    pub name: NString,
     pub ty: TypeId,
     pub init: Option<ValueId>,
 }
@@ -42,7 +42,7 @@ pub struct LocalVariable {
     pub kind: LocalVariableKind,
     pub attributes: BTreeSet<LocalVariableAttribute>,
     pub is_mutable: bool,
-    pub name: IString,
+    pub name: NString,
     pub ty: TypeId,
     pub init: Option<ValueId>,
 }
@@ -56,7 +56,7 @@ pub enum ParameterAttribute {
 pub struct Parameter {
     pub attributes: BTreeSet<ParameterAttribute>,
     pub is_mutable: bool,
-    pub name: IString,
+    pub name: NString,
     pub ty: TypeId,
     pub default_value: Option<ValueId>,
 }
@@ -65,7 +65,7 @@ pub struct Parameter {
 pub struct Function {
     pub visibility: Visibility,
     pub attributes: BTreeSet<FunctionAttribute>,
-    pub name: IString,
+    pub name: NString,
     pub params: Vec<ParameterId>,
     pub return_type: TypeId,
     pub body: Option<BlockId>,
@@ -73,7 +73,7 @@ pub struct Function {
 
 impl Function {
     pub fn get_type(&self, store: &Store) -> FunctionType {
-        let params: Vec<(IString, TypeId)> = self
+        let params: Vec<(NString, TypeId)> = self
             .params
             .iter()
             .map(|param_id| {
@@ -93,7 +93,7 @@ impl Function {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct Trait {
     pub visibility: Visibility,
-    pub name: IString,
+    pub name: NString,
     pub methods: Vec<FunctionId>,
 }
 
@@ -105,7 +105,7 @@ pub enum ModuleAttribute {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct Module {
     pub visibility: Visibility,
-    pub name: IString,
+    pub name: NString,
     pub attributes: BTreeSet<ModuleAttribute>,
     pub items: Vec<Item>,
 }
@@ -113,14 +113,14 @@ pub struct Module {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct TypeAliasDef {
     pub visibility: Visibility,
-    pub name: IString,
+    pub name: NString,
     pub type_id: TypeId,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct StructDef {
     pub visibility: Visibility,
-    pub name: IString,
+    pub name: NString,
     pub field_extras: Vec<(Visibility, Option<ValueId>)>,
     pub struct_id: StructTypeId,
 }
@@ -128,7 +128,7 @@ pub struct StructDef {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct EnumDef {
     pub visibility: Visibility,
-    pub name: IString,
+    pub name: NString,
     pub variant_extras: Vec<Option<ValueId>>,
     pub enum_id: EnumTypeId,
 }
@@ -141,7 +141,7 @@ pub enum TypeDefinition {
 }
 
 impl TypeDefinition {
-    pub fn name(&self, store: &Store) -> IString {
+    pub fn name(&self, store: &Store) -> NString {
         match self {
             TypeDefinition::TypeAliasDef(def) => store[def].borrow().name.clone(),
             TypeDefinition::StructDef(def) => store[def].borrow().name.clone(),
@@ -159,7 +159,7 @@ pub enum SymbolId {
 }
 
 impl SymbolId {
-    pub fn name(&self, store: &Store) -> IString {
+    pub fn name(&self, store: &Store) -> NString {
         match self {
             SymbolId::Function(id) => store[id].borrow().name.clone(),
             SymbolId::GlobalVariable(id) => store[id].borrow().name.clone(),

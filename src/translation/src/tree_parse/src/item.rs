@@ -1,7 +1,7 @@
 use super::parse::Parser;
 use crate::diagnosis::SyntaxErr;
 
-use interned_string::IString;
+use nitrate_nstring::NString;
 use nitrate_token::Token;
 use nitrate_tree::ast::{
     AssociatedItem, Enum, EnumVariant, FuncParam, FuncParams, Function, Generics, GlobalVariable,
@@ -18,7 +18,7 @@ impl Parser<'_, '_> {
                 "".into()
             });
 
-            let name = IString::from(name);
+            let name = NString::from(name);
 
             let default = if this.lexer.skip_if(&Token::Eq) {
                 Some(this.parse_type())
@@ -216,7 +216,7 @@ impl Parser<'_, '_> {
 
                 UseTree::Alias {
                     path,
-                    alias: IString::from(alias),
+                    alias: NString::from(alias),
                 }
             } else {
                 UseTree::Single { path }
@@ -254,7 +254,7 @@ impl Parser<'_, '_> {
             "".into()
         });
 
-        let name = IString::from(name);
+        let name = NString::from(name);
 
         let generics = self.parse_generics();
 
@@ -288,7 +288,7 @@ impl Parser<'_, '_> {
                 "".into()
             });
 
-            let name = IString::from(name);
+            let name = NString::from(name);
 
             let variant_type = if this.lexer.skip_if(&Token::OpenParen) {
                 let ty = this.parse_type();
@@ -328,7 +328,7 @@ impl Parser<'_, '_> {
             "".into()
         });
 
-        let name = IString::from(name);
+        let name = NString::from(name);
 
         let generics = self.parse_generics();
 
@@ -388,7 +388,7 @@ impl Parser<'_, '_> {
                 "".into()
             });
 
-            let name = IString::from(name);
+            let name = NString::from(name);
 
             if !this.lexer.skip_if(&Token::Colon) {
                 let bug = SyntaxErr::ExpectedColon(this.lexer.peek_pos());
@@ -423,7 +423,7 @@ impl Parser<'_, '_> {
             "".into()
         });
 
-        let name = IString::from(name);
+        let name = NString::from(name);
 
         let generics = self.parse_generics();
 
@@ -516,7 +516,7 @@ impl Parser<'_, '_> {
             "".into()
         });
 
-        let name = IString::from(name);
+        let name = NString::from(name);
 
         let generics = self.parse_generics();
 
@@ -633,7 +633,7 @@ impl Parser<'_, '_> {
                 "".into()
             });
 
-            let name = IString::from(name);
+            let name = NString::from(name);
 
             if !this.lexer.skip_if(&Token::Colon) {
                 let bug = SyntaxErr::FunctionParameterExpectedType(this.lexer.peek_pos());
@@ -710,7 +710,7 @@ impl Parser<'_, '_> {
             "".into()
         });
 
-        let name = IString::from(name);
+        let name = NString::from(name);
 
         let generics = self.parse_generics();
         let parameters = self.parse_function_parameters();
@@ -777,7 +777,7 @@ impl Parser<'_, '_> {
             "".into()
         });
 
-        let name = IString::from(name);
+        let name = NString::from(name);
 
         let var_type = if self.lexer.skip_if(&Token::Colon) {
             Some(self.parse_type())

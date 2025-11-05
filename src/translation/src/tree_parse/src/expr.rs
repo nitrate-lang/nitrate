@@ -1,7 +1,7 @@
 use crate::diagnosis::SyntaxErr;
 
 use super::parse::Parser;
-use interned_string::IString;
+use nitrate_nstring::NString;
 use nitrate_token::Token;
 use nitrate_tree::ast::{
     AttributeList, Await, BStringLit, BinExpr, BinExprOp, Block, BlockItem, Bool, BooleanLit,
@@ -688,7 +688,7 @@ impl Parser<'_, '_> {
             let rewind_pos = this.lexer.current_pos();
             if let Some(argument_name) = this.lexer.next_if_name() {
                 if this.lexer.skip_if(&Token::Colon) {
-                    name = Some(IString::from(argument_name));
+                    name = Some(NString::from(argument_name));
                 } else {
                     this.lexer.rewind(rewind_pos);
                 }
@@ -897,7 +897,7 @@ impl Parser<'_, '_> {
     }
 
     fn parse_for(&mut self) -> ForEach {
-        fn parse_for_bindings(this: &mut Parser) -> Vec<IString> {
+        fn parse_for_bindings(this: &mut Parser) -> Vec<NString> {
             if !this.lexer.skip_if(&Token::OpenParen) {
                 let binding_name = this.lexer.next_if_name().unwrap_or_else(|| {
                     let bug = SyntaxErr::ForVariableBindingMissingName(this.lexer.peek_pos());
@@ -905,7 +905,7 @@ impl Parser<'_, '_> {
                     "".into()
                 });
 
-                return vec![IString::from(binding_name)];
+                return vec![NString::from(binding_name)];
             }
 
             let mut bindings = Vec::new();
@@ -935,7 +935,7 @@ impl Parser<'_, '_> {
                     "".into()
                 });
 
-                let binding_name = IString::from(binding_name);
+                let binding_name = NString::from(binding_name);
                 bindings.push(binding_name);
 
                 if !this.lexer.skip_if(&Token::Comma) && !this.lexer.next_is(&Token::CloseParen) {
@@ -993,7 +993,7 @@ impl Parser<'_, '_> {
 
         let label = if self.lexer.skip_if(&Token::SingleQuote) {
             if let Some(name) = self.lexer.next_if_name() {
-                Some(IString::from(name))
+                Some(NString::from(name))
             } else {
                 let bug = SyntaxErr::BreakMissingLabel(self.lexer.peek_pos());
                 self.log.report(&bug);
@@ -1012,7 +1012,7 @@ impl Parser<'_, '_> {
 
         let label = if self.lexer.skip_if(&Token::SingleQuote) {
             if let Some(name) = self.lexer.next_if_name() {
-                Some(IString::from(name))
+                Some(NString::from(name))
             } else {
                 let bug = SyntaxErr::ContinueMissingLabel(self.lexer.peek_pos());
                 self.log.report(&bug);
@@ -1064,7 +1064,7 @@ impl Parser<'_, '_> {
                 "".into()
             });
 
-            let name = IString::from(name);
+            let name = NString::from(name);
 
             if !this.lexer.skip_if(&Token::Colon) {
                 let bug = SyntaxErr::FunctionParameterExpectedType(this.lexer.peek_pos());
@@ -1170,9 +1170,9 @@ impl Parser<'_, '_> {
         }
     }
 
-    fn parse_function_call_arguments(&mut self) -> (Vec<Expr>, Vec<(IString, Expr)>) {
+    fn parse_function_call_arguments(&mut self) -> (Vec<Expr>, Vec<(NString, Expr)>) {
         struct ParsedArgument {
-            name: Option<IString>,
+            name: Option<NString>,
             value: Expr,
         }
 
@@ -1183,7 +1183,7 @@ impl Parser<'_, '_> {
             if let Some(argument_name) = this.lexer.next_if_name() {
                 if this.lexer.skip_if(&Token::Colon) {
                     // Successfully parsed a named argument
-                    name = Some(IString::from(argument_name));
+                    name = Some(NString::from(argument_name));
                 } else {
                     // It was just an identifier that wasn't followed by a colon,
                     // so we treat it as the start of a positional expression.
@@ -1281,7 +1281,7 @@ impl Parser<'_, '_> {
             "".into()
         });
 
-        let name = IString::from(name);
+        let name = NString::from(name);
 
         let var_type = if self.lexer.skip_if(&Token::Colon) {
             Some(self.parse_type())

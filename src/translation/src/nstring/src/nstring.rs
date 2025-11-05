@@ -43,9 +43,9 @@ impl Default for NString {
     }
 }
 
-impl From<&str> for NString {
-    fn from(s: &str) -> Self {
-        intern_nstring(s.to_string())
+impl<T: Into<String>> From<T> for NString {
+    fn from(s: T) -> Self {
+        intern_nstring(s.into())
     }
 }
 

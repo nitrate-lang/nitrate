@@ -3,8 +3,7 @@ use crate::{
     expr::AttributeList,
     ty::TypePath,
 };
-
-use interned_string::IString;
+use nitrate_nstring::NString;
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
 
@@ -25,7 +24,7 @@ pub enum Visibility {
 pub struct Module {
     pub visibility: Option<Visibility>,
     pub attributes: Option<AttributeList>,
-    pub name: IString,
+    pub name: NString,
     pub items: Vec<Item>,
 }
 
@@ -45,7 +44,7 @@ pub struct ItemPath {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum UseTree {
     Single { path: ItemPath },
-    Alias { path: ItemPath, alias: IString },
+    Alias { path: ItemPath, alias: NString },
     UseAll { path: ItemPath },
     Group { path: ItemPath, group: Vec<UseTree> },
 }
@@ -75,7 +74,7 @@ pub struct Import {
 #[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TypeParam {
-    pub name: IString,
+    pub name: NString,
     pub default_value: Option<Type>,
 }
 
@@ -90,7 +89,7 @@ pub struct Generics {
 pub struct TypeAlias {
     pub visibility: Option<Visibility>,
     pub attributes: Option<AttributeList>,
-    pub name: IString,
+    pub name: NString,
     pub generics: Option<Generics>,
     pub alias_type: Option<Type>,
 }
@@ -100,7 +99,7 @@ pub struct TypeAlias {
 pub struct StructField {
     pub visibility: Option<Visibility>,
     pub attributes: Option<AttributeList>,
-    pub name: IString,
+    pub name: NString,
     pub ty: Type,
     pub default_value: Option<Expr>,
 }
@@ -110,7 +109,7 @@ pub struct StructField {
 pub struct Struct {
     pub visibility: Option<Visibility>,
     pub attributes: Option<AttributeList>,
-    pub name: IString,
+    pub name: NString,
     pub generics: Option<Generics>,
     pub fields: Vec<StructField>,
 }
@@ -119,7 +118,7 @@ pub struct Struct {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct EnumVariant {
     pub attributes: Option<AttributeList>,
-    pub name: IString,
+    pub name: NString,
     pub ty: Option<Type>,
     pub default_value: Option<Expr>,
 }
@@ -129,7 +128,7 @@ pub struct EnumVariant {
 pub struct Enum {
     pub visibility: Option<Visibility>,
     pub attributes: Option<AttributeList>,
-    pub name: IString,
+    pub name: NString,
     pub generics: Option<Generics>,
     pub variants: Vec<EnumVariant>,
 }
@@ -148,7 +147,7 @@ pub enum AssociatedItem {
 pub struct Trait {
     pub visibility: Option<Visibility>,
     pub attributes: Option<AttributeList>,
-    pub name: IString,
+    pub name: NString,
     pub generics: Option<Generics>,
     pub items: Vec<AssociatedItem>,
 }
@@ -175,7 +174,7 @@ pub enum Mutability {
 pub struct FuncParam {
     pub attributes: Option<AttributeList>,
     pub mutability: Option<Mutability>,
-    pub name: IString,
+    pub name: NString,
     pub ty: Type,
     pub default_value: Option<Expr>,
 }
@@ -187,7 +186,7 @@ pub type FuncParams = Vec<FuncParam>;
 pub struct Function {
     pub visibility: Option<Visibility>,
     pub attributes: Option<AttributeList>,
-    pub name: IString,
+    pub name: NString,
     pub generics: Option<Generics>,
     pub parameters: FuncParams,
     pub return_type: Option<Type>,
@@ -208,7 +207,7 @@ pub struct GlobalVariable {
     pub kind: GlobalVariableKind,
     pub attributes: Option<AttributeList>,
     pub mutability: Option<Mutability>,
-    pub name: IString,
+    pub name: NString,
     pub ty: Option<Type>,
     pub initializer: Option<Expr>,
 }

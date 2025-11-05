@@ -1,8 +1,8 @@
-use interned_string::IString;
+use nitrate_nstring::NString;
 use nitrate_tree::{Order, ParseTreeIter, RefNode, ast::Module};
 use std::collections::HashSet;
 
-fn qualify_name(scope: &[IString], name: &str) -> IString {
+fn qualify_name(scope: &[NString], name: &str) -> NString {
     let length = scope.iter().map(|s| s.len() + 2).sum::<usize>() + name.len();
     let mut qualified = String::with_capacity(length);
 
@@ -15,7 +15,7 @@ fn qualify_name(scope: &[IString], name: &str) -> IString {
     qualified.into()
 }
 
-pub fn discover_symbols(module: &mut Module) -> HashSet<IString> {
+pub fn discover_symbols(module: &mut Module) -> HashSet<NString> {
     let mut symbol_set = HashSet::new();
     let mut scope_vec = Vec::new();
 

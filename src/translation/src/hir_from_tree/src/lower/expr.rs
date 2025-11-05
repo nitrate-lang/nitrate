@@ -1,10 +1,10 @@
 use crate::context::Ast2HirCtx;
 use crate::diagnosis::HirErr;
 use crate::lower::lower::Ast2Hir;
-use interned_string::IString;
 use nitrate_diagnosis::CompilerLog;
 use nitrate_hir::{SymbolTab, prelude::*};
 use nitrate_hir_get_type::HirGetType;
+use nitrate_nstring::NString;
 use nitrate_token::escape_string;
 use nitrate_token_lexer::{Lexer, LexerError};
 use nitrate_tree::ast::{self as ast, UnaryExprOp};
@@ -454,7 +454,7 @@ impl Ast2Hir for ast::StructInit {
 
         let mut fields = Vec::with_capacity(self.fields.len());
         for field in self.fields {
-            let field_name = IString::from(field.0.to_string());
+            let field_name = NString::from(field.0.to_string());
             let field_value = field.1.ast2hir(ctx, log)?.into_id(&ctx.store);
 
             fields.push((field_name, field_value));
@@ -462,7 +462,7 @@ impl Ast2Hir for ast::StructInit {
 
         if let Some(resolved_path) = self.path.resolved_path {
             return Ok(Value::StructObject {
-                struct_path: IString::from(resolved_path),
+                struct_path: NString::from(resolved_path),
                 fields: fields.into(),
             });
         }
@@ -1005,7 +1005,7 @@ impl Ast2Hir for ast::ExprPath {
         }
 
         if let Some(resolved_path) = self.resolved_path {
-            let path = IString::from(resolved_path);
+            let path = NString::from(resolved_path);
             return Ok(Value::Symbol { path });
         }
 
@@ -1164,7 +1164,7 @@ impl Ast2Hir for ast::FunctionCall {
         }
 
         for (name, arg) in self.named {
-            let name = IString::from(name.to_string());
+            let name = NString::from(name.to_string());
             let value = arg.ast2hir(ctx, log)?.into_id(&ctx.store);
             named.push((name, value));
         }
@@ -1182,7 +1182,7 @@ impl Ast2Hir for ast::MethodCall {
 
     fn ast2hir(self, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
         let object = self.object.ast2hir(ctx, log)?.into_id(&ctx.store);
-        let method = IString::from(self.method_name);
+        let method = NString::from(self.method_name);
 
         let mut positional = Vec::with_capacity(self.positional.len());
         let mut named = Vec::with_capacity(self.named.len());
@@ -1193,7 +1193,7 @@ impl Ast2Hir for ast::MethodCall {
         }
 
         for (name, arg) in self.named {
-            let name = IString::from(name.to_string());
+            let name = NString::from(name.to_string());
             let value = arg.ast2hir(ctx, log)?.into_id(&ctx.store);
             named.push((name, value));
         }

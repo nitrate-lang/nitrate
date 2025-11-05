@@ -1,6 +1,6 @@
 use crate::{diagnosis::ResolveIssue, symbol_table::discover_symbols};
-use interned_string::IString;
 use nitrate_diagnosis::CompilerLog;
+use nitrate_nstring::NString;
 use nitrate_tree::{
     Order, ParseTreeIterMut, RefNodeMut,
     ast::{ExprPath, Module, TypePath},
@@ -10,10 +10,10 @@ use std::collections::HashSet;
 fn resolve_expr_path(
     scope: &[String],
     path: &mut ExprPath,
-    symbol_set: &HashSet<IString>,
+    symbol_set: &HashSet<NString>,
     log: &CompilerLog,
 ) -> bool {
-    let pathname = IString::from(
+    let pathname = NString::from(
         path.segments
             .iter()
             .map(|seg| seg.name.clone())
@@ -55,10 +55,10 @@ fn resolve_expr_path(
 fn resolve_type_path(
     scope: &[String],
     path: &mut TypePath,
-    symbol_set: &HashSet<IString>,
+    symbol_set: &HashSet<NString>,
     log: &CompilerLog,
 ) -> bool {
-    let pathname = IString::from(
+    let pathname = NString::from(
         path.segments
             .iter()
             .map(|seg| seg.name.clone())

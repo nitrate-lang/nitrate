@@ -1,7 +1,7 @@
-use interned_string::IString;
 use nitrate_diagnosis::{
     DiagnosticGroupId, DiagnosticInfo, FormattableDiagnosticGroup, Origin, 
 };
+use nitrate_nstring::NString;
 use nitrate_tree::{ast::{ExprPath, TypePath}};
 use nitrate_token::SourcePosition;
 
@@ -654,15 +654,15 @@ pub enum ResolveIssue {
 
     TypePathUnresolved(TypePath),
 
-    ImportNotFound((IString, std::io::Error)),
+    ImportNotFound((NString, std::io::Error)),
     
     CircularImport {
-        path: IString,
-        depth: Vec<IString>,
+        path: NString,
+        depth: Vec<NString>,
     },
 
     ImportSourceCodeSizeLimitExceeded(std::path::PathBuf),
-    ImportDepthLimitExceeded(IString),
+    ImportDepthLimitExceeded(NString),
 }
 
 impl FormattableDiagnosticGroup for ResolveIssue {

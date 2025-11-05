@@ -1,7 +1,7 @@
 use crate::{context::Ast2HirCtx, convert_ast_to_hir, diagnosis::HirErr, lower::lower::Ast2Hir};
-use interned_string::IString;
 use nitrate_diagnosis::CompilerLog;
 use nitrate_hir::prelude::*;
+use nitrate_nstring::NString;
 use nitrate_tree::ast::{self};
 use std::collections::BTreeSet;
 
@@ -91,7 +91,7 @@ impl Ast2Hir for ast::Struct {
                 }
             }
 
-            let field_name = IString::from(field.name.to_string());
+            let field_name = NString::from(field.name.to_string());
             let field_type = field.ty.to_owned().ast2hir(ctx, log)?.into_id(&ctx.store);
 
             let field_default = match field.default_value.to_owned() {
@@ -161,7 +161,7 @@ impl Ast2Hir for ast::Enum {
                 }
             }
 
-            let variant_name = IString::from(variant.name.to_string());
+            let variant_name = NString::from(variant.name.to_string());
 
             let variant_type = match variant.ty.to_owned() {
                 Some(ty) => ty.ast2hir(ctx, log)?.into_id(&ctx.store),

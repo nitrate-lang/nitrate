@@ -1,8 +1,8 @@
 use crate::{context::Ast2HirCtx, diagnosis::HirErr, lower::lower::Ast2Hir};
-use interned_string::IString;
 use nitrate_diagnosis::CompilerLog;
 use nitrate_hir::prelude::*;
 use nitrate_hir_evaluate::HirEvalCtx;
+use nitrate_nstring::NString;
 use nitrate_tree::ast::{self as ast};
 use std::{collections::BTreeSet, ops::Deref};
 
@@ -146,7 +146,7 @@ impl Ast2Hir for ast::TypePath {
         }
 
         if let Some(resolved_path) = self.resolved_path {
-            let path = IString::from(resolved_path);
+            let path = NString::from(resolved_path);
             return Ok(Type::Symbol { path });
         }
 
@@ -251,7 +251,7 @@ impl Ast2Hir for ast::FunctionType {
                 }
             }
 
-            let name = IString::from(param.name.deref());
+            let name = NString::from(param.name.deref());
             let ty = param.ty.ast2hir(ctx, log)?.into_id(&ctx.store);
 
             parameters.push((name, ty));

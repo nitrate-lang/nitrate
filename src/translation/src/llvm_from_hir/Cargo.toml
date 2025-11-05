@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+nitrate_nstring = { path = "../nstring" }
 nitrate_llvm = { path = "../llvm" }
 nitrate_hir = { path = "../hir" }
 nitrate_hir_validate = { path = "../hir_validate" }
