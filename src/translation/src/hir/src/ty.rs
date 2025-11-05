@@ -213,6 +213,30 @@ impl Type {
         matches!(self, Type::SliceRef { .. })
     }
 
+    pub fn as_struct(&self) -> Option<&StructTypeId> {
+        if let Type::Struct { struct_type } = self {
+            Some(struct_type)
+        } else {
+            None
+        }
+    }
+
+    pub fn as_enum(&self) -> Option<&EnumTypeId> {
+        if let Type::Enum { enum_type } = self {
+            Some(enum_type)
+        } else {
+            None
+        }
+    }
+
+    pub fn as_function(&self) -> Option<&FunctionTypeId> {
+        if let Type::Function { function_type } = self {
+            Some(function_type)
+        } else {
+            None
+        }
+    }
+
     fn is_known_inner(
         &self,
         store: &Store,

@@ -1861,7 +1861,20 @@ fn gen_rval_call<'ctx>(
     callee: &hir::Value,
     arguments: &[hir::ValueId],
 ) -> Result<BasicValueEnum<'ctx>, CodegenError> {
+    let llvm_function_ty = gen_function_ty(
+        &ctx.store[callee
+            .get_type(&ctx.store, &ctx.tab)
+            .expect("Failed to get callee type")
+            .as_function()
+            .expect("Callee is not a function")],
+        ctx.llvm,
+        ctx.store,
+        ctx.tab,
+    );
+
     if let hir::Value::Symbol { path } = callee {
+        let function = gen_rval_symbol(ctx, path)?.into_pointer_value();
+
         let mut llvm_arguments = Vec::new();
         for arg_id in arguments {
             let arg_hir = &ctx.store[arg_id].borrow();
@@ -1869,41 +1882,15 @@ fn gen_rval_call<'ctx>(
             llvm_arguments.push(llvm_arg.into());
         }
 
-        let function = match ctx.module.get_function(path) {
-            Some(f) => f,
-            None => {
-                let function_id = ctx.tab.get_function(path).expect("undefined function");
-                let function = &ctx.store[function_id].borrow();
-                function.get_type(ctx.store);
-
-                unimplemented!()
-            }
-        };
-
-        let result = ctx
+        let call = ctx
             .bb
-            .build_direct_call(function, &llvm_arguments, "")
+            .build_indirect_call(llvm_function_ty, function, &llvm_arguments, "")
             .unwrap()
             .try_as_basic_value()
             .expect_left("missing value");
 
-        Ok(result)
+        Ok(call)
     } else {
-        let function_ty = match callee
-            .get_type(&ctx.store, &ctx.tab)
-            .expect("Failed to get callee type")
-        {
-            hir::Type::Function { function_type } => &ctx.store[&function_type],
-
-            _ => {
-                return Err(CodegenError::OperandTypeCombinationError {
-                    operation_name: "function call",
-                });
-            }
-        };
-
-        let llvm_function_ty = gen_function_ty(&function_ty, ctx.llvm, ctx.store, ctx.tab);
-
         let callee_val = gen_rval(ctx, callee)?;
         if !callee_val.is_pointer_value() {
             return Err(CodegenError::OperandTypeCombinationError {

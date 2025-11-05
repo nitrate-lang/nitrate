@@ -899,7 +899,7 @@ fn ast_localvar2hir(
     var: &ast::LocalVariable,
     ctx: &mut Ast2HirCtx,
     log: &CompilerLog,
-) -> Result<LocalVariable, ()> {
+) -> Result<LocalVariableId, ()> {
     let kind = match var.kind {
         ast::LocalVariableKind::Let => LocalVariableKind::Stack,
         ast::LocalVariableKind::Var => LocalVariableKind::Dynamic,
@@ -932,14 +932,20 @@ fn ast_localvar2hir(
         None => None,
     };
 
-    Ok(LocalVariable {
+    let localvar_id = LocalVariable {
         kind,
         attributes,
         is_mutable,
         name,
         ty,
         init: initializer,
-    })
+    }
+    .into_id(&ctx.store);
+
+    let symbol = SymbolId::LocalVariable(localvar_id.clone());
+    ctx.tab.add_symbol(symbol, &ctx.store);
+
+    Ok(localvar_id)
 }
 
 impl Ast2Hir for ast::Block {
@@ -961,7 +967,7 @@ impl Ast2Hir for ast::Block {
                 }
 
                 ast::BlockItem::Variable(var) => {
-                    let var_hir = ast_localvar2hir(&var, ctx, log)?.into_id(&ctx.store);
+                    let var_hir = ast_localvar2hir(&var, ctx, log)?;
                     elements.push(BlockElement::Local(var_hir));
                 }
             }
