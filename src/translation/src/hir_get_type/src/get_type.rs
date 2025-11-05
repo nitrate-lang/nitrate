@@ -342,7 +342,7 @@ impl HirGetType for Value {
                     Ok(Type::Function {
                         function_type: FunctionType {
                             attributes: function.attributes.to_owned(),
-                            params: parameters,
+                            params: parameters.into(),
                             return_type: function.return_type.to_owned(),
                         }
                         .into_id(store),

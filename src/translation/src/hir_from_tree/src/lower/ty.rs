@@ -264,7 +264,7 @@ impl Ast2Hir for ast::FunctionType {
 
         let function_type = FunctionType {
             attributes,
-            params: parameters,
+            params: parameters.into(),
             return_type: return_type.into_id(&ctx.store),
         };
 

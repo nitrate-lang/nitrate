@@ -80,11 +80,11 @@ impl Function {
                 let p = store[param_id].borrow();
                 (p.name.clone(), p.ty)
             })
-            .collect();
+            .collect::<Vec<_>>();
 
         FunctionType {
             attributes: self.attributes.clone(),
-            params,
+            params: params.into(),
             return_type: self.return_type,
         }
     }

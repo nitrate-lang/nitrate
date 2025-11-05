@@ -4,6 +4,7 @@ use inkwell::types::{BasicType, BasicTypeEnum};
 use inkwell::values::{AsValueRef, FunctionValue, GlobalValue, PointerValue};
 use nitrate_hir_validate::ValidHir;
 use nitrate_nstring::NString;
+use thin_vec::ThinVec;
 
 use crate::rvalue::gen_rval;
 use crate::rvalue::{CodegenCtx, gen_block};
@@ -57,7 +58,7 @@ fn gen_global<'ctx>(ctx: &mut SymbolGenCtx<'ctx, '_, '_, '_>, hir_global: &hir::
     let hir_ctor_type = hir::Type::Function {
         function_type: hir::FunctionType {
             attributes: BTreeSet::new(),
-            params: Vec::new(),
+            params: ThinVec::new(),
             return_type: hir::Type::Unit.into_id(ctx.store),
         }
         .into_id(ctx.store),

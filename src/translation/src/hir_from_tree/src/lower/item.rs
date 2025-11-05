@@ -109,7 +109,11 @@ impl Ast2Hir for ast::Struct {
             fields.push(struct_field);
         }
 
-        let struct_id = StructType { attributes, fields }.into_id(&ctx.store);
+        let struct_id = StructType {
+            attributes,
+            fields: fields.into(),
+        }
+        .into_id(&ctx.store);
 
         let struct_def_id = StructDef {
             visibility,
@@ -185,7 +189,7 @@ impl Ast2Hir for ast::Enum {
 
         let enum_id = EnumType {
             attributes,
-            variants,
+            variants: variants.into(),
         }
         .into_id(&ctx.store);
 

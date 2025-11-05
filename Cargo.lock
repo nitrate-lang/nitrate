@@ -827,6 +827,7 @@ dependencies = [
  "nitrate_hir_validate",
  "nitrate_llvm",
  "nitrate_nstring",
+ "thin-vec",
 ]
 
 [[package]]

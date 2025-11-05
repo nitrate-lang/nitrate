@@ -35,7 +35,7 @@ pub struct StructField {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct StructType {
     pub attributes: BTreeSet<StructAttribute>,
-    pub fields: Vec<StructField>,
+    pub fields: ThinVec<StructField>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -58,7 +58,7 @@ pub struct EnumVariant {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct EnumType {
     pub attributes: BTreeSet<EnumAttribute>,
-    pub variants: Vec<EnumVariant>,
+    pub variants: ThinVec<EnumVariant>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -70,7 +70,7 @@ pub enum FunctionAttribute {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct FunctionType {
     pub attributes: BTreeSet<FunctionAttribute>,
-    pub params: Vec<(NString, TypeId)>,
+    pub params: ThinVec<(NString, TypeId)>,
     pub return_type: TypeId,
 }
 

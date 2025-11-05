@@ -11,6 +11,7 @@ nitrate_hir_validate = { path = "../hir_validate" }
 nitrate_hir_mangle = { path = "../hir_mangle" }
 nitrate_hir_get_type = { path = "../hir_get_type" }
 inkwell = { version = "0.6.0", features = ["llvm16-0"] }
+thin-vec = { version = "0.2.14" }
 
 [build-dependencies]
 cc = "1.0"
