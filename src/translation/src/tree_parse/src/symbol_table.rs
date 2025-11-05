@@ -2,7 +2,7 @@ use interned_string::IString;
 use nitrate_tree::{Order, ParseTreeIter, RefNode, ast::Module};
 use std::collections::HashSet;
 
-fn qualify_name(scope: &[IString], name: &str) -> String {
+fn qualify_name(scope: &[IString], name: &str) -> IString {
     let length = scope.iter().map(|s| s.len() + 2).sum::<usize>() + name.len();
     let mut qualified = String::with_capacity(length);
 
@@ -12,10 +12,10 @@ fn qualify_name(scope: &[IString], name: &str) -> String {
     }
 
     qualified.push_str(name);
-    qualified
+    qualified.into()
 }
 
-pub type SymbolSet = HashSet<String>;
+pub type SymbolSet = HashSet<IString>;
 
 fn visit_node(symbol_set: &mut SymbolSet, scope_vec: &Vec<IString>, node: &RefNode) {
     let name = match node {
@@ -36,6 +36,21 @@ pub fn discover_symbols(module: &mut Module) -> SymbolSet {
     let mut scope_vec = Vec::new();
 
     module.depth_first_iter(&mut |order, node| {
+        if order == Order::Enter {
+            if let Some(symbol_name) = match node {
+                RefNode::ItemTypeAlias(sym) => Some(qualify_name(&scope_vec, &sym.name)),
+                RefNode::ItemStruct(sym) => Some(qualify_name(&scope_vec, &sym.name)),
+                RefNode::ItemEnum(sym) => Some(qualify_name(&scope_vec, &sym.name)),
+                RefNode::ItemTrait(sym) => Some(qualify_name(&scope_vec, &sym.name)),
+                RefNode::ItemFunction(sym) => Some(qualify_name(&scope_vec, &sym.name)),
+                RefNode::ItemGlobalVariable(sym) => Some(qualify_name(&scope_vec, &sym.name)),
+                RefNode::ExprLocalVariable(sym) => Some(qualify_name(&scope_vec, &sym.name)),
+                _ => None,
+            } {
+                symbol_set.insert(symbol_name);
+            }
+        }
+
         if let RefNode::ItemModule(module) = node {
             match order {
                 Order::Enter => {
@@ -46,15 +61,17 @@ pub fn discover_symbols(module: &mut Module) -> SymbolSet {
                     scope_vec.pop();
                 }
             }
+        } else if let RefNode::ItemFunction(function) = node {
+            match order {
+                Order::Enter => {
+                    scope_vec.push(function.name.to_string().into());
+                }
 
-            return;
+                Order::Leave => {
+                    scope_vec.pop();
+                }
+            }
         }
-
-        if order != Order::Enter {
-            return;
-        }
-
-        visit_node(&mut symbol_set, &scope_vec, &node);
     });
 
     symbol_set

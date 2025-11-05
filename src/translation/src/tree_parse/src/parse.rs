@@ -11,7 +11,6 @@ use std::{ops::Deref, path::PathBuf};
 pub struct Parser<'a, 'log> {
     pub(crate) lexer: Lexer<'a>,
     pub(crate) log: &'log CompilerLog,
-    pub(crate) closure_ctr: u64,
 }
 
 pub struct ResolveCtx {
@@ -20,11 +19,7 @@ pub struct ResolveCtx {
 
 impl<'a, 'log> Parser<'a, 'log> {
     pub fn new(lexer: Lexer<'a>, log: &'log CompilerLog) -> Self {
-        Parser {
-            lexer,
-            log: log,
-            closure_ctr: 0,
-        }
+        Parser { lexer, log: log }
     }
 
     pub fn parse_source(&mut self, package_name: IString, resolve: Option<ResolveCtx>) -> Module {

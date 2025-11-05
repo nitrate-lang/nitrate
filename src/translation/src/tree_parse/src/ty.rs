@@ -1,15 +1,13 @@
 use super::parse::Parser;
 use crate::diagnosis::SyntaxErr;
 
+use interned_string::IString;
 use nitrate_token::Token;
-use nitrate_tree::{
-    ast::{
-        ArrayType, Bool, Exclusivity, Expr, Float32, Float64, FuncTypeParam, FuncTypeParams,
-        FunctionType, Int8, Int16, Int32, Int64, Int128, LatentType, Lifetime, Mutability,
-        PointerType, ReferenceType, RefinementType, SliceType, TupleType, Type, TypeParentheses,
-        TypePath, TypePathSegment, TypeSyntaxError, UInt8, UInt16, UInt32, UInt64, UInt128, USize,
-    },
-    tag::{intern_lifetime_name, intern_parameter_name},
+use nitrate_tree::ast::{
+    ArrayType, Bool, Exclusivity, Expr, Float32, Float64, FuncTypeParam, FuncTypeParams,
+    FunctionType, Int8, Int16, Int32, Int64, Int128, LatentType, Lifetime, Mutability, PointerType,
+    ReferenceType, RefinementType, SliceType, TupleType, Type, TypeParentheses, TypePath,
+    TypePathSegment, TypeSyntaxError, UInt8, UInt16, UInt32, UInt64, UInt128, USize,
 };
 
 #[derive(Default)]
@@ -205,7 +203,7 @@ impl Parser<'_, '_> {
                 "".into()
             });
 
-            let name = intern_parameter_name(name);
+            let name = IString::from(name);
 
             if !this.lexer.skip_if(&Token::Colon) {
                 let bug = SyntaxErr::FunctionParameterExpectedType(this.lexer.peek_pos());
@@ -293,7 +291,7 @@ impl Parser<'_, '_> {
 
         if self.lexer.skip_if(&Token::Static) {
             return Lifetime {
-                name: intern_lifetime_name("static".to_string()),
+                name: IString::from("static".to_string()),
             };
         }
 
@@ -304,7 +302,7 @@ impl Parser<'_, '_> {
         });
 
         Lifetime {
-            name: intern_lifetime_name(name),
+            name: IString::from(name),
         }
     }
 

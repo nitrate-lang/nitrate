@@ -2,7 +2,7 @@ use interned_string::IString;
 use nitrate_diagnosis::{
     DiagnosticGroupId, DiagnosticInfo, FormattableDiagnosticGroup, Origin, 
 };
-use nitrate_tree::{ast::{ExprPath, TypePath}, tag::ImportNameId};
+use nitrate_tree::{ast::{ExprPath, TypePath}};
 use nitrate_token::SourcePosition;
 
 pub(crate) enum SyntaxErr {

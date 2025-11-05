@@ -3,17 +3,10 @@ use crate::diagnosis::SyntaxErr;
 
 use interned_string::IString;
 use nitrate_token::Token;
-use nitrate_tree::{
-    ast::{
-        AssociatedItem, Enum, EnumVariant, FuncParam, FuncParams, Function, Generics,
-        GlobalVariable, GlobalVariableKind, Impl, Import, Item, ItemPath, ItemPathSegment,
-        ItemSyntaxError, Module, Mutability, Struct, StructField, Trait, TypeAlias, TypeParam,
-        UseTree, Visibility,
-    },
-    tag::{
-        intern_enum_variant_name, intern_function_name, intern_import_name, intern_parameter_name,
-        intern_struct_field_name, intern_trait_name, intern_type_name, intern_variable_name,
-    },
+use nitrate_tree::ast::{
+    AssociatedItem, Enum, EnumVariant, FuncParam, FuncParams, Function, Generics, GlobalVariable,
+    GlobalVariableKind, Impl, Import, Item, ItemPath, ItemPathSegment, ItemSyntaxError, Module,
+    Mutability, Struct, StructField, Trait, TypeAlias, TypeParam, UseTree, Visibility,
 };
 
 impl Parser<'_, '_> {
@@ -25,7 +18,7 @@ impl Parser<'_, '_> {
                 "".into()
             });
 
-            let name = intern_parameter_name(name);
+            let name = IString::from(name);
 
             let default = if this.lexer.skip_if(&Token::Eq) {
                 Some(this.parse_type())
@@ -223,7 +216,7 @@ impl Parser<'_, '_> {
 
                 UseTree::Alias {
                     path,
-                    alias: intern_import_name(alias),
+                    alias: IString::from(alias),
                 }
             } else {
                 UseTree::Single { path }
@@ -261,7 +254,7 @@ impl Parser<'_, '_> {
             "".into()
         });
 
-        let name = intern_type_name(name);
+        let name = IString::from(name);
 
         let generics = self.parse_generics();
 
@@ -295,7 +288,7 @@ impl Parser<'_, '_> {
                 "".into()
             });
 
-            let name = intern_enum_variant_name(name);
+            let name = IString::from(name);
 
             let variant_type = if this.lexer.skip_if(&Token::OpenParen) {
                 let ty = this.parse_type();
@@ -335,7 +328,7 @@ impl Parser<'_, '_> {
             "".into()
         });
 
-        let name = intern_type_name(name);
+        let name = IString::from(name);
 
         let generics = self.parse_generics();
 
@@ -395,7 +388,7 @@ impl Parser<'_, '_> {
                 "".into()
             });
 
-            let name = intern_struct_field_name(name);
+            let name = IString::from(name);
 
             if !this.lexer.skip_if(&Token::Colon) {
                 let bug = SyntaxErr::ExpectedColon(this.lexer.peek_pos());
@@ -430,7 +423,7 @@ impl Parser<'_, '_> {
             "".into()
         });
 
-        let name = intern_type_name(name);
+        let name = IString::from(name);
 
         let generics = self.parse_generics();
 
@@ -523,7 +516,7 @@ impl Parser<'_, '_> {
             "".into()
         });
 
-        let name = intern_trait_name(name);
+        let name = IString::from(name);
 
         let generics = self.parse_generics();
 
@@ -640,7 +633,7 @@ impl Parser<'_, '_> {
                 "".into()
             });
 
-            let name = intern_parameter_name(name);
+            let name = IString::from(name);
 
             if !this.lexer.skip_if(&Token::Colon) {
                 let bug = SyntaxErr::FunctionParameterExpectedType(this.lexer.peek_pos());
@@ -717,7 +710,7 @@ impl Parser<'_, '_> {
             "".into()
         });
 
-        let name = intern_function_name(name);
+        let name = IString::from(name);
 
         let generics = self.parse_generics();
         let parameters = self.parse_function_parameters();
@@ -784,7 +777,7 @@ impl Parser<'_, '_> {
             "".into()
         });
 
-        let name = intern_variable_name(name);
+        let name = IString::from(name);
 
         let var_type = if self.lexer.skip_if(&Token::Colon) {
             Some(self.parse_type())

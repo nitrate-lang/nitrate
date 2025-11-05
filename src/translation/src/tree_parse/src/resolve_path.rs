@@ -1,3 +1,4 @@
+use interned_string::IString;
 use nitrate_diagnosis::CompilerLog;
 use nitrate_tree::{
     Order, ParseTreeIterMut, RefNodeMut,
@@ -15,12 +16,13 @@ fn resolve_expr_path(
     symbol_set: &SymbolSet,
     log: &CompilerLog,
 ) -> bool {
-    let pathname = path
-        .segments
-        .iter()
-        .map(|seg| seg.name.clone())
-        .collect::<Vec<_>>()
-        .join("::");
+    let pathname = IString::from(
+        path.segments
+            .iter()
+            .map(|seg| seg.name.clone())
+            .collect::<Vec<_>>()
+            .join("::"),
+    );
 
     let is_root_path = path
         .segments
@@ -39,7 +41,7 @@ fn resolve_expr_path(
 
     for i in (0..scope.len()).rev() {
         let current_scope = &scope[0..=i];
-        let name = format!("{}::{}", current_scope.join("::"), pathname);
+        let name = format!("{}::{}", current_scope.join("::"), pathname).into();
 
         if symbol_set.contains(&name) {
             path.resolved_path = Some(name);
@@ -59,12 +61,13 @@ fn resolve_type_path(
     symbol_set: &SymbolSet,
     log: &CompilerLog,
 ) -> bool {
-    let pathname = path
-        .segments
-        .iter()
-        .map(|seg| seg.name.clone())
-        .collect::<Vec<_>>()
-        .join("::");
+    let pathname = IString::from(
+        path.segments
+            .iter()
+            .map(|seg| seg.name.clone())
+            .collect::<Vec<_>>()
+            .join("::"),
+    );
 
     let is_root_path = path
         .segments
@@ -83,7 +86,7 @@ fn resolve_type_path(
 
     for i in (0..scope.len()).rev() {
         let current_scope = &scope[0..=i];
-        let name = format!("{}::{}", current_scope.join("::"), pathname);
+        let name = format!("{}::{}", current_scope.join("::"), pathname).into();
 
         if symbol_set.contains(&name) {
             path.resolved_path = Some(name);

@@ -30,7 +30,17 @@ fn main() -> ExitCode {
         .use_custom_header_print(custom_print_msg_header)
         .build()
         .fuse();
-    let drain = slog_async::Async::new(drain).build().fuse();
+    let drain = slog_async::Async::new(drain)
+        .build()
+        .filter_level(match log::max_level() {
+            log::LevelFilter::Error => slog::Level::Error,
+            log::LevelFilter::Warn => slog::Level::Warning,
+            log::LevelFilter::Info => slog::Level::Info,
+            log::LevelFilter::Debug => slog::Level::Debug,
+            log::LevelFilter::Trace => slog::Level::Trace,
+            log::LevelFilter::Off => slog::Level::Critical,
+        })
+        .fuse();
     let log = slog::Logger::root(drain, o!());
 
     let mut cli = Interpreter::new(&log);
