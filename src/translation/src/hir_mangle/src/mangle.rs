@@ -4,10 +4,10 @@ use crate::{
 };
 use nitrate_hir::prelude::*;
 
-pub fn mangle_name(package: &str, name: &str, ty: &Type, store: &Store) -> String {
+pub fn mangle_name(package_name: &str, name: &str, ty: &Type, store: &Store) -> String {
     format!(
         "_NIT_{}_{}_{}",
-        mangle_string(package),
+        mangle_string(package_name),
         mangle_string(name),
         mangle_type(ty, store)
     )

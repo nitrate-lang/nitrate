@@ -63,6 +63,10 @@ pub enum CodegenError {
 
     #[allow(dead_code)]
     InvalidPlaceValue,
+
+    SymbolNotFound {
+        symbol_name: NString,
+    },
 }
 
 /**
@@ -1950,23 +1954,22 @@ fn gen_rval_symbol<'ctx>(
             .build_load(*llvm_local_ty, *local, "symbol_load")
             .unwrap();
 
-        return Ok(load.into());
+        Ok(load.into())
     } else if let Some((global, llvm_global_ty)) = ctx.globals.get(symbol_name) {
         let load = ctx
             .bb
             .build_load(*llvm_global_ty, *global, "global_symbol_load")
             .unwrap();
 
-        return Ok(load.into());
+        Ok(load.into())
     } else if let Some(function) = ctx.module.get_function(symbol_name) {
         let function_ptr = function.as_global_value().as_pointer_value();
-        return Ok(function_ptr.into());
+        Ok(function_ptr.into())
+    } else {
+        Err(CodegenError::SymbolNotFound {
+            symbol_name: symbol_name.clone(),
+        })
     }
-
-    println!("Symbol not found in locals: {}", symbol_name);
-
-    // TODO: implement symbol codegen
-    unimplemented!()
 }
 
 pub(crate) fn gen_rval<'ctx>(

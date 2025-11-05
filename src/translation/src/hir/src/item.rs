@@ -22,7 +22,7 @@ pub struct GlobalVariable {
     pub is_mutable: bool,
     pub name: NString,
     pub ty: TypeId,
-    pub init: Option<ValueId>,
+    pub init: ValueId,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]

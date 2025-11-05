@@ -21,10 +21,7 @@ impl ValidateHir for GlobalVariable {
         }
 
         store[&self.ty].verify(store, symtab)?;
-
-        if let Some(init_expr) = &self.init {
-            store[init_expr].borrow().verify(store, symtab)?;
-        }
+        store[&self.init].borrow().verify(store, symtab)?;
 
         Ok(())
     }

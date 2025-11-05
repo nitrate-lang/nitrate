@@ -66,6 +66,16 @@ impl SymbolTab {
         }
     }
 
+    pub fn globals(&self) -> impl Iterator<Item = &GlobalVariableId> {
+        self.symbols.values().filter_map(|symbol_id| {
+            if let SymbolId::GlobalVariable(global_var_id) = symbol_id {
+                Some(global_var_id)
+            } else {
+                None
+            }
+        })
+    }
+
     pub fn get_local_variable(&self, name: &NString) -> Option<&LocalVariableId> {
         match self.symbols.get(name) {
             Some(SymbolId::LocalVariable(local_var_id)) => Some(local_var_id),
@@ -85,6 +95,16 @@ impl SymbolTab {
             Some(SymbolId::Function(func_id)) => Some(func_id),
             _ => None,
         }
+    }
+
+    pub fn functions(&self) -> impl Iterator<Item = &FunctionId> {
+        self.symbols.values().filter_map(|symbol_id| {
+            if let SymbolId::Function(func_id) = symbol_id {
+                Some(func_id)
+            } else {
+                None
+            }
+        })
     }
 
     pub fn add_method(&mut self, type_id: TypeId, method_name: NString, function_id: FunctionId) {

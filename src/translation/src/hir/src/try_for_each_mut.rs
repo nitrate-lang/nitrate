@@ -153,7 +153,10 @@ impl ValueIterMut<'_> {
                     .try_for_each_mut(store, vcb)?;
             }
 
-            Value::Cast { value: expr, target_type: _ } => {
+            Value::Cast {
+                value: expr,
+                target_type: _,
+            } => {
                 store[expr as &ValueId]
                     .borrow_mut()
                     .iter_mut()
@@ -317,12 +320,10 @@ impl GlobalVariableIterMut<'_> {
         store: &Store,
         vcb: &mut dyn FnMut(&mut Value) -> ControlFlow<T>,
     ) -> ControlFlow<T> {
-        if let Some(init) = &self.node.init {
-            store[init]
-                .borrow_mut()
-                .iter_mut()
-                .try_for_each_mut(store, vcb)?;
-        }
+        store[&self.node.init]
+            .borrow_mut()
+            .iter_mut()
+            .try_for_each_mut(store, vcb)?;
 
         ControlFlow::Continue(())
     }

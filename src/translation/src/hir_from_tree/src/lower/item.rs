@@ -266,7 +266,7 @@ impl Ast2Hir for ast::GlobalVariable {
             is_mutable,
             name,
             ty,
-            init: Some(init),
+            init,
         }
         .into_id(&ctx.store);
 

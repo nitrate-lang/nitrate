@@ -242,7 +242,10 @@ impl ValueIter<'_> {
                     .try_for_each(store, vcb, tcb)?;
             }
 
-            Value::FieldAccess { expr, field_name: _ } => {
+            Value::FieldAccess {
+                expr,
+                field_name: _,
+            } => {
                 store[expr].borrow().iter().try_for_each(store, vcb, tcb)?;
             }
 
@@ -265,7 +268,10 @@ impl ValueIter<'_> {
                 store[place].borrow().iter().try_for_each(store, vcb, tcb)?;
             }
 
-            Value::Cast { value: expr, target_type: to } => {
+            Value::Cast {
+                value: expr,
+                target_type: to,
+            } => {
                 store[expr].borrow().iter().try_for_each(store, vcb, tcb)?;
 
                 store[to].iter().try_for_each(store, vcb, tcb)?;
@@ -416,9 +422,10 @@ impl GlobalVariableIter<'_> {
     ) -> ControlFlow<T> {
         store[&self.node.ty].iter().try_for_each(store, vcb, tcb)?;
 
-        if let Some(init) = &self.node.init {
-            store[init].borrow().iter().try_for_each(store, vcb, tcb)?;
-        }
+        store[&self.node.init]
+            .borrow()
+            .iter()
+            .try_for_each(store, vcb, tcb)?;
 
         ControlFlow::Continue(())
     }

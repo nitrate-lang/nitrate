@@ -1,5 +1,5 @@
-use nitrate_nstring::NString;
 use nitrate_hir::prelude::*;
+use nitrate_nstring::NString;
 use std::collections::BTreeSet;
 
 pub trait HirItemVisitor<T> {
@@ -18,7 +18,7 @@ pub trait HirItemVisitor<T> {
         is_mutable: bool,
         name: &NString,
         ty: &Type,
-        init: Option<&Value>,
+        init: &Value,
     ) -> T;
 
     fn visit_function(
@@ -58,25 +58,14 @@ pub trait HirItemVisitor<T> {
 
             Item::GlobalVariable(global_variable_id) => {
                 let gv = store[global_variable_id].borrow();
-                match &gv.init {
-                    Some(init) => self.visit_global_variable(
-                        gv.visibility,
-                        &gv.attributes,
-                        gv.is_mutable,
-                        &gv.name,
-                        &store[&gv.ty],
-                        Some(&store[init].borrow()),
-                    ),
-
-                    None => self.visit_global_variable(
-                        gv.visibility,
-                        &gv.attributes,
-                        gv.is_mutable,
-                        &gv.name,
-                        &store[&gv.ty],
-                        None,
-                    ),
-                }
+                self.visit_global_variable(
+                    gv.visibility,
+                    &gv.attributes,
+                    gv.is_mutable,
+                    &gv.name,
+                    &store[&gv.ty],
+                    &store[&gv.init].borrow(),
+                )
             }
 
             Item::Function(function_id) => {
