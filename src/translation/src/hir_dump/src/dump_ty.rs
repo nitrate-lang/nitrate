@@ -1,4 +1,5 @@
-use crate::{dump::write_indent, dump_item::dump_attributes, prelude::*};
+use crate::{Dump, DumpContext, dump_item::dump_attributes, write_indent};
+use nitrate_hir::prelude::*;
 
 impl Dump for StructAttribute {
     fn dump(

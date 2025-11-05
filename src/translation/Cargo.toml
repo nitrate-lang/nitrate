@@ -16,6 +16,7 @@ nitrate_tree_parse = { path = "src/tree_parse" }
 nitrate_hir_from_tree = { path = "src/hir_from_tree" }
 
 nitrate_hir = { path = "src/hir" }
+nitrate_hir_dump = { path = "src/hir_dump" }
 nitrate_hir_visitor = { path = "src/hir_visitor" }
 nitrate_hir_validate = { path = "src/hir_validate" }
 nitrate_hir_evaluate = { path = "src/hir_evaluate" }

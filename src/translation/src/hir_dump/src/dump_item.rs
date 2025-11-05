@@ -1,6 +1,6 @@
+use crate::{Dump, DumpContext, write_indent};
+use nitrate_hir::prelude::*;
 use std::collections::BTreeSet;
-
-use crate::{dump::write_indent, prelude::*};
 
 impl Dump for Visibility {
     fn dump(
@@ -411,36 +411,6 @@ impl Dump for EnumDefId {
         ctx.store[&this.enum_id].dump(ctx, o)?;
 
         write!(o, ";")
-    }
-}
-
-impl SymbolId {
-    pub fn dump_nocycle(
-        &self,
-        ctx: &mut DumpContext,
-        o: &mut dyn std::io::Write,
-    ) -> Result<(), std::io::Error> {
-        match self {
-            SymbolId::Function(func_id) => {
-                let symbol = ctx.store[func_id].borrow();
-                write!(o, "fn::{}::`{}`", func_id.as_usize(), symbol.name)
-            }
-
-            SymbolId::GlobalVariable(global_id) => {
-                let symbol = ctx.store[global_id].borrow();
-                write!(o, "static::{}::`{}`", global_id.as_usize(), symbol.name)
-            }
-
-            SymbolId::LocalVariable(local_id) => {
-                let symbol = ctx.store[local_id].borrow();
-                write!(o, "let::{}::`{}`", local_id.as_usize(), symbol.name)
-            }
-
-            SymbolId::Parameter(param_id) => {
-                let symbol = ctx.store[param_id].borrow();
-                write!(o, "param::{}::`{}`", param_id.as_usize(), symbol.name)
-            }
-        }
     }
 }
 

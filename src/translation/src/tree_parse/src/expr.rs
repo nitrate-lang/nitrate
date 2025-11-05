@@ -1003,6 +1003,11 @@ impl Parser<'_, '_> {
             None
         };
 
+        if !self.lexer.skip_if(&Token::Semi) {
+            let bug = SyntaxErr::ExpectedSemicolon(self.lexer.peek_pos());
+            self.log.report(&bug);
+        }
+
         Break { label }
     }
 
@@ -1022,6 +1027,11 @@ impl Parser<'_, '_> {
             None
         };
 
+        if !self.lexer.skip_if(&Token::Semi) {
+            let bug = SyntaxErr::ExpectedSemicolon(self.lexer.peek_pos());
+            self.log.report(&bug);
+        }
+
         Continue { label }
     }
 
@@ -1034,6 +1044,11 @@ impl Parser<'_, '_> {
         } else {
             Some(self.parse_expression())
         };
+
+        if !self.lexer.skip_if(&Token::Semi) {
+            let bug = SyntaxErr::ExpectedSemicolon(self.lexer.peek_pos());
+            self.log.report(&bug);
+        }
 
         Return { value }
     }

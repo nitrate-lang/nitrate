@@ -1,6 +1,6 @@
+use crate::{Dump, DumpContext, write_indent};
+use nitrate_hir::prelude::*;
 use nitrate_token::{escape_bstring, escape_string};
-
-use crate::{dump::write_indent, prelude::*};
 
 impl Dump for BlockElement {
     fn dump(

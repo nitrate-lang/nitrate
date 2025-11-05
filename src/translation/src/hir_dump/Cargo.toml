@@ -1,0 +1,9 @@
+[package]
+name = "nitrate_hir_dump"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+nitrate_nstring = { path = "../nstring" }
+nitrate_hir = { path = "../hir" }
+nitrate_token = { path = "../token" }

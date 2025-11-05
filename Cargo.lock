@@ -732,6 +732,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "nitrate_hir_dump"
+version = "0.1.0"
+dependencies = [
+ "nitrate_hir",
+ "nitrate_nstring",
+ "nitrate_token",
+]
+
+[[package]]
 name = "nitrate_hir_evaluate"
 version = "0.1.0"
 dependencies = [
@@ -863,6 +872,7 @@ version = "0.1.0"
 dependencies = [
  "nitrate_diagnosis",
  "nitrate_hir",
+ "nitrate_hir_dump",
  "nitrate_hir_evaluate",
  "nitrate_hir_from_tree",
  "nitrate_hir_get_type",

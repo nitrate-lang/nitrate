@@ -2,7 +2,8 @@ use crate::{Interpreter, InterpreterError, package::Package};
 use clap::Parser;
 use nitrate_diagnosis::{CompilerLog, intern_file_id};
 use nitrate_translation::{
-    hir::{Dump, DumpContext, prelude as hir},
+    hir::prelude as hir,
+    hir_dump::{Dump, DumpContext},
     hir_from_tree::{Ast2HirCtx, convert_ast_to_hir},
     hir_validate::ValidateHir,
     llvm::{LLVMContext, OptLevel},

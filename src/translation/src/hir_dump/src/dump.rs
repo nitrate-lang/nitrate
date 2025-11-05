@@ -1,4 +1,4 @@
-use crate::Store;
+use nitrate_hir::prelude::*;
 
 pub struct DumpContext<'a> {
     pub store: &'a Store,
