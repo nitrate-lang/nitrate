@@ -6,6 +6,8 @@ edition = "2024"
 [dependencies]
 nitrate_diagnosis = { path = "../diagnosis" }
 
+nitrate_nstring = { path = "src/nstring" }
+
 nitrate_token = { path = "src/token" }
 nitrate_token_lexer = { path = "src/token_lexer" }
 
