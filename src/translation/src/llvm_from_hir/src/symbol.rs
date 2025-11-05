@@ -1,8 +1,9 @@
 use inkwell::llvm_sys::prelude::{LLVMModuleRef, LLVMValueRef};
 use inkwell::module::{Linkage, Module};
-use inkwell::types::BasicType;
-use inkwell::values::{AsValueRef, FunctionValue, GlobalValue};
+use inkwell::types::{BasicType, BasicTypeEnum};
+use inkwell::values::{AsValueRef, FunctionValue, GlobalValue, PointerValue};
 use nitrate_hir_validate::ValidHir;
+use nitrate_nstring::NString;
 
 use crate::rvalue::gen_rval;
 use crate::rvalue::{CodegenCtx, gen_block};
@@ -22,10 +23,11 @@ unsafe extern "C" {
 }
 
 pub struct SymbolGenCtx<'ctx, 'store, 'tab, 'package_name> {
+    pub llvm: &'ctx LLVMContext,
     pub store: &'store hir::Store,
     pub tab: &'tab hir::SymbolTab,
-    pub llvm: &'ctx LLVMContext,
     pub module: Module<'ctx>,
+    pub globals: HashMap<NString, (PointerValue<'ctx>, BasicTypeEnum<'ctx>)>,
     pub package_name: &'package_name str,
 }
 
@@ -39,11 +41,12 @@ pub(crate) fn get_ptr_size(ctx: &LLVMContext) -> hir::PtrSize {
 }
 
 fn gen_global<'ctx>(
-    ctx: &'ctx SymbolGenCtx,
+    ctx: &mut SymbolGenCtx<'ctx, '_, '_, '_>,
     visibility: hir::Visibility,
     name: &str,
     init: Option<&hir::ValueId>,
     llvm_global: &mut GlobalValue<'ctx>,
+    global_ty: BasicTypeEnum<'ctx>,
 ) {
     /***********************************************************************/
     // 1. Set Linkage
@@ -78,31 +81,24 @@ fn gen_global<'ctx>(
     );
 
     let bb = ctx.llvm.create_builder();
-    let mut rval_ctx = CodegenCtx {
-        store: ctx.store,
-        tab: ctx.tab,
-        llvm: ctx.llvm,
-        module: &ctx.module,
-        bb: &bb,
-        locals: HashMap::new(),
-        default_continue_target: Vec::new(),
-        default_break_target: Vec::new(),
-    };
+    let mut val_ctx = CodegenCtx::new(ctx.llvm, &ctx.module, ctx.store, ctx.tab, &bb, &ctx.globals);
 
     /***********************************************************************/
     // 3. Generate Constructor Body
     let entry = ctx.llvm.append_basic_block(llvm_ctor_function, "entry");
-    let endb = ctx.llvm.append_basic_block(llvm_ctor_function, "end");
 
     bb.position_at_end(entry);
     let init_value = ctx.store[init.expect("Initial value missing")].borrow();
-    let llvm_init_value = gen_rval(&mut rval_ctx, &init_value).expect("rvalue lowering err");
+    let llvm_init_value = gen_rval(&mut val_ctx, &init_value).expect("rvalue lowering err");
 
     let global_ptr = llvm_global.as_pointer_value();
     bb.build_store(global_ptr, llvm_init_value).unwrap();
-
-    bb.position_at_end(endb);
     bb.build_return(None).unwrap();
+
+    ctx.globals.insert(
+        NString::from(name),
+        (llvm_global.as_pointer_value(), global_ty),
+    );
 
     /***********************************************************************/
     // 4. Register Constructor
@@ -139,23 +135,14 @@ fn gen_function<'ctx>(
         /* Generate Body */
         bb.position_at_end(entry);
 
-        let mut rval_ctx = CodegenCtx {
-            store: ctx.store,
-            tab: ctx.tab,
-            llvm: ctx.llvm,
-            module: &ctx.module,
-            bb: &bb,
-            locals: HashMap::new(),
-            default_continue_target: Vec::new(),
-            default_break_target: Vec::new(),
-        };
-
+        let mut val_ctx =
+            CodegenCtx::new(ctx.llvm, &ctx.module, ctx.store, ctx.tab, &bb, &ctx.globals);
         let body = &ctx.store[body].borrow();
-        gen_block(&mut rval_ctx, body).expect("rvalue lowering err");
+        gen_block(&mut val_ctx, body).expect("rvalue lowering err");
     }
 }
 
-pub(crate) fn gen_module<'ctx>(ctx: &'ctx SymbolGenCtx, module: &hir::Module) {
+pub(crate) fn gen_module<'ctx>(ctx: &mut SymbolGenCtx<'ctx, '_, '_, '_>, module: &hir::Module) {
     for item in &module.items {
         match item {
             hir::Item::TypeAliasDef(_) | hir::Item::StructDef(_) | hir::Item::EnumDef(_) => {}
@@ -165,9 +152,7 @@ pub(crate) fn gen_module<'ctx>(ctx: &'ctx SymbolGenCtx, module: &hir::Module) {
             hir::Item::GlobalVariable(id) => {
                 let hir_global = ctx.store[id].borrow();
                 let hir_global_ty = &ctx.store[&hir_global.ty];
-
                 let global_name = &hir_global.name;
-
                 let global_ty = gen_ty(hir_global_ty, ctx.llvm, ctx.store, ctx.tab);
                 let mut llvm_global = ctx.module.add_global(global_ty, None, global_name);
                 llvm_global.set_initializer(&global_ty.const_zero());
@@ -178,6 +163,7 @@ pub(crate) fn gen_module<'ctx>(ctx: &'ctx SymbolGenCtx, module: &hir::Module) {
                     global_name.as_ref(),
                     hir_global.init.as_ref(),
                     &mut llvm_global,
+                    global_ty,
                 );
             }
 
@@ -228,15 +214,16 @@ pub fn generate_llvmir<'ctx>(
     let module_name = hir.name.to_string();
     let module = llvm.create_module(&module_name);
 
-    let ctx = SymbolGenCtx {
+    let mut ctx = SymbolGenCtx {
         store,
         tab,
         llvm,
         module,
+        globals: HashMap::new(),
         package_name,
     };
 
-    gen_module(&ctx, &hir);
+    gen_module(&mut ctx, &hir);
 
     if ctx.module.verify().is_err() {
         panic!("Generated LLVM module is invalid");

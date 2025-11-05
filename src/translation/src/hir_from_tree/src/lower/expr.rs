@@ -917,7 +917,7 @@ fn ast_localvar2hir(
         Some(ast::Mutability::Const) | None => false,
     };
 
-    let name = var.name.to_string().into();
+    let name = ctx.qualify_name(&var.name).into();
 
     let ty = match var.ty.to_owned() {
         None => ctx.create_inference_placeholder().into_id(&ctx.store),

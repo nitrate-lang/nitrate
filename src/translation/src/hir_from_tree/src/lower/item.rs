@@ -331,6 +331,8 @@ impl Ast2Hir for ast::Function {
 
         let name = ctx.qualify_name(&self.name).into();
 
+        ctx.current_scope.push(self.name.to_string());
+
         if self.generics.is_some() {
             // TODO: support generic functions
             log.report(&HirErr::UnimplementedFeature("generic functions".into()));
@@ -364,6 +366,8 @@ impl Ast2Hir for ast::Function {
 
         let function = SymbolId::Function(function_id.clone());
         ctx.tab.add_symbol(function, &ctx.store);
+
+        ctx.current_scope.pop();
 
         Ok(function_id)
     }
