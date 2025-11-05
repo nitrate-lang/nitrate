@@ -8,10 +8,10 @@ use crate::{
     place::gen_place,
     ty::{gen_function_ty, gen_ty},
 };
-use nitrate_nstring::NString;
 use nitrate_hir::{ValueId, prelude as hir};
 use nitrate_hir_get_type::HirGetType;
 use nitrate_llvm::LLVMContext;
+use nitrate_nstring::NString;
 use std::collections::HashMap;
 use std::ops::Deref;
 
@@ -1327,12 +1327,57 @@ fn gen_rval_unary_not<'ctx>(
 }
 
 fn gen_rval_struct_object<'ctx>(
-    _ctx: &mut CodegenCtx<'ctx, '_, '_, '_, '_>,
-    _struct_path: &NString,
-    _fields: &[(NString, ValueId)],
+    ctx: &mut CodegenCtx<'ctx, '_, '_, '_, '_>,
+    struct_path: &NString,
+    fields: &[(NString, ValueId)],
 ) -> Result<BasicValueEnum<'ctx>, CodegenError> {
-    // TODO: implement struct object codegen
-    unimplemented!()
+    let struct_def = &ctx.store[ctx
+        .tab
+        .get_struct(struct_path)
+        .expect("structure undefined")]
+    .borrow();
+
+    let struct_ty = hir::Type::Struct {
+        struct_type: struct_def.struct_id,
+    };
+
+    let mut field_map = HashMap::new();
+    for (i, field) in ctx.store[&struct_def.struct_id].fields.iter().enumerate() {
+        field_map.insert(field.name.clone(), i);
+    }
+
+    let llvm_ty = gen_ty(&struct_ty, ctx.llvm, ctx.store, ctx.tab);
+    let struct_alloca = ctx.bb.build_alloca(llvm_ty, "struct_alloca").unwrap();
+
+    for (field_name, field_value_id) in fields {
+        let field_index = *field_map
+            .get(field_name)
+            .expect("field not found in struct");
+
+        let field_value = ctx.store[field_value_id].borrow();
+        let llvm_field_value = gen_rval(ctx, &field_value)?;
+
+        let index = ctx.llvm.i32_type().const_int(field_index as u64, false);
+        let gep = unsafe {
+            // SAFETY: ** I don't know if this is safe or not
+            ctx.bb.build_in_bounds_gep(
+                llvm_ty,
+                struct_alloca,
+                &[ctx.llvm.i32_type().const_int(0, false), index],
+                "struct_field_gep",
+            )
+        }
+        .unwrap();
+
+        ctx.bb.build_store(gep, llvm_field_value).unwrap();
+    }
+
+    let load = ctx
+        .bb
+        .build_load(llvm_ty, struct_alloca, "struct_load")
+        .unwrap();
+
+    Ok(load.into())
 }
 
 fn gen_rval_enum_variant<'ctx>(
