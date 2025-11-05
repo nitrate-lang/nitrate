@@ -15,24 +15,8 @@ fn qualify_name(scope: &[IString], name: &str) -> IString {
     qualified.into()
 }
 
-pub type SymbolSet = HashSet<IString>;
-
-fn visit_node(symbol_set: &mut SymbolSet, scope_vec: &Vec<IString>, node: &RefNode) {
-    let name = match node {
-        RefNode::ItemTypeAlias(sym) => qualify_name(&scope_vec, &sym.name),
-        RefNode::ItemStruct(sym) => qualify_name(&scope_vec, &sym.name),
-        RefNode::ItemEnum(sym) => qualify_name(&scope_vec, &sym.name),
-        RefNode::ItemTrait(sym) => qualify_name(&scope_vec, &sym.name),
-        RefNode::ItemFunction(sym) => qualify_name(&scope_vec, &sym.name),
-        RefNode::ItemGlobalVariable(sym) => qualify_name(&scope_vec, &sym.name),
-        _ => return,
-    };
-
-    symbol_set.insert(name);
-}
-
-pub fn discover_symbols(module: &mut Module) -> SymbolSet {
-    let mut symbol_set = SymbolSet::new();
+pub fn discover_symbols(module: &mut Module) -> HashSet<IString> {
+    let mut symbol_set = HashSet::new();
     let mut scope_vec = Vec::new();
 
     module.depth_first_iter(&mut |order, node| {

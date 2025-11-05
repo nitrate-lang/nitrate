@@ -1,19 +1,16 @@
+use crate::{diagnosis::ResolveIssue, symbol_table::discover_symbols};
 use interned_string::IString;
 use nitrate_diagnosis::CompilerLog;
 use nitrate_tree::{
     Order, ParseTreeIterMut, RefNodeMut,
     ast::{ExprPath, Module, TypePath},
 };
-
-use crate::{
-    diagnosis::ResolveIssue,
-    symbol_table::{SymbolSet, discover_symbols},
-};
+use std::collections::HashSet;
 
 fn resolve_expr_path(
     scope: &[String],
     path: &mut ExprPath,
-    symbol_set: &SymbolSet,
+    symbol_set: &HashSet<IString>,
     log: &CompilerLog,
 ) -> bool {
     let pathname = IString::from(
@@ -58,7 +55,7 @@ fn resolve_expr_path(
 fn resolve_type_path(
     scope: &[String],
     path: &mut TypePath,
-    symbol_set: &SymbolSet,
+    symbol_set: &HashSet<IString>,
     log: &CompilerLog,
 ) -> bool {
     let pathname = IString::from(
@@ -105,6 +102,16 @@ pub fn resolve_paths(module: &mut Module, log: &CompilerLog) {
     let mut scope_vec = Vec::new();
 
     module.depth_first_iter_mut(&mut |order, node| {
+        if order == Order::Enter {
+            if let RefNodeMut::TypePath(path) = node {
+                resolve_type_path(&scope_vec, path, &symbol_set, log);
+                return;
+            } else if let RefNodeMut::ExprPath(path) = node {
+                resolve_expr_path(&scope_vec, path, &symbol_set, log);
+                return;
+            }
+        }
+
         if let RefNodeMut::ItemModule(module) = node {
             match order {
                 Order::Enter => {
@@ -115,18 +122,16 @@ pub fn resolve_paths(module: &mut Module, log: &CompilerLog) {
                     scope_vec.pop();
                 }
             }
+        } else if let RefNodeMut::ItemFunction(function) = node {
+            match order {
+                Order::Enter => {
+                    scope_vec.push(function.name.to_string().into());
+                }
 
-            return;
-        }
-
-        if order != Order::Enter {
-            return;
-        }
-
-        if let RefNodeMut::TypePath(path) = node {
-            resolve_type_path(&scope_vec, path, &symbol_set, log);
-        } else if let RefNodeMut::ExprPath(path) = node {
-            resolve_expr_path(&scope_vec, path, &symbol_set, log);
+                Order::Leave => {
+                    scope_vec.pop();
+                }
+            }
         }
     });
 }

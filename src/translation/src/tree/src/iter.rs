@@ -26,6 +26,7 @@ pub trait ParseTreeIter {
     fn depth_first_iter(&self, f: &mut dyn FnMut(Order, RefNode));
 }
 
+#[derive(Debug, Clone, Copy)]
 pub enum RefNode<'a> {
     ExprSyntaxError,
     ExprParentheses(&'a ExprParentheses),
