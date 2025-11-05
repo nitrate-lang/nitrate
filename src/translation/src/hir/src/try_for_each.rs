@@ -156,10 +156,6 @@ impl BlockIter<'_> {
                     store[id].borrow().iter().try_for_each(store, vcb, tcb)?;
                 }
 
-                BlockElement::Stmt(id) => {
-                    store[id].borrow().iter().try_for_each(store, vcb, tcb)?;
-                }
-
                 BlockElement::Local(id) => {
                     let local_variable = &store[id].borrow();
 

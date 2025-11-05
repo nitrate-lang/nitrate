@@ -55,18 +55,11 @@ impl<'ctx, 'module, 'store, 'tab, 'builder, 'global>
 }
 
 #[derive(Debug)]
+#[allow(dead_code)]
 pub enum CodegenError {
-    OperandTypeCombinationError {
-        #[allow(dead_code)]
-        operation_name: &'static str,
-    },
-
-    #[allow(dead_code)]
+    OperandTypeCombinationError { operation_name: &'static str },
     InvalidPlaceValue,
-
-    SymbolNotFound {
-        symbol_name: NString,
-    },
+    SymbolNotFound { symbol_name: NString },
 }
 
 /**
@@ -1812,12 +1805,6 @@ fn gen_rval_block<'ctx>(
 ) -> Result<BasicValueEnum<'ctx>, CodegenError> {
     for (i, element) in hir_block.elements.iter().enumerate() {
         let element_val = match element {
-            hir::BlockElement::Stmt(expr) => {
-                let expr = &ctx.store[expr].borrow();
-                gen_rval(ctx, expr)?;
-                gen_rval_lit_unit(ctx)?
-            }
-
             hir::BlockElement::Expr(expr) => {
                 let expr = &ctx.store[expr].borrow();
                 gen_rval(ctx, expr)?
@@ -2159,11 +2146,6 @@ pub(crate) fn gen_block<'ctx>(
 ) -> Result<(), CodegenError> {
     for element in &hir_block.elements {
         match element {
-            hir::BlockElement::Stmt(expr) => {
-                let expr = &ctx.store[expr].borrow();
-                gen_rval(ctx, expr)?;
-            }
-
             hir::BlockElement::Expr(expr) => {
                 let expr = &ctx.store[expr].borrow();
                 gen_rval(ctx, expr)?;

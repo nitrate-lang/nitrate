@@ -45,15 +45,6 @@ impl HirGetType for Block {
     fn get_type(&self, store: &Store, tab: &SymbolTab) -> Result<Type, TypeInferenceError> {
         match self.elements.last() {
             Some(BlockElement::Expr(last)) => store[last].borrow().get_type(store, tab),
-
-            Some(BlockElement::Stmt(stmt)) => match &*store[stmt].borrow() {
-                Value::Break { label: _ }
-                | Value::Continue { label: _ }
-                | Value::Return { value: _ } => Ok(Type::Never),
-
-                _ => Ok(Type::Unit),
-            },
-
             Some(BlockElement::Local(_)) | None => Ok(Type::Unit),
         }
     }
@@ -214,7 +205,10 @@ impl HirGetType for Value {
                 }
             }
 
-            Value::Cast { value: _, target_type: to } => Ok((&store[to]).clone()),
+            Value::Cast {
+                value: _,
+                target_type: to,
+            } => Ok((&store[to]).clone()),
 
             Value::Borrow {
                 mutable,

@@ -265,7 +265,6 @@ pub enum BlockSafety {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub enum BlockElement {
     Expr(ValueId),
-    Stmt(ValueId),
     Local(LocalVariableId),
 }
 
@@ -410,6 +409,176 @@ pub enum Value {
     Symbol {
         path: NString,
     },
+}
+
+impl Value {
+    pub fn is_unit(&self) -> bool {
+        matches!(self, Value::Unit)
+    }
+
+    pub fn is_bool(&self) -> bool {
+        matches!(self, Value::Bool(_))
+    }
+
+    pub fn is_i8(&self) -> bool {
+        matches!(self, Value::I8(_))
+    }
+
+    pub fn is_i16(&self) -> bool {
+        matches!(self, Value::I16(_))
+    }
+
+    pub fn is_i32(&self) -> bool {
+        matches!(self, Value::I32(_))
+    }
+
+    pub fn is_i64(&self) -> bool {
+        matches!(self, Value::I64(_))
+    }
+
+    pub fn is_i128(&self) -> bool {
+        matches!(self, Value::I128(_))
+    }
+
+    pub fn is_u8(&self) -> bool {
+        matches!(self, Value::U8(_))
+    }
+
+    pub fn is_u16(&self) -> bool {
+        matches!(self, Value::U16(_))
+    }
+
+    pub fn is_u32(&self) -> bool {
+        matches!(self, Value::U32(_))
+    }
+
+    pub fn is_u64(&self) -> bool {
+        matches!(self, Value::U64(_))
+    }
+
+    pub fn is_u128(&self) -> bool {
+        matches!(self, Value::U128(_))
+    }
+
+    pub fn is_f32(&self) -> bool {
+        matches!(self, Value::F32(_))
+    }
+
+    pub fn is_f64(&self) -> bool {
+        matches!(self, Value::F64(_))
+    }
+
+    pub fn is_usize(&self) -> bool {
+        matches!(self, Value::USize32(_) | Value::USize64(_))
+    }
+
+    pub fn is_string_lit(&self) -> bool {
+        matches!(self, Value::StringLit(_))
+    }
+
+    pub fn is_bstring_lit(&self) -> bool {
+        matches!(self, Value::BStringLit(_))
+    }
+
+    pub fn is_inferred_integer(&self) -> bool {
+        matches!(self, Value::InferredInteger(_))
+    }
+
+    pub fn is_inferred_float(&self) -> bool {
+        matches!(self, Value::InferredFloat(_))
+    }
+
+    pub fn is_struct_object(&self) -> bool {
+        matches!(self, Value::StructObject { .. })
+    }
+
+    pub fn is_enum_variant(&self) -> bool {
+        matches!(self, Value::EnumVariant { .. })
+    }
+
+    pub fn is_binary(&self) -> bool {
+        matches!(self, Value::Binary { .. })
+    }
+
+    pub fn is_unary(&self) -> bool {
+        matches!(self, Value::Unary { .. })
+    }
+
+    pub fn is_field_access(&self) -> bool {
+        matches!(self, Value::FieldAccess { .. })
+    }
+
+    pub fn is_index_access(&self) -> bool {
+        matches!(self, Value::IndexAccess { .. })
+    }
+
+    pub fn is_assign(&self) -> bool {
+        matches!(self, Value::Assign { .. })
+    }
+
+    pub fn is_deref(&self) -> bool {
+        matches!(self, Value::Deref { .. })
+    }
+
+    pub fn is_cast(&self) -> bool {
+        matches!(self, Value::Cast { .. })
+    }
+
+    pub fn is_borrow(&self) -> bool {
+        matches!(self, Value::Borrow { .. })
+    }
+
+    pub fn is_list(&self) -> bool {
+        matches!(self, Value::List { .. })
+    }
+
+    pub fn is_tuple(&self) -> bool {
+        matches!(self, Value::Tuple { .. })
+    }
+
+    pub fn is_if(&self) -> bool {
+        matches!(self, Value::If { .. })
+    }
+
+    pub fn is_while(&self) -> bool {
+        matches!(self, Value::While { .. })
+    }
+
+    pub fn is_loop(&self) -> bool {
+        matches!(self, Value::Loop { .. })
+    }
+
+    pub fn is_break(&self) -> bool {
+        matches!(self, Value::Break { .. })
+    }
+
+    pub fn is_continue(&self) -> bool {
+        matches!(self, Value::Continue { .. })
+    }
+
+    pub fn is_return(&self) -> bool {
+        matches!(self, Value::Return { .. })
+    }
+
+    pub fn is_block(&self) -> bool {
+        matches!(self, Value::Block { .. })
+    }
+
+    pub fn is_closure(&self) -> bool {
+        matches!(self, Value::Closure { .. })
+    }
+
+    pub fn is_call(&self) -> bool {
+        matches!(self, Value::Call { .. })
+    }
+
+    pub fn is_method_call(&self) -> bool {
+        matches!(self, Value::MethodCall { .. })
+    }
+
+    pub fn is_symbol(&self) -> bool {
+        matches!(self, Value::Symbol { .. })
+    }
 }
 
 impl TryFrom<Value> for Lit {

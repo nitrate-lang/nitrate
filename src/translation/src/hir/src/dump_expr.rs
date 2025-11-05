@@ -9,10 +9,8 @@ impl Dump for BlockElement {
         o: &mut dyn std::io::Write,
     ) -> Result<(), std::io::Error> {
         match self {
-            BlockElement::Expr(expr_id) => ctx.store[expr_id].borrow().dump(ctx, o),
-
-            BlockElement::Stmt(stmt_id) => {
-                ctx.store[stmt_id].borrow().dump(ctx, o)?;
+            BlockElement::Expr(expr_id) => {
+                ctx.store[expr_id].borrow().dump(ctx, o)?;
                 write!(o, ";")
             }
 

@@ -16,13 +16,6 @@ impl BlockIterMut<'_> {
                         .try_for_each_mut(store, vcb)?;
                 }
 
-                BlockElement::Stmt(id) => {
-                    store[id]
-                        .borrow_mut()
-                        .iter_mut()
-                        .try_for_each_mut(store, vcb)?;
-                }
-
                 BlockElement::Local(id) => {
                     let local_variable = &store[id].borrow_mut();
 

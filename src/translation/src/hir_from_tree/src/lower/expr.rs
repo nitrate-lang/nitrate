@@ -952,9 +952,10 @@ impl Ast2Hir for ast::Block {
     type Hir = Block;
 
     fn ast2hir(self, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
-        let mut elements = Vec::with_capacity(self.elements.len());
+        let elements_len = self.elements.len();
+        let mut elements = Vec::with_capacity(elements_len);
 
-        for element in self.elements {
+        for (i, element) in self.elements.into_iter().enumerate() {
             match element {
                 ast::BlockItem::Expr(e) => {
                     let hir_element = e.ast2hir(ctx, log)?.into_id(&ctx.store);
@@ -963,7 +964,10 @@ impl Ast2Hir for ast::Block {
 
                 ast::BlockItem::Stmt(s) => {
                     let hir_element = s.ast2hir(ctx, log)?.into_id(&ctx.store);
-                    elements.push(BlockElement::Stmt(hir_element));
+                    elements.push(BlockElement::Expr(hir_element));
+                    if i == elements_len - 1 {
+                        elements.push(BlockElement::Expr(Value::Unit.into_id(&ctx.store)));
+                    }
                 }
 
                 ast::BlockItem::Variable(var) => {

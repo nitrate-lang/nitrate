@@ -189,11 +189,6 @@ impl HirEvaluate for BlockElement {
         match self {
             BlockElement::Expr(expr) => ctx.store[expr].borrow().evaluate(ctx),
 
-            BlockElement::Stmt(expr) => {
-                ctx.store[expr].borrow().evaluate(ctx)?;
-                Ok(Value::Unit)
-            }
-
             BlockElement::Local(_local) => {
                 // TODO: handle local variable declarations
                 unimplemented!()
@@ -421,7 +416,10 @@ impl HirEvaluate for Value {
                 }
             }
 
-            Value::FieldAccess { expr, field_name: field } => match ctx.store[expr].borrow().evaluate(ctx)? {
+            Value::FieldAccess {
+                expr,
+                field_name: field,
+            } => match ctx.store[expr].borrow().evaluate(ctx)? {
                 Value::StructObject { fields, .. } => {
                     if let Some((_, field_value)) = fields.iter().find(|x| &x.0 == field) {
                         Ok(ctx.store[field_value].borrow().evaluate(ctx)?)
@@ -472,7 +470,10 @@ impl HirEvaluate for Value {
                 unimplemented!()
             }
 
-            Value::Cast { value: expr, target_type: to } => {
+            Value::Cast {
+                value: expr,
+                target_type: to,
+            } => {
                 let expr = ctx.store[expr].borrow().evaluate(ctx)?;
 
                 if expr.is_literal() {

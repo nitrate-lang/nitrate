@@ -345,13 +345,38 @@ impl Ast2Hir for ast::Function {
         }
 
         let return_type = match &self.return_type {
-            Some(ty) => ty.to_owned().ast2hir(ctx, log)?.into_id(&ctx.store),
-            None => Type::Unit.into_id(&ctx.store),
+            Some(ty) => ty.to_owned().ast2hir(ctx, log)?,
+            None => Type::Unit,
         };
 
-        let body = match &self.definition {
-            Some(block) => Some(block.to_owned().ast2hir(ctx, log)?.into_id(&ctx.store)),
+        let body = match self.definition {
             None => None,
+            Some(block) => {
+                let mut hir_block = block.ast2hir(ctx, log)?;
+                match hir_block.elements.last() {
+                    Some(BlockElement::Expr(expr)) if !ctx.store[expr].borrow().is_return() => {
+                        *hir_block.elements.last_mut().unwrap() = BlockElement::Expr(
+                            Value::Return {
+                                value: expr.to_owned(),
+                            }
+                            .into_id(&ctx.store),
+                        );
+                    }
+
+                    _ if return_type == Type::Unit => {
+                        hir_block.elements.push(BlockElement::Expr(
+                            Value::Return {
+                                value: Value::Unit.into_id(&ctx.store),
+                            }
+                            .into_id(&ctx.store),
+                        ));
+                    }
+
+                    _ => log.report(&HirErr::MissingReturnStatement),
+                }
+
+                Some(hir_block.into_id(&ctx.store))
+            }
         };
 
         let function_id = Function {
@@ -359,7 +384,7 @@ impl Ast2Hir for ast::Function {
             attributes,
             name,
             params: parameters,
-            return_type,
+            return_type: return_type.into_id(&ctx.store),
             body,
         }
         .into_id(&ctx.store);

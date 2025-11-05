@@ -8,7 +8,6 @@ impl ValidateHir for Block {
         for elem in &self.elements {
             match elem {
                 BlockElement::Expr(expr) => store[expr].borrow().verify(store, symtab)?,
-                BlockElement::Stmt(expr) => store[expr].borrow().verify(store, symtab)?,
                 BlockElement::Local(local) => store[local].borrow().verify(store, symtab)?,
             }
         }
@@ -103,7 +102,10 @@ impl ValidateHir for Value {
                 Ok(())
             }
 
-            Value::Cast { value: _, target_type: _ } => {
+            Value::Cast {
+                value: _,
+                target_type: _,
+            } => {
                 // TODO: verify cast
                 Ok(())
             }

@@ -24,6 +24,7 @@ pub(crate) enum HirErr {
     UnresolvedTypePath,
     UnrecognizedLocalVariableAttribute,
     UnresolvedSymbol,
+    MissingReturnStatement,
 }
 
 impl FormattableDiagnosticGroup for HirErr {
@@ -56,6 +57,7 @@ impl FormattableDiagnosticGroup for HirErr {
             HirErr::UnresolvedTypePath => 28,
             HirErr::UnrecognizedLocalVariableAttribute => 30,
             HirErr::UnresolvedSymbol => 31,
+            HirErr::MissingReturnStatement => 32,
         }
     }
 
@@ -173,6 +175,11 @@ impl FormattableDiagnosticGroup for HirErr {
 
             HirErr::UnresolvedSymbol => DiagnosticInfo {
                 message: "unresolved symbol".to_string(),
+                origin: Origin::None,
+            },
+
+            HirErr::MissingReturnStatement => DiagnosticInfo {
+                message: "missing return statement in function".to_string(),
                 origin: Origin::None,
             },
         }
