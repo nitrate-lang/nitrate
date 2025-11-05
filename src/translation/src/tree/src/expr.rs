@@ -69,7 +69,7 @@ pub struct Tuple {
 #[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct StructInit {
-    pub type_name: TypePath,
+    pub path: ExprPath,
     pub fields: Vec<(IString, Expr)>,
 }
 

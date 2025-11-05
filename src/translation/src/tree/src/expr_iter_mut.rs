@@ -102,7 +102,7 @@ impl ParseTreeIterMut for StructInit {
     fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
         f(Order::Enter, RefNodeMut::ExprStructInit(self));
 
-        self.type_name.depth_first_iter_mut(f);
+        self.path.depth_first_iter_mut(f);
 
         for (key, value) in &mut self.fields {
             let _ = key;

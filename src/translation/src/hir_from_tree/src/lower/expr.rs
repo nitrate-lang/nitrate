@@ -441,7 +441,7 @@ impl Ast2Hir for ast::StructInit {
 
     fn ast2hir(self, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
         if self
-            .type_name
+            .path
             .segments
             .iter()
             .any(|seg| seg.type_arguments.is_some())
@@ -460,7 +460,7 @@ impl Ast2Hir for ast::StructInit {
             fields.push((field_name, field_value));
         }
 
-        if let Some(resolved_path) = self.type_name.resolved_path {
+        if let Some(resolved_path) = self.path.resolved_path {
             return Ok(Value::StructObject {
                 struct_path: IString::from(resolved_path),
                 fields: fields.into(),

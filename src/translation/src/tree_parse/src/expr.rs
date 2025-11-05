@@ -8,9 +8,9 @@ use nitrate_tree::ast::{
     Break, Cast, Closure, Continue, ElseIf, Expr, ExprParentheses, ExprPath, ExprPathSegment,
     ExprSyntaxError, FieldAccess, Float32, Float64, FloatLit, ForEach, FuncParam, FunctionCall, If,
     IndexAccess, Int8, Int16, Int32, Int64, Int128, IntegerLit, List, LocalVariable,
-    LocalVariableKind, MethodCall, Mutability, Return, Safety, StringLit, Tuple, Type,
-    TypeArgument, TypeInfo, TypePath, TypePathSegment, UInt8, UInt16, UInt32, UInt64, UInt128,
-    USize, UnaryExpr, UnaryExprOp, WhileLoop,
+    LocalVariableKind, MethodCall, Mutability, Return, Safety, StringLit, StructField, StructInit,
+    Tuple, Type, TypeArgument, TypeInfo, TypePath, TypePathSegment, UInt8, UInt16, UInt32, UInt64,
+    UInt128, USize, UnaryExpr, UnaryExprOp, WhileLoop,
 };
 
 type Precedence = u32;
@@ -355,7 +355,14 @@ impl Parser<'_, '_> {
 
             Token::OpenBracket => Expr::List(Box::new(self.parse_list())),
 
-            Token::Name(_) | Token::Colon => Expr::Path(Box::new(self.parse_path())),
+            Token::Name(_) | Token::Colon => {
+                let path = self.parse_path();
+                if self.lexer.next_is(&Token::OpenBrace) {
+                    Expr::StructInit(Box::new(self.parse_struct_object(path)))
+                } else {
+                    Expr::Path(Box::new(path))
+                }
+            }
 
             Token::Type => Expr::TypeInfo(Box::new(TypeInfo {
                 the: self.parse_type_info(),
@@ -816,6 +823,46 @@ impl Parser<'_, '_> {
             segments,
             resolved_path: None,
         }
+    }
+
+    fn parse_struct_object(&mut self, path: ExprPath) -> StructInit {
+        assert!(self.lexer.peek_t() == Token::OpenBrace);
+        self.lexer.skip_tok();
+
+        let mut fields = Vec::new();
+
+        while !self.lexer.skip_if(&Token::CloseBrace) {
+            if self.lexer.is_eof() {
+                let bug = SyntaxErr::StructExpectedFieldOrEnd(self.lexer.peek_pos());
+                self.log.report(&bug);
+                break;
+            }
+
+            let field_name = self.lexer.next_if_name().unwrap_or_else(|| {
+                let bug = SyntaxErr::StructExpectedFieldName(self.lexer.peek_pos());
+                self.log.report(&bug);
+                "".into()
+            });
+
+            if !self.lexer.skip_if(&Token::Colon) {
+                let bug = SyntaxErr::StructExpectedColon(self.lexer.peek_pos());
+                self.log.report(&bug);
+            }
+
+            let field_value = self.parse_expression();
+
+            fields.push((field_name.into(), field_value));
+
+            if !self.lexer.skip_if(&Token::Comma) && !self.lexer.next_is(&Token::CloseBrace) {
+                let bug = SyntaxErr::StructExpectedFieldOrEnd(self.lexer.peek_pos());
+                self.log.report(&bug);
+
+                self.lexer.skip_while(&Token::CloseBrace);
+                break;
+            }
+        }
+
+        StructInit { path, fields }
     }
 
     fn parse_type_info(&mut self) -> Type {

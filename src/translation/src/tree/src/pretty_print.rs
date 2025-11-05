@@ -262,7 +262,7 @@ impl PrettyPrint for StructInit {
         ctx: &mut PrintContext,
         writer: &mut dyn std::fmt::Write,
     ) -> std::fmt::Result {
-        self.type_name.pretty_print_fmt(ctx, writer)?;
+        self.path.pretty_print_fmt(ctx, writer)?;
 
         if self.fields.is_empty() {
             writer.write_str(" {}")

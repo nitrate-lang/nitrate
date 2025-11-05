@@ -57,6 +57,9 @@ pub(crate) enum SyntaxErr {
 
     ReferenceTypeExpectedLifetimeName(SourcePosition),
 
+    StructExpectedFieldOrEnd(SourcePosition),
+    StructExpectedFieldName(SourcePosition),
+    StructExpectedColon(SourcePosition),
 
     TupleTypeExpectedEnd(SourcePosition),
     TupleTypeElementLimit(SourcePosition),
@@ -165,6 +168,9 @@ impl FormattableDiagnosticGroup for SyntaxErr {
 
             SyntaxErr::ReferenceTypeExpectedLifetimeName(_) => 240,
 
+            SyntaxErr::StructExpectedFieldOrEnd(_) => 260,
+            SyntaxErr::StructExpectedFieldName(_) => 261,
+            SyntaxErr::StructExpectedColon(_) => 262,
 
             SyntaxErr::TupleTypeExpectedEnd(_) => 280,
             SyntaxErr::TupleTypeElementLimit(_) => 281,
@@ -433,6 +439,23 @@ impl FormattableDiagnosticGroup for SyntaxErr {
                 message: "reference lifetime is missing after '".into(),
             },
             
+            /* ------------------------------------------------------------------------- */
+
+            SyntaxErr::StructExpectedFieldOrEnd(pos) => DiagnosticInfo {
+                origin: Origin::Point(pos.to_owned().into()),
+                message: "expected field name or '}'".into(),
+            },
+
+            SyntaxErr::StructExpectedFieldName(pos) => DiagnosticInfo {
+                origin: Origin::Point(pos.to_owned().into()),
+                message: "expected field name".into(),
+            },
+
+            SyntaxErr::StructExpectedColon(pos) => DiagnosticInfo {
+                origin: Origin::Point(pos.to_owned().into()),
+                message: "expected ':' after field name".into(),
+            },
+
             /* ------------------------------------------------------------------------- */
 
             SyntaxErr::TupleTypeExpectedEnd(pos) => DiagnosticInfo {
