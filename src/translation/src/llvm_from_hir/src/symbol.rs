@@ -218,9 +218,9 @@ pub fn generate_llvmir<'ctx>(
 
     gen_module(&mut ctx, &hir);
 
-    // if ctx.module.verify().is_err() {
-    //     panic!("Generated LLVM module is invalid");
-    // }
+    if ctx.module.verify().is_err() {
+        panic!("Generated LLVM module is invalid");
+    }
 
     ctx.module
 }
