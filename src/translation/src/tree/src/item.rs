@@ -318,4 +318,5 @@ pub enum SymbolKind {
     Function,
     GlobalVariable,
     LocalVariable,
+    Parameter,
 }

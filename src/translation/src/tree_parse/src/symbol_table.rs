@@ -50,6 +50,11 @@ pub fn discover_symbols(module: &mut Module) -> HashMap<NString, SymbolKind> {
                     symbol_map.insert(name, SymbolKind::Function);
                 }
 
+                RefNode::ItemFuncParam(sym) => {
+                    let name = qualify_name(&scope_vec, &sym.name);
+                    symbol_map.insert(name, SymbolKind::Parameter);
+                }
+
                 RefNode::ItemGlobalVariable(sym) => {
                     let name = qualify_name(&scope_vec, &sym.name);
                     symbol_map.insert(name, SymbolKind::GlobalVariable);

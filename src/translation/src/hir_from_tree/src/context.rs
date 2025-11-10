@@ -13,11 +13,12 @@ pub struct Ast2HirCtx {
 
     pub(crate) ast_symbol_map: HashMap<NString, SymbolKind>,
     pub(crate) current_scope: Vec<NString>,
-    pub(crate) _impl_map: HashMap<TypeId, HashSet<TraitId>>,
-    pub(crate) type_infer_id_ctr: NonZeroU32,
-    pub(crate) unique_name_ctr: u32,
     pub(crate) ptr_size: PtrSize,
     pub(crate) current_package_name: NString,
+
+    _impl_map: HashMap<TypeId, HashSet<TraitId>>,
+    type_infer_id_ctr: NonZeroU32,
+    unique_name_ctr: u32,
 }
 
 impl Ast2HirCtx {

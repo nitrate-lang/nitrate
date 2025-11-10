@@ -730,35 +730,67 @@ impl Ast2Hir for ast::ExprPath {
 
         if let Some(resolved_path) = self.resolved_path {
             match ctx.ast_symbol_map.get(&resolved_path) {
-                Some(SymbolKind::TypeAlias) => {
-                    todo!()
-                }
-
-                Some(SymbolKind::Struct) => {
-                    todo!()
-                }
-
-                Some(SymbolKind::Enum) => {
-                    todo!()
-                }
-
-                Some(SymbolKind::Trait) => {
-                    todo!()
-                }
-
                 Some(SymbolKind::Function) => {
-                    todo!()
+                    match ctx.tab.get_function(&resolved_path) {
+                        Some(existing_function_id) => {
+                            return Ok(Value::FunctionSymbol {
+                                id: existing_function_id.clone(),
+                            });
+                        }
+
+                        None => {
+                            // TODO: Create function placeholder
+                            unimplemented!()
+                        }
+                    }
                 }
 
                 Some(SymbolKind::GlobalVariable) => {
-                    todo!()
+                    match ctx.tab.get_global_variable(&resolved_path) {
+                        Some(existing_global_variable_id) => {
+                            return Ok(Value::GlobalVariableSymbol {
+                                id: existing_global_variable_id.clone(),
+                            });
+                        }
+
+                        None => {
+                            // TODO: Create global variable placeholder
+                            unimplemented!()
+                        }
+                    }
                 }
 
                 Some(SymbolKind::LocalVariable) => {
-                    todo!()
+                    match ctx.tab.get_local_variable(&resolved_path) {
+                        Some(existing_local_variable_id) => {
+                            return Ok(Value::LocalVariableSymbol {
+                                id: existing_local_variable_id.clone(),
+                            });
+                        }
+
+                        None => {
+                            // TODO: Create local variable placeholder
+                            unimplemented!()
+                        }
+                    }
                 }
 
-                None => todo!(),
+                Some(SymbolKind::Parameter) => {
+                    match ctx.tab.get_parameter(&resolved_path) {
+                        Some(existing_parameter_id) => {
+                            return Ok(Value::ParameterSymbol {
+                                id: existing_parameter_id.clone(),
+                            });
+                        }
+
+                        None => {
+                            // TODO: Create parameter placeholder
+                            unimplemented!()
+                        }
+                    }
+                }
+
+                _ => { /* fallthrough to error below */ }
             }
         }
 
