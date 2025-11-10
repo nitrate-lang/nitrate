@@ -3,7 +3,7 @@ use nitrate_tree::{
     Order, ParseTreeIter, RefNode,
     ast::{Module, SymbolKind},
 };
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 
 fn qualify_name(scope: &[NString], name: &str) -> NString {
     let length = scope.iter().map(|s| s.len() + 2).sum::<usize>() + name.len();

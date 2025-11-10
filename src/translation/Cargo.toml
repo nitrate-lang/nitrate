@@ -13,6 +13,7 @@ nitrate_token_lexer = { path = "src/token_lexer" }
 
 nitrate_tree = { path = "src/tree" }
 nitrate_tree_parse = { path = "src/tree_parse" }
+nitrate_tree_resolve = { path = "src/tree_resolve" }
 nitrate_hir_from_tree = { path = "src/hir_from_tree" }
 
 nitrate_hir = { path = "src/hir" }

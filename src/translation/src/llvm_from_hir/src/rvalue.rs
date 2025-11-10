@@ -1433,12 +1433,17 @@ fn gen_rval_index_access<'ctx>(
 }
 
 fn gen_rval_assign<'ctx>(
-    _ctx: &mut CodegenCtx<'ctx, '_, '_, '_, '_, '_>,
-    _place: &hir::Value,
-    _value: &hir::Value,
+    ctx: &mut CodegenCtx<'ctx, '_, '_, '_, '_, '_>,
+    place: &hir::Value,
+    value: &hir::Value,
 ) -> Result<BasicValueEnum<'ctx>, CodegenError> {
-    // TODO: implement assignment codegen
-    unimplemented!()
+    // FIXME: Consider drop semantics? Is that codegen's responsibility or HIR?
+
+    let llvm_place = gen_place(ctx, place)?;
+    let llvm_value = gen_rval(ctx, value)?;
+
+    ctx.bb.build_store(llvm_place, llvm_value).unwrap();
+    Ok(llvm_value)
 }
 
 fn gen_rval_deref<'ctx>(
@@ -2138,24 +2143,24 @@ pub(crate) fn gen_rval<'ctx>(
             gen_rval_method_call(ctx, object, method_name, positional)
         }
 
-        hir::Value::FunctionSymbol { id: _ } => {
-            // TODO: implement function symbol codegen
-            unimplemented!()
+        hir::Value::FunctionSymbol { id } => {
+            let function_def = &ctx.store[id].borrow();
+            gen_rval_symbol(ctx, &function_def.name)
         }
 
-        hir::Value::GlobalVariableSymbol { id: _ } => {
-            // TODO: implement global variable symbol codegen
-            unimplemented!()
+        hir::Value::GlobalVariableSymbol { id } => {
+            let global_def = &ctx.store[id].borrow();
+            gen_rval_symbol(ctx, &global_def.name)
         }
 
-        hir::Value::LocalVariableSymbol { id: _ } => {
-            // TODO: implement local variable symbol codegen
-            unimplemented!()
+        hir::Value::LocalVariableSymbol { id } => {
+            let local_def = &ctx.store[id].borrow();
+            gen_rval_symbol(ctx, &local_def.name)
         }
 
-        hir::Value::ParameterSymbol { id: _ } => {
-            // TODO: implement parameter symbol codegen
-            unimplemented!()
+        hir::Value::ParameterSymbol { id } => {
+            let param_def = &ctx.store[id].borrow();
+            gen_rval_symbol(ctx, &param_def.name)
         }
     }
 }

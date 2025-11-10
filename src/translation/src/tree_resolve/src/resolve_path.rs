@@ -97,7 +97,7 @@ fn resolve_type_path(
     false
 }
 
-pub fn resolve_paths(module: &mut Module, log: &CompilerLog) {
+pub fn resolve_paths(module: &mut Module, log: &CompilerLog) -> HashMap<NString, SymbolKind> {
     let symbol_map = discover_symbols(module);
     let mut scope_vec = Vec::new();
 
@@ -134,4 +134,6 @@ pub fn resolve_paths(module: &mut Module, log: &CompilerLog) {
             }
         }
     });
+
+    symbol_map
 }

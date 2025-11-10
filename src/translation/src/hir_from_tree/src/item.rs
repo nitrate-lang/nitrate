@@ -385,6 +385,8 @@ impl Ast2Hir for ast::Function {
             Some(block) => {
                 let mut hir_block = block.ast2hir(ctx, log)?;
                 match hir_block.elements.last() {
+                    Some(BlockElement::Expr(expr)) if ctx.store[expr].borrow().is_return() => {}
+
                     Some(BlockElement::Expr(expr)) if !ctx.store[expr].borrow().is_return() => {
                         *hir_block.elements.last_mut().unwrap() = BlockElement::Expr(
                             Value::Return {

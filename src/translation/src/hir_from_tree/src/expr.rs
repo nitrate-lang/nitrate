@@ -11,30 +11,8 @@ use nitrate_tree::ast::{self as ast, SymbolKind, UnaryExprOp};
 use nitrate_tree_parse::Parser;
 use ordered_float::OrderedFloat;
 use std::collections::BTreeSet;
-use std::fmt::Write;
 
-fn from_nitrate_expression(_ctx: &mut Ast2HirCtx, nitrate_expr: &str) -> Result<Value, ()> {
-    let lexer = match Lexer::new(nitrate_expr.as_bytes(), None) {
-        Ok(lexer) => lexer,
-        Err(LexerError::SourceTooBig) => return Err(()),
-    };
-
-    let trash = CompilerLog::default();
-    let mut parser = Parser::new(lexer, &trash);
-
-    let _expression = parser.parse_expression();
-    if trash.error_bit() {
-        return Err(());
-    }
-
-    unimplemented!();
-    // TODO: Lower the parsed expression into HIR
-}
-
-pub(crate) enum EncodeErr {
-    CannotEncodeInferredType,
-    UnresolvedTypePath,
-}
+pub(crate) enum EncodeErr {}
 
 fn metatype_encode(_ctx: &mut Ast2HirCtx, _from: Type) -> Result<Value, EncodeErr> {
     // TODO: Serialize the type metaprogrammatically
@@ -728,28 +706,27 @@ impl Ast2Hir for ast::ExprPath {
             ));
         }
 
-        if let Some(resolved_path) = self.resolved_path {
-            match ctx.ast_symbol_map.get(&resolved_path) {
-                Some(SymbolKind::Function) => {
-                    match ctx.tab.get_function(&resolved_path) {
-                        Some(existing_function_id) => {
-                            return Ok(Value::FunctionSymbol {
-                                id: existing_function_id.clone(),
-                            });
-                        }
-
-                        None => {
-                            // TODO: Create function placeholder
-                            unimplemented!()
-                        }
+        match self.resolved_path {
+            Some(resolved_path) => match ctx.ast_symbol_map.get(&resolved_path) {
+                Some(SymbolKind::Function) => match ctx.tab.get_function(&resolved_path) {
+                    Some(existing_function_id) => {
+                        println!("Resolved function path: {}", resolved_path);
+                        return Ok(Value::FunctionSymbol {
+                            id: existing_function_id.clone(),
+                        });
                     }
-                }
+
+                    None => {
+                        // TODO: Create function placeholder
+                        unimplemented!()
+                    }
+                },
 
                 Some(SymbolKind::GlobalVariable) => {
                     match ctx.tab.get_global_variable(&resolved_path) {
-                        Some(existing_global_variable_id) => {
+                        Some(existing_variable_id) => {
                             return Ok(Value::GlobalVariableSymbol {
-                                id: existing_global_variable_id.clone(),
+                                id: existing_variable_id.clone(),
                             });
                         }
 
@@ -790,12 +767,19 @@ impl Ast2Hir for ast::ExprPath {
                     }
                 }
 
-                _ => { /* fallthrough to error below */ }
+                _ => {
+                    println!("Unresolved symbol: {}", resolved_path);
+                    log.report(&HirErr::UnresolvedSymbol);
+                    Err(())
+                }
+            },
+
+            None => {
+                println!("Unresolved path in expr: {:?}", self.segments);
+                log.report(&HirErr::UnresolvedSymbol);
+                Err(())
             }
         }
-
-        log.report(&HirErr::UnresolvedSymbol);
-        Err(())
     }
 }
 

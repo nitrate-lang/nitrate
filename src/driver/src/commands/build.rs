@@ -8,7 +8,6 @@ use nitrate_translation::{
     hir_validate::ValidateHir,
     llvm::{LLVMContext, OptLevel},
     llvm_from_hir::generate_llvmir,
-    parse::ResolveCtx,
     parsetree::ast,
     token_lexer::{Lexer, LexerError},
 };
@@ -165,12 +164,7 @@ impl Interpreter<'_> {
 
         let mut parser = nitrate_translation::parse::Parser::new(lexer, &log);
 
-        Ok(parser.parse_source(
-            package_name.into(),
-            Some(ResolveCtx {
-                package_search_paths: self.get_search_paths(),
-            }),
-        ))
+        Ok(parser.parse_source(package_name.into()))
     }
 
     fn show_ast(&self, module: &ast::Module, format_mode: &Option<String>) {
@@ -231,7 +225,7 @@ impl Interpreter<'_> {
         }
     }
 
-    fn get_search_paths(&self) -> Vec<PathBuf> {
+    fn _get_search_paths(&self) -> Vec<PathBuf> {
         let mut search_paths = Vec::new();
 
         search_paths.push(std::env::current_dir().unwrap().join(".no3/modules"));

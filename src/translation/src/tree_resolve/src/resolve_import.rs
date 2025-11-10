@@ -1,4 +1,3 @@
-use crate::{Parser, diagnosis::ResolveIssue};
 use nitrate_diagnosis::{CompilerLog, intern_file_id};
 use nitrate_nstring::NString;
 use nitrate_token_lexer::{Lexer, LexerError};
@@ -6,8 +5,11 @@ use nitrate_tree::{
     Order, ParseTreeIterMut, RefNodeMut,
     ast::{Import, Item, Module, Visibility},
 };
+use nitrate_tree_parse::Parser;
 
 use std::{collections::HashSet, sync::Arc};
+
+use crate::diagnosis::ResolveIssue;
 
 pub type SourceFilePath = std::path::PathBuf;
 pub type FolderPath = std::path::PathBuf;
@@ -161,7 +163,7 @@ fn load_source_file(
         }
     };
 
-    let mut module = Parser::new(lexer, log).parse_source(source_from_package_name.clone(), None);
+    let mut module = Parser::new(lexer, log).parse_source(source_from_package_name.clone());
     module.name = source_from_package_name;
 
     module.items = module

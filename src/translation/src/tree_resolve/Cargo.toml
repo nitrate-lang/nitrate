@@ -1,0 +1,14 @@
+[package]
+name = "nitrate_tree_resolve"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+nitrate_nstring = { path = "../nstring" }
+nitrate_token = { path = "../token" }
+nitrate_token_lexer = { path = "../token_lexer" }
+nitrate_tree = { path = "../tree" }
+nitrate_tree_parse = { path = "../tree_parse" }
+nitrate_diagnosis = { path = "../../../diagnosis" }
+
+log = "0.4.27"

@@ -1,12 +1,8 @@
-use crate::{
-    resolve_import::{ImportContext, resolve_imports},
-    resolve_path::resolve_paths,
-};
 use nitrate_diagnosis::CompilerLog;
 use nitrate_nstring::NString;
 use nitrate_token_lexer::Lexer;
 use nitrate_tree::ast::Module;
-use std::{ops::Deref, path::PathBuf};
+use std::path::PathBuf;
 
 pub struct Parser<'a, 'log> {
     pub(crate) lexer: Lexer<'a>,
@@ -22,9 +18,7 @@ impl<'a, 'log> Parser<'a, 'log> {
         Parser { lexer, log: log }
     }
 
-    pub fn parse_source(&mut self, package_name: NString, resolve: Option<ResolveCtx>) -> Module {
-        let current_file = self.lexer.peek_tok().fileid;
-
+    pub fn parse_source(&mut self, package_name: NString) -> Module {
         let mut items = Vec::new();
 
         while !self.lexer.is_eof() {
@@ -32,23 +26,11 @@ impl<'a, 'log> Parser<'a, 'log> {
             items.push(item);
         }
 
-        let mut module = Module {
+        Module {
             name: package_name.clone(),
             visibility: None,
             items,
             attributes: None,
-        };
-
-        if let Some(resolve_ctx) = resolve {
-            if let Some(fileid) = current_file {
-                let import_ctx = ImportContext::new(package_name, PathBuf::from(fileid.deref()))
-                    .with_package_search_paths(resolve_ctx.package_search_paths);
-                resolve_imports(&import_ctx, &mut module, self.log);
-            }
-
-            resolve_paths(&mut module, self.log);
         }
-
-        module
     }
 }
