@@ -1,4 +1,4 @@
-use crate::{context::Ast2HirCtx, convert_ast_to_hir, diagnosis::HirErr, lower::lower::Ast2Hir};
+use crate::{context::Ast2HirCtx, convert_ast_to_hir, diagnosis::HirErr, lower::Ast2Hir};
 use nitrate_diagnosis::CompilerLog;
 use nitrate_hir::prelude::*;
 use nitrate_nstring::NString;

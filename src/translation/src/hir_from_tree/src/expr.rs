@@ -1,6 +1,6 @@
 use crate::context::Ast2HirCtx;
 use crate::diagnosis::HirErr;
-use crate::lower::lower::Ast2Hir;
+use crate::lower::Ast2Hir;
 use nitrate_diagnosis::CompilerLog;
 use nitrate_hir::{SymbolTab, prelude::*};
 use nitrate_hir_get_type::HirGetType;
