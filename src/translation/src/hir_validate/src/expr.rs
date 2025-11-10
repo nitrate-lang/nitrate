@@ -217,11 +217,6 @@ impl ValidateHir for Value {
                 // TODO: verify symbol
                 Ok(())
             }
-
-            Value::Symbol { path: _ } => {
-                // TODO: verify symbol
-                Ok(())
-            }
         }
     }
 

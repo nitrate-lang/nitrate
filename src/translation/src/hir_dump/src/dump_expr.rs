@@ -403,8 +403,6 @@ impl Dump for Value {
                 let param = ctx.store[id].borrow();
                 write!(o, "param {}", param.name)
             }
-
-            Value::Symbol { path } => write!(o, "{}", path),
         }
     }
 }

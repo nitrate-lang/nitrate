@@ -3,14 +3,14 @@ use nitrate_diagnosis::CompilerLog;
 use nitrate_nstring::NString;
 use nitrate_tree::{
     Order, ParseTreeIterMut, RefNodeMut,
-    ast::{ExprPath, Module, TypePath},
+    ast::{ExprPath, Module, SymbolKind, TypePath},
 };
-use std::collections::HashSet;
+use std::collections::HashMap;
 
 fn resolve_expr_path(
     scope: &[String],
     path: &mut ExprPath,
-    symbol_set: &HashSet<NString>,
+    symbol_map: &HashMap<NString, SymbolKind>,
     log: &CompilerLog,
 ) -> bool {
     let pathname = NString::from(
@@ -28,7 +28,7 @@ fn resolve_expr_path(
         .unwrap_or(false);
 
     if is_root_path {
-        if symbol_set.contains(&pathname) {
+        if symbol_map.contains_key(&pathname) {
             path.resolved_path = Some(pathname);
             return true;
         }
@@ -40,7 +40,7 @@ fn resolve_expr_path(
         let current_scope = &scope[0..=i];
         let name = format!("{}::{}", current_scope.join("::"), pathname).into();
 
-        if symbol_set.contains(&name) {
+        if symbol_map.contains_key(&name) {
             path.resolved_path = Some(name);
             return true;
         }
@@ -55,7 +55,7 @@ fn resolve_expr_path(
 fn resolve_type_path(
     scope: &[String],
     path: &mut TypePath,
-    symbol_set: &HashSet<NString>,
+    symbol_map: &HashMap<NString, SymbolKind>,
     log: &CompilerLog,
 ) -> bool {
     let pathname = NString::from(
@@ -73,7 +73,7 @@ fn resolve_type_path(
         .unwrap_or(false);
 
     if is_root_path {
-        if symbol_set.contains(&pathname) {
+        if symbol_map.contains_key(&pathname) {
             path.resolved_path = Some(pathname);
             return true;
         }
@@ -85,7 +85,7 @@ fn resolve_type_path(
         let current_scope = &scope[0..=i];
         let name = format!("{}::{}", current_scope.join("::"), pathname).into();
 
-        if symbol_set.contains(&name) {
+        if symbol_map.contains_key(&name) {
             path.resolved_path = Some(name);
             return true;
         }
@@ -98,16 +98,16 @@ fn resolve_type_path(
 }
 
 pub fn resolve_paths(module: &mut Module, log: &CompilerLog) {
-    let symbol_set = discover_symbols(module);
+    let symbol_map = discover_symbols(module);
     let mut scope_vec = Vec::new();
 
     module.depth_first_iter_mut(&mut |order, node| {
         if order == Order::Enter {
             if let RefNodeMut::TypePath(path) = node {
-                resolve_type_path(&scope_vec, path, &symbol_set, log);
+                resolve_type_path(&scope_vec, path, &symbol_map, log);
                 return;
             } else if let RefNodeMut::ExprPath(path) = node {
-                resolve_expr_path(&scope_vec, path, &symbol_set, log);
+                resolve_expr_path(&scope_vec, path, &symbol_map, log);
                 return;
             }
         }

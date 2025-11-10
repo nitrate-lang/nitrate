@@ -421,10 +421,6 @@ pub enum Value {
     ParameterSymbol {
         id: ParameterId,
     },
-
-    Symbol {
-        path: NString,
-    },
 }
 
 impl Value {
@@ -590,10 +586,6 @@ impl Value {
 
     pub fn is_method_call(&self) -> bool {
         matches!(self, Value::MethodCall { .. })
-    }
-
-    pub fn is_symbol(&self) -> bool {
-        matches!(self, Value::Symbol { .. })
     }
 }
 

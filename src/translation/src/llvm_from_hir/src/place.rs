@@ -118,7 +118,5 @@ pub(crate) fn gen_place<'ctx>(
             // TODO: implement parameter symbol codegen
             unimplemented!()
         }
-
-        hir::Value::Symbol { path } => gen_place_symbol(ctx, path),
     }
 }

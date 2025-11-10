@@ -1,6 +1,9 @@
 use nitrate_nstring::NString;
-use nitrate_tree::{Order, ParseTreeIter, RefNode, ast::Module};
-use std::collections::HashSet;
+use nitrate_tree::{
+    Order, ParseTreeIter, RefNode,
+    ast::{Module, SymbolKind},
+};
+use std::collections::{HashMap, HashSet};
 
 fn qualify_name(scope: &[NString], name: &str) -> NString {
     let length = scope.iter().map(|s| s.len() + 2).sum::<usize>() + name.len();
@@ -15,23 +18,49 @@ fn qualify_name(scope: &[NString], name: &str) -> NString {
     qualified.into()
 }
 
-pub fn discover_symbols(module: &mut Module) -> HashSet<NString> {
-    let mut symbol_set = HashSet::new();
+pub fn discover_symbols(module: &mut Module) -> HashMap<NString, SymbolKind> {
+    let mut symbol_map = HashMap::new();
     let mut scope_vec = Vec::new();
 
     module.depth_first_iter(&mut |order, node| {
         if order == Order::Enter {
-            if let Some(symbol_name) = match node {
-                RefNode::ItemTypeAlias(sym) => Some(qualify_name(&scope_vec, &sym.name)),
-                RefNode::ItemStruct(sym) => Some(qualify_name(&scope_vec, &sym.name)),
-                RefNode::ItemEnum(sym) => Some(qualify_name(&scope_vec, &sym.name)),
-                RefNode::ItemTrait(sym) => Some(qualify_name(&scope_vec, &sym.name)),
-                RefNode::ItemFunction(sym) => Some(qualify_name(&scope_vec, &sym.name)),
-                RefNode::ItemGlobalVariable(sym) => Some(qualify_name(&scope_vec, &sym.name)),
-                RefNode::ExprLocalVariable(sym) => Some(qualify_name(&scope_vec, &sym.name)),
-                _ => None,
-            } {
-                symbol_set.insert(symbol_name);
+            match node {
+                RefNode::ItemTypeAlias(sym) => {
+                    let name = qualify_name(&scope_vec, &sym.name);
+                    symbol_map.insert(name, SymbolKind::TypeAlias);
+                }
+
+                RefNode::ItemStruct(sym) => {
+                    let name = qualify_name(&scope_vec, &sym.name);
+                    symbol_map.insert(name, SymbolKind::Struct);
+                }
+
+                RefNode::ItemEnum(sym) => {
+                    let name = qualify_name(&scope_vec, &sym.name);
+                    symbol_map.insert(name, SymbolKind::Enum);
+                }
+
+                RefNode::ItemTrait(sym) => {
+                    let name = qualify_name(&scope_vec, &sym.name);
+                    symbol_map.insert(name, SymbolKind::Trait);
+                }
+
+                RefNode::ItemFunction(sym) => {
+                    let name = qualify_name(&scope_vec, &sym.name);
+                    symbol_map.insert(name, SymbolKind::Function);
+                }
+
+                RefNode::ItemGlobalVariable(sym) => {
+                    let name = qualify_name(&scope_vec, &sym.name);
+                    symbol_map.insert(name, SymbolKind::GlobalVariable);
+                }
+
+                RefNode::ExprLocalVariable(sym) => {
+                    let name = qualify_name(&scope_vec, &sym.name);
+                    symbol_map.insert(name, SymbolKind::LocalVariable);
+                }
+
+                _ => {}
             }
         }
 
@@ -58,5 +87,5 @@ pub fn discover_symbols(module: &mut Module) -> HashSet<NString> {
         }
     });
 
-    symbol_set
+    symbol_map
 }

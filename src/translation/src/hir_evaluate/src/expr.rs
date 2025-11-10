@@ -629,11 +629,6 @@ impl HirEvaluate for Value {
                 // TODO: evaluate symbol expressions
                 unimplemented!()
             }
-
-            Value::Symbol { path: _ } => {
-                // TODO: evaluate symbol expressions
-                unimplemented!()
-            }
         }
     }
 }

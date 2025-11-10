@@ -13,33 +13,31 @@ pub(crate) fn module_put_defaults(module: &mut Module, ctx: &mut Ast2HirCtx, _lo
                 positional,
                 named,
             } => match &*ctx[callee as &ValueId].borrow() {
-                Value::Symbol { path } => {
-                    if let Some(function) = ctx.tab.get_function(path) {
-                        let function = ctx[function].borrow();
+                Value::FunctionSymbol { id } => {
+                    let function = ctx[id].borrow();
 
-                        let mut augmented = Vec::new();
-                        augmented.extend(positional.iter().cloned());
+                    let mut augmented = Vec::new();
+                    augmented.extend(positional.iter().cloned());
 
-                        let mut callee_map = HashMap::new();
-                        for (name, value) in named.iter() {
-                            callee_map.insert(name.clone(), value.clone());
-                        }
-
-                        for signature_param in function.params.iter().skip(positional.len()) {
-                            let signature_param = ctx[signature_param].borrow();
-
-                            if let Some(arg_value) = callee_map.get(&signature_param.name) {
-                                augmented.push(arg_value.clone());
-                            } else if let Some(default_value) = &signature_param.default_value {
-                                augmented.push(default_value.clone());
-                            } else {
-                                // Missing argument without default value
-                            }
-                        }
-
-                        *positional = augmented.into();
-                        named.clear();
+                    let mut callee_map = HashMap::new();
+                    for (name, value) in named.iter() {
+                        callee_map.insert(name.clone(), value.clone());
                     }
+
+                    for signature_param in function.params.iter().skip(positional.len()) {
+                        let signature_param = ctx[signature_param].borrow();
+
+                        if let Some(arg_value) = callee_map.get(&signature_param.name) {
+                            augmented.push(arg_value.clone());
+                        } else if let Some(default_value) = &signature_param.default_value {
+                            augmented.push(default_value.clone());
+                        } else {
+                            // Missing argument without default value
+                        }
+                    }
+
+                    *positional = augmented.into();
+                    named.clear();
                 }
 
                 _ => {}

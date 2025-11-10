@@ -308,3 +308,14 @@ impl Item {
         }
     }
 }
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum SymbolKind {
+    TypeAlias,
+    Struct,
+    Enum,
+    Trait,
+    Function,
+    GlobalVariable,
+    LocalVariable,
+}

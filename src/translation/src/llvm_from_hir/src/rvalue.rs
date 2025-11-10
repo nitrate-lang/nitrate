@@ -1859,53 +1859,55 @@ fn gen_rval_call<'ctx>(
         ctx.tab,
     );
 
-    if let hir::Value::Symbol { path } = callee {
-        let function = gen_rval_symbol(ctx, path)?.into_pointer_value();
+    // TODO: Fix symbol codegen
+    unimplemented!()
+    // if let hir::Value::Symbol { path } = callee {
+    //     let function = gen_rval_symbol(ctx, path)?.into_pointer_value();
 
-        let mut llvm_arguments = Vec::new();
-        for arg_id in arguments {
-            let arg_hir = &ctx.store[arg_id].borrow();
-            let llvm_arg = gen_rval(ctx, arg_hir)?;
-            llvm_arguments.push(llvm_arg.into());
-        }
+    //     let mut llvm_arguments = Vec::new();
+    //     for arg_id in arguments {
+    //         let arg_hir = &ctx.store[arg_id].borrow();
+    //         let llvm_arg = gen_rval(ctx, arg_hir)?;
+    //         llvm_arguments.push(llvm_arg.into());
+    //     }
 
-        let call = ctx
-            .bb
-            .build_indirect_call(llvm_function_ty, function, &llvm_arguments, "")
-            .unwrap()
-            .try_as_basic_value()
-            .expect_left("missing value");
+    //     let call = ctx
+    //         .bb
+    //         .build_indirect_call(llvm_function_ty, function, &llvm_arguments, "")
+    //         .unwrap()
+    //         .try_as_basic_value()
+    //         .expect_left("missing value");
 
-        Ok(call)
-    } else {
-        let callee_val = gen_rval(ctx, callee)?;
-        if !callee_val.is_pointer_value() {
-            return Err(CodegenError::OperandTypeCombinationError {
-                operation_name: "function call",
-            });
-        }
+    //     Ok(call)
+    // } else {
+    //     let callee_val = gen_rval(ctx, callee)?;
+    //     if !callee_val.is_pointer_value() {
+    //         return Err(CodegenError::OperandTypeCombinationError {
+    //             operation_name: "function call",
+    //         });
+    //     }
 
-        let mut llvm_arguments = Vec::new();
-        for arg_id in arguments {
-            let arg_hir = &ctx.store[arg_id].borrow();
-            let llvm_arg = gen_rval(ctx, arg_hir)?;
-            llvm_arguments.push(llvm_arg.into());
-        }
+    //     let mut llvm_arguments = Vec::new();
+    //     for arg_id in arguments {
+    //         let arg_hir = &ctx.store[arg_id].borrow();
+    //         let llvm_arg = gen_rval(ctx, arg_hir)?;
+    //         llvm_arguments.push(llvm_arg.into());
+    //     }
 
-        let result = ctx
-            .bb
-            .build_indirect_call(
-                llvm_function_ty,
-                callee_val.into_pointer_value(),
-                &llvm_arguments,
-                "",
-            )
-            .unwrap()
-            .try_as_basic_value()
-            .expect_left("missing value");
+    //     let result = ctx
+    //         .bb
+    //         .build_indirect_call(
+    //             llvm_function_ty,
+    //             callee_val.into_pointer_value(),
+    //             &llvm_arguments,
+    //             "",
+    //         )
+    //         .unwrap()
+    //         .try_as_basic_value()
+    //         .expect_left("missing value");
 
-        Ok(result)
-    }
+    //     Ok(result)
+    // }
 }
 
 fn gen_rval_method_call<'ctx>(
@@ -2155,8 +2157,6 @@ pub(crate) fn gen_rval<'ctx>(
             // TODO: implement parameter symbol codegen
             unimplemented!()
         }
-
-        hir::Value::Symbol { path } => gen_rval_symbol(ctx, path),
     }
 }
 

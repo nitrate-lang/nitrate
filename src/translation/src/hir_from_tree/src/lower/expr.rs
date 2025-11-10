@@ -7,7 +7,7 @@ use nitrate_hir_get_type::HirGetType;
 use nitrate_nstring::NString;
 use nitrate_token::escape_string;
 use nitrate_token_lexer::{Lexer, LexerError};
-use nitrate_tree::ast::{self as ast, UnaryExprOp};
+use nitrate_tree::ast::{self as ast, SymbolKind, UnaryExprOp};
 use nitrate_tree_parse::Parser;
 use ordered_float::OrderedFloat;
 use std::collections::BTreeSet;
@@ -36,299 +36,10 @@ pub(crate) enum EncodeErr {
     UnresolvedTypePath,
 }
 
-fn metatype_source_encode(
-    store: &Store,
-    tab: &SymbolTab,
-    from: &Type,
-    o: &mut dyn Write,
-) -> Result<(), EncodeErr> {
-    // FIXME: std::meta::Type transcoding | code is stringy => perform manual testing
-    // FIXME: Update implementation in accordance with the ratified definition of std::meta::Type within standard library.
+fn metatype_encode(_ctx: &mut Ast2HirCtx, _from: Type) -> Result<Value, EncodeErr> {
+    // TODO: Serialize the type metaprogrammatically
 
-    match from {
-        Type::Never => {
-            write!(o, "::std::meta::Type::Never").unwrap();
-            Ok(())
-        }
-
-        Type::Unit => {
-            write!(o, "::std::meta::Type::Unit").unwrap();
-            Ok(())
-        }
-
-        Type::Bool => {
-            write!(o, "::std::meta::Type::Bool").unwrap();
-            Ok(())
-        }
-
-        Type::U8 => {
-            write!(o, "::std::meta::Type::U8").unwrap();
-            Ok(())
-        }
-
-        Type::U16 => {
-            write!(o, "::std::meta::Type::U16").unwrap();
-            Ok(())
-        }
-
-        Type::U32 => {
-            write!(o, "::std::meta::Type::U32").unwrap();
-            Ok(())
-        }
-
-        Type::U64 => {
-            write!(o, "::std::meta::Type::U64").unwrap();
-            Ok(())
-        }
-
-        Type::U128 => {
-            write!(o, "::std::meta::Type::U128").unwrap();
-            Ok(())
-        }
-
-        Type::I8 => {
-            write!(o, "::std::meta::Type::I8").unwrap();
-            Ok(())
-        }
-
-        Type::I16 => {
-            write!(o, "::std::meta::Type::I16").unwrap();
-            Ok(())
-        }
-
-        Type::I32 => {
-            write!(o, "::std::meta::Type::I32").unwrap();
-            Ok(())
-        }
-
-        Type::I64 => {
-            write!(o, "::std::meta::Type::I64").unwrap();
-            Ok(())
-        }
-
-        Type::I128 => {
-            write!(o, "::std::meta::Type::I128").unwrap();
-            Ok(())
-        }
-
-        Type::F32 => {
-            write!(o, "::std::meta::Type::F32").unwrap();
-            Ok(())
-        }
-
-        Type::F64 => {
-            write!(o, "::std::meta::Type::F64").unwrap();
-            Ok(())
-        }
-
-        Type::USize => {
-            write!(o, "::std::meta::Type::USize").unwrap();
-            Ok(())
-        }
-
-        Type::Array { element_type, len } => {
-            write!(o, "::std::meta::Type::Array {{ element_type: ").unwrap();
-            metatype_source_encode(store, tab, &store[element_type], o)?;
-            write!(o, ", len: {} }}", len).unwrap();
-            Ok(())
-        }
-
-        Type::Tuple { element_types } => {
-            write!(o, "::std::meta::Type::Tuple {{ element_types: Vec::from([").unwrap();
-            for elem in element_types {
-                metatype_source_encode(store, tab, &store[elem], o)?;
-                write!(o, ",").unwrap();
-            }
-            write!(o, "]) }}").unwrap();
-            Ok(())
-        }
-
-        Type::Struct { struct_type } => {
-            let struct_type = &store[struct_type];
-            write!(o, "::std::meta::Type::Struct {{ fields: Vec::from([").unwrap();
-            for field in &struct_type.fields {
-                write!(
-                    o,
-                    "::std::meta::StructField {{ name: String::from({}), ty: ",
-                    escape_string(&field.name, true)
-                )
-                .unwrap();
-                metatype_source_encode(store, tab, &store[&field.ty], o)?;
-                write!(o, " }},").unwrap();
-            }
-            write!(o, "]), attributes: Vec::from([").unwrap();
-            for attr in &struct_type.attributes {
-                match attr {
-                    StructAttribute::Packed => {
-                        write!(o, "::std::meta::StructAttribute::Packed,").unwrap()
-                    }
-                };
-                write!(o, ",").unwrap();
-            }
-            write!(o, "]) }}").unwrap();
-            Ok(())
-        }
-
-        Type::Enum { enum_type } => {
-            let enum_type = &store[enum_type];
-            write!(o, "::std::meta::Type::Enum {{ variants: Vec::from([").unwrap();
-            for variant in &enum_type.variants {
-                write!(
-                    o,
-                    "::std::meta::EnumVariant {{ name: String::from({}), ty: ",
-                    escape_string(&variant.name, true)
-                )
-                .unwrap();
-                metatype_source_encode(store, tab, &store[&variant.ty], o)?;
-                write!(o, " }},").unwrap();
-            }
-            write!(o, "]), attributes: Vec::from([").unwrap();
-            for attr in &enum_type.attributes {
-                match attr {
-                    _ => {}
-                };
-                write!(o, ",").unwrap();
-            }
-            write!(o, "]) }}").unwrap();
-            Ok(())
-        }
-
-        Type::Refine { base, min, max } => {
-            write!(o, "::std::meta::Type::Refine {{ base: ").unwrap();
-            metatype_source_encode(store, tab, &store[base], o)?;
-            write!(o, ", min: {}, max: {} }}", &store[min], &store[max]).unwrap();
-            Ok(())
-        }
-
-        Type::Function { function_type } => {
-            let function_type = &store[function_type];
-            write!(o, "::std::meta::Type::Function {{ parameters: Vec::from([").unwrap();
-            for param in &function_type.params {
-                write!(
-                    o,
-                    "::std::meta::FunctionParameter {{ name: String::from({}) , ty: ",
-                    escape_string(&param.0, true)
-                )
-                .unwrap();
-                metatype_source_encode(store, tab, &store[&param.1], o)?;
-                write!(o, " }},").unwrap();
-            }
-            write!(o, "]), return_type: ").unwrap();
-            metatype_source_encode(store, tab, &store[&function_type.return_type], o)?;
-            write!(o, ", attributes: Vec::from([").unwrap();
-            for attr in &function_type.attributes {
-                match attr {
-                    FunctionAttribute::CVariadic => {
-                        write!(o, "::std::meta::FunctionAttribute::Variadic,").unwrap()
-                    }
-                    FunctionAttribute::NoMangle => {
-                        write!(o, "::std::meta::FunctionAttribute::NoMangle,").unwrap()
-                    }
-                };
-                write!(o, ",").unwrap();
-            }
-            write!(o, "]) }}").unwrap();
-            Ok(())
-        }
-
-        Type::Reference {
-            lifetime,
-            exclusive,
-            mutable,
-            to,
-        } => {
-            write!(o, "::std::meta::Type::Reference {{ lifetime: ").unwrap();
-            match lifetime {
-                Lifetime::Static => write!(o, "::std::meta::Lifetime::Static").unwrap(),
-                Lifetime::Gc => write!(o, "::std::meta::Lifetime::Gc").unwrap(),
-                Lifetime::ThreadLocal => write!(o, "::std::meta::Lifetime::ThreadLocal").unwrap(),
-                Lifetime::TaskLocal => write!(o, "::std::meta::Lifetime::TaskLocal").unwrap(),
-                Lifetime::Inferred => write!(o, "::std::meta::Lifetime::Inferred").unwrap(),
-            };
-            write!(o, ", exclusive: {}, mutable: {}, to: ", exclusive, mutable).unwrap();
-            metatype_source_encode(store, tab, &store[to], o)?;
-            write!(o, " }}").unwrap();
-            Ok(())
-        }
-
-        Type::SliceRef {
-            lifetime,
-            exclusive,
-            mutable,
-            element_type,
-        } => {
-            write!(o, "::std::meta::Type::SliceRef {{ lifetime: ").unwrap();
-            match lifetime {
-                Lifetime::Static => write!(o, "::std::meta::Lifetime::Static").unwrap(),
-                Lifetime::Gc => write!(o, "::std::meta::Lifetime::Gc").unwrap(),
-                Lifetime::ThreadLocal => write!(o, "::std::meta::Lifetime::ThreadLocal").unwrap(),
-                Lifetime::TaskLocal => write!(o, "::std::meta::Lifetime::TaskLocal").unwrap(),
-                Lifetime::Inferred => write!(o, "::std::meta::Lifetime::Inferred").unwrap(),
-            };
-            write!(
-                o,
-                ", exclusive: {}, mutable: {}, element_type: ",
-                exclusive, mutable
-            )
-            .unwrap();
-            metatype_source_encode(store, tab, &store[element_type], o)?;
-            write!(o, " }}").unwrap();
-            Ok(())
-        }
-
-        Type::Pointer {
-            exclusive,
-            mutable,
-            to,
-        } => {
-            write!(
-                o,
-                "::std::meta::Type::Pointer {{ exclusive: {}, mutable: {}, to: ",
-                exclusive, mutable
-            )
-            .unwrap();
-            metatype_source_encode(store, tab, &store[to], o)?;
-            write!(o, " }}").unwrap();
-            Ok(())
-        }
-
-        Type::Symbol { path } => match tab.get_type(path) {
-            Some(TypeDefinition::TypeAliasDef(type_alias_id)) => {
-                let type_id = store[type_alias_id].borrow().type_id;
-                metatype_source_encode(store, tab, &store[&type_id], o)
-            }
-
-            Some(TypeDefinition::EnumDef(enum_id)) => {
-                let enum_type = Type::Enum {
-                    enum_type: store[enum_id].borrow().enum_id,
-                };
-                metatype_source_encode(store, tab, &enum_type, o)
-            }
-
-            Some(TypeDefinition::StructDef(struct_id)) => {
-                let struct_type = Type::Struct {
-                    struct_type: store[struct_id].borrow().struct_id,
-                };
-                metatype_source_encode(store, tab, &struct_type, o)
-            }
-
-            _ => Err(EncodeErr::UnresolvedTypePath),
-        },
-
-        Type::InferredFloat => Err(EncodeErr::CannotEncodeInferredType),
-        Type::InferredInteger => Err(EncodeErr::CannotEncodeInferredType),
-        Type::Inferred { id: _ } => Err(EncodeErr::CannotEncodeInferredType),
-    }
-}
-
-fn metatype_encode(ctx: &mut Ast2HirCtx, from: Type) -> Result<Value, EncodeErr> {
-    let mut repr = String::new();
-    metatype_source_encode(&ctx.store, &ctx.tab, &from, &mut repr)?;
-
-    let hir_meta_object = from_nitrate_expression(ctx, &repr)
-        .expect("failed to lower auto-generated std::meta::Type expression");
-
-    Ok(hir_meta_object)
+    unimplemented!()
 }
 
 impl Ast2Hir for ast::ExprSyntaxError {
@@ -1009,7 +720,7 @@ impl Ast2Hir for ast::Closure {
 impl Ast2Hir for ast::ExprPath {
     type Hir = Value;
 
-    fn ast2hir(self, _ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
+    fn ast2hir(self, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
         if self.segments.iter().any(|seg| seg.type_arguments.is_some()) {
             // TODO: Support generic type arguments
             log.report(&HirErr::UnimplementedFeature(
@@ -1018,8 +729,37 @@ impl Ast2Hir for ast::ExprPath {
         }
 
         if let Some(resolved_path) = self.resolved_path {
-            let path = NString::from(resolved_path);
-            return Ok(Value::Symbol { path });
+            match ctx.ast_symbol_map.get(&resolved_path) {
+                Some(SymbolKind::TypeAlias) => {
+                    todo!()
+                }
+
+                Some(SymbolKind::Struct) => {
+                    todo!()
+                }
+
+                Some(SymbolKind::Enum) => {
+                    todo!()
+                }
+
+                Some(SymbolKind::Trait) => {
+                    todo!()
+                }
+
+                Some(SymbolKind::Function) => {
+                    todo!()
+                }
+
+                Some(SymbolKind::GlobalVariable) => {
+                    todo!()
+                }
+
+                Some(SymbolKind::LocalVariable) => {
+                    todo!()
+                }
+
+                None => todo!(),
+            }
         }
 
         log.report(&HirErr::UnresolvedSymbol);

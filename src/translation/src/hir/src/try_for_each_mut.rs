@@ -303,8 +303,7 @@ impl ValueIterMut<'_> {
             Value::FunctionSymbol { .. }
             | Value::GlobalVariableSymbol { .. }
             | Value::LocalVariableSymbol { .. }
-            | Value::ParameterSymbol { .. }
-            | Value::Symbol { .. } => {}
+            | Value::ParameterSymbol { .. } => {}
         }
 
         ControlFlow::Continue(())

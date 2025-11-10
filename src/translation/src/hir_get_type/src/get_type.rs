@@ -342,37 +342,6 @@ impl HirGetType for Value {
                 let param = &store[id].borrow();
                 Ok(store[&param.ty].clone())
             }
-
-            Value::Symbol { path } => match tab.get_symbol(path) {
-                Some(SymbolId::GlobalVariable(glb)) => Ok(store[&store[glb].borrow().ty].clone()),
-
-                Some(SymbolId::LocalVariable(loc)) => Ok(store[&store[loc].borrow().ty].clone()),
-
-                Some(SymbolId::Parameter(param)) => Ok(store[&store[param].borrow().ty].clone()),
-
-                Some(SymbolId::Function(function)) => {
-                    let function = &store[function].borrow();
-                    let parameters = function
-                        .params
-                        .iter()
-                        .map(|param_id| {
-                            let param = store[param_id].borrow();
-                            (param.name.clone(), param.ty.clone())
-                        })
-                        .collect::<Vec<_>>();
-
-                    Ok(Type::Function {
-                        function_type: FunctionType {
-                            attributes: function.attributes.to_owned(),
-                            params: parameters.into(),
-                            return_type: function.return_type.to_owned(),
-                        }
-                        .into_id(store),
-                    })
-                }
-
-                None => Err(TypeInferenceError::UnresolvedSymbol),
-            },
         }
     }
 }

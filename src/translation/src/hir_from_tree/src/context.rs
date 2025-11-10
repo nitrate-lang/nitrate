@@ -1,5 +1,6 @@
 use nitrate_hir::{SymbolTab, prelude::*};
 use nitrate_nstring::NString;
+use nitrate_tree::ast::SymbolKind;
 use std::cell::RefCell;
 use std::collections::{HashMap, HashSet};
 use std::num::NonZeroU32;
@@ -9,10 +10,12 @@ use std::ops::Deref;
 pub struct Ast2HirCtx {
     pub store: Store,
     pub tab: SymbolTab,
+
+    pub(crate) ast_symbol_map: HashMap<NString, SymbolKind>,
     pub(crate) current_scope: Vec<NString>,
-    _impl_map: HashMap<TypeId, HashSet<TraitId>>,
-    type_infer_id_ctr: NonZeroU32,
-    unique_name_ctr: u32,
+    pub(crate) _impl_map: HashMap<TypeId, HashSet<TraitId>>,
+    pub(crate) type_infer_id_ctr: NonZeroU32,
+    pub(crate) unique_name_ctr: u32,
     pub(crate) ptr_size: PtrSize,
     pub(crate) current_package_name: NString,
 }
@@ -20,6 +23,7 @@ pub struct Ast2HirCtx {
 impl Ast2HirCtx {
     pub fn new(ptr_size: PtrSize, current_package_name: NString) -> Self {
         Self {
+            ast_symbol_map: HashMap::new(),
             store: Store::new(),
             tab: SymbolTab::default(),
             current_scope: Vec::new(),
