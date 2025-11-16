@@ -1,5 +1,5 @@
 use crate::prelude::*;
-use std::ops::ControlFlow;
+use std::{collections::HashSet, ops::ControlFlow};
 
 impl StructTypeIter<'_> {
     pub fn for_each_type(&self, store: &Store, f: &mut dyn FnMut(&Type)) {
@@ -10,6 +10,7 @@ impl StructTypeIter<'_> {
                 f(ty);
                 ControlFlow::Continue(())
             },
+            &mut HashSet::new(),
         );
     }
 
@@ -21,6 +22,7 @@ impl StructTypeIter<'_> {
                 ControlFlow::Continue(())
             },
             &mut |_| ControlFlow::Continue(()),
+            &mut HashSet::new(),
         );
     }
 }
@@ -34,6 +36,7 @@ impl EnumTypeIter<'_> {
                 f(ty);
                 ControlFlow::Continue(())
             },
+            &mut HashSet::new(),
         );
     }
 
@@ -45,6 +48,7 @@ impl EnumTypeIter<'_> {
                 ControlFlow::Continue(())
             },
             &mut |_| ControlFlow::Continue(()),
+            &mut HashSet::new(),
         );
     }
 }
@@ -58,6 +62,7 @@ impl FunctionTypeIter<'_> {
                 f(ty);
                 ControlFlow::Continue(())
             },
+            &mut HashSet::new(),
         );
     }
 
@@ -69,6 +74,7 @@ impl FunctionTypeIter<'_> {
                 ControlFlow::Continue(())
             },
             &mut |_| ControlFlow::Continue(()),
+            &mut HashSet::new(),
         );
     }
 }
@@ -82,6 +88,7 @@ impl TypeIter<'_> {
                 f(ty);
                 ControlFlow::Continue(())
             },
+            &mut HashSet::new(),
         );
     }
 
@@ -93,6 +100,7 @@ impl TypeIter<'_> {
                 ControlFlow::Continue(())
             },
             &mut |_| ControlFlow::Continue(()),
+            &mut HashSet::new(),
         );
     }
 
@@ -110,6 +118,7 @@ impl TypeIter<'_> {
                     ControlFlow::Break(())
                 }
             },
+            &mut HashSet::new(),
         );
 
         result
@@ -125,6 +134,7 @@ impl BlockIter<'_> {
                 f(ty);
                 ControlFlow::Continue(())
             },
+            &mut HashSet::new(),
         );
     }
 
@@ -136,6 +146,7 @@ impl BlockIter<'_> {
                 ControlFlow::Continue(())
             },
             &mut |_| ControlFlow::Continue(()),
+            &mut HashSet::new(),
         );
     }
 }
@@ -149,6 +160,7 @@ impl ValueIter<'_> {
                 f(ty);
                 ControlFlow::Continue(())
             },
+            &mut HashSet::new(),
         );
     }
 
@@ -160,6 +172,7 @@ impl ValueIter<'_> {
                 ControlFlow::Continue(())
             },
             &mut |_| ControlFlow::Continue(()),
+            &mut HashSet::new(),
         );
     }
 }
@@ -173,6 +186,7 @@ impl GlobalVariableIter<'_> {
                 f(ty);
                 ControlFlow::Continue(())
             },
+            &mut HashSet::new(),
         );
     }
 
@@ -184,6 +198,7 @@ impl GlobalVariableIter<'_> {
                 ControlFlow::Continue(())
             },
             &mut |_| ControlFlow::Continue(()),
+            &mut HashSet::new(),
         );
     }
 }
@@ -197,6 +212,7 @@ impl ModuleIter<'_> {
                 f(ty);
                 ControlFlow::Continue(())
             },
+            &mut HashSet::new(),
         );
     }
 
@@ -208,6 +224,7 @@ impl ModuleIter<'_> {
                 ControlFlow::Continue(())
             },
             &mut |_| ControlFlow::Continue(()),
+            &mut HashSet::new(),
         );
     }
 }
@@ -221,6 +238,7 @@ impl TypeAliasDefIter<'_> {
                 f(ty);
                 ControlFlow::Continue(())
             },
+            &mut HashSet::new(),
         );
     }
 
@@ -232,6 +250,7 @@ impl TypeAliasDefIter<'_> {
                 ControlFlow::Continue(())
             },
             &mut |_| ControlFlow::Continue(()),
+            &mut HashSet::new(),
         );
     }
 }
@@ -245,6 +264,7 @@ impl StructDefIter<'_> {
                 f(ty);
                 ControlFlow::Continue(())
             },
+            &mut HashSet::new(),
         );
     }
 
@@ -256,6 +276,7 @@ impl StructDefIter<'_> {
                 ControlFlow::Continue(())
             },
             &mut |_| ControlFlow::Continue(()),
+            &mut HashSet::new(),
         );
     }
 }
@@ -269,6 +290,7 @@ impl EnumDefIter<'_> {
                 f(ty);
                 ControlFlow::Continue(())
             },
+            &mut HashSet::new(),
         );
     }
 
@@ -280,6 +302,7 @@ impl EnumDefIter<'_> {
                 ControlFlow::Continue(())
             },
             &mut |_| ControlFlow::Continue(()),
+            &mut HashSet::new(),
         );
     }
 }
@@ -293,6 +316,7 @@ impl FunctionIter<'_> {
                 f(ty);
                 ControlFlow::Continue(())
             },
+            &mut HashSet::new(),
         );
     }
 
@@ -304,6 +328,7 @@ impl FunctionIter<'_> {
                 ControlFlow::Continue(())
             },
             &mut |_| ControlFlow::Continue(()),
+            &mut HashSet::new(),
         );
     }
 }

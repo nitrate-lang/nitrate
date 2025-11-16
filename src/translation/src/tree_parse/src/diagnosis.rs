@@ -1,8 +1,6 @@
 use nitrate_diagnosis::{
     DiagnosticGroupId, DiagnosticInfo, FormattableDiagnosticGroup, Origin, 
 };
-use nitrate_nstring::NString;
-use nitrate_tree::{ast::{ExprPath, TypePath}};
 use nitrate_token::SourcePosition;
 
 pub(crate) enum SyntaxErr {
