@@ -1,25 +1,52 @@
 use inkwell::values::PointerValue;
+use nitrate_hir_get_type::HirGetType;
 
-use crate::rvalue::{CodegenCtx, CodegenError};
+use crate::{
+    rvalue::{CodegenCtx, CodegenError},
+    ty::gen_ty,
+};
 use nitrate_hir::prelude as hir;
 use nitrate_nstring::NString;
 
 fn gen_place_field_access<'ctx>(
-    _ctx: &mut CodegenCtx<'ctx, '_, '_, '_, '_, '_>,
-    _struct_value: &hir::Value,
-    _field_name: &NString,
+    ctx: &mut CodegenCtx<'ctx, '_, '_, '_, '_, '_>,
+    struct_value: &hir::Value,
+    field_name: &NString,
 ) -> Result<PointerValue<'ctx>, CodegenError> {
-    // TODO: implement field access codegen
-    unimplemented!()
-}
+    let hir_struct_ty = &ctx.store[struct_value
+        .get_type(ctx.store, ctx.tab)
+        .expect("Failed to get type")
+        .as_struct()
+        .expect("expected struct type")];
 
-fn gen_place_index_access<'ctx>(
-    _ctx: &mut CodegenCtx<'ctx, '_, '_, '_, '_, '_>,
-    _collection: &hir::Value,
-    _index: &hir::Value,
-) -> Result<PointerValue<'ctx>, CodegenError> {
-    // TODO: implement index access codegen
-    unimplemented!()
+    let field_index = hir_struct_ty
+        .fields
+        .iter()
+        .position(|field| &field.name == field_name)
+        .expect("Field not found in struct");
+
+    let llvm_struct_value = gen_place(ctx, struct_value)?;
+    let llvm_struct_ty = gen_ty(
+        &struct_value
+            .get_type(ctx.store, ctx.tab)
+            .expect("unable to get struct type"),
+        &mut ctx.into(),
+    );
+
+    let index = ctx.llvm.i32_type().const_int(field_index as u64, false);
+
+    let gep = unsafe {
+        // SAFETY: ** I don't know if this is safe or not
+        ctx.bb.build_in_bounds_gep(
+            llvm_struct_ty,
+            llvm_struct_value,
+            &[ctx.llvm.i32_type().const_int(0, false), index],
+            "field_access_gep",
+        )
+    }
+    .unwrap();
+
+    Ok(gep)
 }
 
 fn gen_place_deref<'ctx>(

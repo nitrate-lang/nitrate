@@ -406,12 +406,9 @@ fn gen_rval_mul<'ctx>(
  * Division:
  *
  * Signed Integers:
- * - // TODO: define behavior for division by zero
- * - // TODO: define behavior for overflow
  * - https://llvm.org/docs/LangRef.html#sdiv-instruction
  *
  * Unsigned Integers:
- * - // TODO: define behavior for division by zero
  * - https://llvm.org/docs/LangRef.html#udiv-instruction
  *
  * Floating-point:
@@ -465,12 +462,9 @@ fn gen_rval_div<'ctx>(
  * Remainder:
  *
  * Signed Integers:
- * - // TODO: define behavior for remainder by zero
- * - // TODO: define behavior for overflow
  * - https://llvm.org/docs/LangRef.html#srem-instruction
  *
  * Unsigned Integers:
- * - // TODO: define behavior for remainder by zero
  * - https://llvm.org/docs/LangRef.html#urem-instruction
  *
  * Floating-point:
