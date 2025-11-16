@@ -243,6 +243,11 @@ impl Ast2Hir for ast::GlobalVariable {
         };
 
         let name = ctx.qualify_name(&self.name).into();
+        let mangled_name = if attributes.contains(&GlobalVariableAttribute::NoMangle) {
+            self.name.clone().into()
+        } else {
+            ctx.qualify_name(&self.name).into()
+        };
 
         let ty = match self.ty.to_owned() {
             None => ctx.create_inference_placeholder().into_id(&ctx.store),
@@ -269,6 +274,7 @@ impl Ast2Hir for ast::GlobalVariable {
             attributes,
             is_mutable,
             name,
+            mangled_name,
             ty,
             init,
         }
@@ -326,8 +332,6 @@ impl Ast2Hir for ast::Function {
             Some(ast::Visibility::Private) | None => Visibility::Sec,
         };
 
-        ctx.current_scope.push(self.name.clone());
-
         let mut attributes = BTreeSet::new();
         if let Some(ast_attributes) = &self.attributes {
             for attr in ast_attributes {
@@ -358,11 +362,14 @@ impl Ast2Hir for ast::Function {
             }
         }
 
-        let name: NString = if attributes.contains(&FunctionAttribute::NoMangle) {
-            self.name.into()
+        let name: NString = ctx.qualify_name(&self.name).into();
+        let mangled_name: NString = if attributes.contains(&FunctionAttribute::NoMangle) {
+            self.name.clone().into()
         } else {
             ctx.qualify_name(&self.name).into()
         };
+
+        ctx.current_scope.push(self.name.clone());
 
         if self.generics.is_some() {
             // TODO: support generic functions
@@ -416,6 +423,7 @@ impl Ast2Hir for ast::Function {
             visibility,
             attributes,
             name,
+            mangled_name,
             params: parameters,
             return_type: return_type.into_id(&ctx.store),
             body,

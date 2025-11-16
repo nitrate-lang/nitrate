@@ -707,13 +707,14 @@ impl Ast2Hir for ast::ExprPath {
             Some(resolved_path) => match ctx.ast_symbol_map.get(&resolved_path) {
                 Some(SymbolKind::Function) => match ctx.tab.get_function(&resolved_path) {
                     Some(existing_function_id) => {
-                        println!("Resolved function path: {}", resolved_path);
                         return Ok(Value::FunctionSymbol {
                             id: existing_function_id.clone(),
                         });
                     }
 
                     None => {
+                        println!("Function not found: {}", resolved_path);
+                        println!("Symbols: {:?}", ctx.tab);
                         // TODO: Create function placeholder
                         unimplemented!()
                     }

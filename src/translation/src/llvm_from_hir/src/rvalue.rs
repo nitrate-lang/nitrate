@@ -1493,6 +1493,7 @@ fn gen_rval_deref<'ctx>(
     if ptr_ty.is_pointer_type() {
         let pointee_ty = match place.get_type(ctx.store, ctx.tab).unwrap() {
             hir::Type::Pointer { to, .. } => &ctx.store[&to],
+            hir::Type::Reference { to, .. } => &ctx.store[&to],
             _ => unreachable!(),
         };
 
@@ -2155,12 +2156,12 @@ pub(crate) fn gen_rval<'ctx>(
 
         hir::Value::FunctionSymbol { id } => {
             let function_def = &ctx.store[id].borrow();
-            gen_rval_symbol(ctx, &function_def.name)
+            gen_rval_symbol(ctx, &function_def.mangled_name)
         }
 
         hir::Value::GlobalVariableSymbol { id } => {
             let global_def = &ctx.store[id].borrow();
-            gen_rval_symbol(ctx, &global_def.name)
+            gen_rval_symbol(ctx, &global_def.mangled_name)
         }
 
         hir::Value::LocalVariableSymbol { id } => {

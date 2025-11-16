@@ -12,7 +12,7 @@ pub enum Visibility {
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum GlobalVariableAttribute {
-    Invalid,
+    NoMangle,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
@@ -21,6 +21,7 @@ pub struct GlobalVariable {
     pub attributes: BTreeSet<GlobalVariableAttribute>,
     pub is_mutable: bool,
     pub name: NString,
+    pub mangled_name: NString,
     pub ty: TypeId,
     pub init: ValueId,
 }
@@ -66,6 +67,7 @@ pub struct Function {
     pub visibility: Visibility,
     pub attributes: BTreeSet<FunctionAttribute>,
     pub name: NString,
+    pub mangled_name: NString,
     pub params: Vec<ParameterId>,
     pub return_type: TypeId,
     pub body: Option<BlockId>,

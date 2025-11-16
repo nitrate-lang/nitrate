@@ -100,8 +100,23 @@ fn resolve_type_path(
 pub fn resolve_paths(module: &mut Module, log: &CompilerLog) -> HashMap<NString, SymbolKind> {
     let symbol_map = discover_symbols(module);
     let mut scope_vec = Vec::new();
+    let mut skip_attribute_list_depth = 0_usize;
 
     module.depth_first_iter_mut(&mut |order, node| {
+        if let RefNodeMut::ExprAttributeList(_) = node
+            && order == Order::Enter
+        {
+            skip_attribute_list_depth += 1;
+            return;
+        } else if skip_attribute_list_depth > 0 {
+            if let RefNodeMut::ExprAttributeList(_) = node
+                && order == Order::Leave
+            {
+                skip_attribute_list_depth -= 1;
+            }
+            return;
+        }
+
         if order == Order::Enter {
             if let RefNodeMut::TypePath(path) = node {
                 resolve_type_path(&scope_vec, path, &symbol_map, log);

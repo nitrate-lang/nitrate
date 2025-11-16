@@ -4,7 +4,7 @@ use nitrate_hir::{SymbolTab, prelude::*};
 impl ValidateHir for GlobalVariableAttribute {
     fn verify(&self, _store: &Store, _symtab: &SymbolTab) -> Result<(), ()> {
         match self {
-            GlobalVariableAttribute::Invalid => return Err(()),
+            GlobalVariableAttribute::NoMangle => Ok(()),
         }
     }
 

@@ -2,7 +2,7 @@ use inkwell::values::PointerValue;
 use nitrate_hir_get_type::HirGetType;
 
 use crate::{
-    rvalue::{CodegenCtx, CodegenError},
+    rvalue::{CodegenCtx, CodegenError, gen_rval},
     ty::gen_ty,
 };
 use nitrate_hir::prelude as hir;
@@ -50,11 +50,37 @@ fn gen_place_field_access<'ctx>(
 }
 
 fn gen_place_deref<'ctx>(
-    _ctx: &mut CodegenCtx<'ctx, '_, '_, '_, '_, '_>,
-    _place: &hir::Value,
+    ctx: &mut CodegenCtx<'ctx, '_, '_, '_, '_, '_>,
+    place: &hir::Value,
 ) -> Result<PointerValue<'ctx>, CodegenError> {
-    // TODO: implement dereference codegen
-    unimplemented!()
+    let llvm_value = gen_rval(ctx, place)?;
+    let ptr_ty = llvm_value.get_type();
+
+    if ptr_ty.is_pointer_type() {
+        let pointee_ty = match place.get_type(ctx.store, ctx.tab).unwrap() {
+            hir::Type::Pointer { to, .. } => &ctx.store[&to],
+            hir::Type::Reference { to, .. } => &ctx.store[&to],
+            _ => unreachable!(),
+        };
+
+        let load = ctx
+            .bb
+            .build_load(
+                gen_ty(&pointee_ty, &mut ctx.into()),
+                llvm_value.into_pointer_value(),
+                "deref_load",
+            )
+            .unwrap();
+
+        match load {
+            inkwell::values::BasicValueEnum::PointerValue(ptr) => return Ok(ptr),
+            _ => (),
+        }
+    }
+
+    Err(CodegenError::OperandTypeCombinationError {
+        operation_name: "dereference",
+    })
 }
 
 pub(crate) fn gen_place<'ctx>(
@@ -62,25 +88,7 @@ pub(crate) fn gen_place<'ctx>(
     hir_value: &hir::Value,
 ) -> Result<PointerValue<'ctx>, CodegenError> {
     match hir_value {
-        hir::Value::Unit
-        | hir::Value::Bool(_)
-        | hir::Value::I8(_)
-        | hir::Value::I16(_)
-        | hir::Value::I32(_)
-        | hir::Value::I64(_)
-        | hir::Value::I128(_)
-        | hir::Value::U8(_)
-        | hir::Value::U16(_)
-        | hir::Value::U32(_)
-        | hir::Value::U64(_)
-        | hir::Value::U128(_)
-        | hir::Value::F32(_)
-        | hir::Value::F64(_)
-        | hir::Value::USize32(_)
-        | hir::Value::USize64(_)
-        | hir::Value::StringLit(_)
-        | hir::Value::BStringLit(_)
-        | hir::Value::InferredInteger(_)
+        hir::Value::InferredInteger(_)
         | hir::Value::InferredFloat(_)
         | hir::Value::StructObject { .. }
         | hir::Value::EnumVariant { .. }
@@ -102,6 +110,37 @@ pub(crate) fn gen_place<'ctx>(
         | hir::Value::Call { .. }
         | hir::Value::MethodCall { .. } => Err(CodegenError::InvalidPlaceValue),
 
+        hir::Value::Unit
+        | hir::Value::Bool(_)
+        | hir::Value::I8(_)
+        | hir::Value::I16(_)
+        | hir::Value::I32(_)
+        | hir::Value::I64(_)
+        | hir::Value::I128(_)
+        | hir::Value::U8(_)
+        | hir::Value::U16(_)
+        | hir::Value::U32(_)
+        | hir::Value::U64(_)
+        | hir::Value::U128(_)
+        | hir::Value::F32(_)
+        | hir::Value::F64(_)
+        | hir::Value::USize32(_)
+        | hir::Value::USize64(_)
+        | hir::Value::StringLit(_)
+        | hir::Value::BStringLit(_) => {
+            let tmp_ty = gen_ty(
+                &hir_value
+                    .get_type(ctx.store, ctx.tab)
+                    .expect("unable to get bool type"),
+                &mut ctx.into(),
+            );
+
+            let alloca = ctx.bb.build_alloca(tmp_ty, "").unwrap();
+            let llvm_value = gen_rval(ctx, hir_value)?;
+            ctx.bb.build_store(alloca, llvm_value).unwrap();
+            Ok(alloca)
+        }
+
         hir::Value::FieldAccess { expr, field_name } => {
             let expr = ctx.store[expr].borrow();
             gen_place_field_access(ctx, &expr, field_name)
@@ -112,17 +151,22 @@ pub(crate) fn gen_place<'ctx>(
             gen_place_deref(ctx, &place)
         }
 
-        hir::Value::FunctionSymbol { id: _ } => {
-            // TODO: implement function symbol codegen
-            unimplemented!()
+        hir::Value::FunctionSymbol { id } => {
+            let function = ctx.store[id].borrow();
+            match ctx.module.get_function(&function.mangled_name) {
+                Some(func) => Ok(func.as_global_value().as_pointer_value()),
+                None => Err(CodegenError::SymbolNotFound {
+                    symbol_name: function.mangled_name.clone(),
+                }),
+            }
         }
 
         hir::Value::GlobalVariableSymbol { id } => {
             let global_var = ctx.store[id].borrow();
-            match ctx.globals.get(&global_var.name) {
+            match ctx.globals.get(&global_var.mangled_name) {
                 Some(ptr) => Ok(ptr.0),
                 None => Err(CodegenError::SymbolNotFound {
-                    symbol_name: global_var.name.clone(),
+                    symbol_name: global_var.mangled_name.clone(),
                 }),
             }
         }
