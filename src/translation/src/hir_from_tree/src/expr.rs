@@ -11,12 +11,6 @@ use std::collections::BTreeSet;
 
 pub(crate) enum EncodeErr {}
 
-fn metatype_encode(_ctx: &mut Ast2HirCtx, _from: Type) -> Result<Value, EncodeErr> {
-    // TODO: Serialize the type metaprogrammatically
-
-    unimplemented!()
-}
-
 impl Ast2Hir for ast::ExprSyntaxError {
     type Hir = Value;
 
@@ -79,17 +73,9 @@ impl Ast2Hir for ast::BStringLit {
 impl Ast2Hir for ast::TypeInfo {
     type Hir = Value;
 
-    fn ast2hir(self, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
-        let hir_type = self.the.ast2hir(ctx, log)?;
-        let encoded = match metatype_encode(ctx, hir_type) {
-            Ok(v) => v,
-            Err(_) => {
-                log.report(&HirErr::TypeInferenceError);
-                return Err(());
-            }
-        };
-
-        Ok(encoded)
+    fn ast2hir(self, _ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
+        log.report(&HirErr::UnimplementedFeature("Type reflection".into()));
+        Err(())
     }
 }
 
@@ -135,7 +121,6 @@ impl Ast2Hir for ast::StructInit {
             .iter()
             .any(|seg| seg.type_arguments.is_some())
         {
-            // TODO: Support generic type arguments
             log.report(&HirErr::UnimplementedFeature(
                 "generic type arguments in type paths".into(),
             ));
@@ -193,23 +178,10 @@ impl Ast2Hir for ast::UnaryExpr {
                 place: operand.into_id(&ctx.store),
             }),
 
-            UnaryExprOp::Typeof => match operand.get_type(&ctx.store, &ctx.tab) {
-                Ok(t) => {
-                    let encoded = match metatype_encode(ctx, t) {
-                        Ok(v) => v,
-                        Err(_) => {
-                            log.report(&HirErr::TypeInferenceError);
-                            return Err(());
-                        }
-                    };
-
-                    Ok(encoded)
-                }
-                Err(_) => {
-                    log.report(&HirErr::TypeInferenceError);
-                    Err(())
-                }
-            },
+            UnaryExprOp::Typeof => {
+                log.report(&HirErr::UnimplementedFeature("Type reflection".into()));
+                Err(())
+            }
         }
     }
 }
@@ -488,10 +460,7 @@ impl Ast2Hir for ast::BinExpr {
             }),
 
             ast::BinExprOp::Range => {
-                // TODO: lower range to HIR
-                log.report(&HirErr::UnimplementedFeature(
-                    "range with .. operator".into(),
-                ));
+                log.report(&HirErr::UnimplementedFeature("range .. operator".into()));
                 Err(())
             }
         }
@@ -697,7 +666,6 @@ impl Ast2Hir for ast::ExprPath {
 
     fn ast2hir(self, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
         if self.segments.iter().any(|seg| seg.type_arguments.is_some()) {
-            // TODO: Support generic type arguments
             log.report(&HirErr::UnimplementedFeature(
                 "generic type arguments in expr paths".into(),
             ));
@@ -858,8 +826,7 @@ impl Ast2Hir for ast::Match {
     type Hir = Value;
 
     fn ast2hir(self, _ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
-        // TODO: lower ast::Match to HIR
-        log.report(&HirErr::UnimplementedFeature("ast::Expr::Match".into()));
+        log.report(&HirErr::UnimplementedFeature("Match expressions".into()));
         Err(())
     }
 }
@@ -901,8 +868,7 @@ impl Ast2Hir for ast::ForEach {
     type Hir = Value;
 
     fn ast2hir(self, _ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
-        // TODO: lower ast::ForEach to HIR
-        log.report(&HirErr::UnimplementedFeature("ast::Expr::erFor".into()));
+        log.report(&HirErr::UnimplementedFeature("ForEach expressions".into()));
         Err(())
     }
 }
@@ -911,8 +877,7 @@ impl Ast2Hir for ast::Await {
     type Hir = Value;
 
     fn ast2hir(self, _ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
-        // TODO: lower ast::Await to HIR
-        log.report(&HirErr::UnimplementedFeature("ast::Expr::Await".into()));
+        log.report(&HirErr::UnimplementedFeature("Await expressions".into()));
         Err(())
     }
 }

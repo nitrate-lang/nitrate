@@ -24,7 +24,6 @@ impl Ast2Hir for ast::TypeAlias {
         let name = ctx.qualify_name(&self.name).into();
 
         if self.generics.is_some() {
-            // TODO: support generic type aliases
             log.report(&HirErr::UnimplementedFeature("generic type aliases".into()));
         }
 
@@ -70,7 +69,6 @@ impl Ast2Hir for ast::Struct {
         let name = ctx.qualify_name(&self.name).into();
 
         if self.generics.is_some() {
-            // TODO: support generic structs
             log.report(&HirErr::UnimplementedFeature("generic structs".into()));
         }
 
@@ -150,7 +148,6 @@ impl Ast2Hir for ast::Enum {
         let name = ctx.qualify_name(&self.name).into();
 
         if self.generics.is_some() {
-            // TODO: support generic enums
             log.report(&HirErr::UnimplementedFeature("generic enums".into()));
         }
 
@@ -377,7 +374,6 @@ impl Ast2Hir for ast::Function {
         ctx.current_scope.push(self.name.clone());
 
         if self.generics.is_some() {
-            // TODO: support generic functions
             log.report(&HirErr::UnimplementedFeature("generic functions".into()));
         }
 

@@ -1,3 +1,5 @@
+use std::ops::Range;
+
 use nitrate_diagnosis::CompilerLog;
 use nitrate_hir::{Function, Store};
 

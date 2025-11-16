@@ -139,7 +139,6 @@ impl Ast2Hir for ast::TypePath {
 
     fn ast2hir(self, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
         if self.segments.iter().any(|seg| seg.type_arguments.is_some()) {
-            // TODO: Support generic type arguments
             log.report(&HirErr::UnimplementedFeature(
                 "generic type arguments in type paths".into(),
             ));
@@ -203,8 +202,7 @@ impl Ast2Hir for ast::RefinementType {
     type Hir = Type;
 
     fn ast2hir(self, _ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
-        // TODO: lower ast::RefinementType
-        log.report(&HirErr::UnimplementedFeature("refinement type".into()));
+        log.report(&HirErr::UnimplementedFeature("refinement types".into()));
         Err(())
     }
 }
@@ -417,8 +415,7 @@ impl Ast2Hir for ast::Lifetime {
     type Hir = Type;
 
     fn ast2hir(self, _ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
-        // TODO: lower ast::Lifetime
-        log.report(&HirErr::UnimplementedFeature("ast::Lifetime".into()));
+        log.report(&HirErr::UnimplementedFeature("lifetimes".into()));
         Err(())
     }
 }
