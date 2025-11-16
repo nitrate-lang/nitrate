@@ -24,6 +24,7 @@ pub struct CodegenCtx<'ctx, 'module, 'store, 'tab, 'builder, 'global> {
     pub globals: &'global HashMap<NString, (PointerValue<'ctx>, BasicTypeEnum<'ctx>)>,
 
     pub locals: HashMap<NString, (PointerValue<'ctx>, BasicTypeEnum<'ctx>)>,
+    pub parameters: HashMap<NString, (PointerValue<'ctx>, BasicTypeEnum<'ctx>)>,
     pub default_continue_target: Vec<(Option<NString>, BasicBlock<'ctx>)>,
     pub default_break_target: Vec<(Option<NString>, BasicBlock<'ctx>)>,
 }
@@ -61,6 +62,7 @@ impl<'ctx, 'module, 'store, 'tab, 'builder, 'global>
             globals,
 
             locals: HashMap::new(),
+            parameters: HashMap::new(),
             default_continue_target: Vec::new(),
             default_break_target: Vec::new(),
         }

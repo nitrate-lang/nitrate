@@ -181,9 +181,14 @@ pub(crate) fn gen_place<'ctx>(
             }
         }
 
-        hir::Value::ParameterSymbol { id: _ } => {
-            // TODO: implement parameter symbol codegen
-            unimplemented!()
+        hir::Value::ParameterSymbol { id } => {
+            let parameter = ctx.store[id].borrow();
+            match ctx.parameters.get(&parameter.name) {
+                Some(ptr) => Ok(ptr.0),
+                None => Err(CodegenError::SymbolNotFound {
+                    symbol_name: parameter.name.clone(),
+                }),
+            }
         }
     }
 }

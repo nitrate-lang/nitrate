@@ -288,7 +288,7 @@ impl Ast2Hir for ast::GlobalVariable {
 }
 
 impl Ast2Hir for ast::FuncParam {
-    type Hir = Parameter;
+    type Hir = ParameterId;
 
     fn ast2hir(self, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
         let attributes = BTreeSet::new();
@@ -303,8 +303,7 @@ impl Ast2Hir for ast::FuncParam {
             Some(ast::Mutability::Const) | None => false,
         };
 
-        let name = self.name.to_string().into();
-
+        let name = ctx.qualify_name(&self.name).into();
         let ty = self.ty.to_owned().ast2hir(ctx, log)?.into_id(&ctx.store);
 
         let default_value = match self.default_value.to_owned() {
@@ -312,13 +311,19 @@ impl Ast2Hir for ast::FuncParam {
             None => None,
         };
 
-        Ok(Parameter {
+        let parameter_id = Parameter {
             attributes,
             is_mutable,
             name,
             ty,
             default_value,
-        })
+        }
+        .into_id(&ctx.store);
+
+        let parameter = SymbolId::Parameter(parameter_id.clone());
+        ctx.tab.add_symbol(parameter, &ctx.store);
+
+        Ok(parameter_id)
     }
 }
 
@@ -379,7 +384,7 @@ impl Ast2Hir for ast::Function {
         let mut parameters = Vec::with_capacity(self.parameters.len());
         for param in &self.parameters {
             let param_hir = param.to_owned().ast2hir(ctx, log)?;
-            parameters.push(param_hir.into_id(&ctx.store));
+            parameters.push(param_hir);
         }
 
         let return_type = match &self.return_type {

@@ -33,14 +33,13 @@ pub struct SymbolGenCtx<'ctx, 'store, 'tab, 'package_name, 'module> {
 }
 
 impl<'ctx, 'store, 'tab, 'package_name, 'module>
-    From<&mut SymbolGenCtx<'ctx, 'store, 'tab, 'package_name, 'module>>
-    for TypegenCtx<'ctx, 'store, 'tab>
+    SymbolGenCtx<'ctx, 'store, 'tab, 'package_name, 'module>
 {
-    fn from(codegen_ctx: &mut SymbolGenCtx<'ctx, 'store, 'tab, 'package_name, 'module>) -> Self {
+    fn ty_ctx(&self) -> TypegenCtx<'ctx, 'store, 'tab> {
         TypegenCtx {
-            llvm: codegen_ctx.llvm,
-            store: codegen_ctx.store,
-            tab: codegen_ctx.tab,
+            llvm: self.llvm,
+            store: self.store,
+            tab: self.tab,
         }
     }
 }
@@ -59,7 +58,7 @@ fn gen_global<'ctx>(
     hir_global: &hir::GlobalVariable,
 ) {
     let hir_global_ty = &ctx.store[&hir_global.ty];
-    let global_ty = gen_ty(hir_global_ty, &mut ctx.into());
+    let global_ty = gen_ty(hir_global_ty, &mut ctx.ty_ctx());
 
     let llvm_global = ctx
         .module
@@ -140,11 +139,11 @@ fn gen_function_decl<'ctx>(
     let mut param_types = Vec::with_capacity(hir_function.params.len());
     for param in &hir_function.params {
         let param_type_id = ctx.store[param].borrow().ty;
-        let param_type = gen_ty(&ctx.store[&param_type_id], &mut ctx.into());
+        let param_type = gen_ty(&ctx.store[&param_type_id], &mut ctx.ty_ctx());
         param_types.push(param_type.into());
     }
 
-    let return_type = gen_ty(&ctx.store[&hir_function.return_type], &mut ctx.into());
+    let return_type = gen_ty(&ctx.store[&hir_function.return_type], &mut ctx.ty_ctx());
 
     let variadic = hir_function
         .attributes
@@ -177,6 +176,21 @@ fn gen_function<'ctx>(
 
         let entry = ctx.llvm.append_basic_block(llvm_function, "entry");
         bb.position_at_end(entry);
+
+        for (i, param_id) in hir_function.params.iter().enumerate() {
+            let hir_param = &ctx.store[param_id].borrow();
+            let llvm_param_type = gen_ty(&ctx.store[&hir_param.ty], &mut ctx.ty_ctx());
+            let llvm_param = llvm_function.get_nth_param(i as u32).unwrap();
+
+            let alloca = bb
+                .build_alloca(llvm_param_type, &format!("param_{}", hir_param.name))
+                .unwrap();
+            bb.build_store(alloca, llvm_param).unwrap();
+
+            val_ctx
+                .parameters
+                .insert(hir_param.name.to_owned(), (alloca, llvm_param_type));
+        }
 
         let body = &ctx.store[body].borrow();
         gen_block(&mut val_ctx, body).expect("rvalue lowering err");
