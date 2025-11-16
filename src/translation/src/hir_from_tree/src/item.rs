@@ -266,7 +266,7 @@ impl Ast2Hir for ast::GlobalVariable {
             }
         };
 
-        let global_variable_id = GlobalVariable {
+        let global_variable = GlobalVariable {
             visibility,
             attributes,
             is_mutable,
@@ -274,13 +274,17 @@ impl Ast2Hir for ast::GlobalVariable {
             mangled_name,
             ty,
             init,
+        };
+
+        if let Some(existing_global_id) = ctx.tab.get_global_variable(&global_variable.name) {
+            let mut existing_global_variable = ctx.store[existing_global_id].borrow_mut();
+            *existing_global_variable = global_variable;
+            Ok(existing_global_id.clone())
+        } else {
+            let variable_id = global_variable.into_id(&ctx.store);
+            ctx.tab.add_global_variable(variable_id.clone(), &ctx.store);
+            Ok(variable_id)
         }
-        .into_id(&ctx.store);
-
-        ctx.tab
-            .add_global_variable(global_variable_id.clone(), &ctx.store);
-
-        Ok(global_variable_id)
     }
 }
 
@@ -419,21 +423,27 @@ impl Ast2Hir for ast::Function {
             }
         };
 
-        let function_id = Function {
+        ctx.current_scope.pop();
+
+        let function = Function {
             visibility,
             attributes,
-            name,
+            name: name.clone(),
             mangled_name,
             params: parameters,
             return_type: return_type.into_id(&ctx.store),
             body,
+        };
+
+        if let Some(existing_function_id) = ctx.tab.get_function(&name) {
+            let mut existing_function = ctx.store[existing_function_id].borrow_mut();
+            *existing_function = function;
+            Ok(existing_function_id.clone())
+        } else {
+            let function_id = function.into_id(&ctx.store);
+            ctx.tab.add_function(function_id.clone(), &ctx.store);
+            Ok(function_id)
         }
-        .into_id(&ctx.store);
-
-        ctx.tab.add_function(function_id.clone(), &ctx.store);
-        ctx.current_scope.pop();
-
-        Ok(function_id)
     }
 }
 

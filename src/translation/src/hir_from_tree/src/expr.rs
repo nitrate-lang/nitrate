@@ -680,10 +680,20 @@ impl Ast2Hir for ast::ExprPath {
                     }
 
                     None => {
-                        println!("Function not found: {}", resolved_path);
-                        println!("Symbols: {:?}", ctx.tab);
-                        // TODO: Create function placeholder
-                        unimplemented!()
+                        let placeholder = Function {
+                            visibility: Visibility::Sec,
+                            attributes: BTreeSet::new(),
+                            name: resolved_path.clone(),
+                            mangled_name: resolved_path,
+                            params: vec![],
+                            return_type: ctx.create_inference_placeholder().into_id(&ctx.store),
+                            body: None,
+                        };
+
+                        let placeholder_id = placeholder.into_id(&ctx.store);
+                        ctx.tab.add_function(placeholder_id.clone(), &ctx.store);
+
+                        return Ok(Value::FunctionSymbol { id: placeholder_id });
                     }
                 },
 
@@ -696,8 +706,21 @@ impl Ast2Hir for ast::ExprPath {
                         }
 
                         None => {
-                            // TODO: Create global variable placeholder
-                            unimplemented!()
+                            let placeholder = GlobalVariable {
+                                visibility: Visibility::Sec,
+                                attributes: BTreeSet::new(),
+                                is_mutable: true,
+                                name: resolved_path.clone(),
+                                mangled_name: resolved_path,
+                                ty: ctx.create_inference_placeholder().into_id(&ctx.store),
+                                init: Value::Unit.into_id(&ctx.store),
+                            };
+
+                            let placeholder_id = placeholder.into_id(&ctx.store);
+                            ctx.tab
+                                .add_global_variable(placeholder_id.clone(), &ctx.store);
+
+                            return Ok(Value::GlobalVariableSymbol { id: placeholder_id });
                         }
                     }
                 }
@@ -711,27 +734,24 @@ impl Ast2Hir for ast::ExprPath {
                         }
 
                         None => {
-                            println!("Creating placeholder for local variable: {}", resolved_path);
-                            // TODO: Create local variable placeholder
-                            unimplemented!()
+                            log.report(&HirErr::UnresolvedSymbol);
+                            Err(())
                         }
                     }
                 }
 
-                Some(SymbolKind::Parameter) => {
-                    match ctx.tab.get_parameter(&resolved_path) {
-                        Some(existing_parameter_id) => {
-                            return Ok(Value::ParameterSymbol {
-                                id: existing_parameter_id.clone(),
-                            });
-                        }
-
-                        None => {
-                            // TODO: Create parameter placeholder
-                            unimplemented!()
-                        }
+                Some(SymbolKind::Parameter) => match ctx.tab.get_parameter(&resolved_path) {
+                    Some(existing_parameter_id) => {
+                        return Ok(Value::ParameterSymbol {
+                            id: existing_parameter_id.clone(),
+                        });
                     }
-                }
+
+                    None => {
+                        log.report(&HirErr::UnresolvedSymbol);
+                        Err(())
+                    }
+                },
 
                 _ => {
                     println!("Unresolved symbol: {}", resolved_path);

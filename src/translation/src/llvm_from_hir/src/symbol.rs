@@ -206,9 +206,8 @@ pub(crate) fn gen_module<'ctx>(ctx: &mut SymbolGenCtx<'ctx, '_, '_, '_, '_>, mod
 
             hir::Item::Module(id) => gen_module(ctx, &ctx.store[id].borrow()),
 
-            hir::Item::GlobalVariable(id) => {
-                let hir_global = ctx.store[id].borrow();
-                gen_global(ctx, &hir_global);
+            hir::Item::GlobalVariable(_) => {
+                // Already generated in advance
             }
 
             hir::Item::Function(id) => {
@@ -242,6 +241,11 @@ pub fn generate_llvmir<'ctx>(
     for function_id in tab.functions() {
         let function = store[function_id].borrow();
         gen_function_decl(&mut ctx, &function);
+    }
+
+    for global_id in tab.global_variables() {
+        let global_var = store[global_id].borrow();
+        gen_global(&mut ctx, &global_var);
     }
 
     gen_module(&mut ctx, &hir);

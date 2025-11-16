@@ -135,6 +135,16 @@ impl SymbolTab {
         })
     }
 
+    pub fn global_variables(&self) -> impl Iterator<Item = &GlobalVariableId> {
+        self.symbols.values().filter_map(|symbol_id| {
+            if let SymbolId::GlobalVariable(global_var_id) = symbol_id {
+                Some(global_var_id)
+            } else {
+                None
+            }
+        })
+    }
+
     pub fn get_method(&self, type_def: &TypeId, method_name: &NString) -> Option<&FunctionId> {
         self.methods.get(&(*type_def, method_name.clone()))
     }
