@@ -1428,12 +1428,53 @@ fn gen_rval_enum_variant<'ctx>(
 }
 
 fn gen_rval_field_access<'ctx>(
-    _ctx: &mut CodegenCtx<'ctx, '_, '_, '_, '_, '_>,
-    _struct_value: &hir::Value,
-    _field_name: &NString,
+    ctx: &mut CodegenCtx<'ctx, '_, '_, '_, '_, '_>,
+    struct_value: &hir::Value,
+    field_name: &NString,
 ) -> Result<BasicValueEnum<'ctx>, CodegenError> {
+    let struct_ty_id = struct_value
+        .get_type(ctx.store, ctx.tab)
+        .expect("Failed to get type");
+    println!("Struct type: {:?}", struct_ty_id);
+    let struct_ty = match struct_ty_id {
+        hir::Type::Struct { struct_type } => &ctx.store[&struct_type],
+        _ => panic!("Expected struct type for field access"),
+    };
+
+    let llvm_struct_value = gen_rval(ctx, struct_value)?;
+    let llvm_struct_ty = llvm_struct_value.get_type();
+
+    let field_index = struct_ty
+        .fields
+        .iter()
+        .position(|field| &field.name == field_name)
+        .expect("Field not found in struct");
+    let index = ctx.llvm.i32_type().const_int(field_index as u64, false);
+
+    let gep = unsafe {
+        // SAFETY: ** I don't know if this is safe or not
+        ctx.bb.build_in_bounds_gep(
+            llvm_struct_ty,
+            llvm_struct_value.into_pointer_value(),
+            &[ctx.llvm.i32_type().const_int(0, false), index],
+            "field_access_gep",
+        )
+    }
+    .unwrap();
+
+    let load = ctx
+        .bb
+        .build_load(
+            llvm_struct_ty.into_struct_type().get_field_types()[field_index],
+            gep,
+            "field_access_load",
+        )
+        .unwrap();
+
+    Ok(load.into())
+
     // TODO: implement field access codegen
-    unimplemented!()
+    // unimplemented!()
 }
 
 fn gen_rval_index_access<'ctx>(

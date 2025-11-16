@@ -122,18 +122,20 @@ impl TypeIter<'_> {
             }
 
             Type::Reference { to, .. } => {
+                // FIXME: Infinite recursion for self-referential types
                 store[to].iter().try_for_each(store, vcb, tcb)?;
             }
 
             Type::SliceRef { element_type, .. } => {
+                // FIXME: Infinite recursion for self-referential types
                 store[element_type].iter().try_for_each(store, vcb, tcb)?;
             }
 
             Type::Pointer { to, .. } => {
+                // FIXME: Infinite recursion for self-referential types
                 store[to].iter().try_for_each(store, vcb, tcb)?;
             }
 
-            Type::Symbol { path: _ } => {}
             Type::InferredFloat => {}
             Type::InferredInteger => {}
             Type::Inferred { id: _ } => {}

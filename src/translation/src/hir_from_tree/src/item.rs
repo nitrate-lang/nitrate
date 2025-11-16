@@ -326,6 +326,8 @@ impl Ast2Hir for ast::Function {
             Some(ast::Visibility::Private) | None => Visibility::Sec,
         };
 
+        ctx.current_scope.push(self.name.clone());
+
         let mut attributes = BTreeSet::new();
         if let Some(ast_attributes) = &self.attributes {
             for attr in ast_attributes {
@@ -361,8 +363,6 @@ impl Ast2Hir for ast::Function {
         } else {
             ctx.qualify_name(&self.name).into()
         };
-
-        ctx.current_scope.push(name.clone());
 
         if self.generics.is_some() {
             // TODO: support generic functions

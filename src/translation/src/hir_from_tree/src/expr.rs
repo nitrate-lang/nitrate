@@ -743,6 +743,7 @@ impl Ast2Hir for ast::ExprPath {
                         }
 
                         None => {
+                            println!("Creating placeholder for local variable: {}", resolved_path);
                             // TODO: Create local variable placeholder
                             unimplemented!()
                         }

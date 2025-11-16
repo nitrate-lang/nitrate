@@ -82,29 +82,6 @@ pub fn get_align_of(ty: &Type, ctx: &LayoutCtx) -> Result<u64, LayoutError> {
         Type::SliceRef { .. } => Ok(ctx.ptr_size as u64),
         Type::Pointer { .. } => Ok(ctx.ptr_size as u64),
 
-        Type::Symbol { path } => match ctx.tab.get_type(path) {
-            Some(TypeDefinition::TypeAliasDef(type_alias_id)) => {
-                let type_id = ctx.store[type_alias_id].borrow().type_id;
-                get_align_of(&ctx.store[&type_id], ctx)
-            }
-
-            Some(TypeDefinition::EnumDef(enum_id)) => {
-                let enum_type = Type::Enum {
-                    enum_type: ctx.store[enum_id].borrow().enum_id,
-                };
-                get_align_of(&enum_type, ctx)
-            }
-
-            Some(TypeDefinition::StructDef(struct_id)) => {
-                let struct_type = Type::Struct {
-                    struct_type: ctx.store[struct_id].borrow().struct_id,
-                };
-                get_align_of(&struct_type, ctx)
-            }
-
-            None => Err(LayoutError::UnresolvedSymbol),
-        },
-
         Type::InferredInteger { .. } | Type::InferredFloat | Type::Inferred { .. } => {
             Err(LayoutError::NotInferred)
         }

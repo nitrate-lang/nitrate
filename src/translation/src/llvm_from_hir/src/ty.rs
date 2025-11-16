@@ -134,38 +134,6 @@ pub(crate) fn gen_ty<'ctx>(
             ctx.llvm.ptr_type(AddressSpace::default()).into()
         }
 
-        hir::Type::Symbol { path } => {
-            match ctx
-                .tab
-                .get_type(path)
-                .expect("Unknown type name encountered during code generation")
-            {
-                hir::TypeDefinition::EnumDef(id) => {
-                    let enum_def = ctx.store[id].borrow();
-                    let enum_type = hir::Type::Enum {
-                        enum_type: enum_def.enum_id,
-                    };
-
-                    gen_ty(&enum_type, ctx)
-                }
-
-                hir::TypeDefinition::StructDef(id) => {
-                    let struct_def = ctx.store[id].borrow();
-                    let struct_type = hir::Type::Struct {
-                        struct_type: struct_def.struct_id,
-                    };
-
-                    gen_ty(&struct_type, ctx)
-                }
-
-                hir::TypeDefinition::TypeAliasDef(id) => {
-                    let type_alias_def = ctx.store[id].borrow();
-                    let aliased_type = &ctx.store[&type_alias_def.type_id];
-                    gen_ty(aliased_type, ctx)
-                }
-            }
-        }
-
         hir::Type::InferredFloat | hir::Type::InferredInteger | hir::Type::Inferred { .. } => {
             panic!("Inferred types should have been resolved before code generation")
         }

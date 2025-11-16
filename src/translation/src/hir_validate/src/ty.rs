@@ -216,6 +216,7 @@ impl ValidateHir for Type {
                     Lifetime::Inferred => return Err(()),
                 }
 
+                // FIXME: Infinite recursion for self-referential types
                 store[to].verify(store, symtab)
             }
 
@@ -233,14 +234,13 @@ impl ValidateHir for Type {
                     Lifetime::Inferred => return Err(()),
                 }
 
+                // FIXME: Infinite recursion for self-referential types
                 store[element_type].verify(store, symtab)
             }
 
-            Type::Pointer { to, .. } => store[to].verify(store, symtab),
-
-            Type::Symbol { path: _ } => {
-                // TODO: cyclic analysis of types
-                Ok(())
+            Type::Pointer { to, .. } => {
+                // FIXME: Infinite recursion for self-referential types
+                store[to].verify(store, symtab)
             }
 
             Type::InferredFloat | Type::InferredInteger | Type::Inferred { .. } => Err(()),

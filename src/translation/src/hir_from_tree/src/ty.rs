@@ -145,13 +145,15 @@ impl Ast2Hir for ast::TypePath {
             ));
         }
 
-        if let Some(resolved_path) = self.resolved_path {
-            let path = NString::from(resolved_path);
-            return Ok(Type::Symbol { path });
-        }
+        unimplemented!();
 
-        log.report(&HirErr::UnresolvedTypePath);
-        Err(())
+        // if let Some(resolved_path) = self.resolved_path {
+        //     let path = NString::from(resolved_path);
+        //     return Ok(Type::Symbol { path });
+        // }
+
+        // log.report(&HirErr::UnresolvedTypePath);
+        // Err(())
     }
 }
 

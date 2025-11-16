@@ -1,4 +1,3 @@
-use crate::string::mangle_string;
 use core::panic;
 use nitrate_hir::prelude::*;
 
@@ -113,6 +112,7 @@ pub(crate) fn mangle_type(ty: &Type, store: &Store) -> String {
                 (false, false) => "D",
             };
 
+            // FIXME: Infinite recursion for self-referential types
             let to_mangled = mangle_type(&store[to], store);
             format!("R{}{}{}", lifetime_mangled, exmut_mangled, to_mangled)
         }
@@ -138,6 +138,7 @@ pub(crate) fn mangle_type(ty: &Type, store: &Store) -> String {
                 (false, false) => "D",
             };
 
+            // FIXME: Infinite recursion for self-referential types
             let elem_mangled = mangle_type(&store[element_type], store);
             format!("Q{}{}{}", lifetime_mangled, exmut_mangled, elem_mangled)
         }
@@ -154,13 +155,9 @@ pub(crate) fn mangle_type(ty: &Type, store: &Store) -> String {
                 (false, false) => "D",
             };
 
+            // FIXME: Infinite recursion for self-referential types
             let to_mangled = mangle_type(&store[to], store);
             format!("P{}{}", exmut_mangled, to_mangled)
-        }
-
-        Type::Symbol { path } => {
-            let mangled_path = mangle_string(path);
-            format!("Z{}", mangled_path)
         }
 
         Type::InferredFloat | Type::InferredInteger | Type::Inferred { .. } => {

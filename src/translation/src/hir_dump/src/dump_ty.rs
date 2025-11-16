@@ -240,6 +240,7 @@ impl Dump for Type {
                     (false, false) => write!(o, "")?,
                 }
 
+                // FIXME: Infinite recursion for self-referential types
                 ctx.store[to].dump(ctx, o)
             }
 
@@ -264,6 +265,7 @@ impl Dump for Type {
                     (false, false) => write!(o, "")?,
                 }
 
+                // FIXME: Infinite recursion for self-referential types
                 write!(o, "[")?;
                 ctx.store[element_type].dump(ctx, o)?;
                 write!(o, "]")
@@ -283,10 +285,9 @@ impl Dump for Type {
                     (false, false) => write!(o, "")?,
                 }
 
+                // FIXME: Infinite recursion for self-referential types
                 ctx.store[to].dump(ctx, o)
             }
-
-            Type::Symbol { path } => write!(o, "{}", path),
 
             Type::InferredFloat => write!(o, "?f"),
             Type::InferredInteger => write!(o, "?i"),
