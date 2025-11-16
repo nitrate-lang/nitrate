@@ -80,12 +80,6 @@ pub(crate) fn gen_place<'ctx>(
             gen_place_field_access(ctx, &expr, field_name)
         }
 
-        hir::Value::IndexAccess { collection, index } => {
-            let collection = ctx.store[collection].borrow();
-            let index = ctx.store[index].borrow();
-            gen_place_index_access(ctx, &collection, &index)
-        }
-
         hir::Value::Deref { place } => {
             let place = ctx.store[place].borrow();
             gen_place_deref(ctx, &place)
@@ -96,14 +90,24 @@ pub(crate) fn gen_place<'ctx>(
             unimplemented!()
         }
 
-        hir::Value::GlobalVariableSymbol { id: _ } => {
-            // TODO: implement global variable symbol codegen
-            unimplemented!()
+        hir::Value::GlobalVariableSymbol { id } => {
+            let global_var = ctx.store[id].borrow();
+            match ctx.globals.get(&global_var.name) {
+                Some(ptr) => Ok(ptr.0),
+                None => Err(CodegenError::SymbolNotFound {
+                    symbol_name: global_var.name.clone(),
+                }),
+            }
         }
 
-        hir::Value::LocalVariableSymbol { id: _ } => {
-            // TODO: implement local variable symbol codegen
-            unimplemented!()
+        hir::Value::LocalVariableSymbol { id } => {
+            let local_var = ctx.store[id].borrow();
+            match ctx.locals.get(&local_var.name) {
+                Some(ptr) => Ok(ptr.0),
+                None => Err(CodegenError::SymbolNotFound {
+                    symbol_name: local_var.name.clone(),
+                }),
+            }
         }
 
         hir::Value::ParameterSymbol { id: _ } => {

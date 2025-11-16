@@ -194,17 +194,6 @@ impl Dump for Value {
                 write!(o, ".{})", field)
             }
 
-            Value::IndexAccess {
-                collection: expr,
-                index,
-            } => {
-                write!(o, "(")?;
-                ctx.store[expr].borrow().dump(ctx, o)?;
-                write!(o, "[")?;
-                ctx.store[index].borrow().dump(ctx, o)?;
-                write!(o, "])")
-            }
-
             Value::Assign { place, value } => {
                 write!(o, "(")?;
                 ctx.store[place].borrow().dump(ctx, o)?;

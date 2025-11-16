@@ -431,26 +431,6 @@ impl HirEvaluate for Value {
                 _ => Err(Unwind::TypeError),
             },
 
-            Value::IndexAccess {
-                collection: expr,
-                index,
-            } => {
-                let index = match ctx.evaluate_to_literal(&ctx.store[index].borrow())? {
-                    Lit::USize32(i) => i as usize,
-                    Lit::USize64(i) => i as usize,
-                    _ => return Err(Unwind::TypeError),
-                };
-
-                match ctx.store[expr].borrow().evaluate(ctx)? {
-                    Value::List { elements } => match elements.get(index) {
-                        Some(elem) => Ok(elem.evaluate(ctx)?),
-                        None => Err(Unwind::IndexOutOfBounds),
-                    },
-
-                    _ => Err(Unwind::TypeError),
-                }
-            }
-
             Value::Assign { place: _, value: _ } => {
                 // TODO: evaluate assignment expressions
                 unimplemented!()

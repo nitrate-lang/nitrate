@@ -4,7 +4,6 @@ use nitrate_hir::prelude::*;
 pub enum TypeInferenceError {
     EnumVariantNotPresent,
     FieldAccessOnNonStruct,
-    IndexAccessOnNonCollection,
     CalleeIsNotFunctionType,
     TraitHasNoType,
     UnresolvedSymbol,
@@ -176,18 +175,6 @@ impl HirGetType for Value {
                 }
 
                 Err(TypeInferenceError::FieldAccessOnNonStruct)
-            }
-
-            Value::IndexAccess {
-                collection,
-                index: _,
-            } => {
-                let collection = &store[collection].borrow();
-                if let Type::Array { element_type, .. } = collection.get_type(store, tab)? {
-                    return Ok((&store[&element_type]).clone());
-                }
-
-                Err(TypeInferenceError::IndexAccessOnNonCollection)
             }
 
             Value::Assign { place: _, value: _ } => Ok(Type::Unit),

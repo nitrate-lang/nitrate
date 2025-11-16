@@ -324,11 +324,6 @@ pub enum Value {
         field_name: NString,
     },
 
-    IndexAccess {
-        collection: ValueId,
-        index: ValueId,
-    },
-
     Assign {
         place: ValueId,
         value: ValueId,
@@ -518,10 +513,6 @@ impl Value {
 
     pub fn is_field_access(&self) -> bool {
         matches!(self, Value::FieldAccess { .. })
-    }
-
-    pub fn is_index_access(&self) -> bool {
-        matches!(self, Value::IndexAccess { .. })
     }
 
     pub fn is_assign(&self) -> bool {

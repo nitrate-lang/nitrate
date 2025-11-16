@@ -115,18 +115,6 @@ impl ValueIterMut<'_> {
                     .try_for_each_mut(store, vcb)?;
             }
 
-            Value::IndexAccess { collection, index } => {
-                store[collection as &ValueId]
-                    .borrow_mut()
-                    .iter_mut()
-                    .try_for_each_mut(store, vcb)?;
-
-                store[index as &ValueId]
-                    .borrow_mut()
-                    .iter_mut()
-                    .try_for_each_mut(store, vcb)?;
-            }
-
             Value::Assign { place, value } => {
                 store[place as &ValueId]
                     .borrow_mut()

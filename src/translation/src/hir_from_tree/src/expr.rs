@@ -785,9 +785,9 @@ impl Ast2Hir for ast::IndexAccess {
     type Hir = Value;
 
     fn ast2hir(self, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
-        let collection = self.collection.ast2hir(ctx, log)?.into_id(&ctx.store);
-        let index = self.index.ast2hir(ctx, log)?.into_id(&ctx.store);
-        Ok(Value::IndexAccess { collection, index })
+        let _collection = self.collection.ast2hir(ctx, log)?.into_id(&ctx.store);
+        let _index = self.index.ast2hir(ctx, log)?.into_id(&ctx.store);
+        unimplemented!()
     }
 }
 

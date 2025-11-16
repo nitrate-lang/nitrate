@@ -84,14 +84,6 @@ impl ValidateHir for Value {
                 Ok(())
             }
 
-            Value::IndexAccess {
-                collection: _,
-                index: _,
-            } => {
-                // TODO: verify index access
-                Ok(())
-            }
-
             Value::Assign { place: _, value: _ } => {
                 // TODO: verify assignment
                 Ok(())

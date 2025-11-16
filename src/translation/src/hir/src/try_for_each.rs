@@ -247,15 +247,6 @@ impl ValueIter<'_> {
                 store[expr].borrow().iter().try_for_each(store, vcb, tcb)?;
             }
 
-            Value::IndexAccess { collection, index } => {
-                store[collection]
-                    .borrow()
-                    .iter()
-                    .try_for_each(store, vcb, tcb)?;
-
-                store[index].borrow().iter().try_for_each(store, vcb, tcb)?;
-            }
-
             Value::Assign { place, value } => {
                 store[place].borrow().iter().try_for_each(store, vcb, tcb)?;
 

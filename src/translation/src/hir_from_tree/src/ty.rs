@@ -3,7 +3,7 @@ use nitrate_diagnosis::CompilerLog;
 use nitrate_hir::prelude::*;
 use nitrate_hir_evaluate::HirEvalCtx;
 use nitrate_nstring::NString;
-use nitrate_tree::ast::{self as ast};
+use nitrate_tree::ast::{self as ast, SymbolKind};
 use std::{collections::BTreeSet, ops::Deref};
 
 impl Ast2Hir for ast::TypeSyntaxError {
@@ -137,7 +137,7 @@ impl Ast2Hir for ast::InferType {
 impl Ast2Hir for ast::TypePath {
     type Hir = Type;
 
-    fn ast2hir(self, _ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
+    fn ast2hir(self, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
         if self.segments.iter().any(|seg| seg.type_arguments.is_some()) {
             // TODO: Support generic type arguments
             log.report(&HirErr::UnimplementedFeature(
@@ -145,15 +145,57 @@ impl Ast2Hir for ast::TypePath {
             ));
         }
 
-        unimplemented!();
+        match self.resolved_path {
+            Some(resolved_path) => match ctx.ast_symbol_map.get(&resolved_path) {
+                Some(SymbolKind::Struct) => match ctx.tab.get_struct(&resolved_path) {
+                    Some(existing_struct_def_id) => {
+                        let struct_type = ctx.store[existing_struct_def_id].borrow().struct_id;
+                        return Ok(Type::Struct { struct_type });
+                    }
 
-        // if let Some(resolved_path) = self.resolved_path {
-        //     let path = NString::from(resolved_path);
-        //     return Ok(Type::Symbol { path });
-        // }
+                    None => {
+                        // TODO: Create struct placeholder
+                        unimplemented!()
+                    }
+                },
 
-        // log.report(&HirErr::UnresolvedTypePath);
-        // Err(())
+                Some(SymbolKind::Enum) => match ctx.tab.get_enum(&resolved_path) {
+                    Some(existing_enum_def_id) => {
+                        let enum_type = ctx.store[existing_enum_def_id].borrow().enum_id;
+                        return Ok(Type::Enum { enum_type });
+                    }
+
+                    None => {
+                        // TODO: Create enum placeholder
+                        unimplemented!()
+                    }
+                },
+
+                Some(SymbolKind::TypeAlias) => match ctx.tab.get_type_alias(&resolved_path) {
+                    Some(existing_type_alias_def_id) => {
+                        let type_id = ctx.store[existing_type_alias_def_id].borrow().type_id;
+                        return Ok(ctx.store[&type_id].clone());
+                    }
+
+                    None => {
+                        // TODO: Create type alias placeholder
+                        unimplemented!()
+                    }
+                },
+
+                _ => {
+                    println!("Unresolved type path: {}", resolved_path);
+                    log.report(&HirErr::UnresolvedSymbol);
+                    Err(())
+                }
+            },
+
+            None => {
+                println!("Unresolved type path: {:?}", self.segments);
+                log.report(&HirErr::UnresolvedTypePath);
+                Err(())
+            }
+        }
     }
 }
 

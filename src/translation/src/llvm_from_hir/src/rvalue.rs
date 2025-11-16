@@ -1432,30 +1432,35 @@ fn gen_rval_field_access<'ctx>(
     struct_value: &hir::Value,
     field_name: &NString,
 ) -> Result<BasicValueEnum<'ctx>, CodegenError> {
-    let struct_ty_id = struct_value
+    let hir_struct_ty = &ctx.store[struct_value
         .get_type(ctx.store, ctx.tab)
-        .expect("Failed to get type");
-    println!("Struct type: {:?}", struct_ty_id);
-    let struct_ty = match struct_ty_id {
-        hir::Type::Struct { struct_type } => &ctx.store[&struct_type],
-        _ => panic!("Expected struct type for field access"),
-    };
+        .expect("Failed to get type")
+        .as_struct()
+        .expect("expected struct type")];
 
-    let llvm_struct_value = gen_rval(ctx, struct_value)?;
-    let llvm_struct_ty = llvm_struct_value.get_type();
-
-    let field_index = struct_ty
+    let field_index = hir_struct_ty
         .fields
         .iter()
         .position(|field| &field.name == field_name)
         .expect("Field not found in struct");
+
+    let field_ty = &ctx.store[&hir_struct_ty.fields[field_index].ty];
+
+    let llvm_struct_value = gen_place(ctx, struct_value)?;
+    let llvm_struct_ty = gen_ty(
+        &struct_value
+            .get_type(ctx.store, ctx.tab)
+            .expect("unable to get struct type"),
+        &mut ctx.into(),
+    );
+
     let index = ctx.llvm.i32_type().const_int(field_index as u64, false);
 
     let gep = unsafe {
         // SAFETY: ** I don't know if this is safe or not
         ctx.bb.build_in_bounds_gep(
             llvm_struct_ty,
-            llvm_struct_value.into_pointer_value(),
+            llvm_struct_value,
             &[ctx.llvm.i32_type().const_int(0, false), index],
             "field_access_gep",
         )
@@ -1464,26 +1469,10 @@ fn gen_rval_field_access<'ctx>(
 
     let load = ctx
         .bb
-        .build_load(
-            llvm_struct_ty.into_struct_type().get_field_types()[field_index],
-            gep,
-            "field_access_load",
-        )
+        .build_load(gen_ty(&field_ty, &mut ctx.into()), gep, "field_access_load")
         .unwrap();
 
     Ok(load.into())
-
-    // TODO: implement field access codegen
-    // unimplemented!()
-}
-
-fn gen_rval_index_access<'ctx>(
-    _ctx: &mut CodegenCtx<'ctx, '_, '_, '_, '_, '_>,
-    _collection: &hir::Value,
-    _index: &hir::Value,
-) -> Result<BasicValueEnum<'ctx>, CodegenError> {
-    // TODO: implement index access codegen
-    unimplemented!()
 }
 
 fn gen_rval_assign<'ctx>(
@@ -2068,12 +2057,6 @@ pub(crate) fn gen_rval<'ctx>(
         hir::Value::FieldAccess { expr, field_name } => {
             let expr = &ctx.store[expr].borrow();
             gen_rval_field_access(ctx, expr, field_name)
-        }
-
-        hir::Value::IndexAccess { collection, index } => {
-            let collection = &ctx.store[collection].borrow();
-            let index = &ctx.store[index].borrow();
-            gen_rval_index_access(ctx, collection, index)
         }
 
         hir::Value::Assign { place, value } => {
