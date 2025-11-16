@@ -277,8 +277,8 @@ impl Ast2Hir for ast::GlobalVariable {
         }
         .into_id(&ctx.store);
 
-        let variable = SymbolId::GlobalVariable(global_variable_id.clone());
-        ctx.tab.add_symbol(variable, &ctx.store);
+        ctx.tab
+            .add_global_variable(global_variable_id.clone(), &ctx.store);
 
         Ok(global_variable_id)
     }
@@ -317,8 +317,7 @@ impl Ast2Hir for ast::FuncParam {
         }
         .into_id(&ctx.store);
 
-        let parameter = SymbolId::Parameter(parameter_id.clone());
-        ctx.tab.add_symbol(parameter, &ctx.store);
+        ctx.tab.add_parameter(parameter_id.clone(), &ctx.store);
 
         Ok(parameter_id)
     }
@@ -431,9 +430,7 @@ impl Ast2Hir for ast::Function {
         }
         .into_id(&ctx.store);
 
-        let function = SymbolId::Function(function_id.clone());
-        ctx.tab.add_symbol(function, &ctx.store);
-
+        ctx.tab.add_function(function_id.clone(), &ctx.store);
         ctx.current_scope.pop();
 
         Ok(function_id)

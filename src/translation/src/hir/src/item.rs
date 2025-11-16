@@ -153,25 +153,6 @@ impl TypeDefinition {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
-pub enum SymbolId {
-    GlobalVariable(GlobalVariableId),
-    LocalVariable(LocalVariableId),
-    Parameter(ParameterId),
-    Function(FunctionId),
-}
-
-impl SymbolId {
-    pub fn name(&self, store: &Store) -> NString {
-        match self {
-            SymbolId::Function(id) => store[id].borrow().name.clone(),
-            SymbolId::GlobalVariable(id) => store[id].borrow().name.clone(),
-            SymbolId::LocalVariable(id) => store[id].borrow().name.clone(),
-            SymbolId::Parameter(id) => store[id].borrow().name.clone(),
-        }
-    }
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub enum Item {
     Module(ModuleId),
     GlobalVariable(GlobalVariableId),

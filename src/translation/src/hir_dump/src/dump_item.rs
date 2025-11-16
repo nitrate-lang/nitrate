@@ -414,21 +414,6 @@ impl Dump for EnumDefId {
     }
 }
 
-impl Dump for SymbolId {
-    fn dump(
-        &self,
-        ctx: &mut DumpContext,
-        o: &mut dyn std::io::Write,
-    ) -> Result<(), std::io::Error> {
-        match self {
-            SymbolId::Parameter(fp) => fp.dump(ctx, o),
-            SymbolId::Function(f) => f.dump(ctx, o),
-            SymbolId::GlobalVariable(gv) => gv.dump(ctx, o),
-            SymbolId::LocalVariable(lv) => lv.dump(ctx, o),
-        }
-    }
-}
-
 impl Dump for Item {
     fn dump(
         &self,

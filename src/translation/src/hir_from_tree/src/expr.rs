@@ -600,8 +600,7 @@ fn ast_localvar2hir(
     }
     .into_id(&ctx.store);
 
-    let symbol = SymbolId::LocalVariable(localvar_id.clone());
-    ctx.tab.add_symbol(symbol, &ctx.store);
+    ctx.tab.add_local_variable(localvar_id.clone(), &ctx.store);
 
     Ok(localvar_id)
 }
