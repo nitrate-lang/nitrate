@@ -1,5 +1,5 @@
 use nitrate_diagnosis::CompilerLog;
-use nitrate_hir::Store;
+use nitrate_hir::{Function, Store};
 
 pub struct TyCtx<'store> {
     pub(crate) store: &'store Store,
@@ -20,6 +20,6 @@ impl<'store> TyCtx<'store> {
     }
 }
 
-pub trait TypeResolver {
-    fn resolve_type(&mut self, ctx: &mut TyCtx, log: &CompilerLog);
+pub fn resolve_types(function: &mut Function, ctx: &mut TyCtx, log: &CompilerLog) {
+    // TODO: type resolution/inference/checking logic
 }

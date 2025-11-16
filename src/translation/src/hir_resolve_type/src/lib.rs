@@ -1,8 +1,5 @@
 #![forbid(unsafe_code)]
 
-mod expr;
-mod item;
-mod resolve_type;
-mod ty;
+mod resolve;
 
-pub use resolve_type::*;
+pub use resolve::*;
