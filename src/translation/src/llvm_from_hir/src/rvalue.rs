@@ -6,7 +6,7 @@ use inkwell::{
 
 use crate::{
     place::gen_place,
-    ty::{gen_function_ty, gen_ty},
+    ty::{TypegenCtx, gen_function_ty, gen_ty},
 };
 use nitrate_hir::{ValueId, prelude as hir};
 use nitrate_hir_get_type::HirGetType;
@@ -26,6 +26,19 @@ pub struct CodegenCtx<'ctx, 'module, 'store, 'tab, 'builder, 'global> {
     pub locals: HashMap<NString, (PointerValue<'ctx>, BasicTypeEnum<'ctx>)>,
     pub default_continue_target: Vec<(Option<NString>, BasicBlock<'ctx>)>,
     pub default_break_target: Vec<(Option<NString>, BasicBlock<'ctx>)>,
+}
+
+impl<'ctx, 'module, 'store, 'tab, 'builder, 'global>
+    From<&mut CodegenCtx<'ctx, 'module, 'store, 'tab, 'builder, 'global>>
+    for TypegenCtx<'ctx, 'store, 'tab>
+{
+    fn from(codegen_ctx: &mut CodegenCtx<'ctx, 'module, 'store, 'tab, 'builder, 'global>) -> Self {
+        TypegenCtx {
+            llvm: codegen_ctx.llvm,
+            store: codegen_ctx.store,
+            tab: codegen_ctx.tab,
+        }
+    }
 }
 
 impl<'ctx, 'module, 'store, 'tab, 'builder, 'global>
@@ -1370,7 +1383,7 @@ fn gen_rval_struct_object<'ctx>(
         field_map.insert(field.name.clone(), i);
     }
 
-    let llvm_ty = gen_ty(&struct_ty, ctx.llvm, ctx.store, ctx.tab);
+    let llvm_ty = gen_ty(&struct_ty, &mut ctx.into());
     let struct_alloca = ctx.bb.build_alloca(llvm_ty, "struct_alloca").unwrap();
 
     for (field_name, field_value_id) in fields {
@@ -1462,7 +1475,7 @@ fn gen_rval_deref<'ctx>(
         let load = ctx
             .bb
             .build_load(
-                gen_ty(&pointee_ty, ctx.llvm, ctx.store, ctx.tab),
+                gen_ty(&pointee_ty, &mut ctx.into()),
                 llvm_value.into_pointer_value(),
                 "deref_load",
             )
@@ -1598,9 +1611,9 @@ fn gen_rval_if<'ctx>(
         let false_branch_ty = false_branch.get_type(ctx.store, ctx.tab).unwrap();
 
         let if_result_ty = if true_branch_ty.is_diverging() {
-            gen_ty(&false_branch_ty, ctx.llvm, ctx.store, ctx.tab)
+            gen_ty(&false_branch_ty, &mut ctx.into())
         } else {
-            gen_ty(&true_branch_ty, ctx.llvm, ctx.store, ctx.tab)
+            gen_ty(&true_branch_ty, &mut ctx.into())
         };
 
         let result = ctx.bb.build_alloca(if_result_ty, "if_result").unwrap();
@@ -1821,7 +1834,7 @@ fn gen_rval_block<'ctx>(
                 let hir_local_ty = &ctx.store[&hir_local.ty];
                 let hir_local_init = &ctx.store[hir_local.init.as_ref().unwrap()].borrow();
 
-                let llvm_local_ty = gen_ty(hir_local_ty, ctx.llvm, ctx.store, ctx.tab);
+                let llvm_local_ty = gen_ty(hir_local_ty, &mut ctx.into());
                 let llvm_local = ctx.bb.build_alloca(llvm_local_ty, &local_name).unwrap();
                 let llvm_init_value = gen_rval(ctx, hir_local_init)?;
                 ctx.bb.build_store(llvm_local, llvm_init_value).unwrap();
@@ -1853,66 +1866,45 @@ fn gen_rval_call<'ctx>(
     callee: &hir::Value,
     arguments: &[hir::ValueId],
 ) -> Result<BasicValueEnum<'ctx>, CodegenError> {
+    let callee_ty_hir = callee.get_type(&ctx.store, &ctx.tab).unwrap();
+    if !callee_ty_hir.is_function() {
+        return Err(CodegenError::OperandTypeCombinationError {
+            operation_name: "function call",
+        });
+    }
+
     let llvm_function_ty = gen_function_ty(
-        &ctx.store[callee
-            .get_type(&ctx.store, &ctx.tab)
-            .expect("Failed to get callee type")
-            .as_function()
-            .expect("Callee is not a function")],
-        ctx.llvm,
-        ctx.store,
-        ctx.tab,
+        &ctx.store[callee_ty_hir.as_function().unwrap()],
+        &mut ctx.into(),
     );
 
-    // TODO: Fix symbol codegen
-    unimplemented!()
-    // if let hir::Value::Symbol { path } = callee {
-    //     let function = gen_rval_symbol(ctx, path)?.into_pointer_value();
+    let mut llvm_arguments = Vec::new();
+    for arg_id in arguments {
+        let arg_hir = &ctx.store[arg_id].borrow();
+        let llvm_arg = gen_rval(ctx, arg_hir)?;
+        llvm_arguments.push(llvm_arg.into());
+    }
 
-    //     let mut llvm_arguments = Vec::new();
-    //     for arg_id in arguments {
-    //         let arg_hir = &ctx.store[arg_id].borrow();
-    //         let llvm_arg = gen_rval(ctx, arg_hir)?;
-    //         llvm_arguments.push(llvm_arg.into());
-    //     }
+    let callee = gen_rval(ctx, callee)?;
+    if !callee.get_type().is_pointer_type() {
+        return Err(CodegenError::OperandTypeCombinationError {
+            operation_name: "function call",
+        });
+    }
 
-    //     let call = ctx
-    //         .bb
-    //         .build_indirect_call(llvm_function_ty, function, &llvm_arguments, "")
-    //         .unwrap()
-    //         .try_as_basic_value()
-    //         .expect_left("missing value");
+    let call = ctx
+        .bb
+        .build_indirect_call(
+            llvm_function_ty,
+            callee.into_pointer_value(),
+            &llvm_arguments,
+            "",
+        )
+        .unwrap()
+        .try_as_basic_value()
+        .expect_left("missing value");
 
-    //     Ok(call)
-    // } else {
-    //     let callee_val = gen_rval(ctx, callee)?;
-    //     if !callee_val.is_pointer_value() {
-    //         return Err(CodegenError::OperandTypeCombinationError {
-    //             operation_name: "function call",
-    //         });
-    //     }
-
-    //     let mut llvm_arguments = Vec::new();
-    //     for arg_id in arguments {
-    //         let arg_hir = &ctx.store[arg_id].borrow();
-    //         let llvm_arg = gen_rval(ctx, arg_hir)?;
-    //         llvm_arguments.push(llvm_arg.into());
-    //     }
-
-    //     let result = ctx
-    //         .bb
-    //         .build_indirect_call(
-    //             llvm_function_ty,
-    //             callee_val.into_pointer_value(),
-    //             &llvm_arguments,
-    //             "",
-    //         )
-    //         .unwrap()
-    //         .try_as_basic_value()
-    //         .expect_left("missing value");
-
-    //     Ok(result)
-    // }
+    Ok(call)
 }
 
 fn gen_rval_method_call<'ctx>(
@@ -2182,7 +2174,7 @@ pub(crate) fn gen_block<'ctx>(
                 let hir_local_ty = &ctx.store[&hir_local.ty];
                 let hir_local_init = &ctx.store[hir_local.init.as_ref().unwrap()].borrow();
 
-                let llvm_local_ty = gen_ty(hir_local_ty, ctx.llvm, ctx.store, ctx.tab);
+                let llvm_local_ty = gen_ty(hir_local_ty, &mut ctx.into());
                 let llvm_local = ctx.bb.build_alloca(llvm_local_ty, &local_name).unwrap();
                 let llvm_init_value = gen_rval(ctx, hir_local_init)?;
                 ctx.bb.build_store(llvm_local, llvm_init_value).unwrap();

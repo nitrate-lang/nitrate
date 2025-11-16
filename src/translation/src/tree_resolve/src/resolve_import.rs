@@ -14,6 +14,7 @@ use crate::diagnosis::ResolveIssue;
 pub type SourceFilePath = std::path::PathBuf;
 pub type FolderPath = std::path::PathBuf;
 
+#[derive(Debug)]
 pub struct ImportContext {
     pub package_name: NString,
     pub source_filepath: SourceFilePath,

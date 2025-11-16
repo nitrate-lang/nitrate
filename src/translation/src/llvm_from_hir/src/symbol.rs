@@ -1,14 +1,14 @@
 use inkwell::llvm_sys::prelude::{LLVMModuleRef, LLVMValueRef};
 use inkwell::module::{Linkage, Module};
 use inkwell::types::{BasicType, BasicTypeEnum};
-use inkwell::values::{AsValueRef, FunctionValue, GlobalValue, PointerValue};
+use inkwell::values::{AsValueRef, FunctionValue, PointerValue};
 use nitrate_hir_validate::ValidHir;
 use nitrate_nstring::NString;
 use thin_vec::ThinVec;
 
 use crate::rvalue::gen_rval;
 use crate::rvalue::{CodegenCtx, gen_block};
-use crate::ty::gen_ty;
+use crate::ty::{TypegenCtx, gen_ty};
 use nitrate_hir::{IntoStoreId, prelude as hir};
 use nitrate_hir_mangle::mangle_name;
 use nitrate_llvm::LLVMContext;
@@ -23,13 +23,26 @@ unsafe extern "C" {
     ) -> ();
 }
 
-pub struct SymbolGenCtx<'ctx, 'store, 'tab, 'package_name> {
+pub struct SymbolGenCtx<'ctx, 'store, 'tab, 'package_name, 'module> {
     pub llvm: &'ctx LLVMContext,
     pub store: &'store hir::Store,
     pub tab: &'tab hir::SymbolTab,
-    pub module: Module<'ctx>,
+    pub module: &'module Module<'ctx>,
     pub globals: HashMap<NString, (PointerValue<'ctx>, BasicTypeEnum<'ctx>)>,
     pub package_name: &'package_name str,
+}
+
+impl<'ctx, 'store, 'tab, 'package_name, 'module>
+    From<&mut SymbolGenCtx<'ctx, 'store, 'tab, 'package_name, 'module>>
+    for TypegenCtx<'ctx, 'store, 'tab>
+{
+    fn from(codegen_ctx: &mut SymbolGenCtx<'ctx, 'store, 'tab, 'package_name, 'module>) -> Self {
+        TypegenCtx {
+            llvm: codegen_ctx.llvm,
+            store: codegen_ctx.store,
+            tab: codegen_ctx.tab,
+        }
+    }
 }
 
 pub(crate) fn get_ptr_size(ctx: &LLVMContext) -> hir::PtrSize {
@@ -41,9 +54,12 @@ pub(crate) fn get_ptr_size(ctx: &LLVMContext) -> hir::PtrSize {
     }
 }
 
-fn gen_global<'ctx>(ctx: &mut SymbolGenCtx<'ctx, '_, '_, '_>, hir_global: &hir::GlobalVariable) {
+fn gen_global<'ctx>(
+    ctx: &mut SymbolGenCtx<'ctx, '_, '_, '_, '_>,
+    hir_global: &hir::GlobalVariable,
+) {
     let hir_global_ty = &ctx.store[&hir_global.ty];
-    let global_ty = gen_ty(hir_global_ty, ctx.llvm, ctx.store, ctx.tab);
+    let global_ty = gen_ty(hir_global_ty, &mut ctx.into());
 
     let llvm_global = ctx.module.add_global(global_ty, None, &hir_global.name);
     llvm_global.set_initializer(&global_ty.const_zero());
@@ -112,7 +128,7 @@ fn gen_global<'ctx>(ctx: &mut SymbolGenCtx<'ctx, '_, '_, '_>, hir_global: &hir::
 }
 
 fn gen_function_decl<'ctx>(
-    ctx: &'ctx SymbolGenCtx,
+    ctx: &mut SymbolGenCtx<'ctx, '_, '_, '_, '_>,
     hir_function: &hir::Function,
 ) -> FunctionValue<'ctx> {
     if let Some(existing_function) = ctx.module.get_function(&hir_function.name) {
@@ -122,16 +138,11 @@ fn gen_function_decl<'ctx>(
     let mut param_types = Vec::with_capacity(hir_function.params.len());
     for param in &hir_function.params {
         let param_type_id = ctx.store[param].borrow().ty;
-        let param_type = gen_ty(&ctx.store[&param_type_id], ctx.llvm, ctx.store, ctx.tab);
+        let param_type = gen_ty(&ctx.store[&param_type_id], &mut ctx.into());
         param_types.push(param_type.into());
     }
 
-    let return_type = gen_ty(
-        &ctx.store[&hir_function.return_type],
-        ctx.llvm,
-        ctx.store,
-        ctx.tab,
-    );
+    let return_type = gen_ty(&ctx.store[&hir_function.return_type], &mut ctx.into());
 
     let variadic = hir_function
         .attributes
@@ -152,7 +163,7 @@ fn gen_function_decl<'ctx>(
 }
 
 fn gen_function<'ctx>(
-    ctx: &'ctx SymbolGenCtx,
+    ctx: &mut SymbolGenCtx<'ctx, '_, '_, '_, '_>,
     hir_function: &hir::Function,
 ) -> FunctionValue<'ctx> {
     let llvm_function = gen_function_decl(ctx, hir_function);
@@ -172,7 +183,7 @@ fn gen_function<'ctx>(
     llvm_function
 }
 
-pub(crate) fn gen_module<'ctx>(ctx: &mut SymbolGenCtx<'ctx, '_, '_, '_>, module: &hir::Module) {
+pub(crate) fn gen_module<'ctx>(ctx: &mut SymbolGenCtx<'ctx, '_, '_, '_, '_>, module: &hir::Module) {
     for item in &module.items {
         match item {
             hir::Item::TypeAliasDef(_) | hir::Item::StructDef(_) | hir::Item::EnumDef(_) => {}
@@ -207,14 +218,14 @@ pub fn generate_llvmir<'ctx>(
         store,
         tab,
         llvm,
-        module,
+        module: &module,
         globals: HashMap::new(),
         package_name,
     };
 
     for function_id in tab.functions() {
         let function = store[function_id].borrow();
-        gen_function_decl(&ctx, &function);
+        gen_function_decl(&mut ctx, &function);
     }
 
     gen_module(&mut ctx, &hir);
@@ -223,5 +234,5 @@ pub fn generate_llvmir<'ctx>(
         panic!("Generated LLVM module is invalid");
     }
 
-    ctx.module
+    module
 }

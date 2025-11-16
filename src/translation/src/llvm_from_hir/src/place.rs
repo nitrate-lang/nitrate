@@ -30,14 +30,6 @@ fn gen_place_deref<'ctx>(
     unimplemented!()
 }
 
-fn gen_place_symbol<'ctx>(
-    _ctx: &mut CodegenCtx<'ctx, '_, '_, '_, '_, '_>,
-    _symbol_name: &NString,
-) -> Result<PointerValue<'ctx>, CodegenError> {
-    // TODO: implement symbol codegen
-    unimplemented!()
-}
-
 pub(crate) fn gen_place<'ctx>(
     ctx: &mut CodegenCtx<'ctx, '_, '_, '_, '_, '_>,
     hir_value: &hir::Value,

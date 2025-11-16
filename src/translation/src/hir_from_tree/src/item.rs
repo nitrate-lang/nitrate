@@ -142,7 +142,7 @@ impl Ast2Hir for ast::Enum {
 
         let attributes = BTreeSet::new();
         if let Some(ast_attributes) = &self.attributes {
-            for attr in ast_attributes {
+            for _attr in ast_attributes {
                 log.report(&HirErr::UnrecognizedEnumAttribute);
             }
         }

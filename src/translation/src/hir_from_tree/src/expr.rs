@@ -2,13 +2,10 @@ use crate::context::Ast2HirCtx;
 use crate::diagnosis::HirErr;
 use crate::lower::Ast2Hir;
 use nitrate_diagnosis::CompilerLog;
-use nitrate_hir::{SymbolTab, prelude::*};
+use nitrate_hir::prelude::*;
 use nitrate_hir_get_type::HirGetType;
 use nitrate_nstring::NString;
-use nitrate_token::escape_string;
-use nitrate_token_lexer::{Lexer, LexerError};
 use nitrate_tree::ast::{self as ast, SymbolKind, UnaryExprOp};
-use nitrate_tree_parse::Parser;
 use ordered_float::OrderedFloat;
 use std::collections::BTreeSet;
 

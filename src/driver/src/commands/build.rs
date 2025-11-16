@@ -10,6 +10,7 @@ use nitrate_translation::{
     llvm_from_hir::generate_llvmir,
     parsetree::ast,
     token_lexer::{Lexer, LexerError},
+    tree_resolve::ImportContext,
 };
 use slog::{debug, error, info};
 use std::{collections::HashSet, io::Read, path::PathBuf};
@@ -239,6 +240,7 @@ impl Interpreter<'_> {
         module: ast::Module,
         ptr_size: u32,
         package_name: &str,
+        source_filepath: &std::path::Path,
         log: &CompilerLog,
     ) -> Result<(hir::Module, hir::Store, hir::SymbolTab), InterpreterError> {
         let ptr_size = match ptr_size {
@@ -250,7 +252,8 @@ impl Interpreter<'_> {
             }
         };
 
-        let mut ctx = Ast2HirCtx::new(ptr_size, package_name.into());
+        let import_ctx = ImportContext::new(package_name.into(), source_filepath.into());
+        let mut ctx = Ast2HirCtx::new(ptr_size, import_ctx);
         let module = match convert_ast_to_hir(module, &mut ctx, log) {
             Err(_) => return Err(InterpreterError::OperationalError),
             Ok(module) => module,
@@ -275,8 +278,13 @@ impl Interpreter<'_> {
         let llvm_ctx = self.get_llvm_context(args.target, package.optimization_level())?;
         let ptr_size = llvm_ctx.target_data.get_pointer_byte_size(None);
 
-        let (hir_module, store, symbol_tab) =
-            self.lower_to_hir(ast_module, ptr_size, package.name(), &log)?;
+        let (hir_module, store, symbol_tab) = self.lower_to_hir(
+            ast_module,
+            ptr_size,
+            package.name(),
+            &package.entrypoint(),
+            &log,
+        )?;
         if args.show_hir {
             hir_module.dump(&mut DumpContext::new(&store), &mut std::io::stdout())?;
             return Ok(());
