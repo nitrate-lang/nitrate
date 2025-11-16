@@ -240,8 +240,14 @@ impl Dump for Type {
                     (false, false) => write!(o, "")?,
                 }
 
-                // FIXME: Infinite recursion for self-referential types
-                ctx.store[to].dump(ctx, o)
+                if ctx.visited.contains(&to) {
+                    write!(o, "<...>")
+                } else {
+                    ctx.visited.insert(*to);
+                    let res = ctx.store[to].dump(ctx, o);
+                    ctx.visited.remove(&to);
+                    res
+                }
             }
 
             Type::SliceRef {
@@ -265,9 +271,17 @@ impl Dump for Type {
                     (false, false) => write!(o, "")?,
                 }
 
-                // FIXME: Infinite recursion for self-referential types
                 write!(o, "[")?;
-                ctx.store[element_type].dump(ctx, o)?;
+
+                if ctx.visited.contains(&element_type) {
+                    write!(o, "<...>")?;
+                } else {
+                    ctx.visited.insert(*element_type);
+                    let res = ctx.store[element_type].dump(ctx, o);
+                    ctx.visited.remove(&element_type);
+                    res?;
+                }
+
                 write!(o, "]")
             }
 
@@ -285,8 +299,14 @@ impl Dump for Type {
                     (false, false) => write!(o, "")?,
                 }
 
-                // FIXME: Infinite recursion for self-referential types
-                ctx.store[to].dump(ctx, o)
+                if ctx.visited.contains(&to) {
+                    write!(o, "<...>")
+                } else {
+                    ctx.visited.insert(*to);
+                    let res = ctx.store[to].dump(ctx, o);
+                    ctx.visited.remove(&to);
+                    res
+                }
             }
 
             Type::InferredFloat => write!(o, "?f"),

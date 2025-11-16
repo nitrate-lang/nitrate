@@ -1,9 +1,11 @@
 use nitrate_hir::prelude::*;
+use std::collections::HashSet;
 
 pub struct DumpContext<'a> {
     pub store: &'a Store,
     pub indent_str: &'a str,
     pub(crate) indent: usize,
+    pub(crate) visited: HashSet<TypeId>,
 }
 
 impl<'a> DumpContext<'a> {
@@ -12,6 +14,7 @@ impl<'a> DumpContext<'a> {
             store,
             indent: 0,
             indent_str: "  ",
+            visited: HashSet::new(),
         }
     }
 }
