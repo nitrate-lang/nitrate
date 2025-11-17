@@ -2,27 +2,27 @@ use crate::{ValidHir, ValidateHir};
 use nitrate_hir::{SymbolTab, prelude::*};
 
 impl ValidateHir for Block {
-    fn verify(&self, store: &Store, symtab: &SymbolTab) -> Result<(), ()> {
+    fn verify(&self, store: &Store, tab: &SymbolTab) -> Result<(), ()> {
         // TODO: Ensure unconditional branches are only at the end of the block
 
         for elem in &self.elements {
             match elem {
-                BlockElement::Expr(expr) => store[expr].borrow().verify(store, symtab)?,
-                BlockElement::Local(local) => store[local].borrow().verify(store, symtab)?,
+                BlockElement::Expr(expr) => store[expr].borrow().verify(store, tab)?,
+                BlockElement::Local(local) => store[local].borrow().verify(store, tab)?,
             }
         }
 
         Ok(())
     }
 
-    fn validate(self, store: &Store, symtab: &SymbolTab) -> Result<ValidHir<Self>, ()> {
-        self.verify(store, symtab)?;
+    fn validate(self, store: &Store, tab: &SymbolTab) -> Result<ValidHir<Self>, ()> {
+        self.verify(store, tab)?;
         Ok(ValidHir::new(self))
     }
 }
 
 impl ValidateHir for Value {
-    fn verify(&self, _store: &Store, _symtab: &SymbolTab) -> Result<(), ()> {
+    fn verify(&self, _store: &Store, _tab: &SymbolTab) -> Result<(), ()> {
         match self {
             Value::Unit
             | Value::Bool(_)
@@ -212,8 +212,8 @@ impl ValidateHir for Value {
         }
     }
 
-    fn validate(self, store: &Store, symtab: &SymbolTab) -> Result<ValidHir<Self>, ()> {
-        self.verify(store, symtab)?;
+    fn validate(self, store: &Store, tab: &SymbolTab) -> Result<ValidHir<Self>, ()> {
+        self.verify(store, tab)?;
         Ok(ValidHir::new(self))
     }
 }

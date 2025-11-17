@@ -5,3 +5,4 @@ edition = "2024"
 
 [dependencies]
 nitrate_hir = { path = "../hir" }
+nitrate_hir_get_type = { path = "../hir_get_type" }

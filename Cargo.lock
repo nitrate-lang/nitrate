@@ -759,6 +759,7 @@ dependencies = [
  "nitrate_hir_evaluate",
  "nitrate_hir_get_type",
  "nitrate_hir_mangle",
+ "nitrate_hir_resolve_type",
  "nitrate_nstring",
  "nitrate_token",
  "nitrate_token_lexer",
@@ -796,6 +797,7 @@ name = "nitrate_hir_validate"
 version = "0.1.0"
 dependencies = [
  "nitrate_hir",
+ "nitrate_hir_get_type",
 ]
 
 [[package]]

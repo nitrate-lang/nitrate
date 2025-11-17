@@ -1,7 +1,5 @@
-use std::ops::Range;
-
 use nitrate_diagnosis::CompilerLog;
-use nitrate_hir::{Function, Store};
+use nitrate_hir::{Function, GlobalVariable, Store};
 
 pub struct TyCtx<'store> {
     pub(crate) store: &'store Store,
@@ -20,8 +18,14 @@ impl<'store> TyCtx<'store> {
     pub fn ok(&self) -> bool {
         self.ok
     }
-}
 
-pub fn resolve_types(function: &mut Function, ctx: &mut TyCtx, log: &CompilerLog) {
-    // TODO: type resolution/inference/checking logic
+    pub fn resolve_function(&self, function: &mut Function, log: &CompilerLog) {
+        // TODO: type resolution/inference/checking logic
+        println!("Resolving types for function: {}", function.name);
+    }
+
+    pub fn resolve_global(&self, global: &mut GlobalVariable, log: &CompilerLog) {
+        // TODO: type resolution/inference/checking logic
+        println!("Resolving types for global variable: {}", global.name);
+    }
 }

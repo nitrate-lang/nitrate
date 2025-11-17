@@ -18,6 +18,6 @@ pub trait ValidateHir
 where
     Self: Sized,
 {
-    fn verify(&self, store: &Store, symtab: &SymbolTab) -> Result<(), ()>;
-    fn validate(self, store: &Store, symtab: &SymbolTab) -> Result<ValidHir<Self>, ()>;
+    fn verify(&self, store: &Store, tab: &SymbolTab) -> Result<(), ()>;
+    fn validate(self, store: &Store, tab: &SymbolTab) -> Result<ValidHir<Self>, ()>;
 }
