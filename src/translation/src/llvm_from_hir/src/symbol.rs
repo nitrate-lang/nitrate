@@ -35,11 +35,12 @@ pub struct SymbolGenCtx<'ctx, 'store, 'tab, 'package_name, 'module> {
 impl<'ctx, 'store, 'tab, 'package_name, 'module>
     SymbolGenCtx<'ctx, 'store, 'tab, 'package_name, 'module>
 {
-    fn ty_ctx(&self) -> TypegenCtx<'ctx, 'store, 'tab> {
+    fn ty_ctx(&self) -> TypegenCtx<'ctx, 'store, 'tab, 'module> {
         TypegenCtx {
             llvm: self.llvm,
             store: self.store,
             tab: self.tab,
+            module: self.module,
         }
     }
 }

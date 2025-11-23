@@ -4,21 +4,27 @@ use inkwell::{
 };
 use nitrate_llvm::LLVMContext;
 
-pub struct TypegenCtx<'ctx, 'store, 'tab> {
+pub struct TypegenCtx<'ctx, 'store, 'tab, 'module> {
     pub llvm: &'ctx LLVMContext,
     pub store: &'store hir::Store,
     pub tab: &'tab hir::SymbolTab,
+    pub module: &'module inkwell::module::Module<'ctx>,
 }
 
 use crate::symbol::get_ptr_size;
 use nitrate_hir::prelude as hir;
 
 fn gen_struct_ty<'ctx>(
-    hir_struct: &hir::StructType,
-    ctx: &mut TypegenCtx<'ctx, '_, '_>,
+    hir_struct_def: &hir::StructDef,
+    ctx: &mut TypegenCtx<'ctx, '_, '_, '_>,
 ) -> StructType<'ctx> {
-    let mut field_types = Vec::with_capacity(hir_struct.fields.len());
+    if let Some(struct_type) = ctx.module.get_struct_type(&hir_struct_def.name) {
+        return struct_type;
+    }
 
+    let hir_struct = &ctx.store[&hir_struct_def.struct_id];
+
+    let mut field_types = Vec::with_capacity(hir_struct.fields.len());
     for hir_field in &hir_struct.fields {
         // FIXME: insert padding
 
@@ -30,12 +36,14 @@ fn gen_struct_ty<'ctx>(
         .attributes
         .contains(&hir::StructAttribute::Packed);
 
-    ctx.llvm.struct_type(&field_types, is_packed)
+    let struct_type = ctx.llvm.opaque_struct_type(&hir_struct_def.name);
+    struct_type.set_body(&field_types, is_packed);
+    struct_type
 }
 
 pub(crate) fn gen_function_ty<'ctx>(
     hir_func_type: &hir::FunctionType,
-    ctx: &mut TypegenCtx<'ctx, '_, '_>,
+    ctx: &mut TypegenCtx<'ctx, '_, '_, '_>,
 ) -> FunctionType<'ctx> {
     let mut param_types = Vec::with_capacity(hir_func_type.params.len());
     for hir_param in &hir_func_type.params {
@@ -53,7 +61,7 @@ pub(crate) fn gen_function_ty<'ctx>(
 
 pub(crate) fn gen_ty<'ctx>(
     hir_type: &hir::Type,
-    ctx: &mut TypegenCtx<'ctx, '_, '_>,
+    ctx: &mut TypegenCtx<'ctx, '_, '_, '_>,
 ) -> BasicTypeEnum<'ctx> {
     match hir_type {
         hir::Type::Never | hir::Type::Unit => ctx.llvm.struct_type(&[], false).into(),
@@ -88,9 +96,8 @@ pub(crate) fn gen_ty<'ctx>(
         }
 
         hir::Type::Struct { def } => {
-            let struct_type = &ctx.store[def].borrow().struct_id;
-            let hir_struct = &ctx.store[struct_type];
-            gen_struct_ty(hir_struct, ctx).into()
+            let struct_def = &ctx.store[def].borrow();
+            gen_struct_ty(struct_def, ctx).into()
         }
 
         hir::Type::Enum { def } => {

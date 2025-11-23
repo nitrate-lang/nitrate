@@ -31,13 +31,14 @@ pub struct CodegenCtx<'ctx, 'module, 'store, 'tab, 'builder, 'global> {
 
 impl<'ctx, 'module, 'store, 'tab, 'builder, 'global>
     From<&mut CodegenCtx<'ctx, 'module, 'store, 'tab, 'builder, 'global>>
-    for TypegenCtx<'ctx, 'store, 'tab>
+    for TypegenCtx<'ctx, 'store, 'tab, 'module>
 {
     fn from(codegen_ctx: &mut CodegenCtx<'ctx, 'module, 'store, 'tab, 'builder, 'global>) -> Self {
         TypegenCtx {
             llvm: codegen_ctx.llvm,
             store: codegen_ctx.store,
             tab: codegen_ctx.tab,
+            module: codegen_ctx.module,
         }
     }
 }
