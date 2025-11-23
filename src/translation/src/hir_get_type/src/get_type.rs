@@ -7,10 +7,9 @@ pub enum TypeInferenceError {
     CalleeIsNotFunctionType,
     TraitHasNoType,
     UnresolvedSymbol,
-    StructObjectDoesNotHaveStructType,
-    EnumVariantDoesNotHaveEnumType,
     MethodNotFound,
     CannotDeref,
+    ClosureHasNoType,
 }
 
 pub trait HirGetType {
@@ -94,26 +93,20 @@ impl HirGetType for Value {
             Value::StructObject {
                 struct_path,
                 fields: _,
-            } => match tab.get_type(struct_path) {
+            } => match tab.get_struct(struct_path) {
                 None => Err(TypeInferenceError::UnresolvedSymbol),
-
-                Some(TypeDefinition::StructDef(struct_def)) => Ok(Type::Struct {
+                Some(struct_def) => Ok(Type::Struct {
                     def: struct_def.clone(),
                 }),
-
-                Some(TypeDefinition::EnumDef(_)) | Some(TypeDefinition::TypeAliasDef(_)) => {
-                    Err(TypeInferenceError::StructObjectDoesNotHaveStructType)
-                }
             },
 
             Value::EnumVariant {
                 enum_path,
                 variant,
                 value: _,
-            } => match tab.get_type(enum_path) {
+            } => match tab.get_enum(enum_path) {
                 None => return Err(TypeInferenceError::UnresolvedSymbol),
-
-                Some(TypeDefinition::EnumDef(enum_def)) => {
+                Some(enum_def) => {
                     let enum_type = store[enum_def].borrow().enum_id;
                     let found = store[&enum_type]
                         .variants
@@ -123,10 +116,6 @@ impl HirGetType for Value {
                         Some(variant) => Ok(store[&variant.ty].clone()),
                         None => Err(TypeInferenceError::EnumVariantNotPresent),
                     }
-                }
-
-                Some(TypeDefinition::StructDef(_)) | Some(TypeDefinition::TypeAliasDef(_)) => {
-                    return Err(TypeInferenceError::EnumVariantDoesNotHaveEnumType);
                 }
             },
 
@@ -274,8 +263,7 @@ impl HirGetType for Value {
                 captures: _,
                 callee: _,
             } => {
-                // TODO: Determine the type of a closure
-                unimplemented!()
+                return Err(TypeInferenceError::ClosureHasNoType);
             }
 
             Value::Call {
