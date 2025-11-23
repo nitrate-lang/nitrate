@@ -3,13 +3,10 @@ use crate::diagnosis::HirErr;
 use crate::lower::Ast2Hir;
 use nitrate_diagnosis::CompilerLog;
 use nitrate_hir::prelude::*;
-use nitrate_hir_get_type::HirGetType;
 use nitrate_nstring::NString;
 use nitrate_tree::ast::{self as ast, SymbolKind, UnaryExprOp};
 use ordered_float::OrderedFloat;
 use std::collections::BTreeSet;
-
-pub(crate) enum EncodeErr {}
 
 impl Ast2Hir for ast::ExprSyntaxError {
     type Hir = Value;

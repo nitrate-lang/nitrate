@@ -1,4 +1,4 @@
-use crate::{Ast2HirCtx, lower::Ast2Hir, put_defaults::module_put_defaults};
+use crate::{Ast2HirCtx, lower::Ast2Hir};
 use nitrate_diagnosis::CompilerLog;
 use nitrate_hir::prelude::*;
 use nitrate_hir_resolve_type::TyCtx;
@@ -16,7 +16,6 @@ pub fn convert_ast_to_hir(
     ctx.ast_symbol_map.extend(symbol_map);
 
     let mut module = module.ast2hir(ctx, log)?;
-    module_put_defaults(&mut module, ctx, log);
 
     for item in &mut module.items {
         if let Item::Function(func_id) = item {

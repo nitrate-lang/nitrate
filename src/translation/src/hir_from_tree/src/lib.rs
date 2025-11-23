@@ -6,7 +6,6 @@ mod expr;
 mod into;
 mod item;
 mod lower;
-mod put_defaults;
 mod ty;
 
 pub use context::Ast2HirCtx;

@@ -5,12 +5,10 @@ pub(crate) enum HirErr {
     UnimplementedFeature(String),
     UnrecognizedGlobalVariableAttribute,
     GlobalVariableMustHaveInitializer,
-    LatentTypeEvaluationError,
     FoundUSize32InNon32BitTarget,
     FoundUSize64InNon64BitTarget,
     ArrayLengthExpectedUSize,
     ArrayTypeLengthEvalError,
-    TypeInferenceError,
     UnrecognizedFunctionAttribute,
     UnrecognizedFunctionParameterAttribute,
     IntegerCastOutOfRange,
@@ -38,12 +36,10 @@ impl FormattableDiagnosticGroup for HirErr {
             HirErr::UnimplementedFeature(_) => 2,
             HirErr::UnrecognizedGlobalVariableAttribute => 3,
             HirErr::GlobalVariableMustHaveInitializer => 5,
-            HirErr::LatentTypeEvaluationError => 6,
             HirErr::FoundUSize32InNon32BitTarget => 7,
             HirErr::FoundUSize64InNon64BitTarget => 8,
             HirErr::ArrayLengthExpectedUSize => 9,
             HirErr::ArrayTypeLengthEvalError => 10,
-            HirErr::TypeInferenceError => 11,
             HirErr::UnrecognizedFunctionAttribute => 14,
             HirErr::UnrecognizedFunctionParameterAttribute => 15,
             HirErr::IntegerCastOutOfRange => 17,
@@ -83,11 +79,6 @@ impl FormattableDiagnosticGroup for HirErr {
                 origin: Origin::None,
             },
 
-            HirErr::LatentTypeEvaluationError => DiagnosticInfo {
-                message: "latent type evaluation error".to_string(),
-                origin: Origin::None,
-            },
-
             HirErr::FoundUSize32InNon32BitTarget => DiagnosticInfo {
                 message: "found 32-bit 'usize' in non-32-bit target".to_string(),
                 origin: Origin::None,
@@ -105,11 +96,6 @@ impl FormattableDiagnosticGroup for HirErr {
 
             HirErr::ArrayTypeLengthEvalError => DiagnosticInfo {
                 message: "array type length evaluation error".to_string(),
-                origin: Origin::None,
-            },
-
-            HirErr::TypeInferenceError => DiagnosticInfo {
-                message: "type inference error".to_string(),
                 origin: Origin::None,
             },
 

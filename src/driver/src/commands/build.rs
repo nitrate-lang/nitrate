@@ -2,7 +2,7 @@ use crate::{Interpreter, InterpreterError, package::Package};
 use clap::Parser;
 use nitrate_diagnosis::{CompilerLog, intern_file_id};
 use nitrate_translation::{
-    hir::prelude as hir,
+    hir::{prelude as hir, using_storage},
     hir_dump::{Dump, DumpContext},
     hir_from_tree::{Ast2HirCtx, convert_ast_to_hir},
     hir_validate::ValidateHir,
@@ -285,117 +285,127 @@ impl Interpreter<'_> {
             &package.entrypoint(),
             &log,
         )?;
-        if args.show_hir {
-            hir_module.dump(&mut DumpContext::new(&store), &mut std::io::stdout())?;
-            return Ok(());
-        }
 
-        let valid_hir_module = match hir_module.validate(&store, &symbol_tab) {
-            Ok(m) => m,
-            Err(_) => return Err(InterpreterError::OperationalError),
-        };
+        using_storage(&store, || {
+            if args.show_hir {
+                hir_module.dump(&mut DumpContext::new(&store), &mut std::io::stdout())?;
+                return Ok(());
+            }
 
-        let mut llvm_module = generate_llvmir(
-            package.name(),
-            valid_hir_module,
-            &llvm_ctx,
-            &store,
-            &symbol_tab,
-        );
+            let valid_hir_module = match hir_module.validate(&store, &symbol_tab) {
+                Ok(m) => m,
+                Err(_) => {
+                    error!(
+                        self.log,
+                        "HIR validation failed for package '{}'",
+                        package.name()
+                    );
+                    return Err(InterpreterError::OperationalError);
+                }
+            };
 
-        if args.show_llvmir {
-            println!("{}", llvm_module.print_to_string().to_string());
-            return Ok(());
-        }
+            let mut llvm_module = generate_llvmir(
+                package.name(),
+                valid_hir_module,
+                &llvm_ctx,
+                &store,
+                &symbol_tab,
+            );
 
-        llvm_ctx.optimize_module(&mut llvm_module);
+            if args.show_llvmir {
+                println!("{}", llvm_module.print_to_string().to_string());
+                return Ok(());
+            }
 
-        if args.show_asm {
-            if let Err(e) = llvm_ctx.write_asm(&mut llvm_module, &mut std::io::stdout()) {
+            llvm_ctx.optimize_module(&mut llvm_module);
+
+            if args.show_asm {
+                if let Err(e) = llvm_ctx.write_asm(&mut llvm_module, &mut std::io::stdout()) {
+                    error!(
+                        self.log,
+                        "Failed to write assembly file for package '{}': {}",
+                        package.name(),
+                        e
+                    );
+
+                    return Err(InterpreterError::OperationalError);
+                }
+                return Ok(());
+            }
+
+            let target_file_o = format!(
+                ".no3/build/{}-{}.{}.{}.o",
+                package.name(),
+                package.version().0,
+                package.version().1,
+                package.version().2
+            );
+
+            if let Err(e) =
+                llvm_ctx.write_object_file(&mut llvm_module, std::path::Path::new(&target_file_o))
+            {
                 error!(
                     self.log,
-                    "Failed to write assembly file for package '{}': {}",
+                    "Failed to write object file for package '{}': {}",
                     package.name(),
                     e
                 );
 
                 return Err(InterpreterError::OperationalError);
             }
-            return Ok(());
-        }
 
-        let target_file_o = format!(
-            ".no3/build/{}-{}.{}.{}.o",
-            package.name(),
-            package.version().0,
-            package.version().1,
-            package.version().2
-        );
+            if args.show_obj {
+                info!(
+                    self.log,
+                    "Object file for package '{}' written to '{}'",
+                    package.name(),
+                    target_file_o
+                );
+                return Ok(());
+            }
 
-        if let Err(e) =
-            llvm_ctx.write_object_file(&mut llvm_module, std::path::Path::new(&target_file_o))
-        {
-            error!(
-                self.log,
-                "Failed to write object file for package '{}': {}",
-                package.name(),
-                e
-            );
+            // run system command
+            let status = std::process::Command::new("clang")
+                .args(&[&target_file_o, "-o"])
+                .arg(format!(
+                    "{}-{}.{}.{}",
+                    package.name(),
+                    package.version().0,
+                    package.version().1,
+                    package.version().2
+                ))
+                .status()
+                .map_err(|e| {
+                    error!(
+                        self.log,
+                        "Failed to link final binary for package '{}': {}",
+                        package.name(),
+                        e
+                    );
 
-            return Err(InterpreterError::OperationalError);
-        }
+                    InterpreterError::OperationalError
+                })?;
 
-        if args.show_obj {
+            if !status.success() {
+                error!(
+                    self.log,
+                    "Linking final binary for package '{}' failed with exit code: {}",
+                    package.name(),
+                    status.code().unwrap_or(-1),
+                );
+                return Err(InterpreterError::OperationalError);
+            }
+
             info!(
                 self.log,
-                "Object file for package '{}' written to '{}'",
-                package.name(),
-                target_file_o
-            );
-            return Ok(());
-        }
-
-        // run system command
-        let status = std::process::Command::new("clang")
-            .args(&[&target_file_o, "-o"])
-            .arg(format!(
-                "{}-{}.{}.{}",
+                "Successfully built package '{}' version {}.{}.{}",
                 package.name(),
                 package.version().0,
                 package.version().1,
-                package.version().2
-            ))
-            .status()
-            .map_err(|e| {
-                error!(
-                    self.log,
-                    "Failed to link final binary for package '{}': {}",
-                    package.name(),
-                    e
-                );
-
-                InterpreterError::OperationalError
-            })?;
-
-        if !status.success() {
-            error!(
-                self.log,
-                "Linking final binary for package '{}' failed with exit code: {}",
-                package.name(),
-                status.code().unwrap_or(-1),
+                package.version().2,
             );
-            return Err(InterpreterError::OperationalError);
-        }
 
-        info!(
-            self.log,
-            "Successfully built package '{}' version {}.{}.{}",
-            package.name(),
-            package.version().0,
-            package.version().1,
-            package.version().2,
-        );
-
-        Ok(())
+            Ok(())
+        })
     }
 }
