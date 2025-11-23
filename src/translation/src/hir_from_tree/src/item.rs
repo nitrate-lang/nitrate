@@ -195,18 +195,23 @@ impl Ast2Hir for ast::Enum {
         }
         .into_id(&ctx.store);
 
-        let enum_def_id = EnumDef {
+        let enum_def = EnumDef {
             visibility,
             name,
             variant_extras,
             enum_id,
+        };
+
+        if let Some(existing_enum_def_id) = ctx.tab.get_enum(&enum_def.name) {
+            let mut existing_enum_def = ctx.store[existing_enum_def_id].borrow_mut();
+            *existing_enum_def = enum_def;
+            Ok(existing_enum_def_id.clone())
+        } else {
+            let enum_def_id = enum_def.into_id(&ctx.store);
+            let typedef = TypeDefinition::EnumDef(enum_def_id.clone());
+            ctx.tab.add_type(typedef, &ctx.store);
+            Ok(enum_def_id)
         }
-        .into_id(&ctx.store);
-
-        let definition = TypeDefinition::EnumDef(enum_def_id.clone());
-        ctx.tab.add_type(definition, &ctx.store);
-
-        Ok(enum_def_id)
     }
 }
 
