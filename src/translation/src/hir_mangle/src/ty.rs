@@ -56,8 +56,9 @@ pub(crate) fn mangle_type(ty: &Type, store: &Store) -> String {
             mangled
         }
 
-        Type::Enum { enum_type } => {
-            let enum_type = &store[enum_type];
+        Type::Enum { def } => {
+            let enum_def = &store[def].borrow();
+            let enum_type = &store[&enum_def.enum_id];
             let mut mangled = String::new();
 
             mangled.push_str("M");

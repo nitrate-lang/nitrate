@@ -209,7 +209,10 @@ impl Dump for Type {
                 ctx.store[struct_type].dump(ctx, o)
             }
 
-            Type::Enum { enum_type } => ctx.store[enum_type].dump(ctx, o),
+            Type::Enum { def } => {
+                let enum_type = &ctx.store[def].borrow().enum_id;
+                ctx.store[enum_type].dump(ctx, o)
+            }
 
             Type::Refine { base, min, max } => {
                 ctx.store[base].dump(ctx, o)?;

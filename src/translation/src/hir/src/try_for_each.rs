@@ -117,7 +117,8 @@ impl TypeIter<'_> {
                 }
             }
 
-            Type::Enum { enum_type } => {
+            Type::Enum { def } => {
+                let enum_type = &store[def].borrow().enum_id;
                 for variant in &store[enum_type].variants {
                     store[&variant.ty]
                         .iter()

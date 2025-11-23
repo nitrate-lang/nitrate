@@ -78,7 +78,8 @@ pub fn get_size_of(ty: &Type, ctx: &LayoutCtx) -> Result<u64, LayoutError> {
             Ok(offset)
         }
 
-        Type::Enum { enum_type } => {
+        Type::Enum { def } => {
+            let enum_type = &ctx.store[def].borrow().enum_id;
             let EnumType { variants, .. } = &ctx.store[enum_type];
 
             let mut size = 0_u64;

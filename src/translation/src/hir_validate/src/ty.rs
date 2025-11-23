@@ -189,7 +189,7 @@ impl ValidateHir for Type {
 
             Type::Struct { def } => store[def].borrow().verify(store, tab),
 
-            Type::Enum { enum_type } => store[enum_type].verify(store, tab),
+            Type::Enum { def } => store[def].borrow().verify(store, tab),
 
             Type::Refine { base, min, max } => {
                 store[base].verify(store, tab)?;

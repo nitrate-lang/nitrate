@@ -107,7 +107,7 @@ pub enum Type {
     },
 
     Enum {
-        enum_type: EnumTypeId,
+        def: EnumDefId,
     },
 
     Refine {
@@ -218,9 +218,9 @@ impl Type {
         }
     }
 
-    pub fn as_enum(&self) -> Option<&EnumTypeId> {
-        if let Type::Enum { enum_type } = self {
-            Some(enum_type)
+    pub fn as_enum(&self) -> Option<&EnumDefId> {
+        if let Type::Enum { def } = self {
+            Some(def)
         } else {
             None
         }

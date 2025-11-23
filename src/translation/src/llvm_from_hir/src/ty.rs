@@ -93,8 +93,9 @@ pub(crate) fn gen_ty<'ctx>(
             gen_struct_ty(hir_struct, ctx).into()
         }
 
-        hir::Type::Enum { enum_type } => {
-            let hir_enum = &ctx.store[enum_type];
+        hir::Type::Enum { def } => {
+            let enum_def = &ctx.store[def].borrow();
+            let hir_enum = &ctx.store[&enum_def.enum_id];
             let layout_ctx = hir::LayoutCtx {
                 ptr_size: get_ptr_size(ctx.llvm),
                 store: ctx.store,

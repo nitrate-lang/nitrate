@@ -178,8 +178,9 @@ impl Ast2Hir for ast::TypePath {
 
                 Some(SymbolKind::Enum) => match ctx.tab.get_enum(&resolved_path) {
                     Some(existing_enum_def_id) => {
-                        let enum_type = ctx.store[existing_enum_def_id].borrow().enum_id;
-                        return Ok(Type::Enum { enum_type });
+                        return Ok(Type::Enum {
+                            def: existing_enum_def_id.clone(),
+                        });
                     }
 
                     None => {
