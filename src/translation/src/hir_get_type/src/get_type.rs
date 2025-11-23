@@ -168,7 +168,7 @@ impl HirGetType for Value {
 
                 if let Type::Struct { def } = expr.get_type(store, tab)? {
                     let struct_def = &store[&def].borrow();
-                    let struct_type = &store[&struct_def.struct_id].borrow();
+                    let struct_type = &store[&struct_def.struct_id];
                     let found_field = struct_type.fields.iter().find(|x| &x.name == field);
                     if let Some(field) = found_field {
                         return Ok(store[&field.ty].clone());

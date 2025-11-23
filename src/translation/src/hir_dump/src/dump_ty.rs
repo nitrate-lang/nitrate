@@ -206,7 +206,7 @@ impl Dump for Type {
 
             Type::Struct { def } => {
                 let struct_type = &ctx.store[def].borrow().struct_id;
-                ctx.store[struct_type].borrow().dump(ctx, o)
+                ctx.store[struct_type].dump(ctx, o)
             }
 
             Type::Enum { enum_type } => ctx.store[enum_type].dump(ctx, o),

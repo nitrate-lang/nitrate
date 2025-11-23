@@ -21,7 +21,6 @@ fn gen_place_field_access<'ctx>(
     let hir_struct_ty = &ctx.store[&hir_struct_def.borrow().struct_id];
 
     let field_index = hir_struct_ty
-        .borrow()
         .fields
         .iter()
         .position(|field| &field.name == field_name)

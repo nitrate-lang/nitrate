@@ -211,7 +211,7 @@ impl ValidateHir for StructDef {
             }
         }
 
-        store[&self.struct_id].borrow().verify(store, tab)?;
+        store[&self.struct_id].verify(store, tab)?;
 
         Ok(())
     }

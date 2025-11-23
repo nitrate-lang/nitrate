@@ -38,7 +38,7 @@ pub fn get_align_of(ty: &Type, ctx: &LayoutCtx) -> Result<u64, LayoutError> {
             let struct_type = &ctx.store[def].borrow().struct_id;
             let StructType {
                 fields, attributes, ..
-            } = &*ctx.store[struct_type].borrow();
+            } = &ctx.store[struct_type];
 
             if attributes.contains(&StructAttribute::Packed) {
                 return Ok(1);

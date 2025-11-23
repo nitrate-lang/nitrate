@@ -43,7 +43,7 @@ pub(crate) fn mangle_type(ty: &Type, store: &Store) -> String {
 
         Type::Struct { def } => {
             let struct_def = &store[def].borrow();
-            let struct_type = &store[&struct_def.struct_id].borrow();
+            let struct_type = &store[&struct_def.struct_id];
             let mut mangled = String::new();
 
             mangled.push_str("S");

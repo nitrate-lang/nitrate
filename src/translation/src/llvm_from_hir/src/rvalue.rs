@@ -1372,12 +1372,7 @@ fn gen_rval_struct_object<'ctx>(
 
     let struct_def = ctx.store[struct_def_id].borrow();
     let mut field_map = HashMap::new();
-    for (i, field) in ctx.store[&struct_def.struct_id]
-        .borrow()
-        .fields
-        .iter()
-        .enumerate()
-    {
+    for (i, field) in ctx.store[&struct_def.struct_id].fields.iter().enumerate() {
         field_map.insert(field.name.clone(), i);
     }
 
@@ -1436,7 +1431,7 @@ fn gen_rval_field_access<'ctx>(
         .as_struct()
         .expect("expected struct type")]
     .borrow();
-    let hir_struct_ty = &ctx.store[&hir_struct_def.struct_id].borrow();
+    let hir_struct_ty = &ctx.store[&hir_struct_def.struct_id];
 
     let field_index = hir_struct_ty
         .fields

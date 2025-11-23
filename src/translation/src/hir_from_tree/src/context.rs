@@ -119,7 +119,7 @@ impl std::ops::Index<&TypeId> for Ast2HirCtx {
 }
 
 impl std::ops::Index<&StructTypeId> for Ast2HirCtx {
-    type Output = RefCell<StructType>;
+    type Output = StructType;
 
     fn index(&self, index: &StructTypeId) -> &Self::Output {
         &self.store[index]
