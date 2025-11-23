@@ -187,7 +187,7 @@ impl ValidateHir for Type {
                 Ok(())
             }
 
-            Type::Struct { struct_type } => store[struct_type].verify(store, tab),
+            Type::Struct { struct_type } => store[struct_type].borrow().verify(store, tab),
 
             Type::Enum { enum_type } => store[enum_type].verify(store, tab),
 

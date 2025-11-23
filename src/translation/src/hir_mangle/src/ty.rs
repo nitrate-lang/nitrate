@@ -46,7 +46,7 @@ pub(crate) fn mangle_type(ty: &Type, store: &Store) -> String {
             let mut mangled = String::new();
 
             mangled.push_str("S");
-            for field_type in &struct_type.fields {
+            for field_type in &struct_type.borrow().fields {
                 let elem_mangled = mangle_type(&store[&field_type.ty], store);
                 mangled.push_str(&elem_mangled);
             }

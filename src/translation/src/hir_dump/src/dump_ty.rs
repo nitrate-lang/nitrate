@@ -204,7 +204,7 @@ impl Dump for Type {
                 write!(o, ")")
             }
 
-            Type::Struct { struct_type } => ctx.store[struct_type].dump(ctx, o),
+            Type::Struct { struct_type } => ctx.store[struct_type].borrow().dump(ctx, o),
 
             Type::Enum { enum_type } => ctx.store[enum_type].dump(ctx, o),
 

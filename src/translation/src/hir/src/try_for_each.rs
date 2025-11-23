@@ -109,7 +109,7 @@ impl TypeIter<'_> {
             }
 
             Type::Struct { struct_type } => {
-                for field in &store[struct_type].fields {
+                for field in &store[struct_type].borrow().fields {
                     store[&field.ty]
                         .iter()
                         .try_for_each(store, vcb, tcb, visited)?;
@@ -590,6 +590,7 @@ impl StructDefIter<'_> {
         }
 
         store[&self.node.struct_id]
+            .borrow()
             .iter()
             .try_for_each(store, vcb, tcb, visited)?;
 

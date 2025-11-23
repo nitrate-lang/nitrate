@@ -130,7 +130,7 @@ macro_rules! impl_store_mut {
 
 impl_dedup_store!(TypeId, Type, TypeStore);
 
-impl_dedup_store!(StructTypeId, StructType, StructTypeStore);
+impl_store_mut!(StructTypeId, StructType, StructTypeStore);
 
 impl_dedup_store!(EnumTypeId, EnumType, EnumTypeStore);
 
@@ -314,7 +314,7 @@ impl std::ops::Index<&TypeId> for Store {
 }
 
 impl std::ops::Index<&StructTypeId> for Store {
-    type Output = StructType;
+    type Output = RefCell<StructType>;
 
     fn index(&self, index: &StructTypeId) -> &Self::Output {
         &self.struct_types[index]

@@ -386,7 +386,7 @@ impl Dump for StructDefId {
         write!(o, "struct::{}::`{}` ", self.as_usize(), this.name)?;
 
         write!(o, "= ")?;
-        ctx.store[&this.struct_id].dump(ctx, o)?;
+        ctx.store[&this.struct_id].borrow().dump(ctx, o)?;
 
         write!(o, ";")
     }

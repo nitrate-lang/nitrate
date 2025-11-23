@@ -1,6 +1,6 @@
-use nitrate_nstring::NString;
 use nitrate_diagnosis::CompilerLog;
 use nitrate_hir::prelude::*;
+use nitrate_nstring::NString;
 use ordered_float::OrderedFloat;
 use std::{collections::HashMap, sync::LazyLock};
 
@@ -133,21 +133,6 @@ impl HirEvalCtx<'_, '_> {
         match Lit::try_from(value.evaluate(self)?) {
             Ok(lit) => Ok(lit),
             Err(_) => Err(Unwind::TypeError),
-        }
-    }
-
-    pub fn evaluate_into_type(&mut self, value: &Value) -> Result<Type, Unwind> {
-        match value.evaluate(self)? {
-            Value::StructObject {
-                struct_path: _,
-                fields: _,
-            } => {
-                // TODO: convert from nitrate's `std::meta::Type` into nitrate_hir::Type
-
-                Err(Unwind::TypeError)
-            }
-
-            _ => Err(Unwind::TypeError),
         }
     }
 }

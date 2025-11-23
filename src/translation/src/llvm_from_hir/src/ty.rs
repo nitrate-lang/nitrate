@@ -88,7 +88,7 @@ pub(crate) fn gen_ty<'ctx>(
         }
 
         hir::Type::Struct { struct_type } => {
-            let hir_struct = &ctx.store[struct_type];
+            let hir_struct = &ctx.store[struct_type].borrow();
             gen_struct_ty(hir_struct, ctx).into()
         }
 

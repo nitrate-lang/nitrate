@@ -148,7 +148,8 @@ impl Ast2Hir for ast::TypePath {
             Some(resolved_path) => match ctx.ast_symbol_map.get(&resolved_path) {
                 Some(SymbolKind::Struct) => match ctx.tab.get_struct(&resolved_path) {
                     Some(existing_struct_def_id) => {
-                        let struct_type = ctx.store[existing_struct_def_id].borrow().struct_id;
+                        let struct_type =
+                            ctx.store[existing_struct_def_id].borrow().struct_id.clone();
                         return Ok(Type::Struct { struct_type });
                     }
 
@@ -394,20 +395,10 @@ impl Ast2Hir for ast::PointerType {
 impl Ast2Hir for ast::LatentType {
     type Hir = Type;
 
-    fn ast2hir(self, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
-        let block = self.body.ast2hir(ctx, log)?.into_id(&ctx.store);
-
-        let mut eval = HirEvalCtx::new(&ctx.store, log, ctx.ptr_size);
-        let hir_type = match eval.evaluate_into_type(&Value::Block { block }) {
-            Ok(ty) => ty,
-
-            Err(_) => {
-                log.report(&HirErr::LatentTypeEvaluationError);
-                return Err(());
-            }
-        };
-
-        Ok(hir_type)
+    fn ast2hir(self, _ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
+        // TODO: Implement latent types
+        log.report(&HirErr::UnimplementedFeature("latent types".into()));
+        Err(())
     }
 }
 

@@ -1,6 +1,6 @@
 use crate::{
     BlockId, EnumDefId, FunctionId, GlobalVariableId, LocalVariableId, ModuleId, ParameterId,
-    Store, StructDefId, TraitId, TypeAliasDefId, ValueId,
+    Store, StructDefId, StructTypeId, TraitId, TypeAliasDefId, ValueId,
 };
 use std::cell::Cell;
 
@@ -16,6 +16,36 @@ pub fn using_storage<R>(store: &Store, f: impl FnOnce() -> R) -> R {
         tls.set(old); // Ensure panic when misused
         result
     })
+}
+
+impl PartialEq for StructTypeId {
+    fn eq(&self, other: &Self) -> bool {
+        TLS_STORE.with(|tls| {
+            let store_ptr = tls
+                .get()
+                .expect("call to StructTypeId::eq outside of `using_storage(...)`");
+
+            let store = unsafe { &*store_ptr };
+            let lhs = store[self].borrow();
+            let rhs = store[other].borrow();
+            lhs.eq(&*rhs)
+        })
+    }
+}
+
+impl Eq for StructTypeId {}
+
+impl std::hash::Hash for StructTypeId {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        TLS_STORE.with(|tls| {
+            let store_ptr = tls
+                .get()
+                .expect("call to StructTypeId::eq outside of `using_storage(...)`");
+
+            let store = unsafe { &*store_ptr };
+            store[self].borrow().hash(state)
+        })
+    }
 }
 
 impl PartialEq for GlobalVariableId {

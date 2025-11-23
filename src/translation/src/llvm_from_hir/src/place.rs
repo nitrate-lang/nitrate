@@ -20,6 +20,7 @@ fn gen_place_field_access<'ctx>(
         .expect("expected struct type")];
 
     let field_index = hir_struct_ty
+        .borrow()
         .fields
         .iter()
         .position(|field| &field.name == field_name)
