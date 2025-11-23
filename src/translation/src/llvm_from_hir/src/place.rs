@@ -2,7 +2,7 @@ use inkwell::values::PointerValue;
 use nitrate_hir_get_type::HirGetType;
 
 use crate::{
-    rvalue::{CodegenCtx, CodegenError, gen_rval},
+    rvalue::{CodegenCtx, gen_rval},
     ty::gen_ty,
 };
 use nitrate_hir::prelude as hir;
@@ -12,7 +12,7 @@ fn gen_place_field_access<'ctx>(
     ctx: &mut CodegenCtx<'ctx, '_, '_, '_, '_, '_>,
     struct_value: &hir::Value,
     field_name: &NString,
-) -> Result<PointerValue<'ctx>, CodegenError> {
+) -> PointerValue<'ctx> {
     let hir_struct_def = &ctx.store[struct_value
         .get_type(ctx.store, ctx.tab)
         .expect("Failed to get type")
@@ -26,7 +26,7 @@ fn gen_place_field_access<'ctx>(
         .position(|field| &field.name == field_name)
         .expect("Field not found in struct");
 
-    let llvm_struct_value = gen_place(ctx, struct_value)?;
+    let llvm_struct_value = gen_place(ctx, struct_value);
     let llvm_struct_ty = gen_ty(
         &struct_value
             .get_type(ctx.store, ctx.tab)
@@ -47,47 +47,45 @@ fn gen_place_field_access<'ctx>(
     }
     .unwrap();
 
-    Ok(gep)
+    gep
 }
 
 fn gen_place_deref<'ctx>(
     ctx: &mut CodegenCtx<'ctx, '_, '_, '_, '_, '_>,
     place: &hir::Value,
-) -> Result<PointerValue<'ctx>, CodegenError> {
-    let llvm_value = gen_rval(ctx, place)?;
+) -> PointerValue<'ctx> {
+    let llvm_value = gen_rval(ctx, place);
     let ptr_ty = llvm_value.get_type();
 
-    if ptr_ty.is_pointer_type() {
-        let pointee_ty = match place.get_type(ctx.store, ctx.tab).unwrap() {
-            hir::Type::Pointer { to, .. } => &ctx.store[&to],
-            hir::Type::Reference { to, .. } => &ctx.store[&to],
-            _ => unreachable!(),
-        };
-
-        let load = ctx
-            .bb
-            .build_load(
-                gen_ty(&pointee_ty, &mut ctx.into()),
-                llvm_value.into_pointer_value(),
-                "deref_load",
-            )
-            .unwrap();
-
-        match load {
-            inkwell::values::BasicValueEnum::PointerValue(ptr) => return Ok(ptr),
-            _ => (),
-        }
+    if !ptr_ty.is_pointer_type() {
+        panic!("Cannot dereference non-pointer type");
     }
 
-    Err(CodegenError::OperandTypeCombinationError {
-        operation_name: "dereference",
-    })
+    let pointee_ty = match place.get_type(ctx.store, ctx.tab).unwrap() {
+        hir::Type::Pointer { to, .. } => &ctx.store[&to],
+        hir::Type::Reference { to, .. } => &ctx.store[&to],
+        _ => unreachable!(),
+    };
+
+    let load = ctx
+        .bb
+        .build_load(
+            gen_ty(&pointee_ty, &mut ctx.into()),
+            llvm_value.into_pointer_value(),
+            "deref_load",
+        )
+        .unwrap();
+
+    match load {
+        inkwell::values::BasicValueEnum::PointerValue(ptr) => return ptr,
+        _ => panic!("Dereferenced value is not a pointer"),
+    }
 }
 
 pub(crate) fn gen_place<'ctx>(
     ctx: &mut CodegenCtx<'ctx, '_, '_, '_, '_, '_>,
     hir_value: &hir::Value,
-) -> Result<PointerValue<'ctx>, CodegenError> {
+) -> PointerValue<'ctx> {
     match hir_value {
         hir::Value::InferredInteger(_)
         | hir::Value::InferredFloat(_)
@@ -109,7 +107,7 @@ pub(crate) fn gen_place<'ctx>(
         | hir::Value::Block { .. }
         | hir::Value::Closure { .. }
         | hir::Value::Call { .. }
-        | hir::Value::MethodCall { .. } => Err(CodegenError::InvalidPlaceValue),
+        | hir::Value::MethodCall { .. } => panic!("Value is not a place"),
 
         hir::Value::Unit
         | hir::Value::Bool(_)
@@ -137,9 +135,9 @@ pub(crate) fn gen_place<'ctx>(
             );
 
             let alloca = ctx.bb.build_alloca(tmp_ty, "").unwrap();
-            let llvm_value = gen_rval(ctx, hir_value)?;
+            let llvm_value = gen_rval(ctx, hir_value);
             ctx.bb.build_store(alloca, llvm_value).unwrap();
-            Ok(alloca)
+            alloca
         }
 
         hir::Value::FieldAccess { expr, field_name } => {
@@ -155,40 +153,32 @@ pub(crate) fn gen_place<'ctx>(
         hir::Value::FunctionSymbol { id } => {
             let function = ctx.store[id].borrow();
             match ctx.module.get_function(&function.mangled_name) {
-                Some(func) => Ok(func.as_global_value().as_pointer_value()),
-                None => Err(CodegenError::SymbolNotFound {
-                    symbol_name: function.mangled_name.clone(),
-                }),
+                Some(func) => func.as_global_value().as_pointer_value(),
+                None => panic!("Function symbol not found in module"),
             }
         }
 
         hir::Value::GlobalVariableSymbol { id } => {
             let global_var = ctx.store[id].borrow();
             match ctx.globals.get(&global_var.mangled_name) {
-                Some(ptr) => Ok(ptr.0),
-                None => Err(CodegenError::SymbolNotFound {
-                    symbol_name: global_var.mangled_name.clone(),
-                }),
+                Some(ptr) => ptr.0,
+                None => panic!("Global variable symbol not found"),
             }
         }
 
         hir::Value::LocalVariableSymbol { id } => {
             let local_var = ctx.store[id].borrow();
             match ctx.locals.get(&local_var.name) {
-                Some(ptr) => Ok(ptr.0),
-                None => Err(CodegenError::SymbolNotFound {
-                    symbol_name: local_var.name.clone(),
-                }),
+                Some(ptr) => ptr.0,
+                None => panic!("Local variable symbol not found"),
             }
         }
 
         hir::Value::ParameterSymbol { id } => {
             let parameter = ctx.store[id].borrow();
             match ctx.parameters.get(&parameter.name) {
-                Some(ptr) => Ok(ptr.0),
-                None => Err(CodegenError::SymbolNotFound {
-                    symbol_name: parameter.name.clone(),
-                }),
+                Some(ptr) => ptr.0,
+                None => panic!("Parameter symbol not found"),
             }
         }
     }
