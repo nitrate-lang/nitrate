@@ -154,7 +154,6 @@ impl Ast2Hir for ast::TypePath {
                     }
 
                     None => {
-                        // TODO: Create struct placeholder
                         let placeholder_struct_id = StructType {
                             attributes: BTreeSet::new(),
                             fields: Vec::new().into(),
@@ -169,8 +168,8 @@ impl Ast2Hir for ast::TypePath {
                         }
                         .into_id(&ctx.store);
 
-                        ctx.tab
-                            .add_type(TypeDefinition::StructDef(struct_def.clone()), &ctx.store);
+                        let typedef = TypeDefinition::StructDef(struct_def.clone());
+                        ctx.tab.add_type(typedef, &ctx.store);
 
                         return Ok(Type::Struct { def: struct_def });
                     }

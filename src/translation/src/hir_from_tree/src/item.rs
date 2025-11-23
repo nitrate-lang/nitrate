@@ -113,18 +113,23 @@ impl Ast2Hir for ast::Struct {
         }
         .into_id(&ctx.store);
 
-        let struct_def_id = StructDef {
+        let struct_def = StructDef {
             visibility,
             name,
             field_extras,
             struct_id,
+        };
+
+        if let Some(existing_struct_def_id) = ctx.tab.get_struct(&struct_def.name) {
+            let mut existing_struct_def = ctx.store[existing_struct_def_id].borrow_mut();
+            *existing_struct_def = struct_def;
+            Ok(existing_struct_def_id.clone())
+        } else {
+            let struct_def_id = struct_def.into_id(&ctx.store);
+            let typedef = TypeDefinition::StructDef(struct_def_id.clone());
+            ctx.tab.add_type(typedef, &ctx.store);
+            Ok(struct_def_id)
         }
-        .into_id(&ctx.store);
-
-        let definition = TypeDefinition::StructDef(struct_def_id.clone());
-        ctx.tab.add_type(definition, &ctx.store);
-
-        Ok(struct_def_id)
     }
 }
 

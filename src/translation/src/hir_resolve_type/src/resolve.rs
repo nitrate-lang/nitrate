@@ -21,11 +21,9 @@ impl<'store> TyCtx<'store> {
 
     pub fn resolve_function(&self, function: &mut Function, log: &CompilerLog) {
         // TODO: type resolution/inference/checking logic
-        println!("Resolving types for function: {}", function.name);
     }
 
     pub fn resolve_global(&self, global: &mut GlobalVariable, log: &CompilerLog) {
         // TODO: type resolution/inference/checking logic
-        println!("Resolving types for global variable: {}", global.name);
     }
 }
