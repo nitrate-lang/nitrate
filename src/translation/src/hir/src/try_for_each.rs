@@ -108,7 +108,8 @@ impl TypeIter<'_> {
                 }
             }
 
-            Type::Struct { struct_type } => {
+            Type::Struct { def } => {
+                let struct_type = &store[def].borrow().struct_id;
                 for field in &store[struct_type].borrow().fields {
                     store[&field.ty]
                         .iter()

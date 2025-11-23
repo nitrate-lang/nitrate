@@ -87,7 +87,8 @@ pub(crate) fn gen_ty<'ctx>(
             ctx.llvm.struct_type(&llvm_element_types, false).into()
         }
 
-        hir::Type::Struct { struct_type } => {
+        hir::Type::Struct { def } => {
+            let struct_type = &ctx.store[def].borrow().struct_id;
             let hir_struct = &ctx.store[struct_type].borrow();
             gen_struct_ty(hir_struct, ctx).into()
         }

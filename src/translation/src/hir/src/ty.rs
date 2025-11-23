@@ -103,7 +103,7 @@ pub enum Type {
     },
 
     Struct {
-        struct_type: StructTypeId,
+        def: StructDefId,
     },
 
     Enum {
@@ -210,9 +210,9 @@ impl Type {
         matches!(self, Type::SliceRef { .. })
     }
 
-    pub fn as_struct(&self) -> Option<&StructTypeId> {
-        if let Type::Struct { struct_type } = self {
-            Some(struct_type)
+    pub fn as_struct(&self) -> Option<&StructDefId> {
+        if let Type::Struct { def } = self {
+            Some(def)
         } else {
             None
         }

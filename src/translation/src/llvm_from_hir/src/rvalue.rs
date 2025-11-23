@@ -1364,16 +1364,13 @@ fn gen_rval_struct_object<'ctx>(
     struct_path: &NString,
     fields: &[(NString, ValueId)],
 ) -> Result<BasicValueEnum<'ctx>, CodegenError> {
-    let struct_def = &ctx.store[ctx
-        .tab
-        .get_struct(struct_path)
-        .expect("structure undefined")]
-    .borrow();
+    let struct_def_id = ctx.tab.get_struct(struct_path).expect("struct not found");
 
     let struct_ty = hir::Type::Struct {
-        struct_type: struct_def.struct_id.clone(),
+        def: struct_def_id.clone(),
     };
 
+    let struct_def = ctx.store[struct_def_id].borrow();
     let mut field_map = HashMap::new();
     for (i, field) in ctx.store[&struct_def.struct_id]
         .borrow()
@@ -1433,12 +1430,13 @@ fn gen_rval_field_access<'ctx>(
     struct_value: &hir::Value,
     field_name: &NString,
 ) -> Result<BasicValueEnum<'ctx>, CodegenError> {
-    let hir_struct_ty = &ctx.store[struct_value
+    let hir_struct_def = &ctx.store[struct_value
         .get_type(ctx.store, ctx.tab)
         .expect("Failed to get type")
         .as_struct()
         .expect("expected struct type")]
     .borrow();
+    let hir_struct_ty = &ctx.store[&hir_struct_def.struct_id].borrow();
 
     let field_index = hir_struct_ty
         .fields

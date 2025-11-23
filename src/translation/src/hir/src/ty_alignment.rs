@@ -34,7 +34,8 @@ pub fn get_align_of(ty: &Type, ctx: &LayoutCtx) -> Result<u64, LayoutError> {
             Ok(max_align)
         }
 
-        Type::Struct { struct_type } => {
+        Type::Struct { def } => {
+            let struct_type = &ctx.store[def].borrow().struct_id;
             let StructType {
                 fields, attributes, ..
             } = &*ctx.store[struct_type].borrow();

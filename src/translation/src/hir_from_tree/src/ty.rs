@@ -148,14 +148,31 @@ impl Ast2Hir for ast::TypePath {
             Some(resolved_path) => match ctx.ast_symbol_map.get(&resolved_path) {
                 Some(SymbolKind::Struct) => match ctx.tab.get_struct(&resolved_path) {
                     Some(existing_struct_def_id) => {
-                        let struct_type =
-                            ctx.store[existing_struct_def_id].borrow().struct_id.clone();
-                        return Ok(Type::Struct { struct_type });
+                        return Ok(Type::Struct {
+                            def: existing_struct_def_id.clone(),
+                        });
                     }
 
                     None => {
                         // TODO: Create struct placeholder
-                        unimplemented!()
+                        let placeholder_struct_id = StructType {
+                            attributes: BTreeSet::new(),
+                            fields: Vec::new().into(),
+                        }
+                        .into_id(&ctx.store);
+
+                        let struct_def = StructDef {
+                            visibility: Visibility::Sec,
+                            name: resolved_path,
+                            field_extras: Vec::new(),
+                            struct_id: placeholder_struct_id.clone(),
+                        }
+                        .into_id(&ctx.store);
+
+                        ctx.tab
+                            .add_type(TypeDefinition::StructDef(struct_def.clone()), &ctx.store);
+
+                        return Ok(Type::Struct { def: struct_def });
                     }
                 },
 

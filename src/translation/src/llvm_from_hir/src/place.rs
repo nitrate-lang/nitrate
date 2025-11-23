@@ -13,11 +13,12 @@ fn gen_place_field_access<'ctx>(
     struct_value: &hir::Value,
     field_name: &NString,
 ) -> Result<PointerValue<'ctx>, CodegenError> {
-    let hir_struct_ty = &ctx.store[struct_value
+    let hir_struct_def = &ctx.store[struct_value
         .get_type(ctx.store, ctx.tab)
         .expect("Failed to get type")
         .as_struct()
         .expect("expected struct type")];
+    let hir_struct_ty = &ctx.store[&hir_struct_def.borrow().struct_id];
 
     let field_index = hir_struct_ty
         .borrow()
