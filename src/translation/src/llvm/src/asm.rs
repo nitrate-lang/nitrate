@@ -6,10 +6,15 @@ impl LLVMContext {
     pub fn write_asm(
         &self,
         module: &mut Module,
-        output_path: &std::path::Path,
+        output: &mut dyn std::io::Write,
     ) -> Result<(), String> {
-        self.target_machine
-            .write_to_file(&module, FileType::Assembly, output_path)
-            .map_err(|e| format!("Failed to write assembly to file: {}", e))
+        let buffer = self
+            .target_machine
+            .write_to_memory_buffer(module, FileType::Assembly)
+            .map_err(|e| format!("Failed to write module to assembly memory buffer: {}", e))?;
+
+        output
+            .write_all(buffer.as_slice())
+            .map_err(|e| format!("Failed to write assembly to output: {}", e))
     }
 }

@@ -310,21 +310,19 @@ impl Interpreter<'_> {
 
         llvm_ctx.optimize_module(&mut llvm_module);
 
-        let target_file_ll = format!(
-            ".no3/build/{}-{}.{}.{}.ll",
-            package.name(),
-            package.version().0,
-            package.version().1,
-            package.version().2
-        );
+        if args.show_asm {
+            if let Err(e) = llvm_ctx.write_asm(&mut llvm_module, &mut std::io::stdout()) {
+                error!(
+                    self.log,
+                    "Failed to write assembly file for package '{}': {}",
+                    package.name(),
+                    e
+                );
 
-        let target_file_s = format!(
-            ".no3/build/{}-{}.{}.{}.s",
-            package.name(),
-            package.version().0,
-            package.version().1,
-            package.version().2
-        );
+                return Err(InterpreterError::OperationalError);
+            }
+            return Ok(());
+        }
 
         let target_file_o = format!(
             ".no3/build/{}-{}.{}.{}.o",
@@ -333,21 +331,6 @@ impl Interpreter<'_> {
             package.version().1,
             package.version().2
         );
-
-        llvm_module
-            .print_to_file(target_file_ll)
-            .expect("failed to write to file");
-
-        if let Err(e) = llvm_ctx.write_asm(&mut llvm_module, std::path::Path::new(&target_file_s)) {
-            error!(
-                self.log,
-                "Failed to write assembly file for package '{}': {}",
-                package.name(),
-                e
-            );
-
-            return Err(InterpreterError::OperationalError);
-        }
 
         if let Err(e) =
             llvm_ctx.write_object_file(&mut llvm_module, std::path::Path::new(&target_file_o))
@@ -362,7 +345,47 @@ impl Interpreter<'_> {
             return Err(InterpreterError::OperationalError);
         }
 
-        /* TODO: Link LLVM IR into final binary or shared library */
+        if args.show_obj {
+            info!(
+                self.log,
+                "Object file for package '{}' written to '{}'",
+                package.name(),
+                target_file_o
+            );
+            return Ok(());
+        }
+
+        // run system command
+        let status = std::process::Command::new("clang")
+            .args(&[&target_file_o, "-o"])
+            .arg(format!(
+                "{}-{}.{}.{}",
+                package.name(),
+                package.version().0,
+                package.version().1,
+                package.version().2
+            ))
+            .status()
+            .map_err(|e| {
+                error!(
+                    self.log,
+                    "Failed to link final binary for package '{}': {}",
+                    package.name(),
+                    e
+                );
+
+                InterpreterError::OperationalError
+            })?;
+
+        if !status.success() {
+            error!(
+                self.log,
+                "Linking final binary for package '{}' failed with exit code: {}",
+                package.name(),
+                status.code().unwrap_or(-1),
+            );
+            return Err(InterpreterError::OperationalError);
+        }
 
         info!(
             self.log,

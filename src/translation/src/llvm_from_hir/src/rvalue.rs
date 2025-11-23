@@ -1875,6 +1875,13 @@ fn gen_rval_symbol<'ctx>(
             .unwrap();
 
         load.into()
+    } else if let Some((parameter, llvm_param_ty)) = ctx.parameters.get(symbol_name) {
+        let load = ctx
+            .bb
+            .build_load(*llvm_param_ty, *parameter, "parameter_symbol_load")
+            .unwrap();
+
+        load.into()
     } else if let Some((global, llvm_global_ty)) = ctx.globals.get(symbol_name) {
         let load = ctx
             .bb
