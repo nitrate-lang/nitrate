@@ -118,6 +118,12 @@ pub(crate) fn gen_ty<'ctx>(
                 .into()
         }
 
+        hir::Type::TypeAlias { def } => {
+            let type_alias = &ctx.store[def].borrow();
+            let hir_base = &ctx.store[&type_alias.type_id];
+            gen_ty(hir_base, ctx)
+        }
+
         hir::Type::Refine { base, .. } => {
             let hir_base = &ctx.store[base];
             gen_ty(hir_base, ctx)

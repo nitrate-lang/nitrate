@@ -214,6 +214,11 @@ impl Dump for Type {
                 ctx.store[enum_type].dump(ctx, o)
             }
 
+            Type::TypeAlias { def } => {
+                let type_alias = &ctx.store[def].borrow().type_id;
+                ctx.store[type_alias].dump(ctx, o)
+            }
+
             Type::Refine { base, min, max } => {
                 ctx.store[base].dump(ctx, o)?;
                 write!(o, ": [")?;

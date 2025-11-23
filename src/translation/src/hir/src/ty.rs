@@ -110,6 +110,10 @@ pub enum Type {
         def: EnumDefId,
     },
 
+    TypeAlias {
+        def: TypeAliasDefId,
+    },
+
     Refine {
         base: TypeId,
         min: LiteralId,
@@ -220,6 +224,14 @@ impl Type {
 
     pub fn as_enum(&self) -> Option<&EnumDefId> {
         if let Type::Enum { def } = self {
+            Some(def)
+        } else {
+            None
+        }
+    }
+
+    pub fn as_type_alias(&self) -> Option<&TypeAliasDefId> {
+        if let Type::TypeAlias { def } = self {
             Some(def)
         } else {
             None

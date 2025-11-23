@@ -103,6 +103,11 @@ pub fn get_size_of(ty: &Type, ctx: &LayoutCtx) -> Result<u64, LayoutError> {
             Ok(size)
         }
 
+        Type::TypeAlias { def } => {
+            let type_alias = &ctx.store[def].borrow().type_id;
+            get_size_of(&ctx.store[type_alias], ctx)
+        }
+
         Type::Refine { base, .. } => Ok(get_size_of(&ctx.store[base], ctx)?),
 
         Type::Function { .. } => Ok(ctx.ptr_size as u64),

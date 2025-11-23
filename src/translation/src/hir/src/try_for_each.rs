@@ -126,6 +126,13 @@ impl TypeIter<'_> {
                 }
             }
 
+            Type::TypeAlias { def } => {
+                let type_alias = &store[def].borrow().type_id;
+                store[type_alias]
+                    .iter()
+                    .try_for_each(store, vcb, tcb, visited)?;
+            }
+
             Type::Refine {
                 base,
                 min: _,

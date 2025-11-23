@@ -211,8 +211,19 @@ impl Ast2Hir for ast::TypePath {
                     }
 
                     None => {
-                        // TODO: Create type alias placeholder
-                        unimplemented!()
+                        let type_alias_def = TypeAliasDef {
+                            visibility: Visibility::Sec,
+                            name: resolved_path,
+                            type_id: Type::Unit.into_id(&ctx.store),
+                        }
+                        .into_id(&ctx.store);
+
+                        let typedef = TypeDefinition::TypeAliasDef(type_alias_def.clone());
+                        ctx.tab.add_type(typedef, &ctx.store);
+
+                        return Ok(Type::TypeAlias {
+                            def: type_alias_def,
+                        });
                     }
                 },
 
@@ -429,7 +440,6 @@ impl Ast2Hir for ast::LatentType {
     type Hir = Type;
 
     fn ast2hir(self, _ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
-        // TODO: Implement latent types
         log.report(&HirErr::UnimplementedFeature("latent types".into()));
         Err(())
     }

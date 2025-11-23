@@ -35,17 +35,22 @@ impl Ast2Hir for ast::TypeAlias {
             }
         };
 
-        let type_alias_id = TypeAliasDef {
+        let type_alias = TypeAliasDef {
             visibility,
             name,
             type_id,
+        };
+
+        if let Some(existing_type_alias_def_id) = ctx.tab.get_type_alias(&type_alias.name) {
+            let mut existing_type_alias_def = ctx.store[existing_type_alias_def_id].borrow_mut();
+            *existing_type_alias_def = type_alias;
+            Ok(existing_type_alias_def_id.clone())
+        } else {
+            let type_alias_def_id = type_alias.into_id(&ctx.store);
+            let typedef = TypeDefinition::TypeAliasDef(type_alias_def_id.clone());
+            ctx.tab.add_type(typedef, &ctx.store);
+            Ok(type_alias_def_id)
         }
-        .into_id(&ctx.store);
-
-        let definition = TypeDefinition::TypeAliasDef(type_alias_id.clone());
-        ctx.tab.add_type(definition, &ctx.store);
-
-        Ok(type_alias_id)
     }
 }
 

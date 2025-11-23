@@ -71,6 +71,12 @@ pub(crate) fn mangle_type(ty: &Type, store: &Store) -> String {
             mangled
         }
 
+        Type::TypeAlias { def } => {
+            let type_alias = &store[def].borrow();
+            let type_id = &type_alias.type_id;
+            mangle_type(&store[type_id], store)
+        }
+
         Type::Refine { base, min, max } => {
             let base_mangled = mangle_type(&store[base], store);
             format!("Y{}_{}_{}", store[min], store[max], base_mangled)
