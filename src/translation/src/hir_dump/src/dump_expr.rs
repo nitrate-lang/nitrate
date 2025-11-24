@@ -33,14 +33,14 @@ impl Dump for Block {
         if self.elements.is_empty() {
             write!(o, "{{}}")
         } else {
-            write!(o, "{{\n")?;
+            writeln!(o, "{{")?;
 
             for expr in &self.elements {
                 ctx.indent += 1;
 
                 write_indent(ctx, o)?;
                 expr.dump(ctx, o)?;
-                write!(o, "\n")?;
+                writeln!(o)?;
 
                 ctx.indent -= 1;
             }
@@ -59,21 +59,21 @@ impl Dump for Lit {
     ) -> Result<(), std::io::Error> {
         match self {
             Lit::Unit => write!(o, "()"),
-            Lit::Bool(b) => write!(o, "{}", b),
-            Lit::I8(i) => write!(o, "i8 {}", i),
-            Lit::I16(i) => write!(o, "i16 {}", i),
-            Lit::I32(i) => write!(o, "i32 {}", i),
-            Lit::I64(i) => write!(o, "i64 {}", i),
-            Lit::I128(i) => write!(o, "i128 {}", i),
-            Lit::U8(u) => write!(o, "u8 {}", u),
-            Lit::U16(u) => write!(o, "u16 {}", u),
-            Lit::U32(u) => write!(o, "u32 {}", u),
-            Lit::U64(u) => write!(o, "u64 {}", u),
-            Lit::U128(u) => write!(o, "u128 {}", u),
-            Lit::F32(f) => write!(o, "f32 {}", f),
-            Lit::F64(f) => write!(o, "f64 {}", f),
-            Lit::USize32(u) => write!(o, "usize {}", u),
-            Lit::USize64(u) => write!(o, "usize {}", u),
+            Lit::Bool(b) => write!(o, "{b}"),
+            Lit::I8(i) => write!(o, "i8 {i}"),
+            Lit::I16(i) => write!(o, "i16 {i}"),
+            Lit::I32(i) => write!(o, "i32 {i}"),
+            Lit::I64(i) => write!(o, "i64 {i}"),
+            Lit::I128(i) => write!(o, "i128 {i}"),
+            Lit::U8(u) => write!(o, "u8 {u}"),
+            Lit::U16(u) => write!(o, "u16 {u}"),
+            Lit::U32(u) => write!(o, "u32 {u}"),
+            Lit::U64(u) => write!(o, "u64 {u}"),
+            Lit::U128(u) => write!(o, "u128 {u}"),
+            Lit::F32(f) => write!(o, "f32 {f}"),
+            Lit::F64(f) => write!(o, "f64 {f}"),
+            Lit::USize32(u) => write!(o, "usize {u}"),
+            Lit::USize64(u) => write!(o, "usize {u}"),
         }
     }
 }
@@ -86,31 +86,31 @@ impl Dump for Value {
     ) -> Result<(), std::io::Error> {
         match self {
             Value::Unit => write!(o, "()"),
-            Value::Bool(b) => write!(o, "{}", b),
-            Value::I8(i) => write!(o, "i8 {}", i),
-            Value::I16(i) => write!(o, "i16 {}", i),
-            Value::I32(i) => write!(o, "i32 {}", i),
-            Value::I64(i) => write!(o, "i64 {}", i),
-            Value::I128(i) => write!(o, "i128 {}", i),
-            Value::U8(u) => write!(o, "u8 {}", u),
-            Value::U16(u) => write!(o, "u16 {}", u),
-            Value::U32(u) => write!(o, "u32 {}", u),
-            Value::U64(u) => write!(o, "u64 {}", u),
-            Value::U128(u) => write!(o, "u128 {}", u),
-            Value::F32(f) => write!(o, "f32 {}", f),
-            Value::F64(f) => write!(o, "f64 {}", f),
-            Value::USize32(u) => write!(o, "usize {}", u),
-            Value::USize64(u) => write!(o, "usize {}", u),
+            Value::Bool(b) => write!(o, "{b}"),
+            Value::I8(i) => write!(o, "i8 {i}"),
+            Value::I16(i) => write!(o, "i16 {i}"),
+            Value::I32(i) => write!(o, "i32 {i}"),
+            Value::I64(i) => write!(o, "i64 {i}"),
+            Value::I128(i) => write!(o, "i128 {i}"),
+            Value::U8(u) => write!(o, "u8 {u}"),
+            Value::U16(u) => write!(o, "u16 {u}"),
+            Value::U32(u) => write!(o, "u32 {u}"),
+            Value::U64(u) => write!(o, "u64 {u}"),
+            Value::U128(u) => write!(o, "u128 {u}"),
+            Value::F32(f) => write!(o, "f32 {f}"),
+            Value::F64(f) => write!(o, "f64 {f}"),
+            Value::USize32(u) => write!(o, "usize {u}"),
+            Value::USize64(u) => write!(o, "usize {u}"),
             Value::StringLit(s) => write!(o, "{}", escape_string(s, true)),
             Value::BStringLit(s) => write!(o, "{}", escape_bstring(s, true)),
-            Value::InferredInteger(i) => write!(o, "?i {}", i),
-            Value::InferredFloat(f) => write!(o, "?f {}", f),
+            Value::InferredInteger(i) => write!(o, "?i {i}"),
+            Value::InferredFloat(f) => write!(o, "?f {f}"),
 
             Value::StructObject {
                 struct_path,
                 fields,
             } => {
-                write!(o, "{}", struct_path)?;
+                write!(o, "{struct_path}")?;
 
                 write!(o, " {{ ")?;
 
@@ -119,7 +119,7 @@ impl Dump for Value {
                         write!(o, ", ")?;
                     }
 
-                    write!(o, "{}: ", field_name)?;
+                    write!(o, "{field_name}: ")?;
                     field_value.borrow().dump(ctx, o)?;
                 }
 
@@ -131,8 +131,8 @@ impl Dump for Value {
                 variant,
                 value,
             } => {
-                write!(o, "{}", enum_path)?;
-                write!(o, "::{}", variant)?;
+                write!(o, "{enum_path}")?;
+                write!(o, "::{variant}")?;
                 write!(o, "(")?;
                 value.borrow().dump(ctx, o)?;
                 write!(o, ")")
@@ -191,7 +191,7 @@ impl Dump for Value {
             } => {
                 write!(o, "(")?;
                 expr.borrow().dump(ctx, o)?;
-                write!(o, ".{})", field)
+                write!(o, ".{field})")
             }
 
             Value::Assign { place, value } => {
@@ -286,7 +286,7 @@ impl Dump for Value {
             Value::Break { label } => {
                 write!(o, "break")?;
                 if let Some(label) = label {
-                    write!(o, " {}", label)?;
+                    write!(o, " {label}")?;
                 }
                 Ok(())
             }
@@ -294,7 +294,7 @@ impl Dump for Value {
             Value::Continue { label } => {
                 write!(o, "continue")?;
                 if let Some(label) = label {
-                    write!(o, " {}", label)?;
+                    write!(o, " {label}")?;
                 }
                 Ok(())
             }
@@ -315,7 +315,7 @@ impl Dump for Value {
                         write!(o, ", ")?;
                     }
 
-                    write!(o, "{}", capture)?;
+                    write!(o, "{capture}")?;
                 }
                 write!(o, "] ")?;
 
@@ -341,7 +341,7 @@ impl Dump for Value {
                         write!(o, ", ")?;
                     }
 
-                    write!(o, "{}: ", name)?;
+                    write!(o, "{name}: ")?;
                     arg.borrow().dump(ctx, o)?;
                 }
                 write!(o, ")")
@@ -354,7 +354,7 @@ impl Dump for Value {
                 named,
             } => {
                 object.borrow().dump(ctx, o)?;
-                write!(o, ".{}(", method)?;
+                write!(o, ".{method}(")?;
                 for (i, arg) in positional.iter().enumerate() {
                     if i != 0 {
                         write!(o, ", ")?;
@@ -367,7 +367,7 @@ impl Dump for Value {
                         write!(o, ", ")?;
                     }
 
-                    write!(o, "{}: ", name)?;
+                    write!(o, "{name}: ")?;
                     arg.borrow().dump(ctx, o)?;
                 }
                 write!(o, ")")

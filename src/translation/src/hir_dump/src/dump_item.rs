@@ -25,14 +25,14 @@ pub(crate) fn dump_attributes<T: Dump>(
         return Ok(());
     }
 
-    write!(o, "[\n")?;
+    writeln!(o, "[")?;
 
     for attr in attributes {
         ctx.indent += 1;
 
         write_indent(ctx, o)?;
         attr.dump(ctx, o)?;
-        write!(o, ",\n")?;
+        writeln!(o, ",")?;
 
         ctx.indent -= 1;
     }
@@ -47,9 +47,7 @@ impl Dump for GlobalVariableAttribute {
         _ctx: &mut DumpContext,
         _o: &mut dyn std::io::Write,
     ) -> Result<(), std::io::Error> {
-        match self {
-            _ => Ok(()),
-        }
+        Ok(())
     }
 }
 
@@ -90,9 +88,7 @@ impl Dump for LocalVariableAttribute {
         _ctx: &mut DumpContext,
         _o: &mut dyn std::io::Write,
     ) -> Result<(), std::io::Error> {
-        match self {
-            _ => Ok(()),
-        }
+        Ok(())
     }
 }
 
@@ -108,7 +104,7 @@ impl Dump for LocalVariableId {
             LocalVariableKind::Stack => write!(o, "let::{}::`{}` ", self.as_usize(), this.name)?,
             LocalVariableKind::Dynamic => write!(o, "var::{}::`{}` ", self.as_usize(), this.name)?,
             LocalVariableKind::Static => {
-                write!(o, "static::{}::`{}` ", self.as_usize(), this.name)?
+                write!(o, "static::{}::`{}` ", self.as_usize(), this.name)?;
             }
         }
 
@@ -136,9 +132,7 @@ impl Dump for ParameterAttribute {
         _ctx: &mut DumpContext,
         _o: &mut dyn std::io::Write,
     ) -> Result<(), std::io::Error> {
-        match self {
-            _ => Ok(()),
-        }
+        Ok(())
     }
 }
 
@@ -190,14 +184,14 @@ impl Dump for FunctionId {
         if this.params.is_empty() {
             write!(o, "()")?;
         } else {
-            write!(o, "(\n")?;
+            writeln!(o, "(")?;
 
-            for param in this.params.iter() {
+            for param in &this.params {
                 ctx.indent += 1;
 
                 write_indent(ctx, o)?;
                 param.dump(ctx, o)?;
-                write!(o, ",\n")?;
+                writeln!(o, ",")?;
 
                 ctx.indent -= 1;
             }
@@ -236,14 +230,14 @@ impl Dump for TraitId {
         if this.methods.is_empty() {
             write!(o, " {{}}")
         } else {
-            write!(o, " {{\n")?;
+            writeln!(o, " {{")?;
 
             for method in &this.methods {
                 ctx.indent += 1;
 
                 write_indent(ctx, o)?;
                 method.dump(ctx, o)?;
-                write!(o, "\n")?;
+                writeln!(o)?;
 
                 ctx.indent -= 1;
             }
@@ -260,9 +254,7 @@ impl Dump for ModuleAttribute {
         _ctx: &mut DumpContext,
         _o: &mut dyn std::io::Write,
     ) -> Result<(), std::io::Error> {
-        match self {
-            _ => Ok(()),
-        }
+        Ok(())
     }
 }
 
@@ -286,18 +278,18 @@ impl Dump for ModuleId {
         if this.items.is_empty() {
             write!(o, "{{}}")
         } else {
-            write!(o, "{{\n")?;
+            writeln!(o, "{{")?;
 
             for (i, item) in this.items.iter().enumerate() {
                 if i != 0 {
-                    write!(o, "\n")?;
+                    writeln!(o)?;
                 }
 
                 ctx.indent += 1;
 
                 write_indent(ctx, o)?;
                 item.dump(ctx, o)?;
-                write!(o, "\n")?;
+                writeln!(o)?;
 
                 ctx.indent -= 1;
             }
@@ -326,18 +318,18 @@ impl Dump for Module {
         if self.items.is_empty() {
             write!(o, "{{}}")
         } else {
-            write!(o, "{{\n")?;
+            writeln!(o, "{{")?;
 
             for (i, item) in self.items.iter().enumerate() {
                 if i != 0 {
-                    write!(o, "\n")?;
+                    writeln!(o)?;
                 }
 
                 ctx.indent += 1;
 
                 write_indent(ctx, o)?;
                 item.dump(ctx, o)?;
-                write!(o, "\n")?;
+                writeln!(o)?;
 
                 ctx.indent -= 1;
             }
@@ -394,9 +386,9 @@ impl Dump for StructDefId {
         if this.fields.is_empty() {
             write!(o, "{{}}")?;
         } else {
-            write!(o, "{{\n")?;
+            writeln!(o, "{{")?;
 
-            for (_, field) in &this.fields {
+            for field in this.fields.values() {
                 ctx.indent += 1;
 
                 write_indent(ctx, o)?;
@@ -405,7 +397,7 @@ impl Dump for StructDefId {
                 write!(o, ": ")?;
                 field.ty.dump(ctx, o)?;
 
-                write!(o, ",\n")?;
+                writeln!(o, ",")?;
 
                 ctx.indent -= 1;
             }
@@ -441,7 +433,7 @@ impl Dump for EnumDefId {
         if this.variants.is_empty() {
             write!(o, "{{}}")?;
         } else {
-            write!(o, "{{\n")?;
+            writeln!(o, "{{")?;
 
             for variant in &this.variants {
                 ctx.indent += 1;
@@ -452,7 +444,7 @@ impl Dump for EnumDefId {
                 write!(o, ": ")?;
                 variant.ty.dump(ctx, o)?;
 
-                write!(o, ",\n")?;
+                writeln!(o, ",")?;
 
                 ctx.indent -= 1;
             }

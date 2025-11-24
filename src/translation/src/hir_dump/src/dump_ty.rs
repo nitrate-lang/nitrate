@@ -65,15 +65,15 @@ impl Dump for FunctionType {
         if self.params.is_empty() {
             write!(o, " ()")?;
         } else {
-            write!(o, " (\n")?;
+            writeln!(o, " (")?;
 
-            for param in self.params.iter() {
+            for param in &self.params {
                 ctx.indent += 1;
 
                 write_indent(ctx, o)?;
                 write!(o, "{}: ", param.0)?;
                 param.1.dump(ctx, o)?;
-                write!(o, ",\n")?;
+                writeln!(o, ",")?;
 
                 ctx.indent -= 1;
             }
@@ -175,12 +175,12 @@ impl Dump for Type {
                     (false, false) => write!(o, "")?,
                 }
 
-                if ctx.visited.contains(&to) {
+                if ctx.visited.contains(to) {
                     write!(o, "<...>")
                 } else {
                     ctx.visited.insert(*to);
                     let res = to.dump(ctx, o);
-                    ctx.visited.remove(&to);
+                    ctx.visited.remove(to);
                     res
                 }
             }
@@ -208,12 +208,12 @@ impl Dump for Type {
 
                 write!(o, "[")?;
 
-                if ctx.visited.contains(&element_type) {
+                if ctx.visited.contains(element_type) {
                     write!(o, "<...>")?;
                 } else {
                     ctx.visited.insert(*element_type);
                     let res = element_type.dump(ctx, o);
-                    ctx.visited.remove(&element_type);
+                    ctx.visited.remove(element_type);
                     res?;
                 }
 
@@ -234,12 +234,12 @@ impl Dump for Type {
                     (false, false) => write!(o, "")?,
                 }
 
-                if ctx.visited.contains(&to) {
+                if ctx.visited.contains(to) {
                     write!(o, "<...>")
                 } else {
                     ctx.visited.insert(*to);
                     let res = to.dump(ctx, o);
-                    ctx.visited.remove(&to);
+                    ctx.visited.remove(to);
                     res
                 }
             }

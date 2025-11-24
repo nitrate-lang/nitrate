@@ -7,7 +7,14 @@ pub struct DumpContext<'a> {
     pub(crate) visited: HashSet<TypeId>,
 }
 
+impl<'a> Default for DumpContext<'a> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl<'a> DumpContext<'a> {
+    #[must_use] 
     pub fn new() -> DumpContext<'a> {
         DumpContext {
             indent: 0,
