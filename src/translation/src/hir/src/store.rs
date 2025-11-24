@@ -200,8 +200,6 @@ macro_rules! impl_store_mut {
 
 impl_dedup_store!(TypeId, Type, TypeStore);
 
-impl_dedup_store!(FunctionTypeId, FunctionType, FunctionTypeStore);
-
 impl_store_mut!(GlobalVariableId, GlobalVariable, GlobalVariableStore);
 
 impl_store_mut!(LocalVariableId, LocalVariable, LocalVariableStore);
@@ -229,7 +227,6 @@ impl_store_mut!(BlockId, Block, ExprBlockStore);
 #[derive(Debug)]
 pub struct Store {
     types: TypeStore,
-    function_types: FunctionTypeStore,
     global_variables: GlobalVariableStore,
     local_variables: LocalVariableStore,
     parameters: ParameterStore,
@@ -248,7 +245,6 @@ impl Store {
     pub fn new() -> Self {
         Self {
             types: TypeStore::new(),
-            function_types: FunctionTypeStore::new(),
             global_variables: GlobalVariableStore::new(),
             local_variables: LocalVariableStore::new(),
             parameters: ParameterStore::new(),
@@ -266,10 +262,6 @@ impl Store {
 
     pub fn store_type(&self, ty: Type) -> TypeId {
         using_storage(self, || self.types.store(ty))
-    }
-
-    pub fn store_function_type(&self, func_type: FunctionType) -> FunctionTypeId {
-        using_storage(self, || self.function_types.store(func_type))
     }
 
     pub fn store_global_variable(&self, var: GlobalVariable) -> GlobalVariableId {
@@ -322,7 +314,6 @@ impl Store {
 
     pub fn reset(&mut self) {
         self.types.reset();
-        self.function_types.reset();
         self.global_variables.reset();
         self.local_variables.reset();
         self.parameters.reset();
@@ -339,7 +330,6 @@ impl Store {
 
     pub fn shrink_to_fit(&mut self) {
         self.types.shrink_to_fit();
-        self.function_types.shrink_to_fit();
         self.global_variables.shrink_to_fit();
         self.local_variables.shrink_to_fit();
         self.parameters.shrink_to_fit();
@@ -360,14 +350,6 @@ impl std::ops::Index<&TypeId> for Store {
 
     fn index(&self, index: &TypeId) -> &Self::Output {
         &self.types[index]
-    }
-}
-
-impl std::ops::Index<&FunctionTypeId> for Store {
-    type Output = FunctionType;
-
-    fn index(&self, index: &FunctionTypeId) -> &Self::Output {
-        &self.function_types[index]
     }
 }
 

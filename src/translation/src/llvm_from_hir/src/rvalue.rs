@@ -1816,11 +1816,11 @@ fn gen_rval_call<'ctx>(
     arguments: &[hir::ValueId],
 ) -> BasicValueEnum<'ctx> {
     let callee_ty_hir = callee.get_type(&ctx.tab).unwrap();
-    if !callee_ty_hir.is_function() {
+    let hir::Type::Function { function_type } = callee_ty_hir else {
         panic!("Callee is not a function type");
-    }
+    };
 
-    let llvm_function_ty = gen_function_ty(callee_ty_hir.as_function().unwrap(), &mut ctx.into());
+    let llvm_function_ty = gen_function_ty(&function_type, &mut ctx.into());
 
     let mut llvm_arguments = Vec::new();
     for arg_id in arguments {

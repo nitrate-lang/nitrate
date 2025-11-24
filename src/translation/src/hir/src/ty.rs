@@ -75,7 +75,7 @@ pub enum Type {
     },
 
     Function {
-        function_type: FunctionTypeId,
+        function_type: Box<FunctionType>,
     },
 
     Reference {
@@ -191,26 +191,12 @@ impl Type {
             None
         }
     }
-
-    pub fn as_function(&self) -> Option<&FunctionTypeId> {
-        if let Type::Function { function_type } = self {
-            Some(function_type)
-        } else {
-            None
-        }
-    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum PtrSize {
     U32 = 4,
     U64 = 8,
-}
-
-impl From<FunctionType> for FunctionTypeId {
-    fn from(function_type: FunctionType) -> Self {
-        get_storage(|store| store.store_function_type(function_type))
-    }
 }
 
 impl From<Type> for TypeId {

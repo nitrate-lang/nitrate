@@ -29,6 +29,7 @@ impl ValidateHir for FunctionType {
         for param in &self.params {
             param.1.verify(tab, log)?;
         }
+
         Ok(())
     }
 
@@ -69,7 +70,9 @@ impl ValidateHir for Type {
             }
 
             Type::Struct { def } => def.borrow().verify(tab, log),
+
             Type::Enum { def } => def.borrow().verify(tab, log),
+
             Type::TypeAlias { def } => def.borrow().verify(tab, log),
 
             Type::Refine { base, min, max } => {
