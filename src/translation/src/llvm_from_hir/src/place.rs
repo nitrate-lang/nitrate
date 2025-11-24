@@ -14,7 +14,9 @@ fn gen_place_field_access<'ctx>(
     struct_value: &hir::Value,
     field_name: &NString,
 ) -> PointerValue<'ctx> {
-    let value_type = struct_value.get_type(ctx.tab).expect("Failed to get type");
+    let value_type = struct_value
+        .determine_type(ctx.tab)
+        .expect("Failed to get type");
     let hir_struct_def = value_type
         .as_struct()
         .expect("expected struct type")
@@ -33,7 +35,7 @@ fn gen_place_field_access<'ctx>(
     let llvm_struct_value = gen_place(ctx, struct_value);
     let llvm_struct_ty = gen_ty(
         &struct_value
-            .get_type(ctx.tab)
+            .determine_type(ctx.tab)
             .expect("unable to get struct type"),
         &mut ctx.into(),
     );
@@ -65,7 +67,7 @@ fn gen_place_deref<'ctx>(
         panic!("Cannot dereference non-pointer type");
     }
 
-    let pointee_ty = match place.get_type(ctx.tab).unwrap() {
+    let pointee_ty = match place.determine_type(ctx.tab).unwrap() {
         hir::Type::Pointer { to, .. } => to.deref().clone(),
         hir::Type::Reference { to, .. } => to.deref().clone(),
         _ => unreachable!(),
@@ -133,7 +135,7 @@ pub(crate) fn gen_place<'ctx>(
         | hir::Value::BStringLit(_) => {
             let tmp_ty = gen_ty(
                 &hir_value
-                    .get_type(ctx.tab)
+                    .determine_type(ctx.tab)
                     .expect("unable to get bool type"),
                 &mut ctx.into(),
             );

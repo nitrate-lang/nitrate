@@ -6,8 +6,6 @@ use std::ops::Deref;
 
 impl ValidateHir for GlobalVariableAttribute {
     fn verify(&self, _tab: &SymbolTab, _log: &CompilerLog) -> Result<(), ()> {
-        // TODO: verify
-
         match self {
             GlobalVariableAttribute::NoMangle => Ok(()),
         }
@@ -27,14 +25,13 @@ impl ValidateHir for GlobalVariable {
             attr.verify(tab, log)?;
         }
 
-        let ty = self.ty.deref();
-        let init = self.init.borrow();
+        self.ty.verify(tab, log)?;
 
-        ty.verify(tab, log)?;
+        let init = self.init.borrow();
         init.verify(tab, log)?;
 
-        let init_ty = init.get_type(tab).map_err(|_| ())?;
-        if *ty != init_ty {
+        let init_ty = init.determine_type(tab).map_err(|_| ())?;
+        if *self.ty != init_ty {
             return Err(());
         }
 
@@ -77,7 +74,7 @@ impl ValidateHir for LocalVariable {
             let init = init_expr.borrow();
             init.verify(tab, log)?;
 
-            let init_ty = init.get_type(tab).map_err(|_| ())?;
+            let init_ty = init.determine_type(tab).map_err(|_| ())?;
             if *ty != init_ty {
                 return Err(());
             }
@@ -122,7 +119,7 @@ impl ValidateHir for Parameter {
             let init = default_value.borrow();
             init.verify(tab, log)?;
 
-            let init_ty = init.get_type(tab).map_err(|_| ())?;
+            let init_ty = init.determine_type(tab).map_err(|_| ())?;
             if *ty != init_ty {
                 return Err(());
             }
@@ -270,7 +267,7 @@ impl ValidateHir for StructField {
             let init = default_value.borrow();
             init.verify(tab, log)?;
 
-            let init_ty = init.get_type(tab).map_err(|_| ())?;
+            let init_ty = init.determine_type(tab).map_err(|_| ())?;
             let field_ty = self.ty.deref();
             if *field_ty != init_ty {
                 return Err(());

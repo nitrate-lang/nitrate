@@ -16,11 +16,11 @@ pub enum TypeInferenceError {
 }
 
 pub trait HirGetType {
-    fn get_type(&self, tab: &SymbolTab) -> Result<Type, TypeInferenceError>;
+    fn determine_type(&self, tab: &SymbolTab) -> Result<Type, TypeInferenceError>;
 }
 
 impl HirGetType for Lit {
-    fn get_type(&self, _tab: &SymbolTab) -> Result<Type, TypeInferenceError> {
+    fn determine_type(&self, _tab: &SymbolTab) -> Result<Type, TypeInferenceError> {
         match self {
             Lit::Unit => Ok(Type::Unit),
             Lit::Bool(_) => Ok(Type::Bool),
@@ -43,16 +43,16 @@ impl HirGetType for Lit {
 }
 
 impl HirGetType for Block {
-    fn get_type(&self, tab: &SymbolTab) -> Result<Type, TypeInferenceError> {
+    fn determine_type(&self, tab: &SymbolTab) -> Result<Type, TypeInferenceError> {
         match self.elements.last() {
-            Some(BlockElement::Expr(last)) => last.borrow().get_type(tab),
+            Some(BlockElement::Expr(last)) => last.borrow().determine_type(tab),
             Some(BlockElement::Local(_)) | None => Ok(Type::Unit),
         }
     }
 }
 
 impl HirGetType for Value {
-    fn get_type(&self, tab: &SymbolTab) -> Result<Type, TypeInferenceError> {
+    fn determine_type(&self, tab: &SymbolTab) -> Result<Type, TypeInferenceError> {
         match self {
             Value::Unit => Ok(Type::Unit),
             Value::Bool(_) => Ok(Type::Bool),
@@ -127,10 +127,10 @@ impl HirGetType for Value {
                 | BinaryOp::Mod
                 | BinaryOp::And
                 | BinaryOp::Or
-                | BinaryOp::Xor => Ok(left.borrow().get_type(tab)?),
+                | BinaryOp::Xor => Ok(left.borrow().determine_type(tab)?),
 
                 BinaryOp::Shl | BinaryOp::Shr | BinaryOp::Rol | BinaryOp::Ror => {
-                    Ok(left.borrow().get_type(tab)?)
+                    Ok(left.borrow().determine_type(tab)?)
                 }
 
                 BinaryOp::LogicAnd
@@ -144,13 +144,13 @@ impl HirGetType for Value {
             },
 
             Value::Unary { op, operand: expr } => match op {
-                UnaryOp::Add | UnaryOp::Sub | UnaryOp::Not => expr.borrow().get_type(tab),
+                UnaryOp::Add | UnaryOp::Sub | UnaryOp::Not => expr.borrow().determine_type(tab),
             },
 
             Value::FieldAccess { expr, field_name } => {
                 let expr = expr.borrow();
 
-                if let Type::Struct { def } = expr.get_type(tab)? {
+                if let Type::Struct { def } = expr.determine_type(tab)? {
                     let struct_def = &def.borrow();
                     let found_field = struct_def.fields.get(field_name);
                     if let Some(field) = found_field {
@@ -167,7 +167,7 @@ impl HirGetType for Value {
 
             Value::Deref { place } => {
                 let place = place.borrow();
-                let place_type = place.get_type(tab)?;
+                let place_type = place.determine_type(tab)?;
 
                 match place_type {
                     Type::Reference { to, .. } | Type::Pointer { to, .. } => {
@@ -188,7 +188,7 @@ impl HirGetType for Value {
                 exclusive,
                 place,
             } => {
-                let place_type = place.borrow().get_type(tab)?;
+                let place_type = place.borrow().determine_type(tab)?;
                 Ok(Type::Reference {
                     lifetime: Lifetime::Inferred,
                     exclusive: *exclusive,
@@ -201,7 +201,7 @@ impl HirGetType for Value {
                 let element_type = if elements.is_empty() {
                     Type::Unit.into()
                 } else {
-                    elements[0].get_type(tab)?.into()
+                    elements[0].determine_type(tab)?.into()
                 };
 
                 let array = Type::Array {
@@ -215,7 +215,7 @@ impl HirGetType for Value {
             Value::Tuple { elements } => {
                 let mut element_types = Vec::with_capacity(elements.len());
                 for elem in elements {
-                    let elem_type = elem.get_type(tab)?.into();
+                    let elem_type = elem.determine_type(tab)?.into();
                     element_types.push(elem_type);
                 }
 
@@ -234,12 +234,12 @@ impl HirGetType for Value {
                 None => Ok(Type::Unit),
 
                 Some(false_branch) => {
-                    let true_block = true_branch.borrow().get_type(tab)?;
+                    let true_block = true_branch.borrow().determine_type(tab)?;
                     if !true_block.is_diverging() {
                         return Ok(true_block);
                     }
 
-                    false_branch.borrow().get_type(tab)
+                    false_branch.borrow().determine_type(tab)
                 }
             },
 
@@ -253,7 +253,7 @@ impl HirGetType for Value {
             Value::Continue { label: _ } => Ok(Type::Never),
             Value::Return { value: _ } => Ok(Type::Never),
 
-            Value::Block { block } => block.borrow().get_type(tab),
+            Value::Block { block } => block.borrow().determine_type(tab),
 
             Value::Closure {
                 captures: _,
@@ -268,7 +268,7 @@ impl HirGetType for Value {
                 named: _,
             } => {
                 let callee = callee.borrow();
-                if let Type::Function { function_type } = callee.get_type(tab)? {
+                if let Type::Function { function_type } = callee.determine_type(tab)? {
                     return Ok(function_type.return_type.deref().clone());
                 }
 
@@ -282,7 +282,7 @@ impl HirGetType for Value {
                 named: _,
             } => {
                 let object = object.borrow();
-                let object_type = object.get_type(tab)?.into();
+                let object_type = object.determine_type(tab)?.into();
 
                 let method = tab
                     .get_method(&object_type, method_name)
