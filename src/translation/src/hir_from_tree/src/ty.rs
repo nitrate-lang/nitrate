@@ -150,11 +150,9 @@ impl Ast2Hir for ast::TypePath {
         match self.resolved_path {
             Some(resolved_path) => match ctx.ast_symbol_map.get(&resolved_path) {
                 Some(SymbolKind::Struct) => match ctx.tab.get_struct(&resolved_path) {
-                    Some(existing_struct_def_id) => {
-                        Ok(Type::Struct {
-                            def: existing_struct_def_id.clone(),
-                        })
-                    }
+                    Some(existing_struct_def_id) => Ok(Type::Struct {
+                        def: existing_struct_def_id.clone(),
+                    }),
 
                     None => {
                         let struct_def: StructDefId = StructDef {
@@ -174,11 +172,9 @@ impl Ast2Hir for ast::TypePath {
                 },
 
                 Some(SymbolKind::Enum) => match ctx.tab.get_enum(&resolved_path) {
-                    Some(existing_enum_def_id) => {
-                        Ok(Type::Enum {
-                            def: existing_enum_def_id.clone(),
-                        })
-                    }
+                    Some(existing_enum_def_id) => Ok(Type::Enum {
+                        def: existing_enum_def_id.clone(),
+                    }),
 
                     None => {
                         let enum_def: EnumDefId = EnumDef {
@@ -358,8 +354,6 @@ impl Ast2Hir for ast::ReferenceType {
     type Hir = Type;
 
     fn ast2hir(self, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
-        let to = self.to.ast2hir(ctx, log)?.into();
-
         let lifetime = match self.lifetime {
             None => Lifetime::Inferred,
             Some(ast::Lifetime { name }) => match name.deref() {
@@ -386,20 +380,33 @@ impl Ast2Hir for ast::ReferenceType {
             None => mutable,
         };
 
-        Ok(Type::Reference {
-            lifetime,
-            exclusive,
-            mutable,
-            to,
-        })
+        if let ast::Type::SliceType(slice) = self.to {
+            let element_type = slice.element_type.ast2hir(ctx, log)?.into();
+
+            Ok(Type::SliceRef {
+                lifetime,
+                exclusive,
+                mutable,
+                element_type,
+            })
+        } else {
+            let to = self.to.ast2hir(ctx, log)?.into();
+
+            Ok(Type::Reference {
+                lifetime,
+                exclusive,
+                mutable,
+                to,
+            })
+        }
     }
 }
 
 impl Ast2Hir for ast::SliceType {
     type Hir = Type;
 
-    fn ast2hir(self, _ctx: &mut Ast2HirCtx, _log: &CompilerLog) -> Result<Self::Hir, ()> {
-        // Only allowed to appear in reference types
+    fn ast2hir(self, _ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
+        log.report(&HirErr::SliceTypesCannotExistOutsideReferencesOrPointers);
         Err(())
     }
 }
@@ -408,8 +415,6 @@ impl Ast2Hir for ast::PointerType {
     type Hir = Type;
 
     fn ast2hir(self, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
-        let to = self.to.ast2hir(ctx, log)?.into();
-
         let mutable = match self.mutability {
             Some(ast::Mutability::Mut) => true,
             Some(ast::Mutability::Const) | None => false,
@@ -421,11 +426,20 @@ impl Ast2Hir for ast::PointerType {
             None => mutable,
         };
 
-        Ok(Type::Pointer {
-            exclusive,
-            mutable,
-            to,
-        })
+        if let ast::Type::SliceType(slice) = self.to {
+            let _element_type: TypeId = slice.element_type.ast2hir(ctx, log)?.into();
+
+            log.report(&HirErr::UnimplementedFeature("slice pointers".into()));
+            Err(())
+        } else {
+            let to = self.to.ast2hir(ctx, log)?.into();
+
+            Ok(Type::Pointer {
+                exclusive,
+                mutable,
+                to,
+            })
+        }
     }
 }
 

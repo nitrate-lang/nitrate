@@ -23,6 +23,7 @@ pub(crate) enum HirErr {
     UnrecognizedLocalVariableAttribute,
     UnresolvedSymbol,
     MissingReturnStatement,
+    SliceTypesCannotExistOutsideReferencesOrPointers,
 }
 
 impl FormattableDiagnosticGroup for HirErr {
@@ -54,6 +55,7 @@ impl FormattableDiagnosticGroup for HirErr {
             HirErr::UnrecognizedLocalVariableAttribute => 30,
             HirErr::UnresolvedSymbol => 31,
             HirErr::MissingReturnStatement => 32,
+            HirErr::SliceTypesCannotExistOutsideReferencesOrPointers => 33,
         }
     }
 
@@ -166,6 +168,11 @@ impl FormattableDiagnosticGroup for HirErr {
 
             HirErr::MissingReturnStatement => DiagnosticInfo {
                 message: "missing return statement in function".to_string(),
+                origin: Origin::None,
+            },
+
+            HirErr::SliceTypesCannotExistOutsideReferencesOrPointers => DiagnosticInfo {
+                message: "slice types cannot exist outside references or pointers".to_string(),
                 origin: Origin::None,
             },
         }
