@@ -32,6 +32,21 @@ macro_rules! impl_dedup_store {
             }
         }
 
+        impl std::ops::Deref for $handle_name {
+            type Target = $item_name;
+
+            fn deref(&self) -> &Self::Target {
+                TLS_STORE.with(|tls| {
+                    let store_ptr = tls
+                        .get()
+                        .expect("No Store found in TLS. Did you forget to call using_storage?");
+
+                    let store = unsafe { &*store_ptr };
+                    &store[self]
+                })
+            }
+        }
+
         #[derive(Debug)]
         pub struct $store_name {
             bimap: RwLock<BiMap<Arc<$item_name>, $handle_name>>,

@@ -4,26 +4,20 @@ use std::ops::ControlFlow;
 impl BlockIterMut<'_> {
     pub(crate) fn try_for_each_mut<T>(
         &mut self,
-        store: &Store,
+
         vcb: &mut dyn FnMut(&mut Value) -> ControlFlow<T>,
     ) -> ControlFlow<T> {
         for element in &self.node.elements {
             match element {
                 BlockElement::Expr(id) => {
-                    store[id]
-                        .borrow_mut()
-                        .iter_mut()
-                        .try_for_each_mut(store, vcb)?;
+                    id.borrow_mut().iter_mut().try_for_each_mut(vcb)?;
                 }
 
                 BlockElement::Local(id) => {
-                    let local_variable = &store[id].borrow_mut();
+                    let local_variable = &id.borrow_mut();
 
                     if let Some(init) = &local_variable.init {
-                        store[init]
-                            .borrow_mut()
-                            .iter_mut()
-                            .try_for_each_mut(store, vcb)?;
+                        init.borrow_mut().iter_mut().try_for_each_mut(vcb)?;
                     }
                 }
             }
@@ -36,7 +30,7 @@ impl BlockIterMut<'_> {
 impl ValueIterMut<'_> {
     pub(crate) fn try_for_each_mut<T>(
         &mut self,
-        store: &Store,
+
         vcb: &mut dyn FnMut(&mut Value) -> ControlFlow<T>,
     ) -> ControlFlow<T> {
         vcb(self.node)?;
@@ -68,10 +62,7 @@ impl ValueIterMut<'_> {
                 fields,
             } => {
                 for (_field_name, field_value) in fields {
-                    store[field_value as &ValueId]
-                        .borrow_mut()
-                        .iter_mut()
-                        .try_for_each_mut(store, vcb)?;
+                    field_value.borrow_mut().iter_mut().try_for_each_mut(vcb)?;
                 }
             }
 
@@ -80,68 +71,40 @@ impl ValueIterMut<'_> {
                 variant: _,
                 value,
             } => {
-                store[value as &ValueId]
-                    .borrow_mut()
-                    .iter_mut()
-                    .try_for_each_mut(store, vcb)?;
+                value.borrow_mut().iter_mut().try_for_each_mut(vcb)?;
             }
 
             Value::Binary { left, op: _, right } => {
-                store[left as &ValueId]
-                    .borrow_mut()
-                    .iter_mut()
-                    .try_for_each_mut(store, vcb)?;
+                left.borrow_mut().iter_mut().try_for_each_mut(vcb)?;
 
-                store[right as &ValueId]
-                    .borrow_mut()
-                    .iter_mut()
-                    .try_for_each_mut(store, vcb)?;
+                right.borrow_mut().iter_mut().try_for_each_mut(vcb)?;
             }
 
             Value::Unary { op: _, operand } => {
-                store[operand as &ValueId]
-                    .borrow_mut()
-                    .iter_mut()
-                    .try_for_each_mut(store, vcb)?;
+                operand.borrow_mut().iter_mut().try_for_each_mut(vcb)?;
             }
 
             Value::FieldAccess {
                 expr,
                 field_name: _,
             } => {
-                store[expr as &ValueId]
-                    .borrow_mut()
-                    .iter_mut()
-                    .try_for_each_mut(store, vcb)?;
+                expr.borrow_mut().iter_mut().try_for_each_mut(vcb)?;
             }
 
             Value::Assign { place, value } => {
-                store[place as &ValueId]
-                    .borrow_mut()
-                    .iter_mut()
-                    .try_for_each_mut(store, vcb)?;
-
-                store[value as &ValueId]
-                    .borrow_mut()
-                    .iter_mut()
-                    .try_for_each_mut(store, vcb)?;
+                place.borrow_mut().iter_mut().try_for_each_mut(vcb)?;
+                value.borrow_mut().iter_mut().try_for_each_mut(vcb)?;
             }
 
             Value::Deref { place } => {
-                store[place as &ValueId]
-                    .borrow_mut()
-                    .iter_mut()
-                    .try_for_each_mut(store, vcb)?;
+                place.borrow_mut().iter_mut().try_for_each_mut(vcb)?;
             }
 
             Value::Cast {
                 value: expr,
                 target_type: _,
             } => {
-                store[expr as &ValueId]
-                    .borrow_mut()
-                    .iter_mut()
-                    .try_for_each_mut(store, vcb)?;
+                expr.borrow_mut().iter_mut().try_for_each_mut(vcb)?;
             }
 
             Value::Borrow {
@@ -149,21 +112,18 @@ impl ValueIterMut<'_> {
                 mutable: _,
                 place,
             } => {
-                store[place as &ValueId]
-                    .borrow_mut()
-                    .iter_mut()
-                    .try_for_each_mut(store, vcb)?;
+                place.borrow_mut().iter_mut().try_for_each_mut(vcb)?;
             }
 
             Value::List { elements } => {
                 for element in elements {
-                    element.iter_mut().try_for_each_mut(store, vcb)?;
+                    element.iter_mut().try_for_each_mut(vcb)?;
                 }
             }
 
             Value::Tuple { elements } => {
                 for element in elements {
-                    element.iter_mut().try_for_each_mut(store, vcb)?;
+                    element.iter_mut().try_for_each_mut(vcb)?;
                 }
             }
 
@@ -172,41 +132,23 @@ impl ValueIterMut<'_> {
                 true_branch,
                 false_branch,
             } => {
-                store[condition as &ValueId]
-                    .borrow_mut()
-                    .iter_mut()
-                    .try_for_each_mut(store, vcb)?;
+                condition.borrow_mut().iter_mut().try_for_each_mut(vcb)?;
 
-                store[true_branch as &BlockId]
-                    .borrow_mut()
-                    .iter_mut()
-                    .try_for_each_mut(store, vcb)?;
+                true_branch.borrow_mut().iter_mut().try_for_each_mut(vcb)?;
 
                 if let Some(false_branch) = false_branch {
-                    store[false_branch as &BlockId]
-                        .borrow_mut()
-                        .iter_mut()
-                        .try_for_each_mut(store, vcb)?;
+                    false_branch.borrow_mut().iter_mut().try_for_each_mut(vcb)?;
                 }
             }
 
             Value::While { condition, body } => {
-                store[condition as &ValueId]
-                    .borrow_mut()
-                    .iter_mut()
-                    .try_for_each_mut(store, vcb)?;
+                condition.borrow_mut().iter_mut().try_for_each_mut(vcb)?;
 
-                store[body as &BlockId]
-                    .borrow_mut()
-                    .iter_mut()
-                    .try_for_each_mut(store, vcb)?;
+                body.borrow_mut().iter_mut().try_for_each_mut(vcb)?;
             }
 
             Value::Loop { body } => {
-                store[body as &BlockId]
-                    .borrow_mut()
-                    .iter_mut()
-                    .try_for_each_mut(store, vcb)?;
+                body.borrow_mut().iter_mut().try_for_each_mut(vcb)?;
             }
 
             Value::Break { label: _ } => {}
@@ -214,27 +156,18 @@ impl ValueIterMut<'_> {
             Value::Continue { label: _ } => {}
 
             Value::Return { value } => {
-                store[value as &ValueId]
-                    .borrow_mut()
-                    .iter_mut()
-                    .try_for_each_mut(store, vcb)?;
+                value.borrow_mut().iter_mut().try_for_each_mut(vcb)?;
             }
 
             Value::Block { block } => {
-                store[block as &BlockId]
-                    .borrow_mut()
-                    .iter_mut()
-                    .try_for_each_mut(store, vcb)?;
+                block.borrow_mut().iter_mut().try_for_each_mut(vcb)?;
             }
 
             Value::Closure {
                 captures: _,
                 callee,
             } => {
-                store[callee as &FunctionId]
-                    .borrow_mut()
-                    .iter_mut()
-                    .try_for_each_mut(store, vcb)?;
+                callee.borrow_mut().iter_mut().try_for_each_mut(vcb)?;
             }
 
             Value::Call {
@@ -242,23 +175,14 @@ impl ValueIterMut<'_> {
                 positional,
                 named,
             } => {
-                store[callee as &ValueId]
-                    .borrow_mut()
-                    .iter_mut()
-                    .try_for_each_mut(store, vcb)?;
+                callee.borrow_mut().iter_mut().try_for_each_mut(vcb)?;
 
                 for argument in positional {
-                    store[argument as &ValueId]
-                        .borrow_mut()
-                        .iter_mut()
-                        .try_for_each_mut(store, vcb)?;
+                    argument.borrow_mut().iter_mut().try_for_each_mut(vcb)?;
                 }
 
                 for (_name, argument) in named {
-                    store[argument as &ValueId]
-                        .borrow_mut()
-                        .iter_mut()
-                        .try_for_each_mut(store, vcb)?;
+                    argument.borrow_mut().iter_mut().try_for_each_mut(vcb)?;
                 }
             }
 
@@ -268,23 +192,14 @@ impl ValueIterMut<'_> {
                 positional,
                 named,
             } => {
-                store[object as &ValueId]
-                    .borrow_mut()
-                    .iter_mut()
-                    .try_for_each_mut(store, vcb)?;
+                object.borrow_mut().iter_mut().try_for_each_mut(vcb)?;
 
                 for argument in positional {
-                    store[argument as &ValueId]
-                        .borrow_mut()
-                        .iter_mut()
-                        .try_for_each_mut(store, vcb)?;
+                    argument.borrow_mut().iter_mut().try_for_each_mut(vcb)?;
                 }
 
                 for (_name, argument) in named {
-                    store[argument as &ValueId]
-                        .borrow_mut()
-                        .iter_mut()
-                        .try_for_each_mut(store, vcb)?;
+                    argument.borrow_mut().iter_mut().try_for_each_mut(vcb)?;
                 }
             }
 
@@ -301,13 +216,14 @@ impl ValueIterMut<'_> {
 impl GlobalVariableIterMut<'_> {
     pub(crate) fn try_for_each_mut<T>(
         &mut self,
-        store: &Store,
+
         vcb: &mut dyn FnMut(&mut Value) -> ControlFlow<T>,
     ) -> ControlFlow<T> {
-        store[&self.node.init]
+        self.node
+            .init
             .borrow_mut()
             .iter_mut()
-            .try_for_each_mut(store, vcb)?;
+            .try_for_each_mut(vcb)?;
 
         ControlFlow::Continue(())
     }
@@ -316,46 +232,31 @@ impl GlobalVariableIterMut<'_> {
 impl ModuleIterMut<'_> {
     pub(crate) fn try_for_each_mut<T>(
         &mut self,
-        store: &Store,
+
         vcb: &mut dyn FnMut(&mut Value) -> ControlFlow<T>,
     ) -> ControlFlow<T> {
         for item in &self.node.items {
             match item {
                 Item::Module(id) => {
-                    store[id]
-                        .borrow_mut()
-                        .iter_mut()
-                        .try_for_each_mut(store, vcb)?;
+                    id.borrow_mut().iter_mut().try_for_each_mut(vcb)?;
                 }
 
                 Item::GlobalVariable(id) => {
-                    store[id]
-                        .borrow_mut()
-                        .iter_mut()
-                        .try_for_each_mut(store, vcb)?;
+                    id.borrow_mut().iter_mut().try_for_each_mut(vcb)?;
                 }
 
                 Item::Function(id) => {
-                    store[id]
-                        .borrow_mut()
-                        .iter_mut()
-                        .try_for_each_mut(store, vcb)?;
+                    id.borrow_mut().iter_mut().try_for_each_mut(vcb)?;
                 }
 
                 Item::TypeAliasDef(_) => {}
 
                 Item::StructDef(id) => {
-                    store[id]
-                        .borrow_mut()
-                        .iter_mut()
-                        .try_for_each_mut(store, vcb)?;
+                    id.borrow_mut().iter_mut().try_for_each_mut(vcb)?;
                 }
 
                 Item::EnumDef(id) => {
-                    store[id]
-                        .borrow_mut()
-                        .iter_mut()
-                        .try_for_each_mut(store, vcb)?;
+                    id.borrow_mut().iter_mut().try_for_each_mut(vcb)?;
                 }
             }
         }
@@ -367,15 +268,15 @@ impl ModuleIterMut<'_> {
 impl StructDefIterMut<'_> {
     pub(crate) fn try_for_each_mut<T>(
         &mut self,
-        store: &Store,
+
         vcb: &mut dyn FnMut(&mut Value) -> ControlFlow<T>,
     ) -> ControlFlow<T> {
         for (_, field) in &self.node.fields {
             if let Some(default_value) = &field.default_value {
-                store[default_value]
+                default_value
                     .borrow_mut()
                     .iter_mut()
-                    .try_for_each_mut(store, vcb)?;
+                    .try_for_each_mut(vcb)?;
             }
         }
 
@@ -386,15 +287,15 @@ impl StructDefIterMut<'_> {
 impl EnumDefIterMut<'_> {
     pub(crate) fn try_for_each_mut<T>(
         &mut self,
-        store: &Store,
+
         vcb: &mut dyn FnMut(&mut Value) -> ControlFlow<T>,
     ) -> ControlFlow<T> {
         for default in &self.node.variant_extras {
             if let Some(default_value) = default {
-                store[default_value]
+                default_value
                     .borrow_mut()
                     .iter_mut()
-                    .try_for_each_mut(store, vcb)?;
+                    .try_for_each_mut(vcb)?;
             }
         }
 
@@ -405,25 +306,22 @@ impl EnumDefIterMut<'_> {
 impl FunctionIterMut<'_> {
     pub(crate) fn try_for_each_mut<T>(
         &mut self,
-        store: &Store,
+
         vcb: &mut dyn FnMut(&mut Value) -> ControlFlow<T>,
     ) -> ControlFlow<T> {
         for param in &self.node.params {
-            let parameter = store[param].borrow_mut();
+            let parameter = param.borrow_mut();
 
             if let Some(default_value) = &parameter.default_value {
-                store[default_value]
+                default_value
                     .borrow_mut()
                     .iter_mut()
-                    .try_for_each_mut(store, vcb)?;
+                    .try_for_each_mut(vcb)?;
             }
         }
 
         if let Some(body) = &self.node.body {
-            store[body]
-                .borrow_mut()
-                .iter_mut()
-                .try_for_each_mut(store, vcb)?;
+            body.borrow_mut().iter_mut().try_for_each_mut(vcb)?;
         }
 
         ControlFlow::Continue(())
