@@ -14,8 +14,9 @@ fn verify_array(
     log: &CompilerLog,
     _options: &ValidateTypeOptions,
 ) -> Result<(), ()> {
-    element_type.verify(tab, log, &ValidateTypeOptions::sized())?;
-    Ok(())
+    establish_property("element_type: Sized", || {
+        element_type.verify(tab, log, &ValidateTypeOptions::sized())
+    })
 }
 
 fn verify_tuple(
@@ -24,11 +25,15 @@ fn verify_tuple(
     log: &CompilerLog,
     _options: &ValidateTypeOptions,
 ) -> Result<(), ()> {
-    for elem_type in element_types {
-        elem_type.verify(tab, log, &ValidateTypeOptions::sized())?;
-    }
+    establish_property("all tuple element types: Sized", || {
+        for elem_type in element_types {
+            establish_property("element_type: Sized", || {
+                elem_type.verify(tab, log, &ValidateTypeOptions::sized())
+            })?;
+        }
 
-    Ok(())
+        Ok(())
+    })
 }
 
 fn verify_refinement_type(
@@ -41,11 +46,18 @@ fn verify_refinement_type(
 ) -> Result<(), ()> {
     base.verify(tab, log, options)?;
 
-    if min.deref() > max.deref() {
-        return Err(());
-    }
-
-    Ok(())
+    establish_property("refinement bounds: max >= min", || {
+        if max.deref() >= min.deref() {
+            Ok(())
+        } else {
+            log.report(&Issue::RefinementMinimumGreaterThanMaximum {
+                min: min.clone(),
+                max: max.clone(),
+                type_id: base.clone().into(),
+            });
+            Err(())
+        }
+    })
 }
 
 impl ValidateHirType for FunctionAttribute {
@@ -84,7 +96,9 @@ impl ValidateHirType for FunctionType {
         }
 
         for param in &self.params {
-            param.1.verify(tab, log, options)?;
+            establish_property("parameter type: Sized", || {
+                param.1.verify(tab, log, &ValidateTypeOptions::sized())
+            })?;
         }
 
         establish_property("parameter name uniqueness", || {
@@ -134,16 +148,18 @@ fn verify_reference_type(
     to: &Type,
     tab: &SymbolTab,
     log: &CompilerLog,
-    options: &ValidateTypeOptions,
+    _options: &ValidateTypeOptions,
 ) -> Result<(), ()> {
     match lifetime {
         Lifetime::Static | Lifetime::Gc | Lifetime::ThreadLocal | Lifetime::TaskLocal => {}
-
-        Lifetime::Inferred => return Err(()),
+        Lifetime::Inferred => {
+            log.report(&Issue::UninferredTypeResidue);
+            return Err(());
+        }
     }
 
     // FIXME: Infinite recursion for self-referential types
-    to.verify(tab, log, options)
+    to.verify(tab, log, &ValidateTypeOptions::un_sized())
 }
 
 fn verify_slice_reference_type(
@@ -153,16 +169,19 @@ fn verify_slice_reference_type(
     element_type: &Type,
     tab: &SymbolTab,
     log: &CompilerLog,
-    options: &ValidateTypeOptions,
+    _options: &ValidateTypeOptions,
 ) -> Result<(), ()> {
     match lifetime {
         Lifetime::Static | Lifetime::Gc | Lifetime::ThreadLocal | Lifetime::TaskLocal => {}
 
-        Lifetime::Inferred => return Err(()),
+        Lifetime::Inferred => {
+            log.report(&Issue::UninferredTypeResidue);
+            return Err(());
+        }
     }
 
     // FIXME: Infinite recursion for self-referential types
-    element_type.verify(tab, log, options)
+    element_type.verify(tab, log, &ValidateTypeOptions::sized())
 }
 
 fn verify_pointer_type(
@@ -171,10 +190,10 @@ fn verify_pointer_type(
     _mutable: bool,
     tab: &SymbolTab,
     log: &CompilerLog,
-    options: &ValidateTypeOptions,
+    _options: &ValidateTypeOptions,
 ) -> Result<(), ()> {
     // FIXME: Infinite recursion for self-referential types
-    to.verify(tab, log, options)
+    to.verify(tab, log, &ValidateTypeOptions::un_sized())
 }
 
 impl ValidateHirType for Type {

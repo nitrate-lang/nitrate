@@ -65,20 +65,17 @@ impl Dump for FunctionType {
         if self.params.is_empty() {
             write!(o, " ()")?;
         } else {
-            writeln!(o, " (")?;
+            write!(o, " (")?;
 
-            for param in &self.params {
-                ctx.indent += 1;
+            for (i, param) in self.params.iter().enumerate() {
+                if i != 0 {
+                    write!(o, ", ")?;
+                }
 
-                write_indent(ctx, o)?;
                 write!(o, "{}: ", param.0)?;
                 param.1.dump(ctx, o)?;
-                writeln!(o, ",")?;
-
-                ctx.indent -= 1;
             }
 
-            write_indent(ctx, o)?;
             write!(o, ")")?;
         }
 

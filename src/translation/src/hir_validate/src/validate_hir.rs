@@ -42,6 +42,12 @@ impl ValidateTypeOptions {
             require_sized: true,
         }
     }
+
+    pub fn un_sized() -> Self {
+        ValidateTypeOptions {
+            require_sized: false,
+        }
+    }
 }
 
 pub trait ValidateHirType

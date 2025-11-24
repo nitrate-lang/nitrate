@@ -1,16 +1,33 @@
 use std::ops::Deref;
 
 use nitrate_diagnosis::{DiagnosticGroupId, FormattableDiagnosticGroup};
-use nitrate_hir::{TraitId, TypeId};
+use nitrate_hir::{LiteralId, TraitId, TypeId};
 use nitrate_hir_dump::Dump;
 use nitrate_nstring::NString;
 
 pub(crate) enum Issue {
-    TypeDoesNotImplementTrait { type_id: TypeId, trait_id: TraitId },
-    TypeMismatch { expected: TypeId, found: TypeId },
-    UnsupportedAlignment { alignment: u32, max_supported: u32 },
+    TypeDoesNotImplementTrait {
+        type_id: TypeId,
+        trait_id: TraitId,
+    },
+    TypeMismatch {
+        expected: TypeId,
+        found: TypeId,
+    },
+    UnsupportedAlignment {
+        alignment: u32,
+        max_supported: u32,
+    },
     UninferredTypeResidue,
-    FunctionTypeDuplicateParameterName { name: NString, function: TypeId },
+    FunctionTypeDuplicateParameterName {
+        name: NString,
+        function: TypeId,
+    },
+    RefinementMinimumGreaterThanMaximum {
+        min: LiteralId,
+        max: LiteralId,
+        type_id: TypeId,
+    },
 }
 
 impl FormattableDiagnosticGroup for Issue {
@@ -25,6 +42,7 @@ impl FormattableDiagnosticGroup for Issue {
             Issue::UnsupportedAlignment { .. } => 2,
             Issue::UninferredTypeResidue => 3,
             Issue::FunctionTypeDuplicateParameterName { .. } => 4,
+            Issue::RefinementMinimumGreaterThanMaximum { .. } => 5,
         }
     }
 
@@ -81,6 +99,20 @@ impl FormattableDiagnosticGroup for Issue {
                     "Function type {:?} has duplicate parameter name: '{}'.",
                     function.deref().to_string(),
                     name
+                );
+
+                nitrate_diagnosis::DiagnosticInfo {
+                    origin: nitrate_diagnosis::Origin::Unknown,
+                    message,
+                }
+            }
+
+            Issue::RefinementMinimumGreaterThanMaximum { min, max, type_id } => {
+                let message = format!(
+                    "Refinement type {:?} has minimum {:?} greater than maximum {:?}.",
+                    type_id.deref().to_string(),
+                    min.deref(),
+                    max.deref()
                 );
 
                 nitrate_diagnosis::DiagnosticInfo {
