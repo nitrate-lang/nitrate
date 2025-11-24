@@ -121,11 +121,25 @@ impl ValidateHirItem for LocalVariable {
 }
 
 impl ValidateHirItem for ParameterAttribute {
-    fn verify(&self, _tab: &SymbolTab, _log: &CompilerLog) -> Result<(), ()> {
-        // TODO: verify parameter attribute
-
+    fn verify(&self, _tab: &SymbolTab, log: &CompilerLog) -> Result<(), ()> {
         match self {
-            ParameterAttribute::Invalid => Err(()),
+            ParameterAttribute::Align { alignment } => {
+                establish_property("parameter alignment is supported", || {
+                    // TODO: Determine maximum supported alignment
+                    const MAX_SUPPORTED_ALIGNMENT: u32 = 4096;
+
+                    if alignment.get() > MAX_SUPPORTED_ALIGNMENT {
+                        log.report(&Issue::UnsupportedAlignment {
+                            alignment: alignment.get(),
+                            max_supported: MAX_SUPPORTED_ALIGNMENT,
+                        });
+
+                        return Err(());
+                    }
+
+                    Ok(())
+                })
+            }
         }
     }
 
@@ -137,26 +151,31 @@ impl ValidateHirItem for ParameterAttribute {
 
 impl ValidateHirItem for Parameter {
     fn verify(&self, tab: &SymbolTab, log: &CompilerLog) -> Result<(), ()> {
-        // TODO: verify parameter
-
         for attr in &self.attributes {
             attr.verify(tab, log)?;
         }
 
-        let ty = self.ty.deref();
-        ty.verify(tab, log, &ValidateTypeOptions::sized())?;
+        establish_property("type_constraint: Sized", || {
+            self.ty.verify(tab, log, &ValidateTypeOptions::sized())
+        })?;
 
-        if let Some(default_value) = &self.default_value {
-            let init = default_value.borrow();
-            init.verify(tab, log)?;
+        establish_property("type_constraint == typeof(default_value)", || {
+            if let Some(default_value) = &self.default_value {
+                let default_value = default_value.borrow();
+                let default_value_ty = default_value.determine_type(tab).map_err(|_| ())?;
 
-            let init_ty = init.determine_type(tab).map_err(|_| ())?;
-            if *ty != init_ty {
-                return Err(());
+                if *self.ty != default_value_ty {
+                    log.report(&Issue::TypeMismatch {
+                        expected: self.ty,
+                        found: default_value_ty.into(),
+                    });
+
+                    return Err(());
+                }
             }
-        }
 
-        Ok(())
+            Ok(())
+        })
     }
 
     fn validate(self, tab: &SymbolTab, log: &CompilerLog) -> Result<ValidHir<Self>, ()> {

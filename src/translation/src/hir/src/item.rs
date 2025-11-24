@@ -54,7 +54,7 @@ pub struct LocalVariable {
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum ParameterAttribute {
-    Invalid,
+    Align { alignment: PowOf2<u32> },
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
