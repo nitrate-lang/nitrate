@@ -36,9 +36,9 @@ pub struct ValidateTypeOptions {
 }
 
 impl ValidateTypeOptions {
-    pub fn typical() -> Self {
+    pub fn storable() -> Self {
         ValidateTypeOptions {
-            require_sized: false,
+            require_sized: true,
         }
     }
 }

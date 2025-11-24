@@ -3,7 +3,7 @@ use clap::Parser;
 use nitrate_diagnosis::{CompilerLog, intern_file_id};
 use nitrate_translation::{
     hir::{Store, prelude as hir, using_storage},
-    hir_dump::{Dump, DumpContext},
+    hir_dump::Dump,
     hir_from_tree::{Ast2HirCtx, convert_ast_to_hir},
     hir_validate::ValidateHirItem,
     llvm::{LLVMContext, OptLevel},
@@ -290,7 +290,7 @@ impl Interpreter<'_> {
             )?;
 
             if args.show_hir {
-                hir_module.dump(&mut DumpContext::new(), &mut std::io::stdout())?;
+                println!("{}", hir_module.to_string());
                 return Ok(());
             }
 

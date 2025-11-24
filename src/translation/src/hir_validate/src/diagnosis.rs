@@ -1,7 +1,11 @@
+use std::ops::Deref;
+
 use nitrate_diagnosis::{DiagnosticGroupId, FormattableDiagnosticGroup};
+use nitrate_hir::{TraitId, TypeId};
+use nitrate_hir_dump::Dump;
 
 pub(crate) enum Issue {
-    Mismatch,
+    TypeDoesNotImplementTrait { type_id: TypeId, trait_id: TraitId },
 }
 
 impl FormattableDiagnosticGroup for Issue {
@@ -11,16 +15,24 @@ impl FormattableDiagnosticGroup for Issue {
 
     fn variant_id(&self) -> u16 {
         match self {
-            Issue::Mismatch => 0,
+            Issue::TypeDoesNotImplementTrait { .. } => 0,
         }
     }
 
     fn format(&self) -> nitrate_diagnosis::DiagnosticInfo {
         match self {
-            Issue::Mismatch => nitrate_diagnosis::DiagnosticInfo {
-                origin: nitrate_diagnosis::Origin::Unknown,
-                message: "Type mismatch".into(),
-            },
+            Issue::TypeDoesNotImplementTrait { type_id, trait_id } => {
+                let message = format!(
+                    "Type '{:?}' does not implement trait '{:?}'.",
+                    type_id.deref().to_string(),
+                    trait_id.deref().borrow().name
+                );
+
+                nitrate_diagnosis::DiagnosticInfo {
+                    origin: nitrate_diagnosis::Origin::Unknown,
+                    message,
+                }
+            }
         }
     }
 }

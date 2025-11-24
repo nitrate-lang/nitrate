@@ -6,8 +6,8 @@ impl Dump for Visibility {
     fn dump(
         &self,
         _ctx: &mut DumpContext,
-        o: &mut dyn std::io::Write,
-    ) -> Result<(), std::io::Error> {
+        o: &mut dyn std::fmt::Write,
+    ) -> Result<(), std::fmt::Error> {
         match self {
             Visibility::Sec => write!(o, "sec"),
             Visibility::Pro => write!(o, "pro"),
@@ -19,8 +19,8 @@ impl Dump for Visibility {
 pub(crate) fn dump_attributes<T: Dump>(
     attributes: &BTreeSet<T>,
     ctx: &mut DumpContext,
-    o: &mut dyn std::io::Write,
-) -> Result<(), std::io::Error> {
+    o: &mut dyn std::fmt::Write,
+) -> Result<(), std::fmt::Error> {
     if attributes.is_empty() {
         return Ok(());
     }
@@ -45,8 +45,8 @@ impl Dump for GlobalVariableAttribute {
     fn dump(
         &self,
         _ctx: &mut DumpContext,
-        _o: &mut dyn std::io::Write,
-    ) -> Result<(), std::io::Error> {
+        _o: &mut dyn std::fmt::Write,
+    ) -> Result<(), std::fmt::Error> {
         Ok(())
     }
 }
@@ -55,8 +55,8 @@ impl Dump for GlobalVariableId {
     fn dump(
         &self,
         ctx: &mut DumpContext,
-        o: &mut dyn std::io::Write,
-    ) -> Result<(), std::io::Error> {
+        o: &mut dyn std::fmt::Write,
+    ) -> Result<(), std::fmt::Error> {
         let this = self.borrow();
 
         if this.visibility != Visibility::Sec {
@@ -86,8 +86,8 @@ impl Dump for LocalVariableAttribute {
     fn dump(
         &self,
         _ctx: &mut DumpContext,
-        _o: &mut dyn std::io::Write,
-    ) -> Result<(), std::io::Error> {
+        _o: &mut dyn std::fmt::Write,
+    ) -> Result<(), std::fmt::Error> {
         Ok(())
     }
 }
@@ -96,8 +96,8 @@ impl Dump for LocalVariableId {
     fn dump(
         &self,
         ctx: &mut DumpContext,
-        o: &mut dyn std::io::Write,
-    ) -> Result<(), std::io::Error> {
+        o: &mut dyn std::fmt::Write,
+    ) -> Result<(), std::fmt::Error> {
         let this = self.borrow();
 
         match this.kind {
@@ -130,8 +130,8 @@ impl Dump for ParameterAttribute {
     fn dump(
         &self,
         _ctx: &mut DumpContext,
-        _o: &mut dyn std::io::Write,
-    ) -> Result<(), std::io::Error> {
+        _o: &mut dyn std::fmt::Write,
+    ) -> Result<(), std::fmt::Error> {
         Ok(())
     }
 }
@@ -140,8 +140,8 @@ impl Dump for ParameterId {
     fn dump(
         &self,
         ctx: &mut DumpContext,
-        o: &mut dyn std::io::Write,
-    ) -> Result<(), std::io::Error> {
+        o: &mut dyn std::fmt::Write,
+    ) -> Result<(), std::fmt::Error> {
         let this = self.borrow();
 
         write!(o, "param::{}::`{}` ", self.as_usize(), this.name)?;
@@ -168,8 +168,8 @@ impl Dump for FunctionId {
     fn dump(
         &self,
         ctx: &mut DumpContext,
-        o: &mut dyn std::io::Write,
-    ) -> Result<(), std::io::Error> {
+        o: &mut dyn std::fmt::Write,
+    ) -> Result<(), std::fmt::Error> {
         let this = self.borrow();
 
         if this.visibility != Visibility::Sec {
@@ -216,8 +216,8 @@ impl Dump for TraitId {
     fn dump(
         &self,
         ctx: &mut DumpContext,
-        o: &mut dyn std::io::Write,
-    ) -> Result<(), std::io::Error> {
+        o: &mut dyn std::fmt::Write,
+    ) -> Result<(), std::fmt::Error> {
         let this = self.borrow();
 
         if this.visibility != Visibility::Sec {
@@ -252,8 +252,8 @@ impl Dump for ModuleAttribute {
     fn dump(
         &self,
         _ctx: &mut DumpContext,
-        _o: &mut dyn std::io::Write,
-    ) -> Result<(), std::io::Error> {
+        _o: &mut dyn std::fmt::Write,
+    ) -> Result<(), std::fmt::Error> {
         Ok(())
     }
 }
@@ -262,8 +262,8 @@ impl Dump for ModuleId {
     fn dump(
         &self,
         ctx: &mut DumpContext,
-        o: &mut dyn std::io::Write,
-    ) -> Result<(), std::io::Error> {
+        o: &mut dyn std::fmt::Write,
+    ) -> Result<(), std::fmt::Error> {
         let this = self.borrow();
 
         if this.visibility != Visibility::Sec {
@@ -304,8 +304,8 @@ impl Dump for Module {
     fn dump(
         &self,
         ctx: &mut DumpContext,
-        o: &mut dyn std::io::Write,
-    ) -> Result<(), std::io::Error> {
+        o: &mut dyn std::fmt::Write,
+    ) -> Result<(), std::fmt::Error> {
         if self.visibility != Visibility::Sec {
             self.visibility.dump(ctx, o)?;
             write!(o, " ")?;
@@ -344,8 +344,8 @@ impl Dump for TypeAliasDefId {
     fn dump(
         &self,
         ctx: &mut DumpContext,
-        o: &mut dyn std::io::Write,
-    ) -> Result<(), std::io::Error> {
+        o: &mut dyn std::fmt::Write,
+    ) -> Result<(), std::fmt::Error> {
         let this = self.borrow();
 
         if this.visibility != Visibility::Sec {
@@ -366,8 +366,8 @@ impl Dump for StructDefId {
     fn dump(
         &self,
         ctx: &mut DumpContext,
-        o: &mut dyn std::io::Write,
-    ) -> Result<(), std::io::Error> {
+        o: &mut dyn std::fmt::Write,
+    ) -> Result<(), std::fmt::Error> {
         let this = self.borrow();
 
         if this.visibility != Visibility::Sec {
@@ -414,8 +414,8 @@ impl Dump for EnumDefId {
     fn dump(
         &self,
         ctx: &mut DumpContext,
-        o: &mut dyn std::io::Write,
-    ) -> Result<(), std::io::Error> {
+        o: &mut dyn std::fmt::Write,
+    ) -> Result<(), std::fmt::Error> {
         let this = self.borrow();
 
         if this.visibility != Visibility::Sec {
@@ -460,8 +460,8 @@ impl Dump for Item {
     fn dump(
         &self,
         ctx: &mut DumpContext,
-        o: &mut dyn std::io::Write,
-    ) -> Result<(), std::io::Error> {
+        o: &mut dyn std::fmt::Write,
+    ) -> Result<(), std::fmt::Error> {
         match self {
             Item::Function(f) => f.dump(ctx, o),
             Item::GlobalVariable(gv) => gv.dump(ctx, o),

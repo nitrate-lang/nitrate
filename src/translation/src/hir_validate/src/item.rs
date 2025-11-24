@@ -27,7 +27,7 @@ impl ValidateHirItem for GlobalVariable {
 
         if self
             .ty
-            .verify(tab, log, &ValidateTypeOptions::typical())
+            .verify(tab, log, &ValidateTypeOptions::storable())
             .is_err()
         {
             return Err(());
@@ -74,7 +74,7 @@ impl ValidateHirItem for LocalVariable {
         }
 
         let ty = self.ty.deref();
-        ty.verify(tab, log, &ValidateTypeOptions::typical())?;
+        ty.verify(tab, log, &ValidateTypeOptions::storable())?;
 
         if let Some(init_expr) = &self.init {
             let init = init_expr.borrow();
@@ -119,7 +119,7 @@ impl ValidateHirItem for Parameter {
         }
 
         let ty = self.ty.deref();
-        ty.verify(tab, log, &ValidateTypeOptions::typical())?;
+        ty.verify(tab, log, &ValidateTypeOptions::storable())?;
 
         if let Some(default_value) = &self.default_value {
             let init = default_value.borrow();
@@ -145,7 +145,7 @@ impl ValidateHirItem for Function {
         // TODO: verify
 
         for attr in &self.attributes {
-            attr.verify(tab, log, &ValidateTypeOptions::typical())?;
+            attr.verify(tab, log, &ValidateTypeOptions::storable())?;
         }
 
         for param in &self.params {
@@ -153,7 +153,7 @@ impl ValidateHirItem for Function {
         }
 
         self.return_type
-            .verify(tab, log, &ValidateTypeOptions::typical())?;
+            .verify(tab, log, &ValidateTypeOptions::storable())?;
 
         if let Some(body) = &self.body {
             body.borrow().verify(tab, log)?;
@@ -223,7 +223,7 @@ impl ValidateHirItem for TypeAliasDef {
         // TODO: verify
 
         self.type_id
-            .verify(tab, log, &ValidateTypeOptions::typical())
+            .verify(tab, log, &ValidateTypeOptions::storable())
     }
 
     fn validate(self, tab: &SymbolTab, log: &CompilerLog) -> Result<ValidHir<Self>, ()> {
@@ -270,7 +270,7 @@ impl ValidateHirItem for StructField {
             attr.verify(tab, log)?;
         }
 
-        self.ty.verify(tab, log, &ValidateTypeOptions::typical())?;
+        self.ty.verify(tab, log, &ValidateTypeOptions::storable())?;
         if let Some(default_value) = &self.default_value {
             let init = default_value.borrow();
             init.verify(tab, log)?;
@@ -350,7 +350,7 @@ impl ValidateHirItem for EnumVariant {
             attr.verify(tab, log)?;
         }
 
-        self.ty.verify(tab, log, &ValidateTypeOptions::typical())
+        self.ty.verify(tab, log, &ValidateTypeOptions::storable())
     }
 
     fn validate(self, tab: &SymbolTab, log: &CompilerLog) -> Result<ValidHir<Self>, ()> {
