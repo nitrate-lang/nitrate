@@ -12,7 +12,7 @@ pub struct TypegenCtx<'ctx, 'store, 'tab, 'module> {
 }
 
 use crate::symbol::get_ptr_size;
-use nitrate_hir::prelude as hir;
+use nitrate_hir::{StructMemoryLayoutCell, prelude as hir};
 
 fn gen_struct_ty<'ctx>(
     hir_struct_def: &hir::StructDef,
@@ -23,11 +23,22 @@ fn gen_struct_ty<'ctx>(
     }
 
     let mut field_types = Vec::with_capacity(hir_struct_def.fields.len());
-    for (_, hir_field) in &hir_struct_def.fields {
-        // FIXME: insert padding
+    for cell in &hir_struct_def.layout {
+        match cell {
+            StructMemoryLayoutCell::Field { field_name } => {
+                let hir_field = hir_struct_def
+                    .fields
+                    .get(field_name)
+                    .expect("expected field to exist in struct");
+                let hir_field_ty = &ctx.store[&hir_field.ty];
+                field_types.push(gen_ty(hir_field_ty, ctx));
+            }
 
-        let hir_field_ty = &ctx.store[&hir_field.ty];
-        field_types.push(gen_ty(hir_field_ty, ctx));
+            StructMemoryLayoutCell::Padding(size) => {
+                let padding_type = ctx.llvm.i8_type().array_type((*size).get() as u32);
+                field_types.push(padding_type.into());
+            }
+        }
     }
 
     let is_packed = hir_struct_def
