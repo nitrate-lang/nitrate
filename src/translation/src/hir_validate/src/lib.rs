@@ -6,4 +6,4 @@ mod item;
 mod ty;
 mod validate_hir;
 
-pub use validate_hir::{ValidHir, ValidateHir};
+pub use validate_hir::*;

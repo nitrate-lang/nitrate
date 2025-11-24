@@ -1,8 +1,8 @@
-use crate::{ValidHir, ValidateHir};
+use crate::{ValidHir, ValidateHirItem, ValidateHirValue};
 use nitrate_diagnosis::CompilerLog;
 use nitrate_hir::{SymbolTab, prelude::*};
 
-impl ValidateHir for Block {
+impl ValidateHirValue for Block {
     fn verify(&self, tab: &SymbolTab, log: &CompilerLog) -> Result<(), ()> {
         // TODO: verify
 
@@ -35,7 +35,7 @@ impl ValidateHir for Block {
     }
 }
 
-impl ValidateHir for Value {
+impl ValidateHirValue for Value {
     fn verify(&self, _tab: &SymbolTab, _log: &CompilerLog) -> Result<(), ()> {
         // TODO: verify
 

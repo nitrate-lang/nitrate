@@ -5,7 +5,7 @@ use nitrate_translation::{
     hir::{Store, prelude as hir, using_storage},
     hir_dump::{Dump, DumpContext},
     hir_from_tree::{Ast2HirCtx, convert_ast_to_hir},
-    hir_validate::ValidateHir,
+    hir_validate::ValidateHirItem,
     llvm::{LLVMContext, OptLevel},
     llvm_from_hir::generate_llvmir,
     parsetree::ast,

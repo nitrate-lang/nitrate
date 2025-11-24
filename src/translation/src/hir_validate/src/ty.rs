@@ -1,11 +1,16 @@
 use std::ops::Deref;
 
-use crate::{ValidHir, ValidateHir};
+use crate::{ValidHir, ValidateHirItem, ValidateHirType, ValidateTypeOptions};
 use nitrate_diagnosis::CompilerLog;
 use nitrate_hir::{SymbolTab, prelude::*};
 
-impl ValidateHir for FunctionAttribute {
-    fn verify(&self, _tab: &SymbolTab, _log: &CompilerLog) -> Result<(), ()> {
+impl ValidateHirType for FunctionAttribute {
+    fn verify(
+        &self,
+        _tab: &SymbolTab,
+        _log: &CompilerLog,
+        _options: &ValidateTypeOptions,
+    ) -> Result<(), ()> {
         // TODO: verify
 
         match self {
@@ -14,37 +19,57 @@ impl ValidateHir for FunctionAttribute {
         }
     }
 
-    fn validate(self, tab: &SymbolTab, log: &CompilerLog) -> Result<ValidHir<Self>, ()> {
-        self.verify(tab, log)?;
+    fn validate(
+        self,
+        tab: &SymbolTab,
+        log: &CompilerLog,
+        options: &ValidateTypeOptions,
+    ) -> Result<ValidHir<Self>, ()> {
+        self.verify(tab, log, options)?;
         Ok(ValidHir::new(self))
     }
 }
 
-impl ValidateHir for FunctionType {
-    fn verify(&self, tab: &SymbolTab, log: &CompilerLog) -> Result<(), ()> {
+impl ValidateHirType for FunctionType {
+    fn verify(
+        &self,
+        tab: &SymbolTab,
+        log: &CompilerLog,
+        options: &ValidateTypeOptions,
+    ) -> Result<(), ()> {
         // TODO: verify
 
         for attr in &self.attributes {
-            attr.verify(tab, log)?;
+            attr.verify(tab, log, options)?;
         }
 
-        self.return_type.verify(tab, log)?;
+        self.return_type.verify(tab, log, options)?;
 
         for param in &self.params {
-            param.1.verify(tab, log)?;
+            param.1.verify(tab, log, options)?;
         }
 
         Ok(())
     }
 
-    fn validate(self, tab: &SymbolTab, log: &CompilerLog) -> Result<ValidHir<Self>, ()> {
-        self.verify(tab, log)?;
+    fn validate(
+        self,
+        tab: &SymbolTab,
+        log: &CompilerLog,
+        options: &ValidateTypeOptions,
+    ) -> Result<ValidHir<Self>, ()> {
+        self.verify(tab, log, options)?;
         Ok(ValidHir::new(self))
     }
 }
 
-impl ValidateHir for Type {
-    fn verify(&self, tab: &SymbolTab, log: &CompilerLog) -> Result<(), ()> {
+impl ValidateHirType for Type {
+    fn verify(
+        &self,
+        tab: &SymbolTab,
+        log: &CompilerLog,
+        options: &ValidateTypeOptions,
+    ) -> Result<(), ()> {
         // TODO: verify
 
         match self {
@@ -65,11 +90,11 @@ impl ValidateHir for Type {
             | Type::F32
             | Type::F64 => Ok(()),
 
-            Type::Array { element_type, .. } => element_type.verify(tab, log),
+            Type::Array { element_type, .. } => element_type.verify(tab, log, options),
 
             Type::Tuple { element_types } => {
                 for elem_type in element_types {
-                    elem_type.verify(tab, log)?;
+                    elem_type.verify(tab, log, options)?;
                 }
 
                 Ok(())
@@ -82,7 +107,7 @@ impl ValidateHir for Type {
             Type::TypeAlias { def } => def.borrow().verify(tab, log),
 
             Type::Refine { base, min, max } => {
-                base.verify(tab, log)?;
+                base.verify(tab, log, options)?;
 
                 let min = min.deref();
                 let max = max.deref();
@@ -94,7 +119,7 @@ impl ValidateHir for Type {
                 Ok(())
             }
 
-            Type::Function { function_type } => function_type.verify(tab, log),
+            Type::Function { function_type } => function_type.verify(tab, log, options),
 
             Type::Reference { lifetime, to, .. } => {
                 match lifetime {
@@ -107,7 +132,7 @@ impl ValidateHir for Type {
                 }
 
                 // FIXME: Infinite recursion for self-referential types
-                to.verify(tab, log)
+                to.verify(tab, log, options)
             }
 
             Type::SliceRef {
@@ -125,20 +150,25 @@ impl ValidateHir for Type {
                 }
 
                 // FIXME: Infinite recursion for self-referential types
-                element_type.verify(tab, log)
+                element_type.verify(tab, log, options)
             }
 
             Type::Pointer { to, .. } => {
                 // FIXME: Infinite recursion for self-referential types
-                to.verify(tab, log)
+                to.verify(tab, log, options)
             }
 
             Type::InferredFloat | Type::InferredInteger | Type::Inferred { .. } => Err(()),
         }
     }
 
-    fn validate(self, tab: &SymbolTab, log: &CompilerLog) -> Result<ValidHir<Self>, ()> {
-        self.verify(tab, log)?;
+    fn validate(
+        self,
+        tab: &SymbolTab,
+        log: &CompilerLog,
+        options: &ValidateTypeOptions,
+    ) -> Result<ValidHir<Self>, ()> {
+        self.verify(tab, log, options)?;
         Ok(ValidHir::new(self))
     }
 }

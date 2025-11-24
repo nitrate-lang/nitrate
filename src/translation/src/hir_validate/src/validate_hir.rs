@@ -15,10 +15,49 @@ impl<T> ValidHir<T> {
     }
 }
 
-pub trait ValidateHir
+pub trait ValidateHirValue
 where
     Self: Sized,
 {
     fn verify(&self, tab: &SymbolTab, log: &CompilerLog) -> Result<(), ()>;
     fn validate(self, tab: &SymbolTab, log: &CompilerLog) -> Result<ValidHir<Self>, ()>;
+}
+
+pub trait ValidateHirItem
+where
+    Self: Sized,
+{
+    fn verify(&self, tab: &SymbolTab, log: &CompilerLog) -> Result<(), ()>;
+    fn validate(self, tab: &SymbolTab, log: &CompilerLog) -> Result<ValidHir<Self>, ()>;
+}
+
+pub struct ValidateTypeOptions {
+    pub require_sized: bool,
+}
+
+impl ValidateTypeOptions {
+    pub fn typical() -> Self {
+        ValidateTypeOptions {
+            require_sized: false,
+        }
+    }
+}
+
+pub trait ValidateHirType
+where
+    Self: Sized,
+{
+    fn verify(
+        &self,
+        tab: &SymbolTab,
+        log: &CompilerLog,
+        options: &ValidateTypeOptions,
+    ) -> Result<(), ()>;
+
+    fn validate(
+        self,
+        tab: &SymbolTab,
+        log: &CompilerLog,
+        options: &ValidateTypeOptions,
+    ) -> Result<ValidHir<Self>, ()>;
 }

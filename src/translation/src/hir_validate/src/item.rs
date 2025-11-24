@@ -1,10 +1,10 @@
-use crate::{ValidHir, ValidateHir};
+use crate::{ValidHir, ValidateHirItem, ValidateHirType, ValidateHirValue, ValidateTypeOptions};
 use nitrate_diagnosis::CompilerLog;
 use nitrate_hir::{SymbolTab, prelude::*};
 use nitrate_hir_get_type::HirGetType;
 use std::ops::Deref;
 
-impl ValidateHir for GlobalVariableAttribute {
+impl ValidateHirItem for GlobalVariableAttribute {
     fn verify(&self, _tab: &SymbolTab, _log: &CompilerLog) -> Result<(), ()> {
         match self {
             GlobalVariableAttribute::NoMangle => Ok(()),
@@ -17,7 +17,7 @@ impl ValidateHir for GlobalVariableAttribute {
     }
 }
 
-impl ValidateHir for GlobalVariable {
+impl ValidateHirItem for GlobalVariable {
     fn verify(&self, tab: &SymbolTab, log: &CompilerLog) -> Result<(), ()> {
         // TODO: verify
 
@@ -25,7 +25,13 @@ impl ValidateHir for GlobalVariable {
             attr.verify(tab, log)?;
         }
 
-        self.ty.verify(tab, log)?;
+        if self
+            .ty
+            .verify(tab, log, &ValidateTypeOptions::typical())
+            .is_err()
+        {
+            return Err(());
+        }
 
         let init_value = self.init.borrow();
         init_value.verify(tab, log)?;
@@ -44,7 +50,7 @@ impl ValidateHir for GlobalVariable {
     }
 }
 
-impl ValidateHir for LocalVariableAttribute {
+impl ValidateHirItem for LocalVariableAttribute {
     fn verify(&self, _tab: &SymbolTab, _log: &CompilerLog) -> Result<(), ()> {
         // TODO: verify
 
@@ -59,7 +65,7 @@ impl ValidateHir for LocalVariableAttribute {
     }
 }
 
-impl ValidateHir for LocalVariable {
+impl ValidateHirItem for LocalVariable {
     fn verify(&self, tab: &SymbolTab, log: &CompilerLog) -> Result<(), ()> {
         // TODO: verify
 
@@ -68,7 +74,7 @@ impl ValidateHir for LocalVariable {
         }
 
         let ty = self.ty.deref();
-        ty.verify(tab, log)?;
+        ty.verify(tab, log, &ValidateTypeOptions::typical())?;
 
         if let Some(init_expr) = &self.init {
             let init = init_expr.borrow();
@@ -89,7 +95,7 @@ impl ValidateHir for LocalVariable {
     }
 }
 
-impl ValidateHir for ParameterAttribute {
+impl ValidateHirItem for ParameterAttribute {
     fn verify(&self, _tab: &SymbolTab, _log: &CompilerLog) -> Result<(), ()> {
         // TODO: verify
 
@@ -104,7 +110,7 @@ impl ValidateHir for ParameterAttribute {
     }
 }
 
-impl ValidateHir for Parameter {
+impl ValidateHirItem for Parameter {
     fn verify(&self, tab: &SymbolTab, log: &CompilerLog) -> Result<(), ()> {
         // TODO: verify
 
@@ -113,7 +119,7 @@ impl ValidateHir for Parameter {
         }
 
         let ty = self.ty.deref();
-        ty.verify(tab, log)?;
+        ty.verify(tab, log, &ValidateTypeOptions::typical())?;
 
         if let Some(default_value) = &self.default_value {
             let init = default_value.borrow();
@@ -134,19 +140,20 @@ impl ValidateHir for Parameter {
     }
 }
 
-impl ValidateHir for Function {
+impl ValidateHirItem for Function {
     fn verify(&self, tab: &SymbolTab, log: &CompilerLog) -> Result<(), ()> {
         // TODO: verify
 
         for attr in &self.attributes {
-            attr.verify(tab, log)?;
+            attr.verify(tab, log, &ValidateTypeOptions::typical())?;
         }
 
         for param in &self.params {
             param.borrow().verify(tab, log)?;
         }
 
-        self.return_type.verify(tab, log)?;
+        self.return_type
+            .verify(tab, log, &ValidateTypeOptions::typical())?;
 
         if let Some(body) = &self.body {
             body.borrow().verify(tab, log)?;
@@ -161,7 +168,7 @@ impl ValidateHir for Function {
     }
 }
 
-impl ValidateHir for Trait {
+impl ValidateHirItem for Trait {
     fn verify(&self, _tab: &SymbolTab, _log: &CompilerLog) -> Result<(), ()> {
         // TODO: verify
 
@@ -175,7 +182,7 @@ impl ValidateHir for Trait {
     }
 }
 
-impl ValidateHir for ModuleAttribute {
+impl ValidateHirItem for ModuleAttribute {
     fn verify(&self, _tab: &SymbolTab, _log: &CompilerLog) -> Result<(), ()> {
         // TODO: verify
 
@@ -190,7 +197,7 @@ impl ValidateHir for ModuleAttribute {
     }
 }
 
-impl ValidateHir for Module {
+impl ValidateHirItem for Module {
     fn verify(&self, tab: &SymbolTab, log: &CompilerLog) -> Result<(), ()> {
         // TODO: verify
 
@@ -211,11 +218,12 @@ impl ValidateHir for Module {
     }
 }
 
-impl ValidateHir for TypeAliasDef {
+impl ValidateHirItem for TypeAliasDef {
     fn verify(&self, tab: &SymbolTab, log: &CompilerLog) -> Result<(), ()> {
         // TODO: verify
 
-        self.type_id.verify(tab, log)
+        self.type_id
+            .verify(tab, log, &ValidateTypeOptions::typical())
     }
 
     fn validate(self, tab: &SymbolTab, log: &CompilerLog) -> Result<ValidHir<Self>, ()> {
@@ -224,7 +232,7 @@ impl ValidateHir for TypeAliasDef {
     }
 }
 
-impl ValidateHir for StructAttribute {
+impl ValidateHirItem for StructAttribute {
     fn verify(&self, _tab: &SymbolTab, _log: &CompilerLog) -> Result<(), ()> {
         // TODO: verify
 
@@ -239,7 +247,7 @@ impl ValidateHir for StructAttribute {
     }
 }
 
-impl ValidateHir for StructFieldAttribute {
+impl ValidateHirItem for StructFieldAttribute {
     fn verify(&self, _tab: &SymbolTab, _log: &CompilerLog) -> Result<(), ()> {
         // TODO: verify
 
@@ -254,7 +262,7 @@ impl ValidateHir for StructFieldAttribute {
     }
 }
 
-impl ValidateHir for StructField {
+impl ValidateHirItem for StructField {
     fn verify(&self, tab: &SymbolTab, log: &CompilerLog) -> Result<(), ()> {
         // TODO: verify
 
@@ -262,7 +270,7 @@ impl ValidateHir for StructField {
             attr.verify(tab, log)?;
         }
 
-        self.ty.verify(tab, log)?;
+        self.ty.verify(tab, log, &ValidateTypeOptions::typical())?;
         if let Some(default_value) = &self.default_value {
             let init = default_value.borrow();
             init.verify(tab, log)?;
@@ -283,7 +291,7 @@ impl ValidateHir for StructField {
     }
 }
 
-impl ValidateHir for StructDef {
+impl ValidateHirItem for StructDef {
     fn verify(&self, tab: &SymbolTab, log: &CompilerLog) -> Result<(), ()> {
         // TODO: verify
 
@@ -304,7 +312,7 @@ impl ValidateHir for StructDef {
     }
 }
 
-impl ValidateHir for EnumAttribute {
+impl ValidateHirItem for EnumAttribute {
     fn verify(&self, _tab: &SymbolTab, _log: &CompilerLog) -> Result<(), ()> {
         // TODO: verify
 
@@ -319,7 +327,7 @@ impl ValidateHir for EnumAttribute {
     }
 }
 
-impl ValidateHir for EnumVariantAttribute {
+impl ValidateHirItem for EnumVariantAttribute {
     fn verify(&self, _tab: &SymbolTab, _log: &CompilerLog) -> Result<(), ()> {
         // TODO: verify
 
@@ -334,7 +342,7 @@ impl ValidateHir for EnumVariantAttribute {
     }
 }
 
-impl ValidateHir for EnumVariant {
+impl ValidateHirItem for EnumVariant {
     fn verify(&self, tab: &SymbolTab, log: &CompilerLog) -> Result<(), ()> {
         // TODO: verify
 
@@ -342,7 +350,7 @@ impl ValidateHir for EnumVariant {
             attr.verify(tab, log)?;
         }
 
-        self.ty.verify(tab, log)
+        self.ty.verify(tab, log, &ValidateTypeOptions::typical())
     }
 
     fn validate(self, tab: &SymbolTab, log: &CompilerLog) -> Result<ValidHir<Self>, ()> {
@@ -351,7 +359,7 @@ impl ValidateHir for EnumVariant {
     }
 }
 
-impl ValidateHir for EnumDef {
+impl ValidateHirItem for EnumDef {
     fn verify(&self, tab: &SymbolTab, log: &CompilerLog) -> Result<(), ()> {
         // TODO: verify
 
@@ -376,7 +384,7 @@ impl ValidateHir for EnumDef {
     }
 }
 
-impl ValidateHir for Item {
+impl ValidateHirItem for Item {
     fn verify(&self, tab: &SymbolTab, log: &CompilerLog) -> Result<(), ()> {
         // TODO: verify
 
