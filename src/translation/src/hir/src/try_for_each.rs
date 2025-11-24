@@ -1,24 +1,6 @@
 use crate::prelude::*;
 use std::{collections::HashSet, ops::ControlFlow};
 
-impl EnumTypeIter<'_> {
-    pub(crate) fn try_for_each<T>(
-        &self,
-        store: &Store,
-        vcb: &mut dyn FnMut(&Value) -> ControlFlow<T>,
-        tcb: &mut dyn FnMut(&Type) -> ControlFlow<T>,
-        visited: &mut HashSet<*const ()>,
-    ) -> ControlFlow<T> {
-        for variant in &self.node.variants {
-            store[&variant.ty]
-                .iter()
-                .try_for_each(store, vcb, tcb, visited)?;
-        }
-
-        ControlFlow::Continue(())
-    }
-}
-
 impl FunctionTypeIter<'_> {
     pub(crate) fn try_for_each<T>(
         &self,
@@ -99,8 +81,7 @@ impl TypeIter<'_> {
             }
 
             Type::Enum { def } => {
-                let enum_type = &store[def].borrow().enum_id;
-                for variant in &store[enum_type].variants {
+                for variant in &store[def].borrow().variants {
                     store[&variant.ty]
                         .iter()
                         .try_for_each(store, vcb, tcb, visited)?;
@@ -606,9 +587,11 @@ impl EnumDefIter<'_> {
             }
         }
 
-        store[&self.node.enum_id]
-            .iter()
-            .try_for_each(store, vcb, tcb, visited)?;
+        for variant in &self.node.variants {
+            store[&variant.ty]
+                .iter()
+                .try_for_each(store, vcb, tcb, visited)?;
+        }
 
         ControlFlow::Continue(())
     }

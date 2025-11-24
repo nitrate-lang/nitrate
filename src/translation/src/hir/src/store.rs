@@ -130,8 +130,6 @@ macro_rules! impl_store_mut {
 
 impl_dedup_store!(TypeId, Type, TypeStore);
 
-impl_dedup_store!(EnumTypeId, EnumType, EnumTypeStore);
-
 impl_dedup_store!(FunctionTypeId, FunctionType, FunctionTypeStore);
 
 impl_store_mut!(GlobalVariableId, GlobalVariable, GlobalVariableStore);
@@ -161,7 +159,6 @@ impl_store_mut!(BlockId, Block, ExprBlockStore);
 #[derive(Debug)]
 pub struct Store {
     types: TypeStore,
-    enum_types: EnumTypeStore,
     function_types: FunctionTypeStore,
     global_variables: GlobalVariableStore,
     local_variables: LocalVariableStore,
@@ -181,7 +178,6 @@ impl Store {
     pub fn new() -> Self {
         Self {
             types: TypeStore::new(),
-            enum_types: EnumTypeStore::new(),
             function_types: FunctionTypeStore::new(),
             global_variables: GlobalVariableStore::new(),
             local_variables: LocalVariableStore::new(),
@@ -200,10 +196,6 @@ impl Store {
 
     pub fn store_type(&self, ty: Type) -> TypeId {
         using_storage(self, || self.types.store(ty))
-    }
-
-    pub fn store_enum_type(&self, enum_type: EnumType) -> EnumTypeId {
-        using_storage(self, || self.enum_types.store(enum_type))
     }
 
     pub fn store_function_type(&self, func_type: FunctionType) -> FunctionTypeId {
@@ -260,7 +252,6 @@ impl Store {
 
     pub fn reset(&mut self) {
         self.types.reset();
-        self.enum_types.reset();
         self.function_types.reset();
         self.global_variables.reset();
         self.local_variables.reset();
@@ -278,7 +269,6 @@ impl Store {
 
     pub fn shrink_to_fit(&mut self) {
         self.types.shrink_to_fit();
-        self.enum_types.shrink_to_fit();
         self.function_types.shrink_to_fit();
         self.global_variables.shrink_to_fit();
         self.local_variables.shrink_to_fit();
@@ -300,14 +290,6 @@ impl std::ops::Index<&TypeId> for Store {
 
     fn index(&self, index: &TypeId) -> &Self::Output {
         &self.types[index]
-    }
-}
-
-impl std::ops::Index<&EnumTypeId> for Store {
-    type Output = EnumType;
-
-    fn index(&self, index: &EnumTypeId) -> &Self::Output {
-        &self.enum_types[index]
     }
 }
 

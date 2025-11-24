@@ -16,29 +16,6 @@ pub enum Lifetime {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub enum EnumAttribute {
-    Invalid,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub enum EnumVariantAttribute {
-    Invalid,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
-pub struct EnumVariant {
-    pub attributes: BTreeSet<EnumVariantAttribute>,
-    pub name: NString,
-    pub ty: TypeId,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
-pub struct EnumType {
-    pub attributes: BTreeSet<EnumAttribute>,
-    pub variants: ThinVec<EnumVariant>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum FunctionAttribute {
     CVariadic,
     NoMangle,
@@ -228,14 +205,6 @@ impl Type {
 pub enum PtrSize {
     U32 = 4,
     U64 = 8,
-}
-
-impl IntoStoreId for EnumType {
-    type Id = EnumTypeId;
-
-    fn into_id(self, store: &Store) -> Self::Id {
-        store.store_enum_type(self)
-    }
 }
 
 impl IntoStoreId for FunctionType {

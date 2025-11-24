@@ -178,17 +178,12 @@ impl Ast2Hir for ast::TypePath {
                     }
 
                     None => {
-                        let placeholder_enum_type_id = EnumType {
-                            attributes: BTreeSet::new(),
-                            variants: Vec::new().into(),
-                        }
-                        .into_id(&ctx.store);
-
                         let enum_def = EnumDef {
                             visibility: Visibility::Sec,
                             name: resolved_path,
                             variant_extras: Vec::new(),
-                            enum_id: placeholder_enum_type_id,
+                            attributes: BTreeSet::new(),
+                            variants: Vec::new().into(),
                         }
                         .into_id(&ctx.store);
 

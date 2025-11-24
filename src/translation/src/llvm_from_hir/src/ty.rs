@@ -100,7 +100,6 @@ pub(crate) fn gen_ty<'ctx>(
 
         hir::Type::Enum { def } => {
             let enum_def = &ctx.store[def].borrow();
-            let hir_enum = &ctx.store[&enum_def.enum_id];
             let layout_ctx = hir::LayoutCtx {
                 ptr_size: get_ptr_size(ctx.llvm),
                 store: ctx.store,
@@ -109,7 +108,7 @@ pub(crate) fn gen_ty<'ctx>(
 
             let payload_size = hir::get_size_of(hir_type, &layout_ctx).expect("enum size error");
             let payload_type = ctx.llvm.i8_type().array_type(payload_size as u32);
-            let tag_type = match hir_enum.variants.len() {
+            let tag_type = match enum_def.variants.len() {
                 ..=256 => ctx.llvm.i8_type(),
                 ..=65_536 => ctx.llvm.i16_type(),
                 ..=4_294_967_296 => ctx.llvm.i32_type(),

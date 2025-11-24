@@ -434,8 +434,32 @@ impl Dump for EnumDefId {
         write!(o, "enum::{}::`{}` ", self.as_usize(), this.name)?;
 
         write!(o, "= ")?;
-        ctx.store[&this.enum_id].dump(ctx, o)?;
+        write!(o, "enum ")?;
 
+        dump_attributes(&this.attributes, ctx, o)?;
+
+        if this.variants.is_empty() {
+            write!(o, "{{}}")?;
+        } else {
+            write!(o, "{{\n")?;
+
+            for variant in &this.variants {
+                ctx.indent += 1;
+
+                write_indent(ctx, o)?;
+                write!(o, "{}", variant.name)?;
+
+                write!(o, ": ")?;
+                ctx.store[&variant.ty].dump(ctx, o)?;
+
+                write!(o, ",\n")?;
+
+                ctx.indent -= 1;
+            }
+
+            write_indent(ctx, o)?;
+            write!(o, "}}")?;
+        }
         write!(o, ";")
     }
 }

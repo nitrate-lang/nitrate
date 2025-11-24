@@ -54,8 +54,7 @@ pub fn get_align_of(ty: &Type, ctx: &LayoutCtx) -> Result<u64, LayoutError> {
         }
 
         Type::Enum { def } => {
-            let enum_type = &ctx.store[def].borrow().enum_id;
-            let EnumType { variants, .. } = &ctx.store[enum_type];
+            let EnumDef { variants, .. } = &*ctx.store[def].borrow();
 
             let mut max_align = 1;
 

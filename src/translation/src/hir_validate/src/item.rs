@@ -236,7 +236,13 @@ impl ValidateHir for EnumDef {
             }
         }
 
-        store[&self.enum_id].verify(store, tab)?;
+        for attr in &self.attributes {
+            attr.verify(store, tab)?;
+        }
+
+        for variant in &self.variants {
+            variant.verify(store, tab)?;
+        }
 
         Ok(())
     }

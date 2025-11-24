@@ -146,12 +146,30 @@ pub struct StructDef {
     pub fields: ThinVec<StructField>,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum EnumAttribute {
+    Invalid,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum EnumVariantAttribute {
+    Invalid,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
+pub struct EnumVariant {
+    pub attributes: BTreeSet<EnumVariantAttribute>,
+    pub name: NString,
+    pub ty: TypeId,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct EnumDef {
     pub visibility: Visibility,
     pub name: NString,
     pub variant_extras: Vec<Option<ValueId>>,
-    pub enum_id: EnumTypeId,
+    pub attributes: BTreeSet<EnumAttribute>,
+    pub variants: ThinVec<EnumVariant>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]

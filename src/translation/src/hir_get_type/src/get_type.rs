@@ -107,11 +107,8 @@ impl HirGetType for Value {
             } => match tab.get_enum(enum_path) {
                 None => return Err(TypeInferenceError::UnresolvedSymbol),
                 Some(enum_def) => {
-                    let enum_type = store[enum_def].borrow().enum_id;
-                    let found = store[&enum_type]
-                        .variants
-                        .iter()
-                        .find(|x| &x.name == variant);
+                    let enum_def = &store[enum_def].borrow();
+                    let found = enum_def.variants.iter().find(|x| &x.name == variant);
                     match found {
                         Some(variant) => Ok(store[&variant.ty].clone()),
                         None => Err(TypeInferenceError::EnumVariantNotPresent),

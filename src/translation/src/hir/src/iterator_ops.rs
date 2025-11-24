@@ -1,32 +1,6 @@
 use crate::prelude::*;
 use std::{collections::HashSet, ops::ControlFlow};
 
-impl EnumTypeIter<'_> {
-    pub fn for_each_type(&self, store: &Store, f: &mut dyn FnMut(&Type)) {
-        let _ = self.try_for_each(
-            store,
-            &mut |_| ControlFlow::Continue(()),
-            &mut |ty: &Type| -> ControlFlow<()> {
-                f(ty);
-                ControlFlow::Continue(())
-            },
-            &mut HashSet::new(),
-        );
-    }
-
-    pub fn for_each_value(&self, store: &Store, f: &mut dyn FnMut(&Value)) {
-        let _ = self.try_for_each(
-            store,
-            &mut |value: &Value| -> ControlFlow<()> {
-                f(value);
-                ControlFlow::Continue(())
-            },
-            &mut |_| ControlFlow::Continue(()),
-            &mut HashSet::new(),
-        );
-    }
-}
-
 impl FunctionTypeIter<'_> {
     pub fn for_each_type(&self, store: &Store, f: &mut dyn FnMut(&Type)) {
         let _ = self.try_for_each(

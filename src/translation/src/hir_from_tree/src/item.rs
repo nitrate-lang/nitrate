@@ -189,17 +189,12 @@ impl Ast2Hir for ast::Enum {
             variant_extras.push(field_default);
         }
 
-        let enum_id = EnumType {
-            attributes,
-            variants: variants.into(),
-        }
-        .into_id(&ctx.store);
-
         let enum_def = EnumDef {
             visibility,
             name,
             variant_extras,
-            enum_id,
+            attributes,
+            variants: variants.into(),
         };
 
         if let Some(existing_enum_def_id) = ctx.tab.get_enum(&enum_def.name) {

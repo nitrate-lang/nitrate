@@ -118,14 +118,6 @@ impl std::ops::Index<&TypeId> for Ast2HirCtx {
     }
 }
 
-impl std::ops::Index<&EnumTypeId> for Ast2HirCtx {
-    type Output = EnumType;
-
-    fn index(&self, index: &EnumTypeId) -> &Self::Output {
-        &self.store[index]
-    }
-}
-
 impl std::ops::Index<&FunctionTypeId> for Ast2HirCtx {
     type Output = FunctionType;
 

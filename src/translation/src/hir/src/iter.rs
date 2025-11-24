@@ -1,15 +1,5 @@
 use crate::prelude::*;
 
-pub struct EnumTypeIter<'a> {
-    pub(crate) node: &'a EnumType,
-}
-
-impl EnumType {
-    pub fn iter(&self) -> EnumTypeIter<'_> {
-        EnumTypeIter { node: self }
-    }
-}
-
 pub struct FunctionTypeIter<'a> {
     pub(crate) node: &'a FunctionType,
 }

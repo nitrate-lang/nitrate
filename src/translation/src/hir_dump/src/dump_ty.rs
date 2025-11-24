@@ -52,41 +52,6 @@ impl Dump for Lifetime {
     }
 }
 
-impl Dump for EnumType {
-    fn dump(
-        &self,
-        ctx: &mut DumpContext,
-        o: &mut dyn std::io::Write,
-    ) -> Result<(), std::io::Error> {
-        write!(o, "enum ")?;
-
-        dump_attributes(&self.attributes, ctx, o)?;
-
-        if self.variants.is_empty() {
-            write!(o, "{{}}")
-        } else {
-            write!(o, "{{\n")?;
-
-            for variant in &self.variants {
-                ctx.indent += 1;
-
-                write_indent(ctx, o)?;
-                write!(o, "{}", variant.name)?;
-
-                write!(o, ": ")?;
-                ctx.store[&variant.ty].dump(ctx, o)?;
-
-                write!(o, ",\n")?;
-
-                ctx.indent -= 1;
-            }
-
-            write_indent(ctx, o)?;
-            write!(o, "}}")
-        }
-    }
-}
-
 impl Dump for FunctionType {
     fn dump(
         &self,
@@ -171,10 +136,7 @@ impl Dump for Type {
 
             Type::Struct { def } => def.dump(ctx, o),
 
-            Type::Enum { def } => {
-                let enum_type = &ctx.store[def].borrow().enum_id;
-                ctx.store[enum_type].dump(ctx, o)
-            }
+            Type::Enum { def } => def.dump(ctx, o),
 
             Type::TypeAlias { def } => {
                 let type_alias = &ctx.store[def].borrow().type_id;

@@ -85,25 +85,6 @@ impl ValidateHir for EnumVariant {
     }
 }
 
-impl ValidateHir for EnumType {
-    fn verify(&self, store: &Store, tab: &SymbolTab) -> Result<(), ()> {
-        for attr in &self.attributes {
-            attr.verify(store, tab)?;
-        }
-
-        for variant in &self.variants {
-            variant.verify(store, tab)?;
-        }
-
-        Ok(())
-    }
-
-    fn validate(self, store: &Store, tab: &SymbolTab) -> Result<ValidHir<Self>, ()> {
-        self.verify(store, tab)?;
-        Ok(ValidHir::new(self))
-    }
-}
-
 impl ValidateHir for FunctionAttribute {
     fn verify(&self, _store: &Store, _tab: &SymbolTab) -> Result<(), ()> {
         match self {
