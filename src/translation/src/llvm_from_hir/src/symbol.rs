@@ -86,7 +86,6 @@ fn gen_global<'ctx>(
         ctx.package_name,
         &format!("{}_ctor", hir_global.mangled_name),
         &hir_ctor_type,
-        ctx.store,
     );
 
     let llvm_ctor_function = ctx.module.add_function(
