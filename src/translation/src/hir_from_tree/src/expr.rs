@@ -540,7 +540,7 @@ impl Ast2Hir for ast::Cast {
             },
 
             (Value::InferredFloat(v), Type::F32) => Ok(Value::F32(OrderedFloat::from(*v as f32))),
-            (Value::InferredFloat(v), Type::F64) => Ok(Value::F64(OrderedFloat::from((*v)))),
+            (Value::InferredFloat(v), Type::F64) => Ok(Value::F64(OrderedFloat::from(v))),
 
             (expr, to) => Ok(Value::Cast {
                 value: expr.into(),
@@ -576,10 +576,7 @@ fn ast_localvar2hir(
 
     let ty = match var.ty.to_owned() {
         None => ctx.create_inference_placeholder().into(),
-        Some(t) => {
-            
-            t.ast2hir(ctx, log)?.into()
-        }
+        Some(t) => t.ast2hir(ctx, log)?.into(),
     };
 
     let initializer = match var.initializer.to_owned() {
@@ -670,11 +667,9 @@ impl Ast2Hir for ast::ExprPath {
         match self.resolved_path {
             Some(resolved_path) => match ctx.ast_symbol_map.get(&resolved_path) {
                 Some(SymbolKind::Function) => match ctx.tab.get_function(&resolved_path) {
-                    Some(existing_function_id) => {
-                        Ok(Value::FunctionSymbol {
-                            id: existing_function_id.clone(),
-                        })
-                    }
+                    Some(existing_function_id) => Ok(Value::FunctionSymbol {
+                        id: existing_function_id.clone(),
+                    }),
 
                     None => {
                         let placeholder = Function {
@@ -696,11 +691,9 @@ impl Ast2Hir for ast::ExprPath {
 
                 Some(SymbolKind::GlobalVariable) => {
                     match ctx.tab.get_global_variable(&resolved_path) {
-                        Some(existing_variable_id) => {
-                            Ok(Value::GlobalVariableSymbol {
-                                id: existing_variable_id.clone(),
-                            })
-                        }
+                        Some(existing_variable_id) => Ok(Value::GlobalVariableSymbol {
+                            id: existing_variable_id.clone(),
+                        }),
 
                         None => {
                             let placeholder = GlobalVariable {
@@ -723,11 +716,9 @@ impl Ast2Hir for ast::ExprPath {
 
                 Some(SymbolKind::LocalVariable) => {
                     match ctx.tab.get_local_variable(&resolved_path) {
-                        Some(existing_local_variable_id) => {
-                            Ok(Value::LocalVariableSymbol {
-                                id: existing_local_variable_id.clone(),
-                            })
-                        }
+                        Some(existing_local_variable_id) => Ok(Value::LocalVariableSymbol {
+                            id: existing_local_variable_id.clone(),
+                        }),
 
                         None => {
                             log.report(&HirErr::UnresolvedSymbol);
@@ -737,11 +728,9 @@ impl Ast2Hir for ast::ExprPath {
                 }
 
                 Some(SymbolKind::Parameter) => match ctx.tab.get_parameter(&resolved_path) {
-                    Some(existing_parameter_id) => {
-                        Ok(Value::ParameterSymbol {
-                            id: existing_parameter_id.clone(),
-                        })
-                    }
+                    Some(existing_parameter_id) => Ok(Value::ParameterSymbol {
+                        id: existing_parameter_id.clone(),
+                    }),
 
                     None => {
                         log.report(&HirErr::UnresolvedSymbol);

@@ -46,7 +46,7 @@ impl ValidateHir for GlobalVariable {
 impl ValidateHir for LocalVariableAttribute {
     fn verify(&self, _tab: &SymbolTab, _log: &CompilerLog) -> Result<(), ()> {
         match self {
-            LocalVariableAttribute::Invalid => return Err(()),
+            LocalVariableAttribute::Invalid => Err(()),
         }
     }
 
@@ -87,7 +87,7 @@ impl ValidateHir for LocalVariable {
 impl ValidateHir for ParameterAttribute {
     fn verify(&self, _tab: &SymbolTab, _log: &CompilerLog) -> Result<(), ()> {
         match self {
-            ParameterAttribute::Invalid => return Err(()),
+            ParameterAttribute::Invalid => Err(()),
         }
     }
 
@@ -165,7 +165,7 @@ impl ValidateHir for Trait {
 impl ValidateHir for ModuleAttribute {
     fn verify(&self, _tab: &SymbolTab, _log: &CompilerLog) -> Result<(), ()> {
         match self {
-            ModuleAttribute::Invalid => return Err(()),
+            ModuleAttribute::Invalid => Err(()),
         }
     }
 
@@ -264,7 +264,7 @@ impl ValidateHir for StructDef {
             attr.verify(tab, log)?;
         }
 
-        for (_, field) in &self.fields {
+        for field in self.fields.values() {
             field.verify(tab, log)?;
         }
 
@@ -320,10 +320,8 @@ impl ValidateHir for EnumVariant {
 
 impl ValidateHir for EnumDef {
     fn verify(&self, tab: &SymbolTab, log: &CompilerLog) -> Result<(), ()> {
-        for value in &self.variant_extras {
-            if let Some(expr) = value {
-                expr.borrow().verify(tab, log)?;
-            }
+        for expr in self.variant_extras.iter().flatten() {
+            expr.borrow().verify(tab, log)?;
         }
 
         for attr in &self.attributes {
