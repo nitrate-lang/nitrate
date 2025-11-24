@@ -8,7 +8,6 @@ pub enum LayoutError {
 }
 
 pub struct LayoutCtx<'a> {
-    pub store: &'a Store,
     pub tab: &'a SymbolTab,
     pub ptr_size: PtrSize,
 }
@@ -26,7 +25,7 @@ pub fn get_size_of(ty: &Type, ctx: &LayoutCtx) -> Result<u64, LayoutError> {
         Type::USize => Ok(ctx.ptr_size as u64),
 
         Type::Array { element_type, len } => {
-            let element_stride = get_stride_of(&ctx.store[element_type], ctx)?;
+            let element_stride = get_stride_of(element_type, ctx)?;
             Ok(element_stride * (*len as u64))
         }
 
@@ -36,7 +35,6 @@ pub fn get_size_of(ty: &Type, ctx: &LayoutCtx) -> Result<u64, LayoutError> {
             let mut size = 0_u64;
 
             for element in &*elements {
-                let element = &ctx.store[element];
                 let element_size = get_size_of(element, ctx)?;
                 let element_align = get_align_of(element, ctx)?;
 
@@ -50,13 +48,13 @@ pub fn get_size_of(ty: &Type, ctx: &LayoutCtx) -> Result<u64, LayoutError> {
         Type::Struct { def } => {
             let StructDef {
                 fields, attributes, ..
-            } = &*ctx.store[def].borrow();
+            } = &*def.borrow();
 
             if attributes.contains(&StructAttribute::Packed) {
                 let mut total_size = 0_u64;
 
                 for (_, field) in fields {
-                    total_size += get_size_of(&ctx.store[&field.ty], ctx)?;
+                    total_size += get_size_of(&field.ty, ctx)?;
                 }
 
                 return Ok(total_size);
@@ -65,10 +63,8 @@ pub fn get_size_of(ty: &Type, ctx: &LayoutCtx) -> Result<u64, LayoutError> {
             let mut offset = 0_u64;
 
             for (_, field) in fields {
-                let field_type = &ctx.store[&field.ty];
-
-                let field_size = get_size_of(field_type, ctx)?;
-                let field_align = get_align_of(field_type, ctx)?;
+                let field_size = get_size_of(&field.ty, ctx)?;
+                let field_align = get_align_of(&field.ty, ctx)?;
 
                 offset = offset.next_multiple_of(field_align);
                 offset += field_size;
@@ -78,12 +74,12 @@ pub fn get_size_of(ty: &Type, ctx: &LayoutCtx) -> Result<u64, LayoutError> {
         }
 
         Type::Enum { def } => {
-            let EnumDef { variants, .. } = &*ctx.store[def].borrow();
+            let EnumDef { variants, .. } = &*def.borrow();
 
             let mut size = 0_u64;
 
             for variant in variants {
-                let variant_size = get_size_of(&ctx.store[&variant.ty], ctx)?;
+                let variant_size = get_size_of(&variant.ty, ctx)?;
                 size = max(size, variant_size);
             }
 
@@ -102,11 +98,11 @@ pub fn get_size_of(ty: &Type, ctx: &LayoutCtx) -> Result<u64, LayoutError> {
         }
 
         Type::TypeAlias { def } => {
-            let type_alias = &ctx.store[def].borrow().type_id;
-            get_size_of(&ctx.store[type_alias], ctx)
+            let type_alias = &def.borrow().type_id;
+            get_size_of(&type_alias, ctx)
         }
 
-        Type::Refine { base, .. } => Ok(get_size_of(&ctx.store[base], ctx)?),
+        Type::Refine { base, .. } => Ok(get_size_of(&base, ctx)?),
 
         Type::Function { .. } => Ok(ctx.ptr_size as u64),
         Type::Reference { .. } => Ok(ctx.ptr_size as u64),

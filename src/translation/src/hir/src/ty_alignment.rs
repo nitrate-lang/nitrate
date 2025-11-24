@@ -17,7 +17,7 @@ pub fn get_align_of(ty: &Type, ctx: &LayoutCtx) -> Result<u64, LayoutError> {
             if *len == 0 {
                 return Ok(1);
             } else {
-                get_align_of(&ctx.store[element_type], ctx)
+                get_align_of(&element_type, ctx)
             }
         }
 
@@ -27,7 +27,7 @@ pub fn get_align_of(ty: &Type, ctx: &LayoutCtx) -> Result<u64, LayoutError> {
             let mut max_align = 1;
 
             for element in &*elements {
-                let element_align = get_align_of(&ctx.store[element], ctx)?;
+                let element_align = get_align_of(&element, ctx)?;
                 max_align = max(max_align, element_align);
             }
 
@@ -37,7 +37,7 @@ pub fn get_align_of(ty: &Type, ctx: &LayoutCtx) -> Result<u64, LayoutError> {
         Type::Struct { def } => {
             let StructDef {
                 fields, attributes, ..
-            } = &*ctx.store[def].borrow();
+            } = &*def.borrow();
 
             if attributes.contains(&StructAttribute::Packed) {
                 return Ok(1);
@@ -46,7 +46,7 @@ pub fn get_align_of(ty: &Type, ctx: &LayoutCtx) -> Result<u64, LayoutError> {
             let mut max_align = 1;
 
             for (_, field) in fields {
-                let field_align = get_align_of(&ctx.store[&field.ty], ctx)?;
+                let field_align = get_align_of(&field.ty, ctx)?;
                 max_align = max(max_align, field_align);
             }
 
@@ -54,12 +54,12 @@ pub fn get_align_of(ty: &Type, ctx: &LayoutCtx) -> Result<u64, LayoutError> {
         }
 
         Type::Enum { def } => {
-            let EnumDef { variants, .. } = &*ctx.store[def].borrow();
+            let EnumDef { variants, .. } = &*def.borrow();
 
             let mut max_align = 1;
 
             for variant in variants {
-                let variant_align = get_align_of(&ctx.store[&variant.ty], ctx)?;
+                let variant_align = get_align_of(&variant.ty, ctx)?;
                 max_align = max(max_align, variant_align);
             }
 
@@ -76,11 +76,11 @@ pub fn get_align_of(ty: &Type, ctx: &LayoutCtx) -> Result<u64, LayoutError> {
         }
 
         Type::TypeAlias { def } => {
-            let type_alias = &ctx.store[def].borrow().type_id;
-            get_align_of(&ctx.store[type_alias], ctx)
+            let type_alias = &def.borrow().type_id;
+            get_align_of(&type_alias, ctx)
         }
 
-        Type::Refine { base, .. } => Ok(get_align_of(&ctx.store[base], ctx)?),
+        Type::Refine { base, .. } => Ok(get_align_of(&base, ctx)?),
 
         Type::Function { .. } => Ok(ctx.ptr_size as u64),
         Type::Reference { .. } => Ok(ctx.ptr_size as u64),

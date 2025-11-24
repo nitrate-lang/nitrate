@@ -4,6 +4,7 @@ use inkwell::types::{BasicType, BasicTypeEnum};
 use inkwell::values::{AsValueRef, FunctionValue, PointerValue};
 use nitrate_hir_validate::ValidHir;
 use nitrate_nstring::NString;
+use std::ops::Deref;
 use thin_vec::ThinVec;
 
 use crate::rvalue::gen_rval;
@@ -23,22 +24,18 @@ unsafe extern "C" {
     ) -> ();
 }
 
-pub struct SymbolGenCtx<'ctx, 'store, 'tab, 'package_name, 'module> {
+pub struct SymbolGenCtx<'ctx, 'tab, 'package_name, 'module> {
     pub llvm: &'ctx LLVMContext,
-    pub store: &'store hir::Store,
     pub tab: &'tab hir::SymbolTab,
     pub module: &'module Module<'ctx>,
     pub globals: HashMap<NString, (PointerValue<'ctx>, BasicTypeEnum<'ctx>)>,
     pub package_name: &'package_name str,
 }
 
-impl<'ctx, 'store, 'tab, 'package_name, 'module>
-    SymbolGenCtx<'ctx, 'store, 'tab, 'package_name, 'module>
-{
-    fn ty_ctx(&self) -> TypegenCtx<'ctx, 'store, 'tab, 'module> {
+impl<'ctx, 'tab, 'package_name, 'module> SymbolGenCtx<'ctx, 'tab, 'package_name, 'module> {
+    fn ty_ctx(&self) -> TypegenCtx<'ctx, 'tab, 'module> {
         TypegenCtx {
             llvm: self.llvm,
-            store: self.store,
             tab: self.tab,
             module: self.module,
         }
@@ -54,11 +51,8 @@ pub(crate) fn get_ptr_size(ctx: &LLVMContext) -> hir::PtrSize {
     }
 }
 
-fn gen_global<'ctx>(
-    ctx: &mut SymbolGenCtx<'ctx, '_, '_, '_, '_>,
-    hir_global: &hir::GlobalVariable,
-) {
-    let hir_global_ty = &ctx.store[&hir_global.ty];
+fn gen_global<'ctx>(ctx: &mut SymbolGenCtx<'ctx, '_, '_, '_>, hir_global: &hir::GlobalVariable) {
+    let hir_global_ty = hir_global.ty.deref();
     let global_ty = gen_ty(hir_global_ty, &mut ctx.ty_ctx());
 
     let llvm_global = ctx
@@ -97,12 +91,12 @@ fn gen_global<'ctx>(
     /***********************************************************************/
     // Fill Constructor Body
     let bb = ctx.llvm.create_builder();
-    let mut val_ctx = CodegenCtx::new(ctx.llvm, &ctx.module, ctx.store, ctx.tab, &bb, &ctx.globals);
+    let mut val_ctx = CodegenCtx::new(ctx.llvm, &ctx.module, ctx.tab, &bb, &ctx.globals);
 
     let entry = ctx.llvm.append_basic_block(llvm_ctor_function, "entry");
     bb.position_at_end(entry);
 
-    let init_value = ctx.store[&hir_global.init].borrow();
+    let init_value = &hir_global.init.borrow();
     let llvm_init_value = gen_rval(&mut val_ctx, &init_value);
     let global_ptr = llvm_global.as_pointer_value();
     bb.build_store(global_ptr, llvm_init_value).unwrap();
@@ -129,7 +123,7 @@ fn gen_global<'ctx>(
 }
 
 fn gen_function_decl<'ctx>(
-    ctx: &mut SymbolGenCtx<'ctx, '_, '_, '_, '_>,
+    ctx: &mut SymbolGenCtx<'ctx, '_, '_, '_>,
     hir_function: &hir::Function,
 ) -> FunctionValue<'ctx> {
     if let Some(existing_function) = ctx.module.get_function(&hir_function.mangled_name) {
@@ -138,12 +132,12 @@ fn gen_function_decl<'ctx>(
 
     let mut param_types = Vec::with_capacity(hir_function.params.len());
     for param in &hir_function.params {
-        let param_type_id = ctx.store[param].borrow().ty;
-        let param_type = gen_ty(&ctx.store[&param_type_id], &mut ctx.ty_ctx());
+        let param_type_id = param.borrow().ty;
+        let param_type = gen_ty(&param_type_id, &mut ctx.ty_ctx());
         param_types.push(param_type.into());
     }
 
-    let return_type = gen_ty(&ctx.store[&hir_function.return_type], &mut ctx.ty_ctx());
+    let return_type = gen_ty(&hir_function.return_type, &mut ctx.ty_ctx());
 
     let variadic = hir_function
         .attributes
@@ -164,22 +158,21 @@ fn gen_function_decl<'ctx>(
 }
 
 fn gen_function<'ctx>(
-    ctx: &mut SymbolGenCtx<'ctx, '_, '_, '_, '_>,
+    ctx: &mut SymbolGenCtx<'ctx, '_, '_, '_>,
     hir_function: &hir::Function,
 ) -> FunctionValue<'ctx> {
     let llvm_function = gen_function_decl(ctx, hir_function);
 
     if let Some(body) = &hir_function.body {
         let bb = ctx.llvm.create_builder();
-        let mut val_ctx =
-            CodegenCtx::new(ctx.llvm, &ctx.module, ctx.store, ctx.tab, &bb, &ctx.globals);
+        let mut val_ctx = CodegenCtx::new(ctx.llvm, &ctx.module, ctx.tab, &bb, &ctx.globals);
 
         let entry = ctx.llvm.append_basic_block(llvm_function, "entry");
         bb.position_at_end(entry);
 
         for (i, param_id) in hir_function.params.iter().enumerate() {
-            let hir_param = &ctx.store[param_id].borrow();
-            let llvm_param_type = gen_ty(&ctx.store[&hir_param.ty], &mut ctx.ty_ctx());
+            let hir_param = &param_id.borrow();
+            let llvm_param_type = gen_ty(&hir_param.ty, &mut ctx.ty_ctx());
             let llvm_param = llvm_function.get_nth_param(i as u32).unwrap();
 
             let alloca = bb
@@ -192,27 +185,25 @@ fn gen_function<'ctx>(
                 .insert(hir_param.name.to_owned(), (alloca, llvm_param_type));
         }
 
-        let body = &ctx.store[body].borrow();
-        gen_block(&mut val_ctx, body);
+        gen_block(&mut val_ctx, &body.borrow());
     }
 
     llvm_function
 }
 
-pub(crate) fn gen_module<'ctx>(ctx: &mut SymbolGenCtx<'ctx, '_, '_, '_, '_>, module: &hir::Module) {
+pub(crate) fn gen_module<'ctx>(ctx: &mut SymbolGenCtx<'ctx, '_, '_, '_>, module: &hir::Module) {
     for item in &module.items {
         match item {
             hir::Item::TypeAliasDef(_) | hir::Item::StructDef(_) | hir::Item::EnumDef(_) => {}
 
-            hir::Item::Module(id) => gen_module(ctx, &ctx.store[id].borrow()),
+            hir::Item::Module(id) => gen_module(ctx, &id.borrow()),
 
             hir::Item::GlobalVariable(_) => {
                 // Already generated in advance
             }
 
             hir::Item::Function(id) => {
-                let hir_fn = ctx.store[id].borrow();
-                gen_function(ctx, &hir_fn);
+                gen_function(ctx, &id.borrow());
             }
         }
     }
@@ -222,7 +213,6 @@ pub fn generate_llvmir<'ctx>(
     package_name: &str,
     hir: ValidHir<hir::Module>,
     llvm: &'ctx LLVMContext,
-    store: &hir::Store,
     tab: &hir::SymbolTab,
 ) -> Module<'ctx> {
     let hir = hir.into_inner();
@@ -230,7 +220,6 @@ pub fn generate_llvmir<'ctx>(
     let module = llvm.create_module(&module_name);
 
     let mut ctx = SymbolGenCtx {
-        store,
         tab,
         llvm,
         module: &module,
@@ -239,13 +228,11 @@ pub fn generate_llvmir<'ctx>(
     };
 
     for function_id in tab.functions() {
-        let function = store[function_id].borrow();
-        gen_function_decl(&mut ctx, &function);
+        gen_function_decl(&mut ctx, &function_id.borrow());
     }
 
     for global_id in tab.global_variables() {
-        let global_var = store[global_id].borrow();
-        gen_global(&mut ctx, &global_var);
+        gen_global(&mut ctx, &global_id.borrow());
     }
 
     gen_module(&mut ctx, &hir);

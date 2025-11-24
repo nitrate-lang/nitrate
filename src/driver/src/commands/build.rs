@@ -306,13 +306,8 @@ impl Interpreter<'_> {
                 }
             };
 
-            let mut llvm_module = generate_llvmir(
-                package.name(),
-                valid_hir_module,
-                &llvm_ctx,
-                &store,
-                &symbol_tab,
-            );
+            let mut llvm_module =
+                generate_llvmir(package.name(), valid_hir_module, &llvm_ctx, &symbol_tab);
 
             if args.show_llvmir {
                 println!("{}", llvm_module.print_to_string().to_string());

@@ -3,10 +3,10 @@ use inkwell::{
     types::{BasicType, BasicTypeEnum, FunctionType, StructType},
 };
 use nitrate_llvm::LLVMContext;
+use std::ops::Deref;
 
-pub struct TypegenCtx<'ctx, 'store, 'tab, 'module> {
+pub struct TypegenCtx<'ctx, 'tab, 'module> {
     pub llvm: &'ctx LLVMContext,
-    pub store: &'store hir::Store,
     pub tab: &'tab hir::SymbolTab,
     pub module: &'module inkwell::module::Module<'ctx>,
 }
@@ -16,7 +16,7 @@ use nitrate_hir::{StructMemoryLayoutCell, prelude as hir};
 
 fn gen_struct_ty<'ctx>(
     hir_struct_def: &hir::StructDef,
-    ctx: &mut TypegenCtx<'ctx, '_, '_, '_>,
+    ctx: &mut TypegenCtx<'ctx, '_, '_>,
 ) -> StructType<'ctx> {
     if let Some(struct_type) = ctx.module.get_struct_type(&hir_struct_def.name) {
         return struct_type;
@@ -30,7 +30,7 @@ fn gen_struct_ty<'ctx>(
                     .fields
                     .get(field_name)
                     .expect("expected field to exist in struct");
-                let hir_field_ty = &ctx.store[&hir_field.ty];
+                let hir_field_ty = hir_field.ty.deref();
                 field_types.push(gen_ty(hir_field_ty, ctx));
             }
 
@@ -52,11 +52,11 @@ fn gen_struct_ty<'ctx>(
 
 pub(crate) fn gen_function_ty<'ctx>(
     hir_func_type: &hir::FunctionType,
-    ctx: &mut TypegenCtx<'ctx, '_, '_, '_>,
+    ctx: &mut TypegenCtx<'ctx, '_, '_>,
 ) -> FunctionType<'ctx> {
     let mut param_types = Vec::with_capacity(hir_func_type.params.len());
     for hir_param in &hir_func_type.params {
-        let hir_param = &ctx.store[&hir_param.1];
+        let hir_param = hir_param.1.deref();
         param_types.push(gen_ty(hir_param, ctx).into());
     }
 
@@ -64,13 +64,13 @@ pub(crate) fn gen_function_ty<'ctx>(
         .attributes
         .contains(&hir::FunctionAttribute::CVariadic);
 
-    let return_type = gen_ty(&ctx.store[&hir_func_type.return_type], ctx);
+    let return_type = gen_ty(&hir_func_type.return_type, ctx);
     return_type.fn_type(&param_types, variadic)
 }
 
 pub(crate) fn gen_ty<'ctx>(
     hir_type: &hir::Type,
-    ctx: &mut TypegenCtx<'ctx, '_, '_, '_>,
+    ctx: &mut TypegenCtx<'ctx, '_, '_>,
 ) -> BasicTypeEnum<'ctx> {
     match hir_type {
         hir::Type::Never | hir::Type::Unit => ctx.llvm.struct_type(&[], false).into(),
@@ -87,7 +87,6 @@ pub(crate) fn gen_ty<'ctx>(
         hir::Type::F32 => ctx.llvm.f32_type().into(),
         hir::Type::F64 => ctx.llvm.f64_type().into(),
         hir::Type::Array { element_type, len } => {
-            let element_type = &ctx.store[element_type];
             let llvm_element_type = gen_ty(element_type, ctx);
             llvm_element_type.array_type(*len).into()
         }
@@ -96,30 +95,23 @@ pub(crate) fn gen_ty<'ctx>(
             let mut llvm_element_types = Vec::with_capacity(element_types.len());
             for element_type in element_types {
                 // FIXME: insert padding
-
-                let hir_element_type = &ctx.store[element_type];
-                llvm_element_types.push(gen_ty(hir_element_type, ctx));
+                llvm_element_types.push(gen_ty(element_type, ctx));
             }
 
             ctx.llvm.struct_type(&llvm_element_types, false).into()
         }
 
-        hir::Type::Struct { def } => {
-            let struct_def = &ctx.store[def].borrow();
-            gen_struct_ty(struct_def, ctx).into()
-        }
+        hir::Type::Struct { def } => gen_struct_ty(&def.borrow(), ctx).into(),
 
         hir::Type::Enum { def } => {
-            let enum_def = &ctx.store[def].borrow();
             let layout_ctx = hir::LayoutCtx {
                 ptr_size: get_ptr_size(ctx.llvm),
-                store: ctx.store,
                 tab: ctx.tab,
             };
 
             let payload_size = hir::get_size_of(hir_type, &layout_ctx).expect("enum size error");
             let payload_type = ctx.llvm.i8_type().array_type(payload_size as u32);
-            let tag_type = match enum_def.variants.len() {
+            let tag_type = match def.borrow().variants.len() {
                 ..=256 => ctx.llvm.i8_type(),
                 ..=65_536 => ctx.llvm.i16_type(),
                 ..=4_294_967_296 => ctx.llvm.i32_type(),
@@ -133,16 +125,9 @@ pub(crate) fn gen_ty<'ctx>(
                 .into()
         }
 
-        hir::Type::TypeAlias { def } => {
-            let type_alias = &ctx.store[def].borrow();
-            let hir_base = &ctx.store[&type_alias.type_id];
-            gen_ty(hir_base, ctx)
-        }
+        hir::Type::TypeAlias { def } => gen_ty(&def.borrow().type_id, ctx),
 
-        hir::Type::Refine { base, .. } => {
-            let hir_base = &ctx.store[base];
-            gen_ty(hir_base, ctx)
-        }
+        hir::Type::Refine { base, .. } => gen_ty(base, ctx),
 
         hir::Type::SliceRef { .. } => {
             let ptr = ctx.llvm.ptr_type(AddressSpace::default());

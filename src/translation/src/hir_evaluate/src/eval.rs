@@ -4,8 +4,7 @@ use nitrate_nstring::NString;
 use ordered_float::OrderedFloat;
 use std::{collections::HashMap, sync::LazyLock};
 
-type BuiltinFunction =
-    dyn Fn(&mut HirEvalCtx, &Store, &[Value]) -> Result<Value, Unwind> + Send + Sync;
+type BuiltinFunction = dyn Fn(&mut HirEvalCtx, &[Value]) -> Result<Value, Unwind> + Send + Sync;
 
 static DEFAULT_BUILTIN_FUNCTIONS: LazyLock<HashMap<NString, Box<BuiltinFunction>>> =
     LazyLock::new(|| {
@@ -14,7 +13,7 @@ static DEFAULT_BUILTIN_FUNCTIONS: LazyLock<HashMap<NString, Box<BuiltinFunction>
         // Just an example builtin function
         m.insert(
             NString::from("std::math::abs"),
-            Box::new(|_, _, args| {
+            Box::new(|_, args| {
                 if args.len() != 1 {
                     return Err(Unwind::TypeError);
                 }

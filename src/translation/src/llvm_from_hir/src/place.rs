@@ -1,24 +1,24 @@
-use inkwell::values::PointerValue;
-use nitrate_hir_get_type::HirGetType;
-
 use crate::{
     rvalue::{CodegenCtx, gen_rval},
     ty::gen_ty,
 };
+
+use inkwell::values::PointerValue;
 use nitrate_hir::{StructMemoryLayoutCell, prelude as hir};
+use nitrate_hir_get_type::HirGetType;
 use nitrate_nstring::NString;
+use std::ops::Deref;
 
 fn gen_place_field_access<'ctx>(
-    ctx: &mut CodegenCtx<'ctx, '_, '_, '_, '_, '_>,
+    ctx: &mut CodegenCtx<'ctx, '_, '_, '_, '_>,
     struct_value: &hir::Value,
     field_name: &NString,
 ) -> PointerValue<'ctx> {
-    let hir_struct_def = &ctx.store[struct_value
-        .get_type(ctx.tab)
-        .expect("Failed to get type")
+    let value_type = struct_value.get_type(ctx.tab).expect("Failed to get type");
+    let hir_struct_def = value_type
         .as_struct()
-        .expect("expected struct type")]
-    .borrow();
+        .expect("expected struct type")
+        .borrow();
 
     let field_index = hir_struct_def
         .layout
@@ -55,7 +55,7 @@ fn gen_place_field_access<'ctx>(
 }
 
 fn gen_place_deref<'ctx>(
-    ctx: &mut CodegenCtx<'ctx, '_, '_, '_, '_, '_>,
+    ctx: &mut CodegenCtx<'ctx, '_, '_, '_, '_>,
     place: &hir::Value,
 ) -> PointerValue<'ctx> {
     let llvm_value = gen_rval(ctx, place);
@@ -66,8 +66,8 @@ fn gen_place_deref<'ctx>(
     }
 
     let pointee_ty = match place.get_type(ctx.tab).unwrap() {
-        hir::Type::Pointer { to, .. } => &ctx.store[&to],
-        hir::Type::Reference { to, .. } => &ctx.store[&to],
+        hir::Type::Pointer { to, .. } => to.deref().clone(),
+        hir::Type::Reference { to, .. } => to.deref().clone(),
         _ => unreachable!(),
     };
 
@@ -87,7 +87,7 @@ fn gen_place_deref<'ctx>(
 }
 
 pub(crate) fn gen_place<'ctx>(
-    ctx: &mut CodegenCtx<'ctx, '_, '_, '_, '_, '_>,
+    ctx: &mut CodegenCtx<'ctx, '_, '_, '_, '_>,
     hir_value: &hir::Value,
 ) -> PointerValue<'ctx> {
     match hir_value {
@@ -145,45 +145,33 @@ pub(crate) fn gen_place<'ctx>(
         }
 
         hir::Value::FieldAccess { expr, field_name } => {
-            let expr = ctx.store[expr].borrow();
-            gen_place_field_access(ctx, &expr, field_name)
+            gen_place_field_access(ctx, &expr.borrow(), field_name)
         }
 
-        hir::Value::Deref { place } => {
-            let place = ctx.store[place].borrow();
-            gen_place_deref(ctx, &place)
-        }
+        hir::Value::Deref { place } => gen_place_deref(ctx, &place.borrow()),
 
         hir::Value::FunctionSymbol { id } => {
-            let function = ctx.store[id].borrow();
-            match ctx.module.get_function(&function.mangled_name) {
+            match ctx.module.get_function(&id.borrow().mangled_name) {
                 Some(func) => func.as_global_value().as_pointer_value(),
                 None => panic!("Function symbol not found in module"),
             }
         }
 
         hir::Value::GlobalVariableSymbol { id } => {
-            let global_var = ctx.store[id].borrow();
-            match ctx.globals.get(&global_var.mangled_name) {
+            match ctx.globals.get(&id.borrow().mangled_name) {
                 Some(ptr) => ptr.0,
                 None => panic!("Global variable symbol not found"),
             }
         }
 
-        hir::Value::LocalVariableSymbol { id } => {
-            let local_var = ctx.store[id].borrow();
-            match ctx.locals.get(&local_var.name) {
-                Some(ptr) => ptr.0,
-                None => panic!("Local variable symbol not found"),
-            }
-        }
+        hir::Value::LocalVariableSymbol { id } => match ctx.locals.get(&id.borrow().name) {
+            Some(ptr) => ptr.0,
+            None => panic!("Local variable symbol not found"),
+        },
 
-        hir::Value::ParameterSymbol { id } => {
-            let parameter = ctx.store[id].borrow();
-            match ctx.parameters.get(&parameter.name) {
-                Some(ptr) => ptr.0,
-                None => panic!("Parameter symbol not found"),
-            }
-        }
+        hir::Value::ParameterSymbol { id } => match ctx.parameters.get(&id.borrow().name) {
+            Some(ptr) => ptr.0,
+            None => panic!("Parameter symbol not found"),
+        },
     }
 }
