@@ -2,6 +2,7 @@ use crate::prelude::*;
 use nitrate_nstring::NString;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeSet;
+use thin_vec::ThinVec;
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub enum Visibility {
@@ -119,12 +120,30 @@ pub struct TypeAliasDef {
     pub type_id: TypeId,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum StructAttribute {
+    Packed,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum StructFieldAttribute {
+    Invalid,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
+pub struct StructField {
+    pub attributes: BTreeSet<StructFieldAttribute>,
+    pub name: NString,
+    pub ty: TypeId,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct StructDef {
     pub visibility: Visibility,
     pub name: NString,
     pub field_extras: Vec<(Visibility, Option<ValueId>)>,
-    pub struct_id: StructTypeId,
+    pub attributes: BTreeSet<StructAttribute>,
+    pub fields: ThinVec<StructField>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]

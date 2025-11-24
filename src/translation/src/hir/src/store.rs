@@ -130,8 +130,6 @@ macro_rules! impl_store_mut {
 
 impl_dedup_store!(TypeId, Type, TypeStore);
 
-impl_dedup_store!(StructTypeId, StructType, StructTypeStore);
-
 impl_dedup_store!(EnumTypeId, EnumType, EnumTypeStore);
 
 impl_dedup_store!(FunctionTypeId, FunctionType, FunctionTypeStore);
@@ -163,7 +161,6 @@ impl_store_mut!(BlockId, Block, ExprBlockStore);
 #[derive(Debug)]
 pub struct Store {
     types: TypeStore,
-    struct_types: StructTypeStore,
     enum_types: EnumTypeStore,
     function_types: FunctionTypeStore,
     global_variables: GlobalVariableStore,
@@ -184,7 +181,6 @@ impl Store {
     pub fn new() -> Self {
         Self {
             types: TypeStore::new(),
-            struct_types: StructTypeStore::new(),
             enum_types: EnumTypeStore::new(),
             function_types: FunctionTypeStore::new(),
             global_variables: GlobalVariableStore::new(),
@@ -204,10 +200,6 @@ impl Store {
 
     pub fn store_type(&self, ty: Type) -> TypeId {
         using_storage(self, || self.types.store(ty))
-    }
-
-    pub fn store_struct_type(&self, struct_type: StructType) -> StructTypeId {
-        using_storage(self, || self.struct_types.store(struct_type))
     }
 
     pub fn store_enum_type(&self, enum_type: EnumType) -> EnumTypeId {
@@ -268,7 +260,6 @@ impl Store {
 
     pub fn reset(&mut self) {
         self.types.reset();
-        self.struct_types.reset();
         self.enum_types.reset();
         self.function_types.reset();
         self.global_variables.reset();
@@ -287,7 +278,6 @@ impl Store {
 
     pub fn shrink_to_fit(&mut self) {
         self.types.shrink_to_fit();
-        self.struct_types.shrink_to_fit();
         self.enum_types.shrink_to_fit();
         self.function_types.shrink_to_fit();
         self.global_variables.shrink_to_fit();
@@ -310,14 +300,6 @@ impl std::ops::Index<&TypeId> for Store {
 
     fn index(&self, index: &TypeId) -> &Self::Output {
         &self.types[index]
-    }
-}
-
-impl std::ops::Index<&StructTypeId> for Store {
-    type Output = StructType;
-
-    fn index(&self, index: &StructTypeId) -> &Self::Output {
-        &self.struct_types[index]
     }
 }
 

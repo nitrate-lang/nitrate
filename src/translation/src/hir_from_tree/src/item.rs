@@ -112,17 +112,12 @@ impl Ast2Hir for ast::Struct {
             fields.push(struct_field);
         }
 
-        let struct_id = StructType {
-            attributes,
-            fields: fields.into(),
-        }
-        .into_id(&ctx.store);
-
         let struct_def = StructDef {
             visibility,
             name,
             field_extras,
-            struct_id,
+            attributes,
+            fields: fields.into(),
         };
 
         if let Some(existing_struct_def_id) = ctx.tab.get_struct(&struct_def.name) {

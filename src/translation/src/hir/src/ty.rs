@@ -16,29 +16,6 @@ pub enum Lifetime {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub enum StructAttribute {
-    Packed,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub enum StructFieldAttribute {
-    Invalid,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
-pub struct StructField {
-    pub attributes: BTreeSet<StructFieldAttribute>,
-    pub name: NString,
-    pub ty: TypeId,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
-pub struct StructType {
-    pub attributes: BTreeSet<StructAttribute>,
-    pub fields: ThinVec<StructField>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum EnumAttribute {
     Invalid,
 }
@@ -251,14 +228,6 @@ impl Type {
 pub enum PtrSize {
     U32 = 4,
     U64 = 8,
-}
-
-impl IntoStoreId for StructType {
-    type Id = StructTypeId;
-
-    fn into_id(self, store: &Store) -> Self::Id {
-        store.store_struct_type(self)
-    }
 }
 
 impl IntoStoreId for EnumType {

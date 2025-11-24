@@ -211,7 +211,13 @@ impl ValidateHir for StructDef {
             }
         }
 
-        store[&self.struct_id].verify(store, tab)?;
+        for attr in &self.attributes {
+            attr.verify(store, tab)?;
+        }
+
+        for field in &self.fields {
+            field.verify(store, tab)?;
+        }
 
         Ok(())
     }

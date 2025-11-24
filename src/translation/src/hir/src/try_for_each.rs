@@ -1,24 +1,6 @@
 use crate::prelude::*;
 use std::{collections::HashSet, ops::ControlFlow};
 
-impl StructTypeIter<'_> {
-    pub(crate) fn try_for_each<T>(
-        &self,
-        store: &Store,
-        vcb: &mut dyn FnMut(&Value) -> ControlFlow<T>,
-        tcb: &mut dyn FnMut(&Type) -> ControlFlow<T>,
-        visited: &mut HashSet<*const ()>,
-    ) -> ControlFlow<T> {
-        for field in &self.node.fields {
-            store[&field.ty]
-                .iter()
-                .try_for_each(store, vcb, tcb, visited)?;
-        }
-
-        ControlFlow::Continue(())
-    }
-}
-
 impl EnumTypeIter<'_> {
     pub(crate) fn try_for_each<T>(
         &self,
@@ -109,8 +91,7 @@ impl TypeIter<'_> {
             }
 
             Type::Struct { def } => {
-                let struct_type = &store[def].borrow().struct_id;
-                for field in &store[struct_type].fields {
+                for field in &store[def].borrow().fields {
                     store[&field.ty]
                         .iter()
                         .try_for_each(store, vcb, tcb, visited)?;
@@ -598,9 +579,11 @@ impl StructDefIter<'_> {
             }
         }
 
-        store[&self.node.struct_id]
-            .iter()
-            .try_for_each(store, vcb, tcb, visited)?;
+        for field in &self.node.fields {
+            store[&field.ty]
+                .iter()
+                .try_for_each(store, vcb, tcb, visited)?;
+        }
 
         ControlFlow::Continue(())
     }

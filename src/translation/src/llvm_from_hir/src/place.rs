@@ -17,10 +17,10 @@ fn gen_place_field_access<'ctx>(
         .get_type(ctx.store, ctx.tab)
         .expect("Failed to get type")
         .as_struct()
-        .expect("expected struct type")];
-    let hir_struct_ty = &ctx.store[&hir_struct_def.borrow().struct_id];
+        .expect("expected struct type")]
+    .borrow();
 
-    let field_index = hir_struct_ty
+    let field_index = hir_struct_def
         .fields
         .iter()
         .position(|field| &field.name == field_name)

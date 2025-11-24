@@ -386,7 +386,33 @@ impl Dump for StructDefId {
         write!(o, "struct::{}::`{}` ", self.as_usize(), this.name)?;
 
         write!(o, "= ")?;
-        ctx.store[&this.struct_id].dump(ctx, o)?;
+
+        write!(o, "struct ")?;
+
+        dump_attributes(&this.attributes, ctx, o)?;
+
+        if this.fields.is_empty() {
+            write!(o, "{{}}")?;
+        } else {
+            write!(o, "{{\n")?;
+
+            for field in &this.fields {
+                ctx.indent += 1;
+
+                write_indent(ctx, o)?;
+                write!(o, "{}", field.name)?;
+
+                write!(o, ": ")?;
+                ctx.store[&field.ty].dump(ctx, o)?;
+
+                write!(o, ",\n")?;
+
+                ctx.indent -= 1;
+            }
+
+            write_indent(ctx, o)?;
+            write!(o, "}}")?;
+        }
 
         write!(o, ";")
     }

@@ -22,17 +22,15 @@ fn gen_struct_ty<'ctx>(
         return struct_type;
     }
 
-    let hir_struct = &ctx.store[&hir_struct_def.struct_id];
-
-    let mut field_types = Vec::with_capacity(hir_struct.fields.len());
-    for hir_field in &hir_struct.fields {
+    let mut field_types = Vec::with_capacity(hir_struct_def.fields.len());
+    for hir_field in &hir_struct_def.fields {
         // FIXME: insert padding
 
         let hir_field_ty = &ctx.store[&hir_field.ty];
         field_types.push(gen_ty(hir_field_ty, ctx));
     }
 
-    let is_packed = hir_struct
+    let is_packed = hir_struct_def
         .attributes
         .contains(&hir::StructAttribute::Packed);
 

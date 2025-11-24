@@ -154,17 +154,12 @@ impl Ast2Hir for ast::TypePath {
                     }
 
                     None => {
-                        let placeholder_struct_id = StructType {
-                            attributes: BTreeSet::new(),
-                            fields: Vec::new().into(),
-                        }
-                        .into_id(&ctx.store);
-
                         let struct_def = StructDef {
                             visibility: Visibility::Sec,
                             name: resolved_path,
                             field_extras: Vec::new(),
-                            struct_id: placeholder_struct_id.clone(),
+                            attributes: BTreeSet::new(),
+                            fields: Vec::new().into(),
                         }
                         .into_id(&ctx.store);
 

@@ -44,25 +44,6 @@ impl ValidateHir for StructField {
     }
 }
 
-impl ValidateHir for StructType {
-    fn verify(&self, store: &Store, tab: &SymbolTab) -> Result<(), ()> {
-        for attr in &self.attributes {
-            attr.verify(store, tab)?;
-        }
-
-        for field in &self.fields {
-            field.verify(store, tab)?;
-        }
-
-        Ok(())
-    }
-
-    fn validate(self, store: &Store, tab: &SymbolTab) -> Result<ValidHir<Self>, ()> {
-        self.verify(store, tab)?;
-        Ok(ValidHir::new(self))
-    }
-}
-
 impl ValidateHir for EnumAttribute {
     fn verify(&self, _store: &Store, _tab: &SymbolTab) -> Result<(), ()> {
         match self {

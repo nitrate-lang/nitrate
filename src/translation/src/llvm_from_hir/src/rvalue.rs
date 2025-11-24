@@ -1326,7 +1326,7 @@ fn gen_rval_struct_object<'ctx>(
 
     let struct_def = ctx.store[struct_def_id].borrow();
     let mut field_map = HashMap::new();
-    for (i, field) in ctx.store[&struct_def.struct_id].fields.iter().enumerate() {
+    for (i, field) in struct_def.fields.iter().enumerate() {
         field_map.insert(field.name.clone(), i);
     }
 
@@ -1385,15 +1385,14 @@ fn gen_rval_field_access<'ctx>(
         .as_struct()
         .expect("expected struct type")]
     .borrow();
-    let hir_struct_ty = &ctx.store[&hir_struct_def.struct_id];
 
-    let field_index = hir_struct_ty
+    let field_index = hir_struct_def
         .fields
         .iter()
         .position(|field| &field.name == field_name)
         .expect("Field not found in struct");
 
-    let field_ty = &ctx.store[&hir_struct_ty.fields[field_index].ty];
+    let field_ty = &ctx.store[&hir_struct_def.fields[field_index].ty];
 
     let llvm_struct_value = gen_place(ctx, struct_value);
     let llvm_struct_ty = gen_ty(
