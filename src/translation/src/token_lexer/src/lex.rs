@@ -18,6 +18,7 @@ pub struct Lexer<'a> {
     internal_getc_pos: SourcePosition,
     current_pos: SourcePosition,
     preread_token: Option<AnnotatedToken>,
+    skip_comments: bool,
 }
 
 enum StringEscape {
@@ -57,8 +58,13 @@ impl<'a> Lexer<'a> {
                     fileid: fileid.clone(),
                 },
                 preread_token: None,
+                skip_comments: false,
             })
         }
+    }
+
+    pub fn set_skip_comments(&mut self, skip: bool) {
+        self.skip_comments = skip;
     }
 
     pub fn next_tok(&mut self) -> AnnotatedToken {
@@ -445,12 +451,12 @@ impl<'a> Lexer<'a> {
             if let Ok(digit) = u128::from_str_radix(
                 str::from_utf8(&[*digit]).expect("Unexpected non-utf8 digit"),
                 base,
-            )
-                && let Some(y) = number.checked_mul(u128::from(base))
-                    && let Some(sum) = y.checked_add(digit) {
-                        number = sum;
-                        continue;
-                    }
+            ) && let Some(y) = number.checked_mul(u128::from(base))
+                && let Some(sum) = y.checked_add(digit)
+            {
+                number = sum;
+                continue;
+            }
 
             error!("[L0300]: Integer literal is too large to fit in u128\n--> {start_pos}");
             return Err(());
@@ -526,9 +532,10 @@ impl<'a> Lexer<'a> {
         }
 
         if base_prefix.is_none()
-            && let Ok(float) = self.parse_float(&start_pos) {
-                return Ok(float);
-            }
+            && let Ok(float) = self.parse_float(&start_pos)
+        {
+            return Ok(float);
+        }
 
         let number = Self::radix_decode(literal, base_prefix.unwrap_or(10u32), &start_pos)?;
 
@@ -941,6 +948,10 @@ impl<'a> Lexer<'a> {
             },
         }
         .unwrap_or(Token::Eof);
+
+        if self.skip_comments && matches!(token, Token::Comment(_)) {
+            return self.parse_next_token();
+        }
 
         let end_pos = self.internal_getc_pos.clone();
 

@@ -19,6 +19,8 @@ impl<'a, 'log> Parser<'a, 'log> {
     }
 
     pub fn parse_source(&mut self, package_name: NString) -> Module {
+        self.lexer.set_skip_comments(true);
+
         let mut items = Vec::new();
 
         while !self.lexer.is_eof() {

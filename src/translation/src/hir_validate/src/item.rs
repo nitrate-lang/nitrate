@@ -27,10 +27,10 @@ impl ValidateHir for GlobalVariable {
 
         self.ty.verify(tab, log)?;
 
-        let init = self.init.borrow();
-        init.verify(tab, log)?;
+        let init_value = self.init.borrow();
+        init_value.verify(tab, log)?;
 
-        let init_ty = init.determine_type(tab).map_err(|_| ())?;
+        let init_ty = init_value.determine_type(tab).map_err(|_| ())?;
         if *self.ty != init_ty {
             return Err(());
         }
