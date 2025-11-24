@@ -6,6 +6,8 @@ use nitrate_hir::{SymbolTab, prelude::*};
 
 impl ValidateHir for FunctionAttribute {
     fn verify(&self, _tab: &SymbolTab, _log: &CompilerLog) -> Result<(), ()> {
+        // TODO: verify
+
         match self {
             FunctionAttribute::CVariadic => Ok(()),
             FunctionAttribute::NoMangle => Ok(()),
@@ -20,6 +22,8 @@ impl ValidateHir for FunctionAttribute {
 
 impl ValidateHir for FunctionType {
     fn verify(&self, tab: &SymbolTab, log: &CompilerLog) -> Result<(), ()> {
+        // TODO: verify
+
         for attr in &self.attributes {
             attr.verify(tab, log)?;
         }
@@ -41,6 +45,8 @@ impl ValidateHir for FunctionType {
 
 impl ValidateHir for Type {
     fn verify(&self, tab: &SymbolTab, log: &CompilerLog) -> Result<(), ()> {
+        // TODO: verify
+
         match self {
             Type::Never
             | Type::Unit

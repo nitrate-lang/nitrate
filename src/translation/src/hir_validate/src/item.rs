@@ -6,6 +6,8 @@ use std::ops::Deref;
 
 impl ValidateHir for GlobalVariableAttribute {
     fn verify(&self, _tab: &SymbolTab, _log: &CompilerLog) -> Result<(), ()> {
+        // TODO: verify
+
         match self {
             GlobalVariableAttribute::NoMangle => Ok(()),
         }
@@ -19,6 +21,8 @@ impl ValidateHir for GlobalVariableAttribute {
 
 impl ValidateHir for GlobalVariable {
     fn verify(&self, tab: &SymbolTab, log: &CompilerLog) -> Result<(), ()> {
+        // TODO: verify
+
         for attr in &self.attributes {
             attr.verify(tab, log)?;
         }
@@ -45,6 +49,8 @@ impl ValidateHir for GlobalVariable {
 
 impl ValidateHir for LocalVariableAttribute {
     fn verify(&self, _tab: &SymbolTab, _log: &CompilerLog) -> Result<(), ()> {
+        // TODO: verify
+
         match self {
             LocalVariableAttribute::Invalid => Err(()),
         }
@@ -58,6 +64,8 @@ impl ValidateHir for LocalVariableAttribute {
 
 impl ValidateHir for LocalVariable {
     fn verify(&self, tab: &SymbolTab, log: &CompilerLog) -> Result<(), ()> {
+        // TODO: verify
+
         for attr in &self.attributes {
             attr.verify(tab, log)?;
         }
@@ -86,6 +94,8 @@ impl ValidateHir for LocalVariable {
 
 impl ValidateHir for ParameterAttribute {
     fn verify(&self, _tab: &SymbolTab, _log: &CompilerLog) -> Result<(), ()> {
+        // TODO: verify
+
         match self {
             ParameterAttribute::Invalid => Err(()),
         }
@@ -99,6 +109,8 @@ impl ValidateHir for ParameterAttribute {
 
 impl ValidateHir for Parameter {
     fn verify(&self, tab: &SymbolTab, log: &CompilerLog) -> Result<(), ()> {
+        // TODO: verify
+
         for attr in &self.attributes {
             attr.verify(tab, log)?;
         }
@@ -127,6 +139,8 @@ impl ValidateHir for Parameter {
 
 impl ValidateHir for Function {
     fn verify(&self, tab: &SymbolTab, log: &CompilerLog) -> Result<(), ()> {
+        // TODO: verify
+
         for attr in &self.attributes {
             attr.verify(tab, log)?;
         }
@@ -152,6 +166,8 @@ impl ValidateHir for Function {
 
 impl ValidateHir for Trait {
     fn verify(&self, _tab: &SymbolTab, _log: &CompilerLog) -> Result<(), ()> {
+        // TODO: verify
+
         // TODO: verify trait
         unimplemented!()
     }
@@ -164,6 +180,8 @@ impl ValidateHir for Trait {
 
 impl ValidateHir for ModuleAttribute {
     fn verify(&self, _tab: &SymbolTab, _log: &CompilerLog) -> Result<(), ()> {
+        // TODO: verify
+
         match self {
             ModuleAttribute::Invalid => Err(()),
         }
@@ -177,6 +195,8 @@ impl ValidateHir for ModuleAttribute {
 
 impl ValidateHir for Module {
     fn verify(&self, tab: &SymbolTab, log: &CompilerLog) -> Result<(), ()> {
+        // TODO: verify
+
         for attr in &self.attributes {
             attr.verify(tab, log)?;
         }
@@ -196,6 +216,8 @@ impl ValidateHir for Module {
 
 impl ValidateHir for TypeAliasDef {
     fn verify(&self, tab: &SymbolTab, log: &CompilerLog) -> Result<(), ()> {
+        // TODO: verify
+
         self.type_id.verify(tab, log)
     }
 
@@ -207,6 +229,8 @@ impl ValidateHir for TypeAliasDef {
 
 impl ValidateHir for StructAttribute {
     fn verify(&self, _tab: &SymbolTab, _log: &CompilerLog) -> Result<(), ()> {
+        // TODO: verify
+
         match self {
             StructAttribute::Packed => Ok(()),
         }
@@ -220,6 +244,8 @@ impl ValidateHir for StructAttribute {
 
 impl ValidateHir for StructFieldAttribute {
     fn verify(&self, _tab: &SymbolTab, _log: &CompilerLog) -> Result<(), ()> {
+        // TODO: verify
+
         match self {
             StructFieldAttribute::Invalid => Err(()),
         }
@@ -233,6 +259,8 @@ impl ValidateHir for StructFieldAttribute {
 
 impl ValidateHir for StructField {
     fn verify(&self, tab: &SymbolTab, log: &CompilerLog) -> Result<(), ()> {
+        // TODO: verify
+
         for attr in &self.attributes {
             attr.verify(tab, log)?;
         }
@@ -260,6 +288,8 @@ impl ValidateHir for StructField {
 
 impl ValidateHir for StructDef {
     fn verify(&self, tab: &SymbolTab, log: &CompilerLog) -> Result<(), ()> {
+        // TODO: verify
+
         for attr in &self.attributes {
             attr.verify(tab, log)?;
         }
@@ -279,6 +309,8 @@ impl ValidateHir for StructDef {
 
 impl ValidateHir for EnumAttribute {
     fn verify(&self, _tab: &SymbolTab, _log: &CompilerLog) -> Result<(), ()> {
+        // TODO: verify
+
         match self {
             EnumAttribute::Invalid => Err(()),
         }
@@ -292,6 +324,8 @@ impl ValidateHir for EnumAttribute {
 
 impl ValidateHir for EnumVariantAttribute {
     fn verify(&self, _tab: &SymbolTab, _log: &CompilerLog) -> Result<(), ()> {
+        // TODO: verify
+
         match self {
             EnumVariantAttribute::Invalid => Err(()),
         }
@@ -305,6 +339,8 @@ impl ValidateHir for EnumVariantAttribute {
 
 impl ValidateHir for EnumVariant {
     fn verify(&self, tab: &SymbolTab, log: &CompilerLog) -> Result<(), ()> {
+        // TODO: verify
+
         for attr in &self.attributes {
             attr.verify(tab, log)?;
         }
@@ -320,6 +356,8 @@ impl ValidateHir for EnumVariant {
 
 impl ValidateHir for EnumDef {
     fn verify(&self, tab: &SymbolTab, log: &CompilerLog) -> Result<(), ()> {
+        // TODO: verify
+
         for expr in self.variant_extras.iter().flatten() {
             expr.borrow().verify(tab, log)?;
         }
@@ -343,6 +381,8 @@ impl ValidateHir for EnumDef {
 
 impl ValidateHir for Item {
     fn verify(&self, tab: &SymbolTab, log: &CompilerLog) -> Result<(), ()> {
+        // TODO: verify
+
         match self {
             Item::Module(id) => id.borrow().verify(tab, log),
             Item::GlobalVariable(id) => id.borrow().verify(tab, log),

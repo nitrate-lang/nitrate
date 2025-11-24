@@ -4,6 +4,8 @@ use nitrate_hir::{SymbolTab, prelude::*};
 
 impl ValidateHir for Block {
     fn verify(&self, tab: &SymbolTab, log: &CompilerLog) -> Result<(), ()> {
+        // TODO: verify
+
         for (i, elem) in self.elements.iter().enumerate() {
             let is_last = i == self.elements.len() - 1;
 
@@ -35,6 +37,8 @@ impl ValidateHir for Block {
 
 impl ValidateHir for Value {
     fn verify(&self, _tab: &SymbolTab, _log: &CompilerLog) -> Result<(), ()> {
+        // TODO: verify
+
         match self {
             Value::Unit
             | Value::Bool(_)
