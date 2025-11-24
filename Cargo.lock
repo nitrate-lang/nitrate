@@ -801,6 +801,7 @@ dependencies = [
  "nitrate_hir",
  "nitrate_hir_dump",
  "nitrate_hir_get_type",
+ "nitrate_nstring",
 ]
 
 [[package]]

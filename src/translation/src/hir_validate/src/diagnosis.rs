@@ -3,11 +3,14 @@ use std::ops::Deref;
 use nitrate_diagnosis::{DiagnosticGroupId, FormattableDiagnosticGroup};
 use nitrate_hir::{TraitId, TypeId};
 use nitrate_hir_dump::Dump;
+use nitrate_nstring::NString;
 
 pub(crate) enum Issue {
     TypeDoesNotImplementTrait { type_id: TypeId, trait_id: TraitId },
     TypeMismatch { expected: TypeId, found: TypeId },
     UnsupportedAlignment { alignment: u32, max_supported: u32 },
+    UninferredTypeResidue,
+    FunctionTypeDuplicateParameterName { name: NString, function: TypeId },
 }
 
 impl FormattableDiagnosticGroup for Issue {
@@ -20,6 +23,8 @@ impl FormattableDiagnosticGroup for Issue {
             Issue::TypeDoesNotImplementTrait { .. } => 0,
             Issue::TypeMismatch { .. } => 1,
             Issue::UnsupportedAlignment { .. } => 2,
+            Issue::UninferredTypeResidue => 3,
+            Issue::FunctionTypeDuplicateParameterName { .. } => 4,
         }
     }
 
@@ -58,6 +63,24 @@ impl FormattableDiagnosticGroup for Issue {
                 let message = format!(
                     "Unsupported alignment: {} bytes. Maximum supported alignment is {} bytes.",
                     alignment, max_supported
+                );
+
+                nitrate_diagnosis::DiagnosticInfo {
+                    origin: nitrate_diagnosis::Origin::Unknown,
+                    message,
+                }
+            }
+
+            Issue::UninferredTypeResidue => nitrate_diagnosis::DiagnosticInfo {
+                origin: nitrate_diagnosis::Origin::Unknown,
+                message: "Type residue was not inferred correctly.".to_string(),
+            },
+
+            Issue::FunctionTypeDuplicateParameterName { name, function } => {
+                let message = format!(
+                    "Function type {:?} has duplicate parameter name: '{}'.",
+                    function.deref().to_string(),
+                    name
                 );
 
                 nitrate_diagnosis::DiagnosticInfo {

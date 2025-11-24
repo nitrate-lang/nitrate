@@ -1,8 +1,52 @@
-use std::ops::Deref;
+use std::{collections::HashSet, ops::Deref};
 
-use crate::{ValidHir, ValidateHirItem, ValidateHirType, ValidateTypeOptions};
+use crate::{
+    ValidHir, ValidateHirItem, ValidateHirType, ValidateTypeOptions, diagnosis::Issue,
+    establish_property,
+};
 use nitrate_diagnosis::CompilerLog;
 use nitrate_hir::{SymbolTab, prelude::*};
+
+fn verify_array(
+    element_type: &Type,
+    _len: u32,
+    tab: &SymbolTab,
+    log: &CompilerLog,
+    _options: &ValidateTypeOptions,
+) -> Result<(), ()> {
+    element_type.verify(tab, log, &ValidateTypeOptions::sized())?;
+    Ok(())
+}
+
+fn verify_tuple(
+    element_types: &[TypeId],
+    tab: &SymbolTab,
+    log: &CompilerLog,
+    _options: &ValidateTypeOptions,
+) -> Result<(), ()> {
+    for elem_type in element_types {
+        elem_type.verify(tab, log, &ValidateTypeOptions::sized())?;
+    }
+
+    Ok(())
+}
+
+fn verify_refinement_type(
+    base: &Type,
+    min: &LiteralId,
+    max: &LiteralId,
+    tab: &SymbolTab,
+    log: &CompilerLog,
+    options: &ValidateTypeOptions,
+) -> Result<(), ()> {
+    base.verify(tab, log, options)?;
+
+    if min.deref() > max.deref() {
+        return Err(());
+    }
+
+    Ok(())
+}
 
 impl ValidateHirType for FunctionAttribute {
     fn verify(
@@ -11,8 +55,6 @@ impl ValidateHirType for FunctionAttribute {
         _log: &CompilerLog,
         _options: &ValidateTypeOptions,
     ) -> Result<(), ()> {
-        // TODO: verify
-
         match self {
             FunctionAttribute::CVariadic => Ok(()),
             FunctionAttribute::NoMangle => Ok(()),
@@ -37,17 +79,39 @@ impl ValidateHirType for FunctionType {
         log: &CompilerLog,
         options: &ValidateTypeOptions,
     ) -> Result<(), ()> {
-        // TODO: verify
-
         for attr in &self.attributes {
             attr.verify(tab, log, options)?;
         }
 
-        self.return_type.verify(tab, log, options)?;
-
         for param in &self.params {
             param.1.verify(tab, log, options)?;
         }
+
+        establish_property("parameter name uniqueness", || {
+            let mut names = HashSet::new();
+
+            for param in &self.params {
+                if !names.insert(&param.0) {
+                    let function = Type::Function {
+                        function_type: Box::new(self.clone()),
+                    };
+
+                    log.report(&Issue::FunctionTypeDuplicateParameterName {
+                        name: param.0.clone(),
+                        function: function.into(),
+                    });
+
+                    return Err(());
+                }
+            }
+
+            Ok(())
+        })?;
+
+        establish_property("return_type: Sized", || {
+            self.return_type
+                .verify(tab, log, &ValidateTypeOptions::sized())
+        })?;
 
         Ok(())
     }
@@ -63,6 +127,56 @@ impl ValidateHirType for FunctionType {
     }
 }
 
+fn verify_reference_type(
+    lifetime: &Lifetime,
+    _exclusive: bool,
+    _mutable: bool,
+    to: &Type,
+    tab: &SymbolTab,
+    log: &CompilerLog,
+    options: &ValidateTypeOptions,
+) -> Result<(), ()> {
+    match lifetime {
+        Lifetime::Static | Lifetime::Gc | Lifetime::ThreadLocal | Lifetime::TaskLocal => {}
+
+        Lifetime::Inferred => return Err(()),
+    }
+
+    // FIXME: Infinite recursion for self-referential types
+    to.verify(tab, log, options)
+}
+
+fn verify_slice_reference_type(
+    lifetime: &Lifetime,
+    _exclusive: bool,
+    _mutable: bool,
+    element_type: &Type,
+    tab: &SymbolTab,
+    log: &CompilerLog,
+    options: &ValidateTypeOptions,
+) -> Result<(), ()> {
+    match lifetime {
+        Lifetime::Static | Lifetime::Gc | Lifetime::ThreadLocal | Lifetime::TaskLocal => {}
+
+        Lifetime::Inferred => return Err(()),
+    }
+
+    // FIXME: Infinite recursion for self-referential types
+    element_type.verify(tab, log, options)
+}
+
+fn verify_pointer_type(
+    to: &Type,
+    _exclusive: bool,
+    _mutable: bool,
+    tab: &SymbolTab,
+    log: &CompilerLog,
+    options: &ValidateTypeOptions,
+) -> Result<(), ()> {
+    // FIXME: Infinite recursion for self-referential types
+    to.verify(tab, log, options)
+}
+
 impl ValidateHirType for Type {
     fn verify(
         &self,
@@ -70,8 +184,6 @@ impl ValidateHirType for Type {
         log: &CompilerLog,
         options: &ValidateTypeOptions,
     ) -> Result<(), ()> {
-        // TODO: verify
-
         match self {
             Type::Never
             | Type::Unit
@@ -90,15 +202,11 @@ impl ValidateHirType for Type {
             | Type::F32
             | Type::F64 => Ok(()),
 
-            Type::Array { element_type, .. } => element_type.verify(tab, log, options),
-
-            Type::Tuple { element_types } => {
-                for elem_type in element_types {
-                    elem_type.verify(tab, log, options)?;
-                }
-
-                Ok(())
+            Type::Array { element_type, len } => {
+                verify_array(element_type, *len, tab, log, options)
             }
+
+            Type::Tuple { element_types } => verify_tuple(element_types, tab, log, options),
 
             Type::Struct { def } => def.borrow().verify(tab, log),
 
@@ -107,58 +215,43 @@ impl ValidateHirType for Type {
             Type::TypeAlias { def } => def.borrow().verify(tab, log),
 
             Type::Refine { base, min, max } => {
-                base.verify(tab, log, options)?;
-
-                let min = min.deref();
-                let max = max.deref();
-
-                if min > max {
-                    return Err(());
-                }
-
-                Ok(())
+                verify_refinement_type(base, min, max, tab, log, options)
             }
 
             Type::Function { function_type } => function_type.verify(tab, log, options),
 
-            Type::Reference { lifetime, to, .. } => {
-                match lifetime {
-                    Lifetime::Static
-                    | Lifetime::Gc
-                    | Lifetime::ThreadLocal
-                    | Lifetime::TaskLocal => {}
-
-                    Lifetime::Inferred => return Err(()),
-                }
-
-                // FIXME: Infinite recursion for self-referential types
-                to.verify(tab, log, options)
-            }
+            Type::Reference {
+                lifetime,
+                exclusive,
+                mutable,
+                to,
+            } => verify_reference_type(lifetime, *exclusive, *mutable, to, tab, log, options),
 
             Type::SliceRef {
                 lifetime,
+                exclusive,
+                mutable,
                 element_type,
-                ..
-            } => {
-                match lifetime {
-                    Lifetime::Static
-                    | Lifetime::Gc
-                    | Lifetime::ThreadLocal
-                    | Lifetime::TaskLocal => {}
+            } => verify_slice_reference_type(
+                lifetime,
+                *exclusive,
+                *mutable,
+                element_type,
+                tab,
+                log,
+                options,
+            ),
 
-                    Lifetime::Inferred => return Err(()),
-                }
+            Type::Pointer {
+                to,
+                exclusive,
+                mutable,
+            } => verify_pointer_type(to, *exclusive, *mutable, tab, log, options),
 
-                // FIXME: Infinite recursion for self-referential types
-                element_type.verify(tab, log, options)
+            Type::InferredFloat | Type::InferredInteger | Type::Inferred { .. } => {
+                log.report(&Issue::UninferredTypeResidue);
+                Err(())
             }
-
-            Type::Pointer { to, .. } => {
-                // FIXME: Infinite recursion for self-referential types
-                to.verify(tab, log, options)
-            }
-
-            Type::InferredFloat | Type::InferredInteger | Type::Inferred { .. } => Err(()),
         }
     }
 
