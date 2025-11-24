@@ -2,14 +2,12 @@ use nitrate_hir::{SymbolTab, prelude::*};
 use nitrate_nstring::NString;
 use nitrate_tree::ast::SymbolKind;
 use nitrate_tree_resolve::ImportContext;
-use std::cell::RefCell;
 use std::collections::{HashMap, HashSet};
 use std::num::NonZeroU32;
 use std::ops::Deref;
 
 #[derive(Debug)]
 pub struct Ast2HirCtx {
-    pub store: Store,
     pub tab: SymbolTab,
 
     pub(crate) ast_symbol_map: HashMap<NString, SymbolKind>,
@@ -26,7 +24,6 @@ impl Ast2HirCtx {
     pub fn new(ptr_size: PtrSize, import_ctx: ImportContext) -> Self {
         Self {
             ast_symbol_map: HashMap::new(),
-            store: Store::new(),
             tab: SymbolTab::default(),
             current_scope: Vec::new(),
             _impl_map: HashMap::new(),
@@ -58,10 +55,10 @@ impl Ast2HirCtx {
         let mut found: Option<FunctionId> = None;
 
         for trait_id in trait_set {
-            let trait_def = &self[trait_id].borrow();
+            let trait_def = &trait_id.borrow();
 
             for method_id in &trait_def.methods {
-                let method_def = &self[method_id].borrow();
+                let method_def = &method_id.borrow();
 
                 if method_def.name.deref() == method_name {
                     if found.is_some() {
@@ -107,117 +104,5 @@ impl Ast2HirCtx {
 
         qualified.push_str(item_name);
         qualified
-    }
-}
-
-impl std::ops::Index<&TypeId> for Ast2HirCtx {
-    type Output = Type;
-
-    fn index(&self, index: &TypeId) -> &Self::Output {
-        &self.store[index]
-    }
-}
-
-impl std::ops::Index<&FunctionTypeId> for Ast2HirCtx {
-    type Output = FunctionType;
-
-    fn index(&self, index: &FunctionTypeId) -> &Self::Output {
-        &self.store[index]
-    }
-}
-
-impl std::ops::Index<&GlobalVariableId> for Ast2HirCtx {
-    type Output = RefCell<GlobalVariable>;
-
-    fn index(&self, index: &GlobalVariableId) -> &Self::Output {
-        &self.store[index]
-    }
-}
-
-impl std::ops::Index<&LocalVariableId> for Ast2HirCtx {
-    type Output = RefCell<LocalVariable>;
-
-    fn index(&self, index: &LocalVariableId) -> &Self::Output {
-        &self.store[index]
-    }
-}
-
-impl std::ops::Index<&ParameterId> for Ast2HirCtx {
-    type Output = RefCell<Parameter>;
-
-    fn index(&self, index: &ParameterId) -> &Self::Output {
-        &self.store[index]
-    }
-}
-
-impl std::ops::Index<&FunctionId> for Ast2HirCtx {
-    type Output = RefCell<Function>;
-
-    fn index(&self, index: &FunctionId) -> &Self::Output {
-        &self.store[index]
-    }
-}
-
-impl std::ops::Index<&TraitId> for Ast2HirCtx {
-    type Output = RefCell<Trait>;
-
-    fn index(&self, index: &TraitId) -> &Self::Output {
-        &self.store[index]
-    }
-}
-
-impl std::ops::Index<&ModuleId> for Ast2HirCtx {
-    type Output = RefCell<Module>;
-
-    fn index(&self, index: &ModuleId) -> &Self::Output {
-        &self.store[index]
-    }
-}
-
-impl std::ops::Index<&TypeAliasDefId> for Ast2HirCtx {
-    type Output = RefCell<TypeAliasDef>;
-
-    fn index(&self, index: &TypeAliasDefId) -> &Self::Output {
-        &self.store[index]
-    }
-}
-
-impl std::ops::Index<&StructDefId> for Ast2HirCtx {
-    type Output = RefCell<StructDef>;
-
-    fn index(&self, index: &StructDefId) -> &Self::Output {
-        &self.store[index]
-    }
-}
-
-impl std::ops::Index<&EnumDefId> for Ast2HirCtx {
-    type Output = RefCell<EnumDef>;
-
-    fn index(&self, index: &EnumDefId) -> &Self::Output {
-        &self.store[index]
-    }
-}
-
-impl std::ops::Index<&ValueId> for Ast2HirCtx {
-    type Output = RefCell<Value>;
-
-    fn index(&self, index: &ValueId) -> &Self::Output {
-        &self.store[index]
-    }
-}
-
-impl std::ops::Index<&LiteralId> for Ast2HirCtx {
-    type Output = Lit;
-
-    fn index(&self, index: &LiteralId) -> &Self::Output {
-        &self.store[index]
-    }
-}
-
-impl std::ops::Index<&BlockId> for Ast2HirCtx {
-    type Output = RefCell<Block>;
-
-    fn index(&self, index: &BlockId) -> &Self::Output {
-        &self.store[index]
     }
 }

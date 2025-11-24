@@ -2,7 +2,7 @@ use crate::{Interpreter, InterpreterError, package::Package};
 use clap::Parser;
 use nitrate_diagnosis::{CompilerLog, intern_file_id};
 use nitrate_translation::{
-    hir::{prelude as hir, using_storage},
+    hir::{Store, prelude as hir, using_storage},
     hir_dump::{Dump, DumpContext},
     hir_from_tree::{Ast2HirCtx, convert_ast_to_hir},
     hir_validate::ValidateHir,
@@ -242,7 +242,7 @@ impl Interpreter<'_> {
         package_name: &str,
         source_filepath: &std::path::Path,
         log: &CompilerLog,
-    ) -> Result<(hir::Module, hir::Store, hir::SymbolTab), InterpreterError> {
+    ) -> Result<(hir::Module, hir::SymbolTab), InterpreterError> {
         let ptr_size = match ptr_size {
             4 => hir::PtrSize::U32,
             8 => hir::PtrSize::U64,
@@ -259,7 +259,7 @@ impl Interpreter<'_> {
             Ok(module) => module,
         };
 
-        Ok((module, ctx.store, ctx.tab))
+        Ok((module, ctx.tab))
     }
 
     pub(crate) fn sc_build(&mut self, args: BuildArgs) -> Result<(), InterpreterError> {
@@ -278,15 +278,17 @@ impl Interpreter<'_> {
         let llvm_ctx = self.get_llvm_context(args.target, package.optimization_level())?;
         let ptr_size = llvm_ctx.target_data.get_pointer_byte_size(None);
 
-        let (hir_module, store, symbol_tab) = self.lower_to_hir(
-            ast_module,
-            ptr_size,
-            package.name(),
-            &package.entrypoint(),
-            &log,
-        )?;
+        let store = Store::new();
 
         using_storage(&store, || {
+            let (hir_module, symbol_tab) = self.lower_to_hir(
+                ast_module,
+                ptr_size,
+                package.name(),
+                &package.entrypoint(),
+                &log,
+            )?;
+
             if args.show_hir {
                 hir_module.dump(&mut DumpContext::new(&store), &mut std::io::stdout())?;
                 return Ok(());

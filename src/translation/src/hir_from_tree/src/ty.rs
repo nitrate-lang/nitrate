@@ -167,7 +167,7 @@ impl Ast2Hir for ast::TypePath {
                         .into();
 
                         let typedef = TypeDefinition::StructDef(struct_def.clone());
-                        ctx.tab.add_type(typedef, &ctx.store);
+                        ctx.tab.add_type(typedef);
 
                         return Ok(Type::Struct { def: struct_def });
                     }
@@ -191,7 +191,7 @@ impl Ast2Hir for ast::TypePath {
                         .into();
 
                         let typedef = TypeDefinition::EnumDef(enum_def.clone());
-                        ctx.tab.add_type(typedef, &ctx.store);
+                        ctx.tab.add_type(typedef);
 
                         return Ok(Type::Enum { def: enum_def });
                     }
@@ -199,8 +199,8 @@ impl Ast2Hir for ast::TypePath {
 
                 Some(SymbolKind::TypeAlias) => match ctx.tab.get_type_alias(&resolved_path) {
                     Some(existing_type_alias_def_id) => {
-                        let type_id = ctx.store[existing_type_alias_def_id].borrow().type_id;
-                        return Ok(ctx.store[&type_id].clone());
+                        let type_id = existing_type_alias_def_id.borrow().type_id;
+                        return Ok(type_id.deref().clone());
                     }
 
                     None => {
@@ -212,7 +212,7 @@ impl Ast2Hir for ast::TypePath {
                         .into();
 
                         let typedef = TypeDefinition::TypeAliasDef(type_alias_def.clone());
-                        ctx.tab.add_type(typedef, &ctx.store);
+                        ctx.tab.add_type(typedef);
 
                         return Ok(Type::TypeAlias {
                             def: type_alias_def,
@@ -276,7 +276,7 @@ impl Ast2Hir for ast::ArrayType {
             target_type: Type::USize.into(),
         };
 
-        let mut eval = HirEvalCtx::new(&ctx.store, log, ctx.ptr_size);
+        let mut eval = HirEvalCtx::new(log, ctx.ptr_size);
         let len = match eval.evaluate_to_literal(&hir_length) {
             Ok(Lit::USize32(val)) => {
                 if ctx.ptr_size != PtrSize::U32 {

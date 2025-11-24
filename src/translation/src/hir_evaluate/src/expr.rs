@@ -1,7 +1,7 @@
 use crate::{HirEvaluate, Unwind};
 use nitrate_hir::prelude::*;
 use ordered_float::OrderedFloat;
-use std::ops::{Add, BitAnd, BitOr, BitXor, Div, Mul, Neg, Not, Rem, Shl, Shr, Sub};
+use std::ops::{Add, BitAnd, BitOr, BitXor, Deref, Div, Mul, Neg, Not, Rem, Shl, Shr, Sub};
 
 enum CastLitBridge {
     Unit,
@@ -187,7 +187,7 @@ impl HirEvaluate for BlockElement {
 
     fn evaluate(&self, ctx: &mut crate::HirEvalCtx) -> Result<Self::Output, crate::Unwind> {
         match self {
-            BlockElement::Expr(expr) => ctx.store[expr].borrow().evaluate(ctx),
+            BlockElement::Expr(expr) => expr.borrow().evaluate(ctx),
 
             BlockElement::Local(_local) => {
                 // TODO: handle local variable declarations
@@ -255,11 +255,7 @@ impl HirEvaluate for Value {
             } => {
                 let mut fields = fields.to_owned();
                 for (_, field_value) in &mut fields {
-                    let eval_value = ctx.store[field_value as &ValueId]
-                        .borrow()
-                        .evaluate(ctx)?
-                        .into();
-
+                    let eval_value = field_value.borrow().evaluate(ctx)?.into();
                     *field_value = eval_value;
                 }
 
@@ -274,7 +270,7 @@ impl HirEvaluate for Value {
                 variant,
                 value,
             } => {
-                let evaluated_value = ctx.store[value].borrow().evaluate(ctx)?.into();
+                let evaluated_value = value.borrow().evaluate(ctx)?.into();
 
                 Ok(Value::EnumVariant {
                     enum_path: enum_type.clone(),
@@ -284,11 +280,11 @@ impl HirEvaluate for Value {
             }
 
             Value::Binary { left, op, right } => {
-                let left = Lit::try_from(ctx.store[left].borrow().evaluate(ctx)?)
-                    .map_err(|_| Unwind::TypeError)?;
+                let left =
+                    Lit::try_from(left.borrow().evaluate(ctx)?).map_err(|_| Unwind::TypeError)?;
 
-                let right = Lit::try_from(ctx.store[right].borrow().evaluate(ctx)?)
-                    .map_err(|_| Unwind::TypeError)?;
+                let right =
+                    Lit::try_from(right.borrow().evaluate(ctx)?).map_err(|_| Unwind::TypeError)?;
 
                 match op {
                     BinaryOp::Add => match left.add(right) {
@@ -398,8 +394,8 @@ impl HirEvaluate for Value {
             }
 
             Value::Unary { op, operand: expr } => {
-                let operand = Lit::try_from(ctx.store[expr].borrow().evaluate(ctx)?)
-                    .map_err(|_| Unwind::TypeError)?;
+                let operand =
+                    Lit::try_from(expr.borrow().evaluate(ctx)?).map_err(|_| Unwind::TypeError)?;
 
                 match op {
                     UnaryOp::Add => Ok(operand.into()),
@@ -419,10 +415,10 @@ impl HirEvaluate for Value {
             Value::FieldAccess {
                 expr,
                 field_name: field,
-            } => match ctx.store[expr].borrow().evaluate(ctx)? {
+            } => match expr.borrow().evaluate(ctx)? {
                 Value::StructObject { fields, .. } => {
                     if let Some((_, field_value)) = fields.iter().find(|x| &x.0 == field) {
-                        Ok(ctx.store[field_value].borrow().evaluate(ctx)?)
+                        Ok(field_value.borrow().evaluate(ctx)?)
                     } else {
                         Err(Unwind::TypeError)
                     }
@@ -454,11 +450,11 @@ impl HirEvaluate for Value {
                 value: expr,
                 target_type: to,
             } => {
-                let expr = ctx.store[expr].borrow().evaluate(ctx)?;
+                let expr = expr.borrow().evaluate(ctx)?;
 
                 if expr.is_literal() {
                     let bridge = CastLitBridge::try_from(expr).expect("into cast bridge");
-                    let result = match &ctx.store[to] {
+                    let result = match to.deref() {
                         Type::Unit => bridge.to_unit(),
                         Type::U8 => bridge.to_u8(),
                         Type::U16 => bridge.to_u16(),
@@ -512,12 +508,12 @@ impl HirEvaluate for Value {
                 condition,
                 true_branch,
                 false_branch,
-            } => match ctx.store[condition].borrow().evaluate(ctx)? {
-                Value::Bool(true) => ctx.store[true_branch].borrow().evaluate(ctx),
+            } => match condition.borrow().evaluate(ctx)? {
+                Value::Bool(true) => true_branch.borrow().evaluate(ctx),
 
                 Value::Bool(false) => {
                     if let Some(false_branch) = false_branch {
-                        ctx.store[false_branch].borrow().evaluate(ctx)
+                        false_branch.borrow().evaluate(ctx)
                     } else {
                         Ok(Value::Unit)
                     }
@@ -527,12 +523,12 @@ impl HirEvaluate for Value {
             },
 
             Value::While { condition, body } => {
-                while let Value::Bool(true) = ctx.store[condition].borrow().evaluate(ctx)? {
+                while let Value::Bool(true) = condition.borrow().evaluate(ctx)? {
                     if ctx.loop_iter_count >= ctx.loop_iter_limit {
                         return Err(Unwind::LoopLimitExceeded);
                     }
 
-                    ctx.store[body].borrow().evaluate(ctx)?;
+                    body.borrow().evaluate(ctx)?;
                     ctx.loop_iter_count += 1;
                 }
 
@@ -544,7 +540,7 @@ impl HirEvaluate for Value {
                     return Err(Unwind::LoopLimitExceeded);
                 }
 
-                ctx.store[body].borrow().evaluate(ctx)?;
+                body.borrow().evaluate(ctx)?;
                 ctx.loop_iter_count += 1;
             },
 
@@ -557,11 +553,11 @@ impl HirEvaluate for Value {
             }),
 
             Value::Return { value } => {
-                let value = ctx.store[value].borrow().evaluate(ctx)?;
+                let value = value.borrow().evaluate(ctx)?;
                 Err(Unwind::Return(value))
             }
 
-            Value::Block { block } => ctx.store[block].borrow().evaluate(ctx),
+            Value::Block { block } => block.borrow().evaluate(ctx),
 
             Value::Closure {
                 captures: _,

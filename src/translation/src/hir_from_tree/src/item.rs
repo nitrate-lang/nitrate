@@ -43,13 +43,13 @@ fn ast_typealias2hir(
     };
 
     if let Some(existing_type_alias_def_id) = ctx.tab.get_type_alias(&type_alias.name) {
-        let mut existing_type_alias_def = ctx.store[existing_type_alias_def_id].borrow_mut();
+        let mut existing_type_alias_def = existing_type_alias_def_id.borrow_mut();
         *existing_type_alias_def = type_alias;
         Ok(existing_type_alias_def_id.clone())
     } else {
         let type_alias_def_id: TypeAliasDefId = type_alias.into();
         let typedef = TypeDefinition::TypeAliasDef(type_alias_def_id.clone());
-        ctx.tab.add_type(typedef, &ctx.store);
+        ctx.tab.add_type(typedef);
         Ok(type_alias_def_id)
     }
 }
@@ -125,13 +125,13 @@ fn ast_structdef2hir(
     };
 
     if let Some(existing_struct_def_id) = ctx.tab.get_struct(&struct_def.name) {
-        let mut existing_struct_def = ctx.store[existing_struct_def_id].borrow_mut();
+        let mut existing_struct_def = existing_struct_def_id.borrow_mut();
         *existing_struct_def = struct_def;
         Ok(existing_struct_def_id.clone())
     } else {
         let struct_def_id: StructDefId = struct_def.into();
         let typedef = TypeDefinition::StructDef(struct_def_id.clone());
-        ctx.tab.add_type(typedef, &ctx.store);
+        ctx.tab.add_type(typedef);
         Ok(struct_def_id)
     }
 }
@@ -202,13 +202,13 @@ fn ast_enumdef2hir(
     };
 
     if let Some(existing_enum_def_id) = ctx.tab.get_enum(&enum_def.name) {
-        let mut existing_enum_def = ctx.store[existing_enum_def_id].borrow_mut();
+        let mut existing_enum_def = existing_enum_def_id.borrow_mut();
         *existing_enum_def = enum_def;
         Ok(existing_enum_def_id.clone())
     } else {
         let enum_def_id: EnumDefId = enum_def.into();
         let typedef = TypeDefinition::EnumDef(enum_def_id.clone());
-        ctx.tab.add_type(typedef, &ctx.store);
+        ctx.tab.add_type(typedef);
         Ok(enum_def_id)
     }
 }
@@ -286,12 +286,12 @@ fn ast_globalvar2hir(
     };
 
     if let Some(existing_global_id) = ctx.tab.get_global_variable(&global_variable.name) {
-        let mut existing_global_variable = ctx.store[existing_global_id].borrow_mut();
+        let mut existing_global_variable = existing_global_id.borrow_mut();
         *existing_global_variable = global_variable;
         Ok(existing_global_id.clone())
     } else {
         let variable_id: GlobalVariableId = global_variable.into();
-        ctx.tab.add_global_variable(variable_id.clone(), &ctx.store);
+        ctx.tab.add_global_variable(variable_id.clone());
         Ok(variable_id)
     }
 }
@@ -330,7 +330,7 @@ fn ast_funcparam2hir(
     }
     .into();
 
-    ctx.tab.add_parameter(parameter_id.clone(), &ctx.store);
+    ctx.tab.add_parameter(parameter_id.clone());
 
     Ok(parameter_id)
 }
@@ -405,9 +405,9 @@ fn ast_function2hir(
         Some(block) => {
             let mut hir_block = block.ast2hir(ctx, log)?;
             match hir_block.elements.last() {
-                Some(BlockElement::Expr(expr)) if ctx.store[expr].borrow().is_return() => {}
+                Some(BlockElement::Expr(expr)) if expr.borrow().is_return() => {}
 
-                Some(BlockElement::Expr(expr)) if !ctx.store[expr].borrow().is_return() => {
+                Some(BlockElement::Expr(expr)) if !expr.borrow().is_return() => {
                     *hir_block.elements.last_mut().unwrap() = BlockElement::Expr(
                         Value::Return {
                             value: expr.to_owned(),
@@ -445,12 +445,12 @@ fn ast_function2hir(
     };
 
     if let Some(existing_function_id) = ctx.tab.get_function(&name) {
-        let mut existing_function = ctx.store[existing_function_id].borrow_mut();
+        let mut existing_function = existing_function_id.borrow_mut();
         *existing_function = function;
         Ok(existing_function_id.clone())
     } else {
         let function_id: FunctionId = function.into();
-        ctx.tab.add_function(function_id.clone(), &ctx.store);
+        ctx.tab.add_function(function_id.clone());
         Ok(function_id)
     }
 }

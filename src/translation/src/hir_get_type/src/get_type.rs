@@ -1,3 +1,5 @@
+use std::ops::Deref;
+
 use nitrate_hir::prelude::*;
 
 #[derive(Debug)]
@@ -14,11 +16,11 @@ pub enum TypeInferenceError {
 }
 
 pub trait HirGetType {
-    fn get_type(&self, store: &Store, tab: &SymbolTab) -> Result<Type, TypeInferenceError>;
+    fn get_type(&self, tab: &SymbolTab) -> Result<Type, TypeInferenceError>;
 }
 
 impl HirGetType for Lit {
-    fn get_type(&self, _store: &Store, _tab: &SymbolTab) -> Result<Type, TypeInferenceError> {
+    fn get_type(&self, _tab: &SymbolTab) -> Result<Type, TypeInferenceError> {
         match self {
             Lit::Unit => Ok(Type::Unit),
             Lit::Bool(_) => Ok(Type::Bool),
@@ -41,16 +43,16 @@ impl HirGetType for Lit {
 }
 
 impl HirGetType for Block {
-    fn get_type(&self, store: &Store, tab: &SymbolTab) -> Result<Type, TypeInferenceError> {
+    fn get_type(&self, tab: &SymbolTab) -> Result<Type, TypeInferenceError> {
         match self.elements.last() {
-            Some(BlockElement::Expr(last)) => store[last].borrow().get_type(store, tab),
+            Some(BlockElement::Expr(last)) => last.borrow().get_type(tab),
             Some(BlockElement::Local(_)) | None => Ok(Type::Unit),
         }
     }
 }
 
 impl HirGetType for Value {
-    fn get_type(&self, store: &Store, tab: &SymbolTab) -> Result<Type, TypeInferenceError> {
+    fn get_type(&self, tab: &SymbolTab) -> Result<Type, TypeInferenceError> {
         match self {
             Value::Unit => Ok(Type::Unit),
             Value::Bool(_) => Ok(Type::Bool),
@@ -108,10 +110,10 @@ impl HirGetType for Value {
             } => match tab.get_enum(enum_path) {
                 None => return Err(TypeInferenceError::UnresolvedSymbol),
                 Some(enum_def) => {
-                    let enum_def = &store[enum_def].borrow();
+                    let enum_def = enum_def.borrow();
                     let found = enum_def.variants.iter().find(|x| &x.name == variant);
                     match found {
-                        Some(variant) => Ok(store[&variant.ty].clone()),
+                        Some(variant) => Ok(variant.ty.deref().clone()),
                         None => Err(TypeInferenceError::EnumVariantNotPresent),
                     }
                 }
@@ -125,10 +127,10 @@ impl HirGetType for Value {
                 | BinaryOp::Mod
                 | BinaryOp::And
                 | BinaryOp::Or
-                | BinaryOp::Xor => Ok(store[left].borrow().get_type(store, tab)?),
+                | BinaryOp::Xor => Ok(left.borrow().get_type(tab)?),
 
                 BinaryOp::Shl | BinaryOp::Shr | BinaryOp::Rol | BinaryOp::Ror => {
-                    Ok(store[left].borrow().get_type(store, tab)?)
+                    Ok(left.borrow().get_type(tab)?)
                 }
 
                 BinaryOp::LogicAnd
@@ -142,19 +144,17 @@ impl HirGetType for Value {
             },
 
             Value::Unary { op, operand: expr } => match op {
-                UnaryOp::Add | UnaryOp::Sub | UnaryOp::Not => {
-                    store[expr].borrow().get_type(store, tab)
-                }
+                UnaryOp::Add | UnaryOp::Sub | UnaryOp::Not => expr.borrow().get_type(tab),
             },
 
             Value::FieldAccess { expr, field_name } => {
-                let expr = &store[expr].borrow();
+                let expr = expr.borrow();
 
-                if let Type::Struct { def } = expr.get_type(store, tab)? {
-                    let struct_def = &store[&def].borrow();
+                if let Type::Struct { def } = expr.get_type(tab)? {
+                    let struct_def = &def.borrow();
                     let found_field = struct_def.fields.get(field_name);
                     if let Some(field) = found_field {
-                        return Ok(store[&field.ty].clone());
+                        return Ok(field.ty.deref().clone());
                     } else {
                         return Err(TypeInferenceError::StructMissingField);
                     }
@@ -166,12 +166,12 @@ impl HirGetType for Value {
             Value::Assign { place: _, value: _ } => Ok(Type::Unit),
 
             Value::Deref { place } => {
-                let place = &store[place].borrow();
-                let place_type = place.get_type(store, tab)?;
+                let place = place.borrow();
+                let place_type = place.get_type(tab)?;
 
                 match place_type {
                     Type::Reference { to, .. } | Type::Pointer { to, .. } => {
-                        return Ok((&store[&to]).clone());
+                        return Ok((*to).clone());
                     }
 
                     _ => Err(TypeInferenceError::CannotDeref),
@@ -180,15 +180,15 @@ impl HirGetType for Value {
 
             Value::Cast {
                 value: _,
-                target_type: to,
-            } => Ok((&store[to]).clone()),
+                target_type,
+            } => Ok(target_type.deref().clone()),
 
             Value::Borrow {
                 mutable,
                 exclusive,
                 place,
             } => {
-                let place_type = store[place].borrow().get_type(store, tab)?;
+                let place_type = place.borrow().get_type(tab)?;
                 Ok(Type::Reference {
                     lifetime: Lifetime::Inferred,
                     exclusive: *exclusive,
@@ -201,7 +201,7 @@ impl HirGetType for Value {
                 let element_type = if elements.is_empty() {
                     Type::Unit.into()
                 } else {
-                    elements[0].get_type(store, tab)?.into()
+                    elements[0].get_type(tab)?.into()
                 };
 
                 let array = Type::Array {
@@ -215,7 +215,7 @@ impl HirGetType for Value {
             Value::Tuple { elements } => {
                 let mut element_types = Vec::with_capacity(elements.len());
                 for elem in elements {
-                    let elem_type = elem.get_type(store, tab)?.into();
+                    let elem_type = elem.get_type(tab)?.into();
                     element_types.push(elem_type);
                 }
 
@@ -234,12 +234,12 @@ impl HirGetType for Value {
                 None => Ok(Type::Unit),
 
                 Some(false_branch) => {
-                    let true_block = store[true_branch].borrow().get_type(store, tab)?;
+                    let true_block = true_branch.borrow().get_type(tab)?;
                     if !true_block.is_diverging() {
                         return Ok(true_block);
                     }
 
-                    store[false_branch].borrow().get_type(store, tab)
+                    false_branch.borrow().get_type(tab)
                 }
             },
 
@@ -253,7 +253,7 @@ impl HirGetType for Value {
             Value::Continue { label: _ } => Ok(Type::Never),
             Value::Return { value: _ } => Ok(Type::Never),
 
-            Value::Block { block } => store[block].borrow().get_type(store, tab),
+            Value::Block { block } => block.borrow().get_type(tab),
 
             Value::Closure {
                 captures: _,
@@ -267,10 +267,9 @@ impl HirGetType for Value {
                 positional: _,
                 named: _,
             } => {
-                let callee = &store[callee].borrow();
-                if let Type::Function { function_type } = callee.get_type(store, tab)? {
-                    let func = &store[&function_type];
-                    return Ok(store[&func.return_type].clone());
+                let callee = callee.borrow();
+                if let Type::Function { function_type } = callee.get_type(tab)? {
+                    return Ok(function_type.return_type.deref().clone());
                 }
 
                 Err(TypeInferenceError::CalleeIsNotFunctionType)
@@ -282,37 +281,37 @@ impl HirGetType for Value {
                 positional: _,
                 named: _,
             } => {
-                let object = &store[object].borrow();
-                let object_type = object.get_type(store, tab)?.into();
+                let object = object.borrow();
+                let object_type = object.get_type(tab)?.into();
 
                 let method = tab
                     .get_method(&object_type, method_name)
                     .ok_or(TypeInferenceError::MethodNotFound)?;
 
-                let method = &store[method].borrow();
-                Ok(store[&method.return_type].clone())
+                let method = method.borrow();
+                Ok(method.return_type.deref().clone())
             }
 
             Value::FunctionSymbol { id } => {
-                let function = &store[id].borrow();
+                let function = id.borrow();
                 Ok(Type::Function {
-                    function_type: function.get_type(store).into(),
+                    function_type: function.get_type().into(),
                 })
             }
 
             Value::GlobalVariableSymbol { id } => {
-                let glb = &store[id].borrow();
-                Ok(store[&glb.ty].clone())
+                let glb = &id.borrow();
+                Ok(glb.ty.deref().clone())
             }
 
             Value::LocalVariableSymbol { id } => {
-                let loc = &store[id].borrow();
-                Ok(store[&loc.ty].clone())
+                let loc = id.borrow();
+                Ok(loc.ty.deref().clone())
             }
 
             Value::ParameterSymbol { id } => {
-                let param = &store[id].borrow();
-                Ok(store[&param.ty].clone())
+                let param = id.borrow();
+                Ok(param.ty.deref().clone())
             }
         }
     }

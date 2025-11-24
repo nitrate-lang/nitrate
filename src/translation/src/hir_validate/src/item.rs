@@ -27,7 +27,7 @@ impl ValidateHir for GlobalVariable {
         ty.verify(store, tab)?;
         init.verify(store, tab)?;
 
-        let init_ty = init.get_type(store, tab).map_err(|_| ())?;
+        let init_ty = init.get_type(tab).map_err(|_| ())?;
         if *ty != init_ty {
             return Err(());
         }
@@ -67,7 +67,7 @@ impl ValidateHir for LocalVariable {
             let init = store[init_expr].borrow();
             init.verify(store, tab)?;
 
-            let init_ty = init.get_type(store, tab).map_err(|_| ())?;
+            let init_ty = init.get_type(tab).map_err(|_| ())?;
             if *ty != init_ty {
                 return Err(());
             }
@@ -108,7 +108,7 @@ impl ValidateHir for Parameter {
             let init = store[default_value].borrow();
             init.verify(store, tab)?;
 
-            let init_ty = init.get_type(store, tab).map_err(|_| ())?;
+            let init_ty = init.get_type(tab).map_err(|_| ())?;
             if *ty != init_ty {
                 return Err(());
             }
@@ -240,7 +240,7 @@ impl ValidateHir for StructField {
             let init = store[default_value].borrow();
             init.verify(store, tab)?;
 
-            let init_ty = init.get_type(store, tab).map_err(|_| ())?;
+            let init_ty = init.get_type(tab).map_err(|_| ())?;
             let field_ty = &store[&self.ty];
             if *field_ty != init_ty {
                 return Err(());

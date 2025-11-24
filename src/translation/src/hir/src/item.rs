@@ -78,12 +78,12 @@ pub struct Function {
 }
 
 impl Function {
-    pub fn get_type(&self, store: &Store) -> FunctionType {
+    pub fn get_type(&self) -> FunctionType {
         let params: Vec<(NString, TypeId)> = self
             .params
             .iter()
             .map(|param_id| {
-                let p = store[param_id].borrow();
+                let p = param_id.borrow();
                 (p.name.clone(), p.ty)
             })
             .collect::<Vec<_>>();
@@ -217,11 +217,11 @@ pub enum TypeDefinition {
 }
 
 impl TypeDefinition {
-    pub fn name(&self, store: &Store) -> NString {
+    pub fn name(&self) -> NString {
         match self {
-            TypeDefinition::TypeAliasDef(def) => store[def].borrow().name.clone(),
-            TypeDefinition::StructDef(def) => store[def].borrow().name.clone(),
-            TypeDefinition::EnumDef(def) => store[def].borrow().name.clone(),
+            TypeDefinition::TypeAliasDef(def) => def.borrow().name.clone(),
+            TypeDefinition::StructDef(def) => def.borrow().name.clone(),
+            TypeDefinition::EnumDef(def) => def.borrow().name.clone(),
         }
     }
 }

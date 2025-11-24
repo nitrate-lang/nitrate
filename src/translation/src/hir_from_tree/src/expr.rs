@@ -597,7 +597,7 @@ fn ast_localvar2hir(
     }
     .into();
 
-    ctx.tab.add_local_variable(localvar_id.clone(), &ctx.store);
+    ctx.tab.add_local_variable(localvar_id.clone());
 
     Ok(localvar_id)
 }
@@ -688,7 +688,7 @@ impl Ast2Hir for ast::ExprPath {
                         };
 
                         let placeholder_id: FunctionId = placeholder.into();
-                        ctx.tab.add_function(placeholder_id.clone(), &ctx.store);
+                        ctx.tab.add_function(placeholder_id.clone());
 
                         return Ok(Value::FunctionSymbol { id: placeholder_id });
                     }
@@ -714,8 +714,7 @@ impl Ast2Hir for ast::ExprPath {
                             };
 
                             let placeholder_id: GlobalVariableId = placeholder.into();
-                            ctx.tab
-                                .add_global_variable(placeholder_id.clone(), &ctx.store);
+                            ctx.tab.add_global_variable(placeholder_id.clone());
 
                             return Ok(Value::GlobalVariableSymbol { id: placeholder_id });
                         }

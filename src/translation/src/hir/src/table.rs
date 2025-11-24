@@ -30,32 +30,32 @@ impl SymbolTab {
         *self = Self::default();
     }
 
-    pub fn add_global_variable(&mut self, global_var: GlobalVariableId, store: &Store) {
-        let name = store[&global_var].borrow().name.clone();
+    pub fn add_global_variable(&mut self, global_var: GlobalVariableId) {
+        let name = global_var.borrow().name.clone();
         let symbol = SymbolId::GlobalVariable(global_var);
         self.symbols.insert(name, symbol);
     }
 
-    pub fn add_local_variable(&mut self, local_var: LocalVariableId, store: &Store) {
-        let name = store[&local_var].borrow().name.clone();
+    pub fn add_local_variable(&mut self, local_var: LocalVariableId) {
+        let name = local_var.borrow().name.clone();
         let symbol = SymbolId::LocalVariable(local_var);
         self.symbols.insert(name, symbol);
     }
 
-    pub fn add_parameter(&mut self, param: ParameterId, store: &Store) {
-        let name = store[&param].borrow().name.clone();
+    pub fn add_parameter(&mut self, param: ParameterId) {
+        let name = param.borrow().name.clone();
         let symbol = SymbolId::Parameter(param);
         self.symbols.insert(name, symbol);
     }
 
-    pub fn add_function(&mut self, function: FunctionId, store: &Store) {
-        let name = store[&function].borrow().name.clone();
+    pub fn add_function(&mut self, function: FunctionId) {
+        let name = function.borrow().name.clone();
         let symbol = SymbolId::Function(function);
         self.symbols.insert(name, symbol);
     }
 
-    pub fn add_type(&mut self, type_def: TypeDefinition, store: &Store) {
-        self.types.insert(type_def.name(store), type_def);
+    pub fn add_type(&mut self, type_def: TypeDefinition) {
+        self.types.insert(type_def.name(), type_def);
     }
 
     pub fn add_method(&mut self, type_id: TypeId, method_name: NString, function_id: FunctionId) {

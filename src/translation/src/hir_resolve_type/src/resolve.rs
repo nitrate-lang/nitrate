@@ -1,14 +1,13 @@
 use nitrate_diagnosis::CompilerLog;
-use nitrate_hir::{Function, GlobalVariable, Store};
+use nitrate_hir::{Function, GlobalVariable};
 
-pub struct TyCtx<'store> {
-    pub(crate) store: &'store Store,
+pub struct TyCtx {
     ok: bool,
 }
 
-impl<'store> TyCtx<'store> {
-    pub fn new(store: &'store Store) -> Self {
-        Self { store, ok: true }
+impl TyCtx {
+    pub fn new() -> Self {
+        Self { ok: true }
     }
 
     pub fn set_failed_bit(&mut self) {

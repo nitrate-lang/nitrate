@@ -19,13 +19,13 @@ pub fn convert_ast_to_hir(
 
     for item in &mut module.items {
         if let Item::Function(func_id) = item {
-            let mut function = ctx.store[func_id as &FunctionId].borrow_mut();
+            let mut function = func_id.borrow_mut();
             if function.body.is_some() {
-                TyCtx::new(&ctx.store).resolve_function(&mut function, log);
+                TyCtx::new().resolve_function(&mut function, log);
             }
         } else if let Item::GlobalVariable(global_id) = item {
-            let mut global = ctx.store[global_id as &GlobalVariableId].borrow_mut();
-            TyCtx::new(&ctx.store).resolve_global(&mut global, log);
+            let mut global = global_id.borrow_mut();
+            TyCtx::new().resolve_global(&mut global, log);
         }
     }
 

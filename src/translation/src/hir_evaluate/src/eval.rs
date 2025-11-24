@@ -35,8 +35,7 @@ static DEFAULT_BUILTIN_FUNCTIONS: LazyLock<HashMap<NString, Box<BuiltinFunction>
         m
     });
 
-pub struct HirEvalCtx<'store, 'log> {
-    pub(crate) store: &'store Store,
+pub struct HirEvalCtx<'log> {
     pub(crate) log: &'log CompilerLog,
     pub(crate) loop_iter_limit: usize,
     pub(crate) loop_iter_count: usize,
@@ -48,14 +47,9 @@ pub struct HirEvalCtx<'store, 'log> {
     pub(crate) ptr_size: PtrSize,
 }
 
-impl<'store, 'log> HirEvalCtx<'store, 'log> {
-    pub fn new(
-        store: &'store Store,
-        log: &'log CompilerLog,
-        ptr_size: PtrSize,
-    ) -> HirEvalCtx<'store, 'log> {
+impl<'log> HirEvalCtx<'log> {
+    pub fn new(log: &'log CompilerLog, ptr_size: PtrSize) -> HirEvalCtx<'log> {
         HirEvalCtx {
-            store,
             log,
             loop_iter_limit: 4096,
             loop_iter_count: 0,
@@ -128,7 +122,7 @@ pub trait HirEvaluate {
     fn evaluate(&self, ctx: &mut HirEvalCtx) -> Result<Self::Output, Unwind>;
 }
 
-impl HirEvalCtx<'_, '_> {
+impl HirEvalCtx<'_> {
     pub fn evaluate_to_literal(&mut self, value: &Value) -> Result<Lit, Unwind> {
         match Lit::try_from(value.evaluate(self)?) {
             Ok(lit) => Ok(lit),
