@@ -1,5 +1,6 @@
 use crate::{Dump, DumpContext, dump_item::dump_attributes};
 use nitrate_hir::prelude::*;
+use nitrate_token::escape_string;
 
 impl Dump for StructAttribute {
     fn dump(
@@ -131,12 +132,11 @@ impl Dump for Type {
                 write!(o, ")")
             }
 
-            Type::Struct { def } => def.borrow().dump(ctx, o),
-            Type::Enum { def } => def.borrow().dump(ctx, o),
+            Type::Struct { def } => write!(o, "struct {}", escape_string(&def.borrow().name, true)),
+            Type::Enum { def } => write!(o, "enum {}", escape_string(&def.borrow().name, true)),
 
             Type::TypeAlias { def } => {
-                let type_alias = &def.borrow().type_id;
-                type_alias.dump(ctx, o)
+                write!(o, "type {}", escape_string(&def.borrow().name, true))
             }
 
             Type::Refine { base, min, max } => {
@@ -159,7 +159,6 @@ impl Dump for Type {
                 write!(o, "&")?;
 
                 if lifetime != &Lifetime::Inferred {
-                    write!(o, " ")?;
                     lifetime.dump(ctx, o)?;
                     write!(o, " ")?;
                 }
@@ -171,14 +170,7 @@ impl Dump for Type {
                     (false, false) => write!(o, "")?,
                 }
 
-                if ctx.visited.contains(to) {
-                    write!(o, "<...>")
-                } else {
-                    ctx.visited.insert(*to);
-                    let res = to.dump(ctx, o);
-                    ctx.visited.remove(to);
-                    res
-                }
+                to.dump(ctx, o)
             }
 
             Type::SliceRef {
@@ -190,7 +182,6 @@ impl Dump for Type {
                 write!(o, "&")?;
 
                 if lifetime != &Lifetime::Inferred {
-                    write!(o, " ")?;
                     lifetime.dump(ctx, o)?;
                     write!(o, " ")?;
                 }
@@ -203,16 +194,7 @@ impl Dump for Type {
                 }
 
                 write!(o, "[")?;
-
-                if ctx.visited.contains(element_type) {
-                    write!(o, "<...>")?;
-                } else {
-                    ctx.visited.insert(*element_type);
-                    let res = element_type.dump(ctx, o);
-                    ctx.visited.remove(element_type);
-                    res?;
-                }
-
+                element_type.dump(ctx, o)?;
                 write!(o, "]")
             }
 
@@ -230,14 +212,7 @@ impl Dump for Type {
                     (false, false) => write!(o, "")?,
                 }
 
-                if ctx.visited.contains(to) {
-                    write!(o, "<...>")
-                } else {
-                    ctx.visited.insert(*to);
-                    let res = to.dump(ctx, o);
-                    ctx.visited.remove(to);
-                    res
-                }
+                to.dump(ctx, o)
             }
 
             Type::InferredFloat => write!(o, "?f"),
