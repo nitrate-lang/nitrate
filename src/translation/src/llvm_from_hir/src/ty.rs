@@ -23,7 +23,7 @@ fn gen_struct_ty<'ctx>(
     }
 
     let mut field_types = Vec::with_capacity(hir_struct_def.fields.len());
-    for hir_field in &hir_struct_def.fields {
+    for (_, hir_field) in &hir_struct_def.fields {
         // FIXME: insert padding
 
         let hir_field_ty = &ctx.store[&hir_field.ty];

@@ -8,7 +8,7 @@ use crate::{
     place::gen_place,
     ty::{TypegenCtx, gen_function_ty, gen_ty},
 };
-use nitrate_hir::{ValueId, prelude as hir};
+use nitrate_hir::{StructMemoryLayoutCell, ValueId, prelude as hir};
 use nitrate_hir_get_type::HirGetType;
 use nitrate_llvm::LLVMContext;
 use nitrate_nstring::NString;
@@ -1326,8 +1326,8 @@ fn gen_rval_struct_object<'ctx>(
 
     let struct_def = ctx.store[struct_def_id].borrow();
     let mut field_map = HashMap::new();
-    for (i, field) in struct_def.fields.iter().enumerate() {
-        field_map.insert(field.name.clone(), i);
+    for (i, (field_name, _)) in struct_def.fields.iter().enumerate() {
+        field_map.insert(field_name.clone(), i);
     }
 
     let llvm_ty = gen_ty(&struct_ty, &mut ctx.into());
@@ -1387,12 +1387,20 @@ fn gen_rval_field_access<'ctx>(
     .borrow();
 
     let field_index = hir_struct_def
-        .fields
+        .layout
         .iter()
-        .position(|field| &field.name == field_name)
+        .position(|cell| {
+            cell == &StructMemoryLayoutCell::Field {
+                field_name: field_name.clone(),
+            }
+        })
         .expect("Field not found in struct");
 
-    let field_ty = &ctx.store[&hir_struct_def.fields[field_index].ty];
+    let field_ty = &ctx.store[&hir_struct_def
+        .fields
+        .get(field_name)
+        .expect("expected field to exist in struct")
+        .ty];
 
     let llvm_struct_value = gen_place(ctx, struct_value);
     let llvm_struct_ty = gen_ty(

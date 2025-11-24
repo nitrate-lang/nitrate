@@ -3,7 +3,7 @@ use nitrate_diagnosis::CompilerLog;
 use nitrate_hir::prelude::*;
 use nitrate_nstring::NString;
 use nitrate_tree::ast::{self};
-use std::collections::BTreeSet;
+use std::collections::{BTreeMap, BTreeSet};
 
 impl Ast2Hir for ast::TypeAlias {
     type Hir = TypeAliasDefId;
@@ -77,7 +77,8 @@ impl Ast2Hir for ast::Struct {
             log.report(&HirErr::UnimplementedFeature("generic structs".into()));
         }
 
-        let mut fields = Vec::new();
+        let mut fields = BTreeMap::new();
+        let mut layout = StructLayout::new();
 
         for field in &self.fields {
             let field_visibility = match field.visibility {
@@ -109,14 +110,17 @@ impl Ast2Hir for ast::Struct {
                 default_value: field_default,
             };
 
-            fields.push(struct_field);
+            let field_name = struct_field.name.clone();
+            fields.insert(field_name.clone(), struct_field);
+            layout.push(StructMemoryLayoutCell::Field { field_name });
         }
 
         let struct_def = StructDef {
             visibility,
             name,
             attributes,
-            fields: fields.into(),
+            fields,
+            layout,
         };
 
         if let Some(existing_struct_def_id) = ctx.tab.get_struct(&struct_def.name) {

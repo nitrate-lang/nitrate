@@ -262,7 +262,7 @@ impl ValidateHir for StructDef {
             attr.verify(store, tab)?;
         }
 
-        for field in &self.fields {
+        for (_, field) in &self.fields {
             field.verify(store, tab)?;
         }
 

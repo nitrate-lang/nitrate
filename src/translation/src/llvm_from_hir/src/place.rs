@@ -5,7 +5,7 @@ use crate::{
     rvalue::{CodegenCtx, gen_rval},
     ty::gen_ty,
 };
-use nitrate_hir::prelude as hir;
+use nitrate_hir::{StructMemoryLayoutCell, prelude as hir};
 use nitrate_nstring::NString;
 
 fn gen_place_field_access<'ctx>(
@@ -21,9 +21,13 @@ fn gen_place_field_access<'ctx>(
     .borrow();
 
     let field_index = hir_struct_def
-        .fields
+        .layout
         .iter()
-        .position(|field| &field.name == field_name)
+        .position(|cell| {
+            cell == &StructMemoryLayoutCell::Field {
+                field_name: field_name.clone(),
+            }
+        })
         .expect("Field not found in struct");
 
     let llvm_struct_value = gen_place(ctx, struct_value);

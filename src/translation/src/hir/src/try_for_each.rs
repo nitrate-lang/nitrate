@@ -73,7 +73,7 @@ impl TypeIter<'_> {
             }
 
             Type::Struct { def } => {
-                for field in &store[def].borrow().fields {
+                for (_, field) in &store[def].borrow().fields {
                     store[&field.ty]
                         .iter()
                         .try_for_each(store, vcb, tcb, visited)?;
@@ -551,7 +551,7 @@ impl StructDefIter<'_> {
         tcb: &mut dyn FnMut(&Type) -> ControlFlow<T>,
         visited: &mut HashSet<*const ()>,
     ) -> ControlFlow<T> {
-        for field in &self.node.fields {
+        for (_, field) in &self.node.fields {
             if let Some(default_value) = &field.default_value {
                 store[default_value]
                     .borrow()
@@ -560,7 +560,7 @@ impl StructDefIter<'_> {
             }
         }
 
-        for field in &self.node.fields {
+        for (_, field) in &self.node.fields {
             store[&field.ty]
                 .iter()
                 .try_for_each(store, vcb, tcb, visited)?;

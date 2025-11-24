@@ -4,6 +4,7 @@ use nitrate_hir::prelude::*;
 pub enum TypeInferenceError {
     EnumVariantNotPresent,
     FieldAccessOnNonStruct,
+    StructMissingField,
     CalleeIsNotFunctionType,
     TraitHasNoType,
     UnresolvedSymbol,
@@ -146,17 +147,16 @@ impl HirGetType for Value {
                 }
             },
 
-            Value::FieldAccess {
-                expr,
-                field_name: field,
-            } => {
+            Value::FieldAccess { expr, field_name } => {
                 let expr = &store[expr].borrow();
 
                 if let Type::Struct { def } = expr.get_type(store, tab)? {
                     let struct_def = &store[&def].borrow();
-                    let found_field = struct_def.fields.iter().find(|x| &x.name == field);
+                    let found_field = struct_def.fields.get(field_name);
                     if let Some(field) = found_field {
                         return Ok(store[&field.ty].clone());
+                    } else {
+                        return Err(TypeInferenceError::StructMissingField);
                     }
                 }
 

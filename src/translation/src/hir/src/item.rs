@@ -1,7 +1,10 @@
 use crate::prelude::*;
 use nitrate_nstring::NString;
 use serde::{Deserialize, Serialize};
-use std::collections::BTreeSet;
+use std::{
+    collections::{BTreeMap, BTreeSet},
+    num::NonZeroUsize,
+};
 use thin_vec::ThinVec;
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, Hash)]
@@ -140,11 +143,44 @@ pub struct StructField {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
+pub enum StructMemoryLayoutCell {
+    Field { field_name: NString },
+    Padding(NonZeroUsize),
+}
+
+impl StructMemoryLayoutCell {
+    pub fn is_field(&self) -> bool {
+        matches!(self, StructMemoryLayoutCell::Field { .. })
+    }
+
+    pub fn is_padding(&self) -> bool {
+        matches!(self, StructMemoryLayoutCell::Padding(_))
+    }
+
+    pub fn as_field(&self) -> Option<&NString> {
+        match self {
+            StructMemoryLayoutCell::Field { field_name } => Some(field_name),
+            _ => None,
+        }
+    }
+
+    pub fn as_padding(&self) -> Option<NonZeroUsize> {
+        match self {
+            StructMemoryLayoutCell::Padding(size) => Some(*size),
+            _ => None,
+        }
+    }
+}
+
+pub type StructLayout = ThinVec<StructMemoryLayoutCell>;
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct StructDef {
     pub visibility: Visibility,
     pub name: NString,
     pub attributes: BTreeSet<StructAttribute>,
-    pub fields: ThinVec<StructField>,
+    pub fields: BTreeMap<NString, StructField>,
+    pub layout: StructLayout,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]

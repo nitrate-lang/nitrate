@@ -4,7 +4,10 @@ use nitrate_hir::prelude::*;
 use nitrate_hir_evaluate::HirEvalCtx;
 use nitrate_nstring::NString;
 use nitrate_tree::ast::{self as ast, SymbolKind};
-use std::{collections::BTreeSet, ops::Deref};
+use std::{
+    collections::{BTreeMap, BTreeSet},
+    ops::Deref,
+};
 
 impl Ast2Hir for ast::TypeSyntaxError {
     type Hir = Type;
@@ -158,7 +161,8 @@ impl Ast2Hir for ast::TypePath {
                             visibility: Visibility::Sec,
                             name: resolved_path,
                             attributes: BTreeSet::new(),
-                            fields: Vec::new().into(),
+                            fields: BTreeMap::new(),
+                            layout: StructLayout::default(),
                         }
                         .into_id(&ctx.store);
 

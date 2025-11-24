@@ -45,7 +45,7 @@ pub fn get_align_of(ty: &Type, ctx: &LayoutCtx) -> Result<u64, LayoutError> {
 
             let mut max_align = 1;
 
-            for field in fields {
+            for (_, field) in fields {
                 let field_align = get_align_of(&ctx.store[&field.ty], ctx)?;
                 max_align = max(max_align, field_align);
             }

@@ -55,7 +55,7 @@ pub fn get_size_of(ty: &Type, ctx: &LayoutCtx) -> Result<u64, LayoutError> {
             if attributes.contains(&StructAttribute::Packed) {
                 let mut total_size = 0_u64;
 
-                for field in fields {
+                for (_, field) in fields {
                     total_size += get_size_of(&ctx.store[&field.ty], ctx)?;
                 }
 
@@ -64,7 +64,7 @@ pub fn get_size_of(ty: &Type, ctx: &LayoutCtx) -> Result<u64, LayoutError> {
 
             let mut offset = 0_u64;
 
-            for field in fields {
+            for (_, field) in fields {
                 let field_type = &ctx.store[&field.ty];
 
                 let field_size = get_size_of(field_type, ctx)?;

@@ -396,7 +396,7 @@ impl Dump for StructDefId {
         } else {
             write!(o, "{{\n")?;
 
-            for field in &this.fields {
+            for (_, field) in &this.fields {
                 ctx.indent += 1;
 
                 write_indent(ctx, o)?;
