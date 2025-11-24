@@ -1,6 +1,5 @@
 #![warn(clippy::pedantic)]
 
-mod cmp;
 mod expr;
 mod item;
 mod iter;
@@ -20,7 +19,6 @@ mod ty_alignment;
 mod ty_size;
 mod ty_stride;
 
-pub use cmp::*;
 pub use expr::*;
 pub use item::*;
 pub use iter::*;

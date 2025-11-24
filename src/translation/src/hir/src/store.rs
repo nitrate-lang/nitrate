@@ -2,9 +2,24 @@ use crate::prelude::*;
 use append_only_vec::AppendOnlyVec;
 use bimap::BiMap;
 use serde::{Deserialize, Serialize};
-use std::cell::RefCell;
+use std::cell::{Cell, RefCell};
 use std::num::NonZeroU32;
+use std::ops::Deref;
 use std::sync::{Arc, RwLock};
+
+thread_local! {
+    static TLS_STORE: Cell<Option<*const Store>> = Cell::new(None);
+}
+
+pub fn using_storage<R>(store: &Store, f: impl FnOnce() -> R) -> R {
+    TLS_STORE.with(|tls| {
+        let old = tls.take();
+        tls.set(Some(store));
+        let result = f();
+        tls.set(old); // Ensure panic when misused
+        result
+    })
+}
 
 macro_rules! impl_dedup_store {
     ($handle_name:ident, $item_name:ident, $store_name:ident) => {
@@ -84,6 +99,35 @@ macro_rules! impl_store_mut {
         impl $handle_name {
             pub fn as_usize(&self) -> usize {
                 self.0.get() as usize
+            }
+        }
+
+        impl std::ops::Deref for $handle_name {
+            type Target = RefCell<$item_name>;
+
+            fn deref(&self) -> &Self::Target {
+                TLS_STORE.with(|tls| {
+                    let store_ptr = tls
+                        .get()
+                        .expect("No Store found in TLS. Did you forget to call using_storage?");
+
+                    let store = unsafe { &*store_ptr };
+                    &store[self]
+                })
+            }
+        }
+
+        impl std::cmp::PartialEq for $handle_name {
+            fn eq(&self, other: &Self) -> bool {
+                self.deref() == other.deref()
+            }
+        }
+
+        impl std::cmp::Eq for $handle_name {}
+
+        impl std::hash::Hash for $handle_name {
+            fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+                self.deref().borrow().hash(state);
             }
         }
 

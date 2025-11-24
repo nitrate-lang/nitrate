@@ -12,7 +12,6 @@ pub(crate) enum SyntaxErr {
     ModuleItemLimit(SourcePosition),
     ModuleExpectedEnd(SourcePosition),
 
-    ImportMissingName(SourcePosition),
     ImportAliasMissingName(SourcePosition),
     ImportExpectedStarOrGroup(SourcePosition),
     ImportGroupExpectedEnd(SourcePosition),
@@ -123,7 +122,6 @@ impl FormattableDiagnosticGroup for SyntaxErr {
             SyntaxErr::ModuleItemLimit(_) => 21,
             SyntaxErr::ModuleExpectedEnd(_) => 22,
 
-            SyntaxErr::ImportMissingName(_) => 40,
             SyntaxErr::ImportAliasMissingName(_) => 41,
             SyntaxErr::ImportExpectedStarOrGroup(_) => 42,
             SyntaxErr::ImportGroupExpectedEnd(_) => 43,
@@ -252,11 +250,6 @@ impl FormattableDiagnosticGroup for SyntaxErr {
             },
 
             /* ------------------------------------------------------------------------- */
-
-            SyntaxErr::ImportMissingName(pos) => DiagnosticInfo {
-                origin: Origin::Point(pos.to_owned().into()),
-                message: "use package name is missing".into(),
-            },
 
             SyntaxErr::ImportAliasMissingName(pos) => DiagnosticInfo {
                 origin: Origin::Point(pos.to_owned().into()),
