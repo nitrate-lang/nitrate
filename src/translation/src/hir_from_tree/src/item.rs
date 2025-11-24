@@ -250,7 +250,7 @@ fn ast_globalvar2hir(
 
     let name = ctx.qualify_name(&globalvar.name).into();
     let mangled_name = if attributes.contains(&GlobalVariableAttribute::NoMangle) {
-        globalvar.name.clone().into()
+        globalvar.name.clone()
     } else {
         ctx.qualify_name(&globalvar.name).into()
     };
@@ -258,15 +258,15 @@ fn ast_globalvar2hir(
     let ty = match globalvar.ty.to_owned() {
         None => ctx.create_inference_placeholder().into(),
         Some(t) => {
-            let ty_hir = t.ast2hir(ctx, log)?.into();
-            ty_hir
+            
+            t.ast2hir(ctx, log)?.into()
         }
     };
 
     let init = match globalvar.initializer.to_owned() {
         Some(expr) => {
-            let expr_hir = expr.ast2hir(ctx, log)?.into();
-            expr_hir
+            
+            expr.ast2hir(ctx, log)?.into()
         }
 
         None => {
@@ -378,7 +378,7 @@ fn ast_function2hir(
 
     let name: NString = ctx.qualify_name(&function.name).into();
     let mangled_name: NString = if attributes.contains(&FunctionAttribute::NoMangle) {
-        function.name.clone().into()
+        function.name.clone()
     } else {
         ctx.qualify_name(&function.name).into()
     };

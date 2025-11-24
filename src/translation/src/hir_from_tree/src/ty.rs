@@ -151,9 +151,9 @@ impl Ast2Hir for ast::TypePath {
             Some(resolved_path) => match ctx.ast_symbol_map.get(&resolved_path) {
                 Some(SymbolKind::Struct) => match ctx.tab.get_struct(&resolved_path) {
                     Some(existing_struct_def_id) => {
-                        return Ok(Type::Struct {
+                        Ok(Type::Struct {
                             def: existing_struct_def_id.clone(),
-                        });
+                        })
                     }
 
                     None => {
@@ -169,15 +169,15 @@ impl Ast2Hir for ast::TypePath {
                         let typedef = TypeDefinition::StructDef(struct_def.clone());
                         ctx.tab.add_type(typedef);
 
-                        return Ok(Type::Struct { def: struct_def });
+                        Ok(Type::Struct { def: struct_def })
                     }
                 },
 
                 Some(SymbolKind::Enum) => match ctx.tab.get_enum(&resolved_path) {
                     Some(existing_enum_def_id) => {
-                        return Ok(Type::Enum {
+                        Ok(Type::Enum {
                             def: existing_enum_def_id.clone(),
-                        });
+                        })
                     }
 
                     None => {
@@ -193,14 +193,14 @@ impl Ast2Hir for ast::TypePath {
                         let typedef = TypeDefinition::EnumDef(enum_def.clone());
                         ctx.tab.add_type(typedef);
 
-                        return Ok(Type::Enum { def: enum_def });
+                        Ok(Type::Enum { def: enum_def })
                     }
                 },
 
                 Some(SymbolKind::TypeAlias) => match ctx.tab.get_type_alias(&resolved_path) {
                     Some(existing_type_alias_def_id) => {
                         let type_id = existing_type_alias_def_id.borrow().type_id;
-                        return Ok(type_id.deref().clone());
+                        Ok(type_id.deref().clone())
                     }
 
                     None => {
@@ -214,9 +214,9 @@ impl Ast2Hir for ast::TypePath {
                         let typedef = TypeDefinition::TypeAliasDef(type_alias_def.clone());
                         ctx.tab.add_type(typedef);
 
-                        return Ok(Type::TypeAlias {
+                        Ok(Type::TypeAlias {
                             def: type_alias_def,
-                        });
+                        })
                     }
                 },
 
@@ -284,7 +284,7 @@ impl Ast2Hir for ast::ArrayType {
                     return Err(());
                 }
 
-                val as u32
+                val
             }
 
             Ok(Lit::USize64(val)) => {

@@ -133,7 +133,7 @@ impl Ast2Hir for ast::StructInit {
 
         if let Some(resolved_path) = self.path.resolved_path {
             return Ok(Value::StructObject {
-                struct_path: NString::from(resolved_path),
+                struct_path: resolved_path,
                 fields: fields.into(),
             });
         }
@@ -540,7 +540,7 @@ impl Ast2Hir for ast::Cast {
             },
 
             (Value::InferredFloat(v), Type::F32) => Ok(Value::F32(OrderedFloat::from(*v as f32))),
-            (Value::InferredFloat(v), Type::F64) => Ok(Value::F64(OrderedFloat::from(*v as f64))),
+            (Value::InferredFloat(v), Type::F64) => Ok(Value::F64(OrderedFloat::from((*v)))),
 
             (expr, to) => Ok(Value::Cast {
                 value: expr.into(),
@@ -577,8 +577,8 @@ fn ast_localvar2hir(
     let ty = match var.ty.to_owned() {
         None => ctx.create_inference_placeholder().into(),
         Some(t) => {
-            let ty_hir = t.ast2hir(ctx, log)?.into();
-            ty_hir
+            
+            t.ast2hir(ctx, log)?.into()
         }
     };
 
@@ -671,9 +671,9 @@ impl Ast2Hir for ast::ExprPath {
             Some(resolved_path) => match ctx.ast_symbol_map.get(&resolved_path) {
                 Some(SymbolKind::Function) => match ctx.tab.get_function(&resolved_path) {
                     Some(existing_function_id) => {
-                        return Ok(Value::FunctionSymbol {
+                        Ok(Value::FunctionSymbol {
                             id: existing_function_id.clone(),
-                        });
+                        })
                     }
 
                     None => {
@@ -690,16 +690,16 @@ impl Ast2Hir for ast::ExprPath {
                         let placeholder_id: FunctionId = placeholder.into();
                         ctx.tab.add_function(placeholder_id.clone());
 
-                        return Ok(Value::FunctionSymbol { id: placeholder_id });
+                        Ok(Value::FunctionSymbol { id: placeholder_id })
                     }
                 },
 
                 Some(SymbolKind::GlobalVariable) => {
                     match ctx.tab.get_global_variable(&resolved_path) {
                         Some(existing_variable_id) => {
-                            return Ok(Value::GlobalVariableSymbol {
+                            Ok(Value::GlobalVariableSymbol {
                                 id: existing_variable_id.clone(),
-                            });
+                            })
                         }
 
                         None => {
@@ -716,7 +716,7 @@ impl Ast2Hir for ast::ExprPath {
                             let placeholder_id: GlobalVariableId = placeholder.into();
                             ctx.tab.add_global_variable(placeholder_id.clone());
 
-                            return Ok(Value::GlobalVariableSymbol { id: placeholder_id });
+                            Ok(Value::GlobalVariableSymbol { id: placeholder_id })
                         }
                     }
                 }
@@ -724,9 +724,9 @@ impl Ast2Hir for ast::ExprPath {
                 Some(SymbolKind::LocalVariable) => {
                     match ctx.tab.get_local_variable(&resolved_path) {
                         Some(existing_local_variable_id) => {
-                            return Ok(Value::LocalVariableSymbol {
+                            Ok(Value::LocalVariableSymbol {
                                 id: existing_local_variable_id.clone(),
-                            });
+                            })
                         }
 
                         None => {
@@ -738,9 +738,9 @@ impl Ast2Hir for ast::ExprPath {
 
                 Some(SymbolKind::Parameter) => match ctx.tab.get_parameter(&resolved_path) {
                     Some(existing_parameter_id) => {
-                        return Ok(Value::ParameterSymbol {
+                        Ok(Value::ParameterSymbol {
                             id: existing_parameter_id.clone(),
-                        });
+                        })
                     }
 
                     None => {

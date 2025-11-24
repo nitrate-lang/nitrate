@@ -47,10 +47,7 @@ impl Ast2HirCtx {
         ty: &TypeId,
         method_name: &str,
     ) -> Option<FunctionId> {
-        let trait_set = match self._impl_map.get(ty) {
-            Some(trait_set) => trait_set,
-            None => return None,
-        };
+        let trait_set = self._impl_map.get(ty)?;
 
         let mut found: Option<FunctionId> = None;
 
@@ -98,7 +95,7 @@ impl Ast2HirCtx {
         let mut qualified = String::with_capacity(length);
 
         for module in &self.current_scope {
-            qualified.push_str(&module);
+            qualified.push_str(module);
             qualified.push_str("::");
         }
 
