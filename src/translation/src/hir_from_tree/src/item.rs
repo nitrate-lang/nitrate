@@ -225,233 +225,233 @@ fn ast_impl2hir(_impl: &ast::Impl, _ctx: &mut Ast2HirCtx, log: &CompilerLog) -> 
     Err(())
 }
 
-impl Ast2Hir for ast::GlobalVariable {
-    type Hir = GlobalVariableId;
+fn ast_globalvar2hir(
+    globalvar: &ast::GlobalVariable,
+    ctx: &mut Ast2HirCtx,
+    log: &CompilerLog,
+) -> Result<GlobalVariableId, ()> {
+    let visibility = match globalvar.visibility {
+        Some(ast::Visibility::Public) => Visibility::Pub,
+        Some(ast::Visibility::Protected) => Visibility::Pro,
+        Some(ast::Visibility::Private) | None => Visibility::Sec,
+    };
 
-    fn ast2hir(self, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
-        let visibility = match self.visibility {
-            Some(ast::Visibility::Public) => Visibility::Pub,
-            Some(ast::Visibility::Protected) => Visibility::Pro,
-            Some(ast::Visibility::Private) | None => Visibility::Sec,
-        };
+    let attributes = BTreeSet::new();
+    if let Some(ast_attributes) = &globalvar.attributes {
+        for _attr in ast_attributes {
+            log.report(&HirErr::UnrecognizedGlobalVariableAttribute);
+        }
+    }
 
-        let attributes = BTreeSet::new();
-        if let Some(ast_attributes) = &self.attributes {
-            for _attr in ast_attributes {
-                log.report(&HirErr::UnrecognizedGlobalVariableAttribute);
-            }
+    let is_mutable = match globalvar.mutability {
+        Some(ast::Mutability::Mut) => true,
+        Some(ast::Mutability::Const) | None => false,
+    };
+
+    let name = ctx.qualify_name(&globalvar.name).into();
+    let mangled_name = if attributes.contains(&GlobalVariableAttribute::NoMangle) {
+        globalvar.name.clone().into()
+    } else {
+        ctx.qualify_name(&globalvar.name).into()
+    };
+
+    let ty = match globalvar.ty.to_owned() {
+        None => ctx.create_inference_placeholder().into_id(&ctx.store),
+        Some(t) => {
+            let ty_hir = t.ast2hir(ctx, log)?.into_id(&ctx.store);
+            ty_hir
+        }
+    };
+
+    let init = match globalvar.initializer.to_owned() {
+        Some(expr) => {
+            let expr_hir = expr.ast2hir(ctx, log)?.into_id(&ctx.store);
+            expr_hir
         }
 
-        let is_mutable = match self.mutability {
-            Some(ast::Mutability::Mut) => true,
-            Some(ast::Mutability::Const) | None => false,
-        };
-
-        let name = ctx.qualify_name(&self.name).into();
-        let mangled_name = if attributes.contains(&GlobalVariableAttribute::NoMangle) {
-            self.name.clone().into()
-        } else {
-            ctx.qualify_name(&self.name).into()
-        };
-
-        let ty = match self.ty.to_owned() {
-            None => ctx.create_inference_placeholder().into_id(&ctx.store),
-            Some(t) => {
-                let ty_hir = t.ast2hir(ctx, log)?.into_id(&ctx.store);
-                ty_hir
-            }
-        };
-
-        let init = match self.initializer.to_owned() {
-            Some(expr) => {
-                let expr_hir = expr.ast2hir(ctx, log)?.into_id(&ctx.store);
-                expr_hir
-            }
-
-            None => {
-                log.report(&HirErr::GlobalVariableMustHaveInitializer);
-                return Err(());
-            }
-        };
-
-        let global_variable = GlobalVariable {
-            visibility,
-            attributes,
-            is_mutable,
-            name,
-            mangled_name,
-            ty,
-            init,
-        };
-
-        if let Some(existing_global_id) = ctx.tab.get_global_variable(&global_variable.name) {
-            let mut existing_global_variable = ctx.store[existing_global_id].borrow_mut();
-            *existing_global_variable = global_variable;
-            Ok(existing_global_id.clone())
-        } else {
-            let variable_id = global_variable.into_id(&ctx.store);
-            ctx.tab.add_global_variable(variable_id.clone(), &ctx.store);
-            Ok(variable_id)
+        None => {
+            log.report(&HirErr::GlobalVariableMustHaveInitializer);
+            return Err(());
         }
+    };
+
+    let global_variable = GlobalVariable {
+        visibility,
+        attributes,
+        is_mutable,
+        name,
+        mangled_name,
+        ty,
+        init,
+    };
+
+    if let Some(existing_global_id) = ctx.tab.get_global_variable(&global_variable.name) {
+        let mut existing_global_variable = ctx.store[existing_global_id].borrow_mut();
+        *existing_global_variable = global_variable;
+        Ok(existing_global_id.clone())
+    } else {
+        let variable_id = global_variable.into_id(&ctx.store);
+        ctx.tab.add_global_variable(variable_id.clone(), &ctx.store);
+        Ok(variable_id)
     }
 }
 
-impl Ast2Hir for ast::FuncParam {
-    type Hir = ParameterId;
-
-    fn ast2hir(self, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
-        let attributes = BTreeSet::new();
-        if let Some(ast_attributes) = &self.attributes {
-            for _attr in ast_attributes {
-                log.report(&HirErr::UnrecognizedFunctionParameterAttribute);
-            }
+fn ast_funcparam2hir(
+    param: ast::FuncParam,
+    ctx: &mut Ast2HirCtx,
+    log: &CompilerLog,
+) -> Result<ParameterId, ()> {
+    let attributes = BTreeSet::new();
+    if let Some(ast_attributes) = &param.attributes {
+        for _attr in ast_attributes {
+            log.report(&HirErr::UnrecognizedFunctionParameterAttribute);
         }
-
-        let is_mutable = match self.mutability {
-            Some(ast::Mutability::Mut) => true,
-            Some(ast::Mutability::Const) | None => false,
-        };
-
-        let name = ctx.qualify_name(&self.name).into();
-        let ty = self.ty.to_owned().ast2hir(ctx, log)?.into_id(&ctx.store);
-
-        let default_value = match self.default_value.to_owned() {
-            Some(expr) => Some(expr.ast2hir(ctx, log)?.into_id(&ctx.store)),
-            None => None,
-        };
-
-        let parameter_id = Parameter {
-            attributes,
-            is_mutable,
-            name,
-            ty,
-            default_value,
-        }
-        .into_id(&ctx.store);
-
-        ctx.tab.add_parameter(parameter_id.clone(), &ctx.store);
-
-        Ok(parameter_id)
     }
+
+    let is_mutable = match param.mutability {
+        Some(ast::Mutability::Mut) => true,
+        Some(ast::Mutability::Const) | None => false,
+    };
+
+    let name = ctx.qualify_name(&param.name).into();
+    let ty = param.ty.to_owned().ast2hir(ctx, log)?.into_id(&ctx.store);
+
+    let default_value = match param.default_value.to_owned() {
+        Some(expr) => Some(expr.ast2hir(ctx, log)?.into_id(&ctx.store)),
+        None => None,
+    };
+
+    let parameter_id = Parameter {
+        attributes,
+        is_mutable,
+        name,
+        ty,
+        default_value,
+    }
+    .into_id(&ctx.store);
+
+    ctx.tab.add_parameter(parameter_id.clone(), &ctx.store);
+
+    Ok(parameter_id)
 }
 
-impl Ast2Hir for ast::Function {
-    type Hir = FunctionId;
+fn ast_function2hir(
+    function: ast::Function,
+    ctx: &mut Ast2HirCtx,
+    log: &CompilerLog,
+) -> Result<FunctionId, ()> {
+    let visibility = match function.visibility {
+        Some(ast::Visibility::Public) => Visibility::Pub,
+        Some(ast::Visibility::Protected) => Visibility::Pro,
+        Some(ast::Visibility::Private) | None => Visibility::Sec,
+    };
 
-    fn ast2hir(self, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
-        let visibility = match self.visibility {
-            Some(ast::Visibility::Public) => Visibility::Pub,
-            Some(ast::Visibility::Protected) => Visibility::Pro,
-            Some(ast::Visibility::Private) | None => Visibility::Sec,
-        };
+    let mut attributes = BTreeSet::new();
+    if let Some(ast_attributes) = &function.attributes {
+        for attr in ast_attributes {
+            if let ast::Expr::Path(path) = &attr {
+                let ident = path
+                    .segments
+                    .iter()
+                    .map(|seg| seg.name.to_string())
+                    .collect::<Vec<_>>()
+                    .join("::");
 
-        let mut attributes = BTreeSet::new();
-        if let Some(ast_attributes) = &self.attributes {
-            for attr in ast_attributes {
-                if let ast::Expr::Path(path) = &attr {
-                    let ident = path
-                        .segments
-                        .iter()
-                        .map(|seg| seg.name.to_string())
-                        .collect::<Vec<_>>()
-                        .join("::");
-
-                    match ident.as_str() {
-                        "no_mangle" => {
-                            attributes.insert(FunctionAttribute::NoMangle);
-                            continue;
-                        }
-
-                        "c_variadic" => {
-                            attributes.insert(FunctionAttribute::CVariadic);
-                            continue;
-                        }
-
-                        _ => {}
+                match ident.as_str() {
+                    "no_mangle" => {
+                        attributes.insert(FunctionAttribute::NoMangle);
+                        continue;
                     }
+
+                    "c_variadic" => {
+                        attributes.insert(FunctionAttribute::CVariadic);
+                        continue;
+                    }
+
+                    _ => {}
+                }
+            }
+
+            log.report(&HirErr::UnrecognizedEnumAttribute);
+        }
+    }
+
+    let name: NString = ctx.qualify_name(&function.name).into();
+    let mangled_name: NString = if attributes.contains(&FunctionAttribute::NoMangle) {
+        function.name.clone().into()
+    } else {
+        ctx.qualify_name(&function.name).into()
+    };
+
+    ctx.current_scope.push(function.name.clone());
+
+    if function.generics.is_some() {
+        log.report(&HirErr::UnimplementedFeature("generic functions".into()));
+    }
+
+    let mut parameters = Vec::with_capacity(function.parameters.len());
+    for param in &function.parameters {
+        let param_hir = ast_funcparam2hir(param.to_owned(), ctx, log)?;
+        parameters.push(param_hir);
+    }
+
+    let return_type = match &function.return_type {
+        Some(ty) => ty.to_owned().ast2hir(ctx, log)?,
+        None => Type::Unit,
+    };
+
+    let body = match function.definition {
+        None => None,
+        Some(block) => {
+            let mut hir_block = block.ast2hir(ctx, log)?;
+            match hir_block.elements.last() {
+                Some(BlockElement::Expr(expr)) if ctx.store[expr].borrow().is_return() => {}
+
+                Some(BlockElement::Expr(expr)) if !ctx.store[expr].borrow().is_return() => {
+                    *hir_block.elements.last_mut().unwrap() = BlockElement::Expr(
+                        Value::Return {
+                            value: expr.to_owned(),
+                        }
+                        .into_id(&ctx.store),
+                    );
                 }
 
-                log.report(&HirErr::UnrecognizedEnumAttribute);
-            }
-        }
-
-        let name: NString = ctx.qualify_name(&self.name).into();
-        let mangled_name: NString = if attributes.contains(&FunctionAttribute::NoMangle) {
-            self.name.clone().into()
-        } else {
-            ctx.qualify_name(&self.name).into()
-        };
-
-        ctx.current_scope.push(self.name.clone());
-
-        if self.generics.is_some() {
-            log.report(&HirErr::UnimplementedFeature("generic functions".into()));
-        }
-
-        let mut parameters = Vec::with_capacity(self.parameters.len());
-        for param in &self.parameters {
-            let param_hir = param.to_owned().ast2hir(ctx, log)?;
-            parameters.push(param_hir);
-        }
-
-        let return_type = match &self.return_type {
-            Some(ty) => ty.to_owned().ast2hir(ctx, log)?,
-            None => Type::Unit,
-        };
-
-        let body = match self.definition {
-            None => None,
-            Some(block) => {
-                let mut hir_block = block.ast2hir(ctx, log)?;
-                match hir_block.elements.last() {
-                    Some(BlockElement::Expr(expr)) if ctx.store[expr].borrow().is_return() => {}
-
-                    Some(BlockElement::Expr(expr)) if !ctx.store[expr].borrow().is_return() => {
-                        *hir_block.elements.last_mut().unwrap() = BlockElement::Expr(
-                            Value::Return {
-                                value: expr.to_owned(),
-                            }
-                            .into_id(&ctx.store),
-                        );
-                    }
-
-                    _ if return_type == Type::Unit => {
-                        hir_block.elements.push(BlockElement::Expr(
-                            Value::Return {
-                                value: Value::Unit.into_id(&ctx.store),
-                            }
-                            .into_id(&ctx.store),
-                        ));
-                    }
-
-                    _ => log.report(&HirErr::MissingReturnStatement),
+                _ if return_type == Type::Unit => {
+                    hir_block.elements.push(BlockElement::Expr(
+                        Value::Return {
+                            value: Value::Unit.into_id(&ctx.store),
+                        }
+                        .into_id(&ctx.store),
+                    ));
                 }
 
-                Some(hir_block.into_id(&ctx.store))
+                _ => log.report(&HirErr::MissingReturnStatement),
             }
-        };
 
-        ctx.current_scope.pop();
-
-        let function = Function {
-            visibility,
-            attributes,
-            name: name.clone(),
-            mangled_name,
-            params: parameters,
-            return_type: return_type.into_id(&ctx.store),
-            body,
-        };
-
-        if let Some(existing_function_id) = ctx.tab.get_function(&name) {
-            let mut existing_function = ctx.store[existing_function_id].borrow_mut();
-            *existing_function = function;
-            Ok(existing_function_id.clone())
-        } else {
-            let function_id = function.into_id(&ctx.store);
-            ctx.tab.add_function(function_id.clone(), &ctx.store);
-            Ok(function_id)
+            Some(hir_block.into_id(&ctx.store))
         }
+    };
+
+    ctx.current_scope.pop();
+
+    let function = Function {
+        visibility,
+        attributes,
+        name: name.clone(),
+        mangled_name,
+        params: parameters,
+        return_type: return_type.into_id(&ctx.store),
+        body,
+    };
+
+    if let Some(existing_function_id) = ctx.tab.get_function(&name) {
+        let mut existing_function = ctx.store[existing_function_id].borrow_mut();
+        *existing_function = function;
+        Ok(existing_function_id.clone())
+    } else {
+        let function_id = function.into_id(&ctx.store);
+        ctx.tab.add_function(function_id.clone(), &ctx.store);
+        Ok(function_id)
     }
 }
 
@@ -506,13 +506,13 @@ fn lower_item(
         }
 
         ast::Item::Function(func_def) => {
-            let f = func_def.ast2hir(ctx, log)?;
+            let f = ast_function2hir(func_def, ctx, log)?;
             current_module_items.push(Item::Function(f));
             Ok(())
         }
 
         ast::Item::Variable(v) => {
-            let g = v.ast2hir(ctx, log)?;
+            let g = ast_globalvar2hir(&v, ctx, log)?;
             current_module_items.push(Item::GlobalVariable(g));
             Ok(())
         }
@@ -521,45 +521,45 @@ fn lower_item(
     }
 }
 
-impl Ast2Hir for ast::Module {
-    type Hir = Module;
+pub(crate) fn ast_module2hir(
+    module: ast::Module,
+    ctx: &mut Ast2HirCtx,
+    log: &CompilerLog,
+) -> Result<Module, ()> {
+    fn lower_module(
+        this: ast::Module,
+        ctx: &mut Ast2HirCtx,
+        log: &CompilerLog,
+    ) -> Result<Module, ()> {
+        let visibility = match this.visibility {
+            Some(ast::Visibility::Public) => Visibility::Pub,
+            Some(ast::Visibility::Protected) => Visibility::Pro,
+            Some(ast::Visibility::Private) | None => Visibility::Sec,
+        };
 
-    fn ast2hir(self, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
-        fn lower_module(
-            this: ast::Module,
-            ctx: &mut Ast2HirCtx,
-            log: &CompilerLog,
-        ) -> Result<Module, ()> {
-            let visibility = match this.visibility {
-                Some(ast::Visibility::Public) => Visibility::Pub,
-                Some(ast::Visibility::Protected) => Visibility::Pro,
-                Some(ast::Visibility::Private) | None => Visibility::Sec,
-            };
-
-            let ast_attributes = this.attributes.unwrap_or_default();
-            let attributes = BTreeSet::new();
-            for _attr in ast_attributes {
-                log.report(&HirErr::UnrecognizedModuleAttribute);
-            }
-
-            let mut items = Vec::with_capacity(this.items.len());
-            for item in this.items {
-                lower_item(ctx, &mut items, item, log)?;
-            }
-
-            let module = Module {
-                visibility,
-                attributes,
-                name: this.name,
-                items,
-            };
-
-            Ok(module)
+        let ast_attributes = this.attributes.unwrap_or_default();
+        let attributes = BTreeSet::new();
+        for _attr in ast_attributes {
+            log.report(&HirErr::UnrecognizedModuleAttribute);
         }
 
-        ctx.current_scope.push(self.name.clone());
-        let result = lower_module(self, ctx, log);
-        ctx.current_scope.pop();
-        result
+        let mut items = Vec::with_capacity(this.items.len());
+        for item in this.items {
+            lower_item(ctx, &mut items, item, log)?;
+        }
+
+        let module = Module {
+            visibility,
+            attributes,
+            name: this.name,
+            items,
+        };
+
+        Ok(module)
     }
+
+    ctx.current_scope.push(module.name.clone());
+    let result = lower_module(module, ctx, log);
+    ctx.current_scope.pop();
+    result
 }
