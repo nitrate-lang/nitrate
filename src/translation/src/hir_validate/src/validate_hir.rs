@@ -62,6 +62,6 @@ where
     ) -> Result<ValidHir<Self>, ()>;
 }
 
-pub(crate) fn phase<R>(_name: &str, f: impl FnOnce() -> R) -> R {
+pub(crate) fn establish_property<R>(_name: &str, f: impl FnOnce() -> R) -> R {
     f()
 }

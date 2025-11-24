@@ -1,6 +1,6 @@
 use crate::{
     ValidHir, ValidateHirItem, ValidateHirType, ValidateHirValue, ValidateTypeOptions,
-    diagnosis::Issue, phase,
+    diagnosis::Issue, establish_property,
 };
 use nitrate_diagnosis::CompilerLog;
 use nitrate_hir::{SymbolTab, prelude::*};
@@ -22,7 +22,7 @@ impl ValidateHirItem for GlobalVariableAttribute {
 
 impl ValidateHirItem for GlobalVariable {
     fn verify(&self, tab: &SymbolTab, log: &CompilerLog) -> Result<(), ()> {
-        phase("attribute check", || -> Result<(), ()> {
+        establish_property("attributes are valid", || -> Result<(), ()> {
             for attr in &self.attributes {
                 attr.verify(tab, log)?;
             }
@@ -30,15 +30,17 @@ impl ValidateHirItem for GlobalVariable {
             Ok(())
         })?;
 
-        phase("init value check", || -> Result<(), ()> {
+        establish_property("init value is acceptable", || -> Result<(), ()> {
             let init_value = self.init.borrow();
             init_value.verify(tab, log)?;
             Ok(())
         })?;
 
-        phase("type check", || -> Result<(), ()> {
-            self.ty.verify(tab, log, &ValidateTypeOptions::storable())?;
+        establish_property("type is Sized", || -> Result<(), ()> {
+            self.ty.verify(tab, log, &ValidateTypeOptions::storable())
+        })?;
 
+        establish_property("value type satisfies constraint", || -> Result<(), ()> {
             let init_value = self.init.borrow();
             let init_value_ty = init_value.determine_type(tab).map_err(|_| ())?;
 
