@@ -556,8 +556,8 @@ fn ast_localvar2hir(
     log: &CompilerLog,
 ) -> Result<LocalVariableId, ()> {
     let kind = match var.kind {
-        ast::LocalVariableKind::Let => LocalVariableKind::Stack,
-        ast::LocalVariableKind::Var => LocalVariableKind::Dynamic,
+        ast::LocalVariableKind::Let => LocalKind::Let,
+        ast::LocalVariableKind::Var => LocalKind::Var,
     };
 
     let attributes = BTreeSet::new();

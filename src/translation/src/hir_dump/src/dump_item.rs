@@ -1,5 +1,6 @@
 use crate::{Dump, DumpContext, write_indent};
 use nitrate_hir::prelude::*;
+use nitrate_token::escape_string;
 use std::collections::BTreeSet;
 
 impl Dump for Visibility {
@@ -45,38 +46,38 @@ impl Dump for GlobalVariableAttribute {
     fn dump(
         &self,
         _ctx: &mut DumpContext,
-        _o: &mut dyn std::fmt::Write,
+        o: &mut dyn std::fmt::Write,
     ) -> Result<(), std::fmt::Error> {
-        Ok(())
+        match self {
+            GlobalVariableAttribute::NoMangle => write!(o, "no_mangle"),
+        }
     }
 }
 
-impl Dump for GlobalVariableId {
+impl Dump for GlobalVariable {
     fn dump(
         &self,
         ctx: &mut DumpContext,
         o: &mut dyn std::fmt::Write,
     ) -> Result<(), std::fmt::Error> {
-        let this = self.borrow();
-
-        if this.visibility != Visibility::Sec {
-            this.visibility.dump(ctx, o)?;
+        if self.visibility != Visibility::Sec {
+            self.visibility.dump(ctx, o)?;
             write!(o, " ")?;
         }
 
-        write!(o, "static::{}::`{}` ", self.as_usize(), this.name)?;
+        write!(o, "static ")?;
+        dump_attributes(&self.attributes, ctx, o)?;
 
-        if this.is_mutable {
+        if self.is_mutable {
             write!(o, "mut ")?;
         }
-
-        dump_attributes(&this.attributes, ctx, o)?;
+        write!(o, "{} ", escape_string(&self.name, true))?;
 
         write!(o, ": ")?;
-        this.ty.dump(ctx, o)?;
+        self.ty.dump(ctx, o)?;
 
         write!(o, " = ")?;
-        this.init.borrow().dump(ctx, o)?;
+        self.init.borrow().dump(ctx, o)?;
 
         write!(o, ";")
     }
@@ -92,32 +93,29 @@ impl Dump for LocalVariableAttribute {
     }
 }
 
-impl Dump for LocalVariableId {
+impl Dump for LocalVariable {
     fn dump(
         &self,
         ctx: &mut DumpContext,
         o: &mut dyn std::fmt::Write,
     ) -> Result<(), std::fmt::Error> {
-        let this = self.borrow();
-
-        match this.kind {
-            LocalVariableKind::Stack => write!(o, "let::{}::`{}` ", self.as_usize(), this.name)?,
-            LocalVariableKind::Dynamic => write!(o, "var::{}::`{}` ", self.as_usize(), this.name)?,
-            LocalVariableKind::Static => {
-                write!(o, "static::{}::`{}` ", self.as_usize(), this.name)?;
-            }
+        match self.kind {
+            LocalKind::Let => write!(o, "let ")?,
+            LocalKind::Var => write!(o, "var ")?,
+            LocalKind::Static => write!(o, "static ")?,
         }
 
-        if this.is_mutable {
+        dump_attributes(&self.attributes, ctx, o)?;
+
+        if self.is_mutable {
             write!(o, "mut ")?;
         }
-
-        dump_attributes(&this.attributes, ctx, o)?;
+        write!(o, "{} ", escape_string(&self.name, true))?;
 
         write!(o, ": ")?;
-        this.ty.dump(ctx, o)?;
+        self.ty.dump(ctx, o)?;
 
-        if let Some(initializer) = &this.init {
+        if let Some(initializer) = &self.init {
             write!(o, " = ")?;
             initializer.borrow().dump(ctx, o)?;
         }
@@ -136,26 +134,23 @@ impl Dump for ParameterAttribute {
     }
 }
 
-impl Dump for ParameterId {
+impl Dump for Parameter {
     fn dump(
         &self,
         ctx: &mut DumpContext,
         o: &mut dyn std::fmt::Write,
     ) -> Result<(), std::fmt::Error> {
-        let this = self.borrow();
+        dump_attributes(&self.attributes, ctx, o)?;
 
-        write!(o, "param::{}::`{}` ", self.as_usize(), this.name)?;
-
-        if this.is_mutable {
+        if self.is_mutable {
             write!(o, "mut ")?;
         }
-
-        dump_attributes(&this.attributes, ctx, o)?;
+        write!(o, "{} ", escape_string(&self.name, true))?;
 
         write!(o, ": ")?;
-        this.ty.dump(ctx, o)?;
+        self.ty.dump(ctx, o)?;
 
-        if let Some(default_value) = &this.default_value {
+        if let Some(default_value) = &self.default_value {
             write!(o, " = ")?;
             default_value.borrow().dump(ctx, o)?;
         }
@@ -164,33 +159,32 @@ impl Dump for ParameterId {
     }
 }
 
-impl Dump for FunctionId {
+impl Dump for Function {
     fn dump(
         &self,
         ctx: &mut DumpContext,
         o: &mut dyn std::fmt::Write,
     ) -> Result<(), std::fmt::Error> {
-        let this = self.borrow();
-
-        if this.visibility != Visibility::Sec {
-            this.visibility.dump(ctx, o)?;
+        if self.visibility != Visibility::Sec {
+            self.visibility.dump(ctx, o)?;
             write!(o, " ")?;
         }
 
-        write!(o, "fn::{}::`{}` ", self.as_usize(), this.name)?;
+        write!(o, "fn ")?;
+        dump_attributes(&self.attributes, ctx, o)?;
 
-        dump_attributes(&this.attributes, ctx, o)?;
+        write!(o, "{} ", escape_string(&self.name, true))?;
 
-        if this.params.is_empty() {
+        if self.params.is_empty() {
             write!(o, "()")?;
         } else {
             writeln!(o, "(")?;
 
-            for param in &this.params {
+            for param in &self.params {
                 ctx.indent += 1;
 
                 write_indent(ctx, o)?;
-                param.dump(ctx, o)?;
+                param.borrow().dump(ctx, o)?;
                 writeln!(o, ",")?;
 
                 ctx.indent -= 1;
@@ -201,9 +195,9 @@ impl Dump for FunctionId {
         }
 
         write!(o, " -> ")?;
-        this.return_type.dump(ctx, o)?;
+        self.return_type.dump(ctx, o)?;
 
-        if let Some(body) = &this.body {
+        if let Some(body) = &self.body {
             write!(o, " ")?;
             body.borrow().dump(ctx, o)
         } else {
@@ -212,31 +206,30 @@ impl Dump for FunctionId {
     }
 }
 
-impl Dump for TraitId {
+impl Dump for Trait {
     fn dump(
         &self,
         ctx: &mut DumpContext,
         o: &mut dyn std::fmt::Write,
     ) -> Result<(), std::fmt::Error> {
-        let this = self.borrow();
-
-        if this.visibility != Visibility::Sec {
-            this.visibility.dump(ctx, o)?;
+        if self.visibility != Visibility::Sec {
+            self.visibility.dump(ctx, o)?;
             write!(o, " ")?;
         }
 
-        write!(o, "trait::{}::`{}` ", self.as_usize(), this.name)?;
+        write!(o, "trait ")?;
+        write!(o, "{} ", escape_string(&self.name, true))?;
 
-        if this.methods.is_empty() {
+        if self.methods.is_empty() {
             write!(o, " {{}}")
         } else {
             writeln!(o, " {{")?;
 
-            for method in &this.methods {
+            for method in &self.methods {
                 ctx.indent += 1;
 
                 write_indent(ctx, o)?;
-                method.dump(ctx, o)?;
+                method.borrow().dump(ctx, o)?;
                 writeln!(o)?;
 
                 ctx.indent -= 1;
@@ -258,48 +251,6 @@ impl Dump for ModuleAttribute {
     }
 }
 
-impl Dump for ModuleId {
-    fn dump(
-        &self,
-        ctx: &mut DumpContext,
-        o: &mut dyn std::fmt::Write,
-    ) -> Result<(), std::fmt::Error> {
-        let this = self.borrow();
-
-        if this.visibility != Visibility::Sec {
-            this.visibility.dump(ctx, o)?;
-            write!(o, " ")?;
-        }
-
-        write!(o, "mod::{}::`{}` ", self.as_usize(), this.name)?;
-
-        dump_attributes(&this.attributes, ctx, o)?;
-
-        if this.items.is_empty() {
-            write!(o, "{{}}")
-        } else {
-            writeln!(o, "{{")?;
-
-            for (i, item) in this.items.iter().enumerate() {
-                if i != 0 {
-                    writeln!(o)?;
-                }
-
-                ctx.indent += 1;
-
-                write_indent(ctx, o)?;
-                item.dump(ctx, o)?;
-                writeln!(o)?;
-
-                ctx.indent -= 1;
-            }
-
-            write_indent(ctx, o)?;
-            write!(o, "}}")
-        }
-    }
-}
-
 impl Dump for Module {
     fn dump(
         &self,
@@ -311,9 +262,10 @@ impl Dump for Module {
             write!(o, " ")?;
         }
 
-        write!(o, "mod::`{}` ", self.name)?;
-
+        write!(o, "mod ")?;
         dump_attributes(&self.attributes, ctx, o)?;
+
+        write!(o, "{} ", escape_string(&self.name, true))?;
 
         if self.items.is_empty() {
             write!(o, "{{}}")
@@ -340,59 +292,48 @@ impl Dump for Module {
     }
 }
 
-impl Dump for TypeAliasDefId {
+impl Dump for TypeAliasDef {
     fn dump(
         &self,
         ctx: &mut DumpContext,
         o: &mut dyn std::fmt::Write,
     ) -> Result<(), std::fmt::Error> {
-        let this = self.borrow();
-
-        if this.visibility != Visibility::Sec {
-            this.visibility.dump(ctx, o)?;
+        if self.visibility != Visibility::Sec {
+            self.visibility.dump(ctx, o)?;
             write!(o, " ")?;
         }
 
-        write!(o, "typealias::{}::`{}` ", self.as_usize(), this.name)?;
-
-        write!(o, "= ")?;
-        this.type_id.dump(ctx, o)?;
-
+        write!(o, "type {} = ", escape_string(&self.name, true))?;
+        self.type_id.dump(ctx, o)?;
         write!(o, ";")
     }
 }
 
-impl Dump for StructDefId {
+impl Dump for StructDef {
     fn dump(
         &self,
         ctx: &mut DumpContext,
         o: &mut dyn std::fmt::Write,
     ) -> Result<(), std::fmt::Error> {
-        let this = self.borrow();
-
-        if this.visibility != Visibility::Sec {
-            this.visibility.dump(ctx, o)?;
+        if self.visibility != Visibility::Sec {
+            self.visibility.dump(ctx, o)?;
             write!(o, " ")?;
         }
 
-        write!(o, "struct::{}::`{}` ", self.as_usize(), this.name)?;
-
-        write!(o, "= ")?;
-
         write!(o, "struct ")?;
+        dump_attributes(&self.attributes, ctx, o)?;
+        write!(o, "{} ", escape_string(&self.name, true))?;
 
-        dump_attributes(&this.attributes, ctx, o)?;
-
-        if this.fields.is_empty() {
+        if self.fields.is_empty() {
             write!(o, "{{}}")?;
         } else {
             writeln!(o, "{{")?;
 
-            for field in this.fields.values() {
+            for field in self.fields.values() {
                 ctx.indent += 1;
 
                 write_indent(ctx, o)?;
-                write!(o, "{}", field.name)?;
+                write!(o, "{}", escape_string(&field.name, true))?;
 
                 write!(o, ": ")?;
                 field.ty.dump(ctx, o)?;
@@ -410,36 +351,31 @@ impl Dump for StructDefId {
     }
 }
 
-impl Dump for EnumDefId {
+impl Dump for EnumDef {
     fn dump(
         &self,
         ctx: &mut DumpContext,
         o: &mut dyn std::fmt::Write,
     ) -> Result<(), std::fmt::Error> {
-        let this = self.borrow();
-
-        if this.visibility != Visibility::Sec {
-            this.visibility.dump(ctx, o)?;
+        if self.visibility != Visibility::Sec {
+            self.visibility.dump(ctx, o)?;
             write!(o, " ")?;
         }
 
-        write!(o, "enum::{}::`{}` ", self.as_usize(), this.name)?;
-
-        write!(o, "= ")?;
         write!(o, "enum ")?;
+        dump_attributes(&self.attributes, ctx, o)?;
+        write!(o, "{} ", escape_string(&self.name, true))?;
 
-        dump_attributes(&this.attributes, ctx, o)?;
-
-        if this.variants.is_empty() {
+        if self.variants.is_empty() {
             write!(o, "{{}}")?;
         } else {
             writeln!(o, "{{")?;
 
-            for variant in &this.variants {
+            for variant in &self.variants {
                 ctx.indent += 1;
 
                 write_indent(ctx, o)?;
-                write!(o, "{}", variant.name)?;
+                write!(o, "{}", escape_string(&variant.name, true))?;
 
                 write!(o, ": ")?;
                 variant.ty.dump(ctx, o)?;
@@ -463,12 +399,12 @@ impl Dump for Item {
         o: &mut dyn std::fmt::Write,
     ) -> Result<(), std::fmt::Error> {
         match self {
-            Item::Function(f) => f.dump(ctx, o),
-            Item::GlobalVariable(gv) => gv.dump(ctx, o),
-            Item::Module(m) => m.dump(ctx, o),
-            Item::TypeAliasDef(ta) => ta.dump(ctx, o),
-            Item::StructDef(sd) => sd.dump(ctx, o),
-            Item::EnumDef(ed) => ed.dump(ctx, o),
+            Item::Function(f) => f.borrow().dump(ctx, o),
+            Item::GlobalVariable(gv) => gv.borrow().dump(ctx, o),
+            Item::Module(m) => m.borrow().dump(ctx, o),
+            Item::TypeAliasDef(ta) => ta.borrow().dump(ctx, o),
+            Item::StructDef(sd) => sd.borrow().dump(ctx, o),
+            Item::EnumDef(ed) => ed.borrow().dump(ctx, o),
         }
     }
 }

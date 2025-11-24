@@ -1,4 +1,4 @@
-use crate::{Dump, DumpContext, dump_item::dump_attributes, write_indent};
+use crate::{Dump, DumpContext, dump_item::dump_attributes};
 use nitrate_hir::prelude::*;
 
 impl Dump for StructAttribute {
@@ -131,9 +131,8 @@ impl Dump for Type {
                 write!(o, ")")
             }
 
-            Type::Struct { def } => def.dump(ctx, o),
-
-            Type::Enum { def } => def.dump(ctx, o),
+            Type::Struct { def } => def.borrow().dump(ctx, o),
+            Type::Enum { def } => def.borrow().dump(ctx, o),
 
             Type::TypeAlias { def } => {
                 let type_alias = &def.borrow().type_id;

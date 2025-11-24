@@ -14,7 +14,7 @@ impl Dump for BlockElement {
                 write!(o, ";")
             }
 
-            BlockElement::Local(local_id) => local_id.dump(ctx, o),
+            BlockElement::Local(local_id) => local_id.borrow().dump(ctx, o),
         }
     }
 }
@@ -319,7 +319,7 @@ impl Dump for Value {
                 }
                 write!(o, "] ")?;
 
-                callee.dump(ctx, o)
+                callee.borrow().dump(ctx, o)
             }
 
             Value::Call {

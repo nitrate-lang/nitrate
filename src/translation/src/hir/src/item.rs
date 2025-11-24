@@ -36,15 +36,15 @@ pub enum LocalVariableAttribute {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
-pub enum LocalVariableKind {
-    Stack,
-    Dynamic,
+pub enum LocalKind {
+    Let,
+    Var,
     Static,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct LocalVariable {
-    pub kind: LocalVariableKind,
+    pub kind: LocalKind,
     pub attributes: BTreeSet<LocalVariableAttribute>,
     pub is_mutable: bool,
     pub name: NString,
