@@ -4,5 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+nitrate_diagnosis = { path = "../../../diagnosis" }
+
 nitrate_hir = { path = "../hir" }
 nitrate_hir_get_type = { path = "../hir_get_type" }

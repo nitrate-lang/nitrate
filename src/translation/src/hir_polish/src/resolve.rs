@@ -18,11 +18,11 @@ impl TyCtx {
         self.ok
     }
 
-    pub fn resolve_function(&self, function: &mut Function, log: &CompilerLog) {
+    pub fn resolve_function(&self, _function: &mut Function, _log: &CompilerLog) {
         // TODO: type resolution/inference/checking logic
     }
 
-    pub fn resolve_global(&self, global: &mut GlobalVariable, log: &CompilerLog) {
+    pub fn resolve_global(&self, _global: &mut GlobalVariable, _log: &CompilerLog) {
         // TODO: type resolution/inference/checking logic
     }
 }

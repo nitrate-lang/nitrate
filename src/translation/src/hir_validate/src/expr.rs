@@ -1,28 +1,40 @@
 use crate::{ValidHir, ValidateHir};
+use nitrate_diagnosis::CompilerLog;
 use nitrate_hir::{SymbolTab, prelude::*};
 
 impl ValidateHir for Block {
-    fn verify(&self, tab: &SymbolTab) -> Result<(), ()> {
-        // TODO: Ensure unconditional branches are only at the end of the block
+    fn verify(&self, tab: &SymbolTab, log: &CompilerLog) -> Result<(), ()> {
+        for (i, elem) in self.elements.iter().enumerate() {
+            let is_last = i == self.elements.len() - 1;
 
-        for elem in &self.elements {
             match elem {
-                BlockElement::Expr(expr) => expr.borrow().verify(tab)?,
-                BlockElement::Local(local) => local.borrow().verify(tab)?,
+                BlockElement::Expr(expr)
+                    if expr.borrow().is_break()
+                        | expr.borrow().is_continue()
+                        | expr.borrow().is_return() =>
+                {
+                    expr.borrow().verify(tab, log)?;
+                    if !is_last {
+                        return Err(());
+                    }
+                }
+
+                BlockElement::Expr(expr) => expr.borrow().verify(tab, log)?,
+                BlockElement::Local(local) => local.borrow().verify(tab, log)?,
             }
         }
 
         Ok(())
     }
 
-    fn validate(self, tab: &SymbolTab) -> Result<ValidHir<Self>, ()> {
-        self.verify(tab)?;
+    fn validate(self, tab: &SymbolTab, log: &CompilerLog) -> Result<ValidHir<Self>, ()> {
+        self.verify(tab, log)?;
         Ok(ValidHir::new(self))
     }
 }
 
 impl ValidateHir for Value {
-    fn verify(&self, _tab: &SymbolTab) -> Result<(), ()> {
+    fn verify(&self, _tab: &SymbolTab, _log: &CompilerLog) -> Result<(), ()> {
         match self {
             Value::Unit
             | Value::Bool(_)
@@ -212,8 +224,8 @@ impl ValidateHir for Value {
         }
     }
 
-    fn validate(self, tab: &SymbolTab) -> Result<ValidHir<Self>, ()> {
-        self.verify(tab)?;
+    fn validate(self, tab: &SymbolTab, log: &CompilerLog) -> Result<ValidHir<Self>, ()> {
+        self.verify(tab, log)?;
         Ok(ValidHir::new(self))
     }
 }

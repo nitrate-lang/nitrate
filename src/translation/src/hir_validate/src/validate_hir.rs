@@ -1,3 +1,4 @@
+use nitrate_diagnosis::CompilerLog;
 use nitrate_hir::SymbolTab;
 
 pub struct ValidHir<T> {
@@ -18,6 +19,6 @@ pub trait ValidateHir
 where
     Self: Sized,
 {
-    fn verify(&self, tab: &SymbolTab) -> Result<(), ()>;
-    fn validate(self, tab: &SymbolTab) -> Result<ValidHir<Self>, ()>;
+    fn verify(&self, tab: &SymbolTab, log: &CompilerLog) -> Result<(), ()>;
+    fn validate(self, tab: &SymbolTab, log: &CompilerLog) -> Result<ValidHir<Self>, ()>;
 }

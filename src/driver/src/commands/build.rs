@@ -294,7 +294,7 @@ impl Interpreter<'_> {
                 return Ok(());
             }
 
-            let valid_hir_module = match hir_module.validate(&symbol_tab) {
+            let valid_hir_module = match hir_module.validate(&symbol_tab, &log) {
                 Ok(m) => m,
                 Err(_) => {
                     error!(

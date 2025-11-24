@@ -113,7 +113,7 @@ impl PackageBuilder {
         }
     }
 
-    pub fn version(mut self, version: Version) -> Self {
+    pub fn _version(mut self, version: Version) -> Self {
         self.version = version;
         self
     }
@@ -123,7 +123,7 @@ impl PackageBuilder {
         self
     }
 
-    pub fn add_dependency(mut self, dependency: Dependency) -> Self {
+    pub fn _add_dependency(mut self, dependency: Dependency) -> Self {
         self.dependencies.push(dependency);
         self
     }
