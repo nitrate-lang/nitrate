@@ -65,7 +65,3 @@ where
 pub(crate) fn phase<R>(_name: &str, f: impl FnOnce() -> R) -> R {
     f()
 }
-
-pub(crate) fn phase_detail<R>(_name: &str, _note: &str, f: impl FnOnce() -> R) -> R {
-    f()
-}

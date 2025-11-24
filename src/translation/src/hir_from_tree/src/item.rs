@@ -10,6 +10,12 @@ fn ast_typealias2hir(
     ctx: &mut Ast2HirCtx,
     log: &CompilerLog,
 ) -> Result<TypeAliasDefId, ()> {
+    let name = ctx.qualify_name(&type_alias.name).into();
+    if ctx.tab.get_type_alias(&name).is_some() {
+        log.report(&HirErr::DuplicateTypeAliasDefinition);
+        return Err(());
+    }
+
     let visibility = match type_alias.visibility {
         Some(ast::Visibility::Public) => Visibility::Pub,
         Some(ast::Visibility::Protected) => Visibility::Pro,
@@ -21,8 +27,6 @@ fn ast_typealias2hir(
             log.report(&HirErr::UnrecognizedTypeAliasAttribute);
         }
     }
-
-    let name = ctx.qualify_name(&type_alias.name).into();
 
     if type_alias.generics.is_some() {
         log.report(&HirErr::UnimplementedFeature("generic type aliases".into()));
@@ -59,6 +63,12 @@ fn ast_structdef2hir(
     ctx: &mut Ast2HirCtx,
     log: &CompilerLog,
 ) -> Result<StructDefId, ()> {
+    let name = ctx.qualify_name(&struct_def.name).into();
+    if ctx.tab.get_struct(&name).is_some() {
+        log.report(&HirErr::DuplicateStructDefinition);
+        return Err(());
+    }
+
     let visibility = match struct_def.visibility {
         Some(ast::Visibility::Public) => Visibility::Pub,
         Some(ast::Visibility::Protected) => Visibility::Pro,
@@ -71,8 +81,6 @@ fn ast_structdef2hir(
             log.report(&HirErr::UnrecognizedStructAttribute);
         }
     }
-
-    let name = ctx.qualify_name(&struct_def.name).into();
 
     if struct_def.generics.is_some() {
         log.report(&HirErr::UnimplementedFeature("generic structs".into()));
@@ -141,6 +149,12 @@ fn ast_enumdef2hir(
     ctx: &mut Ast2HirCtx,
     log: &CompilerLog,
 ) -> Result<EnumDefId, ()> {
+    let name = ctx.qualify_name(&enum_def.name).into();
+    if ctx.tab.get_enum(&name).is_some() {
+        log.report(&HirErr::DuplicateEnumDefinition);
+        return Err(());
+    }
+
     let visibility = match enum_def.visibility {
         Some(ast::Visibility::Public) => Visibility::Pub,
         Some(ast::Visibility::Protected) => Visibility::Pro,
@@ -153,8 +167,6 @@ fn ast_enumdef2hir(
             log.report(&HirErr::UnrecognizedEnumAttribute);
         }
     }
-
-    let name = ctx.qualify_name(&enum_def.name).into();
 
     if enum_def.generics.is_some() {
         log.report(&HirErr::UnimplementedFeature("generic enums".into()));
@@ -230,6 +242,12 @@ fn ast_globalvar2hir(
     ctx: &mut Ast2HirCtx,
     log: &CompilerLog,
 ) -> Result<GlobalVariableId, ()> {
+    let name = ctx.qualify_name(&globalvar.name).into();
+    if ctx.tab.get_global_variable(&name).is_some() {
+        log.report(&HirErr::DuplicateGlobalVariableDefinition);
+        return Err(());
+    }
+
     let visibility = match globalvar.visibility {
         Some(ast::Visibility::Public) => Visibility::Pub,
         Some(ast::Visibility::Protected) => Visibility::Pro,
@@ -248,7 +266,6 @@ fn ast_globalvar2hir(
         Some(ast::Mutability::Const) | None => false,
     };
 
-    let name = ctx.qualify_name(&globalvar.name).into();
     let mangled_name = if attributes.contains(&GlobalVariableAttribute::NoMangle) {
         globalvar.name.clone()
     } else {
@@ -257,17 +274,11 @@ fn ast_globalvar2hir(
 
     let ty = match globalvar.ty.to_owned() {
         None => ctx.create_inference_placeholder().into(),
-        Some(t) => {
-            
-            t.ast2hir(ctx, log)?.into()
-        }
+        Some(t) => t.ast2hir(ctx, log)?.into(),
     };
 
     let init = match globalvar.initializer.to_owned() {
-        Some(expr) => {
-            
-            expr.ast2hir(ctx, log)?.into()
-        }
+        Some(expr) => expr.ast2hir(ctx, log)?.into(),
 
         None => {
             log.report(&HirErr::GlobalVariableMustHaveInitializer);
@@ -340,6 +351,12 @@ fn ast_function2hir(
     ctx: &mut Ast2HirCtx,
     log: &CompilerLog,
 ) -> Result<FunctionId, ()> {
+    let name: NString = ctx.qualify_name(&function.name).into();
+    if ctx.tab.get_function(&name).is_some() {
+        log.report(&HirErr::DuplicateFunctionDefinition);
+        return Err(());
+    }
+
     let visibility = match function.visibility {
         Some(ast::Visibility::Public) => Visibility::Pub,
         Some(ast::Visibility::Protected) => Visibility::Pro,
@@ -376,7 +393,6 @@ fn ast_function2hir(
         }
     }
 
-    let name: NString = ctx.qualify_name(&function.name).into();
     let mangled_name: NString = if attributes.contains(&FunctionAttribute::NoMangle) {
         function.name.clone()
     } else {
