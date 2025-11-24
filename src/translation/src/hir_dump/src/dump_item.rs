@@ -59,7 +59,7 @@ impl Dump for GlobalVariableId {
         ctx: &mut DumpContext,
         o: &mut dyn std::io::Write,
     ) -> Result<(), std::io::Error> {
-        let this = ctx.store[self].borrow();
+        let this = self.borrow();
 
         if this.visibility != Visibility::Sec {
             this.visibility.dump(ctx, o)?;
@@ -75,10 +75,10 @@ impl Dump for GlobalVariableId {
         dump_attributes(&this.attributes, ctx, o)?;
 
         write!(o, ": ")?;
-        ctx.store[&this.ty].dump(ctx, o)?;
+        this.ty.dump(ctx, o)?;
 
         write!(o, " = ")?;
-        ctx.store[&this.init].borrow().dump(ctx, o)?;
+        this.init.borrow().dump(ctx, o)?;
 
         write!(o, ";")
     }
@@ -102,7 +102,7 @@ impl Dump for LocalVariableId {
         ctx: &mut DumpContext,
         o: &mut dyn std::io::Write,
     ) -> Result<(), std::io::Error> {
-        let this = ctx.store[self].borrow();
+        let this = self.borrow();
 
         match this.kind {
             LocalVariableKind::Stack => write!(o, "let::{}::`{}` ", self.as_usize(), this.name)?,
@@ -119,11 +119,11 @@ impl Dump for LocalVariableId {
         dump_attributes(&this.attributes, ctx, o)?;
 
         write!(o, ": ")?;
-        ctx.store[&this.ty].dump(ctx, o)?;
+        this.ty.dump(ctx, o)?;
 
         if let Some(initializer) = &this.init {
             write!(o, " = ")?;
-            ctx.store[initializer].borrow().dump(ctx, o)?;
+            initializer.borrow().dump(ctx, o)?;
         }
 
         write!(o, ";")
@@ -148,7 +148,7 @@ impl Dump for ParameterId {
         ctx: &mut DumpContext,
         o: &mut dyn std::io::Write,
     ) -> Result<(), std::io::Error> {
-        let this = ctx.store[self].borrow();
+        let this = self.borrow();
 
         write!(o, "param::{}::`{}` ", self.as_usize(), this.name)?;
 
@@ -159,11 +159,11 @@ impl Dump for ParameterId {
         dump_attributes(&this.attributes, ctx, o)?;
 
         write!(o, ": ")?;
-        ctx.store[&this.ty].dump(ctx, o)?;
+        this.ty.dump(ctx, o)?;
 
         if let Some(default_value) = &this.default_value {
             write!(o, " = ")?;
-            ctx.store[default_value].borrow().dump(ctx, o)?;
+            default_value.borrow().dump(ctx, o)?;
         }
 
         Ok(())
@@ -176,7 +176,7 @@ impl Dump for FunctionId {
         ctx: &mut DumpContext,
         o: &mut dyn std::io::Write,
     ) -> Result<(), std::io::Error> {
-        let this = ctx.store[self].borrow();
+        let this = self.borrow();
 
         if this.visibility != Visibility::Sec {
             this.visibility.dump(ctx, o)?;
@@ -207,11 +207,11 @@ impl Dump for FunctionId {
         }
 
         write!(o, " -> ")?;
-        ctx.store[&this.return_type].dump(ctx, o)?;
+        this.return_type.dump(ctx, o)?;
 
         if let Some(body) = &this.body {
             write!(o, " ")?;
-            ctx.store[body].borrow().dump(ctx, o)
+            body.borrow().dump(ctx, o)
         } else {
             write!(o, ";")
         }
@@ -224,7 +224,7 @@ impl Dump for TraitId {
         ctx: &mut DumpContext,
         o: &mut dyn std::io::Write,
     ) -> Result<(), std::io::Error> {
-        let this = ctx.store[self].borrow();
+        let this = self.borrow();
 
         if this.visibility != Visibility::Sec {
             this.visibility.dump(ctx, o)?;
@@ -272,7 +272,7 @@ impl Dump for ModuleId {
         ctx: &mut DumpContext,
         o: &mut dyn std::io::Write,
     ) -> Result<(), std::io::Error> {
-        let this = ctx.store[self].borrow();
+        let this = self.borrow();
 
         if this.visibility != Visibility::Sec {
             this.visibility.dump(ctx, o)?;
@@ -354,7 +354,7 @@ impl Dump for TypeAliasDefId {
         ctx: &mut DumpContext,
         o: &mut dyn std::io::Write,
     ) -> Result<(), std::io::Error> {
-        let this = ctx.store[self].borrow();
+        let this = self.borrow();
 
         if this.visibility != Visibility::Sec {
             this.visibility.dump(ctx, o)?;
@@ -364,7 +364,7 @@ impl Dump for TypeAliasDefId {
         write!(o, "typealias::{}::`{}` ", self.as_usize(), this.name)?;
 
         write!(o, "= ")?;
-        ctx.store[&this.type_id].dump(ctx, o)?;
+        this.type_id.dump(ctx, o)?;
 
         write!(o, ";")
     }
@@ -376,7 +376,7 @@ impl Dump for StructDefId {
         ctx: &mut DumpContext,
         o: &mut dyn std::io::Write,
     ) -> Result<(), std::io::Error> {
-        let this = ctx.store[self].borrow();
+        let this = self.borrow();
 
         if this.visibility != Visibility::Sec {
             this.visibility.dump(ctx, o)?;
@@ -403,7 +403,7 @@ impl Dump for StructDefId {
                 write!(o, "{}", field.name)?;
 
                 write!(o, ": ")?;
-                ctx.store[&field.ty].dump(ctx, o)?;
+                field.ty.dump(ctx, o)?;
 
                 write!(o, ",\n")?;
 
@@ -424,7 +424,7 @@ impl Dump for EnumDefId {
         ctx: &mut DumpContext,
         o: &mut dyn std::io::Write,
     ) -> Result<(), std::io::Error> {
-        let this = ctx.store[self].borrow();
+        let this = self.borrow();
 
         if this.visibility != Visibility::Sec {
             this.visibility.dump(ctx, o)?;
@@ -450,7 +450,7 @@ impl Dump for EnumDefId {
                 write!(o, "{}", variant.name)?;
 
                 write!(o, ": ")?;
-                ctx.store[&variant.ty].dump(ctx, o)?;
+                variant.ty.dump(ctx, o)?;
 
                 write!(o, ",\n")?;
 

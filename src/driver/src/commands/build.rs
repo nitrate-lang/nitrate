@@ -290,7 +290,7 @@ impl Interpreter<'_> {
             )?;
 
             if args.show_hir {
-                hir_module.dump(&mut DumpContext::new(&store), &mut std::io::stdout())?;
+                hir_module.dump(&mut DumpContext::new(), &mut std::io::stdout())?;
                 return Ok(());
             }
 

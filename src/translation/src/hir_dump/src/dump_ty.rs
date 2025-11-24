@@ -72,7 +72,7 @@ impl Dump for FunctionType {
 
                 write_indent(ctx, o)?;
                 write!(o, "{}: ", param.0)?;
-                ctx.store[&param.1].dump(ctx, o)?;
+                param.1.dump(ctx, o)?;
                 write!(o, ",\n")?;
 
                 ctx.indent -= 1;
@@ -83,7 +83,7 @@ impl Dump for FunctionType {
         }
 
         write!(o, " -> ")?;
-        ctx.store[&self.return_type].dump(ctx, o)
+        self.return_type.dump(ctx, o)
     }
 }
 
@@ -113,7 +113,7 @@ impl Dump for Type {
 
             Type::Array { element_type, len } => {
                 write!(o, "[")?;
-                ctx.store[element_type].dump(ctx, o)?;
+                element_type.dump(ctx, o)?;
                 write!(o, "; {len}]")
             }
 
@@ -124,7 +124,7 @@ impl Dump for Type {
                         write!(o, ", ")?;
                     }
 
-                    ctx.store[element_type].dump(ctx, o)?;
+                    element_type.dump(ctx, o)?;
                 }
 
                 if element_types.len() == 1 {
@@ -139,20 +139,20 @@ impl Dump for Type {
             Type::Enum { def } => def.dump(ctx, o),
 
             Type::TypeAlias { def } => {
-                let type_alias = &ctx.store[def].borrow().type_id;
-                ctx.store[type_alias].dump(ctx, o)
+                let type_alias = &def.borrow().type_id;
+                type_alias.dump(ctx, o)
             }
 
             Type::Refine { base, min, max } => {
-                ctx.store[base].dump(ctx, o)?;
+                base.dump(ctx, o)?;
                 write!(o, ": [")?;
-                ctx.store[min].dump(ctx, o)?;
+                min.dump(ctx, o)?;
                 write!(o, ":")?;
-                ctx.store[max].dump(ctx, o)?;
+                max.dump(ctx, o)?;
                 write!(o, "]")
             }
 
-            Type::Function { function_type } => ctx.store[function_type].dump(ctx, o),
+            Type::Function { function_type } => function_type.dump(ctx, o),
 
             Type::Reference {
                 lifetime,
@@ -179,7 +179,7 @@ impl Dump for Type {
                     write!(o, "<...>")
                 } else {
                     ctx.visited.insert(*to);
-                    let res = ctx.store[to].dump(ctx, o);
+                    let res = to.dump(ctx, o);
                     ctx.visited.remove(&to);
                     res
                 }
@@ -212,7 +212,7 @@ impl Dump for Type {
                     write!(o, "<...>")?;
                 } else {
                     ctx.visited.insert(*element_type);
-                    let res = ctx.store[element_type].dump(ctx, o);
+                    let res = element_type.dump(ctx, o);
                     ctx.visited.remove(&element_type);
                     res?;
                 }
@@ -238,7 +238,7 @@ impl Dump for Type {
                     write!(o, "<...>")
                 } else {
                     ctx.visited.insert(*to);
-                    let res = ctx.store[to].dump(ctx, o);
+                    let res = to.dump(ctx, o);
                     ctx.visited.remove(&to);
                     res
                 }

@@ -10,7 +10,7 @@ impl Dump for BlockElement {
     ) -> Result<(), std::io::Error> {
         match self {
             BlockElement::Expr(expr_id) => {
-                ctx.store[expr_id].borrow().dump(ctx, o)?;
+                expr_id.borrow().dump(ctx, o)?;
                 write!(o, ";")
             }
 
@@ -120,7 +120,7 @@ impl Dump for Value {
                     }
 
                     write!(o, "{}: ", field_name)?;
-                    ctx.store[field_value].borrow().dump(ctx, o)?;
+                    field_value.borrow().dump(ctx, o)?;
                 }
 
                 write!(o, " }}")
@@ -134,13 +134,13 @@ impl Dump for Value {
                 write!(o, "{}", enum_path)?;
                 write!(o, "::{}", variant)?;
                 write!(o, "(")?;
-                ctx.store[value].borrow().dump(ctx, o)?;
+                value.borrow().dump(ctx, o)?;
                 write!(o, ")")
             }
 
             Value::Binary { left, op, right } => {
                 write!(o, "(")?;
-                ctx.store[left].borrow().dump(ctx, o)?;
+                left.borrow().dump(ctx, o)?;
                 write!(
                     o,
                     " {} ",
@@ -167,7 +167,7 @@ impl Dump for Value {
                         BinaryOp::Ne => "!=",
                     }
                 )?;
-                ctx.store[right].borrow().dump(ctx, o)?;
+                right.borrow().dump(ctx, o)?;
                 write!(o, ")")
             }
 
@@ -181,7 +181,7 @@ impl Dump for Value {
                         UnaryOp::Not => "!",
                     }
                 )?;
-                ctx.store[expr].borrow().dump(ctx, o)?;
+                expr.borrow().dump(ctx, o)?;
                 write!(o, ")")
             }
 
@@ -190,21 +190,21 @@ impl Dump for Value {
                 field_name: field,
             } => {
                 write!(o, "(")?;
-                ctx.store[expr].borrow().dump(ctx, o)?;
+                expr.borrow().dump(ctx, o)?;
                 write!(o, ".{})", field)
             }
 
             Value::Assign { place, value } => {
                 write!(o, "(")?;
-                ctx.store[place].borrow().dump(ctx, o)?;
+                place.borrow().dump(ctx, o)?;
                 write!(o, " = ")?;
-                ctx.store[value].borrow().dump(ctx, o)?;
+                value.borrow().dump(ctx, o)?;
                 write!(o, ")")
             }
 
             Value::Deref { place } => {
                 write!(o, "(*")?;
-                ctx.store[place].borrow().dump(ctx, o)?;
+                place.borrow().dump(ctx, o)?;
                 write!(o, ")")
             }
 
@@ -220,7 +220,7 @@ impl Dump for Value {
                     (false, true) => write!(o, "poly mut ")?,
                     (false, false) => write!(o, "")?,
                 }
-                ctx.store[place].borrow().dump(ctx, o)?;
+                place.borrow().dump(ctx, o)?;
                 write!(o, ")")
             }
 
@@ -229,9 +229,9 @@ impl Dump for Value {
                 target_type: to,
             } => {
                 write!(o, "(")?;
-                ctx.store[expr].borrow().dump(ctx, o)?;
+                expr.borrow().dump(ctx, o)?;
                 write!(o, " as ")?;
-                ctx.store[to].dump(ctx, o)?;
+                to.dump(ctx, o)?;
                 write!(o, ")")
             }
 
@@ -261,26 +261,26 @@ impl Dump for Value {
                 false_branch,
             } => {
                 write!(o, "if ")?;
-                ctx.store[condition].borrow().dump(ctx, o)?;
+                condition.borrow().dump(ctx, o)?;
                 write!(o, " ")?;
-                ctx.store[true_branch].borrow().dump(ctx, o)?;
+                true_branch.borrow().dump(ctx, o)?;
                 if let Some(false_branch) = false_branch {
                     write!(o, " else ")?;
-                    ctx.store[false_branch].borrow().dump(ctx, o)?;
+                    false_branch.borrow().dump(ctx, o)?;
                 }
                 Ok(())
             }
 
             Value::While { condition, body } => {
                 write!(o, "while ")?;
-                ctx.store[condition].borrow().dump(ctx, o)?;
+                condition.borrow().dump(ctx, o)?;
                 write!(o, " ")?;
-                ctx.store[body].borrow().dump(ctx, o)
+                body.borrow().dump(ctx, o)
             }
 
             Value::Loop { body } => {
                 write!(o, "loop ")?;
-                ctx.store[body].borrow().dump(ctx, o)
+                body.borrow().dump(ctx, o)
             }
 
             Value::Break { label } => {
@@ -301,10 +301,10 @@ impl Dump for Value {
 
             Value::Return { value } => {
                 write!(o, "return ")?;
-                ctx.store[value].borrow().dump(ctx, o)
+                value.borrow().dump(ctx, o)
             }
 
-            Value::Block { block } => ctx.store[block].borrow().dump(ctx, o),
+            Value::Block { block } => block.borrow().dump(ctx, o),
 
             Value::Closure { captures, callee } => {
                 write!(o, "fn ")?;
@@ -327,14 +327,14 @@ impl Dump for Value {
                 positional,
                 named,
             } => {
-                ctx.store[callee].borrow().dump(ctx, o)?;
+                callee.borrow().dump(ctx, o)?;
                 write!(o, "(")?;
                 for (i, arg) in positional.iter().enumerate() {
                     if i != 0 {
                         write!(o, ", ")?;
                     }
 
-                    ctx.store[arg].borrow().dump(ctx, o)?;
+                    arg.borrow().dump(ctx, o)?;
                 }
                 for (i, (name, arg)) in named.iter().enumerate() {
                     if !named.is_empty() || i != 0 {
@@ -342,7 +342,7 @@ impl Dump for Value {
                     }
 
                     write!(o, "{}: ", name)?;
-                    ctx.store[arg].borrow().dump(ctx, o)?;
+                    arg.borrow().dump(ctx, o)?;
                 }
                 write!(o, ")")
             }
@@ -353,14 +353,14 @@ impl Dump for Value {
                 positional,
                 named,
             } => {
-                ctx.store[object].borrow().dump(ctx, o)?;
+                object.borrow().dump(ctx, o)?;
                 write!(o, ".{}(", method)?;
                 for (i, arg) in positional.iter().enumerate() {
                     if i != 0 {
                         write!(o, ", ")?;
                     }
 
-                    ctx.store[arg].borrow().dump(ctx, o)?;
+                    arg.borrow().dump(ctx, o)?;
                 }
                 for (i, (name, arg)) in named.iter().enumerate() {
                     if !named.is_empty() || i != 0 {
@@ -368,28 +368,28 @@ impl Dump for Value {
                     }
 
                     write!(o, "{}: ", name)?;
-                    ctx.store[arg].borrow().dump(ctx, o)?;
+                    arg.borrow().dump(ctx, o)?;
                 }
                 write!(o, ")")
             }
 
             Value::FunctionSymbol { id } => {
-                let func = ctx.store[id].borrow();
+                let func = id.borrow();
                 write!(o, "fn {}", func.name)
             }
 
             Value::GlobalVariableSymbol { id } => {
-                let global = ctx.store[id].borrow();
+                let global = id.borrow();
                 write!(o, "global {}", global.name)
             }
 
             Value::LocalVariableSymbol { id } => {
-                let local = ctx.store[id].borrow();
+                let local = id.borrow();
                 write!(o, "local {}", local.name)
             }
 
             Value::ParameterSymbol { id } => {
-                let param = ctx.store[id].borrow();
+                let param = id.borrow();
                 write!(o, "param {}", param.name)
             }
         }
