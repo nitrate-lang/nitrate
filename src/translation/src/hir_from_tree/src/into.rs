@@ -1,7 +1,7 @@
 use crate::{Ast2HirCtx, item::ast_module2hir};
 use nitrate_diagnosis::CompilerLog;
 use nitrate_hir::prelude::*;
-use nitrate_hir_resolve_type::TyCtx;
+use nitrate_hir_polish::TyCtx;
 use nitrate_tree::ast::{self};
 use nitrate_tree_resolve::{resolve_imports, resolve_paths};
 

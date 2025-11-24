@@ -1,5 +1,5 @@
 [package]
-name = "nitrate_hir_resolve_type"
+name = "nitrate_hir_polish"
 version = "0.1.0"
 edition = "2024"
 
