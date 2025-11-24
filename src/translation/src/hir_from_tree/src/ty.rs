@@ -157,7 +157,6 @@ impl Ast2Hir for ast::TypePath {
                         let struct_def = StructDef {
                             visibility: Visibility::Sec,
                             name: resolved_path,
-                            field_extras: Vec::new(),
                             attributes: BTreeSet::new(),
                             fields: Vec::new().into(),
                         }

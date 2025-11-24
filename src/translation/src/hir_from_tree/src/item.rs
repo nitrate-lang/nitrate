@@ -77,7 +77,6 @@ impl Ast2Hir for ast::Struct {
             log.report(&HirErr::UnimplementedFeature("generic structs".into()));
         }
 
-        let mut field_extras = Vec::new();
         let mut fields = Vec::new();
 
         for field in &self.fields {
@@ -103,19 +102,19 @@ impl Ast2Hir for ast::Struct {
             };
 
             let struct_field = StructField {
+                visibility: field_visibility,
                 attributes: field_attributes,
                 name: field_name,
                 ty: field_type,
+                default_value: field_default,
             };
 
-            field_extras.push((field_visibility, field_default));
             fields.push(struct_field);
         }
 
         let struct_def = StructDef {
             visibility,
             name,
-            field_extras,
             attributes,
             fields: fields.into(),
         };

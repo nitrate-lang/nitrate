@@ -551,8 +551,8 @@ impl StructDefIter<'_> {
         tcb: &mut dyn FnMut(&Type) -> ControlFlow<T>,
         visited: &mut HashSet<*const ()>,
     ) -> ControlFlow<T> {
-        for (_vis, default) in &self.node.field_extras {
-            if let Some(default_value) = default {
+        for field in &self.node.fields {
+            if let Some(default_value) = &field.default_value {
                 store[default_value]
                     .borrow()
                     .iter()

@@ -370,8 +370,8 @@ impl StructDefIterMut<'_> {
         store: &Store,
         vcb: &mut dyn FnMut(&mut Value) -> ControlFlow<T>,
     ) -> ControlFlow<T> {
-        for (_vis, default) in &self.node.field_extras {
-            if let Some(default_value) = default {
+        for field in &self.node.fields {
+            if let Some(default_value) = &field.default_value {
                 store[default_value]
                     .borrow_mut()
                     .iter_mut()

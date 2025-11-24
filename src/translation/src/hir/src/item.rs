@@ -132,16 +132,17 @@ pub enum StructFieldAttribute {
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct StructField {
+    pub visibility: Visibility,
     pub attributes: BTreeSet<StructFieldAttribute>,
     pub name: NString,
     pub ty: TypeId,
+    pub default_value: Option<ValueId>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct StructDef {
     pub visibility: Visibility,
     pub name: NString,
-    pub field_extras: Vec<(Visibility, Option<ValueId>)>,
     pub attributes: BTreeSet<StructAttribute>,
     pub fields: ThinVec<StructField>,
 }
