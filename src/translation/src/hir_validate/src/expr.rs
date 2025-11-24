@@ -1,4 +1,4 @@
-use crate::{ValidHir, ValidateCtx, ValidateHirItem, ValidateHirValue};
+use crate::{ValidHir, ValidateCtx, ValidateHirItem, ValidateHirValue, establish_property};
 use nitrate_hir::prelude::*;
 
 impl ValidateHirValue for Block {
@@ -7,21 +7,24 @@ impl ValidateHirValue for Block {
             return Ok(());
         }
 
-        // TODO: verify
-
         for (i, elem) in self.elements.iter().enumerate() {
             let is_last = i == self.elements.len() - 1;
 
             match elem {
                 BlockElement::Expr(expr)
-                    if expr.borrow().is_break()
-                        | expr.borrow().is_continue()
-                        | expr.borrow().is_return() =>
+                    if matches!(
+                        &*expr.borrow(),
+                        Value::Break { .. } | Value::Continue { .. } | Value::Return { .. }
+                    ) =>
                 {
                     expr.borrow().verify(ctx)?;
-                    if !is_last {
-                        return Err(());
-                    }
+
+                    establish_property("divergent statements have no successors", || {
+                        if !is_last {
+                            return Err(());
+                        }
+                        Ok(())
+                    })?;
                 }
 
                 BlockElement::Expr(expr) => expr.borrow().verify(ctx)?,
@@ -43,8 +46,6 @@ impl ValidateHirValue for Value {
         if ctx.cyclic_bail(self) {
             return Ok(());
         }
-
-        // TODO: verify
 
         match self {
             Value::Unit
@@ -213,25 +214,10 @@ impl ValidateHirValue for Value {
                 Ok(())
             }
 
-            Value::FunctionSymbol { id: _ } => {
-                // TODO: verify symbol
-                Ok(())
-            }
-
-            Value::GlobalVariableSymbol { id: _ } => {
-                // TODO: verify symbol
-                Ok(())
-            }
-
-            Value::LocalVariableSymbol { id: _ } => {
-                // TODO: verify symbol
-                Ok(())
-            }
-
-            Value::ParameterSymbol { id: _ } => {
-                // TODO: verify symbol
-                Ok(())
-            }
+            Value::FunctionSymbol { .. } => Ok(()),
+            Value::GlobalVariableSymbol { .. } => Ok(()),
+            Value::LocalVariableSymbol { .. } => Ok(()),
+            Value::ParameterSymbol { .. } => Ok(()),
         }
     }
 

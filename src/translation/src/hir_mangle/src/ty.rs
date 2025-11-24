@@ -43,37 +43,30 @@ pub(crate) fn mangle_type(ty: &Type) -> String {
         }
 
         Type::Struct { def } => {
-            let struct_def = &def.borrow();
             let mut mangled = String::new();
 
             mangled.push_str("S");
-            for (_, field_type) in &struct_def.fields {
-                let elem_mangled = mangle_type(&field_type.ty);
-                mangled.push_str(&elem_mangled);
-            }
-            mangled.push_str("E");
+            mangled.push_str(&def.borrow().name);
 
             mangled
         }
 
         Type::Enum { def } => {
-            let enum_def = &def.borrow();
             let mut mangled = String::new();
 
             mangled.push_str("M");
-            for variant in &enum_def.variants {
-                let variant_mangled = mangle_type(&variant.ty);
-                mangled.push_str(&variant_mangled);
-            }
-            mangled.push_str("E");
+            mangled.push_str(&def.borrow().name);
 
             mangled
         }
 
         Type::TypeAlias { def } => {
-            let type_alias = &def.borrow();
-            let type_id = &type_alias.type_id;
-            mangle_type(&type_id)
+            let mut mangled = String::new();
+
+            mangled.push_str("L");
+            mangled.push_str(&def.borrow().name);
+
+            mangled
         }
 
         Type::Refine { base, min, max } => {
@@ -118,7 +111,6 @@ pub(crate) fn mangle_type(ty: &Type) -> String {
                 (false, false) => "D",
             };
 
-            // FIXME: Infinite recursion for self-referential types
             let to_mangled = mangle_type(to);
             format!("R{}{}{}", lifetime_mangled, exmut_mangled, to_mangled)
         }
@@ -144,7 +136,6 @@ pub(crate) fn mangle_type(ty: &Type) -> String {
                 (false, false) => "D",
             };
 
-            // FIXME: Infinite recursion for self-referential types
             let elem_mangled = mangle_type(element_type);
             format!("Q{}{}{}", lifetime_mangled, exmut_mangled, elem_mangled)
         }
@@ -161,7 +152,6 @@ pub(crate) fn mangle_type(ty: &Type) -> String {
                 (false, false) => "D",
             };
 
-            // FIXME: Infinite recursion for self-referential types
             let to_mangled = mangle_type(to);
             format!("P{}{}", exmut_mangled, to_mangled)
         }
@@ -173,6 +163,5 @@ pub(crate) fn mangle_type(ty: &Type) -> String {
 }
 
 pub(crate) fn demangle_type(_mangled: &mut dyn std::io::Read) -> Result<Type, ()> {
-    // TODO: implement type demangling
-    Err(())
+    unimplemented!();
 }
