@@ -1,4 +1,7 @@
-use crate::{ValidHir, ValidateHirItem, ValidateHirType, ValidateHirValue, ValidateTypeOptions};
+use crate::{
+    ValidHir, ValidateHirItem, ValidateHirType, ValidateHirValue, ValidateTypeOptions,
+    diagnosis::Issue,
+};
 use nitrate_diagnosis::CompilerLog;
 use nitrate_hir::{SymbolTab, prelude::*};
 use nitrate_hir_get_type::HirGetType;
@@ -19,25 +22,22 @@ impl ValidateHirItem for GlobalVariableAttribute {
 
 impl ValidateHirItem for GlobalVariable {
     fn verify(&self, tab: &SymbolTab, log: &CompilerLog) -> Result<(), ()> {
-        // TODO: verify
-
         for attr in &self.attributes {
             attr.verify(tab, log)?;
         }
 
-        if self
-            .ty
-            .verify(tab, log, &ValidateTypeOptions::storable())
-            .is_err()
-        {
-            return Err(());
-        }
+        self.ty.verify(tab, log, &ValidateTypeOptions::storable())?;
 
         let init_value = self.init.borrow();
         init_value.verify(tab, log)?;
 
         let init_ty = init_value.determine_type(tab).map_err(|_| ())?;
         if *self.ty != init_ty {
+            log.report(&Issue::TypeMismatch {
+                expected: self.ty,
+                found: init_ty.into(),
+            });
+
             return Err(());
         }
 
@@ -52,7 +52,7 @@ impl ValidateHirItem for GlobalVariable {
 
 impl ValidateHirItem for LocalVariableAttribute {
     fn verify(&self, _tab: &SymbolTab, _log: &CompilerLog) -> Result<(), ()> {
-        // TODO: verify
+        // TODO: verify local variable attribute
 
         match self {
             LocalVariableAttribute::Invalid => Err(()),
@@ -67,7 +67,7 @@ impl ValidateHirItem for LocalVariableAttribute {
 
 impl ValidateHirItem for LocalVariable {
     fn verify(&self, tab: &SymbolTab, log: &CompilerLog) -> Result<(), ()> {
-        // TODO: verify
+        // TODO: verify local variable
 
         for attr in &self.attributes {
             attr.verify(tab, log)?;
@@ -97,7 +97,7 @@ impl ValidateHirItem for LocalVariable {
 
 impl ValidateHirItem for ParameterAttribute {
     fn verify(&self, _tab: &SymbolTab, _log: &CompilerLog) -> Result<(), ()> {
-        // TODO: verify
+        // TODO: verify parameter attribute
 
         match self {
             ParameterAttribute::Invalid => Err(()),
@@ -112,7 +112,7 @@ impl ValidateHirItem for ParameterAttribute {
 
 impl ValidateHirItem for Parameter {
     fn verify(&self, tab: &SymbolTab, log: &CompilerLog) -> Result<(), ()> {
-        // TODO: verify
+        // TODO: verify parameter
 
         for attr in &self.attributes {
             attr.verify(tab, log)?;
@@ -142,7 +142,7 @@ impl ValidateHirItem for Parameter {
 
 impl ValidateHirItem for Function {
     fn verify(&self, tab: &SymbolTab, log: &CompilerLog) -> Result<(), ()> {
-        // TODO: verify
+        // TODO: verify function
 
         for attr in &self.attributes {
             attr.verify(tab, log, &ValidateTypeOptions::storable())?;
@@ -170,8 +170,6 @@ impl ValidateHirItem for Function {
 
 impl ValidateHirItem for Trait {
     fn verify(&self, _tab: &SymbolTab, _log: &CompilerLog) -> Result<(), ()> {
-        // TODO: verify
-
         // TODO: verify trait
         unimplemented!()
     }
@@ -184,7 +182,7 @@ impl ValidateHirItem for Trait {
 
 impl ValidateHirItem for ModuleAttribute {
     fn verify(&self, _tab: &SymbolTab, _log: &CompilerLog) -> Result<(), ()> {
-        // TODO: verify
+        // TODO: verify module attribute
 
         match self {
             ModuleAttribute::Invalid => Err(()),
@@ -199,7 +197,7 @@ impl ValidateHirItem for ModuleAttribute {
 
 impl ValidateHirItem for Module {
     fn verify(&self, tab: &SymbolTab, log: &CompilerLog) -> Result<(), ()> {
-        // TODO: verify
+        // TODO: verify module
 
         for attr in &self.attributes {
             attr.verify(tab, log)?;
@@ -220,7 +218,7 @@ impl ValidateHirItem for Module {
 
 impl ValidateHirItem for TypeAliasDef {
     fn verify(&self, tab: &SymbolTab, log: &CompilerLog) -> Result<(), ()> {
-        // TODO: verify
+        // TODO: verify type alias
 
         self.type_id
             .verify(tab, log, &ValidateTypeOptions::storable())
@@ -234,7 +232,7 @@ impl ValidateHirItem for TypeAliasDef {
 
 impl ValidateHirItem for StructAttribute {
     fn verify(&self, _tab: &SymbolTab, _log: &CompilerLog) -> Result<(), ()> {
-        // TODO: verify
+        // TODO: verify struct attribute
 
         match self {
             StructAttribute::Packed => Ok(()),
@@ -249,7 +247,7 @@ impl ValidateHirItem for StructAttribute {
 
 impl ValidateHirItem for StructFieldAttribute {
     fn verify(&self, _tab: &SymbolTab, _log: &CompilerLog) -> Result<(), ()> {
-        // TODO: verify
+        // TODO: verify struct field attribute
 
         match self {
             StructFieldAttribute::Invalid => Err(()),
@@ -264,7 +262,7 @@ impl ValidateHirItem for StructFieldAttribute {
 
 impl ValidateHirItem for StructField {
     fn verify(&self, tab: &SymbolTab, log: &CompilerLog) -> Result<(), ()> {
-        // TODO: verify
+        // TODO: verify struct field
 
         for attr in &self.attributes {
             attr.verify(tab, log)?;
@@ -293,7 +291,7 @@ impl ValidateHirItem for StructField {
 
 impl ValidateHirItem for StructDef {
     fn verify(&self, tab: &SymbolTab, log: &CompilerLog) -> Result<(), ()> {
-        // TODO: verify
+        // TODO: verify struct
 
         for attr in &self.attributes {
             attr.verify(tab, log)?;
@@ -314,7 +312,7 @@ impl ValidateHirItem for StructDef {
 
 impl ValidateHirItem for EnumAttribute {
     fn verify(&self, _tab: &SymbolTab, _log: &CompilerLog) -> Result<(), ()> {
-        // TODO: verify
+        // TODO: verify enum attribute
 
         match self {
             EnumAttribute::Invalid => Err(()),
@@ -329,7 +327,7 @@ impl ValidateHirItem for EnumAttribute {
 
 impl ValidateHirItem for EnumVariantAttribute {
     fn verify(&self, _tab: &SymbolTab, _log: &CompilerLog) -> Result<(), ()> {
-        // TODO: verify
+        // TODO: verify enum variant attribute
 
         match self {
             EnumVariantAttribute::Invalid => Err(()),
@@ -344,7 +342,7 @@ impl ValidateHirItem for EnumVariantAttribute {
 
 impl ValidateHirItem for EnumVariant {
     fn verify(&self, tab: &SymbolTab, log: &CompilerLog) -> Result<(), ()> {
-        // TODO: verify
+        // TODO: verify enum variant
 
         for attr in &self.attributes {
             attr.verify(tab, log)?;
@@ -361,7 +359,7 @@ impl ValidateHirItem for EnumVariant {
 
 impl ValidateHirItem for EnumDef {
     fn verify(&self, tab: &SymbolTab, log: &CompilerLog) -> Result<(), ()> {
-        // TODO: verify
+        // TODO: verify enum
 
         for expr in self.variant_extras.iter().flatten() {
             expr.borrow().verify(tab, log)?;
@@ -386,8 +384,6 @@ impl ValidateHirItem for EnumDef {
 
 impl ValidateHirItem for Item {
     fn verify(&self, tab: &SymbolTab, log: &CompilerLog) -> Result<(), ()> {
-        // TODO: verify
-
         match self {
             Item::Module(id) => id.borrow().verify(tab, log),
             Item::GlobalVariable(id) => id.borrow().verify(tab, log),
