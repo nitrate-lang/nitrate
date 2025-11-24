@@ -1,44 +1,43 @@
 use crate::{
-    ValidHir, ValidateHirItem, ValidateHirType, ValidateHirValue, ValidateTypeOptions,
+    ValidHir, ValidateCtx, ValidateHirItem, ValidateHirType, ValidateHirValue, ValidateTypeOptions,
     diagnosis::Issue, establish_property,
 };
-use nitrate_diagnosis::CompilerLog;
-use nitrate_hir::{SymbolTab, prelude::*};
+use nitrate_hir::prelude::*;
 use nitrate_hir_get_type::HirGetType;
 use std::ops::Deref;
 
 impl ValidateHirItem for GlobalVariableAttribute {
-    fn verify(&self, _tab: &SymbolTab, _log: &CompilerLog) -> Result<(), ()> {
+    fn verify(&self, _ctx: &mut ValidateCtx) -> Result<(), ()> {
         match self {
             GlobalVariableAttribute::NoMangle => Ok(()),
         }
     }
 
-    fn validate(self, tab: &SymbolTab, log: &CompilerLog) -> Result<ValidHir<Self>, ()> {
-        self.verify(tab, log)?;
+    fn validate(self, ctx: &mut ValidateCtx) -> Result<ValidHir<Self>, ()> {
+        self.verify(ctx)?;
         Ok(ValidHir::new(self))
     }
 }
 
 impl ValidateHirItem for GlobalVariable {
-    fn verify(&self, tab: &SymbolTab, log: &CompilerLog) -> Result<(), ()> {
+    fn verify(&self, ctx: &mut ValidateCtx) -> Result<(), ()> {
         for attr in &self.attributes {
-            attr.verify(tab, log)?;
+            attr.verify(ctx)?;
         }
 
         let init_value = self.init.borrow();
-        init_value.verify(tab, log)?;
+        init_value.verify(ctx)?;
 
         establish_property("type_constraint: Sized", || {
-            self.ty.verify(tab, log, &ValidateTypeOptions::sized())
+            self.ty.verify(ctx, &ValidateTypeOptions::sized())
         })?;
 
         establish_property("type_constraint == typeof(initial_value)", || {
             let init_value = self.init.borrow();
-            let init_value_ty = init_value.determine_type(tab).map_err(|_| ())?;
+            let init_value_ty = init_value.determine_type(ctx.tab).map_err(|_| ())?;
 
             if *self.ty != init_value_ty {
-                log.report(&Issue::TypeMismatch {
+                ctx.log.report(&Issue::TypeMismatch {
                     expected: self.ty,
                     found: init_value_ty.into(),
                 });
@@ -50,14 +49,14 @@ impl ValidateHirItem for GlobalVariable {
         })
     }
 
-    fn validate(self, tab: &SymbolTab, log: &CompilerLog) -> Result<ValidHir<Self>, ()> {
-        self.verify(tab, log)?;
+    fn validate(self, ctx: &mut ValidateCtx) -> Result<ValidHir<Self>, ()> {
+        self.verify(ctx)?;
         Ok(ValidHir::new(self))
     }
 }
 
 impl ValidateHirItem for LocalVariableAttribute {
-    fn verify(&self, _tab: &SymbolTab, log: &CompilerLog) -> Result<(), ()> {
+    fn verify(&self, ctx: &mut ValidateCtx) -> Result<(), ()> {
         match self {
             LocalVariableAttribute::Align { alignment } => {
                 establish_property("local variable alignment is supported", || {
@@ -65,7 +64,7 @@ impl ValidateHirItem for LocalVariableAttribute {
                     const MAX_SUPPORTED_ALIGNMENT: u32 = 4096;
 
                     if alignment.get() > MAX_SUPPORTED_ALIGNMENT {
-                        log.report(&Issue::UnsupportedAlignment {
+                        ctx.log.report(&Issue::UnsupportedAlignment {
                             alignment: alignment.get(),
                             max_supported: MAX_SUPPORTED_ALIGNMENT,
                         });
@@ -79,29 +78,29 @@ impl ValidateHirItem for LocalVariableAttribute {
         }
     }
 
-    fn validate(self, tab: &SymbolTab, log: &CompilerLog) -> Result<ValidHir<Self>, ()> {
-        self.verify(tab, log)?;
+    fn validate(self, ctx: &mut ValidateCtx) -> Result<ValidHir<Self>, ()> {
+        self.verify(ctx)?;
         Ok(ValidHir::new(self))
     }
 }
 
 impl ValidateHirItem for LocalVariable {
-    fn verify(&self, tab: &SymbolTab, log: &CompilerLog) -> Result<(), ()> {
+    fn verify(&self, ctx: &mut ValidateCtx) -> Result<(), ()> {
         for attr in &self.attributes {
-            attr.verify(tab, log)?;
+            attr.verify(ctx)?;
         }
 
         establish_property("type_constraint: Sized", || {
-            self.ty.verify(tab, log, &ValidateTypeOptions::sized())
+            self.ty.verify(ctx, &ValidateTypeOptions::sized())
         })?;
 
         establish_property("type_constraint == typeof(initial_value)", || {
             if let Some(init_value) = &self.init {
                 let init_value = init_value.borrow();
-                let init_value_ty = init_value.determine_type(tab).map_err(|_| ())?;
+                let init_value_ty = init_value.determine_type(ctx.tab).map_err(|_| ())?;
 
                 if *self.ty != init_value_ty {
-                    log.report(&Issue::TypeMismatch {
+                    ctx.log.report(&Issue::TypeMismatch {
                         expected: self.ty,
                         found: init_value_ty.into(),
                     });
@@ -114,14 +113,14 @@ impl ValidateHirItem for LocalVariable {
         })
     }
 
-    fn validate(self, tab: &SymbolTab, log: &CompilerLog) -> Result<ValidHir<Self>, ()> {
-        self.verify(tab, log)?;
+    fn validate(self, ctx: &mut ValidateCtx) -> Result<ValidHir<Self>, ()> {
+        self.verify(ctx)?;
         Ok(ValidHir::new(self))
     }
 }
 
 impl ValidateHirItem for ParameterAttribute {
-    fn verify(&self, _tab: &SymbolTab, log: &CompilerLog) -> Result<(), ()> {
+    fn verify(&self, ctx: &mut ValidateCtx) -> Result<(), ()> {
         match self {
             ParameterAttribute::Align { alignment } => {
                 establish_property("parameter alignment is supported", || {
@@ -129,7 +128,7 @@ impl ValidateHirItem for ParameterAttribute {
                     const MAX_SUPPORTED_ALIGNMENT: u32 = 4096;
 
                     if alignment.get() > MAX_SUPPORTED_ALIGNMENT {
-                        log.report(&Issue::UnsupportedAlignment {
+                        ctx.log.report(&Issue::UnsupportedAlignment {
                             alignment: alignment.get(),
                             max_supported: MAX_SUPPORTED_ALIGNMENT,
                         });
@@ -143,29 +142,29 @@ impl ValidateHirItem for ParameterAttribute {
         }
     }
 
-    fn validate(self, tab: &SymbolTab, log: &CompilerLog) -> Result<ValidHir<Self>, ()> {
-        self.verify(tab, log)?;
+    fn validate(self, ctx: &mut ValidateCtx) -> Result<ValidHir<Self>, ()> {
+        self.verify(ctx)?;
         Ok(ValidHir::new(self))
     }
 }
 
 impl ValidateHirItem for Parameter {
-    fn verify(&self, tab: &SymbolTab, log: &CompilerLog) -> Result<(), ()> {
+    fn verify(&self, ctx: &mut ValidateCtx) -> Result<(), ()> {
         for attr in &self.attributes {
-            attr.verify(tab, log)?;
+            attr.verify(ctx)?;
         }
 
         establish_property("type_constraint: Sized", || {
-            self.ty.verify(tab, log, &ValidateTypeOptions::sized())
+            self.ty.verify(ctx, &ValidateTypeOptions::sized())
         })?;
 
         establish_property("type_constraint == typeof(default_value)", || {
             if let Some(default_value) = &self.default_value {
                 let default_value = default_value.borrow();
-                let default_value_ty = default_value.determine_type(tab).map_err(|_| ())?;
+                let default_value_ty = default_value.determine_type(ctx.tab).map_err(|_| ())?;
 
                 if *self.ty != default_value_ty {
-                    log.report(&Issue::TypeMismatch {
+                    ctx.log.report(&Issue::TypeMismatch {
                         expected: self.ty,
                         found: default_value_ty.into(),
                     });
@@ -178,54 +177,54 @@ impl ValidateHirItem for Parameter {
         })
     }
 
-    fn validate(self, tab: &SymbolTab, log: &CompilerLog) -> Result<ValidHir<Self>, ()> {
-        self.verify(tab, log)?;
+    fn validate(self, ctx: &mut ValidateCtx) -> Result<ValidHir<Self>, ()> {
+        self.verify(ctx)?;
         Ok(ValidHir::new(self))
     }
 }
 
 impl ValidateHirItem for Function {
-    fn verify(&self, tab: &SymbolTab, log: &CompilerLog) -> Result<(), ()> {
+    fn verify(&self, ctx: &mut ValidateCtx) -> Result<(), ()> {
         // TODO: verify function
 
         for attr in &self.attributes {
-            attr.verify(tab, log, &ValidateTypeOptions::sized())?;
+            attr.verify(ctx, &ValidateTypeOptions::sized())?;
         }
 
         for param in &self.params {
-            param.borrow().verify(tab, log)?;
+            param.borrow().verify(ctx)?;
         }
 
         self.return_type
-            .verify(tab, log, &ValidateTypeOptions::sized())?;
+            .verify(ctx, &ValidateTypeOptions::sized())?;
 
         if let Some(body) = &self.body {
-            body.borrow().verify(tab, log)?;
+            body.borrow().verify(ctx)?;
         }
 
         Ok(())
     }
 
-    fn validate(self, tab: &SymbolTab, log: &CompilerLog) -> Result<ValidHir<Self>, ()> {
-        self.verify(tab, log)?;
+    fn validate(self, ctx: &mut ValidateCtx) -> Result<ValidHir<Self>, ()> {
+        self.verify(ctx)?;
         Ok(ValidHir::new(self))
     }
 }
 
 impl ValidateHirItem for Trait {
-    fn verify(&self, _tab: &SymbolTab, _log: &CompilerLog) -> Result<(), ()> {
+    fn verify(&self, _ctx: &mut ValidateCtx) -> Result<(), ()> {
         // TODO: verify trait
         unimplemented!()
     }
 
-    fn validate(self, tab: &SymbolTab, log: &CompilerLog) -> Result<ValidHir<Self>, ()> {
-        self.verify(tab, log)?;
+    fn validate(self, ctx: &mut ValidateCtx) -> Result<ValidHir<Self>, ()> {
+        self.verify(ctx)?;
         Ok(ValidHir::new(self))
     }
 }
 
 impl ValidateHirItem for ModuleAttribute {
-    fn verify(&self, _tab: &SymbolTab, _log: &CompilerLog) -> Result<(), ()> {
+    fn verify(&self, _ctx: &mut ValidateCtx) -> Result<(), ()> {
         // TODO: verify module attribute
 
         match self {
@@ -233,48 +232,48 @@ impl ValidateHirItem for ModuleAttribute {
         }
     }
 
-    fn validate(self, tab: &SymbolTab, log: &CompilerLog) -> Result<ValidHir<Self>, ()> {
-        self.verify(tab, log)?;
+    fn validate(self, ctx: &mut ValidateCtx) -> Result<ValidHir<Self>, ()> {
+        self.verify(ctx)?;
         Ok(ValidHir::new(self))
     }
 }
 
 impl ValidateHirItem for Module {
-    fn verify(&self, tab: &SymbolTab, log: &CompilerLog) -> Result<(), ()> {
+    fn verify(&self, ctx: &mut ValidateCtx) -> Result<(), ()> {
         // TODO: verify module
 
         for attr in &self.attributes {
-            attr.verify(tab, log)?;
+            attr.verify(ctx)?;
         }
 
         for item in &self.items {
-            item.verify(tab, log)?;
+            item.verify(ctx)?;
         }
 
         Ok(())
     }
 
-    fn validate(self, tab: &SymbolTab, log: &CompilerLog) -> Result<ValidHir<Self>, ()> {
-        self.verify(tab, log)?;
+    fn validate(self, ctx: &mut ValidateCtx) -> Result<ValidHir<Self>, ()> {
+        self.verify(ctx)?;
         Ok(ValidHir::new(self))
     }
 }
 
 impl ValidateHirItem for TypeAliasDef {
-    fn verify(&self, tab: &SymbolTab, log: &CompilerLog) -> Result<(), ()> {
+    fn verify(&self, ctx: &mut ValidateCtx) -> Result<(), ()> {
         // TODO: verify type alias
 
-        self.type_id.verify(tab, log, &ValidateTypeOptions::sized())
+        self.type_id.verify(ctx, &ValidateTypeOptions::sized())
     }
 
-    fn validate(self, tab: &SymbolTab, log: &CompilerLog) -> Result<ValidHir<Self>, ()> {
-        self.verify(tab, log)?;
+    fn validate(self, ctx: &mut ValidateCtx) -> Result<ValidHir<Self>, ()> {
+        self.verify(ctx)?;
         Ok(ValidHir::new(self))
     }
 }
 
 impl ValidateHirItem for StructAttribute {
-    fn verify(&self, _tab: &SymbolTab, _log: &CompilerLog) -> Result<(), ()> {
+    fn verify(&self, _ctx: &mut ValidateCtx) -> Result<(), ()> {
         // TODO: verify struct attribute
 
         match self {
@@ -282,14 +281,14 @@ impl ValidateHirItem for StructAttribute {
         }
     }
 
-    fn validate(self, tab: &SymbolTab, log: &CompilerLog) -> Result<ValidHir<Self>, ()> {
-        self.verify(tab, log)?;
+    fn validate(self, ctx: &mut ValidateCtx) -> Result<ValidHir<Self>, ()> {
+        self.verify(ctx)?;
         Ok(ValidHir::new(self))
     }
 }
 
 impl ValidateHirItem for StructFieldAttribute {
-    fn verify(&self, _tab: &SymbolTab, _log: &CompilerLog) -> Result<(), ()> {
+    fn verify(&self, _ctx: &mut ValidateCtx) -> Result<(), ()> {
         // TODO: verify struct field attribute
 
         match self {
@@ -297,26 +296,26 @@ impl ValidateHirItem for StructFieldAttribute {
         }
     }
 
-    fn validate(self, tab: &SymbolTab, log: &CompilerLog) -> Result<ValidHir<Self>, ()> {
-        self.verify(tab, log)?;
+    fn validate(self, ctx: &mut ValidateCtx) -> Result<ValidHir<Self>, ()> {
+        self.verify(ctx)?;
         Ok(ValidHir::new(self))
     }
 }
 
 impl ValidateHirItem for StructField {
-    fn verify(&self, tab: &SymbolTab, log: &CompilerLog) -> Result<(), ()> {
+    fn verify(&self, ctx: &mut ValidateCtx) -> Result<(), ()> {
         // TODO: verify struct field
 
         for attr in &self.attributes {
-            attr.verify(tab, log)?;
+            attr.verify(ctx)?;
         }
 
-        self.ty.verify(tab, log, &ValidateTypeOptions::sized())?;
+        self.ty.verify(ctx, &ValidateTypeOptions::sized())?;
         if let Some(default_value) = &self.default_value {
             let init = default_value.borrow();
-            init.verify(tab, log)?;
+            init.verify(ctx)?;
 
-            let init_ty = init.determine_type(tab).map_err(|_| ())?;
+            let init_ty = init.determine_type(ctx.tab).map_err(|_| ())?;
             let field_ty = self.ty.deref();
             if *field_ty != init_ty {
                 return Err(());
@@ -326,35 +325,35 @@ impl ValidateHirItem for StructField {
         Ok(())
     }
 
-    fn validate(self, tab: &SymbolTab, log: &CompilerLog) -> Result<ValidHir<Self>, ()> {
-        self.verify(tab, log)?;
+    fn validate(self, ctx: &mut ValidateCtx) -> Result<ValidHir<Self>, ()> {
+        self.verify(ctx)?;
         Ok(ValidHir::new(self))
     }
 }
 
 impl ValidateHirItem for StructDef {
-    fn verify(&self, tab: &SymbolTab, log: &CompilerLog) -> Result<(), ()> {
+    fn verify(&self, ctx: &mut ValidateCtx) -> Result<(), ()> {
         // TODO: verify struct
 
         for attr in &self.attributes {
-            attr.verify(tab, log)?;
+            attr.verify(ctx)?;
         }
 
         for field in self.fields.values() {
-            field.verify(tab, log)?;
+            field.verify(ctx)?;
         }
 
         Ok(())
     }
 
-    fn validate(self, tab: &SymbolTab, log: &CompilerLog) -> Result<ValidHir<Self>, ()> {
-        self.verify(tab, log)?;
+    fn validate(self, ctx: &mut ValidateCtx) -> Result<ValidHir<Self>, ()> {
+        self.verify(ctx)?;
         Ok(ValidHir::new(self))
     }
 }
 
 impl ValidateHirItem for EnumAttribute {
-    fn verify(&self, _tab: &SymbolTab, _log: &CompilerLog) -> Result<(), ()> {
+    fn verify(&self, _ctx: &mut ValidateCtx) -> Result<(), ()> {
         // TODO: verify enum attribute
 
         match self {
@@ -362,14 +361,14 @@ impl ValidateHirItem for EnumAttribute {
         }
     }
 
-    fn validate(self, tab: &SymbolTab, log: &CompilerLog) -> Result<ValidHir<Self>, ()> {
-        self.verify(tab, log)?;
+    fn validate(self, ctx: &mut ValidateCtx) -> Result<ValidHir<Self>, ()> {
+        self.verify(ctx)?;
         Ok(ValidHir::new(self))
     }
 }
 
 impl ValidateHirItem for EnumVariantAttribute {
-    fn verify(&self, _tab: &SymbolTab, _log: &CompilerLog) -> Result<(), ()> {
+    fn verify(&self, _ctx: &mut ValidateCtx) -> Result<(), ()> {
         // TODO: verify enum variant attribute
 
         match self {
@@ -377,68 +376,68 @@ impl ValidateHirItem for EnumVariantAttribute {
         }
     }
 
-    fn validate(self, tab: &SymbolTab, log: &CompilerLog) -> Result<ValidHir<Self>, ()> {
-        self.verify(tab, log)?;
+    fn validate(self, ctx: &mut ValidateCtx) -> Result<ValidHir<Self>, ()> {
+        self.verify(ctx)?;
         Ok(ValidHir::new(self))
     }
 }
 
 impl ValidateHirItem for EnumVariant {
-    fn verify(&self, tab: &SymbolTab, log: &CompilerLog) -> Result<(), ()> {
+    fn verify(&self, ctx: &mut ValidateCtx) -> Result<(), ()> {
         // TODO: verify enum variant
 
         for attr in &self.attributes {
-            attr.verify(tab, log)?;
+            attr.verify(ctx)?;
         }
 
-        self.ty.verify(tab, log, &ValidateTypeOptions::sized())
+        self.ty.verify(ctx, &ValidateTypeOptions::sized())
     }
 
-    fn validate(self, tab: &SymbolTab, log: &CompilerLog) -> Result<ValidHir<Self>, ()> {
-        self.verify(tab, log)?;
+    fn validate(self, ctx: &mut ValidateCtx) -> Result<ValidHir<Self>, ()> {
+        self.verify(ctx)?;
         Ok(ValidHir::new(self))
     }
 }
 
 impl ValidateHirItem for EnumDef {
-    fn verify(&self, tab: &SymbolTab, log: &CompilerLog) -> Result<(), ()> {
+    fn verify(&self, ctx: &mut ValidateCtx) -> Result<(), ()> {
         // TODO: verify enum
 
         for expr in self.variant_extras.iter().flatten() {
-            expr.borrow().verify(tab, log)?;
+            expr.borrow().verify(ctx)?;
         }
 
         for attr in &self.attributes {
-            attr.verify(tab, log)?;
+            attr.verify(ctx)?;
         }
 
         for variant in &self.variants {
-            variant.verify(tab, log)?;
+            variant.verify(ctx)?;
         }
 
         Ok(())
     }
 
-    fn validate(self, tab: &SymbolTab, log: &CompilerLog) -> Result<ValidHir<Self>, ()> {
-        self.verify(tab, log)?;
+    fn validate(self, ctx: &mut ValidateCtx) -> Result<ValidHir<Self>, ()> {
+        self.verify(ctx)?;
         Ok(ValidHir::new(self))
     }
 }
 
 impl ValidateHirItem for Item {
-    fn verify(&self, tab: &SymbolTab, log: &CompilerLog) -> Result<(), ()> {
+    fn verify(&self, ctx: &mut ValidateCtx) -> Result<(), ()> {
         match self {
-            Item::Module(id) => id.borrow().verify(tab, log),
-            Item::GlobalVariable(id) => id.borrow().verify(tab, log),
-            Item::Function(id) => id.borrow().verify(tab, log),
-            Item::TypeAliasDef(id) => id.borrow().verify(tab, log),
-            Item::StructDef(id) => id.borrow().verify(tab, log),
-            Item::EnumDef(id) => id.borrow().verify(tab, log),
+            Item::Module(id) => id.borrow().verify(ctx),
+            Item::GlobalVariable(id) => id.borrow().verify(ctx),
+            Item::Function(id) => id.borrow().verify(ctx),
+            Item::TypeAliasDef(id) => id.borrow().verify(ctx),
+            Item::StructDef(id) => id.borrow().verify(ctx),
+            Item::EnumDef(id) => id.borrow().verify(ctx),
         }
     }
 
-    fn validate(self, tab: &SymbolTab, log: &CompilerLog) -> Result<ValidHir<Self>, ()> {
-        self.verify(tab, log)?;
+    fn validate(self, ctx: &mut ValidateCtx) -> Result<ValidHir<Self>, ()> {
+        self.verify(ctx)?;
         Ok(ValidHir::new(self))
     }
 }

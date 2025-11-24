@@ -1,9 +1,8 @@
-use crate::{ValidHir, ValidateHirItem, ValidateHirValue};
-use nitrate_diagnosis::CompilerLog;
-use nitrate_hir::{SymbolTab, prelude::*};
+use crate::{ValidHir, ValidateCtx, ValidateHirItem, ValidateHirValue};
+use nitrate_hir::prelude::*;
 
 impl ValidateHirValue for Block {
-    fn verify(&self, tab: &SymbolTab, log: &CompilerLog) -> Result<(), ()> {
+    fn verify(&self, ctx: &mut ValidateCtx) -> Result<(), ()> {
         // TODO: verify
 
         for (i, elem) in self.elements.iter().enumerate() {
@@ -15,28 +14,28 @@ impl ValidateHirValue for Block {
                         | expr.borrow().is_continue()
                         | expr.borrow().is_return() =>
                 {
-                    expr.borrow().verify(tab, log)?;
+                    expr.borrow().verify(ctx)?;
                     if !is_last {
                         return Err(());
                     }
                 }
 
-                BlockElement::Expr(expr) => expr.borrow().verify(tab, log)?,
-                BlockElement::Local(local) => local.borrow().verify(tab, log)?,
+                BlockElement::Expr(expr) => expr.borrow().verify(ctx)?,
+                BlockElement::Local(local) => local.borrow().verify(ctx)?,
             }
         }
 
         Ok(())
     }
 
-    fn validate(self, tab: &SymbolTab, log: &CompilerLog) -> Result<ValidHir<Self>, ()> {
-        self.verify(tab, log)?;
+    fn validate(self, ctx: &mut ValidateCtx) -> Result<ValidHir<Self>, ()> {
+        self.verify(ctx)?;
         Ok(ValidHir::new(self))
     }
 }
 
 impl ValidateHirValue for Value {
-    fn verify(&self, _tab: &SymbolTab, _log: &CompilerLog) -> Result<(), ()> {
+    fn verify(&self, _ctx: &mut ValidateCtx) -> Result<(), ()> {
         // TODO: verify
 
         match self {
@@ -228,8 +227,8 @@ impl ValidateHirValue for Value {
         }
     }
 
-    fn validate(self, tab: &SymbolTab, log: &CompilerLog) -> Result<ValidHir<Self>, ()> {
-        self.verify(tab, log)?;
+    fn validate(self, ctx: &mut ValidateCtx) -> Result<ValidHir<Self>, ()> {
+        self.verify(ctx)?;
         Ok(ValidHir::new(self))
     }
 }

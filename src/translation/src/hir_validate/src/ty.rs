@@ -1,34 +1,31 @@
 use std::{collections::HashSet, ops::Deref};
 
 use crate::{
-    ValidHir, ValidateHirItem, ValidateHirType, ValidateTypeOptions, diagnosis::Issue,
+    ValidHir, ValidateCtx, ValidateHirItem, ValidateHirType, ValidateTypeOptions, diagnosis::Issue,
     establish_property,
 };
-use nitrate_diagnosis::CompilerLog;
-use nitrate_hir::{SymbolTab, prelude::*};
+use nitrate_hir::prelude::*;
 
 fn verify_array(
+    ctx: &mut ValidateCtx,
     element_type: &Type,
     _len: u32,
-    tab: &SymbolTab,
-    log: &CompilerLog,
     _options: &ValidateTypeOptions,
 ) -> Result<(), ()> {
     establish_property("element_type: Sized", || {
-        element_type.verify(tab, log, &ValidateTypeOptions::sized())
+        element_type.verify(ctx, &ValidateTypeOptions::sized())
     })
 }
 
 fn verify_tuple(
+    ctx: &mut ValidateCtx,
     element_types: &[TypeId],
-    tab: &SymbolTab,
-    log: &CompilerLog,
     _options: &ValidateTypeOptions,
 ) -> Result<(), ()> {
     establish_property("all tuple element types: Sized", || {
         for elem_type in element_types {
             establish_property("element_type: Sized", || {
-                elem_type.verify(tab, log, &ValidateTypeOptions::sized())
+                elem_type.verify(ctx, &ValidateTypeOptions::sized())
             })?;
         }
 
@@ -37,20 +34,19 @@ fn verify_tuple(
 }
 
 fn verify_refinement_type(
+    ctx: &mut ValidateCtx,
     base: &Type,
     min: &LiteralId,
     max: &LiteralId,
-    tab: &SymbolTab,
-    log: &CompilerLog,
     options: &ValidateTypeOptions,
 ) -> Result<(), ()> {
-    base.verify(tab, log, options)?;
+    base.verify(ctx, options)?;
 
     establish_property("refinement bounds: max >= min", || {
         if max.deref() >= min.deref() {
             Ok(())
         } else {
-            log.report(&Issue::RefinementMinimumGreaterThanMaximum {
+            ctx.log.report(&Issue::RefinementMinimumGreaterThanMaximum {
                 min: min.clone(),
                 max: max.clone(),
                 type_id: base.clone().into(),
@@ -61,12 +57,7 @@ fn verify_refinement_type(
 }
 
 impl ValidateHirType for FunctionAttribute {
-    fn verify(
-        &self,
-        _tab: &SymbolTab,
-        _log: &CompilerLog,
-        _options: &ValidateTypeOptions,
-    ) -> Result<(), ()> {
+    fn verify(&self, _ctx: &mut ValidateCtx, _options: &ValidateTypeOptions) -> Result<(), ()> {
         match self {
             FunctionAttribute::CVariadic => Ok(()),
             FunctionAttribute::NoMangle => Ok(()),
@@ -75,29 +66,23 @@ impl ValidateHirType for FunctionAttribute {
 
     fn validate(
         self,
-        tab: &SymbolTab,
-        log: &CompilerLog,
+        ctx: &mut ValidateCtx,
         options: &ValidateTypeOptions,
     ) -> Result<ValidHir<Self>, ()> {
-        self.verify(tab, log, options)?;
+        self.verify(ctx, options)?;
         Ok(ValidHir::new(self))
     }
 }
 
 impl ValidateHirType for FunctionType {
-    fn verify(
-        &self,
-        tab: &SymbolTab,
-        log: &CompilerLog,
-        options: &ValidateTypeOptions,
-    ) -> Result<(), ()> {
+    fn verify(&self, ctx: &mut ValidateCtx, options: &ValidateTypeOptions) -> Result<(), ()> {
         for attr in &self.attributes {
-            attr.verify(tab, log, options)?;
+            attr.verify(ctx, options)?;
         }
 
         for param in &self.params {
             establish_property("parameter type: Sized", || {
-                param.1.verify(tab, log, &ValidateTypeOptions::sized())
+                param.1.verify(ctx, &ValidateTypeOptions::sized())
             })?;
         }
 
@@ -110,7 +95,7 @@ impl ValidateHirType for FunctionType {
                         function_type: Box::new(self.clone()),
                     };
 
-                    log.report(&Issue::FunctionTypeDuplicateParameterName {
+                    ctx.log.report(&Issue::FunctionTypeDuplicateParameterName {
                         name: param.0.clone(),
                         function: function.into(),
                     });
@@ -123,8 +108,7 @@ impl ValidateHirType for FunctionType {
         })?;
 
         establish_property("return_type: Sized", || {
-            self.return_type
-                .verify(tab, log, &ValidateTypeOptions::sized())
+            self.return_type.verify(ctx, &ValidateTypeOptions::sized())
         })?;
 
         Ok(())
@@ -132,77 +116,68 @@ impl ValidateHirType for FunctionType {
 
     fn validate(
         self,
-        tab: &SymbolTab,
-        log: &CompilerLog,
+        ctx: &mut ValidateCtx,
         options: &ValidateTypeOptions,
     ) -> Result<ValidHir<Self>, ()> {
-        self.verify(tab, log, options)?;
+        self.verify(ctx, options)?;
         Ok(ValidHir::new(self))
     }
 }
 
 fn verify_reference_type(
+    ctx: &mut ValidateCtx,
     lifetime: &Lifetime,
     _exclusive: bool,
     _mutable: bool,
     to: &Type,
-    tab: &SymbolTab,
-    log: &CompilerLog,
     _options: &ValidateTypeOptions,
 ) -> Result<(), ()> {
     match lifetime {
         Lifetime::Static | Lifetime::Gc | Lifetime::ThreadLocal | Lifetime::TaskLocal => {}
         Lifetime::Inferred => {
-            log.report(&Issue::UninferredTypeResidue);
+            ctx.log.report(&Issue::UninferredTypeResidue);
             return Err(());
         }
     }
 
     // FIXME: Infinite recursion for self-referential types
-    to.verify(tab, log, &ValidateTypeOptions::un_sized())
+    to.verify(ctx, &ValidateTypeOptions::un_sized())
 }
 
 fn verify_slice_reference_type(
+    ctx: &mut ValidateCtx,
     lifetime: &Lifetime,
     _exclusive: bool,
     _mutable: bool,
     element_type: &Type,
-    tab: &SymbolTab,
-    log: &CompilerLog,
     _options: &ValidateTypeOptions,
 ) -> Result<(), ()> {
     match lifetime {
         Lifetime::Static | Lifetime::Gc | Lifetime::ThreadLocal | Lifetime::TaskLocal => {}
 
         Lifetime::Inferred => {
-            log.report(&Issue::UninferredTypeResidue);
+            ctx.log.report(&Issue::UninferredTypeResidue);
             return Err(());
         }
     }
 
     // FIXME: Infinite recursion for self-referential types
-    element_type.verify(tab, log, &ValidateTypeOptions::sized())
+    element_type.verify(ctx, &ValidateTypeOptions::sized())
 }
 
 fn verify_pointer_type(
+    ctx: &mut ValidateCtx,
     to: &Type,
     _exclusive: bool,
     _mutable: bool,
-    tab: &SymbolTab,
-    log: &CompilerLog,
     _options: &ValidateTypeOptions,
 ) -> Result<(), ()> {
     // FIXME: Infinite recursion for self-referential types
-    to.verify(tab, log, &ValidateTypeOptions::un_sized())
+    to.verify(ctx, &ValidateTypeOptions::un_sized())
 }
 
 impl ValidateHirType for Type {
-    fn verify(
-        &self,
-        tab: &SymbolTab,
-        log: &CompilerLog,
-        options: &ValidateTypeOptions,
-    ) -> Result<(), ()> {
+    fn verify(&self, ctx: &mut ValidateCtx, options: &ValidateTypeOptions) -> Result<(), ()> {
         match self {
             Type::Never
             | Type::Unit
@@ -221,30 +196,26 @@ impl ValidateHirType for Type {
             | Type::F32
             | Type::F64 => Ok(()),
 
-            Type::Array { element_type, len } => {
-                verify_array(element_type, *len, tab, log, options)
-            }
+            Type::Array { element_type, len } => verify_array(ctx, element_type, *len, options),
 
-            Type::Tuple { element_types } => verify_tuple(element_types, tab, log, options),
+            Type::Tuple { element_types } => verify_tuple(ctx, element_types, options),
 
-            Type::Struct { def } => def.borrow().verify(tab, log),
+            Type::Struct { def } => def.borrow().verify(ctx),
 
-            Type::Enum { def } => def.borrow().verify(tab, log),
+            Type::Enum { def } => def.borrow().verify(ctx),
 
-            Type::TypeAlias { def } => def.borrow().verify(tab, log),
+            Type::TypeAlias { def } => def.borrow().verify(ctx),
 
-            Type::Refine { base, min, max } => {
-                verify_refinement_type(base, min, max, tab, log, options)
-            }
+            Type::Refine { base, min, max } => verify_refinement_type(ctx, base, min, max, options),
 
-            Type::Function { function_type } => function_type.verify(tab, log, options),
+            Type::Function { function_type } => function_type.verify(ctx, options),
 
             Type::Reference {
                 lifetime,
                 exclusive,
                 mutable,
                 to,
-            } => verify_reference_type(lifetime, *exclusive, *mutable, to, tab, log, options),
+            } => verify_reference_type(ctx, lifetime, *exclusive, *mutable, to, options),
 
             Type::SliceRef {
                 lifetime,
@@ -252,12 +223,11 @@ impl ValidateHirType for Type {
                 mutable,
                 element_type,
             } => verify_slice_reference_type(
+                ctx,
                 lifetime,
                 *exclusive,
                 *mutable,
                 element_type,
-                tab,
-                log,
                 options,
             ),
 
@@ -265,10 +235,10 @@ impl ValidateHirType for Type {
                 to,
                 exclusive,
                 mutable,
-            } => verify_pointer_type(to, *exclusive, *mutable, tab, log, options),
+            } => verify_pointer_type(ctx, to, *exclusive, *mutable, options),
 
             Type::InferredFloat | Type::InferredInteger | Type::Inferred { .. } => {
-                log.report(&Issue::UninferredTypeResidue);
+                ctx.log.report(&Issue::UninferredTypeResidue);
                 Err(())
             }
         }
@@ -276,11 +246,10 @@ impl ValidateHirType for Type {
 
     fn validate(
         self,
-        tab: &SymbolTab,
-        log: &CompilerLog,
+        ctx: &mut ValidateCtx,
         options: &ValidateTypeOptions,
     ) -> Result<ValidHir<Self>, ()> {
-        self.verify(tab, log, options)?;
+        self.verify(ctx, options)?;
         Ok(ValidHir::new(self))
     }
 }

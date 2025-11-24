@@ -5,7 +5,7 @@ use nitrate_translation::{
     hir::{Store, prelude as hir, using_storage},
     hir_dump::Dump,
     hir_from_tree::{Ast2HirCtx, convert_ast_to_hir},
-    hir_validate::ValidateHirItem,
+    hir_validate::{self, ValidateHirItem},
     llvm::{LLVMContext, OptLevel},
     llvm_from_hir::generate_llvmir,
     parsetree::ast,
@@ -289,7 +289,8 @@ impl Interpreter<'_> {
                 &log,
             )?;
 
-            let valid_hir_module = match hir_module.validate(&symbol_tab, &log) {
+            let mut hir_verifier = hir_validate::ValidateCtx::new(&symbol_tab, &log);
+            let valid_hir_module = match hir_module.validate(&mut hir_verifier) {
                 Ok(m) => m,
                 Err(_) => {
                     error!(
