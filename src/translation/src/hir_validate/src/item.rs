@@ -4,7 +4,6 @@ use crate::{
 };
 use nitrate_hir::prelude::*;
 use nitrate_hir_get_type::HirGetType;
-use std::ops::Deref;
 
 impl ValidateHirItem for GlobalVariableAttribute {
     fn verify(&self, ctx: &mut ValidateCtx) -> Result<(), ()> {
@@ -207,6 +206,24 @@ impl ValidateHirItem for Parameter {
     }
 }
 
+impl ValidateHirItem for BlockElement {
+    fn verify(&self, ctx: &mut ValidateCtx) -> Result<(), ()> {
+        if ctx.cyclic_bail(self) {
+            return Ok(());
+        }
+
+        match self {
+            BlockElement::Local(stmt) => stmt.borrow().verify(ctx),
+            BlockElement::Expr(expr) => expr.borrow().verify(ctx),
+        }
+    }
+
+    fn validate(self, ctx: &mut ValidateCtx) -> Result<ValidHir<Self>, ()> {
+        self.verify(ctx)?;
+        Ok(ValidHir::new(self))
+    }
+}
+
 impl ValidateHirItem for Function {
     fn verify(&self, ctx: &mut ValidateCtx) -> Result<(), ()> {
         if ctx.cyclic_bail(self) {
@@ -223,11 +240,52 @@ impl ValidateHirItem for Function {
             param.borrow().verify(ctx)?;
         }
 
-        self.return_type
-            .verify(ctx, &ValidateTypeOptions::sized())?;
+        establish_property("return_type: Sized", || {
+            self.return_type.verify(ctx, &ValidateTypeOptions::sized())
+        })?;
 
         if let Some(body) = &self.body {
-            body.borrow().verify(ctx)?;
+            for element in body {
+                element.verify(ctx)?;
+            }
+
+            establish_property("function body ends with return statement", || {
+                match body.last() {
+                    Some(BlockElement::Expr(expr)) if expr.borrow().is_return() => Ok(()),
+                    _ => {
+                        let issue = Issue::MissingReturnStatementInFunctionBody {
+                            function_name: self.name.clone(),
+                        };
+                        ctx.log.report(&issue);
+                        Err(())
+                    }
+                }
+            })?;
+
+            establish_property("typeof(body) == return_type", || {
+                let Value::Return { value } = &*body
+                    .last()
+                    .expect("Function body should have at least one element")
+                    .as_expr()
+                    .expect("Last element of function body should be an expression")
+                    .borrow()
+                else {
+                    panic!("Last element of function body should be a return expression");
+                };
+
+                let body_ty = value.borrow().determine_type(ctx.tab).map_err(|_| ())?;
+
+                if *self.return_type != body_ty {
+                    ctx.log.report(&Issue::TypeMismatch {
+                        expected: self.return_type,
+                        found: body_ty.into(),
+                    });
+
+                    return Err(());
+                }
+
+                Ok(())
+            })?;
         }
 
         Ok(())
@@ -261,8 +319,6 @@ impl ValidateHirItem for ModuleAttribute {
             return Ok(());
         }
 
-        // TODO: verify module attribute
-
         match self {
             ModuleAttribute::Invalid => Err(()),
         }
@@ -279,8 +335,6 @@ impl ValidateHirItem for Module {
         if ctx.cyclic_bail(self) {
             return Ok(());
         }
-
-        // TODO: verify module
 
         for attr in &self.attributes {
             attr.verify(ctx)?;
@@ -305,9 +359,7 @@ impl ValidateHirItem for TypeAliasDef {
             return Ok(());
         }
 
-        // TODO: verify type alias
-
-        self.type_id.verify(ctx, &ValidateTypeOptions::sized())
+        self.type_id.verify(ctx, &ValidateTypeOptions::un_sized())
     }
 
     fn validate(self, ctx: &mut ValidateCtx) -> Result<ValidHir<Self>, ()> {
@@ -321,8 +373,6 @@ impl ValidateHirItem for StructAttribute {
         if ctx.cyclic_bail(self) {
             return Ok(());
         }
-
-        // TODO: verify struct attribute
 
         match self {
             StructAttribute::Packed => Ok(()),
@@ -341,10 +391,23 @@ impl ValidateHirItem for StructFieldAttribute {
             return Ok(());
         }
 
-        // TODO: verify struct field attribute
-
         match self {
-            StructFieldAttribute::Invalid => Err(()),
+            StructFieldAttribute::Align { alignment } => {
+                establish_property("struct field alignment is supported", || {
+                    const MAX_SUPPORTED_ALIGNMENT: u32 = 4096;
+
+                    if alignment.get() > MAX_SUPPORTED_ALIGNMENT {
+                        ctx.log.report(&Issue::UnsupportedAlignment {
+                            alignment: alignment.get(),
+                            max_supported: MAX_SUPPORTED_ALIGNMENT,
+                        });
+
+                        return Err(());
+                    }
+
+                    Ok(())
+                })
+            }
         }
     }
 
@@ -360,25 +423,31 @@ impl ValidateHirItem for StructField {
             return Ok(());
         }
 
-        // TODO: verify struct field
-
         for attr in &self.attributes {
             attr.verify(ctx)?;
         }
 
-        self.ty.verify(ctx, &ValidateTypeOptions::sized())?;
-        if let Some(default_value) = &self.default_value {
-            let init = default_value.borrow();
-            init.verify(ctx)?;
+        establish_property("field_type: Sized", || {
+            self.ty.verify(ctx, &ValidateTypeOptions::sized())
+        })?;
 
-            let init_ty = init.determine_type(ctx.tab).map_err(|_| ())?;
-            let field_ty = self.ty.deref();
-            if *field_ty != init_ty {
-                return Err(());
+        establish_property("type_constraint == typeof(default_value)", || {
+            if let Some(default_value) = &self.default_value {
+                let default_value = default_value.borrow();
+                let default_value_ty = default_value.determine_type(ctx.tab).map_err(|_| ())?;
+
+                if *self.ty != default_value_ty {
+                    ctx.log.report(&Issue::TypeMismatch {
+                        expected: self.ty,
+                        found: default_value_ty.into(),
+                    });
+
+                    return Err(());
+                }
             }
-        }
 
-        Ok(())
+            Ok(())
+        })
     }
 
     fn validate(self, ctx: &mut ValidateCtx) -> Result<ValidHir<Self>, ()> {
@@ -393,8 +462,6 @@ impl ValidateHirItem for StructDef {
             return Ok(());
         }
 
-        // TODO: verify struct
-
         for attr in &self.attributes {
             attr.verify(ctx)?;
         }
@@ -402,6 +469,8 @@ impl ValidateHirItem for StructDef {
         for field in self.fields.values() {
             field.verify(ctx)?;
         }
+
+        // TODO: verify struct layout
 
         Ok(())
     }
@@ -417,8 +486,6 @@ impl ValidateHirItem for EnumAttribute {
         if ctx.cyclic_bail(self) {
             return Ok(());
         }
-
-        // TODO: verify enum attribute
 
         match self {
             EnumAttribute::Invalid => Err(()),
@@ -437,8 +504,6 @@ impl ValidateHirItem for EnumVariantAttribute {
             return Ok(());
         }
 
-        // TODO: verify enum variant attribute
-
         match self {
             EnumVariantAttribute::Invalid => Err(()),
         }
@@ -456,13 +521,31 @@ impl ValidateHirItem for EnumVariant {
             return Ok(());
         }
 
-        // TODO: verify enum variant
-
         for attr in &self.attributes {
             attr.verify(ctx)?;
         }
 
-        self.ty.verify(ctx, &ValidateTypeOptions::sized())
+        establish_property("variant_type: Sized", || {
+            self.ty.verify(ctx, &ValidateTypeOptions::sized())
+        })?;
+
+        establish_property("type_constraint == typeof(default_value)", || {
+            if let Some(default_value) = &self.default_value {
+                let default_value = default_value.borrow();
+                let default_value_ty = default_value.determine_type(ctx.tab).map_err(|_| ())?;
+
+                if *self.ty != default_value_ty {
+                    ctx.log.report(&Issue::TypeMismatch {
+                        expected: self.ty,
+                        found: default_value_ty.into(),
+                    });
+
+                    return Err(());
+                }
+            }
+
+            Ok(())
+        })
     }
 
     fn validate(self, ctx: &mut ValidateCtx) -> Result<ValidHir<Self>, ()> {
@@ -475,12 +558,6 @@ impl ValidateHirItem for EnumDef {
     fn verify(&self, ctx: &mut ValidateCtx) -> Result<(), ()> {
         if ctx.cyclic_bail(self) {
             return Ok(());
-        }
-
-        // TODO: verify enum
-
-        for expr in self.variant_extras.iter().flatten() {
-            expr.borrow().verify(ctx)?;
         }
 
         for attr in &self.attributes {

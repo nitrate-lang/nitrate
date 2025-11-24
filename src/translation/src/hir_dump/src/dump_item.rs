@@ -199,7 +199,18 @@ impl Dump for Function {
 
         if let Some(body) = &self.body {
             write!(o, " ")?;
-            body.borrow().dump(ctx, o)
+            writeln!(o, "{{")?;
+            for element in body {
+                ctx.indent += 1;
+
+                write_indent(ctx, o)?;
+                element.dump(ctx, o)?;
+                writeln!(o)?;
+
+                ctx.indent -= 1;
+            }
+            write_indent(ctx, o)?;
+            write!(o, "}}")
         } else {
             write!(o, ";")
         }

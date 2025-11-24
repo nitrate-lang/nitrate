@@ -180,7 +180,6 @@ impl Ast2Hir for ast::TypePath {
                         let enum_def: EnumDefId = EnumDef {
                             visibility: Visibility::Sec,
                             name: resolved_path,
-                            variant_extras: Vec::new(),
                             attributes: BTreeSet::new(),
                             variants: Vec::new().into(),
                         }

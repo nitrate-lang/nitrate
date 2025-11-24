@@ -10,23 +10,32 @@ pub(crate) enum Issue {
         type_id: TypeId,
         trait_id: TraitId,
     },
+
     TypeMismatch {
         expected: TypeId,
         found: TypeId,
     },
+
     UnsupportedAlignment {
         alignment: u32,
         max_supported: u32,
     },
+
     UninferredTypeResidue,
+
     FunctionTypeDuplicateParameterName {
         name: NString,
         function: TypeId,
     },
+
     RefinementMinimumGreaterThanMaximum {
         min: LiteralId,
         max: LiteralId,
         type_id: TypeId,
+    },
+
+    MissingReturnStatementInFunctionBody {
+        function_name: NString,
     },
 }
 
@@ -43,6 +52,7 @@ impl FormattableDiagnosticGroup for Issue {
             Issue::UninferredTypeResidue => 3,
             Issue::FunctionTypeDuplicateParameterName { .. } => 4,
             Issue::RefinementMinimumGreaterThanMaximum { .. } => 5,
+            Issue::MissingReturnStatementInFunctionBody { .. } => 6,
         }
     }
 
@@ -113,6 +123,18 @@ impl FormattableDiagnosticGroup for Issue {
                     type_id.deref().to_string(),
                     min.deref(),
                     max.deref()
+                );
+
+                nitrate_diagnosis::DiagnosticInfo {
+                    origin: nitrate_diagnosis::Origin::Unknown,
+                    message,
+                }
+            }
+
+            Issue::MissingReturnStatementInFunctionBody { function_name } => {
+                let message = format!(
+                    "Function {:?} is missing a return statement in its body.",
+                    function_name
                 );
 
                 nitrate_diagnosis::DiagnosticInfo {

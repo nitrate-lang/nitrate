@@ -74,7 +74,7 @@ pub struct Function {
     pub mangled_name: NString,
     pub params: Vec<ParameterId>,
     pub return_type: TypeId,
-    pub body: Option<BlockId>,
+    pub body: Option<Vec<BlockElement>>,
 }
 
 impl Function {
@@ -131,7 +131,7 @@ pub enum StructAttribute {
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum StructFieldAttribute {
-    Invalid,
+    Align { alignment: PowOf2<u32> },
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
@@ -203,13 +203,13 @@ pub struct EnumVariant {
     pub attributes: BTreeSet<EnumVariantAttribute>,
     pub name: NString,
     pub ty: TypeId,
+    pub default_value: Option<ValueId>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct EnumDef {
     pub visibility: Visibility,
     pub name: NString,
-    pub variant_extras: Vec<Option<ValueId>>,
     pub attributes: BTreeSet<EnumAttribute>,
     pub variants: ThinVec<EnumVariant>,
 }

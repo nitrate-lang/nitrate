@@ -161,7 +161,6 @@ fn ast_enumdef2hir(
     }
 
     let mut variants = Vec::new();
-    let mut variant_extras = Vec::new();
 
     for variant in &enum_def.variants {
         let variant_attributes = BTreeSet::new();
@@ -187,16 +186,15 @@ fn ast_enumdef2hir(
             attributes: variant_attributes,
             name: variant_name,
             ty: variant_type,
+            default_value: field_default,
         };
 
         variants.push(variant);
-        variant_extras.push(field_default);
     }
 
     let enum_def = EnumDef {
         visibility,
         name,
-        variant_extras,
         attributes,
         variants: variants.into(),
     };
@@ -397,12 +395,12 @@ fn ast_function2hir(
     let body = match function.definition {
         None => None,
         Some(block) => {
-            let mut hir_block = block.ast2hir(ctx, log)?;
-            match hir_block.elements.last() {
+            let mut hir_elements = block.ast2hir(ctx, log)?.elements;
+            match hir_elements.last() {
                 Some(BlockElement::Expr(expr)) if expr.borrow().is_return() => {}
 
                 Some(BlockElement::Expr(expr)) if !expr.borrow().is_return() => {
-                    *hir_block.elements.last_mut().unwrap() = BlockElement::Expr(
+                    *hir_elements.last_mut().unwrap() = BlockElement::Expr(
                         Value::Return {
                             value: expr.to_owned(),
                         }
@@ -411,7 +409,7 @@ fn ast_function2hir(
                 }
 
                 _ if return_type == Type::Unit => {
-                    hir_block.elements.push(BlockElement::Expr(
+                    hir_elements.push(BlockElement::Expr(
                         Value::Return {
                             value: Value::Unit.into(),
                         }
@@ -422,7 +420,7 @@ fn ast_function2hir(
                 _ => log.report(&HirErr::MissingReturnStatement),
             }
 
-            Some(hir_block.into())
+            Some(hir_elements.into())
         }
     };
 

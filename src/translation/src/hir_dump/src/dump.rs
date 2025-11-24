@@ -1,10 +1,6 @@
-use nitrate_hir::prelude::*;
-use std::collections::HashSet;
-
 pub struct DumpContext<'a> {
     pub indent_str: &'a str,
     pub(crate) indent: usize,
-    pub(crate) visited: HashSet<TypeId>,
 }
 
 impl<'a> Default for DumpContext<'a> {
@@ -19,7 +15,6 @@ impl<'a> DumpContext<'a> {
         DumpContext {
             indent: 0,
             indent_str: "  ",
-            visited: HashSet::new(),
         }
     }
 }

@@ -460,16 +460,17 @@ impl StructDefIter<'_> {
 impl EnumDefIter<'_> {
     pub(crate) fn try_for_each<T>(
         &self,
-
         vcb: &mut dyn FnMut(&Value) -> ControlFlow<T>,
         tcb: &mut dyn FnMut(&Type) -> ControlFlow<T>,
         visited: &mut HashSet<*const ()>,
     ) -> ControlFlow<T> {
-        for default_value in self.node.variant_extras.iter().flatten() {
-            default_value
-                .borrow()
-                .iter()
-                .try_for_each(vcb, tcb, visited)?;
+        for variant in self.node.variants.iter() {
+            if let Some(default_value) = &variant.default_value {
+                default_value
+                    .borrow()
+                    .iter()
+                    .try_for_each(vcb, tcb, visited)?;
+            }
         }
 
         for variant in &self.node.variants {
@@ -507,7 +508,17 @@ impl FunctionIter<'_> {
             .try_for_each(vcb, tcb, visited)?;
 
         if let Some(body) = &self.node.body {
-            body.borrow().iter().try_for_each(vcb, tcb, visited)?;
+            for element in body {
+                match element {
+                    BlockElement::Expr(id) => id.borrow().iter().try_for_each(vcb, tcb, visited)?,
+                    BlockElement::Local(id) => {
+                        let local_variable = &id.borrow();
+                        if let Some(init) = &local_variable.init {
+                            init.borrow().iter().try_for_each(vcb, tcb, visited)?;
+                        }
+                    }
+                }
+            }
         }
 
         ControlFlow::Continue(())

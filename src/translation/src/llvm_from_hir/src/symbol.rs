@@ -7,8 +7,8 @@ use nitrate_nstring::NString;
 use std::ops::Deref;
 use thin_vec::ThinVec;
 
+use crate::rvalue::CodegenCtx;
 use crate::rvalue::gen_rval;
-use crate::rvalue::{CodegenCtx, gen_block};
 use crate::ty::{TypegenCtx, gen_ty};
 use nitrate_hir::prelude as hir;
 use nitrate_hir_mangle::mangle_name;
@@ -185,7 +185,29 @@ fn gen_function<'ctx>(
                 .insert(hir_param.name.to_owned(), (alloca, llvm_param_type));
         }
 
-        gen_block(&mut val_ctx, &body.borrow());
+        for element in body {
+            match element {
+                hir::BlockElement::Expr(expr) => {
+                    gen_rval(&mut val_ctx, &expr.borrow());
+                }
+
+                hir::BlockElement::Local(local) => {
+                    let hir_local = local.borrow();
+                    let local_name = hir_local.name.to_owned();
+                    let hir_local_ty = &hir_local.ty;
+                    let hir_local_init = &hir_local.init.as_ref().unwrap().borrow();
+
+                    let llvm_local_ty = gen_ty(hir_local_ty, &mut ctx.ty_ctx());
+                    let llvm_local = val_ctx.bb.build_alloca(llvm_local_ty, &local_name).unwrap();
+                    let llvm_init_value = gen_rval(&mut val_ctx, hir_local_init);
+                    val_ctx.bb.build_store(llvm_local, llvm_init_value).unwrap();
+
+                    val_ctx
+                        .locals
+                        .insert(local_name, (llvm_local, llvm_local_ty));
+                }
+            };
+        }
     }
 
     llvm_function

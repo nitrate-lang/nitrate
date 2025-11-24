@@ -287,14 +287,15 @@ impl StructDefIterMut<'_> {
 impl EnumDefIterMut<'_> {
     pub(crate) fn try_for_each_mut<T>(
         &mut self,
-
         vcb: &mut dyn FnMut(&mut Value) -> ControlFlow<T>,
     ) -> ControlFlow<T> {
-        for default_value in self.node.variant_extras.iter().flatten() {
-            default_value
-                .borrow_mut()
-                .iter_mut()
-                .try_for_each_mut(vcb)?;
+        for variant in self.node.variants.iter_mut() {
+            if let Some(default_value) = &variant.default_value {
+                default_value
+                    .borrow_mut()
+                    .iter_mut()
+                    .try_for_each_mut(vcb)?;
+            }
         }
 
         ControlFlow::Continue(())
@@ -304,7 +305,6 @@ impl EnumDefIterMut<'_> {
 impl FunctionIterMut<'_> {
     pub(crate) fn try_for_each_mut<T>(
         &mut self,
-
         vcb: &mut dyn FnMut(&mut Value) -> ControlFlow<T>,
     ) -> ControlFlow<T> {
         for param in &self.node.params {
@@ -319,7 +319,17 @@ impl FunctionIterMut<'_> {
         }
 
         if let Some(body) = &self.node.body {
-            body.borrow_mut().iter_mut().try_for_each_mut(vcb)?;
+            for element in body {
+                match element {
+                    BlockElement::Expr(id) => id.borrow_mut().iter_mut().try_for_each_mut(vcb)?,
+                    BlockElement::Local(id) => {
+                        let local_variable = &id.borrow_mut();
+                        if let Some(init) = &local_variable.init {
+                            init.borrow_mut().iter_mut().try_for_each_mut(vcb)?;
+                        }
+                    }
+                }
+            }
         }
 
         ControlFlow::Continue(())
