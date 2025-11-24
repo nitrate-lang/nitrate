@@ -1,6 +1,7 @@
 use log::debug;
 use nitrate_diagnosis::CompilerLog;
 use nitrate_hir::SymbolTab;
+use std::collections::HashSet;
 
 pub struct ValidHir<T> {
     inner: T,
@@ -29,11 +30,22 @@ pub(crate) fn establish_property(name: &str, f: impl FnOnce() -> Result<(), ()>)
 pub struct ValidateCtx<'tab, 'log> {
     pub(crate) tab: &'tab SymbolTab,
     pub(crate) log: &'log CompilerLog,
+    pub(crate) visited: HashSet<*const ()>,
 }
 
 impl<'tab, 'log> ValidateCtx<'tab, 'log> {
     pub fn new(tab: &'tab SymbolTab, log: &'log CompilerLog) -> Self {
-        ValidateCtx { tab, log }
+        ValidateCtx {
+            tab,
+            log,
+            visited: HashSet::new(),
+        }
+    }
+
+    pub(crate) fn cyclic_bail<T>(&mut self, item: &T) -> bool {
+        let ptr = item as *const _ as *const ();
+        let not_visited = self.visited.insert(ptr);
+        !not_visited
     }
 }
 

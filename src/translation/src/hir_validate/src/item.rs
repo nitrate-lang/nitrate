@@ -7,7 +7,11 @@ use nitrate_hir_get_type::HirGetType;
 use std::ops::Deref;
 
 impl ValidateHirItem for GlobalVariableAttribute {
-    fn verify(&self, _ctx: &mut ValidateCtx) -> Result<(), ()> {
+    fn verify(&self, ctx: &mut ValidateCtx) -> Result<(), ()> {
+        if ctx.cyclic_bail(self) {
+            return Ok(());
+        }
+
         match self {
             GlobalVariableAttribute::NoMangle => Ok(()),
         }
@@ -21,6 +25,10 @@ impl ValidateHirItem for GlobalVariableAttribute {
 
 impl ValidateHirItem for GlobalVariable {
     fn verify(&self, ctx: &mut ValidateCtx) -> Result<(), ()> {
+        if ctx.cyclic_bail(self) {
+            return Ok(());
+        }
+
         for attr in &self.attributes {
             attr.verify(ctx)?;
         }
@@ -57,6 +65,10 @@ impl ValidateHirItem for GlobalVariable {
 
 impl ValidateHirItem for LocalVariableAttribute {
     fn verify(&self, ctx: &mut ValidateCtx) -> Result<(), ()> {
+        if ctx.cyclic_bail(self) {
+            return Ok(());
+        }
+
         match self {
             LocalVariableAttribute::Align { alignment } => {
                 establish_property("local variable alignment is supported", || {
@@ -86,6 +98,10 @@ impl ValidateHirItem for LocalVariableAttribute {
 
 impl ValidateHirItem for LocalVariable {
     fn verify(&self, ctx: &mut ValidateCtx) -> Result<(), ()> {
+        if ctx.cyclic_bail(self) {
+            return Ok(());
+        }
+
         for attr in &self.attributes {
             attr.verify(ctx)?;
         }
@@ -121,6 +137,10 @@ impl ValidateHirItem for LocalVariable {
 
 impl ValidateHirItem for ParameterAttribute {
     fn verify(&self, ctx: &mut ValidateCtx) -> Result<(), ()> {
+        if ctx.cyclic_bail(self) {
+            return Ok(());
+        }
+
         match self {
             ParameterAttribute::Align { alignment } => {
                 establish_property("parameter alignment is supported", || {
@@ -150,6 +170,10 @@ impl ValidateHirItem for ParameterAttribute {
 
 impl ValidateHirItem for Parameter {
     fn verify(&self, ctx: &mut ValidateCtx) -> Result<(), ()> {
+        if ctx.cyclic_bail(self) {
+            return Ok(());
+        }
+
         for attr in &self.attributes {
             attr.verify(ctx)?;
         }
@@ -185,6 +209,10 @@ impl ValidateHirItem for Parameter {
 
 impl ValidateHirItem for Function {
     fn verify(&self, ctx: &mut ValidateCtx) -> Result<(), ()> {
+        if ctx.cyclic_bail(self) {
+            return Ok(());
+        }
+
         // TODO: verify function
 
         for attr in &self.attributes {
@@ -212,7 +240,11 @@ impl ValidateHirItem for Function {
 }
 
 impl ValidateHirItem for Trait {
-    fn verify(&self, _ctx: &mut ValidateCtx) -> Result<(), ()> {
+    fn verify(&self, ctx: &mut ValidateCtx) -> Result<(), ()> {
+        if ctx.cyclic_bail(self) {
+            return Ok(());
+        }
+
         // TODO: verify trait
         unimplemented!()
     }
@@ -224,7 +256,11 @@ impl ValidateHirItem for Trait {
 }
 
 impl ValidateHirItem for ModuleAttribute {
-    fn verify(&self, _ctx: &mut ValidateCtx) -> Result<(), ()> {
+    fn verify(&self, ctx: &mut ValidateCtx) -> Result<(), ()> {
+        if ctx.cyclic_bail(self) {
+            return Ok(());
+        }
+
         // TODO: verify module attribute
 
         match self {
@@ -240,6 +276,10 @@ impl ValidateHirItem for ModuleAttribute {
 
 impl ValidateHirItem for Module {
     fn verify(&self, ctx: &mut ValidateCtx) -> Result<(), ()> {
+        if ctx.cyclic_bail(self) {
+            return Ok(());
+        }
+
         // TODO: verify module
 
         for attr in &self.attributes {
@@ -261,6 +301,10 @@ impl ValidateHirItem for Module {
 
 impl ValidateHirItem for TypeAliasDef {
     fn verify(&self, ctx: &mut ValidateCtx) -> Result<(), ()> {
+        if ctx.cyclic_bail(self) {
+            return Ok(());
+        }
+
         // TODO: verify type alias
 
         self.type_id.verify(ctx, &ValidateTypeOptions::sized())
@@ -273,7 +317,11 @@ impl ValidateHirItem for TypeAliasDef {
 }
 
 impl ValidateHirItem for StructAttribute {
-    fn verify(&self, _ctx: &mut ValidateCtx) -> Result<(), ()> {
+    fn verify(&self, ctx: &mut ValidateCtx) -> Result<(), ()> {
+        if ctx.cyclic_bail(self) {
+            return Ok(());
+        }
+
         // TODO: verify struct attribute
 
         match self {
@@ -288,7 +336,11 @@ impl ValidateHirItem for StructAttribute {
 }
 
 impl ValidateHirItem for StructFieldAttribute {
-    fn verify(&self, _ctx: &mut ValidateCtx) -> Result<(), ()> {
+    fn verify(&self, ctx: &mut ValidateCtx) -> Result<(), ()> {
+        if ctx.cyclic_bail(self) {
+            return Ok(());
+        }
+
         // TODO: verify struct field attribute
 
         match self {
@@ -304,6 +356,10 @@ impl ValidateHirItem for StructFieldAttribute {
 
 impl ValidateHirItem for StructField {
     fn verify(&self, ctx: &mut ValidateCtx) -> Result<(), ()> {
+        if ctx.cyclic_bail(self) {
+            return Ok(());
+        }
+
         // TODO: verify struct field
 
         for attr in &self.attributes {
@@ -333,6 +389,10 @@ impl ValidateHirItem for StructField {
 
 impl ValidateHirItem for StructDef {
     fn verify(&self, ctx: &mut ValidateCtx) -> Result<(), ()> {
+        if ctx.cyclic_bail(self) {
+            return Ok(());
+        }
+
         // TODO: verify struct
 
         for attr in &self.attributes {
@@ -353,7 +413,11 @@ impl ValidateHirItem for StructDef {
 }
 
 impl ValidateHirItem for EnumAttribute {
-    fn verify(&self, _ctx: &mut ValidateCtx) -> Result<(), ()> {
+    fn verify(&self, ctx: &mut ValidateCtx) -> Result<(), ()> {
+        if ctx.cyclic_bail(self) {
+            return Ok(());
+        }
+
         // TODO: verify enum attribute
 
         match self {
@@ -368,7 +432,11 @@ impl ValidateHirItem for EnumAttribute {
 }
 
 impl ValidateHirItem for EnumVariantAttribute {
-    fn verify(&self, _ctx: &mut ValidateCtx) -> Result<(), ()> {
+    fn verify(&self, ctx: &mut ValidateCtx) -> Result<(), ()> {
+        if ctx.cyclic_bail(self) {
+            return Ok(());
+        }
+
         // TODO: verify enum variant attribute
 
         match self {
@@ -384,6 +452,10 @@ impl ValidateHirItem for EnumVariantAttribute {
 
 impl ValidateHirItem for EnumVariant {
     fn verify(&self, ctx: &mut ValidateCtx) -> Result<(), ()> {
+        if ctx.cyclic_bail(self) {
+            return Ok(());
+        }
+
         // TODO: verify enum variant
 
         for attr in &self.attributes {
@@ -401,6 +473,10 @@ impl ValidateHirItem for EnumVariant {
 
 impl ValidateHirItem for EnumDef {
     fn verify(&self, ctx: &mut ValidateCtx) -> Result<(), ()> {
+        if ctx.cyclic_bail(self) {
+            return Ok(());
+        }
+
         // TODO: verify enum
 
         for expr in self.variant_extras.iter().flatten() {
@@ -426,6 +502,10 @@ impl ValidateHirItem for EnumDef {
 
 impl ValidateHirItem for Item {
     fn verify(&self, ctx: &mut ValidateCtx) -> Result<(), ()> {
+        if ctx.cyclic_bail(self) {
+            return Ok(());
+        }
+
         match self {
             Item::Module(id) => id.borrow().verify(ctx),
             Item::GlobalVariable(id) => id.borrow().verify(ctx),

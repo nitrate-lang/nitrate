@@ -3,6 +3,10 @@ use nitrate_hir::prelude::*;
 
 impl ValidateHirValue for Block {
     fn verify(&self, ctx: &mut ValidateCtx) -> Result<(), ()> {
+        if ctx.cyclic_bail(self) {
+            return Ok(());
+        }
+
         // TODO: verify
 
         for (i, elem) in self.elements.iter().enumerate() {
@@ -35,7 +39,11 @@ impl ValidateHirValue for Block {
 }
 
 impl ValidateHirValue for Value {
-    fn verify(&self, _ctx: &mut ValidateCtx) -> Result<(), ()> {
+    fn verify(&self, ctx: &mut ValidateCtx) -> Result<(), ()> {
+        if ctx.cyclic_bail(self) {
+            return Ok(());
+        }
+
         // TODO: verify
 
         match self {

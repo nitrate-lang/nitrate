@@ -57,7 +57,11 @@ fn verify_refinement_type(
 }
 
 impl ValidateHirType for FunctionAttribute {
-    fn verify(&self, _ctx: &mut ValidateCtx, _options: &ValidateTypeOptions) -> Result<(), ()> {
+    fn verify(&self, ctx: &mut ValidateCtx, _options: &ValidateTypeOptions) -> Result<(), ()> {
+        if ctx.cyclic_bail(self) {
+            return Ok(());
+        }
+
         match self {
             FunctionAttribute::CVariadic => Ok(()),
             FunctionAttribute::NoMangle => Ok(()),
@@ -76,6 +80,10 @@ impl ValidateHirType for FunctionAttribute {
 
 impl ValidateHirType for FunctionType {
     fn verify(&self, ctx: &mut ValidateCtx, options: &ValidateTypeOptions) -> Result<(), ()> {
+        if ctx.cyclic_bail(self) {
+            return Ok(());
+        }
+
         for attr in &self.attributes {
             attr.verify(ctx, options)?;
         }
@@ -140,7 +148,6 @@ fn verify_reference_type(
         }
     }
 
-    // FIXME: Infinite recursion for self-referential types
     to.verify(ctx, &ValidateTypeOptions::un_sized())
 }
 
@@ -161,7 +168,6 @@ fn verify_slice_reference_type(
         }
     }
 
-    // FIXME: Infinite recursion for self-referential types
     element_type.verify(ctx, &ValidateTypeOptions::sized())
 }
 
@@ -172,12 +178,15 @@ fn verify_pointer_type(
     _mutable: bool,
     _options: &ValidateTypeOptions,
 ) -> Result<(), ()> {
-    // FIXME: Infinite recursion for self-referential types
     to.verify(ctx, &ValidateTypeOptions::un_sized())
 }
 
 impl ValidateHirType for Type {
     fn verify(&self, ctx: &mut ValidateCtx, options: &ValidateTypeOptions) -> Result<(), ()> {
+        if ctx.cyclic_bail(self) {
+            return Ok(());
+        }
+
         match self {
             Type::Never
             | Type::Unit
