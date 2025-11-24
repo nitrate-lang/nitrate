@@ -1,6 +1,6 @@
 use crate::{
     ValidHir, ValidateHirItem, ValidateHirType, ValidateHirValue, ValidateTypeOptions,
-    diagnosis::Issue,
+    diagnosis::Issue, phase,
 };
 use nitrate_diagnosis::CompilerLog;
 use nitrate_hir::{SymbolTab, prelude::*};
@@ -22,24 +22,37 @@ impl ValidateHirItem for GlobalVariableAttribute {
 
 impl ValidateHirItem for GlobalVariable {
     fn verify(&self, tab: &SymbolTab, log: &CompilerLog) -> Result<(), ()> {
-        for attr in &self.attributes {
-            attr.verify(tab, log)?;
-        }
+        phase("attribute check", || -> Result<(), ()> {
+            for attr in &self.attributes {
+                attr.verify(tab, log)?;
+            }
 
-        self.ty.verify(tab, log, &ValidateTypeOptions::storable())?;
+            Ok(())
+        })?;
 
-        let init_value = self.init.borrow();
-        init_value.verify(tab, log)?;
+        phase("init value check", || -> Result<(), ()> {
+            let init_value = self.init.borrow();
+            init_value.verify(tab, log)?;
+            Ok(())
+        })?;
 
-        let init_ty = init_value.determine_type(tab).map_err(|_| ())?;
-        if *self.ty != init_ty {
-            log.report(&Issue::TypeMismatch {
-                expected: self.ty,
-                found: init_ty.into(),
-            });
+        phase("type check", || -> Result<(), ()> {
+            self.ty.verify(tab, log, &ValidateTypeOptions::storable())?;
 
-            return Err(());
-        }
+            let init_value = self.init.borrow();
+            let init_value_ty = init_value.determine_type(tab).map_err(|_| ())?;
+
+            if *self.ty != init_value_ty {
+                log.report(&Issue::TypeMismatch {
+                    expected: self.ty,
+                    found: init_value_ty.into(),
+                });
+
+                return Err(());
+            }
+
+            Ok(())
+        })?;
 
         Ok(())
     }
