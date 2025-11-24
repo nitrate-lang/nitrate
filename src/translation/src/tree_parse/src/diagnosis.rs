@@ -109,7 +109,7 @@ pub(crate) enum SyntaxErr {
 
 impl FormattableDiagnosticGroup for SyntaxErr {
     fn group_id(&self) -> DiagnosticGroupId {
-        DiagnosticGroupId::Syntax
+        DiagnosticGroupId::Parse
     }
 
     fn variant_id(&self) -> u16 {
