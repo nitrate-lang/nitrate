@@ -1,4 +1,4 @@
-use nitrate_hir::{Store, SymbolTab};
+use nitrate_hir::SymbolTab;
 
 pub struct ValidHir<T> {
     inner: T,
@@ -18,6 +18,6 @@ pub trait ValidateHir
 where
     Self: Sized,
 {
-    fn verify(&self, store: &Store, tab: &SymbolTab) -> Result<(), ()>;
-    fn validate(self, store: &Store, tab: &SymbolTab) -> Result<ValidHir<Self>, ()>;
+    fn verify(&self, tab: &SymbolTab) -> Result<(), ()>;
+    fn validate(self, tab: &SymbolTab) -> Result<ValidHir<Self>, ()>;
 }

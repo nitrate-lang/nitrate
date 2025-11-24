@@ -1,42 +1,44 @@
+use std::ops::Deref;
+
 use crate::{ValidHir, ValidateHir};
 use nitrate_hir::{SymbolTab, prelude::*};
 
 impl ValidateHir for FunctionAttribute {
-    fn verify(&self, _store: &Store, _tab: &SymbolTab) -> Result<(), ()> {
+    fn verify(&self, _tab: &SymbolTab) -> Result<(), ()> {
         match self {
             FunctionAttribute::CVariadic => Ok(()),
             FunctionAttribute::NoMangle => Ok(()),
         }
     }
 
-    fn validate(self, store: &Store, tab: &SymbolTab) -> Result<ValidHir<Self>, ()> {
-        self.verify(store, tab)?;
+    fn validate(self, tab: &SymbolTab) -> Result<ValidHir<Self>, ()> {
+        self.verify(tab)?;
         Ok(ValidHir::new(self))
     }
 }
 
 impl ValidateHir for FunctionType {
-    fn verify(&self, store: &Store, tab: &SymbolTab) -> Result<(), ()> {
+    fn verify(&self, tab: &SymbolTab) -> Result<(), ()> {
         for attr in &self.attributes {
-            attr.verify(store, tab)?;
+            attr.verify(tab)?;
         }
 
-        store[&self.return_type].verify(store, tab)?;
+        self.return_type.verify(tab)?;
 
         for param in &self.params {
-            store[&param.1].verify(store, tab)?;
+            param.1.verify(tab)?;
         }
         Ok(())
     }
 
-    fn validate(self, store: &Store, tab: &SymbolTab) -> Result<ValidHir<Self>, ()> {
-        self.verify(store, tab)?;
+    fn validate(self, tab: &SymbolTab) -> Result<ValidHir<Self>, ()> {
+        self.verify(tab)?;
         Ok(ValidHir::new(self))
     }
 }
 
 impl ValidateHir for Type {
-    fn verify(&self, store: &Store, tab: &SymbolTab) -> Result<(), ()> {
+    fn verify(&self, tab: &SymbolTab) -> Result<(), ()> {
         match self {
             Type::Never
             | Type::Unit
@@ -55,25 +57,25 @@ impl ValidateHir for Type {
             | Type::F32
             | Type::F64 => Ok(()),
 
-            Type::Array { element_type, .. } => store[element_type].verify(store, tab),
+            Type::Array { element_type, .. } => element_type.verify(tab),
 
             Type::Tuple { element_types } => {
                 for elem_type in element_types {
-                    store[elem_type].verify(store, tab)?;
+                    elem_type.verify(tab)?;
                 }
 
                 Ok(())
             }
 
-            Type::Struct { def } => store[def].borrow().verify(store, tab),
-            Type::Enum { def } => store[def].borrow().verify(store, tab),
-            Type::TypeAlias { def } => store[def].borrow().verify(store, tab),
+            Type::Struct { def } => def.borrow().verify(tab),
+            Type::Enum { def } => def.borrow().verify(tab),
+            Type::TypeAlias { def } => def.borrow().verify(tab),
 
             Type::Refine { base, min, max } => {
-                store[base].verify(store, tab)?;
+                base.verify(tab)?;
 
-                let min = store[min];
-                let max = store[max];
+                let min = min.deref();
+                let max = max.deref();
 
                 if min > max {
                     return Err(());
@@ -82,7 +84,7 @@ impl ValidateHir for Type {
                 Ok(())
             }
 
-            Type::Function { function_type } => store[function_type].verify(store, tab),
+            Type::Function { function_type } => function_type.verify(tab),
 
             Type::Reference { lifetime, to, .. } => {
                 match lifetime {
@@ -95,7 +97,7 @@ impl ValidateHir for Type {
                 }
 
                 // FIXME: Infinite recursion for self-referential types
-                store[to].verify(store, tab)
+                to.verify(tab)
             }
 
             Type::SliceRef {
@@ -113,20 +115,20 @@ impl ValidateHir for Type {
                 }
 
                 // FIXME: Infinite recursion for self-referential types
-                store[element_type].verify(store, tab)
+                element_type.verify(tab)
             }
 
             Type::Pointer { to, .. } => {
                 // FIXME: Infinite recursion for self-referential types
-                store[to].verify(store, tab)
+                to.verify(tab)
             }
 
             Type::InferredFloat | Type::InferredInteger | Type::Inferred { .. } => Err(()),
         }
     }
 
-    fn validate(self, store: &Store, tab: &SymbolTab) -> Result<ValidHir<Self>, ()> {
-        self.verify(store, tab)?;
+    fn validate(self, tab: &SymbolTab) -> Result<ValidHir<Self>, ()> {
+        self.verify(tab)?;
         Ok(ValidHir::new(self))
     }
 }

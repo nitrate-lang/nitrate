@@ -1,31 +1,32 @@
 use crate::{ValidHir, ValidateHir};
 use nitrate_hir::{SymbolTab, prelude::*};
 use nitrate_hir_get_type::HirGetType;
+use std::ops::Deref;
 
 impl ValidateHir for GlobalVariableAttribute {
-    fn verify(&self, _store: &Store, _tab: &SymbolTab) -> Result<(), ()> {
+    fn verify(&self, _tab: &SymbolTab) -> Result<(), ()> {
         match self {
             GlobalVariableAttribute::NoMangle => Ok(()),
         }
     }
 
-    fn validate(self, store: &Store, tab: &SymbolTab) -> Result<ValidHir<Self>, ()> {
-        self.verify(store, tab)?;
+    fn validate(self, tab: &SymbolTab) -> Result<ValidHir<Self>, ()> {
+        self.verify(tab)?;
         Ok(ValidHir::new(self))
     }
 }
 
 impl ValidateHir for GlobalVariable {
-    fn verify(&self, store: &Store, tab: &SymbolTab) -> Result<(), ()> {
+    fn verify(&self, tab: &SymbolTab) -> Result<(), ()> {
         for attr in &self.attributes {
-            attr.verify(store, tab)?;
+            attr.verify(tab)?;
         }
 
-        let ty = &store[&self.ty];
-        let init = store[&self.init].borrow();
+        let ty = self.ty.deref();
+        let init = self.init.borrow();
 
-        ty.verify(store, tab)?;
-        init.verify(store, tab)?;
+        ty.verify(tab)?;
+        init.verify(tab)?;
 
         let init_ty = init.get_type(tab).map_err(|_| ())?;
         if *ty != init_ty {
@@ -35,37 +36,37 @@ impl ValidateHir for GlobalVariable {
         Ok(())
     }
 
-    fn validate(self, store: &Store, tab: &SymbolTab) -> Result<ValidHir<Self>, ()> {
-        self.verify(store, tab)?;
+    fn validate(self, tab: &SymbolTab) -> Result<ValidHir<Self>, ()> {
+        self.verify(tab)?;
         Ok(ValidHir::new(self))
     }
 }
 
 impl ValidateHir for LocalVariableAttribute {
-    fn verify(&self, _store: &Store, _tab: &SymbolTab) -> Result<(), ()> {
+    fn verify(&self, _tab: &SymbolTab) -> Result<(), ()> {
         match self {
             LocalVariableAttribute::Invalid => return Err(()),
         }
     }
 
-    fn validate(self, store: &Store, tab: &SymbolTab) -> Result<ValidHir<Self>, ()> {
-        self.verify(store, tab)?;
+    fn validate(self, tab: &SymbolTab) -> Result<ValidHir<Self>, ()> {
+        self.verify(tab)?;
         Ok(ValidHir::new(self))
     }
 }
 
 impl ValidateHir for LocalVariable {
-    fn verify(&self, store: &Store, tab: &SymbolTab) -> Result<(), ()> {
+    fn verify(&self, tab: &SymbolTab) -> Result<(), ()> {
         for attr in &self.attributes {
-            attr.verify(store, tab)?;
+            attr.verify(tab)?;
         }
 
-        let ty = &store[&self.ty];
-        ty.verify(store, tab)?;
+        let ty = self.ty.deref();
+        ty.verify(tab)?;
 
         if let Some(init_expr) = &self.init {
-            let init = store[init_expr].borrow();
-            init.verify(store, tab)?;
+            let init = init_expr.borrow();
+            init.verify(tab)?;
 
             let init_ty = init.get_type(tab).map_err(|_| ())?;
             if *ty != init_ty {
@@ -76,37 +77,37 @@ impl ValidateHir for LocalVariable {
         Ok(())
     }
 
-    fn validate(self, store: &Store, tab: &SymbolTab) -> Result<ValidHir<Self>, ()> {
-        self.verify(store, tab)?;
+    fn validate(self, tab: &SymbolTab) -> Result<ValidHir<Self>, ()> {
+        self.verify(tab)?;
         Ok(ValidHir::new(self))
     }
 }
 
 impl ValidateHir for ParameterAttribute {
-    fn verify(&self, _store: &Store, _tab: &SymbolTab) -> Result<(), ()> {
+    fn verify(&self, _tab: &SymbolTab) -> Result<(), ()> {
         match self {
             ParameterAttribute::Invalid => return Err(()),
         }
     }
 
-    fn validate(self, store: &Store, tab: &SymbolTab) -> Result<ValidHir<Self>, ()> {
-        self.verify(store, tab)?;
+    fn validate(self, tab: &SymbolTab) -> Result<ValidHir<Self>, ()> {
+        self.verify(tab)?;
         Ok(ValidHir::new(self))
     }
 }
 
 impl ValidateHir for Parameter {
-    fn verify(&self, store: &Store, tab: &SymbolTab) -> Result<(), ()> {
+    fn verify(&self, tab: &SymbolTab) -> Result<(), ()> {
         for attr in &self.attributes {
-            attr.verify(store, tab)?;
+            attr.verify(tab)?;
         }
 
-        let ty = &store[&self.ty];
-        ty.verify(store, tab)?;
+        let ty = self.ty.deref();
+        ty.verify(tab)?;
 
         if let Some(default_value) = &self.default_value {
-            let init = store[default_value].borrow();
-            init.verify(store, tab)?;
+            let init = default_value.borrow();
+            init.verify(tab)?;
 
             let init_ty = init.get_type(tab).map_err(|_| ())?;
             if *ty != init_ty {
@@ -117,131 +118,131 @@ impl ValidateHir for Parameter {
         Ok(())
     }
 
-    fn validate(self, store: &Store, tab: &SymbolTab) -> Result<ValidHir<Self>, ()> {
-        self.verify(store, tab)?;
+    fn validate(self, tab: &SymbolTab) -> Result<ValidHir<Self>, ()> {
+        self.verify(tab)?;
         Ok(ValidHir::new(self))
     }
 }
 
 impl ValidateHir for Function {
-    fn verify(&self, store: &Store, tab: &SymbolTab) -> Result<(), ()> {
+    fn verify(&self, tab: &SymbolTab) -> Result<(), ()> {
         for attr in &self.attributes {
-            attr.verify(store, tab)?;
+            attr.verify(tab)?;
         }
 
         for param in &self.params {
-            store[param].borrow().verify(store, tab)?;
+            param.borrow().verify(tab)?;
         }
 
-        store[&self.return_type].verify(store, tab)?;
+        self.return_type.verify(tab)?;
 
         if let Some(body) = &self.body {
-            store[body].borrow().verify(store, tab)?;
+            body.borrow().verify(tab)?;
         }
 
         Ok(())
     }
 
-    fn validate(self, store: &Store, tab: &SymbolTab) -> Result<ValidHir<Self>, ()> {
-        self.verify(store, tab)?;
+    fn validate(self, tab: &SymbolTab) -> Result<ValidHir<Self>, ()> {
+        self.verify(tab)?;
         Ok(ValidHir::new(self))
     }
 }
 
 impl ValidateHir for Trait {
-    fn verify(&self, _store: &Store, _tab: &SymbolTab) -> Result<(), ()> {
+    fn verify(&self, _tab: &SymbolTab) -> Result<(), ()> {
         // TODO: verify trait
         unimplemented!()
     }
 
-    fn validate(self, store: &Store, tab: &SymbolTab) -> Result<ValidHir<Self>, ()> {
-        self.verify(store, tab)?;
+    fn validate(self, tab: &SymbolTab) -> Result<ValidHir<Self>, ()> {
+        self.verify(tab)?;
         Ok(ValidHir::new(self))
     }
 }
 
 impl ValidateHir for ModuleAttribute {
-    fn verify(&self, _store: &Store, _tab: &SymbolTab) -> Result<(), ()> {
+    fn verify(&self, _tab: &SymbolTab) -> Result<(), ()> {
         match self {
             ModuleAttribute::Invalid => return Err(()),
         }
     }
 
-    fn validate(self, store: &Store, tab: &SymbolTab) -> Result<ValidHir<Self>, ()> {
-        self.verify(store, tab)?;
+    fn validate(self, tab: &SymbolTab) -> Result<ValidHir<Self>, ()> {
+        self.verify(tab)?;
         Ok(ValidHir::new(self))
     }
 }
 
 impl ValidateHir for Module {
-    fn verify(&self, store: &Store, tab: &SymbolTab) -> Result<(), ()> {
+    fn verify(&self, tab: &SymbolTab) -> Result<(), ()> {
         for attr in &self.attributes {
-            attr.verify(store, tab)?;
+            attr.verify(tab)?;
         }
 
         for item in &self.items {
-            item.verify(store, tab)?;
+            item.verify(tab)?;
         }
 
         Ok(())
     }
 
-    fn validate(self, store: &Store, tab: &SymbolTab) -> Result<ValidHir<Self>, ()> {
-        self.verify(store, tab)?;
+    fn validate(self, tab: &SymbolTab) -> Result<ValidHir<Self>, ()> {
+        self.verify(tab)?;
         Ok(ValidHir::new(self))
     }
 }
 
 impl ValidateHir for TypeAliasDef {
-    fn verify(&self, store: &Store, tab: &SymbolTab) -> Result<(), ()> {
-        store[&self.type_id].verify(store, tab)
+    fn verify(&self, tab: &SymbolTab) -> Result<(), ()> {
+        self.type_id.verify(tab)
     }
 
-    fn validate(self, store: &Store, tab: &SymbolTab) -> Result<ValidHir<Self>, ()> {
-        self.verify(store, tab)?;
+    fn validate(self, tab: &SymbolTab) -> Result<ValidHir<Self>, ()> {
+        self.verify(tab)?;
         Ok(ValidHir::new(self))
     }
 }
 
 impl ValidateHir for StructAttribute {
-    fn verify(&self, _store: &Store, _tab: &SymbolTab) -> Result<(), ()> {
+    fn verify(&self, _tab: &SymbolTab) -> Result<(), ()> {
         match self {
             StructAttribute::Packed => Ok(()),
         }
     }
 
-    fn validate(self, store: &Store, tab: &SymbolTab) -> Result<ValidHir<Self>, ()> {
-        self.verify(store, tab)?;
+    fn validate(self, tab: &SymbolTab) -> Result<ValidHir<Self>, ()> {
+        self.verify(tab)?;
         Ok(ValidHir::new(self))
     }
 }
 
 impl ValidateHir for StructFieldAttribute {
-    fn verify(&self, _store: &Store, _tab: &SymbolTab) -> Result<(), ()> {
+    fn verify(&self, _tab: &SymbolTab) -> Result<(), ()> {
         match self {
             StructFieldAttribute::Invalid => Err(()),
         }
     }
 
-    fn validate(self, store: &Store, tab: &SymbolTab) -> Result<ValidHir<Self>, ()> {
-        self.verify(store, tab)?;
+    fn validate(self, tab: &SymbolTab) -> Result<ValidHir<Self>, ()> {
+        self.verify(tab)?;
         Ok(ValidHir::new(self))
     }
 }
 
 impl ValidateHir for StructField {
-    fn verify(&self, store: &Store, tab: &SymbolTab) -> Result<(), ()> {
+    fn verify(&self, tab: &SymbolTab) -> Result<(), ()> {
         for attr in &self.attributes {
-            attr.verify(store, tab)?;
+            attr.verify(tab)?;
         }
 
-        store[&self.ty].verify(store, tab)?;
+        self.ty.verify(tab)?;
         if let Some(default_value) = &self.default_value {
-            let init = store[default_value].borrow();
-            init.verify(store, tab)?;
+            let init = default_value.borrow();
+            init.verify(tab)?;
 
             let init_ty = init.get_type(tab).map_err(|_| ())?;
-            let field_ty = &store[&self.ty];
+            let field_ty = self.ty.deref();
             if *field_ty != init_ty {
                 return Err(());
             }
@@ -250,111 +251,111 @@ impl ValidateHir for StructField {
         Ok(())
     }
 
-    fn validate(self, store: &Store, tab: &SymbolTab) -> Result<ValidHir<Self>, ()> {
-        self.verify(store, tab)?;
+    fn validate(self, tab: &SymbolTab) -> Result<ValidHir<Self>, ()> {
+        self.verify(tab)?;
         Ok(ValidHir::new(self))
     }
 }
 
 impl ValidateHir for StructDef {
-    fn verify(&self, store: &Store, tab: &SymbolTab) -> Result<(), ()> {
+    fn verify(&self, tab: &SymbolTab) -> Result<(), ()> {
         for attr in &self.attributes {
-            attr.verify(store, tab)?;
+            attr.verify(tab)?;
         }
 
         for (_, field) in &self.fields {
-            field.verify(store, tab)?;
+            field.verify(tab)?;
         }
 
         Ok(())
     }
 
-    fn validate(self, store: &Store, tab: &SymbolTab) -> Result<ValidHir<Self>, ()> {
-        self.verify(store, tab)?;
+    fn validate(self, tab: &SymbolTab) -> Result<ValidHir<Self>, ()> {
+        self.verify(tab)?;
         Ok(ValidHir::new(self))
     }
 }
 
 impl ValidateHir for EnumAttribute {
-    fn verify(&self, _store: &Store, _tab: &SymbolTab) -> Result<(), ()> {
+    fn verify(&self, _tab: &SymbolTab) -> Result<(), ()> {
         match self {
             EnumAttribute::Invalid => Err(()),
         }
     }
 
-    fn validate(self, store: &Store, tab: &SymbolTab) -> Result<ValidHir<Self>, ()> {
-        self.verify(store, tab)?;
+    fn validate(self, tab: &SymbolTab) -> Result<ValidHir<Self>, ()> {
+        self.verify(tab)?;
         Ok(ValidHir::new(self))
     }
 }
 
 impl ValidateHir for EnumVariantAttribute {
-    fn verify(&self, _store: &Store, _tab: &SymbolTab) -> Result<(), ()> {
+    fn verify(&self, _tab: &SymbolTab) -> Result<(), ()> {
         match self {
             EnumVariantAttribute::Invalid => Err(()),
         }
     }
 
-    fn validate(self, store: &Store, tab: &SymbolTab) -> Result<ValidHir<Self>, ()> {
-        self.verify(store, tab)?;
+    fn validate(self, tab: &SymbolTab) -> Result<ValidHir<Self>, ()> {
+        self.verify(tab)?;
         Ok(ValidHir::new(self))
     }
 }
 
 impl ValidateHir for EnumVariant {
-    fn verify(&self, store: &Store, tab: &SymbolTab) -> Result<(), ()> {
+    fn verify(&self, tab: &SymbolTab) -> Result<(), ()> {
         for attr in &self.attributes {
-            attr.verify(store, tab)?;
+            attr.verify(tab)?;
         }
 
-        store[&self.ty].verify(store, tab)
+        self.ty.verify(tab)
     }
 
-    fn validate(self, store: &Store, tab: &SymbolTab) -> Result<ValidHir<Self>, ()> {
-        self.verify(store, tab)?;
+    fn validate(self, tab: &SymbolTab) -> Result<ValidHir<Self>, ()> {
+        self.verify(tab)?;
         Ok(ValidHir::new(self))
     }
 }
 
 impl ValidateHir for EnumDef {
-    fn verify(&self, store: &Store, tab: &SymbolTab) -> Result<(), ()> {
+    fn verify(&self, tab: &SymbolTab) -> Result<(), ()> {
         for value in &self.variant_extras {
             if let Some(expr) = value {
-                store[expr].borrow().verify(store, tab)?;
+                expr.borrow().verify(tab)?;
             }
         }
 
         for attr in &self.attributes {
-            attr.verify(store, tab)?;
+            attr.verify(tab)?;
         }
 
         for variant in &self.variants {
-            variant.verify(store, tab)?;
+            variant.verify(tab)?;
         }
 
         Ok(())
     }
 
-    fn validate(self, store: &Store, tab: &SymbolTab) -> Result<ValidHir<Self>, ()> {
-        self.verify(store, tab)?;
+    fn validate(self, tab: &SymbolTab) -> Result<ValidHir<Self>, ()> {
+        self.verify(tab)?;
         Ok(ValidHir::new(self))
     }
 }
 
 impl ValidateHir for Item {
-    fn verify(&self, store: &Store, tab: &SymbolTab) -> Result<(), ()> {
+    fn verify(&self, tab: &SymbolTab) -> Result<(), ()> {
         match self {
-            Item::Module(id) => store[id].borrow().verify(store, tab),
-            Item::GlobalVariable(id) => store[id].borrow().verify(store, tab),
-            Item::Function(id) => store[id].borrow().verify(store, tab),
-            Item::TypeAliasDef(id) => store[id].borrow().verify(store, tab),
-            Item::StructDef(id) => store[id].borrow().verify(store, tab),
-            Item::EnumDef(id) => store[id].borrow().verify(store, tab),
+            Item::Module(id) => id.borrow().verify(tab),
+            Item::GlobalVariable(id) => id.borrow().verify(tab),
+            Item::Function(id) => id.borrow().verify(tab),
+            Item::TypeAliasDef(id) => id.borrow().verify(tab),
+            Item::StructDef(id) => id.borrow().verify(tab),
+            Item::EnumDef(id) => id.borrow().verify(tab),
         }
     }
 
-    fn validate(self, store: &Store, tab: &SymbolTab) -> Result<ValidHir<Self>, ()> {
-        self.verify(store, tab)?;
+    fn validate(self, tab: &SymbolTab) -> Result<ValidHir<Self>, ()> {
+        self.verify(tab)?;
         Ok(ValidHir::new(self))
     }
 }
