@@ -291,8 +291,7 @@ impl<'a> Lexer<'a> {
         if let Ok(identifier) = str::from_utf8(identifier) {
             if identifier.starts_with(RESERVED_PREFIX) {
                 error!(
-                    "[L0002]: Identifiers starting with '{}' are reserved for compiler-generated names.\n--> {start_pos}",
-                    RESERVED_PREFIX
+                    "[L0002]: Identifiers starting with '{RESERVED_PREFIX}' are reserved for compiler-generated names.\n--> {start_pos}"
                 );
                 return Err(());
             }
@@ -381,8 +380,7 @@ impl<'a> Lexer<'a> {
         } else if let Ok(identifier) = str::from_utf8(name) {
             if identifier.starts_with(RESERVED_PREFIX) {
                 error!(
-                    "[L0002]: Identifiers starting with '{}' are reserved for compiler-generated names.\n--> {start_pos}",
-                    RESERVED_PREFIX
+                    "[L0002]: Identifiers starting with '{RESERVED_PREFIX}' are reserved for compiler-generated names.\n--> {start_pos}"
                 );
                 return Err(());
             }
@@ -447,14 +445,12 @@ impl<'a> Lexer<'a> {
             if let Ok(digit) = u128::from_str_radix(
                 str::from_utf8(&[*digit]).expect("Unexpected non-utf8 digit"),
                 base,
-            ) {
-                if let Some(y) = number.checked_mul(u128::from(base)) {
-                    if let Some(sum) = y.checked_add(digit) {
+            )
+                && let Some(y) = number.checked_mul(u128::from(base))
+                    && let Some(sum) = y.checked_add(digit) {
                         number = sum;
                         continue;
                     }
-                }
-            }
 
             error!("[L0300]: Integer literal is too large to fit in u128\n--> {start_pos}");
             return Err(());
@@ -529,11 +525,10 @@ impl<'a> Lexer<'a> {
             }
         }
 
-        if base_prefix.is_none() {
-            if let Ok(float) = self.parse_float(&start_pos) {
+        if base_prefix.is_none()
+            && let Ok(float) = self.parse_float(&start_pos) {
                 return Ok(float);
             }
-        }
 
         let number = Self::radix_decode(literal, base_prefix.unwrap_or(10u32), &start_pos)?;
 
@@ -826,10 +821,10 @@ impl<'a> Lexer<'a> {
                             return Ok(Token::String(utf8_str.to_string()));
                         }
                         return Ok(Token::BString(buffer.to_vec()));
-                    } else if let Ok(utf8_str) = String::from_utf8(storage.to_vec()) {
-                        return Ok(Token::String(utf8_str.to_string()));
+                    } else if let Ok(utf8_str) = String::from_utf8(storage.clone()) {
+                        return Ok(Token::String(utf8_str.clone()));
                     }
-                    return Ok(Token::BString(storage.to_vec()));
+                    return Ok(Token::BString(storage.clone()));
                 }
 
                 Ok(b) => {
