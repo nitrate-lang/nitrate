@@ -71,7 +71,6 @@ impl ValidateHirItem for LocalVariableAttribute {
         match self {
             LocalVariableAttribute::Align { alignment } => {
                 establish_property("local variable alignment is supported", || {
-                    // TODO: Determine maximum supported alignment
                     const MAX_SUPPORTED_ALIGNMENT: u32 = 4096;
 
                     if alignment.get() > MAX_SUPPORTED_ALIGNMENT {
@@ -143,7 +142,6 @@ impl ValidateHirItem for ParameterAttribute {
         match self {
             ParameterAttribute::Align { alignment } => {
                 establish_property("parameter alignment is supported", || {
-                    // TODO: Determine maximum supported alignment
                     const MAX_SUPPORTED_ALIGNMENT: u32 = 4096;
 
                     if alignment.get() > MAX_SUPPORTED_ALIGNMENT {
@@ -229,8 +227,6 @@ impl ValidateHirItem for Function {
         if ctx.cyclic_bail(self) {
             return Ok(());
         }
-
-        // TODO: verify function
 
         for attr in &self.attributes {
             attr.verify(ctx, &ValidateTypeOptions::sized())?;

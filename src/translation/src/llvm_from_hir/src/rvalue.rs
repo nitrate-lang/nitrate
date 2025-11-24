@@ -1431,8 +1431,6 @@ fn gen_rval_assign<'ctx>(
     place: &hir::Value,
     value: &hir::Value,
 ) -> BasicValueEnum<'ctx> {
-    // FIXME: Consider drop semantics? Is that codegen's responsibility or HIR?
-
     let llvm_place = gen_place(ctx, place);
     let llvm_value = gen_rval(ctx, value);
 
