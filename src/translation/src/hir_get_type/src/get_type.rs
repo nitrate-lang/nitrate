@@ -72,7 +72,7 @@ impl HirGetType for Value {
             Value::InferredFloat(_) => Ok(Type::InferredFloat),
 
             Value::StringLit(str) => {
-                let element_type = Type::U8.into_id(store);
+                let element_type = Type::U8.into();
                 let array = Type::Array {
                     element_type,
                     len: str.len() as u32,
@@ -82,7 +82,7 @@ impl HirGetType for Value {
             }
 
             Value::BStringLit(vec) => {
-                let element_type = Type::U8.into_id(store);
+                let element_type = Type::U8.into();
                 let array = Type::Array {
                     element_type,
                     len: vec.len() as u32,
@@ -193,15 +193,15 @@ impl HirGetType for Value {
                     lifetime: Lifetime::Inferred,
                     exclusive: *exclusive,
                     mutable: *mutable,
-                    to: place_type.into_id(store),
+                    to: place_type.into(),
                 })
             }
 
             Value::List { elements } => {
                 let element_type = if elements.is_empty() {
-                    Type::Unit.into_id(store)
+                    Type::Unit.into()
                 } else {
-                    elements[0].get_type(store, tab)?.into_id(store)
+                    elements[0].get_type(store, tab)?.into()
                 };
 
                 let array = Type::Array {
@@ -215,7 +215,7 @@ impl HirGetType for Value {
             Value::Tuple { elements } => {
                 let mut element_types = Vec::with_capacity(elements.len());
                 for elem in elements {
-                    let elem_type = elem.get_type(store, tab)?.into_id(store);
+                    let elem_type = elem.get_type(store, tab)?.into();
                     element_types.push(elem_type);
                 }
 
@@ -283,7 +283,7 @@ impl HirGetType for Value {
                 named: _,
             } => {
                 let object = &store[object].borrow();
-                let object_type = object.get_type(store, tab)?.into_id(store);
+                let object_type = object.get_type(store, tab)?.into();
 
                 let method = tab
                     .get_method(&object_type, method_name)
@@ -296,7 +296,7 @@ impl HirGetType for Value {
             Value::FunctionSymbol { id } => {
                 let function = &store[id].borrow();
                 Ok(Type::Function {
-                    function_type: function.get_type(store).into_id(store),
+                    function_type: function.get_type(store).into(),
                 })
             }
 

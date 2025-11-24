@@ -258,7 +258,7 @@ impl HirEvaluate for Value {
                     let eval_value = ctx.store[field_value as &ValueId]
                         .borrow()
                         .evaluate(ctx)?
-                        .into_id(ctx.store);
+                        .into();
 
                     *field_value = eval_value;
                 }
@@ -274,7 +274,7 @@ impl HirEvaluate for Value {
                 variant,
                 value,
             } => {
-                let evaluated_value = ctx.store[value].borrow().evaluate(ctx)?.into_id(ctx.store);
+                let evaluated_value = ctx.store[value].borrow().evaluate(ctx)?.into();
 
                 Ok(Value::EnumVariant {
                     enum_path: enum_type.clone(),

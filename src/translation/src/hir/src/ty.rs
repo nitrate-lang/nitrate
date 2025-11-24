@@ -207,18 +207,14 @@ pub enum PtrSize {
     U64 = 8,
 }
 
-impl IntoStoreId for FunctionType {
-    type Id = FunctionTypeId;
-
-    fn into_id(self, store: &Store) -> Self::Id {
-        store.store_function_type(self)
+impl From<FunctionType> for FunctionTypeId {
+    fn from(function_type: FunctionType) -> Self {
+        get_storage(|store| store.store_function_type(function_type))
     }
 }
 
-impl IntoStoreId for Type {
-    type Id = TypeId;
-
-    fn into_id(self, store: &Store) -> Self::Id {
-        store.store_type(self)
+impl From<Type> for TypeId {
+    fn from(ty: Type) -> Self {
+        get_storage(|store| store.store_type(ty))
     }
 }

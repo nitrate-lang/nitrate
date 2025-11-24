@@ -21,6 +21,17 @@ pub fn using_storage<R>(store: &Store, f: impl FnOnce() -> R) -> R {
     })
 }
 
+pub fn get_storage<R>(f: impl FnOnce(&Store) -> R) -> R {
+    TLS_STORE.with(|tls| {
+        let store_ptr = tls
+            .get()
+            .expect("No Store found in TLS. Did you forget to call using_storage?");
+
+        let store = unsafe { &*store_ptr };
+        f(store)
+    })
+}
+
 macro_rules! impl_dedup_store {
     ($handle_name:ident, $item_name:ident, $store_name:ident) => {
         #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, Hash)]

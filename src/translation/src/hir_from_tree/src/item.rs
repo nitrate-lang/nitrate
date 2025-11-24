@@ -29,7 +29,7 @@ fn ast_typealias2hir(
     }
 
     let type_id = match &type_alias.alias_type {
-        Some(ty) => ty.to_owned().ast2hir(ctx, log)?.into_id(&ctx.store),
+        Some(ty) => ty.to_owned().ast2hir(ctx, log)?.into(),
         None => {
             log.report(&HirErr::TypeAliasMustHaveType);
             return Err(());
@@ -47,7 +47,7 @@ fn ast_typealias2hir(
         *existing_type_alias_def = type_alias;
         Ok(existing_type_alias_def_id.clone())
     } else {
-        let type_alias_def_id = type_alias.into_id(&ctx.store);
+        let type_alias_def_id: TypeAliasDefId = type_alias.into();
         let typedef = TypeDefinition::TypeAliasDef(type_alias_def_id.clone());
         ctx.tab.add_type(typedef, &ctx.store);
         Ok(type_alias_def_id)
@@ -96,10 +96,10 @@ fn ast_structdef2hir(
         }
 
         let field_name = NString::from(field.name.to_string());
-        let field_type = field.ty.to_owned().ast2hir(ctx, log)?.into_id(&ctx.store);
+        let field_type = field.ty.to_owned().ast2hir(ctx, log)?.into();
 
         let field_default = match field.default_value.to_owned() {
-            Some(expr) => Some(expr.ast2hir(ctx, log)?.into_id(&ctx.store)),
+            Some(expr) => Some(expr.ast2hir(ctx, log)?.into()),
             None => None,
         };
 
@@ -129,7 +129,7 @@ fn ast_structdef2hir(
         *existing_struct_def = struct_def;
         Ok(existing_struct_def_id.clone())
     } else {
-        let struct_def_id = struct_def.into_id(&ctx.store);
+        let struct_def_id: StructDefId = struct_def.into();
         let typedef = TypeDefinition::StructDef(struct_def_id.clone());
         ctx.tab.add_type(typedef, &ctx.store);
         Ok(struct_def_id)
@@ -174,12 +174,12 @@ fn ast_enumdef2hir(
         let variant_name = NString::from(variant.name.to_string());
 
         let variant_type = match variant.ty.to_owned() {
-            Some(ty) => ty.ast2hir(ctx, log)?.into_id(&ctx.store),
-            None => Type::Unit.into_id(&ctx.store),
+            Some(ty) => ty.ast2hir(ctx, log)?.into(),
+            None => Type::Unit.into(),
         };
 
         let field_default = match variant.default_value.to_owned() {
-            Some(expr) => Some(expr.ast2hir(ctx, log)?.into_id(&ctx.store)),
+            Some(expr) => Some(expr.ast2hir(ctx, log)?.into()),
             None => None,
         };
 
@@ -206,7 +206,7 @@ fn ast_enumdef2hir(
         *existing_enum_def = enum_def;
         Ok(existing_enum_def_id.clone())
     } else {
-        let enum_def_id = enum_def.into_id(&ctx.store);
+        let enum_def_id: EnumDefId = enum_def.into();
         let typedef = TypeDefinition::EnumDef(enum_def_id.clone());
         ctx.tab.add_type(typedef, &ctx.store);
         Ok(enum_def_id)
@@ -256,16 +256,16 @@ fn ast_globalvar2hir(
     };
 
     let ty = match globalvar.ty.to_owned() {
-        None => ctx.create_inference_placeholder().into_id(&ctx.store),
+        None => ctx.create_inference_placeholder().into(),
         Some(t) => {
-            let ty_hir = t.ast2hir(ctx, log)?.into_id(&ctx.store);
+            let ty_hir = t.ast2hir(ctx, log)?.into();
             ty_hir
         }
     };
 
     let init = match globalvar.initializer.to_owned() {
         Some(expr) => {
-            let expr_hir = expr.ast2hir(ctx, log)?.into_id(&ctx.store);
+            let expr_hir = expr.ast2hir(ctx, log)?.into();
             expr_hir
         }
 
@@ -290,7 +290,7 @@ fn ast_globalvar2hir(
         *existing_global_variable = global_variable;
         Ok(existing_global_id.clone())
     } else {
-        let variable_id = global_variable.into_id(&ctx.store);
+        let variable_id: GlobalVariableId = global_variable.into();
         ctx.tab.add_global_variable(variable_id.clone(), &ctx.store);
         Ok(variable_id)
     }
@@ -314,21 +314,21 @@ fn ast_funcparam2hir(
     };
 
     let name = ctx.qualify_name(&param.name).into();
-    let ty = param.ty.to_owned().ast2hir(ctx, log)?.into_id(&ctx.store);
+    let ty = param.ty.to_owned().ast2hir(ctx, log)?.into();
 
     let default_value = match param.default_value.to_owned() {
-        Some(expr) => Some(expr.ast2hir(ctx, log)?.into_id(&ctx.store)),
+        Some(expr) => Some(expr.ast2hir(ctx, log)?.into()),
         None => None,
     };
 
-    let parameter_id = Parameter {
+    let parameter_id: ParameterId = Parameter {
         attributes,
         is_mutable,
         name,
         ty,
         default_value,
     }
-    .into_id(&ctx.store);
+    .into();
 
     ctx.tab.add_parameter(parameter_id.clone(), &ctx.store);
 
@@ -412,23 +412,23 @@ fn ast_function2hir(
                         Value::Return {
                             value: expr.to_owned(),
                         }
-                        .into_id(&ctx.store),
+                        .into(),
                     );
                 }
 
                 _ if return_type == Type::Unit => {
                     hir_block.elements.push(BlockElement::Expr(
                         Value::Return {
-                            value: Value::Unit.into_id(&ctx.store),
+                            value: Value::Unit.into(),
                         }
-                        .into_id(&ctx.store),
+                        .into(),
                     ));
                 }
 
                 _ => log.report(&HirErr::MissingReturnStatement),
             }
 
-            Some(hir_block.into_id(&ctx.store))
+            Some(hir_block.into())
         }
     };
 
@@ -440,7 +440,7 @@ fn ast_function2hir(
         name: name.clone(),
         mangled_name,
         params: parameters,
-        return_type: return_type.into_id(&ctx.store),
+        return_type: return_type.into(),
         body,
     };
 
@@ -449,7 +449,7 @@ fn ast_function2hir(
         *existing_function = function;
         Ok(existing_function_id.clone())
     } else {
-        let function_id = function.into_id(&ctx.store);
+        let function_id: FunctionId = function.into();
         ctx.tab.add_function(function_id.clone(), &ctx.store);
         Ok(function_id)
     }
@@ -463,7 +463,7 @@ fn lower_item(
 ) -> Result<(), ()> {
     match item {
         ast::Item::Module(module) => {
-            let hir_module = convert_ast_to_hir(*module, ctx, log)?.into_id(&ctx.store);
+            let hir_module = convert_ast_to_hir(*module, ctx, log)?.into();
             current_module_items.push(Item::Module(hir_module));
             Ok(())
         }

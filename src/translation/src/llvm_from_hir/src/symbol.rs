@@ -9,7 +9,7 @@ use thin_vec::ThinVec;
 use crate::rvalue::gen_rval;
 use crate::rvalue::{CodegenCtx, gen_block};
 use crate::ty::{TypegenCtx, gen_ty};
-use nitrate_hir::{IntoStoreId, prelude as hir};
+use nitrate_hir::prelude as hir;
 use nitrate_hir_mangle::mangle_name;
 use nitrate_llvm::LLVMContext;
 use std::collections::{BTreeSet, HashMap};
@@ -77,9 +77,9 @@ fn gen_global<'ctx>(
         function_type: hir::FunctionType {
             attributes: BTreeSet::new(),
             params: ThinVec::new(),
-            return_type: hir::Type::Unit.into_id(ctx.store),
+            return_type: hir::Type::Unit.into(),
         }
-        .into_id(ctx.store),
+        .into(),
     };
 
     let ctor_name = mangle_name(

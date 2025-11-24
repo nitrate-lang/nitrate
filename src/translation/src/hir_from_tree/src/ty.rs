@@ -157,14 +157,14 @@ impl Ast2Hir for ast::TypePath {
                     }
 
                     None => {
-                        let struct_def = StructDef {
+                        let struct_def: StructDefId = StructDef {
                             visibility: Visibility::Sec,
                             name: resolved_path,
                             attributes: BTreeSet::new(),
                             fields: BTreeMap::new(),
                             layout: StructLayout::default(),
                         }
-                        .into_id(&ctx.store);
+                        .into();
 
                         let typedef = TypeDefinition::StructDef(struct_def.clone());
                         ctx.tab.add_type(typedef, &ctx.store);
@@ -181,14 +181,14 @@ impl Ast2Hir for ast::TypePath {
                     }
 
                     None => {
-                        let enum_def = EnumDef {
+                        let enum_def: EnumDefId = EnumDef {
                             visibility: Visibility::Sec,
                             name: resolved_path,
                             variant_extras: Vec::new(),
                             attributes: BTreeSet::new(),
                             variants: Vec::new().into(),
                         }
-                        .into_id(&ctx.store);
+                        .into();
 
                         let typedef = TypeDefinition::EnumDef(enum_def.clone());
                         ctx.tab.add_type(typedef, &ctx.store);
@@ -204,12 +204,12 @@ impl Ast2Hir for ast::TypePath {
                     }
 
                     None => {
-                        let type_alias_def = TypeAliasDef {
+                        let type_alias_def: TypeAliasDefId = TypeAliasDef {
                             visibility: Visibility::Sec,
                             name: resolved_path,
-                            type_id: Type::Unit.into_id(&ctx.store),
+                            type_id: Type::Unit.into(),
                         }
-                        .into_id(&ctx.store);
+                        .into();
 
                         let typedef = TypeDefinition::TypeAliasDef(type_alias_def.clone());
                         ctx.tab.add_type(typedef, &ctx.store);
@@ -255,7 +255,7 @@ impl Ast2Hir for ast::TupleType {
 
         let mut elements = Vec::with_capacity(self.element_types.len());
         for ast_elem_ty in self.element_types.into_iter() {
-            let hir_elem_ty = ast_elem_ty.ast2hir(ctx, log)?.into_id(&ctx.store);
+            let hir_elem_ty = ast_elem_ty.ast2hir(ctx, log)?.into();
             elements.push(hir_elem_ty);
         }
 
@@ -269,11 +269,11 @@ impl Ast2Hir for ast::ArrayType {
     type Hir = Type;
 
     fn ast2hir(self, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
-        let element_type = self.element_type.ast2hir(ctx, log)?.into_id(&ctx.store);
+        let element_type = self.element_type.ast2hir(ctx, log)?.into();
 
         let hir_length = Value::Cast {
-            value: self.len.ast2hir(ctx, log)?.into_id(&ctx.store),
-            target_type: Type::USize.into_id(&ctx.store),
+            value: self.len.ast2hir(ctx, log)?.into(),
+            target_type: Type::USize.into(),
         };
 
         let mut eval = HirEvalCtx::new(&ctx.store, log, ctx.ptr_size);
@@ -332,7 +332,7 @@ impl Ast2Hir for ast::FunctionType {
             }
 
             let name = NString::from(param.name.deref());
-            let ty = param.ty.ast2hir(ctx, log)?.into_id(&ctx.store);
+            let ty = param.ty.ast2hir(ctx, log)?.into();
 
             parameters.push((name, ty));
         }
@@ -345,11 +345,11 @@ impl Ast2Hir for ast::FunctionType {
         let function_type = FunctionType {
             attributes,
             params: parameters.into(),
-            return_type: return_type.into_id(&ctx.store),
+            return_type: return_type.into(),
         };
 
         Ok(Type::Function {
-            function_type: function_type.into_id(&ctx.store),
+            function_type: function_type.into(),
         })
     }
 }
@@ -358,7 +358,7 @@ impl Ast2Hir for ast::ReferenceType {
     type Hir = Type;
 
     fn ast2hir(self, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
-        let to = self.to.ast2hir(ctx, log)?.into_id(&ctx.store);
+        let to = self.to.ast2hir(ctx, log)?.into();
 
         let lifetime = match self.lifetime {
             None => Lifetime::Inferred,
@@ -408,7 +408,7 @@ impl Ast2Hir for ast::PointerType {
     type Hir = Type;
 
     fn ast2hir(self, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
-        let to = self.to.ast2hir(ctx, log)?.into_id(&ctx.store);
+        let to = self.to.ast2hir(ctx, log)?.into();
 
         let mutable = match self.mutability {
             Some(ast::Mutability::Mut) => true,

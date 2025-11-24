@@ -126,7 +126,7 @@ impl Ast2Hir for ast::StructInit {
         let mut fields = Vec::with_capacity(self.fields.len());
         for field in self.fields {
             let field_name = NString::from(field.0.to_string());
-            let field_value = field.1.ast2hir(ctx, log)?.into_id(&ctx.store);
+            let field_value = field.1.ast2hir(ctx, log)?.into();
 
             fields.push((field_name, field_value));
         }
@@ -152,27 +152,27 @@ impl Ast2Hir for ast::UnaryExpr {
         match self.operator {
             UnaryExprOp::Add => Ok(Value::Unary {
                 op: UnaryOp::Add,
-                operand: operand.into_id(&ctx.store),
+                operand: operand.into(),
             }),
 
             UnaryExprOp::Sub => Ok(Value::Unary {
                 op: UnaryOp::Sub,
-                operand: operand.into_id(&ctx.store),
+                operand: operand.into(),
             }),
 
             UnaryExprOp::Not => Ok(Value::Unary {
                 op: UnaryOp::Not,
-                operand: operand.into_id(&ctx.store),
+                operand: operand.into(),
             }),
 
             UnaryExprOp::Deref => Ok(Value::Deref {
-                place: operand.into_id(&ctx.store),
+                place: operand.into(),
             }),
 
             UnaryExprOp::Borrow => Ok(Value::Borrow {
                 exclusive: false,
                 mutable: false,
-                place: operand.into_id(&ctx.store),
+                place: operand.into(),
             }),
 
             UnaryExprOp::Typeof => {
@@ -187,8 +187,8 @@ impl Ast2Hir for ast::BinExpr {
     type Hir = Value;
 
     fn ast2hir(self, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
-        let left = self.left.ast2hir(ctx, log)?.into_id(&ctx.store);
-        let right = self.right.ast2hir(ctx, log)?.into_id(&ctx.store);
+        let left = self.left.ast2hir(ctx, log)?.into();
+        let right = self.right.ast2hir(ctx, log)?.into();
 
         match self.operator {
             ast::BinExprOp::Add => Ok(Value::Binary {
@@ -323,7 +323,7 @@ impl Ast2Hir for ast::BinExpr {
                     op: BinaryOp::Add,
                     right,
                 }
-                .into_id(&ctx.store),
+                .into(),
             }),
 
             ast::BinExprOp::SetMinus => Ok(Value::Assign {
@@ -333,7 +333,7 @@ impl Ast2Hir for ast::BinExpr {
                     op: BinaryOp::Sub,
                     right,
                 }
-                .into_id(&ctx.store),
+                .into(),
             }),
 
             ast::BinExprOp::SetTimes => Ok(Value::Assign {
@@ -343,7 +343,7 @@ impl Ast2Hir for ast::BinExpr {
                     op: BinaryOp::Mul,
                     right,
                 }
-                .into_id(&ctx.store),
+                .into(),
             }),
 
             ast::BinExprOp::SetSlash => Ok(Value::Assign {
@@ -353,7 +353,7 @@ impl Ast2Hir for ast::BinExpr {
                     op: BinaryOp::Div,
                     right,
                 }
-                .into_id(&ctx.store),
+                .into(),
             }),
 
             ast::BinExprOp::SetPercent => Ok(Value::Assign {
@@ -363,7 +363,7 @@ impl Ast2Hir for ast::BinExpr {
                     op: BinaryOp::Mod,
                     right,
                 }
-                .into_id(&ctx.store),
+                .into(),
             }),
 
             ast::BinExprOp::SetBitAnd => Ok(Value::Assign {
@@ -373,7 +373,7 @@ impl Ast2Hir for ast::BinExpr {
                     op: BinaryOp::And,
                     right,
                 }
-                .into_id(&ctx.store),
+                .into(),
             }),
 
             ast::BinExprOp::SetBitOr => Ok(Value::Assign {
@@ -383,7 +383,7 @@ impl Ast2Hir for ast::BinExpr {
                     op: BinaryOp::Or,
                     right,
                 }
-                .into_id(&ctx.store),
+                .into(),
             }),
 
             ast::BinExprOp::SetBitXor => Ok(Value::Assign {
@@ -393,7 +393,7 @@ impl Ast2Hir for ast::BinExpr {
                     op: BinaryOp::Xor,
                     right,
                 }
-                .into_id(&ctx.store),
+                .into(),
             }),
 
             ast::BinExprOp::SetBitShl => Ok(Value::Assign {
@@ -403,7 +403,7 @@ impl Ast2Hir for ast::BinExpr {
                     op: BinaryOp::Shl,
                     right,
                 }
-                .into_id(&ctx.store),
+                .into(),
             }),
 
             ast::BinExprOp::SetBitShr => Ok(Value::Assign {
@@ -413,7 +413,7 @@ impl Ast2Hir for ast::BinExpr {
                     op: BinaryOp::Shr,
                     right,
                 }
-                .into_id(&ctx.store),
+                .into(),
             }),
 
             ast::BinExprOp::SetBitRotl => Ok(Value::Assign {
@@ -423,7 +423,7 @@ impl Ast2Hir for ast::BinExpr {
                     op: BinaryOp::Rol,
                     right,
                 }
-                .into_id(&ctx.store),
+                .into(),
             }),
 
             ast::BinExprOp::SetBitRotr => Ok(Value::Assign {
@@ -433,7 +433,7 @@ impl Ast2Hir for ast::BinExpr {
                     op: BinaryOp::Ror,
                     right,
                 }
-                .into_id(&ctx.store),
+                .into(),
             }),
 
             ast::BinExprOp::SetLogicAnd => Ok(Value::Assign {
@@ -443,7 +443,7 @@ impl Ast2Hir for ast::BinExpr {
                     op: BinaryOp::And,
                     right,
                 }
-                .into_id(&ctx.store),
+                .into(),
             }),
 
             ast::BinExprOp::SetLogicOr => Ok(Value::Assign {
@@ -453,7 +453,7 @@ impl Ast2Hir for ast::BinExpr {
                     op: BinaryOp::Or,
                     right,
                 }
-                .into_id(&ctx.store),
+                .into(),
             }),
 
             ast::BinExprOp::Range => {
@@ -543,8 +543,8 @@ impl Ast2Hir for ast::Cast {
             (Value::InferredFloat(v), Type::F64) => Ok(Value::F64(OrderedFloat::from(*v as f64))),
 
             (expr, to) => Ok(Value::Cast {
-                value: expr.into_id(&ctx.store),
-                target_type: to.into_id(&ctx.store),
+                value: expr.into(),
+                target_type: to.into(),
             }),
         }
     }
@@ -575,19 +575,19 @@ fn ast_localvar2hir(
     let name = ctx.qualify_name(&var.name).into();
 
     let ty = match var.ty.to_owned() {
-        None => ctx.create_inference_placeholder().into_id(&ctx.store),
+        None => ctx.create_inference_placeholder().into(),
         Some(t) => {
-            let ty_hir = t.ast2hir(ctx, log)?.into_id(&ctx.store);
+            let ty_hir = t.ast2hir(ctx, log)?.into();
             ty_hir
         }
     };
 
     let initializer = match var.initializer.to_owned() {
-        Some(expr) => Some(expr.ast2hir(ctx, log)?.into_id(&ctx.store)),
+        Some(expr) => Some(expr.ast2hir(ctx, log)?.into()),
         None => None,
     };
 
-    let localvar_id = LocalVariable {
+    let localvar_id: LocalVariableId = LocalVariable {
         kind,
         attributes,
         is_mutable,
@@ -595,7 +595,7 @@ fn ast_localvar2hir(
         ty,
         init: initializer,
     }
-    .into_id(&ctx.store);
+    .into();
 
     ctx.tab.add_local_variable(localvar_id.clone(), &ctx.store);
 
@@ -612,15 +612,15 @@ impl Ast2Hir for ast::Block {
         for (i, element) in self.elements.into_iter().enumerate() {
             match element {
                 ast::BlockItem::Expr(e) => {
-                    let hir_element = e.ast2hir(ctx, log)?.into_id(&ctx.store);
+                    let hir_element = e.ast2hir(ctx, log)?.into();
                     elements.push(BlockElement::Expr(hir_element));
                 }
 
                 ast::BlockItem::Stmt(s) => {
-                    let hir_element = s.ast2hir(ctx, log)?.into_id(&ctx.store);
+                    let hir_element = s.ast2hir(ctx, log)?.into();
                     elements.push(BlockElement::Expr(hir_element));
                     if i == elements_len - 1 {
-                        elements.push(BlockElement::Expr(Value::Unit.into_id(&ctx.store)));
+                        elements.push(BlockElement::Expr(Value::Unit.into()));
                     }
                 }
 
@@ -683,11 +683,11 @@ impl Ast2Hir for ast::ExprPath {
                             name: resolved_path.clone(),
                             mangled_name: resolved_path,
                             params: vec![],
-                            return_type: ctx.create_inference_placeholder().into_id(&ctx.store),
+                            return_type: ctx.create_inference_placeholder().into(),
                             body: None,
                         };
 
-                        let placeholder_id = placeholder.into_id(&ctx.store);
+                        let placeholder_id: FunctionId = placeholder.into();
                         ctx.tab.add_function(placeholder_id.clone(), &ctx.store);
 
                         return Ok(Value::FunctionSymbol { id: placeholder_id });
@@ -709,11 +709,11 @@ impl Ast2Hir for ast::ExprPath {
                                 is_mutable: true,
                                 name: resolved_path.clone(),
                                 mangled_name: resolved_path,
-                                ty: ctx.create_inference_placeholder().into_id(&ctx.store),
-                                init: Value::Unit.into_id(&ctx.store),
+                                ty: ctx.create_inference_placeholder().into(),
+                                init: Value::Unit.into(),
                             };
 
-                            let placeholder_id = placeholder.into_id(&ctx.store);
+                            let placeholder_id: GlobalVariableId = placeholder.into();
                             ctx.tab
                                 .add_global_variable(placeholder_id.clone(), &ctx.store);
 
@@ -770,8 +770,8 @@ impl Ast2Hir for ast::IndexAccess {
     type Hir = Value;
 
     fn ast2hir(self, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
-        let _collection = self.collection.ast2hir(ctx, log)?.into_id(&ctx.store);
-        let _index = self.index.ast2hir(ctx, log)?.into_id(&ctx.store);
+        let _collection: ValueId = self.collection.ast2hir(ctx, log)?.into();
+        let _index: ValueId = self.index.ast2hir(ctx, log)?.into();
         unimplemented!()
     }
 }
@@ -780,7 +780,7 @@ impl Ast2Hir for ast::FieldAccess {
     type Hir = Value;
 
     fn ast2hir(self, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
-        let object = self.object.ast2hir(ctx, log)?.into_id(&ctx.store);
+        let object = self.object.ast2hir(ctx, log)?.into();
         let field = self.field.to_string().into();
 
         Ok(Value::FieldAccess {
@@ -794,22 +794,22 @@ impl Ast2Hir for ast::If {
     type Hir = Value;
 
     fn ast2hir(self, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
-        let condition = self.condition.ast2hir(ctx, log)?.into_id(&ctx.store);
+        let condition = self.condition.ast2hir(ctx, log)?.into();
 
-        let true_branch = self.true_branch.ast2hir(ctx, log)?.into_id(&ctx.store);
+        let true_branch = self.true_branch.ast2hir(ctx, log)?.into();
 
         let false_branch = match self.false_branch {
             Some(ast::ElseIf::If(else_if)) => {
                 let else_if_value = else_if.ast2hir(ctx, log)?;
                 let block = Block {
                     safety: BlockSafety::Safe,
-                    elements: vec![BlockElement::Expr(else_if_value.into_id(&ctx.store))],
+                    elements: vec![BlockElement::Expr(else_if_value.into())],
                 }
-                .into_id(&ctx.store);
+                .into();
                 Some(block)
             }
             Some(ast::ElseIf::Block(block)) => {
-                let block = block.ast2hir(ctx, log)?.into_id(&ctx.store);
+                let block = block.ast2hir(ctx, log)?.into();
                 Some(block)
             }
             None => None,
@@ -828,11 +828,11 @@ impl Ast2Hir for ast::WhileLoop {
 
     fn ast2hir(self, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
         let condition = match self.condition {
-            Some(cond) => cond.ast2hir(ctx, log)?.into_id(&ctx.store),
-            None => Value::Bool(true).into_id(&ctx.store),
+            Some(cond) => cond.ast2hir(ctx, log)?.into(),
+            None => Value::Bool(true).into(),
         };
 
-        let body = self.body.ast2hir(ctx, log)?.into_id(&ctx.store);
+        let body = self.body.ast2hir(ctx, log)?.into();
 
         Ok(Value::While { condition, body })
     }
@@ -872,8 +872,8 @@ impl Ast2Hir for ast::Return {
 
     fn ast2hir(self, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
         let value = match self.value {
-            Some(v) => v.ast2hir(ctx, log)?.into_id(&ctx.store),
-            None => Value::Unit.into_id(&ctx.store),
+            Some(v) => v.ast2hir(ctx, log)?.into(),
+            None => Value::Unit.into(),
         };
 
         Ok(Value::Return { value })
@@ -908,18 +908,18 @@ impl Ast2Hir for ast::FunctionCall {
         let mut named = Vec::with_capacity(self.named.len());
 
         for arg in self.positional {
-            let value = arg.ast2hir(ctx, log)?.into_id(&ctx.store);
+            let value = arg.ast2hir(ctx, log)?.into();
             positional.push(value);
         }
 
         for (name, arg) in self.named {
             let name = NString::from(name.to_string());
-            let value = arg.ast2hir(ctx, log)?.into_id(&ctx.store);
+            let value = arg.ast2hir(ctx, log)?.into();
             named.push((name, value));
         }
 
         Ok(Value::Call {
-            callee: callee.into_id(&ctx.store),
+            callee: callee.into(),
             positional: positional.into(),
             named: named.into(),
         })
@@ -930,20 +930,20 @@ impl Ast2Hir for ast::MethodCall {
     type Hir = Value;
 
     fn ast2hir(self, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
-        let object = self.object.ast2hir(ctx, log)?.into_id(&ctx.store);
+        let object = self.object.ast2hir(ctx, log)?.into();
         let method = NString::from(self.method_name);
 
         let mut positional = Vec::with_capacity(self.positional.len());
         let mut named = Vec::with_capacity(self.named.len());
 
         for arg in self.positional {
-            let value = arg.ast2hir(ctx, log)?.into_id(&ctx.store);
+            let value = arg.ast2hir(ctx, log)?.into();
             positional.push(value);
         }
 
         for (name, arg) in self.named {
             let name = NString::from(name.to_string());
-            let value = arg.ast2hir(ctx, log)?.into_id(&ctx.store);
+            let value = arg.ast2hir(ctx, log)?.into();
             named.push((name, value));
         }
 
@@ -976,7 +976,7 @@ impl Ast2Hir for ast::Expr {
             ast::Expr::BinExpr(e) => e.ast2hir(ctx, log),
             ast::Expr::Cast(e) => e.ast2hir(ctx, log),
             ast::Expr::Block(e) => Ok(Value::Block {
-                block: e.ast2hir(ctx, log)?.into_id(&ctx.store),
+                block: e.ast2hir(ctx, log)?.into(),
             }),
             ast::Expr::Closure(e) => e.ast2hir(ctx, log),
             ast::Expr::Path(e) => e.ast2hir(ctx, log),

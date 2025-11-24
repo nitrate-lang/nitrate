@@ -236,74 +236,56 @@ pub enum Item {
     EnumDef(EnumDefId),
 }
 
-impl IntoStoreId for GlobalVariable {
-    type Id = GlobalVariableId;
-
-    fn into_id(self, store: &Store) -> Self::Id {
-        store.store_global_variable(self)
+impl From<GlobalVariable> for GlobalVariableId {
+    fn from(gv: GlobalVariable) -> Self {
+        get_storage(|store| store.store_global_variable(gv))
     }
 }
 
-impl IntoStoreId for LocalVariable {
-    type Id = LocalVariableId;
-
-    fn into_id(self, store: &Store) -> Self::Id {
-        store.store_local_variable(self)
+impl From<LocalVariable> for LocalVariableId {
+    fn from(lv: LocalVariable) -> Self {
+        get_storage(|store| store.store_local_variable(lv))
     }
 }
 
-impl IntoStoreId for Parameter {
-    type Id = ParameterId;
-
-    fn into_id(self, store: &Store) -> Self::Id {
-        store.store_parameter(self)
+impl From<Parameter> for ParameterId {
+    fn from(param: Parameter) -> Self {
+        get_storage(|store| store.store_parameter(param))
     }
 }
 
-impl IntoStoreId for Function {
-    type Id = FunctionId;
-
-    fn into_id(self, store: &Store) -> Self::Id {
-        store.store_function(self)
+impl From<Function> for FunctionId {
+    fn from(func: Function) -> Self {
+        get_storage(|store| store.store_function(func))
     }
 }
 
-impl IntoStoreId for Trait {
-    type Id = TraitId;
-
-    fn into_id(self, store: &Store) -> Self::Id {
-        store.store_trait(self)
+impl From<Trait> for TraitId {
+    fn from(trait_: Trait) -> Self {
+        get_storage(|store| store.store_trait(trait_))
     }
 }
 
-impl IntoStoreId for Module {
-    type Id = ModuleId;
-
-    fn into_id(self, store: &Store) -> Self::Id {
-        store.store_module(self)
+impl From<Module> for ModuleId {
+    fn from(module: Module) -> Self {
+        get_storage(|store| store.store_module(module))
     }
 }
 
-impl IntoStoreId for TypeAliasDef {
-    type Id = TypeAliasDefId;
-
-    fn into_id(self, store: &Store) -> Self::Id {
-        store.store_type_alias(self)
+impl From<TypeAliasDef> for TypeAliasDefId {
+    fn from(type_alias: TypeAliasDef) -> Self {
+        get_storage(|store| store.store_type_alias(type_alias))
     }
 }
 
-impl IntoStoreId for StructDef {
-    type Id = StructDefId;
-
-    fn into_id(self, store: &Store) -> Self::Id {
-        store.store_struct_def(self)
+impl From<StructDef> for StructDefId {
+    fn from(struct_def: StructDef) -> Self {
+        get_storage(|store| store.store_struct_def(struct_def))
     }
 }
 
-impl IntoStoreId for EnumDef {
-    type Id = EnumDefId;
-
-    fn into_id(self, store: &Store) -> Self::Id {
-        store.store_enum_def(self)
+impl From<EnumDef> for EnumDefId {
+    fn from(enum_def: EnumDef) -> Self {
+        get_storage(|store| store.store_enum_def(enum_def))
     }
 }

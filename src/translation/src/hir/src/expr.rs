@@ -654,26 +654,20 @@ impl Value {
     }
 }
 
-impl IntoStoreId for Lit {
-    type Id = LiteralId;
-
-    fn into_id(self, store: &Store) -> Self::Id {
-        store.store_literal(self)
+impl From<Lit> for LiteralId {
+    fn from(lit: Lit) -> Self {
+        get_storage(|store| store.store_literal(lit))
     }
 }
 
-impl IntoStoreId for Block {
-    type Id = BlockId;
-
-    fn into_id(self, store: &Store) -> Self::Id {
-        store.store_block(self)
+impl From<Block> for BlockId {
+    fn from(block: Block) -> Self {
+        get_storage(|store| store.store_block(block))
     }
 }
 
-impl IntoStoreId for Value {
-    type Id = ValueId;
-
-    fn into_id(self, store: &Store) -> Self::Id {
-        store.store_value(self)
+impl From<Value> for ValueId {
+    fn from(value: Value) -> Self {
+        get_storage(|store| store.store_value(value))
     }
 }
