@@ -1,4 +1,4 @@
-use crate::prelude::*;
+use crate::{helper::PowOf2, prelude::*};
 use nitrate_nstring::NString;
 use serde::{Deserialize, Serialize};
 use std::{
@@ -32,7 +32,7 @@ pub struct GlobalVariable {
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum LocalVariableAttribute {
-    Invalid,
+    Align { alignment: PowOf2<u32> },
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
@@ -78,7 +78,7 @@ pub struct Function {
 }
 
 impl Function {
-    #[must_use] 
+    #[must_use]
     pub fn get_type(&self) -> FunctionType {
         let params: Vec<(NString, TypeId)> = self
             .params
@@ -150,17 +150,17 @@ pub enum StructMemoryLayoutCell {
 }
 
 impl StructMemoryLayoutCell {
-    #[must_use] 
+    #[must_use]
     pub fn is_field(&self) -> bool {
         matches!(self, StructMemoryLayoutCell::Field { .. })
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn is_padding(&self) -> bool {
         matches!(self, StructMemoryLayoutCell::Padding(_))
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn as_field(&self) -> Option<&NString> {
         match self {
             StructMemoryLayoutCell::Field { field_name } => Some(field_name),
@@ -168,7 +168,7 @@ impl StructMemoryLayoutCell {
         }
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn as_padding(&self) -> Option<NonZeroUsize> {
         match self {
             StructMemoryLayoutCell::Padding(size) => Some(*size),
@@ -222,7 +222,7 @@ pub enum TypeDefinition {
 }
 
 impl TypeDefinition {
-    #[must_use] 
+    #[must_use]
     pub fn name(&self) -> NString {
         match self {
             TypeDefinition::TypeAliasDef(def) => def.borrow().name.clone(),

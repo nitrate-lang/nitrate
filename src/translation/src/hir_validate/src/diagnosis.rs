@@ -7,6 +7,7 @@ use nitrate_hir_dump::Dump;
 pub(crate) enum Issue {
     TypeDoesNotImplementTrait { type_id: TypeId, trait_id: TraitId },
     TypeMismatch { expected: TypeId, found: TypeId },
+    UnsupportedAlignment { alignment: u32, max_supported: u32 },
 }
 
 impl FormattableDiagnosticGroup for Issue {
@@ -18,6 +19,7 @@ impl FormattableDiagnosticGroup for Issue {
         match self {
             Issue::TypeDoesNotImplementTrait { .. } => 0,
             Issue::TypeMismatch { .. } => 1,
+            Issue::UnsupportedAlignment { .. } => 2,
         }
     }
 
@@ -41,6 +43,21 @@ impl FormattableDiagnosticGroup for Issue {
                     "Type mismatch: expected {:?}, found {:?}.",
                     expected.deref().to_string(),
                     found.deref().to_string()
+                );
+
+                nitrate_diagnosis::DiagnosticInfo {
+                    origin: nitrate_diagnosis::Origin::Unknown,
+                    message,
+                }
+            }
+
+            Issue::UnsupportedAlignment {
+                alignment,
+                max_supported,
+            } => {
+                let message = format!(
+                    "Unsupported alignment: {} bytes. Maximum supported alignment is {} bytes.",
+                    alignment, max_supported
                 );
 
                 nitrate_diagnosis::DiagnosticInfo {

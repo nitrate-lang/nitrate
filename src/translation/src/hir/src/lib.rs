@@ -1,6 +1,7 @@
 #![warn(clippy::pedantic)]
 
 mod expr;
+mod helper;
 mod item;
 mod iter;
 mod iter_mut;

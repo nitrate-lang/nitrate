@@ -30,7 +30,7 @@ impl ValidateHirItem for GlobalVariable {
         init_value.verify(tab, log)?;
 
         establish_property("type_constraint: Sized", || {
-            self.ty.verify(tab, log, &ValidateTypeOptions::storable())
+            self.ty.verify(tab, log, &ValidateTypeOptions::sized())
         })?;
 
         establish_property("type_constraint == typeof(initial_value)", || {
@@ -47,9 +47,7 @@ impl ValidateHirItem for GlobalVariable {
             }
 
             Ok(())
-        })?;
-
-        Ok(())
+        })
     }
 
     fn validate(self, tab: &SymbolTab, log: &CompilerLog) -> Result<ValidHir<Self>, ()> {
@@ -59,11 +57,25 @@ impl ValidateHirItem for GlobalVariable {
 }
 
 impl ValidateHirItem for LocalVariableAttribute {
-    fn verify(&self, _tab: &SymbolTab, _log: &CompilerLog) -> Result<(), ()> {
-        // TODO: verify local variable attribute
-
+    fn verify(&self, _tab: &SymbolTab, log: &CompilerLog) -> Result<(), ()> {
         match self {
-            LocalVariableAttribute::Invalid => Err(()),
+            LocalVariableAttribute::Align { alignment } => {
+                establish_property("local variable alignment is supported", || {
+                    // TODO: Determine maximum supported alignment
+                    const MAX_SUPPORTED_ALIGNMENT: u32 = 4096;
+
+                    if alignment.get() > MAX_SUPPORTED_ALIGNMENT {
+                        log.report(&Issue::UnsupportedAlignment {
+                            alignment: alignment.get(),
+                            max_supported: MAX_SUPPORTED_ALIGNMENT,
+                        });
+
+                        return Err(());
+                    }
+
+                    Ok(())
+                })
+            }
         }
     }
 
@@ -75,26 +87,31 @@ impl ValidateHirItem for LocalVariableAttribute {
 
 impl ValidateHirItem for LocalVariable {
     fn verify(&self, tab: &SymbolTab, log: &CompilerLog) -> Result<(), ()> {
-        // TODO: verify local variable
-
         for attr in &self.attributes {
             attr.verify(tab, log)?;
         }
 
-        let ty = self.ty.deref();
-        ty.verify(tab, log, &ValidateTypeOptions::storable())?;
+        establish_property("type_constraint: Sized", || {
+            self.ty.verify(tab, log, &ValidateTypeOptions::sized())
+        })?;
 
-        if let Some(init_expr) = &self.init {
-            let init = init_expr.borrow();
-            init.verify(tab, log)?;
+        establish_property("type_constraint == typeof(initial_value)", || {
+            if let Some(init_value) = &self.init {
+                let init_value = init_value.borrow();
+                let init_value_ty = init_value.determine_type(tab).map_err(|_| ())?;
 
-            let init_ty = init.determine_type(tab).map_err(|_| ())?;
-            if *ty != init_ty {
-                return Err(());
+                if *self.ty != init_value_ty {
+                    log.report(&Issue::TypeMismatch {
+                        expected: self.ty,
+                        found: init_value_ty.into(),
+                    });
+
+                    return Err(());
+                }
             }
-        }
 
-        Ok(())
+            Ok(())
+        })
     }
 
     fn validate(self, tab: &SymbolTab, log: &CompilerLog) -> Result<ValidHir<Self>, ()> {
@@ -127,7 +144,7 @@ impl ValidateHirItem for Parameter {
         }
 
         let ty = self.ty.deref();
-        ty.verify(tab, log, &ValidateTypeOptions::storable())?;
+        ty.verify(tab, log, &ValidateTypeOptions::sized())?;
 
         if let Some(default_value) = &self.default_value {
             let init = default_value.borrow();
@@ -153,7 +170,7 @@ impl ValidateHirItem for Function {
         // TODO: verify function
 
         for attr in &self.attributes {
-            attr.verify(tab, log, &ValidateTypeOptions::storable())?;
+            attr.verify(tab, log, &ValidateTypeOptions::sized())?;
         }
 
         for param in &self.params {
@@ -161,7 +178,7 @@ impl ValidateHirItem for Function {
         }
 
         self.return_type
-            .verify(tab, log, &ValidateTypeOptions::storable())?;
+            .verify(tab, log, &ValidateTypeOptions::sized())?;
 
         if let Some(body) = &self.body {
             body.borrow().verify(tab, log)?;
@@ -228,8 +245,7 @@ impl ValidateHirItem for TypeAliasDef {
     fn verify(&self, tab: &SymbolTab, log: &CompilerLog) -> Result<(), ()> {
         // TODO: verify type alias
 
-        self.type_id
-            .verify(tab, log, &ValidateTypeOptions::storable())
+        self.type_id.verify(tab, log, &ValidateTypeOptions::sized())
     }
 
     fn validate(self, tab: &SymbolTab, log: &CompilerLog) -> Result<ValidHir<Self>, ()> {
@@ -276,7 +292,7 @@ impl ValidateHirItem for StructField {
             attr.verify(tab, log)?;
         }
 
-        self.ty.verify(tab, log, &ValidateTypeOptions::storable())?;
+        self.ty.verify(tab, log, &ValidateTypeOptions::sized())?;
         if let Some(default_value) = &self.default_value {
             let init = default_value.borrow();
             init.verify(tab, log)?;
@@ -356,7 +372,7 @@ impl ValidateHirItem for EnumVariant {
             attr.verify(tab, log)?;
         }
 
-        self.ty.verify(tab, log, &ValidateTypeOptions::storable())
+        self.ty.verify(tab, log, &ValidateTypeOptions::sized())
     }
 
     fn validate(self, tab: &SymbolTab, log: &CompilerLog) -> Result<ValidHir<Self>, ()> {
