@@ -289,11 +289,6 @@ impl Interpreter<'_> {
                 &log,
             )?;
 
-            if args.show_hir {
-                println!("{}", hir_module.to_string());
-                return Ok(());
-            }
-
             let valid_hir_module = match hir_module.validate(&symbol_tab, &log) {
                 Ok(m) => m,
                 Err(_) => {
@@ -305,6 +300,11 @@ impl Interpreter<'_> {
                     return Err(InterpreterError::OperationalError);
                 }
             };
+
+            if args.show_hir {
+                println!("{}", valid_hir_module.into_inner().to_string());
+                return Ok(());
+            }
 
             let mut llvm_module =
                 generate_llvmir(package.name(), valid_hir_module, &llvm_ctx, &symbol_tab);
