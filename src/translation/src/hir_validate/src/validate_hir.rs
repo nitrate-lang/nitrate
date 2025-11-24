@@ -1,3 +1,4 @@
+use log::debug;
 use nitrate_diagnosis::CompilerLog;
 use nitrate_hir::SymbolTab;
 
@@ -62,6 +63,12 @@ where
     ) -> Result<ValidHir<Self>, ()>;
 }
 
-pub(crate) fn establish_property<R>(_name: &str, f: impl FnOnce() -> R) -> R {
-    f()
+pub(crate) fn establish_property(name: &str, f: impl FnOnce() -> Result<(), ()>) -> Result<(), ()> {
+    debug!("Establishing property: \"{}\"", name);
+    let result = f();
+    match result {
+        Ok(_) => debug!("Established property \"{}\"", name),
+        Err(_) => debug!("Failed to establish property \"{}\"", name),
+    }
+    result
 }

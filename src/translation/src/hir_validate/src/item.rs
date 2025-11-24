@@ -22,25 +22,18 @@ impl ValidateHirItem for GlobalVariableAttribute {
 
 impl ValidateHirItem for GlobalVariable {
     fn verify(&self, tab: &SymbolTab, log: &CompilerLog) -> Result<(), ()> {
-        establish_property("attributes are valid", || -> Result<(), ()> {
-            for attr in &self.attributes {
-                attr.verify(tab, log)?;
-            }
+        for attr in &self.attributes {
+            attr.verify(tab, log)?;
+        }
 
-            Ok(())
-        })?;
+        let init_value = self.init.borrow();
+        init_value.verify(tab, log)?;
 
-        establish_property("init value is acceptable", || -> Result<(), ()> {
-            let init_value = self.init.borrow();
-            init_value.verify(tab, log)?;
-            Ok(())
-        })?;
-
-        establish_property("type is Sized", || -> Result<(), ()> {
+        establish_property("type_constraint: Sized", || {
             self.ty.verify(tab, log, &ValidateTypeOptions::storable())
         })?;
 
-        establish_property("value type satisfies constraint", || -> Result<(), ()> {
+        establish_property("type_constraint == typeof(initial_value)", || {
             let init_value = self.init.borrow();
             let init_value_ty = init_value.determine_type(tab).map_err(|_| ())?;
 
