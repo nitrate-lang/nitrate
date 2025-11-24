@@ -15,9 +15,9 @@ pub fn get_align_of(ty: &Type, ctx: &LayoutCtx) -> Result<u64, LayoutError> {
 
         Type::Array { element_type, len } => {
             if *len == 0 {
-                return Ok(1);
+                Ok(1)
             } else {
-                get_align_of(&element_type, ctx)
+                get_align_of(element_type, ctx)
             }
         }
 
@@ -26,8 +26,8 @@ pub fn get_align_of(ty: &Type, ctx: &LayoutCtx) -> Result<u64, LayoutError> {
         } => {
             let mut max_align = 1;
 
-            for element in &*elements {
-                let element_align = get_align_of(&element, ctx)?;
+            for element in elements {
+                let element_align = get_align_of(element, ctx)?;
                 max_align = max(max_align, element_align);
             }
 
@@ -45,7 +45,7 @@ pub fn get_align_of(ty: &Type, ctx: &LayoutCtx) -> Result<u64, LayoutError> {
 
             let mut max_align = 1;
 
-            for (_, field) in fields {
+            for field in fields.values() {
                 let field_align = get_align_of(&field.ty, ctx)?;
                 max_align = max(max_align, field_align);
             }
@@ -77,17 +77,17 @@ pub fn get_align_of(ty: &Type, ctx: &LayoutCtx) -> Result<u64, LayoutError> {
 
         Type::TypeAlias { def } => {
             let type_alias = &def.borrow().type_id;
-            get_align_of(&type_alias, ctx)
+            get_align_of(type_alias, ctx)
         }
 
-        Type::Refine { base, .. } => Ok(get_align_of(&base, ctx)?),
+        Type::Refine { base, .. } => Ok(get_align_of(base, ctx)?),
 
         Type::Function { .. } => Ok(ctx.ptr_size as u64),
         Type::Reference { .. } => Ok(ctx.ptr_size as u64),
         Type::SliceRef { .. } => Ok(ctx.ptr_size as u64),
         Type::Pointer { .. } => Ok(ctx.ptr_size as u64),
 
-        Type::InferredInteger { .. } | Type::InferredFloat | Type::Inferred { .. } => {
+        Type::InferredInteger | Type::InferredFloat | Type::Inferred { .. } => {
             Err(LayoutError::NotInferred)
         }
     }

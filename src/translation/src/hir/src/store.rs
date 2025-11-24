@@ -8,7 +8,7 @@ use std::ops::Deref;
 use std::sync::{Arc, RwLock};
 
 thread_local! {
-    static TLS_STORE: Cell<Option<*const Store>> = Cell::new(None);
+    static TLS_STORE: Cell<Option<*const Store>> = const { Cell::new(None) };
 }
 
 pub fn using_storage<R>(store: &Store, f: impl FnOnce() -> R) -> R {
@@ -62,6 +62,12 @@ macro_rules! impl_dedup_store {
         pub struct $store_name {
             bimap: RwLock<BiMap<Arc<$item_name>, $handle_name>>,
             quick_vec: AppendOnlyVec<Arc<$item_name>>,
+        }
+
+        impl Default for $store_name {
+            fn default() -> Self {
+                Self::new()
+            }
         }
 
         impl $store_name {
@@ -162,6 +168,12 @@ macro_rules! impl_store_mut {
             vec: AppendOnlyVec<RefCell<$item_name>>,
         }
 
+        impl Default for $store_name {
+            fn default() -> Self {
+                Self::new()
+            }
+        }
+
         impl $store_name {
             pub fn new() -> Self {
                 Self {
@@ -241,7 +253,14 @@ pub struct Store {
     blocks: ExprBlockStore,
 }
 
+impl Default for Store {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Store {
+    #[must_use] 
     pub fn new() -> Self {
         Self {
             types: TypeStore::new(),

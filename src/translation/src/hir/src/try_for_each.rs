@@ -32,7 +32,7 @@ impl TypeIter<'_> {
         tcb: &mut dyn FnMut(&Type) -> ControlFlow<T>,
         visited: &mut HashSet<*const ()>,
     ) -> ControlFlow<T> {
-        if !visited.insert(self.node as *const Type as *const ()) {
+        if !visited.insert(std::ptr::from_ref::<Type>(self.node).cast::<()>()) {
             return ControlFlow::Continue(());
         }
 
@@ -70,7 +70,7 @@ impl TypeIter<'_> {
             }
 
             Type::Struct { def } => {
-                for (_, field) in &def.borrow().fields {
+                for field in def.borrow().fields.values() {
                     field.ty.iter().try_for_each(vcb, tcb, visited)?;
                 }
             }
@@ -122,7 +122,7 @@ impl TypeIter<'_> {
             Type::Inferred { id: _ } => {}
         }
 
-        visited.remove(&(self.node as *const Type as *const ()));
+        visited.remove(&std::ptr::from_ref::<Type>(self.node).cast::<()>());
 
         ControlFlow::Continue(())
     }
@@ -440,7 +440,7 @@ impl StructDefIter<'_> {
         tcb: &mut dyn FnMut(&Type) -> ControlFlow<T>,
         visited: &mut HashSet<*const ()>,
     ) -> ControlFlow<T> {
-        for (_, field) in &self.node.fields {
+        for field in self.node.fields.values() {
             if let Some(default_value) = &field.default_value {
                 default_value
                     .borrow()
@@ -449,7 +449,7 @@ impl StructDefIter<'_> {
             }
         }
 
-        for (_, field) in &self.node.fields {
+        for field in self.node.fields.values() {
             field.ty.iter().try_for_each(vcb, tcb, visited)?;
         }
 
@@ -465,13 +465,11 @@ impl EnumDefIter<'_> {
         tcb: &mut dyn FnMut(&Type) -> ControlFlow<T>,
         visited: &mut HashSet<*const ()>,
     ) -> ControlFlow<T> {
-        for default in &self.node.variant_extras {
-            if let Some(default_value) = default {
-                default_value
-                    .borrow()
-                    .iter()
-                    .try_for_each(vcb, tcb, visited)?;
-            }
+        for default_value in self.node.variant_extras.iter().flatten() {
+            default_value
+                .borrow()
+                .iter()
+                .try_for_each(vcb, tcb, visited)?;
         }
 
         for variant in &self.node.variants {

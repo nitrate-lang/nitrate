@@ -26,7 +26,7 @@ pub fn get_size_of(ty: &Type, ctx: &LayoutCtx) -> Result<u64, LayoutError> {
 
         Type::Array { element_type, len } => {
             let element_stride = get_stride_of(element_type, ctx)?;
-            Ok(element_stride * (*len as u64))
+            Ok(element_stride * u64::from(*len))
         }
 
         Type::Tuple {
@@ -34,7 +34,7 @@ pub fn get_size_of(ty: &Type, ctx: &LayoutCtx) -> Result<u64, LayoutError> {
         } => {
             let mut size = 0_u64;
 
-            for element in &*elements {
+            for element in elements {
                 let element_size = get_size_of(element, ctx)?;
                 let element_align = get_align_of(element, ctx)?;
 
@@ -53,7 +53,7 @@ pub fn get_size_of(ty: &Type, ctx: &LayoutCtx) -> Result<u64, LayoutError> {
             if attributes.contains(&StructAttribute::Packed) {
                 let mut total_size = 0_u64;
 
-                for (_, field) in fields {
+                for field in fields.values() {
                     total_size += get_size_of(&field.ty, ctx)?;
                 }
 
@@ -62,7 +62,7 @@ pub fn get_size_of(ty: &Type, ctx: &LayoutCtx) -> Result<u64, LayoutError> {
 
             let mut offset = 0_u64;
 
-            for (_, field) in fields {
+            for field in fields.values() {
                 let field_size = get_size_of(&field.ty, ctx)?;
                 let field_align = get_align_of(&field.ty, ctx)?;
 
@@ -99,17 +99,17 @@ pub fn get_size_of(ty: &Type, ctx: &LayoutCtx) -> Result<u64, LayoutError> {
 
         Type::TypeAlias { def } => {
             let type_alias = &def.borrow().type_id;
-            get_size_of(&type_alias, ctx)
+            get_size_of(type_alias, ctx)
         }
 
-        Type::Refine { base, .. } => Ok(get_size_of(&base, ctx)?),
+        Type::Refine { base, .. } => Ok(get_size_of(base, ctx)?),
 
         Type::Function { .. } => Ok(ctx.ptr_size as u64),
         Type::Reference { .. } => Ok(ctx.ptr_size as u64),
         Type::SliceRef { .. } => Ok(ctx.ptr_size as u64 * 2),
         Type::Pointer { .. } => Ok(ctx.ptr_size as u64),
 
-        Type::InferredInteger { .. } | Type::InferredFloat | Type::Inferred { .. } => {
+        Type::InferredInteger | Type::InferredFloat | Type::Inferred { .. } => {
             Err(LayoutError::NotInferred)
         }
     }

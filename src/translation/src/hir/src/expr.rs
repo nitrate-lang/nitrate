@@ -80,6 +80,7 @@ pub enum Lit {
 }
 
 impl Lit {
+    #[must_use] 
     pub fn size_of(&self) -> usize {
         match self {
             Lit::Unit => 0,
@@ -237,21 +238,21 @@ impl std::fmt::Display for Lit {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Lit::Unit => write!(f, "()"),
-            Lit::Bool(b) => write!(f, "{}", b),
-            Lit::I8(i) => write!(f, "{}_i8", i),
-            Lit::I16(i) => write!(f, "{}_i16", i),
-            Lit::I32(i) => write!(f, "{}_i32", i),
-            Lit::I64(i) => write!(f, "{}_i64", i),
-            Lit::I128(i) => write!(f, "{}_i128", i),
-            Lit::U8(u) => write!(f, "{}_u8", u),
-            Lit::U16(u) => write!(f, "{}_u16", u),
-            Lit::U32(u) => write!(f, "{}_u32", u),
-            Lit::U64(u) => write!(f, "{}_u64", u),
-            Lit::U128(u) => write!(f, "{}_u128", u),
-            Lit::F32(fl) => write!(f, "{}_f32", fl),
-            Lit::F64(fl) => write!(f, "{}_f64", fl),
-            Lit::USize32(u) => write!(f, "{}_usize", u),
-            Lit::USize64(u) => write!(f, "{}_usize", u),
+            Lit::Bool(b) => write!(f, "{b}"),
+            Lit::I8(i) => write!(f, "{i}_i8"),
+            Lit::I16(i) => write!(f, "{i}_i16"),
+            Lit::I32(i) => write!(f, "{i}_i32"),
+            Lit::I64(i) => write!(f, "{i}_i64"),
+            Lit::I128(i) => write!(f, "{i}_i128"),
+            Lit::U8(u) => write!(f, "{u}_u8"),
+            Lit::U16(u) => write!(f, "{u}_u16"),
+            Lit::U32(u) => write!(f, "{u}_u32"),
+            Lit::U64(u) => write!(f, "{u}_u64"),
+            Lit::U128(u) => write!(f, "{u}_u128"),
+            Lit::F32(fl) => write!(f, "{fl}_f32"),
+            Lit::F64(fl) => write!(f, "{fl}_f64"),
+            Lit::USize32(u) => write!(f, "{u}_usize"),
+            Lit::USize64(u) => write!(f, "{u}_usize"),
         }
     }
 }
@@ -419,162 +420,202 @@ pub enum Value {
 }
 
 impl Value {
+    #[must_use] 
     pub fn is_unit(&self) -> bool {
         matches!(self, Value::Unit)
     }
 
+    #[must_use] 
     pub fn is_bool(&self) -> bool {
         matches!(self, Value::Bool(_))
     }
 
+    #[must_use] 
     pub fn is_i8(&self) -> bool {
         matches!(self, Value::I8(_))
     }
 
+    #[must_use] 
     pub fn is_i16(&self) -> bool {
         matches!(self, Value::I16(_))
     }
 
+    #[must_use] 
     pub fn is_i32(&self) -> bool {
         matches!(self, Value::I32(_))
     }
 
+    #[must_use] 
     pub fn is_i64(&self) -> bool {
         matches!(self, Value::I64(_))
     }
 
+    #[must_use] 
     pub fn is_i128(&self) -> bool {
         matches!(self, Value::I128(_))
     }
 
+    #[must_use] 
     pub fn is_u8(&self) -> bool {
         matches!(self, Value::U8(_))
     }
 
+    #[must_use] 
     pub fn is_u16(&self) -> bool {
         matches!(self, Value::U16(_))
     }
 
+    #[must_use] 
     pub fn is_u32(&self) -> bool {
         matches!(self, Value::U32(_))
     }
 
+    #[must_use] 
     pub fn is_u64(&self) -> bool {
         matches!(self, Value::U64(_))
     }
 
+    #[must_use] 
     pub fn is_u128(&self) -> bool {
         matches!(self, Value::U128(_))
     }
 
+    #[must_use] 
     pub fn is_f32(&self) -> bool {
         matches!(self, Value::F32(_))
     }
 
+    #[must_use] 
     pub fn is_f64(&self) -> bool {
         matches!(self, Value::F64(_))
     }
 
+    #[must_use] 
     pub fn is_usize(&self) -> bool {
         matches!(self, Value::USize32(_) | Value::USize64(_))
     }
 
+    #[must_use] 
     pub fn is_string_lit(&self) -> bool {
         matches!(self, Value::StringLit(_))
     }
 
+    #[must_use] 
     pub fn is_bstring_lit(&self) -> bool {
         matches!(self, Value::BStringLit(_))
     }
 
+    #[must_use] 
     pub fn is_inferred_integer(&self) -> bool {
         matches!(self, Value::InferredInteger(_))
     }
 
+    #[must_use] 
     pub fn is_inferred_float(&self) -> bool {
         matches!(self, Value::InferredFloat(_))
     }
 
+    #[must_use] 
     pub fn is_struct_object(&self) -> bool {
         matches!(self, Value::StructObject { .. })
     }
 
+    #[must_use] 
     pub fn is_enum_variant(&self) -> bool {
         matches!(self, Value::EnumVariant { .. })
     }
 
+    #[must_use] 
     pub fn is_binary(&self) -> bool {
         matches!(self, Value::Binary { .. })
     }
 
+    #[must_use] 
     pub fn is_unary(&self) -> bool {
         matches!(self, Value::Unary { .. })
     }
 
+    #[must_use] 
     pub fn is_field_access(&self) -> bool {
         matches!(self, Value::FieldAccess { .. })
     }
 
+    #[must_use] 
     pub fn is_assign(&self) -> bool {
         matches!(self, Value::Assign { .. })
     }
 
+    #[must_use] 
     pub fn is_deref(&self) -> bool {
         matches!(self, Value::Deref { .. })
     }
 
+    #[must_use] 
     pub fn is_cast(&self) -> bool {
         matches!(self, Value::Cast { .. })
     }
 
+    #[must_use] 
     pub fn is_borrow(&self) -> bool {
         matches!(self, Value::Borrow { .. })
     }
 
+    #[must_use] 
     pub fn is_list(&self) -> bool {
         matches!(self, Value::List { .. })
     }
 
+    #[must_use] 
     pub fn is_tuple(&self) -> bool {
         matches!(self, Value::Tuple { .. })
     }
 
+    #[must_use] 
     pub fn is_if(&self) -> bool {
         matches!(self, Value::If { .. })
     }
 
+    #[must_use] 
     pub fn is_while(&self) -> bool {
         matches!(self, Value::While { .. })
     }
 
+    #[must_use] 
     pub fn is_loop(&self) -> bool {
         matches!(self, Value::Loop { .. })
     }
 
+    #[must_use] 
     pub fn is_break(&self) -> bool {
         matches!(self, Value::Break { .. })
     }
 
+    #[must_use] 
     pub fn is_continue(&self) -> bool {
         matches!(self, Value::Continue { .. })
     }
 
+    #[must_use] 
     pub fn is_return(&self) -> bool {
         matches!(self, Value::Return { .. })
     }
 
+    #[must_use] 
     pub fn is_block(&self) -> bool {
         matches!(self, Value::Block { .. })
     }
 
+    #[must_use] 
     pub fn is_closure(&self) -> bool {
         matches!(self, Value::Closure { .. })
     }
 
+    #[must_use] 
     pub fn is_call(&self) -> bool {
         matches!(self, Value::Call { .. })
     }
 
+    #[must_use] 
     pub fn is_method_call(&self) -> bool {
         matches!(self, Value::MethodCall { .. })
     }
@@ -630,6 +671,7 @@ impl From<Lit> for Value {
 }
 
 impl Value {
+    #[must_use] 
     pub fn is_literal(&self) -> bool {
         matches!(
             self,

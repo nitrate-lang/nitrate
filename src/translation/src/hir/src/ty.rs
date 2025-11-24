@@ -106,14 +106,17 @@ pub enum Type {
 }
 
 impl Type {
+    #[must_use] 
     pub fn is_diverging(&self) -> bool {
         matches!(self, Type::Never)
     }
 
+    #[must_use] 
     pub fn is_bool(&self) -> bool {
         matches!(self, Type::Bool)
     }
 
+    #[must_use] 
     pub fn is_unsigned_primitive(&self) -> bool {
         matches!(
             self,
@@ -121,6 +124,7 @@ impl Type {
         )
     }
 
+    #[must_use] 
     pub fn is_signed_primitive(&self) -> bool {
         matches!(
             self,
@@ -128,46 +132,57 @@ impl Type {
         )
     }
 
+    #[must_use] 
     pub fn is_integer_primitive(&self) -> bool {
         self.is_unsigned_primitive() || self.is_signed_primitive()
     }
 
+    #[must_use] 
     pub fn is_float_primitive(&self) -> bool {
         matches!(self, Type::F32 | Type::F64)
     }
 
+    #[must_use] 
     pub fn is_array(&self) -> bool {
         matches!(self, Type::Array { .. })
     }
 
+    #[must_use] 
     pub fn is_tuple(&self) -> bool {
         matches!(self, Type::Tuple { .. })
     }
 
+    #[must_use] 
     pub fn is_struct(&self) -> bool {
         matches!(self, Type::Struct { .. })
     }
 
+    #[must_use] 
     pub fn is_enum(&self) -> bool {
         matches!(self, Type::Enum { .. })
     }
 
+    #[must_use] 
     pub fn is_function(&self) -> bool {
         matches!(self, Type::Function { .. })
     }
 
+    #[must_use] 
     pub fn is_reference(&self) -> bool {
         matches!(self, Type::Reference { .. })
     }
 
+    #[must_use] 
     pub fn is_pointer(&self) -> bool {
         matches!(self, Type::Pointer { .. })
     }
 
+    #[must_use] 
     pub fn is_slice_ref(&self) -> bool {
         matches!(self, Type::SliceRef { .. })
     }
 
+    #[must_use] 
     pub fn as_struct(&self) -> Option<&StructDefId> {
         if let Type::Struct { def } = self {
             Some(def)
@@ -176,6 +191,7 @@ impl Type {
         }
     }
 
+    #[must_use] 
     pub fn as_enum(&self) -> Option<&EnumDefId> {
         if let Type::Enum { def } = self {
             Some(def)
@@ -184,6 +200,7 @@ impl Type {
         }
     }
 
+    #[must_use] 
     pub fn as_type_alias(&self) -> Option<&TypeAliasDefId> {
         if let Type::TypeAlias { def } = self {
             Some(def)

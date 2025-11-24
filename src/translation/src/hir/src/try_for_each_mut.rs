@@ -271,7 +271,7 @@ impl StructDefIterMut<'_> {
 
         vcb: &mut dyn FnMut(&mut Value) -> ControlFlow<T>,
     ) -> ControlFlow<T> {
-        for (_, field) in &self.node.fields {
+        for field in self.node.fields.values() {
             if let Some(default_value) = &field.default_value {
                 default_value
                     .borrow_mut()
@@ -290,13 +290,11 @@ impl EnumDefIterMut<'_> {
 
         vcb: &mut dyn FnMut(&mut Value) -> ControlFlow<T>,
     ) -> ControlFlow<T> {
-        for default in &self.node.variant_extras {
-            if let Some(default_value) = default {
-                default_value
-                    .borrow_mut()
-                    .iter_mut()
-                    .try_for_each_mut(vcb)?;
-            }
+        for default_value in self.node.variant_extras.iter().flatten() {
+            default_value
+                .borrow_mut()
+                .iter_mut()
+                .try_for_each_mut(vcb)?;
         }
 
         ControlFlow::Continue(())
