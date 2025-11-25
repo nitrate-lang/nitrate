@@ -9,7 +9,7 @@ Do not checkmark a feature until it is fully implemented and extensive tests hav
     - [x] Raw identifiers
   - [x] Keywords
   - [ ] Literals
-    - [ ] Integer literals
+    - [x] Integer literals
     - [ ] Float literals
     - [ ] String literals
     - [ ] Byte string literals

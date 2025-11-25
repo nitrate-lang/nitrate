@@ -1,7 +1,9 @@
 #![cfg(test)]
 mod tests {
-    use crate::{Lexer, LexerIterator, lex};
-    use nitrate_token::{AnnotatedToken, Comment, CommentKind, Token};
+    use std::u128;
+
+    use crate::{Lexer, LexerIterator};
+    use nitrate_token::{AnnotatedToken, Comment, CommentKind, Integer, IntegerKind, Token};
 
     fn lexical_equate(keyword: &str, token: Token) {
         let lexer = Lexer::new(keyword.as_bytes(), None).expect("source is too big");
@@ -419,8 +421,55 @@ mod tests {
     }
 
     #[test]
-    fn test_lexer_iterator_integer_literal() {
-        // TODO: Implement integer literal tests
+    fn test_lexer_iterator_integer_literal_bin() {
+        lexical_equate(
+            "0b010010100101",
+            Token::Integer(Integer::new(0b010010100101, IntegerKind::Bin)),
+        );
+
+        lexical_equate(
+            "0b11111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111",
+            Token::Integer(Integer::new(u128::MAX, IntegerKind::Bin)),
+        );
+    }
+
+    #[test]
+    fn test_lexer_iterator_integer_literal_oct() {
+        lexical_equate(
+            "0o30071",
+            Token::Integer(Integer::new(0o30071, IntegerKind::Oct)),
+        );
+
+        lexical_equate(
+            "0o3777777777777777777777777777777777777777777",
+            Token::Integer(Integer::new(u128::MAX, IntegerKind::Oct)),
+        );
+    }
+
+    #[test]
+    fn test_lexer_iterator_integer_literal_dec() {
+        lexical_equate(
+            "12345",
+            Token::Integer(Integer::new(12345, IntegerKind::Dec)),
+        );
+
+        lexical_equate(
+            "340282366920938463463374607431768211455",
+            Token::Integer(Integer::new(u128::MAX, IntegerKind::Dec)),
+        );
+    }
+
+    #[test]
+    fn test_lexer_iterator_integer_literal_hex() {
+        lexical_equate(
+            "0x12345abcdef",
+            Token::Integer(Integer::new(0x12345abcdef, IntegerKind::Hex)),
+        );
+
+        lexical_equate(
+            "0xffffffffffffffffffffffffffffffff",
+            Token::Integer(Integer::new(u128::MAX, IntegerKind::Hex)),
+        );
     }
 
     #[test]
