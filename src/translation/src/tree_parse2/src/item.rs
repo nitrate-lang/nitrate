@@ -17,8 +17,25 @@ impl Parser<'_, '_> {
 
         let mut attributes = Vec::new();
 
+        // Check for immediate closing bracket (empty attribute list)
+        if let Some(AnnotatedToken {
+            token: Token::CloseBracket,
+            ..
+        }) = self.lexer.peek()
+        {
+            self.lexer.next(); // Consume the closing bracket
+
+            return Some(AttributeList {
+                source_offset: open_bracket_token.start_offset,
+                trivia: leading,
+                attributes: attributes.into(),
+            });
+        }
+
         loop {
             let trivia = self.consume_trivia();
+
+            // Parse attribute expression
             match self.parse_expression(trivia) {
                 Some(expr) => attributes.push(expr.into()),
                 None => {
