@@ -32,12 +32,37 @@ pub fn get_storage<R>(f: impl FnOnce(&Store) -> R) -> R {
 
 macro_rules! impl_store_mut {
     ($handle_name:ident, $item_name:ident, $store_name:ident) => {
-        #[derive(Debug, Clone, Serialize, Deserialize)]
+        #[derive(Clone)]
         pub struct $handle_name(NonZeroU32);
 
         impl $handle_name {
             pub fn as_usize(&self) -> usize {
                 self.0.get() as usize
+            }
+        }
+
+        impl std::fmt::Debug for $handle_name {
+            fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                self.deref().borrow().fmt(f)
+            }
+        }
+
+        impl Serialize for $handle_name {
+            fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+            where
+                S: serde::Serializer,
+            {
+                self.deref().borrow().serialize(serializer)
+            }
+        }
+
+        impl<'de> Deserialize<'de> for $handle_name {
+            fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+            where
+                D: serde::Deserializer<'de>,
+            {
+                let item = $item_name::deserialize(deserializer)?;
+                Ok(item.into())
             }
         }
 
