@@ -71,7 +71,7 @@ impl Parser<'_, '_> {
     fn parse_module(&mut self) -> Module {
         let module_start_pos = self.lexer.peek_pos();
 
-        assert!(self.lexer.peek_t() == Token::Mod);
+        assert!(self.lexer.peek_tok().token == Token::Mod);
         self.lexer.skip_tok();
 
         let attributes = self.parse_attributes();
@@ -223,7 +223,7 @@ impl Parser<'_, '_> {
             }
         }
 
-        assert!(self.lexer.peek_t() == Token::Use);
+        assert!(self.lexer.peek_tok().token == Token::Use);
         self.lexer.skip_tok();
 
         let attributes = self.parse_attributes();
@@ -243,7 +243,7 @@ impl Parser<'_, '_> {
     }
 
     fn parse_type_alias(&mut self) -> TypeAlias {
-        assert!(self.lexer.peek_t() == Token::Type);
+        assert!(self.lexer.peek_tok().token == Token::Type);
         self.lexer.skip_tok();
 
         let attributes = self.parse_attributes();
@@ -317,7 +317,7 @@ impl Parser<'_, '_> {
             }
         }
 
-        assert!(self.lexer.peek_t() == Token::Enum);
+        assert!(self.lexer.peek_tok().token == Token::Enum);
         self.lexer.skip_tok();
 
         let attributes = self.parse_attributes();
@@ -412,7 +412,7 @@ impl Parser<'_, '_> {
             }
         }
 
-        assert!(self.lexer.peek_t() == Token::Struct);
+        assert!(self.lexer.peek_tok().token == Token::Struct);
         self.lexer.skip_tok();
 
         let attributes = self.parse_attributes();
@@ -474,7 +474,7 @@ impl Parser<'_, '_> {
     fn parse_associated_item(&mut self) -> AssociatedItem {
         let visibility = self.parse_visibility();
 
-        match self.lexer.peek_t() {
+        match self.lexer.peek_tok().token {
             Token::Fn => {
                 let mut func = self.parse_named_function();
                 func.visibility = visibility;
@@ -505,7 +505,7 @@ impl Parser<'_, '_> {
     }
 
     fn parse_trait(&mut self) -> Trait {
-        assert!(self.lexer.peek_t() == Token::Trait);
+        assert!(self.lexer.peek_tok().token == Token::Trait);
         self.lexer.skip_tok();
 
         let attributes = self.parse_attributes();
@@ -558,7 +558,7 @@ impl Parser<'_, '_> {
     }
 
     fn parse_implementation(&mut self) -> Impl {
-        assert!(self.lexer.peek_t() == Token::Impl);
+        assert!(self.lexer.peek_tok().token == Token::Impl);
         self.lexer.skip_tok();
 
         let generics = self.parse_generics();
@@ -699,7 +699,7 @@ impl Parser<'_, '_> {
     }
 
     fn parse_named_function(&mut self) -> Function {
-        assert!(self.lexer.peek_t() == Token::Fn);
+        assert!(self.lexer.peek_tok().token == Token::Fn);
         self.lexer.skip_tok();
 
         let attributes = self.parse_attributes();
@@ -756,7 +756,7 @@ impl Parser<'_, '_> {
     }
 
     fn parse_global_variable(&mut self) -> GlobalVariable {
-        let kind = match self.lexer.next_t() {
+        let kind = match self.lexer.next_tok().token {
             Token::Static => GlobalVariableKind::Static,
             Token::Const => GlobalVariableKind::Const,
             _ => unreachable!(),
@@ -812,7 +812,7 @@ impl Parser<'_, '_> {
 
         let item_pos_begin = self.lexer.peek_pos();
 
-        match self.lexer.peek_t() {
+        match self.lexer.peek_tok().token {
             Token::Mod => {
                 let mut module = self.parse_module();
                 module.visibility = visibility;

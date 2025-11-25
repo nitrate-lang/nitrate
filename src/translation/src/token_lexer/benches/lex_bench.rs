@@ -7,7 +7,7 @@ struct LexerUtil {}
 fn lex(source_code: &[u8], _util: &mut LexerUtil) {
     let mut lexer = Lexer::new(source_code, None).expect("Failed to create lexer");
 
-    while lexer.next_t() != Token::Eof {}
+    while lexer.next_tok().token != Token::Eof {}
 }
 
 #[inline(never)]

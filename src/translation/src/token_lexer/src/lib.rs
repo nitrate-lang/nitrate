@@ -4,5 +4,6 @@
 #![allow(clippy::inline_always)]
 
 mod lex;
+mod tests;
 
 pub use lex::*;

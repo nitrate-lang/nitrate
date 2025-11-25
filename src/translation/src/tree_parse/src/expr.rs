@@ -120,7 +120,7 @@ fn get_precedence(operation: Operation) -> (Associativity, Precedence) {
 
 impl Parser<'_, '_> {
     fn detect_and_parse_unary_operator(&mut self) -> Option<UnaryExprOp> {
-        match self.lexer.peek_t() {
+        match self.lexer.peek_tok().token {
             Token::Plus => {
                 self.lexer.skip_tok();
                 Some(UnaryExprOp::Add)
@@ -158,7 +158,7 @@ impl Parser<'_, '_> {
     fn detect_and_parse_binary_operator(&mut self) -> Option<BinExprOp> {
         let rewind = self.lexer.current_pos();
 
-        let result = match self.lexer.peek_t() {
+        let result = match self.lexer.peek_tok().token {
             Token::Bang => {
                 self.lexer.skip_tok();
                 Some(BinExprOp::LogicNe)
@@ -319,7 +319,7 @@ impl Parser<'_, '_> {
     }
 
     fn parse_expression_primary(&mut self) -> Expr {
-        match self.lexer.peek_t() {
+        match self.lexer.peek_tok().token {
             Token::Integer(int) => {
                 self.lexer.skip_tok();
                 self.parse_literal_suffix(Expr::Integer(Box::new(IntegerLit {
@@ -471,7 +471,7 @@ impl Parser<'_, '_> {
                     right: right_expr,
                 }));
             } else {
-                match self.lexer.peek_t() {
+                match self.lexer.peek_tok().token {
                     Token::Dot => {
                         let operation = Operation::FieldAccessOrMethodCall;
                         let (_, new_precedence) = get_precedence(operation);
@@ -571,7 +571,7 @@ impl Parser<'_, '_> {
     }
 
     fn parse_literal_suffix(&mut self, value: Expr) -> Expr {
-        let suffix = match self.lexer.peek_t() {
+        let suffix = match self.lexer.peek_tok().token {
             Token::Bool => Type::Bool(Bool {}),
             Token::U8 => Type::UInt8(UInt8 {}),
             Token::U16 => Type::UInt16(UInt16 {}),
@@ -607,7 +607,7 @@ impl Parser<'_, '_> {
     }
 
     fn parse_list(&mut self) -> List {
-        assert!(self.lexer.peek_t() == Token::OpenBracket);
+        assert!(self.lexer.peek_tok().token == Token::OpenBracket);
         self.lexer.skip_tok();
 
         let mut elements = Vec::new();
@@ -758,7 +758,10 @@ impl Parser<'_, '_> {
             true
         }
 
-        assert!(matches!(self.lexer.peek_t(), Token::Name(_) | Token::Colon));
+        assert!(matches!(
+            self.lexer.peek_tok().token,
+            Token::Name(_) | Token::Colon
+        ));
 
         let mut segments = Vec::new();
         let mut prev_scope = false;
@@ -830,7 +833,7 @@ impl Parser<'_, '_> {
     }
 
     fn parse_struct_object(&mut self, path: ExprPath) -> StructInit {
-        assert!(self.lexer.peek_t() == Token::OpenBrace);
+        assert!(self.lexer.peek_tok().token == Token::OpenBrace);
         self.lexer.skip_tok();
 
         let mut fields = Vec::new();
@@ -870,14 +873,14 @@ impl Parser<'_, '_> {
     }
 
     fn parse_type_info(&mut self) -> Type {
-        assert!(self.lexer.peek_t() == Token::Type);
+        assert!(self.lexer.peek_tok().token == Token::Type);
         self.lexer.skip_tok();
 
         self.parse_type()
     }
 
     fn parse_if(&mut self) -> If {
-        assert!(self.lexer.peek_t() == Token::If);
+        assert!(self.lexer.peek_tok().token == Token::If);
         self.lexer.skip_tok();
 
         let condition = self.parse_expression();
@@ -954,7 +957,7 @@ impl Parser<'_, '_> {
             bindings
         }
 
-        assert!(self.lexer.peek_t() == Token::For);
+        assert!(self.lexer.peek_tok().token == Token::For);
         self.lexer.skip_tok();
 
         let attributes = self.parse_attributes();
@@ -977,7 +980,7 @@ impl Parser<'_, '_> {
     }
 
     fn parse_while(&mut self) -> WhileLoop {
-        assert!(self.lexer.peek_t() == Token::While);
+        assert!(self.lexer.peek_tok().token == Token::While);
         self.lexer.skip_tok();
 
         let condition = if self.lexer.next_is(&Token::OpenBrace) {
@@ -992,7 +995,7 @@ impl Parser<'_, '_> {
     }
 
     fn parse_break(&mut self) -> Break {
-        assert!(self.lexer.peek_t() == Token::Break);
+        assert!(self.lexer.peek_tok().token == Token::Break);
         self.lexer.skip_tok();
 
         let label = if self.lexer.skip_if(&Token::SingleQuote) {
@@ -1016,7 +1019,7 @@ impl Parser<'_, '_> {
     }
 
     fn parse_continue(&mut self) -> Continue {
-        assert!(self.lexer.peek_t() == Token::Continue);
+        assert!(self.lexer.peek_tok().token == Token::Continue);
         self.lexer.skip_tok();
 
         let label = if self.lexer.skip_if(&Token::SingleQuote) {
@@ -1040,7 +1043,7 @@ impl Parser<'_, '_> {
     }
 
     fn parse_return(&mut self) -> Return {
-        assert!(self.lexer.peek_t() == Token::Ret);
+        assert!(self.lexer.peek_tok().token == Token::Ret);
         self.lexer.skip_tok();
 
         let value = if self.lexer.next_is(&Token::Semi) {
@@ -1058,7 +1061,7 @@ impl Parser<'_, '_> {
     }
 
     fn parse_await(&mut self) -> Await {
-        assert!(self.lexer.peek_t() == Token::Await);
+        assert!(self.lexer.peek_tok().token == Token::Await);
         self.lexer.skip_tok();
 
         let future = self.parse_expression();
@@ -1149,7 +1152,7 @@ impl Parser<'_, '_> {
 
     fn parse_closure(&mut self) -> Closure {
         if matches!(
-            self.lexer.peek_t(),
+            self.lexer.peek_tok().token,
             Token::OpenBrace | Token::Unsafe | Token::Safe
         ) {
             let definition = self.parse_block();
@@ -1162,7 +1165,7 @@ impl Parser<'_, '_> {
             };
         }
 
-        assert!(self.lexer.peek_t() == Token::Fn);
+        assert!(self.lexer.peek_tok().token == Token::Fn);
         self.lexer.skip_tok();
 
         let attributes = self.parse_attributes();
@@ -1215,7 +1218,7 @@ impl Parser<'_, '_> {
             ParsedArgument { name, value }
         }
 
-        assert!(self.lexer.peek_t() == Token::OpenParen);
+        assert!(self.lexer.peek_tok().token == Token::OpenParen);
         self.lexer.skip_tok();
 
         let mut parsed_arguments = Vec::new();
@@ -1279,7 +1282,7 @@ impl Parser<'_, '_> {
     }
 
     fn parse_local_variable(&mut self) -> LocalVariable {
-        let kind = match self.lexer.next_t() {
+        let kind = match self.lexer.next_tok().token {
             Token::Let => LocalVariableKind::Let,
             Token::Var => LocalVariableKind::Var,
             _ => unreachable!(),
@@ -1330,7 +1333,7 @@ impl Parser<'_, '_> {
     }
 
     fn parse_block_item(&mut self) -> BlockItem {
-        match self.lexer.peek_t() {
+        match self.lexer.peek_tok().token {
             Token::Let | Token::Var => {
                 let var = self.parse_local_variable();
                 BlockItem::Variable(var)

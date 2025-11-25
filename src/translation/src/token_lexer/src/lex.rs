@@ -100,33 +100,15 @@ impl<'a> Lexer<'a> {
         self.current_pos = self.internal_getc_pos.clone();
     }
 
-    pub fn modify_next_tok(&mut self, token: Token) {
-        let mut peeked = self.peek_tok();
-        peeked.token = token;
-
-        self.preread_token = Some(peeked);
-    }
-
-    #[inline(always)]
-    pub fn next_t(&mut self) -> Token {
-        self.next_tok().token
-    }
-
-    #[inline(always)]
-    #[must_use]
-    pub fn peek_t(&mut self) -> Token {
-        self.peek_tok().token
-    }
-
     #[inline(always)]
     #[must_use]
     pub fn next_is(&mut self, matches: &Token) -> bool {
-        &self.peek_t() == matches
+        &self.peek_tok().token == matches
     }
 
     #[inline(always)]
     pub fn skip_if(&mut self, matches: &Token) -> bool {
-        if &self.peek_t() == matches {
+        if &self.peek_tok().token == matches {
             self.skip_tok();
             true
         } else {
@@ -135,7 +117,7 @@ impl<'a> Lexer<'a> {
     }
 
     pub fn skip_while(&mut self, not: &Token) {
-        while !self.is_eof() && &self.next_t() != not {}
+        while !self.is_eof() && &self.next_tok().token != not {}
     }
 
     /// Returns the end of the last consumed token
@@ -154,7 +136,7 @@ impl<'a> Lexer<'a> {
     #[inline(always)]
     #[must_use]
     pub fn is_eof(&mut self) -> bool {
-        self.peek_t() == Token::Eof
+        self.peek_tok().token == Token::Eof
     }
 
     #[inline(always)]
@@ -165,60 +147,10 @@ impl<'a> Lexer<'a> {
     }
 
     #[inline(always)]
-    pub fn next_if_string(&mut self) -> Option<String> {
-        if let Token::String(string_data) = self.peek_t() {
-            self.skip_tok();
-            Some(string_data)
-        } else {
-            None
-        }
-    }
-
-    #[inline(always)]
-    pub fn next_if_bstring(&mut self) -> Option<Vec<u8>> {
-        if let Token::BString(bstring_data) = self.peek_t() {
-            self.skip_tok();
-            Some(bstring_data)
-        } else {
-            None
-        }
-    }
-
-    #[inline(always)]
     pub fn next_if_name(&mut self) -> Option<String> {
-        if let Token::Name(name) = self.peek_t() {
+        if let Token::Name(name) = self.peek_tok().token {
             self.skip_tok();
             Some(name)
-        } else {
-            None
-        }
-    }
-
-    #[inline(always)]
-    pub fn next_if_integer(&mut self) -> Option<Integer> {
-        if let Token::Integer(integer) = self.peek_t() {
-            self.skip_tok();
-            Some(integer)
-        } else {
-            None
-        }
-    }
-
-    #[inline(always)]
-    pub fn next_if_float(&mut self) -> Option<NotNan<f64>> {
-        if let Token::Float(float) = self.peek_t() {
-            self.skip_tok();
-            Some(float)
-        } else {
-            None
-        }
-    }
-
-    #[inline(always)]
-    pub fn next_if_comment(&mut self) -> Option<Comment> {
-        if let Token::Comment(comment) = self.peek_t() {
-            self.skip_tok();
-            Some(comment)
         } else {
             None
         }
@@ -956,5 +888,26 @@ impl<'a> Lexer<'a> {
         let end_pos = self.internal_getc_pos.clone();
 
         AnnotatedToken::new(token, start_pos, end_pos)
+    }
+}
+
+pub struct LexerIterator<'a> {
+    lexer: Lexer<'a>,
+}
+
+impl<'a> LexerIterator<'a> {
+    pub fn new(lexer: Lexer<'a>) -> Self {
+        LexerIterator { lexer }
+    }
+}
+
+impl<'a> Iterator for LexerIterator<'a> {
+    type Item = AnnotatedToken;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        match self.lexer.next_tok() {
+            token if token.token == Token::Eof => None,
+            token => Some(token),
+        }
     }
 }
