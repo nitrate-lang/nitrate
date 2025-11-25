@@ -1,11 +1,4 @@
-use crate::{
-    Order, ParseTreeIter, RefNode,
-    ast::{
-        AssociatedItem, Enum, EnumVariant, FuncParam, Function, Generics, GlobalVariable, Impl,
-        Import, Item, Module, Struct, StructField, Trait, TypeAlias,
-    },
-    item::{FuncParams, ItemSyntaxError},
-};
+use crate::prelude::*;
 
 impl ParseTreeIter for ItemSyntaxError {
     fn depth_first_iter(&self, f: &mut dyn FnMut(Order, RefNode)) {

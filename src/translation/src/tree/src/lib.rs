@@ -22,5 +22,11 @@ pub mod ast {
 
 pub use iter::{Order, ParseTreeIter, RefNode};
 pub use iter_mut::{ParseTreeIterMut, RefNodeMut};
-
 pub use pretty_print::{PrettyPrint, PrintContext};
+
+pub mod prelude {
+    pub use super::ast::*;
+    pub use super::iter::{Order, ParseTreeIter, RefNode};
+    pub use super::iter_mut::{ParseTreeIterMut, RefNodeMut};
+    pub use super::pretty_print::{PrettyPrint, PrintContext};
+}

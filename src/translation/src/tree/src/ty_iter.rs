@@ -1,12 +1,4 @@
-use crate::{
-    Order, ParseTreeIter, RefNode,
-    ast::{
-        ArrayType, Bool, Float32, Float64, FunctionType, Int8, Int16, Int32, Int64, Int128,
-        LatentType, Lifetime, ReferenceType, RefinementType, SliceType, TupleType, Type,
-        TypeParentheses, TypePath, TypeSyntaxError, UInt8, UInt16, UInt32, UInt64, UInt128, USize,
-    },
-    ty::{FuncTypeParam, FuncTypeParams, InferType, PointerType},
-};
+use crate::prelude::*;
 
 impl ParseTreeIter for TypeSyntaxError {
     fn depth_first_iter(&self, f: &mut dyn FnMut(Order, RefNode)) {

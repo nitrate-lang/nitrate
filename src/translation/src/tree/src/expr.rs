@@ -1,4 +1,4 @@
-use crate::ast::{FuncParam, Mutability, Type};
+use crate::prelude::*;
 use nitrate_nstring::NString;
 use nitrate_token::IntegerKind;
 use ordered_float::NotNan;

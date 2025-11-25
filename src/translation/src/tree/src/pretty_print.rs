@@ -1,28 +1,6 @@
-use std::num::NonZeroUsize;
-
+use crate::prelude::*;
 use nitrate_token::IntegerKind;
-
-use crate::{
-    ast::{FieldAccess, ItemPath, LocalVariable, LocalVariableKind, UseTree},
-    expr::{
-        AttributeList, Await, BStringLit, BinExpr, BinExprOp, Block, BlockItem, BooleanLit, Break,
-        Cast, Closure, Continue, ElseIf, Expr, ExprParentheses, ExprPath, ExprPathSegment,
-        ExprSyntaxError, FloatLit, ForEach, FunctionCall, If, IndexAccess, IntegerLit, List, Match,
-        MatchCase, MethodCall, Return, Safety, StringLit, StructInit, Tuple, TypeArgument,
-        TypeInfo, UnaryExpr, UnaryExprOp, WhileLoop,
-    },
-    item::{
-        AssociatedItem, Enum, EnumVariant, FuncParam, FuncParams, Function, Generics,
-        GlobalVariable, GlobalVariableKind, Impl, Import, Item, ItemSyntaxError, Module,
-        Mutability, Struct, StructField, Trait, TypeAlias, TypeParam, Visibility,
-    },
-    ty::{
-        ArrayType, Bool, Exclusivity, Float32, Float64, FuncTypeParam, FuncTypeParams,
-        FunctionType, InferType, Int8, Int16, Int32, Int64, Int128, LatentType, Lifetime,
-        PointerType, ReferenceType, RefinementType, SliceType, TupleType, Type, TypeParentheses,
-        TypePath, TypePathSegment, TypeSyntaxError, UInt8, UInt16, UInt32, UInt64, UInt128, USize,
-    },
-};
+use std::num::NonZeroUsize;
 
 pub struct PrintContext {
     pub indent: String,

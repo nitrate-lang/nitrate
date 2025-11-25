@@ -1,20 +1,4 @@
-use crate::{
-    ast::{FieldAccess, LocalVariable},
-    expr::{
-        AttributeList, Await, BStringLit, BinExpr, Block, BlockItem, BooleanLit, Break, Cast,
-        Closure, Continue, ExprParentheses, ExprPath, FloatLit, ForEach, FunctionCall, If,
-        IndexAccess, IntegerLit, List, Match, MatchCase, MethodCall, Return, StringLit, StructInit,
-        Tuple, TypeArgument, TypeInfo, UnaryExpr, WhileLoop,
-    },
-    item::{
-        Enum, EnumVariant, FuncParam, Function, Generics, GlobalVariable, Impl, Import, ItemPath,
-        Module, Struct, StructField, Trait, TypeAlias,
-    },
-    ty::{
-        ArrayType, FuncTypeParam, FunctionType, Lifetime, PointerType, ReferenceType,
-        RefinementType, SliceType, TupleType, Type, TypePath,
-    },
-};
+use crate::prelude::*;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Order {
