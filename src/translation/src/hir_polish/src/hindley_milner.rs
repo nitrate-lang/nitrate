@@ -1,9 +1,6 @@
 use crate::diagnosis::TypeErr;
 use nitrate_diagnosis::CompilerLog;
-use nitrate_hir::{
-    BlockElement, Function, GlobalVariable, GlobalVariableId, LocalVariableId, PtrSize, Type,
-    TypeId, Value, ValueId,
-};
+use nitrate_hir::{BlockElement, Function, GlobalVariable, PtrSize, Type, TypeId, Value, ValueId};
 use nitrate_hir_get_type::HirGetType;
 use ordered_float::OrderedFloat;
 use std::collections::{HashMap, HashSet};
@@ -22,6 +19,7 @@ pub struct HindleyMilner {
     constraints: HashMap<ValueId, HashSet<TypeConstraint>>,
     ptr_size: PtrSize,
     errors: HashSet<TypeErr>,
+    function_return_type: Option<TypeId>,
 }
 
 impl HindleyMilner {
@@ -30,6 +28,7 @@ impl HindleyMilner {
             constraints: HashMap::new(),
             ptr_size,
             errors: HashSet::new(),
+            function_return_type: None,
         }
     }
 
@@ -339,7 +338,14 @@ impl HindleyMilner {
             }
 
             Value::Return { value } => {
-                // TODO: Recurse
+                if let Some(ret_type) = self.function_return_type {
+                    self.constraints
+                        .entry(value.clone())
+                        .or_default()
+                        .insert(TypeConstraint::Equal(ret_type));
+                }
+
+                self.visit(value);
             }
 
             Value::Block { block } => {
@@ -402,6 +408,8 @@ impl HindleyMilner {
 
     pub fn solve_function(&mut self, function: &mut Function, log: &CompilerLog) -> Result<(), ()> {
         if let Some(body) = &mut function.body {
+            self.function_return_type = Some(function.return_type);
+
             loop {
                 let prev_constraints_len = self.constraints.len();
 
@@ -410,15 +418,7 @@ impl HindleyMilner {
                         BlockElement::Expr(e) => self.visit(e),
 
                         BlockElement::Local(local_var) => {
-                            if !local_var.borrow().ty.is_inferred() {
-                                let value = local_var.borrow().initializer.clone();
-                                let ty = local_var.borrow().ty.clone();
-
-                                self.constraints
-                                    .entry(value)
-                                    .or_default()
-                                    .insert(TypeConstraint::Equal(ty));
-                            } else {
+                            if local_var.borrow().ty.is_inferred() {
                                 let initializer_type =
                                     local_var.borrow().initializer.borrow().determine_type();
 
@@ -427,6 +427,14 @@ impl HindleyMilner {
                                 } else if let Err(_) = initializer_type {
                                     // Type determination failed
                                 }
+                            } else {
+                                let value = local_var.borrow().initializer.clone();
+                                let ty = local_var.borrow().ty.clone();
+
+                                self.constraints
+                                    .entry(value)
+                                    .or_default()
+                                    .insert(TypeConstraint::Equal(ty));
                             }
 
                             self.visit(&local_var.borrow().initializer);
@@ -456,27 +464,29 @@ impl HindleyMilner {
         g: &mut GlobalVariable,
         log: &CompilerLog,
     ) -> Result<(), ()> {
-        if !g.ty.is_inferred() {
-            let value = g.initializer.clone();
-            let ty = g.ty.clone();
-
-            self.constraints
-                .entry(value)
-                .or_default()
-                .insert(TypeConstraint::Equal(ty));
-        } else {
-            let initializer_type = g.initializer.borrow().determine_type();
-
-            if let Ok(type_constraint) = initializer_type {
-                g.ty = type_constraint.into();
-            } else if let Err(_) = initializer_type {
-                // Type determination failed
-            }
-        }
-
         loop {
             let prev_constraints_len = self.constraints.len();
+
+            if g.ty.is_inferred() {
+                let initializer_type = g.initializer.borrow().determine_type();
+
+                if let Ok(type_constraint) = initializer_type {
+                    g.ty = type_constraint.into();
+                } else if let Err(_) = initializer_type {
+                    // Type determination failed
+                }
+            } else {
+                let value = g.initializer.clone();
+                let ty = g.ty.clone();
+
+                self.constraints
+                    .entry(value)
+                    .or_default()
+                    .insert(TypeConstraint::Equal(ty));
+            }
+
             self.visit(&mut g.initializer);
+
             if self.constraints.len() == prev_constraints_len {
                 break;
             }
