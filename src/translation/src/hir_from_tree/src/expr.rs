@@ -127,13 +127,21 @@ impl Ast2Hir for ast::StructInit {
         for field in self.fields {
             let field_name = NString::from(field.0.to_string());
             let field_value = field.1.ast2hir(ctx, log)?.into();
-
             fields.push((field_name, field_value));
         }
 
         if let Some(resolved_path) = self.path.resolved_path {
+            let struct_def = match ctx.tab.get_struct(&resolved_path) {
+                Some(s) => s.clone(),
+                None => {
+                    // TODO: Create struct placeholder
+                    log.report(&HirErr::UnresolvedTypePath);
+                    return Err(());
+                }
+            };
+
             return Ok(Value::StructObject {
-                struct_path: resolved_path,
+                struct_def,
                 fields: fields.into(),
             });
         }

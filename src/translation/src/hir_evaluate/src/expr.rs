@@ -249,10 +249,7 @@ impl HirEvaluate for Value {
             Value::InferredInteger(i) => Ok(Value::InferredInteger(i.clone())),
             Value::InferredFloat(f) => Ok(Value::InferredFloat(*f)),
 
-            Value::StructObject {
-                struct_path,
-                fields,
-            } => {
+            Value::StructObject { struct_def, fields } => {
                 let mut fields = fields.to_owned();
                 for (_, field_value) in &mut fields {
                     let eval_value = field_value.borrow().evaluate(ctx)?.into();
@@ -260,20 +257,20 @@ impl HirEvaluate for Value {
                 }
 
                 Ok(Value::StructObject {
-                    struct_path: struct_path.clone(),
+                    struct_def: struct_def.clone(),
                     fields,
                 })
             }
 
             Value::EnumVariant {
-                enum_path: enum_type,
+                enum_def,
                 variant,
                 value,
             } => {
                 let evaluated_value = value.borrow().evaluate(ctx)?.into();
 
                 Ok(Value::EnumVariant {
-                    enum_path: enum_type.clone(),
+                    enum_def: enum_def.clone(),
                     variant: variant.clone(),
                     value: evaluated_value,
                 })

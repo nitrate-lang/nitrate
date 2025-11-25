@@ -41,7 +41,7 @@ impl ValidateHirItem for GlobalVariable {
 
         establish_property("type_constraint == typeof(initial_value)", || {
             let init_value = self.init.borrow();
-            let init_value_ty = init_value.determine_type(ctx.tab).map_err(|_| ())?;
+            let init_value_ty = init_value.determine_type().map_err(|_| ())?;
 
             if *self.ty != init_value_ty {
                 ctx.log.report(&Issue::TypeMismatch {
@@ -111,7 +111,7 @@ impl ValidateHirItem for LocalVariable {
         establish_property("type_constraint == typeof(initial_value)", || {
             if let Some(init_value) = &self.init {
                 let init_value = init_value.borrow();
-                let init_value_ty = init_value.determine_type(ctx.tab).map_err(|_| ())?;
+                let init_value_ty = init_value.determine_type().map_err(|_| ())?;
 
                 if *self.ty != init_value_ty {
                     ctx.log.report(&Issue::TypeMismatch {
@@ -182,7 +182,7 @@ impl ValidateHirItem for Parameter {
         establish_property("type_constraint == typeof(default_value)", || {
             if let Some(default_value) = &self.default_value {
                 let default_value = default_value.borrow();
-                let default_value_ty = default_value.determine_type(ctx.tab).map_err(|_| ())?;
+                let default_value_ty = default_value.determine_type().map_err(|_| ())?;
 
                 if *self.ty != default_value_ty {
                     ctx.log.report(&Issue::TypeMismatch {
@@ -269,7 +269,7 @@ impl ValidateHirItem for Function {
                     panic!("Last element of function body should be a return expression");
                 };
 
-                let body_ty = value.borrow().determine_type(ctx.tab).map_err(|_| ())?;
+                let body_ty = value.borrow().determine_type().map_err(|_| ())?;
 
                 if *self.return_type != body_ty {
                     ctx.log.report(&Issue::TypeMismatch {
@@ -430,7 +430,7 @@ impl ValidateHirItem for StructField {
         establish_property("type_constraint == typeof(default_value)", || {
             if let Some(default_value) = &self.default_value {
                 let default_value = default_value.borrow();
-                let default_value_ty = default_value.determine_type(ctx.tab).map_err(|_| ())?;
+                let default_value_ty = default_value.determine_type().map_err(|_| ())?;
 
                 if *self.ty != default_value_ty {
                     ctx.log.report(&Issue::TypeMismatch {
@@ -528,7 +528,7 @@ impl ValidateHirItem for EnumVariant {
         establish_property("type_constraint == typeof(default_value)", || {
             if let Some(default_value) = &self.default_value {
                 let default_value = default_value.borrow();
-                let default_value_ty = default_value.determine_type(ctx.tab).map_err(|_| ())?;
+                let default_value_ty = default_value.determine_type().map_err(|_| ())?;
 
                 if *self.ty != default_value_ty {
                     ctx.log.report(&Issue::TypeMismatch {

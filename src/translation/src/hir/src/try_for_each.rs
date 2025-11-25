@@ -191,7 +191,7 @@ impl ValueIter<'_> {
             | Value::InferredFloat(_) => {}
 
             Value::StructObject {
-                struct_path: _,
+                struct_def: _,
                 fields,
             } => {
                 for (_field_name, field_value) in fields {
@@ -203,7 +203,7 @@ impl ValueIter<'_> {
             }
 
             Value::EnumVariant {
-                enum_path: _,
+                enum_def: _,
                 variant: _,
                 value,
             } => {

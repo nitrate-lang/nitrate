@@ -790,6 +790,7 @@ version = "0.1.0"
 dependencies = [
  "nitrate_diagnosis",
  "nitrate_hir",
+ "nitrate_hir_get_type",
 ]
 
 [[package]]

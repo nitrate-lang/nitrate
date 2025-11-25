@@ -106,11 +106,8 @@ impl Dump for Value {
             Value::InferredInteger(i) => write!(o, "?i {i}"),
             Value::InferredFloat(f) => write!(o, "?f {f}"),
 
-            Value::StructObject {
-                struct_path,
-                fields,
-            } => {
-                write!(o, "{struct_path}")?;
+            Value::StructObject { struct_def, fields } => {
+                write!(o, "{}", struct_def.borrow().name)?;
 
                 write!(o, " {{ ")?;
 
@@ -127,11 +124,11 @@ impl Dump for Value {
             }
 
             Value::EnumVariant {
-                enum_path,
+                enum_def,
                 variant,
                 value,
             } => {
-                write!(o, "{enum_path}")?;
+                write!(o, "{}", enum_def.borrow().name)?;
                 write!(o, "::{variant}")?;
                 write!(o, "(")?;
                 value.borrow().dump(ctx, o)?;

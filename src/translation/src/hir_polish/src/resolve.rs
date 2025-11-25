@@ -21,11 +21,11 @@ impl TyCtx {
 
     pub fn resolve_function(&mut self, function: &mut Function, _log: &CompilerLog) {
         let mut hm = HindleyMilner::new();
-        hm.solve(function);
+        hm.solve_function(function);
     }
 
-    pub fn resolve_global(&mut self, _global: &mut GlobalVariable, _log: &CompilerLog) {
+    pub fn resolve_global(&mut self, global: &mut GlobalVariable, _log: &CompilerLog) {
         let mut hm = HindleyMilner::new();
-        // TODO: type resolution/inference/checking logic
+        hm.solve_global_variable(global);
     }
 }

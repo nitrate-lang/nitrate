@@ -70,7 +70,7 @@ impl ValidateHirValue for Value {
             Value::InferredInteger(_) | Value::InferredFloat(_) => Err(()),
 
             Value::StructObject {
-                struct_path: _,
+                struct_def: _,
                 fields: _,
             } => {
                 // TODO: verify struct object
@@ -78,7 +78,7 @@ impl ValidateHirValue for Value {
             }
 
             Value::EnumVariant {
-                enum_path: _,
+                enum_def: _,
                 variant: _,
                 value: _,
             } => {

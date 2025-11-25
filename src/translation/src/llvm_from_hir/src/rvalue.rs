@@ -425,7 +425,7 @@ fn gen_rval_div<'ctx>(
         fdiv.into()
     } else if lhs_ty.is_int_type() && rhs_ty.is_int_type() {
         let is_signed = lhs
-            .determine_type(&ctx.tab)
+            .determine_type()
             .expect("Failed to get type")
             .is_signed_primitive();
 
@@ -479,7 +479,7 @@ fn gen_rval_rem<'ctx>(
         frem.into()
     } else if lhs_ty.is_int_type() && rhs_ty.is_int_type() {
         let is_signed = lhs
-            .determine_type(&ctx.tab)
+            .determine_type()
             .expect("Failed to get type")
             .is_signed_primitive();
 
@@ -644,7 +644,7 @@ fn gen_rval_shr<'ctx>(
 
     if lhs_ty.is_int_type() && rhs_ty.is_int_type() {
         let sign_extend = lhs
-            .determine_type(&ctx.tab)
+            .determine_type()
             .expect("Failed to get type")
             .is_signed_primitive();
 
@@ -901,7 +901,7 @@ fn gen_rval_lt<'ctx>(
         fcmp.into()
     } else if lhs_ty.is_int_type() && rhs_ty.is_int_type() {
         let is_signed = lhs
-            .determine_type(&ctx.tab)
+            .determine_type()
             .expect("Failed to get type")
             .is_signed_primitive();
 
@@ -970,7 +970,7 @@ fn gen_rval_gt<'ctx>(
         fcmp.into()
     } else if lhs_ty.is_int_type() && rhs_ty.is_int_type() {
         let is_signed = lhs
-            .determine_type(&ctx.tab)
+            .determine_type()
             .expect("Failed to get type")
             .is_signed_primitive();
 
@@ -1039,7 +1039,7 @@ fn gen_rval_lte<'ctx>(
         fcmp.into()
     } else if lhs_ty.is_int_type() && rhs_ty.is_int_type() {
         let is_signed = lhs
-            .determine_type(&ctx.tab)
+            .determine_type()
             .expect("Failed to get type")
             .is_signed_primitive();
 
@@ -1108,7 +1108,7 @@ fn gen_rval_gte<'ctx>(
         fcmp.into()
     } else if lhs_ty.is_int_type() && rhs_ty.is_int_type() {
         let is_signed = lhs
-            .determine_type(&ctx.tab)
+            .determine_type()
             .expect("Failed to get type")
             .is_signed_primitive();
 
@@ -1309,11 +1309,9 @@ fn gen_rval_unary_not<'ctx>(
 
 fn gen_rval_struct_object<'ctx>(
     ctx: &mut CodegenCtx<'ctx, '_, '_, '_, '_>,
-    struct_path: &NString,
+    struct_def_id: &hir::StructDefId,
     fields: &[(NString, ValueId)],
 ) -> BasicValueEnum<'ctx> {
-    let struct_def_id = ctx.tab.get_struct(struct_path).expect("struct not found");
-
     let struct_ty = hir::Type::Struct {
         def: struct_def_id.clone(),
     };
@@ -1360,7 +1358,7 @@ fn gen_rval_struct_object<'ctx>(
 
 fn gen_rval_enum_variant<'ctx>(
     _ctx: &mut CodegenCtx<'ctx, '_, '_, '_, '_>,
-    _enum_path: &NString,
+    _enum_def_id: &hir::EnumDefId,
     _variant_name: &NString,
     _value: &hir::Value,
 ) -> BasicValueEnum<'ctx> {
@@ -1373,9 +1371,7 @@ fn gen_rval_field_access<'ctx>(
     struct_value: &hir::Value,
     field_name: &NString,
 ) -> BasicValueEnum<'ctx> {
-    let value_type = struct_value
-        .determine_type(ctx.tab)
-        .expect("Failed to get type");
+    let value_type = struct_value.determine_type().expect("Failed to get type");
     let hir_struct_def = value_type
         .as_struct()
         .expect("expected struct type")
@@ -1400,7 +1396,7 @@ fn gen_rval_field_access<'ctx>(
     let llvm_struct_value = gen_place(ctx, struct_value);
     let llvm_struct_ty = gen_ty(
         &struct_value
-            .determine_type(ctx.tab)
+            .determine_type()
             .expect("unable to get struct type"),
         &mut ctx.into(),
     );
@@ -1448,7 +1444,7 @@ fn gen_rval_deref<'ctx>(
         panic!("Unsupported operand type for dereference");
     }
 
-    let pointee_ty = match place.determine_type(ctx.tab).unwrap() {
+    let pointee_ty = match place.determine_type().unwrap() {
         hir::Type::Pointer { to, .. } => to.deref().clone(),
         hir::Type::Reference { to, .. } => to.deref().clone(),
         _ => unreachable!(),
@@ -1584,8 +1580,8 @@ fn gen_rval_if<'ctx>(
         let else_bb = ctx.llvm.append_basic_block(current_function, "if_else");
         let join_bb = ctx.llvm.append_basic_block(current_function, "if_join");
 
-        let true_branch_ty = true_branch.determine_type(ctx.tab).unwrap();
-        let false_branch_ty = false_branch.determine_type(ctx.tab).unwrap();
+        let true_branch_ty = true_branch.determine_type().unwrap();
+        let false_branch_ty = false_branch.determine_type().unwrap();
 
         let if_result_ty = if true_branch_ty.is_diverging() {
             gen_ty(&false_branch_ty, &mut ctx.into())
@@ -1632,7 +1628,7 @@ fn gen_rval_if<'ctx>(
     let then_bb = ctx.llvm.append_basic_block(current_function, "if_then");
     let join_bb = ctx.llvm.append_basic_block(current_function, "if_join");
 
-    let true_branch_ty = true_branch.determine_type(&ctx.tab).unwrap();
+    let true_branch_ty = true_branch.determine_type().unwrap();
 
     let cond_val = gen_rval(ctx, condition);
     ctx.bb
@@ -1679,7 +1675,7 @@ fn gen_rval_while<'ctx>(
     // 2. While loop body
     ctx.bb.position_at_end(body_bb);
     gen_block(ctx, body);
-    if !body.determine_type(&ctx.tab).unwrap().is_diverging() {
+    if !body.determine_type().unwrap().is_diverging() {
         ctx.bb.build_unconditional_branch(cond_bb).unwrap();
     }
 
@@ -1703,7 +1699,7 @@ fn gen_rval_loop<'ctx>(ctx: &mut CodegenCtx<'ctx, '_, '_, '_, '_>, body: &hir::B
     // 1. Loop body
     ctx.bb.position_at_end(body_bb);
     gen_block(ctx, body);
-    if !body.determine_type(&ctx.tab).unwrap().is_diverging() {
+    if !body.determine_type().unwrap().is_diverging() {
         ctx.bb.build_unconditional_branch(body_bb).unwrap();
     }
 
@@ -1815,7 +1811,7 @@ fn gen_rval_call<'ctx>(
     callee: &hir::Value,
     arguments: &[hir::ValueId],
 ) -> BasicValueEnum<'ctx> {
-    let callee_ty_hir = callee.determine_type(&ctx.tab).unwrap();
+    let callee_ty_hir = callee.determine_type().unwrap();
     let hir::Type::Function { function_type } = callee_ty_hir else {
         panic!("Callee is not a function type");
     };
@@ -1956,16 +1952,15 @@ pub(crate) fn gen_rval<'ctx>(
             }
         }
 
-        hir::Value::StructObject {
-            struct_path,
-            fields,
-        } => gen_rval_struct_object(ctx, struct_path, fields),
+        hir::Value::StructObject { struct_def, fields } => {
+            gen_rval_struct_object(ctx, struct_def, fields)
+        }
 
         hir::Value::EnumVariant {
-            enum_path,
+            enum_def,
             variant,
             value,
-        } => gen_rval_enum_variant(ctx, enum_path, variant, &value.borrow()),
+        } => gen_rval_enum_variant(ctx, enum_def, variant, &value.borrow()),
 
         hir::Value::FieldAccess { expr, field_name } => {
             gen_rval_field_access(ctx, &expr.borrow(), field_name)

@@ -319,12 +319,12 @@ pub enum Value {
     InferredFloat(OrderedFloat<f64>),
 
     StructObject {
-        struct_path: NString,
+        struct_def: StructDefId,
         fields: ThinVec<(NString, ValueId)>,
     },
 
     EnumVariant {
-        enum_path: NString,
+        enum_def: EnumDefId,
         variant: NString,
         value: ValueId,
     },
