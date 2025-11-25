@@ -30,6 +30,7 @@ pub(crate) enum HirErr {
     DuplicateFunctionDefinition,
     DuplicateGlobalVariableDefinition,
     DuplicateModuleDefinition,
+    LocalVariableMissingInitializer,
 }
 
 impl FormattableDiagnosticGroup for HirErr {
@@ -68,6 +69,7 @@ impl FormattableDiagnosticGroup for HirErr {
             HirErr::DuplicateFunctionDefinition => 37,
             HirErr::DuplicateGlobalVariableDefinition => 38,
             HirErr::DuplicateModuleDefinition => 39,
+            HirErr::LocalVariableMissingInitializer => 40,
         }
     }
 
@@ -215,6 +217,11 @@ impl FormattableDiagnosticGroup for HirErr {
 
             HirErr::DuplicateModuleDefinition => DiagnosticInfo {
                 message: "duplicate module definition".to_string(),
+                origin: Origin::None,
+            },
+
+            HirErr::LocalVariableMissingInitializer => DiagnosticInfo {
+                message: "local variable missing initializer".to_string(),
                 origin: Origin::None,
             },
         }

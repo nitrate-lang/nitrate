@@ -16,9 +16,11 @@ impl BlockIterMut<'_> {
                 BlockElement::Local(id) => {
                     let local_variable = &id.borrow_mut();
 
-                    if let Some(init) = &local_variable.init {
-                        init.borrow_mut().iter_mut().try_for_each_mut(vcb)?;
-                    }
+                    local_variable
+                        .initializer
+                        .borrow_mut()
+                        .iter_mut()
+                        .try_for_each_mut(vcb)?;
                 }
             }
         }
@@ -324,9 +326,11 @@ impl FunctionIterMut<'_> {
                     BlockElement::Expr(id) => id.borrow_mut().iter_mut().try_for_each_mut(vcb)?,
                     BlockElement::Local(id) => {
                         let local_variable = &id.borrow_mut();
-                        if let Some(init) = &local_variable.init {
-                            init.borrow_mut().iter_mut().try_for_each_mut(vcb)?;
-                        }
+                        local_variable
+                            .initializer
+                            .borrow_mut()
+                            .iter_mut()
+                            .try_for_each_mut(vcb)?;
                     }
                 }
             }

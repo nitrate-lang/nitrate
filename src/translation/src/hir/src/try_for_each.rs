@@ -147,9 +147,11 @@ impl BlockIter<'_> {
 
                     local_variable.ty.iter().try_for_each(vcb, tcb, visited)?;
 
-                    if let Some(init) = &local_variable.init {
-                        init.borrow().iter().try_for_each(vcb, tcb, visited)?;
-                    }
+                    local_variable
+                        .initializer
+                        .borrow()
+                        .iter()
+                        .try_for_each(vcb, tcb, visited)?;
                 }
             }
         }
@@ -513,9 +515,11 @@ impl FunctionIter<'_> {
                     BlockElement::Expr(id) => id.borrow().iter().try_for_each(vcb, tcb, visited)?,
                     BlockElement::Local(id) => {
                         let local_variable = &id.borrow();
-                        if let Some(init) = &local_variable.init {
-                            init.borrow().iter().try_for_each(vcb, tcb, visited)?;
-                        }
+                        local_variable
+                            .initializer
+                            .borrow()
+                            .iter()
+                            .try_for_each(vcb, tcb, visited)?;
                     }
                 }
             }

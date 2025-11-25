@@ -109,18 +109,16 @@ impl ValidateHirItem for LocalVariable {
         })?;
 
         establish_property("type_constraint == typeof(initial_value)", || {
-            if let Some(init_value) = &self.init {
-                let init_value = init_value.borrow();
-                let init_value_ty = init_value.determine_type().map_err(|_| ())?;
+            let init_value = self.initializer.borrow();
+            let init_value_ty = init_value.determine_type().map_err(|_| ())?;
 
-                if *self.ty != init_value_ty {
-                    ctx.log.report(&Issue::TypeMismatch {
-                        expected: self.ty,
-                        found: init_value_ty.into(),
-                    });
+            if *self.ty != init_value_ty {
+                ctx.log.report(&Issue::TypeMismatch {
+                    expected: self.ty,
+                    found: init_value_ty.into(),
+                });
 
-                    return Err(());
-                }
+                return Err(());
             }
 
             Ok(())

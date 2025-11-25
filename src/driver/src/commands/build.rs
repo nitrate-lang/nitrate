@@ -307,7 +307,7 @@ impl Interpreter<'_> {
                 &log,
             )?;
 
-            let mut hir_verifier = hir_validate::ValidateCtx::new(&symbol_tab, &log);
+            let mut hir_verifier = hir_validate::ValidateCtx::new(&log);
             let valid_hir_module = match hir_module.validate(&mut hir_verifier) {
                 Ok(m) => m,
                 Err(_) => {

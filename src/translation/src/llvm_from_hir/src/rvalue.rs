@@ -1777,7 +1777,7 @@ fn gen_rval_block<'ctx>(
                 let hir_local = local.borrow();
                 let local_name = hir_local.name.to_owned();
                 let hir_local_ty = &hir_local.ty;
-                let hir_local_init = &hir_local.init.as_ref().unwrap().borrow();
+                let hir_local_init = &hir_local.initializer.borrow();
 
                 let llvm_local_ty = gen_ty(hir_local_ty, &mut ctx.into());
                 let llvm_local = ctx.bb.build_alloca(llvm_local_ty, &local_name).unwrap();
@@ -2076,7 +2076,7 @@ pub(crate) fn gen_block<'ctx>(ctx: &mut CodegenCtx<'ctx, '_, '_, '_, '_>, hir_bl
                 let hir_local = local.borrow();
                 let local_name = hir_local.name.to_owned();
                 let hir_local_ty = &hir_local.ty;
-                let hir_local_init = &hir_local.init.as_ref().unwrap().borrow();
+                let hir_local_init = &hir_local.initializer.borrow();
 
                 let llvm_local_ty = gen_ty(hir_local_ty, &mut ctx.into());
                 let llvm_local = ctx.bb.build_alloca(llvm_local_ty, &local_name).unwrap();

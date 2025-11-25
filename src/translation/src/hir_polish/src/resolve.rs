@@ -19,13 +19,13 @@ impl TyCtx {
         self.ok
     }
 
-    pub fn resolve_function(&mut self, function: &mut Function, _log: &CompilerLog) {
+    pub fn resolve_function(&mut self, function: &mut Function, log: &CompilerLog) {
         let mut hm = HindleyMilner::new();
-        hm.solve_function(function);
+        hm.solve_function(function, log);
     }
 
-    pub fn resolve_global(&mut self, global: &mut GlobalVariable, _log: &CompilerLog) {
+    pub fn resolve_global(&mut self, global: &mut GlobalVariable, log: &CompilerLog) {
         let mut hm = HindleyMilner::new();
-        hm.solve_global_variable(global);
+        hm.solve_global_variable(global, log);
     }
 }

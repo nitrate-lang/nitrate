@@ -1,4 +1,5 @@
-use nitrate_hir::{BlockElement, Function, GlobalVariable, TypeId, Value, ValueId};
+use nitrate_diagnosis::CompilerLog;
+use nitrate_hir::{BlockElement, Function, GlobalVariable, Type, TypeId, Value, ValueId};
 use nitrate_hir_get_type::HirGetType;
 use std::collections::{HashMap, HashSet};
 
@@ -17,7 +18,7 @@ impl HindleyMilner {
         }
     }
 
-    fn step(&mut self, e: &mut ValueId) {
+    fn recurse(&mut self, e: &mut ValueId, log: &CompilerLog) {
         match &*e.borrow() {
             Value::Unit
             | Value::Bool(_)
@@ -117,32 +118,41 @@ impl HindleyMilner {
         }
     }
 
-    fn step_block_element(&mut self, e: &mut BlockElement) {
+    fn step_block_element(&mut self, e: &mut BlockElement, log: &CompilerLog) {
         match e {
-            BlockElement::Expr(e) => self.step(e),
+            BlockElement::Expr(e) => self.recurse(e, log),
 
-            BlockElement::Local(e) => {
-                let mut local_var = e.borrow_mut();
+            BlockElement::Local(local_var) => {
+                let has_type_constraint = !local_var.borrow().ty.is_inferred();
 
-                if local_var.ty.is_inferred() {
-                    if let Some(init_value) = &mut local_var.init {
-                        let local_ty = init_value.borrow().determine_type();
-                    } else {
-                        // Error: Cannot infer type without initializer
-                    }
+                if has_type_constraint {
+                    let ty = local_var.borrow().ty.clone();
+                    // self.constraints
+                    //     .entry(local_var.clone())
+                    //     .or_default()
+                    //     .insert(TypeConstraint::Equal(ty));
+                    unimplemented!()
                 } else {
+                    let initializer_type = local_var.borrow().initializer.borrow().determine_type();
+
+                    if let Ok(ty) = initializer_type {
+                        // Add the type constraint
+                        local_var.borrow_mut().ty = ty.into();
+                    } else if let Err(_) = initializer_type {
+                        // Type inference failed
+                    }
                 }
             }
         }
     }
 
-    pub fn solve_function(&mut self, f: &mut Function) {
+    pub fn solve_function(&mut self, f: &mut Function, log: &CompilerLog) {
         if let Some(body) = &mut f.body {
             loop {
                 let prev_constraints_len = self.constraints.len();
 
                 for element in body.iter_mut() {
-                    self.step_block_element(element);
+                    self.step_block_element(element, log);
                 }
 
                 if self.constraints.len() == prev_constraints_len {
@@ -152,15 +162,14 @@ impl HindleyMilner {
         }
     }
 
-    pub fn solve_global_variable(&mut self, g: &mut GlobalVariable) {
+    pub fn solve_global_variable(&mut self, g: &mut GlobalVariable, log: &CompilerLog) {
         loop {
             let prev_constraints_len = self.constraints.len();
 
             // for element in body.iter_mut() {
-            //     self.step_block_element(element);
+            //     self.step_block_element(element,log);
             // }
             // TODO: Solve global variable initializers
-            unimplemented!();
 
             if self.constraints.len() == prev_constraints_len {
                 break;

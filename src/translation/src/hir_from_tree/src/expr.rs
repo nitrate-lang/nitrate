@@ -588,8 +588,11 @@ fn ast_localvar2hir(
     };
 
     let initializer = match var.initializer.to_owned() {
-        Some(expr) => Some(expr.ast2hir(ctx, log)?.into()),
-        None => None,
+        Some(expr) => expr.ast2hir(ctx, log)?.into(),
+        None => {
+            log.report(&HirErr::LocalVariableMissingInitializer);
+            return Err(());
+        }
     };
 
     let localvar_id: LocalVariableId = LocalVariable {
@@ -598,7 +601,7 @@ fn ast_localvar2hir(
         is_mutable,
         name,
         ty,
-        init: initializer,
+        initializer,
     }
     .into();
 

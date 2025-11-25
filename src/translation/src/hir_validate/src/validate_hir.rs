@@ -27,16 +27,14 @@ pub(crate) fn establish_property(name: &str, f: impl FnOnce() -> Result<(), ()>)
     result
 }
 
-pub struct ValidateCtx<'tab, 'log> {
-    pub(crate) tab: &'tab SymbolTab,
+pub struct ValidateCtx<'log> {
     pub(crate) log: &'log CompilerLog,
     pub(crate) visited: HashSet<*const ()>,
 }
 
-impl<'tab, 'log> ValidateCtx<'tab, 'log> {
-    pub fn new(tab: &'tab SymbolTab, log: &'log CompilerLog) -> Self {
+impl<'log> ValidateCtx<'log> {
+    pub fn new(log: &'log CompilerLog) -> Self {
         ValidateCtx {
-            tab,
             log,
             visited: HashSet::new(),
         }

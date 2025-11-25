@@ -8,9 +8,6 @@ pub enum TypeInferenceError {
     FieldAccessOnNonStruct,
     StructMissingField,
     CalleeIsNotFunctionType,
-    TraitHasNoType,
-    UnresolvedSymbol,
-    MethodNotFound,
     CannotDeref,
     ClosureHasNoType,
 }
@@ -276,15 +273,6 @@ impl HirGetType for Value {
             } => {
                 // TODO: Get type of method call
                 unimplemented!()
-                // let object = object.borrow();
-                // let object_type = object.determine_type()?.into();
-
-                // let method = tab
-                //     .get_method(&object_type, method_name)
-                //     .ok_or(TypeInferenceError::MethodNotFound)?;
-
-                // let method = method.borrow();
-                // Ok(method.return_type.deref().clone())
             }
 
             Value::FunctionSymbol { id } => {
