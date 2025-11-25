@@ -187,14 +187,6 @@ impl ValidateHirValue for Value {
                 Ok(())
             }
 
-            Value::Closure {
-                captures: _,
-                callee: _,
-            } => {
-                // TODO: verify closure expression
-                Ok(())
-            }
-
             Value::Call {
                 callee: _,
                 positional: _,

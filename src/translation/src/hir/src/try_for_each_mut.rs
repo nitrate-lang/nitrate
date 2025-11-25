@@ -165,13 +165,6 @@ impl ValueIterMut<'_> {
                 block.borrow_mut().iter_mut().try_for_each_mut(vcb)?;
             }
 
-            Value::Closure {
-                captures: _,
-                callee,
-            } => {
-                callee.borrow_mut().iter_mut().try_for_each_mut(vcb)?;
-            }
-
             Value::Call {
                 callee,
                 positional,

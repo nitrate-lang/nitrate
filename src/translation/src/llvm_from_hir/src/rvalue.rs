@@ -1797,15 +1797,6 @@ fn gen_rval_block<'ctx>(
     gen_rval_lit_unit(ctx)
 }
 
-fn gen_rval_closure<'ctx>(
-    _ctx: &mut CodegenCtx<'ctx, '_, '_, '_, '_>,
-    _captures: &[NString],
-    _callee: &hir::FunctionId,
-) -> BasicValueEnum<'ctx> {
-    // TODO: implement closure codegen
-    unimplemented!()
-}
-
 fn gen_rval_call<'ctx>(
     ctx: &mut CodegenCtx<'ctx, '_, '_, '_, '_>,
     callee: &hir::Value,
@@ -2027,8 +2018,6 @@ pub(crate) fn gen_rval<'ctx>(
         }
 
         hir::Value::Block { block } => gen_rval_block(ctx, &block.borrow()),
-
-        hir::Value::Closure { captures, callee } => gen_rval_closure(ctx, captures, callee),
 
         hir::Value::Call {
             callee,

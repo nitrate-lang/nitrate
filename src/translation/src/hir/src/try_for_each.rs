@@ -316,13 +316,6 @@ impl ValueIter<'_> {
                 block.borrow().iter().try_for_each(vcb, tcb, visited)?;
             }
 
-            Value::Closure {
-                captures: _,
-                callee,
-            } => {
-                callee.borrow().iter().try_for_each(vcb, tcb, visited)?;
-            }
-
             Value::Call {
                 callee,
                 positional,

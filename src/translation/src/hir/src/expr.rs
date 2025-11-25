@@ -404,11 +404,6 @@ pub enum Value {
         block: BlockId,
     },
 
-    Closure {
-        captures: ThinVec<NString>,
-        callee: FunctionId,
-    },
-
     Call {
         callee: ValueId,
         positional: ThinVec<ValueId>,
@@ -623,11 +618,6 @@ impl Value {
     #[must_use]
     pub fn is_block(&self) -> bool {
         matches!(self, Value::Block { .. })
-    }
-
-    #[must_use]
-    pub fn is_closure(&self) -> bool {
-        matches!(self, Value::Closure { .. })
     }
 
     #[must_use]

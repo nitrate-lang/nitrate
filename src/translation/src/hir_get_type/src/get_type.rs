@@ -245,13 +245,6 @@ impl HirGetType for Value {
 
             Value::Block { block } => block.borrow().determine_type(),
 
-            Value::Closure {
-                captures: _,
-                callee: _,
-            } => {
-                return Err(TypeInferenceError::ClosureHasNoType);
-            }
-
             Value::Call {
                 callee,
                 positional: _,

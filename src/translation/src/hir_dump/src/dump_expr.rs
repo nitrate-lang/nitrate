@@ -303,22 +303,6 @@ impl Dump for Value {
 
             Value::Block { block } => block.borrow().dump(ctx, o),
 
-            Value::Closure { captures, callee } => {
-                write!(o, "fn ")?;
-
-                write!(o, " [")?;
-                for (i, capture) in captures.iter().enumerate() {
-                    if i != 0 {
-                        write!(o, ", ")?;
-                    }
-
-                    write!(o, "{capture}")?;
-                }
-                write!(o, "] ")?;
-
-                callee.borrow().dump(ctx, o)
-            }
-
             Value::Call {
                 callee,
                 positional,

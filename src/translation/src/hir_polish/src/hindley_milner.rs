@@ -227,7 +227,6 @@ impl HindleyMilner {
             | Value::Continue { .. }
             | Value::Return { .. }
             | Value::Block { .. }
-            | Value::Closure { .. }
             | Value::Call { .. }
             | Value::MethodCall { .. }
             | Value::FunctionSymbol { .. }
@@ -385,11 +384,6 @@ impl HindleyMilner {
                 for element in &mut block.borrow_mut().elements {
                     self.visit_block_element(element);
                 }
-            }
-
-            Value::Closure { .. } => {
-                // TODO: Handle closures
-                unimplemented!()
             }
 
             Value::Call {

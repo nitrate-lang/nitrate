@@ -109,7 +109,6 @@ pub(crate) fn gen_place<'ctx>(
         | hir::Value::Continue { .. }
         | hir::Value::Return { .. }
         | hir::Value::Block { .. }
-        | hir::Value::Closure { .. }
         | hir::Value::Call { .. }
         | hir::Value::MethodCall { .. } => panic!("Value is not a place"),
 

@@ -24,12 +24,6 @@ pub(crate) enum HirErr {
     UnresolvedSymbol,
     MissingReturnStatement,
     SliceTypesCannotExistOutsideReferencesOrPointers,
-    DuplicateTypeAliasDefinition,
-    DuplicateStructDefinition,
-    DuplicateEnumDefinition,
-    DuplicateFunctionDefinition,
-    DuplicateGlobalVariableDefinition,
-    DuplicateModuleDefinition,
     LocalVariableMissingInitializer,
 }
 
@@ -63,12 +57,6 @@ impl FormattableDiagnosticGroup for HirErr {
             HirErr::UnresolvedSymbol => 31,
             HirErr::MissingReturnStatement => 32,
             HirErr::SliceTypesCannotExistOutsideReferencesOrPointers => 33,
-            HirErr::DuplicateTypeAliasDefinition => 34,
-            HirErr::DuplicateStructDefinition => 35,
-            HirErr::DuplicateEnumDefinition => 36,
-            HirErr::DuplicateFunctionDefinition => 37,
-            HirErr::DuplicateGlobalVariableDefinition => 38,
-            HirErr::DuplicateModuleDefinition => 39,
             HirErr::LocalVariableMissingInitializer => 40,
         }
     }
@@ -187,36 +175,6 @@ impl FormattableDiagnosticGroup for HirErr {
 
             HirErr::SliceTypesCannotExistOutsideReferencesOrPointers => DiagnosticInfo {
                 message: "slice types cannot exist outside references or pointers".to_string(),
-                origin: Origin::None,
-            },
-
-            HirErr::DuplicateTypeAliasDefinition => DiagnosticInfo {
-                message: "duplicate type alias definition".to_string(),
-                origin: Origin::None,
-            },
-
-            HirErr::DuplicateStructDefinition => DiagnosticInfo {
-                message: "duplicate struct definition".to_string(),
-                origin: Origin::None,
-            },
-
-            HirErr::DuplicateEnumDefinition => DiagnosticInfo {
-                message: "duplicate enum definition".to_string(),
-                origin: Origin::None,
-            },
-
-            HirErr::DuplicateFunctionDefinition => DiagnosticInfo {
-                message: "duplicate function definition".to_string(),
-                origin: Origin::None,
-            },
-
-            HirErr::DuplicateGlobalVariableDefinition => DiagnosticInfo {
-                message: "duplicate global variable definition".to_string(),
-                origin: Origin::None,
-            },
-
-            HirErr::DuplicateModuleDefinition => DiagnosticInfo {
-                message: "duplicate module definition".to_string(),
                 origin: Origin::None,
             },
 
