@@ -241,85 +241,26 @@ impl HindleyMilner {
 
     fn visit_children(&mut self, e: &ValueId) {
         match &*e.borrow() {
-            Value::Unit => {
-                // TODO: Recurse
-            }
-
-            Value::Bool(_) => {
-                // TODO: Recurse
-            }
-
-            Value::I8(_) => {
-                // TODO: Recurse
-            }
-
-            Value::I16(_) => {
-                // TODO: Recurse
-            }
-
-            Value::I32(_) => {
-                // TODO: Recurse
-            }
-
-            Value::I64(_) => {
-                // TODO: Recurse
-            }
-
-            Value::I128(_) => {
-                // TODO: Recurse
-            }
-
-            Value::U8(_) => {
-                // TODO: Recurse
-            }
-
-            Value::U16(_) => {
-                // TODO: Recurse
-            }
-
-            Value::U32(_) => {
-                // TODO: Recurse
-            }
-
-            Value::U64(_) => {
-                // TODO: Recurse
-            }
-
-            Value::U128(_) => {
-                // TODO: Recurse
-            }
-
-            Value::F32(ordered_float) => {
-                // TODO: Recurse
-            }
-
-            Value::F64(ordered_float) => {
-                // TODO: Recurse
-            }
-
-            Value::USize32(_) => {
-                // TODO: Recurse
-            }
-
-            Value::USize64(_) => {
-                // TODO: Recurse
-            }
-
-            Value::StringLit(thin_str) => {
-                // TODO: Recurse
-            }
-
-            Value::BStringLit(thin_vec) => {
-                // TODO: Recurse
-            }
-
-            Value::InferredInteger(_) => {
-                // TODO: Recurse
-            }
-
-            Value::InferredFloat(ordered_float) => {
-                // TODO: Recurse
-            }
+            Value::Unit
+            | Value::Bool(_)
+            | Value::I8(_)
+            | Value::I16(_)
+            | Value::I32(_)
+            | Value::I64(_)
+            | Value::I128(_)
+            | Value::U8(_)
+            | Value::U16(_)
+            | Value::U32(_)
+            | Value::U64(_)
+            | Value::U128(_)
+            | Value::F32(_)
+            | Value::F64(_)
+            | Value::USize32(_)
+            | Value::USize64(_)
+            | Value::StringLit(_)
+            | Value::BStringLit(_)
+            | Value::InferredInteger(_)
+            | Value::InferredFloat(_) => {}
 
             Value::StructObject { struct_def, fields } => {
                 // TODO: Recurse
