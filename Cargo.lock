@@ -912,6 +912,7 @@ dependencies = [
 name = "nitrate_tree2"
 version = "0.1.0"
 dependencies = [
+ "append-only-vec",
  "nitrate_nstring",
  "nitrate_token",
  "ordered-float",
