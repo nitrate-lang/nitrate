@@ -308,7 +308,7 @@ impl Interpreter<'_> {
             )?;
 
             let mut hir_verifier = hir_validate::ValidateCtx::new(&log);
-            let valid_hir_module = match hir_module.validate(&mut hir_verifier) {
+            let valid_hir_module = match hir_module.clone().validate(&mut hir_verifier) {
                 Ok(m) => m,
                 Err(_) => {
                     error!(
@@ -316,6 +316,12 @@ impl Interpreter<'_> {
                         "HIR validation failed for package '{}'",
                         package.name()
                     );
+
+                    if args.show_hir {
+                        println!("{}", hir_module.to_string());
+                        return Ok(());
+                    }
+
                     return Err(InterpreterError::OperationalError);
                 }
             };

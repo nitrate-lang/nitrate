@@ -679,14 +679,37 @@ impl Ast2Hir for ast::ExprPath {
                 Some(SymbolKind::EnumVariant) => match ctx.tab.get_enum_variant(&resolved_path) {
                     Some(existing_enum_def_id) => Ok(Value::EnumVariant {
                         enum_def: existing_enum_def_id.clone(),
-                        variant: resolved_path,
+                        variant: resolved_path.split("::").last().unwrap().to_string().into(),
                         // TODO: Handle enum variant values
                         value: Value::Unit.into(),
                     }),
 
                     None => {
-                        log.report(&HirErr::UnresolvedSymbol);
-                        Err(())
+                        let parts = resolved_path.split("::");
+                        let enum_name: NString = parts
+                            .clone()
+                            .take(parts.clone().count() - 1)
+                            .collect::<Vec<_>>()
+                            .join("::")
+                            .into();
+                        let variant: NString = parts.last().unwrap().to_string().into();
+
+                        let enum_def: EnumDefId = EnumDef {
+                            visibility: Visibility::Sec,
+                            name: enum_name,
+                            attributes: BTreeSet::new(),
+                            variants: Vec::new().into(),
+                        }
+                        .into();
+
+                        ctx.tab.add_enum(enum_def.clone());
+
+                        Ok(Value::EnumVariant {
+                            enum_def: enum_def.clone(),
+                            variant,
+                            // TODO: Handle enum variant values
+                            value: Value::Unit.into(),
+                        })
                     }
                 },
 

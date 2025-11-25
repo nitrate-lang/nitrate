@@ -152,7 +152,7 @@ fn ast_enumdef2hir(
         }
     }
 
-    let name = ctx.qualify_name(&enum_def.name).into();
+    let name: NString = ctx.qualify_name(&enum_def.name).into();
 
     if enum_def.generics.is_some() {
         log.report(&HirErr::UnimplementedFeature("generic enums".into()));
@@ -192,20 +192,27 @@ fn ast_enumdef2hir(
 
     let enum_def = EnumDef {
         visibility,
-        name,
+        name: name.clone(),
         attributes,
-        variants: variants.into(),
+        variants: variants.clone().into(),
     };
 
-    if let Some(existing_enum_def_id) = ctx.tab.get_enum(&enum_def.name) {
+    let enum_def_id = if let Some(existing_enum_def_id) = ctx.tab.get_enum(&enum_def.name) {
         let mut existing_enum_def = existing_enum_def_id.borrow_mut();
         *existing_enum_def = enum_def;
-        Ok(existing_enum_def_id.clone())
+        existing_enum_def_id.clone()
     } else {
         let enum_def_id: EnumDefId = enum_def.into();
         ctx.tab.add_enum(enum_def_id.clone());
-        Ok(enum_def_id)
+        enum_def_id
+    };
+
+    for variant in variants {
+        let variant_name = NString::from(format!("{}::{}", name.clone(), variant.name));
+        ctx.tab.add_enum_variant(variant_name, enum_def_id.clone());
     }
+
+    Ok(enum_def_id)
 }
 
 fn ast_trait2hir(_trait: &ast::Trait, _ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<(), ()> {

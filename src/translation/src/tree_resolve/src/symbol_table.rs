@@ -40,6 +40,11 @@ pub fn discover_symbols(module: &mut Module) -> HashMap<NString, SymbolKind> {
                     symbol_map.insert(name, SymbolKind::Enum);
                 }
 
+                RefNode::ItemEnumVariant(sym) => {
+                    let name = qualify_name(&scope_vec, &sym.name);
+                    symbol_map.insert(name, SymbolKind::EnumVariant);
+                }
+
                 RefNode::ItemTrait(sym) => {
                     let name = qualify_name(&scope_vec, &sym.name);
                     symbol_map.insert(name, SymbolKind::Trait);
@@ -83,6 +88,16 @@ pub fn discover_symbols(module: &mut Module) -> HashMap<NString, SymbolKind> {
             match order {
                 Order::Enter => {
                     scope_vec.push(function.name.to_string().into());
+                }
+
+                Order::Leave => {
+                    scope_vec.pop();
+                }
+            }
+        } else if let RefNode::ItemEnum(enum_def) = node {
+            match order {
+                Order::Enter => {
+                    scope_vec.push(enum_def.name.to_string().into());
                 }
 
                 Order::Leave => {
