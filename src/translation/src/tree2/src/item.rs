@@ -4,16 +4,24 @@ use serde::{Deserialize, Serialize};
 use thin_vec::ThinVec;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub struct AttributeList {
+    /* .. [<expr>, ... ] */
+    pub source_offset: u32,
+    pub trivia: Option<Trivia>,
+    pub attributes: ThinVec<ExprId>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum Item {
     Root {
         items: ThinVec<ItemId>,
     },
 
     Module {
-        /* .. mod .. <attributes>? .. <name> .. {} */
+        /* .. mod <attributes>? .. <name> .. {} */
         source_offset: u32,
-        trivia: [Option<Trivia>; 4],
-        attributes: ThinVec<ExprId>,
+        trivia: [Option<Trivia>; 3],
+        attributes: Option<AttributeList>,
         name: NString,
         items: ThinVec<ItemId>,
     },

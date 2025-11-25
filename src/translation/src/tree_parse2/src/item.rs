@@ -6,20 +6,73 @@ use nitrate_token::{AnnotatedToken, Token};
 use nitrate_tree2::prelude::*;
 
 impl Parser<'_, '_> {
-    fn parse_attribute_list(&mut self) -> Vec<ExprId> {
-        let attributes = Vec::new();
+    fn parse_attribute_list(&mut self, leading: Option<Trivia>) -> Option<AttributeList> {
+        let open_bracket_token = match self.lexer.peek()? {
+            AnnotatedToken {
+                token: Token::OpenBracket,
+                ..
+            } => self.lexer.next().unwrap(),
+            _ => return None, // No attribute list found
+        };
 
-        // TODO: Implement attribute list parsing
+        let mut attributes = Vec::new();
 
-        attributes
+        loop {
+            let trivia = self.consume_trivia();
+            match self.parse_expression(trivia) {
+                Some(expr) => attributes.push(expr.into()),
+                None => {
+                    let issue = SyntaxErr::ExpectedAttributeExpression {
+                        pos: self.lexer.peek().map(|t| t.start().into()),
+                    };
+                    self.log.report(&issue);
+                    break;
+                }
+            }
+
+            // Expect ',' or ']'
+            match self.lexer.next() {
+                Some(AnnotatedToken {
+                    token: Token::Comma,
+                    ..
+                }) => {
+                    continue;
+                }
+
+                Some(AnnotatedToken {
+                    token: Token::CloseBracket,
+                    ..
+                }) => break,
+
+                Some(token) => {
+                    let issue = SyntaxErr::ExpectedAttributeDelimiter {
+                        pos: Some(token.start().into()),
+                    };
+                    self.log.report(&issue);
+                    break;
+                }
+
+                None => {
+                    let issue = SyntaxErr::ExpectedAttributeDelimiter { pos: None };
+                    self.log.report(&issue);
+                    break;
+                }
+            }
+        }
+
+        Some(AttributeList {
+            source_offset: open_bracket_token.start_offset,
+            trivia: leading,
+            attributes: attributes.into(),
+        })
     }
 
-    fn parse_module(&mut self, leading: Option<Trivia>) -> Item {
+    fn parse_module(&mut self, leading: Option<Trivia>) -> Option<Item> {
         // Consume 'mod' token
-        let mod_token = self.lexer.next().expect("expected mod keyword");
+        let mod_token = self.lexer.next()?;
+        let attribute_trivia = self.consume_trivia();
+        let attributes = self.parse_attribute_list(attribute_trivia);
         let trivia_1 = self.consume_trivia();
-        let attributes = self.parse_attribute_list();
-        let trivia_2 = self.consume_trivia();
 
         // Expect module name
         let name: NString = match self.lexer.peek().cloned() {
@@ -46,7 +99,7 @@ impl Parser<'_, '_> {
             }
         };
 
-        let trivia_3 = self.consume_trivia();
+        let trivia_2 = self.consume_trivia();
 
         // Expect '{'
         match self.lexer.next() {
@@ -99,18 +152,18 @@ impl Parser<'_, '_> {
             }
         };
 
-        Item::Module {
+        Some(Item::Module {
             source_offset: mod_token.start_offset,
-            trivia: [leading, trivia_1, trivia_2, trivia_3],
+            trivia: [leading, trivia_1, trivia_2],
             attributes: attributes.into(),
             name,
             items: items.into(),
-        }
+        })
     }
 
     pub fn parse_item(&mut self, leading: Option<Trivia>) -> Option<Item> {
         match self.lexer.peek()?.token {
-            Token::Mod => Some(self.parse_module(leading)),
+            Token::Mod => self.parse_module(leading),
 
             _ => {
                 // TODO: Implement item parsing
