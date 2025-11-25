@@ -257,7 +257,7 @@ impl std::fmt::Display for Lit {
     }
 }
 
-#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub enum BlockSafety {
     Safe,
     Unsafe,

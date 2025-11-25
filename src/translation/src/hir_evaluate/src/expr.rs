@@ -205,8 +205,8 @@ impl HirEvaluate for Block {
             ctx.unsafe_operations_performed += 1;
         }
 
-        let before_safety = ctx.current_safety;
-        ctx.current_safety = self.safety;
+        let before_safety = ctx.current_safety.clone();
+        ctx.current_safety = self.safety.clone();
 
         let mut last_value = Value::Unit;
         for expr in &self.elements {
