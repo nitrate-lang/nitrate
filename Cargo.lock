@@ -887,6 +887,7 @@ dependencies = [
  "nitrate_token",
  "nitrate_token_lexer",
  "nitrate_tree",
+ "nitrate_tree2",
  "nitrate_tree_parse",
  "nitrate_tree_resolve",
  "threadpool",
@@ -905,6 +906,16 @@ dependencies = [
  "serde",
  "serde_json",
  "serde_with",
+]
+
+[[package]]
+name = "nitrate_tree2"
+version = "0.1.0"
+dependencies = [
+ "nitrate_nstring",
+ "nitrate_token",
+ "ordered-float",
+ "serde",
 ]
 
 [[package]]
