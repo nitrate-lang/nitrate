@@ -8,4 +8,4 @@ mod pat;
 mod stmt;
 mod ty;
 
-pub use parse::{Parser, ResolveCtx};
+pub use parse::Parser;

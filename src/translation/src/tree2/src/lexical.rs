@@ -1,3 +1,5 @@
+use std::num::NonZeroU32;
+
 use crate::get_source;
 use nitrate_diagnosis::FileId;
 use nitrate_token::{AnnotatedToken, SourcePosition, Token};
@@ -6,12 +8,17 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Trivia {
-    pub byte_offset: u32,
+    pub position: NonZeroU32,
 }
 
 impl Trivia {
-    pub fn new(byte_offset: u32) -> Self {
-        Self { byte_offset }
+    pub fn new(start_offset: u32) -> Self {
+        Self {
+            position: match start_offset {
+                0 => NonZeroU32::MAX,
+                offset => NonZeroU32::new(offset).unwrap(),
+            },
+        }
     }
 
     pub fn tokens_iter<'a>(
@@ -25,7 +32,10 @@ impl Trivia {
         lexer.rewind(SourcePosition {
             line: 0,
             column: 0,
-            offset: self.byte_offset,
+            offset: match self.position.get() {
+                u32::MAX => 0,
+                offset => offset,
+            },
             fileid,
         });
 
@@ -55,7 +65,7 @@ impl Serialize for Trivia {
                 .collect::<Vec<_>>();
 
             let helper = TriviaSerHelper {
-                offset: self.byte_offset,
+                offset: self.position.get(),
                 tokens,
             };
 
@@ -70,8 +80,6 @@ impl<'de> Deserialize<'de> for Trivia {
         D: serde::Deserializer<'de>,
     {
         let helper = TriviaSerHelper::deserialize(deserializer)?;
-        Ok(Trivia {
-            byte_offset: helper.offset,
-        })
+        Ok(Trivia::new(helper.offset))
     }
 }

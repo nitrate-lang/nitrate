@@ -1,32 +1,56 @@
 use nitrate_diagnosis::CompilerLog;
-use nitrate_token_lexer::Lexer;
+use nitrate_token::Token;
+use nitrate_token_lexer::{Lexer, LexerIterator};
 use nitrate_tree2::prelude::*;
-use std::path::PathBuf;
+use std::iter::Peekable;
 
 pub struct Parser<'a, 'log> {
-    pub(crate) lexer: Lexer<'a>,
+    pub(crate) lexer: Peekable<LexerIterator<'a>>,
     pub(crate) log: &'log CompilerLog,
-}
-
-pub struct ResolveCtx {
-    pub package_search_paths: Vec<PathBuf>,
 }
 
 impl<'a, 'log> Parser<'a, 'log> {
     pub fn new(lexer: Lexer<'a>, log: &'log CompilerLog) -> Self {
-        Parser { lexer, log: log }
+        Parser {
+            lexer: LexerIterator::new(lexer).peekable(),
+            log: log,
+        }
     }
 
     pub fn parse_source(&mut self) -> Item {
         let mut items = Vec::new();
 
-        while !self.lexer.is_eof() {
-            let item = self.parse_item();
-            items.push(item);
+        loop {
+            let leading_trivia = self.consume_trivia();
+            match self.parse_item(leading_trivia) {
+                Some(item) => items.push(item.into()),
+                None => break,
+            }
         }
 
         Item::Root {
             items: items.into(),
         }
+    }
+
+    pub(crate) fn consume_trivia(&mut self) -> Option<Trivia> {
+        let start_offset = self.lexer.peek().map(|t| t.start_offset)?;
+
+        while let Some(token) = self.lexer.peek() {
+            match token.token {
+                Token::Comment(_)
+                | Token::HorizontalTab
+                | Token::NewLine
+                | Token::VerticalTab
+                | Token::FormFeed
+                | Token::CarriageReturn
+                | Token::Space => {
+                    self.lexer.next();
+                }
+                _ => break,
+            }
+        }
+
+        Some(Trivia::new(start_offset))
     }
 }
