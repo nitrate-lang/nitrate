@@ -1,4 +1,3 @@
-use nitrate_translation::llvm::OptLevel;
 use serde::{Deserialize, Serialize};
 use xml_doc::ReadOptions;
 
@@ -65,10 +64,6 @@ impl Package {
 
     pub fn entrypoint(&self) -> std::path::PathBuf {
         std::path::Path::new("src").join("entry.nit")
-    }
-
-    pub fn optimization_level(&self) -> OptLevel {
-        OptLevel::Default
     }
 
     pub fn xml_serialize(&self) -> String {

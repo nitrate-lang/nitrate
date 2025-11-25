@@ -275,7 +275,25 @@ impl Interpreter<'_> {
             return Ok(());
         }
 
-        let llvm_ctx = self.get_llvm_context(args.target, package.optimization_level())?;
+        let opt_level = if args.release {
+            OptLevel::Aggressive
+        } else {
+            match &args.profile {
+                Some(profile_name) if profile_name == "debug" => OptLevel::None,
+                Some(profile_name) if profile_name == "release" => OptLevel::Aggressive,
+                Some(profile_name) => {
+                    error!(
+                        self.log,
+                        "Unknown build profile '{}'. Supported profiles are 'debug' and 'release'.",
+                        profile_name
+                    );
+                    return Err(InterpreterError::OperationalError);
+                }
+                None => OptLevel::None,
+            }
+        };
+
+        let llvm_ctx = self.get_llvm_context(args.target, opt_level)?;
         let ptr_size = llvm_ctx.target_data.get_pointer_byte_size(None);
 
         let store = Store::new();
@@ -310,12 +328,12 @@ impl Interpreter<'_> {
             let mut llvm_module =
                 generate_llvmir(package.name(), valid_hir_module, &llvm_ctx, &symbol_tab);
 
+            llvm_ctx.optimize_module(&mut llvm_module);
+
             if args.show_llvmir {
                 println!("{}", llvm_module.print_to_string().to_string());
                 return Ok(());
             }
-
-            llvm_ctx.optimize_module(&mut llvm_module);
 
             if args.show_asm {
                 if let Err(e) = llvm_ctx.write_asm(&mut llvm_module, &mut std::io::stdout()) {

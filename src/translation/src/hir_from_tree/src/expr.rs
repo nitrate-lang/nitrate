@@ -648,7 +648,6 @@ impl Ast2Hir for ast::Closure {
     type Hir = Value;
 
     fn ast2hir(self, _ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
-        // TODO: lower ast::Closure to HIR
         log.report(&HirErr::UnimplementedFeature("ast::Expr::Closure".into()));
         Err(())
     }
