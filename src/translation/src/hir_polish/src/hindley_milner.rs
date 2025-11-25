@@ -18,6 +18,7 @@ enum NodeAction {
 pub struct HindleyMilner {
     constraints: HashMap<ValueId, HashSet<TypeConstraint>>,
     ptr_size: PtrSize,
+    errors: HashSet<TypeErr>,
 }
 
 impl HindleyMilner {
@@ -25,126 +26,124 @@ impl HindleyMilner {
         Self {
             constraints: HashMap::new(),
             ptr_size,
+            errors: HashSet::new(),
         }
     }
 
-    fn solve_inferred_integer(
-        &mut self,
-        id: &ValueId,
-        integer: u128,
-        log: &CompilerLog,
-    ) -> NodeAction {
-        fn report_out_of_range(integer: u128, target_type: TypeId, log: &CompilerLog) {
-            let issue = TypeErr::IntegerLiteralOutsizeRange {
-                value: integer,
-                target_type: target_type.clone(),
-            };
-            log.report(&issue);
-        }
+    fn report_out_of_range(&mut self, integer: u128, target_type: TypeId) {
+        self.errors.insert(TypeErr::IntegerLiteralOutsizeRange {
+            value: integer,
+            target_type: target_type.clone(),
+        });
+    }
 
+    fn solve_inferred_integer(&mut self, id: &ValueId, value: u128) -> NodeAction {
         if let Some(constraints) = self.constraints.get(id) {
             for constraint in constraints {
                 match constraint {
                     TypeConstraint::Equal(ty) => {
                         if !ty.is_integer_primitive() {
-                            // TODO: report error
+                            self.errors.insert(TypeErr::IntegerLiteralUnsatisfiable {
+                                value,
+                                unsatisfiable_type: ty.clone(),
+                            });
                             break;
                         }
 
                         return match **ty {
-                            Type::I8 => match i8::try_from(integer) {
+                            Type::I8 => match i8::try_from(value) {
                                 Ok(v) => NodeAction::Replace(Value::I8(v)),
                                 Err(_) => {
-                                    report_out_of_range(integer, ty.clone(), log);
+                                    self.report_out_of_range(value, ty.clone());
                                     NodeAction::NoChange
                                 }
                             },
 
-                            Type::I16 => match i16::try_from(integer) {
+                            Type::I16 => match i16::try_from(value) {
                                 Ok(v) => NodeAction::Replace(Value::I16(v)),
                                 Err(_) => {
-                                    report_out_of_range(integer, ty.clone(), log);
+                                    self.report_out_of_range(value, ty.clone());
                                     NodeAction::NoChange
                                 }
                             },
 
-                            Type::I32 => match i32::try_from(integer) {
+                            Type::I32 => match i32::try_from(value) {
                                 Ok(v) => NodeAction::Replace(Value::I32(v)),
                                 Err(_) => {
-                                    report_out_of_range(integer, ty.clone(), log);
+                                    self.report_out_of_range(value, ty.clone());
                                     NodeAction::NoChange
                                 }
                             },
 
-                            Type::I64 => match i64::try_from(integer) {
+                            Type::I64 => match i64::try_from(value) {
                                 Ok(v) => NodeAction::Replace(Value::I64(v)),
                                 Err(_) => {
-                                    report_out_of_range(integer, ty.clone(), log);
+                                    self.report_out_of_range(value, ty.clone());
                                     NodeAction::NoChange
                                 }
                             },
 
-                            Type::I128 => match i128::try_from(integer) {
+                            Type::I128 => match i128::try_from(value) {
                                 Ok(v) => NodeAction::Replace(Value::I128(Box::new(v))),
                                 Err(_) => {
-                                    report_out_of_range(integer, ty.clone(), log);
+                                    self.report_out_of_range(value, ty.clone());
                                     NodeAction::NoChange
                                 }
                             },
 
-                            Type::U8 => match u8::try_from(integer) {
+                            Type::U8 => match u8::try_from(value) {
                                 Ok(v) => NodeAction::Replace(Value::U8(v)),
                                 Err(_) => {
-                                    report_out_of_range(integer, ty.clone(), log);
+                                    self.report_out_of_range(value, ty.clone());
                                     NodeAction::NoChange
                                 }
                             },
 
-                            Type::U16 => match u16::try_from(integer) {
+                            Type::U16 => match u16::try_from(value) {
                                 Ok(v) => NodeAction::Replace(Value::U16(v)),
                                 Err(_) => {
-                                    report_out_of_range(integer, ty.clone(), log);
+                                    self.report_out_of_range(value, ty.clone());
                                     NodeAction::NoChange
                                 }
                             },
 
-                            Type::U32 => match u32::try_from(integer) {
+                            Type::U32 => match u32::try_from(value) {
                                 Ok(v) => NodeAction::Replace(Value::U32(v)),
                                 Err(_) => {
-                                    report_out_of_range(integer, ty.clone(), log);
+                                    self.report_out_of_range(value, ty.clone());
                                     NodeAction::NoChange
                                 }
                             },
 
-                            Type::U64 => match u64::try_from(integer) {
+                            Type::U64 => match u64::try_from(value) {
                                 Ok(v) => NodeAction::Replace(Value::U64(v)),
                                 Err(_) => {
-                                    report_out_of_range(integer, ty.clone(), log);
+                                    self.report_out_of_range(value, ty.clone());
                                     NodeAction::NoChange
                                 }
                             },
 
-                            Type::U128 => match u128::try_from(integer) {
+                            Type::U128 => match u128::try_from(value) {
                                 Ok(v) => NodeAction::Replace(Value::U128(Box::new(v))),
                                 Err(_) => {
-                                    report_out_of_range(integer, ty.clone(), log);
+                                    self.report_out_of_range(value, ty.clone());
                                     NodeAction::NoChange
                                 }
                             },
 
                             Type::USize => match self.ptr_size {
-                                PtrSize::U32 => match u32::try_from(integer) {
+                                PtrSize::U32 => match u32::try_from(value) {
                                     Ok(v) => NodeAction::Replace(Value::USize32(v)),
                                     Err(_) => {
-                                        report_out_of_range(integer, ty.clone(), log);
+                                        self.report_out_of_range(value, ty.clone());
                                         NodeAction::NoChange
                                     }
                                 },
 
-                                PtrSize::U64 => match u64::try_from(integer) {
+                                PtrSize::U64 => match u64::try_from(value) {
                                     Ok(v) => NodeAction::Replace(Value::USize64(v)),
                                     Err(_) => {
-                                        report_out_of_range(integer, ty.clone(), log);
+                                        self.report_out_of_range(value, ty.clone());
                                         NodeAction::NoChange
                                     }
                                 },
@@ -160,24 +159,22 @@ impl HindleyMilner {
         NodeAction::NoChange
     }
 
-    fn solve_inferred_float(
-        &mut self,
-        id: &ValueId,
-        float: OrderedFloat<f64>,
-        log: &CompilerLog,
-    ) -> NodeAction {
+    fn solve_inferred_float(&mut self, id: &ValueId, value: OrderedFloat<f64>) -> NodeAction {
         if let Some(constraints) = self.constraints.get(id) {
             for constraint in constraints {
                 match constraint {
                     TypeConstraint::Equal(ty) => {
                         if !ty.is_float_primitive() {
-                            // TODO: report error
+                            self.errors.insert(TypeErr::FloatLiteralUnsatisfiable {
+                                value,
+                                unsatisfiable_type: ty.clone(),
+                            });
                             break;
                         }
 
                         return match **ty {
-                            Type::F32 => NodeAction::Replace(Value::F32((*float as f32).into())),
-                            Type::F64 => NodeAction::Replace(Value::F64(float)),
+                            Type::F32 => NodeAction::Replace(Value::F32((*value as f32).into())),
+                            Type::F64 => NodeAction::Replace(Value::F64(value)),
                             _ => unreachable!(),
                         };
                     }
@@ -188,7 +185,7 @@ impl HindleyMilner {
         NodeAction::NoChange
     }
 
-    fn determine_action(&mut self, value: &Value, id: &ValueId, log: &CompilerLog) -> NodeAction {
+    fn determine_action(&mut self, value: &Value, id: &ValueId) -> NodeAction {
         match value {
             Value::Unit
             | Value::Bool(_)
@@ -234,15 +231,15 @@ impl HindleyMilner {
             | Value::LocalVariableSymbol { .. }
             | Value::ParameterSymbol { .. } => NodeAction::NoChange,
 
-            Value::InferredInteger(integer) => self.solve_inferred_integer(id, **integer, log),
-            Value::InferredFloat(float) => self.solve_inferred_float(id, *float, log),
+            Value::InferredInteger(integer) => self.solve_inferred_integer(id, **integer),
+            Value::InferredFloat(float) => self.solve_inferred_float(id, *float),
         }
     }
 
-    fn recurse(&mut self, e: &ValueId, log: &CompilerLog) {
+    fn recurse(&mut self, e: &ValueId) {
         let action = {
             let current_value = e.borrow();
-            self.determine_action(&*current_value, e, log)
+            self.determine_action(&*current_value, e)
         };
 
         match action {
@@ -256,9 +253,9 @@ impl HindleyMilner {
         }
     }
 
-    fn step_block_element(&mut self, e: &mut BlockElement, log: &CompilerLog) {
+    fn step_block_element(&mut self, e: &mut BlockElement) {
         match e {
-            BlockElement::Expr(e) => self.recurse(e, log),
+            BlockElement::Expr(e) => self.recurse(e),
 
             BlockElement::Local(local_var) => {
                 let has_type_constraint = !local_var.borrow().ty.is_inferred();
@@ -281,18 +278,18 @@ impl HindleyMilner {
                     }
                 }
 
-                self.recurse(&local_var.borrow().initializer, log);
+                self.recurse(&local_var.borrow().initializer);
             }
         }
     }
 
-    pub fn solve_function(&mut self, f: &mut Function, log: &CompilerLog) {
+    pub fn solve_function(&mut self, f: &mut Function, log: &CompilerLog) -> Result<(), ()> {
         if let Some(body) = &mut f.body {
             loop {
                 let prev_constraints_len = self.constraints.len();
 
                 for element in body.iter_mut() {
-                    self.step_block_element(element, log);
+                    self.step_block_element(element);
                 }
 
                 if self.constraints.len() == prev_constraints_len {
@@ -300,9 +297,23 @@ impl HindleyMilner {
                 }
             }
         }
+
+        for error in &self.errors {
+            log.report(error);
+        }
+
+        if self.errors.is_empty() {
+            Ok(())
+        } else {
+            Err(())
+        }
     }
 
-    pub fn solve_global_variable(&mut self, g: &mut GlobalVariable, log: &CompilerLog) {
+    pub fn solve_global_variable(
+        &mut self,
+        g: &mut GlobalVariable,
+        log: &CompilerLog,
+    ) -> Result<(), ()> {
         let has_type_constraint = !g.ty.is_inferred();
 
         if has_type_constraint {
@@ -325,10 +336,20 @@ impl HindleyMilner {
 
         loop {
             let prev_constraints_len = self.constraints.len();
-            self.recurse(&mut g.initializer, log);
+            self.recurse(&mut g.initializer);
             if self.constraints.len() == prev_constraints_len {
                 break;
             }
+        }
+
+        for error in &self.errors {
+            log.report(error);
+        }
+
+        if self.errors.is_empty() {
+            Ok(())
+        } else {
+            Err(())
         }
     }
 }
