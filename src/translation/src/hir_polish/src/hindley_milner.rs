@@ -5,10 +5,7 @@ use nitrate_hir::{
 };
 use nitrate_hir_get_type::HirGetType;
 use ordered_float::OrderedFloat;
-use std::{
-    collections::{HashMap, HashSet},
-    ops::Deref,
-};
+use std::collections::{HashMap, HashSet};
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 enum TypeConstraint {
@@ -266,16 +263,21 @@ impl HindleyMilner {
             | Value::InferredInteger(_)
             | Value::InferredFloat(_) => {}
 
-            Value::StructObject { struct_def, fields } => {
-                // TODO: Recurse
+            Value::StructObject {
+                struct_def: _,
+                fields,
+            } => {
+                for (_field_name, field_value) in fields {
+                    self.visit(field_value);
+                }
             }
 
             Value::EnumVariant {
-                enum_def,
-                variant,
+                enum_def: _,
+                variant: _,
                 value,
             } => {
-                // TODO: Recurse
+                self.visit(value);
             }
 
             Value::Binary { left, op: _, right } => {
@@ -385,8 +387,9 @@ impl HindleyMilner {
                 }
             }
 
-            Value::Closure { captures, callee } => {
-                // TODO: Recurse
+            Value::Closure { .. } => {
+                // TODO: Handle closures
+                unimplemented!()
             }
 
             Value::Call {
@@ -394,33 +397,34 @@ impl HindleyMilner {
                 positional,
                 named,
             } => {
-                // TODO: Recurse
+                self.visit(callee);
+                for arg in positional {
+                    self.visit(arg);
+                }
+                for (_name, arg) in named {
+                    self.visit(arg);
+                }
             }
 
             Value::MethodCall {
                 object,
-                method_name,
+                method_name: _,
                 positional,
                 named,
             } => {
-                // TODO: Recurse
+                self.visit(object);
+                for arg in positional {
+                    self.visit(arg);
+                }
+                for (_name, arg) in named {
+                    self.visit(arg);
+                }
             }
 
-            Value::FunctionSymbol { id } => {
-                // TODO: Recurse
-            }
-
-            Value::GlobalVariableSymbol { id } => {
-                // TODO: Recurse
-            }
-
-            Value::LocalVariableSymbol { id } => {
-                // TODO: Recurse
-            }
-
-            Value::ParameterSymbol { id } => {
-                // TODO: Recurse
-            }
+            Value::FunctionSymbol { .. }
+            | Value::GlobalVariableSymbol { .. }
+            | Value::LocalVariableSymbol { .. }
+            | Value::ParameterSymbol { .. } => {}
         }
     }
 
