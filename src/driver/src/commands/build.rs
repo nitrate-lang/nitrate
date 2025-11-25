@@ -60,7 +60,7 @@ pub(crate) struct BuildArgs {
 }
 
 impl Interpreter<'_> {
-    fn validate_package_edition(&self, edition: u16) -> Result<(), InterpreterError> {
+    pub(crate) fn validate_package_edition(&self, edition: u16) -> Result<(), InterpreterError> {
         let supported_edition = HashSet::from([2026]);
 
         if !supported_edition.contains(&edition) {
@@ -83,7 +83,7 @@ impl Interpreter<'_> {
         Ok(())
     }
 
-    fn get_package_config(&self) -> Result<Package, InterpreterError> {
+    pub(crate) fn get_package_config(&self) -> Result<Package, InterpreterError> {
         let config_file_string = match std::fs::read_to_string("no3.xml") {
             Ok(content) => content,
 
@@ -111,7 +111,7 @@ impl Interpreter<'_> {
         }
     }
 
-    fn parse_source_code(
+    pub(crate) fn parse_source_code(
         &self,
         entrypoint_path: &std::path::Path,
         package_name: &str,
@@ -168,7 +168,7 @@ impl Interpreter<'_> {
         Ok(parser.parse_source(package_name.into()))
     }
 
-    fn show_ast(&self, module: &ast::Module, format_mode: &Option<String>) {
+    pub(crate) fn show_ast(&self, module: &ast::Module, format_mode: &Option<String>) {
         match format_mode {
             Some(mode) if mode == "minify" => {
                 serde_json::to_writer(&mut std::io::stdout(), &module)

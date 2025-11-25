@@ -16,7 +16,9 @@ pub use nitrate_token as token;
 pub use nitrate_token_lexer as token_lexer;
 pub use nitrate_tree as parsetree;
 pub use nitrate_tree_parse as parse;
+pub use nitrate_tree_parse2 as parse2;
 pub use nitrate_tree_resolve as tree_resolve;
+pub use nitrate_tree2 as parsetree2;
 
 pub use options::TranslationOptions;
 pub use options_builder::TranslationOptionsBuilder;

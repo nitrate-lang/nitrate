@@ -50,6 +50,9 @@ enum Commands {
     /// Compile the current package
     Build(BuildArgs),
 
+    /// Parse the current package's source code and print the AST
+    Parse(ParseArgs),
+
     /// Analyze the current package and report errors, but don't build object files
     Check(CheckArgs),
 
@@ -261,6 +264,7 @@ impl<'log> Interpreter<'log> {
         if let Some(subcommand) = args.command {
             return match subcommand {
                 Commands::Build(build_args) => self.sc_build(build_args),
+                Commands::Parse(parse_args) => self.sc_parse(parse_args),
                 Commands::Check(check_args) => self.sc_check(check_args),
                 Commands::Clean(clean_args) => self.sc_clean(clean_args),
                 Commands::Doc(doc_args) => self.sc_doc(doc_args),
