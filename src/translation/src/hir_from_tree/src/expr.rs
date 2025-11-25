@@ -676,6 +676,20 @@ impl Ast2Hir for ast::ExprPath {
 
         match self.resolved_path {
             Some(resolved_path) => match ctx.ast_symbol_map.get(&resolved_path) {
+                Some(SymbolKind::EnumVariant) => match ctx.tab.get_enum_variant(&resolved_path) {
+                    Some(existing_enum_def_id) => Ok(Value::EnumVariant {
+                        enum_def: existing_enum_def_id.clone(),
+                        variant: resolved_path,
+                        // TODO: Handle enum variant values
+                        value: Value::Unit.into(),
+                    }),
+
+                    None => {
+                        log.report(&HirErr::UnresolvedSymbol);
+                        Err(())
+                    }
+                },
+
                 Some(SymbolKind::Function) => match ctx.tab.get_function(&resolved_path) {
                     Some(existing_function_id) => Ok(Value::FunctionSymbol {
                         id: existing_function_id.clone(),

@@ -314,6 +314,7 @@ pub enum SymbolKind {
     TypeAlias,
     Struct,
     Enum,
+    EnumVariant,
     Trait,
     Function,
     GlobalVariable,

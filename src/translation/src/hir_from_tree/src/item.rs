@@ -48,8 +48,7 @@ fn ast_typealias2hir(
         Ok(existing_type_alias_def_id.clone())
     } else {
         let type_alias_def_id: TypeAliasDefId = type_alias.into();
-        let typedef = TypeDefinition::TypeAliasDef(type_alias_def_id.clone());
-        ctx.tab.add_type(typedef);
+        ctx.tab.add_type_alias(type_alias_def_id.clone());
         Ok(type_alias_def_id)
     }
 }
@@ -130,8 +129,7 @@ fn ast_structdef2hir(
         Ok(existing_struct_def_id.clone())
     } else {
         let struct_def_id: StructDefId = struct_def.into();
-        let typedef = TypeDefinition::StructDef(struct_def_id.clone());
-        ctx.tab.add_type(typedef);
+        ctx.tab.add_struct(struct_def_id.clone());
         Ok(struct_def_id)
     }
 }
@@ -205,8 +203,7 @@ fn ast_enumdef2hir(
         Ok(existing_enum_def_id.clone())
     } else {
         let enum_def_id: EnumDefId = enum_def.into();
-        let typedef = TypeDefinition::EnumDef(enum_def_id.clone());
-        ctx.tab.add_type(typedef);
+        ctx.tab.add_enum(enum_def_id.clone());
         Ok(enum_def_id)
     }
 }

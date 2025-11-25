@@ -8,6 +8,7 @@ enum SymbolId {
     LocalVariable(LocalVariableId),
     Parameter(ParameterId),
     Function(FunctionId),
+    EnumVariant(EnumDefId),
 }
 
 #[derive(Debug, Default)]
@@ -18,7 +19,7 @@ pub struct SymbolTab {
 }
 
 impl SymbolTab {
-    #[must_use] 
+    #[must_use]
     pub fn new() -> Self {
         Self {
             symbols: HashMap::new(),
@@ -55,44 +56,34 @@ impl SymbolTab {
         self.symbols.insert(name, symbol);
     }
 
-    pub fn add_type(&mut self, type_def: TypeDefinition) {
-        self.types.insert(type_def.name(), type_def);
+    pub fn add_enum_variant(&mut self, name: NString, enum_def_id: EnumDefId) {
+        let symbol = SymbolId::EnumVariant(enum_def_id);
+        self.symbols.insert(name, symbol);
     }
 
     pub fn add_method(&mut self, type_id: TypeId, method_name: NString, function_id: FunctionId) {
         self.methods.insert((type_id, method_name), function_id);
     }
 
-    #[must_use] 
-    pub fn get_type(&self, name: &NString) -> Option<&TypeDefinition> {
-        self.types.get(name)
+    pub fn add_type_alias(&mut self, type_alias_id: TypeAliasDefId) {
+        let name = type_alias_id.borrow().name.clone();
+        let typedef = TypeDefinition::TypeAliasDef(type_alias_id);
+        self.types.insert(name, typedef);
     }
 
-    #[must_use] 
-    pub fn get_type_alias(&self, name: &NString) -> Option<&TypeAliasDefId> {
-        match self.types.get(name) {
-            Some(TypeDefinition::TypeAliasDef(type_alias_id)) => Some(type_alias_id),
-            _ => None,
-        }
+    pub fn add_struct(&mut self, struct_def_id: StructDefId) {
+        let name = struct_def_id.borrow().name.clone();
+        let typedef = TypeDefinition::StructDef(struct_def_id);
+        self.types.insert(name, typedef);
     }
 
-    #[must_use] 
-    pub fn get_struct(&self, name: &NString) -> Option<&StructDefId> {
-        match self.types.get(name) {
-            Some(TypeDefinition::StructDef(struct_def_id)) => Some(struct_def_id),
-            _ => None,
-        }
+    pub fn add_enum(&mut self, enum_def_id: EnumDefId) {
+        let name = enum_def_id.borrow().name.clone();
+        let typedef = TypeDefinition::EnumDef(enum_def_id);
+        self.types.insert(name, typedef);
     }
 
-    #[must_use] 
-    pub fn get_enum(&self, name: &NString) -> Option<&EnumDefId> {
-        match self.types.get(name) {
-            Some(TypeDefinition::EnumDef(enum_def_id)) => Some(enum_def_id),
-            _ => None,
-        }
-    }
-
-    #[must_use] 
+    #[must_use]
     pub fn get_global_variable(&self, name: &NString) -> Option<&GlobalVariableId> {
         match self.symbols.get(name) {
             Some(SymbolId::GlobalVariable(global_var_id)) => Some(global_var_id),
@@ -110,7 +101,7 @@ impl SymbolTab {
         })
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn get_local_variable(&self, name: &NString) -> Option<&LocalVariableId> {
         match self.symbols.get(name) {
             Some(SymbolId::LocalVariable(local_var_id)) => Some(local_var_id),
@@ -118,7 +109,7 @@ impl SymbolTab {
         }
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn get_parameter(&self, name: &NString) -> Option<&ParameterId> {
         match self.symbols.get(name) {
             Some(SymbolId::Parameter(param_id)) => Some(param_id),
@@ -126,7 +117,7 @@ impl SymbolTab {
         }
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn get_function(&self, name: &NString) -> Option<&FunctionId> {
         match self.symbols.get(name) {
             Some(SymbolId::Function(func_id)) => Some(func_id),
@@ -144,18 +135,39 @@ impl SymbolTab {
         })
     }
 
-    pub fn global_variables(&self) -> impl Iterator<Item = &GlobalVariableId> {
-        self.symbols.values().filter_map(|symbol_id| {
-            if let SymbolId::GlobalVariable(global_var_id) = symbol_id {
-                Some(global_var_id)
-            } else {
-                None
-            }
-        })
+    pub fn get_enum_variant(&self, name: &NString) -> Option<&EnumDefId> {
+        match self.symbols.get(name) {
+            Some(SymbolId::EnumVariant(enum_def_id)) => Some(enum_def_id),
+            _ => None,
+        }
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn get_method(&self, type_def: &TypeId, method_name: &NString) -> Option<&FunctionId> {
         self.methods.get(&(*type_def, method_name.clone()))
+    }
+
+    #[must_use]
+    pub fn get_type_alias(&self, name: &NString) -> Option<&TypeAliasDefId> {
+        match self.types.get(name) {
+            Some(TypeDefinition::TypeAliasDef(type_alias_id)) => Some(type_alias_id),
+            _ => None,
+        }
+    }
+
+    #[must_use]
+    pub fn get_struct(&self, name: &NString) -> Option<&StructDefId> {
+        match self.types.get(name) {
+            Some(TypeDefinition::StructDef(struct_def_id)) => Some(struct_def_id),
+            _ => None,
+        }
+    }
+
+    #[must_use]
+    pub fn get_enum(&self, name: &NString) -> Option<&EnumDefId> {
+        match self.types.get(name) {
+            Some(TypeDefinition::EnumDef(enum_def_id)) => Some(enum_def_id),
+            _ => None,
+        }
     }
 }

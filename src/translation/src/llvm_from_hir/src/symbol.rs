@@ -253,7 +253,7 @@ pub fn generate_llvmir<'ctx>(
         gen_function_decl(&mut ctx, &function_id.borrow());
     }
 
-    for global_id in tab.global_variables() {
+    for global_id in tab.globals() {
         gen_global(&mut ctx, &global_id.borrow());
     }
 

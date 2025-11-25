@@ -164,8 +164,7 @@ impl Ast2Hir for ast::TypePath {
                         }
                         .into();
 
-                        let typedef = TypeDefinition::StructDef(struct_def.clone());
-                        ctx.tab.add_type(typedef);
+                        ctx.tab.add_struct(struct_def.clone());
 
                         Ok(Type::Struct { def: struct_def })
                     }
@@ -185,8 +184,7 @@ impl Ast2Hir for ast::TypePath {
                         }
                         .into();
 
-                        let typedef = TypeDefinition::EnumDef(enum_def.clone());
-                        ctx.tab.add_type(typedef);
+                        ctx.tab.add_enum(enum_def.clone());
 
                         Ok(Type::Enum { def: enum_def })
                     }
@@ -206,8 +204,7 @@ impl Ast2Hir for ast::TypePath {
                         }
                         .into();
 
-                        let typedef = TypeDefinition::TypeAliasDef(type_alias_def.clone());
-                        ctx.tab.add_type(typedef);
+                        ctx.tab.add_type_alias(type_alias_def.clone());
 
                         Ok(Type::TypeAlias {
                             def: type_alias_def,
@@ -216,14 +213,12 @@ impl Ast2Hir for ast::TypePath {
                 },
 
                 _ => {
-                    println!("Unresolved type path: {}", resolved_path);
                     log.report(&HirErr::UnresolvedSymbol);
                     Err(())
                 }
             },
 
             None => {
-                println!("Unresolved type path: {:?}", self.segments);
                 log.report(&HirErr::UnresolvedTypePath);
                 Err(())
             }
