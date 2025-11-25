@@ -20,17 +20,17 @@ Do not checkmark a feature until it is fully implemented and extensive tests hav
 - [ ] Parser
 
   - [ ] Expressions
-    - [ ] Leaf expressions
+    - [ ] Literals
       - [ ] Unit
-      - [ ] bool
-      - [ ] i8, i16, i32, i64, i128
-      - [ ] u8, u16, u32, u64, u128
-      - [ ] usize
-      - [ ] f32, f64
-      - [ ] String literals
-      - [ ] Byte string literals
-    - [ ] Struct object
-    - [ ] Enum object
+      - [ ] Boolean
+      - [ ] Number
+        - [ ] Integer
+        - [ ] Float
+      - [ ] String
+      - [ ] Byte string
+      - [ ] Literal suffixes
+    - [ ] Struct initializers
+    - [ ] Enum initializers
     - [ ] Binary expressions
       - [ ] Add `+`
       - [ ] Sub `-`
@@ -56,45 +56,66 @@ Do not checkmark a feature until it is fully implemented and extensive tests hav
       - [ ] Add `+`
       - [ ] Sub `-`
       - [ ] Not `!`
+    - [ ] Get type of via `typeof`
+    - [ ] Inline type via `type { ... }`
     - [ ] Field access
+    - [ ] Indexing
     - [ ] Assignment
     - [ ] Dereference
-    - [ ] Cast
-      - [ ] Integer to integer
-      - [ ] Integer to float
-      - [ ] Float to float
-      - [ ] Float to integer
-      - [ ] User defined casts
+    - [ ] Cast via `as`
     - [ ] Borrowing
     - [ ] Lists
     - [ ] Tuples
-    - [ ] If expressions
+    - [ ] If branches
+      - [ ] Else-if branches
+    - [ ] For loops
     - [ ] While loops
+    - [ ] Do-while loops
     - [ ] Loop expressions
+    - [ ] Do async blocks
+    - [ ] Match expressions
     - [ ] Break expressions
     - [ ] Continue expressions
     - [ ] Return expressions
+    - [ ] Await expressions
     - [ ] Block expressions
     - [ ] Function calls
     - [ ] Method calls
     - [ ] Closures
-  - [ ] Items
-    - [ ] Local variables
-    - [ ] Global variables
-    - [ ] Functions
-      - [ ] Internal Declarations
-        - [ ] Generic functions
-      - [ ] Definitions
-        - [ ] Generic functions
-    - [ ] Struct definitions
-      - [ ] Generic structs
-    - [ ] Enum definitions
-      - [ ] Generic enums
-    - [ ] Trait definitions
-      - [ ] Generic traits
-    - [ ] Impl blocks
+    - [ ] Macro calls
+    - [ ] Inline assembly
+  - [ ] Statements
+    - [ ] Expression statements
+    - [ ] Let declarations
+      - [ ] Let-else syntax
+    - [ ] Const declarations
+    - [ ] Static declarations
     - [ ] Use statements
+    - [ ] Item declarations
+  - [ ] Items
     - [ ] Modules
+    - [ ] Extern crate declarations
+    - [ ] Use statements
+    - [ ] Functions
+      - [ ] Declarations
+        - [ ] Generics
+      - [ ] Definitions
+        - [ ] Generics
+    - [ ] Type alias
+      - [ ] Generics
+    - [ ] Struct definitions
+      - [ ] Generics
+    - [ ] Enum definitions
+      - [ ] Generics
+    - [ ] Union definitions
+      - [ ] Generics
+    - [ ] Global const variables
+    - [ ] Global static variables
+    - [ ] Trait definitions
+      - [ ] Generics
+    - [ ] Impl blocks
+      - [ ] Generics
+    - [ ] Extern blocks
 
 - [ ] High-Level Intermediate Representation (HIR)
 
