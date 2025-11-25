@@ -1,5 +1,6 @@
+use crate::hindley_milner::HindleyMilner;
 use nitrate_diagnosis::CompilerLog;
-use nitrate_hir::{Function, GlobalVariable};
+use nitrate_hir::{Function, GlobalVariable, TypeId, Value, ValueId};
 
 pub struct TyCtx {
     ok: bool,
@@ -18,11 +19,13 @@ impl TyCtx {
         self.ok
     }
 
-    pub fn resolve_function(&mut self, _function: &mut Function, _log: &CompilerLog) {
-        // TODO: type resolution/inference/checking logic
+    pub fn resolve_function(&mut self, function: &mut Function, _log: &CompilerLog) {
+        let mut hm = HindleyMilner::new();
+        hm.solve(function);
     }
 
     pub fn resolve_global(&mut self, _global: &mut GlobalVariable, _log: &CompilerLog) {
+        let mut hm = HindleyMilner::new();
         // TODO: type resolution/inference/checking logic
     }
 }
