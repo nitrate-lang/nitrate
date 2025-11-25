@@ -16,22 +16,32 @@ impl Parser<'_, '_> {
 
     fn parse_module(&mut self, leading: Option<Trivia>) -> Item {
         // Consume 'mod' token
-        let mod_token = self.lexer.next().unwrap();
+        let mod_token = self.lexer.next().expect("expected mod keyword");
         let trivia_1 = self.consume_trivia();
         let attributes = self.parse_attribute_list();
         let trivia_2 = self.consume_trivia();
 
         // Expect module name
-        let name: NString = match self.lexer.next().unwrap() {
-            AnnotatedToken {
+        let name: NString = match self.lexer.peek().cloned() {
+            Some(AnnotatedToken {
                 token: Token::Name(mod_name),
                 ..
-            } => mod_name.into(),
+            }) => {
+                self.lexer.next(); // Consume the name token
+                mod_name.into()
+            }
 
-            token => {
-                self.log.report(&SyntaxErr::ModuleExpectedName {
-                    pos: token.start().into(),
-                });
+            Some(token) => {
+                let issue = SyntaxErr::ModuleExpectedName {
+                    pos: Some(token.start().into()),
+                };
+                self.log.report(&issue);
+                NString::default()
+            }
+
+            None => {
+                let issue = SyntaxErr::ModuleExpectedName { pos: None };
+                self.log.report(&issue);
                 NString::default()
             }
         };
@@ -40,10 +50,22 @@ impl Parser<'_, '_> {
 
         // Expect '{'
         match self.lexer.next() {
-            Some(token) if token.token == Token::OpenBrace => {}
-            _ => self.log.report(&SyntaxErr::ExpectedOpenBrace {
-                pos: mod_token.end().into(),
-            }),
+            Some(AnnotatedToken {
+                token: Token::OpenBrace,
+                ..
+            }) => {}
+
+            Some(token) => {
+                let issue = SyntaxErr::ExpectedOpenBrace {
+                    pos: Some(token.start().into()),
+                };
+                self.log.report(&issue);
+            }
+
+            _ => {
+                let issue = SyntaxErr::ExpectedOpenBrace { pos: None };
+                self.log.report(&issue);
+            }
         };
 
         // Parse module items
@@ -59,10 +81,22 @@ impl Parser<'_, '_> {
 
         // Expect '}'
         match self.lexer.next() {
-            Some(token) if token.token == Token::CloseBrace => {}
-            _ => self.log.report(&SyntaxErr::ExpectedCloseBrace {
-                pos: mod_token.end().into(),
-            }),
+            Some(AnnotatedToken {
+                token: Token::CloseBrace,
+                ..
+            }) => {}
+
+            Some(token) => {
+                let issue = SyntaxErr::ExpectedCloseBrace {
+                    pos: Some(token.start().into()),
+                };
+                self.log.report(&issue);
+            }
+
+            _ => {
+                let issue = SyntaxErr::ExpectedCloseBrace { pos: None };
+                self.log.report(&issue);
+            }
         };
 
         Item::Module {

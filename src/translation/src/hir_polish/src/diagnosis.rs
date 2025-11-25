@@ -44,7 +44,7 @@ impl FormattableDiagnosticGroup for TypeErr {
                 );
 
                 nitrate_diagnosis::DiagnosticInfo {
-                    origin: nitrate_diagnosis::Origin::Unknown,
+                    origin: nitrate_diagnosis::Origin::None,
                     message,
                 }
             }
@@ -60,7 +60,7 @@ impl FormattableDiagnosticGroup for TypeErr {
                 );
 
                 nitrate_diagnosis::DiagnosticInfo {
-                    origin: nitrate_diagnosis::Origin::Unknown,
+                    origin: nitrate_diagnosis::Origin::None,
                     message,
                 }
             }
@@ -76,7 +76,7 @@ impl FormattableDiagnosticGroup for TypeErr {
                 );
 
                 nitrate_diagnosis::DiagnosticInfo {
-                    origin: nitrate_diagnosis::Origin::Unknown,
+                    origin: nitrate_diagnosis::Origin::None,
                     message,
                 }
             }

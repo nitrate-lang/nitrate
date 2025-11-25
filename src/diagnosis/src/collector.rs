@@ -77,13 +77,6 @@ impl CompilerLog {
                 info!(self.log, "info[E{:04X}]: {}: {}", id.0, group, message);
             }
 
-            Origin::Unknown => {
-                info!(
-                    self.log,
-                    "info[E{:04X}]: {}: {}\n--> ???", id.0, group, message
-                );
-            }
-
             Origin::Point(pos) => {
                 info!(
                     self.log,
@@ -113,13 +106,6 @@ impl CompilerLog {
                 warn!(self.log, "warning[E{:04X}]: {}: {}", id.0, group, message);
             }
 
-            Origin::Unknown => {
-                warn!(
-                    self.log,
-                    "warning[E{:04X}]: {}: {}\n--> ???", id.0, group, message
-                );
-            }
-
             Origin::Point(pos) => {
                 warn!(
                     self.log,
@@ -147,13 +133,6 @@ impl CompilerLog {
         match origin {
             Origin::None => {
                 error!(self.log, "error[E{:04X}]: {}: {}", id.0, group, message);
-            }
-
-            Origin::Unknown => {
-                error!(
-                    self.log,
-                    "error[E{:04X}]: {}: {}\n--> ???", id.0, group, message
-                );
             }
 
             Origin::Point(pos) => {

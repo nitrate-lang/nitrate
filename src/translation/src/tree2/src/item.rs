@@ -10,7 +10,7 @@ pub enum Item {
     },
 
     Module {
-        /* $ mod $ <attributes>? $ <name> $ {}*/
+        /* .. mod .. <attributes>? .. <name> .. {} */
         source_offset: u32,
         trivia: [Option<Trivia>; 4],
         attributes: ThinVec<ExprId>,

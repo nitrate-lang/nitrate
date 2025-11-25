@@ -34,7 +34,6 @@ pub struct Span {
 pub enum Origin {
     Point(SourcePosition),
     Span(Span),
-    Unknown,
     None,
 }
 

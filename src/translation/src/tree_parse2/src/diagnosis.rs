@@ -3,9 +3,9 @@ use nitrate_diagnosis::{
 };
 
 pub(crate) enum SyntaxErr {
-    ModuleExpectedName { pos: SourcePosition },
-    ExpectedOpenBrace { pos: SourcePosition },
-    ExpectedCloseBrace { pos: SourcePosition },
+    ModuleExpectedName { pos: Option<SourcePosition> },
+    ExpectedOpenBrace { pos: Option<SourcePosition> },
+    ExpectedCloseBrace { pos: Option<SourcePosition> },
 }
 
 impl FormattableDiagnosticGroup for SyntaxErr {
@@ -25,17 +25,17 @@ impl FormattableDiagnosticGroup for SyntaxErr {
     fn format(&self) -> nitrate_diagnosis::DiagnosticInfo {
         match self {
             SyntaxErr::ModuleExpectedName { pos } => DiagnosticInfo {
-                origin: Origin::Point(pos.to_owned()),
+                origin: pos.to_owned().map(Origin::Point).unwrap_or(Origin::None),
                 message: "Expected module name after 'mod'".to_string(),
             },
 
             SyntaxErr::ExpectedOpenBrace { pos } => DiagnosticInfo {
-                origin: Origin::Point(pos.to_owned()),
+                origin: pos.to_owned().map(Origin::Point).unwrap_or(Origin::None),
                 message: "Expected '{'".to_string(),
             },
 
             SyntaxErr::ExpectedCloseBrace { pos } => DiagnosticInfo {
-                origin: Origin::Point(pos.to_owned()),
+                origin: pos.to_owned().map(Origin::Point).unwrap_or(Origin::None),
                 message: "Expected '}'".to_string(),
             },
         }

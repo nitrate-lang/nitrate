@@ -60,7 +60,7 @@ impl FormattableDiagnosticGroup for Issue {
                 );
 
                 nitrate_diagnosis::DiagnosticInfo {
-                    origin: nitrate_diagnosis::Origin::Unknown,
+                    origin: nitrate_diagnosis::Origin::None,
                     message,
                 }
             }
@@ -75,13 +75,13 @@ impl FormattableDiagnosticGroup for Issue {
                 );
 
                 nitrate_diagnosis::DiagnosticInfo {
-                    origin: nitrate_diagnosis::Origin::Unknown,
+                    origin: nitrate_diagnosis::Origin::None,
                     message,
                 }
             }
 
             Issue::UninferredTypeResidue => nitrate_diagnosis::DiagnosticInfo {
-                origin: nitrate_diagnosis::Origin::Unknown,
+                origin: nitrate_diagnosis::Origin::None,
                 message: "Type residue was not inferred correctly.".to_string(),
             },
 
@@ -93,7 +93,7 @@ impl FormattableDiagnosticGroup for Issue {
                 );
 
                 nitrate_diagnosis::DiagnosticInfo {
-                    origin: nitrate_diagnosis::Origin::Unknown,
+                    origin: nitrate_diagnosis::Origin::None,
                     message,
                 }
             }
@@ -107,7 +107,7 @@ impl FormattableDiagnosticGroup for Issue {
                 );
 
                 nitrate_diagnosis::DiagnosticInfo {
-                    origin: nitrate_diagnosis::Origin::Unknown,
+                    origin: nitrate_diagnosis::Origin::None,
                     message,
                 }
             }
@@ -119,7 +119,7 @@ impl FormattableDiagnosticGroup for Issue {
                 );
 
                 nitrate_diagnosis::DiagnosticInfo {
-                    origin: nitrate_diagnosis::Origin::Unknown,
+                    origin: nitrate_diagnosis::Origin::None,
                     message,
                 }
             }
