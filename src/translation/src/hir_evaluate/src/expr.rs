@@ -480,8 +480,8 @@ impl HirEvaluate for Value {
             Value::List { elements } => {
                 let mut evaluated_elements = Vec::with_capacity(elements.len());
                 for element in &**elements {
-                    let evaluated_element = element.evaluate(ctx)?;
-                    evaluated_elements.push(evaluated_element);
+                    let evaluated_element = element.borrow().evaluate(ctx)?;
+                    evaluated_elements.push(evaluated_element.into());
                 }
 
                 Ok(Value::List {
@@ -492,8 +492,8 @@ impl HirEvaluate for Value {
             Value::Tuple { elements } => {
                 let mut evaluated_elements = Vec::with_capacity(elements.len());
                 for element in &**elements {
-                    let evaluated_element = element.evaluate(ctx)?;
-                    evaluated_elements.push(evaluated_element);
+                    let evaluated_element = element.borrow().evaluate(ctx)?;
+                    evaluated_elements.push(evaluated_element.into());
                 }
 
                 Ok(Value::Tuple {

@@ -293,36 +293,47 @@ impl HindleyMilner {
                 self.visit(right);
             }
 
-            Value::Unary { op, operand } => {
-                // TODO: Recurse
+            Value::Unary { operand, op: _ } => {
+                self.visit(operand);
             }
 
-            Value::FieldAccess { expr, field_name } => {
-                // TODO: Recurse
+            Value::FieldAccess {
+                expr,
+                field_name: _,
+            } => {
+                self.visit(expr);
             }
 
             Value::Assign { place, value } => {
-                // TODO: Recurse
+                self.visit(place);
+                self.visit(value);
             }
 
             Value::Deref { place } => {
-                // TODO: Recurse
+                self.visit(place);
             }
 
             Value::Cast { value, target_type } => {
-                // TODO: Recurse
+                self.constraints
+                    .entry(value.clone())
+                    .or_default()
+                    .insert(TypeConstraint::Equal(target_type.clone()));
+
+                self.visit(value);
             }
 
             Value::Borrow {
-                exclusive,
-                mutable,
+                exclusive: _,
+                mutable: _,
                 place,
             } => {
-                // TODO: Recurse
+                self.visit(place);
             }
 
             Value::List { elements } => {
-                // TODO: Recurse
+                for element in elements {
+                    self.visit(element);
+                }
             }
 
             Value::Tuple { elements } => {

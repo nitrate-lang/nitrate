@@ -83,7 +83,7 @@ impl Ast2Hir for ast::List {
         let mut elements = Vec::with_capacity(self.elements.len());
         for element in self.elements {
             let hir_element = element.ast2hir(ctx, log)?;
-            elements.push(hir_element);
+            elements.push(hir_element.into());
         }
 
         Ok(Value::List {
@@ -99,7 +99,7 @@ impl Ast2Hir for ast::Tuple {
         let mut elements = Vec::with_capacity(self.elements.len());
         for element in self.elements {
             let hir_element = element.ast2hir(ctx, log)?;
-            elements.push(hir_element);
+            elements.push(hir_element.into());
         }
 
         Ok(Value::Tuple {

@@ -1484,7 +1484,7 @@ fn gen_rval_borrow<'ctx>(
 
 fn gen_rval_list<'ctx>(
     ctx: &mut CodegenCtx<'ctx, '_, '_, '_, '_>,
-    elements: &[hir::Value],
+    elements: &[hir::ValueId],
 ) -> BasicValueEnum<'ctx> {
     if elements.is_empty() {
         // TODO: implement empty list codegen
@@ -1493,7 +1493,7 @@ fn gen_rval_list<'ctx>(
 
     let mut llvm_elements = Vec::new();
     for element in elements {
-        let llvm_element = gen_rval(ctx, element);
+        let llvm_element = gen_rval(ctx, &element.borrow());
         llvm_elements.push(llvm_element);
     }
 
@@ -1527,7 +1527,7 @@ fn gen_rval_list<'ctx>(
 
 fn gen_rval_tuple<'ctx>(
     ctx: &mut CodegenCtx<'ctx, '_, '_, '_, '_>,
-    elements: &[hir::Value],
+    elements: &[hir::ValueId],
 ) -> BasicValueEnum<'ctx> {
     if elements.is_empty() {
         return gen_rval_lit_unit(ctx);
@@ -1536,7 +1536,7 @@ fn gen_rval_tuple<'ctx>(
     let mut llvm_elements = Vec::new();
     let mut llvm_elements_types = Vec::new();
     for element in elements {
-        let llvm_element = gen_rval(ctx, element);
+        let llvm_element = gen_rval(ctx, &element.borrow());
         llvm_elements_types.push(llvm_element.get_type());
         llvm_elements.push(llvm_element);
     }

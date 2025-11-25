@@ -258,13 +258,19 @@ impl ValueIter<'_> {
 
             Value::List { elements } => {
                 for element in elements {
-                    element.iter().try_for_each(vcb, tcb, visited)?;
+                    element
+                        .borrow_mut()
+                        .iter()
+                        .try_for_each(vcb, tcb, visited)?;
                 }
             }
 
             Value::Tuple { elements } => {
                 for element in elements {
-                    element.iter().try_for_each(vcb, tcb, visited)?;
+                    element
+                        .borrow_mut()
+                        .iter()
+                        .try_for_each(vcb, tcb, visited)?;
                 }
             }
 

@@ -119,13 +119,13 @@ impl ValueIterMut<'_> {
 
             Value::List { elements } => {
                 for element in elements {
-                    element.iter_mut().try_for_each_mut(vcb)?;
+                    element.borrow_mut().iter_mut().try_for_each_mut(vcb)?;
                 }
             }
 
             Value::Tuple { elements } => {
                 for element in elements {
-                    element.iter_mut().try_for_each_mut(vcb)?;
+                    element.borrow_mut().iter_mut().try_for_each_mut(vcb)?;
                 }
             }
 

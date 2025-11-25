@@ -191,7 +191,7 @@ impl HirGetType for Value {
                 let element_type = if elements.is_empty() {
                     Type::Unit.into()
                 } else {
-                    elements[0].determine_type()?.into()
+                    elements[0].borrow().determine_type()?.into()
                 };
 
                 let array = Type::Array {
@@ -205,7 +205,7 @@ impl HirGetType for Value {
             Value::Tuple { elements } => {
                 let mut element_types = Vec::with_capacity(elements.len());
                 for elem in elements {
-                    let elem_type = elem.determine_type()?.into();
+                    let elem_type = elem.borrow().determine_type()?.into();
                     element_types.push(elem_type);
                 }
 
