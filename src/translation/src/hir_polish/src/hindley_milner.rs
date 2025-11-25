@@ -3,7 +3,10 @@ use nitrate_diagnosis::CompilerLog;
 use nitrate_hir::{BlockElement, Function, GlobalVariable, PtrSize, Type, TypeId, Value, ValueId};
 use nitrate_hir_get_type::HirGetType;
 use ordered_float::OrderedFloat;
-use std::collections::{HashMap, HashSet};
+use std::{
+    collections::{HashMap, HashSet},
+    ops::Deref,
+};
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 enum TypeConstraint {
@@ -273,8 +276,21 @@ impl HindleyMilner {
                 // TODO: Recurse
             }
 
-            Value::Binary { left, op, right } => {
-                // TODO: Recurse
+            Value::Binary { left, op: _, right } => {
+                if let Some(constraints) = self.constraints.get(e).cloned() {
+                    self.constraints
+                        .entry(left.clone())
+                        .or_default()
+                        .extend(constraints.clone());
+
+                    self.constraints
+                        .entry(right.clone())
+                        .or_default()
+                        .extend(constraints);
+                }
+
+                self.visit(left);
+                self.visit(right);
             }
 
             Value::Unary { op, operand } => {
@@ -349,7 +365,9 @@ impl HindleyMilner {
             }
 
             Value::Block { block } => {
-                // TODO: Recurse
+                for element in &mut block.borrow_mut().elements {
+                    self.visit_block_element(element);
+                }
             }
 
             Value::Closure { captures, callee } => {
@@ -406,6 +424,34 @@ impl HindleyMilner {
         }
     }
 
+    fn visit_block_element(&mut self, element: &mut BlockElement) {
+        match element {
+            BlockElement::Expr(e) => self.visit(e),
+
+            BlockElement::Local(local_var) => {
+                if local_var.borrow().ty.is_inferred() {
+                    let initializer_type = local_var.borrow().initializer.borrow().determine_type();
+
+                    if let Ok(type_constraint) = initializer_type {
+                        local_var.borrow_mut().ty = type_constraint.into();
+                    } else if let Err(_) = initializer_type {
+                        // Type determination failed
+                    }
+                } else {
+                    let value = local_var.borrow().initializer.clone();
+                    let ty = local_var.borrow().ty.clone();
+
+                    self.constraints
+                        .entry(value)
+                        .or_default()
+                        .insert(TypeConstraint::Equal(ty));
+                }
+
+                self.visit(&local_var.borrow().initializer);
+            }
+        }
+    }
+
     pub fn solve_function(&mut self, function: &mut Function, log: &CompilerLog) -> Result<(), ()> {
         if let Some(body) = &mut function.body {
             self.function_return_type = Some(function.return_type);
@@ -414,32 +460,7 @@ impl HindleyMilner {
                 let prev_constraints_len = self.constraints.len();
 
                 for element in body.iter_mut() {
-                    match element {
-                        BlockElement::Expr(e) => self.visit(e),
-
-                        BlockElement::Local(local_var) => {
-                            if local_var.borrow().ty.is_inferred() {
-                                let initializer_type =
-                                    local_var.borrow().initializer.borrow().determine_type();
-
-                                if let Ok(type_constraint) = initializer_type {
-                                    local_var.borrow_mut().ty = type_constraint.into();
-                                } else if let Err(_) = initializer_type {
-                                    // Type determination failed
-                                }
-                            } else {
-                                let value = local_var.borrow().initializer.clone();
-                                let ty = local_var.borrow().ty.clone();
-
-                                self.constraints
-                                    .entry(value)
-                                    .or_default()
-                                    .insert(TypeConstraint::Equal(ty));
-                            }
-
-                            self.visit(&local_var.borrow().initializer);
-                        }
-                    }
+                    self.visit_block_element(element);
                 }
 
                 if self.constraints.len() == prev_constraints_len {
