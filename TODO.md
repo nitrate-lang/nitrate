@@ -1,0 +1,83 @@
+# Project TODOs
+
+- [ ] Language Features
+  - [ ] Expressions
+    - [ ] Leaf expressions
+      - [ ] Unit
+      - [ ] bool
+      - [ ] i8, i16, i32, i64, i128
+      - [ ] u8, u16, u32, u64, u128
+      - [ ] usize
+      - [ ] f32, f64
+      - [ ] String literals
+      - [ ] Byte string literals
+    - [ ] Struct object
+    - [ ] Enum object
+    - [ ] Binary expressions
+      - [ ] Add `+`
+      - [ ] Sub `-`
+      - [ ] Mul `*`
+      - [ ] Div `/`
+      - [ ] Mod `%`
+      - [ ] And `&`
+      - [ ] Or `|`
+      - [ ] Xor `^`
+      - [ ] Shl `<<`
+      - [ ] Shr `>>`
+      - [ ] Rol `<<<`
+      - [ ] Ror `>>>`
+      - [ ] LogicAnd `&&`
+      - [ ] LogicOr `||`
+      - [ ] Lt `<`
+      - [ ] Gt `>`
+      - [ ] Lte `<=`
+      - [ ] Gte `>=`
+      - [ ] Eq `==`
+      - [ ] Ne `!=`
+    - [ ] Unary expressions
+      - [ ] Add `+`
+      - [ ] Sub `-`
+      - [ ] Not `!`
+    - [ ] Field access
+    - [ ] Assignment
+    - [ ] Dereference
+    - [ ] Cast
+      - [ ] Integer to integer
+      - [ ] Integer to float
+      - [ ] Float to float
+      - [ ] Float to integer
+      - [ ] User defined casts
+    - [ ] Borrowing
+    - [ ] Lists
+    - [ ] Tuples
+    - [ ] If expressions
+    - [ ] While loops
+    - [ ] Loop expressions
+    - [ ] Break expressions
+    - [ ] Continue expressions
+    - [ ] Return expressions
+    - [ ] Block expressions
+    - [ ] Function calls
+    - [ ] Method calls
+    - [ ] Closures
+  - [ ] Items
+    - [ ] Local variables
+    - [ ] Global variables
+    - [ ] Functions
+      - [ ] Internal Declarations
+        - [ ] Generic functions
+      - [ ] Definitions
+        - [ ] Generic functions
+    - [ ] Struct definitions
+      - [ ] Generic structs
+    - [ ] Enum definitions
+      - [ ] Generic enums
+    - [ ] Trait definitions
+      - [ ] Generic traits
+    - [ ] Impl blocks
+    - [ ] Use statements
+    - [ ] Modules
+  - [ ] Type System
+    - [ ] Hindley-Milner type inference
+    - [ ] Borrow check
+    - [ ] Lifetimes
