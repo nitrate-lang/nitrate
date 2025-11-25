@@ -14,7 +14,7 @@ use slog::error;
 #[command(about, long_about = None)]
 pub(crate) struct ParseArgs {
     /// Format mode for printed output
-    #[arg(long, value_parser = ["minify", "pretty"])]
+    #[arg(long, value_parser = ["minify", "pretty", "source"])]
     format_mode: Option<String>,
 }
 
@@ -91,6 +91,10 @@ impl Interpreter<'_> {
                         Some(mode) if mode == "pretty" => {
                             serde_json::to_writer_pretty(&mut std::io::stdout(), &ast_root)
                                 .expect("Failed to write AST to stdout");
+                        }
+
+                        Some(mode) if mode == "source" => {
+                            println!("{}", ast_root);
                         }
 
                         _ => {
