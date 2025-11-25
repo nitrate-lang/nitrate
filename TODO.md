@@ -1,5 +1,7 @@
 # Project TODOs
 
+Do not checkmark a feature until it is fully implemented and extensive tests have been written and passed.
+
 - [ ] Language Features
   - [ ] Expressions
     - [ ] Leaf expressions
