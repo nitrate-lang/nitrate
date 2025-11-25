@@ -1,4 +1,5 @@
 use crate::prelude::*;
+use nitrate_nstring::NString;
 use serde::{Deserialize, Serialize};
 use thin_vec::ThinVec;
 
@@ -9,9 +10,11 @@ pub enum Item {
     },
 
     Module {
+        /* $ mod $ <attributes>? $ <name> $ {}*/
         source_offset: u32,
         trivia: [Trivia; 4],
         attributes: ThinVec<ExprId>,
+        name: NString,
         items: ThinVec<ItemId>,
     },
 }
