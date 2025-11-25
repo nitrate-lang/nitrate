@@ -168,12 +168,22 @@ impl<'a> Lexer<'a> {
                 fileid: current.fileid.clone(),
             };
         } else {
-            self.internal_getc_pos = SourcePosition {
-                line: current.line,
-                column: current.column + 1,
-                offset: current.offset + 1,
-                fileid: current.fileid.clone(),
-            };
+            let utf8_end = (byte & 0x80) == 0 || (byte & 0xC0) == 0xC0;
+            if utf8_end {
+                self.internal_getc_pos = SourcePosition {
+                    line: current.line,
+                    column: current.column + 1,
+                    offset: current.offset + 1,
+                    fileid: current.fileid.clone(),
+                };
+            } else {
+                self.internal_getc_pos = SourcePosition {
+                    line: current.line,
+                    column: current.column,
+                    offset: current.offset + 1,
+                    fileid: current.fileid.clone(),
+                };
+            }
         }
 
         byte
