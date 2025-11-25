@@ -23,11 +23,10 @@ impl Trivia {
 
     pub fn tokens_iter<'a>(
         &self,
-        full_source: &'a str,
+        full_source: &'a [u8],
         fileid: Option<FileId>,
     ) -> impl Iterator<Item = Token> {
-        let mut lexer =
-            Lexer::new(full_source.as_bytes(), fileid.clone()).expect("failed to create lexer");
+        let mut lexer = Lexer::new(full_source, fileid.clone()).expect("failed to create lexer");
 
         lexer.rewind(SourcePosition {
             line: 0,
@@ -42,7 +41,13 @@ impl Trivia {
         LexerIterator::new(lexer)
             .map(|annotated_token: AnnotatedToken| annotated_token.token)
             .take_while(|token: &Token| match token {
-                Token::Comment(_) => true,
+                Token::Comment(_)
+                | Token::HorizontalTab
+                | Token::NewLine
+                | Token::VerticalTab
+                | Token::FormFeed
+                | Token::CarriageReturn
+                | Token::Space => true,
                 _ => false,
             })
     }

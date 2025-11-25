@@ -21,8 +21,8 @@ impl<'a, 'log> Parser<'a, 'log> {
         let mut items = Vec::new();
 
         loop {
-            let leading_trivia = self.consume_trivia();
-            match self.parse_item(leading_trivia) {
+            let trivia = self.consume_trivia();
+            match self.parse_item(trivia) {
                 Some(item) => items.push(item.into()),
                 None => break,
             }
@@ -35,6 +35,7 @@ impl<'a, 'log> Parser<'a, 'log> {
 
     pub(crate) fn consume_trivia(&mut self) -> Option<Trivia> {
         let start_offset = self.lexer.peek().map(|t| t.start_offset)?;
+        let mut found = false;
 
         while let Some(token) = self.lexer.peek() {
             match token.token {
@@ -46,11 +47,15 @@ impl<'a, 'log> Parser<'a, 'log> {
                 | Token::CarriageReturn
                 | Token::Space => {
                     self.lexer.next();
+                    found = true;
                 }
                 _ => break,
             }
         }
 
-        Some(Trivia::new(start_offset))
+        match found {
+            false => None,
+            true => Some(Trivia::new(start_offset)),
+        }
     }
 }

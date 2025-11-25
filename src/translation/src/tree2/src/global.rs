@@ -3,7 +3,7 @@ use std::cell::Cell;
 use nitrate_diagnosis::FileId;
 
 pub struct GlobalSource<'a> {
-    pub full_source: &'a str,
+    pub full_source: &'a [u8],
     pub fileid: Option<FileId>,
 }
 
