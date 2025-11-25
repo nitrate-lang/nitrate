@@ -164,6 +164,13 @@ pub enum Token {
     BString(Vec<u8>),
     Comment(Comment),
 
+    HorizontalTab,
+    NewLine,
+    VerticalTab,
+    FormFeed,
+    CarriageReturn,
+    Space,
+
     /// '''
     SingleQuote,
     /// ';'
@@ -354,6 +361,12 @@ impl std::fmt::Display for Token {
             Token::String(s) => write!(f, "\"{s}\""),
             Token::BString(s) => write!(f, "{s:?}"),
             Token::Comment(c) => write!(f, "{c}"),
+            Token::HorizontalTab => write!(f, "\\t"),
+            Token::NewLine => write!(f, "\\n"),
+            Token::VerticalTab => write!(f, "\\v"),
+            Token::FormFeed => write!(f, "\\f"),
+            Token::CarriageReturn => write!(f, "\\r"),
+            Token::Space => write!(f, " "),
 
             Token::SingleQuote => write!(f, "'"),
             Token::Semi => write!(f, ";"),

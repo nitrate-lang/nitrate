@@ -18,7 +18,6 @@ pub struct Lexer<'a> {
     internal_getc_pos: SourcePosition,
     current_pos: SourcePosition,
     preread_token: Option<AnnotatedToken>,
-    skip_comments: bool,
 }
 
 enum StringEscape {
@@ -58,13 +57,8 @@ impl<'a> Lexer<'a> {
                     fileid: fileid.clone(),
                 },
                 preread_token: None,
-                skip_comments: false,
             })
         }
-    }
-
-    pub fn set_skip_comments(&mut self, skip: bool) {
-        self.skip_comments = skip;
     }
 
     pub fn next_tok(&mut self) -> AnnotatedToken {
@@ -819,7 +813,7 @@ impl<'a> Lexer<'a> {
     }
 
     #[inline(always)]
-    fn parse_operator_or_punctuation(&mut self) -> Result<Token, ()> {
+    fn parse_single_byte(&mut self) -> Result<Token, ()> {
         let start_pos = self.internal_getc_pos.clone();
 
         let b = self.peek_byte()?;
@@ -851,6 +845,12 @@ impl<'a> Lexer<'a> {
             b'/' => Some(Token::Slash),
             b'^' => Some(Token::Caret),
             b'%' => Some(Token::Percent),
+            b'\t' => Some(Token::HorizontalTab),
+            b'\n' => Some(Token::NewLine),
+            b'\x0b' => Some(Token::VerticalTab),
+            b'\x0c' => Some(Token::FormFeed),
+            b'\r' => Some(Token::CarriageReturn),
+            b' ' => Some(Token::Space),
             _ => None,
         };
 
@@ -870,8 +870,6 @@ impl<'a> Lexer<'a> {
 
     #[inline(always)]
     fn parse_next_token(&mut self) -> AnnotatedToken {
-        self.read_while(|b| b.is_ascii_whitespace());
-
         let start_pos = self.internal_getc_pos.clone();
 
         let token = match self.peek_byte() {
@@ -886,14 +884,10 @@ impl<'a> Lexer<'a> {
                 b if b.is_ascii_digit() => self.parse_number(),
                 b'"' => self.parse_string(),
                 b'#' => self.parse_comment(),
-                _ => self.parse_operator_or_punctuation(),
+                _ => self.parse_single_byte(),
             },
         }
         .unwrap_or(Token::Eof);
-
-        if self.skip_comments && matches!(token, Token::Comment(_)) {
-            return self.parse_next_token();
-        }
 
         let end_pos = self.internal_getc_pos.clone();
 
