@@ -6,7 +6,7 @@ use nitrate_token::{AnnotatedToken, Token};
 use nitrate_tree2::prelude::*;
 
 impl Parser<'_, '_> {
-    fn parse_attribute_list(&mut self, leading: Option<Trivia>) -> Option<AttributeList> {
+    fn parse_attribute_list(&mut self, leading: Trivia) -> Option<AttributeList> {
         let open_bracket_token = match self.lexer.peek()? {
             AnnotatedToken {
                 token: Token::OpenBracket,
@@ -27,16 +27,14 @@ impl Parser<'_, '_> {
 
             return Some(AttributeList {
                 source_offset: open_bracket_token.start_offset,
-                trivia: leading,
+                trivia: [leading],
                 attributes: attributes.into(),
             });
         }
 
         loop {
-            let trivia = self.consume_trivia();
-
             // Parse attribute expression
-            match self.parse_expression(trivia) {
+            match self.parse_expression() {
                 Some(expr) => attributes.push(expr.into()),
                 None => {
                     let issue = SyntaxErr::ExpectedAttributeExpression {
@@ -79,17 +77,24 @@ impl Parser<'_, '_> {
 
         Some(AttributeList {
             source_offset: open_bracket_token.start_offset,
-            trivia: leading,
+            trivia: [leading],
             attributes: attributes.into(),
         })
     }
 
-    fn parse_module(&mut self, leading: Option<Trivia>) -> Option<Item> {
+    fn parse_module(&mut self, leading: Trivia) -> Option<Item> {
         // Consume 'mod' token
         let mod_token = self.lexer.next()?;
-        let attribute_trivia = self.consume_trivia();
-        let attributes = self.parse_attribute_list(attribute_trivia);
-        let trivia_1 = self.consume_trivia();
+
+        // Parse optional attribute list
+        let attribute_list_trivia =
+            self.consume_while(|t| !matches!(t.token, Token::OpenBracket | Token::Name(_)));
+        let attribute_list = self.parse_attribute_list(attribute_list_trivia);
+
+        let trivia_1 = match attribute_list {
+            Some(_) => self.consume_while(|t| !matches!(t.token, Token::Name(_))),
+            None => attribute_list_trivia,
+        };
 
         // Expect module name
         let name: NString = match self.lexer.peek().cloned() {
@@ -116,14 +121,19 @@ impl Parser<'_, '_> {
             }
         };
 
-        let trivia_2 = self.consume_trivia();
+        let trivia_2 = self.consume_while(|t| !matches!(t.token, Token::OpenBrace));
+
+        let mut present = ItemModulePresent::empty();
 
         // Expect '{'
-        match self.lexer.next() {
+        match self.lexer.peek() {
             Some(AnnotatedToken {
                 token: Token::OpenBrace,
                 ..
-            }) => {}
+            }) => {
+                self.lexer.next(); // Consume '{'
+                present.insert(ItemModulePresent::OPEN_BRACE_PRESENT);
+            }
 
             Some(token) => {
                 let issue = SyntaxErr::ExpectedOpenBrace {
@@ -141,8 +151,7 @@ impl Parser<'_, '_> {
         // Parse module items
         let mut items = Vec::new();
         loop {
-            let trivia = self.consume_trivia();
-            if let Some(item) = self.parse_item(trivia) {
+            if let Some(item) = self.parse_item() {
                 items.push(item.into());
             } else {
                 break;
@@ -150,11 +159,14 @@ impl Parser<'_, '_> {
         }
 
         // Expect '}'
-        match self.lexer.next() {
+        match self.lexer.peek() {
             Some(AnnotatedToken {
                 token: Token::CloseBrace,
                 ..
-            }) => {}
+            }) => {
+                self.lexer.next(); // Consume '}'
+                present.insert(ItemModulePresent::CLOSE_BRACE_PRESENT);
+            }
 
             Some(token) => {
                 let issue = SyntaxErr::ExpectedCloseBrace {
@@ -171,16 +183,19 @@ impl Parser<'_, '_> {
 
         Some(Item::Module {
             source_offset: mod_token.start_offset,
+            present,
             trivia: [leading, trivia_1, trivia_2],
-            attributes: attributes.into(),
+            attributes: attribute_list.into(),
             name,
             items: items.into(),
         })
     }
 
-    pub fn parse_item(&mut self, leading: Option<Trivia>) -> Option<Item> {
+    pub fn parse_item(&mut self) -> Option<Item> {
+        let trivia = self.consume_trivia();
+
         match self.lexer.peek()?.token {
-            Token::Mod => self.parse_module(leading),
+            Token::Mod => self.parse_module(trivia),
 
             _ => {
                 // TODO: Implement item parsing

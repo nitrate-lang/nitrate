@@ -15,4 +15,3 @@ nitrate_tree2 = { path = "../tree2" }
 log = "0.4.27"
 ordered-float = "5.0.0"
 spdx = "0.12.0"
-bitflags = "2.10"

@@ -1,5 +1,5 @@
 use nitrate_diagnosis::CompilerLog;
-use nitrate_token::Token;
+use nitrate_token::{AnnotatedToken, Token};
 use nitrate_token_lexer::{Lexer, LexerIterator};
 use nitrate_tree2::prelude::*;
 use std::iter::Peekable;
@@ -21,8 +21,7 @@ impl<'a, 'log> Parser<'a, 'log> {
         let mut items = Vec::new();
 
         loop {
-            let trivia = self.consume_trivia();
-            match self.parse_item(trivia) {
+            match self.parse_item() {
                 Some(item) => items.push(item.into()),
                 None => break,
             }
@@ -33,29 +32,55 @@ impl<'a, 'log> Parser<'a, 'log> {
         }
     }
 
-    pub(crate) fn consume_trivia(&mut self) -> Option<Trivia> {
-        let start_offset = self.lexer.peek().map(|t| t.start_offset)?;
-        let mut found = false;
+    pub(crate) fn consume_trivia(&mut self) -> Trivia {
+        let start_offset = match self.lexer.peek().map(|t| t.start_offset) {
+            Some(offset) => offset,
+            None => return Trivia::default(),
+        };
+
+        let mut end_offset = start_offset;
 
         while let Some(token) = self.lexer.peek() {
-            match token.token {
-                Token::Comment(_)
-                | Token::HorizontalTab
-                | Token::NewLine
-                | Token::VerticalTab
-                | Token::FormFeed
-                | Token::CarriageReturn
-                | Token::Space => {
+            match token {
+                AnnotatedToken {
+                    token:
+                        Token::Comment(_)
+                        | Token::HorizontalTab
+                        | Token::NewLine
+                        | Token::VerticalTab
+                        | Token::FormFeed
+                        | Token::CarriageReturn
+                        | Token::Space,
+                    ..
+                } => {
+                    end_offset = token.end_offset;
                     self.lexer.next();
-                    found = true;
                 }
+
                 _ => break,
             }
         }
 
-        match found {
-            false => None,
-            true => Some(Trivia::new(start_offset)),
+        Trivia::new(start_offset, end_offset - start_offset)
+    }
+
+    pub(crate) fn consume_while(&mut self, f: impl Fn(&AnnotatedToken) -> bool) -> Trivia {
+        let start_offset = match self.lexer.peek().map(|t| t.start_offset) {
+            Some(offset) => offset,
+            None => return Trivia::default(),
+        };
+
+        let mut end_offset = start_offset;
+
+        while let Some(token) = self.lexer.peek() {
+            if f(token) {
+                end_offset = token.end_offset;
+                self.lexer.next();
+            } else {
+                break;
+            }
         }
+
+        Trivia::new(start_offset, end_offset - start_offset)
     }
 }

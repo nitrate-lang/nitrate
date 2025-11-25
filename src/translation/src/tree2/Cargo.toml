@@ -14,3 +14,4 @@ ordered-float = "5.0.0"
 serde = { version = "1.0.219", features = ["derive", "rc"] }
 append-only-vec = "0.1"
 thin-vec = "0.2"
+bitflags = "2.10"

@@ -914,6 +914,7 @@ name = "nitrate_tree2"
 version = "0.1.0"
 dependencies = [
  "append-only-vec",
+ "bitflags 2.10.0",
  "nitrate_diagnosis",
  "nitrate_nstring",
  "nitrate_token",
@@ -941,7 +942,6 @@ dependencies = [
 name = "nitrate_tree_parse2"
 version = "0.1.0"
 dependencies = [
- "bitflags 2.10.0",
  "log",
  "nitrate_diagnosis",
  "nitrate_nstring",
