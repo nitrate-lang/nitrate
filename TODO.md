@@ -17,6 +17,107 @@ Do not checkmark a feature until it is fully implemented and extensive tests hav
   - [x] Punctuation
   - [x] Comments
 
+- [ ] Concrete Syntax Tree (CST) Data Structure
+
+  - [ ] Expressions
+    - [ ] Literals
+      - [ ] Unit
+      - [ ] Boolean
+      - [ ] Number
+        - [ ] Integer
+        - [ ] Float
+      - [ ] String
+      - [ ] Byte string
+      - [ ] Literal suffixes
+    - [ ] Struct initializers
+    - [ ] Enum initializers
+    - [ ] Binary expressions
+      - [ ] Add `+`
+      - [ ] Sub `-`
+      - [ ] Mul `*`
+      - [ ] Div `/`
+      - [ ] Mod `%`
+      - [ ] And `&`
+      - [ ] Or `|`
+      - [ ] Xor `^`
+      - [ ] Shl `<<`
+      - [ ] Shr `>>`
+      - [ ] Rol `<<<`
+      - [ ] Ror `>>>`
+      - [ ] LogicAnd `&&`
+      - [ ] LogicOr `||`
+      - [ ] Lt `<`
+      - [ ] Gt `>`
+      - [ ] Lte `<=`
+      - [ ] Gte `>=`
+      - [ ] Eq `==`
+      - [ ] Ne `!=`
+    - [ ] Unary expressions
+      - [ ] Add `+`
+      - [ ] Sub `-`
+      - [ ] Not `!`
+    - [ ] Get type of via `typeof`
+    - [ ] Inline type via `type { ... }`
+    - [ ] Field access
+    - [ ] Indexing
+    - [ ] Assignment
+    - [ ] Dereference
+    - [ ] Cast via `as`
+    - [ ] Borrowing
+    - [ ] Lists
+    - [ ] Tuples
+    - [ ] If branches
+      - [ ] Else-if branches
+    - [ ] For loops
+    - [ ] While loops
+    - [ ] Do-while loops
+    - [ ] Loop expressions
+    - [ ] Do async blocks
+    - [ ] Match expressions
+    - [ ] Break expressions
+    - [ ] Continue expressions
+    - [ ] Return expressions
+    - [ ] Await expressions
+    - [ ] Block expressions
+    - [ ] Function calls
+    - [ ] Method calls
+    - [ ] Closures
+    - [ ] Macro calls
+    - [ ] Inline assembly
+  - [ ] Statements
+    - [ ] Expression statements
+    - [ ] Let declarations
+      - [ ] Let-else syntax
+    - [ ] Const declarations
+    - [ ] Static declarations
+    - [ ] Use statements
+    - [ ] Item declarations
+  - [ ] Items
+    - [ ] Modules
+    - [ ] Extern crate declarations
+    - [ ] Use statements
+    - [ ] Functions
+      - [ ] Declarations
+        - [ ] Generics
+      - [ ] Definitions
+        - [ ] Generics
+    - [ ] Type alias
+      - [ ] Generics
+    - [ ] Struct definitions
+      - [ ] Generics
+    - [ ] Enum definitions
+      - [ ] Generics
+    - [ ] Union definitions
+      - [ ] Generics
+    - [ ] Global const variables
+    - [ ] Global static variables
+    - [ ] Trait definitions
+      - [ ] Generics
+    - [ ] Impl blocks
+      - [ ] Generics
+    - [ ] Extern blocks
+  - [ ] Patterns
+
 - [ ] Parser
 
   - [ ] Expressions
