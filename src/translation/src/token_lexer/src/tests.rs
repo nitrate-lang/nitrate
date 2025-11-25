@@ -4,9 +4,10 @@ mod tests {
 
     use crate::{Lexer, LexerIterator};
     use nitrate_token::{AnnotatedToken, Comment, CommentKind, Integer, IntegerKind, Token};
+    use ordered_float::NotNan;
 
-    fn lexical_equate(keyword: &str, token: Token) {
-        let lexer = Lexer::new(keyword.as_bytes(), None).expect("source is too big");
+    fn lexical_equate(source: &str, token: Token) {
+        let lexer = Lexer::new(source.as_bytes(), None).expect("source is too big");
         let mut iter = LexerIterator::new(lexer);
         let first_token = iter.next().expect("should have at least one token");
 
@@ -18,12 +19,12 @@ mod tests {
                 start_column: 0,
                 start_offset: 0,
                 end_line: 0,
-                end_column: keyword.len() as u32,
-                end_offset: keyword.len() as u32,
+                end_column: source.len() as u32,
+                end_offset: source.len() as u32,
                 fileid: None
             },
             "Keyword '{}' was not recognized correctly",
-            keyword
+            source
         );
         assert!(iter.next().is_none(), "should be no more tokens");
     }
@@ -473,18 +474,96 @@ mod tests {
     }
 
     #[test]
-    fn test_lexer_iterator_float_literal() {
-        // TODO: Implement float literal tests
+    fn test_lexer_iterator_float_literal_decimal() {
+        lexical_equate("123.456", Token::Float(NotNan::new(123.456).unwrap()));
+        lexical_equate("0.0", Token::Float(NotNan::new(0.0).unwrap()));
     }
 
     #[test]
-    fn test_lexer_iterator_string_literal() {
-        // TODO: Implement string literal tests
+    fn test_lexer_iterator_float_literal_scientific_notation() {
+        lexical_equate(
+            "3.4028235e+38",
+            Token::Float(NotNan::new(3.4028235e+38).unwrap()),
+        );
+
+        lexical_equate(
+            "1.7976931348623157e+308",
+            Token::Float(NotNan::new(1.7976931348623157e+308).unwrap()),
+        );
+    }
+
+    #[test]
+    fn test_lexer_iterator_string_literal_ascii() {
+        lexical_equate("\"\"", Token::String("".into()));
+        lexical_equate("\"Hello, World!\"", Token::String("Hello, World!".into()));
+    }
+
+    #[test]
+    fn test_lexer_iterator_string_literal_utf8() {
+        let source = "\"π_ρογρ🎄αμματι\t\nσμός🔥\"";
+        let lexer = Lexer::new(source.as_bytes(), None).expect("source is too big");
+        let mut iter = LexerIterator::new(lexer);
+        let first_token = iter.next().expect("should have at least one token");
+        assert_eq!(
+            first_token,
+            AnnotatedToken {
+                token: Token::String("π_ρογρ🎄αμματι\t\nσμός🔥".into()),
+                start_line: 0,
+                start_column: 0,
+                start_offset: 0,
+                end_line: 1,
+                end_column: 6,
+                end_offset: 43,
+                fileid: None
+            }
+        );
+        assert!(iter.next().is_none(), "should be no more tokens");
+    }
+
+    #[test]
+    fn test_lexer_iterator_string_literal_escape_sequences() {
+        let source = r#""\0\a\b\t\n\v\f\r\\\'\"\x41\o453\u{1F600}""#;
+        let lexer = Lexer::new(source.as_bytes(), None).expect("source is too big");
+        let mut iter = LexerIterator::new(lexer);
+        let first_token = iter.next().expect("should have at least one token");
+        assert_eq!(
+            first_token,
+            AnnotatedToken {
+                token: Token::String("\0\u{7}\u{8}\t\n\u{b}\u{c}\r\\'\"A+😀".into()),
+                start_line: 0,
+                start_column: 0,
+                start_offset: 0,
+                end_line: 0,
+                end_column: 42,
+                end_offset: 42,
+                fileid: None
+            }
+        );
+        assert!(iter.next().is_none(), "should be no more tokens");
     }
 
     #[test]
     fn test_lexer_iterator_byte_string_literal() {
-        // TODO: Implement byte string literal tests
+        let source = r#""\x9b\xeb\xdd\x44\xde\x13\xfd\x17\x97\xac\xf9\xe5\x4d\xb2\x78\xcd""#;
+        let lexer = Lexer::new(source.as_bytes(), None).expect("source is too big");
+        let mut iter = LexerIterator::new(lexer);
+        let first_token = iter.next().expect("should have at least one token");
+        assert_eq!(
+            first_token,
+            AnnotatedToken {
+                token: Token::BString(
+                    b"\x9b\xeb\xdd\x44\xde\x13\xfd\x17\x97\xac\xf9\xe5\x4d\xb2\x78\xcd".into()
+                ),
+                start_line: 0,
+                start_column: 0,
+                start_offset: 0,
+                end_line: 0,
+                end_column: 66,
+                end_offset: 66,
+                fileid: None
+            }
+        );
+        assert!(iter.next().is_none(), "should be no more tokens");
     }
 
     #[test]

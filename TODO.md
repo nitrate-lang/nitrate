@@ -2,17 +2,17 @@
 
 Do not checkmark a feature until it is fully implemented and extensive tests have been written and passed.
 
-- [ ] Lexer
+- [x] Lexer
 
   - [x] Identifiers
     - [x] Typical identifiers
     - [x] Raw identifiers
   - [x] Keywords
-  - [ ] Literals
+  - [x] Literals
     - [x] Integer literals
-    - [ ] Float literals
-    - [ ] String literals
-    - [ ] Byte string literals
+    - [x] Float literals
+    - [x] String literals
+    - [x] Byte string literals
   - [x] Operators
   - [x] Punctuation
   - [x] Comments
