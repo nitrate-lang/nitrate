@@ -791,6 +791,7 @@ dependencies = [
  "nitrate_diagnosis",
  "nitrate_hir",
  "nitrate_hir_get_type",
+ "ordered-float",
 ]
 
 [[package]]

@@ -7,3 +7,5 @@ edition = "2024"
 nitrate_hir = { path = "../hir" }
 nitrate_diagnosis = { path = "../../../diagnosis" }
 nitrate_hir_get_type = { path = "../hir_get_type" }
+
+ordered-float = "5.1"

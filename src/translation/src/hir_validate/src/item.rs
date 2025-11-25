@@ -32,7 +32,7 @@ impl ValidateHirItem for GlobalVariable {
             attr.verify(ctx)?;
         }
 
-        let init_value = self.init.borrow();
+        let init_value = self.initializer.borrow();
         init_value.verify(ctx)?;
 
         establish_property("type_constraint: Sized", || {
@@ -40,7 +40,7 @@ impl ValidateHirItem for GlobalVariable {
         })?;
 
         establish_property("type_constraint == typeof(initial_value)", || {
-            let init_value = self.init.borrow();
+            let init_value = self.initializer.borrow();
             let init_value_ty = init_value.determine_type().map_err(|_| ())?;
 
             if *self.ty != init_value_ty {

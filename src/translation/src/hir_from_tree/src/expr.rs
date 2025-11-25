@@ -713,7 +713,7 @@ impl Ast2Hir for ast::ExprPath {
                                 name: resolved_path.clone(),
                                 mangled_name: resolved_path,
                                 ty: ctx.create_inference_placeholder().into(),
-                                init: Value::Unit.into(),
+                                initializer: Value::Unit.into(),
                             };
 
                             let placeholder_id: GlobalVariableId = placeholder.into();

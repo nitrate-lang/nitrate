@@ -1,6 +1,5 @@
 use log::debug;
 use nitrate_diagnosis::CompilerLog;
-use nitrate_hir::SymbolTab;
 use std::collections::HashSet;
 
 pub struct ValidHir<T> {

@@ -274,7 +274,7 @@ fn ast_globalvar2hir(
         name,
         mangled_name,
         ty,
-        init,
+        initializer: init,
     };
 
     if let Some(existing_global_id) = ctx.tab.get_global_variable(&global_variable.name) {

@@ -77,7 +77,7 @@ impl Dump for GlobalVariable {
         self.ty.dump(ctx, o)?;
 
         write!(o, " = ")?;
-        self.init.borrow().dump(ctx, o)?;
+        self.initializer.borrow().dump(ctx, o)?;
 
         write!(o, ";")
     }

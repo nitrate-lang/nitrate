@@ -27,7 +27,7 @@ pub struct GlobalVariable {
     pub name: NString,
     pub mangled_name: NString,
     pub ty: TypeId,
-    pub init: ValueId,
+    pub initializer: ValueId,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]

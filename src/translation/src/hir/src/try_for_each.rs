@@ -371,7 +371,7 @@ impl GlobalVariableIter<'_> {
         self.node.ty.iter().try_for_each(vcb, tcb, visited)?;
 
         self.node
-            .init
+            .initializer
             .borrow()
             .iter()
             .try_for_each(vcb, tcb, visited)?;

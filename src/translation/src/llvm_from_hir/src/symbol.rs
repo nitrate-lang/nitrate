@@ -96,7 +96,7 @@ fn gen_global<'ctx>(ctx: &mut SymbolGenCtx<'ctx, '_, '_, '_>, hir_global: &hir::
     let entry = ctx.llvm.append_basic_block(llvm_ctor_function, "entry");
     bb.position_at_end(entry);
 
-    let init_value = &hir_global.init.borrow();
+    let init_value = &hir_global.initializer.borrow();
     let llvm_init_value = gen_rval(&mut val_ctx, &init_value);
     let global_ptr = llvm_global.as_pointer_value();
     bb.build_store(global_ptr, llvm_init_value).unwrap();

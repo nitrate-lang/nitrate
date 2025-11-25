@@ -222,7 +222,7 @@ impl GlobalVariableIterMut<'_> {
         vcb: &mut dyn FnMut(&mut Value) -> ControlFlow<T>,
     ) -> ControlFlow<T> {
         self.node
-            .init
+            .initializer
             .borrow_mut()
             .iter_mut()
             .try_for_each_mut(vcb)?;
