@@ -116,6 +116,7 @@ Do not checkmark a feature until it is fully implemented and extensive tests hav
     - [ ] Impl blocks
       - [ ] Generics
     - [ ] Extern blocks
+  - [ ] Patterns
 
 - [ ] High-Level Intermediate Representation (HIR)
 
