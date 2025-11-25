@@ -358,16 +358,15 @@ impl std::fmt::Display for Token {
             Token::Name(id) => write!(f, "{id}"),
             Token::Integer(int) => write!(f, "{int}"),
             Token::Float(float) => write!(f, "{float}"),
-            Token::String(s) => write!(f, "\"{s}\""),
-            Token::BString(s) => write!(f, "{s:?}"),
+            Token::String(s) => write!(f, "{}", escape_string(s, true)),
+            Token::BString(s) => write!(f, "{}", escape_bstring(s, true)),
             Token::Comment(c) => write!(f, "{c}"),
-            Token::HorizontalTab => write!(f, "\\t"),
-            Token::NewLine => write!(f, "\\n"),
-            Token::VerticalTab => write!(f, "\\v"),
-            Token::FormFeed => write!(f, "\\f"),
-            Token::CarriageReturn => write!(f, "\\r"),
+            Token::HorizontalTab => write!(f, "\t"),
+            Token::NewLine => write!(f, "\n"),
+            Token::VerticalTab => write!(f, "\x0b"),
+            Token::FormFeed => write!(f, "\x0c"),
+            Token::CarriageReturn => write!(f, "\r"),
             Token::Space => write!(f, " "),
-
             Token::SingleQuote => write!(f, "'"),
             Token::Semi => write!(f, ";"),
             Token::Comma => write!(f, ","),
@@ -395,7 +394,6 @@ impl std::fmt::Display for Token {
             Token::Slash => write!(f, "/"),
             Token::Caret => write!(f, "^"),
             Token::Percent => write!(f, "%"),
-
             Token::Let => write!(f, "let"),
             Token::Var => write!(f, "var"),
             Token::Fn => write!(f, "fn"),
@@ -457,7 +455,6 @@ impl std::fmt::Display for Token {
             Token::Opaque => write!(f, "opaque"),
             Token::As => write!(f, "as"),
             Token::Typeof => write!(f, "typeof"),
-
             Token::Eof => write!(f, ""),
         }
     }

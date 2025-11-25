@@ -1,7 +1,6 @@
 use std::num::NonZeroU32;
 
 use crate::get_source;
-use nitrate_diagnosis::FileId;
 use nitrate_token::{AnnotatedToken, SourcePosition, Token};
 use nitrate_token_lexer::{Lexer, LexerIterator};
 use serde::{Deserialize, Serialize};
@@ -21,35 +20,36 @@ impl Trivia {
         }
     }
 
-    pub fn tokens_iter<'a>(
-        &self,
-        full_source: &'a [u8],
-        fileid: Option<FileId>,
-    ) -> impl Iterator<Item = Token> {
-        let mut lexer = Lexer::new(full_source, fileid.clone()).expect("failed to create lexer");
+    pub fn tokens(&self) -> Vec<Token> {
+        get_source(|g| {
+            let source = g.full_source;
+            let fileid = g.fileid.clone();
+            let mut lexer = Lexer::new(source, fileid.clone()).expect("failed to create lexer");
 
-        lexer.rewind(SourcePosition {
-            line: 0,
-            column: 0,
-            offset: match self.position.get() {
-                u32::MAX => 0,
-                offset => offset,
-            },
-            fileid,
-        });
+            lexer.rewind(SourcePosition {
+                line: 0,
+                column: 0,
+                offset: match self.position.get() {
+                    u32::MAX => 0,
+                    offset => offset,
+                },
+                fileid,
+            });
 
-        LexerIterator::new(lexer)
-            .map(|annotated_token: AnnotatedToken| annotated_token.token)
-            .take_while(|token: &Token| match token {
-                Token::Comment(_)
-                | Token::HorizontalTab
-                | Token::NewLine
-                | Token::VerticalTab
-                | Token::FormFeed
-                | Token::CarriageReturn
-                | Token::Space => true,
-                _ => false,
-            })
+            LexerIterator::new(lexer)
+                .map(|annotated_token: AnnotatedToken| annotated_token.token)
+                .take_while(|token: &Token| match token {
+                    Token::Comment(_)
+                    | Token::HorizontalTab
+                    | Token::NewLine
+                    | Token::VerticalTab
+                    | Token::FormFeed
+                    | Token::CarriageReturn
+                    | Token::Space => true,
+                    _ => false,
+                })
+                .collect()
+        })
     }
 }
 
@@ -64,18 +64,13 @@ impl Serialize for Trivia {
     where
         S: serde::Serializer,
     {
-        get_source(|g| {
-            let tokens = self
-                .tokens_iter(g.full_source, g.fileid.clone())
-                .collect::<Vec<_>>();
+        let tokens = self.tokens();
+        let helper = TriviaSerHelper {
+            offset: self.position.get(),
+            tokens,
+        };
 
-            let helper = TriviaSerHelper {
-                offset: self.position.get(),
-                tokens,
-            };
-
-            helper.serialize(serializer)
-        })
+        helper.serialize(serializer)
     }
 }
 
