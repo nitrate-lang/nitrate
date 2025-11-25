@@ -1,6 +1,9 @@
 use crate::diagnosis::TypeErr;
 use nitrate_diagnosis::CompilerLog;
-use nitrate_hir::{BlockElement, Function, GlobalVariable, PtrSize, Type, TypeId, Value, ValueId};
+use nitrate_hir::{
+    BlockElement, Function, GlobalVariable, GlobalVariableId, LocalVariableId, PtrSize, Type,
+    TypeId, Value, ValueId,
+};
 use nitrate_hir_get_type::HirGetType;
 use ordered_float::OrderedFloat;
 use std::collections::{HashMap, HashSet};
@@ -236,60 +239,258 @@ impl HindleyMilner {
         }
     }
 
-    fn recurse(&mut self, e: &ValueId) {
+    fn visit_children(&mut self, e: &ValueId) {
+        match &*e.borrow() {
+            Value::Unit => {
+                // TODO: Recurse
+            }
+
+            Value::Bool(_) => {
+                // TODO: Recurse
+            }
+
+            Value::I8(_) => {
+                // TODO: Recurse
+            }
+
+            Value::I16(_) => {
+                // TODO: Recurse
+            }
+
+            Value::I32(_) => {
+                // TODO: Recurse
+            }
+
+            Value::I64(_) => {
+                // TODO: Recurse
+            }
+
+            Value::I128(_) => {
+                // TODO: Recurse
+            }
+
+            Value::U8(_) => {
+                // TODO: Recurse
+            }
+
+            Value::U16(_) => {
+                // TODO: Recurse
+            }
+
+            Value::U32(_) => {
+                // TODO: Recurse
+            }
+
+            Value::U64(_) => {
+                // TODO: Recurse
+            }
+
+            Value::U128(_) => {
+                // TODO: Recurse
+            }
+
+            Value::F32(ordered_float) => {
+                // TODO: Recurse
+            }
+
+            Value::F64(ordered_float) => {
+                // TODO: Recurse
+            }
+
+            Value::USize32(_) => {
+                // TODO: Recurse
+            }
+
+            Value::USize64(_) => {
+                // TODO: Recurse
+            }
+
+            Value::StringLit(thin_str) => {
+                // TODO: Recurse
+            }
+
+            Value::BStringLit(thin_vec) => {
+                // TODO: Recurse
+            }
+
+            Value::InferredInteger(_) => {
+                // TODO: Recurse
+            }
+
+            Value::InferredFloat(ordered_float) => {
+                // TODO: Recurse
+            }
+
+            Value::StructObject { struct_def, fields } => {
+                // TODO: Recurse
+            }
+
+            Value::EnumVariant {
+                enum_def,
+                variant,
+                value,
+            } => {
+                // TODO: Recurse
+            }
+
+            Value::Binary { left, op, right } => {
+                // TODO: Recurse
+            }
+
+            Value::Unary { op, operand } => {
+                // TODO: Recurse
+            }
+
+            Value::FieldAccess { expr, field_name } => {
+                // TODO: Recurse
+            }
+
+            Value::Assign { place, value } => {
+                // TODO: Recurse
+            }
+
+            Value::Deref { place } => {
+                // TODO: Recurse
+            }
+
+            Value::Cast { value, target_type } => {
+                // TODO: Recurse
+            }
+
+            Value::Borrow {
+                exclusive,
+                mutable,
+                place,
+            } => {
+                // TODO: Recurse
+            }
+
+            Value::List { elements } => {
+                // TODO: Recurse
+            }
+
+            Value::Tuple { elements } => {
+                // TODO: Recurse
+            }
+
+            Value::If {
+                condition,
+                true_branch,
+                false_branch,
+            } => {
+                // TODO: Recurse
+            }
+
+            Value::While { condition, body } => {
+                // TODO: Recurse
+            }
+
+            Value::Loop { body } => {
+                // TODO: Recurse
+            }
+
+            Value::Break { label } => {
+                // TODO: Recurse
+            }
+
+            Value::Continue { label } => {
+                // TODO: Recurse
+            }
+
+            Value::Return { value } => {
+                // TODO: Recurse
+            }
+
+            Value::Block { block } => {
+                // TODO: Recurse
+            }
+
+            Value::Closure { captures, callee } => {
+                // TODO: Recurse
+            }
+
+            Value::Call {
+                callee,
+                positional,
+                named,
+            } => {
+                // TODO: Recurse
+            }
+
+            Value::MethodCall {
+                object,
+                method_name,
+                positional,
+                named,
+            } => {
+                // TODO: Recurse
+            }
+
+            Value::FunctionSymbol { id } => {
+                // TODO: Recurse
+            }
+
+            Value::GlobalVariableSymbol { id } => {
+                // TODO: Recurse
+            }
+
+            Value::LocalVariableSymbol { id } => {
+                // TODO: Recurse
+            }
+
+            Value::ParameterSymbol { id } => {
+                // TODO: Recurse
+            }
+        }
+    }
+
+    fn visit(&mut self, e: &ValueId) {
         let action = {
             let current_value = e.borrow();
             self.determine_action(&*current_value, e)
         };
 
         match action {
-            NodeAction::NoChange => {
-                // TODO: Recurse into child nodes
-            }
-
             NodeAction::Replace(new_value) => {
                 e.replace(new_value);
             }
+
+            NodeAction::NoChange => self.visit_children(e),
         }
     }
 
-    fn step_block_element(&mut self, e: &mut BlockElement) {
-        match e {
-            BlockElement::Expr(e) => self.recurse(e),
-
-            BlockElement::Local(local_var) => {
-                let has_type_constraint = !local_var.borrow().ty.is_inferred();
-
-                if has_type_constraint {
-                    let value = local_var.borrow().initializer.clone();
-                    let ty = local_var.borrow().ty.clone();
-
-                    self.constraints
-                        .entry(value)
-                        .or_default()
-                        .insert(TypeConstraint::Equal(ty));
-                } else {
-                    let initializer_type = local_var.borrow().initializer.borrow().determine_type();
-
-                    if let Ok(type_constraint) = initializer_type {
-                        local_var.borrow_mut().ty = type_constraint.into();
-                    } else if let Err(_) = initializer_type {
-                        // Type inference failed
-                    }
-                }
-
-                self.recurse(&local_var.borrow().initializer);
-            }
-        }
-    }
-
-    pub fn solve_function(&mut self, f: &mut Function, log: &CompilerLog) -> Result<(), ()> {
-        if let Some(body) = &mut f.body {
+    pub fn solve_function(&mut self, function: &mut Function, log: &CompilerLog) -> Result<(), ()> {
+        if let Some(body) = &mut function.body {
             loop {
                 let prev_constraints_len = self.constraints.len();
 
                 for element in body.iter_mut() {
-                    self.step_block_element(element);
+                    match element {
+                        BlockElement::Expr(e) => self.visit(e),
+
+                        BlockElement::Local(local_var) => {
+                            if !local_var.borrow().ty.is_inferred() {
+                                let value = local_var.borrow().initializer.clone();
+                                let ty = local_var.borrow().ty.clone();
+
+                                self.constraints
+                                    .entry(value)
+                                    .or_default()
+                                    .insert(TypeConstraint::Equal(ty));
+                            } else {
+                                let initializer_type =
+                                    local_var.borrow().initializer.borrow().determine_type();
+
+                                if let Ok(type_constraint) = initializer_type {
+                                    local_var.borrow_mut().ty = type_constraint.into();
+                                } else if let Err(_) = initializer_type {
+                                    // Type determination failed
+                                }
+                            }
+
+                            self.visit(&local_var.borrow().initializer);
+                        }
+                    }
                 }
 
                 if self.constraints.len() == prev_constraints_len {
@@ -314,9 +515,7 @@ impl HindleyMilner {
         g: &mut GlobalVariable,
         log: &CompilerLog,
     ) -> Result<(), ()> {
-        let has_type_constraint = !g.ty.is_inferred();
-
-        if has_type_constraint {
+        if !g.ty.is_inferred() {
             let value = g.initializer.clone();
             let ty = g.ty.clone();
 
@@ -330,13 +529,13 @@ impl HindleyMilner {
             if let Ok(type_constraint) = initializer_type {
                 g.ty = type_constraint.into();
             } else if let Err(_) = initializer_type {
-                // Type inference failed
+                // Type determination failed
             }
         }
 
         loop {
             let prev_constraints_len = self.constraints.len();
-            self.recurse(&mut g.initializer);
+            self.visit(&mut g.initializer);
             if self.constraints.len() == prev_constraints_len {
                 break;
             }
