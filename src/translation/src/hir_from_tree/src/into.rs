@@ -21,11 +21,11 @@ pub fn convert_ast_to_hir(
         if let Item::Function(func_id) = item {
             let mut function = func_id.borrow_mut();
             if function.body.is_some() {
-                TyCtx::new().resolve_function(&mut function, log);
+                TyCtx::new(ctx.ptr_size).resolve_function(&mut function, log);
             }
         } else if let Item::GlobalVariable(global_id) = item {
             let mut global = global_id.borrow_mut();
-            TyCtx::new().resolve_global(&mut global, log);
+            TyCtx::new(ctx.ptr_size).resolve_global(&mut global, log);
         }
     }
 

@@ -1,6 +1,6 @@
 use crate::diagnosis::TypeErr;
 use nitrate_diagnosis::CompilerLog;
-use nitrate_hir::{BlockElement, Function, GlobalVariable, Type, TypeId, Value, ValueId};
+use nitrate_hir::{BlockElement, Function, GlobalVariable, PtrSize, Type, TypeId, Value, ValueId};
 use nitrate_hir_get_type::HirGetType;
 use ordered_float::OrderedFloat;
 use std::collections::{HashMap, HashSet};
@@ -17,12 +17,14 @@ enum NodeAction {
 
 pub struct HindleyMilner {
     constraints: HashMap<ValueId, HashSet<TypeConstraint>>,
+    ptr_size: PtrSize,
 }
 
 impl HindleyMilner {
-    pub fn new() -> Self {
+    pub fn new(ptr_size: PtrSize) -> Self {
         Self {
             constraints: HashMap::new(),
+            ptr_size,
         }
     }
 
@@ -130,10 +132,23 @@ impl HindleyMilner {
                                 }
                             },
 
-                            Type::USize => {
-                                // TODO: handle usize types
-                                unimplemented!()
-                            }
+                            Type::USize => match self.ptr_size {
+                                PtrSize::U32 => match u32::try_from(integer) {
+                                    Ok(v) => NodeAction::Replace(Value::USize32(v)),
+                                    Err(_) => {
+                                        report_out_of_range(integer, ty.clone(), log);
+                                        NodeAction::NoChange
+                                    }
+                                },
+
+                                PtrSize::U64 => match u64::try_from(integer) {
+                                    Ok(v) => NodeAction::Replace(Value::USize64(v)),
+                                    Err(_) => {
+                                        report_out_of_range(integer, ty.clone(), log);
+                                        NodeAction::NoChange
+                                    }
+                                },
+                            },
 
                             _ => unreachable!(),
                         };
