@@ -1,6 +1,8 @@
 use crate::diagnosis::TypeErr;
 use nitrate_diagnosis::CompilerLog;
-use nitrate_hir::{BlockElement, Function, GlobalVariable, PtrSize, Type, TypeId, Value, ValueId};
+use nitrate_hir::{
+    BlockElement, BlockId, Function, GlobalVariable, PtrSize, Type, TypeId, Value, ValueId,
+};
 use nitrate_hir_get_type::HirGetType;
 use ordered_float::OrderedFloat;
 use std::{
@@ -337,7 +339,9 @@ impl HindleyMilner {
             }
 
             Value::Tuple { elements } => {
-                // TODO: Recurse
+                for element in elements {
+                    self.visit(element);
+                }
             }
 
             Value::If {
@@ -345,24 +349,24 @@ impl HindleyMilner {
                 true_branch,
                 false_branch,
             } => {
-                // TODO: Recurse
+                self.visit(condition);
+                self.visit_block(true_branch);
+                if let Some(false_branch) = false_branch {
+                    self.visit_block(false_branch);
+                }
             }
 
             Value::While { condition, body } => {
-                // TODO: Recurse
+                self.visit(condition);
+                self.visit_block(body);
             }
 
             Value::Loop { body } => {
-                // TODO: Recurse
+                self.visit_block(body);
             }
 
-            Value::Break { label } => {
-                // TODO: Recurse
-            }
-
-            Value::Continue { label } => {
-                // TODO: Recurse
-            }
+            Value::Break { label: _ } => {}
+            Value::Continue { label: _ } => {}
 
             Value::Return { value } => {
                 if let Some(ret_type) = self.function_return_type {
@@ -432,6 +436,12 @@ impl HindleyMilner {
             }
 
             NodeAction::NoChange => self.visit_children(e),
+        }
+    }
+
+    fn visit_block(&mut self, block: &BlockId) {
+        for element in &mut block.borrow_mut().elements {
+            self.visit_block_element(element);
         }
     }
 
