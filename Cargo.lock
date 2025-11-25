@@ -913,10 +913,13 @@ name = "nitrate_tree2"
 version = "0.1.0"
 dependencies = [
  "append-only-vec",
+ "nitrate_diagnosis",
  "nitrate_nstring",
  "nitrate_token",
+ "nitrate_token_lexer",
  "ordered-float",
  "serde",
+ "thin-vec",
 ]
 
 [[package]]
