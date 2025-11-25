@@ -7,15 +7,15 @@ Do not checkmark a feature until it is fully implemented and extensive tests hav
   - [x] Identifiers
     - [x] Typical identifiers
     - [x] Raw identifiers
-  - [ ] Keywords
+  - [x] Keywords
   - [ ] Literals
     - [ ] Integer literals
     - [ ] Float literals
     - [ ] String literals
     - [ ] Byte string literals
-  - [ ] Operators
-  - [ ] Punctuation
-  - [ ] Comments
+  - [x] Operators
+  - [x] Punctuation
+  - [x] Comments
 
 - [ ] Parser
 
