@@ -45,8 +45,7 @@ impl Parser<'_, '_> {
             // Consume ','
             match self.lexer.peek().cloned() {
                 Some(AnnotatedToken {
-                    token: Token::Comma,
-                    ..
+                    token: Token::Comma, ..
                 }) => {
                     self.lexer.next(); // Consume ','
                     flags.insert(AttributeListFlags::TRAILING_COMMA_PRESENT);
@@ -60,17 +59,15 @@ impl Parser<'_, '_> {
 
                 Some(token) => {
                     self.lexer.next(); // Consume the unexpected token
-                    let issue = SyntaxErr::UnexpectedToken {
+                    self.log.report(&SyntaxErr::UnexpectedToken {
                         pos: token.start().into(),
                         token: token.token,
-                    };
-                    self.log.report(&issue);
+                    });
                     break;
                 }
 
                 None => {
-                    let issue = SyntaxErr::ExpectedAttributeDelimiter { pos: None };
-                    self.log.report(&issue);
+                    self.log.report(&SyntaxErr::ExpectedAttributeDelimiter { pos: None });
                     break;
                 }
             }
@@ -109,16 +106,14 @@ impl Parser<'_, '_> {
             }
 
             Some(token) => {
-                let issue = SyntaxErr::ModuleExpectedName {
+                self.log.report(&SyntaxErr::ModuleExpectedName {
                     pos: Some(token.start().into()),
-                };
-                self.log.report(&issue);
+                });
                 NString::default()
             }
 
             None => {
-                let issue = SyntaxErr::ModuleExpectedName { pos: None };
-                self.log.report(&issue);
+                self.log.report(&SyntaxErr::ModuleExpectedName { pos: None });
                 NString::default()
             }
         };
@@ -135,15 +130,13 @@ impl Parser<'_, '_> {
             }
 
             Some(token) => {
-                let issue = SyntaxErr::ExpectedOpenBrace {
+                self.log.report(&SyntaxErr::ExpectedOpenBrace {
                     pos: Some(token.start().into()),
-                };
-                self.log.report(&issue);
+                });
             }
 
             _ => {
-                let issue = SyntaxErr::ExpectedOpenBrace { pos: None };
-                self.log.report(&issue);
+                self.log.report(&SyntaxErr::ExpectedOpenBrace { pos: None });
             }
         };
 
@@ -181,9 +174,7 @@ impl Parser<'_, '_> {
 
     pub fn parse_item(&mut self, leading: Option<Trivia>) -> Item {
         match self.lexer.peek().cloned() {
-            Some(AnnotatedToken {
-                token: Token::Mod, ..
-            }) => self.parse_module(leading),
+            Some(AnnotatedToken { token: Token::Mod, .. }) => self.parse_module(leading),
 
             Some(AnnotatedToken {
                 token: Token::Pub | Token::Pro | Token::Sec,
@@ -211,18 +202,15 @@ impl Parser<'_, '_> {
             Some(token) => {
                 self.lexer.next(); // Consume unexpected token
 
-                let issue = SyntaxErr::ExpectedItem {
+                self.log.report(&SyntaxErr::ExpectedItem {
                     pos: Some(token.start().into()),
-                };
-                self.log.report(&issue);
+                });
 
                 Item::Trivia { trivia: leading }
             }
 
             None => {
-                let issue = SyntaxErr::ExpectedItem { pos: None };
-                self.log.report(&issue);
-
+                self.log.report(&SyntaxErr::ExpectedItem { pos: None });
                 Item::Trivia { trivia: leading }
             }
         }
