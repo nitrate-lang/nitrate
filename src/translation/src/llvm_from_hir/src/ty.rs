@@ -14,10 +14,7 @@ pub struct TypegenCtx<'ctx, 'tab, 'module> {
 use crate::symbol::get_ptr_size;
 use nitrate_hir::{StructMemoryLayoutCell, prelude as hir};
 
-fn gen_struct_ty<'ctx>(
-    hir_struct_def: &hir::StructDef,
-    ctx: &mut TypegenCtx<'ctx, '_, '_>,
-) -> StructType<'ctx> {
+fn gen_struct_ty<'ctx>(hir_struct_def: &hir::StructDef, ctx: &mut TypegenCtx<'ctx, '_, '_>) -> StructType<'ctx> {
     if let Some(struct_type) = ctx.module.get_struct_type(&hir_struct_def.name) {
         return struct_type;
     }
@@ -41,9 +38,7 @@ fn gen_struct_ty<'ctx>(
         }
     }
 
-    let is_packed = hir_struct_def
-        .attributes
-        .contains(&hir::StructAttribute::Packed);
+    let is_packed = hir_struct_def.attributes.contains(&hir::StructAttribute::Packed);
 
     let struct_type = ctx.llvm.opaque_struct_type(&hir_struct_def.name);
     struct_type.set_body(&field_types, is_packed);
@@ -60,18 +55,13 @@ pub(crate) fn gen_function_ty<'ctx>(
         param_types.push(gen_ty(hir_param, ctx).into());
     }
 
-    let variadic = hir_func_type
-        .attributes
-        .contains(&hir::FunctionAttribute::CVariadic);
+    let variadic = hir_func_type.attributes.contains(&hir::FunctionAttribute::CVariadic);
 
     let return_type = gen_ty(&hir_func_type.return_type, ctx);
     return_type.fn_type(&param_types, variadic)
 }
 
-pub(crate) fn gen_ty<'ctx>(
-    hir_type: &hir::Type,
-    ctx: &mut TypegenCtx<'ctx, '_, '_>,
-) -> BasicTypeEnum<'ctx> {
+pub(crate) fn gen_ty<'ctx>(hir_type: &hir::Type, ctx: &mut TypegenCtx<'ctx, '_, '_>) -> BasicTypeEnum<'ctx> {
     match hir_type {
         hir::Type::Never | hir::Type::Unit => ctx.llvm.struct_type(&[], false).into(),
         hir::Type::Bool => ctx.llvm.bool_type().into(),
@@ -80,10 +70,7 @@ pub(crate) fn gen_ty<'ctx>(
         hir::Type::U32 | hir::Type::I32 => ctx.llvm.i32_type().into(),
         hir::Type::U64 | hir::Type::I64 => ctx.llvm.i64_type().into(),
         hir::Type::U128 | hir::Type::I128 => ctx.llvm.i128_type().into(),
-        hir::Type::USize => ctx
-            .llvm
-            .ptr_sized_int_type(&ctx.llvm.target_data(), None)
-            .into(),
+        hir::Type::USize => ctx.llvm.ptr_sized_int_type(&ctx.llvm.target_data(), None).into(),
         hir::Type::F32 => ctx.llvm.f32_type().into(),
         hir::Type::F64 => ctx.llvm.f64_type().into(),
         hir::Type::Array { element_type, len } => {
@@ -132,9 +119,7 @@ pub(crate) fn gen_ty<'ctx>(
         hir::Type::SliceRef { .. } => {
             let ptr = ctx.llvm.ptr_type(AddressSpace::default());
             let size = ctx.llvm.ptr_sized_int_type(&ctx.llvm.target_data(), None);
-            ctx.llvm
-                .struct_type(&[ptr.into(), size.into()], false)
-                .into()
+            ctx.llvm.struct_type(&[ptr.into(), size.into()], false).into()
         }
 
         hir::Type::Function { .. } | hir::Type::Reference { .. } | hir::Type::Pointer { .. } => {

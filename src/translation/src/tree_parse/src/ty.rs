@@ -4,10 +4,10 @@ use crate::diagnosis::SyntaxErr;
 use nitrate_nstring::NString;
 use nitrate_token::Token;
 use nitrate_tree::ast::{
-    ArrayType, Bool, Exclusivity, Expr, Float32, Float64, FuncTypeParam, FuncTypeParams,
-    FunctionType, Int8, Int16, Int32, Int64, Int128, LatentType, Lifetime, Mutability, PointerType,
-    ReferenceType, RefinementType, SliceType, TupleType, Type, TypeParentheses, TypePath,
-    TypePathSegment, TypeSyntaxError, UInt8, UInt16, UInt32, UInt64, UInt128, USize,
+    ArrayType, Bool, Exclusivity, Expr, Float32, Float64, FuncTypeParam, FuncTypeParams, FunctionType, Int8, Int16,
+    Int32, Int64, Int128, LatentType, Lifetime, Mutability, PointerType, ReferenceType, RefinementType, SliceType,
+    TupleType, Type, TypeParentheses, TypePath, TypePathSegment, TypeSyntaxError, UInt8, UInt16, UInt32, UInt64,
+    UInt128, USize,
 };
 
 #[derive(Default)]
@@ -212,11 +212,7 @@ impl Parser<'_, '_> {
 
             let ty = this.parse_type();
 
-            FuncTypeParam {
-                attributes,
-                name,
-                ty,
-            }
+            FuncTypeParam { attributes, name, ty }
         }
 
         let mut params = Vec::new();
@@ -355,10 +351,7 @@ impl Parser<'_, '_> {
             true
         }
 
-        assert!(matches!(
-            self.lexer.peek_tok().token,
-            Token::Name(_) | Token::Colon
-        ));
+        assert!(matches!(self.lexer.peek_tok().token, Token::Name(_) | Token::Colon));
 
         let mut segments = Vec::new();
         let mut prev_scope = false;
@@ -443,11 +436,9 @@ impl Parser<'_, '_> {
             Token::Star => Type::PointerType(Box::new(self.parse_pointer_type())),
             Token::Fn => Type::FunctionType(Box::new(self.parse_function_type())),
 
-            Token::OpenBrace | Token::Unsafe | Token::Safe => {
-                Type::LatentType(Box::new(LatentType {
-                    body: self.parse_block(),
-                }))
-            }
+            Token::OpenBrace | Token::Unsafe | Token::Safe => Type::LatentType(Box::new(LatentType {
+                body: self.parse_block(),
+            })),
 
             _ => {
                 self.lexer.skip_tok();

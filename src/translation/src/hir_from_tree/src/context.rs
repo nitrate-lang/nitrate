@@ -42,11 +42,7 @@ impl Ast2HirCtx {
         }
     }
 
-    pub(crate) fn _find_unambiguous_trait_method(
-        &self,
-        ty: &TypeId,
-        method_name: &str,
-    ) -> Option<FunctionId> {
+    pub(crate) fn _find_unambiguous_trait_method(&self, ty: &TypeId, method_name: &str) -> Option<FunctionId> {
         let trait_set = self._impl_map.get(ty)?;
 
         let mut found: Option<FunctionId> = None;
@@ -86,12 +82,7 @@ impl Ast2HirCtx {
     }
 
     pub(crate) fn qualify_name(&self, item_name: &str) -> String {
-        let length = self
-            .current_scope
-            .iter()
-            .map(|s| s.len() + 2)
-            .sum::<usize>()
-            + item_name.len();
+        let length = self.current_scope.iter().map(|s| s.len() + 2).sum::<usize>() + item_name.len();
         let mut qualified = String::with_capacity(length);
 
         for module in &self.current_scope {

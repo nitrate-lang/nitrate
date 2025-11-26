@@ -3,11 +3,7 @@ use inkwell::{module::Module, targets::FileType};
 use crate::LLVMContext;
 
 impl LLVMContext {
-    pub fn write_asm(
-        &self,
-        module: &mut Module,
-        output: &mut dyn std::io::Write,
-    ) -> Result<(), String> {
+    pub fn write_asm(&self, module: &mut Module, output: &mut dyn std::io::Write) -> Result<(), String> {
         let buffer = self
             .target_machine
             .write_to_memory_buffer(module, FileType::Assembly)

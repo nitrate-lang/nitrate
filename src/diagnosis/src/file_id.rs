@@ -78,8 +78,7 @@ impl FileIdStore {
     }
 }
 
-static FILE_ID_STORE: once_cell::sync::Lazy<FileIdStore> =
-    once_cell::sync::Lazy::new(FileIdStore::new);
+static FILE_ID_STORE: once_cell::sync::Lazy<FileIdStore> = once_cell::sync::Lazy::new(FileIdStore::new);
 
 pub fn intern_file_id(path: &str) -> Option<FileId> {
     FILE_ID_STORE.get_or_create(path)

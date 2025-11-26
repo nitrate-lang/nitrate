@@ -4,13 +4,12 @@ use super::parse::Parser;
 use nitrate_nstring::NString;
 use nitrate_token::Token;
 use nitrate_tree::ast::{
-    AttributeList, Await, BStringLit, BinExpr, BinExprOp, Block, BlockItem, Bool, BooleanLit,
-    Break, Cast, Closure, Continue, ElseIf, Expr, ExprParentheses, ExprPath, ExprPathSegment,
-    ExprSyntaxError, FieldAccess, Float32, Float64, FloatLit, ForEach, FuncParam, FunctionCall, If,
-    IndexAccess, Int8, Int16, Int32, Int64, Int128, IntegerLit, List, LocalVariable,
-    LocalVariableKind, MethodCall, Mutability, Return, Safety, StringLit, StructInit, Tuple, Type,
-    TypeArgument, TypeInfo, TypePath, TypePathSegment, UInt8, UInt16, UInt32, UInt64, UInt128,
-    USize, UnaryExpr, UnaryExprOp, WhileLoop,
+    AttributeList, Await, BStringLit, BinExpr, BinExprOp, Block, BlockItem, Bool, BooleanLit, Break, Cast, Closure,
+    Continue, ElseIf, Expr, ExprParentheses, ExprPath, ExprPathSegment, ExprSyntaxError, FieldAccess, Float32, Float64,
+    FloatLit, ForEach, FuncParam, FunctionCall, If, IndexAccess, Int8, Int16, Int32, Int64, Int128, IntegerLit, List,
+    LocalVariable, LocalVariableKind, MethodCall, Mutability, Return, Safety, StringLit, StructInit, Tuple, Type,
+    TypeArgument, TypeInfo, TypePath, TypePathSegment, UInt8, UInt16, UInt32, UInt64, UInt128, USize, UnaryExpr,
+    UnaryExprOp, WhileLoop,
 };
 
 type Precedence = u32;
@@ -50,16 +49,13 @@ enum Operation {
 
 fn get_precedence_of_binary_operator(op: BinExprOp) -> (Associativity, Precedence) {
     let (associativity, precedence) = match op {
-        BinExprOp::Mul | BinExprOp::Div | BinExprOp::Mod => {
-            (Associativity::LeftToRight, PrecedenceRank::MulDivMod)
-        }
+        BinExprOp::Mul | BinExprOp::Div | BinExprOp::Mod => (Associativity::LeftToRight, PrecedenceRank::MulDivMod),
 
         BinExprOp::Add | BinExprOp::Sub => (Associativity::LeftToRight, PrecedenceRank::AddSub),
 
-        BinExprOp::BitShl | BinExprOp::BitShr | BinExprOp::BitRol | BinExprOp::BitRor => (
-            Associativity::LeftToRight,
-            PrecedenceRank::BitShiftAndRotate,
-        ),
+        BinExprOp::BitShl | BinExprOp::BitShr | BinExprOp::BitRol | BinExprOp::BitRor => {
+            (Associativity::LeftToRight, PrecedenceRank::BitShiftAndRotate)
+        }
 
         BinExprOp::BitAnd => (Associativity::LeftToRight, PrecedenceRank::BitAnd),
         BinExprOp::BitXor => (Associativity::LeftToRight, PrecedenceRank::BitXor),
@@ -106,15 +102,9 @@ fn get_precedence(operation: Operation) -> (Associativity, Precedence) {
             PrecedenceRank::FunctionCallAndIndexing as Precedence,
         ),
 
-        Operation::Cast => (
-            Associativity::LeftToRight,
-            PrecedenceRank::Cast as Precedence,
-        ),
+        Operation::Cast => (Associativity::LeftToRight, PrecedenceRank::Cast as Precedence),
 
-        Operation::FieldAccessOrMethodCall => (
-            Associativity::LeftToRight,
-            PrecedenceRank::FieldAccess as Precedence,
-        ),
+        Operation::FieldAccessOrMethodCall => (Associativity::LeftToRight, PrecedenceRank::FieldAccess as Precedence),
     }
 }
 
@@ -368,9 +358,7 @@ impl Parser<'_, '_> {
                 the: self.parse_type_info(),
             })),
 
-            Token::Fn | Token::OpenBrace | Token::Unsafe | Token::Safe => {
-                Expr::Closure(Box::new(self.parse_closure()))
-            }
+            Token::Fn | Token::OpenBrace | Token::Unsafe | Token::Safe => Expr::Closure(Box::new(self.parse_closure())),
 
             Token::If => Expr::If(Box::new(self.parse_if())),
             Token::For => Expr::For(Box::new(self.parse_for())),
@@ -758,10 +746,7 @@ impl Parser<'_, '_> {
             true
         }
 
-        assert!(matches!(
-            self.lexer.peek_tok().token,
-            Token::Name(_) | Token::Colon
-        ));
+        assert!(matches!(self.lexer.peek_tok().token, Token::Name(_) | Token::Colon));
 
         let mut segments = Vec::new();
         let mut prev_scope = false;

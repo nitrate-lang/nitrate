@@ -260,7 +260,7 @@ impl Default for Store {
 }
 
 impl Store {
-    #[must_use] 
+    #[must_use]
     pub fn new() -> Self {
         Self {
             types: TypeStore::new(),

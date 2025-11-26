@@ -40,9 +40,7 @@ fn get_styles() -> clap::builder::Styles {
                 .underline()
                 .fg_color(Some(anstyle::Color::Ansi(anstyle::AnsiColor::Green))),
         )
-        .placeholder(
-            anstyle::Style::new().fg_color(Some(anstyle::Color::Ansi(anstyle::AnsiColor::Cyan))),
-        )
+        .placeholder(anstyle::Style::new().fg_color(Some(anstyle::Color::Ansi(anstyle::AnsiColor::Cyan))))
 }
 
 #[derive(Parser, Debug)]
@@ -184,18 +182,13 @@ impl<'log> Interpreter<'log> {
     }
 
     fn list_commands() -> Result<(), InterpreterError> {
-        let fg = Style::new()
-            .bold()
-            .fg_color(Some(Color::Ansi(AnsiColor::Green)));
+        let fg = Style::new().bold().fg_color(Some(Color::Ansi(AnsiColor::Green)));
 
         let reset = fg.render_reset();
 
         println!("{fg}Installed commands:{reset}");
 
-        let mut commands = Args::command()
-            .get_subcommands()
-            .cloned()
-            .collect::<Vec<_>>();
+        let mut commands = Args::command().get_subcommands().cloned().collect::<Vec<_>>();
 
         let help = Command::new("help") // Help is a special case
             .about("Print this message or the help of the given subcommand(s)");
@@ -205,9 +198,7 @@ impl<'log> Interpreter<'log> {
             let name = cmd.get_name();
             let about = cmd.get_about().unwrap_or_default();
 
-            let fg = Style::new()
-                .bold()
-                .fg_color(Some(Color::Ansi(AnsiColor::Cyan)));
+            let fg = Style::new().bold().fg_color(Some(Color::Ansi(AnsiColor::Cyan)));
 
             let reset = fg.render_reset();
 

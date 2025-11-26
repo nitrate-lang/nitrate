@@ -67,11 +67,7 @@ impl FormattableDiagnosticGroup for ResolveIssue {
                 message: format!(
                     "Circular import detected: {}\nImport depth:\n{}",
                     path,
-                    depth
-                        .iter()
-                        .map(|p| format!(" - {}", p))
-                        .collect::<Vec<_>>()
-                        .join("\n")
+                    depth.iter().map(|p| format!(" - {}", p)).collect::<Vec<_>>().join("\n")
                 ),
             },
 
@@ -85,10 +81,7 @@ impl FormattableDiagnosticGroup for ResolveIssue {
 
             ResolveIssue::ImportDepthLimitExceeded(path) => DiagnosticInfo {
                 origin: Origin::None,
-                message: format!(
-                    "Import depth limit of 256 exceeded while importing module: {}",
-                    path
-                ),
+                message: format!("Import depth limit of 256 exceeded while importing module: {}", path),
             },
         }
     }

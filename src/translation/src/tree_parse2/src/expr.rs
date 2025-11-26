@@ -20,9 +20,7 @@ impl Parser<'_, '_> {
                 }
             }
 
-            Some(AnnotatedToken {
-                token: Token::True, ..
-            }) => {
+            Some(AnnotatedToken { token: Token::True, .. }) => {
                 let token = self.lexer.next().unwrap(); // Consume token
 
                 Expr::Boolean {
@@ -33,8 +31,7 @@ impl Parser<'_, '_> {
             }
 
             Some(AnnotatedToken {
-                token: Token::False,
-                ..
+                token: Token::False, ..
             }) => {
                 let token = self.lexer.next().unwrap(); // Consume token
 

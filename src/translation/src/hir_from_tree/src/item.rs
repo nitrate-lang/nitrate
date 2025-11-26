@@ -53,11 +53,7 @@ fn ast_typealias2hir(
     }
 }
 
-fn ast_structdef2hir(
-    struct_def: ast::Struct,
-    ctx: &mut Ast2HirCtx,
-    log: &CompilerLog,
-) -> Result<StructDefId, ()> {
+fn ast_structdef2hir(struct_def: ast::Struct, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<StructDefId, ()> {
     let visibility = match struct_def.visibility {
         Some(ast::Visibility::Public) => Visibility::Pub,
         Some(ast::Visibility::Protected) => Visibility::Pro,
@@ -134,11 +130,7 @@ fn ast_structdef2hir(
     }
 }
 
-fn ast_enumdef2hir(
-    enum_def: ast::Enum,
-    ctx: &mut Ast2HirCtx,
-    log: &CompilerLog,
-) -> Result<EnumDefId, ()> {
+fn ast_enumdef2hir(enum_def: ast::Enum, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<EnumDefId, ()> {
     let visibility = match enum_def.visibility {
         Some(ast::Visibility::Public) => Visibility::Pub,
         Some(ast::Visibility::Protected) => Visibility::Pro,
@@ -292,11 +284,7 @@ fn ast_globalvar2hir(
     }
 }
 
-fn ast_funcparam2hir(
-    param: ast::FuncParam,
-    ctx: &mut Ast2HirCtx,
-    log: &CompilerLog,
-) -> Result<ParameterId, ()> {
+fn ast_funcparam2hir(param: ast::FuncParam, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<ParameterId, ()> {
     let attributes = BTreeSet::new();
     if let Some(ast_attributes) = &param.attributes {
         for _attr in ast_attributes {
@@ -331,11 +319,7 @@ fn ast_funcparam2hir(
     Ok(parameter_id)
 }
 
-fn ast_function2hir(
-    function: ast::Function,
-    ctx: &mut Ast2HirCtx,
-    log: &CompilerLog,
-) -> Result<FunctionId, ()> {
+fn ast_function2hir(function: ast::Function, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<FunctionId, ()> {
     let visibility = match function.visibility {
         Some(ast::Visibility::Public) => Visibility::Pub,
         Some(ast::Visibility::Protected) => Visibility::Pro,
@@ -404,12 +388,8 @@ fn ast_function2hir(
                 Some(BlockElement::Expr(expr)) if expr.borrow().is_return() => {}
 
                 Some(BlockElement::Expr(expr)) if !expr.borrow().is_return() => {
-                    *hir_elements.last_mut().unwrap() = BlockElement::Expr(
-                        Value::Return {
-                            value: expr.to_owned(),
-                        }
-                        .into(),
-                    );
+                    *hir_elements.last_mut().unwrap() =
+                        BlockElement::Expr(Value::Return { value: expr.to_owned() }.into());
                 }
 
                 _ if return_type == Type::Unit => {
@@ -517,16 +497,8 @@ fn lower_item(
     }
 }
 
-pub(crate) fn ast_module2hir(
-    module: ast::Module,
-    ctx: &mut Ast2HirCtx,
-    log: &CompilerLog,
-) -> Result<Module, ()> {
-    fn lower_module(
-        this: ast::Module,
-        ctx: &mut Ast2HirCtx,
-        log: &CompilerLog,
-    ) -> Result<Module, ()> {
+pub(crate) fn ast_module2hir(module: ast::Module, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Module, ()> {
+    fn lower_module(this: ast::Module, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Module, ()> {
         let visibility = match this.visibility {
             Some(ast::Visibility::Public) => Visibility::Pub,
             Some(ast::Visibility::Protected) => Visibility::Pro,

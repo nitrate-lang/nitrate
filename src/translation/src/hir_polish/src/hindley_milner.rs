@@ -1,8 +1,6 @@
 use crate::diagnosis::TypeErr;
 use nitrate_diagnosis::CompilerLog;
-use nitrate_hir::{
-    BlockElement, BlockId, Function, GlobalVariable, PtrSize, Type, TypeId, Value, ValueId,
-};
+use nitrate_hir::{BlockElement, BlockId, Function, GlobalVariable, PtrSize, Type, TypeId, Value, ValueId};
 use nitrate_hir_get_type::HirGetType;
 use ordered_float::OrderedFloat;
 use std::collections::{HashMap, HashSet};
@@ -262,10 +260,7 @@ impl HindleyMilner {
             | Value::InferredInteger(_)
             | Value::InferredFloat(_) => {}
 
-            Value::StructObject {
-                struct_def: _,
-                fields,
-            } => {
+            Value::StructObject { struct_def: _, fields } => {
                 for (_field_name, field_value) in fields {
                     self.visit(field_value);
                 }
@@ -286,10 +281,7 @@ impl HindleyMilner {
                         .or_default()
                         .extend(constraints.clone());
 
-                    self.constraints
-                        .entry(right.clone())
-                        .or_default()
-                        .extend(constraints);
+                    self.constraints.entry(right.clone()).or_default().extend(constraints);
                 }
 
                 self.visit(left);
@@ -300,10 +292,7 @@ impl HindleyMilner {
                 self.visit(operand);
             }
 
-            Value::FieldAccess {
-                expr,
-                field_name: _,
-            } => {
+            Value::FieldAccess { expr, field_name: _ } => {
                 self.visit(expr);
             }
 
@@ -492,18 +481,10 @@ impl HindleyMilner {
             log.report(error);
         }
 
-        if self.errors.is_empty() {
-            Ok(())
-        } else {
-            Err(())
-        }
+        if self.errors.is_empty() { Ok(()) } else { Err(()) }
     }
 
-    pub fn solve_global_variable(
-        &mut self,
-        g: &mut GlobalVariable,
-        log: &CompilerLog,
-    ) -> Result<(), ()> {
+    pub fn solve_global_variable(&mut self, g: &mut GlobalVariable, log: &CompilerLog) -> Result<(), ()> {
         loop {
             let prev_constraints_len = self.constraints.len();
 
@@ -536,10 +517,6 @@ impl HindleyMilner {
             log.report(error);
         }
 
-        if self.errors.is_empty() {
-            Ok(())
-        } else {
-            Err(())
-        }
+        if self.errors.is_empty() { Ok(()) } else { Err(()) }
     }
 }

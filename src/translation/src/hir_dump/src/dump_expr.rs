@@ -3,11 +3,7 @@ use nitrate_hir::prelude::*;
 use nitrate_token::{escape_bstring, escape_string};
 
 impl Dump for BlockElement {
-    fn dump(
-        &self,
-        ctx: &mut DumpContext,
-        o: &mut dyn std::fmt::Write,
-    ) -> Result<(), std::fmt::Error> {
+    fn dump(&self, ctx: &mut DumpContext, o: &mut dyn std::fmt::Write) -> Result<(), std::fmt::Error> {
         match self {
             BlockElement::Expr(expr_id) => {
                 expr_id.borrow().dump(ctx, o)?;
@@ -20,11 +16,7 @@ impl Dump for BlockElement {
 }
 
 impl Dump for Block {
-    fn dump(
-        &self,
-        ctx: &mut DumpContext,
-        o: &mut dyn std::fmt::Write,
-    ) -> Result<(), std::fmt::Error> {
+    fn dump(&self, ctx: &mut DumpContext, o: &mut dyn std::fmt::Write) -> Result<(), std::fmt::Error> {
         match self.safety {
             BlockSafety::Safe => {}
             BlockSafety::Unsafe => write!(o, "unsafe ")?,
@@ -52,11 +44,7 @@ impl Dump for Block {
 }
 
 impl Dump for Lit {
-    fn dump(
-        &self,
-        _ctx: &mut DumpContext,
-        o: &mut dyn std::fmt::Write,
-    ) -> Result<(), std::fmt::Error> {
+    fn dump(&self, _ctx: &mut DumpContext, o: &mut dyn std::fmt::Write) -> Result<(), std::fmt::Error> {
         match self {
             Lit::Unit => write!(o, "()"),
             Lit::Bool(b) => write!(o, "{b}"),
@@ -79,11 +67,7 @@ impl Dump for Lit {
 }
 
 impl Dump for Value {
-    fn dump(
-        &self,
-        ctx: &mut DumpContext,
-        o: &mut dyn std::fmt::Write,
-    ) -> Result<(), std::fmt::Error> {
+    fn dump(&self, ctx: &mut DumpContext, o: &mut dyn std::fmt::Write) -> Result<(), std::fmt::Error> {
         match self {
             Value::Unit => write!(o, "()"),
             Value::Bool(b) => write!(o, "{b}"),

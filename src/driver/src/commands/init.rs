@@ -66,11 +66,7 @@ impl Interpreter<'_> {
         Ok(())
     }
 
-    fn put_no3_xml(
-        &self,
-        dir: &std::path::Path,
-        package: &Package,
-    ) -> Result<(), InterpreterError> {
+    fn put_no3_xml(&self, dir: &std::path::Path, package: &Package) -> Result<(), InterpreterError> {
         let no3_xml_path = dir.join("no3.xml");
 
         let mut no3_xml_file = std::fs::File::create(&no3_xml_path).map_err(|e| {
@@ -88,11 +84,7 @@ impl Interpreter<'_> {
         Ok(())
     }
 
-    fn create_src_directory(
-        &self,
-        dir: &std::path::Path,
-        is_lib: bool,
-    ) -> Result<(), InterpreterError> {
+    fn create_src_directory(&self, dir: &std::path::Path, is_lib: bool) -> Result<(), InterpreterError> {
         std::fs::create_dir_all(dir.join("src")).map_err(|e| {
             error!(self.log, "Failed to create src directory: {}", e);
             InterpreterError::IoError(e)
@@ -125,10 +117,7 @@ impl Interpreter<'_> {
         {
             Ok(status) if status.success() => Ok(()),
             Ok(status) => {
-                error!(
-                    self.log,
-                    "Git initialization failed with status: {}", status
-                );
+                error!(self.log, "Git initialization failed with status: {}", status);
                 Err(())
             }
             Err(e) => {
@@ -175,9 +164,7 @@ impl Interpreter<'_> {
         self.put_default_readme(containing_dir)?;
         self.put_no3_xml(
             containing_dir,
-            &PackageBuilder::new(package_name.to_string())
-                .edition(edition)
-                .build(),
+            &PackageBuilder::new(package_name.to_string()).edition(edition).build(),
         )?;
 
         if self.initialize_git_repo(containing_dir).is_err() {
@@ -196,11 +183,7 @@ impl Interpreter<'_> {
         for file in &conflicting_files {
             let joined = dir.join(file);
             if joined.exists() {
-                warn!(
-                    self.log,
-                    "Conflicting package file found: {}",
-                    joined.display()
-                );
+                warn!(self.log, "Conflicting package file found: {}", joined.display());
 
                 return true;
             }

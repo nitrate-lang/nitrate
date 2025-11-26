@@ -19,8 +19,7 @@ lazy_static! {
             .read_to_string(&mut stripped_json)
             .expect("the file error_codes.json was malformed at build time");
 
-        let parsed = Value::from_str(&stripped_json)
-            .expect("the file error_codes.json was malformed at build time");
+        let parsed = Value::from_str(&stripped_json).expect("the file error_codes.json was malformed at build time");
 
         let mut map = HashMap::new();
 

@@ -3,11 +3,7 @@ use nitrate_hir::prelude::*;
 use nitrate_token::escape_string;
 
 impl Dump for StructAttribute {
-    fn dump(
-        &self,
-        _ctx: &mut DumpContext,
-        o: &mut dyn std::fmt::Write,
-    ) -> Result<(), std::fmt::Error> {
+    fn dump(&self, _ctx: &mut DumpContext, o: &mut dyn std::fmt::Write) -> Result<(), std::fmt::Error> {
         match self {
             StructAttribute::Packed => write!(o, "packed"),
         }
@@ -15,21 +11,13 @@ impl Dump for StructAttribute {
 }
 
 impl Dump for EnumAttribute {
-    fn dump(
-        &self,
-        _ctx: &mut DumpContext,
-        _o: &mut dyn std::fmt::Write,
-    ) -> Result<(), std::fmt::Error> {
+    fn dump(&self, _ctx: &mut DumpContext, _o: &mut dyn std::fmt::Write) -> Result<(), std::fmt::Error> {
         Ok(())
     }
 }
 
 impl Dump for FunctionAttribute {
-    fn dump(
-        &self,
-        _ctx: &mut DumpContext,
-        o: &mut dyn std::fmt::Write,
-    ) -> Result<(), std::fmt::Error> {
+    fn dump(&self, _ctx: &mut DumpContext, o: &mut dyn std::fmt::Write) -> Result<(), std::fmt::Error> {
         match self {
             FunctionAttribute::CVariadic => write!(o, "c_variadic"),
             FunctionAttribute::NoMangle => write!(o, "no_mangle"),
@@ -38,11 +26,7 @@ impl Dump for FunctionAttribute {
 }
 
 impl Dump for Lifetime {
-    fn dump(
-        &self,
-        _ctx: &mut DumpContext,
-        o: &mut dyn std::fmt::Write,
-    ) -> Result<(), std::fmt::Error> {
+    fn dump(&self, _ctx: &mut DumpContext, o: &mut dyn std::fmt::Write) -> Result<(), std::fmt::Error> {
         match self {
             Lifetime::Static => write!(o, "'static"),
             Lifetime::Gc => write!(o, "'gc"),
@@ -54,11 +38,7 @@ impl Dump for Lifetime {
 }
 
 impl Dump for FunctionType {
-    fn dump(
-        &self,
-        ctx: &mut DumpContext,
-        o: &mut dyn std::fmt::Write,
-    ) -> Result<(), std::fmt::Error> {
+    fn dump(&self, ctx: &mut DumpContext, o: &mut dyn std::fmt::Write) -> Result<(), std::fmt::Error> {
         write!(o, "fn")?;
 
         dump_attributes(&self.attributes, ctx, o)?;
@@ -86,11 +66,7 @@ impl Dump for FunctionType {
 }
 
 impl Dump for Type {
-    fn dump(
-        &self,
-        ctx: &mut DumpContext,
-        o: &mut dyn std::fmt::Write,
-    ) -> Result<(), std::fmt::Error> {
+    fn dump(&self, ctx: &mut DumpContext, o: &mut dyn std::fmt::Write) -> Result<(), std::fmt::Error> {
         match self {
             Type::Never => write!(o, "!"),
             Type::Unit => write!(o, "()"),
@@ -198,11 +174,7 @@ impl Dump for Type {
                 write!(o, "]")
             }
 
-            Type::Pointer {
-                exclusive,
-                mutable,
-                to,
-            } => {
+            Type::Pointer { exclusive, mutable, to } => {
                 write!(o, "*")?;
 
                 match (exclusive, mutable) {

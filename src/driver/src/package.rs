@@ -68,12 +68,10 @@ impl Package {
 
     pub fn xml_serialize(&self) -> String {
         const XMLNS_XSI: &str = "http://www.w3.org/2001/XMLSchema-instance";
-        const XSI_NO_NAMESPACE_SCHEMA_LOCATION: &str =
-            "https://static.nitrate.dev/no3_package_config.xsd";
+        const XSI_NO_NAMESPACE_SCHEMA_LOCATION: &str = "https://static.nitrate.dev/no3_package_config.xsd";
 
         let serialized = serde_xml_rs::to_string(self).unwrap();
-        let mut document =
-            xml_doc::Document::parse_str_with_opts(&serialized, ReadOptions::default()).unwrap();
+        let mut document = xml_doc::Document::parse_str_with_opts(&serialized, ReadOptions::default()).unwrap();
 
         let root = document.root_element().unwrap();
         root.set_attribute(&mut document, "xmlns:xsi", XMLNS_XSI);

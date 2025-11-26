@@ -154,13 +154,10 @@ impl NStringStore {
     }
 }
 
-static NSTRING_STORE: once_cell::sync::Lazy<NStringStore> =
-    once_cell::sync::Lazy::new(NStringStore::new);
+static NSTRING_STORE: once_cell::sync::Lazy<NStringStore> = once_cell::sync::Lazy::new(NStringStore::new);
 
 pub fn intern_nstring<T: Into<String>>(path: T) -> NString {
-    NSTRING_STORE
-        .get_or_create(path.into())
-        .expect("ID space exhausted")
+    NSTRING_STORE.get_or_create(path.into()).expect("ID space exhausted")
 }
 
 pub fn nstring_forget_all() {

@@ -42,9 +42,7 @@ impl CastLitBridge {
     fn to_unit(self) -> Result<Value, Unwind> {
         match self {
             CastLitBridge::Unit => Ok(Value::Unit),
-            CastLitBridge::I128(_) | CastLitBridge::U128(_) | CastLitBridge::F128(_) => {
-                Err(Unwind::TypeError)
-            }
+            CastLitBridge::I128(_) | CastLitBridge::U128(_) | CastLitBridge::F128(_) => Err(Unwind::TypeError),
         }
     }
 
@@ -277,11 +275,9 @@ impl HirEvaluate for Value {
             }
 
             Value::Binary { left, op, right } => {
-                let left =
-                    Lit::try_from(left.borrow().evaluate(ctx)?).map_err(|_| Unwind::TypeError)?;
+                let left = Lit::try_from(left.borrow().evaluate(ctx)?).map_err(|_| Unwind::TypeError)?;
 
-                let right =
-                    Lit::try_from(right.borrow().evaluate(ctx)?).map_err(|_| Unwind::TypeError)?;
+                let right = Lit::try_from(right.borrow().evaluate(ctx)?).map_err(|_| Unwind::TypeError)?;
 
                 match op {
                     BinaryOp::Add => match left.add(right) {
@@ -391,8 +387,7 @@ impl HirEvaluate for Value {
             }
 
             Value::Unary { op, operand: expr } => {
-                let operand =
-                    Lit::try_from(expr.borrow().evaluate(ctx)?).map_err(|_| Unwind::TypeError)?;
+                let operand = Lit::try_from(expr.borrow().evaluate(ctx)?).map_err(|_| Unwind::TypeError)?;
 
                 match op {
                     UnaryOp::Add => Ok(operand.into()),

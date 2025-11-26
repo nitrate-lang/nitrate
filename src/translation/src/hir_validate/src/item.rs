@@ -1,6 +1,6 @@
 use crate::{
-    ValidHir, ValidateCtx, ValidateHirItem, ValidateHirType, ValidateHirValue, ValidateTypeOptions,
-    diagnosis::Issue, establish_property,
+    ValidHir, ValidateCtx, ValidateHirItem, ValidateHirType, ValidateHirValue, ValidateTypeOptions, diagnosis::Issue,
+    establish_property,
 };
 use nitrate_hir::prelude::*;
 use nitrate_hir_get_type::HirGetType;
@@ -138,22 +138,20 @@ impl ValidateHirItem for ParameterAttribute {
         }
 
         match self {
-            ParameterAttribute::Align { alignment } => {
-                establish_property("parameter alignment is supported", || {
-                    const MAX_SUPPORTED_ALIGNMENT: u32 = 4096;
+            ParameterAttribute::Align { alignment } => establish_property("parameter alignment is supported", || {
+                const MAX_SUPPORTED_ALIGNMENT: u32 = 4096;
 
-                    if alignment.get() > MAX_SUPPORTED_ALIGNMENT {
-                        ctx.log.report(&Issue::UnsupportedAlignment {
-                            alignment: alignment.get(),
-                            max_supported: MAX_SUPPORTED_ALIGNMENT,
-                        });
+                if alignment.get() > MAX_SUPPORTED_ALIGNMENT {
+                    ctx.log.report(&Issue::UnsupportedAlignment {
+                        alignment: alignment.get(),
+                        max_supported: MAX_SUPPORTED_ALIGNMENT,
+                    });
 
-                        return Err(());
-                    }
+                    return Err(());
+                }
 
-                    Ok(())
-                })
-            }
+                Ok(())
+            }),
         }
     }
 
@@ -243,16 +241,14 @@ impl ValidateHirItem for Function {
                 element.verify(ctx)?;
             }
 
-            establish_property("function body ends with return statement", || {
-                match body.last() {
-                    Some(BlockElement::Expr(expr)) if expr.borrow().is_return() => Ok(()),
-                    _ => {
-                        let issue = Issue::MissingReturnStatementInFunctionBody {
-                            function_name: self.name.clone(),
-                        };
-                        ctx.log.report(&issue);
-                        Err(())
-                    }
+            establish_property("function body ends with return statement", || match body.last() {
+                Some(BlockElement::Expr(expr)) if expr.borrow().is_return() => Ok(()),
+                _ => {
+                    let issue = Issue::MissingReturnStatementInFunctionBody {
+                        function_name: self.name.clone(),
+                    };
+                    ctx.log.report(&issue);
+                    Err(())
                 }
             })?;
 

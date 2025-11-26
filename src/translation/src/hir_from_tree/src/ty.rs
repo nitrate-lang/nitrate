@@ -206,9 +206,7 @@ impl Ast2Hir for ast::TypePath {
 
                         ctx.tab.add_type_alias(type_alias_def.clone());
 
-                        Ok(Type::TypeAlias {
-                            def: type_alias_def,
-                        })
+                        Ok(Type::TypeAlias { def: type_alias_def })
                     }
                 },
 
@@ -428,11 +426,7 @@ impl Ast2Hir for ast::PointerType {
         } else {
             let to = self.to.ast2hir(ctx, log)?.into();
 
-            Ok(Type::Pointer {
-                exclusive,
-                mutable,
-                to,
-            })
+            Ok(Type::Pointer { exclusive, mutable, to })
         }
     }
 }

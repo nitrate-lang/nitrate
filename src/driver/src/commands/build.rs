@@ -72,9 +72,7 @@ impl Interpreter<'_> {
 
             error!(
                 self.log,
-                "Unsupported package edition: {}. This release of no3 supports editions: {}",
-                edition,
-                supported,
+                "Unsupported package edition: {}. This release of no3 supports editions: {}", edition, supported,
             );
 
             return Err(InterpreterError::OperationalError);
@@ -88,10 +86,7 @@ impl Interpreter<'_> {
             Ok(content) => content,
 
             Err(e) => {
-                error!(
-                    self.log,
-                    "Failed to read package config file 'no3.xml': {}", e
-                );
+                error!(self.log, "Failed to read package config file 'no3.xml': {}", e);
 
                 return Err(InterpreterError::IoError(e));
             }
@@ -101,10 +96,7 @@ impl Interpreter<'_> {
             Ok(pkg) => Ok(pkg),
 
             Err(e) => {
-                error!(
-                    self.log,
-                    "Failed to load package config from 'no3.xml': {}", e
-                );
+                error!(self.log, "Failed to load package config from 'no3.xml': {}", e);
 
                 return Err(InterpreterError::OperationalError);
             }
@@ -146,8 +138,7 @@ impl Interpreter<'_> {
             .read_to_end(&mut source_code)
             .map_err(|e| InterpreterError::IoError(e))?;
 
-        let source_code_file = intern_file_id(&entrypoint_path.to_string_lossy().to_string())
-            .expect("FileId overflow");
+        let source_code_file = intern_file_id(&entrypoint_path.to_string_lossy().to_string()).expect("FileId overflow");
 
         let lexer = match Lexer::new(&source_code, Some(source_code_file)) {
             Ok(lexer) => lexer,
@@ -171,18 +162,15 @@ impl Interpreter<'_> {
     pub(crate) fn show_ast(&self, module: &ast::Module, format_mode: &Option<String>) {
         match format_mode {
             Some(mode) if mode == "minify" => {
-                serde_json::to_writer(&mut std::io::stdout(), &module)
-                    .expect("Failed to write AST to stdout");
+                serde_json::to_writer(&mut std::io::stdout(), &module).expect("Failed to write AST to stdout");
             }
 
             Some(mode) if mode == "pretty" => {
-                serde_json::to_writer_pretty(&mut std::io::stdout(), &module)
-                    .expect("Failed to write AST to stdout");
+                serde_json::to_writer_pretty(&mut std::io::stdout(), &module).expect("Failed to write AST to stdout");
             }
 
             _ => {
-                serde_json::to_writer_pretty(&mut std::io::stdout(), &module)
-                    .expect("Failed to write AST to stdout");
+                serde_json::to_writer_pretty(&mut std::io::stdout(), &module).expect("Failed to write AST to stdout");
             }
         }
     }
@@ -202,11 +190,7 @@ impl Interpreter<'_> {
         Ok(())
     }
 
-    fn get_llvm_context(
-        &self,
-        triple: Option<String>,
-        opt_level: OptLevel,
-    ) -> Result<LLVMContext, InterpreterError> {
+    fn get_llvm_context(&self, triple: Option<String>, opt_level: OptLevel) -> Result<LLVMContext, InterpreterError> {
         let triple = match triple {
             Some(t) => t,
             None => LLVMContext::default_target_triple(),
@@ -216,10 +200,7 @@ impl Interpreter<'_> {
             Ok(ctx) => Ok(ctx),
 
             Err(e) => {
-                error!(
-                    self.log,
-                    "Failed to create LLVM context for target '{}': {}", triple, e
-                );
+                error!(self.log, "Failed to create LLVM context for target '{}': {}", triple, e);
 
                 Err(InterpreterError::OperationalError)
             }
@@ -284,8 +265,7 @@ impl Interpreter<'_> {
                 Some(profile_name) => {
                     error!(
                         self.log,
-                        "Unknown build profile '{}'. Supported profiles are 'debug' and 'release'.",
-                        profile_name
+                        "Unknown build profile '{}'. Supported profiles are 'debug' and 'release'.", profile_name
                     );
                     return Err(InterpreterError::OperationalError);
                 }
@@ -299,23 +279,14 @@ impl Interpreter<'_> {
         let store = Store::new();
 
         using_storage(&store, || {
-            let (hir_module, symbol_tab) = self.lower_to_hir(
-                ast_module,
-                ptr_size,
-                package.name(),
-                &package.entrypoint(),
-                &log,
-            )?;
+            let (hir_module, symbol_tab) =
+                self.lower_to_hir(ast_module, ptr_size, package.name(), &package.entrypoint(), &log)?;
 
             let mut hir_verifier = hir_validate::ValidateCtx::new(&log);
             let valid_hir_module = match hir_module.clone().validate(&mut hir_verifier) {
                 Ok(m) => m,
                 Err(_) => {
-                    error!(
-                        self.log,
-                        "HIR validation failed for package '{}'",
-                        package.name()
-                    );
+                    error!(self.log, "HIR validation failed for package '{}'", package.name());
 
                     if args.show_hir {
                         println!("{}", hir_module.to_string());
@@ -331,8 +302,7 @@ impl Interpreter<'_> {
                 return Ok(());
             }
 
-            let mut llvm_module =
-                generate_llvmir(package.name(), valid_hir_module, &llvm_ctx, &symbol_tab);
+            let mut llvm_module = generate_llvmir(package.name(), valid_hir_module, &llvm_ctx, &symbol_tab);
 
             llvm_ctx.optimize_module(&mut llvm_module);
 
@@ -363,9 +333,7 @@ impl Interpreter<'_> {
                 package.version().2
             );
 
-            if let Err(e) =
-                llvm_ctx.write_object_file(&mut llvm_module, std::path::Path::new(&target_file_o))
-            {
+            if let Err(e) = llvm_ctx.write_object_file(&mut llvm_module, std::path::Path::new(&target_file_o)) {
                 error!(
                     self.log,
                     "Failed to write object file for package '{}': {}",

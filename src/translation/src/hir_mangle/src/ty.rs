@@ -140,11 +140,7 @@ pub(crate) fn mangle_type(ty: &Type) -> String {
             format!("Q{}{}{}", lifetime_mangled, exmut_mangled, elem_mangled)
         }
 
-        Type::Pointer {
-            exclusive,
-            mutable,
-            to,
-        } => {
+        Type::Pointer { exclusive, mutable, to } => {
             let exmut_mangled = match (exclusive, mutable) {
                 (true, true) => "A",
                 (true, false) => "B",

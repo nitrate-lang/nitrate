@@ -100,10 +100,7 @@ impl ValidateHirValue for Value {
                 Ok(())
             }
 
-            Value::FieldAccess {
-                expr: _,
-                field_name: _,
-            } => {
+            Value::FieldAccess { expr: _, field_name: _ } => {
                 // TODO: verify field access
                 Ok(())
             }
@@ -154,10 +151,7 @@ impl ValidateHirValue for Value {
                 Ok(())
             }
 
-            Value::While {
-                condition: _,
-                body: _,
-            } => {
+            Value::While { condition: _, body: _ } => {
                 // TODO: verify while expression
                 Ok(())
             }

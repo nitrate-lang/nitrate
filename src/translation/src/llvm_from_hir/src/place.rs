@@ -15,10 +15,7 @@ fn gen_place_field_access<'ctx>(
     field_name: &NString,
 ) -> PointerValue<'ctx> {
     let value_type = struct_value.determine_type().expect("Failed to get type");
-    let hir_struct_def = value_type
-        .as_struct()
-        .expect("expected struct type")
-        .borrow();
+    let hir_struct_def = value_type.as_struct().expect("expected struct type").borrow();
 
     let field_index = hir_struct_def
         .layout
@@ -32,9 +29,7 @@ fn gen_place_field_access<'ctx>(
 
     let llvm_struct_value = gen_place(ctx, struct_value);
     let llvm_struct_ty = gen_ty(
-        &struct_value
-            .determine_type()
-            .expect("unable to get struct type"),
+        &struct_value.determine_type().expect("unable to get struct type"),
         &mut ctx.into(),
     );
 
@@ -54,10 +49,7 @@ fn gen_place_field_access<'ctx>(
     gep
 }
 
-fn gen_place_deref<'ctx>(
-    ctx: &mut CodegenCtx<'ctx, '_, '_, '_, '_>,
-    place: &hir::Value,
-) -> PointerValue<'ctx> {
+fn gen_place_deref<'ctx>(ctx: &mut CodegenCtx<'ctx, '_, '_, '_, '_>, place: &hir::Value) -> PointerValue<'ctx> {
     let llvm_value = gen_rval(ctx, place);
     let ptr_ty = llvm_value.get_type();
 
@@ -141,25 +133,19 @@ pub(crate) fn gen_place<'ctx>(
             alloca
         }
 
-        hir::Value::FieldAccess { expr, field_name } => {
-            gen_place_field_access(ctx, &expr.borrow(), field_name)
-        }
+        hir::Value::FieldAccess { expr, field_name } => gen_place_field_access(ctx, &expr.borrow(), field_name),
 
         hir::Value::Deref { place } => gen_place_deref(ctx, &place.borrow()),
 
-        hir::Value::FunctionSymbol { id } => {
-            match ctx.module.get_function(&id.borrow().mangled_name) {
-                Some(func) => func.as_global_value().as_pointer_value(),
-                None => panic!("Function symbol not found in module"),
-            }
-        }
+        hir::Value::FunctionSymbol { id } => match ctx.module.get_function(&id.borrow().mangled_name) {
+            Some(func) => func.as_global_value().as_pointer_value(),
+            None => panic!("Function symbol not found in module"),
+        },
 
-        hir::Value::GlobalVariableSymbol { id } => {
-            match ctx.globals.get(&id.borrow().mangled_name) {
-                Some(ptr) => ptr.0,
-                None => panic!("Global variable symbol not found"),
-            }
-        }
+        hir::Value::GlobalVariableSymbol { id } => match ctx.globals.get(&id.borrow().mangled_name) {
+            Some(ptr) => ptr.0,
+            None => panic!("Global variable symbol not found"),
+        },
 
         hir::Value::LocalVariableSymbol { id } => match ctx.locals.get(&id.borrow().name) {
             Some(ptr) => ptr.0,

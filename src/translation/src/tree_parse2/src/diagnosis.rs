@@ -1,6 +1,4 @@
-use nitrate_diagnosis::{
-    DiagnosticGroupId, DiagnosticInfo, FormattableDiagnosticGroup, Origin, SourcePosition,
-};
+use nitrate_diagnosis::{DiagnosticGroupId, DiagnosticInfo, FormattableDiagnosticGroup, Origin, SourcePosition};
 use nitrate_token::Token;
 
 #[allow(dead_code)]

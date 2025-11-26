@@ -51,8 +51,7 @@ impl Interpreter<'_> {
             .read_to_end(&mut source_code)
             .map_err(|e| InterpreterError::IoError(e))?;
 
-        let source_code_file = intern_file_id(&entrypoint_path.to_string_lossy().to_string())
-            .expect("FileId overflow");
+        let source_code_file = intern_file_id(&entrypoint_path.to_string_lossy().to_string()).expect("FileId overflow");
 
         let lexer = match Lexer::new(&source_code, Some(source_code_file)) {
             Ok(lexer) => lexer,
@@ -74,18 +73,15 @@ impl Interpreter<'_> {
 
         match args.format_mode {
             Some(mode) if mode == "minify" => {
-                serde_json::to_writer(&mut std::io::stdout(), &tokens)
-                    .expect("Failed to write AST to stdout");
+                serde_json::to_writer(&mut std::io::stdout(), &tokens).expect("Failed to write AST to stdout");
             }
 
             Some(mode) if mode == "pretty" => {
-                serde_json::to_writer_pretty(&mut std::io::stdout(), &tokens)
-                    .expect("Failed to write AST to stdout");
+                serde_json::to_writer_pretty(&mut std::io::stdout(), &tokens).expect("Failed to write AST to stdout");
             }
 
             _ => {
-                serde_json::to_writer_pretty(&mut std::io::stdout(), &tokens)
-                    .expect("Failed to write AST to stdout");
+                serde_json::to_writer_pretty(&mut std::io::stdout(), &tokens).expect("Failed to write AST to stdout");
             }
         }
 

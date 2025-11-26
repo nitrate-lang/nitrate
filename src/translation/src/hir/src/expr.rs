@@ -127,12 +127,7 @@ impl Lit {
             Lit::U64(_) => value.try_into().map(Lit::U64).ok(),
             Lit::U128(_) => value.try_into().map(Lit::U128).ok(),
 
-            Lit::Unit
-            | Lit::Bool(_)
-            | Lit::F32(_)
-            | Lit::F64(_)
-            | Lit::USize32(_)
-            | Lit::USize64(_) => None,
+            Lit::Unit | Lit::Bool(_) | Lit::F32(_) | Lit::F64(_) | Lit::USize32(_) | Lit::USize64(_) => None,
         }
     }
 

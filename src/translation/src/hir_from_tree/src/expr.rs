@@ -112,12 +112,7 @@ impl Ast2Hir for ast::StructInit {
     type Hir = Value;
 
     fn ast2hir(self, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
-        if self
-            .path
-            .segments
-            .iter()
-            .any(|seg| seg.type_arguments.is_some())
-        {
+        if self.path.segments.iter().any(|seg| seg.type_arguments.is_some()) {
             log.report(&HirErr::UnimplementedFeature(
                 "generic type arguments in type paths".into(),
             ));
@@ -173,9 +168,7 @@ impl Ast2Hir for ast::UnaryExpr {
                 operand: operand.into(),
             }),
 
-            UnaryExprOp::Deref => Ok(Value::Deref {
-                place: operand.into(),
-            }),
+            UnaryExprOp::Deref => Ok(Value::Deref { place: operand.into() }),
 
             UnaryExprOp::Borrow => Ok(Value::Borrow {
                 exclusive: false,
@@ -558,11 +551,7 @@ impl Ast2Hir for ast::Cast {
     }
 }
 
-fn ast_localvar2hir(
-    var: &ast::LocalVariable,
-    ctx: &mut Ast2HirCtx,
-    log: &CompilerLog,
-) -> Result<LocalVariableId, ()> {
+fn ast_localvar2hir(var: &ast::LocalVariable, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<LocalVariableId, ()> {
     let kind = match var.kind {
         ast::LocalVariableKind::Let => LocalKind::Let,
         ast::LocalVariableKind::Var => LocalKind::Var,
@@ -644,9 +633,7 @@ impl Ast2Hir for ast::Block {
             Some(ast::Safety::Safe) | None => BlockSafety::Safe,
 
             Some(ast::Safety::Unsafe(Some(_))) => {
-                log.report(&HirErr::UnimplementedFeature(
-                    "block safety unsafe expression".into(),
-                ));
+                log.report(&HirErr::UnimplementedFeature("block safety unsafe expression".into()));
                 return Err(());
             }
         };
@@ -736,43 +723,39 @@ impl Ast2Hir for ast::ExprPath {
                     }
                 },
 
-                Some(SymbolKind::GlobalVariable) => {
-                    match ctx.tab.get_global_variable(&resolved_path) {
-                        Some(existing_variable_id) => Ok(Value::GlobalVariableSymbol {
-                            id: existing_variable_id.clone(),
-                        }),
+                Some(SymbolKind::GlobalVariable) => match ctx.tab.get_global_variable(&resolved_path) {
+                    Some(existing_variable_id) => Ok(Value::GlobalVariableSymbol {
+                        id: existing_variable_id.clone(),
+                    }),
 
-                        None => {
-                            let placeholder = GlobalVariable {
-                                visibility: Visibility::Sec,
-                                attributes: BTreeSet::new(),
-                                is_mutable: true,
-                                name: resolved_path.clone(),
-                                mangled_name: resolved_path,
-                                ty: ctx.create_inference_placeholder().into(),
-                                initializer: Value::Unit.into(),
-                            };
+                    None => {
+                        let placeholder = GlobalVariable {
+                            visibility: Visibility::Sec,
+                            attributes: BTreeSet::new(),
+                            is_mutable: true,
+                            name: resolved_path.clone(),
+                            mangled_name: resolved_path,
+                            ty: ctx.create_inference_placeholder().into(),
+                            initializer: Value::Unit.into(),
+                        };
 
-                            let placeholder_id: GlobalVariableId = placeholder.into();
-                            ctx.tab.add_global_variable(placeholder_id.clone());
+                        let placeholder_id: GlobalVariableId = placeholder.into();
+                        ctx.tab.add_global_variable(placeholder_id.clone());
 
-                            Ok(Value::GlobalVariableSymbol { id: placeholder_id })
-                        }
+                        Ok(Value::GlobalVariableSymbol { id: placeholder_id })
                     }
-                }
+                },
 
-                Some(SymbolKind::LocalVariable) => {
-                    match ctx.tab.get_local_variable(&resolved_path) {
-                        Some(existing_local_variable_id) => Ok(Value::LocalVariableSymbol {
-                            id: existing_local_variable_id.clone(),
-                        }),
+                Some(SymbolKind::LocalVariable) => match ctx.tab.get_local_variable(&resolved_path) {
+                    Some(existing_local_variable_id) => Ok(Value::LocalVariableSymbol {
+                        id: existing_local_variable_id.clone(),
+                    }),
 
-                        None => {
-                            log.report(&HirErr::UnresolvedSymbol);
-                            Err(())
-                        }
+                    None => {
+                        log.report(&HirErr::UnresolvedSymbol);
+                        Err(())
                     }
-                }
+                },
 
                 Some(SymbolKind::Parameter) => match ctx.tab.get_parameter(&resolved_path) {
                     Some(existing_parameter_id) => Ok(Value::ParameterSymbol {

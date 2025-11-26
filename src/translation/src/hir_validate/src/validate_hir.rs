@@ -68,15 +68,11 @@ pub struct ValidateTypeOptions {
 
 impl ValidateTypeOptions {
     pub fn sized() -> Self {
-        ValidateTypeOptions {
-            require_sized: true,
-        }
+        ValidateTypeOptions { require_sized: true }
     }
 
     pub fn un_sized() -> Self {
-        ValidateTypeOptions {
-            require_sized: false,
-        }
+        ValidateTypeOptions { require_sized: false }
     }
 }
 
@@ -86,9 +82,5 @@ where
 {
     fn verify(&self, ctx: &mut ValidateCtx, options: &ValidateTypeOptions) -> Result<(), ()>;
 
-    fn validate(
-        self,
-        ctx: &mut ValidateCtx,
-        options: &ValidateTypeOptions,
-    ) -> Result<ValidHir<Self>, ()>;
+    fn validate(self, ctx: &mut ValidateCtx, options: &ValidateTypeOptions) -> Result<ValidHir<Self>, ()>;
 }

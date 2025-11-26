@@ -142,23 +142,15 @@ fn load_source_file(
     let source_code = match std::fs::read_to_string(&path) {
         Ok(code) => code,
         Err(err) => {
-            log.report(&ResolveIssue::ImportNotFound((
-                source_from_package_name.clone(),
-                err,
-            )));
+            log.report(&ResolveIssue::ImportNotFound((source_from_package_name.clone(), err)));
             return None;
         }
     };
 
-    let lexer = match Lexer::new(
-        source_code.as_bytes(),
-        intern_file_id(&path.to_string_lossy()),
-    ) {
+    let lexer = match Lexer::new(source_code.as_bytes(), intern_file_id(&path.to_string_lossy())) {
         Ok(lex) => lex,
         Err(LexerError::SourceTooBig) => {
-            log.report(&ResolveIssue::ImportSourceCodeSizeLimitExceeded(
-                path.to_path_buf(),
-            ));
+            log.report(&ResolveIssue::ImportSourceCodeSizeLimitExceeded(path.to_path_buf()));
 
             return None;
         }
@@ -176,11 +168,7 @@ fn load_source_file(
     Some(module)
 }
 
-fn decide_what_to_import(
-    ctx: &ImportContext,
-    import_name: NString,
-    log: &CompilerLog,
-) -> Option<ImportContext> {
+fn decide_what_to_import(ctx: &ImportContext, import_name: NString, log: &CompilerLog) -> Option<ImportContext> {
     let folder = ctx.source_filepath.parent()?;
 
     let source_filepath = folder.join(format!("{}.nit", import_name));
@@ -255,12 +243,7 @@ fn resolve_import(
 
     if let Some(what) = decide_what_to_import(ctx, import_name.clone(), log) {
         let inside = ctx.package_name == what.package_name;
-        let content = load_source_file(
-            &what.source_filepath,
-            what.package_name.clone(),
-            inside,
-            log,
-        );
+        let content = load_source_file(&what.source_filepath, what.package_name.clone(), inside, log);
 
         if let Some(mut module) = content {
             resolve_imports_guarded(&what, &mut module, log, visited, depth);

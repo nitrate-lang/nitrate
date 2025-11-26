@@ -15,10 +15,7 @@ impl FunctionTypeIter<'_> {
             param.1.iter().try_for_each(vcb, tcb, visited)?;
         }
 
-        self.node
-            .return_type
-            .iter()
-            .try_for_each(vcb, tcb, visited)?;
+        self.node.return_type.iter().try_for_each(vcb, tcb, visited)?;
 
         ControlFlow::Continue(())
     }
@@ -56,10 +53,7 @@ impl TypeIter<'_> {
             | Type::F32
             | Type::F64 => {}
 
-            Type::Array {
-                element_type,
-                len: _,
-            } => {
+            Type::Array { element_type, len: _ } => {
                 element_type.iter().try_for_each(vcb, tcb, visited)?;
             }
 
@@ -86,11 +80,7 @@ impl TypeIter<'_> {
                 type_alias.iter().try_for_each(vcb, tcb, visited)?;
             }
 
-            Type::Refine {
-                base,
-                min: _,
-                max: _,
-            } => {
+            Type::Refine { base, min: _, max: _ } => {
                 base.iter().try_for_each(vcb, tcb, visited)?;
             }
 
@@ -99,10 +89,7 @@ impl TypeIter<'_> {
                     param.1.iter().try_for_each(vcb, tcb, visited)?;
                 }
 
-                function_type
-                    .return_type
-                    .iter()
-                    .try_for_each(vcb, tcb, visited)?;
+                function_type.return_type.iter().try_for_each(vcb, tcb, visited)?;
             }
 
             Type::Reference { to, .. } => {
@@ -192,15 +179,9 @@ impl ValueIter<'_> {
             | Value::InferredInteger(_)
             | Value::InferredFloat(_) => {}
 
-            Value::StructObject {
-                struct_def: _,
-                fields,
-            } => {
+            Value::StructObject { struct_def: _, fields } => {
                 for (_field_name, field_value) in fields {
-                    field_value
-                        .borrow()
-                        .iter()
-                        .try_for_each(vcb, tcb, visited)?;
+                    field_value.borrow().iter().try_for_each(vcb, tcb, visited)?;
                 }
             }
 
@@ -222,10 +203,7 @@ impl ValueIter<'_> {
                 operand.borrow().iter().try_for_each(vcb, tcb, visited)?;
             }
 
-            Value::FieldAccess {
-                expr,
-                field_name: _,
-            } => {
+            Value::FieldAccess { expr, field_name: _ } => {
                 expr.borrow().iter().try_for_each(vcb, tcb, visited)?;
             }
 
@@ -258,19 +236,13 @@ impl ValueIter<'_> {
 
             Value::List { elements } => {
                 for element in elements {
-                    element
-                        .borrow_mut()
-                        .iter()
-                        .try_for_each(vcb, tcb, visited)?;
+                    element.borrow_mut().iter().try_for_each(vcb, tcb, visited)?;
                 }
             }
 
             Value::Tuple { elements } => {
                 for element in elements {
-                    element
-                        .borrow_mut()
-                        .iter()
-                        .try_for_each(vcb, tcb, visited)?;
+                    element.borrow_mut().iter().try_for_each(vcb, tcb, visited)?;
                 }
             }
 
@@ -281,16 +253,10 @@ impl ValueIter<'_> {
             } => {
                 condition.borrow().iter().try_for_each(vcb, tcb, visited)?;
 
-                true_branch
-                    .borrow()
-                    .iter()
-                    .try_for_each(vcb, tcb, visited)?;
+                true_branch.borrow().iter().try_for_each(vcb, tcb, visited)?;
 
                 if let Some(false_branch) = false_branch {
-                    false_branch
-                        .borrow()
-                        .iter()
-                        .try_for_each(vcb, tcb, visited)?;
+                    false_branch.borrow().iter().try_for_each(vcb, tcb, visited)?;
                 }
             }
 
@@ -369,11 +335,7 @@ impl GlobalVariableIter<'_> {
     ) -> ControlFlow<T> {
         self.node.ty.iter().try_for_each(vcb, tcb, visited)?;
 
-        self.node
-            .initializer
-            .borrow()
-            .iter()
-            .try_for_each(vcb, tcb, visited)?;
+        self.node.initializer.borrow().iter().try_for_each(vcb, tcb, visited)?;
 
         ControlFlow::Continue(())
     }
@@ -443,10 +405,7 @@ impl StructDefIter<'_> {
     ) -> ControlFlow<T> {
         for field in self.node.fields.values() {
             if let Some(default_value) = &field.default_value {
-                default_value
-                    .borrow()
-                    .iter()
-                    .try_for_each(vcb, tcb, visited)?;
+                default_value.borrow().iter().try_for_each(vcb, tcb, visited)?;
             }
         }
 
@@ -467,10 +426,7 @@ impl EnumDefIter<'_> {
     ) -> ControlFlow<T> {
         for variant in self.node.variants.iter() {
             if let Some(default_value) = &variant.default_value {
-                default_value
-                    .borrow()
-                    .iter()
-                    .try_for_each(vcb, tcb, visited)?;
+                default_value.borrow().iter().try_for_each(vcb, tcb, visited)?;
             }
         }
 
@@ -496,17 +452,11 @@ impl FunctionIter<'_> {
             parameter.ty.iter().try_for_each(vcb, tcb, visited)?;
 
             if let Some(default_value) = &parameter.default_value {
-                default_value
-                    .borrow()
-                    .iter()
-                    .try_for_each(vcb, tcb, visited)?;
+                default_value.borrow().iter().try_for_each(vcb, tcb, visited)?;
             }
         }
 
-        self.node
-            .return_type
-            .iter()
-            .try_for_each(vcb, tcb, visited)?;
+        self.node.return_type.iter().try_for_each(vcb, tcb, visited)?;
 
         if let Some(body) = &self.node.body {
             for element in body {

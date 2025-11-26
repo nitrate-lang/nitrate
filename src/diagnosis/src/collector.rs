@@ -78,21 +78,13 @@ impl CompilerLog {
             }
 
             Origin::Point(pos) => {
-                info!(
-                    self.log,
-                    "info[E{:04X}]: {}: {}\n--> {}", id.0, group, message, pos
-                );
+                info!(self.log, "info[E{:04X}]: {}: {}\n--> {}", id.0, group, message, pos);
             }
 
             Origin::Span(span) => {
                 info!(
                     self.log,
-                    "info[E{:04X}]: {}: {}\n--> {}\n--> {}",
-                    id.0,
-                    group,
-                    message,
-                    span.start,
-                    span.end
+                    "info[E{:04X}]: {}: {}\n--> {}\n--> {}", id.0, group, message, span.start, span.end
                 );
             }
         }
@@ -107,21 +99,13 @@ impl CompilerLog {
             }
 
             Origin::Point(pos) => {
-                warn!(
-                    self.log,
-                    "warning[E{:04X}]: {}: {}\n--> {}", id.0, group, message, pos
-                );
+                warn!(self.log, "warning[E{:04X}]: {}: {}\n--> {}", id.0, group, message, pos);
             }
 
             Origin::Span(span) => {
                 warn!(
                     self.log,
-                    "warning[E{:04X}]: {}: {}\n--> {}\n--> {}",
-                    id.0,
-                    group,
-                    message,
-                    span.start,
-                    span.end
+                    "warning[E{:04X}]: {}: {}\n--> {}\n--> {}", id.0, group, message, span.start, span.end
                 );
             }
         }
@@ -136,21 +120,13 @@ impl CompilerLog {
             }
 
             Origin::Point(pos) => {
-                error!(
-                    self.log,
-                    "error[E{:04X}]: {}: {}\n--> {}", id.0, group, message, pos
-                );
+                error!(self.log, "error[E{:04X}]: {}: {}\n--> {}", id.0, group, message, pos);
             }
 
             Origin::Span(span) => {
                 error!(
                     self.log,
-                    "error[E{:04X}]: {}: {}\n--> {}\n--> {}",
-                    id.0,
-                    group,
-                    message,
-                    span.start,
-                    span.end
+                    "error[E{:04X}]: {}: {}\n--> {}\n--> {}", id.0, group, message, span.start, span.end
                 );
             }
         }

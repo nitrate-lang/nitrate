@@ -6,10 +6,7 @@ fn mangle_segment(str: &str) -> String {
     let is_atypical = if str.as_bytes()[0].is_ascii_digit() {
         true
     } else {
-        let is_regular = str
-            .as_bytes()
-            .iter()
-            .all(|b| b.is_ascii_alphanumeric() || *b == b'_');
+        let is_regular = str.as_bytes().iter().all(|b| b.is_ascii_alphanumeric() || *b == b'_');
 
         !is_regular
     };

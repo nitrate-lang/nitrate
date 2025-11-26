@@ -557,12 +557,7 @@ mod tests {
     fn test_integer_token_parsetree() {
         assert_eq!(
             enum_iterator::all::<IntegerKind>().collect::<Vec<_>>(),
-            vec![
-                IntegerKind::Bin,
-                IntegerKind::Oct,
-                IntegerKind::Dec,
-                IntegerKind::Hex
-            ]
+            vec![IntegerKind::Bin, IntegerKind::Oct, IntegerKind::Dec, IntegerKind::Hex]
         );
 
         let prime_u128 = 0xa8b437b5f0bd41f1e97765f63699f65d_u128;
@@ -582,16 +577,8 @@ mod tests {
                 IntegerKind::Oct,
                 "0o2505503366574136501743645673137306646373135",
             ),
-            (
-                prime_u128,
-                IntegerKind::Dec,
-                "224246046673732952298033213736759195229",
-            ),
-            (
-                prime_u128,
-                IntegerKind::Hex,
-                "0xa8b437b5f0bd41f1e97765f63699f65d",
-            ),
+            (prime_u128, IntegerKind::Dec, "224246046673732952298033213736759195229"),
+            (prime_u128, IntegerKind::Hex, "0xa8b437b5f0bd41f1e97765f63699f65d"),
             (
                 u128::MAX,
                 IntegerKind::Bin,
@@ -602,16 +589,8 @@ mod tests {
                 IntegerKind::Oct,
                 "0o3777777777777777777777777777777777777777777",
             ),
-            (
-                u128::MAX,
-                IntegerKind::Dec,
-                "340282366920938463463374607431768211455",
-            ),
-            (
-                u128::MAX,
-                IntegerKind::Hex,
-                "0xffffffffffffffffffffffffffffffff",
-            ),
+            (u128::MAX, IntegerKind::Dec, "340282366920938463463374607431768211455"),
+            (u128::MAX, IntegerKind::Hex, "0xffffffffffffffffffffffffffffffff"),
         ];
 
         for (value, kind, expected_str) in test_vectors {
@@ -657,15 +636,9 @@ mod tests {
             (Token::Integer(Integer::new(42, IntegerKind::Dec)), "42"),
             (Token::Float(NotNan::new(3.14).unwrap()), "3.14"),
             (Token::String("hello".into()), "\"hello\""),
+            (Token::BString(Vec::from(b"world")), "[119, 111, 114, 108, 100]"),
             (
-                Token::BString(Vec::from(b"world")),
-                "[119, 111, 114, 108, 100]",
-            ),
-            (
-                Token::Comment(Comment::new(
-                    " This is a comment".to_string(),
-                    CommentKind::SingleLine,
-                )),
+                Token::Comment(Comment::new(" This is a comment".to_string(), CommentKind::SingleLine)),
                 "# This is a comment",
             ),
             (Token::Let, "let"),
@@ -695,12 +668,7 @@ mod tests {
 
         assert_eq!(
             format!("{}", position),
-            format!(
-                "{}:{}:{}",
-                position.fileid.unwrap().deref(),
-                line + 1,
-                column + 1
-            )
+            format!("{}:{}:{}", position.fileid.unwrap().deref(), line + 1, column + 1)
         );
     }
 
@@ -713,15 +681,9 @@ mod tests {
             (Token::Integer(Integer::new(42, IntegerKind::Dec)), "42"),
             (Token::Float(NotNan::new(3.14).unwrap()), "3.14"),
             (Token::String("hello".into()), "\"hello\""),
+            (Token::BString(Vec::from(b"world")), "[119, 111, 114, 108, 100]"),
             (
-                Token::BString(Vec::from(b"world")),
-                "[119, 111, 114, 108, 100]",
-            ),
-            (
-                Token::Comment(Comment::new(
-                    " This is a comment".into(),
-                    CommentKind::SingleLine,
-                )),
+                Token::Comment(Comment::new(" This is a comment".into(), CommentKind::SingleLine)),
                 "# This is a comment",
             ),
             (Token::Let, "let"),

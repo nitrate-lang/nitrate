@@ -21,11 +21,7 @@ fn resolve_expr_path(
             .join("::"),
     );
 
-    let is_root_path = path
-        .segments
-        .first()
-        .map(|seg| seg.name.is_empty())
-        .unwrap_or(false);
+    let is_root_path = path.segments.first().map(|seg| seg.name.is_empty()).unwrap_or(false);
 
     if is_root_path {
         if symbol_map.contains_key(&pathname) {
@@ -66,11 +62,7 @@ fn resolve_type_path(
             .join("::"),
     );
 
-    let is_root_path = path
-        .segments
-        .first()
-        .map(|seg| seg.name.is_empty())
-        .unwrap_or(false);
+    let is_root_path = path.segments.first().map(|seg| seg.name.is_empty()).unwrap_or(false);
 
     if is_root_path {
         if symbol_map.contains_key(&pathname) {

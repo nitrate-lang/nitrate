@@ -1,9 +1,6 @@
 use crate::prelude::*;
 
-pub(crate) fn print_trivia(
-    trivia: &Option<Trivia>,
-    f: &mut std::fmt::Formatter<'_>,
-) -> std::fmt::Result {
+pub(crate) fn print_trivia(trivia: &Option<Trivia>, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
     if let Some(trivia) = trivia {
         write!(f, "{}", trivia)?;
     }
@@ -32,9 +29,7 @@ impl std::fmt::Display for Vis {
 
 impl std::fmt::Display for AttributeList {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let has_trailing_comma = self
-            .flags
-            .contains(AttributeListFlags::TRAILING_COMMA_PRESENT);
+        let has_trailing_comma = self.flags.contains(AttributeListFlags::TRAILING_COMMA_PRESENT);
 
         print_trivia(&self.trivia[0], f)?;
         write!(f, "[")?;

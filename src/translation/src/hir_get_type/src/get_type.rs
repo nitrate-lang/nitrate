@@ -90,10 +90,7 @@ impl HirGetType for Value {
                 Ok(array)
             }
 
-            Value::StructObject {
-                struct_def,
-                fields: _,
-            } => Ok(Type::Struct {
+            Value::StructObject { struct_def, fields: _ } => Ok(Type::Struct {
                 def: struct_def.clone(),
             }),
 
@@ -119,9 +116,7 @@ impl HirGetType for Value {
                 | BinaryOp::Or
                 | BinaryOp::Xor => Ok(left.borrow().determine_type()?),
 
-                BinaryOp::Shl | BinaryOp::Shr | BinaryOp::Rol | BinaryOp::Ror => {
-                    Ok(left.borrow().determine_type()?)
-                }
+                BinaryOp::Shl | BinaryOp::Shr | BinaryOp::Rol | BinaryOp::Ror => Ok(left.borrow().determine_type()?),
 
                 BinaryOp::LogicAnd
                 | BinaryOp::LogicOr
@@ -168,10 +163,7 @@ impl HirGetType for Value {
                 }
             }
 
-            Value::Cast {
-                value: _,
-                target_type,
-            } => Ok(target_type.deref().clone()),
+            Value::Cast { value: _, target_type } => Ok(target_type.deref().clone()),
 
             Value::Borrow {
                 mutable,
@@ -233,10 +225,7 @@ impl HirGetType for Value {
                 }
             },
 
-            Value::While {
-                condition: _,
-                body: _,
-            } => Ok(Type::Unit),
+            Value::While { condition: _, body: _ } => Ok(Type::Unit),
 
             Value::Loop { body: _ } => Ok(Type::Unit),
             Value::Break { label: _ } => Ok(Type::Never),

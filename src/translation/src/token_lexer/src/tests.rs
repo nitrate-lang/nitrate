@@ -436,10 +436,7 @@ mod tests {
 
     #[test]
     fn test_lexer_iterator_integer_literal_oct() {
-        lexical_equate(
-            "0o30071",
-            Token::Integer(Integer::new(0o30071, IntegerKind::Oct)),
-        );
+        lexical_equate("0o30071", Token::Integer(Integer::new(0o30071, IntegerKind::Oct)));
 
         lexical_equate(
             "0o3777777777777777777777777777777777777777777",
@@ -449,10 +446,7 @@ mod tests {
 
     #[test]
     fn test_lexer_iterator_integer_literal_dec() {
-        lexical_equate(
-            "12345",
-            Token::Integer(Integer::new(12345, IntegerKind::Dec)),
-        );
+        lexical_equate("12345", Token::Integer(Integer::new(12345, IntegerKind::Dec)));
 
         lexical_equate(
             "340282366920938463463374607431768211455",
@@ -481,10 +475,7 @@ mod tests {
 
     #[test]
     fn test_lexer_iterator_float_literal_scientific_notation() {
-        lexical_equate(
-            "3.4028235e+38",
-            Token::Float(NotNan::new(3.4028235e+38).unwrap()),
-        );
+        lexical_equate("3.4028235e+38", Token::Float(NotNan::new(3.4028235e+38).unwrap()));
 
         lexical_equate(
             "1.7976931348623157e+308",
@@ -551,9 +542,7 @@ mod tests {
         assert_eq!(
             first_token,
             AnnotatedToken {
-                token: Token::BString(
-                    b"\x9b\xeb\xdd\x44\xde\x13\xfd\x17\x97\xac\xf9\xe5\x4d\xb2\x78\xcd".into()
-                ),
+                token: Token::BString(b"\x9b\xeb\xdd\x44\xde\x13\xfd\x17\x97\xac\xf9\xe5\x4d\xb2\x78\xcd".into()),
                 start_line: 0,
                 start_column: 0,
                 start_offset: 0,
@@ -711,10 +700,7 @@ mod tests {
         assert_eq!(
             first_token,
             AnnotatedToken {
-                token: Token::Comment(Comment::new(
-                    "# This is a comment".into(),
-                    CommentKind::SingleLine
-                )),
+                token: Token::Comment(Comment::new("# This is a comment".into(), CommentKind::SingleLine)),
                 start_line: 0,
                 start_column: 0,
                 start_offset: 0,

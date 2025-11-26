@@ -17,11 +17,7 @@ use std::collections::{BTreeSet, HashMap};
 
 #[link(name = "nitrate_extra_llvm_ffi", kind = "static")]
 unsafe extern "C" {
-    fn nitrate_llvm_appendToGlobalCtors(
-        module: LLVMModuleRef,
-        function: LLVMValueRef,
-        priority: u32,
-    ) -> ();
+    fn nitrate_llvm_appendToGlobalCtors(module: LLVMModuleRef, function: LLVMValueRef, priority: u32) -> ();
 }
 
 pub struct SymbolGenCtx<'ctx, 'tab, 'package_name, 'module> {
@@ -55,9 +51,7 @@ fn gen_global<'ctx>(ctx: &mut SymbolGenCtx<'ctx, '_, '_, '_>, hir_global: &hir::
     let hir_global_ty = hir_global.ty.deref();
     let global_ty = gen_ty(hir_global_ty, &mut ctx.ty_ctx());
 
-    let llvm_global = ctx
-        .module
-        .add_global(global_ty, None, &hir_global.mangled_name);
+    let llvm_global = ctx.module.add_global(global_ty, None, &hir_global.mangled_name);
     llvm_global.set_initializer(&global_ty.const_zero());
     llvm_global.set_linkage(match hir_global.visibility {
         hir::Visibility::Pub => Linkage::External,
@@ -114,11 +108,7 @@ fn gen_global<'ctx>(ctx: &mut SymbolGenCtx<'ctx, '_, '_, '_>, hir_global: &hir::
     // Register Constructor
 
     unsafe {
-        nitrate_llvm_appendToGlobalCtors(
-            ctx.module.as_mut_ptr(),
-            llvm_ctor_function.as_value_ref(),
-            65535,
-        );
+        nitrate_llvm_appendToGlobalCtors(ctx.module.as_mut_ptr(), llvm_ctor_function.as_value_ref(), 65535);
     }
 }
 
@@ -139,14 +129,10 @@ fn gen_function_decl<'ctx>(
 
     let return_type = gen_ty(&hir_function.return_type, &mut ctx.ty_ctx());
 
-    let variadic = hir_function
-        .attributes
-        .contains(&hir::FunctionAttribute::CVariadic);
+    let variadic = hir_function.attributes.contains(&hir::FunctionAttribute::CVariadic);
 
     let llvm_fn_type = return_type.fn_type(&param_types, variadic);
-    let llvm_function = ctx
-        .module
-        .add_function(&hir_function.mangled_name, llvm_fn_type, None);
+    let llvm_function = ctx.module.add_function(&hir_function.mangled_name, llvm_fn_type, None);
 
     llvm_function.set_linkage(match hir_function.visibility {
         hir::Visibility::Pub => Linkage::External,
@@ -157,10 +143,7 @@ fn gen_function_decl<'ctx>(
     llvm_function
 }
 
-fn gen_function<'ctx>(
-    ctx: &mut SymbolGenCtx<'ctx, '_, '_, '_>,
-    hir_function: &hir::Function,
-) -> FunctionValue<'ctx> {
+fn gen_function<'ctx>(ctx: &mut SymbolGenCtx<'ctx, '_, '_, '_>, hir_function: &hir::Function) -> FunctionValue<'ctx> {
     let llvm_function = gen_function_decl(ctx, hir_function);
 
     if let Some(body) = &hir_function.body {
@@ -202,9 +185,7 @@ fn gen_function<'ctx>(
                     let llvm_init_value = gen_rval(&mut val_ctx, hir_local_init);
                     val_ctx.bb.build_store(llvm_local, llvm_init_value).unwrap();
 
-                    val_ctx
-                        .locals
-                        .insert(local_name, (llvm_local, llvm_local_ty));
+                    val_ctx.locals.insert(local_name, (llvm_local, llvm_local_ty));
                 }
             };
         }

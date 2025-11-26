@@ -1,6 +1,4 @@
-use nitrate_diagnosis::{
-    DiagnosticGroupId, DiagnosticInfo, FormattableDiagnosticGroup, Origin, 
-};
+use nitrate_diagnosis::{DiagnosticGroupId, DiagnosticInfo, FormattableDiagnosticGroup, Origin};
 use nitrate_token::SourcePosition;
 
 pub(crate) enum SyntaxErr {
@@ -45,7 +43,7 @@ pub(crate) enum SyntaxErr {
     ImplExpectedEnd(SourcePosition),
     ImplItemLimit(SourcePosition),
     ImplCannotBeVisible(SourcePosition),
-    
+
     PathGenericArgumentExpectedEnd(SourcePosition),
     PathGenericArgumentLimit(SourcePosition),
     PathExpectedNameOrSeparator(SourcePosition),
@@ -233,7 +231,6 @@ impl FormattableDiagnosticGroup for SyntaxErr {
             },
 
             /* ------------------------------------------------------------------------- */
-
             SyntaxErr::ModuleMissingName(pos) => DiagnosticInfo {
                 origin: Origin::Point(pos.to_owned().into()),
                 message: "module name is missing".into(),
@@ -250,7 +247,6 @@ impl FormattableDiagnosticGroup for SyntaxErr {
             },
 
             /* ------------------------------------------------------------------------- */
-
             SyntaxErr::ImportAliasMissingName(pos) => DiagnosticInfo {
                 origin: Origin::Point(pos.to_owned().into()),
                 message: "use alias name is missing".into(),
@@ -267,14 +263,12 @@ impl FormattableDiagnosticGroup for SyntaxErr {
             },
 
             /* ------------------------------------------------------------------------- */
-
             SyntaxErr::TypeAliasMissingName(pos) => DiagnosticInfo {
                 origin: Origin::Point(pos.to_owned().into()),
                 message: "type alias name is missing".into(),
             },
 
             /* ------------------------------------------------------------------------- */
-
             SyntaxErr::EnumMissingName(pos) => DiagnosticInfo {
                 origin: Origin::Point(pos.to_owned().into()),
                 message: "enum name is missing".into(),
@@ -296,7 +290,6 @@ impl FormattableDiagnosticGroup for SyntaxErr {
             },
 
             /* ------------------------------------------------------------------------- */
-
             SyntaxErr::StructureMissingName(pos) => DiagnosticInfo {
                 origin: Origin::Point(pos.to_owned().into()),
                 message: "structure name is missing".into(),
@@ -318,7 +311,6 @@ impl FormattableDiagnosticGroup for SyntaxErr {
             },
 
             /* ------------------------------------------------------------------------- */
-
             SyntaxErr::FunctionMissingName(pos) => DiagnosticInfo {
                 origin: Origin::Point(pos.to_owned().into()),
                 message: "function name is missing".into(),
@@ -345,14 +337,12 @@ impl FormattableDiagnosticGroup for SyntaxErr {
             },
 
             /* ------------------------------------------------------------------------- */
-
             SyntaxErr::VariableMissingName(pos) => DiagnosticInfo {
                 origin: Origin::Point(pos.to_owned().into()),
                 message: "variable name is missing".into(),
             },
 
             /* ------------------------------------------------------------------------- */
-
             SyntaxErr::TraitMissingName(pos) => DiagnosticInfo {
                 origin: Origin::Point(pos.to_owned().into()),
                 message: "trait name is missing".into(),
@@ -375,7 +365,6 @@ impl FormattableDiagnosticGroup for SyntaxErr {
             },
 
             /* ------------------------------------------------------------------------- */
-
             SyntaxErr::ImplMissingFor(pos) => DiagnosticInfo {
                 origin: Origin::Point(pos.to_owned().into()),
                 message: "expected 'for' in impl declaration".into(),
@@ -397,7 +386,6 @@ impl FormattableDiagnosticGroup for SyntaxErr {
             },
 
             /* ------------------------------------------------------------------------- */
-
             SyntaxErr::PathGenericArgumentExpectedEnd(pos) => DiagnosticInfo {
                 origin: Origin::Point(pos.to_owned().into()),
                 message: "expected '>' or ',' in generic arguments".into(),
@@ -424,14 +412,12 @@ impl FormattableDiagnosticGroup for SyntaxErr {
             },
 
             /* ------------------------------------------------------------------------- */
-
             SyntaxErr::ReferenceTypeExpectedLifetimeName(pos) => DiagnosticInfo {
                 origin: Origin::Point(pos.to_owned().into()),
                 message: "reference lifetime is missing after '".into(),
             },
-            
-            /* ------------------------------------------------------------------------- */
 
+            /* ------------------------------------------------------------------------- */
             SyntaxErr::StructExpectedFieldOrEnd(pos) => DiagnosticInfo {
                 origin: Origin::Point(pos.to_owned().into()),
                 message: "expected field name or '}'".into(),
@@ -448,7 +434,6 @@ impl FormattableDiagnosticGroup for SyntaxErr {
             },
 
             /* ------------------------------------------------------------------------- */
-
             SyntaxErr::TupleTypeExpectedEnd(pos) => DiagnosticInfo {
                 origin: Origin::Point(pos.to_owned().into()),
                 message: "expected ')' or ','".into(),
@@ -460,7 +445,6 @@ impl FormattableDiagnosticGroup for SyntaxErr {
             },
 
             /* ------------------------------------------------------------------------- */
-
             SyntaxErr::ListExpectedEnd(pos) => DiagnosticInfo {
                 origin: Origin::Point(pos.to_owned().into()),
                 message: "expected ',' or ']'".into(),
@@ -472,7 +456,6 @@ impl FormattableDiagnosticGroup for SyntaxErr {
             },
 
             /* ------------------------------------------------------------------------- */
-
             SyntaxErr::AttributesExpectedEnd(pos) => DiagnosticInfo {
                 origin: Origin::Point(pos.to_owned().into()),
                 message: "expected ',' or ']'".into(),
@@ -484,7 +467,6 @@ impl FormattableDiagnosticGroup for SyntaxErr {
             },
 
             /* ------------------------------------------------------------------------- */
-
             SyntaxErr::BlockExpectedEnd(pos) => DiagnosticInfo {
                 origin: Origin::Point(pos.to_owned().into()),
                 message: "expected ';' or '}'".into(),
@@ -496,21 +478,18 @@ impl FormattableDiagnosticGroup for SyntaxErr {
             },
 
             /* ------------------------------------------------------------------------- */
-
             SyntaxErr::BreakMissingLabel(pos) => DiagnosticInfo {
                 origin: Origin::Point(pos.to_owned().into()),
                 message: "break statement is missing a label".into(),
             },
 
             /* ------------------------------------------------------------------------- */
-
             SyntaxErr::ContinueMissingLabel(pos) => DiagnosticInfo {
                 origin: Origin::Point(pos.to_owned().into()),
                 message: "continue statement is missing a label".into(),
             },
 
             /* ------------------------------------------------------------------------- */
-
             SyntaxErr::FunctionCallExpectedEnd(pos) => DiagnosticInfo {
                 origin: Origin::Point(pos.to_owned().into()),
                 message: "expected ',' or ')' after function argument".into(),
@@ -527,7 +506,6 @@ impl FormattableDiagnosticGroup for SyntaxErr {
             },
 
             /* ------------------------------------------------------------------------- */
-
             SyntaxErr::ForVariableBindingMissingName(pos) => DiagnosticInfo {
                 origin: Origin::Point(pos.to_owned().into()),
                 message: "missing name for for-loop binding".into(),
@@ -549,14 +527,12 @@ impl FormattableDiagnosticGroup for SyntaxErr {
             },
 
             /* ------------------------------------------------------------------------- */
-
             SyntaxErr::ExpectedFieldOrMethodName(pos) => DiagnosticInfo {
                 origin: Origin::Point(pos.to_owned().into()),
                 message: "expected field or method name".into(),
             },
 
             /* ------------------------------------------------------------------------- */
-
             SyntaxErr::ExpectedOpenParen(pos) => DiagnosticInfo {
                 origin: Origin::Point(pos.to_owned().into()),
                 message: "expected '('".into(),
@@ -613,7 +589,6 @@ impl FormattableDiagnosticGroup for SyntaxErr {
             },
 
             /* ------------------------------------------------------------------------- */
-
             SyntaxErr::ExpectedItem(pos) => DiagnosticInfo {
                 origin: Origin::Point(pos.to_owned().into()),
                 message: "expected an item".into(),
@@ -630,11 +605,10 @@ impl FormattableDiagnosticGroup for SyntaxErr {
             },
 
             /* ------------------------------------------------------------------------- */
-
             SyntaxErr::SyntaxNotSupported(pos) => DiagnosticInfo {
                 origin: Origin::Point(pos.to_owned().into()),
                 message: "this syntax is not supported".into(),
-            }
+            },
         }
     }
 }

@@ -32,9 +32,7 @@ impl<'a, 'log> Parser<'a, 'log> {
             items.push(item.into());
         }
 
-        Item::Root {
-            items: items.into(),
-        }
+        Item::Root { items: items.into() }
     }
 
     pub(crate) fn consume_trivia(&mut self) -> Option<Trivia> {

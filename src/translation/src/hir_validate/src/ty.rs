@@ -1,8 +1,7 @@
 use std::{collections::HashSet, ops::Deref};
 
 use crate::{
-    ValidHir, ValidateCtx, ValidateHirItem, ValidateHirType, ValidateTypeOptions, diagnosis::Issue,
-    establish_property,
+    ValidHir, ValidateCtx, ValidateHirItem, ValidateHirType, ValidateTypeOptions, diagnosis::Issue, establish_property,
 };
 use nitrate_hir::prelude::*;
 
@@ -17,11 +16,7 @@ fn verify_array(
     })
 }
 
-fn verify_tuple(
-    ctx: &mut ValidateCtx,
-    element_types: &[TypeId],
-    _options: &ValidateTypeOptions,
-) -> Result<(), ()> {
+fn verify_tuple(ctx: &mut ValidateCtx, element_types: &[TypeId], _options: &ValidateTypeOptions) -> Result<(), ()> {
     establish_property("all tuple element types: Sized", || {
         for elem_type in element_types {
             establish_property("element_type: Sized", || {
@@ -68,11 +63,7 @@ impl ValidateHirType for FunctionAttribute {
         }
     }
 
-    fn validate(
-        self,
-        ctx: &mut ValidateCtx,
-        options: &ValidateTypeOptions,
-    ) -> Result<ValidHir<Self>, ()> {
+    fn validate(self, ctx: &mut ValidateCtx, options: &ValidateTypeOptions) -> Result<ValidHir<Self>, ()> {
         self.verify(ctx, options)?;
         Ok(ValidHir::new(self))
     }
@@ -122,11 +113,7 @@ impl ValidateHirType for FunctionType {
         Ok(())
     }
 
-    fn validate(
-        self,
-        ctx: &mut ValidateCtx,
-        options: &ValidateTypeOptions,
-    ) -> Result<ValidHir<Self>, ()> {
+    fn validate(self, ctx: &mut ValidateCtx, options: &ValidateTypeOptions) -> Result<ValidHir<Self>, ()> {
         self.verify(ctx, options)?;
         Ok(ValidHir::new(self))
     }
@@ -231,20 +218,9 @@ impl ValidateHirType for Type {
                 exclusive,
                 mutable,
                 element_type,
-            } => verify_slice_reference_type(
-                ctx,
-                lifetime,
-                *exclusive,
-                *mutable,
-                element_type,
-                options,
-            ),
+            } => verify_slice_reference_type(ctx, lifetime, *exclusive, *mutable, element_type, options),
 
-            Type::Pointer {
-                to,
-                exclusive,
-                mutable,
-            } => verify_pointer_type(ctx, to, *exclusive, *mutable, options),
+            Type::Pointer { to, exclusive, mutable } => verify_pointer_type(ctx, to, *exclusive, *mutable, options),
 
             Type::InferredFloat | Type::InferredInteger | Type::Inferred { .. } => {
                 ctx.log.report(&Issue::UninferredTypeResidue);
@@ -253,11 +229,7 @@ impl ValidateHirType for Type {
         }
     }
 
-    fn validate(
-        self,
-        ctx: &mut ValidateCtx,
-        options: &ValidateTypeOptions,
-    ) -> Result<ValidHir<Self>, ()> {
+    fn validate(self, ctx: &mut ValidateCtx, options: &ValidateTypeOptions) -> Result<ValidHir<Self>, ()> {
         self.verify(ctx, options)?;
         Ok(ValidHir::new(self))
     }

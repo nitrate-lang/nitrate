@@ -54,8 +54,7 @@ impl Interpreter<'_> {
             .read_to_end(&mut source_code)
             .map_err(|e| InterpreterError::IoError(e))?;
 
-        let source_code_file = intern_file_id(&entrypoint_path.to_string_lossy().to_string())
-            .expect("FileId overflow");
+        let source_code_file = intern_file_id(&entrypoint_path.to_string_lossy().to_string()).expect("FileId overflow");
 
         using_source(
             &GlobalSource {

@@ -20,11 +20,7 @@ impl<'a> DumpContext<'a> {
 }
 
 pub trait Dump {
-    fn dump(
-        &self,
-        ctx: &mut DumpContext,
-        o: &mut dyn std::fmt::Write,
-    ) -> Result<(), std::fmt::Error>;
+    fn dump(&self, ctx: &mut DumpContext, o: &mut dyn std::fmt::Write) -> Result<(), std::fmt::Error>;
 
     fn to_string(&self) -> String {
         let mut ctx = DumpContext::default();
@@ -34,10 +30,7 @@ pub trait Dump {
     }
 }
 
-pub(crate) fn write_indent(
-    ctx: &DumpContext,
-    o: &mut dyn std::fmt::Write,
-) -> Result<(), std::fmt::Error> {
+pub(crate) fn write_indent(ctx: &DumpContext, o: &mut dyn std::fmt::Write) -> Result<(), std::fmt::Error> {
     for _ in 0..ctx.indent {
         write!(o, "{}", ctx.indent_str)?;
     }

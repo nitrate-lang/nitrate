@@ -1,9 +1,7 @@
 use inkwell::{
     OptimizationLevel,
     context::Context,
-    targets::{
-        CodeModel, InitializationConfig, RelocMode, Target, TargetData, TargetMachine, TargetTriple,
-    },
+    targets::{CodeModel, InitializationConfig, RelocMode, Target, TargetData, TargetMachine, TargetTriple},
 };
 
 use crate::OptLevel;
@@ -48,8 +46,7 @@ impl LLVMContext {
         let features = "";
 
         let triple = TargetTriple::create(target_triple);
-        let target = Target::from_triple(&triple)
-            .map_err(|e| format!("Failed to get target from triple: {}", e))?;
+        let target = Target::from_triple(&triple).map_err(|e| format!("Failed to get target from triple: {}", e))?;
 
         let target_machine = target
             .create_target_machine(

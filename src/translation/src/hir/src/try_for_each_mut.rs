@@ -2,11 +2,7 @@ use crate::prelude::*;
 use std::ops::ControlFlow;
 
 impl BlockIterMut<'_> {
-    pub(crate) fn try_for_each_mut<T>(
-        &mut self,
-
-        vcb: &mut dyn FnMut(&mut Value) -> ControlFlow<T>,
-    ) -> ControlFlow<T> {
+    pub(crate) fn try_for_each_mut<T>(&mut self, vcb: &mut dyn FnMut(&mut Value) -> ControlFlow<T>) -> ControlFlow<T> {
         for element in &self.node.elements {
             match element {
                 BlockElement::Expr(id) => {
@@ -30,11 +26,7 @@ impl BlockIterMut<'_> {
 }
 
 impl ValueIterMut<'_> {
-    pub(crate) fn try_for_each_mut<T>(
-        &mut self,
-
-        vcb: &mut dyn FnMut(&mut Value) -> ControlFlow<T>,
-    ) -> ControlFlow<T> {
+    pub(crate) fn try_for_each_mut<T>(&mut self, vcb: &mut dyn FnMut(&mut Value) -> ControlFlow<T>) -> ControlFlow<T> {
         vcb(self.node)?;
 
         match self.node {
@@ -59,10 +51,7 @@ impl ValueIterMut<'_> {
             | Value::InferredInteger(_)
             | Value::InferredFloat(_) => {}
 
-            Value::StructObject {
-                struct_def: _,
-                fields,
-            } => {
+            Value::StructObject { struct_def: _, fields } => {
                 for (_field_name, field_value) in fields {
                     field_value.borrow_mut().iter_mut().try_for_each_mut(vcb)?;
                 }
@@ -86,10 +75,7 @@ impl ValueIterMut<'_> {
                 operand.borrow_mut().iter_mut().try_for_each_mut(vcb)?;
             }
 
-            Value::FieldAccess {
-                expr,
-                field_name: _,
-            } => {
+            Value::FieldAccess { expr, field_name: _ } => {
                 expr.borrow_mut().iter_mut().try_for_each_mut(vcb)?;
             }
 
@@ -209,27 +195,15 @@ impl ValueIterMut<'_> {
 }
 
 impl GlobalVariableIterMut<'_> {
-    pub(crate) fn try_for_each_mut<T>(
-        &mut self,
-
-        vcb: &mut dyn FnMut(&mut Value) -> ControlFlow<T>,
-    ) -> ControlFlow<T> {
-        self.node
-            .initializer
-            .borrow_mut()
-            .iter_mut()
-            .try_for_each_mut(vcb)?;
+    pub(crate) fn try_for_each_mut<T>(&mut self, vcb: &mut dyn FnMut(&mut Value) -> ControlFlow<T>) -> ControlFlow<T> {
+        self.node.initializer.borrow_mut().iter_mut().try_for_each_mut(vcb)?;
 
         ControlFlow::Continue(())
     }
 }
 
 impl ModuleIterMut<'_> {
-    pub(crate) fn try_for_each_mut<T>(
-        &mut self,
-
-        vcb: &mut dyn FnMut(&mut Value) -> ControlFlow<T>,
-    ) -> ControlFlow<T> {
+    pub(crate) fn try_for_each_mut<T>(&mut self, vcb: &mut dyn FnMut(&mut Value) -> ControlFlow<T>) -> ControlFlow<T> {
         for item in &self.node.items {
             match item {
                 Item::Module(id) => {
@@ -261,17 +235,10 @@ impl ModuleIterMut<'_> {
 }
 
 impl StructDefIterMut<'_> {
-    pub(crate) fn try_for_each_mut<T>(
-        &mut self,
-
-        vcb: &mut dyn FnMut(&mut Value) -> ControlFlow<T>,
-    ) -> ControlFlow<T> {
+    pub(crate) fn try_for_each_mut<T>(&mut self, vcb: &mut dyn FnMut(&mut Value) -> ControlFlow<T>) -> ControlFlow<T> {
         for field in self.node.fields.values() {
             if let Some(default_value) = &field.default_value {
-                default_value
-                    .borrow_mut()
-                    .iter_mut()
-                    .try_for_each_mut(vcb)?;
+                default_value.borrow_mut().iter_mut().try_for_each_mut(vcb)?;
             }
         }
 
@@ -280,16 +247,10 @@ impl StructDefIterMut<'_> {
 }
 
 impl EnumDefIterMut<'_> {
-    pub(crate) fn try_for_each_mut<T>(
-        &mut self,
-        vcb: &mut dyn FnMut(&mut Value) -> ControlFlow<T>,
-    ) -> ControlFlow<T> {
+    pub(crate) fn try_for_each_mut<T>(&mut self, vcb: &mut dyn FnMut(&mut Value) -> ControlFlow<T>) -> ControlFlow<T> {
         for variant in self.node.variants.iter_mut() {
             if let Some(default_value) = &variant.default_value {
-                default_value
-                    .borrow_mut()
-                    .iter_mut()
-                    .try_for_each_mut(vcb)?;
+                default_value.borrow_mut().iter_mut().try_for_each_mut(vcb)?;
             }
         }
 
@@ -298,18 +259,12 @@ impl EnumDefIterMut<'_> {
 }
 
 impl FunctionIterMut<'_> {
-    pub(crate) fn try_for_each_mut<T>(
-        &mut self,
-        vcb: &mut dyn FnMut(&mut Value) -> ControlFlow<T>,
-    ) -> ControlFlow<T> {
+    pub(crate) fn try_for_each_mut<T>(&mut self, vcb: &mut dyn FnMut(&mut Value) -> ControlFlow<T>) -> ControlFlow<T> {
         for param in &self.node.params {
             let parameter = param.borrow_mut();
 
             if let Some(default_value) = &parameter.default_value {
-                default_value
-                    .borrow_mut()
-                    .iter_mut()
-                    .try_for_each_mut(vcb)?;
+                default_value.borrow_mut().iter_mut().try_for_each_mut(vcb)?;
             }
         }
 

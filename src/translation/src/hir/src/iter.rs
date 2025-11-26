@@ -5,7 +5,7 @@ pub struct FunctionTypeIter<'a> {
 }
 
 impl FunctionType {
-    #[must_use] 
+    #[must_use]
     pub fn iter(&self) -> FunctionTypeIter<'_> {
         FunctionTypeIter { node: self }
     }
@@ -16,7 +16,7 @@ pub struct TypeIter<'a> {
 }
 
 impl Type {
-    #[must_use] 
+    #[must_use]
     pub fn iter(&self) -> TypeIter<'_> {
         TypeIter { node: self }
     }
@@ -27,7 +27,7 @@ pub struct BlockIter<'a> {
 }
 
 impl Block {
-    #[must_use] 
+    #[must_use]
     pub fn iter(&self) -> BlockIter<'_> {
         BlockIter { node: self }
     }
@@ -38,7 +38,7 @@ pub struct ValueIter<'a> {
 }
 
 impl Value {
-    #[must_use] 
+    #[must_use]
     pub fn iter(&self) -> ValueIter<'_> {
         ValueIter { node: self }
     }
@@ -49,7 +49,7 @@ pub struct GlobalVariableIter<'a> {
 }
 
 impl GlobalVariable {
-    #[must_use] 
+    #[must_use]
     pub fn iter(&self) -> GlobalVariableIter<'_> {
         GlobalVariableIter { node: self }
     }
@@ -60,7 +60,7 @@ pub struct ModuleIter<'a> {
 }
 
 impl Module {
-    #[must_use] 
+    #[must_use]
     pub fn iter(&self) -> ModuleIter<'_> {
         ModuleIter { node: self }
     }
@@ -71,7 +71,7 @@ pub struct TypeAliasDefIter<'a> {
 }
 
 impl TypeAliasDef {
-    #[must_use] 
+    #[must_use]
     pub fn iter(&self) -> TypeAliasDefIter<'_> {
         TypeAliasDefIter { node: self }
     }
@@ -82,7 +82,7 @@ pub struct StructDefIter<'a> {
 }
 
 impl StructDef {
-    #[must_use] 
+    #[must_use]
     pub fn iter(&self) -> StructDefIter<'_> {
         StructDefIter { node: self }
     }
@@ -93,7 +93,7 @@ pub struct EnumDefIter<'a> {
 }
 
 impl EnumDef {
-    #[must_use] 
+    #[must_use]
     pub fn iter(&self) -> EnumDefIter<'_> {
         EnumDefIter { node: self }
     }
@@ -104,7 +104,7 @@ pub struct FunctionIter<'a> {
 }
 
 impl Function {
-    #[must_use] 
+    #[must_use]
     pub fn iter(&self) -> FunctionIter<'_> {
         FunctionIter { node: self }
     }

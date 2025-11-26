@@ -1,7 +1,7 @@
 use criterion::{Criterion, criterion_group, criterion_main};
 use nitrate_diagnosis::DiagnosticCollector;
-use nitrate_tree_parse::*;
 use nitrate_token::*;
+use nitrate_tree_parse::*;
 
 struct ParserUtil {
     collector: DiagnosticCollector,

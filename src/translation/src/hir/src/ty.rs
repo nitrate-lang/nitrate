@@ -126,10 +126,7 @@ impl Type {
 
     #[must_use]
     pub fn is_signed_primitive(&self) -> bool {
-        matches!(
-            self,
-            Type::I8 | Type::I16 | Type::I32 | Type::I64 | Type::I128
-        )
+        matches!(self, Type::I8 | Type::I16 | Type::I32 | Type::I64 | Type::I128)
     }
 
     #[must_use]
@@ -201,11 +198,7 @@ impl Type {
 
     #[must_use]
     pub fn as_enum(&self) -> Option<&EnumDefId> {
-        if let Type::Enum { def } = self {
-            Some(def)
-        } else {
-            None
-        }
+        if let Type::Enum { def } = self { Some(def) } else { None }
     }
 
     #[must_use]

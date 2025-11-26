@@ -4,9 +4,9 @@ use crate::diagnosis::SyntaxErr;
 use nitrate_nstring::NString;
 use nitrate_token::Token;
 use nitrate_tree::ast::{
-    AssociatedItem, Enum, EnumVariant, FuncParam, FuncParams, Function, Generics, GlobalVariable,
-    GlobalVariableKind, Impl, Import, Item, ItemPath, ItemPathSegment, ItemSyntaxError, Module,
-    Mutability, Struct, StructField, Trait, TypeAlias, TypeParam, UseTree, Visibility,
+    AssociatedItem, Enum, EnumVariant, FuncParam, FuncParams, Function, Generics, GlobalVariable, GlobalVariableKind,
+    Impl, Import, Item, ItemPath, ItemPathSegment, ItemSyntaxError, Module, Mutability, Struct, StructField, Trait,
+    TypeAlias, TypeParam, UseTree, Visibility,
 };
 
 impl Parser<'_, '_> {
@@ -191,9 +191,7 @@ impl Parser<'_, '_> {
                         let subtree = parse_use_tree(this);
                         group.push(subtree);
 
-                        if !this.lexer.skip_if(&Token::Comma)
-                            && !this.lexer.next_is(&Token::CloseBrace)
-                        {
+                        if !this.lexer.skip_if(&Token::Comma) && !this.lexer.next_is(&Token::CloseBrace) {
                             let bug = SyntaxErr::ImportGroupExpectedEnd(this.lexer.peek_pos());
                             this.log.report(&bug);
                             this.lexer.skip_while(&Token::CloseBrace);

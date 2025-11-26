@@ -35,9 +35,7 @@ pub fn get_align_of(ty: &Type, ctx: &LayoutCtx) -> Result<u64, LayoutError> {
         }
 
         Type::Struct { def } => {
-            let StructDef {
-                fields, attributes, ..
-            } = &*def.borrow();
+            let StructDef { fields, attributes, .. } = &*def.borrow();
 
             if attributes.contains(&StructAttribute::Packed) {
                 return Ok(1);
@@ -87,8 +85,6 @@ pub fn get_align_of(ty: &Type, ctx: &LayoutCtx) -> Result<u64, LayoutError> {
         Type::SliceRef { .. } => Ok(ctx.ptr_size as u64),
         Type::Pointer { .. } => Ok(ctx.ptr_size as u64),
 
-        Type::InferredInteger | Type::InferredFloat | Type::Inferred { .. } => {
-            Err(LayoutError::NotInferred)
-        }
+        Type::InferredInteger | Type::InferredFloat | Type::Inferred { .. } => Err(LayoutError::NotInferred),
     }
 }

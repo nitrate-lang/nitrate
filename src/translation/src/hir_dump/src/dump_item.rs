@@ -4,11 +4,7 @@ use nitrate_token::escape_string;
 use std::collections::BTreeSet;
 
 impl Dump for Visibility {
-    fn dump(
-        &self,
-        _ctx: &mut DumpContext,
-        o: &mut dyn std::fmt::Write,
-    ) -> Result<(), std::fmt::Error> {
+    fn dump(&self, _ctx: &mut DumpContext, o: &mut dyn std::fmt::Write) -> Result<(), std::fmt::Error> {
         match self {
             Visibility::Sec => write!(o, "sec"),
             Visibility::Pro => write!(o, "pro"),
@@ -43,11 +39,7 @@ pub(crate) fn dump_attributes<T: Dump>(
 }
 
 impl Dump for GlobalVariableAttribute {
-    fn dump(
-        &self,
-        _ctx: &mut DumpContext,
-        o: &mut dyn std::fmt::Write,
-    ) -> Result<(), std::fmt::Error> {
+    fn dump(&self, _ctx: &mut DumpContext, o: &mut dyn std::fmt::Write) -> Result<(), std::fmt::Error> {
         match self {
             GlobalVariableAttribute::NoMangle => write!(o, "no_mangle"),
         }
@@ -55,11 +47,7 @@ impl Dump for GlobalVariableAttribute {
 }
 
 impl Dump for GlobalVariable {
-    fn dump(
-        &self,
-        ctx: &mut DumpContext,
-        o: &mut dyn std::fmt::Write,
-    ) -> Result<(), std::fmt::Error> {
+    fn dump(&self, ctx: &mut DumpContext, o: &mut dyn std::fmt::Write) -> Result<(), std::fmt::Error> {
         if self.visibility != Visibility::Sec {
             self.visibility.dump(ctx, o)?;
             write!(o, " ")?;
@@ -84,21 +72,13 @@ impl Dump for GlobalVariable {
 }
 
 impl Dump for LocalVariableAttribute {
-    fn dump(
-        &self,
-        _ctx: &mut DumpContext,
-        _o: &mut dyn std::fmt::Write,
-    ) -> Result<(), std::fmt::Error> {
+    fn dump(&self, _ctx: &mut DumpContext, _o: &mut dyn std::fmt::Write) -> Result<(), std::fmt::Error> {
         Ok(())
     }
 }
 
 impl Dump for LocalVariable {
-    fn dump(
-        &self,
-        ctx: &mut DumpContext,
-        o: &mut dyn std::fmt::Write,
-    ) -> Result<(), std::fmt::Error> {
+    fn dump(&self, ctx: &mut DumpContext, o: &mut dyn std::fmt::Write) -> Result<(), std::fmt::Error> {
         match self.kind {
             LocalKind::Let => write!(o, "let ")?,
             LocalKind::Var => write!(o, "var ")?,
@@ -123,21 +103,13 @@ impl Dump for LocalVariable {
 }
 
 impl Dump for ParameterAttribute {
-    fn dump(
-        &self,
-        _ctx: &mut DumpContext,
-        _o: &mut dyn std::fmt::Write,
-    ) -> Result<(), std::fmt::Error> {
+    fn dump(&self, _ctx: &mut DumpContext, _o: &mut dyn std::fmt::Write) -> Result<(), std::fmt::Error> {
         Ok(())
     }
 }
 
 impl Dump for Parameter {
-    fn dump(
-        &self,
-        ctx: &mut DumpContext,
-        o: &mut dyn std::fmt::Write,
-    ) -> Result<(), std::fmt::Error> {
+    fn dump(&self, ctx: &mut DumpContext, o: &mut dyn std::fmt::Write) -> Result<(), std::fmt::Error> {
         dump_attributes(&self.attributes, ctx, o)?;
 
         if self.is_mutable {
@@ -158,11 +130,7 @@ impl Dump for Parameter {
 }
 
 impl Dump for Function {
-    fn dump(
-        &self,
-        ctx: &mut DumpContext,
-        o: &mut dyn std::fmt::Write,
-    ) -> Result<(), std::fmt::Error> {
+    fn dump(&self, ctx: &mut DumpContext, o: &mut dyn std::fmt::Write) -> Result<(), std::fmt::Error> {
         if self.visibility != Visibility::Sec {
             self.visibility.dump(ctx, o)?;
             write!(o, " ")?;
@@ -216,11 +184,7 @@ impl Dump for Function {
 }
 
 impl Dump for Trait {
-    fn dump(
-        &self,
-        ctx: &mut DumpContext,
-        o: &mut dyn std::fmt::Write,
-    ) -> Result<(), std::fmt::Error> {
+    fn dump(&self, ctx: &mut DumpContext, o: &mut dyn std::fmt::Write) -> Result<(), std::fmt::Error> {
         if self.visibility != Visibility::Sec {
             self.visibility.dump(ctx, o)?;
             write!(o, " ")?;
@@ -251,21 +215,13 @@ impl Dump for Trait {
 }
 
 impl Dump for ModuleAttribute {
-    fn dump(
-        &self,
-        _ctx: &mut DumpContext,
-        _o: &mut dyn std::fmt::Write,
-    ) -> Result<(), std::fmt::Error> {
+    fn dump(&self, _ctx: &mut DumpContext, _o: &mut dyn std::fmt::Write) -> Result<(), std::fmt::Error> {
         Ok(())
     }
 }
 
 impl Dump for Module {
-    fn dump(
-        &self,
-        ctx: &mut DumpContext,
-        o: &mut dyn std::fmt::Write,
-    ) -> Result<(), std::fmt::Error> {
+    fn dump(&self, ctx: &mut DumpContext, o: &mut dyn std::fmt::Write) -> Result<(), std::fmt::Error> {
         if self.visibility != Visibility::Sec {
             self.visibility.dump(ctx, o)?;
             write!(o, " ")?;
@@ -302,11 +258,7 @@ impl Dump for Module {
 }
 
 impl Dump for TypeAliasDef {
-    fn dump(
-        &self,
-        ctx: &mut DumpContext,
-        o: &mut dyn std::fmt::Write,
-    ) -> Result<(), std::fmt::Error> {
+    fn dump(&self, ctx: &mut DumpContext, o: &mut dyn std::fmt::Write) -> Result<(), std::fmt::Error> {
         if self.visibility != Visibility::Sec {
             self.visibility.dump(ctx, o)?;
             write!(o, " ")?;
@@ -319,11 +271,7 @@ impl Dump for TypeAliasDef {
 }
 
 impl Dump for StructDef {
-    fn dump(
-        &self,
-        ctx: &mut DumpContext,
-        o: &mut dyn std::fmt::Write,
-    ) -> Result<(), std::fmt::Error> {
+    fn dump(&self, ctx: &mut DumpContext, o: &mut dyn std::fmt::Write) -> Result<(), std::fmt::Error> {
         if self.visibility != Visibility::Sec {
             self.visibility.dump(ctx, o)?;
             write!(o, " ")?;
@@ -361,11 +309,7 @@ impl Dump for StructDef {
 }
 
 impl Dump for EnumDef {
-    fn dump(
-        &self,
-        ctx: &mut DumpContext,
-        o: &mut dyn std::fmt::Write,
-    ) -> Result<(), std::fmt::Error> {
+    fn dump(&self, ctx: &mut DumpContext, o: &mut dyn std::fmt::Write) -> Result<(), std::fmt::Error> {
         if self.visibility != Visibility::Sec {
             self.visibility.dump(ctx, o)?;
             write!(o, " ")?;
@@ -402,11 +346,7 @@ impl Dump for EnumDef {
 }
 
 impl Dump for Item {
-    fn dump(
-        &self,
-        ctx: &mut DumpContext,
-        o: &mut dyn std::fmt::Write,
-    ) -> Result<(), std::fmt::Error> {
+    fn dump(&self, ctx: &mut DumpContext, o: &mut dyn std::fmt::Write) -> Result<(), std::fmt::Error> {
         match self {
             Item::Function(f) => f.borrow().dump(ctx, o),
             Item::GlobalVariable(gv) => gv.borrow().dump(ctx, o),

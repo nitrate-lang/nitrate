@@ -6,33 +6,32 @@ use std::{collections::HashMap, sync::LazyLock};
 
 type BuiltinFunction = dyn Fn(&mut HirEvalCtx, &[Value]) -> Result<Value, Unwind> + Send + Sync;
 
-static DEFAULT_BUILTIN_FUNCTIONS: LazyLock<HashMap<NString, Box<BuiltinFunction>>> =
-    LazyLock::new(|| {
-        let mut m: HashMap<NString, Box<BuiltinFunction>> = HashMap::new();
+static DEFAULT_BUILTIN_FUNCTIONS: LazyLock<HashMap<NString, Box<BuiltinFunction>>> = LazyLock::new(|| {
+    let mut m: HashMap<NString, Box<BuiltinFunction>> = HashMap::new();
 
-        // Just an example builtin function
-        m.insert(
-            NString::from("std::math::abs"),
-            Box::new(|_, args| {
-                if args.len() != 1 {
-                    return Err(Unwind::TypeError);
-                }
+    // Just an example builtin function
+    m.insert(
+        NString::from("std::math::abs"),
+        Box::new(|_, args| {
+            if args.len() != 1 {
+                return Err(Unwind::TypeError);
+            }
 
-                match &args[0] {
-                    Value::I8(i) => Ok(Value::I8(i.abs())),
-                    Value::I16(i) => Ok(Value::I16(i.abs())),
-                    Value::I32(i) => Ok(Value::I32(i.abs())),
-                    Value::I64(i) => Ok(Value::I64(i.abs())),
-                    Value::I128(i) => Ok(Value::I128(Box::new(i.abs()))),
-                    Value::F32(i) => Ok(Value::F32(OrderedFloat(i.abs()))),
-                    Value::F64(i) => Ok(Value::F64(OrderedFloat(i.abs()))),
-                    _ => Err(Unwind::TypeError),
-                }
-            }),
-        );
+            match &args[0] {
+                Value::I8(i) => Ok(Value::I8(i.abs())),
+                Value::I16(i) => Ok(Value::I16(i.abs())),
+                Value::I32(i) => Ok(Value::I32(i.abs())),
+                Value::I64(i) => Ok(Value::I64(i.abs())),
+                Value::I128(i) => Ok(Value::I128(Box::new(i.abs()))),
+                Value::F32(i) => Ok(Value::F32(OrderedFloat(i.abs()))),
+                Value::F64(i) => Ok(Value::F64(OrderedFloat(i.abs()))),
+                _ => Err(Unwind::TypeError),
+            }
+        }),
+    );
 
-        m
-    });
+    m
+});
 
 pub struct HirEvalCtx<'log> {
     pub(crate) log: &'log CompilerLog,
