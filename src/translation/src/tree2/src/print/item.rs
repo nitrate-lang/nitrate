@@ -1,5 +1,15 @@
 use crate::prelude::*;
 
+pub(crate) fn print_trivia(
+    trivia: &Option<Trivia>,
+    f: &mut std::fmt::Formatter<'_>,
+) -> std::fmt::Result {
+    if let Some(trivia) = trivia {
+        write!(f, "{}", trivia)?;
+    }
+    Ok(())
+}
+
 pub(crate) fn print_attributes(
     attributes: &Option<AttributeList>,
     f: &mut std::fmt::Formatter<'_>,
@@ -12,14 +22,8 @@ pub(crate) fn print_attributes(
 
 impl std::fmt::Display for AttributeList {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.trivia[0])?;
-
-        if self
-            .present
-            .contains(AttributeListPresent::OPEN_BRACKET_PRESENT)
-        {
-            write!(f, "[")?;
-        }
+        print_trivia(&self.trivia[0], f)?;
+        write!(f, "[")?;
 
         for (i, attr) in self.attributes.iter().enumerate() {
             let expr = attr.borrow();
@@ -27,21 +31,14 @@ impl std::fmt::Display for AttributeList {
 
             if i + 1 != self.attributes.len()
                 || self
-                    .present
-                    .contains(AttributeListPresent::TRAILING_COMMA_PRESENT)
+                    .flags
+                    .contains(AttributeListFlags::TRAILING_COMMA_PRESENT)
             {
                 write!(f, ",")?;
             }
         }
 
-        if self
-            .present
-            .contains(AttributeListPresent::CLOSE_BRACKET_PRESENT)
-        {
-            write!(f, "]")?;
-        }
-
-        Ok(())
+        write!(f, "]")
     }
 }
 
@@ -56,40 +53,29 @@ impl std::fmt::Display for Item {
                 Ok(())
             }
 
-            Item::Garbage { trivia } => {
-                write!(f, "{}", trivia)?;
-                Ok(())
-            }
+            Item::Trivia { trivia } => print_trivia(trivia, f),
 
             Item::Module {
                 source_offset: _,
-                present,
                 trivia,
                 attributes,
                 name,
                 items,
             } => {
-                write!(f, "{}", trivia[0])?;
+                print_trivia(&trivia[0], f)?;
                 write!(f, "mod")?;
                 print_attributes(attributes, f)?;
-                write!(f, "{}", trivia[1])?;
+                print_trivia(&trivia[1], f)?;
                 write!(f, "{}", name)?;
-                write!(f, "{}", trivia[2])?;
-
-                if present.contains(ItemModulePresent::OPEN_BRACE_PRESENT) {
-                    write!(f, "{{")?;
-                }
+                print_trivia(&trivia[2], f)?;
+                write!(f, "{{")?;
 
                 for item in items {
                     let item = item.borrow();
                     write!(f, "{}", item)?;
                 }
 
-                if present.contains(ItemModulePresent::CLOSE_BRACE_PRESENT) {
-                    write!(f, "}}")?;
-                }
-
-                Ok(())
+                write!(f, "}}")
             }
         }
     }

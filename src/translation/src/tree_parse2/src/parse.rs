@@ -1,10 +1,8 @@
 use nitrate_diagnosis::CompilerLog;
-use nitrate_token::{AnnotatedToken, Token};
+use nitrate_token::Token;
 use nitrate_token_lexer::{Lexer, LexerIterator};
 use nitrate_tree2::prelude::*;
 use std::iter::Peekable;
-
-use crate::diagnosis::SyntaxErr;
 
 pub struct Parser<'a, 'log> {
     pub(crate) lexer: Peekable<LexerIterator<'a>>,
@@ -22,8 +20,15 @@ impl<'a, 'log> Parser<'a, 'log> {
     pub fn parse_source(&mut self) -> Item {
         let mut items = Vec::new();
 
-        while let Some(_) = self.lexer.peek() {
-            let item = self.parse_item();
+        loop {
+            let trivia = self.consume_trivia();
+            if !self.anymore_tokens() {
+                let item = Item::Trivia { trivia };
+                items.push(item.into());
+                break;
+            }
+
+            let item = self.parse_item(trivia);
             items.push(item.into());
         }
 
@@ -32,42 +37,29 @@ impl<'a, 'log> Parser<'a, 'log> {
         }
     }
 
-    pub(crate) fn consume_trivia_while(&mut self, f: impl Fn(&AnnotatedToken) -> bool) -> Trivia {
-        let start_offset = match self.lexer.peek().map(|t| t.start_offset) {
-            Some(offset) => offset,
-            None => return Trivia::default(),
-        };
+    pub(crate) fn consume_trivia(&mut self) -> Option<Trivia> {
+        let start_offset = self.lexer.peek()?.start_offset;
 
-        let mut end_offset = start_offset;
-
-        while let Some(token) = self.lexer.peek().cloned() {
-            if f(&token) {
-                let is_trivia = matches!(
-                    token.token,
-                    Token::Comment(_)
-                        | Token::HorizontalTab
-                        | Token::NewLine
-                        | Token::VerticalTab
-                        | Token::FormFeed
-                        | Token::CarriageReturn
-                        | Token::Space
-                );
-
-                if !is_trivia {
-                    let issue = SyntaxErr::UnexpectedToken {
-                        pos: token.start().into(),
-                        token: token.token,
-                    };
-                    self.log.report(&issue);
+        while let Some(token) = self.lexer.peek() {
+            match token.token {
+                Token::Comment(_)
+                | Token::HorizontalTab
+                | Token::NewLine
+                | Token::VerticalTab
+                | Token::FormFeed
+                | Token::CarriageReturn
+                | Token::Space => {
+                    self.lexer.next();
                 }
 
-                end_offset = token.end_offset;
-                self.lexer.next();
-            } else {
-                break;
+                _ => break,
             }
         }
 
-        Trivia::new(start_offset, end_offset - start_offset)
+        Some(Trivia::new(start_offset))
+    }
+
+    pub(crate) fn anymore_tokens(&mut self) -> bool {
+        self.lexer.peek().is_some()
     }
 }

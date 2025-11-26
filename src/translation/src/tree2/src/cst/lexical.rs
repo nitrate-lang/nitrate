@@ -6,18 +6,17 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct Trivia {
     offset: u32,
-    len: u32,
 }
 
 impl Default for Trivia {
     fn default() -> Self {
-        Self { offset: 0, len: 0 }
+        Self { offset: 0 }
     }
 }
 
 impl Trivia {
-    pub fn new(offset: u32, len: u32) -> Self {
-        Self { offset, len }
+    pub fn new(offset: u32) -> Self {
+        Self { offset }
     }
 
     pub fn tokens(&self) -> Vec<Token> {
@@ -34,7 +33,16 @@ impl Trivia {
             });
 
             LexerIterator::new(lexer)
-                .take_while(|token| token.end_offset <= self.offset + self.len)
+                .take_while(|token| match token.token {
+                    Token::Comment(_)
+                    | Token::HorizontalTab
+                    | Token::NewLine
+                    | Token::VerticalTab
+                    | Token::FormFeed
+                    | Token::CarriageReturn
+                    | Token::Space => true,
+                    _ => false,
+                })
                 .map(|annotated_token| annotated_token.token)
                 .collect()
         })
@@ -44,7 +52,6 @@ impl Trivia {
 #[derive(Serialize, Deserialize)]
 struct TriviaSerHelper {
     offset: u32,
-    len: u32,
     tokens: Vec<Token>,
 }
 
@@ -56,7 +63,6 @@ impl Serialize for Trivia {
         let tokens = self.tokens();
         let helper = TriviaSerHelper {
             offset: self.offset,
-            len: self.len,
             tokens,
         };
 
@@ -70,6 +76,6 @@ impl<'de> Deserialize<'de> for Trivia {
         D: serde::Deserializer<'de>,
     {
         let helper = TriviaSerHelper::deserialize(deserializer)?;
-        Ok(Trivia::new(helper.offset, helper.len))
+        Ok(Trivia::new(helper.offset))
     }
 }

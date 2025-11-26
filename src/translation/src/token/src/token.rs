@@ -78,7 +78,7 @@ impl Comment {
 impl std::fmt::Display for Comment {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self.kind() {
-            CommentKind::SingleLine => write!(f, "#{}", self.text()),
+            CommentKind::SingleLine => write!(f, "{}", self.text()),
         }
     }
 }
