@@ -1,49 +1,51 @@
-use crate::diagnosis::SyntaxErr;
-
 use super::parse::Parser;
+use crate::diagnosis::SyntaxErr;
 use nitrate_nstring::NString;
 use nitrate_token::{AnnotatedToken, Token};
 use nitrate_tree2::prelude::*;
 
 impl Parser<'_, '_> {
     fn parse_attribute_list(&mut self, leading: Trivia) -> Option<AttributeList> {
+        let mut present = AttributeListPresent::empty();
+
+        // Consume '[', or return None if not present
         let open_bracket_token = match self.lexer.peek()? {
             AnnotatedToken {
                 token: Token::OpenBracket,
                 ..
-            } => self.lexer.next().unwrap(),
+            } => {
+                present.insert(AttributeListPresent::OPEN_BRACKET_PRESENT);
+                self.lexer.next().unwrap() // Consume the opening bracket
+            }
+
             _ => return None, // No attribute list found
         };
 
         let mut attributes = Vec::new();
 
-        // Check for immediate closing bracket (empty attribute list)
-        if let Some(AnnotatedToken {
-            token: Token::CloseBracket,
-            ..
-        }) = self.lexer.peek()
-        {
-            self.lexer.next(); // Consume the closing bracket
-
-            return Some(AttributeList {
-                source_offset: open_bracket_token.start_offset,
-                trivia: [leading],
-                attributes: attributes.into(),
-            });
-        }
-
         loop {
-            // Parse attribute expression
-            match self.parse_expression() {
-                Some(expr) => attributes.push(expr.into()),
-                None => {
-                    let issue = SyntaxErr::ExpectedAttributeExpression {
-                        pos: self.lexer.peek().map(|t| t.start().into()),
-                    };
-                    self.log.report(&issue);
-                    break;
-                }
+            // Check for ']'
+            if let Some(AnnotatedToken {
+                token: Token::CloseBracket,
+                ..
+            }) = self.lexer.peek()
+            {
+                self.lexer.next(); // Consume the closing bracket
+                present.insert(AttributeListPresent::CLOSE_BRACKET_PRESENT);
+
+                return Some(AttributeList {
+                    source_offset: open_bracket_token.start_offset,
+                    present,
+                    trivia: [leading],
+                    attributes: attributes.into(),
+                });
             }
+
+            present.remove(AttributeListPresent::TRAILING_COMMA_PRESENT);
+
+            // Parse attribute expression
+            let expr = self.parse_expression();
+            attributes.push(expr.into());
 
             // Expect ',' or ']'
             match self.lexer.next() {
@@ -51,13 +53,17 @@ impl Parser<'_, '_> {
                     token: Token::Comma,
                     ..
                 }) => {
+                    present.insert(AttributeListPresent::TRAILING_COMMA_PRESENT);
                     continue;
                 }
 
                 Some(AnnotatedToken {
                     token: Token::CloseBracket,
                     ..
-                }) => break,
+                }) => {
+                    present.insert(AttributeListPresent::CLOSE_BRACKET_PRESENT);
+                    break;
+                }
 
                 Some(token) => {
                     let issue = SyntaxErr::ExpectedAttributeDelimiter {
@@ -77,26 +83,30 @@ impl Parser<'_, '_> {
 
         Some(AttributeList {
             source_offset: open_bracket_token.start_offset,
+            present,
             trivia: [leading],
             attributes: attributes.into(),
         })
     }
 
-    fn parse_module(&mut self, leading: Trivia) -> Option<Item> {
+    fn parse_module(&mut self, leading: Trivia) -> Item {
         // Consume 'mod' token
-        let mod_token = self.lexer.next()?;
+        let mod_token = self.lexer.next().expect("mod keyword");
+        assert!(matches!(mod_token.token, Token::Mod));
 
         // Parse optional attribute list
         let attribute_list_trivia =
-            self.consume_while(|t| !matches!(t.token, Token::OpenBracket | Token::Name(_)));
+            self.consume_trivia_while(|t| !matches!(t.token, Token::OpenBracket | Token::Name(_)));
+
         let attribute_list = self.parse_attribute_list(attribute_list_trivia);
 
-        let trivia_1 = match attribute_list {
-            Some(_) => self.consume_while(|t| !matches!(t.token, Token::Name(_))),
+        let name_prefix_trivia = match attribute_list {
+            Some(_) => self.consume_trivia_while(|t| !matches!(t.token, Token::Name(_))),
+            // No attribute list, keep previous trivia
             None => attribute_list_trivia,
         };
 
-        // Expect module name
+        // Parse module name
         let name: NString = match self.lexer.peek().cloned() {
             Some(AnnotatedToken {
                 token: Token::Name(mod_name),
@@ -121,8 +131,7 @@ impl Parser<'_, '_> {
             }
         };
 
-        let trivia_2 = self.consume_while(|t| !matches!(t.token, Token::OpenBrace));
-
+        let trivia_2 = self.consume_trivia_while(|t| !matches!(t.token, Token::OpenBrace));
         let mut present = ItemModulePresent::empty();
 
         // Expect '{'
@@ -150,56 +159,59 @@ impl Parser<'_, '_> {
 
         // Parse module items
         let mut items = Vec::new();
-        loop {
-            if let Some(item) = self.parse_item() {
-                items.push(item.into());
-            } else {
-                break;
-            }
-        }
 
-        // Expect '}'
-        match self.lexer.peek() {
-            Some(AnnotatedToken {
+        while let Some(_) = self.lexer.peek() {
+            // Check for '}'
+            if let Some(AnnotatedToken {
                 token: Token::CloseBrace,
                 ..
-            }) => {
+            }) = self.lexer.peek()
+            {
                 self.lexer.next(); // Consume '}'
                 present.insert(ItemModulePresent::CLOSE_BRACE_PRESENT);
+                break;
             }
 
-            Some(token) => {
-                let issue = SyntaxErr::ExpectedCloseBrace {
-                    pos: Some(token.start().into()),
-                };
-                self.log.report(&issue);
-            }
+            let item = self.parse_item();
+            items.push(item.into());
+        }
 
-            _ => {
-                let issue = SyntaxErr::ExpectedCloseBrace { pos: None };
-                self.log.report(&issue);
-            }
-        };
-
-        Some(Item::Module {
+        Item::Module {
             source_offset: mod_token.start_offset,
             present,
-            trivia: [leading, trivia_1, trivia_2],
+            trivia: [leading, name_prefix_trivia, trivia_2],
             attributes: attribute_list.into(),
             name,
             items: items.into(),
-        })
+        }
     }
 
-    pub fn parse_item(&mut self) -> Option<Item> {
-        let trivia = self.consume_trivia();
+    pub fn parse_item(&mut self) -> Item {
+        let leading_trivia = self.consume_trivia_while(|t| !matches!(t.token, Token::Mod));
 
-        match self.lexer.peek()?.token {
-            Token::Mod => self.parse_module(trivia),
+        match self.lexer.peek() {
+            Some(AnnotatedToken {
+                token: Token::Mod, ..
+            }) => self.parse_module(leading_trivia),
 
-            _ => {
-                // TODO: Implement item parsing
-                None
+            Some(token) => {
+                let issue = SyntaxErr::ExpectedItem {
+                    pos: Some(token.start().into()),
+                };
+                self.log.report(&issue);
+
+                Item::Garbage {
+                    trivia: leading_trivia,
+                }
+            }
+
+            None => {
+                let issue = SyntaxErr::ExpectedItem { pos: None };
+                self.log.report(&issue);
+
+                Item::Garbage {
+                    trivia: leading_trivia,
+                }
             }
         }
     }

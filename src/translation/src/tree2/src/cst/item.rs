@@ -4,10 +4,22 @@ use nitrate_nstring::NString;
 use serde::{Deserialize, Serialize};
 use thin_vec::ThinVec;
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub struct AttributeListPresent(u8);
+
+bitflags! {
+    impl AttributeListPresent: u8 {
+        const OPEN_BRACKET_PRESENT =   0b00000001;
+        const CLOSE_BRACKET_PRESENT =  0b00000010;
+        const TRAILING_COMMA_PRESENT = 0b00000100;
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct AttributeList {
     /* .. [<expr>, ... ] */
     pub source_offset: u32,
+    pub present: AttributeListPresent,
     pub trivia: [Trivia; 1],
     pub attributes: ThinVec<ExprId>,
 }
@@ -26,6 +38,10 @@ bitflags! {
 pub enum Item {
     Root {
         items: ThinVec<ItemId>,
+    },
+
+    Garbage {
+        trivia: Trivia,
     },
 
     Module {

@@ -13,18 +13,35 @@ pub(crate) fn print_attributes(
 impl std::fmt::Display for AttributeList {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.trivia[0])?;
-        write!(f, "[")?;
+
+        if self
+            .present
+            .contains(AttributeListPresent::OPEN_BRACKET_PRESENT)
+        {
+            write!(f, "[")?;
+        }
 
         for (i, attr) in self.attributes.iter().enumerate() {
             let expr = attr.borrow();
             write!(f, "{}", expr)?;
 
-            if i + 1 != self.attributes.len() {
+            if i + 1 != self.attributes.len()
+                || self
+                    .present
+                    .contains(AttributeListPresent::TRAILING_COMMA_PRESENT)
+            {
                 write!(f, ",")?;
             }
         }
 
-        write!(f, "]")
+        if self
+            .present
+            .contains(AttributeListPresent::CLOSE_BRACKET_PRESENT)
+        {
+            write!(f, "]")?;
+        }
+
+        Ok(())
     }
 }
 
@@ -36,6 +53,11 @@ impl std::fmt::Display for Item {
                     let item = item.borrow();
                     write!(f, "{}", item)?;
                 }
+                Ok(())
+            }
+
+            Item::Garbage { trivia } => {
+                write!(f, "{}", trivia)?;
                 Ok(())
             }
 

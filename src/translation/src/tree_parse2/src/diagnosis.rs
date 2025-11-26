@@ -1,6 +1,7 @@
 use nitrate_diagnosis::{
     DiagnosticGroupId, DiagnosticInfo, FormattableDiagnosticGroup, Origin, SourcePosition,
 };
+use nitrate_token::Token;
 
 #[allow(dead_code)]
 pub(crate) enum SyntaxErr {
@@ -13,6 +14,10 @@ pub(crate) enum SyntaxErr {
     ExpectedCloseBrace { pos: Option<SourcePosition> },
     ExpectedOpenBracket { pos: Option<SourcePosition> },
     ExpectedCloseBracket { pos: Option<SourcePosition> },
+
+    UnexpectedToken { token: Token, pos: SourcePosition },
+
+    ExpectedItem { pos: Option<SourcePosition> },
 }
 
 impl FormattableDiagnosticGroup for SyntaxErr {
@@ -31,6 +36,10 @@ impl FormattableDiagnosticGroup for SyntaxErr {
             SyntaxErr::ExpectedCloseBrace { .. } => 101,
             SyntaxErr::ExpectedOpenBracket { .. } => 102,
             SyntaxErr::ExpectedCloseBracket { .. } => 103,
+
+            SyntaxErr::UnexpectedToken { .. } => 200,
+
+            SyntaxErr::ExpectedItem { .. } => 300,
         }
     }
 
@@ -69,6 +78,16 @@ impl FormattableDiagnosticGroup for SyntaxErr {
             SyntaxErr::ExpectedCloseBracket { pos } => DiagnosticInfo {
                 origin: pos.to_owned().map(Origin::Point).unwrap_or(Origin::None),
                 message: "Expected ']'".to_string(),
+            },
+
+            SyntaxErr::UnexpectedToken { token, pos } => DiagnosticInfo {
+                origin: Origin::Point(pos.to_owned()),
+                message: format!("Unexpected token: {}", token),
+            },
+
+            SyntaxErr::ExpectedItem { pos } => DiagnosticInfo {
+                origin: pos.to_owned().map(Origin::Point).unwrap_or(Origin::None),
+                message: "Expected item".to_string(),
             },
         }
     }
