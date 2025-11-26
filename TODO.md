@@ -22,9 +22,9 @@ Do not checkmark a feature until it is fully implemented and extensive tests hav
   - [ ] Expressions
     - [ ] Literals
       - [ ] Unit
-      - [ ] Boolean
+      - [x] Boolean
       - [ ] Number
-        - [ ] Integer
+        - [x] Integer
         - [ ] Float
       - [ ] String
       - [ ] Byte string
@@ -123,9 +123,9 @@ Do not checkmark a feature until it is fully implemented and extensive tests hav
   - [ ] Expressions
     - [ ] Literals
       - [ ] Unit
-      - [ ] Boolean
+      - [x] Boolean
       - [ ] Number
-        - [ ] Integer
+        - [x] Integer
         - [ ] Float
       - [ ] String
       - [ ] Byte string
@@ -194,7 +194,7 @@ Do not checkmark a feature until it is fully implemented and extensive tests hav
     - [ ] Use statements
     - [ ] Item declarations
   - [ ] Items
-    - [ ] Modules
+    - [x] Modules
     - [ ] Extern crate declarations
     - [ ] Use statements
     - [ ] Functions
