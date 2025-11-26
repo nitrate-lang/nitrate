@@ -6,6 +6,7 @@ mod item;
 mod parse;
 mod pat;
 mod stmt;
+mod tests;
 mod ty;
 
 pub use parse::Parser;
