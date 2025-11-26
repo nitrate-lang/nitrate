@@ -15,7 +15,6 @@ bitflags! {
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct AttributeList {
-    /* .. [<expr>, ... ] */
     pub source_offset: u32,
     pub flags: AttributeListFlags,
     pub trivia: [Option<Trivia>; 1],
@@ -33,7 +32,6 @@ pub enum Item {
     },
 
     Module {
-        /* .. mod <attributes_list>? .. <name> .. {} */
         source_offset: u32,
         trivia: [Option<Trivia>; 3],
         attributes: Option<AttributeList>,
