@@ -5,6 +5,13 @@ use serde::{Deserialize, Serialize};
 use thin_vec::ThinVec;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub enum Vis {
+    Pub,
+    Pro,
+    Sec,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct AttributeListFlags(u8);
 
 bitflags! {
@@ -29,6 +36,13 @@ pub enum Item {
 
     Trivia {
         trivia: Option<Trivia>,
+    },
+
+    Visibility {
+        source_offset: u32,
+        trivia: [Option<Trivia>; 1],
+        vis: Vis,
+        item: ItemId,
     },
 
     Module {

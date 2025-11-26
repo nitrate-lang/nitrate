@@ -20,6 +20,16 @@ pub(crate) fn print_attributes(
     Ok(())
 }
 
+impl std::fmt::Display for Vis {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Vis::Pub => write!(f, "pub"),
+            Vis::Pro => write!(f, "pro"),
+            Vis::Sec => write!(f, "sec"),
+        }
+    }
+}
+
 impl std::fmt::Display for AttributeList {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         print_trivia(&self.trivia[0], f)?;
@@ -54,6 +64,18 @@ impl std::fmt::Display for Item {
             }
 
             Item::Trivia { trivia } => print_trivia(trivia, f),
+
+            Item::Visibility {
+                source_offset: _,
+                trivia,
+                vis,
+                item,
+            } => {
+                print_trivia(&trivia[0], f)?;
+                write!(f, "{}", vis)?;
+                let item = item.borrow();
+                write!(f, "{}", item)
+            }
 
             Item::Module {
                 source_offset: _,

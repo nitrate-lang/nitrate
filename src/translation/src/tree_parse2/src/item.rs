@@ -184,6 +184,29 @@ impl Parser<'_, '_> {
                 token: Token::Mod, ..
             }) => self.parse_module(leading),
 
+            Some(AnnotatedToken {
+                token: Token::Pub | Token::Pro | Token::Sec,
+                ..
+            }) => {
+                let visibility_token = self.lexer.next().unwrap(); // Consume visibility token
+                let vis = match visibility_token.token {
+                    Token::Pub => Vis::Pub,
+                    Token::Pro => Vis::Pro,
+                    Token::Sec => Vis::Sec,
+                    _ => unreachable!(),
+                };
+
+                let new_leading = self.consume_trivia();
+                let item = self.parse_item(new_leading);
+
+                Item::Visibility {
+                    source_offset: visibility_token.start_offset,
+                    trivia: [leading],
+                    vis,
+                    item: item.into(),
+                }
+            }
+
             Some(token) => {
                 self.lexer.next(); // Consume unexpected token
 
