@@ -9,9 +9,8 @@ mod module2 {
 
         # Another level of submodule
         mod [
-            # This is a module attribute
-            HelloWorld,
-            42,
+            false, 
+            42
         ] subsubmodule {    }
     }
 }

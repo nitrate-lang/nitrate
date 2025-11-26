@@ -20,8 +20,11 @@ impl Parser<'_, '_> {
 
         let mut attributes = Vec::new();
         let mut flags = AttributeListFlags::empty();
+        let mut close_brace_trivia = None;
 
         loop {
+            let expr_leading_trivia = self.consume_trivia();
+
             // Check for ']'
             if let Some(AnnotatedToken {
                 token: Token::CloseBracket,
@@ -29,27 +32,23 @@ impl Parser<'_, '_> {
             }) = self.lexer.peek()
             {
                 self.lexer.next(); // Consume the closing bracket
-
-                return Some(AttributeList {
-                    source_offset: open_bracket_token.start_offset,
-                    flags,
-                    trivia: [leading],
-                    attributes: attributes.into(),
-                });
+                close_brace_trivia = expr_leading_trivia;
+                break;
             }
 
             flags.remove(AttributeListFlags::TRAILING_COMMA_PRESENT);
 
             // Parse attribute expression
-            let expr = self.parse_expression();
-            attributes.push(expr.into());
+            let expr = self.parse_expression(expr_leading_trivia);
+            attributes.push((expr.into(), self.consume_trivia()));
 
-            // Expect ',' or ']'
-            match self.lexer.next() {
+            // Consume ','
+            match self.lexer.peek().cloned() {
                 Some(AnnotatedToken {
                     token: Token::Comma,
                     ..
                 }) => {
+                    self.lexer.next(); // Consume ','
                     flags.insert(AttributeListFlags::TRAILING_COMMA_PRESENT);
                     continue;
                 }
@@ -57,11 +56,13 @@ impl Parser<'_, '_> {
                 Some(AnnotatedToken {
                     token: Token::CloseBracket,
                     ..
-                }) => break,
+                }) => continue,
 
                 Some(token) => {
-                    let issue = SyntaxErr::ExpectedAttributeDelimiter {
-                        pos: Some(token.start().into()),
+                    self.lexer.next(); // Consume the unexpected token
+                    let issue = SyntaxErr::UnexpectedToken {
+                        pos: token.start().into(),
+                        token: token.token,
                     };
                     self.log.report(&issue);
                     break;
@@ -78,7 +79,7 @@ impl Parser<'_, '_> {
         Some(AttributeList {
             source_offset: open_bracket_token.start_offset,
             flags,
-            trivia: [leading],
+            trivia: [leading, close_brace_trivia],
             attributes: attributes.into(),
         })
     }

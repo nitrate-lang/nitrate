@@ -3,7 +3,21 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum Expr {
-    Placeholder,
+    Trivia {
+        trivia: Option<Trivia>,
+    },
+
+    Integer {
+        source_offset: u32,
+        trivia: Option<Trivia>,
+        value: u128,
+    },
+
+    Boolean {
+        source_offset: u32,
+        trivia: Option<Trivia>,
+        value: bool,
+    },
 }
 
 impl From<Expr> for ExprId {

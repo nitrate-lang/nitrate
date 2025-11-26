@@ -24,8 +24,8 @@ bitflags! {
 pub struct AttributeList {
     pub source_offset: u32,
     pub flags: AttributeListFlags,
-    pub trivia: [Option<Trivia>; 1],
-    pub attributes: ThinVec<ExprId>,
+    pub trivia: [Option<Trivia>; 2],
+    pub attributes: ThinVec<(ExprId, Option<Trivia>)>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]

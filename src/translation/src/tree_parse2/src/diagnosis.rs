@@ -18,6 +18,7 @@ pub(crate) enum SyntaxErr {
     UnexpectedToken { token: Token, pos: SourcePosition },
 
     ExpectedItem { pos: Option<SourcePosition> },
+    ExpectedExpr { pos: Option<SourcePosition> },
 }
 
 impl FormattableDiagnosticGroup for SyntaxErr {
@@ -40,6 +41,7 @@ impl FormattableDiagnosticGroup for SyntaxErr {
             SyntaxErr::UnexpectedToken { .. } => 200,
 
             SyntaxErr::ExpectedItem { .. } => 300,
+            SyntaxErr::ExpectedExpr { .. } => 301,
         }
     }
 
@@ -88,6 +90,11 @@ impl FormattableDiagnosticGroup for SyntaxErr {
             SyntaxErr::ExpectedItem { pos } => DiagnosticInfo {
                 origin: pos.to_owned().map(Origin::Point).unwrap_or(Origin::None),
                 message: "Expected item".to_string(),
+            },
+
+            SyntaxErr::ExpectedExpr { pos } => DiagnosticInfo {
+                origin: pos.to_owned().map(Origin::Point).unwrap_or(Origin::None),
+                message: "Expected expression".to_string(),
             },
         }
     }

@@ -32,22 +32,26 @@ impl std::fmt::Display for Vis {
 
 impl std::fmt::Display for AttributeList {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let has_trailing_comma = self
+            .flags
+            .contains(AttributeListFlags::TRAILING_COMMA_PRESENT);
+
         print_trivia(&self.trivia[0], f)?;
         write!(f, "[")?;
 
         for (i, attr) in self.attributes.iter().enumerate() {
-            let expr = attr.borrow();
+            let expr = attr.0.borrow();
             write!(f, "{}", expr)?;
+            print_trivia(&attr.1, f)?;
 
-            if i + 1 != self.attributes.len()
-                || self
-                    .flags
-                    .contains(AttributeListFlags::TRAILING_COMMA_PRESENT)
-            {
+            let is_last = i + 1 == self.attributes.len();
+
+            if !is_last || is_last && has_trailing_comma {
                 write!(f, ",")?;
             }
         }
 
+        print_trivia(&self.trivia[1], f)?;
         write!(f, "]")
     }
 }
