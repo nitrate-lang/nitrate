@@ -161,20 +161,6 @@ struct Args {
     command: Option<Commands>,
 }
 
-pub enum InterpreterError {
-    UnknownCommand,
-    CLISemanticError,
-
-    IoError(std::io::Error),
-    OperationalError,
-}
-
-impl From<std::io::Error> for InterpreterError {
-    fn from(err: std::io::Error) -> Self {
-        InterpreterError::IoError(err)
-    }
-}
-
 pub struct Interpreter<'log> {
     pub(crate) log: &'log Logger,
 }
@@ -184,7 +170,7 @@ impl<'log> Interpreter<'log> {
         Interpreter { log }
     }
 
-    fn list_commands() -> Result<(), InterpreterError> {
+    fn list_commands() -> anyhow::Result<()> {
         let fg = Style::new().bold().fg_color(Some(Color::Ansi(AnsiColor::Green)));
 
         let reset = fg.render_reset();
@@ -211,7 +197,7 @@ impl<'log> Interpreter<'log> {
         Ok(())
     }
 
-    pub fn run(&mut self, args: &[String]) -> Result<(), InterpreterError> {
+    pub async fn run(&mut self, args: &[String]) -> anyhow::Result<()> {
         let args = Args::parse_from(args);
 
         /* Output color environment configuration override */
@@ -231,7 +217,7 @@ impl<'log> Interpreter<'log> {
         if let Some(change_dir_path) = &args.change_dir {
             if let Err(e) = std::env::set_current_dir(change_dir_path) {
                 error!(self.log, "failed to change directory: {}", e);
-                return Err(InterpreterError::IoError(e));
+                return Err(anyhow::anyhow!("Failed to change directory"));
             }
         }
 
@@ -278,13 +264,13 @@ impl<'log> Interpreter<'log> {
                 Commands::Publish(publish_args) => self.sc_publish(publish_args),
                 Commands::Install(install_args) => self.sc_install(install_args),
                 Commands::Uninstall(uninstall_args) => self.sc_uninstall(uninstall_args),
-                Commands::Lsp(lsp_args) => self.sc_lsp(lsp_args),
+                Commands::Lsp(lsp_args) => self.sc_lsp(lsp_args).await,
             };
         }
 
         let mut cmd = Args::command();
         cmd.print_help().unwrap();
 
-        Err(InterpreterError::UnknownCommand)
+        Err(anyhow::anyhow!("Unknown command"))
     }
 }

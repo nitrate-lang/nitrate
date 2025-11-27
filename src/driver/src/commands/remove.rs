@@ -1,4 +1,4 @@
-use crate::{Interpreter, InterpreterError};
+use crate::Interpreter;
 use clap::Parser;
 use slog::info;
 
@@ -7,7 +7,7 @@ use slog::info;
 pub(crate) struct RemoveArgs {}
 
 impl Interpreter<'_> {
-    pub(crate) fn sc_remove(&mut self, _args: RemoveArgs) -> Result<(), InterpreterError> {
+    pub(crate) fn sc_remove(&mut self, _args: RemoveArgs) -> anyhow::Result<()> {
         info!(self.log, "package remove sub-command invoked");
         // TODO: remove logic here
         Ok(())

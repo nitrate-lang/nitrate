@@ -1,5 +1,5 @@
 use crate::{
-    Interpreter, InterpreterError,
+    Interpreter,
     package::{Package, PackageBuilder},
 };
 use clap::Parser;
@@ -30,7 +30,7 @@ pub(crate) struct InitArgs {
 }
 
 impl Interpreter<'_> {
-    fn put_default_readme(&self, dir: &std::path::Path) -> Result<(), InterpreterError> {
+    fn put_default_readme(&self, dir: &std::path::Path) -> anyhow::Result<()> {
         let readme_content = "# Nitrate Package\n\n";
         let readme_path = dir.join("README.md");
 
@@ -43,7 +43,7 @@ impl Interpreter<'_> {
         } else {
             let mut readme = std::fs::File::create(&readme_path).map_err(|e| {
                 error!(self.log, "Failed to create README.md file: {}", e);
-                InterpreterError::IoError(e)
+                e
             })?;
 
             readme.write_all(readme_content.as_bytes())?;
@@ -52,7 +52,7 @@ impl Interpreter<'_> {
         Ok(())
     }
 
-    fn put_default_gitignore(&self, dir: &std::path::Path) -> Result<(), InterpreterError> {
+    fn put_default_gitignore(&self, dir: &std::path::Path) -> anyhow::Result<()> {
         let gitignore_content = "# Nitrate NO3 files\n.no3/\n\n";
 
         let mut gitignore = OpenOptions::new()
@@ -66,35 +66,35 @@ impl Interpreter<'_> {
         Ok(())
     }
 
-    fn put_no3_xml(&self, dir: &std::path::Path, package: &Package) -> Result<(), InterpreterError> {
+    fn put_no3_xml(&self, dir: &std::path::Path, package: &Package) -> anyhow::Result<()> {
         let no3_xml_path = dir.join("no3.xml");
 
         let mut no3_xml_file = std::fs::File::create(&no3_xml_path).map_err(|e| {
             error!(self.log, "Failed to create no3.xml file: {}", e);
-            InterpreterError::IoError(e)
+            e
         })?;
 
         no3_xml_file
             .write_all(package.xml_serialize().as_bytes())
             .map_err(|e| {
                 error!(self.log, "Failed to write to no3.xml file: {}", e);
-                InterpreterError::IoError(e)
+                e
             })?;
 
         Ok(())
     }
 
-    fn create_src_directory(&self, dir: &std::path::Path, is_lib: bool) -> Result<(), InterpreterError> {
+    fn create_src_directory(&self, dir: &std::path::Path, is_lib: bool) -> anyhow::Result<()> {
         std::fs::create_dir_all(dir.join("src")).map_err(|e| {
             error!(self.log, "Failed to create src directory: {}", e);
-            InterpreterError::IoError(e)
+            e
         })?;
 
         let entry_file_path = dir.join("src").join("entry.nit");
 
         let mut entry_file = std::fs::File::create(entry_file_path).map_err(|e| {
             error!(self.log, "Failed to create entry source file: {}", e);
-            InterpreterError::IoError(e)
+            e
         })?;
 
         let entry_file_content = if is_lib {
@@ -133,10 +133,10 @@ impl Interpreter<'_> {
         package_name: &str,
         is_lib: bool,
         edition: u16,
-    ) -> Result<(), InterpreterError> {
+    ) -> anyhow::Result<()> {
         std::fs::create_dir_all(containing_dir).map_err(|e| {
             error!(self.log, "Failed to create directories: {}", e);
-            InterpreterError::IoError(e)
+            e
         })?;
 
         if !containing_dir.is_dir() {
@@ -146,7 +146,7 @@ impl Interpreter<'_> {
                 containing_dir.display()
             );
 
-            return Err(InterpreterError::OperationalError);
+            return Err(anyhow::anyhow!("Specified path is not a directory"));
         }
 
         if self.contains_conflicting_package_files(containing_dir) {
@@ -156,7 +156,7 @@ impl Interpreter<'_> {
                 containing_dir.display()
             );
 
-            return Err(InterpreterError::OperationalError);
+            return Err(anyhow::anyhow!("Conflicting package files found"));
         }
 
         self.create_src_directory(containing_dir, is_lib)?;
@@ -192,10 +192,10 @@ impl Interpreter<'_> {
         false
     }
 
-    pub(crate) fn sc_init(&mut self, args: InitArgs) -> Result<(), InterpreterError> {
+    pub(crate) fn sc_init(&mut self, args: InitArgs) -> anyhow::Result<()> {
         if args.bin && args.lib {
             error!(self.log, "Cannot specify both --bin and --lib");
-            return Err(InterpreterError::CLISemanticError);
+            return Err(anyhow::anyhow!("Cannot specify both --bin and --lib"));
         }
 
         let containing_dir = std::path::Path::new(&args.path);

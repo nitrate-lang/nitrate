@@ -1,4 +1,4 @@
-use crate::{Interpreter, InterpreterError};
+use crate::Interpreter;
 use clap::Parser;
 use slog::info;
 
@@ -7,7 +7,7 @@ use slog::info;
 pub(crate) struct AddArgs {}
 
 impl Interpreter<'_> {
-    pub(crate) fn sc_add(&mut self, _args: AddArgs) -> Result<(), InterpreterError> {
+    pub(crate) fn sc_add(&mut self, _args: AddArgs) -> anyhow::Result<()> {
         info!(self.log, "package add dependency sub-command invoked");
         // TODO: dependency addition logic here
         Ok(())

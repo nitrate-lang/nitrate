@@ -1,4 +1,4 @@
-use crate::{Interpreter, InterpreterError, package::Package};
+use crate::{Interpreter, package::Package};
 use clap::Parser;
 use nitrate_diagnosis::{CompilerLog, intern_file_id};
 use nitrate_translation::{
@@ -60,7 +60,7 @@ pub(crate) struct BuildArgs {
 }
 
 impl Interpreter<'_> {
-    pub(crate) fn validate_package_edition(&self, edition: u16) -> Result<(), InterpreterError> {
+    pub(crate) fn validate_package_edition(&self, edition: u16) -> anyhow::Result<()> {
         let supported_edition = HashSet::from([2026]);
 
         if !supported_edition.contains(&edition) {
@@ -75,20 +75,20 @@ impl Interpreter<'_> {
                 "Unsupported package edition: {}. This release of no3 supports editions: {}", edition, supported,
             );
 
-            return Err(InterpreterError::OperationalError);
+            return Err(anyhow::anyhow!("Unsupported package edition"));
         }
 
         Ok(())
     }
 
-    pub(crate) fn get_package_config(&self) -> Result<Package, InterpreterError> {
+    pub(crate) fn get_package_config(&self) -> anyhow::Result<Package> {
         let config_file_string = match std::fs::read_to_string("no3.xml") {
             Ok(content) => content,
 
             Err(e) => {
                 error!(self.log, "Failed to read package config file 'no3.xml': {}", e);
 
-                return Err(InterpreterError::IoError(e));
+                return Err(anyhow::anyhow!("Failed to read package config file 'no3.xml'"));
             }
         };
 
@@ -98,7 +98,7 @@ impl Interpreter<'_> {
             Err(e) => {
                 error!(self.log, "Failed to load package config from 'no3.xml': {}", e);
 
-                return Err(InterpreterError::OperationalError);
+                return Err(anyhow::anyhow!("Failed to load package config from 'no3.xml'"));
             }
         }
     }
@@ -108,14 +108,14 @@ impl Interpreter<'_> {
         entrypoint_path: &std::path::Path,
         package_name: &str,
         log: &CompilerLog,
-    ) -> Result<ast::Module, InterpreterError> {
+    ) -> anyhow::Result<ast::Module> {
         if !entrypoint_path.exists() {
             error!(
                 self.log,
                 "Package entrypoint '{}' does not exist.",
                 entrypoint_path.display()
             );
-            return Err(InterpreterError::OperationalError);
+            return Err(anyhow::anyhow!("Package entrypoint does not exist"));
         }
 
         let mut source_code_file = match std::fs::File::open(&entrypoint_path) {
@@ -129,14 +129,12 @@ impl Interpreter<'_> {
                     e
                 );
 
-                return Err(InterpreterError::IoError(e));
+                return Err(e.into());
             }
         };
 
         let mut source_code = Vec::new();
-        source_code_file
-            .read_to_end(&mut source_code)
-            .map_err(|e| InterpreterError::IoError(e))?;
+        source_code_file.read_to_end(&mut source_code)?;
 
         let source_code_file = intern_file_id(&entrypoint_path.to_string_lossy().to_string()).expect("FileId overflow");
 
@@ -150,7 +148,7 @@ impl Interpreter<'_> {
                     entrypoint_path.display(),
                 );
 
-                return Err(InterpreterError::OperationalError);
+                return Err(anyhow::anyhow!("Source file too large"));
             }
         };
 
@@ -175,7 +173,7 @@ impl Interpreter<'_> {
         }
     }
 
-    fn create_target_dir(&self, dir: &PathBuf) -> Result<(), InterpreterError> {
+    fn create_target_dir(&self, dir: &PathBuf) -> anyhow::Result<()> {
         if let Err(e) = std::fs::create_dir_all(dir) {
             error!(
                 self.log,
@@ -183,14 +181,13 @@ impl Interpreter<'_> {
                 dir.display(),
                 e
             );
-
-            return Err(InterpreterError::IoError(e));
+            return Err(e.into());
         }
 
         Ok(())
     }
 
-    fn get_llvm_context(&self, triple: Option<String>, opt_level: OptLevel) -> Result<LLVMContext, InterpreterError> {
+    fn get_llvm_context(&self, triple: Option<String>, opt_level: OptLevel) -> anyhow::Result<LLVMContext> {
         let triple = match triple {
             Some(t) => t,
             None => LLVMContext::default_target_triple(),
@@ -202,7 +199,7 @@ impl Interpreter<'_> {
             Err(e) => {
                 error!(self.log, "Failed to create LLVM context for target '{}': {}", triple, e);
 
-                Err(InterpreterError::OperationalError)
+                Err(anyhow::anyhow!("Failed to create LLVM context"))
             }
         }
     }
@@ -223,27 +220,27 @@ impl Interpreter<'_> {
         package_name: &str,
         source_filepath: &std::path::Path,
         log: &CompilerLog,
-    ) -> Result<(hir::Module, hir::SymbolTab), InterpreterError> {
+    ) -> anyhow::Result<(hir::Module, hir::SymbolTab)> {
         let ptr_size = match ptr_size {
             4 => hir::PtrSize::U32,
             8 => hir::PtrSize::U64,
             _ => {
                 error!(self.log, "Unsupported pointer size: {} bytes", ptr_size);
-                return Err(InterpreterError::OperationalError);
+                return Err(anyhow::anyhow!("Unsupported pointer size"));
             }
         };
 
         let import_ctx = ImportContext::new(package_name.into(), source_filepath.into());
         let mut ctx = Ast2HirCtx::new(ptr_size, import_ctx);
         let module = match convert_ast_to_hir(module, &mut ctx, log) {
-            Err(_) => return Err(InterpreterError::OperationalError),
+            Err(_) => return Err(anyhow::anyhow!("Failed to convert AST to HIR")),
             Ok(module) => module,
         };
 
         Ok((module, ctx.tab))
     }
 
-    pub(crate) fn sc_build(&mut self, args: BuildArgs) -> Result<(), InterpreterError> {
+    pub(crate) fn sc_build(&mut self, args: BuildArgs) -> anyhow::Result<()> {
         self.create_target_dir(&args.target_dir)?;
         let log = CompilerLog::new(self.log.clone());
 
@@ -267,7 +264,7 @@ impl Interpreter<'_> {
                         self.log,
                         "Unknown build profile '{}'. Supported profiles are 'debug' and 'release'.", profile_name
                     );
-                    return Err(InterpreterError::OperationalError);
+                    return Err(anyhow::anyhow!("Unknown build profile"));
                 }
                 None => OptLevel::None,
             }
@@ -293,7 +290,7 @@ impl Interpreter<'_> {
                         return Ok(());
                     }
 
-                    return Err(InterpreterError::OperationalError);
+                    return Err(anyhow::anyhow!("HIR validation failed"));
                 }
             };
 
@@ -320,7 +317,7 @@ impl Interpreter<'_> {
                         e
                     );
 
-                    return Err(InterpreterError::OperationalError);
+                    return Err(anyhow::anyhow!("Failed to write assembly file"));
                 }
                 return Ok(());
             }
@@ -341,7 +338,7 @@ impl Interpreter<'_> {
                     e
                 );
 
-                return Err(InterpreterError::OperationalError);
+                return Err(anyhow::anyhow!("Failed to write object file"));
             }
 
             if args.show_obj {
@@ -373,7 +370,7 @@ impl Interpreter<'_> {
                         e
                     );
 
-                    InterpreterError::OperationalError
+                    e
                 })?;
 
             if !status.success() {
@@ -383,7 +380,7 @@ impl Interpreter<'_> {
                     package.name(),
                     status.code().unwrap_or(-1),
                 );
-                return Err(InterpreterError::OperationalError);
+                return Err(anyhow::anyhow!("Linking final binary failed"));
             }
 
             info!(

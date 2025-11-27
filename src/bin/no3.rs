@@ -20,7 +20,8 @@ fn custom_print_msg_header(
     Ok(true)
 }
 
-fn main() -> ExitCode {
+#[tokio::main]
+async fn main() -> ExitCode {
     env_logger::init();
 
     let args: Vec<String> = std::env::args().collect();
@@ -44,7 +45,7 @@ fn main() -> ExitCode {
     let log = slog::Logger::root(drain, o!());
 
     let mut cli = Interpreter::new(&log);
-    match cli.run(&args) {
+    match cli.run(&args).await {
         Ok(()) => ExitCode::SUCCESS,
         Err(_) => ExitCode::FAILURE,
     }

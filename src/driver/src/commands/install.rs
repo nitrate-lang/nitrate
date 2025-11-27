@@ -1,4 +1,4 @@
-use crate::{Interpreter, InterpreterError};
+use crate::Interpreter;
 use clap::Parser;
 use slog::info;
 
@@ -7,7 +7,7 @@ use slog::info;
 pub(crate) struct InstallArgs {}
 
 impl Interpreter<'_> {
-    pub(crate) fn sc_install(&mut self, _args: InstallArgs) -> Result<(), InterpreterError> {
+    pub(crate) fn sc_install(&mut self, _args: InstallArgs) -> anyhow::Result<()> {
         info!(self.log, "package install sub-command invoked");
         // TODO: install logic here
         Ok(())

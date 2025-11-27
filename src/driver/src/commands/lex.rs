@@ -1,6 +1,6 @@
 use std::io::Read;
 
-use crate::{Interpreter, InterpreterError};
+use crate::Interpreter;
 use clap::Parser;
 use nitrate_diagnosis::intern_file_id;
 use nitrate_translation::{
@@ -18,7 +18,7 @@ pub(crate) struct LexArgs {
 }
 
 impl Interpreter<'_> {
-    pub(crate) fn sc_lex(&mut self, args: LexArgs) -> Result<(), InterpreterError> {
+    pub(crate) fn sc_lex(&mut self, args: LexArgs) -> anyhow::Result<()> {
         let package = self.get_package_config()?;
         self.validate_package_edition(package.edition())?;
         let entrypoint_path = package.entrypoint();
@@ -29,7 +29,7 @@ impl Interpreter<'_> {
                 "Package entrypoint '{}' does not exist.",
                 entrypoint_path.display()
             );
-            return Err(InterpreterError::OperationalError);
+            return Err(anyhow::anyhow!("Package entrypoint does not exist"));
         }
 
         let mut source_code_file = match std::fs::File::open(&entrypoint_path) {
@@ -42,14 +42,12 @@ impl Interpreter<'_> {
                     e
                 );
 
-                return Err(InterpreterError::IoError(e));
+                return Err(anyhow::anyhow!("Failed to open package entrypoint"));
             }
         };
 
         let mut source_code = Vec::new();
-        source_code_file
-            .read_to_end(&mut source_code)
-            .map_err(|e| InterpreterError::IoError(e))?;
+        source_code_file.read_to_end(&mut source_code)?;
 
         let source_code_file = intern_file_id(&entrypoint_path.to_string_lossy().to_string()).expect("FileId overflow");
 
@@ -63,7 +61,7 @@ impl Interpreter<'_> {
                     entrypoint_path.display(),
                 );
 
-                return Err(InterpreterError::OperationalError);
+                return Err(anyhow::anyhow!("Source file is too large to be processed."));
             }
         };
 

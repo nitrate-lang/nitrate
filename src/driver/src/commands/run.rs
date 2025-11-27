@@ -1,4 +1,4 @@
-use crate::{Interpreter, InterpreterError};
+use crate::{Interpreter};
 use clap::Parser;
 use slog::info;
 
@@ -7,7 +7,7 @@ use slog::info;
 pub(crate) struct RunArgs {}
 
 impl Interpreter<'_> {
-    pub(crate) fn sc_run(&mut self, _args: RunArgs) -> Result<(), InterpreterError> {
+    pub(crate) fn sc_run(&mut self, _args: RunArgs) -> anyhow::Result<()> {
         info!(self.log, "package run sub-command invoked");
         // TODO: run logic here
         Ok(())

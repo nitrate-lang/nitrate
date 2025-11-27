@@ -1,4 +1,4 @@
-use crate::{Interpreter, InterpreterError};
+use crate::Interpreter;
 use clap::Parser;
 use slog::info;
 
@@ -7,7 +7,7 @@ use slog::info;
 pub(crate) struct CheckArgs {}
 
 impl Interpreter<'_> {
-    pub(crate) fn sc_check(&mut self, _args: CheckArgs) -> Result<(), InterpreterError> {
+    pub(crate) fn sc_check(&mut self, _args: CheckArgs) -> anyhow::Result<()> {
         info!(self.log, "package check sub-command invoked");
         // TODO: check logic here
         Ok(())
