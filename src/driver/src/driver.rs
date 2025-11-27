@@ -98,6 +98,9 @@ enum Commands {
 
     /// Uninstall a Nitrate binary
     Uninstall(UninstallArgs),
+
+    /// Run the language server protocol (LSP) server
+    Lsp(LspArgs),
 }
 
 /// Nitrate's package manager
@@ -275,6 +278,7 @@ impl<'log> Interpreter<'log> {
                 Commands::Publish(publish_args) => self.sc_publish(publish_args),
                 Commands::Install(install_args) => self.sc_install(install_args),
                 Commands::Uninstall(uninstall_args) => self.sc_uninstall(uninstall_args),
+                Commands::Lsp(lsp_args) => self.sc_lsp(lsp_args),
             };
         }
 
