@@ -1,9 +1,8 @@
+use crate::commands::lsp::lsp::{LspServer, handle_rpc_request};
 use serde::{Deserialize, Serialize};
 use slog::{error, info};
 use std::collections::HashMap;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
-
-use crate::commands::lsp::lsp::handle_rpc_request;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub(crate) struct RpcRequest {
@@ -18,6 +17,16 @@ pub(crate) struct RpcResponse {
     pub jsonrpc: String,
     pub result: serde_json::Value,
     pub id: Option<u64>,
+}
+
+impl From<RpcRequest> for RpcResponse {
+    fn from(request: RpcRequest) -> Self {
+        RpcResponse {
+            jsonrpc: request.jsonrpc,
+            result: serde_json::Value::Null,
+            id: request.id,
+        }
+    }
 }
 
 async fn parse_rpc_frame_headers(socket: &mut tokio::net::TcpStream) -> anyhow::Result<HashMap<String, String>> {
@@ -54,8 +63,9 @@ pub(crate) async fn handle_tcp_connection(
     log: slog::Logger,
 ) {
     info!(log, "Accepted connection from {}", addr);
+    let mut server = LspServer::new(log.clone());
 
-    loop {
+    while server.is_running {
         let Ok(headers) = parse_rpc_frame_headers(&mut socket).await else {
             error!(log, "Failed to parse RPC frame headers from {}", addr);
             return;
@@ -91,10 +101,15 @@ pub(crate) async fn handle_tcp_connection(
             return;
         }
 
-        let Ok(rpc_response) = handle_rpc_request(rpc_request, &log).await else {
+        let Ok(rpc_response) = handle_rpc_request(&mut server, rpc_request).await else {
             error!(log, "Failed to handle RPC request from {}", addr);
             continue;
         };
+
+        // If there's no ID, it's a notification; no response needed
+        if rpc_response.id.is_none() {
+            continue;
+        }
 
         let response_json = serde_json::to_string(&rpc_response).unwrap();
         let response_message = format!("Content-Length: {}\r\n\r\n{}", response_json.len(), response_json);
