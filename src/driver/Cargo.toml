@@ -19,5 +19,5 @@ serde = { version = "1.0.228", features = ["derive"] }
 serde_json = "1.0.145"
 serde-xml-rs = "0.8.1"
 xml-doc = "0.2.0"
-jsonrpsee = { version = "0.26", features = ["server", "macros"] }
 anyhow = "1.0"
+tokio = { version = "1.36.0", features = ["full"] }
