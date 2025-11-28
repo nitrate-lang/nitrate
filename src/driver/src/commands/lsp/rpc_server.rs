@@ -16,7 +16,7 @@ pub(crate) struct RpcRequest {
 pub(crate) struct RpcResponse {
     pub jsonrpc: String,
     pub result: serde_json::Value,
-    pub id: Option<u64>,
+    pub id: u64,
 }
 
 impl From<RpcRequest> for RpcResponse {
@@ -24,9 +24,14 @@ impl From<RpcRequest> for RpcResponse {
         RpcResponse {
             jsonrpc: request.jsonrpc,
             result: serde_json::Value::Null,
-            id: request.id,
+            id: request.id.unwrap_or(0),
         }
     }
+}
+
+pub(crate) enum RpcReply {
+    Response(RpcResponse),
+    None(()),
 }
 
 async fn parse_rpc_frame_headers(socket: &mut tokio::net::TcpStream) -> anyhow::Result<HashMap<String, String>> {
@@ -106,19 +111,18 @@ pub(crate) async fn handle_tcp_connection(
             continue;
         };
 
-        // If there's no ID, it's a notification; no response needed
-        if rpc_response.id.is_none() {
-            continue;
+        match rpc_response {
+            RpcReply::None(_) => continue,
+            RpcReply::Response(rpc_response) => {
+                let response_json = serde_json::to_string(&rpc_response).unwrap();
+                let response_message = format!("Content-Length: {}\r\n\r\n{}", response_json.len(), response_json);
+                if let Err(e) = socket.write_all(response_message.as_bytes()).await {
+                    error!(log, "Failed to send RPC response to {}: {}", addr, e);
+                    return;
+                }
+
+                info!(log, "Sent RPC response to {}", addr);
+            }
         }
-
-        let response_json = serde_json::to_string(&rpc_response).unwrap();
-        let response_message = format!("Content-Length: {}\r\n\r\n{}", response_json.len(), response_json);
-
-        if let Err(e) = socket.write_all(response_message.as_bytes()).await {
-            error!(log, "Failed to send RPC response to {}: {}", addr, e);
-            return;
-        }
-
-        info!(log, "Sent RPC response to {}", addr);
     }
 }
