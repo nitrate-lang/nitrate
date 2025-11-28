@@ -1,6 +1,6 @@
 use crate::commands::lsp::lsp::{LspServer, handle_rpc_request};
 use serde::{Deserialize, Serialize};
-use slog::{error, info};
+use slog::{debug, error, info};
 use std::collections::HashMap;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 
@@ -76,7 +76,7 @@ pub(crate) async fn handle_tcp_connection(
             return;
         };
 
-        info!(log, "Parsed RPC frame headers from {}: {:?}", addr, headers);
+        debug!(log, "Parsed RPC frame headers from {}: {:?}", addr, headers);
 
         let Some(content_length_value) = headers.get("Content-Length") else {
             error!(log, "No Content-Length header found from {}", addr);
@@ -106,9 +106,12 @@ pub(crate) async fn handle_tcp_connection(
             return;
         }
 
-        let Ok(rpc_response) = handle_rpc_request(&mut server, rpc_request).await else {
-            error!(log, "Failed to handle RPC request from {}", addr);
-            continue;
+        let rpc_response = match handle_rpc_request(&mut server, rpc_request).await {
+            Ok(response) => response,
+            Err(e) => {
+                error!(log, "Failed to handle RPC request from {}: {}", addr, e);
+                continue;
+            }
         };
 
         match rpc_response {
@@ -121,7 +124,7 @@ pub(crate) async fn handle_tcp_connection(
                     return;
                 }
 
-                info!(log, "Sent RPC response to {}", addr);
+                debug!(log, "Sent RPC response to {}", addr);
             }
         }
     }
