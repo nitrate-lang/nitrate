@@ -809,8 +809,6 @@ impl Parser<'_, '_> {
             }
         }
 
-        assert_ne!(segments.len(), 0);
-
         ExprPath {
             segments,
             resolved_path: None,

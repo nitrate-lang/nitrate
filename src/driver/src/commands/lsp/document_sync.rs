@@ -11,6 +11,10 @@ impl FileData {
             lines: text.lines().map(|s| s.to_string()).collect(),
         }
     }
+
+    pub fn content(&self) -> String {
+        self.lines.join("\n")
+    }
 }
 
 pub async fn rpc_notify_text_document_did_open(m: &mut LspServer, request: RpcRequest) -> anyhow::Result<()> {

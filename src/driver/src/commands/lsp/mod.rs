@@ -3,6 +3,7 @@ use clap::Parser;
 use slog::info;
 use std::net::SocketAddr;
 
+mod completion;
 mod document_sync;
 mod lsp;
 mod rpc_server;

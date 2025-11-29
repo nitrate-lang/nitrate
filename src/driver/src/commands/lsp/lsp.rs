@@ -1,6 +1,6 @@
-use crate::commands::lsp::{document_sync::*, rpc_server::*};
+use crate::commands::lsp::{completion::rpc_method_text_document_completion, document_sync::*, rpc_server::*};
 use serde_json::json;
-use slog::{error, info};
+use slog::{error, info, warn};
 use std::collections::HashMap;
 
 pub struct LspServer {
@@ -27,7 +27,11 @@ async fn rpc_method_initialize(m: &mut LspServer, request: RpcRequest) -> anyhow
     let mut response = RpcResponse::from(request);
     response.result = json!({
         "capabilities": {
-            "textDocumentSync": TEXT_DOCUMENT_SYNC_KIND_FULL
+            "textDocumentSync": TEXT_DOCUMENT_SYNC_KIND_FULL,
+            "completionProvider": {
+                "resolveProvider": false,
+                "triggerCharacters": [".", ":"]
+            }
         }
     });
 
@@ -51,19 +55,30 @@ async fn rpc_notify_exit(m: &mut LspServer, _request: RpcRequest) -> anyhow::Res
     Ok(())
 }
 
-pub(crate) async fn handle_rpc_request(m: &mut LspServer, request: RpcRequest) -> anyhow::Result<RpcReply> {
-    match request.method.as_str() {
-        "initialize" => Ok(RpcReply::Response(rpc_method_initialize(m, request).await?)),
-        "initialized" => Ok(RpcReply::None(rpc_notify_initialized(m, request).await?)),
-        "shutdown" => Ok(RpcReply::Response(rpc_method_shutdown(m, request).await?)),
-        "exit" => Ok(RpcReply::None(rpc_notify_exit(m, request).await?)),
-        "textDocument/didOpen" => Ok(RpcReply::None(rpc_notify_text_document_did_open(m, request).await?)),
-        "textDocument/didChange" => Ok(RpcReply::None(rpc_notify_text_document_did_change(m, request).await?)),
-        "textDocument/didClose" => Ok(RpcReply::None(rpc_notify_text_document_did_close(m, request).await?)),
-        "textDocument/didSave" => Ok(RpcReply::None(rpc_notify_text_document_did_save(m, request).await?)),
+pub(crate) async fn handle_rpc_request(m: &mut LspServer, req: RpcRequest) -> anyhow::Result<RpcReply> {
+    match req.method.as_str() {
+        "initialize" => Ok(RpcReply::Response(rpc_method_initialize(m, req).await?)),
+        "initialized" => Ok(RpcReply::None(rpc_notify_initialized(m, req).await?)),
+        "shutdown" => Ok(RpcReply::Response(rpc_method_shutdown(m, req).await?)),
+        "exit" => Ok(RpcReply::None(rpc_notify_exit(m, req).await?)),
+
+        /* Handle document synchronization */
+        "textDocument/didOpen" => Ok(RpcReply::None(rpc_notify_text_document_did_open(m, req).await?)),
+        "textDocument/didChange" => Ok(RpcReply::None(rpc_notify_text_document_did_change(m, req).await?)),
+        "textDocument/didClose" => Ok(RpcReply::None(rpc_notify_text_document_did_close(m, req).await?)),
+        "textDocument/didSave" => Ok(RpcReply::None(rpc_notify_text_document_did_save(m, req).await?)),
+
+        /* Language server features */
+        "textDocument/completion" => Ok(RpcReply::Response(rpc_method_text_document_completion(m, req).await?)),
+
+        method if method.starts_with("$/") => {
+            // Handle custom notifications or requests starting with $/
+            warn!(m.log, "Custom RPC method not implemented: {}", req.method);
+            Err(anyhow::anyhow!("Custom RPC methods not implemented"))
+        }
 
         _ => {
-            error!(m.log, "Unknown RPC method: {}", request.method);
+            error!(m.log, "Unknown RPC method: {}", req.method);
             return Err(anyhow::anyhow!("Unknown RPC method"));
         }
     }
