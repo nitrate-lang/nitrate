@@ -26,7 +26,7 @@ Do not checkmark a feature until it is fully implemented and extensive tests hav
       - [x] Number
         - [x] Integer
         - [x] Float
-      - [ ] String
+      - [x] String
       - [ ] Byte string
       - [ ] Literal suffixes
     - [ ] Struct initializers

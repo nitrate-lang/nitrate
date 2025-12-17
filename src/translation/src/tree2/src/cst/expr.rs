@@ -1,4 +1,5 @@
 use crate::prelude::*;
+use nitrate_nstring::NString;
 use ordered_float::OrderedFloat;
 use serde::{Deserialize, Serialize};
 
@@ -29,7 +30,14 @@ pub enum Expr {
         source_offset: u32,
         trivia: Option<Trivia>,
         value: OrderedFloat<f64>,
-        value_str: String,
+        raw_value_str: String,
+    },
+
+    String {
+        source_offset: u32,
+        trivia: Option<Trivia>,
+        value: NString,
+        raw_value_str: String,
     },
 }
 
