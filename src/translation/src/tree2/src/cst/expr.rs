@@ -39,6 +39,13 @@ pub enum Expr {
         value: NString,
         raw_value_str: String,
     },
+
+    BString {
+        source_offset: u32,
+        trivia: Option<Trivia>,
+        value: Vec<u8>,
+        raw_value_str: String,
+    },
 }
 
 impl From<Expr> for ExprId {

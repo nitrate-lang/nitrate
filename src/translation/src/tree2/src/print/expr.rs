@@ -52,6 +52,16 @@ impl std::fmt::Display for Expr {
                 print_trivia(trivia, f)?;
                 write!(f, "{}", value_str)
             }
+
+            Expr::BString {
+                source_offset: _,
+                trivia,
+                value: _,
+                raw_value_str: value_str,
+            } => {
+                print_trivia(trivia, f)?;
+                write!(f, "{}", value_str)
+            }
         }
     }
 }
