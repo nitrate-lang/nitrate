@@ -5,7 +5,17 @@ impl std::fmt::Display for Expr {
         match self {
             Expr::Trivia { trivia } => print_trivia(trivia, f),
 
-            Expr::Integer {
+            Expr::Unit {
+                source_offset: _,
+                trivia,
+            } => {
+                print_trivia(&trivia[0], f)?;
+                write!(f, "(")?;
+                print_trivia(&trivia[1], f)?;
+                write!(f, ")")
+            }
+
+            Expr::Boolean {
                 source_offset: _,
                 trivia,
                 value,
@@ -14,7 +24,7 @@ impl std::fmt::Display for Expr {
                 write!(f, "{}", value)
             }
 
-            Expr::Boolean {
+            Expr::Integer {
                 source_offset: _,
                 trivia,
                 value,

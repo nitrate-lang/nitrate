@@ -21,7 +21,7 @@ Do not checkmark a feature until it is fully implemented and extensive tests hav
 
   - [ ] Expressions
     - [ ] Literals
-      - [ ] Unit
+      - [x] Unit
       - [x] Boolean
       - [ ] Number
         - [x] Integer

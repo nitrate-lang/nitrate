@@ -1,6 +1,5 @@
-use std::cell::Cell;
-
 use nitrate_diagnosis::FileId;
+use std::cell::Cell;
 
 pub struct GlobalSource<'a> {
     pub full_source: &'a [u8],

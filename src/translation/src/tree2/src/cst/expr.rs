@@ -7,16 +7,21 @@ pub enum Expr {
         trivia: Option<Trivia>,
     },
 
-    Integer {
+    Unit {
         source_offset: u32,
-        trivia: Option<Trivia>,
-        value: u128,
+        trivia: [Option<Trivia>; 2],
     },
 
     Boolean {
         source_offset: u32,
         trivia: Option<Trivia>,
         value: bool,
+    },
+
+    Integer {
+        source_offset: u32,
+        trivia: Option<Trivia>,
+        value: u128,
     },
 }
 
