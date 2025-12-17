@@ -4,6 +4,14 @@ use ordered_float::OrderedFloat;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub struct StructInitField {
+    pub trivia: [Option<Trivia>; 3],
+    pub name: NString,
+    pub value: ExprId,
+    pub ends_with_comma: bool,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum Expr {
     Trivia {
         trivia: Option<Trivia>,
@@ -48,6 +56,13 @@ pub enum Expr {
         trivia: Option<Trivia>,
         value: Vec<u8>,
         raw_value_str: String,
+    },
+
+    StructInit {
+        source_offset: u32,
+        trivia: [Option<Trivia>; 2],
+        struct_name: NString,
+        fields: Vec<StructInitField>,
     },
 }
 

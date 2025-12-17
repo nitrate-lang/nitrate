@@ -1,3 +1,5 @@
+use std::ops::Deref;
+
 use crate::{prelude::*, print::item::print_trivia};
 
 impl std::fmt::Display for Expr {
@@ -64,6 +66,33 @@ impl std::fmt::Display for Expr {
             } => {
                 print_trivia(trivia, f)?;
                 write!(f, "{}", value_str)
+            }
+
+            Expr::StructInit {
+                source_offset: _,
+                trivia,
+                struct_name,
+                fields,
+            } => {
+                print_trivia(&trivia[0], f)?;
+                write!(f, "{}", struct_name)?;
+                print_trivia(&trivia[1], f)?;
+                write!(f, "{{")?;
+
+                for field in fields {
+                    print_trivia(&field.trivia[0], f)?;
+                    write!(f, "{}", field.name)?;
+                    print_trivia(&field.trivia[1], f)?;
+                    write!(f, ":")?;
+                    write!(f, "{}", field.value.borrow())?;
+                    print_trivia(&field.trivia[2], f)?;
+
+                    if field.ends_with_comma {
+                        write!(f, ",")?;
+                    }
+                }
+
+                write!(f, "}}")
             }
         }
     }

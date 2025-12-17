@@ -17,6 +17,8 @@ impl Parser<'_, '_> {
                     source_offset: token.start_offset,
                     trivia: leading,
                     value: integer.value(),
+                    raw_value_str: integer.to_string(),
+                    suffix: None,
                 }
             }
 

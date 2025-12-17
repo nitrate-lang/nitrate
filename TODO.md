@@ -29,7 +29,7 @@ Do not checkmark a feature until it is fully implemented and extensive tests hav
       - [x] String
       - [x] Byte string
       - [x] Literal suffixes
-    - [ ] Struct initializers
+    - [x] Struct initializers
     - [ ] Enum initializers
     - [ ] Binary expressions
       - [ ] Add `+`
