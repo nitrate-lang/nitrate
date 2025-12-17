@@ -23,9 +23,9 @@ Do not checkmark a feature until it is fully implemented and extensive tests hav
     - [ ] Literals
       - [x] Unit
       - [x] Boolean
-      - [ ] Number
+      - [x] Number
         - [x] Integer
-        - [ ] Float
+        - [x] Float
       - [ ] String
       - [ ] Byte string
       - [ ] Literal suffixes
