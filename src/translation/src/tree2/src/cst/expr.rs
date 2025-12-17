@@ -24,6 +24,8 @@ pub enum Expr {
         source_offset: u32,
         trivia: Option<Trivia>,
         value: u128,
+        raw_value_str: String,
+        suffix: Option<NString>,
     },
 
     Float {
@@ -31,6 +33,7 @@ pub enum Expr {
         trivia: Option<Trivia>,
         value: OrderedFloat<f64>,
         raw_value_str: String,
+        suffix: Option<NString>,
     },
 
     String {

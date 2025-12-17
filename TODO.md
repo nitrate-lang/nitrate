@@ -20,7 +20,7 @@ Do not checkmark a feature until it is fully implemented and extensive tests hav
 - [ ] Concrete Syntax Tree (CST) Data Structure
 
   - [ ] Expressions
-    - [ ] Literals
+    - [x] Literals
       - [x] Unit
       - [x] Boolean
       - [x] Number
@@ -28,7 +28,7 @@ Do not checkmark a feature until it is fully implemented and extensive tests hav
         - [x] Float
       - [x] String
       - [x] Byte string
-      - [ ] Literal suffixes
+      - [x] Literal suffixes
     - [ ] Struct initializers
     - [ ] Enum initializers
     - [ ] Binary expressions

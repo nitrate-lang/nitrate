@@ -27,10 +27,12 @@ impl std::fmt::Display for Expr {
             Expr::Integer {
                 source_offset: _,
                 trivia,
-                value,
+                value: _,
+                raw_value_str: value_str,
+                suffix: _,
             } => {
                 print_trivia(trivia, f)?;
-                write!(f, "{}", value)
+                write!(f, "{}", value_str)
             }
 
             Expr::Float {
@@ -38,6 +40,7 @@ impl std::fmt::Display for Expr {
                 trivia,
                 value: _,
                 raw_value_str: value_str,
+                suffix: _,
             } => {
                 print_trivia(trivia, f)?;
                 write!(f, "{}", value_str)
