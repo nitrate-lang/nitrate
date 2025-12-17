@@ -1,4 +1,5 @@
 use crate::prelude::*;
+use ordered_float::OrderedFloat;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -22,6 +23,13 @@ pub enum Expr {
         source_offset: u32,
         trivia: Option<Trivia>,
         value: u128,
+    },
+
+    Float {
+        source_offset: u32,
+        trivia: Option<Trivia>,
+        value: OrderedFloat<f64>,
+        value_str: String,
     },
 }
 

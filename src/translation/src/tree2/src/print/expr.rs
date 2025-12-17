@@ -32,6 +32,16 @@ impl std::fmt::Display for Expr {
                 print_trivia(trivia, f)?;
                 write!(f, "{}", value)
             }
+
+            Expr::Float {
+                source_offset: _,
+                trivia,
+                value: _,
+                value_str,
+            } => {
+                print_trivia(trivia, f)?;
+                write!(f, "{}", value_str)
+            }
         }
     }
 }
