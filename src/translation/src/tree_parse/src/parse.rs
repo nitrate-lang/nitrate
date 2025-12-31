@@ -21,6 +21,8 @@ impl<'a, 'log> Parser<'a, 'log> {
     pub fn parse_source(&mut self, package_name: NString) -> Module {
         let mut items = Vec::new();
 
+        self.lexer.disable_trivia();
+
         while !self.lexer.is_eof() {
             let item = self.parse_item();
             items.push(item);

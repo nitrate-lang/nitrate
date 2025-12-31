@@ -16,6 +16,7 @@ pub struct Lexer<'a> {
     internal_getc_pos: SourcePosition,
     current_pos: SourcePosition,
     preread_token: Option<AnnotatedToken>,
+    trivia_enabled: bool,
 }
 
 enum StringEscape {
@@ -55,8 +56,17 @@ impl<'a> Lexer<'a> {
                     fileid: fileid.clone(),
                 },
                 preread_token: None,
+                trivia_enabled: true,
             })
         }
+    }
+
+    pub fn enable_trivia(&mut self) {
+        self.trivia_enabled = true;
+    }
+
+    pub fn disable_trivia(&mut self) {
+        self.trivia_enabled = false;
     }
 
     pub fn next_tok(&mut self) -> AnnotatedToken {
@@ -856,6 +866,21 @@ impl<'a> Lexer<'a> {
             },
         }
         .unwrap_or(Token::Eof);
+
+        if !self.trivia_enabled {
+            match &token {
+                Token::Space
+                | Token::HorizontalTab
+                | Token::NewLine
+                | Token::VerticalTab
+                | Token::FormFeed
+                | Token::CarriageReturn
+                | Token::Comment(_) => {
+                    return self.parse_next_token();
+                }
+                _ => {}
+            }
+        }
 
         let end_pos = self.internal_getc_pos.clone();
 
