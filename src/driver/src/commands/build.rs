@@ -220,7 +220,7 @@ impl Interpreter<'_> {
         package_name: &str,
         source_filepath: &std::path::Path,
         log: &CompilerLog,
-    ) -> anyhow::Result<(hir::Module, hir::SymbolTab)> {
+    ) -> anyhow::Result<(hir::Module, hir::SymbolTab, hir::TyCtx)> {
         let ptr_size = match ptr_size {
             4 => hir::PtrSize::U32,
             8 => hir::PtrSize::U64,
@@ -237,7 +237,7 @@ impl Interpreter<'_> {
             Ok(module) => module,
         };
 
-        Ok((module, ctx.tab))
+        Ok((module, ctx.tab, ctx.m))
     }
 
     pub(crate) fn sc_build(&mut self, args: BuildArgs) -> anyhow::Result<()> {
@@ -276,10 +276,10 @@ impl Interpreter<'_> {
         let store = Store::new();
 
         using_storage(&store, || {
-            let (hir_module, symbol_tab) =
+            let (hir_module, symbol_tab, ty_ctx) =
                 self.lower_to_hir(ast_module, ptr_size, package.name(), &package.entrypoint(), &log)?;
 
-            let mut hir_verifier = hir_validate::ValidateCtx::new(&log);
+            let mut hir_verifier = hir_validate::ValidateCtx::new(&log, &ty_ctx);
             let valid_hir_module = match hir_module.clone().validate(&mut hir_verifier) {
                 Ok(m) => m,
                 Err(_) => {
@@ -299,7 +299,7 @@ impl Interpreter<'_> {
                 return Ok(());
             }
 
-            let mut llvm_module = generate_llvmir(package.name(), valid_hir_module, &llvm_ctx, &symbol_tab);
+            let mut llvm_module = generate_llvmir(package.name(), valid_hir_module, &llvm_ctx, &symbol_tab, &ty_ctx);
 
             llvm_ctx.optimize_module(&mut llvm_module);
 

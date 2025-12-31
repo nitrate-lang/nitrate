@@ -1,6 +1,6 @@
 use crate::diagnosis::TypeErr;
 use nitrate_diagnosis::CompilerLog;
-use nitrate_hir::{BlockElement, BlockId, Function, GlobalVariable, PtrSize, Type, TypeId, Value, ValueId};
+use nitrate_hir::{BlockElement, BlockId, Function, GlobalVariable, PtrSize, TyCtx, Type, TypeId, Value, ValueId};
 use nitrate_hir_get_type::HirGetType;
 use ordered_float::OrderedFloat;
 use std::collections::{HashMap, HashSet};
@@ -15,18 +15,18 @@ enum NodeAction {
     Replace(Value),
 }
 
-pub struct HindleyMilner {
+struct HindleyMilner<'m> {
     constraints: HashMap<ValueId, HashSet<TypeConstraint>>,
-    ptr_size: PtrSize,
+    m: &'m TyCtx,
     errors: HashSet<TypeErr>,
     function_return_type: Option<TypeId>,
 }
 
-impl HindleyMilner {
-    pub fn new(ptr_size: PtrSize) -> Self {
+impl<'m> HindleyMilner<'m> {
+    fn new(m: &'m TyCtx) -> Self {
         Self {
             constraints: HashMap::new(),
-            ptr_size,
+            m,
             errors: HashSet::new(),
             function_return_type: None,
         }
@@ -133,7 +133,7 @@ impl HindleyMilner {
                                 }
                             },
 
-                            Type::USize => match self.ptr_size {
+                            Type::USize => match self.m.ptr_size() {
                                 PtrSize::U32 => match u32::try_from(value) {
                                     Ok(v) => NodeAction::Replace(Value::USize32(v)),
                                     Err(_) => {
@@ -438,7 +438,7 @@ impl HindleyMilner {
 
             BlockElement::Local(local_var) => {
                 if local_var.borrow().ty.is_inferred() {
-                    let initializer_type = local_var.borrow().initializer.borrow().determine_type();
+                    let initializer_type = local_var.borrow().initializer.borrow().determine_type(self.m);
 
                     if let Ok(type_constraint) = initializer_type {
                         local_var.borrow_mut().ty = type_constraint.into();
@@ -460,7 +460,7 @@ impl HindleyMilner {
         }
     }
 
-    pub fn solve_function(&mut self, function: &mut Function, log: &CompilerLog) -> Result<(), ()> {
+    fn solve_function(&mut self, function: &mut Function, log: &CompilerLog) -> Result<(), ()> {
         if let Some(body) = &mut function.body {
             self.function_return_type = Some(function.return_type);
 
@@ -484,12 +484,12 @@ impl HindleyMilner {
         if self.errors.is_empty() { Ok(()) } else { Err(()) }
     }
 
-    pub fn solve_global_variable(&mut self, g: &mut GlobalVariable, log: &CompilerLog) -> Result<(), ()> {
+    fn solve_global_variable(&mut self, g: &mut GlobalVariable, log: &CompilerLog) -> Result<(), ()> {
         loop {
             let prev_constraints_len = self.constraints.len();
 
             if g.ty.is_inferred() {
-                let initializer_type = g.initializer.borrow().determine_type();
+                let initializer_type = g.initializer.borrow().determine_type(self.m);
 
                 if let Ok(type_constraint) = initializer_type {
                     g.ty = type_constraint.into();
@@ -519,4 +519,14 @@ impl HindleyMilner {
 
         if self.errors.is_empty() { Ok(()) } else { Err(()) }
     }
+}
+
+pub fn resolve_function(function: &mut Function, m: &TyCtx, log: &CompilerLog) -> Result<(), ()> {
+    let mut hm = HindleyMilner::new(m);
+    hm.solve_function(function, log)
+}
+
+pub fn resolve_global(global: &mut GlobalVariable, m: &TyCtx, log: &CompilerLog) -> Result<(), ()> {
+    let mut hm = HindleyMilner::new(m);
+    hm.solve_global_variable(global, log)
 }

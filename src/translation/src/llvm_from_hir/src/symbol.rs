@@ -10,7 +10,7 @@ use thin_vec::ThinVec;
 use crate::rvalue::CodegenCtx;
 use crate::rvalue::gen_rval;
 use crate::ty::{TypegenCtx, gen_ty};
-use nitrate_hir::prelude as hir;
+use nitrate_hir::{TyCtx, prelude as hir};
 use nitrate_hir_mangle::mangle_name;
 use nitrate_llvm::LLVMContext;
 use std::collections::{BTreeSet, HashMap};
@@ -20,15 +20,16 @@ unsafe extern "C" {
     fn nitrate_llvm_appendToGlobalCtors(module: LLVMModuleRef, function: LLVMValueRef, priority: u32) -> ();
 }
 
-pub struct SymbolGenCtx<'ctx, 'tab, 'package_name, 'module> {
+pub struct SymbolGenCtx<'ctx, 'tab, 'package_name, 'module, 'tyctx> {
     pub llvm: &'ctx LLVMContext,
     pub tab: &'tab hir::SymbolTab,
     pub module: &'module Module<'ctx>,
     pub globals: HashMap<NString, (PointerValue<'ctx>, BasicTypeEnum<'ctx>)>,
     pub package_name: &'package_name str,
+    pub m: &'tyctx TyCtx,
 }
 
-impl<'ctx, 'tab, 'package_name, 'module> SymbolGenCtx<'ctx, 'tab, 'package_name, 'module> {
+impl<'ctx, 'tab, 'package_name, 'module, 'tyctx> SymbolGenCtx<'ctx, 'tab, 'package_name, 'module, 'tyctx> {
     fn ty_ctx(&self) -> TypegenCtx<'ctx, 'tab, 'module> {
         TypegenCtx {
             llvm: self.llvm,
@@ -47,7 +48,7 @@ pub(crate) fn get_ptr_size(ctx: &LLVMContext) -> hir::PtrSize {
     }
 }
 
-fn gen_global<'ctx>(ctx: &mut SymbolGenCtx<'ctx, '_, '_, '_>, hir_global: &hir::GlobalVariable) {
+fn gen_global<'ctx>(ctx: &mut SymbolGenCtx<'ctx, '_, '_, '_, '_>, hir_global: &hir::GlobalVariable) {
     let hir_global_ty = hir_global.ty.deref();
     let global_ty = gen_ty(hir_global_ty, &mut ctx.ty_ctx());
 
@@ -85,7 +86,7 @@ fn gen_global<'ctx>(ctx: &mut SymbolGenCtx<'ctx, '_, '_, '_>, hir_global: &hir::
     /***********************************************************************/
     // Fill Constructor Body
     let bb = ctx.llvm.create_builder();
-    let mut val_ctx = CodegenCtx::new(ctx.llvm, &ctx.module, ctx.tab, &bb, &ctx.globals);
+    let mut val_ctx = CodegenCtx::new(ctx.llvm, &ctx.module, ctx.tab, &bb, &ctx.globals, ctx.m);
 
     let entry = ctx.llvm.append_basic_block(llvm_ctor_function, "entry");
     bb.position_at_end(entry);
@@ -113,7 +114,7 @@ fn gen_global<'ctx>(ctx: &mut SymbolGenCtx<'ctx, '_, '_, '_>, hir_global: &hir::
 }
 
 fn gen_function_decl<'ctx>(
-    ctx: &mut SymbolGenCtx<'ctx, '_, '_, '_>,
+    ctx: &mut SymbolGenCtx<'ctx, '_, '_, '_, '_>,
     hir_function: &hir::Function,
 ) -> FunctionValue<'ctx> {
     if let Some(existing_function) = ctx.module.get_function(&hir_function.mangled_name) {
@@ -143,12 +144,15 @@ fn gen_function_decl<'ctx>(
     llvm_function
 }
 
-fn gen_function<'ctx>(ctx: &mut SymbolGenCtx<'ctx, '_, '_, '_>, hir_function: &hir::Function) -> FunctionValue<'ctx> {
+fn gen_function<'ctx>(
+    ctx: &mut SymbolGenCtx<'ctx, '_, '_, '_, '_>,
+    hir_function: &hir::Function,
+) -> FunctionValue<'ctx> {
     let llvm_function = gen_function_decl(ctx, hir_function);
 
     if let Some(body) = &hir_function.body {
         let bb = ctx.llvm.create_builder();
-        let mut val_ctx = CodegenCtx::new(ctx.llvm, &ctx.module, ctx.tab, &bb, &ctx.globals);
+        let mut val_ctx = CodegenCtx::new(ctx.llvm, &ctx.module, ctx.tab, &bb, &ctx.globals, ctx.m);
 
         let entry = ctx.llvm.append_basic_block(llvm_function, "entry");
         bb.position_at_end(entry);
@@ -194,7 +198,7 @@ fn gen_function<'ctx>(ctx: &mut SymbolGenCtx<'ctx, '_, '_, '_>, hir_function: &h
     llvm_function
 }
 
-pub(crate) fn gen_module<'ctx>(ctx: &mut SymbolGenCtx<'ctx, '_, '_, '_>, module: &hir::Module) {
+pub(crate) fn gen_module<'ctx>(ctx: &mut SymbolGenCtx<'ctx, '_, '_, '_, '_>, module: &hir::Module) {
     for item in &module.items {
         match item {
             hir::Item::TypeAliasDef(_) | hir::Item::StructDef(_) | hir::Item::EnumDef(_) => {}
@@ -217,6 +221,7 @@ pub fn generate_llvmir<'ctx>(
     hir: ValidHir<hir::Module>,
     llvm: &'ctx LLVMContext,
     tab: &hir::SymbolTab,
+    m: &TyCtx,
 ) -> Module<'ctx> {
     let hir = hir.into_inner();
     let module_name = hir.name.to_string();
@@ -228,6 +233,7 @@ pub fn generate_llvmir<'ctx>(
         module: &module,
         globals: HashMap::new(),
         package_name,
+        m,
     };
 
     for function_id in tab.functions() {

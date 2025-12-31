@@ -1,5 +1,3 @@
-use std::ops::Deref;
-
 use crate::{prelude::*, print::item::print_trivia};
 
 impl std::fmt::Display for Expr {

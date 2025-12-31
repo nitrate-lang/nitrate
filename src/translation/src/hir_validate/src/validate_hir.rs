@@ -1,5 +1,6 @@
 use log::debug;
 use nitrate_diagnosis::CompilerLog;
+use nitrate_hir::TyCtx;
 use std::collections::HashSet;
 
 pub struct ValidHir<T> {
@@ -26,16 +27,18 @@ pub(crate) fn establish_property(name: &str, f: impl FnOnce() -> Result<(), ()>)
     result
 }
 
-pub struct ValidateCtx<'log> {
+pub struct ValidateCtx<'log, 'm> {
     pub(crate) log: &'log CompilerLog,
     pub(crate) visited: HashSet<*const ()>,
+    pub(crate) m: &'m TyCtx,
 }
 
-impl<'log> ValidateCtx<'log> {
-    pub fn new(log: &'log CompilerLog) -> Self {
+impl<'log, 'm> ValidateCtx<'log, 'm> {
+    pub fn new(log: &'log CompilerLog, m: &'m TyCtx) -> Self {
         ValidateCtx {
             log,
             visited: HashSet::new(),
+            m,
         }
     }
 

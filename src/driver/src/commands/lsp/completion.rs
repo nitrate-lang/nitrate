@@ -2,13 +2,12 @@ use crate::commands::lsp::{
     lsp::LspServer,
     rpc_server::{RpcRequest, RpcResponse},
 };
-use nitrate_diagnosis::{CompilerLog, FileId, intern_file_id};
+use nitrate_diagnosis::{CompilerLog, intern_file_id};
 use nitrate_translation::{
     parse::Parser,
     token_lexer::{Lexer, LexerError},
     tree_resolve::discover_symbols,
 };
-use serde_json::json;
 use slog::info;
 
 #[derive(serde::Serialize)]

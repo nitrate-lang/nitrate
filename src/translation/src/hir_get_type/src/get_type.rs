@@ -8,16 +8,17 @@ pub enum TypeInferenceError {
     FieldAccessOnNonStruct,
     StructMissingField,
     CalleeIsNotFunctionType,
+    MethodNotFound,
     CannotDeref,
     ClosureHasNoType,
 }
 
 pub trait HirGetType {
-    fn determine_type(&self) -> Result<Type, TypeInferenceError>;
+    fn determine_type(&self, ctx: &TyCtx) -> Result<Type, TypeInferenceError>;
 }
 
 impl HirGetType for Lit {
-    fn determine_type(&self) -> Result<Type, TypeInferenceError> {
+    fn determine_type(&self, _ctx: &TyCtx) -> Result<Type, TypeInferenceError> {
         match self {
             Lit::Unit => Ok(Type::Unit),
             Lit::Bool(_) => Ok(Type::Bool),
@@ -40,16 +41,16 @@ impl HirGetType for Lit {
 }
 
 impl HirGetType for Block {
-    fn determine_type(&self) -> Result<Type, TypeInferenceError> {
+    fn determine_type(&self, ctx: &TyCtx) -> Result<Type, TypeInferenceError> {
         match self.elements.last() {
-            Some(BlockElement::Expr(last)) => last.borrow().determine_type(),
+            Some(BlockElement::Expr(last)) => last.borrow().determine_type(ctx),
             Some(BlockElement::Local(_)) | None => Ok(Type::Unit),
         }
     }
 }
 
 impl HirGetType for Value {
-    fn determine_type(&self) -> Result<Type, TypeInferenceError> {
+    fn determine_type(&self, ctx: &TyCtx) -> Result<Type, TypeInferenceError> {
         match self {
             Value::Unit => Ok(Type::Unit),
             Value::Bool(_) => Ok(Type::Bool),
@@ -114,9 +115,11 @@ impl HirGetType for Value {
                 | BinaryOp::Mod
                 | BinaryOp::And
                 | BinaryOp::Or
-                | BinaryOp::Xor => Ok(left.borrow().determine_type()?),
+                | BinaryOp::Xor => Ok(left.borrow().determine_type(ctx)?),
 
-                BinaryOp::Shl | BinaryOp::Shr | BinaryOp::Rol | BinaryOp::Ror => Ok(left.borrow().determine_type()?),
+                BinaryOp::Shl | BinaryOp::Shr | BinaryOp::Rol | BinaryOp::Ror => {
+                    Ok(left.borrow().determine_type(ctx)?)
+                }
 
                 BinaryOp::LogicAnd
                 | BinaryOp::LogicOr
@@ -129,13 +132,13 @@ impl HirGetType for Value {
             },
 
             Value::Unary { op, operand: expr } => match op {
-                UnaryOp::Add | UnaryOp::Sub | UnaryOp::Not => expr.borrow().determine_type(),
+                UnaryOp::Add | UnaryOp::Sub | UnaryOp::Not => expr.borrow().determine_type(ctx),
             },
 
             Value::FieldAccess { expr, field_name } => {
                 let expr = expr.borrow();
 
-                if let Type::Struct { def } = expr.determine_type()? {
+                if let Type::Struct { def } = expr.determine_type(ctx)? {
                     let struct_def = &def.borrow();
                     let found_field = struct_def.fields.get(field_name);
                     if let Some(field) = found_field {
@@ -152,7 +155,7 @@ impl HirGetType for Value {
 
             Value::Deref { place } => {
                 let place = place.borrow();
-                let place_type = place.determine_type()?;
+                let place_type = place.determine_type(ctx)?;
 
                 match place_type {
                     Type::Reference { to, .. } | Type::Pointer { to, .. } => {
@@ -170,7 +173,7 @@ impl HirGetType for Value {
                 exclusive,
                 place,
             } => {
-                let place_type = place.borrow().determine_type()?;
+                let place_type = place.borrow().determine_type(ctx)?;
                 Ok(Type::Reference {
                     lifetime: Lifetime::Inferred,
                     exclusive: *exclusive,
@@ -183,7 +186,7 @@ impl HirGetType for Value {
                 let element_type = if elements.is_empty() {
                     Type::Unit.into()
                 } else {
-                    elements[0].borrow().determine_type()?.into()
+                    elements[0].borrow().determine_type(ctx)?.into()
                 };
 
                 let array = Type::Array {
@@ -197,7 +200,7 @@ impl HirGetType for Value {
             Value::Tuple { elements } => {
                 let mut element_types = Vec::with_capacity(elements.len());
                 for elem in elements {
-                    let elem_type = elem.borrow().determine_type()?.into();
+                    let elem_type = elem.borrow().determine_type(ctx)?.into();
                     element_types.push(elem_type);
                 }
 
@@ -216,12 +219,12 @@ impl HirGetType for Value {
                 None => Ok(Type::Unit),
 
                 Some(false_branch) => {
-                    let true_block = true_branch.borrow().determine_type()?;
+                    let true_block = true_branch.borrow().determine_type(ctx)?;
                     if !true_block.is_diverging() {
                         return Ok(true_block);
                     }
 
-                    false_branch.borrow().determine_type()
+                    false_branch.borrow().determine_type(ctx)
                 }
             },
 
@@ -232,7 +235,7 @@ impl HirGetType for Value {
             Value::Continue { label: _ } => Ok(Type::Never),
             Value::Return { value: _ } => Ok(Type::Never),
 
-            Value::Block { block } => block.borrow().determine_type(),
+            Value::Block { block } => block.borrow().determine_type(ctx),
 
             Value::Call {
                 callee,
@@ -240,7 +243,7 @@ impl HirGetType for Value {
                 named: _,
             } => {
                 let callee = callee.borrow();
-                if let Type::Function { function_type } = callee.determine_type()? {
+                if let Type::Function { function_type } = callee.determine_type(ctx)? {
                     return Ok(function_type.return_type.deref().clone());
                 }
 
@@ -248,13 +251,17 @@ impl HirGetType for Value {
             }
 
             Value::MethodCall {
-                object: _,
-                method_name: _,
+                object,
+                method_name,
                 positional: _,
                 named: _,
             } => {
-                // TODO: Get type of method call
-                unimplemented!()
+                let object_type = object.borrow().determine_type(ctx)?.into();
+                let method_type = ctx
+                    .get_method_impl(&object_type, method_name)
+                    .ok_or(TypeInferenceError::MethodNotFound)?;
+
+                Ok(method_type.borrow().return_type.deref().clone())
             }
 
             Value::FunctionSymbol { id } => {
