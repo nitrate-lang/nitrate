@@ -1,6 +1,6 @@
 use crate::prelude::*;
 use nitrate_nstring::NString;
-use std::collections::HashMap;
+use std::collections::{BTreeMap, BTreeSet, HashMap};
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 enum SymbolId {
@@ -83,11 +83,31 @@ impl SymbolTab {
         self.types.insert(name, typedef);
     }
 
-    #[must_use]
+    pub fn get_global_variable_or_insert_placeholder(&mut self, name: &NString) -> GlobalVariableId {
+        if let Some(SymbolId::GlobalVariable(global_var_id)) = self.symbols.get(name).cloned() {
+            return global_var_id;
+        };
+
+        let placeholder = GlobalVariable {
+            visibility: Visibility::Sec,
+            attributes: BTreeSet::new(),
+            is_mutable: false,
+            name: name.clone(),
+            mangled_name: NString::default(),
+            ty: Type::Unit.into(),
+            initializer: Value::Unit.into(),
+        };
+
+        let global_var_id: GlobalVariableId = placeholder.into();
+        self.add_global_variable(global_var_id.clone());
+        self.get_global_variable_or_insert_placeholder(name)
+    }
+
     pub fn get_global_variable(&self, name: &NString) -> Option<&GlobalVariableId> {
-        match self.symbols.get(name) {
-            Some(SymbolId::GlobalVariable(global_var_id)) => Some(global_var_id),
-            _ => None,
+        if let Some(SymbolId::GlobalVariable(global_var_id)) = self.symbols.get(name) {
+            Some(global_var_id)
+        } else {
+            None
         }
     }
 
@@ -101,27 +121,84 @@ impl SymbolTab {
         })
     }
 
-    #[must_use]
+    pub fn get_local_variable_or_insert_placeholder(&mut self, name: &NString) -> LocalVariableId {
+        if let Some(SymbolId::LocalVariable(local_var_id)) = self.symbols.get(name).cloned() {
+            return local_var_id;
+        };
+
+        let placeholder = LocalVariable {
+            kind: LocalKind::Let,
+            attributes: BTreeSet::new(),
+            is_mutable: false,
+            name: name.clone(),
+            ty: Type::Unit.into(),
+            initializer: Value::Unit.into(),
+        };
+
+        let local_var_id: LocalVariableId = placeholder.into();
+        self.add_local_variable(local_var_id.clone());
+        self.get_local_variable_or_insert_placeholder(name)
+    }
+
     pub fn get_local_variable(&self, name: &NString) -> Option<&LocalVariableId> {
-        match self.symbols.get(name) {
-            Some(SymbolId::LocalVariable(local_var_id)) => Some(local_var_id),
-            _ => None,
+        if let Some(SymbolId::LocalVariable(local_var_id)) = self.symbols.get(name) {
+            Some(local_var_id)
+        } else {
+            None
         }
     }
 
-    #[must_use]
+    pub fn get_parameter_or_insert_placeholder(&mut self, name: &NString) -> ParameterId {
+        if let Some(SymbolId::Parameter(param_id)) = self.symbols.get(name).cloned() {
+            return param_id;
+        };
+
+        let placeholder = Parameter {
+            attributes: BTreeSet::new(),
+            is_mutable: false,
+            name: name.clone(),
+            ty: Type::Unit.into(),
+            default_value: None,
+        };
+
+        let param_id: ParameterId = placeholder.into();
+        self.add_parameter(param_id.clone());
+        self.get_parameter_or_insert_placeholder(name)
+    }
+
     pub fn get_parameter(&self, name: &NString) -> Option<&ParameterId> {
-        match self.symbols.get(name) {
-            Some(SymbolId::Parameter(param_id)) => Some(param_id),
-            _ => None,
+        if let Some(SymbolId::Parameter(param_id)) = self.symbols.get(name) {
+            Some(param_id)
+        } else {
+            None
         }
     }
 
-    #[must_use]
+    pub fn get_function_or_insert_placeholder(&mut self, name: &NString) -> FunctionId {
+        if let Some(SymbolId::Function(func_id)) = self.symbols.get(name).cloned() {
+            return func_id;
+        };
+
+        let placeholder = Function {
+            visibility: Visibility::Sec,
+            attributes: BTreeSet::new(),
+            name: name.clone(),
+            mangled_name: NString::default(),
+            params: Vec::new(),
+            return_type: Type::Unit.into(),
+            body: None,
+        };
+
+        let func_id: FunctionId = placeholder.into();
+        self.add_function(func_id.clone());
+        self.get_function_or_insert_placeholder(name)
+    }
+
     pub fn get_function(&self, name: &NString) -> Option<&FunctionId> {
-        match self.symbols.get(name) {
-            Some(SymbolId::Function(func_id)) => Some(func_id),
-            _ => None,
+        if let Some(SymbolId::Function(func_id)) = self.symbols.get(name) {
+            Some(func_id)
+        } else {
+            None
         }
     }
 
@@ -135,39 +212,108 @@ impl SymbolTab {
         })
     }
 
+    pub fn get_enum_variant_or_insert_placeholder(&mut self, name: &NString) -> EnumDefId {
+        if let Some(SymbolId::EnumVariant(enum_def_id)) = self.symbols.get(name).cloned() {
+            return enum_def_id;
+        };
+
+        let parts = name.split("::");
+        let enum_name: NString = parts
+            .clone()
+            .take(parts.clone().count() - 1)
+            .collect::<Vec<_>>()
+            .join("::")
+            .into();
+
+        let enum_def = self.get_enum_or_insert_placeholder(&enum_name);
+        self.add_enum_variant(name.clone(), enum_def.clone());
+        enum_def
+    }
+
     pub fn get_enum_variant(&self, name: &NString) -> Option<&EnumDefId> {
-        match self.symbols.get(name) {
-            Some(SymbolId::EnumVariant(enum_def_id)) => Some(enum_def_id),
-            _ => None,
+        if let Some(SymbolId::EnumVariant(enum_def_id)) = self.symbols.get(name) {
+            Some(enum_def_id)
+        } else {
+            None
         }
     }
 
-    #[must_use]
     pub fn get_method(&self, type_def: &TypeId, method_name: &NString) -> Option<&FunctionId> {
         self.methods.get(&(*type_def, method_name.clone()))
     }
 
-    #[must_use]
+    pub fn get_type_alias_or_insert_placeholder(&mut self, name: &NString) -> TypeAliasDefId {
+        if let Some(TypeDefinition::TypeAliasDef(type_alias_id)) = self.types.get(name).cloned() {
+            return type_alias_id;
+        };
+
+        let placeholder = TypeAliasDef {
+            visibility: Visibility::Sec,
+            name: name.clone(),
+            type_id: Type::Unit.into(),
+        };
+
+        let type_alias_def: TypeAliasDefId = placeholder.into();
+        self.add_type_alias(type_alias_def.clone());
+        self.get_type_alias_or_insert_placeholder(name)
+    }
+
     pub fn get_type_alias(&self, name: &NString) -> Option<&TypeAliasDefId> {
-        match self.types.get(name) {
-            Some(TypeDefinition::TypeAliasDef(type_alias_id)) => Some(type_alias_id),
-            _ => None,
+        if let Some(TypeDefinition::TypeAliasDef(type_alias_id)) = self.types.get(name) {
+            Some(type_alias_id)
+        } else {
+            None
         }
     }
 
-    #[must_use]
+    pub fn get_struct_or_insert_placeholder(&mut self, name: &NString) -> StructDefId {
+        if let Some(TypeDefinition::StructDef(struct_def_id)) = self.types.get(name).cloned() {
+            return struct_def_id;
+        };
+
+        let placeholder = StructDef {
+            visibility: Visibility::Sec,
+            attributes: BTreeSet::new(),
+            name: name.clone(),
+            fields: BTreeMap::new(),
+            layout: StructLayout::new(),
+        };
+
+        let struct_def: StructDefId = placeholder.into();
+        self.add_struct(struct_def.clone());
+        self.get_struct_or_insert_placeholder(name)
+    }
+
     pub fn get_struct(&self, name: &NString) -> Option<&StructDefId> {
-        match self.types.get(name) {
-            Some(TypeDefinition::StructDef(struct_def_id)) => Some(struct_def_id),
-            _ => None,
+        if let Some(TypeDefinition::StructDef(struct_def_id)) = self.types.get(name) {
+            Some(struct_def_id)
+        } else {
+            None
         }
     }
 
-    #[must_use]
+    pub fn get_enum_or_insert_placeholder(&mut self, name: &NString) -> EnumDefId {
+        if let Some(TypeDefinition::EnumDef(enum_def_id)) = self.types.get(name).cloned() {
+            return enum_def_id;
+        };
+
+        let placeholder = EnumDef {
+            visibility: Visibility::Sec,
+            attributes: BTreeSet::new(),
+            name: name.clone(),
+            variants: Vec::new().into(),
+        };
+
+        let enum_def: EnumDefId = placeholder.into();
+        self.add_enum(enum_def.clone());
+        self.get_enum_or_insert_placeholder(name)
+    }
+
     pub fn get_enum(&self, name: &NString) -> Option<&EnumDefId> {
-        match self.types.get(name) {
-            Some(TypeDefinition::EnumDef(enum_def_id)) => Some(enum_def_id),
-            _ => None,
+        if let Some(TypeDefinition::EnumDef(enum_def_id)) = self.types.get(name) {
+            Some(enum_def_id)
+        } else {
+            None
         }
     }
 }

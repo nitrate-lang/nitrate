@@ -4,10 +4,7 @@ use nitrate_hir::prelude::*;
 use nitrate_hir_evaluate::HirEvalCtx;
 use nitrate_nstring::NString;
 use nitrate_tree::ast::{self as ast, SymbolKind};
-use std::{
-    collections::{BTreeMap, BTreeSet},
-    ops::Deref,
-};
+use std::{collections::BTreeSet, ops::Deref};
 
 impl Ast2Hir for ast::TypeSyntaxError {
     type Hir = Type;
@@ -149,66 +146,17 @@ impl Ast2Hir for ast::TypePath {
 
         match self.resolved_path {
             Some(resolved_path) => match ctx.ast_symbol_map.get(&resolved_path) {
-                Some(SymbolKind::Struct) => match ctx.tab.get_struct(&resolved_path) {
-                    Some(existing_struct_def_id) => Ok(Type::Struct {
-                        def: existing_struct_def_id.clone(),
-                    }),
+                Some(SymbolKind::Struct) => Ok(Type::Struct {
+                    def: ctx.tab.get_struct_or_insert_placeholder(&resolved_path).clone(),
+                }),
 
-                    None => {
-                        let struct_def: StructDefId = StructDef {
-                            visibility: Visibility::Sec,
-                            name: resolved_path,
-                            attributes: BTreeSet::new(),
-                            fields: BTreeMap::new(),
-                            layout: StructLayout::default(),
-                        }
-                        .into();
+                Some(SymbolKind::Enum) => Ok(Type::Enum {
+                    def: ctx.tab.get_enum_or_insert_placeholder(&resolved_path).clone(),
+                }),
 
-                        ctx.tab.add_struct(struct_def.clone());
-
-                        Ok(Type::Struct { def: struct_def })
-                    }
-                },
-
-                Some(SymbolKind::Enum) => match ctx.tab.get_enum(&resolved_path) {
-                    Some(existing_enum_def_id) => Ok(Type::Enum {
-                        def: existing_enum_def_id.clone(),
-                    }),
-
-                    None => {
-                        let enum_def: EnumDefId = EnumDef {
-                            visibility: Visibility::Sec,
-                            name: resolved_path,
-                            attributes: BTreeSet::new(),
-                            variants: Vec::new().into(),
-                        }
-                        .into();
-
-                        ctx.tab.add_enum(enum_def.clone());
-
-                        Ok(Type::Enum { def: enum_def })
-                    }
-                },
-
-                Some(SymbolKind::TypeAlias) => match ctx.tab.get_type_alias(&resolved_path) {
-                    Some(existing_type_alias_def_id) => {
-                        let type_id = existing_type_alias_def_id.borrow().type_id;
-                        Ok(type_id.deref().clone())
-                    }
-
-                    None => {
-                        let type_alias_def: TypeAliasDefId = TypeAliasDef {
-                            visibility: Visibility::Sec,
-                            name: resolved_path,
-                            type_id: Type::Unit.into(),
-                        }
-                        .into();
-
-                        ctx.tab.add_type_alias(type_alias_def.clone());
-
-                        Ok(Type::TypeAlias { def: type_alias_def })
-                    }
-                },
+                Some(SymbolKind::TypeAlias) => Ok(Type::TypeAlias {
+                    def: ctx.tab.get_type_alias_or_insert_placeholder(&resolved_path).clone(),
+                }),
 
                 _ => {
                     log.report(&HirErr::UnresolvedSymbol);

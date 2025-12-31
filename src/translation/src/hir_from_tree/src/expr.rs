@@ -126,17 +126,8 @@ impl Ast2Hir for ast::StructInit {
         }
 
         if let Some(resolved_path) = self.path.resolved_path {
-            let struct_def = match ctx.tab.get_struct(&resolved_path) {
-                Some(s) => s.clone(),
-                None => {
-                    // TODO: Create struct placeholder
-                    log.report(&HirErr::UnresolvedTypePath);
-                    return Err(());
-                }
-            };
-
             return Ok(Value::StructObject {
-                struct_def,
+                struct_def: ctx.tab.get_struct_or_insert_placeholder(&resolved_path),
                 fields: fields.into(),
             });
         }
@@ -663,110 +654,27 @@ impl Ast2Hir for ast::ExprPath {
 
         match self.resolved_path {
             Some(resolved_path) => match ctx.ast_symbol_map.get(&resolved_path) {
-                Some(SymbolKind::EnumVariant) => match ctx.tab.get_enum_variant(&resolved_path) {
-                    Some(existing_enum_def_id) => Ok(Value::EnumVariant {
-                        enum_def: existing_enum_def_id.clone(),
-                        variant: resolved_path.split("::").last().unwrap().to_string().into(),
-                        // TODO: Handle enum variant values
-                        value: Value::Unit.into(),
-                    }),
+                Some(SymbolKind::EnumVariant) => Ok(Value::EnumVariant {
+                    enum_def: ctx.tab.get_enum_variant_or_insert_placeholder(&resolved_path),
+                    variant: resolved_path.split("::").last().unwrap().to_string().into(),
+                    value: Value::Unit.into(),
+                }),
 
-                    None => {
-                        let parts = resolved_path.split("::");
-                        let enum_name: NString = parts
-                            .clone()
-                            .take(parts.clone().count() - 1)
-                            .collect::<Vec<_>>()
-                            .join("::")
-                            .into();
-                        let variant: NString = parts.last().unwrap().to_string().into();
+                Some(SymbolKind::Function) => Ok(Value::FunctionSymbol {
+                    id: ctx.tab.get_function_or_insert_placeholder(&resolved_path),
+                }),
 
-                        let enum_def: EnumDefId = EnumDef {
-                            visibility: Visibility::Sec,
-                            name: enum_name,
-                            attributes: BTreeSet::new(),
-                            variants: Vec::new().into(),
-                        }
-                        .into();
+                Some(SymbolKind::GlobalVariable) => Ok(Value::GlobalVariableSymbol {
+                    id: ctx.tab.get_global_variable_or_insert_placeholder(&resolved_path),
+                }),
 
-                        ctx.tab.add_enum(enum_def.clone());
+                Some(SymbolKind::LocalVariable) => Ok(Value::LocalVariableSymbol {
+                    id: ctx.tab.get_local_variable_or_insert_placeholder(&resolved_path),
+                }),
 
-                        Ok(Value::EnumVariant {
-                            enum_def: enum_def.clone(),
-                            variant,
-                            // TODO: Handle enum variant values
-                            value: Value::Unit.into(),
-                        })
-                    }
-                },
-
-                Some(SymbolKind::Function) => match ctx.tab.get_function(&resolved_path) {
-                    Some(existing_function_id) => Ok(Value::FunctionSymbol {
-                        id: existing_function_id.clone(),
-                    }),
-
-                    None => {
-                        let placeholder = Function {
-                            visibility: Visibility::Sec,
-                            attributes: BTreeSet::new(),
-                            name: resolved_path.clone(),
-                            mangled_name: resolved_path,
-                            params: vec![],
-                            return_type: ctx.create_inference_placeholder().into(),
-                            body: None,
-                        };
-
-                        let placeholder_id: FunctionId = placeholder.into();
-                        ctx.tab.add_function(placeholder_id.clone());
-
-                        Ok(Value::FunctionSymbol { id: placeholder_id })
-                    }
-                },
-
-                Some(SymbolKind::GlobalVariable) => match ctx.tab.get_global_variable(&resolved_path) {
-                    Some(existing_variable_id) => Ok(Value::GlobalVariableSymbol {
-                        id: existing_variable_id.clone(),
-                    }),
-
-                    None => {
-                        let placeholder = GlobalVariable {
-                            visibility: Visibility::Sec,
-                            attributes: BTreeSet::new(),
-                            is_mutable: true,
-                            name: resolved_path.clone(),
-                            mangled_name: resolved_path,
-                            ty: ctx.create_inference_placeholder().into(),
-                            initializer: Value::Unit.into(),
-                        };
-
-                        let placeholder_id: GlobalVariableId = placeholder.into();
-                        ctx.tab.add_global_variable(placeholder_id.clone());
-
-                        Ok(Value::GlobalVariableSymbol { id: placeholder_id })
-                    }
-                },
-
-                Some(SymbolKind::LocalVariable) => match ctx.tab.get_local_variable(&resolved_path) {
-                    Some(existing_local_variable_id) => Ok(Value::LocalVariableSymbol {
-                        id: existing_local_variable_id.clone(),
-                    }),
-
-                    None => {
-                        log.report(&HirErr::UnresolvedSymbol);
-                        Err(())
-                    }
-                },
-
-                Some(SymbolKind::Parameter) => match ctx.tab.get_parameter(&resolved_path) {
-                    Some(existing_parameter_id) => Ok(Value::ParameterSymbol {
-                        id: existing_parameter_id.clone(),
-                    }),
-
-                    None => {
-                        log.report(&HirErr::UnresolvedSymbol);
-                        Err(())
-                    }
-                },
+                Some(SymbolKind::Parameter) => Ok(Value::ParameterSymbol {
+                    id: ctx.tab.get_parameter_or_insert_placeholder(&resolved_path),
+                }),
 
                 _ => {
                     println!("Unresolved symbol: {}", resolved_path);
