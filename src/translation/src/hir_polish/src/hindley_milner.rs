@@ -260,17 +260,43 @@ impl<'m> HindleyMilner<'m> {
             | Value::InferredInteger(_)
             | Value::InferredFloat(_) => {}
 
-            Value::StructObject { struct_def: _, fields } => {
-                for (_field_name, field_value) in fields {
+            Value::StructObject { struct_def, fields } => {
+                for (field_name, field_value) in fields {
+                    let field_type = struct_def
+                        .borrow()
+                        .fields
+                        .get(field_name)
+                        .expect("failed not present")
+                        .ty
+                        .clone();
+
+                    self.constraints
+                        .entry(field_value.clone())
+                        .or_default()
+                        .insert(TypeConstraint::Equal(field_type));
+
                     self.visit(field_value);
                 }
             }
 
             Value::EnumVariant {
-                enum_def: _,
-                variant: _,
+                enum_def,
+                variant,
                 value,
             } => {
+                let variant_type = enum_def
+                    .borrow()
+                    .variants
+                    .iter()
+                    .find(|item| item.name == *variant)
+                    .expect("variant not present")
+                    .ty;
+
+                self.constraints
+                    .entry(value.clone())
+                    .or_default()
+                    .insert(TypeConstraint::Equal(variant_type));
+
                 self.visit(value);
             }
 
@@ -289,6 +315,10 @@ impl<'m> HindleyMilner<'m> {
             }
 
             Value::Unary { operand, op: _ } => {
+                if let Some(constraints) = self.constraints.get(e).cloned() {
+                    self.constraints.entry(operand.clone()).or_default().extend(constraints);
+                }
+
                 self.visit(operand);
             }
 
@@ -297,6 +327,13 @@ impl<'m> HindleyMilner<'m> {
             }
 
             Value::Assign { place, value } => {
+                if let Ok(place_type) = place.borrow().determine_type(self.m) {
+                    self.constraints
+                        .entry(value.clone())
+                        .or_default()
+                        .insert(TypeConstraint::Equal(place_type.into()));
+                }
+
                 self.visit(place);
                 self.visit(value);
             }
@@ -339,6 +376,11 @@ impl<'m> HindleyMilner<'m> {
                 true_branch,
                 false_branch,
             } => {
+                self.constraints
+                    .entry(condition.clone())
+                    .or_default()
+                    .insert(TypeConstraint::Equal(Type::Bool.into()));
+
                 self.visit(condition);
                 self.visit_block(true_branch);
                 if let Some(false_branch) = false_branch {
@@ -347,6 +389,11 @@ impl<'m> HindleyMilner<'m> {
             }
 
             Value::While { condition, body } => {
+                self.constraints
+                    .entry(condition.clone())
+                    .or_default()
+                    .insert(TypeConstraint::Equal(Type::Bool.into()));
+
                 self.visit(condition);
                 self.visit_block(body);
             }
