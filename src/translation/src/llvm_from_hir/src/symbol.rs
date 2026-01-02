@@ -198,24 +198,6 @@ fn gen_function<'ctx>(
     llvm_function
 }
 
-pub(crate) fn gen_module<'ctx>(ctx: &mut SymbolGenCtx<'ctx, '_, '_, '_, '_>, module: &hir::Module) {
-    for item in &module.items {
-        match item {
-            hir::Item::TypeAliasDef(_) | hir::Item::StructDef(_) | hir::Item::EnumDef(_) => {}
-
-            hir::Item::Module(id) => gen_module(ctx, &id.borrow()),
-
-            hir::Item::GlobalVariable(_) => {
-                // Already generated in advance
-            }
-
-            hir::Item::Function(id) => {
-                gen_function(ctx, &id.borrow());
-            }
-        }
-    }
-}
-
 pub fn generate_llvmir<'ctx>(
     package_name: &str,
     hir: ValidHir<hir::Module>,
@@ -244,9 +226,12 @@ pub fn generate_llvmir<'ctx>(
         gen_global(&mut ctx, &global_id.borrow());
     }
 
-    gen_module(&mut ctx, &hir);
+    for function_id in tab.functions() {
+        gen_function(&mut ctx, &function_id.borrow());
+    }
 
     if ctx.module.verify().is_err() {
+        println!("{}", ctx.module.print_to_string().to_string());
         panic!("Generated LLVM module is invalid");
     }
 

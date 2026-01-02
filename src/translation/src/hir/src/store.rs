@@ -34,7 +34,7 @@ pub fn get_storage<R>(f: impl FnOnce(&Store) -> R) -> R {
 
 macro_rules! impl_dedup_store {
     ($handle_name:ident, $item_name:ident, $store_name:ident) => {
-        #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, Hash)]
+        #[derive(Clone, Copy, Serialize, Deserialize, PartialEq, Eq, Hash)]
         pub struct $handle_name(NonZeroU32);
 
         impl $handle_name {
@@ -55,6 +55,12 @@ macro_rules! impl_dedup_store {
                     let store = unsafe { &*store_ptr };
                     &store[self]
                 })
+            }
+        }
+
+        impl std::fmt::Debug for $handle_name {
+            fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                self.deref().fmt(f)
             }
         }
 
@@ -125,7 +131,7 @@ macro_rules! impl_dedup_store {
 
 macro_rules! impl_store_mut {
     ($handle_name:ident, $item_name:ident, $store_name:ident) => {
-        #[derive(Debug, Clone, Serialize, Deserialize)]
+        #[derive(Clone, Serialize, Deserialize)]
         pub struct $handle_name(NonZeroU32);
 
         impl $handle_name {
@@ -146,6 +152,12 @@ macro_rules! impl_store_mut {
                     let store = unsafe { &*store_ptr };
                     &store[self]
                 })
+            }
+        }
+
+        impl std::fmt::Debug for $handle_name {
+            fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                self.deref().borrow().fmt(f)
             }
         }
 

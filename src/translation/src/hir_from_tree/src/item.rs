@@ -214,9 +214,36 @@ fn ast_trait2hir(_trait: &ast::Trait, _ctx: &mut Ast2HirCtx, log: &CompilerLog) 
 }
 
 fn ast_impl2hir(impl_: &ast::Impl, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<(), ()> {
-    // TODO: implement impl block lowering
-    log.report(&HirErr::UnimplementedFeature("impl blocks".into()));
-    Err(())
+    if let Some(_generics) = &impl_.generics {
+        log.report(&HirErr::UnimplementedFeature("generic impl blocks".into()));
+        return Err(());
+    }
+
+    if let Some(_trait_path) = &impl_.trait_path {
+        log.report(&HirErr::UnimplementedFeature("trait impl blocks".into()));
+        return Err(());
+    }
+
+    let for_type: TypeId = impl_.for_type.to_owned().ast2hir(ctx, log)?.into();
+
+    for assosiated_item in &impl_.items {
+        match assosiated_item {
+            ast::AssociatedItem::Method(method) => {
+                let name = method.name.clone();
+                let func_id = ast_function2hir(method.to_owned(), ctx, log)?.into();
+                ctx.m.add_method_impl(for_type.clone(), name, func_id);
+            }
+
+            _ => {
+                log.report(&HirErr::UnimplementedFeature(
+                    "only method impls are supported in impl blocks".into(),
+                ));
+                return Err(());
+            }
+        }
+    }
+
+    Ok(())
 }
 
 fn ast_globalvar2hir(

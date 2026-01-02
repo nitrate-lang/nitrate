@@ -427,7 +427,10 @@ fn gen_rval_rem<'ctx>(
 
         frem.into()
     } else if lhs_ty.is_int_type() && rhs_ty.is_int_type() {
-        let is_signed = lhs.determine_type(ctx.m).expect("Failed to get type").is_signed_primitive();
+        let is_signed = lhs
+            .determine_type(ctx.m)
+            .expect("Failed to get type")
+            .is_signed_primitive();
 
         let rem = if is_signed {
             ctx.bb
@@ -586,7 +589,10 @@ fn gen_rval_shr<'ctx>(
     let rhs_ty = llvm_rhs.get_type();
 
     if lhs_ty.is_int_type() && rhs_ty.is_int_type() {
-        let sign_extend = lhs.determine_type(ctx.m).expect("Failed to get type").is_signed_primitive();
+        let sign_extend = lhs
+            .determine_type(ctx.m)
+            .expect("Failed to get type")
+            .is_signed_primitive();
 
         let shr = ctx
             .bb
@@ -823,7 +829,10 @@ fn gen_rval_lt<'ctx>(
 
         fcmp.into()
     } else if lhs_ty.is_int_type() && rhs_ty.is_int_type() {
-        let is_signed = lhs.determine_type(ctx.m).expect("Failed to get type").is_signed_primitive();
+        let is_signed = lhs
+            .determine_type(ctx.m)
+            .expect("Failed to get type")
+            .is_signed_primitive();
 
         let cmp = if is_signed {
             ctx.bb
@@ -889,7 +898,10 @@ fn gen_rval_gt<'ctx>(
 
         fcmp.into()
     } else if lhs_ty.is_int_type() && rhs_ty.is_int_type() {
-        let is_signed = lhs.determine_type(ctx.m).expect("Failed to get type").is_signed_primitive();
+        let is_signed = lhs
+            .determine_type(ctx.m)
+            .expect("Failed to get type")
+            .is_signed_primitive();
 
         let cmp = if is_signed {
             ctx.bb
@@ -955,7 +967,10 @@ fn gen_rval_lte<'ctx>(
 
         fcmp.into()
     } else if lhs_ty.is_int_type() && rhs_ty.is_int_type() {
-        let is_signed = lhs.determine_type(ctx.m).expect("Failed to get type").is_signed_primitive();
+        let is_signed = lhs
+            .determine_type(ctx.m)
+            .expect("Failed to get type")
+            .is_signed_primitive();
 
         let cmp = if is_signed {
             ctx.bb
@@ -1021,7 +1036,10 @@ fn gen_rval_gte<'ctx>(
 
         fcmp.into()
     } else if lhs_ty.is_int_type() && rhs_ty.is_int_type() {
-        let is_signed = lhs.determine_type(ctx.m).expect("Failed to get type").is_signed_primitive();
+        let is_signed = lhs
+            .determine_type(ctx.m)
+            .expect("Failed to get type")
+            .is_signed_primitive();
 
         let cmp = if is_signed {
             ctx.bb
@@ -1703,13 +1721,41 @@ fn gen_rval_call<'ctx>(
 }
 
 fn gen_rval_method_call<'ctx>(
-    _ctx: &mut CodegenCtx<'ctx, '_, '_, '_, '_, '_>,
-    _callee: &hir::Value,
-    _method_name: &NString,
-    _arguments: &[hir::ValueId],
+    ctx: &mut CodegenCtx<'ctx, '_, '_, '_, '_, '_>,
+    object: &hir::Value,
+    method_name: &NString,
+    arguments: &[hir::ValueId],
 ) -> BasicValueEnum<'ctx> {
+    let object_ty_hir = object.determine_type(ctx.m).unwrap().into();
+    let function_id = ctx
+        .m
+        .get_method_impl(&object_ty_hir, method_name)
+        .expect("Method not found")
+        .to_owned();
+
+    let llvm_function_ty = gen_function_ty(&function_id.borrow().get_type(), &mut ctx.into());
+
+    let mut llvm_arguments = Vec::new();
+    for arg_id in arguments {
+        let llvm_arg = gen_rval(ctx, &arg_id.borrow());
+        llvm_arguments.push(llvm_arg.into());
+    }
+
+    let callee = gen_rval(ctx, &hir::Value::FunctionSymbol { id: function_id });
+    if !callee.get_type().is_pointer_type() {
+        panic!("Callee is not a function pointer");
+    }
+
+    let call = ctx
+        .bb
+        .build_indirect_call(llvm_function_ty, callee.into_pointer_value(), &llvm_arguments, "")
+        .unwrap()
+        .try_as_basic_value()
+        .expect_left("missing value");
+
+    call
+
     // TODO: implement method call codegen
-    unimplemented!()
 }
 
 fn gen_rval_symbol<'ctx>(
