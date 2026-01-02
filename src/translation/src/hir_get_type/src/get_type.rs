@@ -14,11 +14,11 @@ pub enum TypeInferenceError {
 }
 
 pub trait HirGetType {
-    fn determine_type(&self, ctx: &TyCtx) -> Result<Type, TypeInferenceError>;
+    fn determine_type(&self, ctx: &SymbolTab) -> Result<Type, TypeInferenceError>;
 }
 
 impl HirGetType for Lit {
-    fn determine_type(&self, _ctx: &TyCtx) -> Result<Type, TypeInferenceError> {
+    fn determine_type(&self, _ctx: &SymbolTab) -> Result<Type, TypeInferenceError> {
         match self {
             Lit::Unit => Ok(Type::Unit),
             Lit::Bool(_) => Ok(Type::Bool),
@@ -41,7 +41,7 @@ impl HirGetType for Lit {
 }
 
 impl HirGetType for Block {
-    fn determine_type(&self, ctx: &TyCtx) -> Result<Type, TypeInferenceError> {
+    fn determine_type(&self, ctx: &SymbolTab) -> Result<Type, TypeInferenceError> {
         match self.elements.last() {
             Some(BlockElement::Expr(last)) => last.borrow().determine_type(ctx),
             Some(BlockElement::Local(_)) | None => Ok(Type::Unit),
@@ -50,7 +50,7 @@ impl HirGetType for Block {
 }
 
 impl HirGetType for Value {
-    fn determine_type(&self, ctx: &TyCtx) -> Result<Type, TypeInferenceError> {
+    fn determine_type(&self, ctx: &SymbolTab) -> Result<Type, TypeInferenceError> {
         match self {
             Value::Unit => Ok(Type::Unit),
             Value::Bool(_) => Ok(Type::Bool),

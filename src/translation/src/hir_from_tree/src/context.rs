@@ -9,7 +9,6 @@ use std::ops::Deref;
 #[derive(Debug)]
 pub struct Ast2HirCtx {
     pub tab: SymbolTab,
-    pub m: TyCtx,
 
     pub(crate) ast_symbol_map: HashMap<NString, SymbolKind>,
     pub(crate) current_scope: Vec<NString>,
@@ -24,8 +23,7 @@ pub struct Ast2HirCtx {
 impl Ast2HirCtx {
     pub fn new(ptr_size: PtrSize, import_ctx: ImportContext) -> Self {
         Self {
-            tab: SymbolTab::default(),
-            m: TyCtx::new(ptr_size),
+            tab: SymbolTab::new(ptr_size),
             ast_symbol_map: HashMap::new(),
             current_scope: Vec::new(),
             _impl_map: HashMap::new(),

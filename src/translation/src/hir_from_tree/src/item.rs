@@ -250,7 +250,7 @@ fn ast_impl2hir(impl_: &ast::Impl, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> R
             ast::AssociatedItem::Method(method) => {
                 let name = method.name.clone();
                 let func_id = ast_function2hir(method.to_owned(), ctx, log)?.into();
-                ctx.m.add_method_impl(for_type.clone(), name, func_id);
+                ctx.tab.add_method_impl(for_type.clone(), name, func_id);
             }
 
             _ => {

@@ -18,7 +18,6 @@ mod ty;
 mod ty_alignment;
 mod ty_size;
 mod ty_stride;
-mod tyctx;
 
 pub use expr::*;
 pub use item::*;
@@ -33,7 +32,6 @@ pub use ty::*;
 pub use ty_alignment::*;
 pub use ty_size::*;
 pub use ty_stride::*;
-pub use tyctx::*;
 
 pub mod prelude {
     pub use super::*;

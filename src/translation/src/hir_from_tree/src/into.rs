@@ -18,11 +18,11 @@ pub fn convert_ast_to_hir(mut module: ast::Module, ctx: &mut Ast2HirCtx, log: &C
         if let Item::Function(func_id) = item {
             let mut function = func_id.borrow_mut();
             if function.body.is_some() {
-                resolve_function(&mut function, &ctx.m, log)?;
+                resolve_function(&mut function, &ctx.tab, log)?;
             }
         } else if let Item::GlobalVariable(global_id) = item {
             let mut global = global_id.borrow_mut();
-            resolve_global(&mut global, &ctx.m, log)?;
+            resolve_global(&mut global, &ctx.tab, log)?;
         }
     }
 

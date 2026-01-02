@@ -11,25 +11,29 @@ enum SymbolId {
     EnumVariant(EnumDefId),
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub struct SymbolTab {
     symbols: HashMap<NString, SymbolId>,
     types: HashMap<NString, TypeDefinition>,
     methods: HashMap<(TypeId, NString), FunctionId>,
+    impls: HashMap<TypeId, HashMap<NString, FunctionId>>,
+    arch_ptr_size: PtrSize,
 }
 
 impl SymbolTab {
     #[must_use]
-    pub fn new() -> Self {
+    pub fn new(arch_ptr_size: PtrSize) -> Self {
         Self {
             symbols: HashMap::new(),
             types: HashMap::new(),
             methods: HashMap::new(),
+            impls: HashMap::new(),
+            arch_ptr_size,
         }
     }
 
     pub fn reset(&mut self) {
-        *self = Self::default();
+        *self = Self::new(self.arch_ptr_size);
     }
 
     pub fn add_global_variable(&mut self, global_var: GlobalVariableId) {
@@ -81,6 +85,13 @@ impl SymbolTab {
         let name = enum_def_id.borrow().name.clone();
         let typedef = TypeDefinition::EnumDef(enum_def_id);
         self.types.insert(name, typedef);
+    }
+
+    pub fn add_method_impl(&mut self, ty: TypeId, method: NString, func_id: FunctionId) {
+        self.impls
+            .entry(ty)
+            .or_insert_with(HashMap::new)
+            .insert(method, func_id);
     }
 
     pub fn get_global_variable_or_insert_placeholder(&mut self, name: &NString) -> GlobalVariableId {
@@ -315,5 +326,13 @@ impl SymbolTab {
         } else {
             None
         }
+    }
+
+    pub fn get_method_impl(&self, ty: &TypeId, method: &NString) -> Option<&FunctionId> {
+        self.impls.get(ty)?.get(method)
+    }
+
+    pub fn arch_ptr_size(&self) -> PtrSize {
+        self.arch_ptr_size
     }
 }

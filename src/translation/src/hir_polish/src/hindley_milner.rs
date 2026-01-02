@@ -1,6 +1,6 @@
 use crate::diagnosis::TypeErr;
 use nitrate_diagnosis::CompilerLog;
-use nitrate_hir::{BlockElement, BlockId, Function, GlobalVariable, PtrSize, TyCtx, Type, TypeId, Value, ValueId};
+use nitrate_hir::{BlockElement, BlockId, Function, GlobalVariable, PtrSize, SymbolTab, Type, TypeId, Value, ValueId};
 use nitrate_hir_get_type::HirGetType;
 use ordered_float::OrderedFloat;
 use std::collections::{HashMap, HashSet};
@@ -17,13 +17,13 @@ enum NodeAction {
 
 struct HindleyMilner<'m> {
     constraints: HashMap<ValueId, HashSet<TypeConstraint>>,
-    m: &'m TyCtx,
+    m: &'m SymbolTab,
     errors: HashSet<TypeErr>,
     function_return_type: Option<TypeId>,
 }
 
 impl<'m> HindleyMilner<'m> {
-    fn new(m: &'m TyCtx) -> Self {
+    fn new(m: &'m SymbolTab) -> Self {
         Self {
             constraints: HashMap::new(),
             m,
@@ -133,7 +133,7 @@ impl<'m> HindleyMilner<'m> {
                                 }
                             },
 
-                            Type::USize => match self.m.ptr_size() {
+                            Type::USize => match self.m.arch_ptr_size() {
                                 PtrSize::U32 => match u32::try_from(value) {
                                     Ok(v) => NodeAction::Replace(Value::USize32(v)),
                                     Err(_) => {
@@ -568,12 +568,12 @@ impl<'m> HindleyMilner<'m> {
     }
 }
 
-pub fn resolve_function(function: &mut Function, m: &TyCtx, log: &CompilerLog) -> Result<(), ()> {
+pub fn resolve_function(function: &mut Function, m: &SymbolTab, log: &CompilerLog) -> Result<(), ()> {
     let mut hm = HindleyMilner::new(m);
     hm.solve_function(function, log)
 }
 
-pub fn resolve_global(global: &mut GlobalVariable, m: &TyCtx, log: &CompilerLog) -> Result<(), ()> {
+pub fn resolve_global(global: &mut GlobalVariable, m: &SymbolTab, log: &CompilerLog) -> Result<(), ()> {
     let mut hm = HindleyMilner::new(m);
     hm.solve_global_variable(global, log)
 }

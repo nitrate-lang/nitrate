@@ -10,11 +10,11 @@ use nitrate_nstring::NString;
 use std::ops::Deref;
 
 fn gen_place_field_access<'ctx>(
-    ctx: &mut CodegenCtx<'ctx, '_, '_, '_, '_, '_>,
+    ctx: &mut CodegenCtx<'ctx, '_, '_, '_, '_>,
     struct_value: &hir::Value,
     field_name: &NString,
 ) -> PointerValue<'ctx> {
-    let value_type = struct_value.determine_type(ctx.m).expect("Failed to get type");
+    let value_type = struct_value.determine_type(ctx.tab).expect("Failed to get type");
     let hir_struct_def = value_type.as_struct().expect("expected struct type").borrow();
 
     let field_index = hir_struct_def
@@ -29,7 +29,7 @@ fn gen_place_field_access<'ctx>(
 
     let llvm_struct_value = gen_place(ctx, struct_value);
     let llvm_struct_ty = gen_ty(
-        &struct_value.determine_type(ctx.m).expect("unable to get struct type"),
+        &struct_value.determine_type(ctx.tab).expect("unable to get struct type"),
         &mut ctx.into(),
     );
 
@@ -49,7 +49,7 @@ fn gen_place_field_access<'ctx>(
     gep
 }
 
-fn gen_place_deref<'ctx>(ctx: &mut CodegenCtx<'ctx, '_, '_, '_, '_, '_>, place: &hir::Value) -> PointerValue<'ctx> {
+fn gen_place_deref<'ctx>(ctx: &mut CodegenCtx<'ctx, '_, '_, '_, '_>, place: &hir::Value) -> PointerValue<'ctx> {
     let llvm_value = gen_rval(ctx, place);
     let ptr_ty = llvm_value.get_type();
 
@@ -57,7 +57,7 @@ fn gen_place_deref<'ctx>(ctx: &mut CodegenCtx<'ctx, '_, '_, '_, '_, '_>, place: 
         panic!("Cannot dereference non-pointer type");
     }
 
-    let pointee_ty = match place.determine_type(ctx.m).unwrap() {
+    let pointee_ty = match place.determine_type(ctx.tab).unwrap() {
         hir::Type::Pointer { to, .. } => to.deref().clone(),
         hir::Type::Reference { to, .. } => to.deref().clone(),
         _ => unreachable!(),
@@ -79,7 +79,7 @@ fn gen_place_deref<'ctx>(ctx: &mut CodegenCtx<'ctx, '_, '_, '_, '_, '_>, place: 
 }
 
 pub(crate) fn gen_place<'ctx>(
-    ctx: &mut CodegenCtx<'ctx, '_, '_, '_, '_, '_>,
+    ctx: &mut CodegenCtx<'ctx, '_, '_, '_, '_>,
     hir_value: &hir::Value,
 ) -> PointerValue<'ctx> {
     match hir_value {
@@ -123,7 +123,7 @@ pub(crate) fn gen_place<'ctx>(
         | hir::Value::StringLit(_)
         | hir::Value::BStringLit(_) => {
             let tmp_ty = gen_ty(
-                &hir_value.determine_type(ctx.m).expect("unable to get bool type"),
+                &hir_value.determine_type(ctx.tab).expect("unable to get bool type"),
                 &mut ctx.into(),
             );
 
