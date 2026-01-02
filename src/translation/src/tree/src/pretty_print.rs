@@ -1542,11 +1542,6 @@ impl PrettyPrint for Impl {
 
         writer.write_char(' ')?;
 
-        if let Some(attributes) = &self.attributes {
-            attributes.pretty_print_fmt(ctx, writer)?;
-            writer.write_char(' ')?;
-        }
-
         if let Some(trait_path) = &self.trait_path {
             writer.write_str("trait ")?;
             trait_path.pretty_print_fmt(ctx, writer)?;

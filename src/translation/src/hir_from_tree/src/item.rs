@@ -213,7 +213,7 @@ fn ast_trait2hir(_trait: &ast::Trait, _ctx: &mut Ast2HirCtx, log: &CompilerLog) 
     Err(())
 }
 
-fn ast_impl2hir(_impl: &ast::Impl, _ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<(), ()> {
+fn ast_impl2hir(impl_: &ast::Impl, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<(), ()> {
     // TODO: implement impl block lowering
     log.report(&HirErr::UnimplementedFeature("impl blocks".into()));
     Err(())

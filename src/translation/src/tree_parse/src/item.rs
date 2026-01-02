@@ -560,7 +560,6 @@ impl Parser<'_, '_> {
         self.lexer.skip_tok();
 
         let generics = self.parse_generics();
-        let attributes = self.parse_attributes();
 
         let trait_path = if self.lexer.skip_if(&Token::Trait) {
             let path = self.parse_type_path();
@@ -606,7 +605,6 @@ impl Parser<'_, '_> {
         }
 
         Impl {
-            attributes,
             generics,
             trait_path,
             for_type,

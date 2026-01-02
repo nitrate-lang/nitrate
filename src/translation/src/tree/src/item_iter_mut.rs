@@ -213,10 +213,6 @@ impl ParseTreeIterMut for Impl {
     fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
         f(Order::Enter, RefNodeMut::ItemImpl(self));
 
-        if let Some(attributes) = &mut self.attributes {
-            attributes.depth_first_iter_mut(f);
-        }
-
         if let Some(params) = &mut self.generics {
             params.depth_first_iter_mut(f);
         }

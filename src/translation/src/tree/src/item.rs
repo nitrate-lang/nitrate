@@ -152,7 +152,6 @@ pub struct Trait {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Impl {
     pub generics: Option<Generics>,
-    pub attributes: Option<AttributeList>,
     pub trait_path: Option<TypePath>,
     pub for_type: Type,
     pub items: Vec<AssociatedItem>,
