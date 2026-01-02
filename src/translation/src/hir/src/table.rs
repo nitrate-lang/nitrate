@@ -17,7 +17,7 @@ pub struct SymbolTab {
     types: HashMap<NString, TypeDefinition>,
     methods: HashMap<(TypeId, NString), FunctionId>,
     traits: HashMap<NString, TraitId>,
-    impls: HashMap<TypeId, HashMap<TraitId, Vec<FunctionId>>>,
+    impls: HashMap<TypeId, HashMap<TraitId, HashMap<NString, FunctionId>>>,
     arch_ptr_size: PtrSize,
 }
 
@@ -81,16 +81,22 @@ impl SymbolTab {
             .entry(type_id)
             .or_insert_with(HashMap::new)
             .entry(trait_id)
-            .or_insert_with(Vec::new);
+            .or_insert_with(HashMap::new);
     }
 
-    pub fn add_trait_method(&mut self, type_id: TypeId, trait_id: TraitId, function_id: FunctionId) {
+    pub fn add_trait_method(
+        &mut self,
+        type_id: TypeId,
+        trait_id: TraitId,
+        method_name: NString,
+        function_id: FunctionId,
+    ) {
         self.impls
             .entry(type_id)
             .or_insert_with(HashMap::new)
             .entry(trait_id)
-            .or_insert_with(Vec::new)
-            .push(function_id);
+            .or_insert_with(HashMap::new)
+            .insert(method_name, function_id);
     }
 
     pub fn add_type_alias(&mut self, type_alias_id: TypeAliasDefId) {
@@ -267,7 +273,20 @@ impl SymbolTab {
     }
 
     pub fn get_method(&self, type_def: &TypeId, method_name: &NString) -> Option<&FunctionId> {
-        self.methods.get(&(*type_def, method_name.clone()))
+        if let Some(method) = self.methods.get(&(*type_def, method_name.clone())) {
+            return Some(method);
+        }
+
+        if let Some(method) = self
+            .impls
+            .get(type_def)?
+            .values()
+            .find_map(|methods_map| methods_map.get(method_name))
+        {
+            return Some(method);
+        }
+
+        None
     }
 
     pub fn get_trait_or_insert_placeholder(&mut self, name: &NString) -> TraitId {

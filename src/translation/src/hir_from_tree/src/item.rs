@@ -286,8 +286,10 @@ fn ast_impl2hir(impl_: ast::Impl, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Re
             for assosiated_item in impl_.items {
                 match assosiated_item {
                     ast::AssociatedItem::Method(method) => {
+                        let name = method.name.clone();
                         let func_id = ast_function2hir(method, ctx, log)?.into();
-                        ctx.tab.add_trait_method(for_type.clone(), trait_id.clone(), func_id);
+                        ctx.tab
+                            .add_trait_method(for_type.clone(), trait_id.clone(), name, func_id);
                     }
 
                     _ => {
