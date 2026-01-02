@@ -207,7 +207,7 @@ fn ast_enumdef2hir(enum_def: ast::Enum, ctx: &mut Ast2HirCtx, log: &CompilerLog)
     Ok(enum_def_id)
 }
 
-fn ast_trait2hir(trait_: &ast::Trait, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<(), ()> {
+fn ast_trait2hir(trait_: &ast::Trait, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<TraitId, ()> {
     let visibility = match trait_.visibility {
         Some(ast::Visibility::Public) => Visibility::Pub,
         Some(ast::Visibility::Protected) => Visibility::Pro,
@@ -227,42 +227,98 @@ fn ast_trait2hir(trait_: &ast::Trait, ctx: &mut Ast2HirCtx, log: &CompilerLog) -
         log.report(&HirErr::UnimplementedFeature("generic traits".into()));
     }
 
-    // TODO: implement trait lowering
-    log.report(&HirErr::UnimplementedFeature("trait definitions".into()));
-    Err(())
-}
-
-fn ast_impl2hir(impl_: &ast::Impl, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<(), ()> {
-    if let Some(_generics) = &impl_.generics {
-        log.report(&HirErr::UnimplementedFeature("generic impl blocks".into()));
-        return Err(());
-    }
-
-    if let Some(_trait_path) = &impl_.trait_path {
-        log.report(&HirErr::UnimplementedFeature("trait impl blocks".into()));
-        return Err(());
-    }
-
-    let for_type: TypeId = impl_.for_type.to_owned().ast2hir(ctx, log)?.into();
-
-    for assosiated_item in &impl_.items {
-        match assosiated_item {
-            ast::AssociatedItem::Method(method) => {
-                let name = method.name.clone();
-                let func_id = ast_function2hir(method.to_owned(), ctx, log)?.into();
-                ctx.tab.add_method_impl(for_type.clone(), name, func_id);
+    let mut methods = Vec::new();
+    for method in &trait_.items {
+        match method {
+            ast::AssociatedItem::Method(func) => {
+                let func_id: FunctionId = ast_function2hir(func.to_owned(), ctx, log)?.into();
+                methods.push(func_id);
             }
 
             _ => {
                 log.report(&HirErr::UnimplementedFeature(
-                    "only method impls are supported in impl blocks".into(),
+                    "only method trait items are supported".into(),
                 ));
                 return Err(());
             }
         }
     }
 
-    Ok(())
+    let trait_ = Trait {
+        visibility,
+        name: name.clone(),
+        methods,
+    };
+
+    let trait_id = if let Some(existing_trait_id) = ctx.tab.get_trait(&trait_.name) {
+        let mut existing_trait = existing_trait_id.borrow_mut();
+        *existing_trait = trait_;
+        existing_trait_id.clone()
+    } else {
+        let trait_id: TraitId = trait_.into();
+        ctx.tab.add_trait(trait_id.clone());
+        trait_id
+    };
+
+    Ok(trait_id)
+}
+
+fn ast_impl2hir(impl_: ast::Impl, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<(), ()> {
+    if let Some(_generics) = impl_.generics {
+        log.report(&HirErr::UnimplementedFeature("generic impl blocks".into()));
+        return Err(());
+    }
+
+    let for_type: TypeId = impl_.for_type.ast2hir(ctx, log)?.into();
+
+    match impl_.trait_path {
+        Some(trait_path) => {
+            let trait_name = trait_path
+                .segments
+                .iter()
+                .map(|seg| seg.name.to_string())
+                .collect::<Vec<_>>()
+                .join("::");
+
+            let trait_id = ctx.tab.get_trait_or_insert_placeholder(&trait_name.into());
+            ctx.tab.add_impl_trait(for_type.clone(), trait_id.clone());
+
+            for assosiated_item in impl_.items {
+                match assosiated_item {
+                    ast::AssociatedItem::Method(method) => {
+                        let func_id = ast_function2hir(method, ctx, log)?.into();
+                        ctx.tab.add_trait_method(for_type.clone(), trait_id.clone(), func_id);
+                    }
+
+                    _ => {
+                        log.report(&HirErr::UnimplementedFeature("only method impls are supported".into()));
+                        return Err(());
+                    }
+                }
+            }
+
+            Ok(())
+        }
+
+        None => {
+            for assosiated_item in impl_.items {
+                match assosiated_item {
+                    ast::AssociatedItem::Method(method) => {
+                        let name = method.name.clone();
+                        let func_id = ast_function2hir(method, ctx, log)?.into();
+                        ctx.tab.add_method(for_type.clone(), name, func_id);
+                    }
+
+                    _ => {
+                        log.report(&HirErr::UnimplementedFeature("only method impls are supported".into()));
+                        return Err(());
+                    }
+                }
+            }
+
+            Ok(())
+        }
+    }
 }
 
 fn ast_globalvar2hir(
@@ -518,12 +574,13 @@ fn lower_item(
         }
 
         ast::Item::Trait(trait_def) => {
-            ast_trait2hir(&trait_def, ctx, log)?;
+            let t = ast_trait2hir(&trait_def, ctx, log)?;
+            current_module_items.push(Item::Trait(t));
             Ok(())
         }
 
         ast::Item::Impl(impl_def) => {
-            ast_impl2hir(&impl_def, ctx, log)?;
+            ast_impl2hir(*impl_def, ctx, log)?;
             Ok(())
         }
 

@@ -1708,7 +1708,7 @@ fn gen_rval_method_call<'ctx>(
     let object_ty_hir = object.determine_type(ctx.tab).unwrap().into();
     let function_id = ctx
         .tab
-        .get_method_impl(&object_ty_hir, method_name)
+        .get_method(&object_ty_hir, method_name)
         .expect("Method not found")
         .to_owned();
 

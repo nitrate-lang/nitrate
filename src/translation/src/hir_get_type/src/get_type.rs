@@ -258,7 +258,7 @@ impl HirGetType for Value {
             } => {
                 let object_type = object.borrow().determine_type(ctx)?.into();
                 let method_type = ctx
-                    .get_method_impl(&object_type, method_name)
+                    .get_method(&object_type, method_name)
                     .ok_or(TypeInferenceError::MethodNotFound)?;
 
                 Ok(method_type.borrow().return_type.deref().clone())

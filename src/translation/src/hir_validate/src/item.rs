@@ -294,7 +294,12 @@ impl ValidateHirItem for Trait {
         }
 
         // TODO: verify trait
-        unimplemented!()
+
+        for method in &self.methods {
+            method.borrow().verify(ctx)?;
+        }
+
+        Ok(())
     }
 
     fn validate(self, ctx: &mut ValidateCtx) -> Result<ValidHir<Self>, ()> {

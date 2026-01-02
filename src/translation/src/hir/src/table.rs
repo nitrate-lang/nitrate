@@ -16,7 +16,8 @@ pub struct SymbolTab {
     symbols: HashMap<NString, SymbolId>,
     types: HashMap<NString, TypeDefinition>,
     methods: HashMap<(TypeId, NString), FunctionId>,
-    impls: HashMap<TypeId, HashMap<NString, FunctionId>>,
+    traits: HashMap<NString, TraitId>,
+    impls: HashMap<TypeId, HashMap<TraitId, Vec<FunctionId>>>,
     arch_ptr_size: PtrSize,
 }
 
@@ -27,6 +28,7 @@ impl SymbolTab {
             symbols: HashMap::new(),
             types: HashMap::new(),
             methods: HashMap::new(),
+            traits: HashMap::new(),
             impls: HashMap::new(),
             arch_ptr_size,
         }
@@ -69,6 +71,28 @@ impl SymbolTab {
         self.methods.insert((type_id, method_name), function_id);
     }
 
+    pub fn add_trait(&mut self, trait_id: TraitId) {
+        let name = trait_id.borrow().name.clone();
+        self.traits.insert(name, trait_id);
+    }
+
+    pub fn add_impl_trait(&mut self, type_id: TypeId, trait_id: TraitId) {
+        self.impls
+            .entry(type_id)
+            .or_insert_with(HashMap::new)
+            .entry(trait_id)
+            .or_insert_with(Vec::new);
+    }
+
+    pub fn add_trait_method(&mut self, type_id: TypeId, trait_id: TraitId, function_id: FunctionId) {
+        self.impls
+            .entry(type_id)
+            .or_insert_with(HashMap::new)
+            .entry(trait_id)
+            .or_insert_with(Vec::new)
+            .push(function_id);
+    }
+
     pub fn add_type_alias(&mut self, type_alias_id: TypeAliasDefId) {
         let name = type_alias_id.borrow().name.clone();
         let typedef = TypeDefinition::TypeAliasDef(type_alias_id);
@@ -85,13 +109,6 @@ impl SymbolTab {
         let name = enum_def_id.borrow().name.clone();
         let typedef = TypeDefinition::EnumDef(enum_def_id);
         self.types.insert(name, typedef);
-    }
-
-    pub fn add_method_impl(&mut self, ty: TypeId, method: NString, func_id: FunctionId) {
-        self.impls
-            .entry(ty)
-            .or_insert_with(HashMap::new)
-            .insert(method, func_id);
     }
 
     pub fn get_global_variable_or_insert_placeholder(&mut self, name: &NString) -> GlobalVariableId {
@@ -253,6 +270,26 @@ impl SymbolTab {
         self.methods.get(&(*type_def, method_name.clone()))
     }
 
+    pub fn get_trait_or_insert_placeholder(&mut self, name: &NString) -> TraitId {
+        if let Some(trait_id) = self.traits.get(name).cloned() {
+            return trait_id;
+        };
+
+        let placeholder = Trait {
+            visibility: Visibility::Sec,
+            name: name.clone(),
+            methods: Vec::new().into(),
+        };
+
+        let trait_id: TraitId = placeholder.into();
+        self.add_trait(trait_id.clone());
+        self.get_trait_or_insert_placeholder(name)
+    }
+
+    pub fn get_trait(&self, name: &NString) -> Option<&TraitId> {
+        self.traits.get(name)
+    }
+
     pub fn get_type_alias_or_insert_placeholder(&mut self, name: &NString) -> TypeAliasDefId {
         if let Some(TypeDefinition::TypeAliasDef(type_alias_id)) = self.types.get(name).cloned() {
             return type_alias_id;
@@ -326,10 +363,6 @@ impl SymbolTab {
         } else {
             None
         }
-    }
-
-    pub fn get_method_impl(&self, ty: &TypeId, method: &NString) -> Option<&FunctionId> {
-        self.impls.get(ty)?.get(method)
     }
 
     pub fn arch_ptr_size(&self) -> PtrSize {

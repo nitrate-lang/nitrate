@@ -224,8 +224,10 @@ pub fn generate_llvmir<'ctx>(
         gen_function(&mut ctx, &function_id.borrow());
     }
 
-    if ctx.module.verify().is_err() {
-        println!("{}", ctx.module.print_to_string().to_string());
+    if let Err(e) = ctx.module.verify() {
+        eprintln!("LLVM Module Verification Error: {}", e.to_string());
+        eprintln!("Generated LLVM Module:\n");
+        eprintln!("{}", ctx.module.print_to_string().to_string());
         panic!("Generated LLVM module is invalid");
     }
 
