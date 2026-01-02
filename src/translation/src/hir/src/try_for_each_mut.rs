@@ -227,6 +227,10 @@ impl ModuleIterMut<'_> {
                 Item::EnumDef(id) => {
                     id.borrow_mut().iter_mut().try_for_each_mut(vcb)?;
                 }
+
+                Item::Trait(id) => {
+                    id.borrow_mut().iter_mut().try_for_each_mut(vcb)?;
+                }
             }
         }
 
@@ -282,6 +286,16 @@ impl FunctionIterMut<'_> {
                     }
                 }
             }
+        }
+
+        ControlFlow::Continue(())
+    }
+}
+
+impl TraitIterMut<'_> {
+    pub(crate) fn try_for_each_mut<T>(&mut self, vcb: &mut dyn FnMut(&mut Value) -> ControlFlow<T>) -> ControlFlow<T> {
+        for method in &self.node.methods {
+            method.borrow_mut().iter_mut().try_for_each_mut(vcb)?;
         }
 
         ControlFlow::Continue(())

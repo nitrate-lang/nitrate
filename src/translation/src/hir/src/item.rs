@@ -240,6 +240,7 @@ pub enum Item {
     TypeAliasDef(TypeAliasDefId),
     StructDef(StructDefId),
     EnumDef(EnumDefId),
+    Trait(TraitId),
 }
 
 impl From<GlobalVariable> for GlobalVariableId {

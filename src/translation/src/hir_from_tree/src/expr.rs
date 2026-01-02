@@ -113,9 +113,7 @@ impl Ast2Hir for ast::StructInit {
 
     fn ast2hir(self, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
         if self.path.segments.iter().any(|seg| seg.type_arguments.is_some()) {
-            log.report(&HirErr::UnimplementedFeature(
-                "generic type arguments in type paths".into(),
-            ));
+            log.report(&HirErr::UnimplementedFeature("generic type args in type paths".into()));
         }
 
         let mut fields = Vec::with_capacity(self.fields.len());
@@ -647,9 +645,7 @@ impl Ast2Hir for ast::ExprPath {
 
     fn ast2hir(self, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
         if self.segments.iter().any(|seg| seg.type_arguments.is_some()) {
-            log.report(&HirErr::UnimplementedFeature(
-                "generic type arguments in expr paths".into(),
-            ));
+            log.report(&HirErr::UnimplementedFeature("generic type args in expr paths".into()));
         }
 
         match self.resolved_path {

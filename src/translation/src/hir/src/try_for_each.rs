@@ -374,6 +374,10 @@ impl ModuleIter<'_> {
                 Item::EnumDef(id) => {
                     id.borrow().iter().try_for_each(vcb, tcb, visited)?;
                 }
+
+                Item::Trait(id) => {
+                    id.borrow().iter().try_for_each(vcb, tcb, visited)?;
+                }
             }
         }
 
@@ -472,6 +476,22 @@ impl FunctionIter<'_> {
                     }
                 }
             }
+        }
+
+        ControlFlow::Continue(())
+    }
+}
+
+impl TraitIter<'_> {
+    pub(crate) fn try_for_each<T>(
+        &self,
+
+        vcb: &mut dyn FnMut(&Value) -> ControlFlow<T>,
+        tcb: &mut dyn FnMut(&Type) -> ControlFlow<T>,
+        visited: &mut HashSet<*const ()>,
+    ) -> ControlFlow<T> {
+        for method in &self.node.methods {
+            method.borrow().iter().try_for_each(vcb, tcb, visited)?;
         }
 
         ControlFlow::Continue(())

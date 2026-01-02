@@ -69,3 +69,13 @@ impl Function {
         FunctionIterMut { node: self }
     }
 }
+
+pub struct TraitIterMut<'a> {
+    pub(crate) node: &'a mut Trait,
+}
+
+impl Trait {
+    pub fn iter_mut(&mut self) -> TraitIterMut<'_> {
+        TraitIterMut { node: self }
+    }
+}

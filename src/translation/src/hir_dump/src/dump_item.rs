@@ -354,6 +354,7 @@ impl Dump for Item {
             Item::TypeAliasDef(ta) => ta.borrow().dump(ctx, o),
             Item::StructDef(sd) => sd.borrow().dump(ctx, o),
             Item::EnumDef(ed) => ed.borrow().dump(ctx, o),
+            Item::Trait(t) => t.borrow().dump(ctx, o),
         }
     }
 }

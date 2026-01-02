@@ -580,6 +580,7 @@ impl ValidateHirItem for Item {
             Item::TypeAliasDef(id) => id.borrow().verify(ctx),
             Item::StructDef(id) => id.borrow().verify(ctx),
             Item::EnumDef(id) => id.borrow().verify(ctx),
+            Item::Trait(id) => id.borrow().verify(ctx),
         }
     }
 

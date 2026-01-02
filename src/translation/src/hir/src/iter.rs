@@ -109,3 +109,14 @@ impl Function {
         FunctionIter { node: self }
     }
 }
+
+pub struct TraitIter<'a> {
+    pub(crate) node: &'a Trait,
+}
+
+impl Trait {
+    #[must_use]
+    pub fn iter(&self) -> TraitIter<'_> {
+        TraitIter { node: self }
+    }
+}

@@ -207,7 +207,26 @@ fn ast_enumdef2hir(enum_def: ast::Enum, ctx: &mut Ast2HirCtx, log: &CompilerLog)
     Ok(enum_def_id)
 }
 
-fn ast_trait2hir(_trait: &ast::Trait, _ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<(), ()> {
+fn ast_trait2hir(trait_: &ast::Trait, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<(), ()> {
+    let visibility = match trait_.visibility {
+        Some(ast::Visibility::Public) => Visibility::Pub,
+        Some(ast::Visibility::Protected) => Visibility::Pro,
+        Some(ast::Visibility::Private) | None => Visibility::Sec,
+    };
+
+    // let attributes = BTreeSet::new();
+    if let Some(ast_attributes) = &trait_.attributes {
+        for _attr in ast_attributes {
+            log.report(&HirErr::UnrecognizedTraitAttribute);
+        }
+    }
+
+    let name: NString = ctx.qualify_name(&trait_.name).into();
+
+    if trait_.generics.is_some() {
+        log.report(&HirErr::UnimplementedFeature("generic traits".into()));
+    }
+
     // TODO: implement trait lowering
     log.report(&HirErr::UnimplementedFeature("trait definitions".into()));
     Err(())

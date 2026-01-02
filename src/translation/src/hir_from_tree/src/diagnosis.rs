@@ -25,6 +25,7 @@ pub(crate) enum HirErr {
     MissingReturnStatement,
     SliceTypesCannotExistOutsideReferencesOrPointers,
     LocalVariableMissingInitializer,
+    UnrecognizedTraitAttribute,
 }
 
 impl FormattableDiagnosticGroup for HirErr {
@@ -58,6 +59,7 @@ impl FormattableDiagnosticGroup for HirErr {
             HirErr::MissingReturnStatement => 32,
             HirErr::SliceTypesCannotExistOutsideReferencesOrPointers => 33,
             HirErr::LocalVariableMissingInitializer => 40,
+            HirErr::UnrecognizedTraitAttribute => 41,
         }
     }
 
@@ -180,6 +182,11 @@ impl FormattableDiagnosticGroup for HirErr {
 
             HirErr::LocalVariableMissingInitializer => DiagnosticInfo {
                 message: "local variable missing initializer".to_string(),
+                origin: Origin::None,
+            },
+
+            HirErr::UnrecognizedTraitAttribute => DiagnosticInfo {
+                message: "unrecognized trait attribute".to_string(),
                 origin: Origin::None,
             },
         }
