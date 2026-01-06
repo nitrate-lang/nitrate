@@ -12,6 +12,8 @@ use nitrate_tree::ast::{self};
 use std::collections::{BTreeMap, BTreeSet};
 
 fn lower_type_alias(type_alias: ast::TypeAlias, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<TypeAliasDefId, ()> {
+    // TODO: Validate implementation
+
     let visibility = match type_alias.visibility {
         Some(ast::Visibility::Public) => Visibility::Pub,
         Some(ast::Visibility::Protected) => Visibility::Pro,
@@ -56,6 +58,8 @@ fn lower_type_alias(type_alias: ast::TypeAlias, ctx: &mut Ast2HirCtx, log: &Comp
 }
 
 fn lower_struct_def(struct_def: ast::Struct, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<StructDefId, ()> {
+    // TODO: Validate implementation
+
     let visibility = match struct_def.visibility {
         Some(ast::Visibility::Public) => Visibility::Pub,
         Some(ast::Visibility::Protected) => Visibility::Pro,
@@ -133,6 +137,8 @@ fn lower_struct_def(struct_def: ast::Struct, ctx: &mut Ast2HirCtx, log: &Compile
 }
 
 fn lower_enum_def(enum_def: ast::Enum, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<EnumDefId, ()> {
+    // TODO: Validate implementation
+
     let visibility = match enum_def.visibility {
         Some(ast::Visibility::Public) => Visibility::Pub,
         Some(ast::Visibility::Protected) => Visibility::Pro,
@@ -210,6 +216,8 @@ fn lower_enum_def(enum_def: ast::Enum, ctx: &mut Ast2HirCtx, log: &CompilerLog) 
 }
 
 fn lower_trait(trait_: &ast::Trait, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<TraitId, ()> {
+    // TODO: Validate implementation
+
     let visibility = match trait_.visibility {
         Some(ast::Visibility::Public) => Visibility::Pub,
         Some(ast::Visibility::Protected) => Visibility::Pro,
@@ -266,6 +274,8 @@ fn lower_trait(trait_: &ast::Trait, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> 
 }
 
 fn lower_impl(impl_: ast::Impl, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<(), ()> {
+    // TODO: Validate implementation
+
     if let Some(_generics) = impl_.generics {
         log.report(&HirErr::UnimplementedFeature("generic impl blocks".into()));
         return Err(());
@@ -330,6 +340,8 @@ fn lower_global_var(
     ctx: &mut Ast2HirCtx,
     log: &CompilerLog,
 ) -> Result<GlobalVariableId, ()> {
+    // TODO: Validate implementation
+
     let visibility = match globalvar.visibility {
         Some(ast::Visibility::Public) => Visibility::Pub,
         Some(ast::Visibility::Protected) => Visibility::Pro,
@@ -391,6 +403,8 @@ fn lower_global_var(
 }
 
 fn lower_parameter(param: ast::FuncParam, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<ParameterId, ()> {
+    // TODO: Validate implementation
+
     let attributes = BTreeSet::new();
     if let Some(ast_attributes) = &param.attributes {
         for _attr in ast_attributes {
@@ -426,6 +440,8 @@ fn lower_parameter(param: ast::FuncParam, ctx: &mut Ast2HirCtx, log: &CompilerLo
 }
 
 fn lower_function(function: ast::Function, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<FunctionId, ()> {
+    // TODO: Validate implementation
+
     let visibility = match function.visibility {
         Some(ast::Visibility::Public) => Visibility::Pub,
         Some(ast::Visibility::Protected) => Visibility::Pro,
@@ -538,6 +554,8 @@ fn lower_function(function: ast::Function, ctx: &mut Ast2HirCtx, log: &CompilerL
 }
 
 pub(crate) fn lower_module(module: ast::Module, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Module, ()> {
+    // TODO: Validate implementation
+
     ctx.current_scope.push(module.name.clone());
 
     let visibility = match module.visibility {
@@ -574,6 +592,8 @@ pub(crate) fn lower_module(module: ast::Module, ctx: &mut Ast2HirCtx, log: &Comp
 }
 
 fn lower_item(ctx: &mut Ast2HirCtx, item: ast::Item, log: &CompilerLog) -> Result<Option<Item>, ()> {
+    // TODO: Validate implementation
+
     match item {
         ast::Item::Module(module) => {
             let hir_module = convert_ast_to_hir(*module, ctx, log)?.into();
