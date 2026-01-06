@@ -7,10 +7,14 @@ use nitrate_tree::ast::{self as ast, SymbolKind};
 use std::{collections::BTreeSet, ops::Deref};
 
 fn lower_infer_type(ctx: &mut Ast2HirCtx) -> Type {
+    // TODO: Validate implementation
+
     ctx.create_inference_placeholder()
 }
 
 fn lower_type_path(type_path: ast::TypePath, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Type, ()> {
+    // TODO: Validate implementation
+
     if type_path.segments.iter().any(|seg| seg.type_arguments.is_some()) {
         log.report(&HirErr::UnimplementedFeature(
             "generic type arguments in type paths".into(),
@@ -54,6 +58,8 @@ fn lower_refinement_type(
 }
 
 fn lower_tuple_type(tuple_type: ast::TupleType, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Type, ()> {
+    // TODO: Validate implementation
+
     if tuple_type.element_types.is_empty() {
         return Ok(Type::Unit);
     }
@@ -71,6 +77,8 @@ fn lower_tuple_type(tuple_type: ast::TupleType, ctx: &mut Ast2HirCtx, log: &Comp
 }
 
 fn lower_array_type(array_type: ast::ArrayType, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Type, ()> {
+    // TODO: Validate implementation
+
     let element_type = lower_type(array_type.element_type, ctx, log)?.into();
 
     let hir_length = Value::Cast {
@@ -113,6 +121,8 @@ fn lower_array_type(array_type: ast::ArrayType, ctx: &mut Ast2HirCtx, log: &Comp
 }
 
 fn lower_function_type(function_type: ast::FunctionType, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Type, ()> {
+    // TODO: Validate implementation
+
     let ast_attributes = function_type.attributes.unwrap_or_default();
 
     let attributes = BTreeSet::new();
@@ -156,6 +166,8 @@ fn lower_reference_type(
     ctx: &mut Ast2HirCtx,
     log: &CompilerLog,
 ) -> Result<Type, ()> {
+    // TODO: Validate implementation
+
     let lifetime = match reference_type.lifetime {
         None => Lifetime::Inferred,
         Some(ast::Lifetime { name }) => match name.deref() {
@@ -209,6 +221,8 @@ fn lower_slice_type(_slice_type: ast::SliceType, _ctx: &mut Ast2HirCtx, log: &Co
 }
 
 fn lower_pointer_type(pointer_type: ast::PointerType, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Type, ()> {
+    // TODO: Validate implementation
+
     let mutable = match pointer_type.mutability {
         Some(ast::Mutability::Mut) => true,
         Some(ast::Mutability::Const) | None => false,
