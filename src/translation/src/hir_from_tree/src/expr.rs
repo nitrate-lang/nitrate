@@ -624,7 +624,8 @@ fn lower_expr_path(expr_path: ast::ExprPath, ctx: &mut Ast2HirCtx, log: &Compile
 fn lower_index_access(index_access: ast::IndexAccess, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
     let _collection: ValueId = index_access.collection.ast2hir(ctx, log)?.into();
     let _index: ValueId = index_access.index.ast2hir(ctx, log)?.into();
-    unimplemented!()
+    log.report(&HirErr::UnimplementedFeature("Index access expressions".into()));
+    Err(())
 }
 
 fn lower_field_access(field_access: ast::FieldAccess, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
