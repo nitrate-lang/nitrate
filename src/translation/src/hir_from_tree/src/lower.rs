@@ -1,5 +1,5 @@
 use crate::context::Ast2HirCtx;
-use crate::item::ast_module2hir;
+use crate::item::lower_module;
 use nitrate_diagnosis::CompilerLog;
 use nitrate_hir::prelude::*;
 use nitrate_hir_polish::{resolve_function, resolve_global};
@@ -18,7 +18,7 @@ pub fn convert_ast_to_hir(mut module: ast::Module, ctx: &mut Ast2HirCtx, log: &C
     let symbol_map = resolve_paths(&mut module, log);
     ctx.ast_symbol_map.extend(symbol_map);
 
-    let mut module = ast_module2hir(module, ctx, log)?;
+    let mut module = lower_module(module, ctx, log)?;
 
     // Perform modified Hindley-Milner type inference on functions and global variables
     for item in &mut module.items {

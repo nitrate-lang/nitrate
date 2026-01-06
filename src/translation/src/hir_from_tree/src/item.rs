@@ -7,11 +7,7 @@ use nitrate_nstring::NString;
 use nitrate_tree::ast::{self};
 use std::collections::{BTreeMap, BTreeSet};
 
-fn ast_typealias2hir(
-    type_alias: ast::TypeAlias,
-    ctx: &mut Ast2HirCtx,
-    log: &CompilerLog,
-) -> Result<TypeAliasDefId, ()> {
+fn lower_type_alias(type_alias: ast::TypeAlias, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<TypeAliasDefId, ()> {
     let visibility = match type_alias.visibility {
         Some(ast::Visibility::Public) => Visibility::Pub,
         Some(ast::Visibility::Protected) => Visibility::Pro,
@@ -55,7 +51,7 @@ fn ast_typealias2hir(
     }
 }
 
-fn ast_structdef2hir(struct_def: ast::Struct, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<StructDefId, ()> {
+fn lower_struct_def(struct_def: ast::Struct, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<StructDefId, ()> {
     let visibility = match struct_def.visibility {
         Some(ast::Visibility::Public) => Visibility::Pub,
         Some(ast::Visibility::Protected) => Visibility::Pro,
@@ -132,7 +128,7 @@ fn ast_structdef2hir(struct_def: ast::Struct, ctx: &mut Ast2HirCtx, log: &Compil
     }
 }
 
-fn ast_enumdef2hir(enum_def: ast::Enum, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<EnumDefId, ()> {
+fn lower_enum_def(enum_def: ast::Enum, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<EnumDefId, ()> {
     let visibility = match enum_def.visibility {
         Some(ast::Visibility::Public) => Visibility::Pub,
         Some(ast::Visibility::Protected) => Visibility::Pro,
@@ -209,7 +205,7 @@ fn ast_enumdef2hir(enum_def: ast::Enum, ctx: &mut Ast2HirCtx, log: &CompilerLog)
     Ok(enum_def_id)
 }
 
-fn ast_trait2hir(trait_: &ast::Trait, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<TraitId, ()> {
+fn lower_trait(trait_: &ast::Trait, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<TraitId, ()> {
     let visibility = match trait_.visibility {
         Some(ast::Visibility::Public) => Visibility::Pub,
         Some(ast::Visibility::Protected) => Visibility::Pro,
@@ -233,7 +229,7 @@ fn ast_trait2hir(trait_: &ast::Trait, ctx: &mut Ast2HirCtx, log: &CompilerLog) -
     for method in &trait_.items {
         match method {
             ast::AssociatedItem::Method(func) => {
-                let func_id: FunctionId = ast_function2hir(func.to_owned(), ctx, log)?.into();
+                let func_id: FunctionId = lower_function(func.to_owned(), ctx, log)?.into();
                 methods.push(func_id);
             }
 
@@ -265,7 +261,7 @@ fn ast_trait2hir(trait_: &ast::Trait, ctx: &mut Ast2HirCtx, log: &CompilerLog) -
     Ok(trait_id)
 }
 
-fn ast_impl2hir(impl_: ast::Impl, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<(), ()> {
+fn lower_impl(impl_: ast::Impl, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<(), ()> {
     if let Some(_generics) = impl_.generics {
         log.report(&HirErr::UnimplementedFeature("generic impl blocks".into()));
         return Err(());
@@ -289,7 +285,7 @@ fn ast_impl2hir(impl_: ast::Impl, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Re
                 match assosiated_item {
                     ast::AssociatedItem::Method(method) => {
                         let name = method.name.clone();
-                        let func_id = ast_function2hir(method, ctx, log)?.into();
+                        let func_id = lower_function(method, ctx, log)?.into();
                         ctx.tab
                             .add_trait_method(for_type.clone(), trait_id.clone(), name, func_id);
                     }
@@ -309,7 +305,7 @@ fn ast_impl2hir(impl_: ast::Impl, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Re
                 match assosiated_item {
                     ast::AssociatedItem::Method(method) => {
                         let name = method.name.clone();
-                        let func_id = ast_function2hir(method, ctx, log)?.into();
+                        let func_id = lower_function(method, ctx, log)?.into();
                         ctx.tab.add_method(for_type.clone(), name, func_id);
                     }
 
@@ -325,7 +321,7 @@ fn ast_impl2hir(impl_: ast::Impl, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Re
     }
 }
 
-fn ast_globalvar2hir(
+fn lower_global_var(
     globalvar: &ast::GlobalVariable,
     ctx: &mut Ast2HirCtx,
     log: &CompilerLog,
@@ -390,7 +386,7 @@ fn ast_globalvar2hir(
     }
 }
 
-fn ast_funcparam2hir(param: ast::FuncParam, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<ParameterId, ()> {
+fn lower_parameter(param: ast::FuncParam, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<ParameterId, ()> {
     let attributes = BTreeSet::new();
     if let Some(ast_attributes) = &param.attributes {
         for _attr in ast_attributes {
@@ -425,7 +421,7 @@ fn ast_funcparam2hir(param: ast::FuncParam, ctx: &mut Ast2HirCtx, log: &Compiler
     Ok(parameter_id)
 }
 
-fn ast_function2hir(function: ast::Function, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<FunctionId, ()> {
+fn lower_function(function: ast::Function, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<FunctionId, ()> {
     let visibility = match function.visibility {
         Some(ast::Visibility::Public) => Visibility::Pub,
         Some(ast::Visibility::Protected) => Visibility::Pro,
@@ -477,7 +473,7 @@ fn ast_function2hir(function: ast::Function, ctx: &mut Ast2HirCtx, log: &Compile
 
     let mut parameters = Vec::with_capacity(function.parameters.len());
     for param in &function.parameters {
-        let param_hir = ast_funcparam2hir(param.to_owned(), ctx, log)?;
+        let param_hir = lower_parameter(param.to_owned(), ctx, log)?;
         parameters.push(param_hir);
     }
 
@@ -537,104 +533,93 @@ fn ast_function2hir(function: ast::Function, ctx: &mut Ast2HirCtx, log: &Compile
     }
 }
 
-fn lower_item(
-    ctx: &mut Ast2HirCtx,
-    current_module_items: &mut Vec<Item>,
-    item: ast::Item,
-    log: &CompilerLog,
-) -> Result<(), ()> {
+pub(crate) fn lower_module(module: ast::Module, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Module, ()> {
+    ctx.current_scope.push(module.name.clone());
+
+    let visibility = match module.visibility {
+        Some(ast::Visibility::Public) => Visibility::Pub,
+        Some(ast::Visibility::Protected) => Visibility::Pro,
+        Some(ast::Visibility::Private) | None => Visibility::Sec,
+    };
+
+    let ast_attributes = module.attributes.unwrap_or_default();
+    let attributes = BTreeSet::new();
+    for _attr in ast_attributes {
+        log.report(&HirErr::UnrecognizedModuleAttribute);
+    }
+
+    let mut items = Vec::with_capacity(module.items.len());
+
+    for item in module.items {
+        let lowered_item = lower_item(ctx, item, log)?;
+        if let Some(item) = lowered_item {
+            items.push(item);
+        }
+    }
+
+    let module = Module {
+        visibility,
+        attributes,
+        name: module.name,
+        items,
+    };
+
+    ctx.current_scope.pop();
+
+    Ok(module)
+}
+
+fn lower_item(ctx: &mut Ast2HirCtx, item: ast::Item, log: &CompilerLog) -> Result<Option<Item>, ()> {
     match item {
         ast::Item::Module(module) => {
             let hir_module = convert_ast_to_hir(*module, ctx, log)?.into();
-            current_module_items.push(Item::Module(hir_module));
-            Ok(())
+            Ok(Some(Item::Module(hir_module)))
         }
 
         ast::Item::Import(import) => {
             if let Some(resolved_items) = import.resolved {
                 for item in resolved_items {
-                    lower_item(ctx, current_module_items, item, log)?;
+                    lower_item(ctx, item, log)?;
                 }
             }
-            Ok(())
+            Ok(None)
         }
 
         ast::Item::TypeAlias(type_alias) => {
-            let t = ast_typealias2hir(type_alias, ctx, log)?;
-            current_module_items.push(Item::TypeAliasDef(t));
-            Ok(())
+            let t = lower_type_alias(type_alias, ctx, log)?;
+            Ok(Some(Item::TypeAliasDef(t)))
         }
 
         ast::Item::Struct(struct_def) => {
-            let s = ast_structdef2hir(struct_def, ctx, log)?;
-            current_module_items.push(Item::StructDef(s));
-            Ok(())
+            let s = lower_struct_def(struct_def, ctx, log)?;
+            Ok(Some(Item::StructDef(s)))
         }
 
         ast::Item::Enum(enum_def) => {
-            let e = ast_enumdef2hir(enum_def, ctx, log)?;
-            current_module_items.push(Item::EnumDef(e));
-            Ok(())
+            let e = lower_enum_def(enum_def, ctx, log)?;
+            Ok(Some(Item::EnumDef(e)))
         }
 
         ast::Item::Trait(trait_def) => {
-            let t = ast_trait2hir(&trait_def, ctx, log)?;
-            current_module_items.push(Item::Trait(t));
-            Ok(())
+            let t = lower_trait(&trait_def, ctx, log)?;
+            Ok(Some(Item::Trait(t)))
         }
 
         ast::Item::Impl(impl_def) => {
-            ast_impl2hir(*impl_def, ctx, log)?;
-            Ok(())
+            lower_impl(*impl_def, ctx, log)?;
+            Ok(None)
         }
 
         ast::Item::Function(func_def) => {
-            let f = ast_function2hir(func_def, ctx, log)?;
-            current_module_items.push(Item::Function(f));
-            Ok(())
+            let f = lower_function(func_def, ctx, log)?;
+            Ok(Some(Item::Function(f)))
         }
 
         ast::Item::Variable(v) => {
-            let g = ast_globalvar2hir(&v, ctx, log)?;
-            current_module_items.push(Item::GlobalVariable(g));
-            Ok(())
+            let g = lower_global_var(&v, ctx, log)?;
+            Ok(Some(Item::GlobalVariable(g)))
         }
 
-        ast::Item::SyntaxError(_) => Ok(()),
+        ast::Item::SyntaxError(_) => Err(()),
     }
-}
-
-pub(crate) fn ast_module2hir(module: ast::Module, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Module, ()> {
-    fn lower_module(this: ast::Module, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Module, ()> {
-        let visibility = match this.visibility {
-            Some(ast::Visibility::Public) => Visibility::Pub,
-            Some(ast::Visibility::Protected) => Visibility::Pro,
-            Some(ast::Visibility::Private) | None => Visibility::Sec,
-        };
-
-        let ast_attributes = this.attributes.unwrap_or_default();
-        let attributes = BTreeSet::new();
-        for _attr in ast_attributes {
-            log.report(&HirErr::UnrecognizedModuleAttribute);
-        }
-
-        let mut items = Vec::with_capacity(this.items.len());
-        for item in this.items {
-            lower_item(ctx, &mut items, item, log)?;
-        }
-
-        let module = Module {
-            visibility,
-            attributes,
-            name: this.name,
-            items,
-        };
-
-        Ok(module)
-    }
-
-    ctx.current_scope.push(module.name.clone());
-    let result = lower_module(module, ctx, log);
-    ctx.current_scope.pop();
-    result
 }
