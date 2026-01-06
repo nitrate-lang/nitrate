@@ -8,78 +8,38 @@ use nitrate_tree::ast::{self as ast, SymbolKind, UnaryExprOp};
 use ordered_float::OrderedFloat;
 use std::collections::BTreeSet;
 
-impl Ast2Hir for ast::ExprSyntaxError {
-    type Hir = Value;
-
-    fn ast2hir(self, _ctx: &mut Ast2HirCtx, _log: &CompilerLog) -> Result<Self::Hir, ()> {
-        Err(())
+fn lower_boolean_literal(boolean_lit: ast::BooleanLit) -> Result<Value, ()> {
+    match boolean_lit.value {
+        true => Ok(Value::Bool(true)),
+        false => Ok(Value::Bool(false)),
     }
 }
 
-impl Ast2Hir for ast::ExprParentheses {
-    type Hir = Value;
-
-    fn ast2hir(self, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
-        self.inner.ast2hir(ctx, log)
-    }
+fn lower_integer_literal(integer_lit: ast::IntegerLit) -> Result<Value, ()> {
+    Ok(Value::InferredInteger(Box::new(integer_lit.value)))
 }
 
-impl Ast2Hir for ast::BooleanLit {
-    type Hir = Value;
-
-    fn ast2hir(self, _ctx: &mut Ast2HirCtx, _log: &CompilerLog) -> Result<Self::Hir, ()> {
-        match self.value {
-            true => Ok(Value::Bool(true)),
-            false => Ok(Value::Bool(false)),
-        }
-    }
+fn lower_float_literal(float_lit: ast::FloatLit) -> Result<Value, ()> {
+    Ok(Value::InferredFloat(OrderedFloat::from(*float_lit.value)))
 }
 
-impl Ast2Hir for ast::IntegerLit {
-    type Hir = Value;
-
-    fn ast2hir(self, _ctx: &mut Ast2HirCtx, _log: &CompilerLog) -> Result<Self::Hir, ()> {
-        Ok(Value::InferredInteger(Box::new(self.value)))
-    }
+fn lower_string_literal(string_lit: ast::StringLit) -> Result<Value, ()> {
+    Ok(Value::StringLit(string_lit.value.into()))
 }
 
-impl Ast2Hir for ast::FloatLit {
-    type Hir = Value;
-
-    fn ast2hir(self, _ctx: &mut Ast2HirCtx, _log: &CompilerLog) -> Result<Self::Hir, ()> {
-        Ok(Value::InferredFloat(OrderedFloat::from(*self.value)))
-    }
+fn lower_bstring_literal(bstring_lit: ast::BStringLit) -> Result<Value, ()> {
+    Ok(Value::BStringLit(bstring_lit.value.into()))
 }
 
-impl Ast2Hir for ast::StringLit {
-    type Hir = Value;
-
-    fn ast2hir(self, _ctx: &mut Ast2HirCtx, _log: &CompilerLog) -> Result<Self::Hir, ()> {
-        Ok(Value::StringLit(self.value.to_string().into()))
-    }
-}
-
-impl Ast2Hir for ast::BStringLit {
-    type Hir = Value;
-
-    fn ast2hir(self, _ctx: &mut Ast2HirCtx, _log: &CompilerLog) -> Result<Self::Hir, ()> {
-        Ok(Value::BStringLit(self.value.into()))
-    }
-}
-
-impl Ast2Hir for ast::TypeInfo {
-    type Hir = Value;
-
-    fn ast2hir(self, _ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
-        log.report(&HirErr::UnimplementedFeature("Type reflection".into()));
-        Err(())
-    }
+fn lower_type_reflection(_type_info: ast::TypeInfo, _ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
+    log.report(&HirErr::UnimplementedFeature("Type reflection".into()));
+    Err(())
 }
 
 impl Ast2Hir for ast::List {
     type Hir = Value;
 
-    fn ast2hir(self, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
+    fn ast2hir(self, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
         let mut elements = Vec::with_capacity(self.elements.len());
         for element in self.elements {
             let hir_element = element.ast2hir(ctx, log)?;
@@ -95,7 +55,7 @@ impl Ast2Hir for ast::List {
 impl Ast2Hir for ast::Tuple {
     type Hir = Value;
 
-    fn ast2hir(self, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
+    fn ast2hir(self, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
         let mut elements = Vec::with_capacity(self.elements.len());
         for element in self.elements {
             let hir_element = element.ast2hir(ctx, log)?;
@@ -111,7 +71,7 @@ impl Ast2Hir for ast::Tuple {
 impl Ast2Hir for ast::StructInit {
     type Hir = Value;
 
-    fn ast2hir(self, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
+    fn ast2hir(self, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
         if self.path.segments.iter().any(|seg| seg.type_arguments.is_some()) {
             log.report(&HirErr::UnimplementedFeature("generic type args in type paths".into()));
         }
@@ -138,7 +98,7 @@ impl Ast2Hir for ast::StructInit {
 impl Ast2Hir for ast::UnaryExpr {
     type Hir = Value;
 
-    fn ast2hir(self, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
+    fn ast2hir(self, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
         let operand = self.operand.ast2hir(ctx, log)?;
 
         match self.operator {
@@ -176,7 +136,7 @@ impl Ast2Hir for ast::UnaryExpr {
 impl Ast2Hir for ast::BinExpr {
     type Hir = Value;
 
-    fn ast2hir(self, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
+    fn ast2hir(self, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
         let left = self.left.ast2hir(ctx, log)?.into();
         let right = self.right.ast2hir(ctx, log)?.into();
 
@@ -457,7 +417,7 @@ impl Ast2Hir for ast::BinExpr {
 impl Ast2Hir for ast::Cast {
     type Hir = Value;
 
-    fn ast2hir(self, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
+    fn ast2hir(self, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
         fn failed_to_cast(log: &CompilerLog) -> Result<Value, ()> {
             log.report(&HirErr::IntegerCastOutOfRange);
             Err(())
@@ -591,7 +551,7 @@ fn ast_localvar2hir(var: &ast::LocalVariable, ctx: &mut Ast2HirCtx, log: &Compil
 impl Ast2Hir for ast::Block {
     type Hir = Block;
 
-    fn ast2hir(self, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
+    fn ast2hir(self, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Block, ()> {
         let elements_len = self.elements.len();
         let mut elements = Vec::with_capacity(elements_len);
 
@@ -634,7 +594,7 @@ impl Ast2Hir for ast::Block {
 impl Ast2Hir for ast::Closure {
     type Hir = Value;
 
-    fn ast2hir(self, _ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
+    fn ast2hir(self, _ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
         log.report(&HirErr::UnimplementedFeature("ast::Expr::Closure".into()));
         Err(())
     }
@@ -643,7 +603,7 @@ impl Ast2Hir for ast::Closure {
 impl Ast2Hir for ast::ExprPath {
     type Hir = Value;
 
-    fn ast2hir(self, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
+    fn ast2hir(self, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
         if self.segments.iter().any(|seg| seg.type_arguments.is_some()) {
             log.report(&HirErr::UnimplementedFeature("generic type args in expr paths".into()));
         }
@@ -691,7 +651,7 @@ impl Ast2Hir for ast::ExprPath {
 impl Ast2Hir for ast::IndexAccess {
     type Hir = Value;
 
-    fn ast2hir(self, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
+    fn ast2hir(self, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
         let _collection: ValueId = self.collection.ast2hir(ctx, log)?.into();
         let _index: ValueId = self.index.ast2hir(ctx, log)?.into();
         unimplemented!()
@@ -701,7 +661,7 @@ impl Ast2Hir for ast::IndexAccess {
 impl Ast2Hir for ast::FieldAccess {
     type Hir = Value;
 
-    fn ast2hir(self, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
+    fn ast2hir(self, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
         let object = self.object.ast2hir(ctx, log)?.into();
         let field = self.field.to_string().into();
 
@@ -715,7 +675,7 @@ impl Ast2Hir for ast::FieldAccess {
 impl Ast2Hir for ast::If {
     type Hir = Value;
 
-    fn ast2hir(self, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
+    fn ast2hir(self, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
         let condition = self.condition.ast2hir(ctx, log)?.into();
 
         let true_branch = self.true_branch.ast2hir(ctx, log)?.into();
@@ -748,7 +708,7 @@ impl Ast2Hir for ast::If {
 impl Ast2Hir for ast::WhileLoop {
     type Hir = Value;
 
-    fn ast2hir(self, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
+    fn ast2hir(self, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
         let condition = match self.condition {
             Some(cond) => cond.ast2hir(ctx, log)?.into(),
             None => Value::Bool(true).into(),
@@ -763,7 +723,7 @@ impl Ast2Hir for ast::WhileLoop {
 impl Ast2Hir for ast::Match {
     type Hir = Value;
 
-    fn ast2hir(self, _ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
+    fn ast2hir(self, _ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
         log.report(&HirErr::UnimplementedFeature("Match expressions".into()));
         Err(())
     }
@@ -772,7 +732,7 @@ impl Ast2Hir for ast::Match {
 impl Ast2Hir for ast::Break {
     type Hir = Value;
 
-    fn ast2hir(self, _ctx: &mut Ast2HirCtx, _log: &CompilerLog) -> Result<Self::Hir, ()> {
+    fn ast2hir(self, _ctx: &mut Ast2HirCtx, _log: &CompilerLog) -> Result<Value, ()> {
         Ok(Value::Break {
             label: self.label.map(|l| l.to_string().into()),
         })
@@ -782,7 +742,7 @@ impl Ast2Hir for ast::Break {
 impl Ast2Hir for ast::Continue {
     type Hir = Value;
 
-    fn ast2hir(self, _ctx: &mut Ast2HirCtx, _log: &CompilerLog) -> Result<Self::Hir, ()> {
+    fn ast2hir(self, _ctx: &mut Ast2HirCtx, _log: &CompilerLog) -> Result<Value, ()> {
         Ok(Value::Continue {
             label: self.label.map(|l| l.to_string().into()),
         })
@@ -792,7 +752,7 @@ impl Ast2Hir for ast::Continue {
 impl Ast2Hir for ast::Return {
     type Hir = Value;
 
-    fn ast2hir(self, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
+    fn ast2hir(self, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
         let value = match self.value {
             Some(v) => v.ast2hir(ctx, log)?.into(),
             None => Value::Unit.into(),
@@ -805,7 +765,7 @@ impl Ast2Hir for ast::Return {
 impl Ast2Hir for ast::ForEach {
     type Hir = Value;
 
-    fn ast2hir(self, _ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
+    fn ast2hir(self, _ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
         log.report(&HirErr::UnimplementedFeature("ForEach expressions".into()));
         Err(())
     }
@@ -814,7 +774,7 @@ impl Ast2Hir for ast::ForEach {
 impl Ast2Hir for ast::Await {
     type Hir = Value;
 
-    fn ast2hir(self, _ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
+    fn ast2hir(self, _ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
         log.report(&HirErr::UnimplementedFeature("Await expressions".into()));
         Err(())
     }
@@ -823,7 +783,7 @@ impl Ast2Hir for ast::Await {
 impl Ast2Hir for ast::FunctionCall {
     type Hir = Value;
 
-    fn ast2hir(self, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
+    fn ast2hir(self, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
         let callee = self.callee.ast2hir(ctx, log)?;
 
         let mut positional = Vec::with_capacity(self.positional.len());
@@ -851,7 +811,7 @@ impl Ast2Hir for ast::FunctionCall {
 impl Ast2Hir for ast::MethodCall {
     type Hir = Value;
 
-    fn ast2hir(self, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
+    fn ast2hir(self, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
         let object = self.object.ast2hir(ctx, log)?.into();
         let method = NString::from(self.method_name);
 
@@ -881,16 +841,16 @@ impl Ast2Hir for ast::MethodCall {
 impl Ast2Hir for ast::Expr {
     type Hir = Value;
 
-    fn ast2hir(self, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
+    fn ast2hir(self, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
         match self {
-            ast::Expr::SyntaxError(e) => e.ast2hir(ctx, log),
-            ast::Expr::Parentheses(e) => e.ast2hir(ctx, log),
-            ast::Expr::Boolean(e) => e.ast2hir(ctx, log),
-            ast::Expr::Integer(e) => e.ast2hir(ctx, log),
-            ast::Expr::Float(e) => e.ast2hir(ctx, log),
-            ast::Expr::String(e) => e.ast2hir(ctx, log),
-            ast::Expr::BString(e) => e.ast2hir(ctx, log),
-            ast::Expr::TypeInfo(e) => e.ast2hir(ctx, log),
+            ast::Expr::SyntaxError(_) => Err(()),
+            ast::Expr::Parentheses(e) => e.inner.ast2hir(ctx, log),
+            ast::Expr::Boolean(e) => lower_boolean_literal(e),
+            ast::Expr::Integer(e) => lower_integer_literal(*e),
+            ast::Expr::Float(e) => lower_float_literal(e),
+            ast::Expr::String(e) => lower_string_literal(e),
+            ast::Expr::BString(e) => lower_bstring_literal(*e),
+            ast::Expr::TypeInfo(e) => lower_type_reflection(*e, ctx, log),
             ast::Expr::List(e) => e.ast2hir(ctx, log),
             ast::Expr::Tuple(e) => e.ast2hir(ctx, log),
             ast::Expr::StructInit(e) => e.ast2hir(ctx, log),
