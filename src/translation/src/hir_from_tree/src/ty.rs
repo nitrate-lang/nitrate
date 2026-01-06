@@ -1,4 +1,4 @@
-use crate::{context::Ast2HirCtx, diagnosis::HirErr, lower::Ast2Hir};
+use crate::{context::Ast2HirCtx, diagnosis::HirErr, expr::lower_expr};
 use nitrate_diagnosis::CompilerLog;
 use nitrate_hir::prelude::*;
 use nitrate_hir_evaluate::HirEvalCtx;
@@ -61,7 +61,7 @@ fn lower_tuple_type(tuple_type: ast::TupleType, ctx: &mut Ast2HirCtx, log: &Comp
     let mut elements = Vec::with_capacity(tuple_type.element_types.len());
 
     for ast_elem_ty in tuple_type.element_types.into_iter() {
-        let hir_elem_ty = ast_elem_ty.ast2hir(ctx, log)?.into();
+        let hir_elem_ty = lower_type(ast_elem_ty, ctx, log)?.into();
         elements.push(hir_elem_ty);
     }
 
@@ -71,10 +71,10 @@ fn lower_tuple_type(tuple_type: ast::TupleType, ctx: &mut Ast2HirCtx, log: &Comp
 }
 
 fn lower_array_type(array_type: ast::ArrayType, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Type, ()> {
-    let element_type = array_type.element_type.ast2hir(ctx, log)?.into();
+    let element_type = lower_type(array_type.element_type, ctx, log)?.into();
 
     let hir_length = Value::Cast {
-        value: array_type.len.ast2hir(ctx, log)?.into(),
+        value: lower_expr(array_type.len, ctx, log)?.into(),
         target_type: Type::USize.into(),
     };
 
@@ -130,13 +130,13 @@ fn lower_function_type(function_type: ast::FunctionType, ctx: &mut Ast2HirCtx, l
         }
 
         let name = NString::from(param.name.deref());
-        let ty = param.ty.ast2hir(ctx, log)?.into();
+        let ty = lower_type(param.ty, ctx, log)?.into();
 
         parameters.push((name, ty));
     }
 
     let return_type = match function_type.return_type {
-        Some(ret_ty) => ret_ty.ast2hir(ctx, log)?,
+        Some(ret_ty) => lower_type(ret_ty, ctx, log)?,
         None => Type::Unit,
     };
 
@@ -183,7 +183,7 @@ fn lower_reference_type(
     };
 
     if let ast::Type::SliceType(slice) = reference_type.to {
-        let element_type = slice.element_type.ast2hir(ctx, log)?.into();
+        let element_type = lower_type(slice.element_type, ctx, log)?.into();
 
         Ok(Type::SliceRef {
             lifetime,
@@ -192,7 +192,7 @@ fn lower_reference_type(
             element_type,
         })
     } else {
-        let to = reference_type.to.ast2hir(ctx, log)?.into();
+        let to = lower_type(reference_type.to, ctx, log)?.into();
 
         Ok(Type::Reference {
             lifetime,
@@ -221,12 +221,12 @@ fn lower_pointer_type(pointer_type: ast::PointerType, ctx: &mut Ast2HirCtx, log:
     };
 
     if let ast::Type::SliceType(slice) = pointer_type.to {
-        let _element_type: TypeId = slice.element_type.ast2hir(ctx, log)?.into();
+        let _element_type: TypeId = lower_type(slice.element_type, ctx, log)?.into();
 
         log.report(&HirErr::UnimplementedFeature("slice pointers".into()));
         Err(())
     } else {
-        let to = pointer_type.to.ast2hir(ctx, log)?.into();
+        let to = lower_type(pointer_type.to, ctx, log)?.into();
 
         Ok(Type::Pointer { exclusive, mutable, to })
     }
@@ -242,7 +242,7 @@ fn lower_lifetime(_lifetime: ast::Lifetime, _ctx: &mut Ast2HirCtx, log: &Compile
     Err(())
 }
 
-fn lower_type(ty: ast::Type, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Type, ()> {
+pub fn lower_type(ty: ast::Type, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Type, ()> {
     match ty {
         ast::Type::SyntaxError(_) => Err(()),
         ast::Type::Bool(_) => Ok(Type::Bool),
@@ -271,13 +271,5 @@ fn lower_type(ty: ast::Type, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<
         ast::Type::LatentType(t) => lower_latent_type(*t, ctx, log),
         ast::Type::Lifetime(t) => lower_lifetime(*t, ctx, log),
         ast::Type::Parentheses(t) => lower_type(t.inner, ctx, log),
-    }
-}
-
-impl Ast2Hir for ast::Type {
-    type Hir = Type;
-
-    fn ast2hir(self, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
-        lower_type(self, ctx, log)
     }
 }

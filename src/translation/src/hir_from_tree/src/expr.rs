@@ -1,6 +1,6 @@
-use crate::context::Ast2HirCtx;
 use crate::diagnosis::HirErr;
 use crate::lower::Ast2Hir;
+use crate::{context::Ast2HirCtx, ty::lower_type};
 use nitrate_diagnosis::CompilerLog;
 use nitrate_hir::prelude::*;
 use nitrate_nstring::NString;
@@ -401,7 +401,7 @@ fn lower_cast(cast: ast::Cast, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Resul
     }
 
     let expr = cast.value.ast2hir(ctx, log)?;
-    let to = cast.to.ast2hir(ctx, log)?;
+    let to = lower_type(cast.to, ctx, log)?;
 
     match (expr, to) {
         (Value::InferredInteger(value), Type::U8) => match u8::try_from(*value) {
@@ -502,7 +502,7 @@ fn ast_local_variable(
 
     let ty = match local_var.ty.to_owned() {
         None => ctx.create_inference_placeholder().into(),
-        Some(t) => t.ast2hir(ctx, log)?.into(),
+        Some(t) => lower_type(t, ctx, log)?.into(),
     };
 
     let initializer = match local_var.initializer.to_owned() {
@@ -761,7 +761,7 @@ fn lower_method_call(method_call: ast::MethodCall, ctx: &mut Ast2HirCtx, log: &C
     })
 }
 
-fn lower_expr(x: ast::Expr, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
+pub(crate) fn lower_expr(x: ast::Expr, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
     match x {
         ast::Expr::SyntaxError(_) => Err(()),
         ast::Expr::Parentheses(e) => e.inner.ast2hir(ctx, log),

@@ -1,4 +1,6 @@
-use crate::{context::Ast2HirCtx, convert_ast_to_hir, diagnosis::HirErr, expr::lower_block, lower::Ast2Hir};
+use crate::{
+    context::Ast2HirCtx, convert_ast_to_hir, diagnosis::HirErr, expr::lower_block, lower::Ast2Hir, ty::lower_type,
+};
 use nitrate_diagnosis::CompilerLog;
 use nitrate_hir::prelude::*;
 use nitrate_nstring::NString;
@@ -29,7 +31,7 @@ fn ast_typealias2hir(
     }
 
     let type_id = match &type_alias.alias_type {
-        Some(ty) => ty.to_owned().ast2hir(ctx, log)?.into(),
+        Some(ty) => lower_type(ty.to_owned(), ctx, log)?.into(),
         None => {
             log.report(&HirErr::TypeAliasMustHaveType);
             return Err(());
@@ -91,7 +93,7 @@ fn ast_structdef2hir(struct_def: ast::Struct, ctx: &mut Ast2HirCtx, log: &Compil
         }
 
         let field_name = NString::from(field.name.to_string());
-        let field_type = field.ty.to_owned().ast2hir(ctx, log)?.into();
+        let field_type = lower_type(field.ty.to_owned(), ctx, log)?.into();
 
         let field_default = match field.default_value.to_owned() {
             Some(expr) => Some(expr.ast2hir(ctx, log)?.into()),
@@ -163,7 +165,7 @@ fn ast_enumdef2hir(enum_def: ast::Enum, ctx: &mut Ast2HirCtx, log: &CompilerLog)
         let variant_name = NString::from(variant.name.to_string());
 
         let variant_type = match variant.ty.to_owned() {
-            Some(ty) => ty.ast2hir(ctx, log)?.into(),
+            Some(ty) => lower_type(ty, ctx, log)?.into(),
             None => Type::Unit.into(),
         };
 
@@ -269,7 +271,7 @@ fn ast_impl2hir(impl_: ast::Impl, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Re
         return Err(());
     }
 
-    let for_type: TypeId = impl_.for_type.ast2hir(ctx, log)?.into();
+    let for_type: TypeId = lower_type(impl_.for_type, ctx, log)?.into();
 
     match impl_.trait_path {
         Some(trait_path) => {
@@ -355,7 +357,7 @@ fn ast_globalvar2hir(
 
     let ty = match globalvar.ty.to_owned() {
         None => ctx.create_inference_placeholder().into(),
-        Some(t) => t.ast2hir(ctx, log)?.into(),
+        Some(t) => lower_type(t, ctx, log)?.into(),
     };
 
     let init = match globalvar.initializer.to_owned() {
@@ -402,7 +404,7 @@ fn ast_funcparam2hir(param: ast::FuncParam, ctx: &mut Ast2HirCtx, log: &Compiler
     };
 
     let name = ctx.qualify_name(&param.name).into();
-    let ty = param.ty.to_owned().ast2hir(ctx, log)?.into();
+    let ty = lower_type(param.ty.to_owned(), ctx, log)?.into();
 
     let default_value = match param.default_value.to_owned() {
         Some(expr) => Some(expr.ast2hir(ctx, log)?.into()),
@@ -480,7 +482,7 @@ fn ast_function2hir(function: ast::Function, ctx: &mut Ast2HirCtx, log: &Compile
     }
 
     let return_type = match &function.return_type {
-        Some(ty) => ty.to_owned().ast2hir(ctx, log)?,
+        Some(ty) => lower_type(ty.to_owned(), ctx, log)?,
         None => Type::Unit,
     };
 
