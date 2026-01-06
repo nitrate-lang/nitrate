@@ -1,5 +1,9 @@
 use crate::{
-    context::Ast2HirCtx, convert_ast_to_hir, diagnosis::HirErr, expr::lower_block, lower::Ast2Hir, ty::lower_type,
+    context::Ast2HirCtx,
+    convert_ast_to_hir,
+    diagnosis::HirErr,
+    expr::{lower_block, lower_expr},
+    ty::lower_type,
 };
 use nitrate_diagnosis::CompilerLog;
 use nitrate_hir::prelude::*;
@@ -92,7 +96,7 @@ fn lower_struct_def(struct_def: ast::Struct, ctx: &mut Ast2HirCtx, log: &Compile
         let field_type = lower_type(field.ty.to_owned(), ctx, log)?.into();
 
         let field_default = match field.default_value.to_owned() {
-            Some(expr) => Some(expr.ast2hir(ctx, log)?.into()),
+            Some(expr) => Some(lower_expr(expr, ctx, log)?.into()),
             None => None,
         };
 
@@ -166,7 +170,7 @@ fn lower_enum_def(enum_def: ast::Enum, ctx: &mut Ast2HirCtx, log: &CompilerLog) 
         };
 
         let field_default = match variant.default_value.to_owned() {
-            Some(expr) => Some(expr.ast2hir(ctx, log)?.into()),
+            Some(expr) => Some(lower_expr(expr, ctx, log)?.into()),
             None => None,
         };
 
@@ -357,7 +361,7 @@ fn lower_global_var(
     };
 
     let init = match globalvar.initializer.to_owned() {
-        Some(expr) => expr.ast2hir(ctx, log)?.into(),
+        Some(expr) => lower_expr(expr, ctx, log)?.into(),
 
         None => {
             log.report(&HirErr::GlobalVariableMustHaveInitializer);
@@ -403,7 +407,7 @@ fn lower_parameter(param: ast::FuncParam, ctx: &mut Ast2HirCtx, log: &CompilerLo
     let ty = lower_type(param.ty.to_owned(), ctx, log)?.into();
 
     let default_value = match param.default_value.to_owned() {
-        Some(expr) => Some(expr.ast2hir(ctx, log)?.into()),
+        Some(expr) => Some(lower_expr(expr, ctx, log)?.into()),
         None => None,
     };
 
