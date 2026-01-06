@@ -1,4 +1,4 @@
-use crate::{context::Ast2HirCtx, convert_ast_to_hir, diagnosis::HirErr, lower::Ast2Hir};
+use crate::{context::Ast2HirCtx, convert_ast_to_hir, diagnosis::HirErr, expr::lower_block, lower::Ast2Hir};
 use nitrate_diagnosis::CompilerLog;
 use nitrate_hir::prelude::*;
 use nitrate_nstring::NString;
@@ -487,7 +487,7 @@ fn ast_function2hir(function: ast::Function, ctx: &mut Ast2HirCtx, log: &Compile
     let body = match function.definition {
         None => None,
         Some(block) => {
-            let mut hir_elements = block.ast2hir(ctx, log)?.elements;
+            let mut hir_elements = lower_block(block, ctx, log)?.elements;
             match hir_elements.last() {
                 Some(BlockElement::Expr(expr)) if expr.borrow().is_return() => {}
 

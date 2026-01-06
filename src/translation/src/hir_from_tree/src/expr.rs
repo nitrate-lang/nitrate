@@ -1,6 +1,6 @@
-use crate::context::Ast2HirCtx;
 use crate::diagnosis::HirErr;
 use crate::lower::Ast2Hir;
+use crate::{context::Ast2HirCtx, lower};
 use nitrate_diagnosis::CompilerLog;
 use nitrate_hir::prelude::*;
 use nitrate_nstring::NString;
@@ -36,471 +36,451 @@ fn lower_type_reflection(_type_info: ast::TypeInfo, _ctx: &mut Ast2HirCtx, log: 
     Err(())
 }
 
-impl Ast2Hir for ast::List {
-    type Hir = Value;
-
-    fn ast2hir(self, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
-        let mut elements = Vec::with_capacity(self.elements.len());
-        for element in self.elements {
-            let hir_element = element.ast2hir(ctx, log)?;
-            elements.push(hir_element.into());
-        }
-
-        Ok(Value::List {
-            elements: elements.into(),
-        })
+fn lower_list(x: ast::List, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
+    let mut elements = Vec::with_capacity(x.elements.len());
+    for element in x.elements {
+        let hir_element = element.ast2hir(ctx, log)?;
+        elements.push(hir_element.into());
     }
+
+    Ok(Value::List {
+        elements: elements.into(),
+    })
 }
 
-impl Ast2Hir for ast::Tuple {
-    type Hir = Value;
-
-    fn ast2hir(self, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
-        let mut elements = Vec::with_capacity(self.elements.len());
-        for element in self.elements {
-            let hir_element = element.ast2hir(ctx, log)?;
-            elements.push(hir_element.into());
-        }
-
-        Ok(Value::Tuple {
-            elements: elements.into(),
-        })
+fn lower_tuple(x: ast::Tuple, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
+    let mut elements = Vec::with_capacity(x.elements.len());
+    for element in x.elements {
+        let hir_element = element.ast2hir(ctx, log)?;
+        elements.push(hir_element.into());
     }
+
+    Ok(Value::Tuple {
+        elements: elements.into(),
+    })
 }
 
-impl Ast2Hir for ast::StructInit {
-    type Hir = Value;
-
-    fn ast2hir(self, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
-        if self.path.segments.iter().any(|seg| seg.type_arguments.is_some()) {
-            log.report(&HirErr::UnimplementedFeature("generic type args in type paths".into()));
-        }
-
-        let mut fields = Vec::with_capacity(self.fields.len());
-        for field in self.fields {
-            let field_name = NString::from(field.0.to_string());
-            let field_value = field.1.ast2hir(ctx, log)?.into();
-            fields.push((field_name, field_value));
-        }
-
-        if let Some(resolved_path) = self.path.resolved_path {
-            return Ok(Value::StructObject {
-                struct_def: ctx.tab.get_struct_or_insert_placeholder(&resolved_path),
-                fields: fields.into(),
-            });
-        }
-
-        log.report(&HirErr::UnresolvedTypePath);
-        Err(())
+fn lower_struct_init(x: ast::StructInit, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
+    if x.path.segments.iter().any(|seg| seg.type_arguments.is_some()) {
+        log.report(&HirErr::UnimplementedFeature("generic type args in type paths".into()));
     }
+
+    let mut fields = Vec::with_capacity(x.fields.len());
+    for field in x.fields {
+        let field_name = NString::from(field.0.to_string());
+        let field_value = field.1.ast2hir(ctx, log)?.into();
+        fields.push((field_name, field_value));
+    }
+
+    if let Some(resolved_path) = x.path.resolved_path {
+        return Ok(Value::StructObject {
+            struct_def: ctx.tab.get_struct_or_insert_placeholder(&resolved_path),
+            fields: fields.into(),
+        });
+    }
+
+    log.report(&HirErr::UnresolvedTypePath);
+    Err(())
 }
 
-impl Ast2Hir for ast::UnaryExpr {
-    type Hir = Value;
+fn lower_unary(x: ast::UnaryExpr, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
+    let operand = x.operand.ast2hir(ctx, log)?;
 
-    fn ast2hir(self, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
-        let operand = self.operand.ast2hir(ctx, log)?;
+    match x.operator {
+        UnaryExprOp::Add => Ok(Value::Unary {
+            op: UnaryOp::Add,
+            operand: operand.into(),
+        }),
 
-        match self.operator {
-            UnaryExprOp::Add => Ok(Value::Unary {
-                op: UnaryOp::Add,
-                operand: operand.into(),
-            }),
+        UnaryExprOp::Sub => Ok(Value::Unary {
+            op: UnaryOp::Sub,
+            operand: operand.into(),
+        }),
 
-            UnaryExprOp::Sub => Ok(Value::Unary {
-                op: UnaryOp::Sub,
-                operand: operand.into(),
-            }),
+        UnaryExprOp::Not => Ok(Value::Unary {
+            op: UnaryOp::Not,
+            operand: operand.into(),
+        }),
 
-            UnaryExprOp::Not => Ok(Value::Unary {
-                op: UnaryOp::Not,
-                operand: operand.into(),
-            }),
+        UnaryExprOp::Deref => Ok(Value::Deref { place: operand.into() }),
 
-            UnaryExprOp::Deref => Ok(Value::Deref { place: operand.into() }),
+        UnaryExprOp::Borrow => Ok(Value::Borrow {
+            exclusive: false,
+            mutable: false,
+            place: operand.into(),
+        }),
 
-            UnaryExprOp::Borrow => Ok(Value::Borrow {
-                exclusive: false,
-                mutable: false,
-                place: operand.into(),
-            }),
-
-            UnaryExprOp::Typeof => {
-                log.report(&HirErr::UnimplementedFeature("Type reflection".into()));
-                Err(())
-            }
+        UnaryExprOp::Typeof => {
+            log.report(&HirErr::UnimplementedFeature("Type reflection".into()));
+            Err(())
         }
     }
 }
 
-impl Ast2Hir for ast::BinExpr {
-    type Hir = Value;
+fn lower_binary(x: ast::BinExpr, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
+    let left = x.left.ast2hir(ctx, log)?.into();
+    let right = x.right.ast2hir(ctx, log)?.into();
 
-    fn ast2hir(self, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
-        let left = self.left.ast2hir(ctx, log)?.into();
-        let right = self.right.ast2hir(ctx, log)?.into();
+    match x.operator {
+        ast::BinExprOp::Add => Ok(Value::Binary {
+            left,
+            op: BinaryOp::Add,
+            right,
+        }),
 
-        match self.operator {
-            ast::BinExprOp::Add => Ok(Value::Binary {
+        ast::BinExprOp::Sub => Ok(Value::Binary {
+            left,
+            op: BinaryOp::Sub,
+            right,
+        }),
+
+        ast::BinExprOp::Mul => Ok(Value::Binary {
+            left,
+            op: BinaryOp::Mul,
+            right,
+        }),
+
+        ast::BinExprOp::Div => Ok(Value::Binary {
+            left,
+            op: BinaryOp::Div,
+            right,
+        }),
+
+        ast::BinExprOp::Mod => Ok(Value::Binary {
+            left,
+            op: BinaryOp::Mod,
+            right,
+        }),
+
+        ast::BinExprOp::BitAnd => Ok(Value::Binary {
+            left,
+            op: BinaryOp::And,
+            right,
+        }),
+
+        ast::BinExprOp::BitOr => Ok(Value::Binary {
+            left,
+            op: BinaryOp::Or,
+            right,
+        }),
+
+        ast::BinExprOp::BitXor => Ok(Value::Binary {
+            left,
+            op: BinaryOp::Xor,
+            right,
+        }),
+
+        ast::BinExprOp::BitShl => Ok(Value::Binary {
+            left,
+            op: BinaryOp::Shl,
+            right,
+        }),
+
+        ast::BinExprOp::BitShr => Ok(Value::Binary {
+            left,
+            op: BinaryOp::Shr,
+            right,
+        }),
+
+        ast::BinExprOp::BitRol => Ok(Value::Binary {
+            left,
+            op: BinaryOp::Rol,
+            right,
+        }),
+
+        ast::BinExprOp::BitRor => Ok(Value::Binary {
+            left,
+            op: BinaryOp::Ror,
+            right,
+        }),
+
+        ast::BinExprOp::LogicAnd => Ok(Value::Binary {
+            left,
+            op: BinaryOp::LogicAnd,
+            right,
+        }),
+
+        ast::BinExprOp::LogicOr => Ok(Value::Binary {
+            left,
+            op: BinaryOp::LogicOr,
+            right,
+        }),
+
+        ast::BinExprOp::LogicLt => Ok(Value::Binary {
+            left,
+            op: BinaryOp::Lt,
+            right,
+        }),
+
+        ast::BinExprOp::LogicGt => Ok(Value::Binary {
+            left,
+            op: BinaryOp::Gt,
+            right,
+        }),
+
+        ast::BinExprOp::LogicLe => Ok(Value::Binary {
+            left,
+            op: BinaryOp::Lte,
+            right,
+        }),
+
+        ast::BinExprOp::LogicGe => Ok(Value::Binary {
+            left,
+            op: BinaryOp::Gte,
+            right,
+        }),
+
+        ast::BinExprOp::LogicEq => Ok(Value::Binary {
+            left,
+            op: BinaryOp::Eq,
+            right,
+        }),
+
+        ast::BinExprOp::LogicNe => Ok(Value::Binary {
+            left,
+            op: BinaryOp::Ne,
+            right,
+        }),
+
+        ast::BinExprOp::Set => Ok(Value::Assign {
+            place: left,
+            value: right,
+        }),
+
+        ast::BinExprOp::SetPlus => Ok(Value::Assign {
+            place: left.clone(),
+            value: Value::Binary {
                 left,
                 op: BinaryOp::Add,
                 right,
-            }),
+            }
+            .into(),
+        }),
 
-            ast::BinExprOp::Sub => Ok(Value::Binary {
+        ast::BinExprOp::SetMinus => Ok(Value::Assign {
+            place: left.clone(),
+            value: Value::Binary {
                 left,
                 op: BinaryOp::Sub,
                 right,
-            }),
+            }
+            .into(),
+        }),
 
-            ast::BinExprOp::Mul => Ok(Value::Binary {
+        ast::BinExprOp::SetTimes => Ok(Value::Assign {
+            place: left.clone(),
+            value: Value::Binary {
                 left,
                 op: BinaryOp::Mul,
                 right,
-            }),
+            }
+            .into(),
+        }),
 
-            ast::BinExprOp::Div => Ok(Value::Binary {
+        ast::BinExprOp::SetSlash => Ok(Value::Assign {
+            place: left.clone(),
+            value: Value::Binary {
                 left,
                 op: BinaryOp::Div,
                 right,
-            }),
+            }
+            .into(),
+        }),
 
-            ast::BinExprOp::Mod => Ok(Value::Binary {
+        ast::BinExprOp::SetPercent => Ok(Value::Assign {
+            place: left.clone(),
+            value: Value::Binary {
                 left,
                 op: BinaryOp::Mod,
                 right,
-            }),
+            }
+            .into(),
+        }),
 
-            ast::BinExprOp::BitAnd => Ok(Value::Binary {
+        ast::BinExprOp::SetBitAnd => Ok(Value::Assign {
+            place: left.clone(),
+            value: Value::Binary {
                 left,
                 op: BinaryOp::And,
                 right,
-            }),
+            }
+            .into(),
+        }),
 
-            ast::BinExprOp::BitOr => Ok(Value::Binary {
+        ast::BinExprOp::SetBitOr => Ok(Value::Assign {
+            place: left.clone(),
+            value: Value::Binary {
                 left,
                 op: BinaryOp::Or,
                 right,
-            }),
+            }
+            .into(),
+        }),
 
-            ast::BinExprOp::BitXor => Ok(Value::Binary {
+        ast::BinExprOp::SetBitXor => Ok(Value::Assign {
+            place: left.clone(),
+            value: Value::Binary {
                 left,
                 op: BinaryOp::Xor,
                 right,
-            }),
+            }
+            .into(),
+        }),
 
-            ast::BinExprOp::BitShl => Ok(Value::Binary {
+        ast::BinExprOp::SetBitShl => Ok(Value::Assign {
+            place: left.clone(),
+            value: Value::Binary {
                 left,
                 op: BinaryOp::Shl,
                 right,
-            }),
+            }
+            .into(),
+        }),
 
-            ast::BinExprOp::BitShr => Ok(Value::Binary {
+        ast::BinExprOp::SetBitShr => Ok(Value::Assign {
+            place: left.clone(),
+            value: Value::Binary {
                 left,
                 op: BinaryOp::Shr,
                 right,
-            }),
+            }
+            .into(),
+        }),
 
-            ast::BinExprOp::BitRol => Ok(Value::Binary {
+        ast::BinExprOp::SetBitRotl => Ok(Value::Assign {
+            place: left.clone(),
+            value: Value::Binary {
                 left,
                 op: BinaryOp::Rol,
                 right,
-            }),
+            }
+            .into(),
+        }),
 
-            ast::BinExprOp::BitRor => Ok(Value::Binary {
+        ast::BinExprOp::SetBitRotr => Ok(Value::Assign {
+            place: left.clone(),
+            value: Value::Binary {
                 left,
                 op: BinaryOp::Ror,
                 right,
-            }),
-
-            ast::BinExprOp::LogicAnd => Ok(Value::Binary {
-                left,
-                op: BinaryOp::LogicAnd,
-                right,
-            }),
-
-            ast::BinExprOp::LogicOr => Ok(Value::Binary {
-                left,
-                op: BinaryOp::LogicOr,
-                right,
-            }),
-
-            ast::BinExprOp::LogicLt => Ok(Value::Binary {
-                left,
-                op: BinaryOp::Lt,
-                right,
-            }),
-
-            ast::BinExprOp::LogicGt => Ok(Value::Binary {
-                left,
-                op: BinaryOp::Gt,
-                right,
-            }),
-
-            ast::BinExprOp::LogicLe => Ok(Value::Binary {
-                left,
-                op: BinaryOp::Lte,
-                right,
-            }),
-
-            ast::BinExprOp::LogicGe => Ok(Value::Binary {
-                left,
-                op: BinaryOp::Gte,
-                right,
-            }),
-
-            ast::BinExprOp::LogicEq => Ok(Value::Binary {
-                left,
-                op: BinaryOp::Eq,
-                right,
-            }),
-
-            ast::BinExprOp::LogicNe => Ok(Value::Binary {
-                left,
-                op: BinaryOp::Ne,
-                right,
-            }),
-
-            ast::BinExprOp::Set => Ok(Value::Assign {
-                place: left,
-                value: right,
-            }),
-
-            ast::BinExprOp::SetPlus => Ok(Value::Assign {
-                place: left.clone(),
-                value: Value::Binary {
-                    left,
-                    op: BinaryOp::Add,
-                    right,
-                }
-                .into(),
-            }),
-
-            ast::BinExprOp::SetMinus => Ok(Value::Assign {
-                place: left.clone(),
-                value: Value::Binary {
-                    left,
-                    op: BinaryOp::Sub,
-                    right,
-                }
-                .into(),
-            }),
-
-            ast::BinExprOp::SetTimes => Ok(Value::Assign {
-                place: left.clone(),
-                value: Value::Binary {
-                    left,
-                    op: BinaryOp::Mul,
-                    right,
-                }
-                .into(),
-            }),
-
-            ast::BinExprOp::SetSlash => Ok(Value::Assign {
-                place: left.clone(),
-                value: Value::Binary {
-                    left,
-                    op: BinaryOp::Div,
-                    right,
-                }
-                .into(),
-            }),
-
-            ast::BinExprOp::SetPercent => Ok(Value::Assign {
-                place: left.clone(),
-                value: Value::Binary {
-                    left,
-                    op: BinaryOp::Mod,
-                    right,
-                }
-                .into(),
-            }),
-
-            ast::BinExprOp::SetBitAnd => Ok(Value::Assign {
-                place: left.clone(),
-                value: Value::Binary {
-                    left,
-                    op: BinaryOp::And,
-                    right,
-                }
-                .into(),
-            }),
-
-            ast::BinExprOp::SetBitOr => Ok(Value::Assign {
-                place: left.clone(),
-                value: Value::Binary {
-                    left,
-                    op: BinaryOp::Or,
-                    right,
-                }
-                .into(),
-            }),
-
-            ast::BinExprOp::SetBitXor => Ok(Value::Assign {
-                place: left.clone(),
-                value: Value::Binary {
-                    left,
-                    op: BinaryOp::Xor,
-                    right,
-                }
-                .into(),
-            }),
-
-            ast::BinExprOp::SetBitShl => Ok(Value::Assign {
-                place: left.clone(),
-                value: Value::Binary {
-                    left,
-                    op: BinaryOp::Shl,
-                    right,
-                }
-                .into(),
-            }),
-
-            ast::BinExprOp::SetBitShr => Ok(Value::Assign {
-                place: left.clone(),
-                value: Value::Binary {
-                    left,
-                    op: BinaryOp::Shr,
-                    right,
-                }
-                .into(),
-            }),
-
-            ast::BinExprOp::SetBitRotl => Ok(Value::Assign {
-                place: left.clone(),
-                value: Value::Binary {
-                    left,
-                    op: BinaryOp::Rol,
-                    right,
-                }
-                .into(),
-            }),
-
-            ast::BinExprOp::SetBitRotr => Ok(Value::Assign {
-                place: left.clone(),
-                value: Value::Binary {
-                    left,
-                    op: BinaryOp::Ror,
-                    right,
-                }
-                .into(),
-            }),
-
-            ast::BinExprOp::SetLogicAnd => Ok(Value::Assign {
-                place: left.clone(),
-                value: Value::Binary {
-                    left,
-                    op: BinaryOp::And,
-                    right,
-                }
-                .into(),
-            }),
-
-            ast::BinExprOp::SetLogicOr => Ok(Value::Assign {
-                place: left.clone(),
-                value: Value::Binary {
-                    left,
-                    op: BinaryOp::Or,
-                    right,
-                }
-                .into(),
-            }),
-
-            ast::BinExprOp::Range => {
-                log.report(&HirErr::UnimplementedFeature("range .. operator".into()));
-                Err(())
             }
-        }
-    }
-}
+            .into(),
+        }),
 
-impl Ast2Hir for ast::Cast {
-    type Hir = Value;
+        ast::BinExprOp::SetLogicAnd => Ok(Value::Assign {
+            place: left.clone(),
+            value: Value::Binary {
+                left,
+                op: BinaryOp::And,
+                right,
+            }
+            .into(),
+        }),
 
-    fn ast2hir(self, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
-        fn failed_to_cast(log: &CompilerLog) -> Result<Value, ()> {
-            log.report(&HirErr::IntegerCastOutOfRange);
+        ast::BinExprOp::SetLogicOr => Ok(Value::Assign {
+            place: left.clone(),
+            value: Value::Binary {
+                left,
+                op: BinaryOp::Or,
+                right,
+            }
+            .into(),
+        }),
+
+        ast::BinExprOp::Range => {
+            log.report(&HirErr::UnimplementedFeature("range .. operator".into()));
             Err(())
         }
-
-        let expr = self.value.ast2hir(ctx, log)?;
-        let to = self.to.ast2hir(ctx, log)?;
-
-        match (expr, to) {
-            (Value::InferredInteger(value), Type::U8) => match u8::try_from(*value) {
-                Ok(v) => Ok(Value::U8(v)),
-                Err(_) => failed_to_cast(log),
-            },
-
-            (Value::InferredInteger(value), Type::U16) => match u16::try_from(*value) {
-                Ok(v) => Ok(Value::U16(v)),
-                Err(_) => failed_to_cast(log),
-            },
-
-            (Value::InferredInteger(value), Type::U32) => match u32::try_from(*value) {
-                Ok(v) => Ok(Value::U32(v)),
-                Err(_) => failed_to_cast(log),
-            },
-
-            (Value::InferredInteger(value), Type::U64) => match u64::try_from(*value) {
-                Ok(v) => Ok(Value::U64(v)),
-                Err(_) => failed_to_cast(log),
-            },
-
-            (Value::InferredInteger(value), Type::U128) => match u128::try_from(*value) {
-                Ok(v) => Ok(Value::U128(Box::new(v))),
-                Err(_) => failed_to_cast(log),
-            },
-
-            (Value::InferredInteger(value), Type::USize) => match ctx.ptr_size {
-                PtrSize::U32 => match u32::try_from(*value) {
-                    Ok(v) => Ok(Value::USize32(v)),
-                    Err(_) => failed_to_cast(log),
-                },
-
-                PtrSize::U64 => match u64::try_from(*value) {
-                    Ok(v) => Ok(Value::USize64(v)),
-                    Err(_) => failed_to_cast(log),
-                },
-            },
-
-            (Value::InferredInteger(value), Type::I8) => match i8::try_from(*value) {
-                Ok(v) => Ok(Value::I8(v)),
-                Err(_) => failed_to_cast(log),
-            },
-
-            (Value::InferredInteger(value), Type::I16) => match i16::try_from(*value) {
-                Ok(v) => Ok(Value::I16(v)),
-                Err(_) => failed_to_cast(log),
-            },
-
-            (Value::InferredInteger(value), Type::I32) => match i32::try_from(*value) {
-                Ok(v) => Ok(Value::I32(v)),
-                Err(_) => failed_to_cast(log),
-            },
-
-            (Value::InferredInteger(value), Type::I64) => match i64::try_from(*value) {
-                Ok(v) => Ok(Value::I64(v)),
-                Err(_) => failed_to_cast(log),
-            },
-
-            (Value::InferredInteger(value), Type::I128) => match i128::try_from(*value) {
-                Ok(v) => Ok(Value::I128(Box::new(v))),
-                Err(_) => failed_to_cast(log),
-            },
-
-            (Value::InferredFloat(v), Type::F32) => Ok(Value::F32(OrderedFloat::from(*v as f32))),
-            (Value::InferredFloat(v), Type::F64) => Ok(Value::F64(OrderedFloat::from(v))),
-
-            (expr, to) => Ok(Value::Cast {
-                value: expr.into(),
-                target_type: to.into(),
-            }),
-        }
     }
 }
 
-fn ast_localvar2hir(var: &ast::LocalVariable, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<LocalVariableId, ()> {
+fn lower_cast(x: ast::Cast, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
+    fn failed_to_cast(log: &CompilerLog) -> Result<Value, ()> {
+        log.report(&HirErr::IntegerCastOutOfRange);
+        Err(())
+    }
+
+    let expr = x.value.ast2hir(ctx, log)?;
+    let to = x.to.ast2hir(ctx, log)?;
+
+    match (expr, to) {
+        (Value::InferredInteger(value), Type::U8) => match u8::try_from(*value) {
+            Ok(v) => Ok(Value::U8(v)),
+            Err(_) => failed_to_cast(log),
+        },
+
+        (Value::InferredInteger(value), Type::U16) => match u16::try_from(*value) {
+            Ok(v) => Ok(Value::U16(v)),
+            Err(_) => failed_to_cast(log),
+        },
+
+        (Value::InferredInteger(value), Type::U32) => match u32::try_from(*value) {
+            Ok(v) => Ok(Value::U32(v)),
+            Err(_) => failed_to_cast(log),
+        },
+
+        (Value::InferredInteger(value), Type::U64) => match u64::try_from(*value) {
+            Ok(v) => Ok(Value::U64(v)),
+            Err(_) => failed_to_cast(log),
+        },
+
+        (Value::InferredInteger(value), Type::U128) => match u128::try_from(*value) {
+            Ok(v) => Ok(Value::U128(Box::new(v))),
+            Err(_) => failed_to_cast(log),
+        },
+
+        (Value::InferredInteger(value), Type::USize) => match ctx.ptr_size {
+            PtrSize::U32 => match u32::try_from(*value) {
+                Ok(v) => Ok(Value::USize32(v)),
+                Err(_) => failed_to_cast(log),
+            },
+
+            PtrSize::U64 => match u64::try_from(*value) {
+                Ok(v) => Ok(Value::USize64(v)),
+                Err(_) => failed_to_cast(log),
+            },
+        },
+
+        (Value::InferredInteger(value), Type::I8) => match i8::try_from(*value) {
+            Ok(v) => Ok(Value::I8(v)),
+            Err(_) => failed_to_cast(log),
+        },
+
+        (Value::InferredInteger(value), Type::I16) => match i16::try_from(*value) {
+            Ok(v) => Ok(Value::I16(v)),
+            Err(_) => failed_to_cast(log),
+        },
+
+        (Value::InferredInteger(value), Type::I32) => match i32::try_from(*value) {
+            Ok(v) => Ok(Value::I32(v)),
+            Err(_) => failed_to_cast(log),
+        },
+
+        (Value::InferredInteger(value), Type::I64) => match i64::try_from(*value) {
+            Ok(v) => Ok(Value::I64(v)),
+            Err(_) => failed_to_cast(log),
+        },
+
+        (Value::InferredInteger(value), Type::I128) => match i128::try_from(*value) {
+            Ok(v) => Ok(Value::I128(Box::new(v))),
+            Err(_) => failed_to_cast(log),
+        },
+
+        (Value::InferredFloat(v), Type::F32) => Ok(Value::F32(OrderedFloat::from(*v as f32))),
+        (Value::InferredFloat(v), Type::F64) => Ok(Value::F64(OrderedFloat::from(v))),
+
+        (expr, to) => Ok(Value::Cast {
+            value: expr.into(),
+            target_type: to.into(),
+        }),
+    }
+}
+
+fn ast_local_variable(
+    var: &ast::LocalVariable,
+    ctx: &mut Ast2HirCtx,
+    log: &CompilerLog,
+) -> Result<LocalVariableId, ()> {
     let kind = match var.kind {
         ast::LocalVariableKind::Let => LocalKind::Let,
         ast::LocalVariableKind::Var => LocalKind::Var,
@@ -548,332 +528,276 @@ fn ast_localvar2hir(var: &ast::LocalVariable, ctx: &mut Ast2HirCtx, log: &Compil
     Ok(localvar_id)
 }
 
-impl Ast2Hir for ast::Block {
-    type Hir = Block;
+pub(crate) fn lower_block(x: ast::Block, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Block, ()> {
+    let elements_len = x.elements.len();
+    let mut elements = Vec::with_capacity(elements_len);
 
-    fn ast2hir(self, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Block, ()> {
-        let elements_len = self.elements.len();
-        let mut elements = Vec::with_capacity(elements_len);
+    for (i, element) in x.elements.into_iter().enumerate() {
+        match element {
+            ast::BlockItem::Expr(e) => {
+                let hir_element = e.ast2hir(ctx, log)?.into();
+                elements.push(BlockElement::Expr(hir_element));
+            }
 
-        for (i, element) in self.elements.into_iter().enumerate() {
-            match element {
-                ast::BlockItem::Expr(e) => {
-                    let hir_element = e.ast2hir(ctx, log)?.into();
-                    elements.push(BlockElement::Expr(hir_element));
-                }
-
-                ast::BlockItem::Stmt(s) => {
-                    let hir_element = s.ast2hir(ctx, log)?.into();
-                    elements.push(BlockElement::Expr(hir_element));
-                    if i == elements_len - 1 {
-                        elements.push(BlockElement::Expr(Value::Unit.into()));
-                    }
-                }
-
-                ast::BlockItem::Variable(var) => {
-                    let var_hir = ast_localvar2hir(&var, ctx, log)?;
-                    elements.push(BlockElement::Local(var_hir));
+            ast::BlockItem::Stmt(s) => {
+                let hir_element = s.ast2hir(ctx, log)?.into();
+                elements.push(BlockElement::Expr(hir_element));
+                if i == elements_len - 1 {
+                    elements.push(BlockElement::Expr(Value::Unit.into()));
                 }
             }
-        }
 
-        let safety = match self.safety {
-            Some(ast::Safety::Unsafe(None)) => BlockSafety::Unsafe,
-            Some(ast::Safety::Safe) | None => BlockSafety::Safe,
-
-            Some(ast::Safety::Unsafe(Some(_))) => {
-                log.report(&HirErr::UnimplementedFeature("block safety unsafe expression".into()));
-                return Err(());
+            ast::BlockItem::Variable(var) => {
+                let var_hir = ast_local_variable(&var, ctx, log)?;
+                elements.push(BlockElement::Local(var_hir));
             }
-        };
-
-        Ok(Block { safety, elements })
-    }
-}
-
-impl Ast2Hir for ast::Closure {
-    type Hir = Value;
-
-    fn ast2hir(self, _ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
-        log.report(&HirErr::UnimplementedFeature("ast::Expr::Closure".into()));
-        Err(())
-    }
-}
-
-impl Ast2Hir for ast::ExprPath {
-    type Hir = Value;
-
-    fn ast2hir(self, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
-        if self.segments.iter().any(|seg| seg.type_arguments.is_some()) {
-            log.report(&HirErr::UnimplementedFeature("generic type args in expr paths".into()));
         }
+    }
 
-        match self.resolved_path {
-            Some(resolved_path) => match ctx.ast_symbol_map.get(&resolved_path) {
-                Some(SymbolKind::EnumVariant) => Ok(Value::EnumVariant {
-                    enum_def: ctx.tab.get_enum_variant_or_insert_placeholder(&resolved_path),
-                    variant: resolved_path.split("::").last().unwrap().to_string().into(),
-                    value: Value::Unit.into(),
-                }),
+    let safety = match x.safety {
+        Some(ast::Safety::Unsafe(None)) => BlockSafety::Unsafe,
+        Some(ast::Safety::Safe) | None => BlockSafety::Safe,
 
-                Some(SymbolKind::Function) => Ok(Value::FunctionSymbol {
-                    id: ctx.tab.get_function_or_insert_placeholder(&resolved_path),
-                }),
+        Some(ast::Safety::Unsafe(Some(_))) => {
+            log.report(&HirErr::UnimplementedFeature("block safety unsafe expression".into()));
+            return Err(());
+        }
+    };
 
-                Some(SymbolKind::GlobalVariable) => Ok(Value::GlobalVariableSymbol {
-                    id: ctx.tab.get_global_variable_or_insert_placeholder(&resolved_path),
-                }),
+    Ok(Block { safety, elements })
+}
 
-                Some(SymbolKind::LocalVariable) => Ok(Value::LocalVariableSymbol {
-                    id: ctx.tab.get_local_variable_or_insert_placeholder(&resolved_path),
-                }),
+fn lower_block_value(x: ast::Block, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
+    let block = lower_block(x, ctx, log)?;
+    Ok(Value::Block { block: block.into() })
+}
 
-                Some(SymbolKind::Parameter) => Ok(Value::ParameterSymbol {
-                    id: ctx.tab.get_parameter_or_insert_placeholder(&resolved_path),
-                }),
+fn lower_closure(x: ast::Closure, _ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
+    log.report(&HirErr::UnimplementedFeature("ast::Expr::Closure".into()));
+    Err(())
+}
 
-                _ => {
-                    println!("Unresolved symbol: {}", resolved_path);
-                    log.report(&HirErr::UnresolvedSymbol);
-                    Err(())
-                }
-            },
+fn lower_expr_path(x: ast::ExprPath, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
+    if x.segments.iter().any(|seg| seg.type_arguments.is_some()) {
+        log.report(&HirErr::UnimplementedFeature("generic type args in expr paths".into()));
+    }
 
-            None => {
-                println!("Unresolved path in expr: {:?}", self.segments);
+    match x.resolved_path {
+        Some(resolved_path) => match ctx.ast_symbol_map.get(&resolved_path) {
+            Some(SymbolKind::EnumVariant) => Ok(Value::EnumVariant {
+                enum_def: ctx.tab.get_enum_variant_or_insert_placeholder(&resolved_path),
+                variant: resolved_path.split("::").last().unwrap().to_string().into(),
+                value: Value::Unit.into(),
+            }),
+
+            Some(SymbolKind::Function) => Ok(Value::FunctionSymbol {
+                id: ctx.tab.get_function_or_insert_placeholder(&resolved_path),
+            }),
+
+            Some(SymbolKind::GlobalVariable) => Ok(Value::GlobalVariableSymbol {
+                id: ctx.tab.get_global_variable_or_insert_placeholder(&resolved_path),
+            }),
+
+            Some(SymbolKind::LocalVariable) => Ok(Value::LocalVariableSymbol {
+                id: ctx.tab.get_local_variable_or_insert_placeholder(&resolved_path),
+            }),
+
+            Some(SymbolKind::Parameter) => Ok(Value::ParameterSymbol {
+                id: ctx.tab.get_parameter_or_insert_placeholder(&resolved_path),
+            }),
+
+            _ => {
+                println!("Unresolved symbol: {}", resolved_path);
                 log.report(&HirErr::UnresolvedSymbol);
                 Err(())
             }
+        },
+
+        None => {
+            println!("Unresolved path in expr: {:?}", x.segments);
+            log.report(&HirErr::UnresolvedSymbol);
+            Err(())
         }
     }
 }
 
-impl Ast2Hir for ast::IndexAccess {
-    type Hir = Value;
-
-    fn ast2hir(self, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
-        let _collection: ValueId = self.collection.ast2hir(ctx, log)?.into();
-        let _index: ValueId = self.index.ast2hir(ctx, log)?.into();
-        unimplemented!()
-    }
+fn lower_index_access(x: ast::IndexAccess, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
+    let _collection: ValueId = x.collection.ast2hir(ctx, log)?.into();
+    let _index: ValueId = x.index.ast2hir(ctx, log)?.into();
+    unimplemented!()
 }
 
-impl Ast2Hir for ast::FieldAccess {
-    type Hir = Value;
+fn lower_field_access(x: ast::FieldAccess, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
+    let object = x.object.ast2hir(ctx, log)?.into();
+    let field = x.field.to_string().into();
 
-    fn ast2hir(self, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
-        let object = self.object.ast2hir(ctx, log)?.into();
-        let field = self.field.to_string().into();
-
-        Ok(Value::FieldAccess {
-            expr: object,
-            field_name: field,
-        })
-    }
+    Ok(Value::FieldAccess {
+        expr: object,
+        field_name: field,
+    })
 }
 
-impl Ast2Hir for ast::If {
-    type Hir = Value;
+fn lower_if(x: ast::If, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
+    let condition = x.condition.ast2hir(ctx, log)?.into();
 
-    fn ast2hir(self, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
-        let condition = self.condition.ast2hir(ctx, log)?.into();
+    let true_branch = lower_block(x.true_branch, ctx, log)?.into();
 
-        let true_branch = self.true_branch.ast2hir(ctx, log)?.into();
+    let false_branch = match x.false_branch {
+        Some(ast::ElseIf::If(else_if)) => {
+            let else_if_value = lower_if(*else_if, ctx, log)?;
+            let block = Block {
+                safety: BlockSafety::Safe,
+                elements: vec![BlockElement::Expr(else_if_value.into())],
+            };
 
-        let false_branch = match self.false_branch {
-            Some(ast::ElseIf::If(else_if)) => {
-                let else_if_value = else_if.ast2hir(ctx, log)?;
-                let block = Block {
-                    safety: BlockSafety::Safe,
-                    elements: vec![BlockElement::Expr(else_if_value.into())],
-                }
-                .into();
-                Some(block)
-            }
-            Some(ast::ElseIf::Block(block)) => {
-                let block = block.ast2hir(ctx, log)?.into();
-                Some(block)
-            }
-            None => None,
-        };
-
-        Ok(Value::If {
-            condition,
-            true_branch,
-            false_branch,
-        })
-    }
-}
-
-impl Ast2Hir for ast::WhileLoop {
-    type Hir = Value;
-
-    fn ast2hir(self, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
-        let condition = match self.condition {
-            Some(cond) => cond.ast2hir(ctx, log)?.into(),
-            None => Value::Bool(true).into(),
-        };
-
-        let body = self.body.ast2hir(ctx, log)?.into();
-
-        Ok(Value::While { condition, body })
-    }
-}
-
-impl Ast2Hir for ast::Match {
-    type Hir = Value;
-
-    fn ast2hir(self, _ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
-        log.report(&HirErr::UnimplementedFeature("Match expressions".into()));
-        Err(())
-    }
-}
-
-impl Ast2Hir for ast::Break {
-    type Hir = Value;
-
-    fn ast2hir(self, _ctx: &mut Ast2HirCtx, _log: &CompilerLog) -> Result<Value, ()> {
-        Ok(Value::Break {
-            label: self.label.map(|l| l.to_string().into()),
-        })
-    }
-}
-
-impl Ast2Hir for ast::Continue {
-    type Hir = Value;
-
-    fn ast2hir(self, _ctx: &mut Ast2HirCtx, _log: &CompilerLog) -> Result<Value, ()> {
-        Ok(Value::Continue {
-            label: self.label.map(|l| l.to_string().into()),
-        })
-    }
-}
-
-impl Ast2Hir for ast::Return {
-    type Hir = Value;
-
-    fn ast2hir(self, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
-        let value = match self.value {
-            Some(v) => v.ast2hir(ctx, log)?.into(),
-            None => Value::Unit.into(),
-        };
-
-        Ok(Value::Return { value })
-    }
-}
-
-impl Ast2Hir for ast::ForEach {
-    type Hir = Value;
-
-    fn ast2hir(self, _ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
-        log.report(&HirErr::UnimplementedFeature("ForEach expressions".into()));
-        Err(())
-    }
-}
-
-impl Ast2Hir for ast::Await {
-    type Hir = Value;
-
-    fn ast2hir(self, _ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
-        log.report(&HirErr::UnimplementedFeature("Await expressions".into()));
-        Err(())
-    }
-}
-
-impl Ast2Hir for ast::FunctionCall {
-    type Hir = Value;
-
-    fn ast2hir(self, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
-        let callee = self.callee.ast2hir(ctx, log)?;
-
-        let mut positional = Vec::with_capacity(self.positional.len());
-        let mut named = Vec::with_capacity(self.named.len());
-
-        for arg in self.positional {
-            let value = arg.ast2hir(ctx, log)?.into();
-            positional.push(value);
+            Some(block.into())
         }
+        Some(ast::ElseIf::Block(block)) => Some(lower_block(block, ctx, log)?.into()),
+        None => None,
+    };
 
-        for (name, arg) in self.named {
-            let name = NString::from(name.to_string());
-            let value = arg.ast2hir(ctx, log)?.into();
-            named.push((name, value));
-        }
-
-        Ok(Value::Call {
-            callee: callee.into(),
-            positional: positional.into(),
-            named: named.into(),
-        })
-    }
+    Ok(Value::If {
+        condition,
+        true_branch,
+        false_branch,
+    })
 }
 
-impl Ast2Hir for ast::MethodCall {
-    type Hir = Value;
+fn lower_while_loop(x: ast::WhileLoop, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
+    let condition = match x.condition {
+        Some(cond) => cond.ast2hir(ctx, log)?.into(),
+        None => Value::Bool(true).into(),
+    };
 
-    fn ast2hir(self, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
-        let object = self.object.ast2hir(ctx, log)?.into();
-        let method = NString::from(self.method_name);
+    let body = lower_block(x.body, ctx, log)?.into();
 
-        let mut positional = Vec::with_capacity(self.positional.len());
-        let mut named = Vec::with_capacity(self.named.len());
+    Ok(Value::While { condition, body })
+}
 
-        for arg in self.positional {
-            let value = arg.ast2hir(ctx, log)?.into();
-            positional.push(value);
-        }
+fn lower_match(x: ast::Match, _ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
+    log.report(&HirErr::UnimplementedFeature("Match expressions".into()));
+    Err(())
+}
 
-        for (name, arg) in self.named {
-            let name = NString::from(name.to_string());
-            let value = arg.ast2hir(ctx, log)?.into();
-            named.push((name, value));
-        }
+fn lower_break(x: ast::Break, _ctx: &mut Ast2HirCtx, _log: &CompilerLog) -> Result<Value, ()> {
+    Ok(Value::Break {
+        label: x.label.map(|l| l.to_string().into()),
+    })
+}
 
-        Ok(Value::MethodCall {
-            object,
-            method_name: method,
-            positional: positional.into(),
-            named: named.into(),
-        })
+fn lower_continue(x: ast::Continue, _ctx: &mut Ast2HirCtx, _log: &CompilerLog) -> Result<Value, ()> {
+    Ok(Value::Continue {
+        label: x.label.map(|l| l.to_string().into()),
+    })
+}
+
+fn lower_return(x: ast::Return, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
+    let value = match x.value {
+        Some(v) => v.ast2hir(ctx, log)?.into(),
+        None => Value::Unit.into(),
+    };
+
+    Ok(Value::Return { value })
+}
+
+fn lower_for_each(x: ast::ForEach, _ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
+    log.report(&HirErr::UnimplementedFeature("ForEach expressions".into()));
+    Err(())
+}
+
+fn lower_await(x: ast::Await, _ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
+    log.report(&HirErr::UnimplementedFeature("Await expressions".into()));
+    Err(())
+}
+
+fn lower_function_call(x: ast::FunctionCall, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
+    let callee = x.callee.ast2hir(ctx, log)?;
+
+    let mut positional = Vec::with_capacity(x.positional.len());
+    let mut named = Vec::with_capacity(x.named.len());
+
+    for arg in x.positional {
+        let value = arg.ast2hir(ctx, log)?.into();
+        positional.push(value);
+    }
+
+    for (name, arg) in x.named {
+        let name = NString::from(name.to_string());
+        let value = arg.ast2hir(ctx, log)?.into();
+        named.push((name, value));
+    }
+
+    Ok(Value::Call {
+        callee: callee.into(),
+        positional: positional.into(),
+        named: named.into(),
+    })
+}
+
+fn lower_method_call(x: ast::MethodCall, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
+    let object = x.object.ast2hir(ctx, log)?.into();
+    let method = NString::from(x.method_name);
+
+    let mut positional = Vec::with_capacity(x.positional.len());
+    let mut named = Vec::with_capacity(x.named.len());
+
+    for arg in x.positional {
+        let value = arg.ast2hir(ctx, log)?.into();
+        positional.push(value);
+    }
+
+    for (name, arg) in x.named {
+        let name = NString::from(name.to_string());
+        let value = arg.ast2hir(ctx, log)?.into();
+        named.push((name, value));
+    }
+
+    Ok(Value::MethodCall {
+        object,
+        method_name: method,
+        positional: positional.into(),
+        named: named.into(),
+    })
+}
+
+fn lower_expr(x: ast::Expr, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
+    match x {
+        ast::Expr::SyntaxError(_) => Err(()),
+        ast::Expr::Parentheses(e) => e.inner.ast2hir(ctx, log),
+        ast::Expr::Boolean(e) => lower_boolean_literal(e),
+        ast::Expr::Integer(e) => lower_integer_literal(*e),
+        ast::Expr::Float(e) => lower_float_literal(e),
+        ast::Expr::String(e) => lower_string_literal(e),
+        ast::Expr::BString(e) => lower_bstring_literal(*e),
+        ast::Expr::TypeInfo(e) => lower_type_reflection(*e, ctx, log),
+        ast::Expr::List(e) => lower_list(*e, ctx, log),
+        ast::Expr::Tuple(e) => lower_tuple(*e, ctx, log),
+        ast::Expr::StructInit(e) => lower_struct_init(*e, ctx, log),
+        ast::Expr::UnaryExpr(e) => lower_unary(*e, ctx, log),
+        ast::Expr::BinExpr(e) => lower_binary(*e, ctx, log),
+        ast::Expr::Cast(e) => lower_cast(*e, ctx, log),
+        ast::Expr::Block(e) => lower_block_value(*e, ctx, log),
+        ast::Expr::Closure(e) => lower_closure(*e, ctx, log),
+        ast::Expr::Path(e) => lower_expr_path(*e, ctx, log),
+        ast::Expr::IndexAccess(e) => lower_index_access(*e, ctx, log),
+        ast::Expr::FieldAccess(e) => lower_field_access(*e, ctx, log),
+        ast::Expr::If(e) => lower_if(*e, ctx, log),
+        ast::Expr::While(e) => lower_while_loop(*e, ctx, log),
+        ast::Expr::Match(e) => lower_match(*e, ctx, log),
+        ast::Expr::Break(e) => lower_break(*e, ctx, log),
+        ast::Expr::Continue(e) => lower_continue(*e, ctx, log),
+        ast::Expr::Return(e) => lower_return(*e, ctx, log),
+        ast::Expr::For(e) => lower_for_each(*e, ctx, log),
+        ast::Expr::Await(e) => lower_await(*e, ctx, log),
+        ast::Expr::FunctionCall(e) => lower_function_call(*e, ctx, log),
+        ast::Expr::MethodCall(e) => lower_method_call(*e, ctx, log),
     }
 }
 
 impl Ast2Hir for ast::Expr {
     type Hir = Value;
 
-    fn ast2hir(self, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
-        match self {
-            ast::Expr::SyntaxError(_) => Err(()),
-            ast::Expr::Parentheses(e) => e.inner.ast2hir(ctx, log),
-            ast::Expr::Boolean(e) => lower_boolean_literal(e),
-            ast::Expr::Integer(e) => lower_integer_literal(*e),
-            ast::Expr::Float(e) => lower_float_literal(e),
-            ast::Expr::String(e) => lower_string_literal(e),
-            ast::Expr::BString(e) => lower_bstring_literal(*e),
-            ast::Expr::TypeInfo(e) => lower_type_reflection(*e, ctx, log),
-            ast::Expr::List(e) => e.ast2hir(ctx, log),
-            ast::Expr::Tuple(e) => e.ast2hir(ctx, log),
-            ast::Expr::StructInit(e) => e.ast2hir(ctx, log),
-            ast::Expr::UnaryExpr(e) => e.ast2hir(ctx, log),
-            ast::Expr::BinExpr(e) => e.ast2hir(ctx, log),
-            ast::Expr::Cast(e) => e.ast2hir(ctx, log),
-            ast::Expr::Block(e) => Ok(Value::Block {
-                block: e.ast2hir(ctx, log)?.into(),
-            }),
-            ast::Expr::Closure(e) => e.ast2hir(ctx, log),
-            ast::Expr::Path(e) => e.ast2hir(ctx, log),
-            ast::Expr::IndexAccess(e) => e.ast2hir(ctx, log),
-            ast::Expr::FieldAccess(e) => e.ast2hir(ctx, log),
-            ast::Expr::If(e) => e.ast2hir(ctx, log),
-            ast::Expr::While(e) => e.ast2hir(ctx, log),
-            ast::Expr::Match(e) => e.ast2hir(ctx, log),
-            ast::Expr::Break(e) => e.ast2hir(ctx, log),
-            ast::Expr::Continue(e) => e.ast2hir(ctx, log),
-            ast::Expr::Return(e) => e.ast2hir(ctx, log),
-            ast::Expr::For(e) => e.ast2hir(ctx, log),
-            ast::Expr::Await(e) => e.ast2hir(ctx, log),
-            ast::Expr::FunctionCall(e) => e.ast2hir(ctx, log),
-            ast::Expr::MethodCall(e) => e.ast2hir(ctx, log),
-        }
+    fn ast2hir(self, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
+        lower_expr(self, ctx, log)
     }
 }
