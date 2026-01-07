@@ -5,6 +5,7 @@ use std::cmp::max;
 pub enum LayoutError {
     NotInferred,
     UnresolvedSymbol,
+    UninstantiatedGeneric,
 }
 
 pub struct LayoutCtx<'a> {
@@ -107,6 +108,7 @@ pub fn get_size_of(ty: &Type, ctx: &LayoutCtx) -> Result<u64, LayoutError> {
         Type::SliceRef { .. } => Ok(ctx.ptr_size as u64 * 2),
         Type::Pointer { .. } => Ok(ctx.ptr_size as u64),
 
+        Type::Parameterized { .. } => Err(LayoutError::UninstantiatedGeneric),
         Type::InferredInteger | Type::InferredFloat | Type::Inferred { .. } => Err(LayoutError::NotInferred),
     }
 }

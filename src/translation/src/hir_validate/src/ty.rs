@@ -195,6 +195,11 @@ impl ValidateHirType for Type {
 
             Type::Pointer { to, exclusive, mutable } => verify_pointer_type(ctx, to, *exclusive, *mutable, options),
 
+            Type::Parameterized { base, args: _ } => {
+                base.verify(ctx, options)
+                // TODO: Verify that the type arguments satisfy the generic constraints.
+            }
+
             Type::InferredFloat | Type::InferredInteger | Type::Inferred { .. } => Err(()),
         }
     }

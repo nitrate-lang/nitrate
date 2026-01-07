@@ -152,6 +152,10 @@ pub(crate) fn mangle_type(ty: &Type) -> String {
             format!("P{}{}", exmut_mangled, to_mangled)
         }
 
+        Type::Parameterized { .. } => {
+            panic!("Cannot mangle uninstantiated generic type: {:?}", ty);
+        }
+
         Type::InferredFloat | Type::InferredInteger | Type::Inferred { .. } => {
             panic!("Cannot mangle inferred type: {:?}", ty);
         }

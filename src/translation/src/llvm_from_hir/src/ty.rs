@@ -127,6 +127,13 @@ pub(crate) fn gen_ty<'ctx>(hir_type: &hir::Type, ctx: &mut TypegenCtx<'ctx, '_, 
             ctx.llvm.ptr_type(AddressSpace::default()).into()
         }
 
+        hir::Type::Parameterized { .. } => {
+            panic!(
+                "Cannot generate LLVM type for uninstantiated generic type: {:?}",
+                hir_type
+            )
+        }
+
         hir::Type::InferredFloat | hir::Type::InferredInteger | hir::Type::Inferred { .. } => {
             panic!("Inferred types should have been resolved before code generation")
         }

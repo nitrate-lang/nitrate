@@ -1,3 +1,5 @@
+use std::ops::Deref;
+
 use crate::{Dump, DumpContext, dump_item::dump_attributes};
 use nitrate_hir::prelude::*;
 use nitrate_token::escape_string;
@@ -187,9 +189,22 @@ impl Dump for Type {
                 to.dump(ctx, o)
             }
 
+            Type::Parameterized { base, args } => {
+                base.dump(ctx, o)?;
+                write!(o, "<")?;
+                args.dump(ctx, o)?;
+                write!(o, ">")
+            }
+
             Type::InferredFloat => write!(o, "?f"),
             Type::InferredInteger => write!(o, "?i"),
             Type::Inferred { id } => write!(o, "?{id}"),
         }
+    }
+}
+
+impl Dump for TypeId {
+    fn dump(&self, ctx: &mut DumpContext, o: &mut dyn std::fmt::Write) -> Result<(), std::fmt::Error> {
+        self.deref().dump(ctx, o)
     }
 }

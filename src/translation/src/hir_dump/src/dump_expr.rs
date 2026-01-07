@@ -66,6 +66,35 @@ impl Dump for Lit {
     }
 }
 
+impl<T: Dump> Dump for Arguments<T> {
+    fn dump(&self, ctx: &mut DumpContext, o: &mut dyn std::fmt::Write) -> Result<(), std::fmt::Error> {
+        for (i, arg) in self.positional.iter().enumerate() {
+            if i != 0 {
+                write!(o, ", ")?;
+            }
+
+            arg.dump(ctx, o)?;
+        }
+
+        if !self.named.is_empty() {
+            if !self.positional.is_empty() {
+                write!(o, ", ")?;
+            }
+
+            for (i, (name, arg)) in self.named.iter().enumerate() {
+                if i != 0 {
+                    write!(o, ", ")?;
+                }
+
+                write!(o, "{name}: ")?;
+                arg.dump(ctx, o)?;
+            }
+        }
+
+        Ok(())
+    }
+}
+
 impl Dump for Value {
     fn dump(&self, ctx: &mut DumpContext, o: &mut dyn std::fmt::Write) -> Result<(), std::fmt::Error> {
         match self {
