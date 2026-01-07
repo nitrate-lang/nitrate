@@ -1,8 +1,6 @@
 use std::{collections::HashSet, ops::Deref};
 
-use crate::{
-    ValidHir, ValidateCtx, ValidateHirItem, ValidateHirType, ValidateTypeOptions, diagnosis::Issue, establish_property,
-};
+use crate::{ValidHir, ValidateCtx, ValidateHirItem, ValidateHirType, ValidateTypeOptions, establish_property};
 use nitrate_hir::prelude::*;
 
 fn verify_array(
@@ -38,16 +36,7 @@ fn verify_refinement_type(
     base.verify(ctx, options)?;
 
     establish_property("refinement bounds: max >= min", || {
-        if max.deref() >= min.deref() {
-            Ok(())
-        } else {
-            ctx.log.report(&Issue::RefinementMinimumGreaterThanMaximum {
-                min: min.clone(),
-                max: max.clone(),
-                type_id: base.clone().into(),
-            });
-            Err(())
-        }
+        if max.deref() >= min.deref() { Ok(()) } else { Err(()) }
     })
 }
 
@@ -90,15 +79,6 @@ impl ValidateHirType for FunctionType {
 
             for param in &self.params {
                 if !names.insert(&param.0) {
-                    let function = Type::Function {
-                        function_type: Box::new(self.clone()),
-                    };
-
-                    ctx.log.report(&Issue::FunctionTypeDuplicateParameterName {
-                        name: param.0.clone(),
-                        function: function.into(),
-                    });
-
                     return Err(());
                 }
             }
@@ -129,10 +109,7 @@ fn verify_reference_type(
 ) -> Result<(), ()> {
     match lifetime {
         Lifetime::Static | Lifetime::Gc | Lifetime::ThreadLocal | Lifetime::TaskLocal => {}
-        Lifetime::Inferred => {
-            ctx.log.report(&Issue::UninferredTypeResidue);
-            return Err(());
-        }
+        Lifetime::Inferred => return Err(()),
     }
 
     to.verify(ctx, &ValidateTypeOptions::un_sized())
@@ -148,11 +125,7 @@ fn verify_slice_reference_type(
 ) -> Result<(), ()> {
     match lifetime {
         Lifetime::Static | Lifetime::Gc | Lifetime::ThreadLocal | Lifetime::TaskLocal => {}
-
-        Lifetime::Inferred => {
-            ctx.log.report(&Issue::UninferredTypeResidue);
-            return Err(());
-        }
+        Lifetime::Inferred => return Err(()),
     }
 
     element_type.verify(ctx, &ValidateTypeOptions::sized())
@@ -222,10 +195,7 @@ impl ValidateHirType for Type {
 
             Type::Pointer { to, exclusive, mutable } => verify_pointer_type(ctx, to, *exclusive, *mutable, options),
 
-            Type::InferredFloat | Type::InferredInteger | Type::Inferred { .. } => {
-                ctx.log.report(&Issue::UninferredTypeResidue);
-                Err(())
-            }
+            Type::InferredFloat | Type::InferredInteger | Type::Inferred { .. } => Err(()),
         }
     }
 

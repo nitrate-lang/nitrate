@@ -1,6 +1,5 @@
 use crate::{
-    ValidHir, ValidateCtx, ValidateHirItem, ValidateHirType, ValidateHirValue, ValidateTypeOptions, diagnosis::Issue,
-    establish_property,
+    ValidHir, ValidateCtx, ValidateHirItem, ValidateHirType, ValidateHirValue, ValidateTypeOptions, establish_property,
 };
 use nitrate_hir::prelude::*;
 use nitrate_hir_get_type::HirGetType;
@@ -44,11 +43,6 @@ impl ValidateHirItem for GlobalVariable {
             let init_value_ty = init_value.determine_type(ctx.m).map_err(|_| ())?;
 
             if *self.ty != init_value_ty {
-                ctx.log.report(&Issue::TypeMismatch {
-                    expected: self.ty,
-                    found: init_value_ty.into(),
-                });
-
                 return Err(());
             }
 
@@ -74,11 +68,6 @@ impl ValidateHirItem for LocalVariableAttribute {
                     const MAX_SUPPORTED_ALIGNMENT: u32 = 4096;
 
                     if alignment.get() > MAX_SUPPORTED_ALIGNMENT {
-                        ctx.log.report(&Issue::UnsupportedAlignment {
-                            alignment: alignment.get(),
-                            max_supported: MAX_SUPPORTED_ALIGNMENT,
-                        });
-
                         return Err(());
                     }
 
@@ -113,11 +102,6 @@ impl ValidateHirItem for LocalVariable {
             let init_value_ty = init_value.determine_type(ctx.m).map_err(|_| ())?;
 
             if *self.ty != init_value_ty {
-                ctx.log.report(&Issue::TypeMismatch {
-                    expected: self.ty,
-                    found: init_value_ty.into(),
-                });
-
                 return Err(());
             }
 
@@ -142,11 +126,6 @@ impl ValidateHirItem for ParameterAttribute {
                 const MAX_SUPPORTED_ALIGNMENT: u32 = 4096;
 
                 if alignment.get() > MAX_SUPPORTED_ALIGNMENT {
-                    ctx.log.report(&Issue::UnsupportedAlignment {
-                        alignment: alignment.get(),
-                        max_supported: MAX_SUPPORTED_ALIGNMENT,
-                    });
-
                     return Err(());
                 }
 
@@ -181,11 +160,6 @@ impl ValidateHirItem for Parameter {
                 let default_value_ty = default_value.determine_type(ctx.m).map_err(|_| ())?;
 
                 if *self.ty != default_value_ty {
-                    ctx.log.report(&Issue::TypeMismatch {
-                        expected: self.ty,
-                        found: default_value_ty.into(),
-                    });
-
                     return Err(());
                 }
             }
@@ -243,13 +217,7 @@ impl ValidateHirItem for Function {
 
             establish_property("function body ends with return statement", || match body.last() {
                 Some(BlockElement::Expr(expr)) if expr.borrow().is_return() => Ok(()),
-                _ => {
-                    let issue = Issue::MissingReturnStatementInFunctionBody {
-                        function_name: self.name.clone(),
-                    };
-                    ctx.log.report(&issue);
-                    Err(())
-                }
+                _ => Err(()),
             })?;
 
             establish_property("typeof(body) == return_type", || {
@@ -266,11 +234,6 @@ impl ValidateHirItem for Function {
                 let body_ty = value.borrow().determine_type(ctx.m).map_err(|_| ())?;
 
                 if *self.return_type != body_ty {
-                    ctx.log.report(&Issue::TypeMismatch {
-                        expected: self.return_type,
-                        found: body_ty.into(),
-                    });
-
                     return Err(());
                 }
 
@@ -392,11 +355,6 @@ impl ValidateHirItem for StructFieldAttribute {
                     const MAX_SUPPORTED_ALIGNMENT: u32 = 4096;
 
                     if alignment.get() > MAX_SUPPORTED_ALIGNMENT {
-                        ctx.log.report(&Issue::UnsupportedAlignment {
-                            alignment: alignment.get(),
-                            max_supported: MAX_SUPPORTED_ALIGNMENT,
-                        });
-
                         return Err(());
                     }
 
@@ -432,11 +390,6 @@ impl ValidateHirItem for StructField {
                 let default_value_ty = default_value.determine_type(ctx.m).map_err(|_| ())?;
 
                 if *self.ty != default_value_ty {
-                    ctx.log.report(&Issue::TypeMismatch {
-                        expected: self.ty,
-                        found: default_value_ty.into(),
-                    });
-
                     return Err(());
                 }
             }
@@ -530,11 +483,6 @@ impl ValidateHirItem for EnumVariant {
                 let default_value_ty = default_value.determine_type(ctx.m).map_err(|_| ())?;
 
                 if *self.ty != default_value_ty {
-                    ctx.log.report(&Issue::TypeMismatch {
-                        expected: self.ty,
-                        found: default_value_ty.into(),
-                    });
-
                     return Err(());
                 }
             }

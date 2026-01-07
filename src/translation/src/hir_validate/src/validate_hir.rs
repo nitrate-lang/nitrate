@@ -1,5 +1,4 @@
 use log::debug;
-use nitrate_diagnosis::CompilerLog;
 use nitrate_hir::SymbolTab;
 use std::collections::HashSet;
 
@@ -27,16 +26,14 @@ pub(crate) fn establish_property(name: &str, f: impl FnOnce() -> Result<(), ()>)
     result
 }
 
-pub struct ValidateCtx<'log, 'm> {
-    pub(crate) log: &'log CompilerLog,
+pub struct ValidateCtx<'m> {
     pub(crate) visited: HashSet<*const ()>,
     pub(crate) m: &'m SymbolTab,
 }
 
-impl<'log, 'm> ValidateCtx<'log, 'm> {
-    pub fn new(log: &'log CompilerLog, m: &'m SymbolTab) -> Self {
+impl<'m> ValidateCtx<'m> {
+    pub fn new(m: &'m SymbolTab) -> Self {
         ValidateCtx {
-            log,
             visited: HashSet::new(),
             m,
         }
