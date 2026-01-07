@@ -98,10 +98,11 @@ pub enum Type {
         to: TypeId,
     },
 
-    // Parameterized {
-    //     base: TypeId,
-    //     args: Arguments<TypeId>,
-    // },
+    Parameterized {
+        base: TypeId,
+        args: Arguments<TypeId>,
+    },
+
     InferredFloat,
     InferredInteger,
     Inferred {
