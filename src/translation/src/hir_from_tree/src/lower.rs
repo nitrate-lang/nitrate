@@ -6,12 +6,6 @@ use nitrate_hir_polish::{resolve_function, resolve_global};
 use nitrate_tree::ast::{self};
 use nitrate_tree_resolve::{resolve_imports, resolve_paths};
 
-pub(crate) trait Ast2Hir {
-    type Hir;
-
-    fn ast2hir(self, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()>;
-}
-
 pub fn convert_ast_to_hir(mut module: ast::Module, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Module, ()> {
     resolve_imports(&ctx.import_ctx, &mut module, log);
 

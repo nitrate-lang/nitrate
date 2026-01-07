@@ -1,5 +1,4 @@
 use crate::diagnosis::HirErr;
-use crate::lower::Ast2Hir;
 use crate::{context::Ast2HirCtx, ty::lower_type};
 use nitrate_diagnosis::CompilerLog;
 use nitrate_hir::prelude::*;
@@ -16,11 +15,11 @@ fn lower_boolean_literal(boolean_lit: ast::BooleanLit) -> Result<Value, ()> {
 }
 
 fn lower_integer_literal(integer_lit: ast::IntegerLit) -> Result<Value, ()> {
-    Ok(Value::InferredInteger(Box::new(integer_lit.value)))
+    Ok(Value::InferredInteger(integer_lit.value.into()))
 }
 
 fn lower_float_literal(float_lit: ast::FloatLit) -> Result<Value, ()> {
-    Ok(Value::InferredFloat(OrderedFloat::from(*float_lit.value)))
+    Ok(Value::InferredFloat((*float_lit.value).into()))
 }
 
 fn lower_string_literal(string_lit: ast::StringLit) -> Result<Value, ()> {
@@ -38,8 +37,9 @@ fn lower_type_reflection(_type_info: ast::TypeInfo, _ctx: &mut Ast2HirCtx, log: 
 
 fn lower_list(list: ast::List, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
     let mut elements = Vec::with_capacity(list.elements.len());
+
     for element in list.elements {
-        let hir_element = element.ast2hir(ctx, log)?;
+        let hir_element = lower_expr(element, ctx, log)?;
         elements.push(hir_element.into());
     }
 
@@ -50,8 +50,9 @@ fn lower_list(list: ast::List, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Resul
 
 fn lower_tuple(tuple: ast::Tuple, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
     let mut elements = Vec::with_capacity(tuple.elements.len());
+
     for element in tuple.elements {
-        let hir_element = element.ast2hir(ctx, log)?;
+        let hir_element = lower_expr(element, ctx, log)?;
         elements.push(hir_element.into());
     }
 
@@ -63,28 +64,33 @@ fn lower_tuple(tuple: ast::Tuple, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Re
 fn lower_struct_init(struct_init: ast::StructInit, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
     if struct_init.path.segments.iter().any(|seg| seg.type_arguments.is_some()) {
         log.report(&HirErr::UnimplementedFeature("generic type args in type paths".into()));
+        return Err(());
     }
 
     let mut fields = Vec::with_capacity(struct_init.fields.len());
-    for field in struct_init.fields {
-        let field_name = NString::from(field.0.to_string());
-        let field_value = field.1.ast2hir(ctx, log)?.into();
-        fields.push((field_name, field_value));
+
+    for (field_name, value) in struct_init.fields {
+        let field_value = lower_expr(value, ctx, log)?;
+        fields.push((field_name, field_value.into()));
     }
 
-    if let Some(resolved_path) = struct_init.path.resolved_path {
-        return Ok(Value::StructObject {
-            struct_def: ctx.tab.get_struct_or_insert_placeholder(&resolved_path),
-            fields: fields.into(),
-        });
-    }
+    match struct_init.path.resolved_path {
+        Some(resolved_path) => {
+            return Ok(Value::StructObject {
+                struct_def: ctx.tab.get_struct_or_insert_placeholder(&resolved_path),
+                fields: fields.into(),
+            });
+        }
 
-    log.report(&HirErr::UnresolvedTypePath);
-    Err(())
+        None => {
+            log.report(&HirErr::UnresolvedTypePath);
+            Err(())
+        }
+    }
 }
 
 fn lower_unary(unary: ast::UnaryExpr, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
-    let operand = unary.operand.ast2hir(ctx, log)?;
+    let operand = lower_expr(unary.operand, ctx, log)?;
 
     match unary.operator {
         UnaryExprOp::Add => Ok(Value::Unary {
@@ -118,8 +124,8 @@ fn lower_unary(unary: ast::UnaryExpr, ctx: &mut Ast2HirCtx, log: &CompilerLog) -
 }
 
 fn lower_binary(binary: ast::BinExpr, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
-    let left = binary.left.ast2hir(ctx, log)?.into();
-    let right = binary.right.ast2hir(ctx, log)?.into();
+    let left = lower_expr(binary.left, ctx, log)?.into();
+    let right = lower_expr(binary.right, ctx, log)?.into();
 
     match binary.operator {
         ast::BinExprOp::Add => Ok(Value::Binary {
@@ -400,7 +406,7 @@ fn lower_cast(cast: ast::Cast, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Resul
         Err(())
     }
 
-    let expr = cast.value.ast2hir(ctx, log)?;
+    let expr = lower_expr(cast.value, ctx, log)?;
     let to = lower_type(cast.to, ctx, log)?;
 
     match (expr, to) {
@@ -506,7 +512,7 @@ fn ast_local_variable(
     };
 
     let initializer = match local_var.initializer.to_owned() {
-        Some(expr) => expr.ast2hir(ctx, log)?.into(),
+        Some(expr) => lower_expr(expr, ctx, log)?.into(),
         None => {
             log.report(&HirErr::LocalVariableMissingInitializer);
             return Err(());
@@ -535,12 +541,12 @@ pub(crate) fn lower_block(block: ast::Block, ctx: &mut Ast2HirCtx, log: &Compile
     for (i, element) in block.elements.into_iter().enumerate() {
         match element {
             ast::BlockItem::Expr(e) => {
-                let hir_element = e.ast2hir(ctx, log)?.into();
+                let hir_element = lower_expr(e, ctx, log)?.into();
                 elements.push(BlockElement::Expr(hir_element));
             }
 
             ast::BlockItem::Stmt(s) => {
-                let hir_element = s.ast2hir(ctx, log)?.into();
+                let hir_element = lower_expr(s, ctx, log)?.into();
                 elements.push(BlockElement::Expr(hir_element));
                 if i == elements_len - 1 {
                     elements.push(BlockElement::Expr(Value::Unit.into()));
@@ -622,14 +628,14 @@ fn lower_expr_path(expr_path: ast::ExprPath, ctx: &mut Ast2HirCtx, log: &Compile
 }
 
 fn lower_index_access(index_access: ast::IndexAccess, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
-    let _collection: ValueId = index_access.collection.ast2hir(ctx, log)?.into();
-    let _index: ValueId = index_access.index.ast2hir(ctx, log)?.into();
+    let _collection: ValueId = lower_expr(index_access.collection, ctx, log)?.into();
+    let _index: ValueId = lower_expr(index_access.index, ctx, log)?.into();
     log.report(&HirErr::UnimplementedFeature("Index access expressions".into()));
     Err(())
 }
 
 fn lower_field_access(field_access: ast::FieldAccess, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
-    let object = field_access.object.ast2hir(ctx, log)?.into();
+    let object = lower_expr(field_access.object, ctx, log)?.into();
     let field = field_access.field.to_string().into();
 
     Ok(Value::FieldAccess {
@@ -639,7 +645,7 @@ fn lower_field_access(field_access: ast::FieldAccess, ctx: &mut Ast2HirCtx, log:
 }
 
 fn lower_if(if_: ast::If, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
-    let condition = if_.condition.ast2hir(ctx, log)?.into();
+    let condition = lower_expr(if_.condition, ctx, log)?.into();
 
     let true_branch = lower_block(if_.true_branch, ctx, log)?.into();
 
@@ -666,7 +672,7 @@ fn lower_if(if_: ast::If, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Val
 
 fn lower_while_loop(while_loop: ast::WhileLoop, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
     let condition = match while_loop.condition {
-        Some(cond) => cond.ast2hir(ctx, log)?.into(),
+        Some(cond) => lower_expr(cond, ctx, log)?.into(),
         None => Value::Bool(true).into(),
     };
 
@@ -694,7 +700,7 @@ fn lower_continue(continue_: ast::Continue, _ctx: &mut Ast2HirCtx, _log: &Compil
 
 fn lower_return(return_: ast::Return, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
     let value = match return_.value {
-        Some(v) => v.ast2hir(ctx, log)?.into(),
+        Some(v) => lower_expr(v, ctx, log)?.into(),
         None => Value::Unit.into(),
     };
 
@@ -712,19 +718,19 @@ fn lower_await(_await_: ast::Await, _ctx: &mut Ast2HirCtx, log: &CompilerLog) ->
 }
 
 fn lower_function_call(function_call: ast::FunctionCall, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
-    let callee = function_call.callee.ast2hir(ctx, log)?;
+    let callee = lower_expr(function_call.callee, ctx, log)?;
 
     let mut positional = Vec::with_capacity(function_call.positional.len());
     let mut named = Vec::with_capacity(function_call.named.len());
 
     for arg in function_call.positional {
-        let value = arg.ast2hir(ctx, log)?.into();
+        let value = lower_expr(arg, ctx, log)?.into();
         positional.push(value);
     }
 
     for (name, arg) in function_call.named {
         let name = NString::from(name.to_string());
-        let value = arg.ast2hir(ctx, log)?.into();
+        let value = lower_expr(arg, ctx, log)?.into();
         named.push((name, value));
     }
 
@@ -736,20 +742,20 @@ fn lower_function_call(function_call: ast::FunctionCall, ctx: &mut Ast2HirCtx, l
 }
 
 fn lower_method_call(method_call: ast::MethodCall, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
-    let object = method_call.object.ast2hir(ctx, log)?.into();
+    let object = lower_expr(method_call.object, ctx, log)?.into();
     let method = NString::from(method_call.method_name);
 
     let mut positional = Vec::with_capacity(method_call.positional.len());
     let mut named = Vec::with_capacity(method_call.named.len());
 
     for arg in method_call.positional {
-        let value = arg.ast2hir(ctx, log)?.into();
+        let value = lower_expr(arg, ctx, log)?.into();
         positional.push(value);
     }
 
     for (name, arg) in method_call.named {
         let name = NString::from(name.to_string());
-        let value = arg.ast2hir(ctx, log)?.into();
+        let value = lower_expr(arg, ctx, log)?.into();
         named.push((name, value));
     }
 
@@ -764,7 +770,7 @@ fn lower_method_call(method_call: ast::MethodCall, ctx: &mut Ast2HirCtx, log: &C
 pub(crate) fn lower_expr(x: ast::Expr, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
     match x {
         ast::Expr::SyntaxError(_) => Err(()),
-        ast::Expr::Parentheses(e) => e.inner.ast2hir(ctx, log),
+        ast::Expr::Parentheses(e) => lower_expr(e.inner, ctx, log),
         ast::Expr::Boolean(e) => lower_boolean_literal(e),
         ast::Expr::Integer(e) => lower_integer_literal(*e),
         ast::Expr::Float(e) => lower_float_literal(e),
@@ -792,13 +798,5 @@ pub(crate) fn lower_expr(x: ast::Expr, ctx: &mut Ast2HirCtx, log: &CompilerLog) 
         ast::Expr::Await(e) => lower_await(*e, ctx, log),
         ast::Expr::FunctionCall(e) => lower_function_call(*e, ctx, log),
         ast::Expr::MethodCall(e) => lower_method_call(*e, ctx, log),
-    }
-}
-
-impl Ast2Hir for ast::Expr {
-    type Hir = Value;
-
-    fn ast2hir(self, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Self::Hir, ()> {
-        lower_expr(self, ctx, log)
     }
 }
