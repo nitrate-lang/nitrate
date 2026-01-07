@@ -5,8 +5,6 @@ pub(crate) enum HirErr {
     UnimplementedFeature(String),
     UnrecognizedGlobalVariableAttribute,
     GlobalVariableMustHaveInitializer,
-    FoundUSize32InNon32BitTarget,
-    FoundUSize64InNon64BitTarget,
     ArrayLengthExpectedUSize,
     ArrayTypeLengthEvalError,
     UnrecognizedFunctionAttribute,
@@ -39,8 +37,6 @@ impl FormattableDiagnosticGroup for HirErr {
             HirErr::UnimplementedFeature(_) => 2,
             HirErr::UnrecognizedGlobalVariableAttribute => 3,
             HirErr::GlobalVariableMustHaveInitializer => 5,
-            HirErr::FoundUSize32InNon32BitTarget => 7,
-            HirErr::FoundUSize64InNon64BitTarget => 8,
             HirErr::ArrayLengthExpectedUSize => 9,
             HirErr::ArrayTypeLengthEvalError => 10,
             HirErr::UnrecognizedFunctionAttribute => 14,
@@ -82,16 +78,6 @@ impl FormattableDiagnosticGroup for HirErr {
 
             HirErr::GlobalVariableMustHaveInitializer => DiagnosticInfo {
                 message: "global variable must have an initializer".to_string(),
-                origin: Origin::None,
-            },
-
-            HirErr::FoundUSize32InNon32BitTarget => DiagnosticInfo {
-                message: "found 32-bit 'usize' in non-32-bit target".to_string(),
-                origin: Origin::None,
-            },
-
-            HirErr::FoundUSize64InNon64BitTarget => DiagnosticInfo {
-                message: "found 64-bit 'usize' in non-64-bit target".to_string(),
                 origin: Origin::None,
             },
 

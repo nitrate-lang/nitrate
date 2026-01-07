@@ -31,6 +31,7 @@ pub(crate) enum SyntaxErr {
     FunctionParameterMissingName(SourcePosition),
     FunctionParametersExpectedEnd(SourcePosition),
     FunctionParameterExpectedType(SourcePosition),
+    FunctionParameterVariadicExpected(SourcePosition),
 
     VariableMissingName(SourcePosition),
 
@@ -141,6 +142,7 @@ impl FormattableDiagnosticGroup for SyntaxErr {
             SyntaxErr::FunctionParameterMissingName(_) => 123,
             SyntaxErr::FunctionParametersExpectedEnd(_) => 124,
             SyntaxErr::FunctionParameterExpectedType(_) => 125,
+            SyntaxErr::FunctionParameterVariadicExpected(_) => 126,
 
             SyntaxErr::VariableMissingName(_) => 140,
 
@@ -334,6 +336,11 @@ impl FormattableDiagnosticGroup for SyntaxErr {
             SyntaxErr::FunctionParameterExpectedType(pos) => DiagnosticInfo {
                 origin: Origin::Point(pos.to_owned().into()),
                 message: "function parameter type is missing".into(),
+            },
+
+            SyntaxErr::FunctionParameterVariadicExpected(pos) => DiagnosticInfo {
+                origin: Origin::Point(pos.to_owned().into()),
+                message: "expected '...' for variadic function parameter".into(),
             },
 
             /* ------------------------------------------------------------------------- */

@@ -1610,12 +1610,18 @@ impl PrettyPrint for FuncParam {
 impl PrettyPrint for FuncParams {
     fn pretty_print_fmt(&self, ctx: &mut PrintContext, writer: &mut dyn std::fmt::Write) -> std::fmt::Result {
         writer.write_char('(')?;
-        for (i, param) in self.iter().enumerate() {
+        for (i, param) in self.params.iter().enumerate() {
             if i > 0 {
                 writer.write_str(", ")?;
             }
 
             param.pretty_print_fmt(ctx, writer)?;
+        }
+        if self.variadic {
+            if !self.params.is_empty() {
+                writer.write_str(", ")?;
+            }
+            writer.write_str("...")?;
         }
         writer.write_char(')')
     }

@@ -2,7 +2,6 @@ use crate::{context::Ast2HirCtx, diagnosis::HirErr, expr::lower_expr};
 use nitrate_diagnosis::CompilerLog;
 use nitrate_hir::prelude::*;
 use nitrate_hir_evaluate::HirEvalCtx;
-use nitrate_nstring::NString;
 use nitrate_tree::ast::{self as ast, SymbolKind};
 use std::{collections::BTreeSet, ops::Deref};
 
@@ -227,7 +226,7 @@ fn lower_lifetime(_lifetime: ast::Lifetime, _ctx: &mut Ast2HirCtx, log: &Compile
     Err(())
 }
 
-pub fn lower_type(ty: ast::Type, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Type, ()> {
+pub(crate) fn lower_type(ty: ast::Type, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Type, ()> {
     match ty {
         ast::Type::SyntaxError(_) => Err(()),
         ast::Type::Bool(_) => Ok(Type::Bool),

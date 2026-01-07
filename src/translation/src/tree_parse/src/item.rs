@@ -680,6 +680,21 @@ impl Parser<'_, '_> {
                 self.log.report(&bug);
             }
 
+            if self.lexer.skip_if(&Token::Dot) {
+                if !self.lexer.skip_if(&Token::Dot) || !self.lexer.skip_if(&Token::Dot) {
+                    let bug = SyntaxErr::FunctionParameterVariadicExpected(self.lexer.peek_pos());
+                    self.log.report(&bug);
+                }
+
+                if !self.lexer.skip_if(&Token::CloseParen) {
+                    let bug = SyntaxErr::FunctionParametersExpectedEnd(self.lexer.peek_pos());
+                    self.log.report(&bug);
+                    self.lexer.skip_while(&Token::CloseParen);
+                }
+
+                return FuncParams { params, variadic: true };
+            }
+
             let param = parse_function_parameter(self);
             params.push(param);
 
@@ -691,7 +706,10 @@ impl Parser<'_, '_> {
             }
         }
 
-        params
+        FuncParams {
+            params,
+            variadic: false,
+        }
     }
 
     fn parse_named_function(&mut self) -> Function {

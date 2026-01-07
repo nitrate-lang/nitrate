@@ -174,7 +174,11 @@ pub struct FuncParam {
     pub default_value: Option<Expr>,
 }
 
-pub type FuncParams = Vec<FuncParam>;
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct FuncParams {
+    pub params: Vec<FuncParam>,
+    pub variadic: bool,
+}
 
 #[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]

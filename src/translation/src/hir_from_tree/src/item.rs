@@ -465,11 +465,6 @@ fn lower_function(function: ast::Function, ctx: &mut Ast2HirCtx, log: &CompilerL
                         continue;
                     }
 
-                    "c_variadic" => {
-                        attributes.insert(FunctionAttribute::CVariadic);
-                        continue;
-                    }
-
                     _ => {}
                 }
             }
@@ -491,10 +486,13 @@ fn lower_function(function: ast::Function, ctx: &mut Ast2HirCtx, log: &CompilerL
         log.report(&HirErr::UnimplementedFeature("generic functions".into()));
     }
 
-    let mut parameters = Vec::with_capacity(function.parameters.len());
-    for param in &function.parameters {
+    let mut parameters = Vec::with_capacity(function.parameters.params.len());
+    for param in &function.parameters.params {
         let param_hir = lower_parameter(param.to_owned(), ctx, log)?;
         parameters.push(param_hir);
+    }
+    if function.parameters.variadic {
+        attributes.insert(FunctionAttribute::CVariadic);
     }
 
     let return_type = match &function.return_type {
