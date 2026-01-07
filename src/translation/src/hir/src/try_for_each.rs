@@ -282,18 +282,14 @@ impl ValueIter<'_> {
                 block.borrow().iter().try_for_each(vcb, tcb, visited)?;
             }
 
-            Value::Call {
-                callee,
-                positional,
-                named,
-            } => {
+            Value::Call { callee, args } => {
                 callee.borrow().iter().try_for_each(vcb, tcb, visited)?;
 
-                for argument in positional {
+                for argument in &args.positional {
                     argument.borrow().iter().try_for_each(vcb, tcb, visited)?;
                 }
 
-                for (_name, argument) in named {
+                for (_name, argument) in &args.named {
                     argument.borrow().iter().try_for_each(vcb, tcb, visited)?;
                 }
             }
@@ -301,16 +297,15 @@ impl ValueIter<'_> {
             Value::MethodCall {
                 object,
                 method_name: _,
-                positional,
-                named,
+                args,
             } => {
                 object.borrow().iter().try_for_each(vcb, tcb, visited)?;
 
-                for argument in positional {
+                for argument in &args.positional {
                     argument.borrow().iter().try_for_each(vcb, tcb, visited)?;
                 }
 
-                for (_name, argument) in named {
+                for (_name, argument) in &args.named {
                     argument.borrow().iter().try_for_each(vcb, tcb, visited)?;
                 }
             }

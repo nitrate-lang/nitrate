@@ -7,8 +7,6 @@ use nitrate_tree::ast::{self as ast, SymbolKind};
 use std::{collections::BTreeSet, ops::Deref};
 
 fn lower_infer_type(ctx: &mut Ast2HirCtx) -> Type {
-    // TODO: Validate implementation
-
     ctx.create_inference_placeholder()
 }
 

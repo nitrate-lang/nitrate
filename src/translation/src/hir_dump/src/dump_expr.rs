@@ -287,22 +287,18 @@ impl Dump for Value {
 
             Value::Block { block } => block.borrow().dump(ctx, o),
 
-            Value::Call {
-                callee,
-                positional,
-                named,
-            } => {
+            Value::Call { callee, args } => {
                 callee.borrow().dump(ctx, o)?;
                 write!(o, "(")?;
-                for (i, arg) in positional.iter().enumerate() {
+                for (i, arg) in args.positional.iter().enumerate() {
                     if i != 0 {
                         write!(o, ", ")?;
                     }
 
                     arg.borrow().dump(ctx, o)?;
                 }
-                for (i, (name, arg)) in named.iter().enumerate() {
-                    if !named.is_empty() || i != 0 {
+                for (i, (name, arg)) in args.named.iter().enumerate() {
+                    if !args.named.is_empty() || i != 0 {
                         write!(o, ", ")?;
                     }
 
@@ -315,20 +311,19 @@ impl Dump for Value {
             Value::MethodCall {
                 object,
                 method_name: method,
-                positional,
-                named,
+                args,
             } => {
                 object.borrow().dump(ctx, o)?;
                 write!(o, ".{method}(")?;
-                for (i, arg) in positional.iter().enumerate() {
+                for (i, arg) in args.positional.iter().enumerate() {
                     if i != 0 {
                         write!(o, ", ")?;
                     }
 
                     arg.borrow().dump(ctx, o)?;
                 }
-                for (i, (name, arg)) in named.iter().enumerate() {
-                    if !named.is_empty() || i != 0 {
+                for (i, (name, arg)) in args.named.iter().enumerate() {
+                    if !args.named.is_empty() || i != 0 {
                         write!(o, ", ")?;
                     }
 

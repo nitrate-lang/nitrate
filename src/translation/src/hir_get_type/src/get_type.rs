@@ -237,11 +237,7 @@ impl HirGetType for Value {
 
             Value::Block { block } => block.borrow().determine_type(ctx),
 
-            Value::Call {
-                callee,
-                positional: _,
-                named: _,
-            } => {
+            Value::Call { callee, args: _ } => {
                 let callee = callee.borrow();
                 if let Type::Function { function_type } = callee.determine_type(ctx)? {
                     return Ok(function_type.return_type.deref().clone());
@@ -253,8 +249,7 @@ impl HirGetType for Value {
             Value::MethodCall {
                 object,
                 method_name,
-                positional: _,
-                named: _,
+                args: _,
             } => {
                 let object_type = object.borrow().determine_type(ctx)?.into();
                 let method_type = ctx

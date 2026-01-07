@@ -151,18 +151,14 @@ impl ValueIterMut<'_> {
                 block.borrow_mut().iter_mut().try_for_each_mut(vcb)?;
             }
 
-            Value::Call {
-                callee,
-                positional,
-                named,
-            } => {
+            Value::Call { callee, args } => {
                 callee.borrow_mut().iter_mut().try_for_each_mut(vcb)?;
 
-                for argument in positional {
+                for argument in &args.positional {
                     argument.borrow_mut().iter_mut().try_for_each_mut(vcb)?;
                 }
 
-                for (_name, argument) in named {
+                for (_name, argument) in &args.named {
                     argument.borrow_mut().iter_mut().try_for_each_mut(vcb)?;
                 }
             }
@@ -170,16 +166,15 @@ impl ValueIterMut<'_> {
             Value::MethodCall {
                 object,
                 method_name: _,
-                positional,
-                named,
+                args,
             } => {
                 object.borrow_mut().iter_mut().try_for_each_mut(vcb)?;
 
-                for argument in positional {
+                for argument in &args.positional {
                     argument.borrow_mut().iter_mut().try_for_each_mut(vcb)?;
                 }
 
-                for (_name, argument) in named {
+                for (_name, argument) in &args.named {
                     argument.borrow_mut().iter_mut().try_for_each_mut(vcb)?;
                 }
             }

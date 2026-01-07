@@ -4,7 +4,6 @@ use nitrate_tree::ast::SymbolKind;
 use nitrate_tree_resolve::ImportContext;
 use std::collections::{HashMap, HashSet};
 use std::num::NonZeroU32;
-use std::ops::Deref;
 
 #[derive(Debug)]
 pub struct Ast2HirCtx {
@@ -32,39 +31,6 @@ impl Ast2HirCtx {
             ptr_size,
             import_ctx,
         }
-    }
-
-    pub(crate) fn _has_trait(&self, ty: &TypeId, trait_id: &TraitId) -> bool {
-        if let Some(impls) = self._impl_map.get(ty) {
-            impls.contains(trait_id)
-        } else {
-            false
-        }
-    }
-
-    pub(crate) fn _find_unambiguous_trait_method(&self, ty: &TypeId, method_name: &str) -> Option<FunctionId> {
-        let trait_set = self._impl_map.get(ty)?;
-
-        let mut found: Option<FunctionId> = None;
-
-        for trait_id in trait_set {
-            let trait_def = &trait_id.borrow();
-
-            for method_id in &trait_def.methods {
-                let method_def = &method_id.borrow();
-
-                if method_def.name.deref() == method_name {
-                    if found.is_some() {
-                        // Ambiguous, multiple traits have the same method
-                        return None;
-                    } else {
-                        found = Some(method_id.clone());
-                    }
-                }
-            }
-        }
-
-        found
     }
 
     pub fn get_unique_name(&mut self) -> String {

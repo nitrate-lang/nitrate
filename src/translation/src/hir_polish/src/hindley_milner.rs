@@ -422,16 +422,12 @@ impl<'m> HindleyMilner<'m> {
                 }
             }
 
-            Value::Call {
-                callee,
-                positional,
-                named,
-            } => {
+            Value::Call { callee, args } => {
                 self.visit(callee);
-                for arg in positional {
+                for arg in &args.positional {
                     self.visit(arg);
                 }
-                for (_name, arg) in named {
+                for (_name, arg) in &args.named {
                     self.visit(arg);
                 }
             }
@@ -439,14 +435,13 @@ impl<'m> HindleyMilner<'m> {
             Value::MethodCall {
                 object,
                 method_name: _,
-                positional,
-                named,
+                args,
             } => {
                 self.visit(object);
-                for arg in positional {
+                for arg in &args.positional {
                     self.visit(arg);
                 }
-                for (_name, arg) in named {
+                for (_name, arg) in &args.named {
                     self.visit(arg);
                 }
             }

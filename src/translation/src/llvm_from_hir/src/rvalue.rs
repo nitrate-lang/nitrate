@@ -1669,7 +1669,7 @@ fn gen_rval_block<'ctx>(ctx: &mut CodegenCtx<'ctx, '_, '_, '_, '_>, hir_block: &
 fn gen_rval_call<'ctx>(
     ctx: &mut CodegenCtx<'ctx, '_, '_, '_, '_>,
     callee: &hir::Value,
-    arguments: &[hir::ValueId],
+    arguments: &hir::Arguments<ValueId>,
 ) -> BasicValueEnum<'ctx> {
     let callee_ty_hir = callee.determine_type(ctx.tab).unwrap();
     let hir::Type::Function { function_type } = callee_ty_hir else {
@@ -1679,7 +1679,7 @@ fn gen_rval_call<'ctx>(
     let llvm_function_ty = gen_function_ty(&function_type, &mut ctx.into());
 
     let mut llvm_arguments = Vec::new();
-    for arg_id in arguments {
+    for arg_id in arguments.to_owned().into_iter() {
         let llvm_arg = gen_rval(ctx, &arg_id.borrow());
         llvm_arguments.push(llvm_arg.into());
     }
@@ -1703,7 +1703,7 @@ fn gen_rval_method_call<'ctx>(
     ctx: &mut CodegenCtx<'ctx, '_, '_, '_, '_>,
     object: &hir::Value,
     method_name: &NString,
-    arguments: &[hir::ValueId],
+    arguments: &hir::Arguments<ValueId>,
 ) -> BasicValueEnum<'ctx> {
     let object_ty_hir = object.determine_type(ctx.tab).unwrap().into();
     let function_id = ctx
@@ -1715,7 +1715,7 @@ fn gen_rval_method_call<'ctx>(
     let llvm_function_ty = gen_function_ty(&function_id.borrow().get_type(), &mut ctx.into());
 
     let mut llvm_arguments = Vec::new();
-    for arg_id in arguments {
+    for arg_id in arguments.to_owned().into_iter() {
         let llvm_arg = gen_rval(ctx, &arg_id.borrow());
         llvm_arguments.push(llvm_arg.into());
     }
@@ -1899,18 +1899,13 @@ pub(crate) fn gen_rval<'ctx>(
 
         hir::Value::Block { block } => gen_rval_block(ctx, &block.borrow()),
 
-        hir::Value::Call {
-            callee,
-            positional,
-            named: _,
-        } => gen_rval_call(ctx, &callee.borrow(), positional),
+        hir::Value::Call { callee, args } => gen_rval_call(ctx, &callee.borrow(), args),
 
         hir::Value::MethodCall {
             object,
             method_name,
-            positional,
-            named: _,
-        } => gen_rval_method_call(ctx, &object.borrow(), method_name, positional),
+            args,
+        } => gen_rval_method_call(ctx, &object.borrow(), method_name, args),
 
         hir::Value::FunctionSymbol { id } => {
             let function_def = id.borrow();

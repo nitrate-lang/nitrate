@@ -734,10 +734,14 @@ fn lower_function_call(function_call: ast::FunctionCall, ctx: &mut Ast2HirCtx, l
         named.push((name, value));
     }
 
-    Ok(Value::Call {
-        callee: callee.into(),
+    let args = Arguments {
         positional: positional.into(),
         named: named.into(),
+    };
+
+    Ok(Value::Call {
+        callee: callee.into(),
+        args,
     })
 }
 
@@ -759,11 +763,15 @@ fn lower_method_call(method_call: ast::MethodCall, ctx: &mut Ast2HirCtx, log: &C
         named.push((name, value));
     }
 
+    let args = Arguments {
+        positional: positional.into(),
+        named: named.into(),
+    };
+
     Ok(Value::MethodCall {
         object,
         method_name: method,
-        positional: positional.into(),
-        named: named.into(),
+        args,
     })
 }
 

@@ -181,11 +181,7 @@ impl ValidateHirValue for Value {
                 Ok(())
             }
 
-            Value::Call {
-                callee: _,
-                positional: _,
-                named: _,
-            } => {
+            Value::Call { callee: _, args: _ } => {
                 // TODO: verify call expression
                 Ok(())
             }
@@ -193,8 +189,7 @@ impl ValidateHirValue for Value {
             Value::MethodCall {
                 object: _,
                 method_name: _,
-                positional: _,
-                named: _,
+                args: _,
             } => {
                 // TODO: verify method call expression
                 Ok(())

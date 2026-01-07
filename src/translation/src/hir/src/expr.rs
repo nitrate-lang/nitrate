@@ -291,6 +291,40 @@ pub struct Block {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
+pub struct Arguments<T> {
+    pub positional: ThinVec<T>,
+    pub named: ThinVec<(NString, T)>,
+}
+
+pub struct ArgumentsIterator<T> {
+    positional: ThinVec<T>,
+    named: ThinVec<(NString, T)>,
+}
+
+impl<T> Arguments<T> {
+    pub fn into_iter(self) -> ArgumentsIterator<T> {
+        ArgumentsIterator {
+            positional: self.positional,
+            named: self.named,
+        }
+    }
+}
+
+impl<T> Iterator for ArgumentsIterator<T> {
+    type Item = T;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if !self.positional.is_empty() {
+            Some(self.positional.remove(0))
+        } else if !self.named.is_empty() {
+            Some(self.named.remove(0).1)
+        } else {
+            None
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub enum Value {
     Unit,
     Bool(bool),
@@ -401,15 +435,13 @@ pub enum Value {
 
     Call {
         callee: ValueId,
-        positional: ThinVec<ValueId>,
-        named: ThinVec<(NString, ValueId)>,
+        args: Arguments<ValueId>,
     },
 
     MethodCall {
         object: ValueId,
         method_name: NString,
-        positional: ThinVec<ValueId>,
-        named: ThinVec<(NString, ValueId)>,
+        args: Arguments<ValueId>,
     },
 
     FunctionSymbol {

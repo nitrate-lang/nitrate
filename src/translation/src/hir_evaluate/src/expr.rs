@@ -551,11 +551,7 @@ impl HirEvaluate for Value {
 
             Value::Block { block } => block.borrow().evaluate(ctx),
 
-            Value::Call {
-                callee: _,
-                positional: _,
-                named: _,
-            } => {
+            Value::Call { callee: _, args: _ } => {
                 // TODO: evaluate function call expressions
                 unimplemented!()
             }
@@ -563,8 +559,7 @@ impl HirEvaluate for Value {
             Value::MethodCall {
                 object: _,
                 method_name: _,
-                positional: _,
-                named: _,
+                args: _,
             } => {
                 // TODO: evaluate method call expressions
                 unimplemented!()
