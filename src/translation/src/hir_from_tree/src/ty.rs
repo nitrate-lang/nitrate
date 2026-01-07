@@ -56,53 +56,32 @@ fn lower_refinement_type(
 }
 
 fn lower_tuple_type(tuple_type: ast::TupleType, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Type, ()> {
-    // TODO: Validate implementation
-
     if tuple_type.element_types.is_empty() {
         return Ok(Type::Unit);
     }
 
-    let mut elements = Vec::with_capacity(tuple_type.element_types.len());
-
-    for ast_elem_ty in tuple_type.element_types.into_iter() {
-        let hir_elem_ty = lower_type(ast_elem_ty, ctx, log)?.into();
-        elements.push(hir_elem_ty);
+    let mut element_types = Vec::with_capacity(tuple_type.element_types.len());
+    for ast_element_type in tuple_type.element_types.into_iter() {
+        let hir_elem_ty: TypeId = lower_type(ast_element_type, ctx, log)?.into();
+        element_types.push(hir_elem_ty);
     }
 
     Ok(Type::Tuple {
-        element_types: elements.into(),
+        element_types: element_types.into(),
     })
 }
 
 fn lower_array_type(array_type: ast::ArrayType, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Type, ()> {
-    // TODO: Validate implementation
+    let element_type: TypeId = lower_type(array_type.element_type, ctx, log)?.into();
 
-    let element_type = lower_type(array_type.element_type, ctx, log)?.into();
-
-    let hir_length = Value::Cast {
+    let array_length_expr = Value::Cast {
         value: lower_expr(array_type.len, ctx, log)?.into(),
         target_type: Type::USize.into(),
     };
 
-    let mut eval = HirEvalCtx::new(log, ctx.ptr_size);
-    let len = match eval.evaluate_to_literal(&hir_length) {
-        Ok(Lit::USize32(val)) => {
-            if ctx.ptr_size != PtrSize::U32 {
-                log.report(&HirErr::FoundUSize32InNon32BitTarget);
-                return Err(());
-            }
-
-            val
-        }
-
-        Ok(Lit::USize64(val)) => {
-            if ctx.ptr_size != PtrSize::U64 {
-                log.report(&HirErr::FoundUSize64InNon64BitTarget);
-                return Err(());
-            }
-
-            val as u32
-        }
+    let len = match HirEvalCtx::new(log, ctx.ptr_size).evaluate_to_literal(&array_length_expr) {
+        Ok(Lit::USize32(val)) => val,
+        Ok(Lit::USize64(val)) => val as u32,
 
         Ok(_) => {
             log.report(&HirErr::ArrayLengthExpectedUSize);
@@ -119,39 +98,33 @@ fn lower_array_type(array_type: ast::ArrayType, ctx: &mut Ast2HirCtx, log: &Comp
 }
 
 fn lower_function_type(function_type: ast::FunctionType, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Type, ()> {
-    // TODO: Validate implementation
-
     let ast_attributes = function_type.attributes.unwrap_or_default();
-
-    let attributes = BTreeSet::new();
+    let function_attributes = BTreeSet::new();
     for _attr in ast_attributes {
         log.report(&HirErr::UnrecognizedFunctionAttribute);
     }
 
     let mut parameters = Vec::with_capacity(function_type.parameters.len());
     for param in function_type.parameters {
-        // let attributes = BTreeSet::new();
         if let Some(ast_attributes) = &param.attributes {
             for _attr in ast_attributes {
                 log.report(&HirErr::UnrecognizedFunctionParameterAttribute);
             }
         }
 
-        let name = NString::from(param.name.deref());
-        let ty = lower_type(param.ty, ctx, log)?.into();
-
-        parameters.push((name, ty));
+        let ty: TypeId = lower_type(param.ty, ctx, log)?.into();
+        parameters.push((param.name, ty));
     }
 
-    let return_type = match function_type.return_type {
-        Some(ret_ty) => lower_type(ret_ty, ctx, log)?,
-        None => Type::Unit,
+    let return_type: TypeId = match function_type.return_type {
+        Some(ret_ty) => lower_type(ret_ty, ctx, log)?.into(),
+        None => Type::Unit.into(),
     };
 
     let function_type = FunctionType {
-        attributes,
+        attributes: function_attributes,
         params: parameters.into(),
-        return_type: return_type.into(),
+        return_type: return_type,
     };
 
     Ok(Type::Function {
