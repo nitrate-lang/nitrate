@@ -3,17 +3,11 @@
 mod expr;
 mod helper;
 mod item;
-mod iter;
-mod iter_mut;
-mod iterator_ops;
-mod iterator_ops_mut;
 mod literal_ops;
 mod node_digest;
 mod pass;
 mod store;
 mod table;
-mod try_for_each;
-mod try_for_each_mut;
 mod ty;
 mod ty_alignment;
 mod ty_size;
@@ -21,8 +15,6 @@ mod ty_stride;
 
 pub use expr::*;
 pub use item::*;
-pub use iter::*;
-pub use iter_mut::*;
 pub use literal_ops::*;
 pub use node_digest::*;
 pub use pass::*;
