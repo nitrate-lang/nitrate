@@ -27,11 +27,11 @@ impl Ast2HirCtx {
             ast_symbol_map: HashMap::new(),
             entities_added: HashSet::new(),
             current_scope: Vec::new(),
+            ptr_size,
+            import_ctx,
             _impl_map: HashMap::new(),
             type_infer_id_ctr: NonZeroU32::new(1).unwrap(),
             unique_name_ctr: 0,
-            ptr_size,
-            import_ctx,
         }
     }
 
@@ -46,7 +46,13 @@ impl Ast2HirCtx {
     pub(crate) fn create_inference_placeholder(&mut self) -> Type {
         let id = self.type_infer_id_ctr;
         self.type_infer_id_ctr = id.checked_add(1).expect("Type infer ID overflow");
-        Type::Inferred { id }
+        Type::Inferred { id, name: None }
+    }
+
+    pub(crate) fn create_generic_placeholder(&mut self, name: NString) -> Type {
+        let id = self.type_infer_id_ctr;
+        self.type_infer_id_ctr = id.checked_add(1).expect("Type infer ID overflow");
+        Type::Inferred { id, name: Some(name) }
     }
 
     pub(crate) fn qualify_name(&self, item_name: &str) -> String {

@@ -8,12 +8,13 @@ use crate::{
     place::gen_place,
     ty::{TypegenCtx, gen_function_ty, gen_ty},
 };
+use core::panic;
 use nitrate_hir::{StructMemoryLayoutCell, ValueId, prelude as hir};
 use nitrate_hir_get_type::HirGetType;
 use nitrate_llvm::LLVMContext;
 use nitrate_nstring::NString;
-use std::collections::HashMap;
 use std::ops::Deref;
+use std::{collections::HashMap, unimplemented};
 
 pub struct CodegenCtx<'ctx, 'module, 'tab, 'builder, 'global> {
     pub llvm: &'ctx LLVMContext,
@@ -1382,8 +1383,14 @@ fn gen_rval_borrow<'ctx>(
 
 fn gen_rval_list<'ctx>(ctx: &mut CodegenCtx<'ctx, '_, '_, '_, '_>, elements: &[hir::ValueId]) -> BasicValueEnum<'ctx> {
     if elements.is_empty() {
-        // TODO: implement empty list codegen
-        unimplemented!()
+        // If the list is empty it will have size zero. That mean any dereference is invalid anyways.
+        // Therefore, any type will be okay. For simplicity we will use the unit type.
+        let element_type = gen_ty(&hir::Type::Unit, &mut ctx.into());
+        let list_ty = element_type.array_type(0);
+
+        let list_alloca = ctx.bb.build_alloca(list_ty, "list_alloca").unwrap();
+        let load = ctx.bb.build_load(list_ty, list_alloca, "list_load").unwrap();
+        return load.into();
     }
 
     let mut llvm_elements = Vec::new();

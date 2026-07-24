@@ -6,11 +6,21 @@ use nitrate_tree::ast::{self as ast, SymbolKind};
 use std::{collections::BTreeSet, ops::Deref};
 
 fn lower_type_path(type_path: ast::TypePath, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Type, ()> {
-    if type_path.segments.iter().any(|seg| seg.type_arguments.is_some()) {
-        // TODO: Implement support for generic type arguments in type paths
+    if type_path.segments[..type_path.segments.len().saturating_sub(1)]
+        .iter()
+        .any(|seg| seg.type_arguments.is_some())
+    {
         log.report(&HirErr::UnimplementedFeature(
-            "generic type arguments in type paths".into(),
+            "can not lower type paths with generic arguments in intermediate segments".into(),
         ));
+    }
+
+    if let Some(type_args) = type_path.segments.last().and_then(|seg| seg.type_arguments.as_ref()) {
+        let mut lowered_type_args = Vec::with_capacity(type_args.len());
+        for type_arg in type_args {
+            let hir_type_arg: TypeId = lower_type(type_arg.value.clone(), ctx, log)?.into();
+            lowered_type_args.push(hir_type_arg);
+        }
     }
 
     match type_path.resolved_path {
@@ -26,6 +36,8 @@ fn lower_type_path(type_path: ast::TypePath, ctx: &mut Ast2HirCtx, log: &Compile
             Some(SymbolKind::TypeAlias) => Ok(Type::TypeAlias {
                 def: ctx.tab.get_type_alias_or_insert_placeholder(&resolved_path).clone(),
             }),
+
+            Some(SymbolKind::GenericParameter) => Ok(ctx.create_generic_placeholder(resolved_path)),
 
             _ => {
                 log.report(&HirErr::UnresolvedSymbol);

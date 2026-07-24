@@ -85,24 +85,14 @@ pub(crate) fn gen_place<'ctx>(
     match hir_value {
         hir::Value::InferredInteger(_)
         | hir::Value::InferredFloat(_)
-        | hir::Value::StructObject { .. }
-        | hir::Value::EnumVariant { .. }
-        | hir::Value::Binary { .. }
-        | hir::Value::Unary { .. }
         | hir::Value::Assign { .. }
-        | hir::Value::Cast { .. }
         | hir::Value::Borrow { .. }
-        | hir::Value::List { .. }
-        | hir::Value::Tuple { .. }
         | hir::Value::If { .. }
         | hir::Value::While { .. }
         | hir::Value::Loop { .. }
         | hir::Value::Break { .. }
         | hir::Value::Continue { .. }
-        | hir::Value::Return { .. }
-        | hir::Value::Block { .. }
-        | hir::Value::Call { .. }
-        | hir::Value::MethodCall { .. } => panic!("Value is not a place"),
+        | hir::Value::Return { .. } => panic!("Value is not a place"),
 
         hir::Value::Unit
         | hir::Value::Bool(_)
@@ -121,7 +111,17 @@ pub(crate) fn gen_place<'ctx>(
         | hir::Value::USize32(_)
         | hir::Value::USize64(_)
         | hir::Value::StringLit(_)
-        | hir::Value::BStringLit(_) => {
+        | hir::Value::BStringLit(_)
+        | hir::Value::List { .. }
+        | hir::Value::Binary { .. }
+        | hir::Value::Unary { .. }
+        | hir::Value::Tuple { .. }
+        | hir::Value::Block { .. }
+        | hir::Value::Call { .. }
+        | hir::Value::MethodCall { .. }
+        | hir::Value::EnumVariant { .. }
+        | hir::Value::StructObject { .. }
+        | hir::Value::Cast { .. } => {
             let tmp_ty = gen_ty(
                 &hir_value.determine_type(ctx.tab).expect("unable to get bool type"),
                 &mut ctx.into(),

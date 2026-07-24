@@ -22,3 +22,5 @@ nitrate_hir_polish = { path = "../hir_polish" }
 
 ordered-float = { version = "5.0.0" }
 thin-vec = { version = "0.2.14" }
+
+serde_json = { version = "1.0", features = ["preserve_order"] }

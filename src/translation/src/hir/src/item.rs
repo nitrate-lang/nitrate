@@ -3,6 +3,7 @@ use nitrate_nstring::NString;
 use serde::{Deserialize, Serialize};
 use std::{
     collections::{BTreeMap, BTreeSet},
+    matches,
     num::NonZeroUsize,
 };
 use thin_vec::ThinVec;
@@ -185,6 +186,7 @@ pub struct StructDef {
     pub name: NString,
     pub attributes: BTreeSet<StructAttribute>,
     pub fields: BTreeMap<NString, StructField>,
+    pub generics: Option<BTreeMap<NString, Option<TypeId>>>,
     pub layout: StructLayout,
 }
 

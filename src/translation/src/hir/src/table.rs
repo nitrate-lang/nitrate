@@ -342,6 +342,7 @@ impl SymbolTab {
             visibility: Visibility::Sec,
             attributes: BTreeSet::new(),
             name: name.clone(),
+            generics: None,
             fields: BTreeMap::new(),
             layout: StructLayout::new(),
         };

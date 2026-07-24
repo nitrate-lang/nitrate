@@ -119,20 +119,20 @@ pub fn resolve_paths(module: &mut Module, log: &CompilerLog) -> HashMap<NString,
             }
         }
 
-        if let RefNodeMut::ItemModule(module) = node {
-            match order {
-                Order::Enter => {
-                    scope_vec.push(module.name.to_string());
-                }
+        let scope_add: Option<NString> = match node {
+            RefNodeMut::ItemTypeAlias(type_alias) => Some(type_alias.name.clone()),
+            RefNodeMut::ItemStruct(struct_def) => Some(struct_def.name.clone()),
+            RefNodeMut::ItemEnum(enum_def) => Some(enum_def.name.clone()),
+            RefNodeMut::ItemTrait(trait_def) => Some(trait_def.name.clone()),
+            RefNodeMut::ItemFunction(function) => Some(function.name.clone()),
+            RefNodeMut::ItemModule(module) => Some(module.name.clone()),
+            _ => None,
+        };
 
-                Order::Leave => {
-                    scope_vec.pop();
-                }
-            }
-        } else if let RefNodeMut::ItemFunction(function) = node {
+        if let Some(name) = scope_add {
             match order {
                 Order::Enter => {
-                    scope_vec.push(function.name.to_string().into());
+                    scope_vec.push(name.to_string());
                 }
 
                 Order::Leave => {

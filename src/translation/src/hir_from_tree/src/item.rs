@@ -86,9 +86,19 @@ fn lower_struct_definition(
         return Err(());
     }
 
-    if struct_def.generics.is_some() {
-        // TODO: Implement generics for structs
-        log.report(&HirErr::UnimplementedFeature("generic structs".into()));
+    let mut generics: Option<BTreeMap<NString, Option<TypeId>>> = None;
+
+    if let Some(generic_params) = struct_def.generics {
+        let mut generics_map = BTreeMap::new();
+        for parameter in generic_params.params {
+            let generic_name = NString::from(parameter.name.to_string());
+            let default_type = match parameter.default_value {
+                Some(ty) => Some(lower_type(ty, ctx, log)?.into()),
+                None => None,
+            };
+            generics_map.insert(generic_name, default_type);
+        }
+        generics = Some(generics_map);
     }
 
     let mut fields = BTreeMap::new();
@@ -134,6 +144,7 @@ fn lower_struct_definition(
         visibility,
         name,
         attributes,
+        generics,
         fields,
         layout,
     };

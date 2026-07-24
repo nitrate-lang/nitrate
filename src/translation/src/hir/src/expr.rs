@@ -1,3 +1,5 @@
+use std::matches;
+
 use crate::{prelude::*, store::LiteralId};
 use nitrate_nstring::NString;
 use ordered_float::OrderedFloat;

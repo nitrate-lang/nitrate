@@ -217,7 +217,10 @@ impl Dump for Type {
 
             Type::InferredFloat => write!(o, "?f"),
             Type::InferredInteger => write!(o, "?i"),
-            Type::Inferred { id } => write!(o, "?{id}"),
+            Type::Inferred { id, name } => match name {
+                Some(name) => write!(o, "?{id}::{}", escape_string(name, true)),
+                None => write!(o, "?{id}"),
+            },
         }
     }
 }

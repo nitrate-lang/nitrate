@@ -114,6 +114,7 @@ pub enum Type {
     InferredInteger,
     Inferred {
         id: NonZeroU32,
+        name: Option<NString>,
     },
 }
 
