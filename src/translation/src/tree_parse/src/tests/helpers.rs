@@ -33,6 +33,35 @@ pub fn parse_expr(source: &str) -> Expr {
     expr
 }
 
+/// Parse source without checking for errors (to test error paths).
+pub fn parse_source_no_assert(source: &str) -> (Module, nitrate_diagnosis::CompilerLog) {
+    let log = CompilerLog::default();
+    let lexer = Lexer::new(source.as_bytes(), None).expect("Failed to create lexer");
+    let mut parser = Parser::new(lexer, &log);
+    let module = parser.parse_source("test".into());
+    (module, log)
+}
+
+/// Parse type without checking for errors.
+pub fn parse_type_no_assert(source: &str) -> (Type, nitrate_diagnosis::CompilerLog) {
+    let log = CompilerLog::default();
+    let lexer = Lexer::new(source.as_bytes(), None).expect("Failed to create lexer");
+    let mut parser = Parser::new(lexer, &log);
+    parser.lexer.disable_trivia();
+    let ty = parser.parse_type();
+    (ty, log)
+}
+
+/// Parse expression without checking for errors.
+pub fn parse_expr_no_assert(source: &str) -> (Expr, nitrate_diagnosis::CompilerLog) {
+    let log = CompilerLog::default();
+    let lexer = Lexer::new(source.as_bytes(), None).expect("Failed to create lexer");
+    let mut parser = Parser::new(lexer, &log);
+    parser.lexer.disable_trivia();
+    let expr = parser.parse_expression();
+    (expr, log)
+}
+
 pub fn single_item(module: Module) -> Item {
     assert_eq!(module.items.len(), 1, "Expected 1 item, got {}", module.items.len());
     module.items.into_iter().next().unwrap()
