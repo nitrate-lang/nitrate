@@ -81,3 +81,49 @@ fn test_import_missing_semicolon() {
     let (_, log) = parse_source_no_assert("use foo");
     assert!(log.error_bit());
 }
+
+
+
+// ---------- IMPORT ERRORS ----------
+
+// SyntaxErr::ImportAliasMissingName (variant 41)
+#[test]
+fn test_import_alias_missing() {
+    let (_, log) = parse_source_no_assert("use foo as ;");
+    assert!(log.error_bit());
+}
+
+
+// SyntaxErr::ImportExpectedStarOrGroup (variant 42)
+#[test]
+fn test_import_star_or_group() {
+    let (_, log) = parse_source_no_assert("use foo::bar::;");
+    assert!(log.error_bit());
+}
+
+
+// SyntaxErr::ImportGroupExpectedEnd (variant 43)
+#[test]
+fn test_import_group_expected_end() {
+    let (_, log) = parse_source_no_assert("use foo::{bar, baz");
+    assert!(log.error_bit());
+}
+
+
+// ========== IMPORT EDGE CASES ==========
+
+#[test]
+fn test_import_global_path() {
+    let imp = single_import(parse_source("use ::std::mem;"));
+    assert!(matches!(&imp.use_tree, UseTree::Single { .. }));
+}
+
+
+// ========== ITEM PATH EDGE CASES ==========
+
+#[test]
+fn test_use_parse_item_path_expected_name() {
+    let (_, log) = parse_source_no_assert("use ::;");
+    assert!(log.error_bit());
+}
+

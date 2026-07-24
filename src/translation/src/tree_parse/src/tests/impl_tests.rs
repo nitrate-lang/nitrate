@@ -37,3 +37,75 @@ fn test_impl_missing_brace() {
     let (_, log) = parse_source_no_assert("impl Foo");
     assert!(log.error_bit());
 }
+
+
+
+// ---------- IMPL ERRORS ----------
+
+// SyntaxErr::ImplMissingFor (variant 200)
+#[test]
+fn test_impl_missing_for() {
+    let (_, log) = parse_source_no_assert("impl Trait Foo {}");
+    assert!(log.error_bit());
+}
+
+
+// SyntaxErr::ImplExpectedEnd (variant 201)
+#[test]
+fn test_impl_expected_end() {
+    let (_, log) = parse_source_no_assert("impl Foo { fn f() {}");
+    assert!(log.error_bit());
+}
+
+
+// SyntaxErr::ImplItemLimit (variant 202) - needs >65536 items
+#[test]
+fn test_impl_item_limit() {
+    let mut items = String::new();
+    for i in 0..65538 {
+        items.push_str(&format!("fn f{i}() {{}} "));
+    }
+    let src = format!("impl Foo {{ {items} }}");
+    let (_, log) = parse_source_no_assert(&src);
+    assert!(log.error_bit());
+}
+
+
+// SyntaxErr::ImplCannotBeVisible (variant 203)
+#[test]
+fn test_impl_visibility_error() {
+    let (_, log) = parse_source_no_assert("pub impl Foo {}");
+    assert!(log.error_bit());
+}
+
+
+// ========== IMPL EDGE CASES ==========
+
+#[test]
+fn test_impl_empty() {
+    let i = single_impl(parse_source("impl Foo {}"));
+    assert!(i.items.is_empty());
+    assert!(i.trait_path.is_none());
+}
+
+
+#[test]
+fn test_impl_with_generics() {
+    let i = single_impl(parse_source("impl<T> Foo<T> {}"));
+    assert!(i.generics.is_some());
+}
+
+
+#[test]
+fn test_impl_with_fn() {
+    let i = single_impl(parse_source("impl Foo { fn bar() {} }"));
+    assert_eq!(i.items.len(), 1);
+}
+
+
+#[test]
+fn test_impl_unclosed() {
+    let (_, log) = parse_source_no_assert("impl Foo { fn bar() {}");
+    assert!(log.error_bit());
+}
+
