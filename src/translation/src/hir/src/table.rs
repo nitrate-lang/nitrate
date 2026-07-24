@@ -2,19 +2,18 @@ use crate::prelude::*;
 use nitrate_nstring::NString;
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-enum SymbolId {
-    GlobalVariable(GlobalVariableId),
-    LocalVariable(LocalVariableId),
-    Parameter(ParameterId),
-    Function(FunctionId),
-    EnumVariant(EnumDefId),
-}
-
 #[derive(Debug)]
 pub struct SymbolTab {
-    symbols: HashMap<NString, SymbolId>,
-    types: HashMap<NString, TypeDefinition>,
+    global_variales: HashMap<NString, GlobalVariableId>,
+    local_variables: HashMap<NString, LocalVariableId>,
+    parameters: HashMap<NString, ParameterId>,
+    functions: HashMap<NString, FunctionId>,
+    enum_variants: HashMap<NString, EnumDefId>,
+
+    type_alises: HashMap<NString, TypeAliasDefId>,
+    structs: HashMap<NString, StructDefId>,
+    enums: HashMap<NString, EnumDefId>,
+
     methods: HashMap<(TypeId, NString), FunctionId>,
     traits: HashMap<NString, TraitId>,
     impls: HashMap<TypeId, HashMap<TraitId, HashMap<NString, FunctionId>>>,
@@ -25,8 +24,14 @@ impl SymbolTab {
     #[must_use]
     pub fn new(arch_ptr_size: PtrSize) -> Self {
         Self {
-            symbols: HashMap::new(),
-            types: HashMap::new(),
+            global_variales: HashMap::new(),
+            local_variables: HashMap::new(),
+            parameters: HashMap::new(),
+            functions: HashMap::new(),
+            enum_variants: HashMap::new(),
+            type_alises: HashMap::new(),
+            structs: HashMap::new(),
+            enums: HashMap::new(),
             methods: HashMap::new(),
             traits: HashMap::new(),
             impls: HashMap::new(),
@@ -40,31 +45,26 @@ impl SymbolTab {
 
     pub fn add_global_variable(&mut self, global_var: GlobalVariableId) {
         let name = global_var.borrow().name.clone();
-        let symbol = SymbolId::GlobalVariable(global_var);
-        self.symbols.insert(name, symbol);
+        self.global_variales.insert(name, global_var);
     }
 
     pub fn add_local_variable(&mut self, local_var: LocalVariableId) {
         let name = local_var.borrow().name.clone();
-        let symbol = SymbolId::LocalVariable(local_var);
-        self.symbols.insert(name, symbol);
+        self.local_variables.insert(name, local_var);
     }
 
     pub fn add_parameter(&mut self, param: ParameterId) {
         let name = param.borrow().name.clone();
-        let symbol = SymbolId::Parameter(param);
-        self.symbols.insert(name, symbol);
+        self.parameters.insert(name, param);
     }
 
     pub fn add_function(&mut self, function: FunctionId) {
         let name = function.borrow().name.clone();
-        let symbol = SymbolId::Function(function);
-        self.symbols.insert(name, symbol);
+        self.functions.insert(name, function);
     }
 
     pub fn add_enum_variant(&mut self, name: NString, enum_def_id: EnumDefId) {
-        let symbol = SymbolId::EnumVariant(enum_def_id);
-        self.symbols.insert(name, symbol);
+        self.enum_variants.insert(name, enum_def_id);
     }
 
     pub fn add_method(&mut self, type_id: TypeId, method_name: NString, function_id: FunctionId) {
@@ -101,24 +101,21 @@ impl SymbolTab {
 
     pub fn add_type_alias(&mut self, type_alias_id: TypeAliasDefId) {
         let name = type_alias_id.borrow().name.clone();
-        let typedef = TypeDefinition::TypeAliasDef(type_alias_id);
-        self.types.insert(name, typedef);
+        self.type_alises.insert(name, type_alias_id);
     }
 
     pub fn add_struct(&mut self, struct_def_id: StructDefId) {
         let name = struct_def_id.borrow().name.clone();
-        let typedef = TypeDefinition::StructDef(struct_def_id);
-        self.types.insert(name, typedef);
+        self.structs.insert(name, struct_def_id);
     }
 
     pub fn add_enum(&mut self, enum_def_id: EnumDefId) {
         let name = enum_def_id.borrow().name.clone();
-        let typedef = TypeDefinition::EnumDef(enum_def_id);
-        self.types.insert(name, typedef);
+        self.enums.insert(name, enum_def_id);
     }
 
     pub fn get_global_variable_or_insert_placeholder(&mut self, name: &NString) -> GlobalVariableId {
-        if let Some(SymbolId::GlobalVariable(global_var_id)) = self.symbols.get(name).cloned() {
+        if let Some(global_var_id) = self.global_variales.get(name).cloned() {
             return global_var_id;
         };
 
@@ -138,25 +135,15 @@ impl SymbolTab {
     }
 
     pub fn get_global_variable(&self, name: &NString) -> Option<&GlobalVariableId> {
-        if let Some(SymbolId::GlobalVariable(global_var_id)) = self.symbols.get(name) {
-            Some(global_var_id)
-        } else {
-            None
-        }
+        self.global_variales.get(name)
     }
 
     pub fn globals(&self) -> impl Iterator<Item = &GlobalVariableId> {
-        self.symbols.values().filter_map(|symbol_id| {
-            if let SymbolId::GlobalVariable(global_var_id) = symbol_id {
-                Some(global_var_id)
-            } else {
-                None
-            }
-        })
+        self.global_variales.values()
     }
 
     pub fn get_local_variable_or_insert_placeholder(&mut self, name: &NString) -> LocalVariableId {
-        if let Some(SymbolId::LocalVariable(local_var_id)) = self.symbols.get(name).cloned() {
+        if let Some(local_var_id) = self.local_variables.get(name).cloned() {
             return local_var_id;
         };
 
@@ -175,15 +162,11 @@ impl SymbolTab {
     }
 
     pub fn get_local_variable(&self, name: &NString) -> Option<&LocalVariableId> {
-        if let Some(SymbolId::LocalVariable(local_var_id)) = self.symbols.get(name) {
-            Some(local_var_id)
-        } else {
-            None
-        }
+        self.local_variables.get(name)
     }
 
     pub fn get_parameter_or_insert_placeholder(&mut self, name: &NString) -> ParameterId {
-        if let Some(SymbolId::Parameter(param_id)) = self.symbols.get(name).cloned() {
+        if let Some(param_id) = self.parameters.get(name).cloned() {
             return param_id;
         };
 
@@ -201,15 +184,11 @@ impl SymbolTab {
     }
 
     pub fn get_parameter(&self, name: &NString) -> Option<&ParameterId> {
-        if let Some(SymbolId::Parameter(param_id)) = self.symbols.get(name) {
-            Some(param_id)
-        } else {
-            None
-        }
+        self.parameters.get(name)
     }
 
     pub fn get_function_or_insert_placeholder(&mut self, name: &NString) -> FunctionId {
-        if let Some(SymbolId::Function(func_id)) = self.symbols.get(name).cloned() {
+        if let Some(func_id) = self.functions.get(name).cloned() {
             return func_id;
         };
 
@@ -229,25 +208,15 @@ impl SymbolTab {
     }
 
     pub fn get_function(&self, name: &NString) -> Option<&FunctionId> {
-        if let Some(SymbolId::Function(func_id)) = self.symbols.get(name) {
-            Some(func_id)
-        } else {
-            None
-        }
+        self.functions.get(name)
     }
 
     pub fn functions(&self) -> impl Iterator<Item = &FunctionId> {
-        self.symbols.values().filter_map(|symbol_id| {
-            if let SymbolId::Function(func_id) = symbol_id {
-                Some(func_id)
-            } else {
-                None
-            }
-        })
+        self.functions.values()
     }
 
     pub fn get_enum_variant_or_insert_placeholder(&mut self, name: &NString) -> EnumDefId {
-        if let Some(SymbolId::EnumVariant(enum_def_id)) = self.symbols.get(name).cloned() {
+        if let Some(enum_def_id) = self.enum_variants.get(name).cloned() {
             return enum_def_id;
         };
 
@@ -265,11 +234,7 @@ impl SymbolTab {
     }
 
     pub fn get_enum_variant(&self, name: &NString) -> Option<&EnumDefId> {
-        if let Some(SymbolId::EnumVariant(enum_def_id)) = self.symbols.get(name) {
-            Some(enum_def_id)
-        } else {
-            None
-        }
+        self.enum_variants.get(name)
     }
 
     pub fn get_method(&self, type_def: &TypeId, method_name: &NString) -> Option<&FunctionId> {
@@ -310,7 +275,7 @@ impl SymbolTab {
     }
 
     pub fn get_type_alias_or_insert_placeholder(&mut self, name: &NString) -> TypeAliasDefId {
-        if let Some(TypeDefinition::TypeAliasDef(type_alias_id)) = self.types.get(name).cloned() {
+        if let Some(type_alias_id) = self.type_alises.get(name).cloned() {
             return type_alias_id;
         };
 
@@ -326,15 +291,11 @@ impl SymbolTab {
     }
 
     pub fn get_type_alias(&self, name: &NString) -> Option<&TypeAliasDefId> {
-        if let Some(TypeDefinition::TypeAliasDef(type_alias_id)) = self.types.get(name) {
-            Some(type_alias_id)
-        } else {
-            None
-        }
+        self.type_alises.get(name)
     }
 
     pub fn get_struct_or_insert_placeholder(&mut self, name: &NString) -> StructDefId {
-        if let Some(TypeDefinition::StructDef(struct_def_id)) = self.types.get(name).cloned() {
+        if let Some(struct_def_id) = self.structs.get(name).cloned() {
             return struct_def_id;
         };
 
@@ -353,15 +314,11 @@ impl SymbolTab {
     }
 
     pub fn get_struct(&self, name: &NString) -> Option<&StructDefId> {
-        if let Some(TypeDefinition::StructDef(struct_def_id)) = self.types.get(name) {
-            Some(struct_def_id)
-        } else {
-            None
-        }
+        self.structs.get(name)
     }
 
     pub fn get_enum_or_insert_placeholder(&mut self, name: &NString) -> EnumDefId {
-        if let Some(TypeDefinition::EnumDef(enum_def_id)) = self.types.get(name).cloned() {
+        if let Some(enum_def_id) = self.enums.get(name).cloned() {
             return enum_def_id;
         };
 
@@ -378,11 +335,7 @@ impl SymbolTab {
     }
 
     pub fn get_enum(&self, name: &NString) -> Option<&EnumDefId> {
-        if let Some(TypeDefinition::EnumDef(enum_def_id)) = self.types.get(name) {
-            Some(enum_def_id)
-        } else {
-            None
-        }
+        self.enums.get(name)
     }
 
     pub fn arch_ptr_size(&self) -> PtrSize {

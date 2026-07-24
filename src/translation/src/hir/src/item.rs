@@ -217,24 +217,6 @@ pub struct EnumDef {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
-pub enum TypeDefinition {
-    TypeAliasDef(TypeAliasDefId),
-    StructDef(StructDefId),
-    EnumDef(EnumDefId),
-}
-
-impl TypeDefinition {
-    #[must_use]
-    pub fn name(&self) -> NString {
-        match self {
-            TypeDefinition::TypeAliasDef(def) => def.borrow().name.clone(),
-            TypeDefinition::StructDef(def) => def.borrow().name.clone(),
-            TypeDefinition::EnumDef(def) => def.borrow().name.clone(),
-        }
-    }
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub enum Item {
     Module(ModuleId),
     GlobalVariable(GlobalVariableId),
