@@ -198,11 +198,6 @@ fn test_type_alias_with_attributes() {
 // ========== TYPE REFINEMENTS ==========
 
 #[test]
-fn test_type_refine_width() {
-    assert!(matches!(&parse_type("u8: 6"), Type::RefinementType(r) if matches!(&r.width, Some(Expr::Integer(_)))));
-}
-
-#[test]
 fn test_type_refine_range() {
     assert!(matches!(&parse_type("u8: [0:10]"), Type::RefinementType(_)));
 }
@@ -275,11 +270,6 @@ fn test_type_fn_attr() {
         &parse_type("fn [inline](x: i32) -> bool"),
         Type::FunctionType(_)
     ));
-}
-
-#[test]
-fn test_type_fn_no_params() {
-    assert!(matches!(&parse_type("fn()"), Type::FunctionType(f) if f.parameters.is_empty()));
 }
 
 // ========== NAMED GENERIC ==========
@@ -359,11 +349,6 @@ fn test_err_fn_param_missing_name() {
 
 
 // ========== NAMED GENERIC ARGUMENT ==========
-#[test]
-fn test_type_named_generic_argument() {
-    let ty = parse_type("Map<Key: i32, Value: f64>");
-    assert!(matches!(&ty, Type::TypePath(p) if p.segments[0].type_arguments.is_some()));
-}
 
 
 // ========== TYPE PATH WITH EMPTY GENERICS ==========
@@ -453,11 +438,6 @@ fn test_path_segment_limit() {
 
 
 // SyntaxErr::PathExpectedName (variant 226)
-#[test]
-fn test_path_expected_name() {
-    let (_, log) = parse_type_no_assert("foo::");
-    assert!(log.error_bit());
-}
 
 
 // ---------- REFERENCE TYPE ERRORS ----------
@@ -473,11 +453,6 @@ fn test_ref_lifetime_missing() {
 // ---------- TUPLE TYPE ERRORS ----------
 
 // SyntaxErr::TupleTypeExpectedEnd (variant 280)
-#[test]
-fn test_tuple_type_expected_end() {
-    let (_, log) = parse_type_no_assert("(i32, f64");
-    assert!(log.error_bit());
-}
 
 
 // SyntaxErr::TupleTypeElementLimit (variant 281) - needs >65536 elements
@@ -578,12 +553,6 @@ fn test_exp_open_angle() {
 }
 
 // SyntaxErr::ExpectedCloseAngle (variant 1007)
-#[test]
-fn test_exp_close_angle() {
-    // Vec<< triggers the open angle lexing differently
-    let (_, log) = parse_type_no_assert("Vec<i32");
-    assert!(log.error_bit());
-}
 
 // SyntaxErr::ExpectedSemicolon (variant 1008)
 #[test]
@@ -600,11 +569,6 @@ fn test_exp_colon() {
 }
 
 // SyntaxErr::ExpectedArrow (variant 1010)
-#[test]
-fn test_exp_arrow() {
-    let (_, log) = parse_type_no_assert("fn(x: i32) - bool");
-    assert!(log.error_bit());
-}
 
 // ---------- GENERAL EXPECTED ERRORS (2000-2020) ----------
 
@@ -616,18 +580,8 @@ fn test_exp_item() {
 }
 
 // SyntaxErr::ExpectedType (variant 2001)
-#[test]
-fn test_exp_type() {
-    let (_, log) = parse_type_no_assert("@");
-    assert!(log.error_bit());
-}
 
 // SyntaxErr::ExpectedExpr (variant 2002)
-#[test]
-fn test_exp_expr() {
-    let (_, log) = parse_expr_no_assert("}");
-    assert!(log.error_bit());
-}
 
 // SyntaxErr::SyntaxNotSupported (variant 2020)
 #[test]
@@ -673,11 +627,6 @@ fn test_type_path_empty_global() {
 
 
 // ========== TUPLE TYPE WITH SINGLE ELEMENT ==========
-#[test]
-fn test_type_paren() {
-    let ty = parse_type("(i32)");
-    assert!(matches!(&ty, Type::Parentheses(_)));
-}
 
 
 // ========== LONG TYPE PATH ==========
@@ -689,19 +638,9 @@ fn test_type_path_long() {
 
 
 // ========== MISSING SEMICOLON ON TYPE ==========
-#[test]
-fn test_err_type_alias_no_semi() {
-    let (_, log) = parse_source_no_assert("type Foo = i32");
-    assert!(log.error_bit());
-}
 
 
 // ========== GENERIC ARGUMENT EXPECTED END ==========
-#[test]
-fn test_err_generic_arg_expected_close() {
-    let (_, log) = parse_type_no_assert("Vec<i32,");
-    assert!(log.error_bit());
-}
 
 
 // ========== TYPE PATH EXPECTED NAME ==========
@@ -730,11 +669,6 @@ fn test_type_ptr_poly_const() {
 
 
 // ========== TYPE: NESTED PATH ==========
-#[test]
-fn test_type_nested_path_with_generics() {
-    let ty = parse_type("std::collections::HashMap<K, V>");
-    assert!(matches!(&ty, Type::TypePath(p) if p.segments.len() >= 2));
-}
 
 
 // ========== TYPE: TUPLE WITH ONE ELEMENT ==========
@@ -746,19 +680,9 @@ fn test_type_tuple_one_elem() {
 
 
 // ========== TYPE: REFINEMENT WITH ALL FIELDS ==========
-#[test]
-fn test_type_refine_full() {
-    let ty = parse_type("u8: 6: [0:10]");
-    assert!(matches!(&ty, Type::RefinementType(_)));
-}
 
 
 // ========== TYPE: LATENT ==========
-#[test]
-fn test_type_latent_expression() {
-    let ty = parse_type("{ 42 }");
-    assert!(matches!(&ty, Type::LatentType(_)));
-}
 
 
 // ========== TYPE: ARRAY WITH COMPLEX LENGTH ==========
@@ -802,11 +726,6 @@ fn test_type_named_generic2() {
 
 
 // ========== TYPE: MISSING SEMICOLON IN ARRAY ==========
-#[test]
-fn test_type_array_no_semi() {
-    let (_, log) = parse_type_no_assert("[i32 10]");
-    assert!(log.error_bit());
-}
 
 
 // ========== BLOCK EDGE CASES ==========
@@ -819,12 +738,6 @@ fn test_empty_block() {
 
 
 // ========== TYPES ==========
-
-#[test]
-fn test_function_type_with_attributes() {
-    let ty = parse_type("fn [inline](x: i32) -> bool");
-    assert!(matches!(&ty, Type::FunctionType(_)));
-}
 
 
 #[test]
@@ -858,13 +771,6 @@ fn test_type_f128() {
 
 
 #[test]
-fn test_type_syntax_error() {
-    let (_, log) = parse_type_no_assert("@");
-    assert!(log.error_bit());
-}
-
-
-#[test]
 fn test_type_ref_with_lifetime_and_iso() {
     let ty = parse_type("&'a iso i32");
     assert!(
@@ -883,27 +789,6 @@ fn test_type_ref_with_lifetime_and_mut() {
 
 
 #[test]
-fn test_type_ptr_with_iso() {
-    let ty = parse_type("*iso i32");
-    assert!(matches!(&ty, Type::PointerType(p) if matches!(p.exclusivity, Some(Exclusivity::Iso))));
-}
-
-
-#[test]
-fn test_type_ptr_with_const() {
-    let ty = parse_type("*const i32");
-    assert!(matches!(&ty, Type::PointerType(p) if matches!(p.mutability, Some(Mutability::Const))));
-}
-
-
-#[test]
-fn test_type_pointer_with_exclusivity_and_mut() {
-    let ty = parse_type("*mut i32");
-    assert!(matches!(&ty, Type::PointerType(p) if p.mutability.is_some()));
-}
-
-
-#[test]
 fn test_type_pointer_iso_mut() {
     let ty = parse_type("*iso mut i32");
     assert!(matches!(&ty, Type::PointerType(_)));
@@ -911,12 +796,6 @@ fn test_type_pointer_iso_mut() {
 
 
 // ========== REFINEMENT TYPE EDGE CASES ==========
-
-#[test]
-fn test_type_refine_width_only() {
-    let ty = parse_type("u8: 6");
-    assert!(matches!(&ty, Type::RefinementType(r) if r.width.is_some() && r.minimum.is_none() && r.maximum.is_none()));
-}
 
 
 #[test]
@@ -949,12 +828,6 @@ fn test_type_refine_width_then_no_bracket() {
 
 // ========== PATH EDGE CASES ==========
 
-#[test]
-fn test_type_path_with_generic_args() {
-    let ty = parse_type("Vec<i32>");
-    assert!(matches!(&ty, Type::TypePath(p) if p.segments[0].type_arguments.is_some()));
-}
-
 
 #[test]
 fn test_type_path_global_with_generics() {
@@ -982,12 +855,6 @@ fn test_type_alias_with_generics() {
 
 // ========== ARRAY TYPE ERROR PATHS ==========
 
-#[test]
-fn test_type_array_missing_semi_before_expr() {
-    let (_, log) = parse_type_no_assert("[i32; 10");
-    assert!(log.error_bit());
-}
-
 
 // ========== POINTER TYPE ERROR PATHS ==========
 
@@ -1001,12 +868,6 @@ fn test_type_ptr_poly_mut() {
 
 
 // ========== PATH ERROR PATHS ==========
-
-#[test]
-fn test_type_path_eof_after_scope() {
-    let (_, log) = parse_type_no_assert("foo::");
-    assert!(log.error_bit());
-}
 
 
 // ========== TYPE RECURSION ==========

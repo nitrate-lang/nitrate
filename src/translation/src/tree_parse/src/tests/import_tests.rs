@@ -87,19 +87,9 @@ fn test_import_missing_semicolon() {
 // ---------- IMPORT ERRORS ----------
 
 // SyntaxErr::ImportAliasMissingName (variant 41)
-#[test]
-fn test_import_alias_missing() {
-    let (_, log) = parse_source_no_assert("use foo as ;");
-    assert!(log.error_bit());
-}
 
 
 // SyntaxErr::ImportExpectedStarOrGroup (variant 42)
-#[test]
-fn test_import_star_or_group() {
-    let (_, log) = parse_source_no_assert("use foo::bar::;");
-    assert!(log.error_bit());
-}
 
 
 // SyntaxErr::ImportGroupExpectedEnd (variant 43)

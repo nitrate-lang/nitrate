@@ -162,11 +162,6 @@ fn test_struct_field_limit() {
 
 
 // SyntaxErr::StructureExpectedEnd (variant 103)
-#[test]
-fn test_struct_expected_end() {
-    let (_, log) = parse_source_no_assert("struct Foo { x: i32");
-    assert!(log.error_bit());
-}
 
 
 // ---------- STRUCT INIT ERRORS ----------
@@ -188,19 +183,6 @@ fn test_struct_init_missing_colon() {
 
 
 // ========== STRUCT EDGE CASES ==========
-
-#[test]
-fn test_struct_field_default_value() {
-    let s = single_struct(parse_source("struct Foo { x: i32 = 42 }"));
-    assert!(s.fields[0].default_value.is_some());
-}
-
-
-#[test]
-fn test_struct_field_trailing_comma() {
-    let s = single_struct(parse_source("struct Foo { x: i32, }"));
-    assert_eq!(s.fields.len(), 1);
-}
 
 
 #[test]

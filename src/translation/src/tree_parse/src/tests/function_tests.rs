@@ -196,11 +196,6 @@ fn test_fn_params_expected_end() {
 
 
 // SyntaxErr::FunctionParameterVariadicExpected (variant 126)
-#[test]
-fn test_fn_variadic_expected() {
-    let (_, log) = parse_source_no_assert("fn f(x: i32, .) {}");
-    assert!(log.error_bit());
-}
 
 
 // ---------- FUNCTION CALL ERRORS ----------

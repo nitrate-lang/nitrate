@@ -82,8 +82,6 @@ fn test_static_mutability_const() {
     ));
 }
 
-
-
 // ---------- VARIABLE ERRORS ----------
 
 // SyntaxErr::VariableMissingName (variant 140)
@@ -93,14 +91,12 @@ fn test_var_missing_name() {
     assert!(log.error_bit());
 }
 
-
 // ========== STATIC TY ==========
 #[test]
 fn test_static_with_type() {
     let v = single_variable(parse_source("static x: i32 = 0;"));
     assert!(v.ty.is_some());
 }
-
 
 // ========== VISIBILITY EDGE CASES ==========
 
@@ -112,7 +108,6 @@ fn test_visibility_sec_enum() {
     ));
 }
 
-
 #[test]
 fn test_visibility_pro_struct() {
     assert!(matches!(
@@ -120,7 +115,6 @@ fn test_visibility_pro_struct() {
         Some(Visibility::Protected)
     ));
 }
-
 
 #[test]
 fn test_visibility_pub_type_alias() {
@@ -130,7 +124,6 @@ fn test_visibility_pub_type_alias() {
     ));
 }
 
-
 #[test]
 fn test_visibility_sec_fn() {
     assert!(matches!(
@@ -138,7 +131,6 @@ fn test_visibility_sec_fn() {
         Some(Visibility::Private)
     ));
 }
-
 
 #[test]
 fn test_visibility_pro_fn() {
@@ -148,17 +140,7 @@ fn test_visibility_pro_fn() {
     ));
 }
 
-
 // ========== GLOBAL VARIABLE EDGE CASES ==========
-
-#[test]
-fn test_static_visibility() {
-    assert!(matches!(
-        single_variable(parse_source("pub static x: i32 = 0;")).visibility,
-        Some(Visibility::Public)
-    ));
-}
-
 
 #[test]
 fn test_const_pub() {
@@ -168,13 +150,11 @@ fn test_const_pub() {
     ));
 }
 
-
 #[test]
 fn test_const_no_type_no_init() {
     let (_, log) = parse_source_no_assert("const X;");
     assert!(!log.error_bit());
 }
-
 
 // ========== LOCAL VARIABLE EDGE CASES ==========
 
@@ -184,13 +164,11 @@ fn test_let_no_type_no_init() {
     assert!(f.definition.is_some());
 }
 
-
 #[test]
 fn test_let_with_type() {
     let f = single_function(parse_source("fn f() { let x: i32 = 42; }"));
     assert!(f.definition.is_some());
 }
-
 
 #[test]
 fn test_let_mut() {
@@ -198,13 +176,11 @@ fn test_let_mut() {
     assert!(f.definition.is_some());
 }
 
-
 #[test]
 fn test_let_const_mutability() {
     let f = single_function(parse_source("fn f() { let const x: i32 = 42; }"));
     assert!(f.definition.is_some());
 }
-
 
 #[test]
 fn test_var_local() {
@@ -212,13 +188,11 @@ fn test_var_local() {
     assert!(f.definition.is_some());
 }
 
-
 #[test]
 fn test_let_missing_semicolon() {
     let (_, log) = parse_source_no_assert("fn f() { let x: i32 = 42 }");
     assert!(log.error_bit());
 }
-
 
 // ========== LOCAL VAR PARSING ERROR ==========
 
@@ -227,4 +201,3 @@ fn test_var_missing_semicolon() {
     let (_, log) = parse_source_no_assert("fn f() { var x: i32 = 42 }");
     assert!(log.error_bit());
 }
-

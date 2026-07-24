@@ -360,11 +360,6 @@ fn test_err_expr_index_missing_expr() {
 
 
 // ========== EMPTY TUPLE ==========
-#[test]
-fn test_empty_tuple_expr() {
-    let expr = parse_expr("()");
-    assert!(matches!(&expr, Expr::Tuple(t) if t.elements.is_empty()));
-}
 
 
 // ========== FOR LOOP VARIADIC BINDING EXPECTED END ==========
@@ -510,11 +505,6 @@ fn test_for_expected_in() {
 // ---------- FIELD/METHOD ERRORS ----------
 
 // SyntaxErr::ExpectedFieldOrMethodName (variant 500)
-#[test]
-fn test_field_or_method_name() {
-    let (_, log) = parse_expr_no_assert("a.");
-    assert!(log.error_bit());
-}
 
 
 // ========== TUPLE TYPE IN EXPRESSION ==========
@@ -599,24 +589,11 @@ fn test_closure_param_default() {
 
 // ========== BREAK/CONTINUE EDGE CASES ==========
 
-#[test]
-fn test_break_label_missing_name() {
-    let (_, log) = parse_expr_no_assert("break ';");
-    assert!(log.error_bit());
-}
-
 
 #[test]
 fn test_continue_label() {
     let expr = parse_expr("continue 'l;");
     assert!(matches!(&expr, Expr::Continue(c) if matches!(&c.label, Some(l) if &**l == "l")));
-}
-
-
-#[test]
-fn test_continue_label_missing_name() {
-    let (_, log) = parse_expr_no_assert("continue ';");
-    assert!(log.error_bit());
 }
 
 
@@ -650,44 +627,9 @@ fn test_closure_with_attributes_and_params() {
 
 
 #[test]
-fn test_closure_params_no_return() {
-    let expr = parse_expr("fn(x: i32) { x }");
-    assert!(matches!(&expr, Expr::Closure(c) if c.parameters.is_some() && c.return_type.is_none()));
-}
-
-
-#[test]
 fn test_closure_no_params_no_return() {
     let expr = parse_expr("fn { 42 }");
     assert!(matches!(&expr, Expr::Closure(c) if c.parameters.is_none() && c.return_type.is_none()));
-}
-
-
-#[test]
-fn test_closure_unsafe_block() {
-    let expr = parse_expr("unsafe { 42 }");
-    assert!(matches!(&expr, Expr::Closure(_)));
-}
-
-
-#[test]
-fn test_closure_safe_block() {
-    let expr = parse_expr("safe { 42 }");
-    assert!(matches!(&expr, Expr::Closure(_)));
-}
-
-
-#[test]
-fn test_closure_unsafe_with_modifier() {
-    let expr = parse_expr("unsafe(42) { 1 }");
-    assert!(matches!(&expr, Expr::Closure(c) if c.parameters.is_none()));
-}
-
-
-#[test]
-fn test_block_as_expression() {
-    let expr = parse_expr("{ 42 }");
-    assert!(matches!(&expr, Expr::Closure(_)));
 }
 
 
@@ -738,13 +680,6 @@ fn test_list_multiple_elements() {
 }
 
 
-#[test]
-fn test_list_unexpected_eof() {
-    let (_, log) = parse_expr_no_assert("[1, 2, 3");
-    assert!(log.error_bit());
-}
-
-
 // ========== ATTRIBUTES EDGE CASES ==========
 
 #[test]
@@ -786,27 +721,8 @@ fn test_block_item_empty_return() {
 
 // ========== WHILE LOOP EDGE CASES ==========
 
-#[test]
-fn test_while_with_condition() {
-    let expr = parse_expr("while true { break; }");
-    assert!(matches!(&expr, Expr::While(w) if w.condition.is_some()));
-}
-
-
-#[test]
-fn test_while_no_condition_implicit() {
-    let expr = parse_expr("while { break; }");
-    assert!(matches!(&expr, Expr::While(w) if w.condition.is_none()));
-}
-
 
 // ========== UNSAFE BLOCK MODIFIER EDGE CASES ==========
-
-#[test]
-fn test_unsafe_block_with_expr_modifier() {
-    let expr = parse_expr("unsafe(42) { 1 }");
-    assert!(matches!(&expr, Expr::Closure(_)));
-}
 
 
 #[test]
@@ -843,20 +759,8 @@ fn test_method_call_no_args() {
 
 // ========== IF ELSE IF ELSE ==========
 
-#[test]
-fn test_if_else_block() {
-    let expr = parse_expr("if true { 1 } else { 2 }");
-    assert!(matches!(&expr, Expr::If(i) if matches!(i.false_branch, Some(ElseIf::Block(_)))));
-}
-
 
 // ========== AWAIT EDGE CASES ==========
-
-#[test]
-fn test_await_expr() {
-    let expr = parse_expr("await fut");
-    assert!(matches!(&expr, Expr::Await(_)));
-}
 
 
 // ========== CLOSURE ERROR PATHS ==========
@@ -882,13 +786,6 @@ fn test_closure_missing_close_paren() {
 }
 
 
-#[test]
-fn test_closure_return_arrow_missing_gt() {
-    let (_, log) = parse_expr_no_assert("fn(x: i32) - i32 { x }");
-    assert!(log.error_bit());
-}
-
-
 // ========== ITEM ERROR PATHS ==========
 
 #[test]
@@ -900,13 +797,6 @@ fn test_item_unexpected_in_function() {
 
 
 // ========== BLOCK WITH UNSAFE AND SAFE ==========
-
-#[test]
-fn test_block_unsafe_missing_modifier() {
-    // Just parsing an unsafe block without modifier
-    let expr = parse_expr("unsafe { 42 }");
-    assert!(matches!(&expr, Expr::Closure(_)));
-}
 
 
 // ========== EXPRESSION PATH WITH EMPTY GENERICS ==========

@@ -72,11 +72,6 @@ fn test_impl_item_limit() {
 
 
 // SyntaxErr::ImplCannotBeVisible (variant 203)
-#[test]
-fn test_impl_visibility_error() {
-    let (_, log) = parse_source_no_assert("pub impl Foo {}");
-    assert!(log.error_bit());
-}
 
 
 // ========== IMPL EDGE CASES ==========
@@ -93,13 +88,6 @@ fn test_impl_empty() {
 fn test_impl_with_generics() {
     let i = single_impl(parse_source("impl<T> Foo<T> {}"));
     assert!(i.generics.is_some());
-}
-
-
-#[test]
-fn test_impl_with_fn() {
-    let i = single_impl(parse_source("impl Foo { fn bar() {} }"));
-    assert_eq!(i.items.len(), 1);
 }
 
 

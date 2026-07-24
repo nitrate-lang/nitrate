@@ -32,8 +32,6 @@ fn test_generics_unclosed() {
     assert!(log.error_bit());
 }
 
-
-
 // ============================================================================
 // Exhaustive tests for EVERY SyntaxErr format() branch in diagnosis.rs
 // ============================================================================
@@ -46,7 +44,6 @@ fn test_gen_missing_param() {
     let (_, log) = parse_source_no_assert("struct Foo<T, = i32> { x: T }");
     assert!(log.error_bit());
 }
-
 
 // SyntaxErr::GenericParameterLimit (variant 1) - needs >65536 params
 #[test]
@@ -64,14 +61,12 @@ fn test_gen_param_limit() {
     assert!(log.error_bit());
 }
 
-
 // SyntaxErr::GenericParameterExpectedEnd (variant 2)
 #[test]
 fn test_gen_expected_end() {
     let (_, log) = parse_source_no_assert("struct Foo<T U> { x: T }");
     assert!(log.error_bit());
 }
-
 
 // ========== GENERICS EDGE CASES ==========
 
@@ -80,18 +75,3 @@ fn test_generic_multi_params() {
     let s = single_struct(parse_source("struct Foo<T, U, V> { a: T, b: U, c: V }"));
     assert_eq!(s.generics.unwrap().params.len(), 3);
 }
-
-
-#[test]
-fn test_generic_missing_param_name() {
-    let (_, log) = parse_source_no_assert("struct Foo<T, = i32> { x: T }");
-    assert!(log.error_bit());
-}
-
-
-#[test]
-fn test_generic_param_expected_end_no_comma() {
-    let (_, log) = parse_source_no_assert("struct Foo<T U> { x: T }");
-    assert!(log.error_bit());
-}
-

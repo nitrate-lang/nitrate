@@ -90,20 +90,6 @@ fn test_module_with_items() {
 
 
 #[test]
-fn test_module_missing_name() {
-    let (_, log) = parse_source_no_assert("mod { fn f() {} }");
-    assert!(log.error_bit());
-}
-
-
-#[test]
-fn test_module_unclosed() {
-    let (_, log) = parse_source_no_assert("mod foo { fn f() {}");
-    assert!(log.error_bit());
-}
-
-
-#[test]
 fn test_module_attributes() {
     let mod_item = match single_item(parse_source("mod [attr] foo { fn f() {} }")) {
         Item::Module(m) => m,

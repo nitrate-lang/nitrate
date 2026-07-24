@@ -26,15 +26,6 @@ fn test_enum_type() {
 }
 
 #[test]
-fn test_enum_default() {
-    assert!(
-        single_enum(parse_source("enum Foo { A = 42 }")).variants[0]
-            .default_value
-            .is_some()
-    );
-}
-
-#[test]
 fn test_enum_generic() {
     assert!(
         single_enum(parse_source("enum O<T> { Some(T), None }"))
@@ -80,8 +71,6 @@ fn test_enum_missing_brace() {
     assert!(log.error_bit());
 }
 
-
-
 // SyntaxErr::EnumVariantLimit (variant 81) - needs >65536 variants
 #[test]
 fn test_enum_variant_limit() {
@@ -97,14 +86,12 @@ fn test_enum_variant_limit() {
     assert!(log.error_bit());
 }
 
-
 // SyntaxErr::EnumExpectedEnd (variant 83)
 #[test]
 fn test_enum_expected_end() {
     let (_, log) = parse_source_no_assert("enum Foo { A B }");
     assert!(log.error_bit());
 }
-
 
 // ========== ENUM WITH DEFAULT VALUE ==========
 #[test]
@@ -114,7 +101,6 @@ fn test_enum_defaulted_variant() {
     assert!(e.variants[1].default_value.is_some());
 }
 
-
 // ========== ENUM EDGE CASES ==========
 
 #[test]
@@ -122,21 +108,11 @@ fn test_enum_variant_with_type_unclosed_paren() {
     let (_, log) = parse_source_no_assert("enum Foo { Bar(i32 }");
     assert!(log.error_bit());
 }
-
-
-#[test]
-fn test_enum_variant_missing_comma() {
-    let (_, log) = parse_source_no_assert("enum Foo { A B }");
-    assert!(log.error_bit());
-}
-
-
 #[test]
 fn test_enum_variant_expected_close_brace() {
     let (_, log) = parse_source_no_assert("enum Foo { A, B, ");
     assert!(log.error_bit());
 }
-
 
 #[test]
 fn test_enum_with_default_value() {
@@ -145,10 +121,8 @@ fn test_enum_with_default_value() {
     assert!(e.variants[1].default_value.is_none());
 }
 
-
 #[test]
 fn test_enum_variant_trailing_comma() {
     let e = single_enum(parse_source("enum Foo { A, B, }"));
     assert_eq!(e.variants.len(), 2);
 }
-
