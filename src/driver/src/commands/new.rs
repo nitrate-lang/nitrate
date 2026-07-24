@@ -1,4 +1,4 @@
-use crate::{Interpreter, InterpreterError};
+use crate::Interpreter;
 use clap::Parser;
 use slog::{error, info};
 
@@ -14,7 +14,7 @@ pub(crate) struct NewArgs {
     lib: bool,
 
     /// Specify the edition for the new package
-    #[arg(long, default_value = "2025")]
+    #[arg(long, default_value = "2026")]
     edition: u16,
 
     /// Set the resulting package name, defaults to the directory name
@@ -25,10 +25,10 @@ pub(crate) struct NewArgs {
 }
 
 impl Interpreter<'_> {
-    pub(crate) fn sc_new(&mut self, args: NewArgs) -> Result<(), InterpreterError> {
+    pub(crate) fn sc_new(&mut self, args: NewArgs) -> anyhow::Result<()> {
         if args.bin && args.lib {
             error!(self.log, "Cannot specify both --bin and --lib");
-            return Err(InterpreterError::CLISemanticError);
+            return Err(anyhow::anyhow!("Cannot specify both --bin and --lib"));
         }
 
         let containing_dir = std::path::Path::new(&args.path);

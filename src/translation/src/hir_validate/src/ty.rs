@@ -1,163 +1,162 @@
-use crate::{ValidHir, ValidateHir};
-use nitrate_hir::{SymbolTab, prelude::*};
+use std::{collections::HashSet, ops::Deref};
 
-impl ValidateHir for StructAttribute {
-    fn verify(&self, _store: &Store, _symtab: &SymbolTab) -> Result<(), ()> {
-        match self {
-            StructAttribute::Packed => Ok(()),
-        }
-    }
+use crate::{ValidHir, ValidateCtx, ValidateHirItem, ValidateHirType, ValidateTypeOptions, establish_property};
+use nitrate_hir::prelude::*;
 
-    fn validate(self, store: &Store, symtab: &SymbolTab) -> Result<ValidHir<Self>, ()> {
-        self.verify(store, symtab)?;
-        Ok(ValidHir::new(self))
-    }
+fn verify_array(
+    ctx: &mut ValidateCtx,
+    element_type: &Type,
+    _len: u32,
+    _options: &ValidateTypeOptions,
+) -> Result<(), ()> {
+    establish_property("element_type: Sized", || {
+        element_type.verify(ctx, &ValidateTypeOptions::sized())
+    })
 }
 
-impl ValidateHir for StructFieldAttribute {
-    fn verify(&self, _store: &Store, _symtab: &SymbolTab) -> Result<(), ()> {
-        match self {
-            StructFieldAttribute::Invalid => Err(()),
-        }
-    }
-
-    fn validate(self, store: &Store, symtab: &SymbolTab) -> Result<ValidHir<Self>, ()> {
-        self.verify(store, symtab)?;
-        Ok(ValidHir::new(self))
-    }
-}
-
-impl ValidateHir for StructField {
-    fn verify(&self, store: &Store, symtab: &SymbolTab) -> Result<(), ()> {
-        for attr in &self.attributes {
-            attr.verify(store, symtab)?;
-        }
-
-        store[&self.ty].verify(store, symtab)?;
-
-        Ok(())
-    }
-
-    fn validate(self, store: &Store, symtab: &SymbolTab) -> Result<ValidHir<Self>, ()> {
-        self.verify(store, symtab)?;
-        Ok(ValidHir::new(self))
-    }
-}
-
-impl ValidateHir for StructType {
-    fn verify(&self, store: &Store, symtab: &SymbolTab) -> Result<(), ()> {
-        for attr in &self.attributes {
-            attr.verify(store, symtab)?;
-        }
-
-        for field in &self.fields {
-            field.verify(store, symtab)?;
+fn verify_tuple(ctx: &mut ValidateCtx, element_types: &[TypeId], _options: &ValidateTypeOptions) -> Result<(), ()> {
+    establish_property("all tuple element types: Sized", || {
+        for elem_type in element_types {
+            establish_property("element_type: Sized", || {
+                elem_type.verify(ctx, &ValidateTypeOptions::sized())
+            })?;
         }
 
         Ok(())
-    }
-
-    fn validate(self, store: &Store, symtab: &SymbolTab) -> Result<ValidHir<Self>, ()> {
-        self.verify(store, symtab)?;
-        Ok(ValidHir::new(self))
-    }
+    })
 }
 
-impl ValidateHir for EnumAttribute {
-    fn verify(&self, _store: &Store, _symtab: &SymbolTab) -> Result<(), ()> {
+fn verify_refinement_type(
+    ctx: &mut ValidateCtx,
+    base: &Type,
+    min: &LiteralId,
+    max: &LiteralId,
+    options: &ValidateTypeOptions,
+) -> Result<(), ()> {
+    base.verify(ctx, options)?;
+
+    establish_property("refinement bounds: max >= min", || {
+        if max.deref() >= min.deref() { Ok(()) } else { Err(()) }
+    })
+}
+
+impl ValidateHirType for FunctionAttribute {
+    fn verify(&self, ctx: &mut ValidateCtx, _options: &ValidateTypeOptions) -> Result<(), ()> {
+        if ctx.cyclic_bail(self) {
+            return Ok(());
+        }
+
         match self {
-            EnumAttribute::Invalid => Err(()),
+            FunctionAttribute::CVariadic => Ok(()),
+            FunctionAttribute::NoMangle => Ok(()),
         }
     }
 
-    fn validate(self, store: &Store, symtab: &SymbolTab) -> Result<ValidHir<Self>, ()> {
-        self.verify(store, symtab)?;
+    fn validate(self, ctx: &mut ValidateCtx, options: &ValidateTypeOptions) -> Result<ValidHir<Self>, ()> {
+        self.verify(ctx, options)?;
         Ok(ValidHir::new(self))
     }
 }
 
-impl ValidateHir for EnumVariantAttribute {
-    fn verify(&self, _store: &Store, _symtab: &SymbolTab) -> Result<(), ()> {
-        match self {
-            EnumVariantAttribute::Invalid => Err(()),
+impl ValidateHirType for FunctionType {
+    fn verify(&self, ctx: &mut ValidateCtx, options: &ValidateTypeOptions) -> Result<(), ()> {
+        if ctx.cyclic_bail(self) {
+            return Ok(());
         }
-    }
 
-    fn validate(self, store: &Store, symtab: &SymbolTab) -> Result<ValidHir<Self>, ()> {
-        self.verify(store, symtab)?;
-        Ok(ValidHir::new(self))
-    }
-}
-
-impl ValidateHir for EnumVariant {
-    fn verify(&self, store: &Store, symtab: &SymbolTab) -> Result<(), ()> {
         for attr in &self.attributes {
-            attr.verify(store, symtab)?;
+            attr.verify(ctx, options)?;
         }
-
-        store[&self.ty].verify(store, symtab)
-    }
-
-    fn validate(self, store: &Store, symtab: &SymbolTab) -> Result<ValidHir<Self>, ()> {
-        self.verify(store, symtab)?;
-        Ok(ValidHir::new(self))
-    }
-}
-
-impl ValidateHir for EnumType {
-    fn verify(&self, store: &Store, symtab: &SymbolTab) -> Result<(), ()> {
-        for attr in &self.attributes {
-            attr.verify(store, symtab)?;
-        }
-
-        for variant in &self.variants {
-            variant.verify(store, symtab)?;
-        }
-
-        Ok(())
-    }
-
-    fn validate(self, store: &Store, symtab: &SymbolTab) -> Result<ValidHir<Self>, ()> {
-        self.verify(store, symtab)?;
-        Ok(ValidHir::new(self))
-    }
-}
-
-impl ValidateHir for FunctionAttribute {
-    fn verify(&self, _store: &Store, _symtab: &SymbolTab) -> Result<(), ()> {
-        match self {
-            FunctionAttribute::Variadic => Ok(()),
-        }
-    }
-
-    fn validate(self, store: &Store, symtab: &SymbolTab) -> Result<ValidHir<Self>, ()> {
-        self.verify(store, symtab)?;
-        Ok(ValidHir::new(self))
-    }
-}
-
-impl ValidateHir for FunctionType {
-    fn verify(&self, store: &Store, symtab: &SymbolTab) -> Result<(), ()> {
-        for attr in &self.attributes {
-            attr.verify(store, symtab)?;
-        }
-
-        store[&self.return_type].verify(store, symtab)?;
 
         for param in &self.params {
-            store[&param.1].verify(store, symtab)?;
+            establish_property("parameter type: Sized", || {
+                param.1.verify(ctx, &ValidateTypeOptions::sized())
+            })?;
         }
+
+        establish_property("parameter name uniqueness", || {
+            let mut names = HashSet::new();
+
+            for param in &self.params {
+                if !names.insert(&param.0) {
+                    return Err(());
+                }
+            }
+
+            Ok(())
+        })?;
+
+        establish_property("return_type: Sized", || {
+            self.return_type.verify(ctx, &ValidateTypeOptions::sized())
+        })?;
+
         Ok(())
     }
 
-    fn validate(self, store: &Store, symtab: &SymbolTab) -> Result<ValidHir<Self>, ()> {
-        self.verify(store, symtab)?;
+    fn validate(self, ctx: &mut ValidateCtx, options: &ValidateTypeOptions) -> Result<ValidHir<Self>, ()> {
+        self.verify(ctx, options)?;
         Ok(ValidHir::new(self))
     }
 }
 
-impl ValidateHir for Type {
-    fn verify(&self, store: &Store, symtab: &SymbolTab) -> Result<(), ()> {
+fn verify_reference_type(
+    ctx: &mut ValidateCtx,
+    lifetime: &Lifetime,
+    _exclusive: bool,
+    _mutable: bool,
+    to: &Type,
+    _options: &ValidateTypeOptions,
+) -> Result<(), ()> {
+    match lifetime {
+        Lifetime::Static | Lifetime::Gc | Lifetime::ThreadLocal | Lifetime::TaskLocal => {}
+        Lifetime::Inferred => return Err(()),
+    }
+
+    to.verify(ctx, &ValidateTypeOptions::un_sized())
+}
+
+fn verify_slice_reference_type(
+    ctx: &mut ValidateCtx,
+    lifetime: &Lifetime,
+    _exclusive: bool,
+    _mutable: bool,
+    element_type: &Type,
+    _options: &ValidateTypeOptions,
+) -> Result<(), ()> {
+    match lifetime {
+        Lifetime::Static | Lifetime::Gc | Lifetime::ThreadLocal | Lifetime::TaskLocal => {}
+        Lifetime::Inferred => return Err(()),
+    }
+
+    element_type.verify(ctx, &ValidateTypeOptions::sized())
+}
+
+fn verify_pointer_type(
+    ctx: &mut ValidateCtx,
+    to: &Type,
+    _exclusive: bool,
+    _mutable: bool,
+    _options: &ValidateTypeOptions,
+) -> Result<(), ()> {
+    to.verify(ctx, &ValidateTypeOptions::un_sized())
+}
+
+fn verify_slice_pointer_type(
+    ctx: &mut ValidateCtx,
+    _exclusive: bool,
+    _mutable: bool,
+    element_type: &Type,
+    _options: &ValidateTypeOptions,
+) -> Result<(), ()> {
+    element_type.verify(ctx, &ValidateTypeOptions::sized())
+}
+
+impl ValidateHirType for Type {
+    fn verify(&self, ctx: &mut ValidateCtx, options: &ValidateTypeOptions) -> Result<(), ()> {
+        if ctx.cyclic_bail(self) {
+            return Ok(());
+        }
+
         match self {
             Type::Never
             | Type::Unit
@@ -176,78 +175,58 @@ impl ValidateHir for Type {
             | Type::F32
             | Type::F64 => Ok(()),
 
-            Type::Array { element_type, .. } => store[element_type].verify(store, symtab),
+            Type::Array { element_type, len } => verify_array(ctx, element_type, *len, options),
 
-            Type::Tuple { element_types } => {
-                for elem_type in element_types {
-                    store[elem_type].verify(store, symtab)?;
-                }
+            Type::Tuple { element_types } => verify_tuple(ctx, element_types, options),
 
-                Ok(())
-            }
+            Type::Struct { def } => def.borrow().verify(ctx),
 
-            Type::Struct { struct_type } => store[struct_type].verify(store, symtab),
+            Type::Enum { def } => def.borrow().verify(ctx),
 
-            Type::Enum { enum_type } => store[enum_type].verify(store, symtab),
+            Type::TypeAlias { def } => def.borrow().verify(ctx),
 
-            Type::Refine { base, min, max } => {
-                store[base].verify(store, symtab)?;
+            Type::Refine { base, min, max } => verify_refinement_type(ctx, base, min, max, options),
 
-                let min = store[min];
-                let max = store[max];
+            Type::Function { function_type } => function_type.verify(ctx, options),
 
-                if min > max {
-                    return Err(());
-                }
-
-                Ok(())
-            }
-
-            Type::Function { function_type } => store[function_type].verify(store, symtab),
-
-            Type::Reference { lifetime, to, .. } => {
-                match lifetime {
-                    Lifetime::Static
-                    | Lifetime::Gc
-                    | Lifetime::ThreadLocal
-                    | Lifetime::TaskLocal => {}
-
-                    Lifetime::Inferred => return Err(()),
-                }
-
-                store[to].verify(store, symtab)
-            }
+            Type::Reference {
+                lifetime,
+                exclusive,
+                mutable,
+                to,
+            } => verify_reference_type(ctx, lifetime, *exclusive, *mutable, to, options),
 
             Type::SliceRef {
                 lifetime,
+                exclusive,
+                mutable,
                 element_type,
-                ..
-            } => {
-                match lifetime {
-                    Lifetime::Static
-                    | Lifetime::Gc
-                    | Lifetime::ThreadLocal
-                    | Lifetime::TaskLocal => {}
+            } => verify_slice_reference_type(ctx, lifetime, *exclusive, *mutable, element_type, options),
 
-                    Lifetime::Inferred => return Err(()),
-                }
+            Type::Pointer { to, exclusive, mutable } => verify_pointer_type(ctx, to, *exclusive, *mutable, options),
 
-                store[element_type].verify(store, symtab)
-            }
+            Type::SlicePtr {
+                exclusive,
+                mutable,
+                element_type,
+            } => verify_slice_pointer_type(ctx, *exclusive, *mutable, element_type, options),
 
-            Type::Pointer { to, .. } => store[to].verify(store, symtab),
-
-            Type::Symbol { path: _ } => {
-                // TODO: cyclic analysis of types
-                Ok(())
+            Type::Parameterized { base, args: _ } => {
+                base.verify(ctx, options)
+                // TODO: Verify that the type arguments satisfy the generic constraints.
             }
 
             Type::InferredFloat | Type::InferredInteger | Type::Inferred { .. } => Err(()),
+
+            Type::GenericParam { .. } => {
+                // Generic parameters are valid in uninstantiated contexts (before monomorphization)
+                // They will be replaced with concrete types during monomorphization.
+                Ok(())
+            }
         }
     }
-
-    fn validate(self, store: &Store, symtab: &SymbolTab) -> Result<ValidHir<Self>, ()> {
-        self.verify(store, symtab)?;
+    fn validate(self, ctx: &mut ValidateCtx, options: &ValidateTypeOptions) -> Result<ValidHir<Self>, ()> {
+        self.verify(ctx, options)?;
         Ok(ValidHir::new(self))
     }
 }

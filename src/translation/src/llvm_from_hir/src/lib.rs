@@ -1,6 +1,6 @@
-mod gen_rval;
-mod gen_symbol;
-mod gencode;
+mod place;
+mod rvalue;
+mod symbol;
 mod ty;
 
-pub use gencode::generate_code;
+pub use symbol::generate_llvmir;

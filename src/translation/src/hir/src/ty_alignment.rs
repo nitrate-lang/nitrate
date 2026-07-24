@@ -15,9 +15,9 @@ pub fn get_align_of(ty: &Type, ctx: &LayoutCtx) -> Result<u64, LayoutError> {
 
         Type::Array { element_type, len } => {
             if *len == 0 {
-                return Ok(1);
+                Ok(1)
             } else {
-                get_align_of(&ctx.store[element_type], ctx)
+                get_align_of(element_type, ctx)
             }
         }
 
@@ -26,18 +26,16 @@ pub fn get_align_of(ty: &Type, ctx: &LayoutCtx) -> Result<u64, LayoutError> {
         } => {
             let mut max_align = 1;
 
-            for element in &*elements {
-                let element_align = get_align_of(&ctx.store[element], ctx)?;
+            for element in elements {
+                let element_align = get_align_of(element, ctx)?;
                 max_align = max(max_align, element_align);
             }
 
             Ok(max_align)
         }
 
-        Type::Struct { struct_type } => {
-            let StructType {
-                fields, attributes, ..
-            } = &ctx.store[struct_type];
+        Type::Struct { def } => {
+            let StructDef { fields, attributes, .. } = &*def.borrow();
 
             if attributes.contains(&StructAttribute::Packed) {
                 return Ok(1);
@@ -45,25 +43,25 @@ pub fn get_align_of(ty: &Type, ctx: &LayoutCtx) -> Result<u64, LayoutError> {
 
             let mut max_align = 1;
 
-            for field in fields {
-                let field_align = get_align_of(&ctx.store[&field.ty], ctx)?;
+            for field in fields.values() {
+                let field_align = get_align_of(&field.ty, ctx)?;
                 max_align = max(max_align, field_align);
             }
 
             Ok(max_align)
         }
 
-        Type::Enum { enum_type } => {
-            let EnumType { variants, .. } = &ctx.store[enum_type];
+        Type::Enum { def } => {
+            let EnumDef { variants, .. } = &*def.borrow();
 
             let mut max_align = 1;
 
             for variant in variants {
-                let variant_align = get_align_of(&ctx.store[&variant.ty], ctx)?;
+                let variant_align = get_align_of(&variant.ty, ctx)?;
                 max_align = max(max_align, variant_align);
             }
 
-            let discrim_align = match variants.len() {
+            let discrim_align = match variants.len() as u64 {
                 0..=256 => 1,
                 257..=65536 => 2,
                 65537..=4294967296 => 4,
@@ -75,38 +73,21 @@ pub fn get_align_of(ty: &Type, ctx: &LayoutCtx) -> Result<u64, LayoutError> {
             Ok(max_align)
         }
 
-        Type::Refine { base, .. } => Ok(get_align_of(&ctx.store[base], ctx)?),
+        Type::TypeAlias { def } => {
+            let type_alias = &def.borrow().type_id;
+            get_align_of(type_alias, ctx)
+        }
+
+        Type::Refine { base, .. } => Ok(get_align_of(base, ctx)?),
 
         Type::Function { .. } => Ok(ctx.ptr_size as u64),
         Type::Reference { .. } => Ok(ctx.ptr_size as u64),
         Type::SliceRef { .. } => Ok(ctx.ptr_size as u64),
         Type::Pointer { .. } => Ok(ctx.ptr_size as u64),
+        Type::SlicePtr { .. } => Ok(ctx.ptr_size as u64),
 
-        Type::Symbol { path } => match ctx.tab.get_type(path) {
-            Some(TypeDefinition::TypeAliasDef(type_alias_id)) => {
-                let type_id = ctx.store[type_alias_id].borrow().type_id;
-                get_align_of(&ctx.store[&type_id], ctx)
-            }
-
-            Some(TypeDefinition::EnumDef(enum_id)) => {
-                let enum_type = Type::Enum {
-                    enum_type: ctx.store[enum_id].borrow().enum_id,
-                };
-                get_align_of(&enum_type, ctx)
-            }
-
-            Some(TypeDefinition::StructDef(struct_id)) => {
-                let struct_type = Type::Struct {
-                    struct_type: ctx.store[struct_id].borrow().struct_id,
-                };
-                get_align_of(&struct_type, ctx)
-            }
-
-            None => Err(LayoutError::UnresolvedSymbol),
-        },
-
-        Type::InferredInteger { .. } | Type::InferredFloat | Type::Inferred { .. } => {
-            Err(LayoutError::NotInferred)
-        }
+        Type::Parameterized { .. } => Err(LayoutError::UninstantiatedGeneric),
+        Type::GenericParam { .. } => Err(LayoutError::UninstantiatedGeneric),
+        Type::InferredInteger | Type::InferredFloat | Type::Inferred { .. } => Err(LayoutError::NotInferred),
     }
 }

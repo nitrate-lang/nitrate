@@ -1,20 +1,13 @@
 use super::parse::Parser;
 use crate::diagnosis::SyntaxErr;
 
-use nitrate_tree::{
-    ast::{
-        AssociatedItem, Enum, EnumVariant, FuncParam, FuncParams, Function, Generics,
-        GlobalVariable, GlobalVariableKind, Impl, Import, Item, ItemPath, ItemPathSegment,
-        ItemSyntaxError, Module, Mutability, Struct, StructField, Trait, TypeAlias, TypeParam,
-        Visibility,
-    },
-    tag::{
-        intern_enum_variant_name, intern_function_name, intern_import_name, intern_module_name,
-        intern_parameter_name, intern_struct_field_name, intern_trait_name, intern_type_name,
-        intern_variable_name,
-    },
-};
+use nitrate_nstring::NString;
 use nitrate_token::Token;
+use nitrate_tree::ast::{
+    AssociatedItem, Enum, EnumVariant, FuncParam, FuncParams, Function, Generics, GlobalVariable, GlobalVariableKind,
+    Impl, Import, Item, ItemPath, ItemPathSegment, ItemSyntaxError, Module, Mutability, Struct, StructField, Trait,
+    TypeAlias, TypeParam, UseTree, Visibility,
+};
 
 impl Parser<'_, '_> {
     fn parse_generics(&mut self) -> Option<Generics> {
@@ -25,7 +18,7 @@ impl Parser<'_, '_> {
                 "".into()
             });
 
-            let name = intern_parameter_name(name);
+            let name = NString::from(name);
 
             let default = if this.lexer.skip_if(&Token::Eq) {
                 Some(this.parse_type())
@@ -78,18 +71,20 @@ impl Parser<'_, '_> {
     fn parse_module(&mut self) -> Module {
         let module_start_pos = self.lexer.peek_pos();
 
-        assert!(self.lexer.peek_t() == Token::Mod);
+        assert!(self.lexer.peek_tok().token == Token::Mod);
         self.lexer.skip_tok();
 
         let attributes = self.parse_attributes();
 
-        let name = self.lexer.next_if_name().unwrap_or_else(|| {
-            let bug = SyntaxErr::ModuleMissingName(self.lexer.peek_pos());
-            self.log.report(&bug);
-            "".into()
-        });
-
-        let name = intern_module_name(name);
+        let name = self
+            .lexer
+            .next_if_name()
+            .unwrap_or_else(|| {
+                let bug = SyntaxErr::ModuleMissingName(self.lexer.peek_pos());
+                self.log.report(&bug);
+                String::default()
+            })
+            .into();
 
         if !self.lexer.skip_if(&Token::OpenBrace) {
             let bug = SyntaxErr::ExpectedOpenBrace(self.lexer.peek_pos());
@@ -122,60 +117,115 @@ impl Parser<'_, '_> {
         Module {
             visibility: None,
             attributes,
-            name: Some(name),
+            name,
             items,
         }
     }
 
-    #[allow(dead_code)]
-    fn parse_item_path(&mut self) -> ItemPath {
-        fn parse_double_colon(this: &mut Parser) -> bool {
-            if !this.lexer.skip_if(&Token::Colon) {
-                return false;
-            }
+    fn consume_double_colon(&mut self) -> bool {
+        let pos = self.lexer.peek_pos();
 
-            if !this.lexer.skip_if(&Token::Colon) {
-                let bug = SyntaxErr::ExpectedColon(this.lexer.peek_pos());
-                this.log.report(&bug);
-                return false;
-            }
-
-            true
+        if !self.lexer.skip_if(&Token::Colon) {
+            return false;
         }
 
+        if !self.lexer.skip_if(&Token::Colon) {
+            self.lexer.rewind(pos);
+            return false;
+        }
+
+        true
+    }
+
+    #[allow(dead_code)]
+    fn parse_item_path(&mut self) -> ItemPath {
         let mut segments = Vec::new();
 
-        if parse_double_colon(self) {
-            segments.push(ItemPathSegment { segment: "".into() });
+        if !self.lexer.next_is(&Token::Colon) {
+            let segment = self.lexer.next_if_name().unwrap_or_else(|| {
+                let bug = SyntaxErr::PathExpectedName(self.lexer.peek_pos());
+                self.log.report(&bug);
+                "".into()
+            });
+
+            segments.push(ItemPathSegment { segment });
         }
 
         while !self.lexer.is_eof() {
+            let rewind_pos = self.lexer.peek_pos();
+
+            if !self.consume_double_colon() {
+                if segments.is_empty() {
+                    let bug = SyntaxErr::PathExpectedName(self.lexer.peek_pos());
+                    self.log.report(&bug);
+                }
+                break;
+            }
+
             let Some(segment) = self.lexer.next_if_name() else {
-                let bug = SyntaxErr::PathExpectedName(self.lexer.peek_pos());
-                self.log.report(&bug);
+                self.lexer.rewind(rewind_pos);
                 break;
             };
 
             segments.push(ItemPathSegment { segment });
-
-            if !parse_double_colon(self) {
-                break;
-            }
         }
 
         ItemPath { segments }
     }
 
-    fn parse_import(&mut self) -> Import {
-        assert!(self.lexer.peek_t() == Token::Use);
+    fn parse_use(&mut self) -> Import {
+        fn parse_use_tree(this: &mut Parser) -> UseTree {
+            let path = this.parse_item_path();
+
+            if this.consume_double_colon() {
+                if this.lexer.skip_if(&Token::Star) {
+                    return UseTree::UseAll { path };
+                } else if this.lexer.skip_if(&Token::OpenBrace) {
+                    let mut group = Vec::new();
+
+                    while !this.lexer.is_eof() {
+                        if this.lexer.skip_if(&Token::CloseBrace) {
+                            break;
+                        }
+
+                        let subtree = parse_use_tree(this);
+                        group.push(subtree);
+
+                        if !this.lexer.skip_if(&Token::Comma) && !this.lexer.next_is(&Token::CloseBrace) {
+                            let bug = SyntaxErr::ImportGroupExpectedEnd(this.lexer.peek_pos());
+                            this.log.report(&bug);
+                            this.lexer.skip_while(&Token::CloseBrace);
+                            break;
+                        }
+                    }
+
+                    UseTree::Group { path, group }
+                } else {
+                    let bug = SyntaxErr::ImportExpectedStarOrGroup(this.lexer.peek_pos());
+                    this.log.report(&bug);
+                    UseTree::Single { path }
+                }
+            } else if this.lexer.skip_if(&Token::As) {
+                let alias = this.lexer.next_if_name().unwrap_or_else(|| {
+                    let bug = SyntaxErr::ImportAliasMissingName(this.lexer.peek_pos());
+                    this.log.report(&bug);
+                    "".into()
+                });
+
+                UseTree::Alias {
+                    path,
+                    alias: NString::from(alias),
+                }
+            } else {
+                UseTree::Single { path }
+            }
+        }
+
+        assert!(self.lexer.peek_tok().token == Token::Use);
         self.lexer.skip_tok();
 
         let attributes = self.parse_attributes();
-        let import_name = self.lexer.next_if_name().unwrap_or_else(|| {
-            let bug = SyntaxErr::ImportMissingName(self.lexer.peek_pos());
-            self.log.report(&bug);
-            "".into()
-        });
+        let use_tree = parse_use_tree(self);
 
         if !self.lexer.skip_if(&Token::Semi) {
             let bug = SyntaxErr::ExpectedSemicolon(self.lexer.peek_pos());
@@ -185,14 +235,13 @@ impl Parser<'_, '_> {
         Import {
             visibility: None,
             attributes,
-            import_name: intern_import_name(import_name),
-            items: None,
+            use_tree,
             resolved: None,
         }
     }
 
     fn parse_type_alias(&mut self) -> TypeAlias {
-        assert!(self.lexer.peek_t() == Token::Type);
+        assert!(self.lexer.peek_tok().token == Token::Type);
         self.lexer.skip_tok();
 
         let attributes = self.parse_attributes();
@@ -203,7 +252,7 @@ impl Parser<'_, '_> {
             "".into()
         });
 
-        let name = intern_type_name(name);
+        let name = NString::from(name);
 
         let generics = self.parse_generics();
 
@@ -237,7 +286,7 @@ impl Parser<'_, '_> {
                 "".into()
             });
 
-            let name = intern_enum_variant_name(name);
+            let name = NString::from(name);
 
             let variant_type = if this.lexer.skip_if(&Token::OpenParen) {
                 let ty = this.parse_type();
@@ -266,7 +315,7 @@ impl Parser<'_, '_> {
             }
         }
 
-        assert!(self.lexer.peek_t() == Token::Enum);
+        assert!(self.lexer.peek_tok().token == Token::Enum);
         self.lexer.skip_tok();
 
         let attributes = self.parse_attributes();
@@ -277,7 +326,7 @@ impl Parser<'_, '_> {
             "".into()
         });
 
-        let name = intern_type_name(name);
+        let name = NString::from(name);
 
         let generics = self.parse_generics();
 
@@ -337,7 +386,7 @@ impl Parser<'_, '_> {
                 "".into()
             });
 
-            let name = intern_struct_field_name(name);
+            let name = NString::from(name);
 
             if !this.lexer.skip_if(&Token::Colon) {
                 let bug = SyntaxErr::ExpectedColon(this.lexer.peek_pos());
@@ -361,7 +410,7 @@ impl Parser<'_, '_> {
             }
         }
 
-        assert!(self.lexer.peek_t() == Token::Struct);
+        assert!(self.lexer.peek_tok().token == Token::Struct);
         self.lexer.skip_tok();
 
         let attributes = self.parse_attributes();
@@ -372,7 +421,7 @@ impl Parser<'_, '_> {
             "".into()
         });
 
-        let name = intern_type_name(name);
+        let name = NString::from(name);
 
         let generics = self.parse_generics();
 
@@ -423,7 +472,7 @@ impl Parser<'_, '_> {
     fn parse_associated_item(&mut self) -> AssociatedItem {
         let visibility = self.parse_visibility();
 
-        match self.lexer.peek_t() {
+        match self.lexer.peek_tok().token {
             Token::Fn => {
                 let mut func = self.parse_named_function();
                 func.visibility = visibility;
@@ -454,7 +503,7 @@ impl Parser<'_, '_> {
     }
 
     fn parse_trait(&mut self) -> Trait {
-        assert!(self.lexer.peek_t() == Token::Trait);
+        assert!(self.lexer.peek_tok().token == Token::Trait);
         self.lexer.skip_tok();
 
         let attributes = self.parse_attributes();
@@ -465,7 +514,7 @@ impl Parser<'_, '_> {
             "".into()
         });
 
-        let name = intern_trait_name(name);
+        let name = NString::from(name);
 
         let generics = self.parse_generics();
 
@@ -507,11 +556,10 @@ impl Parser<'_, '_> {
     }
 
     fn parse_implementation(&mut self) -> Impl {
-        assert!(self.lexer.peek_t() == Token::Impl);
+        assert!(self.lexer.peek_tok().token == Token::Impl);
         self.lexer.skip_tok();
 
         let generics = self.parse_generics();
-        let attributes = self.parse_attributes();
 
         let trait_path = if self.lexer.skip_if(&Token::Trait) {
             let path = self.parse_type_path();
@@ -557,7 +605,6 @@ impl Parser<'_, '_> {
         }
 
         Impl {
-            attributes,
             generics,
             trait_path,
             for_type,
@@ -582,7 +629,7 @@ impl Parser<'_, '_> {
                 "".into()
             });
 
-            let name = intern_parameter_name(name);
+            let name = NString::from(name);
 
             if !this.lexer.skip_if(&Token::Colon) {
                 let bug = SyntaxErr::FunctionParameterExpectedType(this.lexer.peek_pos());
@@ -633,6 +680,21 @@ impl Parser<'_, '_> {
                 self.log.report(&bug);
             }
 
+            if self.lexer.skip_if(&Token::Dot) {
+                if !self.lexer.skip_if(&Token::Dot) || !self.lexer.skip_if(&Token::Dot) {
+                    let bug = SyntaxErr::FunctionParameterVariadicExpected(self.lexer.peek_pos());
+                    self.log.report(&bug);
+                }
+
+                if !self.lexer.skip_if(&Token::CloseParen) {
+                    let bug = SyntaxErr::FunctionParametersExpectedEnd(self.lexer.peek_pos());
+                    self.log.report(&bug);
+                    self.lexer.skip_while(&Token::CloseParen);
+                }
+
+                return FuncParams { params, variadic: true };
+            }
+
             let param = parse_function_parameter(self);
             params.push(param);
 
@@ -644,11 +706,14 @@ impl Parser<'_, '_> {
             }
         }
 
-        params
+        FuncParams {
+            params,
+            variadic: false,
+        }
     }
 
     fn parse_named_function(&mut self) -> Function {
-        assert!(self.lexer.peek_t() == Token::Fn);
+        assert!(self.lexer.peek_tok().token == Token::Fn);
         self.lexer.skip_tok();
 
         let attributes = self.parse_attributes();
@@ -659,7 +724,7 @@ impl Parser<'_, '_> {
             "".into()
         });
 
-        let name = intern_function_name(name);
+        let name = NString::from(name);
 
         let generics = self.parse_generics();
         let parameters = self.parse_function_parameters();
@@ -705,7 +770,7 @@ impl Parser<'_, '_> {
     }
 
     fn parse_global_variable(&mut self) -> GlobalVariable {
-        let kind = match self.lexer.next_t() {
+        let kind = match self.lexer.next_tok().token {
             Token::Static => GlobalVariableKind::Static,
             Token::Const => GlobalVariableKind::Const,
             _ => unreachable!(),
@@ -726,7 +791,7 @@ impl Parser<'_, '_> {
             "".into()
         });
 
-        let name = intern_variable_name(name);
+        let name = NString::from(name);
 
         let var_type = if self.lexer.skip_if(&Token::Colon) {
             Some(self.parse_type())
@@ -761,7 +826,7 @@ impl Parser<'_, '_> {
 
         let item_pos_begin = self.lexer.peek_pos();
 
-        match self.lexer.peek_t() {
+        match self.lexer.peek_tok().token {
             Token::Mod => {
                 let mut module = self.parse_module();
                 module.visibility = visibility;
@@ -769,7 +834,7 @@ impl Parser<'_, '_> {
             }
 
             Token::Use => {
-                let mut import = self.parse_import();
+                let mut import = self.parse_use();
                 import.visibility = visibility;
                 Item::Import(Box::new(import))
             }

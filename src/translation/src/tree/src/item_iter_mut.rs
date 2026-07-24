@@ -1,11 +1,4 @@
-use crate::{
-    Order, ParseTreeIterMut, RefNodeMut,
-    ast::{
-        AssociatedItem, Enum, EnumVariant, FuncParam, Function, Generics, GlobalVariable, Impl,
-        Import, Item, Module, Struct, StructField, Trait, TypeAlias,
-    },
-    item::{FuncParams, ItemSyntaxError},
-};
+use crate::prelude::*;
 
 impl ParseTreeIterMut for ItemSyntaxError {
     fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
@@ -38,15 +31,16 @@ impl ParseTreeIterMut for Import {
         f(Order::Enter, RefNodeMut::ItemImport(self));
 
         let _ = self.visibility;
-        let _ = self.items;
-        let _ = self.import_name;
+        let _ = self.use_tree;
 
         if let Some(attributes) = &mut self.attributes {
             attributes.depth_first_iter_mut(f);
         }
 
         if let Some(resolved) = &mut self.resolved {
-            resolved.depth_first_iter_mut(f);
+            for item in resolved {
+                item.depth_first_iter_mut(f);
+            }
         }
 
         f(Order::Leave, RefNodeMut::ItemImport(self));
@@ -219,10 +213,6 @@ impl ParseTreeIterMut for Impl {
     fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
         f(Order::Enter, RefNodeMut::ItemImpl(self));
 
-        if let Some(attributes) = &mut self.attributes {
-            attributes.depth_first_iter_mut(f);
-        }
-
         if let Some(params) = &mut self.generics {
             params.depth_first_iter_mut(f);
         }
@@ -264,7 +254,7 @@ impl ParseTreeIterMut for FuncParam {
 
 impl ParseTreeIterMut for FuncParams {
     fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
-        for param in self {
+        for param in &mut self.params {
             param.depth_first_iter_mut(f);
         }
     }

@@ -1,13 +1,11 @@
 use log::error;
 use nitrate_diagnosis::FileId;
-use nitrate_token::{
-    AnnotatedToken, Comment, CommentKind, Integer, IntegerKind, SourcePosition, Token,
-};
+use nitrate_token::{AnnotatedToken, Comment, CommentKind, Integer, IntegerKind, SourcePosition, Token};
 use ordered_float::NotNan;
 
 const RESERVED_PREFIX: &str = "⚙️";
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum LexerError {
     SourceTooBig,
 }
@@ -18,6 +16,7 @@ pub struct Lexer<'a> {
     internal_getc_pos: SourcePosition,
     current_pos: SourcePosition,
     preread_token: Option<AnnotatedToken>,
+    trivia_enabled: bool,
 }
 
 enum StringEscape {
@@ -57,8 +56,17 @@ impl<'a> Lexer<'a> {
                     fileid: fileid.clone(),
                 },
                 preread_token: None,
+                trivia_enabled: true,
             })
         }
+    }
+
+    pub fn enable_trivia(&mut self) {
+        self.trivia_enabled = true;
+    }
+
+    pub fn disable_trivia(&mut self) {
+        self.trivia_enabled = false;
     }
 
     pub fn next_tok(&mut self) -> AnnotatedToken {
@@ -94,33 +102,15 @@ impl<'a> Lexer<'a> {
         self.current_pos = self.internal_getc_pos.clone();
     }
 
-    pub fn modify_next_tok(&mut self, token: Token) {
-        let mut peeked = self.peek_tok();
-        peeked.token = token;
-
-        self.preread_token = Some(peeked);
-    }
-
-    #[inline(always)]
-    pub fn next_t(&mut self) -> Token {
-        self.next_tok().token
-    }
-
-    #[inline(always)]
-    #[must_use]
-    pub fn peek_t(&mut self) -> Token {
-        self.peek_tok().token
-    }
-
     #[inline(always)]
     #[must_use]
     pub fn next_is(&mut self, matches: &Token) -> bool {
-        &self.peek_t() == matches
+        &self.peek_tok().token == matches
     }
 
     #[inline(always)]
     pub fn skip_if(&mut self, matches: &Token) -> bool {
-        if &self.peek_t() == matches {
+        if &self.peek_tok().token == matches {
             self.skip_tok();
             true
         } else {
@@ -129,7 +119,7 @@ impl<'a> Lexer<'a> {
     }
 
     pub fn skip_while(&mut self, not: &Token) {
-        while !self.is_eof() && &self.next_t() != not {}
+        while !self.is_eof() && &self.next_tok().token != not {}
     }
 
     /// Returns the end of the last consumed token
@@ -148,7 +138,7 @@ impl<'a> Lexer<'a> {
     #[inline(always)]
     #[must_use]
     pub fn is_eof(&mut self) -> bool {
-        self.peek_t() == Token::Eof
+        self.peek_tok().token == Token::Eof
     }
 
     #[inline(always)]
@@ -159,60 +149,10 @@ impl<'a> Lexer<'a> {
     }
 
     #[inline(always)]
-    pub fn next_if_string(&mut self) -> Option<String> {
-        if let Token::String(string_data) = self.peek_t() {
-            self.skip_tok();
-            Some(string_data)
-        } else {
-            None
-        }
-    }
-
-    #[inline(always)]
-    pub fn next_if_bstring(&mut self) -> Option<Vec<u8>> {
-        if let Token::BString(bstring_data) = self.peek_t() {
-            self.skip_tok();
-            Some(bstring_data)
-        } else {
-            None
-        }
-    }
-
-    #[inline(always)]
     pub fn next_if_name(&mut self) -> Option<String> {
-        if let Token::Name(name) = self.peek_t() {
+        if let Token::Name(name) = self.peek_tok().token {
             self.skip_tok();
             Some(name)
-        } else {
-            None
-        }
-    }
-
-    #[inline(always)]
-    pub fn next_if_integer(&mut self) -> Option<Integer> {
-        if let Token::Integer(integer) = self.peek_t() {
-            self.skip_tok();
-            Some(integer)
-        } else {
-            None
-        }
-    }
-
-    #[inline(always)]
-    pub fn next_if_float(&mut self) -> Option<NotNan<f64>> {
-        if let Token::Float(float) = self.peek_t() {
-            self.skip_tok();
-            Some(float)
-        } else {
-            None
-        }
-    }
-
-    #[inline(always)]
-    pub fn next_if_comment(&mut self) -> Option<Comment> {
-        if let Token::Comment(comment) = self.peek_t() {
-            self.skip_tok();
-            Some(comment)
         } else {
             None
         }
@@ -230,12 +170,22 @@ impl<'a> Lexer<'a> {
                 fileid: current.fileid.clone(),
             };
         } else {
-            self.internal_getc_pos = SourcePosition {
-                line: current.line,
-                column: current.column + 1,
-                offset: current.offset + 1,
-                fileid: current.fileid.clone(),
-            };
+            let utf8_end = (byte & 0x80) == 0 || (byte & 0xC0) == 0xC0;
+            if utf8_end {
+                self.internal_getc_pos = SourcePosition {
+                    line: current.line,
+                    column: current.column + 1,
+                    offset: current.offset + 1,
+                    fileid: current.fileid.clone(),
+                };
+            } else {
+                self.internal_getc_pos = SourcePosition {
+                    line: current.line,
+                    column: current.column,
+                    offset: current.offset + 1,
+                    fileid: current.fileid.clone(),
+                };
+            }
         }
 
         byte
@@ -282,17 +232,14 @@ impl<'a> Lexer<'a> {
         if let Ok(b'`') = self.peek_byte() {
             self.advance(b'`');
         } else {
-            error!(
-                "[L0000]: Unterminated atypical identifier. Did you forget the '`' terminator?\n--> {start_pos}"
-            );
+            error!("[L0000]: Unterminated atypical identifier. Did you forget the '`' terminator?\n--> {start_pos}");
             return Err(());
         }
 
         if let Ok(identifier) = str::from_utf8(identifier) {
             if identifier.starts_with(RESERVED_PREFIX) {
                 error!(
-                    "[L0002]: Identifiers starting with '{}' are reserved for compiler-generated names.\n--> {start_pos}",
-                    RESERVED_PREFIX
+                    "[L0002]: Identifiers starting with '{RESERVED_PREFIX}' are reserved for compiler-generated names.\n--> {start_pos}"
                 );
                 return Err(());
             }
@@ -381,8 +328,7 @@ impl<'a> Lexer<'a> {
         } else if let Ok(identifier) = str::from_utf8(name) {
             if identifier.starts_with(RESERVED_PREFIX) {
                 error!(
-                    "[L0002]: Identifiers starting with '{}' are reserved for compiler-generated names.\n--> {start_pos}",
-                    RESERVED_PREFIX
+                    "[L0002]: Identifiers starting with '{RESERVED_PREFIX}' are reserved for compiler-generated names.\n--> {start_pos}"
                 );
                 return Err(());
             }
@@ -416,11 +362,9 @@ impl<'a> Lexer<'a> {
                 Ok(b) if b.is_ascii_digit() => {
                     self.read_while(|b| b.is_ascii_digit() || b == b'_');
 
-                    let literal = str::from_utf8(
-                        &self.source
-                            [start_pos.offset as usize..self.internal_getc_pos.offset as usize],
-                    )
-                    .expect("Failed to convert float literal to str");
+                    let literal =
+                        str::from_utf8(&self.source[start_pos.offset as usize..self.internal_getc_pos.offset as usize])
+                            .expect("Failed to convert float literal to str");
 
                     if let Ok(result) = Self::convert_float_repr(literal) {
                         return Ok(Token::Float(result));
@@ -444,16 +388,12 @@ impl<'a> Lexer<'a> {
                 continue;
             }
 
-            if let Ok(digit) = u128::from_str_radix(
-                str::from_utf8(&[*digit]).expect("Unexpected non-utf8 digit"),
-                base,
-            ) {
-                if let Some(y) = number.checked_mul(u128::from(base)) {
-                    if let Some(sum) = y.checked_add(digit) {
-                        number = sum;
-                        continue;
-                    }
-                }
+            if let Ok(digit) = u128::from_str_radix(str::from_utf8(&[*digit]).expect("Unexpected non-utf8 digit"), base)
+                && let Some(y) = number.checked_mul(u128::from(base))
+                && let Some(sum) = y.checked_add(digit)
+            {
+                number = sum;
+                continue;
             }
 
             error!("[L0300]: Integer literal is too large to fit in u128\n--> {start_pos}");
@@ -492,9 +432,7 @@ impl<'a> Lexer<'a> {
 
                     literal = self.read_while(|b| (b'0'..=b'7').contains(&b) || b == b'_');
                     if literal.is_empty() {
-                        error!(
-                            "[L0302]: Octal literal must contain at least one digit after '0o'\n--> {start_pos}"
-                        );
+                        error!("[L0302]: Octal literal must contain at least one digit after '0o'\n--> {start_pos}");
                         return Err(());
                     }
                 }
@@ -505,9 +443,7 @@ impl<'a> Lexer<'a> {
 
                     literal = self.read_while(|b| b.is_ascii_digit() || b == b'_');
                     if literal.is_empty() {
-                        error!(
-                            "[L0303]: Decimal literal must contain at least one digit after '0d'\n--> {start_pos}"
-                        );
+                        error!("[L0303]: Decimal literal must contain at least one digit after '0d'\n--> {start_pos}");
                         return Err(());
                     }
                 }
@@ -529,10 +465,10 @@ impl<'a> Lexer<'a> {
             }
         }
 
-        if base_prefix.is_none() {
-            if let Ok(float) = self.parse_float(&start_pos) {
-                return Ok(float);
-            }
+        if base_prefix.is_none()
+            && let Ok(float) = self.parse_float(&start_pos)
+        {
+            return Ok(float);
         }
 
         let number = Self::radix_decode(literal, base_prefix.unwrap_or(10u32), &start_pos)?;
@@ -586,10 +522,7 @@ impl<'a> Lexer<'a> {
     }
 
     #[inline(always)]
-    fn parse_string_octal_escape(
-        &mut self,
-        start_pos: &SourcePosition,
-    ) -> Result<StringEscape, ()> {
+    fn parse_string_octal_escape(&mut self, start_pos: &SourcePosition) -> Result<StringEscape, ()> {
         let mut digits = [0u8; 3];
 
         for i in 0..3 {
@@ -618,14 +551,9 @@ impl<'a> Lexer<'a> {
     }
 
     #[inline(always)]
-    fn parse_string_unicode_escape(
-        &mut self,
-        start_pos: &SourcePosition,
-    ) -> Result<StringEscape, ()> {
+    fn parse_string_unicode_escape(&mut self, start_pos: &SourcePosition) -> Result<StringEscape, ()> {
         if self.peek_byte()? != b'{' {
-            error!(
-                "[L0402]: Invalid unicode escape in string literal. Expected '{{' after '\\u'.\n--> {start_pos}"
-            );
+            error!("[L0402]: Invalid unicode escape in string literal. Expected '{{' after '\\u'.\n--> {start_pos}");
             return Err(());
         }
         self.advance(b'{');
@@ -683,9 +611,7 @@ impl<'a> Lexer<'a> {
         }
 
         if self.peek_byte()? != b'}' {
-            error!(
-                "[L0406]: Invalid unicode escape in string literal. Expected '}}' after '\\u{{'.\n--> {start_pos}"
-            );
+            error!("[L0406]: Invalid unicode escape in string literal. Expected '}}' after '\\u{{'.\n--> {start_pos}");
             return Err(());
         }
         self.advance(b'}');
@@ -766,9 +692,7 @@ impl<'a> Lexer<'a> {
             }
 
             Err(()) => {
-                error!(
-                    "[L0408]: Unexpected end of input while parsing string literal\n--> {start_pos}"
-                );
+                error!("[L0408]: Unexpected end of input while parsing string literal\n--> {start_pos}");
                 Err(())
             }
         }
@@ -791,9 +715,7 @@ impl<'a> Lexer<'a> {
                     self.advance(b'\\');
 
                     if storage.is_empty() {
-                        storage.extend_from_slice(
-                            &self.source[start_offset as usize..end_offset as usize],
-                        );
+                        storage.extend_from_slice(&self.source[start_offset as usize..end_offset as usize]);
                     }
 
                     match self.parse_string_escape(&start_pos) {
@@ -826,10 +748,10 @@ impl<'a> Lexer<'a> {
                             return Ok(Token::String(utf8_str.to_string()));
                         }
                         return Ok(Token::BString(buffer.to_vec()));
-                    } else if let Ok(utf8_str) = String::from_utf8(storage.to_vec()) {
-                        return Ok(Token::String(utf8_str.to_string()));
+                    } else if let Ok(utf8_str) = String::from_utf8(storage.clone()) {
+                        return Ok(Token::String(utf8_str.clone()));
                     }
-                    return Ok(Token::BString(storage.to_vec()));
+                    return Ok(Token::BString(storage.clone()));
                 }
 
                 Ok(b) => {
@@ -842,9 +764,7 @@ impl<'a> Lexer<'a> {
                 }
 
                 Err(()) => {
-                    error!(
-                        "[L0408]: Unexpected end of input while parsing string literal\n--> {start_pos}"
-                    );
+                    error!("[L0408]: Unexpected end of input while parsing string literal\n--> {start_pos}");
                     return Err(());
                 }
             }
@@ -866,16 +786,14 @@ impl<'a> Lexer<'a> {
                 CommentKind::SingleLine,
             )))
         } else {
-            error!(
-                "[L0600]: Single-line comment contains some invalid utf-8 bytes\n--> {start_pos}"
-            );
+            error!("[L0600]: Single-line comment contains some invalid utf-8 bytes\n--> {start_pos}");
 
             Err(())
         }
     }
 
     #[inline(always)]
-    fn parse_operator_or_punctuation(&mut self) -> Result<Token, ()> {
+    fn parse_single_byte(&mut self) -> Result<Token, ()> {
         let start_pos = self.internal_getc_pos.clone();
 
         let b = self.peek_byte()?;
@@ -907,6 +825,12 @@ impl<'a> Lexer<'a> {
             b'/' => Some(Token::Slash),
             b'^' => Some(Token::Caret),
             b'%' => Some(Token::Percent),
+            b'\t' => Some(Token::HorizontalTab),
+            b'\n' => Some(Token::NewLine),
+            b'\x0b' => Some(Token::VerticalTab),
+            b'\x0c' => Some(Token::FormFeed),
+            b'\r' => Some(Token::CarriageReturn),
+            b' ' => Some(Token::Space),
             _ => None,
         };
 
@@ -926,14 +850,10 @@ impl<'a> Lexer<'a> {
 
     #[inline(always)]
     fn parse_next_token(&mut self) -> AnnotatedToken {
-        self.read_while(|b| b.is_ascii_whitespace());
-
         let start_pos = self.internal_getc_pos.clone();
 
         let token = match self.peek_byte() {
-            Err(()) => {
-              Ok(Token::Eof)
-            },
+            Err(()) => Ok(Token::Eof),
             Ok(b) => match b {
                 b'`' => self.parse_atypical_identifier(),
                 b if b.is_ascii_alphabetic() || b == b'_' || !b.is_ascii() /* Support UTF-8 identifiers */ => {
@@ -942,13 +862,49 @@ impl<'a> Lexer<'a> {
                 b if b.is_ascii_digit() => self.parse_number(),
                 b'"' => self.parse_string(),
                 b'#' => self.parse_comment(),
-                _ => self.parse_operator_or_punctuation(),
+                _ => self.parse_single_byte(),
             },
         }
         .unwrap_or(Token::Eof);
 
+        if !self.trivia_enabled {
+            match &token {
+                Token::Space
+                | Token::HorizontalTab
+                | Token::NewLine
+                | Token::VerticalTab
+                | Token::FormFeed
+                | Token::CarriageReturn
+                | Token::Comment(_) => {
+                    return self.parse_next_token();
+                }
+                _ => {}
+            }
+        }
+
         let end_pos = self.internal_getc_pos.clone();
 
         AnnotatedToken::new(token, start_pos, end_pos)
+    }
+}
+
+pub struct LexerIterator<'a> {
+    lexer: Lexer<'a>,
+}
+
+impl<'a> LexerIterator<'a> {
+    pub fn new(lexer: Lexer<'a>) -> Self {
+        LexerIterator { lexer }
+    }
+}
+
+impl<'a> Iterator for LexerIterator<'a> {
+    type Item = AnnotatedToken;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        match self.lexer.next_tok() {
+            token if token.token == Token::Eof => None,
+            token => Some(token),
+        }
     }
 }

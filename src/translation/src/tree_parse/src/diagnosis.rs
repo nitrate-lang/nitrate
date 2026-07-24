@@ -1,7 +1,4 @@
-use nitrate_diagnosis::{
-    DiagnosticGroupId, DiagnosticInfo, FormattableDiagnosticGroup, Origin, 
-};
-use nitrate_tree::{ast::{ExprPath, TypePath}, tag::ImportNameId};
+use nitrate_diagnosis::{DiagnosticGroupId, DiagnosticInfo, FormattableDiagnosticGroup, Origin};
 use nitrate_token::SourcePosition;
 
 pub(crate) enum SyntaxErr {
@@ -13,7 +10,9 @@ pub(crate) enum SyntaxErr {
     ModuleItemLimit(SourcePosition),
     ModuleExpectedEnd(SourcePosition),
 
-    ImportMissingName(SourcePosition),
+    ImportAliasMissingName(SourcePosition),
+    ImportExpectedStarOrGroup(SourcePosition),
+    ImportGroupExpectedEnd(SourcePosition),
 
     TypeAliasMissingName(SourcePosition),
 
@@ -32,6 +31,7 @@ pub(crate) enum SyntaxErr {
     FunctionParameterMissingName(SourcePosition),
     FunctionParametersExpectedEnd(SourcePosition),
     FunctionParameterExpectedType(SourcePosition),
+    FunctionParameterVariadicExpected(SourcePosition),
 
     VariableMissingName(SourcePosition),
 
@@ -44,7 +44,7 @@ pub(crate) enum SyntaxErr {
     ImplExpectedEnd(SourcePosition),
     ImplItemLimit(SourcePosition),
     ImplCannotBeVisible(SourcePosition),
-    
+
     PathGenericArgumentExpectedEnd(SourcePosition),
     PathGenericArgumentLimit(SourcePosition),
     PathExpectedNameOrSeparator(SourcePosition),
@@ -53,6 +53,9 @@ pub(crate) enum SyntaxErr {
 
     ReferenceTypeExpectedLifetimeName(SourcePosition),
 
+    StructExpectedFieldOrEnd(SourcePosition),
+    StructExpectedFieldName(SourcePosition),
+    StructExpectedColon(SourcePosition),
 
     TupleTypeExpectedEnd(SourcePosition),
     TupleTypeElementLimit(SourcePosition),
@@ -105,7 +108,7 @@ pub(crate) enum SyntaxErr {
 
 impl FormattableDiagnosticGroup for SyntaxErr {
     fn group_id(&self) -> DiagnosticGroupId {
-        DiagnosticGroupId::Syntax
+        DiagnosticGroupId::Parse
     }
 
     fn variant_id(&self) -> u16 {
@@ -118,7 +121,9 @@ impl FormattableDiagnosticGroup for SyntaxErr {
             SyntaxErr::ModuleItemLimit(_) => 21,
             SyntaxErr::ModuleExpectedEnd(_) => 22,
 
-            SyntaxErr::ImportMissingName(_) => 40,
+            SyntaxErr::ImportAliasMissingName(_) => 41,
+            SyntaxErr::ImportExpectedStarOrGroup(_) => 42,
+            SyntaxErr::ImportGroupExpectedEnd(_) => 43,
 
             SyntaxErr::TypeAliasMissingName(_) => 60,
 
@@ -137,6 +142,7 @@ impl FormattableDiagnosticGroup for SyntaxErr {
             SyntaxErr::FunctionParameterMissingName(_) => 123,
             SyntaxErr::FunctionParametersExpectedEnd(_) => 124,
             SyntaxErr::FunctionParameterExpectedType(_) => 125,
+            SyntaxErr::FunctionParameterVariadicExpected(_) => 126,
 
             SyntaxErr::VariableMissingName(_) => 140,
 
@@ -158,6 +164,9 @@ impl FormattableDiagnosticGroup for SyntaxErr {
 
             SyntaxErr::ReferenceTypeExpectedLifetimeName(_) => 240,
 
+            SyntaxErr::StructExpectedFieldOrEnd(_) => 260,
+            SyntaxErr::StructExpectedFieldName(_) => 261,
+            SyntaxErr::StructExpectedColon(_) => 262,
 
             SyntaxErr::TupleTypeExpectedEnd(_) => 280,
             SyntaxErr::TupleTypeElementLimit(_) => 281,
@@ -224,7 +233,6 @@ impl FormattableDiagnosticGroup for SyntaxErr {
             },
 
             /* ------------------------------------------------------------------------- */
-
             SyntaxErr::ModuleMissingName(pos) => DiagnosticInfo {
                 origin: Origin::Point(pos.to_owned().into()),
                 message: "module name is missing".into(),
@@ -241,21 +249,28 @@ impl FormattableDiagnosticGroup for SyntaxErr {
             },
 
             /* ------------------------------------------------------------------------- */
-
-            SyntaxErr::ImportMissingName(pos) => DiagnosticInfo {
+            SyntaxErr::ImportAliasMissingName(pos) => DiagnosticInfo {
                 origin: Origin::Point(pos.to_owned().into()),
-                message: "import package name is missing".into(),
+                message: "use alias name is missing".into(),
+            },
+
+            SyntaxErr::ImportExpectedStarOrGroup(pos) => DiagnosticInfo {
+                origin: Origin::Point(pos.to_owned().into()),
+                message: "expected '*' or '{' after '::' in use statement".into(),
+            },
+
+            SyntaxErr::ImportGroupExpectedEnd(pos) => DiagnosticInfo {
+                origin: Origin::Point(pos.to_owned().into()),
+                message: "expected '}' at the end of use group".into(),
             },
 
             /* ------------------------------------------------------------------------- */
-
             SyntaxErr::TypeAliasMissingName(pos) => DiagnosticInfo {
                 origin: Origin::Point(pos.to_owned().into()),
                 message: "type alias name is missing".into(),
             },
 
             /* ------------------------------------------------------------------------- */
-
             SyntaxErr::EnumMissingName(pos) => DiagnosticInfo {
                 origin: Origin::Point(pos.to_owned().into()),
                 message: "enum name is missing".into(),
@@ -277,7 +292,6 @@ impl FormattableDiagnosticGroup for SyntaxErr {
             },
 
             /* ------------------------------------------------------------------------- */
-
             SyntaxErr::StructureMissingName(pos) => DiagnosticInfo {
                 origin: Origin::Point(pos.to_owned().into()),
                 message: "structure name is missing".into(),
@@ -299,7 +313,6 @@ impl FormattableDiagnosticGroup for SyntaxErr {
             },
 
             /* ------------------------------------------------------------------------- */
-
             SyntaxErr::FunctionMissingName(pos) => DiagnosticInfo {
                 origin: Origin::Point(pos.to_owned().into()),
                 message: "function name is missing".into(),
@@ -325,15 +338,18 @@ impl FormattableDiagnosticGroup for SyntaxErr {
                 message: "function parameter type is missing".into(),
             },
 
-            /* ------------------------------------------------------------------------- */
+            SyntaxErr::FunctionParameterVariadicExpected(pos) => DiagnosticInfo {
+                origin: Origin::Point(pos.to_owned().into()),
+                message: "expected '...' for variadic function parameter".into(),
+            },
 
+            /* ------------------------------------------------------------------------- */
             SyntaxErr::VariableMissingName(pos) => DiagnosticInfo {
                 origin: Origin::Point(pos.to_owned().into()),
                 message: "variable name is missing".into(),
             },
 
             /* ------------------------------------------------------------------------- */
-
             SyntaxErr::TraitMissingName(pos) => DiagnosticInfo {
                 origin: Origin::Point(pos.to_owned().into()),
                 message: "trait name is missing".into(),
@@ -356,7 +372,6 @@ impl FormattableDiagnosticGroup for SyntaxErr {
             },
 
             /* ------------------------------------------------------------------------- */
-
             SyntaxErr::ImplMissingFor(pos) => DiagnosticInfo {
                 origin: Origin::Point(pos.to_owned().into()),
                 message: "expected 'for' in impl declaration".into(),
@@ -378,7 +393,6 @@ impl FormattableDiagnosticGroup for SyntaxErr {
             },
 
             /* ------------------------------------------------------------------------- */
-
             SyntaxErr::PathGenericArgumentExpectedEnd(pos) => DiagnosticInfo {
                 origin: Origin::Point(pos.to_owned().into()),
                 message: "expected '>' or ',' in generic arguments".into(),
@@ -405,14 +419,28 @@ impl FormattableDiagnosticGroup for SyntaxErr {
             },
 
             /* ------------------------------------------------------------------------- */
-
             SyntaxErr::ReferenceTypeExpectedLifetimeName(pos) => DiagnosticInfo {
                 origin: Origin::Point(pos.to_owned().into()),
                 message: "reference lifetime is missing after '".into(),
             },
-            
-            /* ------------------------------------------------------------------------- */
 
+            /* ------------------------------------------------------------------------- */
+            SyntaxErr::StructExpectedFieldOrEnd(pos) => DiagnosticInfo {
+                origin: Origin::Point(pos.to_owned().into()),
+                message: "expected field name or '}'".into(),
+            },
+
+            SyntaxErr::StructExpectedFieldName(pos) => DiagnosticInfo {
+                origin: Origin::Point(pos.to_owned().into()),
+                message: "expected field name".into(),
+            },
+
+            SyntaxErr::StructExpectedColon(pos) => DiagnosticInfo {
+                origin: Origin::Point(pos.to_owned().into()),
+                message: "expected ':' after field name".into(),
+            },
+
+            /* ------------------------------------------------------------------------- */
             SyntaxErr::TupleTypeExpectedEnd(pos) => DiagnosticInfo {
                 origin: Origin::Point(pos.to_owned().into()),
                 message: "expected ')' or ','".into(),
@@ -424,7 +452,6 @@ impl FormattableDiagnosticGroup for SyntaxErr {
             },
 
             /* ------------------------------------------------------------------------- */
-
             SyntaxErr::ListExpectedEnd(pos) => DiagnosticInfo {
                 origin: Origin::Point(pos.to_owned().into()),
                 message: "expected ',' or ']'".into(),
@@ -436,7 +463,6 @@ impl FormattableDiagnosticGroup for SyntaxErr {
             },
 
             /* ------------------------------------------------------------------------- */
-
             SyntaxErr::AttributesExpectedEnd(pos) => DiagnosticInfo {
                 origin: Origin::Point(pos.to_owned().into()),
                 message: "expected ',' or ']'".into(),
@@ -448,7 +474,6 @@ impl FormattableDiagnosticGroup for SyntaxErr {
             },
 
             /* ------------------------------------------------------------------------- */
-
             SyntaxErr::BlockExpectedEnd(pos) => DiagnosticInfo {
                 origin: Origin::Point(pos.to_owned().into()),
                 message: "expected ';' or '}'".into(),
@@ -460,21 +485,18 @@ impl FormattableDiagnosticGroup for SyntaxErr {
             },
 
             /* ------------------------------------------------------------------------- */
-
             SyntaxErr::BreakMissingLabel(pos) => DiagnosticInfo {
                 origin: Origin::Point(pos.to_owned().into()),
                 message: "break statement is missing a label".into(),
             },
 
             /* ------------------------------------------------------------------------- */
-
             SyntaxErr::ContinueMissingLabel(pos) => DiagnosticInfo {
                 origin: Origin::Point(pos.to_owned().into()),
                 message: "continue statement is missing a label".into(),
             },
 
             /* ------------------------------------------------------------------------- */
-
             SyntaxErr::FunctionCallExpectedEnd(pos) => DiagnosticInfo {
                 origin: Origin::Point(pos.to_owned().into()),
                 message: "expected ',' or ')' after function argument".into(),
@@ -491,7 +513,6 @@ impl FormattableDiagnosticGroup for SyntaxErr {
             },
 
             /* ------------------------------------------------------------------------- */
-
             SyntaxErr::ForVariableBindingMissingName(pos) => DiagnosticInfo {
                 origin: Origin::Point(pos.to_owned().into()),
                 message: "missing name for for-loop binding".into(),
@@ -513,14 +534,12 @@ impl FormattableDiagnosticGroup for SyntaxErr {
             },
 
             /* ------------------------------------------------------------------------- */
-
             SyntaxErr::ExpectedFieldOrMethodName(pos) => DiagnosticInfo {
                 origin: Origin::Point(pos.to_owned().into()),
                 message: "expected field or method name".into(),
             },
 
             /* ------------------------------------------------------------------------- */
-
             SyntaxErr::ExpectedOpenParen(pos) => DiagnosticInfo {
                 origin: Origin::Point(pos.to_owned().into()),
                 message: "expected '('".into(),
@@ -577,7 +596,6 @@ impl FormattableDiagnosticGroup for SyntaxErr {
             },
 
             /* ------------------------------------------------------------------------- */
-
             SyntaxErr::ExpectedItem(pos) => DiagnosticInfo {
                 origin: Origin::Point(pos.to_owned().into()),
                 message: "expected an item".into(),
@@ -594,108 +612,10 @@ impl FormattableDiagnosticGroup for SyntaxErr {
             },
 
             /* ------------------------------------------------------------------------- */
-
             SyntaxErr::SyntaxNotSupported(pos) => DiagnosticInfo {
                 origin: Origin::Point(pos.to_owned().into()),
                 message: "this syntax is not supported".into(),
-            }
-        }
-    }
-}
-
-
-pub enum ResolveIssue {
-    ExprPathUnresolved(ExprPath),
-
-    TypePathUnresolved(TypePath),
-
-    ImportNotFound((String, std::io::Error)),
-    
-    CircularImport {
-        path: ImportNameId,
-        depth: Vec<ImportNameId>,
-    },
-
-    ImportSourceCodeSizeLimitExceeded(std::path::PathBuf),
-    ImportDepthLimitExceeded(String),
-}
-
-impl FormattableDiagnosticGroup for ResolveIssue {
-    fn group_id(&self) -> DiagnosticGroupId {
-        DiagnosticGroupId::Resolve
-    }
-
-    fn variant_id(&self) -> u16 {
-        match self {
-            ResolveIssue::ExprPathUnresolved(_) => 1,
-            ResolveIssue::TypePathUnresolved(_) => 20,
-            ResolveIssue::ImportNotFound(_) => 40,
-            ResolveIssue::CircularImport { .. } => 41,
-            ResolveIssue::ImportSourceCodeSizeLimitExceeded(_) => 42,
-            ResolveIssue::ImportDepthLimitExceeded(_) => 43,
-        }
-    }
-
-    fn format(&self) -> nitrate_diagnosis::DiagnosticInfo {
-        match self {
-            ResolveIssue::ExprPathUnresolved(path) => DiagnosticInfo {
-                origin: Origin::None,
-                message: format!(
-                    "Unresolved expression path: {}",
-                    path.segments
-                        .iter()
-                        .map(|s| s.name.to_owned())
-                        .collect::<Vec<_>>()
-                        .join("::"),
-                ),
-            },
-
-            ResolveIssue::TypePathUnresolved(path) => DiagnosticInfo {
-                origin: Origin::None,
-                message: format!(
-                    "Unresolved type path: {}",
-                    path.segments
-                        .iter()
-                        .map(|s| s.name.to_owned())
-                        .collect::<Vec<_>>()
-                        .join("::"),
-                ),
-            },
-
-            ResolveIssue::ImportNotFound(path) => DiagnosticInfo {
-                origin: Origin::None,
-                message: format!("Module not found: {} ({})", path.0, path.1),
-            },
-
-            ResolveIssue::CircularImport { path, depth } => DiagnosticInfo {
-                origin: Origin::None,
-                message: format!(
-                    "Circular import detected: {}\nImport depth:\n{}",
-                    path,
-                    depth
-                        .iter()
-                        .map(|p| format!(" - {}", p))
-                        .collect::<Vec<_>>()
-                        .join("\n")
-                ),
-            },
-
-            ResolveIssue::ImportSourceCodeSizeLimitExceeded(path) => DiagnosticInfo {
-                origin: Origin::None,
-                message: format!(
-                    "Imported module ({}) exceeded the source code file size limit.",
-                    path.display()
-                ),
-            },
-
-            ResolveIssue::ImportDepthLimitExceeded(path) => DiagnosticInfo {
-                origin: Origin::None,
-                message: format!(
-                    "Import depth limit of 256 exceeded while importing module: {}",
-                    path
-                ),
             },
         }
     }
 }
-

@@ -1,7 +1,12 @@
-use crate::prelude::*;
-use interned_string::IString;
+use crate::{helper::PowOf2, prelude::*};
+use nitrate_nstring::NString;
 use serde::{Deserialize, Serialize};
-use std::collections::BTreeSet;
+use std::{
+    collections::{BTreeMap, BTreeSet},
+    matches,
+    num::NonZeroUsize,
+};
+use thin_vec::ThinVec;
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub enum Visibility {
@@ -12,7 +17,7 @@ pub enum Visibility {
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum GlobalVariableAttribute {
-    Invalid,
+    NoMangle,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
@@ -20,43 +25,44 @@ pub struct GlobalVariable {
     pub visibility: Visibility,
     pub attributes: BTreeSet<GlobalVariableAttribute>,
     pub is_mutable: bool,
-    pub name: IString,
+    pub name: NString,
+    pub mangled_name: NString,
     pub ty: TypeId,
-    pub init: Option<ValueId>,
+    pub initializer: ValueId,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum LocalVariableAttribute {
-    Invalid,
+    Align { alignment: PowOf2<u32> },
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
-pub enum LocalVariableKind {
-    Stack,
-    Dynamic,
+pub enum LocalKind {
+    Let,
+    Var,
     Static,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct LocalVariable {
-    pub kind: LocalVariableKind,
+    pub kind: LocalKind,
     pub attributes: BTreeSet<LocalVariableAttribute>,
     pub is_mutable: bool,
-    pub name: IString,
+    pub name: NString,
     pub ty: TypeId,
-    pub init: Option<ValueId>,
+    pub initializer: ValueId,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum ParameterAttribute {
-    Invalid,
+    Align { alignment: PowOf2<u32> },
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct Parameter {
     pub attributes: BTreeSet<ParameterAttribute>,
     pub is_mutable: bool,
-    pub name: IString,
+    pub name: NString,
     pub ty: TypeId,
     pub default_value: Option<ValueId>,
 }
@@ -65,26 +71,29 @@ pub struct Parameter {
 pub struct Function {
     pub visibility: Visibility,
     pub attributes: BTreeSet<FunctionAttribute>,
-    pub name: IString,
+    pub name: NString,
+    pub mangled_name: NString,
+    pub generics: Option<BTreeMap<NString, Option<TypeId>>>,
     pub params: Vec<ParameterId>,
     pub return_type: TypeId,
-    pub body: Option<BlockId>,
+    pub body: Option<Vec<BlockElement>>,
 }
 
 impl Function {
-    pub fn get_type(&self, store: &Store) -> FunctionType {
-        let params: Vec<(IString, TypeId)> = self
+    #[must_use]
+    pub fn get_type(&self) -> FunctionType {
+        let params: Vec<(NString, TypeId)> = self
             .params
             .iter()
             .map(|param_id| {
-                let p = store[param_id].borrow();
+                let p = param_id.borrow();
                 (p.name.clone(), p.ty)
             })
-            .collect();
+            .collect::<Vec<_>>();
 
         FunctionType {
             attributes: self.attributes.clone(),
-            params,
+            params: params.into(),
             return_type: self.return_type,
         }
     }
@@ -93,7 +102,7 @@ impl Function {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct Trait {
     pub visibility: Visibility,
-    pub name: IString,
+    pub name: NString,
     pub methods: Vec<FunctionId>,
 }
 
@@ -105,7 +114,7 @@ pub enum ModuleAttribute {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct Module {
     pub visibility: Visibility,
-    pub name: Option<IString>,
+    pub name: NString,
     pub attributes: BTreeSet<ModuleAttribute>,
     pub items: Vec<Item>,
 }
@@ -113,60 +122,101 @@ pub struct Module {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct TypeAliasDef {
     pub visibility: Visibility,
-    pub name: IString,
+    pub name: NString,
+    pub generics: Option<BTreeMap<NString, Option<TypeId>>>,
     pub type_id: TypeId,
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum StructAttribute {
+    Packed,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum StructFieldAttribute {
+    Align { alignment: PowOf2<u32> },
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
+pub struct StructField {
+    pub visibility: Visibility,
+    pub attributes: BTreeSet<StructFieldAttribute>,
+    pub name: NString,
+    pub ty: TypeId,
+    pub default_value: Option<ValueId>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
+pub enum StructMemoryLayoutCell {
+    Field { field_name: NString },
+    Padding(NonZeroUsize),
+}
+
+impl StructMemoryLayoutCell {
+    #[must_use]
+    pub fn is_field(&self) -> bool {
+        matches!(self, StructMemoryLayoutCell::Field { .. })
+    }
+
+    #[must_use]
+    pub fn is_padding(&self) -> bool {
+        matches!(self, StructMemoryLayoutCell::Padding(_))
+    }
+
+    #[must_use]
+    pub fn as_field(&self) -> Option<&NString> {
+        match self {
+            StructMemoryLayoutCell::Field { field_name } => Some(field_name),
+            _ => None,
+        }
+    }
+
+    #[must_use]
+    pub fn as_padding(&self) -> Option<NonZeroUsize> {
+        match self {
+            StructMemoryLayoutCell::Padding(size) => Some(*size),
+            _ => None,
+        }
+    }
+}
+
+pub type StructLayout = ThinVec<StructMemoryLayoutCell>;
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct StructDef {
     pub visibility: Visibility,
-    pub name: IString,
-    pub field_extras: Vec<(Visibility, Option<ValueId>)>,
-    pub struct_id: StructTypeId,
+    pub name: NString,
+    pub attributes: BTreeSet<StructAttribute>,
+    pub fields: BTreeMap<NString, StructField>,
+    pub generics: Option<BTreeMap<NString, Option<TypeId>>>,
+    pub layout: StructLayout,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum EnumAttribute {
+    Invalid,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum EnumVariantAttribute {
+    Invalid,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
+pub struct EnumVariant {
+    pub attributes: BTreeSet<EnumVariantAttribute>,
+    pub name: NString,
+    pub ty: TypeId,
+    pub default_value: Option<ValueId>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct EnumDef {
     pub visibility: Visibility,
-    pub name: IString,
-    pub variant_extras: Vec<Option<ValueId>>,
-    pub enum_id: EnumTypeId,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
-pub enum TypeDefinition {
-    TypeAliasDef(TypeAliasDefId),
-    StructDef(StructDefId),
-    EnumDef(EnumDefId),
-}
-
-impl TypeDefinition {
-    pub fn name(&self, store: &Store) -> IString {
-        match self {
-            TypeDefinition::TypeAliasDef(def) => store[def].borrow().name.clone(),
-            TypeDefinition::StructDef(def) => store[def].borrow().name.clone(),
-            TypeDefinition::EnumDef(def) => store[def].borrow().name.clone(),
-        }
-    }
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
-pub enum SymbolId {
-    GlobalVariable(GlobalVariableId),
-    LocalVariable(LocalVariableId),
-    Parameter(ParameterId),
-    Function(FunctionId),
-}
-
-impl SymbolId {
-    pub fn name(&self, store: &Store) -> IString {
-        match self {
-            SymbolId::Function(id) => store[id].borrow().name.clone(),
-            SymbolId::GlobalVariable(id) => store[id].borrow().name.clone(),
-            SymbolId::LocalVariable(id) => store[id].borrow().name.clone(),
-            SymbolId::Parameter(id) => store[id].borrow().name.clone(),
-        }
-    }
+    pub name: NString,
+    pub attributes: BTreeSet<EnumAttribute>,
+    pub generics: Option<BTreeMap<NString, Option<TypeId>>>,
+    pub variants: ThinVec<EnumVariant>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
@@ -177,76 +227,59 @@ pub enum Item {
     TypeAliasDef(TypeAliasDefId),
     StructDef(StructDefId),
     EnumDef(EnumDefId),
+    Trait(TraitId),
 }
 
-impl IntoStoreId for GlobalVariable {
-    type Id = GlobalVariableId;
-
-    fn into_id(self, store: &Store) -> Self::Id {
-        store.store_global_variable(self)
+impl From<GlobalVariable> for GlobalVariableId {
+    fn from(gv: GlobalVariable) -> Self {
+        get_storage(|store| store.store_global_variable(gv))
     }
 }
 
-impl IntoStoreId for LocalVariable {
-    type Id = LocalVariableId;
-
-    fn into_id(self, store: &Store) -> Self::Id {
-        store.store_local_variable(self)
+impl From<LocalVariable> for LocalVariableId {
+    fn from(lv: LocalVariable) -> Self {
+        get_storage(|store| store.store_local_variable(lv))
     }
 }
 
-impl IntoStoreId for Parameter {
-    type Id = ParameterId;
-
-    fn into_id(self, store: &Store) -> Self::Id {
-        store.store_parameter(self)
+impl From<Parameter> for ParameterId {
+    fn from(param: Parameter) -> Self {
+        get_storage(|store| store.store_parameter(param))
     }
 }
 
-impl IntoStoreId for Function {
-    type Id = FunctionId;
-
-    fn into_id(self, store: &Store) -> Self::Id {
-        store.store_function(self)
+impl From<Function> for FunctionId {
+    fn from(func: Function) -> Self {
+        get_storage(|store| store.store_function(func))
     }
 }
 
-impl IntoStoreId for Trait {
-    type Id = TraitId;
-
-    fn into_id(self, store: &Store) -> Self::Id {
-        store.store_trait(self)
+impl From<Trait> for TraitId {
+    fn from(trait_: Trait) -> Self {
+        get_storage(|store| store.store_trait(trait_))
     }
 }
 
-impl IntoStoreId for Module {
-    type Id = ModuleId;
-
-    fn into_id(self, store: &Store) -> Self::Id {
-        store.store_module(self)
+impl From<Module> for ModuleId {
+    fn from(module: Module) -> Self {
+        get_storage(|store| store.store_module(module))
     }
 }
 
-impl IntoStoreId for TypeAliasDef {
-    type Id = TypeAliasDefId;
-
-    fn into_id(self, store: &Store) -> Self::Id {
-        store.store_type_alias(self)
+impl From<TypeAliasDef> for TypeAliasDefId {
+    fn from(type_alias: TypeAliasDef) -> Self {
+        get_storage(|store| store.store_type_alias(type_alias))
     }
 }
 
-impl IntoStoreId for StructDef {
-    type Id = StructDefId;
-
-    fn into_id(self, store: &Store) -> Self::Id {
-        store.store_struct_def(self)
+impl From<StructDef> for StructDefId {
+    fn from(struct_def: StructDef) -> Self {
+        get_storage(|store| store.store_struct_def(struct_def))
     }
 }
 
-impl IntoStoreId for EnumDef {
-    type Id = EnumDefId;
-
-    fn into_id(self, store: &Store) -> Self::Id {
-        store.store_enum_def(self)
+impl From<EnumDef> for EnumDefId {
+    fn from(enum_def: EnumDef) -> Self {
+        get_storage(|store| store.store_enum_def(enum_def))
     }
 }

@@ -1,13 +1,5 @@
-use crate::{
-    ast::{Block, Expr, Type},
-    expr::AttributeList,
-    tag::{
-        EnumVariantNameId, FunctionNameId, ImportNameId, ModuleNameId, ParameterNameId,
-        StructFieldNameId, TraitNameId, TypeNameId, VariableNameId,
-    },
-    ty::TypePath,
-};
-
+use crate::prelude::*;
+use nitrate_nstring::NString;
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
 
@@ -28,7 +20,7 @@ pub enum Visibility {
 pub struct Module {
     pub visibility: Option<Visibility>,
     pub attributes: Option<AttributeList>,
-    pub name: Option<ModuleNameId>,
+    pub name: NString,
     pub items: Vec<Item>,
 }
 
@@ -46,20 +38,39 @@ pub struct ItemPath {
 
 #[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum UseTree {
+    Single { path: ItemPath },
+    Alias { path: ItemPath, alias: NString },
+    UseAll { path: ItemPath },
+    Group { path: ItemPath, group: Vec<UseTree> },
+}
+
+impl UseTree {
+    pub fn path(&self) -> &ItemPath {
+        match self {
+            UseTree::Single { path } => path,
+            UseTree::Alias { path, .. } => path,
+            UseTree::UseAll { path } => path,
+            UseTree::Group { path, .. } => path,
+        }
+    }
+}
+
+#[skip_serializing_none]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Import {
     pub visibility: Option<Visibility>,
     pub attributes: Option<AttributeList>,
-    pub import_name: ImportNameId,
-    pub items: Option<Vec<ItemPath>>,
+    pub use_tree: UseTree,
 
     // Not set until import resolution
-    pub resolved: Option<Item>,
+    pub resolved: Option<Vec<Item>>,
 }
 
 #[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TypeParam {
-    pub name: ParameterNameId,
+    pub name: NString,
     pub default_value: Option<Type>,
 }
 
@@ -74,7 +85,7 @@ pub struct Generics {
 pub struct TypeAlias {
     pub visibility: Option<Visibility>,
     pub attributes: Option<AttributeList>,
-    pub name: TypeNameId,
+    pub name: NString,
     pub generics: Option<Generics>,
     pub alias_type: Option<Type>,
 }
@@ -84,7 +95,7 @@ pub struct TypeAlias {
 pub struct StructField {
     pub visibility: Option<Visibility>,
     pub attributes: Option<AttributeList>,
-    pub name: StructFieldNameId,
+    pub name: NString,
     pub ty: Type,
     pub default_value: Option<Expr>,
 }
@@ -94,7 +105,7 @@ pub struct StructField {
 pub struct Struct {
     pub visibility: Option<Visibility>,
     pub attributes: Option<AttributeList>,
-    pub name: TypeNameId,
+    pub name: NString,
     pub generics: Option<Generics>,
     pub fields: Vec<StructField>,
 }
@@ -103,7 +114,7 @@ pub struct Struct {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct EnumVariant {
     pub attributes: Option<AttributeList>,
-    pub name: EnumVariantNameId,
+    pub name: NString,
     pub ty: Option<Type>,
     pub default_value: Option<Expr>,
 }
@@ -113,7 +124,7 @@ pub struct EnumVariant {
 pub struct Enum {
     pub visibility: Option<Visibility>,
     pub attributes: Option<AttributeList>,
-    pub name: TypeNameId,
+    pub name: NString,
     pub generics: Option<Generics>,
     pub variants: Vec<EnumVariant>,
 }
@@ -132,7 +143,7 @@ pub enum AssociatedItem {
 pub struct Trait {
     pub visibility: Option<Visibility>,
     pub attributes: Option<AttributeList>,
-    pub name: TraitNameId,
+    pub name: NString,
     pub generics: Option<Generics>,
     pub items: Vec<AssociatedItem>,
 }
@@ -141,7 +152,6 @@ pub struct Trait {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Impl {
     pub generics: Option<Generics>,
-    pub attributes: Option<AttributeList>,
     pub trait_path: Option<TypePath>,
     pub for_type: Type,
     pub items: Vec<AssociatedItem>,
@@ -159,19 +169,23 @@ pub enum Mutability {
 pub struct FuncParam {
     pub attributes: Option<AttributeList>,
     pub mutability: Option<Mutability>,
-    pub name: ParameterNameId,
+    pub name: NString,
     pub ty: Type,
     pub default_value: Option<Expr>,
 }
 
-pub type FuncParams = Vec<FuncParam>;
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct FuncParams {
+    pub params: Vec<FuncParam>,
+    pub variadic: bool,
+}
 
 #[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Function {
     pub visibility: Option<Visibility>,
     pub attributes: Option<AttributeList>,
-    pub name: FunctionNameId,
+    pub name: NString,
     pub generics: Option<Generics>,
     pub parameters: FuncParams,
     pub return_type: Option<Type>,
@@ -192,7 +206,7 @@ pub struct GlobalVariable {
     pub kind: GlobalVariableKind,
     pub attributes: Option<AttributeList>,
     pub mutability: Option<Mutability>,
-    pub name: VariableNameId,
+    pub name: NString,
     pub ty: Option<Type>,
     pub initializer: Option<Expr>,
 }
@@ -292,4 +306,18 @@ impl Item {
             _ => None,
         }
     }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum SymbolKind {
+    TypeAlias,
+    Struct,
+    Enum,
+    EnumVariant,
+    Trait,
+    Function,
+    GlobalVariable,
+    LocalVariable,
+    Parameter,
+    GenericParameter,
 }

@@ -1,8 +1,8 @@
-use crate::string::mangle_string;
 use core::panic;
 use nitrate_hir::prelude::*;
+use std::{format, ops::Deref, unimplemented};
 
-pub(crate) fn mangle_type(ty: &Type, store: &Store) -> String {
+pub(crate) fn mangle_type(ty: &Type) -> String {
     match ty {
         Type::Never => "a".to_string(),
         Type::Unit => "b".to_string(),
@@ -25,7 +25,7 @@ pub(crate) fn mangle_type(ty: &Type, store: &Store) -> String {
         Type::F64 => "x".to_string(),
 
         Type::Array { element_type, len } => {
-            let elem_mangled = mangle_type(&store[element_type], store);
+            let elem_mangled = mangle_type(element_type);
             format!("A{}_{}", len, elem_mangled)
         }
 
@@ -34,7 +34,7 @@ pub(crate) fn mangle_type(ty: &Type, store: &Store) -> String {
 
             mangled.push_str("T");
             for elem_type in element_types {
-                let elem_mangled = mangle_type(&store[elem_type], store);
+                let elem_mangled = mangle_type(elem_type);
                 mangled.push_str(&elem_mangled);
             }
             mangled.push_str("E");
@@ -42,49 +42,47 @@ pub(crate) fn mangle_type(ty: &Type, store: &Store) -> String {
             mangled
         }
 
-        Type::Struct { struct_type } => {
-            let struct_type = &store[struct_type];
+        Type::Struct { def } => {
             let mut mangled = String::new();
 
             mangled.push_str("S");
-            for field_type in &struct_type.fields {
-                let elem_mangled = mangle_type(&store[&field_type.ty], store);
-                mangled.push_str(&elem_mangled);
-            }
-            mangled.push_str("E");
+            mangled.push_str(&def.borrow().name);
 
             mangled
         }
 
-        Type::Enum { enum_type } => {
-            let enum_type = &store[enum_type];
+        Type::Enum { def } => {
             let mut mangled = String::new();
 
             mangled.push_str("M");
-            for variant in &enum_type.variants {
-                let variant_mangled = mangle_type(&store[&variant.ty], store);
-                mangled.push_str(&variant_mangled);
-            }
-            mangled.push_str("E");
+            mangled.push_str(&def.borrow().name);
+
+            mangled
+        }
+
+        Type::TypeAlias { def } => {
+            let mut mangled = String::new();
+
+            mangled.push_str("L");
+            mangled.push_str(&def.borrow().name);
 
             mangled
         }
 
         Type::Refine { base, min, max } => {
-            let base_mangled = mangle_type(&store[base], store);
-            format!("Y{}_{}_{}", store[min], store[max], base_mangled)
+            let base_mangled = mangle_type(base);
+            format!("Y{}_{}_{}", min.deref(), max.deref(), base_mangled)
         }
 
         Type::Function { function_type } => {
-            let function_type = &store[function_type];
             let mut mangled = String::new();
 
             mangled.push_str("F");
-            let return_mangled = mangle_type(&store[&function_type.return_type], store);
+            let return_mangled = mangle_type(&function_type.return_type);
             mangled.push_str(&return_mangled);
 
             for param_type in &function_type.params {
-                let param_mangled = mangle_type(&store[&param_type.1], store);
+                let param_mangled = mangle_type(&param_type.1);
                 mangled.push_str(&param_mangled);
             }
             mangled.push_str("E");
@@ -113,7 +111,7 @@ pub(crate) fn mangle_type(ty: &Type, store: &Store) -> String {
                 (false, false) => "D",
             };
 
-            let to_mangled = mangle_type(&store[to], store);
+            let to_mangled = mangle_type(to);
             format!("R{}{}{}", lifetime_mangled, exmut_mangled, to_mangled)
         }
 
@@ -138,14 +136,26 @@ pub(crate) fn mangle_type(ty: &Type, store: &Store) -> String {
                 (false, false) => "D",
             };
 
-            let elem_mangled = mangle_type(&store[element_type], store);
+            let elem_mangled = mangle_type(element_type);
             format!("Q{}{}{}", lifetime_mangled, exmut_mangled, elem_mangled)
         }
 
-        Type::Pointer {
+        Type::Pointer { exclusive, mutable, to } => {
+            let exmut_mangled = match (exclusive, mutable) {
+                (true, true) => "A",
+                (true, false) => "B",
+                (false, true) => "C",
+                (false, false) => "D",
+            };
+
+            let to_mangled = mangle_type(to);
+            format!("P{}{}", exmut_mangled, to_mangled)
+        }
+
+        Type::SlicePtr {
             exclusive,
             mutable,
-            to,
+            element_type,
         } => {
             let exmut_mangled = match (exclusive, mutable) {
                 (true, true) => "A",
@@ -154,22 +164,24 @@ pub(crate) fn mangle_type(ty: &Type, store: &Store) -> String {
                 (false, false) => "D",
             };
 
-            let to_mangled = mangle_type(&store[to], store);
-            format!("P{}{}", exmut_mangled, to_mangled)
+            let elem_mangled = mangle_type(element_type);
+            format!("Z{}{}", exmut_mangled, elem_mangled)
         }
 
-        Type::Symbol { path } => {
-            let mangled_path = mangle_string(path);
-            format!("Z{}", mangled_path)
+        Type::Parameterized { .. } => {
+            panic!("Cannot mangle uninstantiated generic type: {:?}", ty);
         }
 
         Type::InferredFloat | Type::InferredInteger | Type::Inferred { .. } => {
             panic!("Cannot mangle inferred type: {:?}", ty);
         }
+
+        Type::GenericParam { .. } => {
+            panic!("Cannot mangle uninstantiated generic parameter: {:?}", ty);
+        }
     }
 }
-
-pub(crate) fn demangle_type(_mangled: &mut dyn std::io::Read, _store: &Store) -> Result<Type, ()> {
-    // TODO: implement type demangling
-    Err(())
+pub(crate) fn demangle_type(_mangled: &mut dyn std::io::Read) -> Result<Type, ()> {
+    // TODO: implement demangling
+    unimplemented!();
 }

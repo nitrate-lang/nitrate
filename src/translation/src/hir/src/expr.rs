@@ -1,5 +1,7 @@
+use std::matches;
+
 use crate::{prelude::*, store::LiteralId};
-use interned_string::IString;
+use nitrate_nstring::NString;
 use ordered_float::OrderedFloat;
 use serde::{Deserialize, Serialize};
 use thin_str::ThinStr;
@@ -55,10 +57,8 @@ pub enum UnaryOp {
     Add,
     /// `-`
     Sub,
-    /// `~`
-    BitNot,
     /// `!`
-    LogicNot,
+    Not,
 }
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, PartialOrd)]
@@ -82,6 +82,7 @@ pub enum Lit {
 }
 
 impl Lit {
+    #[must_use]
     pub fn size_of(&self) -> usize {
         match self {
             Lit::Unit => 0,
@@ -128,12 +129,7 @@ impl Lit {
             Lit::U64(_) => value.try_into().map(Lit::U64).ok(),
             Lit::U128(_) => value.try_into().map(Lit::U128).ok(),
 
-            Lit::Unit
-            | Lit::Bool(_)
-            | Lit::F32(_)
-            | Lit::F64(_)
-            | Lit::USize32(_)
-            | Lit::USize64(_) => None,
+            Lit::Unit | Lit::Bool(_) | Lit::F32(_) | Lit::F64(_) | Lit::USize32(_) | Lit::USize64(_) => None,
         }
     }
 
@@ -239,26 +235,26 @@ impl std::fmt::Display for Lit {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Lit::Unit => write!(f, "()"),
-            Lit::Bool(b) => write!(f, "{}", b),
-            Lit::I8(i) => write!(f, "{}_i8", i),
-            Lit::I16(i) => write!(f, "{}_i16", i),
-            Lit::I32(i) => write!(f, "{}_i32", i),
-            Lit::I64(i) => write!(f, "{}_i64", i),
-            Lit::I128(i) => write!(f, "{}_i128", i),
-            Lit::U8(u) => write!(f, "{}_u8", u),
-            Lit::U16(u) => write!(f, "{}_u16", u),
-            Lit::U32(u) => write!(f, "{}_u32", u),
-            Lit::U64(u) => write!(f, "{}_u64", u),
-            Lit::U128(u) => write!(f, "{}_u128", u),
-            Lit::F32(fl) => write!(f, "{}_f32", fl),
-            Lit::F64(fl) => write!(f, "{}_f64", fl),
-            Lit::USize32(u) => write!(f, "{}_usize", u),
-            Lit::USize64(u) => write!(f, "{}_usize", u),
+            Lit::Bool(b) => write!(f, "{b}"),
+            Lit::I8(i) => write!(f, "{i}_i8"),
+            Lit::I16(i) => write!(f, "{i}_i16"),
+            Lit::I32(i) => write!(f, "{i}_i32"),
+            Lit::I64(i) => write!(f, "{i}_i64"),
+            Lit::I128(i) => write!(f, "{i}_i128"),
+            Lit::U8(u) => write!(f, "{u}_u8"),
+            Lit::U16(u) => write!(f, "{u}_u16"),
+            Lit::U32(u) => write!(f, "{u}_u32"),
+            Lit::U64(u) => write!(f, "{u}_u64"),
+            Lit::U128(u) => write!(f, "{u}_u128"),
+            Lit::F32(fl) => write!(f, "{fl}_f32"),
+            Lit::F64(fl) => write!(f, "{fl}_f64"),
+            Lit::USize32(u) => write!(f, "{u}_usize"),
+            Lit::USize64(u) => write!(f, "{u}_usize"),
         }
     }
 }
 
-#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub enum BlockSafety {
     Safe,
     Unsafe,
@@ -267,14 +263,67 @@ pub enum BlockSafety {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub enum BlockElement {
     Expr(ValueId),
-    Stmt(ValueId),
     Local(LocalVariableId),
+}
+
+impl BlockElement {
+    #[must_use]
+    pub fn as_expr(&self) -> Option<&ValueId> {
+        if let BlockElement::Expr(expr) = self {
+            Some(expr)
+        } else {
+            None
+        }
+    }
+
+    #[must_use]
+    pub fn as_local(&self) -> Option<&LocalVariableId> {
+        if let BlockElement::Local(local) = self {
+            Some(local)
+        } else {
+            None
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct Block {
     pub safety: BlockSafety,
     pub elements: Vec<BlockElement>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
+pub struct Arguments<T> {
+    pub positional: ThinVec<T>,
+    pub named: ThinVec<(NString, T)>,
+}
+
+pub struct ArgumentsIterator<T> {
+    positional: ThinVec<T>,
+    named: ThinVec<(NString, T)>,
+}
+
+impl<T> Arguments<T> {
+    pub fn into_iter(self) -> ArgumentsIterator<T> {
+        ArgumentsIterator {
+            positional: self.positional,
+            named: self.named,
+        }
+    }
+}
+
+impl<T> Iterator for ArgumentsIterator<T> {
+    type Item = T;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if !self.positional.is_empty() {
+            Some(self.positional.remove(0))
+        } else if !self.named.is_empty() {
+            Some(self.named.remove(0).1)
+        } else {
+            None
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
@@ -301,13 +350,13 @@ pub enum Value {
     InferredFloat(OrderedFloat<f64>),
 
     StructObject {
-        struct_path: IString,
-        fields: ThinVec<(IString, ValueId)>,
+        struct_def: StructDefId,
+        fields: ThinVec<(NString, ValueId)>,
     },
 
     EnumVariant {
-        enum_path: IString,
-        variant: IString,
+        enum_def: EnumDefId,
+        variant: NString,
         value: ValueId,
     },
 
@@ -324,12 +373,7 @@ pub enum Value {
 
     FieldAccess {
         expr: ValueId,
-        field: IString,
-    },
-
-    IndexAccess {
-        collection: ValueId,
-        index: ValueId,
+        field_name: NString,
     },
 
     Assign {
@@ -342,8 +386,8 @@ pub enum Value {
     },
 
     Cast {
-        expr: ValueId,
-        to: TypeId,
+        value: ValueId,
+        target_type: TypeId,
     },
 
     Borrow {
@@ -353,11 +397,11 @@ pub enum Value {
     },
 
     List {
-        elements: ThinVec<Value>,
+        elements: ThinVec<ValueId>,
     },
 
     Tuple {
-        elements: ThinVec<Value>,
+        elements: ThinVec<ValueId>,
     },
 
     If {
@@ -376,11 +420,11 @@ pub enum Value {
     },
 
     Break {
-        label: Option<IString>,
+        label: Option<NString>,
     },
 
     Continue {
-        label: Option<IString>,
+        label: Option<NString>,
     },
 
     Return {
@@ -391,27 +435,229 @@ pub enum Value {
         block: BlockId,
     },
 
-    Closure {
-        captures: ThinVec<IString>,
-        callee: FunctionId,
-    },
-
     Call {
         callee: ValueId,
-        positional: ThinVec<ValueId>,
-        named: ThinVec<(IString, ValueId)>,
+        args: Arguments<ValueId>,
     },
 
     MethodCall {
         object: ValueId,
-        method_name: IString,
-        positional: ThinVec<ValueId>,
-        named: ThinVec<(IString, ValueId)>,
+        method_name: NString,
+        args: Arguments<ValueId>,
     },
 
-    Symbol {
-        path: IString,
+    FunctionSymbol {
+        id: FunctionId,
     },
+
+    GlobalVariableSymbol {
+        id: GlobalVariableId,
+    },
+
+    LocalVariableSymbol {
+        id: LocalVariableId,
+    },
+
+    ParameterSymbol {
+        id: ParameterId,
+    },
+}
+
+impl Value {
+    #[must_use]
+    pub fn is_unit(&self) -> bool {
+        matches!(self, Value::Unit)
+    }
+
+    #[must_use]
+    pub fn is_bool(&self) -> bool {
+        matches!(self, Value::Bool(_))
+    }
+
+    #[must_use]
+    pub fn is_i8(&self) -> bool {
+        matches!(self, Value::I8(_))
+    }
+
+    #[must_use]
+    pub fn is_i16(&self) -> bool {
+        matches!(self, Value::I16(_))
+    }
+
+    #[must_use]
+    pub fn is_i32(&self) -> bool {
+        matches!(self, Value::I32(_))
+    }
+
+    #[must_use]
+    pub fn is_i64(&self) -> bool {
+        matches!(self, Value::I64(_))
+    }
+
+    #[must_use]
+    pub fn is_i128(&self) -> bool {
+        matches!(self, Value::I128(_))
+    }
+
+    #[must_use]
+    pub fn is_u8(&self) -> bool {
+        matches!(self, Value::U8(_))
+    }
+
+    #[must_use]
+    pub fn is_u16(&self) -> bool {
+        matches!(self, Value::U16(_))
+    }
+
+    #[must_use]
+    pub fn is_u32(&self) -> bool {
+        matches!(self, Value::U32(_))
+    }
+
+    #[must_use]
+    pub fn is_u64(&self) -> bool {
+        matches!(self, Value::U64(_))
+    }
+
+    #[must_use]
+    pub fn is_u128(&self) -> bool {
+        matches!(self, Value::U128(_))
+    }
+
+    #[must_use]
+    pub fn is_f32(&self) -> bool {
+        matches!(self, Value::F32(_))
+    }
+
+    #[must_use]
+    pub fn is_f64(&self) -> bool {
+        matches!(self, Value::F64(_))
+    }
+
+    #[must_use]
+    pub fn is_usize(&self) -> bool {
+        matches!(self, Value::USize32(_) | Value::USize64(_))
+    }
+
+    #[must_use]
+    pub fn is_string_lit(&self) -> bool {
+        matches!(self, Value::StringLit(_))
+    }
+
+    #[must_use]
+    pub fn is_bstring_lit(&self) -> bool {
+        matches!(self, Value::BStringLit(_))
+    }
+
+    #[must_use]
+    pub fn is_inferred_integer(&self) -> bool {
+        matches!(self, Value::InferredInteger(_))
+    }
+
+    #[must_use]
+    pub fn is_inferred_float(&self) -> bool {
+        matches!(self, Value::InferredFloat(_))
+    }
+
+    #[must_use]
+    pub fn is_struct_object(&self) -> bool {
+        matches!(self, Value::StructObject { .. })
+    }
+
+    #[must_use]
+    pub fn is_enum_variant(&self) -> bool {
+        matches!(self, Value::EnumVariant { .. })
+    }
+
+    #[must_use]
+    pub fn is_binary(&self) -> bool {
+        matches!(self, Value::Binary { .. })
+    }
+
+    #[must_use]
+    pub fn is_unary(&self) -> bool {
+        matches!(self, Value::Unary { .. })
+    }
+
+    #[must_use]
+    pub fn is_field_access(&self) -> bool {
+        matches!(self, Value::FieldAccess { .. })
+    }
+
+    #[must_use]
+    pub fn is_assign(&self) -> bool {
+        matches!(self, Value::Assign { .. })
+    }
+
+    #[must_use]
+    pub fn is_deref(&self) -> bool {
+        matches!(self, Value::Deref { .. })
+    }
+
+    #[must_use]
+    pub fn is_cast(&self) -> bool {
+        matches!(self, Value::Cast { .. })
+    }
+
+    #[must_use]
+    pub fn is_borrow(&self) -> bool {
+        matches!(self, Value::Borrow { .. })
+    }
+
+    #[must_use]
+    pub fn is_list(&self) -> bool {
+        matches!(self, Value::List { .. })
+    }
+
+    #[must_use]
+    pub fn is_tuple(&self) -> bool {
+        matches!(self, Value::Tuple { .. })
+    }
+
+    #[must_use]
+    pub fn is_if(&self) -> bool {
+        matches!(self, Value::If { .. })
+    }
+
+    #[must_use]
+    pub fn is_while(&self) -> bool {
+        matches!(self, Value::While { .. })
+    }
+
+    #[must_use]
+    pub fn is_loop(&self) -> bool {
+        matches!(self, Value::Loop { .. })
+    }
+
+    #[must_use]
+    pub fn is_break(&self) -> bool {
+        matches!(self, Value::Break { .. })
+    }
+
+    #[must_use]
+    pub fn is_continue(&self) -> bool {
+        matches!(self, Value::Continue { .. })
+    }
+
+    #[must_use]
+    pub fn is_return(&self) -> bool {
+        matches!(self, Value::Return { .. })
+    }
+
+    #[must_use]
+    pub fn is_block(&self) -> bool {
+        matches!(self, Value::Block { .. })
+    }
+
+    #[must_use]
+    pub fn is_call(&self) -> bool {
+        matches!(self, Value::Call { .. })
+    }
+
+    #[must_use]
+    pub fn is_method_call(&self) -> bool {
+        matches!(self, Value::MethodCall { .. })
+    }
 }
 
 impl TryFrom<Value> for Lit {
@@ -464,6 +710,7 @@ impl From<Lit> for Value {
 }
 
 impl Value {
+    #[must_use]
     pub fn is_literal(&self) -> bool {
         matches!(
             self,
@@ -488,26 +735,20 @@ impl Value {
     }
 }
 
-impl IntoStoreId for Lit {
-    type Id = LiteralId;
-
-    fn into_id(self, store: &Store) -> Self::Id {
-        store.store_literal(self)
+impl From<Lit> for LiteralId {
+    fn from(lit: Lit) -> Self {
+        get_storage(|store| store.store_literal(lit))
     }
 }
 
-impl IntoStoreId for Block {
-    type Id = BlockId;
-
-    fn into_id(self, store: &Store) -> Self::Id {
-        store.store_block(self)
+impl From<Block> for BlockId {
+    fn from(block: Block) -> Self {
+        get_storage(|store| store.store_block(block))
     }
 }
 
-impl IntoStoreId for Value {
-    type Id = ValueId;
-
-    fn into_id(self, store: &Store) -> Self::Id {
-        store.store_value(self)
+impl From<Value> for ValueId {
+    fn from(value: Value) -> Self {
+        get_storage(|store| store.store_value(value))
     }
 }

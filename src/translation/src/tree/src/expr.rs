@@ -1,7 +1,5 @@
-use crate::ast::{FuncParam, Mutability, Type};
-use crate::tag::{ArgNameId, LabelNameId, StringLiteralId, StructFieldNameId, VariableNameId};
-use crate::ty::TypePath;
-
+use crate::prelude::*;
+use nitrate_nstring::NString;
 use nitrate_token::IntegerKind;
 use ordered_float::NotNan;
 use serde::{Deserialize, Serialize};
@@ -39,7 +37,7 @@ pub struct FloatLit {
 #[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct StringLit {
-    pub value: StringLiteralId,
+    pub value: String,
 }
 
 #[skip_serializing_none]
@@ -69,8 +67,8 @@ pub struct Tuple {
 #[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct StructInit {
-    pub type_name: TypePath,
-    pub fields: Vec<(StructFieldNameId, Expr)>,
+    pub path: ExprPath,
+    pub fields: Vec<(NString, Expr)>,
 }
 
 #[skip_serializing_none]
@@ -84,10 +82,8 @@ pub enum UnaryExprOp {
     Deref,
     /// `&`
     Borrow,
-    /// `~`
-    BitNot,
     /// `!`
-    LogicNot,
+    Not,
     /// `typeof`
     Typeof,
 }
@@ -204,7 +200,7 @@ pub struct LocalVariable {
     pub kind: LocalVariableKind,
     pub attributes: Option<AttributeList>,
     pub mutability: Option<Mutability>,
-    pub name: VariableNameId,
+    pub name: NString,
     pub ty: Option<Type>,
     pub initializer: Option<Expr>,
 }
@@ -260,7 +256,6 @@ pub type AttributeList = Vec<Expr>;
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Closure {
     pub attributes: Option<AttributeList>,
-    pub unique_id: u64,
     pub parameters: Option<Vec<FuncParam>>,
     pub return_type: Option<Type>,
     pub definition: Block,
@@ -269,7 +264,7 @@ pub struct Closure {
 #[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TypeArgument {
-    pub name: Option<ArgNameId>,
+    pub name: Option<NString>,
     pub value: Type,
 }
 
@@ -284,7 +279,7 @@ pub struct ExprPathSegment {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ExprPath {
     pub segments: Vec<ExprPathSegment>,
-    pub resolved_path: Option<String>,
+    pub resolved_path: Option<NString>,
 }
 
 #[skip_serializing_none]
@@ -341,13 +336,13 @@ pub struct Match {
 #[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Break {
-    pub label: Option<LabelNameId>,
+    pub label: Option<NString>,
 }
 
 #[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Continue {
-    pub label: Option<LabelNameId>,
+    pub label: Option<NString>,
 }
 
 #[skip_serializing_none]
@@ -360,7 +355,7 @@ pub struct Return {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ForEach {
     pub attributes: Option<AttributeList>,
-    pub bindings: Vec<VariableNameId>,
+    pub bindings: Vec<NString>,
     pub iterable: Expr,
     pub body: Block,
 }
@@ -376,7 +371,7 @@ pub struct Await {
 pub struct FunctionCall {
     pub callee: Expr,
     pub positional: Vec<Expr>,
-    pub named: Vec<(ArgNameId, Expr)>,
+    pub named: Vec<(NString, Expr)>,
 }
 
 #[skip_serializing_none]
@@ -385,7 +380,7 @@ pub struct MethodCall {
     pub object: Expr,
     pub method_name: String,
     pub positional: Vec<Expr>,
-    pub named: Vec<(ArgNameId, Expr)>,
+    pub named: Vec<(NString, Expr)>,
 }
 
 #[skip_serializing_none]

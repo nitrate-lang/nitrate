@@ -34,7 +34,6 @@ pub struct Span {
 pub enum Origin {
     Point(SourcePosition),
     Span(Span),
-    Unknown,
     None,
 }
 
@@ -42,20 +41,24 @@ pub enum Origin {
 #[repr(u8)]
 pub enum DiagnosticGroupId {
     Scan = 0,
-    Token = 1,
-    Syntax = 2,
+    Lex = 1,
+    Parse = 2,
     Resolve = 3,
     Hir = 4,
+    Type = 5,
+    Semantic = 6,
 }
 
 impl std::fmt::Display for DiagnosticGroupId {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             DiagnosticGroupId::Scan => write!(f, "Scanner"),
-            DiagnosticGroupId::Token => write!(f, "Lexical"),
-            DiagnosticGroupId::Syntax => write!(f, "Syntax"),
+            DiagnosticGroupId::Lex => write!(f, "Lexical"),
+            DiagnosticGroupId::Parse => write!(f, "Syntax"),
             DiagnosticGroupId::Resolve => write!(f, "Resolution"),
-            DiagnosticGroupId::Hir => write!(f, "HIR"),
+            DiagnosticGroupId::Hir => write!(f, "Hir"),
+            DiagnosticGroupId::Type => write!(f, "Type"),
+            DiagnosticGroupId::Semantic => write!(f, "Semantic"),
         }
     }
 }

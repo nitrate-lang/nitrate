@@ -1,71 +1,38 @@
 use nitrate_hir::{SymbolTab, prelude::*};
-use std::cell::RefCell;
+use nitrate_nstring::NString;
+use nitrate_tree::ast::SymbolKind;
+use nitrate_tree_resolve::ImportContext;
 use std::collections::{HashMap, HashSet};
 use std::num::NonZeroU32;
-use std::ops::Deref;
 
 #[derive(Debug)]
 pub struct Ast2HirCtx {
-    pub store: Store,
     pub tab: SymbolTab,
-    pub(crate) current_scope: Vec<String>,
+
+    pub(crate) ast_symbol_map: HashMap<NString, SymbolKind>,
+    pub(crate) entities_added: HashSet<NString>,
+    pub(crate) current_scope: Vec<NString>,
+    pub(crate) ptr_size: PtrSize,
+    pub(crate) import_ctx: ImportContext,
+
     _impl_map: HashMap<TypeId, HashSet<TraitId>>,
     type_infer_id_ctr: NonZeroU32,
     unique_name_ctr: u32,
-    pub(crate) ptr_size: PtrSize,
 }
 
 impl Ast2HirCtx {
-    pub fn new(ptr_size: PtrSize) -> Self {
+    pub fn new(ptr_size: PtrSize, import_ctx: ImportContext) -> Self {
         Self {
-            store: Store::new(),
-            tab: SymbolTab::default(),
+            tab: SymbolTab::new(ptr_size),
+            ast_symbol_map: HashMap::new(),
+            entities_added: HashSet::new(),
             current_scope: Vec::new(),
+            ptr_size,
+            import_ctx,
             _impl_map: HashMap::new(),
             type_infer_id_ctr: NonZeroU32::new(1).unwrap(),
             unique_name_ctr: 0,
-            ptr_size,
         }
-    }
-
-    pub(crate) fn _has_trait(&self, ty: &TypeId, trait_id: &TraitId) -> bool {
-        if let Some(impls) = self._impl_map.get(ty) {
-            impls.contains(trait_id)
-        } else {
-            false
-        }
-    }
-
-    pub(crate) fn _find_unambiguous_trait_method(
-        &self,
-        ty: &TypeId,
-        method_name: &str,
-    ) -> Option<FunctionId> {
-        let trait_set = match self._impl_map.get(ty) {
-            Some(trait_set) => trait_set,
-            None => return None,
-        };
-
-        let mut found: Option<FunctionId> = None;
-
-        for trait_id in trait_set {
-            let trait_def = &self[trait_id].borrow();
-
-            for method_id in &trait_def.methods {
-                let method_def = &self[method_id].borrow();
-
-                if method_def.name.deref() == method_name {
-                    if found.is_some() {
-                        // Ambiguous, multiple traits have the same method
-                        return None;
-                    } else {
-                        found = Some(method_id.clone());
-                    }
-                }
-            }
-        }
-
-        found
     }
 
     pub fn get_unique_name(&mut self) -> String {
@@ -79,147 +46,27 @@ impl Ast2HirCtx {
     pub(crate) fn create_inference_placeholder(&mut self) -> Type {
         let id = self.type_infer_id_ctr;
         self.type_infer_id_ctr = id.checked_add(1).expect("Type infer ID overflow");
-        Type::Inferred { id }
+        Type::Inferred { id, name: None }
     }
 
-    pub(crate) fn join_path(scope: &[String], name: &str) -> String {
-        let length = scope.iter().map(|s| s.len() + 2).sum::<usize>() + name.len();
+    pub(crate) fn create_generic_placeholder(&mut self, name: NString) -> Type {
+        // Generic parameters are now represented as Type::GenericParam
+        // The index is assigned implicitly based on the order of declaration
+        // Since context may not know the declaration order, we store the name
+        // and the index will be resolved to the proper GenericParam by the lowering pass
+        Type::GenericParam { index: 0, name }
+    }
+
+    pub(crate) fn qualify_name(&self, item_name: &str) -> String {
+        let length = self.current_scope.iter().map(|s| s.len() + 2).sum::<usize>() + item_name.len();
         let mut qualified = String::with_capacity(length);
 
-        for module in scope {
-            qualified.push_str(&module);
+        for module in &self.current_scope {
+            qualified.push_str(module);
             qualified.push_str("::");
         }
 
-        qualified.push_str(name);
+        qualified.push_str(item_name);
         qualified
-    }
-}
-
-impl std::ops::Index<&TypeId> for Ast2HirCtx {
-    type Output = Type;
-
-    fn index(&self, index: &TypeId) -> &Self::Output {
-        &self.store[index]
-    }
-}
-
-impl std::ops::Index<&StructTypeId> for Ast2HirCtx {
-    type Output = StructType;
-
-    fn index(&self, index: &StructTypeId) -> &Self::Output {
-        &self.store[index]
-    }
-}
-
-impl std::ops::Index<&EnumTypeId> for Ast2HirCtx {
-    type Output = EnumType;
-
-    fn index(&self, index: &EnumTypeId) -> &Self::Output {
-        &self.store[index]
-    }
-}
-
-impl std::ops::Index<&FunctionTypeId> for Ast2HirCtx {
-    type Output = FunctionType;
-
-    fn index(&self, index: &FunctionTypeId) -> &Self::Output {
-        &self.store[index]
-    }
-}
-
-impl std::ops::Index<&GlobalVariableId> for Ast2HirCtx {
-    type Output = RefCell<GlobalVariable>;
-
-    fn index(&self, index: &GlobalVariableId) -> &Self::Output {
-        &self.store[index]
-    }
-}
-
-impl std::ops::Index<&LocalVariableId> for Ast2HirCtx {
-    type Output = RefCell<LocalVariable>;
-
-    fn index(&self, index: &LocalVariableId) -> &Self::Output {
-        &self.store[index]
-    }
-}
-
-impl std::ops::Index<&ParameterId> for Ast2HirCtx {
-    type Output = RefCell<Parameter>;
-
-    fn index(&self, index: &ParameterId) -> &Self::Output {
-        &self.store[index]
-    }
-}
-
-impl std::ops::Index<&FunctionId> for Ast2HirCtx {
-    type Output = RefCell<Function>;
-
-    fn index(&self, index: &FunctionId) -> &Self::Output {
-        &self.store[index]
-    }
-}
-
-impl std::ops::Index<&TraitId> for Ast2HirCtx {
-    type Output = RefCell<Trait>;
-
-    fn index(&self, index: &TraitId) -> &Self::Output {
-        &self.store[index]
-    }
-}
-
-impl std::ops::Index<&ModuleId> for Ast2HirCtx {
-    type Output = RefCell<Module>;
-
-    fn index(&self, index: &ModuleId) -> &Self::Output {
-        &self.store[index]
-    }
-}
-
-impl std::ops::Index<&TypeAliasDefId> for Ast2HirCtx {
-    type Output = RefCell<TypeAliasDef>;
-
-    fn index(&self, index: &TypeAliasDefId) -> &Self::Output {
-        &self.store[index]
-    }
-}
-
-impl std::ops::Index<&StructDefId> for Ast2HirCtx {
-    type Output = RefCell<StructDef>;
-
-    fn index(&self, index: &StructDefId) -> &Self::Output {
-        &self.store[index]
-    }
-}
-
-impl std::ops::Index<&EnumDefId> for Ast2HirCtx {
-    type Output = RefCell<EnumDef>;
-
-    fn index(&self, index: &EnumDefId) -> &Self::Output {
-        &self.store[index]
-    }
-}
-
-impl std::ops::Index<&ValueId> for Ast2HirCtx {
-    type Output = RefCell<Value>;
-
-    fn index(&self, index: &ValueId) -> &Self::Output {
-        &self.store[index]
-    }
-}
-
-impl std::ops::Index<&LiteralId> for Ast2HirCtx {
-    type Output = Lit;
-
-    fn index(&self, index: &LiteralId) -> &Self::Output {
-        &self.store[index]
-    }
-}
-
-impl std::ops::Index<&BlockId> for Ast2HirCtx {
-    type Output = RefCell<Block>;
-
-    fn index(&self, index: &BlockId) -> &Self::Output {
-        &self.store[index]
     }
 }

@@ -1,16 +1,4 @@
-use crate::{
-    Order, ParseTreeIter, RefNode,
-    ast::{
-        Await, BStringLit, BinExpr, Block, BlockItem, BooleanLit, Break, Cast, Closure, Continue,
-        Expr, ExprParentheses, ExprSyntaxError, FieldAccess, FloatLit, ForEach, FunctionCall, If,
-        IndexAccess, IntegerLit, List, LocalVariable, Return, StringLit, TypeInfo, UnaryExpr,
-        WhileLoop,
-    },
-    expr::{
-        AttributeList, ElseIf, ExprPath, Match, MatchCase, MethodCall, Safety, StructInit, Tuple,
-        TypeArgument,
-    },
-};
+use crate::prelude::*;
 
 impl ParseTreeIter for ExprSyntaxError {
     fn depth_first_iter(&self, f: &mut dyn FnMut(Order, RefNode)) {
@@ -102,7 +90,7 @@ impl ParseTreeIter for StructInit {
     fn depth_first_iter(&self, f: &mut dyn FnMut(Order, RefNode)) {
         f(Order::Enter, RefNode::ExprStructInit(self));
 
-        self.type_name.depth_first_iter(f);
+        self.path.depth_first_iter(f);
 
         for (key, value) in &self.fields {
             let _ = key;

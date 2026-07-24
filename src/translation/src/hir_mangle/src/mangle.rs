@@ -4,12 +4,12 @@ use crate::{
 };
 use nitrate_hir::prelude::*;
 
-pub fn mangle_name(package: &str, name: &str, ty: &Type, store: &Store) -> String {
+pub fn mangle_name(package_name: &str, name: &str, ty: &Type) -> String {
     format!(
         "_NIT_{}_{}_{}",
-        mangle_string(package),
+        mangle_string(package_name),
         mangle_string(name),
-        mangle_type(ty, store)
+        mangle_type(ty)
     )
 }
 
@@ -19,7 +19,7 @@ pub struct DemangledName {
     pub ty: Type,
 }
 
-pub fn demangle_name(mangled: &str, store: &Store) -> Result<DemangledName, ()> {
+pub fn demangle_name(mangled: &str) -> Result<DemangledName, ()> {
     let mut buf = [0u8; 1];
 
     let Some(mangled) = mangled.strip_prefix("_NIT_") else {
@@ -40,7 +40,7 @@ pub fn demangle_name(mangled: &str, store: &Store) -> Result<DemangledName, ()> 
         return Err(());
     }
 
-    let ty = demangle_type(read, store)?;
+    let ty = demangle_type(read)?;
 
     Ok(DemangledName { package, name, ty })
 }

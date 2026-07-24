@@ -1,21 +1,15 @@
 use crate::diagnosis::SyntaxErr;
 
 use super::parse::Parser;
+use nitrate_nstring::NString;
 use nitrate_token::Token;
-use nitrate_tree::{
-    ast::{
-        AttributeList, Await, BStringLit, BinExpr, BinExprOp, Block, BlockItem, Bool, BooleanLit,
-        Break, Cast, Closure, Continue, ElseIf, Expr, ExprParentheses, ExprPath, ExprPathSegment,
-        ExprSyntaxError, FieldAccess, Float32, Float64, FloatLit, ForEach, FuncParam, FunctionCall,
-        If, IndexAccess, Int8, Int16, Int32, Int64, Int128, IntegerLit, List, LocalVariable,
-        LocalVariableKind, MethodCall, Mutability, Return, Safety, StringLit, Tuple, Type,
-        TypeArgument, TypeInfo, TypePath, TypePathSegment, UInt8, UInt16, UInt32, UInt64, UInt128,
-        USize, UnaryExpr, UnaryExprOp, WhileLoop,
-    },
-    tag::{
-        ArgNameId, VariableNameId, intern_arg_name, intern_label_name, intern_parameter_name,
-        intern_string_literal, intern_variable_name,
-    },
+use nitrate_tree::ast::{
+    AttributeList, Await, BStringLit, BinExpr, BinExprOp, Block, BlockItem, Bool, BooleanLit, Break, Cast, Closure,
+    Continue, ElseIf, Expr, ExprParentheses, ExprPath, ExprPathSegment, ExprSyntaxError, FieldAccess, Float32, Float64,
+    FloatLit, ForEach, FuncParam, FunctionCall, If, IndexAccess, Int8, Int16, Int32, Int64, Int128, IntegerLit, List,
+    LocalVariable, LocalVariableKind, MethodCall, Mutability, Return, Safety, StringLit, StructInit, Tuple, Type,
+    TypeArgument, TypeInfo, TypePath, TypePathSegment, UInt8, UInt16, UInt32, UInt64, UInt128, USize, UnaryExpr,
+    UnaryExprOp, WhileLoop,
 };
 
 type Precedence = u32;
@@ -55,16 +49,13 @@ enum Operation {
 
 fn get_precedence_of_binary_operator(op: BinExprOp) -> (Associativity, Precedence) {
     let (associativity, precedence) = match op {
-        BinExprOp::Mul | BinExprOp::Div | BinExprOp::Mod => {
-            (Associativity::LeftToRight, PrecedenceRank::MulDivMod)
-        }
+        BinExprOp::Mul | BinExprOp::Div | BinExprOp::Mod => (Associativity::LeftToRight, PrecedenceRank::MulDivMod),
 
         BinExprOp::Add | BinExprOp::Sub => (Associativity::LeftToRight, PrecedenceRank::AddSub),
 
-        BinExprOp::BitShl | BinExprOp::BitShr | BinExprOp::BitRol | BinExprOp::BitRor => (
-            Associativity::LeftToRight,
-            PrecedenceRank::BitShiftAndRotate,
-        ),
+        BinExprOp::BitShl | BinExprOp::BitShr | BinExprOp::BitRol | BinExprOp::BitRor => {
+            (Associativity::LeftToRight, PrecedenceRank::BitShiftAndRotate)
+        }
 
         BinExprOp::BitAnd => (Associativity::LeftToRight, PrecedenceRank::BitAnd),
         BinExprOp::BitXor => (Associativity::LeftToRight, PrecedenceRank::BitXor),
@@ -111,21 +102,15 @@ fn get_precedence(operation: Operation) -> (Associativity, Precedence) {
             PrecedenceRank::FunctionCallAndIndexing as Precedence,
         ),
 
-        Operation::Cast => (
-            Associativity::LeftToRight,
-            PrecedenceRank::Cast as Precedence,
-        ),
+        Operation::Cast => (Associativity::LeftToRight, PrecedenceRank::Cast as Precedence),
 
-        Operation::FieldAccessOrMethodCall => (
-            Associativity::LeftToRight,
-            PrecedenceRank::FieldAccess as Precedence,
-        ),
+        Operation::FieldAccessOrMethodCall => (Associativity::LeftToRight, PrecedenceRank::FieldAccess as Precedence),
     }
 }
 
 impl Parser<'_, '_> {
     fn detect_and_parse_unary_operator(&mut self) -> Option<UnaryExprOp> {
-        match self.lexer.peek_t() {
+        match self.lexer.peek_tok().token {
             Token::Plus => {
                 self.lexer.skip_tok();
                 Some(UnaryExprOp::Add)
@@ -146,14 +131,9 @@ impl Parser<'_, '_> {
                 Some(UnaryExprOp::Borrow)
             }
 
-            Token::Tilde => {
-                self.lexer.skip_tok();
-                Some(UnaryExprOp::BitNot)
-            }
-
             Token::Bang => {
                 self.lexer.skip_tok();
-                Some(UnaryExprOp::LogicNot)
+                Some(UnaryExprOp::Not)
             }
 
             Token::Typeof => {
@@ -168,7 +148,7 @@ impl Parser<'_, '_> {
     fn detect_and_parse_binary_operator(&mut self) -> Option<BinExprOp> {
         let rewind = self.lexer.current_pos();
 
-        let result = match self.lexer.peek_t() {
+        let result = match self.lexer.peek_tok().token {
             Token::Bang => {
                 self.lexer.skip_tok();
                 Some(BinExprOp::LogicNe)
@@ -329,7 +309,7 @@ impl Parser<'_, '_> {
     }
 
     fn parse_expression_primary(&mut self) -> Expr {
-        match self.lexer.peek_t() {
+        match self.lexer.peek_tok().token {
             Token::Integer(int) => {
                 self.lexer.skip_tok();
                 self.parse_literal_suffix(Expr::Integer(Box::new(IntegerLit {
@@ -345,9 +325,7 @@ impl Parser<'_, '_> {
 
             Token::String(string) => {
                 self.lexer.skip_tok();
-                self.parse_literal_suffix(Expr::String(StringLit {
-                    value: intern_string_literal(string),
-                }))
+                self.parse_literal_suffix(Expr::String(StringLit { value: string }))
             }
 
             Token::BString(data) => {
@@ -367,15 +345,20 @@ impl Parser<'_, '_> {
 
             Token::OpenBracket => Expr::List(Box::new(self.parse_list())),
 
-            Token::Name(_) | Token::Colon => Expr::Path(Box::new(self.parse_path())),
+            Token::Name(_) | Token::Colon => {
+                let path = self.parse_path();
+                if self.lexer.next_is(&Token::OpenBrace) {
+                    Expr::StructInit(Box::new(self.parse_struct_object(path)))
+                } else {
+                    Expr::Path(Box::new(path))
+                }
+            }
 
             Token::Type => Expr::TypeInfo(Box::new(TypeInfo {
                 the: self.parse_type_info(),
             })),
 
-            Token::Fn | Token::OpenBrace | Token::Unsafe | Token::Safe => {
-                Expr::Closure(Box::new(self.parse_closure()))
-            }
+            Token::Fn | Token::OpenBrace | Token::Unsafe | Token::Safe => Expr::Closure(Box::new(self.parse_closure())),
 
             Token::If => Expr::If(Box::new(self.parse_if())),
             Token::For => Expr::For(Box::new(self.parse_for())),
@@ -406,6 +389,10 @@ impl Parser<'_, '_> {
         }
 
         if self.lexer.skip_if(&Token::OpenParen) {
+            if self.lexer.skip_if(&Token::CloseParen) {
+                return Expr::Tuple(Box::new(Tuple { elements: vec![] }));
+            }
+
             let inner = self.parse_expression();
 
             if !self.lexer.skip_if(&Token::Comma) {
@@ -472,7 +459,7 @@ impl Parser<'_, '_> {
                     right: right_expr,
                 }));
             } else {
-                match self.lexer.peek_t() {
+                match self.lexer.peek_tok().token {
                     Token::Dot => {
                         let operation = Operation::FieldAccessOrMethodCall;
                         let (_, new_precedence) = get_precedence(operation);
@@ -572,7 +559,7 @@ impl Parser<'_, '_> {
     }
 
     fn parse_literal_suffix(&mut self, value: Expr) -> Expr {
-        let suffix = match self.lexer.peek_t() {
+        let suffix = match self.lexer.peek_tok().token {
             Token::Bool => Type::Bool(Bool {}),
             Token::U8 => Type::UInt8(UInt8 {}),
             Token::U16 => Type::UInt16(UInt16 {}),
@@ -608,7 +595,7 @@ impl Parser<'_, '_> {
     }
 
     fn parse_list(&mut self) -> List {
-        assert!(self.lexer.peek_t() == Token::OpenBracket);
+        assert!(self.lexer.peek_tok().token == Token::OpenBracket);
         self.lexer.skip_tok();
 
         let mut elements = Vec::new();
@@ -647,43 +634,40 @@ impl Parser<'_, '_> {
     }
 
     pub(crate) fn parse_attributes(&mut self) -> Option<AttributeList> {
+        let mut elements: Vec<Expr> = Vec::new();
         let mut already_reported_too_many_attributes = false;
 
-        if !self.lexer.skip_if(&Token::OpenBracket) {
-            return None;
-        }
+        while self.lexer.skip_if(&Token::OpenBracket) {
+            self.lexer.skip_if(&Token::Comma);
 
-        let mut elements = Vec::new();
+            while !self.lexer.skip_if(&Token::CloseBracket) {
+                if self.lexer.is_eof() {
+                    let bug = SyntaxErr::AttributesExpectedEnd(self.lexer.peek_pos());
+                    self.log.report(&bug);
+                    break;
+                }
 
-        self.lexer.skip_if(&Token::Comma);
+                const MAX_ATTRIBUTES: usize = 65_536;
 
-        while !self.lexer.skip_if(&Token::CloseBracket) {
-            if self.lexer.is_eof() {
-                let bug = SyntaxErr::AttributesExpectedEnd(self.lexer.peek_pos());
-                self.log.report(&bug);
-                break;
-            }
+                if !already_reported_too_many_attributes && elements.len() >= MAX_ATTRIBUTES {
+                    already_reported_too_many_attributes = true;
 
-            const MAX_ATTRIBUTES: usize = 65_536;
+                    let bug = SyntaxErr::AttributesElementLimit(self.lexer.peek_pos());
+                    self.log.report(&bug);
+                }
 
-            if !already_reported_too_many_attributes && elements.len() >= MAX_ATTRIBUTES {
-                already_reported_too_many_attributes = true;
+                let attrib = self.parse_expression();
+                elements.push(attrib);
 
-                let bug = SyntaxErr::AttributesElementLimit(self.lexer.peek_pos());
-                self.log.report(&bug);
-            }
-
-            let attrib = self.parse_expression();
-            elements.push(attrib);
-
-            if !self.lexer.skip_if(&Token::Comma) && !self.lexer.next_is(&Token::CloseBracket) {
-                let bug = SyntaxErr::AttributesExpectedEnd(self.lexer.peek_pos());
-                self.log.report(&bug);
-                break;
+                if !self.lexer.skip_if(&Token::Comma) && !self.lexer.next_is(&Token::CloseBracket) {
+                    let bug = SyntaxErr::AttributesExpectedEnd(self.lexer.peek_pos());
+                    self.log.report(&bug);
+                    break;
+                }
             }
         }
 
-        Some(elements)
+        if elements.is_empty() { None } else { Some(elements) }
     }
 
     pub(crate) fn parse_generic_arguments(&mut self) -> Option<Vec<TypeArgument>> {
@@ -693,7 +677,7 @@ impl Parser<'_, '_> {
             let rewind_pos = this.lexer.current_pos();
             if let Some(argument_name) = this.lexer.next_if_name() {
                 if this.lexer.skip_if(&Token::Colon) {
-                    name = Some(intern_arg_name(argument_name));
+                    name = Some(NString::from(argument_name));
                 } else {
                     this.lexer.rewind(rewind_pos);
                 }
@@ -759,7 +743,7 @@ impl Parser<'_, '_> {
             true
         }
 
-        assert!(matches!(self.lexer.peek_t(), Token::Name(_) | Token::Colon));
+        assert!(matches!(self.lexer.peek_tok().token, Token::Name(_) | Token::Colon));
 
         let mut segments = Vec::new();
         let mut prev_scope = false;
@@ -822,23 +806,61 @@ impl Parser<'_, '_> {
             }
         }
 
-        assert_ne!(segments.len(), 0);
-
         ExprPath {
             segments,
             resolved_path: None,
         }
     }
 
+    fn parse_struct_object(&mut self, path: ExprPath) -> StructInit {
+        assert!(self.lexer.peek_tok().token == Token::OpenBrace);
+        self.lexer.skip_tok();
+
+        let mut fields = Vec::new();
+
+        while !self.lexer.skip_if(&Token::CloseBrace) {
+            if self.lexer.is_eof() {
+                let bug = SyntaxErr::StructExpectedFieldOrEnd(self.lexer.peek_pos());
+                self.log.report(&bug);
+                break;
+            }
+
+            let field_name = self.lexer.next_if_name().unwrap_or_else(|| {
+                let bug = SyntaxErr::StructExpectedFieldName(self.lexer.peek_pos());
+                self.log.report(&bug);
+                "".into()
+            });
+
+            if !self.lexer.skip_if(&Token::Colon) {
+                let bug = SyntaxErr::StructExpectedColon(self.lexer.peek_pos());
+                self.log.report(&bug);
+            }
+
+            let field_value = self.parse_expression();
+
+            fields.push((field_name.into(), field_value));
+
+            if !self.lexer.skip_if(&Token::Comma) && !self.lexer.next_is(&Token::CloseBrace) {
+                let bug = SyntaxErr::StructExpectedFieldOrEnd(self.lexer.peek_pos());
+                self.log.report(&bug);
+
+                self.lexer.skip_while(&Token::CloseBrace);
+                break;
+            }
+        }
+
+        StructInit { path, fields }
+    }
+
     fn parse_type_info(&mut self) -> Type {
-        assert!(self.lexer.peek_t() == Token::Type);
+        assert!(self.lexer.peek_tok().token == Token::Type);
         self.lexer.skip_tok();
 
         self.parse_type()
     }
 
     fn parse_if(&mut self) -> If {
-        assert!(self.lexer.peek_t() == Token::If);
+        assert!(self.lexer.peek_tok().token == Token::If);
         self.lexer.skip_tok();
 
         let condition = self.parse_expression();
@@ -862,7 +884,7 @@ impl Parser<'_, '_> {
     }
 
     fn parse_for(&mut self) -> ForEach {
-        fn parse_for_bindings(this: &mut Parser) -> Vec<VariableNameId> {
+        fn parse_for_bindings(this: &mut Parser) -> Vec<NString> {
             if !this.lexer.skip_if(&Token::OpenParen) {
                 let binding_name = this.lexer.next_if_name().unwrap_or_else(|| {
                     let bug = SyntaxErr::ForVariableBindingMissingName(this.lexer.peek_pos());
@@ -870,7 +892,7 @@ impl Parser<'_, '_> {
                     "".into()
                 });
 
-                return vec![intern_variable_name(binding_name)];
+                return vec![NString::from(binding_name)];
             }
 
             let mut bindings = Vec::new();
@@ -900,7 +922,7 @@ impl Parser<'_, '_> {
                     "".into()
                 });
 
-                let binding_name = intern_variable_name(binding_name);
+                let binding_name = NString::from(binding_name);
                 bindings.push(binding_name);
 
                 if !this.lexer.skip_if(&Token::Comma) && !this.lexer.next_is(&Token::CloseParen) {
@@ -915,7 +937,7 @@ impl Parser<'_, '_> {
             bindings
         }
 
-        assert!(self.lexer.peek_t() == Token::For);
+        assert!(self.lexer.peek_tok().token == Token::For);
         self.lexer.skip_tok();
 
         let attributes = self.parse_attributes();
@@ -938,7 +960,7 @@ impl Parser<'_, '_> {
     }
 
     fn parse_while(&mut self) -> WhileLoop {
-        assert!(self.lexer.peek_t() == Token::While);
+        assert!(self.lexer.peek_tok().token == Token::While);
         self.lexer.skip_tok();
 
         let condition = if self.lexer.next_is(&Token::OpenBrace) {
@@ -953,12 +975,12 @@ impl Parser<'_, '_> {
     }
 
     fn parse_break(&mut self) -> Break {
-        assert!(self.lexer.peek_t() == Token::Break);
+        assert!(self.lexer.peek_tok().token == Token::Break);
         self.lexer.skip_tok();
 
         let label = if self.lexer.skip_if(&Token::SingleQuote) {
             if let Some(name) = self.lexer.next_if_name() {
-                Some(intern_label_name(name))
+                Some(NString::from(name))
             } else {
                 let bug = SyntaxErr::BreakMissingLabel(self.lexer.peek_pos());
                 self.log.report(&bug);
@@ -968,16 +990,21 @@ impl Parser<'_, '_> {
             None
         };
 
+        if !self.lexer.skip_if(&Token::Semi) {
+            let bug = SyntaxErr::ExpectedSemicolon(self.lexer.peek_pos());
+            self.log.report(&bug);
+        }
+
         Break { label }
     }
 
     fn parse_continue(&mut self) -> Continue {
-        assert!(self.lexer.peek_t() == Token::Continue);
+        assert!(self.lexer.peek_tok().token == Token::Continue);
         self.lexer.skip_tok();
 
         let label = if self.lexer.skip_if(&Token::SingleQuote) {
             if let Some(name) = self.lexer.next_if_name() {
-                Some(intern_label_name(name))
+                Some(NString::from(name))
             } else {
                 let bug = SyntaxErr::ContinueMissingLabel(self.lexer.peek_pos());
                 self.log.report(&bug);
@@ -987,11 +1014,16 @@ impl Parser<'_, '_> {
             None
         };
 
+        if !self.lexer.skip_if(&Token::Semi) {
+            let bug = SyntaxErr::ExpectedSemicolon(self.lexer.peek_pos());
+            self.log.report(&bug);
+        }
+
         Continue { label }
     }
 
     fn parse_return(&mut self) -> Return {
-        assert!(self.lexer.peek_t() == Token::Ret);
+        assert!(self.lexer.peek_tok().token == Token::Ret);
         self.lexer.skip_tok();
 
         let value = if self.lexer.next_is(&Token::Semi) {
@@ -1000,11 +1032,16 @@ impl Parser<'_, '_> {
             Some(self.parse_expression())
         };
 
+        if !self.lexer.skip_if(&Token::Semi) {
+            let bug = SyntaxErr::ExpectedSemicolon(self.lexer.peek_pos());
+            self.log.report(&bug);
+        }
+
         Return { value }
     }
 
     fn parse_await(&mut self) -> Await {
-        assert!(self.lexer.peek_t() == Token::Await);
+        assert!(self.lexer.peek_tok().token == Token::Await);
         self.lexer.skip_tok();
 
         let future = self.parse_expression();
@@ -1029,7 +1066,7 @@ impl Parser<'_, '_> {
                 "".into()
             });
 
-            let name = intern_parameter_name(name);
+            let name = NString::from(name);
 
             if !this.lexer.skip_if(&Token::Colon) {
                 let bug = SyntaxErr::FunctionParameterExpectedType(this.lexer.peek_pos());
@@ -1094,25 +1131,21 @@ impl Parser<'_, '_> {
     }
 
     fn parse_closure(&mut self) -> Closure {
-        let unique_id = self.closure_ctr;
-        self.closure_ctr += 1;
-
         if matches!(
-            self.lexer.peek_t(),
+            self.lexer.peek_tok().token,
             Token::OpenBrace | Token::Unsafe | Token::Safe
         ) {
             let definition = self.parse_block();
 
             return Closure {
                 attributes: None,
-                unique_id,
                 parameters: None,
                 return_type: None,
                 definition,
             };
         }
 
-        assert!(self.lexer.peek_t() == Token::Fn);
+        assert!(self.lexer.peek_tok().token == Token::Fn);
         self.lexer.skip_tok();
 
         let attributes = self.parse_attributes();
@@ -1133,16 +1166,15 @@ impl Parser<'_, '_> {
 
         Closure {
             attributes,
-            unique_id,
             parameters,
             return_type,
             definition,
         }
     }
 
-    fn parse_function_call_arguments(&mut self) -> (Vec<Expr>, Vec<(ArgNameId, Expr)>) {
+    fn parse_function_call_arguments(&mut self) -> (Vec<Expr>, Vec<(NString, Expr)>) {
         struct ParsedArgument {
-            name: Option<ArgNameId>,
+            name: Option<NString>,
             value: Expr,
         }
 
@@ -1153,7 +1185,7 @@ impl Parser<'_, '_> {
             if let Some(argument_name) = this.lexer.next_if_name() {
                 if this.lexer.skip_if(&Token::Colon) {
                     // Successfully parsed a named argument
-                    name = Some(intern_arg_name(argument_name));
+                    name = Some(NString::from(argument_name));
                 } else {
                     // It was just an identifier that wasn't followed by a colon,
                     // so we treat it as the start of a positional expression.
@@ -1166,7 +1198,7 @@ impl Parser<'_, '_> {
             ParsedArgument { name, value }
         }
 
-        assert!(self.lexer.peek_t() == Token::OpenParen);
+        assert!(self.lexer.peek_tok().token == Token::OpenParen);
         self.lexer.skip_tok();
 
         let mut parsed_arguments = Vec::new();
@@ -1230,7 +1262,7 @@ impl Parser<'_, '_> {
     }
 
     fn parse_local_variable(&mut self) -> LocalVariable {
-        let kind = match self.lexer.next_t() {
+        let kind = match self.lexer.next_tok().token {
             Token::Let => LocalVariableKind::Let,
             Token::Var => LocalVariableKind::Var,
             _ => unreachable!(),
@@ -1251,7 +1283,7 @@ impl Parser<'_, '_> {
             "".into()
         });
 
-        let name = intern_variable_name(name);
+        let name = NString::from(name);
 
         let var_type = if self.lexer.skip_if(&Token::Colon) {
             Some(self.parse_type())
@@ -1281,7 +1313,7 @@ impl Parser<'_, '_> {
     }
 
     fn parse_block_item(&mut self) -> BlockItem {
-        match self.lexer.peek_t() {
+        match self.lexer.peek_tok().token {
             Token::Let | Token::Var => {
                 let var = self.parse_local_variable();
                 BlockItem::Variable(var)

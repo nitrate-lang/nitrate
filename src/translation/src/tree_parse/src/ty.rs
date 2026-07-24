@@ -1,15 +1,13 @@
 use super::parse::Parser;
 use crate::diagnosis::SyntaxErr;
 
+use nitrate_nstring::NString;
 use nitrate_token::Token;
-use nitrate_tree::{
-    ast::{
-        ArrayType, Bool, Exclusivity, Expr, Float32, Float64, FuncTypeParam, FuncTypeParams,
-        FunctionType, Int8, Int16, Int32, Int64, Int128, LatentType, Lifetime, Mutability,
-        PointerType, ReferenceType, RefinementType, SliceType, TupleType, Type, TypeParentheses,
-        TypePath, TypePathSegment, TypeSyntaxError, UInt8, UInt16, UInt32, UInt64, UInt128, USize,
-    },
-    tag::{intern_lifetime_name, intern_parameter_name},
+use nitrate_tree::ast::{
+    ArrayType, Bool, Exclusivity, Expr, Float32, Float64, FuncTypeParam, FuncTypeParams, FunctionType, Int8, Int16,
+    Int32, Int64, Int128, LatentType, Lifetime, Mutability, PointerType, ReferenceType, RefinementType, SliceType,
+    TupleType, Type, TypeParentheses, TypePath, TypePathSegment, TypeSyntaxError, UInt8, UInt16, UInt32, UInt64,
+    UInt128, USize,
 };
 
 #[derive(Default)]
@@ -28,7 +26,7 @@ impl RefinementOptions {
 impl Parser<'_, '_> {
     fn parse_refinement_options(&mut self) -> RefinementOptions {
         fn parse_refinement_range(this: &mut Parser) -> (Option<Expr>, Option<Expr>) {
-            assert!(this.lexer.peek_t() == Token::OpenBracket);
+            assert!(this.lexer.peek_tok().token == Token::OpenBracket);
             this.lexer.skip_tok();
 
             let mut minimum_bound = None;
@@ -106,7 +104,7 @@ impl Parser<'_, '_> {
     }
 
     fn parse_array_or_slice(&mut self) -> Type {
-        assert!(self.lexer.peek_t() == Token::OpenBracket);
+        assert!(self.lexer.peek_tok().token == Token::OpenBracket);
         self.lexer.skip_tok();
 
         let element_type = self.parse_type();
@@ -133,7 +131,7 @@ impl Parser<'_, '_> {
     }
 
     fn parse_reference_type(&mut self) -> ReferenceType {
-        assert!(self.lexer.peek_t() == Token::And);
+        assert!(self.lexer.peek_tok().token == Token::And);
         self.lexer.skip_tok();
 
         let mut exclusive = None;
@@ -168,7 +166,7 @@ impl Parser<'_, '_> {
     }
 
     fn parse_pointer_type(&mut self) -> PointerType {
-        assert!(self.lexer.peek_t() == Token::Star);
+        assert!(self.lexer.peek_tok().token == Token::Star);
         self.lexer.skip_tok();
 
         let mut exclusivity = None;
@@ -205,7 +203,7 @@ impl Parser<'_, '_> {
                 "".into()
             });
 
-            let name = intern_parameter_name(name);
+            let name = NString::from(name);
 
             if !this.lexer.skip_if(&Token::Colon) {
                 let bug = SyntaxErr::FunctionParameterExpectedType(this.lexer.peek_pos());
@@ -214,11 +212,7 @@ impl Parser<'_, '_> {
 
             let ty = this.parse_type();
 
-            FuncTypeParam {
-                attributes,
-                name,
-                ty,
-            }
+            FuncTypeParam { attributes, name, ty }
         }
 
         let mut params = Vec::new();
@@ -263,7 +257,7 @@ impl Parser<'_, '_> {
     }
 
     fn parse_function_type(&mut self) -> FunctionType {
-        assert!(self.lexer.peek_t() == Token::Fn);
+        assert!(self.lexer.peek_tok().token == Token::Fn);
         self.lexer.skip_tok();
 
         let attributes = self.parse_attributes();
@@ -288,12 +282,12 @@ impl Parser<'_, '_> {
     }
 
     fn parse_lifetime(&mut self) -> Lifetime {
-        assert!(self.lexer.peek_t() == Token::SingleQuote);
+        assert!(self.lexer.peek_tok().token == Token::SingleQuote);
         self.lexer.skip_tok();
 
         if self.lexer.skip_if(&Token::Static) {
             return Lifetime {
-                name: intern_lifetime_name("static".to_string()),
+                name: NString::from("static".to_string()),
             };
         }
 
@@ -304,7 +298,7 @@ impl Parser<'_, '_> {
         });
 
         Lifetime {
-            name: intern_lifetime_name(name),
+            name: NString::from(name),
         }
     }
 
@@ -319,7 +313,7 @@ impl Parser<'_, '_> {
     }
 
     fn parse_type_primitive(&mut self) -> Type {
-        match self.lexer.next_t() {
+        match self.lexer.next_tok().token {
             Token::Bool => Type::Bool(Bool),
             Token::U8 => Type::UInt8(UInt8),
             Token::U16 => Type::UInt16(UInt16),
@@ -357,7 +351,7 @@ impl Parser<'_, '_> {
             true
         }
 
-        assert!(matches!(self.lexer.peek_t(), Token::Name(_) | Token::Colon));
+        assert!(matches!(self.lexer.peek_tok().token, Token::Name(_) | Token::Colon));
 
         let mut segments = Vec::new();
         let mut prev_scope = false;
@@ -414,7 +408,7 @@ impl Parser<'_, '_> {
     fn parse_type_primary(&mut self) -> Type {
         let current_pos = self.lexer.current_pos();
 
-        match self.lexer.peek_t() {
+        match self.lexer.peek_tok().token {
             Token::Bool
             | Token::U8
             | Token::U16
@@ -442,11 +436,9 @@ impl Parser<'_, '_> {
             Token::Star => Type::PointerType(Box::new(self.parse_pointer_type())),
             Token::Fn => Type::FunctionType(Box::new(self.parse_function_type())),
 
-            Token::OpenBrace | Token::Unsafe | Token::Safe => {
-                Type::LatentType(Box::new(LatentType {
-                    body: self.parse_block(),
-                }))
-            }
+            Token::OpenBrace | Token::Unsafe | Token::Safe => Type::LatentType(Box::new(LatentType {
+                body: self.parse_block(),
+            })),
 
             _ => {
                 self.lexer.skip_tok();
@@ -504,7 +496,7 @@ impl Parser<'_, '_> {
 
             let inner = self.parse_type();
 
-            let result = match self.lexer.next_t() {
+            let result = match self.lexer.next_tok().token {
                 Token::CloseParen => Type::Parentheses(Box::new(TypeParentheses { inner })),
 
                 Token::Comma => {

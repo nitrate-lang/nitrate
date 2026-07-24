@@ -1,0 +1,14 @@
+[package]
+name = "nitrate_hir_polish"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+nitrate_hir = { path = "../hir" }
+nitrate_diagnosis = { path = "../../../diagnosis" }
+nitrate_hir_get_type = { path = "../hir_get_type" }
+nitrate_hir_dump = { path = "../hir_dump" }
+nitrate_nstring = { path = "../nstring" }
+thin-vec = "0.2"
+
+ordered-float = "5.1"

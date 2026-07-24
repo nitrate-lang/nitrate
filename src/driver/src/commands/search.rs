@@ -1,4 +1,4 @@
-use crate::{Interpreter, InterpreterError};
+use crate::{Interpreter};
 use clap::Parser;
 use slog::info;
 
@@ -7,7 +7,7 @@ use slog::info;
 pub(crate) struct SearchArgs {}
 
 impl Interpreter<'_> {
-    pub(crate) fn sc_search(&mut self, _args: SearchArgs) -> Result<(), InterpreterError> {
+    pub(crate) fn sc_search(&mut self, _args: SearchArgs) -> anyhow::Result<()> {
         info!(self.log, "package search sub-command invoked");
         // TODO: search logic here
         Ok(())

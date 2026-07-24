@@ -1,0 +1,218 @@
+use super::parse::Parser;
+use crate::diagnosis::SyntaxErr;
+use nitrate_nstring::NString;
+use nitrate_token::{AnnotatedToken, Token};
+use nitrate_tree2::prelude::*;
+
+impl Parser<'_, '_> {
+    fn parse_attribute_list(&mut self, leading: Option<Trivia>) -> Option<AttributeList> {
+        // Consume '[', or return None if not present
+        let open_bracket_token = match self.lexer.peek()? {
+            AnnotatedToken {
+                token: Token::OpenBracket,
+                ..
+            } => {
+                self.lexer.next().unwrap() // Consume the opening bracket
+            }
+
+            _ => return None, // No attribute list found
+        };
+
+        let mut attributes = Vec::new();
+        let mut flags = AttributeListFlags::empty();
+        let mut close_brace_trivia = None;
+
+        loop {
+            let expr_leading_trivia = self.consume_trivia();
+
+            // Check for ']'
+            if let Some(AnnotatedToken {
+                token: Token::CloseBracket,
+                ..
+            }) = self.lexer.peek()
+            {
+                self.lexer.next(); // Consume the closing bracket
+                close_brace_trivia = expr_leading_trivia;
+                break;
+            }
+
+            flags.remove(AttributeListFlags::TRAILING_COMMA_PRESENT);
+
+            // Parse attribute expression
+            let expr = self.parse_expression(expr_leading_trivia);
+            attributes.push((expr.into(), self.consume_trivia()));
+
+            // Consume ','
+            match self.lexer.peek().cloned() {
+                Some(AnnotatedToken {
+                    token: Token::Comma, ..
+                }) => {
+                    self.lexer.next(); // Consume ','
+                    flags.insert(AttributeListFlags::TRAILING_COMMA_PRESENT);
+                    continue;
+                }
+
+                Some(AnnotatedToken {
+                    token: Token::CloseBracket,
+                    ..
+                }) => continue,
+
+                Some(token) => {
+                    self.lexer.next(); // Consume the unexpected token
+                    self.log.report(&SyntaxErr::UnexpectedToken {
+                        pos: token.start().into(),
+                        token: token.token,
+                    });
+                    break;
+                }
+
+                None => {
+                    self.log.report(&SyntaxErr::ExpectedAttributeDelimiter { pos: None });
+                    break;
+                }
+            }
+        }
+
+        Some(AttributeList {
+            source_offset: open_bracket_token.start_offset,
+            flags,
+            trivia: [leading, close_brace_trivia],
+            attributes: attributes.into(),
+        })
+    }
+
+    fn parse_module(&mut self, leading: Option<Trivia>) -> Item {
+        // Consume 'mod' token
+        let mod_token = self.lexer.next().expect("mod keyword");
+        assert!(matches!(mod_token.token, Token::Mod));
+
+        // Parse optional attribute list
+        let attribute_list_trivia = self.consume_trivia();
+        let attribute_list = self.parse_attribute_list(attribute_list_trivia);
+
+        let name_leading_trivia = match attribute_list {
+            Some(_) => self.consume_trivia(),
+            None => attribute_list_trivia,
+        };
+
+        // Parse module name
+        let name: NString = match self.lexer.peek().cloned() {
+            Some(AnnotatedToken {
+                token: Token::Name(mod_name),
+                ..
+            }) => {
+                self.lexer.next(); // Consume the name token
+                mod_name.into()
+            }
+
+            Some(token) => {
+                self.log.report(&SyntaxErr::ModuleExpectedName {
+                    pos: Some(token.start().into()),
+                });
+                NString::default()
+            }
+
+            None => {
+                self.log.report(&SyntaxErr::ModuleExpectedName { pos: None });
+                NString::default()
+            }
+        };
+
+        let open_brace_leading_trivia = self.consume_trivia();
+
+        // Expect '{'
+        match self.lexer.peek() {
+            Some(AnnotatedToken {
+                token: Token::OpenBrace,
+                ..
+            }) => {
+                self.lexer.next(); // Consume '{'
+            }
+
+            Some(token) => {
+                self.log.report(&SyntaxErr::ExpectedOpenBrace {
+                    pos: Some(token.start().into()),
+                });
+            }
+
+            _ => {
+                self.log.report(&SyntaxErr::ExpectedOpenBrace { pos: None });
+            }
+        };
+
+        // Parse module items
+        let mut items = Vec::new();
+
+        while self.anymore_tokens() {
+            let trivia = self.consume_trivia();
+
+            // Check for '}'
+            if let Some(AnnotatedToken {
+                token: Token::CloseBrace,
+                ..
+            }) = self.lexer.peek()
+            {
+                let item = Item::Trivia { trivia };
+                items.push(item.into());
+
+                self.lexer.next(); // Consume '}'
+                break;
+            }
+
+            let item = self.parse_item(trivia);
+            items.push(item.into());
+        }
+
+        Item::Module {
+            source_offset: mod_token.start_offset,
+            trivia: [leading, name_leading_trivia, open_brace_leading_trivia],
+            attributes: attribute_list.into(),
+            name,
+            items: items.into(),
+        }
+    }
+
+    pub fn parse_item(&mut self, leading: Option<Trivia>) -> Item {
+        match self.lexer.peek().cloned() {
+            Some(AnnotatedToken { token: Token::Mod, .. }) => self.parse_module(leading),
+
+            Some(AnnotatedToken {
+                token: Token::Pub | Token::Pro | Token::Sec,
+                ..
+            }) => {
+                let visibility_token = self.lexer.next().unwrap(); // Consume visibility token
+                let vis = match visibility_token.token {
+                    Token::Pub => Vis::Pub,
+                    Token::Pro => Vis::Pro,
+                    Token::Sec => Vis::Sec,
+                    _ => unreachable!(),
+                };
+
+                let new_leading = self.consume_trivia();
+                let item = self.parse_item(new_leading);
+
+                Item::Visibility {
+                    source_offset: visibility_token.start_offset,
+                    trivia: [leading],
+                    vis,
+                    item: item.into(),
+                }
+            }
+
+            Some(token) => {
+                self.lexer.next(); // Consume unexpected token
+
+                self.log.report(&SyntaxErr::ExpectedItem {
+                    pos: Some(token.start().into()),
+                });
+
+                Item::Trivia { trivia: leading }
+            }
+
+            None => {
+                self.log.report(&SyntaxErr::ExpectedItem { pos: None });
+                Item::Trivia { trivia: leading }
+            }
+        }
+    }
+}

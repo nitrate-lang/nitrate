@@ -8,9 +8,6 @@ pub trait Diagnose {
     fn diagnose(&self, module: &Module, log: &CompilerLog);
 }
 
-#[derive(Default)]
-pub struct OptimizationOptions {}
-
 pub struct TranslationOptions {
     pub package_name: String,
     pub source_name_for_debug_messages: String,

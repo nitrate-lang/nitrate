@@ -5,10 +5,10 @@ use std::cmp::max;
 pub enum LayoutError {
     NotInferred,
     UnresolvedSymbol,
+    UninstantiatedGeneric,
 }
 
 pub struct LayoutCtx<'a> {
-    pub store: &'a Store,
     pub tab: &'a SymbolTab,
     pub ptr_size: PtrSize,
 }
@@ -26,8 +26,8 @@ pub fn get_size_of(ty: &Type, ctx: &LayoutCtx) -> Result<u64, LayoutError> {
         Type::USize => Ok(ctx.ptr_size as u64),
 
         Type::Array { element_type, len } => {
-            let element_stride = get_stride_of(&ctx.store[element_type], ctx)?;
-            Ok(element_stride * (*len as u64))
+            let element_stride = get_stride_of(element_type, ctx)?;
+            Ok(element_stride * u64::from(*len))
         }
 
         Type::Tuple {
@@ -35,8 +35,7 @@ pub fn get_size_of(ty: &Type, ctx: &LayoutCtx) -> Result<u64, LayoutError> {
         } => {
             let mut size = 0_u64;
 
-            for element in &*elements {
-                let element = &ctx.store[element];
+            for element in elements {
                 let element_size = get_size_of(element, ctx)?;
                 let element_align = get_align_of(element, ctx)?;
 
@@ -47,16 +46,14 @@ pub fn get_size_of(ty: &Type, ctx: &LayoutCtx) -> Result<u64, LayoutError> {
             Ok(size)
         }
 
-        Type::Struct { struct_type } => {
-            let StructType {
-                fields, attributes, ..
-            } = &ctx.store[struct_type];
+        Type::Struct { def } => {
+            let StructDef { fields, attributes, .. } = &*def.borrow();
 
             if attributes.contains(&StructAttribute::Packed) {
                 let mut total_size = 0_u64;
 
-                for field in fields {
-                    total_size += get_size_of(&ctx.store[&field.ty], ctx)?;
+                for field in fields.values() {
+                    total_size += get_size_of(&field.ty, ctx)?;
                 }
 
                 return Ok(total_size);
@@ -64,11 +61,9 @@ pub fn get_size_of(ty: &Type, ctx: &LayoutCtx) -> Result<u64, LayoutError> {
 
             let mut offset = 0_u64;
 
-            for field in fields {
-                let field_type = &ctx.store[&field.ty];
-
-                let field_size = get_size_of(field_type, ctx)?;
-                let field_align = get_align_of(field_type, ctx)?;
+            for field in fields.values() {
+                let field_size = get_size_of(&field.ty, ctx)?;
+                let field_align = get_align_of(&field.ty, ctx)?;
 
                 offset = offset.next_multiple_of(field_align);
                 offset += field_size;
@@ -77,17 +72,17 @@ pub fn get_size_of(ty: &Type, ctx: &LayoutCtx) -> Result<u64, LayoutError> {
             Ok(offset)
         }
 
-        Type::Enum { enum_type } => {
-            let EnumType { variants, .. } = &ctx.store[enum_type];
+        Type::Enum { def } => {
+            let EnumDef { variants, .. } = &*def.borrow();
 
             let mut size = 0_u64;
 
             for variant in variants {
-                let variant_size = get_size_of(&ctx.store[&variant.ty], ctx)?;
+                let variant_size = get_size_of(&variant.ty, ctx)?;
                 size = max(size, variant_size);
             }
 
-            let (discrim_size, discrim_align) = match variants.len() {
+            let (discrim_size, discrim_align) = match variants.len() as u64 {
                 0..=1 => (0, 1),
                 2..=256 => (1, 1),
                 257..=65536 => (2, 2),
@@ -101,38 +96,21 @@ pub fn get_size_of(ty: &Type, ctx: &LayoutCtx) -> Result<u64, LayoutError> {
             Ok(size)
         }
 
-        Type::Refine { base, .. } => Ok(get_size_of(&ctx.store[base], ctx)?),
+        Type::TypeAlias { def } => {
+            let type_alias = &def.borrow().type_id;
+            get_size_of(type_alias, ctx)
+        }
+
+        Type::Refine { base, .. } => Ok(get_size_of(base, ctx)?),
 
         Type::Function { .. } => Ok(ctx.ptr_size as u64),
         Type::Reference { .. } => Ok(ctx.ptr_size as u64),
         Type::SliceRef { .. } => Ok(ctx.ptr_size as u64 * 2),
         Type::Pointer { .. } => Ok(ctx.ptr_size as u64),
+        Type::SlicePtr { .. } => Ok(ctx.ptr_size as u64 * 2),
 
-        Type::Symbol { path } => match ctx.tab.get_type(&path) {
-            Some(TypeDefinition::TypeAliasDef(type_alias_id)) => {
-                let type_id = ctx.store[type_alias_id].borrow().type_id;
-                get_size_of(&ctx.store[&type_id], ctx)
-            }
-
-            Some(TypeDefinition::EnumDef(enum_id)) => {
-                let enum_type = Type::Enum {
-                    enum_type: ctx.store[enum_id].borrow().enum_id,
-                };
-                get_size_of(&enum_type, ctx)
-            }
-
-            Some(TypeDefinition::StructDef(struct_id)) => {
-                let struct_type = Type::Struct {
-                    struct_type: ctx.store[struct_id].borrow().struct_id,
-                };
-                get_size_of(&struct_type, ctx)
-            }
-
-            None => Err(LayoutError::UnresolvedSymbol),
-        },
-
-        Type::InferredInteger { .. } | Type::InferredFloat | Type::Inferred { .. } => {
-            Err(LayoutError::NotInferred)
-        }
+        Type::Parameterized { .. } => Err(LayoutError::UninstantiatedGeneric),
+        Type::GenericParam { .. } => Err(LayoutError::UninstantiatedGeneric),
+        Type::InferredInteger | Type::InferredFloat | Type::Inferred { .. } => Err(LayoutError::NotInferred),
     }
 }

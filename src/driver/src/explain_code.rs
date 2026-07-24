@@ -1,4 +1,4 @@
-use crate::{Interpreter, InterpreterError};
+use crate::Interpreter;
 use json_comments::StripComments;
 use lazy_static::lazy_static;
 use serde_json::Value;
@@ -19,8 +19,7 @@ lazy_static! {
             .read_to_string(&mut stripped_json)
             .expect("the file error_codes.json was malformed at build time");
 
-        let parsed = Value::from_str(&stripped_json)
-            .expect("the file error_codes.json was malformed at build time");
+        let parsed = Value::from_str(&stripped_json).expect("the file error_codes.json was malformed at build time");
 
         let mut map = HashMap::new();
 
@@ -45,13 +44,13 @@ lazy_static! {
 }
 
 impl Interpreter<'_> {
-    pub(crate) fn explain_error_code(&self, code: &str) -> Result<(), InterpreterError> {
+    pub(crate) fn explain_error_code(&self, code: &str) -> anyhow::Result<()> {
         if let Some(error_code) = CODEBOOK.get(code) {
             println!("{}", error_code.explanation);
             Ok(())
         } else {
             error!(self.log, "'{}' is not a recognized error code.", code);
-            Err(InterpreterError::OperationalError)
+            Err(anyhow::anyhow!("Unrecognized error code"))
         }
     }
 }

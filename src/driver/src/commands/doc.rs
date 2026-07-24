@@ -1,4 +1,4 @@
-use crate::{Interpreter, InterpreterError};
+use crate::Interpreter;
 use clap::Parser;
 use slog::info;
 
@@ -7,7 +7,7 @@ use slog::info;
 pub(crate) struct DocArgs {}
 
 impl Interpreter<'_> {
-    pub(crate) fn sc_doc(&mut self, _args: DocArgs) -> Result<(), InterpreterError> {
+    pub(crate) fn sc_doc(&mut self, _args: DocArgs) -> anyhow::Result<()> {
         info!(self.log, "package doc sub-command invoked");
         // TODO: doc logic here
         Ok(())

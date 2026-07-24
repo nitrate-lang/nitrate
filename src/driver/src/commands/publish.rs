@@ -1,4 +1,4 @@
-use crate::{Interpreter, InterpreterError};
+use crate::{Interpreter};
 use clap::Parser;
 use slog::info;
 
@@ -7,7 +7,7 @@ use slog::info;
 pub(crate) struct PublishArgs {}
 
 impl Interpreter<'_> {
-    pub(crate) fn sc_publish(&mut self, _args: PublishArgs) -> Result<(), InterpreterError> {
+    pub(crate) fn sc_publish(&mut self, _args: PublishArgs) -> anyhow::Result<()> {
         info!(self.log, "package publish sub-command invoked");
         // TODO: publish logic here
         Ok(())

@@ -6,10 +6,7 @@ fn mangle_segment(str: &str) -> String {
     let is_atypical = if str.as_bytes()[0].is_ascii_digit() {
         true
     } else {
-        let is_regular = str
-            .as_bytes()
-            .iter()
-            .all(|b| b.is_ascii_alphanumeric() || *b == b'_');
+        let is_regular = str.as_bytes().iter().all(|b| b.is_ascii_alphanumeric() || *b == b'_');
 
         !is_regular
     };
@@ -38,6 +35,6 @@ pub(crate) fn mangle_string(str: &str) -> String {
 }
 
 pub(crate) fn demangle_string(_mangled: &mut dyn std::io::Read) -> Result<String, ()> {
-    // TODO: implement string demangling
-    Err(())
+    // TODO: implement demangling
+    unimplemented!();
 }

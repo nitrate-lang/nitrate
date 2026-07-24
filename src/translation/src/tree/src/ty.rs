@@ -1,10 +1,5 @@
-use crate::{
-    ast::{Block, Expr},
-    expr::{AttributeList, TypeArgument},
-    item::Mutability,
-    tag::{LifetimeNameId, ParameterNameId},
-};
-
+use crate::prelude::*;
+use nitrate_nstring::NString;
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
 
@@ -83,7 +78,7 @@ pub struct TypePathSegment {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TypePath {
     pub segments: Vec<TypePathSegment>,
-    pub resolved_path: Option<String>,
+    pub resolved_path: Option<NString>,
 }
 
 #[skip_serializing_none]
@@ -118,7 +113,7 @@ pub struct SliceType {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FuncTypeParam {
     pub attributes: Option<AttributeList>,
-    pub name: ParameterNameId,
+    pub name: NString,
     pub ty: Type,
 }
 
@@ -135,7 +130,7 @@ pub struct FunctionType {
 #[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Lifetime {
-    pub name: LifetimeNameId,
+    pub name: NString,
 }
 
 #[skip_serializing_none]

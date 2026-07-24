@@ -1,8 +1,9 @@
+use crate::prelude::*;
 use crate::store::LiteralId;
-use crate::{SymbolTab, prelude::*};
-use interned_string::IString;
+use nitrate_nstring::NString;
 use serde::{Deserialize, Serialize};
-use std::collections::{BTreeSet, HashSet};
+use std::collections::BTreeSet;
+use std::matches;
 use std::num::NonZeroU32;
 use thin_vec::ThinVec;
 
@@ -16,60 +17,15 @@ pub enum Lifetime {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub enum StructAttribute {
-    Packed,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub enum StructFieldAttribute {
-    Invalid,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
-pub struct StructField {
-    pub attributes: BTreeSet<StructFieldAttribute>,
-    pub name: IString,
-    pub ty: TypeId,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
-pub struct StructType {
-    pub attributes: BTreeSet<StructAttribute>,
-    pub fields: Vec<StructField>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub enum EnumAttribute {
-    Invalid,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub enum EnumVariantAttribute {
-    Invalid,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
-pub struct EnumVariant {
-    pub attributes: BTreeSet<EnumVariantAttribute>,
-    pub name: IString,
-    pub ty: TypeId,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
-pub struct EnumType {
-    pub attributes: BTreeSet<EnumAttribute>,
-    pub variants: Vec<EnumVariant>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum FunctionAttribute {
-    Variadic,
+    CVariadic,
+    NoMangle,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct FunctionType {
     pub attributes: BTreeSet<FunctionAttribute>,
-    pub params: Vec<(IString, TypeId)>,
+    pub params: ThinVec<(NString, TypeId)>,
     pub return_type: TypeId,
 }
 
@@ -102,11 +58,15 @@ pub enum Type {
     },
 
     Struct {
-        struct_type: StructTypeId,
+        def: StructDefId,
     },
 
     Enum {
-        enum_type: EnumTypeId,
+        def: EnumDefId,
+    },
+
+    TypeAlias {
+        def: TypeAliasDefId,
     },
 
     Refine {
@@ -116,7 +76,7 @@ pub enum Type {
     },
 
     Function {
-        function_type: FunctionTypeId,
+        function_type: Box<FunctionType>,
     },
 
     Reference {
@@ -139,26 +99,46 @@ pub enum Type {
         to: TypeId,
     },
 
-    Symbol {
-        path: IString,
+    SlicePtr {
+        exclusive: bool,
+        mutable: bool,
+        element_type: TypeId,
+    },
+
+    Parameterized {
+        base: TypeId,
+        args: Arguments<TypeId>,
     },
 
     InferredFloat,
     InferredInteger,
+    // A type variable that stands for a concrete type to be inferred by HM
     Inferred {
         id: NonZeroU32,
+        name: Option<NString>,
+    },
+
+    // A generic parameter declared on a function, struct, enum, or type alias
+    // `index` is the position in the generic parameter list
+    // `name` is the user-visible parameter name (e.g. "T" in `fn foo<T>(...)`)
+    GenericParam {
+        index: u32,
+        name: NString,
     },
 }
 
 impl Type {
+    #[must_use]
     pub fn is_diverging(&self) -> bool {
         matches!(self, Type::Never)
     }
 
+    #[must_use]
     pub fn is_bool(&self) -> bool {
         matches!(self, Type::Bool)
     }
 
+    #[must_use]
     pub fn is_unsigned_primitive(&self) -> bool {
         matches!(
             self,
@@ -166,116 +146,95 @@ impl Type {
         )
     }
 
+    #[must_use]
     pub fn is_signed_primitive(&self) -> bool {
-        matches!(
-            self,
-            Type::I8 | Type::I16 | Type::I32 | Type::I64 | Type::I128
-        )
+        matches!(self, Type::I8 | Type::I16 | Type::I32 | Type::I64 | Type::I128)
     }
 
+    #[must_use]
     pub fn is_integer_primitive(&self) -> bool {
         self.is_unsigned_primitive() || self.is_signed_primitive()
     }
 
+    #[must_use]
     pub fn is_float_primitive(&self) -> bool {
         matches!(self, Type::F32 | Type::F64)
     }
 
+    #[must_use]
     pub fn is_array(&self) -> bool {
         matches!(self, Type::Array { .. })
     }
 
+    #[must_use]
     pub fn is_tuple(&self) -> bool {
         matches!(self, Type::Tuple { .. })
     }
 
+    #[must_use]
     pub fn is_struct(&self) -> bool {
         matches!(self, Type::Struct { .. })
     }
 
+    #[must_use]
     pub fn is_enum(&self) -> bool {
         matches!(self, Type::Enum { .. })
     }
 
+    #[must_use]
     pub fn is_function(&self) -> bool {
         matches!(self, Type::Function { .. })
     }
 
+    #[must_use]
     pub fn is_reference(&self) -> bool {
         matches!(self, Type::Reference { .. })
     }
 
+    #[must_use]
+    pub fn is_pointer(&self) -> bool {
+        matches!(self, Type::Pointer { .. })
+    }
+
+    #[must_use]
     pub fn is_slice_ref(&self) -> bool {
         matches!(self, Type::SliceRef { .. })
     }
 
-    fn is_known_inner(
-        &self,
-        store: &Store,
-        symtab: &SymbolTab,
-        visited: &mut HashSet<IString>,
-    ) -> bool {
-        self.iter().all(store, &mut |ty| {
-            if let Type::Inferred { .. } | Type::InferredFloat | Type::InferredInteger = ty {
-                return false;
-            }
-
-            if let Type::Reference { lifetime, .. } = ty {
-                let ok = match lifetime {
-                    Lifetime::Static
-                    | Lifetime::Gc
-                    | Lifetime::ThreadLocal
-                    | Lifetime::TaskLocal => true,
-
-                    Lifetime::Inferred => false,
-                };
-
-                return ok;
-            }
-
-            if let Type::Symbol { path } = ty {
-                if visited.contains(path) {
-                    return true;
-                }
-
-                visited.insert(path.clone());
-
-                match symtab.get_type(path) {
-                    Some(TypeDefinition::EnumDef(id)) => {
-                        let enum_def = store[id].borrow();
-                        let enum_type = Type::Enum {
-                            enum_type: enum_def.enum_id,
-                        };
-
-                        return enum_type.is_known_inner(store, symtab, visited);
-                    }
-
-                    Some(TypeDefinition::StructDef(id)) => {
-                        let struct_def = store[id].borrow();
-                        let struct_type = Type::Struct {
-                            struct_type: struct_def.struct_id,
-                        };
-
-                        return struct_type.is_known_inner(store, symtab, visited);
-                    }
-
-                    Some(TypeDefinition::TypeAliasDef(id)) => {
-                        let type_alias_def = store[id].borrow();
-                        let aliased_type = &store[&type_alias_def.type_id];
-                        return aliased_type.is_known_inner(store, symtab, visited);
-                    }
-
-                    None => return false,
-                };
-            }
-
-            true
-        })
+    #[must_use]
+    pub fn is_slice_ptr(&self) -> bool {
+        matches!(self, Type::SlicePtr { .. })
     }
 
-    pub fn is_known(&self, store: &Store, symtab: &SymbolTab) -> bool {
-        let mut visited = HashSet::new();
-        self.is_known_inner(store, symtab, &mut visited)
+    #[must_use]
+    pub fn is_inferred(&self) -> bool {
+        matches!(
+            self,
+            Type::Inferred { .. } | Type::InferredFloat | Type::InferredInteger
+        )
+    }
+
+    #[must_use]
+    pub fn as_struct(&self) -> Option<&StructDefId> {
+        if let Type::Struct { def } = self {
+            Some(def)
+        } else {
+            None
+        }
+    }
+
+    #[must_use]
+    pub fn as_enum(&self) -> Option<&EnumDefId> {
+        if let Type::Enum { def } = self { Some(def) } else { None }
+    }
+
+    #[must_use]
+    pub fn as_type_alias(&self) -> Option<&TypeAliasDefId> {
+        if let Type::TypeAlias { def } = self {
+            Some(def)
+        } else {
+            None
+        }
     }
 }
 
@@ -285,34 +244,8 @@ pub enum PtrSize {
     U64 = 8,
 }
 
-impl IntoStoreId for StructType {
-    type Id = StructTypeId;
-
-    fn into_id(self, store: &Store) -> Self::Id {
-        store.store_struct_type(self)
-    }
-}
-
-impl IntoStoreId for EnumType {
-    type Id = EnumTypeId;
-
-    fn into_id(self, store: &Store) -> Self::Id {
-        store.store_enum_type(self)
-    }
-}
-
-impl IntoStoreId for FunctionType {
-    type Id = FunctionTypeId;
-
-    fn into_id(self, store: &Store) -> Self::Id {
-        store.store_function_type(self)
-    }
-}
-
-impl IntoStoreId for Type {
-    type Id = TypeId;
-
-    fn into_id(self, store: &Store) -> Self::Id {
-        store.store_type(self)
+impl From<Type> for TypeId {
+    fn from(ty: Type) -> Self {
+        get_storage(|store| store.store_type(ty))
     }
 }

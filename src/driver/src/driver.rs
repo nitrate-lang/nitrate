@@ -40,15 +40,19 @@ fn get_styles() -> clap::builder::Styles {
                 .underline()
                 .fg_color(Some(anstyle::Color::Ansi(anstyle::AnsiColor::Green))),
         )
-        .placeholder(
-            anstyle::Style::new().fg_color(Some(anstyle::Color::Ansi(anstyle::AnsiColor::Cyan))),
-        )
+        .placeholder(anstyle::Style::new().fg_color(Some(anstyle::Color::Ansi(anstyle::AnsiColor::Cyan))))
 }
 
 #[derive(Parser, Debug)]
 enum Commands {
     /// Compile the current package
     Build(BuildArgs),
+
+    /// Parse the current package's source code and print the AST
+    Parse(ParseArgs),
+
+    /// Lex the current package's source code and print the tokens
+    Lex(LexArgs),
 
     /// Analyze the current package and report errors, but don't build object files
     Check(CheckArgs),
@@ -94,6 +98,9 @@ enum Commands {
 
     /// Uninstall a Nitrate binary
     Uninstall(UninstallArgs),
+
+    /// Run the language server protocol (LSP) server
+    Lsp(LspArgs),
 }
 
 /// Nitrate's package manager
@@ -154,20 +161,6 @@ struct Args {
     command: Option<Commands>,
 }
 
-pub enum InterpreterError {
-    UnknownCommand,
-    CLISemanticError,
-
-    IoError(std::io::Error),
-    OperationalError,
-}
-
-impl From<std::io::Error> for InterpreterError {
-    fn from(err: std::io::Error) -> Self {
-        InterpreterError::IoError(err)
-    }
-}
-
 pub struct Interpreter<'log> {
     pub(crate) log: &'log Logger,
 }
@@ -177,19 +170,14 @@ impl<'log> Interpreter<'log> {
         Interpreter { log }
     }
 
-    fn list_commands() -> Result<(), InterpreterError> {
-        let fg = Style::new()
-            .bold()
-            .fg_color(Some(Color::Ansi(AnsiColor::Green)));
+    fn list_commands() -> anyhow::Result<()> {
+        let fg = Style::new().bold().fg_color(Some(Color::Ansi(AnsiColor::Green)));
 
         let reset = fg.render_reset();
 
         println!("{fg}Installed commands:{reset}");
 
-        let mut commands = Args::command()
-            .get_subcommands()
-            .cloned()
-            .collect::<Vec<_>>();
+        let mut commands = Args::command().get_subcommands().cloned().collect::<Vec<_>>();
 
         let help = Command::new("help") // Help is a special case
             .about("Print this message or the help of the given subcommand(s)");
@@ -199,9 +187,7 @@ impl<'log> Interpreter<'log> {
             let name = cmd.get_name();
             let about = cmd.get_about().unwrap_or_default();
 
-            let fg = Style::new()
-                .bold()
-                .fg_color(Some(Color::Ansi(AnsiColor::Cyan)));
+            let fg = Style::new().bold().fg_color(Some(Color::Ansi(AnsiColor::Cyan)));
 
             let reset = fg.render_reset();
 
@@ -211,7 +197,7 @@ impl<'log> Interpreter<'log> {
         Ok(())
     }
 
-    pub fn run(&mut self, args: &[String]) -> Result<(), InterpreterError> {
+    pub async fn run(&mut self, args: &[String]) -> anyhow::Result<()> {
         let args = Args::parse_from(args);
 
         /* Output color environment configuration override */
@@ -231,7 +217,7 @@ impl<'log> Interpreter<'log> {
         if let Some(change_dir_path) = &args.change_dir {
             if let Err(e) = std::env::set_current_dir(change_dir_path) {
                 error!(self.log, "failed to change directory: {}", e);
-                return Err(InterpreterError::IoError(e));
+                return Err(anyhow::anyhow!("Failed to change directory"));
             }
         }
 
@@ -261,6 +247,8 @@ impl<'log> Interpreter<'log> {
         if let Some(subcommand) = args.command {
             return match subcommand {
                 Commands::Build(build_args) => self.sc_build(build_args),
+                Commands::Parse(parse_args) => self.sc_parse(parse_args),
+                Commands::Lex(lex_args) => self.sc_lex(lex_args),
                 Commands::Check(check_args) => self.sc_check(check_args),
                 Commands::Clean(clean_args) => self.sc_clean(clean_args),
                 Commands::Doc(doc_args) => self.sc_doc(doc_args),
@@ -276,12 +264,13 @@ impl<'log> Interpreter<'log> {
                 Commands::Publish(publish_args) => self.sc_publish(publish_args),
                 Commands::Install(install_args) => self.sc_install(install_args),
                 Commands::Uninstall(uninstall_args) => self.sc_uninstall(uninstall_args),
+                Commands::Lsp(lsp_args) => self.sc_lsp(lsp_args).await,
             };
         }
 
         let mut cmd = Args::command();
         cmd.print_help().unwrap();
 
-        Err(InterpreterError::UnknownCommand)
+        Err(anyhow::anyhow!("Unknown command"))
     }
 }

@@ -1,0 +1,103 @@
+use crate::prelude::*;
+
+pub(crate) fn print_trivia(trivia: &Option<Trivia>, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    if let Some(trivia) = trivia {
+        write!(f, "{}", trivia)?;
+    }
+    Ok(())
+}
+
+pub(crate) fn print_attributes(
+    attributes: &Option<AttributeList>,
+    f: &mut std::fmt::Formatter<'_>,
+) -> std::fmt::Result {
+    if let Some(attributes) = attributes {
+        write!(f, "{}", attributes)?;
+    }
+    Ok(())
+}
+
+impl std::fmt::Display for Vis {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Vis::Pub => write!(f, "pub"),
+            Vis::Pro => write!(f, "pro"),
+            Vis::Sec => write!(f, "sec"),
+        }
+    }
+}
+
+impl std::fmt::Display for AttributeList {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let has_trailing_comma = self.flags.contains(AttributeListFlags::TRAILING_COMMA_PRESENT);
+
+        print_trivia(&self.trivia[0], f)?;
+        write!(f, "[")?;
+
+        for (i, attr) in self.attributes.iter().enumerate() {
+            let expr = attr.0.borrow();
+            write!(f, "{}", expr)?;
+            print_trivia(&attr.1, f)?;
+
+            let is_last = i + 1 == self.attributes.len();
+
+            if !is_last || is_last && has_trailing_comma {
+                write!(f, ",")?;
+            }
+        }
+
+        print_trivia(&self.trivia[1], f)?;
+        write!(f, "]")
+    }
+}
+
+impl std::fmt::Display for Item {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Item::Root { items } => {
+                for item in items {
+                    let item = item.borrow();
+                    write!(f, "{}", item)?;
+                }
+                Ok(())
+            }
+
+            Item::Trivia { trivia } => print_trivia(trivia, f),
+
+            Item::Visibility {
+                source_offset: _,
+                trivia,
+                vis,
+                item,
+            } => {
+                print_trivia(&trivia[0], f)?;
+                write!(f, "{}", vis)?;
+                let item = item.borrow();
+                write!(f, "{}", item)
+            }
+
+            Item::Module {
+                source_offset: _,
+                trivia,
+                attributes,
+                name,
+                items,
+            } => {
+                print_trivia(&trivia[0], f)?;
+                write!(f, "mod")?;
+                print_attributes(attributes, f)?;
+                print_trivia(&trivia[1], f)?;
+                write!(f, "{}", name)?;
+                print_trivia(&trivia[2], f)?;
+                write!(f, "{{")?;
+
+                for item in items {
+                    let item = item.borrow();
+                    write!(f, "{}", item)?;
+                }
+
+                write!(f, "}}")
+            }
+        }
+    }
+}

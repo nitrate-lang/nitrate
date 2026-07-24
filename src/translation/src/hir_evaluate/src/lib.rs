@@ -3,4 +3,4 @@
 mod eval;
 mod expr;
 
-pub use eval::{Unwind, HirEvalCtx, HirEvaluate};
+pub use eval::{HirEvalCtx, HirEvaluate, Unwind};

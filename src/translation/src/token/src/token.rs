@@ -78,7 +78,7 @@ impl Comment {
 impl std::fmt::Display for Comment {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self.kind() {
-            CommentKind::SingleLine => write!(f, "#{}", self.text()),
+            CommentKind::SingleLine => write!(f, "{}", self.text()),
         }
     }
 }
@@ -163,6 +163,13 @@ pub enum Token {
     String(String),
     BString(Vec<u8>),
     Comment(Comment),
+
+    HorizontalTab,
+    NewLine,
+    VerticalTab,
+    FormFeed,
+    CarriageReturn,
+    Space,
 
     /// '''
     SingleQuote,
@@ -351,10 +358,15 @@ impl std::fmt::Display for Token {
             Token::Name(id) => write!(f, "{id}"),
             Token::Integer(int) => write!(f, "{int}"),
             Token::Float(float) => write!(f, "{float}"),
-            Token::String(s) => write!(f, "\"{s}\""),
-            Token::BString(s) => write!(f, "{s:?}"),
+            Token::String(s) => write!(f, "{}", escape_string(s, true)),
+            Token::BString(s) => write!(f, "{}", escape_bstring(s, true)),
             Token::Comment(c) => write!(f, "{c}"),
-
+            Token::HorizontalTab => write!(f, "\t"),
+            Token::NewLine => write!(f, "\n"),
+            Token::VerticalTab => write!(f, "\x0b"),
+            Token::FormFeed => write!(f, "\x0c"),
+            Token::CarriageReturn => write!(f, "\r"),
+            Token::Space => write!(f, " "),
             Token::SingleQuote => write!(f, "'"),
             Token::Semi => write!(f, ";"),
             Token::Comma => write!(f, ","),
@@ -382,7 +394,6 @@ impl std::fmt::Display for Token {
             Token::Slash => write!(f, "/"),
             Token::Caret => write!(f, "^"),
             Token::Percent => write!(f, "%"),
-
             Token::Let => write!(f, "let"),
             Token::Var => write!(f, "var"),
             Token::Fn => write!(f, "fn"),
@@ -444,7 +455,6 @@ impl std::fmt::Display for Token {
             Token::Opaque => write!(f, "opaque"),
             Token::As => write!(f, "as"),
             Token::Typeof => write!(f, "typeof"),
-
             Token::Eof => write!(f, ""),
         }
     }
@@ -547,12 +557,7 @@ mod tests {
     fn test_integer_token_parsetree() {
         assert_eq!(
             enum_iterator::all::<IntegerKind>().collect::<Vec<_>>(),
-            vec![
-                IntegerKind::Bin,
-                IntegerKind::Oct,
-                IntegerKind::Dec,
-                IntegerKind::Hex
-            ]
+            vec![IntegerKind::Bin, IntegerKind::Oct, IntegerKind::Dec, IntegerKind::Hex]
         );
 
         let prime_u128 = 0xa8b437b5f0bd41f1e97765f63699f65d_u128;
@@ -572,16 +577,8 @@ mod tests {
                 IntegerKind::Oct,
                 "0o2505503366574136501743645673137306646373135",
             ),
-            (
-                prime_u128,
-                IntegerKind::Dec,
-                "224246046673732952298033213736759195229",
-            ),
-            (
-                prime_u128,
-                IntegerKind::Hex,
-                "0xa8b437b5f0bd41f1e97765f63699f65d",
-            ),
+            (prime_u128, IntegerKind::Dec, "224246046673732952298033213736759195229"),
+            (prime_u128, IntegerKind::Hex, "0xa8b437b5f0bd41f1e97765f63699f65d"),
             (
                 u128::MAX,
                 IntegerKind::Bin,
@@ -592,16 +589,8 @@ mod tests {
                 IntegerKind::Oct,
                 "0o3777777777777777777777777777777777777777777",
             ),
-            (
-                u128::MAX,
-                IntegerKind::Dec,
-                "340282366920938463463374607431768211455",
-            ),
-            (
-                u128::MAX,
-                IntegerKind::Hex,
-                "0xffffffffffffffffffffffffffffffff",
-            ),
+            (u128::MAX, IntegerKind::Dec, "340282366920938463463374607431768211455"),
+            (u128::MAX, IntegerKind::Hex, "0xffffffffffffffffffffffffffffffff"),
         ];
 
         for (value, kind, expected_str) in test_vectors {
@@ -647,15 +636,9 @@ mod tests {
             (Token::Integer(Integer::new(42, IntegerKind::Dec)), "42"),
             (Token::Float(NotNan::new(3.14).unwrap()), "3.14"),
             (Token::String("hello".into()), "\"hello\""),
+            (Token::BString(Vec::from(b"world")), "[119, 111, 114, 108, 100]"),
             (
-                Token::BString(Vec::from(b"world")),
-                "[119, 111, 114, 108, 100]",
-            ),
-            (
-                Token::Comment(Comment::new(
-                    " This is a comment".to_string(),
-                    CommentKind::SingleLine,
-                )),
+                Token::Comment(Comment::new(" This is a comment".to_string(), CommentKind::SingleLine)),
                 "# This is a comment",
             ),
             (Token::Let, "let"),
@@ -685,12 +668,7 @@ mod tests {
 
         assert_eq!(
             format!("{}", position),
-            format!(
-                "{}:{}:{}",
-                position.fileid.unwrap().deref(),
-                line + 1,
-                column + 1
-            )
+            format!("{}:{}:{}", position.fileid.unwrap().deref(), line + 1, column + 1)
         );
     }
 
@@ -703,15 +681,9 @@ mod tests {
             (Token::Integer(Integer::new(42, IntegerKind::Dec)), "42"),
             (Token::Float(NotNan::new(3.14).unwrap()), "3.14"),
             (Token::String("hello".into()), "\"hello\""),
+            (Token::BString(Vec::from(b"world")), "[119, 111, 114, 108, 100]"),
             (
-                Token::BString(Vec::from(b"world")),
-                "[119, 111, 114, 108, 100]",
-            ),
-            (
-                Token::Comment(Comment::new(
-                    " This is a comment".into(),
-                    CommentKind::SingleLine,
-                )),
+                Token::Comment(Comment::new(" This is a comment".into(), CommentKind::SingleLine)),
                 "# This is a comment",
             ),
             (Token::Let, "let"),

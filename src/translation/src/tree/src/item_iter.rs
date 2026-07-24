@@ -1,11 +1,4 @@
-use crate::{
-    Order, ParseTreeIter, RefNode,
-    ast::{
-        AssociatedItem, Enum, EnumVariant, FuncParam, Function, Generics, GlobalVariable, Impl,
-        Import, Item, Module, Struct, StructField, Trait, TypeAlias,
-    },
-    item::{FuncParams, ItemSyntaxError},
-};
+use crate::prelude::*;
 
 impl ParseTreeIter for ItemSyntaxError {
     fn depth_first_iter(&self, f: &mut dyn FnMut(Order, RefNode)) {
@@ -38,15 +31,16 @@ impl ParseTreeIter for Import {
         f(Order::Enter, RefNode::ItemImport(self));
 
         let _ = self.visibility;
-        let _ = self.items;
-        let _ = self.import_name;
+        let _ = self.use_tree;
 
         if let Some(attributes) = &self.attributes {
             attributes.depth_first_iter(f);
         }
 
         if let Some(resolved) = &self.resolved {
-            resolved.depth_first_iter(f);
+            for item in resolved {
+                item.depth_first_iter(f);
+            }
         }
 
         f(Order::Leave, RefNode::ItemImport(self));
@@ -219,10 +213,6 @@ impl ParseTreeIter for Impl {
     fn depth_first_iter(&self, f: &mut dyn FnMut(Order, RefNode)) {
         f(Order::Enter, RefNode::ItemImpl(self));
 
-        if let Some(attributes) = &self.attributes {
-            attributes.depth_first_iter(f);
-        }
-
         if let Some(params) = &self.generics {
             params.depth_first_iter(f);
         }
@@ -264,7 +254,7 @@ impl ParseTreeIter for FuncParam {
 
 impl ParseTreeIter for FuncParams {
     fn depth_first_iter(&self, f: &mut dyn FnMut(Order, RefNode)) {
-        for param in self {
+        for param in &self.params {
             param.depth_first_iter(f);
         }
     }

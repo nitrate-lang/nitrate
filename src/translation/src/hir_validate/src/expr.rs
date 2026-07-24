@@ -1,29 +1,52 @@
-use crate::{ValidHir, ValidateHir};
-use nitrate_hir::{SymbolTab, prelude::*};
+use crate::{ValidHir, ValidateCtx, ValidateHirItem, ValidateHirValue, establish_property};
+use nitrate_hir::prelude::*;
 
-impl ValidateHir for Block {
-    fn verify(&self, store: &Store, symtab: &SymbolTab) -> Result<(), ()> {
-        // TODO: Ensure unconditional branches are only at the end of the block
+impl ValidateHirValue for Block {
+    fn verify(&self, ctx: &mut ValidateCtx) -> Result<(), ()> {
+        if ctx.cyclic_bail(self) {
+            return Ok(());
+        }
 
-        for elem in &self.elements {
+        for (i, elem) in self.elements.iter().enumerate() {
+            let is_last = i == self.elements.len() - 1;
+
             match elem {
-                BlockElement::Expr(expr) => store[expr].borrow().verify(store, symtab)?,
-                BlockElement::Stmt(expr) => store[expr].borrow().verify(store, symtab)?,
-                BlockElement::Local(local) => store[local].borrow().verify(store, symtab)?,
+                BlockElement::Expr(expr)
+                    if matches!(
+                        &*expr.borrow(),
+                        Value::Break { .. } | Value::Continue { .. } | Value::Return { .. }
+                    ) =>
+                {
+                    expr.borrow().verify(ctx)?;
+
+                    establish_property("divergent statements have no successors", || {
+                        if !is_last {
+                            return Err(());
+                        }
+                        Ok(())
+                    })?;
+                }
+
+                BlockElement::Expr(expr) => expr.borrow().verify(ctx)?,
+                BlockElement::Local(local) => local.borrow().verify(ctx)?,
             }
         }
 
         Ok(())
     }
 
-    fn validate(self, store: &Store, symtab: &SymbolTab) -> Result<ValidHir<Self>, ()> {
-        self.verify(store, symtab)?;
+    fn validate(self, ctx: &mut ValidateCtx) -> Result<ValidHir<Self>, ()> {
+        self.verify(ctx)?;
         Ok(ValidHir::new(self))
     }
 }
 
-impl ValidateHir for Value {
-    fn verify(&self, _store: &Store, _symtab: &SymbolTab) -> Result<(), ()> {
+impl ValidateHirValue for Value {
+    fn verify(&self, ctx: &mut ValidateCtx) -> Result<(), ()> {
+        if ctx.cyclic_bail(self) {
+            return Ok(());
+        }
+
         match self {
             Value::Unit
             | Value::Bool(_)
@@ -47,7 +70,7 @@ impl ValidateHir for Value {
             Value::InferredInteger(_) | Value::InferredFloat(_) => Err(()),
 
             Value::StructObject {
-                struct_path: _,
+                struct_def: _,
                 fields: _,
             } => {
                 // TODO: verify struct object
@@ -55,7 +78,7 @@ impl ValidateHir for Value {
             }
 
             Value::EnumVariant {
-                enum_path: _,
+                enum_def: _,
                 variant: _,
                 value: _,
             } => {
@@ -77,16 +100,8 @@ impl ValidateHir for Value {
                 Ok(())
             }
 
-            Value::FieldAccess { expr: _, field: _ } => {
+            Value::FieldAccess { expr: _, field_name: _ } => {
                 // TODO: verify field access
-                Ok(())
-            }
-
-            Value::IndexAccess {
-                collection: _,
-                index: _,
-            } => {
-                // TODO: verify index access
                 Ok(())
             }
 
@@ -100,7 +115,10 @@ impl ValidateHir for Value {
                 Ok(())
             }
 
-            Value::Cast { expr: _, to: _ } => {
+            Value::Cast {
+                value: _,
+                target_type: _,
+            } => {
                 // TODO: verify cast
                 Ok(())
             }
@@ -133,10 +151,7 @@ impl ValidateHir for Value {
                 Ok(())
             }
 
-            Value::While {
-                condition: _,
-                body: _,
-            } => {
+            Value::While { condition: _, body: _ } => {
                 // TODO: verify while expression
                 Ok(())
             }
@@ -166,19 +181,7 @@ impl ValidateHir for Value {
                 Ok(())
             }
 
-            Value::Closure {
-                captures: _,
-                callee: _,
-            } => {
-                // TODO: verify closure expression
-                Ok(())
-            }
-
-            Value::Call {
-                callee: _,
-                positional: _,
-                named: _,
-            } => {
+            Value::Call { callee: _, args: _ } => {
                 // TODO: verify call expression
                 Ok(())
             }
@@ -186,22 +189,21 @@ impl ValidateHir for Value {
             Value::MethodCall {
                 object: _,
                 method_name: _,
-                positional: _,
-                named: _,
+                args: _,
             } => {
                 // TODO: verify method call expression
                 Ok(())
             }
 
-            Value::Symbol { path: _ } => {
-                // TODO: verify symbol
-                Ok(())
-            }
+            Value::FunctionSymbol { .. } => Ok(()),
+            Value::GlobalVariableSymbol { .. } => Ok(()),
+            Value::LocalVariableSymbol { .. } => Ok(()),
+            Value::ParameterSymbol { .. } => Ok(()),
         }
     }
 
-    fn validate(self, store: &Store, symtab: &SymbolTab) -> Result<ValidHir<Self>, ()> {
-        self.verify(store, symtab)?;
+    fn validate(self, ctx: &mut ValidateCtx) -> Result<ValidHir<Self>, ()> {
+        self.verify(ctx)?;
         Ok(ValidHir::new(self))
     }
 }

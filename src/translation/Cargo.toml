@@ -6,18 +6,23 @@ edition = "2024"
 [dependencies]
 nitrate_diagnosis = { path = "../diagnosis" }
 
+nitrate_nstring = { path = "src/nstring" }
+
 nitrate_token = { path = "src/token" }
 nitrate_token_lexer = { path = "src/token_lexer" }
 
 nitrate_tree = { path = "src/tree" }
+nitrate_tree2 = { path = "src/tree2" }
 nitrate_tree_parse = { path = "src/tree_parse" }
+nitrate_tree_parse2 = { path = "src/tree_parse2" }
+nitrate_tree_resolve = { path = "src/tree_resolve" }
 nitrate_hir_from_tree = { path = "src/hir_from_tree" }
 
 nitrate_hir = { path = "src/hir" }
-nitrate_hir_visitor = { path = "src/hir_visitor" }
+nitrate_hir_dump = { path = "src/hir_dump" }
 nitrate_hir_validate = { path = "src/hir_validate" }
 nitrate_hir_evaluate = { path = "src/hir_evaluate" }
-nitrate_hir_resolve_type = { path = "src/hir_resolve_type" }
+nitrate_hir_polish = { path = "src/hir_polish" }
 nitrate_hir_get_type = { path = "src/hir_get_type" }
 nitrate_hir_mangle = { path = "src/hir_mangle" }
 
@@ -27,4 +32,3 @@ nitrate_llvm_from_hir = { path = "src/llvm_from_hir" }
 nitrate_optimization = { path = "../optimization" }
 threadpool_scope = "0.1.0"
 threadpool = "1.8.1"
-interned-string = { version = "0.3.0" }

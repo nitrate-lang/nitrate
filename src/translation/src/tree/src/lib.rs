@@ -4,7 +4,6 @@
 mod expr;
 mod expr_iter;
 mod expr_iter_mut;
-mod id_store;
 mod item;
 mod item_iter;
 mod item_iter_mut;
@@ -21,11 +20,13 @@ pub mod ast {
     pub use crate::item::*;
 }
 
-pub mod tag {
-    pub use crate::id_store::*;
-}
-
 pub use iter::{Order, ParseTreeIter, RefNode};
 pub use iter_mut::{ParseTreeIterMut, RefNodeMut};
-
 pub use pretty_print::{PrettyPrint, PrintContext};
+
+pub mod prelude {
+    pub use super::ast::*;
+    pub use super::iter::{Order, ParseTreeIter, RefNode};
+    pub use super::iter_mut::{ParseTreeIterMut, RefNodeMut};
+    pub use super::pretty_print::{PrettyPrint, PrintContext};
+}

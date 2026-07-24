@@ -1,11 +1,9 @@
-use std::{
-    collections::HashMap,
-    sync::atomic::{AtomicBool, Ordering},
-};
-
-use slog::{Drain, error, info, warn};
-
 use crate::{DiagnosticId, FormattableDiagnosticGroup, Origin};
+use slog::{Drain, error, info, warn};
+use std::cell::RefCell;
+use std::collections::HashMap;
+use std::rc::Rc;
+use std::sync::atomic::{AtomicBool, Ordering};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Severity {
@@ -15,13 +13,13 @@ pub enum Severity {
     Error,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct CompilerLog {
     log: slog::Logger,
-    code_map: HashMap<DiagnosticId, Severity>,
-    info_bit: AtomicBool,
-    warning_bit: AtomicBool,
-    error_bit: AtomicBool,
+    code_map: Rc<RefCell<HashMap<DiagnosticId, Severity>>>,
+    info_bit: Rc<AtomicBool>,
+    warning_bit: Rc<AtomicBool>,
+    error_bit: Rc<AtomicBool>,
 }
 
 impl Default for CompilerLog {
@@ -34,10 +32,10 @@ impl CompilerLog {
     pub fn new(log: slog::Logger) -> Self {
         Self {
             log,
-            code_map: HashMap::new(),
-            info_bit: AtomicBool::new(false),
-            warning_bit: AtomicBool::new(false),
-            error_bit: AtomicBool::new(false),
+            code_map: Rc::new(RefCell::new(HashMap::new())),
+            info_bit: Rc::new(AtomicBool::new(false)),
+            warning_bit: Rc::new(AtomicBool::new(false)),
+            error_bit: Rc::new(AtomicBool::new(false)),
         }
     }
 
@@ -58,11 +56,11 @@ impl CompilerLog {
     }
 
     pub fn set_severity(&mut self, id: DiagnosticId, severity: Severity) {
-        self.code_map.insert(id, severity);
+        self.code_map.borrow_mut().insert(id, severity);
     }
 
     fn get_severity(&self, id: &DiagnosticId) -> Severity {
-        if let Some(sev) = self.code_map.get(id) {
+        if let Some(sev) = self.code_map.borrow().get(id) {
             return *sev;
         }
 
@@ -77,29 +75,14 @@ impl CompilerLog {
                 info!(self.log, "info[E{:04X}]: {}: {}", id.0, group, message);
             }
 
-            Origin::Unknown => {
-                info!(
-                    self.log,
-                    "info[E{:04X}]: {}: {}\n--> ???", id.0, group, message
-                );
-            }
-
             Origin::Point(pos) => {
-                info!(
-                    self.log,
-                    "info[E{:04X}]: {}: {}\n--> {}", id.0, group, message, pos
-                );
+                info!(self.log, "info[E{:04X}]: {}: {}\n--> {}", id.0, group, message, pos);
             }
 
             Origin::Span(span) => {
                 info!(
                     self.log,
-                    "info[E{:04X}]: {}: {}\n--> {}\n--> {}",
-                    id.0,
-                    group,
-                    message,
-                    span.start,
-                    span.end
+                    "info[E{:04X}]: {}: {}\n--> {}\n--> {}", id.0, group, message, span.start, span.end
                 );
             }
         }
@@ -113,29 +96,14 @@ impl CompilerLog {
                 warn!(self.log, "warning[E{:04X}]: {}: {}", id.0, group, message);
             }
 
-            Origin::Unknown => {
-                warn!(
-                    self.log,
-                    "warning[E{:04X}]: {}: {}\n--> ???", id.0, group, message
-                );
-            }
-
             Origin::Point(pos) => {
-                warn!(
-                    self.log,
-                    "warning[E{:04X}]: {}: {}\n--> {}", id.0, group, message, pos
-                );
+                warn!(self.log, "warning[E{:04X}]: {}: {}\n--> {}", id.0, group, message, pos);
             }
 
             Origin::Span(span) => {
                 warn!(
                     self.log,
-                    "warning[E{:04X}]: {}: {}\n--> {}\n--> {}",
-                    id.0,
-                    group,
-                    message,
-                    span.start,
-                    span.end
+                    "warning[E{:04X}]: {}: {}\n--> {}\n--> {}", id.0, group, message, span.start, span.end
                 );
             }
         }
@@ -149,29 +117,14 @@ impl CompilerLog {
                 error!(self.log, "error[E{:04X}]: {}: {}", id.0, group, message);
             }
 
-            Origin::Unknown => {
-                error!(
-                    self.log,
-                    "error[E{:04X}]: {}: {}\n--> ???", id.0, group, message
-                );
-            }
-
             Origin::Point(pos) => {
-                error!(
-                    self.log,
-                    "error[E{:04X}]: {}: {}\n--> {}", id.0, group, message, pos
-                );
+                error!(self.log, "error[E{:04X}]: {}: {}\n--> {}", id.0, group, message, pos);
             }
 
             Origin::Span(span) => {
                 error!(
                     self.log,
-                    "error[E{:04X}]: {}: {}\n--> {}\n--> {}",
-                    id.0,
-                    group,
-                    message,
-                    span.start,
-                    span.end
+                    "error[E{:04X}]: {}: {}\n--> {}\n--> {}", id.0, group, message, span.start, span.end
                 );
             }
         }
