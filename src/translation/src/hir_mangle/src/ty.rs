@@ -175,9 +175,12 @@ pub(crate) fn mangle_type(ty: &Type) -> String {
         Type::InferredFloat | Type::InferredInteger | Type::Inferred { .. } => {
             panic!("Cannot mangle inferred type: {:?}", ty);
         }
+
+        Type::GenericParam { .. } => {
+            panic!("Cannot mangle uninstantiated generic parameter: {:?}", ty);
+        }
     }
 }
-
 pub(crate) fn demangle_type(_mangled: &mut dyn std::io::Read) -> Result<Type, ()> {
     // TODO: implement demangling
     unimplemented!();

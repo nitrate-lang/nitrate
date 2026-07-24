@@ -73,6 +73,7 @@ pub struct Function {
     pub attributes: BTreeSet<FunctionAttribute>,
     pub name: NString,
     pub mangled_name: NString,
+    pub generics: Option<BTreeMap<NString, Option<TypeId>>>,
     pub params: Vec<ParameterId>,
     pub return_type: TypeId,
     pub body: Option<Vec<BlockElement>>,
@@ -122,6 +123,7 @@ pub struct Module {
 pub struct TypeAliasDef {
     pub visibility: Visibility,
     pub name: NString,
+    pub generics: Option<BTreeMap<NString, Option<TypeId>>>,
     pub type_id: TypeId,
 }
 
@@ -213,6 +215,7 @@ pub struct EnumDef {
     pub visibility: Visibility,
     pub name: NString,
     pub attributes: BTreeSet<EnumAttribute>,
+    pub generics: Option<BTreeMap<NString, Option<TypeId>>>,
     pub variants: ThinVec<EnumVariant>,
 }
 

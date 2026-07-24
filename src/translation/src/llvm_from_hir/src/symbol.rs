@@ -212,8 +212,15 @@ pub fn generate_llvmir<'ctx>(
         package_name,
     };
 
+    // Skip generic (uninstantiated) functions - only monomorphized concrete
+    // instances should be compiled to LLVM IR. Generic functions are templates
+    // that are instantiated by the Hindley-Milner monomorphization pass.
     for function_id in tab.functions() {
-        gen_function_decl(&mut ctx, &function_id.borrow());
+        let func = function_id.borrow();
+        if func.generics.is_some() && func.generics.as_ref().map_or(false, |g| !g.is_empty()) {
+            continue;
+        }
+        gen_function_decl(&mut ctx, &func);
     }
 
     for global_id in tab.globals() {
@@ -221,7 +228,11 @@ pub fn generate_llvmir<'ctx>(
     }
 
     for function_id in tab.functions() {
-        gen_function(&mut ctx, &function_id.borrow());
+        let func = function_id.borrow();
+        if func.generics.is_some() && func.generics.as_ref().map_or(false, |g| !g.is_empty()) {
+            continue;
+        }
+        gen_function(&mut ctx, &func);
     }
 
     if let Err(e) = ctx.module.verify() {

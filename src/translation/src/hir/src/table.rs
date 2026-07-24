@@ -197,6 +197,7 @@ impl SymbolTab {
             attributes: BTreeSet::new(),
             name: name.clone(),
             mangled_name: NString::default(),
+            generics: None,
             params: Vec::new(),
             return_type: Type::Unit.into(),
             body: None,
@@ -282,6 +283,7 @@ impl SymbolTab {
         let placeholder = TypeAliasDef {
             visibility: Visibility::Sec,
             name: name.clone(),
+            generics: None,
             type_id: Type::Unit.into(),
         };
 
@@ -326,6 +328,7 @@ impl SymbolTab {
             visibility: Visibility::Sec,
             attributes: BTreeSet::new(),
             name: name.clone(),
+            generics: None,
             variants: Vec::new().into(),
         };
 

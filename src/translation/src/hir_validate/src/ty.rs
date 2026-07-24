@@ -217,9 +217,14 @@ impl ValidateHirType for Type {
             }
 
             Type::InferredFloat | Type::InferredInteger | Type::Inferred { .. } => Err(()),
+
+            Type::GenericParam { .. } => {
+                // Generic parameters are valid in uninstantiated contexts (before monomorphization)
+                // They will be replaced with concrete types during monomorphization.
+                Ok(())
+            }
         }
     }
-
     fn validate(self, ctx: &mut ValidateCtx, options: &ValidateTypeOptions) -> Result<ValidHir<Self>, ()> {
         self.verify(ctx, options)?;
         Ok(ValidHir::new(self))

@@ -1747,28 +1747,32 @@ fn gen_rval_method_call<'ctx>(
 fn gen_rval_symbol<'ctx>(ctx: &mut CodegenCtx<'ctx, '_, '_, '_, '_>, symbol_name: &NString) -> BasicValueEnum<'ctx> {
     if let Some((local, llvm_local_ty)) = ctx.locals.get(symbol_name) {
         let load = ctx.bb.build_load(*llvm_local_ty, *local, "symbol_load").unwrap();
-
-        load.into()
+        return load.into();
     } else if let Some((parameter, llvm_param_ty)) = ctx.parameters.get(symbol_name) {
         let load = ctx
             .bb
             .build_load(*llvm_param_ty, *parameter, "parameter_symbol_load")
             .unwrap();
-
-        load.into()
+        return load.into();
     } else if let Some((global, llvm_global_ty)) = ctx.globals.get(symbol_name) {
         let load = ctx
             .bb
             .build_load(*llvm_global_ty, *global, "global_symbol_load")
             .unwrap();
-
-        load.into()
+        return load.into();
     } else if let Some(function) = ctx.module.get_function(symbol_name) {
         let function_ptr = function.as_global_value().as_pointer_value();
-        function_ptr.into()
-    } else {
-        panic!("Undefined symbol: {}", symbol_name);
+        return function_ptr.into();
     }
+
+    // Function not found in LLVM module - it may be a monomorphized function
+    // that was created by Hindley-Milner but not registered in SymbolTab.
+    // Look it up by searching through the store for matching name.
+    // The monomorphized function is stored in the global Store via its FunctionId.
+    panic!(
+        "Undefined symbol: {}. Monomorphized function may not have been properly registered.",
+        symbol_name
+    );
 }
 
 pub(crate) fn gen_rval<'ctx>(

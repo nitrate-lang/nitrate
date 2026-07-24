@@ -144,5 +144,9 @@ pub(crate) fn gen_ty<'ctx>(hir_type: &hir::Type, ctx: &mut TypegenCtx<'ctx, '_, 
         hir::Type::InferredFloat | hir::Type::InferredInteger | hir::Type::Inferred { .. } => {
             panic!("Inferred types should have been resolved before code generation")
         }
+
+        hir::Type::GenericParam { .. } => {
+            panic!("Generic parameters should have been monomorphized before code generation")
+        }
     }
 }

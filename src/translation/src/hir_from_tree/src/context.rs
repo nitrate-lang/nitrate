@@ -50,9 +50,11 @@ impl Ast2HirCtx {
     }
 
     pub(crate) fn create_generic_placeholder(&mut self, name: NString) -> Type {
-        let id = self.type_infer_id_ctr;
-        self.type_infer_id_ctr = id.checked_add(1).expect("Type infer ID overflow");
-        Type::Inferred { id, name: Some(name) }
+        // Generic parameters are now represented as Type::GenericParam
+        // The index is assigned implicitly based on the order of declaration
+        // Since context may not know the declaration order, we store the name
+        // and the index will be resolved to the proper GenericParam by the lowering pass
+        Type::GenericParam { index: 0, name }
     }
 
     pub(crate) fn qualify_name(&self, item_name: &str) -> String {

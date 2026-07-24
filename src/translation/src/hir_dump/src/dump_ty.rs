@@ -221,10 +221,12 @@ impl Dump for Type {
                 Some(name) => write!(o, "?{id}::{}", escape_string(name, true)),
                 None => write!(o, "?{id}"),
             },
+            Type::GenericParam { index, name } => {
+                write!(o, "'{}", escape_string(name, true))
+            }
         }
     }
 }
-
 impl Dump for TypeId {
     fn dump(&self, ctx: &mut DumpContext, o: &mut dyn std::fmt::Write) -> Result<(), std::fmt::Error> {
         self.deref().dump(ctx, o)

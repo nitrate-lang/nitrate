@@ -6,6 +6,7 @@ use nitrate_tree::ast::{self as ast, SymbolKind};
 use std::{collections::BTreeSet, ops::Deref};
 
 fn lower_type_path(type_path: ast::TypePath, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Type, ()> {
+    // Check for generic args in intermediate segments (e.g., Foo<i32>::Bar)
     if type_path.segments[..type_path.segments.len().saturating_sub(1)]
         .iter()
         .any(|seg| seg.type_arguments.is_some())
@@ -15,35 +16,58 @@ fn lower_type_path(type_path: ast::TypePath, ctx: &mut Ast2HirCtx, log: &Compile
         ));
     }
 
-    if let Some(type_args) = type_path.segments.last().and_then(|seg| seg.type_arguments.as_ref()) {
-        let mut lowered_type_args = Vec::with_capacity(type_args.len());
-        for type_arg in type_args {
-            let hir_type_arg: TypeId = lower_type(type_arg.value.clone(), ctx, log)?.into();
-            lowered_type_args.push(hir_type_arg);
-        }
-    }
+    // Check if the last segment has type arguments
+    let type_args: Option<Vec<TypeId>> = type_path.segments.last().and_then(|seg| {
+        seg.type_arguments.as_ref().map(|type_args| {
+            type_args
+                .iter()
+                .map(|type_arg| {
+                    let hir_type_arg: TypeId = lower_type(type_arg.value.clone(), ctx, log)
+                        .expect("failed to lower type arg")
+                        .into();
+                    hir_type_arg
+                })
+                .collect()
+        })
+    });
 
     match type_path.resolved_path {
-        Some(resolved_path) => match ctx.ast_symbol_map.get(&resolved_path) {
-            Some(SymbolKind::Struct) => Ok(Type::Struct {
-                def: ctx.tab.get_struct_or_insert_placeholder(&resolved_path).clone(),
-            }),
+        Some(resolved_path) => {
+            let base_type = match ctx.ast_symbol_map.get(&resolved_path) {
+                Some(SymbolKind::Struct) => Type::Struct {
+                    def: ctx.tab.get_struct_or_insert_placeholder(&resolved_path).clone(),
+                },
 
-            Some(SymbolKind::Enum) => Ok(Type::Enum {
-                def: ctx.tab.get_enum_or_insert_placeholder(&resolved_path).clone(),
-            }),
+                Some(SymbolKind::Enum) => Type::Enum {
+                    def: ctx.tab.get_enum_or_insert_placeholder(&resolved_path).clone(),
+                },
 
-            Some(SymbolKind::TypeAlias) => Ok(Type::TypeAlias {
-                def: ctx.tab.get_type_alias_or_insert_placeholder(&resolved_path).clone(),
-            }),
+                Some(SymbolKind::TypeAlias) => Type::TypeAlias {
+                    def: ctx.tab.get_type_alias_or_insert_placeholder(&resolved_path).clone(),
+                },
 
-            Some(SymbolKind::GenericParameter) => Ok(ctx.create_generic_placeholder(resolved_path)),
+                Some(SymbolKind::GenericParameter) => return Ok(ctx.create_generic_placeholder(resolved_path)),
 
-            _ => {
-                log.report(&HirErr::UnresolvedSymbol);
-                Err(())
+                _ => {
+                    log.report(&HirErr::UnresolvedSymbol);
+                    return Err(());
+                }
+            };
+
+            // If there are type arguments, wrap in Parameterized
+            if let Some(args) = type_args {
+                let base_id: TypeId = base_type.into();
+                Ok(Type::Parameterized {
+                    base: base_id,
+                    args: Arguments {
+                        positional: args.into(),
+                        named: thin_vec::ThinVec::new(),
+                    },
+                })
+            } else {
+                Ok(base_type)
             }
-        },
+        }
 
         None => {
             log.report(&HirErr::UnresolvedTypePath);

@@ -112,9 +112,18 @@ pub enum Type {
 
     InferredFloat,
     InferredInteger,
+    // A type variable that stands for a concrete type to be inferred by HM
     Inferred {
         id: NonZeroU32,
         name: Option<NString>,
+    },
+
+    // A generic parameter declared on a function, struct, enum, or type alias
+    // `index` is the position in the generic parameter list
+    // `name` is the user-visible parameter name (e.g. "T" in `fn foo<T>(...)`)
+    GenericParam {
+        index: u32,
+        name: NString,
     },
 }
 
