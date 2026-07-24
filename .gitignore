@@ -47,3 +47,8 @@ runtime/libazide-gc/target/
 /target
 src/translation/src/*/target
 tmp/
+src/translation/src/token_lexer/lcov.info
+src/translation/src/token_lexer/tarpaulin-report.json
+src/translation/src/token_lexer/cobertura.xml
+src/translation/src/token_lexer/tarpaulin-report.html
+src/translation/src/token_lexer/cov.json
