@@ -59,3 +59,23 @@ fn test_enum_attr() {
             .is_some()
     );
 }
+
+// ========== ENUM ERROR PATHS ==========
+
+#[test]
+fn test_enum_missing_name() {
+    let (_, log) = parse_source_no_assert("enum {}");
+    assert!(log.error_bit());
+}
+
+#[test]
+fn test_enum_missing_variant_name() {
+    let (_, log) = parse_source_no_assert("enum Foo { : i32 }");
+    assert!(log.error_bit());
+}
+
+#[test]
+fn test_enum_missing_brace() {
+    let (_, log) = parse_source_no_assert("enum Foo");
+    assert!(log.error_bit());
+}

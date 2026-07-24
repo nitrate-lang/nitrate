@@ -116,3 +116,29 @@ fn test_struct_fn_field() {
         Type::FunctionType(_)
     ));
 }
+
+// ========== STRUCT ERROR PATHS ==========
+
+#[test]
+fn test_struct_missing_name() {
+    let (_, log) = parse_source_no_assert("struct {}");
+    assert!(log.error_bit());
+}
+
+#[test]
+fn test_struct_missing_field_name() {
+    let (_, log) = parse_source_no_assert("struct Foo { : i32 }");
+    assert!(log.error_bit());
+}
+
+#[test]
+fn test_struct_field_missing_colon() {
+    let (_, log) = parse_source_no_assert("struct Foo { x i32 }");
+    assert!(log.error_bit());
+}
+
+#[test]
+fn test_struct_field_missing_brace() {
+    let (_, log) = parse_source_no_assert("struct Foo { x: i32");
+    assert!(log.error_bit());
+}

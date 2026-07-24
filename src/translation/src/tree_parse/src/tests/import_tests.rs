@@ -49,3 +49,35 @@ fn test_import_attr() {
             .is_some()
     );
 }
+
+#[test]
+fn test_import_nested_group() {
+    let m = parse_source("use foo::{bar::{baz, qux}};");
+    assert!(matches!(&single_import(m).use_tree, UseTree::Group { .. }));
+}
+
+// ========== IMPORT ERROR PATHS ==========
+
+#[test]
+fn test_import_alias_missing_name() {
+    let (_, log) = parse_source_no_assert("use foo as ;");
+    assert!(log.error_bit());
+}
+
+#[test]
+fn test_import_expected_star_or_group() {
+    let (_, log) = parse_source_no_assert("use foo::bar::;");
+    assert!(log.error_bit());
+}
+
+#[test]
+fn test_import_group_unclosed() {
+    let (_, log) = parse_source_no_assert("use foo::{bar");
+    assert!(log.error_bit());
+}
+
+#[test]
+fn test_import_missing_semicolon() {
+    let (_, log) = parse_source_no_assert("use foo");
+    assert!(log.error_bit());
+}

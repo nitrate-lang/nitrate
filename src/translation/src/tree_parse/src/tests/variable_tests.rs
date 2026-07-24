@@ -49,3 +49,35 @@ fn test_var_attr() {
             .is_some()
     );
 }
+
+// ========== VARIABLE ERROR PATHS ==========
+
+#[test]
+fn test_static_missing_name() {
+    let (_, log) = parse_source_no_assert("static : i32 = 0;");
+    assert!(log.error_bit());
+}
+
+#[test]
+fn test_static_missing_semicolon() {
+    let (_, log) = parse_source_no_assert("static x: i32 = 0");
+    assert!(log.error_bit());
+}
+
+// ========== CONST MUTABILITY ==========
+
+#[test]
+fn test_const_mutability_const() {
+    assert!(matches!(
+        single_variable(parse_source("const const X: i32 = 0;")).mutability,
+        Some(Mutability::Const)
+    ));
+}
+
+#[test]
+fn test_static_mutability_const() {
+    assert!(matches!(
+        single_variable(parse_source("static const x: i32 = 0;")).mutability,
+        Some(Mutability::Const)
+    ));
+}

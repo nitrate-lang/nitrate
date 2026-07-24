@@ -26,3 +26,17 @@ fn test_mod_nested() {
         matches!(&parse_source("mod a { mod b { fn f() {} } }").items[0], Item::Module(outer) if outer.items.len() == 1)
     );
 }
+
+// ========== MODULE ERROR PATHS ==========
+
+#[test]
+fn test_mod_missing_name() {
+    let (_, log) = parse_source_no_assert("mod { fn f() {} }");
+    assert!(log.error_bit());
+}
+
+#[test]
+fn test_mod_missing_brace() {
+    let (_, log) = parse_source_no_assert("mod m fn f() {} }");
+    assert!(log.error_bit());
+}

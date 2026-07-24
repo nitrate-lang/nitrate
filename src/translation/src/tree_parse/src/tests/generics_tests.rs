@@ -1,5 +1,4 @@
 use super::helpers::*;
-use nitrate_tree::ast::*;
 
 #[test]
 fn test_generic_struct() {
@@ -23,4 +22,12 @@ fn test_generic_default() {
             .default_value
             .is_some()
     );
+}
+
+// ========== GENERICS ERROR PATHS ==========
+
+#[test]
+fn test_generics_unclosed() {
+    let (_, log) = parse_source_no_assert("struct Foo<T { x: T }");
+    assert!(log.error_bit());
 }

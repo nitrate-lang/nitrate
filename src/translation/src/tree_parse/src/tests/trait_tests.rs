@@ -43,3 +43,23 @@ fn test_trait_attr() {
             .is_some()
     );
 }
+
+// ========== TRAIT ERROR PATHS ==========
+
+#[test]
+fn test_trait_missing_name() {
+    let (_, log) = parse_source_no_assert("trait {}");
+    assert!(log.error_bit());
+}
+
+#[test]
+fn test_trait_missing_brace() {
+    let (_, log) = parse_source_no_assert("trait Foo");
+    assert!(log.error_bit());
+}
+
+#[test]
+fn test_trait_invalid_item() {
+    let (_, log) = parse_source_no_assert("trait Foo { struct Bad {} }");
+    assert!(log.error_bit());
+}

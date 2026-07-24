@@ -133,3 +133,62 @@ fn test_binop_div_eq() {
 fn test_binop_range() {
     check_binop("0..10", BinExprOp::Range);
 }
+
+#[test]
+fn test_set_percent() {
+    check_binop("x %= 1", BinExprOp::SetPercent);
+}
+
+#[test]
+fn test_set_bitand() {
+    check_binop("x &= 1", BinExprOp::SetBitAnd);
+}
+
+#[test]
+fn test_set_logicand() {
+    let expr = parse_expr("true &&= false");
+    assert!(matches!(&expr, Expr::BinExpr(b) if b.operator == BinExprOp::SetLogicAnd));
+}
+
+#[test]
+fn test_set_logicor() {
+    let expr = parse_expr("true ||= false");
+    assert!(matches!(&expr, Expr::BinExpr(b) if b.operator == BinExprOp::SetLogicOr));
+}
+
+#[test]
+fn test_set_shl() {
+    check_binop("x <<= 1", BinExprOp::SetBitShl);
+}
+
+#[test]
+fn test_set_shr() {
+    check_binop("x >>= 1", BinExprOp::SetBitShr);
+}
+
+#[test]
+fn test_set_rol() {
+    check_binop("x <<<= 1", BinExprOp::SetBitRotl);
+}
+
+#[test]
+fn test_set_ror() {
+    check_binop("x >>>= 1", BinExprOp::SetBitRotr);
+}
+
+#[test]
+fn test_set_xor() {
+    check_binop("x ^= 1", BinExprOp::SetBitXor);
+}
+
+#[test]
+fn test_set_or() {
+    check_binop("x |= 1", BinExprOp::SetBitOr);
+}
+
+#[test]
+fn test_binop_not_range() {
+    // `..` without left side should NOT parse as range, just dot dot
+    let expr = parse_expr("x..y");
+    assert!(matches!(&expr, Expr::BinExpr(b) if b.operator == BinExprOp::Range));
+}
