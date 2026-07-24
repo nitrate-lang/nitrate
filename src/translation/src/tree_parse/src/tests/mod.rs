@@ -1,8 +1,14 @@
 mod helpers;
 
+mod additional_coverage_tests;
+mod all_diagnostic_branches;
 mod binop_tests;
+mod diagnosis_format_tests;
+mod edge_case_tests;
 mod enum_tests;
 mod expr_tests;
+mod final_coverage_tests;
+mod final_push_tests;
 mod function_tests;
 mod generics_tests;
 mod impl_tests;
