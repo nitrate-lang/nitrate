@@ -3,6 +3,7 @@ use crate::store::LiteralId;
 use nitrate_nstring::NString;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeSet;
+use std::matches;
 use std::num::NonZeroU32;
 use thin_vec::ThinVec;
 
@@ -98,6 +99,12 @@ pub enum Type {
         to: TypeId,
     },
 
+    SlicePtr {
+        exclusive: bool,
+        mutable: bool,
+        element_type: TypeId,
+    },
+
     Parameterized {
         base: TypeId,
         args: Arguments<TypeId>,
@@ -182,6 +189,11 @@ impl Type {
     #[must_use]
     pub fn is_slice_ref(&self) -> bool {
         matches!(self, Type::SliceRef { .. })
+    }
+
+    #[must_use]
+    pub fn is_slice_ptr(&self) -> bool {
+        matches!(self, Type::SlicePtr { .. })
     }
 
     #[must_use]

@@ -1,6 +1,6 @@
 use core::panic;
 use nitrate_hir::prelude::*;
-use std::ops::Deref;
+use std::{format, ops::Deref, unimplemented};
 
 pub(crate) fn mangle_type(ty: &Type) -> String {
     match ty {
@@ -152,6 +152,22 @@ pub(crate) fn mangle_type(ty: &Type) -> String {
             format!("P{}{}", exmut_mangled, to_mangled)
         }
 
+        Type::SlicePtr {
+            exclusive,
+            mutable,
+            element_type,
+        } => {
+            let exmut_mangled = match (exclusive, mutable) {
+                (true, true) => "A",
+                (true, false) => "B",
+                (false, true) => "C",
+                (false, false) => "D",
+            };
+
+            let elem_mangled = mangle_type(element_type);
+            format!("Z{}{}", exmut_mangled, elem_mangled)
+        }
+
         Type::Parameterized { .. } => {
             panic!("Cannot mangle uninstantiated generic type: {:?}", ty);
         }
@@ -163,5 +179,6 @@ pub(crate) fn mangle_type(ty: &Type) -> String {
 }
 
 pub(crate) fn demangle_type(_mangled: &mut dyn std::io::Read) -> Result<Type, ()> {
+    // TODO: implement demangling
     unimplemented!();
 }

@@ -107,6 +107,7 @@ pub fn get_size_of(ty: &Type, ctx: &LayoutCtx) -> Result<u64, LayoutError> {
         Type::Reference { .. } => Ok(ctx.ptr_size as u64),
         Type::SliceRef { .. } => Ok(ctx.ptr_size as u64 * 2),
         Type::Pointer { .. } => Ok(ctx.ptr_size as u64),
+        Type::SlicePtr { .. } => Ok(ctx.ptr_size as u64 * 2),
 
         Type::Parameterized { .. } => Err(LayoutError::UninstantiatedGeneric),
         Type::InferredInteger | Type::InferredFloat | Type::Inferred { .. } => Err(LayoutError::NotInferred),

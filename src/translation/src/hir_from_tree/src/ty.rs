@@ -5,14 +5,9 @@ use nitrate_hir_evaluate::HirEvalCtx;
 use nitrate_tree::ast::{self as ast, SymbolKind};
 use std::{collections::BTreeSet, ops::Deref};
 
-fn lower_infer_type(ctx: &mut Ast2HirCtx) -> Type {
-    ctx.create_inference_placeholder()
-}
-
 fn lower_type_path(type_path: ast::TypePath, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Type, ()> {
-    // TODO: Validate implementation
-
     if type_path.segments.iter().any(|seg| seg.type_arguments.is_some()) {
+        // TODO: Implement support for generic type arguments in type paths
         log.report(&HirErr::UnimplementedFeature(
             "generic type arguments in type paths".into(),
         ));
@@ -136,8 +131,6 @@ fn lower_reference_type(
     ctx: &mut Ast2HirCtx,
     log: &CompilerLog,
 ) -> Result<Type, ()> {
-    // TODO: Validate implementation
-
     let lifetime = match reference_type.lifetime {
         None => Lifetime::Inferred,
         Some(ast::Lifetime { name }) => match name.deref() {
@@ -191,8 +184,6 @@ fn lower_slice_type(_slice_type: ast::SliceType, _ctx: &mut Ast2HirCtx, log: &Co
 }
 
 fn lower_pointer_type(pointer_type: ast::PointerType, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Type, ()> {
-    // TODO: Validate implementation
-
     let mutable = match pointer_type.mutability {
         Some(ast::Mutability::Mut) => true,
         Some(ast::Mutability::Const) | None => false,
@@ -205,10 +196,13 @@ fn lower_pointer_type(pointer_type: ast::PointerType, ctx: &mut Ast2HirCtx, log:
     };
 
     if let ast::Type::SliceType(slice) = pointer_type.to {
-        let _element_type: TypeId = lower_type(slice.element_type, ctx, log)?.into();
+        let element_type: TypeId = lower_type(slice.element_type, ctx, log)?.into();
 
-        log.report(&HirErr::UnimplementedFeature("slice pointers".into()));
-        Err(())
+        Ok(Type::SlicePtr {
+            exclusive,
+            mutable,
+            element_type,
+        })
     } else {
         let to = lower_type(pointer_type.to, ctx, log)?.into();
 
@@ -243,7 +237,7 @@ pub(crate) fn lower_type(ty: ast::Type, ctx: &mut Ast2HirCtx, log: &CompilerLog)
         ast::Type::Int128(_) => Ok(Type::I128),
         ast::Type::Float32(_) => Ok(Type::F32),
         ast::Type::Float64(_) => Ok(Type::F64),
-        ast::Type::InferType(_) => Ok(lower_infer_type(ctx)),
+        ast::Type::InferType(_) => Ok(ctx.create_inference_placeholder()),
         ast::Type::TypePath(t) => lower_type_path(*t, ctx, log),
         ast::Type::RefinementType(t) => lower_refinement_type(*t, ctx, log),
         ast::Type::TupleType(t) => lower_tuple_type(*t, ctx, log),

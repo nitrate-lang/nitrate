@@ -12,8 +12,6 @@ use nitrate_tree::ast::{self};
 use std::collections::{BTreeMap, BTreeSet};
 
 fn lower_type_alias(type_alias: ast::TypeAlias, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<TypeAliasDefId, ()> {
-    // TODO: Validate implementation
-
     let visibility = match type_alias.visibility {
         Some(ast::Visibility::Public) => Visibility::Pub,
         Some(ast::Visibility::Protected) => Visibility::Pro,
@@ -27,8 +25,13 @@ fn lower_type_alias(type_alias: ast::TypeAlias, ctx: &mut Ast2HirCtx, log: &Comp
     }
 
     let name = ctx.qualify_name(&type_alias.name).into();
+    if ctx.entities_added.contains(&name) {
+        log.report(&HirErr::DuplicateEntity(name.to_string()));
+        return Err(());
+    }
 
     if type_alias.generics.is_some() {
+        // TODO: Implement generics for type aliases
         log.report(&HirErr::UnimplementedFeature("generic type aliases".into()));
     }
 
@@ -46,6 +49,8 @@ fn lower_type_alias(type_alias: ast::TypeAlias, ctx: &mut Ast2HirCtx, log: &Comp
         type_id,
     };
 
+    ctx.entities_added.insert(type_alias.name.clone());
+
     if let Some(existing_type_alias_def_id) = ctx.tab.get_type_alias(&type_alias.name) {
         let mut existing_type_alias_def = existing_type_alias_def_id.borrow_mut();
         *existing_type_alias_def = type_alias;
@@ -57,9 +62,11 @@ fn lower_type_alias(type_alias: ast::TypeAlias, ctx: &mut Ast2HirCtx, log: &Comp
     }
 }
 
-fn lower_struct_def(struct_def: ast::Struct, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<StructDefId, ()> {
-    // TODO: Validate implementation
-
+fn lower_struct_definition(
+    struct_def: ast::Struct,
+    ctx: &mut Ast2HirCtx,
+    log: &CompilerLog,
+) -> Result<StructDefId, ()> {
     let visibility = match struct_def.visibility {
         Some(ast::Visibility::Public) => Visibility::Pub,
         Some(ast::Visibility::Protected) => Visibility::Pro,
@@ -74,8 +81,13 @@ fn lower_struct_def(struct_def: ast::Struct, ctx: &mut Ast2HirCtx, log: &Compile
     }
 
     let name = ctx.qualify_name(&struct_def.name).into();
+    if ctx.entities_added.contains(&name) {
+        log.report(&HirErr::DuplicateEntity(name.to_string()));
+        return Err(());
+    }
 
     if struct_def.generics.is_some() {
+        // TODO: Implement generics for structs
         log.report(&HirErr::UnimplementedFeature("generic structs".into()));
     }
 
@@ -99,7 +111,7 @@ fn lower_struct_def(struct_def: ast::Struct, ctx: &mut Ast2HirCtx, log: &Compile
         let field_name = NString::from(field.name.to_string());
         let field_type = lower_type(field.ty.to_owned(), ctx, log)?.into();
 
-        let field_default = match field.default_value.to_owned() {
+        let default_value = match field.default_value.to_owned() {
             Some(expr) => Some(lower_expr(expr, ctx, log)?.into()),
             None => None,
         };
@@ -109,12 +121,13 @@ fn lower_struct_def(struct_def: ast::Struct, ctx: &mut Ast2HirCtx, log: &Compile
             attributes: field_attributes,
             name: field_name,
             ty: field_type,
-            default_value: field_default,
+            default_value,
         };
 
         let field_name = struct_field.name.clone();
         fields.insert(field_name.clone(), struct_field);
         layout.push(StructMemoryLayoutCell::Field { field_name });
+        // TODO: Handle padding and alignment for struct layout
     }
 
     let struct_def = StructDef {
@@ -124,6 +137,8 @@ fn lower_struct_def(struct_def: ast::Struct, ctx: &mut Ast2HirCtx, log: &Compile
         fields,
         layout,
     };
+
+    ctx.entities_added.insert(struct_def.name.clone());
 
     if let Some(existing_struct_def_id) = ctx.tab.get_struct(&struct_def.name) {
         let mut existing_struct_def = existing_struct_def_id.borrow_mut();
@@ -136,9 +151,7 @@ fn lower_struct_def(struct_def: ast::Struct, ctx: &mut Ast2HirCtx, log: &Compile
     }
 }
 
-fn lower_enum_def(enum_def: ast::Enum, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<EnumDefId, ()> {
-    // TODO: Validate implementation
-
+fn lower_enum_definition(enum_def: ast::Enum, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<EnumDefId, ()> {
     let visibility = match enum_def.visibility {
         Some(ast::Visibility::Public) => Visibility::Pub,
         Some(ast::Visibility::Protected) => Visibility::Pro,
@@ -153,8 +166,13 @@ fn lower_enum_def(enum_def: ast::Enum, ctx: &mut Ast2HirCtx, log: &CompilerLog) 
     }
 
     let name: NString = ctx.qualify_name(&enum_def.name).into();
+    if ctx.entities_added.contains(&name) {
+        log.report(&HirErr::DuplicateEntity(name.to_string()));
+        return Err(());
+    }
 
     if enum_def.generics.is_some() {
+        // TODO: Implement generics for enums
         log.report(&HirErr::UnimplementedFeature("generic enums".into()));
     }
 
@@ -197,6 +215,8 @@ fn lower_enum_def(enum_def: ast::Enum, ctx: &mut Ast2HirCtx, log: &CompilerLog) 
         variants: variants.clone().into(),
     };
 
+    ctx.entities_added.insert(enum_def.name.clone());
+
     let enum_def_id = if let Some(existing_enum_def_id) = ctx.tab.get_enum(&enum_def.name) {
         let mut existing_enum_def = existing_enum_def_id.borrow_mut();
         *existing_enum_def = enum_def;
@@ -215,16 +235,13 @@ fn lower_enum_def(enum_def: ast::Enum, ctx: &mut Ast2HirCtx, log: &CompilerLog) 
     Ok(enum_def_id)
 }
 
-fn lower_trait(trait_: &ast::Trait, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<TraitId, ()> {
-    // TODO: Validate implementation
-
+fn lower_trait_definition(trait_: &ast::Trait, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<TraitId, ()> {
     let visibility = match trait_.visibility {
         Some(ast::Visibility::Public) => Visibility::Pub,
         Some(ast::Visibility::Protected) => Visibility::Pro,
         Some(ast::Visibility::Private) | None => Visibility::Sec,
     };
 
-    // let attributes = BTreeSet::new();
     if let Some(ast_attributes) = &trait_.attributes {
         for _attr in ast_attributes {
             log.report(&HirErr::UnrecognizedTraitAttribute);
@@ -232,8 +249,13 @@ fn lower_trait(trait_: &ast::Trait, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> 
     }
 
     let name: NString = ctx.qualify_name(&trait_.name).into();
+    if ctx.entities_added.contains(&name) {
+        log.report(&HirErr::DuplicateEntity(name.to_string()));
+        return Err(());
+    }
 
     if trait_.generics.is_some() {
+        // TODO: Implement generics for traits
         log.report(&HirErr::UnimplementedFeature("generic traits".into()));
     }
 
@@ -246,6 +268,8 @@ fn lower_trait(trait_: &ast::Trait, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> 
             }
 
             _ => {
+                // TODO: Support trait associated type aliases
+                // TODO: Support trait associated constants
                 log.report(&HirErr::UnimplementedFeature(
                     "only method trait items are supported".into(),
                 ));
@@ -260,6 +284,8 @@ fn lower_trait(trait_: &ast::Trait, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> 
         methods,
     };
 
+    ctx.entities_added.insert(trait_.name.clone());
+
     let trait_id = if let Some(existing_trait_id) = ctx.tab.get_trait(&trait_.name) {
         let mut existing_trait = existing_trait_id.borrow_mut();
         *existing_trait = trait_;
@@ -273,10 +299,9 @@ fn lower_trait(trait_: &ast::Trait, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> 
     Ok(trait_id)
 }
 
-fn lower_impl(impl_: ast::Impl, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<(), ()> {
-    // TODO: Validate implementation
-
+fn lower_implementation(impl_: ast::Impl, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<(), ()> {
     if let Some(_generics) = impl_.generics {
+        // TODO: Implement generics for impl blocks
         log.report(&HirErr::UnimplementedFeature("generic impl blocks".into()));
         return Err(());
     }
@@ -305,6 +330,8 @@ fn lower_impl(impl_: ast::Impl, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Resu
                     }
 
                     _ => {
+                        // TODO: Support impl associated type aliases
+                        // TODO: Support impl associated constants
                         log.report(&HirErr::UnimplementedFeature("only method impls are supported".into()));
                         return Err(());
                     }
@@ -324,6 +351,8 @@ fn lower_impl(impl_: ast::Impl, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Resu
                     }
 
                     _ => {
+                        // TODO: Support impl associated type aliases
+                        // TODO: Support impl associated constants
                         log.report(&HirErr::UnimplementedFeature("only method impls are supported".into()));
                         return Err(());
                     }
@@ -335,46 +364,48 @@ fn lower_impl(impl_: ast::Impl, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Resu
     }
 }
 
-fn lower_global_var(
-    globalvar: &ast::GlobalVariable,
+fn lower_global_variable(
+    var: &ast::GlobalVariable,
     ctx: &mut Ast2HirCtx,
     log: &CompilerLog,
 ) -> Result<GlobalVariableId, ()> {
-    // TODO: Validate implementation
-
-    let visibility = match globalvar.visibility {
+    let visibility = match var.visibility {
         Some(ast::Visibility::Public) => Visibility::Pub,
         Some(ast::Visibility::Protected) => Visibility::Pro,
         Some(ast::Visibility::Private) | None => Visibility::Sec,
     };
 
     let attributes = BTreeSet::new();
-    if let Some(ast_attributes) = &globalvar.attributes {
+    if let Some(ast_attributes) = &var.attributes {
         for _attr in ast_attributes {
             log.report(&HirErr::UnrecognizedGlobalVariableAttribute);
         }
     }
 
-    let is_mutable = match globalvar.mutability {
+    let is_mutable = match var.mutability {
         Some(ast::Mutability::Mut) => true,
         Some(ast::Mutability::Const) | None => false,
     };
 
-    let name = ctx.qualify_name(&globalvar.name).into();
+    let name = ctx.qualify_name(&var.name).into();
     let mangled_name = if attributes.contains(&GlobalVariableAttribute::NoMangle) {
-        globalvar.name.clone()
+        var.name.clone()
     } else {
-        ctx.qualify_name(&globalvar.name).into()
+        ctx.qualify_name(&var.name).into()
     };
 
-    let ty = match globalvar.ty.to_owned() {
+    if ctx.entities_added.contains(&name) {
+        log.report(&HirErr::DuplicateEntity(name.to_string()));
+        return Err(());
+    }
+
+    let ty = match var.ty.to_owned() {
         None => ctx.create_inference_placeholder().into(),
         Some(t) => lower_type(t, ctx, log)?.into(),
     };
 
-    let init = match globalvar.initializer.to_owned() {
+    let init = match var.initializer.to_owned() {
         Some(expr) => lower_expr(expr, ctx, log)?.into(),
-
         None => {
             log.report(&HirErr::GlobalVariableMustHaveInitializer);
             return Err(());
@@ -391,6 +422,8 @@ fn lower_global_var(
         initializer: init,
     };
 
+    ctx.entities_added.insert(global_variable.name.clone());
+
     if let Some(existing_global_id) = ctx.tab.get_global_variable(&global_variable.name) {
         let mut existing_global_variable = existing_global_id.borrow_mut();
         *existing_global_variable = global_variable;
@@ -403,8 +436,6 @@ fn lower_global_var(
 }
 
 fn lower_parameter(param: ast::FuncParam, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<ParameterId, ()> {
-    // TODO: Validate implementation
-
     let attributes = BTreeSet::new();
     if let Some(ast_attributes) = &param.attributes {
         for _attr in ast_attributes {
@@ -418,6 +449,11 @@ fn lower_parameter(param: ast::FuncParam, ctx: &mut Ast2HirCtx, log: &CompilerLo
     };
 
     let name = ctx.qualify_name(&param.name).into();
+    if ctx.entities_added.contains(&name) {
+        log.report(&HirErr::DuplicateEntity(name.to_string()));
+        return Err(());
+    }
+
     let ty = lower_type(param.ty.to_owned(), ctx, log)?.into();
 
     let default_value = match param.default_value.to_owned() {
@@ -434,14 +470,13 @@ fn lower_parameter(param: ast::FuncParam, ctx: &mut Ast2HirCtx, log: &CompilerLo
     }
     .into();
 
+    ctx.entities_added.insert(parameter_id.borrow().name.clone());
     ctx.tab.add_parameter(parameter_id.clone());
 
     Ok(parameter_id)
 }
 
 fn lower_function(function: ast::Function, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<FunctionId, ()> {
-    // TODO: Validate implementation
-
     let visibility = match function.visibility {
         Some(ast::Visibility::Public) => Visibility::Pub,
         Some(ast::Visibility::Protected) => Visibility::Pro,
@@ -465,7 +500,10 @@ fn lower_function(function: ast::Function, ctx: &mut Ast2HirCtx, log: &CompilerL
                         continue;
                     }
 
-                    _ => {}
+                    _ => {
+                        log.report(&HirErr::UnrecognizedFunctionAttribute);
+                        continue;
+                    }
                 }
             }
 
@@ -474,6 +512,11 @@ fn lower_function(function: ast::Function, ctx: &mut Ast2HirCtx, log: &CompilerL
     }
 
     let name: NString = ctx.qualify_name(&function.name).into();
+    if ctx.entities_added.contains(&name) {
+        log.report(&HirErr::DuplicateEntity(name.to_string()));
+        return Err(());
+    }
+
     let mangled_name: NString = if attributes.contains(&FunctionAttribute::NoMangle) {
         function.name.clone()
     } else {
@@ -483,6 +526,7 @@ fn lower_function(function: ast::Function, ctx: &mut Ast2HirCtx, log: &CompilerL
     ctx.current_scope.push(function.name.clone());
 
     if function.generics.is_some() {
+        // TODO: Implement generics for functions
         log.report(&HirErr::UnimplementedFeature("generic functions".into()));
     }
 
@@ -540,6 +584,8 @@ fn lower_function(function: ast::Function, ctx: &mut Ast2HirCtx, log: &CompilerL
         body,
     };
 
+    ctx.entities_added.insert(function.name.clone());
+
     if let Some(existing_function_id) = ctx.tab.get_function(&name) {
         let mut existing_function = existing_function_id.borrow_mut();
         *existing_function = function;
@@ -552,8 +598,6 @@ fn lower_function(function: ast::Function, ctx: &mut Ast2HirCtx, log: &CompilerL
 }
 
 pub(crate) fn lower_module(module: ast::Module, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Module, ()> {
-    // TODO: Validate implementation
-
     ctx.current_scope.push(module.name.clone());
 
     let visibility = match module.visibility {
@@ -566,6 +610,12 @@ pub(crate) fn lower_module(module: ast::Module, ctx: &mut Ast2HirCtx, log: &Comp
     let attributes = BTreeSet::new();
     for _attr in ast_attributes {
         log.report(&HirErr::UnrecognizedModuleAttribute);
+    }
+
+    let qualified_name = ctx.qualify_name(&module.name).into();
+    if ctx.entities_added.contains(&qualified_name) {
+        log.report(&HirErr::DuplicateEntity(qualified_name.to_string()));
+        return Err(());
     }
 
     let mut items = Vec::with_capacity(module.items.len());
@@ -584,14 +634,13 @@ pub(crate) fn lower_module(module: ast::Module, ctx: &mut Ast2HirCtx, log: &Comp
         items,
     };
 
+    ctx.entities_added.insert(qualified_name.clone());
     ctx.current_scope.pop();
 
     Ok(module)
 }
 
 fn lower_item(ctx: &mut Ast2HirCtx, item: ast::Item, log: &CompilerLog) -> Result<Option<Item>, ()> {
-    // TODO: Validate implementation
-
     match item {
         ast::Item::Module(module) => {
             let hir_module = convert_ast_to_hir(*module, ctx, log)?.into();
@@ -613,22 +662,22 @@ fn lower_item(ctx: &mut Ast2HirCtx, item: ast::Item, log: &CompilerLog) -> Resul
         }
 
         ast::Item::Struct(struct_def) => {
-            let s = lower_struct_def(struct_def, ctx, log)?;
+            let s = lower_struct_definition(struct_def, ctx, log)?;
             Ok(Some(Item::StructDef(s)))
         }
 
         ast::Item::Enum(enum_def) => {
-            let e = lower_enum_def(enum_def, ctx, log)?;
+            let e = lower_enum_definition(enum_def, ctx, log)?;
             Ok(Some(Item::EnumDef(e)))
         }
 
         ast::Item::Trait(trait_def) => {
-            let t = lower_trait(&trait_def, ctx, log)?;
+            let t = lower_trait_definition(&trait_def, ctx, log)?;
             Ok(Some(Item::Trait(t)))
         }
 
         ast::Item::Impl(impl_def) => {
-            lower_impl(*impl_def, ctx, log)?;
+            lower_implementation(*impl_def, ctx, log)?;
             Ok(None)
         }
 
@@ -638,7 +687,7 @@ fn lower_item(ctx: &mut Ast2HirCtx, item: ast::Item, log: &CompilerLog) -> Resul
         }
 
         ast::Item::Variable(v) => {
-            let g = lower_global_var(&v, ctx, log)?;
+            let g = lower_global_variable(&v, ctx, log)?;
             Ok(Some(Item::GlobalVariable(g)))
         }
 

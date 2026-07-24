@@ -35,5 +35,6 @@ pub(crate) fn mangle_string(str: &str) -> String {
 }
 
 pub(crate) fn demangle_string(_mangled: &mut dyn std::io::Read) -> Result<String, ()> {
+    // TODO: implement demangling
     unimplemented!();
 }

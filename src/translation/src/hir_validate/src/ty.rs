@@ -141,6 +141,16 @@ fn verify_pointer_type(
     to.verify(ctx, &ValidateTypeOptions::un_sized())
 }
 
+fn verify_slice_pointer_type(
+    ctx: &mut ValidateCtx,
+    _exclusive: bool,
+    _mutable: bool,
+    element_type: &Type,
+    _options: &ValidateTypeOptions,
+) -> Result<(), ()> {
+    element_type.verify(ctx, &ValidateTypeOptions::sized())
+}
+
 impl ValidateHirType for Type {
     fn verify(&self, ctx: &mut ValidateCtx, options: &ValidateTypeOptions) -> Result<(), ()> {
         if ctx.cyclic_bail(self) {
@@ -194,6 +204,12 @@ impl ValidateHirType for Type {
             } => verify_slice_reference_type(ctx, lifetime, *exclusive, *mutable, element_type, options),
 
             Type::Pointer { to, exclusive, mutable } => verify_pointer_type(ctx, to, *exclusive, *mutable, options),
+
+            Type::SlicePtr {
+                exclusive,
+                mutable,
+                element_type,
+            } => verify_slice_pointer_type(ctx, *exclusive, *mutable, element_type, options),
 
             Type::Parameterized { base, args: _ } => {
                 base.verify(ctx, options)

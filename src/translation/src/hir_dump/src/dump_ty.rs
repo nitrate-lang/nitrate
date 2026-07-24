@@ -1,4 +1,4 @@
-use std::ops::Deref;
+use std::{ops::Deref, write};
 
 use crate::{Dump, DumpContext, dump_item::dump_attributes};
 use nitrate_hir::prelude::*;
@@ -187,6 +187,25 @@ impl Dump for Type {
                 }
 
                 to.dump(ctx, o)
+            }
+
+            Type::SlicePtr {
+                exclusive,
+                mutable,
+                element_type,
+            } => {
+                write!(o, "*")?;
+
+                match (exclusive, mutable) {
+                    (true, true) => write!(o, "mut ")?,
+                    (true, false) => write!(o, "iso ")?,
+                    (false, true) => write!(o, "poly mut ")?,
+                    (false, false) => write!(o, "")?,
+                }
+
+                write!(o, "[")?;
+                element_type.dump(ctx, o)?;
+                write!(o, "]")
             }
 
             Type::Parameterized { base, args } => {

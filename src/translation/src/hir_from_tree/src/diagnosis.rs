@@ -24,6 +24,7 @@ pub(crate) enum HirErr {
     SliceTypesCannotExistOutsideReferencesOrPointers,
     LocalVariableMissingInitializer,
     UnrecognizedTraitAttribute,
+    DuplicateEntity(String),
 }
 
 impl FormattableDiagnosticGroup for HirErr {
@@ -56,6 +57,7 @@ impl FormattableDiagnosticGroup for HirErr {
             HirErr::SliceTypesCannotExistOutsideReferencesOrPointers => 33,
             HirErr::LocalVariableMissingInitializer => 40,
             HirErr::UnrecognizedTraitAttribute => 41,
+            HirErr::DuplicateEntity(_) => 42,
         }
     }
 
@@ -173,6 +175,11 @@ impl FormattableDiagnosticGroup for HirErr {
 
             HirErr::UnrecognizedTraitAttribute => DiagnosticInfo {
                 message: "unrecognized trait attribute".to_string(),
+                origin: Origin::None,
+            },
+
+            HirErr::DuplicateEntity(name) => DiagnosticInfo {
+                message: format!("duplicate entity: {}", name),
                 origin: Origin::None,
             },
         }

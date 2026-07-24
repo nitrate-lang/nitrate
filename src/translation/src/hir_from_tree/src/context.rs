@@ -10,6 +10,7 @@ pub struct Ast2HirCtx {
     pub tab: SymbolTab,
 
     pub(crate) ast_symbol_map: HashMap<NString, SymbolKind>,
+    pub(crate) entities_added: HashSet<NString>,
     pub(crate) current_scope: Vec<NString>,
     pub(crate) ptr_size: PtrSize,
     pub(crate) import_ctx: ImportContext,
@@ -24,6 +25,7 @@ impl Ast2HirCtx {
         Self {
             tab: SymbolTab::new(ptr_size),
             ast_symbol_map: HashMap::new(),
+            entities_added: HashSet::new(),
             current_scope: Vec::new(),
             _impl_map: HashMap::new(),
             type_infer_id_ctr: NonZeroU32::new(1).unwrap(),

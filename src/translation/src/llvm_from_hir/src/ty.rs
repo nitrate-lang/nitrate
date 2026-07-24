@@ -1,3 +1,4 @@
+use core::panic;
 use inkwell::{
     AddressSpace,
     types::{BasicType, BasicTypeEnum, FunctionType, StructType},
@@ -117,6 +118,12 @@ pub(crate) fn gen_ty<'ctx>(hir_type: &hir::Type, ctx: &mut TypegenCtx<'ctx, '_, 
         hir::Type::Refine { base, .. } => gen_ty(base, ctx),
 
         hir::Type::SliceRef { .. } => {
+            let ptr = ctx.llvm.ptr_type(AddressSpace::default());
+            let size = ctx.llvm.ptr_sized_int_type(&ctx.llvm.target_data(), None);
+            ctx.llvm.struct_type(&[ptr.into(), size.into()], false).into()
+        }
+
+        hir::Type::SlicePtr { .. } => {
             let ptr = ctx.llvm.ptr_type(AddressSpace::default());
             let size = ctx.llvm.ptr_sized_int_type(&ctx.llvm.target_data(), None);
             ctx.llvm.struct_type(&[ptr.into(), size.into()], false).into()
