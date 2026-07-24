@@ -634,43 +634,40 @@ impl Parser<'_, '_> {
     }
 
     pub(crate) fn parse_attributes(&mut self) -> Option<AttributeList> {
+        let mut elements: Vec<Expr> = Vec::new();
         let mut already_reported_too_many_attributes = false;
 
-        if !self.lexer.skip_if(&Token::OpenBracket) {
-            return None;
-        }
+        while self.lexer.skip_if(&Token::OpenBracket) {
+            self.lexer.skip_if(&Token::Comma);
 
-        let mut elements = Vec::new();
+            while !self.lexer.skip_if(&Token::CloseBracket) {
+                if self.lexer.is_eof() {
+                    let bug = SyntaxErr::AttributesExpectedEnd(self.lexer.peek_pos());
+                    self.log.report(&bug);
+                    break;
+                }
 
-        self.lexer.skip_if(&Token::Comma);
+                const MAX_ATTRIBUTES: usize = 65_536;
 
-        while !self.lexer.skip_if(&Token::CloseBracket) {
-            if self.lexer.is_eof() {
-                let bug = SyntaxErr::AttributesExpectedEnd(self.lexer.peek_pos());
-                self.log.report(&bug);
-                break;
-            }
+                if !already_reported_too_many_attributes && elements.len() >= MAX_ATTRIBUTES {
+                    already_reported_too_many_attributes = true;
 
-            const MAX_ATTRIBUTES: usize = 65_536;
+                    let bug = SyntaxErr::AttributesElementLimit(self.lexer.peek_pos());
+                    self.log.report(&bug);
+                }
 
-            if !already_reported_too_many_attributes && elements.len() >= MAX_ATTRIBUTES {
-                already_reported_too_many_attributes = true;
+                let attrib = self.parse_expression();
+                elements.push(attrib);
 
-                let bug = SyntaxErr::AttributesElementLimit(self.lexer.peek_pos());
-                self.log.report(&bug);
-            }
-
-            let attrib = self.parse_expression();
-            elements.push(attrib);
-
-            if !self.lexer.skip_if(&Token::Comma) && !self.lexer.next_is(&Token::CloseBracket) {
-                let bug = SyntaxErr::AttributesExpectedEnd(self.lexer.peek_pos());
-                self.log.report(&bug);
-                break;
+                if !self.lexer.skip_if(&Token::Comma) && !self.lexer.next_is(&Token::CloseBracket) {
+                    let bug = SyntaxErr::AttributesExpectedEnd(self.lexer.peek_pos());
+                    self.log.report(&bug);
+                    break;
+                }
             }
         }
 
-        Some(elements)
+        if elements.is_empty() { None } else { Some(elements) }
     }
 
     pub(crate) fn parse_generic_arguments(&mut self) -> Option<Vec<TypeArgument>> {
