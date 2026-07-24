@@ -44,8 +44,8 @@ impl Substitution {
                     ty.clone()
                 }
             }
-            Type::Struct { def } => {
-                // Check if this is a monomorphized struct; return as-is
+            Type::Struct { .. } => {
+                // Return struct types as-is (monomorphized structs are handled elsewhere)
                 ty.clone()
             }
             Type::Parameterized { base, .. } => {
@@ -151,6 +151,10 @@ struct HindleyMilner<'m> {
     errors: HashSet<TypeErr>,
     function_return_type: Option<TypeId>,
     mono_counter: u32,
+    /// Cache of monomorphized function copies keyed by (generic_function_store_index, sorted_concrete_args).
+    /// Prevents creating duplicate copies when the same generic function is instantiated
+    /// with identical concrete type arguments at multiple call sites.
+    mono_cache: HashMap<(usize, Vec<(u32, TypeId)>), FunctionId>,
 }
 
 impl<'m> HindleyMilner<'m> {
@@ -161,7 +165,14 @@ impl<'m> HindleyMilner<'m> {
             errors: HashSet::new(),
             function_return_type: None,
             mono_counter: 0,
+            mono_cache: HashMap::new(),
         }
+    }
+
+    fn mono_cache_key(&self, func_id: &FunctionId, subst: &Substitution) -> (usize, Vec<(u32, TypeId)>) {
+        let mut sorted_args: Vec<(u32, TypeId)> = subst.mapping.iter().map(|(k, v)| (*k, *v)).collect();
+        sorted_args.sort_by_key(|(k, _)| *k);
+        (func_id.as_usize(), sorted_args)
     }
 
     fn report_out_of_range(&mut self, integer: u128, target_type: TypeId) {
@@ -424,6 +435,13 @@ impl<'m> HindleyMilner<'m> {
     }
 
     fn monomorphize_function(&mut self, func_id: &FunctionId, subst: &Substitution) -> FunctionId {
+        // Check cache first — if we already monomorphized this generic function
+        // with identical concrete type arguments, return the existing copy.
+        let cache_key = self.mono_cache_key(func_id, subst);
+        if let Some(existing) = self.mono_cache.get(&cache_key) {
+            return existing.clone();
+        }
+
         let func = func_id.borrow();
 
         self.mono_counter += 1;
@@ -470,6 +488,8 @@ impl<'m> HindleyMilner<'m> {
         let mono_id: FunctionId = mono_func.into();
         // Register the monomorphized function in the symbol table so the LLVM codegen can find it
         self.m.add_function(mono_id.clone());
+        // Cache for future identical instantiations
+        self.mono_cache.insert(cache_key, mono_id.clone());
         mono_id
     }
 

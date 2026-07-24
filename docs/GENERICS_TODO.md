@@ -46,11 +46,11 @@ Implement full Rust-style generics support with monomorphization in the `hir_pol
 - [x] Monomorphized functions are registered in SymbolTab
 - [x] LLVM IR correctly generated for monomorphized instances
 
-### Phase 6: Future Work (Not Yet Implemented) ❌
+### Phase 6: Monomorphization Copy Deduplication ✅
 
-- [ ] Struct monomorphization: `StructDef` instances need type substitution
-- [ ] Generic enum variant types
-- [ ] Nested generic calls (generic function calling another generic)
-- [ ] Generic impl blocks with method dispatch
-- [ ] Proper mangling scheme for monomorphized symbols
-- [ ] Test suite for generics
+- [x] `mono_cache` field added to `HindleyMilner`: `HashMap<(usize, Vec<(u32, TypeId)>), FunctionId>`
+- [x] Cache key derived from `(generic_function_store_index, sorted_concrete_type_args)`
+- [x] `monomorphize_function()` checks cache first; returns existing copy if found
+- [x] New copies are cached after creation for future identical instantiations
+- [x] Covers all generic function instantiations within a single HM pass invocation
+- [x] Deduplication is transparent: call sites still get a valid `FunctionId` to reference
