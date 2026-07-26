@@ -1,4 +1,4 @@
-use std::ops::Deref;
+use std::{ops::Deref, write};
 
 use enum_iterator::Sequence;
 use nitrate_diagnosis::FileId;
@@ -348,6 +348,10 @@ pub enum Token {
     As,
     /// 'typeof'
     Typeof,
+    /// 'Self' keyword - the implementing type in impl blocks
+    SelfType,
+    /// 'self' keyword - the receiver parameter in methods
+    SelfKeyword,
 
     Eof,
 }
@@ -455,6 +459,8 @@ impl std::fmt::Display for Token {
             Token::Opaque => write!(f, "opaque"),
             Token::As => write!(f, "as"),
             Token::Typeof => write!(f, "typeof"),
+            Token::SelfType => write!(f, "Self"),
+            Token::SelfKeyword => write!(f, "self"),
             Token::Eof => write!(f, ""),
         }
     }

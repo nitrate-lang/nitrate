@@ -150,11 +150,20 @@ impl<'a> Lexer<'a> {
 
     #[inline(always)]
     pub fn next_if_name(&mut self) -> Option<String> {
-        if let Token::Name(name) = self.peek_tok().token {
-            self.skip_tok();
-            Some(name)
-        } else {
-            None
+        match &self.peek_tok().token {
+            Token::Name(name) => {
+                self.skip_tok();
+                Some(name.clone())
+            }
+            Token::SelfType => {
+                self.skip_tok();
+                Some("Self".to_string())
+            }
+            Token::SelfKeyword => {
+                self.skip_tok();
+                Some("self".to_string())
+            }
+            _ => None,
         }
     }
 
@@ -321,7 +330,8 @@ impl<'a> Lexer<'a> {
             b"opaque" => Some(Token::Opaque),
             b"as" => Some(Token::As),
             b"typeof" => Some(Token::Typeof),
-
+            b"Self" => Some(Token::SelfType),
+            b"self" => Some(Token::SelfKeyword),
             _ => None,
         } {
             Ok(keyword)

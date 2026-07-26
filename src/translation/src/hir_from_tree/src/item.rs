@@ -354,7 +354,11 @@ fn lower_implementation(impl_: ast::Impl, ctx: &mut Ast2HirCtx, log: &CompilerLo
 
     let for_type: TypeId = lower_type(impl_.for_type, ctx, log)?.into();
 
-    match impl_.trait_path {
+    // Save any previous self type and set the current one so `Self` can be resolved
+    let prev_self = ctx.current_self_type.take();
+    ctx.current_self_type = Some(for_type.clone());
+
+    let result = match impl_.trait_path {
         Some(trait_path) => {
             let trait_name = trait_path
                 .segments
@@ -407,7 +411,11 @@ fn lower_implementation(impl_: ast::Impl, ctx: &mut Ast2HirCtx, log: &CompilerLo
 
             Ok(())
         }
-    }
+    };
+
+    // Restore the previous self type
+    ctx.current_self_type = prev_self;
+    result
 }
 
 fn lower_global_variable(

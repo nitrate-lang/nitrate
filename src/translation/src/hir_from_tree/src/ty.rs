@@ -34,7 +34,14 @@ pub(crate) fn lower_type_path(type_path: ast::TypePath, ctx: &mut Ast2HirCtx, lo
     });
 
     match type_path.resolved_path {
-        Some(resolved_path) => {
+        Some(ref resolved_path) => {
+            // Handle `Self` keyword: resolve to the current impl type
+            if resolved_path.deref() == "Self" || resolved_path.deref() == "self" {
+                if let Some(self_type) = &ctx.current_self_type {
+                    return Ok((&**self_type).clone());
+                }
+            }
+
             let base_type = match ctx.ast_symbol_map.get(&resolved_path) {
                 Some(SymbolKind::Struct) => Type::Struct {
                     def: ctx.tab.get_struct_or_insert_placeholder(&resolved_path).clone(),
@@ -48,7 +55,7 @@ pub(crate) fn lower_type_path(type_path: ast::TypePath, ctx: &mut Ast2HirCtx, lo
                     def: ctx.tab.get_type_alias_or_insert_placeholder(&resolved_path).clone(),
                 },
 
-                Some(SymbolKind::GenericParameter) => return Ok(ctx.create_generic_placeholder(resolved_path)),
+                Some(SymbolKind::GenericParameter) => return Ok(ctx.create_generic_placeholder(resolved_path.clone())),
 
                 _ => {
                     log.report(&HirErr::UnresolvedSymbol);

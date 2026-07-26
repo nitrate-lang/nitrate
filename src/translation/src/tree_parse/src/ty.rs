@@ -358,7 +358,10 @@ impl Parser<'_, '_> {
             true
         }
 
-        assert!(matches!(self.lexer.peek_tok().token, Token::Name(_) | Token::Colon));
+        assert!(matches!(
+            self.lexer.peek_tok().token,
+            Token::Name(_) | Token::Colon | Token::SelfType
+        ));
 
         let mut segments = Vec::new();
         let mut prev_scope = false;
@@ -436,7 +439,7 @@ impl Parser<'_, '_> {
 
             Token::SingleQuote => Type::Lifetime(Box::new(self.parse_lifetime())),
 
-            Token::Name(_) | Token::Colon => Type::TypePath(Box::new(self.parse_type_path())),
+            Token::Name(_) | Token::Colon | Token::SelfType => Type::TypePath(Box::new(self.parse_type_path())),
 
             Token::OpenBracket => self.parse_array_or_slice(),
             Token::And => Type::ReferenceType(Box::new(self.parse_reference_type())),

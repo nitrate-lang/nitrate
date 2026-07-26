@@ -1,6 +1,6 @@
 use crate::prelude::*;
 use nitrate_token::IntegerKind;
-use std::num::NonZeroUsize;
+use std::{num::NonZeroUsize, write};
 
 pub struct PrintContext {
     pub indent: String,
