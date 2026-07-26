@@ -7,35 +7,35 @@ use nitrate_tree::ast::{self as ast, SymbolKind, UnaryExprOp};
 use ordered_float::OrderedFloat;
 use std::collections::BTreeSet;
 
-fn lower_boolean_literal(boolean_lit: ast::BooleanLit) -> Result<Value, ()> {
+pub(crate) fn lower_boolean_literal(boolean_lit: ast::BooleanLit) -> Result<Value, ()> {
     match boolean_lit.value {
         true => Ok(Value::Bool(true)),
         false => Ok(Value::Bool(false)),
     }
 }
 
-fn lower_integer_literal(integer_lit: ast::IntegerLit) -> Result<Value, ()> {
+pub(crate) fn lower_integer_literal(integer_lit: ast::IntegerLit) -> Result<Value, ()> {
     Ok(Value::InferredInteger(integer_lit.value.into()))
 }
 
-fn lower_float_literal(float_lit: ast::FloatLit) -> Result<Value, ()> {
+pub(crate) fn lower_float_literal(float_lit: ast::FloatLit) -> Result<Value, ()> {
     Ok(Value::InferredFloat((*float_lit.value).into()))
 }
 
-fn lower_string_literal(string_lit: ast::StringLit) -> Result<Value, ()> {
+pub(crate) fn lower_string_literal(string_lit: ast::StringLit) -> Result<Value, ()> {
     Ok(Value::StringLit(string_lit.value.into()))
 }
 
-fn lower_bstring_literal(bstring_lit: ast::BStringLit) -> Result<Value, ()> {
+pub(crate) fn lower_bstring_literal(bstring_lit: ast::BStringLit) -> Result<Value, ()> {
     Ok(Value::BStringLit(bstring_lit.value.into()))
 }
 
-fn lower_type_reflection(_type_info: ast::TypeInfo, _ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
+pub(crate) fn lower_type_reflection(_type_info: ast::TypeInfo, _ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
     log.report(&HirErr::UnimplementedFeature("Type reflection".into()));
     Err(())
 }
 
-fn lower_list(list: ast::List, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
+pub(crate) fn lower_list(list: ast::List, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
     let mut elements = Vec::with_capacity(list.elements.len());
 
     for element in list.elements {
@@ -48,7 +48,7 @@ fn lower_list(list: ast::List, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Resul
     })
 }
 
-fn lower_tuple(tuple: ast::Tuple, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
+pub(crate) fn lower_tuple(tuple: ast::Tuple, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
     let mut elements = Vec::with_capacity(tuple.elements.len());
 
     for element in tuple.elements {
@@ -61,7 +61,7 @@ fn lower_tuple(tuple: ast::Tuple, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Re
     })
 }
 
-fn lower_struct_init(struct_init: ast::StructInit, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
+pub(crate) fn lower_struct_init(struct_init: ast::StructInit, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
     // Process any generic type arguments in the struct path but don't error
     // The type arguments will be inferred from field types during monomorphization
     if struct_init.path.segments.iter().any(|seg| seg.type_arguments.is_some()) {
@@ -90,7 +90,7 @@ fn lower_struct_init(struct_init: ast::StructInit, ctx: &mut Ast2HirCtx, log: &C
     }
 }
 
-fn lower_unary(unary: ast::UnaryExpr, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
+pub(crate) fn lower_unary(unary: ast::UnaryExpr, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
     let operand = lower_expr(unary.operand, ctx, log)?;
 
     match unary.operator {
@@ -124,7 +124,7 @@ fn lower_unary(unary: ast::UnaryExpr, ctx: &mut Ast2HirCtx, log: &CompilerLog) -
     }
 }
 
-fn lower_binary(binary: ast::BinExpr, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
+pub(crate) fn lower_binary(binary: ast::BinExpr, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
     let left = lower_expr(binary.left, ctx, log)?.into();
     let right = lower_expr(binary.right, ctx, log)?.into();
 
@@ -401,7 +401,7 @@ fn lower_binary(binary: ast::BinExpr, ctx: &mut Ast2HirCtx, log: &CompilerLog) -
     }
 }
 
-fn lower_cast(cast: ast::Cast, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
+pub(crate) fn lower_cast(cast: ast::Cast, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
     fn failed_to_cast(log: &CompilerLog) -> Result<Value, ()> {
         log.report(&HirErr::IntegerCastOutOfRange);
         Err(())
@@ -574,17 +574,17 @@ pub(crate) fn lower_block(block: ast::Block, ctx: &mut Ast2HirCtx, log: &Compile
     Ok(Block { safety, elements })
 }
 
-fn lower_block_value(block: ast::Block, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
+pub(crate) fn lower_block_value(block: ast::Block, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
     let block = lower_block(block, ctx, log)?;
     Ok(Value::Block { block: block.into() })
 }
 
-fn lower_closure(_closure: ast::Closure, _ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
+pub(crate) fn lower_closure(_closure: ast::Closure, _ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
     log.report(&HirErr::UnimplementedFeature("ast::Expr::Closure".into()));
     Err(())
 }
 
-fn lower_expr_path(expr_path: ast::ExprPath, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
+pub(crate) fn lower_expr_path(expr_path: ast::ExprPath, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
     // Check for generic type arguments in expression paths - we don't need to create
     // Parameterized types for function call expressions here since the type args are only
     // used for disambiguation. The monomorphization pass will infer them from arguments.
@@ -632,14 +632,14 @@ fn lower_expr_path(expr_path: ast::ExprPath, ctx: &mut Ast2HirCtx, log: &Compile
     }
 }
 
-fn lower_index_access(index_access: ast::IndexAccess, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
+pub(crate) fn lower_index_access(index_access: ast::IndexAccess, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
     let _collection: ValueId = lower_expr(index_access.collection, ctx, log)?.into();
     let _index: ValueId = lower_expr(index_access.index, ctx, log)?.into();
     log.report(&HirErr::UnimplementedFeature("Index access expressions".into()));
     Err(())
 }
 
-fn lower_field_access(field_access: ast::FieldAccess, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
+pub(crate) fn lower_field_access(field_access: ast::FieldAccess, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
     let object = lower_expr(field_access.object, ctx, log)?.into();
     let field = field_access.field.to_string().into();
 
@@ -649,7 +649,7 @@ fn lower_field_access(field_access: ast::FieldAccess, ctx: &mut Ast2HirCtx, log:
     })
 }
 
-fn lower_if(if_: ast::If, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
+pub(crate) fn lower_if(if_: ast::If, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
     let condition = lower_expr(if_.condition, ctx, log)?.into();
 
     let true_branch = lower_block(if_.true_branch, ctx, log)?.into();
@@ -675,7 +675,7 @@ fn lower_if(if_: ast::If, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Val
     })
 }
 
-fn lower_while_loop(while_loop: ast::WhileLoop, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
+pub(crate) fn lower_while_loop(while_loop: ast::WhileLoop, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
     let condition = match while_loop.condition {
         Some(cond) => lower_expr(cond, ctx, log)?.into(),
         None => Value::Bool(true).into(),
@@ -686,24 +686,24 @@ fn lower_while_loop(while_loop: ast::WhileLoop, ctx: &mut Ast2HirCtx, log: &Comp
     Ok(Value::While { condition, body })
 }
 
-fn lower_match(_match_: ast::Match, _ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
+pub(crate) fn lower_match(_match_: ast::Match, _ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
     log.report(&HirErr::UnimplementedFeature("Match expressions".into()));
     Err(())
 }
 
-fn lower_break(break_: ast::Break, _ctx: &mut Ast2HirCtx, _log: &CompilerLog) -> Result<Value, ()> {
+pub(crate) fn lower_break(break_: ast::Break, _ctx: &mut Ast2HirCtx, _log: &CompilerLog) -> Result<Value, ()> {
     Ok(Value::Break {
         label: break_.label.map(|l| l.to_string().into()),
     })
 }
 
-fn lower_continue(continue_: ast::Continue, _ctx: &mut Ast2HirCtx, _log: &CompilerLog) -> Result<Value, ()> {
+pub(crate) fn lower_continue(continue_: ast::Continue, _ctx: &mut Ast2HirCtx, _log: &CompilerLog) -> Result<Value, ()> {
     Ok(Value::Continue {
         label: continue_.label.map(|l| l.to_string().into()),
     })
 }
 
-fn lower_return(return_: ast::Return, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
+pub(crate) fn lower_return(return_: ast::Return, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
     let value = match return_.value {
         Some(v) => lower_expr(v, ctx, log)?.into(),
         None => Value::Unit.into(),
@@ -712,17 +712,17 @@ fn lower_return(return_: ast::Return, ctx: &mut Ast2HirCtx, log: &CompilerLog) -
     Ok(Value::Return { value })
 }
 
-fn lower_for_each(_for_each: ast::ForEach, _ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
+pub(crate) fn lower_for_each(_for_each: ast::ForEach, _ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
     log.report(&HirErr::UnimplementedFeature("ForEach expressions".into()));
     Err(())
 }
 
-fn lower_await(_await_: ast::Await, _ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
+pub(crate) fn lower_await(_await_: ast::Await, _ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
     log.report(&HirErr::UnimplementedFeature("Await expressions".into()));
     Err(())
 }
 
-fn lower_function_call(function_call: ast::FunctionCall, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
+pub(crate) fn lower_function_call(function_call: ast::FunctionCall, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
     let callee = lower_expr(function_call.callee, ctx, log)?;
 
     let mut positional = Vec::with_capacity(function_call.positional.len());
@@ -750,7 +750,7 @@ fn lower_function_call(function_call: ast::FunctionCall, ctx: &mut Ast2HirCtx, l
     })
 }
 
-fn lower_method_call(method_call: ast::MethodCall, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
+pub(crate) fn lower_method_call(method_call: ast::MethodCall, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
     let object = lower_expr(method_call.object, ctx, log)?.into();
     let method = NString::from(method_call.method_name);
 

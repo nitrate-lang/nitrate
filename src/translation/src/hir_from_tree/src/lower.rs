@@ -2,7 +2,7 @@ use crate::context::Ast2HirCtx;
 use crate::item::lower_module;
 use nitrate_diagnosis::CompilerLog;
 use nitrate_hir::prelude::*;
-use nitrate_hir_polish::{resolve_function, resolve_global};
+use nitrate_hir_solve::{resolve_function, resolve_global};
 use nitrate_tree::ast::{self};
 use nitrate_tree_resolve::{resolve_imports, resolve_paths};
 
@@ -14,7 +14,7 @@ pub fn convert_ast_to_hir(mut module: ast::Module, ctx: &mut Ast2HirCtx, log: &C
 
     let mut module = lower_module(module, ctx, log)?;
 
-    // Perform modified Hindley-Milner type inference on functions and global variables
+    // Perform type inference and monomorphization on functions and global variables
     for item in &mut module.items {
         if let Item::Function(func_id) = item {
             let mut function = func_id.borrow_mut();
