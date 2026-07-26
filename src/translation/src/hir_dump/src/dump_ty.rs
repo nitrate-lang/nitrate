@@ -176,8 +176,18 @@ impl Dump for Type {
                 write!(o, "]")
             }
 
-            Type::Pointer { exclusive, mutable, to } => {
+            Type::Pointer {
+                lifetime,
+                exclusive,
+                mutable,
+                to,
+            } => {
                 write!(o, "*")?;
+
+                if lifetime != &Lifetime::Inferred {
+                    lifetime.dump(ctx, o)?;
+                    write!(o, " ")?;
+                }
 
                 match (exclusive, mutable) {
                     (true, true) => write!(o, "mut ")?,
@@ -190,11 +200,17 @@ impl Dump for Type {
             }
 
             Type::SlicePtr {
+                lifetime,
                 exclusive,
                 mutable,
                 element_type,
             } => {
                 write!(o, "*")?;
+
+                if lifetime != &Lifetime::Inferred {
+                    lifetime.dump(ctx, o)?;
+                    write!(o, " ")?;
+                }
 
                 match (exclusive, mutable) {
                     (true, true) => write!(o, "mut ")?,
@@ -206,6 +222,20 @@ impl Dump for Type {
                 write!(o, "[")?;
                 element_type.dump(ctx, o)?;
                 write!(o, "]")
+            }
+
+            Type::TraitObject { bounds } => {
+                write!(o, "dyn ")?;
+                for (i, bound) in bounds.iter().enumerate() {
+                    if i != 0 {
+                        write!(o, " + ")?;
+                    }
+                    match bound {
+                        TypeBound::Trait(trait_id) => write!(o, "{}", trait_id.borrow().name)?,
+                        TypeBound::Lifetime(lt) => lt.dump(ctx, o)?,
+                    }
+                }
+                Ok(())
             }
 
             Type::Parameterized { base, args } => {

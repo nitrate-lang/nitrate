@@ -322,7 +322,11 @@ fn lower_trait_definition(trait_: &ast::Trait, ctx: &mut Ast2HirCtx, log: &Compi
     let trait_ = Trait {
         visibility,
         name: name.clone(),
+        generics: None,
+        supertraits: Vec::new(),
+        where_clause: None,
         methods,
+        associated_types: Vec::new(),
     };
 
     ctx.entities_added.insert(trait_.name.clone());

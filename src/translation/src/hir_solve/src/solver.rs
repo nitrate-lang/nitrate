@@ -414,7 +414,40 @@ impl<'m> Solver<'m> {
                 }
             }
 
-            Value::MethodCall { object, args, .. } => {
+            Value::MethodCall {
+                object,
+                method_name,
+                args,
+            } => {
+                // Phase 1: Resolve the method type without borrowing self.m in a closure
+                let obj_type: Option<TypeId> = object.borrow().determine_type(self.m).ok().map(|ty| ty.into());
+
+                // Phase 2: Look up method - get the FunctionId (clone it to avoid borrow issues)
+                let method_id_opt: Option<FunctionId> =
+                    obj_type.and_then(|obj_type| self.m.get_method(&obj_type, method_name).cloned());
+
+                // Phase 3: Check if generic and monomorphize if needed
+                if let Some(method_id) = method_id_opt {
+                    let is_generic = {
+                        let method_func = method_id.borrow();
+                        method_func.generics.is_some() && method_func.generics.as_ref().map_or(false, |g| !g.is_empty())
+                    };
+
+                    if is_generic {
+                        if let Some(subst) = self.infer_generic_args_from_call(&method_id, &args.positional) {
+                            let mono_id = self.monomorphize_function(&method_id, &subst);
+                            let new_callee = Value::FunctionSymbol { id: mono_id };
+                            let new_call = Value::Call {
+                                callee: ValueId::from(new_callee),
+                                args: args.clone(),
+                            };
+                            e.replace(new_call);
+                            self.visit(e);
+                            return;
+                        }
+                    }
+                }
+
                 self.visit(object);
                 for arg in &args.positional {
                     self.visit(arg);

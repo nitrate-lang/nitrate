@@ -158,9 +158,10 @@ impl HirGetType for Value {
                 let place_type = place.determine_type(ctx)?;
 
                 match place_type {
-                    Type::Reference { to, .. } | Type::Pointer { to, .. } => {
-                        return Ok((*to).clone());
-                    }
+                    Type::Reference { to, .. }
+                    | Type::Pointer { to, .. }
+                    | Type::SliceRef { element_type: to, .. }
+                    | Type::SlicePtr { element_type: to, .. } => Ok((*to).clone()),
 
                     _ => Err(TypeInferenceError::CannotDeref),
                 }

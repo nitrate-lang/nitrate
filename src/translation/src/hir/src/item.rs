@@ -103,7 +103,11 @@ impl Function {
 pub struct Trait {
     pub visibility: Visibility,
     pub name: NString,
+    pub generics: Option<BTreeMap<NString, Option<TypeId>>>,
+    pub supertraits: Vec<TraitId>,
+    pub where_clause: Option<Vec<WhereClause>>,
     pub methods: Vec<FunctionId>,
+    pub associated_types: Vec<NString>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]

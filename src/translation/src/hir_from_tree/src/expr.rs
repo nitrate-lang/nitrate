@@ -30,7 +30,11 @@ pub(crate) fn lower_bstring_literal(bstring_lit: ast::BStringLit) -> Result<Valu
     Ok(Value::BStringLit(bstring_lit.value.into()))
 }
 
-pub(crate) fn lower_type_reflection(_type_info: ast::TypeInfo, _ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
+pub(crate) fn lower_type_reflection(
+    _type_info: ast::TypeInfo,
+    _ctx: &mut Ast2HirCtx,
+    log: &CompilerLog,
+) -> Result<Value, ()> {
     log.report(&HirErr::UnimplementedFeature("Type reflection".into()));
     Err(())
 }
@@ -61,7 +65,11 @@ pub(crate) fn lower_tuple(tuple: ast::Tuple, ctx: &mut Ast2HirCtx, log: &Compile
     })
 }
 
-pub(crate) fn lower_struct_init(struct_init: ast::StructInit, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
+pub(crate) fn lower_struct_init(
+    struct_init: ast::StructInit,
+    ctx: &mut Ast2HirCtx,
+    log: &CompilerLog,
+) -> Result<Value, ()> {
     // Process any generic type arguments in the struct path but don't error
     // The type arguments will be inferred from field types during monomorphization
     if struct_init.path.segments.iter().any(|seg| seg.type_arguments.is_some()) {
@@ -585,13 +593,32 @@ pub(crate) fn lower_closure(_closure: ast::Closure, _ctx: &mut Ast2HirCtx, log: 
 }
 
 pub(crate) fn lower_expr_path(expr_path: ast::ExprPath, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
-    // Check for generic type arguments in expression paths - we don't need to create
-    // Parameterized types for function call expressions here since the type args are only
-    // used for disambiguation. The monomorphization pass will infer them from arguments.
-    if expr_path.segments.iter().any(|seg| seg.type_arguments.is_some()) {
-        // We can still proceed - just ignore the explicit type args for now
-        // since we use type inference from arguments in the monomorphization pass
-    }
+    // Check for generic type arguments in expression paths - we store them on the
+    // function symbol so the monomorphization pass can use them for disambiguation
+    let explicit_type_args: Option<Vec<TypeId>> = if expr_path.segments.iter().any(|seg| seg.type_arguments.is_some()) {
+        // Collect explicit type args from the last segment that has them
+        let args: Vec<TypeId> = expr_path
+            .segments
+            .iter()
+            .filter_map(|seg| {
+                seg.type_arguments.as_ref().map(|type_args| {
+                    type_args
+                        .iter()
+                        .filter_map(|type_arg| {
+                            lower_type(type_arg.value.clone(), ctx, log).ok().map(|t| {
+                                let hir_type_arg: TypeId = t.into();
+                                hir_type_arg
+                            })
+                        })
+                        .collect::<Vec<_>>()
+                })
+            })
+            .flatten()
+            .collect();
+        if args.is_empty() { None } else { Some(args) }
+    } else {
+        None
+    };
 
     match expr_path.resolved_path {
         Some(resolved_path) => match ctx.ast_symbol_map.get(&resolved_path) {
@@ -601,9 +628,16 @@ pub(crate) fn lower_expr_path(expr_path: ast::ExprPath, ctx: &mut Ast2HirCtx, lo
                 value: Value::Unit.into(),
             }),
 
-            Some(SymbolKind::Function) => Ok(Value::FunctionSymbol {
-                id: ctx.tab.get_function_or_insert_placeholder(&resolved_path),
-            }),
+            Some(SymbolKind::Function) => {
+                let func_id = ctx.tab.get_function_or_insert_placeholder(&resolved_path);
+                // If there are explicit type args, store them for monomorphization
+                if let Some(_type_args) = explicit_type_args {
+                    // We currently only support inference-based monomorphization,
+                    // but we record the explicit args for potential future use
+                    // TODO: Use explicit type args for monomorphization
+                }
+                Ok(Value::FunctionSymbol { id: func_id })
+            }
 
             Some(SymbolKind::GlobalVariable) => Ok(Value::GlobalVariableSymbol {
                 id: ctx.tab.get_global_variable_or_insert_placeholder(&resolved_path),
@@ -632,14 +666,22 @@ pub(crate) fn lower_expr_path(expr_path: ast::ExprPath, ctx: &mut Ast2HirCtx, lo
     }
 }
 
-pub(crate) fn lower_index_access(index_access: ast::IndexAccess, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
+pub(crate) fn lower_index_access(
+    index_access: ast::IndexAccess,
+    ctx: &mut Ast2HirCtx,
+    log: &CompilerLog,
+) -> Result<Value, ()> {
     let _collection: ValueId = lower_expr(index_access.collection, ctx, log)?.into();
     let _index: ValueId = lower_expr(index_access.index, ctx, log)?.into();
     log.report(&HirErr::UnimplementedFeature("Index access expressions".into()));
     Err(())
 }
 
-pub(crate) fn lower_field_access(field_access: ast::FieldAccess, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
+pub(crate) fn lower_field_access(
+    field_access: ast::FieldAccess,
+    ctx: &mut Ast2HirCtx,
+    log: &CompilerLog,
+) -> Result<Value, ()> {
     let object = lower_expr(field_access.object, ctx, log)?.into();
     let field = field_access.field.to_string().into();
 
@@ -675,7 +717,11 @@ pub(crate) fn lower_if(if_: ast::If, ctx: &mut Ast2HirCtx, log: &CompilerLog) ->
     })
 }
 
-pub(crate) fn lower_while_loop(while_loop: ast::WhileLoop, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
+pub(crate) fn lower_while_loop(
+    while_loop: ast::WhileLoop,
+    ctx: &mut Ast2HirCtx,
+    log: &CompilerLog,
+) -> Result<Value, ()> {
     let condition = match while_loop.condition {
         Some(cond) => lower_expr(cond, ctx, log)?.into(),
         None => Value::Bool(true).into(),
@@ -722,7 +768,11 @@ pub(crate) fn lower_await(_await_: ast::Await, _ctx: &mut Ast2HirCtx, log: &Comp
     Err(())
 }
 
-pub(crate) fn lower_function_call(function_call: ast::FunctionCall, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
+pub(crate) fn lower_function_call(
+    function_call: ast::FunctionCall,
+    ctx: &mut Ast2HirCtx,
+    log: &CompilerLog,
+) -> Result<Value, ()> {
     let callee = lower_expr(function_call.callee, ctx, log)?;
 
     let mut positional = Vec::with_capacity(function_call.positional.len());
@@ -750,7 +800,11 @@ pub(crate) fn lower_function_call(function_call: ast::FunctionCall, ctx: &mut As
     })
 }
 
-pub(crate) fn lower_method_call(method_call: ast::MethodCall, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
+pub(crate) fn lower_method_call(
+    method_call: ast::MethodCall,
+    ctx: &mut Ast2HirCtx,
+    log: &CompilerLog,
+) -> Result<Value, ()> {
     let object = lower_expr(method_call.object, ctx, log)?.into();
     let method = NString::from(method_call.method_name);
 

@@ -203,13 +203,18 @@ impl ValidateHirType for Type {
                 element_type,
             } => verify_slice_reference_type(ctx, lifetime, *exclusive, *mutable, element_type, options),
 
-            Type::Pointer { to, exclusive, mutable } => verify_pointer_type(ctx, to, *exclusive, *mutable, options),
+            Type::Pointer {
+                to, exclusive, mutable, ..
+            } => verify_pointer_type(ctx, to, *exclusive, *mutable, options),
 
             Type::SlicePtr {
                 exclusive,
                 mutable,
                 element_type,
+                ..
             } => verify_slice_pointer_type(ctx, *exclusive, *mutable, element_type, options),
+
+            Type::TraitObject { .. } => Ok(()),
 
             Type::Parameterized { base, args: _ } => {
                 base.verify(ctx, options)

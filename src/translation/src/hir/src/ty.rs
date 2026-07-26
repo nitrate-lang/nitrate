@@ -7,13 +7,27 @@ use std::matches;
 use std::num::NonZeroU32;
 use thin_vec::ThinVec;
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Lifetime {
     Static,
     Gc,
     ThreadLocal,
     TaskLocal,
     Inferred,
+}
+
+/// A trait bound (e.g. `T: Clone + 'static`)
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
+pub enum TypeBound {
+    Trait(TraitId),
+    Lifetime(Lifetime),
+}
+
+/// A where clause (e.g. `T: Clone + Debug`)
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
+pub struct WhereClause {
+    pub type_id: TypeId,
+    pub bounds: Vec<TypeBound>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -94,15 +108,22 @@ pub enum Type {
     },
 
     Pointer {
+        lifetime: Lifetime,
         exclusive: bool,
         mutable: bool,
         to: TypeId,
     },
 
     SlicePtr {
+        lifetime: Lifetime,
         exclusive: bool,
         mutable: bool,
         element_type: TypeId,
+    },
+
+    /// A trait object type (e.g. `dyn Clone` or `impl Clone`)
+    TraitObject {
+        bounds: Vec<TypeBound>,
     },
 
     Parameterized {

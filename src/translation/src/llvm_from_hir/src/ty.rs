@@ -134,6 +134,11 @@ pub(crate) fn gen_ty<'ctx>(hir_type: &hir::Type, ctx: &mut TypegenCtx<'ctx, '_, 
             ctx.llvm.ptr_type(AddressSpace::default()).into()
         }
 
+        hir::Type::TraitObject { .. } => {
+            // Trait objects are opaque pointers for now
+            ctx.llvm.ptr_type(AddressSpace::default()).into()
+        }
+
         hir::Type::Parameterized { .. } => {
             panic!(
                 "Cannot generate LLVM type for uninstantiated generic type: {:?}",

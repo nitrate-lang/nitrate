@@ -172,6 +172,12 @@ impl Parser<'_, '_> {
         let mut exclusivity = None;
         let mut mutability = None;
 
+        let lifetime = if self.lexer.next_is(&Token::SingleQuote) {
+            Some(self.parse_lifetime())
+        } else {
+            None
+        };
+
         if self.lexer.skip_if(&Token::Poly) {
             exclusivity = Some(Exclusivity::Poly);
         } else if self.lexer.skip_if(&Token::Iso) {
@@ -187,6 +193,7 @@ impl Parser<'_, '_> {
         let to = self.parse_type();
 
         PointerType {
+            lifetime,
             exclusivity,
             mutability,
             to,

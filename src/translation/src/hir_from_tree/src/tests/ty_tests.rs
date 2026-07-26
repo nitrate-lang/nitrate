@@ -1206,6 +1206,7 @@ fn lpt_default() {
     run(|c, l| {
         let r = lower_pointer_type(
             ast::PointerType {
+                lifetime: None,
                 exclusivity: None,
                 mutability: None,
                 to: ast::Type::Int32(ast::Int32),
@@ -1229,6 +1230,7 @@ fn lpt_mut() {
     run(|c, l| {
         let r = lower_pointer_type(
             ast::PointerType {
+                lifetime: None,
                 exclusivity: None,
                 mutability: Some(ast::Mutability::Mut),
                 to: ast::Type::Bool(ast::Bool),
@@ -1252,6 +1254,7 @@ fn lpt_iso() {
     run(|c, l| {
         let r = lower_pointer_type(
             ast::PointerType {
+                lifetime: None,
                 exclusivity: Some(ast::Exclusivity::Iso),
                 mutability: None,
                 to: ast::Type::UInt64(ast::UInt64),
@@ -1268,6 +1271,7 @@ fn lpt_poly() {
     run(|c, l| {
         let r = lower_pointer_type(
             ast::PointerType {
+                lifetime: None,
                 exclusivity: Some(ast::Exclusivity::Poly),
                 mutability: None,
                 to: ast::Type::Float32(ast::Float32),
@@ -1284,6 +1288,7 @@ fn lpt_poly_mut() {
     run(|c, l| {
         let r = lower_pointer_type(
             ast::PointerType {
+                lifetime: None,
                 exclusivity: Some(ast::Exclusivity::Poly),
                 mutability: Some(ast::Mutability::Mut),
                 to: ast::Type::UInt8(ast::UInt8),
@@ -1307,6 +1312,7 @@ fn lpt_slice() {
     run(|c, l| {
         let r = lower_pointer_type(
             ast::PointerType {
+                lifetime: None,
                 exclusivity: None,
                 mutability: None,
                 to: ast::Type::SliceType(Box::new(ast::SliceType {
@@ -1325,6 +1331,7 @@ fn lpt_mut_slice() {
     run(|c, l| {
         let r = lower_pointer_type(
             ast::PointerType {
+                lifetime: None,
                 exclusivity: None,
                 mutability: Some(ast::Mutability::Mut),
                 to: ast::Type::SliceType(Box::new(ast::SliceType {
@@ -1343,6 +1350,7 @@ fn lpt_iso_mut_slice() {
     run(|c, l| {
         let r = lower_pointer_type(
             ast::PointerType {
+                lifetime: None,
                 exclusivity: Some(ast::Exclusivity::Iso),
                 mutability: Some(ast::Mutability::Mut),
                 to: ast::Type::SliceType(Box::new(ast::SliceType {
@@ -1368,6 +1376,7 @@ fn lpt_poly_slice() {
     run(|c, l| {
         let r = lower_pointer_type(
             ast::PointerType {
+                lifetime: None,
                 exclusivity: Some(ast::Exclusivity::Poly),
                 mutability: Some(ast::Mutability::Mut),
                 to: ast::Type::SliceType(Box::new(ast::SliceType {

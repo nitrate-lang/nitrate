@@ -86,9 +86,15 @@ impl Substitution {
                     to: TypeId::from(new_to),
                 }
             }
-            Type::Pointer { exclusive, mutable, to } => {
+            Type::Pointer {
+                lifetime,
+                exclusive,
+                mutable,
+                to,
+            } => {
                 let new_to = self.apply(to);
                 Type::Pointer {
+                    lifetime: lifetime.clone(),
                     exclusive: *exclusive,
                     mutable: *mutable,
                     to: TypeId::from(new_to),
@@ -109,16 +115,22 @@ impl Substitution {
                 }
             }
             Type::SlicePtr {
+                lifetime,
                 exclusive,
                 mutable,
                 element_type,
             } => {
                 let new_elem = self.apply(element_type);
                 Type::SlicePtr {
+                    lifetime: lifetime.clone(),
                     exclusive: *exclusive,
                     mutable: *mutable,
                     element_type: TypeId::from(new_elem),
                 }
+            }
+            Type::TraitObject { bounds } => {
+                // Trait bounds don't contain generic type params we can substitute
+                Type::TraitObject { bounds: bounds.clone() }
             }
             Type::Refine { base, min, max } => {
                 let new_base = self.apply(base);

@@ -257,6 +257,7 @@ pub(crate) fn lower_pointer_type(
         let element_type: TypeId = lower_type(slice.element_type, ctx, log)?.into();
 
         Ok(Type::SlicePtr {
+            lifetime: Lifetime::Inferred,
             exclusive,
             mutable,
             element_type,
@@ -264,7 +265,12 @@ pub(crate) fn lower_pointer_type(
     } else {
         let to = lower_type(pointer_type.to, ctx, log)?.into();
 
-        Ok(Type::Pointer { exclusive, mutable, to })
+        Ok(Type::Pointer {
+            lifetime: Lifetime::Inferred,
+            exclusive,
+            mutable,
+            to,
+        })
     }
 }
 
@@ -1026,6 +1032,7 @@ fn lower_ref_to_slice_mut() {
 fn lower_ptr_default() {
     run(|ctx, log| {
         let pt = ast::PointerType {
+            lifetime: None,
             exclusivity: None,
             mutability: None,
             to: ast::Type::Int32(ast::Int32),
@@ -1046,6 +1053,7 @@ fn lower_ptr_default() {
 fn lower_ptr_mut() {
     run(|ctx, log| {
         let pt = ast::PointerType {
+            lifetime: None,
             exclusivity: None,
             mutability: Some(ast::Mutability::Mut),
             to: ast::Type::Bool(ast::Bool),
@@ -1066,6 +1074,7 @@ fn lower_ptr_mut() {
 fn lower_ptr_iso() {
     run(|ctx, log| {
         let pt = ast::PointerType {
+            lifetime: None,
             exclusivity: Some(ast::Exclusivity::Iso),
             mutability: None,
             to: ast::Type::UInt64(ast::UInt64),
@@ -1079,6 +1088,7 @@ fn lower_ptr_iso() {
 fn lower_ptr_poly() {
     run(|ctx, log| {
         let pt = ast::PointerType {
+            lifetime: None,
             exclusivity: Some(ast::Exclusivity::Poly),
             mutability: None,
             to: ast::Type::Float32(ast::Float32),
@@ -1092,6 +1102,7 @@ fn lower_ptr_poly() {
 fn lower_ptr_poly_mut() {
     run(|ctx, log| {
         let pt = ast::PointerType {
+            lifetime: None,
             exclusivity: Some(ast::Exclusivity::Poly),
             mutability: Some(ast::Mutability::Mut),
             to: ast::Type::UInt8(ast::UInt8),
@@ -1112,6 +1123,7 @@ fn lower_ptr_poly_mut() {
 fn lower_ptr_to_slice() {
     run(|ctx, log| {
         let pt = ast::PointerType {
+            lifetime: None,
             exclusivity: None,
             mutability: None,
             to: ast::Type::SliceType(Box::new(ast::SliceType {

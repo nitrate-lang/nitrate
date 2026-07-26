@@ -263,7 +263,11 @@ impl SymbolTab {
         let placeholder = Trait {
             visibility: Visibility::Sec,
             name: name.clone(),
+            generics: None,
+            supertraits: Vec::new(),
+            where_clause: None,
             methods: Vec::new().into(),
+            associated_types: Vec::new(),
         };
 
         let trait_id: TraitId = placeholder.into();

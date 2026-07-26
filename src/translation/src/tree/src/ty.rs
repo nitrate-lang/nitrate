@@ -152,6 +152,7 @@ pub struct ReferenceType {
 #[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PointerType {
+    pub lifetime: Option<Lifetime>,
     pub exclusivity: Option<Exclusivity>,
     pub mutability: Option<Mutability>,
     pub to: Type,

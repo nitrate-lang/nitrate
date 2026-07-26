@@ -140,7 +140,20 @@ pub(crate) fn mangle_type(ty: &Type) -> String {
             format!("Q{}{}{}", lifetime_mangled, exmut_mangled, elem_mangled)
         }
 
-        Type::Pointer { exclusive, mutable, to } => {
+        Type::Pointer {
+            lifetime,
+            exclusive,
+            mutable,
+            to,
+        } => {
+            let lifetime_mangled = match lifetime {
+                Lifetime::Static => "A",
+                Lifetime::Gc => "B",
+                Lifetime::ThreadLocal => "C",
+                Lifetime::TaskLocal => "D",
+                Lifetime::Inferred => "E",
+            };
+
             let exmut_mangled = match (exclusive, mutable) {
                 (true, true) => "A",
                 (true, false) => "B",
@@ -149,14 +162,23 @@ pub(crate) fn mangle_type(ty: &Type) -> String {
             };
 
             let to_mangled = mangle_type(to);
-            format!("P{}{}", exmut_mangled, to_mangled)
+            format!("P{}{}{}", lifetime_mangled, exmut_mangled, to_mangled)
         }
 
         Type::SlicePtr {
+            lifetime,
             exclusive,
             mutable,
             element_type,
         } => {
+            let lifetime_mangled = match lifetime {
+                Lifetime::Static => "A",
+                Lifetime::Gc => "B",
+                Lifetime::ThreadLocal => "C",
+                Lifetime::TaskLocal => "D",
+                Lifetime::Inferred => "E",
+            };
+
             let exmut_mangled = match (exclusive, mutable) {
                 (true, true) => "A",
                 (true, false) => "B",
@@ -165,7 +187,12 @@ pub(crate) fn mangle_type(ty: &Type) -> String {
             };
 
             let elem_mangled = mangle_type(element_type);
-            format!("Z{}{}", exmut_mangled, elem_mangled)
+            format!("Z{}{}{}", lifetime_mangled, exmut_mangled, elem_mangled)
+        }
+
+        Type::TraitObject { .. } => {
+            // For now, mangle trait objects as a pointer-sized opaque
+            "O".to_string()
         }
 
         Type::Parameterized { .. } => {

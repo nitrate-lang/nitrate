@@ -1071,6 +1071,11 @@ impl PrettyPrint for PointerType {
     fn pretty_print_fmt(&self, ctx: &mut PrintContext, writer: &mut dyn std::fmt::Write) -> std::fmt::Result {
         writer.write_str("*")?;
 
+        if let Some(lifetime) = &self.lifetime {
+            lifetime.pretty_print_fmt(ctx, writer)?;
+            writer.write_char(' ')?;
+        }
+
         if let Some(exclusivity) = &self.exclusivity {
             exclusivity.pretty_print_fmt(ctx, writer)?;
             writer.write_char(' ')?;

@@ -54,10 +54,16 @@ impl<'m> Solver<'m> {
                     .entry(id.get())
                     .or_insert_with(|| TypeId::from(concrete.clone()));
             }
-            (Type::Reference { to: a_to, .. }, Type::Reference { to: p_to, .. }) => {
+            (Type::Pointer { to: a_to, .. }, Type::Pointer { to: p_to, .. }) => {
                 Self::unify_types_with_subst(a_to, p_to, subst);
             }
-            (Type::Pointer { to: a_to, .. }, Type::Pointer { to: p_to, .. }) => {
+            (Type::SlicePtr { element_type: a_e, .. }, Type::SlicePtr { element_type: p_e, .. }) => {
+                Self::unify_types_with_subst(a_e, p_e, subst);
+            }
+            (Type::SliceRef { element_type: a_e, .. }, Type::SliceRef { element_type: p_e, .. }) => {
+                Self::unify_types_with_subst(a_e, p_e, subst);
+            }
+            (Type::Reference { to: a_to, .. }, Type::Reference { to: p_to, .. }) => {
                 Self::unify_types_with_subst(a_to, p_to, subst);
             }
             (Type::Array { element_type: a_e, .. }, Type::Array { element_type: p_e, .. }) => {
