@@ -779,7 +779,7 @@ dependencies = [
  "nitrate_hir_evaluate",
  "nitrate_hir_get_type",
  "nitrate_hir_mangle",
- "nitrate_hir_polish",
+ "nitrate_hir_solve",
  "nitrate_nstring",
  "nitrate_token",
  "nitrate_token_lexer",
@@ -806,7 +806,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "nitrate_hir_polish"
+name = "nitrate_hir_solve"
 version = "0.1.0"
 dependencies = [
  "nitrate_diagnosis",
@@ -901,7 +901,7 @@ dependencies = [
  "nitrate_hir_from_tree",
  "nitrate_hir_get_type",
  "nitrate_hir_mangle",
- "nitrate_hir_polish",
+ "nitrate_hir_solve",
  "nitrate_hir_validate",
  "nitrate_llvm",
  "nitrate_llvm_from_hir",
