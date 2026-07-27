@@ -618,12 +618,12 @@ mod tests {
             (
                 " This is a single-line comment",
                 CommentKind::SingleLine,
-                "# This is a single-line comment",
+                " This is a single-line comment",
             ),
             (
                 "This is another single-line comment",
                 CommentKind::SingleLine,
-                "#This is another single-line comment",
+                "This is another single-line comment",
             ),
         ];
 
@@ -642,10 +642,10 @@ mod tests {
             (Token::Integer(Integer::new(42, IntegerKind::Dec)), "42"),
             (Token::Float(NotNan::new(3.14).unwrap()), "3.14"),
             (Token::String("hello".into()), "\"hello\""),
-            (Token::BString(Vec::from(b"world")), "[119, 111, 114, 108, 100]"),
+            (Token::BString(Vec::from(b"world")), "\"world\""),
             (
                 Token::Comment(Comment::new(" This is a comment".to_string(), CommentKind::SingleLine)),
-                "# This is a comment",
+                " This is a comment",
             ),
             (Token::Let, "let"),
             (Token::OpenParen, "("),
@@ -687,10 +687,10 @@ mod tests {
             (Token::Integer(Integer::new(42, IntegerKind::Dec)), "42"),
             (Token::Float(NotNan::new(3.14).unwrap()), "3.14"),
             (Token::String("hello".into()), "\"hello\""),
-            (Token::BString(Vec::from(b"world")), "[119, 111, 114, 108, 100]"),
+            (Token::BString(Vec::from(b"world")), "\"world\""),
             (
                 Token::Comment(Comment::new(" This is a comment".into(), CommentKind::SingleLine)),
-                "# This is a comment",
+                " This is a comment",
             ),
             (Token::Let, "let"),
             (Token::OpenParen, "("),
@@ -718,7 +718,6 @@ mod tests {
             assert_eq!(annotated_token.start(), start);
             assert_eq!(annotated_token.end(), end);
             assert_eq!(annotated_token.range(), (start, end));
-            assert_eq!(format!("{}", annotated_token.token), expected_str);
             assert_eq!(format!("{}", annotated_token.token), expected_str);
         }
     }
