@@ -41,6 +41,11 @@ geometry:
   - top=1.2in
   - bottom=1.2in
 linestretch: 1.15
+mainfont: DejaVu Serif
+sansfont: DejaVu Sans
+monofont: DejaVu Sans Mono
+monofontoptions:
+  - Scale=0.8
 header-includes:
   - |
     ```{=latex}
@@ -49,6 +54,7 @@ header-includes:
     \fancyhead[LE,RO]{\slshape \leftmark}
     \fancyhead[RE,LO]{Nitrate Compiler Documentation}
     \fancyfoot[C]{\thepage}
+    \usepackage{xltxtra}
     ```
   - |
     ```{=html}
@@ -150,7 +156,26 @@ if command -v pandoc &> /dev/null; then
             2>&1 && echo "PDF created successfully!" || echo "PDF build failed, trying alternate engine..."
     fi
     
-    # Try pdflatex if weasyprint failed or isn't available
+    # Try xelatex if weasyprint failed or isn't available
+    if [ ! -f "${OUTPUT_PDF}" ]; then
+        if command -v xelatex &> /dev/null; then
+            echo "Using pandoc + xelatex..."
+            pandoc "${COMBINED_MD}" \
+                --metadata-file="${METADATA_FILE}" \
+                --from markdown \
+                --to pdf \
+                --pdf-engine=xelatex \
+                --output "${OUTPUT_PDF}" \
+                --highlight-style=tango \
+                --table-of-contents \
+                --toc-depth=3 \
+                --number-sections \
+                --standalone \
+                2>&1 && echo "PDF created successfully!" || echo "PDF build failed."
+        fi
+    fi
+    
+    # Try pdflatex as fallback
     if [ ! -f "${OUTPUT_PDF}" ]; then
         if command -v pdflatex &> /dev/null; then
             echo "Using pandoc + pdflatex..."
@@ -168,8 +193,8 @@ if command -v pandoc &> /dev/null; then
                 2>&1 && echo "PDF created successfully!" || echo "PDF build failed."
         fi
     fi
-    
-    # Try wkhtmltopdf as fallback
+
+    # Try wkhtmltopdf as final fallback
     if [ ! -f "${OUTPUT_PDF}" ]; then
         if command -v wkhtmltopdf &> /dev/null; then
             echo "Using pandoc + wkhtmltopdf..."
@@ -212,7 +237,7 @@ if [ ! -f "${OUTPUT_PDF}" ]; then
             --toc-depth=3 \
             --number-sections \
             --standalone \
-            --self-contained \
+            --embed-resources \
             2>&1 && echo "HTML documentation created: ${OUTPUT_HTML}"
     else
         echo "pandoc not available. Cannot generate any output format."
