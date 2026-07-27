@@ -3,7 +3,7 @@ use crate::diagnosis::SyntaxErr;
 
 use nitrate_nstring::NString;
 use nitrate_token::Token;
-use nitrate_tree::ast::{Exclusivity, Mutability, Visibility};
+use nitrate_tree::ast::{Exclusivity, Mutability, Type, Visibility};
 
 impl Parser<'_, '_> {
     /// Consumes a `::` token pair. Returns `true` if both colons were consumed.
@@ -101,13 +101,25 @@ impl Parser<'_, '_> {
         }
     }
 
-    /// Expect an arrow (`->`).
+    /// Expect an arrow (`->`). Reports the given error if missing.
     pub(crate) fn expect_arrow(&mut self) {
         let pos = self.lexer.peek_pos();
         self.lexer.skip_if(&Token::Minus);
         let found = self.lexer.skip_if(&Token::Gt);
         if !found {
             self.log.report(&SyntaxErr::ExpectedArrow(pos));
+        }
+    }
+
+    /// Parse an optional return type (`-> Type`). Returns `None` if no arrow is found.
+    pub(crate) fn parse_return_type_arrow(&mut self) -> Option<Type> {
+        if self.lexer.skip_if(&Token::Minus) {
+            if !self.lexer.skip_if(&Token::Gt) {
+                self.log.report(&SyntaxErr::ExpectedArrow(self.lexer.peek_pos()));
+            }
+            Some(self.parse_type())
+        } else {
+            None
         }
     }
 

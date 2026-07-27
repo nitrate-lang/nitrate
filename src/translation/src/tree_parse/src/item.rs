@@ -12,13 +12,8 @@ use nitrate_tree::ast::{
 impl Parser<'_, '_> {
     fn parse_generics(&mut self) -> Option<Generics> {
         fn parse_generic_parameter(this: &mut Parser) -> TypeParam {
-            let name = this.lexer.next_if_name().unwrap_or_else(|| {
-                let bug = SyntaxErr::GenericMissingParameterName(this.lexer.peek_pos());
-                this.log.report(&bug);
-                "".into()
-            });
-
-            let name = NString::from(name);
+            let pos = this.lexer.peek_pos();
+            let name = this.parse_name(SyntaxErr::GenericMissingParameterName(pos));
 
             let default = if this.lexer.skip_if(&Token::Eq) {
                 Some(this.parse_type())
@@ -86,10 +81,7 @@ impl Parser<'_, '_> {
             })
             .into();
 
-        if !self.lexer.skip_if(&Token::OpenBrace) {
-            let bug = SyntaxErr::ExpectedOpenBrace(self.lexer.peek_pos());
-            self.log.report(&bug);
-        }
+        self.expect_open_brace();
 
         let mut items = Vec::new();
         let mut already_reported_too_many_items = false;
@@ -714,16 +706,7 @@ impl Parser<'_, '_> {
         let generics = self.parse_generics();
         let parameters = self.parse_function_parameters();
 
-        let return_type = if self.lexer.skip_if(&Token::Minus) {
-            if !self.lexer.skip_if(&Token::Gt) {
-                let bug = SyntaxErr::ExpectedArrow(self.lexer.peek_pos());
-                self.log.report(&bug);
-            }
-
-            Some(self.parse_type())
-        } else {
-            None
-        };
+        let return_type = self.parse_return_type_arrow();
 
         let definition = if self.lexer.skip_if(&Token::Semi) {
             None

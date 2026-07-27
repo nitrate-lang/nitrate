@@ -270,16 +270,7 @@ impl Parser<'_, '_> {
         let attributes = self.parse_attributes();
         let parameters = self.parse_function_type_parameters();
 
-        let return_type = if self.lexer.skip_if(&Token::Minus) {
-            if !self.lexer.skip_if(&Token::Gt) {
-                let bug = SyntaxErr::ExpectedArrow(self.lexer.peek_pos());
-                self.log.report(&bug);
-            }
-
-            Some(self.parse_type())
-        } else {
-            None
-        };
+        let return_type = self.parse_return_type_arrow();
 
         FunctionType {
             parameters,
