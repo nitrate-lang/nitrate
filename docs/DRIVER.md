@@ -23,7 +23,7 @@ add | remove | install | uninstall | publish | search | update | bench
 
 **`no3 new <name>`**: Creates a new package with standard directory structure (`no3.xml`, `src/entry.nit`, `.gitignore`, `README.md`). The `entry.nit` contains a basic "Hello, World!" program.
 
-**`no3 build [--release] [--emit-llvm] [--emit-asm]`**: Compiles the package by loading the manifest, discovering sources, running the full pipeline, and producing output files. The `--release` flag uses optimization level 3; default is debug level 0.
+**`no3 build [--release] [--show-llvm] [--show-asm]`**: Compiles the package by loading the manifest, discovering sources, running the full pipeline, and producing output files. The `--release` flag uses optimization level 3; default is debug level 0.
 
 **`no3 run [--release]`**: Builds and executes the resulting binary.
 
