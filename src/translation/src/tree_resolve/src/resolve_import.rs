@@ -1,3 +1,4 @@
+use crate::diagnosis::ResolveIssue;
 use nitrate_diagnosis::{CompilerLog, intern_file_id};
 use nitrate_nstring::NString;
 use nitrate_token_lexer::{Lexer, LexerError};
@@ -6,11 +7,7 @@ use nitrate_tree::{
     ast::{Import, Item, Module, Visibility},
 };
 use nitrate_tree_parse::Parser;
-
 use std::{collections::HashSet, sync::Arc};
-
-use crate::diagnosis::ResolveIssue;
-
 pub type SourceFilePath = std::path::PathBuf;
 pub type FolderPath = std::path::PathBuf;
 
@@ -220,6 +217,20 @@ fn resolve_import(
         None => return,
     };
 
+    // For multi-segment paths like `use file::world`, we need to resolve the module first,
+    // then extract the specific item named by the remaining segments.
+    let item_name: Option<String> = if import_path.segments.len() > 1 {
+        Some(
+            import_path.segments[1..]
+                .iter()
+                .map(|s| s.segment.clone())
+                .collect::<Vec<_>>()
+                .join("::"),
+        )
+    } else {
+        None
+    };
+
     const MAX_IMPORT_DEPTH: usize = 256;
     if depth.len() >= MAX_IMPORT_DEPTH {
         // This prevents stack overflow and other bugs.
@@ -249,7 +260,40 @@ fn resolve_import(
             resolve_imports_guarded(&what, &mut module, log, visited, depth);
             module.visibility = import.visibility;
 
-            import.resolved = Some(vec![Item::Module(Box::new(module))]);
+            if let Some(item_name) = &item_name {
+                // Single item import: extract the named item from the module
+                // (used for `use file::world` style imports)
+                let items = std::mem::take(&mut module.items);
+                let item_name_ns = NString::from(item_name.as_str());
+                let found: Vec<Item> = items
+                    .into_iter()
+                    .filter(|item| {
+                        // Check if the item name matches
+                        match item {
+                            Item::Function(f) => f.name == item_name_ns,
+                            Item::Struct(s) => s.name == item_name_ns,
+                            Item::Enum(e) => e.name == item_name_ns,
+                            Item::Trait(t) => t.name == item_name_ns,
+                            Item::TypeAlias(t) => t.name == item_name_ns,
+                            Item::Variable(v) => v.name == item_name_ns,
+                            _ => false,
+                        }
+                    })
+                    .collect();
+
+                if found.is_empty() {
+                    log.report(&ResolveIssue::ImportNotFound((
+                        format!("{}::{}", import_name, item_name).into(),
+                        std::io::Error::from(std::io::ErrorKind::NotFound),
+                    )));
+                } else {
+                    import.resolved = Some(found);
+                }
+            } else {
+                // Module import: import the whole module
+                // (used for `use file` style imports)
+                import.resolved = Some(vec![Item::Module(Box::new(module))]);
+            }
         }
     }
 
