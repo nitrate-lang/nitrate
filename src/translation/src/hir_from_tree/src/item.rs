@@ -298,6 +298,18 @@ fn lower_trait_definition(trait_: &ast::Trait, ctx: &mut Ast2HirCtx, log: &Compi
     // Push trait name as scope so methods get properly qualified names (e.g. MyTrait::foo)
     ctx.current_scope.push(trait_.name.clone());
 
+    // Set current_self_type to a generic Self placeholder so that &self
+    // in trait method signatures can be lowered (Self resolves to the
+    // implementing type, which is unknown until impl).
+    let prev_self = ctx.current_self_type.take();
+    ctx.current_self_type = Some(
+        Type::GenericParam {
+            index: u32::MAX,
+            name: "Self".into(),
+        }
+        .into(),
+    );
+
     // Lower generics on the trait itself
     let mut generics: Option<BTreeMap<NString, Option<TypeId>>> = None;
     if let Some(generic_params) = &trait_.generics {
@@ -336,6 +348,9 @@ fn lower_trait_definition(trait_: &ast::Trait, ctx: &mut Ast2HirCtx, log: &Compi
             }
         }
     }
+
+    // Restore the previous self type
+    ctx.current_self_type = prev_self;
 
     ctx.current_scope.pop();
 

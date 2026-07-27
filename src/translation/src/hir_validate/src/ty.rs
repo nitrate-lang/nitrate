@@ -108,8 +108,7 @@ fn verify_reference_type(
     _options: &ValidateTypeOptions,
 ) -> Result<(), ()> {
     match lifetime {
-        Lifetime::Static | Lifetime::Gc | Lifetime::ThreadLocal | Lifetime::TaskLocal => {}
-        Lifetime::Inferred => return Err(()),
+        Lifetime::Static | Lifetime::Gc | Lifetime::ThreadLocal | Lifetime::TaskLocal | Lifetime::Inferred => {}
     }
 
     to.verify(ctx, &ValidateTypeOptions::un_sized())
@@ -124,8 +123,7 @@ fn verify_slice_reference_type(
     _options: &ValidateTypeOptions,
 ) -> Result<(), ()> {
     match lifetime {
-        Lifetime::Static | Lifetime::Gc | Lifetime::ThreadLocal | Lifetime::TaskLocal => {}
-        Lifetime::Inferred => return Err(()),
+        Lifetime::Static | Lifetime::Gc | Lifetime::ThreadLocal | Lifetime::TaskLocal | Lifetime::Inferred => {}
     }
 
     element_type.verify(ctx, &ValidateTypeOptions::sized())

@@ -215,9 +215,17 @@ pub fn generate_llvmir<'ctx>(
     // Skip generic (uninstantiated) functions - only monomorphized concrete
     // instances should be compiled to LLVM IR. Generic functions are templates
     // that are instantiated by the Hindley-Milner monomorphization pass.
+    // First pass: emit declarations for all non-generic functions.
+    // This includes both functions with bodies and public extern declarations
+    // (like printf) so that codegen can reference them.
     for function_id in tab.functions() {
         let func = function_id.borrow();
         if func.generics.is_some() && func.generics.as_ref().map_or(false, |g| !g.is_empty()) {
+            continue;
+        }
+        // Skip abstract trait methods (bodyless, non-public) - they are
+        // placeholder declarations that won't have a corresponding definition.
+        if func.body.is_none() && func.visibility != hir::Visibility::Pub {
             continue;
         }
         gen_function_decl(&mut ctx, &func);
@@ -227,9 +235,13 @@ pub fn generate_llvmir<'ctx>(
         gen_global(&mut ctx, &global_id.borrow());
     }
 
+    // Second pass: generate function definitions for non-generic functions with bodies
     for function_id in tab.functions() {
         let func = function_id.borrow();
         if func.generics.is_some() && func.generics.as_ref().map_or(false, |g| !g.is_empty()) {
+            continue;
+        }
+        if func.body.is_none() {
             continue;
         }
         gen_function(&mut ctx, &func);
