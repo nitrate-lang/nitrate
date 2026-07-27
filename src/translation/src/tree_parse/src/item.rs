@@ -1,5 +1,6 @@
 use super::parse::Parser;
 use crate::diagnosis::SyntaxErr;
+use crate::helper::MAX_LIMIT;
 
 use nitrate_nstring::NString;
 use nitrate_token::Token;
@@ -36,14 +37,12 @@ impl Parser<'_, '_> {
         let end = SyntaxErr::GenericParameterExpectedEnd(self.lexer.peek_pos());
 
         let params =
-            self.parse_comma_separated_list(&Token::Gt, 65_536, false, eof, limit, end, parse_generic_parameter);
+            self.parse_comma_separated_list(&Token::Gt, MAX_LIMIT, false, eof, limit, end, parse_generic_parameter);
 
         Some(Generics { params })
     }
 
     fn parse_module(&mut self) -> Module {
-        let module_start_pos = self.lexer.peek_pos();
-
         assert!(self.lexer.peek_tok().token == Token::Mod);
         self.lexer.skip_tok();
 
@@ -71,12 +70,10 @@ impl Parser<'_, '_> {
                 break;
             }
 
-            const MAX_ITEMS_PER_MODULE: usize = 65_536;
-
-            if !already_reported_too_many_items && items.len() >= MAX_ITEMS_PER_MODULE {
+            if !already_reported_too_many_items && items.len() >= MAX_LIMIT {
                 already_reported_too_many_items = true;
 
-                let bug = SyntaxErr::ModuleItemLimit(module_start_pos.clone());
+                let bug = SyntaxErr::ModuleItemLimit(self.lexer.peek_pos());
                 self.log.report(&bug);
             }
 
@@ -283,7 +280,7 @@ impl Parser<'_, '_> {
         let end = SyntaxErr::EnumExpectedEnd(self.lexer.peek_pos());
 
         let variants =
-            self.parse_comma_separated_list(&Token::CloseBrace, 65_536, true, eof, limit, end, parse_enum_variant);
+            self.parse_comma_separated_list(&Token::CloseBrace, MAX_LIMIT, true, eof, limit, end, parse_enum_variant);
 
         Enum {
             visibility: None,
@@ -348,7 +345,7 @@ impl Parser<'_, '_> {
         let end = SyntaxErr::StructureExpectedEnd(self.lexer.peek_pos());
 
         let fields =
-            self.parse_comma_separated_list(&Token::CloseBrace, 65_536, true, eof, limit, end, parse_struct_field);
+            self.parse_comma_separated_list(&Token::CloseBrace, MAX_LIMIT, true, eof, limit, end, parse_struct_field);
 
         Struct {
             visibility: None,
@@ -413,8 +410,6 @@ impl Parser<'_, '_> {
         let mut items = Vec::new();
         let mut already_reported_too_many_items = false;
 
-        const MAX_ITEMS: usize = 65_536;
-
         while !self.lexer.skip_if(&Token::CloseBrace) {
             if self.lexer.is_eof() {
                 let bug = SyntaxErr::TraitExpectedEnd(self.lexer.peek_pos());
@@ -422,7 +417,7 @@ impl Parser<'_, '_> {
                 break;
             }
 
-            if !already_reported_too_many_items && items.len() >= MAX_ITEMS {
+            if !already_reported_too_many_items && items.len() >= MAX_LIMIT {
                 already_reported_too_many_items = true;
                 let bug = SyntaxErr::TraitItemLimit(self.lexer.peek_pos());
                 self.log.report(&bug);
@@ -466,8 +461,6 @@ impl Parser<'_, '_> {
         let mut items = Vec::new();
         let mut already_reported_too_many_items = false;
 
-        const MAX_ITEMS: usize = 65_536;
-
         while !self.lexer.skip_if(&Token::CloseBrace) {
             if self.lexer.is_eof() {
                 let bug = SyntaxErr::ImplExpectedEnd(self.lexer.peek_pos());
@@ -475,7 +468,7 @@ impl Parser<'_, '_> {
                 break;
             }
 
-            if !already_reported_too_many_items && items.len() >= MAX_ITEMS {
+            if !already_reported_too_many_items && items.len() >= MAX_LIMIT {
                 already_reported_too_many_items = true;
                 let bug = SyntaxErr::ImplItemLimit(self.lexer.peek_pos());
                 self.log.report(&bug);
@@ -650,7 +643,8 @@ impl Parser<'_, '_> {
                 break;
             }
 
-            Self::check_limit(params.len(), 65_536, &mut false, &limit, self.log);
+            let mut limit_reported = false;
+            Self::check_limit(params.len(), MAX_LIMIT, &mut limit_reported, &limit, self.log);
 
             if self.lexer.skip_if(&Token::Dot) {
                 if !self.lexer.skip_if(&Token::Dot) || !self.lexer.skip_if(&Token::Dot) {
@@ -884,9 +878,10 @@ impl Parser<'_, '_> {
                     let mut block_item = self.parse_item();
                     // Apply ABI to functions inside the extern block
                     if let Item::Function(ref mut func) = block_item
-                        && func.abi.is_none() {
-                            func.abi = extern_abi.clone();
-                        }
+                        && func.abi.is_none()
+                    {
+                        func.abi = extern_abi.clone();
+                    }
                     block_items.push(block_item);
                 }
 

@@ -30,7 +30,6 @@ pub(crate) enum SyntaxErr {
     FunctionParameterLimit(SourcePosition),
     FunctionParameterMissingName(SourcePosition),
     FunctionParametersExpectedEnd(SourcePosition),
-    FunctionParameterExpectedType(SourcePosition),
     FunctionParameterVariadicExpected(SourcePosition),
 
     VariableMissingName(SourcePosition),
@@ -55,7 +54,6 @@ pub(crate) enum SyntaxErr {
 
     StructExpectedFieldOrEnd(SourcePosition),
     StructExpectedFieldName(SourcePosition),
-    StructExpectedColon(SourcePosition),
 
     TupleTypeExpectedEnd(SourcePosition),
     TupleTypeElementLimit(SourcePosition),
@@ -91,19 +89,16 @@ pub(crate) enum SyntaxErr {
     ExpectedCloseBrace(SourcePosition),
     ExpectedOpenBracket(SourcePosition),
     ExpectedCloseBracket(SourcePosition),
-    #[allow(dead_code)]
-    ExpectedOpenAngle(SourcePosition),
     ExpectedCloseAngle(SourcePosition),
     ExpectedSemicolon(SourcePosition),
     ExpectedColon(SourcePosition),
     ExpectedArrow(SourcePosition),
+    #[allow(dead_code)]
+    SyntaxNotSupported(SourcePosition),
 
     ExpectedItem(SourcePosition),
     ExpectedType(SourcePosition),
     ExpectedExpr(SourcePosition),
-
-    #[allow(dead_code)]
-    SyntaxNotSupported(SourcePosition),
 }
 
 impl FormattableDiagnosticGroup for SyntaxErr {
@@ -141,7 +136,6 @@ impl FormattableDiagnosticGroup for SyntaxErr {
             SyntaxErr::FunctionParameterLimit(_) => 122,
             SyntaxErr::FunctionParameterMissingName(_) => 123,
             SyntaxErr::FunctionParametersExpectedEnd(_) => 124,
-            SyntaxErr::FunctionParameterExpectedType(_) => 125,
             SyntaxErr::FunctionParameterVariadicExpected(_) => 126,
 
             SyntaxErr::VariableMissingName(_) => 140,
@@ -166,7 +160,6 @@ impl FormattableDiagnosticGroup for SyntaxErr {
 
             SyntaxErr::StructExpectedFieldOrEnd(_) => 260,
             SyntaxErr::StructExpectedFieldName(_) => 261,
-            SyntaxErr::StructExpectedColon(_) => 262,
 
             SyntaxErr::TupleTypeExpectedEnd(_) => 280,
             SyntaxErr::TupleTypeElementLimit(_) => 281,
@@ -201,7 +194,6 @@ impl FormattableDiagnosticGroup for SyntaxErr {
             SyntaxErr::ExpectedCloseBrace(_) => 1003,
             SyntaxErr::ExpectedOpenBracket(_) => 1004,
             SyntaxErr::ExpectedCloseBracket(_) => 1005,
-            SyntaxErr::ExpectedOpenAngle(_) => 1006,
             SyntaxErr::ExpectedCloseAngle(_) => 1007,
             SyntaxErr::ExpectedSemicolon(_) => 1008,
             SyntaxErr::ExpectedColon(_) => 1009,
@@ -210,7 +202,6 @@ impl FormattableDiagnosticGroup for SyntaxErr {
             SyntaxErr::ExpectedItem(_) => 2000,
             SyntaxErr::ExpectedType(_) => 2001,
             SyntaxErr::ExpectedExpr(_) => 2002,
-
             SyntaxErr::SyntaxNotSupported(_) => 2020,
         }
     }
@@ -333,11 +324,6 @@ impl FormattableDiagnosticGroup for SyntaxErr {
                 message: "expected ')' or ','".into(),
             },
 
-            SyntaxErr::FunctionParameterExpectedType(pos) => DiagnosticInfo {
-                origin: Origin::Point(pos.to_owned().into()),
-                message: "function parameter type is missing".into(),
-            },
-
             SyntaxErr::FunctionParameterVariadicExpected(pos) => DiagnosticInfo {
                 origin: Origin::Point(pos.to_owned().into()),
                 message: "expected '...' for variadic function parameter".into(),
@@ -433,11 +419,6 @@ impl FormattableDiagnosticGroup for SyntaxErr {
             SyntaxErr::StructExpectedFieldName(pos) => DiagnosticInfo {
                 origin: Origin::Point(pos.to_owned().into()),
                 message: "expected field name".into(),
-            },
-
-            SyntaxErr::StructExpectedColon(pos) => DiagnosticInfo {
-                origin: Origin::Point(pos.to_owned().into()),
-                message: "expected ':' after field name".into(),
             },
 
             /* ------------------------------------------------------------------------- */
@@ -555,11 +536,6 @@ impl FormattableDiagnosticGroup for SyntaxErr {
                 message: "expected '{'".into(),
             },
 
-            SyntaxErr::ExpectedCloseBrace(pos) => DiagnosticInfo {
-                origin: Origin::Point(pos.to_owned().into()),
-                message: "expected '}'".into(),
-            },
-
             SyntaxErr::ExpectedOpenBracket(pos) => DiagnosticInfo {
                 origin: Origin::Point(pos.to_owned().into()),
                 message: "expected '['".into(),
@@ -568,11 +544,6 @@ impl FormattableDiagnosticGroup for SyntaxErr {
             SyntaxErr::ExpectedCloseBracket(pos) => DiagnosticInfo {
                 origin: Origin::Point(pos.to_owned().into()),
                 message: "expected ']'".into(),
-            },
-
-            SyntaxErr::ExpectedOpenAngle(pos) => DiagnosticInfo {
-                origin: Origin::Point(pos.to_owned().into()),
-                message: "expected '<'".into(),
             },
 
             SyntaxErr::ExpectedCloseAngle(pos) => DiagnosticInfo {
@@ -611,7 +582,11 @@ impl FormattableDiagnosticGroup for SyntaxErr {
                 message: "expected an expression".into(),
             },
 
-            /* ------------------------------------------------------------------------- */
+            SyntaxErr::ExpectedCloseBrace(pos) => DiagnosticInfo {
+                origin: Origin::Point(pos.to_owned().into()),
+                message: "expected '}'".into(),
+            },
+
             SyntaxErr::SyntaxNotSupported(pos) => DiagnosticInfo {
                 origin: Origin::Point(pos.to_owned().into()),
                 message: "this syntax is not supported".into(),

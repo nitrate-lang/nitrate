@@ -1,5 +1,6 @@
 use super::parse::Parser;
 use crate::diagnosis::SyntaxErr;
+use crate::helper::MAX_LIMIT;
 
 use nitrate_nstring::NString;
 use nitrate_token::Token;
@@ -186,11 +187,9 @@ impl Parser<'_, '_> {
         let limit = SyntaxErr::FunctionParameterLimit(self.lexer.peek_pos());
         let end = SyntaxErr::FunctionParametersExpectedEnd(self.lexer.peek_pos());
 
-        
-
         self.parse_comma_separated_list(
             &Token::CloseParen,
-            65_536,
+            MAX_LIMIT,
             true,
             eof,
             limit,
@@ -296,8 +295,7 @@ impl Parser<'_, '_> {
                 break;
             }
 
-            const MAX_PATH_SEGMENTS: usize = 65_536;
-            if !already_reported_too_many_segments && segments.len() >= MAX_PATH_SEGMENTS {
+            if !already_reported_too_many_segments && segments.len() >= MAX_LIMIT {
                 already_reported_too_many_segments = true;
 
                 let bug = SyntaxErr::PathSegmentLimit(self.lexer.peek_pos());
@@ -381,7 +379,7 @@ impl Parser<'_, '_> {
         let limit = SyntaxErr::TupleTypeElementLimit(self.lexer.peek_pos());
         let end = SyntaxErr::TupleTypeExpectedEnd(self.lexer.peek_pos());
 
-        let rest = self.parse_comma_separated_list(&Token::CloseParen, 65_536, false, eof, limit, end, |this| {
+        let rest = self.parse_comma_separated_list(&Token::CloseParen, MAX_LIMIT, false, eof, limit, end, |this| {
             this.parse_type()
         });
 

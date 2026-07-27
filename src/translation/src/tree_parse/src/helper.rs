@@ -5,6 +5,9 @@ use nitrate_nstring::NString;
 use nitrate_token::Token;
 use nitrate_tree::ast::{Exclusivity, Mutability, Type, Visibility};
 
+/// Default maximum for counted parser elements (items, parameters, fields, etc.).
+pub(crate) const MAX_LIMIT: usize = 65_536;
+
 impl Parser<'_, '_> {
     /// Consumes a `::` token pair. Returns `true` if both colons were consumed.
     pub(crate) fn parse_double_colon(&mut self) -> bool {

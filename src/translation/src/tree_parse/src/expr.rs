@@ -1,4 +1,5 @@
 use crate::diagnosis::SyntaxErr;
+use crate::helper::MAX_LIMIT;
 
 use super::parse::Parser;
 use nitrate_nstring::NString;
@@ -14,7 +15,171 @@ use nitrate_tree::ast::{
 
 type Precedence = u32;
 
+/// A single operator-pattern entry: a sequence of tokens to skip and the resulting `BinExprOp`.
+struct OpPattern {
+    tokens: &'static [Token],
+    op: BinExprOp,
+}
+
+/// All binary operator patterns, ordered so longer sequences are tried first.
+const BINOP_PATTERNS: &[OpPattern] = &[
+    // Three-token patterns (must come before two-token)
+    OpPattern {
+        tokens: &[Token::Lt, Token::Lt, Token::Lt, Token::Eq],
+        op: BinExprOp::SetBitRotl,
+    },
+    OpPattern {
+        tokens: &[Token::Gt, Token::Gt, Token::Gt, Token::Eq],
+        op: BinExprOp::SetBitRotr,
+    },
+    OpPattern {
+        tokens: &[Token::And, Token::And, Token::Eq],
+        op: BinExprOp::SetLogicAnd,
+    },
+    OpPattern {
+        tokens: &[Token::Or, Token::Or, Token::Eq],
+        op: BinExprOp::SetLogicOr,
+    },
+    OpPattern {
+        tokens: &[Token::Lt, Token::Lt, Token::Lt],
+        op: BinExprOp::BitRol,
+    },
+    OpPattern {
+        tokens: &[Token::Gt, Token::Gt, Token::Gt],
+        op: BinExprOp::BitRor,
+    },
+    // Two-token patterns
+    OpPattern {
+        tokens: &[Token::Bang, Token::Eq],
+        op: BinExprOp::SetLogicAnd,
+    }, // != is handled by ! alone below, this is for !=
+    OpPattern {
+        tokens: &[Token::Percent, Token::Eq],
+        op: BinExprOp::SetPercent,
+    },
+    OpPattern {
+        tokens: &[Token::And, Token::Eq],
+        op: BinExprOp::SetBitAnd,
+    },
+    OpPattern {
+        tokens: &[Token::And, Token::And],
+        op: BinExprOp::LogicAnd,
+    },
+    OpPattern {
+        tokens: &[Token::Star, Token::Eq],
+        op: BinExprOp::SetTimes,
+    },
+    OpPattern {
+        tokens: &[Token::Plus, Token::Eq],
+        op: BinExprOp::SetPlus,
+    },
+    OpPattern {
+        tokens: &[Token::Minus, Token::Eq],
+        op: BinExprOp::SetMinus,
+    },
+    OpPattern {
+        tokens: &[Token::Slash, Token::Eq],
+        op: BinExprOp::SetSlash,
+    },
+    OpPattern {
+        tokens: &[Token::Lt, Token::Lt, Token::Eq],
+        op: BinExprOp::SetBitShl,
+    },
+    OpPattern {
+        tokens: &[Token::Lt, Token::Lt],
+        op: BinExprOp::BitShl,
+    },
+    OpPattern {
+        tokens: &[Token::Lt, Token::Eq],
+        op: BinExprOp::LogicLe,
+    },
+    OpPattern {
+        tokens: &[Token::Eq, Token::Eq],
+        op: BinExprOp::LogicEq,
+    },
+    OpPattern {
+        tokens: &[Token::Gt, Token::Gt, Token::Eq],
+        op: BinExprOp::SetBitShr,
+    },
+    OpPattern {
+        tokens: &[Token::Gt, Token::Gt],
+        op: BinExprOp::BitShr,
+    },
+    OpPattern {
+        tokens: &[Token::Gt, Token::Eq],
+        op: BinExprOp::LogicGe,
+    },
+    OpPattern {
+        tokens: &[Token::Caret, Token::Eq],
+        op: BinExprOp::SetBitXor,
+    },
+    OpPattern {
+        tokens: &[Token::Or, Token::Eq],
+        op: BinExprOp::SetBitOr,
+    },
+    OpPattern {
+        tokens: &[Token::Or, Token::Or],
+        op: BinExprOp::LogicOr,
+    },
+    // Single-token patterns (try these last)
+    OpPattern {
+        tokens: &[Token::Bang],
+        op: BinExprOp::LogicNe,
+    },
+    OpPattern {
+        tokens: &[Token::Percent],
+        op: BinExprOp::Mod,
+    },
+    OpPattern {
+        tokens: &[Token::And],
+        op: BinExprOp::BitAnd,
+    },
+    OpPattern {
+        tokens: &[Token::Star],
+        op: BinExprOp::Mul,
+    },
+    OpPattern {
+        tokens: &[Token::Plus],
+        op: BinExprOp::Add,
+    },
+    OpPattern {
+        tokens: &[Token::Minus],
+        op: BinExprOp::Sub,
+    },
+    OpPattern {
+        tokens: &[Token::Slash],
+        op: BinExprOp::Div,
+    },
+    OpPattern {
+        tokens: &[Token::Eq],
+        op: BinExprOp::Set,
+    },
+    OpPattern {
+        tokens: &[Token::Caret],
+        op: BinExprOp::BitXor,
+    },
+    OpPattern {
+        tokens: &[Token::Or],
+        op: BinExprOp::BitOr,
+    },
+    OpPattern {
+        tokens: &[Token::Lt],
+        op: BinExprOp::LogicLt,
+    },
+    OpPattern {
+        tokens: &[Token::Gt],
+        op: BinExprOp::LogicGt,
+    },
+    // Range
+    OpPattern {
+        tokens: &[Token::Dot, Token::Dot],
+        op: BinExprOp::Range,
+    },
+];
+
+/// Precedence levels in ascending order (lower = binds tighter).
 #[repr(u32)]
+#[derive(Clone, Copy)]
 enum PrecedenceRank {
     Assign,
     Range,
@@ -48,62 +213,36 @@ enum Operation {
 }
 
 fn get_precedence_of_binary_operator(op: BinExprOp) -> (Associativity, Precedence) {
+    use BinExprOp::*;
     let (associativity, precedence) = match op {
-        BinExprOp::Mul | BinExprOp::Div | BinExprOp::Mod => (Associativity::LeftToRight, PrecedenceRank::MulDivMod),
-
-        BinExprOp::Add | BinExprOp::Sub => (Associativity::LeftToRight, PrecedenceRank::AddSub),
-
-        BinExprOp::BitShl | BinExprOp::BitShr | BinExprOp::BitRol | BinExprOp::BitRor => {
-            (Associativity::LeftToRight, PrecedenceRank::BitShiftAndRotate)
+        Mul | Div | Mod => (Associativity::LeftToRight, PrecedenceRank::MulDivMod),
+        Add | Sub => (Associativity::LeftToRight, PrecedenceRank::AddSub),
+        BitShl | BitShr | BitRol | BitRor => (Associativity::LeftToRight, PrecedenceRank::BitShiftAndRotate),
+        BitAnd => (Associativity::LeftToRight, PrecedenceRank::BitAnd),
+        BitXor => (Associativity::LeftToRight, PrecedenceRank::BitXor),
+        BitOr => (Associativity::LeftToRight, PrecedenceRank::BitOr),
+        LogicEq | LogicNe | LogicLt | LogicGt | LogicLe | LogicGe => {
+            (Associativity::LeftToRight, PrecedenceRank::Comparison)
         }
-
-        BinExprOp::BitAnd => (Associativity::LeftToRight, PrecedenceRank::BitAnd),
-        BinExprOp::BitXor => (Associativity::LeftToRight, PrecedenceRank::BitXor),
-        BinExprOp::BitOr => (Associativity::LeftToRight, PrecedenceRank::BitOr),
-
-        BinExprOp::LogicEq
-        | BinExprOp::LogicNe
-        | BinExprOp::LogicLt
-        | BinExprOp::LogicGt
-        | BinExprOp::LogicLe
-        | BinExprOp::LogicGe => (Associativity::LeftToRight, PrecedenceRank::Comparison),
-
-        BinExprOp::LogicAnd => (Associativity::LeftToRight, PrecedenceRank::LogicAnd),
-        BinExprOp::LogicOr => (Associativity::LeftToRight, PrecedenceRank::LogicOr),
-
-        BinExprOp::Range => (Associativity::LeftToRight, PrecedenceRank::Range),
-
-        BinExprOp::Set
-        | BinExprOp::SetPlus
-        | BinExprOp::SetMinus
-        | BinExprOp::SetTimes
-        | BinExprOp::SetSlash
-        | BinExprOp::SetPercent
-        | BinExprOp::SetBitAnd
-        | BinExprOp::SetBitOr
-        | BinExprOp::SetBitXor
-        | BinExprOp::SetBitShl
-        | BinExprOp::SetBitShr
-        | BinExprOp::SetBitRotl
-        | BinExprOp::SetBitRotr
-        | BinExprOp::SetLogicAnd
-        | BinExprOp::SetLogicOr => (Associativity::RightToLeft, PrecedenceRank::Assign),
+        LogicAnd => (Associativity::LeftToRight, PrecedenceRank::LogicAnd),
+        LogicOr => (Associativity::LeftToRight, PrecedenceRank::LogicOr),
+        Range => (Associativity::LeftToRight, PrecedenceRank::Range),
+        Set | SetPlus | SetMinus | SetTimes | SetSlash | SetPercent | SetBitAnd | SetBitOr | SetBitXor | SetBitShl
+        | SetBitShr | SetBitRotl | SetBitRotr | SetLogicAnd | SetLogicOr => {
+            (Associativity::RightToLeft, PrecedenceRank::Assign)
+        }
     };
-
     (associativity, precedence as Precedence)
 }
 
 fn get_precedence(operation: Operation) -> (Associativity, Precedence) {
     match operation {
         Operation::BinOp(op) => get_precedence_of_binary_operator(op),
-
         Operation::FunctionCall | Operation::Index => (
             Associativity::LeftToRight,
             PrecedenceRank::FunctionCallAndIndexing as Precedence,
         ),
-
         Operation::Cast => (Associativity::LeftToRight, PrecedenceRank::Cast as Precedence),
-
         Operation::FieldAccessOrMethodCall => (Associativity::LeftToRight, PrecedenceRank::FieldAccess as Precedence),
     }
 }
@@ -145,167 +284,35 @@ impl Parser<'_, '_> {
         }
     }
 
+    /// Tries to match a binary operator pattern starting at the current lexer position.
+    /// Returns `None` without advancing the lexer if no pattern matches.
     fn detect_and_parse_binary_operator(&mut self) -> Option<BinExprOp> {
-        let rewind = self.lexer.current_pos();
-
-        let result = match self.lexer.peek_tok().token {
-            Token::Bang => {
-                self.lexer.skip_tok();
-                Some(BinExprOp::LogicNe)
+        for pattern in BINOP_PATTERNS {
+            // Quick reject: check the first token without advancing
+            if self.lexer.peek_tok().token != pattern.tokens[0] {
+                continue;
             }
 
-            Token::Percent => {
-                self.lexer.skip_tok();
-                if self.lexer.skip_if(&Token::Eq) {
-                    Some(BinExprOp::SetPercent)
-                } else {
-                    Some(BinExprOp::Mod)
+            let saved = self.lexer.current_pos();
+
+            // Try the full sequence
+            let mut matched = true;
+            for tok in pattern.tokens {
+                if !self.lexer.skip_if(tok) {
+                    matched = false;
+                    break;
                 }
             }
 
-            Token::And => {
-                self.lexer.skip_tok();
-                if self.lexer.skip_if(&Token::And) {
-                    if self.lexer.skip_if(&Token::Eq) {
-                        Some(BinExprOp::SetLogicAnd)
-                    } else {
-                        Some(BinExprOp::LogicAnd)
-                    }
-                } else if self.lexer.skip_if(&Token::Eq) {
-                    Some(BinExprOp::SetBitAnd)
-                } else {
-                    Some(BinExprOp::BitAnd)
-                }
+            if matched {
+                return Some(pattern.op);
             }
 
-            Token::Star => {
-                self.lexer.skip_tok();
-                if self.lexer.skip_if(&Token::Eq) {
-                    Some(BinExprOp::SetTimes)
-                } else {
-                    Some(BinExprOp::Mul)
-                }
-            }
-
-            Token::Plus => {
-                self.lexer.skip_tok();
-                if self.lexer.skip_if(&Token::Eq) {
-                    Some(BinExprOp::SetPlus)
-                } else {
-                    Some(BinExprOp::Add)
-                }
-            }
-
-            Token::Minus => {
-                self.lexer.skip_tok();
-                if self.lexer.skip_if(&Token::Eq) {
-                    Some(BinExprOp::SetMinus)
-                } else {
-                    Some(BinExprOp::Sub)
-                }
-            }
-
-            Token::Dot => {
-                self.lexer.skip_tok();
-                if self.lexer.skip_if(&Token::Dot) {
-                    Some(BinExprOp::Range)
-                } else {
-                    None
-                }
-            }
-
-            Token::Slash => {
-                self.lexer.skip_tok();
-                if self.lexer.skip_if(&Token::Eq) {
-                    Some(BinExprOp::SetSlash)
-                } else {
-                    Some(BinExprOp::Div)
-                }
-            }
-
-            Token::Lt => {
-                self.lexer.skip_tok();
-                if self.lexer.skip_if(&Token::Lt) {
-                    if self.lexer.skip_if(&Token::Lt) {
-                        if self.lexer.skip_if(&Token::Eq) {
-                            Some(BinExprOp::SetBitRotl)
-                        } else {
-                            Some(BinExprOp::BitRol)
-                        }
-                    } else if self.lexer.skip_if(&Token::Eq) {
-                        Some(BinExprOp::SetBitShl)
-                    } else {
-                        Some(BinExprOp::BitShl)
-                    }
-                } else if self.lexer.skip_if(&Token::Eq) {
-                    Some(BinExprOp::LogicLe)
-                } else {
-                    Some(BinExprOp::LogicLt)
-                }
-            }
-
-            Token::Eq => {
-                self.lexer.skip_tok();
-                if self.lexer.skip_if(&Token::Eq) {
-                    Some(BinExprOp::LogicEq)
-                } else {
-                    Some(BinExprOp::Set)
-                }
-            }
-
-            Token::Gt => {
-                self.lexer.skip_tok();
-                if self.lexer.skip_if(&Token::Gt) {
-                    if self.lexer.skip_if(&Token::Gt) {
-                        if self.lexer.skip_if(&Token::Eq) {
-                            Some(BinExprOp::SetBitRotr)
-                        } else {
-                            Some(BinExprOp::BitRor)
-                        }
-                    } else if self.lexer.skip_if(&Token::Eq) {
-                        Some(BinExprOp::SetBitShr)
-                    } else {
-                        Some(BinExprOp::BitShr)
-                    }
-                } else if self.lexer.skip_if(&Token::Eq) {
-                    Some(BinExprOp::LogicGe)
-                } else {
-                    Some(BinExprOp::LogicGt)
-                }
-            }
-
-            Token::Caret => {
-                self.lexer.skip_tok();
-                if self.lexer.skip_if(&Token::Eq) {
-                    Some(BinExprOp::SetBitXor)
-                } else {
-                    Some(BinExprOp::BitXor)
-                }
-            }
-
-            Token::Or => {
-                self.lexer.skip_tok();
-                if self.lexer.skip_if(&Token::Eq) {
-                    Some(BinExprOp::SetBitOr)
-                } else if self.lexer.skip_if(&Token::Or) {
-                    if self.lexer.skip_if(&Token::Eq) {
-                        Some(BinExprOp::SetLogicOr)
-                    } else {
-                        Some(BinExprOp::LogicOr)
-                    }
-                } else {
-                    Some(BinExprOp::BitOr)
-                }
-            }
-
-            _ => None,
-        };
-
-        if result.is_none() {
-            self.lexer.rewind(rewind);
+            // Rewind to try next pattern - clone to avoid move issues
+            self.lexer.rewind(saved.clone());
         }
 
-        result
+        None
     }
 
     fn parse_expression_primary(&mut self) -> Expr {
@@ -596,9 +603,10 @@ impl Parser<'_, '_> {
         let limit = SyntaxErr::ListElementLimit(self.lexer.peek_pos());
         let end = SyntaxErr::ListExpectedEnd(self.lexer.peek_pos());
 
-        let elements = self.parse_comma_separated_list(&Token::CloseBracket, 65_536, true, eof, limit, end, |this| {
-            this.parse_expression()
-        });
+        let elements =
+            self.parse_comma_separated_list(&Token::CloseBracket, MAX_LIMIT, true, eof, limit, end, |this| {
+                this.parse_expression()
+            });
 
         List { elements }
     }
@@ -612,12 +620,13 @@ impl Parser<'_, '_> {
             let limit = SyntaxErr::AttributesElementLimit(self.lexer.peek_pos());
             let end = SyntaxErr::AttributesExpectedEnd(self.lexer.peek_pos());
 
-            let inner = self.parse_comma_separated_list(&Token::CloseBracket, 65_536, true, eof, limit, end, |this| {
-                this.parse_expression()
-            });
+            let inner =
+                self.parse_comma_separated_list(&Token::CloseBracket, MAX_LIMIT, true, eof, limit, end, |this| {
+                    this.parse_expression()
+                });
 
             let total = elements.len() + inner.len();
-            if !already_reported_too_many_attributes && total > 65_536 {
+            if !already_reported_too_many_attributes && total > MAX_LIMIT {
                 already_reported_too_many_attributes = true;
                 let bug = SyntaxErr::AttributesElementLimit(self.lexer.peek_pos());
                 self.log.report(&bug);
@@ -656,7 +665,7 @@ impl Parser<'_, '_> {
         let end = SyntaxErr::ExpectedCloseAngle(self.lexer.peek_pos());
 
         let arguments =
-            self.parse_comma_separated_list(&Token::Gt, 65_536, true, eof, limit, end, parse_generic_argument);
+            self.parse_comma_separated_list(&Token::Gt, MAX_LIMIT, true, eof, limit, end, parse_generic_argument);
 
         Some(arguments)
     }
@@ -692,8 +701,7 @@ impl Parser<'_, '_> {
                 break;
             }
 
-            const MAX_PATH_SEGMENTS: usize = 65_536;
-            if !already_reported_too_many_segments && segments.len() >= MAX_PATH_SEGMENTS {
+            if !already_reported_too_many_segments && segments.len() >= MAX_LIMIT {
                 already_reported_too_many_segments = true;
 
                 let bug = SyntaxErr::PathSegmentLimit(self.lexer.peek_pos());
@@ -818,7 +826,7 @@ impl Parser<'_, '_> {
             let limit = SyntaxErr::ForVariableBindingLimit(this.lexer.peek_pos());
             let end = SyntaxErr::ForVariableBindingExpectedEnd(this.lexer.peek_pos());
 
-            this.parse_comma_separated_list(&Token::CloseParen, 65_536, true, eof, limit, end, |this| {
+            this.parse_comma_separated_list(&Token::CloseParen, MAX_LIMIT, true, eof, limit, end, |this| {
                 let binding_name = this.lexer.next_if_name().unwrap_or_else(|| {
                     let bug = SyntaxErr::ForVariableBindingMissingName(this.lexer.peek_pos());
                     this.log.report(&bug);
@@ -975,7 +983,7 @@ impl Parser<'_, '_> {
 
         let params = self.parse_comma_separated_list(
             &Token::CloseParen,
-            65_536,
+            MAX_LIMIT,
             true,
             eof,
             limit,
@@ -1030,11 +1038,8 @@ impl Parser<'_, '_> {
             let rewind_pos = this.lexer.current_pos();
             if let Some(argument_name) = this.lexer.next_if_name() {
                 if this.lexer.skip_if(&Token::Colon) {
-                    // Successfully parsed a named argument
                     name = Some(NString::from(argument_name));
                 } else {
-                    // It was just an identifier that wasn't followed by a colon,
-                    // so we treat it as the start of a positional expression.
                     this.lexer.rewind(rewind_pos);
                 }
             }
@@ -1050,8 +1055,6 @@ impl Parser<'_, '_> {
         let mut parsed_arguments = Vec::new();
         let mut named_argument_seen = false;
 
-        // Cannot use parse_comma_separated_list here because of
-        // positional-before-named enforcement.
         self.lexer.skip_if(&Token::Comma);
 
         while !self.lexer.skip_if(&Token::CloseParen) {
@@ -1061,9 +1064,7 @@ impl Parser<'_, '_> {
                 break;
             }
 
-            const MAX_CARGUMENTS: usize = 65_536;
-
-            if parsed_arguments.len() >= MAX_CARGUMENTS {
+            if parsed_arguments.len() >= MAX_LIMIT {
                 let bug = SyntaxErr::FunctionCallArgumentLimit(self.lexer.peek_pos());
                 self.log.report(&bug);
                 break;
@@ -1071,11 +1072,9 @@ impl Parser<'_, '_> {
 
             let argument = parse_function_call_argument(self);
 
-            // Enforce Positional-before-Named rule
             if argument.name.is_some() {
                 named_argument_seen = true;
             } else if named_argument_seen {
-                // Error: Positional argument follows a named argument
                 let bug = SyntaxErr::FunctionCallPositionFollowsNamed(self.lexer.peek_pos());
                 self.log.report(&bug);
             }
@@ -1091,7 +1090,6 @@ impl Parser<'_, '_> {
             }
         }
 
-        // Separate into positional and named vectors for the return type
         let mut positional_args = Vec::new();
         let mut named_args = Vec::new();
 
@@ -1215,9 +1213,7 @@ impl Parser<'_, '_> {
                 break;
             }
 
-            const MAX_BLOCK_ELEMENTS: usize = 65_536;
-
-            if !already_reported_too_many_elements && elements.len() >= MAX_BLOCK_ELEMENTS {
+            if !already_reported_too_many_elements && elements.len() >= MAX_LIMIT {
                 already_reported_too_many_elements = true;
 
                 let bug = SyntaxErr::BlockElementLimit(self.lexer.peek_pos());
