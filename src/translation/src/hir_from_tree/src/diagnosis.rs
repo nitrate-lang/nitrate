@@ -25,6 +25,16 @@ pub(crate) enum HirErr {
     LocalVariableMissingInitializer,
     UnrecognizedTraitAttribute,
     DuplicateEntity(String),
+    /// Refinement type bound expression could not be evaluated to a constant.
+    RefinementBoundNotConstant,
+    /// Refinement type applied to a non-integer base type.
+    RefinementTypeOnNonInteger,
+    /// Refinement type width was out of the valid range (1..=128).
+    RefinementWidthOutOfRange,
+    /// Refinement type had no bounds at all.
+    RefinementTypeEmpty,
+    /// Refinement type width was not a positive integer.
+    RefinementWidthNotPositive,
 }
 
 impl FormattableDiagnosticGroup for HirErr {
@@ -58,6 +68,11 @@ impl FormattableDiagnosticGroup for HirErr {
             HirErr::LocalVariableMissingInitializer => 40,
             HirErr::UnrecognizedTraitAttribute => 41,
             HirErr::DuplicateEntity(_) => 42,
+            HirErr::RefinementBoundNotConstant => 43,
+            HirErr::RefinementTypeOnNonInteger => 44,
+            HirErr::RefinementWidthOutOfRange => 45,
+            HirErr::RefinementTypeEmpty => 46,
+            HirErr::RefinementWidthNotPositive => 47,
         }
     }
 
@@ -180,6 +195,31 @@ impl FormattableDiagnosticGroup for HirErr {
 
             HirErr::DuplicateEntity(name) => DiagnosticInfo {
                 message: format!("duplicate entity: {}", name),
+                origin: Origin::None,
+            },
+
+            HirErr::RefinementBoundNotConstant => DiagnosticInfo {
+                message: "refinement type bound must be a constant expression".to_string(),
+                origin: Origin::None,
+            },
+
+            HirErr::RefinementTypeOnNonInteger => DiagnosticInfo {
+                message: "refinement types can only be applied to integer types".to_string(),
+                origin: Origin::None,
+            },
+
+            HirErr::RefinementWidthOutOfRange => DiagnosticInfo {
+                message: "refinement type width must be between 1 and 128".to_string(),
+                origin: Origin::None,
+            },
+
+            HirErr::RefinementTypeEmpty => DiagnosticInfo {
+                message: "refinement type must have at least one bound".to_string(),
+                origin: Origin::None,
+            },
+
+            HirErr::RefinementWidthNotPositive => DiagnosticInfo {
+                message: "refinement type width must be a positive integer".to_string(),
                 origin: Origin::None,
             },
         }

@@ -5,7 +5,7 @@ use nitrate_hir_evaluate::HirEvalCtx;
 use nitrate_token::IntegerKind;
 use nitrate_tree::ast::{self as ast, SymbolKind};
 use nitrate_tree_resolve::ImportContext;
-use std::{collections::BTreeSet, ops::Deref};
+use std::{collections::BTreeSet, ops::Deref, ops::Index};
 
 pub(crate) fn lower_type_path(type_path: ast::TypePath, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Type, ()> {
     // Check for generic args in intermediate segments (e.g., Foo<i32>::Bar)
@@ -85,15 +85,192 @@ pub(crate) fn lower_type_path(type_path: ast::TypePath, ctx: &mut Ast2HirCtx, lo
     }
 }
 
-pub(crate) fn lower_refinement_type(
-    _refinement_type: ast::RefinementType,
-    _ctx: &mut Ast2HirCtx,
-    log: &CompilerLog,
-) -> Result<Type, ()> {
-    log.report(&HirErr::UnimplementedFeature("refinement types".into()));
-    Err(())
+/// Stores a literal value into the global store and returns its ID.
+fn store_lit(lit: Lit) -> LiteralId {
+    get_storage(|store| store.store_literal(lit))
 }
 
+/// Returns the minimum literal value for a given integer type.
+fn min_lit_for_type(ty: &Type) -> Lit {
+    match ty {
+        Type::U8 => Lit::U8(0),
+        Type::U16 => Lit::U16(0),
+        Type::U32 => Lit::U32(0),
+        Type::U64 => Lit::U64(0),
+        Type::U128 => Lit::U128(0),
+        Type::USize => Lit::USize32(0),
+        Type::I8 => Lit::I8(0),
+        Type::I16 => Lit::I16(0),
+        Type::I32 => Lit::I32(0),
+        Type::I64 => Lit::I64(0),
+        Type::I128 => Lit::I128(0),
+        _ => Lit::U64(0),
+    }
+}
+
+/// Returns the maximum literal value for a given integer type.
+fn max_lit_for_type(ty: &Type) -> Lit {
+    match ty {
+        Type::U8 => Lit::U8(u8::MAX),
+        Type::U16 => Lit::U16(u16::MAX),
+        Type::U32 => Lit::U32(u32::MAX),
+        Type::U64 => Lit::U64(u64::MAX),
+        Type::U128 => Lit::U128(u128::MAX),
+        Type::USize => Lit::USize64(u64::MAX),
+        Type::I8 => Lit::I8(i8::MAX),
+        Type::I16 => Lit::I16(i16::MAX),
+        Type::I32 => Lit::I32(i32::MAX),
+        Type::I64 => Lit::I64(i64::MAX),
+        Type::I128 => Lit::I128(i128::MAX),
+        _ => Lit::U64(u64::MAX),
+    }
+}
+
+/// Evaluate an AST expression to a constant literal value.
+fn lower_refinement_bound(
+    bound_expr: ast::Expr,
+    target_type: Option<&Type>,
+    ctx: &mut Ast2HirCtx,
+    log: &CompilerLog,
+) -> Result<LiteralId, ()> {
+    let hir_value = lower_expr(bound_expr, ctx, log)?;
+
+    let cast_value = match target_type {
+        Some(ty) => Value::Cast {
+            value: hir_value.into(),
+            target_type: ty.clone().into(),
+        },
+        None => hir_value,
+    };
+
+    match HirEvalCtx::new(log, ctx.ptr_size).evaluate_to_literal(&cast_value) {
+        Ok(lit) => Ok(store_lit(lit)),
+        Err(_) => {
+            log.report(&HirErr::RefinementBoundNotConstant);
+            Err(())
+        }
+    }
+}
+
+/// Get the Lit::U128 value from a Lit (or fail if not a compatible numeric lit).
+fn lit_to_u128(lit: &Lit) -> Option<u128> {
+    match lit {
+        Lit::U8(w) => Some(*w as u128),
+        Lit::U16(w) => Some(*w as u128),
+        Lit::U32(w) => Some(*w as u128),
+        Lit::U64(w) => Some(*w as u128),
+        Lit::U128(w) => Some(*w),
+        Lit::USize32(w) => Some(*w as u128),
+        Lit::USize64(w) => Some(*w as u128),
+        Lit::I8(w) if *w >= 0 => Some(*w as u128),
+        Lit::I16(w) if *w >= 0 => Some(*w as u128),
+        Lit::I32(w) if *w >= 0 => Some(*w as u128),
+        Lit::I64(w) if *w >= 0 => Some(*w as u128),
+        Lit::I128(w) if *w >= 0 => Some(*w as u128),
+        _ => None,
+    }
+}
+
+pub(crate) fn lower_refinement_type(
+    refinement_type: ast::RefinementType,
+    ctx: &mut Ast2HirCtx,
+    log: &CompilerLog,
+) -> Result<Type, ()> {
+    let basis_type = lower_type(refinement_type.basis_type, ctx, log)?;
+
+    // Ensure the basis type is an integer type that can be refined
+    match &basis_type {
+        Type::U8
+        | Type::U16
+        | Type::U32
+        | Type::U64
+        | Type::U128
+        | Type::USize
+        | Type::I8
+        | Type::I16
+        | Type::I32
+        | Type::I64
+        | Type::I128 => {}
+        _ => {
+            log.report(&HirErr::RefinementTypeOnNonInteger);
+            return Err(());
+        }
+    }
+
+    let (min_lit, max_lit): (LiteralId, LiteralId) =
+        match (refinement_type.width, refinement_type.minimum, refinement_type.maximum) {
+            // Just width: u8: 6  =>  [0: 2^width - 1]
+            (Some(width_expr), None, None) => {
+                let w_id = lower_refinement_bound(width_expr, None, ctx, log)?;
+                let w_lit: Lit = get_storage(|store| store[&w_id].clone());
+                let width_val = lit_to_u128(&w_lit).filter(|&v| v != 0 && v <= 128).ok_or_else(|| {
+                    log.report(&HirErr::RefinementWidthOutOfRange);
+                })?;
+
+                let max_val = (1u128 << width_val) - 1;
+                let min = store_lit(Lit::U128(0));
+                let max = store_lit(Lit::U128(max_val));
+                (min, max)
+            }
+
+            // Just explicit range: u8: [0:10]
+            (None, Some(min_expr), Some(max_expr)) => {
+                let min = lower_refinement_bound(min_expr, Some(&basis_type), ctx, log)?;
+                let max = lower_refinement_bound(max_expr, Some(&basis_type), ctx, log)?;
+                (min, max)
+            }
+
+            // Both width and range: u8: 6: [0:10]
+            (Some(width_expr), Some(min_expr), Some(max_expr)) => {
+                let _w_id = lower_refinement_bound(width_expr, None, ctx, log)?;
+                let min = lower_refinement_bound(min_expr, Some(&basis_type), ctx, log)?;
+                let max = lower_refinement_bound(max_expr, Some(&basis_type), ctx, log)?;
+                (min, max)
+            }
+
+            // Just min: u8: [0:]
+            (None, Some(min_expr), None) => {
+                let min = lower_refinement_bound(min_expr, Some(&basis_type), ctx, log)?;
+                let max = store_lit(max_lit_for_type(&basis_type));
+                (min, max)
+            }
+
+            // Just max: u8: [:10]
+            (None, None, Some(max_expr)) => {
+                let min = store_lit(min_lit_for_type(&basis_type));
+                let max = lower_refinement_bound(max_expr, Some(&basis_type), ctx, log)?;
+                (min, max)
+            }
+
+            // width + min only: u8: 6: [0:]
+            (Some(width_expr), Some(min_expr), None) => {
+                let _w_id = lower_refinement_bound(width_expr, None, ctx, log)?;
+                let min = lower_refinement_bound(min_expr, Some(&basis_type), ctx, log)?;
+                let max = store_lit(max_lit_for_type(&basis_type));
+                (min, max)
+            }
+
+            // width + max only: u8: 6: [:10]
+            (Some(width_expr), None, Some(max_expr)) => {
+                let _w_id = lower_refinement_bound(width_expr, None, ctx, log)?;
+                let min = store_lit(min_lit_for_type(&basis_type));
+                let max = lower_refinement_bound(max_expr, Some(&basis_type), ctx, log)?;
+                (min, max)
+            }
+
+            // No bounds at all (shouldn't reach here since parser only creates RefinementType when bounds present)
+            (None, None, None) => {
+                log.report(&HirErr::RefinementTypeEmpty);
+                return Err(());
+            }
+        };
+
+    Ok(Type::Refine {
+        base: basis_type.into(),
+        min: min_lit,
+        max: max_lit,
+    })
+}
 pub(crate) fn lower_tuple_type(
     tuple_type: ast::TupleType,
     ctx: &mut Ast2HirCtx,
