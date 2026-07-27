@@ -98,7 +98,7 @@ fn min_lit_for_type(ty: &Type) -> Lit {
         Type::U32 => Lit::U32(0),
         Type::U64 => Lit::U64(0),
         Type::U128 => Lit::U128(0),
-        Type::USize => Lit::USize32(0),
+        Type::USize => Lit::USize(32, 0),
         Type::I8 => Lit::I8(0),
         Type::I16 => Lit::I16(0),
         Type::I32 => Lit::I32(0),
@@ -116,7 +116,7 @@ fn max_lit_for_type(ty: &Type) -> Lit {
         Type::U32 => Lit::U32(u32::MAX),
         Type::U64 => Lit::U64(u64::MAX),
         Type::U128 => Lit::U128(u128::MAX),
-        Type::USize => Lit::USize64(u64::MAX),
+        Type::USize => Lit::USize(64, u64::MAX),
         Type::I8 => Lit::I8(i8::MAX),
         Type::I16 => Lit::I16(i16::MAX),
         Type::I32 => Lit::I32(i32::MAX),
@@ -160,8 +160,8 @@ fn lit_to_u128(lit: &Lit) -> Option<u128> {
         Lit::U32(w) => Some(*w as u128),
         Lit::U64(w) => Some(*w as u128),
         Lit::U128(w) => Some(*w),
-        Lit::USize32(w) => Some(*w as u128),
-        Lit::USize64(w) => Some(*w as u128),
+        Lit::USize(bits, w) => Some(*w as u128),
+        Lit::USize(bits, w) => Some(*w as u128),
         Lit::I8(w) if *w >= 0 => Some(*w as u128),
         Lit::I16(w) if *w >= 0 => Some(*w as u128),
         Lit::I32(w) if *w >= 0 => Some(*w as u128),
@@ -304,8 +304,9 @@ pub(crate) fn lower_array_type(
     };
 
     let len = match HirEvalCtx::new(log, ctx.ptr_size).evaluate_to_literal(&array_length_expr) {
-        Ok(Lit::USize32(val)) => val,
-        Ok(Lit::USize64(val)) => val as u32,
+        Ok(Lit::USize(bits, val)) => u32::try_from(val).map_err(|_| {
+            log.report(&HirErr::ArrayLengthExpectedUSize);
+        })?,
 
         Ok(_) => {
             log.report(&HirErr::ArrayLengthExpectedUSize);

@@ -34,8 +34,8 @@ pub fn lit_to_u128(lit: &Lit) -> Option<u128> {
         Lit::U32(w) => Some(*w as u128),
         Lit::U64(w) => Some(*w as u128),
         Lit::U128(w) => Some(*w),
-        Lit::USize32(w) => Some(*w as u128),
-        Lit::USize64(w) => Some(*w as u128),
+        Lit::USize(bits, w) => Some(*w as u128),
+        Lit::USize(bits, w) => Some(*w as u128),
         Lit::I8(w) if *w >= 0 => Some(*w as u128),
         Lit::I16(w) if *w >= 0 => Some(*w as u128),
         Lit::I32(w) if *w >= 0 => Some(*w as u128),
@@ -62,8 +62,8 @@ impl HirGetType for Lit {
             Lit::U128(_) => Ok(Type::U128),
             Lit::F32(_) => Ok(Type::F32),
             Lit::F64(_) => Ok(Type::F64),
-            Lit::USize32(_) => Ok(Type::USize),
-            Lit::USize64(_) => Ok(Type::USize),
+            Lit::USize(bits, _) => Ok(Type::USize),
+            Lit::USize(bits, _) => Ok(Type::USize),
         }
     }
 }
@@ -94,8 +94,8 @@ impl HirGetType for Value {
             Value::U128(_) => Ok(Type::U128),
             Value::F32(_) => Ok(Type::F32),
             Value::F64(_) => Ok(Type::F64),
-            Value::USize32(_) => Ok(Type::USize),
-            Value::USize64(_) => Ok(Type::USize),
+            Value::USize(bits, _) => Ok(Type::USize),
+            Value::USize(bits, _) => Ok(Type::USize),
             Value::InferredInteger(_) => Ok(Type::InferredInteger),
             Value::InferredFloat(_) => Ok(Type::InferredFloat),
 

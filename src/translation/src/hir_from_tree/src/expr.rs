@@ -693,12 +693,12 @@ pub(crate) fn lower_cast(cast: ast::Cast, ctx: &mut Ast2HirCtx, log: &CompilerLo
 
         (Value::InferredInteger(value), Type::USize) => match ctx.ptr_size {
             PtrSize::U32 => match u32::try_from(*value) {
-                Ok(v) => Ok(Value::USize32(v)),
+                Ok(v) => Ok(Value::USize(32, v as u64)),
                 Err(_) => failed_to_cast(log),
             },
 
             PtrSize::U64 => match u64::try_from(*value) {
-                Ok(v) => Ok(Value::USize64(v)),
+                Ok(v) => Ok(Value::USize(64, v)),
                 Err(_) => failed_to_cast(log),
             },
         },

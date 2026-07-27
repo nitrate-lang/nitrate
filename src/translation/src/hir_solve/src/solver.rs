@@ -47,8 +47,7 @@ impl<'m> Solver<'m> {
             Lit::U32(v) => Some(*v as i128),
             Lit::U64(v) => Some(*v as i128),
             Lit::U128(v) => Some(*v as i128),
-            Lit::USize32(v) => Some(*v as i128),
-            Lit::USize64(v) => Some(*v as i128),
+            Lit::USize(_, v) => Some(*v as i128),
             Lit::I8(v) => Some(*v as i128),
             Lit::I16(v) => Some(*v as i128),
             Lit::I32(v) => Some(*v as i128),
@@ -106,8 +105,7 @@ impl<'m> Solver<'m> {
                 Value::U32(_) => Some((0, 4294967295)),
                 Value::U64(_) => Some((0, 18446744073709551615)),
                 Value::U128(_) => Some((0, i128::MAX)),
-                Value::USize32(_) => Some((0, 4294967295)),
-                Value::USize64(_) => Some((0, 18446744073709551615)),
+                Value::USize(..) => Some((0, 18446744073709551615)),
                 Value::InferredInteger(v) => Some((**v as i128, **v as i128)),
                 _ => None,
             }
@@ -285,8 +283,7 @@ impl<'m> Solver<'m> {
             Lit::U32(v) => Some(*v as u128),
             Lit::U64(v) => Some(*v as u128),
             Lit::U128(v) => Some(*v),
-            Lit::USize32(v) => Some(*v as u128),
-            Lit::USize64(v) => Some(*v as u128),
+            Lit::USize(_, v) => Some(*v as u128),
             Lit::I8(v) if *v >= 0 => Some(*v as u128),
             Lit::I16(v) if *v >= 0 => Some(*v as u128),
             Lit::I32(v) if *v >= 0 => Some(*v as u128),
@@ -394,14 +391,14 @@ impl<'m> Solver<'m> {
                 },
                 Type::USize => match self.m.arch_ptr_size() {
                     PtrSize::U32 => match u32::try_from(value) {
-                        Ok(v) => NodeAction::Replace(Value::USize32(v)),
+                        Ok(v) => NodeAction::Replace(Value::USize(32, u64::from(v))),
                         Err(_) => {
                             self.report_out_of_range(value, ty.clone());
                             NodeAction::NoChange
                         }
                     },
                     PtrSize::U64 => match u64::try_from(value) {
-                        Ok(v) => NodeAction::Replace(Value::USize64(v)),
+                        Ok(v) => NodeAction::Replace(Value::USize(64, v)),
                         Err(_) => {
                             self.report_out_of_range(value, ty.clone());
                             NodeAction::NoChange
@@ -452,8 +449,7 @@ impl<'m> Solver<'m> {
             | Value::U128(_)
             | Value::F32(_)
             | Value::F64(_)
-            | Value::USize32(_)
-            | Value::USize64(_)
+            | Value::USize(_, _)
             | Value::StringLit(_)
             | Value::BStringLit(_)
             | Value::StructObject { .. }
@@ -503,8 +499,7 @@ impl<'m> Solver<'m> {
             | Value::U128(_)
             | Value::F32(_)
             | Value::F64(_)
-            | Value::USize32(_)
-            | Value::USize64(_)
+            | Value::USize(..)
             | Value::StringLit(_)
             | Value::BStringLit(_)
             | Value::InferredInteger(_)

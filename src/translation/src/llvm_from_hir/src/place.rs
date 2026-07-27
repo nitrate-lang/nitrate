@@ -199,8 +199,7 @@ pub(crate) fn gen_place<'ctx>(
         | hir::Value::U128(_)
         | hir::Value::F32(_)
         | hir::Value::F64(_)
-        | hir::Value::USize32(_)
-        | hir::Value::USize64(_)
+        | hir::Value::USize(..)
         | hir::Value::StringLit(_)
         | hir::Value::BStringLit(_)
         | hir::Value::List { .. }

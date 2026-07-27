@@ -51,6 +51,26 @@ pub enum BinaryOp {
     Ne,
 }
 
+impl BinaryOp {
+    #[must_use]
+    pub fn is_comparison(&self) -> bool {
+        matches!(
+            self,
+            BinaryOp::Lt | BinaryOp::Gt | BinaryOp::Lte | BinaryOp::Gte | BinaryOp::Eq | BinaryOp::Ne
+        )
+    }
+
+    #[must_use]
+    pub fn is_equality(&self) -> bool {
+        matches!(self, BinaryOp::Eq | BinaryOp::Ne)
+    }
+
+    #[must_use]
+    pub fn is_logical(&self) -> bool {
+        matches!(self, BinaryOp::LogicAnd | BinaryOp::LogicOr)
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub enum UnaryOp {
     /// `+`
@@ -61,7 +81,7 @@ pub enum UnaryOp {
     Not,
 }
 
-#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, PartialOrd)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, PartialOrd)]
 pub enum Lit {
     Unit,
     Bool(bool),
@@ -77,8 +97,7 @@ pub enum Lit {
     U128(u128),
     F32(OrderedFloat<f32>),
     F64(OrderedFloat<f64>),
-    USize32(u32),
-    USize64(u64),
+    USize(u8, u64),
 }
 
 impl Lit {
@@ -99,8 +118,7 @@ impl Lit {
             Lit::U128(_) => 16,
             Lit::F32(_) => 4,
             Lit::F64(_) => 8,
-            Lit::USize32(_) => 4,
-            Lit::USize64(_) => 8,
+            Lit::USize(bits, _) => usize::from(*bits / 8),
         }
     }
 
@@ -118,48 +136,23 @@ impl Lit {
             + TryInto<u128>,
     {
         match ty {
-            Lit::I8(_) => value.try_into().map(Lit::I8).ok(),
-            Lit::I16(_) => value.try_into().map(Lit::I16).ok(),
-            Lit::I32(_) => value.try_into().map(Lit::I32).ok(),
-            Lit::I64(_) => value.try_into().map(Lit::I64).ok(),
-            Lit::I128(_) => value.try_into().map(Lit::I128).ok(),
-            Lit::U8(_) => value.try_into().map(Lit::U8).ok(),
-            Lit::U16(_) => value.try_into().map(Lit::U16).ok(),
-            Lit::U32(_) => value.try_into().map(Lit::U32).ok(),
-            Lit::U64(_) => value.try_into().map(Lit::U64).ok(),
-            Lit::U128(_) => value.try_into().map(Lit::U128).ok(),
-
-            Lit::Unit | Lit::Bool(_) | Lit::F32(_) | Lit::F64(_) | Lit::USize32(_) | Lit::USize64(_) => None,
-        }
-    }
-
-    pub fn new_float<T>(ty: &Lit, value: T) -> Option<Self>
-    where
-        T: TryInto<OrderedFloat<f32>> + TryInto<OrderedFloat<f64>>,
-    {
-        match ty {
-            Lit::Unit
-            | Lit::Bool(_)
-            | Lit::I8(_)
-            | Lit::I16(_)
-            | Lit::I32(_)
-            | Lit::I64(_)
-            | Lit::I128(_)
-            | Lit::U8(_)
-            | Lit::U16(_)
-            | Lit::U32(_)
-            | Lit::U64(_)
-            | Lit::U128(_)
-            | Lit::USize32(_)
-            | Lit::USize64(_) => None,
-
-            Lit::F32(_) => value.try_into().map(Lit::F32).ok(),
-            Lit::F64(_) => value.try_into().map(Lit::F64).ok(),
+            Lit::Unit => None,
+            Lit::Bool(_) => None,
+            Lit::I8(_) => value.try_into().ok().map(Lit::I8),
+            Lit::I16(_) => value.try_into().ok().map(Lit::I16),
+            Lit::I32(_) => value.try_into().ok().map(Lit::I32),
+            Lit::I64(_) => value.try_into().ok().map(Lit::I64),
+            Lit::I128(_) => value.try_into().ok().map(Lit::I128),
+            Lit::U8(_) => value.try_into().ok().map(Lit::U8),
+            Lit::U16(_) => value.try_into().ok().map(Lit::U16),
+            Lit::U32(_) => value.try_into().ok().map(Lit::U32),
+            Lit::U64(_) => value.try_into().ok().map(Lit::U64),
+            Lit::U128(_) => value.try_into().ok().map(Lit::U128),
+            Lit::F32(_) | Lit::F64(_) => None,
+            Lit::USize(bits, _) => value.try_into().ok().map(|v| Lit::USize(*bits, v)),
         }
     }
 }
-
-impl Eq for Lit {}
 
 impl std::hash::Hash for Lit {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
@@ -219,12 +212,9 @@ impl std::hash::Hash for Lit {
                 15u8.hash(state);
                 f.to_bits().hash(state);
             }
-            Lit::USize32(u) => {
+            Lit::USize(bits, u) => {
                 17u8.hash(state);
-                u.hash(state);
-            }
-            Lit::USize64(u) => {
-                18u8.hash(state);
+                bits.hash(state);
                 u.hash(state);
             }
         }
@@ -248,8 +238,7 @@ impl std::fmt::Display for Lit {
             Lit::U128(u) => write!(f, "{u}_u128"),
             Lit::F32(fl) => write!(f, "{fl}_f32"),
             Lit::F64(fl) => write!(f, "{fl}_f64"),
-            Lit::USize32(u) => write!(f, "{u}_usize"),
-            Lit::USize64(u) => write!(f, "{u}_usize"),
+            Lit::USize(bits, u) => write!(f, "{u}_usize{}", *bits),
         }
     }
 }
@@ -342,8 +331,7 @@ pub enum Value {
     U128(Box<u128>),
     F32(OrderedFloat<f32>),
     F64(OrderedFloat<f64>),
-    USize32(u32),
-    USize64(u64),
+    USize(u8, u64),
     StringLit(ThinStr),
     BStringLit(ThinVec<u8>),
     InferredInteger(Box<u128>),
@@ -369,6 +357,11 @@ pub enum Value {
     Unary {
         op: UnaryOp,
         operand: ValueId,
+    },
+
+    IndexAccess {
+        collection: ValueId,
+        index: ValueId,
     },
 
     FieldAccess {
@@ -454,11 +447,6 @@ pub enum Value {
         id: GlobalVariableId,
     },
 
-    IndexAccess {
-        collection: ValueId,
-        index: ValueId,
-    },
-
     LocalVariableSymbol {
         id: LocalVariableId,
     },
@@ -541,7 +529,7 @@ impl Value {
 
     #[must_use]
     pub fn is_usize(&self) -> bool {
-        matches!(self, Value::USize32(_) | Value::USize64(_))
+        matches!(self, Value::USize(..))
     }
 
     #[must_use]
@@ -582,6 +570,11 @@ impl Value {
     #[must_use]
     pub fn is_unary(&self) -> bool {
         matches!(self, Value::Unary { .. })
+    }
+
+    #[must_use]
+    pub fn is_index_access(&self) -> bool {
+        matches!(self, Value::IndexAccess { .. })
     }
 
     #[must_use]
@@ -663,6 +656,26 @@ impl Value {
     pub fn is_method_call(&self) -> bool {
         matches!(self, Value::MethodCall { .. })
     }
+
+    #[must_use]
+    pub fn is_function_symbol(&self) -> bool {
+        matches!(self, Value::FunctionSymbol { .. })
+    }
+
+    #[must_use]
+    pub fn is_global_variable_symbol(&self) -> bool {
+        matches!(self, Value::GlobalVariableSymbol { .. })
+    }
+
+    #[must_use]
+    pub fn is_local_variable_symbol(&self) -> bool {
+        matches!(self, Value::LocalVariableSymbol { .. })
+    }
+
+    #[must_use]
+    pub fn is_parameter_symbol(&self) -> bool {
+        matches!(self, Value::ParameterSymbol { .. })
+    }
 }
 
 impl TryFrom<Value> for Lit {
@@ -684,8 +697,7 @@ impl TryFrom<Value> for Lit {
             Value::U128(u) => Ok(Lit::U128(*u)),
             Value::F32(f) => Ok(Lit::F32(f)),
             Value::F64(f) => Ok(Lit::F64(f)),
-            Value::USize32(u) => Ok(Lit::USize32(u)),
-            Value::USize64(u) => Ok(Lit::USize64(u)),
+            Value::USize(bits, u) => Ok(Lit::USize(bits, u)),
             other => Err(other),
         }
     }
@@ -708,8 +720,7 @@ impl From<Lit> for Value {
             Lit::U128(u) => Value::U128(Box::new(u)),
             Lit::F32(f) => Value::F32(f),
             Lit::F64(f) => Value::F64(f),
-            Lit::USize32(u) => Value::USize32(u),
-            Lit::USize64(u) => Value::USize64(u),
+            Lit::USize(bits, u) => Value::USize(bits, u),
         }
     }
 }
@@ -733,8 +744,7 @@ impl Value {
                 | Value::U128(_)
                 | Value::F32(_)
                 | Value::F64(_)
-                | Value::USize32(_)
-                | Value::USize64(_)
+                | Value::USize(..)
                 | Value::InferredInteger(_)
         )
     }

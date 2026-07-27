@@ -61,8 +61,7 @@ impl Dump for Lit {
             Lit::U128(u) => write!(o, "u128 {u}"),
             Lit::F32(f) => write!(o, "f32 {f}"),
             Lit::F64(f) => write!(o, "f64 {f}"),
-            Lit::USize32(u) => write!(o, "usize {u}"),
-            Lit::USize64(u) => write!(o, "usize {u}"),
+            Lit::USize(_, u) => write!(o, "usize {u}"),
         }
     }
 }
@@ -113,8 +112,7 @@ impl Dump for Value {
             Value::U128(u) => write!(o, "u128 {u}"),
             Value::F32(f) => write!(o, "f32 {f}"),
             Value::F64(f) => write!(o, "f64 {f}"),
-            Value::USize32(u) => write!(o, "usize {u}"),
-            Value::USize64(u) => write!(o, "usize {u}"),
+            Value::USize(_, u) => write!(o, "usize {u}"),
             Value::StringLit(s) => write!(o, "{}", escape_string(s, true)),
             Value::BStringLit(s) => write!(o, "{}", escape_bstring(s, true)),
             Value::InferredInteger(i) => write!(o, "?i {i}"),

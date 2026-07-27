@@ -23,8 +23,7 @@ impl std::ops::Neg for Lit {
             Lit::U128(a) => Ok(Lit::U128(a.wrapping_neg())),
             Lit::F32(a) => Ok(Lit::F32(a.neg())),
             Lit::F64(a) => Ok(Lit::F64(a.neg())),
-            Lit::USize32(a) => Ok(Lit::USize32(a.wrapping_neg())),
-            Lit::USize64(a) => Ok(Lit::USize64(a.wrapping_neg())),
+            Lit::USize(bits, a) => Ok(Lit::USize(bits, a.wrapping_neg())),
             Lit::Bool(_) | Lit::Unit => Err(LiteralNegError::TypeError),
         }
     }
@@ -52,8 +51,7 @@ impl std::ops::Not for Lit {
             Lit::U32(a) => Ok(Lit::U32(a.not())),
             Lit::U64(a) => Ok(Lit::U64(a.not())),
             Lit::U128(a) => Ok(Lit::U128(a.not())),
-            Lit::USize32(a) => Ok(Lit::USize32(a.not())),
-            Lit::USize64(a) => Ok(Lit::USize64(a.not())),
+            Lit::USize(bits, a) => Ok(Lit::USize(bits, a.not())),
             Lit::F32(_) | Lit::F64(_) | Lit::Unit => Err(LiteralNotError::TypeError),
         }
     }
@@ -82,8 +80,7 @@ impl std::ops::Add for Lit {
             (Lit::U128(a), Lit::U128(b)) => Ok(Lit::U128(a.wrapping_add(b))),
             (Lit::F32(a), Lit::F32(b)) => Ok(Lit::F32(a.add(b))),
             (Lit::F64(a), Lit::F64(b)) => Ok(Lit::F64(a.add(b))),
-            (Lit::USize32(a), Lit::USize32(b)) => Ok(Lit::USize32(a.wrapping_add(b))),
-            (Lit::USize64(a), Lit::USize64(b)) => Ok(Lit::USize64(a.wrapping_add(b))),
+            (Lit::USize(bits, a), Lit::USize(_, b)) => Ok(Lit::USize(bits, a.wrapping_add(b))),
             _ => Err(LiteralAddError::TypeError),
         }
     }
@@ -112,8 +109,7 @@ impl std::ops::Sub for Lit {
             (Lit::U128(a), Lit::U128(b)) => Ok(Lit::U128(a.wrapping_sub(b))),
             (Lit::F32(a), Lit::F32(b)) => Ok(Lit::F32(a.sub(b))),
             (Lit::F64(a), Lit::F64(b)) => Ok(Lit::F64(a.sub(b))),
-            (Lit::USize32(a), Lit::USize32(b)) => Ok(Lit::USize32(a.wrapping_sub(b))),
-            (Lit::USize64(a), Lit::USize64(b)) => Ok(Lit::USize64(a.wrapping_sub(b))),
+            (Lit::USize(bits, a), Lit::USize(_, b)) => Ok(Lit::USize(bits, a.wrapping_sub(b))),
             _ => Err(LiteralSubError::TypeError),
         }
     }
@@ -142,8 +138,7 @@ impl std::ops::Mul for Lit {
             (Lit::U128(a), Lit::U128(b)) => Ok(Lit::U128(a.wrapping_mul(b))),
             (Lit::F32(a), Lit::F32(b)) => Ok(Lit::F32(a.mul(b))),
             (Lit::F64(a), Lit::F64(b)) => Ok(Lit::F64(a.mul(b))),
-            (Lit::USize32(a), Lit::USize32(b)) => Ok(Lit::USize32(a.wrapping_mul(b))),
-            (Lit::USize64(a), Lit::USize64(b)) => Ok(Lit::USize64(a.wrapping_mul(b))),
+            (Lit::USize(bits, a), Lit::USize(_, b)) => Ok(Lit::USize(bits, a.wrapping_mul(b))),
             _ => Err(LiteralMulError::TypeError),
         }
     }
@@ -203,13 +198,9 @@ impl std::ops::Div for Lit {
             },
             (Lit::F32(a), Lit::F32(b)) => Ok(Lit::F32(a.div(b))),
             (Lit::F64(a), Lit::F64(b)) => Ok(Lit::F64(a.div(b))),
-            (Lit::USize32(a), Lit::USize32(b)) => match b {
+            (Lit::USize(bits, a), Lit::USize(_, b)) => match b {
                 0 => Err(LiteralDivError::DivisionByZero),
-                _ => Ok(Lit::USize32(a.wrapping_div(b))),
-            },
-            (Lit::USize64(a), Lit::USize64(b)) => match b {
-                0 => Err(LiteralDivError::DivisionByZero),
-                _ => Ok(Lit::USize64(a.wrapping_div(b))),
+                _ => Ok(Lit::USize(bits, a.wrapping_div(b))),
             },
             _ => Err(LiteralDivError::TypeError),
         }
@@ -270,13 +261,9 @@ impl std::ops::Rem for Lit {
             },
             (Lit::F32(a), Lit::F32(b)) => Ok(Lit::F32(a.rem(b))),
             (Lit::F64(a), Lit::F64(b)) => Ok(Lit::F64(a.rem(b))),
-            (Lit::USize32(a), Lit::USize32(b)) => match b {
+            (Lit::USize(bits, a), Lit::USize(_, b)) => match b {
                 0 => Err(LiteralRemError::ModuloByZero),
-                _ => Ok(Lit::USize32(a.wrapping_rem(b))),
-            },
-            (Lit::USize64(a), Lit::USize64(b)) => match b {
-                0 => Err(LiteralRemError::ModuloByZero),
-                _ => Ok(Lit::USize64(a.wrapping_rem(b))),
+                _ => Ok(Lit::USize(bits, a.wrapping_rem(b))),
             },
             _ => Err(LiteralRemError::TypeError),
         }
@@ -304,8 +291,7 @@ impl std::ops::BitAnd for Lit {
             (Lit::U32(a), Lit::U32(b)) => Ok(Lit::U32(a.bitand(b))),
             (Lit::U64(a), Lit::U64(b)) => Ok(Lit::U64(a.bitand(b))),
             (Lit::U128(a), Lit::U128(b)) => Ok(Lit::U128(a.bitand(b))),
-            (Lit::USize32(a), Lit::USize32(b)) => Ok(Lit::USize32(a.bitand(b))),
-            (Lit::USize64(a), Lit::USize64(b)) => Ok(Lit::USize64(a.bitand(b))),
+            (Lit::USize(bits, a), Lit::USize(_, b)) => Ok(Lit::USize(bits, a.bitand(b))),
             _ => Err(LiteralBitAndError::TypeError),
         }
     }
@@ -332,8 +318,7 @@ impl std::ops::BitOr for Lit {
             (Lit::U32(a), Lit::U32(b)) => Ok(Lit::U32(a.bitor(b))),
             (Lit::U64(a), Lit::U64(b)) => Ok(Lit::U64(a.bitor(b))),
             (Lit::U128(a), Lit::U128(b)) => Ok(Lit::U128(a.bitor(b))),
-            (Lit::USize32(a), Lit::USize32(b)) => Ok(Lit::USize32(a.bitor(b))),
-            (Lit::USize64(a), Lit::USize64(b)) => Ok(Lit::USize64(a.bitor(b))),
+            (Lit::USize(bits, a), Lit::USize(_, b)) => Ok(Lit::USize(bits, a.bitor(b))),
             _ => Err(LiteralBitOrError::TypeError),
         }
     }
@@ -360,8 +345,7 @@ impl std::ops::BitXor for Lit {
             (Lit::U32(a), Lit::U32(b)) => Ok(Lit::U32(a.bitxor(b))),
             (Lit::U64(a), Lit::U64(b)) => Ok(Lit::U64(a.bitxor(b))),
             (Lit::U128(a), Lit::U128(b)) => Ok(Lit::U128(a.bitxor(b))),
-            (Lit::USize32(a), Lit::USize32(b)) => Ok(Lit::USize32(a.bitxor(b))),
-            (Lit::USize64(a), Lit::USize64(b)) => Ok(Lit::USize64(a.bitxor(b))),
+            (Lit::USize(bits, a), Lit::USize(_, b)) => Ok(Lit::USize(bits, a.bitxor(b))),
             _ => Err(LiteralBitXorError::TypeError),
         }
     }
@@ -419,12 +403,8 @@ impl std::ops::Shl<Lit> for Lit {
                 Some(res) => Ok(Lit::U128(res)),
                 None => Err(LiteralShlError::ShiftAmountError),
             },
-            (Lit::USize32(a), Lit::U32(b)) => match a.checked_shl(b) {
-                Some(res) => Ok(Lit::USize32(res)),
-                None => Err(LiteralShlError::ShiftAmountError),
-            },
-            (Lit::USize64(a), Lit::U32(b)) => match a.checked_shl(b) {
-                Some(res) => Ok(Lit::USize64(res)),
+            (Lit::USize(bits, a), Lit::U32(b)) => match a.checked_shl(b) {
+                Some(res) => Ok(Lit::USize(bits, res)),
                 None => Err(LiteralShlError::ShiftAmountError),
             },
             _ => Err(LiteralShlError::TypeError),
@@ -484,12 +464,8 @@ impl std::ops::Shr<Lit> for Lit {
                 Some(res) => Ok(Lit::U128(res)),
                 None => Err(LiteralShrError::ShiftAmountError),
             },
-            (Lit::USize32(a), Lit::U32(b)) => match a.checked_shr(b) {
-                Some(res) => Ok(Lit::USize32(res)),
-                None => Err(LiteralShrError::ShiftAmountError),
-            },
-            (Lit::USize64(a), Lit::U32(b)) => match a.checked_shr(b) {
-                Some(res) => Ok(Lit::USize64(res)),
+            (Lit::USize(bits, a), Lit::U32(b)) => match a.checked_shr(b) {
+                Some(res) => Ok(Lit::USize(bits, res)),
                 None => Err(LiteralShrError::ShiftAmountError),
             },
             _ => Err(LiteralShrError::TypeError),
@@ -600,8 +576,7 @@ impl Lit {
             (Lit::U128(a), Lit::U128(b)) => Ok(a.lt(b)),
             (Lit::F32(a), Lit::F32(b)) => Ok(a.lt(b)),
             (Lit::F64(a), Lit::F64(b)) => Ok(a.lt(b)),
-            (Lit::USize32(a), Lit::USize32(b)) => Ok(a.lt(b)),
-            (Lit::USize64(a), Lit::USize64(b)) => Ok(a.lt(b)),
+            (Lit::USize(_, a), Lit::USize(_, b)) => Ok(a.lt(b)),
             _ => Err(LiteralCmpError::TypeError),
         }
     }
@@ -623,8 +598,7 @@ impl Lit {
             (Lit::U128(a), Lit::U128(b)) => Ok(a.gt(b)),
             (Lit::F32(a), Lit::F32(b)) => Ok(a.gt(b)),
             (Lit::F64(a), Lit::F64(b)) => Ok(a.gt(b)),
-            (Lit::USize32(a), Lit::USize32(b)) => Ok(a.gt(b)),
-            (Lit::USize64(a), Lit::USize64(b)) => Ok(a.gt(b)),
+            (Lit::USize(_, a), Lit::USize(_, b)) => Ok(a.gt(b)),
             _ => Err(LiteralCmpError::TypeError),
         }
     }
@@ -646,8 +620,7 @@ impl Lit {
             (Lit::U128(a), Lit::U128(b)) => Ok(a.le(b)),
             (Lit::F32(a), Lit::F32(b)) => Ok(a.le(b)),
             (Lit::F64(a), Lit::F64(b)) => Ok(a.le(b)),
-            (Lit::USize32(a), Lit::USize32(b)) => Ok(a.le(b)),
-            (Lit::USize64(a), Lit::USize64(b)) => Ok(a.le(b)),
+            (Lit::USize(_, a), Lit::USize(_, b)) => Ok(a.le(b)),
             _ => Err(LiteralCmpError::TypeError),
         }
     }
@@ -669,8 +642,7 @@ impl Lit {
             (Lit::U128(a), Lit::U128(b)) => Ok(a.ge(b)),
             (Lit::F32(a), Lit::F32(b)) => Ok(a.ge(b)),
             (Lit::F64(a), Lit::F64(b)) => Ok(a.ge(b)),
-            (Lit::USize32(a), Lit::USize32(b)) => Ok(a.ge(b)),
-            (Lit::USize64(a), Lit::USize64(b)) => Ok(a.ge(b)),
+            (Lit::USize(_, a), Lit::USize(_, b)) => Ok(a.ge(b)),
             _ => Err(LiteralCmpError::TypeError),
         }
     }
@@ -692,8 +664,7 @@ impl Lit {
             (Lit::U128(a), Lit::U128(b)) => Ok(a.eq(b)),
             (Lit::F32(a), Lit::F32(b)) => Ok(a.eq(b) || (a.is_nan() && b.is_nan())),
             (Lit::F64(a), Lit::F64(b)) => Ok(a.eq(b) || (a.is_nan() && b.is_nan())),
-            (Lit::USize32(a), Lit::USize32(b)) => Ok(a.eq(b)),
-            (Lit::USize64(a), Lit::USize64(b)) => Ok(a.eq(b)),
+            (Lit::USize(_, a), Lit::USize(_, b)) => Ok(a.eq(b)),
             _ => Err(LiteralCmpError::TypeError),
         }
     }
@@ -715,8 +686,7 @@ impl Lit {
             (Lit::U128(a), Lit::U128(b)) => Ok(a.ne(b)),
             (Lit::F32(a), Lit::F32(b)) => Ok(a.ne(b) && !(a.is_nan() && b.is_nan())),
             (Lit::F64(a), Lit::F64(b)) => Ok(a.ne(b) && !(a.is_nan() && b.is_nan())),
-            (Lit::USize32(a), Lit::USize32(b)) => Ok(a.ne(b)),
-            (Lit::USize64(a), Lit::USize64(b)) => Ok(a.ne(b)),
+            (Lit::USize(_, a), Lit::USize(_, b)) => Ok(a.ne(b)),
             _ => Err(LiteralCmpError::TypeError),
         }
     }

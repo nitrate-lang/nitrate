@@ -1901,8 +1901,9 @@ pub(crate) fn gen_rval<'ctx>(
         hir::Value::U128(x) => gen_rval_lit_u128(ctx, **x),
         hir::Value::F32(x) => gen_rval_lit_f32(ctx, x.into_inner()),
         hir::Value::F64(x) => gen_rval_lit_f64(ctx, x.into_inner()),
-        hir::Value::USize32(x) => gen_rval_lit_u32(ctx, *x),
-        hir::Value::USize64(x) => gen_rval_lit_u64(ctx, *x),
+        hir::Value::USize(32, x) => gen_rval_lit_u32(ctx, *x as u32),
+        hir::Value::USize(64, x) => gen_rval_lit_u64(ctx, *x as u64),
+        hir::Value::USize(_, x) => panic!("Unsupported usize size: {}", x),
         hir::Value::StringLit(x) => gen_rval_lit_string(ctx, x),
         hir::Value::BStringLit(x) => gen_rval_lit_bstring(ctx, x.as_slice()),
 

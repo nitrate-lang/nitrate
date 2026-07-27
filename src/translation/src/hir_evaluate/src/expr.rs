@@ -32,8 +32,7 @@ impl TryFrom<Value> for CastLitBridge {
             Value::U128(u) => Ok(CastLitBridge::U128(*u)),
             Value::F32(f) => Ok(CastLitBridge::F128(OrderedFloat::from(*f as f64))),
             Value::F64(f) => Ok(CastLitBridge::F128(OrderedFloat::from(*f as f64))),
-            Value::USize32(u) => Ok(CastLitBridge::U128(u as u128)),
-            Value::USize64(u) => Ok(CastLitBridge::U128(u as u128)),
+            Value::USize(_, u) => Ok(CastLitBridge::U128(u as u128)),
             Value::InferredInteger(u) => Ok(CastLitBridge::U128(*u)),
             Value::InferredFloat(f) => Ok(CastLitBridge::F128(f)),
             _ => Err(()),
@@ -97,15 +96,15 @@ impl CastLitBridge {
     fn to_usize(self, ptr_size: PtrSize) -> Result<Value, Unwind> {
         match ptr_size {
             PtrSize::U32 => match self {
-                CastLitBridge::I128(i) => Ok(Value::USize32(i as u32)),
-                CastLitBridge::U128(u) => Ok(Value::USize32(u as u32)),
-                CastLitBridge::F128(f) => Ok(Value::USize32(*f as u32)),
+                CastLitBridge::I128(i) => Ok(Value::USize(32, i as u64)),
+                CastLitBridge::U128(u) => Ok(Value::USize(32, u as u64)),
+                CastLitBridge::F128(f) => Ok(Value::USize(32, *f as u64)),
                 CastLitBridge::Unit => Err(Unwind::TypeError),
             },
             PtrSize::U64 => match self {
-                CastLitBridge::I128(i) => Ok(Value::USize64(i as u64)),
-                CastLitBridge::U128(u) => Ok(Value::USize64(u as u64)),
-                CastLitBridge::F128(f) => Ok(Value::USize64(*f as u64)),
+                CastLitBridge::I128(i) => Ok(Value::USize(64, i as u64)),
+                CastLitBridge::U128(u) => Ok(Value::USize(64, u as u64)),
+                CastLitBridge::F128(f) => Ok(Value::USize(64, *f as u64)),
                 CastLitBridge::Unit => Err(Unwind::TypeError),
             },
         }
@@ -243,8 +242,7 @@ impl HirEvaluate for Value {
             Value::U128(u) => Ok(Value::U128(u.clone())),
             Value::F32(f) => Ok(Value::F32(*f)),
             Value::F64(f) => Ok(Value::F64(*f)),
-            Value::USize32(u) => Ok(Value::USize32(*u)),
-            Value::USize64(u) => Ok(Value::USize64(*u)),
+            Value::USize(bits, u) => Ok(Value::USize(*bits, *u)),
             Value::StringLit(s) => Ok(Value::StringLit(s.clone())),
             Value::BStringLit(s) => Ok(Value::BStringLit(s.clone())),
             Value::InferredInteger(i) => Ok(Value::InferredInteger(i.clone())),

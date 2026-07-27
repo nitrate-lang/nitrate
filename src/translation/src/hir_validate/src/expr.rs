@@ -71,8 +71,7 @@ impl ValidateHirValue for Value {
             | Value::U128(_)
             | Value::F32(_)
             | Value::F64(_)
-            | Value::USize32(_)
-            | Value::USize64(_)
+            | Value::USize(..)
             | Value::StringLit(_)
             | Value::BStringLit(_) => Ok(()),
 
