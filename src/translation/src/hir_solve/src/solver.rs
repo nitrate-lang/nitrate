@@ -370,26 +370,46 @@ impl<'m> Solver<'m> {
                 // by propagating constraints between them
                 if let Some(constraints) = self.constraints.get(e).cloned() {
                     for element in elements {
+                        // When propagating constraints from a list literal to its elements,
+                        // transform array/slice type constraints into element-type constraints.
+                        // E.g., if the list is constrained to [i32; 3], each element should be i32.
+                        let element_constraints: HashSet<TypeConstraint> = constraints
+                            .iter()
+                            .map(|c| match c {
+                                TypeConstraint::Equal(ty) => match &**ty {
+                                    Type::Array { element_type, .. }
+                                    | Type::SliceRef { element_type, .. }
+                                    | Type::SlicePtr { element_type, .. } => TypeConstraint::Equal(*element_type),
+                                    _ => c.clone(),
+                                },
+                            })
+                            .collect();
                         self.constraints
                             .entry(element.clone())
                             .or_default()
-                            .extend(constraints.clone());
+                            .extend(element_constraints);
                     }
                 }
-                // All list elements must have the same type, so constrain each
-                // element's type to match the first element's type
-                if let Some(first_element) = elements.first() {
-                    for element in elements.iter().skip(1) {
-                        let first_type_id = first_element
-                            .borrow()
-                            .determine_type(self.m)
-                            .ok()
-                            .map(|ty| TypeId::from(ty));
-                        if let Some(first_type_id) = first_type_id {
-                            self.constraints
-                                .entry(element.clone())
-                                .or_default()
-                                .insert(TypeConstraint::Equal(first_type_id));
+                // All list elements must have the same type, so find the first
+                // element that has already resolved to a concrete type and propagate
+                // that type to all other elements.
+                let concrete_element = elements
+                    .iter()
+                    .find(|element| !matches!(&*element.borrow(), Value::InferredInteger(_) | Value::InferredFloat(_)));
+                if let Some(concrete_element) = concrete_element {
+                    let concrete_type_id = concrete_element
+                        .borrow()
+                        .determine_type(self.m)
+                        .ok()
+                        .map(|ty| TypeId::from(ty));
+                    if let Some(concrete_type_id) = concrete_type_id {
+                        for element in elements.iter() {
+                            if matches!(&*element.borrow(), Value::InferredInteger(_) | Value::InferredFloat(_)) {
+                                self.constraints
+                                    .entry(element.clone())
+                                    .or_default()
+                                    .insert(TypeConstraint::Equal(concrete_type_id));
+                            }
                         }
                     }
                 }
