@@ -1,4 +1,10 @@
 //! Tests for comment lexing.
+//!
+//! Comment text includes the delimiter markers so the LSP can distinguish
+//! comment kinds by inspecting the stored text:
+//! - `#` comments store the full text including `#`.
+//! - `//` comments store the full text including `//`.
+//! - `/* */` comments store the full text including `/*` and `*/`.
 
 use crate::tests::{all_tokens, tokens_skipping_trivia};
 use nitrate_token::{Comment, CommentKind, Integer, IntegerKind, Token};
@@ -147,6 +153,7 @@ fn test_slash_slash_comment_eof_no_newline() {
 }
 
 // --- `/* */` block comment tests ---
+// Block comments store the full text including /* and */ delimiters.
 
 #[test]
 fn test_block_comment_basic() {
@@ -155,7 +162,7 @@ fn test_block_comment_basic() {
     assert_eq!(toks.len(), 1);
     assert_eq!(
         toks[0].token,
-        Token::Comment(Comment::new(" block comment ".into(), CommentKind::MultiLine)),
+        Token::Comment(Comment::new("/* block comment */".into(), CommentKind::MultiLine)),
     );
 }
 
@@ -166,7 +173,7 @@ fn test_block_comment_empty() {
     assert_eq!(toks.len(), 1);
     assert_eq!(
         toks[0].token,
-        Token::Comment(Comment::new(String::new(), CommentKind::MultiLine)),
+        Token::Comment(Comment::new("/**/".into(), CommentKind::MultiLine)),
     );
 }
 
@@ -177,7 +184,7 @@ fn test_block_comment_multiline() {
     assert_eq!(toks.len(), 1);
     assert_eq!(
         toks[0].token,
-        Token::Comment(Comment::new(" line1\nline2\nline3 ".into(), CommentKind::MultiLine)),
+        Token::Comment(Comment::new("/* line1\nline2\nline3 */".into(), CommentKind::MultiLine)),
     );
 }
 
@@ -218,11 +225,11 @@ fn test_block_comment_in_the_middle_of_code() {
 fn test_block_comment_with_nested_looking_content() {
     let source = "/* contains /* nested looking */";
     let toks = all_tokens(source);
-    // The first `*/` terminates the comment — only " contains /* nested looking " is the comment
+    // The first `*/` terminates the comment — the stored text includes delimiters
     assert_eq!(
         toks[0].token,
         Token::Comment(Comment::new(
-            " contains /* nested looking ".into(),
+            "/* contains /* nested looking */".into(),
             CommentKind::MultiLine,
         ))
     );
@@ -234,7 +241,7 @@ fn test_block_comment_multiple_stars_before_close() {
     let toks = all_tokens(source);
     assert_eq!(
         toks[0].token,
-        Token::Comment(Comment::new(String::new(), CommentKind::MultiLine))
+        Token::Comment(Comment::new("/**/".into(), CommentKind::MultiLine))
     );
 }
 
@@ -244,7 +251,7 @@ fn test_block_comment_many_stars() {
     let toks = all_tokens(source);
     assert_eq!(
         toks[0].token,
-        Token::Comment(Comment::new("***".into(), CommentKind::MultiLine)),
+        Token::Comment(Comment::new("/*****/".into(), CommentKind::MultiLine)),
     );
 }
 
@@ -254,7 +261,10 @@ fn test_block_comment_with_newlines_inside() {
     let toks = all_tokens(source);
     assert_eq!(
         toks[0].token,
-        Token::Comment(Comment::new(" line1\nline2\nline3\n".into(), CommentKind::MultiLine)),
+        Token::Comment(Comment::new(
+            "/* line1\nline2\nline3\n*/".into(),
+            CommentKind::MultiLine
+        )),
     );
 }
 
@@ -264,7 +274,7 @@ fn test_block_comment_with_carriage_returns() {
     let toks = all_tokens(source);
     assert_eq!(
         toks[0].token,
-        Token::Comment(Comment::new(" line1\r\nline2\r\n".into(), CommentKind::MultiLine)),
+        Token::Comment(Comment::new("/* line1\r\nline2\r\n*/".into(), CommentKind::MultiLine)),
     );
 }
 
@@ -275,7 +285,7 @@ fn test_block_comment_with_special_chars() {
     assert_eq!(
         toks[0].token,
         Token::Comment(Comment::new(
-            " special: $%^&*()_+-=[]{}|;:',.<>?/~` ".into(),
+            "/* special: $%^&*()_+-=[]{}|;:',.<>?/~` */".into(),
             CommentKind::MultiLine
         )),
     );
@@ -311,7 +321,7 @@ fn test_block_comment_exact_three_char() {
     let toks = all_tokens(source);
     assert_eq!(
         toks[0].token,
-        Token::Comment(Comment::new("a".into(), CommentKind::MultiLine)),
+        Token::Comment(Comment::new("/*a*/".into(), CommentKind::MultiLine)),
     );
 }
 
@@ -401,7 +411,7 @@ fn test_block_comment_at_end_of_file_no_newline() {
     assert_eq!(toks[1].token, Token::Space);
     assert_eq!(
         toks[2].token,
-        Token::Comment(Comment::new(" trailing block ".into(), CommentKind::MultiLine)),
+        Token::Comment(Comment::new("/* trailing block */".into(), CommentKind::MultiLine)),
     );
 }
 
@@ -412,7 +422,7 @@ fn test_block_comment_star_in_middle_but_no_slash() {
     let toks = all_tokens(source);
     assert_eq!(
         toks[0].token,
-        Token::Comment(Comment::new(" a * b ".into(), CommentKind::MultiLine)),
+        Token::Comment(Comment::new("/* a * b */".into(), CommentKind::MultiLine)),
     );
 }
 

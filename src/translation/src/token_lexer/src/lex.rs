@@ -828,11 +828,13 @@ impl<'a> Lexer<'a> {
 
     #[inline(always)]
     fn parse_block_comment(&mut self) -> Result<Token, ()> {
-        // We already consumed the first '/' and '*', so advance past '*'
+        // We already consumed the first '/' in parse_slash_or_comment.
+        // Now consume the '*', then read until "*/" is found.
         self.advance(b'*');
         let start_pos = self.internal_getc_pos.clone();
 
-        let mut comment_bytes = Vec::new();
+        // Pre-populate with the opening "/*"
+        let mut comment_bytes = vec![b'/', b'*'];
 
         loop {
             match self.peek_byte() {
@@ -840,6 +842,8 @@ impl<'a> Lexer<'a> {
                     self.advance(b'*');
                     if let Ok(b'/') = self.peek_byte() {
                         self.advance(b'/');
+                        comment_bytes.push(b'*');
+                        comment_bytes.push(b'/');
                         break;
                     } else {
                         comment_bytes.push(b'*');
