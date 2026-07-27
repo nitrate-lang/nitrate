@@ -279,7 +279,7 @@ impl Interpreter<'_> {
             let (hir_module, symbol_tab) =
                 self.lower_to_hir(ast_module, ptr_size, package.name(), &package.entrypoint(), &log)?;
 
-            let mut hir_verifier = hir_validate::ValidateCtx::new(&symbol_tab);
+            let mut hir_verifier = hir_validate::ValidateCtx::new(&symbol_tab, &log);
             let valid_hir_module = match hir_module.clone().validate(&mut hir_verifier) {
                 Ok(m) => m,
                 Err(_) => {

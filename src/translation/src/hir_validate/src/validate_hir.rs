@@ -1,9 +1,12 @@
 use log::debug;
+use nitrate_diagnosis::CompilerLog;
 use nitrate_hir::SymbolTab;
 use nitrate_hir::prelude::*;
 use nitrate_hir_get_type::HirGetType;
 use nitrate_nstring::NString;
 use std::collections::HashSet;
+
+use crate::diagnosis::ValidateErr;
 
 pub struct ValidHir<T> {
     inner: T,
@@ -19,30 +22,27 @@ impl<T> ValidHir<T> {
     }
 }
 
-pub(crate) fn establish_property(name: &str, f: impl FnOnce() -> Result<(), ()>) -> Result<(), ()> {
-    debug!("Establishing property: \"{}\"", name);
-    let result = f();
-    match result {
-        Ok(_) => debug!("Established property \"{}\"", name),
-        Err(_) => debug!("Failed to establish property \"{}\"", name),
-    }
-    result
-}
-
 pub struct ValidateCtx<'m> {
     pub(crate) visited: HashSet<*const ()>,
     pub(crate) m: &'m SymbolTab,
     /// The current module path (e.g., ["root", "foo"] for module foo inside root).
     pub(crate) current_module_path: Vec<NString>,
+    pub(crate) log: &'m CompilerLog,
 }
 
 impl<'m> ValidateCtx<'m> {
-    pub fn new(m: &'m SymbolTab) -> Self {
+    pub fn new(m: &'m SymbolTab, log: &'m CompilerLog) -> Self {
         ValidateCtx {
             visited: HashSet::new(),
             m,
             current_module_path: Vec::new(),
+            log,
         }
+    }
+
+    /// Report a validation error to the compiler log.
+    pub(crate) fn report(&self, err: ValidateErr) {
+        self.log.report(&err);
     }
 
     pub(crate) fn cyclic_bail<T>(&mut self, item: &T) -> bool {
@@ -121,6 +121,28 @@ impl<'m> ValidateCtx<'m> {
             _ => false,
         }
     }
+}
+
+/// Check a property and report the given error if the property check fails.
+///
+/// The closure `f` receives `ctx` as `&mut ValidateCtx` to allow checking
+/// properties that need access to the validation context (e.g., type verification).
+pub(crate) fn establish_property(
+    ctx: &mut ValidateCtx,
+    name: &str,
+    err: ValidateErr,
+    f: impl FnOnce(&mut ValidateCtx) -> Result<(), ()>,
+) -> Result<(), ()> {
+    debug!("Establishing property: \"{}\"", name);
+    let result = f(ctx);
+    match result {
+        Ok(_) => debug!("Established property \"{}\"", name),
+        Err(_) => {
+            debug!("Failed to establish property \"{}\"", name);
+            ctx.report(err);
+        }
+    }
+    result
 }
 
 pub trait ValidateHirValue

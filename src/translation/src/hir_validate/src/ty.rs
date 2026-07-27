@@ -1,5 +1,6 @@
 use std::{collections::HashSet, ops::Deref};
 
+use crate::diagnosis::ValidateErr;
 use crate::{ValidHir, ValidateCtx, ValidateHirItem, ValidateHirType, ValidateTypeOptions, establish_property};
 use nitrate_hir::prelude::*;
 
@@ -9,21 +10,29 @@ fn verify_array(
     _len: u32,
     _options: &ValidateTypeOptions,
 ) -> Result<(), ()> {
-    establish_property("element_type: Sized", || {
-        element_type.verify(ctx, &ValidateTypeOptions::sized())
-    })
+    establish_property(
+        ctx,
+        "element_type: Sized",
+        ValidateErr::TypeNotSized {
+            type_repr: format!("{:?}", element_type),
+        },
+        |c| element_type.verify(c, &ValidateTypeOptions::sized()),
+    )
 }
 
 fn verify_tuple(ctx: &mut ValidateCtx, element_types: &[TypeId], _options: &ValidateTypeOptions) -> Result<(), ()> {
-    establish_property("all tuple element types: Sized", || {
-        for elem_type in element_types {
-            establish_property("element_type: Sized", || {
-                elem_type.verify(ctx, &ValidateTypeOptions::sized())
-            })?;
-        }
+    for elem_type in element_types {
+        establish_property(
+            ctx,
+            "element_type: Sized",
+            ValidateErr::TypeNotSized {
+                type_repr: format!("{:?}", elem_type),
+            },
+            |c| elem_type.verify(c, &ValidateTypeOptions::sized()),
+        )?;
+    }
 
-        Ok(())
-    })
+    Ok(())
 }
 
 fn verify_refinement_type(
@@ -35,9 +44,17 @@ fn verify_refinement_type(
 ) -> Result<(), ()> {
     base.verify(ctx, options)?;
 
-    establish_property("refinement bounds: max >= min", || {
-        if max.deref() >= min.deref() { Ok(()) } else { Err(()) }
-    })
+    establish_property(
+        ctx,
+        "refinement bounds: max >= min",
+        ValidateErr::RefinementBoundsInvalid {
+            min: min.deref().to_string().parse().unwrap_or(0),
+            max: max.deref().to_string().parse().unwrap_or(0),
+        },
+        |_| {
+            if max.deref() >= min.deref() { Ok(()) } else { Err(()) }
+        },
+    )
 }
 
 /// Valid extern ABI names that LLVM supports.
@@ -130,6 +147,9 @@ impl ValidateHirType for FunctionAttribute {
                 if VALID_ABI_NAMES.iter().any(|&name| name == &*abi.name) {
                     Ok(())
                 } else {
+                    ctx.report(ValidateErr::InvalidExternAbi {
+                        abi_name: abi.name.to_string(),
+                    });
                     Err(())
                 }
             }
@@ -153,26 +173,41 @@ impl ValidateHirType for FunctionType {
         }
 
         for param in &self.params {
-            establish_property("parameter type: Sized", || {
-                param.1.verify(ctx, &ValidateTypeOptions::sized())
-            })?;
+            establish_property(
+                ctx,
+                "parameter type: Sized",
+                ValidateErr::TypeNotSized {
+                    type_repr: format!("{:?}", param.1),
+                },
+                |c| param.1.verify(c, &ValidateTypeOptions::sized()),
+            )?;
         }
 
-        establish_property("parameter name uniqueness", || {
-            let mut names = HashSet::new();
+        establish_property(
+            ctx,
+            "parameter name uniqueness",
+            ValidateErr::DuplicateParameterName { name: "".into() },
+            |_| {
+                let mut names = HashSet::new();
 
-            for param in &self.params {
-                if !names.insert(&param.0) {
-                    return Err(());
+                for param in &self.params {
+                    if !names.insert(&param.0) {
+                        return Err(());
+                    }
                 }
-            }
 
-            Ok(())
-        })?;
+                Ok(())
+            },
+        )?;
 
-        establish_property("return_type: Sized", || {
-            self.return_type.verify(ctx, &ValidateTypeOptions::sized())
-        })?;
+        establish_property(
+            ctx,
+            "return_type: Sized",
+            ValidateErr::TypeNotSized {
+                type_repr: format!("{:?}", self.return_type),
+            },
+            |c| self.return_type.verify(c, &ValidateTypeOptions::sized()),
+        )?;
 
         Ok(())
     }
@@ -303,7 +338,12 @@ impl ValidateHirType for Type {
                 // TODO: Verify that the type arguments satisfy the generic constraints.
             }
 
-            Type::InferredFloat | Type::InferredInteger | Type::Inferred { .. } => Err(()),
+            Type::InferredFloat | Type::InferredInteger | Type::Inferred { .. } => {
+                ctx.report(ValidateErr::InferredTypeNotAllowed {
+                    type_repr: format!("{:?}", self),
+                });
+                Err(())
+            }
 
             Type::GenericParam { .. } => {
                 // Generic parameters are valid in uninstantiated contexts (before monomorphization)

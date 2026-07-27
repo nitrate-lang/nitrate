@@ -1,3 +1,4 @@
+use crate::diagnosis::ValidateErr;
 use crate::{
     ValidHir, ValidateCtx, ValidateHirItem, ValidateHirType, ValidateHirValue, ValidateTypeOptions, establish_property,
 };
@@ -22,12 +23,17 @@ impl ValidateHirValue for Block {
                 {
                     expr.borrow().verify(ctx)?;
 
-                    establish_property("divergent statements have no successors", || {
-                        if !is_last {
-                            return Err(());
-                        }
-                        Ok(())
-                    })?;
+                    establish_property(
+                        ctx,
+                        "divergent statements have no successors",
+                        ValidateErr::DivergentStatementHasSuccessors,
+                        |_| {
+                            if !is_last {
+                                return Err(());
+                            }
+                            Ok(())
+                        },
+                    )?;
                 }
 
                 BlockElement::Expr(expr) => expr.borrow().verify(ctx)?,
@@ -70,7 +76,12 @@ impl ValidateHirValue for Value {
             | Value::StringLit(_)
             | Value::BStringLit(_) => Ok(()),
 
-            Value::InferredInteger(_) | Value::InferredFloat(_) => Err(()),
+            Value::InferredInteger(_) | Value::InferredFloat(_) => {
+                ctx.report(ValidateErr::InferredTypeNotAllowed {
+                    type_repr: format!("{:?}", self),
+                });
+                Err(())
+            }
 
             Value::StructObject { struct_def, fields } => {
                 // Verify that all fields exist on the struct and are accessible
@@ -79,16 +90,27 @@ impl ValidateHirValue for Value {
                     match struct_def.fields.get(field_name) {
                         Some(field) => {
                             // Check field visibility
-                            establish_property("struct field visibility", || {
-                                if !ctx.check_visibility(&field.visibility, field_name) {
-                                    return Err(());
-                                }
-                                Ok(())
-                            })?;
+                            establish_property(
+                                ctx,
+                                "struct field visibility",
+                                ValidateErr::FieldAccessVisibility {
+                                    field_name: field_name.clone(),
+                                },
+                                |c| {
+                                    if !c.check_visibility(&field.visibility, field_name) {
+                                        return Err(());
+                                    }
+                                    Ok(())
+                                },
+                            )?;
                             field_value.borrow().verify(ctx)?;
                         }
                         None => {
                             // Field doesn't exist on struct
+                            ctx.report(ValidateErr::StructFieldDoesNotExist {
+                                struct_name: struct_def.name.clone(),
+                                field_name: field_name.clone(),
+                            });
                             return Err(());
                         }
                     }
@@ -104,6 +126,10 @@ impl ValidateHirValue for Value {
                 // Verify that the enum variant exists
                 let enum_def = enum_def.borrow();
                 if !enum_def.variants.iter().any(|v| &v.name == variant) {
+                    ctx.report(ValidateErr::EnumVariantDoesNotExist {
+                        enum_name: enum_def.name.clone(),
+                        variant_name: variant.clone(),
+                    });
                     return Err(());
                 }
                 value.borrow().verify(ctx)?;
@@ -128,15 +154,26 @@ impl ValidateHirValue for Value {
                     if let Type::Struct { def } = ty {
                         let struct_def = def.borrow();
                         if let Some(field) = struct_def.fields.get(field_name) {
-                            establish_property("field access visibility", || {
-                                let qualified_name = format!("{}::{}", struct_def.name, field_name).into();
-                                if !ctx.check_visibility(&field.visibility, &qualified_name) {
-                                    return Err(());
-                                }
-                                Ok(())
-                            })?;
+                            establish_property(
+                                ctx,
+                                "field access visibility",
+                                ValidateErr::FieldAccessVisibility {
+                                    field_name: field_name.clone(),
+                                },
+                                |c| {
+                                    let qualified_name = format!("{}::{}", struct_def.name, field_name).into();
+                                    if !c.check_visibility(&field.visibility, &qualified_name) {
+                                        return Err(());
+                                    }
+                                    Ok(())
+                                },
+                            )?;
                         } else {
                             // Field doesn't exist
+                            ctx.report(ValidateErr::StructFieldDoesNotExist {
+                                struct_name: struct_def.name.clone(),
+                                field_name: field_name.clone(),
+                            });
                             return Err(());
                         }
                     }
@@ -149,12 +186,17 @@ impl ValidateHirValue for Value {
                 value.borrow().verify(ctx)?;
 
                 // Mutability enforcement: assignment target must be mutable
-                establish_property("assignment target is mutable", || {
-                    if !ctx.is_place_mutable(&place.borrow()) {
-                        return Err(());
-                    }
-                    Ok(())
-                })
+                establish_property(
+                    ctx,
+                    "assignment target is mutable",
+                    ValidateErr::AssignmentTargetNotMutable,
+                    |c| {
+                        if !c.is_place_mutable(&place.borrow()) {
+                            return Err(());
+                        }
+                        Ok(())
+                    },
+                )
             }
 
             Value::Deref { place } => place.borrow().verify(ctx),
@@ -174,12 +216,17 @@ impl ValidateHirValue for Value {
 
                 // Mutability enforcement: if borrowing as mutable, the place must be mutable
                 if *mutable {
-                    establish_property("mutable borrow target is mutable", || {
-                        if !ctx.is_place_mutable(&place.borrow()) {
-                            return Err(());
-                        }
-                        Ok(())
-                    })?;
+                    establish_property(
+                        ctx,
+                        "mutable borrow target is mutable",
+                        ValidateErr::MutableBorrowTargetNotMutable,
+                        |c| {
+                            if !c.is_place_mutable(&place.borrow()) {
+                                return Err(());
+                            }
+                            Ok(())
+                        },
+                    )?;
                 }
                 Ok(())
             }
@@ -253,26 +300,40 @@ impl ValidateHirValue for Value {
 
             Value::FunctionSymbol { id } => {
                 // Visibility enforcement: check that the function is accessible
-                establish_property("function visibility", || {
-                    let func = id.borrow();
-                    let qualified_name = &func.name;
-                    if !ctx.check_visibility(&func.visibility, qualified_name) {
-                        return Err(());
-                    }
-                    Ok(())
-                })
+                let func = id.borrow();
+                let qualified_name = &func.name;
+                establish_property(
+                    ctx,
+                    "function visibility",
+                    ValidateErr::FunctionNotAccessible {
+                        function_name: qualified_name.clone(),
+                    },
+                    |c| {
+                        if !c.check_visibility(&func.visibility, qualified_name) {
+                            return Err(());
+                        }
+                        Ok(())
+                    },
+                )
             }
 
             Value::GlobalVariableSymbol { id } => {
                 // Visibility enforcement: check that the global variable is accessible
-                establish_property("global variable visibility", || {
-                    let glb = id.borrow();
-                    let qualified_name = &glb.name;
-                    if !ctx.check_visibility(&glb.visibility, qualified_name) {
-                        return Err(());
-                    }
-                    Ok(())
-                })
+                let glb = id.borrow();
+                let qualified_name = &glb.name;
+                establish_property(
+                    ctx,
+                    "global variable visibility",
+                    ValidateErr::GlobalVariableNotAccessible {
+                        variable_name: qualified_name.clone(),
+                    },
+                    |c| {
+                        if !c.check_visibility(&glb.visibility, qualified_name) {
+                            return Err(());
+                        }
+                        Ok(())
+                    },
+                )
             }
 
             Value::LocalVariableSymbol { .. } => Ok(()),
