@@ -1,25 +1,24 @@
-use crate::diagnosis::TypeErr;
 use crate::substitution::{NodeAction, TypeConstraint};
 use nitrate_diagnosis::CompilerLog;
 use nitrate_hir::{
-    BlockElement, BlockId, Function, FunctionId, GlobalVariable, PtrSize, SymbolTab, Type, TypeId, Value, ValueId,
+    BinaryOp, BlockElement, BlockId, Function, FunctionId, GlobalVariable, Lit, PtrSize, SymbolTab, Type, TypeId,
+    UnaryOp, Value, ValueId, get_storage,
 };
 use nitrate_hir_get_type::HirGetType;
 use ordered_float::OrderedFloat;
 use std::collections::{HashMap, HashSet};
+use std::ops::Deref;
 
-/// The main type solver. Replaces the old HindleyMilner.
 pub(crate) struct Solver<'m> {
     constraints: HashMap<ValueId, HashSet<TypeConstraint>>,
     pub(crate) m: &'m mut SymbolTab,
-    errors: HashSet<TypeErr>,
+    errors: HashSet<crate::diagnosis::TypeErr>,
     function_return_type: Option<TypeId>,
     pub(crate) mono_counter: u32,
-    /// Cache of monomorphized function copies keyed by (generic_function_store_index, sorted_concrete_args).
-    /// Prevents creating duplicate copies when the same generic function is instantiated
-    /// with identical concrete type arguments at multiple call sites.
     pub(crate) mono_cache: HashMap<(usize, Vec<(u32, TypeId)>), FunctionId>,
 }
+
+type Bounds = (i128, i128);
 
 impl<'m> Solver<'m> {
     pub(crate) fn new(m: &'m mut SymbolTab) -> Self {
@@ -34,117 +33,384 @@ impl<'m> Solver<'m> {
     }
 
     fn report_out_of_range(&mut self, integer: u128, target_type: TypeId) {
-        self.errors.insert(TypeErr::IntegerLiteralOutsizeRange {
-            value: integer,
-            target_type,
-        });
+        self.errors
+            .insert(crate::diagnosis::TypeErr::IntegerLiteralOutsizeRange {
+                value: integer,
+                target_type,
+            });
+    }
+
+    fn lit_to_i128(lit: &Lit) -> Option<i128> {
+        match lit {
+            Lit::U8(v) => Some(*v as i128),
+            Lit::U16(v) => Some(*v as i128),
+            Lit::U32(v) => Some(*v as i128),
+            Lit::U64(v) => Some(*v as i128),
+            Lit::U128(v) => Some(*v as i128),
+            Lit::USize32(v) => Some(*v as i128),
+            Lit::USize64(v) => Some(*v as i128),
+            Lit::I8(v) => Some(*v as i128),
+            Lit::I16(v) => Some(*v as i128),
+            Lit::I32(v) => Some(*v as i128),
+            Lit::I64(v) => Some(*v as i128),
+            Lit::I128(v) => Some(*v),
+            _ => None,
+        }
+    }
+
+    fn integer_primitive_bounds(ty: &Type) -> Option<Bounds> {
+        match ty {
+            Type::U8 => Some((0, 255)),
+            Type::U16 => Some((0, 65535)),
+            Type::U32 => Some((0, 4294967295)),
+            Type::U64 => Some((0, 18446744073709551615)),
+            Type::U128 => Some((0, i128::MAX)),
+            Type::USize => Some((0, 18446744073709551615)),
+            Type::I8 => Some((-128, 127)),
+            Type::I16 => Some((-32768, 32767)),
+            Type::I32 => Some((-2147483648, 2147483647)),
+            Type::I64 => Some((-9223372036854775808, 9223372036854775807)),
+            Type::I128 => Some((i128::MIN, i128::MAX)),
+            _ => None,
+        }
+    }
+
+    fn extract_bounds_from_type(ty: &Type) -> Option<Bounds> {
+        match ty {
+            Type::Refine { min, max, .. } => {
+                let min_lit = get_storage(|store| store[min].clone());
+                let max_lit = get_storage(|store| store[max].clone());
+                match (Self::lit_to_i128(&min_lit), Self::lit_to_i128(&max_lit)) {
+                    (Some(min_val), Some(max_val)) => Some((min_val, max_val)),
+                    _ => None,
+                }
+            }
+            _ => Self::integer_primitive_bounds(ty),
+        }
+    }
+
+    fn get_effective_bounds(&self, id: &ValueId) -> Option<Bounds> {
+        let own_bounds = {
+            let value = id.borrow();
+            match &*value {
+                Value::LocalVariableSymbol { id } => Self::extract_bounds_from_type(id.borrow().ty.deref()),
+                Value::GlobalVariableSymbol { id } => Self::extract_bounds_from_type(id.borrow().ty.deref()),
+                Value::ParameterSymbol { id } => Self::extract_bounds_from_type(id.borrow().ty.deref()),
+                Value::I8(_) => Some((-128, 127)),
+                Value::I16(_) => Some((-32768, 32767)),
+                Value::I32(_) => Some((-2147483648, 2147483647)),
+                Value::I64(_) => Some((-9223372036854775808, 9223372036854775807)),
+                Value::I128(_) => Some((i128::MIN, i128::MAX)),
+                Value::U8(_) => Some((0, 255)),
+                Value::U16(_) => Some((0, 65535)),
+                Value::U32(_) => Some((0, 4294967295)),
+                Value::U64(_) => Some((0, 18446744073709551615)),
+                Value::U128(_) => Some((0, i128::MAX)),
+                Value::USize32(_) => Some((0, 4294967295)),
+                Value::USize64(_) => Some((0, 18446744073709551615)),
+                Value::InferredInteger(v) => Some((**v as i128, **v as i128)),
+                _ => None,
+            }
+        };
+
+        if let Some(constraints) = self.constraints.get(id) {
+            let mut effective_bounds = own_bounds;
+            for constraint in constraints {
+                let TypeConstraint::Equal(ty) = constraint;
+                if let Some(bounds) = Self::extract_bounds_from_type(ty) {
+                    effective_bounds = Some(match effective_bounds {
+                        Some((cur_min, cur_max)) => {
+                            (std::cmp::max(cur_min, bounds.0), std::cmp::min(cur_max, bounds.1))
+                        }
+                        None => bounds,
+                    });
+                }
+            }
+            return effective_bounds;
+        }
+        own_bounds
+    }
+
+    fn compute_binary_bounds(op: &BinaryOp, left: Bounds, right: Bounds) -> Option<Bounds> {
+        let (l_min, l_max) = left;
+        let (r_min, r_max) = right;
+        match op {
+            BinaryOp::Add => Some((l_min.saturating_add(r_min), l_max.saturating_add(r_max))),
+            BinaryOp::Sub => Some((l_min.saturating_sub(r_max), l_max.saturating_sub(r_min))),
+            BinaryOp::Mul => {
+                let products = [
+                    l_min.saturating_mul(r_min),
+                    l_min.saturating_mul(r_max),
+                    l_max.saturating_mul(r_min),
+                    l_max.saturating_mul(r_max),
+                ];
+                Some((*products.iter().min().unwrap(), *products.iter().max().unwrap()))
+            }
+            BinaryOp::Div => {
+                let candidates = if r_min <= 0 && r_max >= 0 {
+                    vec![
+                        if r_min != 0 {
+                            l_min.saturating_div(r_min)
+                        } else {
+                            i128::MAX
+                        },
+                        if r_max != 0 {
+                            l_min.saturating_div(r_max)
+                        } else {
+                            i128::MAX
+                        },
+                        if r_min != 0 {
+                            l_max.saturating_div(r_min)
+                        } else {
+                            i128::MIN
+                        },
+                        if r_max != 0 {
+                            l_max.saturating_div(r_max)
+                        } else {
+                            i128::MIN
+                        },
+                    ]
+                } else {
+                    vec![
+                        l_min.saturating_div(r_min),
+                        l_min.saturating_div(r_max),
+                        l_max.saturating_div(r_min),
+                        l_max.saturating_div(r_max),
+                    ]
+                };
+                Some((*candidates.iter().min().unwrap(), *candidates.iter().max().unwrap()))
+            }
+            BinaryOp::Mod => {
+                if r_min <= 0 && r_max >= 0 {
+                    Some((i128::MIN, i128::MAX))
+                } else {
+                    let a = std::cmp::max(r_min.abs(), r_max.abs());
+                    Some((0, a - 1))
+                }
+            }
+            BinaryOp::And => {
+                if l_min >= 0 && r_min >= 0 {
+                    Some((0, std::cmp::min(l_max, r_max)))
+                } else {
+                    Some((std::cmp::min(l_min, r_min), std::cmp::max(l_max, r_max)))
+                }
+            }
+            BinaryOp::Or => Some((std::cmp::min(l_min, r_min), std::cmp::max(l_max, r_max))),
+            BinaryOp::Xor => Some((std::cmp::min(l_min, r_min), std::cmp::max(l_max, r_max))),
+            BinaryOp::Shl | BinaryOp::Rol => Some((i128::MIN, i128::MAX)),
+            BinaryOp::Shr | BinaryOp::Ror => {
+                if l_min >= 0 && r_min >= 0 {
+                    let smin = if r_max > 0 {
+                        l_min.checked_shr(r_max as u32).unwrap_or(l_min)
+                    } else {
+                        l_min
+                    };
+                    let smax = if r_min > 0 {
+                        l_max.checked_shr(r_min as u32).unwrap_or(l_max)
+                    } else {
+                        l_max
+                    };
+                    Some((smin, smax))
+                } else {
+                    Some((i128::MIN, i128::MAX))
+                }
+            }
+            BinaryOp::Lt
+            | BinaryOp::Gt
+            | BinaryOp::Lte
+            | BinaryOp::Gte
+            | BinaryOp::Eq
+            | BinaryOp::Ne
+            | BinaryOp::LogicAnd
+            | BinaryOp::LogicOr => None,
+        }
+    }
+
+    fn compute_unary_bounds(op: &UnaryOp, operand: Bounds) -> Bounds {
+        let (min, max) = operand;
+        match op {
+            UnaryOp::Add => (min, max),
+            UnaryOp::Sub => (max.saturating_neg(), min.saturating_neg()),
+            UnaryOp::Not => (!max, !min),
+        }
+    }
+
+    fn check_bounds_against_constraint(&mut self, computed_bounds: Bounds, constraint_ty: &Type) -> bool {
+        let target_bounds = Self::extract_bounds_from_type(constraint_ty);
+        if let Some((target_min, target_max)) = target_bounds {
+            let (comp_min, comp_max) = computed_bounds;
+            if comp_min < target_min || comp_max > target_max {
+                if matches!(constraint_ty, Type::Refine { .. }) {
+                    self.errors
+                        .insert(crate::diagnosis::TypeErr::OperationResultOutOfRefinementBounds {
+                            refinement_type: TypeId::from(constraint_ty.clone()),
+                            computed_min: comp_min.max(0) as u128,
+                            computed_max: comp_max.max(0) as u128,
+                        });
+                    return false;
+                }
+            }
+        }
+        true
+    }
+
+    fn check_refinement_bounds(&mut self, value: u128, constraint_ty: &Type) -> bool {
+        match constraint_ty {
+            Type::Refine { min, max, .. } => {
+                let min_lit: Lit = get_storage(|store| store[min].clone());
+                let max_lit: Lit = get_storage(|store| store[max].clone());
+                let min_val = Self::lit_to_u128_check(&min_lit);
+                let max_val = Self::lit_to_u128_check(&max_lit);
+                match (min_val, max_val) {
+                    (Some(_mn), Some(_mx)) if value >= _mn && value <= _mx => true,
+                    (Some(_), Some(_)) => {
+                        self.errors
+                            .insert(crate::diagnosis::TypeErr::IntegerLiteralOutOfRefinementBounds {
+                                value,
+                                refinement_type: TypeId::from(constraint_ty.clone()),
+                            });
+                        false
+                    }
+                    _ => true,
+                }
+            }
+            _ => true,
+        }
+    }
+
+    fn lit_to_u128_check(lit: &Lit) -> Option<u128> {
+        match lit {
+            Lit::U8(v) => Some(*v as u128),
+            Lit::U16(v) => Some(*v as u128),
+            Lit::U32(v) => Some(*v as u128),
+            Lit::U64(v) => Some(*v as u128),
+            Lit::U128(v) => Some(*v),
+            Lit::USize32(v) => Some(*v as u128),
+            Lit::USize64(v) => Some(*v as u128),
+            Lit::I8(v) if *v >= 0 => Some(*v as u128),
+            Lit::I16(v) if *v >= 0 => Some(*v as u128),
+            Lit::I32(v) if *v >= 0 => Some(*v as u128),
+            Lit::I64(v) if *v >= 0 => Some(*v as u128),
+            Lit::I128(v) if *v >= 0 => Some(*v as u128),
+            _ => None,
+        }
     }
 
     fn solve_inferred_integer(&mut self, id: &ValueId, value: u128) -> NodeAction {
-        if let Some(constraints) = self.constraints.get(id) {
-            for constraint in constraints {
-                match constraint {
-                    TypeConstraint::Equal(ty) => {
-                        if !ty.is_integer_primitive() {
-                            self.errors.insert(TypeErr::IntegerLiteralUnsatisfiable {
-                                value,
-                                unsatisfiable_type: ty.clone(),
-                            });
-                            break;
-                        }
-
-                        return match **ty {
-                            Type::I8 => match i8::try_from(value) {
-                                Ok(v) => NodeAction::Replace(Value::I8(v)),
-                                Err(_) => {
-                                    self.report_out_of_range(value, ty.clone());
-                                    NodeAction::NoChange
-                                }
-                            },
-                            Type::I16 => match i16::try_from(value) {
-                                Ok(v) => NodeAction::Replace(Value::I16(v)),
-                                Err(_) => {
-                                    self.report_out_of_range(value, ty.clone());
-                                    NodeAction::NoChange
-                                }
-                            },
-                            Type::I32 => match i32::try_from(value) {
-                                Ok(v) => NodeAction::Replace(Value::I32(v)),
-                                Err(_) => {
-                                    self.report_out_of_range(value, ty.clone());
-                                    NodeAction::NoChange
-                                }
-                            },
-                            Type::I64 => match i64::try_from(value) {
-                                Ok(v) => NodeAction::Replace(Value::I64(v)),
-                                Err(_) => {
-                                    self.report_out_of_range(value, ty.clone());
-                                    NodeAction::NoChange
-                                }
-                            },
-                            Type::I128 => match i128::try_from(value) {
-                                Ok(v) => NodeAction::Replace(Value::I128(Box::new(v))),
-                                Err(_) => {
-                                    self.report_out_of_range(value, ty.clone());
-                                    NodeAction::NoChange
-                                }
-                            },
-                            Type::U8 => match u8::try_from(value) {
-                                Ok(v) => NodeAction::Replace(Value::U8(v)),
-                                Err(_) => {
-                                    self.report_out_of_range(value, ty.clone());
-                                    NodeAction::NoChange
-                                }
-                            },
-                            Type::U16 => match u16::try_from(value) {
-                                Ok(v) => NodeAction::Replace(Value::U16(v)),
-                                Err(_) => {
-                                    self.report_out_of_range(value, ty.clone());
-                                    NodeAction::NoChange
-                                }
-                            },
-                            Type::U32 => match u32::try_from(value) {
-                                Ok(v) => NodeAction::Replace(Value::U32(v)),
-                                Err(_) => {
-                                    self.report_out_of_range(value, ty.clone());
-                                    NodeAction::NoChange
-                                }
-                            },
-                            Type::U64 => match u64::try_from(value) {
-                                Ok(v) => NodeAction::Replace(Value::U64(v)),
-                                Err(_) => {
-                                    self.report_out_of_range(value, ty.clone());
-                                    NodeAction::NoChange
-                                }
-                            },
-                            Type::U128 => match u128::try_from(value) {
-                                Ok(v) => NodeAction::Replace(Value::U128(Box::new(v))),
-                                Err(_) => {
-                                    self.report_out_of_range(value, ty.clone());
-                                    NodeAction::NoChange
-                                }
-                            },
-                            Type::USize => match self.m.arch_ptr_size() {
-                                PtrSize::U32 => match u32::try_from(value) {
-                                    Ok(v) => NodeAction::Replace(Value::USize32(v)),
-                                    Err(_) => {
-                                        self.report_out_of_range(value, ty.clone());
-                                        NodeAction::NoChange
-                                    }
-                                },
-                                PtrSize::U64 => match u64::try_from(value) {
-                                    Ok(v) => NodeAction::Replace(Value::USize64(v)),
-                                    Err(_) => {
-                                        self.report_out_of_range(value, ty.clone());
-                                        NodeAction::NoChange
-                                    }
-                                },
-                            },
-                            _ => unreachable!(),
-                        };
-                    }
-                }
+        let constraints: Vec<TypeConstraint> = self
+            .constraints
+            .get(id)
+            .cloned()
+            .unwrap_or_default()
+            .into_iter()
+            .collect();
+        for constraint in &constraints {
+            let TypeConstraint::Equal(ty) = constraint;
+            if let Type::Refine { .. } = &**ty {
+                self.check_refinement_bounds(value, ty);
             }
+            let effective_ty = match &**ty {
+                Type::Refine { base, .. } => &*base.deref(),
+                _ => ty.deref(),
+            };
+            if !effective_ty.is_integer_primitive() {
+                self.errors
+                    .insert(crate::diagnosis::TypeErr::IntegerLiteralUnsatisfiable {
+                        value,
+                        unsatisfiable_type: ty.clone(),
+                    });
+                break;
+            }
+            return match **ty {
+                Type::I8 => match i8::try_from(value) {
+                    Ok(v) => NodeAction::Replace(Value::I8(v)),
+                    Err(_) => {
+                        self.report_out_of_range(value, ty.clone());
+                        NodeAction::NoChange
+                    }
+                },
+                Type::I16 => match i16::try_from(value) {
+                    Ok(v) => NodeAction::Replace(Value::I16(v)),
+                    Err(_) => {
+                        self.report_out_of_range(value, ty.clone());
+                        NodeAction::NoChange
+                    }
+                },
+                Type::I32 => match i32::try_from(value) {
+                    Ok(v) => NodeAction::Replace(Value::I32(v)),
+                    Err(_) => {
+                        self.report_out_of_range(value, ty.clone());
+                        NodeAction::NoChange
+                    }
+                },
+                Type::I64 => match i64::try_from(value) {
+                    Ok(v) => NodeAction::Replace(Value::I64(v)),
+                    Err(_) => {
+                        self.report_out_of_range(value, ty.clone());
+                        NodeAction::NoChange
+                    }
+                },
+                Type::I128 => match i128::try_from(value) {
+                    Ok(v) => NodeAction::Replace(Value::I128(Box::new(v))),
+                    Err(_) => {
+                        self.report_out_of_range(value, ty.clone());
+                        NodeAction::NoChange
+                    }
+                },
+                Type::U8 => match u8::try_from(value) {
+                    Ok(v) => NodeAction::Replace(Value::U8(v)),
+                    Err(_) => {
+                        self.report_out_of_range(value, ty.clone());
+                        NodeAction::NoChange
+                    }
+                },
+                Type::U16 => match u16::try_from(value) {
+                    Ok(v) => NodeAction::Replace(Value::U16(v)),
+                    Err(_) => {
+                        self.report_out_of_range(value, ty.clone());
+                        NodeAction::NoChange
+                    }
+                },
+                Type::U32 => match u32::try_from(value) {
+                    Ok(v) => NodeAction::Replace(Value::U32(v)),
+                    Err(_) => {
+                        self.report_out_of_range(value, ty.clone());
+                        NodeAction::NoChange
+                    }
+                },
+                Type::U64 => match u64::try_from(value) {
+                    Ok(v) => NodeAction::Replace(Value::U64(v)),
+                    Err(_) => {
+                        self.report_out_of_range(value, ty.clone());
+                        NodeAction::NoChange
+                    }
+                },
+                Type::U128 => match u128::try_from(value) {
+                    Ok(v) => NodeAction::Replace(Value::U128(Box::new(v))),
+                    Err(_) => {
+                        self.report_out_of_range(value, ty.clone());
+                        NodeAction::NoChange
+                    }
+                },
+                Type::USize => match self.m.arch_ptr_size() {
+                    PtrSize::U32 => match u32::try_from(value) {
+                        Ok(v) => NodeAction::Replace(Value::USize32(v)),
+                        Err(_) => {
+                            self.report_out_of_range(value, ty.clone());
+                            NodeAction::NoChange
+                        }
+                    },
+                    PtrSize::U64 => match u64::try_from(value) {
+                        Ok(v) => NodeAction::Replace(Value::USize64(v)),
+                        Err(_) => {
+                            self.report_out_of_range(value, ty.clone());
+                            NodeAction::NoChange
+                        }
+                    },
+                },
+                Type::Refine { .. } => return NodeAction::NoChange,
+                _ => unreachable!(),
+            };
         }
         NodeAction::NoChange
     }
@@ -152,22 +418,20 @@ impl<'m> Solver<'m> {
     fn solve_inferred_float(&mut self, id: &ValueId, value: OrderedFloat<f64>) -> NodeAction {
         if let Some(constraints) = self.constraints.get(id) {
             for constraint in constraints {
-                match constraint {
-                    TypeConstraint::Equal(ty) => {
-                        if !ty.is_float_primitive() {
-                            self.errors.insert(TypeErr::FloatLiteralUnsatisfiable {
-                                value,
-                                unsatisfiable_type: ty.clone(),
-                            });
-                            break;
-                        }
-                        return match **ty {
-                            Type::F32 => NodeAction::Replace(Value::F32((*value as f32).into())),
-                            Type::F64 => NodeAction::Replace(Value::F64(value)),
-                            _ => unreachable!(),
-                        };
-                    }
+                let TypeConstraint::Equal(ty) = constraint;
+                if !ty.is_float_primitive() {
+                    self.errors
+                        .insert(crate::diagnosis::TypeErr::FloatLiteralUnsatisfiable {
+                            value,
+                            unsatisfiable_type: ty.clone(),
+                        });
+                    break;
                 }
+                return match **ty {
+                    Type::F32 => NodeAction::Replace(Value::F32((*value as f32).into())),
+                    Type::F64 => NodeAction::Replace(Value::F64(value)),
+                    _ => unreachable!(),
+                };
             }
         }
         NodeAction::NoChange
@@ -218,7 +482,6 @@ impl<'m> Solver<'m> {
             | Value::GlobalVariableSymbol { .. }
             | Value::LocalVariableSymbol { .. }
             | Value::ParameterSymbol { .. } => NodeAction::NoChange,
-
             Value::InferredInteger(integer) => self.solve_inferred_integer(id, **integer),
             Value::InferredFloat(float) => self.solve_inferred_float(id, *float),
         }
@@ -281,34 +544,80 @@ impl<'m> Solver<'m> {
                 self.visit(inner_value);
             }
 
-            Value::Binary { left, op: _, right } => {
-                if let Some(constraints) = self.constraints.get(e).cloned() {
+            Value::Binary { left, op, right } => {
+                // Check refinement bounds FIRST, before constraint propagation contaminates operands
+                let constraints_copy = self.constraints.get(e).cloned().unwrap_or_default();
+                for c in &constraints_copy {
+                    let TypeConstraint::Equal(result_ty) = c;
+                    if matches!(
+                        op,
+                        BinaryOp::Add
+                            | BinaryOp::Sub
+                            | BinaryOp::Mul
+                            | BinaryOp::Div
+                            | BinaryOp::Mod
+                            | BinaryOp::And
+                            | BinaryOp::Or
+                            | BinaryOp::Xor
+                            | BinaryOp::Shl
+                            | BinaryOp::Shr
+                            | BinaryOp::Rol
+                            | BinaryOp::Ror
+                    ) {
+                        if let (Some(lb), Some(rb)) =
+                            (self.get_effective_bounds(left), self.get_effective_bounds(right))
+                        {
+                            if let Some(res) = Self::compute_binary_bounds(op, lb, rb) {
+                                self.check_bounds_against_constraint(res, result_ty);
+                            }
+                        }
+                    }
+                }
+                // Now propagate base type constraints to children
+                if let Some(parent_constraints) = self.constraints.get(e).cloned() {
+                    let child_constraints: HashSet<TypeConstraint> = parent_constraints
+                        .iter()
+                        .map(|c| match c {
+                            TypeConstraint::Equal(ty) => match &**ty {
+                                Type::Refine { base, .. } => TypeConstraint::Equal(*base),
+                                _ => c.clone(),
+                            },
+                        })
+                        .collect();
                     self.constraints
                         .entry(left.clone())
                         .or_default()
-                        .extend(constraints.clone());
-                    self.constraints.entry(right.clone()).or_default().extend(constraints);
+                        .extend(child_constraints.clone());
+                    self.constraints
+                        .entry(right.clone())
+                        .or_default()
+                        .extend(child_constraints);
                 }
                 self.visit(left);
                 self.visit(right);
             }
 
-            Value::Unary { operand, .. } => {
+            Value::Unary { op, operand } => {
                 if let Some(constraints) = self.constraints.get(e).cloned() {
                     self.constraints.entry(operand.clone()).or_default().extend(constraints);
                 }
                 self.visit(operand);
+                let constraints_copy = self.constraints.get(e).cloned().unwrap_or_default();
+                for c in &constraints_copy {
+                    let TypeConstraint::Equal(result_ty) = c;
+                    if let Some(ob) = self.get_effective_bounds(operand) {
+                        let res = Self::compute_unary_bounds(op, ob);
+                        self.check_bounds_against_constraint(res, result_ty);
+                    }
+                }
             }
 
             Value::IndexAccess { collection, index } => {
-                // Constrain the index to be usize-compatible
                 self.constraints
                     .entry(index.clone())
                     .or_default()
                     .insert(TypeConstraint::Equal(Type::USize.into()));
-                // Propagate constraints from the IndexAccess result to the collection's element type
                 if let Some(constraints) = self.constraints.get(e).cloned() {
-                    // Determine the collection type to find the element type
                     if let Ok(collection_type) = collection.borrow().determine_type(self.m) {
                         let element_type_id = match &collection_type {
                             Type::Array { element_type, .. }
@@ -317,12 +626,10 @@ impl<'m> Solver<'m> {
                             _ => None,
                         };
                         if let Some(element_type_id) = element_type_id {
-                            // Constrain the IndexAccess result to the element type
                             self.constraints
                                 .entry(e.clone())
                                 .or_default()
                                 .insert(TypeConstraint::Equal(element_type_id));
-                            // If the collection is a list literal, constrain its elements
                             if let Value::List { elements } = &*collection.borrow() {
                                 for element in elements {
                                     self.constraints
@@ -341,7 +648,6 @@ impl<'m> Solver<'m> {
             Value::FieldAccess { expr, .. } => {
                 self.visit(expr);
             }
-
             Value::Assign { place, value: v } => {
                 if let Ok(place_type) = place.borrow().determine_type(self.m) {
                     self.constraints
@@ -352,9 +658,7 @@ impl<'m> Solver<'m> {
                 self.visit(place);
                 self.visit(v);
             }
-
             Value::Deref { place } => self.visit(place),
-
             Value::Cast { value: v, target_type } => {
                 self.constraints
                     .entry(v.clone())
@@ -362,18 +666,12 @@ impl<'m> Solver<'m> {
                     .insert(TypeConstraint::Equal(target_type.clone()));
                 self.visit(v);
             }
-
             Value::Borrow { place, .. } => self.visit(place),
 
             Value::List { elements } => {
-                // Constrain all list elements to have the same type
-                // by propagating constraints between them
                 if let Some(constraints) = self.constraints.get(e).cloned() {
                     for element in elements {
-                        // When propagating constraints from a list literal to its elements,
-                        // transform array/slice type constraints into element-type constraints.
-                        // E.g., if the list is constrained to [i32; 3], each element should be i32.
-                        let element_constraints: HashSet<TypeConstraint> = constraints
+                        let ec: HashSet<TypeConstraint> = constraints
                             .iter()
                             .map(|c| match c {
                                 TypeConstraint::Equal(ty) => match &**ty {
@@ -384,25 +682,19 @@ impl<'m> Solver<'m> {
                                 },
                             })
                             .collect();
-                        self.constraints
-                            .entry(element.clone())
-                            .or_default()
-                            .extend(element_constraints);
+                        self.constraints.entry(element.clone()).or_default().extend(ec);
                     }
                 }
-                // All list elements must have the same type, so find the first
-                // element that has already resolved to a concrete type and propagate
-                // that type to all other elements.
                 let concrete_element = elements
                     .iter()
-                    .find(|element| !matches!(&*element.borrow(), Value::InferredInteger(_) | Value::InferredFloat(_)));
+                    .find(|el| !matches!(&*el.borrow(), Value::InferredInteger(_) | Value::InferredFloat(_)));
                 if let Some(concrete_element) = concrete_element {
-                    let concrete_type_id = concrete_element
+                    if let Some(concrete_type_id) = concrete_element
                         .borrow()
                         .determine_type(self.m)
                         .ok()
-                        .map(|ty| TypeId::from(ty));
-                    if let Some(concrete_type_id) = concrete_type_id {
+                        .map(|ty| TypeId::from(ty))
+                    {
                         for element in elements.iter() {
                             if matches!(&*element.borrow(), Value::InferredInteger(_) | Value::InferredFloat(_)) {
                                 self.constraints
@@ -450,7 +742,6 @@ impl<'m> Solver<'m> {
             }
 
             Value::Loop { body } => self.visit_block(body),
-
             Value::Break { .. } | Value::Continue { .. } => {}
 
             Value::Return { value: v } => {
@@ -470,8 +761,6 @@ impl<'m> Solver<'m> {
             }
 
             Value::Call { callee, args } => {
-                // Check if callee is a generic function - monomorphize if so
-                // We need to drop the borrow before mutating, so clone what we need
                 let callee_func_id: Option<FunctionId> = match &*callee.borrow() {
                     Value::FunctionSymbol { id } => {
                         let func = id.borrow();
@@ -483,17 +772,13 @@ impl<'m> Solver<'m> {
                     }
                     _ => None,
                 };
-
                 if let Some(func_id) = callee_func_id {
                     if let Some(subst) = self.infer_generic_args_from_call(&func_id, &args.positional) {
                         let mono_id = self.monomorphize_function(&func_id, &subst);
                         callee.replace(Value::FunctionSymbol { id: mono_id });
                     }
                 }
-
                 self.visit(callee);
-
-                // Propagate function parameter type constraints to call arguments
                 if let Value::FunctionSymbol { id } = &*callee.borrow() {
                     let func = id.borrow();
                     for (i, arg) in args.positional.iter().enumerate() {
@@ -506,7 +791,6 @@ impl<'m> Solver<'m> {
                         }
                     }
                 }
-
                 for arg in &args.positional {
                     self.visit(arg);
                 }
@@ -520,26 +804,19 @@ impl<'m> Solver<'m> {
                 method_name,
                 args,
             } => {
-                // Phase 1: Resolve the method type without borrowing self.m in a closure
                 let obj_type: Option<TypeId> = object.borrow().determine_type(self.m).ok().map(|ty| ty.into());
-
-                // Phase 2: Look up method - get the FunctionId (clone it to avoid borrow issues)
                 let method_id_opt: Option<FunctionId> =
                     obj_type.and_then(|obj_type| self.m.get_method(&obj_type, method_name).cloned());
-
-                // Phase 3: Check if generic and monomorphize if needed
                 if let Some(method_id) = method_id_opt {
                     let is_generic = {
-                        let method_func = method_id.borrow();
-                        method_func.generics.is_some() && method_func.generics.as_ref().map_or(false, |g| !g.is_empty())
+                        let mf = method_id.borrow();
+                        mf.generics.is_some() && mf.generics.as_ref().map_or(false, |g| !g.is_empty())
                     };
-
                     if is_generic {
                         if let Some(subst) = self.infer_generic_args_from_call(&method_id, &args.positional) {
                             let mono_id = self.monomorphize_function(&method_id, &subst);
-                            let new_callee = Value::FunctionSymbol { id: mono_id };
                             let new_call = Value::Call {
-                                callee: ValueId::from(new_callee),
+                                callee: ValueId::from(Value::FunctionSymbol { id: mono_id }),
                                 args: args.clone(),
                             };
                             e.replace(new_call);
@@ -548,7 +825,6 @@ impl<'m> Solver<'m> {
                         }
                     }
                 }
-
                 self.visit(object);
                 for arg in &args.positional {
                     self.visit(arg);
@@ -589,8 +865,7 @@ impl<'m> Solver<'m> {
             BlockElement::Expr(e) => self.visit(e),
             BlockElement::Local(local_var) => {
                 if local_var.borrow().ty.is_inferred() {
-                    let init_ty = local_var.borrow().initializer.borrow().determine_type(self.m);
-                    if let Ok(ty) = init_ty {
+                    if let Ok(ty) = local_var.borrow().initializer.borrow().determine_type(self.m) {
                         local_var.borrow_mut().ty = ty.into();
                     }
                 } else {
@@ -629,8 +904,7 @@ impl<'m> Solver<'m> {
         loop {
             let prev_len = self.constraints.len();
             if g.ty.is_inferred() {
-                let init_ty = g.initializer.borrow().determine_type(self.m);
-                if let Ok(ty) = init_ty {
+                if let Ok(ty) = g.initializer.borrow().determine_type(self.m) {
                     g.ty = ty.into();
                 }
             } else {

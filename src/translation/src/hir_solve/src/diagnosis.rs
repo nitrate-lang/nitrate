@@ -19,6 +19,21 @@ pub(crate) enum TypeErr {
         value: OrderedFloat<f64>,
         unsatisfiable_type: TypeId,
     },
+
+    /// A literal value falls outside the declared refinement bounds.
+    /// The target_type is the Refine type with its bounds.
+    IntegerLiteralOutOfRefinementBounds {
+        value: u128,
+        refinement_type: TypeId,
+    },
+
+    /// An arithmetic operation produces a result that cannot be guaranteed
+    /// to satisfy the refinement bounds of the result type.
+    OperationResultOutOfRefinementBounds {
+        refinement_type: TypeId,
+        computed_min: u128,
+        computed_max: u128,
+    },
 }
 
 impl FormattableDiagnosticGroup for TypeErr {
@@ -31,6 +46,8 @@ impl FormattableDiagnosticGroup for TypeErr {
             TypeErr::IntegerLiteralOutsizeRange { .. } => 0,
             TypeErr::IntegerLiteralUnsatisfiable { .. } => 1,
             TypeErr::FloatLiteralUnsatisfiable { .. } => 2,
+            TypeErr::IntegerLiteralOutOfRefinementBounds { .. } => 3,
+            TypeErr::OperationResultOutOfRefinementBounds { .. } => 4,
         }
     }
 
@@ -75,6 +92,35 @@ impl FormattableDiagnosticGroup for TypeErr {
                     unsatisfiable_type.to_string()
                 );
 
+                nitrate_diagnosis::DiagnosticInfo {
+                    origin: nitrate_diagnosis::Origin::None,
+                    message,
+                }
+            }
+
+            TypeErr::IntegerLiteralOutOfRefinementBounds { value, refinement_type } => {
+                let message = format!(
+                    "Integer literal value {} does not satisfy refinement type bounds {}",
+                    value,
+                    refinement_type.to_string()
+                );
+                nitrate_diagnosis::DiagnosticInfo {
+                    origin: nitrate_diagnosis::Origin::None,
+                    message,
+                }
+            }
+
+            TypeErr::OperationResultOutOfRefinementBounds {
+                refinement_type,
+                computed_min,
+                computed_max,
+            } => {
+                let message = format!(
+                    "Arithmetic operation result [{}, {}] cannot be guaranteed to satisfy refinement type bounds {}",
+                    computed_min,
+                    computed_max,
+                    refinement_type.to_string()
+                );
                 nitrate_diagnosis::DiagnosticInfo {
                     origin: nitrate_diagnosis::Origin::None,
                     message,

@@ -18,6 +18,33 @@ pub trait HirGetType {
     fn determine_type(&self, ctx: &SymbolTab) -> Result<Type, TypeInferenceError>;
 }
 
+/// Resolve a Type::Refine to its base type for type inference purposes.
+/// For all other types, returns the type as-is.
+pub fn resolve_refine(ty: &Type) -> Result<Type, TypeInferenceError> {
+    match ty {
+        Type::Refine { base, .. } => Ok(base.deref().clone()),
+        _ => Ok(ty.clone()),
+    }
+}
+
+pub fn lit_to_u128(lit: &Lit) -> Option<u128> {
+    match lit {
+        Lit::U8(w) => Some(*w as u128),
+        Lit::U16(w) => Some(*w as u128),
+        Lit::U32(w) => Some(*w as u128),
+        Lit::U64(w) => Some(*w as u128),
+        Lit::U128(w) => Some(*w),
+        Lit::USize32(w) => Some(*w as u128),
+        Lit::USize64(w) => Some(*w as u128),
+        Lit::I8(w) if *w >= 0 => Some(*w as u128),
+        Lit::I16(w) if *w >= 0 => Some(*w as u128),
+        Lit::I32(w) if *w >= 0 => Some(*w as u128),
+        Lit::I64(w) if *w >= 0 => Some(*w as u128),
+        Lit::I128(w) if *w >= 0 => Some(*w as u128),
+        _ => None,
+    }
+}
+
 impl HirGetType for Lit {
     fn determine_type(&self, _ctx: &SymbolTab) -> Result<Type, TypeInferenceError> {
         match self {
@@ -292,17 +319,17 @@ impl HirGetType for Value {
 
             Value::GlobalVariableSymbol { id } => {
                 let glb = &id.borrow();
-                Ok(glb.ty.deref().clone())
+                resolve_refine(glb.ty.deref())
             }
 
             Value::LocalVariableSymbol { id } => {
                 let loc = id.borrow();
-                Ok(loc.ty.deref().clone())
+                resolve_refine(loc.ty.deref())
             }
 
             Value::ParameterSymbol { id } => {
                 let param = id.borrow();
-                Ok(param.ty.deref().clone())
+                resolve_refine(param.ty.deref())
             }
         }
     }
