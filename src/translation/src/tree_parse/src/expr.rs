@@ -729,32 +729,18 @@ impl Parser<'_, '_> {
     }
 
     pub(crate) fn parse_path(&mut self) -> ExprPath {
-        fn parse_double_colon(this: &mut Parser) -> bool {
-            if !this.lexer.skip_if(&Token::Colon) {
-                return false;
-            }
-
-            if !this.lexer.skip_if(&Token::Colon) {
-                let bug = SyntaxErr::ExpectedColon(this.lexer.peek_pos());
-                this.log.report(&bug);
-                return false;
-            }
-
-            true
-        }
-
         assert!(matches!(self.lexer.peek_tok().token, Token::Name(_) | Token::Colon));
 
         let mut segments = Vec::new();
         let mut prev_scope = false;
         let mut already_reported_too_many_segments = false;
 
-        if parse_double_colon(self) {
+        if self.parse_double_colon() {
             prev_scope = true;
 
             let type_arguments = self.parse_generic_arguments();
             if type_arguments.is_some() {
-                prev_scope = parse_double_colon(self);
+                prev_scope = self.parse_double_colon();
             }
 
             segments.push(ExprPathSegment {
@@ -784,12 +770,12 @@ impl Parser<'_, '_> {
                 break;
             };
 
-            prev_scope = parse_double_colon(self);
+            prev_scope = self.parse_double_colon();
 
             if prev_scope {
                 let type_arguments = self.parse_generic_arguments();
                 if type_arguments.is_some() {
-                    prev_scope = parse_double_colon(self);
+                    prev_scope = self.parse_double_colon();
                 }
 
                 segments.push(ExprPathSegment {

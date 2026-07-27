@@ -6,7 +6,7 @@ use nitrate_token::Token;
 use nitrate_tree::ast::{
     AssociatedItem, Enum, EnumVariant, FuncParam, FuncParams, Function, Generics, GlobalVariable, GlobalVariableKind,
     Impl, Import, Item, ItemPath, ItemPathSegment, ItemSyntaxError, Module, Mutability, Struct, StructField, Trait,
-    TypeAlias, TypeParam, UseTree, Visibility,
+    TypeAlias, TypeParam, UseTree,
 };
 
 impl Parser<'_, '_> {
@@ -122,21 +122,6 @@ impl Parser<'_, '_> {
         }
     }
 
-    fn consume_double_colon(&mut self) -> bool {
-        let pos = self.lexer.peek_pos();
-
-        if !self.lexer.skip_if(&Token::Colon) {
-            return false;
-        }
-
-        if !self.lexer.skip_if(&Token::Colon) {
-            self.lexer.rewind(pos);
-            return false;
-        }
-
-        true
-    }
-
     #[allow(dead_code)]
     fn parse_item_path(&mut self) -> ItemPath {
         let mut segments = Vec::new();
@@ -154,7 +139,7 @@ impl Parser<'_, '_> {
         while !self.lexer.is_eof() {
             let rewind_pos = self.lexer.peek_pos();
 
-            if !self.consume_double_colon() {
+            if !self.parse_double_colon() {
                 if segments.is_empty() {
                     let bug = SyntaxErr::PathExpectedName(self.lexer.peek_pos());
                     self.log.report(&bug);
@@ -177,7 +162,7 @@ impl Parser<'_, '_> {
         fn parse_use_tree(this: &mut Parser) -> UseTree {
             let path = this.parse_item_path();
 
-            if this.consume_double_colon() {
+            if this.parse_double_colon() {
                 if this.lexer.skip_if(&Token::Star) {
                     return UseTree::UseAll { path };
                 } else if this.lexer.skip_if(&Token::OpenBrace) {
@@ -754,18 +739,6 @@ impl Parser<'_, '_> {
             parameters,
             return_type,
             definition,
-        }
-    }
-
-    fn parse_visibility(&mut self) -> Option<Visibility> {
-        if self.lexer.skip_if(&Token::Pub) {
-            Some(Visibility::Public)
-        } else if self.lexer.skip_if(&Token::Sec) {
-            Some(Visibility::Private)
-        } else if self.lexer.skip_if(&Token::Pro) {
-            Some(Visibility::Protected)
-        } else {
-            None
         }
     }
 

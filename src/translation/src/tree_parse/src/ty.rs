@@ -344,20 +344,6 @@ impl Parser<'_, '_> {
     }
 
     pub(crate) fn parse_type_path(&mut self) -> TypePath {
-        fn parse_double_colon(this: &mut Parser) -> bool {
-            if !this.lexer.skip_if(&Token::Colon) {
-                return false;
-            }
-
-            if !this.lexer.skip_if(&Token::Colon) {
-                let bug = SyntaxErr::ExpectedColon(this.lexer.peek_pos());
-                this.log.report(&bug);
-                return false;
-            }
-
-            true
-        }
-
         assert!(matches!(
             self.lexer.peek_tok().token,
             Token::Name(_) | Token::Colon | Token::SelfType
@@ -367,7 +353,7 @@ impl Parser<'_, '_> {
         let mut prev_scope = false;
         let mut already_reported_too_many_segments = false;
 
-        if parse_double_colon(self) {
+        if self.parse_double_colon() {
             prev_scope = true;
 
             segments.push(TypePathSegment {
@@ -404,7 +390,7 @@ impl Parser<'_, '_> {
                 type_arguments,
             });
 
-            prev_scope = parse_double_colon(self);
+            prev_scope = self.parse_double_colon();
         }
 
         assert_ne!(segments.len(), 0);
