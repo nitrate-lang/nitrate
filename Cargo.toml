@@ -1,3 +1,30 @@
+[workspace]
+resolver = "2"
+members = [
+    "src/diagnosis",
+    "src/driver",
+    "src/optimization",
+    "src/translation",
+    "src/translation/src/nstring",
+    "src/translation/src/token",
+    "src/translation/src/token_lexer",
+    "src/translation/src/tree",
+    "src/translation/src/tree2",
+    "src/translation/src/tree_parse",
+    "src/translation/src/tree_parse2",
+    "src/translation/src/tree_resolve",
+    "src/translation/src/hir",
+    "src/translation/src/hir_dump",
+    "src/translation/src/hir_evaluate",
+    "src/translation/src/hir_from_tree",
+    "src/translation/src/hir_get_type",
+    "src/translation/src/hir_mangle",
+    "src/translation/src/hir_solve",
+    "src/translation/src/hir_validate",
+    "src/translation/src/llvm",
+    "src/translation/src/llvm_from_hir",
+]
+
 [package]
 name = "nitrate"
 version = "0.1.0"

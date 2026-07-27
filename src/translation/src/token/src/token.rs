@@ -714,12 +714,12 @@ mod tests {
 
             let annotated_token = AnnotatedToken::new(token.clone(), start.clone(), end.clone());
 
-            assert_eq!(annotated_token.token(), &token);
+            assert_eq!(&annotated_token.token, &token);
             assert_eq!(annotated_token.start(), start);
             assert_eq!(annotated_token.end(), end);
             assert_eq!(annotated_token.range(), (start, end));
-            assert_eq!(format!("{}", annotated_token.token()), expected_str);
-            assert_eq!(format!("{}", annotated_token.into_token()), expected_str);
+            assert_eq!(format!("{}", annotated_token.token), expected_str);
+            assert_eq!(format!("{}", annotated_token.token), expected_str);
         }
     }
 }
