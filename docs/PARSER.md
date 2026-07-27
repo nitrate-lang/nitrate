@@ -100,14 +100,14 @@ Types in the parse tree mirror the language's type grammar:
 The parser is a hand-written recursive-descent parser with one token of lookahead. Each parsing method follows a consistent pattern: examine the next token to determine which production rule applies, consume the relevant keyword or delimiter, parse the sub-components, and construct the appropriate AST node.
 
 ```rust
-fn parse_something(&mut self) -> Result<AstNode, Error> {
+fn parse_something(&mut self) -> AstNode {
     let start_token = self.lexer.peek_tok();
 
     // Check which alternative matches
     if self.lexer.next_is(&Token::SomeKeyword) {
         self.lexer.skip_tok(); // consume the keyword
         // Parse the components of this alternative
-        Ok(AstNode::Alternative { ... })
+        AstNode::Alternative { ... }
     } else {
         // Alternative 2
     }
@@ -118,20 +118,64 @@ fn parse_something(&mut self) -> Result<AstNode, Error> {
 
 Binary operators are parsed using a **precedence climbing** method (a variation of the classic Pratt parsing algorithm). Each operator is associated with a numeric precedence level and an associativity direction. The algorithm uses these values to determine when to stop parsing the current expression and return a result, versus continuing to consume more operators.
 
-| Precedence | Operators                   | Associativity |
-| ---------- | --------------------------- | ------------- |
-| 1          | `\|\|`                      | Left          |
-| 2          | `&&`                        | Left          |
-| 3          | `==` `!=` `<` `>` `<=` `>=` | Left          |
-| 4          | `\|`                        | Left          |
-| 5          | `^`                         | Left          |
-| 6          | `&`                         | Left          |
-| 7          | `<<` `>>` `<<<` `>>>`       | Left          |
-| 8          | `+` `-`                     | Left          |
-| 9          | `*` `/` `%`                 | Left          |
-| 10         | `**` (exponentiation)       | Right         |
+| Precedence     | Operators                                                                            | Associativity |
+| -------------- | ------------------------------------------------------------------------------------ | ------------- |
+| 1 (Assign)     | `=` `+=` `-=` `*=` `/=` `%=` `&=` `\|=` `^=` `<<=` `>>=` `<<<=` `>>>=` `&&=` `\|\|=` | Right         |
+| 2 (Range)      | `..`                                                                                 | Left          |
+| 3 (LogicOr)    | `\|\|`                                                                               | Left          |
+| 4 (LogicAnd)   | `&&`                                                                                 | Left          |
+| 5 (Comparison) | `==` `!=` `<` `>` `<=` `>=`                                                          | Left          |
+| 6 (BitOr)      | `\|`                                                                                 | Left          |
+| 7 (BitXor)     | `^`                                                                                  | Left          |
+| 8 (BitAnd)     | `&`                                                                                  | Left          |
+| 9 (Shift)      | `<<` `>>` `<<<` `>>>`                                                                | Left          |
+| 10 (AddSub)    | `+` `-`                                                                              | Left          |
+| 11 (MulDiv)    | `*` `/` `%`                                                                          | Left          |
 
-The precedence climbing approach provides clean separation between operator definitions (just a precedence number and associativity flag) and the parsing logic. Reordering precedence levels requires only changing the number. Left and right associativity are handled naturally without grammar rewriting. The algorithm runs in linear time with respect to the number of operators in the expression.
+### Table-Driven Binary Operator Detection
+
+The original implementation used a deeply nested `match`/`if` tree spanning ~200 lines to detect and parse binary operators. This has been replaced with a **table-driven pattern matching** approach:
+
+```rust
+struct OpPattern {
+    tokens: &'static [Token],
+    op: BinExprOp,
+}
+
+const BINOP_PATTERNS: &[OpPattern] = &[
+    OpPattern { tokens: &[Token::Lt, Token::Lt, Token::Lt, Token::Eq], op: BinExprOp::SetBitRotl },
+    OpPattern { tokens: &[Token::And, Token::And, Token::Eq],       op: BinExprOp::SetLogicAnd },
+    // ... all 30+ operator patterns ordered longest-first ...
+    OpPattern { tokens: &[Token::Lt],                                op: BinExprOp::LogicLt },
+    OpPattern { tokens: &[Token::Dot, Token::Dot],                  op: BinExprOp::Range },
+];
+```
+
+The `detect_and_parse_binary_operator` method iterates through this table in declaration order (longest sequences first, single tokens last), attempting each pattern by checking if the lexer's current token stream matches the pattern's token sequence. On match, it returns the corresponding `BinExprOp` without consuming more than the matched tokens. On failure, it rewinds to the saved position and tries the next pattern.
+
+This approach provides four benefits over the original nested branching:
+
+1. **Declarative operator definitions** — adding, removing, or reordering operators requires only changing the table
+2. **Single responsibility** — the detection method is reduced from 200 lines to ~25 lines
+3. **Easier auditing** — all operator mappings are visible in one sorted table
+4. **No regressions** — the pattern order (longest-first) naturally handles operators that share prefixes (e.g., `<` vs `<<` vs `<<<` vs `<<=`)
+
+### Shared Limit Constant
+
+A module-level constant `MAX_LIMIT: usize = 65_536` is used across all element-count limit checks instead of repeated bare literals. This constant is defined in `helper.rs` and imported by all parser submodules, making the intent clear and changes centralized.
+
+### Common Utility Methods
+
+The `helper.rs` module provides shared utilities that reduce duplication across the parser submodules:
+
+- **`parse_double_colon()`** — consumes `::` and returns `true` if both colons were found
+- **`parse_name()`** — reads an identifier or reports a provided error
+- **`expect_*()`** — family of methods to expect and consume specific delimiters (`;`, `{`, `}`, `(`, `)`, `[`, `]`, `:`, `->`, `>`)
+- **`parse_mutability()`**, **`parse_exclusivity()`**, **`parse_visibility()`** — parse optional modifiers
+- **`check_limit()`** — reports an exceeded-limit error at most once
+- **`parse_comma_separated_list()`** — generic comma-separated list parser with limit checks, leading-comma support, and recovery
+
+These shared methods ensure consistent error reporting and recovery behavior across all parsing contexts.
 
 Prefix and postfix operators (unary `+`, `-`, `!`, dereference `*`, borrow `&`, etc.) are parsed inline before descending into binary expression parsing. The parser first checks for prefix operators, parses the operand (which may itself be a prefix expression, a primary expression, or a postfix expression with calls/accesses), then enters the precedence climbing loop for binary operators.
 
@@ -387,7 +431,15 @@ The parser has an extensive test suite covering:
 
 Diagnostic format tests verify that error messages are correctly formatted, user-friendly, and include all required information.
 
-## Design Decisions
+## Error Handling and Diagnostic Infrastructure
+
+Parse errors are reported through the `SyntaxErr` enum, which implements `FormattableDiagnosticGroup`. Each variant carries a `SourcePosition` and maps to a unique numeric error code. The diagnostic system accumulates errors across stages rather than aborting at the first failure.
+
+The error handling system uses several patterns to maximize error discovery in a single pass:
+
+- **Missing delimiter insertion** — when a required `}` or `)` is missing, the parser logs the error but continues parsing by skipping to the appropriate recovery point
+- **Limit enforcement** — element counts (function parameters, enum variants, struct fields, path segments, etc.) are all checked against `MAX_LIMIT` and reported once per context
+- **Brace-matching recovery** — on missing closing braces, the parser skips to the next likely recovery point (next top-level keyword or EOF)
 
 ### Why Recursive Descent Over Parser Generators?
 

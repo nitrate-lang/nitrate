@@ -941,38 +941,6 @@ impl Parser<'_, '_> {
     }
 
     fn parse_closure_parameters(&mut self) -> Option<Vec<FuncParam>> {
-        fn parse_closure_parameter(this: &mut Parser) -> FuncParam {
-            let attributes = this.parse_attributes();
-
-            let mutability = this.parse_mutability();
-
-            let name = this.lexer.next_if_name().unwrap_or_else(|| {
-                let bug = SyntaxErr::FunctionParameterMissingName(this.lexer.peek_pos());
-                this.log.report(&bug);
-                "".into()
-            });
-
-            let name = NString::from(name);
-
-            this.expect_colon();
-
-            let ty = this.parse_type();
-
-            let default = if this.lexer.skip_if(&Token::Eq) {
-                Some(this.parse_expression())
-            } else {
-                None
-            };
-
-            FuncParam {
-                attributes,
-                mutability,
-                name,
-                ty,
-                default_value: default,
-            }
-        }
-
         if !self.lexer.skip_if(&Token::OpenParen) {
             return None;
         }
@@ -981,15 +949,9 @@ impl Parser<'_, '_> {
         let limit = SyntaxErr::FunctionParameterLimit(self.lexer.peek_pos());
         let end = SyntaxErr::FunctionParametersExpectedEnd(self.lexer.peek_pos());
 
-        let params = self.parse_comma_separated_list(
-            &Token::CloseParen,
-            MAX_LIMIT,
-            true,
-            eof,
-            limit,
-            end,
-            parse_closure_parameter,
-        );
+        let params = self.parse_comma_separated_list(&Token::CloseParen, MAX_LIMIT, true, eof, limit, end, |this| {
+            this.parse_common_func_param(true)
+        });
 
         Some(params)
     }

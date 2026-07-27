@@ -3,7 +3,7 @@ use crate::diagnosis::SyntaxErr;
 
 use nitrate_nstring::NString;
 use nitrate_token::Token;
-use nitrate_tree::ast::{Exclusivity, Mutability, Type, Visibility};
+use nitrate_tree::ast::{Exclusivity, Expr, FuncParam, Mutability, Type, Visibility};
 
 /// Default maximum for counted parser elements (items, parameters, fields, etc.).
 pub(crate) const MAX_LIMIT: usize = 65_536;
@@ -29,13 +29,6 @@ impl Parser<'_, '_> {
             .into()
     }
 
-    /// Expect a specific token. Reports the given error if not found.
-    pub(crate) fn expect_token(&mut self, expected: &Token, on_missing: SyntaxErr) {
-        if !self.lexer.skip_if(expected) {
-            self.log.report(&on_missing);
-        }
-    }
-
     /// Expect a semicolon (`;`).
     pub(crate) fn expect_semicolon(&mut self) {
         let pos = self.lexer.peek_pos();
@@ -49,14 +42,6 @@ impl Parser<'_, '_> {
         let pos = self.lexer.peek_pos();
         if !self.lexer.skip_if(&Token::OpenBrace) {
             self.log.report(&SyntaxErr::ExpectedOpenBrace(pos));
-        }
-    }
-
-    /// Expect a closing brace (`}`).
-    pub(crate) fn expect_close_brace(&mut self) {
-        let pos = self.lexer.peek_pos();
-        if !self.lexer.skip_if(&Token::CloseBrace) {
-            self.log.report(&SyntaxErr::ExpectedCloseBrace(pos));
         }
     }
 
@@ -76,14 +61,6 @@ impl Parser<'_, '_> {
         }
     }
 
-    /// Expect an opening bracket (`[`).
-    pub(crate) fn expect_open_bracket(&mut self) {
-        let pos = self.lexer.peek_pos();
-        if !self.lexer.skip_if(&Token::OpenBracket) {
-            self.log.report(&SyntaxErr::ExpectedOpenBracket(pos));
-        }
-    }
-
     /// Expect a closing bracket (`]`).
     pub(crate) fn expect_close_bracket(&mut self) {
         let pos = self.lexer.peek_pos();
@@ -100,16 +77,6 @@ impl Parser<'_, '_> {
         }
     }
 
-    /// Expect an arrow (`->`). Reports the given error if missing.
-    pub(crate) fn expect_arrow(&mut self) {
-        let pos = self.lexer.peek_pos();
-        self.lexer.skip_if(&Token::Minus);
-        let found = self.lexer.skip_if(&Token::Gt);
-        if !found {
-            self.log.report(&SyntaxErr::ExpectedArrow(pos));
-        }
-    }
-
     /// Parse an optional return type (`-> Type`). Returns `None` if no arrow is found.
     pub(crate) fn parse_return_type_arrow(&mut self) -> Option<Type> {
         if self.lexer.skip_if(&Token::Minus) {
@@ -119,14 +86,6 @@ impl Parser<'_, '_> {
             Some(self.parse_type())
         } else {
             None
-        }
-    }
-
-    /// Expect a closing angle bracket (`>`).
-    pub(crate) fn expect_close_angle(&mut self) {
-        let pos = self.lexer.peek_pos();
-        if !self.lexer.skip_if(&Token::Gt) {
-            self.log.report(&SyntaxErr::ExpectedCloseAngle(pos));
         }
     }
 
@@ -215,6 +174,87 @@ impl Parser<'_, '_> {
                 self.lexer.skip_while(close);
                 break;
             }
+        }
+
+        items
+    }
+
+    // === Extracted common patterns (Iteration 3) ===
+
+    /// Parse a keyword + attributes + name prefix pattern used in item declarations.
+    ///
+    /// Consumes `keyword` token (asserted), then attributes and identifier.
+    /// Returns `(attributes, name)`.
+    #[allow(dead_code)]
+    pub(crate) fn parse_keyword_attrs_name(
+        &mut self,
+        keyword: &Token,
+        missing_name: SyntaxErr,
+    ) -> (Option<Vec<Expr>>, NString) {
+        debug_assert_eq!(self.lexer.peek_tok().token, *keyword);
+        self.lexer.skip_tok();
+        let attributes = self.parse_attributes();
+        let name = self.lexer.next_if_name().unwrap_or_else(|| {
+            self.log.report(&missing_name);
+            String::new()
+        });
+        (attributes, NString::from(name))
+    }
+
+    /// Parse a common function parameter (reused in named functions, closures, and function types).
+    ///
+    /// Parses `[attributes] [mutability] name: Type [= default]`.
+    /// When `allow_default` is false, the `= default` part is skipped.
+    #[allow(dead_code)]
+    pub(crate) fn parse_common_func_param(&mut self, allow_default: bool) -> FuncParam {
+        let attributes = self.parse_attributes();
+        let mutability = self.parse_mutability();
+        let name = self.lexer.next_if_name().unwrap_or_else(|| {
+            let bug = SyntaxErr::FunctionParameterMissingName(self.lexer.peek_pos());
+            self.log.report(&bug);
+            String::new()
+        });
+        let name = NString::from(name);
+        self.expect_colon();
+        let ty = self.parse_type();
+        let default_value = if allow_default && self.lexer.skip_if(&Token::Eq) {
+            Some(self.parse_expression())
+        } else {
+            None
+        };
+        FuncParam {
+            attributes,
+            mutability,
+            name,
+            ty,
+            default_value,
+        }
+    }
+
+    /// Parse a brace-delimited body of items with limit checking and EOF recovery.
+    ///
+    /// Parses `{ item item item ... }` using the provided `parse_one` closure.
+    /// Each item is parsed via `parse_one`, errors `eof_err` on EOF, and `limit_err`
+    /// when exceeding `max` items.
+    #[allow(dead_code)]
+    pub(crate) fn parse_brace_body<T>(
+        &mut self,
+        max: usize,
+        eof_err: SyntaxErr,
+        limit_err: SyntaxErr,
+        mut parse_one: impl FnMut(&mut Self) -> T,
+    ) -> Vec<T> {
+        let mut items = Vec::new();
+        let mut limit_reported = false;
+
+        while !self.lexer.skip_if(&Token::CloseBrace) {
+            if self.lexer.is_eof() {
+                self.log.report(&eof_err);
+                break;
+            }
+
+            Self::check_limit(items.len(), max, &mut limit_reported, &limit_err, self.log);
+            items.push(parse_one(self));
         }
 
         items

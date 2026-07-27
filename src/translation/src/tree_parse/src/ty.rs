@@ -163,39 +163,22 @@ impl Parser<'_, '_> {
     }
 
     fn parse_function_type_parameters(&mut self) -> FuncTypeParams {
-        fn parse_function_parameter(this: &mut Parser) -> FuncTypeParam {
-            let attributes = this.parse_attributes();
-
-            let name = this.lexer.next_if_name().unwrap_or_else(|| {
-                let bug = SyntaxErr::FunctionParameterMissingName(this.lexer.peek_pos());
-                this.log.report(&bug);
-                "".into()
-            });
-
-            let name = NString::from(name);
-
-            this.expect_colon();
-
-            let ty = this.parse_type();
-
-            FuncTypeParam { attributes, name, ty }
-        }
-
         self.expect_open_paren();
 
         let eof = SyntaxErr::FunctionParametersExpectedEnd(self.lexer.peek_pos());
         let limit = SyntaxErr::FunctionParameterLimit(self.lexer.peek_pos());
         let end = SyntaxErr::FunctionParametersExpectedEnd(self.lexer.peek_pos());
 
-        self.parse_comma_separated_list(
-            &Token::CloseParen,
-            MAX_LIMIT,
-            true,
-            eof,
-            limit,
-            end,
-            parse_function_parameter,
-        )
+        let params = self.parse_comma_separated_list(&Token::CloseParen, MAX_LIMIT, true, eof, limit, end, |this| {
+            let param = this.parse_common_func_param(false);
+            FuncTypeParam {
+                attributes: param.attributes,
+                name: param.name,
+                ty: param.ty,
+            }
+        });
+
+        params
     }
 
     fn parse_function_type(&mut self) -> FunctionType {

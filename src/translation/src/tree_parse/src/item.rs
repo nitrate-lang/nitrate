@@ -574,38 +574,6 @@ impl Parser<'_, '_> {
     }
 
     fn parse_function_parameters(&mut self) -> FuncParams {
-        fn parse_function_parameter(this: &mut Parser) -> FuncParam {
-            let attributes = this.parse_attributes();
-
-            let mutability = this.parse_mutability();
-
-            let name = this.lexer.next_if_name().unwrap_or_else(|| {
-                let bug = SyntaxErr::FunctionParameterMissingName(this.lexer.peek_pos());
-                this.log.report(&bug);
-                "".into()
-            });
-
-            let name = NString::from(name);
-
-            this.expect_colon();
-
-            let ty = this.parse_type();
-
-            let default_value = if this.lexer.skip_if(&Token::Eq) {
-                Some(this.parse_expression())
-            } else {
-                None
-            };
-
-            FuncParam {
-                attributes,
-                mutability,
-                name,
-                ty,
-                default_value,
-            }
-        }
-
         self.expect_open_paren();
 
         let mut params = Vec::new();
@@ -660,7 +628,7 @@ impl Parser<'_, '_> {
                 return FuncParams { params, variadic: true };
             }
 
-            let param = parse_function_parameter(self);
+            let param = self.parse_common_func_param(true);
             params.push(param);
 
             if !self.lexer.skip_if(&Token::Comma) && !self.lexer.next_is(&Token::CloseParen) {
@@ -768,27 +736,6 @@ impl Parser<'_, '_> {
             }
             _ => None,
         }
-    }
-
-    fn parse_extern_block(&mut self) -> Vec<Item> {
-        // We've already consumed the 'extern' keyword and optional ABI.
-        // Now parse '{ ... }' containing function declarations.
-        let mut items = Vec::new();
-
-        self.expect_open_brace();
-
-        while !self.lexer.skip_if(&Token::CloseBrace) {
-            if self.lexer.is_eof() {
-                let bug = SyntaxErr::ExpectedItem(self.lexer.peek_pos());
-                self.log.report(&bug);
-                break;
-            }
-
-            let item = self.parse_item();
-            items.push(item);
-        }
-
-        items
     }
 
     pub(crate) fn parse_item(&mut self) -> Item {
