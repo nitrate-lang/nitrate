@@ -300,9 +300,15 @@ impl ValidateHirItem for Module {
             attr.verify(ctx)?;
         }
 
+        // Push this module onto the current module path for visibility checks
+        ctx.current_module_path.push(self.name.clone());
+
         for item in &self.items {
             item.verify(ctx)?;
         }
+
+        // Pop the module path after processing all items
+        ctx.current_module_path.pop();
 
         Ok(())
     }

@@ -1,5 +1,8 @@
 use log::debug;
 use nitrate_hir::SymbolTab;
+use nitrate_hir::prelude::*;
+use nitrate_hir_get_type::HirGetType;
+use nitrate_nstring::NString;
 use std::collections::HashSet;
 
 pub struct ValidHir<T> {
@@ -29,6 +32,8 @@ pub(crate) fn establish_property(name: &str, f: impl FnOnce() -> Result<(), ()>)
 pub struct ValidateCtx<'m> {
     pub(crate) visited: HashSet<*const ()>,
     pub(crate) m: &'m SymbolTab,
+    /// The current module path (e.g., ["root", "foo"] for module foo inside root).
+    pub(crate) current_module_path: Vec<NString>,
 }
 
 impl<'m> ValidateCtx<'m> {
@@ -36,6 +41,7 @@ impl<'m> ValidateCtx<'m> {
         ValidateCtx {
             visited: HashSet::new(),
             m,
+            current_module_path: Vec::new(),
         }
     }
 
@@ -43,6 +49,77 @@ impl<'m> ValidateCtx<'m> {
         let ptr = item as *const _ as *const ();
         let not_visited = self.visited.insert(ptr);
         !not_visited
+    }
+
+    /// Check whether `target_visibility` is accessible from the current module path,
+    /// given the fully-qualified name of the target item.
+    pub(crate) fn check_visibility(&self, target_visibility: &Visibility, target_qualified_name: &NString) -> bool {
+        match target_visibility {
+            Visibility::Pub => true,
+            Visibility::Pro => {
+                // "Protected" visibility: accessible from the same project.
+                // Since we don't have a project/package concept yet, allow all.
+                // TODO: Restrict to sibling modules
+                true
+            }
+            Visibility::Sec => {
+                // "Section/private" visibility: accessible only from within the same module.
+                // Check if the target is in the same module as the current scope.
+                let target_path: &str = target_qualified_name;
+
+                // Build the current module path string
+                let current_path: String = {
+                    let mut s = String::new();
+                    for (i, segment) in self.current_module_path.iter().enumerate() {
+                        if i > 0 {
+                            s.push_str("::");
+                        }
+                        s.push_str(segment);
+                    }
+                    s
+                };
+
+                // If the current scope is empty (root), only root items are accessible.
+                if self.current_module_path.is_empty() {
+                    // Root-level items have no "::" in their qualified name
+                    return !target_path.contains("::");
+                }
+
+                // Check if the target's module path equals the current module path
+                // Target name is like "module::item_name". Extract the module part.
+                if let Some(last_sep) = target_path.rfind("::") {
+                    let target_module = &target_path[..last_sep];
+                    target_module == current_path
+                } else {
+                    // The target is at root level, but we're inside a module -> not accessible
+                    false
+                }
+            }
+        }
+    }
+
+    /// Check if a value expression refers to a mutable place.
+    /// Returns true if the place is mutable.
+    pub(crate) fn is_place_mutable(&self, value: &Value) -> bool {
+        match value {
+            Value::LocalVariableSymbol { id } => id.borrow().is_mutable,
+            Value::GlobalVariableSymbol { id } => id.borrow().is_mutable,
+            Value::ParameterSymbol { id } => id.borrow().is_mutable,
+            Value::Deref { place } => {
+                // Dereferencing a mutable reference/pointer yields a mutable place
+                let place = place.borrow();
+                if let Ok(ty) = place.determine_type(self.m) {
+                    match ty {
+                        Type::Reference { mutable, .. } | Type::Pointer { mutable, .. } => mutable,
+                        Type::SliceRef { mutable, .. } | Type::SlicePtr { mutable, .. } => mutable,
+                        _ => false,
+                    }
+                } else {
+                    false
+                }
+            }
+            _ => false,
+        }
     }
 }
 
