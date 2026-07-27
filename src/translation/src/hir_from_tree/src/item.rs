@@ -352,7 +352,27 @@ fn lower_implementation(impl_: ast::Impl, ctx: &mut Ast2HirCtx, log: &CompilerLo
         // will handle generic method calls when they are encountered
     }
 
+    // Extract the impl type name before moving impl_.for_type
+    let impl_type_name: Option<NString> = match &impl_.for_type {
+        nitrate_tree::ast::Type::TypePath(type_path) => {
+            let name = type_path
+                .segments
+                .iter()
+                .map(|seg| seg.name.clone())
+                .collect::<Vec<_>>()
+                .join("::");
+            Some(name.into())
+        }
+        _ => None,
+    };
+
     let for_type: TypeId = lower_type(impl_.for_type, ctx, log)?.into();
+
+    // Push the impl type name onto the current scope so methods get
+    // properly qualified names (e.g. test-package::Person::new)
+    if let Some(ref name) = impl_type_name {
+        ctx.current_scope.push(name.clone());
+    }
 
     // Save any previous self type and set the current one so `Self` can be resolved
     let prev_self = ctx.current_self_type.take();
@@ -412,6 +432,11 @@ fn lower_implementation(impl_: ast::Impl, ctx: &mut Ast2HirCtx, log: &CompilerLo
             Ok(())
         }
     };
+
+    // Pop the impl type name from scope
+    if let Some(_) = impl_type_name {
+        ctx.current_scope.pop();
+    }
 
     // Restore the previous self type
     ctx.current_self_type = prev_self;

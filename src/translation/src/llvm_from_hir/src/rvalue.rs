@@ -1362,12 +1362,87 @@ fn gen_rval_deref<'ctx>(ctx: &mut CodegenCtx<'ctx, '_, '_, '_, '_>, place: &hir:
 }
 
 fn gen_rval_cast<'ctx>(
-    _ctx: &mut CodegenCtx<'ctx, '_, '_, '_, '_>,
-    _value: &hir::Value,
-    _target_type: &hir::Type,
+    ctx: &mut CodegenCtx<'ctx, '_, '_, '_, '_>,
+    value: &hir::Value,
+    target_type: &hir::Type,
 ) -> BasicValueEnum<'ctx> {
-    // TODO: implement cast codegen
-    unimplemented!()
+    let llvm_value = gen_rval(ctx, value);
+    let llvm_target_ty = gen_ty(target_type, &mut ctx.into());
+
+    // In LLVM, both references and pointers map to the same ptr type.
+    // Casting between pointer-like types (reference → pointer, pointer → pointer, etc.)
+    // is a no-op at the LLVM level — just bitcast.
+    if llvm_value.is_pointer_value() || llvm_target_ty.is_pointer_type() {
+        return ctx.bb.build_bit_cast(llvm_value, llvm_target_ty, "cast_ptr").unwrap();
+    }
+
+    // Int-to-int cast
+    if llvm_value.is_int_value() && llvm_target_ty.is_int_type() {
+        let v = llvm_value.into_int_value();
+        let dst_ty = llvm_target_ty.into_int_type();
+        let src_bits = v.get_type().get_bit_width();
+        let dst_bits = dst_ty.get_bit_width();
+
+        if src_bits == dst_bits {
+            return ctx.bb.build_bit_cast(llvm_value, llvm_target_ty, "cast_int").unwrap();
+        } else if src_bits < dst_bits {
+            return ctx
+                .bb
+                .build_int_z_extend_or_bit_cast(v, dst_ty, "cast_zext")
+                .unwrap()
+                .into();
+        } else {
+            return ctx
+                .bb
+                .build_int_truncate_or_bit_cast(v, dst_ty, "cast_trunc")
+                .unwrap()
+                .into();
+        }
+    }
+
+    // Float-to-float cast
+    if llvm_value.is_float_value() && llvm_target_ty.is_float_type() {
+        return ctx
+            .bb
+            .build_float_cast(
+                llvm_value.into_float_value(),
+                llvm_target_ty.into_float_type(),
+                "cast_fp",
+            )
+            .unwrap()
+            .into();
+    }
+
+    // Int-to-float cast
+    if llvm_value.is_int_value() && llvm_target_ty.is_float_type() {
+        return ctx
+            .bb
+            .build_signed_int_to_float(
+                llvm_value.into_int_value(),
+                llvm_target_ty.into_float_type(),
+                "cast_sitofp",
+            )
+            .unwrap()
+            .into();
+    }
+
+    // Float-to-int cast
+    if llvm_value.is_float_value() && llvm_target_ty.is_int_type() {
+        return ctx
+            .bb
+            .build_float_to_signed_int(
+                llvm_value.into_float_value(),
+                llvm_target_ty.into_int_type(),
+                "cast_fptosi",
+            )
+            .unwrap()
+            .into();
+    }
+
+    // Fallback: try bitcast
+    ctx.bb
+        .build_bit_cast(llvm_value, llvm_target_ty, "cast_fallback")
+        .unwrap()
 }
 
 fn gen_rval_borrow<'ctx>(

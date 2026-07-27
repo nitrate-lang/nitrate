@@ -14,17 +14,20 @@ pub fn convert_ast_to_hir(mut module: ast::Module, ctx: &mut Ast2HirCtx, log: &C
 
     let mut module = lower_module(module, ctx, log)?;
 
-    // Perform type inference and monomorphization on functions and global variables
-    for item in &mut module.items {
-        if let Item::Function(func_id) = item {
-            let mut function = func_id.borrow_mut();
-            if function.body.is_some() {
-                resolve_function(&mut function, &mut ctx.tab, log)?;
-            }
-        } else if let Item::GlobalVariable(global_id) = item {
-            let mut global = global_id.borrow_mut();
-            resolve_global(&mut global, &mut ctx.tab, log)?;
+    // Collect function IDs first to avoid borrow conflict with resolve_function
+    let function_ids: Vec<FunctionId> = ctx.tab.functions().cloned().collect();
+    for func_id in &function_ids {
+        let mut function = func_id.borrow_mut();
+        if function.body.is_some() {
+            resolve_function(&mut function, &mut ctx.tab, log)?;
         }
+    }
+
+    // Collect global IDs first to avoid borrow conflict with resolve_global
+    let global_ids: Vec<GlobalVariableId> = ctx.tab.globals().cloned().collect();
+    for global_id in &global_ids {
+        let mut global = global_id.borrow_mut();
+        resolve_global(&mut global, &mut ctx.tab, log)?;
     }
 
     Ok(module)

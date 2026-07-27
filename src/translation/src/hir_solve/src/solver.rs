@@ -406,6 +406,21 @@ impl<'m> Solver<'m> {
                 }
 
                 self.visit(callee);
+
+                // Propagate function parameter type constraints to call arguments
+                if let Value::FunctionSymbol { id } = &*callee.borrow() {
+                    let func = id.borrow();
+                    for (i, arg) in args.positional.iter().enumerate() {
+                        if let Some(param) = func.params.get(i) {
+                            let param_type = param.borrow().ty;
+                            self.constraints
+                                .entry(arg.clone())
+                                .or_default()
+                                .insert(TypeConstraint::Equal(param_type));
+                        }
+                    }
+                }
+
                 for arg in &args.positional {
                     self.visit(arg);
                 }

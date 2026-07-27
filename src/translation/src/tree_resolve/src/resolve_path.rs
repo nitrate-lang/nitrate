@@ -6,6 +6,7 @@ use nitrate_tree::{
     ast::{ExprPath, Module, SymbolKind, TypePath},
 };
 use std::collections::HashMap;
+use std::ops::Deref;
 
 fn resolve_expr_path(
     scope: &[String],
@@ -61,6 +62,13 @@ fn resolve_type_path(
             .collect::<Vec<_>>()
             .join("::"),
     );
+
+    // Handle `Self` keyword: resolve to the innermost type that defines Self scope
+    if pathname.deref() == "Self" || pathname.deref() == "self" {
+        // Set resolved_path to "Self" so the HIR layer can handle it using context.current_self_type
+        path.resolved_path = Some("Self".into());
+        return true;
+    }
 
     let is_root_path = path.segments.first().map(|seg| seg.name.is_empty()).unwrap_or(false);
 
@@ -126,6 +134,18 @@ pub fn resolve_paths(module: &mut Module, log: &CompilerLog) -> HashMap<NString,
             RefNodeMut::ItemTrait(trait_def) => Some(trait_def.name.clone()),
             RefNodeMut::ItemFunction(function) => Some(function.name.clone()),
             RefNodeMut::ItemModule(module) => Some(module.name.clone()),
+            RefNodeMut::ItemImpl(impl_def) => match &impl_def.for_type {
+                nitrate_tree::ast::Type::TypePath(type_path) => {
+                    let name = type_path
+                        .segments
+                        .iter()
+                        .map(|seg| seg.name.clone())
+                        .collect::<Vec<_>>()
+                        .join("::");
+                    Some(name.into())
+                }
+                _ => None,
+            },
             _ => None,
         };
 
