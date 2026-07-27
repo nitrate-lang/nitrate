@@ -9,9 +9,7 @@ members = [
     "src/translation/src/token",
     "src/translation/src/token_lexer",
     "src/translation/src/tree",
-    "src/translation/src/tree2",
     "src/translation/src/tree_parse",
-    "src/translation/src/tree_parse2",
     "src/translation/src/tree_resolve",
     "src/translation/src/hir",
     "src/translation/src/hir_dump",
@@ -71,9 +69,7 @@ nitrate_nstring = { path = "src/translation/src/nstring" }
 nitrate_token = { path = "src/translation/src/token" }
 nitrate_token_lexer = { path = "src/translation/src/token_lexer" }
 nitrate_tree = { path = "src/translation/src/tree" }
-nitrate_tree2 = { path = "src/translation/src/tree2" }
 nitrate_tree_parse = { path = "src/translation/src/tree_parse" }
-nitrate_tree_parse2 = { path = "src/translation/src/tree_parse2" }
 nitrate_tree_resolve = { path = "src/translation/src/tree_resolve" }
 
 nitrate_hir = { path = "src/translation/src/hir" }

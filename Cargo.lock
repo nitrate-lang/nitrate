@@ -1010,9 +1010,7 @@ dependencies = [
  "nitrate_token",
  "nitrate_token_lexer",
  "nitrate_tree",
- "nitrate_tree2",
  "nitrate_tree_parse",
- "nitrate_tree_parse2",
  "nitrate_tree_resolve",
  "threadpool",
  "threadpool_scope",
@@ -1033,21 +1031,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "nitrate_tree2"
-version = "0.1.0"
-dependencies = [
- "append-only-vec",
- "bitflags 2.10.0",
- "nitrate_diagnosis",
- "nitrate_nstring",
- "nitrate_token",
- "nitrate_token_lexer",
- "ordered-float",
- "serde",
- "thin-vec",
-]
-
-[[package]]
 name = "nitrate_tree_parse"
 version = "0.1.0"
 dependencies = [
@@ -1058,20 +1041,6 @@ dependencies = [
  "nitrate_token",
  "nitrate_token_lexer",
  "nitrate_tree",
- "ordered-float",
- "spdx",
-]
-
-[[package]]
-name = "nitrate_tree_parse2"
-version = "0.1.0"
-dependencies = [
- "log",
- "nitrate_diagnosis",
- "nitrate_nstring",
- "nitrate_token",
- "nitrate_token_lexer",
- "nitrate_tree2",
  "ordered-float",
  "spdx",
 ]

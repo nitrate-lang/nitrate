@@ -13,9 +13,7 @@ src/translation/
 ├── src/token/              # Token types & diagnostics
 ├── src/token_lexer/        # Lexer: text → tokens
 ├── src/tree/               # Concrete Syntax Tree (CST) v1
-├── src/tree2/              # Concrete Syntax Tree (CST) v2
 ├── src/tree_parse/         # Parser: tokens → tree (v1)
-├── src/tree_parse2/        # Parser: tokens → tree (v2)
 ├── src/tree_resolve/       # Name resolution on the CST
 ├── src/hir/                # High-level IR data types
 ├── src/hir_dump/           # HIR debug formatting
