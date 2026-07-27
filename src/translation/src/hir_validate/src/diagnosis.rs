@@ -72,6 +72,9 @@ pub(crate) enum ValidateErr {
 
     /// An enum variant attribute is invalid.
     InvalidEnumVariantAttribute,
+
+    /// A generic parameter was found in a context where it is not allowed (must be monomorphized first).
+    GenericParamNotAllowed { type_repr: String },
 }
 
 impl FormattableDiagnosticGroup for ValidateErr {
@@ -101,6 +104,7 @@ impl FormattableDiagnosticGroup for ValidateErr {
             ValidateErr::InvalidModuleAttribute => 0x011,
             ValidateErr::InvalidEnumAttribute => 0x012,
             ValidateErr::InvalidEnumVariantAttribute => 0x013,
+            ValidateErr::GenericParamNotAllowed { .. } => 0x014,
         }
     }
 
@@ -201,6 +205,13 @@ impl FormattableDiagnosticGroup for ValidateErr {
             ValidateErr::InvalidEnumAttribute => "enum has an invalid attribute".to_string(),
 
             ValidateErr::InvalidEnumVariantAttribute => "enum variant has an invalid attribute".to_string(),
+
+            ValidateErr::GenericParamNotAllowed { type_repr } => {
+                format!(
+                    "generic parameter `{}` not allowed in this context; generics must be monomorphized before codegen",
+                    type_repr,
+                )
+            }
         };
 
         DiagnosticInfo {

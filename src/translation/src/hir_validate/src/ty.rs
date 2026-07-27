@@ -346,8 +346,9 @@ impl ValidateHirType for Type {
             }
 
             Type::GenericParam { .. } => {
-                // Generic parameters are valid in uninstantiated contexts (before monomorphization)
+                // Generic parameters are valid in uninstantiated contexts (before monomorphization).
                 // They will be replaced with concrete types during monomorphization.
+                // The codegen layer will panic if any GenericParam survives to LLVM IR generation.
                 Ok(())
             }
         }

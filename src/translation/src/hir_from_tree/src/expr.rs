@@ -6,6 +6,7 @@ use nitrate_nstring::NString;
 use nitrate_tree::ast::{self as ast, SymbolKind, UnaryExprOp};
 use ordered_float::OrderedFloat;
 use std::collections::BTreeSet;
+use std::ops::Deref;
 
 pub(crate) fn lower_boolean_literal(boolean_lit: ast::BooleanLit) -> Result<Value, ()> {
     match boolean_lit.value {
@@ -70,11 +71,26 @@ pub(crate) fn lower_struct_init(
     ctx: &mut Ast2HirCtx,
     log: &CompilerLog,
 ) -> Result<Value, ()> {
-    // Process any generic type arguments in the struct path but don't error
-    // The type arguments will be inferred from field types during monomorphization
-    if struct_init.path.segments.iter().any(|seg| seg.type_arguments.is_some()) {
-        // Just acknowledge them and continue - inference will handle it
-    }
+    // Collect explicit type arguments from turbofish syntax (e.g., Pair::<i32>)
+    let explicit_type_args: Vec<TypeId> = struct_init
+        .path
+        .segments
+        .iter()
+        .filter_map(|seg| {
+            seg.type_arguments.as_ref().map(|type_args| {
+                type_args
+                    .iter()
+                    .filter_map(|type_arg| {
+                        lower_type(type_arg.value.clone(), ctx, log).ok().map(|t| {
+                            let hir_type_arg: TypeId = t.into();
+                            hir_type_arg
+                        })
+                    })
+                    .collect::<Vec<_>>()
+            })
+        })
+        .flatten()
+        .collect();
 
     let mut fields = Vec::with_capacity(struct_init.fields.len());
 
@@ -85,16 +101,247 @@ pub(crate) fn lower_struct_init(
 
     match struct_init.path.resolved_path {
         Some(resolved_path) => {
-            return Ok(Value::StructObject {
-                struct_def: ctx.tab.get_struct_or_insert_placeholder(&resolved_path),
+            let struct_def_id = ctx.tab.get_struct_or_insert_placeholder(&resolved_path);
+
+            // If explicit type args were provided (turbofish), monomorphize the struct
+            // by creating a uniquely-named concrete copy
+            if !explicit_type_args.is_empty() {
+                let struct_def = struct_def_id.borrow();
+                if struct_def.generics.is_some() {
+                    let generic_params: Vec<&NString> = struct_def
+                        .generics
+                        .as_ref()
+                        .map(|g| g.keys().collect())
+                        .unwrap_or_default();
+
+                    // Build a unique suffix from the concrete type args
+                    let type_suffix: String = explicit_type_args
+                        .iter()
+                        .map(|t| format!("{:?}", t.deref()))
+                        .collect::<Vec<_>>()
+                        .join("_");
+                    let mono_name = format!("{}::<{}>", resolved_path, type_suffix);
+
+                    // Check if we already created this monomorphized version
+                    let mono_name_ns: NString = mono_name.clone().into();
+                    if let Some(existing_mono) = ctx.tab.get_struct(&mono_name_ns) {
+                        return Ok(Value::StructObject {
+                            struct_def: existing_mono.clone(),
+                            fields: fields.into(),
+                        });
+                    }
+
+                    use std::collections::BTreeMap;
+                    let mut new_fields = BTreeMap::new();
+                    let mut new_layout = Vec::new();
+
+                    for (field_name, field) in &struct_def.fields {
+                        let new_field_ty =
+                            substitute_generic_params_in_type(&field.ty, &generic_params, &explicit_type_args);
+                        let new_field = StructField {
+                            visibility: field.visibility.clone(),
+                            attributes: field.attributes.clone(),
+                            name: field.name.clone(),
+                            ty: TypeId::from(new_field_ty),
+                            default_value: field.default_value.clone(),
+                        };
+                        new_fields.insert(field_name.clone(), new_field);
+                        new_layout.push(StructMemoryLayoutCell::Field {
+                            field_name: field_name.clone(),
+                        });
+                    }
+
+                    let mono_struct = StructDef {
+                        visibility: struct_def.visibility.clone(),
+                        name: mono_name_ns,
+                        attributes: struct_def.attributes.clone(),
+                        fields: new_fields,
+                        generics: None,
+                        layout: new_layout.into(),
+                    };
+                    let mono_id: StructDefId = mono_struct.into();
+                    ctx.tab.add_struct(mono_id.clone());
+                    return Ok(Value::StructObject {
+                        struct_def: mono_id,
+                        fields: fields.into(),
+                    });
+                }
+            }
+
+            Ok(Value::StructObject {
+                struct_def: struct_def_id,
                 fields: fields.into(),
-            });
+            })
         }
 
         None => {
             log.report(&HirErr::UnresolvedTypePath);
             Err(())
         }
+    }
+}
+
+/// Helper function: substitute generic params in a type given explicit type args.
+/// Used in lower_struct_init to monomorphize struct types at HIR lowering time.
+fn substitute_generic_params_in_type(ty: &Type, param_names: &[&NString], type_args: &[TypeId]) -> Type {
+    match ty {
+        Type::GenericParam { index, name } => {
+            // Find this name's position among generic params
+            for (i, param_name) in param_names.iter().enumerate() {
+                if *param_name == name {
+                    if let Some(concrete_ty) = type_args.get(i) {
+                        return concrete_ty.deref().clone();
+                    }
+                }
+            }
+            // If index matches, use that directly
+            if let Some(concrete_ty) = type_args.get(*index as usize) {
+                concrete_ty.deref().clone()
+            } else {
+                ty.clone()
+            }
+        }
+        Type::Array { element_type, len } => {
+            let new_elem = substitute_generic_params_in_type(element_type, param_names, type_args);
+            Type::Array {
+                element_type: TypeId::from(new_elem),
+                len: *len,
+            }
+        }
+        Type::Tuple { element_types } => {
+            let new_elements: Vec<TypeId> = element_types
+                .iter()
+                .map(|et| TypeId::from(substitute_generic_params_in_type(et, param_names, type_args)))
+                .collect();
+            Type::Tuple {
+                element_types: new_elements.into(),
+            }
+        }
+        Type::Function { function_type } => {
+            let new_params: Vec<(NString, TypeId)> = function_type
+                .params
+                .iter()
+                .map(|(n, p)| {
+                    (
+                        n.clone(),
+                        TypeId::from(substitute_generic_params_in_type(p, param_names, type_args)),
+                    )
+                })
+                .collect();
+            let new_ret = substitute_generic_params_in_type(&function_type.return_type, param_names, type_args);
+            Type::Function {
+                function_type: Box::new(FunctionType {
+                    attributes: function_type.attributes.clone(),
+                    params: new_params.into(),
+                    return_type: TypeId::from(new_ret),
+                }),
+            }
+        }
+        Type::Reference {
+            lifetime,
+            exclusive,
+            mutable,
+            to,
+        } => {
+            let new_to = substitute_generic_params_in_type(to, param_names, type_args);
+            Type::Reference {
+                lifetime: lifetime.clone(),
+                exclusive: *exclusive,
+                mutable: *mutable,
+                to: TypeId::from(new_to),
+            }
+        }
+        Type::Pointer {
+            lifetime,
+            exclusive,
+            mutable,
+            to,
+        } => {
+            let new_to = substitute_generic_params_in_type(to, param_names, type_args);
+            Type::Pointer {
+                lifetime: lifetime.clone(),
+                exclusive: *exclusive,
+                mutable: *mutable,
+                to: TypeId::from(new_to),
+            }
+        }
+        Type::SliceRef {
+            lifetime,
+            exclusive,
+            mutable,
+            element_type,
+        } => {
+            let new_elem = substitute_generic_params_in_type(element_type, param_names, type_args);
+            Type::SliceRef {
+                lifetime: lifetime.clone(),
+                exclusive: *exclusive,
+                mutable: *mutable,
+                element_type: TypeId::from(new_elem),
+            }
+        }
+        Type::SlicePtr {
+            lifetime,
+            exclusive,
+            mutable,
+            element_type,
+        } => {
+            let new_elem = substitute_generic_params_in_type(element_type, param_names, type_args);
+            Type::SlicePtr {
+                lifetime: lifetime.clone(),
+                exclusive: *exclusive,
+                mutable: *mutable,
+                element_type: TypeId::from(new_elem),
+            }
+        }
+        Type::TraitObject { bounds } => Type::TraitObject { bounds: bounds.clone() },
+        Type::Refine { base, min, max } => {
+            let new_base = substitute_generic_params_in_type(base, param_names, type_args);
+            Type::Refine {
+                base: TypeId::from(new_base),
+                min: *min,
+                max: *max,
+            }
+        }
+        Type::Parameterized { base, args } => {
+            // Substitute in the base type and all type arguments
+            let new_base = substitute_generic_params_in_type(base, param_names, type_args);
+            let new_args: thin_vec::ThinVec<TypeId> = args
+                .positional
+                .iter()
+                .map(|arg| TypeId::from(substitute_generic_params_in_type(arg, param_names, type_args)))
+                .collect();
+            // If the base was a GenericParam that got substituted, just return the substituted type
+            match &new_base {
+                Type::Struct { .. } | Type::TypeAlias { .. } => new_base,
+                _ => Type::Parameterized {
+                    base: TypeId::from(new_base),
+                    args: Arguments {
+                        positional: new_args,
+                        named: thin_vec::ThinVec::new(),
+                    },
+                },
+            }
+        }
+        Type::TypeAlias { def } => {
+            let type_alias = def.borrow();
+            substitute_generic_params_in_type(&type_alias.type_id, param_names, type_args)
+        }
+        Type::Struct { def } => {
+            // For struct types, also substitute generics within
+            let struct_def = def.borrow();
+            if struct_def.generics.is_some() {
+                // Need to create a monomorphized copy of this struct
+                let generic_params: Vec<&NString> = struct_def
+                    .generics
+                    .as_ref()
+                    .map(|g| g.keys().collect())
+                    .unwrap_or_default();
+                // Check if all type params are provided by the outer call
+                // This case should generally be handled via the Parameterized path above
+            }
+            ty.clone()
+        }
+        _ => ty.clone(),
     }
 }
 

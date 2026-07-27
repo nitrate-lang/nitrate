@@ -511,15 +511,65 @@ impl<'m> Solver<'m> {
             | Value::InferredFloat(_) => {}
 
             Value::StructObject { struct_def, fields } => {
-                for (field_name, field_value) in fields {
+                // Check if this struct is generic and needs monomorphization
+                let has_generics = struct_def.borrow().generics.is_some();
+
+                // For generic structs: visit children first to resolve Inferred types,
+                // then try to monomorphize in a later pass.
+                // For non-generic structs: add constraints as usual.
+                if has_generics {
+                    // First, try to monomorphize - this will succeed if field values
+                    // have reached concrete types
+                    if let Some(subst) = self.infer_generic_args_from_struct_fields(struct_def, fields) {
+                        // Successfully inferred concrete type args - monomorphize
+                        let mono_struct_id = self.monomorphize_struct(struct_def, &subst);
+                        // Replace the struct_def in the original value
+                        {
+                            let mut original = e.borrow_mut();
+                            if let Value::StructObject { struct_def: sd, .. } = &mut *original {
+                                *sd = mono_struct_id;
+                            }
+                        }
+                        // Now visit with the concrete monomorphized struct
+                        drop(value); // Don't hold old value
+                        let updated = e.borrow();
+                        if let Value::StructObject {
+                            struct_def: sd,
+                            fields: flds,
+                        } = &*updated
+                        {
+                            let struct_def_b = sd.borrow();
+                            for (field_name, field_value) in flds {
+                                if let Some(field) = struct_def_b.fields.get(field_name) {
+                                    let field_type = field.ty;
+                                    self.constraints
+                                        .entry(field_value.clone())
+                                        .or_default()
+                                        .insert(TypeConstraint::Equal(field_type));
+                                    self.visit(field_value);
+                                }
+                            }
+                        }
+                    } else {
+                        // Can't infer yet - just visit field values without adding constraints
+                        // This allows Inferred types to resolve, then in the next
+                        // fixed-point iteration, we'll try monomorphization again
+                        for (_, field_value) in fields {
+                            self.visit(field_value);
+                        }
+                    }
+                } else {
+                    // Non-generic struct - normal processing
                     let struct_def_b = struct_def.borrow();
-                    if let Some(field) = struct_def_b.fields.get(field_name) {
-                        let field_type = field.ty;
-                        self.constraints
-                            .entry(field_value.clone())
-                            .or_default()
-                            .insert(TypeConstraint::Equal(field_type));
-                        self.visit(field_value);
+                    for (field_name, field_value) in fields {
+                        if let Some(field) = struct_def_b.fields.get(field_name) {
+                            let field_type = field.ty;
+                            self.constraints
+                                .entry(field_value.clone())
+                                .or_default()
+                                .insert(TypeConstraint::Equal(field_type));
+                            self.visit(field_value);
+                        }
                     }
                 }
             }
@@ -863,15 +913,18 @@ impl<'m> Solver<'m> {
         match element {
             BlockElement::Expr(e) => self.visit(e),
             BlockElement::Local(local_var) => {
-                if local_var.borrow().ty.is_inferred() {
-                    if let Ok(ty) = local_var.borrow().initializer.borrow().determine_type(self.m) {
+                let (is_inferred, init_id) = {
+                    let lv = local_var.borrow();
+                    (lv.ty.is_inferred(), lv.initializer.clone())
+                };
+                if is_inferred {
+                    if let Ok(ty) = init_id.borrow().determine_type(self.m) {
                         local_var.borrow_mut().ty = ty.into();
                     }
                 } else {
-                    let value = local_var.borrow().initializer.clone();
                     let ty = local_var.borrow().ty.clone();
                     self.constraints
-                        .entry(value)
+                        .entry(init_id.clone())
                         .or_default()
                         .insert(TypeConstraint::Equal(ty));
                 }

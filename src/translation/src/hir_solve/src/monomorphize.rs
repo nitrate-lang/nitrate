@@ -1,11 +1,12 @@
 use crate::solver::Solver;
 use crate::substitution::Substitution;
 use nitrate_hir::{
-    Arguments, BlockElement, Function, FunctionId, LocalVariable, LocalVariableId, Parameter, ParameterId, Type,
-    TypeId, Value, ValueId,
+    Arguments, BlockElement, Function, FunctionId, LocalVariable, LocalVariableId, Parameter, ParameterId, StructDef,
+    StructDefId, StructField, StructMemoryLayoutCell, Type, TypeId, Value, ValueId,
 };
 use nitrate_hir_get_type::HirGetType;
 use nitrate_nstring::NString;
+use std::collections::BTreeMap;
 use thin_vec::ThinVec;
 
 impl<'m> Solver<'m> {
@@ -13,6 +14,16 @@ impl<'m> Solver<'m> {
         let mut sorted_args: Vec<(u32, TypeId)> = subst.mapping.iter().map(|(k, v)| (*k, *v)).collect();
         sorted_args.sort_by_key(|(k, _)| *k);
         (func_id.as_usize(), sorted_args)
+    }
+
+    pub(crate) fn struct_mono_cache_key(
+        &self,
+        struct_id: &StructDefId,
+        subst: &Substitution,
+    ) -> (usize, Vec<(u32, TypeId)>) {
+        let mut sorted_args: Vec<(u32, TypeId)> = subst.mapping.iter().map(|(k, v)| (*k, *v)).collect();
+        sorted_args.sort_by_key(|(k, _)| *k);
+        (struct_id.as_usize(), sorted_args)
     }
 
     /// Infer concrete types for generic parameters from argument types at a call site.
@@ -38,6 +49,139 @@ impl<'m> Solver<'m> {
         }
 
         Some(subst)
+    }
+
+    /// Infer concrete types for generic struct parameters from field values.
+    /// Returns None if inference is incomplete (some generics still unbound).
+    pub(crate) fn infer_generic_args_from_struct_fields(
+        &self,
+        struct_def_id: &StructDefId,
+        field_values: &[(NString, ValueId)],
+    ) -> Option<Substitution> {
+        let struct_def = struct_def_id.borrow();
+        let generics = struct_def.generics.as_ref()?;
+
+        if generics.is_empty() {
+            return Some(Substitution::default());
+        }
+
+        let mut subst = Substitution::default();
+        let mut any_concrete_type_found = false;
+
+        for (field_name, field_value_id) in field_values {
+            if let Some(field) = struct_def.fields.get(field_name) {
+                let field_type = &*field.ty;
+                // Only unify if we can determine the value's type
+                if let Ok(arg_type) = field_value_id.borrow().determine_type(self.m) {
+                    // Skip if the value type is still inferred (not yet concrete)
+                    if arg_type.is_inferred() {
+                        continue;
+                    }
+                    any_concrete_type_found = true;
+                    Self::unify_types_with_subst(&arg_type, field_type, &mut subst);
+                }
+            }
+        }
+
+        // If no field values have concrete types yet, we can't infer
+        if !any_concrete_type_found {
+            return None;
+        }
+
+        // Check that all generic params that appear in field types have been bound
+        for (_param_name, _default_ty) in generics {
+            // Check if this generic param appears in any field type
+            let appears_in_fields = struct_def
+                .fields
+                .values()
+                .any(|f| Self::type_contains_generic_param(&f.ty, _param_name));
+            if appears_in_fields {
+                let idx = Self::find_generic_index_in_type(
+                    &struct_def
+                        .fields
+                        .values()
+                        .next()
+                        .map(|f| &f.ty)
+                        .cloned()
+                        .unwrap_or(Type::Unit.into()),
+                    _param_name,
+                )
+                .unwrap_or(0);
+                // Find the correct index for this param name
+                let generic_idx = struct_def
+                    .fields
+                    .values()
+                    .find_map(|f| match &*f.ty {
+                        Type::GenericParam { index, name } if name == _param_name => Some(*index),
+                        _ => Self::find_generic_index_in_type_deep(&f.ty, _param_name),
+                    })
+                    .unwrap_or(0);
+                if generic_idx > 0 && !subst.mapping.contains_key(&generic_idx) {
+                    // This generic param is used in field types but couldn't be inferred
+                    // Return None to defer monomorphization until types are resolved
+                    return None;
+                }
+            }
+        }
+
+        Some(subst)
+    }
+
+    fn type_contains_generic_param(ty: &Type, param_name: &NString) -> bool {
+        match ty {
+            Type::GenericParam { name, .. } => name == param_name,
+            Type::Array { element_type, .. } => Self::type_contains_generic_param(element_type, param_name),
+            Type::Tuple { element_types } => element_types
+                .iter()
+                .any(|et| Self::type_contains_generic_param(et, param_name)),
+            Type::Reference { to, .. } | Type::Pointer { to, .. } => Self::type_contains_generic_param(to, param_name),
+            Type::SliceRef { element_type, .. } | Type::SlicePtr { element_type, .. } => {
+                Self::type_contains_generic_param(element_type, param_name)
+            }
+            _ => false,
+        }
+    }
+
+    fn find_generic_index_in_type_deep(ty: &Type, param_name: &NString) -> Option<u32> {
+        match ty {
+            Type::GenericParam { index, name } if name == param_name => Some(*index),
+            Type::Array { element_type, .. } => Self::find_generic_index_in_type_deep(element_type, param_name),
+            Type::Tuple { element_types } => {
+                for et in element_types.iter() {
+                    if let Some(idx) = Self::find_generic_index_in_type_deep(et, param_name) {
+                        return Some(idx);
+                    }
+                }
+                None
+            }
+            Type::Reference { to, .. } | Type::Pointer { to, .. } => {
+                Self::find_generic_index_in_type_deep(to, param_name)
+            }
+            Type::SliceRef { element_type, .. } | Type::SlicePtr { element_type, .. } => {
+                Self::find_generic_index_in_type_deep(element_type, param_name)
+            }
+            _ => None,
+        }
+    }
+
+    fn find_generic_index_in_type(ty: &Type, param_name: &NString) -> Option<u32> {
+        match ty {
+            Type::GenericParam { index, name } if name == param_name => Some(*index),
+            Type::Array { element_type, .. } => Self::find_generic_index_in_type(element_type, param_name),
+            Type::Tuple { element_types } => {
+                for et in element_types.iter() {
+                    if let Some(idx) = Self::find_generic_index_in_type(et, param_name) {
+                        return Some(idx);
+                    }
+                }
+                None
+            }
+            Type::Reference { to, .. } | Type::Pointer { to, .. } => Self::find_generic_index_in_type(to, param_name),
+            Type::SliceRef { element_type, .. } | Type::SlicePtr { element_type, .. } => {
+                Self::find_generic_index_in_type(element_type, param_name)
+            }
+            _ => None,
+        }
     }
 
     pub(crate) fn unify_types_with_subst(arg_type: &Type, param_type: &Type, subst: &mut Substitution) {
@@ -86,7 +230,109 @@ impl<'m> Solver<'m> {
                     .entry(*index)
                     .or_insert_with(|| TypeId::from(concrete.clone()));
             }
+            // Handle struct types - unify inside
+            (arg, Type::Struct { def: struct_def_id }) => {
+                // For struct types, inspect field types for generic params
+                let struct_def = struct_def_id.borrow();
+                if struct_def.generics.is_some() {
+                    // Try to extract concrete types from the arg struct type
+                    if let Type::Struct { def: arg_def } = arg {
+                        if arg_def != struct_def_id {
+                            // Different struct, nothing to unify
+                            return;
+                        }
+                    }
+                    for field in struct_def.fields.values() {
+                        if let Type::GenericParam { index, .. } = &*field.ty {
+                            // This doesn't give us concrete types from arg directly
+                            // Need to look at the actual value to infer
+                        }
+                    }
+                }
+            }
             _ => {}
+        }
+    }
+
+    /// Monomorphize a generic struct by creating a concrete copy with substituted field types.
+    pub(crate) fn monomorphize_struct(&mut self, struct_id: &StructDefId, subst: &Substitution) -> StructDefId {
+        // Generate a struct-level cache key
+        let mut sorted_args: Vec<(u32, TypeId)> = subst.mapping.iter().map(|(k, v)| (*k, *v)).collect();
+        sorted_args.sort_by_key(|(k, _)| *k);
+        let _cache_key = (struct_id.as_usize(), sorted_args);
+
+        // Store the cache in the solver (we use a separate field for struct mono cache)
+        // For now, we don't cache struct monomorphization (they're simple enough)
+
+        let struct_def = struct_id.borrow();
+
+        self.mono_counter += 1;
+        let mono_name = format!("{}::<mono-{}>", struct_def.name, self.mono_counter);
+        let mono_name_ns: NString = mono_name.into();
+
+        // Apply substitution to each field's type
+        let mut new_fields = BTreeMap::new();
+        let mut new_layout = Vec::new();
+
+        for (field_name, field) in &struct_def.fields {
+            let new_field_ty = subst.apply(&field.ty);
+            let new_field = StructField {
+                visibility: field.visibility.clone(),
+                attributes: field.attributes.clone(),
+                name: field.name.clone(),
+                ty: TypeId::from(new_field_ty),
+                default_value: field.default_value.clone(),
+            };
+            new_fields.insert(field_name.clone(), new_field);
+            new_layout.push(StructMemoryLayoutCell::Field {
+                field_name: field_name.clone(),
+            });
+        }
+
+        let mono_struct = StructDef {
+            visibility: struct_def.visibility.clone(),
+            name: mono_name_ns,
+            attributes: struct_def.attributes.clone(),
+            fields: new_fields,
+            generics: None, // Monomorphized - no more generics
+            layout: new_layout.into(),
+        };
+
+        let mono_id: StructDefId = mono_struct.into();
+        // Register in symbol table so codegen can find it
+        self.m.add_struct(mono_id.clone());
+        mono_id
+    }
+
+    /// Try to substitute `type GenericParam` types in a value to concrete types.
+    /// This is needed when struct field values contain generic types.
+    pub(crate) fn substitute_in_value(&self, value: &Value, subst: &Substitution) -> Value {
+        match value {
+            Value::Cast { value: v, target_type } => {
+                let new_target = subst.apply(target_type);
+                let v_borrowed = v.borrow();
+                let new_v = self.substitute_in_value(&v_borrowed, subst);
+                Value::Cast {
+                    value: ValueId::from(new_v),
+                    target_type: TypeId::from(new_target),
+                }
+            }
+            Value::StructObject { struct_def, fields } => {
+                let new_fields: ThinVec<(NString, ValueId)> = fields
+                    .iter()
+                    .map(|(name, val_id)| {
+                        let val_borrowed = val_id.borrow();
+                        let new_val = self.substitute_in_value(&val_borrowed, subst);
+                        (name.clone(), ValueId::from(new_val))
+                    })
+                    .collect();
+                Value::StructObject {
+                    struct_def: struct_def.clone(),
+                    fields: new_fields,
+                }
+            }
+            // For literals and symbols, just clone
+            _ => value.clone(),
         }
     }
 
@@ -184,13 +430,16 @@ impl<'m> Solver<'m> {
                 }
             }
             Value::StructObject { struct_def, fields } => {
-                // For generic structs, we need to monomorphize the struct def
                 let struct_def_b = struct_def.borrow();
                 if struct_def_b.generics.is_some() {
-                    // Update field types using substitution
+                    // Apply substitution to field value types if they contain generic params
                     let new_fields: ThinVec<(NString, ValueId)> = fields
                         .iter()
-                        .map(|(name, val_id)| (name.clone(), val_id.clone()))
+                        .map(|(name, val_id)| {
+                            let val = val_id.borrow();
+                            let new_val = self.apply_subst_to_value(&val, subst);
+                            (name.clone(), ValueId::from(new_val))
+                        })
                         .collect();
                     Value::StructObject {
                         struct_def: struct_def.clone(),
