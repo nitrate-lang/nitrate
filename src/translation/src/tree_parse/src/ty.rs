@@ -4,10 +4,9 @@ use crate::diagnosis::SyntaxErr;
 use nitrate_nstring::NString;
 use nitrate_token::Token;
 use nitrate_tree::ast::{
-    ArrayType, Bool, Exclusivity, Expr, Float32, Float64, FuncTypeParam, FuncTypeParams, FunctionType, Int8, Int16,
-    Int32, Int64, Int128, LatentType, Lifetime, Mutability, PointerType, ReferenceType, RefinementType, SliceType,
-    TupleType, Type, TypeParentheses, TypePath, TypePathSegment, TypeSyntaxError, UInt8, UInt16, UInt32, UInt64,
-    UInt128, USize,
+    ArrayType, Bool, Expr, Float32, Float64, FuncTypeParam, FuncTypeParams, FunctionType, Int8, Int16, Int32, Int64,
+    Int128, LatentType, Lifetime, PointerType, ReferenceType, RefinementType, SliceType, TupleType, Type,
+    TypeParentheses, TypePath, TypePathSegment, TypeSyntaxError, UInt8, UInt16, UInt32, UInt64, UInt128, USize,
 };
 
 #[derive(Default)]
@@ -35,10 +34,7 @@ impl Parser<'_, '_> {
             if !this.lexer.skip_if(&Token::Colon) {
                 let minimum = this.parse_expression();
 
-                if !this.lexer.skip_if(&Token::Colon) {
-                    let bug = SyntaxErr::ExpectedColon(this.lexer.peek_pos());
-                    this.log.report(&bug);
-                }
+                this.expect_colon();
 
                 minimum_bound = Some(minimum);
             }
@@ -46,10 +42,7 @@ impl Parser<'_, '_> {
             if !this.lexer.skip_if(&Token::CloseBracket) {
                 let maximum = this.parse_expression();
 
-                if !this.lexer.skip_if(&Token::CloseBracket) {
-                    let bug = SyntaxErr::ExpectedCloseBracket(this.lexer.peek_pos());
-                    this.log.report(&bug);
-                }
+                this.expect_close_bracket();
 
                 maximum_bound = Some(maximum);
             }
@@ -113,19 +106,11 @@ impl Parser<'_, '_> {
             return Type::SliceType(Box::new(SliceType { element_type }));
         }
 
-        if !self.lexer.skip_if(&Token::Semi) {
-            let bug = SyntaxErr::ExpectedSemicolon(self.lexer.peek_pos());
-            self.log.report(&bug);
-        }
+        self.expect_semicolon();
 
         let len = self.parse_expression();
 
-        if !self.lexer.skip_if(&Token::CloseBracket) {
-            let bug = SyntaxErr::ExpectedCloseBracket(self.lexer.peek_pos());
-            self.log.report(&bug);
-
-            self.lexer.skip_while(&Token::CloseBracket);
-        }
+        self.expect_close_bracket();
 
         Type::ArrayType(Box::new(ArrayType { element_type, len }))
     }
@@ -134,32 +119,20 @@ impl Parser<'_, '_> {
         assert!(self.lexer.peek_tok().token == Token::And);
         self.lexer.skip_tok();
 
-        let mut exclusive = None;
-        let mut mutability = None;
-
         let lifetime = if self.lexer.next_is(&Token::SingleQuote) {
             Some(self.parse_lifetime())
         } else {
             None
         };
 
-        if self.lexer.skip_if(&Token::Poly) {
-            exclusive = Some(Exclusivity::Poly);
-        } else if self.lexer.skip_if(&Token::Iso) {
-            exclusive = Some(Exclusivity::Iso);
-        }
-
-        if self.lexer.skip_if(&Token::Mut) {
-            mutability = Some(Mutability::Mut);
-        } else if self.lexer.skip_if(&Token::Const) {
-            mutability = Some(Mutability::Const);
-        }
+        let exclusivity = self.parse_exclusivity();
+        let mutability = self.parse_mutability();
 
         let to = self.parse_type();
 
         ReferenceType {
             lifetime,
-            exclusivity: exclusive,
+            exclusivity,
             mutability,
             to,
         }
@@ -169,26 +142,14 @@ impl Parser<'_, '_> {
         assert!(self.lexer.peek_tok().token == Token::Star);
         self.lexer.skip_tok();
 
-        let mut exclusivity = None;
-        let mut mutability = None;
-
         let lifetime = if self.lexer.next_is(&Token::SingleQuote) {
             Some(self.parse_lifetime())
         } else {
             None
         };
 
-        if self.lexer.skip_if(&Token::Poly) {
-            exclusivity = Some(Exclusivity::Poly);
-        } else if self.lexer.skip_if(&Token::Iso) {
-            exclusivity = Some(Exclusivity::Iso);
-        }
-
-        if self.lexer.skip_if(&Token::Mut) {
-            mutability = Some(Mutability::Mut);
-        } else if self.lexer.skip_if(&Token::Const) {
-            mutability = Some(Mutability::Const);
-        }
+        let exclusivity = self.parse_exclusivity();
+        let mutability = self.parse_mutability();
 
         let to = self.parse_type();
 
@@ -212,53 +173,28 @@ impl Parser<'_, '_> {
 
             let name = NString::from(name);
 
-            if !this.lexer.skip_if(&Token::Colon) {
-                let bug = SyntaxErr::FunctionParameterExpectedType(this.lexer.peek_pos());
-                this.log.report(&bug);
-            }
+            this.expect_colon();
 
             let ty = this.parse_type();
 
             FuncTypeParam { attributes, name, ty }
         }
 
-        let mut params = Vec::new();
+        self.expect_open_paren();
 
-        if !self.lexer.skip_if(&Token::OpenParen) {
-            let bug = SyntaxErr::ExpectedOpenParen(self.lexer.peek_pos());
-            self.log.report(&bug);
-        }
+        let eof = SyntaxErr::FunctionParametersExpectedEnd(self.lexer.peek_pos());
+        let limit = SyntaxErr::FunctionParameterLimit(self.lexer.peek_pos());
+        let end = SyntaxErr::FunctionParametersExpectedEnd(self.lexer.peek_pos());
 
-        self.lexer.skip_if(&Token::Comma);
-
-        let mut already_reported_too_many_parameters = false;
-
-        while !self.lexer.skip_if(&Token::CloseParen) {
-            if self.lexer.is_eof() {
-                let bug = SyntaxErr::FunctionParametersExpectedEnd(self.lexer.peek_pos());
-                self.log.report(&bug);
-                break;
-            }
-
-            const MAX_FUNCTION_PARAMETERS: usize = 65_536;
-
-            if !already_reported_too_many_parameters && params.len() >= MAX_FUNCTION_PARAMETERS {
-                already_reported_too_many_parameters = true;
-
-                let bug = SyntaxErr::FunctionParameterLimit(self.lexer.peek_pos());
-                self.log.report(&bug);
-            }
-
-            let param = parse_function_parameter(self);
-            params.push(param);
-
-            if !self.lexer.skip_if(&Token::Comma) && !self.lexer.next_is(&Token::CloseParen) {
-                let bug = SyntaxErr::FunctionParametersExpectedEnd(self.lexer.peek_pos());
-                self.log.report(&bug);
-                self.lexer.skip_while(&Token::CloseParen);
-                break;
-            }
-        }
+        let params = self.parse_comma_separated_list(
+            &Token::CloseParen,
+            65_536,
+            true,
+            eof,
+            limit,
+            end,
+            parse_function_parameter,
+        );
 
         params
     }
@@ -440,35 +376,16 @@ impl Parser<'_, '_> {
 
     fn parse_rest_of_tuple(&mut self, first_element: Type) -> TupleType {
         let mut element_types = Vec::from([first_element]);
-        let mut already_reported_too_many_elements = false;
 
-        while !self.lexer.skip_if(&Token::CloseParen) {
-            if self.lexer.is_eof() {
-                let bug = SyntaxErr::TupleTypeExpectedEnd(self.lexer.peek_pos());
-                self.log.report(&bug);
-                break;
-            }
+        let eof = SyntaxErr::TupleTypeExpectedEnd(self.lexer.peek_pos());
+        let limit = SyntaxErr::TupleTypeElementLimit(self.lexer.peek_pos());
+        let end = SyntaxErr::TupleTypeExpectedEnd(self.lexer.peek_pos());
 
-            const MAX_TUPLE_ELEMENTS: usize = 65_536;
+        let rest = self.parse_comma_separated_list(&Token::CloseParen, 65_536, false, eof, limit, end, |this| {
+            this.parse_type()
+        });
 
-            if !already_reported_too_many_elements && element_types.len() >= MAX_TUPLE_ELEMENTS {
-                already_reported_too_many_elements = true;
-
-                let bug = SyntaxErr::TupleTypeElementLimit(self.lexer.peek_pos());
-                self.log.report(&bug);
-            }
-
-            let element = self.parse_type();
-            element_types.push(element);
-
-            if !self.lexer.skip_if(&Token::Comma) && !self.lexer.next_is(&Token::CloseParen) {
-                let bug = SyntaxErr::TupleTypeExpectedEnd(self.lexer.peek_pos());
-                self.log.report(&bug);
-
-                self.lexer.skip_while(&Token::CloseParen);
-                break;
-            }
-        }
+        element_types.extend(rest);
 
         TupleType { element_types }
     }

@@ -5,8 +5,8 @@ use nitrate_nstring::NString;
 use nitrate_token::Token;
 use nitrate_tree::ast::{
     AssociatedItem, Enum, EnumVariant, FuncParam, FuncParams, Function, Generics, GlobalVariable, GlobalVariableKind,
-    Impl, Import, Item, ItemPath, ItemPathSegment, ItemSyntaxError, Module, Mutability, Struct, StructField, Trait,
-    TypeAlias, TypeParam, UseTree,
+    Impl, Import, Item, ItemPath, ItemPathSegment, ItemSyntaxError, Module, Struct, StructField, Trait, TypeAlias,
+    TypeParam, UseTree,
 };
 
 impl Parser<'_, '_> {
@@ -31,34 +31,12 @@ impl Parser<'_, '_> {
             return None;
         }
 
-        let mut params = Vec::new();
+        let eof = SyntaxErr::GenericParameterExpectedEnd(self.lexer.peek_pos());
+        let limit = SyntaxErr::GenericParameterLimit(self.lexer.peek_pos());
+        let end = SyntaxErr::GenericParameterExpectedEnd(self.lexer.peek_pos());
 
-        while !self.lexer.skip_if(&Token::Gt) {
-            if self.lexer.is_eof() {
-                let bug = SyntaxErr::GenericParameterExpectedEnd(self.lexer.peek_pos());
-                self.log.report(&bug);
-                break;
-            }
-
-            const MAX_GENERIC_PARAMETERS: usize = 65_536;
-
-            if params.len() >= MAX_GENERIC_PARAMETERS {
-                let bug = SyntaxErr::GenericParameterLimit(self.lexer.peek_pos());
-                self.log.report(&bug);
-                break;
-            }
-
-            let param = parse_generic_parameter(self);
-            params.push(param);
-
-            if !self.lexer.skip_if(&Token::Comma) && !self.lexer.next_is(&Token::Gt) {
-                let bug = SyntaxErr::GenericParameterExpectedEnd(self.lexer.peek_pos());
-                self.log.report(&bug);
-
-                self.lexer.skip_while(&Token::Gt);
-                break;
-            }
-        }
+        let params =
+            self.parse_comma_separated_list(&Token::Gt, 65_536, false, eof, limit, end, parse_generic_parameter);
 
         Some(Generics { params })
     }
@@ -204,10 +182,7 @@ impl Parser<'_, '_> {
         let attributes = self.parse_attributes();
         let use_tree = parse_use_tree(self);
 
-        if !self.lexer.skip_if(&Token::Semi) {
-            let bug = SyntaxErr::ExpectedSemicolon(self.lexer.peek_pos());
-            self.log.report(&bug);
-        }
+        self.expect_semicolon();
 
         Import {
             visibility: None,
@@ -239,10 +214,7 @@ impl Parser<'_, '_> {
             None
         };
 
-        if !self.lexer.skip_if(&Token::Semi) {
-            let bug = SyntaxErr::ExpectedSemicolon(self.lexer.peek_pos());
-            self.log.report(&bug);
-        }
+        self.expect_semicolon();
 
         TypeAlias {
             visibility: None,
@@ -268,10 +240,7 @@ impl Parser<'_, '_> {
             let variant_type = if this.lexer.skip_if(&Token::OpenParen) {
                 let ty = this.parse_type();
 
-                if !this.lexer.skip_if(&Token::CloseParen) {
-                    let bug = SyntaxErr::ExpectedCloseParen(this.lexer.peek_pos());
-                    this.log.report(&bug);
-                }
+                this.expect_close_paren();
 
                 Some(ty)
             } else {
@@ -307,41 +276,14 @@ impl Parser<'_, '_> {
 
         let generics = self.parse_generics();
 
-        if !self.lexer.skip_if(&Token::OpenBrace) {
-            let bug = SyntaxErr::ExpectedOpenBrace(self.lexer.peek_pos());
-            self.log.report(&bug);
-        }
+        self.expect_open_brace();
 
-        let mut variants = Vec::new();
-        let mut already_reported_too_many_variants = false;
+        let eof = SyntaxErr::EnumExpectedEnd(self.lexer.peek_pos());
+        let limit = SyntaxErr::EnumVariantLimit(self.lexer.peek_pos());
+        let end = SyntaxErr::EnumExpectedEnd(self.lexer.peek_pos());
 
-        while !self.lexer.skip_if(&Token::CloseBrace) {
-            if self.lexer.is_eof() {
-                let bug = SyntaxErr::EnumExpectedEnd(self.lexer.peek_pos());
-                self.log.report(&bug);
-                break;
-            }
-
-            const MAX_ENUM_VARIANTS: usize = 65_536;
-
-            if !already_reported_too_many_variants && variants.len() >= MAX_ENUM_VARIANTS {
-                already_reported_too_many_variants = true;
-
-                let bug = SyntaxErr::EnumVariantLimit(self.lexer.peek_pos());
-                self.log.report(&bug);
-            }
-
-            let variant = parse_enum_variant(self);
-            variants.push(variant);
-
-            if !self.lexer.skip_if(&Token::Comma) && !self.lexer.next_is(&Token::CloseBrace) {
-                let bug = SyntaxErr::EnumExpectedEnd(self.lexer.peek_pos());
-                self.log.report(&bug);
-                self.lexer.skip_while(&Token::CloseBrace);
-
-                break;
-            }
-        }
+        let variants =
+            self.parse_comma_separated_list(&Token::CloseBrace, 65_536, true, eof, limit, end, parse_enum_variant);
 
         Enum {
             visibility: None,
@@ -365,10 +307,7 @@ impl Parser<'_, '_> {
 
             let name = NString::from(name);
 
-            if !this.lexer.skip_if(&Token::Colon) {
-                let bug = SyntaxErr::ExpectedColon(this.lexer.peek_pos());
-                this.log.report(&bug);
-            }
+            this.expect_colon();
 
             let field_type = this.parse_type();
 
@@ -402,40 +341,14 @@ impl Parser<'_, '_> {
 
         let generics = self.parse_generics();
 
-        if !self.lexer.skip_if(&Token::OpenBrace) {
-            let bug = SyntaxErr::ExpectedOpenBrace(self.lexer.peek_pos());
-            self.log.report(&bug);
-        }
+        self.expect_open_brace();
 
-        let mut fields = Vec::new();
-        let mut already_reported_too_many_fields = false;
+        let eof = SyntaxErr::StructureExpectedEnd(self.lexer.peek_pos());
+        let limit = SyntaxErr::StructureFieldLimit(self.lexer.peek_pos());
+        let end = SyntaxErr::StructureExpectedEnd(self.lexer.peek_pos());
 
-        while !self.lexer.skip_if(&Token::CloseBrace) {
-            if self.lexer.is_eof() {
-                let bug = SyntaxErr::StructureExpectedEnd(self.lexer.peek_pos());
-                self.log.report(&bug);
-                break;
-            }
-
-            const MAX_STRUCT_FIELDS: usize = 65_536;
-
-            if !already_reported_too_many_fields && fields.len() >= MAX_STRUCT_FIELDS {
-                already_reported_too_many_fields = true;
-
-                let bug = SyntaxErr::StructureFieldLimit(self.lexer.peek_pos());
-                self.log.report(&bug);
-            }
-
-            let field = parse_struct_field(self);
-            fields.push(field);
-
-            if !self.lexer.skip_if(&Token::Comma) && !self.lexer.next_is(&Token::CloseBrace) {
-                let bug = SyntaxErr::StructureExpectedEnd(self.lexer.peek_pos());
-                self.log.report(&bug);
-                self.lexer.skip_while(&Token::CloseBrace);
-                break;
-            }
-        }
+        let fields =
+            self.parse_comma_separated_list(&Token::CloseBrace, 65_536, true, eof, limit, end, parse_struct_field);
 
         Struct {
             visibility: None,
@@ -495,33 +408,15 @@ impl Parser<'_, '_> {
 
         let generics = self.parse_generics();
 
-        if !self.lexer.skip_if(&Token::OpenBrace) {
-            let bug = SyntaxErr::ExpectedOpenBrace(self.lexer.peek_pos());
-            self.log.report(&bug);
-        }
+        self.expect_open_brace();
 
-        let mut items = Vec::new();
-        let mut already_reported_too_many_items = false;
+        let eof = SyntaxErr::TraitExpectedEnd(self.lexer.peek_pos());
+        let limit = SyntaxErr::TraitItemLimit(self.lexer.peek_pos());
+        let end = SyntaxErr::TraitExpectedEnd(self.lexer.peek_pos());
 
-        while !self.lexer.skip_if(&Token::CloseBrace) {
-            if self.lexer.is_eof() {
-                let bug = SyntaxErr::TraitExpectedEnd(self.lexer.peek_pos());
-                self.log.report(&bug);
-                break;
-            }
-
-            const MAX_TRAIT_ITEMS: usize = 65_536;
-
-            if !already_reported_too_many_items && items.len() >= MAX_TRAIT_ITEMS {
-                already_reported_too_many_items = true;
-
-                let bug = SyntaxErr::TraitItemLimit(self.lexer.peek_pos());
-                self.log.report(&bug);
-            }
-
-            let item = self.parse_associated_item();
-            items.push(item);
-        }
+        let items = self.parse_comma_separated_list(&Token::CloseBrace, 65_536, true, eof, limit, end, |this| {
+            this.parse_associated_item()
+        });
 
         Trait {
             visibility: None,
@@ -553,33 +448,15 @@ impl Parser<'_, '_> {
 
         let for_type = self.parse_type();
 
-        if !self.lexer.skip_if(&Token::OpenBrace) {
-            let bug = SyntaxErr::ExpectedOpenBrace(self.lexer.peek_pos());
-            self.log.report(&bug);
-        }
+        self.expect_open_brace();
 
-        let mut items = Vec::new();
-        let mut already_reported_too_many_items = false;
+        let eof = SyntaxErr::ImplExpectedEnd(self.lexer.peek_pos());
+        let limit = SyntaxErr::ImplItemLimit(self.lexer.peek_pos());
+        let end = SyntaxErr::ImplExpectedEnd(self.lexer.peek_pos());
 
-        while !self.lexer.skip_if(&Token::CloseBrace) {
-            if self.lexer.is_eof() {
-                let bug = SyntaxErr::ImplExpectedEnd(self.lexer.peek_pos());
-                self.log.report(&bug);
-                break;
-            }
-
-            const MAX_IMPL_ITEMS: usize = 65_536;
-
-            if !already_reported_too_many_items && items.len() >= MAX_IMPL_ITEMS {
-                already_reported_too_many_items = true;
-
-                let bug = SyntaxErr::ImplItemLimit(self.lexer.peek_pos());
-                self.log.report(&bug);
-            }
-
-            let item = self.parse_associated_item();
-            items.push(item);
-        }
+        let items = self.parse_comma_separated_list(&Token::CloseBrace, 65_536, true, eof, limit, end, |this| {
+            this.parse_associated_item()
+        });
 
         Impl {
             generics,
@@ -593,12 +470,7 @@ impl Parser<'_, '_> {
         fn parse_function_parameter(this: &mut Parser) -> FuncParam {
             let attributes = this.parse_attributes();
 
-            let mut mutability = None;
-            if this.lexer.skip_if(&Token::Mut) {
-                mutability = Some(Mutability::Mut);
-            } else if this.lexer.skip_if(&Token::Const) {
-                mutability = Some(Mutability::Const);
-            }
+            let mutability = this.parse_mutability();
 
             let name = this.lexer.next_if_name().unwrap_or_else(|| {
                 let bug = SyntaxErr::FunctionParameterMissingName(this.lexer.peek_pos());
@@ -608,10 +480,7 @@ impl Parser<'_, '_> {
 
             let name = NString::from(name);
 
-            if !this.lexer.skip_if(&Token::Colon) {
-                let bug = SyntaxErr::FunctionParameterExpectedType(this.lexer.peek_pos());
-                this.log.report(&bug);
-            }
+            this.expect_colon();
 
             let ty = this.parse_type();
 
@@ -630,42 +499,33 @@ impl Parser<'_, '_> {
             }
         }
 
+        self.expect_open_paren();
+
         let mut params = Vec::new();
 
-        if !self.lexer.skip_if(&Token::OpenParen) {
-            let bug = SyntaxErr::ExpectedOpenParen(self.lexer.peek_pos());
-            self.log.report(&bug);
-        }
+        let eof = SyntaxErr::FunctionParametersExpectedEnd(self.lexer.peek_pos());
+        let limit = SyntaxErr::FunctionParameterLimit(self.lexer.peek_pos());
+        let end = SyntaxErr::FunctionParametersExpectedEnd(self.lexer.peek_pos());
 
+        // Skip leading comma
         self.lexer.skip_if(&Token::Comma);
-
-        let mut already_reported_too_many_parameters = false;
 
         while !self.lexer.skip_if(&Token::CloseParen) {
             if self.lexer.is_eof() {
-                let bug = SyntaxErr::FunctionParametersExpectedEnd(self.lexer.peek_pos());
-                self.log.report(&bug);
+                self.log.report(&eof);
                 break;
             }
 
-            const MAX_FUNCTION_PARAMETERS: usize = 65_536;
-
-            if !already_reported_too_many_parameters && params.len() >= MAX_FUNCTION_PARAMETERS {
-                already_reported_too_many_parameters = true;
-
-                let bug = SyntaxErr::FunctionParameterLimit(self.lexer.peek_pos());
-                self.log.report(&bug);
-            }
+            Self::check_limit(params.len(), 65_536, &mut false, &limit, self.log);
 
             if self.lexer.skip_if(&Token::Dot) {
                 if !self.lexer.skip_if(&Token::Dot) || !self.lexer.skip_if(&Token::Dot) {
-                    let bug = SyntaxErr::FunctionParameterVariadicExpected(self.lexer.peek_pos());
-                    self.log.report(&bug);
+                    self.log
+                        .report(&SyntaxErr::FunctionParameterVariadicExpected(self.lexer.peek_pos()));
                 }
 
                 if !self.lexer.skip_if(&Token::CloseParen) {
-                    let bug = SyntaxErr::FunctionParametersExpectedEnd(self.lexer.peek_pos());
-                    self.log.report(&bug);
+                    self.log.report(&end);
                     self.lexer.skip_while(&Token::CloseParen);
                 }
 
@@ -676,8 +536,7 @@ impl Parser<'_, '_> {
             params.push(param);
 
             if !self.lexer.skip_if(&Token::Comma) && !self.lexer.next_is(&Token::CloseParen) {
-                let bug = SyntaxErr::FunctionParametersExpectedEnd(self.lexer.peek_pos());
-                self.log.report(&bug);
+                self.log.report(&end);
                 self.lexer.skip_while(&Token::CloseParen);
                 break;
             }
@@ -734,12 +593,7 @@ impl Parser<'_, '_> {
 
         let attributes = self.parse_attributes();
 
-        let mut mutability = None;
-        if self.lexer.skip_if(&Token::Mut) {
-            mutability = Some(Mutability::Mut);
-        } else if self.lexer.skip_if(&Token::Const) {
-            mutability = Some(Mutability::Const);
-        }
+        let mutability = self.parse_mutability();
 
         let name = self.lexer.next_if_name().unwrap_or_else(|| {
             let bug = SyntaxErr::VariableMissingName(self.lexer.peek_pos());
@@ -761,10 +615,7 @@ impl Parser<'_, '_> {
             None
         };
 
-        if !self.lexer.skip_if(&Token::Semi) {
-            let bug = SyntaxErr::ExpectedSemicolon(self.lexer.peek_pos());
-            self.log.report(&bug);
-        }
+        self.expect_semicolon();
 
         GlobalVariable {
             visibility: None,
