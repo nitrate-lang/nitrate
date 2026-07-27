@@ -804,6 +804,82 @@ impl<'a> Lexer<'a> {
     }
 
     #[inline(always)]
+    fn parse_slash_comment(&mut self) -> Result<Token, ()> {
+        // We already consumed the first '/', now consume the second '/'
+        self.advance(b'/');
+        let start_pos = self.internal_getc_pos.clone();
+        let mut comment_bytes = self.read_while(|b| b != b'\n');
+
+        if comment_bytes.ends_with(b"\r") {
+            comment_bytes = &comment_bytes[..comment_bytes.len() - 1];
+        }
+
+        if let Ok(comment) = str::from_utf8(comment_bytes) {
+            Ok(Token::Comment(Comment::new(
+                format!("//{comment}"),
+                CommentKind::SingleLine,
+            )))
+        } else {
+            error!("[L0600]: Single-line comment contains some invalid utf-8 bytes\n--> {start_pos}");
+
+            Err(())
+        }
+    }
+
+    #[inline(always)]
+    fn parse_block_comment(&mut self) -> Result<Token, ()> {
+        // We already consumed the first '/' and '*', so advance past '*'
+        self.advance(b'*');
+        let start_pos = self.internal_getc_pos.clone();
+
+        let mut comment_bytes = Vec::new();
+
+        loop {
+            match self.peek_byte() {
+                Ok(b'*') => {
+                    self.advance(b'*');
+                    if let Ok(b'/') = self.peek_byte() {
+                        self.advance(b'/');
+                        break;
+                    } else {
+                        comment_bytes.push(b'*');
+                    }
+                }
+                Ok(b) => {
+                    self.advance(b);
+                    comment_bytes.push(b);
+                }
+                Err(()) => {
+                    error!("[L0601]: Unterminated block comment\n--> {start_pos}");
+                    return Err(());
+                }
+            }
+        }
+
+        if let Ok(comment) = String::from_utf8(comment_bytes) {
+            Ok(Token::Comment(Comment::new(comment, CommentKind::MultiLine)))
+        } else {
+            error!("[L0602]: Block comment contains some invalid utf-8 bytes\n--> {start_pos}");
+            Err(())
+        }
+    }
+
+    #[inline(always)]
+    fn parse_slash_or_comment(&mut self) -> Result<Token, ()> {
+        let start_pos = self.internal_getc_pos.clone();
+        self.advance(b'/');
+
+        match self.peek_byte() {
+            Ok(b'/') => self.parse_slash_comment(),
+            Ok(b'*') => self.parse_block_comment(),
+            _ => {
+                // Just a regular slash `/` operator token
+                Ok(Token::Slash)
+            }
+        }
+    }
+
+    #[inline(always)]
     fn parse_single_byte(&mut self) -> Result<Token, ()> {
         let start_pos = self.internal_getc_pos.clone();
 
@@ -833,7 +909,6 @@ impl<'a> Lexer<'a> {
             b'|' => Some(Token::Or),
             b'+' => Some(Token::Plus),
             b'*' => Some(Token::Star),
-            b'/' => Some(Token::Slash),
             b'^' => Some(Token::Caret),
             b'%' => Some(Token::Percent),
             b'\t' => Some(Token::HorizontalTab),
@@ -873,6 +948,7 @@ impl<'a> Lexer<'a> {
                 b if b.is_ascii_digit() => self.parse_number(),
                 b'"' => self.parse_string(),
                 b'#' => self.parse_comment(),
+                b'/' => self.parse_slash_or_comment(),
                 _ => self.parse_single_byte(),
             },
         }

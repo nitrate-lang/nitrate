@@ -50,6 +50,7 @@ impl std::fmt::Display for Integer {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Hash, Sequence, Serialize, Deserialize)]
 pub enum CommentKind {
     SingleLine,
+    MultiLine,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash, Serialize, Deserialize)]
@@ -79,6 +80,7 @@ impl std::fmt::Display for Comment {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self.kind() {
             CommentKind::SingleLine => write!(f, "{}", self.text()),
+            CommentKind::MultiLine => write!(f, "{}", self.text()),
         }
     }
 }
@@ -614,7 +616,7 @@ mod tests {
     fn test_comment_token_parsetree() {
         assert_eq!(
             enum_iterator::all::<CommentKind>().collect::<Vec<_>>(),
-            vec![CommentKind::SingleLine]
+            vec![CommentKind::SingleLine, CommentKind::MultiLine]
         );
 
         let test_vectors = [
@@ -628,6 +630,12 @@ mod tests {
                 CommentKind::SingleLine,
                 "This is another single-line comment",
             ),
+            (
+                " A multi-line comment ",
+                CommentKind::MultiLine,
+                " A multi-line comment ",
+            ),
+            ("line1\nline2\nline3", CommentKind::MultiLine, "line1\nline2\nline3"),
         ];
 
         for (text, kind, expected_str) in test_vectors {
