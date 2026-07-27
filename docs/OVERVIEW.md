@@ -81,7 +81,7 @@ The lexer supports two modes: with trivia enabled (whitespace, newlines, and com
 
 ### Stage 2: Syntactic Parsing
 
-The parser (`nitrate_tree_parse`) consumes the token stream and produces a Parse Tree (AST) using a hand-written recursive-descent strategy with one token of lookahead. Operator precedence is managed using a precedence climbing algorithm with 10 levels from logical OR (lowest) through exponentiation (highest). The parser is organized into distinct functions for item parsing, expression parsing, and type parsing.
+The parser (`nitrate_tree_parse`) consumes the token stream and produces a Parse Tree (AST) using a hand-written recursive-descent strategy with one token of lookahead. Operator precedence is managed using a precedence climbing algorithm with 10 levels from assignment (lowest) through field access (highest). The parser is organized into distinct functions for item parsing, expression parsing, and type parsing.
 
 Item parsing handles all top-level declarations: functions, structs, enums, classes, unions, contracts, traits, impl blocks, type aliases, modules, use declarations, extern blocks, and global variables. Expression parsing handles control flow constructs (`if`/`while`/`loop`/`for`/`match`/`break`/`continue`/`return`), binary operations, unary operations, calls, field access, index access, literals, blocks, and special forms. Type parsing handles primitives, arrays, tuples, references, pointers, slices, generic parameterized types, function types, trait objects, and inferred types.
 
