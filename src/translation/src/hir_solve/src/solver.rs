@@ -321,7 +321,7 @@ impl<'m> Solver<'m> {
                     });
                 break;
             }
-            return match **ty {
+            return match effective_ty {
                 Type::I8 => match i8::try_from(value) {
                     Ok(v) => NodeAction::Replace(Value::I8(v)),
                     Err(_) => {
@@ -408,8 +408,7 @@ impl<'m> Solver<'m> {
                         }
                     },
                 },
-                Type::Refine { .. } => return NodeAction::NoChange,
-                _ => unreachable!(),
+                _ => return NodeAction::NoChange,
             };
         }
         NodeAction::NoChange

@@ -6,6 +6,7 @@ use crate::{
 };
 use nitrate_hir::prelude::*;
 use nitrate_hir_get_type::HirGetType;
+use std::ops::Deref;
 
 impl ValidateHirItem for GlobalVariableAttribute {
     fn verify(&self, ctx: &mut ValidateCtx) -> Result<(), ()> {
@@ -56,7 +57,7 @@ impl ValidateHirItem for GlobalVariable {
             |c| {
                 let init_value_ty = init_value.determine_type(c.m).map_err(|_| ())?;
 
-                if *self.ty != init_value_ty {
+                if !types_refinement_compatible(&self.ty, &init_value_ty) {
                     return Err(());
                 }
 
@@ -135,7 +136,7 @@ impl ValidateHirItem for LocalVariable {
                 let init_value = self.initializer.borrow();
                 let init_value_ty = init_value.determine_type(c.m).map_err(|_| ())?;
 
-                if *self.ty != init_value_ty {
+                if !types_refinement_compatible(&self.ty, &init_value_ty) {
                     return Err(());
                 }
 
@@ -215,7 +216,7 @@ impl ValidateHirItem for Parameter {
                     let default_value = default_value.borrow();
                     let default_value_ty = default_value.determine_type(c.m).map_err(|_| ())?;
 
-                    if *self.ty != default_value_ty {
+                    if !types_refinement_compatible(&self.ty, &default_value_ty) {
                         return Err(());
                     }
                 }
@@ -495,7 +496,7 @@ impl ValidateHirItem for StructField {
                     let default_value = default_value.borrow();
                     let default_value_ty = default_value.determine_type(c.m).map_err(|_| ())?;
 
-                    if *self.ty != default_value_ty {
+                    if !types_refinement_compatible(&self.ty, &default_value_ty) {
                         return Err(());
                     }
                 }
@@ -576,6 +577,16 @@ impl ValidateHirItem for EnumVariantAttribute {
     }
 }
 
+/// Check if a declared type (possibly a Refine) is compatible with an actual expression type.
+/// A `Refine { base: U8, ... }` is compatible with `U8` (the literal type).
+/// Exact equality is also required for non-refinement types.
+fn types_refinement_compatible(declared: &Type, actual: &Type) -> bool {
+    match declared {
+        Type::Refine { base, .. } => base.deref() == actual,
+        _ => declared == actual,
+    }
+}
+
 impl ValidateHirItem for EnumVariant {
     fn verify(&self, ctx: &mut ValidateCtx) -> Result<(), ()> {
         if ctx.cyclic_bail(self) {
@@ -607,7 +618,7 @@ impl ValidateHirItem for EnumVariant {
                     let default_value = default_value.borrow();
                     let default_value_ty = default_value.determine_type(c.m).map_err(|_| ())?;
 
-                    if *self.ty != default_value_ty {
+                    if !types_refinement_compatible(&self.ty, &default_value_ty) {
                         return Err(());
                     }
                 }
