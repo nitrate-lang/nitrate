@@ -5,8 +5,8 @@ use nitrate_nstring::NString;
 use nitrate_token::Token;
 use nitrate_tree::ast::{
     AssociatedItem, Enum, EnumVariant, FuncParam, FuncParams, Function, Generics, GlobalVariable, GlobalVariableKind,
-    Impl, Import, Item, ItemPath, ItemPathSegment, ItemSyntaxError, Module, Struct, StructField, Trait, TypeAlias,
-    TypeParam, UseTree,
+    Impl, Import, Item, ItemPath, ItemPathSegment, ItemSyntaxError, Module, Mutability, ReferenceType, Struct,
+    StructField, Trait, Type, TypeAlias, TypeParam, TypePath, TypePathSegment, UseTree,
 };
 
 impl Parser<'_, '_> {
@@ -410,13 +410,26 @@ impl Parser<'_, '_> {
 
         self.expect_open_brace();
 
-        let eof = SyntaxErr::TraitExpectedEnd(self.lexer.peek_pos());
-        let limit = SyntaxErr::TraitItemLimit(self.lexer.peek_pos());
-        let end = SyntaxErr::TraitExpectedEnd(self.lexer.peek_pos());
+        let mut items = Vec::new();
+        let mut already_reported_too_many_items = false;
 
-        let items = self.parse_comma_separated_list(&Token::CloseBrace, 65_536, true, eof, limit, end, |this| {
-            this.parse_associated_item()
-        });
+        const MAX_ITEMS: usize = 65_536;
+
+        while !self.lexer.skip_if(&Token::CloseBrace) {
+            if self.lexer.is_eof() {
+                let bug = SyntaxErr::TraitExpectedEnd(self.lexer.peek_pos());
+                self.log.report(&bug);
+                break;
+            }
+
+            if !already_reported_too_many_items && items.len() >= MAX_ITEMS {
+                already_reported_too_many_items = true;
+                let bug = SyntaxErr::TraitItemLimit(self.lexer.peek_pos());
+                self.log.report(&bug);
+            }
+
+            items.push(self.parse_associated_item());
+        }
 
         Trait {
             visibility: None,
@@ -450,13 +463,26 @@ impl Parser<'_, '_> {
 
         self.expect_open_brace();
 
-        let eof = SyntaxErr::ImplExpectedEnd(self.lexer.peek_pos());
-        let limit = SyntaxErr::ImplItemLimit(self.lexer.peek_pos());
-        let end = SyntaxErr::ImplExpectedEnd(self.lexer.peek_pos());
+        let mut items = Vec::new();
+        let mut already_reported_too_many_items = false;
 
-        let items = self.parse_comma_separated_list(&Token::CloseBrace, 65_536, true, eof, limit, end, |this| {
-            this.parse_associated_item()
-        });
+        const MAX_ITEMS: usize = 65_536;
+
+        while !self.lexer.skip_if(&Token::CloseBrace) {
+            if self.lexer.is_eof() {
+                let bug = SyntaxErr::ImplExpectedEnd(self.lexer.peek_pos());
+                self.log.report(&bug);
+                break;
+            }
+
+            if !already_reported_too_many_items && items.len() >= MAX_ITEMS {
+                already_reported_too_many_items = true;
+                let bug = SyntaxErr::ImplItemLimit(self.lexer.peek_pos());
+                self.log.report(&bug);
+            }
+
+            items.push(self.parse_associated_item());
+        }
 
         Impl {
             generics,
@@ -464,6 +490,94 @@ impl Parser<'_, '_> {
             for_type,
             items,
         }
+    }
+
+    fn parse_self_parameter(&mut self) -> Option<FuncParam> {
+        // Check for self parameter syntax: self, &self, &mut self, mut self
+        if !self.lexer.next_is(&Token::SelfKeyword) && !self.lexer.next_is(&Token::And) {
+            return None;
+        }
+
+        // Try to parse &self or &mut self
+        let rewind_pos = self.lexer.current_pos();
+        let is_ref = self.lexer.skip_if(&Token::And);
+
+        if is_ref {
+            // If we saw &, the next token must be self or mut self
+            if self.lexer.next_is(&Token::SelfKeyword) {
+                // &self - create a reference type for the parameter
+                self.lexer.skip_tok(); // consume self
+                let name = NString::from("self");
+                let ty = Type::ReferenceType(Box::new(ReferenceType {
+                    lifetime: None,
+                    exclusivity: None,
+                    mutability: None,
+                    to: Type::TypePath(Box::new(TypePath {
+                        segments: vec![TypePathSegment {
+                            name: "Self".to_string(),
+                            type_arguments: None,
+                        }],
+                        resolved_path: None,
+                    })),
+                }));
+                return Some(FuncParam {
+                    attributes: None,
+                    mutability: None,
+                    name,
+                    ty,
+                    default_value: None,
+                });
+            } else if self.lexer.skip_if(&Token::Mut) && self.lexer.next_is(&Token::SelfKeyword) {
+                // &mut self
+                self.lexer.skip_tok(); // consume self
+                let name = NString::from("self");
+                let ty = Type::ReferenceType(Box::new(ReferenceType {
+                    lifetime: None,
+                    exclusivity: None,
+                    mutability: Some(Mutability::Mut),
+                    to: Type::TypePath(Box::new(TypePath {
+                        segments: vec![TypePathSegment {
+                            name: "Self".to_string(),
+                            type_arguments: None,
+                        }],
+                        resolved_path: None,
+                    })),
+                }));
+                return Some(FuncParam {
+                    attributes: None,
+                    mutability: None,
+                    name,
+                    ty,
+                    default_value: None,
+                });
+            }
+
+            // Not a valid self parameter, rewind
+            self.lexer.rewind(rewind_pos);
+            return None;
+        }
+
+        // self or mut self (without &)
+        if self.lexer.next_is(&Token::SelfKeyword) {
+            self.lexer.skip_tok(); // consume self
+            let name = NString::from("self");
+            let ty = Type::TypePath(Box::new(TypePath {
+                segments: vec![TypePathSegment {
+                    name: "Self".to_string(),
+                    type_arguments: None,
+                }],
+                resolved_path: None,
+            }));
+            return Some(FuncParam {
+                attributes: None,
+                mutability: None,
+                name,
+                ty,
+                default_value: None,
+            });
+        }
+
+        None
     }
 
     fn parse_function_parameters(&mut self) -> FuncParams {
@@ -509,6 +623,26 @@ impl Parser<'_, '_> {
 
         // Skip leading comma
         self.lexer.skip_if(&Token::Comma);
+
+        // Try to parse self parameter first
+        if let Some(self_param) = self.parse_self_parameter() {
+            params.push(self_param);
+
+            // After self parameter, expect comma or close paren
+            if !self.lexer.skip_if(&Token::Comma) && !self.lexer.next_is(&Token::CloseParen) {
+                // If we have a self parameter without trailing comma and not at close paren,
+                // it might be followed by more params - report error and skip
+                if !self.lexer.next_is(&Token::CloseParen) {
+                    self.log
+                        .report(&SyntaxErr::FunctionParametersExpectedEnd(self.lexer.peek_pos()));
+                    self.lexer.skip_while(&Token::CloseParen);
+                    return FuncParams {
+                        params,
+                        variadic: false,
+                    };
+                }
+            }
+        }
 
         while !self.lexer.skip_if(&Token::CloseParen) {
             if self.lexer.is_eof() {

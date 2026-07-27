@@ -1279,7 +1279,12 @@ fn gen_rval_field_access<'ctx>(
     field_name: &NString,
 ) -> BasicValueEnum<'ctx> {
     let value_type = struct_value.determine_type(ctx.tab).expect("Failed to get type");
-    let hir_struct_def = value_type.as_struct().expect("expected struct type").borrow();
+    // Resolve through references to find the actual struct type
+    let actual_type = match &value_type {
+        hir::Type::Reference { to, .. } | hir::Type::Pointer { to, .. } => to.deref().clone(),
+        _ => value_type.clone(),
+    };
+    let hir_struct_def = actual_type.as_struct().expect("expected struct type").borrow();
 
     let field_index = hir_struct_def
         .layout
@@ -1297,11 +1302,21 @@ fn gen_rval_field_access<'ctx>(
         .expect("expected field to exist in struct")
         .ty;
 
-    let llvm_struct_value = gen_place(ctx, struct_value);
-    let llvm_struct_ty = gen_ty(
-        &struct_value.determine_type(ctx.tab).expect("unable to get struct type"),
-        &mut ctx.into(),
-    );
+    let llvm_struct_value = if matches!(
+        struct_value.determine_type(ctx.tab).expect("Failed to get type"),
+        hir::Type::Reference { .. } | hir::Type::Pointer { .. }
+    ) {
+        // Auto-deref for field access on references
+        gen_place(
+            ctx,
+            &hir::Value::Deref {
+                place: struct_value.clone().into(),
+            },
+        )
+    } else {
+        gen_place(ctx, struct_value)
+    };
+    let llvm_struct_ty = gen_ty(&actual_type, &mut ctx.into());
 
     let index = ctx.llvm.i32_type().const_int(field_index as u64, false);
 
@@ -1797,6 +1812,25 @@ fn gen_rval_method_call<'ctx>(
     let llvm_function_ty = gen_function_ty(&function_id.borrow().get_type(), &mut ctx.into());
 
     let mut llvm_arguments = Vec::new();
+
+    // The method function expects self as the first parameter.
+    // Check what the function's first param expects (reference vs by-value)
+    {
+        let func_def = function_id.borrow();
+        let self_param_ty = &func_def.params[0].borrow().ty;
+        let is_self_ref = matches!(&**self_param_ty, hir::Type::Reference { .. });
+
+        // If the method takes &self (reference), pass the address of the object (a pointer).
+        // Otherwise pass the object value directly.
+        if is_self_ref {
+            let llvm_object_ptr = gen_place(ctx, object);
+            llvm_arguments.push(llvm_object_ptr.into());
+        } else {
+            let llvm_object_arg = gen_rval(ctx, object);
+            llvm_arguments.push(llvm_object_arg.into());
+        }
+    } // func_def borrow ends here
+
     for arg_id in arguments.to_owned().into_iter() {
         let llvm_arg = gen_rval(ctx, &arg_id.borrow());
         llvm_arguments.push(llvm_arg.into());
@@ -1815,8 +1849,6 @@ fn gen_rval_method_call<'ctx>(
         .expect_left("missing value");
 
     call
-
-    // TODO: implement method call codegen
 }
 
 fn gen_rval_symbol<'ctx>(ctx: &mut CodegenCtx<'ctx, '_, '_, '_, '_>, symbol_name: &NString) -> BasicValueEnum<'ctx> {

@@ -14,8 +14,26 @@ fn gen_place_field_access<'ctx>(
     struct_value: &hir::Value,
     field_name: &NString,
 ) -> PointerValue<'ctx> {
+    // If the value is behind a reference/pointer, first dereference it
+    let resolved_value = if let hir::Type::Reference { to, .. } | hir::Type::Pointer { to, .. } =
+        struct_value.determine_type(ctx.tab).expect("Failed to get type")
+    {
+        // Dereference the reference to get the underlying struct
+        let deref_value = hir::Value::Deref {
+            place: struct_value.clone().into(),
+        };
+        gen_place(ctx, &deref_value)
+    } else {
+        gen_place(ctx, struct_value)
+    };
+
     let value_type = struct_value.determine_type(ctx.tab).expect("Failed to get type");
-    let hir_struct_def = value_type.as_struct().expect("expected struct type").borrow();
+    // Resolve through references to find the actual struct type
+    let actual_type = match &value_type {
+        hir::Type::Reference { to, .. } | hir::Type::Pointer { to, .. } => to.deref().clone(),
+        _ => value_type.clone(),
+    };
+    let hir_struct_def = actual_type.as_struct().expect("expected struct type").borrow();
 
     let field_index = hir_struct_def
         .layout
@@ -27,11 +45,8 @@ fn gen_place_field_access<'ctx>(
         })
         .expect("Field not found in struct");
 
-    let llvm_struct_value = gen_place(ctx, struct_value);
-    let llvm_struct_ty = gen_ty(
-        &struct_value.determine_type(ctx.tab).expect("unable to get struct type"),
-        &mut ctx.into(),
-    );
+    let llvm_struct_value = resolved_value;
+    let llvm_struct_ty = gen_ty(&actual_type, &mut ctx.into());
 
     let index = ctx.llvm.i32_type().const_int(field_index as u64, false);
 
@@ -63,19 +78,18 @@ fn gen_place_deref<'ctx>(ctx: &mut CodegenCtx<'ctx, '_, '_, '_, '_>, place: &hir
         _ => unreachable!(),
     };
 
-    let load = ctx
+    let llvm_pointee_ty = gen_ty(&pointee_ty, &mut ctx.into());
+
+    // Load the struct value from the pointer
+    let loaded_value = ctx
         .bb
-        .build_load(
-            gen_ty(&pointee_ty, &mut ctx.into()),
-            llvm_value.into_pointer_value(),
-            "deref_load",
-        )
+        .build_load(llvm_pointee_ty, llvm_value.into_pointer_value(), "deref_load")
         .unwrap();
 
-    match load {
-        inkwell::values::BasicValueEnum::PointerValue(ptr) => return ptr,
-        _ => panic!("Dereferenced value is not a pointer"),
-    }
+    // Store it into a temporary alloca so we have a pointer to the struct
+    let alloca = ctx.bb.build_alloca(llvm_pointee_ty, "derefed").unwrap();
+    ctx.bb.build_store(alloca, loaded_value).unwrap();
+    alloca
 }
 
 pub(crate) fn gen_place<'ctx>(

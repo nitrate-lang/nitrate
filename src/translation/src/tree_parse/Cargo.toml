@@ -6,10 +6,6 @@ edition = "2024"
 [dev-dependencies]
 criterion = { version = "0.7.0", features = ["html_reports"] }
 
-[[bench]]
-name = "parse_type_bench"
-harness = false
-
 [dependencies]
 nitrate_nstring = { path = "../nstring" }
 nitrate_token = { path = "../token" }

@@ -345,7 +345,7 @@ impl Parser<'_, '_> {
 
             Token::OpenBracket => Expr::List(Box::new(self.parse_list())),
 
-            Token::Name(_) | Token::Colon => {
+            Token::Name(_) | Token::Colon | Token::SelfKeyword => {
                 let path = self.parse_path();
                 if self.lexer.next_is(&Token::OpenBrace) {
                     Expr::StructInit(Box::new(self.parse_struct_object(path)))
@@ -662,7 +662,10 @@ impl Parser<'_, '_> {
     }
 
     pub(crate) fn parse_path(&mut self) -> ExprPath {
-        assert!(matches!(self.lexer.peek_tok().token, Token::Name(_) | Token::Colon));
+        assert!(matches!(
+            self.lexer.peek_tok().token,
+            Token::Name(_) | Token::Colon | Token::SelfKeyword
+        ));
 
         let mut segments = Vec::new();
         let mut prev_scope = false;

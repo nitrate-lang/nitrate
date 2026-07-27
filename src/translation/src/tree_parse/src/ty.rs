@@ -273,7 +273,7 @@ impl Parser<'_, '_> {
     pub(crate) fn parse_type_path(&mut self) -> TypePath {
         assert!(matches!(
             self.lexer.peek_tok().token,
-            Token::Name(_) | Token::Colon | Token::SelfType
+            Token::Name(_) | Token::Colon | Token::SelfType | Token::SelfKeyword
         ));
 
         let mut segments = Vec::new();
