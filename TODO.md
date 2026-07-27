@@ -1,71 +1,53 @@
-# Nitrate Compiler - Comprehensive Implementation Plan
+# Nitrate Compiler - Visibility and Linkage Implementation
 
-## Overview
+## Implementing Rust-compatible `extern` linkage syntax and visibility/linkage separation
 
-This task covers: (1) Rust-compatible traits, trait impls, supertraits, and type bounds, (2) Unmanaged rust-like lifetimes/pointers, (3) `iso`/`poly` modifier support, (4) Generics fixes and completion.
+### Completed
 
-## Phase 1: HIR Type System Extensions ✅ (COMPLETE)
+All items complete. The compiler now supports full Rust-compatible extern linkage syntax.
 
-- [x] **1.1 Add lifetime to Pointer/SlicePtr types**
-  - Added `lifetime: Lifetime` field to `Type::Pointer` and `Type::SlicePtr`
-  - Updated all match patterns across the codebase (13 files)
-  - Updated `Substitution::apply` to handle lifetime in pointers
-  - Updated `HirGetType`, `gen_ty`, validation, dump, mangle
+### Changes Summary
 
-- [x] **1.2 Add Trait bounds/generics support**
-  - Added `generics` field to `Trait` struct
-  - Added `supertraits: Vec<TraitId>` field to `Trait` struct
-  - Added `Type::TraitObject { bounds: Vec<TypeBound> }` variant for trait object types
-  - Added `TypeBound` enum: `Trait(TraitId)`, `Lifetime(Lifetime)`
+#### 1. Token Layer
 
-- [x] **1.3 Add where clause support**
-  - Added `WhereClause` struct with `type_id` and `bounds` fields
-  - Added `where_clause: Option<Vec<WhereClause>>` to `Trait`
+- **token.rs**: Added `Token::Extern` enum variant with Display implementation
+- **lex.rs**: Added `extern` keyword recognition → maps to `Token::Extern`
 
-- [x] **1.4 Add associated types to traits**
-  - Added `associated_types: Vec<NString>` to `Trait`
+#### 2. Tree AST (tree crate)
 
-## Phase 2: HIR Lowering (hir_from_tree) [PARTIAL]
+- **item.rs**: Added `ExternAbi` struct with `name: NString` field
+- **item.rs**: Added `abi: Option<ExternAbi>` field to `Function`
 
-- [ ] **2.1 Fix lower_trait_definition** - TODO: generic traits, supertraits, where clauses, associated types
-- [ ] **2.2 Fix lower_implementation** - TODO: generic impl blocks, associated types
-- [x] **2.3 Fix lower_type_path for disambiguation** - Records type args for later resolution
-- [x] **2.4 Fix lower_expr_path for generic disambiguation** - Parses and stores explicit type args from `foo::<i32>` expressions
-- [ ] **2.5 Handle trait bounds on generic parameters** - TODO: parse and store type bounds
-- [x] **2.6 Lower pointer types with lifetime annotations** - Lifetime field added to Pointer/SlicePtr
+#### 3. Old Parser (tree_parse)
 
-## Phase 3: Type System Updates (HIR core) ✅ (COMPLETE)
+- **item.rs**: Added `parse_abi()` method to parse ABI string specifiers
+- **item.rs**: Added `parse_extern_block()` method for `extern { ... }` blocks
+- **item.rs**: Updated `parse_item()` to handle `extern` keyword before functions and extern blocks
+- **item.rs**: Functions inside extern blocks inherit the block's ABI
 
-- [x] **3.1 Update all Type match arms** - Updated all 13 source files
-- [x] **3.2 Fix Parameterized type handling** - Handled in Substitution
+#### 4. HIR Layer (hir crate)
 
-## Phase 4: Trait Resolution (hir_solve) [PARTIAL]
+- **ty.rs**: Added `ExternAbi` struct at HIR level
+- **ty.rs**: Added `FunctionAttribute::ExternAbi(ExternAbi)` variant
 
-- [x] **4.1 Implement trait resolution for method calls** - Solver now resolves methods through SymbolTab and monomorphizes generic trait methods
-- [ ] **4.2-4.4** - TODO: trait bound checking, supertrait resolution, bounds in solver
+#### 5. HIR Lowering (hir_from_tree)
 
-## Phase 5: Monomorphization Fixes [PARTIAL]
+- **item.rs**: Lower `abi` from AST Function into `FunctionAttribute::ExternAbi`
 
-- [x] **5.1 expr_path with generic type args** - Lowering parses and stores explicit type args
-- [ ] **5.2-5.4** - TODO: type_path resolution, struct/enum mono, Substitution completeness
+#### 6. LLVM Codegen (llvm_from_hir)
 
-## Phase 6: Tests ✅
+- **symbol.rs**: Added calling convention constants for common ABIs (C, stdcall, fastcall, thiscall, win64)
+- **symbol.rs**: `get_abi_call_conv()` maps ABI strings to LLVM convention IDs
+- **symbol.rs**: `gen_function_decl()` now sets call conventions for extern functions
+- **symbol.rs**: Functions with `extern` ABI (without body) are emitted as declarations regardless of visibility
 
-- [x] **All 212 existing tests pass** - No regressions
+#### 7. Validation
 
-## Phase 7: Codegen & Validation Updates ✅
+- **ty.rs**: `FunctionAttribute::ExternAbi` accepted in HIR validation
+- **dump_ty.rs**: `FunctionAttribute::ExternAbi` properly dumped
 
-- [x] **7.1 LLVM codegen for new types** - TraitObject as opaque ptr, pointer lifetimes handled
-- [x] **7.2 Type validation** - TraitObject validated, pointer lifetimes handled
-- [x] **7.3 Test stability** - All existing tests pass, build clean
+### Test Results
 
-## Implementation Order
-
-1. Phase 1.1 (Pointer lifetime) - affects most files, foundation
-2. Phase 1.2-1.4 (Trait extensions) - add HIR types
-3. Phase 3.1 (Update match arms) - update all files for new variants
-4. Phase 2.1-2.6 (Lowering fixes) - implement parsing
-5. Phase 4 (Trait resolution) - the core logic
-6. Phase 5 (Monomorphization fixes) - fix generics
-7. Phase 6 (Tests) - verify everything works
-8. Phase 7 (Codegen) - final integration
+- All 211 existing tests pass with no regressions
+- Build succeeds cleanly
+- Test package compiles successfully

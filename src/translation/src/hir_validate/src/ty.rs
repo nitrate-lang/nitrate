@@ -40,6 +40,83 @@ fn verify_refinement_type(
     })
 }
 
+/// Valid extern ABI names that LLVM supports.
+/// Maps to the calling conventions in llvm/src/symbol.rs
+const VALID_ABI_NAMES: &[&str] = &[
+    // Standard
+    "C",
+    "cdecl",
+    "system",
+    "rust-intrinsic",
+    "platform-intrinsic",
+    "rust-call",
+    "unadjusted",
+    // x86
+    "fastcall",
+    "x86-fastcall",
+    "stdcall",
+    "x86-stdcall",
+    "thiscall",
+    "x86-thiscall",
+    "vectorcall",
+    "x86-vectorcall",
+    "regcall",
+    "x86-regcall",
+    "x86-intr",
+    // x86-64
+    "win64",
+    "x86-64-win64",
+    "sysv64",
+    "x86-64-sysv",
+    // ARM
+    "aapcs",
+    "arm-aapcs",
+    "aapcs-vfp",
+    "arm-aapcs-vfp",
+    "arm-apcs",
+    // GPU
+    "ptx-kernel",
+    "ptx-device",
+    "amdgpu-kernel",
+    "amdgpu-vs",
+    "amdgpu-gs",
+    "amdgpu-ps",
+    "amdgpu-cs",
+    "amdgpu-hs",
+    "amdgpu-es",
+    "amdgpu-ls",
+    "amdgpu-call",
+    // SPIR
+    "spir-func",
+    "spir-function",
+    "spir-kernel",
+    "intel-ocl-bicc",
+    // Special
+    "cold",
+    "fast",
+    "swift",
+    "swift-tail",
+    "preserve-most",
+    "preserve-all",
+    "tail",
+    "cxx-fast-tls",
+    "ghc",
+    "ghcc",
+    "hipcc",
+    "anyreg",
+    "webkit-js",
+    // HHVM
+    "hhvm",
+    "hhvmc",
+    "hhvm-c",
+    // AVR
+    "avr-intr",
+    "avr-signal",
+    "avr-builtin",
+    // MSP430
+    "msp430-intr",
+];
+
 impl ValidateHirType for FunctionAttribute {
     fn verify(&self, ctx: &mut ValidateCtx, _options: &ValidateTypeOptions) -> Result<(), ()> {
         if ctx.cyclic_bail(self) {
@@ -49,6 +126,13 @@ impl ValidateHirType for FunctionAttribute {
         match self {
             FunctionAttribute::CVariadic => Ok(()),
             FunctionAttribute::NoMangle => Ok(()),
+            FunctionAttribute::ExternAbi(abi) => {
+                if VALID_ABI_NAMES.iter().any(|&name| name == &*abi.name) {
+                    Ok(())
+                } else {
+                    Err(())
+                }
+            }
         }
     }
 

@@ -16,7 +16,7 @@ fn gen_place_field_access<'ctx>(
     field_name: &NString,
 ) -> PointerValue<'ctx> {
     // If the value is behind a reference/pointer, first dereference it
-    let resolved_value = if let hir::Type::Reference { to, .. } | hir::Type::Pointer { to, .. } =
+    let resolved_value = if let hir::Type::Reference { to: _, .. } | hir::Type::Pointer { to: _, .. } =
         struct_value.determine_type(ctx.tab).expect("Failed to get type")
     {
         // Dereference the reference to get the underlying struct

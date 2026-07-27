@@ -352,6 +352,8 @@ pub enum Token {
     SelfType,
     /// 'self' keyword - the receiver parameter in methods
     SelfKeyword,
+    /// 'extern'
+    Extern,
 
     Eof,
 }
@@ -461,6 +463,7 @@ impl std::fmt::Display for Token {
             Token::Typeof => write!(f, "typeof"),
             Token::SelfType => write!(f, "Self"),
             Token::SelfKeyword => write!(f, "self"),
+            Token::Extern => write!(f, "extern"),
             Token::Eof => write!(f, ""),
         }
     }

@@ -23,6 +23,7 @@ impl Dump for FunctionAttribute {
         match self {
             FunctionAttribute::CVariadic => write!(o, "c_variadic"),
             FunctionAttribute::NoMangle => write!(o, "no_mangle"),
+            FunctionAttribute::ExternAbi(abi) => write!(o, "extern(\"{}\")", abi.name),
         }
     }
 }
@@ -251,7 +252,7 @@ impl Dump for Type {
                 Some(name) => write!(o, "?{id}::{}", escape_string(name, true)),
                 None => write!(o, "?{id}"),
             },
-            Type::GenericParam { index, name } => {
+            Type::GenericParam { index: _, name } => {
                 write!(o, "'{}", escape_string(name, true))
             }
         }

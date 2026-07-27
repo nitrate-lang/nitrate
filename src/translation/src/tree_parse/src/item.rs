@@ -4,9 +4,9 @@ use crate::diagnosis::SyntaxErr;
 use nitrate_nstring::NString;
 use nitrate_token::Token;
 use nitrate_tree::ast::{
-    AssociatedItem, Enum, EnumVariant, FuncParam, FuncParams, Function, Generics, GlobalVariable, GlobalVariableKind,
-    Impl, Import, Item, ItemPath, ItemPathSegment, ItemSyntaxError, Module, Mutability, ReferenceType, Struct,
-    StructField, Trait, Type, TypeAlias, TypeParam, TypePath, TypePathSegment, UseTree,
+    AssociatedItem, Enum, EnumVariant, ExternAbi, FuncParam, FuncParams, Function, Generics, GlobalVariable,
+    GlobalVariableKind, Impl, Import, Item, ItemPath, ItemPathSegment, ItemSyntaxError, Module, Mutability,
+    ReferenceType, Struct, StructField, Trait, Type, TypeAlias, TypeParam, TypePath, TypePathSegment, UseTree,
 };
 
 impl Parser<'_, '_> {
@@ -715,6 +715,7 @@ impl Parser<'_, '_> {
             parameters,
             return_type,
             definition,
+            abi: None,
         }
     }
 
@@ -762,8 +763,49 @@ impl Parser<'_, '_> {
         }
     }
 
+    fn parse_abi(&mut self) -> Option<ExternAbi> {
+        // Parse an optional ABI string like "C" after extern keyword
+        match self.lexer.peek_tok().token {
+            Token::String(ref abi_name) => {
+                self.lexer.skip_tok();
+                Some(ExternAbi {
+                    name: NString::from(abi_name.clone()),
+                })
+            }
+            _ => None,
+        }
+    }
+
+    fn parse_extern_block(&mut self) -> Vec<Item> {
+        // We've already consumed the 'extern' keyword and optional ABI.
+        // Now parse '{ ... }' containing function declarations.
+        let mut items = Vec::new();
+
+        self.expect_open_brace();
+
+        while !self.lexer.skip_if(&Token::CloseBrace) {
+            if self.lexer.is_eof() {
+                let bug = SyntaxErr::ExpectedItem(self.lexer.peek_pos());
+                self.log.report(&bug);
+                break;
+            }
+
+            let item = self.parse_item();
+            items.push(item);
+        }
+
+        items
+    }
+
     pub(crate) fn parse_item(&mut self) -> Item {
         let visibility = self.parse_visibility();
+
+        // Check for extern keyword before other items
+        let extern_abi = if self.lexer.skip_if(&Token::Extern) {
+            self.parse_abi()
+        } else {
+            None
+        };
 
         let item_pos_begin = self.lexer.peek_pos();
 
@@ -816,6 +858,7 @@ impl Parser<'_, '_> {
             Token::Fn => {
                 let mut func = self.parse_named_function();
                 func.visibility = visibility;
+                func.abi = extern_abi;
                 Item::Function(func)
             }
 
@@ -823,6 +866,37 @@ impl Parser<'_, '_> {
                 let mut var = self.parse_global_variable();
                 var.visibility = visibility;
                 Item::Variable(var)
+            }
+
+            Token::OpenBrace if extern_abi.is_some() => {
+                // This is an extern block { ... }
+                // Parse the block items - each function gets the ABI
+                let mut block_items = Vec::new();
+                self.expect_open_brace();
+
+                while !self.lexer.skip_if(&Token::CloseBrace) {
+                    if self.lexer.is_eof() {
+                        let bug = SyntaxErr::ExpectedItem(self.lexer.peek_pos());
+                        self.log.report(&bug);
+                        break;
+                    }
+
+                    let mut block_item = self.parse_item();
+                    // Apply ABI to functions inside the extern block
+                    if let Item::Function(ref mut func) = block_item {
+                        if func.abi.is_none() {
+                            func.abi = extern_abi.clone();
+                        }
+                    }
+                    block_items.push(block_item);
+                }
+
+                // If no visibility set and there are items, wrap in a placeholder
+                if block_items.is_empty() {
+                    Item::SyntaxError(ItemSyntaxError)
+                } else {
+                    block_items.remove(0)
+                }
             }
 
             _ => {

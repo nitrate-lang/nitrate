@@ -1,19 +1,151 @@
+use crate::rvalue::CodegenCtx;
+use crate::rvalue::gen_rval;
+use crate::ty::{TypegenCtx, gen_ty};
 use inkwell::llvm_sys::prelude::{LLVMModuleRef, LLVMValueRef};
 use inkwell::module::{Linkage, Module};
 use inkwell::types::{BasicType, BasicTypeEnum};
 use inkwell::values::{AsValueRef, FunctionValue, PointerValue};
+use nitrate_hir::prelude as hir;
+use nitrate_hir_mangle::mangle_name;
 use nitrate_hir_validate::ValidHir;
+use nitrate_llvm::LLVMContext;
 use nitrate_nstring::NString;
+use std::collections::{BTreeSet, HashMap};
 use std::ops::Deref;
 use thin_vec::ThinVec;
 
-use crate::rvalue::CodegenCtx;
-use crate::rvalue::gen_rval;
-use crate::ty::{TypegenCtx, gen_ty};
-use nitrate_hir::prelude as hir;
-use nitrate_hir_mangle::mangle_name;
-use nitrate_llvm::LLVMContext;
-use std::collections::{BTreeSet, HashMap};
+/// LLVM calling convention values (from llvm-c/Core.h)
+/// See: https://llvm.org/docs/LangRef.html#calling-conventions
+mod call_conv {
+    pub const C: u32 = 0;
+    pub const FAST: u32 = 8;
+    pub const COLD: u32 = 9;
+    pub const GHCC: u32 = 10;
+    pub const HIPCC: u32 = 11;
+    pub const WEBKIT_JS: u32 = 12;
+    pub const ANYREG: u32 = 13;
+    pub const PRESERVE_MOST: u32 = 14;
+    pub const PRESERVE_ALL: u32 = 15;
+    pub const SWIFT: u32 = 16;
+    pub const CXX_FAST_TLS: u32 = 17;
+    pub const TAIL: u32 = 18;
+    pub const SWIFT_TAIL: u32 = 19;
+    pub const X86_STDCALL: u32 = 64;
+    pub const X86_FASTCALL: u32 = 65;
+    pub const ARM_APCS: u32 = 66;
+    pub const ARM_AAPCS: u32 = 67;
+    pub const ARM_AAPCS_VFP: u32 = 68;
+    pub const MSP430_INTR: u32 = 69;
+    pub const X86_THISCALL: u32 = 70;
+    pub const PTX_KERNEL: u32 = 71;
+    pub const PTX_DEVICE: u32 = 72;
+    pub const SPIR_FUNC: u32 = 75;
+    pub const SPIR_KERNEL: u32 = 76;
+    pub const INTEL_OCL_BI: u32 = 77;
+    pub const X86_64_SYSV: u32 = 78;
+    pub const WIN64: u32 = 79;
+    pub const X86_VECTORCALL: u32 = 80;
+    pub const HHVM: u32 = 81;
+    pub const HHVM_C: u32 = 82;
+    pub const X86_INTR: u32 = 83;
+    pub const AVR_INTR: u32 = 84;
+    pub const AVR_SIGNAL: u32 = 85;
+    pub const AVR_BUILTIN: u32 = 86;
+    pub const AMDGPU_VS: u32 = 87;
+    pub const AMDGPU_GS: u32 = 88;
+    pub const AMDGPU_PS: u32 = 89;
+    pub const AMDGPU_CS: u32 = 90;
+    pub const AMDGPU_KERNEL: u32 = 91;
+    pub const X86_REGCALL: u32 = 92;
+    pub const AMDGPU_HS: u32 = 93;
+    pub const AMDGPU_ES: u32 = 94;
+    pub const AMDGPU_LS: u32 = 95;
+    pub const AMDGPU_CALL: u32 = 96;
+}
+
+/// Determine the LLVM calling convention for a given extern ABI string.
+/// Maps Rust/C-style ABI names to their LLVM calling convention IDs.
+fn get_abi_call_conv(abi: &hir::ExternAbi) -> u32 {
+    match &*abi.name {
+        // Standard/common conventions
+        "C" | "cdecl" => call_conv::C,
+        "system" => call_conv::C,
+        "rust-intrinsic" | "platform-intrinsic" | "rust-call" => call_conv::C,
+        "unadjusted" => call_conv::C,
+
+        // x86 conventions
+        "fastcall" | "x86-fastcall" => call_conv::X86_FASTCALL,
+        "stdcall" | "x86-stdcall" => call_conv::X86_STDCALL,
+        "thiscall" | "x86-thiscall" => call_conv::X86_THISCALL,
+        "vectorcall" | "x86-vectorcall" => call_conv::X86_VECTORCALL,
+        "regcall" | "x86-regcall" => call_conv::X86_REGCALL,
+        "x86-intr" => call_conv::X86_INTR,
+
+        // x86-64 conventions
+        "win64" | "x86-64-win64" => call_conv::WIN64,
+        "sysv64" | "x86-64-sysv" => call_conv::X86_64_SYSV,
+
+        // ARM conventions
+        "aapcs" | "arm-aapcs" => call_conv::ARM_AAPCS,
+        "aapcs-vfp" | "arm-aapcs-vfp" => call_conv::ARM_AAPCS_VFP,
+        "arm-apcs" => call_conv::ARM_APCS,
+
+        // GPU conventions
+        "ptx-kernel" => call_conv::PTX_KERNEL,
+        "ptx-device" => call_conv::PTX_DEVICE,
+        "amdgpu-kernel" => call_conv::AMDGPU_KERNEL,
+        "amdgpu-vs" => call_conv::AMDGPU_VS,
+        "amdgpu-gs" => call_conv::AMDGPU_GS,
+        "amdgpu-ps" => call_conv::AMDGPU_PS,
+        "amdgpu-cs" => call_conv::AMDGPU_CS,
+        "amdgpu-hs" => call_conv::AMDGPU_HS,
+        "amdgpu-es" => call_conv::AMDGPU_ES,
+        "amdgpu-ls" => call_conv::AMDGPU_LS,
+        "amdgpu-call" => call_conv::AMDGPU_CALL,
+
+        // SPIR conventions
+        "spir-func" | "spir-function" => call_conv::SPIR_FUNC,
+        "spir-kernel" => call_conv::SPIR_KERNEL,
+        "intel-ocl-bicc" => call_conv::INTEL_OCL_BI,
+
+        // Special conventions
+        "cold" => call_conv::COLD,
+        "fast" => call_conv::FAST,
+        "swift" => call_conv::SWIFT,
+        "swift-tail" => call_conv::SWIFT_TAIL,
+        "preserve-most" => call_conv::PRESERVE_MOST,
+        "preserve-all" => call_conv::PRESERVE_ALL,
+        "tail" => call_conv::TAIL,
+        "cxx-fast-tls" => call_conv::CXX_FAST_TLS,
+        "ghc" | "ghcc" => call_conv::GHCC,
+        "hipcc" => call_conv::HIPCC,
+        "webkit-js" => call_conv::WEBKIT_JS,
+        "anyreg" => call_conv::ANYREG,
+
+        // HHVM conventions
+        "hhvm" | "hhvmc" => call_conv::HHVM,
+        "hhvm-c" => call_conv::HHVM_C,
+
+        // AVR conventions
+        "avr-intr" => call_conv::AVR_INTR,
+        "avr-signal" => call_conv::AVR_SIGNAL,
+        "avr-builtin" => call_conv::AVR_BUILTIN,
+
+        // MSP430
+        "msp430-intr" => call_conv::MSP430_INTR,
+
+        // Default to C calling convention for unknown/unrecognized ABIs
+        _ => panic!(
+            "Unrecognized extern ABI: \"{}\". See the Nitrate reference for supported calling conventions.",
+            abi.name
+        ),
+    }
+}
+
+/// Determine if a function should use external linkage based on its attributes.
+fn has_extern_abi(attrs: &BTreeSet<hir::FunctionAttribute>) -> bool {
+    attrs.iter().any(|a| matches!(a, hir::FunctionAttribute::ExternAbi(_)))
+}
 
 #[link(name = "nitrate_extra_llvm_ffi", kind = "static")]
 unsafe extern "C" {
@@ -134,11 +266,27 @@ fn gen_function_decl<'ctx>(
     let llvm_fn_type = return_type.fn_type(&param_types, variadic);
     let llvm_function = ctx.module.add_function(&hir_function.mangled_name, llvm_fn_type, None);
 
-    llvm_function.set_linkage(match hir_function.visibility {
-        hir::Visibility::Pub => Linkage::External,
-        hir::Visibility::Pro => Linkage::Internal,
-        hir::Visibility::Sec => Linkage::Private,
-    });
+    // Determine linkage: extern ABI functions without a body are external declarations,
+    // so they must have External linkage regardless of visibility.
+    // Otherwise, use visibility-based linkage (Pub→External, Pro→Internal, Sec→Private).
+    let is_extern_decl = hir_function.body.is_none() && has_extern_abi(&hir_function.attributes);
+    if is_extern_decl {
+        llvm_function.set_linkage(Linkage::External);
+    } else {
+        llvm_function.set_linkage(match hir_function.visibility {
+            hir::Visibility::Pub => Linkage::External,
+            hir::Visibility::Pro => Linkage::Internal,
+            hir::Visibility::Sec => Linkage::Private,
+        });
+    }
+
+    // Apply calling convention based on extern ABI attribute
+    for attr in &hir_function.attributes {
+        if let hir::FunctionAttribute::ExternAbi(abi) = attr {
+            llvm_function.set_call_conventions(get_abi_call_conv(abi));
+            break;
+        }
+    }
 
     llvm_function
 }
@@ -225,7 +373,8 @@ pub fn generate_llvmir<'ctx>(
         }
         // Skip abstract trait methods (bodyless, non-public) - they are
         // placeholder declarations that won't have a corresponding definition.
-        if func.body.is_none() && func.visibility != hir::Visibility::Pub {
+        // But emit declarations for extern functions regardless of visibility.
+        if func.body.is_none() && func.visibility != hir::Visibility::Pub && !has_extern_abi(&func.attributes) {
             continue;
         }
         gen_function_decl(&mut ctx, &func);

@@ -180,6 +180,11 @@ pub struct FuncParams {
     pub variadic: bool,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ExternAbi {
+    pub name: NString,
+}
+
 #[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Function {
@@ -190,6 +195,7 @@ pub struct Function {
     pub parameters: FuncParams,
     pub return_type: Option<Type>,
     pub definition: Option<Block>,
+    pub abi: Option<ExternAbi>,
 }
 
 #[skip_serializing_none]

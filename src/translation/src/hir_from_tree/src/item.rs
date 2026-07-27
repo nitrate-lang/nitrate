@@ -649,6 +649,11 @@ fn lower_function(function: ast::Function, ctx: &mut Ast2HirCtx, log: &CompilerL
         }
     }
 
+    // Lower extern ABI from the AST
+    if let Some(abi) = &function.abi {
+        attributes.insert(FunctionAttribute::ExternAbi(ExternAbi { name: abi.name.clone() }));
+    }
+
     let name: NString = ctx.qualify_name(&function.name).into();
     if ctx.entities_added.contains(&name) {
         log.report(&HirErr::DuplicateEntity(name.to_string()));

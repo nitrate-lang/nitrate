@@ -306,6 +306,7 @@ impl<'a> Lexer<'a> {
             b"ret" => Some(Token::Ret),
             b"async" => Some(Token::Async),
             b"await" => Some(Token::Await),
+            b"extern" => Some(Token::Extern),
             b"asm" => Some(Token::Asm),
             b"null" => Some(Token::Null),
             b"true" => Some(Token::True),
