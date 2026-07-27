@@ -295,9 +295,27 @@ fn lower_trait_definition(trait_: &ast::Trait, ctx: &mut Ast2HirCtx, log: &Compi
         return Err(());
     }
 
-    if trait_.generics.is_some() {
-        // TODO: Implement generics for traits
-        log.report(&HirErr::UnimplementedFeature("generic traits".into()));
+    // Push trait name as scope so methods get properly qualified names (e.g. MyTrait::foo)
+    ctx.current_scope.push(trait_.name.clone());
+
+    // Lower generics on the trait itself
+    let mut generics: Option<BTreeMap<NString, Option<TypeId>>> = None;
+    if let Some(generic_params) = &trait_.generics {
+        let mut generics_map = BTreeMap::new();
+        for (i, parameter) in generic_params.params.iter().enumerate() {
+            let generic_name = NString::from(parameter.name.to_string());
+            let generic_type: TypeId = Type::GenericParam {
+                index: i as u32,
+                name: generic_name.clone(),
+            }
+            .into();
+            let default_type = match &parameter.default_value {
+                Some(ty) => Some(lower_type(ty.to_owned(), ctx, log)?.into()),
+                None => None,
+            };
+            generics_map.insert(generic_name, default_type);
+        }
+        generics = Some(generics_map);
     }
 
     let mut methods = Vec::new();
@@ -319,10 +337,12 @@ fn lower_trait_definition(trait_: &ast::Trait, ctx: &mut Ast2HirCtx, log: &Compi
         }
     }
 
+    ctx.current_scope.pop();
+
     let trait_ = Trait {
         visibility,
         name: name.clone(),
-        generics: None,
+        generics,
         supertraits: Vec::new(),
         where_clause: None,
         methods,
