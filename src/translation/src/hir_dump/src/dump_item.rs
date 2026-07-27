@@ -1,7 +1,7 @@
 use crate::{Dump, DumpContext, write_indent};
 use nitrate_hir::prelude::*;
 use nitrate_token::escape_string;
-use std::collections::BTreeSet;
+use std::{collections::BTreeSet, write};
 
 impl Dump for Visibility {
     fn dump(&self, _ctx: &mut DumpContext, o: &mut dyn std::fmt::Write) -> Result<(), std::fmt::Error> {
@@ -193,7 +193,7 @@ impl Dump for Trait {
         write!(o, "trait ")?;
         write!(o, "{} ", escape_string(&self.name, true))?;
 
-        if self.methods.is_empty() {
+        if self.methods.is_empty() && self.associated_types.is_empty() && self.associated_constants.is_empty() {
             write!(o, " {{}}")
         } else {
             writeln!(o, " {{")?;
@@ -205,6 +205,22 @@ impl Dump for Trait {
                 method.borrow().dump(ctx, o)?;
                 writeln!(o)?;
 
+                ctx.indent -= 1;
+            }
+
+            for assoc_type in &self.associated_types {
+                ctx.indent += 1;
+                write_indent(ctx, o)?;
+                write!(o, "type {};", escape_string(assoc_type, true))?;
+                writeln!(o)?;
+                ctx.indent -= 1;
+            }
+
+            for assoc_const in &self.associated_constants {
+                ctx.indent += 1;
+                write_indent(ctx, o)?;
+                write!(o, "const {};", escape_string(assoc_const, true))?;
+                writeln!(o)?;
                 ctx.indent -= 1;
             }
 

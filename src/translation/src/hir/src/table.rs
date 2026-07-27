@@ -17,6 +17,8 @@ pub struct SymbolTab {
     methods: HashMap<(TypeId, NString), FunctionId>,
     traits: HashMap<NString, TraitId>,
     impls: HashMap<TypeId, HashMap<TraitId, HashMap<NString, FunctionId>>>,
+    impl_associated_types: HashMap<TypeId, HashMap<TraitId, HashMap<NString, TypeAliasDefId>>>,
+    impl_associated_constants: HashMap<TypeId, HashMap<TraitId, HashMap<NString, GlobalVariableId>>>,
     arch_ptr_size: PtrSize,
 }
 
@@ -35,6 +37,8 @@ impl SymbolTab {
             methods: HashMap::new(),
             traits: HashMap::new(),
             impls: HashMap::new(),
+            impl_associated_types: HashMap::new(),
+            impl_associated_constants: HashMap::new(),
             arch_ptr_size,
         }
     }
@@ -268,6 +272,7 @@ impl SymbolTab {
             where_clause: None,
             methods: Vec::new().into(),
             associated_types: Vec::new(),
+            associated_constants: Vec::new(),
         };
 
         let trait_id: TraitId = placeholder.into();
@@ -277,6 +282,36 @@ impl SymbolTab {
 
     pub fn get_trait(&self, name: &NString) -> Option<&TraitId> {
         self.traits.get(name)
+    }
+
+    pub fn add_impl_associated_type(
+        &mut self,
+        type_id: TypeId,
+        trait_id: TraitId,
+        assoc_name: NString,
+        type_alias_id: TypeAliasDefId,
+    ) {
+        self.impl_associated_types
+            .entry(type_id)
+            .or_insert_with(HashMap::new)
+            .entry(trait_id)
+            .or_insert_with(HashMap::new)
+            .insert(assoc_name, type_alias_id);
+    }
+
+    pub fn add_impl_associated_constant(
+        &mut self,
+        type_id: TypeId,
+        trait_id: TraitId,
+        assoc_name: NString,
+        const_id: GlobalVariableId,
+    ) {
+        self.impl_associated_constants
+            .entry(type_id)
+            .or_insert_with(HashMap::new)
+            .entry(trait_id)
+            .or_insert_with(HashMap::new)
+            .insert(assoc_name, const_id);
     }
 
     pub fn get_type_alias_or_insert_placeholder(&mut self, name: &NString) -> TypeAliasDefId {

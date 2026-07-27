@@ -331,6 +331,8 @@ fn lower_trait_definition(trait_: &ast::Trait, ctx: &mut Ast2HirCtx, log: &Compi
     }
 
     let mut methods = Vec::new();
+    let mut associated_types: Vec<NString> = Vec::new();
+    let mut associated_constants: Vec<NString> = Vec::new();
     for method in &trait_.items {
         match method {
             ast::AssociatedItem::Method(func) => {
@@ -338,12 +340,17 @@ fn lower_trait_definition(trait_: &ast::Trait, ctx: &mut Ast2HirCtx, log: &Compi
                 methods.push(func_id);
             }
 
-            _ => {
-                // TODO: Support trait associated type aliases
-                // TODO: Support trait associated constants
-                log.report(&HirErr::UnimplementedFeature(
-                    "only method trait items are supported".into(),
-                ));
+            ast::AssociatedItem::TypeAlias(type_alias) => {
+                let name: NString = ctx.qualify_name(&type_alias.name).into();
+                associated_types.push(name);
+            }
+
+            ast::AssociatedItem::ConstantItem(const_var) => {
+                let name: NString = ctx.qualify_name(&const_var.name).into();
+                associated_constants.push(name);
+            }
+
+            ast::AssociatedItem::SyntaxError(_) => {
                 return Err(());
             }
         }
@@ -361,7 +368,8 @@ fn lower_trait_definition(trait_: &ast::Trait, ctx: &mut Ast2HirCtx, log: &Compi
         supertraits: Vec::new(),
         where_clause: None,
         methods,
-        associated_types: Vec::new(),
+        associated_types,
+        associated_constants,
     };
 
     ctx.entities_added.insert(trait_.name.clone());
@@ -434,10 +442,21 @@ fn lower_implementation(impl_: ast::Impl, ctx: &mut Ast2HirCtx, log: &CompilerLo
                             .add_trait_method(for_type.clone(), trait_id.clone(), name, func_id);
                     }
 
-                    _ => {
-                        // TODO: Support impl associated type aliases
-                        // TODO: Support impl associated constants
-                        log.report(&HirErr::UnimplementedFeature("only method impls are supported".into()));
+                    ast::AssociatedItem::TypeAlias(type_alias) => {
+                        let name = ctx.qualify_name(&type_alias.name).into();
+                        let type_alias_id = lower_type_alias(type_alias, ctx, log)?;
+                        ctx.tab
+                            .add_impl_associated_type(for_type.clone(), trait_id.clone(), name, type_alias_id);
+                    }
+
+                    ast::AssociatedItem::ConstantItem(const_var) => {
+                        let name = ctx.qualify_name(&const_var.name).into();
+                        let const_id = lower_global_variable(&const_var, ctx, log)?;
+                        ctx.tab
+                            .add_impl_associated_constant(for_type.clone(), trait_id.clone(), name, const_id);
+                    }
+
+                    ast::AssociatedItem::SyntaxError(_) => {
                         return Err(());
                     }
                 }
@@ -455,10 +474,15 @@ fn lower_implementation(impl_: ast::Impl, ctx: &mut Ast2HirCtx, log: &CompilerLo
                         ctx.tab.add_method(for_type.clone(), name, func_id);
                     }
 
-                    _ => {
-                        // TODO: Support impl associated type aliases
-                        // TODO: Support impl associated constants
-                        log.report(&HirErr::UnimplementedFeature("only method impls are supported".into()));
+                    ast::AssociatedItem::TypeAlias(type_alias) => {
+                        let _ = lower_type_alias(type_alias, ctx, log)?;
+                    }
+
+                    ast::AssociatedItem::ConstantItem(const_var) => {
+                        let _ = lower_global_variable(&const_var, ctx, log)?;
+                    }
+
+                    ast::AssociatedItem::SyntaxError(_) => {
                         return Err(());
                     }
                 }

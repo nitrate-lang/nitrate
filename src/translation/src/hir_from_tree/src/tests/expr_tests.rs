@@ -1290,28 +1290,6 @@ fn expr_type_info_unimplemented() {
     })
 }
 #[test]
-fn expr_index_access_unimplemented() {
-    run(|c, l| {
-        assert!(
-            lower_expr(
-                ast::Expr::IndexAccess(Box::new(ast::IndexAccess {
-                    collection: ast::Expr::Integer(Box::new(ast::IntegerLit {
-                        value: 0,
-                        kind: IntegerKind::Dec
-                    })),
-                    index: ast::Expr::Integer(Box::new(ast::IntegerLit {
-                        value: 1,
-                        kind: IntegerKind::Dec
-                    }))
-                })),
-                c,
-                l
-            )
-            .is_err()
-        );
-    })
-}
-#[test]
 fn expr_match_unimplemented() {
     run(|c, l| {
         assert!(

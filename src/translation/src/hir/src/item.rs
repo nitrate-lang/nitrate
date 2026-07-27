@@ -108,6 +108,7 @@ pub struct Trait {
     pub where_clause: Option<Vec<WhereClause>>,
     pub methods: Vec<FunctionId>,
     pub associated_types: Vec<NString>,
+    pub associated_constants: Vec<NString>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
