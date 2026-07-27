@@ -4,14 +4,14 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-nitrate_nstring = { path = "../nstring" }
-nitrate_llvm = { path = "../llvm" }
-nitrate_hir = { path = "../hir" }
-nitrate_hir_validate = { path = "../hir_validate" }
-nitrate_hir_mangle = { path = "../hir_mangle" }
-nitrate_hir_get_type = { path = "../hir_get_type" }
-inkwell = { version = "0.6.0", features = ["llvm16-0"] }
-thin-vec = { version = "0.2.14" }
+nitrate_nstring.workspace = true
+nitrate_llvm.workspace = true
+nitrate_hir.workspace = true
+nitrate_hir_validate.workspace = true
+nitrate_hir_mangle.workspace = true
+nitrate_hir_get_type.workspace = true
+inkwell.workspace = true
+thin-vec.workspace = true
 
 [build-dependencies]
-cc = "1.0"
+cc.workspace = true

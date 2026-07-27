@@ -25,24 +25,89 @@ members = [
     "src/translation/src/llvm_from_hir",
 ]
 
+[workspace.dependencies]
+# ──────────────────────────────────────────────────────────────────
+# External dependencies (crates.io)
+# ──────────────────────────────────────────────────────────────────
+append-only-vec = "0.1"
+bimap = "0.6"
+bitflags = "2"
+blake3 = "1"
+cc = "1"
+enum-iterator = "2"
+inkwell = { version = "0.6", features = ["llvm16-0"] }
+internal-iterator = "0.2"
+llvm-plugin-inkwell = { version = "0.3", features = ["llvm16-0"] }
+log = "0.4"
+once_cell = "1"
+ordered-float = "5"
+serde = "1"
+serde_json = "1"
+serde_with = "3"
+spdx = "0.12"
+thin-vec = "0.2"
+thin_str = "0.1"
+threadpool = "1"
+threadpool_scope = "0.1"
+
+# Dev / build dependencies
+criterion = { version = "0.7", features = ["html_reports"] }
+
+# Project-level shared dependencies (used by root crate, driver, diagnosis)
+env_logger = "0.11"
+slog = "2.7"
+slog-async = "2.8"
+slog-term = "2.9"
+tokio = { version = "1", features = ["full"] }
+
+# ──────────────────────────────────────────────────────────────────
+# Internal path dependencies
+# ──────────────────────────────────────────────────────────────────
+nitrate_diagnosis = { path = "src/diagnosis" }
+nitrate_driver = { path = "src/driver" }
+nitrate_optimization = { path = "src/optimization" }
+
+nitrate_nstring = { path = "src/translation/src/nstring" }
+nitrate_token = { path = "src/translation/src/token" }
+nitrate_token_lexer = { path = "src/translation/src/token_lexer" }
+nitrate_tree = { path = "src/translation/src/tree" }
+nitrate_tree2 = { path = "src/translation/src/tree2" }
+nitrate_tree_parse = { path = "src/translation/src/tree_parse" }
+nitrate_tree_parse2 = { path = "src/translation/src/tree_parse2" }
+nitrate_tree_resolve = { path = "src/translation/src/tree_resolve" }
+
+nitrate_hir = { path = "src/translation/src/hir" }
+nitrate_hir_dump = { path = "src/translation/src/hir_dump" }
+nitrate_hir_evaluate = { path = "src/translation/src/hir_evaluate" }
+nitrate_hir_from_tree = { path = "src/translation/src/hir_from_tree" }
+nitrate_hir_get_type = { path = "src/translation/src/hir_get_type" }
+nitrate_hir_mangle = { path = "src/translation/src/hir_mangle" }
+nitrate_hir_solve = { path = "src/translation/src/hir_solve" }
+nitrate_hir_validate = { path = "src/translation/src/hir_validate" }
+
+nitrate_llvm = { path = "src/translation/src/llvm" }
+nitrate_llvm_from_hir = { path = "src/translation/src/llvm_from_hir" }
+
+nitrate_translation = { path = "src/translation" }
+
 [package]
 name = "nitrate"
 version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-nitrate_diagnosis = { path = "src/diagnosis" }
-nitrate_optimization = { path = "src/optimization" }
-nitrate_translation = { path = "src/translation" }
-nitrate_driver = { path = "src/driver" }
+nitrate_diagnosis.workspace = true
+nitrate_optimization.workspace = true
+nitrate_translation.workspace = true
+nitrate_driver.workspace = true
 
-env_logger = "0.11.8"
-log = "0.4.28"
-slog = "2.7.0"
-slog-async = "2.8.0"
-slog-term = "2.9.2"
-serde_json = "1.0.145"
-tokio = { version = "1", features = ["full"] }
+env_logger.workspace = true
+log.workspace = true
+slog.workspace = true
+slog-async.workspace = true
+slog-term.workspace = true
+serde_json.workspace = true
+tokio.workspace = true
 
 [profile.dev.package.xml-doc]
 debug-assertions = false

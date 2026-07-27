@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-nitrate_nstring = { path = "../nstring" }
-nitrate_hir = { path = "../hir" }
-nitrate_diagnosis = { path = "../../../diagnosis" }
-ordered-float = "5.1.0"
+nitrate_nstring.workspace = true
+nitrate_hir.workspace = true
+nitrate_diagnosis.workspace = true
+ordered-float.workspace = true

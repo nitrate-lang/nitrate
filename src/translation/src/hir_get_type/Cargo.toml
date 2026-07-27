@@ -4,5 +4,5 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-nitrate_hir = { path = "../hir" }
-nitrate_nstring = { path = "../nstring" }
+nitrate_hir.workspace = true
+nitrate_nstring.workspace = true
