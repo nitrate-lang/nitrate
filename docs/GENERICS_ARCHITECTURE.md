@@ -45,7 +45,7 @@ Source Code
 
 ## 1. The Type System
 
-### Two New Variants
+### Two Key Variants
 
 **`Type::GenericParam { index, name }`** — marks the _declaration site_ of a generic parameter. Appears in parameter types, field types, and return types wherever the user wrote the parameter name.
 
@@ -66,7 +66,7 @@ When `None`, the item has no generics. When `Some(map)`, each key is a parameter
 
 ## 2. The Hindley-Milner Pass
 
-The HM pass at `hir_polish/src/hindley_milner.rs` performs two tasks simultaneously:
+The HM pass at `hir_solve/src/solver.rs` performs two tasks simultaneously:
 
 ### 2a. Constraint-Based Type Inference
 
@@ -115,25 +115,62 @@ This ensures that:
 
 ---
 
-## 3. Integration Requirements
+## 3. The Monomorphization Subsystem
+
+### Monomorphization of Functions
+
+When `monomorphize_function` is called:
+
+1. **Clone**: Deep-clone the generic `Function` struct, including all params, body elements, and types
+2. **Substitute**: Walk every type in the clone, replacing `GenericParam { index, .. }` with the concrete type from the substitution map
+3. **Name**: Generate a unique name (`original::<mono-N>`) using the mono counter
+4. **Store**: Store the new function in the Store and register in the symbol table
+5. **Cache**: Insert into `mono_cache` to deduplicate future instantiations
+
+### Monomorphization of Structs
+
+Similar to functions, struct monomorphization handles generic structs used in expressions:
+
+1. **Detect**: When visiting a `StructObject` value, check if the `struct_def` has generics
+2. **Infer**: For each field, match the field value's concrete type against the field's declared type (which may contain `GenericParam`)
+3. **Monomorphize**: Clone the struct definition, substitute generic params, store the new definition
+4. **Replace**: Update the `StructObject` value to reference the monomorphized struct
+
+### The Monomorphization Cache
+
+```rust
+mono_cache: HashMap<(usize, Vec<(u32, TypeId)>), FunctionId>
+```
+
+Key = `(original_function_store_index, [(param_index, concrete_type), ...])`
+
+Before monomorphizing, the solver checks the cache. If an identical instantiation was already created, the existing copy is reused. This prevents:
+
+- Duplicate function definitions (code bloat)
+- Recursive infinite monomorphization
+- Redundant compilation work
+
+---
+
+## 4. Integration Requirements
 
 For monomorphization to work end-to-end, three integration points must be maintained:
 
-### 3a. HIR Lowering: No Early Errors
+### 4a. HIR Lowering: No Early Errors
 
 The lowerers (`lower_expr_path`, `lower_struct_init`, `lower_implementation`) must not reject generic constructs. They should accept syntax like `Foo<i32>` and `impl<T> ...` even if the type arguments aren't immediately processed — the monomorphization pass handles them later.
 
-### 3b. Symbol Table Registration
+### 4b. Symbol Table Registration
 
 Monomorphized functions must be added to the symbol table via `add_function()`. Otherwise, LLVM codegen won't iterate them and the call site will reference an undefined symbol. This requires the HM pass to take `&mut SymbolTab` rather than `&SymbolTab`.
 
-### 3c. LLVM Codegen: Skip Templates
+### 4c. LLVM Codegen: Skip Templates
 
 The codegen loop in `generate_llvmir()` must skip any function whose `generics` field is non-empty. Only concrete (monomorphized) copies should produce LLVM IR. A panic-guard in `gen_ty()` catches any `GenericParam` that slips through, ensuring early failure rather than silent miscompilation.
 
 ---
 
-## 4. Naming and Storage
+## 5. Naming and Storage
 
 Monomorphized functions are named `"original::<mono-N>"` (counter-based). Both `name` and `mangled_name` use this scheme.
 
@@ -143,11 +180,31 @@ The compiler uses a thread-local storage pattern for its stores:
 - The symbol table maintains a separate `HashMap<Name, FunctionId>` for name-based lookup
 - Codegen iterates the symbol table, which includes both user-declared and monomorphized functions
 
-The system deduplicates by caching with `(generic_function_store_index, sorted_concrete_type_args)` as the key — the `mono_cache` field on `HindleyMilner`. When the same generic function is instantiated with identical concrete type arguments at multiple call sites, the existing monomorphized copy is reused.
+The system deduplicates by caching with `(generic_function_store_index, sorted_concrete_type_args)` as the key — the `mono_cache` field on `Solver`. When the same generic function is instantiated with identical concrete type arguments at multiple call sites, the existing monomorphized copy is reused.
 
 ---
 
-## 5. Edge Cases
+## 6. Generic Struct Instantiation
+
+Generic structs require special handling because the solver must:
+
+1. **Parse field types**: For each field in the struct definition, substitute generic params with concrete types
+2. **Rebuild layout**: Compute the memory layout for the monomorphized struct (fields may change size/alignment)
+3. **Handle nested generics**: If a generic struct contains fields of another generic type, recursively monomorphize
+
+The solver infers generic arguments for structs by matching field value types against field declared types:
+
+```
+struct Pair<T> { first: T, second: T }
+
+// Usage: Pair { first: 42_i32, second: 7_i32 }
+// → T = i32 (inferred from both fields)
+// → Monomorphized: Pair<i32> { first: i32, second: i32 }
+```
+
+---
+
+## 7. Edge Cases
 
 | Scenario                                                    | Behavior                                                                           |
 | ----------------------------------------------------------- | ---------------------------------------------------------------------------------- |
@@ -156,13 +213,19 @@ The system deduplicates by caching with `(generic_function_store_index, sorted_c
 | Reference generic param (`fn id<T>(x: &T) -> &T`)           | Unification recurses into compound types automatically                             |
 | Multiple generic params                                     | Each param gets its own index; substitution maps independently                     |
 | Generic with unused param                                   | Empty substitution is applied; clone proceeds normally                             |
+| Generic default type                                        | When `type Foo<T = i32>`, default is used if caller omits the type argument        |
+| Recursive generic instantiation                             | Cache prevents infinite recursion; already-monomorphized copy is reused            |
 
 ---
 
-## 6. Design Rationale
+## 8. Design Rationale
 
 **Why monomorphization at the HIR level instead of LLVM?** LLVM has no template system. Generating LLVM IR with generic placeholders would require runtime dispatch or JIT compilation, both of which defeat the purpose of monomorphization. Rust uses the same approach (monomorphization during MIR → LLVM translation).
 
 **Why separate `GenericParam` from `Inferred`?** They have different lifetimes and resolution strategies. `Inferred` is solved by constraint propagation within a single function. `GenericParam` persists until a caller instantiates the generic, potentially across translation units. Using one variant for both purposes caused confusion and prevented clean separation of the two resolution strategies.
 
 **Why mutable access to the symbol table?** Monomorphization creates new functions that must be discoverable by subsequent passes. The symbol table is the natural discovery mechanism. Without `&mut SymbolTab`, monomorphized functions would exist only in the TLS store and be invisible to LLVM codegen.
+
+**Why the monomorphization cache?** Without deduplication, each call site of `identity::<i32>(x)` would produce a separate monomorphized copy. The cache ensures that all call sites with identical type arguments share a single copy, reducing code size and compilation time.
+
+**Why fixed-point iteration?** Nested generics require multiple passes. For example, `map(list, fn(x) -> identity(x))` where both `map` and `identity` are generic: the solver first monomorphizes `identity<i32>`, then monomorphizes `map<List<i32>, fn(i32) -> i32>`. Without fixed-point iteration, the inner generic would not yet exist when the outer generic is processed.
