@@ -12,11 +12,7 @@ impl Parser<'_, '_> {
             return false;
         }
 
-        if !self.lexer.skip_if(&Token::Colon) {
-            false
-        } else {
-            true
-        }
+        !!self.lexer.skip_if(&Token::Colon)
     }
 
     /// Expect and consume an identifier token. Reports the given error if missing.

@@ -1,5 +1,3 @@
-#![warn(clippy::pedantic)]
-
 mod expr;
 mod helper;
 mod item;

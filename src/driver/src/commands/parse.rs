@@ -51,7 +51,7 @@ impl Interpreter<'_> {
         let mut source_code = Vec::new();
         source_code_file.read_to_end(&mut source_code)?;
 
-        let source_code_file = intern_file_id(&entrypoint_path.to_string_lossy().to_string()).expect("FileId overflow");
+        let source_code_file = intern_file_id(entrypoint_path.to_string_lossy().as_ref()).expect("FileId overflow");
 
         let lexer = match Lexer::new(&source_code, Some(source_code_file)) {
             Ok(lexer) => lexer,

@@ -1,5 +1,3 @@
-#![warn(clippy::pedantic)]
-
 mod dump;
 mod dump_expr;
 mod dump_item;

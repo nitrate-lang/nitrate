@@ -1,4 +1,4 @@
-use std::{ops::Deref, write};
+use std::{fmt::Write, write};
 
 use enum_iterator::Sequence;
 use nitrate_diagnosis::FileId;
@@ -79,12 +79,12 @@ impl Comment {
 impl std::fmt::Display for Comment {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self.kind() {
-            CommentKind::SingleLine => write!(f, "{}", self.text()),
-            CommentKind::MultiLine => write!(f, "{}", self.text()),
+            CommentKind::SingleLine | CommentKind::MultiLine => write!(f, "{}", self.text()),
         }
     }
 }
 
+#[must_use]
 pub fn escape_string(s: &str, quotes: bool) -> String {
     let mut escaped = String::with_capacity(s.len() + if quotes { 2 } else { 0 });
 
@@ -107,11 +107,11 @@ pub fn escape_string(s: &str, quotes: bool) -> String {
             '\x20'..='\x7E' => escaped.push(c),
 
             c if c.is_ascii() => {
-                escaped.push_str(&format!("\\x{:02x}", c as u8));
+                let _ = write!(escaped, "\\x{:02x}", c as u8);
             }
 
             c => {
-                escaped.push_str(&format!("\\u{{{:04x}}}", c as u32));
+                let _ = write!(escaped, "\\u{{{:04x}}}", c as u32);
             }
         }
     }
@@ -123,6 +123,7 @@ pub fn escape_string(s: &str, quotes: bool) -> String {
     escaped
 }
 
+#[must_use]
 pub fn escape_bstring(s: &[u8], quotes: bool) -> String {
     let mut escaped = String::with_capacity(s.len() + if quotes { 2 } else { 0 });
 
@@ -145,7 +146,7 @@ pub fn escape_bstring(s: &[u8], quotes: bool) -> String {
             b'\x20'..=b'\x7E' => escaped.push(*c as char),
 
             c => {
-                escaped.push_str(&format!("\\x{:02x}", *c));
+                let _ = write!(escaped, "\\x{c:02x}");
             }
         }
     }
@@ -370,7 +371,7 @@ impl std::fmt::Display for Token {
             Token::BString(s) => write!(f, "{}", escape_bstring(s, true)),
             Token::Comment(c) => write!(f, "{c}"),
             Token::HorizontalTab => write!(f, "\t"),
-            Token::NewLine => write!(f, "\n"),
+            Token::NewLine => writeln!(f),
             Token::VerticalTab => write!(f, "\x0b"),
             Token::FormFeed => write!(f, "\x0c"),
             Token::CarriageReturn => write!(f, "\r"),
@@ -484,7 +485,7 @@ impl std::fmt::Display for SourcePosition {
         write!(
             f,
             "{}:{}:{}",
-            self.fileid.as_ref().map_or("???", |fid| fid.deref()),
+            self.fileid.as_ref().map_or("???", |fid| &**fid),
             self.line + 1,
             self.column + 1
         )
@@ -519,6 +520,7 @@ pub struct AnnotatedToken {
 
 impl AnnotatedToken {
     #[must_use]
+    #[allow(clippy::needless_pass_by_value)]
     pub fn new(token: Token, start: SourcePosition, end: SourcePosition) -> Self {
         AnnotatedToken {
             token,
@@ -571,7 +573,7 @@ mod tests {
             vec![IntegerKind::Bin, IntegerKind::Oct, IntegerKind::Dec, IntegerKind::Hex]
         );
 
-        let prime_u128 = 0xa8b437b5f0bd41f1e97765f63699f65d_u128;
+        let prime_u128 = 0xa8b4_37b5_f0bd_41f1_e977_65f6_3699_f65d_u128;
 
         let test_vectors = [
             (0_u128, IntegerKind::Bin, "0b0"),
@@ -608,7 +610,7 @@ mod tests {
             let integer = Integer::new(value, kind);
             assert_eq!(integer.value(), value);
             assert_eq!(integer.kind(), kind);
-            assert_eq!(format!("{}", integer), expected_str);
+            assert_eq!(format!("{integer}"), expected_str);
         }
     }
 
@@ -642,7 +644,7 @@ mod tests {
             let comment = Comment::new(text.to_string(), kind);
             assert_eq!(comment.text(), &text);
             assert_eq!(comment.kind(), kind);
-            assert_eq!(format!("{}", comment), expected_str);
+            assert_eq!(format!("{comment}"), expected_str);
         }
     }
 
@@ -651,7 +653,10 @@ mod tests {
         let test_vectors = [
             (Token::Name("example".into()), "example"),
             (Token::Integer(Integer::new(42, IntegerKind::Dec)), "42"),
-            (Token::Float(NotNan::new(3.14).unwrap()), "3.14"),
+            (
+                Token::Float(NotNan::new(std::f64::consts::PI).unwrap()),
+                "3.141592653589793",
+            ),
             (Token::String("hello".into()), "\"hello\""),
             (Token::BString(Vec::from(b"world")), "\"world\""),
             (
@@ -665,7 +670,7 @@ mod tests {
         ];
 
         for (token, expected_str) in test_vectors {
-            assert_eq!(format!("{}", token), expected_str);
+            assert_eq!(format!("{token}"), expected_str);
         }
     }
 
@@ -684,8 +689,8 @@ mod tests {
         };
 
         assert_eq!(
-            format!("{}", position),
-            format!("{}:{}:{}", position.fileid.unwrap().deref(), line + 1, column + 1)
+            format!("{position}"),
+            format!("{}:{}:{}", &*position.fileid.unwrap(), line + 1, column + 1)
         );
     }
 
@@ -696,7 +701,10 @@ mod tests {
         let test_vectors = [
             (Token::Name("example".into()), "example"),
             (Token::Integer(Integer::new(42, IntegerKind::Dec)), "42"),
-            (Token::Float(NotNan::new(3.14).unwrap()), "3.14"),
+            (
+                Token::Float(NotNan::new(std::f64::consts::PI).unwrap()),
+                "3.141592653589793",
+            ),
             (Token::String("hello".into()), "\"hello\""),
             (Token::BString(Vec::from(b"world")), "\"world\""),
             (

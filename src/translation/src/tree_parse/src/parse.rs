@@ -15,7 +15,7 @@ pub struct ResolveCtx {
 
 impl<'a, 'log> Parser<'a, 'log> {
     pub fn new(lexer: Lexer<'a>, log: &'log CompilerLog) -> Self {
-        Parser { lexer, log: log }
+        Parser { lexer, log }
     }
 
     pub fn parse_source(&mut self, package_name: NString) -> Module {

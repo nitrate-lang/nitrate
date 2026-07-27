@@ -336,7 +336,7 @@ fn lower_trait_definition(trait_: &ast::Trait, ctx: &mut Ast2HirCtx, log: &Compi
     for method in &trait_.items {
         match method {
             ast::AssociatedItem::Method(func) => {
-                let func_id: FunctionId = lower_function(func.to_owned(), ctx, log)?.into();
+                let func_id: FunctionId = lower_function(func.to_owned(), ctx, log)?;
                 methods.push(func_id);
             }
 
@@ -419,7 +419,7 @@ fn lower_implementation(impl_: ast::Impl, ctx: &mut Ast2HirCtx, log: &CompilerLo
 
     // Save any previous self type and set the current one so `Self` can be resolved
     let prev_self = ctx.current_self_type.take();
-    ctx.current_self_type = Some(for_type.clone());
+    ctx.current_self_type = Some(for_type);
 
     let result = match impl_.trait_path {
         Some(trait_path) => {
@@ -431,29 +431,29 @@ fn lower_implementation(impl_: ast::Impl, ctx: &mut Ast2HirCtx, log: &CompilerLo
                 .join("::");
 
             let trait_id = ctx.tab.get_trait_or_insert_placeholder(&trait_name.into());
-            ctx.tab.add_impl_trait(for_type.clone(), trait_id.clone());
+            ctx.tab.add_impl_trait(for_type, trait_id.clone());
 
             for assosiated_item in impl_.items {
                 match assosiated_item {
                     ast::AssociatedItem::Method(method) => {
                         let name = method.name.clone();
-                        let func_id = lower_function(method, ctx, log)?.into();
+                        let func_id = lower_function(method, ctx, log)?;
                         ctx.tab
-                            .add_trait_method(for_type.clone(), trait_id.clone(), name, func_id);
+                            .add_trait_method(for_type, trait_id.clone(), name, func_id);
                     }
 
                     ast::AssociatedItem::TypeAlias(type_alias) => {
                         let name = ctx.qualify_name(&type_alias.name).into();
                         let type_alias_id = lower_type_alias(type_alias, ctx, log)?;
                         ctx.tab
-                            .add_impl_associated_type(for_type.clone(), trait_id.clone(), name, type_alias_id);
+                            .add_impl_associated_type(for_type, trait_id.clone(), name, type_alias_id);
                     }
 
                     ast::AssociatedItem::ConstantItem(const_var) => {
                         let name = ctx.qualify_name(&const_var.name).into();
                         let const_id = lower_global_variable(&const_var, ctx, log)?;
                         ctx.tab
-                            .add_impl_associated_constant(for_type.clone(), trait_id.clone(), name, const_id);
+                            .add_impl_associated_constant(for_type, trait_id.clone(), name, const_id);
                     }
 
                     ast::AssociatedItem::SyntaxError(_) => {
@@ -470,8 +470,8 @@ fn lower_implementation(impl_: ast::Impl, ctx: &mut Ast2HirCtx, log: &CompilerLo
                 match assosiated_item {
                     ast::AssociatedItem::Method(method) => {
                         let name = method.name.clone();
-                        let func_id = lower_function(method, ctx, log)?.into();
-                        ctx.tab.add_method(for_type.clone(), name, func_id);
+                        let func_id = lower_function(method, ctx, log)?;
+                        ctx.tab.add_method(for_type, name, func_id);
                     }
 
                     ast::AssociatedItem::TypeAlias(type_alias) => {
@@ -493,7 +493,7 @@ fn lower_implementation(impl_: ast::Impl, ctx: &mut Ast2HirCtx, log: &CompilerLo
     };
 
     // Pop the impl type name from scope
-    if let Some(_) = impl_type_name {
+    if impl_type_name.is_some() {
         ctx.current_scope.pop();
     }
 
@@ -725,7 +725,7 @@ fn lower_function(function: ast::Function, ctx: &mut Ast2HirCtx, log: &CompilerL
                 _ => log.report(&HirErr::MissingReturnStatement),
             }
 
-            Some(hir_elements.into())
+            Some(hir_elements)
         }
     };
 

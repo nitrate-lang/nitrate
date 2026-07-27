@@ -98,7 +98,7 @@ impl Interpreter<'_> {
             Err(e) => {
                 error!(self.log, "Failed to load package config from 'no3.xml': {}", e);
 
-                return Err(anyhow::anyhow!("Failed to load package config from 'no3.xml'"));
+                Err(anyhow::anyhow!("Failed to load package config from 'no3.xml'"))
             }
         }
     }
@@ -118,7 +118,7 @@ impl Interpreter<'_> {
             return Err(anyhow::anyhow!("Package entrypoint does not exist"));
         }
 
-        let mut source_code_file = match std::fs::File::open(&entrypoint_path) {
+        let mut source_code_file = match std::fs::File::open(entrypoint_path) {
             Ok(file) => file,
 
             Err(e) => {
@@ -136,7 +136,7 @@ impl Interpreter<'_> {
         let mut source_code = Vec::new();
         source_code_file.read_to_end(&mut source_code)?;
 
-        let source_code_file = intern_file_id(&entrypoint_path.to_string_lossy().to_string()).expect("FileId overflow");
+        let source_code_file = intern_file_id(entrypoint_path.to_string_lossy().as_ref()).expect("FileId overflow");
 
         let lexer = match Lexer::new(&source_code, Some(source_code_file)) {
             Ok(lexer) => lexer,
@@ -152,7 +152,7 @@ impl Interpreter<'_> {
             }
         };
 
-        let mut parser = nitrate_translation::parse::Parser::new(lexer, &log);
+        let mut parser = nitrate_translation::parse::Parser::new(lexer, log);
 
         Ok(parser.parse_source(package_name.into()))
     }
@@ -353,7 +353,7 @@ impl Interpreter<'_> {
 
             // run system command
             let status = std::process::Command::new("clang")
-                .args(&[&target_file_o, "-o"])
+                .args([&target_file_o, "-o"])
                 .arg(format!(
                     "{}-{}.{}.{}",
                     package.name(),

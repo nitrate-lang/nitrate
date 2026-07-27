@@ -149,8 +149,8 @@ impl ValidateHirValue for Value {
                 expr_value.verify(ctx)?;
 
                 // Check that we can access the field based on struct field visibility
-                if let Ok(ty) = expr_value.determine_type(ctx.m) {
-                    if let Type::Struct { def } = ty {
+                if let Ok(ty) = expr_value.determine_type(ctx.m)
+                    && let Type::Struct { def } = ty {
                         let struct_def = def.borrow();
                         if let Some(field) = struct_def.fields.get(field_name) {
                             establish_property(
@@ -176,7 +176,6 @@ impl ValidateHirValue for Value {
                             return Err(());
                         }
                     }
-                }
                 Ok(())
             }
 

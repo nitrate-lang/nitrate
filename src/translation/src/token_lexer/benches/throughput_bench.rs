@@ -97,7 +97,7 @@ fn gen_repeating_identifiers(count: usize) -> Vec<u8> {
         if i > 0 {
             src.push_str(" + ");
         }
-        src.push_str("x");
+        src.push('x');
     }
     src.into_bytes()
 }

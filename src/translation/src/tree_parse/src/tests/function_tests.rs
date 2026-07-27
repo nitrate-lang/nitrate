@@ -233,7 +233,7 @@ fn test_fn_call_arg_limit() {
     for _ in 0..65538 {
         args.push_str("0, ");
     }
-    args.push_str("0");
+    args.push('0');
     let src = format!("f({args})");
     let (_, log) = parse_expr_no_assert(&src);
     assert!(log.error_bit());

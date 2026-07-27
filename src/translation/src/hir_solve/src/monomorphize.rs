@@ -44,7 +44,7 @@ impl<'m> Solver<'m> {
 
         for (arg_value_id, param_type_id) in positional_args.iter().zip(param_types.iter()) {
             let arg_type = arg_value_id.borrow().determine_type(self.m).ok()?;
-            let param_type = &*param_type_id;
+            let param_type = param_type_id;
             Self::unify_types_with_subst(&arg_type, param_type, &mut subst);
         }
 
@@ -89,14 +89,14 @@ impl<'m> Solver<'m> {
         }
 
         // Check that all generic params that appear in field types have been bound
-        for (_param_name, _default_ty) in generics {
+        for _param_name in generics.keys() {
             // Check if this generic param appears in any field type
             let appears_in_fields = struct_def
                 .fields
                 .values()
                 .any(|f| Self::type_contains_generic_param(&f.ty, _param_name));
             if appears_in_fields {
-                let idx = Self::find_generic_index_in_type(
+                let _idx = Self::find_generic_index_in_type(
                     &struct_def
                         .fields
                         .values()
@@ -236,14 +236,13 @@ impl<'m> Solver<'m> {
                 let struct_def = struct_def_id.borrow();
                 if struct_def.generics.is_some() {
                     // Try to extract concrete types from the arg struct type
-                    if let Type::Struct { def: arg_def } = arg {
-                        if arg_def != struct_def_id {
+                    if let Type::Struct { def: arg_def } = arg
+                        && arg_def != struct_def_id {
                             // Different struct, nothing to unify
                             return;
                         }
-                    }
                     for field in struct_def.fields.values() {
-                        if let Type::GenericParam { index, .. } = &*field.ty {
+                        if let Type::GenericParam { index: _, .. } = &*field.ty {
                             // This doesn't give us concrete types from arg directly
                             // Need to look at the actual value to infer
                         }
@@ -277,7 +276,7 @@ impl<'m> Solver<'m> {
         for (field_name, field) in &struct_def.fields {
             let new_field_ty = subst.apply(&field.ty);
             let new_field = StructField {
-                visibility: field.visibility.clone(),
+                visibility: field.visibility,
                 attributes: field.attributes.clone(),
                 name: field.name.clone(),
                 ty: TypeId::from(new_field_ty),
@@ -290,7 +289,7 @@ impl<'m> Solver<'m> {
         }
 
         let mono_struct = StructDef {
-            visibility: struct_def.visibility.clone(),
+            visibility: struct_def.visibility,
             name: mono_name_ns,
             attributes: struct_def.attributes.clone(),
             fields: new_fields,

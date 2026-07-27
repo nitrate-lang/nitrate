@@ -139,7 +139,7 @@ pub(crate) fn lower_struct_init(
                         let new_field_ty =
                             substitute_generic_params_in_type(&field.ty, &generic_params, &explicit_type_args);
                         let new_field = StructField {
-                            visibility: field.visibility.clone(),
+                            visibility: field.visibility,
                             attributes: field.attributes.clone(),
                             name: field.name.clone(),
                             ty: TypeId::from(new_field_ty),
@@ -152,7 +152,7 @@ pub(crate) fn lower_struct_init(
                     }
 
                     let mono_struct = StructDef {
-                        visibility: struct_def.visibility.clone(),
+                        visibility: struct_def.visibility,
                         name: mono_name_ns,
                         attributes: struct_def.attributes.clone(),
                         fields: new_fields,
@@ -188,11 +188,10 @@ fn substitute_generic_params_in_type(ty: &Type, param_names: &[&NString], type_a
         Type::GenericParam { index, name } => {
             // Find this name's position among generic params
             for (i, param_name) in param_names.iter().enumerate() {
-                if *param_name == name {
-                    if let Some(concrete_ty) = type_args.get(i) {
+                if *param_name == name
+                    && let Some(concrete_ty) = type_args.get(i) {
                         return concrete_ty.deref().clone();
                     }
-                }
             }
             // If index matches, use that directly
             if let Some(concrete_ty) = type_args.get(*index as usize) {
@@ -729,7 +728,7 @@ pub(crate) fn lower_cast(cast: ast::Cast, ctx: &mut Ast2HirCtx, log: &CompilerLo
         },
 
         (Value::InferredFloat(v), Type::F32) => Ok(Value::F32(OrderedFloat::from(*v as f32))),
-        (Value::InferredFloat(v), Type::F64) => Ok(Value::F64(OrderedFloat::from(v))),
+        (Value::InferredFloat(v), Type::F64) => Ok(Value::F64(v)),
 
         (expr, to) => Ok(Value::Cast {
             value: expr.into(),

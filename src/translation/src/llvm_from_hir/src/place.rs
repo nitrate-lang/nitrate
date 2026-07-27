@@ -51,7 +51,9 @@ fn gen_place_field_access<'ctx>(
 
     let index = ctx.llvm.i32_type().const_int(field_index as u64, false);
 
-    let gep = unsafe {
+    
+
+    unsafe {
         // SAFETY: ** I don't know if this is safe or not
         ctx.bb.build_in_bounds_gep(
             llvm_struct_ty,
@@ -60,9 +62,7 @@ fn gen_place_field_access<'ctx>(
             "field_access_gep",
         )
     }
-    .unwrap();
-
-    gep
+    .unwrap()
 }
 
 fn gen_place_index_access<'ctx>(
@@ -114,7 +114,9 @@ fn gen_place_index_access<'ctx>(
                 panic!("Index must be an integer");
             };
 
-            let gep = unsafe {
+            
+
+            unsafe {
                 // SAFETY: Array/Slice indexing via GEP
                 ctx.bb.build_in_bounds_gep(
                     llvm_collection_ty,
@@ -123,9 +125,7 @@ fn gen_place_index_access<'ctx>(
                     "index_access_gep",
                 )
             }
-            .unwrap();
-
-            gep
+            .unwrap()
         }
         _ => {
             // For trait-based Index resolution, we need to call the `index` method

@@ -10,7 +10,7 @@ fn qualify_name(scope: &[NString], name: &str) -> NString {
     let mut qualified = String::with_capacity(length);
 
     for module in scope {
-        qualified.push_str(&module);
+        qualified.push_str(module);
         qualified.push_str("::");
     }
 
@@ -28,7 +28,7 @@ fn enumerate_generics(
         scope_vec.push(name.clone());
 
         for generic in &generics.params {
-            let generic_name = qualify_name(&scope_vec, &generic.name);
+            let generic_name = qualify_name(scope_vec, &generic.name);
             symbol_map.insert(generic_name, SymbolKind::GenericParameter);
         }
 
@@ -77,7 +77,7 @@ pub fn discover_symbols(module: &mut Module) -> HashMap<NString, SymbolKind> {
                     enumerate_generics(&mut scope_vec, sym.name.clone(), &sym.generics, &mut symbol_map);
                 }
 
-                RefNode::ItemImpl(impl_def) => {
+                RefNode::ItemImpl(_impl_def) => {
                     // No symbol to register for the impl block itself.
                     // Methods inside are handled by ItemFunction when visited.
                 }

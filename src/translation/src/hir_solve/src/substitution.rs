@@ -24,14 +24,14 @@ impl Substitution {
         match ty {
             Type::GenericParam { index, .. } => {
                 if let Some(concrete) = self.mapping.get(index) {
-                    (&**concrete).clone()
+                    (**concrete).clone()
                 } else {
                     ty.clone()
                 }
             }
             Type::Inferred { id, .. } => {
                 if let Some(concrete) = self.mapping.get(&id.get()) {
-                    (&**concrete).clone()
+                    (**concrete).clone()
                 } else {
                     ty.clone()
                 }

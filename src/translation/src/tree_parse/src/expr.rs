@@ -574,7 +574,7 @@ impl Parser<'_, '_> {
 
             Token::Name(name) => Type::TypePath(Box::new(TypePath {
                 segments: vec![TypePathSegment {
-                    name: name,
+                    name,
                     type_arguments: None,
                 }],
                 resolved_path: None,
@@ -1074,12 +1074,10 @@ impl Parser<'_, '_> {
             // Enforce Positional-before-Named rule
             if argument.name.is_some() {
                 named_argument_seen = true;
-            } else {
-                if named_argument_seen {
-                    // Error: Positional argument follows a named argument
-                    let bug = SyntaxErr::FunctionCallPositionFollowsNamed(self.lexer.peek_pos());
-                    self.log.report(&bug);
-                }
+            } else if named_argument_seen {
+                // Error: Positional argument follows a named argument
+                let bug = SyntaxErr::FunctionCallPositionFollowsNamed(self.lexer.peek_pos());
+                self.log.report(&bug);
             }
 
             parsed_arguments.push(argument);

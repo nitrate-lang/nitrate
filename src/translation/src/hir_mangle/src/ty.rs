@@ -32,12 +32,12 @@ pub(crate) fn mangle_type(ty: &Type) -> String {
         Type::Tuple { element_types } => {
             let mut mangled = String::new();
 
-            mangled.push_str("T");
+            mangled.push('T');
             for elem_type in element_types {
                 let elem_mangled = mangle_type(elem_type);
                 mangled.push_str(&elem_mangled);
             }
-            mangled.push_str("E");
+            mangled.push('E');
 
             mangled
         }
@@ -45,7 +45,7 @@ pub(crate) fn mangle_type(ty: &Type) -> String {
         Type::Struct { def } => {
             let mut mangled = String::new();
 
-            mangled.push_str("S");
+            mangled.push('S');
             mangled.push_str(&def.borrow().name);
 
             mangled
@@ -54,7 +54,7 @@ pub(crate) fn mangle_type(ty: &Type) -> String {
         Type::Enum { def } => {
             let mut mangled = String::new();
 
-            mangled.push_str("M");
+            mangled.push('M');
             mangled.push_str(&def.borrow().name);
 
             mangled
@@ -63,7 +63,7 @@ pub(crate) fn mangle_type(ty: &Type) -> String {
         Type::TypeAlias { def } => {
             let mut mangled = String::new();
 
-            mangled.push_str("L");
+            mangled.push('L');
             mangled.push_str(&def.borrow().name);
 
             mangled
@@ -77,7 +77,7 @@ pub(crate) fn mangle_type(ty: &Type) -> String {
         Type::Function { function_type } => {
             let mut mangled = String::new();
 
-            mangled.push_str("F");
+            mangled.push('F');
             let return_mangled = mangle_type(&function_type.return_type);
             mangled.push_str(&return_mangled);
 
@@ -85,7 +85,7 @@ pub(crate) fn mangle_type(ty: &Type) -> String {
                 let param_mangled = mangle_type(&param_type.1);
                 mangled.push_str(&param_mangled);
             }
-            mangled.push_str("E");
+            mangled.push('E');
 
             mangled
         }

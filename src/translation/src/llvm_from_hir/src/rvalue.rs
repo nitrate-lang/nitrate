@@ -131,9 +131,9 @@ fn gen_rval_lit_i128<'ctx>(ctx: &mut CodegenCtx<'ctx, '_, '_, '_, '_>, value: i1
     let low = (value & 0xFFFFFFFFFFFFFFFF) as u64;
     let high = ((value >> 64) & 0xFFFFFFFFFFFFFFFF) as u64;
 
-    let value = ctx.llvm.i128_type().const_int_arbitrary_precision(&[low, high]).into();
+    
 
-    value
+    ctx.llvm.i128_type().const_int_arbitrary_precision(&[low, high]).into()
 }
 
 /**
@@ -177,9 +177,9 @@ fn gen_rval_lit_u128<'ctx>(ctx: &mut CodegenCtx<'ctx, '_, '_, '_, '_>, value: u1
     let low = (value & 0xFFFFFFFFFFFFFFFF) as u64;
     let high = ((value >> 64) & 0xFFFFFFFFFFFFFFFF) as u64;
 
-    let value = ctx.llvm.i128_type().const_int_arbitrary_precision(&[low, high]).into();
+    
 
-    value
+    ctx.llvm.i128_type().const_int_arbitrary_precision(&[low, high]).into()
 }
 
 /**
@@ -736,8 +736,8 @@ fn gen_rval_land<'ctx>(
     /**************************************************************************/
     // 4. Join block and load result
     ctx.bb.position_at_end(end_bb);
-    let load = ctx.bb.build_load(bool, land_result, "land_load").unwrap();
-    load.into()
+    
+    ctx.bb.build_load(bool, land_result, "land_load").unwrap()
 }
 
 /**
@@ -785,8 +785,8 @@ fn gen_rval_lor<'ctx>(
     /**************************************************************************/
     // 4. Join block and load result
     ctx.bb.position_at_end(end_bb);
-    let load = ctx.bb.build_load(bool, lor_result, "lor_load").unwrap();
-    load.into()
+    
+    ctx.bb.build_load(bool, lor_result, "lor_load").unwrap()
 }
 
 /**
@@ -1258,9 +1258,9 @@ fn gen_rval_struct_object<'ctx>(
         ctx.bb.build_store(gep, llvm_field_value).unwrap();
     }
 
-    let load = ctx.bb.build_load(llvm_ty, struct_alloca, "struct_load").unwrap();
+    
 
-    load.into()
+    ctx.bb.build_load(llvm_ty, struct_alloca, "struct_load").unwrap()
 }
 
 fn gen_rval_enum_variant<'ctx>(
@@ -1331,12 +1331,12 @@ fn gen_rval_field_access<'ctx>(
     }
     .unwrap();
 
-    let load = ctx
-        .bb
-        .build_load(gen_ty(&field_ty, &mut ctx.into()), gep, "field_access_load")
-        .unwrap();
+    
 
-    load.into()
+    ctx
+        .bb
+        .build_load(gen_ty(field_ty, &mut ctx.into()), gep, "field_access_load")
+        .unwrap()
 }
 
 fn gen_rval_assign<'ctx>(
@@ -1364,16 +1364,16 @@ fn gen_rval_deref<'ctx>(ctx: &mut CodegenCtx<'ctx, '_, '_, '_, '_>, place: &hir:
         _ => unreachable!(),
     };
 
-    let load = ctx
+    
+
+    ctx
         .bb
         .build_load(
             gen_ty(&pointee_ty, &mut ctx.into()),
             llvm_value.into_pointer_value(),
             "deref_load",
         )
-        .unwrap();
-
-    load.into()
+        .unwrap()
 }
 
 fn gen_rval_cast<'ctx>(
@@ -1480,7 +1480,7 @@ fn gen_rval_list<'ctx>(ctx: &mut CodegenCtx<'ctx, '_, '_, '_, '_>, elements: &[h
 
         let list_alloca = ctx.bb.build_alloca(list_ty, "list_alloca").unwrap();
         let load = ctx.bb.build_load(list_ty, list_alloca, "list_load").unwrap();
-        return load.into();
+        return load;
     }
 
     let mut llvm_elements = Vec::new();
@@ -1507,9 +1507,9 @@ fn gen_rval_list<'ctx>(ctx: &mut CodegenCtx<'ctx, '_, '_, '_, '_>, elements: &[h
         ctx.bb.build_store(gep, *llvm_element).unwrap();
     }
 
-    let load = ctx.bb.build_load(list_ty, list_alloca, "list_load").unwrap();
+    
 
-    load.into()
+    ctx.bb.build_load(list_ty, list_alloca, "list_load").unwrap()
 }
 
 fn gen_rval_tuple<'ctx>(ctx: &mut CodegenCtx<'ctx, '_, '_, '_, '_>, elements: &[hir::ValueId]) -> BasicValueEnum<'ctx> {
@@ -1542,9 +1542,9 @@ fn gen_rval_tuple<'ctx>(ctx: &mut CodegenCtx<'ctx, '_, '_, '_, '_>, elements: &[
         ctx.bb.build_store(gep, *llvm_element).unwrap();
     }
 
-    let load = ctx.bb.build_load(tuple_ty, tuple_alloca, "tuple_load").unwrap();
+    
 
-    load.into()
+    ctx.bb.build_load(tuple_ty, tuple_alloca, "tuple_load").unwrap()
 }
 
 fn gen_rval_if<'ctx>(
@@ -1603,7 +1603,7 @@ fn gen_rval_if<'ctx>(
         // Join block
         ctx.bb.position_at_end(join_bb);
         let load = ctx.bb.build_load(if_result_ty, result, "if_load").unwrap();
-        return load.into();
+        return load;
     }
 
     let then_bb = ctx.llvm.append_basic_block(current_function, "if_then");
@@ -1786,14 +1786,14 @@ fn gen_rval_call<'ctx>(
         panic!("Callee is not a function pointer");
     }
 
-    let call = ctx
+    
+
+    ctx
         .bb
         .build_indirect_call(llvm_function_ty, callee.into_pointer_value(), &llvm_arguments, "")
         .unwrap()
         .try_as_basic_value()
-        .expect_left("missing value");
-
-    call
+        .expect_left("missing value")
 }
 
 fn gen_rval_method_call<'ctx>(
@@ -1841,32 +1841,32 @@ fn gen_rval_method_call<'ctx>(
         panic!("Callee is not a function pointer");
     }
 
-    let call = ctx
+    
+
+    ctx
         .bb
         .build_indirect_call(llvm_function_ty, callee.into_pointer_value(), &llvm_arguments, "")
         .unwrap()
         .try_as_basic_value()
-        .expect_left("missing value");
-
-    call
+        .expect_left("missing value")
 }
 
 fn gen_rval_symbol<'ctx>(ctx: &mut CodegenCtx<'ctx, '_, '_, '_, '_>, symbol_name: &NString) -> BasicValueEnum<'ctx> {
     if let Some((local, llvm_local_ty)) = ctx.locals.get(symbol_name) {
         let load = ctx.bb.build_load(*llvm_local_ty, *local, "symbol_load").unwrap();
-        return load.into();
+        return load;
     } else if let Some((parameter, llvm_param_ty)) = ctx.parameters.get(symbol_name) {
         let load = ctx
             .bb
             .build_load(*llvm_param_ty, *parameter, "parameter_symbol_load")
             .unwrap();
-        return load.into();
+        return load;
     } else if let Some((global, llvm_global_ty)) = ctx.globals.get(symbol_name) {
         let load = ctx
             .bb
             .build_load(*llvm_global_ty, *global, "global_symbol_load")
             .unwrap();
-        return load.into();
+        return load;
     } else if let Some(function) = ctx.module.get_function(symbol_name) {
         let function_ptr = function.as_global_value().as_pointer_value();
         return function_ptr.into();
@@ -1902,7 +1902,7 @@ pub(crate) fn gen_rval<'ctx>(
         hir::Value::F32(x) => gen_rval_lit_f32(ctx, x.into_inner()),
         hir::Value::F64(x) => gen_rval_lit_f64(ctx, x.into_inner()),
         hir::Value::USize(32, x) => gen_rval_lit_u32(ctx, *x as u32),
-        hir::Value::USize(64, x) => gen_rval_lit_u64(ctx, *x as u64),
+        hir::Value::USize(64, x) => gen_rval_lit_u64(ctx, *x ),
         hir::Value::USize(_, x) => panic!("Unsupported usize size: {}", x),
         hir::Value::StringLit(x) => gen_rval_lit_string(ctx, x),
         hir::Value::BStringLit(x) => gen_rval_lit_bstring(ctx, x.as_slice()),
@@ -1979,7 +1979,6 @@ pub(crate) fn gen_rval<'ctx>(
             ctx.bb
                 .build_load(llvm_element_ty, index_place, "index_load")
                 .unwrap()
-                .into()
         }
 
         hir::Value::FieldAccess { expr, field_name } => gen_rval_field_access(ctx, &expr.borrow(), field_name),

@@ -293,6 +293,7 @@ pub struct ArgumentsIterator<T> {
 }
 
 impl<T> Arguments<T> {
+    #[allow(clippy::should_implement_trait)]
     pub fn into_iter(self) -> ArgumentsIterator<T> {
         ArgumentsIterator {
             positional: self.positional,

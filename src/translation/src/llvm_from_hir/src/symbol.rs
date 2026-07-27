@@ -171,7 +171,7 @@ impl<'ctx, 'tab, 'package_name, 'module> SymbolGenCtx<'ctx, 'tab, 'package_name,
 }
 
 pub(crate) fn get_ptr_size(ctx: &LLVMContext) -> hir::PtrSize {
-    let int_type = ctx.ptr_sized_int_type(&ctx.target_data(), None);
+    let int_type = ctx.ptr_sized_int_type(ctx.target_data(), None);
     match int_type.get_bit_width() {
         32 => hir::PtrSize::U32,
         64 => hir::PtrSize::U64,
@@ -217,13 +217,13 @@ fn gen_global<'ctx>(ctx: &mut SymbolGenCtx<'ctx, '_, '_, '_>, hir_global: &hir::
     /***********************************************************************/
     // Fill Constructor Body
     let bb = ctx.llvm.create_builder();
-    let mut val_ctx = CodegenCtx::new(ctx.llvm, &ctx.module, ctx.tab, &bb, &ctx.globals);
+    let mut val_ctx = CodegenCtx::new(ctx.llvm, ctx.module, ctx.tab, &bb, &ctx.globals);
 
     let entry = ctx.llvm.append_basic_block(llvm_ctor_function, "entry");
     bb.position_at_end(entry);
 
     let init_value = &hir_global.initializer.borrow();
-    let llvm_init_value = gen_rval(&mut val_ctx, &init_value);
+    let llvm_init_value = gen_rval(&mut val_ctx, init_value);
     let global_ptr = llvm_global.as_pointer_value();
     bb.build_store(global_ptr, llvm_init_value).unwrap();
     bb.build_return(None).unwrap();
@@ -296,7 +296,7 @@ fn gen_function<'ctx>(ctx: &mut SymbolGenCtx<'ctx, '_, '_, '_>, hir_function: &h
 
     if let Some(body) = &hir_function.body {
         let bb = ctx.llvm.create_builder();
-        let mut val_ctx = CodegenCtx::new(ctx.llvm, &ctx.module, ctx.tab, &bb, &ctx.globals);
+        let mut val_ctx = CodegenCtx::new(ctx.llvm, ctx.module, ctx.tab, &bb, &ctx.globals);
 
         let entry = ctx.llvm.append_basic_block(llvm_function, "entry");
         bb.position_at_end(entry);
@@ -368,7 +368,7 @@ pub fn generate_llvmir<'ctx>(
     // (like printf) so that codegen can reference them.
     for function_id in tab.functions() {
         let func = function_id.borrow();
-        if func.generics.is_some() && func.generics.as_ref().map_or(false, |g| !g.is_empty()) {
+        if func.generics.is_some() && func.generics.as_ref().is_some_and(|g| !g.is_empty()) {
             continue;
         }
         // Skip abstract trait methods (bodyless, non-public) - they are
@@ -387,7 +387,7 @@ pub fn generate_llvmir<'ctx>(
     // Second pass: generate function definitions for non-generic functions with bodies
     for function_id in tab.functions() {
         let func = function_id.borrow();
-        if func.generics.is_some() && func.generics.as_ref().map_or(false, |g| !g.is_empty()) {
+        if func.generics.is_some() && func.generics.as_ref().is_some_and(|g| !g.is_empty()) {
             continue;
         }
         if func.body.is_none() {

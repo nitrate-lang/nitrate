@@ -19,7 +19,7 @@ fn mangle_segment(str: &str) -> String {
 
         format!("X{}_{}", mangled.len(), mangled)
     } else {
-        return format!("{}{}", str.len(), str);
+        format!("{}{}", str.len(), str)
     }
 }
 

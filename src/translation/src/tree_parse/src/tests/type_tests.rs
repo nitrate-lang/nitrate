@@ -158,7 +158,7 @@ fn test_type_nested_path() {
 
 #[test]
 fn test_type_global_path() {
-    assert!(matches!(&parse_type("::std::collections"), Type::TypePath(p) if p.segments[0].name == ""));
+    assert!(matches!(&parse_type("::std::collections"), Type::TypePath(p) if p.segments[0].name.is_empty()));
 }
 
 #[test]
@@ -387,7 +387,7 @@ fn test_type_ref_complex() {
 #[test]
 fn test_global_type_path() {
     let ty = parse_type("::std::mem");
-    assert!(matches!(&ty, Type::TypePath(p) if p.segments[0].name == ""));
+    assert!(matches!(&ty, Type::TypePath(p) if p.segments[0].name.is_empty()));
 }
 
 
@@ -614,7 +614,7 @@ fn test_err_expected_type() {
 #[test]
 fn test_global_type_path_segments() {
     let ty = parse_type("::std::vec::Vec<i32>");
-    assert!(matches!(&ty, Type::TypePath(p) if p.segments[0].name == "" && p.segments.len() >= 3));
+    assert!(matches!(&ty, Type::TypePath(p) if p.segments[0].name.is_empty() && p.segments.len() >= 3));
 }
 
 

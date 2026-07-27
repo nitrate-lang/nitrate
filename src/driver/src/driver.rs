@@ -214,12 +214,11 @@ impl<'log> Interpreter<'log> {
             return Ok(());
         }
 
-        if let Some(change_dir_path) = &args.change_dir {
-            if let Err(e) = std::env::set_current_dir(change_dir_path) {
+        if let Some(change_dir_path) = &args.change_dir
+            && let Err(e) = std::env::set_current_dir(change_dir_path) {
                 error!(self.log, "failed to change directory: {}", e);
                 return Err(anyhow::anyhow!("Failed to change directory"));
             }
-        }
 
         if args.list {
             return Self::list_commands();

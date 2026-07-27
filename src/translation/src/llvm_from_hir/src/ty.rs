@@ -71,7 +71,7 @@ pub(crate) fn gen_ty<'ctx>(hir_type: &hir::Type, ctx: &mut TypegenCtx<'ctx, '_, 
         hir::Type::U32 | hir::Type::I32 => ctx.llvm.i32_type().into(),
         hir::Type::U64 | hir::Type::I64 => ctx.llvm.i64_type().into(),
         hir::Type::U128 | hir::Type::I128 => ctx.llvm.i128_type().into(),
-        hir::Type::USize => ctx.llvm.ptr_sized_int_type(&ctx.llvm.target_data(), None).into(),
+        hir::Type::USize => ctx.llvm.ptr_sized_int_type(ctx.llvm.target_data(), None).into(),
         hir::Type::F32 => ctx.llvm.f32_type().into(),
         hir::Type::F64 => ctx.llvm.f64_type().into(),
         hir::Type::Array { element_type, len } => {
@@ -119,13 +119,13 @@ pub(crate) fn gen_ty<'ctx>(hir_type: &hir::Type, ctx: &mut TypegenCtx<'ctx, '_, 
 
         hir::Type::SliceRef { .. } => {
             let ptr = ctx.llvm.ptr_type(AddressSpace::default());
-            let size = ctx.llvm.ptr_sized_int_type(&ctx.llvm.target_data(), None);
+            let size = ctx.llvm.ptr_sized_int_type(ctx.llvm.target_data(), None);
             ctx.llvm.struct_type(&[ptr.into(), size.into()], false).into()
         }
 
         hir::Type::SlicePtr { .. } => {
             let ptr = ctx.llvm.ptr_type(AddressSpace::default());
-            let size = ctx.llvm.ptr_sized_int_type(&ctx.llvm.target_data(), None);
+            let size = ctx.llvm.ptr_sized_int_type(ctx.llvm.target_data(), None);
             ctx.llvm.struct_type(&[ptr.into(), size.into()], false).into()
         }
 

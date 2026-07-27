@@ -2,7 +2,6 @@
 
 use crate::tests::eq;
 use nitrate_token::{Integer, IntegerKind, Token};
-use std::u128;
 
 macro_rules! int_eq {
     ($src:expr, $val:expr, $kind:ident) => {
@@ -25,7 +24,7 @@ fn test_integer_dec_max() {
 
 #[test]
 fn test_integer_bin() {
-    int_eq!("0b101010", 0b101010, Bin);
+    int_eq!("0b101010", 0b10_1010, Bin);
 }
 #[test]
 fn test_integer_bin_max() {
@@ -52,7 +51,7 @@ fn test_integer_oct_max() {
 
 #[test]
 fn test_integer_hex() {
-    int_eq!("0x12345abcdef", 0x12345abcdef, Hex);
+    int_eq!("0x12345abcdef", 0x0123_45ab_cdef, Hex);
 }
 #[test]
 fn test_integer_hex_max() {
@@ -60,7 +59,7 @@ fn test_integer_hex_max() {
 }
 #[test]
 fn test_integer_hex_uppercase() {
-    int_eq!("0xABCDEF", 0xABCDEF, Hex);
+    int_eq!("0xABCDEF", 0xAB_CD_EF, Hex);
 }
 
 #[test]

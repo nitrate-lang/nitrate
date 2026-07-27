@@ -7,15 +7,15 @@ pub struct TranslationOptionsBuilder {
 
 impl TranslationOptionsBuilder {
     pub fn default_debug_build_options() -> Self {
-        let b = Self::default();
+        
         // Set default debug options here
-        b
+        Self::default()
     }
 
     pub fn default_release_build_options() -> Self {
-        let b = Self::default();
+        
         // Set default release options here
-        b
+        Self::default()
     }
 
     pub fn build(self) -> Option<TranslationOptions> {

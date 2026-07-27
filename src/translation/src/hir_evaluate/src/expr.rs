@@ -31,7 +31,7 @@ impl TryFrom<Value> for CastLitBridge {
             Value::U64(u) => Ok(CastLitBridge::U128(u as u128)),
             Value::U128(u) => Ok(CastLitBridge::U128(*u)),
             Value::F32(f) => Ok(CastLitBridge::F128(OrderedFloat::from(*f as f64))),
-            Value::F64(f) => Ok(CastLitBridge::F128(OrderedFloat::from(*f as f64))),
+            Value::F64(f) => Ok(CastLitBridge::F128(OrderedFloat::from(*f ))),
             Value::USize(_, u) => Ok(CastLitBridge::U128(u as u128)),
             Value::InferredInteger(u) => Ok(CastLitBridge::U128(*u)),
             Value::InferredFloat(f) => Ok(CastLitBridge::F128(f)),
@@ -168,7 +168,7 @@ impl CastLitBridge {
         match self {
             CastLitBridge::I128(i) => Ok(Value::F64(OrderedFloat::from(i as f64))),
             CastLitBridge::U128(u) => Ok(Value::F64(OrderedFloat::from(u as f64))),
-            CastLitBridge::F128(f) => Ok(Value::F64(OrderedFloat::from(*f as f64))),
+            CastLitBridge::F128(f) => Ok(Value::F64(OrderedFloat::from(*f ))),
             CastLitBridge::Unit => Err(Unwind::TypeError),
         }
     }
@@ -178,7 +178,7 @@ impl HirEvaluate for Lit {
     type Output = Lit;
 
     fn evaluate(&self, _ctx: &mut crate::HirEvalCtx) -> Result<Self::Output, crate::Unwind> {
-        Ok(self.clone())
+        Ok(*self)
     }
 }
 
@@ -478,7 +478,7 @@ impl HirEvaluate for Value {
 
                 // TODO: handle non-literal type casts
 
-                return Err(Unwind::TypeError);
+                Err(Unwind::TypeError)
             }
 
             Value::List { elements } => {

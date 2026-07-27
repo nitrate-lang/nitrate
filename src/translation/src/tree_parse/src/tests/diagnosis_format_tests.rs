@@ -404,7 +404,7 @@ fn test_err_trait_invalid_token() {
 
 #[test]
 fn test_err_expected_open_angle() {
-    let (_, log) = parse_source_no_assert("fn f() { ::<i32>::bar() }");
+    let (_, _log) = parse_source_no_assert("fn f() { ::<i32>::bar() }");
     // May or may not trigger ExpectedOpenAngle depending on parse flow
     // Just verify it parses or errors gracefully
 }

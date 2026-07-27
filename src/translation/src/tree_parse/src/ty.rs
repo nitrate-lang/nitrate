@@ -186,7 +186,9 @@ impl Parser<'_, '_> {
         let limit = SyntaxErr::FunctionParameterLimit(self.lexer.peek_pos());
         let end = SyntaxErr::FunctionParametersExpectedEnd(self.lexer.peek_pos());
 
-        let params = self.parse_comma_separated_list(
+        
+
+        self.parse_comma_separated_list(
             &Token::CloseParen,
             65_536,
             true,
@@ -194,9 +196,7 @@ impl Parser<'_, '_> {
             limit,
             end,
             parse_function_parameter,
-        );
-
-        params
+        )
     }
 
     fn parse_function_type(&mut self) -> FunctionType {

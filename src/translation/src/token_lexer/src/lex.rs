@@ -30,7 +30,7 @@ enum StringEscape {
 #[cfg(not(test))]
 const MAX_SOURCE_SIZE: usize = u32::MAX as usize;
 #[cfg(test)]
-const MAX_SOURCE_SIZE: usize = 4096 as usize;
+const MAX_SOURCE_SIZE: usize = 4096;
 
 impl<'a> Lexer<'a> {
     /// Creates a new lexer instance from the given source code and filename.
@@ -201,7 +201,6 @@ impl<'a> Lexer<'a> {
     }
 
     #[inline(always)]
-    #[must_use]
     fn peek_byte(&self) -> Result<u8, ()> {
         self.source
             .get(self.internal_getc_pos.offset as usize)
@@ -845,9 +844,8 @@ impl<'a> Lexer<'a> {
                         comment_bytes.push(b'*');
                         comment_bytes.push(b'/');
                         break;
-                    } else {
-                        comment_bytes.push(b'*');
                     }
+                    comment_bytes.push(b'*');
                 }
                 Ok(b) => {
                     self.advance(b);

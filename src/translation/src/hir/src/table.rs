@@ -81,11 +81,7 @@ impl SymbolTab {
     }
 
     pub fn add_impl_trait(&mut self, type_id: TypeId, trait_id: TraitId) {
-        self.impls
-            .entry(type_id)
-            .or_insert_with(HashMap::new)
-            .entry(trait_id)
-            .or_insert_with(HashMap::new);
+        self.impls.entry(type_id).or_default().entry(trait_id).or_default();
     }
 
     pub fn add_trait_method(
@@ -97,9 +93,9 @@ impl SymbolTab {
     ) {
         self.impls
             .entry(type_id)
-            .or_insert_with(HashMap::new)
+            .or_default()
             .entry(trait_id)
-            .or_insert_with(HashMap::new)
+            .or_default()
             .insert(method_name, function_id);
     }
 
@@ -270,7 +266,7 @@ impl SymbolTab {
             generics: None,
             supertraits: Vec::new(),
             where_clause: None,
-            methods: Vec::new().into(),
+            methods: Vec::new(),
             associated_types: Vec::new(),
             associated_constants: Vec::new(),
         };
@@ -293,9 +289,9 @@ impl SymbolTab {
     ) {
         self.impl_associated_types
             .entry(type_id)
-            .or_insert_with(HashMap::new)
+            .or_default()
             .entry(trait_id)
-            .or_insert_with(HashMap::new)
+            .or_default()
             .insert(assoc_name, type_alias_id);
     }
 
@@ -308,9 +304,9 @@ impl SymbolTab {
     ) {
         self.impl_associated_constants
             .entry(type_id)
-            .or_insert_with(HashMap::new)
+            .or_default()
             .entry(trait_id)
-            .or_insert_with(HashMap::new)
+            .or_default()
             .insert(assoc_name, const_id);
     }
 

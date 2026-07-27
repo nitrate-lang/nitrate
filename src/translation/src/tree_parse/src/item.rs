@@ -134,7 +134,7 @@ impl Parser<'_, '_> {
 
             if this.parse_double_colon() {
                 if this.lexer.skip_if(&Token::Star) {
-                    return UseTree::UseAll { path };
+                    UseTree::UseAll { path }
                 } else if this.lexer.skip_if(&Token::OpenBrace) {
                     let mut group = Vec::new();
 
@@ -883,11 +883,10 @@ impl Parser<'_, '_> {
 
                     let mut block_item = self.parse_item();
                     // Apply ABI to functions inside the extern block
-                    if let Item::Function(ref mut func) = block_item {
-                        if func.abi.is_none() {
+                    if let Item::Function(ref mut func) = block_item
+                        && func.abi.is_none() {
                             func.abi = extern_abi.clone();
                         }
-                    }
                     block_items.push(block_item);
                 }
 

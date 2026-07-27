@@ -56,7 +56,7 @@ impl Interpreter<'_> {
         let gitignore_content = "# Nitrate NO3 files\n.no3/\n\n";
 
         let mut gitignore = OpenOptions::new()
-            .write(true)
+            
             .create(true)
             .append(true)
             .open(dir.join(".gitignore"))?;

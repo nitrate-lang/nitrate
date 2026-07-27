@@ -92,7 +92,7 @@ fn test_large_identifier_does_not_panic() {
     let mut lexer = Lexer::new(long_id.as_bytes(), None).expect("source too big");
     lexer.disable_trivia();
     let tok = lexer.next_tok();
-    assert_eq!(tok.token, Token::Name(long_id.clone().into()));
+    assert_eq!(tok.token, Token::Name(long_id.clone()));
     assert_eq!(tok.end_offset, 1000);
 }
 

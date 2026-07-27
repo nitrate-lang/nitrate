@@ -136,7 +136,7 @@ fn load_source_file(
     is_same_package: bool,
     log: &CompilerLog,
 ) -> Option<Module> {
-    let source_code = match std::fs::read_to_string(&path) {
+    let source_code = match std::fs::read_to_string(path) {
         Ok(code) => code,
         Err(err) => {
             log.report(&ResolveIssue::ImportNotFound((source_from_package_name.clone(), err)));
@@ -186,15 +186,14 @@ fn decide_what_to_import(ctx: &ImportContext, import_name: NString, log: &Compil
         });
     }
 
-    if let Some(source_filepath) = ctx.find_package(&import_name) {
-        if source_filepath.exists() {
+    if let Some(source_filepath) = ctx.find_package(&import_name)
+        && source_filepath.exists() {
             return Some(ImportContext {
                 package_name: import_name,
                 source_filepath,
                 package_search_paths: ctx.package_search_paths.clone(),
             });
         }
-    }
 
     log.report(&ResolveIssue::ImportNotFound((
         import_name.clone(),
@@ -309,11 +308,10 @@ fn resolve_imports_guarded(
     depth: &mut Vec<NString>,
 ) {
     module.depth_first_iter_mut(&mut |order, node| {
-        if order == Order::Leave {
-            if let RefNodeMut::ItemImport(import) = node {
+        if order == Order::Leave
+            && let RefNodeMut::ItemImport(import) = node {
                 resolve_import(ctx, import, log, visited, depth);
             }
-        }
     });
 }
 

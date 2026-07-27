@@ -204,7 +204,7 @@ fn test_unsafe_block_with_expr() {
 
 #[test]
 fn test_expr_path_global() {
-    assert!(matches!(&parse_expr("::std::mem"), Expr::Path(p) if p.segments[0].name == ""));
+    assert!(matches!(&parse_expr("::std::mem"), Expr::Path(p) if p.segments[0].name.is_empty()));
 }
 
 #[test]
@@ -948,7 +948,7 @@ fn test_cast_from_string() {
 #[test]
 fn test_closure_params_trailing_comma() {
     let expr = parse_expr("fn(x: i32,) { x }");
-    assert!(matches!(&expr, Expr::Closure(c) if c.parameters.as_ref().map_or(false, |p| p.len() == 1)));
+    assert!(matches!(&expr, Expr::Closure(c) if c.parameters.as_ref().is_some_and(|p| p.len() == 1)));
 }
 
 
