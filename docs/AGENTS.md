@@ -1,125 +1,147 @@
-# Nitrate Compiler Documentation Index
+# Nitrate Compiler: Complete Documentation Index
 
-## Overview
+## About This Documentation Set
 
-This documentation provides comprehensive coverage of the Nitrate compiler, a modern systems programming language compiler built in Rust. The compiler architecture follows a multi-stage pipeline: source text → tokens → AST (Parse Tree) → HIR (High-Level IR) → LLVM IR → machine code.
+This index provides a structured portal into the complete Nitrate compiler documentation — a comprehensive reference for a modern systems programming language compiler written entirely in Rust. The Nitrate compiler transforms `.nit` source files into optimized native machine code through a sophisticated multi-stage pipeline, and these documents collectively form a complete reference for every subsystem within the compiler.
 
-## Documentation Files
+The documentation follows a coherent narrative that mirrors the natural flow of compilation: from raw source text through lexical analysis, syntactic parsing, name resolution, HIR construction, type inference, validation, code generation, and optimization. Supporting documents cover the diagnostic system, package management, LSP integration, build system configuration, string interning infrastructure, and reference semantics.
 
-| Document                                             | Description                                                    | Audience                |
-| ---------------------------------------------------- | -------------------------------------------------------------- | ----------------------- |
-| [OVERVIEW.md](OVERVIEW.md)                           | High-level compiler architecture and pipeline                  | All developers          |
-| [LEXER.md](LEXER.md)                                 | Tokenization: source text to token stream                      | Lexer developers        |
-| [PARSER.md](PARSER.md)                               | AST parsing: tokens to parse tree                              | Parser developers       |
-| [RESOLVER.md](RESOLVER.md)                           | Name resolution and symbol table construction                  | Resolver developers     |
-| [HIR.md](HIR.md)                                     | High-Level IR: types, expressions, store architecture          | HIR developers          |
-| [TYPE_SYSTEM.md](TYPE_SYSTEM.md)                     | Type representation, semantics, and theory                     | Type system developers  |
-| [HINDLEY_MILNER.md](HINDLEY_MILNER.md)               | Type inference via Hindley-Milner constraint solving           | Inference developers    |
-| [GENERICS_ARCHITECTURE.md](GENERICS_ARCHITECTURE.md) | Generics and monomorphization architecture                     | Generics developers     |
-| [VALIDATION.md](VALIDATION.md)                       | HIR validation passes and semantic checks                      | Validation developers   |
-| [EVALUATION.md](EVALUATION.md)                       | Constant evaluation and compile-time computation               | Evaluation developers   |
-| [SOLVER.md](SOLVER.md)                               | Trait solving and type constraint propagation                  | Solver developers       |
-| [MANGLE.md](MANGLE.md)                               | Name mangling for symbol identification                        | Codegen developers      |
-| [LLVM_CODEGEN.md](LLVM_CODEGEN.md)                   | LLVM IR generation and backend codegen                         | Codegen developers      |
-| [OPTIMIZATION.md](OPTIMIZATION.md)                   | Optimization passes and transformation framework               | Optimization developers |
-| [TRANSLATION.md](TRANSLATION.md)                     | Translation pipeline orchestration and wiring                  | Pipeline developers     |
-| [DIAGNOSTICS.md](DIAGNOSTICS.md)                     | Error reporting, diagnostics, and user-facing messages         | All developers          |
-| [DRIVER.md](DRIVER.md)                               | CLI driver, subcommands, and compiler invocation               | Tooling developers      |
-| [PACKAGE_MANAGER.md](PACKAGE_MANAGER.md)             | Package management, dependencies, and publishing               | Package developers      |
-| [LSP.md](LSP.md)                                     | Language Server Protocol implementation                        | LSP/IDE developers      |
-| [BUILD_SYSTEM.md](BUILD_SYSTEM.md)                   | Build system, crate dependencies, and toolchain                | Build/CI developers     |
-| [NSTRING.md](NSTRING.md)                             | Interned string system for memory-efficient identifier storage | Core developers         |
-| [REFERENCE_SEMANTICS.md](REFERENCE_SEMANTICS.md)     | Reference semantics, borrowing, lifetimes, and memory safety   | Language developers     |
+## Complete Document Index
 
-## Quick Start
+| Document                                             | Description                                                                                               | Primary Audience                   |
+| ---------------------------------------------------- | --------------------------------------------------------------------------------------------------------- | ---------------------------------- |
+| [OVERVIEW.md](OVERVIEW.md)                           | High-level compiler architecture, pipeline stages, core design principles, data flow between subsystems   | All developers new to the codebase |
+| [LEXER.md](LEXER.md)                                 | Lexical analysis: character-by-character tokenization, literal parsing, trivia management, error recovery | Lexer subsystem developers         |
+| [PARSER.md](PARSER.md)                               | Syntactic parsing: recursive-descent AST construction, operator precedence, type and expression parsing   | Parser subsystem developers        |
+| [RESOLVER.md](RESOLVER.md)                           | Name resolution: import processing, scope analysis, symbol table construction, path resolution            | Resolver subsystem developers      |
+| [HIR.md](HIR.md)                                     | High-Level Intermediate Representation: type system, value representation, TLS storage architecture       | All HIR developers                 |
+| [TYPE_SYSTEM.md](TYPE_SYSTEM.md)                     | Type system: type hierarchy, primitive/compound/nominal/refinement types, memory layout computations      | Type system and solver developers  |
+| [HINDLEY_MILNER.md](HINDLEY_MILNER.md)               | Type inference engine: Hindley-Milner constraint solving, fixed-point iteration, monomorphization         | Inference and solver developers    |
+| [GENERICS_ARCHITECTURE.md](GENERICS_ARCHITECTURE.md) | Generics: monomorphization mechanics, type substitution, template instantiation, caching                  | Generics and solver developers     |
+| [VALIDATION.md](VALIDATION.md)                       | HIR validation: semantic checks, ValidHir wrapper pattern, expression and type validation                 | Validation subsystem developers    |
+| [EVALUATION.md](EVALUATION.md)                       | Constant evaluation: compile-time expression computation, global initializers, defaults                   | Evaluation developers              |
+| [SOLVER.md](SOLVER.md)                               | Constraint solver: engine architecture, type constraints, refinement bounds, monomorphization             | Type system and solver developers  |
+| [MANGLE.md](MANGLE.md)                               | Name mangling: deterministic symbol names, type encoding, generic instantiation naming                    | Codegen developers                 |
+| [LLVM_CODEGEN.md](LLVM_CODEGEN.md)                   | LLVM IR codegen: HIR-to-LLVM translation, type mapping, control flow, calling conventions                 | Codegen backend developers         |
+| [OPTIMIZATION.md](OPTIMIZATION.md)                   | Optimization: LLVM pass pipeline, optimization levels, Nitrate-specific pass infrastructure               | Optimization developers            |
+| [TRANSLATION.md](TRANSLATION.md)                     | Pipeline orchestration: stage sequencing, configuration, compilation modes, error handling                | Integration developers             |
+| [DIAGNOSTICS.md](DIAGNOSTICS.md)                     | Diagnostics: structured error types, accumulation, groups, error codes, display formatting                | All developers                     |
+| [DRIVER.md](DRIVER.md)                               | CLI driver: `no3` binary, subcommands, package loading, compiler invocation                               | Tooling developers                 |
+| [PACKAGE_MANAGER.md](PACKAGE_MANAGER.md)             | Package management: dependencies, manifest format, publishing, registry                                   | Package developers                 |
+| [LSP.md](LSP.md)                                     | LSP server: JSON-RPC, document sync, diagnostics push, code completion                                    | IDE/tooling developers             |
+| [BUILD_SYSTEM.md](BUILD_SYSTEM.md)                   | Build system: Cargo workspace, LLVM linkage, testing, CI dependencies                                     | Build/CI developers                |
+| [NSTRING.md](NSTRING.md)                             | Interned strings: `NString` design, memory optimization, compiler-wide usage                              | Core infrastructure developers     |
+| [REFERENCE_SEMANTICS.md](REFERENCE_SEMANTICS.md)     | Reference semantics: borrowing, lifetimes, pointer types, memory safety                                   | Language/type system developers    |
 
-For new developers, the recommended reading order is:
+## Recommended Reading Path
 
-1. [OVERVIEW.md](OVERVIEW.md) — understand the big picture
-2. [TRANSLATION.md](TRANSLATION.md) — understand how stages connect
-3. [HIR.md](HIR.md) — understand the central IR
-4. [TYPE_SYSTEM.md](TYPE_SYSTEM.md) — understand types
-5. [DIAGNOSTICS.md](DIAGNOSTICS.md) — understand error handling
-6. [DRIVER.md](DRIVER.md) — understand how compilation is invoked
+For developers new to the Nitrate compiler codebase, we recommend the following graduated reading sequence:
 
-Then read specific documents as needed for the subsystem you're working on.
+1. **Start with the big picture**: [OVERVIEW.md](OVERVIEW.md) provides the essential high-level understanding of the compiler pipeline, core architectural principles (immutable interning with TLS, diagnostic accumulation, pass-based architecture, and reentrant store access), and how data flows between stages.
 
-> **Total**: 22 comprehensive reference documents covering every compiler subsystem, approximately 5,600+ lines of documentation.
+2. **Understand stage connectivity**: [TRANSLATION.md](TRANSLATION.md) describes how the pipeline orchestration works, how stages are sequenced and configured, and how errors propagate between them.
 
-## Key Crate Map
+3. **Master the central IR**: [HIR.md](HIR.md) covers the High-Level Intermediate Representation — the central data structure that all analysis passes operate on. Understanding the TLS-based storage architecture, type deduplication, and handle-based access patterns is essential for any compiler development work.
 
-The compiler is organized as a Rust workspace with the following core crates:
+4. **Study the type system**: [TYPE_SYSTEM.md](TYPE_SYSTEM.md) provides a complete reference for all type variants, their memory layouts, and classification rules. This knowledge is prerequisite for solver, codegen, or HIR development.
 
-| Crate                   | Path                                 | Role                           |
-| ----------------------- | ------------------------------------ | ------------------------------ |
-| `nitrate`               | `src/lib.rs`                         | Top-level re-exports           |
-| `nitrate_diagnosis`     | `src/diagnosis/`                     | Error reporting infrastructure |
-| `nitrate_driver`        | `src/driver/`                        | CLI, package management, LSP   |
-| `nitrate_translation`   | `src/translation/`                   | Translation pipeline root      |
-| `nitrate_token`         | `src/translation/src/token/`         | Token types and definitions    |
-| `nitrate_token_lexer`   | `src/translation/src/token_lexer/`   | Lexer implementation           |
-| `nitrate_tree`          | `src/translation/src/tree/`          | Parse tree (AST) types         |
-| `nitrate_tree_parse`    | `src/translation/src/tree_parse/`    | Parser implementation          |
-| `nitrate_tree_resolve`  | `src/translation/src/tree_resolve/`  | Name resolution                |
-| `nitrate_hir`           | `src/translation/src/hir/`           | HIR types, storage, passes     |
-| `nitrate_hir_from_tree` | `src/translation/src/hir_from_tree/` | AST→HIR lowering               |
-| `nitrate_hir_solve`     | `src/translation/src/hir_solve/`     | Type inference + solver        |
-| `nitrate_hir_validate`  | `src/translation/src/hir_validate/`  | HIR validation                 |
-| `nitrate_hir_evaluate`  | `src/translation/src/hir_evaluate/`  | Constant evaluation            |
-| `nitrate_hir_get_type`  | `src/translation/src/hir_get_type/`  | Type determination             |
-| `nitrate_hir_mangle`    | `src/translation/src/hir_mangle/`    | Name mangling                  |
-| `nitrate_hir_dump`      | `src/translation/src/hir_dump/`      | HIR pretty-printing            |
-| `nitrate_llvm`          | `src/translation/src/llvm/`          | LLVM context wrapper           |
-| `nitrate_llvm_from_hir` | `src/translation/src/llvm_from_hir/` | HIR→LLVM IR codegen            |
-| `nitrate_nstring`       | `src/translation/src/nstring/`       | Interned string system         |
-| `nitrate_optimization`  | `src/optimization/`                  | Optimization passes            |
+5. **Learn error handling**: [DIAGNOSTICS.md](DIAGNOSTICS.md) describes the structured diagnostic system, error accumulation patterns, error code conventions, and display formatting.
 
-## Compilation Pipeline (Data Flow)
+6. **Explore CLI invocation**: [DRIVER.md](DRIVER.md) explains how `no3` parses commands, loads packages, and invokes the pipeline, providing context for how the compiler is actually used.
+
+## Complete Data Flow Diagram
+
+The following diagram traces source code through the entire compilation pipeline, showing each stage's input/output and the progressive lowering through intermediate representations:
 
 ```
-Source Code (.nit)
-    │
-    ▼ [Lexer]
-Token Stream ──────► Trivia (whitespace, comments)
-    │
-    ▼ [Parser]
-Parse Tree (AST) ──► Item tree + Expression tree
-    │
-    ▼ [Resolver]
-Resolved AST ──────► Symbol table populated
-    │
-    ▼ [HIR Lowering]
-High-Level IR ─────► Type-level representation
-    │
-    ▼ [Type Inference / Solver]
-Solved HIR ────────► Constraints resolved, generics monomorphized
-    │
-    ▼ [Validation]
-Validated HIR ─────► Semantic correctness verified
-    │
-    ▼ [Codegen]
-LLVM IR ───────────► Module + Functions + Globals
-    │
-    ▼ [LLVM Backend]
-Machine Code ──────► Object file / executable
+Source Code (.nit files) ──► [File Loading + Package Resolution]
+    │  Output: Byte slices + FileIds + CompilerLog
+    ▼
+[Lexical Analysis — nitrate_token_lexer]
+    │  Input: &[u8] source bytes
+    │  Output: Token stream (AnnotatedToken values with source positions)
+    │  Handling: Maximal munch, keyword recognition, literal parsing, trivia management
+    ▼
+[Syntactic Parsing — nitrate_tree_parse]
+    │  Input: Token stream from lexer
+    │  Output: Parse Tree (Module with Items: functions, structs, enums, etc.)
+    │  Strategy: Hand-written recursive descent with precedence climbing
+    ▼
+[Name Resolution — nitrate_tree_resolve]
+    │  Input: Unresolved Parse Tree
+    │  Output: Resolved Parse Tree + populated SymbolTab
+    │  Operations: Import expansion, scope analysis, path resolution, error detection
+    ▼
+[HIR Lowering — nitrate_hir_from_tree]
+    │  Input: Resolved Parse Tree + SymbolTab
+    │  Output: HIR items in TLS Store (TypeId, FunctionId, ValueId handles)
+    │  Operations: Type interning, expression graph construction, symbol resolution
+    ▼
+[Type Inference + Solving — nitrate_hir_solve]
+    │  Input: Unresolved HIR (Type::Inferred, Type::GenericParam present)
+    │  Output: Solved HIR (all types resolved, generics monomorphized)
+    │  Algorithm: Fixed-point constraint solving with monomorphization
+    ▼
+[HIR Validation — nitrate_hir_validate]
+    │  Input: Solved HIR module
+    │  Output: ValidHir<Module> (type-level guarantee of correctness)
+    │  Checks: No unresolved types, valid control flow, sound expressions
+    ▼
+[Name Mangling — nitrate_hir_mangle]
+    │  Input: Validated HIR with Function and GlobalVariable records
+    │  Output: mangled_name fields populated on all symbols
+    ▼
+[LLVM IR Code Generation — nitrate_llvm_from_hir]
+    │  Input: ValidHir<Module>
+    │  Output: LLVM Module (verified, type-checked)
+    │  Passes: (1) Globals (2) Declarations (3) Definitions
+    ▼
+[LLVM Optimization — nitrate_llvm / ModuleOptimizer]
+    │  Input: Unoptimized LLVM Module
+    │  Output: Optimized LLVM Module (based on optimization level 0-3)
+    │  Passes: Mem2Reg, GVN, SCCP, inlining, loop opts, DCE
+    ▼
+[Native Code Emission]
+    │  Output: Object file (.o), executable, assembly (.s), or LLVM IR (.ll)
 ```
 
-## Common Patterns
+## Foundational Architectural Patterns
 
-Throughout the compiler, several architectural patterns are consistently applied:
+Five architectural patterns recur consistently throughout the compiler. Understanding them will accelerate comprehension of any individual subsystem document:
 
-1. **Thread-Local Store**: HIR elements use TLS-based storage with `AppendOnlyVec` and `BiMap` for deduplication
-2. **Diagnostic Accumulation**: Errors are collected via `CompilerLog` rather than panicking, enabling multi-error reporting
-3. **Pass-Based Architecture**: Each compilation stage is a pass over the IR, often with fixed-point iteration
-4. **Immutable Core + Mutable Edges**: Types are immutable and interned; values/items are stored in `RefCell` for mutation
-5. **Symbol Table Agnosticism**: Most passes work through `SymbolTab` which provides iteration over all defined symbols
+### Pattern 1: Thread-Local Storage (TLS)
 
-## Contributing to Documentation
+The compiler avoids both global mutable state and passing the Store through every function call. Instead, the `Store` type is placed in thread-local storage at the start of a compilation session. All handles (`TypeId`, `FunctionId`, `ValueId`, etc.) dereference through TLS to access their underlying data. This enables lifetime-free handles, reentrant access from any call site, and RAII-based deterministic cleanup when the compilation session ends.
 
-When adding or modifying documentation:
+### Pattern 2: Diagnostic Accumulation
 
-1. Follow the existing style: theoretical foundation first, then practical implementation details
-2. Include architectural diagrams using ASCII art where appropriate
-3. Reference type names, function names, and crate names but avoid line numbers
-4. Explain _why_ design decisions were made, not just _what_ was implemented
-5. Cross-reference related documents using relative links
+Rather than aborting on the first error, every compilation stage collects diagnostics in a shared `CompilerLog`. Each stage defines its own structured error types implementing `FormattableDiagnosticGroup`. The pipeline checks for errors between stages, but within each stage, processing continues to maximize error discovery. This enables users to see all issues in a single compilation pass.
+
+### Pattern 3: Pass-Based Architecture
+
+Each compilation stage is structured as a pass over the current IR, defined by the `Pass<T>` trait. The `PassManager` sequences passes, calling each one in order. Several critical passes (most notably the Hindley-Milner solver) use fixed-point iteration: they repeatedly walk the IR until no new transformations are required. This handles transitive constraint propagation, nested monomorphization, and incremental type resolution.
+
+### Pattern 4: Immutable Core with Mutable Edges
+
+Types are immutable, interned, and deduplicated: identical types always produce the same `TypeId`, and handle comparison equals structural comparison. Values and items are stored in `RefCell`-backed append-only vectors that allow interior mutability. This hybrid optimizes the most frequent operation (type comparison) while supporting the mutation patterns required by the solver.
+
+### Pattern 5: Symbol Table as Compilation Hub
+
+Most passes interact with the `SymbolTab`, which provides iteration over all defined symbols (functions, types, globals, methods). The symbol table is built during name resolution, extended during solving (with monomorphized copies), and iterated by codegen. This abstraction allows incremental population without requiring passes to understand symbol storage internals.
+
+## Documentation Contribution Guidelines
+
+When extending or modifying these documentation files, adhere to the following standards:
+
+1. **Structure**: Present theoretical foundation first, then practical implementation details, then design rationale with tradeoffs considered
+2. **Visual aids**: Use ASCII art diagrams for data flow, architecture, and relationships where they improve comprehension
+3. **Conventions**: Reference type names (`TypeId`, `Value::Binary`), function names, and crate names with backtick formatting. Avoid line-number references
+4. **Rationale-first**: Every design decision should explain why that approach was chosen over alternatives, including specific tradeoffs and limitations
+5. **Cross-references**: Use relative links to related documents. Central concepts (Store, TLS, Monomorphization) should be linked to their primary documentation
+6. **Audience targeting**: Each document specifies its target audience; foundational documents assume less prior knowledge than subsystem-specific ones
+
+## Documentation Statistics
+
+- **Total documents**: 22 comprehensive reference files
+- **Scope**: Every compiler subsystem covered, from low-level byte scanning to high-level optimization pipelines
+- **Target audience**: From new contributors to experienced subsystem maintainers

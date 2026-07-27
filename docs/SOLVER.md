@@ -2,7 +2,7 @@
 
 ## Overview
 
-The trait solver resolves trait constraints and propagates type constraints through the expression graph. It is the engine behind Nitrate's Hindley-Milner type inference, monomorphization, and refinement type checking. The solver operates as part of the `nitrate_hir_solve` crate.
+The trait solver resolves type constraints and propagates type information through the expression graph. It is the engine behind Nitrate's Hindley-Milner type inference, monomorphization, and refinement type checking. The solver operates as part of the `nitrate_hir_solve` crate, serving as the core analysis pass that transforms unresolved HIR (with `Inferred` type variables and `GenericParam` references) into fully resolved, concrete type assignments ready for validation and code generation.
 
 ## Architecture
 
@@ -12,22 +12,7 @@ The trait solver resolves trait constraints and propagates type constraints thro
 
 ## The Solver Structure
 
-```rust
-pub(crate) struct Solver<'m> {
-    // Per-value-id type constraints
-    constraints: HashMap<ValueId, HashSet<TypeConstraint>>,
-    // Mutable reference to symbol table
-    m: &'m mut SymbolTab,
-    // Accumulated type errors
-    errors: HashSet<TypeErr>,
-    // The return type of the current function
-    function_return_type: Option<TypeId>,
-    // Counter for naming monomorphized copies
-    mono_counter: u32,
-    // Dedup cache: (generic_function_index, sorted_type_args) → monomorphized FunctionId
-    mono_cache: HashMap<(usize, Vec<(u32, TypeId)>), FunctionId>,
-}
-```
+The `Solver` struct maintains per-expression type constraints, a mutable symbol table reference for registering monomorphized copies, accumulated error state, the current function's return type, a monotonically increasing counter for naming monomorphized functions, and a deduplication cache that prevents redundant generic instantiations.
 
 ## Type Constraints
 
@@ -37,58 +22,15 @@ pub(crate) enum TypeConstraint {
 }
 ```
 
-Currently, all constraints are equality constraints. Each expresses that a value's type must equal a specific `TypeId`.
-
-## Node Actions
-
-```rust
-pub(crate) enum NodeAction {
-    NoChange,              // Keep the current value as-is
-    Replace(Value),        // Replace with a new value (e.g., resolved literal)
-}
-```
+Currently, all constraints are equality constraints — each states that a value's type must equal a specific `TypeId`. This simple constraint system is sufficient for Hindley-Milner inference because all type relationships in the base system are equality-based. Future extensions could add subtyping constraints for variance or trait bound constraints for more expressive dispatch.
 
 ## Constraint Propagation
 
-The solver propagates constraints through the expression tree:
-
-### Binary Operations
-
-```rust
-Binary { left, op, right }:
-    // Propagate parent type constraints to children
-    // For arithmetic ops: both operands have the same type as the result
-    // For comparison ops: operands have the same type, result is Bool
-    // For Refine types: propagate the base type
-```
-
-### Lists/Arrays
-
-```rust
-List { elements }:
-    // If one element has a concrete type, propagate to inferred siblings
-    // If parent constraint is Array(T, N) or SliceRef(T), propagate T to elements
-```
-
-### Conditionals
-
-```rust
-If { condition, true_branch, false_branch }:
-    // Condition must be Bool
-    // Both branches must have the same type (unified)
-```
-
-### Calls
-
-```rust
-Call { callee, args }:
-    // For generic callees: infer type args, monomorphize
-    // For non-generic callees: propagate parameter types to arguments
-```
+The solver propagates constraints through the expression tree by visiting each node and extending child constraints based on parent constraints. For binary operations, arithmetic operands inherit the result type while comparison operands must match but produce `Bool`. For lists, concrete element types are propagated to inferred siblings. For calls, parameter types from the callee are propagated to arguments, enabling inference of argument types from the function signature.
 
 ## Fixed-Point Iteration
 
-The solver uses a fixed-point loop for each function:
+The solver uses a fixed-point loop for each function, repeatedly visiting all block elements until constraint accumulation reaches a steady state:
 
 ```rust
 loop {
@@ -102,41 +44,19 @@ loop {
 }
 ```
 
-This ensures:
-
-1. Transitive constraint propagation
-2. Nested monomorphization detection
-3. Inferred type variable resolution
+This ensures transitive constraint propagation (constraints flow through intermediate values), nested monomorphization detection (inner generics resolved before outer), and inference variable resolution (literals constrained by their usage context).
 
 ## Monomorphization
 
-When a generic function call is detected:
-
-1. **Infer type arguments**: Match actual argument types against parameter types containing `GenericParam`
-2. **Clone and substitute**: Clone the generic function, replace all `GenericParam` with concrete types
-3. **Cache and register**: Store in `mono_cache` and register in symbol table
-4. **Redirect**: Replace the call site's callee with the monomorphized copy
+When a generic function call is detected, the solver infers type arguments by matching actual argument types against parameter types containing `GenericParam`, clones the generic function and applies type substitution, caches the monomorphized copy in `mono_cache` and registers it in the symbol table, and redirects the call site's callee to the monomorphized copy.
 
 ## Refinement Type Checking
 
-The solver tracks value bounds through arithmetic operations:
-
-- For `BinaryOp::Add`: result bounds = [a_min + b_min, a_max + b_max]
-- For `BinaryOp::Sub`: result bounds = [a_min - b_max, a_max - b_min]
-- For `BinaryOp::Mul`: result bounds = [min(a*b), max(a*b)] across all combinations
-- etc.
-
-When a result is assigned to a refinement type, the computed bounds are checked against the refinement range.
+The solver tracks value bounds through arithmetic operations: addition bounds are the sum of min and max; subtraction bounds account for the range of both operands; multiplication evaluates all four combinations of min/max products. When a result is assigned to a refinement type, the computed bounds are checked against the declared refinement range, producing errors if values could fall outside the valid range.
 
 ## Error Accumulation
 
-Errors are stored in a `HashSet<TypeErr>` for deduplication:
-
-- `IntegerLiteralUnsatisfiable`
-- `IntegerLiteralOutsizeRange`
-- `FloatLiteralUnsatisfiable`
-- `IntegerLiteralOutOfRefinementBounds`
-- `OperationResultOutOfRefinementBounds`
+Errors are stored in a `HashSet<TypeErr>` for deduplication, preventing multiple identical error reports for the same type mismatch.
 
 ## Integration
 

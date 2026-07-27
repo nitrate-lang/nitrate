@@ -1,65 +1,54 @@
-# Translation Pipeline
+# Translation Pipeline Orchestration
 
 ## Overview
 
-The translation pipeline orchestrates the transformation of source code from tokens to LLVM IR. It connects all the individual compilation stages into a coherent, configurable pipeline. The `nitrate_translation` crate serves as the root of the translation subsystem, re-exporting all sub-crate public APIs and providing the top-level `TranslationOptions` configuration.
+The translation pipeline orchestrates the transformation of source code from tokens to LLVM IR. It connects all individual compilation stages into a coherent, configurable pipeline that can operate in different modes depending on the user's request. The `nitrate_translation` crate serves as the root of the translation subsystem, re-exporting all sub-crate public APIs and providing the top-level `TranslationOptions` configuration that controls how the pipeline operates.
+
+The pipeline is designed around the principle of progressive lowering: each stage transforms the input into a representation that is closer to machine code while preserving the semantic content of the original program. The stages are sequenced so that earlier stages perform purely syntactic transformations (lexing, parsing), middle stages perform semantic analysis (resolution, type inference), and later stages perform code generation and optimization.
 
 ## Architecture
 
 **Crate**: `nitrate_translation`  
 **Key types**: `TranslationOptions`, `TranslationOptionsBuilder`  
-**Re-exports**: All HIR sub-crates, parser, lexer, resolver, LLVM bindings
+**Re-exports**: All HIR sub-crates (`nitrate_hir`, `nitrate_hir_from_tree`, `nitrate_hir_solve`, `nitrate_hir_validate`, `nitrate_hir_get_type`, `nitrate_hir_mangle`, `nitrate_hir_evaluate`, `nitrate_hir_dump`), the parser (`nitrate_tree_parse`), lexer (`nitrate_token_lexer`), resolver (`nitrate_tree_resolve`), LLVM bindings (`nitrate_llvm`, `nitrate_llvm_from_hir`), and supporting infrastructure (`nitrate_token`, `nitrate_tree`, `nitrate_nstring`)
 
 ## Pipeline Components
 
-The translation pipeline is composed of these stages, each implemented as a separate crate:
+The translation pipeline is composed of 16 sub-crates, each implementing one stage of the compilation process:
 
 ```
-nitrate_translation (orchestrator)
-├── nitrate_token              (token type definitions)
-├── nitrate_token_lexer        (source → tokens)
-├── nitrate_tree               (parse tree / AST types)
-├── nitrate_tree_parse         (tokens → parse tree)
-├── nitrate_tree_resolve       (parse tree → resolved parse tree)
-├── nitrate_nstring            (interned string system)
-├── nitrate_hir                (HIR types, store, passes)
-├── nitrate_hir_from_tree      (resolved parse tree → HIR)
-├── nitrate_hir_solve          (HIR → solved HIR, type inference)
-├── nitrate_hir_get_type       (type determination for values)
-├── nitrate_hir_validate       (HIR → validated HIR)
-├── nitrate_hir_mangle         (name mangling)
-├── nitrate_hir_evaluate       (constant evaluation)
-├── nitrate_hir_dump           (HIR pretty-printing)
-├── nitrate_llvm               (LLVM context wrapper)
-└── nitrate_llvm_from_hir      (validated HIR → LLVM IR)
+nitrate_translation (orchestrator crate - coordinates all stages)
+├── nitrate_token              (Token type definitions - the output of lexing)
+├── nitrate_token_lexer        (Source bytes → Token stream)
+├── nitrate_tree               (Parse tree / AST type definitions)
+├── nitrate_tree_parse         (Token stream → Parse tree/AST)
+├── nitrate_tree_resolve       (Parse tree → Resolved parse tree with symbol table)
+├── nitrate_nstring            (Interned string system - NString)
+├── nitrate_hir                (HIR types, Store, Pass infrastructure)
+├── nitrate_hir_from_tree      (Resolved parse tree → HIR in Store)
+├── nitrate_hir_solve          (HIR → Solved HIR with type inference + monomorphization)
+├── nitrate_hir_get_type       (HirGetType trait for determining expression types)
+├── nitrate_hir_validate       (HIR → Validated HIR with ValidHir wrapper)
+├── nitrate_hir_mangle         (Name mangling for LLVM linkage names)
+├── nitrate_hir_evaluate       (Constant evaluation for compile-time expressions)
+├── nitrate_hir_dump           (HIR pretty-printing for debugging)
+├── nitrate_llvm               (LLVM context wrapper and type factories)
+└── nitrate_llvm_from_hir      (Validated HIR → LLVM IR module)
 ```
 
 ## TranslationOptions
 
-The `TranslationOptions` struct configures the translation pipeline:
+The `TranslationOptions` struct configures the translation pipeline's behavior:
 
 ```rust
 pub struct TranslationOptions {
-    // Which optimization level to use (0-3)
-    pub optimization_level: u8,
-
-    // Whether to generate debug information
-    pub debug_info: bool,
-
-    // Target triple (e.g., "x86_64-unknown-linux-gnu")
-    pub target_triple: Option<String>,
-
-    // Whether to emit LLVM IR instead of machine code
-    pub emit_llvm_ir: bool,
-
-    // Whether to emit assembly instead of object code
-    pub emit_assembly: bool,
-
-    // Additional LLVM pass options
-    pub llvm_options: Vec<String>,
-
-    // Paths for output files
-    pub output_path: Option<PathBuf>,
+    pub optimization_level: u8,       // 0-3, controls LLVM optimization
+    pub debug_info: bool,              // Generate DWARF debug information
+    pub target_triple: Option<String>, // e.g., "x86_64-unknown-linux-gnu"
+    pub emit_llvm_ir: bool,            // Emit .ll file instead of object file
+    pub emit_assembly: bool,           // Emit .s assembly file instead of object file
+    pub llvm_options: Vec<String>,     // Additional LLVM pass options
+    pub output_path: Option<PathBuf>,  // Override default output location
 }
 ```
 
@@ -75,139 +64,31 @@ let options = TranslationOptionsBuilder::new()
 
 ## Data Flow Through the Pipeline
 
-```
-Input: Source file(s) + package manifest (no3.xml)
+The pipeline processes source code through 10 sequential stages, each of which transforms the data into a progressively lower-level representation:
 
-Step 1: Load source files
-    ├── Read .nit files as byte slices
-    ├── Assign FileId to each file
-    └── Create CompilerLog for error accumulation
+**Stage 1 — Source Loading**: Read `.nit` files from the package's `src/` directory as byte slices. Each file is assigned a unique `FileId` for consistent source location tracking. A `CompilerLog` instance is created to accumulate diagnostics throughout the entire pipeline. The package manifest (`no3.xml`) is also loaded during this stage to determine the package name and dependencies.
 
-Step 2: Lexical Analysis
-    ├── Create Lexer for each source file
-    ├── Produce token stream per file
-    └── Report lexer errors to CompilerLog
+**Stage 2 — Lexical Analysis**: Create a `Lexer` for each source file. The lexer reads source bytes and produces a flat stream of `AnnotatedToken` values, each with precise source position information. Lexer errors (invalid tokens, malformed literals) are reported to the `CompilerLog`.
 
-Step 3: Syntactic Parsing
-    ├── Create Parser for each token stream
-    ├── Produce Module (parse tree) per file
-    └── Report parser errors to CompilerLog
+**Stage 3 — Syntactic Parsing**: Create a `Parser` for each token stream. The parser uses recursive-descent parsing with precedence climbing to build a `Module` — the top-level AST node containing all items (functions, structs, enums, etc.) declared in the file. Parser errors (grammar violations, missing tokens) are reported to the `CompilerLog`.
 
-Step 4: Name Resolution
-    ├── Resolve imports (use declarations)
-    ├── Resolve paths to fully qualified names
-    ├── Build symbol table with preliminary entries
-    └── Report resolution errors to CompilerLog
+**Stage 4 — Name Resolution**: Process `use` declarations and resolve all name paths to their fully qualified equivalents. The resolver builds a `SymbolTab` that maps names to their declarations. Resolution errors (unknown names, ambiguous references, cyclic imports) are reported.
 
-Step 5: HIR Lowering
-    ├── Create Store for compilation session
-    ├── Set up TLS storage via using_storage()
-    ├── Lower each resolved Module to HIR items
-    ├── Inter types in TypeStore
-    ├── Store value expressions in ExprValueStore
-    └── Report lowering errors to CompilerLog
+**Stage 5 — HIR Lowering**: Create the `Store` for the compilation session and set up TLS storage via `using_storage()`. The lowerer transforms each resolved `Module` into HIR items, interning types in `TypeStore` and storing value expressions in `ExprValueStore`. Lowering errors (invalid type expressions, unresolved symbols) are reported.
 
-Step 6: Type Solving (Hindley-Milner)
-    ├── For each function: run fixed-point solver
-    ├── Resolve inferred types
-    ├── Monomorphize generic instantiations
-    ├── Register monomorphized functions in symbol table
-    └── Report type errors to CompilerLog
+**Stage 6 — Type Solving**: Run the Hindley-Milner fixed-point solver for each function. The solver resolves `Inferred` and `InferredInteger`/`InferredFloat` type variables through constraint propagation, monomorphizes generic function instantiations, and registers the resulting concrete functions in the symbol table. Type errors (mismatches, unsatisfiable constraints, refinement violations) are reported.
 
-Step 7: HIR Validation
-    ├── Walk entire HIR tree
-    ├── Validate items, expressions, and types
-    ├── Produce ValidHir wrapper
-    └── Report validation errors to CompilerLog
+**Stage 7 — HIR Validation**: Walk the entire HIR tree to verify that all `Inferred` types have been resolved, all `GenericParam` instances have been substituted, control flow is valid, and all field/index accesses target valid types. Successful validation produces a `ValidHir<Module>` wrapper.
 
-Step 8: Name Mangling
-    ├── For each function: compute mangled name
-    ├── Encode package name, function name, type signature
-    └── Store mangled name in Function::mangled_name
+**Stage 8 — Name Mangling**: Compute deterministic LLVM linkage names for each function and global variable by encoding the package name, symbol name, and type signature into a compact string format.
 
-Step 9: LLVM Code Generation
-    ├── Create LLVMContext
-    ├── Generate LLVM Module from validated HIR
-    ├── Verify LLVM module
-    └── Output to object file, assembly, or LLVM IR
+**Stage 9 — LLVM Code Generation**: Create an `LLVMContext` and generate an LLVM `Module` from the validated HIR. The codegen runs three passes: global variable generation, function declarations, and function definitions. The resulting LLVM module is verified for correctness.
 
-Step 10: Optimization (LLVM)
-    ├── Run ModuleOptimizer with configured optimization level
-    ├── Apply LLVM optimization passes
-    └── Output the optimized module
-```
+**Stage 10 — Optimization and Output**: Run the `ModuleOptimizer` with the configured optimization level. The optimized module is then emitted as an object file (`.o`), assembly file (`.s`), or LLVM IR text (`.ll`) depending on the compilation flags.
 
-## Pass Manager Integration
+## Error Handling Between Stages
 
-The translation pipeline uses the `Pass` trait and `PassManager` from `nitrate_hir`:
-
-```rust
-pub trait Pass<T> {
-    fn run(&mut self, input: T) -> T;
-}
-
-pub struct PassManager<T> {
-    passes: Vec<Box<dyn Pass<T>>>,
-}
-```
-
-The pipeline can be extended by registering additional passes:
-
-```rust
-let mut pass_manager = PassManager::new();
-pass_manager.add_pass(Box::new(LoweringPass::new(options)));
-pass_manager.add_pass(Box::new(SolvingPass::new(options)));
-pass_manager.add_pass(Box::new(ValidationPass::new(options)));
-let result = pass_manager.run(input);
-```
-
-## Compilation Modes
-
-The translation pipeline supports several modes:
-
-### Full Compilation
-
-```
-source → tokens → AST → resolved AST → HIR → solved HIR → validated HIR → LLVM IR → object file
-```
-
-Used for `no3 build` and `no3 run`.
-
-### Check-Only
-
-```
-source → tokens → AST → resolved AST → HIR → solved HIR → validated HIR
-```
-
-Used for `no3 check` — validates code without producing output.
-
-### Lex-Only
-
-```
-source → tokens
-```
-
-Used for `no3 lex` — debugging the lexer.
-
-### Parse-Only
-
-```
-source → tokens → AST
-```
-
-Used for `no3 parse` — debugging the parser.
-
-### LLVM IR Emission
-
-```
-source → tokens → AST → resolved AST → HIR → solved HIR → validated HIR → LLVM IR
-```
-
-Used for `no3 build --emit-llvm` — outputs LLVM IR for inspection.
-
-## Error Handling
-
-The pipeline checks for errors at each stage before proceeding:
+The pipeline checks for errors at each stage before proceeding to the next:
 
 ```rust
 fn compile(options: &TranslationOptions) -> Result<(), Vec<Diagnostic>> {
@@ -219,70 +100,38 @@ fn compile(options: &TranslationOptions) -> Result<(), Vec<Diagnostic>> {
     let ast = parse_tokens(tokens, &log)?;
     if log.has_errors() { return Err(log.errors()); }
 
-    let resolved_ast = resolve_names(ast, &log)?;
-    if log.has_errors() { return Err(log.errors()); }
-
-    let hir = lower_to_hir(resolved_ast, &log)?;
-    if log.has_errors() { return Err(log.errors()); }
-
-    let solved_hir = solve_types(hir, &log)?;
-    if log.has_errors() { return Err(log.errors()); }
-
-    let validated_hir = validate_hir(solved_hir, &log)?;
-    if log.has_errors() { return Err(log.errors()); }
-
-    let llvm_module = generate_code(validated_hir, options)?;
-    emit_output(llvm_module, options)?;
-
-    Ok(())
+    // ... continues through each stage
 }
 ```
 
-## Integration with Driver
+This pattern ensures that the pipeline stops as soon as a stage produces errors, because subsequent stages depend on correct output from earlier stages. However, within each stage, as many errors as possible are collected before reporting, maximizing the information available to the programmer.
 
-The driver subsystem (`nitrate_driver`) invokes the translation pipeline based on user commands. The driver:
+## Compilation Modes
 
-1. Parses command-line arguments
-2. Discovers and loads the package manifest
-3. Finds source files
-4. Creates the `CompilerLog`
-5. Creates the `TranslationOptions`
-6. Invokes the appropriate compilation mode
-7. Handles output (files, stdout)
-8. Reports diagnostics to the user
+The pipeline supports different modes by stopping at different stages:
 
-## Extension Points
+- **Full compilation** (stages 1-10): Used for `no3 build` and `no3 run`
+- **Check-only** (stages 1-7): Used for `no3 check` — validates code without producing output
+- **Lex-only** (stage 2): Used for `no3 lex` — debugging the lexer by inspecting the token stream
+- **Parse-only** (stages 2-3): Used for `no3 parse` — debugging the parser by inspecting the AST
+- **LLVM IR emission** (stages 1-9): Used for `no3 build --emit-llvm` — outputs LLVM IR for inspection
 
-The translation pipeline is designed for extensibility:
+## Pass Manager Integration
 
-- **Additional passes**: New passes can be added to the `PassManager`
-- **Custom lowering**: Alternative lowerers can produce different IRs
-- **Alternative backends**: While LLVM is the primary backend, the `ValidHir` boundary provides a clean interface for alternative backends
-- **Plugin system**: Future plugins could intercept or modify the pipeline at any stage
+The pipeline uses the `Pass` trait and `PassManager` from `nitrate_hir` for extensibility. New passes can be added to the pipeline without modifying existing code:
+
+```rust
+let mut pass_manager = PassManager::new();
+pass_manager.add_pass(Box::new(LoweringPass::new(options)));
+pass_manager.add_pass(Box::new(SolvingPass::new(options)));
+pass_manager.add_pass(Box::new(ValidationPass::new(options)));
+let result = pass_manager.run(input);
+```
 
 ## Design Rationale
 
-### Why a Modular Pipeline?
+**Why a modular pipeline?** The modular approach provides testability (each stage can be tested independently with its own test fixtures), reusability (stages can be combined in different ways for different compilation modes), parallelism potential (independent stages like lexing different files can be parallelized in the future), and clear boundaries with well-defined input and output types.
 
-The modular pipeline approach provides:
+**Why error accumulation between stages?** Accumulating errors before proceeding ensures maximum error discovery in a single pass. Later stages may still be able to work with partial results from earlier stages (for example, the parser can produce a partial AST even if the lexer produced some errors).
 
-1. **Testability**: Each stage can be tested independently
-2. **Reusability**: Stages can be combined in different ways for different compilation modes
-3. **Parallelism potential**: Independent stages (like lexing different files) can be parallelized
-4. **Clear boundaries**: Each stage has a well-defined input and output type
-
-### Why Error Accumulation Between Stages?
-
-Accumulating errors before proceeding ensures:
-
-1. **Maximum error discovery**: All errors in the current stage are reported before moving on
-2. **Staged recovery**: Later stages may still work with partial results from earlier stages
-3. **User efficiency**: Multiple issues are reported in a single compiler invocation
-
-### Why the ValidHir Wrapper?
-
-The `ValidHir<T>` wrapper provides a type-level guarantee that the HIR has passed validation:
-
-- Codegen only accepts `ValidHir<Module>`, ensuring validation is never skipped
-- The wrapper can be unwrapped via `into_inner()` after validation
-- The type system enforces the compilation order at compile time
+**Why the ValidHir wrapper?** The `ValidHir<T>` wrapper provides a type-level guarantee that the HIR has passed validation. The codegen entry point accepts only `ValidHir<Module>`, making it impossible to generate code from invalid HIR. This pattern — using the type system to enforce phase ordering — prevents a class of bugs where code is generated from semantically incorrect input.
