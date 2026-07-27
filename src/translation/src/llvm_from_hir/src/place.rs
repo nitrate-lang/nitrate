@@ -3,6 +3,7 @@ use crate::{
     ty::gen_ty,
 };
 
+use core::panic;
 use inkwell::values::PointerValue;
 use nitrate_hir::{StructMemoryLayoutCell, prelude as hir};
 use nitrate_hir_get_type::HirGetType;
@@ -62,6 +63,82 @@ fn gen_place_field_access<'ctx>(
     .unwrap();
 
     gep
+}
+
+fn gen_place_index_access<'ctx>(
+    ctx: &mut CodegenCtx<'ctx, '_, '_, '_, '_>,
+    collection: &hir::Value,
+    index: &hir::Value,
+) -> PointerValue<'ctx> {
+    // Get the collection type to determine if it's an array, slice, or trait-based
+    let collection_type = collection
+        .determine_type(ctx.tab)
+        .expect("Failed to get collection type");
+
+    // First, get a pointer to the collection (the place)
+    let collection_ptr = if let hir::Type::Reference { .. } | hir::Type::Pointer { .. } = &collection_type {
+        // Auto-deref to get the underlying collection
+        let deref_value = hir::Value::Deref {
+            place: collection.clone().into(),
+        };
+        gen_place(ctx, &deref_value)
+    } else {
+        gen_place(ctx, collection)
+    };
+
+    // Get the actual type after deref
+    let actual_type = match &collection_type {
+        hir::Type::Reference { to, .. } | hir::Type::Pointer { to, .. } => to.deref().clone(),
+        _ => collection_type.clone(),
+    };
+
+    match &actual_type {
+        hir::Type::Array {
+            element_type: _element_type,
+            ..
+        }
+        | hir::Type::SliceRef {
+            element_type: _element_type,
+            ..
+        }
+        | hir::Type::SlicePtr {
+            element_type: _element_type,
+            ..
+        } => {
+            let llvm_collection_ty = gen_ty(&actual_type, &mut ctx.into());
+
+            let index_val = gen_rval(ctx, index);
+            let index_int = if index_val.is_int_value() {
+                index_val.into_int_value()
+            } else {
+                panic!("Index must be an integer");
+            };
+
+            let gep = unsafe {
+                // SAFETY: Array/Slice indexing via GEP
+                ctx.bb.build_in_bounds_gep(
+                    llvm_collection_ty,
+                    collection_ptr,
+                    &[ctx.llvm.i32_type().const_int(0, false), index_int],
+                    "index_access_gep",
+                )
+            }
+            .unwrap();
+
+            gep
+        }
+        _ => {
+            // For trait-based Index resolution, we need to call the `index` method
+            // and return a pointer to the result.
+            // For now, we treat it as a rvalue (load the result via method call)
+            // and store it in a temporary alloca to make it a place.
+            let llvm_element_ty = gen_ty(&collection_type, &mut ctx.into());
+            let alloca = ctx.bb.build_alloca(llvm_element_ty, "index_result_place").unwrap();
+            let rv = gen_rval(ctx, collection); // For traits, we just get the rvalue
+            ctx.bb.build_store(alloca, rv).unwrap();
+            alloca
+        }
+    }
 }
 
 fn gen_place_deref<'ctx>(ctx: &mut CodegenCtx<'ctx, '_, '_, '_, '_>, place: &hir::Value) -> PointerValue<'ctx> {
@@ -148,6 +225,10 @@ pub(crate) fn gen_place<'ctx>(
         }
 
         hir::Value::FieldAccess { expr, field_name } => gen_place_field_access(ctx, &expr.borrow(), field_name),
+
+        hir::Value::IndexAccess { collection, index } => {
+            gen_place_index_access(ctx, &collection.borrow(), &index.borrow())
+        }
 
         hir::Value::Deref { place } => gen_place_deref(ctx, &place.borrow()),
 

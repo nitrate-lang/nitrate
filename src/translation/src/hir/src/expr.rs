@@ -454,6 +454,11 @@ pub enum Value {
         id: GlobalVariableId,
     },
 
+    IndexAccess {
+        collection: ValueId,
+        index: ValueId,
+    },
+
     LocalVariableSymbol {
         id: LocalVariableId,
     },

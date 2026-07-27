@@ -671,10 +671,10 @@ pub(crate) fn lower_index_access(
     ctx: &mut Ast2HirCtx,
     log: &CompilerLog,
 ) -> Result<Value, ()> {
-    let _collection: ValueId = lower_expr(index_access.collection, ctx, log)?.into();
-    let _index: ValueId = lower_expr(index_access.index, ctx, log)?.into();
-    log.report(&HirErr::UnimplementedFeature("Index access expressions".into()));
-    Err(())
+    let collection: ValueId = lower_expr(index_access.collection, ctx, log)?.into();
+    let index: ValueId = lower_expr(index_access.index, ctx, log)?.into();
+
+    Ok(Value::IndexAccess { collection, index })
 }
 
 pub(crate) fn lower_field_access(

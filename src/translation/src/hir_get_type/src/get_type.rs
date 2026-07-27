@@ -1,6 +1,7 @@
 use std::ops::Deref;
 
 use nitrate_hir::prelude::*;
+use nitrate_nstring::NString;
 
 #[derive(Debug)]
 pub enum TypeInferenceError {
@@ -134,6 +135,28 @@ impl HirGetType for Value {
             Value::Unary { op, operand: expr } => match op {
                 UnaryOp::Add | UnaryOp::Sub | UnaryOp::Not => expr.borrow().determine_type(ctx),
             },
+
+            Value::IndexAccess { collection, index: _ } => {
+                let collection = collection.borrow();
+                let collection_type = collection.determine_type(ctx)?;
+
+                match collection_type {
+                    Type::Array { element_type, .. } => Ok((*element_type).clone()),
+                    Type::SliceRef { element_type, .. } => Ok((*element_type).clone()),
+                    Type::SlicePtr { element_type, .. } => Ok((*element_type).clone()),
+                    // For trait-based Index resolution, look up the `index` method's return type
+                    _ => {
+                        // Try to find the `index` method on the type
+                        let collection_type_id = collection_type.clone().into();
+                        if let Some(method) = ctx.get_method(&collection_type_id, &NString::from("index")) {
+                            Ok(method.borrow().return_type.deref().clone())
+                        } else {
+                            // Return the collection type itself if we can't resolve further
+                            Ok(collection_type)
+                        }
+                    }
+                }
+            }
 
             Value::FieldAccess { expr, field_name } => {
                 let expr = expr.borrow();

@@ -894,6 +894,7 @@ name = "nitrate_hir_get_type"
 version = "0.1.0"
 dependencies = [
  "nitrate_hir",
+ "nitrate_nstring",
 ]
 
 [[package]]

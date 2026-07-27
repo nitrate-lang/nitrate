@@ -1955,6 +1955,32 @@ pub(crate) fn gen_rval<'ctx>(
             value,
         } => gen_rval_enum_variant(ctx, enum_def, variant, &value.borrow()),
 
+        hir::Value::IndexAccess { collection, index } => {
+            // Generate the place (pointer) to the indexed element, then load it
+            let index_place = gen_place(
+                ctx,
+                &hir::Value::IndexAccess {
+                    collection: collection.clone(),
+                    index: index.clone(),
+                },
+            );
+            let element_type = collection.borrow().determine_type(ctx.tab).unwrap();
+            let (_, element_type) = match &element_type {
+                hir::Type::Array { element_type, .. } => ((), element_type.deref().clone()),
+                hir::Type::SliceRef { element_type, .. } => ((), element_type.deref().clone()),
+                hir::Type::SlicePtr { element_type, .. } => ((), element_type.deref().clone()),
+                _ => {
+                    // Fallback to the collection type
+                    ((), element_type)
+                }
+            };
+            let llvm_element_ty = gen_ty(&element_type, &mut ctx.into());
+            ctx.bb
+                .build_load(llvm_element_ty, index_place, "index_load")
+                .unwrap()
+                .into()
+        }
+
         hir::Value::FieldAccess { expr, field_name } => gen_rval_field_access(ctx, &expr.borrow(), field_name),
 
         hir::Value::Assign { place, value } => gen_rval_assign(ctx, &place.borrow(), &value.borrow()),

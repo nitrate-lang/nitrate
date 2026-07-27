@@ -1,7 +1,10 @@
 use crate::{HirEvaluate, Unwind};
 use nitrate_hir::prelude::*;
 use ordered_float::OrderedFloat;
-use std::ops::{Add, BitAnd, BitOr, BitXor, Deref, Div, Mul, Neg, Not, Rem, Shl, Shr, Sub};
+use std::{
+    ops::{Add, BitAnd, BitOr, BitXor, Deref, Div, Mul, Neg, Not, Rem, Shl, Shr, Sub},
+    unimplemented,
+};
 
 enum CastLitBridge {
     Unit,
@@ -402,6 +405,14 @@ impl HirEvaluate for Value {
                         Err(LiteralNotError::TypeError) => Err(Unwind::TypeError),
                     },
                 }
+            }
+
+            Value::IndexAccess {
+                collection: _,
+                index: _,
+            } => {
+                // TODO: evaluate index access expressions
+                unimplemented!()
             }
 
             Value::FieldAccess {

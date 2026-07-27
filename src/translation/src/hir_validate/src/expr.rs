@@ -195,6 +195,14 @@ impl ValidateHirValue for Value {
                 Ok(())
             }
 
+            Value::IndexAccess {
+                collection: _,
+                index: _,
+            } => {
+                // TODO: verify index access expression
+                Ok(())
+            }
+
             Value::FunctionSymbol { .. } => Ok(()),
             Value::GlobalVariableSymbol { .. } => Ok(()),
             Value::LocalVariableSymbol { .. } => Ok(()),

@@ -197,6 +197,7 @@ impl<'m> Solver<'m> {
             | Value::EnumVariant { .. }
             | Value::Binary { .. }
             | Value::Unary { .. }
+            | Value::IndexAccess { .. }
             | Value::FieldAccess { .. }
             | Value::Assign { .. }
             | Value::Deref { .. }
@@ -297,6 +298,44 @@ impl<'m> Solver<'m> {
                     self.constraints.entry(operand.clone()).or_default().extend(constraints);
                 }
                 self.visit(operand);
+            }
+
+            Value::IndexAccess { collection, index } => {
+                // Constrain the index to be usize-compatible
+                self.constraints
+                    .entry(index.clone())
+                    .or_default()
+                    .insert(TypeConstraint::Equal(Type::USize.into()));
+                // Propagate constraints from the IndexAccess result to the collection's element type
+                if let Some(constraints) = self.constraints.get(e).cloned() {
+                    // Determine the collection type to find the element type
+                    if let Ok(collection_type) = collection.borrow().determine_type(self.m) {
+                        let element_type_id = match &collection_type {
+                            Type::Array { element_type, .. }
+                            | Type::SliceRef { element_type, .. }
+                            | Type::SlicePtr { element_type, .. } => Some(*element_type),
+                            _ => None,
+                        };
+                        if let Some(element_type_id) = element_type_id {
+                            // Constrain the IndexAccess result to the element type
+                            self.constraints
+                                .entry(e.clone())
+                                .or_default()
+                                .insert(TypeConstraint::Equal(element_type_id));
+                            // If the collection is a list literal, constrain its elements
+                            if let Value::List { elements } = &*collection.borrow() {
+                                for element in elements {
+                                    self.constraints
+                                        .entry(element.clone())
+                                        .or_default()
+                                        .extend(constraints.clone());
+                                }
+                            }
+                        }
+                    }
+                }
+                self.visit(collection);
+                self.visit(index);
             }
 
             Value::FieldAccess { expr, .. } => {

@@ -1,6 +1,7 @@
 use crate::{Dump, DumpContext, write_indent};
 use nitrate_hir::prelude::*;
 use nitrate_token::{escape_bstring, escape_string};
+use std::write;
 
 impl Dump for BlockElement {
     fn dump(&self, ctx: &mut DumpContext, o: &mut dyn std::fmt::Write) -> Result<(), std::fmt::Error> {
@@ -193,6 +194,14 @@ impl Dump for Value {
                 )?;
                 expr.borrow().dump(ctx, o)?;
                 write!(o, ")")
+            }
+
+            Value::IndexAccess { collection, index } => {
+                write!(o, "(")?;
+                collection.borrow().dump(ctx, o)?;
+                write!(o, "[")?;
+                index.borrow().dump(ctx, o)?;
+                write!(o, "])")
             }
 
             Value::FieldAccess {
