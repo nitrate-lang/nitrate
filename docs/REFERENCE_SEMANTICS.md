@@ -47,7 +47,26 @@ The HIR represents borrows explicitly through `Value::Borrow { exclusive, mutabl
 
 ## Borrow Checking
 
-The solver performs basic borrow checking: exclusive borrows prevent any other access to the borrowed place, mutable borrows require the borrowed place to be mutable, shared read-only borrows can coexist with each other, and assignment to a borrowed place is restricted while a borrow is active. Returning a reference from a function requires that the reference's lifetime is not longer than any of the input references' lifetimes.
+Borrow checking is a dedicated pass that runs after type inference (the solver) but before validation and code generation. The borrow checker operates as a dataflow analysis over a function body, tracking:
+
+1. **Place decomposition**: Converting HIR value expressions into `Place` paths that represent memory location paths (e.g., `x.f.g` becomes `Projection(Projection(Local(x), .f), .g)`)
+
+2. **Active borrow tracking**: Each borrow expression (`&expr`, `&mut expr`) is recorded as an active borrow on the borrowed place. The borrow remains active for its lexical scope.
+
+3. **Conflict detection**: At each program point, the checker verifies:
+   - **Aliasing XOR Mutation**: No write can occur while any shared borrow is active; no read or write can occur while a mutable/exclusive borrow is active
+   - **Use-after-move**: Values cannot be used after they have been moved
+   - **Use-before-initialization**: Variables must be initialized before use
+   - **Mutable borrow targets**: Mutable borrows require the target to be mutable
+   - **Assignment to borrowed places**: Writing to a place while it is borrowed
+   - **Returning local references**: References to local variables cannot be returned
+
+4. **Control flow handling**:
+   - **if/else**: Borrows from both branches are merged at the join point
+   - **while/loop**: Borrows created inside a loop must be released before the next iteration
+   - **return**: All borrows of local variables are invalidated on return
+
+The borrow checker is designed to be conservatively sound: it may reject valid programs (false positives) but will never accept invalid programs (no false negatives). This is the same trade-off Rust made in its lexical borrow checker (pre-NLL). A future upgrade to full NLL (Non-Lexical Lifetimes) region inference will reduce false positives.
 
 ## Integration
 

@@ -116,18 +116,6 @@ The pipeline supports different modes by stopping at different stages:
 - **Parse-only** (stages 2-3): Used for `no3 parse` — debugging the parser by inspecting the AST
 - **LLVM IR emission** (stages 1-9): Used for `no3 build --show-llvm` — outputs LLVM IR for inspection
 
-## Pass Manager Integration
-
-The pipeline uses the `Pass` trait and `PassManager` from `nitrate_hir` for extensibility. New passes can be added to the pipeline without modifying existing code:
-
-```rust
-let mut pass_manager = PassManager::new();
-pass_manager.add_pass(Box::new(LoweringPass::new(options)));
-pass_manager.add_pass(Box::new(SolvingPass::new(options)));
-pass_manager.add_pass(Box::new(ValidationPass::new(options)));
-let result = pass_manager.run(input);
-```
-
 ## Design Rationale
 
 **Why a modular pipeline?** The modular approach provides testability (each stage can be tested independently with its own test fixtures), reusability (stages can be combined in different ways for different compilation modes), parallelism potential (independent stages like lexing different files can be parallelized in the future), and clear boundaries with well-defined input and output types.

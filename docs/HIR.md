@@ -16,7 +16,7 @@ Every expression and binding in the HIR carries resolved type information. Durin
 
 ### 3. Analysis Target
 
-Type checking, constraint solving, refinement type verification, and semantic validation all operate on the HIR. The HIR's structure is designed to make these analyses efficient: types are interned for O(1) comparison, values are stored in a traversable graph where every expression references its sub-expressions through `ValueId` handles, and control flow is explicitly represented through block structures with well-defined entry and exit points.
+Type checking, constraint solving, refinement type verification, and semantic validation all operate on the HIR. The HIR's structure is designed to make these analyses efficient: types are interned for O(1) comparison, values are stored in a traversable graph where every expression references its sub-expressions through `ValueId` handles, and control flow is explicitly represented through block structures with well-defined entry points.
 
 ### 4. Monomorphization Boundary
 
@@ -44,7 +44,7 @@ The validated, solved HIR drives LLVM IR generation. The codegen traverses the H
 
 **Key types**: `Store` (the central data repository), type handles (`TypeId`, `ValueId`, `FunctionId`, `StructDefId`, `EnumDefId`, `TraitId`, `ModuleId`, `BlockId`, `LocalVariableId`, `ParameterId`, `GlobalVariableId`, `TypeAliasDefId`), the `Type` enum, the `Value` enum, item definition structs (`Function`, `StructDef`, `EnumDef`, `Trait`, `Module`, `TypeAliasDef`, `GlobalVariable`, `LocalVariable`, `Parameter`, `Block`).
 
-**Key files**: `store.rs` (storage architecture and TLS pattern), `ty.rs` (Type enum with all 37+ type variants), `expr.rs` (Value enum with all 30+ expression variants), `item.rs` (item definition structs), `pass.rs` (Pass trait and PassManager), `table.rs` (symbol table integration).
+**Key files**: `store.rs` (storage architecture and TLS pattern), `ty.rs` (Type enum with all 37+ type variants), `expr.rs` (Value enum with all 30+ expression variants), `item.rs` (item definition structs), `table.rs` (symbol table integration).
 
 ## Storage Architecture in Detail
 

@@ -1,4 +1,4 @@
-use std::ops::Deref;
+use std::{ops::Deref, write};
 
 use serde::{Deserialize, Serialize};
 
@@ -47,6 +47,7 @@ pub enum DiagnosticGroupId {
     Hir = 4,
     Type = 5,
     Semantic = 6,
+    BorrowCheck = 7,
 }
 
 impl std::fmt::Display for DiagnosticGroupId {
@@ -59,6 +60,7 @@ impl std::fmt::Display for DiagnosticGroupId {
             DiagnosticGroupId::Hir => write!(f, "Hir"),
             DiagnosticGroupId::Type => write!(f, "Type"),
             DiagnosticGroupId::Semantic => write!(f, "Semantic"),
+            DiagnosticGroupId::BorrowCheck => write!(f, "BorrowCheck"),
         }
     }
 }

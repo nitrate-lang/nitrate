@@ -1,0 +1,14 @@
+[package]
+name = "nitrate_hir_borrow_check"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+nitrate_diagnosis.workspace = true
+nitrate_hir.workspace = true
+nitrate_hir_get_type.workspace = true
+nitrate_nstring.workspace = true
+
+ordered-float.workspace = true
+thin-vec.workspace = true
+log.workspace = true

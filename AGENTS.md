@@ -117,15 +117,11 @@ The compiler avoids both global mutable state and passing the Store through ever
 
 Rather than aborting on the first error, every compilation stage collects diagnostics in a shared `CompilerLog`. Each stage defines its own structured error types implementing `FormattableDiagnosticGroup`. The pipeline checks for errors between stages, but within each stage, processing continues to maximize error discovery. This enables users to see all issues in a single compilation pass.
 
-### Pattern 3: Pass-Based Architecture
-
-Each compilation stage is structured as a pass over the current IR, defined by the `Pass<T>` trait. The `PassManager` sequences passes, calling each one in order. Several critical passes (most notably the Hindley-Milner solver) use fixed-point iteration: they repeatedly walk the IR until no new transformations are required. This handles transitive constraint propagation, nested monomorphization, and incremental type resolution.
-
-### Pattern 4: Immutable Core with Mutable Edges
+### Pattern 5: Immutable Core with Mutable Edges
 
 Types are immutable, interned, and deduplicated: identical types always produce the same `TypeId`, and handle comparison equals structural comparison. Values and items are stored in `RefCell`-backed append-only vectors that allow interior mutability. This hybrid optimizes the most frequent operation (type comparison) while supporting the mutation patterns required by the solver.
 
-### Pattern 5: Symbol Table as Compilation Hub
+### Pattern 6: Symbol Table as Compilation Hub
 
 Most passes interact with the `SymbolTab`, which provides iteration over all defined symbols (functions, types, globals, methods). The symbol table is built during name resolution, extended during solving (with monomorphized copies), and iterated by codegen. This abstraction allows incremental population without requiring passes to understand symbol storage internals.
 

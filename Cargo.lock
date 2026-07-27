@@ -850,6 +850,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "nitrate_hir_borrow_check"
+version = "0.1.0"
+dependencies = [
+ "log",
+ "nitrate_diagnosis",
+ "nitrate_hir",
+ "nitrate_hir_get_type",
+ "nitrate_nstring",
+ "ordered-float",
+ "thin-vec",
+]
+
+[[package]]
 name = "nitrate_hir_dump"
 version = "0.1.0"
 dependencies = [
@@ -874,6 +887,7 @@ version = "0.1.0"
 dependencies = [
  "nitrate_diagnosis",
  "nitrate_hir",
+ "nitrate_hir_borrow_check",
  "nitrate_hir_evaluate",
  "nitrate_hir_get_type",
  "nitrate_hir_mangle",
@@ -996,6 +1010,7 @@ version = "0.1.0"
 dependencies = [
  "nitrate_diagnosis",
  "nitrate_hir",
+ "nitrate_hir_borrow_check",
  "nitrate_hir_dump",
  "nitrate_hir_evaluate",
  "nitrate_hir_from_tree",

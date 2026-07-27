@@ -13,6 +13,7 @@ nitrate_tree_parse.workspace = true
 nitrate_tree_resolve.workspace = true
 nitrate_hir_from_tree.workspace = true
 nitrate_hir.workspace = true
+nitrate_hir_borrow_check.workspace = true
 nitrate_hir_dump.workspace = true
 nitrate_hir_validate.workspace = true
 nitrate_hir_evaluate.workspace = true
