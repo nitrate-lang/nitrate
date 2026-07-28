@@ -442,7 +442,7 @@ impl<'m> Solver<'m> {
         }
     }
 
-    fn visit_if(&mut self, e: &ValueId, value: &Value) {
+    fn visit_if(&mut self, _e: &ValueId, value: &Value) {
         let Value::If {
             condition,
             true_branch,

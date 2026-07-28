@@ -1,27 +1,6 @@
 use nitrate_hir::{FunctionType, Type, TypeId};
 use nitrate_nstring::NString;
-use nitrate_tree::ByteSpan;
 use std::collections::HashMap;
-
-/// A constraint on a value's type.
-///
-/// Currently all constraints are equality constraints, which is sufficient
-/// for Hindley-Milner-style type inference. Future extensions may add
-/// subtyping or trait bound constraints.
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub(crate) enum TypeConstraint {
-    /// The value must have exactly this type.
-    Equal(TypeId),
-}
-
-/// The action to take after visiting a value node.
-#[derive(Debug)]
-pub(crate) enum NodeAction {
-    /// No change needed; continue visiting children.
-    NoChange,
-    /// Replace this value node with a new one.
-    Replace(nitrate_hir::Value),
-}
 
 /// A substitution maps generic parameter indices to concrete types.
 #[derive(Debug, Clone, Default)]

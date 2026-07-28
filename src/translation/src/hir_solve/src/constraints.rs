@@ -1,6 +1,5 @@
-use std::matches;
-
 use nitrate_hir::{Type, TypeId};
+use std::matches;
 
 /// A constraint on a value's type.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]

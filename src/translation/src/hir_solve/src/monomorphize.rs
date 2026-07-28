@@ -1,4 +1,3 @@
-use crate::constraints::TypeConstraint;
 use crate::solver::Solver;
 use crate::substitution::Substitution;
 use nitrate_hir::{
@@ -9,7 +8,6 @@ use nitrate_hir_get_type::HirGetType;
 use nitrate_nstring::NString;
 use nitrate_tree::ByteSpan;
 use std::collections::BTreeMap;
-use std::collections::HashMap;
 use thin_vec::ThinVec;
 
 /// Cache key for monomorphized structs.
@@ -265,40 +263,6 @@ impl<'m> Solver<'m> {
         // Cache for future identical instantiations
         self.struct_mono_cache.insert(cache_key, mono_id.clone());
         mono_id
-    }
-
-    /// Substitute GenericParam types in a value with concrete types.
-    pub(crate) fn substitute_in_value(&self, value: &Value, subst: &Substitution) -> Value {
-        match value {
-            Value::Cast {
-                value: v, target_type, ..
-            } => {
-                let new_target = subst.apply(target_type);
-                let v_borrowed = v.borrow();
-                let new_v = self.substitute_in_value(&v_borrowed, subst);
-                Value::Cast {
-                    span: ByteSpan::default(),
-                    value: ValueId::from(new_v),
-                    target_type: TypeId::from(new_target),
-                }
-            }
-            Value::StructObject { struct_def, fields, .. } => {
-                let new_fields: ThinVec<(NString, ValueId)> = fields
-                    .iter()
-                    .map(|(name, val_id)| {
-                        let val_borrowed = val_id.borrow();
-                        let new_val = self.substitute_in_value(&val_borrowed, subst);
-                        (name.clone(), ValueId::from(new_val))
-                    })
-                    .collect();
-                Value::StructObject {
-                    span: ByteSpan::default(),
-                    struct_def: struct_def.clone(),
-                    fields: new_fields,
-                }
-            }
-            _ => value.clone(),
-        }
     }
 
     pub(crate) fn monomorphize_function(&mut self, func_id: &FunctionId, subst: &Substitution) -> FunctionId {

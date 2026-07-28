@@ -2,7 +2,6 @@ use nitrate_diagnosis::{DiagnosticGroupId, DiagnosticInfo, FormattableDiagnostic
 use nitrate_hir::{Lit, Type, TypeId};
 use nitrate_hir_dump::Dump;
 use nitrate_tree::ByteSpan;
-use ordered_float::OrderedFloat;
 use std::{format, ops::Deref};
 
 /// Convert a `ByteSpan` into an `Origin` for diagnostic output.
@@ -68,48 +67,6 @@ pub(crate) enum TypeErr {
         true_type: TypeId,
         false_type: TypeId,
     },
-    CannotInferTypeArgs {
-        span: ByteSpan,
-        callee_name: String,
-        reason: String,
-    },
-    GenericArgCountMismatch {
-        span: ByteSpan,
-        expected: usize,
-        provided: usize,
-    },
-    AmbiguousType {
-        span: ByteSpan,
-        name: String,
-        reason: String,
-    },
-    MissingTypeAnnotation {
-        span: ByteSpan,
-        name: String,
-    },
-    UnresolvedInferredType {
-        span: ByteSpan,
-        id: u32,
-        name: Option<String>,
-    },
-    UnboundGenericParam {
-        span: ByteSpan,
-        index: u32,
-        name: String,
-    },
-    StructFieldTypeMismatch {
-        span: ByteSpan,
-        struct_name: String,
-        field_name: String,
-        expected_type: TypeId,
-        actual_type: TypeId,
-    },
-    ArgumentTypeMismatch {
-        span: ByteSpan,
-        parameter_name: String,
-        expected_type: TypeId,
-        actual_type: TypeId,
-    },
     MethodNotFound {
         span: ByteSpan,
         method_name: String,
@@ -130,20 +87,11 @@ impl FormattableDiagnosticGroup for TypeErr {
             TypeErr::IntegerLiteralOutOfRefinementBounds { .. } => 3,
             TypeErr::OperationResultOutOfRefinementBounds { .. } => 4,
             TypeErr::MismatchedBranchTypes { .. } => 5,
-            TypeErr::CannotInferTypeArgs { .. } => 6,
-            TypeErr::GenericArgCountMismatch { .. } => 7,
-            TypeErr::AmbiguousType { .. } => 8,
-            TypeErr::MissingTypeAnnotation { .. } => 9,
-            TypeErr::UnresolvedInferredType { .. } => 10,
-            TypeErr::UnboundGenericParam { .. } => 11,
-            TypeErr::StructFieldTypeMismatch { .. } => 12,
-            TypeErr::ArgumentTypeMismatch { .. } => 13,
             TypeErr::MethodNotFound { .. } => 14,
         }
     }
 
     fn format(&self) -> DiagnosticInfo {
-        use std::string::ToString;
         match self {
             TypeErr::IntegerLiteralOutOfRange {
                 span,
@@ -235,74 +183,6 @@ impl FormattableDiagnosticGroup for TypeErr {
                     "'if' and 'else' branches have incompatible types: `{}` vs `{}`",
                     true_type.to_string(),
                     false_type.to_string()
-                ),
-            },
-            TypeErr::CannotInferTypeArgs {
-                span,
-                callee_name,
-                reason,
-            } => DiagnosticInfo {
-                origin: byte_span_to_origin(*span),
-                message: format!("Cannot infer type arguments for `{}`: {}", callee_name, reason),
-            },
-            TypeErr::GenericArgCountMismatch {
-                span,
-                expected,
-                provided,
-            } => DiagnosticInfo {
-                origin: byte_span_to_origin(*span),
-                message: format!("Expected {} type arguments, but {} were provided", expected, provided),
-            },
-            TypeErr::AmbiguousType { span, name, reason } => DiagnosticInfo {
-                origin: byte_span_to_origin(*span),
-                message: format!("Type of `{}` is ambiguous: {}", name, reason),
-            },
-            TypeErr::MissingTypeAnnotation { span, name } => DiagnosticInfo {
-                origin: byte_span_to_origin(*span),
-                message: format!("Type annotation required for `{}`: cannot infer from context", name),
-            },
-            TypeErr::UnresolvedInferredType { span, id, name } => {
-                let name_str = name.as_deref().unwrap_or("<unnamed>");
-                DiagnosticInfo {
-                    origin: byte_span_to_origin(*span),
-                    message: format!(
-                        "Inferred type variable `{}` (`{}`) could not be resolved to a concrete type",
-                        id, name_str
-                    ),
-                }
-            }
-            TypeErr::UnboundGenericParam { span, index, name } => DiagnosticInfo {
-                origin: byte_span_to_origin(*span),
-                message: format!("Generic parameter `{name}` (index {index}) could not be inferred from usage context"),
-            },
-            TypeErr::StructFieldTypeMismatch {
-                span,
-                struct_name,
-                field_name,
-                expected_type,
-                actual_type,
-            } => DiagnosticInfo {
-                origin: byte_span_to_origin(*span),
-                message: format!(
-                    "Field `{}` of struct `{}` has type `{}`, but the provided expression has type `{}`",
-                    field_name,
-                    struct_name,
-                    expected_type.to_string(),
-                    actual_type.to_string()
-                ),
-            },
-            TypeErr::ArgumentTypeMismatch {
-                span,
-                parameter_name,
-                expected_type,
-                actual_type,
-            } => DiagnosticInfo {
-                origin: byte_span_to_origin(*span),
-                message: format!(
-                    "Argument `{}` has type `{}`, but expected `{}`",
-                    parameter_name,
-                    actual_type.to_string(),
-                    expected_type.to_string()
                 ),
             },
             TypeErr::MethodNotFound {

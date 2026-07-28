@@ -16,7 +16,7 @@ use crate::constraints::TypeConstraint;
 use crate::diagnosis::TypeErr;
 use nitrate_diagnosis::CompilerLog;
 use nitrate_hir::{
-    Function, FunctionId, GlobalVariable, Lit, PtrSize, StructDefId, SymbolTab, Type, TypeId, Value, ValueId,
+    Function, FunctionId, GlobalVariable, PtrSize, StructDefId, SymbolTab, Type, TypeId, Value, ValueId,
 };
 use nitrate_hir_get_type::HirGetType;
 use nitrate_tree::ByteSpan;
@@ -26,8 +26,6 @@ use std::ops::Deref;
 
 #[path = "visit.rs"]
 mod solver_visit;
-// Sub modules that extend Solver
-pub(crate) use solver_visit::*;
 
 /// The core solver struct that manages type constraint propagation.
 ///
@@ -72,24 +70,6 @@ impl<'m> Solver<'m> {
             value: integer,
             target_type,
         });
-    }
-
-    /// Convert a Lit to u128 (non-negative only).
-    fn lit_to_u128_check(lit: &Lit) -> Option<u128> {
-        match lit {
-            Lit::U8(v) => Some(*v as u128),
-            Lit::U16(v) => Some(*v as u128),
-            Lit::U32(v) => Some(*v as u128),
-            Lit::U64(v) => Some(*v as u128),
-            Lit::U128(v) => Some(*v),
-            Lit::USize(_, v) => Some(*v as u128),
-            Lit::I8(v) if *v >= 0 => Some(*v as u128),
-            Lit::I16(v) if *v >= 0 => Some(*v as u128),
-            Lit::I32(v) if *v >= 0 => Some(*v as u128),
-            Lit::I64(v) if *v >= 0 => Some(*v as u128),
-            Lit::I128(v) if *v >= 0 => Some(*v as u128),
-            _ => None,
-        }
     }
 
     /// Get effective value bounds for a ValueId, accounting for constraints.
