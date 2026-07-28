@@ -13,6 +13,7 @@ mod program_tests;
 mod struct_tests;
 mod trait_tests;
 mod trivia_tests;
+mod trivia_tests_generated;
 mod type_tests;
 mod unary_tests;
 mod variable_tests;
