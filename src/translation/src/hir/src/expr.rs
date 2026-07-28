@@ -2,6 +2,7 @@ use std::matches;
 
 use crate::{prelude::*, store::LiteralId};
 use nitrate_nstring::NString;
+use nitrate_tree::ByteSpan;
 use ordered_float::OrderedFloat;
 use serde::{Deserialize, Serialize};
 use thin_str::ThinStr;
@@ -277,6 +278,7 @@ impl BlockElement {
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct Block {
+    pub span: ByteSpan,
     pub safety: BlockSafety,
     pub elements: Vec<BlockElement>,
 }
@@ -318,239 +320,371 @@ impl<T> Iterator for ArgumentsIterator<T> {
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub enum Value {
-    Unit,
-    Bool(bool),
-    I8(i8),
-    I16(i16),
-    I32(i32),
-    I64(i64),
-    I128(Box<i128>),
-    U8(u8),
-    U16(u16),
-    U32(u32),
-    U64(u64),
-    U128(Box<u128>),
-    F32(OrderedFloat<f32>),
-    F64(OrderedFloat<f64>),
-    USize(u8, u64),
-    StringLit(ThinStr),
-    BStringLit(ThinVec<u8>),
-    InferredInteger(Box<u128>),
-    InferredFloat(OrderedFloat<f64>),
+    Unit {
+        span: ByteSpan,
+    },
+    Bool {
+        span: ByteSpan,
+        value: bool,
+    },
+    I8 {
+        span: ByteSpan,
+        value: i8,
+    },
+    I16 {
+        span: ByteSpan,
+        value: i16,
+    },
+    I32 {
+        span: ByteSpan,
+        value: i32,
+    },
+    I64 {
+        span: ByteSpan,
+        value: i64,
+    },
+    I128 {
+        span: ByteSpan,
+        value: Box<i128>,
+    },
+    U8 {
+        span: ByteSpan,
+        value: u8,
+    },
+    U16 {
+        span: ByteSpan,
+        value: u16,
+    },
+    U32 {
+        span: ByteSpan,
+        value: u32,
+    },
+    U64 {
+        span: ByteSpan,
+        value: u64,
+    },
+    U128 {
+        span: ByteSpan,
+        value: Box<u128>,
+    },
+    F32 {
+        span: ByteSpan,
+        value: OrderedFloat<f32>,
+    },
+    F64 {
+        span: ByteSpan,
+        value: OrderedFloat<f64>,
+    },
+    USize {
+        span: ByteSpan,
+        bits: u8,
+        value: u64,
+    },
+    StringLit {
+        span: ByteSpan,
+        value: ThinStr,
+    },
+    BStringLit {
+        span: ByteSpan,
+        value: ThinVec<u8>,
+    },
+    InferredInteger {
+        span: ByteSpan,
+        value: Box<u128>,
+    },
+    InferredFloat {
+        span: ByteSpan,
+        value: OrderedFloat<f64>,
+    },
 
     StructObject {
+        span: ByteSpan,
         struct_def: StructDefId,
         fields: ThinVec<(NString, ValueId)>,
     },
 
     EnumVariant {
+        span: ByteSpan,
         enum_def: EnumDefId,
         variant: NString,
         value: ValueId,
     },
 
     Binary {
+        span: ByteSpan,
         left: ValueId,
         op: BinaryOp,
         right: ValueId,
     },
 
     Unary {
+        span: ByteSpan,
         op: UnaryOp,
         operand: ValueId,
     },
 
     IndexAccess {
+        span: ByteSpan,
         collection: ValueId,
         index: ValueId,
     },
 
     FieldAccess {
+        span: ByteSpan,
         expr: ValueId,
         field_name: NString,
     },
 
     Assign {
+        span: ByteSpan,
         place: ValueId,
         value: ValueId,
     },
 
     Deref {
+        span: ByteSpan,
         place: ValueId,
     },
 
     Cast {
+        span: ByteSpan,
         value: ValueId,
         target_type: TypeId,
     },
 
     Borrow {
+        span: ByteSpan,
         exclusive: bool,
         mutable: bool,
         place: ValueId,
     },
 
     List {
+        span: ByteSpan,
         elements: ThinVec<ValueId>,
     },
 
     Tuple {
+        span: ByteSpan,
         elements: ThinVec<ValueId>,
     },
 
     If {
+        span: ByteSpan,
         condition: ValueId,
         true_branch: BlockId,
         false_branch: Option<BlockId>,
     },
 
     While {
+        span: ByteSpan,
         condition: ValueId,
         body: BlockId,
     },
 
     Loop {
+        span: ByteSpan,
         body: BlockId,
     },
 
     Break {
+        span: ByteSpan,
         label: Option<NString>,
     },
 
     Continue {
+        span: ByteSpan,
         label: Option<NString>,
     },
 
     Return {
+        span: ByteSpan,
         value: ValueId,
     },
 
     Block {
+        span: ByteSpan,
         block: BlockId,
     },
 
     Call {
+        span: ByteSpan,
         callee: ValueId,
         args: Arguments<ValueId>,
     },
 
     MethodCall {
+        span: ByteSpan,
         object: ValueId,
         method_name: NString,
         args: Arguments<ValueId>,
     },
 
     FunctionSymbol {
+        span: ByteSpan,
         id: FunctionId,
     },
 
     GlobalVariableSymbol {
+        span: ByteSpan,
         id: GlobalVariableId,
     },
 
     LocalVariableSymbol {
+        span: ByteSpan,
         id: LocalVariableId,
     },
 
     ParameterSymbol {
+        span: ByteSpan,
         id: ParameterId,
     },
 }
 
 impl Value {
     #[must_use]
+    pub fn span(&self) -> ByteSpan {
+        match self {
+            Value::Unit { span } => *span,
+            Value::Bool { span, .. } => *span,
+            Value::I8 { span, .. } => *span,
+            Value::I16 { span, .. } => *span,
+            Value::I32 { span, .. } => *span,
+            Value::I64 { span, .. } => *span,
+            Value::I128 { span, .. } => *span,
+            Value::U8 { span, .. } => *span,
+            Value::U16 { span, .. } => *span,
+            Value::U32 { span, .. } => *span,
+            Value::U64 { span, .. } => *span,
+            Value::U128 { span, .. } => *span,
+            Value::F32 { span, .. } => *span,
+            Value::F64 { span, .. } => *span,
+            Value::USize { span, .. } => *span,
+            Value::StringLit { span, .. } => *span,
+            Value::BStringLit { span, .. } => *span,
+            Value::InferredInteger { span, .. } => *span,
+            Value::InferredFloat { span, .. } => *span,
+            Value::StructObject { span, .. } => *span,
+            Value::EnumVariant { span, .. } => *span,
+            Value::Binary { span, .. } => *span,
+            Value::Unary { span, .. } => *span,
+            Value::IndexAccess { span, .. } => *span,
+            Value::FieldAccess { span, .. } => *span,
+            Value::Assign { span, .. } => *span,
+            Value::Deref { span, .. } => *span,
+            Value::Cast { span, .. } => *span,
+            Value::Borrow { span, .. } => *span,
+            Value::List { span, .. } => *span,
+            Value::Tuple { span, .. } => *span,
+            Value::If { span, .. } => *span,
+            Value::While { span, .. } => *span,
+            Value::Loop { span, .. } => *span,
+            Value::Break { span, .. } => *span,
+            Value::Continue { span, .. } => *span,
+            Value::Return { span, .. } => *span,
+            Value::Block { span, .. } => *span,
+            Value::Call { span, .. } => *span,
+            Value::MethodCall { span, .. } => *span,
+            Value::FunctionSymbol { span, .. } => *span,
+            Value::GlobalVariableSymbol { span, .. } => *span,
+            Value::LocalVariableSymbol { span, .. } => *span,
+            Value::ParameterSymbol { span, .. } => *span,
+        }
+    }
+
+    #[must_use]
     pub fn is_unit(&self) -> bool {
-        matches!(self, Value::Unit)
+        matches!(self, Value::Unit { .. })
     }
 
     #[must_use]
     pub fn is_bool(&self) -> bool {
-        matches!(self, Value::Bool(_))
+        matches!(self, Value::Bool { .. })
     }
 
     #[must_use]
     pub fn is_i8(&self) -> bool {
-        matches!(self, Value::I8(_))
+        matches!(self, Value::I8 { .. })
     }
 
     #[must_use]
     pub fn is_i16(&self) -> bool {
-        matches!(self, Value::I16(_))
+        matches!(self, Value::I16 { .. })
     }
 
     #[must_use]
     pub fn is_i32(&self) -> bool {
-        matches!(self, Value::I32(_))
+        matches!(self, Value::I32 { .. })
     }
 
     #[must_use]
     pub fn is_i64(&self) -> bool {
-        matches!(self, Value::I64(_))
+        matches!(self, Value::I64 { .. })
     }
 
     #[must_use]
     pub fn is_i128(&self) -> bool {
-        matches!(self, Value::I128(_))
+        matches!(self, Value::I128 { .. })
     }
 
     #[must_use]
     pub fn is_u8(&self) -> bool {
-        matches!(self, Value::U8(_))
+        matches!(self, Value::U8 { .. })
     }
 
     #[must_use]
     pub fn is_u16(&self) -> bool {
-        matches!(self, Value::U16(_))
+        matches!(self, Value::U16 { .. })
     }
 
     #[must_use]
     pub fn is_u32(&self) -> bool {
-        matches!(self, Value::U32(_))
+        matches!(self, Value::U32 { .. })
     }
 
     #[must_use]
     pub fn is_u64(&self) -> bool {
-        matches!(self, Value::U64(_))
+        matches!(self, Value::U64 { .. })
     }
 
     #[must_use]
     pub fn is_u128(&self) -> bool {
-        matches!(self, Value::U128(_))
+        matches!(self, Value::U128 { .. })
     }
 
     #[must_use]
     pub fn is_f32(&self) -> bool {
-        matches!(self, Value::F32(_))
+        matches!(self, Value::F32 { .. })
     }
 
     #[must_use]
     pub fn is_f64(&self) -> bool {
-        matches!(self, Value::F64(_))
+        matches!(self, Value::F64 { .. })
     }
 
     #[must_use]
     pub fn is_usize(&self) -> bool {
-        matches!(self, Value::USize(..))
+        matches!(self, Value::USize { .. })
     }
 
     #[must_use]
     pub fn is_string_lit(&self) -> bool {
-        matches!(self, Value::StringLit(_))
+        matches!(self, Value::StringLit { .. })
     }
 
     #[must_use]
     pub fn is_bstring_lit(&self) -> bool {
-        matches!(self, Value::BStringLit(_))
+        matches!(self, Value::BStringLit { .. })
     }
 
     #[must_use]
     pub fn is_inferred_integer(&self) -> bool {
-        matches!(self, Value::InferredInteger(_))
+        matches!(self, Value::InferredInteger { .. })
     }
 
     #[must_use]
     pub fn is_inferred_float(&self) -> bool {
-        matches!(self, Value::InferredFloat(_))
+        matches!(self, Value::InferredFloat { .. })
     }
 
     #[must_use]
@@ -684,21 +818,21 @@ impl TryFrom<Value> for Lit {
 
     fn try_from(value: Value) -> Result<Self, Self::Error> {
         match value {
-            Value::Unit => Ok(Lit::Unit),
-            Value::Bool(b) => Ok(Lit::Bool(b)),
-            Value::I8(i) => Ok(Lit::I8(i)),
-            Value::I16(i) => Ok(Lit::I16(i)),
-            Value::I32(i) => Ok(Lit::I32(i)),
-            Value::I64(i) => Ok(Lit::I64(i)),
-            Value::I128(i) => Ok(Lit::I128(*i)),
-            Value::U8(u) => Ok(Lit::U8(u)),
-            Value::U16(u) => Ok(Lit::U16(u)),
-            Value::U32(u) => Ok(Lit::U32(u)),
-            Value::U64(u) => Ok(Lit::U64(u)),
-            Value::U128(u) => Ok(Lit::U128(*u)),
-            Value::F32(f) => Ok(Lit::F32(f)),
-            Value::F64(f) => Ok(Lit::F64(f)),
-            Value::USize(bits, u) => Ok(Lit::USize(bits, u)),
+            Value::Unit { .. } => Ok(Lit::Unit),
+            Value::Bool { value, .. } => Ok(Lit::Bool(value)),
+            Value::I8 { value, .. } => Ok(Lit::I8(value)),
+            Value::I16 { value, .. } => Ok(Lit::I16(value)),
+            Value::I32 { value, .. } => Ok(Lit::I32(value)),
+            Value::I64 { value, .. } => Ok(Lit::I64(value)),
+            Value::I128 { value, .. } => Ok(Lit::I128(*value)),
+            Value::U8 { value, .. } => Ok(Lit::U8(value)),
+            Value::U16 { value, .. } => Ok(Lit::U16(value)),
+            Value::U32 { value, .. } => Ok(Lit::U32(value)),
+            Value::U64 { value, .. } => Ok(Lit::U64(value)),
+            Value::U128 { value, .. } => Ok(Lit::U128(*value)),
+            Value::F32 { value, .. } => Ok(Lit::F32(value)),
+            Value::F64 { value, .. } => Ok(Lit::F64(value)),
+            Value::USize { bits, value, .. } => Ok(Lit::USize(bits, value)),
             other => Err(other),
         }
     }
@@ -707,21 +841,66 @@ impl TryFrom<Value> for Lit {
 impl From<Lit> for Value {
     fn from(value: Lit) -> Self {
         match value {
-            Lit::Unit => Value::Unit,
-            Lit::Bool(b) => Value::Bool(b),
-            Lit::I8(i) => Value::I8(i),
-            Lit::I16(i) => Value::I16(i),
-            Lit::I32(i) => Value::I32(i),
-            Lit::I64(i) => Value::I64(i),
-            Lit::I128(i) => Value::I128(Box::new(i)),
-            Lit::U8(u) => Value::U8(u),
-            Lit::U16(u) => Value::U16(u),
-            Lit::U32(u) => Value::U32(u),
-            Lit::U64(u) => Value::U64(u),
-            Lit::U128(u) => Value::U128(Box::new(u)),
-            Lit::F32(f) => Value::F32(f),
-            Lit::F64(f) => Value::F64(f),
-            Lit::USize(bits, u) => Value::USize(bits, u),
+            Lit::Unit => Value::Unit {
+                span: ByteSpan::default(),
+            },
+            Lit::Bool(b) => Value::Bool {
+                span: ByteSpan::default(),
+                value: b,
+            },
+            Lit::I8(i) => Value::I8 {
+                span: ByteSpan::default(),
+                value: i,
+            },
+            Lit::I16(i) => Value::I16 {
+                span: ByteSpan::default(),
+                value: i,
+            },
+            Lit::I32(i) => Value::I32 {
+                span: ByteSpan::default(),
+                value: i,
+            },
+            Lit::I64(i) => Value::I64 {
+                span: ByteSpan::default(),
+                value: i,
+            },
+            Lit::I128(i) => Value::I128 {
+                span: ByteSpan::default(),
+                value: Box::new(i),
+            },
+            Lit::U8(u) => Value::U8 {
+                span: ByteSpan::default(),
+                value: u,
+            },
+            Lit::U16(u) => Value::U16 {
+                span: ByteSpan::default(),
+                value: u,
+            },
+            Lit::U32(u) => Value::U32 {
+                span: ByteSpan::default(),
+                value: u,
+            },
+            Lit::U64(u) => Value::U64 {
+                span: ByteSpan::default(),
+                value: u,
+            },
+            Lit::U128(u) => Value::U128 {
+                span: ByteSpan::default(),
+                value: Box::new(u),
+            },
+            Lit::F32(f) => Value::F32 {
+                span: ByteSpan::default(),
+                value: f,
+            },
+            Lit::F64(f) => Value::F64 {
+                span: ByteSpan::default(),
+                value: f,
+            },
+            Lit::USize(bits, u) => Value::USize {
+                span: ByteSpan::default(),
+                bits,
+                value: u,
+            },
         }
     }
 }
@@ -731,22 +910,22 @@ impl Value {
     pub fn is_literal(&self) -> bool {
         matches!(
             self,
-            Value::Unit
-                | Value::Bool(_)
-                | Value::I8(_)
-                | Value::I16(_)
-                | Value::I32(_)
-                | Value::I64(_)
-                | Value::I128(_)
-                | Value::U8(_)
-                | Value::U16(_)
-                | Value::U32(_)
-                | Value::U64(_)
-                | Value::U128(_)
-                | Value::F32(_)
-                | Value::F64(_)
-                | Value::USize(..)
-                | Value::InferredInteger(_)
+            Value::Unit { .. }
+                | Value::Bool { .. }
+                | Value::I8 { .. }
+                | Value::I16 { .. }
+                | Value::I32 { .. }
+                | Value::I64 { .. }
+                | Value::I128 { .. }
+                | Value::U8 { .. }
+                | Value::U16 { .. }
+                | Value::U32 { .. }
+                | Value::U64 { .. }
+                | Value::U128 { .. }
+                | Value::F32 { .. }
+                | Value::F64 { .. }
+                | Value::USize { .. }
+                | Value::InferredInteger { .. }
         )
     }
 }

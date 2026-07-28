@@ -30,6 +30,8 @@ The validated, solved HIR drives LLVM IR generation. The codegen traverses the H
 
 **Crate**: `nitrate_hir` (also re-exported as `nitrate::hir` via `nitrate_translation`) — the central crate defining all HIR types, the storage infrastructure, and the pass framework.
 
+**Dependencies**: HIR types carry source location information via `nitrate_tree::ByteSpan`, providing byte-offset ranges into source files that allow error messages, LSP features, and diagnostics to reference precise source locations.
+
 **Sub-crates**: Each major HIR operation lives in its own sub-crate for modularity and independent testing:
 
 | Sub-crate               | Function                                                                                                                             |
@@ -44,7 +46,21 @@ The validated, solved HIR drives LLVM IR generation. The codegen traverses the H
 
 **Key types**: `Store` (the central data repository), type handles (`TypeId`, `ValueId`, `FunctionId`, `StructDefId`, `EnumDefId`, `TraitId`, `ModuleId`, `BlockId`, `LocalVariableId`, `ParameterId`, `GlobalVariableId`, `TypeAliasDefId`), the `Type` enum, the `Value` enum, item definition structs (`Function`, `StructDef`, `EnumDef`, `Trait`, `Module`, `TypeAliasDef`, `GlobalVariable`, `LocalVariable`, `Parameter`, `Block`).
 
-**Key files**: `store.rs` (storage architecture and TLS pattern), `ty.rs` (Type enum with all 37+ type variants), `expr.rs` (Value enum with all 30+ expression variants), `item.rs` (item definition structs), `table.rs` (symbol table integration).
+**Key files**: `store.rs` (storage architecture and TLS pattern), `ty.rs` (Type enum with all 37+ type variants — each variant carries a `ByteSpan`), `expr.rs` (Value enum with all 30+ expression variants — each carries a `ByteSpan`), `item.rs` (item definition structs with `ByteSpan` fields), `table.rs` (symbol table integration).
+
+### Source Location Tracking
+
+All HIR types now carry source location information from the parser. Every `Type` variant, `Value` variant, and item struct (`Function`, `StructDef`, `EnumDef`, `Trait`, `Module`, `TypeAliasDef`, `GlobalVariable`, `LocalVariable`, `Parameter`, `StructField`, `EnumVariant`) has a `span: ByteSpan` field that records the byte range of the source text that produced it.
+
+The `ByteSpan` type (from `nitrate_tree`) stores start and end byte offsets as `u32` values, providing compact 8-byte source ranges that support:
+
+- **Error reporting**: Diagnostics can reference exact source locations for meaningful error messages
+- **LSP integration**: IDE features like hover, go-to-definition, and references can map HIR nodes back to source
+- **Debugging**: The HIR dump can annotate output with source positions
+
+For the `Type` enum specifically, `ByteSpan` is excluded from `Hash`, `Eq`, and `Ord` implementations via custom trait implementations. This preserves the critical deduplication property: `Type::U8 { span: (0, 1) }` and `Type::U8 { span: (5, 6) }` produce the same `TypeId`, and `Type::Bool` in one expression is structurally identical to `Type::Bool` in another. The custom `Hash` uses discriminant-based hashing while custom `PartialEq` compares only structural fields, ignoring span. This deduplication extends to all compound types: `Type::Array`, `Type::Tuple`, `Type::Reference`, etc. all compare structurally without considering their `span` fields.
+
+For `Value`, `Block`, and item types, span is included in `Hash`/`Eq` since these types use `impl_store_mut!` (append-only vector storage) where each handle is unique and structural comparison is not required for deduplication.
 
 ## Storage Architecture in Detail
 

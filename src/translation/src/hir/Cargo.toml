@@ -5,6 +5,7 @@ edition = "2024"
 
 [dependencies]
 nitrate_nstring.workspace = true
+nitrate_tree.workspace = true
 log.workspace = true
 serde = { workspace = true, features = ["derive", "rc"] }
 serde_json.workspace = true

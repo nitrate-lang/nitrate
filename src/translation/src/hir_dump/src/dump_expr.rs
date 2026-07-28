@@ -10,7 +10,6 @@ impl Dump for BlockElement {
                 expr_id.borrow().dump(ctx, o)?;
                 write!(o, ";")
             }
-
             BlockElement::Local(local_id) => local_id.borrow().dump(ctx, o),
         }
     }
@@ -22,22 +21,17 @@ impl Dump for Block {
             BlockSafety::Safe => {}
             BlockSafety::Unsafe => write!(o, "unsafe ")?,
         }
-
         if self.elements.is_empty() {
             write!(o, "{{}}")
         } else {
             writeln!(o, "{{")?;
-
             for expr in &self.elements {
                 ctx.indent += 1;
-
                 write_indent(ctx, o)?;
                 expr.dump(ctx, o)?;
                 writeln!(o)?;
-
                 ctx.indent -= 1;
             }
-
             write_indent(ctx, o)?;
             write!(o, "}}")
         }
@@ -72,25 +66,20 @@ impl<T: Dump> Dump for Arguments<T> {
             if i != 0 {
                 write!(o, ", ")?;
             }
-
             arg.dump(ctx, o)?;
         }
-
         if !self.named.is_empty() {
             if !self.positional.is_empty() {
                 write!(o, ", ")?;
             }
-
             for (i, (name, arg)) in self.named.iter().enumerate() {
                 if i != 0 {
                     write!(o, ", ")?;
                 }
-
                 write!(o, "{name}: ")?;
                 arg.dump(ctx, o)?;
             }
         }
-
         Ok(())
     }
 }
@@ -98,40 +87,36 @@ impl<T: Dump> Dump for Arguments<T> {
 impl Dump for Value {
     fn dump(&self, ctx: &mut DumpContext, o: &mut dyn std::fmt::Write) -> Result<(), std::fmt::Error> {
         match self {
-            Value::Unit => write!(o, "()"),
-            Value::Bool(b) => write!(o, "{b}"),
-            Value::I8(i) => write!(o, "i8 {i}"),
-            Value::I16(i) => write!(o, "i16 {i}"),
-            Value::I32(i) => write!(o, "i32 {i}"),
-            Value::I64(i) => write!(o, "i64 {i}"),
-            Value::I128(i) => write!(o, "i128 {i}"),
-            Value::U8(u) => write!(o, "u8 {u}"),
-            Value::U16(u) => write!(o, "u16 {u}"),
-            Value::U32(u) => write!(o, "u32 {u}"),
-            Value::U64(u) => write!(o, "u64 {u}"),
-            Value::U128(u) => write!(o, "u128 {u}"),
-            Value::F32(f) => write!(o, "f32 {f}"),
-            Value::F64(f) => write!(o, "f64 {f}"),
-            Value::USize(_, u) => write!(o, "usize {u}"),
-            Value::StringLit(s) => write!(o, "{}", escape_string(s, true)),
-            Value::BStringLit(s) => write!(o, "{}", escape_bstring(s, true)),
-            Value::InferredInteger(i) => write!(o, "?i {i}"),
-            Value::InferredFloat(f) => write!(o, "?f {f}"),
+            Value::Unit { .. } => write!(o, "()"),
+            Value::Bool { value: b, .. } => write!(o, "{b}"),
+            Value::I8 { value: i, .. } => write!(o, "i8 {i}"),
+            Value::I16 { value: i, .. } => write!(o, "i16 {i}"),
+            Value::I32 { value: i, .. } => write!(o, "i32 {i}"),
+            Value::I64 { value: i, .. } => write!(o, "i64 {i}"),
+            Value::I128 { value: i, .. } => write!(o, "i128 {i}"),
+            Value::U8 { value: u, .. } => write!(o, "u8 {u}"),
+            Value::U16 { value: u, .. } => write!(o, "u16 {u}"),
+            Value::U32 { value: u, .. } => write!(o, "u32 {u}"),
+            Value::U64 { value: u, .. } => write!(o, "u64 {u}"),
+            Value::U128 { value: u, .. } => write!(o, "u128 {u}"),
+            Value::F32 { value: f, .. } => write!(o, "f32 {f}"),
+            Value::F64 { value: f, .. } => write!(o, "f64 {f}"),
+            Value::USize { value: u, .. } => write!(o, "usize {u}"),
+            Value::StringLit { value: s, .. } => write!(o, "{}", escape_string(s, true)),
+            Value::BStringLit { value: s, .. } => write!(o, "{}", escape_bstring(s, true)),
+            Value::InferredInteger { value: i, .. } => write!(o, "?i {i}"),
+            Value::InferredFloat { value: f, .. } => write!(o, "?f {f}"),
 
-            Value::StructObject { struct_def, fields } => {
+            Value::StructObject { struct_def, fields, .. } => {
                 write!(o, "{}", struct_def.borrow().name)?;
-
                 write!(o, " {{ ")?;
-
                 for (i, (field_name, field_value)) in fields.iter().enumerate() {
                     if i != 0 {
                         write!(o, ", ")?;
                     }
-
                     write!(o, "{field_name}: ")?;
                     field_value.borrow().dump(ctx, o)?;
                 }
-
                 write!(o, " }}")
             }
 
@@ -139,6 +124,7 @@ impl Dump for Value {
                 enum_def,
                 variant,
                 value,
+                ..
             } => {
                 write!(o, "{}", enum_def.borrow().name)?;
                 write!(o, "::{variant}")?;
@@ -147,7 +133,7 @@ impl Dump for Value {
                 write!(o, ")")
             }
 
-            Value::Binary { left, op, right } => {
+            Value::Binary { left, op, right, .. } => {
                 write!(o, "(")?;
                 left.borrow().dump(ctx, o)?;
                 write!(
@@ -180,7 +166,7 @@ impl Dump for Value {
                 write!(o, ")")
             }
 
-            Value::Unary { op, operand: expr } => {
+            Value::Unary { op, operand: expr, .. } => {
                 write!(
                     o,
                     "({} ",
@@ -194,7 +180,7 @@ impl Dump for Value {
                 write!(o, ")")
             }
 
-            Value::IndexAccess { collection, index } => {
+            Value::IndexAccess { collection, index, .. } => {
                 write!(o, "(")?;
                 collection.borrow().dump(ctx, o)?;
                 write!(o, "[")?;
@@ -205,13 +191,14 @@ impl Dump for Value {
             Value::FieldAccess {
                 expr,
                 field_name: field,
+                ..
             } => {
                 write!(o, "(")?;
                 expr.borrow().dump(ctx, o)?;
                 write!(o, ".{field})")
             }
 
-            Value::Assign { place, value } => {
+            Value::Assign { place, value, .. } => {
                 write!(o, "(")?;
                 place.borrow().dump(ctx, o)?;
                 write!(o, " = ")?;
@@ -219,7 +206,7 @@ impl Dump for Value {
                 write!(o, ")")
             }
 
-            Value::Deref { place } => {
+            Value::Deref { place, .. } => {
                 write!(o, "(*")?;
                 place.borrow().dump(ctx, o)?;
                 write!(o, ")")
@@ -229,6 +216,7 @@ impl Dump for Value {
                 exclusive,
                 mutable,
                 place,
+                ..
             } => {
                 write!(o, "(&")?;
                 match (exclusive, mutable) {
@@ -244,6 +232,7 @@ impl Dump for Value {
             Value::Cast {
                 value: expr,
                 target_type: to,
+                ..
             } => {
                 write!(o, "(")?;
                 expr.borrow().dump(ctx, o)?;
@@ -252,7 +241,7 @@ impl Dump for Value {
                 write!(o, ")")
             }
 
-            Value::List { elements } => {
+            Value::List { elements, .. } => {
                 write!(o, "[")?;
                 for (i, elem) in elements.iter().enumerate() {
                     if i != 0 {
@@ -263,7 +252,7 @@ impl Dump for Value {
                 write!(o, "]")
             }
 
-            Value::Tuple { elements } => {
+            Value::Tuple { elements, .. } => {
                 write!(o, "(")?;
                 for elem in &**elements {
                     elem.borrow().dump(ctx, o)?;
@@ -276,6 +265,7 @@ impl Dump for Value {
                 condition,
                 true_branch,
                 false_branch,
+                ..
             } => {
                 write!(o, "if ")?;
                 condition.borrow().dump(ctx, o)?;
@@ -288,19 +278,19 @@ impl Dump for Value {
                 Ok(())
             }
 
-            Value::While { condition, body } => {
+            Value::While { condition, body, .. } => {
                 write!(o, "while ")?;
                 condition.borrow().dump(ctx, o)?;
                 write!(o, " ")?;
                 body.borrow().dump(ctx, o)
             }
 
-            Value::Loop { body } => {
+            Value::Loop { body, .. } => {
                 write!(o, "loop ")?;
                 body.borrow().dump(ctx, o)
             }
 
-            Value::Break { label } => {
+            Value::Break { label, .. } => {
                 write!(o, "break")?;
                 if let Some(label) = label {
                     write!(o, " {label}")?;
@@ -308,7 +298,7 @@ impl Dump for Value {
                 Ok(())
             }
 
-            Value::Continue { label } => {
+            Value::Continue { label, .. } => {
                 write!(o, "continue")?;
                 if let Some(label) = label {
                     write!(o, " {label}")?;
@@ -316,28 +306,26 @@ impl Dump for Value {
                 Ok(())
             }
 
-            Value::Return { value } => {
+            Value::Return { value, .. } => {
                 write!(o, "return ")?;
                 value.borrow().dump(ctx, o)
             }
 
-            Value::Block { block } => block.borrow().dump(ctx, o),
+            Value::Block { block, .. } => block.borrow().dump(ctx, o),
 
-            Value::Call { callee, args } => {
+            Value::Call { callee, args, .. } => {
                 callee.borrow().dump(ctx, o)?;
                 write!(o, "(")?;
                 for (i, arg) in args.positional.iter().enumerate() {
                     if i != 0 {
                         write!(o, ", ")?;
                     }
-
                     arg.borrow().dump(ctx, o)?;
                 }
                 for (i, (name, arg)) in args.named.iter().enumerate() {
                     if !args.named.is_empty() || i != 0 {
                         write!(o, ", ")?;
                     }
-
                     write!(o, "{name}: ")?;
                     arg.borrow().dump(ctx, o)?;
                 }
@@ -348,6 +336,7 @@ impl Dump for Value {
                 object,
                 method_name: method,
                 args,
+                ..
             } => {
                 object.borrow().dump(ctx, o)?;
                 write!(o, ".{method}(")?;
@@ -355,36 +344,31 @@ impl Dump for Value {
                     if i != 0 {
                         write!(o, ", ")?;
                     }
-
                     arg.borrow().dump(ctx, o)?;
                 }
                 for (i, (name, arg)) in args.named.iter().enumerate() {
                     if !args.named.is_empty() || i != 0 {
                         write!(o, ", ")?;
                     }
-
                     write!(o, "{name}: ")?;
                     arg.borrow().dump(ctx, o)?;
                 }
                 write!(o, ")")
             }
 
-            Value::FunctionSymbol { id } => {
+            Value::FunctionSymbol { id, .. } => {
                 let func = id.borrow();
                 write!(o, "fn {}", func.name)
             }
-
-            Value::GlobalVariableSymbol { id } => {
-                let global = id.borrow();
-                write!(o, "global {}", global.name)
+            Value::GlobalVariableSymbol { id, .. } => {
+                let glb = id.borrow();
+                write!(o, "global {}", glb.name)
             }
-
-            Value::LocalVariableSymbol { id } => {
-                let local = id.borrow();
-                write!(o, "local {}", local.name)
+            Value::LocalVariableSymbol { id, .. } => {
+                let loc = id.borrow();
+                write!(o, "local {}", loc.name)
             }
-
-            Value::ParameterSymbol { id } => {
+            Value::ParameterSymbol { id, .. } => {
                 let param = id.borrow();
                 write!(o, "param {}", param.name)
             }

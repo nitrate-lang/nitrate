@@ -2,6 +2,7 @@ use std::ops::Deref;
 
 use nitrate_hir::prelude::*;
 use nitrate_nstring::NString;
+use nitrate_tree::ByteSpan;
 
 #[derive(Debug)]
 pub enum TypeInferenceError {
@@ -19,7 +20,6 @@ pub trait HirGetType {
 }
 
 /// Resolve a Type::Refine to its base type for type inference purposes.
-/// For all other types, returns the type as-is.
 pub fn resolve_refine(ty: &Type) -> Result<Type, TypeInferenceError> {
     match ty {
         Type::Refine { base, .. } => Ok(base.deref().clone()),
@@ -47,21 +47,51 @@ pub fn lit_to_u128(lit: &Lit) -> Option<u128> {
 impl HirGetType for Lit {
     fn determine_type(&self, _ctx: &SymbolTab) -> Result<Type, TypeInferenceError> {
         match self {
-            Lit::Unit => Ok(Type::Unit),
-            Lit::Bool(_) => Ok(Type::Bool),
-            Lit::I8(_) => Ok(Type::I8),
-            Lit::I16(_) => Ok(Type::I16),
-            Lit::I32(_) => Ok(Type::I32),
-            Lit::I64(_) => Ok(Type::I64),
-            Lit::I128(_) => Ok(Type::I128),
-            Lit::U8(_) => Ok(Type::U8),
-            Lit::U16(_) => Ok(Type::U16),
-            Lit::U32(_) => Ok(Type::U32),
-            Lit::U64(_) => Ok(Type::U64),
-            Lit::U128(_) => Ok(Type::U128),
-            Lit::F32(_) => Ok(Type::F32),
-            Lit::F64(_) => Ok(Type::F64),
-            Lit::USize(_, _) => Ok(Type::USize),
+            Lit::Unit => Ok(Type::Unit {
+                span: ByteSpan::default(),
+            }),
+            Lit::Bool(_) => Ok(Type::Bool {
+                span: ByteSpan::default(),
+            }),
+            Lit::I8(_) => Ok(Type::I8 {
+                span: ByteSpan::default(),
+            }),
+            Lit::I16(_) => Ok(Type::I16 {
+                span: ByteSpan::default(),
+            }),
+            Lit::I32(_) => Ok(Type::I32 {
+                span: ByteSpan::default(),
+            }),
+            Lit::I64(_) => Ok(Type::I64 {
+                span: ByteSpan::default(),
+            }),
+            Lit::I128(_) => Ok(Type::I128 {
+                span: ByteSpan::default(),
+            }),
+            Lit::U8(_) => Ok(Type::U8 {
+                span: ByteSpan::default(),
+            }),
+            Lit::U16(_) => Ok(Type::U16 {
+                span: ByteSpan::default(),
+            }),
+            Lit::U32(_) => Ok(Type::U32 {
+                span: ByteSpan::default(),
+            }),
+            Lit::U64(_) => Ok(Type::U64 {
+                span: ByteSpan::default(),
+            }),
+            Lit::U128(_) => Ok(Type::U128 {
+                span: ByteSpan::default(),
+            }),
+            Lit::F32(_) => Ok(Type::F32 {
+                span: ByteSpan::default(),
+            }),
+            Lit::F64(_) => Ok(Type::F64 {
+                span: ByteSpan::default(),
+            }),
+            Lit::USize(_, _) => Ok(Type::USize {
+                span: ByteSpan::default(),
+            }),
         }
     }
 }
@@ -70,7 +100,9 @@ impl HirGetType for Block {
     fn determine_type(&self, ctx: &SymbolTab) -> Result<Type, TypeInferenceError> {
         match self.elements.last() {
             Some(BlockElement::Expr(last)) => last.borrow().determine_type(ctx),
-            Some(BlockElement::Local(_)) | None => Ok(Type::Unit),
+            Some(BlockElement::Local(_)) | None => Ok(Type::Unit {
+                span: ByteSpan::default(),
+            }),
         }
     }
 }
@@ -78,53 +110,90 @@ impl HirGetType for Block {
 impl HirGetType for Value {
     fn determine_type(&self, ctx: &SymbolTab) -> Result<Type, TypeInferenceError> {
         match self {
-            Value::Unit => Ok(Type::Unit),
-            Value::Bool(_) => Ok(Type::Bool),
-            Value::I8(_) => Ok(Type::I8),
-            Value::I16(_) => Ok(Type::I16),
-            Value::I32(_) => Ok(Type::I32),
-            Value::I64(_) => Ok(Type::I64),
-            Value::I128(_) => Ok(Type::I128),
-            Value::U8(_) => Ok(Type::U8),
-            Value::U16(_) => Ok(Type::U16),
-            Value::U32(_) => Ok(Type::U32),
-            Value::U64(_) => Ok(Type::U64),
-            Value::U128(_) => Ok(Type::U128),
-            Value::F32(_) => Ok(Type::F32),
-            Value::F64(_) => Ok(Type::F64),
-            Value::USize(_, _) => Ok(Type::USize),
-            Value::InferredInteger(_) => Ok(Type::InferredInteger),
-            Value::InferredFloat(_) => Ok(Type::InferredFloat),
+            Value::Unit { .. } => Ok(Type::Unit {
+                span: ByteSpan::default(),
+            }),
+            Value::Bool { .. } => Ok(Type::Bool {
+                span: ByteSpan::default(),
+            }),
+            Value::I8 { .. } => Ok(Type::I8 {
+                span: ByteSpan::default(),
+            }),
+            Value::I16 { .. } => Ok(Type::I16 {
+                span: ByteSpan::default(),
+            }),
+            Value::I32 { .. } => Ok(Type::I32 {
+                span: ByteSpan::default(),
+            }),
+            Value::I64 { .. } => Ok(Type::I64 {
+                span: ByteSpan::default(),
+            }),
+            Value::I128 { .. } => Ok(Type::I128 {
+                span: ByteSpan::default(),
+            }),
+            Value::U8 { .. } => Ok(Type::U8 {
+                span: ByteSpan::default(),
+            }),
+            Value::U16 { .. } => Ok(Type::U16 {
+                span: ByteSpan::default(),
+            }),
+            Value::U32 { .. } => Ok(Type::U32 {
+                span: ByteSpan::default(),
+            }),
+            Value::U64 { .. } => Ok(Type::U64 {
+                span: ByteSpan::default(),
+            }),
+            Value::U128 { .. } => Ok(Type::U128 {
+                span: ByteSpan::default(),
+            }),
+            Value::F32 { .. } => Ok(Type::F32 {
+                span: ByteSpan::default(),
+            }),
+            Value::F64 { .. } => Ok(Type::F64 {
+                span: ByteSpan::default(),
+            }),
+            Value::USize { .. } => Ok(Type::USize {
+                span: ByteSpan::default(),
+            }),
+            Value::InferredInteger { .. } => Ok(Type::InferredInteger {
+                span: ByteSpan::default(),
+            }),
+            Value::InferredFloat { .. } => Ok(Type::InferredFloat {
+                span: ByteSpan::default(),
+            }),
 
-            Value::StringLit(str) => {
-                let element_type = Type::U8.into();
+            Value::StringLit { value: str, .. } => {
+                let element_type = Type::U8 {
+                    span: ByteSpan::default(),
+                }
+                .into();
                 let array = Type::Array {
+                    span: ByteSpan::default(),
                     element_type,
                     len: str.len() as u32,
                 };
-
                 Ok(array)
             }
 
-            Value::BStringLit(vec) => {
-                let element_type = Type::U8.into();
+            Value::BStringLit { value: vec, .. } => {
+                let element_type = Type::U8 {
+                    span: ByteSpan::default(),
+                }
+                .into();
                 let array = Type::Array {
+                    span: ByteSpan::default(),
                     element_type,
                     len: vec.len() as u32,
                 };
-
                 Ok(array)
             }
 
-            Value::StructObject { struct_def, fields: _ } => Ok(Type::Struct {
+            Value::StructObject { struct_def, .. } => Ok(Type::Struct {
+                span: ByteSpan::default(),
                 def: struct_def.clone(),
             }),
 
-            Value::EnumVariant {
-                enum_def,
-                variant,
-                value: _,
-            } => {
+            Value::EnumVariant { enum_def, variant, .. } => {
                 let enum_def = enum_def.borrow();
                 match enum_def.variants.iter().find(|x| &x.name == variant) {
                     Some(variant) => Ok(variant.ty.deref().clone()),
@@ -132,7 +201,7 @@ impl HirGetType for Value {
                 }
             }
 
-            Value::Binary { left, op, right: _ } => match op {
+            Value::Binary { left, op, .. } => match op {
                 BinaryOp::Add
                 | BinaryOp::Sub
                 | BinaryOp::Mul
@@ -141,11 +210,9 @@ impl HirGetType for Value {
                 | BinaryOp::And
                 | BinaryOp::Or
                 | BinaryOp::Xor => Ok(left.borrow().determine_type(ctx)?),
-
                 BinaryOp::Shl | BinaryOp::Shr | BinaryOp::Rol | BinaryOp::Ror => {
                     Ok(left.borrow().determine_type(ctx)?)
                 }
-
                 BinaryOp::LogicAnd
                 | BinaryOp::LogicOr
                 | BinaryOp::Lt
@@ -153,76 +220,76 @@ impl HirGetType for Value {
                 | BinaryOp::Lte
                 | BinaryOp::Gte
                 | BinaryOp::Eq
-                | BinaryOp::Ne => Ok(Type::Bool),
+                | BinaryOp::Ne => Ok(Type::Bool {
+                    span: ByteSpan::default(),
+                }),
             },
 
-            Value::Unary { op, operand: expr } => match op {
-                UnaryOp::Add | UnaryOp::Sub | UnaryOp::Not => expr.borrow().determine_type(ctx),
+            Value::Unary { operand: expr, .. } => match expr.borrow().determine_type(ctx) {
+                Ok(Type::InferredFloat { .. }) => Ok(Type::InferredFloat {
+                    span: ByteSpan::default(),
+                }),
+                Ok(Type::InferredInteger { .. }) => Ok(Type::InferredInteger {
+                    span: ByteSpan::default(),
+                }),
+                Ok(other) => Ok(other),
+                Err(e) => Err(e),
             },
 
-            Value::IndexAccess { collection, index: _ } => {
-                let collection = collection.borrow();
-                let collection_type = collection.determine_type(ctx)?;
-
+            Value::IndexAccess { collection, .. } => {
+                let collection_type = collection.borrow().determine_type(ctx)?;
                 match collection_type {
                     Type::Array { element_type, .. } => Ok((*element_type).clone()),
                     Type::SliceRef { element_type, .. } => Ok((*element_type).clone()),
                     Type::SlicePtr { element_type, .. } => Ok((*element_type).clone()),
-                    // For trait-based Index resolution, look up the `index` method's return type
                     _ => {
-                        // Try to find the `index` method on the type
                         let collection_type_id = collection_type.clone().into();
                         if let Some(method) = ctx.get_method(&collection_type_id, &NString::from("index")) {
                             Ok(method.borrow().return_type.deref().clone())
                         } else {
-                            // Return the collection type itself if we can't resolve further
                             Ok(collection_type)
                         }
                     }
                 }
             }
 
-            Value::FieldAccess { expr, field_name } => {
-                let expr = expr.borrow();
-
-                if let Type::Struct { def } = expr.determine_type(ctx)? {
+            Value::FieldAccess { expr, field_name, .. } => {
+                if let Type::Struct { def, .. } = expr.borrow().determine_type(ctx)? {
                     let struct_def = &def.borrow();
-                    let found_field = struct_def.fields.get(field_name);
-                    if let Some(field) = found_field {
+                    if let Some(field) = struct_def.fields.get(field_name) {
                         return Ok(field.ty.deref().clone());
-                    } else {
-                        return Err(TypeInferenceError::StructMissingField);
                     }
+                    return Err(TypeInferenceError::StructMissingField);
                 }
-
                 Err(TypeInferenceError::FieldAccessOnNonStruct)
             }
 
-            Value::Assign { place: _, value: _ } => Ok(Type::Unit),
+            Value::Assign { .. } => Ok(Type::Unit {
+                span: ByteSpan::default(),
+            }),
 
-            Value::Deref { place } => {
-                let place = place.borrow();
-                let place_type = place.determine_type(ctx)?;
-
+            Value::Deref { place, .. } => {
+                let place_type = place.borrow().determine_type(ctx)?;
                 match place_type {
                     Type::Reference { to, .. }
                     | Type::Pointer { to, .. }
                     | Type::SliceRef { element_type: to, .. }
                     | Type::SlicePtr { element_type: to, .. } => Ok((*to).clone()),
-
                     _ => Err(TypeInferenceError::CannotDeref),
                 }
             }
 
-            Value::Cast { value: _, target_type } => Ok(target_type.deref().clone()),
+            Value::Cast { target_type, .. } => Ok(target_type.deref().clone()),
 
             Value::Borrow {
                 mutable,
                 exclusive,
                 place,
+                ..
             } => {
                 let place_type = place.borrow().determine_type(ctx)?;
                 Ok(Type::Reference {
+                    span: ByteSpan::default(),
                     lifetime: Lifetime::Inferred,
                     exclusive: *exclusive,
                     mutable: *mutable,
@@ -230,104 +297,86 @@ impl HirGetType for Value {
                 })
             }
 
-            Value::List { elements } => {
+            Value::List { elements, .. } => {
                 let element_type = if elements.is_empty() {
-                    Type::Unit.into()
+                    Type::Unit {
+                        span: ByteSpan::default(),
+                    }
+                    .into()
                 } else {
                     elements[0].borrow().determine_type(ctx)?.into()
                 };
-
-                let array = Type::Array {
+                Ok(Type::Array {
+                    span: ByteSpan::default(),
                     element_type,
                     len: elements.len() as u32,
-                };
-
-                Ok(array)
+                })
             }
 
-            Value::Tuple { elements } => {
+            Value::Tuple { elements, .. } => {
                 let mut element_types = Vec::with_capacity(elements.len());
                 for elem in elements {
-                    let elem_type = elem.borrow().determine_type(ctx)?.into();
-                    element_types.push(elem_type);
+                    element_types.push(elem.borrow().determine_type(ctx)?.into());
                 }
-
-                let tuple_type = Type::Tuple {
+                Ok(Type::Tuple {
+                    span: ByteSpan::default(),
                     element_types: element_types.into(),
-                };
-
-                Ok(tuple_type)
+                })
             }
 
-            Value::If {
-                true_branch,
-                false_branch,
-                condition: _,
-            } => match false_branch {
-                None => Ok(Type::Unit),
-
-                Some(false_branch) => {
-                    let true_block = true_branch.borrow().determine_type(ctx)?;
-                    if !true_block.is_diverging() {
-                        return Ok(true_block);
-                    }
-
-                    false_branch.borrow().determine_type(ctx)
-                }
+            Value::If { false_branch, .. } => match false_branch {
+                None => Ok(Type::Unit {
+                    span: ByteSpan::default(),
+                }),
+                Some(false_branch) => false_branch.borrow().determine_type(ctx),
             },
 
-            Value::While { condition: _, body: _ } => Ok(Type::Unit),
+            Value::While { .. } => Ok(Type::Unit {
+                span: ByteSpan::default(),
+            }),
+            Value::Loop { .. } => Ok(Type::Unit {
+                span: ByteSpan::default(),
+            }),
+            Value::Break { .. } => Ok(Type::Never {
+                span: ByteSpan::default(),
+            }),
+            Value::Continue { .. } => Ok(Type::Never {
+                span: ByteSpan::default(),
+            }),
+            Value::Return { .. } => Ok(Type::Never {
+                span: ByteSpan::default(),
+            }),
 
-            Value::Loop { body: _ } => Ok(Type::Unit),
-            Value::Break { label: _ } => Ok(Type::Never),
-            Value::Continue { label: _ } => Ok(Type::Never),
-            Value::Return { value: _ } => Ok(Type::Never),
+            Value::Block { block, .. } => block.borrow().determine_type(ctx),
 
-            Value::Block { block } => block.borrow().determine_type(ctx),
-
-            Value::Call { callee, args: _ } => {
-                let callee = callee.borrow();
-                if let Type::Function { function_type } = callee.determine_type(ctx)? {
+            Value::Call { callee, .. } => {
+                if let Type::Function { function_type, .. } = callee.borrow().determine_type(ctx)? {
                     return Ok(function_type.return_type.deref().clone());
                 }
-
                 Err(TypeInferenceError::CalleeIsNotFunctionType)
             }
 
             Value::MethodCall {
-                object,
-                method_name,
-                args: _,
+                object, method_name, ..
             } => {
                 let object_type = object.borrow().determine_type(ctx)?.into();
                 let method_type = ctx
                     .get_method(&object_type, method_name)
                     .ok_or(TypeInferenceError::MethodNotFound)?;
-
                 Ok(method_type.borrow().return_type.deref().clone())
             }
 
-            Value::FunctionSymbol { id } => {
+            Value::FunctionSymbol { id, .. } => {
                 let function = id.borrow();
                 Ok(Type::Function {
+                    span: ByteSpan::default(),
                     function_type: function.get_type().into(),
                 })
             }
 
-            Value::GlobalVariableSymbol { id } => {
-                let glb = &id.borrow();
-                resolve_refine(glb.ty.deref())
-            }
-
-            Value::LocalVariableSymbol { id } => {
-                let loc = id.borrow();
-                resolve_refine(loc.ty.deref())
-            }
-
-            Value::ParameterSymbol { id } => {
-                let param = id.borrow();
-                resolve_refine(param.ty.deref())
-            }
+            Value::GlobalVariableSymbol { id, .. } => resolve_refine(id.borrow().ty.deref()),
+            Value::LocalVariableSymbol { id, .. } => resolve_refine(id.borrow().ty.deref()),
+            Value::ParameterSymbol { id, .. } => resolve_refine(id.borrow().ty.deref()),
         }
     }
 }

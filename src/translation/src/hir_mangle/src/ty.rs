@@ -1,214 +1,109 @@
-use core::panic;
 use nitrate_hir::prelude::*;
-use std::{format, ops::Deref, unimplemented};
 
-pub(crate) fn mangle_type(ty: &Type) -> String {
+pub fn mangle_type(ty: &Type) -> String {
     match ty {
-        Type::Never => "a".to_string(),
-        Type::Unit => "b".to_string(),
-        Type::Bool => "c".to_string(),
+        Type::Never { .. } => "a".to_string(),
+        Type::Unit { .. } => "b".to_string(),
+        Type::Bool { .. } => "c".to_string(),
+        Type::U8 { .. } => "g".to_string(),
+        Type::U16 { .. } => "h".to_string(),
+        Type::U32 { .. } => "i".to_string(),
+        Type::U64 { .. } => "j".to_string(),
+        Type::U128 { .. } => "k".to_string(),
+        Type::USize { .. } => "l".to_string(),
+        Type::I8 { .. } => "d".to_string(),
+        Type::I16 { .. } => "e".to_string(),
+        Type::I32 { .. } => "f".to_string(),
+        Type::I64 { .. } => "m".to_string(),
+        Type::I128 { .. } => "n".to_string(),
+        Type::F32 { .. } => "o".to_string(),
+        Type::F64 { .. } => "p".to_string(),
 
-        Type::U8 => "g".to_string(),
-        Type::U16 => "h".to_string(),
-        Type::U32 => "i".to_string(),
-        Type::U64 => "j".to_string(),
-        Type::U128 => "k".to_string(),
-        Type::USize => "l".to_string(),
-
-        Type::I8 => "q".to_string(),
-        Type::I16 => "r".to_string(),
-        Type::I32 => "s".to_string(),
-        Type::I64 => "t".to_string(),
-        Type::I128 => "u".to_string(),
-
-        Type::F32 => "w".to_string(),
-        Type::F64 => "x".to_string(),
-
-        Type::Array { element_type, len } => {
-            let elem_mangled = mangle_type(element_type);
-            format!("A{}_{}", len, elem_mangled)
+        Type::Array { element_type, len, .. } => {
+            format!("q{}e{}", mangle_type(element_type), len)
         }
 
-        Type::Tuple { element_types } => {
-            let mut mangled = String::new();
-
-            mangled.push('T');
-            for elem_type in element_types {
-                let elem_mangled = mangle_type(elem_type);
-                mangled.push_str(&elem_mangled);
+        Type::Tuple { element_types, .. } => {
+            let mut result = "t".to_string();
+            for element in element_types {
+                result.push_str(&mangle_type(element));
             }
-            mangled.push('E');
-
-            mangled
+            result.push('e');
+            result
         }
 
-        Type::Struct { def } => {
-            let mut mangled = String::new();
-
-            mangled.push('S');
-            mangled.push_str(&def.borrow().name);
-
-            mangled
+        Type::Struct { def, .. } => {
+            let name = &def.borrow().name;
+            format!("s{}e", name)
         }
 
-        Type::Enum { def } => {
-            let mut mangled = String::new();
-
-            mangled.push('M');
-            mangled.push_str(&def.borrow().name);
-
-            mangled
+        Type::Enum { def, .. } => {
+            let name = &def.borrow().name;
+            format!("u{}e", name)
         }
 
-        Type::TypeAlias { def } => {
-            let mut mangled = String::new();
-
-            mangled.push('L');
-            mangled.push_str(&def.borrow().name);
-
-            mangled
+        Type::TypeAlias { def, .. } => {
+            let name = &def.borrow().name;
+            format!("x{}e", name)
         }
 
-        Type::Refine { base, min, max } => {
-            let base_mangled = mangle_type(base);
-            format!("Y{}_{}_{}", min.deref(), max.deref(), base_mangled)
+        Type::Refine { base, .. } => {
+            format!("z{}", mangle_type(base))
         }
 
-        Type::Function { function_type } => {
-            let mut mangled = String::new();
-
-            mangled.push('F');
-            let return_mangled = mangle_type(&function_type.return_type);
-            mangled.push_str(&return_mangled);
-
-            for param_type in &function_type.params {
-                let param_mangled = mangle_type(&param_type.1);
-                mangled.push_str(&param_mangled);
+        Type::Function { function_type, .. } => {
+            let mut result = "F".to_string();
+            for (_, param) in function_type.params.iter() {
+                result.push_str(&mangle_type(param));
             }
-            mangled.push('E');
-
-            mangled
+            result.push('e');
+            result.push_str(&mangle_type(&function_type.return_type));
+            result
         }
 
         Type::Reference {
-            lifetime,
-            exclusive,
-            mutable,
-            to,
+            exclusive, mutable, to, ..
         } => {
-            let lifetime_mangled = match lifetime {
-                Lifetime::Static => "A",
-                Lifetime::Gc => "B",
-                Lifetime::ThreadLocal => "C",
-                Lifetime::TaskLocal => "D",
-                Lifetime::Inferred => panic!("Cannot mangle inferred lifetime"),
-            };
-
-            let exmut_mangled = match (exclusive, mutable) {
-                (true, true) => "A",
-                (true, false) => "B",
-                (false, true) => "C",
-                (false, false) => "D",
-            };
-
-            let to_mangled = mangle_type(to);
-            format!("R{}{}{}", lifetime_mangled, exmut_mangled, to_mangled)
+            let prefix = if *exclusive { "R" } else { "r" };
+            let mutability = if *mutable { "v" } else { "x" };
+            format!("{}{}{}", prefix, mutability, mangle_type(to))
         }
 
         Type::SliceRef {
-            lifetime,
             exclusive,
             mutable,
             element_type,
+            ..
         } => {
-            let lifetime_mangled = match lifetime {
-                Lifetime::Static => "A",
-                Lifetime::Gc => "B",
-                Lifetime::ThreadLocal => "C",
-                Lifetime::TaskLocal => "D",
-                Lifetime::Inferred => panic!("Cannot mangle inferred lifetime"),
-            };
-
-            let exmut_mangled = match (exclusive, mutable) {
-                (true, true) => "A",
-                (true, false) => "B",
-                (false, true) => "C",
-                (false, false) => "D",
-            };
-
-            let elem_mangled = mangle_type(element_type);
-            format!("Q{}{}{}", lifetime_mangled, exmut_mangled, elem_mangled)
+            let prefix = if *exclusive { "S" } else { "s" };
+            let mutability = if *mutable { "v" } else { "x" };
+            format!("{}{}{}", prefix, mutability, mangle_type(element_type))
         }
 
         Type::Pointer {
-            lifetime,
-            exclusive,
-            mutable,
-            to,
+            exclusive, mutable, to, ..
         } => {
-            let lifetime_mangled = match lifetime {
-                Lifetime::Static => "A",
-                Lifetime::Gc => "B",
-                Lifetime::ThreadLocal => "C",
-                Lifetime::TaskLocal => "D",
-                Lifetime::Inferred => "E",
-            };
-
-            let exmut_mangled = match (exclusive, mutable) {
-                (true, true) => "A",
-                (true, false) => "B",
-                (false, true) => "C",
-                (false, false) => "D",
-            };
-
-            let to_mangled = mangle_type(to);
-            format!("P{}{}{}", lifetime_mangled, exmut_mangled, to_mangled)
+            let prefix = if *exclusive { "P" } else { "p" };
+            let mutability = if *mutable { "v" } else { "x" };
+            format!("{}{}{}", prefix, mutability, mangle_type(to))
         }
 
         Type::SlicePtr {
-            lifetime,
             exclusive,
             mutable,
             element_type,
+            ..
         } => {
-            let lifetime_mangled = match lifetime {
-                Lifetime::Static => "A",
-                Lifetime::Gc => "B",
-                Lifetime::ThreadLocal => "C",
-                Lifetime::TaskLocal => "D",
-                Lifetime::Inferred => "E",
-            };
-
-            let exmut_mangled = match (exclusive, mutable) {
-                (true, true) => "A",
-                (true, false) => "B",
-                (false, true) => "C",
-                (false, false) => "D",
-            };
-
-            let elem_mangled = mangle_type(element_type);
-            format!("Z{}{}{}", lifetime_mangled, exmut_mangled, elem_mangled)
+            let prefix = if *exclusive { "Q" } else { "q" };
+            let mutability = if *mutable { "v" } else { "x" };
+            format!("{}{}{}", prefix, mutability, mangle_type(element_type))
         }
 
-        Type::TraitObject { .. } => {
-            // For now, mangle trait objects as a pointer-sized opaque
-            "O".to_string()
-        }
-
-        Type::Parameterized { .. } => {
-            panic!("Cannot mangle uninstantiated generic type: {:?}", ty);
-        }
-
-        Type::InferredFloat | Type::InferredInteger | Type::Inferred { .. } => {
-            panic!("Cannot mangle inferred type: {:?}", ty);
-        }
-
-        Type::GenericParam { .. } => {
-            panic!("Cannot mangle uninstantiated generic parameter: {:?}", ty);
-        }
+        Type::TraitObject { .. } => "O".to_string(),
+        Type::Parameterized { base, .. } => mangle_type(base),
+        Type::GenericParam { index, .. } => format!("g{}", index),
+        Type::Inferred { .. } => "i".to_string(),
+        Type::InferredFloat { .. } => "f".to_string(),
+        Type::InferredInteger { .. } => "w".to_string(),
     }
-}
-pub(crate) fn demangle_type(_mangled: &mut dyn std::io::Read) -> Result<Type, ()> {
-    // TODO: implement demangling
-    unimplemented!();
 }

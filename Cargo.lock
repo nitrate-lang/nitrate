@@ -842,6 +842,7 @@ dependencies = [
  "log",
  "nitrate_nstring",
  "nitrate_token",
+ "nitrate_tree",
  "ordered-float",
  "serde",
  "serde_json",
@@ -869,6 +870,7 @@ dependencies = [
  "nitrate_hir",
  "nitrate_nstring",
  "nitrate_token",
+ "nitrate_tree",
 ]
 
 [[package]]
@@ -878,6 +880,7 @@ dependencies = [
  "nitrate_diagnosis",
  "nitrate_hir",
  "nitrate_nstring",
+ "nitrate_tree",
  "ordered-float",
 ]
 
@@ -909,6 +912,7 @@ version = "0.1.0"
 dependencies = [
  "nitrate_hir",
  "nitrate_nstring",
+ "nitrate_tree",
 ]
 
 [[package]]

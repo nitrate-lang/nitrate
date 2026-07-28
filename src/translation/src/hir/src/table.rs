@@ -1,5 +1,6 @@
 use crate::prelude::*;
 use nitrate_nstring::NString;
+use nitrate_tree::ByteSpan;
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 
 #[derive(Debug)]
@@ -120,13 +121,20 @@ impl SymbolTab {
         };
 
         let placeholder = GlobalVariable {
+            span: ByteSpan::default(),
             visibility: Visibility::Sec,
             attributes: BTreeSet::new(),
             is_mutable: false,
             name: name.clone(),
             mangled_name: NString::default(),
-            ty: Type::Unit.into(),
-            initializer: Value::Unit.into(),
+            ty: Type::Unit {
+                span: ByteSpan::default(),
+            }
+            .into(),
+            initializer: Value::Unit {
+                span: ByteSpan::default(),
+            }
+            .into(),
         };
 
         let global_var_id: GlobalVariableId = placeholder.into();
@@ -148,12 +156,19 @@ impl SymbolTab {
         };
 
         let placeholder = LocalVariable {
+            span: ByteSpan::default(),
             kind: LocalKind::Let,
             attributes: BTreeSet::new(),
             is_mutable: false,
             name: name.clone(),
-            ty: Type::Unit.into(),
-            initializer: Value::Unit.into(),
+            ty: Type::Unit {
+                span: ByteSpan::default(),
+            }
+            .into(),
+            initializer: Value::Unit {
+                span: ByteSpan::default(),
+            }
+            .into(),
         };
 
         let local_var_id: LocalVariableId = placeholder.into();
@@ -171,10 +186,14 @@ impl SymbolTab {
         };
 
         let placeholder = Parameter {
+            span: ByteSpan::default(),
             attributes: BTreeSet::new(),
             is_mutable: false,
             name: name.clone(),
-            ty: Type::Unit.into(),
+            ty: Type::Unit {
+                span: ByteSpan::default(),
+            }
+            .into(),
             default_value: None,
         };
 
@@ -193,13 +212,17 @@ impl SymbolTab {
         };
 
         let placeholder = Function {
+            span: ByteSpan::default(),
             visibility: Visibility::Sec,
             attributes: BTreeSet::new(),
             name: name.clone(),
             mangled_name: NString::default(),
             generics: None,
             params: Vec::new(),
-            return_type: Type::Unit.into(),
+            return_type: Type::Unit {
+                span: ByteSpan::default(),
+            }
+            .into(),
             body: None,
         };
 
@@ -261,6 +284,7 @@ impl SymbolTab {
         };
 
         let placeholder = Trait {
+            span: ByteSpan::default(),
             visibility: Visibility::Sec,
             name: name.clone(),
             generics: None,
@@ -316,10 +340,14 @@ impl SymbolTab {
         };
 
         let placeholder = TypeAliasDef {
+            span: ByteSpan::default(),
             visibility: Visibility::Sec,
             name: name.clone(),
             generics: None,
-            type_id: Type::Unit.into(),
+            type_id: Type::Unit {
+                span: ByteSpan::default(),
+            }
+            .into(),
         };
 
         let type_alias_def: TypeAliasDefId = placeholder.into();
@@ -337,6 +365,7 @@ impl SymbolTab {
         };
 
         let placeholder = StructDef {
+            span: ByteSpan::default(),
             visibility: Visibility::Sec,
             attributes: BTreeSet::new(),
             name: name.clone(),
@@ -360,6 +389,7 @@ impl SymbolTab {
         };
 
         let placeholder = EnumDef {
+            span: ByteSpan::default(),
             visibility: Visibility::Sec,
             attributes: BTreeSet::new(),
             name: name.clone(),

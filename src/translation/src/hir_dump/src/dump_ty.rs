@@ -43,26 +43,20 @@ impl Dump for Lifetime {
 impl Dump for FunctionType {
     fn dump(&self, ctx: &mut DumpContext, o: &mut dyn std::fmt::Write) -> Result<(), std::fmt::Error> {
         write!(o, "fn")?;
-
         dump_attributes(&self.attributes, ctx, o)?;
-
         if self.params.is_empty() {
             write!(o, " ()")?;
         } else {
             write!(o, " (")?;
-
             for (i, param) in self.params.iter().enumerate() {
                 if i != 0 {
                     write!(o, ", ")?;
                 }
-
                 write!(o, "{}: ", param.0)?;
                 param.1.dump(ctx, o)?;
             }
-
             write!(o, ")")?;
         }
-
         write!(o, " -> ")?;
         self.return_type.dump(ctx, o)
     }
@@ -71,54 +65,49 @@ impl Dump for FunctionType {
 impl Dump for Type {
     fn dump(&self, ctx: &mut DumpContext, o: &mut dyn std::fmt::Write) -> Result<(), std::fmt::Error> {
         match self {
-            Type::Never => write!(o, "!"),
-            Type::Unit => write!(o, "()"),
-            Type::Bool => write!(o, "bool"),
-            Type::U8 => write!(o, "u8"),
-            Type::U16 => write!(o, "u16"),
-            Type::U32 => write!(o, "u32"),
-            Type::U64 => write!(o, "u64"),
-            Type::U128 => write!(o, "u128"),
-            Type::USize => write!(o, "usize"),
-            Type::I8 => write!(o, "i8"),
-            Type::I16 => write!(o, "i16"),
-            Type::I32 => write!(o, "i32"),
-            Type::I64 => write!(o, "i64"),
-            Type::I128 => write!(o, "i128"),
-            Type::F32 => write!(o, "f32"),
-            Type::F64 => write!(o, "f64"),
+            Type::Never { .. } => write!(o, "!"),
+            Type::Unit { .. } => write!(o, "()"),
+            Type::Bool { .. } => write!(o, "bool"),
+            Type::U8 { .. } => write!(o, "u8"),
+            Type::U16 { .. } => write!(o, "u16"),
+            Type::U32 { .. } => write!(o, "u32"),
+            Type::U64 { .. } => write!(o, "u64"),
+            Type::U128 { .. } => write!(o, "u128"),
+            Type::USize { .. } => write!(o, "usize"),
+            Type::I8 { .. } => write!(o, "i8"),
+            Type::I16 { .. } => write!(o, "i16"),
+            Type::I32 { .. } => write!(o, "i32"),
+            Type::I64 { .. } => write!(o, "i64"),
+            Type::I128 { .. } => write!(o, "i128"),
+            Type::F32 { .. } => write!(o, "f32"),
+            Type::F64 { .. } => write!(o, "f64"),
 
-            Type::Array { element_type, len } => {
+            Type::Array { element_type, len, .. } => {
                 write!(o, "[")?;
                 element_type.dump(ctx, o)?;
                 write!(o, "; {len}]")
             }
 
-            Type::Tuple { element_types } => {
+            Type::Tuple { element_types, .. } => {
                 write!(o, "(")?;
                 for (i, element_type) in element_types.iter().enumerate() {
                     if i != 0 {
                         write!(o, ", ")?;
                     }
-
                     element_type.dump(ctx, o)?;
                 }
-
                 if element_types.len() == 1 {
                     write!(o, ",")?;
                 }
-
                 write!(o, ")")
             }
 
-            Type::Struct { def } => write!(o, "struct {}", escape_string(&def.borrow().name, true)),
-            Type::Enum { def } => write!(o, "enum {}", escape_string(&def.borrow().name, true)),
+            Type::Struct { def, .. } => write!(o, "struct {}", escape_string(&def.borrow().name, true)),
+            Type::Enum { def, .. } => write!(o, "enum {}", escape_string(&def.borrow().name, true)),
 
-            Type::TypeAlias { def } => {
-                write!(o, "type {}", escape_string(&def.borrow().name, true))
-            }
+            Type::TypeAlias { def, .. } => write!(o, "type {}", escape_string(&def.borrow().name, true)),
 
-            Type::Refine { base, min, max } => {
+            Type::Refine { base, min, max, .. } => {
                 base.dump(ctx, o)?;
                 write!(o, ": [")?;
                 min.dump(ctx, o)?;
@@ -127,28 +116,26 @@ impl Dump for Type {
                 write!(o, "]")
             }
 
-            Type::Function { function_type } => function_type.dump(ctx, o),
+            Type::Function { function_type, .. } => function_type.dump(ctx, o),
 
             Type::Reference {
                 lifetime,
                 exclusive,
                 mutable,
                 to,
+                ..
             } => {
                 write!(o, "&")?;
-
                 if lifetime != &Lifetime::Inferred {
                     lifetime.dump(ctx, o)?;
                     write!(o, " ")?;
                 }
-
                 match (exclusive, mutable) {
                     (true, true) => write!(o, "mut ")?,
                     (true, false) => write!(o, "iso ")?,
                     (false, true) => write!(o, "poly mut ")?,
                     (false, false) => write!(o, "")?,
                 }
-
                 to.dump(ctx, o)
             }
 
@@ -157,21 +144,19 @@ impl Dump for Type {
                 exclusive,
                 mutable,
                 element_type,
+                ..
             } => {
                 write!(o, "&")?;
-
                 if lifetime != &Lifetime::Inferred {
                     lifetime.dump(ctx, o)?;
                     write!(o, " ")?;
                 }
-
                 match (exclusive, mutable) {
                     (true, true) => write!(o, "mut ")?,
                     (true, false) => write!(o, "iso ")?,
                     (false, true) => write!(o, "poly mut ")?,
                     (false, false) => write!(o, "")?,
                 }
-
                 write!(o, "[")?;
                 element_type.dump(ctx, o)?;
                 write!(o, "]")
@@ -182,21 +167,19 @@ impl Dump for Type {
                 exclusive,
                 mutable,
                 to,
+                ..
             } => {
                 write!(o, "*")?;
-
                 if lifetime != &Lifetime::Inferred {
                     lifetime.dump(ctx, o)?;
                     write!(o, " ")?;
                 }
-
                 match (exclusive, mutable) {
                     (true, true) => write!(o, "mut ")?,
                     (true, false) => write!(o, "iso ")?,
                     (false, true) => write!(o, "poly mut ")?,
                     (false, false) => write!(o, "")?,
                 }
-
                 to.dump(ctx, o)
             }
 
@@ -205,27 +188,25 @@ impl Dump for Type {
                 exclusive,
                 mutable,
                 element_type,
+                ..
             } => {
                 write!(o, "*")?;
-
                 if lifetime != &Lifetime::Inferred {
                     lifetime.dump(ctx, o)?;
                     write!(o, " ")?;
                 }
-
                 match (exclusive, mutable) {
                     (true, true) => write!(o, "mut ")?,
                     (true, false) => write!(o, "iso ")?,
                     (false, true) => write!(o, "poly mut ")?,
                     (false, false) => write!(o, "")?,
                 }
-
                 write!(o, "[")?;
                 element_type.dump(ctx, o)?;
                 write!(o, "]")
             }
 
-            Type::TraitObject { bounds } => {
+            Type::TraitObject { bounds, .. } => {
                 write!(o, "dyn ")?;
                 for (i, bound) in bounds.iter().enumerate() {
                     if i != 0 {
@@ -239,25 +220,24 @@ impl Dump for Type {
                 Ok(())
             }
 
-            Type::Parameterized { base, args } => {
+            Type::Parameterized { base, args, .. } => {
                 base.dump(ctx, o)?;
                 write!(o, "<")?;
                 args.dump(ctx, o)?;
                 write!(o, ">")
             }
 
-            Type::InferredFloat => write!(o, "?f"),
-            Type::InferredInteger => write!(o, "?i"),
-            Type::Inferred { id, name } => match name {
+            Type::InferredFloat { .. } => write!(o, "?f"),
+            Type::InferredInteger { .. } => write!(o, "?i"),
+            Type::Inferred { id, name, .. } => match name {
                 Some(name) => write!(o, "?{id}::{}", escape_string(name, true)),
                 None => write!(o, "?{id}"),
             },
-            Type::GenericParam { index: _, name } => {
-                write!(o, "'{}", escape_string(name, true))
-            }
+            Type::GenericParam { name, .. } => write!(o, "'{}", escape_string(name, true)),
         }
     }
 }
+
 impl Dump for TypeId {
     fn dump(&self, ctx: &mut DumpContext, o: &mut dyn std::fmt::Write) -> Result<(), std::fmt::Error> {
         self.deref().dump(ctx, o)

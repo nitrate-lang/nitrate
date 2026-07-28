@@ -1,5 +1,6 @@
 use crate::{helper::PowOf2, prelude::*};
 use nitrate_nstring::NString;
+use nitrate_tree::ByteSpan;
 use serde::{Deserialize, Serialize};
 use std::{
     collections::{BTreeMap, BTreeSet},
@@ -22,6 +23,7 @@ pub enum GlobalVariableAttribute {
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct GlobalVariable {
+    pub span: ByteSpan,
     pub visibility: Visibility,
     pub attributes: BTreeSet<GlobalVariableAttribute>,
     pub is_mutable: bool,
@@ -45,6 +47,7 @@ pub enum LocalKind {
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct LocalVariable {
+    pub span: ByteSpan,
     pub kind: LocalKind,
     pub attributes: BTreeSet<LocalVariableAttribute>,
     pub is_mutable: bool,
@@ -60,6 +63,7 @@ pub enum ParameterAttribute {
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct Parameter {
+    pub span: ByteSpan,
     pub attributes: BTreeSet<ParameterAttribute>,
     pub is_mutable: bool,
     pub name: NString,
@@ -69,6 +73,7 @@ pub struct Parameter {
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct Function {
+    pub span: ByteSpan,
     pub visibility: Visibility,
     pub attributes: BTreeSet<FunctionAttribute>,
     pub name: NString,
@@ -101,6 +106,7 @@ impl Function {
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct Trait {
+    pub span: ByteSpan,
     pub visibility: Visibility,
     pub name: NString,
     pub generics: Option<BTreeMap<NString, Option<TypeId>>>,
@@ -118,6 +124,7 @@ pub enum ModuleAttribute {
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct Module {
+    pub span: ByteSpan,
     pub visibility: Visibility,
     pub name: NString,
     pub attributes: BTreeSet<ModuleAttribute>,
@@ -126,6 +133,7 @@ pub struct Module {
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct TypeAliasDef {
+    pub span: ByteSpan,
     pub visibility: Visibility,
     pub name: NString,
     pub generics: Option<BTreeMap<NString, Option<TypeId>>>,
@@ -144,6 +152,7 @@ pub enum StructFieldAttribute {
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct StructField {
+    pub span: ByteSpan,
     pub visibility: Visibility,
     pub attributes: BTreeSet<StructFieldAttribute>,
     pub name: NString,
@@ -189,6 +198,7 @@ pub type StructLayout = ThinVec<StructMemoryLayoutCell>;
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct StructDef {
+    pub span: ByteSpan,
     pub visibility: Visibility,
     pub name: NString,
     pub attributes: BTreeSet<StructAttribute>,
@@ -209,6 +219,7 @@ pub enum EnumVariantAttribute {
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct EnumVariant {
+    pub span: ByteSpan,
     pub attributes: BTreeSet<EnumVariantAttribute>,
     pub name: NString,
     pub ty: TypeId,
@@ -217,6 +228,7 @@ pub struct EnumVariant {
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct EnumDef {
+    pub span: ByteSpan,
     pub visibility: Visibility,
     pub name: NString,
     pub attributes: BTreeSet<EnumAttribute>,
