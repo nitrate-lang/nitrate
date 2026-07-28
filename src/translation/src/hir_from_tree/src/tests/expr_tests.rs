@@ -35,7 +35,10 @@ fn expr_bool_true() {
                 l
             )
             .unwrap(),
-            Value::Bool(true)
+            Value::Bool {
+                span: ByteSpan::default(),
+                value: true
+            }
         );
     })
 }
@@ -52,7 +55,10 @@ fn expr_bool_false() {
                 l
             )
             .unwrap(),
-            Value::Bool(false)
+            Value::Bool {
+                span: ByteSpan::default(),
+                value: false
+            }
         );
     })
 }
@@ -71,7 +77,7 @@ fn expr_integer_42() {
             l,
         )
         .unwrap();
-        assert!(matches!(r, Value::InferredInteger(v) if *v == 42));
+        assert!(matches!(r, Value::InferredInteger { value: v, .. } if *v == 42));
     })
 }
 #[test]
@@ -87,7 +93,7 @@ fn expr_integer_hex() {
             l,
         )
         .unwrap();
-        assert!(matches!(r, Value::InferredInteger(v) if *v == 255));
+        assert!(matches!(r, Value::InferredInteger { value: v, .. } if *v == 255));
     })
 }
 #[test]
@@ -152,7 +158,7 @@ fn expr_string_hello() {
             l,
         )
         .unwrap();
-        assert!(matches!(r, Value::StringLit(s) if *s == *"hello"));
+        assert!(matches!(r, Value::StringLit { value: ref s, .. } if *s == *"hello"));
     })
 }
 #[test]
@@ -290,7 +296,10 @@ fn expr_parens() {
                 l
             )
             .unwrap(),
-            Value::Bool(true)
+            Value::Bool {
+                span: ByteSpan::default(),
+                value: true
+            }
         );
     })
 }
