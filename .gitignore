@@ -56,3 +56,4 @@ src/translation/target/.rustc_info.json
 src/translation/target/CACHEDIR.TAG
 src/translation/target/debug/
 docs/_build/
+prompts/

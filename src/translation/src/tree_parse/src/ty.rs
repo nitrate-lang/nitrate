@@ -99,6 +99,7 @@ impl Parser<'_, '_> {
     }
 
     fn parse_array_or_slice(&mut self) -> Type {
+        let bracket_start = self.lexer.peek_pos().offset;
         assert!(self.lexer.peek_tok().token == Token::OpenBracket);
         self.lexer.skip_tok();
 
@@ -106,7 +107,7 @@ impl Parser<'_, '_> {
 
         if self.lexer.skip_if(&Token::CloseBracket) {
             return Type::SliceType(Box::new(SliceType {
-                span: ByteSpan::default(),
+                span: ByteSpan::new(bracket_start, self.lexer.current_pos().offset),
                 element_type,
             }));
         }
@@ -118,13 +119,14 @@ impl Parser<'_, '_> {
         self.expect_close_bracket();
 
         Type::ArrayType(Box::new(ArrayType {
-            span: ByteSpan::default(),
+            span: ByteSpan::new(bracket_start, self.lexer.current_pos().offset),
             element_type,
             len,
         }))
     }
 
     fn parse_reference_type(&mut self) -> ReferenceType {
+        let ref_start = self.lexer.peek_pos().offset;
         assert!(self.lexer.peek_tok().token == Token::And);
         self.lexer.skip_tok();
 
@@ -140,7 +142,7 @@ impl Parser<'_, '_> {
         let to = self.parse_type();
 
         ReferenceType {
-            span: ByteSpan::default(),
+            span: ByteSpan::new(ref_start, self.lexer.current_pos().offset),
             lifetime,
             exclusivity,
             mutability,
@@ -149,6 +151,7 @@ impl Parser<'_, '_> {
     }
 
     fn parse_pointer_type(&mut self) -> PointerType {
+        let ptr_start = self.lexer.peek_pos().offset;
         assert!(self.lexer.peek_tok().token == Token::Star);
         self.lexer.skip_tok();
 
@@ -164,7 +167,7 @@ impl Parser<'_, '_> {
         let to = self.parse_type();
 
         PointerType {
-            span: ByteSpan::default(),
+            span: ByteSpan::new(ptr_start, self.lexer.current_pos().offset),
             lifetime,
             exclusivity,
             mutability,
@@ -180,9 +183,10 @@ impl Parser<'_, '_> {
         let end = SyntaxErr::FunctionParametersExpectedEnd(self.lexer.peek_pos());
 
         let params = self.parse_comma_separated_list(&Token::CloseParen, MAX_LIMIT, true, eof, limit, end, |this| {
+            let param_start = this.lexer.peek_pos().offset;
             let param = this.parse_common_func_param(false);
             FuncTypeParam {
-                span: ByteSpan::default(),
+                span: ByteSpan::new(param_start, this.lexer.current_pos().offset),
                 attributes: param.attributes,
                 name: param.name,
                 ty: param.ty,
@@ -193,6 +197,7 @@ impl Parser<'_, '_> {
     }
 
     fn parse_function_type(&mut self) -> FunctionType {
+        let fn_start = self.lexer.peek_pos().offset;
         assert!(self.lexer.peek_tok().token == Token::Fn);
         self.lexer.skip_tok();
 
@@ -202,7 +207,7 @@ impl Parser<'_, '_> {
         let return_type = self.parse_return_type_arrow();
 
         FunctionType {
-            span: ByteSpan::default(),
+            span: ByteSpan::new(fn_start, self.lexer.current_pos().offset),
             parameters,
             return_type,
             attributes,
@@ -210,12 +215,13 @@ impl Parser<'_, '_> {
     }
 
     fn parse_lifetime(&mut self) -> Lifetime {
+        let lt_start = self.lexer.peek_pos().offset;
         assert!(self.lexer.peek_tok().token == Token::SingleQuote);
         self.lexer.skip_tok();
 
         if self.lexer.skip_if(&Token::Static) {
             return Lifetime {
-                span: ByteSpan::default(),
+                span: ByteSpan::new(lt_start, self.lexer.current_pos().offset),
                 name: NString::from("static".to_string()),
             };
         }
@@ -227,16 +233,16 @@ impl Parser<'_, '_> {
         });
 
         Lifetime {
-            span: ByteSpan::default(),
+            span: ByteSpan::new(lt_start, self.lexer.current_pos().offset),
             name: NString::from(name),
         }
     }
 
     pub(crate) fn create_type_path(&mut self, segment_name: String) -> TypePath {
         TypePath {
-            span: ByteSpan::default(),
+            span: ByteSpan::new(0, 0),
             segments: Vec::from([TypePathSegment {
-                span: ByteSpan::default(),
+                span: ByteSpan::new(0, 0),
                 name: segment_name,
                 type_arguments: None,
             }]),
@@ -245,7 +251,8 @@ impl Parser<'_, '_> {
     }
 
     fn parse_type_primitive(&mut self) -> Type {
-        match self.lexer.next_tok().token {
+        let type_start = self.lexer.peek_pos().offset;
+        let result = match self.lexer.next_tok().token {
             Token::Bool => Type::Bool(Bool::default()),
             Token::U8 => Type::UInt8(UInt8::default()),
             Token::U16 => Type::UInt16(UInt16::default()),
@@ -265,7 +272,10 @@ impl Parser<'_, '_> {
             Token::F128 => Type::TypePath(Box::new(self.create_type_path("f128".to_string()))),
 
             _ => Type::SyntaxError(TypeSyntaxError::default()),
-        }
+        };
+        let type_end = self.lexer.current_pos().offset;
+        // Apply span to result
+        set_type_span(result, type_start, type_end)
     }
 
     pub(crate) fn parse_type_path(&mut self) -> TypePath {
@@ -282,7 +292,7 @@ impl Parser<'_, '_> {
             prev_scope = true;
 
             segments.push(TypePathSegment {
-                span: ByteSpan::default(),
+                span: ByteSpan::new(0, self.lexer.current_pos().offset),
                 name: "".into(),
                 type_arguments: None,
             });
@@ -302,16 +312,18 @@ impl Parser<'_, '_> {
                 self.log.report(&bug);
             }
 
+            let name_start = self.lexer.peek_pos().offset;
             let Some(identifier) = self.lexer.next_if_name() else {
                 let bug = SyntaxErr::PathExpectedName(self.lexer.peek_pos());
                 self.log.report(&bug);
                 break;
             };
+            let name_end = self.lexer.current_pos().offset;
 
             let type_arguments = self.parse_generic_arguments();
 
             segments.push(TypePathSegment {
-                span: ByteSpan::default(),
+                span: ByteSpan::new(name_start, name_end),
                 name: identifier,
                 type_arguments,
             });
@@ -321,8 +333,11 @@ impl Parser<'_, '_> {
 
         assert_ne!(segments.len(), 0);
 
+        let path_start = segments.first().map(|s| s.span.start).unwrap_or(0);
+        let path_end = segments.last().map(|s| s.span.end).unwrap_or(0);
+
         TypePath {
-            span: ByteSpan::default(),
+            span: ByteSpan::new(path_start, path_end),
             segments,
             resolved_path: None,
         }
@@ -359,23 +374,30 @@ impl Parser<'_, '_> {
             Token::Star => Type::PointerType(Box::new(self.parse_pointer_type())),
             Token::Fn => Type::FunctionType(Box::new(self.parse_function_type())),
 
-            Token::OpenBrace | Token::Unsafe | Token::Safe => Type::LatentType(Box::new(LatentType {
-                span: ByteSpan::default(),
-                body: self.parse_block(),
-            })),
+            Token::OpenBrace | Token::Unsafe | Token::Safe => {
+                let block_start = self.lexer.peek_pos().offset;
+                let body = self.parse_block();
+                Type::LatentType(Box::new(LatentType {
+                    span: ByteSpan::new(block_start, self.lexer.current_pos().offset),
+                    body,
+                }))
+            }
 
             _ => {
+                let err_start = self.lexer.peek_pos().offset;
                 self.lexer.skip_tok();
 
                 let log = SyntaxErr::ExpectedType(current_pos);
                 self.log.report(&log);
 
-                Type::SyntaxError(TypeSyntaxError::default())
+                Type::SyntaxError(TypeSyntaxError {
+                    span: ByteSpan::new(err_start, self.lexer.current_pos().offset),
+                })
             }
         }
     }
 
-    fn parse_rest_of_tuple(&mut self, first_element: Type) -> TupleType {
+    fn parse_rest_of_tuple(&mut self, first_element: Type, paren_start: u32) -> TupleType {
         let mut element_types = Vec::from([first_element]);
 
         let eof = SyntaxErr::TupleTypeExpectedEnd(self.lexer.peek_pos());
@@ -389,16 +411,18 @@ impl Parser<'_, '_> {
         element_types.extend(rest);
 
         TupleType {
-            span: ByteSpan::default(),
+            span: ByteSpan::new(paren_start, self.lexer.current_pos().offset),
             element_types,
         }
     }
 
     pub fn parse_type(&mut self) -> Type {
         if self.lexer.skip_if(&Token::OpenParen) {
+            let paren_start = self.lexer.current_pos().offset;
             if self.lexer.skip_if(&Token::CloseParen) {
+                let paren_end = self.lexer.current_pos().offset;
                 return Type::TupleType(Box::new(TupleType {
-                    span: ByteSpan::default(),
+                    span: ByteSpan::new(paren_start, paren_end),
                     element_types: Vec::new(),
                 }));
             }
@@ -406,13 +430,16 @@ impl Parser<'_, '_> {
             let inner = self.parse_type();
 
             let result = match self.lexer.next_tok().token {
-                Token::CloseParen => Type::Parentheses(Box::new(TypeParentheses {
-                    span: ByteSpan::default(),
-                    inner,
-                })),
+                Token::CloseParen => {
+                    let paren_end = self.lexer.current_pos().offset;
+                    Type::Parentheses(Box::new(TypeParentheses {
+                        span: ByteSpan::new(paren_start, paren_end),
+                        inner,
+                    }))
+                }
 
                 Token::Comma => {
-                    let tuple = self.parse_rest_of_tuple(inner);
+                    let tuple = self.parse_rest_of_tuple(inner, paren_start);
                     Type::TupleType(Box::new(tuple))
                 }
 
@@ -420,7 +447,9 @@ impl Parser<'_, '_> {
                     let bug = SyntaxErr::TupleTypeExpectedEnd(self.lexer.peek_pos());
                     self.log.report(&bug);
 
-                    Type::SyntaxError(TypeSyntaxError::default())
+                    Type::SyntaxError(TypeSyntaxError {
+                        span: ByteSpan::new(paren_start, self.lexer.current_pos().offset),
+                    })
                 }
             };
 
@@ -435,11 +464,87 @@ impl Parser<'_, '_> {
         }
 
         Type::RefinementType(Box::new(RefinementType {
-            span: ByteSpan::default(),
+            span: ByteSpan::new(basis_type.span().start, self.lexer.current_pos().offset),
             basis_type,
             width: refine_options.width,
             minimum: refine_options.minimum,
             maximum: refine_options.maximum,
         }))
+    }
+}
+
+/// Helper to set the span on a primitive type that was created via Default.
+fn set_type_span(ty: Type, start: u32, end: u32) -> Type {
+    use Type::*;
+    let span = ByteSpan::new(start, end);
+    match ty {
+        Bool(mut b) => {
+            b.span = span;
+            Bool(b)
+        }
+        UInt8(mut u) => {
+            u.span = span;
+            UInt8(u)
+        }
+        UInt16(mut u) => {
+            u.span = span;
+            UInt16(u)
+        }
+        UInt32(mut u) => {
+            u.span = span;
+            UInt32(u)
+        }
+        UInt64(mut u) => {
+            u.span = span;
+            UInt64(u)
+        }
+        UInt128(mut u) => {
+            u.span = span;
+            UInt128(u)
+        }
+        USize(mut u) => {
+            u.span = span;
+            USize(u)
+        }
+        Int8(mut i) => {
+            i.span = span;
+            Int8(i)
+        }
+        Int16(mut i) => {
+            i.span = span;
+            Int16(i)
+        }
+        Int32(mut i) => {
+            i.span = span;
+            Int32(i)
+        }
+        Int64(mut i) => {
+            i.span = span;
+            Int64(i)
+        }
+        Int128(mut i) => {
+            i.span = span;
+            Int128(i)
+        }
+        Float32(mut f) => {
+            f.span = span;
+            Float32(f)
+        }
+        Float64(mut f) => {
+            f.span = span;
+            Float64(f)
+        }
+        TypePath(mut tp) => {
+            tp.span = span;
+            if let Some(seg) = tp.segments.first_mut() {
+                seg.span = span;
+            }
+            TypePath(tp)
+        }
+        SyntaxError(mut e) => {
+            e.span = span;
+            SyntaxError(e)
+        }
+        other => other,
     }
 }
