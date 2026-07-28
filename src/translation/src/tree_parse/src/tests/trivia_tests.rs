@@ -15,6 +15,7 @@ fn check_reconstruct(source: &str) {
             "Reconstructed text not found in source.\nSource: {source:?}\nReconstructed: {reconstructed:?}"
         );
     }
+    assert_eq!(module.reconstruct(source_bytes), source, "Module reconstruction failed");
 }
 
 /// Helper: verify the module span covers the entire source.
