@@ -1,3 +1,4 @@
+use crate::constraints::TypeConstraint;
 use crate::solver::Solver;
 use crate::substitution::Substitution;
 use nitrate_hir::{
@@ -8,7 +9,11 @@ use nitrate_hir_get_type::HirGetType;
 use nitrate_nstring::NString;
 use nitrate_tree::ByteSpan;
 use std::collections::BTreeMap;
+use std::collections::HashMap;
 use thin_vec::ThinVec;
+
+/// Cache key for monomorphized structs.
+type StructMonoCacheKey = (usize, Vec<(u32, TypeId)>);
 
 impl<'m> Solver<'m> {
     pub(crate) fn mono_cache_key(&self, func_id: &FunctionId, subst: &Substitution) -> (usize, Vec<(u32, TypeId)>) {
@@ -17,11 +22,7 @@ impl<'m> Solver<'m> {
         (func_id.as_usize(), sorted_args)
     }
 
-    pub(crate) fn struct_mono_cache_key(
-        &self,
-        struct_id: &StructDefId,
-        subst: &Substitution,
-    ) -> (usize, Vec<(u32, TypeId)>) {
+    pub(crate) fn struct_mono_cache_key(&self, struct_id: &StructDefId, subst: &Substitution) -> StructMonoCacheKey {
         let mut sorted_args: Vec<(u32, TypeId)> = subst.mapping.iter().map(|(k, v)| (*k, *v)).collect();
         sorted_args.sort_by_key(|(k, _)| *k);
         (struct_id.as_usize(), sorted_args)
@@ -91,23 +92,11 @@ impl<'m> Solver<'m> {
 
         // Check that all generic params that appear in field types have been bound
         for _param_name in generics.keys() {
-            // Check if this generic param appears in any field type
             let appears_in_fields = struct_def
                 .fields
                 .values()
                 .any(|f| Self::type_contains_generic_param(&f.ty, _param_name));
             if appears_in_fields {
-                let _idx = Self::find_generic_index_in_type(
-                    &struct_def.fields.values().next().map(|f| &f.ty).cloned().unwrap_or(
-                        Type::Unit {
-                            span: ByteSpan::default(),
-                        }
-                        .into(),
-                    ),
-                    _param_name,
-                )
-                .unwrap_or(0);
-                // Find the correct index for this param name
                 let generic_idx = struct_def
                     .fields
                     .values()
@@ -117,8 +106,6 @@ impl<'m> Solver<'m> {
                     })
                     .unwrap_or(0);
                 if generic_idx > 0 && !subst.mapping.contains_key(&generic_idx) {
-                    // This generic param is used in field types but couldn't be inferred
-                    // Return None to defer monomorphization until types are resolved
                     return None;
                 }
             }
@@ -159,26 +146,6 @@ impl<'m> Solver<'m> {
             }
             Type::SliceRef { element_type, .. } | Type::SlicePtr { element_type, .. } => {
                 Self::find_generic_index_in_type_deep(element_type, param_name)
-            }
-            _ => None,
-        }
-    }
-
-    fn find_generic_index_in_type(ty: &Type, param_name: &NString) -> Option<u32> {
-        match ty {
-            Type::GenericParam { index, name, .. } if name == param_name => Some(*index),
-            Type::Array { element_type, .. } => Self::find_generic_index_in_type(element_type, param_name),
-            Type::Tuple { element_types, .. } => {
-                for et in element_types.iter() {
-                    if let Some(idx) = Self::find_generic_index_in_type(et, param_name) {
-                        return Some(idx);
-                    }
-                }
-                None
-            }
-            Type::Reference { to, .. } | Type::Pointer { to, .. } => Self::find_generic_index_in_type(to, param_name),
-            Type::SliceRef { element_type, .. } | Type::SlicePtr { element_type, .. } => {
-                Self::find_generic_index_in_type(element_type, param_name)
             }
             _ => None,
         }
@@ -244,39 +211,17 @@ impl<'m> Solver<'m> {
                     .entry(*index)
                     .or_insert_with(|| TypeId::from(concrete.clone()));
             }
-            // Handle struct types - unify inside
-            (arg, Type::Struct { def: struct_def_id, .. }) => {
-                // For struct types, inspect field types for generic params
-                let struct_def = struct_def_id.borrow();
-                if struct_def.generics.is_some() {
-                    // Try to extract concrete types from the arg struct type
-                    if let Type::Struct { def: arg_def, .. } = arg
-                        && arg_def != struct_def_id
-                    {
-                        // Different struct, nothing to unify
-                        return;
-                    }
-                    for field in struct_def.fields.values() {
-                        if let Type::GenericParam { index: _, .. } = &*field.ty {
-                            // This doesn't give us concrete types from arg directly
-                            // Need to look at the actual value to infer
-                        }
-                    }
-                }
-            }
             _ => {}
         }
     }
 
     /// Monomorphize a generic struct by creating a concrete copy with substituted field types.
     pub(crate) fn monomorphize_struct(&mut self, struct_id: &StructDefId, subst: &Substitution) -> StructDefId {
-        // Generate a struct-level cache key
-        let mut sorted_args: Vec<(u32, TypeId)> = subst.mapping.iter().map(|(k, v)| (*k, *v)).collect();
-        sorted_args.sort_by_key(|(k, _)| *k);
-        let _cache_key = (struct_id.as_usize(), sorted_args);
-
-        // Store the cache in the solver (we use a separate field for struct mono cache)
-        // For now, we don't cache struct monomorphization (they're simple enough)
+        // Check cache first
+        let cache_key = self.struct_mono_cache_key(struct_id, subst);
+        if let Some(cached_id) = self.struct_mono_cache.get(&cache_key) {
+            return cached_id.clone();
+        }
 
         let struct_def = struct_id.borrow();
 
@@ -317,11 +262,12 @@ impl<'m> Solver<'m> {
         let mono_id: StructDefId = mono_struct.into();
         // Register in symbol table so codegen can find it
         self.m.add_struct(mono_id.clone());
+        // Cache for future identical instantiations
+        self.struct_mono_cache.insert(cache_key, mono_id.clone());
         mono_id
     }
 
-    /// Try to substitute `type GenericParam` types in a value to concrete types.
-    /// This is needed when struct field values contain generic types.
+    /// Substitute GenericParam types in a value with concrete types.
     pub(crate) fn substitute_in_value(&self, value: &Value, subst: &Substitution) -> Value {
         match value {
             Value::Cast {
@@ -351,14 +297,12 @@ impl<'m> Solver<'m> {
                     fields: new_fields,
                 }
             }
-            // For literals and symbols, just clone
             _ => value.clone(),
         }
     }
 
     pub(crate) fn monomorphize_function(&mut self, func_id: &FunctionId, subst: &Substitution) -> FunctionId {
-        // Check cache first — if we already monomorphized this generic function
-        // with identical concrete type arguments, return the existing copy.
+        // Check cache first
         let cache_key = self.mono_cache_key(func_id, subst);
         if let Some(existing) = self.mono_cache.get(&cache_key) {
             return existing.clone();
@@ -377,15 +321,14 @@ impl<'m> Solver<'m> {
             .map(|param_id| {
                 let param = param_id.borrow();
                 let new_ty = subst.apply(&param.ty);
-                let new_param = Parameter {
+                ParameterId::from(Parameter {
                     span: param.span,
                     attributes: param.attributes.clone(),
                     is_mutable: param.is_mutable,
                     name: param.name.clone(),
                     ty: TypeId::from(new_ty),
                     default_value: param.default_value.clone(),
-                };
-                ParameterId::from(new_param)
+                })
             })
             .collect();
 
@@ -410,7 +353,7 @@ impl<'m> Solver<'m> {
         };
 
         let mono_id: FunctionId = mono_func.into();
-        // Register the monomorphized function in the symbol table so the LLVM codegen can find it
+        // Register the monomorphized function in the symbol table
         self.m.add_function(mono_id.clone());
         // Cache for future identical instantiations
         self.mono_cache.insert(cache_key, mono_id.clone());
@@ -429,7 +372,7 @@ impl<'m> Solver<'m> {
                 let new_ty = subst.apply(&local.ty);
                 let new_init_val = local.initializer.borrow();
                 let new_init = self.apply_subst_to_value(&new_init_val, subst);
-                let new_local = LocalVariable {
+                BlockElement::Local(LocalVariableId::from(LocalVariable {
                     span: local.span,
                     kind: local.kind.clone(),
                     attributes: local.attributes.clone(),
@@ -437,8 +380,7 @@ impl<'m> Solver<'m> {
                     name: local.name.clone(),
                     ty: TypeId::from(new_ty),
                     initializer: ValueId::from(new_init),
-                };
-                BlockElement::Local(LocalVariableId::from(new_local))
+                }))
             }
         }
     }
@@ -458,7 +400,6 @@ impl<'m> Solver<'m> {
             Value::StructObject { struct_def, fields, .. } => {
                 let struct_def_b = struct_def.borrow();
                 if struct_def_b.generics.is_some() {
-                    // Apply substitution to field value types if they contain generic params
                     let new_fields: ThinVec<(NString, ValueId)> = fields
                         .iter()
                         .map(|(name, val_id)| {
@@ -480,22 +421,18 @@ impl<'m> Solver<'m> {
                     }
                 }
             }
-            Value::Call { callee, args, .. } => {
-                let new_args = Arguments {
+            Value::Call { callee, args, .. } => Value::Call {
+                span: ByteSpan::default(),
+                callee: callee.clone(),
+                args: Arguments {
                     positional: args.positional.clone(),
                     named: args.named.clone(),
-                };
-                Value::Call {
-                    span: ByteSpan::default(),
-                    callee: callee.clone(),
-                    args: new_args,
-                }
-            }
+                },
+            },
             Value::FunctionSymbol { id, .. } => Value::FunctionSymbol {
                 span: ByteSpan::default(),
                 id: id.clone(),
             },
-            // For all other values, just clone
             val => val.clone(),
         }
     }
