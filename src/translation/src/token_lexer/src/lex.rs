@@ -12,7 +12,7 @@ pub enum LexerError {
 
 #[derive(Debug)]
 pub struct Lexer<'a> {
-    source: &'a [u8],
+    pub source: &'a [u8],
     internal_getc_pos: SourcePosition,
     current_pos: SourcePosition,
     preread_token: Option<AnnotatedToken>,

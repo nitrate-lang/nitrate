@@ -361,6 +361,22 @@ pub enum Token {
     Eof,
 }
 
+impl Token {
+    /// Returns true if this token is trivia (whitespace, newlines, comments).
+    pub fn is_trivia(&self) -> bool {
+        match self {
+            Token::Space
+            | Token::HorizontalTab
+            | Token::NewLine
+            | Token::VerticalTab
+            | Token::FormFeed
+            | Token::CarriageReturn
+            | Token::Comment(_) => true,
+            _ => false,
+        }
+    }
+}
+
 impl std::fmt::Display for Token {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
@@ -739,5 +755,20 @@ mod tests {
             assert_eq!(annotated_token.range(), (start, end));
             assert_eq!(format!("{}", annotated_token.token), expected_str);
         }
+    }
+
+    #[test]
+    fn test_token_is_trivia() {
+        assert!(Token::Space.is_trivia());
+        assert!(Token::NewLine.is_trivia());
+        assert!(Token::HorizontalTab.is_trivia());
+        assert!(Token::VerticalTab.is_trivia());
+        assert!(Token::FormFeed.is_trivia());
+        assert!(Token::CarriageReturn.is_trivia());
+        assert!(Token::Comment(Comment::new("test".to_string(), CommentKind::SingleLine)).is_trivia());
+        assert!(!Token::Let.is_trivia());
+        assert!(!Token::Plus.is_trivia());
+        assert!(!Token::Semi.is_trivia());
+        assert!(!Token::Eof.is_trivia());
     }
 }
