@@ -1,0 +1,2 @@
+- Never write or execute scripts (Python, Bash, Node, etc.) to edit files.
+- Always use built-in tools (`write_to_file` or `replace_in_file`) for code modifications.
