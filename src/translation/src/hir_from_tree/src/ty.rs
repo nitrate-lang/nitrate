@@ -9,6 +9,7 @@ use nitrate_tree_resolve::ImportContext;
 use std::{collections::BTreeSet, ops::Deref, ops::Index};
 
 pub(crate) fn lower_type_path(type_path: ast::TypePath, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Type, ()> {
+    let span = type_path.span;
     // Check for generic args in intermediate segments (e.g., Foo<i32>::Bar)
     if type_path.segments[..type_path.segments.len().saturating_sub(1)]
         .iter()
@@ -45,14 +46,17 @@ pub(crate) fn lower_type_path(type_path: ast::TypePath, ctx: &mut Ast2HirCtx, lo
 
             let base_type = match ctx.ast_symbol_map.get(resolved_path) {
                 Some(SymbolKind::Struct) => Type::Struct {
+                    span,
                     def: ctx.tab.get_struct_or_insert_placeholder(resolved_path).clone(),
                 },
 
                 Some(SymbolKind::Enum) => Type::Enum {
+                    span,
                     def: ctx.tab.get_enum_or_insert_placeholder(resolved_path).clone(),
                 },
 
                 Some(SymbolKind::TypeAlias) => Type::TypeAlias {
+                    span,
                     def: ctx.tab.get_type_alias_or_insert_placeholder(resolved_path).clone(),
                 },
 
@@ -68,6 +72,7 @@ pub(crate) fn lower_type_path(type_path: ast::TypePath, ctx: &mut Ast2HirCtx, lo
             if let Some(args) = type_args {
                 let base_id: TypeId = base_type.into();
                 Ok(Type::Parameterized {
+                    span,
                     base: base_id,
                     args: Arguments {
                         positional: args.into(),
@@ -181,17 +186,17 @@ pub(crate) fn lower_refinement_type(
 
     // Ensure the basis type is an integer type that can be refined
     match &basis_type {
-        Type::U8
-        | Type::U16
-        | Type::U32
-        | Type::U64
-        | Type::U128
-        | Type::USize
-        | Type::I8
-        | Type::I16
-        | Type::I32
-        | Type::I64
-        | Type::I128 => {}
+        Type::U8 { .. }
+        | Type::U16 { .. }
+        | Type::U32 { .. }
+        | Type::U64 { .. }
+        | Type::U128 { .. }
+        | Type::USize { .. }
+        | Type::I8 { .. }
+        | Type::I16 { .. }
+        | Type::I32 { .. }
+        | Type::I64 { .. }
+        | Type::I128 { .. } => {}
         _ => {
             log.report(&HirErr::RefinementTypeOnNonInteger);
             return Err(());
@@ -267,6 +272,7 @@ pub(crate) fn lower_refinement_type(
         };
 
     Ok(Type::Refine {
+        span: ByteSpan::default(),
         base: basis_type.into(),
         min: min_lit,
         max: max_lit,
@@ -278,7 +284,9 @@ pub(crate) fn lower_tuple_type(
     log: &CompilerLog,
 ) -> Result<Type, ()> {
     if tuple_type.element_types.is_empty() {
-        return Ok(Type::Unit);
+        return Ok(Type::Unit {
+            span: ByteSpan::default(),
+        });
     }
 
     let mut element_types = Vec::with_capacity(tuple_type.element_types.len());
@@ -288,6 +296,7 @@ pub(crate) fn lower_tuple_type(
     }
 
     Ok(Type::Tuple {
+        span: tuple_type.span,
         element_types: element_types.into(),
     })
 }
@@ -320,7 +329,11 @@ pub(crate) fn lower_array_type(
         }
     };
 
-    Ok(Type::Array { element_type, len })
+    Ok(Type::Array {
+        span: array_type.span,
+        element_type,
+        len,
+    })
 }
 
 pub(crate) fn lower_function_type(
@@ -348,7 +361,10 @@ pub(crate) fn lower_function_type(
 
     let return_type: TypeId = match function_type.return_type {
         Some(ret_ty) => lower_type(ret_ty, ctx, log)?.into(),
-        None => Type::Unit.into(),
+        None => Type::Unit {
+            span: ByteSpan::default(),
+        }
+        .into(),
     };
 
     let function_type = FunctionType {
@@ -358,6 +374,7 @@ pub(crate) fn lower_function_type(
     };
 
     Ok(Type::Function {
+        span: function_type.span,
         function_type: function_type.into(),
     })
 }
@@ -397,6 +414,7 @@ pub(crate) fn lower_reference_type(
         let element_type = lower_type(slice.element_type, ctx, log)?.into();
 
         Ok(Type::SliceRef {
+            span: reference_type.span,
             lifetime,
             exclusive,
             mutable,
@@ -406,6 +424,7 @@ pub(crate) fn lower_reference_type(
         let to = lower_type(reference_type.to, ctx, log)?.into();
 
         Ok(Type::Reference {
+            span: reference_type.span,
             lifetime,
             exclusive,
             mutable,
@@ -443,6 +462,7 @@ pub(crate) fn lower_pointer_type(
         let element_type: TypeId = lower_type(slice.element_type, ctx, log)?.into();
 
         Ok(Type::SlicePtr {
+            span: pointer_type.span,
             lifetime: Lifetime::Inferred,
             exclusive,
             mutable,
@@ -452,6 +472,7 @@ pub(crate) fn lower_pointer_type(
         let to = lower_type(pointer_type.to, ctx, log)?.into();
 
         Ok(Type::Pointer {
+            span: pointer_type.span,
             lifetime: Lifetime::Inferred,
             exclusive,
             mutable,
@@ -477,21 +498,21 @@ pub(crate) fn lower_lifetime(_lifetime: ast::Lifetime, _ctx: &mut Ast2HirCtx, lo
 pub(crate) fn lower_type(ty: ast::Type, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Type, ()> {
     match ty {
         ast::Type::SyntaxError(_) => Err(()),
-        ast::Type::Bool(_) => Ok(Type::Bool),
-        ast::Type::UInt8(_) => Ok(Type::U8),
-        ast::Type::UInt16(_) => Ok(Type::U16),
-        ast::Type::UInt32(_) => Ok(Type::U32),
-        ast::Type::UInt64(_) => Ok(Type::U64),
-        ast::Type::UInt128(_) => Ok(Type::U128),
-        ast::Type::USize(_) => Ok(Type::USize),
-        ast::Type::Int8(_) => Ok(Type::I8),
-        ast::Type::Int16(_) => Ok(Type::I16),
-        ast::Type::Int32(_) => Ok(Type::I32),
-        ast::Type::Int64(_) => Ok(Type::I64),
-        ast::Type::Int128(_) => Ok(Type::I128),
-        ast::Type::Float32(_) => Ok(Type::F32),
-        ast::Type::Float64(_) => Ok(Type::F64),
-        ast::Type::InferType(_) => Ok(ctx.create_inference_placeholder()),
+        ast::Type::Bool(b) => Ok(Type::Bool { span: b.span }),
+        ast::Type::UInt8(t) => Ok(Type::U8 { span: t.span }),
+        ast::Type::UInt16(t) => Ok(Type::U16 { span: t.span }),
+        ast::Type::UInt32(t) => Ok(Type::U32 { span: t.span }),
+        ast::Type::UInt64(t) => Ok(Type::U64 { span: t.span }),
+        ast::Type::UInt128(t) => Ok(Type::U128 { span: t.span }),
+        ast::Type::USize(t) => Ok(Type::USize { span: t.span }),
+        ast::Type::Int8(t) => Ok(Type::I8 { span: t.span }),
+        ast::Type::Int16(t) => Ok(Type::I16 { span: t.span }),
+        ast::Type::Int32(t) => Ok(Type::I32 { span: t.span }),
+        ast::Type::Int64(t) => Ok(Type::I64 { span: t.span }),
+        ast::Type::Int128(t) => Ok(Type::I128 { span: t.span }),
+        ast::Type::Float32(t) => Ok(Type::F32 { span: t.span }),
+        ast::Type::Float64(t) => Ok(Type::F64 { span: t.span }),
+        ast::Type::InferType(t) => Ok(ctx.create_inference_placeholder()),
         ast::Type::TypePath(t) => lower_type_path(*t, ctx, log),
         ast::Type::RefinementType(t) => lower_refinement_type(*t, ctx, log),
         ast::Type::TupleType(t) => lower_tuple_type(*t, ctx, log),
@@ -537,7 +558,10 @@ fn lower_type_bool() {
         &mut ctx,
         &log,
     );
-    assert_eq!(r, Ok(Type::Bool));
+    let expected = Type::Bool {
+        span: ByteSpan::default(),
+    };
+    assert_eq!(r, Ok(expected));
 }
 
 #[test]
@@ -550,7 +574,10 @@ fn lower_type_u8() {
         &mut ctx,
         &log,
     );
-    assert_eq!(r, Ok(Type::U8));
+    let expected = Type::U8 {
+        span: ByteSpan::default(),
+    };
+    assert_eq!(r, Ok(expected));
 }
 
 #[test]
@@ -563,7 +590,10 @@ fn lower_type_u16() {
         &mut ctx,
         &log,
     );
-    assert_eq!(r, Ok(Type::U16));
+    let expected = Type::U16 {
+        span: ByteSpan::default(),
+    };
+    assert_eq!(r, Ok(expected));
 }
 
 #[test]
@@ -576,7 +606,10 @@ fn lower_type_u32() {
         &mut ctx,
         &log,
     );
-    assert_eq!(r, Ok(Type::U32));
+    let expected = Type::U32 {
+        span: ByteSpan::default(),
+    };
+    assert_eq!(r, Ok(expected));
 }
 
 #[test]
@@ -589,7 +622,10 @@ fn lower_type_u64() {
         &mut ctx,
         &log,
     );
-    assert_eq!(r, Ok(Type::U64));
+    let expected = Type::U64 {
+        span: ByteSpan::default(),
+    };
+    assert_eq!(r, Ok(expected));
 }
 
 #[test]
@@ -602,7 +638,10 @@ fn lower_type_u128() {
         &mut ctx,
         &log,
     );
-    assert_eq!(r, Ok(Type::U128));
+    let expected = Type::U128 {
+        span: ByteSpan::default(),
+    };
+    assert_eq!(r, Ok(expected));
 }
 
 #[test]
@@ -615,7 +654,10 @@ fn lower_type_usize() {
         &mut ctx,
         &log,
     );
-    assert_eq!(r, Ok(Type::USize));
+    let expected = Type::USize {
+        span: ByteSpan::default(),
+    };
+    assert_eq!(r, Ok(expected));
 }
 
 #[test]
@@ -628,7 +670,10 @@ fn lower_type_i8() {
         &mut ctx,
         &log,
     );
-    assert_eq!(r, Ok(Type::I8));
+    let expected = Type::I8 {
+        span: ByteSpan::default(),
+    };
+    assert_eq!(r, Ok(expected));
 }
 
 #[test]
@@ -641,7 +686,10 @@ fn lower_type_i16() {
         &mut ctx,
         &log,
     );
-    assert_eq!(r, Ok(Type::I16));
+    let expected = Type::I16 {
+        span: ByteSpan::default(),
+    };
+    assert_eq!(r, Ok(expected));
 }
 
 #[test]
@@ -654,7 +702,10 @@ fn lower_type_i32() {
         &mut ctx,
         &log,
     );
-    assert_eq!(r, Ok(Type::I32));
+    let expected = Type::I32 {
+        span: ByteSpan::default(),
+    };
+    assert_eq!(r, Ok(expected));
 }
 
 #[test]
@@ -667,7 +718,10 @@ fn lower_type_i64() {
         &mut ctx,
         &log,
     );
-    assert_eq!(r, Ok(Type::I64));
+    let expected = Type::I64 {
+        span: ByteSpan::default(),
+    };
+    assert_eq!(r, Ok(expected));
 }
 
 #[test]
@@ -680,7 +734,10 @@ fn lower_type_i128() {
         &mut ctx,
         &log,
     );
-    assert_eq!(r, Ok(Type::I128));
+    let expected = Type::I128 {
+        span: ByteSpan::default(),
+    };
+    assert_eq!(r, Ok(expected));
 }
 
 #[test]
@@ -693,7 +750,10 @@ fn lower_type_f32() {
         &mut ctx,
         &log,
     );
-    assert_eq!(r, Ok(Type::F32));
+    let expected = Type::F32 {
+        span: ByteSpan::default(),
+    };
+    assert_eq!(r, Ok(expected));
 }
 
 #[test]
@@ -706,7 +766,10 @@ fn lower_type_f64() {
         &mut ctx,
         &log,
     );
-    assert_eq!(r, Ok(Type::F64));
+    let expected = Type::F64 {
+        span: ByteSpan::default(),
+    };
+    assert_eq!(r, Ok(expected));
 }
 
 #[test]
@@ -749,7 +812,10 @@ fn lower_type_parentheses() {
         &mut ctx,
         &log,
     );
-    assert_eq!(r, Ok(Type::Bool));
+    let expected = Type::Bool {
+        span: ByteSpan::default(),
+    };
+    assert_eq!(r, Ok(expected));
 }
 
 // ===== lower_type_path =====
@@ -958,7 +1024,12 @@ fn lower_tuple_empty_is_unit() {
         span: ByteSpan::default(),
         element_types: vec![],
     };
-    assert_eq!(lower_tuple_type(t, &mut ctx, &log).unwrap(), Type::Unit);
+    assert_eq!(
+        lower_tuple_type(t, &mut ctx, &log).unwrap(),
+        Type::Unit {
+            span: ByteSpan::default()
+        }
+    );
 }
 
 #[test]

@@ -189,39 +189,39 @@ fn check_value_access(value: &Value, ctx: &mut BorrowCheckCtx) {
 fn check_rvalue_access(value: &Value, ctx: &mut BorrowCheckCtx) {
     match value {
         // --- Literals and constants: no borrow concerns ---
-        Value::Unit
-        | Value::Bool(_)
-        | Value::I8(_)
-        | Value::I16(_)
-        | Value::I32(_)
-        | Value::I64(_)
-        | Value::I128(_)
-        | Value::U8(_)
-        | Value::U16(_)
-        | Value::U32(_)
-        | Value::U64(_)
-        | Value::U128(_)
-        | Value::F32(_)
-        | Value::F64(_)
-        | Value::USize(_, _)
-        | Value::StringLit(_)
-        | Value::BStringLit(_) => {}
+        Value::Unit { .. }
+        | Value::Bool { .. }
+        | Value::I8 { .. }
+        | Value::I16 { .. }
+        | Value::I32 { .. }
+        | Value::I64 { .. }
+        | Value::I128 { .. }
+        | Value::U8 { .. }
+        | Value::U16 { .. }
+        | Value::U32 { .. }
+        | Value::U64 { .. }
+        | Value::U128 { .. }
+        | Value::F32 { .. }
+        | Value::F64 { .. }
+        | Value::USize { .. }
+        | Value::StringLit { .. }
+        | Value::BStringLit { .. } => {}
 
         // Inferred types should have been resolved by now.
-        Value::InferredInteger(_) | Value::InferredFloat(_) => {
+        Value::InferredInteger { .. } | Value::InferredFloat { .. } => {
             panic!("Inferred types should have been resolved before borrow checking");
         }
 
         // --- Symbol references: check for use-after-move and read-while-borrowed ---
-        Value::LocalVariableSymbol { id } => {
+        Value::LocalVariableSymbol { id, .. } => {
             let pid = ctx.place_id(Place::Local(id.clone()));
             check_read_place(pid, ctx, "use of local variable");
         }
-        Value::GlobalVariableSymbol { id } => {
+        Value::GlobalVariableSymbol { id, .. } => {
             let pid = ctx.place_id(Place::Static(id.clone()));
             check_read_place(pid, ctx, "use of global variable");
         }
-        Value::ParameterSymbol { id } => {
+        Value::ParameterSymbol { id, .. } => {
             let pid = ctx.place_id(Place::Param(id.clone()));
             check_read_place(pid, ctx, "use of parameter");
         }
@@ -251,7 +251,7 @@ fn check_rvalue_access(value: &Value, ctx: &mut BorrowCheckCtx) {
         }
 
         // --- Index access: check both collection and index ---
-        Value::IndexAccess { collection, index } => {
+        Value::IndexAccess { collection, index, .. } => {
             // Indexing reads from the collection (shared borrow if it's a reference).
             let coll_value = collection.borrow();
             check_rvalue_access(&coll_value, ctx);
@@ -264,14 +264,14 @@ fn check_rvalue_access(value: &Value, ctx: &mut BorrowCheckCtx) {
         }
 
         // --- Assignment: check the write ---
-        Value::Assign { place, value } => {
+        Value::Assign { place, value, .. } => {
             let place_value = place.borrow();
             check_write_place(&place_value, ctx, "assignment");
             check_rvalue_access(&value.borrow(), ctx);
         }
 
         // --- Dereference: read through a pointer ---
-        Value::Deref { place } => {
+        Value::Deref { place, .. } => {
             // Dereferencing reads the pointer value, and then reads the pointed-to memory.
             // Check that the pointer itself is readable.
             check_rvalue_access(&place.borrow(), ctx);
@@ -287,6 +287,7 @@ fn check_rvalue_access(value: &Value, ctx: &mut BorrowCheckCtx) {
             exclusive,
             mutable,
             place,
+            ..
         } => {
             let borrow_kind = match (exclusive, mutable) {
                 (false, false) => BorrowKind::Shared,
@@ -298,13 +299,13 @@ fn check_rvalue_access(value: &Value, ctx: &mut BorrowCheckCtx) {
         }
 
         // --- Lists and tuples ---
-        Value::List { elements } => {
+        Value::List { elements, .. } => {
             for elem in elements {
                 check_rvalue_access(&elem.borrow(), ctx);
             }
         }
 
-        Value::Tuple { elements } => {
+        Value::Tuple { elements, .. } => {
             for elem in elements {
                 check_rvalue_access(&elem.borrow(), ctx);
             }
@@ -315,6 +316,7 @@ fn check_rvalue_access(value: &Value, ctx: &mut BorrowCheckCtx) {
             condition,
             true_branch,
             false_branch,
+            ..
         } => {
             check_rvalue_access(&condition.borrow(), ctx);
 
@@ -368,7 +370,7 @@ fn check_rvalue_access(value: &Value, ctx: &mut BorrowCheckCtx) {
             }
         }
 
-        Value::While { condition, body } => {
+        Value::While { condition, body, .. } => {
             // In a while loop, condition and body can execute multiple times.
             // Borrows created inside must not outlive the loop body (they must be
             // released before the next iteration).
@@ -397,7 +399,7 @@ fn check_rvalue_access(value: &Value, ctx: &mut BorrowCheckCtx) {
             }
         }
 
-        Value::Loop { body } => {
+        Value::Loop { body, .. } => {
             let body_block = body.borrow();
             let before_borrows = ctx.active_borrows.len();
             check_block_elements(&body_block.elements, ctx);
@@ -416,9 +418,9 @@ fn check_rvalue_access(value: &Value, ctx: &mut BorrowCheckCtx) {
             }
         }
 
-        Value::Break { label: _ } | Value::Continue { label: _ } => {}
+        Value::Break { label: _, .. } | Value::Continue { label: _, .. } => {}
 
-        Value::Return { value } => {
+        Value::Return { value, .. } => {
             // Check the return value expression.
             check_rvalue_access(&value.borrow(), ctx);
 
@@ -442,12 +444,12 @@ fn check_rvalue_access(value: &Value, ctx: &mut BorrowCheckCtx) {
             }
         }
 
-        Value::Block { block } => {
+        Value::Block { block, .. } => {
             let block = block.borrow();
             check_block_elements(&block.elements, ctx);
         }
 
-        Value::Call { callee, args } => {
+        Value::Call { callee, args, .. } => {
             // Evaluate the callee.
             check_rvalue_access(&callee.borrow(), ctx);
 
@@ -603,7 +605,7 @@ fn check_borrow_place(value: &Value, kind: BorrowKind, ctx: &mut BorrowCheckCtx,
         // Check if the value is a string literal - these are static constants
         // that are always safe to borrow (they live in the binary's .rodata section).
         match value {
-            Value::StringLit(_) | Value::BStringLit(_) => {
+            Value::StringLit { .. } | Value::BStringLit { .. } => {
                 // String literals are compile-time constants with 'static lifetime.
                 // They're stored in the binary's read-only data section, so borrowing
                 // them creates a valid reference. No borrow checking needed.
@@ -683,28 +685,28 @@ fn check_borrow_place(value: &Value, kind: BorrowKind, ctx: &mut BorrowCheckCtx,
 /// For example, `x.f.g` becomes `Place::Projection(Place::Projection(Place::Local(x), .f), .g)`.
 fn value_to_place(value: &Value, ctx: &BorrowCheckCtx) -> Place {
     match value {
-        Value::LocalVariableSymbol { id } => Place::Local(id.clone()),
-        Value::GlobalVariableSymbol { id } => Place::Static(id.clone()),
-        Value::ParameterSymbol { id } => Place::Param(id.clone()),
+        Value::LocalVariableSymbol { id, .. } => Place::Local(id.clone()),
+        Value::GlobalVariableSymbol { id, .. } => Place::Static(id.clone()),
+        Value::ParameterSymbol { id, .. } => Place::Param(id.clone()),
         // String/byte literals are compile-time constants with 'static lifetime.
         // Borrowing them is always valid.
         // String literals are compile-time constants with 'static lifetime.
-        Value::StringLit(_) | Value::BStringLit(_) => Place::Temporary,
-        Value::FieldAccess { expr, field_name } => {
+        Value::StringLit { .. } | Value::BStringLit { .. } => Place::Temporary,
+        Value::FieldAccess { expr, field_name, .. } => {
             let base = value_to_place(&expr.borrow(), ctx);
             Place::Projection {
                 base: Box::new(base),
                 elem: PlaceElem::Field(field_name.clone()),
             }
         }
-        Value::Deref { place } => {
+        Value::Deref { place, .. } => {
             let base = value_to_place(&place.borrow(), ctx);
             Place::Projection {
                 base: Box::new(base),
                 elem: PlaceElem::Deref,
             }
         }
-        Value::IndexAccess { collection, index } => {
+        Value::IndexAccess { collection, index, .. } => {
             let base = value_to_place(&collection.borrow(), ctx);
             // For indexing, we represent the index itself as a place too.
             let index_place = value_to_place(&index.borrow(), ctx);
@@ -726,10 +728,10 @@ fn place_to_string(place: &Place, _ctx: &BorrowCheckCtx) -> String {
 /// Check if a place value is mutable.
 fn is_place_mutable(value: &Value, ctx: &BorrowCheckCtx) -> bool {
     match value {
-        Value::LocalVariableSymbol { id } => id.borrow().is_mutable,
-        Value::GlobalVariableSymbol { id } => id.borrow().is_mutable,
-        Value::ParameterSymbol { id } => id.borrow().is_mutable,
-        Value::Deref { place } => {
+        Value::LocalVariableSymbol { id, .. } => id.borrow().is_mutable,
+        Value::GlobalVariableSymbol { id, .. } => id.borrow().is_mutable,
+        Value::ParameterSymbol { id, .. } => id.borrow().is_mutable,
+        Value::Deref { place, .. } => {
             let deref_type = HirGetType::determine_type(&*place.borrow(), ctx.tab).ok();
             match deref_type {
                 Some(Type::Reference { mutable, .. })
@@ -739,10 +741,10 @@ fn is_place_mutable(value: &Value, ctx: &BorrowCheckCtx) -> bool {
                 _ => false,
             }
         }
-        Value::FieldAccess { expr, field_name } => {
+        Value::FieldAccess { expr, field_name, .. } => {
             let expr_type = HirGetType::determine_type(&*expr.borrow(), ctx.tab).ok();
             match expr_type {
-                Some(Type::Struct { def }) => {
+                Some(Type::Struct { def, .. }) => {
                     let struct_def = def.borrow();
                     struct_def
                         .fields

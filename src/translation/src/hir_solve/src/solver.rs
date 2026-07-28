@@ -59,17 +59,17 @@ impl<'m> Solver<'m> {
 
     fn integer_primitive_bounds(ty: &Type) -> Option<Bounds> {
         match ty {
-            Type::U8 => Some((0, 255)),
-            Type::U16 => Some((0, 65535)),
-            Type::U32 => Some((0, 4294967295)),
-            Type::U64 => Some((0, 18446744073709551615)),
-            Type::U128 => Some((0, i128::MAX)),
-            Type::USize => Some((0, 18446744073709551615)),
-            Type::I8 => Some((-128, 127)),
-            Type::I16 => Some((-32768, 32767)),
-            Type::I32 => Some((-2147483648, 2147483647)),
-            Type::I64 => Some((-9223372036854775808, 9223372036854775807)),
-            Type::I128 => Some((i128::MIN, i128::MAX)),
+            Type::U8 { .. } => Some((0, 255)),
+            Type::U16 { .. } => Some((0, 65535)),
+            Type::U32 { .. } => Some((0, 4294967295)),
+            Type::U64 { .. } => Some((0, 18446744073709551615)),
+            Type::U128 { .. } => Some((0, i128::MAX)),
+            Type::USize { .. } => Some((0, 18446744073709551615)),
+            Type::I8 { .. } => Some((-128, 127)),
+            Type::I16 { .. } => Some((-32768, 32767)),
+            Type::I32 { .. } => Some((-2147483648, 2147483647)),
+            Type::I64 { .. } => Some((-9223372036854775808, 9223372036854775807)),
+            Type::I128 { .. } => Some((i128::MIN, i128::MAX)),
             _ => None,
         }
     }
@@ -95,18 +95,18 @@ impl<'m> Solver<'m> {
                 Value::LocalVariableSymbol { id } => Self::extract_bounds_from_type(id.borrow().ty.deref()),
                 Value::GlobalVariableSymbol { id } => Self::extract_bounds_from_type(id.borrow().ty.deref()),
                 Value::ParameterSymbol { id } => Self::extract_bounds_from_type(id.borrow().ty.deref()),
-                Value::I8(_) => Some((-128, 127)),
-                Value::I16(_) => Some((-32768, 32767)),
-                Value::I32(_) => Some((-2147483648, 2147483647)),
-                Value::I64(_) => Some((-9223372036854775808, 9223372036854775807)),
-                Value::I128(_) => Some((i128::MIN, i128::MAX)),
-                Value::U8(_) => Some((0, 255)),
-                Value::U16(_) => Some((0, 65535)),
-                Value::U32(_) => Some((0, 4294967295)),
-                Value::U64(_) => Some((0, 18446744073709551615)),
-                Value::U128(_) => Some((0, i128::MAX)),
-                Value::USize(..) => Some((0, 18446744073709551615)),
-                Value::InferredInteger(v) => Some((**v as i128, **v as i128)),
+                Value::I8 { .. } => Some((-128, 127)),
+                Value::I16 { .. } => Some((-32768, 32767)),
+                Value::I32 { .. } => Some((-2147483648, 2147483647)),
+                Value::I64 { .. } => Some((-9223372036854775808, 9223372036854775807)),
+                Value::I128 { .. } => Some((i128::MIN, i128::MAX)),
+                Value::U8 { .. } => Some((0, 255)),
+                Value::U16 { .. } => Some((0, 65535)),
+                Value::U32 { .. } => Some((0, 4294967295)),
+                Value::U64 { .. } => Some((0, 18446744073709551615)),
+                Value::U128 { .. } => Some((0, i128::MAX)),
+                Value::USize { .. } => Some((0, 18446744073709551615)),
+                Value::InferredInteger { value: v, .. } => Some((**v as i128, **v as i128)),
                 _ => None,
             }
         };
@@ -237,16 +237,15 @@ impl<'m> Solver<'m> {
         let target_bounds = Self::extract_bounds_from_type(constraint_ty);
         if let Some((target_min, target_max)) = target_bounds {
             let (comp_min, comp_max) = computed_bounds;
-            if (comp_min < target_min || comp_max > target_max)
-                && matches!(constraint_ty, Type::Refine { .. }) {
-                    self.errors
-                        .insert(crate::diagnosis::TypeErr::OperationResultOutOfRefinementBounds {
-                            refinement_type: TypeId::from(constraint_ty.clone()),
-                            computed_min: comp_min.max(0) as u128,
-                            computed_max: comp_max.max(0) as u128,
-                        });
-                    return false;
-                }
+            if (comp_min < target_min || comp_max > target_max) && matches!(constraint_ty, Type::Refine { .. }) {
+                self.errors
+                    .insert(crate::diagnosis::TypeErr::OperationResultOutOfRefinementBounds {
+                        refinement_type: TypeId::from(constraint_ty.clone()),
+                        computed_min: comp_min.max(0) as u128,
+                        computed_max: comp_max.max(0) as u128,
+                    });
+                return false;
+            }
         }
         true
     }
@@ -318,86 +317,124 @@ impl<'m> Solver<'m> {
                 break;
             }
             return match effective_ty {
-                Type::I8 => match i8::try_from(value) {
-                    Ok(v) => NodeAction::Replace(Value::I8(v)),
+                Type::I8 { .. } => match i8::try_from(value) {
+                    Ok(v) => NodeAction::Replace(Value::I8 {
+                        span: ByteSpan::default(),
+                        value: v,
+                    }),
                     Err(_) => {
                         self.report_out_of_range(value, *ty);
                         NodeAction::NoChange
                     }
                 },
-                Type::I16 => match i16::try_from(value) {
-                    Ok(v) => NodeAction::Replace(Value::I16(v)),
+                Type::I16 { .. } => match i16::try_from(value) {
+                    Ok(v) => NodeAction::Replace(Value::I16 {
+                        span: ByteSpan::default(),
+                        value: v,
+                    }),
                     Err(_) => {
                         self.report_out_of_range(value, *ty);
                         NodeAction::NoChange
                     }
                 },
-                Type::I32 => match i32::try_from(value) {
-                    Ok(v) => NodeAction::Replace(Value::I32(v)),
+                Type::I32 { .. } => match i32::try_from(value) {
+                    Ok(v) => NodeAction::Replace(Value::I32 {
+                        span: ByteSpan::default(),
+                        value: v,
+                    }),
                     Err(_) => {
                         self.report_out_of_range(value, *ty);
                         NodeAction::NoChange
                     }
                 },
-                Type::I64 => match i64::try_from(value) {
-                    Ok(v) => NodeAction::Replace(Value::I64(v)),
+                Type::I64 { .. } => match i64::try_from(value) {
+                    Ok(v) => NodeAction::Replace(Value::I64 {
+                        span: ByteSpan::default(),
+                        value: v,
+                    }),
                     Err(_) => {
                         self.report_out_of_range(value, *ty);
                         NodeAction::NoChange
                     }
                 },
-                Type::I128 => match i128::try_from(value) {
-                    Ok(v) => NodeAction::Replace(Value::I128(Box::new(v))),
+                Type::I128 { .. } => match i128::try_from(value) {
+                    Ok(v) => NodeAction::Replace(Value::I128 {
+                        span: ByteSpan::default(),
+                        value: Box::new(v),
+                    }),
                     Err(_) => {
                         self.report_out_of_range(value, *ty);
                         NodeAction::NoChange
                     }
                 },
-                Type::U8 => match u8::try_from(value) {
-                    Ok(v) => NodeAction::Replace(Value::U8(v)),
+                Type::U8 { .. } => match u8::try_from(value) {
+                    Ok(v) => NodeAction::Replace(Value::U8 {
+                        span: ByteSpan::default(),
+                        value: v,
+                    }),
                     Err(_) => {
                         self.report_out_of_range(value, *ty);
                         NodeAction::NoChange
                     }
                 },
-                Type::U16 => match u16::try_from(value) {
-                    Ok(v) => NodeAction::Replace(Value::U16(v)),
+                Type::U16 { .. } => match u16::try_from(value) {
+                    Ok(v) => NodeAction::Replace(Value::U16 {
+                        span: ByteSpan::default(),
+                        value: v,
+                    }),
                     Err(_) => {
                         self.report_out_of_range(value, *ty);
                         NodeAction::NoChange
                     }
                 },
-                Type::U32 => match u32::try_from(value) {
-                    Ok(v) => NodeAction::Replace(Value::U32(v)),
+                Type::U32 { .. } => match u32::try_from(value) {
+                    Ok(v) => NodeAction::Replace(Value::U32 {
+                        span: ByteSpan::default(),
+                        value: v,
+                    }),
                     Err(_) => {
                         self.report_out_of_range(value, *ty);
                         NodeAction::NoChange
                     }
                 },
-                Type::U64 => match u64::try_from(value) {
-                    Ok(v) => NodeAction::Replace(Value::U64(v)),
+                Type::U64 { .. } => match u64::try_from(value) {
+                    Ok(v) => NodeAction::Replace(Value::U64 {
+                        span: ByteSpan::default(),
+                        value: v,
+                    }),
                     Err(_) => {
                         self.report_out_of_range(value, *ty);
                         NodeAction::NoChange
                     }
                 },
-                Type::U128 => match u128::try_from(value) {
-                    Ok(v) => NodeAction::Replace(Value::U128(Box::new(v))),
+                Type::U128 { .. } => match u128::try_from(value) {
+                    Ok(v) => NodeAction::Replace(Value::U128 {
+                        span: ByteSpan::default(),
+                        value: Box::new(v),
+                    }),
                     Err(_) => {
                         self.report_out_of_range(value, *ty);
                         NodeAction::NoChange
                     }
                 },
-                Type::USize => match self.m.arch_ptr_size() {
+                Type::USize { .. } => match self.m.arch_ptr_size() {
                     PtrSize::U32 => match u32::try_from(value) {
-                        Ok(v) => NodeAction::Replace(Value::USize(32, u64::from(v))),
+                        Ok(v) => NodeAction::Replace(Value::USize {
+                            span: ByteSpan::default(),
+                            bits: 32,
+                            value: u64::from(v),
+                        }),
                         Err(_) => {
                             self.report_out_of_range(value, *ty);
                             NodeAction::NoChange
                         }
                     },
                     PtrSize::U64 => match u64::try_from(value) {
-                        Ok(v) => NodeAction::Replace(Value::USize(64, v)),
+                        Ok(v) => NodeAction::Replace(Value::USize {
+                            span: ByteSpan::default(),
+                            bits: 64,
+                            value: v,
+                        }),
                         Err(_) => {
                             self.report_out_of_range(value, *ty);
                             NodeAction::NoChange
@@ -434,23 +471,23 @@ impl<'m> Solver<'m> {
 
     fn determine_action(&mut self, value: &Value, id: &ValueId) -> NodeAction {
         match value {
-            Value::Unit
-            | Value::Bool(_)
-            | Value::I8(_)
-            | Value::I16(_)
-            | Value::I32(_)
-            | Value::I64(_)
-            | Value::I128(_)
-            | Value::U8(_)
-            | Value::U16(_)
-            | Value::U32(_)
-            | Value::U64(_)
-            | Value::U128(_)
-            | Value::F32(_)
-            | Value::F64(_)
-            | Value::USize(_, _)
-            | Value::StringLit(_)
-            | Value::BStringLit(_)
+            Value::Unit { .. }
+            | Value::Bool { .. }
+            | Value::I8 { .. }
+            | Value::I16 { .. }
+            | Value::I32 { .. }
+            | Value::I64 { .. }
+            | Value::I128 { .. }
+            | Value::U8 { .. }
+            | Value::U16 { .. }
+            | Value::U32 { .. }
+            | Value::U64 { .. }
+            | Value::U128 { .. }
+            | Value::F32 { .. }
+            | Value::F64 { .. }
+            | Value::USize { .. }
+            | Value::StringLit { .. }
+            | Value::BStringLit { .. }
             | Value::StructObject { .. }
             | Value::EnumVariant { .. }
             | Value::Binary { .. }
@@ -476,33 +513,33 @@ impl<'m> Solver<'m> {
             | Value::GlobalVariableSymbol { .. }
             | Value::LocalVariableSymbol { .. }
             | Value::ParameterSymbol { .. } => NodeAction::NoChange,
-            Value::InferredInteger(integer) => self.solve_inferred_integer(id, **integer),
-            Value::InferredFloat(float) => self.solve_inferred_float(id, *float),
+            Value::InferredInteger { .. } => self.solve_inferred_integer(id, **integer()),
+            Value::InferredFloat { .. } => self.solve_inferred_float(id, *float()),
         }
     }
 
     fn visit_children(&mut self, e: &ValueId) {
         let value = e.borrow().clone();
         match &value {
-            Value::Unit
-            | Value::Bool(_)
-            | Value::I8(_)
-            | Value::I16(_)
-            | Value::I32(_)
-            | Value::I64(_)
-            | Value::I128(_)
-            | Value::U8(_)
-            | Value::U16(_)
-            | Value::U32(_)
-            | Value::U64(_)
-            | Value::U128(_)
-            | Value::F32(_)
-            | Value::F64(_)
-            | Value::USize(..)
-            | Value::StringLit(_)
-            | Value::BStringLit(_)
-            | Value::InferredInteger(_)
-            | Value::InferredFloat(_) => {}
+            Value::Unit { .. }
+            | Value::Bool { .. }
+            | Value::I8 { .. }
+            | Value::I16 { .. }
+            | Value::I32 { .. }
+            | Value::I64 { .. }
+            | Value::I128 { .. }
+            | Value::U8 { .. }
+            | Value::U16 { .. }
+            | Value::U32 { .. }
+            | Value::U64 { .. }
+            | Value::U128 { .. }
+            | Value::F32 { .. }
+            | Value::F64 { .. }
+            | Value::USize { .. }
+            | Value::StringLit { .. }
+            | Value::BStringLit { .. }
+            | Value::InferredInteger { .. }
+            | Value::InferredFloat { .. } => {}
 
             Value::StructObject { struct_def, fields } => {
                 // Check if this struct is generic and needs monomorphization
@@ -606,12 +643,12 @@ impl<'m> Solver<'m> {
                             | BinaryOp::Shr
                             | BinaryOp::Rol
                             | BinaryOp::Ror
-                    )
-                        && let (Some(lb), Some(rb)) =
-                            (self.get_effective_bounds(left), self.get_effective_bounds(right))
-                            && let Some(res) = Self::compute_binary_bounds(op, lb, rb) {
-                                self.check_bounds_against_constraint(res, result_ty);
-                            }
+                    ) && let (Some(lb), Some(rb)) =
+                        (self.get_effective_bounds(left), self.get_effective_bounds(right))
+                        && let Some(res) = Self::compute_binary_bounds(op, lb, rb)
+                    {
+                        self.check_bounds_against_constraint(res, result_ty);
+                    }
                 }
                 // Now propagate base type constraints to children
                 if let Some(parent_constraints) = self.constraints.get(e).cloned() {
@@ -656,30 +693,36 @@ impl<'m> Solver<'m> {
                 self.constraints
                     .entry(index.clone())
                     .or_default()
-                    .insert(TypeConstraint::Equal(Type::USize.into()));
+                    .insert(TypeConstraint::Equal(
+                        Type::USize {
+                            span: ByteSpan::default(),
+                        }
+                        .into(),
+                    ));
                 if let Some(constraints) = self.constraints.get(e).cloned()
-                    && let Ok(collection_type) = collection.borrow().determine_type(self.m) {
-                        let element_type_id = match &collection_type {
-                            Type::Array { element_type, .. }
-                            | Type::SliceRef { element_type, .. }
-                            | Type::SlicePtr { element_type, .. } => Some(*element_type),
-                            _ => None,
-                        };
-                        if let Some(element_type_id) = element_type_id {
-                            self.constraints
-                                .entry(e.clone())
-                                .or_default()
-                                .insert(TypeConstraint::Equal(element_type_id));
-                            if let Value::List { elements } = &*collection.borrow() {
-                                for element in elements {
-                                    self.constraints
-                                        .entry(element.clone())
-                                        .or_default()
-                                        .extend(constraints.clone());
-                                }
+                    && let Ok(collection_type) = collection.borrow().determine_type(self.m)
+                {
+                    let element_type_id = match &collection_type {
+                        Type::Array { element_type, .. }
+                        | Type::SliceRef { element_type, .. }
+                        | Type::SlicePtr { element_type, .. } => Some(*element_type),
+                        _ => None,
+                    };
+                    if let Some(element_type_id) = element_type_id {
+                        self.constraints
+                            .entry(e.clone())
+                            .or_default()
+                            .insert(TypeConstraint::Equal(element_type_id));
+                        if let Value::List { elements } = &*collection.borrow() {
+                            for element in elements {
+                                self.constraints
+                                    .entry(element.clone())
+                                    .or_default()
+                                    .extend(constraints.clone());
                             }
                         }
                     }
+                }
                 self.visit(collection);
                 self.visit(index);
             }
@@ -728,21 +771,18 @@ impl<'m> Solver<'m> {
                     .iter()
                     .find(|el| !matches!(&*el.borrow(), Value::InferredInteger(_) | Value::InferredFloat(_)));
                 if let Some(concrete_element) = concrete_element
-                    && let Some(concrete_type_id) = concrete_element
-                        .borrow()
-                        .determine_type(self.m)
-                        .ok()
-                        .map(TypeId::from)
-                    {
-                        for element in elements.iter() {
-                            if matches!(&*element.borrow(), Value::InferredInteger(_) | Value::InferredFloat(_)) {
-                                self.constraints
-                                    .entry(element.clone())
-                                    .or_default()
-                                    .insert(TypeConstraint::Equal(concrete_type_id));
-                            }
+                    && let Some(concrete_type_id) =
+                        concrete_element.borrow().determine_type(self.m).ok().map(TypeId::from)
+                {
+                    for element in elements.iter() {
+                        if matches!(&*element.borrow(), Value::InferredInteger(_) | Value::InferredFloat(_)) {
+                            self.constraints
+                                .entry(element.clone())
+                                .or_default()
+                                .insert(TypeConstraint::Equal(concrete_type_id));
                         }
                     }
+                }
                 for element in elements {
                     self.visit(element);
                 }
@@ -762,7 +802,12 @@ impl<'m> Solver<'m> {
                 self.constraints
                     .entry(condition.clone())
                     .or_default()
-                    .insert(TypeConstraint::Equal(Type::Bool.into()));
+                    .insert(TypeConstraint::Equal(
+                        Type::Bool {
+                            span: ByteSpan::default(),
+                        }
+                        .into(),
+                    ));
                 self.visit(condition);
                 self.visit_block(true_branch);
                 if let Some(false_branch) = false_branch {
@@ -811,10 +856,11 @@ impl<'m> Solver<'m> {
                     _ => None,
                 };
                 if let Some(func_id) = callee_func_id
-                    && let Some(subst) = self.infer_generic_args_from_call(&func_id, &args.positional) {
-                        let mono_id = self.monomorphize_function(&func_id, &subst);
-                        callee.replace(Value::FunctionSymbol { id: mono_id });
-                    }
+                    && let Some(subst) = self.infer_generic_args_from_call(&func_id, &args.positional)
+                {
+                    let mono_id = self.monomorphize_function(&func_id, &subst);
+                    callee.replace(Value::FunctionSymbol { id: mono_id });
+                }
                 self.visit(callee);
                 if let Value::FunctionSymbol { id } = &*callee.borrow() {
                     let func = id.borrow();
@@ -849,17 +895,16 @@ impl<'m> Solver<'m> {
                         let mf = method_id.borrow();
                         mf.generics.is_some() && mf.generics.as_ref().is_some_and(|g| !g.is_empty())
                     };
-                    if is_generic
-                        && let Some(subst) = self.infer_generic_args_from_call(&method_id, &args.positional) {
-                            let mono_id = self.monomorphize_function(&method_id, &subst);
-                            let new_call = Value::Call {
-                                callee: ValueId::from(Value::FunctionSymbol { id: mono_id }),
-                                args: args.clone(),
-                            };
-                            e.replace(new_call);
-                            self.visit(e);
-                            return;
-                        }
+                    if is_generic && let Some(subst) = self.infer_generic_args_from_call(&method_id, &args.positional) {
+                        let mono_id = self.monomorphize_function(&method_id, &subst);
+                        let new_call = Value::Call {
+                            callee: ValueId::from(Value::FunctionSymbol { id: mono_id }),
+                            args: args.clone(),
+                        };
+                        e.replace(new_call);
+                        self.visit(e);
+                        return;
+                    }
                 }
                 self.visit(object);
                 for arg in &args.positional {

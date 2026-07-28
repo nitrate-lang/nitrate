@@ -1,5 +1,6 @@
 use nitrate_hir::{FunctionType, Type, TypeId};
 use nitrate_nstring::NString;
+use nitrate_tree::ByteSpan;
 use std::collections::HashMap;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -36,28 +37,24 @@ impl Substitution {
                     ty.clone()
                 }
             }
-            Type::Struct { .. } => {
-                // Return struct types as-is (monomorphized structs are handled elsewhere)
-                ty.clone()
-            }
-            Type::Parameterized { base, .. } => {
-                // Resolve parameterized type by applying substitution to base
-                self.apply(base)
-            }
-            Type::Array { element_type, len } => {
+            Type::Struct { .. } => ty.clone(),
+            Type::Parameterized { base, .. } => self.apply(base),
+            Type::Array { element_type, len, .. } => {
                 let new_elem = self.apply(element_type);
                 Type::Array {
+                    span: ty.span(),
                     element_type: TypeId::from(new_elem),
                     len: *len,
                 }
             }
-            Type::Tuple { element_types } => {
+            Type::Tuple { element_types, .. } => {
                 let new_elements: Vec<TypeId> = element_types.iter().map(|et| TypeId::from(self.apply(et))).collect();
                 Type::Tuple {
+                    span: ty.span(),
                     element_types: new_elements.into(),
                 }
             }
-            Type::Function { function_type } => {
+            Type::Function { function_type, .. } => {
                 let new_params: Vec<(NString, TypeId)> = function_type
                     .params
                     .iter()
@@ -65,6 +62,7 @@ impl Substitution {
                     .collect();
                 let new_ret = self.apply(&function_type.return_type);
                 Type::Function {
+                    span: ty.span(),
                     function_type: Box::new(FunctionType {
                         attributes: function_type.attributes.clone(),
                         params: new_params.into(),
@@ -77,9 +75,11 @@ impl Substitution {
                 exclusive,
                 mutable,
                 to,
+                ..
             } => {
                 let new_to = self.apply(to);
                 Type::Reference {
+                    span: ty.span(),
                     lifetime: lifetime.clone(),
                     exclusive: *exclusive,
                     mutable: *mutable,
@@ -91,9 +91,11 @@ impl Substitution {
                 exclusive,
                 mutable,
                 to,
+                ..
             } => {
                 let new_to = self.apply(to);
                 Type::Pointer {
+                    span: ty.span(),
                     lifetime: lifetime.clone(),
                     exclusive: *exclusive,
                     mutable: *mutable,
@@ -105,9 +107,11 @@ impl Substitution {
                 exclusive,
                 mutable,
                 element_type,
+                ..
             } => {
                 let new_elem = self.apply(element_type);
                 Type::SliceRef {
+                    span: ty.span(),
                     lifetime: lifetime.clone(),
                     exclusive: *exclusive,
                     mutable: *mutable,
@@ -119,28 +123,31 @@ impl Substitution {
                 exclusive,
                 mutable,
                 element_type,
+                ..
             } => {
                 let new_elem = self.apply(element_type);
                 Type::SlicePtr {
+                    span: ty.span(),
                     lifetime: lifetime.clone(),
                     exclusive: *exclusive,
                     mutable: *mutable,
                     element_type: TypeId::from(new_elem),
                 }
             }
-            Type::TraitObject { bounds } => {
-                // Trait bounds don't contain generic type params we can substitute
-                Type::TraitObject { bounds: bounds.clone() }
-            }
-            Type::Refine { base, min, max } => {
+            Type::TraitObject { bounds, .. } => Type::TraitObject {
+                span: ty.span(),
+                bounds: bounds.clone(),
+            },
+            Type::Refine { base, min, max, .. } => {
                 let new_base = self.apply(base);
                 Type::Refine {
+                    span: ty.span(),
                     base: TypeId::from(new_base),
                     min: *min,
                     max: *max,
                 }
             }
-            Type::TypeAlias { def } => {
+            Type::TypeAlias { def, .. } => {
                 let type_alias = def.borrow();
                 self.apply(&type_alias.type_id)
             }

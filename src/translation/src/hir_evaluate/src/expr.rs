@@ -358,11 +358,10 @@ impl HirEvaluate for Value {
             Value::InferredFloat { .. } => Ok(self.clone()),
 
             Value::StructObject { struct_def, fields, .. } => {
-                let mut new_fields: Vec<(NString, ValueId)> =
-                    fields.iter().map(|(name, _)| (name.clone(), *name)).collect();
-                for i in 0..fields.len() {
-                    let evaluated = fields[i].1.borrow().evaluate(ctx)?.into();
-                    new_fields[i].1 = evaluated;
+                let mut new_fields: Vec<(NString, ValueId)> = Vec::with_capacity(fields.len());
+                for (name, field_id) in fields.iter() {
+                    let evaluated = field_id.borrow().evaluate(ctx)?.into();
+                    new_fields.push((name.clone(), evaluated));
                 }
                 Ok(Value::StructObject {
                     span: self.span(),
