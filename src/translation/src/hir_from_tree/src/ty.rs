@@ -37,9 +37,10 @@ pub(crate) fn lower_type_path(type_path: ast::TypePath, ctx: &mut Ast2HirCtx, lo
         Some(ref resolved_path) => {
             // Handle `Self` keyword: resolve to the current impl type
             if (resolved_path.deref() == "Self" || resolved_path.deref() == "self")
-                && let Some(self_type) = &ctx.current_self_type {
-                    return Ok((**self_type).clone());
-                }
+                && let Some(self_type) = &ctx.current_self_type
+            {
+                return Ok((**self_type).clone());
+            }
 
             let base_type = match ctx.ast_symbol_map.get(resolved_path) {
                 Some(SymbolKind::Struct) => Type::Struct {
@@ -367,7 +368,7 @@ pub(crate) fn lower_reference_type(
 ) -> Result<Type, ()> {
     let lifetime = match reference_type.lifetime {
         None => Lifetime::Inferred,
-        Some(ast::Lifetime { name }) => match name.deref() {
+        Some(ast::Lifetime { span: _, name }) => match name.deref() {
             "static" => Lifetime::Static,
             "gc" => Lifetime::Gc,
             "thread" => Lifetime::ThreadLocal,
@@ -1057,7 +1058,10 @@ fn lower_ref_poly() {
 fn lower_ref_lifetime_static() {
     run(|ctx, log| {
         let rt = ast::ReferenceType {
-            lifetime: Some(ast::Lifetime { name: "static".into() }),
+            lifetime: Some(ast::Lifetime {
+                span: ByteSpan::default(),
+                name: "static".into(),
+            }),
             exclusivity: None,
             mutability: None,
             to: ast::Type::Int32(ast::Int32),
@@ -1077,7 +1081,10 @@ fn lower_ref_lifetime_static() {
 fn lower_ref_lifetime_gc() {
     run(|ctx, log| {
         let rt = ast::ReferenceType {
-            lifetime: Some(ast::Lifetime { name: "gc".into() }),
+            lifetime: Some(ast::Lifetime {
+                span: ByteSpan::default(),
+                name: "gc".into(),
+            }),
             exclusivity: None,
             mutability: None,
             to: ast::Type::Int32(ast::Int32),
@@ -1097,7 +1104,10 @@ fn lower_ref_lifetime_gc() {
 fn lower_ref_lifetime_thread() {
     run(|ctx, log| {
         let rt = ast::ReferenceType {
-            lifetime: Some(ast::Lifetime { name: "thread".into() }),
+            lifetime: Some(ast::Lifetime {
+                span: ByteSpan::default(),
+                name: "thread".into(),
+            }),
             exclusivity: None,
             mutability: None,
             to: ast::Type::Int32(ast::Int32),
@@ -1117,7 +1127,10 @@ fn lower_ref_lifetime_thread() {
 fn lower_ref_lifetime_task() {
     run(|ctx, log| {
         let rt = ast::ReferenceType {
-            lifetime: Some(ast::Lifetime { name: "task".into() }),
+            lifetime: Some(ast::Lifetime {
+                span: ByteSpan::default(),
+                name: "task".into(),
+            }),
             exclusivity: None,
             mutability: None,
             to: ast::Type::Int32(ast::Int32),
@@ -1137,7 +1150,10 @@ fn lower_ref_lifetime_task() {
 fn lower_ref_lifetime_underscore() {
     run(|ctx, log| {
         let rt = ast::ReferenceType {
-            lifetime: Some(ast::Lifetime { name: "_".into() }),
+            lifetime: Some(ast::Lifetime {
+                span: ByteSpan::default(),
+                name: "_".into(),
+            }),
             exclusivity: None,
             mutability: None,
             to: ast::Type::Int32(ast::Int32),
@@ -1157,7 +1173,10 @@ fn lower_ref_lifetime_underscore() {
 fn lower_ref_bad_lifetime() {
     let (mut ctx, log) = ctx_and_log();
     let rt = ast::ReferenceType {
-        lifetime: Some(ast::Lifetime { name: "invalid".into() }),
+        lifetime: Some(ast::Lifetime {
+            span: ByteSpan::default(),
+            name: "invalid".into(),
+        }),
         exclusivity: None,
         mutability: None,
         to: ast::Type::Int32(ast::Int32),
@@ -1169,7 +1188,10 @@ fn lower_ref_bad_lifetime() {
 fn lower_ref_to_slice() {
     run(|ctx, log| {
         let rt = ast::ReferenceType {
-            lifetime: Some(ast::Lifetime { name: "static".into() }),
+            lifetime: Some(ast::Lifetime {
+                span: ByteSpan::default(),
+                name: "static".into(),
+            }),
             exclusivity: None,
             mutability: None,
             to: ast::Type::SliceType(Box::new(ast::SliceType {
@@ -1375,7 +1397,17 @@ fn lower_latent_type_fails() {
 #[test]
 fn lower_lifetime_as_type_fails() {
     let (mut ctx, log) = ctx_and_log();
-    assert!(lower_lifetime(ast::Lifetime { name: "static".into() }, &mut ctx, &log).is_err());
+    assert!(
+        lower_lifetime(
+            ast::Lifetime {
+                span: ByteSpan::default(),
+                name: "static".into()
+            },
+            &mut ctx,
+            &log
+        )
+        .is_err()
+    );
 }
 
 // ===== lower_array_type =====

@@ -3,6 +3,7 @@ use crate::diagnosis::SyntaxErr;
 
 use nitrate_nstring::NString;
 use nitrate_token::Token;
+use nitrate_tree::ByteSpan;
 use nitrate_tree::ast::{Exclusivity, Expr, FuncParam, Mutability, Type, Visibility};
 
 /// Default maximum for counted parser elements (items, parameters, fields, etc.).
@@ -223,6 +224,7 @@ impl Parser<'_, '_> {
             None
         };
         FuncParam {
+            span: ByteSpan::default(),
             attributes,
             mutability,
             name,

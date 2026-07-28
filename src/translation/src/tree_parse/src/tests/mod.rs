@@ -12,6 +12,7 @@ mod module_tests;
 mod program_tests;
 mod struct_tests;
 mod trait_tests;
+mod trivia_tests;
 mod type_tests;
 mod unary_tests;
 mod variable_tests;

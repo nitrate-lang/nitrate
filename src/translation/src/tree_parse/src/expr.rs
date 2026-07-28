@@ -4,6 +4,7 @@ use crate::helper::MAX_LIMIT;
 use super::parse::Parser;
 use nitrate_nstring::NString;
 use nitrate_token::Token;
+use nitrate_tree::ByteSpan;
 use nitrate_tree::ast::{
     AttributeList, Await, BStringLit, BinExpr, BinExprOp, Block, BlockItem, Bool, BooleanLit, Break, Cast, Closure,
     Continue, ElseIf, Expr, ExprParentheses, ExprPath, ExprPathSegment, ExprSyntaxError, FieldAccess, Float32, Float64,
@@ -320,6 +321,7 @@ impl Parser<'_, '_> {
             Token::Integer(int) => {
                 self.lexer.skip_tok();
                 self.parse_literal_suffix(Expr::Integer(Box::new(IntegerLit {
+                    span: ByteSpan::default(),
                     value: int.value(),
                     kind: int.kind(),
                 })))
@@ -327,27 +329,42 @@ impl Parser<'_, '_> {
 
             Token::Float(value) => {
                 self.lexer.skip_tok();
-                self.parse_literal_suffix(Expr::Float(FloatLit { value }))
+                self.parse_literal_suffix(Expr::Float(FloatLit {
+                    span: ByteSpan::default(),
+                    value,
+                }))
             }
 
             Token::String(string) => {
                 self.lexer.skip_tok();
-                self.parse_literal_suffix(Expr::String(StringLit { value: string }))
+                self.parse_literal_suffix(Expr::String(StringLit {
+                    span: ByteSpan::default(),
+                    value: string,
+                }))
             }
 
             Token::BString(data) => {
                 self.lexer.skip_tok();
-                self.parse_literal_suffix(Expr::BString(Box::new(BStringLit { value: data })))
+                self.parse_literal_suffix(Expr::BString(Box::new(BStringLit {
+                    span: ByteSpan::default(),
+                    value: data,
+                })))
             }
 
             Token::True => {
                 self.lexer.skip_tok();
-                Expr::Boolean(BooleanLit { value: true })
+                Expr::Boolean(BooleanLit {
+                    span: ByteSpan::default(),
+                    value: true,
+                })
             }
 
             Token::False => {
                 self.lexer.skip_tok();
-                Expr::Boolean(BooleanLit { value: false })
+                Expr::Boolean(BooleanLit {
+                    span: ByteSpan::default(),
+                    value: false,
+                })
             }
 
             Token::OpenBracket => Expr::List(Box::new(self.parse_list())),
@@ -362,6 +379,7 @@ impl Parser<'_, '_> {
             }
 
             Token::Type => Expr::TypeInfo(Box::new(TypeInfo {
+                span: ByteSpan::default(),
                 the: self.parse_type_info(),
             })),
 
@@ -382,7 +400,9 @@ impl Parser<'_, '_> {
                 let bug = SyntaxErr::ExpectedExpr(self.lexer.peek_pos());
                 self.log.report(&bug);
 
-                Expr::SyntaxError(ExprSyntaxError)
+                Expr::SyntaxError(ExprSyntaxError {
+                    span: ByteSpan::default(),
+                })
             }
         }
     }
@@ -392,12 +412,19 @@ impl Parser<'_, '_> {
             let precedence = PrecedenceRank::Unary as Precedence;
             let operand = self.parse_expression_precedence(precedence);
 
-            return Expr::UnaryExpr(Box::new(UnaryExpr { operator, operand }));
+            return Expr::UnaryExpr(Box::new(UnaryExpr {
+                span: ByteSpan::default(),
+                operator,
+                operand,
+            }));
         }
 
         if self.lexer.skip_if(&Token::OpenParen) {
             if self.lexer.skip_if(&Token::CloseParen) {
-                return Expr::Tuple(Box::new(Tuple { elements: vec![] }));
+                return Expr::Tuple(Box::new(Tuple {
+                    span: ByteSpan::default(),
+                    elements: vec![],
+                }));
             }
 
             let inner = self.parse_expression();
@@ -405,7 +432,10 @@ impl Parser<'_, '_> {
             if !self.lexer.skip_if(&Token::Comma) {
                 self.expect_close_paren();
 
-                return Expr::Parentheses(Box::new(ExprParentheses { inner }));
+                return Expr::Parentheses(Box::new(ExprParentheses {
+                    span: ByteSpan::default(),
+                    inner,
+                }));
             }
 
             let mut tuple_elements = vec![inner];
@@ -430,6 +460,7 @@ impl Parser<'_, '_> {
             }
 
             return Expr::Tuple(Box::new(Tuple {
+                span: ByteSpan::default(),
                 elements: tuple_elements,
             }));
         }
@@ -458,6 +489,7 @@ impl Parser<'_, '_> {
                 };
 
                 sofar = Expr::BinExpr(Box::new(BinExpr {
+                    span: ByteSpan::default(),
                     left: sofar,
                     operator,
                     right: right_expr,
@@ -484,6 +516,7 @@ impl Parser<'_, '_> {
                             let (positional, named) = self.parse_function_call_arguments();
 
                             sofar = Expr::MethodCall(Box::new(MethodCall {
+                                span: ByteSpan::default(),
                                 object: sofar,
                                 method_name: member_name,
                                 positional,
@@ -493,6 +526,7 @@ impl Parser<'_, '_> {
                             continue;
                         } else {
                             sofar = Expr::FieldAccess(Box::new(FieldAccess {
+                                span: ByteSpan::default(),
                                 object: sofar,
                                 field: member_name,
                             }))
@@ -511,7 +545,11 @@ impl Parser<'_, '_> {
 
                         let to = self.parse_type();
 
-                        sofar = Expr::Cast(Box::new(Cast { value: sofar, to }));
+                        sofar = Expr::Cast(Box::new(Cast {
+                            span: ByteSpan::default(),
+                            value: sofar,
+                            to,
+                        }));
                     }
 
                     Token::OpenParen => {
@@ -525,6 +563,7 @@ impl Parser<'_, '_> {
                         let (positional, named) = self.parse_function_call_arguments();
 
                         sofar = Expr::FunctionCall(Box::new(FunctionCall {
+                            span: ByteSpan::default(),
                             callee: sofar,
                             positional,
                             named,
@@ -546,6 +585,7 @@ impl Parser<'_, '_> {
                         self.expect_close_bracket();
 
                         sofar = Expr::IndexAccess(Box::new(IndexAccess {
+                            span: ByteSpan::default(),
                             collection: sofar,
                             index,
                         }));
@@ -561,26 +601,28 @@ impl Parser<'_, '_> {
 
     fn parse_literal_suffix(&mut self, value: Expr) -> Expr {
         let suffix = match self.lexer.peek_tok().token {
-            Token::Bool => Type::Bool(Bool {}),
-            Token::U8 => Type::UInt8(UInt8 {}),
-            Token::U16 => Type::UInt16(UInt16 {}),
-            Token::U32 => Type::UInt32(UInt32 {}),
-            Token::U64 => Type::UInt64(UInt64 {}),
-            Token::U128 => Type::UInt128(UInt128 {}),
-            Token::USize => Type::USize(USize {}),
-            Token::I8 => Type::Int8(Int8 {}),
-            Token::I16 => Type::Int16(Int16 {}),
-            Token::I32 => Type::Int32(Int32 {}),
-            Token::I64 => Type::Int64(Int64 {}),
-            Token::I128 => Type::Int128(Int128 {}),
+            Token::Bool => Type::Bool(Bool::default()),
+            Token::U8 => Type::UInt8(UInt8::default()),
+            Token::U16 => Type::UInt16(UInt16::default()),
+            Token::U32 => Type::UInt32(UInt32::default()),
+            Token::U64 => Type::UInt64(UInt64::default()),
+            Token::U128 => Type::UInt128(UInt128::default()),
+            Token::USize => Type::USize(USize::default()),
+            Token::I8 => Type::Int8(Int8::default()),
+            Token::I16 => Type::Int16(Int16::default()),
+            Token::I32 => Type::Int32(Int32::default()),
+            Token::I64 => Type::Int64(Int64::default()),
+            Token::I128 => Type::Int128(Int128::default()),
             Token::F8 => Type::TypePath(Box::new(self.create_type_path("f8".to_string()))),
             Token::F16 => Type::TypePath(Box::new(self.create_type_path("f16".to_string()))),
-            Token::F32 => Type::Float32(Float32 {}),
-            Token::F64 => Type::Float64(Float64 {}),
+            Token::F32 => Type::Float32(Float32::default()),
+            Token::F64 => Type::Float64(Float64::default()),
             Token::F128 => Type::TypePath(Box::new(self.create_type_path("f128".to_string()))),
 
             Token::Name(name) => Type::TypePath(Box::new(TypePath {
+                span: ByteSpan::default(),
                 segments: vec![TypePathSegment {
+                    span: ByteSpan::default(),
                     name,
                     type_arguments: None,
                 }],
@@ -592,7 +634,11 @@ impl Parser<'_, '_> {
 
         self.lexer.skip_tok();
 
-        Expr::Cast(Box::new(Cast { value, to: suffix }))
+        Expr::Cast(Box::new(Cast {
+            span: ByteSpan::default(),
+            value,
+            to: suffix,
+        }))
     }
 
     fn parse_list(&mut self) -> List {
@@ -608,7 +654,10 @@ impl Parser<'_, '_> {
                 this.parse_expression()
             });
 
-        List { elements }
+        List {
+            span: ByteSpan::default(),
+            elements,
+        }
     }
 
     pub(crate) fn parse_attributes(&mut self) -> Option<AttributeList> {
@@ -653,7 +702,11 @@ impl Parser<'_, '_> {
 
             let value = this.parse_type();
 
-            TypeArgument { name, value }
+            TypeArgument {
+                span: ByteSpan::default(),
+                name,
+                value,
+            }
         }
 
         if !self.lexer.skip_if(&Token::Lt) {
@@ -689,6 +742,7 @@ impl Parser<'_, '_> {
             }
 
             segments.push(ExprPathSegment {
+                span: ByteSpan::default(),
                 name: "".into(),
                 type_arguments,
             });
@@ -723,11 +777,13 @@ impl Parser<'_, '_> {
                 }
 
                 segments.push(ExprPathSegment {
+                    span: ByteSpan::default(),
                     name: identifier,
                     type_arguments,
                 });
             } else {
                 segments.push(ExprPathSegment {
+                    span: ByteSpan::default(),
                     name: identifier,
                     type_arguments: None,
                 });
@@ -737,6 +793,7 @@ impl Parser<'_, '_> {
         }
 
         ExprPath {
+            span: ByteSpan::default(),
             segments,
             resolved_path: None,
         }
@@ -776,7 +833,11 @@ impl Parser<'_, '_> {
             }
         }
 
-        StructInit { path, fields }
+        StructInit {
+            span: ByteSpan::default(),
+            path,
+            fields,
+        }
     }
 
     fn parse_type_info(&mut self) -> Type {
@@ -787,6 +848,7 @@ impl Parser<'_, '_> {
     }
 
     fn parse_if(&mut self) -> If {
+        let start = self.lexer.peek_pos().offset;
         assert!(self.lexer.peek_tok().token == Token::If);
         self.lexer.skip_tok();
 
@@ -804,6 +866,7 @@ impl Parser<'_, '_> {
         };
 
         If {
+            span: ByteSpan::new(start, self.lexer.current_pos().offset),
             condition,
             true_branch,
             false_branch,
@@ -852,6 +915,7 @@ impl Parser<'_, '_> {
         let body = self.parse_block();
 
         ForEach {
+            span: ByteSpan::default(),
             attributes,
             bindings,
             iterable,
@@ -871,7 +935,11 @@ impl Parser<'_, '_> {
 
         let body = self.parse_block();
 
-        WhileLoop { condition, body }
+        WhileLoop {
+            span: ByteSpan::default(),
+            condition,
+            body,
+        }
     }
 
     fn parse_break(&mut self) -> Break {
@@ -892,7 +960,10 @@ impl Parser<'_, '_> {
 
         self.expect_semicolon();
 
-        Break { label }
+        Break {
+            span: ByteSpan::default(),
+            label,
+        }
     }
 
     fn parse_continue(&mut self) -> Continue {
@@ -913,7 +984,10 @@ impl Parser<'_, '_> {
 
         self.expect_semicolon();
 
-        Continue { label }
+        Continue {
+            span: ByteSpan::default(),
+            label,
+        }
     }
 
     fn parse_return(&mut self) -> Return {
@@ -928,7 +1002,10 @@ impl Parser<'_, '_> {
 
         self.expect_semicolon();
 
-        Return { value }
+        Return {
+            span: ByteSpan::default(),
+            value,
+        }
     }
 
     fn parse_await(&mut self) -> Await {
@@ -937,7 +1014,10 @@ impl Parser<'_, '_> {
 
         let future = self.parse_expression();
 
-        Await { future }
+        Await {
+            span: ByteSpan::default(),
+            future,
+        }
     }
 
     fn parse_closure_parameters(&mut self) -> Option<Vec<FuncParam>> {
@@ -964,6 +1044,7 @@ impl Parser<'_, '_> {
             let definition = self.parse_block();
 
             return Closure {
+                span: ByteSpan::default(),
                 attributes: None,
                 parameters: None,
                 return_type: None,
@@ -981,6 +1062,7 @@ impl Parser<'_, '_> {
         let definition = self.parse_block();
 
         Closure {
+            span: ByteSpan::default(),
             attributes,
             parameters,
             return_type,
@@ -1099,6 +1181,7 @@ impl Parser<'_, '_> {
         self.expect_semicolon();
 
         LocalVariable {
+            span: ByteSpan::default(),
             kind,
             attributes,
             mutability,
@@ -1186,7 +1269,11 @@ impl Parser<'_, '_> {
             elements.push(element);
         }
 
-        Block { safety, elements }
+        Block {
+            span: ByteSpan::default(),
+            safety,
+            elements,
+        }
     }
 
     pub fn parse_expression(&mut self) -> Expr {

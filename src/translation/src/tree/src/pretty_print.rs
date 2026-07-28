@@ -1217,22 +1217,26 @@ impl PrettyPrint for ItemPath {
 impl PrettyPrint for UseTree {
     fn pretty_print_fmt(&self, ctx: &mut PrintContext, writer: &mut dyn std::fmt::Write) -> std::fmt::Result {
         match self {
-            UseTree::Single { path } => {
+            UseTree::Single { span: _, path } => {
                 path.pretty_print_fmt(ctx, writer)?;
             }
 
-            UseTree::Alias { path, alias: name } => {
+            UseTree::Alias {
+                span: _,
+                path,
+                alias: name,
+            } => {
                 path.pretty_print_fmt(ctx, writer)?;
                 writer.write_str(" as ")?;
                 writer.write_str(name)?;
             }
 
-            UseTree::UseAll { path } => {
+            UseTree::UseAll { span: _, path } => {
                 path.pretty_print_fmt(ctx, writer)?;
                 writer.write_str("::*")?;
             }
 
-            UseTree::Group { path, group } => {
+            UseTree::Group { span: _, path, group } => {
                 path.pretty_print_fmt(ctx, writer)?;
                 writer.write_str("::{")?;
 

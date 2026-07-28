@@ -1,6 +1,7 @@
 use super::parse::Parser;
 use crate::diagnosis::SyntaxErr;
 use crate::helper::MAX_LIMIT;
+use nitrate_tree::ByteSpan;
 
 use nitrate_nstring::NString;
 use nitrate_token::Token;
@@ -23,6 +24,7 @@ impl Parser<'_, '_> {
             };
 
             TypeParam {
+                span: ByteSpan::default(),
                 name,
                 default_value: default,
             }
@@ -39,7 +41,10 @@ impl Parser<'_, '_> {
         let params =
             self.parse_comma_separated_list(&Token::Gt, MAX_LIMIT, false, eof, limit, end, parse_generic_parameter);
 
-        Some(Generics { params })
+        Some(Generics {
+            span: ByteSpan::default(),
+            params,
+        })
     }
 
     fn parse_module(&mut self) -> Module {
@@ -82,6 +87,7 @@ impl Parser<'_, '_> {
         }
 
         Module {
+            span: ByteSpan::default(),
             visibility: None,
             attributes,
             name,
@@ -100,7 +106,10 @@ impl Parser<'_, '_> {
                 "".into()
             });
 
-            segments.push(ItemPathSegment { segment });
+            segments.push(ItemPathSegment {
+                span: ByteSpan::default(),
+                segment,
+            });
         }
 
         while !self.lexer.is_eof() {
@@ -119,10 +128,16 @@ impl Parser<'_, '_> {
                 break;
             };
 
-            segments.push(ItemPathSegment { segment });
+            segments.push(ItemPathSegment {
+                span: ByteSpan::default(),
+                segment,
+            });
         }
 
-        ItemPath { segments }
+        ItemPath {
+            span: ByteSpan::default(),
+            segments,
+        }
     }
 
     fn parse_use(&mut self) -> Import {
@@ -131,7 +146,10 @@ impl Parser<'_, '_> {
 
             if this.parse_double_colon() {
                 if this.lexer.skip_if(&Token::Star) {
-                    UseTree::UseAll { path }
+                    UseTree::UseAll {
+                        span: ByteSpan::default(),
+                        path,
+                    }
                 } else if this.lexer.skip_if(&Token::OpenBrace) {
                     let mut group = Vec::new();
 
@@ -151,11 +169,18 @@ impl Parser<'_, '_> {
                         }
                     }
 
-                    UseTree::Group { path, group }
+                    UseTree::Group {
+                        span: ByteSpan::default(),
+                        path,
+                        group,
+                    }
                 } else {
                     let bug = SyntaxErr::ImportExpectedStarOrGroup(this.lexer.peek_pos());
                     this.log.report(&bug);
-                    UseTree::Single { path }
+                    UseTree::Single {
+                        span: ByteSpan::default(),
+                        path,
+                    }
                 }
             } else if this.lexer.skip_if(&Token::As) {
                 let alias = this.lexer.next_if_name().unwrap_or_else(|| {
@@ -165,11 +190,15 @@ impl Parser<'_, '_> {
                 });
 
                 UseTree::Alias {
+                    span: ByteSpan::default(),
                     path,
                     alias: NString::from(alias),
                 }
             } else {
-                UseTree::Single { path }
+                UseTree::Single {
+                    span: ByteSpan::default(),
+                    path,
+                }
             }
         }
 
@@ -182,6 +211,7 @@ impl Parser<'_, '_> {
         self.expect_semicolon();
 
         Import {
+            span: ByteSpan::default(),
             visibility: None,
             attributes,
             use_tree,
@@ -214,6 +244,7 @@ impl Parser<'_, '_> {
         self.expect_semicolon();
 
         TypeAlias {
+            span: ByteSpan::default(),
             visibility: None,
             attributes,
             name,
@@ -251,6 +282,7 @@ impl Parser<'_, '_> {
             };
 
             EnumVariant {
+                span: ByteSpan::default(),
                 attributes,
                 name,
                 ty: variant_type,
@@ -283,6 +315,7 @@ impl Parser<'_, '_> {
             self.parse_comma_separated_list(&Token::CloseBrace, MAX_LIMIT, true, eof, limit, end, parse_enum_variant);
 
         Enum {
+            span: ByteSpan::default(),
             visibility: None,
             attributes,
             name,
@@ -315,6 +348,7 @@ impl Parser<'_, '_> {
             };
 
             StructField {
+                span: ByteSpan::default(),
                 visibility,
                 attributes,
                 name,
@@ -348,6 +382,7 @@ impl Parser<'_, '_> {
             self.parse_comma_separated_list(&Token::CloseBrace, MAX_LIMIT, true, eof, limit, end, parse_struct_field);
 
         Struct {
+            span: ByteSpan::default(),
             visibility: None,
             attributes,
             name,
@@ -384,7 +419,9 @@ impl Parser<'_, '_> {
                 let bug = SyntaxErr::TraitDoesNotAllowItem(self.lexer.peek_pos());
                 self.log.report(&bug);
 
-                AssociatedItem::SyntaxError(ItemSyntaxError)
+                AssociatedItem::SyntaxError(ItemSyntaxError {
+                    span: ByteSpan::default(),
+                })
             }
         }
     }
@@ -427,6 +464,7 @@ impl Parser<'_, '_> {
         }
 
         Trait {
+            span: ByteSpan::default(),
             visibility: None,
             attributes,
             name,
@@ -478,6 +516,7 @@ impl Parser<'_, '_> {
         }
 
         Impl {
+            span: ByteSpan::default(),
             generics,
             trait_path,
             for_type,
@@ -502,11 +541,14 @@ impl Parser<'_, '_> {
                 self.lexer.skip_tok(); // consume self
                 let name = NString::from("self");
                 let ty = Type::ReferenceType(Box::new(ReferenceType {
+                    span: ByteSpan::default(),
                     lifetime: None,
                     exclusivity: None,
                     mutability: None,
                     to: Type::TypePath(Box::new(TypePath {
+                        span: ByteSpan::default(),
                         segments: vec![TypePathSegment {
+                            span: ByteSpan::default(),
                             name: "Self".to_string(),
                             type_arguments: None,
                         }],
@@ -514,6 +556,7 @@ impl Parser<'_, '_> {
                     })),
                 }));
                 return Some(FuncParam {
+                    span: ByteSpan::default(),
                     attributes: None,
                     mutability: None,
                     name,
@@ -525,11 +568,14 @@ impl Parser<'_, '_> {
                 self.lexer.skip_tok(); // consume self
                 let name = NString::from("self");
                 let ty = Type::ReferenceType(Box::new(ReferenceType {
+                    span: ByteSpan::default(),
                     lifetime: None,
                     exclusivity: None,
                     mutability: Some(Mutability::Mut),
                     to: Type::TypePath(Box::new(TypePath {
+                        span: ByteSpan::default(),
                         segments: vec![TypePathSegment {
+                            span: ByteSpan::default(),
                             name: "Self".to_string(),
                             type_arguments: None,
                         }],
@@ -537,6 +583,7 @@ impl Parser<'_, '_> {
                     })),
                 }));
                 return Some(FuncParam {
+                    span: ByteSpan::default(),
                     attributes: None,
                     mutability: None,
                     name,
@@ -555,13 +602,16 @@ impl Parser<'_, '_> {
             self.lexer.skip_tok(); // consume self
             let name = NString::from("self");
             let ty = Type::TypePath(Box::new(TypePath {
+                span: ByteSpan::default(),
                 segments: vec![TypePathSegment {
+                    span: ByteSpan::default(),
                     name: "Self".to_string(),
                     type_arguments: None,
                 }],
                 resolved_path: None,
             }));
             return Some(FuncParam {
+                span: ByteSpan::default(),
                 attributes: None,
                 mutability: None,
                 name,
@@ -598,6 +648,7 @@ impl Parser<'_, '_> {
                         .report(&SyntaxErr::FunctionParametersExpectedEnd(self.lexer.peek_pos()));
                     self.lexer.skip_while(&Token::CloseParen);
                     return FuncParams {
+                        span: ByteSpan::default(),
                         params,
                         variadic: false,
                     };
@@ -625,7 +676,11 @@ impl Parser<'_, '_> {
                     self.lexer.skip_while(&Token::CloseParen);
                 }
 
-                return FuncParams { params, variadic: true };
+                return FuncParams {
+                    span: ByteSpan::default(),
+                    params,
+                    variadic: true,
+                };
             }
 
             let param = self.parse_common_func_param(true);
@@ -639,6 +694,7 @@ impl Parser<'_, '_> {
         }
 
         FuncParams {
+            span: ByteSpan::default(),
             params,
             variadic: false,
         }
@@ -670,6 +726,7 @@ impl Parser<'_, '_> {
         };
 
         Function {
+            span: ByteSpan::default(),
             visibility: None,
             attributes,
             name,
@@ -715,6 +772,7 @@ impl Parser<'_, '_> {
         self.expect_semicolon();
 
         GlobalVariable {
+            span: ByteSpan::default(),
             visibility: None,
             kind,
             attributes,
@@ -731,6 +789,7 @@ impl Parser<'_, '_> {
             Token::String(ref abi_name) => {
                 self.lexer.skip_tok();
                 Some(ExternAbi {
+                    span: ByteSpan::default(),
                     name: NString::from(abi_name.clone()),
                 })
             }
@@ -834,7 +893,9 @@ impl Parser<'_, '_> {
 
                 // If no visibility set and there are items, wrap in a placeholder
                 if block_items.is_empty() {
-                    Item::SyntaxError(ItemSyntaxError)
+                    Item::SyntaxError(ItemSyntaxError {
+                        span: ByteSpan::default(),
+                    })
                 } else {
                     block_items.remove(0)
                 }
@@ -846,7 +907,9 @@ impl Parser<'_, '_> {
                 let bug = SyntaxErr::ExpectedItem(item_pos_begin);
                 self.log.report(&bug);
 
-                Item::SyntaxError(ItemSyntaxError)
+                Item::SyntaxError(ItemSyntaxError {
+                    span: ByteSpan::default(),
+                })
             }
         }
     }
