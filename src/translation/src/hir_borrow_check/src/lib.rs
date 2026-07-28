@@ -437,6 +437,15 @@ impl<'a> BorrowCheckCtx<'a> {
         }
     }
 
+    /// Get the set of regions where a borrow is used.
+    pub(crate) fn borrow_use_regions_at(&self, borrow_idx: usize) -> &[RegionId] {
+        if borrow_idx < self.borrow_use_regions.len() {
+            &self.borrow_use_regions[borrow_idx]
+        } else {
+            &[]
+        }
+    }
+
     /// Push the current borrow count onto the stack (for branch handling).
     pub(crate) fn push_borrow_count(&mut self) {
         self.borrow_count_stack.push(self.active_borrows.len());

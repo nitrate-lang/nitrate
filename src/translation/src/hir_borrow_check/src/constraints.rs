@@ -30,109 +30,6 @@
 //!   are accepted (no false negatives)
 //! - This is the same trade-off Rust made before NLL was implemented
 
-use crate::{BorrowRecord, PlaceId, RegionId};
-use std::collections::{HashMap, HashSet};
-
-/// A constraint that tracks which borrows overlap with which places.
-///
-/// This is used by the borrow checker to detect borrow conflicts
-/// (e.g., mutable borrow while shared borrow is active on overlapping places).
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct BorrowConflictConstraint {
-    /// The place that is being borrowed.
-    pub place: PlaceId,
-    /// The borrow record for the existing borrow.
-    pub existing_borrow: BorrowRecord,
-    /// The region where the conflict would occur.
-    pub region: RegionId,
-}
-
-/// Represents the set of regions where a borrow is considered "live".
-///
-/// A borrow is live from its creation point until its last use.
-/// In the lexical borrow checker, this is approximated as:
-/// - Created at the borrow expression site
-/// - Killed (dies) at the end of the enclosing scope
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct BorrowLiveness {
-    /// The borrow this liveness information refers to.
-    pub borrow: BorrowRecord,
-    /// Region IDs where this borrow is live.
-    pub live_regions: HashSet<RegionId>,
-}
-
-/// Manages constraints between borrows and places.
-///
-/// This struct collects all borrow-related constraints during HIR traversal
-/// and provides methods to check for conflicts.
-#[derive(Debug, Default)]
-pub struct BorrowConstraintSet {
-    /// All active borrows, tracked by place.
-    borrows_by_place: HashMap<PlaceId, Vec<BorrowRecord>>,
-    /// Borrows that have overlapping places.
-    overlapping_borrows: Vec<(PlaceId, PlaceId)>,
-    /// Set of places that have been "moved from" (consumed).
-    moved_places: HashSet<PlaceId>,
-}
-
-impl BorrowConstraintSet {
-    /// Creates a new empty constraint set.
-    pub fn new() -> Self {
-        Self {
-            borrows_by_place: HashMap::new(),
-            overlapping_borrows: Vec::new(),
-            moved_places: HashSet::new(),
-        }
-    }
-
-    /// Records a new borrow on a place.
-    ///
-    /// # Preconditions
-    /// - `record` is a completed borrow record with a valid place and kind.
-    ///
-    /// # Postconditions
-    /// - The borrow is added to the set of active borrows for that place.
-    pub fn add_borrow(&mut self, record: BorrowRecord) {
-        self.borrows_by_place.entry(record.place).or_default().push(record);
-    }
-
-    /// Removes all borrows for a given place. This is called when
-    /// borrows are released (e.g., at end of scope).
-    ///
-    /// # Postconditions
-    /// - No borrows remain for the given place.
-    pub fn release_borrows(&mut self, place: PlaceId) {
-        self.borrows_by_place.remove(&place);
-    }
-
-    /// Clears all borrows. Used when entering a new scope.
-    ///
-    /// # Postconditions
-    /// - All borrows are removed.
-    pub fn clear(&mut self) {
-        self.borrows_by_place.clear();
-        self.overlapping_borrows.clear();
-    }
-
-    /// Returns all active borrows for a given place.
-    pub fn borrows_for(&self, place: PlaceId) -> Vec<&BorrowRecord> {
-        self.borrows_by_place
-            .get(&place)
-            .map(|v| v.iter().collect())
-            .unwrap_or_default()
-    }
-
-    /// Returns all active borrows across all places.
-    pub fn all_borrows(&self) -> Vec<&BorrowRecord> {
-        self.borrows_by_place.values().flat_map(|v| v.iter()).collect()
-    }
-
-    /// Returns the number of active borrows.
-    pub fn borrow_count(&self) -> usize {
-        self.borrows_by_place.values().map(|v| v.len()).sum()
-    }
-}
-
 /// Helper to check if a borrow is still valid given the set of active borrows.
 ///
 /// # Arguments
@@ -144,13 +41,14 @@ impl BorrowConstraintSet {
 /// # Returns
 /// * `Ok(())` if the borrow is valid (no conflicts)
 /// * `Err(conflict_place, conflict_kind)` if a conflict exists
+#[allow(dead_code)]
 pub fn check_borrow_conflict(
-    new_place: PlaceId,
+    new_place: crate::PlaceId,
     new_place_data: &crate::Place,
     new_kind: &crate::BorrowKind,
-    active_borrows: &[BorrowRecord],
+    active_borrows: &[crate::BorrowRecord],
     id_to_place: &[crate::Place],
-) -> Result<(), (PlaceId, crate::BorrowKind)> {
+) -> Result<(), (crate::PlaceId, crate::BorrowKind)> {
     for borrow in active_borrows {
         if borrow.place == new_place {
             continue; // Same place, not a conflict with itself
@@ -182,9 +80,10 @@ pub fn check_borrow_conflict(
 /// # Returns
 /// * `true` if there's a conflict (cannot write)
 /// * `false` if the write is safe
+#[allow(dead_code)]
 pub fn check_write_conflict(
     place: &crate::Place,
-    active_borrows: &[BorrowRecord],
+    active_borrows: &[crate::BorrowRecord],
     id_to_place: &[crate::Place],
 ) -> bool {
     for borrow in active_borrows {
@@ -200,7 +99,7 @@ pub fn check_write_conflict(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{BorrowKind, Place, PlaceElem};
+    use crate::{BorrowKind, BorrowRecord, Place};
 
     #[test]
     fn test_no_conflict_with_self() {

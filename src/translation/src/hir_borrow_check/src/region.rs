@@ -126,6 +126,7 @@ impl RegionInferenceCtx {
     }
 
     /// Creates a new existential region variable.
+    #[allow(dead_code)]
     pub fn new_existential(&mut self) -> RegionId {
         let id = self.vars.len() as RegionId;
         self.vars.push(RegionVar::new(RegionKind::Existential, id));
@@ -141,6 +142,7 @@ impl RegionInferenceCtx {
     /// - The constraint is added to the set.
     /// - If it creates a cycle where `sub` transitively outlives `sup`,
     ///   then they must be the same region (coinductive).
+    #[allow(dead_code)]
     pub fn add_outlives(&mut self, sup: RegionId, sub: RegionId, reason: String) {
         // Avoid adding redundant constraints
         if sup == sub {
@@ -224,6 +226,7 @@ impl RegionInferenceCtx {
     /// # Postconditions
     /// - Returns `Some(region)` if a common outliver exists.
     /// - Returns `None` if no such region exists (incomparable regions).
+    #[allow(dead_code)]
     pub fn join(&self, a: RegionId, b: RegionId) -> Option<RegionId> {
         if a == b {
             return Some(a);
@@ -250,21 +253,25 @@ impl RegionInferenceCtx {
     }
 
     /// Returns the number of region variables.
+    #[allow(dead_code)]
     pub fn len(&self) -> usize {
         self.vars.len()
     }
 
     /// Returns whether there are no region variables.
+    #[allow(dead_code)]
     pub fn is_empty(&self) -> bool {
         self.vars.is_empty()
     }
 
     /// Returns a reference to all constraints for diagnostics.
+    #[allow(dead_code)]
     pub fn constraints(&self) -> &[OutlivesConstraint] {
         &self.constraints
     }
 
     /// Returns whether the solver has been run.
+    #[allow(dead_code)]
     pub fn is_solved(&self) -> bool {
         self.solved
     }
