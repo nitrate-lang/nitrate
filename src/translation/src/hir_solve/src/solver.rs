@@ -16,7 +16,7 @@ use crate::constraints::TypeConstraint;
 use crate::diagnosis::TypeErr;
 use nitrate_diagnosis::CompilerLog;
 use nitrate_hir::{
-    Function, FunctionId, GlobalVariable, PtrSize, StructDefId, SymbolTab, Type, TypeId, Value, ValueId,
+    BlockElement, Function, FunctionId, GlobalVariable, PtrSize, StructDefId, SymbolTab, Type, TypeId, Value, ValueId,
 };
 use nitrate_hir_get_type::HirGetType;
 use nitrate_tree::ByteSpan;
@@ -301,11 +301,174 @@ impl<'m> Solver<'m> {
                     break;
                 }
             }
+            // Final pass: resolve any remaining InferredInteger/InferredFloat values
+            // by defaulting to i32/f64 (like Rust's default literal types)
+            self.finalize_inferred_literals(body);
         }
         for error in &self.errors {
             log.report(error);
         }
         if self.errors.is_empty() { Ok(()) } else { Err(()) }
+    }
+
+    /// Recursively default remaining InferredInteger → i32 and InferredFloat → f64
+    /// This walks through the entire value tree to catch any nested inferred values.
+    fn finalize_inferred_literals(&mut self, body: &mut [BlockElement]) {
+        for element in body.iter_mut() {
+            match element {
+                BlockElement::Expr(expr_id) => {
+                    self.finalize_value_recursive(expr_id);
+                }
+                BlockElement::Local(local_var) => {
+                    let lv = local_var.borrow();
+                    self.finalize_value_recursive(&lv.initializer);
+                }
+            }
+        }
+    }
+
+    /// Recursively finalize a value and all its children.
+    fn finalize_value_recursive(&mut self, value_id: &ValueId) {
+        // First, try to resolve this value itself
+        self.finalize_value(value_id);
+        // Then recurse into children
+        let value = value_id.borrow().clone();
+        match &value {
+            Value::Block { block, .. } => {
+                self.finalize_inferred_literals(&mut block.borrow_mut().elements);
+            }
+            Value::StructObject { fields, .. } => {
+                for (_, field_value) in fields {
+                    self.finalize_value_recursive(field_value);
+                }
+            }
+            Value::EnumVariant { value: v, .. } => {
+                self.finalize_value_recursive(v);
+            }
+            Value::Binary { left, right, .. } => {
+                self.finalize_value_recursive(left);
+                self.finalize_value_recursive(right);
+            }
+            Value::Unary { operand, .. } => {
+                self.finalize_value_recursive(operand);
+            }
+            Value::IndexAccess { collection, index, .. } => {
+                self.finalize_value_recursive(collection);
+                self.finalize_value_recursive(index);
+            }
+            Value::FieldAccess { expr, .. } => {
+                self.finalize_value_recursive(expr);
+            }
+            Value::Assign { place, value: v, .. } => {
+                self.finalize_value_recursive(place);
+                self.finalize_value_recursive(v);
+            }
+            Value::Deref { place, .. } => {
+                self.finalize_value_recursive(place);
+            }
+            Value::Cast { value: v, .. } => {
+                self.finalize_value_recursive(v);
+            }
+            Value::Borrow { place, .. } => {
+                self.finalize_value_recursive(place);
+            }
+            Value::List { elements, .. } => {
+                for element in elements {
+                    self.finalize_value_recursive(element);
+                }
+            }
+            Value::Tuple { elements, .. } => {
+                for element in elements {
+                    self.finalize_value_recursive(element);
+                }
+            }
+            Value::If {
+                condition,
+                true_branch,
+                false_branch,
+                ..
+            } => {
+                self.finalize_value_recursive(condition);
+                self.finalize_inferred_literals(&mut true_branch.borrow_mut().elements);
+                if let Some(false_branch) = false_branch {
+                    self.finalize_inferred_literals(&mut false_branch.borrow_mut().elements);
+                }
+            }
+            Value::While { condition, body, .. } => {
+                self.finalize_value_recursive(condition);
+                self.finalize_inferred_literals(&mut body.borrow_mut().elements);
+            }
+            Value::Loop { body, .. } => {
+                self.finalize_inferred_literals(&mut body.borrow_mut().elements);
+            }
+            Value::Return { value: v, .. } => {
+                self.finalize_value_recursive(v);
+            }
+            Value::Call { callee, args, .. } => {
+                self.finalize_value_recursive(callee);
+                for arg in &args.positional {
+                    self.finalize_value_recursive(arg);
+                }
+                for (_, arg) in &args.named {
+                    self.finalize_value_recursive(arg);
+                }
+            }
+            Value::MethodCall { object, args, .. } => {
+                self.finalize_value_recursive(object);
+                for arg in &args.positional {
+                    self.finalize_value_recursive(arg);
+                }
+                for (_, arg) in &args.named {
+                    self.finalize_value_recursive(arg);
+                }
+            }
+            _ => {}
+        }
+    }
+
+    fn finalize_value(&mut self, value_id: &ValueId) {
+        let action = {
+            let current_value = value_id.borrow();
+            // Only handle InferredInteger/InferredFloat - default them
+            match &*current_value {
+                Value::InferredInteger { value, span } => {
+                    // Default: i32
+                    match i32::try_from(**value) {
+                        Ok(v) => crate::constraints::NodeAction::Replace(Value::I32 { span: *span, value: v }),
+                        Err(_) => {
+                            // If doesn't fit in i32, try i64
+                            match i64::try_from(**value) {
+                                Ok(v) => crate::constraints::NodeAction::Replace(Value::I64 { span: *span, value: v }),
+                                Err(_) => {
+                                    // If doesn't fit in i64, try u64
+                                    match u64::try_from(**value) {
+                                        Ok(v) => crate::constraints::NodeAction::Replace(Value::U64 {
+                                            span: *span,
+                                            value: v,
+                                        }),
+                                        Err(_) => {
+                                            // Last resort: u128
+                                            crate::constraints::NodeAction::Replace(Value::U128 {
+                                                span: *span,
+                                                value: Box::new(**value),
+                                            })
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                Value::InferredFloat { value, span } => crate::constraints::NodeAction::Replace(Value::F64 {
+                    span: *span,
+                    value: *value,
+                }),
+                _ => crate::constraints::NodeAction::NoChange,
+            }
+        };
+        if let crate::constraints::NodeAction::Replace(new_value) = action {
+            value_id.replace(new_value);
+        }
     }
 
     /// Solve all constraints for a global variable.

@@ -1,3 +1,4 @@
+use crate::constraints::TypeConstraint;
 use crate::solver::Solver;
 use crate::substitution::Substitution;
 use nitrate_hir::{
@@ -208,6 +209,116 @@ impl<'m> Solver<'m> {
                     .mapping
                     .entry(*index)
                     .or_insert_with(|| TypeId::from(concrete.clone()));
+            }
+            _ => {}
+        }
+    }
+
+    /// Infer concrete type arguments for generic struct parameters from parent constraints.
+    /// This handles the case where the struct expression has a type annotation,
+    /// e.g., `let x: Pair<i32> = Pair { first: 1, second: 2 };`
+    /// In this case, the constraint `Equal(Parameterized { base: Struct { def: Pair }, args: [i32] })`
+    /// is on the struct object's ValueId, and we extract the args from it.
+    ///
+    /// To map positional type args to generic parameter indices, we look at the struct's
+    /// field types to find GenericParam types, then match their names to the ordered
+    /// list of generic parameter names.
+    pub(crate) fn infer_generic_args_from_constraints(
+        &self,
+        value_id: &ValueId,
+        struct_def_id: &StructDefId,
+    ) -> Option<Substitution> {
+        let struct_def = struct_def_id.borrow();
+        let generics = struct_def.generics.as_ref()?;
+
+        if generics.is_empty() {
+            return Some(Substitution::default());
+        }
+
+        // Build a name->index mapping from the struct's field types
+        // by extracting GenericParam indices from field types
+        let mut param_name_to_index: BTreeMap<NString, u32> = BTreeMap::new();
+        for field in struct_def.fields.values() {
+            Self::collect_generic_params_from_type(&field.ty, &mut param_name_to_index);
+        }
+
+        // Build ordered list of param names matching declaration order in generics map
+        let ordered_param_names: Vec<&NString> = generics.keys().collect();
+
+        // Look at constraints on this value
+        let constraints = self.constraints.get(value_id)?;
+
+        for constraint in constraints {
+            let ty = constraint.type_id();
+            // The constraint type could be a Parameterized wrapping a Struct, or a Struct directly
+            let (generic_args, struct_def_from_constraint) = match &*ty {
+                Type::Parameterized { base, args, .. } => {
+                    if let Type::Struct { def, .. } = &**base {
+                        (Some(args.positional.clone()), Some(def.clone()))
+                    } else {
+                        (None, None)
+                    }
+                }
+                Type::Struct { def, .. } => {
+                    // Direct struct type without params
+                    (None, Some(def.clone()))
+                }
+                _ => (None, None),
+            };
+
+            if let Some(args) = generic_args {
+                if let Some(constraint_def) = struct_def_from_constraint {
+                    // Verify the struct def matches (same identity)
+                    if constraint_def.as_usize() != struct_def_id.as_usize() {
+                        continue;
+                    }
+
+                    if args.len() != ordered_param_names.len() {
+                        continue;
+                    }
+
+                    let mut subst = Substitution::default();
+                    for (i, param_name) in ordered_param_names.iter().enumerate() {
+                        // Try matching by unqualified name from the generics map key
+                        if let Some(idx) = param_name_to_index.get(*param_name) {
+                            subst.mapping.insert(*idx, args[i]);
+                        } else {
+                            // Fallback: try matching by position if field types use qualified names
+                            // (e.g. generics key is "T" but field type has GenericParam name "pkg::Pair::T")
+                            if i < args.len() {
+                                // Use position i as the index - generics were inserted in declaration order
+                                subst.mapping.insert(i as u32, args[i]);
+                            }
+                        }
+                    }
+
+                    if !subst.mapping.is_empty() {
+                        return Some(subst);
+                    }
+                }
+            }
+        }
+
+        None
+    }
+
+    /// Recursively collect GenericParam name-to-index mappings from a type.
+    fn collect_generic_params_from_type(ty: &TypeId, mapping: &mut BTreeMap<NString, u32>) {
+        match &**ty {
+            Type::GenericParam { index, name, .. } => {
+                mapping.entry(name.clone()).or_insert(*index);
+            }
+            Type::Array { element_type, .. } => Self::collect_generic_params_from_type(element_type, mapping),
+            Type::Tuple { element_types, .. } => {
+                for et in element_types.iter() {
+                    Self::collect_generic_params_from_type(et, mapping);
+                }
+            }
+            Type::Reference { to, .. } | Type::Pointer { to, .. } => {
+                Self::collect_generic_params_from_type(to, mapping);
+            }
+            Type::SliceRef { element_type, .. } | Type::SlicePtr { element_type, .. } => {
+                Self::collect_generic_params_from_type(element_type, mapping);
             }
             _ => {}
         }

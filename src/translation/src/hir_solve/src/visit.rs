@@ -51,7 +51,32 @@ impl<'m> Solver<'m> {
                     let ty = local_var.borrow().ty;
                     self.add_constraint(&init_id, TypeConstraint::Equal(ty));
                 }
+                // Visit the initializer first, which may monomorphize structs and resolve
+                // inferred literal types
                 self.visit(&local_var.borrow().initializer);
+                // Re-check the type of the initializer after visiting, since it may have been
+                // monomorphized (e.g. Pair { first: 1_i32, second: 2_i32 } -> Pair::<i32>)
+                // Also handle the case where the declared type was Parameterized (e.g. Pair<i32>)
+                // and the initializer was monomorphized to a concrete Struct type
+                {
+                    let init_id = local_var.borrow().initializer.clone();
+                    if let Ok(new_ty) = init_id.borrow().determine_type(self.m) {
+                        let mut lv = local_var.borrow_mut();
+                        let old_ty = lv.ty.clone();
+                        // Check if the initializer's type has been monomorphized to a different struct.
+                        // The initializer's Struct def may have been replaced with a monomorphized copy.
+                        let old_is_parameterized = matches!(&*old_ty, Type::Parameterized { .. });
+                        let new_type_id: TypeId = new_ty.clone().into();
+                        // Update if: old was Parameterized -> now Struct,
+                        // OR old was generic Struct -> now monomorphized Struct (different def)
+                        let should_update = old_is_parameterized && matches!(&new_ty, Type::Struct { .. });
+                        let old_is_generic_struct = matches!(&*old_ty, Type::Struct { .. });
+                        let new_is_different_struct = matches!(&new_ty, Type::Struct { .. }) && old_ty != new_type_id;
+                        if should_update || (old_is_generic_struct && new_is_different_struct) {
+                            lv.ty = new_type_id;
+                        }
+                    }
+                }
             }
         }
     }
@@ -137,6 +162,7 @@ impl<'m> Solver<'m> {
         let has_generics = struct_def.borrow().generics.is_some();
 
         if has_generics {
+            // First try to infer generic args from concrete field values
             if let Some(subst) = self.infer_generic_args_from_struct_fields(struct_def, fields) {
                 let mono_struct_id = self.monomorphize_struct(struct_def, &subst);
                 {
@@ -146,6 +172,31 @@ impl<'m> Solver<'m> {
                     }
                 }
                 let _ = value;
+                let updated = e.borrow();
+                if let Value::StructObject {
+                    struct_def: sd,
+                    fields: flds,
+                    ..
+                } = &*updated
+                {
+                    let struct_def_b = sd.borrow();
+                    for (field_name, field_value) in flds {
+                        if let Some(field) = struct_def_b.fields.get(field_name) {
+                            self.add_constraint(field_value, TypeConstraint::Equal(field.ty));
+                            self.visit(field_value);
+                        }
+                    }
+                }
+            // If field-based inference failed, try to extract concrete type args
+            // from parent constraints (e.g., from type annotations like `let x: Pair<i32>`)
+            } else if let Some(subst) = self.infer_generic_args_from_constraints(e, struct_def) {
+                let mono_struct_id = self.monomorphize_struct(struct_def, &subst);
+                {
+                    let mut original = e.borrow_mut();
+                    if let Value::StructObject { struct_def: sd, .. } = &mut *original {
+                        *sd = mono_struct_id;
+                    }
+                }
                 let updated = e.borrow();
                 if let Value::StructObject {
                     struct_def: sd,
