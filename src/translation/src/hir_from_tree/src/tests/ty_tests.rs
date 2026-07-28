@@ -2,8 +2,8 @@ use crate::{
     context::Ast2HirCtx,
     diagnosis::HirErr,
     ty::{
-        lower_array_type, lower_function_type, lower_latent_type, lower_lifetime, lower_pointer_type,
-        lower_reference_type, lower_refinement_type, lower_slice_type, lower_tuple_type, lower_type, lower_type_path,
+        lower_array_type, lower_function_type, lower_latent_type, lower_pointer_type, lower_reference_type,
+        lower_refinement_type, lower_slice_type, lower_tuple_type, lower_type, lower_type_path,
     },
 };
 use nitrate_diagnosis::CompilerLog;
@@ -655,7 +655,7 @@ fn lt_latent() {
 fn lt_lifetime() {
     run(|c, l| {
         assert!(
-            lower_lifetime(
+            crate::ty::lower_lifetime_type(
                 ast::Lifetime {
                     span: ByteSpan::default(),
                     name: "static".into()

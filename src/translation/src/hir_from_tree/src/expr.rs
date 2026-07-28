@@ -1,20 +1,22 @@
-use crate::diagnosis::HirErr;
-use crate::{context::Ast2HirCtx, ty::lower_type};
+use crate::{context::Ast2HirCtx, diagnosis::HirErr, helpers, ty::lower_type};
 use nitrate_diagnosis::CompilerLog;
 use nitrate_hir::prelude::*;
 use nitrate_nstring::NString;
 use nitrate_tree::ByteSpan;
 use nitrate_tree::ast::{self as ast, SymbolKind, UnaryExprOp};
 use ordered_float::OrderedFloat;
-use std::collections::BTreeSet;
+use std::collections::{BTreeMap, BTreeSet};
 use std::ops::Deref;
 
+// ═══════════════════════════════════════════════════════════════════════════
+// Literal Lowering
+// ═══════════════════════════════════════════════════════════════════════════
+
 pub(crate) fn lower_boolean_literal(boolean_lit: ast::BooleanLit) -> Result<Value, ()> {
-    let span = boolean_lit.span;
-    match boolean_lit.value {
-        true => Ok(Value::Bool { span, value: true }),
-        false => Ok(Value::Bool { span, value: false }),
-    }
+    Ok(Value::Bool {
+        span: boolean_lit.span,
+        value: boolean_lit.value,
+    })
 }
 
 pub(crate) fn lower_integer_literal(integer_lit: ast::IntegerLit) -> Result<Value, ()> {
@@ -45,14 +47,9 @@ pub(crate) fn lower_bstring_literal(bstring_lit: ast::BStringLit) -> Result<Valu
     })
 }
 
-pub(crate) fn lower_type_reflection(
-    _type_info: ast::TypeInfo,
-    _ctx: &mut Ast2HirCtx,
-    log: &CompilerLog,
-) -> Result<Value, ()> {
-    log.report(&HirErr::UnimplementedFeature("Type reflection".into()));
-    Err(())
-}
+// ═══════════════════════════════════════════════════════════════════════════
+// Collection Literals
+// ═══════════════════════════════════════════════════════════════════════════
 
 pub(crate) fn lower_list(list: ast::List, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
     let span = list.span;
@@ -84,6 +81,10 @@ pub(crate) fn lower_tuple(tuple: ast::Tuple, ctx: &mut Ast2HirCtx, log: &Compile
     })
 }
 
+// ═══════════════════════════════════════════════════════════════════════════
+// Struct Initialization
+// ═══════════════════════════════════════════════════════════════════════════
+
 pub(crate) fn lower_struct_init(
     struct_init: ast::StructInit,
     ctx: &mut Ast2HirCtx,
@@ -91,29 +92,15 @@ pub(crate) fn lower_struct_init(
 ) -> Result<Value, ()> {
     let span = struct_init.span;
 
-    // Collect explicit type arguments from turbofish syntax (e.g., Pair::<i32>)
+    // Collect explicit type arguments from turbofish syntax
     let explicit_type_args: Vec<TypeId> = struct_init
         .path
         .segments
         .iter()
-        .filter_map(|seg| {
-            seg.type_arguments.as_ref().map(|type_args| {
-                type_args
-                    .iter()
-                    .filter_map(|type_arg| {
-                        lower_type(type_arg.value.clone(), ctx, log).ok().map(|t| {
-                            let hir_type_arg: TypeId = t.into();
-                            hir_type_arg
-                        })
-                    })
-                    .collect::<Vec<_>>()
-            })
-        })
-        .flatten()
+        .flat_map(|seg| helpers::extract_type_args(&seg.type_arguments, ctx, log))
         .collect();
 
     let mut fields = Vec::with_capacity(struct_init.fields.len());
-
     for (field_name, value) in struct_init.fields {
         let field_value = lower_expr(value, ctx, log)?;
         fields.push((field_name, field_value.into()));
@@ -124,72 +111,15 @@ pub(crate) fn lower_struct_init(
             let struct_def_id = ctx.tab.get_struct_or_insert_placeholder(&resolved_path);
 
             // If explicit type args were provided (turbofish), monomorphize the struct
-            // by creating a uniquely-named concrete copy
             if !explicit_type_args.is_empty() {
-                let struct_def = struct_def_id.borrow();
-                if struct_def.generics.is_some() {
-                    let generic_params: Vec<&NString> = struct_def
-                        .generics
-                        .as_ref()
-                        .map(|g| g.keys().collect())
-                        .unwrap_or_default();
-
-                    // Build a unique suffix from the concrete type args
-                    let type_suffix: String = explicit_type_args
-                        .iter()
-                        .map(|t| format!("{:?}", t.deref()))
-                        .collect::<Vec<_>>()
-                        .join("_");
-                    let mono_name = format!("{}::<{}>", resolved_path, type_suffix);
-
-                    // Check if we already created this monomorphized version
-                    let mono_name_ns: NString = mono_name.clone().into();
-                    if let Some(existing_mono) = ctx.tab.get_struct(&mono_name_ns) {
-                        return Ok(Value::StructObject {
-                            span,
-                            struct_def: existing_mono.clone(),
-                            fields: fields.into(),
-                        });
-                    }
-
-                    use std::collections::BTreeMap;
-                    let mut new_fields = BTreeMap::new();
-                    let mut new_layout = Vec::new();
-
-                    for (field_name, field) in &struct_def.fields {
-                        let new_field_ty =
-                            substitute_generic_params_in_type(&field.ty, &generic_params, &explicit_type_args);
-                        let new_field = StructField {
-                            span: ByteSpan::default(),
-                            visibility: field.visibility,
-                            attributes: field.attributes.clone(),
-                            name: field.name.clone(),
-                            ty: TypeId::from(new_field_ty),
-                            default_value: field.default_value.clone(),
-                        };
-                        new_fields.insert(field_name.clone(), new_field);
-                        new_layout.push(StructMemoryLayoutCell::Field {
-                            field_name: field_name.clone(),
-                        });
-                    }
-
-                    let mono_struct = StructDef {
-                        span: ByteSpan::default(),
-                        visibility: struct_def.visibility,
-                        name: mono_name_ns,
-                        attributes: struct_def.attributes.clone(),
-                        fields: new_fields,
-                        generics: None,
-                        layout: new_layout.into(),
-                    };
-                    let mono_id: StructDefId = mono_struct.into();
-                    ctx.tab.add_struct(mono_id.clone());
-                    return Ok(Value::StructObject {
-                        span,
-                        struct_def: mono_id,
-                        fields: fields.into(),
-                    });
-                }
+                return handle_monomorphized_struct(
+                    struct_def_id,
+                    &explicit_type_args,
+                    &resolved_path,
+                    span,
+                    fields,
+                    ctx,
+                );
             }
 
             Ok(Value::StructObject {
@@ -198,16 +128,101 @@ pub(crate) fn lower_struct_init(
                 fields: fields.into(),
             })
         }
-
         None => {
-            log.report(&HirErr::UnresolvedTypePath);
+            log.report(&HirErr::UnresolvedTypePath("struct path".into()));
             Err(())
         }
     }
 }
 
-/// Helper function: substitute generic params in a type given explicit type args.
-/// Used in lower_struct_init to monomorphize struct types at HIR lowering time.
+/// Handles monomorphization of a struct with explicit type arguments (turbofish).
+fn handle_monomorphized_struct(
+    struct_def_id: StructDefId,
+    explicit_type_args: &[TypeId],
+    resolved_path: &NString,
+    span: ByteSpan,
+    fields: Vec<(NString, ValueId)>,
+    ctx: &mut Ast2HirCtx,
+) -> Result<Value, ()> {
+    let borrowed = struct_def_id.borrow();
+    let Some(generics) = &borrowed.generics else {
+        // No generics to substitute, return as-is
+        drop(borrowed);
+        return Ok(Value::StructObject {
+            span,
+            struct_def: struct_def_id,
+            fields: fields.into(),
+        });
+    };
+
+    let generic_params: Vec<&NString> = generics.keys().collect();
+
+    // Build a unique suffix from the concrete type args
+    let type_suffix: String = explicit_type_args
+        .iter()
+        .map(|t| format!("{:?}", t.deref()))
+        .collect::<Vec<_>>()
+        .join("_");
+    let mono_name = format!("{}::<{}>", resolved_path, type_suffix);
+
+    // Check if we already created this monomorphized version
+    let mono_name_ns: NString = mono_name.clone().into();
+    if let Some(existing_mono) = ctx.tab.get_struct(&mono_name_ns) {
+        drop(borrowed);
+        return Ok(Value::StructObject {
+            span,
+            struct_def: existing_mono.clone(),
+            fields: fields.into(),
+        });
+    }
+
+    let struct_def = &*borrowed;
+
+    // Create a monomorphized copy of the struct
+    let mut new_fields = BTreeMap::new();
+    let mut new_layout = Vec::new();
+
+    for (field_name, field) in &struct_def.fields {
+        let new_field_ty = substitute_generic_params_in_type(&field.ty, &generic_params, explicit_type_args);
+        let new_field = StructField {
+            span: ByteSpan::default(),
+            visibility: field.visibility,
+            attributes: field.attributes.clone(),
+            name: field.name.clone(),
+            ty: TypeId::from(new_field_ty),
+            default_value: field.default_value.clone(),
+        };
+        new_fields.insert(field_name.clone(), new_field);
+        new_layout.push(StructMemoryLayoutCell::Field {
+            field_name: field_name.clone(),
+        });
+    }
+
+    let visibility = borrowed.visibility;
+    let attributes = borrowed.attributes.clone();
+
+    drop(borrowed);
+
+    let mono_struct = StructDef {
+        span: ByteSpan::default(),
+        visibility,
+        name: mono_name_ns,
+        attributes,
+        fields: new_fields,
+        generics: None,
+        layout: new_layout.into(),
+    };
+    let mono_id: StructDefId = mono_struct.into();
+    ctx.tab.add_struct(mono_id.clone());
+
+    Ok(Value::StructObject {
+        span,
+        struct_def: mono_id,
+        fields: fields.into(),
+    })
+}
+
+/// Substitute generic params in a type given explicit type args.
 fn substitute_generic_params_in_type(ty: &Type, param_names: &[&NString], type_args: &[TypeId]) -> Type {
     match ty {
         Type::GenericParam { index, name, .. } => {
@@ -343,14 +358,12 @@ fn substitute_generic_params_in_type(ty: &Type, param_names: &[&NString], type_a
             }
         }
         Type::Parameterized { base, args, .. } => {
-            // Substitute in the base type and all type arguments
             let new_base = substitute_generic_params_in_type(base, param_names, type_args);
             let new_args: thin_vec::ThinVec<TypeId> = args
                 .positional
                 .iter()
                 .map(|arg| TypeId::from(substitute_generic_params_in_type(arg, param_names, type_args)))
                 .collect();
-            // If the base was a GenericParam that got substituted, just return the substituted type
             match &new_base {
                 Type::Struct { .. } | Type::TypeAlias { .. } => new_base,
                 _ => Type::Parameterized {
@@ -367,24 +380,13 @@ fn substitute_generic_params_in_type(ty: &Type, param_names: &[&NString], type_a
             let type_alias = def.borrow();
             substitute_generic_params_in_type(&type_alias.type_id, param_names, type_args)
         }
-        Type::Struct { def, .. } => {
-            // For struct types, also substitute generics within
-            let struct_def = def.borrow();
-            if struct_def.generics.is_some() {
-                // Need to create a monomorphized copy of this struct
-                let _generic_params: Vec<&NString> = struct_def
-                    .generics
-                    .as_ref()
-                    .map(|g| g.keys().collect())
-                    .unwrap_or_default();
-                // Check if all type params are provided by the outer call
-                // This case should generally be handled via the Parameterized path above
-            }
-            ty.clone()
-        }
         _ => ty.clone(),
     }
 }
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Unary and Binary Expressions
+// ═══════════════════════════════════════════════════════════════════════════
 
 pub(crate) fn lower_unary(unary: ast::UnaryExpr, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
     let span = unary.span;
@@ -417,7 +419,7 @@ pub(crate) fn lower_unary(unary: ast::UnaryExpr, ctx: &mut Ast2HirCtx, log: &Com
             place: operand.into(),
         }),
         UnaryExprOp::Typeof => {
-            log.report(&HirErr::UnimplementedFeature("Type reflection".into()));
+            log.report(&HirErr::TypeofNotImplemented);
             Err(())
         }
     }
@@ -429,6 +431,7 @@ pub(crate) fn lower_binary(binary: ast::BinExpr, ctx: &mut Ast2HirCtx, log: &Com
     let right = lower_expr(binary.right, ctx, log)?.into();
 
     match binary.operator {
+        // Arithmetic
         ast::BinExprOp::Add => Ok(Value::Binary {
             span,
             left,
@@ -459,6 +462,8 @@ pub(crate) fn lower_binary(binary: ast::BinExpr, ctx: &mut Ast2HirCtx, log: &Com
             op: BinaryOp::Mod,
             right,
         }),
+
+        // Bitwise
         ast::BinExprOp::BitAnd => Ok(Value::Binary {
             span,
             left,
@@ -501,6 +506,8 @@ pub(crate) fn lower_binary(binary: ast::BinExpr, ctx: &mut Ast2HirCtx, log: &Com
             op: BinaryOp::Ror,
             right,
         }),
+
+        // Logical
         ast::BinExprOp::LogicAnd => Ok(Value::Binary {
             span,
             left,
@@ -513,6 +520,8 @@ pub(crate) fn lower_binary(binary: ast::BinExpr, ctx: &mut Ast2HirCtx, log: &Com
             op: BinaryOp::LogicOr,
             right,
         }),
+
+        // Comparison
         ast::BinExprOp::LogicLt => Ok(Value::Binary {
             span,
             left,
@@ -549,289 +558,259 @@ pub(crate) fn lower_binary(binary: ast::BinExpr, ctx: &mut Ast2HirCtx, log: &Com
             op: BinaryOp::Ne,
             right,
         }),
+
+        // Assignment
         ast::BinExprOp::Set => Ok(Value::Assign {
             span,
             place: left,
             value: right,
         }),
-        ast::BinExprOp::SetPlus => {
-            let binary = Value::Binary {
-                span,
-                left: left.clone(),
-                op: BinaryOp::Add,
-                right: right.clone(),
-            };
-            Ok(Value::Assign {
-                span,
-                place: left,
-                value: binary.into(),
-            })
-        }
-        ast::BinExprOp::SetMinus => {
-            let binary = Value::Binary {
-                span,
-                left: left.clone(),
-                op: BinaryOp::Sub,
-                right: right.clone(),
-            };
-            Ok(Value::Assign {
-                span,
-                place: left,
-                value: binary.into(),
-            })
-        }
-        ast::BinExprOp::SetTimes => {
-            let binary = Value::Binary {
-                span,
-                left: left.clone(),
-                op: BinaryOp::Mul,
-                right: right.clone(),
-            };
-            Ok(Value::Assign {
-                span,
-                place: left,
-                value: binary.into(),
-            })
-        }
-        ast::BinExprOp::SetSlash => {
-            let binary = Value::Binary {
-                span,
-                left: left.clone(),
-                op: BinaryOp::Div,
-                right: right.clone(),
-            };
-            Ok(Value::Assign {
-                span,
-                place: left,
-                value: binary.into(),
-            })
-        }
-        ast::BinExprOp::SetPercent => {
-            let binary = Value::Binary {
-                span,
-                left: left.clone(),
-                op: BinaryOp::Mod,
-                right: right.clone(),
-            };
-            Ok(Value::Assign {
-                span,
-                place: left,
-                value: binary.into(),
-            })
-        }
-        ast::BinExprOp::SetBitAnd => {
-            let binary = Value::Binary {
-                span,
-                left: left.clone(),
-                op: BinaryOp::And,
-                right: right.clone(),
-            };
-            Ok(Value::Assign {
-                span,
-                place: left,
-                value: binary.into(),
-            })
-        }
-        ast::BinExprOp::SetBitOr => {
-            let binary = Value::Binary {
-                span,
-                left: left.clone(),
-                op: BinaryOp::Or,
-                right: right.clone(),
-            };
-            Ok(Value::Assign {
-                span,
-                place: left,
-                value: binary.into(),
-            })
-        }
-        ast::BinExprOp::SetBitXor => {
-            let binary = Value::Binary {
-                span,
-                left: left.clone(),
-                op: BinaryOp::Xor,
-                right: right.clone(),
-            };
-            Ok(Value::Assign {
-                span,
-                place: left,
-                value: binary.into(),
-            })
-        }
-        ast::BinExprOp::SetBitShl => {
-            let binary = Value::Binary {
-                span,
-                left: left.clone(),
-                op: BinaryOp::Shl,
-                right: right.clone(),
-            };
-            Ok(Value::Assign {
-                span,
-                place: left,
-                value: binary.into(),
-            })
-        }
-        ast::BinExprOp::SetBitShr => {
-            let binary = Value::Binary {
-                span,
-                left: left.clone(),
-                op: BinaryOp::Shr,
-                right: right.clone(),
-            };
-            Ok(Value::Assign {
-                span,
-                place: left,
-                value: binary.into(),
-            })
-        }
-        ast::BinExprOp::SetBitRotl => {
-            let binary = Value::Binary {
-                span,
-                left: left.clone(),
-                op: BinaryOp::Rol,
-                right: right.clone(),
-            };
-            Ok(Value::Assign {
-                span,
-                place: left,
-                value: binary.into(),
-            })
-        }
-        ast::BinExprOp::SetBitRotr => {
-            let binary = Value::Binary {
-                span,
-                left: left.clone(),
-                op: BinaryOp::Ror,
-                right: right.clone(),
-            };
-            Ok(Value::Assign {
-                span,
-                place: left,
-                value: binary.into(),
-            })
-        }
-        ast::BinExprOp::SetLogicAnd => {
-            let binary = Value::Binary {
-                span,
-                left: left.clone(),
-                op: BinaryOp::And,
-                right: right.clone(),
-            };
-            Ok(Value::Assign {
-                span,
-                place: left,
-                value: binary.into(),
-            })
-        }
-        ast::BinExprOp::SetLogicOr => {
-            let binary = Value::Binary {
-                span,
-                left: left.clone(),
-                op: BinaryOp::Or,
-                right: right.clone(),
-            };
-            Ok(Value::Assign {
-                span,
-                place: left,
-                value: binary.into(),
-            })
-        }
+
+        // Compound assignment operators
+        op @ (ast::BinExprOp::SetPlus
+        | ast::BinExprOp::SetMinus
+        | ast::BinExprOp::SetTimes
+        | ast::BinExprOp::SetSlash
+        | ast::BinExprOp::SetPercent
+        | ast::BinExprOp::SetBitAnd
+        | ast::BinExprOp::SetBitOr
+        | ast::BinExprOp::SetBitXor
+        | ast::BinExprOp::SetBitShl
+        | ast::BinExprOp::SetBitShr
+        | ast::BinExprOp::SetBitRotl
+        | ast::BinExprOp::SetBitRotr
+        | ast::BinExprOp::SetLogicAnd
+        | ast::BinExprOp::SetLogicOr) => Ok(lower_compound_assignment(span, left, right, op)),
+
         ast::BinExprOp::Range => {
-            log.report(&HirErr::UnimplementedFeature("range .. operator".into()));
+            log.report(&HirErr::RangeOperatorNotImplemented);
             Err(())
         }
     }
 }
 
-pub(crate) fn lower_cast(cast: ast::Cast, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
-    fn failed_to_cast(log: &CompilerLog) -> Result<Value, ()> {
-        log.report(&HirErr::IntegerCastOutOfRange);
-        Err(())
-    }
+/// Lower compound assignment operators (e.g., `+=`, `-=`) by expanding
+/// them into `place = place OP value`.
+fn lower_compound_assignment(span: ByteSpan, place: ValueId, value: ValueId, op: ast::BinExprOp) -> Value {
+    let binary_op = match op {
+        ast::BinExprOp::SetPlus => BinaryOp::Add,
+        ast::BinExprOp::SetMinus => BinaryOp::Sub,
+        ast::BinExprOp::SetTimes => BinaryOp::Mul,
+        ast::BinExprOp::SetSlash => BinaryOp::Div,
+        ast::BinExprOp::SetPercent => BinaryOp::Mod,
+        ast::BinExprOp::SetBitAnd => BinaryOp::And,
+        ast::BinExprOp::SetBitOr => BinaryOp::Or,
+        ast::BinExprOp::SetBitXor => BinaryOp::Xor,
+        ast::BinExprOp::SetBitShl => BinaryOp::Shl,
+        ast::BinExprOp::SetBitShr => BinaryOp::Shr,
+        ast::BinExprOp::SetBitRotl => BinaryOp::Rol,
+        ast::BinExprOp::SetBitRotr => BinaryOp::Ror,
+        ast::BinExprOp::SetLogicAnd => BinaryOp::And,
+        ast::BinExprOp::SetLogicOr => BinaryOp::Or,
+        _ => unreachable!(), // guarded by caller
+    };
 
+    let binary = Value::Binary {
+        span,
+        left: place.clone(),
+        op: binary_op,
+        right: value,
+    };
+
+    Value::Assign {
+        span,
+        place,
+        value: binary.into(),
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Cast Expressions
+// ═══════════════════════════════════════════════════════════════════════════
+
+pub(crate) fn lower_cast(cast: ast::Cast, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
     let span = cast.span;
     let expr = lower_expr(cast.value, ctx, log)?;
     let to = lower_type(cast.to, ctx, log)?;
 
-    match (expr, to) {
-        (Value::InferredInteger { value, .. }, Type::U8 { .. }) => match u8::try_from(*value) {
+    // Try to resolve inferred integer literals to concrete types
+    if let Value::InferredInteger { value, .. } = &expr {
+        // Attempt direct conversion to each primitive integer type
+        let cast_result = try_cast_inferred_integer(**value, &to, span, ctx, log);
+        if cast_result.is_some() {
+            return cast_result.unwrap();
+        }
+    }
+
+    // For inferred floats, try direct conversion
+    if let Value::InferredFloat { value: v, .. } = &expr {
+        match &to {
+            Type::F32 { .. } => {
+                return Ok(Value::F32 {
+                    span,
+                    value: OrderedFloat::from(f64::from(*v) as f32),
+                });
+            }
+            Type::F64 { .. } => {
+                return Ok(Value::F64 { span, value: *v });
+            }
+            _ => {}
+        }
+    }
+
+    // Fallback: emit a general cast
+    Ok(Value::Cast {
+        span,
+        value: expr.into(),
+        target_type: to.into(),
+    })
+}
+
+/// Try to cast an inferred integer literal directly to a concrete type.
+fn try_cast_inferred_integer(
+    value: u128,
+    target_type: &Type,
+    span: ByteSpan,
+    ctx: &Ast2HirCtx,
+    log: &CompilerLog,
+) -> Option<Result<Value, ()>> {
+    Some(match target_type {
+        Type::U8 { .. } => match u8::try_from(value) {
             Ok(v) => Ok(Value::U8 { span, value: v }),
-            Err(_) => failed_to_cast(log),
+            Err(_) => {
+                log.report(&HirErr::IntegerCastOutOfRange {
+                    value: format!("{}", value),
+                    target_type: "u8".into(),
+                });
+                return None;
+            }
         },
-        (Value::InferredInteger { value, .. }, Type::U16 { .. }) => match u16::try_from(*value) {
+        Type::U16 { .. } => match u16::try_from(value) {
             Ok(v) => Ok(Value::U16 { span, value: v }),
-            Err(_) => failed_to_cast(log),
+            Err(_) => {
+                log.report(&HirErr::IntegerCastOutOfRange {
+                    value: format!("{}", value),
+                    target_type: "u16".into(),
+                });
+                return None;
+            }
         },
-        (Value::InferredInteger { value, .. }, Type::U32 { .. }) => match u32::try_from(*value) {
+        Type::U32 { .. } => match u32::try_from(value) {
             Ok(v) => Ok(Value::U32 { span, value: v }),
-            Err(_) => failed_to_cast(log),
+            Err(_) => {
+                log.report(&HirErr::IntegerCastOutOfRange {
+                    value: format!("{}", value),
+                    target_type: "u32".into(),
+                });
+                return None;
+            }
         },
-        (Value::InferredInteger { value, .. }, Type::U64 { .. }) => match u64::try_from(*value) {
+        Type::U64 { .. } => match u64::try_from(value) {
             Ok(v) => Ok(Value::U64 { span, value: v }),
-            Err(_) => failed_to_cast(log),
+            Err(_) => {
+                log.report(&HirErr::IntegerCastOutOfRange {
+                    value: format!("{}", value),
+                    target_type: "u64".into(),
+                });
+                return None;
+            }
         },
-        (Value::InferredInteger { value, .. }, Type::U128 { .. }) => match u128::try_from(*value) {
-            Ok(v) => Ok(Value::U128 {
-                span,
-                value: Box::new(v),
-            }),
-            Err(_) => failed_to_cast(log),
-        },
-        (Value::InferredInteger { value, .. }, Type::USize { .. }) => match ctx.ptr_size {
-            PtrSize::U32 => match u32::try_from(*value) {
+        Type::U128 { .. } => Ok(Value::U128 {
+            span,
+            value: Box::new(value),
+        }),
+        Type::USize { .. } => match ctx.ptr_size {
+            PtrSize::U32 => match u32::try_from(value) {
                 Ok(v) => Ok(Value::USize {
                     span,
                     bits: 32,
                     value: v as u64,
                 }),
-                Err(_) => failed_to_cast(log),
+                Err(_) => {
+                    log.report(&HirErr::IntegerCastOutOfRange {
+                        value: format!("{}", value),
+                        target_type: "usize".into(),
+                    });
+                    return None;
+                }
             },
-            PtrSize::U64 => match u64::try_from(*value) {
+            PtrSize::U64 => match u64::try_from(value) {
                 Ok(v) => Ok(Value::USize {
                     span,
                     bits: 64,
                     value: v,
                 }),
-                Err(_) => failed_to_cast(log),
+                Err(_) => {
+                    log.report(&HirErr::IntegerCastOutOfRange {
+                        value: format!("{}", value),
+                        target_type: "usize".into(),
+                    });
+                    return None;
+                }
             },
         },
-        (Value::InferredInteger { value, .. }, Type::I8 { .. }) => match i8::try_from(*value) {
+        Type::I8 { .. } => match i8::try_from(value) {
             Ok(v) => Ok(Value::I8 { span, value: v }),
-            Err(_) => failed_to_cast(log),
+            Err(_) => {
+                log.report(&HirErr::IntegerCastOutOfRange {
+                    value: format!("{}", value),
+                    target_type: "i8".into(),
+                });
+                return None;
+            }
         },
-        (Value::InferredInteger { value, .. }, Type::I16 { .. }) => match i16::try_from(*value) {
+        Type::I16 { .. } => match i16::try_from(value) {
             Ok(v) => Ok(Value::I16 { span, value: v }),
-            Err(_) => failed_to_cast(log),
+            Err(_) => {
+                log.report(&HirErr::IntegerCastOutOfRange {
+                    value: format!("{}", value),
+                    target_type: "i16".into(),
+                });
+                return None;
+            }
         },
-        (Value::InferredInteger { value, .. }, Type::I32 { .. }) => match i32::try_from(*value) {
+        Type::I32 { .. } => match i32::try_from(value) {
             Ok(v) => Ok(Value::I32 { span, value: v }),
-            Err(_) => failed_to_cast(log),
+            Err(_) => {
+                log.report(&HirErr::IntegerCastOutOfRange {
+                    value: format!("{}", value),
+                    target_type: "i32".into(),
+                });
+                return None;
+            }
         },
-        (Value::InferredInteger { value, .. }, Type::I64 { .. }) => match i64::try_from(*value) {
+        Type::I64 { .. } => match i64::try_from(value) {
             Ok(v) => Ok(Value::I64 { span, value: v }),
-            Err(_) => failed_to_cast(log),
+            Err(_) => {
+                log.report(&HirErr::IntegerCastOutOfRange {
+                    value: format!("{}", value),
+                    target_type: "i64".into(),
+                });
+                return None;
+            }
         },
-        (Value::InferredInteger { value, .. }, Type::I128 { .. }) => match i128::try_from(*value) {
+        Type::I128 { .. } => match i128::try_from(value) {
             Ok(v) => Ok(Value::I128 {
                 span,
                 value: Box::new(v),
             }),
-            Err(_) => failed_to_cast(log),
+            Err(_) => {
+                log.report(&HirErr::IntegerCastOutOfRange {
+                    value: format!("{}", value),
+                    target_type: "i128".into(),
+                });
+                return None;
+            }
         },
-        (Value::InferredFloat { value: v, .. }, Type::F32 { .. }) => Ok(Value::F32 {
-            span,
-            value: OrderedFloat::from(*v as f32),
-        }),
-        (Value::InferredFloat { value: v, .. }, Type::F64 { .. }) => Ok(Value::F64 { span, value: v }),
-        (expr, to) => Ok(Value::Cast {
-            span,
-            value: expr.into(),
-            target_type: to.into(),
-        }),
-    }
+        _ => return None,
+    })
 }
 
-fn ast_local_variable(
+// ═══════════════════════════════════════════════════════════════════════════
+// Local Variable Lowering
+// ═══════════════════════════════════════════════════════════════════════════
+
+fn lower_local_variable(
     local_var: &ast::LocalVariable,
     ctx: &mut Ast2HirCtx,
     log: &CompilerLog,
@@ -841,19 +820,15 @@ fn ast_local_variable(
         ast::LocalVariableKind::Var => LocalKind::Var,
     };
 
-    let attributes = BTreeSet::new();
-    if let Some(ast_attributes) = &local_var.attributes {
-        for _attr in ast_attributes {
-            log.report(&HirErr::UnrecognizedLocalVariableAttribute);
-        }
-    }
+    helpers::reject_all_attributes(
+        &local_var.attributes,
+        HirErr::UnrecognizedLocalVarAttribute("".into()),
+        log,
+    );
 
-    let is_mutable = match local_var.mutability {
-        Some(ast::Mutability::Mut) => true,
-        Some(ast::Mutability::Const) | None => false,
-    };
+    let is_mutable = helpers::is_mutable(local_var.mutability);
 
-    let name = ctx.qualify_name(&local_var.name).into();
+    let name = helpers::qualify(&local_var.name, ctx);
 
     let ty = match local_var.ty.to_owned() {
         None => ctx.create_inference_placeholder().into(),
@@ -863,7 +838,7 @@ fn ast_local_variable(
     let initializer = match local_var.initializer.to_owned() {
         Some(expr) => lower_expr(expr, ctx, log)?.into(),
         None => {
-            log.report(&HirErr::LocalVariableMissingInitializer);
+            log.report(&HirErr::LocalVariableMissingInitializer(name.to_string()));
             return Err(());
         }
     };
@@ -871,7 +846,7 @@ fn ast_local_variable(
     let localvar_id: LocalVariableId = LocalVariable {
         span: ByteSpan::default(),
         kind,
-        attributes,
+        attributes: BTreeSet::new(),
         is_mutable,
         name,
         ty,
@@ -880,9 +855,12 @@ fn ast_local_variable(
     .into();
 
     ctx.tab.add_local_variable(localvar_id.clone());
-
     Ok(localvar_id)
 }
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Block Expressions
+// ═══════════════════════════════════════════════════════════════════════════
 
 pub(crate) fn lower_block(block: ast::Block, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Block, ()> {
     let span = block.span;
@@ -908,7 +886,7 @@ pub(crate) fn lower_block(block: ast::Block, ctx: &mut Ast2HirCtx, log: &Compile
                 }
             }
             ast::BlockItem::Variable(var) => {
-                let var_hir = ast_local_variable(&var, ctx, log)?;
+                let var_hir = lower_local_variable(&var, ctx, log)?;
                 elements.push(BlockElement::Local(var_hir));
             }
         }
@@ -918,7 +896,7 @@ pub(crate) fn lower_block(block: ast::Block, ctx: &mut Ast2HirCtx, log: &Compile
         Some(ast::Safety::Unsafe(None)) => BlockSafety::Unsafe,
         Some(ast::Safety::Safe) | None => BlockSafety::Safe,
         Some(ast::Safety::Unsafe(Some(_))) => {
-            log.report(&HirErr::UnimplementedFeature("block safety unsafe expression".into()));
+            log.report(&HirErr::UnsafeExprBodyNotImplemented);
             return Err(());
         }
     };
@@ -927,47 +905,22 @@ pub(crate) fn lower_block(block: ast::Block, ctx: &mut Ast2HirCtx, log: &Compile
 }
 
 pub(crate) fn lower_block_value(block: ast::Block, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
-    let span = block.span;
     let block = lower_block(block, ctx, log)?;
     Ok(Value::Block {
-        span,
+        span: block.span,
         block: block.into(),
     })
 }
 
-pub(crate) fn lower_closure(_closure: ast::Closure, _ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
-    log.report(&HirErr::UnimplementedFeature("ast::Expr::Closure".into()));
-    Err(())
-}
+// ═══════════════════════════════════════════════════════════════════════════
+// Expression Path / Symbol Resolution
+// ═══════════════════════════════════════════════════════════════════════════
 
 pub(crate) fn lower_expr_path(expr_path: ast::ExprPath, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
     let span = expr_path.span;
 
-    // Check for generic type arguments in expression paths - we store them on the
-    // function symbol so the monomorphization pass can use them for disambiguation
-    let explicit_type_args: Option<Vec<TypeId>> = if expr_path.segments.iter().any(|seg| seg.type_arguments.is_some()) {
-        let args: Vec<TypeId> = expr_path
-            .segments
-            .iter()
-            .filter_map(|seg| {
-                seg.type_arguments.as_ref().map(|type_args| {
-                    type_args
-                        .iter()
-                        .filter_map(|type_arg| {
-                            lower_type(type_arg.value.clone(), ctx, log).ok().map(|t| {
-                                let hir_type_arg: TypeId = t.into();
-                                hir_type_arg
-                            })
-                        })
-                        .collect::<Vec<_>>()
-                })
-            })
-            .flatten()
-            .collect();
-        if args.is_empty() { None } else { Some(args) }
-    } else {
-        None
-    };
+    // Check for generic type arguments in expression paths
+    let _explicit_type_args = helpers::extract_type_args_from_expr_path(&expr_path.segments, ctx, log);
 
     match expr_path.resolved_path {
         Some(resolved_path) => match ctx.ast_symbol_map.get(&resolved_path) {
@@ -982,9 +935,6 @@ pub(crate) fn lower_expr_path(expr_path: ast::ExprPath, ctx: &mut Ast2HirCtx, lo
             }),
             Some(SymbolKind::Function) => {
                 let func_id = ctx.tab.get_function_or_insert_placeholder(&resolved_path);
-                if let Some(_type_args) = explicit_type_args {
-                    // We currently only support inference-based monomorphization,
-                }
                 Ok(Value::FunctionSymbol { span, id: func_id })
             }
             Some(SymbolKind::GlobalVariable) => Ok(Value::GlobalVariableSymbol {
@@ -999,31 +949,42 @@ pub(crate) fn lower_expr_path(expr_path: ast::ExprPath, ctx: &mut Ast2HirCtx, lo
                 span,
                 id: ctx.tab.get_parameter_or_insert_placeholder(&resolved_path),
             }),
-            _ => {
-                println!("Unresolved symbol: {}", resolved_path);
-                log.report(&HirErr::UnresolvedSymbol);
+            Some(_) => {
+                log.report(&HirErr::UnresolvedSymbol(resolved_path.to_string()));
+                Err(())
+            }
+            None => {
+                log.report(&HirErr::UnresolvedSymbol(resolved_path.to_string()));
                 Err(())
             }
         },
         None => {
-            println!("Unresolved path in expr: {:?}", expr_path.segments);
-            log.report(&HirErr::UnresolvedSymbol);
+            let path_str = expr_path
+                .segments
+                .iter()
+                .map(|s| s.name.to_string())
+                .collect::<Vec<_>>()
+                .join("::");
+            log.report(&HirErr::UnresolvedSymbol(path_str));
             Err(())
         }
     }
 }
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Access Expressions
+// ═══════════════════════════════════════════════════════════════════════════
 
 pub(crate) fn lower_index_access(
     index_access: ast::IndexAccess,
     ctx: &mut Ast2HirCtx,
     log: &CompilerLog,
 ) -> Result<Value, ()> {
-    let span = index_access.span;
-    let collection: ValueId = lower_expr(index_access.collection, ctx, log)?.into();
-    let index: ValueId = lower_expr(index_access.index, ctx, log)?.into();
+    let collection = lower_expr(index_access.collection, ctx, log)?.into();
+    let index = lower_expr(index_access.index, ctx, log)?.into();
 
     Ok(Value::IndexAccess {
-        span,
+        span: index_access.span,
         collection,
         index,
     })
@@ -1034,21 +995,23 @@ pub(crate) fn lower_field_access(
     ctx: &mut Ast2HirCtx,
     log: &CompilerLog,
 ) -> Result<Value, ()> {
-    let span = field_access.span;
     let object = lower_expr(field_access.object, ctx, log)?.into();
-    let field = field_access.field.to_string().into();
+    let field = NString::from(field_access.field.to_string());
 
     Ok(Value::FieldAccess {
-        span,
+        span: field_access.span,
         expr: object,
         field_name: field,
     })
 }
 
+// ═══════════════════════════════════════════════════════════════════════════
+// Control Flow
+// ═══════════════════════════════════════════════════════════════════════════
+
 pub(crate) fn lower_if(if_: ast::If, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
     let span = if_.span;
     let condition = lower_expr(if_.condition, ctx, log)?.into();
-
     let true_branch = lower_block(if_.true_branch, ctx, log)?.into();
 
     let false_branch = match if_.false_branch {
@@ -1093,11 +1056,6 @@ pub(crate) fn lower_while_loop(
     Ok(Value::While { span, condition, body })
 }
 
-pub(crate) fn lower_match(_match_: ast::Match, _ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
-    log.report(&HirErr::UnimplementedFeature("Match expressions".into()));
-    Err(())
-}
-
 pub(crate) fn lower_break(break_: ast::Break, _ctx: &mut Ast2HirCtx, _log: &CompilerLog) -> Result<Value, ()> {
     Ok(Value::Break {
         span: break_.span,
@@ -1125,15 +1083,9 @@ pub(crate) fn lower_return(return_: ast::Return, ctx: &mut Ast2HirCtx, log: &Com
     Ok(Value::Return { span, value })
 }
 
-pub(crate) fn lower_for_each(_for_each: ast::ForEach, _ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
-    log.report(&HirErr::UnimplementedFeature("ForEach expressions".into()));
-    Err(())
-}
-
-pub(crate) fn lower_await(_await_: ast::Await, _ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
-    log.report(&HirErr::UnimplementedFeature("Await expressions".into()));
-    Err(())
-}
+// ═══════════════════════════════════════════════════════════════════════════
+// Call Expressions
+// ═══════════════════════════════════════════════════════════════════════════
 
 pub(crate) fn lower_function_call(
     function_call: ast::FunctionCall,
@@ -1143,24 +1095,7 @@ pub(crate) fn lower_function_call(
     let span = function_call.span;
     let callee = lower_expr(function_call.callee, ctx, log)?;
 
-    let mut positional = Vec::with_capacity(function_call.positional.len());
-    let mut named = Vec::with_capacity(function_call.named.len());
-
-    for arg in function_call.positional {
-        let value = lower_expr(arg, ctx, log)?.into();
-        positional.push(value);
-    }
-
-    for (name, arg) in function_call.named {
-        let name = NString::from(name.to_string());
-        let value = lower_expr(arg, ctx, log)?.into();
-        named.push((name, value));
-    }
-
-    let args = Arguments {
-        positional: positional.into(),
-        named: named.into(),
-    };
+    let args = lower_call_arguments(function_call.positional, function_call.named, ctx, log);
 
     Ok(Value::Call {
         span,
@@ -1178,24 +1113,7 @@ pub(crate) fn lower_method_call(
     let object = lower_expr(method_call.object, ctx, log)?.into();
     let method = NString::from(method_call.method_name);
 
-    let mut positional = Vec::with_capacity(method_call.positional.len());
-    let mut named = Vec::with_capacity(method_call.named.len());
-
-    for arg in method_call.positional {
-        let value = lower_expr(arg, ctx, log)?.into();
-        positional.push(value);
-    }
-
-    for (name, arg) in method_call.named {
-        let name = NString::from(name.to_string());
-        let value = lower_expr(arg, ctx, log)?.into();
-        named.push((name, value));
-    }
-
-    let args = Arguments {
-        positional: positional.into(),
-        named: named.into(),
-    };
+    let args = lower_call_arguments(method_call.positional, method_call.named, ctx, log);
 
     Ok(Value::MethodCall {
         span,
@@ -1204,6 +1122,70 @@ pub(crate) fn lower_method_call(
         args,
     })
 }
+
+/// Lower function/method call arguments (positional + named) to a single `Arguments` struct.
+fn lower_call_arguments(
+    positional: Vec<ast::Expr>,
+    named: Vec<(NString, ast::Expr)>,
+    ctx: &mut Ast2HirCtx,
+    log: &CompilerLog,
+) -> Arguments<ValueId> {
+    let mut pos = Vec::with_capacity(positional.len());
+    for arg in positional {
+        if let Ok(value) = lower_expr(arg, ctx, log) {
+            pos.push(value.into());
+        }
+    }
+
+    let mut nam = Vec::with_capacity(named.len());
+    for (name, arg) in named {
+        if let Ok(value) = lower_expr(arg, ctx, log) {
+            nam.push((name, value.into()));
+        }
+    }
+
+    Arguments {
+        positional: pos.into(),
+        named: nam.into(),
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Unimplemented Feature Stubs
+// ═══════════════════════════════════════════════════════════════════════════
+
+pub(crate) fn lower_closure(_closure: ast::Closure, _ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
+    log.report(&HirErr::ClosureNotImplemented);
+    Err(())
+}
+
+pub(crate) fn lower_match(_match_: ast::Match, _ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
+    log.report(&HirErr::MatchNotImplemented);
+    Err(())
+}
+
+pub(crate) fn lower_for_each(_for_each: ast::ForEach, _ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
+    log.report(&HirErr::ForLoopNotImplemented);
+    Err(())
+}
+
+pub(crate) fn lower_await(_await_: ast::Await, _ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
+    log.report(&HirErr::AwaitNotImplemented);
+    Err(())
+}
+
+pub(crate) fn lower_type_reflection(
+    _type_info: ast::TypeInfo,
+    _ctx: &mut Ast2HirCtx,
+    log: &CompilerLog,
+) -> Result<Value, ()> {
+    log.report(&HirErr::TypeReflectionNotImplemented);
+    Err(())
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Main Expression Dispatch
+// ═══════════════════════════════════════════════════════════════════════════
 
 pub(crate) fn lower_expr(x: ast::Expr, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
     match x {

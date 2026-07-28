@@ -4,6 +4,7 @@
 mod context;
 mod diagnosis;
 mod expr;
+mod helpers;
 mod item;
 mod lower;
 mod ty;

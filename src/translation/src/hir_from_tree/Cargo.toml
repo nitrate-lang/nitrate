@@ -23,5 +23,6 @@ nitrate_hir_solve.workspace = true
 
 ordered-float.workspace = true
 thin-vec.workspace = true
+num-bigint = "0.4"
 
 serde_json = { workspace = true, features = ["preserve_order"] }
