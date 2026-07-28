@@ -6,13 +6,17 @@ use std::matches;
 pub(crate) enum TypeConstraint {
     /// The value must have exactly this type.
     Equal(TypeId),
+    /// The value must be a subtype of this type (for safe variance).
+    /// Currently reserved for future use with refinement types and variance.
+    SubtypeOf(TypeId),
 }
 
 impl TypeConstraint {
-    /// Return the TypeId if this is an equality constraint.
+    /// Return the TypeId if this is an equality or subtype constraint.
     pub fn type_id(&self) -> TypeId {
         match self {
             TypeConstraint::Equal(ty) => *ty,
+            TypeConstraint::SubtypeOf(ty) => *ty,
         }
     }
 
@@ -36,6 +40,10 @@ pub(crate) enum NodeAction {
 /// Given a set of parent constraints, this derives appropriate constraints
 /// for child nodes. For example, if a binary expression must be `i32`,
 /// then both operands should also be `i32`.
+///
+/// When the parent constraint is a refinement type like `u32::<1..100>`,
+/// the full refinement type is propagated to children so that range
+/// information flows through the expression tree (e.g., for bounds checking).
 pub(crate) fn propagate_to_children(
     parent_constraints: &std::collections::HashSet<TypeConstraint>,
 ) -> Vec<TypeConstraint> {
@@ -43,11 +51,9 @@ pub(crate) fn propagate_to_children(
         .iter()
         .map(|c| {
             let ty = c.type_id();
-            let base = match &*ty {
-                Type::Refine { base, .. } => *base,
-                _ => ty,
-            };
-            TypeConstraint::Equal(base)
+            // Preserve the full type including refinements so that
+            // range information flows to child expressions.
+            TypeConstraint::Equal(ty)
         })
         .collect()
 }

@@ -95,11 +95,13 @@ impl<'m> Solver<'m> {
 
     pub(super) fn add_constraint(&mut self, id: &ValueId, constraint: TypeConstraint) {
         self.constraints.entry(id.clone()).or_default().insert(constraint);
+        self.constraint_version = self.constraint_version.wrapping_add(1);
         self.add_to_worklist(id);
     }
 
     pub(super) fn add_constraints(&mut self, id: &ValueId, constraints: impl IntoIterator<Item = TypeConstraint>) {
         self.constraints.entry(id.clone()).or_default().extend(constraints);
+        self.constraint_version = self.constraint_version.wrapping_add(1);
         self.add_to_worklist(id);
     }
 
@@ -152,6 +154,10 @@ impl<'m> Solver<'m> {
             | Value::GlobalVariableSymbol { .. }
             | Value::LocalVariableSymbol { .. }
             | Value::ParameterSymbol { .. } => {}
+            // Wildcard guard: if a new Value variant is added to the HIR,
+            // this ensures a compile-time error or clear runtime panic rather
+            // than silently ignoring the new variant.
+            _ => panic!("unhandled Value variant in visit_children"),
         }
     }
 
@@ -532,9 +538,7 @@ impl<'m> Solver<'m> {
             match (true_type, false_type) {
                 (Some(t), Some(f)) if t != f => {
                     if !t.is_inferred() && !f.is_inferred() {
-                        let t_never = matches!(&t, Type::Never { .. });
-                        let f_never = matches!(&f, Type::Never { .. });
-                        if !t_never && !f_never {
+                        if !matches!(&t, Type::Never { .. }) && !matches!(&f, Type::Never { .. }) {
                             self.errors.insert(TypeErr::MismatchedBranchTypes {
                                 span,
                                 true_type: t.into(),

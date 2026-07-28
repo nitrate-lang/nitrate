@@ -22,7 +22,6 @@ use nitrate_hir_get_type::HirGetType;
 use nitrate_tree::ByteSpan;
 use ordered_float::OrderedFloat;
 use std::collections::{HashMap, HashSet};
-use std::hash::{Hash, Hasher};
 use std::ops::Deref;
 
 #[path = "visit.rs"]
@@ -30,22 +29,26 @@ mod solver_visit;
 
 /// A compact cache key for monomorphization that avoids heap allocation.
 ///
-/// Instead of `Vec<(u32, TypeId)>` which allocates and sorts every lookup,
-/// we hash the (index, type_id) pairs directly into a single u64.
+/// Uses a deterministic combinatorial hash (FNV-1a derived) instead of
+/// `DefaultHasher` which is non-deterministic across platforms and Rust versions.
+/// The key is computed from the original id and sorted (index, type_id) pairs.
+/// Since `Substitution` now uses `BTreeMap`, the pairs are already sorted by key.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub(super) struct MonoCacheKey(u64);
 
 impl MonoCacheKey {
     pub(super) fn new(original_id: usize, subst_type_args: &[(u32, TypeId)]) -> Self {
-        let mut state = std::collections::hash_map::DefaultHasher::new();
-        original_id.hash(&mut state);
-        let mut sorted: Vec<(u32, u64)> = subst_type_args.iter().map(|(k, v)| (*k, v.as_usize() as u64)).collect();
-        sorted.sort_by_key(|(k, _)| *k);
-        for (k, v) in &sorted {
-            k.hash(&mut state);
-            v.hash(&mut state);
+        // FNV-1a-like deterministic hash
+        let mut hash: u64 = 0xcbf29ce484222325; // FNV offset basis
+        hash ^= original_id as u64;
+        hash = hash.wrapping_mul(0x100000001b3); // FNV prime
+        for (k, v) in subst_type_args {
+            hash ^= *k as u64;
+            hash = hash.wrapping_mul(0x100000001b3);
+            hash ^= v.as_usize() as u64;
+            hash = hash.wrapping_mul(0x100000001b3);
         }
-        MonoCacheKey(state.finish())
+        MonoCacheKey(hash)
     }
 }
 
@@ -72,6 +75,10 @@ pub(crate) struct Solver<'m> {
     /// When a value is changed (e.g. monomorphized or a constraint added),
     /// it's added here so we don't re-visit all elements.
     worklist: HashSet<ValueId>,
+    /// Monotonically increasing version counter for constraint map mutations.
+    /// Incremented on every constraint addition, enabling precise convergence
+    /// detection instead of comparing map length.
+    constraint_version: u64,
 }
 
 type Bounds = (i128, i128);
@@ -87,6 +94,7 @@ impl<'m> Solver<'m> {
             mono_cache: HashMap::new(),
             struct_mono_cache: HashMap::new(),
             worklist: HashSet::new(),
+            constraint_version: 0,
         }
     }
 
@@ -275,7 +283,7 @@ impl<'m> Solver<'m> {
         for constraint in &constraints {
             let ty = constraint.type_id();
             if let Type::Refine { .. } = &*ty {
-                let bounds_check = crate::bounds::check_literal_against_refinement(value as i128, &ty);
+                let bounds_check = crate::bounds::check_literal_against_refinement(value, &ty);
                 if !bounds_check {
                     check_errors.push((ty, value as i128));
                 }
@@ -488,7 +496,7 @@ impl<'m> Solver<'m> {
                     break;
                 }
 
-                let prev_len = self.constraints.len();
+                let prev_version = self.constraint_version;
                 let prev_mono_count = self.mono_counter;
 
                 for value_id in &pending {
@@ -496,7 +504,7 @@ impl<'m> Solver<'m> {
                     self.visit(value_id);
                 }
 
-                if self.constraints.len() == prev_len && self.mono_counter == prev_mono_count {
+                if self.constraint_version == prev_version && self.mono_counter == prev_mono_count {
                     break;
                 }
             }
@@ -676,7 +684,7 @@ impl<'m> Solver<'m> {
     /// Solve all constraints for a global variable.
     fn solve_global_variable(&mut self, g: &mut GlobalVariable, log: &CompilerLog) -> Result<(), ()> {
         loop {
-            let prev_len = self.constraints.len();
+            let prev_version = self.constraint_version;
             if g.ty.is_inferred() {
                 if let Ok(ty) = g.initializer.borrow().determine_type(self.m) {
                     g.ty = ty.into();
@@ -687,7 +695,7 @@ impl<'m> Solver<'m> {
                 self.add_constraint(&value, TypeConstraint::Equal(ty));
             }
             self.visit(&g.initializer);
-            if self.constraints.len() == prev_len {
+            if self.constraint_version == prev_version {
                 break;
             }
         }
