@@ -6,6 +6,7 @@ use nitrate_hir::{
 };
 use nitrate_hir_get_type::HirGetType;
 use nitrate_nstring::NString;
+use nitrate_tree::ByteSpan;
 use std::collections::BTreeMap;
 use thin_vec::ThinVec;
 
@@ -97,13 +98,12 @@ impl<'m> Solver<'m> {
                 .any(|f| Self::type_contains_generic_param(&f.ty, _param_name));
             if appears_in_fields {
                 let _idx = Self::find_generic_index_in_type(
-                    &struct_def
-                        .fields
-                        .values()
-                        .next()
-                        .map(|f| &f.ty)
-                        .cloned()
-                        .unwrap_or(Type::Unit.into()),
+                    &struct_def.fields.values().next().map(|f| &f.ty).cloned().unwrap_or(
+                        Type::Unit {
+                            span: ByteSpan::default(),
+                        }
+                        .into(),
+                    ),
                     _param_name,
                 )
                 .unwrap_or(0);
@@ -112,7 +112,7 @@ impl<'m> Solver<'m> {
                     .fields
                     .values()
                     .find_map(|f| match &*f.ty {
-                        Type::GenericParam { index, name } if name == _param_name => Some(*index),
+                        Type::GenericParam { index, name, .. } if name == _param_name => Some(*index),
                         _ => Self::find_generic_index_in_type_deep(&f.ty, _param_name),
                     })
                     .unwrap_or(0);
@@ -131,7 +131,7 @@ impl<'m> Solver<'m> {
         match ty {
             Type::GenericParam { name, .. } => name == param_name,
             Type::Array { element_type, .. } => Self::type_contains_generic_param(element_type, param_name),
-            Type::Tuple { element_types } => element_types
+            Type::Tuple { element_types, .. } => element_types
                 .iter()
                 .any(|et| Self::type_contains_generic_param(et, param_name)),
             Type::Reference { to, .. } | Type::Pointer { to, .. } => Self::type_contains_generic_param(to, param_name),
@@ -144,9 +144,9 @@ impl<'m> Solver<'m> {
 
     fn find_generic_index_in_type_deep(ty: &Type, param_name: &NString) -> Option<u32> {
         match ty {
-            Type::GenericParam { index, name } if name == param_name => Some(*index),
+            Type::GenericParam { index, name, .. } if name == param_name => Some(*index),
             Type::Array { element_type, .. } => Self::find_generic_index_in_type_deep(element_type, param_name),
-            Type::Tuple { element_types } => {
+            Type::Tuple { element_types, .. } => {
                 for et in element_types.iter() {
                     if let Some(idx) = Self::find_generic_index_in_type_deep(et, param_name) {
                         return Some(idx);
@@ -166,9 +166,9 @@ impl<'m> Solver<'m> {
 
     fn find_generic_index_in_type(ty: &Type, param_name: &NString) -> Option<u32> {
         match ty {
-            Type::GenericParam { index, name } if name == param_name => Some(*index),
+            Type::GenericParam { index, name, .. } if name == param_name => Some(*index),
             Type::Array { element_type, .. } => Self::find_generic_index_in_type(element_type, param_name),
-            Type::Tuple { element_types } => {
+            Type::Tuple { element_types, .. } => {
                 for et in element_types.iter() {
                     if let Some(idx) = Self::find_generic_index_in_type(et, param_name) {
                         return Some(idx);
@@ -213,12 +213,26 @@ impl<'m> Solver<'m> {
             (Type::Array { element_type: a_e, .. }, Type::Array { element_type: p_e, .. }) => {
                 Self::unify_types_with_subst(a_e, p_e, subst);
             }
-            (Type::Tuple { element_types: a_ets }, Type::Tuple { element_types: p_ets }) => {
+            (
+                Type::Tuple {
+                    element_types: a_ets, ..
+                },
+                Type::Tuple {
+                    element_types: p_ets, ..
+                },
+            ) => {
                 for (a_et, p_et) in a_ets.iter().zip(p_ets.iter()) {
                     Self::unify_types_with_subst(a_et, p_et, subst);
                 }
             }
-            (Type::Function { function_type: a_ft }, Type::Function { function_type: p_ft }) => {
+            (
+                Type::Function {
+                    function_type: a_ft, ..
+                },
+                Type::Function {
+                    function_type: p_ft, ..
+                },
+            ) => {
                 Self::unify_types_with_subst(&a_ft.return_type, &p_ft.return_type, subst);
                 for ((_, a_p), (_, p_p)) in a_ft.params.iter().zip(p_ft.params.iter()) {
                     Self::unify_types_with_subst(a_p, p_p, subst);
@@ -231,16 +245,17 @@ impl<'m> Solver<'m> {
                     .or_insert_with(|| TypeId::from(concrete.clone()));
             }
             // Handle struct types - unify inside
-            (arg, Type::Struct { def: struct_def_id }) => {
+            (arg, Type::Struct { def: struct_def_id, .. }) => {
                 // For struct types, inspect field types for generic params
                 let struct_def = struct_def_id.borrow();
                 if struct_def.generics.is_some() {
                     // Try to extract concrete types from the arg struct type
-                    if let Type::Struct { def: arg_def } = arg
-                        && arg_def != struct_def_id {
-                            // Different struct, nothing to unify
-                            return;
-                        }
+                    if let Type::Struct { def: arg_def, .. } = arg
+                        && arg_def != struct_def_id
+                    {
+                        // Different struct, nothing to unify
+                        return;
+                    }
                     for field in struct_def.fields.values() {
                         if let Type::GenericParam { index: _, .. } = &*field.ty {
                             // This doesn't give us concrete types from arg directly
@@ -276,6 +291,7 @@ impl<'m> Solver<'m> {
         for (field_name, field) in &struct_def.fields {
             let new_field_ty = subst.apply(&field.ty);
             let new_field = StructField {
+                span: field.span,
                 visibility: field.visibility,
                 attributes: field.attributes.clone(),
                 name: field.name.clone(),
@@ -289,6 +305,7 @@ impl<'m> Solver<'m> {
         }
 
         let mono_struct = StructDef {
+            span: ByteSpan::default(),
             visibility: struct_def.visibility,
             name: mono_name_ns,
             attributes: struct_def.attributes.clone(),
@@ -307,16 +324,19 @@ impl<'m> Solver<'m> {
     /// This is needed when struct field values contain generic types.
     pub(crate) fn substitute_in_value(&self, value: &Value, subst: &Substitution) -> Value {
         match value {
-            Value::Cast { value: v, target_type } => {
+            Value::Cast {
+                value: v, target_type, ..
+            } => {
                 let new_target = subst.apply(target_type);
                 let v_borrowed = v.borrow();
                 let new_v = self.substitute_in_value(&v_borrowed, subst);
                 Value::Cast {
+                    span: ByteSpan::default(),
                     value: ValueId::from(new_v),
                     target_type: TypeId::from(new_target),
                 }
             }
-            Value::StructObject { struct_def, fields } => {
+            Value::StructObject { struct_def, fields, .. } => {
                 let new_fields: ThinVec<(NString, ValueId)> = fields
                     .iter()
                     .map(|(name, val_id)| {
@@ -326,6 +346,7 @@ impl<'m> Solver<'m> {
                     })
                     .collect();
                 Value::StructObject {
+                    span: ByteSpan::default(),
                     struct_def: struct_def.clone(),
                     fields: new_fields,
                 }
@@ -357,6 +378,7 @@ impl<'m> Solver<'m> {
                 let param = param_id.borrow();
                 let new_ty = subst.apply(&param.ty);
                 let new_param = Parameter {
+                    span: param.span,
                     attributes: param.attributes.clone(),
                     is_mutable: param.is_mutable,
                     name: param.name.clone(),
@@ -376,6 +398,7 @@ impl<'m> Solver<'m> {
         });
 
         let mono_func = Function {
+            span: ByteSpan::default(),
             visibility: func.visibility,
             attributes: func.attributes.clone(),
             name: mono_name_ns,
@@ -407,6 +430,7 @@ impl<'m> Solver<'m> {
                 let new_init_val = local.initializer.borrow();
                 let new_init = self.apply_subst_to_value(&new_init_val, subst);
                 let new_local = LocalVariable {
+                    span: local.span,
                     kind: local.kind.clone(),
                     attributes: local.attributes.clone(),
                     is_mutable: local.is_mutable,
@@ -421,14 +445,17 @@ impl<'m> Solver<'m> {
 
     pub(crate) fn apply_subst_to_value(&self, value: &Value, subst: &Substitution) -> Value {
         match value {
-            Value::Cast { value: v, target_type } => {
+            Value::Cast {
+                value: v, target_type, ..
+            } => {
                 let new_target = subst.apply(target_type);
                 Value::Cast {
+                    span: ByteSpan::default(),
                     value: v.clone(),
                     target_type: TypeId::from(new_target),
                 }
             }
-            Value::StructObject { struct_def, fields } => {
+            Value::StructObject { struct_def, fields, .. } => {
                 let struct_def_b = struct_def.borrow();
                 if struct_def_b.generics.is_some() {
                     // Apply substitution to field value types if they contain generic params
@@ -441,27 +468,33 @@ impl<'m> Solver<'m> {
                         })
                         .collect();
                     Value::StructObject {
+                        span: ByteSpan::default(),
                         struct_def: struct_def.clone(),
                         fields: new_fields,
                     }
                 } else {
                     Value::StructObject {
+                        span: ByteSpan::default(),
                         struct_def: struct_def.clone(),
                         fields: fields.clone(),
                     }
                 }
             }
-            Value::Call { callee, args } => {
+            Value::Call { callee, args, .. } => {
                 let new_args = Arguments {
                     positional: args.positional.clone(),
                     named: args.named.clone(),
                 };
                 Value::Call {
+                    span: ByteSpan::default(),
                     callee: callee.clone(),
                     args: new_args,
                 }
             }
-            Value::FunctionSymbol { id } => Value::FunctionSymbol { id: id.clone() },
+            Value::FunctionSymbol { id, .. } => Value::FunctionSymbol {
+                span: ByteSpan::default(),
+                id: id.clone(),
+            },
             // For all other values, just clone
             val => val.clone(),
         }

@@ -57,32 +57,32 @@ impl ValidateHirValue for Value {
         }
 
         match self {
-            Value::Unit
-            | Value::Bool(_)
-            | Value::I8(_)
-            | Value::I16(_)
-            | Value::I32(_)
-            | Value::I64(_)
-            | Value::I128(_)
-            | Value::U8(_)
-            | Value::U16(_)
-            | Value::U32(_)
-            | Value::U64(_)
-            | Value::U128(_)
-            | Value::F32(_)
-            | Value::F64(_)
-            | Value::USize(..)
-            | Value::StringLit(_)
-            | Value::BStringLit(_) => Ok(()),
+            Value::Unit { .. }
+            | Value::Bool { .. }
+            | Value::I8 { .. }
+            | Value::I16 { .. }
+            | Value::I32 { .. }
+            | Value::I64 { .. }
+            | Value::I128 { .. }
+            | Value::U8 { .. }
+            | Value::U16 { .. }
+            | Value::U32 { .. }
+            | Value::U64 { .. }
+            | Value::U128 { .. }
+            | Value::F32 { .. }
+            | Value::F64 { .. }
+            | Value::USize { .. }
+            | Value::StringLit { .. }
+            | Value::BStringLit { .. } => Ok(()),
 
-            Value::InferredInteger(_) | Value::InferredFloat(_) => {
+            Value::InferredInteger { .. } | Value::InferredFloat { .. } => {
                 ctx.report(ValidateErr::InferredTypeNotAllowed {
                     type_repr: format!("{:?}", self),
                 });
                 Err(())
             }
 
-            Value::StructObject { struct_def, fields } => {
+            Value::StructObject { struct_def, fields, .. } => {
                 // Verify that all fields exist on the struct and are accessible
                 let struct_def = struct_def.borrow();
                 for (field_name, field_value) in fields {
@@ -121,6 +121,7 @@ impl ValidateHirValue for Value {
                 enum_def,
                 variant,
                 value,
+                ..
             } => {
                 // Verify that the enum variant exists
                 let enum_def = enum_def.borrow();
@@ -135,51 +136,52 @@ impl ValidateHirValue for Value {
                 Ok(())
             }
 
-            Value::Binary { left, op: _, right } => {
+            Value::Binary { left, op: _, right, .. } => {
                 left.borrow().verify(ctx)?;
                 right.borrow().verify(ctx)?;
                 Ok(())
             }
 
-            Value::Unary { op: _, operand } => operand.borrow().verify(ctx),
+            Value::Unary { op: _, operand, .. } => operand.borrow().verify(ctx),
 
-            Value::FieldAccess { expr, field_name } => {
+            Value::FieldAccess { expr, field_name, .. } => {
                 // Verify field access visibility
                 let expr_value = expr.borrow();
                 expr_value.verify(ctx)?;
 
                 // Check that we can access the field based on struct field visibility
                 if let Ok(ty) = expr_value.determine_type(ctx.m)
-                    && let Type::Struct { def } = ty {
-                        let struct_def = def.borrow();
-                        if let Some(field) = struct_def.fields.get(field_name) {
-                            establish_property(
-                                ctx,
-                                "field access visibility",
-                                ValidateErr::FieldAccessVisibility {
-                                    field_name: field_name.clone(),
-                                },
-                                |c| {
-                                    let qualified_name = format!("{}::{}", struct_def.name, field_name).into();
-                                    if !c.check_visibility(&field.visibility, &qualified_name) {
-                                        return Err(());
-                                    }
-                                    Ok(())
-                                },
-                            )?;
-                        } else {
-                            // Field doesn't exist
-                            ctx.report(ValidateErr::StructFieldDoesNotExist {
-                                struct_name: struct_def.name.clone(),
+                    && let Type::Struct { def, .. } = ty
+                {
+                    let struct_def = def.borrow();
+                    if let Some(field) = struct_def.fields.get(field_name) {
+                        establish_property(
+                            ctx,
+                            "field access visibility",
+                            ValidateErr::FieldAccessVisibility {
                                 field_name: field_name.clone(),
-                            });
-                            return Err(());
-                        }
+                            },
+                            |c| {
+                                let qualified_name = format!("{}::{}", struct_def.name, field_name).into();
+                                if !c.check_visibility(&field.visibility, &qualified_name) {
+                                    return Err(());
+                                }
+                                Ok(())
+                            },
+                        )?;
+                    } else {
+                        // Field doesn't exist
+                        ctx.report(ValidateErr::StructFieldDoesNotExist {
+                            struct_name: struct_def.name.clone(),
+                            field_name: field_name.clone(),
+                        });
+                        return Err(());
                     }
+                }
                 Ok(())
             }
 
-            Value::Assign { place, value } => {
+            Value::Assign { place, value, .. } => {
                 place.borrow().verify(ctx)?;
                 value.borrow().verify(ctx)?;
 
@@ -197,9 +199,9 @@ impl ValidateHirValue for Value {
                 )
             }
 
-            Value::Deref { place } => place.borrow().verify(ctx),
+            Value::Deref { place, .. } => place.borrow().verify(ctx),
 
-            Value::Cast { value, target_type } => {
+            Value::Cast { value, target_type, .. } => {
                 value.borrow().verify(ctx)?;
                 target_type.verify(ctx, &ValidateTypeOptions::un_sized())?;
                 Ok(())
@@ -209,6 +211,7 @@ impl ValidateHirValue for Value {
                 exclusive: _,
                 mutable,
                 place,
+                ..
             } => {
                 place.borrow().verify(ctx)?;
 
@@ -229,14 +232,14 @@ impl ValidateHirValue for Value {
                 Ok(())
             }
 
-            Value::List { elements } => {
+            Value::List { elements, .. } => {
                 for elem in elements {
                     elem.borrow().verify(ctx)?;
                 }
                 Ok(())
             }
 
-            Value::Tuple { elements } => {
+            Value::Tuple { elements, .. } => {
                 for elem in elements {
                     elem.borrow().verify(ctx)?;
                 }
@@ -247,6 +250,7 @@ impl ValidateHirValue for Value {
                 condition,
                 true_branch,
                 false_branch,
+                ..
             } => {
                 condition.borrow().verify(ctx)?;
                 true_branch.borrow().verify(ctx)?;
@@ -256,22 +260,22 @@ impl ValidateHirValue for Value {
                 Ok(())
             }
 
-            Value::While { condition, body } => {
+            Value::While { condition, body, .. } => {
                 condition.borrow().verify(ctx)?;
                 body.borrow().verify(ctx)
             }
 
-            Value::Loop { body } => body.borrow().verify(ctx),
+            Value::Loop { body, .. } => body.borrow().verify(ctx),
 
-            Value::Break { label: _ } => Ok(()),
+            Value::Break { label: _, .. } => Ok(()),
 
-            Value::Continue { label: _ } => Ok(()),
+            Value::Continue { label: _, .. } => Ok(()),
 
-            Value::Return { value } => value.borrow().verify(ctx),
+            Value::Return { value, .. } => value.borrow().verify(ctx),
 
-            Value::Block { block } => block.borrow().verify(ctx),
+            Value::Block { block, .. } => block.borrow().verify(ctx),
 
-            Value::Call { callee, args } => {
+            Value::Call { callee, args, .. } => {
                 callee.borrow().verify(ctx)?;
                 for arg in args.clone().into_iter() {
                     arg.borrow().verify(ctx)?;
@@ -283,6 +287,7 @@ impl ValidateHirValue for Value {
                 object,
                 method_name: _,
                 args,
+                ..
             } => {
                 object.borrow().verify(ctx)?;
                 for arg in args.clone().into_iter() {
@@ -291,12 +296,12 @@ impl ValidateHirValue for Value {
                 Ok(())
             }
 
-            Value::IndexAccess { collection, index } => {
+            Value::IndexAccess { collection, index, .. } => {
                 collection.borrow().verify(ctx)?;
                 index.borrow().verify(ctx)
             }
 
-            Value::FunctionSymbol { id } => {
+            Value::FunctionSymbol { id, .. } => {
                 // Visibility enforcement: check that the function is accessible
                 let func = id.borrow();
                 let qualified_name = &func.name;
@@ -315,7 +320,7 @@ impl ValidateHirValue for Value {
                 )
             }
 
-            Value::GlobalVariableSymbol { id } => {
+            Value::GlobalVariableSymbol { id, .. } => {
                 // Visibility enforcement: check that the global variable is accessible
                 let glb = id.borrow();
                 let qualified_name = &glb.name;

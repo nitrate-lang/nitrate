@@ -5,6 +5,7 @@ use nitrate_hir::{
     UnaryOp, Value, ValueId, get_storage,
 };
 use nitrate_hir_get_type::HirGetType;
+use nitrate_tree::ByteSpan;
 use ordered_float::OrderedFloat;
 use std::collections::{HashMap, HashSet};
 use std::ops::Deref;
@@ -92,9 +93,9 @@ impl<'m> Solver<'m> {
         let own_bounds = {
             let value = id.borrow();
             match &*value {
-                Value::LocalVariableSymbol { id } => Self::extract_bounds_from_type(id.borrow().ty.deref()),
-                Value::GlobalVariableSymbol { id } => Self::extract_bounds_from_type(id.borrow().ty.deref()),
-                Value::ParameterSymbol { id } => Self::extract_bounds_from_type(id.borrow().ty.deref()),
+                Value::LocalVariableSymbol { id, .. } => Self::extract_bounds_from_type(id.borrow().ty.deref()),
+                Value::GlobalVariableSymbol { id, .. } => Self::extract_bounds_from_type(id.borrow().ty.deref()),
+                Value::ParameterSymbol { id, .. } => Self::extract_bounds_from_type(id.borrow().ty.deref()),
                 Value::I8 { .. } => Some((-128, 127)),
                 Value::I16 { .. } => Some((-32768, 32767)),
                 Value::I32 { .. } => Some((-2147483648, 2147483647)),
@@ -460,8 +461,14 @@ impl<'m> Solver<'m> {
                     break;
                 }
                 return match **ty {
-                    Type::F32 => NodeAction::Replace(Value::F32((*value as f32).into())),
-                    Type::F64 => NodeAction::Replace(Value::F64(value)),
+                    Type::F32 { .. } => NodeAction::Replace(Value::F32 {
+                        span: ByteSpan::default(),
+                        value: (*value as f32).into(),
+                    }),
+                    Type::F64 { .. } => NodeAction::Replace(Value::F64 {
+                        span: ByteSpan::default(),
+                        value,
+                    }),
                     _ => unreachable!(),
                 };
             }
@@ -513,8 +520,8 @@ impl<'m> Solver<'m> {
             | Value::GlobalVariableSymbol { .. }
             | Value::LocalVariableSymbol { .. }
             | Value::ParameterSymbol { .. } => NodeAction::NoChange,
-            Value::InferredInteger { .. } => self.solve_inferred_integer(id, **integer()),
-            Value::InferredFloat { .. } => self.solve_inferred_float(id, *float()),
+            Value::InferredInteger { value, .. } => self.solve_inferred_integer(id, **value),
+            Value::InferredFloat { value, .. } => self.solve_inferred_float(id, *value),
         }
     }
 
@@ -541,7 +548,7 @@ impl<'m> Solver<'m> {
             | Value::InferredInteger { .. }
             | Value::InferredFloat { .. } => {}
 
-            Value::StructObject { struct_def, fields } => {
+            Value::StructObject { struct_def, fields, .. } => {
                 // Check if this struct is generic and needs monomorphization
                 let has_generics = struct_def.borrow().generics.is_some();
 
@@ -567,6 +574,7 @@ impl<'m> Solver<'m> {
                         if let Value::StructObject {
                             struct_def: sd,
                             fields: flds,
+                            ..
                         } = &*updated
                         {
                             let struct_def_b = sd.borrow();
@@ -609,6 +617,7 @@ impl<'m> Solver<'m> {
                 enum_def,
                 variant,
                 value: inner_value,
+                ..
             } => {
                 let variant_type = enum_def
                     .borrow()
@@ -624,7 +633,7 @@ impl<'m> Solver<'m> {
                 self.visit(inner_value);
             }
 
-            Value::Binary { left, op, right } => {
+            Value::Binary { left, op, right, .. } => {
                 // Check refinement bounds FIRST, before constraint propagation contaminates operands
                 let constraints_copy = self.constraints.get(e).cloned().unwrap_or_default();
                 for c in &constraints_copy {
@@ -674,7 +683,7 @@ impl<'m> Solver<'m> {
                 self.visit(right);
             }
 
-            Value::Unary { op, operand } => {
+            Value::Unary { op, operand, .. } => {
                 if let Some(constraints) = self.constraints.get(e).cloned() {
                     self.constraints.entry(operand.clone()).or_default().extend(constraints);
                 }
@@ -689,7 +698,7 @@ impl<'m> Solver<'m> {
                 }
             }
 
-            Value::IndexAccess { collection, index } => {
+            Value::IndexAccess { collection, index, .. } => {
                 self.constraints
                     .entry(index.clone())
                     .or_default()
@@ -713,7 +722,7 @@ impl<'m> Solver<'m> {
                             .entry(e.clone())
                             .or_default()
                             .insert(TypeConstraint::Equal(element_type_id));
-                        if let Value::List { elements } = &*collection.borrow() {
+                        if let Value::List { elements, .. } = &*collection.borrow() {
                             for element in elements {
                                 self.constraints
                                     .entry(element.clone())
@@ -730,7 +739,7 @@ impl<'m> Solver<'m> {
             Value::FieldAccess { expr, .. } => {
                 self.visit(expr);
             }
-            Value::Assign { place, value: v } => {
+            Value::Assign { place, value: v, .. } => {
                 if let Ok(place_type) = place.borrow().determine_type(self.m) {
                     self.constraints
                         .entry(v.clone())
@@ -740,8 +749,10 @@ impl<'m> Solver<'m> {
                 self.visit(place);
                 self.visit(v);
             }
-            Value::Deref { place } => self.visit(place),
-            Value::Cast { value: v, target_type } => {
+            Value::Deref { place, .. } => self.visit(place),
+            Value::Cast {
+                value: v, target_type, ..
+            } => {
                 self.constraints
                     .entry(v.clone())
                     .or_default()
@@ -750,7 +761,7 @@ impl<'m> Solver<'m> {
             }
             Value::Borrow { place, .. } => self.visit(place),
 
-            Value::List { elements } => {
+            Value::List { elements, .. } => {
                 if let Some(constraints) = self.constraints.get(e).cloned() {
                     for element in elements {
                         let ec: HashSet<TypeConstraint> = constraints
@@ -767,15 +778,21 @@ impl<'m> Solver<'m> {
                         self.constraints.entry(element.clone()).or_default().extend(ec);
                     }
                 }
-                let concrete_element = elements
-                    .iter()
-                    .find(|el| !matches!(&*el.borrow(), Value::InferredInteger(_) | Value::InferredFloat(_)));
+                let concrete_element = elements.iter().find(|el| {
+                    !matches!(
+                        &*el.borrow(),
+                        Value::InferredInteger { .. } | Value::InferredFloat { .. }
+                    )
+                });
                 if let Some(concrete_element) = concrete_element
                     && let Some(concrete_type_id) =
                         concrete_element.borrow().determine_type(self.m).ok().map(TypeId::from)
                 {
                     for element in elements.iter() {
-                        if matches!(&*element.borrow(), Value::InferredInteger(_) | Value::InferredFloat(_)) {
+                        if matches!(
+                            &*element.borrow(),
+                            Value::InferredInteger { .. } | Value::InferredFloat { .. }
+                        ) {
                             self.constraints
                                 .entry(element.clone())
                                 .or_default()
@@ -788,7 +805,7 @@ impl<'m> Solver<'m> {
                 }
             }
 
-            Value::Tuple { elements } => {
+            Value::Tuple { elements, .. } => {
                 for element in elements {
                     self.visit(element);
                 }
@@ -798,6 +815,7 @@ impl<'m> Solver<'m> {
                 condition,
                 true_branch,
                 false_branch,
+                ..
             } => {
                 self.constraints
                     .entry(condition.clone())
@@ -815,19 +833,24 @@ impl<'m> Solver<'m> {
                 }
             }
 
-            Value::While { condition, body } => {
+            Value::While { condition, body, .. } => {
                 self.constraints
                     .entry(condition.clone())
                     .or_default()
-                    .insert(TypeConstraint::Equal(Type::Bool.into()));
+                    .insert(TypeConstraint::Equal(
+                        Type::Bool {
+                            span: ByteSpan::default(),
+                        }
+                        .into(),
+                    ));
                 self.visit(condition);
                 self.visit_block(body);
             }
 
-            Value::Loop { body } => self.visit_block(body),
+            Value::Loop { body, .. } => self.visit_block(body),
             Value::Break { .. } | Value::Continue { .. } => {}
 
-            Value::Return { value: v } => {
+            Value::Return { value: v, .. } => {
                 if let Some(ret_type) = self.function_return_type {
                     self.constraints
                         .entry(v.clone())
@@ -837,15 +860,15 @@ impl<'m> Solver<'m> {
                 self.visit(v);
             }
 
-            Value::Block { block } => {
+            Value::Block { block, .. } => {
                 for element in &mut block.borrow_mut().elements {
                     self.visit_block_element(element);
                 }
             }
 
-            Value::Call { callee, args } => {
+            Value::Call { callee, args, .. } => {
                 let callee_func_id: Option<FunctionId> = match &*callee.borrow() {
-                    Value::FunctionSymbol { id } => {
+                    Value::FunctionSymbol { id, .. } => {
                         let func = id.borrow();
                         if func.generics.is_some() && func.generics.as_ref().is_some_and(|g| !g.is_empty()) {
                             Some(id.clone())
@@ -859,10 +882,13 @@ impl<'m> Solver<'m> {
                     && let Some(subst) = self.infer_generic_args_from_call(&func_id, &args.positional)
                 {
                     let mono_id = self.monomorphize_function(&func_id, &subst);
-                    callee.replace(Value::FunctionSymbol { id: mono_id });
+                    callee.replace(Value::FunctionSymbol {
+                        span: ByteSpan::default(),
+                        id: mono_id,
+                    });
                 }
                 self.visit(callee);
-                if let Value::FunctionSymbol { id } = &*callee.borrow() {
+                if let Value::FunctionSymbol { id, .. } = &*callee.borrow() {
                     let func = id.borrow();
                     for (i, arg) in args.positional.iter().enumerate() {
                         if let Some(param) = func.params.get(i) {
@@ -886,6 +912,7 @@ impl<'m> Solver<'m> {
                 object,
                 method_name,
                 args,
+                ..
             } => {
                 let obj_type: Option<TypeId> = object.borrow().determine_type(self.m).ok().map(|ty| ty.into());
                 let method_id_opt: Option<FunctionId> =
@@ -898,7 +925,11 @@ impl<'m> Solver<'m> {
                     if is_generic && let Some(subst) = self.infer_generic_args_from_call(&method_id, &args.positional) {
                         let mono_id = self.monomorphize_function(&method_id, &subst);
                         let new_call = Value::Call {
-                            callee: ValueId::from(Value::FunctionSymbol { id: mono_id }),
+                            span: ByteSpan::default(),
+                            callee: ValueId::from(Value::FunctionSymbol {
+                                span: ByteSpan::default(),
+                                id: mono_id,
+                            }),
                             args: args.clone(),
                         };
                         e.replace(new_call);

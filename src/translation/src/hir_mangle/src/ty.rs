@@ -1,3 +1,5 @@
+use std::format;
+
 use nitrate_hir::prelude::*;
 
 pub fn mangle_type(ty: &Type) -> String {

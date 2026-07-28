@@ -10,6 +10,7 @@ use nitrate_hir_mangle::mangle_name;
 use nitrate_hir_validate::ValidHir;
 use nitrate_llvm::LLVMContext;
 use nitrate_nstring::NString;
+use nitrate_tree::ByteSpan;
 use std::collections::{BTreeSet, HashMap};
 use std::ops::Deref;
 use thin_vec::ThinVec;
@@ -194,10 +195,14 @@ fn gen_global<'ctx>(ctx: &mut SymbolGenCtx<'ctx, '_, '_, '_>, hir_global: &hir::
     /***********************************************************************/
     // Create Constructor Function
     let hir_ctor_type = hir::Type::Function {
+        span: ByteSpan::default(),
         function_type: hir::FunctionType {
             attributes: BTreeSet::new(),
             params: ThinVec::new(),
-            return_type: hir::Type::Unit.into(),
+            return_type: hir::Type::Unit {
+                span: ByteSpan::default(),
+            }
+            .into(),
         }
         .into(),
     };

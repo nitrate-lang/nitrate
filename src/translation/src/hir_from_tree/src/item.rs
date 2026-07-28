@@ -36,6 +36,7 @@ fn lower_type_alias(type_alias: ast::TypeAlias, ctx: &mut Ast2HirCtx, log: &Comp
         for (i, parameter) in generic_params.params.iter().enumerate() {
             let generic_name = NString::from(parameter.name.to_string());
             let generic_type: TypeId = Type::GenericParam {
+                span: ByteSpan::default(),
                 index: i as u32,
                 name: generic_name.clone(),
             }
@@ -58,6 +59,7 @@ fn lower_type_alias(type_alias: ast::TypeAlias, ctx: &mut Ast2HirCtx, log: &Comp
     };
 
     let type_alias = TypeAliasDef {
+        span: ByteSpan::default(),
         visibility,
         name,
         generics,
@@ -142,6 +144,7 @@ fn lower_struct_definition(
         };
 
         let struct_field = StructField {
+            span: ByteSpan::default(),
             visibility: field_visibility,
             attributes: field_attributes,
             name: field_name,
@@ -156,6 +159,7 @@ fn lower_struct_definition(
     }
 
     let struct_def = StructDef {
+        span: ByteSpan::default(),
         visibility,
         name,
         attributes,
@@ -203,6 +207,7 @@ fn lower_enum_definition(enum_def: ast::Enum, ctx: &mut Ast2HirCtx, log: &Compil
         for (i, parameter) in generic_params.params.iter().enumerate() {
             let generic_name = NString::from(parameter.name.to_string());
             let generic_type: TypeId = Type::GenericParam {
+                span: ByteSpan::default(),
                 index: i as u32,
                 name: generic_name.clone(),
             }
@@ -230,7 +235,10 @@ fn lower_enum_definition(enum_def: ast::Enum, ctx: &mut Ast2HirCtx, log: &Compil
 
         let variant_type = match variant.ty.to_owned() {
             Some(ty) => lower_type(ty, ctx, log)?.into(),
-            None => Type::Unit.into(),
+            None => Type::Unit {
+                span: ByteSpan::default(),
+            }
+            .into(),
         };
 
         let field_default = match variant.default_value.to_owned() {
@@ -239,6 +247,7 @@ fn lower_enum_definition(enum_def: ast::Enum, ctx: &mut Ast2HirCtx, log: &Compil
         };
 
         let variant = EnumVariant {
+            span: ByteSpan::default(),
             attributes: variant_attributes,
             name: variant_name,
             ty: variant_type,
@@ -249,6 +258,7 @@ fn lower_enum_definition(enum_def: ast::Enum, ctx: &mut Ast2HirCtx, log: &Compil
     }
 
     let enum_def = EnumDef {
+        span: ByteSpan::default(),
         visibility,
         name: name.clone(),
         attributes,
@@ -304,6 +314,7 @@ fn lower_trait_definition(trait_: &ast::Trait, ctx: &mut Ast2HirCtx, log: &Compi
     let prev_self = ctx.current_self_type.take();
     ctx.current_self_type = Some(
         Type::GenericParam {
+            span: ByteSpan::default(),
             index: u32::MAX,
             name: "Self".into(),
         }
@@ -317,6 +328,7 @@ fn lower_trait_definition(trait_: &ast::Trait, ctx: &mut Ast2HirCtx, log: &Compi
         for (i, parameter) in generic_params.params.iter().enumerate() {
             let generic_name = NString::from(parameter.name.to_string());
             let generic_type: TypeId = Type::GenericParam {
+                span: ByteSpan::default(),
                 index: i as u32,
                 name: generic_name.clone(),
             }
@@ -362,6 +374,7 @@ fn lower_trait_definition(trait_: &ast::Trait, ctx: &mut Ast2HirCtx, log: &Compi
     ctx.current_scope.pop();
 
     let trait_ = Trait {
+        span: ByteSpan::default(),
         visibility,
         name: name.clone(),
         generics,
@@ -438,8 +451,7 @@ fn lower_implementation(impl_: ast::Impl, ctx: &mut Ast2HirCtx, log: &CompilerLo
                     ast::AssociatedItem::Method(method) => {
                         let name = method.name.clone();
                         let func_id = lower_function(method, ctx, log)?;
-                        ctx.tab
-                            .add_trait_method(for_type, trait_id.clone(), name, func_id);
+                        ctx.tab.add_trait_method(for_type, trait_id.clone(), name, func_id);
                     }
 
                     ast::AssociatedItem::TypeAlias(type_alias) => {
@@ -551,6 +563,7 @@ fn lower_global_variable(
     };
 
     let global_variable = GlobalVariable {
+        span: ByteSpan::default(),
         visibility,
         attributes,
         is_mutable,
@@ -600,6 +613,7 @@ fn lower_parameter(param: ast::FuncParam, ctx: &mut Ast2HirCtx, log: &CompilerLo
     };
 
     let parameter_id: ParameterId = Parameter {
+        span: ByteSpan::default(),
         attributes,
         is_mutable,
         name,
@@ -674,6 +688,7 @@ fn lower_function(function: ast::Function, ctx: &mut Ast2HirCtx, log: &CompilerL
         for (i, parameter) in generic_params.params.iter().enumerate() {
             let generic_name = NString::from(parameter.name.to_string());
             let generic_type: TypeId = Type::GenericParam {
+                span: ByteSpan::default(),
                 index: i as u32,
                 name: generic_name.clone(),
             }
@@ -696,9 +711,11 @@ fn lower_function(function: ast::Function, ctx: &mut Ast2HirCtx, log: &CompilerL
         attributes.insert(FunctionAttribute::CVariadic);
     }
 
-    let return_type = match &function.return_type {
+    let return_type: Type = match &function.return_type {
         Some(ty) => lower_type(ty.to_owned(), ctx, log)?,
-        None => Type::Unit,
+        None => Type::Unit {
+            span: ByteSpan::default(),
+        },
     };
 
     let body = match function.definition {
@@ -709,14 +726,23 @@ fn lower_function(function: ast::Function, ctx: &mut Ast2HirCtx, log: &CompilerL
                 Some(BlockElement::Expr(expr)) if expr.borrow().is_return() => {}
 
                 Some(BlockElement::Expr(expr)) if !expr.borrow().is_return() => {
-                    *hir_elements.last_mut().unwrap() =
-                        BlockElement::Expr(Value::Return { value: expr.to_owned() }.into());
+                    *hir_elements.last_mut().unwrap() = BlockElement::Expr(
+                        Value::Return {
+                            span: ByteSpan::default(),
+                            value: expr.to_owned(),
+                        }
+                        .into(),
+                    );
                 }
 
-                _ if return_type == Type::Unit => {
+                _ if return_type == Type::Unit { span, .. } => {
                     hir_elements.push(BlockElement::Expr(
                         Value::Return {
-                            value: Value::Unit.into(),
+                            span: ByteSpan::default(),
+                            value: Value::Unit {
+                                span: ByteSpan::default(),
+                            }
+                            .into(),
                         }
                         .into(),
                     ));
@@ -732,6 +758,7 @@ fn lower_function(function: ast::Function, ctx: &mut Ast2HirCtx, log: &CompilerL
     ctx.current_scope.pop();
 
     let function = Function {
+        span: ByteSpan::default(),
         visibility,
         attributes,
         name: name.clone(),
@@ -786,6 +813,7 @@ pub(crate) fn lower_module(module: ast::Module, ctx: &mut Ast2HirCtx, log: &Comp
     }
 
     let module = Module {
+        span: ByteSpan::default(),
         visibility,
         attributes,
         name: module.name,

@@ -64,22 +64,22 @@ pub(crate) fn gen_function_ty<'ctx>(
 
 pub(crate) fn gen_ty<'ctx>(hir_type: &hir::Type, ctx: &mut TypegenCtx<'ctx, '_, '_>) -> BasicTypeEnum<'ctx> {
     match hir_type {
-        hir::Type::Never | hir::Type::Unit => ctx.llvm.struct_type(&[], false).into(),
-        hir::Type::Bool => ctx.llvm.bool_type().into(),
-        hir::Type::U8 | hir::Type::I8 => ctx.llvm.i8_type().into(),
-        hir::Type::U16 | hir::Type::I16 => ctx.llvm.i16_type().into(),
-        hir::Type::U32 | hir::Type::I32 => ctx.llvm.i32_type().into(),
-        hir::Type::U64 | hir::Type::I64 => ctx.llvm.i64_type().into(),
-        hir::Type::U128 | hir::Type::I128 => ctx.llvm.i128_type().into(),
-        hir::Type::USize => ctx.llvm.ptr_sized_int_type(ctx.llvm.target_data(), None).into(),
-        hir::Type::F32 => ctx.llvm.f32_type().into(),
-        hir::Type::F64 => ctx.llvm.f64_type().into(),
-        hir::Type::Array { element_type, len } => {
+        hir::Type::Never { .. } | hir::Type::Unit { .. } => ctx.llvm.struct_type(&[], false).into(),
+        hir::Type::Bool { .. } => ctx.llvm.bool_type().into(),
+        hir::Type::U8 { .. } | hir::Type::I8 { .. } => ctx.llvm.i8_type().into(),
+        hir::Type::U16 { .. } | hir::Type::I16 { .. } => ctx.llvm.i16_type().into(),
+        hir::Type::U32 { .. } | hir::Type::I32 { .. } => ctx.llvm.i32_type().into(),
+        hir::Type::U64 { .. } | hir::Type::I64 { .. } => ctx.llvm.i64_type().into(),
+        hir::Type::U128 { .. } | hir::Type::I128 { .. } => ctx.llvm.i128_type().into(),
+        hir::Type::USize { .. } => ctx.llvm.ptr_sized_int_type(ctx.llvm.target_data(), None).into(),
+        hir::Type::F32 { .. } => ctx.llvm.f32_type().into(),
+        hir::Type::F64 { .. } => ctx.llvm.f64_type().into(),
+        hir::Type::Array { element_type, len, .. } => {
             let llvm_element_type = gen_ty(element_type, ctx);
             llvm_element_type.array_type(*len).into()
         }
 
-        hir::Type::Tuple { element_types } => {
+        hir::Type::Tuple { element_types, .. } => {
             let mut llvm_element_types = Vec::with_capacity(element_types.len());
             for element_type in element_types {
                 // FIXME: insert padding
@@ -89,9 +89,9 @@ pub(crate) fn gen_ty<'ctx>(hir_type: &hir::Type, ctx: &mut TypegenCtx<'ctx, '_, 
             ctx.llvm.struct_type(&llvm_element_types, false).into()
         }
 
-        hir::Type::Struct { def } => gen_struct_ty(&def.borrow(), ctx).into(),
+        hir::Type::Struct { def, .. } => gen_struct_ty(&def.borrow(), ctx).into(),
 
-        hir::Type::Enum { def } => {
+        hir::Type::Enum { def, .. } => {
             let layout_ctx = hir::LayoutCtx {
                 ptr_size: get_ptr_size(ctx.llvm),
                 tab: ctx.tab,
@@ -113,7 +113,7 @@ pub(crate) fn gen_ty<'ctx>(hir_type: &hir::Type, ctx: &mut TypegenCtx<'ctx, '_, 
                 .into()
         }
 
-        hir::Type::TypeAlias { def } => gen_ty(&def.borrow().type_id, ctx),
+        hir::Type::TypeAlias { def, .. } => gen_ty(&def.borrow().type_id, ctx),
 
         hir::Type::Refine { base, .. } => gen_ty(base, ctx),
 
@@ -146,7 +146,7 @@ pub(crate) fn gen_ty<'ctx>(hir_type: &hir::Type, ctx: &mut TypegenCtx<'ctx, '_, 
             )
         }
 
-        hir::Type::InferredFloat | hir::Type::InferredInteger | hir::Type::Inferred { .. } => {
+        hir::Type::InferredFloat { .. } | hir::Type::InferredInteger { .. } | hir::Type::Inferred { .. } => {
             panic!("Inferred types should have been resolved before code generation")
         }
 

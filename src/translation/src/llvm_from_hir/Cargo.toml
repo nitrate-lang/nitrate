@@ -6,6 +6,7 @@ edition = "2024"
 [dependencies]
 nitrate_nstring.workspace = true
 nitrate_llvm.workspace = true
+nitrate_tree.workspace = true
 nitrate_hir.workspace = true
 nitrate_hir_validate.workspace = true
 nitrate_hir_mangle.workspace = true

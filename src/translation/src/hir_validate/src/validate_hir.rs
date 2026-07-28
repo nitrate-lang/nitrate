@@ -102,10 +102,10 @@ impl<'m> ValidateCtx<'m> {
     /// Returns true if the place is mutable.
     pub(crate) fn is_place_mutable(&self, value: &Value) -> bool {
         match value {
-            Value::LocalVariableSymbol { id } => id.borrow().is_mutable,
-            Value::GlobalVariableSymbol { id } => id.borrow().is_mutable,
-            Value::ParameterSymbol { id } => id.borrow().is_mutable,
-            Value::Deref { place } => {
+            Value::LocalVariableSymbol { id, .. } => id.borrow().is_mutable,
+            Value::GlobalVariableSymbol { id, .. } => id.borrow().is_mutable,
+            Value::ParameterSymbol { id, .. } => id.borrow().is_mutable,
+            Value::Deref { place, .. } => {
                 // Dereferencing a mutable reference/pointer yields a mutable place
                 let place = place.borrow();
                 if let Ok(ty) = place.determine_type(self.m) {

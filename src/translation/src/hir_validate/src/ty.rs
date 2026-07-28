@@ -275,42 +275,43 @@ impl ValidateHirType for Type {
         }
 
         match self {
-            Type::Never
-            | Type::Unit
-            | Type::Bool
-            | Type::U8
-            | Type::U16
-            | Type::U32
-            | Type::U64
-            | Type::U128
-            | Type::USize
-            | Type::I8
-            | Type::I16
-            | Type::I32
-            | Type::I64
-            | Type::I128
-            | Type::F32
-            | Type::F64 => Ok(()),
+            Type::Never { .. }
+            | Type::Unit { .. }
+            | Type::Bool { .. }
+            | Type::U8 { .. }
+            | Type::U16 { .. }
+            | Type::U32 { .. }
+            | Type::U64 { .. }
+            | Type::U128 { .. }
+            | Type::USize { .. }
+            | Type::I8 { .. }
+            | Type::I16 { .. }
+            | Type::I32 { .. }
+            | Type::I64 { .. }
+            | Type::I128 { .. }
+            | Type::F32 { .. }
+            | Type::F64 { .. } => Ok(()),
 
-            Type::Array { element_type, len } => verify_array(ctx, element_type, *len, options),
+            Type::Array { element_type, len, .. } => verify_array(ctx, element_type, *len, options),
 
-            Type::Tuple { element_types } => verify_tuple(ctx, element_types, options),
+            Type::Tuple { element_types, .. } => verify_tuple(ctx, element_types, options),
 
-            Type::Struct { def } => def.borrow().verify(ctx),
+            Type::Struct { def, .. } => def.borrow().verify(ctx),
 
-            Type::Enum { def } => def.borrow().verify(ctx),
+            Type::Enum { def, .. } => def.borrow().verify(ctx),
 
-            Type::TypeAlias { def } => def.borrow().verify(ctx),
+            Type::TypeAlias { def, .. } => def.borrow().verify(ctx),
 
-            Type::Refine { base, min, max } => verify_refinement_type(ctx, base, min, max, options),
+            Type::Refine { base, min, max, .. } => verify_refinement_type(ctx, base, min, max, options),
 
-            Type::Function { function_type } => function_type.verify(ctx, options),
+            Type::Function { function_type, .. } => function_type.verify(ctx, options),
 
             Type::Reference {
                 lifetime,
                 exclusive,
                 mutable,
                 to,
+                ..
             } => verify_reference_type(ctx, lifetime, *exclusive, *mutable, to, options),
 
             Type::SliceRef {
@@ -318,6 +319,7 @@ impl ValidateHirType for Type {
                 exclusive,
                 mutable,
                 element_type,
+                ..
             } => verify_slice_reference_type(ctx, lifetime, *exclusive, *mutable, element_type, options),
 
             Type::Pointer {
@@ -333,12 +335,12 @@ impl ValidateHirType for Type {
 
             Type::TraitObject { .. } => Ok(()),
 
-            Type::Parameterized { base, args: _ } => {
+            Type::Parameterized { base, args: _, .. } => {
                 base.verify(ctx, options)
                 // TODO: Verify that the type arguments satisfy the generic constraints.
             }
 
-            Type::InferredFloat | Type::InferredInteger | Type::Inferred { .. } => {
+            Type::InferredFloat { .. } | Type::InferredInteger { .. } | Type::Inferred { .. } => {
                 ctx.report(ValidateErr::InferredTypeNotAllowed {
                     type_repr: format!("{:?}", self),
                 });

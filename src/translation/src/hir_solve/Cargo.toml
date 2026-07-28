@@ -5,6 +5,7 @@ edition = "2024"
 
 [dependencies]
 nitrate_hir.workspace = true
+nitrate_tree.workspace = true
 nitrate_diagnosis.workspace = true
 nitrate_hir_get_type.workspace = true
 nitrate_hir_dump.workspace = true

@@ -131,8 +131,6 @@ fn gen_rval_lit_i128<'ctx>(ctx: &mut CodegenCtx<'ctx, '_, '_, '_, '_>, value: i1
     let low = (value & 0xFFFFFFFFFFFFFFFF) as u64;
     let high = ((value >> 64) & 0xFFFFFFFFFFFFFFFF) as u64;
 
-    
-
     ctx.llvm.i128_type().const_int_arbitrary_precision(&[low, high]).into()
 }
 
@@ -176,8 +174,6 @@ fn gen_rval_lit_u64<'ctx>(ctx: &mut CodegenCtx<'ctx, '_, '_, '_, '_>, value: u64
 fn gen_rval_lit_u128<'ctx>(ctx: &mut CodegenCtx<'ctx, '_, '_, '_, '_>, value: u128) -> BasicValueEnum<'ctx> {
     let low = (value & 0xFFFFFFFFFFFFFFFF) as u64;
     let high = ((value >> 64) & 0xFFFFFFFFFFFFFFFF) as u64;
-
-    
 
     ctx.llvm.i128_type().const_int_arbitrary_precision(&[low, high]).into()
 }
@@ -736,7 +732,7 @@ fn gen_rval_land<'ctx>(
     /**************************************************************************/
     // 4. Join block and load result
     ctx.bb.position_at_end(end_bb);
-    
+
     ctx.bb.build_load(bool, land_result, "land_load").unwrap()
 }
 
@@ -785,7 +781,7 @@ fn gen_rval_lor<'ctx>(
     /**************************************************************************/
     // 4. Join block and load result
     ctx.bb.position_at_end(end_bb);
-    
+
     ctx.bb.build_load(bool, lor_result, "lor_load").unwrap()
 }
 
@@ -1225,6 +1221,7 @@ fn gen_rval_struct_object<'ctx>(
     fields: &[(NString, ValueId)],
 ) -> BasicValueEnum<'ctx> {
     let struct_ty = hir::Type::Struct {
+        span: nitrate_tree::ByteSpan::default(),
         def: struct_def_id.clone(),
     };
 
@@ -1257,8 +1254,6 @@ fn gen_rval_struct_object<'ctx>(
 
         ctx.bb.build_store(gep, llvm_field_value).unwrap();
     }
-
-    
 
     ctx.bb.build_load(llvm_ty, struct_alloca, "struct_load").unwrap()
 }
@@ -1310,6 +1305,7 @@ fn gen_rval_field_access<'ctx>(
         gen_place(
             ctx,
             &hir::Value::Deref {
+                span: nitrate_tree::ByteSpan::default(),
                 place: struct_value.clone().into(),
             },
         )
@@ -1331,10 +1327,7 @@ fn gen_rval_field_access<'ctx>(
     }
     .unwrap();
 
-    
-
-    ctx
-        .bb
+    ctx.bb
         .build_load(gen_ty(field_ty, &mut ctx.into()), gep, "field_access_load")
         .unwrap()
 }
@@ -1364,10 +1357,7 @@ fn gen_rval_deref<'ctx>(ctx: &mut CodegenCtx<'ctx, '_, '_, '_, '_>, place: &hir:
         _ => unreachable!(),
     };
 
-    
-
-    ctx
-        .bb
+    ctx.bb
         .build_load(
             gen_ty(&pointee_ty, &mut ctx.into()),
             llvm_value.into_pointer_value(),
@@ -1475,7 +1465,12 @@ fn gen_rval_list<'ctx>(ctx: &mut CodegenCtx<'ctx, '_, '_, '_, '_>, elements: &[h
     if elements.is_empty() {
         // If the list is empty it will have size zero. That mean any dereference is invalid anyways.
         // Therefore, any type will be okay. For simplicity we will use the unit type.
-        let element_type = gen_ty(&hir::Type::Unit, &mut ctx.into());
+        let element_type = gen_ty(
+            &hir::Type::Unit {
+                span: nitrate_tree::ByteSpan::default(),
+            },
+            &mut ctx.into(),
+        );
         let list_ty = element_type.array_type(0);
 
         let list_alloca = ctx.bb.build_alloca(list_ty, "list_alloca").unwrap();
@@ -1506,8 +1501,6 @@ fn gen_rval_list<'ctx>(ctx: &mut CodegenCtx<'ctx, '_, '_, '_, '_>, elements: &[h
         .unwrap();
         ctx.bb.build_store(gep, *llvm_element).unwrap();
     }
-
-    
 
     ctx.bb.build_load(list_ty, list_alloca, "list_load").unwrap()
 }
@@ -1541,8 +1534,6 @@ fn gen_rval_tuple<'ctx>(ctx: &mut CodegenCtx<'ctx, '_, '_, '_, '_>, elements: &[
         .unwrap();
         ctx.bb.build_store(gep, *llvm_element).unwrap();
     }
-
-    
 
     ctx.bb.build_load(tuple_ty, tuple_alloca, "tuple_load").unwrap()
 }
@@ -1769,7 +1760,7 @@ fn gen_rval_call<'ctx>(
     arguments: &hir::Arguments<ValueId>,
 ) -> BasicValueEnum<'ctx> {
     let callee_ty_hir = callee.determine_type(ctx.tab).unwrap();
-    let hir::Type::Function { function_type } = callee_ty_hir else {
+    let hir::Type::Function { function_type, .. } = callee_ty_hir else {
         panic!("Callee is not a function type");
     };
 
@@ -1786,10 +1777,7 @@ fn gen_rval_call<'ctx>(
         panic!("Callee is not a function pointer");
     }
 
-    
-
-    ctx
-        .bb
+    ctx.bb
         .build_indirect_call(llvm_function_ty, callee.into_pointer_value(), &llvm_arguments, "")
         .unwrap()
         .try_as_basic_value()
@@ -1836,15 +1824,18 @@ fn gen_rval_method_call<'ctx>(
         llvm_arguments.push(llvm_arg.into());
     }
 
-    let callee = gen_rval(ctx, &hir::Value::FunctionSymbol { id: function_id });
+    let callee = gen_rval(
+        ctx,
+        &hir::Value::FunctionSymbol {
+            span: nitrate_tree::ByteSpan::default(),
+            id: function_id,
+        },
+    );
     if !callee.get_type().is_pointer_type() {
         panic!("Callee is not a function pointer");
     }
 
-    
-
-    ctx
-        .bb
+    ctx.bb
         .build_indirect_call(llvm_function_ty, callee.into_pointer_value(), &llvm_arguments, "")
         .unwrap()
         .try_as_basic_value()
@@ -1887,31 +1878,31 @@ pub(crate) fn gen_rval<'ctx>(
     hir_value: &hir::Value,
 ) -> BasicValueEnum<'ctx> {
     match hir_value {
-        hir::Value::Unit => gen_rval_lit_unit(ctx),
-        hir::Value::Bool(x) => gen_rval_lit_bool(ctx, *x),
-        hir::Value::I8(x) => gen_rval_lit_i8(ctx, *x),
-        hir::Value::I16(x) => gen_rval_lit_i16(ctx, *x),
-        hir::Value::I32(x) => gen_rval_lit_i32(ctx, *x),
-        hir::Value::I64(x) => gen_rval_lit_i64(ctx, *x),
-        hir::Value::I128(x) => gen_rval_lit_i128(ctx, **x),
-        hir::Value::U8(x) => gen_rval_lit_u8(ctx, *x),
-        hir::Value::U16(x) => gen_rval_lit_u16(ctx, *x),
-        hir::Value::U32(x) => gen_rval_lit_u32(ctx, *x),
-        hir::Value::U64(x) => gen_rval_lit_u64(ctx, *x),
-        hir::Value::U128(x) => gen_rval_lit_u128(ctx, **x),
-        hir::Value::F32(x) => gen_rval_lit_f32(ctx, x.into_inner()),
-        hir::Value::F64(x) => gen_rval_lit_f64(ctx, x.into_inner()),
-        hir::Value::USize(32, x) => gen_rval_lit_u32(ctx, *x as u32),
-        hir::Value::USize(64, x) => gen_rval_lit_u64(ctx, *x ),
-        hir::Value::USize(_, x) => panic!("Unsupported usize size: {}", x),
-        hir::Value::StringLit(x) => gen_rval_lit_string(ctx, x),
-        hir::Value::BStringLit(x) => gen_rval_lit_bstring(ctx, x.as_slice()),
+        hir::Value::Unit { .. } => gen_rval_lit_unit(ctx),
+        hir::Value::Bool { value: x, .. } => gen_rval_lit_bool(ctx, *x),
+        hir::Value::I8 { value: x, .. } => gen_rval_lit_i8(ctx, *x),
+        hir::Value::I16 { value: x, .. } => gen_rval_lit_i16(ctx, *x),
+        hir::Value::I32 { value: x, .. } => gen_rval_lit_i32(ctx, *x),
+        hir::Value::I64 { value: x, .. } => gen_rval_lit_i64(ctx, *x),
+        hir::Value::I128 { value: x, .. } => gen_rval_lit_i128(ctx, **x),
+        hir::Value::U8 { value: x, .. } => gen_rval_lit_u8(ctx, *x),
+        hir::Value::U16 { value: x, .. } => gen_rval_lit_u16(ctx, *x),
+        hir::Value::U32 { value: x, .. } => gen_rval_lit_u32(ctx, *x),
+        hir::Value::U64 { value: x, .. } => gen_rval_lit_u64(ctx, *x),
+        hir::Value::U128 { value: x, .. } => gen_rval_lit_u128(ctx, **x),
+        hir::Value::F32 { value: x, .. } => gen_rval_lit_f32(ctx, x.into_inner()),
+        hir::Value::F64 { value: x, .. } => gen_rval_lit_f64(ctx, x.into_inner()),
+        hir::Value::USize { bits: 32, value: x, .. } => gen_rval_lit_u32(ctx, *x as u32),
+        hir::Value::USize { bits: 64, value: x, .. } => gen_rval_lit_u64(ctx, *x),
+        hir::Value::USize { value: x, .. } => panic!("Unsupported usize size: {}", x),
+        hir::Value::StringLit { value: x, .. } => gen_rval_lit_string(ctx, x),
+        hir::Value::BStringLit { value: x, .. } => gen_rval_lit_bstring(ctx, x.as_slice()),
 
-        hir::Value::InferredInteger(_) | hir::Value::InferredFloat(_) => {
+        hir::Value::InferredInteger { .. } | hir::Value::InferredFloat { .. } => {
             panic!("Inferred values should have been resolved before code generation")
         }
 
-        hir::Value::Binary { left, op, right } => {
+        hir::Value::Binary { left, op, right, .. } => {
             let lhs = &left.borrow();
             let rhs = &right.borrow();
 
@@ -1939,7 +1930,7 @@ pub(crate) fn gen_rval<'ctx>(
             }
         }
 
-        hir::Value::Unary { op, operand } => {
+        hir::Value::Unary { op, operand, .. } => {
             let operand = &operand.borrow();
             match op {
                 hir::UnaryOp::Add => gen_rval_unary_add(ctx, operand),
@@ -1948,19 +1939,21 @@ pub(crate) fn gen_rval<'ctx>(
             }
         }
 
-        hir::Value::StructObject { struct_def, fields } => gen_rval_struct_object(ctx, struct_def, fields),
+        hir::Value::StructObject { struct_def, fields, .. } => gen_rval_struct_object(ctx, struct_def, fields),
 
         hir::Value::EnumVariant {
             enum_def,
             variant,
             value,
+            ..
         } => gen_rval_enum_variant(ctx, enum_def, variant, &value.borrow()),
 
-        hir::Value::IndexAccess { collection, index } => {
+        hir::Value::IndexAccess { collection, index, .. } => {
             // Generate the place (pointer) to the indexed element, then load it
             let index_place = gen_place(
                 ctx,
                 &hir::Value::IndexAccess {
+                    span: nitrate_tree::ByteSpan::default(),
                     collection: collection.clone(),
                     index: index.clone(),
                 },
@@ -1976,32 +1969,32 @@ pub(crate) fn gen_rval<'ctx>(
                 }
             };
             let llvm_element_ty = gen_ty(&element_type, &mut ctx.into());
-            ctx.bb
-                .build_load(llvm_element_ty, index_place, "index_load")
-                .unwrap()
+            ctx.bb.build_load(llvm_element_ty, index_place, "index_load").unwrap()
         }
 
-        hir::Value::FieldAccess { expr, field_name } => gen_rval_field_access(ctx, &expr.borrow(), field_name),
+        hir::Value::FieldAccess { expr, field_name, .. } => gen_rval_field_access(ctx, &expr.borrow(), field_name),
 
-        hir::Value::Assign { place, value } => gen_rval_assign(ctx, &place.borrow(), &value.borrow()),
+        hir::Value::Assign { place, value, .. } => gen_rval_assign(ctx, &place.borrow(), &value.borrow()),
 
-        hir::Value::Deref { place } => gen_rval_deref(ctx, &place.borrow()),
+        hir::Value::Deref { place, .. } => gen_rval_deref(ctx, &place.borrow()),
 
-        hir::Value::Cast { value, target_type } => gen_rval_cast(ctx, &value.borrow(), target_type),
+        hir::Value::Cast { value, target_type, .. } => gen_rval_cast(ctx, &value.borrow(), target_type),
 
         hir::Value::Borrow {
             exclusive,
             mutable,
             place,
+            ..
         } => gen_rval_borrow(ctx, *exclusive, *mutable, &place.borrow()),
 
-        hir::Value::List { elements } => gen_rval_list(ctx, elements),
-        hir::Value::Tuple { elements } => gen_rval_tuple(ctx, elements),
+        hir::Value::List { elements, .. } => gen_rval_list(ctx, elements),
+        hir::Value::Tuple { elements, .. } => gen_rval_tuple(ctx, elements),
 
         hir::Value::If {
             condition,
             true_branch,
             false_branch,
+            ..
         } => {
             let condition = &condition.borrow();
             let true_branch = &true_branch.borrow();
@@ -2014,59 +2007,60 @@ pub(crate) fn gen_rval<'ctx>(
             }
         }
 
-        hir::Value::While { condition, body } => {
+        hir::Value::While { condition, body, .. } => {
             let condition = &condition.borrow();
             let body = &body.borrow();
             gen_rval_while(ctx, condition, body);
             gen_rval_lit_unit(ctx)
         }
 
-        hir::Value::Loop { body } => {
+        hir::Value::Loop { body, .. } => {
             gen_rval_loop(ctx, &body.borrow());
             gen_rval_lit_unit(ctx)
         }
 
-        hir::Value::Break { label } => {
+        hir::Value::Break { label, .. } => {
             gen_rval_break(ctx, label.as_deref());
             gen_rval_lit_unit(ctx)
         }
 
-        hir::Value::Continue { label } => {
+        hir::Value::Continue { label, .. } => {
             gen_rval_continue(ctx, label.as_deref());
             gen_rval_lit_unit(ctx)
         }
 
-        hir::Value::Return { value } => {
+        hir::Value::Return { value, .. } => {
             gen_rval_return(ctx, &value.borrow());
             gen_rval_lit_unit(ctx)
         }
 
-        hir::Value::Block { block } => gen_rval_block(ctx, &block.borrow()),
+        hir::Value::Block { block, .. } => gen_rval_block(ctx, &block.borrow()),
 
-        hir::Value::Call { callee, args } => gen_rval_call(ctx, &callee.borrow(), args),
+        hir::Value::Call { callee, args, .. } => gen_rval_call(ctx, &callee.borrow(), args),
 
         hir::Value::MethodCall {
             object,
             method_name,
             args,
+            ..
         } => gen_rval_method_call(ctx, &object.borrow(), method_name, args),
 
-        hir::Value::FunctionSymbol { id } => {
+        hir::Value::FunctionSymbol { id, .. } => {
             let function_def = id.borrow();
             gen_rval_symbol(ctx, &function_def.mangled_name)
         }
 
-        hir::Value::GlobalVariableSymbol { id } => {
+        hir::Value::GlobalVariableSymbol { id, .. } => {
             let global_def = id.borrow();
             gen_rval_symbol(ctx, &global_def.mangled_name)
         }
 
-        hir::Value::LocalVariableSymbol { id } => {
+        hir::Value::LocalVariableSymbol { id, .. } => {
             let local_def = id.borrow();
             gen_rval_symbol(ctx, &local_def.name)
         }
 
-        hir::Value::ParameterSymbol { id } => {
+        hir::Value::ParameterSymbol { id, .. } => {
             let param_def = id.borrow();
             gen_rval_symbol(ctx, &param_def.name)
         }

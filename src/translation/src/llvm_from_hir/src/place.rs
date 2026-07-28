@@ -8,6 +8,7 @@ use inkwell::values::PointerValue;
 use nitrate_hir::{StructMemoryLayoutCell, prelude as hir};
 use nitrate_hir_get_type::HirGetType;
 use nitrate_nstring::NString;
+use nitrate_tree::ByteSpan;
 use std::ops::Deref;
 
 fn gen_place_field_access<'ctx>(
@@ -21,6 +22,7 @@ fn gen_place_field_access<'ctx>(
     {
         // Dereference the reference to get the underlying struct
         let deref_value = hir::Value::Deref {
+            span: ByteSpan::default(),
             place: struct_value.clone().into(),
         };
         gen_place(ctx, &deref_value)
@@ -51,8 +53,6 @@ fn gen_place_field_access<'ctx>(
 
     let index = ctx.llvm.i32_type().const_int(field_index as u64, false);
 
-    
-
     unsafe {
         // SAFETY: ** I don't know if this is safe or not
         ctx.bb.build_in_bounds_gep(
@@ -79,6 +79,7 @@ fn gen_place_index_access<'ctx>(
     let collection_ptr = if let hir::Type::Reference { .. } | hir::Type::Pointer { .. } = &collection_type {
         // Auto-deref to get the underlying collection
         let deref_value = hir::Value::Deref {
+            span: ByteSpan::default(),
             place: collection.clone().into(),
         };
         gen_place(ctx, &deref_value)
@@ -113,8 +114,6 @@ fn gen_place_index_access<'ctx>(
             } else {
                 panic!("Index must be an integer");
             };
-
-            
 
             unsafe {
                 // SAFETY: Array/Slice indexing via GEP
@@ -174,8 +173,8 @@ pub(crate) fn gen_place<'ctx>(
     hir_value: &hir::Value,
 ) -> PointerValue<'ctx> {
     match hir_value {
-        hir::Value::InferredInteger(_)
-        | hir::Value::InferredFloat(_)
+        hir::Value::InferredInteger { .. }
+        | hir::Value::InferredFloat { .. }
         | hir::Value::Assign { .. }
         | hir::Value::Borrow { .. }
         | hir::Value::If { .. }
@@ -185,23 +184,23 @@ pub(crate) fn gen_place<'ctx>(
         | hir::Value::Continue { .. }
         | hir::Value::Return { .. } => panic!("Value is not a place"),
 
-        hir::Value::Unit
-        | hir::Value::Bool(_)
-        | hir::Value::I8(_)
-        | hir::Value::I16(_)
-        | hir::Value::I32(_)
-        | hir::Value::I64(_)
-        | hir::Value::I128(_)
-        | hir::Value::U8(_)
-        | hir::Value::U16(_)
-        | hir::Value::U32(_)
-        | hir::Value::U64(_)
-        | hir::Value::U128(_)
-        | hir::Value::F32(_)
-        | hir::Value::F64(_)
-        | hir::Value::USize(..)
-        | hir::Value::StringLit(_)
-        | hir::Value::BStringLit(_)
+        hir::Value::Unit { .. }
+        | hir::Value::Bool { .. }
+        | hir::Value::I8 { .. }
+        | hir::Value::I16 { .. }
+        | hir::Value::I32 { .. }
+        | hir::Value::I64 { .. }
+        | hir::Value::I128 { .. }
+        | hir::Value::U8 { .. }
+        | hir::Value::U16 { .. }
+        | hir::Value::U32 { .. }
+        | hir::Value::U64 { .. }
+        | hir::Value::U128 { .. }
+        | hir::Value::F32 { .. }
+        | hir::Value::F64 { .. }
+        | hir::Value::USize { .. }
+        | hir::Value::StringLit { .. }
+        | hir::Value::BStringLit { .. }
         | hir::Value::List { .. }
         | hir::Value::Binary { .. }
         | hir::Value::Unary { .. }
@@ -223,30 +222,30 @@ pub(crate) fn gen_place<'ctx>(
             alloca
         }
 
-        hir::Value::FieldAccess { expr, field_name } => gen_place_field_access(ctx, &expr.borrow(), field_name),
+        hir::Value::FieldAccess { expr, field_name, .. } => gen_place_field_access(ctx, &expr.borrow(), field_name),
 
-        hir::Value::IndexAccess { collection, index } => {
+        hir::Value::IndexAccess { collection, index, .. } => {
             gen_place_index_access(ctx, &collection.borrow(), &index.borrow())
         }
 
-        hir::Value::Deref { place } => gen_place_deref(ctx, &place.borrow()),
+        hir::Value::Deref { place, .. } => gen_place_deref(ctx, &place.borrow()),
 
-        hir::Value::FunctionSymbol { id } => match ctx.module.get_function(&id.borrow().mangled_name) {
+        hir::Value::FunctionSymbol { id, .. } => match ctx.module.get_function(&id.borrow().mangled_name) {
             Some(func) => func.as_global_value().as_pointer_value(),
             None => panic!("Function symbol not found in module"),
         },
 
-        hir::Value::GlobalVariableSymbol { id } => match ctx.globals.get(&id.borrow().mangled_name) {
+        hir::Value::GlobalVariableSymbol { id, .. } => match ctx.globals.get(&id.borrow().mangled_name) {
             Some(ptr) => ptr.0,
             None => panic!("Global variable symbol not found"),
         },
 
-        hir::Value::LocalVariableSymbol { id } => match ctx.locals.get(&id.borrow().name) {
+        hir::Value::LocalVariableSymbol { id, .. } => match ctx.locals.get(&id.borrow().name) {
             Some(ptr) => ptr.0,
             None => panic!("Local variable symbol not found"),
         },
 
-        hir::Value::ParameterSymbol { id } => match ctx.parameters.get(&id.borrow().name) {
+        hir::Value::ParameterSymbol { id, .. } => match ctx.parameters.get(&id.borrow().name) {
             Some(ptr) => ptr.0,
             None => panic!("Parameter symbol not found"),
         },

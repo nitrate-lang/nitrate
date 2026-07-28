@@ -299,7 +299,7 @@ impl ValidateHirItem for Function {
                     actual: "?".to_string(),
                 },
                 |c| {
-                    let Value::Return { value } = &*body
+                    let Value::Return { value, .. } = &*body
                         .last()
                         .expect("Function body should have at least one element")
                         .as_expr()
