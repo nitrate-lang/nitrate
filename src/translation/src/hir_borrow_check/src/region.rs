@@ -35,9 +35,11 @@ use std::collections::{HashMap, HashSet, VecDeque};
 pub enum RegionKind {
     /// A universally quantified region (exists before function entry).
     /// Examples: `'static`, named lifetime parameters like `'a`.
+    #[allow(dead_code)]
     Universal,
     /// An existentially quantified region (created during borrow checking).
     /// These represent the lifetime of a borrow or temporary.
+    #[allow(dead_code)]
     Existential,
 }
 
@@ -47,6 +49,7 @@ pub enum RegionKind {
 /// itself. The solver computes the minimal region for each variable
 /// by finding the transitive closure of outlives constraints.
 #[derive(Debug, Clone)]
+#[allow(dead_code)]
 pub struct RegionVar {
     /// The kind of this region variable.
     pub kind: RegionKind,
@@ -59,6 +62,7 @@ pub struct RegionVar {
     pub solved_value: Option<RegionId>,
 }
 
+#[allow(dead_code)]
 impl RegionVar {
     pub fn new(kind: RegionKind, id: RegionId) -> Self {
         Self {
@@ -87,6 +91,8 @@ pub struct OutlivesConstraint {
 /// The region inference context for a single function.
 ///
 /// This manages all region variables and constraints for one function body.
+/// It is integrated into the borrow checker's `BorrowCheckCtx` and is used
+/// to track and solve region constraints during borrow checking.
 #[derive(Debug)]
 pub struct RegionInferenceCtx {
     /// All region variables, indexed by ID.
@@ -96,6 +102,8 @@ pub struct RegionInferenceCtx {
     /// The constraint graph: for each region, which regions it must outlive.
     /// This is the transitive closure of the constraints.
     outlives_graph: HashMap<RegionId, HashSet<RegionId>>,
+    /// Whether the constraints have been solved.
+    solved: bool,
 }
 
 impl RegionInferenceCtx {
@@ -105,10 +113,12 @@ impl RegionInferenceCtx {
             vars: Vec::new(),
             constraints: Vec::new(),
             outlives_graph: HashMap::new(),
+            solved: false,
         }
     }
 
     /// Creates a new universal region variable.
+    #[allow(dead_code)]
     pub fn new_universal(&mut self) -> RegionId {
         let id = self.vars.len() as RegionId;
         self.vars.push(RegionVar::new(RegionKind::Universal, id));
@@ -183,6 +193,7 @@ impl RegionInferenceCtx {
             var.solved = true;
             var.solved_value = Some(var.id);
         }
+        self.solved = true;
     }
 
     /// Checks if region `a` must outlive region `b`.
@@ -251,6 +262,11 @@ impl RegionInferenceCtx {
     /// Returns a reference to all constraints for diagnostics.
     pub fn constraints(&self) -> &[OutlivesConstraint] {
         &self.constraints
+    }
+
+    /// Returns whether the solver has been run.
+    pub fn is_solved(&self) -> bool {
+        self.solved
     }
 }
 

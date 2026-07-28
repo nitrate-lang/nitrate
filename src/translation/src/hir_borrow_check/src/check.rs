@@ -32,7 +32,6 @@ use nitrate_hir_get_type::HirGetType;
 
 /// Bit flags for access kind.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-#[allow(dead_code)]
 enum AccessKind {
     /// A simple read access.
     Read,
@@ -80,14 +79,18 @@ pub fn check_function_borrows(
         ctx.initialized.insert(pid);
     }
 
+    // Advance to the first real region.
+    ctx.advance_region();
+
     // Check the function body.
     check_block_elements(&body, &mut ctx);
 
+    // Solve all region constraints (NLL inference).
+    // This computes the minimal lifetimes for all borrows based on their use regions.
+    ctx.solve_regions();
+
     // Check that no active borrows reference local variables at the end of the function,
     // since the locals will be destroyed when the function returns.
-    // We only check this if the function returns a reference type, since borrows of
-    // locals being alive at the end of a non-reference-returning function is fine
-    // (both the reference and the locale are dropped simultaneously).
     let return_type_is_ref = matches!(&*ctx.return_type, Type::Reference { .. } | Type::SliceRef { .. });
     if return_type_is_ref {
         let local_borrows: Vec<BorrowRecord> = ctx
@@ -130,20 +133,6 @@ pub fn check_global_borrows(
 }
 
 // ============================================================================
-// Internal: Entry point used by the module
-// ============================================================================
-
-/// Entry point used by the module.
-#[allow(dead_code)]
-pub(crate) fn check_function(
-    function: &mut Function,
-    tab: &SymbolTab,
-    log: &nitrate_diagnosis::CompilerLog,
-) -> Result<(), ()> {
-    check_function_borrows(function, tab, log)
-}
-
-// ============================================================================
 // Block and Expression Walking
 // ============================================================================
 
@@ -151,6 +140,9 @@ pub(crate) fn check_function(
 /// in program order, updating borrow state at each step.
 fn check_block_elements(elements: &[BlockElement], ctx: &mut BorrowCheckCtx) {
     for element in elements {
+        // Advance region for each statement to enable NLL narrowing.
+        ctx.advance_region();
+
         match element {
             BlockElement::Expr(expr_id) => {
                 let value = expr_id.borrow();
@@ -331,35 +323,31 @@ fn check_rvalue_access(value: &Value, ctx: &mut BorrowCheckCtx) {
             let saved_borrows = ctx.active_borrows.clone();
             let saved_moved = ctx.moved_from.clone();
 
+            // Push borrow count to track borrows created inside branches.
+            ctx.push_borrow_count();
+
             // Check true branch.
             let true_block = true_branch.borrow();
             check_block_elements(&true_block.elements, ctx);
 
-            // For soundness: collect new borrows from true branch.
-            let true_new_borrows: Vec<BorrowRecord> = ctx
-                .active_borrows
-                .iter()
-                .filter(|b| !saved_borrows.contains(b))
-                .cloned()
-                .collect();
+            // Collect new borrows created in the true branch.
+            let true_new_borrows: Vec<BorrowRecord> = ctx.pop_new_borrows_since_push();
 
             // Restore to pre-branch state and check false branch.
             ctx.active_borrows = saved_borrows.clone();
             ctx.moved_from = saved_moved.clone();
+
+            // Push borrow count for false branch tracking.
+            ctx.push_borrow_count();
 
             if let Some(false_branch) = false_branch {
                 let false_block = false_branch.borrow();
                 check_block_elements(&false_block.elements, ctx);
 
                 // Collect new borrows from false branch.
-                let _false_new_borrows: Vec<BorrowRecord> = ctx
-                    .active_borrows
-                    .iter()
-                    .filter(|b| !saved_borrows.contains(b))
-                    .cloned()
-                    .collect();
+                let _false_new_borrows: Vec<BorrowRecord> = ctx.pop_new_borrows_since_push();
 
-                // After both branches, borrows that exist in either branch remain active.
+                // After both branches, borrows that existed in either branch remain active.
                 // This is conservative but sound: we keep all borrows that might exist
                 // after the if expression.
                 for borrow in &true_new_borrows {
@@ -393,12 +381,12 @@ fn check_rvalue_access(value: &Value, ctx: &mut BorrowCheckCtx) {
                 // Report error: borrow escapes loop body
                 let outstanding: Vec<BorrowRecord> = ctx.active_borrows.drain(before_borrows..).collect();
                 for borrow in &outstanding {
-                    ctx.report(BorrowError::BorrowConflict {
-                        place: format!("{:?}", borrow.place),
-                        borrow_kind: format!("{:?}", borrow.kind),
-                        conflicting_kind: "loop".to_string(),
-                        reason: "borrow created inside loop must be released before next iteration".to_string(),
-                    });
+                    if let Some(place) = ctx.id_to_place.get(borrow.place as usize) {
+                        ctx.report(BorrowError::BorrowEscapesLoop {
+                            place: place.to_string(),
+                            reason: "borrow created inside loop must be released before next iteration".to_string(),
+                        });
+                    }
                 }
             }
         }
@@ -412,12 +400,12 @@ fn check_rvalue_access(value: &Value, ctx: &mut BorrowCheckCtx) {
             if before_borrows < ctx.active_borrows.len() {
                 let outstanding: Vec<BorrowRecord> = ctx.active_borrows.drain(before_borrows..).collect();
                 for borrow in &outstanding {
-                    ctx.report(BorrowError::BorrowConflict {
-                        place: format!("{:?}", borrow.place),
-                        borrow_kind: format!("{:?}", borrow.kind),
-                        conflicting_kind: "loop".to_string(),
-                        reason: "borrow created inside loop must be released before next iteration".to_string(),
-                    });
+                    if let Some(place) = ctx.id_to_place.get(borrow.place as usize) {
+                        ctx.report(BorrowError::BorrowEscapesLoop {
+                            place: place.to_string(),
+                            reason: "borrow created inside loop must be released before next iteration".to_string(),
+                        });
+                    }
                 }
             }
         }
@@ -427,6 +415,25 @@ fn check_rvalue_access(value: &Value, ctx: &mut BorrowCheckCtx) {
         Value::Return { value } => {
             // Check the return value expression.
             check_rvalue_access(&value.borrow(), ctx);
+
+            // When returning, all borrows of local variables become invalid
+            // since the stack frame will be destroyed. We handle this
+            // in check_function_borrows by checking borrows at the end.
+            //
+            // However, we can also clear borrows here for borrows of locals
+            // to catch errors earlier (this is an NLL refinement).
+            let return_type_is_ref = matches!(&*ctx.return_type, Type::Reference { .. } | Type::SliceRef { .. });
+            if !return_type_is_ref {
+                // If the function doesn't return a reference, no borrow can
+                // be returned, so all borrows of locals can be killed at return.
+                for i in (0..ctx.active_borrows.len()).rev() {
+                    if let Some(place) = ctx.id_to_place.get(ctx.active_borrows[i].place as usize) {
+                        if matches!(place, Place::Local(_)) {
+                            ctx.active_borrows.remove(i);
+                        }
+                    }
+                }
+            }
         }
 
         Value::Block { block } => {
@@ -476,8 +483,9 @@ fn check_rvalue_access(value: &Value, ctx: &mut BorrowCheckCtx) {
 /// - Reports an error if the place is not initialized.
 /// - Reports an error if a mutable/exclusive borrow is active on this place.
 fn check_read_place(pid: PlaceId, ctx: &mut BorrowCheckCtx, reason: &str) {
+    // Clone the place early to avoid borrow conflicts with mutable ctx methods.
     let place = match ctx.id_to_place.get(pid as usize) {
-        Some(p) => p,
+        Some(p) => p.clone(),
         None => return,
     };
 
@@ -500,25 +508,31 @@ fn check_read_place(pid: PlaceId, ctx: &mut BorrowCheckCtx, reason: &str) {
     }
 
     // Check for read during active mutable/exclusive borrow.
-    for borrow in &ctx.active_borrows {
-        if borrow.place == pid {
+    for borrow_idx in 0..ctx.active_borrows.len() {
+        let borrow_place_same = ctx.active_borrows[borrow_idx].place == pid;
+        if borrow_place_same {
+            // Record that this borrow is being used here (for NLL).
+            ctx.record_borrow_use(borrow_idx);
             continue; // Same place, not overlapping
         }
-        if let Some(borrowed_place) = ctx.id_to_place.get(borrow.place as usize) {
-            if place.overlaps_with(borrowed_place) {
-                // If the borrow conflicts with reads, report it.
-                if borrow.kind.conflicts_with_read() {
-                    ctx.report(BorrowError::BorrowConflict {
-                        place: place.to_string(),
-                        borrow_kind: format!("{:?}", borrow.kind),
-                        conflicting_kind: "read".to_string(),
-                        reason: format!(
-                            "cannot read `{}` because it is already borrowed as {:?}",
-                            place, borrow.kind
-                        ),
-                    });
-                    return;
-                }
+        // Re-borrow after any mutable ctx operation.
+        let borrowed_place = match ctx.id_to_place.get(ctx.active_borrows[borrow_idx].place as usize) {
+            Some(p) => p.clone(),
+            None => continue,
+        };
+        if place.overlaps_with(&borrowed_place) {
+            // If the borrow conflicts with reads, report it.
+            if ctx.active_borrows[borrow_idx].kind.conflicts_with_read() {
+                ctx.report(BorrowError::BorrowConflict {
+                    place: place.to_string(),
+                    borrow_kind: format!("{:?}", ctx.active_borrows[borrow_idx].kind),
+                    conflicting_kind: "read".to_string(),
+                    reason: format!(
+                        "cannot read `{}` because it is already borrowed as {:?}",
+                        place, ctx.active_borrows[borrow_idx].kind
+                    ),
+                });
+                return;
             }
         }
     }
@@ -527,7 +541,7 @@ fn check_read_place(pid: PlaceId, ctx: &mut BorrowCheckCtx, reason: &str) {
 /// Check a write access to a place.
 ///
 /// # Preconditions
-/// - `pid` is a valid place ID.
+/// - Valid place value.
 ///
 /// # Postconditions
 /// - Reports an error if any active borrow overlaps with this place.
@@ -649,6 +663,8 @@ fn check_borrow_place(value: &Value, kind: BorrowKind, ctx: &mut BorrowCheckCtx,
         region,
         reason: reason.to_string(),
     });
+    // Record the borrow index as using its own creation site.
+    ctx.record_borrow_use(ctx.active_borrows.len() - 1);
 }
 
 // ============================================================================

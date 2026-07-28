@@ -89,6 +89,9 @@ pub mod diagnosis {
 
         /// Invalidates a borrow (e.g., assigning to a field while it's borrowed).
         InvalidatesBorrow { place: String, reason: String },
+
+        /// A borrow created inside a loop body escapes to the next iteration.
+        BorrowEscapesLoop { place: String, reason: String },
     }
 
     impl FormattableDiagnosticGroup for BorrowError {
@@ -104,6 +107,7 @@ pub mod diagnosis {
                 BorrowError::UseBeforeInit { .. } => 0x103,
                 BorrowError::MutableBorrowOfImmutable { .. } => 0x104,
                 BorrowError::InvalidatesBorrow { .. } => 0x105,
+                BorrowError::BorrowEscapesLoop { .. } => 0x106,
             }
         }
 
@@ -147,6 +151,9 @@ pub mod diagnosis {
                         place, reason
                     )
                 }
+                BorrowError::BorrowEscapesLoop { place, reason } => {
+                    format!("borrow of `{}` escapes loop body\n  = note: {}", place, reason)
+                }
             };
 
             DiagnosticInfo {
@@ -158,6 +165,7 @@ pub mod diagnosis {
 }
 
 use diagnosis::BorrowError;
+use region::RegionInferenceCtx;
 
 // ============================================================================
 // Core Types
@@ -319,12 +327,11 @@ impl Place {
 ///
 /// This struct holds all the state needed to perform borrow checking on one function body.
 /// It is designed to be created fresh for each function, used, and then discarded.
-struct BorrowCheckCtx<'a> {
+pub(crate) struct BorrowCheckCtx<'a> {
     /// The function being checked (for diagnostics).
     #[allow(dead_code)]
     function_name: NString,
     /// The function's return type.
-    #[allow(dead_code)]
     return_type: TypeId,
     /// Symbol table for type resolution.
     tab: &'a SymbolTab,
@@ -335,7 +342,7 @@ struct BorrowCheckCtx<'a> {
     /// Map from place to its place ID.
     place_to_id: HashMap<Place, PlaceId>,
     /// Map from place ID to the place.
-    id_to_place: Vec<Place>,
+    pub(crate) id_to_place: Vec<Place>,
     /// Counter for generating new place IDs.
     next_place_id: PlaceId,
 
@@ -345,23 +352,32 @@ struct BorrowCheckCtx<'a> {
 
     // --- Borrow tracking ---
     /// All active borrows, keyed by the place they borrow.
-    active_borrows: Vec<BorrowRecord>,
+    pub(crate) active_borrows: Vec<BorrowRecord>,
     /// The current program point (represented as the region index).
-    #[allow(dead_code)]
-    current_region: RegionId,
+    pub(crate) current_region: RegionId,
+
+    // --- NLL tracking ---
+    /// For each active borrow, the set of regions where it is used.
+    borrow_use_regions: Vec<Vec<RegionId>>,
+    /// Stack of borrow counts at branch points for tracking borrows created inside branches.
+    borrow_count_stack: Vec<usize>,
+    /// Region inference engine for NLL constraint solving.
+    /// This tracks outlives constraints between regions and solves them
+    /// to determine the minimal lifetime for each borrow.
+    region_inference: RegionInferenceCtx,
 
     // --- Move/init state ---
     /// Set of place IDs that have been moved from.
-    moved_from: HashSet<PlaceId>,
+    pub(crate) moved_from: HashSet<PlaceId>,
     /// Set of place IDs that have been initialized.
-    initialized: HashSet<PlaceId>,
+    pub(crate) initialized: HashSet<PlaceId>,
 
     // --- Error accumulation ---
     errors: Vec<BorrowError>,
 }
 
 impl<'a> BorrowCheckCtx<'a> {
-    fn new(function_name: NString, return_type: TypeId, tab: &'a SymbolTab, log: &'a CompilerLog) -> Self {
+    pub(crate) fn new(function_name: NString, return_type: TypeId, tab: &'a SymbolTab, log: &'a CompilerLog) -> Self {
         Self {
             function_name,
             return_type,
@@ -373,6 +389,9 @@ impl<'a> BorrowCheckCtx<'a> {
             next_region_id: 0,
             active_borrows: Vec::new(),
             current_region: 0,
+            borrow_use_regions: Vec::new(),
+            borrow_count_stack: Vec::new(),
+            region_inference: RegionInferenceCtx::new(),
             moved_from: HashSet::new(),
             initialized: HashSet::new(),
             errors: Vec::new(),
@@ -380,7 +399,7 @@ impl<'a> BorrowCheckCtx<'a> {
     }
 
     /// Allocate a new place ID for a given place, or return the existing one.
-    fn place_id(&mut self, place: Place) -> PlaceId {
+    pub(crate) fn place_id(&mut self, place: Place) -> PlaceId {
         if let Some(&id) = self.place_to_id.get(&place) {
             return id;
         }
@@ -392,22 +411,68 @@ impl<'a> BorrowCheckCtx<'a> {
     }
 
     /// Create a new region scope.
-    fn new_region(&mut self) -> RegionId {
+    pub(crate) fn new_region(&mut self) -> RegionId {
         let id = self.next_region_id;
         self.next_region_id += 1;
         id
     }
 
+    /// Advance to a new region (program point).
+    pub(crate) fn advance_region(&mut self) -> RegionId {
+        let id = self.new_region();
+        self.current_region = id;
+        id
+    }
+
+    /// Record that a borrow is used at the current region.
+    pub(crate) fn record_borrow_use(&mut self, borrow_idx: usize) {
+        let current = self.current_region;
+        // Extend the borrow_use_regions for this borrow if needed
+        while self.borrow_use_regions.len() <= borrow_idx {
+            self.borrow_use_regions.push(Vec::new());
+        }
+        let uses = &mut self.borrow_use_regions[borrow_idx];
+        if !uses.contains(&current) {
+            uses.push(current);
+        }
+    }
+
+    /// Push the current borrow count onto the stack (for branch handling).
+    pub(crate) fn push_borrow_count(&mut self) {
+        self.borrow_count_stack.push(self.active_borrows.len());
+    }
+
+    /// Pop the borrow count stack and return borrows created since the matching push.
+    pub(crate) fn pop_new_borrows_since_push(&mut self) -> Vec<BorrowRecord> {
+        let saved_count = self.borrow_count_stack.pop().unwrap_or(0);
+        if saved_count < self.active_borrows.len() {
+            self.active_borrows.drain(saved_count..).collect()
+        } else {
+            Vec::new()
+        }
+    }
+
+    /// Get a mutable reference to the region inference engine for adding constraints.
+    pub(crate) fn region_inference(&mut self) -> &mut RegionInferenceCtx {
+        &mut self.region_inference
+    }
+
     /// Report a borrow checking error.
-    fn report(&mut self, error: BorrowError) {
+    pub(crate) fn report(&mut self, error: BorrowError) {
         self.errors.push(error);
     }
 
     /// Check all tracked errors and report them to the compiler log.
-    fn flush_errors(&self) -> Result<(), ()> {
+    pub(crate) fn flush_errors(&self) -> Result<(), ()> {
         for error in &self.errors {
             self.log.report(error);
         }
         if self.errors.is_empty() { Ok(()) } else { Err(()) }
+    }
+
+    /// Solve all collected region constraints.
+    /// This must be called after all constraint collection is complete.
+    pub(crate) fn solve_regions(&mut self) {
+        self.region_inference.solve();
     }
 }
