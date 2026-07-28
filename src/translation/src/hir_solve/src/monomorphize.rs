@@ -1,5 +1,4 @@
-use crate::constraints::TypeConstraint;
-use crate::solver::Solver;
+use crate::solver::{MonoCacheKey, Solver};
 use crate::substitution::Substitution;
 use nitrate_hir::{
     Arguments, BlockElement, Function, FunctionId, LocalVariable, LocalVariableId, Parameter, ParameterId, StructDef,
@@ -11,20 +10,20 @@ use nitrate_tree::ByteSpan;
 use std::collections::BTreeMap;
 use thin_vec::ThinVec;
 
-/// Cache key for monomorphized structs.
-type StructMonoCacheKey = (usize, Vec<(u32, TypeId)>);
+/// Cache value type alias for struct monomorphization cache.
+pub(crate) type StructMonoCacheValue = StructDefId;
 
 impl<'m> Solver<'m> {
-    pub(crate) fn mono_cache_key(&self, func_id: &FunctionId, subst: &Substitution) -> (usize, Vec<(u32, TypeId)>) {
+    pub(crate) fn mono_cache_key(&self, func_id: &FunctionId, subst: &Substitution) -> MonoCacheKey {
         let mut sorted_args: Vec<(u32, TypeId)> = subst.mapping.iter().map(|(k, v)| (*k, *v)).collect();
         sorted_args.sort_by_key(|(k, _)| *k);
-        (func_id.as_usize(), sorted_args)
+        MonoCacheKey::new(func_id.as_usize(), &sorted_args)
     }
 
-    pub(crate) fn struct_mono_cache_key(&self, struct_id: &StructDefId, subst: &Substitution) -> StructMonoCacheKey {
+    pub(crate) fn struct_mono_cache_key(&self, struct_id: &StructDefId, subst: &Substitution) -> MonoCacheKey {
         let mut sorted_args: Vec<(u32, TypeId)> = subst.mapping.iter().map(|(k, v)| (*k, *v)).collect();
         sorted_args.sort_by_key(|(k, _)| *k);
-        (struct_id.as_usize(), sorted_args)
+        MonoCacheKey::new(struct_id.as_usize(), &sorted_args)
     }
 
     /// Infer concrete types for generic parameters from argument types at a call site.
@@ -69,8 +68,38 @@ impl<'m> Solver<'m> {
         let mut subst = Substitution::default();
         let mut any_concrete_type_found = false;
 
+        // Collect which generic params appear in which fields in a single pass
+        // to avoid O(g × f) iteration.
+        struct GenericFieldInfo {
+            index: u32,
+            appears: bool,
+        }
+        let mut param_info: BTreeMap<NString, GenericFieldInfo> = BTreeMap::new();
+        for (param_name, param_default) in generics.iter() {
+            // If the generic has a concrete type (from default), use its index.
+            // Otherwise we rely on name matching during unify.
+            let index = param_default
+                .as_ref()
+                .and_then(|tid| {
+                    if let Type::GenericParam { index, .. } = &**tid {
+                        Some(*index)
+                    } else {
+                        None
+                    }
+                })
+                .unwrap_or(0);
+            param_info.insert(param_name.clone(), GenericFieldInfo { index, appears: false });
+        }
+
         for (field_name, field_value_id) in field_values {
             if let Some(field) = struct_def.fields.get(field_name) {
+                // Mark which generic params appear in this field's type
+                for (param_name, info) in param_info.iter_mut() {
+                    if Self::type_contains_generic_param(&field.ty, param_name) {
+                        info.appears = true;
+                    }
+                }
+
                 let field_type = &*field.ty;
                 // Only unify if we can determine the value's type
                 if let Ok(arg_type) = field_value_id.borrow().determine_type(self.m) {
@@ -90,23 +119,9 @@ impl<'m> Solver<'m> {
         }
 
         // Check that all generic params that appear in field types have been bound
-        for _param_name in generics.keys() {
-            let appears_in_fields = struct_def
-                .fields
-                .values()
-                .any(|f| Self::type_contains_generic_param(&f.ty, _param_name));
-            if appears_in_fields {
-                let generic_idx = struct_def
-                    .fields
-                    .values()
-                    .find_map(|f| match &*f.ty {
-                        Type::GenericParam { index, name, .. } if name == _param_name => Some(*index),
-                        _ => Self::find_generic_index_in_type_deep(&f.ty, _param_name),
-                    })
-                    .unwrap_or(0);
-                if generic_idx > 0 && !subst.mapping.contains_key(&generic_idx) {
-                    return None;
-                }
+        for info in param_info.values() {
+            if info.appears && !subst.mapping.contains_key(&info.index) {
+                return None;
             }
         }
 
@@ -125,28 +140,6 @@ impl<'m> Solver<'m> {
                 Self::type_contains_generic_param(element_type, param_name)
             }
             _ => false,
-        }
-    }
-
-    fn find_generic_index_in_type_deep(ty: &Type, param_name: &NString) -> Option<u32> {
-        match ty {
-            Type::GenericParam { index, name, .. } if name == param_name => Some(*index),
-            Type::Array { element_type, .. } => Self::find_generic_index_in_type_deep(element_type, param_name),
-            Type::Tuple { element_types, .. } => {
-                for et in element_types.iter() {
-                    if let Some(idx) = Self::find_generic_index_in_type_deep(et, param_name) {
-                        return Some(idx);
-                    }
-                }
-                None
-            }
-            Type::Reference { to, .. } | Type::Pointer { to, .. } => {
-                Self::find_generic_index_in_type_deep(to, param_name)
-            }
-            Type::SliceRef { element_type, .. } | Type::SlicePtr { element_type, .. } => {
-                Self::find_generic_index_in_type_deep(element_type, param_name)
-            }
-            _ => None,
         }
     }
 
@@ -372,7 +365,8 @@ impl<'m> Solver<'m> {
         // Register in symbol table so codegen can find it
         self.m.add_struct(mono_id.clone());
         // Cache for future identical instantiations
-        self.struct_mono_cache.insert(cache_key, mono_id.clone());
+        self.struct_mono_cache
+            .insert(cache_key, StructMonoCacheValue::from(mono_id.clone()));
         mono_id
     }
 

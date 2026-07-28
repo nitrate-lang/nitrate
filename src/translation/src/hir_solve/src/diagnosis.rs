@@ -67,10 +67,54 @@ pub(crate) enum TypeErr {
         true_type: TypeId,
         false_type: TypeId,
     },
+    CannotInferTypeArgs {
+        span: ByteSpan,
+        generic_name: String,
+        reason: String,
+    },
+    GenericArgCountMismatch {
+        span: ByteSpan,
+        expected: usize,
+        actual: usize,
+        generic_name: String,
+    },
+    AmbiguousType {
+        span: ByteSpan,
+        description: String,
+    },
+    MissingTypeAnnotation {
+        span: ByteSpan,
+        param_name: String,
+    },
+    UnresolvedInferredType {
+        span: ByteSpan,
+        description: String,
+    },
+    UnboundGenericParam {
+        span: ByteSpan,
+        param_name: String,
+        generic_name: String,
+    },
+    StructFieldTypeMismatch {
+        span: ByteSpan,
+        field_name: String,
+        expected_type: TypeId,
+        actual_type: TypeId,
+    },
+    ArgumentTypeMismatch {
+        span: ByteSpan,
+        param_name: String,
+        expected_type: TypeId,
+        actual_type: TypeId,
+    },
     MethodNotFound {
         span: ByteSpan,
         method_name: String,
         receiver_type: TypeId,
+    },
+    InferredLiteralAmbiguous {
+        span: ByteSpan,
+        value: String,
     },
 }
 
@@ -87,7 +131,16 @@ impl FormattableDiagnosticGroup for TypeErr {
             TypeErr::IntegerLiteralOutOfRefinementBounds { .. } => 3,
             TypeErr::OperationResultOutOfRefinementBounds { .. } => 4,
             TypeErr::MismatchedBranchTypes { .. } => 5,
+            TypeErr::CannotInferTypeArgs { .. } => 6,
+            TypeErr::GenericArgCountMismatch { .. } => 7,
+            TypeErr::AmbiguousType { .. } => 8,
+            TypeErr::MissingTypeAnnotation { .. } => 9,
+            TypeErr::UnresolvedInferredType { .. } => 10,
+            TypeErr::UnboundGenericParam { .. } => 11,
+            TypeErr::StructFieldTypeMismatch { .. } => 12,
+            TypeErr::ArgumentTypeMismatch { .. } => 13,
             TypeErr::MethodNotFound { .. } => 14,
+            TypeErr::InferredLiteralAmbiguous { .. } => 15,
         }
     }
 
@@ -185,6 +238,77 @@ impl FormattableDiagnosticGroup for TypeErr {
                     false_type.to_string()
                 ),
             },
+            TypeErr::CannotInferTypeArgs {
+                span,
+                generic_name,
+                reason,
+            } => DiagnosticInfo {
+                origin: byte_span_to_origin(*span),
+                message: format!("Cannot infer type arguments for `{}`: {}", generic_name, reason),
+            },
+            TypeErr::GenericArgCountMismatch {
+                span,
+                expected,
+                actual,
+                generic_name,
+            } => DiagnosticInfo {
+                origin: byte_span_to_origin(*span),
+                message: format!(
+                    "Expected {} type argument(s) for `{}`, but got {}",
+                    expected, generic_name, actual
+                ),
+            },
+            TypeErr::AmbiguousType { span, description } => DiagnosticInfo {
+                origin: byte_span_to_origin(*span),
+                message: format!("Ambiguous type: {}", description),
+            },
+            TypeErr::MissingTypeAnnotation { span, param_name } => DiagnosticInfo {
+                origin: byte_span_to_origin(*span),
+                message: format!("Type annotation required for parameter `{}`", param_name),
+            },
+            TypeErr::UnresolvedInferredType { span, description } => DiagnosticInfo {
+                origin: byte_span_to_origin(*span),
+                message: format!("Cannot determine type: {}", description),
+            },
+            TypeErr::UnboundGenericParam {
+                span,
+                param_name,
+                generic_name,
+            } => DiagnosticInfo {
+                origin: byte_span_to_origin(*span),
+                message: format!(
+                    "Generic parameter `{}` on `{}` could not be inferred from context",
+                    param_name, generic_name
+                ),
+            },
+            TypeErr::StructFieldTypeMismatch {
+                span,
+                field_name,
+                expected_type,
+                actual_type,
+            } => DiagnosticInfo {
+                origin: byte_span_to_origin(*span),
+                message: format!(
+                    "Field `{}` expected type `{}`, but got `{}`",
+                    field_name,
+                    expected_type.to_string(),
+                    actual_type.to_string()
+                ),
+            },
+            TypeErr::ArgumentTypeMismatch {
+                span,
+                param_name,
+                expected_type,
+                actual_type,
+            } => DiagnosticInfo {
+                origin: byte_span_to_origin(*span),
+                message: format!(
+                    "Argument `{}` expected type `{}`, but got `{}`",
+                    param_name,
+                    expected_type.to_string(),
+                    actual_type.to_string()
+                ),
+            },
             TypeErr::MethodNotFound {
                 span,
                 method_name,
@@ -195,6 +319,13 @@ impl FormattableDiagnosticGroup for TypeErr {
                     "Method `{}` not found on type `{}`",
                     method_name,
                     receiver_type.to_string()
+                ),
+            },
+            TypeErr::InferredLiteralAmbiguous { span, value } => DiagnosticInfo {
+                origin: byte_span_to_origin(*span),
+                message: format!(
+                    "Cannot determine type for literal `{}` — add an explicit type annotation",
+                    value,
                 ),
             },
         }

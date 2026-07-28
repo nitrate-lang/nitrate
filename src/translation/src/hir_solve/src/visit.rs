@@ -95,10 +95,12 @@ impl<'m> Solver<'m> {
 
     pub(super) fn add_constraint(&mut self, id: &ValueId, constraint: TypeConstraint) {
         self.constraints.entry(id.clone()).or_default().insert(constraint);
+        self.add_to_worklist(id);
     }
 
     pub(super) fn add_constraints(&mut self, id: &ValueId, constraints: impl IntoIterator<Item = TypeConstraint>) {
         self.constraints.entry(id.clone()).or_default().extend(constraints);
+        self.add_to_worklist(id);
     }
 
     // ── Visit Children (dispatched by variant) ────────────────────────────
@@ -163,67 +165,41 @@ impl<'m> Solver<'m> {
 
         if has_generics {
             // First try to infer generic args from concrete field values
-            if let Some(subst) = self.infer_generic_args_from_struct_fields(struct_def, fields) {
+            let subst = self
+                .infer_generic_args_from_struct_fields(struct_def, fields)
+                // If field-based inference failed, try to extract concrete type args
+                // from parent constraints (e.g., from type annotations like `let x: Pair<i32>`)
+                .or_else(|| self.infer_generic_args_from_constraints(e, struct_def));
+
+            if let Some(subst) = subst {
                 let mono_struct_id = self.monomorphize_struct(struct_def, &subst);
                 {
                     let mut original = e.borrow_mut();
                     if let Value::StructObject { struct_def: sd, .. } = &mut *original {
                         *sd = mono_struct_id;
                     }
-                }
-                let _ = value;
-                let updated = e.borrow();
-                if let Value::StructObject {
-                    struct_def: sd,
-                    fields: flds,
-                    ..
-                } = &*updated
-                {
-                    let struct_def_b = sd.borrow();
-                    for (field_name, field_value) in flds {
-                        if let Some(field) = struct_def_b.fields.get(field_name) {
-                            self.add_constraint(field_value, TypeConstraint::Equal(field.ty));
-                            self.visit(field_value);
-                        }
-                    }
-                }
-            // If field-based inference failed, try to extract concrete type args
-            // from parent constraints (e.g., from type annotations like `let x: Pair<i32>`)
-            } else if let Some(subst) = self.infer_generic_args_from_constraints(e, struct_def) {
-                let mono_struct_id = self.monomorphize_struct(struct_def, &subst);
-                {
-                    let mut original = e.borrow_mut();
-                    if let Value::StructObject { struct_def: sd, .. } = &mut *original {
-                        *sd = mono_struct_id;
-                    }
-                }
-                let updated = e.borrow();
-                if let Value::StructObject {
-                    struct_def: sd,
-                    fields: flds,
-                    ..
-                } = &*updated
-                {
-                    let struct_def_b = sd.borrow();
-                    for (field_name, field_value) in flds {
-                        if let Some(field) = struct_def_b.fields.get(field_name) {
-                            self.add_constraint(field_value, TypeConstraint::Equal(field.ty));
-                            self.visit(field_value);
-                        }
-                    }
-                }
-            } else {
-                for (_, field_value) in fields {
-                    self.visit(field_value);
                 }
             }
+
+            // After optional monomorphization, apply constraints and visit fields
+            self.apply_struct_field_constraints(e);
         } else {
-            let struct_def_b = struct_def.borrow();
-            for (field_name, field_value) in fields {
-                if let Some(field) = struct_def_b.fields.get(field_name) {
-                    self.add_constraint(field_value, TypeConstraint::Equal(field.ty));
-                    self.visit(field_value);
-                }
+            self.apply_struct_field_constraints(e);
+        }
+    }
+
+    /// Apply field type constraints and visit all fields of a struct object.
+    /// Shared helper to avoid duplicated code between generic and non-generic paths.
+    fn apply_struct_field_constraints(&mut self, e: &ValueId) {
+        let value = e.borrow().clone();
+        let Value::StructObject { struct_def, fields, .. } = &value else {
+            return;
+        };
+        let struct_def_b = struct_def.borrow();
+        for (field_name, field_value) in fields {
+            if let Some(field) = struct_def_b.fields.get(field_name) {
+                self.add_constraint(field_value, TypeConstraint::Equal(field.ty));
+                self.visit(field_value);
             }
         }
     }
