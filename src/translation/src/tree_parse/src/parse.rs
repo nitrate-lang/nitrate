@@ -74,11 +74,13 @@ impl<'a, 'log> Parser<'a, 'log> {
     pub fn parse_source(&mut self, package_name: NString) -> nitrate_tree::ast::Module {
         let mut items = Vec::new();
 
-        // Disable trivia before any token access so the lexer skips whitespace/comments.
-        // Trivia is preserved for reconstruction via ByteSpan ranges.
-        self.lexer.disable_trivia();
+        // The module span starts at offset 0 (beginning of source file).
+        // Must be captured before disabling trivia to include leading whitespace/comments.
+        let module_start = 0u32;
 
-        let module_start = self.current_offset();
+        // Disable trivia so the lexer skips whitespace/comments when parsing items.
+        // Trivia is preserved for reconstruction via ByteSpan ranges on individual items.
+        self.lexer.disable_trivia();
 
         while !self.is_eof() {
             let item = self.parse_item();
