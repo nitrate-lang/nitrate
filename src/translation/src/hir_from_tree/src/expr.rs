@@ -20,7 +20,7 @@ pub(crate) fn lower_boolean_literal(boolean_lit: ast::BooleanLit) -> Result<Valu
 pub(crate) fn lower_integer_literal(integer_lit: ast::IntegerLit) -> Result<Value, ()> {
     Ok(Value::InferredInteger {
         span: integer_lit.span,
-        value: integer_lit.value,
+        value: Box::new(integer_lit.value),
     })
 }
 
@@ -428,123 +428,314 @@ pub(crate) fn lower_binary(binary: ast::BinExpr, ctx: &mut Ast2HirCtx, log: &Com
     let left = lower_expr(binary.left, ctx, log)?.into();
     let right = lower_expr(binary.right, ctx, log)?.into();
 
-    let make_binary = |op: BinaryOp| Value::Binary { span, left, op, right };
-    let make_assign = |val: Value| Value::Assign {
-        span,
-        place: left.clone(),
-        value: val.into(),
-    };
-
     match binary.operator {
-        ast::BinExprOp::Add => Ok(make_binary(BinaryOp::Add)),
-        ast::BinExprOp::Sub => Ok(make_binary(BinaryOp::Sub)),
-        ast::BinExprOp::Mul => Ok(make_binary(BinaryOp::Mul)),
-        ast::BinExprOp::Div => Ok(make_binary(BinaryOp::Div)),
-        ast::BinExprOp::Mod => Ok(make_binary(BinaryOp::Mod)),
-        ast::BinExprOp::BitAnd => Ok(make_binary(BinaryOp::And)),
-        ast::BinExprOp::BitOr => Ok(make_binary(BinaryOp::Or)),
-        ast::BinExprOp::BitXor => Ok(make_binary(BinaryOp::Xor)),
-        ast::BinExprOp::BitShl => Ok(make_binary(BinaryOp::Shl)),
-        ast::BinExprOp::BitShr => Ok(make_binary(BinaryOp::Shr)),
-        ast::BinExprOp::BitRol => Ok(make_binary(BinaryOp::Rol)),
-        ast::BinExprOp::BitRor => Ok(make_binary(BinaryOp::Ror)),
-        ast::BinExprOp::LogicAnd => Ok(make_binary(BinaryOp::LogicAnd)),
-        ast::BinExprOp::LogicOr => Ok(make_binary(BinaryOp::LogicOr)),
-        ast::BinExprOp::LogicLt => Ok(make_binary(BinaryOp::Lt)),
-        ast::BinExprOp::LogicGt => Ok(make_binary(BinaryOp::Gt)),
-        ast::BinExprOp::LogicLe => Ok(make_binary(BinaryOp::Lte)),
-        ast::BinExprOp::LogicGe => Ok(make_binary(BinaryOp::Gte)),
-        ast::BinExprOp::LogicEq => Ok(make_binary(BinaryOp::Eq)),
-        ast::BinExprOp::LogicNe => Ok(make_binary(BinaryOp::Ne)),
+        ast::BinExprOp::Add => Ok(Value::Binary {
+            span,
+            left,
+            op: BinaryOp::Add,
+            right,
+        }),
+        ast::BinExprOp::Sub => Ok(Value::Binary {
+            span,
+            left,
+            op: BinaryOp::Sub,
+            right,
+        }),
+        ast::BinExprOp::Mul => Ok(Value::Binary {
+            span,
+            left,
+            op: BinaryOp::Mul,
+            right,
+        }),
+        ast::BinExprOp::Div => Ok(Value::Binary {
+            span,
+            left,
+            op: BinaryOp::Div,
+            right,
+        }),
+        ast::BinExprOp::Mod => Ok(Value::Binary {
+            span,
+            left,
+            op: BinaryOp::Mod,
+            right,
+        }),
+        ast::BinExprOp::BitAnd => Ok(Value::Binary {
+            span,
+            left,
+            op: BinaryOp::And,
+            right,
+        }),
+        ast::BinExprOp::BitOr => Ok(Value::Binary {
+            span,
+            left,
+            op: BinaryOp::Or,
+            right,
+        }),
+        ast::BinExprOp::BitXor => Ok(Value::Binary {
+            span,
+            left,
+            op: BinaryOp::Xor,
+            right,
+        }),
+        ast::BinExprOp::BitShl => Ok(Value::Binary {
+            span,
+            left,
+            op: BinaryOp::Shl,
+            right,
+        }),
+        ast::BinExprOp::BitShr => Ok(Value::Binary {
+            span,
+            left,
+            op: BinaryOp::Shr,
+            right,
+        }),
+        ast::BinExprOp::BitRol => Ok(Value::Binary {
+            span,
+            left,
+            op: BinaryOp::Rol,
+            right,
+        }),
+        ast::BinExprOp::BitRor => Ok(Value::Binary {
+            span,
+            left,
+            op: BinaryOp::Ror,
+            right,
+        }),
+        ast::BinExprOp::LogicAnd => Ok(Value::Binary {
+            span,
+            left,
+            op: BinaryOp::LogicAnd,
+            right,
+        }),
+        ast::BinExprOp::LogicOr => Ok(Value::Binary {
+            span,
+            left,
+            op: BinaryOp::LogicOr,
+            right,
+        }),
+        ast::BinExprOp::LogicLt => Ok(Value::Binary {
+            span,
+            left,
+            op: BinaryOp::Lt,
+            right,
+        }),
+        ast::BinExprOp::LogicGt => Ok(Value::Binary {
+            span,
+            left,
+            op: BinaryOp::Gt,
+            right,
+        }),
+        ast::BinExprOp::LogicLe => Ok(Value::Binary {
+            span,
+            left,
+            op: BinaryOp::Lte,
+            right,
+        }),
+        ast::BinExprOp::LogicGe => Ok(Value::Binary {
+            span,
+            left,
+            op: BinaryOp::Gte,
+            right,
+        }),
+        ast::BinExprOp::LogicEq => Ok(Value::Binary {
+            span,
+            left,
+            op: BinaryOp::Eq,
+            right,
+        }),
+        ast::BinExprOp::LogicNe => Ok(Value::Binary {
+            span,
+            left,
+            op: BinaryOp::Ne,
+            right,
+        }),
         ast::BinExprOp::Set => Ok(Value::Assign {
             span,
             place: left,
             value: right,
         }),
-        ast::BinExprOp::SetPlus => Ok(make_assign(Value::Binary {
-            span,
-            left,
-            op: BinaryOp::Add,
-            right,
-        })),
-        ast::BinExprOp::SetMinus => Ok(make_assign(Value::Binary {
-            span,
-            left,
-            op: BinaryOp::Sub,
-            right,
-        })),
-        ast::BinExprOp::SetTimes => Ok(make_assign(Value::Binary {
-            span,
-            left,
-            op: BinaryOp::Mul,
-            right,
-        })),
-        ast::BinExprOp::SetSlash => Ok(make_assign(Value::Binary {
-            span,
-            left,
-            op: BinaryOp::Div,
-            right,
-        })),
-        ast::BinExprOp::SetPercent => Ok(make_assign(Value::Binary {
-            span,
-            left,
-            op: BinaryOp::Mod,
-            right,
-        })),
-        ast::BinExprOp::SetBitAnd => Ok(make_assign(Value::Binary {
-            span,
-            left,
-            op: BinaryOp::And,
-            right,
-        })),
-        ast::BinExprOp::SetBitOr => Ok(make_assign(Value::Binary {
-            span,
-            left,
-            op: BinaryOp::Or,
-            right,
-        })),
-        ast::BinExprOp::SetBitXor => Ok(make_assign(Value::Binary {
-            span,
-            left,
-            op: BinaryOp::Xor,
-            right,
-        })),
-        ast::BinExprOp::SetBitShl => Ok(make_assign(Value::Binary {
-            span,
-            left,
-            op: BinaryOp::Shl,
-            right,
-        })),
-        ast::BinExprOp::SetBitShr => Ok(make_assign(Value::Binary {
-            span,
-            left,
-            op: BinaryOp::Shr,
-            right,
-        })),
-        ast::BinExprOp::SetBitRotl => Ok(make_assign(Value::Binary {
-            span,
-            left,
-            op: BinaryOp::Rol,
-            right,
-        })),
-        ast::BinExprOp::SetBitRotr => Ok(make_assign(Value::Binary {
-            span,
-            left,
-            op: BinaryOp::Ror,
-            right,
-        })),
-        ast::BinExprOp::SetLogicAnd => Ok(make_assign(Value::Binary {
-            span,
-            left,
-            op: BinaryOp::And,
-            right,
-        })),
-        ast::BinExprOp::SetLogicOr => Ok(make_assign(Value::Binary {
-            span,
-            left,
-            op: BinaryOp::Or,
-            right,
-        })),
+        ast::BinExprOp::SetPlus => {
+            let binary = Value::Binary {
+                span,
+                left: left.clone(),
+                op: BinaryOp::Add,
+                right: right.clone(),
+            };
+            Ok(Value::Assign {
+                span,
+                place: left,
+                value: binary.into(),
+            })
+        }
+        ast::BinExprOp::SetMinus => {
+            let binary = Value::Binary {
+                span,
+                left: left.clone(),
+                op: BinaryOp::Sub,
+                right: right.clone(),
+            };
+            Ok(Value::Assign {
+                span,
+                place: left,
+                value: binary.into(),
+            })
+        }
+        ast::BinExprOp::SetTimes => {
+            let binary = Value::Binary {
+                span,
+                left: left.clone(),
+                op: BinaryOp::Mul,
+                right: right.clone(),
+            };
+            Ok(Value::Assign {
+                span,
+                place: left,
+                value: binary.into(),
+            })
+        }
+        ast::BinExprOp::SetSlash => {
+            let binary = Value::Binary {
+                span,
+                left: left.clone(),
+                op: BinaryOp::Div,
+                right: right.clone(),
+            };
+            Ok(Value::Assign {
+                span,
+                place: left,
+                value: binary.into(),
+            })
+        }
+        ast::BinExprOp::SetPercent => {
+            let binary = Value::Binary {
+                span,
+                left: left.clone(),
+                op: BinaryOp::Mod,
+                right: right.clone(),
+            };
+            Ok(Value::Assign {
+                span,
+                place: left,
+                value: binary.into(),
+            })
+        }
+        ast::BinExprOp::SetBitAnd => {
+            let binary = Value::Binary {
+                span,
+                left: left.clone(),
+                op: BinaryOp::And,
+                right: right.clone(),
+            };
+            Ok(Value::Assign {
+                span,
+                place: left,
+                value: binary.into(),
+            })
+        }
+        ast::BinExprOp::SetBitOr => {
+            let binary = Value::Binary {
+                span,
+                left: left.clone(),
+                op: BinaryOp::Or,
+                right: right.clone(),
+            };
+            Ok(Value::Assign {
+                span,
+                place: left,
+                value: binary.into(),
+            })
+        }
+        ast::BinExprOp::SetBitXor => {
+            let binary = Value::Binary {
+                span,
+                left: left.clone(),
+                op: BinaryOp::Xor,
+                right: right.clone(),
+            };
+            Ok(Value::Assign {
+                span,
+                place: left,
+                value: binary.into(),
+            })
+        }
+        ast::BinExprOp::SetBitShl => {
+            let binary = Value::Binary {
+                span,
+                left: left.clone(),
+                op: BinaryOp::Shl,
+                right: right.clone(),
+            };
+            Ok(Value::Assign {
+                span,
+                place: left,
+                value: binary.into(),
+            })
+        }
+        ast::BinExprOp::SetBitShr => {
+            let binary = Value::Binary {
+                span,
+                left: left.clone(),
+                op: BinaryOp::Shr,
+                right: right.clone(),
+            };
+            Ok(Value::Assign {
+                span,
+                place: left,
+                value: binary.into(),
+            })
+        }
+        ast::BinExprOp::SetBitRotl => {
+            let binary = Value::Binary {
+                span,
+                left: left.clone(),
+                op: BinaryOp::Rol,
+                right: right.clone(),
+            };
+            Ok(Value::Assign {
+                span,
+                place: left,
+                value: binary.into(),
+            })
+        }
+        ast::BinExprOp::SetBitRotr => {
+            let binary = Value::Binary {
+                span,
+                left: left.clone(),
+                op: BinaryOp::Ror,
+                right: right.clone(),
+            };
+            Ok(Value::Assign {
+                span,
+                place: left,
+                value: binary.into(),
+            })
+        }
+        ast::BinExprOp::SetLogicAnd => {
+            let binary = Value::Binary {
+                span,
+                left: left.clone(),
+                op: BinaryOp::And,
+                right: right.clone(),
+            };
+            Ok(Value::Assign {
+                span,
+                place: left,
+                value: binary.into(),
+            })
+        }
+        ast::BinExprOp::SetLogicOr => {
+            let binary = Value::Binary {
+                span,
+                left: left.clone(),
+                op: BinaryOp::Or,
+                right: right.clone(),
+            };
+            Ok(Value::Assign {
+                span,
+                place: left,
+                value: binary.into(),
+            })
+        }
         ast::BinExprOp::Range => {
             log.report(&HirErr::UnimplementedFeature("range .. operator".into()));
             Err(())
@@ -631,7 +822,7 @@ pub(crate) fn lower_cast(cast: ast::Cast, ctx: &mut Ast2HirCtx, log: &CompilerLo
             span,
             value: OrderedFloat::from(*v as f32),
         }),
-        (Value::InferredFloat { value: v, .. }, Type::F64 { .. }) => Ok(Value::F64 { span, value: *v }),
+        (Value::InferredFloat { value: v, .. }, Type::F64 { .. }) => Ok(Value::F64 { span, value: v }),
         (expr, to) => Ok(Value::Cast {
             span,
             value: expr.into(),

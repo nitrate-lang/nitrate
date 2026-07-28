@@ -99,17 +99,17 @@ fn store_lit(lit: Lit) -> LiteralId {
 /// Returns the minimum literal value for a given integer type.
 fn min_lit_for_type(ty: &Type) -> Lit {
     match ty {
-        Type::U8 => Lit::U8(0),
-        Type::U16 => Lit::U16(0),
-        Type::U32 => Lit::U32(0),
-        Type::U64 => Lit::U64(0),
-        Type::U128 => Lit::U128(0),
-        Type::USize => Lit::USize(32, 0),
-        Type::I8 => Lit::I8(0),
-        Type::I16 => Lit::I16(0),
-        Type::I32 => Lit::I32(0),
-        Type::I64 => Lit::I64(0),
-        Type::I128 => Lit::I128(0),
+        Type::U8 { .. } => Lit::U8(0),
+        Type::U16 { .. } => Lit::U16(0),
+        Type::U32 { .. } => Lit::U32(0),
+        Type::U64 { .. } => Lit::U64(0),
+        Type::U128 { .. } => Lit::U128(0),
+        Type::USize { .. } => Lit::USize(32, 0),
+        Type::I8 { .. } => Lit::I8(0),
+        Type::I16 { .. } => Lit::I16(0),
+        Type::I32 { .. } => Lit::I32(0),
+        Type::I64 { .. } => Lit::I64(0),
+        Type::I128 { .. } => Lit::I128(0),
         _ => Lit::U64(0),
     }
 }
@@ -117,17 +117,17 @@ fn min_lit_for_type(ty: &Type) -> Lit {
 /// Returns the maximum literal value for a given integer type.
 fn max_lit_for_type(ty: &Type) -> Lit {
     match ty {
-        Type::U8 => Lit::U8(u8::MAX),
-        Type::U16 => Lit::U16(u16::MAX),
-        Type::U32 => Lit::U32(u32::MAX),
-        Type::U64 => Lit::U64(u64::MAX),
-        Type::U128 => Lit::U128(u128::MAX),
-        Type::USize => Lit::USize(64, u64::MAX),
-        Type::I8 => Lit::I8(i8::MAX),
-        Type::I16 => Lit::I16(i16::MAX),
-        Type::I32 => Lit::I32(i32::MAX),
-        Type::I64 => Lit::I64(i64::MAX),
-        Type::I128 => Lit::I128(i128::MAX),
+        Type::U8 { .. } => Lit::U8(u8::MAX),
+        Type::U16 { .. } => Lit::U16(u16::MAX),
+        Type::U32 { .. } => Lit::U32(u32::MAX),
+        Type::U64 { .. } => Lit::U64(u64::MAX),
+        Type::U128 { .. } => Lit::U128(u128::MAX),
+        Type::USize { .. } => Lit::USize(64, u64::MAX),
+        Type::I8 { .. } => Lit::I8(i8::MAX),
+        Type::I16 { .. } => Lit::I16(i16::MAX),
+        Type::I32 { .. } => Lit::I32(i32::MAX),
+        Type::I64 { .. } => Lit::I64(i64::MAX),
+        Type::I128 { .. } => Lit::I128(i128::MAX),
         _ => Lit::U64(u64::MAX),
     }
 }
@@ -143,6 +143,7 @@ fn lower_refinement_bound(
 
     let cast_value = match target_type {
         Some(ty) => Value::Cast {
+            span: ByteSpan::default(),
             value: hir_value.into(),
             target_type: ty.clone().into(),
         },
@@ -309,8 +310,12 @@ pub(crate) fn lower_array_type(
     let element_type: TypeId = lower_type(array_type.element_type, ctx, log)?.into();
 
     let array_length_expr = Value::Cast {
+        span: ByteSpan::default(),
         value: lower_expr(array_type.len, ctx, log)?.into(),
-        target_type: Type::USize.into(),
+        target_type: Type::USize {
+            span: ByteSpan::default(),
+        }
+        .into(),
     };
 
     let len = match HirEvalCtx::new(log, ctx.ptr_size).evaluate_to_literal(&array_length_expr) {
@@ -337,18 +342,19 @@ pub(crate) fn lower_array_type(
 }
 
 pub(crate) fn lower_function_type(
-    function_type: ast::FunctionType,
+    func_type_ast: ast::FunctionType,
     ctx: &mut Ast2HirCtx,
     log: &CompilerLog,
 ) -> Result<Type, ()> {
-    let ast_attributes = function_type.attributes.unwrap_or_default();
+    let span = func_type_ast.span;
+    let ast_attributes = func_type_ast.attributes.unwrap_or_default();
     let function_attributes = BTreeSet::new();
     for _attr in ast_attributes {
         log.report(&HirErr::UnrecognizedFunctionAttribute);
     }
 
-    let mut parameters = Vec::with_capacity(function_type.parameters.len());
-    for param in function_type.parameters {
+    let mut parameters = Vec::with_capacity(func_type_ast.parameters.len());
+    for param in func_type_ast.parameters {
         if let Some(ast_attributes) = &param.attributes {
             for _attr in ast_attributes {
                 log.report(&HirErr::UnrecognizedFunctionParameterAttribute);
@@ -359,7 +365,7 @@ pub(crate) fn lower_function_type(
         parameters.push((param.name, ty));
     }
 
-    let return_type: TypeId = match function_type.return_type {
+    let return_type: TypeId = match func_type_ast.return_type {
         Some(ret_ty) => lower_type(ret_ty, ctx, log)?.into(),
         None => Type::Unit {
             span: ByteSpan::default(),
@@ -367,15 +373,15 @@ pub(crate) fn lower_function_type(
         .into(),
     };
 
-    let function_type = FunctionType {
+    let func_type = FunctionType {
         attributes: function_attributes,
         params: parameters.into(),
         return_type,
     };
 
     Ok(Type::Function {
-        span: function_type.span,
-        function_type: function_type.into(),
+        span,
+        function_type: func_type.into(),
     })
 }
 
@@ -1042,7 +1048,7 @@ fn lower_tuple_single() {
             })],
         };
         let r = lower_tuple_type(t, ctx, log).unwrap();
-        assert!(matches!(r, Type::Tuple { element_types } if element_types.len() == 1));
+        assert!(matches!(r, Type::Tuple { element_types , ..} if element_types.len() == 1));
     })
 }
 
@@ -1065,7 +1071,7 @@ fn lower_tuple_multiple() {
         };
         let r = lower_tuple_type(t, ctx, log).unwrap();
         match r {
-            Type::Tuple { element_types } => {
+            Type::Tuple { element_types, .. } => {
                 assert_eq!(element_types.len(), 3);
             }
             _ => panic!("expected tuple"),
@@ -1092,7 +1098,7 @@ fn lower_tuple_nested() {
         };
         let r = lower_tuple_type(t, ctx, log).unwrap();
         match r {
-            Type::Tuple { element_types } => {
+            Type::Tuple { element_types, .. } => {
                 assert_eq!(element_types.len(), 2);
                 assert!(element_types[1].deref().is_tuple());
             }
@@ -1114,9 +1120,9 @@ fn lower_fn_type_empty() {
         };
         let r = lower_function_type(ft, ctx, log).unwrap();
         match r {
-            Type::Function { function_type } => {
+            Type::Function { function_type, .. } => {
                 assert!(function_type.params.is_empty());
-                assert!(matches!(function_type.return_type.deref(), Type::Unit));
+                assert!(matches!(function_type.return_type.deref(), Type::Unit { .. }));
             }
             _ => panic!("expected function type"),
         }
@@ -1153,7 +1159,7 @@ fn lower_fn_type_with_params() {
         };
         let r = lower_function_type(ft, ctx, log).unwrap();
         match r {
-            Type::Function { function_type } => {
+            Type::Function { function_type, .. } => {
                 assert_eq!(function_type.params.len(), 2);
                 assert_eq!(function_type.params[0].0.deref(), "a");
                 assert!(function_type.params[1].1.deref().is_bool());
@@ -1231,8 +1237,9 @@ fn lower_ref_default() {
                 mutable: false,
                 exclusive: false,
                 to,
+                ..
             } => {
-                assert!(matches!(to.deref(), Type::I32));
+                assert!(matches!(to.deref(), Type::I32 { .. }));
             }
             _ => panic!("expected &i32"),
         }
@@ -1732,8 +1739,8 @@ fn lower_array_i32_5() {
         };
         let r = lower_array_type(a, ctx, log).unwrap();
         match r {
-            Type::Array { element_type, len } => {
-                assert!(matches!(element_type.deref(), Type::I32));
+            Type::Array { element_type, len, .. } => {
+                assert!(matches!(element_type.deref(), Type::I32 { .. }));
                 assert_eq!(len, 5);
             }
             _ => panic!("expected array"),
@@ -1759,8 +1766,12 @@ fn lower_array_zero() {
         assert_eq!(
             r,
             Type::Array {
-                element_type: Type::U8.into(),
-                len: 0
+                element_type: Type::U8 {
+                    span: ByteSpan::default()
+                }
+                .into(),
+                len: 0,
+                span: ByteSpan::default()
             }
         );
     })

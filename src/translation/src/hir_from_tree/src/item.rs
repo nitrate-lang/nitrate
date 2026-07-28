@@ -8,6 +8,7 @@ use crate::{
 use nitrate_diagnosis::CompilerLog;
 use nitrate_hir::prelude::*;
 use nitrate_nstring::NString;
+use nitrate_tree::ByteSpan;
 use nitrate_tree::ast::{self};
 use std::collections::{BTreeMap, BTreeSet};
 
@@ -735,7 +736,7 @@ fn lower_function(function: ast::Function, ctx: &mut Ast2HirCtx, log: &CompilerL
                     );
                 }
 
-                _ if return_type == Type::Unit { span, .. } => {
+                _ if matches!(return_type, Type::Unit { .. }) => {
                     hir_elements.push(BlockElement::Expr(
                         Value::Return {
                             span: ByteSpan::default(),
