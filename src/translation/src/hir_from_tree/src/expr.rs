@@ -129,7 +129,10 @@ pub(crate) fn lower_struct_init(
             })
         }
         None => {
-            log.report(&HirErr::UnresolvedTypePath("struct path".into()));
+            log.report(&HirErr::UnresolvedTypePath {
+                span,
+                name: "struct path".into(),
+            });
             Err(())
         }
     }
@@ -226,7 +229,6 @@ fn handle_monomorphized_struct(
 fn substitute_generic_params_in_type(ty: &Type, param_names: &[&NString], type_args: &[TypeId]) -> Type {
     match ty {
         Type::GenericParam { index, name, .. } => {
-            // Find this name's position among generic params
             for (i, param_name) in param_names.iter().enumerate() {
                 if *param_name == name
                     && let Some(concrete_ty) = type_args.get(i)
@@ -234,7 +236,6 @@ fn substitute_generic_params_in_type(ty: &Type, param_names: &[&NString], type_a
                     return concrete_ty.deref().clone();
                 }
             }
-            // If index matches, use that directly
             if let Some(concrete_ty) = type_args.get(*index as usize) {
                 concrete_ty.deref().clone()
             } else {
@@ -419,7 +420,7 @@ pub(crate) fn lower_unary(unary: ast::UnaryExpr, ctx: &mut Ast2HirCtx, log: &Com
             place: operand.into(),
         }),
         UnaryExprOp::Typeof => {
-            log.report(&HirErr::TypeofNotImplemented);
+            log.report(&HirErr::TypeofNotImplemented { span });
             Err(())
         }
     }
@@ -583,7 +584,7 @@ pub(crate) fn lower_binary(binary: ast::BinExpr, ctx: &mut Ast2HirCtx, log: &Com
         | ast::BinExprOp::SetLogicOr) => Ok(lower_compound_assignment(span, left, right, op)),
 
         ast::BinExprOp::Range => {
-            log.report(&HirErr::RangeOperatorNotImplemented);
+            log.report(&HirErr::RangeOperatorNotImplemented { span });
             Err(())
         }
     }
@@ -607,7 +608,7 @@ fn lower_compound_assignment(span: ByteSpan, place: ValueId, value: ValueId, op:
         ast::BinExprOp::SetBitRotr => BinaryOp::Ror,
         ast::BinExprOp::SetLogicAnd => BinaryOp::And,
         ast::BinExprOp::SetLogicOr => BinaryOp::Or,
-        _ => unreachable!(), // guarded by caller
+        _ => unreachable!(),
     };
 
     let binary = Value::Binary {
@@ -633,16 +634,13 @@ pub(crate) fn lower_cast(cast: ast::Cast, ctx: &mut Ast2HirCtx, log: &CompilerLo
     let expr = lower_expr(cast.value, ctx, log)?;
     let to = lower_type(cast.to, ctx, log)?;
 
-    // Try to resolve inferred integer literals to concrete types
     if let Value::InferredInteger { value, .. } = &expr {
-        // Attempt direct conversion to each primitive integer type
         let cast_result = try_cast_inferred_integer(**value, &to, span, ctx, log);
         if cast_result.is_some() {
             return cast_result.unwrap();
         }
     }
 
-    // For inferred floats, try direct conversion
     if let Value::InferredFloat { value: v, .. } = &expr {
         match &to {
             Type::F32 { .. } => {
@@ -658,7 +656,6 @@ pub(crate) fn lower_cast(cast: ast::Cast, ctx: &mut Ast2HirCtx, log: &CompilerLo
         }
     }
 
-    // Fallback: emit a general cast
     Ok(Value::Cast {
         span,
         value: expr.into(),
@@ -679,6 +676,7 @@ fn try_cast_inferred_integer(
             Ok(v) => Ok(Value::U8 { span, value: v }),
             Err(_) => {
                 log.report(&HirErr::IntegerCastOutOfRange {
+                    span,
                     value: format!("{}", value),
                     target_type: "u8".into(),
                 });
@@ -689,6 +687,7 @@ fn try_cast_inferred_integer(
             Ok(v) => Ok(Value::U16 { span, value: v }),
             Err(_) => {
                 log.report(&HirErr::IntegerCastOutOfRange {
+                    span,
                     value: format!("{}", value),
                     target_type: "u16".into(),
                 });
@@ -699,6 +698,7 @@ fn try_cast_inferred_integer(
             Ok(v) => Ok(Value::U32 { span, value: v }),
             Err(_) => {
                 log.report(&HirErr::IntegerCastOutOfRange {
+                    span,
                     value: format!("{}", value),
                     target_type: "u32".into(),
                 });
@@ -709,6 +709,7 @@ fn try_cast_inferred_integer(
             Ok(v) => Ok(Value::U64 { span, value: v }),
             Err(_) => {
                 log.report(&HirErr::IntegerCastOutOfRange {
+                    span,
                     value: format!("{}", value),
                     target_type: "u64".into(),
                 });
@@ -728,6 +729,7 @@ fn try_cast_inferred_integer(
                 }),
                 Err(_) => {
                     log.report(&HirErr::IntegerCastOutOfRange {
+                        span,
                         value: format!("{}", value),
                         target_type: "usize".into(),
                     });
@@ -742,6 +744,7 @@ fn try_cast_inferred_integer(
                 }),
                 Err(_) => {
                     log.report(&HirErr::IntegerCastOutOfRange {
+                        span,
                         value: format!("{}", value),
                         target_type: "usize".into(),
                     });
@@ -753,6 +756,7 @@ fn try_cast_inferred_integer(
             Ok(v) => Ok(Value::I8 { span, value: v }),
             Err(_) => {
                 log.report(&HirErr::IntegerCastOutOfRange {
+                    span,
                     value: format!("{}", value),
                     target_type: "i8".into(),
                 });
@@ -763,6 +767,7 @@ fn try_cast_inferred_integer(
             Ok(v) => Ok(Value::I16 { span, value: v }),
             Err(_) => {
                 log.report(&HirErr::IntegerCastOutOfRange {
+                    span,
                     value: format!("{}", value),
                     target_type: "i16".into(),
                 });
@@ -773,6 +778,7 @@ fn try_cast_inferred_integer(
             Ok(v) => Ok(Value::I32 { span, value: v }),
             Err(_) => {
                 log.report(&HirErr::IntegerCastOutOfRange {
+                    span,
                     value: format!("{}", value),
                     target_type: "i32".into(),
                 });
@@ -783,6 +789,7 @@ fn try_cast_inferred_integer(
             Ok(v) => Ok(Value::I64 { span, value: v }),
             Err(_) => {
                 log.report(&HirErr::IntegerCastOutOfRange {
+                    span,
                     value: format!("{}", value),
                     target_type: "i64".into(),
                 });
@@ -796,6 +803,7 @@ fn try_cast_inferred_integer(
             }),
             Err(_) => {
                 log.report(&HirErr::IntegerCastOutOfRange {
+                    span,
                     value: format!("{}", value),
                     target_type: "i128".into(),
                 });
@@ -815,6 +823,7 @@ fn lower_local_variable(
     ctx: &mut Ast2HirCtx,
     log: &CompilerLog,
 ) -> Result<LocalVariableId, ()> {
+    let span = local_var.span;
     let kind = match local_var.kind {
         ast::LocalVariableKind::Let => LocalKind::Let,
         ast::LocalVariableKind::Var => LocalKind::Var,
@@ -822,7 +831,7 @@ fn lower_local_variable(
 
     helpers::reject_all_attributes(
         &local_var.attributes,
-        HirErr::UnrecognizedLocalVarAttribute("".into()),
+        |name, span| HirErr::UnrecognizedLocalVarAttribute { span, name },
         log,
     );
 
@@ -838,13 +847,16 @@ fn lower_local_variable(
     let initializer = match local_var.initializer.to_owned() {
         Some(expr) => lower_expr(expr, ctx, log)?.into(),
         None => {
-            log.report(&HirErr::LocalVariableMissingInitializer(name.to_string()));
+            log.report(&HirErr::LocalVariableMissingInitializer {
+                span,
+                name: name.to_string(),
+            });
             return Err(());
         }
     };
 
     let localvar_id: LocalVariableId = LocalVariable {
-        span: ByteSpan::default(),
+        span,
         kind,
         attributes: BTreeSet::new(),
         is_mutable,
@@ -896,7 +908,7 @@ pub(crate) fn lower_block(block: ast::Block, ctx: &mut Ast2HirCtx, log: &Compile
         Some(ast::Safety::Unsafe(None)) => BlockSafety::Unsafe,
         Some(ast::Safety::Safe) | None => BlockSafety::Safe,
         Some(ast::Safety::Unsafe(Some(_))) => {
-            log.report(&HirErr::UnsafeExprBodyNotImplemented);
+            log.report(&HirErr::UnsafeExprBodyNotImplemented { span });
             return Err(());
         }
     };
@@ -919,7 +931,6 @@ pub(crate) fn lower_block_value(block: ast::Block, ctx: &mut Ast2HirCtx, log: &C
 pub(crate) fn lower_expr_path(expr_path: ast::ExprPath, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
     let span = expr_path.span;
 
-    // Check for generic type arguments in expression paths
     let _explicit_type_args = helpers::extract_type_args_from_expr_path(&expr_path.segments, ctx, log);
 
     match expr_path.resolved_path {
@@ -950,11 +961,17 @@ pub(crate) fn lower_expr_path(expr_path: ast::ExprPath, ctx: &mut Ast2HirCtx, lo
                 id: ctx.tab.get_parameter_or_insert_placeholder(&resolved_path),
             }),
             Some(_) => {
-                log.report(&HirErr::UnresolvedSymbol(resolved_path.to_string()));
+                log.report(&HirErr::UnresolvedSymbol {
+                    span,
+                    name: resolved_path.to_string(),
+                });
                 Err(())
             }
             None => {
-                log.report(&HirErr::UnresolvedSymbol(resolved_path.to_string()));
+                log.report(&HirErr::UnresolvedSymbol {
+                    span,
+                    name: resolved_path.to_string(),
+                });
                 Err(())
             }
         },
@@ -965,7 +982,7 @@ pub(crate) fn lower_expr_path(expr_path: ast::ExprPath, ctx: &mut Ast2HirCtx, lo
                 .map(|s| s.name.to_string())
                 .collect::<Vec<_>>()
                 .join("::");
-            log.report(&HirErr::UnresolvedSymbol(path_str));
+            log.report(&HirErr::UnresolvedSymbol { span, name: path_str });
             Err(())
         }
     }
@@ -1154,32 +1171,32 @@ fn lower_call_arguments(
 // Unimplemented Feature Stubs
 // ═══════════════════════════════════════════════════════════════════════════
 
-pub(crate) fn lower_closure(_closure: ast::Closure, _ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
-    log.report(&HirErr::ClosureNotImplemented);
+pub(crate) fn lower_closure(closure: ast::Closure, _ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
+    log.report(&HirErr::ClosureNotImplemented { span: closure.span });
     Err(())
 }
 
-pub(crate) fn lower_match(_match_: ast::Match, _ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
-    log.report(&HirErr::MatchNotImplemented);
+pub(crate) fn lower_match(match_: ast::Match, _ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
+    log.report(&HirErr::MatchNotImplemented { span: match_.span });
     Err(())
 }
 
-pub(crate) fn lower_for_each(_for_each: ast::ForEach, _ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
-    log.report(&HirErr::ForLoopNotImplemented);
+pub(crate) fn lower_for_each(for_each: ast::ForEach, _ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
+    log.report(&HirErr::ForLoopNotImplemented { span: for_each.span });
     Err(())
 }
 
-pub(crate) fn lower_await(_await_: ast::Await, _ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
-    log.report(&HirErr::AwaitNotImplemented);
+pub(crate) fn lower_await(await_: ast::Await, _ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
+    log.report(&HirErr::AwaitNotImplemented { span: await_.span });
     Err(())
 }
 
 pub(crate) fn lower_type_reflection(
-    _type_info: ast::TypeInfo,
+    type_info: ast::TypeInfo,
     _ctx: &mut Ast2HirCtx,
     log: &CompilerLog,
 ) -> Result<Value, ()> {
-    log.report(&HirErr::TypeReflectionNotImplemented);
+    log.report(&HirErr::TypeReflectionNotImplemented { span: type_info.span });
     Err(())
 }
 

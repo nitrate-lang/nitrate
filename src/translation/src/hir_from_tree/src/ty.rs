@@ -12,12 +12,10 @@ use std::ops::Deref;
 // Primitive Type Lowering (used by `lower_type` dispatch)
 // ═══════════════════════════════════════════════════════════════════════════
 
-/// Stores a literal value into the global store and returns its ID.
 fn store_lit(lit: Lit) -> LiteralId {
     get_storage(|store| store.store_literal(lit))
 }
 
-/// Returns the minimum literal value for a given integer type.
 fn min_lit_for_type(ty: &Type) -> Lit {
     match ty {
         Type::U8 { .. } => Lit::U8(0),
@@ -35,7 +33,6 @@ fn min_lit_for_type(ty: &Type) -> Lit {
     }
 }
 
-/// Returns the maximum literal value for a given integer type.
 fn max_lit_for_type(ty: &Type) -> Lit {
     match ty {
         Type::U8 { .. } => Lit::U8(u8::MAX),
@@ -53,7 +50,6 @@ fn max_lit_for_type(ty: &Type) -> Lit {
     }
 }
 
-/// Get the `Lit::U128` value from a `Lit` (or return `None` if not a compatible numeric lit).
 fn lit_to_u128(lit: &Lit) -> Option<u128> {
     match lit {
         Lit::U8(w) => Some(*w as u128),
@@ -78,7 +74,6 @@ fn lit_to_u128(lit: &Lit) -> Option<u128> {
 pub(crate) fn lower_type_path(type_path: ast::TypePath, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Type, ()> {
     let span = type_path.span;
 
-    // Check for generic args in intermediate segments (e.g., Foo<i32>::Bar)
     let has_intermediate_generics = type_path.segments[..type_path.segments.len().saturating_sub(1)]
         .iter()
         .any(|seg| seg.type_arguments.is_some());
@@ -90,11 +85,10 @@ pub(crate) fn lower_type_path(type_path: ast::TypePath, ctx: &mut Ast2HirCtx, lo
             .map(|s| s.name.to_string())
             .collect::<Vec<_>>()
             .join("::");
-        log.report(&HirErr::IntermediateGenericArgsNotSupported(path_str));
+        log.report(&HirErr::IntermediateGenericArgsNotSupported { span, path: path_str });
         return Err(());
     }
 
-    // Extract type arguments from the last segment
     let type_args: Vec<TypeId> = type_path
         .segments
         .last()
@@ -103,7 +97,6 @@ pub(crate) fn lower_type_path(type_path: ast::TypePath, ctx: &mut Ast2HirCtx, lo
 
     match type_path.resolved_path {
         Some(ref resolved_path) => {
-            // Handle `Self` keyword: resolve to the current impl type
             if (resolved_path.deref() == "Self" || resolved_path.deref() == "self")
                 && let Some(self_type) = &ctx.current_self_type
             {
@@ -127,12 +120,14 @@ pub(crate) fn lower_type_path(type_path: ast::TypePath, ctx: &mut Ast2HirCtx, lo
                     return Ok(ctx.create_generic_placeholder(resolved_path.clone()));
                 }
                 _ => {
-                    log.report(&HirErr::UnresolvedSymbol(resolved_path.to_string()));
+                    log.report(&HirErr::UnresolvedSymbol {
+                        span,
+                        name: resolved_path.to_string(),
+                    });
                     return Err(());
                 }
             };
 
-            // If there are type arguments, wrap in Parameterized
             if !type_args.is_empty() {
                 let base_id: TypeId = base_type.into();
                 Ok(Type::Parameterized {
@@ -154,7 +149,7 @@ pub(crate) fn lower_type_path(type_path: ast::TypePath, ctx: &mut Ast2HirCtx, lo
                 .map(|s| s.name.to_string())
                 .collect::<Vec<_>>()
                 .join("::");
-            log.report(&HirErr::UnresolvedTypePath(path_str));
+            log.report(&HirErr::UnresolvedTypePath { span, name: path_str });
             Err(())
         }
     }
@@ -164,7 +159,6 @@ pub(crate) fn lower_type_path(type_path: ast::TypePath, ctx: &mut Ast2HirCtx, lo
 // Refinement Type Lowering
 // ═══════════════════════════════════════════════════════════════════════════
 
-/// Evaluate an AST expression to a constant literal value for a refinement bound.
 fn lower_refinement_bound(
     bound_expr: ast::Expr,
     target_type: Option<&Type>,
@@ -185,7 +179,9 @@ fn lower_refinement_bound(
     match HirEvalCtx::new(log, ctx.ptr_size).evaluate_to_literal(&cast_value) {
         Ok(lit) => Ok(store_lit(lit)),
         Err(_) => {
-            log.report(&HirErr::RefinementBoundNotConstant);
+            log.report(&HirErr::RefinementBoundNotConstant {
+                span: ByteSpan::default(),
+            });
             Err(())
         }
     }
@@ -196,9 +192,9 @@ pub(crate) fn lower_refinement_type(
     ctx: &mut Ast2HirCtx,
     log: &CompilerLog,
 ) -> Result<Type, ()> {
+    let r_span = refinement_type.span;
     let basis_type = lower_type(refinement_type.basis_type, ctx, log)?;
 
-    // Ensure the basis type is an integer type that can be refined
     let is_integer = matches!(
         &basis_type,
         Type::U8 { .. }
@@ -216,19 +212,24 @@ pub(crate) fn lower_refinement_type(
 
     if !is_integer {
         let base_desc = format!("{:?}", basis_type);
-        log.report(&HirErr::RefinementTypeOnNonInteger(base_desc));
+        log.report(&HirErr::RefinementTypeOnNonInteger {
+            span: r_span,
+            base_type: base_desc,
+        });
         return Err(());
     }
 
     let (min_lit, max_lit): (LiteralId, LiteralId) =
         match (refinement_type.width, refinement_type.minimum, refinement_type.maximum) {
-            // Just width: u8: 6  =>  [0: 2^width - 1]
             (Some(width_expr), None, None) => {
                 let w_id = lower_refinement_bound(width_expr, None, ctx, log)?;
                 let w_lit: Lit = get_storage(|store| store[&w_id]);
                 let width_val = lit_to_u128(&w_lit).filter(|&v| v != 0 && v <= 128).ok_or_else(|| {
                     let width_str = format!("{:?}", w_lit);
-                    log.report(&HirErr::RefinementWidthOutOfRange(width_str));
+                    log.report(&HirErr::RefinementWidthOutOfRange {
+                        span: r_span,
+                        width: width_str,
+                    });
                 })?;
 
                 let max_val = (1u128 << width_val) - 1;
@@ -237,14 +238,12 @@ pub(crate) fn lower_refinement_type(
                 (min, max)
             }
 
-            // Just explicit range: u8: [0:10]
             (None, Some(min_expr), Some(max_expr)) => {
                 let min = lower_refinement_bound(min_expr, Some(&basis_type), ctx, log)?;
                 let max = lower_refinement_bound(max_expr, Some(&basis_type), ctx, log)?;
                 (min, max)
             }
 
-            // Both width and range: u8: 6: [0:10]
             (Some(width_expr), Some(min_expr), Some(max_expr)) => {
                 let _w_id = lower_refinement_bound(width_expr, None, ctx, log)?;
                 let min = lower_refinement_bound(min_expr, Some(&basis_type), ctx, log)?;
@@ -252,21 +251,18 @@ pub(crate) fn lower_refinement_type(
                 (min, max)
             }
 
-            // Just min: u8: [0:]
             (None, Some(min_expr), None) => {
                 let min = lower_refinement_bound(min_expr, Some(&basis_type), ctx, log)?;
                 let max = store_lit(max_lit_for_type(&basis_type));
                 (min, max)
             }
 
-            // Just max: u8: [:10]
             (None, None, Some(max_expr)) => {
                 let min = store_lit(min_lit_for_type(&basis_type));
                 let max = lower_refinement_bound(max_expr, Some(&basis_type), ctx, log)?;
                 (min, max)
             }
 
-            // width + min only: u8: 6: [0:]
             (Some(width_expr), Some(min_expr), None) => {
                 let _w_id = lower_refinement_bound(width_expr, None, ctx, log)?;
                 let min = lower_refinement_bound(min_expr, Some(&basis_type), ctx, log)?;
@@ -274,7 +270,6 @@ pub(crate) fn lower_refinement_type(
                 (min, max)
             }
 
-            // width + max only: u8: 6: [:10]
             (Some(width_expr), None, Some(max_expr)) => {
                 let _w_id = lower_refinement_bound(width_expr, None, ctx, log)?;
                 let min = store_lit(min_lit_for_type(&basis_type));
@@ -282,15 +277,14 @@ pub(crate) fn lower_refinement_type(
                 (min, max)
             }
 
-            // No bounds at all
             (None, None, None) => {
-                log.report(&HirErr::RefinementTypeEmpty);
+                log.report(&HirErr::RefinementTypeEmpty { span: r_span });
                 return Err(());
             }
         };
 
     Ok(Type::Refine {
-        span: ByteSpan::default(),
+        span: r_span,
         base: basis_type.into(),
         min: min_lit,
         max: max_lit,
@@ -330,6 +324,7 @@ pub(crate) fn lower_array_type(
     log: &CompilerLog,
 ) -> Result<Type, ()> {
     let element_type: TypeId = lower_type(array_type.element_type, ctx, log)?.into();
+    let a_span = array_type.span;
 
     let array_length_expr = Value::Cast {
         span: ByteSpan::default(),
@@ -342,20 +337,20 @@ pub(crate) fn lower_array_type(
 
     let len = match HirEvalCtx::new(log, ctx.ptr_size).evaluate_to_literal(&array_length_expr) {
         Ok(Lit::USize(_bits, val)) => u32::try_from(val).map_err(|_| {
-            log.report(&HirErr::ArrayLengthExpectedUSize);
+            log.report(&HirErr::ArrayLengthExpectedUSize { span: a_span });
         })?,
         Ok(_) => {
-            log.report(&HirErr::ArrayLengthExpectedUSize);
+            log.report(&HirErr::ArrayLengthExpectedUSize { span: a_span });
             return Err(());
         }
         Err(_) => {
-            log.report(&HirErr::ArrayTypeLengthEvalError);
+            log.report(&HirErr::ArrayTypeLengthEvalError { span: a_span });
             return Err(());
         }
     };
 
     Ok(Type::Array {
-        span: array_type.span,
+        span: a_span,
         element_type,
         len,
     })
@@ -368,7 +363,6 @@ pub(crate) fn lower_function_type(
 ) -> Result<Type, ()> {
     let span = func_type_ast.span;
 
-    // Reject function type attributes
     if let Some(attrs) = &func_type_ast.attributes {
         for attr in attrs {
             let name = match attr {
@@ -380,7 +374,10 @@ pub(crate) fn lower_function_type(
                     .join("::"),
                 _ => "#[<unknown>]".to_string(),
             };
-            log.report(&HirErr::UnrecognizedFunctionAttribute(name));
+            log.report(&HirErr::UnrecognizedFunctionAttribute {
+                span: attr.span(),
+                name,
+            });
         }
     }
 
@@ -397,7 +394,10 @@ pub(crate) fn lower_function_type(
                         .join("::"),
                     _ => "#[<unknown>]".to_string(),
                 };
-                log.report(&HirErr::UnrecognizedFunctionParamAttribute(name));
+                log.report(&HirErr::UnrecognizedFunctionParamAttribute {
+                    span: attr.span(),
+                    name,
+                });
             }
         }
 
@@ -493,29 +493,29 @@ pub(crate) fn lower_pointer_type(
 // ═══════════════════════════════════════════════════════════════════════════
 
 pub(crate) fn lower_slice_type(
-    _slice_type: ast::SliceType,
+    slice_type: ast::SliceType,
     _ctx: &mut Ast2HirCtx,
     log: &CompilerLog,
 ) -> Result<Type, ()> {
-    log.report(&HirErr::SliceTypesMustBeInRefOrPtr);
+    log.report(&HirErr::SliceTypesMustBeInRefOrPtr { span: slice_type.span });
     Err(())
 }
 
 pub(crate) fn lower_latent_type(
-    _latent_type: ast::LatentType,
+    latent_type: ast::LatentType,
     _ctx: &mut Ast2HirCtx,
     log: &CompilerLog,
 ) -> Result<Type, ()> {
-    log.report(&HirErr::LatentTypeNotImplemented);
+    log.report(&HirErr::LatentTypeNotImplemented { span: latent_type.span });
     Err(())
 }
 
 pub(crate) fn lower_lifetime_type(
-    _lifetime: ast::Lifetime,
+    lifetime: ast::Lifetime,
     _ctx: &mut Ast2HirCtx,
     log: &CompilerLog,
 ) -> Result<Type, ()> {
-    log.report(&HirErr::LifetimeTypeNotImplemented);
+    log.report(&HirErr::LifetimeTypeNotImplemented { span: lifetime.span });
     Err(())
 }
 
@@ -555,10 +555,6 @@ pub(crate) fn lower_type(ty: ast::Type, ctx: &mut Ast2HirCtx, log: &CompilerLog)
     }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// Tests
-// ═══════════════════════════════════════════════════════════════════════════
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -584,7 +580,6 @@ mod tests {
         })
     }
 
-    // ── primitive types ──
     #[test]
     fn lower_type_bool() {
         let (mut ctx, log) = ctx_and_log();
@@ -813,8 +808,6 @@ mod tests {
         );
     }
 
-    // ── type path ──
-
     #[test]
     fn lower_type_path_struct_resolved() {
         run(|ctx, log| {
@@ -975,8 +968,6 @@ mod tests {
         })
     }
 
-    // ── tuple types ──
-
     #[test]
     fn lower_tuple_empty_is_unit() {
         let (mut ctx, log) = ctx_and_log();
@@ -1027,8 +1018,6 @@ mod tests {
             assert!(matches!(r, Type::Tuple { element_types, .. } if element_types.len() == 3));
         })
     }
-
-    // ── function types ──
 
     #[test]
     fn lower_fn_type_empty() {
@@ -1098,8 +1087,6 @@ mod tests {
             assert!(log.error_bit());
         })
     }
-
-    // ── reference types ──
 
     #[test]
     fn lower_ref_default() {
@@ -1214,8 +1201,6 @@ mod tests {
         assert!(lower_reference_type(rt, &mut ctx, &log).is_err());
     }
 
-    // ── pointer types ──
-
     #[test]
     fn lower_ptr_default() {
         run(|ctx, log| {
@@ -1284,8 +1269,6 @@ mod tests {
         })
     }
 
-    // ── error stubs ──
-
     #[test]
     fn lower_slice_outside_ref_ptr_fails() {
         let (mut ctx, log) = ctx_and_log();
@@ -1298,7 +1281,7 @@ mod tests {
                     })
                 },
                 &mut ctx,
-                &log
+                &log,
             )
             .is_err()
         );
@@ -1316,10 +1299,10 @@ mod tests {
                     }),
                     width: None,
                     minimum: None,
-                    maximum: None,
+                    maximum: None
                 },
                 &mut ctx,
-                &log
+                &log,
             )
             .is_err()
         );
@@ -1339,13 +1322,11 @@ mod tests {
                     }
                 },
                 &mut ctx,
-                &log
+                &log,
             )
             .is_err()
         );
     }
-
-    // ── array types ──
 
     #[test]
     fn lower_array_i32_5() {

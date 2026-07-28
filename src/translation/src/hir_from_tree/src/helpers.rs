@@ -34,52 +34,40 @@ pub(crate) fn lower_visibility(visibility: Option<ast::Visibility>) -> Visibilit
 
 /// Log an error for each unrecognized attribute on an item.
 /// Used by item definitions that don't support custom attributes.
-pub(crate) fn reject_all_attributes(ast_attributes: &Option<Vec<ast::Expr>>, err_variant: HirErr, log: &CompilerLog) {
+///
+/// `err_ctor` is a function that takes `(name: String, span: ByteSpan)` and
+/// returns a `HirErr` variant with the span populated.
+pub(crate) fn reject_all_attributes(
+    ast_attributes: &Option<Vec<ast::Expr>>,
+    err_ctor: fn(String, ByteSpan) -> HirErr,
+    log: &CompilerLog,
+) {
     if let Some(attrs) = ast_attributes {
         for attr in attrs {
-            let attr_name = extract_attr_name(attr);
-            match err_variant {
-                HirErr::UnrecognizedModuleAttribute(_) => {
-                    log.report(&HirErr::UnrecognizedModuleAttribute(attr_name.clone()));
-                }
-                HirErr::UnrecognizedGlobalVarAttribute(_) => {
-                    log.report(&HirErr::UnrecognizedGlobalVarAttribute(attr_name.clone()));
-                }
-                HirErr::UnrecognizedFunctionAttribute(_) => {
-                    log.report(&HirErr::UnrecognizedFunctionAttribute(attr_name.clone()));
-                }
-                HirErr::UnrecognizedFunctionParamAttribute(_) => {
-                    log.report(&HirErr::UnrecognizedFunctionParamAttribute(attr_name.clone()));
-                }
-                HirErr::UnrecognizedTypeAliasAttribute(_) => {
-                    log.report(&HirErr::UnrecognizedTypeAliasAttribute(attr_name.clone()));
-                }
-                HirErr::UnrecognizedStructAttribute(_) => {
-                    log.report(&HirErr::UnrecognizedStructAttribute(attr_name.clone()));
-                }
-                HirErr::UnrecognizedStructFieldAttribute(_) => {
-                    log.report(&HirErr::UnrecognizedStructFieldAttribute(attr_name.clone()));
-                }
-                HirErr::UnrecognizedEnumAttribute(_) => {
-                    log.report(&HirErr::UnrecognizedEnumAttribute(attr_name.clone()));
-                }
-                HirErr::UnrecognizedEnumVariantAttribute(_) => {
-                    log.report(&HirErr::UnrecognizedEnumVariantAttribute(attr_name.clone()));
-                }
-                HirErr::UnrecognizedLocalVarAttribute(_) => {
-                    log.report(&HirErr::UnrecognizedLocalVarAttribute(attr_name.clone()));
-                }
-                HirErr::UnrecognizedTraitAttribute(_) => {
-                    log.report(&HirErr::UnrecognizedTraitAttribute(attr_name.clone()));
-                }
-                _ => {
-                    log.report(&HirErr::UnrecognizedFunctionAttribute(attr_name.clone()));
-                }
-            }
+            let (attr_name, attr_span) = extract_attr_name_and_span(attr);
+            log.report(&err_ctor(attr_name, attr_span));
         }
     }
 }
 
+/// Extract a display-friendly attribute name and its span from an AST expression.
+fn extract_attr_name_and_span(attr: &ast::Expr) -> (String, ByteSpan) {
+    let name = match attr {
+        ast::Expr::Path(p) => p
+            .segments
+            .iter()
+            .map(|s| s.name.to_string())
+            .collect::<Vec<_>>()
+            .join("::"),
+        ast::Expr::Boolean(_) => "#[true]".to_string(),
+        ast::Expr::Integer(_) => "#[<integer>]".to_string(),
+        ast::Expr::String(s) => format!("#[\"{}\"]", s.value),
+        _ => "#[<unknown>]".to_string(),
+    };
+    (name, attr.span())
+}
+
+// We keep the old extract_attr_name for parse_function_attributes which doesn't need span
 /// Extract a display-friendly attribute name from an AST expression.
 fn extract_attr_name(attr: &ast::Expr) -> String {
     match attr {
@@ -106,6 +94,7 @@ pub(crate) fn parse_function_attributes(
 
     if let Some(attrs) = ast_attributes {
         for attr in attrs {
+            let attr_span = attr.span();
             if let ast::Expr::Path(path) = attr {
                 let ident = path
                     .segments
@@ -120,13 +109,19 @@ pub(crate) fn parse_function_attributes(
                         continue;
                     }
                     _ => {
-                        log.report(&HirErr::UnrecognizedFunctionAttribute(ident));
+                        log.report(&HirErr::UnrecognizedFunctionAttribute {
+                            span: attr_span,
+                            name: ident,
+                        });
                         continue;
                     }
                 }
             }
 
-            log.report(&HirErr::UnrecognizedFunctionAttribute("#[<unknown>]".into()));
+            log.report(&HirErr::UnrecognizedFunctionAttribute {
+                span: attr_span,
+                name: "#[<unknown>]".into(),
+            });
         }
     }
 
@@ -141,7 +136,10 @@ pub(crate) fn parse_function_attributes(
 /// Returns `Ok(())` if unique, or logs a `DuplicateEntity` error and returns `Err(())`.
 pub(crate) fn check_duplicate(name: &NString, ctx: &Ast2HirCtx, log: &CompilerLog) -> Result<(), ()> {
     if ctx.entities_added.contains(name) {
-        log.report(&HirErr::DuplicateEntity(name.to_string()));
+        log.report(&HirErr::DuplicateEntity {
+            span: ByteSpan::default(),
+            name: name.to_string(),
+        });
         return Err(());
     }
     Ok(())
@@ -277,7 +275,10 @@ pub(crate) fn lower_lifetime(lifetime: Option<ast::Lifetime>, log: &CompilerLog)
             "task" => Ok(Lifetime::TaskLocal),
             "_" => Ok(Lifetime::Inferred),
             _ => {
-                log.report(&HirErr::UnrecognizedLifetime(name.to_string()));
+                log.report(&HirErr::UnrecognizedLifetime {
+                    span: ByteSpan::default(),
+                    name: name.to_string(),
+                });
                 Err(())
             }
         },
