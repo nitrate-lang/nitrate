@@ -19,8 +19,9 @@ impl Parser<'_, '_> {
         !!self.lexer.skip_if(&Token::Colon)
     }
 
-    /// Expect and consume an identifier token. Reports the given error if missing.
-    pub(crate) fn parse_name(&mut self, on_missing: SyntaxErr) -> NString {
+    /// Expect and consume an identifier token, returning it as `NString`.
+    /// Reports `on_missing` if no name is found.
+    pub(crate) fn parse_nstring_name(&mut self, on_missing: SyntaxErr) -> NString {
         self.lexer
             .next_if_name()
             .unwrap_or_else(|| {
@@ -28,6 +29,15 @@ impl Parser<'_, '_> {
                 String::new()
             })
             .into()
+    }
+
+    /// Expect and consume an identifier token, returning it as `String`.
+    /// Reports `on_missing` if no name is found.
+    pub(crate) fn parse_string_name(&mut self, on_missing: SyntaxErr) -> String {
+        self.lexer.next_if_name().unwrap_or_else(|| {
+            self.log.report(&on_missing);
+            String::new()
+        })
     }
 
     /// Expect a semicolon (`;`).
@@ -195,11 +205,8 @@ impl Parser<'_, '_> {
         debug_assert_eq!(self.lexer.peek_tok().token, *keyword);
         self.lexer.skip_tok();
         let attributes = self.parse_attributes();
-        let name = self.lexer.next_if_name().unwrap_or_else(|| {
-            self.log.report(&missing_name);
-            String::new()
-        });
-        (attributes, NString::from(name))
+        let name = self.parse_nstring_name(missing_name);
+        (attributes, name)
     }
 
     /// Parse a common function parameter (reused in named functions, closures, and function types).
@@ -210,12 +217,8 @@ impl Parser<'_, '_> {
         let param_start = self.lexer.peek_pos().offset;
         let attributes = self.parse_attributes();
         let mutability = self.parse_mutability();
-        let name = self.lexer.next_if_name().unwrap_or_else(|| {
-            let bug = SyntaxErr::FunctionParameterMissingName(self.lexer.peek_pos());
-            self.log.report(&bug);
-            String::new()
-        });
-        let name = NString::from(name);
+        let err = SyntaxErr::FunctionParameterMissingName(self.lexer.peek_pos());
+        let name = self.parse_nstring_name(err);
         self.expect_colon();
         let ty = self.parse_type();
         let default_value = if allow_default && self.lexer.skip_if(&Token::Eq) {

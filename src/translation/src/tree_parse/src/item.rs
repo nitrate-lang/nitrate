@@ -16,7 +16,7 @@ impl Parser<'_, '_> {
         fn parse_generic_parameter(this: &mut Parser) -> TypeParam {
             let pos = this.lexer.peek_pos();
             let name_start = pos.offset;
-            let name = this.parse_name(SyntaxErr::GenericMissingParameterName(pos));
+            let name = this.parse_nstring_name(SyntaxErr::GenericMissingParameterName(pos));
 
             // Consume optional type constraint after `:`
             // (TypeParam doesn't store constraints yet, so we just skip the type)
@@ -63,15 +63,8 @@ impl Parser<'_, '_> {
 
         let attributes = self.parse_attributes();
 
-        let name = self
-            .lexer
-            .next_if_name()
-            .unwrap_or_else(|| {
-                let bug = SyntaxErr::ModuleMissingName(self.lexer.peek_pos());
-                self.log.report(&bug);
-                String::default()
-            })
-            .into();
+        let err = SyntaxErr::ModuleMissingName(self.lexer.peek_pos());
+        let name = self.parse_nstring_name(err);
 
         self.expect_open_brace();
 
@@ -111,11 +104,8 @@ impl Parser<'_, '_> {
 
         if !self.lexer.next_is(&Token::Colon) {
             let name_start = self.lexer.peek_pos().offset;
-            let segment = self.lexer.next_if_name().unwrap_or_else(|| {
-                let bug = SyntaxErr::PathExpectedName(self.lexer.peek_pos());
-                self.log.report(&bug);
-                "".into()
-            });
+            let err = SyntaxErr::PathExpectedName(self.lexer.peek_pos());
+            let segment = self.parse_string_name(err);
             let name_end = self.lexer.current_pos().offset;
 
             segments.push(ItemPathSegment {
@@ -201,11 +191,8 @@ impl Parser<'_, '_> {
                 }
             } else if this.lexer.skip_if(&Token::As) {
                 let alias_start = this.lexer.peek_pos().offset;
-                let alias = this.lexer.next_if_name().unwrap_or_else(|| {
-                    let bug = SyntaxErr::ImportAliasMissingName(this.lexer.peek_pos());
-                    this.log.report(&bug);
-                    "".into()
-                });
+                let err = SyntaxErr::ImportAliasMissingName(this.lexer.peek_pos());
+                let alias = this.parse_string_name(err);
                 let alias_end = this.lexer.current_pos().offset;
 
                 UseTree::Alias {
@@ -246,13 +233,8 @@ impl Parser<'_, '_> {
 
         let attributes = self.parse_attributes();
 
-        let name = self.lexer.next_if_name().unwrap_or_else(|| {
-            let bug = SyntaxErr::TypeAliasMissingName(self.lexer.peek_pos());
-            self.log.report(&bug);
-            "".into()
-        });
-
-        let name = NString::from(name);
+        let err = SyntaxErr::TypeAliasMissingName(self.lexer.peek_pos());
+        let name = self.parse_nstring_name(err);
 
         let generics = self.parse_generics();
 
@@ -279,13 +261,8 @@ impl Parser<'_, '_> {
             let attributes = this.parse_attributes();
 
             let name_start = this.lexer.peek_pos().offset;
-            let name = this.lexer.next_if_name().unwrap_or_else(|| {
-                let bug = SyntaxErr::EnumMissingVariantName(this.lexer.peek_pos());
-                this.log.report(&bug);
-                "".into()
-            });
-
-            let name = NString::from(name);
+            let err = SyntaxErr::EnumMissingVariantName(this.lexer.peek_pos());
+            let name = this.parse_nstring_name(err);
 
             let variant_type = if this.lexer.skip_if(&Token::OpenParen) {
                 let ty = this.parse_type();
@@ -318,13 +295,8 @@ impl Parser<'_, '_> {
 
         let attributes = self.parse_attributes();
 
-        let name = self.lexer.next_if_name().unwrap_or_else(|| {
-            let bug = SyntaxErr::EnumMissingName(self.lexer.peek_pos());
-            self.log.report(&bug);
-            "".into()
-        });
-
-        let name = NString::from(name);
+        let err = SyntaxErr::EnumMissingName(self.lexer.peek_pos());
+        let name = self.parse_nstring_name(err);
 
         let generics = self.parse_generics();
 
@@ -353,13 +325,8 @@ impl Parser<'_, '_> {
             let visibility = this.parse_visibility();
             let attributes = this.parse_attributes();
 
-            let name = this.lexer.next_if_name().unwrap_or_else(|| {
-                let bug = SyntaxErr::StructureMissingFieldName(this.lexer.peek_pos());
-                this.log.report(&bug);
-                "".into()
-            });
-
-            let name = NString::from(name);
+            let err = SyntaxErr::StructureMissingFieldName(this.lexer.peek_pos());
+            let name = this.parse_nstring_name(err);
 
             this.expect_colon();
 
@@ -387,13 +354,8 @@ impl Parser<'_, '_> {
 
         let attributes = self.parse_attributes();
 
-        let name = self.lexer.next_if_name().unwrap_or_else(|| {
-            let bug = SyntaxErr::StructureMissingName(self.lexer.peek_pos());
-            self.log.report(&bug);
-            "".into()
-        });
-
-        let name = NString::from(name);
+        let err = SyntaxErr::StructureMissingName(self.lexer.peek_pos());
+        let name = self.parse_nstring_name(err);
 
         let generics = self.parse_generics();
 
@@ -459,13 +421,8 @@ impl Parser<'_, '_> {
 
         let attributes = self.parse_attributes();
 
-        let name = self.lexer.next_if_name().unwrap_or_else(|| {
-            let bug = SyntaxErr::TraitMissingName(self.lexer.peek_pos());
-            self.log.report(&bug);
-            "".into()
-        });
-
-        let name = NString::from(name);
+        let err = SyntaxErr::TraitMissingName(self.lexer.peek_pos());
+        let name = self.parse_nstring_name(err);
 
         let generics = self.parse_generics();
 
@@ -758,13 +715,8 @@ impl Parser<'_, '_> {
 
         let attributes = self.parse_attributes();
 
-        let name = self.lexer.next_if_name().unwrap_or_else(|| {
-            let bug = SyntaxErr::FunctionMissingName(self.lexer.peek_pos());
-            self.log.report(&bug);
-            "".into()
-        });
-
-        let name = NString::from(name);
+        let err = SyntaxErr::FunctionMissingName(self.lexer.peek_pos());
+        let name = self.parse_nstring_name(err);
 
         let generics = self.parse_generics();
         let parameters = self.parse_function_parameters();
@@ -802,13 +754,8 @@ impl Parser<'_, '_> {
 
         let mutability = self.parse_mutability();
 
-        let name = self.lexer.next_if_name().unwrap_or_else(|| {
-            let bug = SyntaxErr::VariableMissingName(self.lexer.peek_pos());
-            self.log.report(&bug);
-            "".into()
-        });
-
-        let name = NString::from(name);
+        let err = SyntaxErr::VariableMissingName(self.lexer.peek_pos());
+        let name = self.parse_nstring_name(err);
 
         let var_type = if self.lexer.skip_if(&Token::Colon) {
             Some(self.parse_type())

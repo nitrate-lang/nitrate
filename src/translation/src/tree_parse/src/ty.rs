@@ -226,11 +226,8 @@ impl Parser<'_, '_> {
             };
         }
 
-        let name = self.lexer.next_if_name().unwrap_or_else(|| {
-            let bug = SyntaxErr::ReferenceTypeExpectedLifetimeName(self.lexer.peek_pos());
-            self.log.report(&bug);
-            "".into()
-        });
+        let err = SyntaxErr::ReferenceTypeExpectedLifetimeName(self.lexer.peek_pos());
+        let name = self.parse_string_name(err);
 
         Lifetime {
             span: ByteSpan::new(lt_start, self.lexer.current_pos().offset),

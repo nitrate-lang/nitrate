@@ -541,11 +541,8 @@ impl Parser<'_, '_> {
 
                         self.lexer.skip_tok();
 
-                        let member_name = self.lexer.next_if_name().unwrap_or_else(|| {
-                            let bug = SyntaxErr::ExpectedFieldOrMethodName(self.lexer.peek_pos());
-                            self.log.report(&bug);
-                            "".into()
-                        });
+                        let err = SyntaxErr::ExpectedFieldOrMethodName(self.lexer.peek_pos());
+                        let member_name = self.parse_string_name(err);
                         let member_name_end = self.lexer.current_pos().offset;
 
                         if self.lexer.next_is(&Token::OpenParen) {
@@ -897,11 +894,8 @@ impl Parser<'_, '_> {
                 break;
             }
 
-            let field_name = self.lexer.next_if_name().unwrap_or_else(|| {
-                let bug = SyntaxErr::StructExpectedFieldName(self.lexer.peek_pos());
-                self.log.report(&bug);
-                "".into()
-            });
+            let err = SyntaxErr::StructExpectedFieldName(self.lexer.peek_pos());
+            let field_name = self.parse_string_name(err);
 
             self.expect_colon();
 
@@ -963,11 +957,8 @@ impl Parser<'_, '_> {
     fn parse_for(&mut self) -> ForEach {
         fn parse_for_bindings(this: &mut Parser) -> Vec<NString> {
             if !this.lexer.skip_if(&Token::OpenParen) {
-                let binding_name = this.lexer.next_if_name().unwrap_or_else(|| {
-                    let bug = SyntaxErr::ForVariableBindingMissingName(this.lexer.peek_pos());
-                    this.log.report(&bug);
-                    "".into()
-                });
+                let err = SyntaxErr::ForVariableBindingMissingName(this.lexer.peek_pos());
+                let binding_name = this.parse_string_name(err);
 
                 return vec![NString::from(binding_name)];
             }
@@ -977,11 +968,8 @@ impl Parser<'_, '_> {
             let end = SyntaxErr::ForVariableBindingExpectedEnd(this.lexer.peek_pos());
 
             this.parse_comma_separated_list(&Token::CloseParen, MAX_LIMIT, true, eof, limit, end, |this| {
-                let binding_name = this.lexer.next_if_name().unwrap_or_else(|| {
-                    let bug = SyntaxErr::ForVariableBindingMissingName(this.lexer.peek_pos());
-                    this.log.report(&bug);
-                    "".into()
-                });
+                let err = SyntaxErr::ForVariableBindingMissingName(this.lexer.peek_pos());
+                let binding_name = this.parse_string_name(err);
 
                 NString::from(binding_name)
             })
@@ -1253,13 +1241,8 @@ impl Parser<'_, '_> {
 
         let mutability = self.parse_mutability();
 
-        let name = self.lexer.next_if_name().unwrap_or_else(|| {
-            let bug = SyntaxErr::VariableMissingName(self.lexer.peek_pos());
-            self.log.report(&bug);
-            "".into()
-        });
-
-        let name = NString::from(name);
+        let err = SyntaxErr::VariableMissingName(self.lexer.peek_pos());
+        let name = self.parse_nstring_name(err);
 
         let var_type = if self.lexer.skip_if(&Token::Colon) {
             Some(self.parse_type())
