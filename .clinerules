@@ -1,2 +1,3 @@
 - Never write or execute scripts (Python, Bash, Node, etc.) to edit files.
 - Always use built-in tools (`write_to_file` or `replace_in_file`) for code modifications.
+- FROM HERE ON OUT NO MORE SED commands. You are only allowed to use your builtin editing TOOLS. NO EXCEPTIONS. Use git to revert some of your changes if needed. YOU ARE FORBIDDEN FROM USING CLI AUTOMATIC EDITING.
