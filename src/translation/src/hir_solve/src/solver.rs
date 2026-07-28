@@ -24,6 +24,9 @@ use ordered_float::OrderedFloat;
 use std::collections::{HashMap, HashSet};
 use std::ops::Deref;
 
+/// Maximum monomorphization recursion depth to prevent infinite cycles. (#18)
+pub(crate) const MAX_MONO_DEPTH: u32 = 64;
+
 #[path = "visit.rs"]
 mod solver_visit;
 
@@ -79,6 +82,10 @@ pub(crate) struct Solver<'m> {
     /// Incremented on every constraint addition, enabling precise convergence
     /// detection instead of comparing map length.
     constraint_version: u64,
+    /// Current monomorphization recursion depth for cycle detection. (#18)
+    pub(super) mono_depth: u32,
+    /// Set of monomorphization cache keys currently in progress, for cycle detection. (#18)
+    pub(super) mono_in_progress: HashSet<MonoCacheKey>,
 }
 
 type Bounds = (i128, i128);
@@ -95,6 +102,8 @@ impl<'m> Solver<'m> {
             struct_mono_cache: HashMap::new(),
             worklist: HashSet::new(),
             constraint_version: 0,
+            mono_depth: 0,
+            mono_in_progress: HashSet::new(),
         }
     }
 
@@ -539,26 +548,27 @@ impl<'m> Solver<'m> {
     fn finalize_value_recursive(&mut self, value_id: &ValueId) {
         // First, try to resolve this value itself
         let span = value_id.borrow().span();
-        if matches!(
+        let is_inferred = matches!(
             &*value_id.borrow(),
             Value::InferredInteger { .. } | Value::InferredFloat { .. }
-        ) {
+        );
+
+        if is_inferred {
             // Check if there are still unsolved constraints
-            if let Some(_constraints) = self.constraints.get(value_id) {
+            if self.constraints.contains_key(value_id) {
                 // If there are constraints, re-try solving
                 self.visit(value_id);
             }
         }
 
-        let was_resolved = !matches!(
+        let still_inferred = matches!(
             &*value_id.borrow(),
             Value::InferredInteger { .. } | Value::InferredFloat { .. }
         );
 
         // If it's still inferred and has no constraints, emit a diagnostic
-        if !was_resolved {
-            let current_value = value_id.borrow();
-            match &*current_value {
+        if still_inferred {
+            match &*value_id.borrow() {
                 Value::InferredInteger { value: v, .. } => {
                     // Default to i32
                     let action = match i32::try_from(**v) {
@@ -586,15 +596,15 @@ impl<'m> Solver<'m> {
             return;
         }
 
-        // Then recurse into children
-        let value = value_id.borrow().clone();
-        match &value {
+        // Then recurse into children — borrow in place without cloning to avoid O(n²) overhead
+        match &*value_id.borrow() {
             Value::Block { block, .. } => {
                 self.finalize_inferred_literals(&mut block.borrow_mut().elements);
             }
             Value::StructObject { fields, .. } => {
-                for (_, field_value) in fields {
-                    self.finalize_value_recursive(field_value);
+                let child_ids: Vec<ValueId> = fields.iter().map(|(_, v)| v.clone()).collect();
+                for child in &child_ids {
+                    self.finalize_value_recursive(child);
                 }
             }
             Value::EnumVariant { value: v, .. } => {
@@ -628,13 +638,15 @@ impl<'m> Solver<'m> {
                 self.finalize_value_recursive(place);
             }
             Value::List { elements, .. } => {
-                for element in elements {
-                    self.finalize_value_recursive(element);
+                let child_ids: Vec<ValueId> = elements.iter().cloned().collect();
+                for child in &child_ids {
+                    self.finalize_value_recursive(child);
                 }
             }
             Value::Tuple { elements, .. } => {
-                for element in elements {
-                    self.finalize_value_recursive(element);
+                let child_ids: Vec<ValueId> = elements.iter().cloned().collect();
+                for child in &child_ids {
+                    self.finalize_value_recursive(child);
                 }
             }
             Value::If {
@@ -660,21 +672,21 @@ impl<'m> Solver<'m> {
                 self.finalize_value_recursive(v);
             }
             Value::Call { callee, args, .. } => {
-                self.finalize_value_recursive(callee);
-                for arg in &args.positional {
-                    self.finalize_value_recursive(arg);
-                }
-                for (_, arg) in &args.named {
-                    self.finalize_value_recursive(arg);
+                let child_ids: Vec<ValueId> = std::iter::once(callee.clone())
+                    .chain(args.positional.iter().cloned())
+                    .chain(args.named.iter().map(|(_, v)| v.clone()))
+                    .collect();
+                for child in &child_ids {
+                    self.finalize_value_recursive(child);
                 }
             }
             Value::MethodCall { object, args, .. } => {
-                self.finalize_value_recursive(object);
-                for arg in &args.positional {
-                    self.finalize_value_recursive(arg);
-                }
-                for (_, arg) in &args.named {
-                    self.finalize_value_recursive(arg);
+                let child_ids: Vec<ValueId> = std::iter::once(object.clone())
+                    .chain(args.positional.iter().cloned())
+                    .chain(args.named.iter().map(|(_, v)| v.clone()))
+                    .collect();
+                for child in &child_ids {
+                    self.finalize_value_recursive(child);
                 }
             }
             _ => {}

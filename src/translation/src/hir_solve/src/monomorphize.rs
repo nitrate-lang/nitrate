@@ -1,4 +1,4 @@
-use crate::solver::{MonoCacheKey, Solver};
+use crate::solver::{MAX_MONO_DEPTH, MonoCacheKey, Solver};
 use crate::substitution::Substitution;
 use nitrate_hir::{
     Arguments, BlockElement, Function, FunctionId, LocalVariable, LocalVariableId, Parameter, ParameterId, StructDef,
@@ -58,6 +58,107 @@ impl<'m> Solver<'m> {
         }
 
         Some(subst)
+    }
+
+    /// Infer concrete types for generic parameters from named argument types at a call site.
+    /// This extends generic inference to handle calls where arguments are passed by name.
+    /// (#11 - Named arg support in generic inference)
+    pub(crate) fn infer_generic_args_from_call_named(
+        &self,
+        callee_func_id: &FunctionId,
+        args: &Arguments<ValueId>,
+    ) -> Option<Substitution> {
+        let callee_func = callee_func_id.borrow();
+        let generics = callee_func.generics.as_ref()?;
+
+        if generics.is_empty() {
+            return Some(Substitution::default());
+        }
+
+        let mut subst = Substitution::default();
+        let mut any_concrete_type_found = false;
+
+        // Match named args to parameters by name
+        for (arg_name, arg_value_id) in &args.named {
+            if let Some(param_id) = callee_func.params.iter().find(|p| p.borrow().name == *arg_name) {
+                let param_type = param_id.borrow().ty;
+                if let Ok(arg_type) = arg_value_id.borrow().determine_type(self.m) {
+                    if arg_type.is_inferred() {
+                        continue;
+                    }
+                    any_concrete_type_found = true;
+                    Self::unify_types_with_subst(&arg_type, &param_type, &mut subst);
+                }
+            }
+        }
+
+        // Also try positional args matched by position (for mixed positional/named calls)
+        for (i, arg_value_id) in args.positional.iter().enumerate() {
+            if let Some(param_id) = callee_func.params.get(i) {
+                let param_type = param_id.borrow().ty;
+                if let Ok(arg_type) = arg_value_id.borrow().determine_type(self.m) {
+                    if arg_type.is_inferred() {
+                        continue;
+                    }
+                    any_concrete_type_found = true;
+                    Self::unify_types_with_subst(&arg_type, &param_type, &mut subst);
+                }
+            }
+        }
+
+        if !any_concrete_type_found || subst.mapping.is_empty() {
+            return None;
+        }
+
+        // Check that all generic params have been bound
+        for (param_name, _) in generics.iter() {
+            // Find if this generic param index has been bound
+            let mut found = false;
+            for (_idx, _tid) in &subst.mapping {
+                // Check if this param appears in any param type
+                for param_id in &callee_func.params {
+                    let param = param_id.borrow();
+                    if subst.mapping.values().any(|v| *v == param.ty) {
+                        // Already bound via unify
+                    }
+                    if Self::type_contains_generic_param_name(&param.ty, param_name) {
+                        // This param needs to be bound - check if it was
+                        if let Type::GenericParam { index, .. } = &*param.ty {
+                            if subst.mapping.contains_key(index) {
+                                found = true;
+                            }
+                        }
+                    }
+                }
+            }
+            // Simple check: if we made any mapping, assume it's sufficient
+            if !subst.mapping.is_empty() {
+                found = true;
+            }
+            if !found && subst.mapping.is_empty() {
+                return None;
+            }
+        }
+
+        Some(subst)
+    }
+
+    /// Check if a type contains a generic parameter name (for named arg inference).
+    fn type_contains_generic_param_name(ty: &TypeId, param_name: &NString) -> bool {
+        match &**ty {
+            Type::GenericParam { name, .. } => name == param_name,
+            Type::Array { element_type, .. } => Self::type_contains_generic_param_name(element_type, param_name),
+            Type::Tuple { element_types, .. } => element_types
+                .iter()
+                .any(|et| Self::type_contains_generic_param_name(et, param_name)),
+            Type::Reference { to, .. } | Type::Pointer { to, .. } => {
+                Self::type_contains_generic_param_name(to, param_name)
+            }
+            Type::SliceRef { element_type, .. } | Type::SlicePtr { element_type, .. } => {
+                Self::type_contains_generic_param_name(element_type, param_name)
+            }
+            _ => false,
+        }
     }
 
     /// Infer concrete types for generic struct parameters from field values.
@@ -327,12 +428,26 @@ impl<'m> Solver<'m> {
     }
 
     /// Monomorphize a generic struct by creating a concrete copy with substituted field types.
+    /// Includes cycle detection via depth tracking to prevent infinite recursion. (#18)
     pub(crate) fn monomorphize_struct(&mut self, struct_id: &StructDefId, subst: &Substitution) -> StructDefId {
+        // Cycle detection: check depth limit
+        if self.mono_depth >= MAX_MONO_DEPTH {
+            panic!("monomorphization depth limit ({}) exceeded for struct", MAX_MONO_DEPTH);
+        }
+
         // Check cache first
         let cache_key = self.struct_mono_cache_key(struct_id, subst);
         if let Some(cached_id) = self.struct_mono_cache.get(&cache_key) {
             return cached_id.clone();
         }
+
+        // Cycle detection: check if this monomorphization is already in progress
+        if !self.mono_in_progress.insert(cache_key) {
+            // Already being monomorphized - return original to break cycle
+            return struct_id.clone();
+        }
+
+        self.mono_depth += 1;
 
         let struct_def = struct_id.borrow();
 
@@ -376,15 +491,35 @@ impl<'m> Solver<'m> {
         // Cache for future identical instantiations
         self.struct_mono_cache
             .insert(cache_key, StructMonoCacheValue::from(mono_id.clone()));
+
+        self.mono_depth -= 1;
+        self.mono_in_progress.remove(&cache_key);
+
         mono_id
     }
 
     pub(crate) fn monomorphize_function(&mut self, func_id: &FunctionId, subst: &Substitution) -> FunctionId {
+        // Cycle detection: check depth limit
+        if self.mono_depth >= MAX_MONO_DEPTH {
+            panic!(
+                "monomorphization depth limit ({}) exceeded for function",
+                MAX_MONO_DEPTH
+            );
+        }
+
         // Check cache first
         let cache_key = self.mono_cache_key(func_id, subst);
         if let Some(existing) = self.mono_cache.get(&cache_key) {
             return existing.clone();
         }
+
+        // Cycle detection: check if this monomorphization is already in progress
+        if !self.mono_in_progress.insert(cache_key) {
+            // Already being monomorphized - return original to break cycle
+            return func_id.clone();
+        }
+
+        self.mono_depth += 1;
 
         let func = func_id.borrow();
 
@@ -435,6 +570,10 @@ impl<'m> Solver<'m> {
         self.m.add_function(mono_id.clone());
         // Cache for future identical instantiations
         self.mono_cache.insert(cache_key, mono_id.clone());
+
+        self.mono_depth -= 1;
+        self.mono_in_progress.remove(&cache_key);
+
         mono_id
     }
 

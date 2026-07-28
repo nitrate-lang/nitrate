@@ -11,5 +11,6 @@ nitrate_hir_get_type.workspace = true
 nitrate_hir_dump.workspace = true
 nitrate_nstring.workspace = true
 thin-vec.workspace = true
+smallvec.workspace = true
 
 ordered-float.workspace = true

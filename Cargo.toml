@@ -44,6 +44,7 @@ serde = "1"
 serde_json = "1"
 serde_with = "3"
 spdx = "0.12"
+smallvec = { version = "1", features = ["const_generics"] }
 thin-vec = "0.2"
 thin_str = "0.1"
 threadpool = "1"

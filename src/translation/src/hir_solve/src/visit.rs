@@ -11,7 +11,7 @@ use crate::solver::Solver;
 use nitrate_hir::{BlockElement, BlockId, FunctionId, Type, TypeId, Value, ValueId};
 use nitrate_hir_get_type::HirGetType;
 use nitrate_tree::ByteSpan;
-use std::collections::HashSet;
+use smallvec::SmallVec;
 use std::unreachable;
 
 impl<'m> Solver<'m> {
@@ -108,8 +108,8 @@ impl<'m> Solver<'m> {
     // ── Visit Children (dispatched by variant) ────────────────────────────
 
     fn visit_children(&mut self, e: &ValueId) {
-        let value = e.borrow().clone();
-        match &value {
+        // Borrow in place without cloning to avoid O(n²) clone overhead
+        match &*e.borrow() {
             Value::Unit { .. }
             | Value::Bool { .. }
             | Value::I8 { .. }
@@ -130,26 +130,26 @@ impl<'m> Solver<'m> {
             | Value::InferredInteger { .. }
             | Value::InferredFloat { .. } => {}
 
-            Value::StructObject { .. } => self.visit_struct_object(e, &value),
-            Value::EnumVariant { .. } => self.visit_enum_variant(e, &value),
-            Value::Binary { .. } => self.visit_binary(e, &value),
-            Value::Unary { .. } => self.visit_unary(e, &value),
-            Value::IndexAccess { .. } => self.visit_index_access(e, &value),
-            Value::FieldAccess { .. } => self.visit_field_access(e, &value),
-            Value::Assign { .. } => self.visit_assign(e, &value),
-            Value::Deref { .. } => self.visit_deref(e, &value),
-            Value::Cast { .. } => self.visit_cast(e, &value),
-            Value::Borrow { .. } => self.visit_borrow(e, &value),
-            Value::List { .. } => self.visit_list(e, &value),
-            Value::Tuple { .. } => self.visit_tuple(e, &value),
-            Value::If { .. } => self.visit_if(e, &value),
-            Value::While { .. } => self.visit_while(e, &value),
-            Value::Loop { .. } => self.visit_loop(e, &value),
+            Value::StructObject { .. } => self.visit_struct_object(e),
+            Value::EnumVariant { .. } => self.visit_enum_variant(e),
+            Value::Binary { .. } => self.visit_binary(e),
+            Value::Unary { .. } => self.visit_unary(e),
+            Value::IndexAccess { .. } => self.visit_index_access(e),
+            Value::FieldAccess { .. } => self.visit_field_access(e),
+            Value::Assign { .. } => self.visit_assign(e),
+            Value::Deref { .. } => self.visit_deref(e),
+            Value::Cast { .. } => self.visit_cast(e),
+            Value::Borrow { .. } => self.visit_borrow(e),
+            Value::List { .. } => self.visit_list(e),
+            Value::Tuple { .. } => self.visit_tuple(e),
+            Value::If { .. } => self.visit_if(e),
+            Value::While { .. } => self.visit_while(e),
+            Value::Loop { .. } => self.visit_loop(e),
             Value::Break { .. } | Value::Continue { .. } => {}
-            Value::Return { .. } => self.visit_return(e, &value),
-            Value::Block { .. } => self.visit_block_value(e, &value),
-            Value::Call { .. } => self.visit_call(e, &value),
-            Value::MethodCall { .. } => self.visit_method_call(e, &value),
+            Value::Return { .. } => self.visit_return(e),
+            Value::Block { .. } => self.visit_block_value(e),
+            Value::Call { .. } => self.visit_call(e),
+            Value::MethodCall { .. } => self.visit_method_call(e),
             Value::FunctionSymbol { .. }
             | Value::GlobalVariableSymbol { .. }
             | Value::LocalVariableSymbol { .. }
@@ -163,7 +163,8 @@ impl<'m> Solver<'m> {
 
     // ── Per-variant handlers ──────────────────────────────────────────────
 
-    fn visit_struct_object(&mut self, e: &ValueId, value: &Value) {
+    fn visit_struct_object(&mut self, e: &ValueId) {
+        let value = &*e.borrow();
         let Value::StructObject { struct_def, fields, .. } = value else {
             unreachable!()
         };
@@ -236,7 +237,8 @@ impl<'m> Solver<'m> {
         }
     }
 
-    fn visit_enum_variant(&mut self, _e: &ValueId, value: &Value) {
+    fn visit_enum_variant(&mut self, e: &ValueId) {
+        let value = &*e.borrow();
         let Value::EnumVariant {
             enum_def,
             variant,
@@ -257,13 +259,14 @@ impl<'m> Solver<'m> {
         self.visit(inner_value);
     }
 
-    fn visit_binary(&mut self, e: &ValueId, value: &Value) {
+    fn visit_binary(&mut self, e: &ValueId) {
+        let value = &*e.borrow();
         let Value::Binary { left, op, right, .. } = value else {
             unreachable!()
         };
         let span = value.span();
 
-        let parent_constraints: Vec<TypeConstraint> = self
+        let parent_constraints: SmallVec<[TypeConstraint; 2]> = self
             .constraints
             .get(e)
             .cloned()
@@ -331,7 +334,8 @@ impl<'m> Solver<'m> {
         self.visit(right);
     }
 
-    fn visit_unary(&mut self, e: &ValueId, value: &Value) {
+    fn visit_unary(&mut self, e: &ValueId) {
+        let value = &*e.borrow();
         let Value::Unary { op, operand, .. } = value else {
             unreachable!()
         };
@@ -342,7 +346,7 @@ impl<'m> Solver<'m> {
         }
         self.visit(operand);
 
-        let parent_constraints: Vec<TypeConstraint> = self
+        let parent_constraints: SmallVec<[TypeConstraint; 2]> = self
             .constraints
             .get(e)
             .cloned()
@@ -368,7 +372,8 @@ impl<'m> Solver<'m> {
         }
     }
 
-    fn visit_index_access(&mut self, e: &ValueId, value: &Value) {
+    fn visit_index_access(&mut self, e: &ValueId) {
+        let value = &*e.borrow();
         let Value::IndexAccess { collection, index, .. } = value else {
             unreachable!()
         };
@@ -401,14 +406,16 @@ impl<'m> Solver<'m> {
         self.visit(index);
     }
 
-    fn visit_field_access(&mut self, _e: &ValueId, value: &Value) {
+    fn visit_field_access(&mut self, e: &ValueId) {
+        let value = &*e.borrow();
         let Value::FieldAccess { expr, .. } = value else {
             unreachable!()
         };
         self.visit(expr);
     }
 
-    fn visit_assign(&mut self, _e: &ValueId, value: &Value) {
+    fn visit_assign(&mut self, e: &ValueId) {
+        let value = &*e.borrow();
         let Value::Assign { place, value: v, .. } = value else {
             unreachable!()
         };
@@ -419,14 +426,16 @@ impl<'m> Solver<'m> {
         self.visit(v);
     }
 
-    fn visit_deref(&mut self, _e: &ValueId, value: &Value) {
+    fn visit_deref(&mut self, e: &ValueId) {
+        let value = &*e.borrow();
         let Value::Deref { place, .. } = value else {
             unreachable!()
         };
         self.visit(place);
     }
 
-    fn visit_cast(&mut self, _e: &ValueId, value: &Value) {
+    fn visit_cast(&mut self, e: &ValueId) {
+        let value = &*e.borrow();
         let Value::Cast {
             value: v, target_type, ..
         } = value
@@ -437,21 +446,23 @@ impl<'m> Solver<'m> {
         self.visit(v);
     }
 
-    fn visit_borrow(&mut self, _e: &ValueId, value: &Value) {
+    fn visit_borrow(&mut self, e: &ValueId) {
+        let value = &*e.borrow();
         let Value::Borrow { place, .. } = value else {
             unreachable!()
         };
         self.visit(place);
     }
 
-    fn visit_list(&mut self, e: &ValueId, value: &Value) {
+    fn visit_list(&mut self, e: &ValueId) {
+        let value = &*e.borrow();
         let Value::List { elements, .. } = value else {
             unreachable!()
         };
 
         if let Some(parent_constraints) = self.constraints.get(e).cloned() {
             for element in elements {
-                let element_constraints: HashSet<TypeConstraint> = parent_constraints
+                let element_constraints: SmallVec<[TypeConstraint; 2]> = parent_constraints
                     .iter()
                     .filter_map(|c| {
                         let ty = c.type_id();
@@ -501,7 +512,8 @@ impl<'m> Solver<'m> {
         }
     }
 
-    fn visit_tuple(&mut self, _e: &ValueId, value: &Value) {
+    fn visit_tuple(&mut self, e: &ValueId) {
+        let value = &*e.borrow();
         let Value::Tuple { elements, .. } = value else {
             unreachable!()
         };
@@ -510,7 +522,8 @@ impl<'m> Solver<'m> {
         }
     }
 
-    fn visit_if(&mut self, _e: &ValueId, value: &Value) {
+    fn visit_if(&mut self, e: &ValueId) {
+        let value = &*e.borrow();
         let Value::If {
             condition,
             true_branch,
@@ -552,7 +565,8 @@ impl<'m> Solver<'m> {
         }
     }
 
-    fn visit_while(&mut self, _e: &ValueId, value: &Value) {
+    fn visit_while(&mut self, e: &ValueId) {
+        let value = &*e.borrow();
         let Value::While { condition, body, .. } = value else {
             unreachable!()
         };
@@ -566,14 +580,16 @@ impl<'m> Solver<'m> {
         self.visit_block(body);
     }
 
-    fn visit_loop(&mut self, _e: &ValueId, value: &Value) {
+    fn visit_loop(&mut self, e: &ValueId) {
+        let value = &*e.borrow();
         let Value::Loop { body, .. } = value else {
             unreachable!()
         };
         self.visit_block(body);
     }
 
-    fn visit_return(&mut self, _e: &ValueId, value: &Value) {
+    fn visit_return(&mut self, e: &ValueId) {
+        let value = &*e.borrow();
         let Value::Return { value: v, .. } = value else {
             unreachable!()
         };
@@ -583,7 +599,8 @@ impl<'m> Solver<'m> {
         self.visit(v);
     }
 
-    fn visit_block_value(&mut self, _e_id: &ValueId, value: &Value) {
+    fn visit_block_value(&mut self, e: &ValueId) {
+        let value = &*e.borrow();
         let Value::Block { block, .. } = value else {
             unreachable!()
         };
@@ -592,7 +609,8 @@ impl<'m> Solver<'m> {
         }
     }
 
-    fn visit_call(&mut self, _e: &ValueId, value: &Value) {
+    fn visit_call(&mut self, e: &ValueId) {
+        let value = &*e.borrow();
         let Value::Call { callee, args, .. } = value else {
             unreachable!()
         };
@@ -609,10 +627,22 @@ impl<'m> Solver<'m> {
             _ => None,
         };
 
-        if let Some(func_id) = callee_func_id
-            && let Some(subst) = self.infer_generic_args_from_call(&func_id, &args.positional)
+        // Check for named args in generic inference (#11)
+        let has_named_args = !args.named.is_empty();
+
+        if let Some(ref func_id) = callee_func_id
+            && let Some(subst) = self.infer_generic_args_from_call(func_id, &args.positional)
         {
-            let mono_id = self.monomorphize_function(&func_id, &subst);
+            let mono_id = self.monomorphize_function(func_id, &subst);
+            callee.replace(Value::FunctionSymbol {
+                span: ByteSpan::default(),
+                id: mono_id,
+            });
+        } else if let Some(ref func_id) = callee_func_id
+            && has_named_args
+            && let Some(subst) = self.infer_generic_args_from_call_named(func_id, args)
+        {
+            let mono_id = self.monomorphize_function(func_id, &subst);
             callee.replace(Value::FunctionSymbol {
                 span: ByteSpan::default(),
                 id: mono_id,
@@ -628,6 +658,12 @@ impl<'m> Solver<'m> {
                     self.add_constraint(arg, TypeConstraint::Equal(param.borrow().ty));
                 }
             }
+            // Also add constraints for named args by looking up param names
+            for (name, arg) in &args.named {
+                if let Some(param) = func.params.iter().find(|p| p.borrow().name == *name) {
+                    self.add_constraint(arg, TypeConstraint::Equal(param.borrow().ty));
+                }
+            }
         }
 
         for arg in &args.positional {
@@ -638,7 +674,8 @@ impl<'m> Solver<'m> {
         }
     }
 
-    fn visit_method_call(&mut self, e: &ValueId, value: &Value) {
+    fn visit_method_call(&mut self, e: &ValueId) {
+        let value = &*e.borrow();
         let Value::MethodCall {
             object,
             method_name,
@@ -659,7 +696,18 @@ impl<'m> Solver<'m> {
                 mf.generics.is_some() && mf.generics.as_ref().is_some_and(|g| !g.is_empty())
             };
             if is_generic {
-                if let Some(subst) = self.infer_generic_args_from_call(&method_id, &args.positional) {
+                // Try positional inference first, then named inference fallback
+                let subst = self
+                    .infer_generic_args_from_call(&method_id, &args.positional)
+                    .or_else(|| {
+                        if !args.named.is_empty() {
+                            // Construct a synthetic call to use named arg inference
+                            self.infer_generic_args_from_call_named(&method_id, args)
+                        } else {
+                            None
+                        }
+                    });
+                if let Some(subst) = subst {
                     let mono_id = self.monomorphize_function(&method_id, &subst);
                     e.replace(Value::Call {
                         span: ByteSpan::default(),
@@ -676,6 +724,12 @@ impl<'m> Solver<'m> {
                 let mf = method_id.borrow();
                 for (i, arg) in args.positional.iter().enumerate() {
                     if let Some(param) = mf.params.get(i) {
+                        self.add_constraint(arg, TypeConstraint::Equal(param.borrow().ty));
+                    }
+                }
+                // Add constraints for named args too
+                for (name, arg) in &args.named {
+                    if let Some(param) = mf.params.iter().find(|p| p.borrow().name == *name) {
                         self.add_constraint(arg, TypeConstraint::Equal(param.borrow().ty));
                     }
                 }
