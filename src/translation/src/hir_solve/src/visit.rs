@@ -107,9 +107,10 @@ impl<'m> Solver<'m> {
 
     // ── Visit Children (dispatched by variant) ────────────────────────────
 
-    fn visit_children(&mut self, e: &ValueId) {
-        // Borrow in place without cloning to avoid O(n²) clone overhead
-        match &*e.borrow() {
+    /// Classify a Value variant into a handler tag without holding the borrow.
+    /// This allows per-variant handlers to freely borrow the ValueId (including mutably).
+    fn classify_value(value: &Value) -> u8 {
+        match value {
             Value::Unit { .. }
             | Value::Bool { .. }
             | Value::I8 { .. }
@@ -128,35 +129,65 @@ impl<'m> Solver<'m> {
             | Value::StringLit { .. }
             | Value::BStringLit { .. }
             | Value::InferredInteger { .. }
-            | Value::InferredFloat { .. } => {}
+            | Value::InferredFloat { .. } => 0, // Leaf
 
-            Value::StructObject { .. } => self.visit_struct_object(e),
-            Value::EnumVariant { .. } => self.visit_enum_variant(e),
-            Value::Binary { .. } => self.visit_binary(e),
-            Value::Unary { .. } => self.visit_unary(e),
-            Value::IndexAccess { .. } => self.visit_index_access(e),
-            Value::FieldAccess { .. } => self.visit_field_access(e),
-            Value::Assign { .. } => self.visit_assign(e),
-            Value::Deref { .. } => self.visit_deref(e),
-            Value::Cast { .. } => self.visit_cast(e),
-            Value::Borrow { .. } => self.visit_borrow(e),
-            Value::List { .. } => self.visit_list(e),
-            Value::Tuple { .. } => self.visit_tuple(e),
-            Value::If { .. } => self.visit_if(e),
-            Value::While { .. } => self.visit_while(e),
-            Value::Loop { .. } => self.visit_loop(e),
-            Value::Break { .. } | Value::Continue { .. } => {}
-            Value::Return { .. } => self.visit_return(e),
-            Value::Block { .. } => self.visit_block_value(e),
-            Value::Call { .. } => self.visit_call(e),
-            Value::MethodCall { .. } => self.visit_method_call(e),
+            Value::StructObject { .. } => 1,
+            Value::EnumVariant { .. } => 2,
+            Value::Binary { .. } => 3,
+            Value::Unary { .. } => 4,
+            Value::IndexAccess { .. } => 5,
+            Value::FieldAccess { .. } => 6,
+            Value::Assign { .. } => 7,
+            Value::Deref { .. } => 8,
+            Value::Cast { .. } => 9,
+            Value::Borrow { .. } => 10,
+            Value::List { .. } => 11,
+            Value::Tuple { .. } => 12,
+            Value::If { .. } => 13,
+            Value::While { .. } => 14,
+            Value::Loop { .. } => 15,
+            Value::Break { .. } | Value::Continue { .. } => 16, // BreakContinue
+            Value::Return { .. } => 17,
+            Value::Block { .. } => 18,
+            Value::Call { .. } => 19,
+            Value::MethodCall { .. } => 20,
             Value::FunctionSymbol { .. }
             | Value::GlobalVariableSymbol { .. }
             | Value::LocalVariableSymbol { .. }
-            | Value::ParameterSymbol { .. } => {}
-            // Wildcard guard: if a new Value variant is added to the HIR,
-            // this ensures a compile-time error or clear runtime panic rather
-            // than silently ignoring the new variant.
+            | Value::ParameterSymbol { .. } => 21, // Symbol
+        }
+    }
+
+    fn visit_children(&mut self, e: &ValueId) {
+        // Determine the variant discriminant without holding a borrow on e,
+        // so that per-variant handlers can freely borrow e (including mutably).
+        let tag = {
+            let v = e.borrow();
+            Self::classify_value(&v)
+        };
+        match tag {
+            0 => {} // Leaf
+            1 => self.visit_struct_object(e),
+            2 => self.visit_enum_variant(e),
+            3 => self.visit_binary(e),
+            4 => self.visit_unary(e),
+            5 => self.visit_index_access(e),
+            6 => self.visit_field_access(e),
+            7 => self.visit_assign(e),
+            8 => self.visit_deref(e),
+            9 => self.visit_cast(e),
+            10 => self.visit_borrow(e),
+            11 => self.visit_list(e),
+            12 => self.visit_tuple(e),
+            13 => self.visit_if(e),
+            14 => self.visit_while(e),
+            15 => self.visit_loop(e),
+            16 => {} // BreakContinue
+            17 => self.visit_return(e),
+            18 => self.visit_block_value(e),
+            19 => self.visit_call(e),
+            20 => self.visit_method_call(e),
+            21 => {} // Symbol
             _ => panic!("unhandled Value variant in visit_children"),
         }
     }
@@ -164,22 +195,27 @@ impl<'m> Solver<'m> {
     // ── Per-variant handlers ──────────────────────────────────────────────
 
     fn visit_struct_object(&mut self, e: &ValueId) {
-        let value = &*e.borrow();
-        let Value::StructObject { struct_def, fields, .. } = value else {
-            unreachable!()
+        // Extract needed data in a narrow scope to avoid holding an immutable
+        // borrow across the potential mutable borrow in the monomorphization path.
+        let (struct_def, has_generics, fields, span) = {
+            let v = e.borrow();
+            let Value::StructObject { struct_def, fields, .. } = &*v else {
+                unreachable!()
+            };
+            let has_generics = struct_def.borrow().generics.is_some();
+            (struct_def.clone(), has_generics, fields.clone(), v.span())
         };
-        let has_generics = struct_def.borrow().generics.is_some();
 
         if has_generics {
             // First try to infer generic args from concrete field values
             let subst = self
-                .infer_generic_args_from_struct_fields(struct_def, fields)
+                .infer_generic_args_from_struct_fields(&struct_def, &fields)
                 // If field-based inference failed, try to extract concrete type args
                 // from parent constraints (e.g., from type annotations like `let x: Pair<i32>`)
-                .or_else(|| self.infer_generic_args_from_constraints(e, struct_def));
+                .or_else(|| self.infer_generic_args_from_constraints(e, &struct_def));
 
             if let Some(subst) = subst {
-                let mono_struct_id = self.monomorphize_struct(struct_def, &subst);
+                let mono_struct_id = self.monomorphize_struct(&struct_def, &subst);
                 {
                     let mut original = e.borrow_mut();
                     if let Value::StructObject { struct_def: sd, .. } = &mut *original {
@@ -188,14 +224,14 @@ impl<'m> Solver<'m> {
                 }
             } else {
                 // Could not infer generic args - report error and unbound params
-                let (generic_name, span, unbound_params) = {
+                let (generic_name, unbound_params) = {
                     let sd = struct_def.borrow();
                     let unbound: Vec<String> = sd
                         .generics
                         .as_ref()
                         .map(|g| g.keys().map(|k| k.to_string()).collect())
                         .unwrap_or_default();
-                    (sd.name.to_string(), value.span(), unbound)
+                    (sd.name.to_string(), unbound)
                 };
                 self.errors.insert(TypeErr::CannotInferTypeArgs {
                     span,

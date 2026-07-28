@@ -561,35 +561,44 @@ impl<'m> Solver<'m> {
             }
         }
 
-        let still_inferred = matches!(
-            &*value_id.borrow(),
-            Value::InferredInteger { .. } | Value::InferredFloat { .. }
-        );
+        // Extract inferred state in a narrow scope to avoid holding borrow across replace.
+        let inferred_info = {
+            let v = value_id.borrow();
+            if matches!(&*v, Value::InferredInteger { .. } | Value::InferredFloat { .. }) {
+                match &*v {
+                    Value::InferredInteger { value, .. } => Some(("int", **value)),
+                    Value::InferredFloat { value, .. } => Some(("float", value.0 as u128)),
+                    _ => None,
+                }
+            } else {
+                None
+            }
+        };
 
-        // If it's still inferred and has no constraints, emit a diagnostic
-        if still_inferred {
-            match &*value_id.borrow() {
-                Value::InferredInteger { value: v, .. } => {
-                    // Default to i32
-                    let action = match i32::try_from(**v) {
-                        Ok(val) => crate::constraints::NodeAction::Replace(Value::I32 { span, value: val }),
-                        Err(_) => match i64::try_from(**v) {
-                            Ok(val) => crate::constraints::NodeAction::Replace(Value::I64 { span, value: val }),
-                            Err(_) => match u64::try_from(**v) {
-                                Ok(val) => crate::constraints::NodeAction::Replace(Value::U64 { span, value: val }),
-                                Err(_) => crate::constraints::NodeAction::Replace(Value::U128 {
+        // If still inferred, default it to a concrete type (no borrow active on value_id)
+        if let Some((kind, val)) = inferred_info {
+            match kind {
+                "int" => {
+                    let new_value = match i32::try_from(val) {
+                        Ok(v) => Value::I32 { span, value: v },
+                        Err(_) => match i64::try_from(val) {
+                            Ok(v) => Value::I64 { span, value: v },
+                            Err(_) => match u64::try_from(val) {
+                                Ok(v) => Value::U64 { span, value: v },
+                                Err(_) => Value::U128 {
                                     span,
-                                    value: Box::new(**v),
-                                }),
+                                    value: Box::new(val),
+                                },
                             },
                         },
                     };
-                    if let crate::constraints::NodeAction::Replace(new_value) = action {
-                        value_id.replace(new_value);
-                    }
+                    value_id.replace(new_value);
                 }
-                Value::InferredFloat { value: v, .. } => {
-                    value_id.replace(Value::F64 { span, value: *v });
+                "float" => {
+                    value_id.replace(Value::F64 {
+                        span,
+                        value: ordered_float::OrderedFloat(val as f64),
+                    });
                 }
                 _ => {}
             }
@@ -597,99 +606,66 @@ impl<'m> Solver<'m> {
         }
 
         // Then recurse into children — borrow in place without cloning to avoid O(n²) overhead
-        match &*value_id.borrow() {
-            Value::Block { block, .. } => {
-                self.finalize_inferred_literals(&mut block.borrow_mut().elements);
-            }
-            Value::StructObject { fields, .. } => {
-                let child_ids: Vec<ValueId> = fields.iter().map(|(_, v)| v.clone()).collect();
-                for child in &child_ids {
-                    self.finalize_value_recursive(child);
+        let children: Option<Vec<ValueId>> = {
+            let v = value_id.borrow();
+            match &*v {
+                Value::Block { block, .. } => {
+                    self.finalize_inferred_literals(&mut block.borrow_mut().elements);
+                    None
                 }
-            }
-            Value::EnumVariant { value: v, .. } => {
-                self.finalize_value_recursive(v);
-            }
-            Value::Binary { left, right, .. } => {
-                self.finalize_value_recursive(left);
-                self.finalize_value_recursive(right);
-            }
-            Value::Unary { operand, .. } => {
-                self.finalize_value_recursive(operand);
-            }
-            Value::IndexAccess { collection, index, .. } => {
-                self.finalize_value_recursive(collection);
-                self.finalize_value_recursive(index);
-            }
-            Value::FieldAccess { expr, .. } => {
-                self.finalize_value_recursive(expr);
-            }
-            Value::Assign { place, value: v, .. } => {
-                self.finalize_value_recursive(place);
-                self.finalize_value_recursive(v);
-            }
-            Value::Deref { place, .. } => {
-                self.finalize_value_recursive(place);
-            }
-            Value::Cast { value: v, .. } => {
-                self.finalize_value_recursive(v);
-            }
-            Value::Borrow { place, .. } => {
-                self.finalize_value_recursive(place);
-            }
-            Value::List { elements, .. } => {
-                let child_ids: Vec<ValueId> = elements.iter().cloned().collect();
-                for child in &child_ids {
-                    self.finalize_value_recursive(child);
+                Value::StructObject { fields, .. } => Some(fields.iter().map(|(_, v)| v.clone()).collect()),
+                Value::EnumVariant { value: v, .. } => Some(vec![v.clone()]),
+                Value::Binary { left, right, .. } => Some(vec![left.clone(), right.clone()]),
+                Value::Unary { operand, .. } => Some(vec![operand.clone()]),
+                Value::IndexAccess { collection, index, .. } => Some(vec![collection.clone(), index.clone()]),
+                Value::FieldAccess { expr, .. } => Some(vec![expr.clone()]),
+                Value::Assign { place, value: val, .. } => Some(vec![place.clone(), val.clone()]),
+                Value::Deref { place, .. } => Some(vec![place.clone()]),
+                Value::Cast { value: val, .. } => Some(vec![val.clone()]),
+                Value::Borrow { place, .. } => Some(vec![place.clone()]),
+                Value::List { elements, .. } => Some(elements.iter().cloned().collect()),
+                Value::Tuple { elements, .. } => Some(elements.iter().cloned().collect()),
+                Value::If {
+                    condition,
+                    true_branch,
+                    false_branch,
+                    ..
+                } => {
+                    self.finalize_inferred_literals(&mut true_branch.borrow_mut().elements);
+                    if let Some(fb) = false_branch {
+                        self.finalize_inferred_literals(&mut fb.borrow_mut().elements);
+                    }
+                    Some(vec![condition.clone()])
                 }
-            }
-            Value::Tuple { elements, .. } => {
-                let child_ids: Vec<ValueId> = elements.iter().cloned().collect();
-                for child in &child_ids {
-                    self.finalize_value_recursive(child);
+                Value::While { condition, body, .. } => {
+                    self.finalize_inferred_literals(&mut body.borrow_mut().elements);
+                    Some(vec![condition.clone()])
                 }
-            }
-            Value::If {
-                condition,
-                true_branch,
-                false_branch,
-                ..
-            } => {
-                self.finalize_value_recursive(condition);
-                self.finalize_inferred_literals(&mut true_branch.borrow_mut().elements);
-                if let Some(false_branch) = false_branch {
-                    self.finalize_inferred_literals(&mut false_branch.borrow_mut().elements);
+                Value::Loop { body, .. } => {
+                    self.finalize_inferred_literals(&mut body.borrow_mut().elements);
+                    None
                 }
-            }
-            Value::While { condition, body, .. } => {
-                self.finalize_value_recursive(condition);
-                self.finalize_inferred_literals(&mut body.borrow_mut().elements);
-            }
-            Value::Loop { body, .. } => {
-                self.finalize_inferred_literals(&mut body.borrow_mut().elements);
-            }
-            Value::Return { value: v, .. } => {
-                self.finalize_value_recursive(v);
-            }
-            Value::Call { callee, args, .. } => {
-                let child_ids: Vec<ValueId> = std::iter::once(callee.clone())
-                    .chain(args.positional.iter().cloned())
-                    .chain(args.named.iter().map(|(_, v)| v.clone()))
-                    .collect();
-                for child in &child_ids {
-                    self.finalize_value_recursive(child);
+                Value::Return { value: val, .. } => Some(vec![val.clone()]),
+                Value::Call { callee, args, .. } => {
+                    let mut ids = vec![callee.clone()];
+                    ids.extend(args.positional.iter().cloned());
+                    ids.extend(args.named.iter().map(|(_, v)| v.clone()));
+                    Some(ids)
                 }
-            }
-            Value::MethodCall { object, args, .. } => {
-                let child_ids: Vec<ValueId> = std::iter::once(object.clone())
-                    .chain(args.positional.iter().cloned())
-                    .chain(args.named.iter().map(|(_, v)| v.clone()))
-                    .collect();
-                for child in &child_ids {
-                    self.finalize_value_recursive(child);
+                Value::MethodCall { object, args, .. } => {
+                    let mut ids = vec![object.clone()];
+                    ids.extend(args.positional.iter().cloned());
+                    ids.extend(args.named.iter().map(|(_, v)| v.clone()));
+                    Some(ids)
                 }
+                _ => None,
             }
-            _ => {}
+        };
+
+        if let Some(children) = children {
+            for child in &children {
+                self.finalize_value_recursive(child);
+            }
         }
     }
 
