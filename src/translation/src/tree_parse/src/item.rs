@@ -17,6 +17,12 @@ impl Parser<'_, '_> {
             let pos = this.lexer.peek_pos();
             let name = this.parse_name(SyntaxErr::GenericMissingParameterName(pos));
 
+            // Consume optional type constraint after `:`
+            // (TypeParam doesn't store constraints yet, so we just skip the type)
+            if this.lexer.skip_if(&Token::Colon) {
+                this.parse_type();
+            }
+
             let default = if this.lexer.skip_if(&Token::Eq) {
                 Some(this.parse_type())
             } else {
@@ -479,7 +485,8 @@ impl Parser<'_, '_> {
 
         let generics = self.parse_generics();
 
-        let trait_path = if self.lexer.skip_if(&Token::Trait) {
+        let (trait_path, for_type) = if self.lexer.skip_if(&Token::Trait) {
+            // impl trait Type for Type { ... }
             let path = self.parse_type_path();
 
             if !self.lexer.skip_if(&Token::For) {
@@ -487,12 +494,24 @@ impl Parser<'_, '_> {
                 self.log.report(&bug);
             }
 
-            Some(path)
+            (Some(path), self.parse_type())
         } else {
-            None
-        };
+            // Could be: impl Type { ... } or impl Type for Type { ... }
+            let first_type = self.parse_type();
 
-        let for_type = self.parse_type();
+            if self.lexer.skip_if(&Token::For) {
+                // impl TraitType for Type { ... }
+                // Extract TypePath from Type if possible
+                let trait_path = match &first_type {
+                    Type::TypePath(tp) => Some(*tp.clone()),
+                    _ => None,
+                };
+                (trait_path, self.parse_type())
+            } else {
+                // impl Type { ... }
+                (None, first_type)
+            }
+        };
 
         self.expect_open_brace();
 
