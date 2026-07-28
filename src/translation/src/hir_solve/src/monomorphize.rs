@@ -42,10 +42,19 @@ impl<'m> Solver<'m> {
         let mut subst = Substitution::default();
         let param_types: Vec<TypeId> = callee_func.params.iter().map(|p| p.borrow().ty).collect();
 
+        if param_types.len() != positional_args.len() {
+            return Some(Substitution::default()); // Mismatch is caught elsewhere
+        }
+
         for (arg_value_id, param_type_id) in positional_args.iter().zip(param_types.iter()) {
             let arg_type = arg_value_id.borrow().determine_type(self.m).ok()?;
             let param_type = param_type_id;
             Self::unify_types_with_subst(&arg_type, param_type, &mut subst);
+        }
+
+        // If we weren't able to infer any generic args, return None
+        if subst.mapping.is_empty() {
+            return None;
         }
 
         Some(subst)

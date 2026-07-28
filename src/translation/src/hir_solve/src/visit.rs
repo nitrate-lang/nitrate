@@ -179,6 +179,32 @@ impl<'m> Solver<'m> {
                         *sd = mono_struct_id;
                     }
                 }
+            } else {
+                // Could not infer generic args - report error and unbound params
+                let (generic_name, span, unbound_params) = {
+                    let sd = struct_def.borrow();
+                    let unbound: Vec<String> = sd
+                        .generics
+                        .as_ref()
+                        .map(|g| g.keys().map(|k| k.to_string()).collect())
+                        .unwrap_or_default();
+                    (sd.name.to_string(), value.span(), unbound)
+                };
+                self.errors.insert(TypeErr::CannotInferTypeArgs {
+                    span,
+                    generic_name: generic_name.clone(),
+                    reason: format!(
+                        "cannot determine type arguments for struct `{}` from field values or context",
+                        generic_name
+                    ),
+                });
+                for param_name in &unbound_params {
+                    self.errors.insert(TypeErr::UnboundGenericParam {
+                        span,
+                        param_name: param_name.clone(),
+                        generic_name: generic_name.clone(),
+                    });
+                }
             }
 
             // After optional monomorphization, apply constraints and visit fields
@@ -271,6 +297,15 @@ impl<'m> Solver<'m> {
                 let right_ty: TypeId = right_type.clone().into();
                 let left_inferred = left_type.is_inferred();
                 let right_inferred = right_type.is_inferred();
+
+                // If both operands are concrete and different types, that's ambiguous
+                if !left_inferred && !right_inferred && left_ty != right_ty && is_arithmetic_op(op) {
+                    self.errors.insert(TypeErr::AmbiguousType {
+                        span,
+                        description: "binary operation has operands of different types".into(),
+                    });
+                }
+
                 if left_ty == right_ty && !left_inferred && is_arithmetic_op(op) {
                     self.add_constraint(e, TypeConstraint::Equal(left_ty));
                 }
