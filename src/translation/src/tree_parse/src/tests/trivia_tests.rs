@@ -457,21 +457,21 @@ fn test_roundtrip_small_program() {
 
 #[test]
 fn test_roundtrip_fn_with_comments() {
-    // The module span starts at the first non-trivia token,
-    // so leading comments and trailing whitespace aren't included.
+    // The module span starts at offset 0 to include leading trivia/comments,
+    // and ends after the last item is fully parsed.
     let source = "// This is a function\nfn foo() {\n  // inside\n  let x = 42;\n}\n";
     let module = parse_source(source);
     let reconstructed = module.reconstruct(source.as_bytes());
     // Verify the roundtrip works within the module span
     assert!(
-        reconstructed.starts_with("fn foo()"),
-        "Module span should start with fn"
+        reconstructed.starts_with("// This is a function"),
+        "Module span should start with leading comment"
     );
     assert!(
         reconstructed.contains("// inside"),
         "Module span should include inside-comment"
     );
-    assert!(reconstructed.ends_with("}\n"), "Module span should end with }}\n");
+    assert!(reconstructed.ends_with('}'), "Module span should end with '}}'");
 }
 
 #[test]

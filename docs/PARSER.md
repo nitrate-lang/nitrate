@@ -160,7 +160,32 @@ This approach provides four benefits over the original nested branching:
 3. **Easier auditing** — all operator mappings are visible in one sorted table
 4. **No regressions** — the pattern order (longest-first) naturally handles operators that share prefixes (e.g., `<` vs `<<` vs `<<<` vs `<<=`)
 
-### Shared Limit Constant
+#### Struct Init Ambiguity Resolution
+
+When parsing a path expression followed by `{`, the parser must disambiguate between a struct literal (`Foo { x: 1 }`) and a block expression following an iterable in a `for` loop (`items { break; }`). This is handled by the `peek_is_struct_field_start()` method, which peeks inside the `{` to determine the content type:
+
+```rust
+pub(crate) fn peek_is_struct_field_start(&mut self) -> bool {
+    let saved = self.lexer.current_pos();
+    self.lexer.skip_tok();
+    let result = match self.lexer.peek_tok().token {
+        Token::CloseBrace          => true,   // empty struct: Foo {}
+        Token::Name(_) | Token::SelfKeyword => true,  // named field: Foo { x: ... }
+        Token::Colon               => true,   // anonymous field: Foo { : 1 }
+        Token::OpenBracket         => true,   // attributed field: Foo { #[attr] x: 1 }
+        Token::Break | Token::Continue | Token::Ret | Token::Let | Token::Var |
+        Token::If | Token::For | Token::While | Token::Match | Token::Fn |
+        Token::OpenBrace | Token::Unsafe | Token::Safe | Token::Await => false,
+        _                          => false,  // treat as block by default
+    };
+    self.lexer.rewind(saved);
+    result
+}
+```
+
+This heuristic treats content after `{` as a struct field initializer only when the first token could plausibly be a field name or attribute. Keywords that only appear as block-level statements (break, continue, let, var, if, for, while, etc.) cause the parser to treat the braced content as a block instead. This correctly handles `for x in items { break; }` (block body) while still accepting `Foo { x: 1 }` (struct init) and `Foo { x 1 }` (error path for struct init).
+
+## Shared Limit Constant
 
 A module-level constant `MAX_LIMIT: usize = 65_536` is used across all element-count limit checks instead of repeated bare literals. This constant is defined in `helper.rs` and imported by all parser submodules, making the intent clear and changes centralized.
 

@@ -71,6 +71,36 @@ impl<'a, 'log> Parser<'a, 'log> {
         self.lexer.rewind(pos);
     }
 
+    /// Peek at the token immediately after a `{` to determine if it looks like
+    /// a struct field start vs a block body.
+    ///
+    /// Returns `true` if the token following `{` could be the start of a struct
+    /// field initializer (e.g., `Foo { x: 1 }`, `Foo {}`, `Foo { : 1 }`).
+    /// Returns `false` if it looks like a block body (e.g., `items { break; }`).
+    pub(crate) fn peek_is_struct_field_start(&mut self) -> bool {
+        let saved = self.lexer.current_pos();
+        // Skip the `{` to peek at what comes next
+        self.lexer.skip_tok();
+        let result = match self.lexer.peek_tok().token {
+            // Empty struct: `Foo {}`
+            Token::CloseBrace => true,
+            // Struct with named field: `Foo { x: 1 }` or `Foo { x 1 }`
+            Token::Name(_) | Token::SelfKeyword => true,
+            // Struct with anonymous field: `Foo { : 1 }` (error path)
+            Token::Colon => true,
+            // Struct with attributes: `Foo { #[attr] x: 1 }`
+            Token::OpenBracket => true,
+            // Statements and keywords that only appear in blocks, not struct fields
+            Token::Break | Token::Continue | Token::Ret | Token::Let | Token::Var => false,
+            Token::If | Token::For | Token::While | Token::Match | Token::Fn => false,
+            Token::OpenBrace | Token::Unsafe | Token::Safe | Token::Await => false,
+            // Anything else might be an expression, treat as block
+            _ => false,
+        };
+        self.lexer.rewind(saved);
+        result
+    }
+
     pub fn parse_source(&mut self, package_name: NString) -> nitrate_tree::ast::Module {
         let mut items = Vec::new();
 

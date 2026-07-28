@@ -371,7 +371,7 @@ impl Parser<'_, '_> {
 
             Token::Name(_) | Token::Colon | Token::SelfKeyword => {
                 let path = self.parse_path();
-                if self.lexer.next_is(&Token::OpenBrace) {
+                if self.lexer.next_is(&Token::OpenBrace) && self.peek_is_struct_field_start() {
                     Expr::StructInit(Box::new(self.parse_struct_object(path)))
                 } else {
                     Expr::Path(Box::new(path))
