@@ -117,7 +117,7 @@ impl<'m> Solver<'m> {
     }
 
     /// Add a value to the worklist for re-visiting.
-    pub(super) fn add_to_worklist(&mut self, id: &ValueId) {
+    pub(crate) fn add_to_worklist(&mut self, id: &ValueId) {
         self.worklist.insert(id.clone());
     }
 
@@ -137,7 +137,7 @@ impl<'m> Solver<'m> {
     }
 
     /// Get effective value bounds for a ValueId, accounting for constraints.
-    pub(super) fn get_effective_bounds(&self, id: &ValueId) -> Option<Bounds> {
+    pub(crate) fn get_effective_bounds(&self, id: &ValueId) -> Option<Bounds> {
         let own_bounds = {
             let value = id.borrow();
             match &*value {

@@ -144,7 +144,7 @@ impl<'m> Solver<'m> {
     }
 
     /// Check if a type contains a generic parameter name (for named arg inference).
-    fn type_contains_generic_param_name(ty: &TypeId, param_name: &NString) -> bool {
+    pub(crate) fn type_contains_generic_param_name(ty: &TypeId, param_name: &NString) -> bool {
         match &**ty {
             Type::GenericParam { name, .. } => name == param_name,
             Type::Array { element_type, .. } => Self::type_contains_generic_param_name(element_type, param_name),
@@ -238,7 +238,7 @@ impl<'m> Solver<'m> {
         Some(subst)
     }
 
-    fn type_contains_generic_param(ty: &Type, param_name: &NString) -> bool {
+    pub(crate) fn type_contains_generic_param(ty: &Type, param_name: &NString) -> bool {
         match ty {
             Type::GenericParam { name, .. } => name == param_name,
             Type::Array { element_type, .. } => Self::type_contains_generic_param(element_type, param_name),
@@ -406,7 +406,7 @@ impl<'m> Solver<'m> {
     }
 
     /// Recursively collect GenericParam name-to-index mappings from a type.
-    fn collect_generic_params_from_type(ty: &TypeId, mapping: &mut BTreeMap<NString, u32>) {
+    pub(crate) fn collect_generic_params_from_type(ty: &TypeId, mapping: &mut BTreeMap<NString, u32>) {
         match &**ty {
             Type::GenericParam { index, name, .. } => {
                 mapping.entry(name.clone()).or_insert(*index);

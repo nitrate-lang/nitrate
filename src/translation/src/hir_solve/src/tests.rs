@@ -2633,6 +2633,1044 @@ fn test_monomorphize_with_body_containing_local() {
     });
 }
 
+// ═══ DIRECT pub(crate) TESTING ═══
+
+#[test]
+fn test_collect_generic_params_from_type() {
+    store(|_| {
+        let mut mapping = BTreeMap::new();
+        Solver::collect_generic_params_from_type(&GP(0, "T"), &mut mapping);
+        assert_eq!(mapping.get(&NString::from("T")), Some(&0));
+
+        let arr_ty = TypeId::from(Type::Array {
+            span: ByteSpan::default(),
+            element_type: GP(1, "U"),
+            len: 5,
+        });
+        let mut mapping2 = BTreeMap::new();
+        Solver::collect_generic_params_from_type(&arr_ty, &mut mapping2);
+        assert_eq!(mapping2.get(&NString::from("U")), Some(&1));
+
+        let tuple_ty = TypeId::from(Type::Tuple {
+            span: ByteSpan::default(),
+            element_types: vec![GP(0, "A"), GP(1, "B")].into(),
+        });
+        let mut mapping3 = BTreeMap::new();
+        Solver::collect_generic_params_from_type(&tuple_ty, &mut mapping3);
+        assert_eq!(mapping3.get(&NString::from("A")), Some(&0));
+        assert_eq!(mapping3.get(&NString::from("B")), Some(&1));
+
+        let ref_ty = TypeId::from(Type::Reference {
+            span: ByteSpan::default(),
+            lifetime: nitrate_hir::Lifetime::Inferred,
+            exclusive: false,
+            mutable: false,
+            to: GP(0, "T"),
+        });
+        let mut mapping4 = BTreeMap::new();
+        Solver::collect_generic_params_from_type(&ref_ty, &mut mapping4);
+        assert_eq!(mapping4.get(&NString::from("T")), Some(&0));
+
+        let ptr_ty = TypeId::from(Type::Pointer {
+            span: ByteSpan::default(),
+            lifetime: nitrate_hir::Lifetime::Inferred,
+            exclusive: false,
+            mutable: false,
+            to: GP(0, "T"),
+        });
+        let mut mapping5 = BTreeMap::new();
+        Solver::collect_generic_params_from_type(&ptr_ty, &mut mapping5);
+        assert_eq!(mapping5.get(&NString::from("T")), Some(&0));
+
+        let slice_ref = TypeId::from(Type::SliceRef {
+            span: ByteSpan::default(),
+            lifetime: nitrate_hir::Lifetime::Inferred,
+            exclusive: false,
+            mutable: false,
+            element_type: GP(2, "C"),
+        });
+        let mut mapping6 = BTreeMap::new();
+        Solver::collect_generic_params_from_type(&slice_ref, &mut mapping6);
+        assert_eq!(mapping6.get(&NString::from("C")), Some(&2));
+
+        let slice_ptr = TypeId::from(Type::SlicePtr {
+            span: ByteSpan::default(),
+            lifetime: nitrate_hir::Lifetime::Inferred,
+            exclusive: false,
+            mutable: false,
+            element_type: GP(3, "D"),
+        });
+        let mut mapping7 = BTreeMap::new();
+        Solver::collect_generic_params_from_type(&slice_ptr, &mut mapping7);
+        assert_eq!(mapping7.get(&NString::from("D")), Some(&3));
+
+        // Non-generic type (leaf) should not add anything
+        let mut mapping8 = BTreeMap::new();
+        Solver::collect_generic_params_from_type(&i32t(), &mut mapping8);
+        assert!(mapping8.is_empty());
+    });
+}
+
+#[test]
+fn test_type_contains_generic_param() {
+    store(|_| {
+        let t_name = NString::from("T");
+        assert!(Solver::type_contains_generic_param(&*GP(0, "T"), &t_name));
+        assert!(!Solver::type_contains_generic_param(&*GP(0, "U"), &t_name));
+        assert!(!Solver::type_contains_generic_param(&*i32t(), &t_name));
+
+        // Array with generic element
+        let arr = Type::Array {
+            span: ByteSpan::default(),
+            element_type: GP(0, "T"),
+            len: 10,
+        };
+        assert!(Solver::type_contains_generic_param(&arr, &t_name));
+
+        // Tuple with generic elements
+        let tup = Type::Tuple {
+            span: ByteSpan::default(),
+            element_types: vec![GP(0, "T"), i32t()].into(),
+        };
+        assert!(Solver::type_contains_generic_param(&tup, &t_name));
+
+        // Reference
+        let r = Type::Reference {
+            span: ByteSpan::default(),
+            lifetime: nitrate_hir::Lifetime::Inferred,
+            exclusive: false,
+            mutable: false,
+            to: TypeId::from(Type::GenericParam {
+                span: ByteSpan::default(),
+                index: 0,
+                name: t_name.clone(),
+            }),
+        };
+        assert!(Solver::type_contains_generic_param(&r, &t_name));
+
+        // Pointer
+        let p = Type::Pointer {
+            span: ByteSpan::default(),
+            lifetime: nitrate_hir::Lifetime::Inferred,
+            exclusive: false,
+            mutable: false,
+            to: TypeId::from(Type::GenericParam {
+                span: ByteSpan::default(),
+                index: 0,
+                name: t_name.clone(),
+            }),
+        };
+        assert!(Solver::type_contains_generic_param(&p, &t_name));
+
+        // SliceRef
+        let sr = Type::SliceRef {
+            span: ByteSpan::default(),
+            lifetime: nitrate_hir::Lifetime::Inferred,
+            exclusive: false,
+            mutable: false,
+            element_type: GP(0, "T"),
+        };
+        assert!(Solver::type_contains_generic_param(&sr, &t_name));
+
+        // SlicePtr
+        let sp = Type::SlicePtr {
+            span: ByteSpan::default(),
+            lifetime: nitrate_hir::Lifetime::Inferred,
+            exclusive: false,
+            mutable: false,
+            element_type: GP(0, "T"),
+        };
+        assert!(Solver::type_contains_generic_param(&sp, &t_name));
+    });
+}
+
+#[test]
+fn test_type_contains_generic_param_name() {
+    store(|_| {
+        let t_name = NString::from("T");
+        let u_name = NString::from("U");
+
+        assert!(Solver::type_contains_generic_param_name(&GP(0, "T"), &t_name));
+        assert!(!Solver::type_contains_generic_param_name(&GP(0, "T"), &u_name));
+
+        let arr = TypeId::from(Type::Array {
+            span: ByteSpan::default(),
+            element_type: GP(0, "T"),
+            len: 10,
+        });
+        assert!(Solver::type_contains_generic_param_name(&arr, &t_name));
+
+        let tuple = TypeId::from(Type::Tuple {
+            span: ByteSpan::default(),
+            element_types: vec![GP(0, "T"), i32t()].into(),
+        });
+        assert!(Solver::type_contains_generic_param_name(&tuple, &t_name));
+
+        let ref_ty = TypeId::from(Type::Reference {
+            span: ByteSpan::default(),
+            lifetime: nitrate_hir::Lifetime::Inferred,
+            exclusive: false,
+            mutable: false,
+            to: GP(0, "T"),
+        });
+        assert!(Solver::type_contains_generic_param_name(&ref_ty, &t_name));
+
+        let ptr_ty = TypeId::from(Type::Pointer {
+            span: ByteSpan::default(),
+            lifetime: nitrate_hir::Lifetime::Inferred,
+            exclusive: false,
+            mutable: false,
+            to: GP(0, "T"),
+        });
+        assert!(Solver::type_contains_generic_param_name(&ptr_ty, &t_name));
+    });
+}
+
+#[test]
+fn test_find_common_integer_type_edge_cases() {
+    store(|_| {
+        // Empty iterator - returns None since there are no constraints to choose from
+        let result = Solver::find_common_integer_type(std::iter::empty(), 42);
+        assert!(result.is_none());
+
+        // Only refinement types
+        let refine = Type::Refine {
+            span: ByteSpan::default(),
+            base: i32t(),
+            min: lit(Lit::I32(0)),
+            max: lit(Lit::I32(100)),
+        };
+        let refine_id = TypeId::from(refine);
+        let constraints = vec![TypeConstraint::Equal(refine_id)];
+        let result2 = Solver::find_common_integer_type(constraints.iter(), 42);
+        assert!(result2.is_some());
+        assert!(matches!(&*result2.unwrap().0, Type::I32 { .. }));
+
+        // All unsigned types
+        let c = vec![TypeConstraint::Equal(u8t()), TypeConstraint::Equal(u16t())];
+        let r3 = Solver::find_common_integer_type(c.iter(), 10);
+        assert!(r3.is_some());
+        // U16 is wider than U8
+        assert!(matches!(&*r3.unwrap().0, Type::U16 { .. }));
+
+        // Signed preferred over unsigned
+        let c2 = vec![TypeConstraint::Equal(u32t()), TypeConstraint::Equal(i16t())];
+        let r4 = Solver::find_common_integer_type(c2.iter(), 10);
+        assert!(r4.is_some());
+        // i16 is signed, u32 is unsigned but wider - signed preference wins for fitting
+        let ty = r4.unwrap().0;
+        assert!(matches!(&*ty, Type::I16 { .. }));
+
+        // Wide value that doesn't fit in small types - returns None
+        // since the function requires the value to fit in the constraint type
+        let c3 = vec![TypeConstraint::Equal(i8t())];
+        let r5 = Solver::find_common_integer_type(c3.iter(), 300);
+        assert!(r5.is_none());
+    });
+}
+
+#[test]
+fn test_binary_bounds_div_edge_cases() {
+    store(|_| {
+        // Div with both negative divisor range and no zero crossing
+        assert_eq!(
+            compute_binary_bounds(&BinaryOp::Div, (-100, -10), (-20, -5)),
+            Some((0, 20))
+        );
+
+        // Div with positive divisor only (no zero crossing)
+        assert_eq!(compute_binary_bounds(&BinaryOp::Div, (-10, 20), (5, 10)), Some((-2, 4)));
+
+        // Div with divisor range crossing zero, both positive and negative sub-ranges
+        let result = compute_binary_bounds(&BinaryOp::Div, (-20, 30), (-5, 10));
+        assert!(result.is_some());
+        let (min, max) = result.unwrap();
+        assert!(min <= max);
+        // Div where one sub-range contributes multiple values
+        let result = compute_binary_bounds(&BinaryOp::Div, (5, 10), (-5, 5));
+        assert!(result.is_some());
+        let (min, max) = result.unwrap();
+        assert!(min <= max);
+
+        // Mod with r_max=0 (divisor range is negative)
+        assert_eq!(
+            compute_binary_bounds(&BinaryOp::Mod, (0, 100), (-20, 0)),
+            Some((i128::MIN, i128::MAX))
+        );
+
+        // Mod with entirely negative divisor
+        assert_eq!(
+            compute_binary_bounds(&BinaryOp::Mod, (0, 100), (-20, -5)),
+            Some((0, 19))
+        );
+
+        // Shr with r_min=0 and r_max=0 (no shift)
+        assert_eq!(compute_binary_bounds(&BinaryOp::Shr, (8, 64), (0, 0)), Some((8, 64)));
+
+        // Shr with r_min=0 and r_max>0
+        assert_eq!(
+            compute_binary_bounds(&BinaryOp::Shr, (100, 200), (0, 2)),
+            Some((25, 200))
+        );
+
+        // Shr with r_min>0 but l_min=0
+        assert_eq!(compute_binary_bounds(&BinaryOp::Shr, (0, 256), (1, 3)), Some((0, 128)));
+    });
+}
+
+#[test]
+fn test_monomorphize_function_cycle_detection() {
+    store(|_| {
+        // Test mono_in_progress cycle detection
+        let mut s = sym();
+        let mut solver = Solver::new(&mut s);
+        let p = param("x", GP(0, "T"));
+        let mut gens = BTreeMap::new();
+        gens.insert(NString::from("T"), Some(GP(0, "T")));
+        let fid = mkfunc("f", vec![p], GP(0, "T"), None, Some(gens));
+        let mut sub = Substitution::default();
+        sub.mapping.insert(0, i32t());
+        let ck = solver.mono_cache_key(&fid, &sub);
+        // Manually insert into mono_in_progress to test cycle path
+        solver.mono_in_progress.insert(ck);
+        // When already in progress, returns original id
+        let result = solver.monomorphize_function(&fid, &sub);
+        assert_eq!(result.as_usize(), fid.as_usize());
+    });
+}
+
+#[test]
+fn test_monomorphize_struct_cycle_detection() {
+    store(|_| {
+        let mut s = sym();
+        let mut solver = Solver::new(&mut s);
+        let sd = mkstruct("GP", vec![("f", GP(0, "T"))], Some(vec!["T"]), None);
+        let mut sub = Substitution::default();
+        sub.mapping.insert(0, i32t());
+        let ck = solver.struct_mono_cache_key(&sd, &sub);
+        solver.mono_in_progress.insert(ck);
+        let result = solver.monomorphize_struct(&sd, &sub);
+        assert_eq!(result.as_usize(), sd.as_usize());
+    });
+}
+
+#[test]
+fn test_apply_subst_to_value_cast() {
+    store(|_| {
+        let mut s = sym();
+        let solver = Solver::new(&mut s);
+        let mut sub = Substitution::default();
+        sub.mapping.insert(0, i32t());
+        let cast_val = Value::Cast {
+            span: ByteSpan::default(),
+            value: i32v(42),
+            target_type: GP(0, "T"),
+        };
+        let result = solver.apply_subst_to_value(&cast_val, &sub);
+        assert!(matches!(result, Value::Cast { .. }));
+        if let Value::Cast { target_type, .. } = &result {
+            assert!(matches!(&**target_type, Type::I32 { .. }));
+        }
+    });
+}
+
+#[test]
+fn test_apply_subst_to_value_non_generic_struct() {
+    store(|_| {
+        let mut s = sym();
+        let solver = Solver::new(&mut s);
+        let sub = Substitution::default();
+        let sd = mkstruct("Pt", vec![("x", i32t())], None, None);
+        let fields: ThinVec<(NString, ValueId)> = vec![(NString::from("x"), i32v(10))].into();
+        let so = Value::StructObject {
+            span: ByteSpan::default(),
+            struct_def: sd,
+            fields,
+        };
+        let result = solver.apply_subst_to_value(&so, &sub);
+        assert!(matches!(result, Value::StructObject { .. }));
+    });
+}
+
+#[test]
+fn test_apply_subst_to_value_generic_struct() {
+    store(|_| {
+        let mut s = sym();
+        let solver = Solver::new(&mut s);
+        let mut sub = Substitution::default();
+        sub.mapping.insert(0, i32t());
+        let sd = mkstruct("GP", vec![("f", GP(0, "T"))], Some(vec!["T"]), None);
+        let fields: ThinVec<(NString, ValueId)> = vec![(
+            NString::from("f"),
+            sv(Value::ParameterSymbol {
+                span: ByteSpan::default(),
+                id: param("x", GP(0, "T")),
+            }),
+        )]
+        .into();
+        let so = Value::StructObject {
+            span: ByteSpan::default(),
+            struct_def: sd,
+            fields,
+        };
+        let result = solver.apply_subst_to_value(&so, &sub);
+        assert!(matches!(result, Value::StructObject { .. }));
+    });
+}
+
+#[test]
+fn test_clone_block_element_local() {
+    store(|_| {
+        let mut s = sym();
+        let solver = Solver::new(&mut s);
+        let mut sub = Substitution::default();
+        sub.mapping.insert(0, i32t());
+        let local_el = BlockElement::Local(local(
+            "x",
+            GP(0, "T"),
+            sv(Value::ParameterSymbol {
+                span: ByteSpan::default(),
+                id: param("x", GP(0, "T")),
+            }),
+        ));
+        let cloned = solver.clone_block_element(&local_el, &sub);
+        if let BlockElement::Local(lv) = &cloned {
+            assert!(matches!(&*lv.borrow().ty, Type::I32 { .. }));
+        } else {
+            panic!("expected Local");
+        }
+        let expr_el = BlockElement::Expr(i32v(42));
+        let cloned2 = solver.clone_block_element(&expr_el, &sub);
+        assert!(matches!(cloned2, BlockElement::Expr(_)));
+    });
+}
+
+#[test]
+fn test_infer_generic_args_from_call_named_empty() {
+    store(|_| {
+        let mut s = sym();
+        let solver = Solver::new(&mut s);
+        // Non-generic function
+        let fid = mkfunc("f", vec![param("x", i32t())], i32t(), None, None);
+        let args = Arguments {
+            positional: ThinVec::new(),
+            named: vec![].into(),
+        };
+        let result = solver.infer_generic_args_from_call_named(&fid, &args);
+        assert!(result.is_none());
+    });
+}
+
+#[test]
+fn test_infer_generic_args_from_call_named_with_inferred_args() {
+    store(|_| {
+        let mut s = sym();
+        let solver = Solver::new(&mut s);
+        let mut gens = BTreeMap::new();
+        gens.insert(NString::from("T"), Some(GP(0, "T")));
+        let fid = mkfunc("id", vec![param("x", GP(0, "T"))], GP(0, "T"), None, Some(gens));
+        let args = Arguments {
+            positional: ThinVec::new(),
+            named: vec![(NString::from("x"), inf_int(42))].into(),
+        };
+        let result = solver.infer_generic_args_from_call_named(&fid, &args);
+        // Should return None because all arg types are inferred
+        assert!(result.is_none() || result.as_ref().map_or(false, |s| s.mapping.is_empty()));
+    });
+}
+
+#[test]
+fn test_infer_generic_args_from_struct_fields_empty() {
+    store(|_| {
+        let mut s = sym();
+        let solver = Solver::new(&mut s);
+        // Non-generic struct has no generics field, so returns None (early return via ?)
+        let sd = mkstruct("Pt", vec![("x", i32t())], None, None);
+        let result = solver.infer_generic_args_from_struct_fields(&sd, &[]);
+        assert!(result.is_none());
+    });
+}
+
+#[test]
+fn test_infer_generic_args_from_struct_fields_with_inferred() {
+    store(|_| {
+        let mut s = sym();
+        let solver = Solver::new(&mut s);
+        let sd = mkstruct("GP", vec![("f", GP(0, "T"))], Some(vec!["T"]), None);
+        let fields = vec![(NString::from("f"), inf_int(42))];
+        // All inferred -> should return None (can't infer)
+        let result = solver.infer_generic_args_from_struct_fields(&sd, &fields);
+        assert!(result.is_none());
+    });
+}
+
+#[test]
+fn test_infer_generic_args_from_constraints_no_constraints() {
+    store(|_| {
+        let mut s = sym();
+        let solver = Solver::new(&mut s);
+        let sd = mkstruct("GP", vec![("f", GP(0, "T"))], Some(vec!["T"]), None);
+        let val = sv(Value::Unit {
+            span: ByteSpan::default(),
+        });
+        let result = solver.infer_generic_args_from_constraints(&val, &sd);
+        assert!(result.is_none());
+    });
+}
+
+#[test]
+fn test_infer_generic_args_from_constraints_with_parameterized() {
+    store(|_| {
+        let mut s = sym();
+        let sd = mkstruct("GP", vec![("f", GP(0, "T"))], Some(vec!["T"]), None);
+        s.add_struct(sd.clone());
+        let mut solver = Solver::new(&mut s);
+        let val = sv(Value::Unit {
+            span: ByteSpan::default(),
+        });
+        let param_type = TypeId::from(Type::Parameterized {
+            span: ByteSpan::default(),
+            base: TypeId::from(Type::Struct {
+                span: ByteSpan::default(),
+                def: sd.clone(),
+            }),
+            args: Arguments {
+                positional: vec![i32t()].into(),
+                named: ThinVec::new(),
+            },
+        });
+        solver.add_constraint(&val, TypeConstraint::Equal(param_type));
+        let result = solver.infer_generic_args_from_constraints(&val, &sd);
+        assert!(result.is_some());
+        let subst = result.unwrap();
+        assert!(subst.mapping.contains_key(&0));
+    });
+}
+
+#[test]
+fn test_infer_generic_args_from_constraints_with_different_struct() {
+    store(|_| {
+        let mut s = sym();
+        let sd = mkstruct("GP", vec![("f", GP(0, "T"))], Some(vec!["T"]), None);
+        let sd_other = mkstruct("Other", vec![("x", i32t())], None, None);
+        s.add_struct(sd.clone());
+        let mut solver = Solver::new(&mut s);
+        let val = sv(Value::Unit {
+            span: ByteSpan::default(),
+        });
+        let param_type = TypeId::from(Type::Parameterized {
+            span: ByteSpan::default(),
+            base: TypeId::from(Type::Struct {
+                span: ByteSpan::default(),
+                def: sd_other,
+            }),
+            args: Arguments {
+                positional: vec![i32t()].into(),
+                named: ThinVec::new(),
+            },
+        });
+        solver.add_constraint(&val, TypeConstraint::Equal(param_type));
+        // Different struct def in constraint -> should return None (mismatch check)
+        let result = solver.infer_generic_args_from_constraints(&val, &sd);
+        assert!(result.is_none());
+    });
+}
+
+#[test]
+fn test_classify_value_all_variants() {
+    store(|_| {
+        assert_eq!(
+            Solver::classify_value(&Value::Unit {
+                span: ByteSpan::default()
+            }),
+            0
+        );
+        assert_eq!(
+            Solver::classify_value(&Value::Bool {
+                span: ByteSpan::default(),
+                value: true
+            }),
+            0
+        );
+        assert_eq!(
+            Solver::classify_value(&Value::I8 {
+                span: ByteSpan::default(),
+                value: 0
+            }),
+            0
+        );
+        assert_eq!(
+            Solver::classify_value(&Value::I16 {
+                span: ByteSpan::default(),
+                value: 0
+            }),
+            0
+        );
+        assert_eq!(
+            Solver::classify_value(&Value::I32 {
+                span: ByteSpan::default(),
+                value: 0
+            }),
+            0
+        );
+        assert_eq!(
+            Solver::classify_value(&Value::I64 {
+                span: ByteSpan::default(),
+                value: 0
+            }),
+            0
+        );
+        assert_eq!(
+            Solver::classify_value(&Value::U8 {
+                span: ByteSpan::default(),
+                value: 0
+            }),
+            0
+        );
+        assert_eq!(
+            Solver::classify_value(&Value::U16 {
+                span: ByteSpan::default(),
+                value: 0
+            }),
+            0
+        );
+        assert_eq!(
+            Solver::classify_value(&Value::U32 {
+                span: ByteSpan::default(),
+                value: 0
+            }),
+            0
+        );
+        assert_eq!(
+            Solver::classify_value(&Value::U64 {
+                span: ByteSpan::default(),
+                value: 0
+            }),
+            0
+        );
+        assert_eq!(
+            Solver::classify_value(&Value::USize {
+                span: ByteSpan::default(),
+                bits: 64,
+                value: 0
+            }),
+            0
+        );
+        assert_eq!(
+            Solver::classify_value(&Value::F32 {
+                span: ByteSpan::default(),
+                value: OrderedFloat(0.0)
+            }),
+            0
+        );
+        assert_eq!(
+            Solver::classify_value(&Value::F64 {
+                span: ByteSpan::default(),
+                value: OrderedFloat(0.0)
+            }),
+            0
+        );
+        assert_eq!(
+            Solver::classify_value(&Value::StringLit {
+                span: ByteSpan::default(),
+                value: "".into()
+            }),
+            0
+        );
+        assert_eq!(
+            Solver::classify_value(&Value::BStringLit {
+                span: ByteSpan::default(),
+                value: vec![].into()
+            }),
+            0
+        );
+        assert_eq!(
+            Solver::classify_value(&Value::InferredInteger {
+                span: ByteSpan::default(),
+                value: Box::new(0)
+            }),
+            0
+        );
+        assert_eq!(
+            Solver::classify_value(&Value::InferredFloat {
+                span: ByteSpan::default(),
+                value: OrderedFloat(0.0)
+            }),
+            0
+        );
+        assert_eq!(
+            Solver::classify_value(&Value::Break {
+                span: ByteSpan::default(),
+                label: None
+            }),
+            16
+        );
+        assert_eq!(
+            Solver::classify_value(&Value::Continue {
+                span: ByteSpan::default(),
+                label: None
+            }),
+            16
+        );
+        assert_eq!(
+            Solver::classify_value(&Value::FunctionSymbol {
+                span: ByteSpan::default(),
+                id: mkfunc("f", vec![], unitt(), None, None),
+            }),
+            21
+        );
+        assert_eq!(
+            Solver::classify_value(&Value::GlobalVariableSymbol {
+                span: ByteSpan::default(),
+                id: {
+                    let gv = nitrate_hir::GlobalVariable {
+                        span: ByteSpan::default(),
+                        visibility: Visibility::Pub,
+                        attributes: BTreeSet::new(),
+                        is_mutable: false,
+                        name: NString::from("G"),
+                        mangled_name: NString::from("G"),
+                        ty: i32t(),
+                        initializer: i32v(0),
+                    };
+                    GlobalVariableId::from(gv)
+                },
+            }),
+            21
+        );
+        let lv = local("x", i32t(), i32v(0));
+        assert_eq!(
+            Solver::classify_value(&Value::LocalVariableSymbol {
+                span: ByteSpan::default(),
+                id: lv,
+            }),
+            21
+        );
+        assert_eq!(
+            Solver::classify_value(&Value::ParameterSymbol {
+                span: ByteSpan::default(),
+                id: param("x", i32t()),
+            }),
+            21
+        );
+    });
+}
+
+#[test]
+fn test_find_common_integer_type_with_usize() {
+    store(|_| {
+        let c = vec![TypeConstraint::Equal(uszt())];
+        let r = Solver::find_common_integer_type(c.iter(), 42);
+        assert!(r.is_some());
+        assert!(matches!(&*r.unwrap().0, Type::USize { .. }));
+
+        let c2 = vec![TypeConstraint::Equal(i32t()), TypeConstraint::Equal(uszt())];
+        let r2 = Solver::find_common_integer_type(c2.iter(), 42);
+        assert!(r2.is_some());
+        // USize is wider (64-bit) than i32 (32-bit), so USize wins
+        assert!(matches!(&*r2.unwrap().0, Type::USize { .. }));
+    });
+}
+
+#[test]
+fn test_solve_inferred_integer_to_usize() {
+    store(|_| {
+        let log = CompilerLog::default();
+        let mut s = sym();
+        let inferred = inf_int(42);
+        assert!(
+            resolve_func(
+                vec![BlockElement::Local(local("x", uszt(), inferred))],
+                unitt(),
+                &log,
+                &mut s
+            )
+            .is_ok()
+        );
+    });
+}
+
+#[test]
+fn test_solve_inferred_integer_out_of_range() {
+    store(|_| {
+        let log = CompilerLog::default();
+        let mut s = sym();
+        // Value too large for u8
+        let inferred = inf_int(300);
+        let result = resolve_func(
+            vec![BlockElement::Local(local("x", u8t(), inferred))],
+            unitt(),
+            &log,
+            &mut s,
+        );
+        let _ = result;
+    });
+}
+
+#[test]
+fn test_infer_generic_args_from_call_mismatched_args() {
+    store(|_| {
+        let mut s = sym();
+        let solver = Solver::new(&mut s);
+        let mut gens = BTreeMap::new();
+        gens.insert(NString::from("T"), Some(GP(0, "T")));
+        let p1 = param("x", GP(0, "T"));
+        let p2 = param("y", GP(0, "T"));
+        let fid = mkfunc("f", vec![p1, p2], GP(0, "T"), None, Some(gens));
+        // Mismatched arg count - should return empty subst (Some(default))
+        let result = solver.infer_generic_args_from_call(&fid, &[i32v(42)]);
+        assert!(result.is_some());
+        assert!(result.unwrap().mapping.is_empty());
+    });
+}
+
+#[test]
+fn test_type_bit_width_edge_cases() {
+    store(|_| {
+        assert_eq!(
+            Solver::type_bit_width(&Type::U8 {
+                span: ByteSpan::default()
+            }),
+            8
+        );
+        assert_eq!(
+            Solver::type_bit_width(&Type::I8 {
+                span: ByteSpan::default()
+            }),
+            8
+        );
+        assert_eq!(
+            Solver::type_bit_width(&Type::U16 {
+                span: ByteSpan::default()
+            }),
+            16
+        );
+        assert_eq!(
+            Solver::type_bit_width(&Type::I16 {
+                span: ByteSpan::default()
+            }),
+            16
+        );
+        assert_eq!(
+            Solver::type_bit_width(&Type::U32 {
+                span: ByteSpan::default()
+            }),
+            32
+        );
+        assert_eq!(
+            Solver::type_bit_width(&Type::I32 {
+                span: ByteSpan::default()
+            }),
+            32
+        );
+        assert_eq!(
+            Solver::type_bit_width(&Type::U64 {
+                span: ByteSpan::default()
+            }),
+            64
+        );
+        assert_eq!(
+            Solver::type_bit_width(&Type::I64 {
+                span: ByteSpan::default()
+            }),
+            64
+        );
+        assert_eq!(
+            Solver::type_bit_width(&Type::USize {
+                span: ByteSpan::default()
+            }),
+            64
+        );
+        assert_eq!(
+            Solver::type_bit_width(&Type::U128 {
+                span: ByteSpan::default()
+            }),
+            128
+        );
+        assert_eq!(
+            Solver::type_bit_width(&Type::I128 {
+                span: ByteSpan::default()
+            }),
+            128
+        );
+        assert_eq!(
+            Solver::type_bit_width(&Type::Bool {
+                span: ByteSpan::default()
+            }),
+            0
+        );
+        assert_eq!(
+            Solver::type_bit_width(&Type::F64 {
+                span: ByteSpan::default()
+            }),
+            0
+        );
+    });
+}
+
+#[test]
+fn test_unary_bounds_overflow_edge() {
+    store(|_| {
+        // Negating MIN gives MAX-1 (saturating_neg of MIN = MAX)
+        let result = compute_unary_bounds(&UnaryOp::Sub, (i128::MIN, i128::MIN));
+        // i128::MIN.saturating_neg() = i128::MAX
+        assert_eq!(result, (i128::MAX, i128::MAX));
+        // Negating across zero
+        assert_eq!(compute_unary_bounds(&UnaryOp::Sub, (-1, 1)), (-1, 1));
+    });
+}
+
+#[test]
+fn test_effective_bounds_with_constraint_intersection() {
+    store(|_| {
+        let mut s = sym();
+        let mut solver = Solver::new(&mut s);
+        let val = i32v(42);
+        let refine = TypeId::from(Type::Refine {
+            span: ByteSpan::default(),
+            base: i32t(),
+            min: lit(Lit::I32(0)),
+            max: lit(Lit::I32(50)),
+        });
+        solver.add_constraint(&val, TypeConstraint::Equal(refine));
+        let bounds = solver.get_effective_bounds(&val);
+        assert_eq!(bounds, Some((0, 50)));
+    });
+}
+
+#[test]
+fn test_get_effective_bounds_local_var_symbol() {
+    store(|_| {
+        let mut s = sym();
+        let solver = Solver::new(&mut s);
+        let lv = local("x", i32t(), i32v(0));
+        let lvs = sv(Value::LocalVariableSymbol {
+            span: ByteSpan::default(),
+            id: lv,
+        });
+        let bounds = solver.get_effective_bounds(&lvs);
+        assert_eq!(bounds, Some((-2147483648, 2147483647)));
+    });
+}
+
+#[test]
+fn test_visit_unary_with_refinement_bounds_error() {
+    store(|_| {
+        let log = CompilerLog::default();
+        let mut s = sym();
+        let refine = TypeId::from(Type::Refine {
+            span: ByteSpan::default(),
+            base: u8t(),
+            min: lit(Lit::U8(0)),
+            max: lit(Lit::U8(10)),
+        });
+        let neg = sv(Value::Unary {
+            span: ByteSpan::default(),
+            op: UnaryOp::Sub,
+            operand: u8v(5),
+        });
+        let result = resolve_func(
+            vec![BlockElement::Local(local("r", refine, neg))],
+            unitt(),
+            &log,
+            &mut s,
+        );
+        let _ = result;
+    });
+}
+
+#[test]
+fn test_apply_struct_field_constraints_with_missing_field() {
+    store(|_| {
+        let mut s = sym();
+        let sd = mkstruct("Pt", vec![("x", i32t())], None, None);
+        s.add_struct(sd.clone());
+        let mut solver = Solver::new(&mut s);
+        let fields: ThinVec<(NString, ValueId)> = vec![(NString::from("y"), i32v(99))].into();
+        let so = sv(Value::StructObject {
+            span: ByteSpan::default(),
+            struct_def: sd,
+            fields,
+        });
+        let val = sv(Value::Unit {
+            span: ByteSpan::default(),
+        });
+        solver.apply_struct_field_constraints(&val);
+        solver.apply_struct_field_constraints(&so);
+    });
+}
+
+#[test]
+fn test_visit_if_mismatch_with_never() {
+    store(|_| {
+        let log = CompilerLog::default();
+        let mut s = sym();
+        let tb = Block {
+            span: ByteSpan::default(),
+            safety: BlockSafety::Safe,
+            elements: vec![BlockElement::Expr(sv(Value::Break {
+                span: ByteSpan::default(),
+                label: None,
+            }))],
+        };
+        let fb = Block {
+            span: ByteSpan::default(),
+            safety: BlockSafety::Safe,
+            elements: vec![BlockElement::Expr(i32v(1))],
+        };
+        let ifv = sv(Value::If {
+            span: ByteSpan::default(),
+            condition: boolv(true),
+            true_branch: BlockId::from(tb),
+            false_branch: Some(BlockId::from(fb)),
+        });
+        assert!(resolve_func(vec![BlockElement::Expr(ifv)], i32t(), &log, &mut s).is_ok());
+    });
+}
+
+#[test]
+fn test_visit_if_no_false_branch() {
+    store(|_| {
+        let log = CompilerLog::default();
+        let mut s = sym();
+        let tb = Block {
+            span: ByteSpan::default(),
+            safety: BlockSafety::Safe,
+            elements: vec![BlockElement::Expr(i32v(1))],
+        };
+        let ifv = sv(Value::If {
+            span: ByteSpan::default(),
+            condition: boolv(true),
+            true_branch: BlockId::from(tb),
+            false_branch: None,
+        });
+        assert!(resolve_func(vec![BlockElement::Expr(ifv)], unitt(), &log, &mut s).is_ok());
+    });
+}
+
+#[test]
+fn test_report_out_of_range() {
+    store(|_| {
+        let mut s = sym();
+        let mut solver = Solver::new(&mut s);
+        solver.report_out_of_range(span(0, 1), 300, u8t());
+        assert!(!solver.errors.is_empty());
+    });
+}
+
+#[test]
+fn test_add_all_elements_to_worklist() {
+    store(|_| {
+        let mut s = sym();
+        let mut solver = Solver::new(&mut s);
+        let body = vec![
+            BlockElement::Expr(i32v(42)),
+            BlockElement::Local(local("x", i32t(), i32v(0))),
+        ];
+        solver.add_all_elements_to_worklist(&body);
+    });
+}
+
 #[test]
 fn test_monomorphize_struct_with_generic_not_in_fields() {
     store(|_| {

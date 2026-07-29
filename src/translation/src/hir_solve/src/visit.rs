@@ -16,7 +16,7 @@ use std::unreachable;
 
 impl<'m> Solver<'m> {
     /// Main entry: visit a value node, determine action, then recurse.
-    pub(super) fn visit(&mut self, e: &ValueId) {
+    pub(crate) fn visit(&mut self, e: &ValueId) {
         let action = {
             let current_value = e.borrow();
             self.determine_action(&current_value, e)
@@ -29,13 +29,13 @@ impl<'m> Solver<'m> {
         }
     }
 
-    pub(super) fn visit_block(&mut self, block: &BlockId) {
+    pub(crate) fn visit_block(&mut self, block: &BlockId) {
         for element in &mut block.borrow_mut().elements {
             self.visit_block_element(element);
         }
     }
 
-    pub(super) fn visit_block_element(&mut self, element: &mut BlockElement) {
+    pub(crate) fn visit_block_element(&mut self, element: &mut BlockElement) {
         match element {
             BlockElement::Expr(e) => self.visit(e),
             BlockElement::Local(local_var) => {
@@ -83,7 +83,7 @@ impl<'m> Solver<'m> {
 
     // ── Determine Action ──────────────────────────────────────────────────
 
-    fn determine_action(&mut self, value: &Value, id: &ValueId) -> crate::constraints::NodeAction {
+    pub(crate) fn determine_action(&mut self, value: &Value, id: &ValueId) -> crate::constraints::NodeAction {
         match value {
             Value::InferredInteger { value, .. } => self.solve_inferred_integer(id, **value),
             Value::InferredFloat { value, .. } => self.solve_inferred_float(id, *value),
@@ -101,7 +101,7 @@ impl<'m> Solver<'m> {
         }
     }
 
-    pub(super) fn add_constraints(&mut self, id: &ValueId, constraints: impl IntoIterator<Item = TypeConstraint>) {
+    pub(crate) fn add_constraints(&mut self, id: &ValueId, constraints: impl IntoIterator<Item = TypeConstraint>) {
         let entry = self.constraints.entry(id.clone()).or_default();
         let mut changed = false;
         for c in constraints {
@@ -119,7 +119,7 @@ impl<'m> Solver<'m> {
 
     /// Classify a Value variant into a handler tag without holding the borrow.
     /// This allows per-variant handlers to freely borrow the ValueId (including mutably).
-    fn classify_value(value: &Value) -> u8 {
+    pub(crate) fn classify_value(value: &Value) -> u8 {
         match value {
             Value::Unit { .. }
             | Value::Bool { .. }
@@ -168,7 +168,7 @@ impl<'m> Solver<'m> {
         }
     }
 
-    fn visit_children(&mut self, e: &ValueId) {
+    pub(crate) fn visit_children(&mut self, e: &ValueId) {
         // Determine the variant discriminant without holding a borrow on e,
         // so that per-variant handlers can freely borrow e (including mutably).
         let tag = {
@@ -204,7 +204,7 @@ impl<'m> Solver<'m> {
 
     // ── Per-variant handlers ──────────────────────────────────────────────
 
-    fn visit_struct_object(&mut self, e: &ValueId) {
+    pub(crate) fn visit_struct_object(&mut self, e: &ValueId) {
         // Extract needed data in a narrow scope to avoid holding an immutable
         // borrow across the potential mutable borrow in the monomorphization path.
         let (struct_def, has_generics, fields, span) = {
@@ -269,7 +269,7 @@ impl<'m> Solver<'m> {
 
     /// Apply field type constraints and visit all fields of a struct object.
     /// Shared helper to avoid duplicated code between generic and non-generic paths.
-    fn apply_struct_field_constraints(&mut self, e: &ValueId) {
+    pub(crate) fn apply_struct_field_constraints(&mut self, e: &ValueId) {
         let value = e.borrow().clone();
         let Value::StructObject { struct_def, fields, .. } = &value else {
             return;
@@ -283,7 +283,7 @@ impl<'m> Solver<'m> {
         }
     }
 
-    fn visit_enum_variant(&mut self, e: &ValueId) {
+    pub(crate) fn visit_enum_variant(&mut self, e: &ValueId) {
         let value = &*e.borrow();
         let Value::EnumVariant {
             enum_def,
@@ -305,7 +305,7 @@ impl<'m> Solver<'m> {
         self.visit(inner_value);
     }
 
-    fn visit_binary(&mut self, e: &ValueId) {
+    pub(crate) fn visit_binary(&mut self, e: &ValueId) {
         let value = &*e.borrow();
         let Value::Binary { left, op, right, .. } = value else {
             unreachable!()
@@ -380,7 +380,7 @@ impl<'m> Solver<'m> {
         self.visit(right);
     }
 
-    fn visit_unary(&mut self, e: &ValueId) {
+    pub(crate) fn visit_unary(&mut self, e: &ValueId) {
         let value = &*e.borrow();
         let Value::Unary { op, operand, .. } = value else {
             unreachable!()
@@ -418,7 +418,7 @@ impl<'m> Solver<'m> {
         }
     }
 
-    fn visit_index_access(&mut self, e: &ValueId) {
+    pub(crate) fn visit_index_access(&mut self, e: &ValueId) {
         let value = &*e.borrow();
         let Value::IndexAccess { collection, index, .. } = value else {
             unreachable!()
@@ -452,7 +452,7 @@ impl<'m> Solver<'m> {
         self.visit(index);
     }
 
-    fn visit_field_access(&mut self, e: &ValueId) {
+    pub(crate) fn visit_field_access(&mut self, e: &ValueId) {
         let value = &*e.borrow();
         let Value::FieldAccess { expr, .. } = value else {
             unreachable!()
@@ -460,7 +460,7 @@ impl<'m> Solver<'m> {
         self.visit(expr);
     }
 
-    fn visit_assign(&mut self, e: &ValueId) {
+    pub(crate) fn visit_assign(&mut self, e: &ValueId) {
         let value = &*e.borrow();
         let Value::Assign { place, value: v, .. } = value else {
             unreachable!()
@@ -472,7 +472,7 @@ impl<'m> Solver<'m> {
         self.visit(v);
     }
 
-    fn visit_deref(&mut self, e: &ValueId) {
+    pub(crate) fn visit_deref(&mut self, e: &ValueId) {
         let value = &*e.borrow();
         let Value::Deref { place, .. } = value else {
             unreachable!()
@@ -480,7 +480,7 @@ impl<'m> Solver<'m> {
         self.visit(place);
     }
 
-    fn visit_cast(&mut self, e: &ValueId) {
+    pub(crate) fn visit_cast(&mut self, e: &ValueId) {
         let value = &*e.borrow();
         let Value::Cast {
             value: v, target_type, ..
@@ -492,7 +492,7 @@ impl<'m> Solver<'m> {
         self.visit(v);
     }
 
-    fn visit_borrow(&mut self, e: &ValueId) {
+    pub(crate) fn visit_borrow(&mut self, e: &ValueId) {
         let value = &*e.borrow();
         let Value::Borrow { place, .. } = value else {
             unreachable!()
@@ -500,7 +500,7 @@ impl<'m> Solver<'m> {
         self.visit(place);
     }
 
-    fn visit_list(&mut self, e: &ValueId) {
+    pub(crate) fn visit_list(&mut self, e: &ValueId) {
         let value = &*e.borrow();
         let Value::List { elements, .. } = value else {
             unreachable!()
@@ -558,7 +558,7 @@ impl<'m> Solver<'m> {
         }
     }
 
-    fn visit_tuple(&mut self, e: &ValueId) {
+    pub(crate) fn visit_tuple(&mut self, e: &ValueId) {
         let value = &*e.borrow();
         let Value::Tuple { elements, .. } = value else {
             unreachable!()
@@ -568,7 +568,7 @@ impl<'m> Solver<'m> {
         }
     }
 
-    fn visit_if(&mut self, e: &ValueId) {
+    pub(crate) fn visit_if(&mut self, e: &ValueId) {
         let value = &*e.borrow();
         let Value::If {
             condition,
@@ -611,7 +611,7 @@ impl<'m> Solver<'m> {
         }
     }
 
-    fn visit_while(&mut self, e: &ValueId) {
+    pub(crate) fn visit_while(&mut self, e: &ValueId) {
         let value = &*e.borrow();
         let Value::While { condition, body, .. } = value else {
             unreachable!()
@@ -626,7 +626,7 @@ impl<'m> Solver<'m> {
         self.visit_block(body);
     }
 
-    fn visit_loop(&mut self, e: &ValueId) {
+    pub(crate) fn visit_loop(&mut self, e: &ValueId) {
         let value = &*e.borrow();
         let Value::Loop { body, .. } = value else {
             unreachable!()
@@ -634,7 +634,7 @@ impl<'m> Solver<'m> {
         self.visit_block(body);
     }
 
-    fn visit_return(&mut self, e: &ValueId) {
+    pub(crate) fn visit_return(&mut self, e: &ValueId) {
         let value = &*e.borrow();
         let Value::Return { value: v, .. } = value else {
             unreachable!()
@@ -645,7 +645,7 @@ impl<'m> Solver<'m> {
         self.visit(v);
     }
 
-    fn visit_block_value(&mut self, e: &ValueId) {
+    pub(crate) fn visit_block_value(&mut self, e: &ValueId) {
         let value = &*e.borrow();
         let Value::Block { block, .. } = value else {
             unreachable!()
@@ -655,7 +655,7 @@ impl<'m> Solver<'m> {
         }
     }
 
-    fn visit_call(&mut self, e: &ValueId) {
+    pub(crate) fn visit_call(&mut self, e: &ValueId) {
         let value = &*e.borrow();
         let Value::Call { callee, args, .. } = value else {
             unreachable!()
@@ -720,7 +720,7 @@ impl<'m> Solver<'m> {
         }
     }
 
-    fn visit_method_call(&mut self, e: &ValueId) {
+    pub(crate) fn visit_method_call(&mut self, e: &ValueId) {
         let value = &*e.borrow();
         let Value::MethodCall {
             object,
