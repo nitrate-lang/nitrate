@@ -93,7 +93,7 @@ impl<'m> Solver<'m> {
 
     // ── Constraint helpers (used by both visit.rs and solver.rs) ──────────
 
-    pub(super) fn add_constraint(&mut self, id: &ValueId, constraint: TypeConstraint) {
+    pub(crate) fn add_constraint(&mut self, id: &ValueId, constraint: TypeConstraint) {
         let changed = self.constraints.entry(id.clone()).or_default().insert(constraint);
         if changed {
             self.constraint_version = self.constraint_version.wrapping_add(1);

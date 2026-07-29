@@ -108,7 +108,7 @@ impl<'m> Solver<'m> {
     }
 
     /// Report that an integer literal is outside the range of its target type.
-    fn report_out_of_range(&mut self, span: ByteSpan, integer: u128, target_type: TypeId) {
+    pub(crate) fn report_out_of_range(&mut self, span: ByteSpan, integer: u128, target_type: TypeId) {
         self.errors.insert(TypeErr::IntegerLiteralOutOfRange {
             span,
             value: integer,
@@ -122,7 +122,7 @@ impl<'m> Solver<'m> {
     }
 
     /// Mark all block elements as needing re-visit.
-    fn add_all_elements_to_worklist(&mut self, body: &[BlockElement]) {
+    pub(crate) fn add_all_elements_to_worklist(&mut self, body: &[BlockElement]) {
         for element in body {
             match element {
                 BlockElement::Expr(expr_id) => {
@@ -180,7 +180,7 @@ impl<'m> Solver<'m> {
 
     /// Determine the concrete target type from a set of constraints.
     /// Returns the most specific (narrowest) compatible integer/float type.
-    fn find_common_integer_type<'a>(
+    pub(crate) fn find_common_integer_type<'a>(
         constraints: impl Iterator<Item = &'a TypeConstraint>,
         value: u128,
     ) -> Option<(TypeId, bool)> {
@@ -257,7 +257,7 @@ impl<'m> Solver<'m> {
         Some((best_ty?, has_error))
     }
 
-    fn type_bit_width(ty: &Type) -> u32 {
+    pub(crate) fn type_bit_width(ty: &Type) -> u32 {
         match ty {
             Type::I8 { .. } | Type::U8 { .. } => 8,
             Type::I16 { .. } | Type::U16 { .. } => 16,
@@ -270,7 +270,7 @@ impl<'m> Solver<'m> {
 
     /// Try to resolve an `InferredInteger` value based on accumulated constraints.
     /// Returns `Replace` with the concrete integer value, or `NoChange` if unresolved.
-    fn solve_inferred_integer(&mut self, id: &ValueId, value: u128) -> crate::constraints::NodeAction {
+    pub(crate) fn solve_inferred_integer(&mut self, id: &ValueId, value: u128) -> crate::constraints::NodeAction {
         let constraints: Vec<TypeConstraint> = self
             .constraints
             .get(id)
@@ -438,7 +438,11 @@ impl<'m> Solver<'m> {
     }
 
     /// Try to resolve an `InferredFloat` value based on accumulated constraints.
-    fn solve_inferred_float(&mut self, id: &ValueId, value: OrderedFloat<f64>) -> crate::constraints::NodeAction {
+    pub(crate) fn solve_inferred_float(
+        &mut self,
+        id: &ValueId,
+        value: OrderedFloat<f64>,
+    ) -> crate::constraints::NodeAction {
         let span = id.borrow().span();
         if let Some(constraints) = self.constraints.get(id) {
             let mut best_ty: Option<TypeId> = None;
@@ -491,7 +495,7 @@ impl<'m> Solver<'m> {
 
     /// Solve all constraints for a function.
     /// Uses worklist-based fixed-point iteration: only re-visits changed values.
-    fn solve_function(&mut self, function: &mut Function, log: &CompilerLog) -> Result<(), ()> {
+    pub(crate) fn solve_function(&mut self, function: &mut Function, log: &CompilerLog) -> Result<(), ()> {
         if let Some(body) = &mut function.body {
             self.function_return_type = Some(function.return_type);
 
@@ -530,7 +534,7 @@ impl<'m> Solver<'m> {
 
     /// Recursively default remaining InferredInteger → i32 and InferredFloat → f64
     /// This walks through the entire value tree to catch any nested inferred values.
-    fn finalize_inferred_literals(&mut self, body: &mut [BlockElement]) {
+    pub(crate) fn finalize_inferred_literals(&mut self, body: &mut [BlockElement]) {
         for element in body.iter_mut() {
             match element {
                 BlockElement::Expr(expr_id) => {
@@ -545,7 +549,7 @@ impl<'m> Solver<'m> {
     }
 
     /// Recursively finalize a value and all its children.
-    fn finalize_value_recursive(&mut self, value_id: &ValueId) {
+    pub(crate) fn finalize_value_recursive(&mut self, value_id: &ValueId) {
         // First, try to resolve this value itself
         let span = value_id.borrow().span();
         let is_inferred = matches!(
@@ -670,7 +674,7 @@ impl<'m> Solver<'m> {
     }
 
     /// Solve all constraints for a global variable.
-    fn solve_global_variable(&mut self, g: &mut GlobalVariable, log: &CompilerLog) -> Result<(), ()> {
+    pub(crate) fn solve_global_variable(&mut self, g: &mut GlobalVariable, log: &CompilerLog) -> Result<(), ()> {
         loop {
             let prev_version = self.constraint_version;
             if g.ty.is_inferred() {
