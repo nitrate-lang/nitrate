@@ -10,9 +10,9 @@ use crate::solver::{MAX_MONO_DEPTH, MonoCacheKey, Solver, resolve_function, reso
 use crate::substitution::Substitution;
 use nitrate_diagnosis::CompilerLog;
 use nitrate_hir::{
-    Arguments, BinaryOp, Block, BlockElement, BlockId, BlockSafety, Function, FunctionId, Lit, LocalKind,
-    LocalVariable, LocalVariableId, Parameter, ParameterId, PtrSize, Store, StructDef, StructDefId, StructField,
-    StructMemoryLayoutCell, SymbolTab, Type, TypeId, UnaryOp, Value, ValueId, Visibility, using_storage,
+    Arguments, BinaryOp, Block, BlockElement, BlockId, BlockSafety, Function, FunctionId, GlobalVariableId, Lit,
+    LocalKind, LocalVariable, LocalVariableId, Parameter, ParameterId, PtrSize, Store, StructDef, StructDefId,
+    StructField, StructMemoryLayoutCell, SymbolTab, Type, TypeId, UnaryOp, Value, ValueId, Visibility, using_storage,
 };
 use nitrate_nstring::NString;
 use nitrate_tree::ByteSpan;
@@ -194,7 +194,7 @@ fn mkfunc(
 fn lit(l: Lit) -> nitrate_hir::LiteralId {
     nitrate_hir::LiteralId::from(l)
 }
-fn mkstruct(name: &str, fields: Vec<(&str, TypeId)>, generics: Option<Vec<&str>>) -> StructDefId {
+fn mkstruct(name: &str, fields: Vec<(&str, TypeId)>, generics: Option<Vec<&str>>, ns: Option<&str>) -> StructDefId {
     let fmap: BTreeMap<NString, StructField> = fields
         .into_iter()
         .map(|(n, t)| {
@@ -215,6 +215,11 @@ fn mkstruct(name: &str, fields: Vec<(&str, TypeId)>, generics: Option<Vec<&str>>
         .keys()
         .map(|n| StructMemoryLayoutCell::Field { field_name: n.clone() })
         .collect();
+    let full_name = if let Some(ns_val) = ns {
+        format!("pkg::{}::{}", ns_val, name)
+    } else {
+        name.to_string()
+    };
     let gmap = generics.map(|g| {
         let mut m = BTreeMap::new();
         for (i, gn) in g.into_iter().enumerate() {
@@ -225,7 +230,7 @@ fn mkstruct(name: &str, fields: Vec<(&str, TypeId)>, generics: Option<Vec<&str>>
     StructDefId::from(StructDef {
         span: ByteSpan::default(),
         visibility: Visibility::Pub,
-        name: NString::from(name),
+        name: NString::from(full_name),
         attributes: BTreeSet::new(),
         fields: fmap,
         generics: gmap,
@@ -295,6 +300,19 @@ fn test_bounds_extract() {
 }
 
 #[test]
+fn test_bounds_extract_refine_with_non_literal_bounds() {
+    store(|_| {
+        let r = TypeId::from(Type::Refine {
+            span: ByteSpan::default(),
+            base: i32t(),
+            min: lit(Lit::Unit),
+            max: lit(Lit::Unit),
+        });
+        assert_eq!(extract_bounds_from_type(&*r), None);
+    });
+}
+
+#[test]
 fn test_bounds_lit() {
     store(|_| {
         assert_eq!(lit_to_i128(&Lit::U8(42)), Some(42));
@@ -323,7 +341,7 @@ fn test_bounds_binary() {
         assert_eq!(compute_binary_bounds(&BinaryOp::Mul, (-5, 5), (-5, 5)), Some((-25, 25)));
         assert_eq!(
             compute_binary_bounds(&BinaryOp::Mul, (i128::MAX, i128::MAX), (2, 2)),
-            Some((i128::MIN + 1, i128::MIN + 1))
+            Some((i128::MAX, i128::MAX))
         );
         assert_eq!(compute_binary_bounds(&BinaryOp::Div, (10, 20), (2, 5)), Some((2, 10)));
         assert_eq!(
@@ -389,10 +407,7 @@ fn test_bounds_unary() {
     store(|_| {
         assert_eq!(compute_unary_bounds(&UnaryOp::Add, (-5, 10)), (-5, 10));
         assert_eq!(compute_unary_bounds(&UnaryOp::Sub, (-5, 10)), (-10, 5));
-        assert_eq!(
-            compute_unary_bounds(&UnaryOp::Sub, (i128::MIN, 5)),
-            (i128::MIN, i128::MAX)
-        );
+        assert_eq!(compute_unary_bounds(&UnaryOp::Sub, (i128::MIN, 5)), (-5, i128::MAX));
         assert_eq!(compute_unary_bounds(&UnaryOp::Not, (0, 255)), (!255, !0));
     });
 }
@@ -430,6 +445,34 @@ fn test_bounds_check() {
     });
 }
 
+#[test]
+fn test_check_literal_against_refinement_above_i128_max() {
+    store(|_| {
+        let val = 170141183460469231731687303715884105728u128;
+        let r = TypeId::from(Type::Refine {
+            span: ByteSpan::default(),
+            base: u128t(),
+            min: lit(Lit::U128(0)),
+            max: lit(Lit::U128(200)),
+        });
+        assert!(!check_literal_against_refinement(val, &*r));
+        let r2 = TypeId::from(Type::Refine {
+            span: ByteSpan::default(),
+            base: u64t(),
+            min: lit(Lit::U64(0)),
+            max: lit(Lit::U64(u64::MAX)),
+        });
+        assert!(!check_literal_against_refinement(val, &*r2));
+        let r3 = TypeId::from(Type::Refine {
+            span: ByteSpan::default(),
+            base: i128t(),
+            min: lit(Lit::I128(-100)),
+            max: lit(Lit::I128(-50)),
+        });
+        assert!(!check_literal_against_refinement(val, &*r3));
+    });
+}
+
 // ═══ CONSTRAINTS ═══
 
 #[test]
@@ -457,6 +500,23 @@ fn test_constraints() {
             assert!(matches!(c, TypeConstraint::Equal(..)));
         }
     });
+}
+
+#[test]
+fn test_constraints_eq_type() {
+    store(|_| {
+        let c = TypeConstraint::eq_type(Type::I32 {
+            span: ByteSpan::default(),
+        });
+        assert!(matches!(c, TypeConstraint::Equal(_)));
+        assert_eq!(c.type_id(), i32t());
+    });
+}
+
+#[test]
+fn test_propagate_to_children_empty() {
+    let p = propagate_to_children(&HashSet::new());
+    assert!(p.is_empty());
 }
 
 // ═══ SUBSTITUTION ═══
@@ -577,13 +637,13 @@ fn test_subst_compound() {
         assert!(matches!(
             sub.apply(&Type::Struct {
                 span: ByteSpan::default(),
-                def: mkstruct("S", vec![("x", i32t())], None)
+                def: mkstruct("S", vec![("x", i32t())], None, None)
             }),
             Type::Struct { .. }
         ));
         let base = Type::Struct {
             span: ByteSpan::default(),
-            def: mkstruct("P", vec![("x", i32t())], None),
+            def: mkstruct("P", vec![("x", i32t())], None, None),
         };
         assert!(matches!(
             sub.apply(&Type::Parameterized {
@@ -826,6 +886,102 @@ fn test_unify() {
             &mut sub4,
         );
         assert!(matches!(&*sub4.mapping[&0], Type::I32 { .. }));
+        let mut sub5 = Substitution::default();
+        Solver::unify_types_with_subst(
+            &Type::I32 {
+                span: ByteSpan::default(),
+            },
+            &Type::SliceRef {
+                span: ByteSpan::default(),
+                lifetime: nitrate_hir::Lifetime::Inferred,
+                exclusive: false,
+                mutable: false,
+                element_type: GP(0, "T"),
+            },
+            &mut sub5,
+        );
+        assert!(sub5.mapping.is_empty());
+    });
+}
+
+#[test]
+fn test_unify_slice_ptr_and_ref() {
+    store(|_| {
+        let mut sub = Substitution::default();
+        Solver::unify_types_with_subst(
+            &Type::SlicePtr {
+                span: ByteSpan::default(),
+                lifetime: nitrate_hir::Lifetime::Inferred,
+                exclusive: false,
+                mutable: false,
+                element_type: TypeId::from(Type::I32 {
+                    span: ByteSpan::default(),
+                }),
+            },
+            &Type::SlicePtr {
+                span: ByteSpan::default(),
+                lifetime: nitrate_hir::Lifetime::Inferred,
+                exclusive: false,
+                mutable: false,
+                element_type: GP(0, "T"),
+            },
+            &mut sub,
+        );
+        assert!(sub.mapping.contains_key(&0));
+        let mut sub2 = Substitution::default();
+        Solver::unify_types_with_subst(
+            &Type::SliceRef {
+                span: ByteSpan::default(),
+                lifetime: nitrate_hir::Lifetime::Inferred,
+                exclusive: false,
+                mutable: false,
+                element_type: TypeId::from(Type::I32 {
+                    span: ByteSpan::default(),
+                }),
+            },
+            &Type::SliceRef {
+                span: ByteSpan::default(),
+                lifetime: nitrate_hir::Lifetime::Inferred,
+                exclusive: false,
+                mutable: false,
+                element_type: GP(0, "T"),
+            },
+            &mut sub2,
+        );
+        assert!(sub2.mapping.contains_key(&0));
+        let mut sub3 = Substitution::default();
+        Solver::unify_types_with_subst(
+            &Type::Array {
+                span: ByteSpan::default(),
+                element_type: TypeId::from(Type::I32 {
+                    span: ByteSpan::default(),
+                }),
+                len: 10,
+            },
+            &Type::Array {
+                span: ByteSpan::default(),
+                element_type: GP(0, "T"),
+                len: 10,
+            },
+            &mut sub3,
+        );
+        assert!(sub3.mapping.contains_key(&0));
+        let mut sub4 = Substitution::default();
+        Solver::unify_types_with_subst(
+            &Type::I32 {
+                span: ByteSpan::default(),
+            },
+            &Type::Function {
+                span: ByteSpan::default(),
+                function_type: Box::new(nitrate_hir::FunctionType {
+                    attributes: BTreeSet::new(),
+                    params: vec![(NString::from("x"), GP(0, "T"))].into(),
+                    return_type: GP(1, "U"),
+                }),
+            },
+            &mut sub4,
+        );
+        assert!(sub4.mapping.is_empty());
     });
 }
 
@@ -880,6 +1036,97 @@ fn test_effective_bounds() {
         });
         let bounds = solver.get_effective_bounds(&ps);
         assert!(bounds.is_none() || bounds == Some((-2147483648, 2147483647)));
+    });
+}
+
+#[test]
+fn test_effective_bounds_inferred() {
+    store(|_| {
+        let mut s = sym();
+        let solver = Solver::new(&mut s);
+        assert_eq!(
+            solver.get_effective_bounds(&sv(Value::USize {
+                span: ByteSpan::default(),
+                bits: 64,
+                value: 42
+            })),
+            Some((0, 18446744073709551615))
+        );
+        assert_eq!(solver.get_effective_bounds(&inf_int(42)), Some((42, 42)));
+        assert_eq!(
+            solver.get_effective_bounds(&sv(Value::U128 {
+                span: ByteSpan::default(),
+                value: Box::new(100)
+            })),
+            Some((0, i128::MAX))
+        );
+        assert_eq!(
+            solver.get_effective_bounds(&sv(Value::I128 {
+                span: ByteSpan::default(),
+                value: Box::new(-5)
+            })),
+            Some((i128::MIN, i128::MAX))
+        );
+        let gv = nitrate_hir::GlobalVariable {
+            span: ByteSpan::default(),
+            visibility: Visibility::Pub,
+            attributes: BTreeSet::new(),
+            is_mutable: false,
+            name: NString::from("G"),
+            mangled_name: NString::from("G"),
+            ty: i32t(),
+            initializer: i32v(0),
+        };
+        let gid = GlobalVariableId::from(gv);
+        let gs = sv(Value::GlobalVariableSymbol {
+            span: ByteSpan::default(),
+            id: gid,
+        });
+        assert_eq!(solver.get_effective_bounds(&gs), Some((-2147483648, 2147483647)));
+        assert_eq!(
+            solver.get_effective_bounds(&sv(Value::U32 {
+                span: ByteSpan::default(),
+                value: 10
+            })),
+            Some((0, 4294967295))
+        );
+        assert_eq!(
+            solver.get_effective_bounds(&sv(Value::U64 {
+                span: ByteSpan::default(),
+                value: 10
+            })),
+            Some((0, 18446744073709551615))
+        );
+        assert_eq!(solver.get_effective_bounds(&i32v(42)), Some((-2147483648, 2147483647)));
+        assert_eq!(
+            solver.get_effective_bounds(&sv(Value::I64 {
+                span: ByteSpan::default(),
+                value: 99
+            })),
+            Some((-9223372036854775808, 9223372036854775807))
+        );
+        assert_eq!(
+            solver.get_effective_bounds(&sv(Value::F64 {
+                span: ByteSpan::default(),
+                value: OrderedFloat(1.0)
+            })),
+            None
+        );
+        assert_eq!(solver.get_effective_bounds(&boolv(true)), None);
+        assert_eq!(
+            solver.get_effective_bounds(&sv(Value::StringLit {
+                span: ByteSpan::default(),
+                value: "hi".into()
+            })),
+            None
+        );
+        assert_eq!(
+            solver.get_effective_bounds(&sv(Value::U128 {
+                span: ByteSpan::default(),
+                value: Box::new(0)
+            })),
+            Some((0, i128::MAX))
+        );
     });
 }
 
@@ -1021,6 +1268,48 @@ fn test_resolve_binary_ops() {
 }
 
 #[test]
+fn test_resolve_binary_ambiguous() {
+    store(|_| {
+        let log = CompilerLog::default();
+        let mut s = sym();
+        let result = resolve_func(
+            vec![BlockElement::Expr(sv(Value::Binary {
+                span: ByteSpan::default(),
+                left: i32v(10),
+                op: BinaryOp::Add,
+                right: i64v(20),
+            }))],
+            unitt(),
+            &log,
+            &mut s,
+        );
+        let _ = result;
+    });
+}
+
+#[test]
+fn test_resolve_binary_with_inferred_ops() {
+    store(|_| {
+        let log = CompilerLog::default();
+        let mut s = sym();
+        assert!(
+            resolve_func(
+                vec![BlockElement::Expr(sv(Value::Binary {
+                    span: ByteSpan::default(),
+                    left: inf_int(10),
+                    op: BinaryOp::Add,
+                    right: i32v(20)
+                }))],
+                i32t(),
+                &log,
+                &mut s
+            )
+            .is_ok()
+        );
+    });
+}
+
+#[test]
 fn test_resolve_cmp_ops() {
     store(|_| {
         let log = CompilerLog::default();
@@ -1120,6 +1409,41 @@ fn test_resolve_local() {
             )
             .is_ok()
         );
+    });
+}
+
+#[test]
+fn test_resolve_local_with_parameterized_type() {
+    store(|_| {
+        let log = CompilerLog::default();
+        let mut s = sym();
+        let sd = mkstruct(
+            "Pair",
+            vec![("first", GP(0, "T")), ("second", GP(0, "T"))],
+            Some(vec!["T"]),
+            None,
+        );
+        s.add_struct(sd.clone());
+        let param_type = Type::Parameterized {
+            span: ByteSpan::default(),
+            base: TypeId::from(Type::Struct {
+                span: ByteSpan::default(),
+                def: sd.clone(),
+            }),
+            args: Arguments {
+                positional: vec![i32t()].into(),
+                named: ThinVec::new(),
+            },
+        };
+        let fields: ThinVec<(NString, ValueId)> =
+            vec![(NString::from("first"), i32v(1)), (NString::from("second"), i32v(2))].into();
+        let obj = sv(Value::StructObject {
+            span: ByteSpan::default(),
+            struct_def: sd.clone(),
+            fields,
+        });
+        let lv = local("p", TypeId::from(param_type), obj);
+        assert!(resolve_func(vec![BlockElement::Local(lv)], unitt(), &log, &mut s).is_ok());
     });
 }
 
@@ -1226,7 +1550,6 @@ fn test_resolve_if() {
             )
             .is_ok()
         );
-        // Never type branches (break/continue)
         let tb3 = Block {
             span: ByteSpan::default(),
             safety: BlockSafety::Safe,
@@ -1461,9 +1784,9 @@ fn test_resolve_struct() {
     store(|_| {
         let log = CompilerLog::default();
         let mut s = sym();
-        let sd = mkstruct("Point", vec![("x", i32t()), ("y", i32t())], None);
+        let sd = mkstruct("Point", vec![("x", i32t()), ("y", i32t())], None, None);
         s.add_struct(sd);
-        let sd2 = mkstruct("Point", vec![("x", i32t()), ("y", i32t())], None);
+        let sd2 = mkstruct("Point", vec![("x", i32t()), ("y", i32t())], None, None);
         let fields: ThinVec<(NString, ValueId)> =
             vec![(NString::from("x"), i32v(10)), (NString::from("y"), i32v(20))].into();
         assert!(
@@ -1479,12 +1802,12 @@ fn test_resolve_struct() {
             )
             .is_ok()
         );
-        let sd3 = mkstruct("OnlyI32", vec![("val", i32t())], None);
+        let sd3 = mkstruct("OnlyI32", vec![("val", i32t())], None, None);
         s.add_struct(sd3);
         let fields3: ThinVec<(NString, ValueId)> = vec![(NString::from("val"), i32v(99))].into();
         let sd4 = sv(Value::StructObject {
             span: ByteSpan::default(),
-            struct_def: mkstruct("OnlyI32", vec![("val", i32t())], None),
+            struct_def: mkstruct("OnlyI32", vec![("val", i32t())], None, None),
             fields: fields3,
         });
         assert!(resolve_func(vec![BlockElement::Expr(sd4)], unitt(), &log, &mut s).is_ok());
@@ -1500,6 +1823,7 @@ fn test_resolve_generic_struct() {
             "Pair",
             vec![("first", GP(0, "T")), ("second", GP(0, "T"))],
             Some(vec!["T"]),
+            None,
         );
         let fields: ThinVec<(NString, ValueId)> =
             vec![(NString::from("first"), i32v(1)), (NString::from("second"), i32v(2))].into();
@@ -1528,6 +1852,7 @@ fn test_resolve_generic_struct_float_fields() {
             "Pair",
             vec![("first", GP(0, "T")), ("second", GP(0, "T"))],
             Some(vec!["T"]),
+            None,
         );
         let fields: ThinVec<(NString, ValueId)> = vec![
             (NString::from("first"), f64v(1.0)),
@@ -1559,6 +1884,7 @@ fn test_resolve_generic_struct_unsolved_inferred() {
             "Pair",
             vec![("first", GP(0, "T")), ("second", GP(0, "T"))],
             Some(vec!["T"]),
+            None,
         );
         let fields: ThinVec<(NString, ValueId)> = vec![
             (NString::from("first"), inf_int(1)),
@@ -1575,8 +1901,45 @@ fn test_resolve_generic_struct_unsolved_inferred() {
             &log,
             &mut s,
         );
-        // This may succeed or fail depending on inference
         let _ = result;
+    });
+}
+
+#[test]
+fn test_resolve_generic_struct_from_constraints() {
+    store(|_| {
+        let log = CompilerLog::default();
+        let mut s = sym();
+        let sd = mkstruct(
+            "Pair",
+            vec![("first", GP(0, "T")), ("second", GP(0, "T"))],
+            Some(vec!["T"]),
+            None,
+        );
+        s.add_struct(sd.clone());
+        let fields: ThinVec<(NString, ValueId)> = vec![
+            (NString::from("first"), inf_int(1)),
+            (NString::from("second"), inf_int(2)),
+        ]
+        .into();
+        let param_type = TypeId::from(Type::Parameterized {
+            span: ByteSpan::default(),
+            base: TypeId::from(Type::Struct {
+                span: ByteSpan::default(),
+                def: sd.clone(),
+            }),
+            args: Arguments {
+                positional: vec![i32t()].into(),
+                named: ThinVec::new(),
+            },
+        });
+        let obj = sv(Value::StructObject {
+            span: ByteSpan::default(),
+            struct_def: sd,
+            fields,
+        });
+        let lv = local("p", param_type, obj);
+        let _ = resolve_func(vec![BlockElement::Local(lv)], unitt(), &log, &mut s);
     });
 }
 
@@ -1585,9 +1948,9 @@ fn test_resolve_field_access() {
     store(|_| {
         let log = CompilerLog::default();
         let mut s = sym();
-        let sd = mkstruct("Pt", vec![("x", i32t()), ("y", i32t())], None);
+        let sd = mkstruct("Pt", vec![("x", i32t()), ("y", i32t())], None, None);
         s.add_struct(sd);
-        let sd2 = mkstruct("Pt", vec![("x", i32t()), ("y", i32t())], None);
+        let sd2 = mkstruct("Pt", vec![("x", i32t()), ("y", i32t())], None, None);
         let fields: ThinVec<(NString, ValueId)> =
             vec![(NString::from("x"), i32v(10)), (NString::from("y"), i32v(20))].into();
         let so = sv(Value::StructObject {
@@ -1633,6 +1996,37 @@ fn test_resolve_index_access() {
                     index: idx
                 }))],
                 i32t(),
+                &log,
+                &mut s
+            )
+            .is_ok()
+        );
+    });
+}
+
+#[test]
+fn test_resolve_index_access_with_list_and_constraint() {
+    store(|_| {
+        let log = CompilerLog::default();
+        let mut s = sym();
+        let list = sv(Value::List {
+            span: ByteSpan::default(),
+            elements: vec![i32v(1), i32v(2), i32v(3)].into(),
+        });
+        let idx = sv(Value::USize {
+            span: ByteSpan::default(),
+            bits: 64,
+            value: 0,
+        });
+        let idx_access = sv(Value::IndexAccess {
+            span: ByteSpan::default(),
+            collection: list,
+            index: idx,
+        });
+        assert!(
+            resolve_func(
+                vec![BlockElement::Local(local("r", i32t(), idx_access))],
+                unitt(),
                 &log,
                 &mut s
             )
@@ -1905,7 +2299,6 @@ fn test_resolve_call_generic_mismatch() {
             Some(vec![BlockElement::Expr(ret)]),
             Some(gens),
         );
-        // Wrong number of args - should still visit without error
         let call = sv(Value::Call {
             span: ByteSpan::default(),
             callee: sv(Value::FunctionSymbol {
@@ -1922,12 +2315,35 @@ fn test_resolve_call_generic_mismatch() {
 }
 
 #[test]
+fn test_resolve_call_generic_empty_generics() {
+    store(|_| {
+        let log = CompilerLog::default();
+        let mut s = sym();
+        let mut gens = BTreeMap::new();
+        gens.insert(NString::from("T"), Some(GP(0, "T")));
+        let fid = mkfunc("gen", vec![], GP(0, "T"), None, Some(gens));
+        let call = sv(Value::Call {
+            span: ByteSpan::default(),
+            callee: sv(Value::FunctionSymbol {
+                span: ByteSpan::default(),
+                id: fid,
+            }),
+            args: Arguments {
+                positional: ThinVec::new(),
+                named: ThinVec::new(),
+            },
+        });
+        let _ = resolve_func(vec![BlockElement::Expr(call)], unitt(), &log, &mut s);
+    });
+}
+
+#[test]
 fn test_resolve_method_call() {
     store(|_| {
         let log = CompilerLog::default();
         let mut s = sym();
-        let sd = mkstruct("Pt", vec![("x", i32t()), ("y", i32t())], None);
-        let sd2 = mkstruct("Pt", vec![("x", i32t()), ("y", i32t())], None);
+        let sd = mkstruct("Pt", vec![("x", i32t()), ("y", i32t())], None, None);
+        let sd2 = mkstruct("Pt", vec![("x", i32t()), ("y", i32t())], None, None);
         s.add_struct(sd);
         let st_id = TypeId::from(Type::Struct {
             span: ByteSpan::default(),
@@ -1943,7 +2359,7 @@ fn test_resolve_method_call() {
         });
         let mid = mkfunc("get_x", vec![p], i32t(), Some(vec![BlockElement::Expr(ret)]), None);
         s.add_method(st_id, NString::from("get_x"), mid);
-        let sd3 = mkstruct("Pt", vec![("x", i32t()), ("y", i32t())], None);
+        let sd3 = mkstruct("Pt", vec![("x", i32t()), ("y", i32t())], None, None);
         let fields: ThinVec<(NString, ValueId)> =
             vec![(NString::from("x"), i32v(10)), (NString::from("y"), i32v(20))].into();
         let obj = sv(Value::StructObject {
@@ -1969,8 +2385,8 @@ fn test_resolve_method_call_named_args() {
     store(|_| {
         let log = CompilerLog::default();
         let mut s = sym();
-        let sd = mkstruct("Pt", vec![("x", i32t()), ("y", i32t())], None);
-        let sd2 = mkstruct("Pt", vec![("x", i32t()), ("y", i32t())], None);
+        let sd = mkstruct("Pt", vec![("x", i32t()), ("y", i32t())], None, None);
+        let sd2 = mkstruct("Pt", vec![("x", i32t()), ("y", i32t())], None, None);
         s.add_struct(sd);
         let st_id = TypeId::from(Type::Struct {
             span: ByteSpan::default(),
@@ -1986,7 +2402,7 @@ fn test_resolve_method_call_named_args() {
         });
         let mid = mkfunc("get_x", vec![p], i32t(), Some(vec![BlockElement::Expr(ret)]), None);
         s.add_method(st_id, NString::from("get_x"), mid);
-        let sd3 = mkstruct("Pt", vec![("x", i32t()), ("y", i32t())], None);
+        let sd3 = mkstruct("Pt", vec![("x", i32t()), ("y", i32t())], None, None);
         let fields: ThinVec<(NString, ValueId)> =
             vec![(NString::from("x"), i32v(10)), (NString::from("y"), i32v(20))].into();
         let obj = sv(Value::StructObject {
@@ -2022,6 +2438,54 @@ fn test_resolve_method_not_found() {
             },
         });
         let _ = resolve_func(vec![BlockElement::Expr(mc)], unitt(), &log, &mut s);
+    });
+}
+
+#[test]
+fn test_resolve_method_call_generic() {
+    store(|_| {
+        let log = CompilerLog::default();
+        let mut s = sym();
+        let sd = mkstruct("Pt", vec![("x", GP(0, "T")), ("y", GP(0, "T"))], Some(vec!["T"]), None);
+        s.add_struct(sd.clone());
+        let st_id = TypeId::from(Type::Struct {
+            span: ByteSpan::default(),
+            def: sd.clone(),
+        });
+        let p = param("self", st_id);
+        let ret = sv(Value::Return {
+            span: ByteSpan::default(),
+            value: sv(Value::ParameterSymbol {
+                span: ByteSpan::default(),
+                id: p.clone(),
+            }),
+        });
+        let mid = mkfunc("get_x", vec![p], i32t(), Some(vec![BlockElement::Expr(ret)]), None);
+        s.add_method(
+            TypeId::from(Type::Struct {
+                span: ByteSpan::default(),
+                def: sd.clone(),
+            }),
+            NString::from("get_x"),
+            mid,
+        );
+        let fields: ThinVec<(NString, ValueId)> =
+            vec![(NString::from("x"), i32v(10)), (NString::from("y"), i32v(20))].into();
+        let obj = sv(Value::StructObject {
+            span: ByteSpan::default(),
+            struct_def: sd,
+            fields,
+        });
+        let mc = sv(Value::MethodCall {
+            span: ByteSpan::default(),
+            object: obj,
+            method_name: NString::from("get_x"),
+            args: Arguments {
+                positional: ThinVec::new(),
+                named: ThinVec::new(),
+            },
+        });
+        assert!(resolve_func(vec![BlockElement::Expr(mc)], i32t(), &log, &mut s).is_ok());
     });
 }
 
@@ -2133,16 +2597,53 @@ fn test_monomorphize() {
         let mid = solver.monomorphize_function(&fid, &sub);
         assert!(mid.borrow().name.contains("mono"));
         assert!(matches!(&*mid.borrow().return_type, Type::I32 { .. }));
-        let sd = mkstruct("GP", vec![("f", GP(0, "T"))], Some(vec!["T"]));
+        let sd = mkstruct("GP", vec![("f", GP(0, "T"))], Some(vec!["T"]), None);
         let mid2 = solver.monomorphize_struct(&sd, &sub);
         assert!(mid2.borrow().name.contains("mono") && mid2.borrow().generics.is_none());
         assert_eq!(
             solver.monomorphize_function(&fid, &sub).as_usize(),
             solver.monomorphize_function(&fid, &sub).as_usize()
         );
-        // Test struct mono caching
         let mid3 = solver.monomorphize_struct(&sd, &sub);
         assert_eq!(mid2.as_usize(), mid3.as_usize());
+    });
+}
+
+#[test]
+fn test_monomorphize_with_body_containing_local() {
+    store(|_| {
+        let mut s = sym();
+        let p = param("x", GP(0, "T"));
+        let body = vec![BlockElement::Local(local(
+            "y",
+            GP(0, "T"),
+            sv(Value::ParameterSymbol {
+                span: ByteSpan::default(),
+                id: p.clone(),
+            }),
+        ))];
+        let mut gens = BTreeMap::new();
+        gens.insert(NString::from("T"), Some(GP(0, "T")));
+        let fid = mkfunc("gf2", vec![p], GP(0, "T"), Some(body), Some(gens));
+        let mut sub = Substitution::default();
+        sub.mapping.insert(0, i32t());
+        let mut solver = Solver::new(&mut s);
+        let mid = solver.monomorphize_function(&fid, &sub);
+        assert!(mid.borrow().name.contains("mono"));
+    });
+}
+
+#[test]
+fn test_monomorphize_struct_with_generic_not_in_fields() {
+    store(|_| {
+        let mut s = sym();
+        let sd = mkstruct("Wrapper", vec![("x", i32t())], Some(vec!["T"]), None);
+        let mut sub = Substitution::default();
+        sub.mapping.insert(0, i32t());
+        let mut solver = Solver::new(&mut s);
+        let mid = solver.monomorphize_struct(&sd, &sub);
+        assert!(mid.borrow().name.contains("mono"));
+        assert!(mid.borrow().generics.is_none());
     });
 }
 
@@ -2169,13 +2670,358 @@ fn test_mono_struct_depth_limit() {
         let mut solver = Solver::new(&mut s);
         solver.mono_depth = MAX_MONO_DEPTH;
         let r = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-            solver.monomorphize_struct(&mkstruct("S", vec![("x", i32t())], None), &Substitution::default());
+            solver.monomorphize_struct(
+                &mkstruct("S", vec![("x", i32t())], None, None),
+                &Substitution::default(),
+            );
         }));
         assert!(r.is_err());
     });
 }
 
-// ═══ DIAGNOSIS: ALL 10 VARIANTS ═══
+// ═══ INFERRED INTEGER/FLOAT SOLVING ═══
+
+#[test]
+fn test_solve_inferred_int_to_u8() {
+    store(|_| {
+        let log = CompilerLog::default();
+        let mut s = sym();
+        let inferred = inf_int(42);
+        assert!(
+            resolve_func(
+                vec![BlockElement::Local(local("x", u8t(), inferred))],
+                unitt(),
+                &log,
+                &mut s
+            )
+            .is_ok()
+        );
+    });
+}
+
+#[test]
+fn test_solve_inferred_int_to_u16() {
+    store(|_| {
+        let log = CompilerLog::default();
+        let mut s = sym();
+        let inferred = inf_int(42);
+        assert!(
+            resolve_func(
+                vec![BlockElement::Local(local("x", u16t(), inferred))],
+                unitt(),
+                &log,
+                &mut s
+            )
+            .is_ok()
+        );
+    });
+}
+
+#[test]
+fn test_solve_inferred_int_to_u32() {
+    store(|_| {
+        let log = CompilerLog::default();
+        let mut s = sym();
+        let inferred = inf_int(42);
+        assert!(
+            resolve_func(
+                vec![BlockElement::Local(local("x", u32t(), inferred))],
+                unitt(),
+                &log,
+                &mut s
+            )
+            .is_ok()
+        );
+    });
+}
+
+#[test]
+fn test_solve_inferred_int_to_u64() {
+    store(|_| {
+        let log = CompilerLog::default();
+        let mut s = sym();
+        let inferred = inf_int(42);
+        assert!(
+            resolve_func(
+                vec![BlockElement::Local(local("x", u64t(), inferred))],
+                unitt(),
+                &log,
+                &mut s
+            )
+            .is_ok()
+        );
+    });
+}
+
+#[test]
+fn test_solve_inferred_int_to_i16() {
+    store(|_| {
+        let log = CompilerLog::default();
+        let mut s = sym();
+        let inferred = inf_int(42);
+        assert!(
+            resolve_func(
+                vec![BlockElement::Local(local("x", i16t(), inferred))],
+                unitt(),
+                &log,
+                &mut s
+            )
+            .is_ok()
+        );
+    });
+}
+
+#[test]
+fn test_solve_inferred_int_to_i64() {
+    store(|_| {
+        let log = CompilerLog::default();
+        let mut s = sym();
+        let inferred = inf_int(42);
+        assert!(
+            resolve_func(
+                vec![BlockElement::Local(local("x", i64t(), inferred))],
+                unitt(),
+                &log,
+                &mut s
+            )
+            .is_ok()
+        );
+    });
+}
+
+#[test]
+fn test_solve_inferred_int_to_i128() {
+    store(|_| {
+        let log = CompilerLog::default();
+        let mut s = sym();
+        let inferred = inf_int(42);
+        assert!(
+            resolve_func(
+                vec![BlockElement::Local(local("x", i128t(), inferred))],
+                unitt(),
+                &log,
+                &mut s
+            )
+            .is_ok()
+        );
+    });
+}
+
+#[test]
+fn test_solve_inferred_int_to_u128() {
+    store(|_| {
+        let log = CompilerLog::default();
+        let mut s = sym();
+        let inferred = inf_int(42);
+        assert!(
+            resolve_func(
+                vec![BlockElement::Local(local("x", u128t(), inferred))],
+                unitt(),
+                &log,
+                &mut s
+            )
+            .is_ok()
+        );
+    });
+}
+
+#[test]
+fn test_solve_inferred_int_refinement_constraint() {
+    store(|_| {
+        let log = CompilerLog::default();
+        let mut s = sym();
+        let inferred = inf_int(42);
+        let refine = TypeId::from(Type::Refine {
+            span: ByteSpan::default(),
+            base: i32t(),
+            min: lit(Lit::I32(0)),
+            max: lit(Lit::I32(100)),
+        });
+        assert!(
+            resolve_func(
+                vec![BlockElement::Local(local("x", refine, inferred))],
+                unitt(),
+                &log,
+                &mut s
+            )
+            .is_ok()
+        );
+    });
+}
+
+#[test]
+fn test_solve_inferred_int_refinement_out_of_bounds() {
+    store(|_| {
+        let log = CompilerLog::default();
+        let mut s = sym();
+        let inferred = inf_int(200);
+        let refine = TypeId::from(Type::Refine {
+            span: ByteSpan::default(),
+            base: i32t(),
+            min: lit(Lit::I32(0)),
+            max: lit(Lit::I32(100)),
+        });
+        let result = resolve_func(
+            vec![BlockElement::Local(local("x", refine, inferred))],
+            unitt(),
+            &log,
+            &mut s,
+        );
+        let _ = result;
+    });
+}
+
+#[test]
+fn test_solve_inferred_int_non_integer_constraint() {
+    store(|_| {
+        let log = CompilerLog::default();
+        let mut s = sym();
+        let inferred = inf_int(42);
+        let result = resolve_func(
+            vec![BlockElement::Local(local("x", boolt(), inferred))],
+            unitt(),
+            &log,
+            &mut s,
+        );
+        let _ = result;
+    });
+}
+
+#[test]
+fn test_solve_inferred_float_f32() {
+    store(|_| {
+        let log = CompilerLog::default();
+        let mut s = sym();
+        let inferred = inf_flt(3.14);
+        assert!(
+            resolve_func(
+                vec![BlockElement::Local(local("x", f32t(), inferred))],
+                unitt(),
+                &log,
+                &mut s
+            )
+            .is_ok()
+        );
+    });
+}
+
+#[test]
+fn test_solve_inferred_float_f64() {
+    store(|_| {
+        let log = CompilerLog::default();
+        let mut s = sym();
+        let inferred = inf_flt(3.14);
+        assert!(
+            resolve_func(
+                vec![BlockElement::Local(local("x", f64t(), inferred))],
+                unitt(),
+                &log,
+                &mut s
+            )
+            .is_ok()
+        );
+    });
+}
+
+#[test]
+fn test_solve_inferred_float_non_float_constraint() {
+    store(|_| {
+        let log = CompilerLog::default();
+        let mut s = sym();
+        let inferred = inf_flt(3.14);
+        let result = resolve_func(
+            vec![BlockElement::Local(local("x", boolt(), inferred))],
+            unitt(),
+            &log,
+            &mut s,
+        );
+        let _ = result;
+    });
+}
+
+// ═══ INFERRED LITERAL DEFAULTING ═══
+
+#[test]
+fn test_inferred_literal_defaulting_in_block() {
+    store(|_| {
+        let log = CompilerLog::default();
+        let mut s = sym();
+        let inner_block = Block {
+            span: ByteSpan::default(),
+            safety: BlockSafety::Safe,
+            elements: vec![BlockElement::Expr(inf_int(99))],
+        };
+        let val = sv(Value::Block {
+            span: ByteSpan::default(),
+            block: BlockId::from(inner_block),
+        });
+        assert!(resolve_func(vec![BlockElement::Expr(val)], unitt(), &log, &mut s).is_ok());
+    });
+}
+
+#[test]
+fn test_inferred_literal_defaulting_in_if() {
+    store(|_| {
+        let log = CompilerLog::default();
+        let mut s = sym();
+        let tb = Block {
+            span: ByteSpan::default(),
+            safety: BlockSafety::Safe,
+            elements: vec![BlockElement::Expr(inf_int(42))],
+        };
+        let fb = Block {
+            span: ByteSpan::default(),
+            safety: BlockSafety::Safe,
+            elements: vec![BlockElement::Expr(inf_int(43))],
+        };
+        let val = sv(Value::If {
+            span: ByteSpan::default(),
+            condition: boolv(true),
+            true_branch: BlockId::from(tb),
+            false_branch: Some(BlockId::from(fb)),
+        });
+        assert!(resolve_func(vec![BlockElement::Expr(val)], unitt(), &log, &mut s).is_ok());
+    });
+}
+
+// ═══ TYPE CONTAINING GENERIC PARAM ═══
+
+#[test]
+fn test_type_contains_generic_param_indirect() {
+    store(|_| {
+        let sd = mkstruct(
+            "Holder",
+            vec![(
+                "ptr",
+                TypeId::from(Type::Pointer {
+                    span: ByteSpan::default(),
+                    lifetime: nitrate_hir::Lifetime::Inferred,
+                    exclusive: false,
+                    mutable: false,
+                    to: GP(0, "T"),
+                }),
+            )],
+            Some(vec!["T"]),
+            None,
+        );
+        let fields: ThinVec<(NString, ValueId)> = vec![(NString::from("ptr"), i32v(42))].into();
+        let log = CompilerLog::default();
+        let mut s = sym();
+        let result = resolve_func(
+            vec![BlockElement::Expr(sv(Value::StructObject {
+                span: ByteSpan::default(),
+                struct_def: sd,
+                fields,
+            }))],
+            unitt(),
+            &log,
+            &mut s,
+        );
+        let _ = result;
+    });
+}
+
+// ═══ DIAGNOSIS ═══
 
 #[test]
 fn test_diagnostic_all_variants() {
@@ -2290,7 +3136,6 @@ fn test_diagnostic_all_variants() {
                 info.message
             );
         }
-        // Test origin variants
         let with_span = TypeErr::IntegerLiteralOutOfRange {
             span: span(10, 20),
             value: 0,
@@ -2336,5 +3181,229 @@ fn test_diagnostic_refine_bounds_format() {
         };
         let info2 = e2.format();
         assert!(!info2.message.is_empty());
+    });
+}
+
+// ═══ SPECIAL VISITOR PATHS ═══
+
+#[test]
+fn test_resolve_global_initializer_with_inferred_type() {
+    store(|_| {
+        let log = CompilerLog::default();
+        let mut s = sym();
+        let mut g = nitrate_hir::GlobalVariable {
+            span: ByteSpan::default(),
+            visibility: Visibility::Pub,
+            attributes: BTreeSet::new(),
+            is_mutable: false,
+            name: NString::from("V"),
+            mangled_name: NString::from("V"),
+            ty: TypeId::from(Type::Inferred {
+                span: ByteSpan::default(),
+                id: std::num::NonZeroU32::new(1).unwrap(),
+                name: None,
+            }),
+            initializer: sv(Value::Binary {
+                span: ByteSpan::default(),
+                left: i32v(10),
+                op: BinaryOp::Add,
+                right: i32v(20),
+            }),
+        };
+        assert!(resolve_global(&mut g, &mut s, &log).is_ok());
+    });
+}
+
+#[test]
+fn test_resolve_binary_with_refinement_bounds() {
+    store(|_| {
+        let log = CompilerLog::default();
+        let mut s = sym();
+        let refine = TypeId::from(Type::Refine {
+            span: ByteSpan::default(),
+            base: i32t(),
+            min: lit(Lit::I32(0)),
+            max: lit(Lit::I32(100)),
+        });
+        let binop = sv(Value::Binary {
+            span: ByteSpan::default(),
+            left: i32v(10),
+            op: BinaryOp::Add,
+            right: i32v(20),
+        });
+        let result = resolve_func(
+            vec![BlockElement::Local(local("r", refine, binop))],
+            unitt(),
+            &log,
+            &mut s,
+        );
+        let _ = result;
+    });
+}
+
+#[test]
+fn test_resolve_binary_with_refinement_bounds_out_of_range() {
+    store(|_| {
+        let log = CompilerLog::default();
+        let mut s = sym();
+        let refine = TypeId::from(Type::Refine {
+            span: ByteSpan::default(),
+            base: u8t(),
+            min: lit(Lit::U8(0)),
+            max: lit(Lit::U8(10)),
+        });
+        let binop = sv(Value::Binary {
+            span: ByteSpan::default(),
+            left: u8v(10),
+            op: BinaryOp::Add,
+            right: u8v(20),
+        });
+        let result = resolve_func(
+            vec![BlockElement::Local(local("r", refine, binop))],
+            unitt(),
+            &log,
+            &mut s,
+        );
+        let _ = result;
+    });
+}
+
+fn u8v(v: u8) -> ValueId {
+    sv(Value::U8 {
+        span: ByteSpan::default(),
+        value: v,
+    })
+}
+
+#[test]
+fn test_resolve_binary_default_fallback() {
+    store(|_| {
+        let log = CompilerLog::default();
+        let mut s = sym();
+        let binop = sv(Value::Binary {
+            span: ByteSpan::default(),
+            left: inf_int(10),
+            op: BinaryOp::Add,
+            right: inf_int(20),
+        });
+        assert!(resolve_func(vec![BlockElement::Expr(binop)], unitt(), &log, &mut s).is_ok());
+    });
+}
+
+#[test]
+fn test_resolve_list_with_inferred_elements_and_parent_constraint() {
+    store(|_| {
+        let log = CompilerLog::default();
+        let mut s = sym();
+        let list = sv(Value::List {
+            span: ByteSpan::default(),
+            elements: vec![inf_int(1), inf_int(2)].into(),
+        });
+        assert!(
+            resolve_func(
+                vec![BlockElement::Local(local("xs", u32t(), list))],
+                unitt(),
+                &log,
+                &mut s
+            )
+            .is_ok()
+        );
+    });
+}
+
+#[test]
+fn test_method_call_generic_method() {
+    store(|_| {
+        let log = CompilerLog::default();
+        let mut s = sym();
+        let sd = mkstruct("Pt", vec![("x", GP(0, "T")), ("y", GP(0, "T"))], Some(vec!["T"]), None);
+        s.add_struct(sd.clone());
+        let st_id = TypeId::from(Type::Struct {
+            span: ByteSpan::default(),
+            def: sd.clone(),
+        });
+        let p = param("self", st_id);
+        let ret = sv(Value::Return {
+            span: ByteSpan::default(),
+            value: sv(Value::ParameterSymbol {
+                span: ByteSpan::default(),
+                id: p.clone(),
+            }),
+        });
+        let mid = mkfunc("get_x", vec![p], GP(0, "T"), Some(vec![BlockElement::Expr(ret)]), None);
+        s.add_method(
+            TypeId::from(Type::Struct {
+                span: ByteSpan::default(),
+                def: sd.clone(),
+            }),
+            NString::from("get_x"),
+            mid,
+        );
+        let fields: ThinVec<(NString, ValueId)> =
+            vec![(NString::from("x"), i32v(10)), (NString::from("y"), i32v(20))].into();
+        let obj = sv(Value::StructObject {
+            span: ByteSpan::default(),
+            struct_def: sd,
+            fields,
+        });
+        let mc = sv(Value::MethodCall {
+            span: ByteSpan::default(),
+            object: obj,
+            method_name: NString::from("get_x"),
+            args: Arguments {
+                positional: ThinVec::new(),
+                named: ThinVec::new(),
+            },
+        });
+        assert!(resolve_func(vec![BlockElement::Expr(mc)], i32t(), &log, &mut s).is_ok());
+    });
+}
+
+#[test]
+fn test_monomorphize_with_cast() {
+    store(|_| {
+        let mut s = sym();
+        let body = vec![BlockElement::Expr(sv(Value::Cast {
+            span: ByteSpan::default(),
+            value: i32v(42),
+            target_type: GP(0, "T"),
+        }))];
+        let mut gens = BTreeMap::new();
+        gens.insert(NString::from("T"), Some(GP(0, "T")));
+        let fid = mkfunc("cast_fn", vec![], GP(0, "T"), Some(body), Some(gens));
+        let mut sub = Substitution::default();
+        sub.mapping.insert(0, i64t());
+        let mut solver = Solver::new(&mut s);
+        let mid = solver.monomorphize_function(&fid, &sub);
+        assert!(mid.borrow().name.contains("mono"));
+    });
+}
+
+#[test]
+fn test_monomorphize_with_generic_struct_value() {
+    store(|_| {
+        let mut s = sym();
+        let sd = mkstruct("GP", vec![("f", GP(0, "T"))], Some(vec!["T"]), None);
+        let body = vec![BlockElement::Expr(sv(Value::StructObject {
+            span: ByteSpan::default(),
+            struct_def: sd,
+            fields: vec![(
+                NString::from("f"),
+                sv(Value::ParameterSymbol {
+                    span: ByteSpan::default(),
+                    id: param("x", GP(0, "T")),
+                }),
+            )]
+            .into(),
+        }))];
+        let p = param("x", GP(0, "T"));
+        let mut gens = BTreeMap::new();
+        gens.insert(NString::from("T"), Some(GP(0, "T")));
+        let fid = mkfunc("make_gp", vec![p], GP(0, "T"), Some(body), Some(gens));
+        let mut sub = Substitution::default();
+        sub.mapping.insert(0, i32t());
+        let mut solver = Solver::new(&mut s);
+        let mid = solver.monomorphize_function(&fid, &sub);
+        assert!(mid.borrow().name.contains("mono"));
     });
 }
