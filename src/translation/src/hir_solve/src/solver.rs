@@ -11,7 +11,7 @@
 //! reaches a steady state. This ensures transitive constraint propagation,
 //! nested monomorphization detection, and inference variable resolution.
 
-use crate::bounds::extract_bounds_from_type;
+use crate::bounds::{Bounds, extract_bounds_from_type};
 use crate::constraints::TypeConstraint;
 use crate::diagnosis::TypeErr;
 use nitrate_diagnosis::CompilerLog;
@@ -88,8 +88,6 @@ pub(crate) struct Solver<'m> {
     pub(super) mono_in_progress: HashSet<MonoCacheKey>,
 }
 
-type Bounds = (i128, i128);
-
 impl<'m> Solver<'m> {
     pub(crate) fn new(m: &'m mut SymbolTab) -> Self {
         Self {
@@ -144,18 +142,18 @@ impl<'m> Solver<'m> {
                 Value::LocalVariableSymbol { id, .. } => extract_bounds_from_type(id.borrow().ty.deref()),
                 Value::GlobalVariableSymbol { id, .. } => extract_bounds_from_type(id.borrow().ty.deref()),
                 Value::ParameterSymbol { id, .. } => extract_bounds_from_type(id.borrow().ty.deref()),
-                Value::I8 { .. } => Some((-128, 127)),
-                Value::I16 { .. } => Some((-32768, 32_767)),
-                Value::I32 { .. } => Some((-2_147_483_648, 2_147_483_647)),
-                Value::I64 { .. } => Some((-9_223_372_036_854_775_808, 9_223_372_036_854_775_807)),
-                Value::I128 { .. } => Some((i128::MIN, i128::MAX)),
-                Value::U8 { .. } => Some((0, 255)),
-                Value::U16 { .. } => Some((0, 65535)),
-                Value::U32 { .. } => Some((0, 4_294_967_295)),
-                Value::U64 { .. } => Some((0, 18_446_744_073_709_551_615)),
-                Value::U128 { .. } => Some((0, i128::MAX)),
-                Value::USize { .. } => Some((0, 18_446_744_073_709_551_615)),
-                Value::InferredInteger { value: v, .. } => Some((**v as i128, **v as i128)),
+                Value::I8 { .. } => Some(Bounds::signed(-128, 127)),
+                Value::I16 { .. } => Some(Bounds::signed(-32768, 32_767)),
+                Value::I32 { .. } => Some(Bounds::signed(-2_147_483_648, 2_147_483_647)),
+                Value::I64 { .. } => Some(Bounds::signed(-9_223_372_036_854_775_808, 9_223_372_036_854_775_807)),
+                Value::I128 { .. } => Some(Bounds::signed(i128::MIN, i128::MAX)),
+                Value::U8 { .. } => Some(Bounds::unsigned(0, 255)),
+                Value::U16 { .. } => Some(Bounds::unsigned(0, 65535)),
+                Value::U32 { .. } => Some(Bounds::unsigned(0, 4_294_967_295)),
+                Value::U64 { .. } => Some(Bounds::unsigned(0, 18_446_744_073_709_551_615)),
+                Value::U128 { .. } => Some(Bounds::unsigned(0, u128::MAX)),
+                Value::USize { .. } => Some(Bounds::unsigned(0, 18_446_744_073_709_551_615)),
+                Value::InferredInteger { value: v, .. } => Some(Bounds::new(**v as i128, **v as u128)),
                 _ => None,
             }
         };
@@ -166,9 +164,7 @@ impl<'m> Solver<'m> {
                 let constraint_ty = constraint.type_id();
                 if let Some(bounds) = extract_bounds_from_type(&constraint_ty) {
                     effective_bounds = Some(match effective_bounds {
-                        Some((cur_min, cur_max)) => {
-                            (std::cmp::max(cur_min, bounds.0), std::cmp::min(cur_max, bounds.1))
-                        }
+                        Some(cur) => Bounds::new(std::cmp::max(cur.lo, bounds.lo), std::cmp::min(cur.hi, bounds.hi)),
                         None => bounds,
                     });
                 }
@@ -570,8 +566,8 @@ impl<'m> Solver<'m> {
             let v = value_id.borrow();
             if matches!(&*v, Value::InferredInteger { .. } | Value::InferredFloat { .. }) {
                 match &*v {
-                    Value::InferredInteger { value, .. } => Some(("int", **value)),
-                    Value::InferredFloat { value, .. } => Some(("float", value.0 as u128)),
+                    Value::InferredInteger { value, .. } => Some(InferredInfo::Int(**value)),
+                    Value::InferredFloat { value, .. } => Some(InferredInfo::Float(value.0)),
                     _ => None,
                 }
             } else {
@@ -580,31 +576,48 @@ impl<'m> Solver<'m> {
         };
 
         // If still inferred, default it to a concrete type (no borrow active on value_id)
-        if let Some((kind, val)) = inferred_info {
-            match kind {
-                "int" => {
-                    let new_value = match i32::try_from(val) {
-                        Ok(v) => Value::I32 { span, value: v },
-                        Err(_) => match i64::try_from(val) {
-                            Ok(v) => Value::I64 { span, value: v },
-                            Err(_) => match u64::try_from(val) {
-                                Ok(v) => Value::U64 { span, value: v },
-                                Err(_) => Value::U128 {
-                                    span,
-                                    value: Box::new(val),
+        // BUT only if there were no errors - don't silently convert error cases
+        if let Some(info) = inferred_info {
+            // Check if there are unsatisfiable errors for this value - if so, don't default
+            let has_reported_error = self.constraints.get(value_id).map_or(false, |constraints| {
+                constraints.iter().any(|c| {
+                    let ty = c.type_id();
+                    let effective_ty = match &*ty {
+                        Type::Refine { base, .. } => *base,
+                        _ => ty,
+                    };
+                    match &info {
+                        InferredInfo::Int(_) => !effective_ty.is_integer_primitive(),
+                        InferredInfo::Float(_) => !effective_ty.is_float_primitive(),
+                    }
+                })
+            });
+
+            if !has_reported_error {
+                match info {
+                    InferredInfo::Int(val) => {
+                        let new_value = match i32::try_from(val) {
+                            Ok(v) => Value::I32 { span, value: v },
+                            Err(_) => match i64::try_from(val) {
+                                Ok(v) => Value::I64 { span, value: v },
+                                Err(_) => match u64::try_from(val) {
+                                    Ok(v) => Value::U64 { span, value: v },
+                                    Err(_) => Value::U128 {
+                                        span,
+                                        value: Box::new(val),
+                                    },
                                 },
                             },
-                        },
-                    };
-                    value_id.replace(new_value);
+                        };
+                        value_id.replace(new_value);
+                    }
+                    InferredInfo::Float(val) => {
+                        value_id.replace(Value::F64 {
+                            span,
+                            value: ordered_float::OrderedFloat(val),
+                        });
+                    }
                 }
-                "float" => {
-                    value_id.replace(Value::F64 {
-                        span,
-                        value: ordered_float::OrderedFloat(val as f64),
-                    });
-                }
-                _ => {}
             }
             return;
         }
@@ -696,6 +709,12 @@ impl<'m> Solver<'m> {
         }
         if self.errors.is_empty() { Ok(()) } else { Err(()) }
     }
+}
+
+/// Helper enum to distinguish integer vs float inferred literals.
+enum InferredInfo {
+    Int(u128),
+    Float(f64),
 }
 
 /// Public entry point: resolve all type constraints for a function.

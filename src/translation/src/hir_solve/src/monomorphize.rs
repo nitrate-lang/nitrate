@@ -43,7 +43,7 @@ impl<'m> Solver<'m> {
         let param_types: Vec<TypeId> = callee_func.params.iter().map(|p| p.borrow().ty).collect();
 
         if param_types.len() != positional_args.len() {
-            return Some(Substitution::default()); // Mismatch is caught elsewhere
+            return None; // Mismatch should not trigger monomorphization with empty substitution
         }
 
         for (arg_value_id, param_type_id) in positional_args.iter().zip(param_types.iter()) {
@@ -110,33 +110,24 @@ impl<'m> Solver<'m> {
             return None;
         }
 
-        // Check that all generic params have been bound
+        // Check that the substitution has bound all generic parameters used in params
         for (param_name, _) in generics.iter() {
-            // Find if this generic param index has been bound
-            let mut found = false;
-            for (_idx, _tid) in &subst.mapping {
-                // Check if this param appears in any param type
-                for param_id in &callee_func.params {
-                    let param = param_id.borrow();
-                    if subst.mapping.values().any(|v| *v == param.ty) {
-                        // Already bound via unify
+            let param_index = callee_func.params.iter().find_map(|param_id| {
+                let param = param_id.borrow();
+                if Self::type_contains_generic_param_name(&param.ty, param_name) {
+                    if let Type::GenericParam { index, .. } = &*param.ty {
+                        Some(*index)
+                    } else {
+                        None
                     }
-                    if Self::type_contains_generic_param_name(&param.ty, param_name) {
-                        // This param needs to be bound - check if it was
-                        if let Type::GenericParam { index, .. } = &*param.ty {
-                            if subst.mapping.contains_key(index) {
-                                found = true;
-                            }
-                        }
-                    }
+                } else {
+                    None
                 }
-            }
-            // Simple check: if we made any mapping, assume it's sufficient
-            if !subst.mapping.is_empty() {
-                found = true;
-            }
-            if !found && subst.mapping.is_empty() {
-                return None;
+            });
+            if let Some(index) = param_index {
+                if !subst.mapping.contains_key(&index) {
+                    return None;
+                }
             }
         }
 
@@ -197,7 +188,10 @@ impl<'m> Solver<'m> {
                         None
                     }
                 })
-                .unwrap_or(0);
+                .unwrap_or_else(|| {
+                    // Use the BTreeMap index directly instead of defaulting to 0
+                    generics.keys().position(|k| k == param_name).unwrap_or(0) as u32
+                });
             param_info.insert(param_name.clone(), GenericFieldInfo { index, appears: false });
         }
 

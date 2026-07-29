@@ -325,13 +325,14 @@ impl<'m> Solver<'m> {
                 if let (Some(lb), Some(rb)) = (self.get_effective_bounds(left), self.get_effective_bounds(right)) {
                     if let Some(res) = crate::bounds::compute_binary_bounds(op, lb, rb) {
                         if !crate::bounds::check_bounds_against_constraint(res, &result_ty) {
-                            let bounds = crate::bounds::extract_bounds_from_type(&result_ty);
-                            if let Some((comp_min, comp_max)) = bounds {
+                            if let Some(bnds) = crate::bounds::extract_bounds_from_type(&result_ty) {
+                                let comp_min = bnds.lo.max(0) as u128;
+                                let comp_max = bnds.hi;
                                 self.errors.insert(TypeErr::OperationResultOutOfRefinementBounds {
                                     span,
                                     refinement_type: result_ty,
-                                    computed_min: comp_min.max(0) as u128,
-                                    computed_max: comp_max.max(0) as u128,
+                                    computed_min: comp_min,
+                                    computed_max: comp_max,
                                 });
                             }
                         }
@@ -363,6 +364,10 @@ impl<'m> Solver<'m> {
 
                 if left_ty == right_ty && !left_inferred && is_arithmetic_op(op) {
                     self.add_constraint(e, TypeConstraint::Equal(left_ty));
+                } else if left_inferred && right_inferred && is_arithmetic_op(op) {
+                    // Both operands are inferred - check if they have the same value
+                    // by looking at their constraints. If they share a constraint, use it.
+                    // Otherwise, leave for finalization to default.
                 }
                 if is_comparison_or_logical_op(op) {
                     self.add_constraint(e, TypeConstraint::eq_type(Type::Bool { span }));
@@ -404,13 +409,14 @@ impl<'m> Solver<'m> {
             if let Some(ob) = self.get_effective_bounds(operand) {
                 let res = crate::bounds::compute_unary_bounds(op, ob);
                 if !crate::bounds::check_bounds_against_constraint(res, &result_ty) {
-                    let bounds = crate::bounds::extract_bounds_from_type(&result_ty);
-                    if let Some((comp_min, comp_max)) = bounds {
+                    if let Some(bnds) = crate::bounds::extract_bounds_from_type(&result_ty) {
+                        let comp_min = bnds.lo.max(0) as u128;
+                        let comp_max = bnds.hi;
                         self.errors.insert(TypeErr::OperationResultOutOfRefinementBounds {
                             span,
                             refinement_type: result_ty,
-                            computed_min: comp_min.max(0) as u128,
-                            computed_max: comp_max.max(0) as u128,
+                            computed_min: comp_min,
+                            computed_max: comp_max,
                         });
                     }
                 }
@@ -742,13 +748,16 @@ impl<'m> Solver<'m> {
                 mf.generics.is_some() && mf.generics.as_ref().is_some_and(|g| !g.is_empty())
             };
             if is_generic {
-                // Try positional inference first, then named inference fallback
+                // Prepend `self`/object to the argument list since method calls
+                // include the receiver separately from args. The monomorphized
+                // function expects `self` as the first parameter.
+                let mut args_with_self = args.clone();
+                args_with_self.positional.insert(0, object.clone());
                 let subst = self
-                    .infer_generic_args_from_call(&method_id, &args.positional)
+                    .infer_generic_args_from_call(&method_id, &args_with_self.positional)
                     .or_else(|| {
                         if !args.named.is_empty() {
-                            // Construct a synthetic call to use named arg inference
-                            self.infer_generic_args_from_call_named(&method_id, args)
+                            self.infer_generic_args_from_call_named(&method_id, &args_with_self)
                         } else {
                             None
                         }
@@ -761,7 +770,7 @@ impl<'m> Solver<'m> {
                             span: ByteSpan::default(),
                             id: mono_id,
                         }),
-                        args: args.clone(),
+                        args: args_with_self,
                     });
                     self.visit(e);
                     return;
