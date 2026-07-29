@@ -94,15 +94,25 @@ impl<'m> Solver<'m> {
     // ── Constraint helpers (used by both visit.rs and solver.rs) ──────────
 
     pub(super) fn add_constraint(&mut self, id: &ValueId, constraint: TypeConstraint) {
-        self.constraints.entry(id.clone()).or_default().insert(constraint);
-        self.constraint_version = self.constraint_version.wrapping_add(1);
-        self.add_to_worklist(id);
+        let changed = self.constraints.entry(id.clone()).or_default().insert(constraint);
+        if changed {
+            self.constraint_version = self.constraint_version.wrapping_add(1);
+            self.add_to_worklist(id);
+        }
     }
 
     pub(super) fn add_constraints(&mut self, id: &ValueId, constraints: impl IntoIterator<Item = TypeConstraint>) {
-        self.constraints.entry(id.clone()).or_default().extend(constraints);
-        self.constraint_version = self.constraint_version.wrapping_add(1);
-        self.add_to_worklist(id);
+        let entry = self.constraints.entry(id.clone()).or_default();
+        let mut changed = false;
+        for c in constraints {
+            if entry.insert(c) {
+                changed = true;
+            }
+        }
+        if changed {
+            self.constraint_version = self.constraint_version.wrapping_add(1);
+            self.add_to_worklist(id);
+        }
     }
 
     // ── Visit Children (dispatched by variant) ────────────────────────────
