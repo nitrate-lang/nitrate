@@ -13,6 +13,7 @@ pub enum TypeInferenceError {
     MethodNotFound,
     CannotDeref,
     ClosureHasNoType,
+    RangeStructNotRegistered,
 }
 
 pub trait HirGetType {
@@ -377,9 +378,29 @@ impl HirGetType for Value {
             Value::GlobalVariableSymbol { id, .. } => resolve_refine(id.borrow().ty.deref()),
             Value::LocalVariableSymbol { id, .. } => resolve_refine(id.borrow().ty.deref()),
             Value::ParameterSymbol { id, .. } => resolve_refine(id.borrow().ty.deref()),
-            Value::Range { .. } => Ok(Type::Unit {
-                span: ByteSpan::default(),
-            }),
+            Value::Range {
+                start, end, inclusive, ..
+            } => {
+                let has_start = start.is_some();
+                let has_end = end.is_some();
+
+                let struct_name = match (has_start, has_end) {
+                    (true, true) if *inclusive => "RangeInclusive",
+                    (true, true) => "Range",
+                    (true, false) => "RangeFrom",
+                    (false, true) if *inclusive => "RangeToInclusive",
+                    (false, true) => "RangeTo",
+                    (false, false) => "RangeFull",
+                };
+
+                match ctx.get_struct(&NString::from(struct_name)) {
+                    Some(struct_def) => Ok(Type::Struct {
+                        span: ByteSpan::default(),
+                        def: struct_def.clone(),
+                    }),
+                    None => Err(TypeInferenceError::RangeStructNotRegistered),
+                }
+            }
         }
     }
 }

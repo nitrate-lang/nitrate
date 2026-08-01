@@ -1,6 +1,6 @@
 use crate::constraints::{TypeConstraint, is_arithmetic_op, is_comparison_or_logical_op, propagate_to_children};
-use crate::diagnosis::TypeErr;
 use crate::solver::Solver;
+use crate::{constraints::NodeAction, diagnosis::TypeErr};
 use nitrate_hir::{BlockElement, BlockId, FunctionId, Type, TypeId, Value, ValueId};
 use nitrate_hir_get_type::HirGetType;
 use nitrate_tree::ByteSpan;
@@ -30,10 +30,10 @@ impl<'m> Solver<'m> {
             self.determine_action(&current_value, e)
         };
         match action {
-            crate::constraints::NodeAction::Replace(new_value) => {
+            NodeAction::Replace(new_value) => {
                 e.replace(new_value);
             }
-            crate::constraints::NodeAction::NoChange => self.visit_children(e),
+            NodeAction::NoChange => self.visit_children(e),
         }
     }
 
@@ -78,18 +78,38 @@ impl<'m> Solver<'m> {
         }
     }
 
-    pub(crate) fn determine_action(&mut self, value: &Value, id: &ValueId) -> crate::constraints::NodeAction {
+    pub(crate) fn determine_action(&mut self, value: &Value, id: &ValueId) -> NodeAction {
         match value {
             Value::InferredInteger { value, .. } => self.solve_inferred_integer(id, **value),
             Value::InferredFloat { value, .. } => self.solve_inferred_float(id, *value),
             Value::Range { .. } => self.solve_range(id),
-            _ => crate::constraints::NodeAction::NoChange,
+            _ => NodeAction::NoChange,
         }
     }
 
-    pub(crate) fn solve_range(&mut self, id: &ValueId) -> crate::constraints::NodeAction {
-        // Implementation for range solving - currently a placeholder
-        crate::constraints::NodeAction::NoChange
+    pub(crate) fn solve_range(&mut self, id: &ValueId) -> NodeAction {
+        let (span, start, end, inclusive) = {
+            let value = &*id.borrow();
+            if let Value::Range {
+                span,
+                start,
+                end,
+                inclusive,
+            } = value
+            {
+                (*span, start.clone(), end.clone(), *inclusive)
+            } else {
+                return NodeAction::NoChange;
+            }
+        };
+
+        let has_start = start.is_some();
+        let has_end = end.is_some();
+
+        let replacement =
+            crate::range::make_range_struct_object(self.m, span, start, end, inclusive, has_start, has_end);
+
+        NodeAction::Replace(replacement)
     }
 
     pub(crate) fn add_constraint(&mut self, id: &ValueId, constraint: TypeConstraint) {

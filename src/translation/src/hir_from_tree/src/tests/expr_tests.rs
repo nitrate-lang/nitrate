@@ -1201,28 +1201,43 @@ fn expr_assign_shr() {
     })
 }
 #[test]
-fn expr_range_unimplemented() {
+fn expr_range_lowered() {
     run(|c, l| {
-        assert!(
-            lower_expr(
-                ast::Expr::BinExpr(Box::new(ast::BinExpr {
+        let result = lower_expr(
+            ast::Expr::BinExpr(Box::new(ast::BinExpr {
+                span: ByteSpan::default(),
+                operator: ast::BinExprOp::Range,
+                left: ast::Expr::Integer(Box::new(ast::IntegerLit {
                     span: ByteSpan::default(),
-                    operator: ast::BinExprOp::Range,
-                    left: ast::Expr::Integer(Box::new(ast::IntegerLit {
-                        span: ByteSpan::default(),
-                        value: 1,
-                        kind: IntegerKind::Dec
-                    })),
-                    right: ast::Expr::Integer(Box::new(ast::IntegerLit {
-                        span: ByteSpan::default(),
-                        value: 10,
-                        kind: IntegerKind::Dec
-                    }))
+                    value: 1,
+                    kind: IntegerKind::Dec,
                 })),
-                c,
-                l
-            )
-            .is_err()
+                right: ast::Expr::Integer(Box::new(ast::IntegerLit {
+                    span: ByteSpan::default(),
+                    value: 10,
+                    kind: IntegerKind::Dec,
+                })),
+            })),
+            c,
+            l,
+        );
+        assert!(
+            result.is_ok(),
+            "Range lowering should succeed now that the operator is implemented"
+        );
+        let value = result.unwrap();
+        assert!(
+            matches!(
+                &value,
+                Value::Range {
+                    start: Some(_),
+                    end: Some(_),
+                    inclusive: false,
+                    ..
+                }
+            ),
+            "Expected Range with start and end, got {:?}",
+            value
         );
     })
 }

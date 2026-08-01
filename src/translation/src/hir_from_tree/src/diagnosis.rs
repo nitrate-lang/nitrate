@@ -87,8 +87,6 @@ pub(crate) enum HirErr {
     AwaitNotImplemented { span: ByteSpan },
     /// The `typeof` operator is not yet implemented.
     TypeofNotImplemented { span: ByteSpan },
-    /// The `..` range operator is not yet implemented.
-    RangeOperatorNotImplemented { span: ByteSpan },
     /// Type reflection via `typeinfo` is not yet implemented.
     TypeReflectionNotImplemented { span: ByteSpan },
     /// Closure expressions are not yet implemented.
@@ -193,7 +191,6 @@ impl FormattableDiagnosticGroup for HirErr {
             HirErr::ForLoopNotImplemented { .. } => 151,
             HirErr::AwaitNotImplemented { .. } => 152,
             HirErr::TypeofNotImplemented { .. } => 153,
-            HirErr::RangeOperatorNotImplemented { .. } => 154,
             HirErr::TypeReflectionNotImplemented { .. } => 155,
             HirErr::ClosureNotImplemented { .. } => 156,
             HirErr::TypePotentialNotImplemented { .. } => 157,
@@ -512,16 +509,6 @@ impl FormattableDiagnosticGroup for HirErr {
                     "`typeof` operator is not yet implemented\n\
                      \n  = note: the `typeof` reflection operator is planned but not yet available.\n\
                      \n  = help: specify the type explicitly instead of using typeof."
-                ),
-                origin: byte_span_to_origin(*span),
-            },
-
-            HirErr::RangeOperatorNotImplemented { span } => DiagnosticInfo {
-                message: format!(
-                    "the range operator `..` is not yet implemented\n\
-                     \n  = note: range expressions like `0..10` or `start..end` are planned\n\
-                     \n        but not yet available.\n\
-                     \n  = help: use explicit bounds instead of range syntax."
                 ),
                 origin: byte_span_to_origin(*span),
             },

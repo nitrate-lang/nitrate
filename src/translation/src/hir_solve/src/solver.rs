@@ -634,11 +634,13 @@ enum InferredInfo {
 }
 
 pub fn resolve_function(function: &mut Function, m: &mut SymbolTab, log: &CompilerLog) -> Result<(), ()> {
+    crate::range::ensure_range_structs(m);
     let mut solver = Solver::new(m);
     solver.solve_function(function, log)
 }
 
 pub fn resolve_global(global: &mut GlobalVariable, m: &mut SymbolTab, log: &CompilerLog) -> Result<(), ()> {
+    crate::range::ensure_range_structs(m);
     let mut solver = Solver::new(m);
     solver.solve_global_variable(global, log)
 }
