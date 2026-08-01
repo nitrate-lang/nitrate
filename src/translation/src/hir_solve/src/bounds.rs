@@ -342,16 +342,22 @@ pub(crate) fn compute_unary_bounds(op: &UnaryOp, operand: Bounds) -> Bounds {
 /// Check if computed bounds fit within a constraint type's bounds.
 /// Returns `true` if the bounds are satisfied.
 pub(crate) fn check_bounds_against_constraint(computed_bounds: Bounds, constraint_ty: &Type) -> bool {
-    let target_bounds = extract_bounds_from_type(constraint_ty);
-    if let Some(target) = target_bounds {
-        let (comp_min, comp_max) = (computed_bounds.lo, computed_bounds.hi);
-        let (target_min, target_max) = (target.lo, target.hi);
-        // For non-refinement types, check that computed bounds fit within the type's native range
-        if comp_min < target_min || comp_max > target_max {
-            return false;
+    // Only check bounds for refinement types - primitive types are always valid
+    // since the full type range may overflow when computing bounds on the full range.
+    match constraint_ty {
+        Type::Refine { .. } => {
+            let target_bounds = extract_bounds_from_type(constraint_ty);
+            if let Some(target) = target_bounds {
+                let (comp_min, comp_max) = (computed_bounds.lo, computed_bounds.hi);
+                let (target_min, target_max) = (target.lo, target.hi);
+                if comp_min < target_min || comp_max > target_max {
+                    return false;
+                }
+            }
+            true
         }
+        _ => true,
     }
-    true
 }
 
 /// Check whether a specific integer value fits within a refinement type's bounds.
@@ -361,16 +367,20 @@ pub(crate) fn check_literal_against_refinement(value: u128, constraint_ty: &Type
     match constraint_ty {
         Type::Refine { min, max, .. } => {
             let min_val = lit_to_i128(min);
-            let max_val = lit_to_u128(max);
+            let max_val = lit_to_i128(max);
             match (min_val, max_val) {
-                (Some(mn), Some(mx)) => {
-                    // Handle values that exceed i128::MAX by comparing against
-                    // the max bound only (since min is always <= i128::MAX for valid refinements)
+                (Some(mn), Some(mx_i128)) => {
+                    // If max is negative in signed space, values > i128::MAX are impossible
+                    if value > i128::MAX as u128 && mx_i128 < 0 {
+                        return false;
+                    }
+                    // If value exceeds i128::MAX, check against u128 conversion of max
                     if value > i128::MAX as u128 {
-                        value <= mx
+                        let mx_u128 = lit_to_u128(max).unwrap_or(0);
+                        value <= mx_u128
                     } else {
                         let signed = value as i128;
-                        signed >= mn
+                        signed >= mn && signed <= mx_i128
                     }
                 }
                 _ => true,

@@ -15,6 +15,23 @@ use smallvec::SmallVec;
 use std::unreachable;
 
 impl<'m> Solver<'m> {
+    /// Check if a type contains any GenericParam anywhere in its structure.
+    fn type_contains_any_generic_param(ty: &Type) -> bool {
+        match ty {
+            Type::GenericParam { .. } => true,
+            Type::Array { element_type, .. } => Self::type_contains_any_generic_param(element_type),
+            Type::Tuple { element_types, .. } => {
+                element_types.iter().any(|et| Self::type_contains_any_generic_param(et))
+            }
+            Type::Reference { to, .. } | Type::Pointer { to, .. } => Self::type_contains_any_generic_param(to),
+            Type::SliceRef { element_type, .. } | Type::SlicePtr { element_type, .. } => {
+                Self::type_contains_any_generic_param(element_type)
+            }
+            Type::Refine { base, .. } => Self::type_contains_any_generic_param(base),
+            _ => false,
+        }
+    }
+
     /// Main entry: visit a value node, determine action, then recurse.
     pub(crate) fn visit(&mut self, e: &ValueId) {
         let action = {
@@ -39,42 +56,38 @@ impl<'m> Solver<'m> {
         match element {
             BlockElement::Expr(e) => self.visit(e),
             BlockElement::Local(local_var) => {
-                let (is_inferred, init_id) = {
-                    let lv = local_var.borrow();
-                    (lv.ty.is_inferred(), lv.initializer.clone())
-                };
+                // Extract the initializer ID first to avoid holding a Ref across visit
+                let init_id = local_var.borrow().initializer.clone();
+                let ty = local_var.borrow().ty;
+                let is_inferred = ty.is_inferred();
+
                 if is_inferred {
-                    if let Ok(ty) = init_id.borrow().determine_type(self.m) {
-                        local_var.borrow_mut().ty = ty.into();
+                    if let Ok(determined_ty) = init_id.borrow().determine_type(self.m) {
+                        local_var.borrow_mut().ty = determined_ty.into();
                     }
                 } else {
-                    let ty = local_var.borrow().ty;
                     self.add_constraint(&init_id, TypeConstraint::Equal(ty));
                 }
+
                 // Visit the initializer first, which may monomorphize structs and resolve
                 // inferred literal types
-                self.visit(&local_var.borrow().initializer);
+                self.visit(&init_id);
+
                 // Re-check the type of the initializer after visiting, since it may have been
                 // monomorphized (e.g. Pair { first: 1_i32, second: 2_i32 } -> Pair::<i32>)
                 // Also handle the case where the declared type was Parameterized (e.g. Pair<i32>)
                 // and the initializer was monomorphized to a concrete Struct type
-                {
-                    let init_id = local_var.borrow().initializer.clone();
-                    if let Ok(new_ty) = init_id.borrow().determine_type(self.m) {
-                        let mut lv = local_var.borrow_mut();
-                        let old_ty = lv.ty.clone();
-                        // Check if the initializer's type has been monomorphized to a different struct.
-                        // The initializer's Struct def may have been replaced with a monomorphized copy.
-                        let old_is_parameterized = matches!(&*old_ty, Type::Parameterized { .. });
-                        let new_type_id: TypeId = new_ty.clone().into();
-                        // Update if: old was Parameterized -> now Struct,
-                        // OR old was generic Struct -> now monomorphized Struct (different def)
-                        let should_update = old_is_parameterized && matches!(&new_ty, Type::Struct { .. });
-                        let old_is_generic_struct = matches!(&*old_ty, Type::Struct { .. });
-                        let new_is_different_struct = matches!(&new_ty, Type::Struct { .. }) && old_ty != new_type_id;
-                        if should_update || (old_is_generic_struct && new_is_different_struct) {
-                            lv.ty = new_type_id;
-                        }
+                if let Ok(new_ty) = init_id.borrow().determine_type(self.m) {
+                    let mut lv = local_var.borrow_mut();
+                    let old_ty = lv.ty.clone();
+                    let old_is_parameterized = matches!(&*old_ty, Type::Parameterized { .. });
+                    let new_is_struct = matches!(&new_ty, Type::Struct { .. });
+                    let new_type_id: TypeId = new_ty.into();
+                    let should_update = old_is_parameterized && new_is_struct;
+                    let old_is_generic_struct = matches!(&*old_ty, Type::Struct { .. });
+                    let new_is_different_struct = new_is_struct && old_ty != new_type_id;
+                    if should_update || (old_is_generic_struct && new_is_different_struct) {
+                        lv.ty = new_type_id;
                     }
                 }
             }
@@ -217,7 +230,14 @@ impl<'m> Solver<'m> {
         };
 
         if has_generics {
-            // First try to infer generic args from concrete field values
+            // First visit field values to resolve any inferred literals before trying
+            // to infer generic args. This ensures e.g. `Pair { first: 1_i32, second: 2_i32 }`
+            // has concrete types available for inference.
+            for (_name, field_value) in &fields {
+                self.visit(field_value);
+            }
+
+            // Now try to infer generic args from concrete field values
             let subst = self
                 .infer_generic_args_from_struct_fields(&struct_def, &fields)
                 // If field-based inference failed, try to extract concrete type args
@@ -232,6 +252,9 @@ impl<'m> Solver<'m> {
                         *sd = mono_struct_id;
                     }
                 }
+                // After monomorphization, apply constraints using the monomorphized
+                // struct's concrete field types (which no longer contain GenericParam)
+                self.apply_struct_field_constraints(e);
             } else {
                 // Could not infer generic args - report error and unbound params
                 let (generic_name, unbound_params) = {
@@ -258,10 +281,9 @@ impl<'m> Solver<'m> {
                         generic_name: generic_name.clone(),
                     });
                 }
+                // Still apply struct field constraints so inferred literals get proper type info
+                self.apply_struct_field_constraints(e);
             }
-
-            // After optional monomorphization, apply constraints and visit fields
-            self.apply_struct_field_constraints(e);
         } else {
             self.apply_struct_field_constraints(e);
         }
@@ -275,8 +297,17 @@ impl<'m> Solver<'m> {
             return;
         };
         let struct_def_b = struct_def.borrow();
+        let is_generic = struct_def_b.generics.is_some();
         for (field_name, field_value) in fields {
             if let Some(field) = struct_def_b.fields.get(field_name) {
+                // For generic structs that haven't been monomorphized yet,
+                // skip field constraints that contain GenericParam types.
+                // These would be resolved after monomorphization.
+                if is_generic && Self::type_contains_any_generic_param(&field.ty) {
+                    // Still visit the field value to resolve literals
+                    self.visit(field_value);
+                    continue;
+                }
                 self.add_constraint(field_value, TypeConstraint::Equal(field.ty));
                 self.visit(field_value);
             }
@@ -727,20 +758,24 @@ impl<'m> Solver<'m> {
     }
 
     pub(crate) fn visit_method_call(&mut self, e: &ValueId) {
-        let value = &*e.borrow();
-        let Value::MethodCall {
-            object,
-            method_name,
-            args,
-            span,
-        } = value
-        else {
-            unreachable!()
+        // Extract all needed data in a block to avoid holding the borrow on `e`
+        // across any potential `e.replace()` call.
+        let (object_id, method_name_result, args_result, span, obj_type) = {
+            let value = &*e.borrow();
+            let Value::MethodCall {
+                object,
+                method_name,
+                args,
+                span,
+            } = value
+            else {
+                unreachable!()
+            };
+            let obj_type: Option<TypeId> = object.borrow().determine_type(self.m).ok().map(|ty| ty.into());
+            (object.clone(), method_name.clone(), args.clone(), *span, obj_type)
         };
-
-        let obj_type: Option<TypeId> = object.borrow().determine_type(self.m).ok().map(|ty| ty.into());
         let method_id_opt: Option<FunctionId> =
-            obj_type.and_then(|obj_type| self.m.get_method(&obj_type, method_name).cloned());
+            obj_type.and_then(|obj_type| self.m.get_method(&obj_type, &method_name_result).cloned());
 
         if let Some(method_id) = method_id_opt {
             let is_generic = {
@@ -751,12 +786,12 @@ impl<'m> Solver<'m> {
                 // Prepend `self`/object to the argument list since method calls
                 // include the receiver separately from args. The monomorphized
                 // function expects `self` as the first parameter.
-                let mut args_with_self = args.clone();
-                args_with_self.positional.insert(0, object.clone());
+                let mut args_with_self = args_result.clone();
+                args_with_self.positional.insert(0, object_id.clone());
                 let subst = self
                     .infer_generic_args_from_call(&method_id, &args_with_self.positional)
                     .or_else(|| {
-                        if !args.named.is_empty() {
+                        if !args_result.named.is_empty() {
                             self.infer_generic_args_from_call_named(&method_id, &args_with_self)
                         } else {
                             None
@@ -777,13 +812,13 @@ impl<'m> Solver<'m> {
                 }
             } else {
                 let mf = method_id.borrow();
-                for (i, arg) in args.positional.iter().enumerate() {
+                for (i, arg) in args_result.positional.iter().enumerate() {
                     if let Some(param) = mf.params.get(i) {
                         self.add_constraint(arg, TypeConstraint::Equal(param.borrow().ty));
                     }
                 }
                 // Add constraints for named args too
-                for (name, arg) in &args.named {
+                for (name, arg) in &args_result.named {
                     if let Some(param) = mf.params.iter().find(|p| p.borrow().name == *name) {
                         self.add_constraint(arg, TypeConstraint::Equal(param.borrow().ty));
                     }
@@ -791,17 +826,17 @@ impl<'m> Solver<'m> {
             }
         } else if let Some(recv_type) = obj_type {
             self.errors.insert(TypeErr::MethodNotFound {
-                span: *span,
-                method_name: method_name.to_string(),
+                span,
+                method_name: method_name_result.to_string(),
                 receiver_type: recv_type,
             });
         }
 
-        self.visit(object);
-        for arg in &args.positional {
+        self.visit(&object_id);
+        for arg in &args_result.positional {
             self.visit(arg);
         }
-        for (_name, arg) in &args.named {
+        for (_name, arg) in &args_result.named {
             self.visit(arg);
         }
     }

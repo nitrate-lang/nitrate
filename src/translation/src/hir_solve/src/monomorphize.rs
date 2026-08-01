@@ -207,6 +207,30 @@ impl<'m> Solver<'m> {
                 let field_type = &*field.ty;
                 // Only unify if we can determine the value's type
                 if let Ok(arg_type) = field_value_id.borrow().determine_type(self.m) {
+                    // For generic struct fields, allow InferredInteger/InferredFloat to bind
+                    // their default types (i32/f64 respectively) to generic params.
+                    // This handles `Pair { first: 1, second: 2 }` where integer literals
+                    // should infer T = i32.
+                    let effective_type = match &arg_type {
+                        Type::InferredInteger { .. } => Some(Type::I32 {
+                            span: ByteSpan::default(),
+                        }),
+                        Type::InferredFloat { .. } => Some(Type::F64 {
+                            span: ByteSpan::default(),
+                        }),
+                        _ => None,
+                    };
+                    if let Some(effective) = effective_type {
+                        // Check if field type has generic params
+                        let field_has_generics = param_info
+                            .keys()
+                            .any(|k| Self::type_contains_generic_param(field_type, k));
+                        if field_has_generics {
+                            any_concrete_type_found = true;
+                            Self::unify_types_with_subst(&effective, field_type, &mut subst);
+                        }
+                        continue;
+                    }
                     // Skip if the value type is still inferred (not yet concrete)
                     if arg_type.is_inferred() {
                         continue;
@@ -350,6 +374,7 @@ impl<'m> Solver<'m> {
             // The constraint type could be a Parameterized wrapping a Struct, or a Struct directly
             let (generic_args, struct_def_from_constraint) = match &*ty {
                 Type::Parameterized { base, args, .. } => {
+                    // Check if base is a Struct directly, or resolve through deref if needed
                     if let Type::Struct { def, .. } = &**base {
                         (Some(args.positional.clone()), Some(def.clone()))
                     } else {
@@ -363,8 +388,8 @@ impl<'m> Solver<'m> {
                 _ => (None, None),
             };
 
-            if let Some(args) = generic_args {
-                if let Some(constraint_def) = struct_def_from_constraint {
+            if let Some(ref args) = generic_args {
+                if let Some(ref constraint_def) = struct_def_from_constraint {
                     // Verify the struct def matches (same identity)
                     if constraint_def.as_usize() != struct_def_id.as_usize() {
                         continue;
@@ -376,14 +401,11 @@ impl<'m> Solver<'m> {
 
                     let mut subst = Substitution::default();
                     for (i, param_name) in ordered_param_names.iter().enumerate() {
-                        // Try matching by unqualified name from the generics map key
                         if let Some(idx) = param_name_to_index.get(*param_name) {
                             subst.mapping.insert(*idx, args[i]);
                         } else {
-                            // Fallback: try matching by position if field types use qualified names
-                            // (e.g. generics key is "T" but field type has GenericParam name "pkg::Pair::T")
+                            // Fallback to positional index
                             if i < args.len() {
-                                // Use position i as the index - generics were inserted in declaration order
                                 subst.mapping.insert(i as u32, args[i]);
                             }
                         }

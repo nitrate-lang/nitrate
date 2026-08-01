@@ -142,6 +142,7 @@ impl Substitution {
                 self.apply(&type_alias.type_id)
             }
             // Leaf/terminal types that contain no generic params
+            // Inferred is handled above, so we don't include it here
             Type::Never { .. }
             | Type::Unit { .. }
             | Type::Bool { .. }
@@ -160,7 +161,6 @@ impl Substitution {
             | Type::F64 { .. }
             | Type::InferredInteger { .. }
             | Type::InferredFloat { .. }
-            | Type::Inferred { .. }
             | Type::Enum { .. } => ty.clone(),
         }
     }
