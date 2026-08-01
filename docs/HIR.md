@@ -297,6 +297,17 @@ The combination of `exclusive` and `mutable` defines four access semantics: `&T`
 
 The `Value` enum represents all expression nodes with 30+ variants: literal values (19 variants), compound values (struct/enum/list/tuple construction), operator values (binary/unary operations), access values (field/index/dereference), control flow values (if/while/loop/break/continue/return/block), call values (function calls/method calls), symbol values (function/global/local/parameter references), and special values (assignment/cast/borrow).
 
+### Place Semantics for Memory Operations
+
+The HIR distinguishes between **place expressions** (memory locations that can be borrowed and assigned) and **rvalue expressions** (values that occupy registers). The codegen translates place expressions to pointer addresses:
+
+- `Value::Borrow { place, .. }` — the borrow's runtime value IS the address of `place`'s storage. `&arr[i]` computes a GEP into the array, yielding a pointer to element `i` — no copies.
+- `Value::Deref { place, .. }` — the dereferenced place's address IS the pointer value of `place`. It is zero-cost: no load, no intermediate alloca.
+- `Value::FieldAccess { expr, field, .. }` — a GEP on the struct address. When `expr` is a reference/pointer, the GEP operates on the pointee (auto-deref).
+- `Value::IndexAccess { collection, index, .. }` — a GEP on the collection address. For slices, it loads the fat pointer's data field and GEPs the element pointer.
+
+These semantics ensure Rust-compatible aliasing: writes through borrowed references are observed by the original variable, and vice versa.
+
 ### Design Rationale
 
 **Why Thread-Local Store instead of global state?** Testability (each test creates a fresh Store), deterministic RAII teardown, no global locks, and explicit visibility through the call stack.

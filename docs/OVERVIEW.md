@@ -115,6 +115,8 @@ The mangler (`nitrate_hir_mangle`) produces unique, deterministic LLVM linkage n
 
 The code generator (`nitrate_llvm_from_hir`) translates validated HIR into LLVM IR in three passes: global variable generation (with constructor functions for complex initializers), function declarations (ensuring symbols are available for mutual recursion), and function definitions. The LLVM crate then runs optimization passes based on the configured level (0-3) and emits the result as an object file, assembly, or LLVM IR text.
 
+Codegen follows Rust's place-expression memory model. Every HIR `Value` that denotes a memory location (a _place_) compiles to a `PointerValue` — the address of that location in memory. The core invariant is that `gen_place(value)` returns the address of `value`'s storage, never a copy. This makes borrows (`&expr`, `&mut expr`) alias their targets: `&arr[i]` produces a GEP into the array, not a pointer to a temporary copy. Dereference (`*p`) is zero-cost — the place address IS the pointer value. Field and index access on references auto-deref one layer, GEP-ing the pointee directly. Slice indexing extracts the data pointer from the fat pointer and GEPs the element. See [LLVM_CODEGEN.md](LLVM_CODEGEN.md) for the complete memory model specification.
+
 ## Design Rationale
 
 **Why HIR instead of direct AST-to-LLVM?** The HIR carries resolved type information expensive to recompute, serves as the monomorphization target (simpler than LLVM IR level), abstracts backend-specific details for alternative backends, and provides a validation boundary.

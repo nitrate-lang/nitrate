@@ -9,7 +9,7 @@ use crate::{
     ty::{TypegenCtx, gen_function_ty, gen_ty},
 };
 use core::panic;
-use nitrate_hir::{StructMemoryLayoutCell, ValueId, prelude as hir};
+use nitrate_hir::{ValueId, prelude as hir};
 use nitrate_hir_get_type::HirGetType;
 use nitrate_llvm::LLVMContext;
 use nitrate_nstring::NString;
@@ -1281,54 +1281,26 @@ fn gen_rval_field_access<'ctx>(
     };
     let hir_struct_def = actual_type.as_struct().expect("expected struct type").borrow();
 
-    let field_index = hir_struct_def
-        .layout
-        .iter()
-        .position(|cell| {
-            cell == &StructMemoryLayoutCell::Field {
-                field_name: field_name.clone(),
-            }
-        })
-        .expect("Field not found in struct");
-
     let field_ty = &hir_struct_def
         .fields
         .get(field_name)
         .expect("expected field to exist in struct")
         .ty;
 
-    let llvm_struct_value = if matches!(
-        struct_value.determine_type(ctx.tab).expect("Failed to get type"),
-        hir::Type::Reference { .. } | hir::Type::Pointer { .. }
-    ) {
-        // Auto-deref for field access on references
-        gen_place(
-            ctx,
-            &hir::Value::Deref {
-                span: nitrate_tree::ByteSpan::default(),
-                place: struct_value.clone().into(),
-            },
-        )
-    } else {
-        gen_place(ctx, struct_value)
-    };
-    let llvm_struct_ty = gen_ty(&actual_type, &mut ctx.into());
-
-    let index = ctx.llvm.i32_type().const_int(field_index as u64, false);
-
-    let gep = unsafe {
-        // SAFETY: ** I don't know if this is safe or not
-        ctx.bb.build_in_bounds_gep(
-            llvm_struct_ty,
-            llvm_struct_value,
-            &[ctx.llvm.i32_type().const_int(0, false), index],
-            "field_access_gep",
-        )
-    }
-    .unwrap();
+    // `gen_place` on a FieldAccess handles both plain places and
+    // auto-deref through references/pointers, producing the address of the
+    // actual field in memory (no copies).
+    let field_ptr = gen_place(
+        ctx,
+        &hir::Value::FieldAccess {
+            span: nitrate_tree::ByteSpan::default(),
+            expr: struct_value.clone().into(),
+            field_name: field_name.clone(),
+        },
+    );
 
     ctx.bb
-        .build_load(gen_ty(field_ty, &mut ctx.into()), gep, "field_access_load")
+        .build_load(gen_ty(field_ty, &mut ctx.into()), field_ptr, "field_access_load")
         .unwrap()
 }
 
@@ -1808,10 +1780,18 @@ fn gen_rval_method_call<'ctx>(
         let self_param_ty = &func_def.params[0].borrow().ty;
         let is_self_ref = matches!(&**self_param_ty, hir::Type::Reference { .. });
 
-        // If the method takes &self (reference), pass the address of the object (a pointer).
-        // Otherwise pass the object value directly.
+        // If the method takes &self (reference), pass the address of the object.
+        // If the object receiver is *already* a reference/pointer (auto-deref
+        // on method calls), pass the pointer value directly rather than the
+        // address of the reference slot.
         if is_self_ref {
-            let llvm_object_ptr = gen_place(ctx, object);
+            let obj_type = object.determine_type(ctx.tab).expect("Failed to get type");
+            let llvm_object_ptr = if matches!(&obj_type, hir::Type::Reference { .. } | hir::Type::Pointer { .. }) {
+                let ref_val = gen_rval(ctx, object);
+                ref_val.into_pointer_value()
+            } else {
+                gen_place(ctx, object)
+            };
             llvm_arguments.push(llvm_object_ptr.into());
         } else {
             let llvm_object_arg = gen_rval(ctx, object);
@@ -1958,15 +1938,19 @@ pub(crate) fn gen_rval<'ctx>(
                     index: index.clone(),
                 },
             );
-            let element_type = collection.borrow().determine_type(ctx.tab).unwrap();
-            let (_, element_type) = match &element_type {
-                hir::Type::Array { element_type, .. } => ((), element_type.deref().clone()),
-                hir::Type::SliceRef { element_type, .. } => ((), element_type.deref().clone()),
-                hir::Type::SlicePtr { element_type, .. } => ((), element_type.deref().clone()),
-                _ => {
-                    // Fallback to the collection type
-                    ((), element_type)
-                }
+
+            // Resolve through references/pointers to find the underlying
+            // collection, then extract the element type for the load.
+            let collection_ty = collection.borrow().determine_type(ctx.tab).unwrap();
+            let actual_ty = match &collection_ty {
+                hir::Type::Reference { to, .. } | hir::Type::Pointer { to, .. } => to.deref().clone(),
+                _ => collection_ty.clone(),
+            };
+            let element_type = match &actual_ty {
+                hir::Type::Array { element_type, .. }
+                | hir::Type::SliceRef { element_type, .. }
+                | hir::Type::SlicePtr { element_type, .. } => element_type.deref().clone(),
+                _ => actual_ty,
             };
             let llvm_element_ty = gen_ty(&element_type, &mut ctx.into());
             ctx.bb.build_load(llvm_element_ty, index_place, "index_load").unwrap()
