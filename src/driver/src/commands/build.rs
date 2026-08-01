@@ -1,4 +1,4 @@
-use crate::{Interpreter, package::Package};
+use crate::{Interpreter, package::Manifest};
 use clap::Parser;
 use nitrate_diagnosis::{CompilerLog, intern_file_id};
 use nitrate_translation::{
@@ -14,7 +14,9 @@ use nitrate_translation::{
     tree_resolve::ImportContext,
 };
 use slog::{debug, error, info};
-use std::{collections::HashSet, io::Read, path::PathBuf};
+use std::collections::HashSet;
+use std::io::Read;
+use std::path::{Path, PathBuf};
 
 #[derive(Parser, Debug)]
 #[command(about, long_about = None)]
@@ -45,19 +47,179 @@ pub(crate) struct BuildArgs {
 
     /// Build artifacts in release mode, with optimizations
     #[arg(long, short = 'r', group = "build-profile")]
-    release: bool,
+    pub(crate) release: bool,
 
     /// Build artifacts with the specified profile
     #[arg(long, group = "build-profile", value_name = "PROFILE-NAME")]
-    profile: Option<String>,
+    pub(crate) profile: Option<String>,
 
     /// Build for the LLVM target triple
     #[arg(long, value_name = "TRIPLE")]
-    target: Option<String>,
+    pub(crate) target: Option<String>,
 
     /// Directory for all generated artifacts
-    #[arg(long, value_name = "DIRECTORY", default_value = ".no3/build")]
-    target_dir: PathBuf,
+    #[arg(long, value_name = "DIRECTORY")]
+    pub(crate) target_dir: Option<PathBuf>,
+
+    /// Number of parallel jobs, defaults to # of CPUs.
+    #[arg(long, short = 'j', value_name = "N")]
+    pub(crate) jobs: Option<usize>,
+
+    /// Do not abort the build as soon as there is an error
+    #[arg(long)]
+    pub(crate) keep_going: bool,
+
+    /// Path to Cargo.toml
+    #[arg(long, value_name = "PATH")]
+    pub(crate) manifest_path: Option<PathBuf>,
+
+    /// Build only this package's library
+    #[arg(long)]
+    pub(crate) lib: bool,
+
+    /// Build all binaries
+    #[arg(long)]
+    pub(crate) bins: bool,
+
+    /// Build only the specified binary
+    #[arg(long, value_name = "NAME")]
+    pub(crate) bin: Option<String>,
+
+    /// Build all examples
+    #[arg(long)]
+    pub(crate) examples: bool,
+
+    /// Build only the specified example
+    #[arg(long, value_name = "NAME")]
+    pub(crate) example: Option<String>,
+
+    /// Build all tests
+    #[arg(long)]
+    pub(crate) tests: bool,
+
+    /// Build only the specified test target
+    #[arg(long, value_name = "NAME")]
+    pub(crate) test: Option<String>,
+
+    /// Build all benchmarks
+    #[arg(long)]
+    pub(crate) benches: bool,
+
+    /// Build only the specified benchmark target
+    #[arg(long, value_name = "NAME")]
+    pub(crate) bench: Option<String>,
+
+    /// Build all targets
+    #[arg(long)]
+    pub(crate) all_targets: bool,
+
+    /// Space or comma separated list of features to activate
+    #[arg(long, short = 'F', value_name = "FEATURES")]
+    pub(crate) features: Vec<String>,
+
+    /// Activate all available features
+    #[arg(long)]
+    pub(crate) all_features: bool,
+
+    /// Do not activate the `default` feature
+    #[arg(long)]
+    pub(crate) no_default_features: bool,
+
+    /// Package to build (see `no3 help pkgid`)
+    #[arg(long, short = 'p', value_name = "SPEC")]
+    pub(crate) package: Option<String>,
+
+    /// Build all packages in the workspace
+    #[arg(long)]
+    pub(crate) workspace: bool,
+
+    /// Exclude packages from the build
+    #[arg(long, value_name = "SPEC")]
+    pub(crate) exclude: Vec<String>,
+}
+
+/// Shared compile options extracted from a cargo-style command.
+#[derive(Debug, Clone)]
+pub(crate) struct CompileOptions {
+    pub(crate) release: bool,
+    pub(crate) profile: Option<String>,
+    pub(crate) target: Option<String>,
+    pub(crate) target_dir: Option<PathBuf>,
+    pub(crate) manifest_path: Option<PathBuf>,
+    pub(crate) show_ast: bool,
+    pub(crate) show_hir: bool,
+    pub(crate) show_llvmir: bool,
+    pub(crate) show_asm: bool,
+    pub(crate) show_obj: bool,
+    pub(crate) format_mode: Option<String>,
+    /// Stop after HIR validation; don't emit object code or link.
+    pub(crate) check_only: bool,
+}
+
+impl Default for CompileOptions {
+    fn default() -> Self {
+        Self {
+            release: false,
+            profile: None,
+            target: None,
+            target_dir: None,
+            manifest_path: None,
+            show_ast: false,
+            show_hir: false,
+            show_llvmir: false,
+            show_asm: false,
+            show_obj: false,
+            format_mode: None,
+            check_only: false,
+        }
+    }
+}
+
+impl From<&BuildArgs> for CompileOptions {
+    fn from(args: &BuildArgs) -> Self {
+        Self {
+            release: args.release,
+            profile: args.profile.clone(),
+            target: args.target.clone(),
+            target_dir: args.target_dir.clone(),
+            manifest_path: args.manifest_path.clone(),
+            show_ast: args.show_ast,
+            show_hir: args.show_hir,
+            show_llvmir: args.show_llvmir,
+            show_asm: args.show_asm,
+            show_obj: args.show_obj,
+            format_mode: args.format_mode.clone(),
+            check_only: false,
+        }
+    }
+}
+
+/// Resolve the manifest to compile, honoring `--manifest-path` if given.
+pub(crate) fn resolve_manifest(manifest_path: Option<&Path>) -> anyhow::Result<Manifest> {
+    match manifest_path {
+        Some(path) => Manifest::load(path).map_err(|e| anyhow::anyhow!("{e}")),
+        None => {
+            let cwd = std::env::current_dir().map_err(|e| anyhow::anyhow!("failed to get current dir: {e}"))?;
+            Manifest::discover(&cwd).map_err(|e| anyhow::anyhow!("{e}"))
+        }
+    }
+}
+
+/// Compute the target directory: `--target-dir`, or `<manifest_dir>/target`.
+pub(crate) fn target_dir_for(manifest: &Manifest, explicit: Option<&Path>) -> PathBuf {
+    match explicit {
+        Some(dir) => dir.to_path_buf(),
+        None => manifest.manifest_dir.join("target"),
+    }
+}
+
+/// Compute the profile directory name (debug/release or custom profile).
+pub(crate) fn profile_dir(opts: &CompileOptions) -> String {
+    match &opts.profile {
+        Some(p) => p.clone(),
+        None if opts.release => "release".to_string(),
+        None => "debug".to_string(),
+    }
 }
 
 impl Interpreter<'_> {
@@ -82,31 +244,9 @@ impl Interpreter<'_> {
         Ok(())
     }
 
-    pub(crate) fn get_package_config(&self) -> anyhow::Result<Package> {
-        let config_file_string = match std::fs::read_to_string("no3.xml") {
-            Ok(content) => content,
-
-            Err(e) => {
-                error!(self.log, "Failed to read package config file 'no3.xml': {}", e);
-
-                return Err(anyhow::anyhow!("Failed to read package config file 'no3.xml'"));
-            }
-        };
-
-        match Package::from_xml(&config_file_string) {
-            Ok(pkg) => Ok(pkg),
-
-            Err(e) => {
-                error!(self.log, "Failed to load package config from 'no3.xml': {}", e);
-
-                Err(anyhow::anyhow!("Failed to load package config from 'no3.xml'"))
-            }
-        }
-    }
-
     pub(crate) fn parse_source_code(
         &self,
-        entrypoint_path: &std::path::Path,
+        entrypoint_path: &Path,
         package_name: &str,
         log: &CompilerLog,
     ) -> anyhow::Result<ast::Module> {
@@ -174,7 +314,7 @@ impl Interpreter<'_> {
         }
     }
 
-    fn create_target_dir(&self, dir: &PathBuf) -> anyhow::Result<()> {
+    fn create_target_dir(&self, dir: &Path) -> anyhow::Result<()> {
         if let Err(e) = std::fs::create_dir_all(dir) {
             error!(
                 self.log,
@@ -205,13 +345,16 @@ impl Interpreter<'_> {
         }
     }
 
-    fn _get_search_paths(&self) -> Vec<PathBuf> {
-        let mut search_paths = Vec::new();
-
-        search_paths.push(std::env::current_dir().unwrap().join(".no3/modules"));
-        debug!(self.log, "Package search paths: {:?}", search_paths);
-
-        search_paths
+    fn opt_level_for(opts: &CompileOptions) -> OptLevel {
+        if opts.release {
+            OptLevel::Aggressive
+        } else {
+            match &opts.profile {
+                Some(profile_name) if profile_name == "debug" => OptLevel::None,
+                Some(profile_name) if profile_name == "release" => OptLevel::Aggressive,
+                _ => OptLevel::None,
+            }
+        }
     }
 
     fn lower_to_hir(
@@ -219,7 +362,7 @@ impl Interpreter<'_> {
         module: ast::Module,
         ptr_size: u32,
         package_name: &str,
-        source_filepath: &std::path::Path,
+        source_filepath: &Path,
         log: &CompilerLog,
     ) -> anyhow::Result<(hir::Module, hir::SymbolTab)> {
         let ptr_size = match ptr_size {
@@ -241,63 +384,65 @@ impl Interpreter<'_> {
         Ok((module, ctx.tab))
     }
 
-    pub(crate) fn sc_build(&mut self, args: BuildArgs) -> anyhow::Result<()> {
-        self.create_target_dir(&args.target_dir)?;
+    /// Run the full compilation pipeline for a package and produce a binary.
+    pub(crate) fn compile_package(&mut self, opts: &CompileOptions) -> anyhow::Result<PathBuf> {
+        let manifest = resolve_manifest(opts.manifest_path.as_deref())?;
+        let target_dir = target_dir_for(&manifest, opts.target_dir.as_deref());
+        let profile = profile_dir(opts);
+        let build_dir = target_dir.join(&profile);
+
+        self.create_target_dir(&build_dir)?;
         let log = CompilerLog::new(self.log.clone());
 
-        let package = self.get_package_config()?;
-        self.validate_package_edition(package.edition())?;
+        self.validate_package_edition(manifest.package.edition_major())?;
 
-        let ast_module = self.parse_source_code(&package.entrypoint(), package.name(), &log)?;
-        if args.show_ast {
-            self.show_ast(&ast_module, &args.format_mode);
-            return Ok(());
-        }
-
-        let opt_level = if args.release {
-            OptLevel::Aggressive
-        } else {
-            match &args.profile {
-                Some(profile_name) if profile_name == "debug" => OptLevel::None,
-                Some(profile_name) if profile_name == "release" => OptLevel::Aggressive,
-                Some(profile_name) => {
-                    error!(
-                        self.log,
-                        "Unknown build profile '{}'. Supported profiles are 'debug' and 'release'.", profile_name
-                    );
-                    return Err(anyhow::anyhow!("Unknown build profile"));
-                }
-                None => OptLevel::None,
-            }
-        };
-
-        let llvm_ctx = self.get_llvm_context(args.target, opt_level)?;
+        let opt_level = Self::opt_level_for(opts);
+        let llvm_ctx = self.get_llvm_context(opts.target.clone(), opt_level)?;
         let ptr_size = llvm_ctx.target_data.get_pointer_byte_size(None);
+
+        let ast_module = self.parse_source_code(&manifest.entrypoint(), &manifest.package.name, &log)?;
+        if opts.show_ast {
+            self.show_ast(&ast_module, &opts.format_mode);
+            return Ok(PathBuf::new());
+        }
 
         let store = Store::new();
 
         using_storage(&store, || {
-            let (hir_module, symbol_tab) =
-                self.lower_to_hir(ast_module, ptr_size, package.name(), &package.entrypoint(), &log)?;
+            let (hir_module, symbol_tab) = self.lower_to_hir(
+                ast_module,
+                ptr_size,
+                &manifest.package.name,
+                &manifest.entrypoint(),
+                &log,
+            )?;
 
             let mut hir_verifier = hir_validate::ValidateCtx::new(&symbol_tab, &log);
             let valid_hir_module = match hir_module.clone().validate(&mut hir_verifier) {
                 Ok(m) => m,
                 Err(_) => {
-                    error!(self.log, "HIR validation failed for package '{}'", package.name());
+                    error!(
+                        self.log,
+                        "HIR validation failed for package '{}'", manifest.package.name
+                    );
 
-                    if args.show_hir {
+                    if opts.show_hir {
                         println!("{}", hir_module.to_string());
-                        return Ok(());
+                        return Ok(PathBuf::new());
                     }
 
                     return Err(anyhow::anyhow!("HIR validation failed"));
                 }
             };
 
-            if args.show_hir {
+            if opts.show_hir {
                 println!("{}", valid_hir_module.into_inner().to_string());
-                return Ok(());
+                return Ok(PathBuf::new());
+            }
+
+            if opts.check_only {
+                info!(self.log, "Finished checking `{}`", manifest.package.name);
+                return Ok(PathBuf::new());
             }
 
             // Apply name mangling to all functions and global variables.
@@ -305,77 +450,63 @@ impl Interpreter<'_> {
             // appears in the object file during LLVM IR generation. The `name`
             // field is preserved for internal symbol lookup.
             let mut symbol_tab = symbol_tab;
-            mangle_symbols(package.name(), &mut symbol_tab);
+            mangle_symbols(&manifest.package.name, &mut symbol_tab);
 
-            let mut llvm_module = generate_llvmir(package.name(), valid_hir_module, &llvm_ctx, &symbol_tab);
+            let mut llvm_module = generate_llvmir(&manifest.package.name, valid_hir_module, &llvm_ctx, &symbol_tab);
 
             llvm_ctx.optimize_module(&mut llvm_module);
 
-            if args.show_llvmir {
+            if opts.show_llvmir {
                 println!("{}", llvm_module.print_to_string().to_string());
-                return Ok(());
+                return Ok(PathBuf::new());
             }
 
-            if args.show_asm {
+            if opts.show_asm {
                 if let Err(e) = llvm_ctx.write_asm(&mut llvm_module, &mut std::io::stdout()) {
                     error!(
                         self.log,
-                        "Failed to write assembly file for package '{}': {}",
-                        package.name(),
-                        e
+                        "Failed to write assembly file for package '{}': {}", manifest.package.name, e
                     );
 
                     return Err(anyhow::anyhow!("Failed to write assembly file"));
                 }
-                return Ok(());
+                return Ok(PathBuf::new());
             }
 
-            let target_file_o = format!(
-                ".no3/build/{}-{}.{}.{}.o",
-                package.name(),
-                package.version().0,
-                package.version().1,
-                package.version().2
-            );
+            let (major, minor, patch) = manifest.package.major_minor_patch();
+            let object_file = build_dir.join(format!("{}-{}.{}.{}.o", manifest.package.name, major, minor, patch));
 
-            if let Err(e) = llvm_ctx.write_object_file(&mut llvm_module, std::path::Path::new(&target_file_o)) {
+            if let Err(e) = llvm_ctx.write_object_file(&mut llvm_module, &object_file) {
                 error!(
                     self.log,
-                    "Failed to write object file for package '{}': {}",
-                    package.name(),
-                    e
+                    "Failed to write object file for package '{}': {}", manifest.package.name, e
                 );
 
                 return Err(anyhow::anyhow!("Failed to write object file"));
             }
 
-            if args.show_obj {
+            if opts.show_obj {
                 info!(
                     self.log,
                     "Object file for package '{}' written to '{}'",
-                    package.name(),
-                    target_file_o
+                    manifest.package.name,
+                    object_file.display()
                 );
-                return Ok(());
+                return Ok(PathBuf::new());
             }
 
-            // run system command
+            let binary_path = build_dir.join(&manifest.package.name);
+
+            // Run system linker.
             let status = std::process::Command::new("clang")
-                .args([&target_file_o, "-o"])
-                .arg(format!(
-                    "{}-{}.{}.{}",
-                    package.name(),
-                    package.version().0,
-                    package.version().1,
-                    package.version().2
-                ))
+                .arg(&object_file)
+                .arg("-o")
+                .arg(&binary_path)
                 .status()
                 .map_err(|e| {
                     error!(
                         self.log,
-                        "Failed to link final binary for package '{}': {}",
-                        package.name(),
-                        e
+                        "Failed to link final binary for package '{}': {}", manifest.package.name, e
                     );
 
                     e
@@ -385,7 +516,7 @@ impl Interpreter<'_> {
                 error!(
                     self.log,
                     "Linking final binary for package '{}' failed with exit code: {}",
-                    package.name(),
+                    manifest.package.name,
                     status.code().unwrap_or(-1),
                 );
                 return Err(anyhow::anyhow!("Linking final binary failed"));
@@ -393,14 +524,26 @@ impl Interpreter<'_> {
 
             info!(
                 self.log,
-                "Successfully built package '{}' version {}.{}.{}",
-                package.name(),
-                package.version().0,
-                package.version().1,
-                package.version().2,
+                "Successfully built package '{}' v{}.{}.{}", manifest.package.name, major, minor, patch,
             );
 
-            Ok(())
+            Ok(binary_path)
         })
+    }
+
+    pub(crate) fn sc_build(&mut self, args: BuildArgs) -> anyhow::Result<()> {
+        let opts = CompileOptions::from(&args);
+        let manifest = resolve_manifest(opts.manifest_path.as_deref())?;
+        let target_dir = target_dir_for(&manifest, opts.target_dir.as_deref());
+
+        self.compile_package(&opts)?;
+
+        debug!(
+            self.log,
+            "Build artifacts in '{}'",
+            target_dir.join(profile_dir(&opts)).display()
+        );
+
+        Ok(())
     }
 }

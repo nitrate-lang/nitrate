@@ -1,6 +1,7 @@
 use std::io::Read;
 
 use crate::Interpreter;
+use crate::commands::build::resolve_manifest;
 use clap::Parser;
 use nitrate_diagnosis::{CompilerLog, intern_file_id};
 use nitrate_translation::{
@@ -15,15 +16,19 @@ pub(crate) struct ParseArgs {
     /// Format mode for printed output
     #[arg(long, value_parser = ["minify", "pretty", "source"])]
     format_mode: Option<String>,
+
+    /// Path to Cargo.toml
+    #[arg(long, value_name = "PATH")]
+    pub(crate) manifest_path: Option<std::path::PathBuf>,
 }
 
 impl Interpreter<'_> {
     pub(crate) fn sc_parse(&mut self, args: ParseArgs) -> anyhow::Result<()> {
         let log = CompilerLog::new(self.log.clone());
 
-        let package = self.get_package_config()?;
-        self.validate_package_edition(package.edition())?;
-        let entrypoint_path = package.entrypoint();
+        let manifest = resolve_manifest(args.manifest_path.as_deref())?;
+        self.validate_package_edition(manifest.package.edition_major())?;
+        let entrypoint_path = manifest.entrypoint();
 
         if !entrypoint_path.exists() {
             error!(
@@ -69,7 +74,7 @@ impl Interpreter<'_> {
 
         let mut parser = parse::Parser::new(lexer, &log);
 
-        let ast_root = parser.parse_source(package.name().into());
+        let ast_root = parser.parse_source(manifest.package.name.clone().into());
 
         match args.format_mode {
             Some(mode) if mode == "minify" => {

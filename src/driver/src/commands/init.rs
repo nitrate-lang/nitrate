@@ -1,32 +1,41 @@
 use crate::{
     Interpreter,
-    package::{Package, PackageBuilder},
+    package::{Manifest, ManifestBuilder, validate_package_name},
 };
 use clap::Parser;
 use slog::{error, info, warn};
-use std::{fs::OpenOptions, io::Write};
+use std::fs::OpenOptions;
+use std::io::Write;
 
 #[derive(Parser, Debug)]
 #[command(about, long_about = None)]
 pub(crate) struct InitArgs {
+    /// Initialize a new repository for the given version control system
+    #[arg(long, value_parser = ["git", "hg", "pijul", "fossil", "none"])]
+    pub(crate) vcs: Option<String>,
+
     /// Use a binary (application) template [default]
     #[arg(long, default_value_t = true)]
-    bin: bool,
+    pub(crate) bin: bool,
 
     /// Use a library template
     #[arg(long)]
-    lib: bool,
+    pub(crate) lib: bool,
 
-    /// Specify the edition for the new package
+    /// Edition to set for the package generated
     #[arg(long, default_value = "2026")]
-    edition: u16,
+    pub(crate) edition: String,
 
     /// Set the resulting package name, defaults to the directory name
     #[arg(long)]
-    name: Option<String>,
+    pub(crate) name: Option<String>,
+
+    /// Registry to use
+    #[arg(long)]
+    pub(crate) registry: Option<String>,
 
     #[arg(default_value = ".")]
-    path: String,
+    pub(crate) path: String,
 }
 
 impl Interpreter<'_> {
@@ -53,10 +62,9 @@ impl Interpreter<'_> {
     }
 
     fn put_default_gitignore(&self, dir: &std::path::Path) -> anyhow::Result<()> {
-        let gitignore_content = "# Nitrate NO3 files\n.no3/\n\n";
+        let gitignore_content = "/target\n";
 
         let mut gitignore = OpenOptions::new()
-            
             .create(true)
             .append(true)
             .open(dir.join(".gitignore"))?;
@@ -66,18 +74,18 @@ impl Interpreter<'_> {
         Ok(())
     }
 
-    fn put_no3_xml(&self, dir: &std::path::Path, package: &Package) -> anyhow::Result<()> {
-        let no3_xml_path = dir.join("no3.xml");
+    fn put_no3_toml(&self, dir: &std::path::Path, manifest: &Manifest) -> anyhow::Result<()> {
+        let no3_toml_path = dir.join("no3.toml");
 
-        let mut no3_xml_file = std::fs::File::create(&no3_xml_path).map_err(|e| {
-            error!(self.log, "Failed to create no3.xml file: {}", e);
+        let mut no3_toml_file = std::fs::File::create(&no3_toml_path).map_err(|e| {
+            error!(self.log, "Failed to create no3.toml file: {}", e);
             e
         })?;
 
-        no3_xml_file
-            .write_all(package.xml_serialize().as_bytes())
+        no3_toml_file
+            .write_all(manifest.to_toml_string().as_bytes())
             .map_err(|e| {
-                error!(self.log, "Failed to write to no3.xml file: {}", e);
+                error!(self.log, "Failed to write to no3.toml file: {}", e);
                 e
             })?;
 
@@ -132,7 +140,7 @@ impl Interpreter<'_> {
         containing_dir: &std::path::Path,
         package_name: &str,
         is_lib: bool,
-        edition: u16,
+        edition: &str,
     ) -> anyhow::Result<()> {
         std::fs::create_dir_all(containing_dir).map_err(|e| {
             error!(self.log, "Failed to create directories: {}", e);
@@ -162,9 +170,11 @@ impl Interpreter<'_> {
         self.create_src_directory(containing_dir, is_lib)?;
         self.put_default_gitignore(containing_dir)?;
         self.put_default_readme(containing_dir)?;
-        self.put_no3_xml(
+        self.put_no3_toml(
             containing_dir,
-            &PackageBuilder::new(package_name.to_string()).edition(edition).build(),
+            &ManifestBuilder::new(package_name.to_string(), edition)
+                .lib(is_lib)
+                .build(),
         )?;
 
         if self.initialize_git_repo(containing_dir).is_err() {
@@ -178,7 +188,7 @@ impl Interpreter<'_> {
     }
 
     fn contains_conflicting_package_files(&self, dir: &std::path::Path) -> bool {
-        let conflicting_files = ["no3.xml", "src", ".no3", "README.md"];
+        let conflicting_files = ["no3.toml", "src", "target", "README.md"];
 
         for file in &conflicting_files {
             let joined = dir.join(file);
@@ -208,7 +218,9 @@ impl Interpreter<'_> {
                 .to_string(),
         };
 
-        self.create_package_dir_structure(containing_dir, &package_name, args.lib, args.edition)?;
+        validate_package_name(&package_name).map_err(|e| anyhow::anyhow!("{e}"))?;
+
+        self.create_package_dir_structure(containing_dir, &package_name, args.lib, &args.edition)?;
 
         info!(
             self.log,
