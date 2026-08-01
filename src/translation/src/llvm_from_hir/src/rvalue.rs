@@ -1858,6 +1858,7 @@ pub(crate) fn gen_rval<'ctx>(
     hir_value: &hir::Value,
 ) -> BasicValueEnum<'ctx> {
     match hir_value {
+        hir::Value::Range { .. } => unimplemented!(),
         hir::Value::Unit { .. } => gen_rval_lit_unit(ctx),
         hir::Value::Bool { value: x, .. } => gen_rval_lit_bool(ctx, *x),
         hir::Value::I8 { value: x, .. } => gen_rval_lit_i8(ctx, *x),

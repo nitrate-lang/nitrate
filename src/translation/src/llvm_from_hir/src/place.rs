@@ -199,6 +199,7 @@ pub(crate) fn gen_place<'ctx>(
     hir_value: &hir::Value,
 ) -> PointerValue<'ctx> {
     match hir_value {
+        hir::Value::Range { .. } => panic!("Value is not a place"),
         hir::Value::InferredInteger { .. }
         | hir::Value::InferredFloat { .. }
         | hir::Value::Assign { .. }

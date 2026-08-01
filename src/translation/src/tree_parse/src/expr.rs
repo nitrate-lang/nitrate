@@ -173,6 +173,10 @@ const BINOP_PATTERNS: &[OpPattern] = &[
     },
     // Range
     OpPattern {
+        tokens: &[Token::Dot, Token::Dot, Token::Eq],
+        op: BinExprOp::Range,
+    },
+    OpPattern {
         tokens: &[Token::Dot, Token::Dot],
         op: BinExprOp::Range,
     },

@@ -278,6 +278,48 @@ impl Spanned for BinExpr {
     }
 }
 
+/// The syntactic form of a range expression, mirroring Rust's range operator
+/// forms. Each form corresponds to a distinct range type in the standard
+/// library (`Range`, `RangeInclusive`, `RangeFrom`, `RangeTo`, `RangeToInclusive`,
+/// `RangeFull`).
+#[skip_serializing_none]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum RangeKind {
+    /// `a..b` — inclusive start, exclusive end (`Range<T>`)
+    Range,
+    /// `a..=b` — inclusive start, inclusive end (`RangeInclusive<T>`)
+    RangeInclusive,
+    /// `a..` — no end (`RangeFrom<T>`)
+    RangeFrom,
+    /// `..b` — no start, exclusive end (`RangeTo<T>`)
+    RangeTo,
+    /// `..=b` — no start, inclusive end (`RangeToInclusive<T>`)
+    RangeToInclusive,
+    /// `..` — no bounds (`RangeFull`)
+    RangeFull,
+}
+
+/// A range expression. Unlike a binary operator, a range can have zero, one,
+/// or two bound expressions depending on its [`RangeKind`]. This mirrors Rust,
+/// where `a..b` desugars to construction of a `core::ops::Range` value.
+#[skip_serializing_none]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Range {
+    pub span: ByteSpan,
+    pub kind: RangeKind,
+    pub start: Option<Box<Expr>>,
+    pub end: Option<Box<Expr>>,
+}
+
+impl Spanned for Range {
+    fn span(&self) -> ByteSpan {
+        self.span
+    }
+    fn set_span(&mut self, span: ByteSpan) {
+        self.span = span;
+    }
+}
+
 #[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Cast {
@@ -695,6 +737,7 @@ pub enum Expr {
     StructInit(Box<StructInit>),
     UnaryExpr(Box<UnaryExpr>),
     BinExpr(Box<BinExpr>),
+    Range(Box<Range>),
     Cast(Box<Cast>),
     Block(Box<Block>),
     Closure(Box<Closure>),
@@ -729,6 +772,7 @@ impl Expr {
             Expr::StructInit(e) => e.span,
             Expr::UnaryExpr(e) => e.span,
             Expr::BinExpr(e) => e.span,
+            Expr::Range(e) => e.span,
             Expr::Cast(e) => e.span,
             Expr::Block(e) => e.span,
             Expr::Closure(e) => e.span,
@@ -763,6 +807,7 @@ impl Expr {
             Expr::StructInit(e) => e.span = span,
             Expr::UnaryExpr(e) => e.span = span,
             Expr::BinExpr(e) => e.span = span,
+            Expr::Range(e) => e.span = span,
             Expr::Cast(e) => e.span = span,
             Expr::Block(e) => e.span = span,
             Expr::Closure(e) => e.span = span,
@@ -855,6 +900,12 @@ impl Expr {
     pub fn as_bin_expr(self) -> Option<BinExpr> {
         match self {
             Expr::BinExpr(e) => Some(*e),
+            _ => None,
+        }
+    }
+    pub fn as_range(self) -> Option<Range> {
+        match self {
+            Expr::Range(e) => Some(*e),
             _ => None,
         }
     }

@@ -18,6 +18,7 @@ pub enum RefNodeMut<'a> {
     ExprStructInit(&'a mut StructInit),
     ExprUnaryExpr(&'a mut UnaryExpr),
     ExprBinExpr(&'a mut BinExpr),
+    ExprRange(&'a mut Range),
     ExprCast(&'a mut Cast),
     ExprLocalVariable(&'a mut LocalVariable),
     ExprBlockItem(&'a mut BlockItem),

@@ -25,6 +25,7 @@ pub enum RefNode<'a> {
     ExprStructInit(&'a StructInit),
     ExprUnaryExpr(&'a UnaryExpr),
     ExprBinExpr(&'a BinExpr),
+    ExprRange(&'a Range),
     ExprCast(&'a Cast),
     ExprLocalVariable(&'a LocalVariable),
     ExprBlockItem(&'a BlockItem),

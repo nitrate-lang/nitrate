@@ -643,6 +643,7 @@ impl HirEvaluate for Value {
             Value::GlobalVariableSymbol { .. } => unimplemented!(),
             Value::LocalVariableSymbol { .. } => unimplemented!(),
             Value::ParameterSymbol { .. } => unimplemented!(),
+            Value::Range { .. } => unimplemented!(),
         }
     }
 }

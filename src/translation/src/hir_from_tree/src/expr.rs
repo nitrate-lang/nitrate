@@ -583,11 +583,26 @@ pub(crate) fn lower_binary(binary: ast::BinExpr, ctx: &mut Ast2HirCtx, log: &Com
         | ast::BinExprOp::SetLogicAnd
         | ast::BinExprOp::SetLogicOr) => Ok(lower_compound_assignment(span, left, right, op)),
 
-        ast::BinExprOp::Range => {
-            log.report(&HirErr::RangeOperatorNotImplemented { span });
-            Err(())
-        }
+        ast::BinExprOp::Range => Ok(Value::Range {
+            span,
+            start: Some(left),
+            end: Some(right),
+            inclusive: false,
+        }),
     }
+}
+
+pub(crate) fn lower_range(range: ast::Range, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
+    let span = range.span;
+    let start = range.start.map(|s| lower_expr(*s, ctx, log).unwrap().into());
+    let end = range.end.map(|e| lower_expr(*e, ctx, log).unwrap().into());
+
+    Ok(Value::Range {
+        span,
+        start,
+        end,
+        inclusive: range.kind == ast::RangeKind::RangeInclusive || range.kind == ast::RangeKind::RangeToInclusive,
+    })
 }
 
 /// Lower compound assignment operators (e.g., `+=`, `-=`) by expanding
@@ -1219,6 +1234,7 @@ pub(crate) fn lower_expr(x: ast::Expr, ctx: &mut Ast2HirCtx, log: &CompilerLog) 
         ast::Expr::StructInit(e) => lower_struct_init(*e, ctx, log),
         ast::Expr::UnaryExpr(e) => lower_unary(*e, ctx, log),
         ast::Expr::BinExpr(e) => lower_binary(*e, ctx, log),
+        ast::Expr::Range(e) => lower_range(*e, ctx, log),
         ast::Expr::Cast(e) => lower_cast(*e, ctx, log),
         ast::Expr::Block(e) => lower_block_value(*e, ctx, log),
         ast::Expr::Closure(e) => lower_closure(*e, ctx, log),

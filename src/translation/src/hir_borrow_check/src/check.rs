@@ -226,6 +226,8 @@ fn check_rvalue_access(value: &Value, ctx: &mut BorrowCheckCtx) {
             check_read_place(pid, ctx, "use of parameter");
         }
 
+        Value::Range { .. } => {}
+
         // --- Function references: no borrow concerns ---
         Value::FunctionSymbol { .. } => {}
 

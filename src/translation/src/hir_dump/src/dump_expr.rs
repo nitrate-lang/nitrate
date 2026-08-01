@@ -372,6 +372,7 @@ impl Dump for Value {
                 let param = id.borrow();
                 write!(o, "param {}", param.name)
             }
+            Value::Range { .. } => write!(o, "range"),
         }
     }
 }

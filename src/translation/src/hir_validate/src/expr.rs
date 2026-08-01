@@ -342,6 +342,7 @@ impl ValidateHirValue for Value {
             Value::LocalVariableSymbol { .. } => Ok(()),
 
             Value::ParameterSymbol { .. } => Ok(()),
+            Value::Range { .. } => Ok(()),
         }
     }
 

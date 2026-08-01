@@ -417,6 +417,13 @@ pub enum Value {
         right: ValueId,
     },
 
+    Range {
+        span: ByteSpan,
+        start: Option<ValueId>,
+        end: Option<ValueId>,
+        inclusive: bool,
+    },
+
     Unary {
         span: ByteSpan,
         op: UnaryOp,
@@ -567,6 +574,7 @@ impl Value {
             Value::StructObject { span, .. } => *span,
             Value::EnumVariant { span, .. } => *span,
             Value::Binary { span, .. } => *span,
+            Value::Range { span, .. } => *span,
             Value::Unary { span, .. } => *span,
             Value::IndexAccess { span, .. } => *span,
             Value::FieldAccess { span, .. } => *span,
@@ -700,6 +708,11 @@ impl Value {
     #[must_use]
     pub fn is_binary(&self) -> bool {
         matches!(self, Value::Binary { .. })
+    }
+
+    #[must_use]
+    pub fn is_range(&self) -> bool {
+        matches!(self, Value::Range { .. })
     }
 
     #[must_use]

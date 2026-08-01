@@ -82,8 +82,14 @@ impl<'m> Solver<'m> {
         match value {
             Value::InferredInteger { value, .. } => self.solve_inferred_integer(id, **value),
             Value::InferredFloat { value, .. } => self.solve_inferred_float(id, *value),
+            Value::Range { .. } => self.solve_range(id),
             _ => crate::constraints::NodeAction::NoChange,
         }
+    }
+
+    pub(crate) fn solve_range(&mut self, id: &ValueId) -> crate::constraints::NodeAction {
+        // Implementation for range solving - currently a placeholder
+        crate::constraints::NodeAction::NoChange
     }
 
     pub(crate) fn add_constraint(&mut self, id: &ValueId, constraint: TypeConstraint) {
@@ -154,6 +160,7 @@ impl<'m> Solver<'m> {
             | Value::GlobalVariableSymbol { .. }
             | Value::LocalVariableSymbol { .. }
             | Value::ParameterSymbol { .. } => 21,
+            Value::Range { .. } => 22,
         }
     }
 
@@ -185,6 +192,7 @@ impl<'m> Solver<'m> {
             19 => self.visit_call(e),
             20 => self.visit_method_call(e),
             21 => {}
+            22 => self.visit_range(e),
             _ => panic!("unhandled Value variant in visit_children"),
         }
     }
@@ -402,6 +410,20 @@ impl<'m> Solver<'m> {
                     }
                 }
             }
+        }
+    }
+
+    pub(crate) fn visit_range(&mut self, e: &ValueId) {
+        let value = &*e.borrow();
+        let Value::Range { start, end, .. } = value else {
+            unreachable!()
+        };
+
+        if let Some(start) = start {
+            self.visit(start);
+        }
+        if let Some(end) = end {
+            self.visit(end);
         }
     }
 

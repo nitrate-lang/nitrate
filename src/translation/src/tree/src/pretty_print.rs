@@ -296,6 +296,25 @@ impl PrettyPrint for BinExpr {
     }
 }
 
+impl PrettyPrint for Range {
+    fn pretty_print_fmt(&self, ctx: &mut PrintContext, writer: &mut dyn std::fmt::Write) -> std::fmt::Result {
+        if let Some(start) = &self.start {
+            start.pretty_print_fmt(ctx, writer)?;
+        }
+
+        writer.write_str("..")?;
+        if self.kind == RangeKind::RangeInclusive || self.kind == RangeKind::RangeToInclusive {
+            writer.write_char('=')?;
+        }
+
+        if let Some(end) = &self.end {
+            end.pretty_print_fmt(ctx, writer)?;
+        }
+
+        Ok(())
+    }
+}
+
 impl PrettyPrint for Cast {
     fn pretty_print_fmt(&self, ctx: &mut PrintContext, writer: &mut dyn std::fmt::Write) -> std::fmt::Result {
         self.value.pretty_print_fmt(ctx, writer)?;
@@ -754,6 +773,7 @@ impl PrettyPrint for Expr {
             Expr::StructInit(m) => m.pretty_print_fmt(ctx, writer),
             Expr::UnaryExpr(m) => m.pretty_print_fmt(ctx, writer),
             Expr::BinExpr(m) => m.pretty_print_fmt(ctx, writer),
+            Expr::Range(m) => m.pretty_print_fmt(ctx, writer),
             Expr::Cast(m) => m.pretty_print_fmt(ctx, writer),
             Expr::Block(m) => m.pretty_print_fmt(ctx, writer),
             Expr::Closure(m) => m.pretty_print_fmt(ctx, writer),

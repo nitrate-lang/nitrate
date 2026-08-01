@@ -377,6 +377,9 @@ impl HirGetType for Value {
             Value::GlobalVariableSymbol { id, .. } => resolve_refine(id.borrow().ty.deref()),
             Value::LocalVariableSymbol { id, .. } => resolve_refine(id.borrow().ty.deref()),
             Value::ParameterSymbol { id, .. } => resolve_refine(id.borrow().ty.deref()),
+            Value::Range { .. } => Ok(Type::Unit {
+                span: ByteSpan::default(),
+            }),
         }
     }
 }
