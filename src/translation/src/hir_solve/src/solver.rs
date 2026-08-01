@@ -1,16 +1,3 @@
-//! Main solver module: fixed-point constraint propagation and type inference.
-//!
-//! The `Solver` struct maintains per-expression type constraints, a mutable
-//! symbol table reference, accumulated error state, the current function's
-//! return type, monomorphization counters, and deduplication caches.
-//!
-//! # Architecture
-//!
-//! The solver uses a fixed-point iteration loop for each function/global:
-//! repeatedly visiting all block elements until constraint accumulation
-//! reaches a steady state. This ensures transitive constraint propagation,
-//! nested monomorphization detection, and inference variable resolution.
-
 use crate::bounds::{Bounds, extract_bounds_from_type};
 use crate::constraints::TypeConstraint;
 use crate::diagnosis::TypeErr;
@@ -24,27 +11,19 @@ use ordered_float::OrderedFloat;
 use std::collections::{HashMap, HashSet};
 use std::ops::Deref;
 
-/// Maximum monomorphization recursion depth to prevent infinite cycles. (#18)
 pub(crate) const MAX_MONO_DEPTH: u32 = 64;
 
 #[path = "visit.rs"]
 mod solver_visit;
 
-/// A compact cache key for monomorphization that avoids heap allocation.
-///
-/// Uses a deterministic combinatorial hash (FNV-1a derived) instead of
-/// `DefaultHasher` which is non-deterministic across platforms and Rust versions.
-/// The key is computed from the original id and sorted (index, type_id) pairs.
-/// Since `Substitution` now uses `BTreeMap`, the pairs are already sorted by key.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub(super) struct MonoCacheKey(u64);
 
 impl MonoCacheKey {
     pub(super) fn new(original_id: usize, subst_type_args: &[(u32, TypeId)]) -> Self {
-        // FNV-1a-like deterministic hash
-        let mut hash: u64 = 0xcbf29ce484222325; // FNV offset basis
+        let mut hash: u64 = 0xcbf29ce484222325;
         hash ^= original_id as u64;
-        hash = hash.wrapping_mul(0x100000001b3); // FNV prime
+        hash = hash.wrapping_mul(0x100000001b3);
         for (k, v) in subst_type_args {
             hash ^= *k as u64;
             hash = hash.wrapping_mul(0x100000001b3);
@@ -55,36 +34,17 @@ impl MonoCacheKey {
     }
 }
 
-/// The core solver struct that manages type constraint propagation.
-///
-/// Contains per-expression constraints, symbol table, error accumulation,
-/// function return type tracking, and monomorphization infrastructure.
 pub(crate) struct Solver<'m> {
-    /// Maps each ValueId to a set of type constraints it must satisfy.
     pub(super) constraints: HashMap<ValueId, HashSet<TypeConstraint>>,
-    /// Mutable reference to the global symbol table.
     pub(super) m: &'m mut SymbolTab,
-    /// Accumulated type errors (HashSet for deduplication).
     pub(super) errors: HashSet<TypeErr>,
-    /// The return type of the function currently being solved.
     pub(super) function_return_type: Option<TypeId>,
-    /// Counter for naming monomorphized functions/structs.
     pub(super) mono_counter: u32,
-    /// Cache for monomorphized functions: compact hash key -> FunctionId.
     pub(super) mono_cache: HashMap<MonoCacheKey, FunctionId>,
-    /// Cache for monomorphized structs: compact hash key -> StructDefId.
     pub(super) struct_mono_cache: HashMap<MonoCacheKey, crate::monomorphize::StructMonoCacheValue>,
-    /// Worklist of ValueIds that need re-visiting on the next iteration.
-    /// When a value is changed (e.g. monomorphized or a constraint added),
-    /// it's added here so we don't re-visit all elements.
     worklist: HashSet<ValueId>,
-    /// Monotonically increasing version counter for constraint map mutations.
-    /// Incremented on every constraint addition, enabling precise convergence
-    /// detection instead of comparing map length.
     constraint_version: u64,
-    /// Current monomorphization recursion depth for cycle detection. (#18)
     pub(super) mono_depth: u32,
-    /// Set of monomorphization cache keys currently in progress, for cycle detection. (#18)
     pub(super) mono_in_progress: HashSet<MonoCacheKey>,
 }
 
@@ -105,7 +65,6 @@ impl<'m> Solver<'m> {
         }
     }
 
-    /// Report that an integer literal is outside the range of its target type.
     pub(crate) fn report_out_of_range(&mut self, span: ByteSpan, integer: u128, target_type: TypeId) {
         self.errors.insert(TypeErr::IntegerLiteralOutOfRange {
             span,
@@ -114,12 +73,10 @@ impl<'m> Solver<'m> {
         });
     }
 
-    /// Add a value to the worklist for re-visiting.
     pub(crate) fn add_to_worklist(&mut self, id: &ValueId) {
         self.worklist.insert(id.clone());
     }
 
-    /// Mark all block elements as needing re-visit.
     pub(crate) fn add_all_elements_to_worklist(&mut self, body: &[BlockElement]) {
         for element in body {
             match element {
@@ -134,7 +91,6 @@ impl<'m> Solver<'m> {
         }
     }
 
-    /// Get effective value bounds for a ValueId, accounting for constraints.
     pub(crate) fn get_effective_bounds(&self, id: &ValueId) -> Option<Bounds> {
         let own_bounds = {
             let value = id.borrow();
@@ -174,8 +130,6 @@ impl<'m> Solver<'m> {
         own_bounds
     }
 
-    /// Determine the concrete target type from a set of constraints.
-    /// Returns the most specific (narrowest) compatible integer/float type.
     pub(crate) fn find_common_integer_type<'a>(
         constraints: impl Iterator<Item = &'a TypeConstraint>,
         value: u128,
@@ -191,7 +145,6 @@ impl<'m> Solver<'m> {
             };
 
             if !effective_ty.is_integer_primitive() {
-                // Non-integer constraint - not usable for resolution
                 continue;
             }
 
@@ -210,8 +163,6 @@ impl<'m> Solver<'m> {
                 _ => continue,
             }
 
-            // Pick the widest type that can hold the value
-            // This prefers signed over unsigned (like Rust)
             let fits = match &*effective_ty {
                 Type::I8 { .. } => value <= 127,
                 Type::I16 { .. } => value <= 32767,
@@ -228,15 +179,11 @@ impl<'m> Solver<'m> {
             };
 
             if fits {
-                // Prefer signed over unsigned when both fit
                 match (best_ty, &*effective_ty) {
-                    // If no best yet, take this one
                     (None, _) => best_ty = Some(effective_ty),
-                    // Prefer signed over unsigned
                     _ if effective_ty.is_signed_primitive() && !best_ty.unwrap().is_signed_primitive() => {
                         best_ty = Some(effective_ty);
                     }
-                    // Prefer wider over narrower
                     _ if Self::type_bit_width(&effective_ty) > Self::type_bit_width(&best_ty.unwrap()) => {
                         best_ty = Some(effective_ty);
                     }
@@ -244,10 +191,7 @@ impl<'m> Solver<'m> {
                 }
             }
 
-            // If any constraint is a refinement, we still check it
-            if let Type::Refine { .. } = &*ty {
-                // Refinement bound check happens separately
-            }
+            if let Type::Refine { .. } = &*ty {}
         }
 
         Some((best_ty?, has_error))
@@ -264,8 +208,6 @@ impl<'m> Solver<'m> {
         }
     }
 
-    /// Try to resolve an `InferredInteger` value based on accumulated constraints.
-    /// Returns `Replace` with the concrete integer value, or `NoChange` if unresolved.
     pub(crate) fn solve_inferred_integer(&mut self, id: &ValueId, value: u128) -> crate::constraints::NodeAction {
         let constraints: Vec<TypeConstraint> = self
             .constraints
@@ -284,7 +226,6 @@ impl<'m> Solver<'m> {
         let mut has_non_integer = false;
         let mut unsatisfiable_ty: Option<TypeId> = None;
 
-        // Phase 1: Validate constraints - check refinement bounds and non-integer errors
         for constraint in &constraints {
             let ty = constraint.type_id();
             if let Type::Refine { .. } = &*ty {
@@ -303,7 +244,6 @@ impl<'m> Solver<'m> {
             }
         }
 
-        // Report errors
         if has_non_integer {
             if let Some(unsat_ty) = unsatisfiable_ty {
                 self.errors.insert(TypeErr::IntegerLiteralUnsatisfiable {
@@ -323,11 +263,9 @@ impl<'m> Solver<'m> {
             });
         }
 
-        // Phase 2: Find the best (widest fitting) common type across all constraints
         let (best_ty, _has_error) = Self::find_common_integer_type(constraints.iter(), value)
             .unwrap_or((TypeId::from(Type::I32 { span }), false));
 
-        // Phase 3: Build the concrete value
         match &*best_ty {
             Type::I8 { .. } => match i8::try_from(value) {
                 Ok(v) => crate::constraints::NodeAction::Replace(Value::I8 { span, value: v }),
@@ -433,7 +371,6 @@ impl<'m> Solver<'m> {
         }
     }
 
-    /// Try to resolve an `InferredFloat` value based on accumulated constraints.
     pub(crate) fn solve_inferred_float(
         &mut self,
         id: &ValueId,
@@ -452,7 +389,6 @@ impl<'m> Solver<'m> {
                     unsatisfiable_ty = Some(ty);
                     continue;
                 }
-                // Pick the widest float type (F64 > F32)
                 if let Some(current_best) = best_ty {
                     let current_is_f64 = matches!(&*current_best, Type::F64 { .. });
                     let this_is_f64 = matches!(&*ty, Type::F64 { .. });
@@ -489,17 +425,13 @@ impl<'m> Solver<'m> {
         crate::constraints::NodeAction::NoChange
     }
 
-    /// Solve all constraints for a function.
-    /// Uses worklist-based fixed-point iteration: only re-visits changed values.
     pub(crate) fn solve_function(&mut self, function: &mut Function, log: &CompilerLog) -> Result<(), ()> {
         if let Some(body) = &mut function.body {
             self.function_return_type = Some(function.return_type);
 
-            // Initially visit all elements
             self.add_all_elements_to_worklist(body);
 
             loop {
-                // Drain the worklist: visit only elements that were queued
                 let pending: Vec<ValueId> = self.worklist.drain().collect();
                 if pending.is_empty() {
                     break;
@@ -509,7 +441,6 @@ impl<'m> Solver<'m> {
                 let prev_mono_count = self.mono_counter;
 
                 for value_id in &pending {
-                    // Find which block element this value belongs to and visit it
                     self.visit(value_id);
                 }
 
@@ -518,8 +449,6 @@ impl<'m> Solver<'m> {
                 }
             }
 
-            // Final pass: resolve any remaining InferredInteger/InferredFloat values
-            // by defaulting to i32/f64 (like Rust's default literal types)
             self.finalize_inferred_literals(body);
         }
         for error in &self.errors {
@@ -528,8 +457,6 @@ impl<'m> Solver<'m> {
         if self.errors.is_empty() { Ok(()) } else { Err(()) }
     }
 
-    /// Recursively default remaining InferredInteger → i32 and InferredFloat → f64
-    /// This walks through the entire value tree to catch any nested inferred values.
     pub(crate) fn finalize_inferred_literals(&mut self, body: &mut [BlockElement]) {
         for element in body.iter_mut() {
             match element {
@@ -544,9 +471,7 @@ impl<'m> Solver<'m> {
         }
     }
 
-    /// Recursively finalize a value and all its children.
     pub(crate) fn finalize_value_recursive(&mut self, value_id: &ValueId) {
-        // First, try to resolve this value itself
         let span = value_id.borrow().span();
         let is_inferred = matches!(
             &*value_id.borrow(),
@@ -554,14 +479,11 @@ impl<'m> Solver<'m> {
         );
 
         if is_inferred {
-            // Check if there are still unsolved constraints
             if self.constraints.contains_key(value_id) {
-                // If there are constraints, re-try solving
                 self.visit(value_id);
             }
         }
 
-        // Extract inferred state in a narrow scope to avoid holding borrow across replace.
         let inferred_info = {
             let v = value_id.borrow();
             if matches!(&*v, Value::InferredInteger { .. } | Value::InferredFloat { .. }) {
@@ -575,10 +497,7 @@ impl<'m> Solver<'m> {
             }
         };
 
-        // If still inferred, default it to a concrete type (no borrow active on value_id)
-        // BUT only if there were no errors - don't silently convert error cases
         if let Some(info) = inferred_info {
-            // Check if there are unsatisfiable errors for this value - if so, don't default
             let has_reported_error = self.constraints.get(value_id).map_or(false, |constraints| {
                 constraints.iter().any(|c| {
                     let ty = c.type_id();
@@ -622,7 +541,6 @@ impl<'m> Solver<'m> {
             return;
         }
 
-        // Then recurse into children — borrow in place without cloning to avoid O(n²) overhead
         let children: Option<Vec<ValueId>> = {
             let v = value_id.borrow();
             match &*v {
@@ -686,7 +604,6 @@ impl<'m> Solver<'m> {
         }
     }
 
-    /// Solve all constraints for a global variable.
     pub(crate) fn solve_global_variable(&mut self, g: &mut GlobalVariable, log: &CompilerLog) -> Result<(), ()> {
         loop {
             let prev_version = self.constraint_version;
@@ -711,19 +628,16 @@ impl<'m> Solver<'m> {
     }
 }
 
-/// Helper enum to distinguish integer vs float inferred literals.
 enum InferredInfo {
     Int(u128),
     Float(f64),
 }
 
-/// Public entry point: resolve all type constraints for a function.
 pub fn resolve_function(function: &mut Function, m: &mut SymbolTab, log: &CompilerLog) -> Result<(), ()> {
     let mut solver = Solver::new(m);
     solver.solve_function(function, log)
 }
 
-/// Public entry point: resolve all type constraints for a global variable.
 pub fn resolve_global(global: &mut GlobalVariable, m: &mut SymbolTab, log: &CompilerLog) -> Result<(), ()> {
     let mut solver = Solver::new(m);
     solver.solve_global_variable(global, log)

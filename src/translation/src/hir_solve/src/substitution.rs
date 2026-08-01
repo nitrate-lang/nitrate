@@ -2,11 +2,8 @@ use nitrate_hir::{FunctionType, Type, TypeId};
 use nitrate_nstring::NString;
 use std::collections::BTreeMap;
 
-/// A substitution maps generic parameter indices to concrete types.
 #[derive(Debug, Clone, Default)]
 pub(crate) struct Substitution {
-    /// Maps inference variable IDs or generic param indices to concrete types
-    /// BTreeMap ensures deterministic ordering for cache key computation.
     pub mapping: BTreeMap<u32, TypeId>,
 }
 
@@ -141,8 +138,6 @@ impl Substitution {
                 let type_alias = def.borrow();
                 self.apply(&type_alias.type_id)
             }
-            // Leaf/terminal types that contain no generic params
-            // Inferred is handled above, so we don't include it here
             Type::Never { .. }
             | Type::Unit { .. }
             | Type::Bool { .. }

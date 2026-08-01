@@ -259,8 +259,6 @@ fn resolve_func(body: Vec<BlockElement>, rt: TypeId, log: &CompilerLog, sym: &mu
     resolve_function(&mut f, sym, log)
 }
 
-// ═══ BOUNDS ═══
-
 #[test]
 fn test_bounds_int_primitive() {
     store(|_| {
@@ -369,7 +367,6 @@ fn test_bounds_binary() {
             compute_binary_bounds(&BinaryOp::Mul, Bounds::new(-5, 5), Bounds::new(-5, 5)),
             Some(Bounds::new(-25, 25))
         );
-        // i128::MAX * 2 in u128 space saturates to 340282366920938463463374607431768211454
         assert!(matches!(
             compute_binary_bounds(
                 &BinaryOp::Mul,
@@ -540,14 +537,9 @@ fn test_check_literal_against_refinement_above_i128_max() {
             min: lit(Lit::I128(-100)),
             max: lit(Lit::I128(-50)),
         });
-        // Refinement has max=(-50), and val > i128::MAX
-        // val < mx since mx converted to u128 gives u128::MAX - 49
-        // This test checks that a negative max refinement still works correctly
         assert!(!check_literal_against_refinement(val, &*r3));
     });
 }
-
-// ═══ CONSTRAINTS ═══
 
 #[test]
 fn test_constraints() {
@@ -592,8 +584,6 @@ fn test_propagate_to_children_empty() {
     let p = propagate_to_children(&HashSet::new());
     assert!(p.is_empty());
 }
-
-// ═══ SUBSTITUTION ═══
 
 #[test]
 fn test_subst_generic_inferred() {
@@ -851,8 +841,6 @@ fn test_subst_type_alias() {
     });
 }
 
-// ═══ MONO CACHE KEY ═══
-
 #[test]
 fn test_mono_cache_key() {
     store(|_| {
@@ -863,8 +851,6 @@ fn test_mono_cache_key() {
         assert_ne!(a, c);
     });
 }
-
-// ═══ UNIFY ═══
 
 #[test]
 fn test_unify() {
@@ -1058,8 +1044,6 @@ fn test_unify_slice_ptr_and_ref() {
         assert!(sub4.mapping.is_empty());
     });
 }
-
-// ═══ SOLVER ═══
 
 #[test]
 fn test_solver_new() {
@@ -2716,8 +2700,6 @@ fn test_monomorphize_with_body_containing_local() {
     });
 }
 
-// ═══ COVERAGE GAPS - PHASE 2 ═══
-
 #[test]
 fn test_check_bounds_against_constraint_refinement_with_bounds_within() {
     store(|_| {
@@ -2727,9 +2709,7 @@ fn test_check_bounds_against_constraint_refinement_with_bounds_within() {
             min: lit(Lit::I32(0)),
             max: lit(Lit::I32(100)),
         });
-        // Line 181: computed bounds are within refinement bounds with comp_min >= target_min
         assert!(check_bounds_against_constraint(Bounds::new(0, 50), &*r));
-        // Also test the case where constraint_ty is not Refine
         assert!(check_bounds_against_constraint(Bounds::new(0, 200), &*i32t()));
     });
 }
@@ -2737,15 +2717,13 @@ fn test_check_bounds_against_constraint_refinement_with_bounds_within() {
 #[test]
 fn test_check_literal_against_refinement_above_i128_max_pass() {
     store(|_| {
-        // Line 205: value > i128::MAX and mx >= 0
-        let val = 170141183460469231731687303715884105728u128; // > i128::MAX
+        let val = 170141183460469231731687303715884105728u128;
         let r = TypeId::from(Type::Refine {
             span: ByteSpan::default(),
             base: u128t(),
             min: lit(Lit::U128(0)),
             max: lit(Lit::U128(100000)),
         });
-        // mx = 100000, value = 170141...728, mx >= 0 but value > mx -> should fail
         assert!(!check_literal_against_refinement(val, &*r));
     });
 }
@@ -2755,11 +2733,9 @@ fn test_infer_generic_args_from_call_empty_generics() {
     store(|_| {
         let mut s = sym();
         let solver = Solver::new(&mut s);
-        // Non-generic function returns None (generics.as_ref()? fails)
         let fid = mkfunc("f", vec![param("x", i32t())], i32t(), None, None);
         let result = solver.infer_generic_args_from_call(&fid, &[i32v(42)]);
         assert!(result.is_none());
-        // Empty generics map (Some({})) returns Some(default)
         let gens = BTreeMap::new();
         let fid2 = mkfunc("g", vec![], unitt(), None, Some(gens));
         let result2 = solver.infer_generic_args_from_call(&fid2, &[]);
@@ -2777,7 +2753,6 @@ fn test_unify_types_with_subst_inferred_target() {
             id: NonZeroU32::new(5).unwrap(),
             name: None,
         });
-        // Line 264-268: unify with Inferred type
         let concrete = Type::I32 {
             span: ByteSpan::default(),
         };
@@ -2806,7 +2781,6 @@ fn test_unify_types_with_subst_reference_to_reference() {
             mutable: false,
             to: GP(0, "T"),
         };
-        // Line 279-281: Reference matching
         Solver::unify_types_with_subst(&concrete_ref, &param_ref, &mut subst);
         assert!(subst.mapping.contains_key(&0));
     });
@@ -2887,7 +2861,6 @@ fn test_monomorphize_infer_generic_args_from_call_named_with_positional() {
             None,
             Some(gens),
         );
-        // Named arg with concrete type + positional that is inferred
         let args = Arguments {
             positional: vec![inf_int(42)].into(),
             named: vec![(NString::from("x"), i32v(42))].into(),
@@ -2911,8 +2884,6 @@ fn test_get_effective_bounds_with_constraint_intersection_and_no_own_bounds() {
         });
         let mut s2 = sym();
         let _solver2 = Solver::new(&mut s2);
-        // Need to add constraint without solver2 being mut
-        // Just test that get_effective_bounds returns None for non-integer
         assert_eq!(solver.get_effective_bounds(&boolv(true)), None);
     });
 }
@@ -2971,7 +2942,6 @@ fn test_infer_generic_args_from_call_named_with_all_positional() {
         let mut gens = BTreeMap::new();
         gens.insert(NString::from("T"), Some(GP(0, "T")));
         let fid = mkfunc("f", vec![param("x", GP(0, "T"))], GP(0, "T"), None, Some(gens));
-        // All positional, no named - should match via positional loop
         let args = Arguments {
             positional: vec![i32v(42)].into(),
             named: ThinVec::new(),
@@ -2986,7 +2956,6 @@ fn test_finalize_value_recursive_call_method_call_children() {
     store(|_| {
         let log = CompilerLog::default();
         let mut s = sym();
-        // Create a call with inferred args to trigger finalize_value_recursive
         let call_val = sv(Value::Call {
             span: ByteSpan::default(),
             callee: sv(Value::FunctionSymbol {
@@ -3025,17 +2994,13 @@ fn test_monomorphize_infer_generic_args_from_struct_fields_with_matching_generic
 #[test]
 fn test_check_literal_against_refinement_value_above_i128_max_with_negative_max() {
     store(|_| {
-        // Line 199-205: value > i128::MAX and mx < 0
-        let val = 170141183460469231731687303715884105728u128; // > i128::MAX
+        let val = 170141183460469231731687303715884105728u128;
         let r = TypeId::from(Type::Refine {
             span: ByteSpan::default(),
             base: i128t(),
             min: lit(Lit::I128(-100)),
             max: lit(Lit::I128(-50)),
         });
-        // mx = -50i128 as u128 = u128::MAX - 49
-        // val (170141...) < mx so check needs to handle the negative max case
-        // The refinement check should verify that the value is NOT within bounds
         assert!(!check_literal_against_refinement(val, &*r));
     });
 }
@@ -3044,7 +3009,6 @@ fn test_check_literal_against_refinement_value_above_i128_max_with_negative_max(
 fn test_unify_types_with_subst_generic_param_left() {
     store(|_| {
         let mut subst = Substitution::default();
-        // Line 310-315: GenericParam on left, concrete on right
         let concrete = Type::I32 {
             span: ByteSpan::default(),
         };
@@ -3060,8 +3024,6 @@ fn test_unify_types_with_subst_generic_param_left() {
         assert!(subst.mapping.contains_key(&0));
     });
 }
-
-// ═══ DIRECT pub(crate) TESTING ═══
 
 #[test]
 fn test_collect_generic_params_from_type() {
@@ -3132,7 +3094,6 @@ fn test_collect_generic_params_from_type() {
         Solver::collect_generic_params_from_type(&slice_ptr, &mut mapping7);
         assert_eq!(mapping7.get(&NString::from("D")), Some(&3));
 
-        // Non-generic type (leaf) should not add anything
         let mut mapping8 = BTreeMap::new();
         Solver::collect_generic_params_from_type(&i32t(), &mut mapping8);
         assert!(mapping8.is_empty());
@@ -3147,7 +3108,6 @@ fn test_type_contains_generic_param() {
         assert!(!Solver::type_contains_generic_param(&*GP(0, "U"), &t_name));
         assert!(!Solver::type_contains_generic_param(&*i32t(), &t_name));
 
-        // Array with generic element
         let arr = Type::Array {
             span: ByteSpan::default(),
             element_type: GP(0, "T"),
@@ -3155,14 +3115,12 @@ fn test_type_contains_generic_param() {
         };
         assert!(Solver::type_contains_generic_param(&arr, &t_name));
 
-        // Tuple with generic elements
         let tup = Type::Tuple {
             span: ByteSpan::default(),
             element_types: vec![GP(0, "T"), i32t()].into(),
         };
         assert!(Solver::type_contains_generic_param(&tup, &t_name));
 
-        // Reference
         let r = Type::Reference {
             span: ByteSpan::default(),
             lifetime: nitrate_hir::Lifetime::Inferred,
@@ -3176,7 +3134,6 @@ fn test_type_contains_generic_param() {
         };
         assert!(Solver::type_contains_generic_param(&r, &t_name));
 
-        // Pointer
         let p = Type::Pointer {
             span: ByteSpan::default(),
             lifetime: nitrate_hir::Lifetime::Inferred,
@@ -3190,7 +3147,6 @@ fn test_type_contains_generic_param() {
         };
         assert!(Solver::type_contains_generic_param(&p, &t_name));
 
-        // SliceRef
         let sr = Type::SliceRef {
             span: ByteSpan::default(),
             lifetime: nitrate_hir::Lifetime::Inferred,
@@ -3200,7 +3156,6 @@ fn test_type_contains_generic_param() {
         };
         assert!(Solver::type_contains_generic_param(&sr, &t_name));
 
-        // SlicePtr
         let sp = Type::SlicePtr {
             span: ByteSpan::default(),
             lifetime: nitrate_hir::Lifetime::Inferred,
@@ -3257,11 +3212,9 @@ fn test_type_contains_generic_param_name() {
 #[test]
 fn test_find_common_integer_type_edge_cases() {
     store(|_| {
-        // Empty iterator - returns None since there are no constraints to choose from
         let result = Solver::find_common_integer_type(std::iter::empty(), 42);
         assert!(result.is_none());
 
-        // Only refinement types
         let refine = Type::Refine {
             span: ByteSpan::default(),
             base: i32t(),
@@ -3274,23 +3227,17 @@ fn test_find_common_integer_type_edge_cases() {
         assert!(result2.is_some());
         assert!(matches!(&*result2.unwrap().0, Type::I32 { .. }));
 
-        // All unsigned types
         let c = vec![TypeConstraint::Equal(u8t()), TypeConstraint::Equal(u16t())];
         let r3 = Solver::find_common_integer_type(c.iter(), 10);
         assert!(r3.is_some());
-        // U16 is wider than U8
         assert!(matches!(&*r3.unwrap().0, Type::U16 { .. }));
 
-        // Signed preferred over unsigned
         let c2 = vec![TypeConstraint::Equal(u32t()), TypeConstraint::Equal(i16t())];
         let r4 = Solver::find_common_integer_type(c2.iter(), 10);
         assert!(r4.is_some());
-        // i16 is signed, u32 is unsigned but wider - signed preference wins for fitting
         let ty = r4.unwrap().0;
         assert!(matches!(&*ty, Type::I16 { .. }));
 
-        // Wide value that doesn't fit in small types - returns None
-        // since the function requires the value to fit in the constraint type
         let c3 = vec![TypeConstraint::Equal(i8t())];
         let r5 = Solver::find_common_integer_type(c3.iter(), 300);
         assert!(r5.is_none());
@@ -3300,8 +3247,6 @@ fn test_find_common_integer_type_edge_cases() {
 #[test]
 fn test_binary_bounds_div_edge_cases() {
     store(|_| {
-        // Div with both negative divisor range and no zero crossing
-        // i128::MAX * 2 saturates to 340282366920938463463374607431768211454 in u128 space
         assert!(matches!(
             compute_binary_bounds(
                 &BinaryOp::Mul,
@@ -3311,48 +3256,40 @@ fn test_binary_bounds_div_edge_cases() {
             Some(Bounds { lo: i128::MAX, hi: _ })
         ));
 
-        // Div with positive divisor only (no zero crossing)
         assert_eq!(
             compute_binary_bounds(&BinaryOp::Div, Bounds::new(-10, 20), Bounds::new(5, 10)),
             Some(Bounds::new(-2, 4))
         );
 
-        // Div with divisor range crossing zero, both positive and negative sub-ranges
         let result = compute_binary_bounds(&BinaryOp::Div, Bounds::new(-20, 30), Bounds::new(-5, 10));
         assert!(result.is_some());
         let b = result.unwrap();
         assert!(b.lo <= b.hi as i128);
-        // Div where one sub-range contributes multiple values
         let result = compute_binary_bounds(&BinaryOp::Div, Bounds::new(5, 10), Bounds::new(-5, 5));
         assert!(result.is_some());
         let b = result.unwrap();
         assert!(b.lo <= b.hi as i128);
 
-        // Mod with r_max=0 (divisor range is negative)
         assert_eq!(
             compute_binary_bounds(&BinaryOp::Mod, Bounds::new(0, 100), Bounds::new(-20, 0)),
             Some(Bounds::new(i128::MIN, i128::MAX as u128))
         );
 
-        // Mod with entirely negative divisor
         assert_eq!(
             compute_binary_bounds(&BinaryOp::Mod, Bounds::new(0, 100), Bounds::new(-20, (-5i128) as u128)),
             Some(Bounds::new(0, 19))
         );
 
-        // Shr with r_min=0 and r_max=0 (no shift)
         assert_eq!(
             compute_binary_bounds(&BinaryOp::Shr, Bounds::new(8, 64), Bounds::new(0, 0)),
             Some(Bounds::new(8, 64))
         );
 
-        // Shr with r_min=0 and r_max>0
         assert_eq!(
             compute_binary_bounds(&BinaryOp::Shr, Bounds::new(100, 200), Bounds::new(0, 2)),
             Some(Bounds::new(25, 200))
         );
 
-        // Shr with r_min>0 but l_min=0
         assert_eq!(
             compute_binary_bounds(&BinaryOp::Shr, Bounds::new(0, 256), Bounds::new(1, 3)),
             Some(Bounds::new(0, 128))
@@ -3363,7 +3300,6 @@ fn test_binary_bounds_div_edge_cases() {
 #[test]
 fn test_monomorphize_function_cycle_detection() {
     store(|_| {
-        // Test mono_in_progress cycle detection
         let mut s = sym();
         let mut solver = Solver::new(&mut s);
         let p = param("x", GP(0, "T"));
@@ -3373,9 +3309,7 @@ fn test_monomorphize_function_cycle_detection() {
         let mut sub = Substitution::default();
         sub.mapping.insert(0, i32t());
         let ck = solver.mono_cache_key(&fid, &sub);
-        // Manually insert into mono_in_progress to test cycle path
         solver.mono_in_progress.insert(ck);
-        // When already in progress, returns original id
         let result = solver.monomorphize_function(&fid, &sub);
         assert_eq!(result.as_usize(), fid.as_usize());
     });
@@ -3492,7 +3426,6 @@ fn test_infer_generic_args_from_call_named_empty() {
     store(|_| {
         let mut s = sym();
         let solver = Solver::new(&mut s);
-        // Non-generic function
         let fid = mkfunc("f", vec![param("x", i32t())], i32t(), None, None);
         let args = Arguments {
             positional: ThinVec::new(),
@@ -3516,7 +3449,6 @@ fn test_infer_generic_args_from_call_named_with_inferred_args() {
             named: vec![(NString::from("x"), inf_int(42))].into(),
         };
         let result = solver.infer_generic_args_from_call_named(&fid, &args);
-        // Should return None because all arg types are inferred
         assert!(result.is_none() || result.as_ref().map_or(false, |s| s.mapping.is_empty()));
     });
 }
@@ -3526,7 +3458,6 @@ fn test_infer_generic_args_from_struct_fields_empty() {
     store(|_| {
         let mut s = sym();
         let solver = Solver::new(&mut s);
-        // Non-generic struct has no generics field, so returns None (early return via ?)
         let sd = mkstruct("Pt", vec![("x", i32t())], None, None);
         let result = solver.infer_generic_args_from_struct_fields(&sd, &[]);
         assert!(result.is_none());
@@ -3540,7 +3471,6 @@ fn test_infer_generic_args_from_struct_fields_with_inferred() {
         let solver = Solver::new(&mut s);
         let sd = mkstruct("GP", vec![("f", GP(0, "T"))], Some(vec!["T"]), None);
         let fields = vec![(NString::from("f"), inf_int(42))];
-        // All inferred -> should infer i32 as default for integer literals
         let result = solver.infer_generic_args_from_struct_fields(&sd, &fields);
         assert!(result.is_some());
         let subst = result.unwrap();
@@ -3615,7 +3545,6 @@ fn test_infer_generic_args_from_constraints_with_different_struct() {
             },
         });
         solver.add_constraint(&val, TypeConstraint::Equal(param_type));
-        // Different struct def in constraint -> should return None (mismatch check)
         let result = solver.infer_generic_args_from_constraints(&val, &sd);
         assert!(result.is_none());
     });
@@ -3812,7 +3741,6 @@ fn test_find_common_integer_type_with_usize() {
         let c2 = vec![TypeConstraint::Equal(i32t()), TypeConstraint::Equal(uszt())];
         let r2 = Solver::find_common_integer_type(c2.iter(), 42);
         assert!(r2.is_some());
-        // USize is wider (64-bit) than i32 (32-bit), so USize wins
         assert!(matches!(&*r2.unwrap().0, Type::USize { .. }));
     });
 }
@@ -3840,7 +3768,6 @@ fn test_solve_inferred_integer_out_of_range() {
     store(|_| {
         let log = CompilerLog::default();
         let mut s = sym();
-        // Value too large for u8
         let inferred = inf_int(300);
         let result = resolve_func(
             vec![BlockElement::Local(local("x", u8t(), inferred))],
@@ -3862,9 +3789,7 @@ fn test_infer_generic_args_from_call_mismatched_args() {
         let p1 = param("x", GP(0, "T"));
         let p2 = param("y", GP(0, "T"));
         let fid = mkfunc("f", vec![p1, p2], GP(0, "T"), None, Some(gens));
-        // Mismatched arg count - can't infer, returns None since param_types.len() != positional_args.len()
         let result = solver.infer_generic_args_from_call(&fid, &[i32v(42)]);
-        // Function has 2 params but only 1 arg supplied, so it can't determine the substitution
         assert!(result.is_none() || result.as_ref().map_or(true, |s| s.mapping.is_empty()));
     });
 }
@@ -3956,11 +3881,8 @@ fn test_type_bit_width_edge_cases() {
 #[test]
 fn test_unary_bounds_overflow_edge() {
     store(|_| {
-        // Negating MIN gives MAX-1 (saturating_neg of MIN = MAX)
         let result = compute_unary_bounds(&UnaryOp::Sub, Bounds::new(i128::MIN, i128::MIN as u128));
-        // i128::MIN.saturating_neg() = i128::MAX
         assert_eq!(result, Bounds::new(i128::MAX, i128::MAX as u128));
-        // Negating across zero
         assert_eq!(
             compute_unary_bounds(&UnaryOp::Sub, Bounds::new(-1, 1)),
             Bounds::new(-1, 1)
@@ -4164,8 +4086,6 @@ fn test_mono_struct_depth_limit() {
         assert!(r.is_err());
     });
 }
-
-// ═══ INFERRED INTEGER/FLOAT SOLVING ═══
 
 #[test]
 fn test_solve_inferred_int_to_u8() {
@@ -4425,8 +4345,6 @@ fn test_solve_inferred_float_non_float_constraint() {
     });
 }
 
-// ═══ INFERRED LITERAL DEFAULTING ═══
-
 #[test]
 fn test_inferred_literal_defaulting_in_block() {
     store(|_| {
@@ -4470,8 +4388,6 @@ fn test_inferred_literal_defaulting_in_if() {
     });
 }
 
-// ═══ TYPE CONTAINING GENERIC PARAM ═══
-
 #[test]
 fn test_type_contains_generic_param_indirect() {
     store(|_| {
@@ -4506,8 +4422,6 @@ fn test_type_contains_generic_param_indirect() {
         let _ = result;
     });
 }
-
-// ═══ DIAGNOSIS ═══
 
 #[test]
 fn test_diagnostic_all_variants() {
@@ -4669,8 +4583,6 @@ fn test_diagnostic_refine_bounds_format() {
         assert!(!info2.message.is_empty());
     });
 }
-
-// ═══ SPECIAL VISITOR PATHS ═══
 
 #[test]
 fn test_resolve_global_initializer_with_inferred_type() {

@@ -1,10 +1,3 @@
-//! Per-variant visitor handlers for the HIR expression graph.
-//!
-//! Each Value variant gets its own `visit_*` handler method, factored out
-//! from the monolithic `visit_children` in the original code. This module
-//! implements constraint propagation, bounds checking, and generic inference
-//! for every expression kind.
-
 use crate::constraints::{TypeConstraint, is_arithmetic_op, is_comparison_or_logical_op, propagate_to_children};
 use crate::diagnosis::TypeErr;
 use crate::solver::Solver;
@@ -15,7 +8,6 @@ use smallvec::SmallVec;
 use std::unreachable;
 
 impl<'m> Solver<'m> {
-    /// Check if a type contains any GenericParam anywhere in its structure.
     fn type_contains_any_generic_param(ty: &Type) -> bool {
         match ty {
             Type::GenericParam { .. } => true,
@@ -32,7 +24,6 @@ impl<'m> Solver<'m> {
         }
     }
 
-    /// Main entry: visit a value node, determine action, then recurse.
     pub(crate) fn visit(&mut self, e: &ValueId) {
         let action = {
             let current_value = e.borrow();
@@ -56,7 +47,6 @@ impl<'m> Solver<'m> {
         match element {
             BlockElement::Expr(e) => self.visit(e),
             BlockElement::Local(local_var) => {
-                // Extract the initializer ID first to avoid holding a Ref across visit
                 let init_id = local_var.borrow().initializer.clone();
                 let ty = local_var.borrow().ty;
                 let is_inferred = ty.is_inferred();
@@ -69,14 +59,8 @@ impl<'m> Solver<'m> {
                     self.add_constraint(&init_id, TypeConstraint::Equal(ty));
                 }
 
-                // Visit the initializer first, which may monomorphize structs and resolve
-                // inferred literal types
                 self.visit(&init_id);
 
-                // Re-check the type of the initializer after visiting, since it may have been
-                // monomorphized (e.g. Pair { first: 1_i32, second: 2_i32 } -> Pair::<i32>)
-                // Also handle the case where the declared type was Parameterized (e.g. Pair<i32>)
-                // and the initializer was monomorphized to a concrete Struct type
                 if let Ok(new_ty) = init_id.borrow().determine_type(self.m) {
                     let mut lv = local_var.borrow_mut();
                     let old_ty = lv.ty.clone();
@@ -94,8 +78,6 @@ impl<'m> Solver<'m> {
         }
     }
 
-    // ── Determine Action ──────────────────────────────────────────────────
-
     pub(crate) fn determine_action(&mut self, value: &Value, id: &ValueId) -> crate::constraints::NodeAction {
         match value {
             Value::InferredInteger { value, .. } => self.solve_inferred_integer(id, **value),
@@ -103,8 +85,6 @@ impl<'m> Solver<'m> {
             _ => crate::constraints::NodeAction::NoChange,
         }
     }
-
-    // ── Constraint helpers (used by both visit.rs and solver.rs) ──────────
 
     pub(crate) fn add_constraint(&mut self, id: &ValueId, constraint: TypeConstraint) {
         let changed = self.constraints.entry(id.clone()).or_default().insert(constraint);
@@ -128,10 +108,6 @@ impl<'m> Solver<'m> {
         }
     }
 
-    // ── Visit Children (dispatched by variant) ────────────────────────────
-
-    /// Classify a Value variant into a handler tag without holding the borrow.
-    /// This allows per-variant handlers to freely borrow the ValueId (including mutably).
     pub(crate) fn classify_value(value: &Value) -> u8 {
         match value {
             Value::Unit { .. }
@@ -152,7 +128,7 @@ impl<'m> Solver<'m> {
             | Value::StringLit { .. }
             | Value::BStringLit { .. }
             | Value::InferredInteger { .. }
-            | Value::InferredFloat { .. } => 0, // Leaf
+            | Value::InferredFloat { .. } => 0,
 
             Value::StructObject { .. } => 1,
             Value::EnumVariant { .. } => 2,
@@ -169,7 +145,7 @@ impl<'m> Solver<'m> {
             Value::If { .. } => 13,
             Value::While { .. } => 14,
             Value::Loop { .. } => 15,
-            Value::Break { .. } | Value::Continue { .. } => 16, // BreakContinue
+            Value::Break { .. } | Value::Continue { .. } => 16,
             Value::Return { .. } => 17,
             Value::Block { .. } => 18,
             Value::Call { .. } => 19,
@@ -177,19 +153,17 @@ impl<'m> Solver<'m> {
             Value::FunctionSymbol { .. }
             | Value::GlobalVariableSymbol { .. }
             | Value::LocalVariableSymbol { .. }
-            | Value::ParameterSymbol { .. } => 21, // Symbol
+            | Value::ParameterSymbol { .. } => 21,
         }
     }
 
     pub(crate) fn visit_children(&mut self, e: &ValueId) {
-        // Determine the variant discriminant without holding a borrow on e,
-        // so that per-variant handlers can freely borrow e (including mutably).
         let tag = {
             let v = e.borrow();
             Self::classify_value(&v)
         };
         match tag {
-            0 => {} // Leaf
+            0 => {}
             1 => self.visit_struct_object(e),
             2 => self.visit_enum_variant(e),
             3 => self.visit_binary(e),
@@ -205,21 +179,17 @@ impl<'m> Solver<'m> {
             13 => self.visit_if(e),
             14 => self.visit_while(e),
             15 => self.visit_loop(e),
-            16 => {} // BreakContinue
+            16 => {}
             17 => self.visit_return(e),
             18 => self.visit_block_value(e),
             19 => self.visit_call(e),
             20 => self.visit_method_call(e),
-            21 => {} // Symbol
+            21 => {}
             _ => panic!("unhandled Value variant in visit_children"),
         }
     }
 
-    // ── Per-variant handlers ──────────────────────────────────────────────
-
     pub(crate) fn visit_struct_object(&mut self, e: &ValueId) {
-        // Extract needed data in a narrow scope to avoid holding an immutable
-        // borrow across the potential mutable borrow in the monomorphization path.
         let (struct_def, has_generics, fields, span) = {
             let v = e.borrow();
             let Value::StructObject { struct_def, fields, .. } = &*v else {
@@ -230,18 +200,12 @@ impl<'m> Solver<'m> {
         };
 
         if has_generics {
-            // First visit field values to resolve any inferred literals before trying
-            // to infer generic args. This ensures e.g. `Pair { first: 1_i32, second: 2_i32 }`
-            // has concrete types available for inference.
             for (_name, field_value) in &fields {
                 self.visit(field_value);
             }
 
-            // Now try to infer generic args from concrete field values
             let subst = self
                 .infer_generic_args_from_struct_fields(&struct_def, &fields)
-                // If field-based inference failed, try to extract concrete type args
-                // from parent constraints (e.g., from type annotations like `let x: Pair<i32>`)
                 .or_else(|| self.infer_generic_args_from_constraints(e, &struct_def));
 
             if let Some(subst) = subst {
@@ -252,11 +216,8 @@ impl<'m> Solver<'m> {
                         *sd = mono_struct_id;
                     }
                 }
-                // After monomorphization, apply constraints using the monomorphized
-                // struct's concrete field types (which no longer contain GenericParam)
                 self.apply_struct_field_constraints(e);
             } else {
-                // Could not infer generic args - report error and unbound params
                 let (generic_name, unbound_params) = {
                     let sd = struct_def.borrow();
                     let unbound: Vec<String> = sd
@@ -281,7 +242,6 @@ impl<'m> Solver<'m> {
                         generic_name: generic_name.clone(),
                     });
                 }
-                // Still apply struct field constraints so inferred literals get proper type info
                 self.apply_struct_field_constraints(e);
             }
         } else {
@@ -289,8 +249,6 @@ impl<'m> Solver<'m> {
         }
     }
 
-    /// Apply field type constraints and visit all fields of a struct object.
-    /// Shared helper to avoid duplicated code between generic and non-generic paths.
     pub(crate) fn apply_struct_field_constraints(&mut self, e: &ValueId) {
         let value = e.borrow().clone();
         let Value::StructObject { struct_def, fields, .. } = &value else {
@@ -300,11 +258,7 @@ impl<'m> Solver<'m> {
         let is_generic = struct_def_b.generics.is_some();
         for (field_name, field_value) in fields {
             if let Some(field) = struct_def_b.fields.get(field_name) {
-                // For generic structs that haven't been monomorphized yet,
-                // skip field constraints that contain GenericParam types.
-                // These would be resolved after monomorphization.
                 if is_generic && Self::type_contains_any_generic_param(&field.ty) {
-                    // Still visit the field value to resolve literals
                     self.visit(field_value);
                     continue;
                 }
@@ -385,7 +339,6 @@ impl<'m> Solver<'m> {
                 let left_inferred = left_type.is_inferred();
                 let right_inferred = right_type.is_inferred();
 
-                // If both operands are concrete and different types, that's ambiguous
                 if !left_inferred && !right_inferred && left_ty != right_ty && is_arithmetic_op(op) {
                     self.errors.insert(TypeErr::AmbiguousType {
                         span,
@@ -396,9 +349,6 @@ impl<'m> Solver<'m> {
                 if left_ty == right_ty && !left_inferred && is_arithmetic_op(op) {
                     self.add_constraint(e, TypeConstraint::Equal(left_ty));
                 } else if left_inferred && right_inferred && is_arithmetic_op(op) {
-                    // Both operands are inferred - check if they have the same value
-                    // by looking at their constraints. If they share a constraint, use it.
-                    // Otherwise, leave for finalization to default.
                 }
                 if is_comparison_or_logical_op(op) {
                     self.add_constraint(e, TypeConstraint::eq_type(Type::Bool { span }));
@@ -710,7 +660,6 @@ impl<'m> Solver<'m> {
             _ => None,
         };
 
-        // Check for named args in generic inference (#11)
         let has_named_args = !args.named.is_empty();
 
         if let Some(ref func_id) = callee_func_id
@@ -741,7 +690,6 @@ impl<'m> Solver<'m> {
                     self.add_constraint(arg, TypeConstraint::Equal(param.borrow().ty));
                 }
             }
-            // Also add constraints for named args by looking up param names
             for (name, arg) in &args.named {
                 if let Some(param) = func.params.iter().find(|p| p.borrow().name == *name) {
                     self.add_constraint(arg, TypeConstraint::Equal(param.borrow().ty));
@@ -758,8 +706,6 @@ impl<'m> Solver<'m> {
     }
 
     pub(crate) fn visit_method_call(&mut self, e: &ValueId) {
-        // Extract all needed data in a block to avoid holding the borrow on `e`
-        // across any potential `e.replace()` call.
         let (object_id, method_name_result, args_result, span, obj_type) = {
             let value = &*e.borrow();
             let Value::MethodCall {
@@ -783,9 +729,6 @@ impl<'m> Solver<'m> {
                 mf.generics.is_some() && mf.generics.as_ref().is_some_and(|g| !g.is_empty())
             };
             if is_generic {
-                // Prepend `self`/object to the argument list since method calls
-                // include the receiver separately from args. The monomorphized
-                // function expects `self` as the first parameter.
                 let mut args_with_self = args_result.clone();
                 args_with_self.positional.insert(0, object_id.clone());
                 let subst = self
@@ -817,7 +760,6 @@ impl<'m> Solver<'m> {
                         self.add_constraint(arg, TypeConstraint::Equal(param.borrow().ty));
                     }
                 }
-                // Add constraints for named args too
                 for (name, arg) in &args_result.named {
                     if let Some(param) = mf.params.iter().find(|p| p.borrow().name == *name) {
                         self.add_constraint(arg, TypeConstraint::Equal(param.borrow().ty));

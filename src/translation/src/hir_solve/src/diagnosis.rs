@@ -4,7 +4,6 @@ use nitrate_hir_dump::Dump;
 use nitrate_tree::ByteSpan;
 use std::{format, ops::Deref};
 
-/// Convert a `ByteSpan` into an `Origin` for diagnostic output.
 fn byte_span_to_origin(span: ByteSpan) -> Origin {
     if span.is_empty() {
         Origin::Point(SourcePosition {
@@ -31,9 +30,6 @@ fn byte_span_to_origin(span: ByteSpan) -> Origin {
     }
 }
 
-/// Comprehensive type error variants for the solver.
-///
-/// Every error variant includes a source location span for precise diagnostics.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub(crate) enum TypeErr {
     IntegerLiteralOutOfRange {

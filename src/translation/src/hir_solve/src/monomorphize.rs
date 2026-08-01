@@ -10,7 +10,6 @@ use nitrate_tree::ByteSpan;
 use std::collections::BTreeMap;
 use thin_vec::ThinVec;
 
-/// Cache value type alias for struct monomorphization cache.
 pub(crate) type StructMonoCacheValue = StructDefId;
 
 impl<'m> Solver<'m> {
@@ -26,7 +25,6 @@ impl<'m> Solver<'m> {
         MonoCacheKey::new(struct_id.as_usize(), &sorted_args)
     }
 
-    /// Infer concrete types for generic parameters from argument types at a call site.
     pub(crate) fn infer_generic_args_from_call(
         &self,
         callee_func_id: &FunctionId,
@@ -43,7 +41,7 @@ impl<'m> Solver<'m> {
         let param_types: Vec<TypeId> = callee_func.params.iter().map(|p| p.borrow().ty).collect();
 
         if param_types.len() != positional_args.len() {
-            return None; // Mismatch should not trigger monomorphization with empty substitution
+            return None;
         }
 
         for (arg_value_id, param_type_id) in positional_args.iter().zip(param_types.iter()) {
@@ -52,7 +50,6 @@ impl<'m> Solver<'m> {
             Self::unify_types_with_subst(&arg_type, param_type, &mut subst);
         }
 
-        // If we weren't able to infer any generic args, return None
         if subst.mapping.is_empty() {
             return None;
         }
@@ -60,9 +57,6 @@ impl<'m> Solver<'m> {
         Some(subst)
     }
 
-    /// Infer concrete types for generic parameters from named argument types at a call site.
-    /// This extends generic inference to handle calls where arguments are passed by name.
-    /// (#11 - Named arg support in generic inference)
     pub(crate) fn infer_generic_args_from_call_named(
         &self,
         callee_func_id: &FunctionId,
@@ -78,7 +72,6 @@ impl<'m> Solver<'m> {
         let mut subst = Substitution::default();
         let mut any_concrete_type_found = false;
 
-        // Match named args to parameters by name
         for (arg_name, arg_value_id) in &args.named {
             if let Some(param_id) = callee_func.params.iter().find(|p| p.borrow().name == *arg_name) {
                 let param_type = param_id.borrow().ty;
@@ -92,7 +85,6 @@ impl<'m> Solver<'m> {
             }
         }
 
-        // Also try positional args matched by position (for mixed positional/named calls)
         for (i, arg_value_id) in args.positional.iter().enumerate() {
             if let Some(param_id) = callee_func.params.get(i) {
                 let param_type = param_id.borrow().ty;
@@ -110,7 +102,6 @@ impl<'m> Solver<'m> {
             return None;
         }
 
-        // Check that the substitution has bound all generic parameters used in params
         for (param_name, _) in generics.iter() {
             let param_index = callee_func.params.iter().find_map(|param_id| {
                 let param = param_id.borrow();
@@ -134,7 +125,6 @@ impl<'m> Solver<'m> {
         Some(subst)
     }
 
-    /// Check if a type contains a generic parameter name (for named arg inference).
     pub(crate) fn type_contains_generic_param_name(ty: &TypeId, param_name: &NString) -> bool {
         match &**ty {
             Type::GenericParam { name, .. } => name == param_name,
@@ -152,8 +142,6 @@ impl<'m> Solver<'m> {
         }
     }
 
-    /// Infer concrete types for generic struct parameters from field values.
-    /// Returns None if inference is incomplete (some generics still unbound).
     pub(crate) fn infer_generic_args_from_struct_fields(
         &self,
         struct_def_id: &StructDefId,
@@ -169,16 +157,12 @@ impl<'m> Solver<'m> {
         let mut subst = Substitution::default();
         let mut any_concrete_type_found = false;
 
-        // Collect which generic params appear in which fields in a single pass
-        // to avoid O(g × f) iteration.
         struct GenericFieldInfo {
             index: u32,
             appears: bool,
         }
         let mut param_info: BTreeMap<NString, GenericFieldInfo> = BTreeMap::new();
         for (param_name, param_default) in generics.iter() {
-            // If the generic has a concrete type (from default), use its index.
-            // Otherwise we rely on name matching during unify.
             let index = param_default
                 .as_ref()
                 .and_then(|tid| {
@@ -188,16 +172,12 @@ impl<'m> Solver<'m> {
                         None
                     }
                 })
-                .unwrap_or_else(|| {
-                    // Use the BTreeMap index directly instead of defaulting to 0
-                    generics.keys().position(|k| k == param_name).unwrap_or(0) as u32
-                });
+                .unwrap_or_else(|| generics.keys().position(|k| k == param_name).unwrap_or(0) as u32);
             param_info.insert(param_name.clone(), GenericFieldInfo { index, appears: false });
         }
 
         for (field_name, field_value_id) in field_values {
             if let Some(field) = struct_def.fields.get(field_name) {
-                // Mark which generic params appear in this field's type
                 for (param_name, info) in param_info.iter_mut() {
                     if Self::type_contains_generic_param(&field.ty, param_name) {
                         info.appears = true;
@@ -205,12 +185,7 @@ impl<'m> Solver<'m> {
                 }
 
                 let field_type = &*field.ty;
-                // Only unify if we can determine the value's type
                 if let Ok(arg_type) = field_value_id.borrow().determine_type(self.m) {
-                    // For generic struct fields, allow InferredInteger/InferredFloat to bind
-                    // their default types (i32/f64 respectively) to generic params.
-                    // This handles `Pair { first: 1, second: 2 }` where integer literals
-                    // should infer T = i32.
                     let effective_type = match &arg_type {
                         Type::InferredInteger { .. } => Some(Type::I32 {
                             span: ByteSpan::default(),
@@ -221,7 +196,6 @@ impl<'m> Solver<'m> {
                         _ => None,
                     };
                     if let Some(effective) = effective_type {
-                        // Check if field type has generic params
                         let field_has_generics = param_info
                             .keys()
                             .any(|k| Self::type_contains_generic_param(field_type, k));
@@ -231,7 +205,6 @@ impl<'m> Solver<'m> {
                         }
                         continue;
                     }
-                    // Skip if the value type is still inferred (not yet concrete)
                     if arg_type.is_inferred() {
                         continue;
                     }
@@ -241,12 +214,10 @@ impl<'m> Solver<'m> {
             }
         }
 
-        // If no field values have concrete types yet, we can't infer
         if !any_concrete_type_found {
             return None;
         }
 
-        // Check that all generic params that appear in field types have been bound
         for info in param_info.values() {
             if info.appears && !subst.mapping.contains_key(&info.index) {
                 return None;
@@ -335,15 +306,6 @@ impl<'m> Solver<'m> {
         }
     }
 
-    /// Infer concrete type arguments for generic struct parameters from parent constraints.
-    /// This handles the case where the struct expression has a type annotation,
-    /// e.g., `let x: Pair<i32> = Pair { first: 1, second: 2 };`
-    /// In this case, the constraint `Equal(Parameterized { base: Struct { def: Pair }, args: [i32] })`
-    /// is on the struct object's ValueId, and we extract the args from it.
-    ///
-    /// To map positional type args to generic parameter indices, we look at the struct's
-    /// field types to find GenericParam types, then match their names to the ordered
-    /// list of generic parameter names.
     pub(crate) fn infer_generic_args_from_constraints(
         &self,
         value_id: &ValueId,
@@ -356,41 +318,31 @@ impl<'m> Solver<'m> {
             return Some(Substitution::default());
         }
 
-        // Build a name->index mapping from the struct's field types
-        // by extracting GenericParam indices from field types
         let mut param_name_to_index: BTreeMap<NString, u32> = BTreeMap::new();
         for field in struct_def.fields.values() {
             Self::collect_generic_params_from_type(&field.ty, &mut param_name_to_index);
         }
 
-        // Build ordered list of param names matching declaration order in generics map
         let ordered_param_names: Vec<&NString> = generics.keys().collect();
 
-        // Look at constraints on this value
         let constraints = self.constraints.get(value_id)?;
 
         for constraint in constraints {
             let ty = constraint.type_id();
-            // The constraint type could be a Parameterized wrapping a Struct, or a Struct directly
             let (generic_args, struct_def_from_constraint) = match &*ty {
                 Type::Parameterized { base, args, .. } => {
-                    // Check if base is a Struct directly, or resolve through deref if needed
                     if let Type::Struct { def, .. } = &**base {
                         (Some(args.positional.clone()), Some(def.clone()))
                     } else {
                         (None, None)
                     }
                 }
-                Type::Struct { def, .. } => {
-                    // Direct struct type without params
-                    (None, Some(def.clone()))
-                }
+                Type::Struct { def, .. } => (None, Some(def.clone())),
                 _ => (None, None),
             };
 
             if let Some(ref args) = generic_args {
                 if let Some(ref constraint_def) = struct_def_from_constraint {
-                    // Verify the struct def matches (same identity)
                     if constraint_def.as_usize() != struct_def_id.as_usize() {
                         continue;
                     }
@@ -404,7 +356,6 @@ impl<'m> Solver<'m> {
                         if let Some(idx) = param_name_to_index.get(*param_name) {
                             subst.mapping.insert(*idx, args[i]);
                         } else {
-                            // Fallback to positional index
                             if i < args.len() {
                                 subst.mapping.insert(i as u32, args[i]);
                             }
@@ -421,7 +372,6 @@ impl<'m> Solver<'m> {
         None
     }
 
-    /// Recursively collect GenericParam name-to-index mappings from a type.
     pub(crate) fn collect_generic_params_from_type(ty: &TypeId, mapping: &mut BTreeMap<NString, u32>) {
         match &**ty {
             Type::GenericParam { index, name, .. } => {
@@ -443,23 +393,17 @@ impl<'m> Solver<'m> {
         }
     }
 
-    /// Monomorphize a generic struct by creating a concrete copy with substituted field types.
-    /// Includes cycle detection via depth tracking to prevent infinite recursion. (#18)
     pub(crate) fn monomorphize_struct(&mut self, struct_id: &StructDefId, subst: &Substitution) -> StructDefId {
-        // Cycle detection: check depth limit
         if self.mono_depth >= MAX_MONO_DEPTH {
             panic!("monomorphization depth limit ({}) exceeded for struct", MAX_MONO_DEPTH);
         }
 
-        // Check cache first
         let cache_key = self.struct_mono_cache_key(struct_id, subst);
         if let Some(cached_id) = self.struct_mono_cache.get(&cache_key) {
             return cached_id.clone();
         }
 
-        // Cycle detection: check if this monomorphization is already in progress
         if !self.mono_in_progress.insert(cache_key) {
-            // Already being monomorphized - return original to break cycle
             return struct_id.clone();
         }
 
@@ -471,7 +415,6 @@ impl<'m> Solver<'m> {
         let mono_name = format!("{}::<mono-{}>", struct_def.name, self.mono_counter);
         let mono_name_ns: NString = mono_name.into();
 
-        // Apply substitution to each field's type
         let mut new_fields = BTreeMap::new();
         let mut new_layout = Vec::new();
 
@@ -497,14 +440,12 @@ impl<'m> Solver<'m> {
             name: mono_name_ns,
             attributes: struct_def.attributes.clone(),
             fields: new_fields,
-            generics: None, // Monomorphized - no more generics
+            generics: None,
             layout: new_layout.into(),
         };
 
         let mono_id: StructDefId = mono_struct.into();
-        // Register in symbol table so codegen can find it
         self.m.add_struct(mono_id.clone());
-        // Cache for future identical instantiations
         self.struct_mono_cache
             .insert(cache_key, StructMonoCacheValue::from(mono_id.clone()));
 
@@ -515,7 +456,6 @@ impl<'m> Solver<'m> {
     }
 
     pub(crate) fn monomorphize_function(&mut self, func_id: &FunctionId, subst: &Substitution) -> FunctionId {
-        // Cycle detection: check depth limit
         if self.mono_depth >= MAX_MONO_DEPTH {
             panic!(
                 "monomorphization depth limit ({}) exceeded for function",
@@ -523,15 +463,12 @@ impl<'m> Solver<'m> {
             );
         }
 
-        // Check cache first
         let cache_key = self.mono_cache_key(func_id, subst);
         if let Some(existing) = self.mono_cache.get(&cache_key) {
             return existing.clone();
         }
 
-        // Cycle detection: check if this monomorphization is already in progress
         if !self.mono_in_progress.insert(cache_key) {
-            // Already being monomorphized - return original to break cycle
             return func_id.clone();
         }
 
@@ -582,9 +519,7 @@ impl<'m> Solver<'m> {
         };
 
         let mono_id: FunctionId = mono_func.into();
-        // Register the monomorphized function in the symbol table
         self.m.add_function(mono_id.clone());
-        // Cache for future identical instantiations
         self.mono_cache.insert(cache_key, mono_id.clone());
 
         self.mono_depth -= 1;
