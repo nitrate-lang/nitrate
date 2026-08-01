@@ -223,7 +223,7 @@ fn mkstruct(name: &str, fields: Vec<(&str, TypeId)>, generics: Option<Vec<&str>>
     let gmap = generics.map(|g| {
         let mut m = BTreeMap::new();
         for (i, gn) in g.into_iter().enumerate() {
-            m.insert(NString::from(gn), Some(GP(i as u32, gn)));
+            m.insert(NString::from(gn), Some(gp(i as u32, gn)));
         }
         m
     });
@@ -237,7 +237,7 @@ fn mkstruct(name: &str, fields: Vec<(&str, TypeId)>, generics: Option<Vec<&str>>
         layout: layout.into(),
     })
 }
-fn GP(idx: u32, name: &str) -> TypeId {
+fn gp(idx: u32, name: &str) -> TypeId {
     TypeId::from(Type::GenericParam {
         span: ByteSpan::default(),
         index: idx,
@@ -637,7 +637,7 @@ fn test_subst_compound() {
         assert!(matches!(
             sub.apply(&Type::Tuple {
                 span: ByteSpan::default(),
-                element_types: vec![GP(0, "T"), GP(1, "U")].into()
+                element_types: vec![gp(0, "T"), gp(1, "U")].into()
             }),
             Type::Tuple { .. }
         ));
@@ -647,7 +647,7 @@ fn test_subst_compound() {
                 lifetime: nitrate_hir::Lifetime::Inferred,
                 exclusive: false,
                 mutable: false,
-                to: GP(0, "T")
+                to: gp(0, "T")
             }),
             Type::Reference { .. }
         ));
@@ -657,7 +657,7 @@ fn test_subst_compound() {
                 lifetime: nitrate_hir::Lifetime::Inferred,
                 exclusive: false,
                 mutable: true,
-                to: GP(0, "T")
+                to: gp(0, "T")
             }),
             Type::Pointer { .. }
         ));
@@ -667,7 +667,7 @@ fn test_subst_compound() {
                 lifetime: nitrate_hir::Lifetime::Inferred,
                 exclusive: false,
                 mutable: false,
-                element_type: GP(0, "T")
+                element_type: gp(0, "T")
             }),
             Type::SliceRef { .. }
         ));
@@ -677,14 +677,14 @@ fn test_subst_compound() {
                 lifetime: nitrate_hir::Lifetime::Inferred,
                 exclusive: false,
                 mutable: false,
-                element_type: GP(0, "T")
+                element_type: gp(0, "T")
             }),
             Type::SlicePtr { .. }
         ));
         assert!(matches!(
             sub.apply(&Type::Refine {
                 span: ByteSpan::default(),
-                base: GP(0, "T"),
+                base: gp(0, "T"),
                 min: lit(Lit::I32(0)),
                 max: lit(Lit::I32(100))
             }),
@@ -693,7 +693,7 @@ fn test_subst_compound() {
         assert!(matches!(
             sub.apply(&Type::Array {
                 span: ByteSpan::default(),
-                element_type: GP(0, "T"),
+                element_type: gp(0, "T"),
                 len: 10
             }),
             Type::Array { .. }
@@ -731,8 +731,8 @@ fn test_subst_compound() {
             span: ByteSpan::default(),
             function_type: Box::new(nitrate_hir::FunctionType {
                 attributes: BTreeSet::new(),
-                params: vec![(NString::from("x"), GP(2, "T"))].into(),
-                return_type: GP(3, "U"),
+                params: vec![(NString::from("x"), gp(2, "T"))].into(),
+                return_type: gp(3, "U"),
             }),
         });
         assert!(matches!(r10, Type::Function { .. }));
@@ -829,7 +829,7 @@ fn test_subst_type_alias() {
             visibility: Visibility::Pub,
             name: NString::from("A"),
             generics: None,
-            type_id: GP(0, "T"),
+            type_id: gp(0, "T"),
         });
         assert!(matches!(
             sub.apply(&Type::TypeAlias {
@@ -906,7 +906,7 @@ fn test_unify() {
                 lifetime: nitrate_hir::Lifetime::Inferred,
                 exclusive: false,
                 mutable: false,
-                to: GP(0, "T"),
+                to: gp(0, "T"),
             },
             &mut sub2,
         );
@@ -927,7 +927,7 @@ fn test_unify() {
             },
             &Type::Tuple {
                 span: ByteSpan::default(),
-                element_types: vec![GP(0, "T"), GP(1, "U")].into(),
+                element_types: vec![gp(0, "T"), gp(1, "U")].into(),
             },
             &mut sub3,
         );
@@ -956,7 +956,7 @@ fn test_unify() {
                 lifetime: nitrate_hir::Lifetime::Inferred,
                 exclusive: false,
                 mutable: false,
-                element_type: GP(0, "T"),
+                element_type: gp(0, "T"),
             },
             &mut sub5,
         );
@@ -983,7 +983,7 @@ fn test_unify_slice_ptr_and_ref() {
                 lifetime: nitrate_hir::Lifetime::Inferred,
                 exclusive: false,
                 mutable: false,
-                element_type: GP(0, "T"),
+                element_type: gp(0, "T"),
             },
             &mut sub,
         );
@@ -1004,7 +1004,7 @@ fn test_unify_slice_ptr_and_ref() {
                 lifetime: nitrate_hir::Lifetime::Inferred,
                 exclusive: false,
                 mutable: false,
-                element_type: GP(0, "T"),
+                element_type: gp(0, "T"),
             },
             &mut sub2,
         );
@@ -1020,7 +1020,7 @@ fn test_unify_slice_ptr_and_ref() {
             },
             &Type::Array {
                 span: ByteSpan::default(),
-                element_type: GP(0, "T"),
+                element_type: gp(0, "T"),
                 len: 10,
             },
             &mut sub3,
@@ -1035,8 +1035,8 @@ fn test_unify_slice_ptr_and_ref() {
                 span: ByteSpan::default(),
                 function_type: Box::new(nitrate_hir::FunctionType {
                     attributes: BTreeSet::new(),
-                    params: vec![(NString::from("x"), GP(0, "T"))].into(),
-                    return_type: GP(1, "U"),
+                    params: vec![(NString::from("x"), gp(0, "T"))].into(),
+                    return_type: gp(1, "U"),
                 }),
             },
             &mut sub4,
@@ -1486,7 +1486,7 @@ fn test_resolve_local_with_parameterized_type() {
         let mut s = sym();
         let sd = mkstruct(
             "Pair",
-            vec![("first", GP(0, "T")), ("second", GP(0, "T"))],
+            vec![("first", gp(0, "T")), ("second", gp(0, "T"))],
             Some(vec!["T"]),
             None,
         );
@@ -1888,7 +1888,7 @@ fn test_resolve_generic_struct() {
         let mut s = sym();
         let sd = mkstruct(
             "Pair",
-            vec![("first", GP(0, "T")), ("second", GP(0, "T"))],
+            vec![("first", gp(0, "T")), ("second", gp(0, "T"))],
             Some(vec!["T"]),
             None,
         );
@@ -1917,7 +1917,7 @@ fn test_resolve_generic_struct_float_fields() {
         let mut s = sym();
         let sd = mkstruct(
             "Pair",
-            vec![("first", GP(0, "T")), ("second", GP(0, "T"))],
+            vec![("first", gp(0, "T")), ("second", gp(0, "T"))],
             Some(vec!["T"]),
             None,
         );
@@ -1949,7 +1949,7 @@ fn test_resolve_generic_struct_unsolved_inferred() {
         let mut s = sym();
         let sd = mkstruct(
             "Pair",
-            vec![("first", GP(0, "T")), ("second", GP(0, "T"))],
+            vec![("first", gp(0, "T")), ("second", gp(0, "T"))],
             Some(vec!["T"]),
             None,
         );
@@ -1979,7 +1979,7 @@ fn test_resolve_generic_struct_from_constraints() {
         let mut s = sym();
         let sd = mkstruct(
             "Pair",
-            vec![("first", GP(0, "T")), ("second", GP(0, "T"))],
+            vec![("first", gp(0, "T")), ("second", gp(0, "T"))],
             Some(vec!["T"]),
             None,
         );
@@ -2275,7 +2275,7 @@ fn test_resolve_call_generic() {
     store(|_| {
         let log = CompilerLog::default();
         let mut s = sym();
-        let p = param("x", GP(0, "T"));
+        let p = param("x", gp(0, "T"));
         let ret = sv(Value::Return {
             span: ByteSpan::default(),
             value: sv(Value::ParameterSymbol {
@@ -2284,11 +2284,11 @@ fn test_resolve_call_generic() {
             }),
         });
         let mut gens = BTreeMap::new();
-        gens.insert(NString::from("T"), Some(GP(0, "T")));
+        gens.insert(NString::from("T"), Some(gp(0, "T")));
         let fid = mkfunc(
             "id",
             vec![p],
-            GP(0, "T"),
+            gp(0, "T"),
             Some(vec![BlockElement::Expr(ret)]),
             Some(gens),
         );
@@ -2312,7 +2312,7 @@ fn test_resolve_call_generic_named() {
     store(|_| {
         let log = CompilerLog::default();
         let mut s = sym();
-        let p = param("x", GP(0, "T"));
+        let p = param("x", gp(0, "T"));
         let ret = sv(Value::Return {
             span: ByteSpan::default(),
             value: sv(Value::ParameterSymbol {
@@ -2321,11 +2321,11 @@ fn test_resolve_call_generic_named() {
             }),
         });
         let mut gens = BTreeMap::new();
-        gens.insert(NString::from("T"), Some(GP(0, "T")));
+        gens.insert(NString::from("T"), Some(gp(0, "T")));
         let fid = mkfunc(
             "id",
             vec![p],
-            GP(0, "T"),
+            gp(0, "T"),
             Some(vec![BlockElement::Expr(ret)]),
             Some(gens),
         );
@@ -2349,7 +2349,7 @@ fn test_resolve_call_generic_mismatch() {
     store(|_| {
         let log = CompilerLog::default();
         let mut s = sym();
-        let p = param("x", GP(0, "T"));
+        let p = param("x", gp(0, "T"));
         let ret = sv(Value::Return {
             span: ByteSpan::default(),
             value: sv(Value::ParameterSymbol {
@@ -2358,11 +2358,11 @@ fn test_resolve_call_generic_mismatch() {
             }),
         });
         let mut gens = BTreeMap::new();
-        gens.insert(NString::from("T"), Some(GP(0, "T")));
+        gens.insert(NString::from("T"), Some(gp(0, "T")));
         let fid = mkfunc(
             "id",
             vec![p],
-            GP(0, "T"),
+            gp(0, "T"),
             Some(vec![BlockElement::Expr(ret)]),
             Some(gens),
         );
@@ -2387,8 +2387,8 @@ fn test_resolve_call_generic_empty_generics() {
         let log = CompilerLog::default();
         let mut s = sym();
         let mut gens = BTreeMap::new();
-        gens.insert(NString::from("T"), Some(GP(0, "T")));
-        let fid = mkfunc("gen", vec![], GP(0, "T"), None, Some(gens));
+        gens.insert(NString::from("T"), Some(gp(0, "T")));
+        let fid = mkfunc("gen", vec![], gp(0, "T"), None, Some(gens));
         let call = sv(Value::Call {
             span: ByteSpan::default(),
             callee: sv(Value::FunctionSymbol {
@@ -2513,7 +2513,7 @@ fn test_resolve_method_call_generic() {
     store(|_| {
         let log = CompilerLog::default();
         let mut s = sym();
-        let sd = mkstruct("Pt", vec![("x", GP(0, "T")), ("y", GP(0, "T"))], Some(vec!["T"]), None);
+        let sd = mkstruct("Pt", vec![("x", gp(0, "T")), ("y", gp(0, "T"))], Some(vec!["T"]), None);
         s.add_struct(sd.clone());
         let st_id = TypeId::from(Type::Struct {
             span: ByteSpan::default(),
@@ -2644,17 +2644,17 @@ fn test_resolve_enum_variant_nested_ty() {
 fn test_monomorphize() {
     store(|_| {
         let mut s = sym();
-        let p = param("x", GP(0, "T"));
+        let p = param("x", gp(0, "T"));
         let bv = sv(Value::ParameterSymbol {
             span: ByteSpan::default(),
             id: p.clone(),
         });
         let mut gens = BTreeMap::new();
-        gens.insert(NString::from("T"), Some(GP(0, "T")));
+        gens.insert(NString::from("T"), Some(gp(0, "T")));
         let fid = mkfunc(
             "gf",
             vec![p],
-            GP(0, "T"),
+            gp(0, "T"),
             Some(vec![BlockElement::Expr(bv)]),
             Some(gens),
         );
@@ -2664,7 +2664,7 @@ fn test_monomorphize() {
         let mid = solver.monomorphize_function(&fid, &sub);
         assert!(mid.borrow().name.contains("mono"));
         assert!(matches!(&*mid.borrow().return_type, Type::I32 { .. }));
-        let sd = mkstruct("GP", vec![("f", GP(0, "T"))], Some(vec!["T"]), None);
+        let sd = mkstruct("GP", vec![("f", gp(0, "T"))], Some(vec!["T"]), None);
         let mid2 = solver.monomorphize_struct(&sd, &sub);
         assert!(mid2.borrow().name.contains("mono") && mid2.borrow().generics.is_none());
         assert_eq!(
@@ -2680,18 +2680,18 @@ fn test_monomorphize() {
 fn test_monomorphize_with_body_containing_local() {
     store(|_| {
         let mut s = sym();
-        let p = param("x", GP(0, "T"));
+        let p = param("x", gp(0, "T"));
         let body = vec![BlockElement::Local(local(
             "y",
-            GP(0, "T"),
+            gp(0, "T"),
             sv(Value::ParameterSymbol {
                 span: ByteSpan::default(),
                 id: p.clone(),
             }),
         ))];
         let mut gens = BTreeMap::new();
-        gens.insert(NString::from("T"), Some(GP(0, "T")));
-        let fid = mkfunc("gf2", vec![p], GP(0, "T"), Some(body), Some(gens));
+        gens.insert(NString::from("T"), Some(gp(0, "T")));
+        let fid = mkfunc("gf2", vec![p], gp(0, "T"), Some(body), Some(gens));
         let mut sub = Substitution::default();
         sub.mapping.insert(0, i32t());
         let mut solver = Solver::new(&mut s);
@@ -2779,7 +2779,7 @@ fn test_unify_types_with_subst_reference_to_reference() {
             lifetime: nitrate_hir::Lifetime::Inferred,
             exclusive: false,
             mutable: false,
-            to: GP(0, "T"),
+            to: gp(0, "T"),
         };
         Solver::unify_types_with_subst(&concrete_ref, &param_ref, &mut subst);
         assert!(subst.mapping.contains_key(&0));
@@ -2802,8 +2802,8 @@ fn test_unify_types_with_subst_function_to_function() {
             span: ByteSpan::default(),
             function_type: Box::new(nitrate_hir::FunctionType {
                 attributes: BTreeSet::new(),
-                params: vec![(NString::from("x"), GP(0, "T"))].into(),
-                return_type: GP(1, "U") as TypeId,
+                params: vec![(NString::from("x"), gp(0, "T"))].into(),
+                return_type: gp(1, "U") as TypeId,
             }),
         };
         Solver::unify_types_with_subst(&concrete_func, &param_func, &mut subst);
@@ -2853,11 +2853,11 @@ fn test_monomorphize_infer_generic_args_from_call_named_with_positional() {
         let mut s = sym();
         let solver = Solver::new(&mut s);
         let mut gens = BTreeMap::new();
-        gens.insert(NString::from("T"), Some(GP(0, "T")));
+        gens.insert(NString::from("T"), Some(gp(0, "T")));
         let fid = mkfunc(
             "f",
-            vec![param("x", GP(0, "T")), param("y", i32t())],
-            GP(0, "T"),
+            vec![param("x", gp(0, "T")), param("y", i32t())],
+            gp(0, "T"),
             None,
             Some(gens),
         );
@@ -2940,8 +2940,8 @@ fn test_infer_generic_args_from_call_named_with_all_positional() {
         let mut s = sym();
         let solver = Solver::new(&mut s);
         let mut gens = BTreeMap::new();
-        gens.insert(NString::from("T"), Some(GP(0, "T")));
-        let fid = mkfunc("f", vec![param("x", GP(0, "T"))], GP(0, "T"), None, Some(gens));
+        gens.insert(NString::from("T"), Some(gp(0, "T")));
+        let fid = mkfunc("f", vec![param("x", gp(0, "T"))], gp(0, "T"), None, Some(gens));
         let args = Arguments {
             positional: vec![i32v(42)].into(),
             named: ThinVec::new(),
@@ -2979,7 +2979,7 @@ fn test_monomorphize_infer_generic_args_from_struct_fields_with_matching_generic
         let solver = Solver::new(&mut s);
         let sd = mkstruct(
             "Pair",
-            vec![("first", GP(0, "T")), ("second", GP(0, "T"))],
+            vec![("first", gp(0, "T")), ("second", gp(0, "T"))],
             Some(vec!["T"]),
             None,
         );
@@ -3029,12 +3029,12 @@ fn test_unify_types_with_subst_generic_param_left() {
 fn test_collect_generic_params_from_type() {
     store(|_| {
         let mut mapping = BTreeMap::new();
-        Solver::collect_generic_params_from_type(&GP(0, "T"), &mut mapping);
+        Solver::collect_generic_params_from_type(&gp(0, "T"), &mut mapping);
         assert_eq!(mapping.get(&NString::from("T")), Some(&0));
 
         let arr_ty = TypeId::from(Type::Array {
             span: ByteSpan::default(),
-            element_type: GP(1, "U"),
+            element_type: gp(1, "U"),
             len: 5,
         });
         let mut mapping2 = BTreeMap::new();
@@ -3043,7 +3043,7 @@ fn test_collect_generic_params_from_type() {
 
         let tuple_ty = TypeId::from(Type::Tuple {
             span: ByteSpan::default(),
-            element_types: vec![GP(0, "A"), GP(1, "B")].into(),
+            element_types: vec![gp(0, "A"), gp(1, "B")].into(),
         });
         let mut mapping3 = BTreeMap::new();
         Solver::collect_generic_params_from_type(&tuple_ty, &mut mapping3);
@@ -3055,7 +3055,7 @@ fn test_collect_generic_params_from_type() {
             lifetime: nitrate_hir::Lifetime::Inferred,
             exclusive: false,
             mutable: false,
-            to: GP(0, "T"),
+            to: gp(0, "T"),
         });
         let mut mapping4 = BTreeMap::new();
         Solver::collect_generic_params_from_type(&ref_ty, &mut mapping4);
@@ -3066,7 +3066,7 @@ fn test_collect_generic_params_from_type() {
             lifetime: nitrate_hir::Lifetime::Inferred,
             exclusive: false,
             mutable: false,
-            to: GP(0, "T"),
+            to: gp(0, "T"),
         });
         let mut mapping5 = BTreeMap::new();
         Solver::collect_generic_params_from_type(&ptr_ty, &mut mapping5);
@@ -3077,7 +3077,7 @@ fn test_collect_generic_params_from_type() {
             lifetime: nitrate_hir::Lifetime::Inferred,
             exclusive: false,
             mutable: false,
-            element_type: GP(2, "C"),
+            element_type: gp(2, "C"),
         });
         let mut mapping6 = BTreeMap::new();
         Solver::collect_generic_params_from_type(&slice_ref, &mut mapping6);
@@ -3088,7 +3088,7 @@ fn test_collect_generic_params_from_type() {
             lifetime: nitrate_hir::Lifetime::Inferred,
             exclusive: false,
             mutable: false,
-            element_type: GP(3, "D"),
+            element_type: gp(3, "D"),
         });
         let mut mapping7 = BTreeMap::new();
         Solver::collect_generic_params_from_type(&slice_ptr, &mut mapping7);
@@ -3104,20 +3104,20 @@ fn test_collect_generic_params_from_type() {
 fn test_type_contains_generic_param() {
     store(|_| {
         let t_name = NString::from("T");
-        assert!(Solver::type_contains_generic_param(&*GP(0, "T"), &t_name));
-        assert!(!Solver::type_contains_generic_param(&*GP(0, "U"), &t_name));
+        assert!(Solver::type_contains_generic_param(&*gp(0, "T"), &t_name));
+        assert!(!Solver::type_contains_generic_param(&*gp(0, "U"), &t_name));
         assert!(!Solver::type_contains_generic_param(&*i32t(), &t_name));
 
         let arr = Type::Array {
             span: ByteSpan::default(),
-            element_type: GP(0, "T"),
+            element_type: gp(0, "T"),
             len: 10,
         };
         assert!(Solver::type_contains_generic_param(&arr, &t_name));
 
         let tup = Type::Tuple {
             span: ByteSpan::default(),
-            element_types: vec![GP(0, "T"), i32t()].into(),
+            element_types: vec![gp(0, "T"), i32t()].into(),
         };
         assert!(Solver::type_contains_generic_param(&tup, &t_name));
 
@@ -3152,7 +3152,7 @@ fn test_type_contains_generic_param() {
             lifetime: nitrate_hir::Lifetime::Inferred,
             exclusive: false,
             mutable: false,
-            element_type: GP(0, "T"),
+            element_type: gp(0, "T"),
         };
         assert!(Solver::type_contains_generic_param(&sr, &t_name));
 
@@ -3161,7 +3161,7 @@ fn test_type_contains_generic_param() {
             lifetime: nitrate_hir::Lifetime::Inferred,
             exclusive: false,
             mutable: false,
-            element_type: GP(0, "T"),
+            element_type: gp(0, "T"),
         };
         assert!(Solver::type_contains_generic_param(&sp, &t_name));
     });
@@ -3173,19 +3173,19 @@ fn test_type_contains_generic_param_name() {
         let t_name = NString::from("T");
         let u_name = NString::from("U");
 
-        assert!(Solver::type_contains_generic_param_name(&GP(0, "T"), &t_name));
-        assert!(!Solver::type_contains_generic_param_name(&GP(0, "T"), &u_name));
+        assert!(Solver::type_contains_generic_param_name(&gp(0, "T"), &t_name));
+        assert!(!Solver::type_contains_generic_param_name(&gp(0, "T"), &u_name));
 
         let arr = TypeId::from(Type::Array {
             span: ByteSpan::default(),
-            element_type: GP(0, "T"),
+            element_type: gp(0, "T"),
             len: 10,
         });
         assert!(Solver::type_contains_generic_param_name(&arr, &t_name));
 
         let tuple = TypeId::from(Type::Tuple {
             span: ByteSpan::default(),
-            element_types: vec![GP(0, "T"), i32t()].into(),
+            element_types: vec![gp(0, "T"), i32t()].into(),
         });
         assert!(Solver::type_contains_generic_param_name(&tuple, &t_name));
 
@@ -3194,7 +3194,7 @@ fn test_type_contains_generic_param_name() {
             lifetime: nitrate_hir::Lifetime::Inferred,
             exclusive: false,
             mutable: false,
-            to: GP(0, "T"),
+            to: gp(0, "T"),
         });
         assert!(Solver::type_contains_generic_param_name(&ref_ty, &t_name));
 
@@ -3203,7 +3203,7 @@ fn test_type_contains_generic_param_name() {
             lifetime: nitrate_hir::Lifetime::Inferred,
             exclusive: false,
             mutable: false,
-            to: GP(0, "T"),
+            to: gp(0, "T"),
         });
         assert!(Solver::type_contains_generic_param_name(&ptr_ty, &t_name));
     });
@@ -3302,10 +3302,10 @@ fn test_monomorphize_function_cycle_detection() {
     store(|_| {
         let mut s = sym();
         let mut solver = Solver::new(&mut s);
-        let p = param("x", GP(0, "T"));
+        let p = param("x", gp(0, "T"));
         let mut gens = BTreeMap::new();
-        gens.insert(NString::from("T"), Some(GP(0, "T")));
-        let fid = mkfunc("f", vec![p], GP(0, "T"), None, Some(gens));
+        gens.insert(NString::from("T"), Some(gp(0, "T")));
+        let fid = mkfunc("f", vec![p], gp(0, "T"), None, Some(gens));
         let mut sub = Substitution::default();
         sub.mapping.insert(0, i32t());
         let ck = solver.mono_cache_key(&fid, &sub);
@@ -3320,7 +3320,7 @@ fn test_monomorphize_struct_cycle_detection() {
     store(|_| {
         let mut s = sym();
         let mut solver = Solver::new(&mut s);
-        let sd = mkstruct("GP", vec![("f", GP(0, "T"))], Some(vec!["T"]), None);
+        let sd = mkstruct("GP", vec![("f", gp(0, "T"))], Some(vec!["T"]), None);
         let mut sub = Substitution::default();
         sub.mapping.insert(0, i32t());
         let ck = solver.struct_mono_cache_key(&sd, &sub);
@@ -3340,7 +3340,7 @@ fn test_apply_subst_to_value_cast() {
         let cast_val = Value::Cast {
             span: ByteSpan::default(),
             value: i32v(42),
-            target_type: GP(0, "T"),
+            target_type: gp(0, "T"),
         };
         let result = solver.apply_subst_to_value(&cast_val, &sub);
         assert!(matches!(result, Value::Cast { .. }));
@@ -3375,12 +3375,12 @@ fn test_apply_subst_to_value_generic_struct() {
         let solver = Solver::new(&mut s);
         let mut sub = Substitution::default();
         sub.mapping.insert(0, i32t());
-        let sd = mkstruct("GP", vec![("f", GP(0, "T"))], Some(vec!["T"]), None);
+        let sd = mkstruct("GP", vec![("f", gp(0, "T"))], Some(vec!["T"]), None);
         let fields: ThinVec<(NString, ValueId)> = vec![(
             NString::from("f"),
             sv(Value::ParameterSymbol {
                 span: ByteSpan::default(),
-                id: param("x", GP(0, "T")),
+                id: param("x", gp(0, "T")),
             }),
         )]
         .into();
@@ -3403,10 +3403,10 @@ fn test_clone_block_element_local() {
         sub.mapping.insert(0, i32t());
         let local_el = BlockElement::Local(local(
             "x",
-            GP(0, "T"),
+            gp(0, "T"),
             sv(Value::ParameterSymbol {
                 span: ByteSpan::default(),
-                id: param("x", GP(0, "T")),
+                id: param("x", gp(0, "T")),
             }),
         ));
         let cloned = solver.clone_block_element(&local_el, &sub);
@@ -3442,8 +3442,8 @@ fn test_infer_generic_args_from_call_named_with_inferred_args() {
         let mut s = sym();
         let solver = Solver::new(&mut s);
         let mut gens = BTreeMap::new();
-        gens.insert(NString::from("T"), Some(GP(0, "T")));
-        let fid = mkfunc("id", vec![param("x", GP(0, "T"))], GP(0, "T"), None, Some(gens));
+        gens.insert(NString::from("T"), Some(gp(0, "T")));
+        let fid = mkfunc("id", vec![param("x", gp(0, "T"))], gp(0, "T"), None, Some(gens));
         let args = Arguments {
             positional: ThinVec::new(),
             named: vec![(NString::from("x"), inf_int(42))].into(),
@@ -3469,7 +3469,7 @@ fn test_infer_generic_args_from_struct_fields_with_inferred() {
     store(|_| {
         let mut s = sym();
         let solver = Solver::new(&mut s);
-        let sd = mkstruct("GP", vec![("f", GP(0, "T"))], Some(vec!["T"]), None);
+        let sd = mkstruct("GP", vec![("f", gp(0, "T"))], Some(vec!["T"]), None);
         let fields = vec![(NString::from("f"), inf_int(42))];
         let result = solver.infer_generic_args_from_struct_fields(&sd, &fields);
         assert!(result.is_some());
@@ -3484,7 +3484,7 @@ fn test_infer_generic_args_from_constraints_no_constraints() {
     store(|_| {
         let mut s = sym();
         let solver = Solver::new(&mut s);
-        let sd = mkstruct("GP", vec![("f", GP(0, "T"))], Some(vec!["T"]), None);
+        let sd = mkstruct("GP", vec![("f", gp(0, "T"))], Some(vec!["T"]), None);
         let val = sv(Value::Unit {
             span: ByteSpan::default(),
         });
@@ -3497,7 +3497,7 @@ fn test_infer_generic_args_from_constraints_no_constraints() {
 fn test_infer_generic_args_from_constraints_with_parameterized() {
     store(|_| {
         let mut s = sym();
-        let sd = mkstruct("GP", vec![("f", GP(0, "T"))], Some(vec!["T"]), None);
+        let sd = mkstruct("GP", vec![("f", gp(0, "T"))], Some(vec!["T"]), None);
         s.add_struct(sd.clone());
         let mut solver = Solver::new(&mut s);
         let val = sv(Value::Unit {
@@ -3526,7 +3526,7 @@ fn test_infer_generic_args_from_constraints_with_parameterized() {
 fn test_infer_generic_args_from_constraints_with_different_struct() {
     store(|_| {
         let mut s = sym();
-        let sd = mkstruct("GP", vec![("f", GP(0, "T"))], Some(vec!["T"]), None);
+        let sd = mkstruct("GP", vec![("f", gp(0, "T"))], Some(vec!["T"]), None);
         let sd_other = mkstruct("Other", vec![("x", i32t())], None, None);
         s.add_struct(sd.clone());
         let mut solver = Solver::new(&mut s);
@@ -3785,10 +3785,10 @@ fn test_infer_generic_args_from_call_mismatched_args() {
         let mut s = sym();
         let solver = Solver::new(&mut s);
         let mut gens = BTreeMap::new();
-        gens.insert(NString::from("T"), Some(GP(0, "T")));
-        let p1 = param("x", GP(0, "T"));
-        let p2 = param("y", GP(0, "T"));
-        let fid = mkfunc("f", vec![p1, p2], GP(0, "T"), None, Some(gens));
+        gens.insert(NString::from("T"), Some(gp(0, "T")));
+        let p1 = param("x", gp(0, "T"));
+        let p2 = param("y", gp(0, "T"));
+        let fid = mkfunc("f", vec![p1, p2], gp(0, "T"), None, Some(gens));
         let result = solver.infer_generic_args_from_call(&fid, &[i32v(42)]);
         assert!(result.is_none() || result.as_ref().map_or(true, |s| s.mapping.is_empty()));
     });
@@ -4400,7 +4400,7 @@ fn test_type_contains_generic_param_indirect() {
                     lifetime: nitrate_hir::Lifetime::Inferred,
                     exclusive: false,
                     mutable: false,
-                    to: GP(0, "T"),
+                    to: gp(0, "T"),
                 }),
             )],
             Some(vec!["T"]),
@@ -4714,7 +4714,7 @@ fn test_method_call_generic_method() {
     store(|_| {
         let log = CompilerLog::default();
         let mut s = sym();
-        let sd = mkstruct("Pt", vec![("x", GP(0, "T")), ("y", GP(0, "T"))], Some(vec!["T"]), None);
+        let sd = mkstruct("Pt", vec![("x", gp(0, "T")), ("y", gp(0, "T"))], Some(vec!["T"]), None);
         s.add_struct(sd.clone());
         let st_id = TypeId::from(Type::Struct {
             span: ByteSpan::default(),
@@ -4728,7 +4728,7 @@ fn test_method_call_generic_method() {
                 id: p.clone(),
             }),
         });
-        let mid = mkfunc("get_x", vec![p], GP(0, "T"), Some(vec![BlockElement::Expr(ret)]), None);
+        let mid = mkfunc("get_x", vec![p], gp(0, "T"), Some(vec![BlockElement::Expr(ret)]), None);
         s.add_method(
             TypeId::from(Type::Struct {
                 span: ByteSpan::default(),
@@ -4764,11 +4764,11 @@ fn test_monomorphize_with_cast() {
         let body = vec![BlockElement::Expr(sv(Value::Cast {
             span: ByteSpan::default(),
             value: i32v(42),
-            target_type: GP(0, "T"),
+            target_type: gp(0, "T"),
         }))];
         let mut gens = BTreeMap::new();
-        gens.insert(NString::from("T"), Some(GP(0, "T")));
-        let fid = mkfunc("cast_fn", vec![], GP(0, "T"), Some(body), Some(gens));
+        gens.insert(NString::from("T"), Some(gp(0, "T")));
+        let fid = mkfunc("cast_fn", vec![], gp(0, "T"), Some(body), Some(gens));
         let mut sub = Substitution::default();
         sub.mapping.insert(0, i64t());
         let mut solver = Solver::new(&mut s);
@@ -4781,7 +4781,7 @@ fn test_monomorphize_with_cast() {
 fn test_monomorphize_with_generic_struct_value() {
     store(|_| {
         let mut s = sym();
-        let sd = mkstruct("GP", vec![("f", GP(0, "T"))], Some(vec!["T"]), None);
+        let sd = mkstruct("GP", vec![("f", gp(0, "T"))], Some(vec!["T"]), None);
         let body = vec![BlockElement::Expr(sv(Value::StructObject {
             span: ByteSpan::default(),
             struct_def: sd,
@@ -4789,15 +4789,15 @@ fn test_monomorphize_with_generic_struct_value() {
                 NString::from("f"),
                 sv(Value::ParameterSymbol {
                     span: ByteSpan::default(),
-                    id: param("x", GP(0, "T")),
+                    id: param("x", gp(0, "T")),
                 }),
             )]
             .into(),
         }))];
-        let p = param("x", GP(0, "T"));
+        let p = param("x", gp(0, "T"));
         let mut gens = BTreeMap::new();
-        gens.insert(NString::from("T"), Some(GP(0, "T")));
-        let fid = mkfunc("make_gp", vec![p], GP(0, "T"), Some(body), Some(gens));
+        gens.insert(NString::from("T"), Some(gp(0, "T")));
+        let fid = mkfunc("make_gp", vec![p], gp(0, "T"), Some(body), Some(gens));
         let mut sub = Substitution::default();
         sub.mapping.insert(0, i32t());
         let mut solver = Solver::new(&mut s);
