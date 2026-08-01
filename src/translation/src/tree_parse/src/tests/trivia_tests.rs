@@ -22,7 +22,6 @@ fn check_reconstruct(source: &str) {
 fn check_module_span(source: &str) {
     let module = parse_source(source);
     let span = module.span;
-    let source_bytes = source.as_bytes();
     if !source.trim().is_empty() {
         assert!(
             span.len() > 0 || source.trim().is_empty(),
