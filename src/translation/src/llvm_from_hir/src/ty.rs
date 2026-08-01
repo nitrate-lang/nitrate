@@ -153,5 +153,6 @@ pub(crate) fn gen_ty<'ctx>(hir_type: &hir::Type, ctx: &mut TypegenCtx<'ctx, '_, 
         hir::Type::GenericParam { .. } => {
             panic!("Generic parameters should have been monomorphized before code generation")
         }
+        hir::Type::Range { .. } => ctx.llvm.struct_type(&[], false).into(),
     }
 }

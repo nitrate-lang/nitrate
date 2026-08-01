@@ -190,6 +190,9 @@ pub enum Type {
         index: u32,
         name: NString,
     },
+    Range {
+        span: ByteSpan,
+    },
 }
 
 /// Variant discriminant used for Ord ordering.
@@ -228,6 +231,7 @@ enum TypeDisc {
     InferredInteger = 30,
     Inferred = 31,
     GenericParam = 32,
+    Range = 33,
 }
 
 impl Type {
@@ -266,6 +270,7 @@ impl Type {
             Type::InferredInteger { .. } => TypeDisc::InferredInteger,
             Type::Inferred { .. } => TypeDisc::Inferred,
             Type::GenericParam { .. } => TypeDisc::GenericParam,
+            Type::Range { .. } => TypeDisc::Range,
         }
     }
 
@@ -305,6 +310,7 @@ impl Type {
             Type::InferredInteger { span } => *span,
             Type::Inferred { span, .. } => *span,
             Type::GenericParam { span, .. } => *span,
+            Type::Range { span, .. } => *span,
         }
     }
 
@@ -672,6 +678,7 @@ impl std::hash::Hash for Type {
                 index.hash(state);
                 name.hash(state);
             }
+            Type::Range { .. } => 33u8.hash(state),
         }
     }
 }

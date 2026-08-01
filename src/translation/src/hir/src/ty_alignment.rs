@@ -69,6 +69,7 @@ pub fn get_align_of(ty: &Type, ctx: &LayoutCtx) -> Result<u64, LayoutError> {
         }
 
         Type::Refine { base, .. } => Ok(get_align_of(base, ctx)?),
+        Type::Range { .. } => Ok(1),
 
         Type::Function { .. } => Ok(ctx.ptr_size as u64),
         Type::Reference { .. } => Ok(ctx.ptr_size as u64),

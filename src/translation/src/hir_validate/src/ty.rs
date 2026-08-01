@@ -353,6 +353,7 @@ impl ValidateHirType for Type {
                 // The codegen layer will panic if any GenericParam survives to LLVM IR generation.
                 Ok(())
             }
+            Type::Range { .. } => Ok(()),
         }
     }
     fn validate(self, ctx: &mut ValidateCtx, options: &ValidateTypeOptions) -> Result<ValidHir<Self>, ()> {

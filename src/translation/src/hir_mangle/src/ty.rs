@@ -173,6 +173,7 @@ pub fn mangle_type(ty: &Type) -> String {
 
         Type::InferredFloat { .. } => "f".to_string(),
         Type::InferredInteger { .. } => "g".to_string(),
+        Type::Range { .. } => "h".to_string(),
     }
 }
 
@@ -440,6 +441,9 @@ pub fn demangle_type(input: &mut &[u8]) -> Result<Type, ()> {
             span: ByteSpan::default(),
         }),
         b'g' => Ok(Type::InferredInteger {
+            span: ByteSpan::default(),
+        }),
+        b'h' => Ok(Type::Range {
             span: ByteSpan::default(),
         }),
 
