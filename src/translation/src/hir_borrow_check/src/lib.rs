@@ -329,7 +329,6 @@ impl Place {
 /// It is designed to be created fresh for each function, used, and then discarded.
 pub(crate) struct BorrowCheckCtx<'a> {
     /// The function being checked (for diagnostics).
-    #[allow(dead_code)]
     function_name: NString,
     /// The function's return type.
     return_type: TypeId,

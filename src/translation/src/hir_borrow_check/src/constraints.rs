@@ -41,7 +41,7 @@
 /// # Returns
 /// * `Ok(())` if the borrow is valid (no conflicts)
 /// * `Err(conflict_place, conflict_kind)` if a conflict exists
-#[allow(dead_code)]
+
 pub fn check_borrow_conflict(
     new_place: crate::PlaceId,
     new_place_data: &crate::Place,
@@ -80,7 +80,7 @@ pub fn check_borrow_conflict(
 /// # Returns
 /// * `true` if there's a conflict (cannot write)
 /// * `false` if the write is safe
-#[allow(dead_code)]
+
 pub fn check_write_conflict(
     place: &crate::Place,
     active_borrows: &[crate::BorrowRecord],
