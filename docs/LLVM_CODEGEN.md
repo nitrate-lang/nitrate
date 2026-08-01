@@ -19,7 +19,7 @@ The codegen proceeds in three coordinated passes over the HIR module. This three
 
 ### Pass 1: Global Variable Generation
 
-Each HIR global variable creates an LLVM global with the appropriate type (derived from the HIR type) and linkage (External for `Pub` globals, Internal for `Pro`, Private for `Sec`). Complex initializers — those that cannot be expressed as LLVM constants, such as values requiring function calls or arithmetic — are handled through constructor functions registered via `llvm_appendToGlobalCtors`. Each constructor function is named `{mangled_name}_ctor` with `void()` signature and internal linkage. The constructor evaluates the HIR initializer expression, stores the result into the global, and returns void. The global constructors list ensures these initializers run before `main()` in priority order.
+Each HIR global variable creates an LLVM global with the appropriate type (derived from the HIR type) and linkage (External for `Pub` globals, Internal for `Pro`, Private for `Sec`). Complex initializers — those that cannot be expressed as LLVM constants, such as values requiring function calls or arithmetic — are handled through constructor functions registered via `llvm_appendToGlobalCtors`. Each constructor function is a synthesized symbol named via `mangle_name(package_name, "<global>_ctor", <void() type>)` with a `void()` signature and internal linkage. The constructor evaluates the HIR initializer expression, stores the result into the global, and returns void. The global constructors list ensures these initializers run before `main()` in priority order.
 
 ### Pass 2: Function Declarations
 

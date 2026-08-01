@@ -207,11 +207,11 @@ fn gen_global<'ctx>(ctx: &mut SymbolGenCtx<'ctx, '_, '_, '_>, hir_global: &hir::
         .into(),
     };
 
-    let ctor_name = mangle_name(
-        ctx.package_name,
-        &format!("{}_ctor", hir_global.mangled_name),
-        &hir_ctor_type,
-    );
+    // The global's name is fully qualified (e.g. `test-package::counter`).
+    // The package name is encoded separately by `mangle_name`, so strip it
+    // to avoid duplication.
+    let bare_global_name = hir_global.name.rsplit("::").next().unwrap_or(&hir_global.name);
+    let ctor_name = mangle_name(ctx.package_name, &format!("{}_ctor", bare_global_name), &hir_ctor_type);
 
     let llvm_ctor_function = ctx.module.add_function(
         ctor_name.as_str(),

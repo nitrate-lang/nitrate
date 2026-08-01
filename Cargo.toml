@@ -34,6 +34,7 @@ bitflags = "2"
 blake3 = "1"
 cc = "1"
 enum-iterator = "2"
+flate2 = "1"
 inkwell = { version = "0.6", features = ["llvm16-0"] }
 internal-iterator = "0.2"
 llvm-plugin-inkwell = { version = "0.3", features = ["llvm16-0"] }

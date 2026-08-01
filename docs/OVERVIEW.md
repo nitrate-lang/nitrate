@@ -109,7 +109,7 @@ The validator (`nitrate_hir_validate`) performs final semantic checks verifying 
 
 ### Stage 8: Name Mangling
 
-The mangler (`nitrate_hir_mangle`) produces unique, deterministic LLVM linkage names encoding the package name, symbol name, and type signature. Generic instantiations append a monomorphization counter suffix. Functions with the `NoMangle` attribute preserve their original name.
+The mangler (`nitrate_hir_mangle`) produces unique, deterministic LLVM linkage names encoding the package name, symbol name, and type signature using a compact C99-safe charset (`[A-Za-z0-9_]`). Mangled names are self-delimiting and support DEFLATE compression for very long names. Symbols with the `NoMangle` attribute use their bare, unqualified name so that externally-visible symbols (e.g. `main`, `printf`) appear exactly as written. See [MANGLE.md](MANGLE.md) for the complete encoding specification.
 
 ### Stages 9-10: LLVM Code Generation and Optimization
 

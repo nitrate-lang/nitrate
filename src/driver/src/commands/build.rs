@@ -5,6 +5,7 @@ use nitrate_translation::{
     hir::{Store, prelude as hir, using_storage},
     hir_dump::Dump,
     hir_from_tree::{Ast2HirCtx, convert_ast_to_hir},
+    hir_mangle::mangle_symbols,
     hir_validate::{self, ValidateHirItem},
     llvm::{LLVMContext, OptLevel},
     llvm_from_hir::generate_llvmir,
@@ -298,6 +299,13 @@ impl Interpreter<'_> {
                 println!("{}", valid_hir_module.into_inner().to_string());
                 return Ok(());
             }
+
+            // Apply name mangling to all functions and global variables.
+            // This sets the `mangled_name` field on each symbol, which is what
+            // appears in the object file during LLVM IR generation. The `name`
+            // field is preserved for internal symbol lookup.
+            let mut symbol_tab = symbol_tab;
+            mangle_symbols(package.name(), &mut symbol_tab);
 
             let mut llvm_module = generate_llvmir(package.name(), valid_hir_module, &llvm_ctx, &symbol_tab);
 
