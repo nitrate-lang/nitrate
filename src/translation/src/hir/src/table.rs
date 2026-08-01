@@ -215,6 +215,7 @@ impl SymbolTab {
             span: ByteSpan::default(),
             visibility: Visibility::Sec,
             attributes: BTreeSet::new(),
+            is_unsafe: false,
             name: name.clone(),
             mangled_name: None,
             generics: None,

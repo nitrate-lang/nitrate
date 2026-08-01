@@ -28,6 +28,10 @@ pub struct ValidateCtx<'m> {
     /// The current module path (e.g., ["root", "foo"] for module foo inside root).
     pub(crate) current_module_path: Vec<NString>,
     pub(crate) log: &'m CompilerLog,
+    /// The safety context stack. The top of the stack is the current safety level.
+    /// When entering an `unsafe` block, `Unsafe` is pushed. When entering a `safe`
+    /// block, `Safe` is pushed. This allows nested blocks to override the parent.
+    pub(crate) safety_stack: Vec<BlockSafety>,
 }
 
 impl<'m> ValidateCtx<'m> {
@@ -37,7 +41,23 @@ impl<'m> ValidateCtx<'m> {
             m,
             current_module_path: Vec::new(),
             log,
+            safety_stack: vec![BlockSafety::Safe],
         }
+    }
+
+    /// Returns the current effective safety level (top of the stack).
+    pub(crate) fn current_safety(&self) -> BlockSafety {
+        self.safety_stack.last().cloned().unwrap_or(BlockSafety::Safe)
+    }
+
+    /// Push a new safety level onto the stack.
+    pub(crate) fn push_safety(&mut self, safety: BlockSafety) {
+        self.safety_stack.push(safety);
+    }
+
+    /// Pop the current safety level from the stack.
+    pub(crate) fn pop_safety(&mut self) {
+        self.safety_stack.pop();
     }
 
     /// Report a validation error to the compiler log.

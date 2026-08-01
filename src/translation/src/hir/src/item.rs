@@ -76,6 +76,7 @@ pub struct Function {
     pub span: ByteSpan,
     pub visibility: Visibility,
     pub attributes: BTreeSet<FunctionAttribute>,
+    pub is_unsafe: bool,
     pub name: NString,
     pub mangled_name: Option<NString>,
     pub generics: Option<BTreeMap<NString, Option<TypeId>>>,

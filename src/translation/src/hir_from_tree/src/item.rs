@@ -494,6 +494,7 @@ fn lower_function(function: ast::Function, ctx: &mut Ast2HirCtx, log: &CompilerL
         span,
         visibility,
         attributes,
+        is_unsafe: false,
         name: name.clone(),
         mangled_name: None,
         generics,

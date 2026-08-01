@@ -9,9 +9,9 @@ use nitrate_tree::ast::{
     AttributeList, Await, BStringLit, BinExpr, BinExprOp, Block, BlockItem, Bool, BooleanLit, Break, Cast, Closure,
     Continue, ElseIf, Expr, ExprParentheses, ExprPath, ExprPathSegment, ExprSyntaxError, FieldAccess, Float32, Float64,
     FloatLit, ForEach, FuncParam, FunctionCall, If, IndexAccess, Int8, Int16, Int32, Int64, Int128, IntegerLit, List,
-    LocalVariable, LocalVariableKind, MethodCall, Range, RangeKind, Return, Safety, Spanned, StringLit, StructInit,
-    Tuple, Type, TypeArgument, TypeInfo, TypePath, TypePathSegment, UInt8, UInt16, UInt32, UInt64, UInt128, USize,
-    UnaryExpr, UnaryExprOp, WhileLoop,
+    LocalVariable, LocalVariableKind, MethodCall, Range, RangeKind, Return, Safety, StringLit, StructInit, Tuple, Type,
+    TypeArgument, TypeInfo, TypePath, TypePathSegment, UInt8, UInt16, UInt32, UInt64, UInt128, USize, UnaryExpr,
+    UnaryExprOp, WhileLoop,
 };
 
 type Precedence = u32;
@@ -394,7 +394,8 @@ impl Parser<'_, '_> {
                 }))
             }
 
-            Token::Fn | Token::OpenBrace | Token::Unsafe | Token::Safe => Expr::Closure(Box::new(self.parse_closure())),
+            Token::Fn => Expr::Closure(Box::new(self.parse_closure())),
+            Token::OpenBrace | Token::Unsafe | Token::Safe => Expr::Block(Box::new(self.parse_block())),
 
             Token::If => Expr::If(Box::new(self.parse_if())),
             Token::For => Expr::For(Box::new(self.parse_for())),
@@ -1222,21 +1223,6 @@ impl Parser<'_, '_> {
     }
 
     fn parse_closure(&mut self) -> Closure {
-        if matches!(
-            self.lexer.peek_tok().token,
-            Token::OpenBrace | Token::Unsafe | Token::Safe
-        ) {
-            let definition = self.parse_block();
-
-            return Closure {
-                span: definition.span(),
-                attributes: None,
-                parameters: None,
-                return_type: None,
-                definition,
-            };
-        }
-
         let fn_start = self.lexer.peek_pos().offset;
         assert!(self.lexer.peek_tok().token == Token::Fn);
         self.lexer.skip_tok();

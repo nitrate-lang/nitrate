@@ -75,6 +75,12 @@ pub(crate) enum ValidateErr {
 
     /// A generic parameter was found in a context where it is not allowed (must be monomorphized first).
     GenericParamNotAllowed { type_repr: String },
+
+    /// An unsafe operation was performed outside an `unsafe` block.
+    UnsafeOperationOutsideUnsafeBlock { operation: String },
+
+    /// An `unsafe` function was called from safe code.
+    UnsafeFnCallOutsideUnsafeBlock { function_name: NString },
 }
 
 impl FormattableDiagnosticGroup for ValidateErr {
@@ -105,6 +111,8 @@ impl FormattableDiagnosticGroup for ValidateErr {
             ValidateErr::InvalidEnumAttribute => 0x012,
             ValidateErr::InvalidEnumVariantAttribute => 0x013,
             ValidateErr::GenericParamNotAllowed { .. } => 0x014,
+            ValidateErr::UnsafeOperationOutsideUnsafeBlock { .. } => 0x015,
+            ValidateErr::UnsafeFnCallOutsideUnsafeBlock { .. } => 0x016,
         }
     }
 
@@ -210,6 +218,26 @@ impl FormattableDiagnosticGroup for ValidateErr {
                 format!(
                     "generic parameter `{}` not allowed in this context; generics must be monomorphized before codegen",
                     type_repr,
+                )
+            }
+
+            ValidateErr::UnsafeOperationOutsideUnsafeBlock { operation } => {
+                format!(
+                    "`{}` is unsafe and requires an `unsafe` block\n\
+                     \n  = note: operations like raw pointer dereference, calls to `unsafe` functions,\n\
+                     \n         and access to mutable statics must be performed inside an `unsafe` block.\n\
+                     \n  = help: wrap this operation in an `unsafe {{ ... }}` block.",
+                    operation,
+                )
+            }
+
+            ValidateErr::UnsafeFnCallOutsideUnsafeBlock { function_name } => {
+                format!(
+                    "call to unsafe function `{}` requires an `unsafe` block\n\
+                     \n  = note: `unsafe` functions may perform operations that violate memory safety.\n\
+                     \n         The caller must explicitly opt into this by wrapping the call in `unsafe {{ ... }}`.\n\
+                     \n  = help: wrap the call in an `unsafe {{ ... }}` block.",
+                    function_name,
                 )
             }
         };

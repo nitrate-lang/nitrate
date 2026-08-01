@@ -685,7 +685,7 @@ fn test_type_named_generic2() {
 #[test]
 fn test_empty_block() {
     let expr = parse_expr("{ }");
-    assert!(matches!(&expr, Expr::Closure(_)));
+    assert!(matches!(&expr, Expr::Block(_)));
 }
 
 // ========== TYPES ==========

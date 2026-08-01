@@ -207,6 +207,21 @@ fn check_rvalue_access(value: &Value, ctx: &mut BorrowCheckCtx) {
         | Value::StringLit { .. }
         | Value::BStringLit { .. } => {}
 
+        // --- Raw pointer dereference: skip borrow checks in unsafe blocks ---
+        Value::Deref { place, .. } => {
+            // Check if we're dereferencing a raw pointer (not a reference)
+            let place_val = place.borrow();
+            if let Ok(ty) = place_val.determine_type(ctx.tab) {
+                if matches!(ty, Type::Pointer { .. } | Type::SlicePtr { .. }) {
+                    // Raw pointer dereference — skip borrow checks entirely.
+                    // The programmer is responsible for safety in unsafe blocks.
+                    return;
+                }
+            }
+            // Regular reference dereference: check the pointer itself
+            check_rvalue_access(&place_val, ctx);
+        }
+
         // Inferred types should have been resolved by now.
         Value::InferredInteger { .. } | Value::InferredFloat { .. } => {
             panic!("Inferred types should have been resolved before borrow checking");
@@ -270,13 +285,6 @@ fn check_rvalue_access(value: &Value, ctx: &mut BorrowCheckCtx) {
             let place_value = place.borrow();
             check_write_place(&place_value, ctx, "assignment");
             check_rvalue_access(&value.borrow(), ctx);
-        }
-
-        // --- Dereference: read through a pointer ---
-        Value::Deref { place, .. } => {
-            // Dereferencing reads the pointer value, and then reads the pointed-to memory.
-            // Check that the pointer itself is readable.
-            check_rvalue_access(&place.borrow(), ctx);
         }
 
         // --- Cast: check the value being cast ---

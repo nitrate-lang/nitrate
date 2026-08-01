@@ -510,6 +510,7 @@ impl<'m> Solver<'m> {
             span: ByteSpan::default(),
             visibility: func.visibility,
             attributes: func.attributes.clone(),
+            is_unsafe: func.is_unsafe,
             name: mono_name_ns,
             mangled_name: Some(mono_mangled_name),
             generics: None,

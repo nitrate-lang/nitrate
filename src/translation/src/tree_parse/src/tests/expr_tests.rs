@@ -162,7 +162,7 @@ fn test_list_trailing_comma() {
 #[test]
 fn test_closure_brace() {
     let expr = parse_expr("{ 42 }");
-    assert!(matches!(&expr, Expr::Closure(_)));
+    assert!(matches!(&expr, Expr::Block(_)));
 }
 
 #[test]
@@ -187,17 +187,17 @@ fn test_closure_call() {
 
 #[test]
 fn test_unsafe_block() {
-    assert!(matches!(&parse_expr("unsafe { 42 }"), Expr::Closure(_)));
+    assert!(matches!(&parse_expr("unsafe { 42 }"), Expr::Block(_)));
 }
 
 #[test]
 fn test_safe_block() {
-    assert!(matches!(&parse_expr("safe { 42 }"), Expr::Closure(_)));
+    assert!(matches!(&parse_expr("safe { 42 }"), Expr::Block(_)));
 }
 
 #[test]
 fn test_unsafe_block_with_expr() {
-    assert!(matches!(&parse_expr("unsafe(42) { 1 }"), Expr::Closure(_)));
+    assert!(matches!(&parse_expr("unsafe(42) { 1 }"), Expr::Block(_)));
 }
 
 // ========== PATHS ==========
@@ -680,7 +680,7 @@ fn test_block_item_empty_return() {
 #[test]
 fn test_unsafe_block_without_parens() {
     let expr = parse_expr("unsafe { 1 }");
-    assert!(matches!(&expr, Expr::Closure(_)));
+    assert!(matches!(&expr, Expr::Block(_)));
 }
 
 // ========== PATH RESOLUTION EDGE CASES ==========

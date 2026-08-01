@@ -11,37 +11,46 @@ impl ValidateHirValue for Block {
             return Ok(());
         }
 
-        for (i, elem) in self.elements.iter().enumerate() {
-            let is_last = i == self.elements.len() - 1;
+        // Push the block's safety onto the stack, then pop when done
+        ctx.push_safety(self.safety.clone());
 
-            match elem {
-                BlockElement::Expr(expr)
-                    if matches!(
-                        &*expr.borrow(),
-                        Value::Break { .. } | Value::Continue { .. } | Value::Return { .. }
-                    ) =>
-                {
-                    expr.borrow().verify(ctx)?;
+        // Use a deferred pop pattern with a guard-like closure
+        let result = (|| {
+            for (i, elem) in self.elements.iter().enumerate() {
+                let is_last = i == self.elements.len() - 1;
 
-                    establish_property(
-                        ctx,
-                        "divergent statements have no successors",
-                        ValidateErr::DivergentStatementHasSuccessors,
-                        |_| {
-                            if !is_last {
-                                return Err(());
-                            }
-                            Ok(())
-                        },
-                    )?;
+                match elem {
+                    BlockElement::Expr(expr)
+                        if matches!(
+                            &*expr.borrow(),
+                            Value::Break { .. } | Value::Continue { .. } | Value::Return { .. }
+                        ) =>
+                    {
+                        expr.borrow().verify(ctx)?;
+
+                        establish_property(
+                            ctx,
+                            "divergent statements have no successors",
+                            ValidateErr::DivergentStatementHasSuccessors,
+                            |_| {
+                                if !is_last {
+                                    return Err(());
+                                }
+                                Ok(())
+                            },
+                        )?;
+                    }
+
+                    BlockElement::Expr(expr) => expr.borrow().verify(ctx)?,
+                    BlockElement::Local(local) => local.borrow().verify(ctx)?,
                 }
-
-                BlockElement::Expr(expr) => expr.borrow().verify(ctx)?,
-                BlockElement::Local(local) => local.borrow().verify(ctx)?,
             }
-        }
 
-        Ok(())
+            Ok(())
+        })();
+
+        ctx.pop_safety();
+        result
     }
 
     fn validate(self, ctx: &mut ValidateCtx) -> Result<ValidHir<Self>, ()> {
@@ -199,7 +208,24 @@ impl ValidateHirValue for Value {
                 )
             }
 
-            Value::Deref { place, .. } => place.borrow().verify(ctx),
+            Value::Deref { place, .. } => {
+                // Check if this is a raw pointer dereference outside an unsafe block
+                let place_val = place.borrow();
+                place_val.verify(ctx)?;
+
+                // Determine if we're dereferencing a raw pointer (not a reference)
+                if let Ok(ty) = place_val.determine_type(ctx.m) {
+                    if matches!(ty, Type::Pointer { .. } | Type::SlicePtr { .. })
+                        && ctx.current_safety() != BlockSafety::Unsafe
+                    {
+                        ctx.report(ValidateErr::UnsafeOperationOutsideUnsafeBlock {
+                            operation: "dereference of raw pointer".into(),
+                        });
+                        return Err(());
+                    }
+                }
+                Ok(())
+            }
 
             Value::Cast { value, target_type, .. } => {
                 value.borrow().verify(ctx)?;
@@ -279,6 +305,17 @@ impl ValidateHirValue for Value {
                 callee.borrow().verify(ctx)?;
                 for arg in args.clone().into_iter() {
                     arg.borrow().verify(ctx)?;
+                }
+
+                // Check if the callee is an unsafe function being called outside unsafe
+                if let Value::FunctionSymbol { id, .. } = &*callee.borrow() {
+                    let func = id.borrow();
+                    if func.is_unsafe && ctx.current_safety() != BlockSafety::Unsafe {
+                        ctx.report(ValidateErr::UnsafeFnCallOutsideUnsafeBlock {
+                            function_name: func.name.clone(),
+                        });
+                        return Err(());
+                    }
                 }
                 Ok(())
             }
