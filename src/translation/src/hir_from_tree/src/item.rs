@@ -367,7 +367,6 @@ fn lower_global_variable(
     let is_mutable = helpers::is_mutable(var.mutability);
 
     let name = helpers::qualify(&var.name, ctx);
-    let mangled_name = name.clone();
     helpers::check_duplicate(&name, ctx, log)?;
 
     let ty = match var.ty.to_owned() {
@@ -392,7 +391,7 @@ fn lower_global_variable(
         attributes: BTreeSet::new(),
         is_mutable,
         name,
-        mangled_name,
+        mangled_name: None,
         ty,
         initializer: init,
     };
@@ -453,12 +452,6 @@ fn lower_function(function: ast::Function, ctx: &mut Ast2HirCtx, log: &CompilerL
     let name: NString = helpers::qualify(&function.name, ctx);
     helpers::check_duplicate(&name, ctx, log)?;
 
-    let mangled_name: NString = if attributes.contains(&FunctionAttribute::NoMangle) {
-        function.name.clone()
-    } else {
-        helpers::qualify(&function.name, ctx)
-    };
-
     ctx.current_scope.push(function.name.clone());
 
     let generics = helpers::lower_generic_params(function.generics, ctx, log)?;
@@ -502,7 +495,7 @@ fn lower_function(function: ast::Function, ctx: &mut Ast2HirCtx, log: &CompilerL
         visibility,
         attributes,
         name: name.clone(),
-        mangled_name,
+        mangled_name: None,
         generics,
         params: parameters,
         return_type: return_type.into(),

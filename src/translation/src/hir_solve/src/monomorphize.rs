@@ -511,7 +511,7 @@ impl<'m> Solver<'m> {
             visibility: func.visibility,
             attributes: func.attributes.clone(),
             name: mono_name_ns,
-            mangled_name: mono_mangled_name,
+            mangled_name: Some(mono_mangled_name),
             generics: None,
             params: new_params,
             return_type: new_return_type,

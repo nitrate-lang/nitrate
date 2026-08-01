@@ -126,7 +126,7 @@ impl SymbolTab {
             attributes: BTreeSet::new(),
             is_mutable: false,
             name: name.clone(),
-            mangled_name: NString::default(),
+            mangled_name: None,
             ty: Type::Unit {
                 span: ByteSpan::default(),
             }
@@ -216,7 +216,7 @@ impl SymbolTab {
             visibility: Visibility::Sec,
             attributes: BTreeSet::new(),
             name: name.clone(),
-            mangled_name: NString::default(),
+            mangled_name: None,
             generics: None,
             params: Vec::new(),
             return_type: Type::Unit {

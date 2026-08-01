@@ -230,15 +230,19 @@ pub(crate) fn gen_place<'ctx>(
 
         hir::Value::Deref { place, .. } => gen_place_deref(ctx, &place.borrow()),
 
-        hir::Value::FunctionSymbol { id, .. } => match ctx.module.get_function(&id.borrow().mangled_name) {
-            Some(func) => func.as_global_value().as_pointer_value(),
-            None => panic!("Function symbol not found in module"),
-        },
+        hir::Value::FunctionSymbol { id, .. } => {
+            match ctx.module.get_function(id.borrow().mangled_name.as_ref().unwrap()) {
+                Some(func) => func.as_global_value().as_pointer_value(),
+                None => panic!("Function symbol not found in module"),
+            }
+        }
 
-        hir::Value::GlobalVariableSymbol { id, .. } => match ctx.globals.get(&id.borrow().mangled_name) {
-            Some(ptr) => ptr.0,
-            None => panic!("Global variable symbol not found"),
-        },
+        hir::Value::GlobalVariableSymbol { id, .. } => {
+            match ctx.globals.get(id.borrow().mangled_name.as_ref().unwrap()) {
+                Some(ptr) => ptr.0,
+                None => panic!("Global variable symbol not found"),
+            }
+        }
 
         hir::Value::LocalVariableSymbol { id, .. } => match ctx.locals.get(&id.borrow().name) {
             Some(ptr) => ptr.0,

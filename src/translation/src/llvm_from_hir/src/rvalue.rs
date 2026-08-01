@@ -2047,12 +2047,12 @@ pub(crate) fn gen_rval<'ctx>(
 
         hir::Value::FunctionSymbol { id, .. } => {
             let function_def = id.borrow();
-            gen_rval_symbol(ctx, &function_def.mangled_name)
+            gen_rval_symbol(ctx, function_def.mangled_name.as_ref().unwrap())
         }
 
         hir::Value::GlobalVariableSymbol { id, .. } => {
             let global_def = id.borrow();
-            gen_rval_symbol(ctx, &global_def.mangled_name)
+            gen_rval_symbol(ctx, global_def.mangled_name.as_ref().unwrap())
         }
 
         hir::Value::LocalVariableSymbol { id, .. } => {

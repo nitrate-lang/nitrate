@@ -1,6 +1,5 @@
 use crate::mangle::mangle_name;
 use nitrate_hir::prelude::*;
-use nitrate_nstring::NString;
 use std::ops::Deref;
 
 /// Applies name mangling to all functions and global variables in the symbol
@@ -17,11 +16,10 @@ use std::ops::Deref;
 /// or `printf` for an extern C function).
 pub fn mangle_symbols(package_name: &str, tab: &mut SymbolTab) {
     // Mangle all functions.
-    let function_ids: Vec<FunctionId> = tab.functions().cloned().collect();
-    for function_id in function_ids {
+    for function_id in tab.functions() {
         let mut function = function_id.borrow_mut();
         if function.attributes.contains(&FunctionAttribute::NoMangle) {
-            function.mangled_name = NString::from(last_segment(&function.name));
+            function.mangled_name = Some(last_segment(&function.name).into());
         } else {
             let ty = function.get_type();
             // HIR symbol names are fully qualified (e.g.
@@ -36,21 +34,19 @@ pub fn mangle_symbols(package_name: &str, tab: &mut SymbolTab) {
                     function_type: ty.into(),
                 },
             );
-            function.mangled_name = NString::from(mangled);
+            function.mangled_name = Some(mangled.into());
         }
     }
 
     // Mangle all global variables.
-    let global_ids: Vec<GlobalVariableId> = tab.globals().cloned().collect();
-    for global_id in global_ids {
+    for global_id in tab.globals() {
         let mut global = global_id.borrow_mut();
         if global.attributes.contains(&GlobalVariableAttribute::NoMangle) {
-            global.mangled_name = NString::from(last_segment(&global.name));
+            global.mangled_name = Some(last_segment(&global.name).into());
         } else {
-            let ty = global.ty.deref().clone();
             let name = strip_package(package_name, &global.name);
-            let mangled = mangle_name(package_name, name, &ty);
-            global.mangled_name = NString::from(mangled);
+            let mangled = mangle_name(package_name, name, &global.ty);
+            global.mangled_name = Some(mangled.into());
         }
     }
 }

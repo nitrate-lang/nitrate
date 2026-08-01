@@ -184,7 +184,9 @@ fn gen_global<'ctx>(ctx: &mut SymbolGenCtx<'ctx, '_, '_, '_>, hir_global: &hir::
     let hir_global_ty = hir_global.ty.deref();
     let global_ty = gen_ty(hir_global_ty, &mut ctx.ty_ctx());
 
-    let llvm_global = ctx.module.add_global(global_ty, None, &hir_global.mangled_name);
+    let llvm_global = ctx
+        .module
+        .add_global(global_ty, None, hir_global.mangled_name.as_ref().unwrap());
     llvm_global.set_initializer(&global_ty.const_zero());
     llvm_global.set_linkage(match hir_global.visibility {
         hir::Visibility::Pub => Linkage::External,
@@ -237,7 +239,7 @@ fn gen_global<'ctx>(ctx: &mut SymbolGenCtx<'ctx, '_, '_, '_>, hir_global: &hir::
     // Register Global
 
     ctx.globals.insert(
-        hir_global.mangled_name.to_owned(),
+        hir_global.mangled_name.as_ref().unwrap().to_owned(),
         (llvm_global.as_pointer_value(), global_ty),
     );
 
@@ -253,7 +255,7 @@ fn gen_function_decl<'ctx>(
     ctx: &mut SymbolGenCtx<'ctx, '_, '_, '_>,
     hir_function: &hir::Function,
 ) -> FunctionValue<'ctx> {
-    if let Some(existing_function) = ctx.module.get_function(&hir_function.mangled_name) {
+    if let Some(existing_function) = ctx.module.get_function(hir_function.mangled_name.as_ref().unwrap()) {
         return existing_function;
     }
 
@@ -269,7 +271,9 @@ fn gen_function_decl<'ctx>(
     let variadic = hir_function.attributes.contains(&hir::FunctionAttribute::CVariadic);
 
     let llvm_fn_type = return_type.fn_type(&param_types, variadic);
-    let llvm_function = ctx.module.add_function(&hir_function.mangled_name, llvm_fn_type, None);
+    let llvm_function = ctx
+        .module
+        .add_function(hir_function.mangled_name.as_ref().unwrap(), llvm_fn_type, None);
 
     // Determine linkage: extern ABI functions without a body are external declarations,
     // so they must have External linkage regardless of visibility.
