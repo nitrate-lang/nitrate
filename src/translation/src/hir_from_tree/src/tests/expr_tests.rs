@@ -1204,19 +1204,19 @@ fn expr_assign_shr() {
 fn expr_range_lowered() {
     run(|c, l| {
         let result = lower_expr(
-            ast::Expr::BinExpr(Box::new(ast::BinExpr {
+            ast::Expr::Range(Box::new(ast::Range {
                 span: ByteSpan::default(),
-                operator: ast::BinExprOp::Range,
-                left: ast::Expr::Integer(Box::new(ast::IntegerLit {
+                kind: ast::RangeKind::Range,
+                start: Some(Box::new(ast::Expr::Integer(Box::new(ast::IntegerLit {
                     span: ByteSpan::default(),
                     value: 1,
                     kind: IntegerKind::Dec,
-                })),
-                right: ast::Expr::Integer(Box::new(ast::IntegerLit {
+                })))),
+                end: Some(Box::new(ast::Expr::Integer(Box::new(ast::IntegerLit {
                     span: ByteSpan::default(),
                     value: 10,
                     kind: IntegerKind::Dec,
-                })),
+                })))),
             })),
             c,
             l,

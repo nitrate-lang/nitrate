@@ -257,7 +257,6 @@ pub enum BinExprOp {
     SetBitRotr,
     SetLogicAnd,
     SetLogicOr,
-    Range,
 }
 
 #[skip_serializing_none]

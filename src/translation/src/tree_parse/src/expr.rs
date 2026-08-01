@@ -9,9 +9,9 @@ use nitrate_tree::ast::{
     AttributeList, Await, BStringLit, BinExpr, BinExprOp, Block, BlockItem, Bool, BooleanLit, Break, Cast, Closure,
     Continue, ElseIf, Expr, ExprParentheses, ExprPath, ExprPathSegment, ExprSyntaxError, FieldAccess, Float32, Float64,
     FloatLit, ForEach, FuncParam, FunctionCall, If, IndexAccess, Int8, Int16, Int32, Int64, Int128, IntegerLit, List,
-    LocalVariable, LocalVariableKind, MethodCall, Return, Safety, Spanned, StringLit, StructInit, Tuple, Type,
-    TypeArgument, TypeInfo, TypePath, TypePathSegment, UInt8, UInt16, UInt32, UInt64, UInt128, USize, UnaryExpr,
-    UnaryExprOp, WhileLoop,
+    LocalVariable, LocalVariableKind, MethodCall, Range, RangeKind, Return, Safety, Spanned, StringLit, StructInit,
+    Tuple, Type, TypeArgument, TypeInfo, TypePath, TypePathSegment, UInt8, UInt16, UInt32, UInt64, UInt128, USize,
+    UnaryExpr, UnaryExprOp, WhileLoop,
 };
 
 type Precedence = u32;
@@ -171,15 +171,6 @@ const BINOP_PATTERNS: &[OpPattern] = &[
         tokens: &[Token::Gt],
         op: BinExprOp::LogicGt,
     },
-    // Range
-    OpPattern {
-        tokens: &[Token::Dot, Token::Dot, Token::Eq],
-        op: BinExprOp::Range,
-    },
-    OpPattern {
-        tokens: &[Token::Dot, Token::Dot],
-        op: BinExprOp::Range,
-    },
 ];
 
 /// Precedence levels in ascending order (lower = binds tighter).
@@ -231,7 +222,6 @@ fn get_precedence_of_binary_operator(op: BinExprOp) -> (Associativity, Precedenc
         }
         LogicAnd => (Associativity::LeftToRight, PrecedenceRank::LogicAnd),
         LogicOr => (Associativity::LeftToRight, PrecedenceRank::LogicOr),
-        Range => (Associativity::LeftToRight, PrecedenceRank::Range),
         Set | SetPlus | SetMinus | SetTimes | SetSlash | SetPercent | SetBitAnd | SetBitOr | SetBitXor | SetBitShl
         | SetBitShr | SetBitRotl | SetBitRotr | SetLogicAnd | SetLogicOr => {
             (Associativity::RightToLeft, PrecedenceRank::Assign)
@@ -429,27 +419,88 @@ impl Parser<'_, '_> {
         }
     }
 
+    /// Check if the current peeked token can start an expression.
+    /// Used to decide between `..` (RangeFull) and `..expr` (RangeTo) after
+    /// the `..` token.
+    fn peek_is_expr_start(&mut self) -> bool {
+        match self.lexer.peek_tok().token {
+            Token::Integer(_)
+            | Token::Float(_)
+            | Token::String(_)
+            | Token::BString(_)
+            | Token::True
+            | Token::False
+            | Token::OpenBracket
+            | Token::OpenParen
+            | Token::Name(_)
+            | Token::Colon
+            | Token::SelfKeyword
+            | Token::Type
+            | Token::Fn
+            | Token::OpenBrace
+            | Token::Unsafe
+            | Token::Safe
+            | Token::If
+            | Token::For
+            | Token::While
+            | Token::Break
+            | Token::Continue
+            | Token::Ret
+            | Token::Await
+            | Token::Dot => true,
+            _ => false,
+        }
+    }
+
     fn parse_prefix(&mut self) -> Expr {
         if let Some(operator) = self.detect_and_parse_unary_operator() {
             let precedence = PrecedenceRank::Unary as Precedence;
             let operand = self.parse_expression_precedence(precedence);
 
-            // The start is the unary operator offset, stored before detection consumed it
-            // We need the span start to be where the operator started. Since detect_and_parse
-            // consumed the token, we'll set start = operand.span().start (covering the operator
-            // via the operand span since unary operators are consumed before parsing the operand)
-            // Actually, the operator token was consumed BEFORE we captured start. Let's track it.
-            // Since detect_and_parse_unary_operator consumed the operator token, we want the span
-            // to start from operator offset. We can compute it as: start = operator_offset (before
-            // token) which is operand.span().start minus the operator token length? No, easier:
-            // For UnaryExpr, just use the operand's start as the overall start since the operator
-            // is a single token that precedes the operand.
             return Expr::UnaryExpr(Box::new(UnaryExpr {
                 span: ByteSpan::new(operand.span().start, operand.span().end),
                 operator,
                 operand,
             }));
         }
+
+        // Range start expressions: `..`, `..expr`, `..=expr`
+        let saved = self.lexer.current_pos();
+        if self.lexer.skip_if(&Token::Dot) && self.lexer.skip_if(&Token::Dot) {
+            let inclusive = self.lexer.skip_if(&Token::Eq);
+            if inclusive {
+                // `..=expr`
+                let end = self.parse_expression_precedence(PrecedenceRank::Range as Precedence + 1);
+                let end_span = end.span().end;
+                return Expr::Range(Box::new(Range {
+                    span: ByteSpan::new(saved.offset, end_span),
+                    kind: RangeKind::RangeToInclusive,
+                    start: None,
+                    end: Some(Box::new(end)),
+                }));
+            }
+            // `..` or `..expr`
+            if self.peek_is_expr_start() {
+                let end = self.parse_expression_precedence(PrecedenceRank::Range as Precedence + 1);
+                let end_span = end.span().end;
+                return Expr::Range(Box::new(Range {
+                    span: ByteSpan::new(saved.offset, end_span),
+                    kind: RangeKind::RangeTo,
+                    start: None,
+                    end: Some(Box::new(end)),
+                }));
+            }
+            // `..` with no end — RangeFull
+            let dot_end = self.lexer.current_pos().offset;
+            return Expr::Range(Box::new(Range {
+                span: ByteSpan::new(saved.offset, dot_end),
+                kind: RangeKind::RangeFull,
+                start: None,
+                end: None,
+            }));
+        }
+        // Not a range — rewind and continue
+        self.lexer.rewind(saved);
 
         if self.lexer.skip_if(&Token::OpenParen) {
             let paren_start = self.lexer.current_pos().offset;
@@ -536,6 +587,56 @@ impl Parser<'_, '_> {
             } else {
                 match self.lexer.peek_tok().token {
                     Token::Dot => {
+                        // Check if this is a range operator: `..` or `..=`
+                        // We just saw one Dot. Save position, then check for another.
+                        let saved_dot = self.lexer.current_pos();
+                        self.lexer.skip_tok(); // consume first Dot
+
+                        if self.lexer.skip_if(&Token::Dot) {
+                            // We have `..` — this is a range infix operator
+                            let range_precedence = PrecedenceRank::Range as Precedence;
+                            if range_precedence < min_precedence_to_proceed {
+                                // Rewind both dots and return
+                                self.lexer.rewind(saved_dot.clone());
+                                return sofar;
+                            }
+
+                            let inclusive = self.lexer.skip_if(&Token::Eq);
+                            let start_span = sofar.span().start;
+
+                            if inclusive || self.peek_is_expr_start() {
+                                // `expr..expr` (Range) or `expr..=expr` (RangeInclusive)
+                                let end = self.parse_expression_precedence(range_precedence + 1);
+                                let end_span = end.span().end;
+
+                                let kind = if inclusive {
+                                    RangeKind::RangeInclusive
+                                } else {
+                                    RangeKind::Range
+                                };
+
+                                sofar = Expr::Range(Box::new(Range {
+                                    span: ByteSpan::new(start_span, end_span),
+                                    kind,
+                                    start: Some(Box::new(sofar)),
+                                    end: Some(Box::new(end)),
+                                }));
+                            } else {
+                                // `expr..` (RangeFrom)
+                                let end_span = self.lexer.current_pos().offset;
+
+                                sofar = Expr::Range(Box::new(Range {
+                                    span: ByteSpan::new(start_span, end_span),
+                                    kind: RangeKind::RangeFrom,
+                                    start: Some(Box::new(sofar)),
+                                    end: None,
+                                }));
+                            }
+
+                            continue;
+                        }
+
+                        // Not a range — it's a single Dot: field access or method call
                         let operation = Operation::FieldAccessOrMethodCall;
                         let (_, new_precedence) = get_precedence(operation);
 
@@ -543,8 +644,7 @@ impl Parser<'_, '_> {
                             return sofar;
                         }
 
-                        self.lexer.skip_tok();
-
+                        // Already consumed the single Dot above
                         let err = SyntaxErr::ExpectedFieldOrMethodName(self.lexer.peek_pos());
                         let member_name = self.parse_string_name(err);
                         let member_name_end = self.lexer.current_pos().offset;

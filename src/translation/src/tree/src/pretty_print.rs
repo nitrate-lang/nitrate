@@ -279,7 +279,6 @@ impl PrettyPrint for BinExprOp {
             BinExprOp::SetBitRotr => writer.write_str(">>>="),
             BinExprOp::SetLogicAnd => writer.write_str("&&="),
             BinExprOp::SetLogicOr => writer.write_str("||="),
-            BinExprOp::Range => writer.write_str(".."),
         }
     }
 }

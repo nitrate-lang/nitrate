@@ -339,8 +339,6 @@ fn test_path_at_eof_after_colon() {
     assert!(log.error_bit());
 }
 
-
-
 // ========== EXPECTED OPEN BRACKET ==========
 #[test]
 fn test_err_expected_open_bracket() {
@@ -348,7 +346,6 @@ fn test_err_expected_open_bracket() {
     let (_, log) = parse_expr_no_assert("a[");
     assert!(log.error_bit());
 }
-
 
 // ========== EXPECTED OPEN BRACKET IN EXPR ==========
 #[test]
@@ -358,9 +355,7 @@ fn test_err_expr_index_missing_expr() {
     assert!(log.error_bit());
 }
 
-
 // ========== EMPTY TUPLE ==========
-
 
 // ========== FOR LOOP VARIADIC BINDING EXPECTED END ==========
 #[test]
@@ -369,14 +364,12 @@ fn test_err_for_binding_expected_end() {
     assert!(log.error_bit());
 }
 
-
 // ========== STRUCT INIT FIELD NAME BEFORE COLON ==========
 #[test]
 fn test_struct_init_field_name() {
     let expr = parse_expr("Foo { x: 42 }");
     assert!(matches!(&expr, Expr::StructInit(s) if s.fields.len() == 1));
 }
-
 
 // ========== EXPRESSION IN BLOCK ITEM ==========
 #[test]
@@ -385,14 +378,12 @@ fn test_block_unsafe_expr() {
     assert!(!log.error_bit());
 }
 
-
 // ========== TYPE AS EXPR PREFIX ==========
 #[test]
 fn test_type_info_parse() {
     let expr = parse_expr("type u8");
     assert!(matches!(&expr, Expr::TypeInfo(_)));
 }
-
 
 // ---------- LIST ERRORS ----------
 
@@ -402,7 +393,6 @@ fn test_list_expected_end() {
     let (_, log) = parse_expr_no_assert("[1, 2");
     assert!(log.error_bit());
 }
-
 
 // SyntaxErr::ListElementLimit (variant 301) - needs >65536 elements
 #[test]
@@ -416,7 +406,6 @@ fn test_list_element_limit() {
     assert!(log.error_bit());
 }
 
-
 // ---------- BLOCK ERRORS ----------
 
 // SyntaxErr::BlockExpectedEnd (variant 340)
@@ -425,7 +414,6 @@ fn test_block_expected_end() {
     let (_, log) = parse_expr_no_assert("unsafe { 42");
     assert!(log.error_bit());
 }
-
 
 // SyntaxErr::BlockElementLimit (variant 341) - needs >65536 elements
 #[test]
@@ -439,7 +427,6 @@ fn test_block_element_limit() {
     assert!(log.error_bit());
 }
 
-
 // ---------- BREAK ERRORS ----------
 
 // SyntaxErr::BreakMissingLabel (variant 360)
@@ -448,7 +435,6 @@ fn test_break_missing_label() {
     let (_, log) = parse_expr_no_assert("break ';");
     assert!(log.error_bit());
 }
-
 
 // ---------- CONTINUE ERRORS ----------
 
@@ -459,7 +445,6 @@ fn test_continue_missing_label() {
     assert!(log.error_bit());
 }
 
-
 // ---------- FOR LOOP ERRORS ----------
 
 // SyntaxErr::ForVariableBindingMissingName (variant 440)
@@ -469,14 +454,12 @@ fn test_for_binding_missing_name() {
     assert!(log.error_bit());
 }
 
-
 // SyntaxErr::ForVariableBindingExpectedEnd (variant 441)
 #[test]
 fn test_for_binding_expected_end() {
     let (_, log) = parse_expr_no_assert("for (x, y in items { }");
     assert!(log.error_bit());
 }
-
 
 // SyntaxErr::ForVariableBindingLimit (variant 442) - needs >65536 bindings
 #[test]
@@ -493,7 +476,6 @@ fn test_for_binding_limit() {
     assert!(log.error_bit());
 }
 
-
 // SyntaxErr::ForExpectedInKeyword (variant 443)
 #[test]
 fn test_for_expected_in() {
@@ -501,11 +483,9 @@ fn test_for_expected_in() {
     assert!(log.error_bit());
 }
 
-
 // ---------- FIELD/METHOD ERRORS ----------
 
 // SyntaxErr::ExpectedFieldOrMethodName (variant 500)
-
 
 // ========== TUPLE TYPE IN EXPRESSION ==========
 #[test]
@@ -514,14 +494,12 @@ fn test_tuple_type_expr() {
     assert!(matches!(&expr, Expr::Tuple(t) if t.elements.len() == 3));
 }
 
-
 // ========== PAREN EXPRESSION ==========
 #[test]
 fn test_paren_expression() {
     let expr = parse_expr("(42,)");
     assert!(matches!(&expr, Expr::Tuple(t) if t.elements.len() == 1));
 }
-
 
 // ========== PARENTHESIZED TYPE IN EXPRESSION ==========
 #[test]
@@ -531,14 +509,12 @@ fn test_paren_type_path_expr() {
     assert!(matches!(&expr, Expr::Parentheses(_)));
 }
 
-
 // ========== CLOSURE WITH DEFAULT PARAM ==========
 #[test]
 fn test_closure_default_param() {
     let expr = parse_expr("fn(x: i32 = 42) { x }");
     assert!(matches!(&expr, Expr::Closure(_)));
 }
-
 
 // Push coverage for expr.rs and ty.rs uncovered paths
 
@@ -549,7 +525,6 @@ fn test_nested_prefix_parens() {
     assert!(matches!(&expr, Expr::Parentheses(_)));
 }
 
-
 // ========== EXPR: DELETE_PRECEDENCE_EDGE ==========
 #[test]
 fn test_expr_precedence_rewind() {
@@ -558,7 +533,6 @@ fn test_expr_precedence_rewind() {
     // Left associative, so (1+2)+3
     assert!(matches!(&expr, Expr::BinExpr(b) if matches!(b.operator, BinExprOp::Add)));
 }
-
 
 // Note: literal suffix with bool keyword after boolean literal - depends on lexer spacing
 // Skipped because "true bool" parses as boolean expression followed by path
@@ -570,14 +544,12 @@ fn test_type_info_complex() {
     assert!(matches!(&expr, Expr::TypeInfo(_)));
 }
 
-
 // ========== EXPR: CLOSURE RETURN ARROW ==========
 #[test]
 fn test_closure_with_return_arrow_missing_gt() {
     let (_, log) = parse_expr_no_assert("fn(x: i32) - i32 { x }");
     assert!(log.error_bit());
 }
-
 
 // ========== EXPR: CLOSURE PARAM DEFAULT ==========
 #[test]
@@ -586,16 +558,13 @@ fn test_closure_param_default() {
     assert!(matches!(&expr, Expr::Closure(_)));
 }
 
-
 // ========== BREAK/CONTINUE EDGE CASES ==========
-
 
 #[test]
 fn test_continue_label() {
     let expr = parse_expr("continue 'l;");
     assert!(matches!(&expr, Expr::Continue(c) if matches!(&c.label, Some(l) if &**l == "l")));
 }
-
 
 // ========== RETURN EDGE CASES ==========
 
@@ -605,7 +574,6 @@ fn test_return_with_expr_missing_semicolon() {
     assert!(log.error_bit());
 }
 
-
 // ========== CAST EDGE CASES ==========
 
 #[test]
@@ -613,7 +581,6 @@ fn test_cast_from_float() {
     let expr = parse_expr("3.14 as i32");
     assert!(matches!(&expr, Expr::Cast(c) if matches!(&c.to, Type::Int32(_))));
 }
-
 
 // ========== CLOSURE EDGE CASES ==========
 
@@ -625,20 +592,17 @@ fn test_closure_with_attributes_and_params() {
     );
 }
 
-
 #[test]
 fn test_closure_no_params_no_return() {
     let expr = parse_expr("fn { 42 }");
     assert!(matches!(&expr, Expr::Closure(c) if c.parameters.is_none() && c.return_type.is_none()));
 }
 
-
 #[test]
 fn test_block_in_block() {
     let f = single_function(parse_source("fn f() { { 42 } }"));
     assert!(f.definition.is_some());
 }
-
 
 // ========== PARSE ITEM ERROR PATHS ==========
 
@@ -648,13 +612,11 @@ fn test_parse_unexpected_token() {
     assert!(log.error_bit());
 }
 
-
 #[test]
 fn test_parse_unexpected_token_after_valid() {
     let (_, log) = parse_source_no_assert("fn f() {} $invalid");
     assert!(log.error_bit());
 }
-
 
 #[test]
 fn test_syntax_error_item() {
@@ -662,7 +624,6 @@ fn test_syntax_error_item() {
     let (_, log) = parse_source_no_assert("fn f() {} @");
     assert!(log.error_bit());
 }
-
 
 // ========== LIST EDGE CASES ==========
 
@@ -672,13 +633,11 @@ fn test_list_trailing_comma_empty() {
     assert!(matches!(&expr, Expr::List(l) if l.elements.is_empty()));
 }
 
-
 #[test]
 fn test_list_multiple_elements() {
     let expr = parse_expr("[1, 2, 3, 4, 5]");
     assert!(matches!(&expr, Expr::List(l) if l.elements.len() == 5));
 }
-
 
 // ========== ATTRIBUTES EDGE CASES ==========
 
@@ -688,13 +647,11 @@ fn test_multiple_attributes() {
     assert!(f.attributes.is_some());
 }
 
-
 #[test]
 fn test_attributes_with_multiple_expressions() {
     let f = single_function(parse_source("fn [a, b, c] foo() {}"));
     assert!(f.attributes.is_some());
 }
-
 
 // ========== BLOCK ITEM EDGE CASE ==========
 
@@ -704,13 +661,11 @@ fn test_block_item_expr_with_semi() {
     assert!(f.definition.is_some());
 }
 
-
 #[test]
 fn test_block_item_expr_no_semi() {
     let f = single_function(parse_source("fn f() { 42 }"));
     assert!(f.definition.is_some());
 }
-
 
 #[test]
 fn test_block_item_empty_return() {
@@ -718,19 +673,15 @@ fn test_block_item_empty_return() {
     assert!(f.definition.is_some());
 }
 
-
 // ========== WHILE LOOP EDGE CASES ==========
 
-
 // ========== UNSAFE BLOCK MODIFIER EDGE CASES ==========
-
 
 #[test]
 fn test_unsafe_block_without_parens() {
     let expr = parse_expr("unsafe { 1 }");
     assert!(matches!(&expr, Expr::Closure(_)));
 }
-
 
 // ========== PATH RESOLUTION EDGE CASES ==========
 
@@ -740,7 +691,6 @@ fn test_expr_path_triple_colon() {
     assert!(log.error_bit());
 }
 
-
 // ========== METHOD CALL EDGE CASES ==========
 
 #[test]
@@ -749,19 +699,15 @@ fn test_method_call_with_args() {
     assert!(matches!(&expr, Expr::MethodCall(m) if m.positional.len() == 3));
 }
 
-
 #[test]
 fn test_method_call_no_args() {
     let expr = parse_expr("obj.method()");
     assert!(matches!(&expr, Expr::MethodCall(m) if m.positional.is_empty()));
 }
 
-
 // ========== IF ELSE IF ELSE ==========
 
-
 // ========== AWAIT EDGE CASES ==========
-
 
 // ========== CLOSURE ERROR PATHS ==========
 
@@ -771,20 +717,17 @@ fn test_closure_missing_param_name() {
     assert!(log.error_bit());
 }
 
-
 #[test]
 fn test_closure_missing_param_type() {
     let (_, log) = parse_expr_no_assert("fn(x) { x }");
     assert!(log.error_bit());
 }
 
-
 #[test]
 fn test_closure_missing_close_paren() {
     let (_, log) = parse_expr_no_assert("fn(x: i32 { x }");
     assert!(log.error_bit());
 }
-
 
 // ========== ITEM ERROR PATHS ==========
 
@@ -795,9 +738,7 @@ fn test_item_unexpected_in_function() {
     assert!(!log.error_bit());
 }
 
-
 // ========== BLOCK WITH UNSAFE AND SAFE ==========
-
 
 // ========== EXPRESSION PATH WITH EMPTY GENERICS ==========
 
@@ -808,7 +749,6 @@ fn test_expr_path_with_empty_generics() {
     assert!(matches!(&expr, Expr::Path(_)));
 }
 
-
 // ========== EXPRESSION WITH NESTED FUNCTION CALLS ==========
 
 #[test]
@@ -816,7 +756,6 @@ fn test_nested_function_calls() {
     let expr = parse_expr("f(g(h()))");
     assert!(matches!(&expr, Expr::FunctionCall(c) if c.positional.len() == 1));
 }
-
 
 // ========== PROPAGATION OF PRECEDENCE ==========
 
@@ -826,13 +765,11 @@ fn test_mixed_precedence_add_mul() {
     assert!(matches!(&expr, Expr::BinExpr(b) if matches!(&b.left, Expr::Integer(_))));
 }
 
-
 #[test]
 fn test_mixed_precedence_mul_add() {
     let expr = parse_expr("1 * 2 + 3");
     assert!(matches!(&expr, Expr::BinExpr(b) if matches!(b.operator, BinExprOp::Add)));
 }
-
 
 // ========== COMPLEX EXPRESSIONS ==========
 
@@ -843,7 +780,6 @@ fn test_complex_chain() {
     assert!(matches!(&expr, Expr::MethodCall(_)));
 }
 
-
 // ========== DEREFERENCE AND BORROW ==========
 
 #[test]
@@ -852,13 +788,11 @@ fn test_deref_path() {
     assert!(matches!(&expr, Expr::UnaryExpr(u) if matches!(u.operator, UnaryExprOp::Deref)));
 }
 
-
 #[test]
 fn test_borrow_path() {
     let expr = parse_expr("&val");
     assert!(matches!(&expr, Expr::UnaryExpr(u) if matches!(u.operator, UnaryExprOp::Borrow)));
 }
-
 
 // ========== CLOSURE WITH MUT PARAM ==========
 
@@ -868,13 +802,11 @@ fn test_closure_mut_param() {
     assert!(matches!(&expr, Expr::Closure(_)));
 }
 
-
 #[test]
 fn test_closure_const_param() {
     let expr = parse_expr("fn(const x: i32) { }");
     assert!(matches!(&expr, Expr::Closure(_)));
 }
-
 
 // ========== COMPOUND ASSIGNMENTS ==========
 
@@ -884,13 +816,11 @@ fn test_set_percent() {
     assert!(matches!(&expr, Expr::BinExpr(b) if matches!(b.operator, BinExprOp::SetPercent)));
 }
 
-
 #[test]
 fn test_set_bitand() {
     let expr = parse_expr("x &= 1");
     assert!(matches!(&expr, Expr::BinExpr(b) if matches!(b.operator, BinExprOp::SetBitAnd)));
 }
-
 
 #[test]
 fn test_set_logicand() {
@@ -898,13 +828,11 @@ fn test_set_logicand() {
     assert!(matches!(&expr, Expr::BinExpr(b) if matches!(b.operator, BinExprOp::SetLogicAnd)));
 }
 
-
 #[test]
 fn test_set_logicor() {
     let expr = parse_expr("true ||= false");
     assert!(matches!(&expr, Expr::BinExpr(b) if matches!(b.operator, BinExprOp::SetLogicOr)));
 }
-
 
 #[test]
 fn test_set_shl() {
@@ -912,13 +840,11 @@ fn test_set_shl() {
     assert!(matches!(&expr, Expr::BinExpr(b) if matches!(b.operator, BinExprOp::SetBitShl)));
 }
 
-
 #[test]
 fn test_set_shr() {
     let expr = parse_expr("x >>= 1");
     assert!(matches!(&expr, Expr::BinExpr(b) if matches!(b.operator, BinExprOp::SetBitShr)));
 }
-
 
 #[test]
 fn test_set_rol() {
@@ -926,13 +852,11 @@ fn test_set_rol() {
     assert!(matches!(&expr, Expr::BinExpr(b) if matches!(b.operator, BinExprOp::SetBitRotl)));
 }
 
-
 #[test]
 fn test_set_ror() {
     let expr = parse_expr("x >>>= 1");
     assert!(matches!(&expr, Expr::BinExpr(b) if matches!(b.operator, BinExprOp::SetBitRotr)));
 }
-
 
 // ========== CAST FROM STRING ==========
 
@@ -942,7 +866,6 @@ fn test_cast_from_string() {
     assert!(matches!(&expr, Expr::Cast(_)));
 }
 
-
 // ========== CLOSURE TRAILING COMMA ==========
 
 #[test]
@@ -950,7 +873,6 @@ fn test_closure_params_trailing_comma() {
     let expr = parse_expr("fn(x: i32,) { x }");
     assert!(matches!(&expr, Expr::Closure(c) if c.parameters.as_ref().is_some_and(|p| p.len() == 1)));
 }
-
 
 // ========== EXPRESSION WITH TUPLE AND FUNCTION CALL ==========
 
@@ -960,7 +882,6 @@ fn test_tuple_in_function_call() {
     assert!(matches!(&expr, Expr::FunctionCall(_)));
 }
 
-
 // ========== ANNOTATED ATTRIBUTES ==========
 
 #[test]
@@ -968,7 +889,6 @@ fn test_attributes_with_nonempty_comma() {
     let f = single_function(parse_source("fn [a, b] foo() {}"));
     assert!(f.attributes.is_some());
 }
-
 
 // ========== EXPRESSION AS CAST TARGET ==========
 
@@ -978,7 +898,6 @@ fn test_cast_of_expression_result() {
     assert!(matches!(&expr, Expr::Cast(_)));
 }
 
-
 // ========== LINKED OPERATIONS ==========
 
 #[test]
@@ -987,13 +906,11 @@ fn test_assign_plus() {
     assert!(matches!(&expr, Expr::BinExpr(b) if matches!(b.operator, BinExprOp::SetPlus)));
 }
 
-
 #[test]
 fn test_assign_minus() {
     let expr = parse_expr("x -= 1");
     assert!(matches!(&expr, Expr::BinExpr(b) if matches!(b.operator, BinExprOp::SetMinus)));
 }
-
 
 #[test]
 fn test_assign_times() {
@@ -1001,13 +918,11 @@ fn test_assign_times() {
     assert!(matches!(&expr, Expr::BinExpr(b) if matches!(b.operator, BinExprOp::SetTimes)));
 }
 
-
 #[test]
 fn test_assign_divide() {
     let expr = parse_expr("x /= 2");
     assert!(matches!(&expr, Expr::BinExpr(b) if matches!(b.operator, BinExprOp::SetSlash)));
 }
-
 
 // ========== LOGICAL OPERATORS ==========
 
@@ -1017,13 +932,11 @@ fn test_logic_and() {
     assert!(matches!(&expr, Expr::BinExpr(b) if matches!(b.operator, BinExprOp::LogicAnd)));
 }
 
-
 #[test]
 fn test_logic_or() {
     let expr = parse_expr("true || false");
     assert!(matches!(&expr, Expr::BinExpr(b) if matches!(b.operator, BinExprOp::LogicOr)));
 }
-
 
 // ========== COMPARISONS ==========
 
@@ -1033,13 +946,11 @@ fn test_lt() {
     assert!(matches!(&expr, Expr::BinExpr(b) if matches!(b.operator, BinExprOp::LogicLt)));
 }
 
-
 #[test]
 fn test_le() {
     let expr = parse_expr("1 <= 2");
     assert!(matches!(&expr, Expr::BinExpr(b) if matches!(b.operator, BinExprOp::LogicLe)));
 }
-
 
 #[test]
 fn test_gt() {
@@ -1047,13 +958,11 @@ fn test_gt() {
     assert!(matches!(&expr, Expr::BinExpr(b) if matches!(b.operator, BinExprOp::LogicGt)));
 }
 
-
 #[test]
 fn test_ge() {
     let expr = parse_expr("1 >= 2");
     assert!(matches!(&expr, Expr::BinExpr(b) if matches!(b.operator, BinExprOp::LogicGe)));
 }
-
 
 // ========== COMPARISON EQ ==========
 
@@ -1063,7 +972,6 @@ fn test_eq() {
     assert!(matches!(&expr, Expr::BinExpr(b) if matches!(b.operator, BinExprOp::LogicEq)));
 }
 
-
 // ========== BIT OPERATORS ==========
 
 #[test]
@@ -1072,13 +980,11 @@ fn test_shl() {
     assert!(matches!(&expr, Expr::BinExpr(b) if matches!(b.operator, BinExprOp::BitShl)));
 }
 
-
 #[test]
 fn test_shr() {
     let expr = parse_expr("1 >> 2");
     assert!(matches!(&expr, Expr::BinExpr(b) if matches!(b.operator, BinExprOp::BitShr)));
 }
-
 
 #[test]
 fn test_rol() {
@@ -1086,13 +992,11 @@ fn test_rol() {
     assert!(matches!(&expr, Expr::BinExpr(b) if matches!(b.operator, BinExprOp::BitRol)));
 }
 
-
 #[test]
 fn test_ror() {
     let expr = parse_expr("1 >>> 2");
     assert!(matches!(&expr, Expr::BinExpr(b) if matches!(b.operator, BinExprOp::BitRor)));
 }
-
 
 // ========== SET OPERATIONS ==========
 
@@ -1102,19 +1006,34 @@ fn test_set_bit_or() {
     assert!(matches!(&expr, Expr::BinExpr(b) if matches!(b.operator, BinExprOp::SetBitOr)));
 }
 
-
 #[test]
 fn test_set_bit_xor() {
     let expr = parse_expr("x ^= 1");
     assert!(matches!(&expr, Expr::BinExpr(b) if matches!(b.operator, BinExprOp::SetBitXor)));
 }
 
-
 // ========== RANGE OPERATOR ==========
 
 #[test]
 fn test_range_expression() {
     let expr = parse_expr("x..y");
-    assert!(matches!(&expr, Expr::BinExpr(b) if matches!(b.operator, BinExprOp::Range)));
+    assert!(matches!(&expr, Expr::Range(r) if matches!(r.kind, RangeKind::Range)));
 }
 
+#[test]
+fn test_range_to() {
+    let expr = parse_expr("..10");
+    assert!(matches!(&expr, Expr::Range(r) if matches!(r.kind, RangeKind::RangeTo)));
+}
+
+#[test]
+fn test_range_to_inclusive() {
+    let expr = parse_expr("..=10");
+    assert!(matches!(&expr, Expr::Range(r) if matches!(r.kind, RangeKind::RangeToInclusive)));
+}
+
+#[test]
+fn test_range_full() {
+    let expr = parse_expr("..");
+    assert!(matches!(&expr, Expr::Range(r) if matches!(r.kind, RangeKind::RangeFull)));
+}

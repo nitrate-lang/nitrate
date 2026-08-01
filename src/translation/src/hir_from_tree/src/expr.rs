@@ -582,13 +582,6 @@ pub(crate) fn lower_binary(binary: ast::BinExpr, ctx: &mut Ast2HirCtx, log: &Com
         | ast::BinExprOp::SetBitRotr
         | ast::BinExprOp::SetLogicAnd
         | ast::BinExprOp::SetLogicOr) => Ok(lower_compound_assignment(span, left, right, op)),
-
-        ast::BinExprOp::Range => Ok(Value::Range {
-            span,
-            start: Some(left),
-            end: Some(right),
-            inclusive: false,
-        }),
     }
 }
 

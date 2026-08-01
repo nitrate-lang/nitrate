@@ -130,11 +130,6 @@ fn test_binop_div_eq() {
 }
 
 #[test]
-fn test_binop_range() {
-    check_binop("0..10", BinExprOp::Range);
-}
-
-#[test]
 fn test_set_percent() {
     check_binop("x %= 1", BinExprOp::SetPercent);
 }
@@ -187,8 +182,19 @@ fn test_set_or() {
 }
 
 #[test]
-fn test_binop_not_range() {
-    // `..` without left side should NOT parse as range, just dot dot
+fn test_range_infix() {
     let expr = parse_expr("x..y");
-    assert!(matches!(&expr, Expr::BinExpr(b) if b.operator == BinExprOp::Range));
+    assert!(matches!(&expr, Expr::Range(r) if r.kind == RangeKind::Range));
+}
+
+#[test]
+fn test_range_infix_inclusive() {
+    let expr = parse_expr("x..=y");
+    assert!(matches!(&expr, Expr::Range(r) if r.kind == RangeKind::RangeInclusive));
+}
+
+#[test]
+fn test_range_infix_from() {
+    let expr = parse_expr("x..");
+    assert!(matches!(&expr, Expr::Range(r) if r.kind == RangeKind::RangeFrom));
 }
