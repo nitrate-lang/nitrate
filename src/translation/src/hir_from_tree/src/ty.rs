@@ -501,12 +501,14 @@ pub(crate) fn lower_slice_type(
     Err(())
 }
 
-pub(crate) fn lower_latent_type(
-    latent_type: ast::LatentType,
+pub(crate) fn lower_type_potential(
+    type_potential: ast::TypePotential,
     _ctx: &mut Ast2HirCtx,
     log: &CompilerLog,
 ) -> Result<Type, ()> {
-    log.report(&HirErr::LatentTypeNotImplemented { span: latent_type.span });
+    log.report(&HirErr::TypePotentialNotImplemented {
+        span: type_potential.span,
+    });
     Err(())
 }
 
@@ -549,7 +551,7 @@ pub(crate) fn lower_type(ty: ast::Type, ctx: &mut Ast2HirCtx, log: &CompilerLog)
         ast::Type::FunctionType(t) => lower_function_type(*t, ctx, log),
         ast::Type::ReferenceType(t) => lower_reference_type(*t, ctx, log),
         ast::Type::PointerType(t) => lower_pointer_type(*t, ctx, log),
-        ast::Type::LatentType(t) => lower_latent_type(*t, ctx, log),
+        ast::Type::TypePotential(t) => lower_type_potential(*t, ctx, log),
         ast::Type::Lifetime(t) => lower_lifetime_type(*t, ctx, log),
         ast::Type::Parentheses(t) => lower_type(t.inner, ctx, log),
     }
@@ -1309,11 +1311,11 @@ mod tests {
     }
 
     #[test]
-    fn lower_latent_type_fails() {
+    fn lower_type_potential_fails() {
         let (mut ctx, log) = ctx_and_log();
         assert!(
-            lower_latent_type(
-                ast::LatentType {
+            lower_type_potential(
+                ast::TypePotential {
                     span: ByteSpan::default(),
                     body: ast::Block {
                         span: ByteSpan::default(),

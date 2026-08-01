@@ -266,13 +266,13 @@ impl ParseTreeIterMut for PointerType {
     }
 }
 
-impl ParseTreeIterMut for LatentType {
+impl ParseTreeIterMut for TypePotential {
     fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
-        f(Order::Enter, RefNodeMut::TypeLatentType(&mut self.body));
+        f(Order::Enter, RefNodeMut::TypePotential(&mut self.body));
 
         self.body.depth_first_iter_mut(f);
 
-        f(Order::Leave, RefNodeMut::TypeLatentType(&mut self.body));
+        f(Order::Leave, RefNodeMut::TypePotential(&mut self.body));
     }
 }
 
@@ -313,7 +313,7 @@ impl ParseTreeIterMut for Type {
             Type::FunctionType(ty) => ty.depth_first_iter_mut(f),
             Type::ReferenceType(ty) => ty.depth_first_iter_mut(f),
             Type::PointerType(ty) => ty.depth_first_iter_mut(f),
-            Type::LatentType(ty) => ty.depth_first_iter_mut(f),
+            Type::TypePotential(ty) => ty.depth_first_iter_mut(f),
             Type::Lifetime(ty) => ty.depth_first_iter_mut(f),
             Type::Parentheses(ty) => ty.depth_first_iter_mut(f),
         }

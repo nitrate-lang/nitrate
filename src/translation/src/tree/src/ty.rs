@@ -255,12 +255,12 @@ impl Spanned for PointerType {
 
 #[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct LatentType {
+pub struct TypePotential {
     pub span: ByteSpan,
     pub body: Block,
 }
 
-impl Spanned for LatentType {
+impl Spanned for TypePotential {
     fn span(&self) -> ByteSpan {
         self.span
     }
@@ -312,7 +312,7 @@ pub enum Type {
     FunctionType(Box<FunctionType>),
     ReferenceType(Box<ReferenceType>),
     PointerType(Box<PointerType>),
-    LatentType(Box<LatentType>),
+    TypePotential(Box<TypePotential>),
     Lifetime(Box<Lifetime>),
     Parentheses(Box<TypeParentheses>),
 }
@@ -344,7 +344,7 @@ impl Type {
             Type::FunctionType(e) => e.span,
             Type::ReferenceType(e) => e.span,
             Type::PointerType(e) => e.span,
-            Type::LatentType(e) => e.span,
+            Type::TypePotential(e) => e.span,
             Type::Lifetime(e) => e.span,
             Type::Parentheses(e) => e.span,
         }
@@ -375,7 +375,7 @@ impl Type {
             Type::FunctionType(e) => e.span = span,
             Type::ReferenceType(e) => e.span = span,
             Type::PointerType(e) => e.span = span,
-            Type::LatentType(e) => e.span = span,
+            Type::TypePotential(e) => e.span = span,
             Type::Lifetime(e) => e.span = span,
             Type::Parentheses(e) => e.span = span,
         }
@@ -509,9 +509,9 @@ impl Type {
             _ => None,
         }
     }
-    pub fn as_latent_type(self) -> Option<LatentType> {
+    pub fn as_type_potential(self) -> Option<TypePotential> {
         match self {
-            Type::LatentType(b) => Some(*b),
+            Type::TypePotential(b) => Some(*b),
             _ => None,
         }
     }

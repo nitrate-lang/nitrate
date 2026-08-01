@@ -142,8 +142,8 @@ fn test_type_refine() {
 }
 
 #[test]
-fn test_type_latent() {
-    assert!(matches!(&parse_type("{ 42 }"), Type::LatentType(_)));
+fn test_type_potential() {
+    assert!(matches!(&parse_type("{ 42 }"), Type::TypePotential(_)));
 }
 
 #[test]
@@ -317,8 +317,6 @@ fn test_type_path_expected_name() {
     assert!(log.error_bit());
 }
 
-
-
 // ========== EXPECTED CLOSE ANGLE ==========
 #[test]
 fn test_err_expected_close_angle() {
@@ -327,7 +325,6 @@ fn test_err_expected_close_angle() {
     assert!(log.error_bit());
 }
 
-
 // ========== PATH EXPECTED NAME OR SEPARATOR ==========
 #[test]
 fn test_err_path_expected_name_or_separator() {
@@ -335,7 +332,6 @@ fn test_err_path_expected_name_or_separator() {
     let (_, log) = parse_source_no_assert("fn f() { foo:::bar; }");
     assert!(log.error_bit());
 }
-
 
 // ========== PATH SEGMENT LIMIT ==========
 // NOTE: Would need >65536 segments, impractical
@@ -347,9 +343,7 @@ fn test_err_fn_param_missing_name() {
     assert!(log.error_bit());
 }
 
-
 // ========== NAMED GENERIC ARGUMENT ==========
-
 
 // ========== TYPE PATH WITH EMPTY GENERICS ==========
 #[test]
@@ -358,14 +352,12 @@ fn test_type_path_empty_generics() {
     assert!(matches!(&ty, Type::TypePath(_)));
 }
 
-
 // ========== TYPE PATH WITH TRAILING COLON ==========
 #[test]
 fn test_type_path_trailing_colon() {
     let (_, log) = parse_type_no_assert("Foo::");
     assert!(log.error_bit());
 }
-
 
 // ========== TYPE PATH WITH MULTIPLE SEGMENTS ==========
 #[test]
@@ -374,7 +366,6 @@ fn test_type_path_multi_segment() {
     assert!(matches!(&ty, Type::TypePath(p) if p.segments.len() == 3));
 }
 
-
 // ========== REFERENCE WITH LIFETIME + ISO + MUT ==========
 #[test]
 fn test_type_ref_complex() {
@@ -382,14 +373,12 @@ fn test_type_ref_complex() {
     assert!(matches!(&ty, Type::ReferenceType(_)));
 }
 
-
 // ========== GLOBAL PATH ==========
 #[test]
 fn test_global_type_path() {
     let ty = parse_type("::std::mem");
     assert!(matches!(&ty, Type::TypePath(p) if p.segments[0].name.is_empty()));
 }
-
 
 // ---------- PATH ERRORS ----------
 
@@ -399,7 +388,6 @@ fn test_path_generic_arg_expected_end() {
     let (_, log) = parse_type_no_assert("Vec<i32,");
     assert!(log.error_bit());
 }
-
 
 // SyntaxErr::PathGenericArgumentLimit (variant 223) - needs >65536 args
 #[test]
@@ -416,14 +404,12 @@ fn test_path_generic_arg_limit() {
     assert!(log.error_bit());
 }
 
-
 // SyntaxErr::PathExpectedNameOrSeparator (variant 224)
 #[test]
 fn test_path_expected_name_or_separator() {
     let (_, log) = parse_source_no_assert("fn f() { ::; }");
     assert!(log.error_bit());
 }
-
 
 // SyntaxErr::PathSegmentLimit (variant 225) - needs >65536 segments
 #[test]
@@ -436,9 +422,7 @@ fn test_path_segment_limit() {
     assert!(log.error_bit());
 }
 
-
 // SyntaxErr::PathExpectedName (variant 226)
-
 
 // ---------- REFERENCE TYPE ERRORS ----------
 
@@ -449,11 +433,9 @@ fn test_ref_lifetime_missing() {
     assert!(log.error_bit());
 }
 
-
 // ---------- TUPLE TYPE ERRORS ----------
 
 // SyntaxErr::TupleTypeExpectedEnd (variant 280)
-
 
 // SyntaxErr::TupleTypeElementLimit (variant 281) - needs >65536 elements
 #[test]
@@ -467,7 +449,6 @@ fn test_tuple_type_element_limit() {
     assert!(log.error_bit());
 }
 
-
 // ---------- ATTRIBUTES ERRORS ----------
 
 // SyntaxErr::AttributesExpectedEnd (variant 320)
@@ -476,7 +457,6 @@ fn test_attrs_expected_end() {
     let (_, log) = parse_source_no_assert("fn [a,");
     assert!(log.error_bit());
 }
-
 
 // SyntaxErr::AttributesElementLimit (variant 321) - needs >65536 elements
 #[test]
@@ -493,7 +473,6 @@ fn test_attrs_element_limit() {
     assert!(log.error_bit());
 }
 
-
 // ---------- EXPECTED TOKEN ERRORS (1000-1010) ----------
 
 // SyntaxErr::ExpectedOpenParen (variant 1000)
@@ -503,14 +482,12 @@ fn test_exp_open_paren() {
     assert!(log.error_bit());
 }
 
-
 // SyntaxErr::ExpectedCloseParen (variant 1001)
 #[test]
 fn test_exp_close_paren() {
     let (_, log) = parse_expr_no_assert("(1, 2");
     assert!(log.error_bit());
 }
-
 
 // SyntaxErr::ExpectedOpenBrace (variant 1002)
 #[test]
@@ -519,14 +496,12 @@ fn test_exp_open_brace() {
     assert!(log.error_bit());
 }
 
-
 // SyntaxErr::ExpectedCloseBrace (variant 1003)
 #[test]
 fn test_exp_close_brace() {
     let (_, log) = parse_source_no_assert("mod foo { fn f() {} ");
     assert!(log.error_bit());
 }
-
 
 // SyntaxErr::ExpectedOpenBracket (variant 1004)
 #[test]
@@ -535,14 +510,12 @@ fn test_exp_open_bracket() {
     assert!(log.error_bit());
 }
 
-
 // SyntaxErr::ExpectedCloseBracket (variant 1005)
 #[test]
 fn test_exp_close_bracket() {
     let (_, log) = parse_expr_no_assert("a[0");
     assert!(log.error_bit());
 }
-
 
 // SyntaxErr::ExpectedOpenAngle (variant 1006)
 #[test]
@@ -599,7 +572,6 @@ fn test_syntax_not_supported() {
     assert_eq!(info.message, "this syntax is not supported");
 }
 
-
 // Tests to cover remaining reachable format() arms by triggering edge cases
 
 // ========== EXPECTED TYPE ERROR ==========
@@ -609,14 +581,12 @@ fn test_err_expected_type() {
     assert!(log.error_bit());
 }
 
-
 // ========== GLOBAL PATH IN TYPE ==========
 #[test]
 fn test_global_type_path_segments() {
     let ty = parse_type("::std::vec::Vec<i32>");
     assert!(matches!(&ty, Type::TypePath(p) if p.segments[0].name.is_empty() && p.segments.len() >= 3));
 }
-
 
 // ========== EMPTY TYPE PATH ==========
 #[test]
@@ -625,9 +595,7 @@ fn test_type_path_empty_global() {
     assert!(log.error_bit());
 }
 
-
 // ========== TUPLE TYPE WITH SINGLE ELEMENT ==========
-
 
 // ========== LONG TYPE PATH ==========
 #[test]
@@ -636,12 +604,9 @@ fn test_type_path_long() {
     assert!(matches!(&ty, Type::TypePath(p) if p.segments.len() == 5));
 }
 
-
 // ========== MISSING SEMICOLON ON TYPE ==========
 
-
 // ========== GENERIC ARGUMENT EXPECTED END ==========
-
 
 // ========== TYPE PATH EXPECTED NAME ==========
 #[test]
@@ -651,14 +616,12 @@ fn test_err_type_path_expected_name() {
     assert!(log.error_bit());
 }
 
-
 // ========== FUNCTION TYPE EXPECTED OPEN PAREN ==========
 #[test]
 fn test_fn_type_missing_open_paren2() {
     let (_, log) = parse_type_no_assert("fn i32) -> bool");
     assert!(log.error_bit());
 }
-
 
 // ========== TYPE: MORE COMPLEX POINTER ==========
 #[test]
@@ -667,9 +630,7 @@ fn test_type_ptr_poly_const() {
     assert!(matches!(&ty, Type::PointerType(p) if matches!(p.exclusivity, Some(Exclusivity::Poly))));
 }
 
-
 // ========== TYPE: NESTED PATH ==========
-
 
 // ========== TYPE: TUPLE WITH ONE ELEMENT ==========
 #[test]
@@ -678,12 +639,9 @@ fn test_type_tuple_one_elem() {
     assert!(matches!(&ty, Type::TupleType(t) if t.element_types.len() == 1));
 }
 
-
 // ========== TYPE: REFINEMENT WITH ALL FIELDS ==========
 
-
-// ========== TYPE: LATENT ==========
-
+// ========== TYPE: TYPE POTENTIAL ==========
 
 // ========== TYPE: ARRAY WITH COMPLEX LENGTH ==========
 #[test]
@@ -692,14 +650,12 @@ fn test_type_array_complex_len() {
     assert!(matches!(&ty, Type::ArrayType(_)));
 }
 
-
 // ========== TYPE: FN WITH MULTIPLE PARAMS ==========
 #[test]
 fn test_type_fn_multi_params() {
     let ty = parse_type("fn(x: i32, y: f64, z: bool)");
     assert!(matches!(&ty, Type::FunctionType(_)));
 }
-
 
 // ========== TYPE: FN RETURN TYPE ==========
 #[test]
@@ -708,14 +664,12 @@ fn test_type_fn_return() {
     assert!(matches!(&ty, Type::FunctionType(f) if f.return_type.is_some()));
 }
 
-
 // ========== TYPE: PARENTHESIZED TUPLE ==========
 #[test]
 fn test_type_paren_in_tuple() {
     let ty = parse_type("((i32, f64))");
     assert!(matches!(&ty, Type::Parentheses(_)));
 }
-
 
 // ========== TYPE: NAMED GENERIC ==========
 #[test]
@@ -724,9 +678,7 @@ fn test_type_named_generic2() {
     assert!(matches!(&ty, Type::TypePath(_)));
 }
 
-
 // ========== TYPE: MISSING SEMICOLON IN ARRAY ==========
-
 
 // ========== BLOCK EDGE CASES ==========
 
@@ -736,16 +688,13 @@ fn test_empty_block() {
     assert!(matches!(&expr, Expr::Closure(_)));
 }
 
-
 // ========== TYPES ==========
-
 
 #[test]
 fn test_function_type_no_return() {
     let ty = parse_type("fn(x: i32)");
     assert!(matches!(&ty, Type::FunctionType(f) if f.return_type.is_none()));
 }
-
 
 // ========== TYPE PARSE EDGE CASES ==========
 
@@ -755,20 +704,17 @@ fn test_type_f8() {
     assert!(matches!(&ty, Type::TypePath(_)));
 }
 
-
 #[test]
 fn test_type_f16() {
     let ty = parse_type("f16");
     assert!(matches!(&ty, Type::TypePath(_)));
 }
 
-
 #[test]
 fn test_type_f128() {
     let ty = parse_type("f128");
     assert!(matches!(&ty, Type::TypePath(_)));
 }
-
 
 #[test]
 fn test_type_ref_with_lifetime_and_iso() {
@@ -778,7 +724,6 @@ fn test_type_ref_with_lifetime_and_iso() {
     );
 }
 
-
 #[test]
 fn test_type_ref_with_lifetime_and_mut() {
     let ty = parse_type("&'a mut i32");
@@ -787,16 +732,13 @@ fn test_type_ref_with_lifetime_and_mut() {
     );
 }
 
-
 #[test]
 fn test_type_pointer_iso_mut() {
     let ty = parse_type("*iso mut i32");
     assert!(matches!(&ty, Type::PointerType(_)));
 }
 
-
 // ========== REFINEMENT TYPE EDGE CASES ==========
-
 
 #[test]
 fn test_type_refine_range_no_min() {
@@ -804,13 +746,11 @@ fn test_type_refine_range_no_min() {
     assert!(matches!(&ty, Type::RefinementType(r) if r.minimum.is_none() && r.maximum.is_some()));
 }
 
-
 #[test]
 fn test_type_refine_range_no_max() {
     let ty = parse_type("u8: [0:]");
     assert!(matches!(&ty, Type::RefinementType(r) if r.minimum.is_some() && r.maximum.is_none()));
 }
-
 
 #[test]
 fn test_type_refine_width_range_missing_bracket() {
@@ -818,23 +758,19 @@ fn test_type_refine_width_range_missing_bracket() {
     assert!(log.error_bit());
 }
 
-
 #[test]
 fn test_type_refine_width_then_no_bracket() {
     let (_, log) = parse_type_no_assert("u8: 6: foo");
     assert!(log.error_bit());
 }
 
-
 // ========== PATH EDGE CASES ==========
-
 
 #[test]
 fn test_type_path_global_with_generics() {
     let ty = parse_type("::std::Vec<i32>");
     assert!(matches!(&ty, Type::TypePath(p) if p.segments.len() >= 2));
 }
-
 
 // ========== TYPE ALIAS EDGE CASES ==========
 
@@ -845,16 +781,13 @@ fn test_type_alias_no_value() {
     assert!(ta.alias_type.is_none());
 }
 
-
 #[test]
 fn test_type_alias_with_generics() {
     let ta = single_type_alias(parse_source("type MyVec<T> = Vec<T>;"));
     assert!(ta.generics.is_some());
 }
 
-
 // ========== ARRAY TYPE ERROR PATHS ==========
-
 
 // ========== POINTER TYPE ERROR PATHS ==========
 
@@ -866,9 +799,7 @@ fn test_type_ptr_poly_mut() {
     );
 }
 
-
 // ========== PATH ERROR PATHS ==========
-
 
 // ========== TYPE RECURSION ==========
 
@@ -878,13 +809,11 @@ fn test_type_double_parens() {
     assert!(matches!(&ty, Type::Parentheses(p) if matches!(&p.inner, Type::Parentheses(_))));
 }
 
-
 #[test]
 fn test_type_unexpected_after_paren() {
     let (_, log) = parse_type_no_assert("(i32");
     assert!(log.error_bit());
 }
-
 
 // ========== INLINE TYPE PATHS ==========
 
@@ -894,7 +823,6 @@ fn test_type_path_with_triple_nested() {
     assert!(matches!(&ty, Type::TypePath(p) if p.segments.len() == 3));
 }
 
-
 // ========== TYPE INFO ==========
 
 #[test]
@@ -903,7 +831,6 @@ fn test_type_info_path() {
     assert!(matches!(&expr, Expr::TypeInfo(_)));
 }
 
-
 // ========== PARSING EOF AFTER BINARY OPERATOR ==========
 
 #[test]
@@ -911,4 +838,3 @@ fn test_binary_op_at_eof() {
     let (_, log) = parse_expr_no_assert("1 + ");
     assert!(log.error_bit());
 }
-

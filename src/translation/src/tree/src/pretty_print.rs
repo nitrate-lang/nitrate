@@ -1090,7 +1090,7 @@ impl PrettyPrint for PointerType {
     }
 }
 
-impl PrettyPrint for LatentType {
+impl PrettyPrint for TypePotential {
     fn pretty_print_fmt(&self, ctx: &mut PrintContext, writer: &mut dyn std::fmt::Write) -> std::fmt::Result {
         self.body.pretty_print_fmt(ctx, writer)
     }
@@ -1138,7 +1138,7 @@ impl PrettyPrint for Type {
             Type::FunctionType(m) => m.pretty_print_fmt(ctx, writer),
             Type::ReferenceType(m) => m.pretty_print_fmt(ctx, writer),
             Type::PointerType(m) => m.pretty_print_fmt(ctx, writer),
-            Type::LatentType(m) => m.pretty_print_fmt(ctx, writer),
+            Type::TypePotential(m) => m.pretty_print_fmt(ctx, writer),
             Type::Lifetime(m) => m.pretty_print_fmt(ctx, writer),
             Type::Parentheses(m) => m.pretty_print_fmt(ctx, writer),
         }

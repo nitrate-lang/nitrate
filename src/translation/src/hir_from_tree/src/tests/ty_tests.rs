@@ -2,8 +2,8 @@ use crate::{
     context::Ast2HirCtx,
     diagnosis::HirErr,
     ty::{
-        lower_array_type, lower_function_type, lower_latent_type, lower_pointer_type, lower_reference_type,
-        lower_refinement_type, lower_slice_type, lower_tuple_type, lower_type, lower_type_path,
+        lower_array_type, lower_function_type, lower_pointer_type, lower_reference_type, lower_refinement_type,
+        lower_slice_type, lower_tuple_type, lower_type, lower_type_path, lower_type_potential,
     },
 };
 use nitrate_diagnosis::CompilerLog;
@@ -631,11 +631,11 @@ fn lt_slice_outside_ref() {
 }
 
 #[test]
-fn lt_latent() {
+fn lt_type_potential() {
     run(|c, l| {
         assert!(
-            lower_latent_type(
-                ast::LatentType {
+            lower_type_potential(
+                ast::TypePotential {
                     span: ByteSpan::default(),
                     body: ast::Block {
                         span: ByteSpan::default(),

@@ -72,7 +72,7 @@ pub enum RefNode<'a> {
     TypeFunctionType(&'a FunctionType),
     TypeReferenceType(&'a ReferenceType),
     TypePointerType(&'a PointerType),
-    TypeLatentType(&'a Block),
+    TypePotential(&'a Block),
     TypeLifetime(&'a Lifetime),
     TypeParentheses(&'a Type),
 

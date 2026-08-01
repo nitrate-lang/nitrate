@@ -65,7 +65,7 @@ pub enum RefNodeMut<'a> {
     TypeFunctionType(&'a mut FunctionType),
     TypeReferenceType(&'a mut ReferenceType),
     TypePointerType(&'a mut PointerType),
-    TypeLatentType(&'a mut Block),
+    TypePotential(&'a mut Block),
     TypeLifetime(&'a mut Lifetime),
     TypeParentheses(&'a mut Type),
 

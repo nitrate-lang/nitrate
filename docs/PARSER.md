@@ -93,6 +93,7 @@ Types in the parse tree mirror the language's type grammar:
 - **Named types**: Struct, enum, and type-alias references, optionally with generic arguments (`Foo<T, U>`)
 - **Function types**: Function pointer types (`fn(T1, T2) -> Ret`)
 - **Trait object types**: Dynamic dispatch types (`dyn Trait`)
+- **Type potentials**: Types computed from a block expression (`{ 42 }`) — parsed as a `TypePotential` node
 - **Inferred types**: Placeholder types for omitted annotations (`_` in expressions, implicit in `let` bindings)
 
 ## Parsing Strategy

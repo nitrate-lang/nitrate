@@ -7,8 +7,8 @@ use nitrate_nstring::NString;
 use nitrate_token::Token;
 use nitrate_tree::ast::{
     ArrayType, Bool, Expr, Float32, Float64, FuncTypeParam, FuncTypeParams, FunctionType, Int8, Int16, Int32, Int64,
-    Int128, LatentType, Lifetime, PointerType, ReferenceType, RefinementType, SliceType, TupleType, Type,
-    TypeParentheses, TypePath, TypePathSegment, TypeSyntaxError, UInt8, UInt16, UInt32, UInt64, UInt128, USize,
+    Int128, Lifetime, PointerType, ReferenceType, RefinementType, SliceType, TupleType, Type, TypeParentheses,
+    TypePath, TypePathSegment, TypePotential, TypeSyntaxError, UInt8, UInt16, UInt32, UInt64, UInt128, USize,
 };
 
 #[derive(Default)]
@@ -374,7 +374,7 @@ impl Parser<'_, '_> {
             Token::OpenBrace | Token::Unsafe | Token::Safe => {
                 let block_start = self.lexer.peek_pos().offset;
                 let body = self.parse_block();
-                Type::LatentType(Box::new(LatentType {
+                Type::TypePotential(Box::new(TypePotential {
                     span: ByteSpan::new(block_start, self.lexer.current_pos().offset),
                     body,
                 }))

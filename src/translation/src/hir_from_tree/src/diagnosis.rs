@@ -93,8 +93,8 @@ pub(crate) enum HirErr {
     TypeReflectionNotImplemented { span: ByteSpan },
     /// Closure expressions are not yet implemented.
     ClosureNotImplemented { span: ByteSpan },
-    /// Latent types are not yet implemented.
-    LatentTypeNotImplemented { span: ByteSpan },
+    /// Type potentials are not yet implemented.
+    TypePotentialNotImplemented { span: ByteSpan },
     /// Lifetime as standalone type is not yet implemented.
     LifetimeTypeNotImplemented { span: ByteSpan },
     /// Generic type arguments in intermediate path segments are not yet supported.
@@ -196,7 +196,7 @@ impl FormattableDiagnosticGroup for HirErr {
             HirErr::RangeOperatorNotImplemented { .. } => 154,
             HirErr::TypeReflectionNotImplemented { .. } => 155,
             HirErr::ClosureNotImplemented { .. } => 156,
-            HirErr::LatentTypeNotImplemented { .. } => 157,
+            HirErr::TypePotentialNotImplemented { .. } => 157,
             HirErr::LifetimeTypeNotImplemented { .. } => 158,
             HirErr::IntermediateGenericArgsNotSupported { .. } => 159,
 
@@ -546,10 +546,10 @@ impl FormattableDiagnosticGroup for HirErr {
                 origin: byte_span_to_origin(*span),
             },
 
-            HirErr::LatentTypeNotImplemented { span } => DiagnosticInfo {
+            HirErr::TypePotentialNotImplemented { span } => DiagnosticInfo {
                 message: format!(
-                    "latent types are not yet implemented\n\
-                     \n  = note: latent types (type computed from a block expression) are planned\n\
+                    "type potentials are not yet implemented\n\
+                     \n  = note: type potentials (type computed from a block expression) are planned\n\
                      \n        but not yet available.\n\
                      \n  = help: specify the type explicitly."
                 ),
