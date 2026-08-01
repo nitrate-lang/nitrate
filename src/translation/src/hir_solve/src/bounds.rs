@@ -20,30 +20,6 @@ impl Bounds {
     pub fn unsigned(lo: u128, hi: u128) -> Self {
         Self { lo: lo as i128, hi }
     }
-
-    pub fn from_i128(val: i128) -> u128 {
-        val as u128
-    }
-
-    pub fn contains_signed(&self, val: i128) -> bool {
-        val >= self.lo && (val as u128) <= self.hi
-    }
-
-    pub fn contains_unsigned(&self, val: u128) -> bool {
-        if self.lo < 0 {
-            val <= self.hi
-        } else {
-            val >= (self.lo as u128) && val <= self.hi
-        }
-    }
-
-    pub fn hi_u128(&self) -> u128 {
-        self.hi
-    }
-
-    pub fn lo_i128(&self) -> i128 {
-        self.lo
-    }
 }
 
 fn numeric_bounds_for_type(ty: &Type) -> Option<Bounds> {
@@ -109,18 +85,6 @@ pub(crate) fn extract_bounds_from_type(ty: &Type) -> Option<Bounds> {
         },
         _ => integer_primitive_bounds(ty),
     }
-}
-
-fn saturating_add_to_u128(a: i128, b: i128) -> u128 {
-    a.saturating_add(b) as u128
-}
-
-fn saturating_sub_to_u128(a: i128, b: i128) -> u128 {
-    a.saturating_sub(b) as u128
-}
-
-fn saturating_mul_to_u128(a: i128, b: i128) -> u128 {
-    a.saturating_mul(b) as u128
 }
 
 pub(crate) fn compute_binary_bounds(op: &BinaryOp, left: Bounds, right: Bounds) -> Option<Bounds> {

@@ -546,8 +546,6 @@ fn test_constraints() {
     store(|_| {
         let eq = TypeConstraint::Equal(i32t());
         assert_eq!(eq.type_id(), i32t());
-        let sub = TypeConstraint::SubtypeOf(u32t());
-        assert_eq!(sub.type_id(), u32t());
         let _ = NodeAction::NoChange;
         let r = NodeAction::Replace(Value::Unit {
             span: ByteSpan::default(),
@@ -559,9 +557,8 @@ fn test_constraints() {
         assert!(!is_arithmetic_op(&BinaryOp::Lt));
         let mut s = HashSet::new();
         s.insert(TypeConstraint::Equal(i32t()));
-        s.insert(TypeConstraint::SubtypeOf(u32t()));
         let p = propagate_to_children(&s);
-        assert_eq!(p.len(), 2);
+        assert_eq!(p.len(), 1);
         for c in &p {
             assert!(matches!(c, TypeConstraint::Equal(..)));
         }

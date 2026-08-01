@@ -1,6 +1,5 @@
 use crate::mangle::mangle_name;
 use nitrate_hir::prelude::*;
-use std::ops::Deref;
 
 /// Applies name mangling to all functions and global variables in the symbol
 /// table.

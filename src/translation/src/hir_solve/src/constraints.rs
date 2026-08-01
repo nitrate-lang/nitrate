@@ -4,14 +4,12 @@ use std::matches;
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub(crate) enum TypeConstraint {
     Equal(TypeId),
-    SubtypeOf(TypeId),
 }
 
 impl TypeConstraint {
     pub fn type_id(&self) -> TypeId {
         match self {
             TypeConstraint::Equal(ty) => *ty,
-            TypeConstraint::SubtypeOf(ty) => *ty,
         }
     }
 

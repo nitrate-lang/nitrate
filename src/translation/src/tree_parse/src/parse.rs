@@ -24,51 +24,13 @@ impl<'a, 'log> Parser<'a, 'log> {
         self.lexer.source
     }
 
-    /// Get the start byte offset of the current peek token.
-    pub(crate) fn current_offset(&mut self) -> u32 {
-        self.lexer.peek_pos().offset
-    }
-
     /// Get the end byte offset of the last consumed token.
     pub(crate) fn current_pos(&self) -> u32 {
         self.lexer.current_pos().offset
     }
 
-    /// Create a ByteSpan from a start offset to current end position.
-    pub(crate) fn span_from(&self, start: u32) -> ByteSpan {
-        ByteSpan::new(start, self.lexer.current_pos().offset)
-    }
-
-    pub(crate) fn peek_tok(&mut self) -> Token {
-        self.lexer.peek_tok().token
-    }
-
-    pub(crate) fn next_is(&mut self, matches: &Token) -> bool {
-        self.lexer.next_is(matches)
-    }
-
-    pub(crate) fn skip_tok(&mut self) {
-        self.lexer.skip_tok();
-    }
-
-    pub(crate) fn skip_if(&mut self, matches: &Token) -> bool {
-        self.lexer.skip_if(matches)
-    }
-
-    pub(crate) fn skip_while(&mut self, not: &Token) {
-        self.lexer.skip_while(not);
-    }
-
     pub fn is_eof(&mut self) -> bool {
         self.lexer.is_eof()
-    }
-
-    pub(crate) fn next_if_name(&mut self) -> Option<String> {
-        self.lexer.next_if_name()
-    }
-
-    pub(crate) fn rewind(&mut self, pos: nitrate_token::SourcePosition) {
-        self.lexer.rewind(pos);
     }
 
     /// Peek at the token immediately after a `{` to determine if it looks like

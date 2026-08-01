@@ -35,6 +35,4 @@ pub mod prelude {
     pub use super::iter::{Order, ParseTreeIter, RefNode};
     pub use super::iter_mut::{ParseTreeIterMut, RefNodeMut};
     pub use super::pretty_print::{PrettyPrint, PrintContext};
-    pub use super::span::*;
-    pub use super::trivia::*;
 }

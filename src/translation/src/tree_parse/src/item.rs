@@ -190,7 +190,6 @@ impl Parser<'_, '_> {
                     }
                 }
             } else if this.lexer.skip_if(&Token::As) {
-                let alias_start = this.lexer.peek_pos().offset;
                 let err = SyntaxErr::ImportAliasMissingName(this.lexer.peek_pos());
                 let alias = this.parse_string_name(err);
                 let alias_end = this.lexer.current_pos().offset;
