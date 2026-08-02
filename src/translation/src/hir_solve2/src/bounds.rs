@@ -13,16 +13,16 @@ impl Bounds {
         Self { lo, hi }
     }
     pub fn signed(lo: i128, hi: i128) -> Self {
-        debug_assert!(hi >= 0, "signed upper bound must be non-negative: got {}", hi);
-        Self { lo, hi: hi as u128 }
+        // In release builds, clamp hi to 0 if negative to avoid producing
+        // a nonsensical Bounds with a u128::MAX upper bound from wrap.
+        let clamped_hi = hi.max(0) as u128;
+        Self { lo, hi: clamped_hi }
     }
     pub fn unsigned(lo: u128, hi: u128) -> Self {
-        debug_assert!(
-            lo <= i128::MAX as u128,
-            "unsigned lower bound exceeds i128 range: got {}",
-            lo
-        );
-        Self { lo: lo as i128, hi }
+        // If lo exceeds i128::MAX, clamp to i128::MAX rather than
+        // wrapping to a negative i128 via `as i128` cast.
+        let clamped_lo = lo.min(i128::MAX as u128) as i128;
+        Self { lo: clamped_lo, hi }
     }
 }
 
@@ -132,7 +132,11 @@ pub(crate) fn compute_binary_bounds(op: &BinaryOp, left: Bounds, right: Bounds) 
             if products_u128.is_empty() {
                 let min = *products_i128.iter().min().unwrap();
                 let max = *products_i128.iter().max().unwrap();
-                Some(Bounds::new(min, max as u128))
+                // Guard against inverted bounds from saturating arithmetic:
+                // if min > max_{u128}, clamp max to at least min's unsigned
+                // representation so lo <= hi holds.
+                let max_u128 = (max as u128).max(min.max(0) as u128);
+                Some(Bounds::new(min, max_u128))
             } else {
                 let min_u128 = *products_u128.iter().min().unwrap();
                 let min_i128_final = if min_u128 <= i128::MAX as u128 {
@@ -196,14 +200,34 @@ pub(crate) fn compute_binary_bounds(op: &BinaryOp, left: Bounds, right: Bounds) 
                 ))
             }
         }
-        BinaryOp::Or => Some(Bounds::new(
-            std::cmp::min(l_min, r_min),
-            std::cmp::max(left.hi, right.hi),
-        )),
-        BinaryOp::Xor => Some(Bounds::new(
-            std::cmp::min(l_min, r_min),
-            std::cmp::max(left.hi, right.hi),
-        )),
+        BinaryOp::Or => {
+            // Unsigned OR result: lower bound is max of lower bounds (unsigned),
+            // since OR can only set bits, never clear them.
+            if l_min >= 0 && r_min >= 0 {
+                let lo = std::cmp::max(l_min, r_min) as u128;
+                let hi = std::cmp::max(left.hi, right.hi);
+                Some(Bounds::new(lo as i128, hi))
+            } else {
+                Some(Bounds::new(
+                    std::cmp::min(l_min, r_min),
+                    std::cmp::max(left.hi, right.hi),
+                ))
+            }
+        }
+        BinaryOp::Xor => {
+            // XOR can produce anywhere between 0 and the max of the two unsigned
+            // upper bounds. For signed pairs with negative values, fall back to
+            // the coarsest possible bounds.
+            if l_min >= 0 && r_min >= 0 {
+                let hi = std::cmp::max(left.hi, right.hi);
+                Some(Bounds::new(0, hi))
+            } else {
+                Some(Bounds::new(
+                    std::cmp::min(l_min, r_min),
+                    std::cmp::max(left.hi, right.hi),
+                ))
+            }
+        }
         BinaryOp::Shl | BinaryOp::Rol => Some(Bounds::new(i128::MIN, i128::MAX as u128)),
         BinaryOp::Shr | BinaryOp::Ror => {
             if l_min >= 0 && r_min >= 0 {
@@ -255,7 +279,9 @@ pub(crate) fn compute_unary_bounds(op: &UnaryOp, operand: Bounds) -> Bounds {
                 let new_lo = if hi > i128::MAX as u128 {
                     i128::MIN
                 } else {
-                    -(hi as i128)
+                    // Use wrapping_neg to avoid debug panic if hi as i128
+                    // happens to be i128::MIN (defensive, shouldn't occur).
+                    -(hi as i128).wrapping_neg()
                 };
                 let new_hi = (lo.unsigned_abs() as u128).saturating_sub(1).min(i128::MAX as u128);
                 Bounds::new(new_lo, new_hi)
@@ -298,21 +324,46 @@ pub(crate) fn check_bounds_against_constraint(computed_bounds: Bounds, constrain
 
 pub(crate) fn check_literal_against_refinement(value: u128, constraint_ty: &Type) -> bool {
     match constraint_ty {
-        Type::Refine { min, max, .. } => match (lit_to_i128(min), lit_to_i128(max)) {
-            (Some(mn), Some(mx_i128)) => {
-                if value > i128::MAX as u128 && mx_i128 < 0 {
-                    return false;
+        Type::Refine { min, max, .. } => {
+            // Use lit_to_u128 for the max bound to avoid clamping u128::MAX to
+            // i128::MAX (which would make the upper-bound check overly permissive).
+            let mn = match lit_to_i128(min) {
+                Some(v) => v,
+                None => return true, // can't check without a concrete min
+            };
+            match lit_to_u128(max) {
+                Some(mx) => {
+                    if value > mx {
+                        return false;
+                    }
+                    // Min check: the literal must be >= mn (signed comparison).
+                    // If value fits in i128, compare directly; otherwise it's a
+                    // large unsigned value which is always >= any i128 min.
+                    if value <= i128::MAX as u128 {
+                        let signed = value as i128;
+                        if signed < mn {
+                            return false;
+                        }
+                    }
+                    true
                 }
-                if value > i128::MAX as u128 {
-                    let mx_u128 = lit_to_u128(max).unwrap_or(0);
-                    value <= mx_u128
-                } else {
+                None => {
+                    // max couldn't be converted to u128 (likely a negative literal).
+                    // A negative max means only negative signed values can satisfy
+                    // the refinement. A large u128 value can never be negative.
+                    if value > i128::MAX as u128 {
+                        return false;
+                    }
                     let signed = value as i128;
-                    signed >= mn && signed <= mx_i128
+                    // Use lit_to_i128 for the negative max comparison
+                    if let Some(mx_i128) = lit_to_i128(max) {
+                        signed >= mn && signed <= mx_i128
+                    } else {
+                        true // can't check without concrete bounds
+                    }
                 }
             }
-            _ => true,
-        },
+        }
         _ => true,
     }
 }

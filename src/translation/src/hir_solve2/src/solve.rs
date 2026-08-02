@@ -90,7 +90,15 @@ impl<'a> Solver<'a> {
 
     fn find_common_integer_type(constraint_types: &[TypeId], value: u128) -> Option<TypeId> {
         let mut best: Option<TypeId> = None;
-        let signed_val = value as i128;
+        // Only use signed comparison for values that actually fit in i128.
+        // For values > i128::MAX, wrapping to negative would make signed
+        // checks incorrectly match I128.
+        let signed_val = if value <= i128::MAX as u128 {
+            value as i128
+        } else {
+            i128::MAX // sentinel: won't match any signed type narrower than I128
+        };
+        let fits_in_i128 = value <= i128::MAX as u128;
         for &ty in constraint_types {
             let eff = match &*ty {
                 Type::Refine { base, .. } => *base,
@@ -104,7 +112,8 @@ impl<'a> Solver<'a> {
                 Type::I16 { .. } => signed_val >= i16::MIN as i128 && signed_val <= i16::MAX as i128,
                 Type::I32 { .. } => signed_val >= i32::MIN as i128 && signed_val <= i32::MAX as i128,
                 Type::I64 { .. } => signed_val >= i64::MIN as i128 && signed_val <= i64::MAX as i128,
-                Type::I128 { .. } => true,
+                // Only allow I128 if the value actually fits in signed i128
+                Type::I128 { .. } => fits_in_i128,
                 Type::U8 { .. } => value <= u8::MAX as u128,
                 Type::U16 { .. } => value <= u16::MAX as u128,
                 Type::U32 { .. } => value <= u32::MAX as u128,
@@ -172,15 +181,18 @@ impl<'a> Solver<'a> {
                 }
             }
         }
-        if has_non_integer {
-            return NodeAction::NoChange;
-        }
+        // Report refinement errors regardless of whether there are
+        // non-integer constraints — the user should still see that
+        // a refinement bound was violated even if the type is ambiguous.
         for (refinement_ty, val) in &check_errors {
             self.errors.insert(TypeErr::IntegerLiteralOutOfRefinementBounds {
                 span,
                 value: *val,
                 refinement_type: *refinement_ty,
             });
+        }
+        if has_non_integer {
+            return NodeAction::NoChange;
         }
         let best = Self::find_common_integer_type(&constraint_types, value).unwrap_or_else(|| {
             // Choose the smallest integer type that can hold the literal value
@@ -732,13 +744,11 @@ impl<'a> Solver<'a> {
     fn visit_field_access(&mut self, e: &ValueId) {
         let v = e.borrow();
         let Value::FieldAccess { expr, .. } = &*v else { return };
-        // Propagate type constraints: if we have constraints on this field access,
-        // forward them to the struct/object being accessed
-        if let Some(pc) = self.constraints.get(e).cloned() {
-            for c in &pc {
-                self.add_constraint(expr, c.clone());
-            }
-        }
+        // Do NOT forward constraints from the field access to the whole
+        // struct/object. A constraint `Equal(I32)` on `.field` means the
+        // field should be I32, not that the entire struct is I32.
+        // (Future: add a HasField constraint type to propagate field-specific
+        // constraints properly.)
         self.visit(expr);
     }
     fn visit_assign(&mut self, e: &ValueId) {
@@ -760,15 +770,12 @@ impl<'a> Solver<'a> {
     }
     fn visit_cast(&mut self, e: &ValueId) {
         let v = e.borrow();
-        let Value::Cast {
-            value: val,
-            target_type,
-            ..
-        } = &*v
-        else {
+        let Value::Cast { value: val, .. } = &*v else {
             return;
         };
-        self.add_constraint(val, TypeConstraint::Equal(*target_type));
+        // Do NOT constrain the source value to equal the target type.
+        // A cast `x as T` means x can be any castable type, not that x
+        // must equal T. Only visit the source so its type is resolved.
         self.visit(val);
     }
     fn visit_borrow(&mut self, e: &ValueId) {
@@ -925,26 +932,37 @@ impl<'a> Solver<'a> {
             }
             _ => None,
         };
-        let mut infer_succeeded = false;
         if let Some(ref fid) = callee_func_id {
-            if let Some(subst) = self.infer_generic_args_from_call(fid, &args.positional) {
+            // Try positional inference first
+            let pos_subst = self.infer_generic_args_from_call(fid, &args.positional);
+            // Named args should supplement positional inference, not be an
+            // alternative. Start with the positional result, then fold in named args.
+            let subst = if let Some(pos) = pos_subst {
+                if !args.named.is_empty() {
+                    if let Some(named) = self.infer_generic_args_from_call_named(fid, args) {
+                        // Merge: start with positional bindings, add named on top
+                        let mut merged = pos;
+                        for (k, v) in named.mapping {
+                            merged.mapping.entry(k).or_insert(v);
+                        }
+                        Some(merged)
+                    } else {
+                        Some(pos)
+                    }
+                } else {
+                    Some(pos)
+                }
+            } else if !args.named.is_empty() {
+                self.infer_generic_args_from_call_named(fid, args)
+            } else {
+                None
+            };
+            if let Some(subst) = subst {
                 let mono_id = self.monomorphize_function(fid, &subst);
                 callee.replace(Value::FunctionSymbol {
                     span: ByteSpan::default(),
                     id: mono_id,
                 });
-                infer_succeeded = true;
-            }
-        }
-        if let Some(ref fid) = callee_func_id {
-            if !infer_succeeded && !args.named.is_empty() {
-                if let Some(subst) = self.infer_generic_args_from_call_named(fid, args) {
-                    let mono_id = self.monomorphize_function(fid, &subst);
-                    callee.replace(Value::FunctionSymbol {
-                        span: ByteSpan::default(),
-                        id: mono_id,
-                    });
-                }
             }
         }
         self.visit(callee);

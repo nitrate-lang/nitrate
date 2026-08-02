@@ -99,8 +99,10 @@ pub(crate) fn unify_types_with_subst(arg_type: &Type, param_type: &Type, subst: 
             for (a, p) in a_args.positional.iter().zip(p_args.positional.iter()) {
                 unify_types_with_subst(a, p, subst);
             }
-            for ((a_k, a_v), (p_k, p_v)) in a_args.named.iter().zip(p_args.named.iter()) {
-                if a_k == p_k {
+            // Match named arguments by name, not by position. Zip would
+            // pair in iteration order, which is wrong if orderings differ.
+            for (a_k, a_v) in a_args.named.iter() {
+                if let Some((_, p_v)) = p_args.named.iter().find(|(k, _)| k == a_k) {
                     unify_types_with_subst(a_v, p_v, subst);
                 }
             }
@@ -119,6 +121,13 @@ pub(crate) fn type_contains_any_generic_param(ty: &Type) -> bool {
             type_contains_any_generic_param(element_type)
         }
         Type::Refine { base, .. } => type_contains_any_generic_param(base),
+        Type::Function { function_type, .. } => {
+            type_contains_any_generic_param(&function_type.return_type)
+                || function_type
+                    .params
+                    .iter()
+                    .any(|(_, p)| type_contains_any_generic_param(p))
+        }
         Type::Parameterized { base, args, .. } => {
             type_contains_any_generic_param(base)
                 || args.positional.iter().any(|a| type_contains_any_generic_param(a))
@@ -140,6 +149,13 @@ pub(crate) fn type_contains_generic_param_name(ty: &TypeId, param_name: &NString
             type_contains_generic_param_name(element_type, param_name)
         }
         Type::Refine { base, .. } => type_contains_generic_param_name(base, param_name),
+        Type::Function { function_type, .. } => {
+            type_contains_generic_param_name(&function_type.return_type, param_name)
+                || function_type
+                    .params
+                    .iter()
+                    .any(|(_, p)| type_contains_generic_param_name(p, param_name))
+        }
         Type::Parameterized { base, args, .. } => {
             type_contains_generic_param_name(base, param_name)
                 || args
@@ -171,6 +187,12 @@ pub(crate) fn collect_generic_params_from_type(ty: &TypeId, mapping: &mut BTreeM
             collect_generic_params_from_type(element_type, mapping)
         }
         Type::Refine { base, .. } => collect_generic_params_from_type(base, mapping),
+        Type::Function { function_type, .. } => {
+            collect_generic_params_from_type(&function_type.return_type, mapping);
+            for (_, p) in &function_type.params {
+                collect_generic_params_from_type(p, mapping);
+            }
+        }
         Type::Parameterized { base, args, .. } => {
             collect_generic_params_from_type(base, mapping);
             for a in &args.positional {
@@ -217,9 +239,12 @@ pub(crate) fn apply_subst_to_value(value: &Value, subst: &Substitution) -> Value
             value: v, target_type, ..
         } => {
             let nt = subst.apply(target_type);
+            // Recurse into the casted value so that nested generics (e.g. T in `T as i32`)
+            // are also substituted.
+            let nv = apply_subst_to_value(&v.borrow(), subst);
             Value::Cast {
                 span: ByteSpan::default(),
-                value: v.clone(),
+                value: ValueId::from(nv),
                 target_type: TypeId::from(nt),
             }
         }
@@ -245,18 +270,52 @@ pub(crate) fn apply_subst_to_value(value: &Value, subst: &Substitution) -> Value
                 }
             }
         }
-        Value::Call { callee, args, .. } => Value::Call {
-            span: ByteSpan::default(),
-            callee: callee.clone(),
-            args: Arguments {
-                positional: args.positional.clone(),
-                named: args.named.clone(),
-            },
-        },
+        Value::Call { callee, args, .. } => {
+            // Substitute the callee and all arguments so that nested
+            // generic calls inside monomorphized code get rewritten.
+            let new_callee = apply_subst_to_value(&callee.borrow(), subst);
+            let new_positional: ThinVec<ValueId> = args
+                .positional
+                .iter()
+                .map(|a| ValueId::from(apply_subst_to_value(&a.borrow(), subst)))
+                .collect();
+            let new_named: ThinVec<(NString, ValueId)> = args
+                .named
+                .iter()
+                .map(|(n, a)| (n.clone(), ValueId::from(apply_subst_to_value(&a.borrow(), subst))))
+                .collect();
+            Value::Call {
+                span: ByteSpan::default(),
+                callee: ValueId::from(new_callee),
+                args: Arguments {
+                    positional: new_positional,
+                    named: new_named,
+                },
+            }
+        }
         Value::FunctionSymbol { id, .. } => Value::FunctionSymbol {
             span: ByteSpan::default(),
             id: id.clone(),
         },
+        Value::Block { block, .. } => {
+            // Substitute all block elements so that nested generics within
+            // block expressions inside monomorphized code are rewritten.
+            let new_elements: Vec<BlockElement> = block
+                .borrow()
+                .elements
+                .iter()
+                .map(|el| clone_block_element(el, subst))
+                .collect();
+            let new_block = nitrate_hir::Block {
+                span: block.borrow().span,
+                safety: block.borrow().safety.clone(),
+                elements: new_elements,
+            };
+            Value::Block {
+                span: ByteSpan::default(),
+                block: nitrate_hir::BlockId::from(new_block),
+            }
+        }
         val => val.clone(),
     }
 }
