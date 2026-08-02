@@ -1,7 +1,7 @@
 use crate::{context::Ast2HirCtx, diagnosis::HirErr, expr::lower_expr, helpers};
 use nitrate_diagnosis::CompilerLog;
 use nitrate_hir::prelude::*;
-use nitrate_hir_evaluate::HirEvalCtx;
+use nitrate_hir_evaluate::Evaluator;
 use nitrate_token::IntegerKind;
 use nitrate_tree::ByteSpan;
 use nitrate_tree::ast::{self as ast, SymbolKind};
@@ -176,7 +176,7 @@ fn lower_refinement_bound(
         None => hir_value,
     };
 
-    match HirEvalCtx::new(log, ctx.ptr_size).evaluate_to_literal(&cast_value) {
+    match Evaluator::new(log, ctx.ptr_size).evaluate_to_literal(&cast_value) {
         Ok(lit) => Ok(store_lit(lit)),
         Err(_) => {
             log.report(&HirErr::RefinementBoundNotConstant {
@@ -335,7 +335,7 @@ pub(crate) fn lower_array_type(
         .into(),
     };
 
-    let len = match HirEvalCtx::new(log, ctx.ptr_size).evaluate_to_literal(&array_length_expr) {
+    let len = match Evaluator::new(log, ctx.ptr_size).evaluate_to_literal(&array_length_expr) {
         Ok(Lit::USize(_bits, val)) => u32::try_from(val).map_err(|_| {
             log.report(&HirErr::ArrayLengthExpectedUSize { span: a_span });
         })?,

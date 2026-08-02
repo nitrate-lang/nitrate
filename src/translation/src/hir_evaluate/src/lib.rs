@@ -1,7 +1,12 @@
 #![forbid(unsafe_code)]
-#![allow(clippy::wrong_self_convention)]
 
-mod eval;
-mod expr;
+mod builtins;
+mod error;
+mod evaluator;
+mod memory;
+mod value;
 
-pub use eval::{HirEvalCtx, HirEvaluate, Unwind};
+pub use builtins::DEFAULT_BUILTIN_FUNCTIONS;
+pub use error::EvalError;
+pub use evaluator::{BuiltinFn, Evaluator};
+pub use memory::Memory;
