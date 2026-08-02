@@ -301,7 +301,13 @@ impl<'b> MirFunctionBuilder<'b> {
 
     /// Shorthand: call with no return (diverging).
     pub fn call(&mut self, callee: Operand, args: ThinVec<Operand>) -> &mut Self {
-        self.set_terminator(Terminator::Call { callee, args })
+        self.set_terminator(Terminator::Call {
+            callee,
+            args,
+            destination: None,
+            target: None,
+            target_args: ThinVec::new(),
+        })
     }
 
     /// Shorthand: call with return value.
@@ -312,11 +318,11 @@ impl<'b> MirFunctionBuilder<'b> {
         destination: Place,
         target: BasicBlockId,
     ) -> &mut Self {
-        self.set_terminator(Terminator::CallReturn {
+        self.set_terminator(Terminator::Call {
             callee,
             args,
-            destination,
-            target,
+            destination: Some(destination),
+            target: Some(target),
             target_args: ThinVec::new(),
         })
     }
@@ -330,26 +336,13 @@ impl<'b> MirFunctionBuilder<'b> {
         target: BasicBlockId,
         target_args: ThinVec<Operand>,
     ) -> &mut Self {
-        self.set_terminator(Terminator::CallReturn {
+        self.set_terminator(Terminator::Call {
             callee,
             args,
-            destination,
-            target,
+            destination: Some(destination),
+            target: Some(target),
             target_args,
         })
-    }
-
-    /// Shorthand: unwind with block arguments.
-    pub fn unwind(&mut self, target: BasicBlockId) -> &mut Self {
-        self.set_terminator(Terminator::Unwind {
-            target,
-            args: ThinVec::new(),
-        })
-    }
-
-    /// Shorthand: unwind with block arguments.
-    pub fn unwind_with_args(&mut self, target: BasicBlockId, args: ThinVec<Operand>) -> &mut Self {
-        self.set_terminator(Terminator::Unwind { target, args })
     }
 
     /// Shorthand: unreachable.

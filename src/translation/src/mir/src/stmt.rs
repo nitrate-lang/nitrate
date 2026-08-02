@@ -79,34 +79,23 @@ pub enum Terminator {
     /// Return from the function with an optional value.
     Return { value: Option<Operand> },
 
-    /// Jump to an unwind block, passing block arguments.
-    Unwind {
-        target: BasicBlockId,
-        args: ThinVec<Operand>,
-    },
-
     /// Unreachable — marks a code path that must never be taken.
     Unreachable,
 
-    /// Call a function that never returns (diverges), e.g. `exit()` or `panic()`.
-    /// No destination is needed because control never returns.
-    Call { callee: Operand, args: ThinVec<Operand> },
-
-    /// Call a function and continue to `target` with the return value
-    /// placed in `destination`. Carries block arguments for the target.
-    CallReturn {
+    /// Call a function.
+    ///
+    /// * If `destination` is `Some` and `target` is `Some`: the call returns,
+    ///   the return value is stored in `destination`, and control transfers to
+    ///   `target` with the given `target_args` block arguments.
+    /// * If `destination` is `None` and `target` is `None`: the call diverges
+    ///   (never returns). Control does not continue past this terminator.
+    Call {
         callee: Operand,
         args: ThinVec<Operand>,
-        destination: Place,
-        target: BasicBlockId,
+        destination: Option<Place>,
+        target: Option<BasicBlockId>,
         target_args: ThinVec<Operand>,
     },
-
-    /// Resume unwinding after a caught panic (used with Unwind).
-    Resume,
-
-    /// Abort the program immediately.
-    Abort,
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -180,12 +169,9 @@ impl BasicBlock {
                 succs.push(otherwise.clone());
                 succs
             }
-            Terminator::Return { .. } | Terminator::Unreachable | Terminator::Resume | Terminator::Abort => {
-                ThinVec::new()
-            }
-            Terminator::Call { .. } => ThinVec::new(),
-            Terminator::CallReturn { target, .. } => [target.clone()].into_iter().collect(),
-            Terminator::Unwind { target, .. } => [target.clone()].into_iter().collect(),
+            Terminator::Return { .. } | Terminator::Unreachable => ThinVec::new(),
+            Terminator::Call { target: Some(t), .. } => [t.clone()].into_iter().collect(),
+            Terminator::Call { target: None, .. } => ThinVec::new(),
         }
     }
 }

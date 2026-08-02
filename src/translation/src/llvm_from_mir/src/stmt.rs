@@ -133,35 +133,10 @@ pub fn gen_terminator<'ctx>(ctx: &mut CodegenCtx<'ctx, '_>, terminator: &mir::Te
                 ctx.builder.build_return(None).unwrap();
             }
         },
-        mir::Terminator::Unwind { target, args } => {
-            add_phi_incoming_from_operands(ctx, target, args);
-            ctx.builder.build_unreachable().unwrap();
-        }
         mir::Terminator::Unreachable => {
             ctx.builder.build_unreachable().unwrap();
         }
-        mir::Terminator::Call { callee, args } => {
-            // Diverging call: call function then unreachable
-            let callee_val = gen_operand(ctx, callee);
-            let llvm_args: Vec<BasicValueEnum<'ctx>> = args.iter().map(|a| gen_operand(ctx, a)).collect();
-
-            if callee_val.is_pointer_value() {
-                let callee_ptr = callee_val.into_pointer_value();
-                let void_ty = ctx.llvm.void_type();
-                let arg_types: Vec<inkwell::types::BasicMetadataTypeEnum<'ctx>> =
-                    llvm_args.iter().map(|v| v.get_type().into()).collect();
-                let fn_ty = void_ty.fn_type(&arg_types, false);
-                let arg_values: Vec<inkwell::values::BasicMetadataValueEnum<'ctx>> =
-                    llvm_args.iter().map(|v| (*v).into()).collect();
-                ctx.builder
-                    .build_indirect_call(fn_ty, callee_ptr, &arg_values, "")
-                    .unwrap();
-            } else {
-                panic!("Call target must be a function pointer");
-            }
-            ctx.builder.build_unreachable().unwrap();
-        }
-        mir::Terminator::CallReturn {
+        mir::Terminator::Call {
             callee,
             args,
             destination,
@@ -175,36 +150,49 @@ pub fn gen_terminator<'ctx>(ctx: &mut CodegenCtx<'ctx, '_>, terminator: &mir::Te
                 let callee_ptr = callee_val.into_pointer_value();
                 let arg_types: Vec<inkwell::types::BasicMetadataTypeEnum<'ctx>> =
                     llvm_args.iter().map(|v| v.get_type().into()).collect();
-                let dest_ty = crate::place::get_place_type_for_load(ctx, destination);
-                let llvm_dest_ty = crate::ty::gen_ty(&dest_ty, &mut ctx.ty_ctx());
-                let fn_ty = llvm_dest_ty.fn_type(&arg_types, false);
-                let arg_values: Vec<inkwell::values::BasicMetadataValueEnum<'ctx>> =
-                    llvm_args.iter().map(|v| (*v).into()).collect();
-                ctx.builder
-                    .build_indirect_call(fn_ty, callee_ptr, &arg_values, "call")
-                    .unwrap()
+
+                if let Some(dest) = destination {
+                    // Returning call
+                    let dest_ty = crate::place::get_place_type_for_load(ctx, dest);
+                    let llvm_dest_ty = crate::ty::gen_ty(&dest_ty, &mut ctx.ty_ctx());
+                    let fn_ty = llvm_dest_ty.fn_type(&arg_types, false);
+                    let arg_values: Vec<inkwell::values::BasicMetadataValueEnum<'ctx>> =
+                        llvm_args.iter().map(|v| (*v).into()).collect();
+                    ctx.builder
+                        .build_indirect_call(fn_ty, callee_ptr, &arg_values, "call")
+                        .unwrap()
+                } else {
+                    // Diverging call
+                    let void_ty = ctx.llvm.void_type();
+                    let fn_ty = void_ty.fn_type(&arg_types, false);
+                    let arg_values: Vec<inkwell::values::BasicMetadataValueEnum<'ctx>> =
+                        llvm_args.iter().map(|v| (*v).into()).collect();
+                    ctx.builder
+                        .build_indirect_call(fn_ty, callee_ptr, &arg_values, "")
+                        .unwrap()
+                }
             } else {
                 panic!("Call target must be a function pointer");
             };
 
-            // Store result to destination
-            let dest_ptr = gen_place(ctx, destination);
-            if call_result.try_as_basic_value().is_left() {
-                let result_val = call_result.try_as_basic_value().left().unwrap();
-                ctx.builder.build_store(dest_ptr, result_val).unwrap();
+            // Store result to destination if this is a returning call
+            if let Some(dest) = destination {
+                let dest_ptr = gen_place(ctx, dest);
+                if call_result.try_as_basic_value().is_left() {
+                    let result_val = call_result.try_as_basic_value().left().unwrap();
+                    ctx.builder.build_store(dest_ptr, result_val).unwrap();
+                }
             }
 
-            // Add phi incoming values for block args
-            add_phi_incoming_from_operands(ctx, target, target_args);
-
-            let target_bb = ctx.get_llvm_block(target);
-            ctx.builder.build_unconditional_branch(target_bb).unwrap();
-        }
-        mir::Terminator::Resume => {
-            ctx.builder.build_unreachable().unwrap();
-        }
-        mir::Terminator::Abort => {
-            ctx.builder.build_unreachable().unwrap();
+            // Add phi incoming values for block args and branch if returning
+            if let Some(t) = target {
+                add_phi_incoming_from_operands(ctx, t, target_args);
+                let target_bb = ctx.get_llvm_block(t);
+                ctx.builder.build_unconditional_branch(target_bb).unwrap();
+            } else {
+                // Diverging call — unreachable after call
+                ctx.builder.build_unreachable().unwrap();
+            }
         }
     }
 }
