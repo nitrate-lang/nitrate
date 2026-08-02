@@ -1,7 +1,7 @@
 use crate::{Interpreter, package::Manifest};
 use clap::Parser;
 use nitrate_diagnosis::CompilerLog;
-use nitrate_translation::{LlvmGenerated, MirLowered};
+use nitrate_translation::MirLowered;
 use nitrate_translation::{Pipeline, PipelineConfig, hir, llvm::OptLevel, mir};
 use slog::{debug, error, info};
 use std::collections::HashSet;
