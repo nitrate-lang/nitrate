@@ -32,21 +32,59 @@ pub fn gen_statement<'ctx>(ctx: &mut CodegenCtx<'ctx, '_>, stmt: &mir::Statement
     }
 }
 
+/// Add the block arguments from a predecessor's terminator to the target's phi nodes.
+///
+/// Block arguments on terminators carry the actual values that should be bound to
+/// a successor block's formal parameters. This function stores those operand values
+/// into the phi node incoming value map so they can be resolved when the block is
+/// later generated.
+fn add_phi_incoming_from_operands<'ctx>(
+    ctx: &mut CodegenCtx<'ctx, '_>,
+    target: &mir::BasicBlockId,
+    block_args: &[mir::Operand],
+) {
+    if block_args.is_empty() {
+        return;
+    }
+
+    let curr_bb = ctx.curr_block.expect("no current block for phi incoming");
+
+    // Evaluate all operands first (before borrowing block_phi_nodes)
+    let arg_vals: Vec<BasicValueEnum<'ctx>> = block_args.iter().map(|arg| gen_operand(ctx, arg)).collect();
+
+    // Now add them as incoming values to the target block's phi nodes
+    if let Some(phi_list) = ctx.block_phi_nodes.get(&target.as_usize()) {
+        for (i, phi_node) in phi_list.iter().enumerate() {
+            if let Some(arg_val) = arg_vals.get(i) {
+                phi_node.borrow_mut().add_incoming(&[(arg_val, curr_bb)]);
+            }
+        }
+    }
+}
+
 /// Generate LLVM IR for a MIR terminator.
 pub fn gen_terminator<'ctx>(ctx: &mut CodegenCtx<'ctx, '_>, terminator: &mir::Terminator) {
     match terminator {
-        mir::Terminator::Goto { target } => {
+        mir::Terminator::Goto { target, args } => {
             let target_bb = ctx.get_llvm_block(target);
+            add_phi_incoming_from_operands(ctx, target, args);
             ctx.builder.build_unconditional_branch(target_bb).unwrap();
         }
         mir::Terminator::If {
             condition,
             true_target,
+            true_args,
             false_target,
+            false_args,
         } => {
             let cond_val = gen_operand(ctx, condition);
             let true_bb = ctx.get_llvm_block(true_target);
             let false_bb = ctx.get_llvm_block(false_target);
+
+            // Add phi incoming values for both branches before the branch instruction
+            add_phi_incoming_from_operands(ctx, true_target, true_args);
+            add_phi_incoming_from_operands(ctx, false_target, false_args);
+
             ctx.builder
                 .build_conditional_branch(cond_val.into_int_value(), true_bb, false_bb)
                 .unwrap();
@@ -55,17 +93,23 @@ pub fn gen_terminator<'ctx>(ctx: &mut CodegenCtx<'ctx, '_>, terminator: &mir::Te
             discr,
             targets,
             otherwise,
+            otherwise_args,
         } => {
             let discr_val = gen_operand(ctx, discr);
             let discr_int = discr_val.into_int_value();
             let otherwise_bb = ctx.get_llvm_block(otherwise);
 
+            // Add phi incoming values for the default case
+            add_phi_incoming_from_operands(ctx, otherwise, otherwise_args);
+
             // Build case list
             let cases: Vec<(inkwell::values::IntValue<'ctx>, inkwell::basic_block::BasicBlock<'ctx>)> = targets
                 .iter()
-                .map(|(val, target)| {
+                .map(|(val, target, target_args)| {
                     let target_bb = ctx.get_llvm_block(target);
                     let int_type = ctx.llvm.custom_width_int_type(discr_int.get_type().get_bit_width());
+                    // Add phi incoming values for this case
+                    add_phi_incoming_from_operands(ctx, target, target_args);
                     // For values > u64::MAX, use arbitrary precision.
                     let const_val = if *val > u64::MAX as u128 {
                         let low = (*val & 0xFFFFFFFFFFFFFFFF) as u64;
@@ -89,7 +133,8 @@ pub fn gen_terminator<'ctx>(ctx: &mut CodegenCtx<'ctx, '_>, terminator: &mir::Te
                 ctx.builder.build_return(None).unwrap();
             }
         },
-        mir::Terminator::Unwind { target: _ } => {
+        mir::Terminator::Unwind { target, args } => {
+            add_phi_incoming_from_operands(ctx, target, args);
             ctx.builder.build_unreachable().unwrap();
         }
         mir::Terminator::Unreachable => {
@@ -121,6 +166,7 @@ pub fn gen_terminator<'ctx>(ctx: &mut CodegenCtx<'ctx, '_>, terminator: &mir::Te
             args,
             destination,
             target,
+            target_args,
         } => {
             let callee_val = gen_operand(ctx, callee);
             let llvm_args: Vec<BasicValueEnum<'ctx>> = args.iter().map(|a| gen_operand(ctx, a)).collect();
@@ -147,6 +193,9 @@ pub fn gen_terminator<'ctx>(ctx: &mut CodegenCtx<'ctx, '_>, terminator: &mir::Te
                 let result_val = call_result.try_as_basic_value().left().unwrap();
                 ctx.builder.build_store(dest_ptr, result_val).unwrap();
             }
+
+            // Add phi incoming values for block args
+            add_phi_incoming_from_operands(ctx, target, target_args);
 
             let target_bb = ctx.get_llvm_block(target);
             ctx.builder.build_unconditional_branch(target_bb).unwrap();

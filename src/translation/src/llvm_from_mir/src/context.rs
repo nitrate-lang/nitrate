@@ -4,10 +4,11 @@ use inkwell::builder::Builder;
 use inkwell::llvm_sys::prelude::{LLVMModuleRef, LLVMValueRef};
 use inkwell::module::Module;
 use inkwell::types::BasicTypeEnum;
-use inkwell::values::{FunctionValue, PointerValue};
+use inkwell::values::{FunctionValue, PhiValue, PointerValue};
 use nitrate_llvm::LLVMContext;
 use nitrate_mir::prelude as mir;
 use nitrate_nstring::NString;
+use std::cell::RefCell;
 use std::collections::HashMap;
 
 // ─────────────────────────────────────────────────────────────
@@ -44,6 +45,11 @@ pub struct CodegenCtx<'ctx, 'module> {
 
     /// The current function being compiled
     pub function: FunctionValue<'ctx>,
+
+    /// Map from MIR BasicBlockId (as usize) → list of phi nodes for block arguments.
+    /// Each phi node corresponds to one block argument and will receive incoming
+    /// values from predecessor terminators that carry block arguments.
+    pub block_phi_nodes: HashMap<usize, Vec<RefCell<PhiValue<'ctx>>>>,
 }
 
 impl<'ctx, 'module> CodegenCtx<'ctx, 'module> {
@@ -65,6 +71,7 @@ impl<'ctx, 'module> CodegenCtx<'ctx, 'module> {
             curr_block: None,
             blocks: HashMap::new(),
             function,
+            block_phi_nodes: HashMap::new(),
         }
     }
 

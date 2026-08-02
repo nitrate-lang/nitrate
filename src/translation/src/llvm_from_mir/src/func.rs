@@ -4,10 +4,11 @@ use crate::stmt::{gen_statement, gen_terminator};
 use crate::ty::{TypegenCtx, gen_ty};
 use inkwell::module::{Linkage, Module};
 use inkwell::types::{BasicMetadataTypeEnum, BasicType, BasicTypeEnum};
-use inkwell::values::{AsValueRef, FunctionValue, PointerValue};
+use inkwell::values::{AsValueRef, FunctionValue, PhiValue, PointerValue};
 use nitrate_llvm::LLVMContext;
 use nitrate_mir::prelude as mir;
 use nitrate_nstring::NString;
+use std::cell::RefCell;
 use std::collections::HashMap;
 
 /// Generate LLVM IR for a single MIR function.
@@ -36,6 +37,42 @@ pub fn gen_function<'ctx>(ctx: &mut CodegenCtx<'ctx, '_>, llvm_function: Functio
     // Create all basic blocks first (to allow forward references)
     for bb_id in ctx.mir_func.blocks.iter() {
         ctx.get_llvm_block(bb_id);
+    }
+
+    // Create phi nodes for blocks that have block arguments.
+    // Each block argument becomes a phi node that will receive incoming
+    // values from predecessor terminators.
+    for bb_id in ctx.mir_func.blocks.iter() {
+        let bb_data = bb_id.borrow();
+        if bb_data.args.is_empty() {
+            continue;
+        }
+
+        let llvm_bb = ctx.get_llvm_block(bb_id);
+
+        // Temporarily position at start of target block to create phi nodes
+        let saved_position = ctx.builder.get_insert_block();
+        ctx.position_at_end(llvm_bb);
+        if let Some(first_instr) = llvm_bb.get_first_instruction() {
+            ctx.builder.position_before(&first_instr);
+        }
+
+        let mut phi_nodes: Vec<RefCell<PhiValue<'ctx>>> = Vec::new();
+        for (i, arg_ty) in bb_data.args.iter().enumerate() {
+            let llvm_ty = gen_ty(arg_ty, &mut ctx.ty_ctx());
+            let phi = ctx
+                .builder
+                .build_phi(llvm_ty, &format!("phi_{}_{}", bb_id.as_usize(), i))
+                .unwrap();
+            phi_nodes.push(RefCell::new(phi));
+        }
+
+        ctx.block_phi_nodes.insert(bb_id.as_usize(), phi_nodes);
+
+        // Restore position
+        if let Some(saved) = saved_position {
+            ctx.position_at_end(saved);
+        }
     }
 
     // Branch from entry to the first basic block

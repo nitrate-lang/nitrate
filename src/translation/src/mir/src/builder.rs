@@ -194,6 +194,7 @@ impl<'b> MirFunctionBuilder<'b> {
         let bb = BasicBlock {
             statements: ThinVec::new(),
             terminator: Terminator::Unreachable,
+            args: ThinVec::new(),
         };
         let bb_id: BasicBlockId = get_storage(|s| s.store_basic_block(bb));
         if self.entry_block.is_none() {
@@ -251,8 +252,17 @@ impl<'b> MirFunctionBuilder<'b> {
     }
 
     /// Shorthand: unconditional branch to target.
+    /// `args` are the block arguments passed to the target block.
     pub fn goto(&mut self, target: BasicBlockId) -> &mut Self {
-        self.set_terminator(Terminator::Goto { target })
+        self.set_terminator(Terminator::Goto {
+            target,
+            args: ThinVec::new(),
+        })
+    }
+
+    /// Shorthand: unconditional branch with block arguments.
+    pub fn goto_with_args(&mut self, target: BasicBlockId, args: ThinVec<Operand>) -> &mut Self {
+        self.set_terminator(Terminator::Goto { target, args })
     }
 
     /// Shorthand: conditional branch.
@@ -260,7 +270,27 @@ impl<'b> MirFunctionBuilder<'b> {
         self.set_terminator(Terminator::If {
             condition,
             true_target,
+            true_args: ThinVec::new(),
             false_target,
+            false_args: ThinVec::new(),
+        })
+    }
+
+    /// Shorthand: conditional branch with block arguments.
+    pub fn if_br_with_args(
+        &mut self,
+        condition: Operand,
+        true_target: BasicBlockId,
+        true_args: ThinVec<Operand>,
+        false_target: BasicBlockId,
+        false_args: ThinVec<Operand>,
+    ) -> &mut Self {
+        self.set_terminator(Terminator::If {
+            condition,
+            true_target,
+            true_args,
+            false_target,
+            false_args,
         })
     }
 
@@ -287,7 +317,39 @@ impl<'b> MirFunctionBuilder<'b> {
             args,
             destination,
             target,
+            target_args: ThinVec::new(),
         })
+    }
+
+    /// Shorthand: call with return value and block arguments to target.
+    pub fn call_return_with_args(
+        &mut self,
+        callee: Operand,
+        args: ThinVec<Operand>,
+        destination: Place,
+        target: BasicBlockId,
+        target_args: ThinVec<Operand>,
+    ) -> &mut Self {
+        self.set_terminator(Terminator::CallReturn {
+            callee,
+            args,
+            destination,
+            target,
+            target_args,
+        })
+    }
+
+    /// Shorthand: unwind with block arguments.
+    pub fn unwind(&mut self, target: BasicBlockId) -> &mut Self {
+        self.set_terminator(Terminator::Unwind {
+            target,
+            args: ThinVec::new(),
+        })
+    }
+
+    /// Shorthand: unwind with block arguments.
+    pub fn unwind_with_args(&mut self, target: BasicBlockId, args: ThinVec<Operand>) -> &mut Self {
+        self.set_terminator(Terminator::Unwind { target, args })
     }
 
     /// Shorthand: unreachable.
