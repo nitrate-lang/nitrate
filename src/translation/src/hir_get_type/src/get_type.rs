@@ -161,31 +161,13 @@ impl HirGetType for Value {
                 span: ByteSpan::default(),
             }),
 
-            Value::StringLit { value: str, .. } => {
-                let element_type = Type::U8 {
-                    span: ByteSpan::default(),
-                }
-                .into();
-                let array = Type::Array {
-                    span: ByteSpan::default(),
-                    element_type,
-                    len: str.len() as u32,
-                };
-                Ok(array)
-            }
+            Value::StringLit { .. } => Ok(Type::Str {
+                span: ByteSpan::default(),
+            }),
 
-            Value::BStringLit { value: vec, .. } => {
-                let element_type = Type::U8 {
-                    span: ByteSpan::default(),
-                }
-                .into();
-                let array = Type::Array {
-                    span: ByteSpan::default(),
-                    element_type,
-                    len: vec.len() as u32,
-                };
-                Ok(array)
-            }
+            Value::BStringLit { .. } => Ok(Type::Str {
+                span: ByteSpan::default(),
+            }),
 
             Value::StructObject { struct_def, .. } => Ok(Type::Struct {
                 span: ByteSpan::default(),
