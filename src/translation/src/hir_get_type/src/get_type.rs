@@ -1,8 +1,6 @@
-use std::ops::Deref;
-
 use nitrate_hir::prelude::*;
-use nitrate_nstring::NString;
 use nitrate_tree::ByteSpan;
+use std::ops::Deref;
 
 #[derive(Debug)]
 pub enum TypeInferenceError {

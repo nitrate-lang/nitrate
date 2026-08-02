@@ -82,15 +82,11 @@ fn test_import_missing_semicolon() {
     assert!(log.error_bit());
 }
 
-
-
 // ---------- IMPORT ERRORS ----------
 
 // SyntaxErr::ImportAliasMissingName (variant 41)
 
-
 // SyntaxErr::ImportExpectedStarOrGroup (variant 42)
-
 
 // SyntaxErr::ImportGroupExpectedEnd (variant 43)
 #[test]
@@ -98,7 +94,6 @@ fn test_import_group_expected_end() {
     let (_, log) = parse_source_no_assert("use foo::{bar, baz");
     assert!(log.error_bit());
 }
-
 
 // ========== IMPORT EDGE CASES ==========
 
@@ -108,7 +103,6 @@ fn test_import_global_path() {
     assert!(matches!(&imp.use_tree, UseTree::Single { .. }));
 }
 
-
 // ========== ITEM PATH EDGE CASES ==========
 
 #[test]
@@ -117,3 +111,190 @@ fn test_use_parse_item_path_expected_name() {
     assert!(log.error_bit());
 }
 
+// ========== SELF IMPORT ==========
+
+#[test]
+fn test_import_self_bare() {
+    let imp = single_import(parse_source("use self;"));
+    assert!(matches!(&imp.use_tree, UseTree::Single { .. }));
+    let path = imp.use_tree.path();
+    assert_eq!(path.segments.len(), 1);
+    assert_eq!(path.segments[0].segment, "self");
+    assert!(matches!(path.segments[0].prefix, Some(PathPrefix::SelfPath)));
+}
+
+#[test]
+fn test_import_self_module() {
+    let imp = single_import(parse_source("use self::bar;"));
+    assert!(matches!(&imp.use_tree, UseTree::Single { .. }));
+    let path = imp.use_tree.path();
+    assert_eq!(path.segments.len(), 2);
+    assert_eq!(path.segments[0].segment, "self");
+    assert!(matches!(path.segments[0].prefix, Some(PathPrefix::SelfPath)));
+    assert_eq!(path.segments[1].segment, "bar");
+    assert!(path.segments[1].prefix.is_none());
+}
+
+#[test]
+fn test_import_self_module_alias() {
+    assert!(matches!(
+        &single_import(parse_source("use self::bar as b;")).use_tree,
+        UseTree::Alias { .. }
+    ));
+}
+
+// ========== CRATE IMPORT ==========
+
+#[test]
+fn test_import_crate_bare() {
+    let imp = single_import(parse_source("use crate;"));
+    assert!(matches!(&imp.use_tree, UseTree::Single { .. }));
+    let path = imp.use_tree.path();
+    assert_eq!(path.segments.len(), 1);
+    assert_eq!(path.segments[0].segment, "crate");
+    assert!(matches!(path.segments[0].prefix, Some(PathPrefix::Crate)));
+}
+
+#[test]
+fn test_import_crate_module() {
+    let imp = single_import(parse_source("use crate::bar;"));
+    assert!(matches!(&imp.use_tree, UseTree::Single { .. }));
+    let path = imp.use_tree.path();
+    assert_eq!(path.segments.len(), 2);
+    assert_eq!(path.segments[0].segment, "crate");
+    assert!(matches!(path.segments[0].prefix, Some(PathPrefix::Crate)));
+    assert_eq!(path.segments[1].segment, "bar");
+    assert!(path.segments[1].prefix.is_none());
+}
+
+#[test]
+fn test_import_crate_deep_path() {
+    let imp = single_import(parse_source("use crate::foo::bar;"));
+    assert!(matches!(&imp.use_tree, UseTree::Single { .. }));
+    let path = imp.use_tree.path();
+    assert_eq!(path.segments.len(), 3);
+    assert!(matches!(path.segments[0].prefix, Some(PathPrefix::Crate)));
+    assert_eq!(path.segments[1].segment, "foo");
+    assert_eq!(path.segments[2].segment, "bar");
+}
+
+#[test]
+fn test_import_crate_glob() {
+    assert!(matches!(
+        &single_import(parse_source("use crate::foo::*;")).use_tree,
+        UseTree::UseAll { .. }
+    ));
+}
+
+#[test]
+fn test_import_crate_group() {
+    assert!(matches!(
+        &single_import(parse_source("use crate::foo::{a, b};")).use_tree,
+        UseTree::Group { .. }
+    ));
+}
+
+#[test]
+fn test_import_crate_alias() {
+    assert!(matches!(
+        &single_import(parse_source("use crate::foo as f;")).use_tree,
+        UseTree::Alias { .. }
+    ));
+}
+
+// ========== SUPER IMPORT ==========
+
+#[test]
+fn test_import_super_bare() {
+    let imp = single_import(parse_source("use super;"));
+    assert!(matches!(&imp.use_tree, UseTree::Single { .. }));
+    let path = imp.use_tree.path();
+    assert_eq!(path.segments.len(), 1);
+    assert_eq!(path.segments[0].segment, "super");
+    assert!(matches!(path.segments[0].prefix, Some(PathPrefix::Super)));
+}
+
+#[test]
+fn test_import_super_module() {
+    let imp = single_import(parse_source("use super::bar;"));
+    assert!(matches!(&imp.use_tree, UseTree::Single { .. }));
+    let path = imp.use_tree.path();
+    assert_eq!(path.segments.len(), 2);
+    assert_eq!(path.segments[0].segment, "super");
+    assert!(matches!(path.segments[0].prefix, Some(PathPrefix::Super)));
+    assert_eq!(path.segments[1].segment, "bar");
+    assert!(path.segments[1].prefix.is_none());
+}
+
+#[test]
+fn test_import_super_super() {
+    let imp = single_import(parse_source("use super::super::bar;"));
+    assert!(matches!(&imp.use_tree, UseTree::Single { .. }));
+    let path = imp.use_tree.path();
+    assert_eq!(path.segments.len(), 3);
+    assert_eq!(path.segments[0].segment, "super");
+    assert!(matches!(path.segments[0].prefix, Some(PathPrefix::Super)));
+    assert_eq!(path.segments[1].segment, "super");
+    assert_eq!(path.segments[2].segment, "bar");
+}
+
+#[test]
+fn test_import_super_super_bare() {
+    let imp = single_import(parse_source("use super::super;"));
+    assert!(matches!(&imp.use_tree, UseTree::Single { .. }));
+    let path = imp.use_tree.path();
+    assert_eq!(path.segments.len(), 2);
+    assert_eq!(path.segments[0].segment, "super");
+    assert!(matches!(path.segments[0].prefix, Some(PathPrefix::Super)));
+    assert_eq!(path.segments[1].segment, "super");
+}
+
+#[test]
+fn test_import_super_glob() {
+    assert!(matches!(
+        &single_import(parse_source("use super::*;")).use_tree,
+        UseTree::UseAll { .. }
+    ));
+}
+
+#[test]
+fn test_import_super_group() {
+    assert!(matches!(
+        &single_import(parse_source("use super::{a, b};")).use_tree,
+        UseTree::Group { .. }
+    ));
+}
+
+#[test]
+fn test_import_super_alias() {
+    assert!(matches!(
+        &single_import(parse_source("use super::foo as f;")).use_tree,
+        UseTree::Alias { .. }
+    ));
+}
+
+// ========== PUB IMPORT WITH PREFIX ==========
+
+#[test]
+fn test_import_pub_crate() {
+    let imp = single_import(parse_source("pub use crate::foo;"));
+    assert!(matches!(imp.visibility, Some(Visibility::Public)));
+    let path = imp.use_tree.path();
+    assert!(matches!(path.segments[0].prefix, Some(PathPrefix::Crate)));
+}
+
+#[test]
+fn test_import_pub_super() {
+    let imp = single_import(parse_source("pub use super::foo;"));
+    assert!(matches!(imp.visibility, Some(Visibility::Public)));
+    let path = imp.use_tree.path();
+    assert!(matches!(path.segments[0].prefix, Some(PathPrefix::Super)));
+}
+
+#[test]
+fn test_import_pub_self() {
+    let imp = single_import(parse_source("pub use self::foo;"));
+    assert!(matches!(imp.visibility, Some(Visibility::Public)));
+    let path = imp.use_tree.path();
+    assert!(matches!(path.segments[0].prefix, Some(PathPrefix::SelfPath)));
+}

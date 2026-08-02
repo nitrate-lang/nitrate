@@ -4,7 +4,7 @@ use nitrate_nstring::NString;
 use nitrate_token_lexer::{Lexer, LexerError};
 use nitrate_tree::{
     Order, ParseTreeIterMut, RefNodeMut,
-    ast::{Import, Item, Module, Visibility},
+    ast::{Import, Item, Module, PathPrefix, Visibility},
 };
 use nitrate_tree_parse::Parser;
 use std::{collections::HashSet, sync::Arc};
@@ -16,6 +16,9 @@ pub struct ImportContext {
     pub package_name: NString,
     pub source_filepath: SourceFilePath,
     pub package_search_paths: Arc<Vec<FolderPath>>,
+    /// The root directory of the current package (for `crate::` resolution).
+    /// This is typically the directory containing `no3.toml`.
+    pub package_root: Option<SourceFilePath>,
 }
 
 impl ImportContext {
@@ -24,11 +27,17 @@ impl ImportContext {
             package_name,
             source_filepath,
             package_search_paths: Arc::new(Vec::new()),
+            package_root: None,
         }
     }
 
     pub fn with_package_search_paths(mut self, paths: Vec<FolderPath>) -> Self {
         self.package_search_paths = Arc::new(paths);
+        self
+    }
+
+    pub fn with_package_root(mut self, root: SourceFilePath) -> Self {
+        self.package_root = Some(root);
         self
     }
 
@@ -40,6 +49,56 @@ impl ImportContext {
             }
         }
 
+        None
+    }
+
+    /// Resolve a `crate::` path to the given relative module path within this package.
+    fn resolve_crate_path(&self, relative_path: &str) -> Option<SourceFilePath> {
+        let root = self.package_root.as_ref()?;
+        let mut candidate = root.clone();
+        candidate.pop(); // pop entry.nit
+        candidate.pop(); // pop src
+        candidate.push(format!("src/{}.nit", relative_path));
+        if candidate.exists() {
+            return Some(candidate);
+        }
+        // Try mod.nit variant
+        candidate.pop();
+        candidate.push(format!("{}/mod.nit", relative_path));
+        if candidate.exists() {
+            return Some(candidate);
+        }
+        None
+    }
+
+    /// Resolve a `self::` path (relative to current module's directory).
+    fn resolve_self_path(&self, relative_path: &str) -> Option<SourceFilePath> {
+        let parent = self.source_filepath.parent()?;
+        let candidate = parent.join(format!("{}.nit", relative_path));
+        if candidate.exists() {
+            return Some(candidate);
+        }
+        let candidate = parent.join(relative_path).join("mod.nit");
+        if candidate.exists() {
+            return Some(candidate);
+        }
+        None
+    }
+
+    /// Resolve a `super::` path by going up N levels from the current file.
+    fn resolve_super_path(&self, super_count: usize, relative_path: &str) -> Option<SourceFilePath> {
+        let mut current = self.source_filepath.parent()?.to_path_buf();
+        for _ in 0..super_count {
+            current = current.parent()?.to_path_buf();
+        }
+        let candidate = current.join(format!("{}.nit", relative_path));
+        if candidate.exists() {
+            return Some(candidate);
+        }
+        let candidate = current.join(relative_path).join("mod.nit");
+        if candidate.exists() {
+            return Some(candidate);
+        }
         None
     }
 }
@@ -174,6 +233,7 @@ fn decide_what_to_import(ctx: &ImportContext, import_name: NString, log: &Compil
             package_name: ctx.package_name.clone(),
             source_filepath,
             package_search_paths: ctx.package_search_paths.clone(),
+            package_root: ctx.package_root.clone(),
         });
     }
 
@@ -183,6 +243,7 @@ fn decide_what_to_import(ctx: &ImportContext, import_name: NString, log: &Compil
             package_name: ctx.package_name.clone(),
             source_filepath,
             package_search_paths: ctx.package_search_paths.clone(),
+            package_root: ctx.package_root.clone(),
         });
     }
 
@@ -193,6 +254,7 @@ fn decide_what_to_import(ctx: &ImportContext, import_name: NString, log: &Compil
             package_name: import_name,
             source_filepath,
             package_search_paths: ctx.package_search_paths.clone(),
+            package_root: ctx.package_root.clone(),
         });
     }
 
@@ -212,13 +274,15 @@ fn resolve_import(
     depth: &mut Vec<NString>,
 ) {
     let import_path = import.use_tree.path();
-    let import_name = match import_path.segments.first().map(|s| s.segment.clone()) {
-        Some(name) => name.into(),
+    let first_seg = match import_path.segments.first() {
+        Some(seg) => seg,
         None => return,
     };
 
-    // For multi-segment paths like `use file::world`, we need to resolve the module first,
-    // then extract the specific item named by the remaining segments.
+    // Determine the import name and whether we have a path prefix
+    let import_name: NString = first_seg.segment.clone().into();
+
+    // Build the item name from remaining segments (after the module name)
     let item_name: Option<String> = if import_path.segments.len() > 1 {
         Some(
             import_path.segments[1..]
@@ -233,9 +297,7 @@ fn resolve_import(
 
     const MAX_IMPORT_DEPTH: usize = 256;
     if depth.len() >= MAX_IMPORT_DEPTH {
-        // This prevents stack overflow and other bugs.
-        // For example, prevents crashes when cyclic importing symlinked files.
-        log.report(&ResolveIssue::ImportDepthLimitExceeded(import_name));
+        log.report(&ResolveIssue::ImportDepthLimitExceeded(import_name.clone()));
         return;
     } else {
         depth.push(import_name.clone());
@@ -252,7 +314,125 @@ fn resolve_import(
         visited.insert(import_name.clone());
     }
 
-    if let Some(what) = decide_what_to_import(ctx, import_name.clone(), log) {
+    // Resolve based on the path prefix
+    let what: Option<ImportContext> = match first_seg.prefix {
+        Some(PathPrefix::Crate) => {
+            // `use crate::path` or bare `use crate;`
+            if let Some(item_name) = &item_name {
+                ctx.resolve_crate_path(item_name).map(|path| ImportContext {
+                    package_name: ctx.package_name.clone(),
+                    source_filepath: path,
+                    package_search_paths: ctx.package_search_paths.clone(),
+                    package_root: ctx.package_root.clone(),
+                })
+            } else {
+                // Bare `use crate;` — resolve to the package root (entry.nit)
+                ctx.package_root.clone().map(|root| ImportContext {
+                    package_name: ctx.package_name.clone(),
+                    source_filepath: root,
+                    package_search_paths: ctx.package_search_paths.clone(),
+                    package_root: ctx.package_root.clone(),
+                })
+            }
+        }
+
+        Some(PathPrefix::Super) => {
+            // Count how many `super` segments we have (consecutive from the start)
+            let super_count = import_path.segments.iter().take_while(|s| s.segment == "super").count();
+
+            // Remaining segments after the super chain form the relative path
+            let relative_path: String = import_path.segments[super_count..]
+                .iter()
+                .map(|s| s.segment.clone())
+                .collect::<Vec<_>>()
+                .join("::");
+
+            if relative_path.is_empty() {
+                // Bare `super` or `super::super` — resolve to parent entry.nit
+                let parent = ctx.source_filepath.parent();
+                if parent.is_none() {
+                    None
+                } else {
+                    let mut current = parent.unwrap().to_path_buf();
+                    let mut valid = true;
+                    for _ in 0..super_count {
+                        match current.parent() {
+                            Some(p) => current = p.to_path_buf(),
+                            None => {
+                                valid = false;
+                                break;
+                            }
+                        }
+                    }
+                    if !valid {
+                        None
+                    } else {
+                        let candidate = current.join("entry.nit");
+                        if !candidate.exists() {
+                            let src_dir = current.join("src");
+                            if src_dir.exists() {
+                                let entry = src_dir.join("entry.nit");
+                                if entry.exists() {
+                                    Some(ImportContext {
+                                        package_name: ctx.package_name.clone(),
+                                        source_filepath: entry,
+                                        package_search_paths: ctx.package_search_paths.clone(),
+                                        package_root: ctx.package_root.clone(),
+                                    })
+                                } else {
+                                    None
+                                }
+                            } else {
+                                None
+                            }
+                        } else {
+                            Some(ImportContext {
+                                package_name: ctx.package_name.clone(),
+                                source_filepath: candidate,
+                                package_search_paths: ctx.package_search_paths.clone(),
+                                package_root: ctx.package_root.clone(),
+                            })
+                        }
+                    }
+                }
+            } else {
+                ctx.resolve_super_path(super_count, &relative_path)
+                    .map(|path| ImportContext {
+                        package_name: ctx.package_name.clone(),
+                        source_filepath: path,
+                        package_search_paths: ctx.package_search_paths.clone(),
+                        package_root: ctx.package_root.clone(),
+                    })
+            }
+        }
+
+        Some(PathPrefix::SelfPath) => {
+            // `use self::path` or bare `use self;`
+            if let Some(item_name) = &item_name {
+                ctx.resolve_self_path(item_name).map(|path| ImportContext {
+                    package_name: ctx.package_name.clone(),
+                    source_filepath: path,
+                    package_search_paths: ctx.package_search_paths.clone(),
+                    package_root: ctx.package_root.clone(),
+                })
+            } else {
+                // Bare `use self;` — reference the current module (same file)
+                Some(ImportContext {
+                    package_name: ctx.package_name.clone(),
+                    source_filepath: ctx.source_filepath.clone(),
+                    package_search_paths: ctx.package_search_paths.clone(),
+                    package_root: ctx.package_root.clone(),
+                })
+            }
+        }
+
+        None => {
+            // No prefix — standard module import (existing logic)
+            decide_what_to_import(ctx, import_name.clone(), log)
+        }
+    };
+
+    if let Some(what) = what {
         let inside = ctx.package_name == what.package_name;
         let content = load_source_file(&what.source_filepath, what.package_name.clone(), inside, log);
 
@@ -260,40 +440,62 @@ fn resolve_import(
             resolve_imports_guarded(&what, &mut module, log, visited, depth);
             module.visibility = import.visibility;
 
-            if let Some(item_name) = &item_name {
-                // Single item import: extract the named item from the module
-                // (used for `use file::world` style imports)
+            if import_path.segments.len() > 1 {
+                // Multi-segment path: extract the named item from the module
                 let items = std::mem::take(&mut module.items);
-                let item_name_ns = item_name.as_str().into();
+
+                // Build the target item name from segments after the module name
+                // For `use crate::foo::bar`, after resolving `crate::foo`, look for `bar`
+                let target_segments: Vec<&str> = import_path
+                    .segments
+                    .iter()
+                    .skip_while(|s| s.prefix.is_some())
+                    .map(|s| s.segment.as_str())
+                    .collect();
+
+                let target: NString = if target_segments.len() > 1 {
+                    target_segments[1..].join("::").into()
+                } else if let Some(ref item_name) = item_name {
+                    item_name.as_str().into()
+                } else {
+                    // Only one non-prefix segment — it IS the module we imported
+                    module.items = items;
+                    import.resolved = Some(vec![Item::Module(Box::new(module))]);
+                    visited.remove(&import_name);
+                    depth.pop();
+                    return;
+                };
+
                 let found: Vec<Item> = items
                     .into_iter()
-                    .filter(|item| {
-                        // Check if the item name matches
-                        match item {
-                            Item::Function(f) => f.name == item_name_ns,
-                            Item::Struct(s) => s.name == item_name_ns,
-                            Item::Enum(e) => e.name == item_name_ns,
-                            Item::Trait(t) => t.name == item_name_ns,
-                            Item::TypeAlias(t) => t.name == item_name_ns,
-                            Item::Variable(v) => v.name == item_name_ns,
-                            _ => false,
-                        }
+                    .filter(|item| match item {
+                        Item::Function(f) => f.name == target,
+                        Item::Struct(s) => s.name == target,
+                        Item::Enum(e) => e.name == target,
+                        Item::Trait(t) => t.name == target,
+                        Item::TypeAlias(t) => t.name == target,
+                        Item::Variable(v) => v.name == target,
+                        _ => false,
                     })
                     .collect();
 
                 if found.is_empty() {
                     log.report(&ResolveIssue::ImportNotFound((
-                        format!("{}::{}", import_name, item_name).into(),
+                        format!("{}::{}", import_name, target).into(),
                         std::io::Error::from(std::io::ErrorKind::NotFound),
                     )));
                 } else {
                     import.resolved = Some(found);
                 }
             } else {
-                // Module import: import the whole module
-                // (used for `use file` style imports)
+                // Single segment path: import the whole module
                 import.resolved = Some(vec![Item::Module(Box::new(module))]);
             }
+        } else {
+            log.report(&ResolveIssue::ImportNotFound((
+                import_name.clone(),
+                std::io::Error::from(std::io::ErrorKind::NotFound),
+            )));
         }
     }
 

@@ -67,9 +67,9 @@ The combination of start and end positions enables the error reporting system to
 
 The `Token` enum (defined in `nitrate_token`) encompasses all lexical elements of the Nitrate language.
 
-### Keywords (52 tokens)
+### Keywords (54 tokens)
 
-Nitrate reserves 52 keywords that cannot be used as identifiers (except through the atypical identifier mechanism described below):
+Nitrate reserves 54 keywords that cannot be used as identifiers (except through the atypical identifier mechanism described below):
 
 | Token      | Keyword    | Token         | Keyword    | Token    | Keyword  |
 | ---------- | ---------- | ------------- | ---------- | -------- | -------- |
@@ -88,7 +88,8 @@ Nitrate reserves 52 keywords that cannot be used as identifiers (except through 
 | `Await`    | `await`    | `Asm`         | `asm`      | `Null`   | `null`   |
 | `True`     | `true`     | `False`       | `false`    | `Bool`   | `bool`   |
 | `As`       | `as`       | `Typeof`      | `typeof`   | `Extern` | `extern` |
-| `SelfType` | `Self`     | `SelfKeyword` | `self`     |          |          |
+| `SelfType` | `Self`     | `SelfKeyword` | `self`     | `Super`  | `super`  |
+| `Crate`    | `crate`    |               |            |          |          |
 
 The keyword set includes control flow (`if`, `else`, `while`, `for`, `match`, `break`, `continue`, `ret`, `loop`), type system (`struct`, `enum`, `trait`, `impl`, `type`, `union`, `contract`, `class`, `scope`), visibility (`pub`, `sec`, `pro`), memory management (`let`, `var`, `mut`, `const`, `static`), safety (`safe`, `unsafe`), concurrency (`async`, `await`), and special constructs (`asm`, `extern`, `use`, `mod`, `promise`).
 

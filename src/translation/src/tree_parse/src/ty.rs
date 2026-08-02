@@ -3,7 +3,6 @@ use crate::diagnosis::SyntaxErr;
 use crate::helper::MAX_LIMIT;
 use nitrate_tree::ByteSpan;
 
-use nitrate_nstring::NString;
 use nitrate_token::Token;
 use nitrate_tree::ast::{
     ArrayType, Bool, Expr, Float32, Float64, FuncTypeParam, FuncTypeParams, FunctionType, Int8, Int16, Int32, Int64,

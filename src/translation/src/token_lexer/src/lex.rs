@@ -163,6 +163,14 @@ impl<'a> Lexer<'a> {
                 self.skip_tok();
                 Some("self".to_string())
             }
+            Token::Super => {
+                self.skip_tok();
+                Some("super".to_string())
+            }
+            Token::Crate => {
+                self.skip_tok();
+                Some("crate".to_string())
+            }
             _ => None,
         }
     }
@@ -332,6 +340,8 @@ impl<'a> Lexer<'a> {
             b"typeof" => Some(Token::Typeof),
             b"Self" => Some(Token::SelfType),
             b"self" => Some(Token::SelfKeyword),
+            b"super" => Some(Token::Super),
+            b"crate" => Some(Token::Crate),
             _ => None,
         } {
             Ok(keyword)

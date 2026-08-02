@@ -50,6 +50,12 @@ impl Spanned for Module {
 pub struct ItemPathSegment {
     pub span: ByteSpan,
     pub segment: String,
+    /// The prefix of the first path segment, if any:
+    /// - `Crate` for `crate::foo`
+    /// - `Super` for `super::foo` (each `super` becomes a segment)
+    /// - `SelfPath` for `self::foo`
+    /// - `None` for regular names or `::foo` (global path)
+    pub prefix: Option<PathPrefix>,
 }
 
 impl Spanned for ItemPathSegment {
@@ -59,6 +65,18 @@ impl Spanned for ItemPathSegment {
     fn set_span(&mut self, span: ByteSpan) {
         self.span = span;
     }
+}
+
+/// Represents the leading path prefix keyword in a use/item path.
+#[skip_serializing_none]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum PathPrefix {
+    /// `crate::` — references the root of the current package
+    Crate,
+    /// `super::` — references the parent module (can be chained)
+    Super,
+    /// `self::` — references the current module
+    SelfPath,
 }
 
 #[skip_serializing_none]

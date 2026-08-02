@@ -65,14 +65,6 @@ impl<'b> LoweringCtx<'b> {
         self.merge_point_stack.pop();
     }
 
-    fn merge_point(&self) -> Option<&mir::BasicBlockId> {
-        self.merge_point_stack.last()
-    }
-
-    fn map_value_place(&mut self, hir_value: &hir::ValueId, mir_place: mir::Place) {
-        self.value_place_map.insert(hir_value.as_usize(), mir_place);
-    }
-
     fn get_value_place(&self, hir_value: &hir::ValueId) -> Option<&mir::Place> {
         self.value_place_map.get(&hir_value.as_usize())
     }

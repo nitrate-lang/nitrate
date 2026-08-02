@@ -355,6 +355,10 @@ pub enum Token {
     SelfType,
     /// 'self' keyword - the receiver parameter in methods
     SelfKeyword,
+    /// 'super' keyword - parent module reference in paths
+    Super,
+    /// 'crate' keyword - package root reference in paths
+    Crate,
     /// 'extern'
     Extern,
 
@@ -482,6 +486,8 @@ impl std::fmt::Display for Token {
             Token::Typeof => write!(f, "typeof"),
             Token::SelfType => write!(f, "Self"),
             Token::SelfKeyword => write!(f, "self"),
+            Token::Super => write!(f, "super"),
+            Token::Crate => write!(f, "crate"),
             Token::Extern => write!(f, "extern"),
             Token::Eof => write!(f, ""),
         }

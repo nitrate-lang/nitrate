@@ -3,11 +3,10 @@ use crate::diagnosis::SyntaxErr;
 use crate::helper::MAX_LIMIT;
 use nitrate_tree::ByteSpan;
 
-use nitrate_nstring::NString;
 use nitrate_token::Token;
 use nitrate_tree::ast::{
     AssociatedItem, Enum, EnumVariant, ExternAbi, FuncParam, FuncParams, Function, Generics, GlobalVariable,
-    GlobalVariableKind, Impl, Import, Item, ItemPath, ItemPathSegment, ItemSyntaxError, Module, Mutability,
+    GlobalVariableKind, Impl, Import, Item, ItemPath, ItemPathSegment, ItemSyntaxError, Module, Mutability, PathPrefix,
     ReferenceType, Spanned, Struct, StructField, Trait, Type, TypeAlias, TypeParam, TypePath, TypePathSegment, UseTree,
 };
 
@@ -102,18 +101,154 @@ impl Parser<'_, '_> {
     fn parse_item_path(&mut self) -> ItemPath {
         let mut segments = Vec::new();
 
-        if !self.lexer.next_is(&Token::Colon) {
-            let name_start = self.lexer.peek_pos().offset;
-            let err = SyntaxErr::PathExpectedName(self.lexer.peek_pos());
-            let segment = self.parse_string_name(err);
-            let name_end = self.lexer.current_pos().offset;
+        // Handle leading `::` (global path like `::std::mem`)
+        let has_global_prefix = self.parse_double_colon();
 
-            segments.push(ItemPathSegment {
-                span: ByteSpan::new(name_start, name_end),
-                segment,
-            });
+        if !self.lexer.is_eof() {
+            let name_start = self.lexer.peek_pos().offset;
+
+            // Detect if the first token is a path prefix keyword
+            let prefix_info: Option<PathPrefix> = match self.lexer.peek_tok().token {
+                Token::Crate => {
+                    self.lexer.skip_tok();
+                    Some(PathPrefix::Crate)
+                }
+                Token::Super => {
+                    self.lexer.skip_tok();
+                    let first_super_start = name_start;
+                    let mut super_count = 1;
+
+                    // Consume chained `::super` — each `super::` adds one level up
+                    loop {
+                        let rewind_pos = self.lexer.peek_pos();
+                        if !self.parse_double_colon() {
+                            break; // No trailing `::`, bare `super` or `super::super`
+                        }
+                        if self.lexer.next_is(&Token::Super) {
+                            self.lexer.skip_tok();
+                            super_count += 1;
+                        } else {
+                            // The token after `::` is not `super`.
+                            // If it's a name, this is `super::name` and we parse it as the path.
+                            // If it's `*`, `{`, `as`, `;`, etc., rewind and let parse_use_tree handle it.
+                            if self.lexer.next_is(&Token::Star)
+                                || self.lexer.next_is(&Token::OpenBrace)
+                                || self.lexer.next_is(&Token::Semi)
+                                || self.lexer.next_is(&Token::As)
+                            {
+                                self.lexer.rewind(rewind_pos);
+                                break;
+                            }
+
+                            // It must be a segment name: push supers, then the name, then return
+                            for i in 0..super_count {
+                                segments.push(ItemPathSegment {
+                                    span: ByteSpan::new(first_super_start, self.lexer.current_pos().offset),
+                                    segment: "super".into(),
+                                    prefix: if i == 0 { Some(PathPrefix::Super) } else { None },
+                                });
+                            }
+
+                            let seg_name_start = self.lexer.peek_pos().offset;
+                            let Some(seg_name) = self.lexer.next_if_name() else {
+                                self.lexer.rewind(rewind_pos);
+                                break;
+                            };
+                            let seg_name_end = self.lexer.current_pos().offset;
+                            segments.push(ItemPathSegment {
+                                span: ByteSpan::new(seg_name_start, seg_name_end),
+                                segment: seg_name,
+                                prefix: None,
+                            });
+                            return self.finish_path(segments);
+                        }
+                    }
+
+                    // No trailing name found — it's `super` or `super::super` (bare).
+                    for i in 0..super_count {
+                        segments.push(ItemPathSegment {
+                            span: ByteSpan::new(first_super_start, self.lexer.current_pos().offset),
+                            segment: "super".into(),
+                            prefix: if i == 0 { Some(PathPrefix::Super) } else { None },
+                        });
+                    }
+                    return self.finish_path(segments);
+                }
+                Token::SelfKeyword | Token::SelfType => {
+                    self.lexer.skip_tok();
+                    Some(PathPrefix::SelfPath)
+                }
+                _ => None,
+            };
+
+            if let Some(prefix) = prefix_info {
+                // We consumed a prefix keyword (`crate` or `self`).
+                // Push the prefix segment.
+                segments.push(ItemPathSegment {
+                    span: ByteSpan::new(name_start, self.lexer.current_pos().offset),
+                    segment: match prefix {
+                        PathPrefix::Crate => "crate",
+                        PathPrefix::SelfPath => "self",
+                        PathPrefix::Super => "super",
+                    }
+                    .into(),
+                    prefix: Some(prefix),
+                });
+
+                let rewind_pos = self.lexer.peek_pos();
+                if !self.parse_double_colon() {
+                    // Bare keyword (e.g., `use crate;` or `use self;`) — we're done
+                    return self.finish_path(segments);
+                }
+
+                // We consumed `::`. Check if the next token is a use-tree
+                // operator (`*`, `{`, `as`). If so, rewind and let parse_use_tree handle it.
+                if self.lexer.next_is(&Token::Star)
+                    || self.lexer.next_is(&Token::OpenBrace)
+                    || self.lexer.next_is(&Token::Semi)
+                    || self.lexer.next_is(&Token::As)
+                {
+                    self.lexer.rewind(rewind_pos);
+                    // segments already has the prefix — return it so parse_use_tree
+                    // can consume `::*` or `::{...}` after the path.
+                    return self.finish_path(segments);
+                }
+
+                // After prefix::, parse the first real segment name directly.
+                let seg_name_start = self.lexer.peek_pos().offset;
+                let err = SyntaxErr::PathExpectedName(self.lexer.peek_pos());
+                let segment = self.parse_string_name(err);
+                let seg_name_end = self.lexer.current_pos().offset;
+
+                if !segment.is_empty() {
+                    segments.push(ItemPathSegment {
+                        span: ByteSpan::new(seg_name_start, seg_name_end),
+                        segment,
+                        prefix: None,
+                    });
+                }
+            } else {
+                // Regular first segment name (or empty for global `::name`)
+                if has_global_prefix {
+                    // The global `::` prefix consumed. Parse the first name from here.
+                }
+                let first_seg_start = self.lexer.peek_pos().offset;
+                let err = SyntaxErr::PathExpectedName(self.lexer.peek_pos());
+                let segment = self.parse_string_name(err);
+                let first_seg_end = self.lexer.current_pos().offset;
+
+                if !segment.is_empty() {
+                    segments.push(ItemPathSegment {
+                        span: ByteSpan::new(first_seg_start, first_seg_end),
+                        segment,
+                        prefix: None,
+                    });
+                }
+                // Fall through to parse remaining `::name` pairs
+            }
         }
 
+        // Parse remaining segments separated by `::`
         while !self.lexer.is_eof() {
             let rewind_pos = self.lexer.peek_pos();
 
@@ -125,19 +260,51 @@ impl Parser<'_, '_> {
                 break;
             }
 
+            // After `::`, parse the segment name (or prefix keyword)
             let name_start = self.lexer.peek_pos().offset;
-            let Some(segment) = self.lexer.next_if_name() else {
-                self.lexer.rewind(rewind_pos);
-                break;
+            let seg_prefix = match self.lexer.peek_tok().token {
+                Token::Crate => {
+                    self.lexer.skip_tok();
+                    Some(PathPrefix::Crate)
+                }
+                Token::Super => {
+                    self.lexer.skip_tok();
+                    Some(PathPrefix::Super)
+                }
+                Token::SelfKeyword | Token::SelfType => {
+                    self.lexer.skip_tok();
+                    Some(PathPrefix::SelfPath)
+                }
+                _ => None,
             };
+
             let name_end = self.lexer.current_pos().offset;
+            let segment = if seg_prefix.is_some() {
+                match seg_prefix {
+                    Some(PathPrefix::Crate) => "crate".into(),
+                    Some(PathPrefix::Super) => "super".into(),
+                    Some(PathPrefix::SelfPath) => "self".into(),
+                    None => unreachable!(),
+                }
+            } else {
+                let Some(seg) = self.lexer.next_if_name() else {
+                    self.lexer.rewind(rewind_pos);
+                    break;
+                };
+                seg
+            };
 
             segments.push(ItemPathSegment {
                 span: ByteSpan::new(name_start, name_end),
                 segment,
+                prefix: seg_prefix,
             });
         }
 
+        self.finish_path(segments)
+    }
+
+    fn finish_path(&self, segments: Vec<ItemPathSegment>) -> ItemPath {
         let path_start = segments.first().map(|s| s.span.start).unwrap_or(0);
         let path_end = segments.last().map(|s| s.span.end).unwrap_or(0);
 

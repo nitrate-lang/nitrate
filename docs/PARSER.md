@@ -245,15 +245,62 @@ File-based modules (semicolon-terminated) cause the parser to load the correspon
 
 ### Import Declarations
 
-The `use` keyword imports names from other modules into the current scope:
+The `use` keyword imports names from other modules into the current scope. Nitrate supports the full Rust-compatible import syntax:
 
 ```
-use path::to::item;      // Import a specific name
-use path::to::*;          // Import all public names from a module (wildcard)
-use path::to::{A, B, C};  // Import multiple specific names
+// Basic forms
+use path::to::item;       // Import a specific name
+use path::to::*;           // Import all public names from a module (wildcard)
+use path::to::{A, B, C};   // Import multiple specific names
+use path::to::item as alias; // Import with a local alias
+
+// Path prefix keywords (fully compatible with Rust)
+use crate::module;         // Import from the crate root
+use super::parent_module;  // Import from the parent module
+use self::sibling_module;  // Import from the current module (relative)
+use super::super::item;    // Chain multiple `super` to go up multiple levels
+
+// Visibility
+pub use module::item;      // Re-export the imported name
 ```
 
-The parser captures the use path as a series of identifiers and namespace separators (`::`), plus an optional wildcard or braced list of names. Semantic processing of imports is deferred to the resolver stage.
+#### UseTree AST Structure
+
+The parser captures import paths using the `UseTree` enum, which represents the recursive tree structure of `use` declarations:
+
+```rust
+enum UseTree {
+    Single { span, path: ItemPath },
+    Alias { span, path: ItemPath, alias: String },
+    UseAll { span, path: ItemPath },
+    Group { span, path: ItemPath, group: Vec<UseTree> },
+}
+```
+
+Each use tree node carries an `ItemPath` comprising one or more `ItemPathSegment`s connected by `::` separators. The first segment may carry a `PathPrefix` that indicates the path resolution base:
+
+```rust
+enum PathPrefix {
+    Crate,     // `crate::` — root of the current package
+    Super,     // `super::` — parent module (chainable)
+    SelfPath,  // `self::` — current module
+}
+```
+
+#### Path Parsing
+
+The `parse_item_path()` method handles all path forms including:
+
+- **Global paths**: `::global::path` (leading `::`)
+- **Crate-relative paths**: `crate::module::item`
+- **Super paths**: `super::parent` or `super::super::grandparent`
+- **Self paths**: `self::sibling` or `self` (bare, imports the current module)
+- **Bare keywords**: `use crate;`, `use super;`, `use self;` (valid as single-segment paths)
+- **Regular paths**: `module::submodule::item`
+
+For chained `super` paths, each `super` becomes its own segment with the first carrying `PathPrefix::Super`. This allows the resolver to count how many levels up to navigate.
+
+Semantic processing of imports — including path resolution, file discovery, and item extraction — is deferred to the resolver stage.
 
 ## Function Parsing
 

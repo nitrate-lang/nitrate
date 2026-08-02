@@ -23,7 +23,9 @@ Parse Tree (with unresolved names)
     │
     ▼ [Phase 1: Import Resolution]
     ├── Process 'use' declarations throughout the module tree
-    ├── Resolve module paths to their target modules
+    ├── Resolve module paths to their target files on disk
+    ├── Recursively parse and resolve imported modules
+    ├── Handle crate::, super::, self::, and global path prefixes
     └── Build import graph for cycle detection
     │
     ▼ [Phase 2: Symbol Table Population]
@@ -43,28 +45,94 @@ Resolved Parse Tree + Symbol Table (→ HIR Lowering)
 
 ## Import Resolution
 
-The `resolve_import.rs` module processes `use` declarations throughout the module tree:
+The `resolve_import.rs` module processes `use` declarations throughout the module tree. Imports are resolved against the filesystem — the resolver discovers which `.nit` files correspond to `use`d module names and recursively processes those modules.
+
+### ImportContext
+
+The `ImportContext` struct carries the state needed for import resolution:
 
 ```rust
-pub fn resolve_import(import: &UseDecl, symbol_table: &mut SymbolTab) -> Result<(), ResolveError> {
-    // Resolve the import path to its target
-    let resolved_path = resolve_path(&import.path, symbol_table)?;
-
-    // Register the imported name in the local scope
-    symbol_table.add_import(import.name.clone(), resolved_path);
-
-    Ok(())
+pub struct ImportContext {
+    pub package_name: NString,           // Name of the current package
+    pub source_filepath: SourceFilePath, // Path to the current source file
+    pub package_search_paths: Arc<Vec<FolderPath>>, // Where to find packages
+    pub package_root: Option<SourceFilePath>, // Package entry point (for crate::)
 }
 ```
 
-Import paths can be specified in several forms:
+The `package_root` field stores the path to the package's `entry.nit` file, enabling `crate::` path resolution back to the package root.
 
-- **Absolute paths**: Starting from the package root (e.g., `std::collections::HashMap`), identified by the package name as the first segment
-- **Relative paths**: Starting from the current module (e.g., `helper::util`), resolved by walking the module tree from the current position
-- **Self references**: `self` referring to the current module, used for relative imports within the same module
-- **Super references**: `super` referring to the parent module, used for navigating up the module hierarchy (multiple `super::super::` sequences are supported)
+### Path Resolution via Prefix Keywords
 
-Wildcard imports (`use path::to::*`) import all public names from the target module into the current scope. The resolver expands wildcard imports by enumerating the target module's public declarations and adding each as a name binding in the current scope.
+Import paths carry a `PathPrefix` on their leading segment that determines the resolution strategy:
+
+| Prefix      | Example              | Resolution Strategy                                                      |
+| ----------- | -------------------- | ------------------------------------------------------------------------ |
+| `Crate`     | `use crate::module;` | Look up `src/module.nit` relative to the package root                    |
+| `Super`     | `use super::parent;` | Navigate up N levels (one per `super`) from the current file's directory |
+| `SelfPath`  | `use self::module;`  | Look up sibling modules relative to the current file                     |
+| None (bare) | `use module;`        | Standard resolution: check current directory, then search packages       |
+
+#### Crate Paths
+
+`crate::` prefixed paths are resolved by `resolve_crate_path()`:
+
+1. Take the package root path (entry.nit), strip back to the `src/` directory
+2. Construct `src/{relative_path}.nit` or `src/{relative_path}/mod.nit` as candidates
+3. Return the first candidate that exists on disk
+
+#### Super Paths
+
+`super::` paths navigate up the filesystem hierarchy. The resolver counts consecutive `super` segments in the path (each `super` is a separate `ItemPathSegment`), then calls `resolve_super_path()`:
+
+1. Start from the current file's parent directory
+2. Navigate up N levels matching the `super` count
+3. Append the remaining path as `.nit` or `/mod.nit` candidates
+
+For bare `use super;` (no trailing names), the resolver navigates up and looks for `entry.nit` in the parent package.
+
+#### Self Paths
+
+`self::` paths are resolved relative to the current file's directory via `resolve_self_path()`:
+
+1. Look for `{relative_path}.nit` in the current directory
+2. Fall back to `{relative_path}/mod.nit` if the first candidate doesn't exist
+
+### Recursive Resolution and Cycle Detection
+
+When resolving an import to its target file, the resolver recursively processes that file's imports. Two safety mechanisms prevent infinite recursion:
+
+1. **Cycle detection**: A `visited: HashSet<NString>` tracks which module names are currently being resolved. If a module name appears in the set, a `CircularImport` diagnostic is reported and resolution stops for that branch.
+
+2. **Depth limit**: The resolver enforces a maximum import depth of 256. If the import chain exceeds this limit, an `ImportDepthLimitExceeded` diagnostic is reported. This prevents stack overflow when cyclic imports exist through symlinked files.
+
+### Visibility Filtering
+
+Before imported items are added to the current module, they pass through `visibility_filter()`, which strips non-visible items based on the `Visibility` modifier and whether the import source is in the same package:
+
+- `Public`: Always visible, regardless of package boundaries
+- `Protected`: Visible only within the same package
+- `Private`: Never visible across module boundaries (stripped during import)
+
+Implementation blocks (`Item::Impl`) are always passed through without visibility filtering, since impl blocks cannot have visibility modifiers.
+
+### File Discovery
+
+The `decide_what_to_import()` function attempts to locate a source file for a given import name using a prioritized search:
+
+1. **Current directory, `.nit` file**: `{current_dir}/{import_name}.nit`
+2. **Current directory, module directory**: `{current_dir}/{import_name}/mod.nit`
+3. **Package search paths**: For each path in `package_search_paths`, check `{path}/{import_name}/src/entry.nit`
+
+If no file is found, an `ImportNotFound` diagnostic is reported and the import is skipped.
+
+### Multi-Segment Imported Items
+
+When a `use` path has multiple segments after the module name (e.g., `use module::FunctionName`), the resolver extracts only the named item from the imported module rather than importing the entire module. It filters the module's items by matching `Function`, `Struct`, `Enum`, `Trait`, `TypeAlias`, and `Variable` names against the target item name. If no matching item is found, a diagnostic is reported.
+
+### Wildcard and Group Imports
+
+The `UseTree` structure supports wildcard imports (`use path::*`) and grouped imports (`use path::{A, B, C}`) at the parser level. These are resolved by the `parse_use_tree` invocation within `resolve_import`, which recursively processes all sub-trees in group imports.
 
 ## Path Resolution
 
