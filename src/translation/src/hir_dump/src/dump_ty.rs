@@ -120,12 +120,17 @@ impl Dump for Type {
                 write!(o, "[")?;
                 element_type.dump(ctx, o)?;
                 write!(o, "; ")?;
-                write!(o, "<expr {:?}>", len)
+                len.borrow().dump(ctx, o)?;
+                write!(o, "]")
             }
 
-            Type::UnresolvedRefine { base, .. } => {
+            Type::UnresolvedRefine { base, min, max, .. } => {
                 base.dump(ctx, o)?;
-                write!(o, ": [<expr>]")
+                write!(o, ": [")?;
+                min.borrow().dump(ctx, o)?;
+                write!(o, ":")?;
+                max.borrow().dump(ctx, o)?;
+                write!(o, "]")
             }
 
             Type::Function { function_type, .. } => function_type.dump(ctx, o),
