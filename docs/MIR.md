@@ -168,7 +168,7 @@ MIR uses the same Thread-Local Storage (TLS) pattern as HIR, with a dedicated `M
 
 ### Type Deduplication
 
-`MirTypeStore` uses a `RwLock<BiMap<Arc<MirType>, MirTypeId>>` backed by an `AppendOnlyVec<Arc<MirType>>` for O(1) deduplication. When a type is stored, the BiMap is checked under a read lock; if the type already exists, the existing `MirTypeId` is returned. Otherwise, under a write lock, a second check prevents races, and the new type is appended. This ensures that structural type equality is equivalent to handle equality — critical for the frequent type comparisons performed during lowering and codegen.
+`MirTypeStore` uses a `RwLock<BiMap<Arc<MirType>, MirTypeId>>` backed by an `AppendOnlyVec<Arc<MirType>>` for O(1) deduplication. When a type is stored, the BiMap is checked under a read lock; if the type already exists, the existing `MirTypeId` is returned. Otherwise, under a write lock, a second check prevents races, and the new type is appended. This ensures that structural type equality is equivalent to handle equality — critical for the frequent type comparisons performed during optimization.
 
 ### Handle Access
 
