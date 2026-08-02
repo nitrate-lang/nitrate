@@ -1409,6 +1409,10 @@ impl<'a> Solver<'a> {
                 for vid in &pending {
                     self.visit(vid);
                 }
+                // After resolving value types, sync local variable type fields
+                // from their initializers so that `ty` is updated as the
+                // initializer type is deduced.
+                self.sync_local_types_from_initializers(body);
                 if self.constraint_version == prev_ver && self.mono_counter == prev_mono {
                     break;
                 }
@@ -1422,6 +1426,30 @@ impl<'a> Solver<'a> {
             Ok(())
         } else {
             Err(crate::SolveError::TypeErrors)
+        }
+    }
+
+    /// Walk through the top-level body elements and update each local
+    /// variable's `ty` field from its initializer's resolved type.  Nested
+    /// blocks are handled by `visit_block_value` / `visit_block` during the
+    /// normal visitor pass, so we only need to sync the function-body-level
+    /// locals here.
+    fn sync_local_types_from_initializers(&mut self, body: &[BlockElement]) {
+        for element in body {
+            if let BlockElement::Local(lv) = element {
+                let local = lv.borrow();
+                if let Some(init_id) = &local.initializer {
+                    if let Ok(new_ty) = init_id.borrow().determine_type(self.symbol_tab) {
+                        let mut lv_mut = lv.borrow_mut();
+                        if lv_mut.ty.is_inferred()
+                            || (matches!(&*lv_mut.ty, Type::Parameterized { .. })
+                                && matches!(&new_ty, Type::Struct { .. }))
+                        {
+                            lv_mut.ty = new_ty.into();
+                        }
+                    }
+                }
+            }
         }
     }
 

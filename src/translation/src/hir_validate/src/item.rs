@@ -5,6 +5,7 @@ use crate::{
     ValidHir, ValidateCtx, ValidateHirItem, ValidateHirType, ValidateHirValue, ValidateTypeOptions, establish_property,
 };
 use nitrate_hir::prelude::*;
+use nitrate_hir_dump::Dump;
 use nitrate_hir_type::HirGetType;
 use std::ops::Deref;
 
@@ -42,7 +43,7 @@ impl ValidateHirItem for GlobalVariable {
             ctx,
             "type_constraint: Sized",
             ValidateErr::TypeNotSized {
-                type_repr: format!("{:?}", self.ty),
+                type_repr: self.ty.to_string(),
             },
             |c| self.ty.verify(c, &ValidateTypeOptions::sized()),
         )?;
@@ -51,8 +52,8 @@ impl ValidateHirItem for GlobalVariable {
             ctx,
             "type_constraint == typeof(initial_value)",
             ValidateErr::TypeMismatch {
-                expected: format!("{:?}", self.ty),
-                actual: format!("{:?}", init_value.determine_type(ctx.m).map_err(|_| ())?),
+                expected: self.ty.to_string(),
+                actual: init_value.determine_type(ctx.m).map_err(|_| ())?.to_string(),
             },
             |c| {
                 let init_value_ty = init_value.determine_type(c.m).map_err(|_| ())?;
@@ -120,7 +121,7 @@ impl ValidateHirItem for LocalVariable {
             ctx,
             "type_constraint: Sized",
             ValidateErr::TypeNotSized {
-                type_repr: format!("{:?}", self.ty),
+                type_repr: self.ty.to_string(),
             },
             |c| self.ty.verify(c, &ValidateTypeOptions::sized()),
         )?;
@@ -132,7 +133,7 @@ impl ValidateHirItem for LocalVariable {
                 ctx,
                 "type_constraint == typeof(initial_value)",
                 ValidateErr::TypeMismatch {
-                    expected: format!("{:?}", self.ty),
+                    expected: self.ty.to_string(),
                     actual: "?".to_string(),
                 },
                 |c| {
@@ -204,7 +205,7 @@ impl ValidateHirItem for Parameter {
             ctx,
             "type_constraint: Sized",
             ValidateErr::TypeNotSized {
-                type_repr: format!("{:?}", self.ty),
+                type_repr: self.ty.to_string(),
             },
             |c| self.ty.verify(c, &ValidateTypeOptions::sized()),
         )?;
@@ -213,7 +214,7 @@ impl ValidateHirItem for Parameter {
             ctx,
             "type_constraint == typeof(default_value)",
             ValidateErr::TypeMismatch {
-                expected: format!("{:?}", self.ty),
+                expected: self.ty.to_string(),
                 actual: "?".to_string(),
             },
             |c| {
@@ -273,7 +274,7 @@ impl ValidateHirItem for Function {
             ctx,
             "return_type: Sized",
             ValidateErr::TypeNotSized {
-                type_repr: format!("{:?}", self.return_type),
+                type_repr: self.return_type.to_string(),
             },
             |c| self.return_type.verify(c, &ValidateTypeOptions::sized()),
         )?;
@@ -300,7 +301,7 @@ impl ValidateHirItem for Function {
                 "typeof(body) == return_type",
                 ValidateErr::ReturnTypeMismatch {
                     function_name: self.name.clone(),
-                    expected: format!("{:?}", self.return_type),
+                    expected: self.return_type.to_string(),
                     actual: "?".to_string(),
                 },
                 |c| {
@@ -484,7 +485,7 @@ impl ValidateHirItem for StructField {
             ctx,
             "field_type: Sized",
             ValidateErr::TypeNotSized {
-                type_repr: format!("{:?}", self.ty),
+                type_repr: self.ty.to_string(),
             },
             |c| self.ty.verify(c, &ValidateTypeOptions::sized()),
         )?;
@@ -493,7 +494,7 @@ impl ValidateHirItem for StructField {
             ctx,
             "type_constraint == typeof(default_value)",
             ValidateErr::TypeMismatch {
-                expected: format!("{:?}", self.ty),
+                expected: self.ty.to_string(),
                 actual: "?".to_string(),
             },
             |c| {
@@ -606,7 +607,7 @@ impl ValidateHirItem for EnumVariant {
             ctx,
             "variant_type: Sized",
             ValidateErr::TypeNotSized {
-                type_repr: format!("{:?}", self.ty),
+                type_repr: self.ty.to_string(),
             },
             |c| self.ty.verify(c, &ValidateTypeOptions::sized()),
         )?;
@@ -615,7 +616,7 @@ impl ValidateHirItem for EnumVariant {
             ctx,
             "type_constraint == typeof(default_value)",
             ValidateErr::TypeMismatch {
-                expected: format!("{:?}", self.ty),
+                expected: self.ty.to_string(),
                 actual: "?".to_string(),
             },
             |c| {

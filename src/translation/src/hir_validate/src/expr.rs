@@ -3,6 +3,7 @@ use crate::{
     ValidHir, ValidateCtx, ValidateHirItem, ValidateHirType, ValidateHirValue, ValidateTypeOptions, establish_property,
 };
 use nitrate_hir::prelude::*;
+use nitrate_hir_dump::Dump;
 use nitrate_hir_type::HirGetType;
 
 impl ValidateHirValue for Block {
@@ -86,7 +87,7 @@ impl ValidateHirValue for Value {
 
             Value::InferredInteger { .. } | Value::InferredFloat { .. } => {
                 ctx.report(ValidateErr::InferredTypeNotAllowed {
-                    type_repr: format!("{:?}", self),
+                    type_repr: self.to_string(),
                 });
                 Err(())
             }

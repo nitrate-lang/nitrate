@@ -3,6 +3,7 @@ use std::{collections::HashSet, ops::Deref};
 use crate::diagnosis::ValidateErr;
 use crate::{ValidHir, ValidateCtx, ValidateHirItem, ValidateHirType, ValidateTypeOptions, establish_property};
 use nitrate_hir::prelude::*;
+use nitrate_hir_dump::Dump;
 
 fn verify_array(
     ctx: &mut ValidateCtx,
@@ -14,7 +15,7 @@ fn verify_array(
         ctx,
         "element_type: Sized",
         ValidateErr::TypeNotSized {
-            type_repr: format!("{:?}", element_type),
+            type_repr: element_type.to_string(),
         },
         |c| element_type.verify(c, &ValidateTypeOptions::sized()),
     )
@@ -26,7 +27,7 @@ fn verify_tuple(ctx: &mut ValidateCtx, element_types: &[TypeId], _options: &Vali
             ctx,
             "element_type: Sized",
             ValidateErr::TypeNotSized {
-                type_repr: format!("{:?}", elem_type),
+                type_repr: elem_type.to_string(),
             },
             |c| elem_type.verify(c, &ValidateTypeOptions::sized()),
         )?;
@@ -48,8 +49,8 @@ fn verify_refinement_type(
         ctx,
         "refinement bounds: max >= min",
         ValidateErr::RefinementBoundsInvalid {
-            min: min.deref().to_string().parse().unwrap_or(0),
-            max: max.deref().to_string().parse().unwrap_or(0),
+            min: Dump::to_string(min.deref()).parse().unwrap_or(0),
+            max: Dump::to_string(max.deref()).parse().unwrap_or(0),
         },
         |_| {
             if max.deref() >= min.deref() { Ok(()) } else { Err(()) }
@@ -177,7 +178,7 @@ impl ValidateHirType for FunctionType {
                 ctx,
                 "parameter type: Sized",
                 ValidateErr::TypeNotSized {
-                    type_repr: format!("{:?}", param.1),
+                    type_repr: param.1.to_string(),
                 },
                 |c| param.1.verify(c, &ValidateTypeOptions::sized()),
             )?;
@@ -204,7 +205,7 @@ impl ValidateHirType for FunctionType {
             ctx,
             "return_type: Sized",
             ValidateErr::TypeNotSized {
-                type_repr: format!("{:?}", self.return_type),
+                type_repr: self.return_type.to_string(),
             },
             |c| self.return_type.verify(c, &ValidateTypeOptions::sized()),
         )?;
@@ -342,7 +343,7 @@ impl ValidateHirType for Type {
 
             Type::InferredFloat { .. } | Type::InferredInteger { .. } | Type::Inferred { .. } => {
                 ctx.report(ValidateErr::InferredTypeNotAllowed {
-                    type_repr: format!("{:?}", self),
+                    type_repr: self.to_string(),
                 });
                 Err(())
             }
