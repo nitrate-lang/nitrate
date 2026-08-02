@@ -50,8 +50,31 @@ pub fn gen_literal<'ctx>(ctx: &CodegenCtx<'ctx, '_>, lit: &mir::MirLiteral) -> B
             let ptr_ty = ctx.llvm.ptr_sized_int_type(ctx.llvm.target_data(), None);
             ptr_ty.const_int(*value, false).into()
         }
-        mir::MirLiteral::Str(s) => ctx.llvm.const_string(s.as_bytes(), false).into(),
-        mir::MirLiteral::BStr(b) => ctx.llvm.const_string(b, false).into(),
+        mir::MirLiteral::Str(s) => {
+            let bytes = s.as_bytes();
+            let global_ptr = ctx.llvm.const_string(bytes, false);
+            let len_val = ctx
+                .llvm
+                .ptr_sized_int_type(ctx.llvm.target_data(), None)
+                .const_int(bytes.len() as u64, false);
+            let ptr_ty = ctx.llvm.ptr_type(inkwell::AddressSpace::default());
+            let slice_struct = ctx.llvm.struct_type(&[ptr_ty.into(), len_val.get_type().into()], false);
+            slice_struct
+                .const_named_struct(&[global_ptr.into(), len_val.into()])
+                .into()
+        }
+        mir::MirLiteral::BStr(b) => {
+            let global_ptr = ctx.llvm.const_string(b, false);
+            let len_val = ctx
+                .llvm
+                .ptr_sized_int_type(ctx.llvm.target_data(), None)
+                .const_int(b.len() as u64, false);
+            let ptr_ty = ctx.llvm.ptr_type(inkwell::AddressSpace::default());
+            let slice_struct = ctx.llvm.struct_type(&[ptr_ty.into(), len_val.get_type().into()], false);
+            slice_struct
+                .const_named_struct(&[global_ptr.into(), len_val.into()])
+                .into()
+        }
     }
 }
 
