@@ -5,7 +5,7 @@ use nitrate_diagnosis::CompilerLog;
 use nitrate_hir::{
     BlockElement, Function, FunctionId, GlobalVariable, PtrSize, SymbolTab, Type, TypeId, Value, ValueId,
 };
-use nitrate_hir_get_type::HirGetType;
+use nitrate_hir_type::HirGetType;
 use nitrate_tree::ByteSpan;
 use ordered_float::OrderedFloat;
 use std::collections::{HashMap, HashSet};

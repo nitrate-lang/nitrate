@@ -2,7 +2,7 @@ use crate::constraints::{TypeConstraint, is_arithmetic_op, is_comparison_or_logi
 use crate::solver::Solver;
 use crate::{constraints::NodeAction, diagnosis::TypeErr};
 use nitrate_hir::{BlockElement, BlockId, FunctionId, Type, TypeId, Value, ValueId};
-use nitrate_hir_get_type::HirGetType;
+use nitrate_hir_type::HirGetType;
 use nitrate_tree::ByteSpan;
 use smallvec::SmallVec;
 use std::{matches, unreachable};

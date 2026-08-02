@@ -1052,7 +1052,7 @@ dependencies = [
  "log",
  "nitrate_diagnosis",
  "nitrate_hir",
- "nitrate_hir_get_type",
+ "nitrate_hir_type",
  "nitrate_nstring",
  "nitrate_tree",
  "ordered-float",
@@ -1090,9 +1090,9 @@ dependencies = [
  "nitrate_hir",
  "nitrate_hir_borrow_check",
  "nitrate_hir_evaluate",
- "nitrate_hir_get_type",
  "nitrate_hir_mangle",
  "nitrate_hir_solve",
+ "nitrate_hir_type",
  "nitrate_nstring",
  "nitrate_token",
  "nitrate_token_lexer",
@@ -1103,15 +1103,6 @@ dependencies = [
  "ordered-float",
  "serde_json",
  "thin-vec",
-]
-
-[[package]]
-name = "nitrate_hir_get_type"
-version = "0.1.0"
-dependencies = [
- "nitrate_hir",
- "nitrate_nstring",
- "nitrate_tree",
 ]
 
 [[package]]
@@ -1140,12 +1131,22 @@ dependencies = [
  "nitrate_diagnosis",
  "nitrate_hir",
  "nitrate_hir_dump",
- "nitrate_hir_get_type",
+ "nitrate_hir_evaluate",
+ "nitrate_hir_type",
  "nitrate_nstring",
  "nitrate_tree",
  "ordered-float",
  "smallvec",
  "thin-vec",
+]
+
+[[package]]
+name = "nitrate_hir_type"
+version = "0.1.0"
+dependencies = [
+ "nitrate_hir",
+ "nitrate_nstring",
+ "nitrate_tree",
 ]
 
 [[package]]
@@ -1156,7 +1157,7 @@ dependencies = [
  "nitrate_diagnosis",
  "nitrate_hir",
  "nitrate_hir_dump",
- "nitrate_hir_get_type",
+ "nitrate_hir_type",
  "nitrate_nstring",
  "nitrate_tree",
 ]
@@ -1199,7 +1200,7 @@ name = "nitrate_mir_from_hir"
 version = "0.1.0"
 dependencies = [
  "nitrate_hir",
- "nitrate_hir_get_type",
+ "nitrate_hir_type",
  "nitrate_mir",
  "nitrate_nstring",
  "thin-vec",
@@ -1253,10 +1254,10 @@ dependencies = [
  "nitrate_hir_dump",
  "nitrate_hir_evaluate",
  "nitrate_hir_from_tree",
- "nitrate_hir_get_type",
  "nitrate_hir_mangle",
  "nitrate_hir_optimize",
  "nitrate_hir_solve",
+ "nitrate_hir_type",
  "nitrate_hir_validate",
  "nitrate_llvm",
  "nitrate_llvm_from_mir",

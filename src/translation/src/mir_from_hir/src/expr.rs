@@ -2,7 +2,7 @@ use super::LoweringCtx;
 use crate::block;
 use crate::ty;
 use nitrate_hir::prelude as hir;
-use nitrate_hir_get_type::HirGetType;
+use nitrate_hir_type::HirGetType;
 use nitrate_mir::prelude as mir;
 use nitrate_nstring::NString;
 

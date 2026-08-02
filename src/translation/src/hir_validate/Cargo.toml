@@ -9,7 +9,7 @@ nitrate_tree.workspace = true
 nitrate_nstring.workspace = true
 
 nitrate_hir.workspace = true
-nitrate_hir_get_type.workspace = true
+nitrate_hir_type.workspace = true
 nitrate_hir_dump.workspace = true
 
 log.workspace = true

@@ -54,6 +54,8 @@ use crate::string::{demangle_string, mangle_string};
 /// | `Inferred`      | `e<id>_`                          |
 /// | `InferredFloat` | `f`                               |
 /// | `InferredInt`   | `g`                               |
+/// | `Range`         | `h`                               |
+/// | `Str`           | `i`                               |
 ///
 /// Where:
 /// - `<name>` is a mangled string (self-delimiting, terminated with `_`)

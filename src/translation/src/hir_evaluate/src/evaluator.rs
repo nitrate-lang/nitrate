@@ -83,7 +83,7 @@ impl<'log> Evaluator<'log> {
             log,
             ptr_size,
             loop_limit: 1_000_000,
-            call_depth_limit: 1000,
+            call_depth_limit: 100,
             memory_limit: 1024 * 1024,
             frames: Vec::new(),
             loop_count: 0,

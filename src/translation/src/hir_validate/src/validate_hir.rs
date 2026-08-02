@@ -2,7 +2,7 @@ use log::debug;
 use nitrate_diagnosis::CompilerLog;
 use nitrate_hir::SymbolTab;
 use nitrate_hir::prelude::*;
-use nitrate_hir_get_type::HirGetType;
+use nitrate_hir_type::HirGetType;
 use nitrate_nstring::NString;
 use std::collections::HashSet;
 

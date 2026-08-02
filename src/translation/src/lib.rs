@@ -5,7 +5,7 @@ pub use nitrate_hir_borrow_check as hir_borrow_check;
 pub use nitrate_hir_dump as hir_dump;
 pub use nitrate_hir_evaluate as hir_evaluate;
 pub use nitrate_hir_from_tree as hir_from_tree;
-pub use nitrate_hir_get_type as hir_get_type;
+pub use nitrate_hir_type as hir_type;
 pub use nitrate_hir_mangle as hir_mangle;
 pub use nitrate_hir_optimize as hir_optimize;
 pub use nitrate_hir_solve as hir_solve;

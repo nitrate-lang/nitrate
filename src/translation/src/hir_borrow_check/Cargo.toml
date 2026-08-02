@@ -7,7 +7,7 @@ edition = "2024"
 nitrate_diagnosis.workspace = true
 nitrate_tree.workspace = true
 nitrate_hir.workspace = true
-nitrate_hir_get_type.workspace = true
+nitrate_hir_type.workspace = true
 nitrate_nstring.workspace = true
 
 ordered-float.workspace = true

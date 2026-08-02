@@ -14,7 +14,7 @@ members = [
     "src/translation/src/hir_dump",
     "src/translation/src/hir_evaluate",
     "src/translation/src/hir_from_tree",
-    "src/translation/src/hir_get_type",
+    "src/translation/src/hir_type",
     "src/translation/src/hir_mangle",
     "src/translation/src/hir_solve",
     "src/translation/src/hir_validate",
@@ -89,7 +89,7 @@ nitrate_hir = { path = "src/translation/src/hir" }
 nitrate_hir_dump = { path = "src/translation/src/hir_dump" }
 nitrate_hir_evaluate = { path = "src/translation/src/hir_evaluate" }
 nitrate_hir_from_tree = { path = "src/translation/src/hir_from_tree" }
-nitrate_hir_get_type = { path = "src/translation/src/hir_get_type" }
+nitrate_hir_type = { path = "src/translation/src/hir_type" }
 nitrate_hir_mangle = { path = "src/translation/src/hir_mangle" }
 nitrate_hir_solve = { path = "src/translation/src/hir_solve" }
 nitrate_hir_validate = { path = "src/translation/src/hir_validate" }

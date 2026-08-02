@@ -28,7 +28,7 @@ use std::matches;
 
 use crate::{BorrowCheckCtx, BorrowError, BorrowKind, BorrowRecord, Place, PlaceElem, PlaceId};
 use nitrate_hir::prelude::*;
-use nitrate_hir_get_type::HirGetType;
+use nitrate_hir_type::HirGetType;
 
 // ============================================================================
 // Public API

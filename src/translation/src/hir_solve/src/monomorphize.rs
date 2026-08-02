@@ -4,7 +4,7 @@ use nitrate_hir::{
     Arguments, BlockElement, Function, FunctionId, LocalVariable, LocalVariableId, Parameter, ParameterId, StructDef,
     StructDefId, StructField, StructMemoryLayoutCell, Type, TypeId, Value, ValueId,
 };
-use nitrate_hir_get_type::HirGetType;
+use nitrate_hir_type::HirGetType;
 use nitrate_nstring::NString;
 use nitrate_tree::ByteSpan;
 use std::collections::BTreeMap;

@@ -3,7 +3,7 @@ use crate::{
     ValidHir, ValidateCtx, ValidateHirItem, ValidateHirType, ValidateHirValue, ValidateTypeOptions, establish_property,
 };
 use nitrate_hir::prelude::*;
-use nitrate_hir_get_type::HirGetType;
+use nitrate_hir_type::HirGetType;
 
 impl ValidateHirValue for Block {
     fn verify(&self, ctx: &mut ValidateCtx) -> Result<(), ()> {
