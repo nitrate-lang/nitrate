@@ -1177,6 +1177,39 @@ dependencies = [
 ]
 
 [[package]]
+name = "nitrate_llvm_from_mir"
+version = "0.1.0"
+dependencies = [
+ "cc",
+ "inkwell",
+ "nitrate_llvm",
+ "nitrate_mir",
+ "nitrate_nstring",
+ "thin-vec",
+]
+
+[[package]]
+name = "nitrate_mir"
+version = "0.1.0"
+dependencies = [
+ "append-only-vec",
+ "bimap",
+ "nitrate_nstring",
+ "ordered-float",
+ "serde",
+ "thin-vec",
+ "thin_str",
+]
+
+[[package]]
+name = "nitrate_mir_from_hir"
+version = "0.1.0"
+dependencies = [
+ "nitrate_hir",
+ "nitrate_mir",
+]
+
+[[package]]
 name = "nitrate_nstring"
 version = "0.1.0"
 dependencies = [

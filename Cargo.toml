@@ -22,6 +22,9 @@ members = [
     "src/translation/src/hir_borrow_check",
     "src/translation/src/llvm",
     "src/translation/src/llvm_from_hir",
+    "src/translation/src/mir",
+    "src/translation/src/mir_from_hir",
+    "src/translation/src/llvm_from_mir",
 ]
 
 [workspace.dependencies]
@@ -40,14 +43,14 @@ internal-iterator = "0.2"
 llvm-plugin-inkwell = { version = "0.3", features = ["llvm16-0"] }
 log = "0.4"
 once_cell = "1"
-ordered-float = "5"
+ordered-float = { version = "5", features = ["serde"] }
 serde = "1"
 serde_json = "1"
 serde_with = "3"
 spdx = "0.12"
 smallvec = { version = "1", features = ["const_generics"] }
-thin-vec = "0.2"
-thin_str = "0.1"
+thin-vec = { version = "0.2", features = ["serde"] }
+thin_str = { version = "0.1", features = ["serde", "serde_support"] }
 threadpool = "1"
 threadpool_scope = "0.1"
 
@@ -94,6 +97,10 @@ nitrate_hir_borrow_check = { path = "src/translation/src/hir_borrow_check" }
 
 nitrate_llvm = { path = "src/translation/src/llvm" }
 nitrate_llvm_from_hir = { path = "src/translation/src/llvm_from_hir" }
+
+nitrate_mir = { path = "src/translation/src/mir" }
+nitrate_mir_from_hir = { path = "src/translation/src/mir_from_hir" }
+nitrate_llvm_from_mir = { path = "src/translation/src/llvm_from_mir" }
 
 nitrate_translation = { path = "src/translation" }
 

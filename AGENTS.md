@@ -22,8 +22,9 @@ The documentation follows a coherent narrative that mirrors the natural flow of 
 | [EVALUATION.md](EVALUATION.md)                       | Constant evaluation: compile-time expression computation, global initializers, defaults                   | Evaluation developers              |
 | [SOLVER.md](SOLVER.md)                               | Constraint solver: engine architecture, type constraints, refinement bounds, monomorphization             | Type system and solver developers  |
 | [MANGLE.md](MANGLE.md)                               | Name mangling: deterministic symbol names, type encoding, generic instantiation naming                    | Codegen developers                 |
-| [LLVM_CODEGEN.md](LLVM_CODEGEN.md)                   | LLVM IR codegen: HIR-to-LLVM translation, type mapping, control flow, calling conventions                 | Codegen backend developers         |
+| [LLVM_CODEGEN.md](LLVM_CODEGEN.md)                   | LLVM IR codegen: HIR-to-LLVM and MIR-to-LLVM translation, type mapping, control flow, calling conventions | Codegen backend developers         |
 | [OPTIMIZATION.md](OPTIMIZATION.md)                   | Optimization: LLVM pass pipeline, optimization levels, Nitrate-specific pass infrastructure               | Optimization developers            |
+| [MIR.md](MIR.md)                                     | MIR (Mid-level IR): basic block CFG, SSA locals, Places/Operands/Rvalues, TLS storage                     | MIR and codegen developers         |
 | [TRANSLATION.md](TRANSLATION.md)                     | Pipeline orchestration: stage sequencing, configuration, compilation modes, error handling                | Integration developers             |
 | [DIAGNOSTICS.md](DIAGNOSTICS.md)                     | Diagnostics: structured error types, accumulation, groups, error codes, display formatting                | All developers                     |
 | [DRIVER.md](DRIVER.md)                               | CLI driver: `no3` binary, subcommands, package loading, compiler invocation                               | Tooling developers                 |

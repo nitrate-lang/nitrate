@@ -28,7 +28,8 @@ This document describes each pipeline stage in detail, the data flow between sta
     - [Stage 6: Type Determination](#stage-6-type-determination)
     - [Stage 7: HIR Validation](#stage-7-hir-validation)
     - [Stage 8: Name Mangling](#stage-8-name-mangling)
-    - [Stages 9-10: LLVM Code Generation and Optimization](#stages-9-10-llvm-code-generation-and-optimization)
+    - [Stage 9: MIR Lowering](#stage-9-mir-lowering)
+    - [Stage 10: MIR to LLVM Code Generation](#stage-10-mir-to-llvm-code-generation)
   - [Design Rationale](#design-rationale)
 
 ## Core Architectural Principles
@@ -61,7 +62,7 @@ Diagnostics are organized into seven groups based on the compilation stage that 
 
 ### Principle 3: Pass-Based Pipeline with Fixed-Point Iteration
 
-The compiler is organized as a sequence of passes over progressively lower-level IRs. Each pass has a well-defined input type and output type, enabling independent testing and clear separation of concerns. The `Pass` trait in `nitrate_hir` formalizes this contract. Several critical passes — most notably the Hindley-Milner constraint solver — use fixed-point iteration, repeatedly visiting every expression in a function body until no new type constraints are added. This pattern is essential for transitive constraint propagation (if `x = y` and `y = 42`, then `x = i32`), nested monomorphization (when a generic function calls another generic function, the first pass monomorphizes the inner call and the second pass discovers the outer call), and incremental type resolution (type variables are resolved as constraints accumulate).
+The compiler is organized as a sequence of passes over progressively lower-level IRs: Source Text → Tokens → Parse Tree (AST) → HIR → MIR → LLVM IR → Machine Code. Each pass has a well-defined input type and output type, enabling independent testing and clear separation of concerns. The `Pass` trait in `nitrate_hir` formalizes this contract. Several critical passes — most notably the Hindley-Milner constraint solver — use fixed-point iteration, repeatedly visiting every expression in a function body until no new type constraints are added. This pattern is essential for transitive constraint propagation (if `x = y` and `y = 42`, then `x = i32`), nested monomorphization (when a generic function calls another generic function, the first pass monomorphizes the inner call and the second pass discovers the outer call), and incremental type resolution (type variables are resolved as constraints accumulate).
 
 ### Principle 4: Reentrant Store Access
 
@@ -111,11 +112,24 @@ The validator (`nitrate_hir_validate`) performs final semantic checks verifying 
 
 The mangler (`nitrate_hir_mangle`) produces unique, deterministic LLVM linkage names encoding the package name, symbol name, and type signature using a compact C99-safe charset (`[A-Za-z0-9_]`). Mangled names are self-delimiting and support DEFLATE compression for very long names. Symbols with the `NoMangle` attribute use their bare, unqualified name so that externally-visible symbols (e.g. `main`, `printf`) appear exactly as written. See [MANGLE.md](MANGLE.md) for the complete encoding specification.
 
-### Stages 9-10: LLVM Code Generation and Optimization
+### Stage 9: MIR Lowering
 
-The code generator (`nitrate_llvm_from_hir`) translates validated HIR into LLVM IR in three passes: global variable generation (with constructor functions for complex initializers), function declarations (ensuring symbols are available for mutual recursion), and function definitions. The LLVM crate then runs optimization passes based on the configured level (0-3) and emits the result as an object file, assembly, or LLVM IR text.
+**New in Nitrate 0.2**: The MIR (Mid-level Intermediate Representation) lowering pass (`nitrate_mir_from_hir`) converts the validated, monomorphized HIR into a control-flow-graph-based MIR. This is a structural transformation that:
 
-Codegen follows Rust's place-expression memory model. Every HIR `Value` that denotes a memory location (a _place_) compiles to a `PointerValue` — the address of that location in memory. The core invariant is that `gen_place(value)` returns the address of `value`'s storage, never a copy. This makes borrows (`&expr`, `&mut expr`) alias their targets: `&arr[i]` produces a GEP into the array, not a pointer to a temporary copy. Dereference (`*p`) is zero-cost — the place address IS the pointer value. Field and index access on references auto-deref one layer, GEP-ing the pointee directly. Slice indexing extracts the data pointer from the fat pointer and GEPs the element. See [LLVM_CODEGEN.md](LLVM_CODEGEN.md) for the complete memory model specification.
+1. **Flattens expression trees** into sequences of `Statement::Assign(Place, Rvalue)` within basic blocks. HIR's nested expression DAG becomes a flat list of assignments.
+2. **Converts control flow** (if/while/loop/break/continue/return) into basic blocks connected by `Terminator` instructions (Goto, If, SwitchInt, Return, Call, Unreachable).
+3. **Introduces SSA locals** (`LocalDecl`) with known, fully concrete `MirType` values — no inference, no generics. Each local is assigned exactly once.
+4. **Separates Places, Operands, and Rvalues**: `Place` represents memory locations (locals, statics, dereferences, field/index access), `Operand` wraps either Copy/Move from a Place or a Constant literal, and `Rvalue` represents computed values (binary/unary ops, casts, refs, aggregates).
+
+After lowering, the HIR `Store` and parse tree can be dropped to free memory — all relevant information has been transferred to the MIR.
+
+### Stage 10: MIR to LLVM Code Generation
+
+The MIR code generator (`nitrate_llvm_from_mir`) translates the MIR representation directly into LLVM IR. Because MIR basic blocks and terminators map 1:1 to LLVM basic blocks and branch instructions, this translation is straightforward and less error-prone than generating LLVM IR directly from HIR's tree-structured expressions. Functions are generated in two passes: declarations first (for mutual recursion), then definitions. Each MIR basic block becomes an LLVM basic block, statements become LLVM instructions, and terminators become LLVM branch/return/call instructions.
+
+The `nitrate_llvm` crate then runs LLVM optimization passes based on the configured level (0-3) and emits the result as an object file, assembly, or LLVM IR text.
+
+> **Note**: The existing `nitrate_llvm_from_hir` crate remains in the codebase. The pipeline will be updated to use `nitrate_llvm_from_mir` in a future release. Currently, both backends coexist.
 
 ## Design Rationale
 

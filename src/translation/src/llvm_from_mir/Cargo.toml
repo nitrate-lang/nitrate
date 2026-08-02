@@ -1,0 +1,15 @@
+[package]
+name = "nitrate_llvm_from_mir"
+version = "0.1.0"
+edition = "2024"
+build = "build.rs"
+
+[dependencies]
+nitrate_mir.workspace = true
+nitrate_llvm.workspace = true
+nitrate_nstring.workspace = true
+inkwell.workspace = true
+thin-vec.workspace = true
+
+[build-dependencies]
+cc.workspace = true
