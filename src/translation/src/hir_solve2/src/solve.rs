@@ -119,6 +119,7 @@ impl<'a> Solver<'a> {
                 Type::U32 { .. } => value <= u32::MAX as u128,
                 Type::U64 { .. } => value <= u64::MAX as u128,
                 Type::U128 { .. } => true,
+                Type::USize { .. } => value <= u64::MAX as u128,
                 _ => true,
             };
             if fits {
@@ -723,6 +724,12 @@ impl<'a> Solver<'a> {
                     Type::Array { element_type, .. }
                     | Type::SliceRef { element_type, .. }
                     | Type::SlicePtr { element_type, .. } => Some(*element_type),
+                    Type::Refine { base, .. } => match &**base {
+                        Type::Array { element_type, .. }
+                        | Type::SliceRef { element_type, .. }
+                        | Type::SlicePtr { element_type, .. } => Some(*element_type),
+                        _ => None,
+                    },
                     _ => None,
                 };
                 if let Some(et) = et {
@@ -881,6 +888,32 @@ impl<'a> Solver<'a> {
                         true_type: tt.into(),
                         false_type: ft.into(),
                     });
+                }
+            }
+        }
+        // Propagate constraints from the if-expression to both branches.
+        // This ensures that when a variable is declared with an explicit type
+        // (e.g. `let x: i32 = if ... { 1u8 } else { 2u8 }`), the branches
+        // are constrained to match the declared type rather than silently
+        // overriding it with the branch consensus type.
+        let if_constraints: Vec<TypeId> = self
+            .constraints
+            .get(e)
+            .map(|cs| cs.iter().map(|c| c.type_id()).collect())
+            .unwrap_or_default();
+        for ty in &if_constraints {
+            let t_block = true_branch.borrow();
+            if let Some(last) = t_block.elements.last() {
+                if let BlockElement::Expr(expr_id) = last {
+                    self.add_constraint(expr_id, TypeConstraint::Equal(*ty));
+                }
+            }
+            if let Some(fb) = false_branch {
+                let f_block = fb.borrow();
+                if let Some(last) = f_block.elements.last() {
+                    if let BlockElement::Expr(expr_id) = last {
+                        self.add_constraint(expr_id, TypeConstraint::Equal(*ty));
+                    }
                 }
             }
         }
@@ -1121,6 +1154,24 @@ impl<'a> Solver<'a> {
         for (a, p) in args.iter().zip(ptypes.iter()) {
             let at = a.borrow().determine_type(self.symbol_tab).ok()?;
             unify_types_with_subst(&at, p, &mut subst);
+        }
+        // Ensure all generic params (including those appearing only in the
+        // return type) are resolved.  Collect from both params and return type.
+        let mut param_name_to_index = BTreeMap::new();
+        for pid in &func.params {
+            let p = pid.borrow();
+            collect_generic_params_from_type(&p.ty, &mut param_name_to_index);
+        }
+        collect_generic_params_from_type(&func.return_type, &mut param_name_to_index);
+        for (pn, _) in generics.iter() {
+            if let Some(idx) = param_name_to_index.get(pn) {
+                if !subst.generic_mapping.contains_key(idx) {
+                    return None;
+                }
+            }
+        }
+        if subst.generic_mapping.is_empty() {
+            return None;
         }
         Some(subst)
     }
@@ -1384,6 +1435,10 @@ impl<'a> Solver<'a> {
         let mut new_layout = Vec::new();
         for (fn_, field) in &sd.fields {
             let nt = subst.apply(&field.ty);
+            let nd = field
+                .default_value
+                .as_ref()
+                .map(|dv| ValueId::from(apply_subst_to_value(&dv.borrow(), subst)));
             new_fields.insert(
                 fn_.clone(),
                 nitrate_hir::StructField {
@@ -1392,7 +1447,7 @@ impl<'a> Solver<'a> {
                     attributes: field.attributes.clone(),
                     name: field.name.clone(),
                     ty: TypeId::from(nt),
-                    default_value: field.default_value.clone(),
+                    default_value: nd,
                 },
             );
             new_layout.push(nitrate_hir::StructMemoryLayoutCell::Field {
@@ -1813,6 +1868,24 @@ fn resolve_type_impl(s: &Solver, ty: &TypeId, log: &CompilerLog) -> TypeId {
             } else {
                 ty.clone()
             }
+        }
+        Type::Function { function_type, .. } => {
+            let params: Vec<(NString, TypeId)> = function_type
+                .params
+                .iter()
+                .map(|(n, p)| (n.clone(), TypeId::from(resolve_type_impl(s, p, log))))
+                .collect();
+            let ret = resolve_type_impl(s, &function_type.return_type, log);
+            let resolved_ft = nitrate_hir::FunctionType {
+                attributes: function_type.attributes.clone(),
+                params: params.into(),
+                return_type: ret,
+            };
+            Type::Function {
+                span,
+                function_type: Box::new(resolved_ft),
+            }
+            .into()
         }
         // Catch-all: types that don't need resolution (primitives, etc.) are
         // returned unchanged. If new resolvable type variants are added to the

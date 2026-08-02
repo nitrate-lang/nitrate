@@ -235,12 +235,37 @@ pub(crate) fn clone_block_element(element: &BlockElement, subst: &Substitution) 
 
 pub(crate) fn apply_subst_to_value(value: &Value, subst: &Substitution) -> Value {
     match value {
+        // ── Leaves (no children to recurse into) ──────────────────
+        Value::Unit { .. }
+        | Value::Bool { .. }
+        | Value::I8 { .. }
+        | Value::I16 { .. }
+        | Value::I32 { .. }
+        | Value::I64 { .. }
+        | Value::I128 { .. }
+        | Value::U8 { .. }
+        | Value::U16 { .. }
+        | Value::U32 { .. }
+        | Value::U64 { .. }
+        | Value::U128 { .. }
+        | Value::F32 { .. }
+        | Value::F64 { .. }
+        | Value::USize { .. }
+        | Value::StringLit { .. }
+        | Value::BStringLit { .. }
+        | Value::InferredInteger { .. }
+        | Value::InferredFloat { .. }
+        | Value::FunctionSymbol { .. }
+        | Value::GlobalVariableSymbol { .. }
+        | Value::LocalVariableSymbol { .. }
+        | Value::ParameterSymbol { .. }
+        | Value::Break { .. }
+        | Value::Continue { .. } => value.clone(),
+        // ── Cast ──────────────────────────────────────────────────
         Value::Cast {
             value: v, target_type, ..
         } => {
             let nt = subst.apply(target_type);
-            // Recurse into the casted value so that nested generics (e.g. T in `T as i32`)
-            // are also substituted.
             let nv = apply_subst_to_value(&v.borrow(), subst);
             Value::Cast {
                 span: ByteSpan::default(),
@@ -248,31 +273,256 @@ pub(crate) fn apply_subst_to_value(value: &Value, subst: &Substitution) -> Value
                 target_type: TypeId::from(nt),
             }
         }
+        // ── StructObject ──────────────────────────────────────────
         Value::StructObject { struct_def, fields, .. } => {
-            if struct_def.borrow().generics.is_some() {
-                let nf: ThinVec<(NString, ValueId)> = fields
-                    .iter()
-                    .map(|(n, vid)| {
-                        let v = vid.borrow();
-                        (n.clone(), ValueId::from(apply_subst_to_value(&v, subst)))
-                    })
-                    .collect();
-                Value::StructObject {
-                    span: ByteSpan::default(),
-                    struct_def: struct_def.clone(),
-                    fields: nf,
-                }
-            } else {
-                Value::StructObject {
-                    span: ByteSpan::default(),
-                    struct_def: struct_def.clone(),
-                    fields: fields.clone(),
-                }
+            let has_generics = struct_def.borrow().generics.is_some();
+            let nf: ThinVec<(NString, ValueId)> = fields
+                .iter()
+                .map(|(n, vid)| {
+                    let v = vid.borrow();
+                    let new_v = if has_generics {
+                        apply_subst_to_value(&v, subst)
+                    } else {
+                        v.clone()
+                    };
+                    (n.clone(), ValueId::from(new_v))
+                })
+                .collect();
+            Value::StructObject {
+                span: ByteSpan::default(),
+                struct_def: struct_def.clone(),
+                fields: nf,
             }
         }
+        // ── EnumVariant ───────────────────────────────────────────
+        Value::EnumVariant {
+            span: _,
+            enum_def,
+            variant,
+            value: inner,
+        } => {
+            let nv = apply_subst_to_value(&inner.borrow(), subst);
+            Value::EnumVariant {
+                span: ByteSpan::default(),
+                enum_def: enum_def.clone(),
+                variant: variant.clone(),
+                value: ValueId::from(nv),
+            }
+        }
+        // ── Binary ────────────────────────────────────────────────
+        Value::Binary {
+            span: _,
+            left,
+            op,
+            right,
+        } => {
+            let nl = apply_subst_to_value(&left.borrow(), subst);
+            let nr = apply_subst_to_value(&right.borrow(), subst);
+            Value::Binary {
+                span: ByteSpan::default(),
+                left: ValueId::from(nl),
+                op: op.clone(),
+                right: ValueId::from(nr),
+            }
+        }
+        // ── Unary ─────────────────────────────────────────────────
+        Value::Unary { span: _, op, operand } => {
+            let no = apply_subst_to_value(&operand.borrow(), subst);
+            Value::Unary {
+                span: ByteSpan::default(),
+                op: op.clone(),
+                operand: ValueId::from(no),
+            }
+        }
+        // ── IndexAccess ───────────────────────────────────────────
+        Value::IndexAccess {
+            span: _,
+            collection,
+            index,
+        } => {
+            let nc = apply_subst_to_value(&collection.borrow(), subst);
+            let ni = apply_subst_to_value(&index.borrow(), subst);
+            Value::IndexAccess {
+                span: ByteSpan::default(),
+                collection: ValueId::from(nc),
+                index: ValueId::from(ni),
+            }
+        }
+        // ── FieldAccess ───────────────────────────────────────────
+        Value::FieldAccess {
+            span: _,
+            expr,
+            field_name,
+        } => {
+            let ne = apply_subst_to_value(&expr.borrow(), subst);
+            Value::FieldAccess {
+                span: ByteSpan::default(),
+                expr: ValueId::from(ne),
+                field_name: field_name.clone(),
+            }
+        }
+        // ── Assign ────────────────────────────────────────────────
+        Value::Assign {
+            span: _,
+            place,
+            value: val,
+        } => {
+            let np = apply_subst_to_value(&place.borrow(), subst);
+            let nv = apply_subst_to_value(&val.borrow(), subst);
+            Value::Assign {
+                span: ByteSpan::default(),
+                place: ValueId::from(np),
+                value: ValueId::from(nv),
+            }
+        }
+        // ── Deref ─────────────────────────────────────────────────
+        Value::Deref { span: _, place } => {
+            let np = apply_subst_to_value(&place.borrow(), subst);
+            Value::Deref {
+                span: ByteSpan::default(),
+                place: ValueId::from(np),
+            }
+        }
+        // ── Borrow ────────────────────────────────────────────────
+        Value::Borrow {
+            span: _,
+            exclusive,
+            mutable,
+            place,
+        } => {
+            let np = apply_subst_to_value(&place.borrow(), subst);
+            Value::Borrow {
+                span: ByteSpan::default(),
+                exclusive: *exclusive,
+                mutable: *mutable,
+                place: ValueId::from(np),
+            }
+        }
+        // ── List ──────────────────────────────────────────────────
+        Value::List { span: _, elements } => {
+            let nel: ThinVec<ValueId> = elements
+                .iter()
+                .map(|e| ValueId::from(apply_subst_to_value(&e.borrow(), subst)))
+                .collect();
+            Value::List {
+                span: ByteSpan::default(),
+                elements: nel,
+            }
+        }
+        // ── Tuple ─────────────────────────────────────────────────
+        Value::Tuple { span: _, elements } => {
+            let nel: ThinVec<ValueId> = elements
+                .iter()
+                .map(|e| ValueId::from(apply_subst_to_value(&e.borrow(), subst)))
+                .collect();
+            Value::Tuple {
+                span: ByteSpan::default(),
+                elements: nel,
+            }
+        }
+        // ── If ────────────────────────────────────────────────────
+        Value::If {
+            span: _,
+            condition,
+            true_branch,
+            false_branch,
+        } => {
+            let nc = apply_subst_to_value(&condition.borrow(), subst);
+            let nt_block = {
+                let block = true_branch.borrow();
+                let new_elements: Vec<BlockElement> =
+                    block.elements.iter().map(|el| clone_block_element(el, subst)).collect();
+                nitrate_hir::Block {
+                    span: block.span,
+                    safety: block.safety.clone(),
+                    elements: new_elements,
+                }
+            };
+            let nf_block = false_branch.as_ref().map(|fb| {
+                let block = fb.borrow();
+                let new_elements: Vec<BlockElement> =
+                    block.elements.iter().map(|el| clone_block_element(el, subst)).collect();
+                nitrate_hir::Block {
+                    span: block.span,
+                    safety: block.safety.clone(),
+                    elements: new_elements,
+                }
+            });
+            Value::If {
+                span: ByteSpan::default(),
+                condition: ValueId::from(nc),
+                true_branch: nitrate_hir::BlockId::from(nt_block),
+                false_branch: nf_block.map(nitrate_hir::BlockId::from),
+            }
+        }
+        // ── While ─────────────────────────────────────────────────
+        Value::While {
+            span: _,
+            condition,
+            body,
+        } => {
+            let nc = apply_subst_to_value(&condition.borrow(), subst);
+            let n_body_block = {
+                let block = body.borrow();
+                let new_elements: Vec<BlockElement> =
+                    block.elements.iter().map(|el| clone_block_element(el, subst)).collect();
+                nitrate_hir::Block {
+                    span: block.span,
+                    safety: block.safety.clone(),
+                    elements: new_elements,
+                }
+            };
+            Value::While {
+                span: ByteSpan::default(),
+                condition: ValueId::from(nc),
+                body: nitrate_hir::BlockId::from(n_body_block),
+            }
+        }
+        // ── Loop ──────────────────────────────────────────────────
+        Value::Loop { span: _, body } => {
+            let n_body_block = {
+                let block = body.borrow();
+                let new_elements: Vec<BlockElement> =
+                    block.elements.iter().map(|el| clone_block_element(el, subst)).collect();
+                nitrate_hir::Block {
+                    span: block.span,
+                    safety: block.safety.clone(),
+                    elements: new_elements,
+                }
+            };
+            Value::Loop {
+                span: ByteSpan::default(),
+                body: nitrate_hir::BlockId::from(n_body_block),
+            }
+        }
+        // ── Return ────────────────────────────────────────────────
+        Value::Return { span: _, value: val } => {
+            let nv = apply_subst_to_value(&val.borrow(), subst);
+            Value::Return {
+                span: ByteSpan::default(),
+                value: ValueId::from(nv),
+            }
+        }
+        // ── Block ─────────────────────────────────────────────────
+        Value::Block { block, .. } => {
+            let new_elements: Vec<BlockElement> = block
+                .borrow()
+                .elements
+                .iter()
+                .map(|el| clone_block_element(el, subst))
+                .collect();
+            let new_block = nitrate_hir::Block {
+                span: block.borrow().span,
+                safety: block.borrow().safety.clone(),
+                elements: new_elements,
+            };
+            Value::Block {
+                span: ByteSpan::default(),
+                block: nitrate_hir::BlockId::from(new_block),
+            }
+        }
+        // ── Call ──────────────────────────────────────────────────
         Value::Call { callee, args, .. } => {
-            // Substitute the callee and all arguments so that nested
-            // generic calls inside monomorphized code get rewritten.
             let new_callee = apply_subst_to_value(&callee.borrow(), subst);
             let new_positional: ThinVec<ValueId> = args
                 .positional
@@ -293,29 +543,53 @@ pub(crate) fn apply_subst_to_value(value: &Value, subst: &Substitution) -> Value
                 },
             }
         }
-        Value::FunctionSymbol { id, .. } => Value::FunctionSymbol {
-            span: ByteSpan::default(),
-            id: id.clone(),
-        },
-        Value::Block { block, .. } => {
-            // Substitute all block elements so that nested generics within
-            // block expressions inside monomorphized code are rewritten.
-            let new_elements: Vec<BlockElement> = block
-                .borrow()
-                .elements
+        // ── MethodCall ────────────────────────────────────────────
+        Value::MethodCall {
+            span: _,
+            object,
+            method_name,
+            args,
+        } => {
+            let no = apply_subst_to_value(&object.borrow(), subst);
+            let new_positional: ThinVec<ValueId> = args
+                .positional
                 .iter()
-                .map(|el| clone_block_element(el, subst))
+                .map(|a| ValueId::from(apply_subst_to_value(&a.borrow(), subst)))
                 .collect();
-            let new_block = nitrate_hir::Block {
-                span: block.borrow().span,
-                safety: block.borrow().safety.clone(),
-                elements: new_elements,
-            };
-            Value::Block {
+            let new_named: ThinVec<(NString, ValueId)> = args
+                .named
+                .iter()
+                .map(|(n, a)| (n.clone(), ValueId::from(apply_subst_to_value(&a.borrow(), subst))))
+                .collect();
+            Value::MethodCall {
                 span: ByteSpan::default(),
-                block: nitrate_hir::BlockId::from(new_block),
+                object: ValueId::from(no),
+                method_name: method_name.clone(),
+                args: Arguments {
+                    positional: new_positional,
+                    named: new_named,
+                },
             }
         }
-        val => val.clone(),
+        // ── Range ─────────────────────────────────────────────────
+        Value::Range {
+            span: _,
+            start,
+            end,
+            inclusive,
+        } => {
+            let ns = start
+                .as_ref()
+                .map(|s| ValueId::from(apply_subst_to_value(&s.borrow(), subst)));
+            let ne = end
+                .as_ref()
+                .map(|e| ValueId::from(apply_subst_to_value(&e.borrow(), subst)));
+            Value::Range {
+                span: ByteSpan::default(),
+                start: ns,
+                end: ne,
+                inclusive: *inclusive,
+            }
+        }
     }
 }

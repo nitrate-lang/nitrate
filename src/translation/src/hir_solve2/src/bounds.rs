@@ -211,8 +211,22 @@ pub(crate) fn compute_binary_bounds(op: &BinaryOp, left: Bounds, right: Bounds) 
             if r_min <= 0 && r_max_i128 >= 0 {
                 Some(Bounds::new(i128::MIN, i128::MAX as u128))
             } else {
-                let a = std::cmp::max(r_min.saturating_abs(), r_max_i128.saturating_abs());
-                Some(Bounds::new(0, (a - 1) as u128))
+                // Divisor range does not cross zero.  The sign of `x % y`
+                // follows the dividend `x` (truncation-toward-zero semantics).
+                // |x % y| < |y_max| = abs_max, so the result lies in
+                // [-(abs_max-1), abs_max-1] depending on the dividend's sign.
+                let abs_max = std::cmp::max(r_min.saturating_abs(), r_max_i128.saturating_abs());
+                if abs_max <= 0 {
+                    return Some(Bounds::new(i128::MIN, i128::MAX as u128));
+                }
+                let mag = (abs_max - 1) as i128;
+                if l_min >= 0 {
+                    Some(Bounds::new(0, mag.max(0) as u128))
+                } else if l_max_i128 <= 0 {
+                    Some(Bounds::new(mag.saturating_neg(), 0))
+                } else {
+                    Some(Bounds::new(mag.saturating_neg(), mag.max(0) as u128))
+                }
             }
         }
         BinaryOp::And => {
@@ -335,8 +349,14 @@ pub(crate) fn compute_unary_bounds(op: &UnaryOp, operand: Bounds) -> Bounds {
         }
         UnaryOp::Not => {
             if is_unsigned {
+                // For unsigned NOT: ~x lies in [~hi, ~lo] where both are
+                // u128 values.  The lower bound (~hi) may be negative when
+                // cast to i128, which is correct — it represents large
+                // unsigned values in the upper half of u128 space.
+                // Do NOT clip new_hi to i128::MAX; values in
+                // (i128::MAX, u128::MAX] are perfectly valid results.
                 let new_lo = (!hi) as i128;
-                let new_hi = (!(lo as u128)).min(i128::MAX as u128);
+                let new_hi = !(lo as u128);
                 Bounds::new(new_lo, new_hi)
             } else {
                 let hi_i128 = (hi.min(i128::MAX as u128)) as i128;
