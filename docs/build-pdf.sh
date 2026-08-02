@@ -22,13 +22,20 @@ COMBINED_MD="${OUTPUT_DIR}/combined.md"
 # Build output directory
 mkdir -p "${OUTPUT_DIR}"
 
+# Remove previous output so the script always regenerates the PDF
+# (prevents idempotency — every execution produces a fresh build)
+rm -f "${OUTPUT_PDF}"
+
+# Current month/year for the date field
+CURRENT_DATE="$(date "+%B %Y")"
+
 # Create metadata YAML for pandoc
-cat > "${METADATA_FILE}" << 'YAML'
+cat > "${METADATA_FILE}" << YAML
 ---
 title: "Nitrate Compiler Documentation"
 subtitle: "Comprehensive Architecture and Implementation Guide"
 author: "The Nitrate Team"
-date: "July 2026"
+date: "${CURRENT_DATE}"
 toc: true
 toc-depth: 3
 numbersections: true
@@ -51,9 +58,12 @@ header-includes:
     ```{=latex}
     \usepackage{fancyhdr}
     \pagestyle{fancy}
-    \fancyhead[LE,RO]{\slshape \leftmark}
-    \fancyhead[RE,LO]{Nitrate Compiler Documentation}
+    \fancyhf{}
+    \fancyhead[LE,RO]{\footnotesize\leftmark}
+    \fancyhead[LO,RE]{\footnotesize\itshape Nitrate Compiler}
     \fancyfoot[C]{\thepage}
+    \renewcommand{\headrulewidth}{0.4pt}
+    \renewcommand{\chaptermark}[1]{\markboth{\thechapter.\ #1}{}}
     \usepackage{xltxtra}
     ```
   - |
@@ -99,6 +109,7 @@ FILES=(
     "${SCRIPT_DIR}/VALIDATION.md"
     "${SCRIPT_DIR}/EVALUATION.md"
     "${SCRIPT_DIR}/MANGLE.md"
+    "${SCRIPT_DIR}/MIR.md"
     "${SCRIPT_DIR}/LLVM_CODEGEN.md"
     "${SCRIPT_DIR}/OPTIMIZATION.md"
     "${SCRIPT_DIR}/NSTRING.md"
@@ -156,7 +167,7 @@ if command -v pandoc &> /dev/null; then
             --standalone \
             2>&1 && echo "PDF created successfully!" || echo "PDF build failed, trying alternate engine..."
     fi
-    
+
     # Try xelatex if weasyprint failed or isn't available
     if [ ! -f "${OUTPUT_PDF}" ]; then
         if command -v xelatex &> /dev/null; then
@@ -175,7 +186,7 @@ if command -v pandoc &> /dev/null; then
                 2>&1 && echo "PDF created successfully!" || echo "PDF build failed."
         fi
     fi
-    
+
     # Try pdflatex as fallback
     if [ ! -f "${OUTPUT_PDF}" ]; then
         if command -v pdflatex &> /dev/null; then
@@ -226,7 +237,7 @@ if [ ! -f "${OUTPUT_PDF}" ]; then
     echo ""
     echo "PDF generation was not possible. Generating HTML documentation..."
     OUTPUT_HTML="${OUTPUT_DIR}/nitrate-compiler-documentation.html"
-    
+
     if command -v pandoc &> /dev/null; then
         pandoc "${COMBINED_MD}" \
             --metadata-file="${METADATA_FILE}" \
