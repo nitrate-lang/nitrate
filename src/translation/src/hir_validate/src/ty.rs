@@ -354,6 +354,7 @@ impl ValidateHirType for Type {
                 Ok(())
             }
             Type::Range { .. } => Ok(()),
+            Type::Str { .. } => Ok(()),
         }
     }
     fn validate(self, ctx: &mut ValidateCtx, options: &ValidateTypeOptions) -> Result<ValidHir<Self>, ()> {
