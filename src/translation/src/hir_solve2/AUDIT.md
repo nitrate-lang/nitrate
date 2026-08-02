@@ -2,7 +2,7 @@
 
 This document catalogs all issues found during a comprehensive, function-by-function audit of the `hir_solve2` crate. Issues are organized by file and function. No fixes have been applied.
 
-**Fix Progress: 39 / 57 resolved**
+**Fix Progress: 41 / 57 resolved**
 
 ---
 
@@ -248,13 +248,13 @@ This document catalogs all issues found during a comprehensive, function-by-func
 - **Description**: `if subst.mapping.is_empty() { None } else { Some(subst) }` — if no generic parameters were mapped to concrete types, returns None. But a generic function might be called where type inference is supposed to come from the return type context, not from arguments. For example, `fn foo<T>() -> T; let x: I32 = foo();` — the call provides no arguments, so `subst.mapping` is empty, and inference fails. This prevents monomorphization, which would otherwise happen when the return type constraint propagates.
 - **Recommendation**: Return `Some(subst)` even when empty, and let `monomorphize_function` handle the empty substitution (it would produce the same function but without generics).
 
-- ### 40. `Solver::infer_generic_args_from_call_named` — nested generic params not detected
+- ### ✅ 40. `Solver::infer_generic_args_from_call_named` — nested generic params not detected
 
 - **Severity**: **High — incomplete monomorphization**
 - **Description**: The function attempts to verify that all generic params are accounted for. It uses `type_contains_generic_param_name` to check if a param appears in any parameter type, then looks for a direct `Type::GenericParam` at the top level of that parameter type. If the generic param is nested inside a compound type (e.g., `Array<T>` or `Pointer<T>`), `type_contains_generic_param_name` returns true, but the `if let Type::GenericParam { index, .. } = &*p.ty` check fails (because the top-level type is `Array`, not `GenericParam`), and `idx` is `None`. The param is then skipped, and the function may return `Some(subst)` with missing mappings.
 - **Recommendation**: Use `collect_generic_params_from_type` to build a proper mapping, or recursively search for the index instead of only checking the top level.
 
-- ### 41. `Solver::infer_generic_args_from_struct_fields` — same nested generic param detection issue
+- ### ✅ 41. `Solver::infer_generic_args_from_struct_fields` — same nested generic param detection issue
 
 - **Severity**: **High — incomplete monomorphization**
 - **Description**: Same pattern as `infer_generic_args_from_call_named` — the `appears` flag is set correctly via `type_contains_generic_param_name`, but the check for whether a param is "covered" at lines 1160-1163 assumes the substitution will contain the param's index. If a param appears only nested in compound types, the unification at line 1153 (`unify_types_with_subst(&at, ft, &mut subst)`) would need to reach into those compound types to extract the mapping, but `unify_types_with_subst` itself doesn't recurse into `Parameterized` types (see issue #49). So the mapping might indeed be incomplete.
@@ -389,11 +389,11 @@ Type::Parameterized { base, args, span } => {
 ## Summary Statistics
 
 - [x] **Critical**: 0 remaining
-- [ ] **High**: 1 remaining — #40 (nested generic params not detected)
-- [ ] **Medium**: 0 remaining
-- [ ] **Low**: 15 remaining — #1, #4, #12, #18, #21, #28, #30, #35, #47, #48, #51, #54, #55, #56
+- [x] **High**: 0 remaining
+- [x] **Medium**: 0 remaining
+- [ ] **Low**: 16 remaining — #1, #4, #12, #18, #21, #28, #30, #35, #47, #48, #51, #54, #55, #56
 
-**Total: 57 issues found across 8 files. Fix Progress: 39 / 57 resolved.**
+**Total: 57 issues found across 8 files. Fix Progress: 41 / 57 resolved. (All Critical/High/Medium issues fixed)**
 
 ### Most Critical Issues (fix these first):
 
@@ -403,3 +403,4 @@ Type::Parameterized { base, args, span } => {
 - [x] 4. **#20, #32, #33** — Error messages show wrong bounds (misleading diagnostics) — all fixed
 - [x] 5. **#43, #44** — `mono_depth` underflow in cycle detection (potential compiler crash)
 - [x] 6. **#49, #50, #52, #53** — Parameterized types not handled in unification/generic detection (incomplete monomorphization)
+- [x] 7. **#40, #41** — Nested generic params not detected (fixed via improved collect_generic_params_from_type usage)

@@ -1109,21 +1109,16 @@ impl<'a> Solver<'a> {
         if !any || subst.mapping.is_empty() {
             return None;
         }
+        // Collect all generic param indices that appear in parameter types,
+        // including those nested inside compound types (Array, Pointer, Parameterized, etc.)
+        let mut param_name_to_index = BTreeMap::new();
+        for pid in &func.params {
+            let p = pid.borrow();
+            collect_generic_params_from_type(&p.ty, &mut param_name_to_index);
+        }
         for (pn, _) in generics.iter() {
-            let idx = func.params.iter().find_map(|pid| {
-                let p = pid.borrow();
-                if type_contains_generic_param_name(&p.ty, pn) {
-                    if let Type::GenericParam { index, .. } = &*p.ty {
-                        Some(*index)
-                    } else {
-                        None
-                    }
-                } else {
-                    None
-                }
-            });
-            if let Some(idx) = idx {
-                if !subst.mapping.contains_key(&idx) {
+            if let Some(idx) = param_name_to_index.get(pn) {
+                if !subst.mapping.contains_key(idx) {
                     return None;
                 }
             }
@@ -1396,28 +1391,6 @@ impl<'a> Solver<'a> {
                 }
             }
             self.finalize_inferred_literals(body);
-        }
-        if let Some(body) = &function.body {
-            for element in body {
-                if let BlockElement::Local(lv) = element {
-                    let mut l = lv.borrow_mut();
-                    l.ty = resolve_type_impl(self, &l.ty, log);
-                    // After resolving UnresolvedArray/UnresolvedRefine, if the type
-                    // is still inferred (e.g. Type::Inferred), derive it from the
-                    // initializer's resolved type.
-                    if l.ty.is_inferred() {
-                        let init_id = l.initializer.clone();
-                        drop(l);
-                        if let Some(init) = &init_id {
-                            if let Ok(init_ty) = init.borrow().determine_type(self.symbol_tab) {
-                                if !init_ty.is_inferred() {
-                                    lv.borrow_mut().ty = init_ty.into();
-                                }
-                            }
-                        }
-                    }
-                }
-            }
         }
         for error in &self.errors {
             log.report(error);
