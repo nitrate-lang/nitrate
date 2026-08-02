@@ -89,19 +89,22 @@ pub fn lower_hir_to_mir(hir_module: &hir::Module, symbol_tab: &hir::SymbolTab) -
 
     let mut builder = mir::MirBuilder::new();
 
-    // Lower all top-level items that are functions
+    // Lower all functions that have a body, including impl methods
+    // which are registered in the symbol table but not in module.items.
+    let mut lowered: std::collections::HashSet<usize> = std::collections::HashSet::new();
+    for func_id in symbol_tab.functions() {
+        let func = func_id.borrow();
+        if func.body.is_some() && lowered.insert(func_id.as_usize()) {
+            lower_function(&mut builder, &*func, symbol_tab);
+        }
+    }
+
+    // Also lower top-level function items (includes extern declarations)
     for item in &hir_module.items {
-        match item {
-            hir::Item::Function(func_id) => {
-                let func = func_id.borrow();
-                // Only lower functions that have a body
-                if func.body.is_some() {
-                    lower_function(&mut builder, &*func, symbol_tab);
-                }
-            }
-            _ => {
-                // Structs, enums, type aliases, traits, globals — nothing to lower
-                // to MIR at the module level. They are referenced by functions.
+        if let hir::Item::Function(func_id) = item {
+            let func = func_id.borrow();
+            if lowered.insert(func_id.as_usize()) {
+                lower_function(&mut builder, &*func, symbol_tab);
             }
         }
     }
@@ -129,6 +132,12 @@ fn lower_function(builder: &mut mir::MirBuilder, func: &hir::Function, symbol_ta
         .collect();
 
     let mut func_builder = builder.start_function(name, return_ty);
+
+    // Propagate C-variadic flag
+    use nitrate_hir::FunctionAttribute;
+    if func.attributes.contains(&FunctionAttribute::CVariadic) {
+        func_builder.set_c_variadic();
+    }
 
     // Lower parameters
     let mut param_locals: Vec<(NString, mir::LocalId)> = Vec::new();
