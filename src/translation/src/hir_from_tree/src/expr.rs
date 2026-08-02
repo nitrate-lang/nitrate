@@ -854,13 +854,10 @@ fn lower_local_variable(
 
     let initializer = match local_var.initializer.to_owned() {
         Some(expr) => lower_expr(expr, ctx, log)?.into(),
-        None => {
-            log.report(&HirErr::LocalVariableMissingInitializer {
-                span,
-                name: name.to_string(),
-            });
-            return Err(());
+        None => Value::Unit {
+            span: ByteSpan::default(),
         }
+        .into(),
     };
 
     let localvar_id: LocalVariableId = LocalVariable {
