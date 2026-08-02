@@ -182,6 +182,14 @@ pub fn lower_type(hir_ty: &hir::Type) -> mir::MirTypeId {
             return lower_type(base);
         }
 
+        hir::Type::UnresolvedArray { element_type, .. } => {
+            return lower_type(element_type);
+        }
+
+        hir::Type::UnresolvedRefine { base, .. } => {
+            return lower_type(base);
+        }
+
         hir::Type::Inferred { .. }
         | hir::Type::InferredFloat { .. }
         | hir::Type::InferredInteger { .. }

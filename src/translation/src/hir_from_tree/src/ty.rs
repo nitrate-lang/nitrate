@@ -1,7 +1,6 @@
 use crate::{context::Ast2HirCtx, diagnosis::HirErr, expr::lower_expr, helpers};
 use nitrate_diagnosis::CompilerLog;
 use nitrate_hir::prelude::*;
-use nitrate_hir_evaluate::Evaluator;
 use nitrate_token::IntegerKind;
 use nitrate_tree::ByteSpan;
 use nitrate_tree::ast::{self as ast, SymbolKind};
@@ -48,6 +47,11 @@ fn max_lit_for_type(ty: &Type) -> Lit {
         Type::I128 { .. } => Lit::I128(i128::MAX),
         _ => Lit::U64(u64::MAX),
     }
+}
+
+fn lit_id_to_value_id(lit_id: &LiteralId) -> ValueId {
+    let lit: Lit = get_storage(|store| store[lit_id].clone());
+    Value::from(lit).into()
 }
 
 fn lit_to_u128(lit: &Lit) -> Option<u128> {
@@ -164,26 +168,19 @@ fn lower_refinement_bound(
     target_type: Option<&Type>,
     ctx: &mut Ast2HirCtx,
     log: &CompilerLog,
-) -> Result<LiteralId, ()> {
+) -> Result<ValueId, ()> {
     let hir_value = lower_expr(bound_expr, ctx, log)?;
 
-    let cast_value = match target_type {
-        Some(ty) => Value::Cast {
-            span: ByteSpan::default(),
-            value: hir_value.into(),
-            target_type: ty.clone().into(),
-        },
-        None => hir_value,
-    };
-
-    match Evaluator::new(log, ctx.ptr_size).evaluate_to_literal(&cast_value) {
-        Ok(lit) => Ok(store_lit(lit)),
-        Err(_) => {
-            log.report(&HirErr::RefinementBoundNotConstant {
+    match target_type {
+        Some(ty) => {
+            let cast = Value::Cast {
                 span: ByteSpan::default(),
-            });
-            Err(())
+                value: hir_value.into(),
+                target_type: ty.clone().into(),
+            };
+            Ok(cast.into())
         }
+        None => Ok(hir_value.into()),
     }
 }
 
@@ -219,23 +216,13 @@ pub(crate) fn lower_refinement_type(
         return Err(());
     }
 
-    let (min_lit, max_lit): (LiteralId, LiteralId) =
+    let (min_val, max_val): (ValueId, ValueId) =
         match (refinement_type.width, refinement_type.minimum, refinement_type.maximum) {
             (Some(width_expr), None, None) => {
-                let w_id = lower_refinement_bound(width_expr, None, ctx, log)?;
-                let w_lit: Lit = get_storage(|store| store[&w_id]);
-                let width_val = lit_to_u128(&w_lit).filter(|&v| v != 0 && v <= 128).ok_or_else(|| {
-                    let width_str = format!("{:?}", w_lit);
-                    log.report(&HirErr::RefinementWidthOutOfRange {
-                        span: r_span,
-                        width: width_str,
-                    });
-                })?;
-
-                let max_val = (1u128 << width_val) - 1;
-                let min = store_lit(Lit::U128(0));
-                let max = store_lit(Lit::U128(max_val));
-                (min, max)
+                let _w_id = lower_refinement_bound(width_expr, None, ctx, log)?;
+                let min_lit = store_lit(Lit::U128(0));
+                let max_lit = store_lit(Lit::U128(u128::MAX));
+                (lit_id_to_value_id(&min_lit), lit_id_to_value_id(&max_lit))
             }
 
             (None, Some(min_expr), Some(max_expr)) => {
@@ -253,28 +240,28 @@ pub(crate) fn lower_refinement_type(
 
             (None, Some(min_expr), None) => {
                 let min = lower_refinement_bound(min_expr, Some(&basis_type), ctx, log)?;
-                let max = store_lit(max_lit_for_type(&basis_type));
-                (min, max)
+                let max_lit = store_lit(max_lit_for_type(&basis_type));
+                (min, lit_id_to_value_id(&max_lit))
             }
 
             (None, None, Some(max_expr)) => {
-                let min = store_lit(min_lit_for_type(&basis_type));
+                let min_lit = store_lit(min_lit_for_type(&basis_type));
                 let max = lower_refinement_bound(max_expr, Some(&basis_type), ctx, log)?;
-                (min, max)
+                (lit_id_to_value_id(&min_lit), max)
             }
 
             (Some(width_expr), Some(min_expr), None) => {
                 let _w_id = lower_refinement_bound(width_expr, None, ctx, log)?;
                 let min = lower_refinement_bound(min_expr, Some(&basis_type), ctx, log)?;
-                let max = store_lit(max_lit_for_type(&basis_type));
-                (min, max)
+                let max_lit = store_lit(max_lit_for_type(&basis_type));
+                (min, lit_id_to_value_id(&max_lit))
             }
 
             (Some(width_expr), None, Some(max_expr)) => {
                 let _w_id = lower_refinement_bound(width_expr, None, ctx, log)?;
-                let min = store_lit(min_lit_for_type(&basis_type));
+                let min_lit = store_lit(min_lit_for_type(&basis_type));
                 let max = lower_refinement_bound(max_expr, Some(&basis_type), ctx, log)?;
-                (min, max)
+                (lit_id_to_value_id(&min_lit), max)
             }
 
             (None, None, None) => {
@@ -283,11 +270,11 @@ pub(crate) fn lower_refinement_type(
             }
         };
 
-    Ok(Type::Refine {
+    Ok(Type::UnresolvedRefine {
         span: r_span,
         base: basis_type.into(),
-        min: min_lit,
-        max: max_lit,
+        min: min_val,
+        max: max_val,
     })
 }
 
@@ -326,33 +313,12 @@ pub(crate) fn lower_array_type(
     let element_type: TypeId = lower_type(array_type.element_type, ctx, log)?.into();
     let a_span = array_type.span;
 
-    let array_length_expr = Value::Cast {
-        span: ByteSpan::default(),
-        value: lower_expr(array_type.len, ctx, log)?.into(),
-        target_type: Type::USize {
-            span: ByteSpan::default(),
-        }
-        .into(),
-    };
+    let len_value_id: ValueId = lower_expr(array_type.len, ctx, log)?.into();
 
-    let len = match Evaluator::new(log, ctx.ptr_size).evaluate_to_literal(&array_length_expr) {
-        Ok(Lit::USize(_bits, val)) => u32::try_from(val).map_err(|_| {
-            log.report(&HirErr::ArrayLengthExpectedUSize { span: a_span });
-        })?,
-        Ok(_) => {
-            log.report(&HirErr::ArrayLengthExpectedUSize { span: a_span });
-            return Err(());
-        }
-        Err(err) => {
-            log.report(&HirErr::ArrayTypeLengthEvalError { span: a_span, err });
-            return Err(());
-        }
-    };
-
-    Ok(Type::Array {
+    Ok(Type::UnresolvedArray {
         span: a_span,
         element_type,
-        len,
+        len: len_value_id,
     })
 }
 
@@ -1345,12 +1311,12 @@ mod tests {
                 })),
             };
             let r = lower_array_type(a, ctx, log).unwrap();
-            assert!(matches!(r, Type::Array { len: 5, .. }));
+            assert!(matches!(r, Type::UnresolvedArray { .. }));
         })
     }
 
     #[test]
-    fn lower_array_string_len_fails() {
+    fn lower_array_len_works() {
         run(|ctx, log| {
             let a = ast::ArrayType {
                 span: ByteSpan::default(),
@@ -1362,7 +1328,8 @@ mod tests {
                     value: "bad".into(),
                 }),
             };
-            assert!(lower_array_type(a, ctx, log).is_err());
+            // Now produces UnresolvedArray since evaluation is deferred
+            assert!(lower_array_type(a, ctx, log).is_ok());
         })
     }
 }

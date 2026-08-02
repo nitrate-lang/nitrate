@@ -116,6 +116,18 @@ impl Dump for Type {
                 write!(o, "]")
             }
 
+            Type::UnresolvedArray { element_type, len, .. } => {
+                write!(o, "[")?;
+                element_type.dump(ctx, o)?;
+                write!(o, "; ")?;
+                write!(o, "<expr {:?}>", len)
+            }
+
+            Type::UnresolvedRefine { base, .. } => {
+                base.dump(ctx, o)?;
+                write!(o, ": [<expr>]")
+            }
+
             Type::Function { function_type, .. } => function_type.dump(ctx, o),
 
             Type::Reference {

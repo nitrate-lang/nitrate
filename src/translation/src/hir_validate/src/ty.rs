@@ -353,6 +353,8 @@ impl ValidateHirType for Type {
                 // The codegen layer will panic if any GenericParam survives to LLVM IR generation.
                 Ok(())
             }
+            Type::UnresolvedArray { element_type, .. } => element_type.verify(ctx, options),
+            Type::UnresolvedRefine { base, .. } => base.verify(ctx, options),
             Type::Range { .. } => Ok(()),
             Type::Str { .. } => Ok(()),
         }

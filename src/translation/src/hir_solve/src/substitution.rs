@@ -138,6 +138,23 @@ impl Substitution {
                 let type_alias = def.borrow();
                 self.apply(&type_alias.type_id)
             }
+            Type::UnresolvedArray { element_type, len, .. } => {
+                let new_elem = self.apply(element_type);
+                Type::UnresolvedArray {
+                    span: ty.span(),
+                    element_type: TypeId::from(new_elem),
+                    len: len.clone(),
+                }
+            }
+            Type::UnresolvedRefine { base, min, max, .. } => {
+                let new_base = self.apply(base);
+                Type::UnresolvedRefine {
+                    span: ty.span(),
+                    base: TypeId::from(new_base),
+                    min: min.clone(),
+                    max: max.clone(),
+                }
+            }
             Type::Never { .. }
             | Type::Unit { .. }
             | Type::Bool { .. }

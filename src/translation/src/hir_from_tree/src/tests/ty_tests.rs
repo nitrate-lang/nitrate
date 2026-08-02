@@ -449,11 +449,10 @@ fn lt_array_5() {
         )
         .unwrap();
         match r {
-            Type::Array { element_type, len, .. } => {
+            Type::UnresolvedArray { element_type, .. } => {
                 assert!(matches!(element_type.deref(), Type::I32 { .. }));
-                assert_eq!(len, 5);
             }
-            _ => panic!("expected array"),
+            _ => panic!("expected UnresolvedArray"),
         }
     })
 }
@@ -477,10 +476,9 @@ fn lt_array_zero() {
             l,
         )
         .unwrap();
-        assert!(r.is_array());
         match r {
-            Type::Array { len, .. } => assert_eq!(len, 0),
-            _ => panic!("expected array"),
+            Type::UnresolvedArray { .. } => {}
+            _ => panic!("expected UnresolvedArray"),
         }
     })
 }

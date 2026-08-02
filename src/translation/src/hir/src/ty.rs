@@ -1,5 +1,6 @@
 use crate::prelude::*;
 use crate::store::LiteralId;
+use crate::store::ValueId;
 use nitrate_nstring::NString;
 use nitrate_tree::ByteSpan;
 use serde::{Deserialize, Serialize};
@@ -129,6 +130,21 @@ pub enum Type {
         base: TypeId,
         min: LiteralId,
         max: LiteralId,
+    },
+    /// Array type with an expression for length, not yet evaluated.
+    /// Resolved to `Array` during `hir_solve`.
+    UnresolvedArray {
+        span: ByteSpan,
+        element_type: TypeId,
+        len: ValueId,
+    },
+    /// Refinement type with expressions for bounds, not yet evaluated.
+    /// Resolved to `Refine` during `hir_solve`.
+    UnresolvedRefine {
+        span: ByteSpan,
+        base: TypeId,
+        min: ValueId,
+        max: ValueId,
     },
     Function {
         span: ByteSpan,
@@ -263,6 +279,8 @@ impl Type {
             Type::Enum { .. } => TypeDisc::Enum,
             Type::TypeAlias { .. } => TypeDisc::TypeAlias,
             Type::Refine { .. } => TypeDisc::Refine,
+            Type::UnresolvedArray { .. } => TypeDisc::Array,
+            Type::UnresolvedRefine { .. } => TypeDisc::Refine,
             Type::Function { .. } => TypeDisc::Function,
             Type::Reference { .. } => TypeDisc::Reference,
             Type::SliceRef { .. } => TypeDisc::SliceRef,
@@ -303,7 +321,9 @@ impl Type {
             Type::Struct { span, .. } => *span,
             Type::Enum { span, .. } => *span,
             Type::TypeAlias { span, .. } => *span,
-            Type::Refine { span, .. } => *span,
+            Type::Refine { span, .. } | Type::UnresolvedArray { span, .. } | Type::UnresolvedRefine { span, .. } => {
+                *span
+            }
             Type::Function { span, .. } => *span,
             Type::Reference { span, .. } => *span,
             Type::SliceRef { span, .. } => *span,
@@ -357,7 +377,7 @@ impl Type {
     }
     #[must_use]
     pub fn is_array(&self) -> bool {
-        matches!(self, Type::Array { .. })
+        matches!(self, Type::Array { .. } | Type::UnresolvedArray { .. })
     }
     #[must_use]
     pub fn is_tuple(&self) -> bool {
@@ -607,6 +627,17 @@ impl std::hash::Hash for Type {
                 min.hash(state);
                 max.hash(state);
             }
+            Type::UnresolvedArray { element_type, len, .. } => {
+                35u8.hash(state);
+                element_type.hash(state);
+                len.hash(state);
+            }
+            Type::UnresolvedRefine { base, min, max, .. } => {
+                36u8.hash(state);
+                base.hash(state);
+                min.hash(state);
+                max.hash(state);
+            }
             Type::Function { function_type, .. } => {
                 22u8.hash(state);
                 function_type.hash(state);
@@ -734,6 +765,41 @@ impl Ord for Type {
                         ..
                     },
                     Type::Refine {
+                        base: b2,
+                        min: mi2,
+                        max: ma2,
+                        ..
+                    },
+                ) => match b1.as_usize().cmp(&b2.as_usize()) {
+                    std::cmp::Ordering::Equal => match mi1.as_usize().cmp(&mi2.as_usize()) {
+                        std::cmp::Ordering::Equal => ma1.as_usize().cmp(&ma2.as_usize()),
+                        other => other,
+                    },
+                    other => other,
+                },
+                (
+                    Type::UnresolvedArray {
+                        element_type: e1,
+                        len: l1,
+                        ..
+                    },
+                    Type::UnresolvedArray {
+                        element_type: e2,
+                        len: l2,
+                        ..
+                    },
+                ) => match e1.as_usize().cmp(&e2.as_usize()) {
+                    std::cmp::Ordering::Equal => l1.as_usize().cmp(&l2.as_usize()),
+                    other => other,
+                },
+                (
+                    Type::UnresolvedRefine {
+                        base: b1,
+                        min: mi1,
+                        max: ma1,
+                        ..
+                    },
+                    Type::UnresolvedRefine {
                         base: b2,
                         min: mi2,
                         max: ma2,

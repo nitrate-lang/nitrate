@@ -111,6 +111,14 @@ pub fn mangle_type(ty: &Type) -> String {
             format!("V{}", mangle_type(base))
         }
 
+        Type::UnresolvedArray { element_type, .. } => {
+            format!("Q{}0_", mangle_type(element_type))
+        }
+
+        Type::UnresolvedRefine { base, .. } => {
+            format!("V{}", mangle_type(base))
+        }
+
         Type::Function { function_type, .. } => {
             let mut result = format!("W{}_", function_type.params.len());
             for (_, param) in function_type.params.iter() {

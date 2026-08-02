@@ -68,7 +68,9 @@ pub fn get_align_of(ty: &Type, ctx: &LayoutCtx) -> Result<u64, LayoutError> {
             get_align_of(type_alias, ctx)
         }
 
-        Type::Refine { base, .. } => Ok(get_align_of(base, ctx)?),
+        Type::Refine { base, .. } => get_align_of(base, ctx),
+        Type::UnresolvedArray { element_type, .. } => get_align_of(element_type, ctx),
+        Type::UnresolvedRefine { base, .. } => get_align_of(base, ctx),
         Type::Range { .. } => Ok(1),
         Type::Str { .. } => Ok(ctx.ptr_size as u64),
 
