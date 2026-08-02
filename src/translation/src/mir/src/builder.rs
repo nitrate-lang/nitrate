@@ -35,9 +35,11 @@ impl MirBuilder {
             return_ty,
             params: ThinVec::new(),
             locals: ThinVec::new(),
+            local_ids: ThinVec::new(),
             arg_count: 0,
             blocks: ThinVec::new(),
             entry_block: None,
+            is_c_variadic: false,
             current_block: None,
         }
     }
@@ -109,6 +111,8 @@ pub struct MirFunctionBuilder<'b> {
     arg_count: u32,
     blocks: ThinVec<BasicBlockId>,
     entry_block: Option<BasicBlockId>,
+    local_ids: ThinVec<LocalId>,
+    is_c_variadic: bool,
 
     /// The basic block currently being constructed (if any).
     pub current_block: Option<BasicBlockId>,
@@ -127,7 +131,14 @@ impl<'b> MirFunctionBuilder<'b> {
         self.params.push(id.clone());
         self.arg_count += 1;
         self.locals.push(LocalDecl { ty, mutable });
+        self.local_ids.push(id.clone());
         id
+    }
+
+    /// Mark this function as C-variadic (uses `...` in params).
+    pub fn set_c_variadic(&mut self) -> &mut Self {
+        self.is_c_variadic = true;
+        self
     }
 
     /// Create a new temporary local and return its `LocalId`.
@@ -139,6 +150,7 @@ impl<'b> MirFunctionBuilder<'b> {
         let local = LocalDecl { ty, mutable };
         let id: LocalId = local.into();
         self.locals.push(LocalDecl { ty, mutable });
+        self.local_ids.push(id.clone());
         id
     }
 
@@ -487,22 +499,57 @@ impl<'b> MirFunctionBuilder<'b> {
     /// Finalize the function: commit all data to the MirStore and return
     /// the `MirFunctionId`.
     pub fn finish_function(self) -> MirFunctionId {
-        let entry_block = self
-            .entry_block
-            .expect("No entry block created; call create_block first");
+        // Extern functions have no body and thus no blocks/entry block.
+        // Create a dummy entry block so the function is well-formed.
+        if self.entry_block.is_none() {
+            return self.finish_extern_function();
+        }
+
+        let entry_block = self.entry_block.unwrap();
 
         let func = MirFunction {
             name: self.name,
             params: self.params,
             return_ty: self.return_ty,
             locals: self.locals,
+            local_ids: self.local_ids,
             entry_block,
             blocks: self.blocks,
             arg_count: self.arg_count,
+            is_c_variadic: self.is_c_variadic,
         };
 
         let func_id: MirFunctionId = func.into();
 
+        self.builder.add_function(func_id.clone());
+        func_id
+    }
+
+    /// Finalize an extern function that has no body (and thus no blocks).
+    /// Creates an empty block to satisfy the invariant that every function
+    /// has an entry block.
+    fn finish_extern_function(self) -> MirFunctionId {
+        // Create a placeholder entry block for the extern function
+        let bb = BasicBlock {
+            statements: ThinVec::new(),
+            terminator: Terminator::Unreachable,
+            args: ThinVec::new(),
+        };
+        let entry_block: BasicBlockId = bb.into();
+
+        let func = MirFunction {
+            name: self.name,
+            params: self.params,
+            return_ty: self.return_ty,
+            locals: self.locals,
+            local_ids: self.local_ids,
+            entry_block,
+            blocks: ThinVec::new(),
+            arg_count: self.arg_count,
+            is_c_variadic: self.is_c_variadic,
+        };
+
+        let func_id: MirFunctionId = func.into();
         self.builder.add_function(func_id.clone());
         func_id
     }

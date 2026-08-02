@@ -40,6 +40,10 @@ pub struct MirFunction {
     /// All local variable declarations (parameters + temporaries + user variables).
     pub locals: ThinVec<LocalDecl>,
 
+    /// LocalIds for each local, in 1:1 correspondence with `locals`.
+    /// These are the global TLS store handles needed for codegen lookups.
+    pub local_ids: ThinVec<LocalId>,
+
     /// The entry basic block (where execution starts).
     pub entry_block: BasicBlockId,
 
@@ -49,6 +53,9 @@ pub struct MirFunction {
     /// Number of "arguments" (parameter locals). The first `arg_count`
     /// entries in `locals` are parameters.
     pub arg_count: u32,
+
+    /// Whether this function is C-variadic (has `...` in its parameter list).
+    pub is_c_variadic: bool,
 }
 
 impl MirFunction {
@@ -58,18 +65,22 @@ impl MirFunction {
         params: ThinVec<LocalId>,
         return_ty: MirTypeId,
         locals: ThinVec<LocalDecl>,
+        local_ids: ThinVec<LocalId>,
         entry_block: BasicBlockId,
         blocks: ThinVec<BasicBlockId>,
         arg_count: u32,
+        is_c_variadic: bool,
     ) -> Self {
         Self {
             name,
             params,
             return_ty,
             locals,
+            local_ids,
             entry_block,
             blocks,
             arg_count,
+            is_c_variadic,
         }
     }
 
