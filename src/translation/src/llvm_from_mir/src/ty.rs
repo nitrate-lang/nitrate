@@ -93,10 +93,8 @@ pub fn gen_ty<'ctx>(mir_type: &mir::MirType, ctx: &mut TypegenCtx<'ctx, '_>) -> 
         }
         mir::MirType::Range => ctx.llvm.struct_type(&[], false).into(),
         mir::MirType::Str => {
-            // String is represented as { ptr, len } (same as slice)
-            let ptr = ctx.llvm.ptr_type(AddressSpace::default());
-            let size = ctx.llvm.ptr_sized_int_type(ctx.llvm.target_data(), None);
-            ctx.llvm.struct_type(&[ptr.into(), size.into()], false).into()
+            // String is represented as a pointer to null-terminated byte data
+            ctx.llvm.ptr_type(AddressSpace::default()).into()
         }
     }
 }

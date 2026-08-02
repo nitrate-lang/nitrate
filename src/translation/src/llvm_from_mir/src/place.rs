@@ -90,7 +90,22 @@ pub fn get_place_type_for_load<'ctx>(ctx: &CodegenCtx<'ctx, '_>, place: &mir::Pl
             // copy of the locals vec (which has different indexing).
             local_id.borrow().ty.clone()
         }
-        mir::Place::Static(_name) => mir::MirType::Unit.into(),
+        mir::Place::Static(name) => {
+            // Look up the global's type from the globals map
+            if let Some((_, llvm_ty)) = ctx.globals.get(name) {
+                // Map LLVM type back to MirType for load purposes
+                if llvm_ty.is_pointer_type() {
+                    // For string globals, the type is Str (a pointer)
+                    mir::MirType::Str.into()
+                } else if llvm_ty.is_struct_type() {
+                    mir::MirType::Unit.into()
+                } else {
+                    mir::MirType::Unit.into()
+                }
+            } else {
+                mir::MirType::Unit.into()
+            }
+        }
         mir::Place::Deref(base) => {
             let base_ty = get_place_type_for_load(ctx, base);
             match &*base_ty {

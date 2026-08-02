@@ -2,6 +2,7 @@ use crate::context::CodegenCtx;
 use crate::context::nitrate_llvm_appendToGlobalCtors;
 use crate::stmt::{gen_statement, gen_terminator};
 use crate::ty::{TypegenCtx, gen_ty};
+use inkwell::AddressSpace;
 use inkwell::module::{Linkage, Module};
 use inkwell::types::{BasicMetadataTypeEnum, BasicType, BasicTypeEnum};
 use inkwell::values::{AsValueRef, FunctionValue, PhiValue, PointerValue};
@@ -150,13 +151,6 @@ pub fn generate_llvmir_from_mir<'ctx>(
         global.set_initializer(&llvm_ty.const_zero());
         global.set_linkage(Linkage::External);
 
-        // Generate a constructor function for this global, registered via
-        // llvm.global_ctors. This ensures the global is initialized before main.
-        //
-        // MIR globals do not carry initializer expressions (unlike HIR), so the
-        // constructor is a minimal placeholder that zero-initializes. The real
-        // initialization is expected to happen before codegen or via a separate
-        // lowering pass.
         let ctor_name = format!("{}_ctor", global_name);
         let ctor_fn = module.add_function(&ctor_name, llvm.void_type().fn_type(&[], false), Some(Linkage::Private));
         let ctor_builder = llvm.create_builder();
@@ -169,6 +163,27 @@ pub fn generate_llvmir_from_mir<'ctx>(
         }
 
         globals.insert(global_name.clone(), (global.as_pointer_value(), llvm_ty));
+    }
+
+    // Emit string literals as private global constant arrays.
+    // String globals (e.g. __nitrate_str_0) are created as read-only
+    // `[N x i8]` arrays and registered in the globals map so that
+    // `Place::Static(name)` works for borrow expressions like `&"string"`.
+    for (str_name, str_data) in mir_module.string_globals.iter() {
+        let str_const = llvm.const_string(str_data.as_slice(), true);
+        let str_ty = str_const.get_type();
+        let str_global = module.add_global(str_ty, None, str_name);
+        str_global.set_initializer(&str_const);
+        str_global.set_linkage(Linkage::Private);
+        str_global.set_unnamed_addr(true);
+        str_global.set_constant(true);
+        globals.insert(
+            str_name.clone(),
+            (
+                str_global.as_pointer_value(),
+                llvm.ptr_type(AddressSpace::default()).into(),
+            ),
+        );
     }
 
     // Pass 1: Declare all functions first (so calls to extern/forward-referenced
