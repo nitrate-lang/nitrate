@@ -796,17 +796,34 @@ impl<'m> Solver<'m> {
                     return;
                 }
             } else {
-                let mf = method_id.borrow();
+                // Non-generic method: replace MethodCall with Call + FunctionSymbol,
+                // passing the object as the first positional argument (self).
+                let mut args_with_self = args_result.clone();
+                args_with_self.positional.insert(0, object_id.clone());
+                self.add_constraint(
+                    &object_id,
+                    TypeConstraint::Equal(method_id.borrow().params[0].borrow().ty),
+                );
                 for (i, arg) in args_result.positional.iter().enumerate() {
-                    if let Some(param) = mf.params.get(i) {
+                    if let Some(param) = method_id.borrow().params.get(i + 1) {
                         self.add_constraint(arg, TypeConstraint::Equal(param.borrow().ty));
                     }
                 }
                 for (name, arg) in &args_result.named {
-                    if let Some(param) = mf.params.iter().find(|p| p.borrow().name == *name) {
+                    if let Some(param) = method_id.borrow().params.iter().find(|p| p.borrow().name == *name) {
                         self.add_constraint(arg, TypeConstraint::Equal(param.borrow().ty));
                     }
                 }
+                e.replace(Value::Call {
+                    span: ByteSpan::default(),
+                    callee: ValueId::from(Value::FunctionSymbol {
+                        span: ByteSpan::default(),
+                        id: method_id,
+                    }),
+                    args: args_with_self,
+                });
+                self.visit(e);
+                return;
             }
         } else if let Some(recv_type) = obj_type {
             self.errors.insert(TypeErr::MethodNotFound {
