@@ -2,7 +2,7 @@
 
 This document catalogs all issues found during a comprehensive, function-by-function audit of the `hir_solve2` crate. Issues are organized by file and function. No fixes have been applied.
 
-**Fix Progress: 0 / 57 resolved**
+**Fix Progress: 24 / 57 resolved**
 
 ---
 
@@ -19,14 +19,14 @@ This document catalogs all issues found during a comprehensive, function-by-func
 
 ## bounds.rs
 
-- ### 2. `Bounds::signed` casts negative `hi` i128 to u128 without checking
+- ### ✅ 2. `Bounds::signed` casts negative `hi` i128 to u128 without checking
 
 - **Location**: Lines 15-17
 - **Severity**: Medium
 - **Description**: `Self { lo, hi: hi as u128 }` — if `hi` is negative (which is invalid for an upper bound), the `as u128` cast silently wraps to a huge value (e.g., `-1i128 as u128 == u128::MAX`). No debug assertion or error guards against this.
 - **Recommendation**: Add `debug_assert!(hi >= 0, "signed upper bound must be non-negative")`.
 
-- ### 3. `Bounds::unsigned` wraps `lo > i128::MAX` to negative i128
+- ### ✅ 3. `Bounds::unsigned` wraps `lo > i128::MAX` to negative i128
 
 - **Location**: Lines 18-20
 - **Severity**: Medium
@@ -40,49 +40,49 @@ This document catalogs all issues found during a comprehensive, function-by-func
 - **Description**: `USize` always returns `Bounds::unsigned(0, 18_446_744_073_709_551_615)` (u64::MAX). On a 32-bit target, `USize` would be 32 bits wide.
 - **Recommendation**: Use the architecture pointer size from the symbol table or target config.
 
-- ### 5. `lit_to_i128` silently wraps unsigned values > i128::MAX
+- ### ✅ 5. `lit_to_i128` silently wraps unsigned values > i128::MAX
 
 - **Location**: Lines 43-48
 - **Severity**: Medium
 - **Description**: All unsigned literal variants (`U8` through `U128`, `USize`) are cast to `i128` via `as i128`. Values above `i128::MAX` silently wrap to negative numbers. The `Bounds` struct stores `lo` as `i128`, so this is inherent to the design, but the silent wrapping could produce incorrect bound computations (e.g., `lit_to_i128(&Lit::U128(u128::MAX))` returns `-1`).
 - **Recommendation**: Document this limitation clearly. Consider saturating at `i128::MAX` instead of wrapping.
 
-- ### 6. `lit_to_u128` silently wraps negative i128 values
+- ### ✅ 6. `lit_to_u128` silently wraps negative i128 values
 
 - **Location**: Lines 67-71
 - **Severity**: Medium
 - **Description**: Signed literal variants (`I8` through `I128`) are cast to `u128` via `as u128`. Negative values wrap to large unsigned numbers (e.g., `-1i8 as u128 == u128::MAX`). This function is used by `extract_bounds_from_type` and `check_literal_against_refinement`, which expect the max of a refinement type to be a valid upper bound.
 - **Recommendation**: Use `TryFrom` or clamp negative values to 0, or redesign the bound representation.
 
-- ### 7. `compute_binary_bounds` — `i128::MIN.abs()` panic in Mod handling
+- ### ✅ 7. `compute_binary_bounds` — `i128::MIN.abs()` panic in Mod handling
 
 - **Location**: Line 170
 - **Severity**: **Critical — compiler panic**
 - **Description**: `let a = std::cmp::max(r_min.abs(), r_max_i128.abs());` — if `r_min` (the lower bound of the divisor) is `i128::MIN`, calling `.abs()` panics with overflow because `i128::MIN` has no positive representation in `i128`. This can be triggered by user code like `x % y` where `y` has refinement bounds that include `i128::MIN`.
 - **Recommendation**: Use `r_min.checked_abs().unwrap_or(i128::MAX)` or `saturating_abs()`.
 
-- ### 8. `compute_binary_bounds` — `hi` to `i128` cast wraps for large unsigned values
+- ### ✅ 8. `compute_binary_bounds` — `hi` to `i128` cast wraps for large unsigned values
 
 - **Location**: Lines 87-88
 - **Severity**: Medium
 - **Description**: `let (l_min, l_max_i128) = (left.lo, left.hi as i128);` — `left.hi` is `u128`. When `left.hi > i128::MAX`, the cast wraps to a negative `i128`. This `l_max_i128` is then used in saturating arithmetic throughout the function, producing incorrect bounds for operations on values whose upper bound exceeds `i128::MAX`.
 - **Recommendation**: Clamp at `i128::MAX` instead of wrapping: `left.hi.min(i128::MAX as u128) as i128`.
 
-- ### 9. `compute_binary_bounds` — Sub: unsigned path uses `right.lo as u128` which wraps negative values
+- ### ✅ 9. `compute_binary_bounds` — Sub: unsigned path uses `right.lo as u128` which wraps negative values
 
 - **Location**: Line 98-99
 - **Severity**: Medium
 - **Description**: `if left.hi >= right.lo as u128` — `right.lo` is `i128`. If `right.lo` is negative (e.g., from a value that's actually a large unsigned wrapped to negative via `Bounds::unsigned`), `as u128` produces a huge value, making the comparison false when it should be true.
 - **Recommendation**: Check for negativity before casting, or restructure the bounds representation.
 
-- ### 10. `compute_binary_bounds` — Sub: casts result of signed subtraction to u128
+- ### ✅ 10. `compute_binary_bounds` — Sub: casts result of signed subtraction to u128
 
 - **Location**: Line 104
 - **Severity**: Medium
 - **Description**: `l_max_i128.saturating_sub(r_min) as u128` — if the subtraction saturates (or produces a negative result), the `as u128` cast wraps. This could produce a wildly incorrect upper bound.
 - **Recommendation**: Clamp to 0 before casting: `l_max_i128.saturating_sub(r_min).max(0) as u128`.
 
-- ### 11. `compute_binary_bounds` — Mul: mixes i128 products for min with u128 products for max
+- ### ✅ 11. `compute_binary_bounds` — Mul: mixes i128 products for min with u128 products for max
 
 - **Location**: Lines 130-132
 - **Severity**: Medium
@@ -96,35 +96,35 @@ This document catalogs all issues found during a comprehensive, function-by-func
 - **Description**: `l.saturating_div(-1)` for `l = i128::MIN` produces `i128::MAX` (saturation), which is a reasonable approximation. However, the user won't be informed that `i128::MIN / -1` would overflow at runtime.
 - **Recommendation**: Consider emitting a warning diagnostic for this case.
 
-- ### 13. `compute_binary_bounds` — Shr: `.max(1)` overestimates upper bound
+- ### ✅ 13. `compute_binary_bounds` — Shr: `.max(1)` overestimates upper bound
 
 - **Location**: Line 210
 - **Severity**: Low
 - **Description**: `left.hi.checked_shr(shift).unwrap_or(0).max(1)` — if the shifted value is 0, it's forced to 1. This means a value that can only be 0 after shifting is reported as having an upper bound of 1. This could mask refinement errors.
 - **Recommendation**: Remove `.max(1)` or document the rationale.
 
-- ### 14. `compute_binary_bounds` — Shr: reads `right.lo as i128` which may already be wrapped
+- ### ✅ 14. `compute_binary_bounds` — Shr: reads `right.lo as i128` which may already be wrapped
 
 - **Location**: Line 204
 - **Severity**: Medium
 - **Description**: `right.lo as i128` — but `right.lo` is already `i128`. The `as i128` is a no-op. If the original `Bounds::unsigned` call wrapped a large value, this check is subtly wrong. The code compares `right.lo as i128 > 0` but `right.lo` IS an i128.
 - **Recommendation**: The `as i128` is extraneous but harmless. The variable naming (`right.lo` being i128) is confusing in this context.
 
-- ### 15. `compute_unary_bounds` — Negation: tangled sign handling
+- ### ✅ 15. `compute_unary_bounds` — Negation: tangled sign handling
 
 - **Location**: Lines 238-245
 - **Severity**: Medium
 - **Description**: The negation bounds computation goes through `max_i128 = max as i128` (which wraps for large unsigned). Then `max_i128.saturating_neg()` computes the negation. For an unsigned value with `hi > i128::MAX`, `max_i128` wraps negative, and `saturating_neg()` of a negative value is positive — this chain of conversions makes the result difficult to reason about.
 - **Recommendation**: Separate signed and unsigned negation paths.
 
-- ### 16. `compute_unary_bounds` — Not: swapped bounds logic is incorrect for unsigned
+- ### ✅ 16. `compute_unary_bounds` — Not: swapped bounds logic is incorrect for unsigned
 
 - **Location**: Line 246
 - **Severity**: Medium
 - **Description**: `Bounds::new(!max_i128, (!min) as u128)` — for unsigned types, bitwise NOT bounds should be `[!hi, !lo]`, but here `max_i128` may be a wrapped negative value. The bound computation assumes signed semantics.
 - **Recommendation**: Use unsigned bitwise NOT when the operand is unsigned.
 
-- ### 17. `check_bounds_against_constraint` returns `true` when bounds extraction fails
+- ### ✅ 17. `check_bounds_against_constraint` returns `true` when bounds extraction fails
 
 - **Location**: Lines 257-258
 - **Severity**: Low
@@ -153,7 +153,7 @@ This document catalogs all issues found during a comprehensive, function-by-func
 - **Description**: All `SourcePosition` values created by this function have `line: 0`, `column: 0`, and `fileid: None`. Only the byte `offset` is populated. This means all diagnostics from the solver will display at line 0, column 0 in an unknown file, making them nearly useless for users trying to locate the error source.
 - **Recommendation**: Either populate line/column from the span (requires access to source text), or use the `offset` field consistently in the diagnostic display, or propagate proper span information from earlier compilation stages.
 
-- ### 20. `OperationResultOutOfRefinementBounds` stores target bounds, not computed bounds
+- ### ✅ 20. `OperationResultOutOfRefinementBounds` stores target bounds, not computed bounds
 
 - **Location**: Lines 45-50 (struct definition), lines 130-152 (formatting)
 - **Severity**: **High — misleading error messages**
@@ -171,42 +171,42 @@ This document catalogs all issues found during a comprehensive, function-by-func
 
 ## solve.rs
 
-- ### 22. `Solver::find_common_integer_type` — `best` may be a `Refine` type while comparisons unwrap Refine
+- ### ✅ 22. `Solver::find_common_integer_type` — `best` may be a `Refine` type while comparisons unwrap Refine
 
 - **Location**: Lines 91-97 vs 116-117
 - **Severity**: Medium
 - **Description**: `best` is set to the raw constraint type, which could be `Type::Refine { base, .. }`. Later, `best.unwrap().is_signed_primitive()` and `Self::type_bit_width(&best.unwrap())` are called directly on `best`. If `best` is a `Refine` type, `is_signed_primitive()` and `type_bit_width` might not behave as expected (depending on their implementation on `Type`). The code should unwrap `Refine` to `base` for `best` consistently, just as it does for `eff`.
 - **Recommendation**: Unwrap Refine when setting `best`: `best = Some(match &*eff { Type::Refine { base, .. } => *base, _ => eff })`.
 
-- ### 23. `Solver::find_common_integer_type` — signed type range checks only verify positive half
+- ### ✅ 23. `Solver::find_common_integer_type` — signed type range checks only verify positive half
 
 - **Location**: Lines 101-105
 - **Severity**: Medium
 - **Description**: For signed types (I8, I16, I32, I64), the `fits` check only verifies `value <= MAX_POSITIVE`. Negative literals (which have large `u128` values in two's complement representation) would not "fit" these checks, but they fall through to the `_ => true` wildcard for `I128`. So negative literals would only fit into `I128`, never into `I8`–`I64`. This means a literal like `-5` with no type annotation would be inferred as `I128` instead of the more natural `I32`.
 - **Recommendation**: Also check for negative values: `value <= MAX_POSITIVE || (value as i128) >= MIN_NEGATIVE`.
 
-- ### 24. `Solver::find_common_integer_type` — `U128` not explicitly handled, uses wildcard
+- ### ✅ 24. `Solver::find_common_integer_type` — `U128` not explicitly handled, uses wildcard
 
 - **Location**: Line 111
 - **Severity**: Low
 - **Description**: `U128` is not listed in the match arms. The `_ => true` wildcard makes it always "fit". This means any literal value is considered to fit in `U128`, which is correct since `u128` can hold any `u128` value. But relying on the wildcard is fragile and could mask bugs if new types are added.
 - **Recommendation**: Add an explicit `Type::U128 { .. } => true` arm.
 
-- ### 25. `Solver::find_common_integer_type` — non-deterministic preference for same-width types
+- ### ✅ 25. `Solver::find_common_integer_type` — non-deterministic preference for same-width types
 
 - **Location**: Lines 114-119
 - **Severity**: Low
 - **Description**: When two types have the same bit width, the one encountered first in iteration is kept. Since constraints are stored in a `HashSet`, iteration order is deterministic per run but may vary across Rust versions or hashCode changes. This could cause non-deterministic type inference for edge cases.
 - **Recommendation**: Add a deterministic tiebreaker (e.g., prefer signed over unsigned, or use a type ordering).
 
-- ### 26. `Solver::solve_inferred_integer` — clones entire constraint set unnecessarily
+- ### ✅ 26. `Solver::solve_inferred_integer` — clones entire constraint set unnecessarily
 
 - **Location**: Lines 126-132
 - **Severity**: Low (performance)
 - **Description**: `self.constraints.get(id).cloned().unwrap_or_default().into_iter().collect()` allocates a Vec of cloned constraints. The function only needs to iterate over references. This allocation happens for every inferred integer literal.
 - **Recommendation**: Iterate over `self.constraints.get(id).map(HashSet::iter).into_iter().flatten()`.
 
-- ### 27. `Solver::solve_inferred_integer` — casts u128 value to i128 for error reporting, wraps
+- ### ✅ 27. `Solver::solve_inferred_integer` — casts u128 value to i128 for error reporting, wraps
 
 - **Location**: Line 143
 - **Severity**: Low
@@ -220,7 +220,7 @@ This document catalogs all issues found during a comprehensive, function-by-func
 - **Description**: `unwrap_or_else(|| TypeId::from(Type::I32 { span }))` — an integer literal with zero type constraints defaults to I32. If the literal value is `300_000_000_000` (doesn't fit in I32), the subsequent conversion will fail with an "out of range" error, and the literal stays as `InferredInteger` (unresolved). The fallback should be the smallest type that fits the value.
 - **Recommendation**: Choose the smallest integer type that can hold the literal value.
 
-- ### 29. `Solver::solve_inferred_float` — non-deterministic preference between F32 and F64
+- ### ✅ 29. `Solver::solve_inferred_float` — non-deterministic preference between F32 and F64
 
 - **Location**: Lines 306-312
 - **Severity**: Medium
@@ -234,7 +234,7 @@ This document catalogs all issues found during a comprehensive, function-by-func
 - **Description**: `*value as f32` — truncates the f64 value to f32. This can lose precision. The solver doesn't warn about potential precision loss.
 - **Recommendation**: Consider emitting a warning for lossy float conversions, or at least checking `value == OrderedFloat(*value as f32 as f64)`.
 
-- ### 31. `Solver::visit_enum_variant` — panics on missing variant
+- ### ✅ 31. `Solver::visit_enum_variant` — panics on missing variant
 
 - **Location**: Line 542
 - **Severity**: Medium (robustness)
@@ -255,7 +255,7 @@ This document catalogs all issues found during a comprehensive, function-by-func
 - **Description**: Same issue as #32 for unary operations. The error stores target bounds instead of computed bounds.
 - **Recommendation**: Same as #32.
 
-- ### 34. `Solver::visit_unary` — clones constraints twice
+- ### ✅ 34. `Solver::visit_unary` — clones constraints twice
 
 - **Location**: Lines 613-617 and 619-635
 - **Severity**: Low (performance)
@@ -455,18 +455,18 @@ Type::Parameterized { base, args, span } => {
 
 ## Summary Statistics
 
-- [ ] **Critical**: 2 issues — #7, #57
-- [ ] **High**: 14 issues — #19, #20, #32, #33, #36, #40, #41, #43, #44, #46, #49, #50, #52, #53
-- [ ] **Medium**: 18 issues — #2, #3, #5, #6, #8, #9, #10, #11, #14, #15, #16, #22, #23, #29, #31, #37, #38, #39, #42, #45
-- [ ] **Low**: 23 issues — #1, #4, #12, #13, #17, #18, #21, #24, #25, #26, #27, #28, #30, #34, #35, #47, #48, #51, #54, #55, #56
+- [ ] **Critical**: 1 remaining — #57
+- [ ] **High**: 11 remaining — #19, #36, #40, #41, #43, #44, #46, #49, #50, #52, #53
+- [ ] **Medium**: 5 remaining — #37, #38, #39, #42, #45
+- [ ] **Low**: 14 remaining — #1, #4, #12, #18, #21, #28, #30, #35, #47, #48, #51, #54, #55, #56
 
-**Total: 57 issues found across 8 files. Fix Progress: 0 / 57 resolved.**
+**Total: 57 issues found across 8 files. Fix Progress: 24 / 57 resolved.**
 
 ### Most Critical Issues (fix these first):
 
-- [ ] 1. **#7** — `i128::MIN.abs()` panic in `compute_binary_bounds` Mod handling (compiler crash)
+- [x] 1. **#7** — `i128::MIN.abs()` panic in `compute_binary_bounds` Mod handling (compiler crash)
 - [ ] 2. **#57** — `Substitution::apply` drops all type arguments from Parameterized types (silent incorrect code generation)
 - [ ] 3. **#19** — Diagnostics point to line 0, column 0 (users can't find errors)
-- [ ] 4. **#20, #32, #33** — Error messages show wrong bounds (misleading diagnostics)
+- [x] 4. **#20, #32, #33** — Error messages show wrong bounds (misleading diagnostics) (visit_binary and visit_unary callers fixed)
 - [ ] 5. **#43, #44** — `mono_depth` underflow in cycle detection (potential compiler crash)
 - [ ] 6. **#49, #50, #52, #53** — Parameterized types not handled in unification/generic detection (incomplete monomorphization)
