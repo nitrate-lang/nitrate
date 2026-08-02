@@ -154,5 +154,6 @@ pub(crate) fn gen_ty<'ctx>(hir_type: &hir::Type, ctx: &mut TypegenCtx<'ctx, '_, 
             panic!("Generic parameters should have been monomorphized before code generation")
         }
         hir::Type::Range { .. } => ctx.llvm.struct_type(&[], false).into(),
+        hir::Type::Str { .. } => ctx.llvm.ptr_type(AddressSpace::default()).into(),
     }
 }
