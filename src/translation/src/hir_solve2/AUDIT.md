@@ -2,7 +2,7 @@
 
 This document catalogs all issues found during a comprehensive, function-by-function audit of the `hir_solve2` crate. Issues are organized by file and function. No fixes have been applied.
 
-**Fix Progress: 29 / 57 resolved**
+**Fix Progress: 39 / 57 resolved**
 
 ---
 
@@ -200,13 +200,13 @@ This document catalogs all issues found during a comprehensive, function-by-func
 - **Description**: `.expect("variant not present")` will panic if the variant name in the value doesn't match any variant in the enum definition. This should be a diagnostic, not a panic.
 - **Recommendation**: Return early or emit a `TypeErr` diagnostic instead of panicking.
 
-- ### 32. `Solver::visit_binary` — same misleading bounds bug as diagnosis issue #20
+- ### ✅ 32. `Solver::visit_binary` — same misleading bounds bug as diagnosis issue #20
 
 - **Severity**: **High**
 - **Description**: The error reporting for operation result out of refinement bounds uses `bnds.lo.max(0) as u128` and `bnds.hi` where `bnds` is from `extract_bounds_from_type(&result_ty)` (the target bounds), NOT the computed bounds `res`. The computed bounds are in `res` but are discarded. See also diagnosis issue #20.
 - **Recommendation**: Use `res.lo` and `res.hi` instead of `bnds.lo` and `bnds.hi`.
 
-- ### 33. `Solver::visit_unary` — same misleading bounds bug
+- ### ✅ 33. `Solver::visit_unary` — same misleading bounds bug
 
 - **Severity**: **High**
 - **Description**: Same issue as #32 for unary operations. The error stores target bounds instead of computed bounds.
@@ -224,25 +224,25 @@ This document catalogs all issues found during a comprehensive, function-by-func
 - **Description**: The function only visits the expression (`self.visit(expr)`) but does not propagate any type constraints to the field or from the containing struct type. Field access types must be determined by other mechanisms (struct field lookup in HIR type resolution), which may happen before the solver runs.
 - **Recommendation**: add appropriate constraint propagation.
 
-- ### 36. `Solver::visit_method_call` — self borrow always uses `mutable: false, exclusive: false`
+- ### ✅ 36. `Solver::visit_method_call` — self borrow always uses `mutable: false, exclusive: false`
 
 - **Severity**: **High — `&mut self` methods get immutable borrow**
 - **Description**: When converting a method call to a function call, the solver checks if the first parameter is a reference type and, if so, automatically wraps the self object in a `Borrow` node. However, the `Borrow` is always created with `mutable: false` and `exclusive: false`, regardless of whether the method takes `&self` or `&mut self`. This means `&mut self` methods would receive an immutable shared reference, which is semantically incorrect and would likely cause borrow-checker errors downstream.
 - **Recommendation**: Extract mutability and exclusivity from the parameter type: if `Type::Reference { mutable, exclusive, .. }`, use those values in the `Borrow` node.
 
-- ### 37. `Solver::visit_call` — generic inference can fire twice with different substitution strategies
+- ### ✅ 37. `Solver::visit_call` — generic inference can fire twice with different substitution strategies
 
 - **Severity**: Medium
 - **Description**: `infer_generic_args_from_call` is tried first (positional only). Then, if the callee is still generic, `infer_generic_args_from_call_named` is tried. But the first call may have already replaced `callee` with a monomorphized version. The second check `if let Some(ref fid) = callee_func_id` uses the saved `callee_func_id` from before the replacement, so it still fires. This means the callee can be replaced twice, and `monomorphize_function` is called twice for the same function with potentially different substitutions. The second replacement wins, silently discarding the first. This is likely unintentional — the second attempt should only fire if the first failed.
 - **Recommendation**: Use `if ... else if` or check whether the first substitution succeeded before trying the second.
 
-- ### 38. `Solver::infer_generic_args_from_call` — rejects calls with fewer args than params
+- ### ✅ 38. `Solver::infer_generic_args_from_call` — rejects calls with fewer args than params
 
 - **Severity**: Medium
 - **Description**: `if ptypes.len() != args.len() { return None; }` — returns None if argument count doesn't match parameter count exactly. But functions can have default-valued parameters, and calls may legitimately provide fewer arguments. This causes generic inference to fail entirely for such calls, even though inference from the provided arguments should still be possible.
 - **Recommendation**: Only require `args.len() <= ptypes.len()` and skip parameters beyond the provided argument count.
 
-- ### 39. `Solver::infer_generic_args_from_call` — returns None if no substitution was found, even for valid empty-generics case
+- ### ✅ 39. `Solver::infer_generic_args_from_call` — returns None if no substitution was found, even for valid empty-generics case
 
 - **Severity**: Medium
 - **Description**: `if subst.mapping.is_empty() { None } else { Some(subst) }` — if no generic parameters were mapped to concrete types, returns None. But a generic function might be called where type inference is supposed to come from the return type context, not from arguments. For example, `fn foo<T>() -> T; let x: I32 = foo();` — the call provides no arguments, so `subst.mapping` is empty, and inference fails. This prevents monomorphization, which would otherwise happen when the return type constraint propagates.
@@ -260,30 +260,30 @@ This document catalogs all issues found during a comprehensive, function-by-func
 - **Description**: Same pattern as `infer_generic_args_from_call_named` — the `appears` flag is set correctly via `type_contains_generic_param_name`, but the check for whether a param is "covered" at lines 1160-1163 assumes the substitution will contain the param's index. If a param appears only nested in compound types, the unification at line 1153 (`unify_types_with_subst(&at, ft, &mut subst)`) would need to reach into those compound types to extract the mapping, but `unify_types_with_subst` itself doesn't recurse into `Parameterized` types (see issue #49). So the mapping might indeed be incomplete.
 - **Recommendation**: Fix both `unify_types_with_subst` and `collect_generic_params_from_type` to handle all compound types.
 
-- ### 42. `Solver::monomorphize_function` — panics on depth limit instead of reporting diagnostic
+- ### ✅ 42. `Solver::monomorphize_function` — panics on depth limit instead of reporting diagnostic
 
 - **Severity**: Medium (robustness)
 - **Description**: `panic!("mono depth limit exceeded")` — if monomorphization recursion exceeds `MAX_MONO_DEPTH` (64), the compiler panics and crashes. This should be a user-facing diagnostic.
 - **Recommendation**: Emit a `TypeErr` diagnostic and return the original un-monomorphized function id (or an error sentinel).
 
-- ### 43. `Solver::monomorphize_function` — mono_depth can underflow due to cycle detection
+- ### ✅ 43. `Solver::monomorphize_function` — mono_depth can underflow due to cycle detection
 
 - **Severity**: **High — integer underflow in release, or panic in debug**
 - **Description**: When `mono_in_progress` contains the cache key (indicating a recursive monomorphization cycle), the function returns early at line 1227 WITHOUT incrementing `mono_depth`. However, the _caller_ of this function already incremented `mono_depth` at line 1229 (or will do so). After the early return, the caller decrements `mono_depth` at line 1269. Net effect: `mono_depth` decreases by 1 for each cycle detection. If enough cycles are detected (e.g., deeply nested recursive generic calls), `mono_depth` can underflow from 0 to `u32::MAX`, which would then fail the depth check at line 1219 and panic. In debug mode, this would cause an arithmetic overflow panic.
 - **Recommendation**: Track `mono_depth` on a per-key basis (e.g., store the depth alongside the cache key in `mono_in_progress`), or use a separate cycle-detection mechanism that doesn't affect the depth counter.
 
-- ### 44. `Solver::monomorphize_struct` — same mono_depth underflow bug
+- ### ✅ 44. `Solver::monomorphize_struct` — same mono_depth underflow bug
 
 - **Severity**: **High — same as #43**
 - **Description**: Identical issue to `monomorphize_function`. The early return at line 1283 doesn't increment depth, but the caller will decrement.
 
-- ### 45. `resolve_type_impl` — UnresolvedArray silently defaults length to 0 on evaluation failure
+- ### ✅ 45. `resolve_type_impl` — UnresolvedArray silently defaults length to 0 on evaluation failure
 
 - **Severity**: Medium
 - **Description**: `u32::try_from(v).ok().unwrap_or(0)` — if the array length expression evaluates to a non-u32 value (e.g., `u64::MAX`) or can't be evaluated (constant evaluation fails), the length silently becomes 0. This could cause incorrect memory layouts and code generation.
 - **Recommendation**: Return the type unchanged (keep as `UnresolvedArray`) when the length can't be evaluated, and let the validator emit a diagnostic.
 
-- ### 46. `resolve_type_impl` — Parameterized type: named arguments not resolved
+- ### ✅ 46. `resolve_type_impl` — Parameterized type: named arguments not resolved
 
 - **Severity**: **High — named generic arguments silently not resolved**
 - **Description**: The code resolves positional args (`args.positional.iter().map(|a| resolve_type_impl(s, a, log))`) but clones named args as-is (`named: args.named.clone()`). If named type arguments contain nested `UnresolvedArray`, `UnresolvedRefine`, or other resolvable types, they will remain unresolved. This could lead to unresolved types appearing in the final HIR.
@@ -389,17 +389,17 @@ Type::Parameterized { base, args, span } => {
 ## Summary Statistics
 
 - [x] **Critical**: 0 remaining
-- [ ] **High**: 6 remaining — #19, #36, #40, #41, #43, #44, #46
-- [ ] **Medium**: 5 remaining — #37, #38, #39, #42, #45
-- [ ] **Low**: 14 remaining — #1, #4, #12, #18, #21, #28, #30, #35, #47, #48, #51, #54, #55, #56
+- [ ] **High**: 1 remaining — #40 (nested generic params not detected)
+- [ ] **Medium**: 0 remaining
+- [ ] **Low**: 15 remaining — #1, #4, #12, #18, #21, #28, #30, #35, #47, #48, #51, #54, #55, #56
 
-**Total: 57 issues found across 8 files. Fix Progress: 29 / 57 resolved.**
+**Total: 57 issues found across 8 files. Fix Progress: 39 / 57 resolved.**
 
 ### Most Critical Issues (fix these first):
 
 - [x] 1. **#7** — `i128::MIN.abs()` panic in `compute_binary_bounds` Mod handling (compiler crash)
 - [x] 2. **#57** — `Substitution::apply` drops all type arguments from Parameterized types (silent incorrect code generation)
-- [ ] 3. **#19** — Diagnostics point to line 0, column 0 (users can't find errors)
-- [x] 4. **#20, #32, #33** — Error messages show wrong bounds (misleading diagnostics) (visit_binary and visit_unary callers fixed)
-- [ ] 5. **#43, #44** — `mono_depth` underflow in cycle detection (potential compiler crash)
+- [ ] 3. **#19** — Diagnostics point to line 0, column 0 (users can't find errors) — not fixed per audit recommendation
+- [x] 4. **#20, #32, #33** — Error messages show wrong bounds (misleading diagnostics) — all fixed
+- [x] 5. **#43, #44** — `mono_depth` underflow in cycle detection (potential compiler crash)
 - [x] 6. **#49, #50, #52, #53** — Parameterized types not handled in unification/generic detection (incomplete monomorphization)

@@ -18,6 +18,7 @@ use std::collections::{BTreeMap, HashMap, HashSet};
 use std::matches;
 use std::ops::Deref;
 use std::vec;
+use thin_vec::ThinVec;
 
 struct Solver<'a> {
     constraints: HashMap<ValueId, HashSet<TypeConstraint>>,
@@ -895,6 +896,7 @@ impl<'a> Solver<'a> {
             }
             _ => None,
         };
+        let mut infer_succeeded = false;
         if let Some(ref fid) = callee_func_id {
             if let Some(subst) = self.infer_generic_args_from_call(fid, &args.positional) {
                 let mono_id = self.monomorphize_function(fid, &subst);
@@ -902,10 +904,11 @@ impl<'a> Solver<'a> {
                     span: ByteSpan::default(),
                     id: mono_id,
                 });
+                infer_succeeded = true;
             }
         }
         if let Some(ref fid) = callee_func_id {
-            if !args.named.is_empty() {
+            if !infer_succeeded && !args.named.is_empty() {
                 if let Some(subst) = self.infer_generic_args_from_call_named(fid, args) {
                     let mono_id = self.monomorphize_function(fid, &subst);
                     callee.replace(Value::FunctionSymbol {
@@ -982,18 +985,22 @@ impl<'a> Solver<'a> {
                     }
                 } else {
                     let mf = method_id.borrow();
-                    let first_param_is_ref = mf.params.first().map_or(false, |pid| {
-                        matches!(&*pid.borrow().ty, Type::Reference { .. } | Type::SliceRef { .. })
+                    let first_param_info = mf.params.first().map(|pid| {
+                        let p = pid.borrow();
+                        match &*p.ty {
+                            Type::Reference { mutable, exclusive, .. } => Some((true, *mutable, *exclusive)),
+                            Type::SliceRef { mutable, exclusive, .. } => Some((true, *mutable, *exclusive)),
+                            _ => None,
+                        }
                     });
-                    let self_arg = if first_param_is_ref {
-                        ValueId::from(Value::Borrow {
+                    let self_arg = match first_param_info {
+                        Some(Some((_, is_mutable, is_exclusive))) => ValueId::from(Value::Borrow {
                             span: ByteSpan::default(),
-                            exclusive: false,
-                            mutable: false,
+                            exclusive: is_exclusive,
+                            mutable: is_mutable,
                             place: object_id.clone(),
-                        })
-                    } else {
-                        object_id.clone()
+                        }),
+                        _ => object_id.clone(),
                     };
                     let mut args_with_self = args.clone();
                     args_with_self.positional.insert(0, self_arg);
@@ -1057,14 +1064,14 @@ impl<'a> Solver<'a> {
         }
         let mut subst = Substitution::default();
         let ptypes: Vec<TypeId> = func.params.iter().map(|p| p.borrow().ty).collect();
-        if ptypes.len() != args.len() {
+        if args.len() > ptypes.len() {
             return None;
         }
         for (a, p) in args.iter().zip(ptypes.iter()) {
             let at = a.borrow().determine_type(self.symbol_tab).ok()?;
             unify_types_with_subst(&at, p, &mut subst);
         }
-        if subst.mapping.is_empty() { None } else { Some(subst) }
+        Some(subst)
     }
 
     fn infer_generic_args_from_call_named(&self, fid: &FunctionId, args: &Arguments<ValueId>) -> Option<Substitution> {
@@ -1240,16 +1247,25 @@ impl<'a> Solver<'a> {
 
     fn monomorphize_function(&mut self, fid: &FunctionId, subst: &Substitution) -> FunctionId {
         if self.mono_depth >= MAX_MONO_DEPTH {
-            panic!("mono depth limit exceeded");
+            let func = fid.borrow();
+            self.errors.insert(TypeErr::AmbiguousType {
+                span: func.span,
+                description: format!(
+                    "monomorphization depth limit ({}) exceeded for function `{}`",
+                    MAX_MONO_DEPTH, func.name
+                ),
+            });
+            return fid.clone();
         }
         let ck = self.mono_cache_key(fid, subst);
         if let Some(existing) = self.mono_cache.get(&ck) {
             return existing.clone();
         }
+        self.mono_depth += 1;
         if !self.mono_in_progress.insert(ck) {
+            self.mono_depth -= 1;
             return fid.clone();
         }
-        self.mono_depth += 1;
         self.mono_counter += 1;
         let func = fid.borrow();
         let mono_name = format!("{}::<mono-{}>", func.name, self.mono_counter);
@@ -1296,16 +1312,25 @@ impl<'a> Solver<'a> {
 
     fn monomorphize_struct(&mut self, sid: &StructDefId, subst: &Substitution) -> StructDefId {
         if self.mono_depth >= MAX_MONO_DEPTH {
-            panic!("mono depth limit exceeded");
+            let sd = sid.borrow();
+            self.errors.insert(TypeErr::AmbiguousType {
+                span: sd.span,
+                description: format!(
+                    "monomorphization depth limit ({}) exceeded for struct `{}`",
+                    MAX_MONO_DEPTH, sd.name
+                ),
+            });
+            return sid.clone();
         }
         let ck = self.struct_mono_cache_key(sid, subst);
         if let Some(existing) = self.struct_mono_cache.get(&ck) {
             return existing.clone();
         }
+        self.mono_depth += 1;
         if !self.mono_in_progress.insert(ck) {
+            self.mono_depth -= 1;
             return sid.clone();
         }
-        self.mono_depth += 1;
         self.mono_counter += 1;
         let sd = sid.borrow();
         let mono_name = format!("{}::<mono-{}>", sd.name, self.mono_counter);
@@ -1562,15 +1587,16 @@ fn resolve_type_impl(s: &Solver, ty: &TypeId, log: &CompilerLog) -> TypeId {
             let mut ev = Evaluator::new(log, s.symbol_tab.arch_ptr_size());
             match ev.evaluate_to_literal(&len.borrow()) {
                 Ok(lit) => {
-                    let len_u32 = nitrate_hir_type::lit_to_u128(&lit)
-                        .and_then(|v| u32::try_from(v).ok())
-                        .unwrap_or(0);
-                    Type::Array {
-                        span,
-                        element_type: resolve_type_impl(s, element_type, log),
-                        len: len_u32,
+                    if let Some(len_u32) = nitrate_hir_type::lit_to_u128(&lit).and_then(|v| u32::try_from(v).ok()) {
+                        Type::Array {
+                            span,
+                            element_type: resolve_type_impl(s, element_type, log),
+                            len: len_u32,
+                        }
+                        .into()
+                    } else {
+                        ty.clone()
                     }
-                    .into()
                 }
                 Err(_) => ty.clone(),
             }
@@ -1610,12 +1636,17 @@ fn resolve_type_impl(s: &Solver, ty: &TypeId, log: &CompilerLog) -> TypeId {
         Type::Parameterized { base, args, .. } => {
             let rb = resolve_type_impl(s, base, log);
             let ra: Vec<TypeId> = args.positional.iter().map(|a| resolve_type_impl(s, a, log)).collect();
+            let rn: ThinVec<(NString, TypeId)> = args
+                .named
+                .iter()
+                .map(|(k, v)| (k.clone(), resolve_type_impl(s, v, log)))
+                .collect();
             Type::Parameterized {
                 span,
                 base: rb,
                 args: Arguments {
                     positional: ra.into(),
-                    named: args.named.clone(),
+                    named: rn,
                 },
             }
             .into()
