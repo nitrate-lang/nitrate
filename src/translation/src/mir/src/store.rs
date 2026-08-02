@@ -1,4 +1,6 @@
-use crate::prelude::*;
+use crate::func::{LocalDecl, MirFunction};
+use crate::stmt::BasicBlock;
+use crate::ty::MirType;
 use append_only_vec::AppendOnlyVec;
 use bimap::BiMap;
 use serde::{Deserialize, Serialize};
