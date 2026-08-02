@@ -1125,6 +1125,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "nitrate_hir_optimize"
+version = "0.1.0"
+dependencies = [
+ "nitrate_diagnosis",
+ "nitrate_hir",
+]
+
+[[package]]
 name = "nitrate_hir_solve"
 version = "0.1.0"
 dependencies = [
@@ -1213,6 +1221,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "nitrate_mir_optimize"
+version = "0.1.0"
+dependencies = [
+ "nitrate_diagnosis",
+ "nitrate_mir",
+]
+
+[[package]]
 name = "nitrate_nstring"
 version = "0.1.0"
 dependencies = [
@@ -1262,6 +1278,7 @@ dependencies = [
  "nitrate_hir_from_tree",
  "nitrate_hir_get_type",
  "nitrate_hir_mangle",
+ "nitrate_hir_optimize",
  "nitrate_hir_solve",
  "nitrate_hir_validate",
  "nitrate_llvm",
@@ -1269,6 +1286,7 @@ dependencies = [
  "nitrate_llvm_from_mir",
  "nitrate_mir",
  "nitrate_mir_from_hir",
+ "nitrate_mir_optimize",
  "nitrate_nstring",
  "nitrate_optimization",
  "nitrate_token",
@@ -1276,6 +1294,8 @@ dependencies = [
  "nitrate_tree",
  "nitrate_tree_parse",
  "nitrate_tree_resolve",
+ "serde_json",
+ "thiserror 2.0.19",
  "threadpool",
  "threadpool_scope",
 ]

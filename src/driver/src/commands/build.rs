@@ -1,21 +1,14 @@
 use crate::{Interpreter, package::Manifest};
 use clap::Parser;
-use nitrate_diagnosis::{CompilerLog, intern_file_id};
+use nitrate_diagnosis::CompilerLog;
 use nitrate_translation::{
-    hir::{Store, prelude as hir, using_storage},
-    hir_dump::Dump,
-    hir_from_tree::{Ast2HirCtx, convert_ast_to_hir},
-    hir_mangle::mangle_symbols,
-    hir_validate::{self, ValidateHirItem},
-    llvm::{LLVMContext, OptLevel},
-    llvm_from_hir::generate_llvmir,
-    parsetree::ast,
-    token_lexer::{Lexer, LexerError},
-    tree_resolve::ImportContext,
+    Pipeline, PipelineConfig,
+    hir::{Store, using_storage},
+    llvm::OptLevel,
 };
 use slog::{debug, error, info};
 use std::collections::HashSet;
-use std::io::Read;
+use std::num::NonZero;
 use std::path::{Path, PathBuf};
 
 #[derive(Parser, Debug)]
@@ -136,6 +129,14 @@ pub(crate) struct BuildArgs {
     /// Exclude packages from the build
     #[arg(long, value_name = "SPEC")]
     pub(crate) exclude: Vec<String>,
+
+    /// Codegen options: -C opt-level=3, -C target-cpu=native, -C passes=inline,constfold
+    #[arg(long = "codegen", short = 'C', value_name = "OPTION[=VALUE]", number_of_values = 1)]
+    pub(crate) codegen_opts: Vec<String>,
+
+    /// Disable default optimization passes
+    #[arg(long)]
+    pub(crate) no_default_passes: bool,
 }
 
 /// Shared compile options extracted from a cargo-style command.
@@ -154,6 +155,12 @@ pub(crate) struct CompileOptions {
     pub(crate) format_mode: Option<String>,
     /// Stop after HIR validation; don't emit object code or link.
     pub(crate) check_only: bool,
+    /// Raw `-C` codegen options to parse.
+    pub(crate) codegen_opts: Vec<String>,
+    /// Disable default optimization passes.
+    pub(crate) no_default_passes: bool,
+    /// Number of parallel jobs.
+    pub(crate) jobs: Option<usize>,
 }
 
 impl Default for CompileOptions {
@@ -171,6 +178,9 @@ impl Default for CompileOptions {
             show_obj: false,
             format_mode: None,
             check_only: false,
+            codegen_opts: Vec::new(),
+            no_default_passes: false,
+            jobs: None,
         }
     }
 }
@@ -190,6 +200,9 @@ impl From<&BuildArgs> for CompileOptions {
             show_obj: args.show_obj,
             format_mode: args.format_mode.clone(),
             check_only: false,
+            codegen_opts: args.codegen_opts.clone(),
+            no_default_passes: args.no_default_passes,
+            jobs: args.jobs,
         }
     }
 }
@@ -222,6 +235,76 @@ pub(crate) fn profile_dir(opts: &CompileOptions) -> String {
     }
 }
 
+/// Compute the optimization level from compile options.
+pub(crate) fn opt_level_for(opts: &CompileOptions) -> OptLevel {
+    match opts
+        .codegen_opts
+        .iter()
+        .find_map(|opt| opt.strip_prefix("opt-level=").and_then(|v| v.parse::<u8>().ok()))
+    {
+        Some(0) => OptLevel::None,
+        Some(1) => OptLevel::Default,
+        Some(_) | None if opts.release => OptLevel::Aggressive,
+        _ => OptLevel::None,
+    }
+}
+
+/// Extract the target CPU from `-C target-cpu=...` codegen options.
+pub(crate) fn target_cpu_from_opts(opts: &CompileOptions) -> Option<String> {
+    opts.codegen_opts
+        .iter()
+        .find_map(|opt| opt.strip_prefix("target-cpu=").map(String::from))
+}
+
+/// Build a `PipelineConfig` from compile options and manifest.
+pub(crate) fn pipeline_config_from_opts(opts: &CompileOptions, manifest: &Manifest) -> PipelineConfig {
+    let log = CompilerLog::new(slog::Logger::root(slog::Discard, slog::o!()));
+    let opt_level = opt_level_for(opts);
+    let target_cpu = target_cpu_from_opts(opts);
+
+    PipelineConfig {
+        package_name: manifest.package.name.clone(),
+        target_triple: opts.target.clone(),
+        target_cpu,
+        opt_level,
+        hir_passes: Vec::new(),
+        hir_module_passes: Vec::new(),
+        mir_passes: Vec::new(),
+        mir_module_passes: Vec::new(),
+        no_default_passes: opts.no_default_passes,
+        thread_count: opts
+            .jobs
+            .and_then(|j| NonZero::new(j))
+            .unwrap_or_else(|| NonZero::new(1).unwrap()),
+        log,
+    }
+}
+
+/// Helper: link an object file into a binary using the system linker.
+fn link_binary(log: &slog::Logger, object_file: &Path, binary_path: &Path, package_name: &str) -> anyhow::Result<()> {
+    let status = std::process::Command::new("clang")
+        .arg(object_file)
+        .arg("-o")
+        .arg(binary_path)
+        .status()
+        .map_err(|e| {
+            error!(log, "Failed to link final binary for package '{}': {}", package_name, e);
+            e
+        })?;
+
+    if !status.success() {
+        error!(
+            log,
+            "Linking final binary for package '{}' failed with exit code: {}",
+            package_name,
+            status.code().unwrap_or(-1),
+        );
+        return Err(anyhow::anyhow!("Linking final binary failed"));
+    }
+
+    Ok(())
+}
+
 impl Interpreter<'_> {
     pub(crate) fn validate_package_edition(&self, edition: u16) -> anyhow::Result<()> {
         let supported_edition = HashSet::from([2026]);
@@ -244,76 +327,6 @@ impl Interpreter<'_> {
         Ok(())
     }
 
-    pub(crate) fn parse_source_code(
-        &self,
-        entrypoint_path: &Path,
-        package_name: &str,
-        log: &CompilerLog,
-    ) -> anyhow::Result<ast::Module> {
-        if !entrypoint_path.exists() {
-            error!(
-                self.log,
-                "Package entrypoint '{}' does not exist.",
-                entrypoint_path.display()
-            );
-            return Err(anyhow::anyhow!("Package entrypoint does not exist"));
-        }
-
-        let mut source_code_file = match std::fs::File::open(entrypoint_path) {
-            Ok(file) => file,
-
-            Err(e) => {
-                error!(
-                    self.log,
-                    "Failed to open package entrypoint '{}': {}",
-                    entrypoint_path.display(),
-                    e
-                );
-
-                return Err(e.into());
-            }
-        };
-
-        let mut source_code = Vec::new();
-        source_code_file.read_to_end(&mut source_code)?;
-
-        let source_code_file = intern_file_id(entrypoint_path.to_string_lossy().as_ref()).expect("FileId overflow");
-
-        let lexer = match Lexer::new(&source_code, Some(source_code_file)) {
-            Ok(lexer) => lexer,
-
-            Err(LexerError::SourceTooBig) => {
-                error!(
-                    self.log,
-                    "Source file '{}' is too large to be processed.",
-                    entrypoint_path.display(),
-                );
-
-                return Err(anyhow::anyhow!("Source file too large"));
-            }
-        };
-
-        let mut parser = nitrate_translation::parse::Parser::new(lexer, log);
-
-        Ok(parser.parse_source(package_name.into()))
-    }
-
-    pub(crate) fn show_ast(&self, module: &ast::Module, format_mode: &Option<String>) {
-        match format_mode {
-            Some(mode) if mode == "minify" => {
-                serde_json::to_writer(&mut std::io::stdout(), &module).expect("Failed to write AST to stdout");
-            }
-
-            Some(mode) if mode == "pretty" => {
-                serde_json::to_writer_pretty(&mut std::io::stdout(), &module).expect("Failed to write AST to stdout");
-            }
-
-            _ => {
-                serde_json::to_writer_pretty(&mut std::io::stdout(), &module).expect("Failed to write AST to stdout");
-            }
-        }
-    }
-
     fn create_target_dir(&self, dir: &Path) -> anyhow::Result<()> {
         if let Err(e) = std::fs::create_dir_all(dir) {
             error!(
@@ -328,63 +341,9 @@ impl Interpreter<'_> {
         Ok(())
     }
 
-    fn get_llvm_context(&self, triple: Option<String>, opt_level: OptLevel) -> anyhow::Result<LLVMContext> {
-        let triple = match triple {
-            Some(t) => t,
-            None => LLVMContext::default_target_triple(),
-        };
-
-        match LLVMContext::new(&triple, opt_level) {
-            Ok(ctx) => Ok(ctx),
-
-            Err(e) => {
-                error!(self.log, "Failed to create LLVM context for target '{}': {}", triple, e);
-
-                Err(anyhow::anyhow!("Failed to create LLVM context"))
-            }
-        }
-    }
-
-    fn opt_level_for(opts: &CompileOptions) -> OptLevel {
-        if opts.release {
-            OptLevel::Aggressive
-        } else {
-            match &opts.profile {
-                Some(profile_name) if profile_name == "debug" => OptLevel::None,
-                Some(profile_name) if profile_name == "release" => OptLevel::Aggressive,
-                _ => OptLevel::None,
-            }
-        }
-    }
-
-    fn lower_to_hir(
-        &self,
-        module: ast::Module,
-        ptr_size: u32,
-        package_name: &str,
-        source_filepath: &Path,
-        log: &CompilerLog,
-    ) -> anyhow::Result<(hir::Module, hir::SymbolTab)> {
-        let ptr_size = match ptr_size {
-            4 => hir::PtrSize::U32,
-            8 => hir::PtrSize::U64,
-            _ => {
-                error!(self.log, "Unsupported pointer size: {} bytes", ptr_size);
-                return Err(anyhow::anyhow!("Unsupported pointer size"));
-            }
-        };
-
-        let import_ctx = ImportContext::new(package_name.into(), source_filepath.into());
-        let mut ctx = Ast2HirCtx::new(ptr_size, import_ctx);
-        let module = match convert_ast_to_hir(module, &mut ctx, log) {
-            Err(_) => return Err(anyhow::anyhow!("Failed to convert AST to HIR")),
-            Ok(module) => module,
-        };
-
-        Ok((module, ctx.tab))
-    }
-
     /// Run the full compilation pipeline for a package and produce a binary.
+    ///
+    /// Uses the centralized `Pipeline` type-state builder from `nitrate_translation`.
     pub(crate) fn compile_package(&mut self, opts: &CompileOptions) -> anyhow::Result<PathBuf> {
         let manifest = resolve_manifest(opts.manifest_path.as_deref())?;
         let target_dir = target_dir_for(&manifest, opts.target_dir.as_deref());
@@ -392,139 +351,90 @@ impl Interpreter<'_> {
         let build_dir = target_dir.join(&profile);
 
         self.create_target_dir(&build_dir)?;
-        let log = CompilerLog::new(self.log.clone());
-
         self.validate_package_edition(manifest.package.edition_major())?;
 
-        let opt_level = Self::opt_level_for(opts);
-        let llvm_ctx = self.get_llvm_context(opts.target.clone(), opt_level)?;
-        let ptr_size = llvm_ctx.target_data.get_pointer_byte_size(None);
+        // Build pipeline configuration
+        let mut config = pipeline_config_from_opts(opts, &manifest);
+        config.log = CompilerLog::new(self.log.clone());
 
-        let ast_module = self.parse_source_code(&manifest.entrypoint(), &manifest.package.name, &log)?;
+        let entrypoint = manifest.entrypoint();
+        let package_name = manifest.package.name.clone();
+
+        // Create the HIR Store upfront
+        let store = Store::new();
+
+        let pipeline = Pipeline::new(config);
+
+        // Load → Lex → Parse (no Store needed)
+        let source = pipeline.load_source(&entrypoint)?;
+        let tokenized = source.lex()?;
+        let parsed = tokenized.parse()?;
+
         if opts.show_ast {
-            self.show_ast(&ast_module, &opts.format_mode);
+            let pretty = opts.format_mode.as_deref() != Some("minify");
+            parsed.dump_ast(pretty);
             return Ok(PathBuf::new());
         }
 
-        let store = Store::new();
+        let ptr_size = std::mem::size_of::<*const u8>() as u32;
 
-        using_storage(&store, || {
-            let (hir_module, symbol_tab) = self.lower_to_hir(
-                ast_module,
-                ptr_size,
-                &manifest.package.name,
-                &manifest.entrypoint(),
-                &log,
-            )?;
-
-            let mut hir_verifier = hir_validate::ValidateCtx::new(&symbol_tab, &log);
-            let valid_hir_module = match hir_module.clone().validate(&mut hir_verifier) {
-                Ok(m) => m,
-                Err(_) => {
-                    error!(
-                        self.log,
-                        "HIR validation failed for package '{}'", manifest.package.name
-                    );
-
-                    if opts.show_hir {
-                        println!("{}", hir_module.to_string());
-                        return Ok(PathBuf::new());
-                    }
-
-                    return Err(anyhow::anyhow!("HIR validation failed"));
-                }
-            };
+        // HIR stages run inside TLS storage
+        using_storage(&store, || -> anyhow::Result<PathBuf> {
+            let hir_lowered = parsed.lower_hir(ptr_size)?;
 
             if opts.show_hir {
-                println!("{}", valid_hir_module.into_inner().to_string());
+                hir_lowered.dump_hir();
                 return Ok(PathBuf::new());
             }
+
+            // Validate (with or without optimization)
+            let hir_validated = hir_lowered.validate()?;
 
             if opts.check_only {
-                info!(self.log, "Finished checking `{}`", manifest.package.name);
+                hir_validated.finish_check();
+                info!(self.log, "Finished checking `{}`", package_name);
                 return Ok(PathBuf::new());
             }
 
-            // Apply name mangling to all functions and global variables.
-            // This sets the `mangled_name` field on each symbol, which is what
-            // appears in the object file during LLVM IR generation. The `name`
-            // field is preserved for internal symbol lookup.
-            let mut symbol_tab = symbol_tab;
-            mangle_symbols(&manifest.package.name, &mut symbol_tab);
+            // Name mangling → MIR lowering
+            let hir_mangled = hir_validated.mangle();
+            let mir_lowered = hir_mangled.lower_mir();
 
-            let mut llvm_module = generate_llvmir(&manifest.package.name, valid_hir_module, &llvm_ctx, &symbol_tab);
-
-            llvm_ctx.optimize_module(&mut llvm_module);
+            // Codegen
+            let llvm_generated = mir_lowered.codegen()?;
 
             if opts.show_llvmir {
-                println!("{}", llvm_module.print_to_string().to_string());
+                llvm_generated.dump_llvm_ir();
                 return Ok(PathBuf::new());
             }
 
             if opts.show_asm {
-                if let Err(e) = llvm_ctx.write_asm(&mut llvm_module, &mut std::io::stdout()) {
-                    error!(
-                        self.log,
-                        "Failed to write assembly file for package '{}': {}", manifest.package.name, e
-                    );
-
-                    return Err(anyhow::anyhow!("Failed to write assembly file"));
-                }
+                llvm_generated.dump_asm()?;
                 return Ok(PathBuf::new());
             }
 
+            // Optimize LLVM → emit object
             let (major, minor, patch) = manifest.package.major_minor_patch();
-            let object_file = build_dir.join(format!("{}-{}.{}.{}.o", manifest.package.name, major, minor, patch));
+            let object_file = build_dir.join(format!("{}-{}.{}.{}.o", package_name, major, minor, patch));
 
-            if let Err(e) = llvm_ctx.write_object_file(&mut llvm_module, &object_file) {
-                error!(
-                    self.log,
-                    "Failed to write object file for package '{}': {}", manifest.package.name, e
-                );
-
-                return Err(anyhow::anyhow!("Failed to write object file"));
-            }
+            let emitted = llvm_generated.optimize_llvm().emit_obj(&object_file)?;
 
             if opts.show_obj {
                 info!(
                     self.log,
                     "Object file for package '{}' written to '{}'",
-                    manifest.package.name,
-                    object_file.display()
+                    package_name,
+                    emitted.path().display()
                 );
                 return Ok(PathBuf::new());
             }
 
-            let binary_path = build_dir.join(&manifest.package.name);
-
-            // Run system linker.
-            let status = std::process::Command::new("clang")
-                .arg(&object_file)
-                .arg("-o")
-                .arg(&binary_path)
-                .status()
-                .map_err(|e| {
-                    error!(
-                        self.log,
-                        "Failed to link final binary for package '{}': {}", manifest.package.name, e
-                    );
-
-                    e
-                })?;
-
-            if !status.success() {
-                error!(
-                    self.log,
-                    "Linking final binary for package '{}' failed with exit code: {}",
-                    manifest.package.name,
-                    status.code().unwrap_or(-1),
-                );
-                return Err(anyhow::anyhow!("Linking final binary failed"));
-            }
+            let binary_path = build_dir.join(&package_name);
+            link_binary(self.log, emitted.path(), &binary_path, &package_name)?;
 
             info!(
                 self.log,
-                "Successfully built package '{}' v{}.{}.{}", manifest.package.name, major, minor, patch,
+                "Successfully built package '{}' v{}.{}.{}", package_name, major, minor, patch,
             );
 
             Ok(binary_path)

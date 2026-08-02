@@ -3,6 +3,7 @@ use inkwell::passes::{PassManager, PassManagerBuilder};
 
 use crate::LLVMContext;
 
+#[derive(Clone, Copy)]
 pub enum OptLevel {
     None,
     Default,
