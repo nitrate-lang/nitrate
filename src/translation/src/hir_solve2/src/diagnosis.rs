@@ -1,9 +1,3 @@
-//! Type error diagnostics for the suspended constraint solver.
-//!
-//! Provides structured error types with precise source spans, implementing
-//! the `FormattableDiagnosticGroup` trait for integration with the Nitrate
-//! diagnostic system.
-
 use nitrate_diagnosis::{DiagnosticGroupId, DiagnosticInfo, FormattableDiagnosticGroup, Origin, SourcePosition, Span};
 use nitrate_hir::{Lit, Type, TypeId};
 use nitrate_hir_dump::Dump;
@@ -38,76 +32,45 @@ fn byte_span_to_origin(span: ByteSpan) -> Origin {
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub(crate) enum TypeErr {
-    /// Integer literal value exceeds the range of the target primitive type.
     IntegerLiteralOutOfRange {
         span: ByteSpan,
         value: u128,
         target_type: TypeId,
     },
-    /// Integer literal constrained to a non-integer type.
-    IntegerLiteralUnsatisfiable {
-        span: ByteSpan,
-        value: u128,
-        unsatisfiable_type: TypeId,
-    },
-    /// Float literal constrained to a non-float type.
-    FloatLiteralUnsatisfiable {
-        span: ByteSpan,
-        value: ordered_float::OrderedFloat<f64>,
-        unsatisfiable_type: TypeId,
-    },
-    /// Integer literal outside refinement type bounds.
     IntegerLiteralOutOfRefinementBounds {
         span: ByteSpan,
         value: u128,
         refinement_type: TypeId,
     },
-    /// Arithmetic result cannot be guaranteed to satisfy refinement bounds.
     OperationResultOutOfRefinementBounds {
         span: ByteSpan,
         refinement_type: TypeId,
         computed_min: u128,
         computed_max: u128,
     },
-    /// If/else branches have incompatible concrete types.
     MismatchedBranchTypes {
         span: ByteSpan,
         true_type: TypeId,
         false_type: TypeId,
     },
-    /// Generic type arguments cannot be inferred from context.
     CannotInferTypeArgs {
         span: ByteSpan,
         generic_name: String,
         reason: String,
     },
-    /// Expression type is ambiguous (cannot be determined).
-    AmbiguousType { span: ByteSpan, description: String },
-    /// A generic parameter could not be resolved.
+    AmbiguousType {
+        span: ByteSpan,
+        description: String,
+    },
     UnboundGenericParam {
         span: ByteSpan,
         param_name: String,
         generic_name: String,
     },
-    /// Method not found on receiver type.
     MethodNotFound {
         span: ByteSpan,
         method_name: String,
         receiver_type: TypeId,
-    },
-    /// Cannot unify two distinct concrete types.
-    TypeMismatch {
-        span: ByteSpan,
-        expected: TypeId,
-        found: TypeId,
-    },
-    /// Occurs check failure — recursive type detected.
-    RecursiveType { span: ByteSpan, description: String },
-    /// Trait bound not satisfied.
-    TraitNotSatisfied {
-        span: ByteSpan,
-        type_id: TypeId,
-        trait_name: String,
     },
 }
 
@@ -119,8 +82,6 @@ impl FormattableDiagnosticGroup for TypeErr {
     fn variant_id(&self) -> u16 {
         match self {
             TypeErr::IntegerLiteralOutOfRange { .. } => 0,
-            TypeErr::IntegerLiteralUnsatisfiable { .. } => 1,
-            TypeErr::FloatLiteralUnsatisfiable { .. } => 2,
             TypeErr::IntegerLiteralOutOfRefinementBounds { .. } => 3,
             TypeErr::OperationResultOutOfRefinementBounds { .. } => 4,
             TypeErr::MismatchedBranchTypes { .. } => 5,
@@ -128,9 +89,6 @@ impl FormattableDiagnosticGroup for TypeErr {
             TypeErr::AmbiguousType { .. } => 8,
             TypeErr::UnboundGenericParam { .. } => 11,
             TypeErr::MethodNotFound { .. } => 14,
-            TypeErr::TypeMismatch { .. } => 16,
-            TypeErr::RecursiveType { .. } => 17,
-            TypeErr::TraitNotSatisfied { .. } => 18,
         }
     }
 
@@ -146,30 +104,6 @@ impl FormattableDiagnosticGroup for TypeErr {
                     "integer literal value `{}` is outside the range of type `{}`",
                     value,
                     target_type.to_string()
-                ),
-            },
-            TypeErr::IntegerLiteralUnsatisfiable {
-                span,
-                value,
-                unsatisfiable_type,
-            } => DiagnosticInfo {
-                origin: byte_span_to_origin(*span),
-                message: format!(
-                    "integer literal `{}` cannot satisfy non-integer type constraint `{}`",
-                    value,
-                    unsatisfiable_type.to_string()
-                ),
-            },
-            TypeErr::FloatLiteralUnsatisfiable {
-                span,
-                value,
-                unsatisfiable_type,
-            } => DiagnosticInfo {
-                origin: byte_span_to_origin(*span),
-                message: format!(
-                    "float literal `{}` cannot satisfy non-float type constraint `{}`",
-                    value,
-                    unsatisfiable_type.to_string()
                 ),
             },
             TypeErr::IntegerLiteralOutOfRefinementBounds {
@@ -261,30 +195,6 @@ impl FormattableDiagnosticGroup for TypeErr {
                     "method `{}` not found on type `{}`",
                     method_name,
                     receiver_type.to_string()
-                ),
-            },
-            TypeErr::TypeMismatch { span, expected, found } => DiagnosticInfo {
-                origin: byte_span_to_origin(*span),
-                message: format!(
-                    "type mismatch: expected `{}`, found `{}`",
-                    expected.to_string(),
-                    found.to_string()
-                ),
-            },
-            TypeErr::RecursiveType { span, description } => DiagnosticInfo {
-                origin: byte_span_to_origin(*span),
-                message: format!("recursive type detected: {}", description),
-            },
-            TypeErr::TraitNotSatisfied {
-                span,
-                type_id,
-                trait_name,
-            } => DiagnosticInfo {
-                origin: byte_span_to_origin(*span),
-                message: format!(
-                    "type `{}` does not satisfy trait bound `{}`",
-                    type_id.to_string(),
-                    trait_name
                 ),
             },
         }

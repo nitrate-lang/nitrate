@@ -1,12 +1,7 @@
-//! Value range analysis for integer refinement type checking.
-//!
-//! Tracks the possible range of integer values through arithmetic operations.
-//! Used to verify that computed values stay within declared refinement type bounds.
-
-use nitrate_hir::{BinaryOp, Lit, Type, UnaryOp};
 use std::vec;
 
-/// Inclusive range [lo, hi] that an integer value can take.
+use nitrate_hir::{BinaryOp, Type, UnaryOp};
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) struct Bounds {
     pub lo: i128,
@@ -17,17 +12,14 @@ impl Bounds {
     pub fn new(lo: i128, hi: u128) -> Self {
         Self { lo, hi }
     }
-
     pub fn signed(lo: i128, hi: i128) -> Self {
         Self { lo, hi: hi as u128 }
     }
-
     pub fn unsigned(lo: u128, hi: u128) -> Self {
         Self { lo: lo as i128, hi }
     }
 }
 
-/// Returns the numeric bounds inherent to a primitive integer type.
 fn numeric_bounds_for_type(ty: &Type) -> Option<Bounds> {
     match ty {
         Type::U8 { .. } => Some(Bounds::unsigned(0, 255)),
@@ -45,8 +37,8 @@ fn numeric_bounds_for_type(ty: &Type) -> Option<Bounds> {
     }
 }
 
-/// Convert a literal to i128, if it is an integer literal.
-pub(crate) fn lit_to_i128(lit: &Lit) -> Option<i128> {
+pub(crate) fn lit_to_i128(lit: &nitrate_hir::Lit) -> Option<i128> {
+    use nitrate_hir::Lit;
     match lit {
         Lit::U8(v) => Some(*v as i128),
         Lit::U16(v) => Some(*v as i128),
@@ -63,8 +55,8 @@ pub(crate) fn lit_to_i128(lit: &Lit) -> Option<i128> {
     }
 }
 
-/// Convert a literal to u128, if it is an integer literal.
-pub(crate) fn lit_to_u128(lit: &Lit) -> Option<u128> {
+pub(crate) fn lit_to_u128(lit: &nitrate_hir::Lit) -> Option<u128> {
+    use nitrate_hir::Lit;
     match lit {
         Lit::U8(v) => Some(*v as u128),
         Lit::U16(v) => Some(*v as u128),
@@ -81,39 +73,23 @@ pub(crate) fn lit_to_u128(lit: &Lit) -> Option<u128> {
     }
 }
 
-/// Get the numeric bounds for a primitive integer type.
-pub(crate) fn integer_primitive_bounds(ty: &Type) -> Option<Bounds> {
-    numeric_bounds_for_type(ty)
-}
-
-/// Extract value bounds from a type. For `Refine` types, reads the min/max
-/// literal bounds. For integer primitives, returns the full range.
 pub(crate) fn extract_bounds_from_type(ty: &Type) -> Option<Bounds> {
     match ty {
         Type::Refine { min, max, .. } => match (lit_to_i128(min), lit_to_u128(max)) {
             (Some(min_val), Some(max_val)) => Some(Bounds::new(min_val, max_val)),
             _ => None,
         },
-        _ => integer_primitive_bounds(ty),
+        _ => numeric_bounds_for_type(ty),
     }
 }
 
-/// Compute the bounds of a binary arithmetic operation from operand bounds.
-///
-/// Returns `None` for comparison/logical operations (which produce bools).
 pub(crate) fn compute_binary_bounds(op: &BinaryOp, left: Bounds, right: Bounds) -> Option<Bounds> {
     let (l_min, l_max_i128) = (left.lo, left.hi as i128);
     let (r_min, r_max_i128) = (right.lo, right.hi as i128);
     let is_unsigned_both = left.lo >= 0 && right.lo >= 0;
-
     match op {
         BinaryOp::Add => {
-            let hi = if is_unsigned_both {
-                let hi128 = left.hi.saturating_add(right.hi);
-                if hi128 > i128::MAX as u128 { hi128 } else { hi128 }
-            } else {
-                left.hi.saturating_add(right.hi)
-            };
+            let hi = left.hi.saturating_add(right.hi);
             Some(Bounds::new(l_min.saturating_add(r_min), hi))
         }
         BinaryOp::Sub => {
@@ -130,18 +106,15 @@ pub(crate) fn compute_binary_bounds(op: &BinaryOp, left: Bounds, right: Bounds) 
             Some(Bounds::new(lo, hi))
         }
         BinaryOp::Mul => {
-            let mut products_u128 = Vec::new();
             let products_i128 = [
                 l_min.saturating_mul(r_min),
                 l_min.saturating_mul(r_max_i128),
                 l_max_i128.saturating_mul(r_min),
                 l_max_i128.saturating_mul(r_max_i128),
             ];
+            let mut products_u128 = Vec::new();
             if is_unsigned_both {
-                let ul_min = left.lo as u128;
-                let ul_max = left.hi;
-                let ur_min = right.lo as u128;
-                let ur_max = right.hi;
+                let (ul_min, ul_max, ur_min, ur_max) = (left.lo as u128, left.hi, right.lo as u128, right.hi);
                 products_u128 = vec![
                     ul_min.saturating_mul(ur_min),
                     ul_min.saturating_mul(ur_max),
@@ -161,7 +134,7 @@ pub(crate) fn compute_binary_bounds(op: &BinaryOp, left: Bounds, right: Bounds) 
         }
         BinaryOp::Div => {
             let candidates = if r_min <= 0 && r_max_i128 >= 0 {
-                let mut vals: Vec<i128> = Vec::new();
+                let mut vals = Vec::new();
                 if r_max_i128 > 0 {
                     for &l in &[l_min, l_max_i128] {
                         vals.push(l.saturating_div(1));
@@ -257,7 +230,6 @@ pub(crate) fn compute_binary_bounds(op: &BinaryOp, left: Bounds, right: Bounds) 
     }
 }
 
-/// Compute the bounds of a unary operation from operand bounds.
 pub(crate) fn compute_unary_bounds(op: &UnaryOp, operand: Bounds) -> Bounds {
     let (min, max) = (operand.lo, operand.hi);
     let max_i128 = max as i128;
@@ -275,47 +247,38 @@ pub(crate) fn compute_unary_bounds(op: &UnaryOp, operand: Bounds) -> Bounds {
     }
 }
 
-/// Check if computed bounds satisfy the constraint type's bounds.
-/// Returns false if the computed range could produce values outside the constraint.
 pub(crate) fn check_bounds_against_constraint(computed_bounds: Bounds, constraint_ty: &Type) -> bool {
     match constraint_ty {
         Type::Refine { .. } => {
-            let target_bounds = extract_bounds_from_type(constraint_ty);
-            if let Some(target) = target_bounds {
+            if let Some(target) = extract_bounds_from_type(constraint_ty) {
                 let (comp_min, comp_max) = (computed_bounds.lo, computed_bounds.hi);
                 let (target_min, target_max) = (target.lo, target.hi);
-                if comp_min < target_min || comp_max > target_max {
-                    return false;
-                }
+                !(comp_min < target_min || comp_max > target_max)
+            } else {
+                true
             }
-            true
         }
         _ => true,
     }
 }
 
-/// Check if a literal value satisfies a refinement type's bounds.
 pub(crate) fn check_literal_against_refinement(value: u128, constraint_ty: &Type) -> bool {
     match constraint_ty {
-        Type::Refine { min, max, .. } => {
-            let min_val = lit_to_i128(min);
-            let max_val = lit_to_i128(max);
-            match (min_val, max_val) {
-                (Some(mn), Some(mx_i128)) => {
-                    if value > i128::MAX as u128 && mx_i128 < 0 {
-                        return false;
-                    }
-                    if value > i128::MAX as u128 {
-                        let mx_u128 = lit_to_u128(max).unwrap_or(0);
-                        value <= mx_u128
-                    } else {
-                        let signed = value as i128;
-                        signed >= mn && signed <= mx_i128
-                    }
+        Type::Refine { min, max, .. } => match (lit_to_i128(min), lit_to_i128(max)) {
+            (Some(mn), Some(mx_i128)) => {
+                if value > i128::MAX as u128 && mx_i128 < 0 {
+                    return false;
                 }
-                _ => true,
+                if value > i128::MAX as u128 {
+                    let mx_u128 = lit_to_u128(max).unwrap_or(0);
+                    value <= mx_u128
+                } else {
+                    let signed = value as i128;
+                    signed >= mn && signed <= mx_i128
+                }
             }
-        }
+            _ => true,
+        },
         _ => true,
     }
 }
