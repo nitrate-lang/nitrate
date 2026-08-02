@@ -87,7 +87,9 @@ impl Interpreter<'_> {
 
         // Build first: tests compile the package, and running them finds
         // `#[test]`-attributed functions via the compiled artifact.
-        let binary_path = self.compile_package(&opts)?;
+        let binary_path = self
+            .compile_package(&opts)?
+            .expect("Failed to compile package for tests");
         if binary_path.as_os_str().is_empty() {
             return Ok(());
         }

@@ -110,7 +110,9 @@ impl Interpreter<'_> {
             let mut opts = crate::commands::build::CompileOptions::default();
             opts.manifest_path = Some(manifest_path);
             opts.release = !args.debug;
-            let binary_path = self.compile_package(&opts)?;
+            let binary_path = self
+                .compile_package(&opts)?
+                .expect("Failed to compile package for installation");
             if binary_path.as_os_str().is_empty() {
                 return Ok(());
             }
@@ -166,7 +168,9 @@ impl Interpreter<'_> {
             let mut opts = crate::commands::build::CompileOptions::default();
             opts.manifest_path = Some(pkg_dir.join(crate::package::MANIFEST_FILE));
             opts.release = !args.debug;
-            let binary_path = self.compile_package(&opts)?;
+            let binary_path = self
+                .compile_package(&opts)?
+                .expect("Failed to compile package for installation");
             if binary_path.as_os_str().is_empty() {
                 continue;
             }

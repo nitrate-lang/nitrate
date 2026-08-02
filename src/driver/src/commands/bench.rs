@@ -73,7 +73,9 @@ impl Interpreter<'_> {
         opts.target_dir = args.target_dir;
         opts.manifest_path = args.manifest_path;
 
-        let binary_path = self.compile_package(&opts)?;
+        let binary_path = self
+            .compile_package(&opts)?
+            .expect("Failed to compile package for benchmarks");
         if binary_path.as_os_str().is_empty() {
             return Ok(());
         }

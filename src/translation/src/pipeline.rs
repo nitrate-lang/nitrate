@@ -42,11 +42,9 @@
 //!                                            dump_llvm_ir()  dump_asm() emit_obj()
 //! ```
 
-use std::num::NonZero;
-use std::path::{Path, PathBuf};
-
 use crate::hir_dump::Dump;
-use crate::hir_validate::{self, ValidateHirItem};
+use crate::hir_validate::ValidateHirItem;
+use crate::parse::Parser;
 use nitrate_diagnosis::{CompilerLog, FileId, intern_file_id};
 use nitrate_hir::prelude as hir;
 use nitrate_hir_from_tree::{Ast2HirCtx, convert_ast_to_hir};
@@ -55,12 +53,11 @@ use nitrate_llvm::{LLVMContext, OptLevel};
 use nitrate_llvm_from_mir::generate_llvmir_from_mir;
 use nitrate_mir::prelude as mir;
 use nitrate_mir_from_hir::lower_hir_to_mir;
-use nitrate_token::AnnotatedToken;
-use nitrate_token_lexer::{Lexer, LexerError, LexerIterator};
+use nitrate_token_lexer::{Lexer, LexerError};
 use nitrate_tree::ast;
 use nitrate_tree_resolve::ImportContext;
-
-use crate::parse::Parser;
+use std::num::NonZero;
+use std::path::{Path, PathBuf};
 
 // ────────────────────────────────────────────────────────────────────
 // Pipeline configuration
@@ -116,13 +113,10 @@ impl Pipeline {
 
         let file_id = intern_file_id(source_path.to_string_lossy().as_ref()).ok_or(PipelineError::FileIdOverflow)?;
 
-        let source_name = source_path.to_string_lossy().to_string();
-
         Ok(Source {
             config: self.config,
             source_bytes,
             source_file_id: file_id,
-            source_name,
             source_path: Some(source_path.to_path_buf()),
         })
     }
@@ -136,18 +130,11 @@ pub struct Source {
     pub(crate) config: PipelineConfig,
     pub(crate) source_bytes: Vec<u8>,
     pub(crate) source_file_id: FileId,
-    pub(crate) source_name: String,
     pub(crate) source_path: Option<PathBuf>,
 }
 
 impl Source {
     pub fn lex(self) -> Result<Tokenized, PipelineError> {
-        let file_id = self.source_file_id.clone();
-        let lexer = Lexer::new(&self.source_bytes, Some(file_id))
-            .map_err(|LexerError::SourceTooBig| PipelineError::SourceTooLarge)?;
-
-        let tokens: Vec<AnnotatedToken> = LexerIterator::new(lexer).collect();
-
         if self.config.log.error_bit() {
             return Err(PipelineError::CompilationFailed);
         }
@@ -156,9 +143,7 @@ impl Source {
             config: self.config,
             source_bytes: self.source_bytes,
             source_file_id: self.source_file_id,
-            source_name: self.source_name,
             source_path: self.source_path,
-            _tokens: tokens,
         })
     }
 }
@@ -171,9 +156,7 @@ pub struct Tokenized {
     config: PipelineConfig,
     source_bytes: Vec<u8>,
     source_file_id: FileId,
-    source_name: String,
     source_path: Option<PathBuf>,
-    _tokens: Vec<AnnotatedToken>,
 }
 
 impl Tokenized {
@@ -191,7 +174,6 @@ impl Tokenized {
         Ok(Parsed {
             config: self.config,
             module,
-            source_name: self.source_name,
             source_path: self.source_path,
         })
     }
@@ -204,7 +186,6 @@ impl Tokenized {
 pub struct Parsed {
     config: PipelineConfig,
     module: ast::Module,
-    source_name: String,
     source_path: Option<PathBuf>,
 }
 

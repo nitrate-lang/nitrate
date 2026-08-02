@@ -1,11 +1,8 @@
 use crate::{Interpreter, package::Manifest};
 use clap::Parser;
 use nitrate_diagnosis::CompilerLog;
-use nitrate_translation::{
-    Pipeline, PipelineConfig,
-    hir::{Store, using_storage},
-    llvm::OptLevel,
-};
+use nitrate_translation::{LlvmGenerated, MirLowered};
+use nitrate_translation::{Pipeline, PipelineConfig, hir, llvm::OptLevel, mir};
 use slog::{debug, error, info};
 use std::collections::HashSet;
 use std::num::NonZero;
@@ -344,7 +341,7 @@ impl Interpreter<'_> {
     /// Run the full compilation pipeline for a package and produce a binary.
     ///
     /// Uses the centralized `Pipeline` type-state builder from `nitrate_translation`.
-    pub(crate) fn compile_package(&mut self, opts: &CompileOptions) -> anyhow::Result<PathBuf> {
+    pub(crate) fn compile_package(&mut self, opts: &CompileOptions) -> anyhow::Result<Option<PathBuf>> {
         let manifest = resolve_manifest(opts.manifest_path.as_deref())?;
         let target_dir = target_dir_for(&manifest, opts.target_dir.as_deref());
         let profile = profile_dir(opts);
@@ -361,7 +358,8 @@ impl Interpreter<'_> {
         let package_name = manifest.package.name.clone();
 
         // Create the HIR Store upfront
-        let store = Store::new();
+        let mut hir_store = hir::Store::new();
+        let mut mir_store = mir::MirStore::new();
 
         let pipeline = Pipeline::new(config);
 
@@ -373,47 +371,58 @@ impl Interpreter<'_> {
         if opts.show_ast {
             let pretty = opts.format_mode.as_deref() != Some("minify");
             parsed.dump_ast(pretty);
-            return Ok(PathBuf::new());
+            return Ok(None);
         }
 
         let ptr_size = std::mem::size_of::<*const u8>() as u32;
 
-        // HIR stages run inside TLS storage
-        using_storage(&store, || -> anyhow::Result<PathBuf> {
+        // HIR stages run inside HIR TLS storage
+        let mir_lowered = hir::using_storage(&hir_store, || -> anyhow::Result<Option<MirLowered>> {
             let hir_lowered = parsed.lower_hir(ptr_size)?;
 
             if opts.show_hir {
                 hir_lowered.dump_hir();
-                return Ok(PathBuf::new());
+                return Ok(None);
             }
 
-            // Validate (with or without optimization)
             let hir_validated = hir_lowered.validate()?;
 
             if opts.check_only {
                 hir_validated.finish_check();
                 info!(self.log, "Finished checking `{}`", package_name);
-                return Ok(PathBuf::new());
+                return Ok(None);
             }
 
-            // Name mangling → MIR lowering
             let hir_mangled = hir_validated.mangle();
-            let mir_lowered = hir_mangled.lower_mir();
 
-            // Codegen
-            let llvm_generated = mir_lowered.codegen()?;
+            // MIR stages need their own TLS storage (separate from HIR)
+            let mir_lowered = mir::using_storage(&mir_store, || -> MirLowered { hir_mangled.lower_mir() });
+
+            Ok(Some(mir_lowered))
+        });
+
+        // Reset the HIR store to free memory before codegen
+        hir_store.reset();
+
+        if let Some(mir_lowered) = mir_lowered? {
+            let llvm_generated = mir::using_storage(&mir_store, || -> anyhow::Result<LlvmGenerated> {
+                let llvm_generated = mir_lowered.codegen()?;
+                Ok(llvm_generated)
+            })?;
+
+            // Reset the MIR store to free memory before codegen
+            mir_store.reset();
 
             if opts.show_llvmir {
                 llvm_generated.dump_llvm_ir();
-                return Ok(PathBuf::new());
+                return Ok(None);
             }
 
             if opts.show_asm {
                 llvm_generated.dump_asm()?;
-                return Ok(PathBuf::new());
+                return Ok(None);
             }
 
-            // Optimize LLVM → emit object
             let (major, minor, patch) = manifest.package.major_minor_patch();
             let object_file = build_dir.join(format!("{}-{}.{}.{}.o", package_name, major, minor, patch));
 
@@ -426,7 +435,7 @@ impl Interpreter<'_> {
                     package_name,
                     emitted.path().display()
                 );
-                return Ok(PathBuf::new());
+                return Ok(None);
             }
 
             let binary_path = build_dir.join(&package_name);
@@ -437,8 +446,10 @@ impl Interpreter<'_> {
                 "Successfully built package '{}' v{}.{}.{}", package_name, major, minor, patch,
             );
 
-            Ok(binary_path)
-        })
+            Ok(Some(binary_path))
+        } else {
+            Ok(None)
+        }
     }
 
     pub(crate) fn sc_build(&mut self, args: BuildArgs) -> anyhow::Result<()> {
