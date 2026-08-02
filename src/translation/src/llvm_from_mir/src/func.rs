@@ -18,12 +18,12 @@ pub fn gen_function<'ctx>(ctx: &mut CodegenCtx<'ctx, '_>, llvm_function: Functio
     ctx.position_at_end(entry);
 
     // Allocate locals (SSA registers become allocas).
-    // LocalId::as_usize() returns the 1-based NonZeroU32 value, so we use
-    // 1-based keys to match gen_place's lookup via local_id.as_usize().
+    // Use the function's local_ids to map TLS-store LocalId values to allocas.
     for (i, local_decl) in ctx.mir_func.locals.iter().enumerate() {
         let llvm_ty = gen_ty(&*local_decl.ty, &mut ctx.ty_ctx());
         let alloca = ctx.builder.build_alloca(llvm_ty, &format!("local_{}", i)).unwrap();
-        ctx.locals.insert((i + 1) as u32, (alloca, llvm_ty));
+        let key = ctx.mir_func.local_ids[i].as_usize() as u32;
+        ctx.locals.insert(key, (alloca, llvm_ty));
     }
 
     // Map parameters to their allocas
@@ -171,39 +171,34 @@ pub fn generate_llvmir_from_mir<'ctx>(
         globals.insert(global_name.clone(), (global.as_pointer_value(), llvm_ty));
     }
 
-    // Generate each function
+    // Pass 1: Declare all functions first (so calls to extern/forward-referenced
+    // functions can be resolved when generating bodies).
+    let mut func_map: Vec<(mir::MirFunctionId, FunctionValue<'ctx>)> = Vec::new();
     for func_id in mir_module.functions.iter() {
-        let mir_func_borrowed = func_id.borrow();
+        let mir_func = func_id.borrow();
+        let ret_ty = crate::ty::gen_fn_ret_ty(&mir_func.return_ty, &mut TypegenCtx { llvm, module: &module });
+        let param_tys: Vec<BasicMetadataTypeEnum<'ctx>> = mir_func
+            .params
+            .iter()
+            .map(|pid| {
+                let local = pid.borrow();
+                gen_ty(&local.ty, &mut TypegenCtx { llvm, module: &module }).into()
+            })
+            .collect();
+        let fn_ty = match ret_ty {
+            Some(rt) => rt.fn_type(&param_tys, mir_func.is_c_variadic),
+            None => llvm.void_type().fn_type(&param_tys, mir_func.is_c_variadic),
+        };
+        let llvm_function = module.add_function(&mir_func.name, fn_ty, Some(Linkage::External));
+        func_map.push((func_id.clone(), llvm_function));
+    }
 
-        if mir_func_borrowed.is_extern() {
-            // For extern functions, just declare
-            let return_ty = gen_ty(&mir_func_borrowed.return_ty, &mut TypegenCtx { llvm, module: &module });
-            let param_tys: Vec<BasicMetadataTypeEnum<'ctx>> = mir_func_borrowed
-                .params
-                .iter()
-                .map(|pid| {
-                    let local = pid.borrow();
-                    gen_ty(&local.ty, &mut TypegenCtx { llvm, module: &module }).into()
-                })
-                .collect();
-            let fn_ty = return_ty.fn_type(&param_tys, false);
-            module.add_function(&mir_func_borrowed.name, fn_ty, Some(Linkage::External));
-        } else {
-            // For functions with bodies, declare and define
-            let return_ty = gen_ty(&mir_func_borrowed.return_ty, &mut TypegenCtx { llvm, module: &module });
-            let param_tys: Vec<BasicMetadataTypeEnum<'ctx>> = mir_func_borrowed
-                .params
-                .iter()
-                .map(|pid| {
-                    let local = pid.borrow();
-                    gen_ty(&local.ty, &mut TypegenCtx { llvm, module: &module }).into()
-                })
-                .collect();
-            let fn_ty = return_ty.fn_type(&param_tys, false);
-            let llvm_function = module.add_function(&mir_func_borrowed.name, fn_ty, Some(Linkage::External));
-
+    // Pass 2: Generate bodies for non-extern functions.
+    for (func_id, llvm_function) in func_map {
+        let mir_func = func_id.borrow();
+        if !mir_func.is_extern() {
             let builder = llvm.create_builder();
-            let mut ctx = CodegenCtx::new(llvm, &module, builder, &mir_func_borrowed, &globals, llvm_function);
+            let mut ctx = CodegenCtx::new(llvm, &module, builder, &mir_func, &globals, llvm_function);
             gen_function(&mut ctx, llvm_function);
         }
     }

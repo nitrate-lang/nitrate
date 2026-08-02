@@ -150,11 +150,16 @@ pub fn gen_terminator<'ctx>(ctx: &mut CodegenCtx<'ctx, '_>, terminator: &mir::Te
             let call_result = if let mir::Operand::Copy(mir::Place::Static(callee_name))
             | mir::Operand::Move(mir::Place::Static(callee_name)) = callee
             {
-                // Direct call to a known function by name
-                let llvm_fn = ctx
-                    .module
-                    .get_function(callee_name)
-                    .unwrap_or_else(|| panic!("function '{}' not found in module", callee_name));
+                // Direct call to a known function by name.
+                // The function must have been declared in the LLVM module during
+                // the two-pass declare-then-generate phase in generate_llvmir_from_mir.
+                let llvm_fn = ctx.module.get_function(callee_name).unwrap_or_else(|| {
+                    panic!(
+                        "function '{}' not found in LLVM module. \
+                         Ensure all functions are lowered to MIR and declared before codegen.",
+                        callee_name
+                    )
+                });
                 let arg_values: Vec<inkwell::values::BasicMetadataValueEnum<'ctx>> =
                     llvm_args.iter().map(|v| (*v).into()).collect();
                 ctx.builder.build_direct_call(llvm_fn, &arg_values, "call").unwrap()

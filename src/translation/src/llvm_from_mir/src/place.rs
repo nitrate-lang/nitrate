@@ -86,12 +86,9 @@ pub fn gen_place<'ctx>(ctx: &mut CodegenCtx<'ctx, '_>, place: &mir::Place) -> Po
 pub fn get_place_type_for_load<'ctx>(ctx: &CodegenCtx<'ctx, '_>, place: &mir::Place) -> mir::MirTypeId {
     match place {
         mir::Place::Local(local_id) => {
-            let idx = local_id.as_usize() as u32;
-            if (idx as usize) < ctx.mir_func.locals.len() {
-                ctx.mir_func.locals[idx as usize].ty.clone()
-            } else {
-                panic!("local index out of bounds: {}", idx);
-            }
+            // Use the TLS store via LocalId's Deref, not the function-local
+            // copy of the locals vec (which has different indexing).
+            local_id.borrow().ty.clone()
         }
         mir::Place::Static(_name) => mir::MirType::Unit.into(),
         mir::Place::Deref(base) => {

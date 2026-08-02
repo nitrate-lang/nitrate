@@ -9,6 +9,15 @@ pub struct TypegenCtx<'ctx, 'module> {
     pub module: &'module inkwell::module::Module<'ctx>,
 }
 
+/// Generate an LLVM return type for a function declaration.
+/// Maps Unit/Never to void; all other types use gen_ty.
+pub fn gen_fn_ret_ty<'ctx>(mir_type: &mir::MirType, ctx: &mut TypegenCtx<'ctx, '_>) -> Option<BasicTypeEnum<'ctx>> {
+    match mir_type {
+        mir::MirType::Never | mir::MirType::Unit => None, // void return
+        other => Some(gen_ty(other, ctx)),
+    }
+}
+
 /// Generate an LLVM type from a MIR type.
 pub fn gen_ty<'ctx>(mir_type: &mir::MirType, ctx: &mut TypegenCtx<'ctx, '_>) -> BasicTypeEnum<'ctx> {
     match mir_type {
