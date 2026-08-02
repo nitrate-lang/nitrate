@@ -117,4 +117,4 @@ The translation pipeline executes 10 sequential stages to lower source code into
 | **Type Solver**    | `nitrate_hir_solve`      | Hindley-Milner constraint-based inference engine utilizing a fixed-point iteration loop and on-the-fly monomorphization.                  |
 | **HIR Validation** | `nitrate_hir_validate`   | Semantic pass ensuring all type variables and generics are substituted; emits the type-safe `ValidHir<T>` wrapper.                        |
 | **Diagnostics**    | `nitrate_diagnosis`      | Structured error accumulation framework (`CompilerLog`) with 16-bit IDs, group prefixes (`[S0...]`–`[S6...]`), and source caret printing. |
-| **LLVM Codegen**   | `nitrate_llvm_from_hir`  | Multi-pass translator emitting global variables, function declarations, and definitions into LLVM IR.                                     |
+| **LLVM Codegen**   | `nitrate_llvm_from_mir`  | Multi-pass translator emitting global variables, function declarations, and definitions into LLVM IR.                                     |

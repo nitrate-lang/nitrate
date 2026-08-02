@@ -31,7 +31,7 @@ src/
         ├── hir_evaluate/    # Constant evaluation
         ├── hir_dump/        # HIR pretty-printing
         ├── llvm/            # LLVM context wrapper
-        └── llvm_from_hir/   # HIR→LLVM codegen
+        └── llvm_from_mir/   # MIR→LLVM codegen
 ```
 
 ## Key Dependencies

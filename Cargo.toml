@@ -22,7 +22,6 @@ members = [
     "src/translation/src/hir_optimize",
     "src/translation/src/mir_optimize",
     "src/translation/src/llvm",
-    "src/translation/src/llvm_from_hir",
     "src/translation/src/mir",
     "src/translation/src/mir_from_hir",
     "src/translation/src/llvm_from_mir",
@@ -99,7 +98,6 @@ nitrate_hir_optimize = { path = "src/translation/src/hir_optimize" }
 nitrate_mir_optimize = { path = "src/translation/src/mir_optimize" }
 
 nitrate_llvm = { path = "src/translation/src/llvm" }
-nitrate_llvm_from_hir = { path = "src/translation/src/llvm_from_hir" }
 
 nitrate_mir = { path = "src/translation/src/mir" }
 nitrate_mir_from_hir = { path = "src/translation/src/mir_from_hir" }

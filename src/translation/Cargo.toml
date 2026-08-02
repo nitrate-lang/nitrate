@@ -22,7 +22,6 @@ nitrate_hir_solve.workspace = true
 nitrate_hir_get_type.workspace = true
 nitrate_hir_mangle.workspace = true
 nitrate_llvm.workspace = true
-nitrate_llvm_from_hir.workspace = true
 nitrate_mir.workspace = true
 nitrate_mir_optimize.workspace = true
 nitrate_mir_from_hir.workspace = true

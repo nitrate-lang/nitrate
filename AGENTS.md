@@ -92,7 +92,7 @@ Source Code (.nit files) ──► [File Loading + Package Resolution]
     │  Input: Validated HIR with Function and GlobalVariable records
     │  Output: mangled_name fields populated on all symbols
     ▼
-[LLVM IR Code Generation — nitrate_llvm_from_hir]
+[LLVM IR Code Generation — nitrate_llvm_from_mir]
     │  Input: ValidHir<Module>
     │  Output: LLVM Module (verified, type-checked)
     │  Passes: (1) Globals (2) Declarations (3) Definitions

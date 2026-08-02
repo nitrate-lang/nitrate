@@ -1170,22 +1170,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "nitrate_llvm_from_hir"
-version = "0.1.0"
-dependencies = [
- "cc",
- "inkwell",
- "nitrate_hir",
- "nitrate_hir_get_type",
- "nitrate_hir_mangle",
- "nitrate_hir_validate",
- "nitrate_llvm",
- "nitrate_nstring",
- "nitrate_tree",
- "thin-vec",
-]
-
-[[package]]
 name = "nitrate_llvm_from_mir"
 version = "0.1.0"
 dependencies = [
@@ -1275,7 +1259,6 @@ dependencies = [
  "nitrate_hir_solve",
  "nitrate_hir_validate",
  "nitrate_llvm",
- "nitrate_llvm_from_hir",
  "nitrate_llvm_from_mir",
  "nitrate_mir",
  "nitrate_mir_from_hir",
