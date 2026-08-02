@@ -6,3 +6,6 @@ edition = "2024"
 [dependencies]
 nitrate_mir.workspace = true
 nitrate_hir.workspace = true
+nitrate_nstring.workspace = true
+nitrate_hir_get_type.workspace = true
+thin-vec.workspace = true

@@ -1206,7 +1206,10 @@ name = "nitrate_mir_from_hir"
 version = "0.1.0"
 dependencies = [
  "nitrate_hir",
+ "nitrate_hir_get_type",
  "nitrate_mir",
+ "nitrate_nstring",
+ "thin-vec",
 ]
 
 [[package]]
