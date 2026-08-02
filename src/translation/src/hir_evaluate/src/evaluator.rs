@@ -136,7 +136,13 @@ impl<'log> Evaluator<'log> {
             BlockElement::Expr(expr_id) => self.evaluate(&expr_id.borrow()),
             BlockElement::Local(local_id) => {
                 let local = local_id.borrow();
-                let init_value = self.evaluate(&local.initializer.borrow())?;
+                let init_value = if let Some(init_id) = &local.initializer {
+                    self.evaluate(&init_id.borrow())?
+                } else {
+                    Value::Unit {
+                        span: ByteSpan::default(),
+                    }
+                };
                 if let Some(frame) = self.frames.last_mut() {
                     frame.set_binding(local.name.clone(), init_value);
                 }

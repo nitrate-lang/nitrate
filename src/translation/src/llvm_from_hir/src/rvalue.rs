@@ -1706,12 +1706,14 @@ fn gen_rval_block<'ctx>(ctx: &mut CodegenCtx<'ctx, '_, '_, '_, '_>, hir_block: &
                 let hir_local = local.borrow();
                 let local_name = hir_local.name.to_owned();
                 let hir_local_ty = &hir_local.ty;
-                let hir_local_init = &hir_local.initializer.borrow();
 
                 let llvm_local_ty = gen_ty(hir_local_ty, &mut ctx.into());
                 let llvm_local = ctx.bb.build_alloca(llvm_local_ty, &local_name).unwrap();
-                let llvm_init_value = gen_rval(ctx, hir_local_init);
-                ctx.bb.build_store(llvm_local, llvm_init_value).unwrap();
+                if let Some(hir_local_init_id) = &hir_local.initializer {
+                    let hir_local_init = &hir_local_init_id.borrow();
+                    let llvm_init_value = gen_rval(ctx, hir_local_init);
+                    ctx.bb.build_store(llvm_local, llvm_init_value).unwrap();
+                }
 
                 ctx.locals.insert(local_name, (llvm_local, llvm_local_ty));
                 gen_rval_lit_unit(ctx)
@@ -2065,12 +2067,14 @@ pub(crate) fn gen_block<'ctx>(ctx: &mut CodegenCtx<'ctx, '_, '_, '_, '_>, hir_bl
                 let hir_local = local.borrow();
                 let local_name = hir_local.name.to_owned();
                 let hir_local_ty = &hir_local.ty;
-                let hir_local_init = &hir_local.initializer.borrow();
 
                 let llvm_local_ty = gen_ty(hir_local_ty, &mut ctx.into());
                 let llvm_local = ctx.bb.build_alloca(llvm_local_ty, &local_name).unwrap();
-                let llvm_init_value = gen_rval(ctx, hir_local_init);
-                ctx.bb.build_store(llvm_local, llvm_init_value).unwrap();
+                if let Some(hir_local_init_id) = &hir_local.initializer {
+                    let hir_local_init = &hir_local_init_id.borrow();
+                    let llvm_init_value = gen_rval(ctx, hir_local_init);
+                    ctx.bb.build_store(llvm_local, llvm_init_value).unwrap();
+                }
 
                 ctx.locals.insert(local_name, (llvm_local, llvm_local_ty));
             }

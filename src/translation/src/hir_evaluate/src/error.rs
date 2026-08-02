@@ -1,3 +1,5 @@
+use std::write;
+
 use nitrate_hir::prelude::Value;
 use nitrate_nstring::NString;
 
@@ -38,4 +40,38 @@ pub enum EvalError {
     Unsupported(&'static str),
     /// An unsafe operation was attempted in a safe context
     UnsafeInSafeContext,
+}
+
+impl std::fmt::Display for EvalError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            EvalError::Break { label } => {
+                if let Some(lbl) = label {
+                    write!(f, "break statement encountered with label '{}'", lbl)
+                } else {
+                    write!(f, "break statement encountered")
+                }
+            }
+            EvalError::Continue { label } => {
+                if let Some(lbl) = label {
+                    write!(f, "continue statement encountered with label '{}'", lbl)
+                } else {
+                    write!(f, "continue statement encountered")
+                }
+            }
+            EvalError::Return(value) => write!(f, "return statement encountered with value {:?}", value),
+            EvalError::DivisionByZero => write!(f, "division by zero"),
+            EvalError::ModuloByZero => write!(f, "modulo by zero"),
+            EvalError::ShiftAmountError => write!(f, "shift amount out of range"),
+            EvalError::TypeError => write!(f, "runtime type error"),
+            EvalError::LoopLimitExceeded => write!(f, "loop iteration limit exceeded"),
+            EvalError::CallDepthExceeded => write!(f, "function call depth limit exceeded"),
+            EvalError::MemoryLimitExceeded => write!(f, "total memory allocation limit exceeded"),
+            EvalError::InvalidPointer => write!(f, "dereference of an invalid pointer"),
+            EvalError::OutOfBoundsAccess => write!(f, "memory access out of bounds"),
+            EvalError::MisalignedAccess => write!(f, "misaligned memory access"),
+            EvalError::Unsupported(op) => write!(f, "unsupported operation: {}", op),
+            EvalError::UnsafeInSafeContext => write!(f, "unsafe operation attempted in a safe context"),
+        }
+    }
 }

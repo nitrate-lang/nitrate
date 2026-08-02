@@ -85,7 +85,9 @@ impl<'m> Solver<'m> {
                 }
                 BlockElement::Local(local_var) => {
                     let lv = local_var.borrow();
-                    self.worklist.insert(lv.initializer.clone());
+                    if let Some(init) = &lv.initializer {
+                        self.worklist.insert(init.clone());
+                    }
                 }
             }
         }
@@ -465,7 +467,9 @@ impl<'m> Solver<'m> {
                 }
                 BlockElement::Local(local_var) => {
                     let lv = local_var.borrow();
-                    self.finalize_value_recursive(&lv.initializer);
+                    if let Some(init) = &lv.initializer {
+                        self.finalize_value_recursive(init);
+                    }
                 }
             }
         }

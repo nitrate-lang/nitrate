@@ -343,8 +343,8 @@ pub(crate) fn lower_array_type(
             log.report(&HirErr::ArrayLengthExpectedUSize { span: a_span });
             return Err(());
         }
-        Err(_) => {
-            log.report(&HirErr::ArrayTypeLengthEvalError { span: a_span });
+        Err(err) => {
+            log.report(&HirErr::ArrayTypeLengthEvalError { span: a_span, err });
             return Err(());
         }
     };

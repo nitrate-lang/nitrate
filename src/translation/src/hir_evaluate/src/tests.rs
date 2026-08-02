@@ -129,7 +129,7 @@ fn make_local_var(name: &str, ty: Type, initializer: Value) -> LocalVariableId {
         is_mutable: false,
         name: NString::from(name),
         ty: ty.into(),
-        initializer: initializer.into(),
+        initializer: Some(initializer.into()),
     }
     .into()
 }

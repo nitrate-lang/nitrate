@@ -95,8 +95,10 @@ impl Dump for LocalVariable {
         write!(o, ": ")?;
         self.ty.dump(ctx, o)?;
 
-        write!(o, " = ")?;
-        self.initializer.borrow().dump(ctx, o)?;
+        if let Some(init) = &self.initializer {
+            write!(o, " = ")?;
+            init.borrow().dump(ctx, o)?;
+        }
 
         write!(o, ";")
     }

@@ -160,9 +160,10 @@ fn check_block_elements(elements: &[BlockElement], ctx: &mut BorrowCheckCtx) {
                 let place = Place::Local(local_id.clone());
 
                 // If this local has an initializer, evaluate it first.
-                let init_id = local.initializer.clone();
-                let init_value = init_id.borrow();
-                check_value_access(&init_value, ctx);
+                if let Some(init_id) = &local.initializer {
+                    let init_value = init_id.borrow();
+                    check_value_access(&init_value, ctx);
+                }
 
                 // Mark the local as initialized.
                 let pid = ctx.place_id(place);

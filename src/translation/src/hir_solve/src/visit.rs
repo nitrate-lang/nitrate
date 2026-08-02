@@ -47,31 +47,33 @@ impl<'m> Solver<'m> {
         match element {
             BlockElement::Expr(e) => self.visit(e),
             BlockElement::Local(local_var) => {
-                let init_id = local_var.borrow().initializer.clone();
-                let ty = local_var.borrow().ty;
+                let lv = local_var.borrow();
+                let ty = lv.ty;
                 let is_inferred = ty.is_inferred();
 
-                if is_inferred {
-                    if let Ok(determined_ty) = init_id.borrow().determine_type(self.m) {
-                        local_var.borrow_mut().ty = determined_ty.into();
+                if let Some(init_id) = &lv.initializer {
+                    if is_inferred {
+                        if let Ok(determined_ty) = init_id.borrow().determine_type(self.m) {
+                            local_var.borrow_mut().ty = determined_ty.into();
+                        }
+                    } else {
+                        self.add_constraint(init_id, TypeConstraint::Equal(ty));
                     }
-                } else {
-                    self.add_constraint(&init_id, TypeConstraint::Equal(ty));
-                }
 
-                self.visit(&init_id);
+                    self.visit(init_id);
 
-                if let Ok(new_ty) = init_id.borrow().determine_type(self.m) {
-                    let mut lv = local_var.borrow_mut();
-                    let old_ty = lv.ty.clone();
-                    let old_is_parameterized = matches!(&*old_ty, Type::Parameterized { .. });
-                    let new_is_struct = matches!(&new_ty, Type::Struct { .. });
-                    let new_type_id: TypeId = new_ty.into();
-                    let should_update = old_is_parameterized && new_is_struct;
-                    let old_is_generic_struct = matches!(&*old_ty, Type::Struct { .. });
-                    let new_is_different_struct = new_is_struct && old_ty != new_type_id;
-                    if should_update || (old_is_generic_struct && new_is_different_struct) {
-                        lv.ty = new_type_id;
+                    if let Ok(new_ty) = init_id.borrow().determine_type(self.m) {
+                        let mut lv = local_var.borrow_mut();
+                        let old_ty = lv.ty.clone();
+                        let old_is_parameterized = matches!(&*old_ty, Type::Parameterized { .. });
+                        let new_is_struct = matches!(&new_ty, Type::Struct { .. });
+                        let new_type_id: TypeId = new_ty.into();
+                        let should_update = old_is_parameterized && new_is_struct;
+                        let old_is_generic_struct = matches!(&*old_ty, Type::Struct { .. });
+                        let new_is_different_struct = new_is_struct && old_ty != new_type_id;
+                        if should_update || (old_is_generic_struct && new_is_different_struct) {
+                            lv.ty = new_type_id;
+                        }
                     }
                 }
             }

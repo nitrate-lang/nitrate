@@ -169,7 +169,7 @@ fn local(n: &str, ty: TypeId, init: ValueId) -> LocalVariableId {
         is_mutable: false,
         name: NString::from(n),
         ty,
-        initializer: init,
+        initializer: Some(init),
     })
 }
 fn mkfunc(

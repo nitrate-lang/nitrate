@@ -1,4 +1,5 @@
 use nitrate_diagnosis::{DiagnosticGroupId, DiagnosticInfo, FormattableDiagnosticGroup, Origin, SourcePosition};
+use nitrate_hir_evaluate::EvalError;
 use nitrate_tree::ByteSpan;
 
 /// Comprehensive error codes for the HIR lowering stage (group H).
@@ -72,7 +73,7 @@ pub(crate) enum HirErr {
     /// An array type length expression did not evaluate to a usize value.
     ArrayLengthExpectedUSize { span: ByteSpan },
     /// An array type length expression could not be evaluated at compile time.
-    ArrayTypeLengthEvalError { span: ByteSpan },
+    ArrayTypeLengthEvalError { span: ByteSpan, err: EvalError },
     /// Slice types ([T]) can only appear behind references (&[T]) or pointers (*[T]).
     SliceTypesMustBeInRefOrPtr { span: ByteSpan },
     /// A type alias's type evaluation failed.
@@ -439,13 +440,13 @@ impl FormattableDiagnosticGroup for HirErr {
                 origin: byte_span_to_origin(*span),
             },
 
-            HirErr::ArrayTypeLengthEvalError { span } => DiagnosticInfo {
+            HirErr::ArrayTypeLengthEvalError { span, err } => DiagnosticInfo {
                 message: format!(
-                    "array length expression could not be evaluated at compile time\n\
-                     \n  = note: the length of an array type `[T; N]` must be a constant expression\n\
-                     \n        that can be fully evaluated during compilation.\n\
-                     \n  = help: use a literal, a constant, or an expression that the compiler can evaluate.\n\
-                     \n  = example:\n           const SIZE: usize = 100;\n           type Buffer = [u8; SIZE];  // ok\n           fn foo(n: usize) {{\n               let arr: [i32; n];       // error: n is not constant\n           }}"
+                    "failed to evaluate array length expression: {err}\n\
+                     \n  = note: the length expression in an array type `[T; N]` must be a constant\n\
+                     \n        expression that can be evaluated at compile time.\n\
+                     \n  = help: ensure the length expression is a valid constant expression:\n\
+                     \n  = example:\n           const N: usize = 10;\n           let arr: [i32; N] = [0; N];      // ok\n           let arr: [i32; some_var] = [];   // error: `some_var` is not const"
                 ),
                 origin: byte_span_to_origin(*span),
             },

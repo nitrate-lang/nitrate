@@ -49,13 +49,12 @@ fn lower_local_declaration(ctx: &mut LoweringCtx, func: &mut mir::MirFunctionBui
     // Emit StorageLive
     func.push_storage_live(local_id.clone());
 
-    // Lower the initializer
-    let init_value = &local_var.initializer;
-    let init_operand = expr::lower_value(ctx, func, init_value, false);
-
-    // Assign the initializer to the local (resolve through a temp if needed)
-    let init_rvalue = mir::Rvalue::Use(init_operand);
-    func.push_assign(mir::Place::Local(local_id.clone()), init_rvalue);
+    // Lower the initializer if present
+    if let Some(init_value) = &local_var.initializer {
+        let init_operand = expr::lower_value(ctx, func, init_value, false);
+        let init_rvalue = mir::Rvalue::Use(init_operand);
+        func.push_assign(mir::Place::Local(local_id.clone()), init_rvalue);
+    }
 }
 
 // ─────────────────────────────────────────────────────────────

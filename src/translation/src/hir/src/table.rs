@@ -165,10 +165,7 @@ impl SymbolTab {
                 span: ByteSpan::default(),
             }
             .into(),
-            initializer: Value::Unit {
-                span: ByteSpan::default(),
-            }
-            .into(),
+            initializer: None,
         };
 
         let local_var_id: LocalVariableId = placeholder.into();

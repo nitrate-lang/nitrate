@@ -539,8 +539,10 @@ impl<'m> Solver<'m> {
             BlockElement::Local(local_id) => {
                 let local = local_id.borrow();
                 let new_ty = subst.apply(&local.ty);
-                let new_init_val = local.initializer.borrow();
-                let new_init = self.apply_subst_to_value(&new_init_val, subst);
+                let new_init = local.initializer.as_ref().map(|init_id| {
+                    let init_val = init_id.borrow();
+                    ValueId::from(self.apply_subst_to_value(&init_val, subst))
+                });
                 BlockElement::Local(LocalVariableId::from(LocalVariable {
                     span: local.span,
                     kind: local.kind.clone(),
@@ -548,7 +550,7 @@ impl<'m> Solver<'m> {
                     is_mutable: local.is_mutable,
                     name: local.name.clone(),
                     ty: TypeId::from(new_ty),
-                    initializer: ValueId::from(new_init),
+                    initializer: new_init,
                 }))
             }
         }

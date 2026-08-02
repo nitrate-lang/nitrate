@@ -335,12 +335,14 @@ fn gen_function<'ctx>(ctx: &mut SymbolGenCtx<'ctx, '_, '_, '_>, hir_function: &h
                     let hir_local = local.borrow();
                     let local_name = hir_local.name.to_owned();
                     let hir_local_ty = &hir_local.ty;
-                    let hir_local_init = &hir_local.initializer.borrow();
 
                     let llvm_local_ty = gen_ty(hir_local_ty, &mut ctx.ty_ctx());
                     let llvm_local = val_ctx.bb.build_alloca(llvm_local_ty, &local_name).unwrap();
-                    let llvm_init_value = gen_rval(&mut val_ctx, hir_local_init);
-                    val_ctx.bb.build_store(llvm_local, llvm_init_value).unwrap();
+                    if let Some(hir_local_init_id) = &hir_local.initializer {
+                        let hir_local_init = &hir_local_init_id.borrow();
+                        let llvm_init_value = gen_rval(&mut val_ctx, hir_local_init);
+                        val_ctx.bb.build_store(llvm_local, llvm_init_value).unwrap();
+                    }
 
                     val_ctx.locals.insert(local_name, (llvm_local, llvm_local_ty));
                 }

@@ -126,9 +126,9 @@ impl ValidateHirItem for LocalVariable {
             |c| self.ty.verify(c, &ValidateTypeOptions::sized()),
         )?;
 
-        // Skip type checking for uninitialized local variables (placeholder Value::Unit).
-        let init_value = self.initializer.borrow();
-        if !matches!(&*init_value, Value::Unit { .. }) || matches!(&*self.ty, Type::Unit { .. }) {
+        // Skip type checking for uninitialized local variables.
+        if let Some(init_value_id) = &self.initializer {
+            let init_value = init_value_id.borrow();
             establish_property(
                 ctx,
                 "type_constraint == typeof(initial_value)",

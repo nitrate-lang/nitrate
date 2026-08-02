@@ -853,11 +853,8 @@ fn lower_local_variable(
     };
 
     let initializer = match local_var.initializer.to_owned() {
-        Some(expr) => lower_expr(expr, ctx, log)?.into(),
-        None => Value::Unit {
-            span: ByteSpan::default(),
-        }
-        .into(),
+        Some(expr) => Some(lower_expr(expr, ctx, log)?.into()),
+        None => None,
     };
 
     let localvar_id: LocalVariableId = LocalVariable {
