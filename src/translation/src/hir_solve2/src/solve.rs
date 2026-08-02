@@ -87,10 +87,10 @@ impl<'a> Solver<'a> {
         }
     }
 
-    fn find_common_integer_type(constraints: &[TypeConstraint], value: u128) -> Option<TypeId> {
+    fn find_common_integer_type(constraint_types: &[TypeId], value: u128) -> Option<TypeId> {
         let mut best: Option<TypeId> = None;
-        for c in constraints {
-            let ty = c.type_id();
+        let signed_val = value as i128;
+        for &ty in constraint_types {
             let eff = match &*ty {
                 Type::Refine { base, .. } => *base,
                 _ => ty,
@@ -99,23 +99,44 @@ impl<'a> Solver<'a> {
                 continue;
             }
             let fits = match &*eff {
-                Type::I8 { .. } => value <= 127,
-                Type::I16 { .. } => value <= 32767,
-                Type::I32 { .. } => value <= 2147483647,
-                Type::I64 { .. } => value <= 9223372036854775807,
-                Type::U8 { .. } => value <= 255,
-                Type::U16 { .. } => value <= 65535,
-                Type::U32 { .. } => value <= 4294967295,
-                Type::U64 { .. } => value <= 18446744073709551615,
-                Type::I128 { .. } => value <= 170141183460469231731687303715884105727,
+                Type::I8 { .. } => signed_val >= i8::MIN as i128 && signed_val <= i8::MAX as i128,
+                Type::I16 { .. } => signed_val >= i16::MIN as i128 && signed_val <= i16::MAX as i128,
+                Type::I32 { .. } => signed_val >= i32::MIN as i128 && signed_val <= i32::MAX as i128,
+                Type::I64 { .. } => signed_val >= i64::MIN as i128 && signed_val <= i64::MAX as i128,
+                Type::I128 { .. } => true,
+                Type::U8 { .. } => value <= u8::MAX as u128,
+                Type::U16 { .. } => value <= u16::MAX as u128,
+                Type::U32 { .. } => value <= u32::MAX as u128,
+                Type::U64 { .. } => value <= u64::MAX as u128,
+                Type::U128 { .. } => true,
                 _ => true,
             };
             if fits {
-                match (best, &*eff) {
-                    (None, _) => best = Some(eff),
-                    _ if eff.is_signed_primitive() && !best.unwrap().is_signed_primitive() => best = Some(eff),
-                    _ if Self::type_bit_width(&eff) > Self::type_bit_width(&best.unwrap()) => best = Some(eff),
-                    _ => {}
+                let eff_unwrapped = match &*eff {
+                    Type::Refine { base, .. } => *base,
+                    _ => eff,
+                };
+                let best_unwrapped = best.map(|bt| match &*bt {
+                    Type::Refine { base, .. } => *base,
+                    _ => bt,
+                });
+                match best_unwrapped {
+                    None => best = Some(eff_unwrapped),
+                    Some(ref cur) => {
+                        let prefer_eff = if eff_unwrapped.is_signed_primitive() && !cur.is_signed_primitive() {
+                            true
+                        } else if cur.is_signed_primitive() && !eff_unwrapped.is_signed_primitive() {
+                            false
+                        } else {
+                            Self::type_bit_width(&eff_unwrapped) > Self::type_bit_width(cur)
+                                || (Self::type_bit_width(&eff_unwrapped) == Self::type_bit_width(cur)
+                                    && cur.is_signed_primitive()
+                                    && !eff_unwrapped.is_signed_primitive())
+                        };
+                        if prefer_eff {
+                            best = Some(eff_unwrapped);
+                        }
+                    }
                 }
             }
         }
@@ -123,32 +144,31 @@ impl<'a> Solver<'a> {
     }
 
     fn solve_inferred_integer(&mut self, id: &ValueId, value: u128) -> NodeAction {
-        let constraints: Vec<TypeConstraint> = self
-            .constraints
-            .get(id)
-            .cloned()
-            .unwrap_or_default()
-            .into_iter()
-            .collect();
-        if constraints.is_empty() {
+        let span = id.borrow().span();
+        let has_constraints = self.constraints.get(id).map_or(false, |cs| !cs.is_empty());
+        if !has_constraints {
             return NodeAction::NoChange;
         }
-        let span = id.borrow().span();
+        // Collect constraint types without cloning the entire HashSet
+        let mut constraint_types: Vec<TypeId> = Vec::new();
         let mut check_errors = Vec::new();
         let mut has_non_integer = false;
-        for c in &constraints {
-            let ty = c.type_id();
-            if let Type::Refine { .. } = &*ty {
-                if !check_literal_against_refinement(value, &ty) {
-                    check_errors.push((ty, value as i128));
+        if let Some(cs) = self.constraints.get(id) {
+            for c in cs {
+                let ty = c.type_id();
+                constraint_types.push(ty);
+                if let Type::Refine { .. } = &*ty {
+                    if !check_literal_against_refinement(value, &ty) {
+                        check_errors.push((ty, value));
+                    }
                 }
-            }
-            let eff = match &*ty {
-                Type::Refine { base, .. } => *base,
-                _ => ty,
-            };
-            if !eff.is_integer_primitive() {
-                has_non_integer = true;
+                let eff = match &*ty {
+                    Type::Refine { base, .. } => *base,
+                    _ => ty,
+                };
+                if !eff.is_integer_primitive() {
+                    has_non_integer = true;
+                }
             }
         }
         if has_non_integer {
@@ -157,12 +177,12 @@ impl<'a> Solver<'a> {
         for (refinement_ty, val) in &check_errors {
             self.errors.insert(TypeErr::IntegerLiteralOutOfRefinementBounds {
                 span,
-                value: *val as u128,
+                value: *val,
                 refinement_type: *refinement_ty,
             });
         }
-        let best =
-            Self::find_common_integer_type(&constraints, value).unwrap_or_else(|| TypeId::from(Type::I32 { span }));
+        let best = Self::find_common_integer_type(&constraint_types, value)
+            .unwrap_or_else(|| TypeId::from(Type::I32 { span }));
         match &*best {
             Type::I8 { .. } => i8::try_from(value)
                 .map(|v| NodeAction::Replace(Value::I8 { span, value: v }))
@@ -285,30 +305,31 @@ impl<'a> Solver<'a> {
 
     fn solve_inferred_float(&mut self, id: &ValueId, value: OrderedFloat<f64>) -> NodeAction {
         let span = id.borrow().span();
-        let constraints: Vec<TypeConstraint> = self
+        let constraint_types: Vec<TypeId> = self
             .constraints
             .get(id)
-            .cloned()
-            .unwrap_or_default()
-            .into_iter()
-            .collect();
-        if constraints.is_empty() {
+            .map(|cs| cs.iter().map(|c| c.type_id()).collect())
+            .unwrap_or_default();
+        if constraint_types.is_empty() {
             return NodeAction::NoChange;
         }
         let mut best: Option<TypeId> = None;
         let mut has_non_float = false;
-        for c in &constraints {
-            let ty = c.type_id();
+        for &ty in &constraint_types {
             if !ty.is_float_primitive() {
                 has_non_float = true;
                 continue;
             }
-            if let Some(cur) = best {
-                if matches!(&*ty, Type::F64 { .. }) && !matches!(&*cur, Type::F64 { .. }) {
-                    best = Some(ty);
+            match best {
+                None => best = Some(ty),
+                Some(cur) => {
+                    // Always prefer F64 over F32 deterministically
+                    let cur_is_f64 = matches!(&*cur, Type::F64 { .. });
+                    let ty_is_f64 = matches!(&*ty, Type::F64 { .. });
+                    if ty_is_f64 && !cur_is_f64 {
+                        best = Some(ty);
+                    }
                 }
-            } else {
-                best = Some(ty);
             }
         }
         if has_non_float {
@@ -534,13 +555,17 @@ impl<'a> Solver<'a> {
         else {
             return;
         };
-        let vt = enum_def
-            .borrow()
-            .variants
-            .iter()
-            .find(|item| item.name == *variant)
-            .expect("variant not present")
-            .ty;
+        let span = value.span();
+        let vt = match enum_def.borrow().variants.iter().find(|item| item.name == *variant) {
+            Some(item) => item.ty,
+            None => {
+                self.errors.insert(TypeErr::AmbiguousType {
+                    span,
+                    description: format!("variant `{}` not found in enum", variant),
+                });
+                return;
+            }
+        };
         self.add_constraint(inner, TypeConstraint::Equal(vt));
         self.visit(inner);
     }
@@ -608,25 +633,27 @@ impl<'a> Solver<'a> {
             return;
         };
         let span = value.span();
-        if let Some(constraints) = self.constraints.get(e).cloned() {
-            for c in &constraints {
-                self.add_constraint(operand, c.clone());
-            }
+        // Collect constraints once and reuse
+        let constraint_snapshot: Vec<TypeConstraint> = self
+            .constraints
+            .get(e)
+            .map(|cs| cs.iter().cloned().collect())
+            .unwrap_or_default();
+        for c in &constraint_snapshot {
+            self.add_constraint(operand, c.clone());
         }
         self.visit(operand);
-        if let Some(constraints) = self.constraints.get(e).cloned() {
-            for c in &constraints {
-                let result_ty = c.type_id();
-                if let Some(ob) = self.get_effective_bounds(operand) {
-                    let res = compute_unary_bounds(op, ob);
-                    if !check_bounds_against_constraint(res, &result_ty) {
-                        self.errors.insert(TypeErr::OperationResultOutOfRefinementBounds {
-                            span,
-                            refinement_type: result_ty,
-                            computed_min: res.lo.max(0) as u128,
-                            computed_max: res.hi,
-                        });
-                    }
+        for c in &constraint_snapshot {
+            let result_ty = c.type_id();
+            if let Some(ob) = self.get_effective_bounds(operand) {
+                let res = compute_unary_bounds(op, ob);
+                if !check_bounds_against_constraint(res, &result_ty) {
+                    self.errors.insert(TypeErr::OperationResultOutOfRefinementBounds {
+                        span,
+                        refinement_type: result_ty,
+                        computed_min: res.lo.max(0) as u128,
+                        computed_max: res.hi,
+                    });
                 }
             }
         }
