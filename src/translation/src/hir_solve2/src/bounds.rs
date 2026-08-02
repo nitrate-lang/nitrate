@@ -26,6 +26,31 @@ impl Bounds {
     }
 }
 
+/// Returns the smallest `u128` value consisting of all 1 bits that is
+/// greater than or equal to `v`. For example:
+/// - next_all_ones(0) = 0 (0b0)
+/// - next_all_ones(1) = 1 (0b1)
+/// - next_all_ones(2) = 3 (0b11)
+/// - next_all_ones(3) = 3 (0b11)
+/// - next_all_ones(4) = 7 (0b111)
+/// - next_all_ones(5) = 7 (0b111)
+/// - next_all_ones(u128::MAX) = u128::MAX
+fn next_all_ones(v: u128) -> u128 {
+    if v == 0 {
+        return 0;
+    }
+    let mut result = v;
+    // Set all bits to the right of (and including) the highest set bit
+    result |= result >> 1;
+    result |= result >> 2;
+    result |= result >> 4;
+    result |= result >> 8;
+    result |= result >> 16;
+    result |= result >> 32;
+    result |= result >> 64;
+    result
+}
+
 fn numeric_bounds_for_type(ty: &Type) -> Option<Bounds> {
     match ty {
         Type::U8 { .. } => Some(Bounds::unsigned(0, 255)),
@@ -203,29 +228,33 @@ pub(crate) fn compute_binary_bounds(op: &BinaryOp, left: Bounds, right: Bounds) 
         BinaryOp::Or => {
             // Unsigned OR result: lower bound is max of lower bounds (unsigned),
             // since OR can only set bits, never clear them.
+            // The upper bound is the smallest all-ones bitmask covering the
+            // maximum operand value, since OR can set any bit that either
+            // operand has. E.g., max(1,2) = 2 but 1|2 = 3 (bitmask 0b11).
             if l_min >= 0 && r_min >= 0 {
                 let lo = std::cmp::max(l_min, r_min) as u128;
-                let hi = std::cmp::max(left.hi, right.hi);
+                let max_val = std::cmp::max(left.hi, right.hi);
+                let hi = next_all_ones(max_val);
                 Some(Bounds::new(lo as i128, hi))
             } else {
-                Some(Bounds::new(
-                    std::cmp::min(l_min, r_min),
-                    std::cmp::max(left.hi, right.hi),
-                ))
+                let max_val = std::cmp::max(left.hi, right.hi);
+                let hi = next_all_ones(max_val);
+                Some(Bounds::new(std::cmp::min(l_min, r_min), hi))
             }
         }
         BinaryOp::Xor => {
-            // XOR can produce anywhere between 0 and the max of the two unsigned
-            // upper bounds. For signed pairs with negative values, fall back to
-            // the coarsest possible bounds.
+            // XOR can produce values exceeding both input upper bounds.
+            // E.g., 1 XOR 2 = 3 while max(1,2) = 2. The tightest correct
+            // upper bound for unsigned operands is the smallest all-ones
+            // bitmask covering the maximum operand.
             if l_min >= 0 && r_min >= 0 {
-                let hi = std::cmp::max(left.hi, right.hi);
+                let max_val = std::cmp::max(left.hi, right.hi);
+                let hi = next_all_ones(max_val);
                 Some(Bounds::new(0, hi))
             } else {
-                Some(Bounds::new(
-                    std::cmp::min(l_min, r_min),
-                    std::cmp::max(left.hi, right.hi),
-                ))
+                let max_val = std::cmp::max(left.hi, right.hi);
+                let hi = next_all_ones(max_val);
+                Some(Bounds::new(std::cmp::min(l_min, r_min), hi))
             }
         }
         BinaryOp::Shl | BinaryOp::Rol => Some(Bounds::new(i128::MIN, i128::MAX as u128)),
@@ -276,14 +305,26 @@ pub(crate) fn compute_unary_bounds(op: &UnaryOp, operand: Bounds) -> Bounds {
         UnaryOp::Add => Bounds::new(lo, hi),
         UnaryOp::Sub => {
             if is_unsigned {
+                // Negating an unsigned value range [lo, hi] produces the signed
+                // range [-hi, -lo].  The lower bound is the negation of the
+                // maximum unsigned value, clamped to I128::MIN if it exceeds
+                // the representable signed range.  The upper bound is the
+                // negation of the minimum (lo), which for unsigned lo=0
+                // produces 0; for lo>0 the upper bound must be at least the
+                // negated lo as an unsigned value.
                 let new_lo = if hi > i128::MAX as u128 {
                     i128::MIN
                 } else {
-                    // Use wrapping_neg to avoid debug panic if hi as i128
-                    // happens to be i128::MIN (defensive, shouldn't occur).
-                    -(hi as i128).wrapping_neg()
+                    // Negate hi: -(hi as i128).  Use wrapping_neg so that
+                    // i128::MIN wraps to itself rather than panicking in debug.
+                    (hi as i128).wrapping_neg()
                 };
-                let new_hi = (lo.unsigned_abs() as u128).saturating_sub(1).min(i128::MAX as u128);
+                // Upper bound: negating lo (the smallest unsigned value)
+                // gives the largest signed result.  If lo == 0, negating
+                // gives 0.  Otherwise -(lo as i128) is negative, and as a
+                // u128 it wraps.  Use the same saturating_neg pattern as the
+                // signed branch for consistency.
+                let new_hi = lo.saturating_neg() as u128;
                 Bounds::new(new_lo, new_hi)
             } else {
                 let hi_i128 = (hi.min(i128::MAX as u128)) as i128;

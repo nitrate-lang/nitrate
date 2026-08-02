@@ -942,8 +942,11 @@ impl<'a> Solver<'a> {
                     if let Some(named) = self.infer_generic_args_from_call_named(fid, args) {
                         // Merge: start with positional bindings, add named on top
                         let mut merged = pos;
-                        for (k, v) in named.mapping {
-                            merged.mapping.entry(k).or_insert(v);
+                        for (k, v) in named.generic_mapping {
+                            merged.generic_mapping.entry(k).or_insert(v);
+                        }
+                        for (k, v) in named.inferred_mapping {
+                            merged.inferred_mapping.entry(k).or_insert(v);
                         }
                         Some(merged)
                     } else {
@@ -978,6 +981,7 @@ impl<'a> Solver<'a> {
                     self.add_constraint(arg, TypeConstraint::Equal(param.borrow().ty));
                 }
             }
+            self.add_constraint(e, TypeConstraint::Equal(func.return_type));
         }
         for arg in &args.positional {
             self.visit(arg);
@@ -1093,12 +1097,12 @@ impl<'a> Solver<'a> {
     // ── Generics / Monomorphization ────────────────────────────────
 
     fn mono_cache_key(&self, func_id: &FunctionId, subst: &Substitution) -> MonoCacheKey {
-        let mut sa: Vec<(u32, TypeId)> = subst.mapping.iter().map(|(k, v)| (*k, *v)).collect();
+        let mut sa: Vec<(u32, TypeId)> = subst.generic_mapping.iter().map(|(k, v)| (*k, *v)).collect();
         sa.sort_by_key(|(k, _)| *k);
         MonoCacheKey::new(func_id.as_usize(), &sa)
     }
     fn struct_mono_cache_key(&self, sid: &StructDefId, subst: &Substitution) -> MonoCacheKey {
-        let mut sa: Vec<(u32, TypeId)> = subst.mapping.iter().map(|(k, v)| (*k, *v)).collect();
+        let mut sa: Vec<(u32, TypeId)> = subst.generic_mapping.iter().map(|(k, v)| (*k, *v)).collect();
         sa.sort_by_key(|(k, _)| *k);
         MonoCacheKey::new(sid.as_usize(), &sa)
     }
@@ -1153,7 +1157,7 @@ impl<'a> Solver<'a> {
                 }
             }
         }
-        if !any || subst.mapping.is_empty() {
+        if !any || subst.generic_mapping.is_empty() {
             return None;
         }
         // Collect all generic param indices that appear in parameter types,
@@ -1165,7 +1169,7 @@ impl<'a> Solver<'a> {
         }
         for (pn, _) in generics.iter() {
             if let Some(idx) = param_name_to_index.get(pn) {
-                if !subst.mapping.contains_key(idx) {
+                if !subst.generic_mapping.contains_key(idx) {
                     return None;
                 }
             }
@@ -1230,7 +1234,7 @@ impl<'a> Solver<'a> {
             return None;
         }
         for info in pi.values() {
-            if info.appears && !subst.mapping.contains_key(&info.index) {
+            if info.appears && !subst.generic_mapping.contains_key(&info.index) {
                 return None;
             }
         }
@@ -1273,12 +1277,12 @@ impl<'a> Solver<'a> {
                     let mut subst = Substitution::default();
                     for (i, pn) in opn.iter().enumerate() {
                         if let Some(idx) = pni.get(*pn) {
-                            subst.mapping.insert(*idx, args[i]);
+                            subst.generic_mapping.insert(*idx, args[i]);
                         } else if i < args.len() {
-                            subst.mapping.insert(i as u32, args[i]);
+                            subst.generic_mapping.insert(i as u32, args[i]);
                         }
                     }
-                    if !subst.mapping.is_empty() {
+                    if !subst.generic_mapping.is_empty() {
                         return Some(subst);
                     }
                 }

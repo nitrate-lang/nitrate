@@ -29,13 +29,13 @@ pub(crate) fn unify_types_with_subst(arg_type: &Type, param_type: &Type, subst: 
     match (arg_type, param_type) {
         (concrete, Type::GenericParam { index, .. }) => {
             subst
-                .mapping
+                .generic_mapping
                 .entry(*index)
                 .or_insert_with(|| TypeId::from(concrete.clone()));
         }
         (concrete, Type::Inferred { id, .. }) => {
             subst
-                .mapping
+                .inferred_mapping
                 .entry(id.get())
                 .or_insert_with(|| TypeId::from(concrete.clone()));
         }
@@ -79,7 +79,7 @@ pub(crate) fn unify_types_with_subst(arg_type: &Type, param_type: &Type, subst: 
         }
         (Type::GenericParam { index, .. }, concrete) => {
             subst
-                .mapping
+                .generic_mapping
                 .entry(*index)
                 .or_insert_with(|| TypeId::from(concrete.clone()));
         }

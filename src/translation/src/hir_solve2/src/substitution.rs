@@ -3,21 +3,33 @@ use nitrate_nstring::NString;
 use std::collections::BTreeMap;
 use thin_vec::ThinVec;
 
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone)]
 pub(crate) struct Substitution {
-    pub mapping: BTreeMap<u32, TypeId>,
+    /// Maps GenericParam indices to their concrete types.
+    pub generic_mapping: BTreeMap<u32, TypeId>,
+    /// Maps Inferred type IDs (via id.get()) to their concrete resolved types.
+    pub inferred_mapping: BTreeMap<u32, TypeId>,
+}
+
+impl Default for Substitution {
+    fn default() -> Self {
+        Self {
+            generic_mapping: BTreeMap::new(),
+            inferred_mapping: BTreeMap::new(),
+        }
+    }
 }
 
 impl Substitution {
     pub fn apply(&self, ty: &Type) -> Type {
         match ty {
             Type::GenericParam { index, .. } => self
-                .mapping
+                .generic_mapping
                 .get(index)
                 .map(|c| (**c).clone())
                 .unwrap_or_else(|| ty.clone()),
             Type::Inferred { id, .. } => self
-                .mapping
+                .inferred_mapping
                 .get(&id.get())
                 .map(|c| (**c).clone())
                 .unwrap_or_else(|| ty.clone()),
