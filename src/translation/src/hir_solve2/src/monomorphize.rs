@@ -83,6 +83,28 @@ pub(crate) fn unify_types_with_subst(arg_type: &Type, param_type: &Type, subst: 
                 .entry(*index)
                 .or_insert_with(|| TypeId::from(concrete.clone()));
         }
+        (
+            Type::Parameterized {
+                base: a_base,
+                args: a_args,
+                ..
+            },
+            Type::Parameterized {
+                base: p_base,
+                args: p_args,
+                ..
+            },
+        ) => {
+            unify_types_with_subst(a_base, p_base, subst);
+            for (a, p) in a_args.positional.iter().zip(p_args.positional.iter()) {
+                unify_types_with_subst(a, p, subst);
+            }
+            for ((a_k, a_v), (p_k, p_v)) in a_args.named.iter().zip(p_args.named.iter()) {
+                if a_k == p_k {
+                    unify_types_with_subst(a_v, p_v, subst);
+                }
+            }
+        }
         _ => {}
     }
 }
@@ -97,6 +119,11 @@ pub(crate) fn type_contains_any_generic_param(ty: &Type) -> bool {
             type_contains_any_generic_param(element_type)
         }
         Type::Refine { base, .. } => type_contains_any_generic_param(base),
+        Type::Parameterized { base, args, .. } => {
+            type_contains_any_generic_param(base)
+                || args.positional.iter().any(|a| type_contains_any_generic_param(a))
+                || args.named.iter().any(|(_, v)| type_contains_any_generic_param(v))
+        }
         _ => false,
     }
 }
@@ -111,6 +138,18 @@ pub(crate) fn type_contains_generic_param_name(ty: &TypeId, param_name: &NString
         Type::Reference { to, .. } | Type::Pointer { to, .. } => type_contains_generic_param_name(to, param_name),
         Type::SliceRef { element_type, .. } | Type::SlicePtr { element_type, .. } => {
             type_contains_generic_param_name(element_type, param_name)
+        }
+        Type::Refine { base, .. } => type_contains_generic_param_name(base, param_name),
+        Type::Parameterized { base, args, .. } => {
+            type_contains_generic_param_name(base, param_name)
+                || args
+                    .positional
+                    .iter()
+                    .any(|a| type_contains_generic_param_name(a, param_name))
+                || args
+                    .named
+                    .iter()
+                    .any(|(_, v)| type_contains_generic_param_name(v, param_name))
         }
         _ => false,
     }
@@ -130,6 +169,16 @@ pub(crate) fn collect_generic_params_from_type(ty: &TypeId, mapping: &mut BTreeM
         Type::Reference { to, .. } | Type::Pointer { to, .. } => collect_generic_params_from_type(to, mapping),
         Type::SliceRef { element_type, .. } | Type::SlicePtr { element_type, .. } => {
             collect_generic_params_from_type(element_type, mapping)
+        }
+        Type::Refine { base, .. } => collect_generic_params_from_type(base, mapping),
+        Type::Parameterized { base, args, .. } => {
+            collect_generic_params_from_type(base, mapping);
+            for a in &args.positional {
+                collect_generic_params_from_type(a, mapping);
+            }
+            for (_, v) in &args.named {
+                collect_generic_params_from_type(v, mapping);
+            }
         }
         _ => {}
     }

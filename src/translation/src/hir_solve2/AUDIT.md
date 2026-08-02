@@ -2,7 +2,7 @@
 
 This document catalogs all issues found during a comprehensive, function-by-function audit of the `hir_solve2` crate. Issues are organized by file and function. No fixes have been applied.
 
-**Fix Progress: 24 / 57 resolved**
+**Fix Progress: 29 / 57 resolved**
 
 ---
 
@@ -305,13 +305,13 @@ This document catalogs all issues found during a comprehensive, function-by-func
 
 ## monomorphize.rs
 
-- ### 49. `unify_types_with_subst` — does not handle `Parameterized` types
+- ### ✅ 49. `unify_types_with_subst` — does not handle `Parameterized` types
 
 - **Severity**: **High — generic type arguments in Parameterized types are not unified**
 - **Description**: The function recursively handles `Pointer`, `SliceRef`, `Reference`, `Array`, `Tuple`, and `Function` types, but `Type::Parameterized` is not handled. A type like `Vec<T>` compared to `Vec<I32>` would fall through to `_ => {}` and no unification would occur. The generic parameter `T` would not be bound to `I32`. This means monomorphization of functions or structs involving generic container types would produce incomplete or incorrect substitutions.
 - **Recommendation**: Add a match arm for `Type::Parameterized` that recursively unifies the base type and all type arguments.
 
-- ### 50. `type_contains_any_generic_param` — does not inspect `Parameterized` types
+- ### ✅ 50. `type_contains_any_generic_param` — does not inspect `Parameterized` types
 
 - **Severity**: **High — generic field types missed**
 - **Description**: The function checks for `GenericParam` in various compound types but does not recurse into `Type::Parameterized { base, args }`. A field of type `Vec<T>` would return `false`, causing `apply_struct_field_constraints` to add an equality constraint instead of skipping the field. This could lead to incorrect type inference.
@@ -322,12 +322,12 @@ This document catalogs all issues found during a comprehensive, function-by-func
 - **Severity**: Low
 - **Description**: Only `base` of `Refine` is checked. The `min` and `max` are `Lit` values, which can't contain type parameters — this is fine. But worth noting for completeness.
 
-- ### 52. `type_contains_generic_param_name` — does not inspect `Parameterized` types
+- ### ✅ 52. `type_contains_generic_param_name` — does not inspect `Parameterized` types
 
 - **Severity**: **High — same impact as #50**
 - **Description**: Same issue as `type_contains_any_generic_param` but for the name-specific variant. A generic parameter name inside a `Parameterized` type would not be found.
 
-- ### 53. `collect_generic_params_from_type` — does not inspect `Parameterized` types
+- ### ✅ 53. `collect_generic_params_from_type` — does not inspect `Parameterized` types
 
 - **Severity**: **High — same impact**
 - **Description**: Same issue. Generic params in `Parameterized` type arguments are not collected. This affects `infer_generic_args_from_constraints` which uses this function to build the name→index mapping.
@@ -358,7 +358,7 @@ This document catalogs all issues found during a comprehensive, function-by-func
 
 ## substitution.rs
 
-- ### 57. `Substitution::apply` — `Parameterized` type arguments are lost
+- ### ✅ 57. `Substitution::apply` — `Parameterized` type arguments are lost
 
 - **Severity**: **Critical — monomorphized types lose all generic arguments**
 - **Description**: `Type::Parameterized { base, .. } => self.apply(base)` — only the base type is substituted; the type arguments (`args.positional` and `args.named`) are completely dropped. When monomorphizing `Vec<T>` with `T -> I32`, this produces `Vec` (a bare struct reference with no type arguments) instead of `Vec<I32>`. This is a critical correctness bug that affects all generic container types. The returned type is semantically different from the input.
@@ -388,18 +388,18 @@ Type::Parameterized { base, args, span } => {
 
 ## Summary Statistics
 
-- [ ] **Critical**: 1 remaining — #57
-- [ ] **High**: 11 remaining — #19, #36, #40, #41, #43, #44, #46, #49, #50, #52, #53
+- [x] **Critical**: 0 remaining
+- [ ] **High**: 6 remaining — #19, #36, #40, #41, #43, #44, #46
 - [ ] **Medium**: 5 remaining — #37, #38, #39, #42, #45
 - [ ] **Low**: 14 remaining — #1, #4, #12, #18, #21, #28, #30, #35, #47, #48, #51, #54, #55, #56
 
-**Total: 57 issues found across 8 files. Fix Progress: 24 / 57 resolved.**
+**Total: 57 issues found across 8 files. Fix Progress: 29 / 57 resolved.**
 
 ### Most Critical Issues (fix these first):
 
 - [x] 1. **#7** — `i128::MIN.abs()` panic in `compute_binary_bounds` Mod handling (compiler crash)
-- [ ] 2. **#57** — `Substitution::apply` drops all type arguments from Parameterized types (silent incorrect code generation)
+- [x] 2. **#57** — `Substitution::apply` drops all type arguments from Parameterized types (silent incorrect code generation)
 - [ ] 3. **#19** — Diagnostics point to line 0, column 0 (users can't find errors)
 - [x] 4. **#20, #32, #33** — Error messages show wrong bounds (misleading diagnostics) (visit_binary and visit_unary callers fixed)
 - [ ] 5. **#43, #44** — `mono_depth` underflow in cycle detection (potential compiler crash)
-- [ ] 6. **#49, #50, #52, #53** — Parameterized types not handled in unification/generic detection (incomplete monomorphization)
+- [x] 6. **#49, #50, #52, #53** — Parameterized types not handled in unification/generic detection (incomplete monomorphization)

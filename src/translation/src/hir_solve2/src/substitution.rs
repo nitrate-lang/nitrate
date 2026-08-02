@@ -1,6 +1,7 @@
-use nitrate_hir::{Type, TypeId};
+use nitrate_hir::{Arguments, Type, TypeId};
 use nitrate_nstring::NString;
 use std::collections::BTreeMap;
+use thin_vec::ThinVec;
 
 #[derive(Debug, Clone, Default)]
 pub(crate) struct Substitution {
@@ -21,7 +22,24 @@ impl Substitution {
                 .map(|c| (**c).clone())
                 .unwrap_or_else(|| ty.clone()),
             Type::Struct { .. } | Type::Enum { .. } => ty.clone(),
-            Type::Parameterized { base, .. } => self.apply(base),
+            Type::Parameterized { base, args, .. } => {
+                let new_base = self.apply(base);
+                let new_positional: ThinVec<TypeId> =
+                    args.positional.iter().map(|a| TypeId::from(self.apply(a))).collect();
+                let new_named: ThinVec<(NString, TypeId)> = args
+                    .named
+                    .iter()
+                    .map(|(k, v)| (k.clone(), TypeId::from(self.apply(v))))
+                    .collect();
+                Type::Parameterized {
+                    span: ty.span(),
+                    base: TypeId::from(new_base),
+                    args: Arguments {
+                        positional: new_positional,
+                        named: new_named,
+                    },
+                }
+            }
             Type::Array { element_type, len, .. } => Type::Array {
                 span: ty.span(),
                 element_type: TypeId::from(self.apply(element_type)),
