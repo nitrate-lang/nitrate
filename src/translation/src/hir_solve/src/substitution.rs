@@ -157,7 +157,8 @@ impl Substitution {
             | Type::InferredInteger { .. }
             | Type::InferredFloat { .. }
             | Type::Enum { .. }
-            | Type::Range { .. } => ty.clone(),
+            | Type::Range { .. }
+            | Type::Str { .. } => ty.clone(),
         }
     }
 }
