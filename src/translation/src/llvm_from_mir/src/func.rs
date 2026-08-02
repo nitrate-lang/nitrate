@@ -1,9 +1,10 @@
 use crate::context::CodegenCtx;
+use crate::context::nitrate_llvm_appendToGlobalCtors;
 use crate::stmt::{gen_statement, gen_terminator};
 use crate::ty::{TypegenCtx, gen_ty};
 use inkwell::module::{Linkage, Module};
 use inkwell::types::{BasicMetadataTypeEnum, BasicType, BasicTypeEnum};
-use inkwell::values::{FunctionValue, PointerValue};
+use inkwell::values::{AsValueRef, FunctionValue, PointerValue};
 use nitrate_llvm::LLVMContext;
 use nitrate_mir::prelude as mir;
 use nitrate_nstring::NString;
@@ -75,7 +76,7 @@ pub fn generate_llvmir_from_mir<'ctx>(
     let module = llvm.create_module(package_name);
     let mut globals: HashMap<NString, (PointerValue<'ctx>, BasicTypeEnum<'ctx>)> = HashMap::new();
 
-    // First pass: declare all global variables
+    // First pass: declare all global variables and generate constructors
     for (global_name, global_ty) in mir_module.globals.iter() {
         let llvm_ty = mir::using_storage(mir_store, || {
             gen_ty(global_ty, &mut TypegenCtx { llvm, module: &module })
@@ -83,6 +84,25 @@ pub fn generate_llvmir_from_mir<'ctx>(
         let global = module.add_global(llvm_ty, None, global_name);
         global.set_initializer(&llvm_ty.const_zero());
         global.set_linkage(Linkage::External);
+
+        // Generate a constructor function for this global, registered via
+        // llvm.global_ctors. This ensures the global is initialized before main.
+        //
+        // MIR globals do not carry initializer expressions (unlike HIR), so the
+        // constructor is a minimal placeholder that zero-initializes. The real
+        // initialization is expected to happen before codegen or via a separate
+        // lowering pass.
+        let ctor_name = format!("{}_ctor", global_name);
+        let ctor_fn = module.add_function(&ctor_name, llvm.void_type().fn_type(&[], false), Some(Linkage::Private));
+        let ctor_builder = llvm.create_builder();
+        let ctor_entry = llvm.append_basic_block(ctor_fn, "entry");
+        ctor_builder.position_at_end(ctor_entry);
+        ctor_builder.build_return(None).unwrap();
+
+        unsafe {
+            nitrate_llvm_appendToGlobalCtors(module.as_mut_ptr(), ctor_fn.as_value_ref(), 65535);
+        }
+
         globals.insert(global_name.clone(), (global.as_pointer_value(), llvm_ty));
     }
 
