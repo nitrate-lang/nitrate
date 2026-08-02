@@ -9,3 +9,7 @@ nitrate_tree.workspace = true
 nitrate_hir.workspace = true
 nitrate_diagnosis.workspace = true
 ordered-float.workspace = true
+thin-vec.workspace = true
+
+[dev-dependencies]
+slog.workspace = true

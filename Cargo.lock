@@ -1078,6 +1078,8 @@ dependencies = [
  "nitrate_nstring",
  "nitrate_tree",
  "ordered-float",
+ "slog",
+ "thin-vec",
 ]
 
 [[package]]

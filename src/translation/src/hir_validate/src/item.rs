@@ -1,4 +1,5 @@
 use core::panic;
+use std::matches;
 
 use crate::diagnosis::ValidateErr;
 use crate::{
@@ -125,24 +126,29 @@ impl ValidateHirItem for LocalVariable {
             |c| self.ty.verify(c, &ValidateTypeOptions::sized()),
         )?;
 
-        establish_property(
-            ctx,
-            "type_constraint == typeof(initial_value)",
-            ValidateErr::TypeMismatch {
-                expected: format!("{:?}", self.ty),
-                actual: "?".to_string(),
-            },
-            |c| {
-                let init_value = self.initializer.borrow();
-                let init_value_ty = init_value.determine_type(c.m).map_err(|_| ())?;
+        // Skip type checking for uninitialized local variables (placeholder Value::Unit).
+        let init_value = self.initializer.borrow();
+        if !matches!(&*init_value, Value::Unit { .. }) || matches!(&*self.ty, Type::Unit { .. }) {
+            establish_property(
+                ctx,
+                "type_constraint == typeof(initial_value)",
+                ValidateErr::TypeMismatch {
+                    expected: format!("{:?}", self.ty),
+                    actual: "?".to_string(),
+                },
+                |c| {
+                    let init_value_ty = init_value.determine_type(c.m).map_err(|_| ())?;
 
-                if !types_refinement_compatible(&self.ty, &init_value_ty) {
-                    return Err(());
-                }
+                    if !types_refinement_compatible(&self.ty, &init_value_ty) {
+                        return Err(());
+                    }
 
-                Ok(())
-            },
-        )
+                    Ok(())
+                },
+            )?;
+        }
+
+        Ok(())
     }
 
     fn validate(self, ctx: &mut ValidateCtx) -> Result<ValidHir<Self>, ()> {
