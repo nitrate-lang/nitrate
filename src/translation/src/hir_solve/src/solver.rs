@@ -3,8 +3,10 @@ use crate::constraints::TypeConstraint;
 use crate::diagnosis::TypeErr;
 use nitrate_diagnosis::CompilerLog;
 use nitrate_hir::{
-    BlockElement, Function, FunctionId, GlobalVariable, PtrSize, SymbolTab, Type, TypeId, Value, ValueId,
+    Arguments, BlockElement, Function, FunctionId, GlobalVariable, LiteralId, PtrSize, SymbolTab, Type, TypeId, Value,
+    ValueId, get_storage,
 };
+use nitrate_hir_evaluate::Evaluator;
 use nitrate_hir_type::HirGetType;
 use nitrate_tree::ByteSpan;
 use ordered_float::OrderedFloat;
@@ -427,7 +429,219 @@ impl<'m> Solver<'m> {
         crate::constraints::NodeAction::NoChange
     }
 
+    // ── Unresolved type resolution ─────────────────────────────────────
+
+    /// Evaluate `UnresolvedArray`/`UnresolvedRefine` embedded `ValueId` expressions
+    /// and replace them with their resolved concrete `Type`.
+    ///
+    /// Uses the `Evaluator` to compute the constant value, then constructs
+    /// `Type::Array` or `Type::Refine` with literal bounds.
+    pub(crate) fn resolve_type(&self, ty: &TypeId, log: &CompilerLog) -> TypeId {
+        let span = ty.span();
+        match &*ty.deref() {
+            Type::UnresolvedArray { element_type, len, .. } => {
+                let mut evaluator = Evaluator::new(log, self.m.arch_ptr_size());
+                match evaluator.evaluate_to_literal(&len.borrow()) {
+                    Ok(lit) => {
+                        let len_u32 = nitrate_hir_type::lit_to_u128(&lit)
+                            .and_then(|v| u32::try_from(v).ok())
+                            .unwrap_or(0);
+                        Type::Array {
+                            span,
+                            element_type: self.resolve_type(element_type, log),
+                            len: len_u32,
+                        }
+                        .into()
+                    }
+                    Err(_) => {
+                        // Evaluation failed; keep the original type.
+                        ty.clone()
+                    }
+                }
+            }
+            Type::UnresolvedRefine { base, min, max, .. } => {
+                let mut evaluator = Evaluator::new(log, self.m.arch_ptr_size());
+                let min_lit = evaluator
+                    .evaluate_to_literal(&min.borrow())
+                    .ok()
+                    .map(|lit| LiteralId::from(get_storage(|store| store.store_literal(lit))));
+                let max_lit = evaluator
+                    .evaluate_to_literal(&max.borrow())
+                    .ok()
+                    .map(|lit| LiteralId::from(get_storage(|store| store.store_literal(lit))));
+                let resolved_base = self.resolve_type(base, log);
+
+                match (min_lit, max_lit) {
+                    (Some(min), Some(max)) => Type::Refine {
+                        span,
+                        base: resolved_base,
+                        min,
+                        max,
+                    }
+                    .into(),
+                    _ => {
+                        // Evaluation failed; keep the original type.
+                        ty.clone()
+                    }
+                }
+            }
+            Type::Array { element_type, .. } => {
+                let resolved_elem = self.resolve_type(element_type, log);
+                if resolved_elem.as_usize() != element_type.as_usize() {
+                    Type::Array {
+                        span,
+                        element_type: resolved_elem,
+                        len: match &**ty {
+                            Type::Array { len, .. } => *len,
+                            _ => 0,
+                        },
+                    }
+                    .into()
+                } else {
+                    ty.clone()
+                }
+            }
+            Type::Parameterized { base, args, .. } => {
+                let resolved_base = self.resolve_type(base, log);
+                let resolved_args: Vec<TypeId> = args.positional.iter().map(|a| self.resolve_type(a, log)).collect();
+                Type::Parameterized {
+                    span,
+                    base: resolved_base,
+                    args: Arguments {
+                        positional: resolved_args.into(),
+                        named: args.named.clone(),
+                    },
+                }
+                .into()
+            }
+            Type::Tuple { element_types, .. } => {
+                let resolved: Vec<TypeId> = element_types.iter().map(|et| self.resolve_type(et, log)).collect();
+                Type::Tuple {
+                    span,
+                    element_types: resolved.into(),
+                }
+                .into()
+            }
+            Type::Reference {
+                lifetime,
+                exclusive,
+                mutable,
+                to,
+                ..
+            } => {
+                let resolved_to = self.resolve_type(to, log);
+                if resolved_to.as_usize() != to.as_usize() {
+                    Type::Reference {
+                        span,
+                        lifetime: lifetime.clone(),
+                        exclusive: *exclusive,
+                        mutable: *mutable,
+                        to: resolved_to,
+                    }
+                    .into()
+                } else {
+                    ty.clone()
+                }
+            }
+            Type::SliceRef {
+                lifetime,
+                exclusive,
+                mutable,
+                element_type,
+                ..
+            } => {
+                let resolved_et = self.resolve_type(element_type, log);
+                if resolved_et.as_usize() != element_type.as_usize() {
+                    Type::SliceRef {
+                        span,
+                        lifetime: lifetime.clone(),
+                        exclusive: *exclusive,
+                        mutable: *mutable,
+                        element_type: resolved_et,
+                    }
+                    .into()
+                } else {
+                    ty.clone()
+                }
+            }
+            Type::Pointer {
+                lifetime,
+                exclusive,
+                mutable,
+                to,
+                ..
+            } => {
+                let resolved_to = self.resolve_type(to, log);
+                if resolved_to.as_usize() != to.as_usize() {
+                    Type::Pointer {
+                        span,
+                        lifetime: lifetime.clone(),
+                        exclusive: *exclusive,
+                        mutable: *mutable,
+                        to: resolved_to,
+                    }
+                    .into()
+                } else {
+                    ty.clone()
+                }
+            }
+            Type::SlicePtr {
+                lifetime,
+                exclusive,
+                mutable,
+                element_type,
+                ..
+            } => {
+                let resolved_et = self.resolve_type(element_type, log);
+                if resolved_et.as_usize() != element_type.as_usize() {
+                    Type::SlicePtr {
+                        span,
+                        lifetime: lifetime.clone(),
+                        exclusive: *exclusive,
+                        mutable: *mutable,
+                        element_type: resolved_et,
+                    }
+                    .into()
+                } else {
+                    ty.clone()
+                }
+            }
+            // For all other types, return unchanged.
+            _ => ty.clone(),
+        }
+    }
+
+    /// Resolve `UnresolvedArray`/`UnresolvedRefine` types in function parameters and return type.
+    fn resolve_unresolved_types_in_function(&self, function: &mut Function, log: &CompilerLog) {
+        function.return_type = self.resolve_type(&function.return_type, log);
+
+        for param_id in &function.params {
+            let mut param = param_id.borrow_mut();
+            param.ty = self.resolve_type(&param.ty, log);
+        }
+    }
+
+    /// Resolve `UnresolvedArray`/`UnresolvedRefine` types in local variable types within a function body.
+    fn resolve_unresolved_types_in_body(&self, function: &mut Function, log: &CompilerLog) {
+        if let Some(body) = &function.body {
+            for element in body {
+                match element {
+                    BlockElement::Local(local_var) => {
+                        let mut lv = local_var.borrow_mut();
+                        lv.ty = self.resolve_type(&lv.ty, log);
+                    }
+                    _ => {}
+                }
+            }
+        }
+    }
+
+    // ── Main entry points ─────────────────────────────────────────────
+
     pub(crate) fn solve_function(&mut self, function: &mut Function, log: &CompilerLog) -> Result<(), ()> {
+        // Resolve UnresolvedArray/UnresolvedRefine types in function signature before solving.
+        self.resolve_unresolved_types_in_function(function, log);
+
         if let Some(body) = &mut function.body {
             self.function_return_type = Some(function.return_type);
 
@@ -453,6 +667,11 @@ impl<'m> Solver<'m> {
 
             self.finalize_inferred_literals(body);
         }
+
+        // Resolve UnresolvedArray/UnresolvedRefine types in local variable declarations after solving
+        // (in case the computed types were refined during inference).
+        self.resolve_unresolved_types_in_body(function, log);
+
         for error in &self.errors {
             log.report(error);
         }
@@ -609,6 +828,9 @@ impl<'m> Solver<'m> {
     }
 
     pub(crate) fn solve_global_variable(&mut self, g: &mut GlobalVariable, log: &CompilerLog) -> Result<(), ()> {
+        // Resolve UnresolvedArray/UnresolvedRefine in global variable type.
+        g.ty = self.resolve_type(&g.ty, log);
+
         loop {
             let prev_version = self.constraint_version;
             if g.ty.is_inferred() {

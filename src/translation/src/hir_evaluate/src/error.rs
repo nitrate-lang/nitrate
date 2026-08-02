@@ -40,6 +40,8 @@ pub enum EvalError {
     Unsupported(&'static str),
     /// An unsafe operation was attempted in a safe context
     UnsafeInSafeContext,
+    /// An programmatic abort was requested (e.g., via `std::meta::abort`)
+    Abort,
 }
 
 impl std::fmt::Display for EvalError {
@@ -72,6 +74,7 @@ impl std::fmt::Display for EvalError {
             EvalError::MisalignedAccess => write!(f, "misaligned memory access"),
             EvalError::Unsupported(op) => write!(f, "unsupported operation: {}", op),
             EvalError::UnsafeInSafeContext => write!(f, "unsafe operation attempted in a safe context"),
+            EvalError::Abort => write!(f, "programmatic abort requested"),
         }
     }
 }

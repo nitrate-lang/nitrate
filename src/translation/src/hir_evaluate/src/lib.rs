@@ -1,6 +1,7 @@
 #![forbid(unsafe_code)]
 
 mod builtins;
+mod diagnosis;
 mod error;
 mod evaluator;
 mod memory;
