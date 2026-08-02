@@ -174,6 +174,7 @@ pub fn mangle_type(ty: &Type) -> String {
         Type::InferredFloat { .. } => "f".to_string(),
         Type::InferredInteger { .. } => "g".to_string(),
         Type::Range { .. } => "h".to_string(),
+        Type::Str { .. } => "i".to_string(),
     }
 }
 
