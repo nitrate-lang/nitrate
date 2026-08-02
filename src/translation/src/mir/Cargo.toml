@@ -1,0 +1,13 @@
+[package]
+name = "nitrate_mir"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+nitrate_nstring.workspace = true
+ordered-float.workspace = true
+serde.workspace = true
+append-only-vec.workspace = true
+bimap.workspace = true
+thin-vec.workspace = true
+thin_str.workspace = true
