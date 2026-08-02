@@ -3,7 +3,7 @@ use crate::operand::{MirBinaryOp, MirLiteral, MirUnaryOp, Operand};
 use crate::place::Place;
 use crate::rvalue::{AggregateKind, BorrowKind, NullaryOp, Rvalue};
 use crate::stmt::{BasicBlock, Statement, Terminator};
-use crate::store::{BasicBlockId, LocalId, MirFunctionId, MirTypeId, get_storage};
+use crate::store::{BasicBlockId, LocalId, MirFunctionId, MirTypeId};
 use crate::ty::{MirType, PtrSize};
 use nitrate_nstring::NString;
 use thin_vec::ThinVec;
@@ -58,7 +58,7 @@ impl MirBuilder {
 
     /// Convenience: intern a type and return its `MirTypeId`.
     pub fn intern_type(&self, ty: MirType) -> MirTypeId {
-        get_storage(|s| s.store_type(ty))
+        ty.into()
     }
 }
 
@@ -123,7 +123,7 @@ impl<'b> MirFunctionBuilder<'b> {
     /// They are stored as the first N locals.
     pub fn add_param(&mut self, _name: NString, ty: MirTypeId, mutable: bool) -> LocalId {
         let local = LocalDecl { ty, mutable };
-        let id: LocalId = get_storage(|s| s.store_local(local));
+        let id: LocalId = local.into();
         self.params.push(id.clone());
         self.arg_count += 1;
         self.locals.push(LocalDecl { ty, mutable });
@@ -137,7 +137,7 @@ impl<'b> MirFunctionBuilder<'b> {
     /// to its final destination).
     pub fn new_temp(&mut self, ty: MirTypeId, mutable: bool) -> LocalId {
         let local = LocalDecl { ty, mutable };
-        let id: LocalId = get_storage(|s| s.store_local(local));
+        let id: LocalId = local.into();
         self.locals.push(LocalDecl { ty, mutable });
         id
     }
@@ -178,7 +178,7 @@ impl<'b> MirFunctionBuilder<'b> {
             terminator: Terminator::Unreachable,
             args: arg_types.iter().cloned().collect(),
         };
-        let bb_id: BasicBlockId = get_storage(|s| s.store_basic_block(bb));
+        let bb_id: BasicBlockId = bb.into();
 
         // First block created becomes the entry block
         if self.entry_block.is_none() {
@@ -194,6 +194,61 @@ impl<'b> MirFunctionBuilder<'b> {
         }
     }
 
+    /// Reserve a new basic block without making it current.
+    ///
+    /// The block is registered and can be referenced in terminators immediately,
+    /// but the current block remains unchanged. Use `switch_to_block` later
+    /// to begin adding statements to the reserved block.
+    ///
+    /// The first block reserved becomes the entry block if no entry block
+    /// has been set yet.
+    pub fn reserve_block(&mut self) -> BasicBlockId {
+        self.reserve_block_with_args(&[]).block
+    }
+
+    /// Reserve a new basic block with argument types, without making it current.
+    ///
+    /// Returns the created block's ID and its argument locals. The current
+    /// block is unchanged.
+    pub fn reserve_block_with_args(&mut self, arg_types: &[MirTypeId]) -> NewBlock {
+        // Create locals for block arguments
+        let mut arg_locals: ThinVec<LocalId> = ThinVec::new();
+        for ty in arg_types.iter() {
+            let local_id = self.new_temp(ty.clone(), false);
+            arg_locals.push(local_id);
+        }
+
+        // Build the block
+        let bb = BasicBlock {
+            statements: ThinVec::new(),
+            terminator: Terminator::Unreachable,
+            args: arg_types.iter().cloned().collect(),
+        };
+        let bb_id: BasicBlockId = bb.into();
+
+        // First block reserved/created becomes the entry block
+        if self.entry_block.is_none() {
+            self.entry_block = Some(bb_id.clone());
+        }
+
+        self.blocks.push(bb_id.clone());
+        // NOTE: current_block is NOT changed — caller must use switch_to_block
+
+        NewBlock {
+            block: bb_id,
+            arg_locals,
+        }
+    }
+
+    /// Switch to a previously reserved block, making it the current block.
+    ///
+    /// All subsequent `push_stmt` / `push_assign` / terminator calls will
+    /// operate on this block.
+    pub fn switch_to_block(&mut self, block: BasicBlockId) -> &mut Self {
+        self.current_block = Some(block);
+        self
+    }
+
     // ── Statements ───────────────────────────────────────────
 
     /// Push a statement into the current block.
@@ -204,10 +259,8 @@ impl<'b> MirFunctionBuilder<'b> {
             .as_ref()
             .cloned()
             .expect("push_stmt called with no current block — call create_block first");
-        get_storage(|s| {
-            let mut borrowed = s[&bb_id].borrow_mut();
-            borrowed.statements.push(stmt.clone());
-        });
+        let mut borrowed = bb_id.borrow_mut();
+        borrowed.statements.push(stmt.clone());
         self
     }
 
@@ -239,10 +292,8 @@ impl<'b> MirFunctionBuilder<'b> {
             .current_block
             .take()
             .expect("set_terminator called with no current block");
-        get_storage(|s| {
-            let mut borrowed = s[&bb_id].borrow_mut();
-            borrowed.terminator = terminator;
-        });
+        let mut borrowed = bb_id.borrow_mut();
+        borrowed.terminator = terminator;
         self
     }
 
@@ -450,7 +501,7 @@ impl<'b> MirFunctionBuilder<'b> {
             arg_count: self.arg_count,
         };
 
-        let func_id = get_storage(|s| s.store_function(func));
+        let func_id: MirFunctionId = func.into();
 
         self.builder.add_function(func_id.clone());
         func_id
@@ -458,7 +509,7 @@ impl<'b> MirFunctionBuilder<'b> {
 
     /// Convenience: intern a type and return its `MirTypeId`.
     pub fn store_type(&self, ty: MirType) -> MirTypeId {
-        get_storage(|s| s.store_type(ty))
+        ty.into()
     }
 }
 

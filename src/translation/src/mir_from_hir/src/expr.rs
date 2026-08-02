@@ -230,8 +230,9 @@ pub fn lower_value(
             } else {
                 let return_ty = value_result_type(ctx, func, &value);
                 let ret_temp = func.new_temp(return_ty.clone(), false);
-                let merge_block = func.create_block();
+                let merge_block = func.reserve_block();
                 func.call_return(callee_op, mir_args, mir::Place::Local(ret_temp.clone()), merge_block);
+                func.switch_to_block(merge_block);
                 mir::Operand::Copy(mir::Place::Local(ret_temp))
             }
         }
@@ -248,13 +249,14 @@ pub fn lower_value(
                 mir::Operand::Constant(mir::MirLiteral::Unit)
             } else {
                 let ret_temp = func.new_temp(return_ty.clone(), false);
-                let merge_block = func.create_block();
+                let merge_block = func.reserve_block();
                 func.call_return(
                     callee_op,
                     thin_vec::ThinVec::new(),
                     mir::Place::Local(ret_temp.clone()),
                     merge_block,
                 );
+                func.switch_to_block(merge_block);
                 mir::Operand::Copy(mir::Place::Local(ret_temp))
             }
         }
@@ -452,21 +454,22 @@ fn lower_if(
         Some(value_result_type(ctx, func, &condition.borrow()))
     };
 
-    // Create merge block with a block argument for the result value (if not tail)
+    // Reserve all blocks before setting the terminator on the current block
     let merge_types: thin_vec::ThinVec<mir::MirTypeId> = result_ty
         .as_ref()
         .map(|t| thin_vec::ThinVec::from([t.clone()].as_slice()))
         .unwrap_or_default();
-    let merge = func.create_block_with_args(&merge_types);
+    let merge = func.reserve_block_with_args(&merge_types);
     let merge_arg_local = merge.arg_locals.first().cloned();
 
-    let then_block = func.create_block();
-    let else_block_opt = false_branch.as_ref().map(|_| func.create_block());
+    let then_block = func.reserve_block();
+    let else_block = false_branch.as_ref().map(|_| func.reserve_block());
 
-    // Branch from condition to then/else
-    func.if_br(cond_op, then_block, else_block_opt.unwrap_or(merge.block.clone()));
+    // Branch from condition (which is in the current block) to then/else
+    func.if_br(cond_op, then_block, else_block.unwrap_or(merge.block.clone()));
 
     // Lower then branch
+    func.switch_to_block(then_block);
     let true_block_data = true_branch.borrow();
     let then_result = block::lower_block(ctx, func, &true_block_data);
     if func.current_block.is_some() {
@@ -479,6 +482,8 @@ fn lower_if(
 
     // Lower else branch if present
     if let Some(false_id) = false_branch {
+        let else_block = else_block.unwrap();
+        func.switch_to_block(else_block);
         let false_block_data = false_id.borrow();
         let else_result = block::lower_block(ctx, func, &false_block_data);
         if func.current_block.is_some() {
@@ -489,6 +494,9 @@ fn lower_if(
             }
         }
     }
+
+    // Switch to the merge block so the caller can continue adding statements
+    func.switch_to_block(merge.block);
 
     // Return the merge block argument as the result operand
     if let Some(arg_local) = merge_arg_local {
@@ -504,40 +512,49 @@ fn lower_while(
     condition: &hir::ValueId,
     body: &hir::BlockId,
 ) -> mir::Operand {
-    let header_block = func.create_block();
-    let body_block = func.create_block();
-    let exit_block = func.create_block();
+    // Reserve all blocks first
+    let header_block = func.reserve_block();
+    let body_block = func.reserve_block();
+    let exit_block = func.reserve_block();
 
+    // Set goto on the current block to header
     func.goto(header_block);
 
     // Header: evaluate condition
+    func.switch_to_block(header_block);
     let cond_op = lower_value(ctx, func, condition, false);
     func.if_br(cond_op, body_block, exit_block);
 
     // Body block
+    func.switch_to_block(body_block);
     ctx.push_loop(header_block, exit_block);
     let body_data = body.borrow();
     block::lower_block_elements(ctx, func, &body_data.elements);
     ctx.pop_loop();
     func.goto(header_block);
 
-    // Exit block
+    // Switch to exit block so caller can continue
+    func.switch_to_block(exit_block);
     mir::Operand::Constant(mir::MirLiteral::Unit)
 }
 
 fn lower_loop(ctx: &mut LoweringCtx, func: &mut mir::MirFunctionBuilder, body: &hir::BlockId) -> mir::Operand {
-    let loop_body = func.create_block();
-    let loop_exit = func.create_block();
+    // Reserve blocks first
+    let loop_body = func.reserve_block();
+    let loop_exit = func.reserve_block();
 
+    // Terminate current block with goto to loop body
     func.goto(loop_body);
 
+    func.switch_to_block(loop_body);
     ctx.push_loop(loop_body, loop_exit);
     let body_data = body.borrow();
     block::lower_block_elements(ctx, func, &body_data.elements);
     ctx.pop_loop();
     func.goto(loop_body);
 
-    // Exit block — we must position on it so the caller can continue
+    // Switch to exit block so caller can continue
+    func.switch_to_block(loop_exit);
     mir::Operand::Constant(mir::MirLiteral::Unit)
 }
 
