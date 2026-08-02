@@ -350,10 +350,15 @@ impl<'a> Solver<'a> {
         }
         if let Some(b) = best {
             return match &*b {
-                Type::F32 { .. } => NodeAction::Replace(Value::F32 {
-                    span,
-                    value: OrderedFloat(*value as f32),
-                }),
+                Type::F32 { .. } => {
+                    // NOTE: Narrowing an f64 InferredFloat to F32 can silently
+                    // lose precision. Future work should check `*value as f32 as f64 == *value`
+                    // and emit a warning for lossy conversions.
+                    NodeAction::Replace(Value::F32 {
+                        span,
+                        value: OrderedFloat(*value as f32),
+                    })
+                }
                 Type::F64 { .. } => NodeAction::Replace(Value::F64 { span, value }),
                 _ => unreachable!(),
             };
@@ -1385,7 +1390,7 @@ impl<'a> Solver<'a> {
 
     // ── Main entry points ──────────────────────────────────────────
 
-    fn solve_function(&mut self, function: &mut Function, log: &CompilerLog) -> Result<(), ()> {
+    fn solve_function(&mut self, function: &mut Function, log: &CompilerLog) -> Result<(), crate::SolveError> {
         function.return_type = resolve_type_impl(self, &function.return_type, log);
         for param_id in &function.params {
             let mut p = param_id.borrow_mut();
@@ -1413,7 +1418,11 @@ impl<'a> Solver<'a> {
         for error in &self.errors {
             log.report(error);
         }
-        if self.errors.is_empty() { Ok(()) } else { Err(()) }
+        if self.errors.is_empty() {
+            Ok(())
+        } else {
+            Err(crate::SolveError::TypeErrors)
+        }
     }
 
     fn finalize_inferred_literals(&mut self, body: &mut [BlockElement]) {
@@ -1546,7 +1555,7 @@ impl<'a> Solver<'a> {
         }
     }
 
-    fn solve_global_variable(&mut self, g: &mut GlobalVariable, log: &CompilerLog) -> Result<(), ()> {
+    fn solve_global_variable(&mut self, g: &mut GlobalVariable, log: &CompilerLog) -> Result<(), crate::SolveError> {
         g.ty = resolve_type_impl(self, &g.ty, log);
         loop {
             let prev_ver = self.constraint_version;
@@ -1565,7 +1574,11 @@ impl<'a> Solver<'a> {
         for error in &self.errors {
             log.report(error);
         }
-        if self.errors.is_empty() { Ok(()) } else { Err(()) }
+        if self.errors.is_empty() {
+            Ok(())
+        } else {
+            Err(crate::SolveError::TypeErrors)
+        }
     }
 }
 
@@ -1734,6 +1747,11 @@ fn resolve_type_impl(s: &Solver, ty: &TypeId, log: &CompilerLog) -> TypeId {
                 ty.clone()
             }
         }
+        // Catch-all: types that don't need resolution (primitives, etc.) are
+        // returned unchanged. If new resolvable type variants are added to the
+        // HIR, they should be added as explicit match arms above.
+        // debug_assert! is omitted here because Type can be any variant and
+        // many are genuinely pass-through (Struct, Enum, traits, generics, etc.).
         _ => ty.clone(),
     }
 }
@@ -1826,12 +1844,20 @@ fn classify_value(value: &Value) -> u8 {
 
 // ── Public API ─────────────────────────────────────────────────────
 
-pub fn resolve_function(function: &mut Function, m: &mut SymbolTab, log: &CompilerLog) -> Result<(), ()> {
+pub fn resolve_function(
+    function: &mut Function,
+    m: &mut SymbolTab,
+    log: &CompilerLog,
+) -> Result<(), crate::SolveError> {
     ensure_range_structs(m);
     Solver::new(m).solve_function(function, log)
 }
 
-pub fn resolve_global(global: &mut GlobalVariable, m: &mut SymbolTab, log: &CompilerLog) -> Result<(), ()> {
+pub fn resolve_global(
+    global: &mut GlobalVariable,
+    m: &mut SymbolTab,
+    log: &CompilerLog,
+) -> Result<(), crate::SolveError> {
     ensure_range_structs(m);
     Solver::new(m).solve_global_variable(global, log)
 }

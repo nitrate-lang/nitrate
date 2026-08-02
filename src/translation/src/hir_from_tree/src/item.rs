@@ -596,7 +596,7 @@ pub(crate) type Item = nitrate_hir::Item;
 fn lower_item(ctx: &mut Ast2HirCtx, item: ast::Item, log: &CompilerLog) -> Result<Option<Item>, ()> {
     match item {
         ast::Item::Module(module) => {
-            let hir_module = convert_ast_to_hir(*module, ctx, log)?.into();
+            let hir_module = convert_ast_to_hir(*module, ctx, log).map_err(|_| ())?.into();
             Ok(Some(Item::Module(hir_module)))
         }
 

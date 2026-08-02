@@ -6,6 +6,9 @@ use nitrate_tree::ByteSpan;
 use std::collections::{BTreeMap, BTreeSet};
 use thin_vec::ThinVec;
 
+// Range struct names could conflict with user-defined types. If a user defines
+// a struct with the same name (e.g., "Range"), the user definition wins silently
+// (ensure_range_structs skips if the name already exists in the symbol table).
 const RANGE_NAMES: [&str; 6] = [
     "Range",
     "RangeInclusive",
@@ -26,6 +29,9 @@ pub(crate) fn range_struct_name(has_start: bool, has_end: bool, inclusive: bool)
     }
 }
 
+/// Ensures that synthetic range struct definitions exist in the symbol table.
+/// This is idempotent — if a struct with the same name already exists (including
+/// a user-defined one), it is silently kept and no synthetic definition is created.
 pub(crate) fn ensure_range_structs(tab: &mut SymbolTab) {
     let generic_t: NString = NString::from("T");
     for name_str in RANGE_NAMES {
@@ -93,10 +99,28 @@ pub(crate) fn make_range_struct_object(
     has_end: bool,
 ) -> Value {
     let struct_name = range_struct_name(has_start, has_end, inclusive);
-    let struct_def = tab
-        .get_struct(&NString::from(struct_name))
-        .expect("range struct not found")
-        .clone();
+    let name_ns: NString = NString::from(struct_name);
+    let struct_def = match tab.get_struct(&name_ns) {
+        Some(sd) => sd.clone(),
+        None => {
+            // Fallback: the range struct wasn't found. This can happen if
+            // ensure_range_structs was not called, or if a user-defined struct
+            // shadowed the compiler-internal one. In this case, emit a tuple
+            // of the range endpoints so that the range expression can still
+            // be type-checked.
+            let mut elements = Vec::new();
+            if let Some(s) = start {
+                elements.push(s);
+            }
+            if let Some(e) = end {
+                elements.push(e);
+            }
+            return Value::Tuple {
+                span,
+                elements: elements.into(),
+            };
+        }
+    };
     let mut fields: ThinVec<(NString, ValueId)> = ThinVec::new();
     if let Some(s) = start {
         fields.push((NString::from("start"), s));

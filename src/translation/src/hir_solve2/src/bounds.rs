@@ -156,6 +156,9 @@ pub(crate) fn compute_binary_bounds(op: &BinaryOp, left: Bounds, right: Bounds) 
                 if r_min < 0 {
                     for &l in &[l_min, l_max_i128] {
                         vals.push(l.saturating_div(r_min));
+                        // NOTE: Division by -1 can overflow for i128::MIN.
+                        // We use saturating_div here which produces i128::MAX for
+                        // i128::MIN / -1, a safe over-approximation for bounds analysis.
                         vals.push(l.saturating_div(-1));
                     }
                 }
