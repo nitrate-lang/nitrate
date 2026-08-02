@@ -143,14 +143,28 @@ pub fn gen_terminator<'ctx>(ctx: &mut CodegenCtx<'ctx, '_>, terminator: &mir::Te
             target,
             target_args,
         } => {
-            let callee_val = gen_operand(ctx, callee);
             let llvm_args: Vec<BasicValueEnum<'ctx>> = args.iter().map(|a| gen_operand(ctx, a)).collect();
+            let arg_types: Vec<inkwell::types::BasicMetadataTypeEnum<'ctx>> =
+                llvm_args.iter().map(|v| v.get_type().into()).collect();
 
-            let call_result = if callee_val.is_pointer_value() {
+            let call_result = if let mir::Operand::Copy(mir::Place::Static(callee_name))
+            | mir::Operand::Move(mir::Place::Static(callee_name)) = callee
+            {
+                // Direct call to a known function by name
+                let llvm_fn = ctx
+                    .module
+                    .get_function(callee_name)
+                    .unwrap_or_else(|| panic!("function '{}' not found in module", callee_name));
+                let arg_values: Vec<inkwell::values::BasicMetadataValueEnum<'ctx>> =
+                    llvm_args.iter().map(|v| (*v).into()).collect();
+                ctx.builder.build_direct_call(llvm_fn, &arg_values, "call").unwrap()
+            } else {
+                // Indirect call via function pointer
+                let callee_val = gen_operand(ctx, callee);
+                if !callee_val.is_pointer_value() {
+                    panic!("Call target must be a function pointer");
+                }
                 let callee_ptr = callee_val.into_pointer_value();
-                let arg_types: Vec<inkwell::types::BasicMetadataTypeEnum<'ctx>> =
-                    llvm_args.iter().map(|v| v.get_type().into()).collect();
-
                 if let Some(dest) = destination {
                     // Returning call
                     let dest_ty = crate::place::get_place_type_for_load(ctx, dest);
@@ -171,8 +185,6 @@ pub fn gen_terminator<'ctx>(ctx: &mut CodegenCtx<'ctx, '_>, terminator: &mir::Te
                         .build_indirect_call(fn_ty, callee_ptr, &arg_values, "")
                         .unwrap()
                 }
-            } else {
-                panic!("Call target must be a function pointer");
             };
 
             // Store result to destination if this is a returning call

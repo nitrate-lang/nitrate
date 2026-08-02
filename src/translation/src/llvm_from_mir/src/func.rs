@@ -17,17 +17,19 @@ pub fn gen_function<'ctx>(ctx: &mut CodegenCtx<'ctx, '_>, llvm_function: Functio
     let entry = ctx.llvm.append_basic_block(llvm_function, "entry");
     ctx.position_at_end(entry);
 
-    // Allocate locals (SSA registers become allocas)
+    // Allocate locals (SSA registers become allocas).
+    // LocalId::as_usize() returns the 1-based NonZeroU32 value, so we use
+    // 1-based keys to match gen_place's lookup via local_id.as_usize().
     for (i, local_decl) in ctx.mir_func.locals.iter().enumerate() {
         let llvm_ty = gen_ty(&*local_decl.ty, &mut ctx.ty_ctx());
         let alloca = ctx.builder.build_alloca(llvm_ty, &format!("local_{}", i)).unwrap();
-        ctx.locals.insert(i as u32, (alloca, llvm_ty));
+        ctx.locals.insert((i + 1) as u32, (alloca, llvm_ty));
     }
 
     // Map parameters to their allocas
     for (i, param_id) in ctx.mir_func.params.iter().enumerate() {
-        let param_idx = param_id.as_usize() as u32;
         if let Some(llvm_param) = llvm_function.get_nth_param(i as u32) {
+            let param_idx = param_id.as_usize() as u32;
             if let Some((alloca, _)) = ctx.locals.get(&param_idx).copied() {
                 ctx.builder.build_store(alloca, llvm_param).unwrap();
             }
