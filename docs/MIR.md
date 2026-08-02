@@ -184,25 +184,49 @@ let ty_id: MirTypeId = MirType::I32.into();  // implicitly uses get_storage()
 
 ## MirFunction and MirModule
 
-### MirFunction
+### MirFunction and MirFunctionBody
 
-A `MirFunction` represents the complete MIR body of a single function:
+A `MirFunction` represents a single function in the MIR. The signature fields (name, parameters, return type, variadic flag) are always present. The function body — containing locals, basic blocks, and the CFG — is split into a separate `MirFunctionBody` struct wrapped in `Option<>`:
 
 ```rust
-pub struct MirFunction {
-    pub name: NString,
-    pub params: ThinVec<LocalId>,        // parameter locals
-    pub return_ty: MirTypeId,
+pub struct MirFunctionBody {
     pub locals: ThinVec<LocalDecl>,       // all locals (params + temporaries + user variables)
     pub local_ids: ThinVec<LocalId>,      // handles for each local (1:1 with locals)
     pub entry_block: BasicBlockId,        // where execution starts
     pub blocks: ThinVec<BasicBlockId>,    // all blocks in the function
     pub arg_count: u32,                   // number of parameters
+}
+
+pub struct MirFunction {
+    pub name: NString,
+    pub params: ThinVec<LocalId>,        // parameter locals
+    pub return_ty: MirTypeId,
     pub is_c_variadic: bool,              // C variadic (...)
+    pub body: Option<MirFunctionBody>,    // None for extern declarations
 }
 ```
 
-Parameters are stored as the first `arg_count` entries in `locals` — the same vector holds parameters, user-declared variables, and compiler-generated temporaries. This uniform treatment simplifies iteration and avoids separate parameter-specific code paths in analysis passes. The `is_extern()` method returns `true` when `blocks` is empty, indicating a bodyless function (extern declaration, FFI import).
+For function definitions (bodies with code), `body` is `Some(MirFunctionBody { ... })`. For extern/FFI declarations, `body` is `None`. The `is_extern()` method returns `true` when `body.is_none()`, providing a clean check for bodyless functions. Accessor methods (`locals()`, `blocks()`, `local_ids()`, `entry_block()`, `arg_count()`) safely handle both cases, returning empty slices or panicking as appropriate.
+
+Parameters are stored as the first `arg_count` entries in `locals` — the same vector holds parameters, user-declared variables, and compiler-generated temporaries. This uniform treatment simplifies iteration and avoids separate parameter-specific code paths in analysis passes.
+
+### MirGlobal and MirGlobalBody
+
+Global variables follow the same pattern as functions: a `MirGlobal` contains the signature (name, type), while initialization data is separated into an optional `MirGlobalBody`:
+
+```rust
+pub struct MirGlobalBody {
+    pub initializer_data: Option<ThinVec<u8>>,
+}
+
+pub struct MirGlobal {
+    pub name: NString,
+    pub ty: MirTypeId,
+    pub body: Option<MirGlobalBody>,
+}
+```
+
+For extern/imported globals, `body` is `None`. For defined globals, `body` is `Some(MirGlobalBody { ... })`. The `initializer_data` is `None` for zero-initialized globals (the default for mutable statics) and `Some(...)` for globals with constant initializer data.
 
 ### MirModule
 
@@ -211,12 +235,31 @@ A `MirModule` bundles all functions and global variables for a compilation unit:
 ```rust
 pub struct MirModule {
     pub functions: ThinVec<MirFunctionId>,
-    pub globals: ThinVec<(NString, MirTypeId)>,
+    pub globals: ThinVec<MirGlobal>,
+    pub string_globals: ThinVec<(NString, ThinVec<u8>)>,
     pub ptr_size: PtrSize,
 }
 ```
 
-The module is the unit of code generation — the LLVM codegen iterates over `functions` and `globals` to produce an LLVM module. The `ptr_size` field determines pointer width (32 or 64 bits) for `USize` resolution and struct layout computation.
+The module is the unit of code generation — the LLVM codegen iterates over `functions` and `globals` to produce an LLVM module. String literals are stored as byte data in `string_globals` and emitted as private global constant arrays during codegen. The `ptr_size` field determines pointer width (32 or 64 bits) for `USize` resolution and struct layout computation.
+
+### MIR CFG Graphviz Export
+
+`MirFunction` and `MirModule` both provide `emit_dot()` methods that produce Graphviz DOT-format strings suitable for rendering with `dot` or `xdot`. Each function's basic blocks become nodes; terminators become directed edges with color-coded styling (green for `true` branches, red for `false`, blue for `switch`, purple for call returns). Block arguments are shown as edge labels, and entry blocks are distinguished with a comment annotation.
+
+For module-level export, each function is rendered inside its own subgraph cluster, making it easy to visualize the entire compilation unit's control flow structure.
+
+```rust
+use nitrate_mir::prelude::*;
+
+// Export a single function
+let dot = mir_func.emit_dot();
+std::fs::write("function.dot", dot)?;
+
+// Export the entire module
+let dot = mir_module.emit_dot();
+std::fs::write("module.dot", dot)?;
+```
 
 ## Builder API
 
@@ -246,7 +289,7 @@ The first block created or reserved becomes the entry block.
 
 **Convenience Constructors**: Static methods `rv_use`, `rv_ref`, `rv_binary`, `rv_aggregate`, etc. provide ergonomic rvalue construction. `place_local`, `place_field`, `op_copy`, `op_const`, etc. do the same for places and operands.
 
-**Finish**: `finish_function()` commits the function to the global store. For functions with a body, it constructs the `MirFunction` from the accumulated locals, blocks, and metadata. For extern functions (no blocks), it creates a placeholder entry block to satisfy the invariant that every function has an entry block, though the blocks list remains empty.
+**Finish**: `finish_function()` commits the function to the global store. For functions with a body, it constructs the `MirFunction` from the accumulated locals, blocks, and metadata. For extern functions, it creates a `MirFunction` with `body=None`. The builder is then reset for the next function.
 
 ## HIR to MIR Lowering
 
