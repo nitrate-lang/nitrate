@@ -222,7 +222,7 @@ impl Parser<'_, '_> {
         if self.lexer.skip_if(&Token::Static) {
             return Lifetime {
                 span: ByteSpan::new(lt_start, self.lexer.current_pos().offset),
-                name: NString::from("static".to_string()),
+                name: "static".into(),
             };
         }
 
@@ -231,7 +231,7 @@ impl Parser<'_, '_> {
 
         Lifetime {
             span: ByteSpan::new(lt_start, self.lexer.current_pos().offset),
-            name: NString::from(name),
+            name: name.into(),
         }
     }
 

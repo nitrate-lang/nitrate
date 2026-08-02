@@ -197,7 +197,7 @@ impl Parser<'_, '_> {
                 UseTree::Alias {
                     span: ByteSpan::new(path.span().start, alias_end),
                     path,
-                    alias: NString::from(alias),
+                    alias: alias.into(),
                 }
             } else {
                 UseTree::Single {
@@ -537,7 +537,7 @@ impl Parser<'_, '_> {
                 let self_start = rewind_pos.offset; // start of `&`
                 // &self - create a reference type for the parameter
                 self.lexer.skip_tok(); // consume self
-                let name = NString::from("self");
+                let name = "self".into();
                 let self_ty_end = self.lexer.current_pos().offset;
                 let ref_span = ByteSpan::new(self_start, self_ty_end);
                 let ty = Type::ReferenceType(Box::new(ReferenceType {
@@ -567,7 +567,7 @@ impl Parser<'_, '_> {
                 let self_start = rewind_pos.offset; // start of `&`
                 // &mut self
                 self.lexer.skip_tok(); // consume self
-                let name = NString::from("self");
+                let name = "self".into();
                 let self_ty_end = self.lexer.current_pos().offset;
                 let ref_span = ByteSpan::new(self_start, self_ty_end);
                 let ty = Type::ReferenceType(Box::new(ReferenceType {
@@ -604,7 +604,7 @@ impl Parser<'_, '_> {
         if self.lexer.next_is(&Token::SelfKeyword) {
             let self_start = self.lexer.peek_pos().offset;
             self.lexer.skip_tok(); // consume self
-            let name = NString::from("self");
+            let name = "self".into();
             let self_ty_end = self.lexer.current_pos().offset;
             let inner_span = ByteSpan::new(self_start, self_ty_end);
             let ty = Type::TypePath(Box::new(TypePath {
@@ -791,7 +791,7 @@ impl Parser<'_, '_> {
                 let abi_end = self.lexer.current_pos().offset;
                 Some(ExternAbi {
                     span: ByteSpan::new(abi_start, abi_end),
-                    name: NString::from(abi_name.clone()),
+                    name: abi_name.clone().into(),
                 })
             }
             _ => None,

@@ -187,13 +187,14 @@ fn decide_what_to_import(ctx: &ImportContext, import_name: NString, log: &Compil
     }
 
     if let Some(source_filepath) = ctx.find_package(&import_name)
-        && source_filepath.exists() {
-            return Some(ImportContext {
-                package_name: import_name,
-                source_filepath,
-                package_search_paths: ctx.package_search_paths.clone(),
-            });
-        }
+        && source_filepath.exists()
+    {
+        return Some(ImportContext {
+            package_name: import_name,
+            source_filepath,
+            package_search_paths: ctx.package_search_paths.clone(),
+        });
+    }
 
     log.report(&ResolveIssue::ImportNotFound((
         import_name.clone(),
@@ -212,7 +213,7 @@ fn resolve_import(
 ) {
     let import_path = import.use_tree.path();
     let import_name = match import_path.segments.first().map(|s| s.segment.clone()) {
-        Some(name) => NString::from(name),
+        Some(name) => name.into(),
         None => return,
     };
 
@@ -263,7 +264,7 @@ fn resolve_import(
                 // Single item import: extract the named item from the module
                 // (used for `use file::world` style imports)
                 let items = std::mem::take(&mut module.items);
-                let item_name_ns = NString::from(item_name.as_str());
+                let item_name_ns = item_name.as_str().into();
                 let found: Vec<Item> = items
                     .into_iter()
                     .filter(|item| {
@@ -309,9 +310,10 @@ fn resolve_imports_guarded(
 ) {
     module.depth_first_iter_mut(&mut |order, node| {
         if order == Order::Leave
-            && let RefNodeMut::ItemImport(import) = node {
-                resolve_import(ctx, import, log, visited, depth);
-            }
+            && let RefNodeMut::ItemImport(import) = node
+        {
+            resolve_import(ctx, import, log, visited, depth);
+        }
     });
 }
 

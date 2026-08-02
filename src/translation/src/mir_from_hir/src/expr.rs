@@ -153,7 +153,7 @@ pub fn lower_value(
             ..
         } => {
             let operand = lower_value(ctx, func, inner, false);
-            let mir_target_ty = ty::lower_type(target_type, func.store());
+            let mir_target_ty = ty::lower_type(target_type);
             let rv = mir::Rvalue::Cast {
                 value: operand,
                 target_ty: mir_target_ty,
@@ -202,12 +202,12 @@ pub fn lower_value(
             let elem_ty = if let Some(first) = elements.first() {
                 let val = first.borrow();
                 if let Ok(hir_ty) = val.determine_type(ctx.symbol_tab) {
-                    ty::lower_type(&hir_ty, func.store())
+                    ty::lower_type(&hir_ty)
                 } else {
-                    func.store().store_type(mir::MirType::U8)
+                    func.store_type(mir::MirType::U8)
                 }
             } else {
-                func.store().store_type(mir::MirType::U8)
+                func.store_type(mir::MirType::U8)
             };
             let rv = mir::Rvalue::Aggregate(mir::AggregateKind::Array(elem_ty), operands);
             assign_rvalue_to_temp(ctx, func, &value, rv)
@@ -223,9 +223,9 @@ pub fn lower_value(
                 .collect();
 
             let return_ty = if let Ok(hir_ty) = value.determine_type(ctx.symbol_tab) {
-                ty::lower_type(&hir_ty, func.store())
+                ty::lower_type(&hir_ty)
             } else {
-                func.store().store_type(mir::MirType::Unit)
+                func.store_type(mir::MirType::Unit)
             };
 
             if is_tail {
@@ -246,9 +246,9 @@ pub fn lower_value(
         } => {
             let callee_op = lower_value(ctx, func, object, false);
             let return_ty = if let Ok(hir_ty) = value.determine_type(ctx.symbol_tab) {
-                ty::lower_type(&hir_ty, func.store())
+                ty::lower_type(&hir_ty)
             } else {
-                func.store().store_type(mir::MirType::Unit)
+                func.store_type(mir::MirType::Unit)
             };
 
             if is_tail {
@@ -327,7 +327,7 @@ pub fn lower_value(
                     let s_op = lower_value(ctx, func, s, false);
                     let e_op = lower_value(ctx, func, e, false);
                     (
-                        NString::from("Range"),
+                        "Range".into(),
                         thin_vec::ThinVec::from(["start".into(), "end".into()].as_slice()),
                         thin_vec::ThinVec::from([s_op, e_op].as_slice()),
                     )
@@ -335,7 +335,7 @@ pub fn lower_value(
                 (Some(s), None) => {
                     let s_op = lower_value(ctx, func, s, false);
                     (
-                        NString::from("RangeFrom"),
+                        "RangeFrom".into(),
                         thin_vec::ThinVec::from(["start".into()].as_slice()),
                         thin_vec::ThinVec::from([s_op].as_slice()),
                     )
@@ -343,16 +343,12 @@ pub fn lower_value(
                 (None, Some(e)) => {
                     let e_op = lower_value(ctx, func, e, false);
                     (
-                        NString::from("RangeTo"),
+                        "RangeTo".into(),
                         thin_vec::ThinVec::from(["end".into()].as_slice()),
                         thin_vec::ThinVec::from([e_op].as_slice()),
                     )
                 }
-                (None, None) => (
-                    NString::from("RangeFull"),
-                    thin_vec::ThinVec::new(),
-                    thin_vec::ThinVec::new(),
-                ),
+                (None, None) => ("RangeFull".into(), thin_vec::ThinVec::new(), thin_vec::ThinVec::new()),
             };
             let rv = mir::Rvalue::Aggregate(mir::AggregateKind::Struct(struct_name, field_names), operands);
             assign_rvalue_to_temp(ctx, func, &value, rv)
@@ -382,7 +378,7 @@ pub fn lower_value_as_place(
             if let Some(local_id) = ctx.local_map.get(&param.name).cloned() {
                 mir::Place::Local(local_id)
             } else {
-                let unit_ty = func.store().store_type(mir::MirType::Unit);
+                let unit_ty = func.store_type(mir::MirType::Unit);
                 let temp = func.new_temp(unit_ty, false);
                 mir::Place::Local(temp)
             }
@@ -392,7 +388,7 @@ pub fn lower_value_as_place(
             if let Some(local_id) = ctx.local_map.get(&local_var.name).cloned() {
                 mir::Place::Local(local_id)
             } else {
-                let unit_ty = func.store().store_type(mir::MirType::Unit);
+                let unit_ty = func.store_type(mir::MirType::Unit);
                 let temp = func.new_temp(unit_ty, false);
                 mir::Place::Local(temp)
             }
@@ -431,7 +427,7 @@ fn operand_to_place(func: &mut mir::MirFunctionBuilder, operand: mir::Operand) -
     match operand {
         mir::Operand::Copy(p) | mir::Operand::Move(p) => p,
         mir::Operand::Constant(_) => {
-            let unit_ty = func.store().store_type(mir::MirType::Unit);
+            let unit_ty = func.store_type(mir::MirType::Unit);
             let temp = func.new_temp(unit_ty, false);
             func.push_assign(mir::Place::Local(temp.clone()), mir::Rvalue::Use(operand));
             mir::Place::Local(temp)
@@ -546,9 +542,9 @@ fn assign_rvalue_to_temp(
     rvalue: mir::Rvalue,
 ) -> mir::Operand {
     let mir_ty = if let Ok(hir_ty) = hir_value.determine_type(ctx.symbol_tab) {
-        ty::lower_type(&hir_ty, func.store())
+        ty::lower_type(&hir_ty)
     } else {
-        func.store().store_type(mir::MirType::Unit)
+        func.store_type(mir::MirType::Unit)
     };
 
     let temp = func.new_temp(mir_ty, false);
@@ -558,7 +554,7 @@ fn assign_rvalue_to_temp(
 
 fn create_block(func: &mut mir::MirFunctionBuilder) -> mir::BasicBlockId {
     func.start_block();
-    let dummy_local = func.new_temp(func.store().store_type(mir::MirType::Unit), false);
+    let dummy_local = func.new_temp(func.store_type(mir::MirType::Unit), false);
     func.push_assign(
         mir::Place::Local(dummy_local.clone()),
         mir::Rvalue::Use(mir::Operand::Constant(mir::MirLiteral::Unit)),

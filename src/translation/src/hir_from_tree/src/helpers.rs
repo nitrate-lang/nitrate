@@ -184,7 +184,7 @@ pub(crate) fn lower_generic_params(
 
     let mut generics_map = BTreeMap::new();
     for (i, parameter) in params.params.iter().enumerate() {
-        let generic_name = NString::from(parameter.name.to_string());
+        let generic_name: NString = parameter.name.to_string().into();
         let _generic_type: TypeId = Type::GenericParam {
             span: ByteSpan::default(),
             index: i as u32,
@@ -332,7 +332,7 @@ pub(crate) fn upsert_enum(enum_def: EnumDef, variants: Vec<EnumVariant>, ctx: &m
 
     // Register enum variants
     for variant in variants {
-        let variant_name = NString::from(format!("{}::{}", name, variant.name));
+        let variant_name: NString = format!("{}::{}", name, variant.name).into();
         ctx.tab.add_enum_variant(variant_name, enum_def_id.clone());
     }
 

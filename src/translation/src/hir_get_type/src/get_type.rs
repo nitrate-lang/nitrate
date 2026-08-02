@@ -245,7 +245,7 @@ impl HirGetType for Value {
                     Type::SlicePtr { element_type, .. } => Ok((*element_type).clone()),
                     _ => {
                         let collection_type_id = collection_type.clone().into();
-                        if let Some(method) = ctx.get_method(&collection_type_id, &NString::from("index")) {
+                        if let Some(method) = ctx.get_method(&collection_type_id, &"index".into()) {
                             Ok(method.borrow().return_type.deref().clone())
                         } else {
                             Ok(collection_type)
@@ -393,7 +393,7 @@ impl HirGetType for Value {
                     (false, false) => "RangeFull",
                 };
 
-                match ctx.get_struct(&NString::from(struct_name)) {
+                match ctx.get_struct(&struct_name.into()) {
                     Some(struct_def) => Ok(Type::Struct {
                         span: ByteSpan::default(),
                         def: struct_def.clone(),

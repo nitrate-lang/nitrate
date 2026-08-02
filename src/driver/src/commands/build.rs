@@ -9,6 +9,7 @@ use nitrate_translation::{
     hir_validate::{self, ValidateHirItem},
     llvm::{LLVMContext, OptLevel},
     llvm_from_hir::generate_llvmir,
+    mir::using_storage as mir_using_storage,
     parsetree::ast,
     token_lexer::{Lexer, LexerError},
     tree_resolve::ImportContext,

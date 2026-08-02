@@ -14,13 +14,13 @@ fn resolve_expr_path(
     symbol_map: &HashMap<NString, SymbolKind>,
     log: &CompilerLog,
 ) -> bool {
-    let pathname = NString::from(
-        path.segments
-            .iter()
-            .map(|seg| seg.name.clone())
-            .collect::<Vec<_>>()
-            .join("::"),
-    );
+    let pathname: NString = path
+        .segments
+        .iter()
+        .map(|seg| seg.name.clone())
+        .collect::<Vec<_>>()
+        .join("::")
+        .into();
 
     let is_root_path = path.segments.first().map(|seg| seg.name.is_empty()).unwrap_or(false);
 
@@ -55,13 +55,13 @@ fn resolve_type_path(
     symbol_map: &HashMap<NString, SymbolKind>,
     log: &CompilerLog,
 ) -> bool {
-    let pathname = NString::from(
-        path.segments
-            .iter()
-            .map(|seg| seg.name.clone())
-            .collect::<Vec<_>>()
-            .join("::"),
-    );
+    let pathname: NString = path
+        .segments
+        .iter()
+        .map(|seg| seg.name.clone())
+        .collect::<Vec<_>>()
+        .join("::")
+        .into();
 
     // Handle `Self` keyword: resolve to the innermost type that defines Self scope
     if pathname.deref() == "Self" || pathname.deref() == "self" {

@@ -10,7 +10,7 @@ static DEFAULT_BUILTIN_FUNCTIONS: LazyLock<HashMap<NString, Box<BuiltinFunction>
     let mut m: HashMap<NString, Box<BuiltinFunction>> = HashMap::new();
 
     m.insert(
-        NString::from("std::math::abs"),
+        "std::math::abs".into(),
         Box::new(|_, args| {
             if args.len() != 1 {
                 return Err(Unwind::TypeError);

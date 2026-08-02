@@ -93,7 +93,7 @@ fn lower_struct_definition(
         let field_visibility = helpers::lower_visibility(field.visibility);
         helpers::reject_all_attributes(&field.attributes, ATTR_STRUCT_FIELD, log);
 
-        let field_name = NString::from(field.name.to_string());
+        let field_name: NString = field.name.to_string().into();
         let field_type = lower_type(field.ty.to_owned(), ctx, log)?.into();
 
         let default_value = match field.default_value.to_owned() {
@@ -147,7 +147,7 @@ fn lower_enum_definition(enum_def: ast::Enum, ctx: &mut Ast2HirCtx, log: &Compil
     for variant in &enum_def.variants {
         helpers::reject_all_attributes(&variant.attributes, ATTR_ENUM_VARIANT, log);
 
-        let variant_name = NString::from(variant.name.to_string());
+        let variant_name: NString = variant.name.to_string().into();
 
         let variant_type = match variant.ty.to_owned() {
             Some(ty) => lower_type(ty, ctx, log)?.into(),

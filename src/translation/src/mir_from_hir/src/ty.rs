@@ -1,11 +1,12 @@
 use core::panic;
 use nitrate_hir::prelude as hir;
+use nitrate_mir::get_storage;
 use nitrate_mir::prelude as mir;
 use nitrate_nstring::NString;
 use std::ops::Deref;
 
 /// Lower an HIR `Type` (fully resolved, no inference/generics) into a MIR `MirTypeId`.
-pub fn lower_type(hir_ty: &hir::Type, store: &mir::MirStore) -> mir::MirTypeId {
+pub fn lower_type(hir_ty: &hir::Type) -> mir::MirTypeId {
     let mir_ty = match hir_ty {
         hir::Type::Never { .. } => mir::MirType::Never,
         hir::Type::Unit { .. } => mir::MirType::Unit,
@@ -26,7 +27,7 @@ pub fn lower_type(hir_ty: &hir::Type, store: &mir::MirStore) -> mir::MirTypeId {
         hir::Type::Range { .. } => mir::MirType::Range,
 
         hir::Type::Array { element_type, len, .. } => {
-            let elem = lower_type(element_type, store);
+            let elem = lower_type(element_type);
             mir::MirType::Array {
                 element_type: elem,
                 len: *len,
@@ -34,8 +35,7 @@ pub fn lower_type(hir_ty: &hir::Type, store: &mir::MirStore) -> mir::MirTypeId {
         }
 
         hir::Type::Tuple { element_types, .. } => {
-            let lowered: thin_vec::ThinVec<mir::MirTypeId> =
-                element_types.iter().map(|t| lower_type(t, store)).collect();
+            let lowered: thin_vec::ThinVec<mir::MirTypeId> = element_types.iter().map(|t| lower_type(t)).collect();
             mir::MirType::Tuple { element_types: lowered }
         }
 
@@ -45,7 +45,7 @@ pub fn lower_type(hir_ty: &hir::Type, store: &mir::MirStore) -> mir::MirTypeId {
                 .fields
                 .iter()
                 .map(|(name, field)| {
-                    let mir_field_ty = lower_type(&field.ty, store);
+                    let mir_field_ty = lower_type(&field.ty);
                     (name.clone(), mir_field_ty)
                 })
                 .collect();
@@ -79,7 +79,7 @@ pub fn lower_type(hir_ty: &hir::Type, store: &mir::MirStore) -> mir::MirTypeId {
                     let payload = if matches!(v.ty.deref(), hir::Type::Unit { .. }) {
                         None
                     } else {
-                        Some(lower_type(&v.ty, store))
+                        Some(lower_type(&v.ty))
                     };
                     mir::MirEnumVariant {
                         name: v.name.clone(),
@@ -100,7 +100,7 @@ pub fn lower_type(hir_ty: &hir::Type, store: &mir::MirStore) -> mir::MirTypeId {
             to,
             ..
         } => {
-            let to_id = lower_type(to, store);
+            let to_id = lower_type(to);
             mir::MirType::Reference {
                 exclusive: *exclusive,
                 mutable: *mutable,
@@ -115,7 +115,7 @@ pub fn lower_type(hir_ty: &hir::Type, store: &mir::MirStore) -> mir::MirTypeId {
             element_type,
             ..
         } => {
-            let elem_id = lower_type(element_type, store);
+            let elem_id = lower_type(element_type);
             mir::MirType::SliceRef {
                 exclusive: *exclusive,
                 mutable: *mutable,
@@ -130,7 +130,7 @@ pub fn lower_type(hir_ty: &hir::Type, store: &mir::MirStore) -> mir::MirTypeId {
             to,
             ..
         } => {
-            let to_id = lower_type(to, store);
+            let to_id = lower_type(to);
             mir::MirType::Pointer {
                 exclusive: *exclusive,
                 mutable: *mutable,
@@ -145,7 +145,7 @@ pub fn lower_type(hir_ty: &hir::Type, store: &mir::MirStore) -> mir::MirTypeId {
             element_type,
             ..
         } => {
-            let elem_id = lower_type(element_type, store);
+            let elem_id = lower_type(element_type);
             mir::MirType::SlicePtr {
                 exclusive: *exclusive,
                 mutable: *mutable,
@@ -157,9 +157,9 @@ pub fn lower_type(hir_ty: &hir::Type, store: &mir::MirStore) -> mir::MirTypeId {
             let params: thin_vec::ThinVec<(NString, mir::MirTypeId)> = function_type
                 .params
                 .iter()
-                .map(|(name, ty)| (name.clone(), lower_type(ty, store)))
+                .map(|(name, ty)| (name.clone(), lower_type(ty)))
                 .collect();
-            let ret = lower_type(&function_type.return_type, store);
+            let ret = lower_type(&function_type.return_type);
             let is_c_variadic = function_type.attributes.contains(&hir::FunctionAttribute::CVariadic);
             mir::MirType::Function {
                 params,
@@ -170,15 +170,15 @@ pub fn lower_type(hir_ty: &hir::Type, store: &mir::MirStore) -> mir::MirTypeId {
 
         hir::Type::TypeAlias { def, .. } => {
             let resolved = def.borrow().type_id.deref().clone();
-            return lower_type(&resolved, store);
+            return lower_type(&resolved);
         }
 
         hir::Type::Parameterized { base, .. } => {
-            return lower_type(base, store);
+            return lower_type(base);
         }
 
         hir::Type::Refine { base, .. } => {
-            return lower_type(base, store);
+            return lower_type(base);
         }
 
         hir::Type::Inferred { .. }
@@ -195,5 +195,5 @@ pub fn lower_type(hir_ty: &hir::Type, store: &mir::MirStore) -> mir::MirTypeId {
         hir::Type::TraitObject { .. } => mir::MirType::USize,
     };
 
-    store.store_type(mir_ty)
+    get_storage(|s| s.store_type(mir_ty))
 }

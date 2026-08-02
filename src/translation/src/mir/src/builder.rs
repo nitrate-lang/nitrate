@@ -3,7 +3,7 @@ use crate::operand::{MirBinaryOp, MirLiteral, MirUnaryOp, Operand};
 use crate::place::Place;
 use crate::rvalue::{AggregateKind, BorrowKind, NullaryOp, Rvalue};
 use crate::stmt::{BasicBlock, Statement, Terminator};
-use crate::store::{BasicBlockId, LocalId, MirFunctionId, MirStore, MirTypeId, get_storage, using_storage};
+use crate::store::{BasicBlockId, LocalId, MirFunctionId, MirTypeId, get_storage};
 use crate::ty::{MirType, PtrSize};
 use nitrate_nstring::NString;
 use thin_vec::ThinVec;
@@ -41,13 +41,13 @@ impl Default for FreshLocalCounter {
 /// A builder for constructing MIR modules and functions.
 ///
 /// The builder manages the construction of MIR functions incrementally,
-/// tracking locals, basic blocks, and statements. It holds a reference
-/// to a `MirStore` and inserts constructed entities into it on `finish`.
+/// tracking locals, basic blocks, and statements. Storage access goes
+/// through TLS (via `get_storage`/`using_storage` set by the driver).
 ///
 /// # Usage
 ///
 /// ```ignore
-/// let mut builder = MirBuilder::new(&store);
+/// let mut builder = MirBuilder::new();
 /// let func_id = builder
 ///     .start_function("my_func".into(), return_ty_id)?
 ///     .add_param("x".into(), ty_id, false)?
@@ -58,17 +58,15 @@ impl Default for FreshLocalCounter {
 /// let module = builder.build_module(ptr_size)?;
 /// ```
 #[derive(Debug)]
-pub struct MirBuilder<'store> {
-    store: &'store MirStore,
+pub struct MirBuilder {
     /// Accumulated function IDs for the final module.
     functions: ThinVec<MirFunctionId>,
 }
 
-impl<'store> MirBuilder<'store> {
+impl MirBuilder {
     #[must_use]
-    pub fn new(store: &'store MirStore) -> Self {
+    pub fn new() -> Self {
         Self {
-            store,
             functions: ThinVec::new(),
         }
     }
@@ -77,7 +75,7 @@ impl<'store> MirBuilder<'store> {
     ///
     /// The per-function builder holds data locally; nothing is inserted
     /// into the `MirStore` until `finish_function()` is called.
-    pub fn start_function(&mut self, name: NString, return_ty: MirTypeId) -> MirFunctionBuilder<'_, 'store> {
+    pub fn start_function(&mut self, name: NString, return_ty: MirTypeId) -> MirFunctionBuilder<'_> {
         MirFunctionBuilder {
             builder: self,
             name,
@@ -110,12 +108,7 @@ impl<'store> MirBuilder<'store> {
 
     /// Convenience: intern a type and return its `MirTypeId`.
     pub fn intern_type(&self, ty: MirType) -> MirTypeId {
-        self.store.store_type(ty)
-    }
-
-    /// Access the underlying MirStore.
-    pub fn store(&self) -> &'store MirStore {
-        self.store
+        get_storage(|s| s.store_type(ty))
     }
 }
 
@@ -128,8 +121,8 @@ impl<'store> MirBuilder<'store> {
 /// Holds all data locally until `finish_function()` commits it to the
 /// `MirStore` and returns a `MirFunctionId`.
 #[derive(Debug)]
-pub struct MirFunctionBuilder<'b, 'store> {
-    builder: &'b mut MirBuilder<'store>,
+pub struct MirFunctionBuilder<'b> {
+    builder: &'b mut MirBuilder,
     name: NString,
     return_ty: MirTypeId,
     params: ThinVec<LocalId>,
@@ -147,7 +140,7 @@ pub struct MirFunctionBuilder<'b, 'store> {
     fresh_counter: FreshLocalCounter,
 }
 
-impl<'b, 'store> MirFunctionBuilder<'b, 'store> {
+impl<'b> MirFunctionBuilder<'b> {
     // ── Parameters and locals ────────────────────────────────
 
     /// Register a parameter local and return its `LocalId`.
@@ -156,13 +149,9 @@ impl<'b, 'store> MirFunctionBuilder<'b, 'store> {
     /// They are stored as the first N locals.
     pub fn add_param(&mut self, _name: NString, ty: MirTypeId, mutable: bool) -> LocalId {
         let local = LocalDecl { ty, mutable };
-        // Store locally first; actual MirStore insertion happens at finish.
-        // We use a placeholder approach: store into MirStore immediately
-        // so that LocalId dereferencing works if needed during building.
-        let id: LocalId = using_storage(self.builder.store, || get_storage(|s| s.store_local(local)));
+        let id: LocalId = get_storage(|s| s.store_local(local));
         self.params.push(id.clone());
         self.arg_count += 1;
-        // Also track in locals list for the function
         self.locals.push(LocalDecl { ty, mutable });
         id
     }
@@ -174,7 +163,7 @@ impl<'b, 'store> MirFunctionBuilder<'b, 'store> {
     /// to its final destination).
     pub fn new_temp(&mut self, ty: MirTypeId, mutable: bool) -> LocalId {
         let local = LocalDecl { ty, mutable };
-        let id: LocalId = using_storage(self.builder.store, || get_storage(|s| s.store_local(local)));
+        let id: LocalId = get_storage(|s| s.store_local(local));
         self.locals.push(LocalDecl { ty, mutable });
         id
     }
@@ -192,8 +181,6 @@ impl<'b, 'store> MirFunctionBuilder<'b, 'store> {
             // We don't validate here; the caller is responsible.
         }
         self.current_statements = ThinVec::new();
-        // Create the block lazily — on finish or when the terminator is set.
-        // For now, we just note that a new block is starting.
         self.current_block = None; // will be created on first statement/terminator
         self
     }
@@ -208,7 +195,7 @@ impl<'b, 'store> MirFunctionBuilder<'b, 'store> {
             statements: ThinVec::new(),
             terminator: Terminator::Unreachable,
         };
-        let bb_id: BasicBlockId = using_storage(self.builder.store, || get_storage(|s| s.store_basic_block(bb)));
+        let bb_id: BasicBlockId = get_storage(|s| s.store_basic_block(bb));
         if self.entry_block.is_none() {
             self.entry_block = Some(bb_id.clone());
         }
@@ -222,10 +209,8 @@ impl<'b, 'store> MirFunctionBuilder<'b, 'store> {
     /// Push a statement into the current block.
     pub fn push_stmt(&mut self, stmt: Statement) -> &mut Self {
         let bb_id = self.ensure_block();
-        // Update the stored block's statements.
-        // Access the store directly since we're inside using_storage.
-        using_storage(self.builder.store, || {
-            let mut borrowed = self.builder.store[&bb_id].borrow_mut();
+        get_storage(|s| {
+            let mut borrowed = s[&bb_id].borrow_mut();
             borrowed.statements.push(stmt.clone());
         });
         self
@@ -257,8 +242,8 @@ impl<'b, 'store> MirFunctionBuilder<'b, 'store> {
     /// and prepares for a new block to be started.
     pub fn set_terminator(&mut self, terminator: Terminator) -> &mut Self {
         let bb_id = self.ensure_block();
-        using_storage(self.builder.store, || {
-            let mut borrowed = self.builder.store[&bb_id].borrow_mut();
+        get_storage(|s| {
+            let mut borrowed = s[&bb_id].borrow_mut();
             borrowed.terminator = terminator;
         });
         self.current_block = None;
@@ -414,9 +399,6 @@ impl<'b, 'store> MirFunctionBuilder<'b, 'store> {
     /// After this call, the function builder is consumed and the function
     /// ID is added to the parent `MirBuilder`'s function list.
     pub fn finish_function(self) -> MirFunctionId {
-        // Ensure all locals are stored (they should already be since we used
-        // using_storage during add_param/new_temp)
-        // Ensure the entry block exists
         let entry_block = self
             .entry_block
             .expect("No entry block created; call start_block first");
@@ -431,7 +413,7 @@ impl<'b, 'store> MirFunctionBuilder<'b, 'store> {
             arg_count: self.arg_count,
         };
 
-        let func_id = using_storage(self.builder.store, || get_storage(|s| s.store_function(func)));
+        let func_id = get_storage(|s| s.store_function(func));
 
         self.builder.add_function(func_id.clone());
         func_id
@@ -447,9 +429,9 @@ impl<'b, 'store> MirFunctionBuilder<'b, 'store> {
         &mut self.fresh_counter
     }
 
-    /// Access the underlying store.
-    pub fn store(&self) -> &'store MirStore {
-        self.builder.store
+    /// Convenience: intern a type and return its `MirTypeId`.
+    pub fn store_type(&self, ty: MirType) -> MirTypeId {
+        get_storage(|s| s.store_type(ty))
     }
 }
 

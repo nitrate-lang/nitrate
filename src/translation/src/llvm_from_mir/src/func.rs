@@ -70,7 +70,6 @@ pub fn gen_function<'ctx>(ctx: &mut CodegenCtx<'ctx, '_>, llvm_function: Functio
 pub fn generate_llvmir_from_mir<'ctx>(
     package_name: &str,
     mir_module: &mir::MirModule,
-    mir_store: &mir::MirStore,
     llvm: &'ctx LLVMContext,
 ) -> Module<'ctx> {
     let module = llvm.create_module(package_name);
@@ -78,9 +77,7 @@ pub fn generate_llvmir_from_mir<'ctx>(
 
     // First pass: declare all global variables and generate constructors
     for (global_name, global_ty) in mir_module.globals.iter() {
-        let llvm_ty = mir::using_storage(mir_store, || {
-            gen_ty(global_ty, &mut TypegenCtx { llvm, module: &module })
-        });
+        let llvm_ty = gen_ty(global_ty, &mut TypegenCtx { llvm, module: &module });
         let global = module.add_global(llvm_ty, None, global_name);
         global.set_initializer(&llvm_ty.const_zero());
         global.set_linkage(Linkage::External);
@@ -108,41 +105,39 @@ pub fn generate_llvmir_from_mir<'ctx>(
 
     // Generate each function
     for func_id in mir_module.functions.iter() {
-        mir::using_storage(mir_store, || {
-            let mir_func_borrowed = func_id.borrow();
+        let mir_func_borrowed = func_id.borrow();
 
-            if mir_func_borrowed.is_extern() {
-                // For extern functions, just declare
-                let return_ty = gen_ty(&mir_func_borrowed.return_ty, &mut TypegenCtx { llvm, module: &module });
-                let param_tys: Vec<BasicMetadataTypeEnum<'ctx>> = mir_func_borrowed
-                    .params
-                    .iter()
-                    .map(|pid| {
-                        let local = pid.borrow();
-                        gen_ty(&local.ty, &mut TypegenCtx { llvm, module: &module }).into()
-                    })
-                    .collect();
-                let fn_ty = return_ty.fn_type(&param_tys, false);
-                module.add_function(&mir_func_borrowed.name, fn_ty, Some(Linkage::External));
-            } else {
-                // For functions with bodies, declare and define
-                let return_ty = gen_ty(&mir_func_borrowed.return_ty, &mut TypegenCtx { llvm, module: &module });
-                let param_tys: Vec<BasicMetadataTypeEnum<'ctx>> = mir_func_borrowed
-                    .params
-                    .iter()
-                    .map(|pid| {
-                        let local = pid.borrow();
-                        gen_ty(&local.ty, &mut TypegenCtx { llvm, module: &module }).into()
-                    })
-                    .collect();
-                let fn_ty = return_ty.fn_type(&param_tys, false);
-                let llvm_function = module.add_function(&mir_func_borrowed.name, fn_ty, Some(Linkage::External));
+        if mir_func_borrowed.is_extern() {
+            // For extern functions, just declare
+            let return_ty = gen_ty(&mir_func_borrowed.return_ty, &mut TypegenCtx { llvm, module: &module });
+            let param_tys: Vec<BasicMetadataTypeEnum<'ctx>> = mir_func_borrowed
+                .params
+                .iter()
+                .map(|pid| {
+                    let local = pid.borrow();
+                    gen_ty(&local.ty, &mut TypegenCtx { llvm, module: &module }).into()
+                })
+                .collect();
+            let fn_ty = return_ty.fn_type(&param_tys, false);
+            module.add_function(&mir_func_borrowed.name, fn_ty, Some(Linkage::External));
+        } else {
+            // For functions with bodies, declare and define
+            let return_ty = gen_ty(&mir_func_borrowed.return_ty, &mut TypegenCtx { llvm, module: &module });
+            let param_tys: Vec<BasicMetadataTypeEnum<'ctx>> = mir_func_borrowed
+                .params
+                .iter()
+                .map(|pid| {
+                    let local = pid.borrow();
+                    gen_ty(&local.ty, &mut TypegenCtx { llvm, module: &module }).into()
+                })
+                .collect();
+            let fn_ty = return_ty.fn_type(&param_tys, false);
+            let llvm_function = module.add_function(&mir_func_borrowed.name, fn_ty, Some(Linkage::External));
 
-                let builder = llvm.create_builder();
-                let mut ctx = CodegenCtx::new(llvm, &module, builder, &mir_func_borrowed, &globals, llvm_function);
-                gen_function(&mut ctx, llvm_function);
-            }
-        });
+            let builder = llvm.create_builder();
+            let mut ctx = CodegenCtx::new(llvm, &module, builder, &mir_func_borrowed, &globals, llvm_function);
+            gen_function(&mut ctx, llvm_function);
+        }
     }
 
     // Verify the module

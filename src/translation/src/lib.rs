@@ -12,6 +12,7 @@ pub use nitrate_hir_solve as hir_solve;
 pub use nitrate_hir_validate as hir_validate;
 pub use nitrate_llvm as llvm;
 pub use nitrate_llvm_from_hir as llvm_from_hir;
+pub use nitrate_mir as mir;
 pub use nitrate_nstring as nstring;
 pub use nitrate_token as token;
 pub use nitrate_token_lexer as token_lexer;

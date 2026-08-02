@@ -106,24 +106,19 @@ impl<'b> LoweringCtx<'b> {
 /// # Arguments
 ///
 /// * `hir_module` - The validated HIR module (from `nitrate_hir_validate`)
-/// * `mir_store` - The MIR storage to populate with lowered data
 /// * `symbol_tab` - The HIR symbol table for name resolution
 ///
 /// # Returns
 ///
 /// A fully constructed `MirModule` containing all lowered functions.
 #[must_use]
-pub fn lower_hir_to_mir(
-    hir_module: &hir::Module,
-    mir_store: &mir::MirStore,
-    symbol_tab: &hir::SymbolTab,
-) -> mir::MirModule {
+pub fn lower_hir_to_mir(hir_module: &hir::Module, symbol_tab: &hir::SymbolTab) -> mir::MirModule {
     let ptr_size = match symbol_tab.arch_ptr_size() {
         hir::PtrSize::U32 => mir::PtrSize::U32,
         hir::PtrSize::U64 => mir::PtrSize::U64,
     };
 
-    let mut builder = mir::MirBuilder::new(mir_store);
+    let mut builder = mir::MirBuilder::new();
 
     // Lower all top-level items that are functions
     for item in &hir_module.items {
@@ -154,17 +149,13 @@ fn lower_function(builder: &mut mir::MirBuilder, func: &hir::Function, symbol_ta
     let name = func.mangled_name.clone().unwrap_or_else(|| func.name.clone());
 
     // Pre-compute all types before borrowing builder for the function builder
-    let return_ty = ty::lower_type(&func.return_type, builder.store());
+    let return_ty = ty::lower_type(&func.return_type);
     let param_types: Vec<_> = func
         .params
         .iter()
         .map(|pid| {
             let param = pid.borrow();
-            (
-                param.name.clone(),
-                ty::lower_type(&param.ty, builder.store()),
-                param.is_mutable,
-            )
+            (param.name.clone(), ty::lower_type(&param.ty), param.is_mutable)
         })
         .collect();
 

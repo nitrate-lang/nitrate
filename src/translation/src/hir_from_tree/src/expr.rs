@@ -1021,7 +1021,7 @@ pub(crate) fn lower_field_access(
     log: &CompilerLog,
 ) -> Result<Value, ()> {
     let object = lower_expr(field_access.object, ctx, log)?.into();
-    let field = NString::from(field_access.field.to_string());
+    let field: NString = field_access.field.to_string().into();
 
     Ok(Value::FieldAccess {
         span: field_access.span,
@@ -1136,7 +1136,7 @@ pub(crate) fn lower_method_call(
 ) -> Result<Value, ()> {
     let span = method_call.span;
     let object = lower_expr(method_call.object, ctx, log)?.into();
-    let method = NString::from(method_call.method_name);
+    let method: NString = method_call.method_name.into();
 
     let args = lower_call_arguments(method_call.positional, method_call.named, ctx, log);
 

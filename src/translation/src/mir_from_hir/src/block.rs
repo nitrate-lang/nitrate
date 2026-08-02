@@ -36,7 +36,7 @@ pub fn lower_block_elements(ctx: &mut LoweringCtx, func: &mut mir::MirFunctionBu
 /// `Assign` statement. The local is registered in the context's local map
 /// for future reference.
 fn lower_local_declaration(ctx: &mut LoweringCtx, func: &mut mir::MirFunctionBuilder, local_var: &hir::LocalVariable) {
-    let mir_ty = crate::ty::lower_type(&local_var.ty, func.store());
+    let mir_ty = crate::ty::lower_type(&local_var.ty);
 
     // Create a new local in the MIR function
     let local_id = func.new_temp(mir_ty, local_var.is_mutable);
