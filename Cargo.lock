@@ -1141,6 +1141,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "nitrate_hir_solve2"
+version = "0.1.0"
+dependencies = [
+ "nitrate_diagnosis",
+ "nitrate_hir",
+ "nitrate_hir_dump",
+ "nitrate_hir_evaluate",
+ "nitrate_hir_type",
+ "nitrate_nstring",
+ "nitrate_tree",
+ "ordered-float",
+ "smallvec",
+ "thin-vec",
+]
+
+[[package]]
 name = "nitrate_hir_type"
 version = "0.1.0"
 dependencies = [
