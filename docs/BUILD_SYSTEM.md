@@ -14,7 +14,6 @@ src/
 ├── bin/no3.rs               # Main binary
 ├── diagnosis/               # Diagnostic system (nitrate_diagnosis)
 ├── driver/                  # Driver and CLI (nitrate_driver)
-├── optimization/            # Optimization (nitrate_optimization)
 └── translation/             # Translation pipeline (nitrate_translation)
     └── src/
         ├── token/           # Token types

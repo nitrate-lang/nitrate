@@ -978,7 +978,6 @@ dependencies = [
  "log",
  "nitrate_diagnosis",
  "nitrate_driver",
- "nitrate_optimization",
  "nitrate_translation",
  "serde_json",
  "slog",
@@ -1238,14 +1237,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "nitrate_optimization"
-version = "0.1.0"
-dependencies = [
- "nitrate_diagnosis",
- "nitrate_tree",
-]
-
-[[package]]
 name = "nitrate_token"
 version = "0.1.0"
 dependencies = [
@@ -1288,7 +1279,6 @@ dependencies = [
  "nitrate_mir_from_hir",
  "nitrate_mir_optimize",
  "nitrate_nstring",
- "nitrate_optimization",
  "nitrate_token",
  "nitrate_token_lexer",
  "nitrate_tree",

@@ -1,5 +1,3 @@
-mod options;
-mod options_builder;
 pub mod pipeline;
 
 pub use nitrate_hir as hir;
@@ -18,15 +16,12 @@ pub use nitrate_mir as mir;
 pub use nitrate_mir_from_hir as mir_from_hir;
 pub use nitrate_mir_optimize as mir_optimize;
 pub use nitrate_nstring as nstring;
-pub use nitrate_optimization as optimization;
 pub use nitrate_token as token;
 pub use nitrate_token_lexer as token_lexer;
 pub use nitrate_tree as parsetree;
 pub use nitrate_tree_parse as parse;
 pub use nitrate_tree_resolve as tree_resolve;
 
-pub use options::TranslationOptions;
-pub use options_builder::TranslationOptionsBuilder;
 pub use pipeline::{
     Emitted, HirLowered, HirMangled, HirOptimized, HirValidated, LlvmGenerated, LlvmOptimized, MirLowered,
     MirOptimized, Parsed, Pipeline, PipelineConfig, PipelineError, Source, Tokenized,

@@ -27,7 +27,6 @@ nitrate_mir.workspace = true
 nitrate_mir_optimize.workspace = true
 nitrate_mir_from_hir.workspace = true
 nitrate_llvm_from_mir.workspace = true
-nitrate_optimization.workspace = true
 serde_json.workspace = true
 thiserror.workspace = true
 threadpool_scope.workspace = true
