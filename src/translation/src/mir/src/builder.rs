@@ -1,4 +1,4 @@
-use crate::func::{LocalDecl, MirFunction};
+use crate::func::{LocalDecl, MirFunction, MirFunctionBody};
 use crate::operand::{MirBinaryOp, MirLiteral, MirUnaryOp, Operand};
 use crate::place::Place;
 use crate::rvalue::{AggregateKind, BorrowKind, NullaryOp, Rvalue};
@@ -517,23 +517,26 @@ impl<'b> MirFunctionBuilder<'b> {
     /// the `MirFunctionId`.
     pub fn finish_function(self) -> MirFunctionId {
         // Extern functions have no body and thus no blocks/entry block.
-        // Create a dummy entry block so the function is well-formed.
         if self.entry_block.is_none() {
             return self.finish_extern_function();
         }
 
         let entry_block = self.entry_block.unwrap();
 
-        let func = MirFunction {
-            name: self.name,
-            params: self.params,
-            return_ty: self.return_ty,
+        let body = MirFunctionBody {
             locals: self.locals,
             local_ids: self.local_ids,
             entry_block,
             blocks: self.blocks,
             arg_count: self.arg_count,
+        };
+
+        let func = MirFunction {
+            name: self.name,
+            params: self.params,
+            return_ty: self.return_ty,
             is_c_variadic: self.is_c_variadic,
+            body: Some(body),
         };
 
         let func_id: MirFunctionId = func.into();
@@ -543,27 +546,13 @@ impl<'b> MirFunctionBuilder<'b> {
     }
 
     /// Finalize an extern function that has no body (and thus no blocks).
-    /// Creates an empty block to satisfy the invariant that every function
-    /// has an entry block.
     fn finish_extern_function(self) -> MirFunctionId {
-        // Create a placeholder entry block for the extern function
-        let bb = BasicBlock {
-            statements: ThinVec::new(),
-            terminator: Terminator::Unreachable,
-            args: ThinVec::new(),
-        };
-        let entry_block: BasicBlockId = bb.into();
-
         let func = MirFunction {
             name: self.name,
             params: self.params,
             return_ty: self.return_ty,
-            locals: self.locals,
-            local_ids: self.local_ids,
-            entry_block,
-            blocks: ThinVec::new(),
-            arg_count: self.arg_count,
             is_c_variadic: self.is_c_variadic,
+            body: None,
         };
 
         let func_id: MirFunctionId = func.into();

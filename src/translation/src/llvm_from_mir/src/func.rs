@@ -20,10 +20,10 @@ pub fn gen_function<'ctx>(ctx: &mut CodegenCtx<'ctx, '_>, llvm_function: Functio
 
     // Allocate locals (SSA registers become allocas).
     // Use the function's local_ids to map TLS-store LocalId values to allocas.
-    for (i, local_decl) in ctx.mir_func.locals.iter().enumerate() {
+    for (i, local_decl) in ctx.mir_func.locals().iter().enumerate() {
         let llvm_ty = gen_ty(&*local_decl.ty, &mut ctx.ty_ctx());
         let alloca = ctx.builder.build_alloca(llvm_ty, &format!("local_{}", i)).unwrap();
-        let key = ctx.mir_func.local_ids[i].as_usize() as u32;
+        let key = ctx.mir_func.local_ids()[i].as_usize() as u32;
         ctx.locals.insert(key, (alloca, llvm_ty));
     }
 
@@ -38,14 +38,14 @@ pub fn gen_function<'ctx>(ctx: &mut CodegenCtx<'ctx, '_>, llvm_function: Functio
     }
 
     // Create all basic blocks first (to allow forward references)
-    for bb_id in ctx.mir_func.blocks.iter() {
+    for bb_id in ctx.mir_func.blocks().iter() {
         ctx.get_llvm_block(bb_id);
     }
 
     // Create phi nodes for blocks that have block arguments.
     // Each block argument becomes a phi node that will receive incoming
     // values from predecessor terminators.
-    for bb_id in ctx.mir_func.blocks.iter() {
+    for bb_id in ctx.mir_func.blocks().iter() {
         let bb_data = bb_id.borrow();
         if bb_data.args.is_empty() {
             continue;
@@ -79,11 +79,11 @@ pub fn gen_function<'ctx>(ctx: &mut CodegenCtx<'ctx, '_>, llvm_function: Functio
     }
 
     // Branch from entry to the first basic block
-    let entry_target = ctx.get_llvm_block(&ctx.mir_func.entry_block);
+    let entry_target = ctx.get_llvm_block(ctx.mir_func.entry_block());
     ctx.builder.build_unconditional_branch(entry_target).unwrap();
 
     // Generate code for each basic block
-    for bb_id in ctx.mir_func.blocks.iter() {
+    for bb_id in ctx.mir_func.blocks().iter() {
         let bb_data = bb_id.borrow();
         let llvm_bb = ctx.get_llvm_block(bb_id);
         ctx.position_at_end(llvm_bb);
@@ -96,8 +96,8 @@ pub fn gen_function<'ctx>(ctx: &mut CodegenCtx<'ctx, '_>, llvm_function: Functio
             // Find the local indices for this block's arguments.
             // Block arg locals are allocated contiguously after all non-arg locals
             // and earlier block args. We walk the block list to find our starting index.
-            let mut arg_local_start: u32 = ctx.mir_func.arg_count;
-            for earlier_bb in ctx.mir_func.blocks.iter() {
+            let mut arg_local_start: u32 = ctx.mir_func.arg_count();
+            for earlier_bb in ctx.mir_func.blocks().iter() {
                 if earlier_bb.as_usize() == bb_id.as_usize() {
                     break;
                 }
@@ -145,13 +145,13 @@ pub fn generate_llvmir_from_mir<'ctx>(
     let mut globals: HashMap<NString, (PointerValue<'ctx>, BasicTypeEnum<'ctx>)> = HashMap::new();
 
     // First pass: declare all global variables and generate constructors
-    for (global_name, global_ty) in mir_module.globals.iter() {
-        let llvm_ty = gen_ty(global_ty, &mut TypegenCtx { llvm, module: &module });
-        let global = module.add_global(llvm_ty, None, global_name);
+    for mir_global in mir_module.globals.iter() {
+        let llvm_ty = gen_ty(&mir_global.ty, &mut TypegenCtx { llvm, module: &module });
+        let global = module.add_global(llvm_ty, None, &mir_global.name);
         global.set_initializer(&llvm_ty.const_zero());
         global.set_linkage(Linkage::External);
 
-        let ctor_name = format!("{}_ctor", global_name);
+        let ctor_name = format!("{}_ctor", mir_global.name);
         let ctor_fn = module.add_function(&ctor_name, llvm.void_type().fn_type(&[], false), Some(Linkage::Private));
         let ctor_builder = llvm.create_builder();
         let ctor_entry = llvm.append_basic_block(ctor_fn, "entry");
@@ -162,7 +162,7 @@ pub fn generate_llvmir_from_mir<'ctx>(
             nitrate_llvm_appendToGlobalCtors(module.as_mut_ptr(), ctor_fn.as_value_ref(), 65535);
         }
 
-        globals.insert(global_name.clone(), (global.as_pointer_value(), llvm_ty));
+        globals.insert(mir_global.name.clone(), (global.as_pointer_value(), llvm_ty));
     }
 
     // Emit string literals as private global constant arrays.

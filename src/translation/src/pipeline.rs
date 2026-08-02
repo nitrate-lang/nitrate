@@ -429,6 +429,12 @@ impl MirLowered {
         })
     }
 
+    /// Write the MIR control-flow graph as a Graphviz DOT file.
+    pub fn dump_mir_dot(&self, output_path: &Path) -> Result<(), std::io::Error> {
+        let dot = self.mir_module.emit_dot();
+        std::fs::write(output_path, dot)
+    }
+
     /// Codegen (skip MIR optimization).
     pub fn codegen(self) -> Result<LlvmGenerated, PipelineError> {
         let llvm_ctx = create_llvm_context(self.config.target_triple.as_deref(), self.config.opt_level)?;

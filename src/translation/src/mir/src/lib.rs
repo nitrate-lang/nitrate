@@ -1,5 +1,6 @@
 mod builder;
 mod func;
+mod graphviz;
 mod operand;
 mod place;
 mod rvalue;
