@@ -23,6 +23,10 @@ pub(crate) struct BuildArgs {
     #[arg(long, group = "output")]
     show_llvmir: bool,
 
+    /// Export the MIR control-flow graph as a Graphviz DOT file
+    #[arg(long)]
+    emit_mir: bool,
+
     /// Pretty-print the Assembly Code
     #[arg(long, group = "output")]
     show_asm: bool,
@@ -150,6 +154,8 @@ pub(crate) struct CompileOptions {
     pub(crate) show_asm: bool,
     pub(crate) show_obj: bool,
     pub(crate) format_mode: Option<String>,
+    /// Export MIR control-flow graph as a Graphviz DOT file in the target dir.
+    pub(crate) emit_mir: bool,
     /// Stop after HIR validation; don't emit object code or link.
     pub(crate) check_only: bool,
     /// Raw `-C` codegen options to parse.
@@ -174,6 +180,7 @@ impl Default for CompileOptions {
             show_asm: false,
             show_obj: false,
             format_mode: None,
+            emit_mir: false,
             check_only: false,
             codegen_opts: Vec::new(),
             no_default_passes: false,
@@ -196,6 +203,7 @@ impl From<&BuildArgs> for CompileOptions {
             show_asm: args.show_asm,
             show_obj: args.show_obj,
             format_mode: args.format_mode.clone(),
+            emit_mir: args.emit_mir,
             check_only: false,
             codegen_opts: args.codegen_opts.clone(),
             no_default_passes: args.no_default_passes,
@@ -406,6 +414,13 @@ impl Interpreter<'_> {
 
         if let Some(mir_lowered) = mir_lowered? {
             mir::using_storage(&mir_store, || -> anyhow::Result<Option<PathBuf>> {
+                if opts.emit_mir {
+                    let dot_path = build_dir.join(format!("{}.mir.dot", package_name));
+                    mir_lowered.dump_mir_dot(&dot_path)?;
+                    info!(self.log, "MIR control-flow graph written to '{}'", dot_path.display());
+                    return Ok(None);
+                }
+
                 let llvm_generated = mir_lowered.codegen()?;
 
                 if opts.show_llvmir {
