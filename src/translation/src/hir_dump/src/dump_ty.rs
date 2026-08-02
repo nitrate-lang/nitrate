@@ -235,6 +235,7 @@ impl Dump for Type {
             },
             Type::GenericParam { name, .. } => write!(o, "'{}", escape_string(name, true)),
             Type::Range { .. } => write!(o, "range"),
+            Type::Str { .. } => write!(o, "str"),
         }
     }
 }
