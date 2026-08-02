@@ -558,14 +558,12 @@ impl<'a> Solver<'a> {
                     if let (Some(lb), Some(rb)) = (self.get_effective_bounds(left), self.get_effective_bounds(right)) {
                         if let Some(res) = compute_binary_bounds(op, lb, rb) {
                             if !check_bounds_against_constraint(res, &result_ty) {
-                                if let Some(bnds) = extract_bounds_from_type(&result_ty) {
-                                    self.errors.insert(TypeErr::OperationResultOutOfRefinementBounds {
-                                        span,
-                                        refinement_type: result_ty,
-                                        computed_min: bnds.lo.max(0) as u128,
-                                        computed_max: bnds.hi,
-                                    });
-                                }
+                                self.errors.insert(TypeErr::OperationResultOutOfRefinementBounds {
+                                    span,
+                                    refinement_type: result_ty,
+                                    computed_min: res.lo.max(0) as u128,
+                                    computed_max: res.hi,
+                                });
                             }
                         }
                     }
@@ -622,14 +620,12 @@ impl<'a> Solver<'a> {
                 if let Some(ob) = self.get_effective_bounds(operand) {
                     let res = compute_unary_bounds(op, ob);
                     if !check_bounds_against_constraint(res, &result_ty) {
-                        if let Some(bnds) = extract_bounds_from_type(&result_ty) {
-                            self.errors.insert(TypeErr::OperationResultOutOfRefinementBounds {
-                                span,
-                                refinement_type: result_ty,
-                                computed_min: bnds.lo.max(0) as u128,
-                                computed_max: bnds.hi,
-                            });
-                        }
+                        self.errors.insert(TypeErr::OperationResultOutOfRefinementBounds {
+                            span,
+                            refinement_type: result_ty,
+                            computed_min: res.lo.max(0) as u128,
+                            computed_max: res.hi,
+                        });
                     }
                 }
             }

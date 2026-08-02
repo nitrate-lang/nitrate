@@ -13,9 +13,15 @@ impl Bounds {
         Self { lo, hi }
     }
     pub fn signed(lo: i128, hi: i128) -> Self {
+        debug_assert!(hi >= 0, "signed upper bound must be non-negative: got {}", hi);
         Self { lo, hi: hi as u128 }
     }
     pub fn unsigned(lo: u128, hi: u128) -> Self {
+        debug_assert!(
+            lo <= i128::MAX as u128,
+            "unsigned lower bound exceeds i128 range: got {}",
+            lo
+        );
         Self { lo: lo as i128, hi }
     }
 }
@@ -44,7 +50,7 @@ pub(crate) fn lit_to_i128(lit: &nitrate_hir::Lit) -> Option<i128> {
         Lit::U16(v) => Some(*v as i128),
         Lit::U32(v) => Some(*v as i128),
         Lit::U64(v) => Some(*v as i128),
-        Lit::U128(v) => Some(*v as i128),
+        Lit::U128(v) => Some((*v).min(i128::MAX as u128) as i128),
         Lit::USize(_, v) => Some(*v as i128),
         Lit::I8(v) => Some(*v as i128),
         Lit::I16(v) => Some(*v as i128),
@@ -64,11 +70,11 @@ pub(crate) fn lit_to_u128(lit: &nitrate_hir::Lit) -> Option<u128> {
         Lit::U64(v) => Some(*v as u128),
         Lit::U128(v) => Some(*v),
         Lit::USize(_, v) => Some(*v as u128),
-        Lit::I8(v) => Some(*v as u128),
-        Lit::I16(v) => Some(*v as u128),
-        Lit::I32(v) => Some(*v as u128),
-        Lit::I64(v) => Some(*v as u128),
-        Lit::I128(v) => Some(*v as u128),
+        Lit::I8(v) => std::convert::TryFrom::try_from(*v).ok(),
+        Lit::I16(v) => std::convert::TryFrom::try_from(*v).ok(),
+        Lit::I32(v) => std::convert::TryFrom::try_from(*v).ok(),
+        Lit::I64(v) => std::convert::TryFrom::try_from(*v).ok(),
+        Lit::I128(v) => std::convert::TryFrom::try_from(*v).ok(),
         _ => None,
     }
 }
@@ -84,8 +90,8 @@ pub(crate) fn extract_bounds_from_type(ty: &Type) -> Option<Bounds> {
 }
 
 pub(crate) fn compute_binary_bounds(op: &BinaryOp, left: Bounds, right: Bounds) -> Option<Bounds> {
-    let (l_min, l_max_i128) = (left.lo, left.hi as i128);
-    let (r_min, r_max_i128) = (right.lo, right.hi as i128);
+    let (l_min, l_max_i128) = (left.lo, (left.hi.min(i128::MAX as u128)) as i128);
+    let (r_min, r_max_i128) = (right.lo, (right.hi.min(i128::MAX as u128)) as i128);
     let is_unsigned_both = left.lo >= 0 && right.lo >= 0;
     match op {
         BinaryOp::Add => {
@@ -95,13 +101,14 @@ pub(crate) fn compute_binary_bounds(op: &BinaryOp, left: Bounds, right: Bounds) 
         BinaryOp::Sub => {
             let lo = l_min.saturating_sub(r_max_i128);
             let hi = if is_unsigned_both && l_min >= 0 && r_min >= 0 {
-                if left.hi >= right.lo as u128 {
-                    left.hi - right.lo as u128
+                let r_lo_unsigned = if right.lo >= 0 { right.lo as u128 } else { 0 };
+                if left.hi >= r_lo_unsigned {
+                    left.hi - r_lo_unsigned
                 } else {
                     0
                 }
             } else {
-                l_max_i128.saturating_sub(r_min) as u128
+                l_max_i128.saturating_sub(r_min).max(0) as u128
             };
             Some(Bounds::new(lo, hi))
         }
@@ -127,9 +134,14 @@ pub(crate) fn compute_binary_bounds(op: &BinaryOp, left: Bounds, right: Bounds) 
                 let max = *products_i128.iter().max().unwrap();
                 Some(Bounds::new(min, max as u128))
             } else {
-                let min_i128 = *products_i128.iter().min().unwrap();
+                let min_u128 = *products_u128.iter().min().unwrap();
+                let min_i128_final = if min_u128 <= i128::MAX as u128 {
+                    min_u128 as i128
+                } else {
+                    i128::MAX
+                };
                 let max_u128 = *products_u128.iter().max().unwrap();
-                Some(Bounds::new(min_i128, max_u128))
+                Some(Bounds::new(min_i128_final, max_u128))
             }
         }
         BinaryOp::Div => {
@@ -167,7 +179,7 @@ pub(crate) fn compute_binary_bounds(op: &BinaryOp, left: Bounds, right: Bounds) 
             if r_min <= 0 && r_max_i128 >= 0 {
                 Some(Bounds::new(i128::MIN, i128::MAX as u128))
             } else {
-                let a = std::cmp::max(r_min.abs(), r_max_i128.abs());
+                let a = std::cmp::max(r_min.saturating_abs(), r_max_i128.saturating_abs());
                 Some(Bounds::new(0, (a - 1) as u128))
             }
         }
@@ -201,13 +213,13 @@ pub(crate) fn compute_binary_bounds(op: &BinaryOp, left: Bounds, right: Bounds) 
                 let smax = if left.hi > 0 {
                     let shift = if r_min > 0 {
                         r_min as u32
-                    } else if right.lo as i128 > 0 {
+                    } else if right.lo > 0 {
                         right.lo as u32
                     } else {
                         0
                     };
                     if shift > 0 {
-                        left.hi.checked_shr(shift).unwrap_or(0).max(1)
+                        left.hi.checked_shr(shift).unwrap_or(0)
                     } else {
                         left.hi
                     }
@@ -231,19 +243,36 @@ pub(crate) fn compute_binary_bounds(op: &BinaryOp, left: Bounds, right: Bounds) 
 }
 
 pub(crate) fn compute_unary_bounds(op: &UnaryOp, operand: Bounds) -> Bounds {
-    let (min, max) = (operand.lo, operand.hi);
-    let max_i128 = max as i128;
+    let (lo, hi) = (operand.lo, operand.hi);
+    let is_unsigned = lo >= 0;
     match op {
-        UnaryOp::Add => Bounds::new(min, max),
-        UnaryOp::Sub => Bounds::new(
-            max_i128.saturating_neg(),
-            if min >= 0 {
-                (0i128).saturating_sub(min) as u128
+        UnaryOp::Add => Bounds::new(lo, hi),
+        UnaryOp::Sub => {
+            if is_unsigned {
+                let new_lo = if hi > i128::MAX as u128 {
+                    i128::MIN
+                } else {
+                    -(hi as i128)
+                };
+                let new_hi = (lo.unsigned_abs() as u128).saturating_sub(1).min(i128::MAX as u128);
+                Bounds::new(new_lo, new_hi)
             } else {
-                min.saturating_neg() as u128
-            },
-        ),
-        UnaryOp::Not => Bounds::new(!max_i128, (!min) as u128),
+                let hi_i128 = (hi.min(i128::MAX as u128)) as i128;
+                let new_lo = hi_i128.saturating_neg();
+                let new_hi = lo.saturating_neg() as u128;
+                Bounds::new(new_lo, new_hi)
+            }
+        }
+        UnaryOp::Not => {
+            if is_unsigned {
+                let new_lo = (!hi) as i128;
+                let new_hi = (!(lo as u128)).min(i128::MAX as u128);
+                Bounds::new(new_lo, new_hi)
+            } else {
+                let hi_i128 = (hi.min(i128::MAX as u128)) as i128;
+                Bounds::new(!hi_i128, (!lo) as u128)
+            }
+        }
     }
 }
 
@@ -255,7 +284,9 @@ pub(crate) fn check_bounds_against_constraint(computed_bounds: Bounds, constrain
                 let (target_min, target_max) = (target.lo, target.hi);
                 !(comp_min < target_min || comp_max > target_max)
             } else {
-                true
+                // When bounds extraction fails (e.g. min/max are non-literal expressions),
+                // we cannot verify the constraint - conservatively report failure
+                false
             }
         }
         _ => true,
