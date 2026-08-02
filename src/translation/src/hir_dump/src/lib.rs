@@ -1,3 +1,5 @@
+#![forbid(unsafe_code)]
+
 mod dump;
 mod dump_expr;
 mod dump_item;

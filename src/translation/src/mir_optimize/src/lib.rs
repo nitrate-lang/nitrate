@@ -1,3 +1,5 @@
+#![forbid(unsafe_code)]
+
 use nitrate_diagnosis::CompilerLog;
 use nitrate_mir::prelude as mir;
 
