@@ -439,7 +439,9 @@ impl<'a> Solver<'a> {
                     self.visit(init_id);
                     if let Ok(new_ty) = init_id.borrow().determine_type(self.symbol_tab) {
                         let mut lv = local_var.borrow_mut();
-                        if matches!(&*lv.ty, Type::Parameterized { .. }) && matches!(&new_ty, Type::Struct { .. }) {
+                        if lv.ty.is_inferred()
+                            || (matches!(&*lv.ty, Type::Parameterized { .. }) && matches!(&new_ty, Type::Struct { .. }))
+                        {
                             lv.ty = new_ty.into();
                         }
                     }
@@ -1352,6 +1354,20 @@ impl<'a> Solver<'a> {
                 if let BlockElement::Local(lv) = element {
                     let mut l = lv.borrow_mut();
                     l.ty = resolve_type_impl(self, &l.ty, log);
+                    // After resolving UnresolvedArray/UnresolvedRefine, if the type
+                    // is still inferred (e.g. Type::Inferred), derive it from the
+                    // initializer's resolved type.
+                    if l.ty.is_inferred() {
+                        let init_id = l.initializer.clone();
+                        drop(l);
+                        if let Some(init) = &init_id {
+                            if let Ok(init_ty) = init.borrow().determine_type(self.symbol_tab) {
+                                if !init_ty.is_inferred() {
+                                    lv.borrow_mut().ty = init_ty.into();
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
