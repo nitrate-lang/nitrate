@@ -1,5 +1,35 @@
 #![forbid(unsafe_code)]
 
+//! # Nitrate Parse Tree (Concrete Syntax Tree)
+//!
+//! The parse tree represents the syntactic structure of Nitrate source
+//! code as a concrete tree with full source position information. It is
+//! the output of the parser and the input to name resolution.
+//!
+//! ## Architecture
+//!
+//! The tree is a mutable arena-based tree where each node stores its
+//! kind (expression, type, item), source span, and child links. The
+//! tree supports both immutable and mutable traversal via iterator
+//! types.
+//!
+//! ## Module Overview
+//!
+//! | Module | Description |
+//! |--------|-------------|
+//! | [`ast`] | AST node types: expressions, types, items, spans, trivia |
+//! | [`span`] | `ByteSpan` — byte-offset source location type |
+//! | [`trivia`] | Whitespace and comment handling |
+//! | [`iter`] / [`iter_mut`] | Immutable / mutable tree traversals |
+//! | [`pretty_print`] | Debug and display formatting of parse trees |
+//!
+//! ## Key Types
+//!
+//! - [`ByteSpan`]: A half-open byte range `[start, end)` in source code.
+//! - [`Trivia`]: Whitespace and comment information attached to tokens.
+//! - [`ParseTreeIter`] / [`ParseTreeIterMut`]: Iterator-based tree traversal.
+//! - [`PrettyPrint`]: Trait for formatting tree nodes as source-like text.
+
 mod expr;
 mod expr_iter;
 mod expr_iter_mut;
@@ -18,6 +48,11 @@ mod ty_iter_mut;
 pub use span::ByteSpan;
 pub use trivia::Trivia;
 
+/// Abstract Syntax Tree node types.
+///
+/// Contains expression nodes, type nodes, item nodes, and associated
+/// iteration and span types used by the parser, resolver, and HIR
+/// lowering stages.
 pub mod ast {
     pub use super::expr::*;
     pub use super::span::*;
@@ -30,6 +65,7 @@ pub use iter::{Order, ParseTreeIter, RefNode};
 pub use iter_mut::{ParseTreeIterMut, RefNodeMut};
 pub use pretty_print::{PrettyPrint, PrintContext};
 
+/// Convenience re-export of all parse tree types.
 pub mod prelude {
     pub use super::ast::*;
     pub use super::iter::{Order, ParseTreeIter, RefNode};

@@ -9,207 +9,359 @@ use std::matches;
 use std::num::NonZeroU32;
 use thin_vec::ThinVec;
 
+/// The lifetime of a reference or pointer.
+///
+/// Nitrate supports several lifetime kinds:
+/// - `Static`: Lives for the entire program duration.
+/// - `Gc`: Garbage-collected lifetime.
+/// - `ThreadLocal`: Bound to the current thread.
+/// - `TaskLocal`: Bound to the current async task.
+/// - `Inferred`: To be determined by the borrow checker.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Lifetime {
+    /// Lifetime spanning the entire program (`'static`).
     Static,
+    /// Garbage-collected heap lifetime.
     Gc,
+    /// Lifetime scoped to the current thread.
     ThreadLocal,
+    /// Lifetime scoped to the current async task.
     TaskLocal,
+    /// Lifetime to be inferred by the borrow checker.
     Inferred,
 }
 
-/// A trait bound (e.g. `T: Clone + 'static`)
+/// A trait or lifetime bound (e.g. `T: Clone + 'static`).
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub enum TypeBound {
+    /// A trait that must be implemented by the constrained type.
     Trait(TraitId),
+    /// A lifetime bound (e.g. `'static`).
     Lifetime(Lifetime),
 }
 
-/// A where clause (e.g. `T: Clone + Debug`)
+/// A `where` clause constraint (e.g. `where T: Clone + Debug`).
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct WhereClause {
+    /// The type being constrained.
     pub type_id: TypeId,
+    /// The bounds required on the type.
     pub bounds: Vec<TypeBound>,
 }
 
+/// External ABI specification for FFI functions.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct ExternAbi {
+    /// Name of the external ABI (e.g. `"C"`).
     pub name: NString,
 }
 
+/// Attributes applied to function declarations.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum FunctionAttribute {
+    /// The function takes a variable number of arguments (C-style variadic).
     CVariadic,
+    /// Do not mangle the function's symbol name.
     NoMangle,
+    /// The function uses an external ABI.
     ExternAbi(ExternAbi),
 }
 
+/// A function type signature used in function pointer types.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct FunctionType {
+    /// Attributes applied to this function type.
     pub attributes: BTreeSet<FunctionAttribute>,
+    /// Named parameters with their types.
     pub params: ThinVec<(NString, TypeId)>,
+    /// The return type of the function.
     pub return_type: TypeId,
 }
 
-/// Type with source location information.
-/// The span field is excluded from Hash/Eq/Ord to preserve type deduplication.
+/// The central type representation in the HIR.
+///
+/// Types are interned and deduplicated — two identical types always produce
+/// the same [`TypeId`]. The `span` field is excluded from `Hash`/`Eq`/`Ord`
+/// to preserve deduplication regardless of source location.
+///
+/// Types fall into several categories:
+/// - **Primitives**: `Never`, `Unit`, `Bool`, integer and float types.
+/// - **Compounds**: `Array`, `Tuple`, `Struct`, `Enum`.
+/// - **Indirections**: `Reference`, `Pointer`, `SliceRef`, `SlicePtr`.
+/// - **Special**: `Function`, `Refine`, `Parameterized`, `TraitObject`.
+/// - **Inference**: `Inferred`, `InferredInteger`, `InferredFloat`, `GenericParam`.
+/// - **Unresolved**: `UnresolvedArray`, `UnresolvedRefine` (pre-evaluation forms).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum Type {
+    /// The never type (`!`). Indicates a computation that never completes.
+    /// It is the bottom type: a subtype of every type.
     Never {
+        /// Source location.
         span: ByteSpan,
     },
+    /// The unit type (`()`). A zero-sized type with exactly one value.
     Unit {
+        /// Source location.
         span: ByteSpan,
     },
+    /// The boolean type (`bool`). Either `true` or `false`.
     Bool {
+        /// Source location.
         span: ByteSpan,
     },
+    /// Unsigned 8-bit integer (`u8`). Range: 0 to 255.
     U8 {
+        /// Source location.
         span: ByteSpan,
     },
+    /// Unsigned 16-bit integer (`u16`). Range: 0 to 65535.
     U16 {
+        /// Source location.
         span: ByteSpan,
     },
+    /// Unsigned 32-bit integer (`u32`). Range: 0 to 4,294,967,295.
     U32 {
+        /// Source location.
         span: ByteSpan,
     },
+    /// Unsigned 64-bit integer (`u64`).
     U64 {
+        /// Source location.
         span: ByteSpan,
     },
+    /// Unsigned 128-bit integer (`u128`).
     U128 {
+        /// Source location.
         span: ByteSpan,
     },
+    /// Architecture-dependent unsigned integer (`usize`). 32 or 64 bits.
     USize {
+        /// Source location.
         span: ByteSpan,
     },
+    /// Signed 8-bit integer (`i8`). Range: -128 to 127.
     I8 {
+        /// Source location.
         span: ByteSpan,
     },
+    /// Signed 16-bit integer (`i16`). Range: -32,768 to 32,767.
     I16 {
+        /// Source location.
         span: ByteSpan,
     },
+    /// Signed 32-bit integer (`i32`).
     I32 {
+        /// Source location.
         span: ByteSpan,
     },
+    /// Signed 64-bit integer (`i64`).
     I64 {
+        /// Source location.
         span: ByteSpan,
     },
+    /// Signed 128-bit integer (`i128`).
     I128 {
+        /// Source location.
         span: ByteSpan,
     },
+    /// 32-bit IEEE 754 floating-point (`f32`).
     F32 {
+        /// Source location.
         span: ByteSpan,
     },
+    /// 64-bit IEEE 754 floating-point (`f64`).
     F64 {
+        /// Source location.
         span: ByteSpan,
     },
 
+    /// A fixed-size array type (`[T; N]`).
     Array {
+        /// Source location.
         span: ByteSpan,
+        /// The type of each element.
         element_type: TypeId,
+        /// The number of elements.
         len: u32,
     },
+    /// A heterogeneous fixed-size tuple (`(A, B, C)`).
     Tuple {
+        /// Source location.
         span: ByteSpan,
+        /// The types of each element, in order.
         element_types: ThinVec<TypeId>,
     },
+    /// A named struct type.
     Struct {
+        /// Source location.
         span: ByteSpan,
+        /// Reference to the struct definition.
         def: StructDefId,
     },
+    /// A named enum type.
     Enum {
+        /// Source location.
         span: ByteSpan,
+        /// Reference to the enum definition.
         def: EnumDefId,
     },
+    /// A type alias.
     TypeAlias {
+        /// Source location.
         span: ByteSpan,
+        /// Reference to the alias definition.
         def: TypeAliasDefId,
     },
+    /// A refinement type (`T<min..max>`) constraining a base type to a
+    /// specific range of values. Used for integer range types.
     Refine {
+        /// Source location.
         span: ByteSpan,
+        /// The base type being refined (e.g., `I32`).
         base: TypeId,
+        /// The inclusive lower bound (compile-time literal).
         min: LiteralId,
+        /// The inclusive upper bound (compile-time literal).
         max: LiteralId,
     },
     /// Array type with an expression for length, not yet evaluated.
-    /// Resolved to `Array` during `hir_solve`.
+    /// Resolved to [`Type::Array`] during `hir_solve`.
     UnresolvedArray {
+        /// Source location.
         span: ByteSpan,
+        /// The type of each element.
         element_type: TypeId,
+        /// An unevaluated expression for the array length.
         len: ValueId,
     },
     /// Refinement type with expressions for bounds, not yet evaluated.
-    /// Resolved to `Refine` during `hir_solve`.
+    /// Resolved to [`Type::Refine`] during `hir_solve`.
     UnresolvedRefine {
+        /// Source location.
         span: ByteSpan,
+        /// The base type being refined.
         base: TypeId,
+        /// An unevaluated expression for the minimum bound.
         min: ValueId,
+        /// An unevaluated expression for the maximum bound.
         max: ValueId,
     },
+    /// A function pointer type (`fn(A, B) -> C`).
     Function {
+        /// Source location.
         span: ByteSpan,
+        /// The full function type signature.
         function_type: Box<FunctionType>,
     },
+    /// A reference type (`&T`, `&mut T`, `&unique T`).
     Reference {
+        /// Source location.
         span: ByteSpan,
+        /// The lifetime of the reference.
         lifetime: Lifetime,
+        /// Whether the reference is unique (exclusive) or shared.
         exclusive: bool,
+        /// Whether the referent can be mutated through this reference.
         mutable: bool,
+        /// The type being referenced.
         to: TypeId,
     },
+    /// A reference to a slice (`&[T]`, `&mut [T]`).
     SliceRef {
+        /// Source location.
         span: ByteSpan,
+        /// The lifetime of the slice reference.
         lifetime: Lifetime,
+        /// Whether the reference is unique (exclusive).
         exclusive: bool,
+        /// Whether elements can be mutated through this reference.
         mutable: bool,
+        /// The type of each element in the slice.
         element_type: TypeId,
     },
+    /// A raw pointer type (`*T`, `*mut T`, `*unique T`).
     Pointer {
+        /// Source location.
         span: ByteSpan,
+        /// The lifetime associated with this pointer.
         lifetime: Lifetime,
+        /// Whether the pointer is unique (exclusive).
         exclusive: bool,
+        /// Whether the pointee can be mutated through this pointer.
         mutable: bool,
+        /// The type being pointed to.
         to: TypeId,
     },
+    /// A raw pointer to a slice (`*[T]`, `*mut [T]`).
     SlicePtr {
+        /// Source location.
         span: ByteSpan,
+        /// The lifetime associated with this slice pointer.
         lifetime: Lifetime,
+        /// Whether the pointer is unique (exclusive).
         exclusive: bool,
+        /// Whether elements can be mutated through this pointer.
         mutable: bool,
+        /// The type of each element in the slice.
         element_type: TypeId,
     },
-    /// A trait object type (e.g. `dyn Clone` or `impl Clone`)
+    /// A trait object type (`dyn Trait` or `impl Trait`).
     TraitObject {
+        /// Source location.
         span: ByteSpan,
+        /// The trait bounds that constrain this type.
         bounds: Vec<TypeBound>,
     },
+    /// A parameterized type application (`Base<A, B, C>`).
     Parameterized {
+        /// Source location.
         span: ByteSpan,
+        /// The base type being parameterized (e.g., a generic struct).
         base: TypeId,
+        /// The type arguments applied to the base.
         args: Arguments<TypeId>,
     },
+    /// A floating-point literal whose concrete type has not yet been inferred.
+    /// Defaults to `F64` if no constraints determine the type.
     InferredFloat {
+        /// Source location.
         span: ByteSpan,
     },
+    /// An integer literal whose concrete type has not yet been inferred.
+    /// Defaults to `I32` if no constraints determine the type.
     InferredInteger {
+        /// Source location.
         span: ByteSpan,
     },
-    // A type variable that stands for a concrete type to be inferred by HM
+    /// A type variable to be inferred by Hindley-Milner unification.
+    /// Carries a unique identifier for the inference variable and an
+    /// optional name for diagnostics.
     Inferred {
+        /// Source location.
         span: ByteSpan,
+        /// Unique identifier for this inference variable.
         id: NonZeroU32,
+        /// Optional name for diagnostic output (e.g., from `_` or named type vars).
         name: Option<NString>,
     },
-    // A generic parameter declared on a function, struct, enum, or type alias
+    /// A generic type parameter declared on a function, struct, enum, or type alias
+    /// (e.g., `T` in `fn foo<T>(x: T)`).
     GenericParam {
+        /// Source location.
         span: ByteSpan,
+        /// Index of this parameter in the generic parameter list.
         index: u32,
+        /// The name of the generic parameter.
         name: NString,
     },
+    /// The range type — used internally for range expression desugaring.
     Range {
+        /// Source location.
         span: ByteSpan,
     },
+    /// The string type (`str`). Unsized sequence of UTF-8 bytes.
     Str {
+        /// Source location.
         span: ByteSpan,
     },
 }

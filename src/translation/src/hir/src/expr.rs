@@ -318,232 +318,406 @@ impl<T> Iterator for ArgumentsIterator<T> {
     }
 }
 
+/// The central expression representation in the HIR.
+///
+/// Every expression in a Nitrate program is lowered into a [`Value`] variant.
+/// Values are stored in TLS-backed append-only storage and accessed via
+/// lightweight [`ValueId`] handles. Expressions fall into several categories:
+///
+/// - **Literals**: `Unit`, `Bool`, integer/float primitives, strings.
+/// - **Inference placeholders**: `InferredInteger`, `InferredFloat`.
+/// - **Compound construction**: `StructObject`, `EnumVariant`, `List`, `Tuple`.
+/// - **Operations**: `Binary`, `Unary`, `IndexAccess`, `FieldAccess`, `Deref`, `Cast`, `Borrow`.
+/// - **Control flow**: `If`, `While`, `Loop`, `Break`, `Continue`, `Return`, `Block`.
+/// - **Calls**: `Call`, `MethodCall`.
+/// - **Symbol references**: `FunctionSymbol`, `GlobalVariableSymbol`, `LocalVariableSymbol`, `ParameterSymbol`.
+/// - **Assignment**: `Assign`.
+/// - **Range**: `Range`.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub enum Value {
+    /// The unit literal `()`. Zero-sized, the only value of type `Unit`.
     Unit {
+        /// Source location.
         span: ByteSpan,
     },
+    /// A boolean literal (`true` or `false`).
     Bool {
+        /// Source location.
         span: ByteSpan,
+        /// The boolean value.
         value: bool,
     },
+    /// An 8-bit signed integer literal.
     I8 {
+        /// Source location.
         span: ByteSpan,
+        /// The literal value.
         value: i8,
     },
+    /// A 16-bit signed integer literal.
     I16 {
+        /// Source location.
         span: ByteSpan,
+        /// The literal value.
         value: i16,
     },
+    /// A 32-bit signed integer literal.
     I32 {
+        /// Source location.
         span: ByteSpan,
+        /// The literal value.
         value: i32,
     },
+    /// A 64-bit signed integer literal.
     I64 {
+        /// Source location.
         span: ByteSpan,
+        /// The literal value.
         value: i64,
     },
+    /// A 128-bit signed integer literal.
     I128 {
+        /// Source location.
         span: ByteSpan,
+        /// The literal value (boxed to keep enum size manageable).
         value: Box<i128>,
     },
+    /// An 8-bit unsigned integer literal.
     U8 {
+        /// Source location.
         span: ByteSpan,
+        /// The literal value.
         value: u8,
     },
+    /// A 16-bit unsigned integer literal.
     U16 {
+        /// Source location.
         span: ByteSpan,
+        /// The literal value.
         value: u16,
     },
+    /// A 32-bit unsigned integer literal.
     U32 {
+        /// Source location.
         span: ByteSpan,
+        /// The literal value.
         value: u32,
     },
+    /// A 64-bit unsigned integer literal.
     U64 {
+        /// Source location.
         span: ByteSpan,
+        /// The literal value.
         value: u64,
     },
+    /// A 128-bit unsigned integer literal.
     U128 {
+        /// Source location.
         span: ByteSpan,
+        /// The literal value (boxed to keep enum size manageable).
         value: Box<u128>,
     },
+    /// A 32-bit floating-point literal.
     F32 {
+        /// Source location.
         span: ByteSpan,
+        /// The literal value.
         value: OrderedFloat<f32>,
     },
+    /// A 64-bit floating-point literal.
     F64 {
+        /// Source location.
         span: ByteSpan,
+        /// The literal value.
         value: OrderedFloat<f64>,
     },
+    /// A platform-dependent unsigned integer literal (`usize`).
     USize {
+        /// Source location.
         span: ByteSpan,
+        /// The pointer width in bits (32 or 64).
         bits: u8,
+        /// The literal value.
         value: u64,
     },
+    /// A UTF-8 string literal.
     StringLit {
+        /// Source location.
         span: ByteSpan,
+        /// The string content.
         value: ThinStr,
     },
+    /// A byte string literal (sequence of bytes).
     BStringLit {
+        /// Source location.
         span: ByteSpan,
+        /// The byte content.
         value: ThinVec<u8>,
     },
+    /// An integer literal whose concrete type is not yet inferred.
+    /// The solver determines the type from constraints; defaults to `I32`.
     InferredInteger {
+        /// Source location.
         span: ByteSpan,
+        /// The literal value (boxed to keep enum size manageable).
         value: Box<u128>,
     },
+    /// A floating-point literal whose concrete type is not yet inferred.
+    /// The solver determines the type from constraints; defaults to `F64`.
     InferredFloat {
+        /// Source location.
         span: ByteSpan,
+        /// The literal value.
         value: OrderedFloat<f64>,
     },
 
+    /// Construction of a struct value (`Foo { field1: val1, field2: val2 }`).
     StructObject {
+        /// Source location.
         span: ByteSpan,
+        /// Reference to the struct definition.
         struct_def: StructDefId,
+        /// Field name to value mappings.
         fields: ThinVec<(NString, ValueId)>,
     },
 
+    /// Construction of an enum variant (`MyEnum::Variant(payload)`).
     EnumVariant {
+        /// Source location.
         span: ByteSpan,
+        /// Reference to the enum definition.
         enum_def: EnumDefId,
+        /// The variant name being constructed.
         variant: NString,
+        /// The payload value for this variant.
         value: ValueId,
     },
 
+    /// A binary operation expression (`left op right`).
     Binary {
+        /// Source location.
         span: ByteSpan,
+        /// The left-hand operand.
         left: ValueId,
+        /// The binary operator.
         op: BinaryOp,
+        /// The right-hand operand.
         right: ValueId,
     },
 
+    /// A range expression (`start..end`, `start..=end`, `..end`, `start..`, `..`).
+    /// Desugared to a struct object during solving.
     Range {
+        /// Source location.
         span: ByteSpan,
+        /// The start of the range, if present.
         start: Option<ValueId>,
+        /// The end of the range, if present.
         end: Option<ValueId>,
+        /// Whether the range is inclusive of the end value.
         inclusive: bool,
     },
 
+    /// A unary operation expression (`op operand`).
     Unary {
+        /// Source location.
         span: ByteSpan,
+        /// The unary operator.
         op: UnaryOp,
+        /// The operand.
         operand: ValueId,
     },
 
+    /// An index access expression (`collection[index]`).
     IndexAccess {
+        /// Source location.
         span: ByteSpan,
+        /// The collection being indexed.
         collection: ValueId,
+        /// The index value (`USize`).
         index: ValueId,
     },
 
+    /// A field access expression (`expr.field_name`).
     FieldAccess {
+        /// Source location.
         span: ByteSpan,
+        /// The expression whose field is being accessed.
         expr: ValueId,
+        /// The name of the field.
         field_name: NString,
     },
 
+    /// An assignment expression (`place = value`).
     Assign {
+        /// Source location.
         span: ByteSpan,
+        /// The place being assigned to (must be mutable).
         place: ValueId,
+        /// The value being assigned.
         value: ValueId,
     },
 
+    /// A dereference expression (`*place`).
     Deref {
+        /// Source location.
         span: ByteSpan,
+        /// The pointer or reference being dereferenced.
         place: ValueId,
     },
 
+    /// A type cast expression (`value as target_type`).
     Cast {
+        /// Source location.
         span: ByteSpan,
+        /// The value being cast.
         value: ValueId,
+        /// The target type for the cast.
         target_type: TypeId,
     },
 
+    /// A borrow expression (`&place`, `&mut place`, `&unique place`).
     Borrow {
+        /// Source location.
         span: ByteSpan,
+        /// Whether the borrow is exclusive (unique) or shared.
         exclusive: bool,
+        /// Whether the borrow allows mutation.
         mutable: bool,
+        /// The place being borrowed.
         place: ValueId,
     },
 
+    /// A list literal expression (`[elem1, elem2, ...]`).
     List {
+        /// Source location.
         span: ByteSpan,
+        /// The elements of the list.
         elements: ThinVec<ValueId>,
     },
 
+    /// A tuple literal expression (`(elem1, elem2, ...)`).
     Tuple {
+        /// Source location.
         span: ByteSpan,
+        /// The elements of the tuple.
         elements: ThinVec<ValueId>,
     },
 
+    /// An if-else conditional expression.
     If {
+        /// Source location.
         span: ByteSpan,
+        /// The condition expression (must be `Bool`).
         condition: ValueId,
+        /// The block executed when the condition is true.
         true_branch: BlockId,
+        /// The optional else block executed when the condition is false.
         false_branch: Option<BlockId>,
     },
 
+    /// A while loop expression.
     While {
+        /// Source location.
         span: ByteSpan,
+        /// The loop condition (must be `Bool`).
         condition: ValueId,
+        /// The loop body.
         body: BlockId,
     },
 
+    /// An infinite loop expression (`loop { ... }`).
     Loop {
+        /// Source location.
         span: ByteSpan,
+        /// The loop body.
         body: BlockId,
     },
 
+    /// A break expression, optionally targeting a labeled loop.
     Break {
+        /// Source location.
         span: ByteSpan,
+        /// The optional label of the loop to break from.
         label: Option<NString>,
     },
 
+    /// A continue expression, optionally targeting a labeled loop.
     Continue {
+        /// Source location.
         span: ByteSpan,
+        /// The optional label of the loop to continue.
         label: Option<NString>,
     },
 
+    /// A return expression from the enclosing function.
     Return {
+        /// Source location.
         span: ByteSpan,
+        /// The value being returned.
         value: ValueId,
     },
 
+    /// A block expression (`{ ... }`). Creates a new scope.
     Block {
+        /// Source location.
         span: ByteSpan,
+        /// The block body.
         block: BlockId,
     },
 
+    /// A function call expression (`callee(args)`).
     Call {
+        /// Source location.
         span: ByteSpan,
+        /// The function or function pointer being called.
         callee: ValueId,
+        /// The arguments to the call.
         args: Arguments<ValueId>,
     },
 
+    /// A method call expression (`object.method_name(args)`).
+    /// Desugared to a [`Value::Call`] during solving.
     MethodCall {
+        /// Source location.
         span: ByteSpan,
+        /// The receiver object.
         object: ValueId,
+        /// The name of the method being called.
         method_name: NString,
+        /// The arguments to the method (excluding `self`).
         args: Arguments<ValueId>,
     },
 
+    /// A reference to a function symbol (not a call, just the name).
     FunctionSymbol {
+        /// Source location.
         span: ByteSpan,
+        /// Reference to the function definition.
         id: FunctionId,
     },
 
+    /// A reference to a global variable symbol.
     GlobalVariableSymbol {
+        /// Source location.
         span: ByteSpan,
+        /// Reference to the global variable definition.
         id: GlobalVariableId,
     },
 
+    /// A reference to a local variable symbol.
     LocalVariableSymbol {
+        /// Source location.
         span: ByteSpan,
+        /// Reference to the local variable definition.
         id: LocalVariableId,
     },
 
+    /// A reference to a function parameter symbol.
     ParameterSymbol {
+        /// Source location.
         span: ByteSpan,
+        /// Reference to the parameter definition.
         id: ParameterId,
     },
 }
