@@ -89,6 +89,7 @@ pub fn get_size_of(ty: &Type, ctx: &LayoutCtx) -> Result<u64, LayoutError> {
 
         Type::Refine { base, .. } => Ok(get_size_of(base, ctx)?),
         Type::Range { .. } => Ok(0),
+        Type::Str { .. } => Ok(ctx.ptr_size as u64 * 2),
 
         Type::Function { .. } => Ok(ctx.ptr_size as u64),
         Type::Reference { .. } => Ok(ctx.ptr_size as u64),
