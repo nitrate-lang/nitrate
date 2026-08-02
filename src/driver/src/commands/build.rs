@@ -359,7 +359,7 @@ impl Interpreter<'_> {
 
         // Create the HIR Store upfront
         let mut hir_store = hir::Store::new();
-        let mut mir_store = mir::MirStore::new();
+        let mir_store = mir::MirStore::new();
 
         let pipeline = Pipeline::new(config);
 
@@ -405,48 +405,44 @@ impl Interpreter<'_> {
         hir_store.reset();
 
         if let Some(mir_lowered) = mir_lowered? {
-            let llvm_generated = mir::using_storage(&mir_store, || -> anyhow::Result<LlvmGenerated> {
+            mir::using_storage(&mir_store, || -> anyhow::Result<Option<PathBuf>> {
                 let llvm_generated = mir_lowered.codegen()?;
-                Ok(llvm_generated)
-            })?;
 
-            // Reset the MIR store to free memory before codegen
-            mir_store.reset();
+                if opts.show_llvmir {
+                    llvm_generated.dump_llvm_ir();
+                    return Ok(None);
+                }
 
-            if opts.show_llvmir {
-                llvm_generated.dump_llvm_ir();
-                return Ok(None);
-            }
+                if opts.show_asm {
+                    llvm_generated.dump_asm()?;
+                    return Ok(None);
+                }
 
-            if opts.show_asm {
-                llvm_generated.dump_asm()?;
-                return Ok(None);
-            }
+                let (major, minor, patch) = manifest.package.major_minor_patch();
+                let object_file = build_dir.join(format!("{}-{}.{}.{}.o", package_name, major, minor, patch));
 
-            let (major, minor, patch) = manifest.package.major_minor_patch();
-            let object_file = build_dir.join(format!("{}-{}.{}.{}.o", package_name, major, minor, patch));
+                let emitted = llvm_generated.optimize_llvm().emit_obj(&object_file)?;
 
-            let emitted = llvm_generated.optimize_llvm().emit_obj(&object_file)?;
+                if opts.show_obj {
+                    info!(
+                        self.log,
+                        "Object file for package '{}' written to '{}'",
+                        package_name,
+                        emitted.path().display()
+                    );
+                    return Ok(None);
+                }
 
-            if opts.show_obj {
+                let binary_path = build_dir.join(&package_name);
+                link_binary(self.log, emitted.path(), &binary_path, &package_name)?;
+
                 info!(
                     self.log,
-                    "Object file for package '{}' written to '{}'",
-                    package_name,
-                    emitted.path().display()
+                    "Successfully built package '{}' v{}.{}.{}", package_name, major, minor, patch,
                 );
-                return Ok(None);
-            }
 
-            let binary_path = build_dir.join(&package_name);
-            link_binary(self.log, emitted.path(), &binary_path, &package_name)?;
-
-            info!(
-                self.log,
-                "Successfully built package '{}' v{}.{}.{}", package_name, major, minor, patch,
-            );
-
-            Ok(Some(binary_path))
+                Ok(Some(binary_path))
+            })
         } else {
             Ok(None)
         }
