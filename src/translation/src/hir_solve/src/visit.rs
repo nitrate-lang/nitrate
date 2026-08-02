@@ -5,7 +5,7 @@ use nitrate_hir::{BlockElement, BlockId, FunctionId, Type, TypeId, Value, ValueI
 use nitrate_hir_get_type::HirGetType;
 use nitrate_tree::ByteSpan;
 use smallvec::SmallVec;
-use std::unreachable;
+use std::{matches, unreachable};
 
 impl<'m> Solver<'m> {
     fn type_contains_any_generic_param(ty: &Type) -> bool {
@@ -798,22 +798,37 @@ impl<'m> Solver<'m> {
             } else {
                 // Non-generic method: replace MethodCall with Call + FunctionSymbol,
                 // passing the object as the first positional argument (self).
+                // If the method takes &self (reference), auto-borrow the receiver.
+                let mf = method_id.borrow();
+                let first_param_is_ref = mf.params.first().map_or(false, |pid| {
+                    matches!(&*pid.borrow().ty, Type::Reference { .. } | Type::SliceRef { .. })
+                });
+
+                let self_arg = if first_param_is_ref {
+                    ValueId::from(Value::Borrow {
+                        span: ByteSpan::default(),
+                        exclusive: false,
+                        mutable: false,
+                        place: object_id.clone(),
+                    })
+                } else {
+                    object_id.clone()
+                };
+
                 let mut args_with_self = args_result.clone();
-                args_with_self.positional.insert(0, object_id.clone());
-                self.add_constraint(
-                    &object_id,
-                    TypeConstraint::Equal(method_id.borrow().params[0].borrow().ty),
-                );
+                args_with_self.positional.insert(0, self_arg);
+
                 for (i, arg) in args_result.positional.iter().enumerate() {
-                    if let Some(param) = method_id.borrow().params.get(i + 1) {
+                    if let Some(param) = mf.params.get(i + 1) {
                         self.add_constraint(arg, TypeConstraint::Equal(param.borrow().ty));
                     }
                 }
                 for (name, arg) in &args_result.named {
-                    if let Some(param) = method_id.borrow().params.iter().find(|p| p.borrow().name == *name) {
+                    if let Some(param) = mf.params.iter().find(|p| p.borrow().name == *name) {
                         self.add_constraint(arg, TypeConstraint::Equal(param.borrow().ty));
                     }
                 }
+                drop(mf);
                 e.replace(Value::Call {
                     span: ByteSpan::default(),
                     callee: ValueId::from(Value::FunctionSymbol {
