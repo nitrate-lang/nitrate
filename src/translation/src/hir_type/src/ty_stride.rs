@@ -1,4 +1,5 @@
-use crate::prelude::*;
+use crate::{LayoutCtx, LayoutError, get_align_of, get_size_of};
+use nitrate_hir::prelude::*;
 
 pub fn get_stride_of(ty: &Type, ctx: &LayoutCtx) -> Result<u64, LayoutError> {
     let element_size = get_size_of(ty, ctx)?;

@@ -1,4 +1,5 @@
-use crate::prelude::*;
+use crate::{LayoutCtx, LayoutError};
+use nitrate_hir::prelude::*;
 use std::cmp::max;
 
 pub fn get_align_of(ty: &Type, ctx: &LayoutCtx) -> Result<u64, LayoutError> {

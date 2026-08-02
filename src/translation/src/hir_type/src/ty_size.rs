@@ -1,4 +1,5 @@
-use crate::{SymbolTab, prelude::*};
+use crate::{get_align_of, get_stride_of};
+use nitrate_hir::prelude::*;
 use std::cmp::max;
 
 #[derive(Debug, Clone, Copy)]
@@ -88,7 +89,7 @@ pub fn get_size_of(ty: &Type, ctx: &LayoutCtx) -> Result<u64, LayoutError> {
         }
 
         Type::Refine { base, .. } => Ok(get_size_of(base, ctx)?),
-        Type::UnresolvedArray { element_type, .. } => Err(LayoutError::NotInferred),
+        Type::UnresolvedArray { .. } => Err(LayoutError::NotInferred),
         Type::UnresolvedRefine { base, .. } => get_size_of(base, ctx),
         Type::Range { .. } => Ok(0),
         Type::Str { .. } => Ok(ctx.ptr_size as u64 * 2),
