@@ -464,10 +464,16 @@ impl<'a> Solver<'a> {
         match element {
             BlockElement::Expr(e) => self.visit(e),
             BlockElement::Local(local_var) => {
-                let lv = local_var.borrow();
-                let ty = lv.ty;
-                let is_inferred = ty.is_inferred();
-                if let Some(init_id) = &lv.initializer {
+                // Extract fields first (dropping the immutable borrow before
+                // taking a mutable one) to avoid RefCell panics.
+                let (ty, is_inferred, init_id_clone) = {
+                    let lv = local_var.borrow();
+                    let ty = lv.ty;
+                    let is_inferred = ty.is_inferred();
+                    let init_id_clone = lv.initializer.clone();
+                    (ty, is_inferred, init_id_clone)
+                };
+                if let Some(ref init_id) = init_id_clone {
                     if is_inferred {
                         if let Ok(d) = init_id.borrow().determine_type(self.symbol_tab) {
                             local_var.borrow_mut().ty = d.into();
@@ -1418,6 +1424,11 @@ impl<'a> Solver<'a> {
                 }
             }
             self.finalize_inferred_literals(body);
+            // Final sync: `finalize_inferred_literals` may have resolved
+            // otherwise-unconstrained literals to concrete default types
+            // (e.g. InferredInteger -> I32).  Propagate those final types
+            // back to the local variable `ty` fields.
+            self.sync_local_types_from_initializers(body);
         }
         for error in &self.errors {
             log.report(error);
@@ -1437,11 +1448,17 @@ impl<'a> Solver<'a> {
     fn sync_local_types_from_initializers(&mut self, body: &[BlockElement]) {
         for element in body {
             if let BlockElement::Local(lv) = element {
-                let local = lv.borrow();
-                if let Some(init_id) = &local.initializer {
+                let (init_id, should_update) = {
+                    let local = lv.borrow();
+                    (
+                        local.initializer.clone(),
+                        local.ty.is_inferred() || matches!(&*local.ty, Type::Parameterized { .. }),
+                    )
+                };
+                if let Some(init_id) = init_id {
                     if let Ok(new_ty) = init_id.borrow().determine_type(self.symbol_tab) {
                         let mut lv_mut = lv.borrow_mut();
-                        if lv_mut.ty.is_inferred()
+                        if should_update
                             || (matches!(&*lv_mut.ty, Type::Parameterized { .. })
                                 && matches!(&new_ty, Type::Struct { .. }))
                         {
