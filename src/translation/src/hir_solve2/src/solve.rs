@@ -6,8 +6,8 @@ use crate::range::*;
 use crate::substitution::Substitution;
 use nitrate_diagnosis::CompilerLog;
 use nitrate_hir::{
-    Arguments, BlockElement, Function, FunctionId, GlobalVariable, LiteralId, StructDef, StructDefId, SymbolTab, Type,
-    TypeId, Value, ValueId, get_storage,
+    Arguments, BlockElement, Function, FunctionId, GlobalVariable, StructDef, StructDefId, SymbolTab, Type, TypeId,
+    Value, ValueId,
 };
 use nitrate_hir_evaluate::Evaluator;
 use nitrate_hir_type::HirGetType;
@@ -1554,14 +1554,8 @@ fn resolve_type_impl(s: &Solver, ty: &TypeId, log: &CompilerLog) -> TypeId {
         }
         Type::UnresolvedRefine { base, min, max, .. } => {
             let mut ev = Evaluator::new(log, s.symbol_tab.arch_ptr_size());
-            let min_lit = ev
-                .evaluate_to_literal(&min.borrow())
-                .ok()
-                .map(|lit| LiteralId::from(get_storage(|s| s.store_literal(lit))));
-            let max_lit = ev
-                .evaluate_to_literal(&max.borrow())
-                .ok()
-                .map(|lit| LiteralId::from(get_storage(|s| s.store_literal(lit))));
+            let min_lit = ev.evaluate_to_literal(&min.borrow()).ok().map(|lit| lit.into());
+            let max_lit = ev.evaluate_to_literal(&max.borrow()).ok().map(|lit| lit.into());
             let resolved_base = resolve_type_impl(s, base, log);
             match (min_lit, max_lit) {
                 (Some(min), Some(max)) => Type::Refine {
