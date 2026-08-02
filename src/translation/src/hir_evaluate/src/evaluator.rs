@@ -184,23 +184,42 @@ impl<'log> Evaluator<'log> {
 
         let before_safety = self.current_safety.clone();
         if func.is_unsafe && self.current_safety == BlockSafety::Safe {
+            self.frames.pop();
             self.call_depth -= 1;
             return Err(EvalError::UnsafeInSafeContext);
         }
 
-        let result = if let Some(body) = &func.body {
-            let mut last_value = Value::Unit {
-                span: ByteSpan::default(),
-            };
+        let mut last_value = Value::Unit {
+            span: ByteSpan::default(),
+        };
+        if let Some(body) = &func.body {
             for element in body {
-                last_value = self.evaluate_block_element(element)?;
+                match self.evaluate_block_element(element) {
+                    Ok(val) => last_value = val,
+                    Err(EvalError::Return(val)) => {
+                        last_value = val;
+                        break;
+                    }
+                    Err(e) => {
+                        self.frames.pop();
+                        self.current_safety = before_safety;
+                        self.call_depth -= 1;
+                        return Err(e);
+                    }
+                }
             }
-            Ok(last_value)
         } else {
             if let Some(builtin) = self.get_builtin(&func.name) {
-                builtin(self, args)
+                let result = builtin(self, args);
+                self.frames.pop();
+                self.current_safety = before_safety;
+                self.call_depth -= 1;
+                return result;
             } else {
-                Err(EvalError::Unsupported("extern function call"))
+                self.frames.pop();
+                self.current_safety = before_safety;
+                self.call_depth -= 1;
+                return Err(EvalError::Unsupported("extern function call"));
             }
         };
 
@@ -208,7 +227,7 @@ impl<'log> Evaluator<'log> {
         self.current_safety = before_safety;
         self.call_depth -= 1;
 
-        result
+        Ok(last_value)
     }
 
     /// Evaluate a block of statements/expressions.
@@ -220,7 +239,13 @@ impl<'log> Evaluator<'log> {
             span: ByteSpan::default(),
         };
         for element in &block.elements {
-            last_value = self.evaluate_block_element(element)?;
+            match self.evaluate_block_element(element) {
+                Ok(val) => last_value = val,
+                Err(e) => {
+                    self.current_safety = before_safety;
+                    return Err(e);
+                }
+            }
         }
 
         self.current_safety = before_safety;
