@@ -3,7 +3,7 @@ use crate::item::lower_module;
 use nitrate_diagnosis::CompilerLog;
 use nitrate_hir::prelude::*;
 use nitrate_hir_borrow_check::check_function_borrows;
-use nitrate_hir_solve::{resolve_function, resolve_global};
+use nitrate_hir_solve2::{resolve_function, resolve_global};
 use nitrate_tree::ast::{self};
 use nitrate_tree_resolve::{resolve_imports, resolve_paths};
 

@@ -19,6 +19,7 @@ nitrate_hir_dump.workspace = true
 nitrate_hir_validate.workspace = true
 nitrate_hir_evaluate.workspace = true
 nitrate_hir_solve.workspace = true
+nitrate_hir_solve2.workspace = true
 nitrate_hir_type.workspace = true
 nitrate_hir_mangle.workspace = true
 nitrate_llvm.workspace = true
