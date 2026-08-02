@@ -108,16 +108,26 @@ pub struct MirModule {
     pub functions: ThinVec<MirFunctionId>,
     /// Global variable declarations referenced by this module.
     pub globals: ThinVec<(NString, MirTypeId)>,
+    /// String literal data to be emitted as global constants.
+    /// Each entry is (global_name, byte_data). The name is used
+    /// to create a `Place::Static(name)` for borrowing string literals.
+    pub string_globals: ThinVec<(NString, ThinVec<u8>)>,
     /// Target pointer size
     pub ptr_size: PtrSize,
 }
 
 impl MirModule {
     #[must_use]
-    pub fn new(functions: ThinVec<MirFunctionId>, globals: ThinVec<(NString, MirTypeId)>, ptr_size: PtrSize) -> Self {
+    pub fn new(
+        functions: ThinVec<MirFunctionId>,
+        globals: ThinVec<(NString, MirTypeId)>,
+        string_globals: ThinVec<(NString, ThinVec<u8>)>,
+        ptr_size: PtrSize,
+    ) -> Self {
         Self {
             functions,
             globals,
+            string_globals,
             ptr_size,
         }
     }

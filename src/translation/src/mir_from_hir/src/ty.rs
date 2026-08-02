@@ -25,6 +25,7 @@ pub fn lower_type(hir_ty: &hir::Type) -> mir::MirTypeId {
         hir::Type::F32 { .. } => mir::MirType::F32,
         hir::Type::F64 { .. } => mir::MirType::F64,
         hir::Type::Range { .. } => mir::MirType::Range,
+        hir::Type::Str { .. } => mir::MirType::Str,
 
         hir::Type::Array { element_type, len, .. } => {
             let elem = lower_type(element_type);

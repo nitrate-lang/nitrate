@@ -405,6 +405,15 @@ pub fn lower_value_as_place(
                 index: Box::new(ix),
             }
         }
+        hir::Value::StringLit { value: s, .. } => {
+            let data: thin_vec::ThinVec<u8> = s.as_bytes().iter().cloned().collect();
+            let name = func.register_string_global(data);
+            mir::Place::Static(name)
+        }
+        hir::Value::BStringLit { value: b, .. } => {
+            let name = func.register_string_global(b.clone());
+            mir::Place::Static(name)
+        }
         hir::Value::Deref { place: inner, .. } => {
             let base = lower_value_as_place(ctx, func, inner);
             mir::Place::Deref(Box::new(base))

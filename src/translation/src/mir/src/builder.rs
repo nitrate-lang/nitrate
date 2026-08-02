@@ -17,6 +17,10 @@ use thin_vec::ThinVec;
 pub struct MirBuilder {
     /// Accumulated function IDs for the final module.
     functions: ThinVec<MirFunctionId>,
+    /// String literal globals: (name, byte_data).
+    pub string_globals: ThinVec<(NString, ThinVec<u8>)>,
+    /// Counter for generating unique global names for string literals.
+    string_global_counter: u64,
 }
 
 impl MirBuilder {
@@ -24,6 +28,8 @@ impl MirBuilder {
     pub fn new() -> Self {
         Self {
             functions: ThinVec::new(),
+            string_globals: ThinVec::new(),
+            string_global_counter: 0,
         }
     }
 
@@ -49,11 +55,22 @@ impl MirBuilder {
         self.functions.push(func_id);
     }
 
+    /// Register a string literal as a global constant, returning a unique
+    /// name that can be used as `Place::Static(name)`.
+    pub fn register_string_global(&mut self, data: ThinVec<u8>) -> NString {
+        let id = self.string_global_counter;
+        self.string_global_counter += 1;
+        let name: NString = format!("__nitrate_str_{}", id).into();
+        self.string_globals.push((name.clone(), data));
+        name
+    }
+
     /// Build the final `MirModule` from all accumulated functions.
     pub fn build_module(self, ptr_size: PtrSize) -> MirModule {
         MirModule {
             functions: self.functions,
             globals: ThinVec::new(),
+            string_globals: self.string_globals,
             ptr_size,
         }
     }
@@ -557,6 +574,12 @@ impl<'b> MirFunctionBuilder<'b> {
     /// Convenience: intern a type and return its `MirTypeId`.
     pub fn store_type(&self, ty: MirType) -> MirTypeId {
         ty.into()
+    }
+
+    /// Register a string literal as a global constant, returning a unique
+    /// name that can be used as `Place::Static(name)`.
+    pub fn register_string_global(&mut self, data: ThinVec<u8>) -> NString {
+        self.builder.register_string_global(data)
     }
 }
 
