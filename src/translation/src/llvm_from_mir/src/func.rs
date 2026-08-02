@@ -85,6 +85,35 @@ pub fn gen_function<'ctx>(ctx: &mut CodegenCtx<'ctx, '_>, llvm_function: Functio
         let llvm_bb = ctx.get_llvm_block(bb_id);
         ctx.position_at_end(llvm_bb);
 
+        // Store phi node results into block argument locals' allocas.
+        // Block arguments are indexed as arg_count + (sum of arg_locals from
+        // previously created blocks). The block's args types correspond one-to-one
+        // with the phi nodes created for this block.
+        if !bb_data.args.is_empty() {
+            // Find the local indices for this block's arguments.
+            // Block arg locals are allocated contiguously after all non-arg locals
+            // and earlier block args. We walk the block list to find our starting index.
+            let mut arg_local_start: u32 = ctx.mir_func.arg_count;
+            for earlier_bb in ctx.mir_func.blocks.iter() {
+                if earlier_bb.as_usize() == bb_id.as_usize() {
+                    break;
+                }
+                let earlier_data = earlier_bb.borrow();
+                arg_local_start += earlier_data.args.len() as u32;
+            }
+
+            if let Some(phi_list) = ctx.block_phi_nodes.get(&bb_id.as_usize()) {
+                for (i, phi_node) in phi_list.iter().enumerate() {
+                    let phi = phi_node.borrow();
+                    let phi_val = phi.as_basic_value();
+                    let local_idx = arg_local_start + i as u32;
+                    if let Some((alloca, _)) = ctx.locals.get(&local_idx).copied() {
+                        ctx.builder.build_store(alloca, phi_val).unwrap();
+                    }
+                }
+            }
+        }
+
         for stmt in bb_data.statements.iter() {
             gen_statement(ctx, stmt);
         }

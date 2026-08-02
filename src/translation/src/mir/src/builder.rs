@@ -9,54 +9,10 @@ use nitrate_nstring::NString;
 use thin_vec::ThinVec;
 
 // ─────────────────────────────────────────────────────────────
-// Utility: fresh local counter
-// ─────────────────────────────────────────────────────────────
-
-/// A counter for generating fresh temporary local indices.
-#[derive(Debug, Clone)]
-pub struct FreshLocalCounter(u32);
-
-impl FreshLocalCounter {
-    pub fn new() -> Self {
-        FreshLocalCounter(0)
-    }
-
-    pub fn next(&mut self) -> u32 {
-        let val = self.0;
-        self.0 += 1;
-        val
-    }
-}
-
-impl Default for FreshLocalCounter {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-// ─────────────────────────────────────────────────────────────
 // MirBuilder — top-level module builder
 // ─────────────────────────────────────────────────────────────
 
 /// A builder for constructing MIR modules and functions.
-///
-/// The builder manages the construction of MIR functions incrementally,
-/// tracking locals, basic blocks, and statements. Storage access goes
-/// through TLS (via `get_storage`/`using_storage` set by the driver).
-///
-/// # Usage
-///
-/// ```ignore
-/// let mut builder = MirBuilder::new();
-/// let func_id = builder
-///     .start_function("my_func".into(), return_ty_id)?
-///     .add_param("x".into(), ty_id, false)?
-///     .new_block()?
-///     .push_assign(local_id, rvalue)?
-///     .set_terminator(Terminator::Return { value: None })?
-///     .finish_function()?;
-/// let module = builder.build_module(ptr_size)?;
-/// ```
 #[derive(Debug)]
 pub struct MirBuilder {
     /// Accumulated function IDs for the final module.
@@ -72,9 +28,6 @@ impl MirBuilder {
     }
 
     /// Begin constructing a new function. Returns a per-function builder.
-    ///
-    /// The per-function builder holds data locally; nothing is inserted
-    /// into the `MirStore` until `finish_function()` is called.
     pub fn start_function(&mut self, name: NString, return_ty: MirTypeId) -> MirFunctionBuilder<'_> {
         MirFunctionBuilder {
             builder: self,
@@ -86,13 +39,10 @@ impl MirBuilder {
             blocks: ThinVec::new(),
             entry_block: None,
             current_block: None,
-            current_statements: ThinVec::new(),
-            fresh_counter: FreshLocalCounter::new(),
         }
     }
 
     /// Insert a pre-built MirFunctionId into the module's function list.
-    /// Useful for extern functions or functions built elsewhere.
     pub fn add_function(&mut self, func_id: MirFunctionId) {
         self.functions.push(func_id);
     }
@@ -116,10 +66,39 @@ impl MirBuilder {
 // MirFunctionBuilder — per-function builder
 // ─────────────────────────────────────────────────────────────
 
+/// Result of creating a new basic block.
+#[derive(Debug)]
+pub struct NewBlock {
+    /// The newly created basic block's ID.
+    pub block: BasicBlockId,
+    /// Locals created for each block argument (one per type in `args`).
+    /// These locals are SSA values that get their values from predecessor
+    /// terminators' block argument lists.
+    pub arg_locals: ThinVec<LocalId>,
+}
+
 /// A builder for a single MIR function body.
 ///
 /// Holds all data locally until `finish_function()` commits it to the
 /// `MirStore` and returns a `MirFunctionId`.
+///
+/// # Block Arguments Usage
+///
+/// Call `create_block(types)` to create a block with formal parameters.
+/// The returned `arg_locals` are fresh SSA locals that will receive values
+/// from predecessor edges. When branching to this block, use the `_with_args`
+/// terminators to pass the actual operand values.
+///
+/// ```ignore
+/// let merge = func.create_block(&[int_ty])?;
+/// // merge.arg_locals[0] is a Local that will hold the merged value
+///
+/// // In predecessors:
+/// func.goto_with_args(merge.block, &[some_operand]);
+///
+/// // Use merge.arg_locals[0] in merge block:
+/// func.push_assign(dest, mir::Rvalue::Use(mir::Operand::Copy(mir::Place::Local(merge.arg_locals[0].clone()))));
+/// ```
 #[derive(Debug)]
 pub struct MirFunctionBuilder<'b> {
     builder: &'b mut MirBuilder,
@@ -133,11 +112,6 @@ pub struct MirFunctionBuilder<'b> {
 
     /// The basic block currently being constructed (if any).
     pub current_block: Option<BasicBlockId>,
-    /// Statements accumulated for the current block.
-    pub current_statements: ThinVec<Statement>,
-
-    /// Fresh local counter for temporaries.
-    fresh_counter: FreshLocalCounter,
 }
 
 impl<'b> MirFunctionBuilder<'b> {
@@ -145,7 +119,7 @@ impl<'b> MirFunctionBuilder<'b> {
 
     /// Register a parameter local and return its `LocalId`.
     ///
-    /// Parameters must be added before the entry block is created.
+    /// Parameters must be added before any blocks are created.
     /// They are stored as the first N locals.
     pub fn add_param(&mut self, _name: NString, ty: MirTypeId, mutable: bool) -> LocalId {
         let local = LocalDecl { ty, mutable };
@@ -170,46 +144,66 @@ impl<'b> MirFunctionBuilder<'b> {
 
     // ── Block management ─────────────────────────────────────
 
-    /// Start a new basic block. If a previous block was being built,
-    /// **it must have a terminator set** or this will panic.
+    /// Create a new basic block with no block arguments and make it the
+    /// current block. If a previous block existed, it MUST have a terminator
+    /// already set.
     ///
     /// The first block created becomes the entry block.
-    pub fn start_block(&mut self) -> &mut Self {
-        // Finalize any current block
-        if let Some(_current) = self.current_block.take() {
-            // The previous block should have had its terminator set.
-            // We don't validate here; the caller is responsible.
-        }
-        self.current_statements = ThinVec::new();
-        self.current_block = None; // will be created on first statement/terminator
-        self
+    pub fn create_block(&mut self) -> BasicBlockId {
+        let new_block = self.create_block_with_args(&[]);
+        new_block.block
     }
 
-    /// Ensure there is an active current block, creating one if necessary.
-    fn ensure_block(&mut self) -> BasicBlockId {
-        if let Some(ref bb) = self.current_block {
-            return bb.clone();
+    /// Create a new basic block with the given argument types.
+    ///
+    /// For each argument type, a fresh local is created. The returned
+    /// `arg_locals` are the locals that will receive block argument values
+    /// from predecessor edges.
+    ///
+    /// The first block created becomes the entry block.
+    pub fn create_block_with_args(&mut self, arg_types: &[MirTypeId]) -> NewBlock {
+        // Finalize any previous current block
+        self.current_block = None;
+
+        // Create locals for block arguments
+        let mut arg_locals: ThinVec<LocalId> = ThinVec::new();
+        for ty in arg_types.iter() {
+            let local_id = self.new_temp(ty.clone(), false);
+            arg_locals.push(local_id);
         }
-        // Create an empty block
+
+        // Build the block
         let bb = BasicBlock {
             statements: ThinVec::new(),
             terminator: Terminator::Unreachable,
-            args: ThinVec::new(),
+            args: arg_types.iter().cloned().collect(),
         };
         let bb_id: BasicBlockId = get_storage(|s| s.store_basic_block(bb));
+
+        // First block created becomes the entry block
         if self.entry_block.is_none() {
             self.entry_block = Some(bb_id.clone());
         }
+
         self.blocks.push(bb_id.clone());
         self.current_block = Some(bb_id.clone());
-        bb_id
+
+        NewBlock {
+            block: bb_id,
+            arg_locals,
+        }
     }
 
     // ── Statements ───────────────────────────────────────────
 
     /// Push a statement into the current block.
+    /// Panics if no current block exists (call `create_block` first).
     pub fn push_stmt(&mut self, stmt: Statement) -> &mut Self {
-        let bb_id = self.ensure_block();
+        let bb_id = self
+            .current_block
+            .as_ref()
+            .cloned()
+            .expect("push_stmt called with no current block — call create_block first");
         get_storage(|s| {
             let mut borrowed = s[&bb_id].borrow_mut();
             borrowed.statements.push(stmt.clone());
@@ -239,20 +233,20 @@ impl<'b> MirFunctionBuilder<'b> {
 
     // ── Terminators ──────────────────────────────────────────
 
-    /// Set the terminator of the current block. This finalizes the block
-    /// and prepares for a new block to be started.
+    /// Set the terminator of the current block. This finalizes the block.
     pub fn set_terminator(&mut self, terminator: Terminator) -> &mut Self {
-        let bb_id = self.ensure_block();
+        let bb_id = self
+            .current_block
+            .take()
+            .expect("set_terminator called with no current block");
         get_storage(|s| {
             let mut borrowed = s[&bb_id].borrow_mut();
             borrowed.terminator = terminator;
         });
-        self.current_block = None;
         self
     }
 
-    /// Shorthand: unconditional branch to target.
-    /// `args` are the block arguments passed to the target block.
+    /// Unconditional branch to target (no block arguments).
     pub fn goto(&mut self, target: BasicBlockId) -> &mut Self {
         self.set_terminator(Terminator::Goto {
             target,
@@ -260,12 +254,12 @@ impl<'b> MirFunctionBuilder<'b> {
         })
     }
 
-    /// Shorthand: unconditional branch with block arguments.
+    /// Unconditional branch with block arguments.
     pub fn goto_with_args(&mut self, target: BasicBlockId, args: ThinVec<Operand>) -> &mut Self {
         self.set_terminator(Terminator::Goto { target, args })
     }
 
-    /// Shorthand: conditional branch.
+    /// Conditional branch (no block arguments).
     pub fn if_br(&mut self, condition: Operand, true_target: BasicBlockId, false_target: BasicBlockId) -> &mut Self {
         self.set_terminator(Terminator::If {
             condition,
@@ -276,7 +270,7 @@ impl<'b> MirFunctionBuilder<'b> {
         })
     }
 
-    /// Shorthand: conditional branch with block arguments.
+    /// Conditional branch with block arguments.
     pub fn if_br_with_args(
         &mut self,
         condition: Operand,
@@ -294,12 +288,12 @@ impl<'b> MirFunctionBuilder<'b> {
         })
     }
 
-    /// Shorthand: return.
+    /// Return from the function.
     pub fn ret(&mut self, value: Option<Operand>) -> &mut Self {
         self.set_terminator(Terminator::Return { value })
     }
 
-    /// Shorthand: call with no return (diverging).
+    /// Diverging call (no return).
     pub fn call(&mut self, callee: Operand, args: ThinVec<Operand>) -> &mut Self {
         self.set_terminator(Terminator::Call {
             callee,
@@ -310,7 +304,7 @@ impl<'b> MirFunctionBuilder<'b> {
         })
     }
 
-    /// Shorthand: call with return value.
+    /// Returning call.
     pub fn call_return(
         &mut self,
         callee: Operand,
@@ -327,7 +321,7 @@ impl<'b> MirFunctionBuilder<'b> {
         })
     }
 
-    /// Shorthand: call with return value and block arguments to target.
+    /// Returning call with block arguments on the successor edge.
     pub fn call_return_with_args(
         &mut self,
         callee: Operand,
@@ -345,54 +339,45 @@ impl<'b> MirFunctionBuilder<'b> {
         })
     }
 
-    /// Shorthand: unreachable.
+    /// Unreachable terminator.
     pub fn unreachable(&mut self) -> &mut Self {
         self.set_terminator(Terminator::Unreachable)
     }
 
     // ── Convenience: build Rvalues ───────────────────────────
 
-    /// Build an `Rvalue::Use` from an operand.
     pub fn rv_use(op: Operand) -> Rvalue {
         Rvalue::Use(op)
     }
 
-    /// Build an `Rvalue::Ref`.
     pub fn rv_ref(kind: BorrowKind, place: Place) -> Rvalue {
         Rvalue::Ref { region: kind, place }
     }
 
-    /// Build an `Rvalue::Len`.
     pub fn rv_len(place: Place) -> Rvalue {
         Rvalue::Len(place)
     }
 
-    /// Build an `Rvalue::Cast`.
     pub fn rv_cast(value: Operand, target_ty: MirTypeId) -> Rvalue {
         Rvalue::Cast { value, target_ty }
     }
 
-    /// Build an `Rvalue::BinaryOp`.
     pub fn rv_binary(op: MirBinaryOp, lhs: Operand, rhs: Operand) -> Rvalue {
         Rvalue::BinaryOp { op, lhs, rhs }
     }
 
-    /// Build an `Rvalue::CheckedBinaryOp`.
     pub fn rv_checked_binary(op: MirBinaryOp, lhs: Operand, rhs: Operand) -> Rvalue {
         Rvalue::CheckedBinaryOp { op, lhs, rhs }
     }
 
-    /// Build an `Rvalue::UnaryOp`.
     pub fn rv_unary(op: MirUnaryOp, operand: Operand) -> Rvalue {
         Rvalue::UnaryOp { op, operand }
     }
 
-    /// Build an `Rvalue::NullaryOp`.
     pub fn rv_nullary(op: NullaryOp, ty: MirTypeId) -> Rvalue {
         Rvalue::NullaryOp(op, ty)
     }
 
-    /// Build an `Rvalue::Aggregate`.
     pub fn rv_aggregate(kind: AggregateKind, operands: ThinVec<Operand>) -> Rvalue {
         Rvalue::Aggregate(kind, operands)
     }
@@ -450,13 +435,10 @@ impl<'b> MirFunctionBuilder<'b> {
 
     /// Finalize the function: commit all data to the MirStore and return
     /// the `MirFunctionId`.
-    ///
-    /// After this call, the function builder is consumed and the function
-    /// ID is added to the parent `MirBuilder`'s function list.
     pub fn finish_function(self) -> MirFunctionId {
         let entry_block = self
             .entry_block
-            .expect("No entry block created; call start_block first");
+            .expect("No entry block created; call create_block first");
 
         let func = MirFunction {
             name: self.name,
@@ -472,16 +454,6 @@ impl<'b> MirFunctionBuilder<'b> {
 
         self.builder.add_function(func_id.clone());
         func_id
-    }
-
-    /// Get the current fresh counter value.
-    pub fn fresh_counter(&self) -> &FreshLocalCounter {
-        &self.fresh_counter
-    }
-
-    /// Get a mutable reference to the fresh counter.
-    pub fn fresh_counter_mut(&mut self) -> &mut FreshLocalCounter {
-        &mut self.fresh_counter
     }
 
     /// Convenience: intern a type and return its `MirTypeId`.

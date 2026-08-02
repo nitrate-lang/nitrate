@@ -10,7 +10,9 @@ use nitrate_nstring::NString;
 // Expression lowering
 // ─────────────────────────────────────────────────────────────
 
-/// Lower an HIR `Value` into MIR statements within the current basic block.
+/// Lower an HIR `Value` into MIR. Returns the `Operand` representing the
+/// computed value. For tail-position expressions (`is_tail = true`), the
+/// result may be passed via block arguments rather than returned directly.
 pub fn lower_value(
     ctx: &mut LoweringCtx,
     func: &mut mir::MirFunctionBuilder,
@@ -222,21 +224,15 @@ pub fn lower_value(
                 .map(|arg| lower_value(ctx, func, &arg, false))
                 .collect();
 
-            let return_ty = if let Ok(hir_ty) = value.determine_type(ctx.symbol_tab) {
-                ty::lower_type(&hir_ty)
-            } else {
-                func.store_type(mir::MirType::Unit)
-            };
-
             if is_tail {
                 func.call(callee_op, mir_args);
                 mir::Operand::Constant(mir::MirLiteral::Unit)
             } else {
-                let temp = func.new_temp(return_ty.clone(), false);
-                let merge_block = create_block(func);
-                func.call_return(callee_op, mir_args, mir::Place::Local(temp.clone()), merge_block);
-                func.start_block();
-                mir::Operand::Copy(mir::Place::Local(temp))
+                let return_ty = value_result_type(ctx, func, &value);
+                let ret_temp = func.new_temp(return_ty.clone(), false);
+                let merge_block = func.create_block();
+                func.call_return(callee_op, mir_args, mir::Place::Local(ret_temp.clone()), merge_block);
+                mir::Operand::Copy(mir::Place::Local(ret_temp))
             }
         }
 
@@ -245,26 +241,21 @@ pub fn lower_value(
             object, method_name: _, ..
         } => {
             let callee_op = lower_value(ctx, func, object, false);
-            let return_ty = if let Ok(hir_ty) = value.determine_type(ctx.symbol_tab) {
-                ty::lower_type(&hir_ty)
-            } else {
-                func.store_type(mir::MirType::Unit)
-            };
+            let return_ty = value_result_type(ctx, func, &value);
 
             if is_tail {
                 func.call(callee_op, thin_vec::ThinVec::new());
                 mir::Operand::Constant(mir::MirLiteral::Unit)
             } else {
-                let temp = func.new_temp(return_ty.clone(), false);
-                let merge_block = create_block(func);
+                let ret_temp = func.new_temp(return_ty.clone(), false);
+                let merge_block = func.create_block();
                 func.call_return(
                     callee_op,
                     thin_vec::ThinVec::new(),
-                    mir::Place::Local(temp.clone()),
+                    mir::Place::Local(ret_temp.clone()),
                     merge_block,
                 );
-                func.start_block();
-                mir::Operand::Copy(mir::Place::Local(temp))
+                mir::Operand::Copy(mir::Place::Local(ret_temp))
             }
         }
 
@@ -286,7 +277,7 @@ pub fn lower_value(
             true_branch,
             false_branch,
             ..
-        } => lower_if(ctx, func, condition, true_branch, false_branch.as_ref()),
+        } => lower_if(ctx, func, condition, true_branch, false_branch.as_ref(), is_tail),
 
         // ── While loop ──────────────────────────────────
         hir::Value::While { condition, body, .. } => lower_while(ctx, func, condition, body),
@@ -439,49 +430,72 @@ fn operand_to_place(func: &mut mir::MirFunctionBuilder, operand: mir::Operand) -
 // Control flow lowering helpers
 // ─────────────────────────────────────────────────────────────
 
+/// Lower an if/else expression using block arguments for the merged value.
+///
+/// When `is_tail` is false and both branches produce values, a merge block
+/// with a block argument is created. Each branch passes its result value
+/// as a block argument via goto_with_args.
 fn lower_if(
     ctx: &mut LoweringCtx,
     func: &mut mir::MirFunctionBuilder,
     condition: &hir::ValueId,
     true_branch: &hir::BlockId,
     false_branch: Option<&hir::BlockId>,
+    is_tail: bool,
 ) -> mir::Operand {
     let cond_op = lower_value(ctx, func, condition, false);
 
-    let then_block = create_block(func);
-    let else_block_opt = false_branch.as_ref().map(|_| create_block(func));
-    let merge_block = create_block(func);
+    // Determine the result type
+    let result_ty = if is_tail {
+        None
+    } else {
+        Some(value_result_type(ctx, func, &condition.borrow()))
+    };
 
-    func.if_br(
-        cond_op,
-        then_block.clone(),
-        else_block_opt.clone().unwrap_or_else(|| merge_block.clone()),
-    );
+    // Create merge block with a block argument for the result value (if not tail)
+    let merge_types: thin_vec::ThinVec<mir::MirTypeId> = result_ty
+        .as_ref()
+        .map(|t| thin_vec::ThinVec::from([t.clone()].as_slice()))
+        .unwrap_or_default();
+    let merge = func.create_block_with_args(&merge_types);
+    let merge_arg_local = merge.arg_locals.first().cloned();
+
+    let then_block = func.create_block();
+    let else_block_opt = false_branch.as_ref().map(|_| func.create_block());
+
+    // Branch from condition to then/else
+    func.if_br(cond_op, then_block, else_block_opt.unwrap_or(merge.block.clone()));
 
     // Lower then branch
-    func.start_block();
     let true_block_data = true_branch.borrow();
-    ctx.push_merge_point(merge_block.clone());
-    let _ = block::lower_block(ctx, func, &true_block_data);
-    ctx.pop_merge_point();
+    let then_result = block::lower_block(ctx, func, &true_block_data);
     if func.current_block.is_some() {
-        func.goto(merge_block.clone());
+        if is_tail {
+            func.goto(merge.block.clone());
+        } else {
+            func.goto_with_args(merge.block.clone(), thin_vec::ThinVec::from([then_result].as_slice()));
+        }
     }
 
     // Lower else branch if present
     if let Some(false_id) = false_branch {
-        func.start_block();
         let false_block_data = false_id.borrow();
-        ctx.push_merge_point(merge_block.clone());
-        let _ = block::lower_block(ctx, func, &false_block_data);
-        ctx.pop_merge_point();
+        let else_result = block::lower_block(ctx, func, &false_block_data);
         if func.current_block.is_some() {
-            func.goto(merge_block.clone());
+            if is_tail {
+                func.goto(merge.block.clone());
+            } else {
+                func.goto_with_args(merge.block.clone(), thin_vec::ThinVec::from([else_result].as_slice()));
+            }
         }
     }
 
-    func.start_block();
-    mir::Operand::Constant(mir::MirLiteral::Unit)
+    // Return the merge block argument as the result operand
+    if let Some(arg_local) = merge_arg_local {
+        mir::Operand::Copy(mir::Place::Local(arg_local))
+    } else {
+        mir::Operand::Constant(mir::MirLiteral::Unit)
+    }
 }
 
 fn lower_while(
@@ -490,44 +504,40 @@ fn lower_while(
     condition: &hir::ValueId,
     body: &hir::BlockId,
 ) -> mir::Operand {
-    let header_block = create_block(func);
-    let body_block = create_block(func);
-    let exit_block = create_block(func);
+    let header_block = func.create_block();
+    let body_block = func.create_block();
+    let exit_block = func.create_block();
 
-    func.goto(header_block.clone());
+    func.goto(header_block);
 
     // Header: evaluate condition
-    func.start_block();
     let cond_op = lower_value(ctx, func, condition, false);
-    func.if_br(cond_op, body_block.clone(), exit_block.clone());
+    func.if_br(cond_op, body_block, exit_block);
 
     // Body block
-    func.start_block();
-    ctx.push_loop(header_block.clone(), exit_block.clone());
+    ctx.push_loop(header_block, exit_block);
     let body_data = body.borrow();
     block::lower_block_elements(ctx, func, &body_data.elements);
     ctx.pop_loop();
     func.goto(header_block);
 
     // Exit block
-    func.start_block();
     mir::Operand::Constant(mir::MirLiteral::Unit)
 }
 
 fn lower_loop(ctx: &mut LoweringCtx, func: &mut mir::MirFunctionBuilder, body: &hir::BlockId) -> mir::Operand {
-    let loop_body = create_block(func);
-    let loop_exit = create_block(func);
+    let loop_body = func.create_block();
+    let loop_exit = func.create_block();
 
-    func.goto(loop_body.clone());
+    func.goto(loop_body);
 
-    func.start_block();
-    ctx.push_loop(loop_body.clone(), loop_exit.clone());
+    ctx.push_loop(loop_body, loop_exit);
     let body_data = body.borrow();
     block::lower_block_elements(ctx, func, &body_data.elements);
     ctx.pop_loop();
     func.goto(loop_body);
 
-    func.start_block();
+    // Exit block — we must position on it so the caller can continue
     mir::Operand::Constant(mir::MirLiteral::Unit)
 }
 
@@ -541,27 +551,23 @@ fn assign_rvalue_to_temp(
     hir_value: &hir::Value,
     rvalue: mir::Rvalue,
 ) -> mir::Operand {
-    let mir_ty = if let Ok(hir_ty) = hir_value.determine_type(ctx.symbol_tab) {
-        ty::lower_type(&hir_ty)
-    } else {
-        func.store_type(mir::MirType::Unit)
-    };
-
+    let mir_ty = value_result_type(ctx, func, hir_value);
     let temp = func.new_temp(mir_ty, false);
     func.push_assign(mir::Place::Local(temp.clone()), rvalue);
     mir::Operand::Copy(mir::Place::Local(temp))
 }
 
-fn create_block(func: &mut mir::MirFunctionBuilder) -> mir::BasicBlockId {
-    func.start_block();
-    let dummy_local = func.new_temp(func.store_type(mir::MirType::Unit), false);
-    func.push_assign(
-        mir::Place::Local(dummy_local.clone()),
-        mir::Rvalue::Use(mir::Operand::Constant(mir::MirLiteral::Unit)),
-    );
-    func.current_block
-        .clone()
-        .expect("current_block should be set after push_assign")
+/// Get the MIR type for an HIR value's result.
+fn value_result_type(
+    ctx: &mut LoweringCtx,
+    func: &mut mir::MirFunctionBuilder,
+    hir_value: &hir::Value,
+) -> mir::MirTypeId {
+    if let Ok(hir_ty) = hir_value.determine_type(ctx.symbol_tab) {
+        ty::lower_type(&hir_ty)
+    } else {
+        func.store_type(mir::MirType::Unit)
+    }
 }
 
 // ─────────────────────────────────────────────────────────────

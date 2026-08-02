@@ -8,9 +8,7 @@ use nitrate_mir::prelude as mir;
 ///
 /// This is the primary entry point for lowering a HIR function body or block
 /// expression into MIR. Each `BlockElement::Expr` is lowered in order. The last
-/// expression in the block determines the block's result value (if any).
-///
-/// Panics if the block is empty (callers should ensure blocks have at least one element).
+/// expression in the block determines the block's result operand.
 pub fn lower_block_elements(ctx: &mut LoweringCtx, func: &mut mir::MirFunctionBuilder, elements: &[hir::BlockElement]) {
     if elements.is_empty() {
         return;
@@ -20,7 +18,11 @@ pub fn lower_block_elements(ctx: &mut LoweringCtx, func: &mut mir::MirFunctionBu
         let is_last = i == elements.len() - 1;
         match element {
             hir::BlockElement::Expr(value_id) => {
-                expr::lower_value(ctx, func, value_id, is_last);
+                let operand = expr::lower_value(ctx, func, value_id, is_last);
+                if is_last {
+                    // Store the result operand for the caller to use
+                    ctx.set_value_operand(value_id, operand);
+                }
             }
             hir::BlockElement::Local(local_var_id) => {
                 let local_var = local_var_id.borrow();
@@ -51,8 +53,9 @@ fn lower_local_declaration(ctx: &mut LoweringCtx, func: &mut mir::MirFunctionBui
     let init_value = &local_var.initializer;
     let init_operand = expr::lower_value(ctx, func, init_value, false);
 
-    // Assign the initializer to the local
-    func.push_assign(mir::Place::Local(local_id.clone()), mir::Rvalue::Use(init_operand));
+    // Assign the initializer to the local (resolve through a temp if needed)
+    let init_rvalue = mir::Rvalue::Use(init_operand);
+    func.push_assign(mir::Place::Local(local_id.clone()), init_rvalue);
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -61,30 +64,20 @@ fn lower_local_declaration(ctx: &mut LoweringCtx, func: &mut mir::MirFunctionBui
 
 /// Lower an HIR `Block` (block expression `{ ... }`) into MIR.
 ///
-/// Each `Block` contains a sequence of `BlockElement`s. The last expression
-/// provides the block's result value.
-///
-/// Returns the `Place` containing the block's result, or a unit place
+/// Returns the `Operand` containing the block's result, or unit
 /// if the block has no result expression.
 pub fn lower_block(ctx: &mut LoweringCtx, func: &mut mir::MirFunctionBuilder, block: &hir::Block) -> mir::Operand {
-    // Blocks are lowered inline — the elements are just appended to the
-    // current basic block sequence. Complex scoping (nested blocks that
-    // need their own locals) would require StorageLive/StorageDead markers,
-    // but for now we lower them flat.
-
     if block.elements.is_empty() {
         return mir::Operand::Constant(mir::MirLiteral::Unit);
     }
 
+    // Clear any prior value map entries to avoid stale results
     lower_block_elements(ctx, func, &block.elements);
 
     // The result of the block is the value of the last expression
     if let Some(hir::BlockElement::Expr(last_value)) = block.elements.last() {
-        let _last = last_value.borrow();
-        // If the last expression was already lowered with its result placed
-        // somewhere, return that. Otherwise return unit.
-        if let Some(place) = ctx.get_value_place(last_value) {
-            return mir::Operand::Copy(place.clone());
+        if let Some(operand) = ctx.get_value_operand(last_value) {
+            return operand.clone();
         }
     }
 

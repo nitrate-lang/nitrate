@@ -26,12 +26,8 @@ struct LoweringCtx<'b> {
     /// Each entry is (continue_target, break_target).
     loop_stack: Vec<(mir::BasicBlockId, mir::BasicBlockId)>,
 
-    /// Stack of if-else merge points for block expression results.
-    /// Each entry is the block where the phi/merge happens.
-    merge_point_stack: Vec<mir::BasicBlockId>,
-
-    /// Map from HIR value IDs to their lowered MIR place (for symbol references).
-    value_place_map: HashMap<usize, mir::Place>,
+    /// Map from HIR value IDs to their lowered MIR Operand (for block results).
+    value_operand_map: HashMap<usize, mir::Operand>,
 }
 
 impl<'b> LoweringCtx<'b> {
@@ -40,8 +36,7 @@ impl<'b> LoweringCtx<'b> {
             symbol_tab,
             local_map: HashMap::new(),
             loop_stack: Vec::new(),
-            merge_point_stack: Vec::new(),
-            value_place_map: HashMap::new(),
+            value_operand_map: HashMap::new(),
         }
     }
 
@@ -57,16 +52,12 @@ impl<'b> LoweringCtx<'b> {
         self.loop_stack.last()
     }
 
-    fn push_merge_point(&mut self, bb: mir::BasicBlockId) {
-        self.merge_point_stack.push(bb);
+    fn set_value_operand(&mut self, hir_value: &hir::ValueId, operand: mir::Operand) {
+        self.value_operand_map.insert(hir_value.as_usize(), operand);
     }
 
-    fn pop_merge_point(&mut self) {
-        self.merge_point_stack.pop();
-    }
-
-    fn get_value_place(&self, hir_value: &hir::ValueId) -> Option<&mir::Place> {
-        self.value_place_map.get(&hir_value.as_usize())
+    fn get_value_operand(&self, hir_value: &hir::ValueId) -> Option<&mir::Operand> {
+        self.value_operand_map.get(&hir_value.as_usize())
     }
 }
 
@@ -78,22 +69,8 @@ impl<'b> LoweringCtx<'b> {
 ///
 /// This function converts the high-level, AST-like HIR representation
 /// into a control-flow-graph-based MIR representation with basic blocks,
-/// flat statements, and explicit terminators.
-///
-/// # Design
-///
-/// The lowering process performs the following transformations:
-/// 1. Converts HIR `Value` trees into flat MIR `Statement` + `Rvalue` sequences
-/// 2. Transforms HIR control flow (`If`, `While`, `Loop`, `Break`, `Continue`,
-///    `Return`) into basic blocks with `Terminator` instructions
-/// 3. Monomorphizes all types into fully concrete `MirType` values
-/// 4. Converts HIR locals/variables into MIR `LocalDecl` entries with SSA form
-/// 5. Translates HIR expressions (that are non-branching) into DAG-like Rvalues
-///    within basic blocks
-///
-/// After this lowering, the HIR `Store` and its associated memory can be
-/// dropped (freeing all HIR data) since all relevant information has been
-/// transferred to the MIR representation.
+/// flat statements, and explicit terminators. Block arguments are used
+/// to carry values across control flow edges instead of phi nodes.
 ///
 /// # Arguments
 ///
@@ -167,9 +144,13 @@ fn lower_function(builder: &mut mir::MirBuilder, func: &hir::Function, symbol_ta
             ctx.local_map.insert(name.clone(), local_id.clone());
         }
 
-        func_builder.start_block();
+        // Create the entry block
+        func_builder.create_block();
         block::lower_block_elements(&mut ctx, &mut func_builder, body);
-        func_builder.ret(None);
+        // If the body didn't explicitly return, add an implicit return
+        if func_builder.current_block.is_some() {
+            func_builder.ret(None);
+        }
     }
 
     func_builder.finish_function();
