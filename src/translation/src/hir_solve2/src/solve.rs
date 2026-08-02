@@ -182,8 +182,20 @@ impl<'a> Solver<'a> {
                 refinement_type: *refinement_ty,
             });
         }
-        let best = Self::find_common_integer_type(&constraint_types, value)
-            .unwrap_or_else(|| TypeId::from(Type::I32 { span }));
+        let best = Self::find_common_integer_type(&constraint_types, value).unwrap_or_else(|| {
+            // Choose the smallest integer type that can hold the literal value
+            if value <= u8::MAX as u128 {
+                TypeId::from(Type::U8 { span })
+            } else if value <= u16::MAX as u128 {
+                TypeId::from(Type::U16 { span })
+            } else if value <= u32::MAX as u128 {
+                TypeId::from(Type::U32 { span })
+            } else if value <= u64::MAX as u128 {
+                TypeId::from(Type::U64 { span })
+            } else {
+                TypeId::from(Type::U128 { span })
+            }
+        });
         match &*best {
             Type::I8 { .. } => i8::try_from(value)
                 .map(|v| NodeAction::Replace(Value::I8 { span, value: v }))
@@ -708,9 +720,15 @@ impl<'a> Solver<'a> {
 
     fn visit_field_access(&mut self, e: &ValueId) {
         let v = e.borrow();
-        if let Value::FieldAccess { expr, .. } = &*v {
-            self.visit(expr);
+        let Value::FieldAccess { expr, .. } = &*v else { return };
+        // Propagate type constraints: if we have constraints on this field access,
+        // forward them to the struct/object being accessed
+        if let Some(pc) = self.constraints.get(e).cloned() {
+            for c in &pc {
+                self.add_constraint(expr, c.clone());
+            }
         }
+        self.visit(expr);
     }
     fn visit_assign(&mut self, e: &ValueId) {
         let v = e.borrow();

@@ -2,7 +2,7 @@
 
 This document catalogs all issues found during a comprehensive, function-by-function audit of the `hir_solve2` crate. Issues are organized by file and function. No fixes have been applied.
 
-**Fix Progress: 41 / 57 resolved**
+**Fix Progress: 44 / 57 resolved**
 
 ---
 
@@ -130,7 +130,7 @@ This document catalogs all issues found during a comprehensive, function-by-func
 - **Description**: The error variant has fields `computed_min: u128, computed_max: u128`, suggesting they hold the computed operation result range. However, callers (`visit_binary` line 565, `visit_unary` line 629) pass `bnds.lo.max(0) as u128` and `bnds.hi` where `bnds` comes from `extract_bounds_from_type(&result_ty)` — the **target** refinement bounds. The actual computed result bounds (`res` in `visit_binary`, or the unary result in `visit_unary`) are discarded. The error message says "operation result range [X, Y] cannot be guaranteed..." but X and Y are the _expected_ bounds, not the _actual_ computed range.
 - **Recommendation**: Pass the computed result bounds (`res.lo`, `res.hi`) instead of the target bounds, and rename fields to `computed_lo: i128, computed_hi: u128` to match the Bounds struct.
 
-- ### 21. Non-contiguous variant IDs suggest incomplete maintenance
+- ### ✅ 21. Non-contiguous variant IDs suggest incomplete maintenance
 
 - **Severity**: Low (maintainability)
 - **Description**: Variant IDs are 0, 3, 4, 5, 6, 8, 11, 14 — gaps suggest variants were added and removed over time. This makes it unclear whether IDs 1, 2, 7, 9, 10, 12, 13 are reserved or free.
@@ -176,7 +176,7 @@ This document catalogs all issues found during a comprehensive, function-by-func
 - **Description**: `check_errors.push((ty, value as i128))` — the original `value` is `u128`. If the literal value is larger than `i128::MAX`, the cast wraps to a negative number, and the error diagnostic will show an incorrect (negative) value.
 - **Recommendation**: Store the original `u128` value and convert appropriately for display.
 
-- ### 28. `Solver::solve_inferred_integer` — defaults to `I32` when no constraints match
+- ### ✅ 28. `Solver::solve_inferred_integer` — defaults to `I32` when no constraints match
 
 - **Severity**: Low
 - **Description**: `unwrap_or_else(|| TypeId::from(Type::I32 { span }))` — an integer literal with zero type constraints defaults to I32. If the literal value is `300_000_000_000` (doesn't fit in I32), the subsequent conversion will fail with an "out of range" error, and the literal stays as `InferredInteger` (unresolved). The fallback should be the smallest type that fits the value.
@@ -218,7 +218,7 @@ This document catalogs all issues found during a comprehensive, function-by-func
 - **Description**: Constraints are cloned before visiting the operand (line 613) and then cloned again after visiting (line 619) for bounds checking. The second clone is unnecessary — the first clone could be reused if stored.
 - **Recommendation**: Store the cloned constraints in a local variable and reuse.
 
-- ### 35. `Solver::visit_field_access` — does not propagate constraints
+- ### ✅ 35. `Solver::visit_field_access` — does not propagate constraints
 
 - **Severity**: Low
 - **Description**: The function only visits the expression (`self.visit(expr)`) but does not propagate any type constraints to the field or from the containing struct type. Field access types must be determined by other mechanisms (struct field lookup in HIR type resolution), which may happen before the solver runs.
@@ -391,9 +391,9 @@ Type::Parameterized { base, args, span } => {
 - [x] **Critical**: 0 remaining
 - [x] **High**: 0 remaining
 - [x] **Medium**: 0 remaining
-- [ ] **Low**: 16 remaining — #1, #4, #12, #18, #21, #28, #30, #35, #47, #48, #51, #54, #55, #56
+- [ ] **Low**: 11 remaining — #1, #4, #12, #30, #47, #48, #51, #54, #55, #56 (and #19 deferred per audit)
 
-**Total: 57 issues found across 8 files. Fix Progress: 41 / 57 resolved. (All Critical/High/Medium issues fixed)**
+**Total: 57 issues found across 8 files. Fix Progress: 44 / 57 resolved. All Critical/High/Medium issues fixed.**
 
 ### Most Critical Issues (fix these first):
 

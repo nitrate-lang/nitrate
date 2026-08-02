@@ -82,13 +82,13 @@ impl FormattableDiagnosticGroup for TypeErr {
     fn variant_id(&self) -> u16 {
         match self {
             TypeErr::IntegerLiteralOutOfRange { .. } => 0,
-            TypeErr::IntegerLiteralOutOfRefinementBounds { .. } => 3,
-            TypeErr::OperationResultOutOfRefinementBounds { .. } => 4,
-            TypeErr::MismatchedBranchTypes { .. } => 5,
-            TypeErr::CannotInferTypeArgs { .. } => 6,
-            TypeErr::AmbiguousType { .. } => 8,
-            TypeErr::UnboundGenericParam { .. } => 11,
-            TypeErr::MethodNotFound { .. } => 14,
+            TypeErr::IntegerLiteralOutOfRefinementBounds { .. } => 1,
+            TypeErr::OperationResultOutOfRefinementBounds { .. } => 2,
+            TypeErr::MismatchedBranchTypes { .. } => 3,
+            TypeErr::CannotInferTypeArgs { .. } => 4,
+            TypeErr::AmbiguousType { .. } => 5,
+            TypeErr::UnboundGenericParam { .. } => 6,
+            TypeErr::MethodNotFound { .. } => 7,
         }
     }
 
