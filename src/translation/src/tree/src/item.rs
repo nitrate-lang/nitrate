@@ -460,6 +460,19 @@ pub enum Item {
     Variable(GlobalVariable),
 }
 
+pub enum ItemKind {
+    SyntaxError,
+    Module,
+    Import,
+    TypeAlias,
+    Struct,
+    Enum,
+    Trait,
+    Impl,
+    Function,
+    Variable,
+}
+
 impl Item {
     pub fn span(&self) -> SrcSpan {
         match self {

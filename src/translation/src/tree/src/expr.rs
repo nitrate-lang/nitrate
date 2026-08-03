@@ -755,6 +755,39 @@ pub enum Expr {
     MethodCall(Box<MethodCall>),
 }
 
+pub enum RValueKind {
+    SyntaxError,
+    Parentheses,
+    Boolean,
+    Integer,
+    Float,
+    String,
+    BString,
+    TypeInfo,
+    List,
+    Tuple,
+    StructInit,
+    UnaryExpr,
+    BinExpr,
+    Range,
+    Cast,
+    Block,
+    Closure,
+    Path,
+    IndexAccess,
+    FieldAccess,
+    If,
+    While,
+    Match,
+    Break,
+    Continue,
+    Return,
+    ForEach,
+    Await,
+    FunctionCall,
+    MethodCall,
+}
+
 impl Expr {
     pub fn span(&self) -> SrcSpan {
         match self {
