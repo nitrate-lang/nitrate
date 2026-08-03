@@ -37,7 +37,7 @@ const ATTR_TRAIT: fn(String, SrcPos) -> HirErr = |name, span| HirErr::Unrecogniz
 // ═══════════════════════════════════════════════════════════════════════════
 
 fn lower_type_alias(type_alias: ast::TypeAlias, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<TypeAliasDefId, ()> {
-    let span: SrcPos = type_alias.span.into();
+    let span: SrcPos = type_alias.span.start;
     let visibility = helpers::lower_visibility(type_alias.visibility);
     helpers::reject_all_attributes(&type_alias.attributes, ATTR_TYPE_ALIAS, log);
 
@@ -77,7 +77,7 @@ fn lower_struct_definition(
     ctx: &mut Ast2HirCtx,
     log: &CompilerLog,
 ) -> Result<StructDefId, ()> {
-    let span: SrcPos = struct_def.span.into();
+    let span: SrcPos = struct_def.span.start;
     let visibility = helpers::lower_visibility(struct_def.visibility);
     helpers::reject_all_attributes(&struct_def.attributes, ATTR_STRUCT, log);
 
@@ -102,7 +102,7 @@ fn lower_struct_definition(
         };
 
         let struct_field = StructField {
-            span: field.span.into(),
+            span: field.span.start,
             visibility: field_visibility,
             attributes: BTreeSet::new(),
             name: field_name,
@@ -133,7 +133,7 @@ fn lower_struct_definition(
 // ═══════════════════════════════════════════════════════════════════════════
 
 fn lower_enum_definition(enum_def: ast::Enum, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<EnumDefId, ()> {
-    let span: SrcPos = enum_def.span.into();
+    let span: SrcPos = enum_def.span.start;
     let visibility = helpers::lower_visibility(enum_def.visibility);
     helpers::reject_all_attributes(&enum_def.attributes, ATTR_ENUM, log);
 
@@ -163,7 +163,7 @@ fn lower_enum_definition(enum_def: ast::Enum, ctx: &mut Ast2HirCtx, log: &Compil
         };
 
         let variant = EnumVariant {
-            span: variant.span.into(),
+            span: variant.span.start,
             attributes: BTreeSet::new(),
             name: variant_name,
             ty: variant_type,
@@ -190,7 +190,7 @@ fn lower_enum_definition(enum_def: ast::Enum, ctx: &mut Ast2HirCtx, log: &Compil
 // ═══════════════════════════════════════════════════════════════════════════
 
 fn lower_trait_definition(trait_: &ast::Trait, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<TraitId, ()> {
-    let span: SrcPos = trait_.span.into();
+    let span: SrcPos = trait_.span.start;
     let visibility = helpers::lower_visibility(trait_.visibility);
     helpers::reject_all_attributes(&trait_.attributes, ATTR_TRAIT, log);
 
@@ -360,7 +360,7 @@ fn lower_global_variable(
     ctx: &mut Ast2HirCtx,
     log: &CompilerLog,
 ) -> Result<GlobalVariableId, ()> {
-    let span: SrcPos = var.span.into();
+    let span: SrcPos = var.span.start;
     let visibility = helpers::lower_visibility(var.visibility);
     helpers::reject_all_attributes(&var.attributes, ATTR_GLOBAL_VAR, log);
 
@@ -404,7 +404,7 @@ fn lower_global_variable(
 // ═══════════════════════════════════════════════════════════════════════════
 
 fn lower_parameter(param: ast::FuncParam, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<ParameterId, ()> {
-    let span: SrcPos = param.span.into();
+    let span: SrcPos = param.span.start;
     helpers::reject_all_attributes(&param.attributes, ATTR_FUNC_PARAM, log);
 
     let is_mutable = helpers::is_mutable(param.mutability);
@@ -440,7 +440,7 @@ fn lower_parameter(param: ast::FuncParam, ctx: &mut Ast2HirCtx, log: &CompilerLo
 // ═══════════════════════════════════════════════════════════════════════════
 
 fn lower_function(function: ast::Function, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<FunctionId, ()> {
-    let span: SrcPos = function.span.into();
+    let span: SrcPos = function.span.start;
     let visibility = helpers::lower_visibility(function.visibility);
     let mut attributes = helpers::parse_function_attributes(&function.attributes, log);
 
@@ -554,7 +554,7 @@ fn ensure_return_in_body(
 // ═══════════════════════════════════════════════════════════════════════════
 
 pub(crate) fn lower_module(module: ast::Module, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Module, ()> {
-    let span: SrcPos = module.span.into();
+    let span: SrcPos = module.span.start;
     ctx.current_scope.push(module.name.clone());
 
     let visibility = helpers::lower_visibility(module.visibility);

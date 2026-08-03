@@ -10,8 +10,8 @@ use crate::diagnosis::HirErr;
 use nitrate_diagnosis::CompilerLog;
 use nitrate_hir::prelude::*;
 use nitrate_nstring::NString;
-use nitrate_tree::{SrcPos, SrcSpan};
 use nitrate_tree::ast::{self, SymbolKind};
+use nitrate_tree::{SrcPos, SrcSpan};
 use std::collections::{BTreeMap, BTreeSet};
 use std::ops::Deref;
 
@@ -64,7 +64,7 @@ fn extract_attr_name_and_span(attr: &ast::Expr) -> (String, SrcPos) {
         ast::Expr::String(s) => format!("#[\"{}\"]", s.value),
         _ => "#[<unknown>]".to_string(),
     };
-    (name, attr.span().into())
+    (name, attr.span().start)
 }
 
 // We keep the old extract_attr_name for parse_function_attributes which doesn't need span
@@ -94,7 +94,7 @@ pub(crate) fn parse_function_attributes(
 
     if let Some(attrs) = ast_attributes {
         for attr in attrs {
-            let attr_span: SrcPos = attr.span().into();
+            let attr_span: SrcPos = attr.span().start;
             if let ast::Expr::Path(path) = attr {
                 let ident = path
                     .segments

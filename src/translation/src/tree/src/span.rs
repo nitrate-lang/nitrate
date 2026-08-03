@@ -99,12 +99,6 @@ impl SrcSpan {
         }
     }
 
-    /// Create a new span from SrcPos values (new API).
-    #[must_use]
-    pub const fn from_parts(start: SrcPos, end: SrcPos) -> Self {
-        SrcSpan { start, end }
-    }
-
     /// Returns true if the span has zero length.
     #[must_use]
     pub fn is_empty(self) -> bool {
@@ -135,25 +129,5 @@ impl SrcSpan {
     #[must_use]
     pub fn display(&self, file: &str) -> String {
         self.start.display(file)
-    }
-}
-
-impl From<(SrcPos, SrcPos)> for SrcSpan {
-    fn from((start, end): (SrcPos, SrcPos)) -> Self {
-        SrcSpan::from_parts(start, end)
-    }
-}
-
-/// Convert a span to its start position (lossy).
-impl From<SrcSpan> for SrcPos {
-    fn from(span: SrcSpan) -> Self {
-        span.start
-    }
-}
-
-/// Convert a position to a zero-length span.
-impl From<SrcPos> for SrcSpan {
-    fn from(pos: SrcPos) -> Self {
-        SrcSpan::from_parts(pos, pos)
     }
 }

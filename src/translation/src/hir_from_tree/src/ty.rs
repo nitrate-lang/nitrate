@@ -76,7 +76,7 @@ fn lit_to_u128(lit: &Lit) -> Option<u128> {
 // ═══════════════════════════════════════════════════════════════════════════
 
 pub(crate) fn lower_type_path(type_path: ast::TypePath, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Type, ()> {
-    let span = type_path.span.into();
+    let span = type_path.span.start;
 
     let has_intermediate_generics = type_path.segments[..type_path.segments.len().saturating_sub(1)]
         .iter()
@@ -189,7 +189,7 @@ pub(crate) fn lower_refinement_type(
     ctx: &mut Ast2HirCtx,
     log: &CompilerLog,
 ) -> Result<Type, ()> {
-    let r_span: SrcPos = refinement_type.span.into();
+    let r_span: SrcPos = refinement_type.span.start;
     let basis_type = lower_type(refinement_type.basis_type, ctx, log)?;
 
     let is_integer = matches!(
@@ -300,7 +300,7 @@ pub(crate) fn lower_tuple_type(
     }
 
     Ok(Type::Tuple {
-        span: tuple_type.span.into(),
+        span: tuple_type.span.start,
         element_types: element_types.into(),
     })
 }
@@ -311,7 +311,7 @@ pub(crate) fn lower_array_type(
     log: &CompilerLog,
 ) -> Result<Type, ()> {
     let element_type: TypeId = lower_type(array_type.element_type, ctx, log)?.into();
-    let a_span: SrcPos = array_type.span.into();
+    let a_span: SrcPos = array_type.span.start;
 
     let len_value_id: ValueId = lower_expr(array_type.len, ctx, log)?.into();
 
@@ -327,7 +327,7 @@ pub(crate) fn lower_function_type(
     ctx: &mut Ast2HirCtx,
     log: &CompilerLog,
 ) -> Result<Type, ()> {
-    let span: SrcPos = func_type_ast.span.into();
+    let span: SrcPos = func_type_ast.span.start;
 
     if let Some(attrs) = &func_type_ast.attributes {
         for attr in attrs {
@@ -341,7 +341,7 @@ pub(crate) fn lower_function_type(
                 _ => "#[<unknown>]".to_string(),
             };
             log.report(&HirErr::UnrecognizedFunctionAttribute {
-                span: attr.span().into(),
+                span: attr.span().start,
                 name,
             });
         }
@@ -361,7 +361,7 @@ pub(crate) fn lower_function_type(
                     _ => "#[<unknown>]".to_string(),
                 };
                 log.report(&HirErr::UnrecognizedFunctionParamAttribute {
-                    span: attr.span().into(),
+                    span: attr.span().start,
                     name,
                 });
             }
@@ -407,7 +407,7 @@ pub(crate) fn lower_reference_type(
     if let ast::Type::SliceType(slice) = reference_type.to {
         let element_type = lower_type(slice.element_type, ctx, log)?.into();
         Ok(Type::SliceRef {
-            span: reference_type.span.into(),
+            span: reference_type.span.start,
             lifetime,
             exclusive,
             mutable,
@@ -416,7 +416,7 @@ pub(crate) fn lower_reference_type(
     } else {
         let to = lower_type(reference_type.to, ctx, log)?.into();
         Ok(Type::Reference {
-            span: reference_type.span.into(),
+            span: reference_type.span.start,
             lifetime,
             exclusive,
             mutable,
@@ -436,7 +436,7 @@ pub(crate) fn lower_pointer_type(
     if let ast::Type::SliceType(slice) = pointer_type.to {
         let element_type: TypeId = lower_type(slice.element_type, ctx, log)?.into();
         Ok(Type::SlicePtr {
-            span: pointer_type.span.into(),
+            span: pointer_type.span.start,
             lifetime: Lifetime::Inferred,
             exclusive,
             mutable,
@@ -445,7 +445,7 @@ pub(crate) fn lower_pointer_type(
     } else {
         let to = lower_type(pointer_type.to, ctx, log)?.into();
         Ok(Type::Pointer {
-            span: pointer_type.span.into(),
+            span: pointer_type.span.start,
             lifetime: Lifetime::Inferred,
             exclusive,
             mutable,
@@ -464,7 +464,7 @@ pub(crate) fn lower_slice_type(
     log: &CompilerLog,
 ) -> Result<Type, ()> {
     log.report(&HirErr::SliceTypesMustBeInRefOrPtr {
-        span: slice_type.span.into(),
+        span: slice_type.span.start,
     });
     Err(())
 }
@@ -475,7 +475,7 @@ pub(crate) fn lower_type_potential(
     log: &CompilerLog,
 ) -> Result<Type, ()> {
     log.report(&HirErr::TypePotentialNotImplemented {
-        span: type_potential.span.into(),
+        span: type_potential.span.start,
     });
     Err(())
 }
@@ -486,7 +486,7 @@ pub(crate) fn lower_lifetime_type(
     log: &CompilerLog,
 ) -> Result<Type, ()> {
     log.report(&HirErr::LifetimeTypeNotImplemented {
-        span: lifetime.span.into(),
+        span: lifetime.span.start,
     });
     Err(())
 }
@@ -498,20 +498,20 @@ pub(crate) fn lower_lifetime_type(
 pub(crate) fn lower_type(ty: ast::Type, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Type, ()> {
     match ty {
         ast::Type::SyntaxError(_) => Err(()),
-        ast::Type::Bool(t) => Ok(Type::Bool { span: t.span.into() }),
-        ast::Type::UInt8(t) => Ok(Type::U8 { span: t.span.into() }),
-        ast::Type::UInt16(t) => Ok(Type::U16 { span: t.span.into() }),
-        ast::Type::UInt32(t) => Ok(Type::U32 { span: t.span.into() }),
-        ast::Type::UInt64(t) => Ok(Type::U64 { span: t.span.into() }),
-        ast::Type::UInt128(t) => Ok(Type::U128 { span: t.span.into() }),
-        ast::Type::USize(t) => Ok(Type::USize { span: t.span.into() }),
-        ast::Type::Int8(t) => Ok(Type::I8 { span: t.span.into() }),
-        ast::Type::Int16(t) => Ok(Type::I16 { span: t.span.into() }),
-        ast::Type::Int32(t) => Ok(Type::I32 { span: t.span.into() }),
-        ast::Type::Int64(t) => Ok(Type::I64 { span: t.span.into() }),
-        ast::Type::Int128(t) => Ok(Type::I128 { span: t.span.into() }),
-        ast::Type::Float32(t) => Ok(Type::F32 { span: t.span.into() }),
-        ast::Type::Float64(t) => Ok(Type::F64 { span: t.span.into() }),
+        ast::Type::Bool(t) => Ok(Type::Bool { span: t.span.start }),
+        ast::Type::UInt8(t) => Ok(Type::U8 { span: t.span.start }),
+        ast::Type::UInt16(t) => Ok(Type::U16 { span: t.span.start }),
+        ast::Type::UInt32(t) => Ok(Type::U32 { span: t.span.start }),
+        ast::Type::UInt64(t) => Ok(Type::U64 { span: t.span.start }),
+        ast::Type::UInt128(t) => Ok(Type::U128 { span: t.span.start }),
+        ast::Type::USize(t) => Ok(Type::USize { span: t.span.start }),
+        ast::Type::Int8(t) => Ok(Type::I8 { span: t.span.start }),
+        ast::Type::Int16(t) => Ok(Type::I16 { span: t.span.start }),
+        ast::Type::Int32(t) => Ok(Type::I32 { span: t.span.start }),
+        ast::Type::Int64(t) => Ok(Type::I64 { span: t.span.start }),
+        ast::Type::Int128(t) => Ok(Type::I128 { span: t.span.start }),
+        ast::Type::Float32(t) => Ok(Type::F32 { span: t.span.start }),
+        ast::Type::Float64(t) => Ok(Type::F64 { span: t.span.start }),
         ast::Type::InferType(t) => Ok(ctx.create_inference_placeholder()),
         ast::Type::TypePath(t) => lower_type_path(*t, ctx, log),
         ast::Type::RefinementType(t) => lower_refinement_type(*t, ctx, log),
