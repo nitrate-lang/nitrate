@@ -55,6 +55,8 @@ thin_str = { version = "0.1", features = ["serde", "serde_support"] }
 threadpool = "1"
 thiserror = "2"
 threadpool_scope = "0.1"
+clap = { version = "4", features = ["color"] }
+rand = { version = "0.8", features = ["std"] }
 
 # Dev / build dependencies
 criterion = { version = "0.7", features = ["html_reports"] }
@@ -125,3 +127,5 @@ slog-async.workspace = true
 slog-term.workspace = true
 serde_json.workspace = true
 tokio.workspace = true
+clap.workspace = true
+rand.workspace = true
