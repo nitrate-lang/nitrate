@@ -1076,6 +1076,7 @@ dependencies = [
  "log",
  "nitrate_diagnosis",
  "nitrate_driver",
+ "nitrate_generate",
  "nitrate_translation",
  "serde_json",
  "slog",
@@ -1123,6 +1124,10 @@ dependencies = [
  "toml_edit",
  "ureq",
 ]
+
+[[package]]
+name = "nitrate_generate"
+version = "0.1.0"
 
 [[package]]
 name = "nitrate_hir"

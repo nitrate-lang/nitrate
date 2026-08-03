@@ -3,6 +3,7 @@ resolver = "2"
 members = [
     "src/diagnosis",
     "src/driver",
+    "src/generate",
     "src/translation",
     "src/translation/src/nstring",
     "src/translation/src/token",
@@ -77,6 +78,7 @@ ureq = { version = "2", features = ["json"] }
 # ──────────────────────────────────────────────────────────────────
 nitrate_diagnosis = { path = "src/diagnosis" }
 nitrate_driver = { path = "src/driver" }
+nitrate_generate = { path = "src/generate" }
 
 nitrate_nstring = { path = "src/translation/src/nstring" }
 nitrate_token = { path = "src/translation/src/token" }
@@ -114,6 +116,7 @@ edition = "2024"
 nitrate_diagnosis.workspace = true
 nitrate_translation.workspace = true
 nitrate_driver.workspace = true
+nitrate_generate.workspace = true
 
 env_logger.workspace = true
 log.workspace = true
