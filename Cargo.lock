@@ -1128,6 +1128,9 @@ dependencies = [
 [[package]]
 name = "nitrate_generate"
 version = "0.1.0"
+dependencies = [
+ "nitrate_translation",
+]
 
 [[package]]
 name = "nitrate_hir"
