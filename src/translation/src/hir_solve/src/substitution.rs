@@ -165,7 +165,8 @@ impl Substitution {
 mod tests {
     use super::*;
     use nitrate_hir::{
-        Arguments, FunctionType, Lifetime, Lit, LiteralId, Store, Type, TypeId, Value, ValueId, using_storage,
+        Arguments, FunctionType, Lifetime, Lit, LiteralId, Store, StructDef, StructDefId, Type, TypeId, Value, ValueId,
+        using_storage,
     };
     use nitrate_nstring::NString;
     use nitrate_tree::SrcPos;
@@ -610,10 +611,37 @@ mod tests {
                 max: LiteralId::from(Lit::I8(100)),
             };
             let result = s.apply(&refine);
-            if let Type::Refine { base, .. } = result {
-                assert_eq!(*base, Type::I32 { span: sp() });
-            } else {
-                panic!("expected Refine");
+            match result {
+                Type::Refine { base, .. } => {
+                    assert_eq!(*base, Type::I32 { span: sp() });
+                }
+                _ => panic!("expected Refine"),
+            }
+        });
+    }
+
+    // ── Struct/Enum pass-through test ───────────────────────
+
+    #[test]
+    fn apply_struct_passthrough() {
+        with_store(|| {
+            let name = NString::from("Foo");
+            let sd = StructDef {
+                span: sp(),
+                visibility: nitrate_hir::Visibility::Sec,
+                name: name.clone(),
+                attributes: Default::default(),
+                fields: BTreeMap::new(),
+                generics: None,
+                layout: ThinVec::new(),
+            };
+            let sid = StructDefId::from(sd);
+            let struct_ty = Type::Struct { span: sp(), def: sid };
+            let s = Substitution::default();
+            let result = s.apply(&struct_ty);
+            match result {
+                Type::Struct { .. } => {} // pass
+                _ => panic!("expected Struct pass-through"),
             }
         });
     }

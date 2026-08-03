@@ -392,4 +392,58 @@ mod tests {
         assert!(info.message.contains("cannot infer type arguments"));
         assert!(info.message.contains("MyStruct"));
     }
+
+    #[test]
+    fn format_ambiguous_type() {
+        let e = TypeErr::AmbiguousType {
+            span: sp(),
+            description: "binary operations".into(),
+        };
+        let info = e.format();
+        assert!(info.message.contains("ambiguous type"));
+        assert!(info.message.contains("binary operations"));
+    }
+
+    #[test]
+    fn format_unbound_generic_param() {
+        let e = TypeErr::UnboundGenericParam {
+            span: sp(),
+            param_name: "T".into(),
+            generic_name: "Container".into(),
+        };
+        let info = e.format();
+        assert!(info.message.contains("generic parameter"));
+        assert!(info.message.contains("T"));
+        assert!(info.message.contains("Container"));
+    }
+
+    #[test]
+    fn format_method_not_found() {
+        with_store(|| {
+            let e = TypeErr::MethodNotFound {
+                span: sp(),
+                method_name: "fred".into(),
+                receiver_type: TypeId::from(Type::I32 { span: sp() }),
+            };
+            let info = e.format();
+            assert!(info.message.contains("method"));
+            assert!(info.message.contains("fred"));
+            assert!(info.message.contains("not found on type"));
+        });
+    }
+
+    #[test]
+    fn format_refinement_operation_result_non_refine() {
+        // operation result with a non-Refinement type - no bounds_info
+        with_store(|| {
+            let e = TypeErr::OperationResultOutOfRefinementBounds {
+                span: sp(),
+                refinement_type: TypeId::from(Type::I32 { span: sp() }),
+                computed_min: 0,
+                computed_max: 100,
+            };
+            let info = e.format();
+            assert!(!info.message.contains("(expected"));
+        });
+    }
 }

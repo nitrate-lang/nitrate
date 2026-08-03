@@ -1033,4 +1033,139 @@ mod tests {
     fn check_literal_non_refine_always_true() {
         assert!(check_literal_against_refinement(0, &Type::Bool { span: sp() }));
     }
+
+    // ── Remaining uncovered branches ────────────────────────
+
+    #[test]
+    fn sub_bounds_both_unsigned_zero_hi() {
+        // left: 0..5, right: 10..100: hi=0 branch
+        let b = compute_binary_bounds(&BinaryOp::Sub, Bounds::unsigned(0, 5), Bounds::unsigned(10, 100)).unwrap();
+        assert_eq!(b.lo, -100);
+        assert_eq!(b.hi, 0);
+    }
+
+    #[test]
+    fn mul_bounds_both_unsigned_large() {
+        let b = compute_binary_bounds(
+            &BinaryOp::Mul,
+            Bounds::unsigned(1, u128::MAX),
+            Bounds::unsigned(1, u128::MAX),
+        )
+        .unwrap();
+        assert_eq!(b.hi, u128::MAX);
+    }
+
+    #[test]
+    fn mod_bounds_zero_abs_max() {
+        // r_min=0, r_max=0, abs_max=0 => wide bounds
+        let b = compute_binary_bounds(&BinaryOp::Mod, Bounds::signed(-10, 10), Bounds::new(0, 0)).unwrap();
+        assert_eq!(b.lo, i128::MIN);
+        assert_eq!(b.hi, i128::MAX as u128);
+    }
+
+    #[test]
+    fn div_bounds_crosses_zero_empty_vals() {
+        // r_min == 0 && r_max == 0 => vals is empty -> extends with MIN/MAX
+        let b = compute_binary_bounds(&BinaryOp::Div, Bounds::signed(-100, 100), Bounds::new(0, 0)).unwrap();
+        assert_eq!(b.lo, i128::MIN);
+    }
+
+    #[test]
+    fn shift_bounds_max_zero_hi() {
+        let b = compute_binary_bounds(&BinaryOp::Shr, Bounds::signed(0, 0), Bounds::unsigned(1, 2)).unwrap();
+        assert_eq!(b.hi, 0);
+    }
+
+    #[test]
+    fn unary_sub_unsigned() {
+        // lo=10, hi=20, is_unsigned => neg_bounds unsigned path
+        let b = compute_unary_bounds(&UnaryOp::Sub, Bounds::unsigned(10, 20));
+        assert_eq!(b.lo, -20);
+    }
+
+    #[test]
+    fn unary_not_unsigned() {
+        // lo=0, hi=255, is_unsigned => not_bounds unsigned path
+        let b = compute_unary_bounds(&UnaryOp::Not, Bounds::unsigned(0, 255));
+        assert_eq!(b.lo, (!255u128) as i128);
+        assert_eq!(b.hi, u128::MAX);
+    }
+
+    #[test]
+    fn check_bounds_against_refine_with_non_integer_lits() {
+        let store = Store::new();
+        using_storage(&store, || {
+            let refine = Type::Refine {
+                span: sp(),
+                base: TypeId::from(Type::I8 { span: sp() }),
+                min: LiteralId::from(Lit::Unit),
+                max: LiteralId::from(Lit::Unit),
+            };
+            // extract_bounds_from_type returns None for non-integer lits => false
+            assert!(!check_bounds_against_constraint(Bounds::new(10, 50), &refine));
+        });
+    }
+
+    #[test]
+    fn check_literal_above_refinement_max() {
+        let store = Store::new();
+        using_storage(&store, || {
+            let min_lit = LiteralId::from(Lit::I8(10));
+            let max_lit = LiteralId::from(Lit::I8(20));
+            let refine = Type::Refine {
+                span: sp(),
+                base: TypeId::from(Type::I8 { span: sp() }),
+                min: min_lit,
+                max: max_lit,
+            };
+            assert!(!check_literal_against_refinement(30, &refine));
+        });
+    }
+
+    #[test]
+    fn check_literal_min_cant_parse_returns_true() {
+        let store = Store::new();
+        using_storage(&store, || {
+            let refine = Type::Refine {
+                span: sp(),
+                base: TypeId::from(Type::I8 { span: sp() }),
+                min: LiteralId::from(Lit::Unit),
+                max: LiteralId::from(Lit::I8(20)),
+            };
+            // lit_to_i128(Unit) = None, so returns true early
+            assert!(check_literal_against_refinement(15, &refine));
+        });
+    }
+
+    #[test]
+    fn check_literal_max_cant_parse_as_u128_value_above_i128max() {
+        let store = Store::new();
+        using_storage(&store, || {
+            let refine = Type::Refine {
+                span: sp(),
+                base: TypeId::from(Type::I32 { span: sp() }),
+                min: LiteralId::from(Lit::I8(0)),
+                max: LiteralId::from(Lit::Unit),
+            };
+            // max lit is Unit => lit_to_u128(Unit)=None, max=None branch
+            // value > i128::MAX => returns false
+            assert!(!check_literal_against_refinement(u128::MAX, &refine));
+        });
+    }
+
+    #[test]
+    fn check_literal_max_cant_parse_as_u128_but_value_fits() {
+        let store = Store::new();
+        using_storage(&store, || {
+            let refine = Type::Refine {
+                span: sp(),
+                base: TypeId::from(Type::I32 { span: sp() }),
+                min: LiteralId::from(Lit::I8(10)),
+                max: LiteralId::from(Lit::Unit),
+            };
+            // max=None, value <= i128::MAX, check as signed
+            // lit_to_i128(Unit)=None, mx_i128=None => returns true
+            assert!(check_literal_against_refinement(15, &refine));
+        });
+    }
 }
