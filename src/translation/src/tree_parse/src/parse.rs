@@ -24,11 +24,6 @@ impl<'a, 'log> Parser<'a, 'log> {
         self.lexer.source
     }
 
-    /// Get the end byte offset of the last consumed token.
-    pub(crate) fn current_pos(&self) -> u32 {
-        self.lexer.current_pos().offset
-    }
-
     pub fn is_eof(&mut self) -> bool {
         self.lexer.is_eof()
     }
