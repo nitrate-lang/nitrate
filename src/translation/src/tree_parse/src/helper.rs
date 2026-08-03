@@ -214,7 +214,7 @@ impl Parser<'_, '_> {
     /// Parses `[attributes] [mutability] name: Type [= default]`.
     /// When `allow_default` is false, the `= default` part is skipped.
     pub(crate) fn parse_common_func_param(&mut self, allow_default: bool) -> FuncParam {
-        let param_start = self.lexer.peek_pos().offset;
+        let param_start = self.lexer.peek_pos();
         let attributes = self.parse_attributes();
         let mutability = self.parse_mutability();
         let err = SyntaxErr::FunctionParameterMissingName(self.lexer.peek_pos());
@@ -227,7 +227,7 @@ impl Parser<'_, '_> {
             None
         };
         FuncParam {
-            span: SrcSpan::new(param_start, self.lexer.current_pos().offset),
+            span: SrcSpan::new(param_start, self.lexer.current_pos()),
             attributes,
             mutability,
             name,

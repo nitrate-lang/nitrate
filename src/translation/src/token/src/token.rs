@@ -1,9 +1,27 @@
-use std::{fmt::Write, write};
-
 use enum_iterator::Sequence;
 use nitrate_diagnosis::FileId;
 pub use ordered_float::NotNan;
 use serde::{Deserialize, Serialize};
+use std::{fmt::Write, write};
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct LexPos {
+    pub fileid: Option<FileId>,
+    pub line: u16,
+    pub column: u8,
+    pub offset: u32,
+}
+
+impl From<LexPos> for nitrate_diagnosis::SourcePosition {
+    fn from(pos: LexPos) -> Self {
+        nitrate_diagnosis::SourcePosition {
+            line: u32::from(pos.line),
+            column: u32::from(pos.column),
+            offset: pos.offset,
+            fileid: pos.fileid,
+        }
+    }
+}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Hash, Sequence, Serialize, Deserialize)]
 pub enum IntegerKind {

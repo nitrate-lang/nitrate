@@ -30,7 +30,6 @@
 //! - [`ParseTreeIter`] / [`ParseTreeIterMut`]: Iterator-based tree traversal.
 //! - [`PrettyPrint`]: Trait for formatting tree nodes as source-like text.
 
-mod convert;
 mod expr;
 mod expr_iter;
 mod expr_iter_mut;
@@ -46,9 +45,6 @@ mod ty;
 mod ty_iter;
 mod ty_iter_mut;
 
-pub use convert::{
-    raw_to_srcpos, span_from_offsets, span_from_raw, tok_to_srcpos_end, tok_to_srcpos_start, tok_to_srcspan,
-};
 pub use span::{SrcPos, SrcSpan};
 pub use trivia::Trivia;
 

@@ -123,11 +123,11 @@ pub(crate) enum HirErr {
 }
 
 /// Convert a `SrcPos` into an `Origin` for diagnostic output.
-fn byte_span_to_origin(span: SrcPos) -> Origin {
+fn srcpos_to_origin(span: SrcPos) -> Origin {
     Origin::Point(SourcePosition {
         line: span.line as u32,
         column: span.column as u32,
-        offset: span.offset,
+        offset: span.offset.to_u32(),
         fileid: span.fileid,
     })
 }
@@ -207,7 +207,7 @@ impl FormattableDiagnosticGroup for HirErr {
                      \n  = help: module items do not support custom attributes. Remove the attribute.\n\
                      \n  = example:\n           mod my_module {{\n               // ... module contents\n           }}"
                 ),
-                origin: byte_span_to_origin(*span),
+                origin: srcpos_to_origin(*span),
             },
 
             HirErr::UnrecognizedGlobalVarAttribute { span, name } => DiagnosticInfo {
@@ -217,7 +217,7 @@ impl FormattableDiagnosticGroup for HirErr {
                      \n  = help: remove this attribute or use a recognized one\n\
                      \n  = example:\n           #[no_mangle]\n           static MY_CONST: i32 = 42;"
                 ),
-                origin: byte_span_to_origin(*span),
+                origin: srcpos_to_origin(*span),
             },
 
             HirErr::UnrecognizedFunctionAttribute { span, name } => DiagnosticInfo {
@@ -228,7 +228,7 @@ impl FormattableDiagnosticGroup for HirErr {
                      \n  = example:\n           #[no_mangle]\n           fn my_function() {{ }}\n\
                      \n           #[extern(\"C\")]\n           fn external_fn() {{ }}"
                 ),
-                origin: byte_span_to_origin(*span),
+                origin: srcpos_to_origin(*span),
             },
 
             HirErr::UnrecognizedFunctionParamAttribute { span, name } => DiagnosticInfo {
@@ -238,7 +238,7 @@ impl FormattableDiagnosticGroup for HirErr {
                      \n  = help: remove the attribute from this parameter\n\
                      \n  = example:\n           fn foo(x: i32, y: bool) {{ }}"
                 ),
-                origin: byte_span_to_origin(*span),
+                origin: srcpos_to_origin(*span),
             },
 
             HirErr::UnrecognizedTypeAliasAttribute { span, name } => DiagnosticInfo {
@@ -248,7 +248,7 @@ impl FormattableDiagnosticGroup for HirErr {
                      \n  = help: remove the attribute from this type alias\n\
                      \n  = example:\n           type MyInt = i32;"
                 ),
-                origin: byte_span_to_origin(*span),
+                origin: srcpos_to_origin(*span),
             },
 
             HirErr::UnrecognizedStructAttribute { span, name } => DiagnosticInfo {
@@ -258,7 +258,7 @@ impl FormattableDiagnosticGroup for HirErr {
                      \n  = help: remove the attribute from this struct definition\n\
                      \n  = example:\n           struct Point {{\n               x: i32,\n               y: i32,\n           }}"
                 ),
-                origin: byte_span_to_origin(*span),
+                origin: srcpos_to_origin(*span),
             },
 
             HirErr::UnrecognizedStructFieldAttribute { span, name } => DiagnosticInfo {
@@ -268,7 +268,7 @@ impl FormattableDiagnosticGroup for HirErr {
                      \n  = help: remove the attribute from this struct field\n\
                      \n  = example:\n           struct Point {{\n               x: i32,\n               y: i32,\n           }}"
                 ),
-                origin: byte_span_to_origin(*span),
+                origin: srcpos_to_origin(*span),
             },
 
             HirErr::UnrecognizedEnumAttribute { span, name } => DiagnosticInfo {
@@ -278,7 +278,7 @@ impl FormattableDiagnosticGroup for HirErr {
                      \n  = help: remove the attribute from this enum definition\n\
                      \n  = example:\n           enum Color {{\n               Red,\n               Green,\n               Blue,\n           }}"
                 ),
-                origin: byte_span_to_origin(*span),
+                origin: srcpos_to_origin(*span),
             },
 
             HirErr::UnrecognizedEnumVariantAttribute { span, name } => DiagnosticInfo {
@@ -288,7 +288,7 @@ impl FormattableDiagnosticGroup for HirErr {
                      \n  = help: remove the attribute from this enum variant\n\
                      \n  = example:\n           enum Option<T> {{\n               Some(T),\n               None,\n           }}"
                 ),
-                origin: byte_span_to_origin(*span),
+                origin: srcpos_to_origin(*span),
             },
 
             HirErr::UnrecognizedLocalVarAttribute { span, name } => DiagnosticInfo {
@@ -298,7 +298,7 @@ impl FormattableDiagnosticGroup for HirErr {
                      \n  = help: remove the attribute from this local variable\n\
                      \n  = example:\n           fn foo() {{\n               let x = 42;\n               var y = 10;\n           }}"
                 ),
-                origin: byte_span_to_origin(*span),
+                origin: srcpos_to_origin(*span),
             },
 
             HirErr::UnrecognizedTraitAttribute { span, name } => DiagnosticInfo {
@@ -308,7 +308,7 @@ impl FormattableDiagnosticGroup for HirErr {
                      \n  = help: remove the attribute from this trait definition\n\
                      \n  = example:\n           trait MyTrait {{\n               fn method(&self);\n           }}"
                 ),
-                origin: byte_span_to_origin(*span),
+                origin: srcpos_to_origin(*span),
             },
 
             // ════════════════════════════════════════════════════════════════
@@ -323,7 +323,7 @@ impl FormattableDiagnosticGroup for HirErr {
                      \n         If this is a value, make sure it has been defined before use.\n\
                      \n  = example:\n           fn bar() {{\n               let x = foo(); // `foo` must be defined or imported\n           }}"
                 ),
-                origin: byte_span_to_origin(*span),
+                origin: srcpos_to_origin(*span),
             },
 
             HirErr::UnresolvedTypePath { span, name } => DiagnosticInfo {
@@ -336,7 +336,7 @@ impl FormattableDiagnosticGroup for HirErr {
                      \n  = example:\n           use std::collections::HashMap;\n\
                      \n           fn foo(map: HashMap<String, i32>) {{ }}"
                 ),
-                origin: byte_span_to_origin(*span),
+                origin: srcpos_to_origin(*span),
             },
 
             HirErr::DuplicateEntity { span, name } => DiagnosticInfo {
@@ -348,7 +348,7 @@ impl FormattableDiagnosticGroup for HirErr {
                      \n  = example:\n           // This is not allowed:\n           fn foo() {{ }}\n           fn foo() {{ }} // error: duplicate definition\n\
                      \n           // Instead, use different names:\n           fn foo() {{ }}\n           fn foo_v2() {{ }}"
                 ),
-                origin: byte_span_to_origin(*span),
+                origin: srcpos_to_origin(*span),
             },
 
             HirErr::UnrecognizedLifetime { span, name } => DiagnosticInfo {
@@ -359,7 +359,7 @@ impl FormattableDiagnosticGroup for HirErr {
                      \n  = help: use one of the valid lifetime names or `'_` for an inferred lifetime.\n\
                      \n  = example:\n           fn foo(x: &'static i32) {{ }}\n           fn bar(x: &'_ i32) {{ }}"
                 ),
-                origin: byte_span_to_origin(*span),
+                origin: srcpos_to_origin(*span),
             },
 
             // ════════════════════════════════════════════════════════════════
@@ -376,7 +376,7 @@ impl FormattableDiagnosticGroup for HirErr {
                      \n  = help: use a smaller integer literal or a wider integer type.\n\
                      \n  = example:\n           let a: i8 = 127;   // valid: i8 ranges from -128 to 127\n           let b: i8 = 128;   // error: 128 does not fit in i8\n           let c: i16 = 128;  // ok: 128 fits in i16"
                 ),
-                origin: byte_span_to_origin(*span),
+                origin: srcpos_to_origin(*span),
             },
 
             HirErr::GlobalVariableMustHaveInitializer { span, name } => DiagnosticInfo {
@@ -387,7 +387,7 @@ impl FormattableDiagnosticGroup for HirErr {
                      \n  = help: provide an initializer expression:\n\
                      \n  = example:\n           static MAX_SIZE: i32 = 1024;     // ok\n           static MIN_SIZE: i32;           // error: missing initializer"
                 ),
-                origin: byte_span_to_origin(*span),
+                origin: srcpos_to_origin(*span),
             },
 
             HirErr::LocalVariableMissingInitializer { span, name } => DiagnosticInfo {
@@ -397,7 +397,7 @@ impl FormattableDiagnosticGroup for HirErr {
                      \n  = help: provide an initializer expression:\n\
                      \n  = example:\n           fn foo() {{\n               let x = 42;     // ok\n               let y;             // error: missing initializer\n               var z = vec![1];   // ok\n           }}"
                 ),
-                origin: byte_span_to_origin(*span),
+                origin: srcpos_to_origin(*span),
             },
 
             HirErr::TypeAliasMustHaveType { span, name } => DiagnosticInfo {
@@ -407,7 +407,7 @@ impl FormattableDiagnosticGroup for HirErr {
                      \n  = help: provide the type that this alias refers to.\n\
                      \n  = example:\n           type MyInt = i32;                 // ok\n           type MyInt;                       // error\n           type MyInt<T> = Result<T, Error>; // ok"
                 ),
-                origin: byte_span_to_origin(*span),
+                origin: srcpos_to_origin(*span),
             },
 
             HirErr::ArrayLengthExpectedUSize { span } => DiagnosticInfo {
@@ -418,7 +418,7 @@ impl FormattableDiagnosticGroup for HirErr {
                      \n  = help: use a constant usize expression:\n\
                      \n  = example:\n           let arr: [i32; 5] = [0; 5];        // ok: literal usize\n           const N: usize = 10;\n           let arr: [i32; N] = [0; N];      // ok: const usize\n           let arr: [i32; \"foo\"] = [];     // error: string is not usize"
                 ),
-                origin: byte_span_to_origin(*span),
+                origin: srcpos_to_origin(*span),
             },
 
             HirErr::ArrayTypeLengthEvalError { span, err } => DiagnosticInfo {
@@ -429,7 +429,7 @@ impl FormattableDiagnosticGroup for HirErr {
                      \n  = help: ensure the length expression is a valid constant expression:\n\
                      \n  = example:\n           const N: usize = 10;\n           let arr: [i32; N] = [0; N];      // ok\n           let arr: [i32; some_var] = [];   // error: `some_var` is not const"
                 ),
-                origin: byte_span_to_origin(*span),
+                origin: srcpos_to_origin(*span),
             },
 
             HirErr::SliceTypesMustBeInRefOrPtr { span } => DiagnosticInfo {
@@ -441,7 +441,7 @@ impl FormattableDiagnosticGroup for HirErr {
                      \n  = help: use `&[T]` or `*[T]` instead of bare `[T]`.\n\
                      \n  = example:\n           fn foo(slice: &[i32]) {{ }}  // ok\n           fn bar(slice: [i32]) {{ }}  // error: bare slice"
                 ),
-                origin: byte_span_to_origin(*span),
+                origin: srcpos_to_origin(*span),
             },
 
             HirErr::TypeAliasEvalError { span, name } => DiagnosticInfo {
@@ -451,7 +451,7 @@ impl FormattableDiagnosticGroup for HirErr {
                      \n        could not be fully resolved during HIR lowering.\n\
                      \n  = help: check that the type expression is valid and all referenced types are in scope."
                 ),
-                origin: byte_span_to_origin(*span),
+                origin: srcpos_to_origin(*span),
             },
 
             // ════════════════════════════════════════════════════════════════
@@ -464,7 +464,7 @@ impl FormattableDiagnosticGroup for HirErr {
                      \n  = help: use `if`/`else if` chains as a workaround.\n\
                      \n  = example:\n           // Workaround for match:\n           if x == 1 {{\n               // handle case 1\n           }} else if x == 2 {{\n               // handle case 2\n           }} else {{\n               // default case\n           }}"
                 ),
-                origin: byte_span_to_origin(*span),
+                origin: srcpos_to_origin(*span),
             },
 
             HirErr::ForLoopNotImplemented { span } => DiagnosticInfo {
@@ -474,7 +474,7 @@ impl FormattableDiagnosticGroup for HirErr {
                      \n  = help: use `while` loops or manual iteration as a workaround.\n\
                      \n  = example:\n           // Workaround for for loop:\n           let mut i = 0;\n           while i < 10 {{\n               // ... loop body\n               i += 1;\n           }}"
                 ),
-                origin: byte_span_to_origin(*span),
+                origin: srcpos_to_origin(*span),
             },
 
             HirErr::AwaitNotImplemented { span } => DiagnosticInfo {
@@ -483,7 +483,7 @@ impl FormattableDiagnosticGroup for HirErr {
                      \n  = note: async/await is planned but not yet available.\n\
                      \n  = help: use synchronous blocking calls as a workaround."
                 ),
-                origin: byte_span_to_origin(*span),
+                origin: srcpos_to_origin(*span),
             },
 
             HirErr::TypeofNotImplemented { span } => DiagnosticInfo {
@@ -492,7 +492,7 @@ impl FormattableDiagnosticGroup for HirErr {
                      \n  = note: the `typeof` reflection operator is planned but not yet available.\n\
                      \n  = help: specify the type explicitly instead of using typeof."
                 ),
-                origin: byte_span_to_origin(*span),
+                origin: srcpos_to_origin(*span),
             },
 
             HirErr::TypeReflectionNotImplemented { span } => DiagnosticInfo {
@@ -502,7 +502,7 @@ impl FormattableDiagnosticGroup for HirErr {
                      \n        planned but not yet available.\n\
                      \n  = help: use explicit type annotations instead."
                 ),
-                origin: byte_span_to_origin(*span),
+                origin: srcpos_to_origin(*span),
             },
 
             HirErr::ClosureNotImplemented { span } => DiagnosticInfo {
@@ -512,7 +512,7 @@ impl FormattableDiagnosticGroup for HirErr {
                      \n  = help: define a named function instead.\n\
                      \n  = example:\n           fn my_callback(x: i32) -> i32 {{ x * 2 }}\n           process(my_callback);"
                 ),
-                origin: byte_span_to_origin(*span),
+                origin: srcpos_to_origin(*span),
             },
 
             HirErr::TypePotentialNotImplemented { span } => DiagnosticInfo {
@@ -522,7 +522,7 @@ impl FormattableDiagnosticGroup for HirErr {
                      \n        but not yet available.\n\
                      \n  = help: specify the type explicitly."
                 ),
-                origin: byte_span_to_origin(*span),
+                origin: srcpos_to_origin(*span),
             },
 
             HirErr::LifetimeTypeNotImplemented { span } => DiagnosticInfo {
@@ -533,7 +533,7 @@ impl FormattableDiagnosticGroup for HirErr {
                      \n  = help: lifetimes can only be used in reference type positions currently:\n\
                      \n         `&'a i32`, not `'a` as a standalone type."
                 ),
-                origin: byte_span_to_origin(*span),
+                origin: srcpos_to_origin(*span),
             },
 
             HirErr::IntermediateGenericArgsNotSupported { span, path } => DiagnosticInfo {
@@ -545,7 +545,7 @@ impl FormattableDiagnosticGroup for HirErr {
                      \n         so that generic arguments only appear on the final segment:\n\
                      \n  = example:\n           // Not yet supported:\n           Foo<i32>::Bar\n           // Use instead:\n           Foo::Bar<i32>  // if applicable"
                 ),
-                origin: byte_span_to_origin(*span),
+                origin: srcpos_to_origin(*span),
             },
 
             // ════════════════════════════════════════════════════════════════
@@ -561,7 +561,7 @@ impl FormattableDiagnosticGroup for HirErr {
                      \n  = example:\n           fn add(a: i32, b: i32) -> i32 {{\n               return a + b;  // explicit return\n           }}\n\
                      \n           // The final expression is also returned implicitly:\n           fn add_implicit(a: i32, b: i32) -> i32 {{\n               a + b  // no semicolon; this is the return value\n           }}"
                 ),
-                origin: byte_span_to_origin(*span),
+                origin: srcpos_to_origin(*span),
             },
 
             HirErr::UnsafeExprBodyNotImplemented { span } => DiagnosticInfo {
@@ -572,7 +572,7 @@ impl FormattableDiagnosticGroup for HirErr {
                      \n  = help: use a statement-level `unsafe` block instead.\n\
                      \n  = example:\n           unsafe {{  // this is supported\n               // ... unsafe operations\n           }}\n           unsafe expr  // not yet supported"
                 ),
-                origin: byte_span_to_origin(*span),
+                origin: srcpos_to_origin(*span),
             },
 
             // ════════════════════════════════════════════════════════════════
@@ -587,7 +587,7 @@ impl FormattableDiagnosticGroup for HirErr {
                      \n         evaluated during compilation.\n\
                      \n  = example:\n           type SmallInt = i32: [0:255];   // ok: literal bounds\n           const MAX: i32 = 100;\n           type Range = i32: [0:MAX];   // ok: const bound\n           fn foo(limit: i32) {{\n               type Dynamic = i32: [0:limit]; // error: limit is not constant\n           }}"
                 ),
-                origin: byte_span_to_origin(*span),
+                origin: srcpos_to_origin(*span),
             },
 
             HirErr::RefinementTypeOnNonInteger { span, base_type } => DiagnosticInfo {
@@ -598,7 +598,7 @@ impl FormattableDiagnosticGroup for HirErr {
                      \n  = help: use a valid integer type as the base of this refinement type.\n\
                      \n  = example:\n           type Small = i32: [0:255];    // ok\n           type Small = f32: [0:1];     // error: float is not an integer\n           type Small = bool: [0:1];    // error: bool is not an integer"
                 ),
-                origin: byte_span_to_origin(*span),
+                origin: srcpos_to_origin(*span),
             },
 
             HirErr::RefinementWidthOutOfRange { span, width } => DiagnosticInfo {
@@ -609,7 +609,7 @@ impl FormattableDiagnosticGroup for HirErr {
                      \n  = help: use a width value between 1 and 128.\n\
                      \n  = example:\n           type HalfByte = u8: 4;        // ok: 4-bit values [0:15]\n           type TripleWord = u128: 96;  // ok: 96-bit values\n           type Invalid = u8: 0;        // error: width must be >= 1\n           type Invalid = u8: 200;       // error: width must be <= 128"
                 ),
-                origin: byte_span_to_origin(*span),
+                origin: srcpos_to_origin(*span),
             },
 
             HirErr::RefinementTypeEmpty { span } => DiagnosticInfo {
@@ -620,7 +620,7 @@ impl FormattableDiagnosticGroup for HirErr {
                      \n  = help: add a width, minimum bound, maximum bound, or range to the type.\n\
                      \n  = example:\n           type Small = u8: 4;           // ok: width only\n           type Range = i32: [0:100];   // ok: min and max\n           type MinOnly = i32: [0:];    // ok: min only\n           type MaxOnly = i32: [:100];  // ok: max only\n           type Empty = i32:;           // error: no bounds"
                 ),
-                origin: byte_span_to_origin(*span),
+                origin: srcpos_to_origin(*span),
             },
 
             HirErr::RefinementWidthNotPositive { span, width } => DiagnosticInfo {
@@ -631,7 +631,7 @@ impl FormattableDiagnosticGroup for HirErr {
                      \n  = help: use a positive integer value for the width.\n\
                      \n  = example:\n           type HalfByte = u8: 4;  // ok\n           // The following would be invalid:\n           type Empty = u8: 0;    // width must be > 0"
                 ),
-                origin: byte_span_to_origin(*span),
+                origin: srcpos_to_origin(*span),
             },
 
             // ════════════════════════════════════════════════════════════════
@@ -646,7 +646,7 @@ impl FormattableDiagnosticGroup for HirErr {
                      \n         it as `extern`.\n\
                      \n  = example:\n           fn foo() -> i32 {{ 42 }}         // ok: has body\n           fn bar() -> i32;               // error: no body and non-unit return\n           extern fn baz() -> i32;         // ok: extern with no body\n           fn qux() -> ();                 // ok: unit return"
                 ),
-                origin: byte_span_to_origin(*span),
+                origin: srcpos_to_origin(*span),
             },
         }
     }

@@ -1,7 +1,7 @@
 use super::parse::Parser;
 use crate::diagnosis::SyntaxErr;
 use crate::helper::MAX_LIMIT;
-use nitrate_tree::SrcSpan;
+use nitrate_tree::{SrcPos, SrcSpan};
 
 use nitrate_token::Token;
 use nitrate_tree::ast::{
@@ -14,7 +14,7 @@ impl Parser<'_, '_> {
     fn parse_generics(&mut self) -> Option<Generics> {
         fn parse_generic_parameter(this: &mut Parser) -> TypeParam {
             let pos = this.lexer.peek_pos();
-            let name_start = pos.offset;
+            let name_start = pos;
             let name = this.parse_nstring_name(SyntaxErr::GenericMissingParameterName(pos));
 
             // Consume optional type constraint after `:`
@@ -29,7 +29,7 @@ impl Parser<'_, '_> {
                 None
             };
 
-            let name_end = this.lexer.current_pos().offset;
+            let name_end = this.lexer.current_pos();
 
             TypeParam {
                 span: SrcSpan::new(name_start, name_end),
@@ -37,6 +37,8 @@ impl Parser<'_, '_> {
                 default_value: default,
             }
         }
+
+        let pos = self.lexer.peek_pos();
 
         if !self.lexer.skip_if(&Token::Lt) {
             return None;
@@ -50,13 +52,13 @@ impl Parser<'_, '_> {
             self.parse_comma_separated_list(&Token::Gt, MAX_LIMIT, false, eof, limit, end, parse_generic_parameter);
 
         Some(Generics {
-            span: SrcSpan::new(0, self.lexer.current_pos().offset), // updated after params parsed
+            span: SrcSpan::new(pos, self.lexer.current_pos()), // updated after params parsed
             params,
         })
     }
 
     fn parse_module(&mut self) -> Module {
-        let start = self.lexer.peek_pos().offset;
+        let start = self.lexer.peek_pos();
         assert!(self.lexer.peek_tok().token == Token::Mod);
         self.lexer.skip_tok();
 
@@ -89,7 +91,7 @@ impl Parser<'_, '_> {
         }
 
         Module {
-            span: SrcSpan::new(start, self.lexer.current_pos().offset),
+            span: SrcSpan::new(start, self.lexer.current_pos()),
             visibility: None,
             attributes,
             name,
@@ -105,7 +107,7 @@ impl Parser<'_, '_> {
         let has_global_prefix = self.parse_double_colon();
 
         if !self.lexer.is_eof() {
-            let name_start = self.lexer.peek_pos().offset;
+            let name_start = self.lexer.peek_pos();
 
             // Detect if the first token is a path prefix keyword
             let prefix_info: Option<PathPrefix> = match self.lexer.peek_tok().token {
@@ -143,18 +145,18 @@ impl Parser<'_, '_> {
                             // It must be a segment name: push supers, then the name, then return
                             for i in 0..super_count {
                                 segments.push(ItemPathSegment {
-                                    span: SrcSpan::new(first_super_start, self.lexer.current_pos().offset),
+                                    span: SrcSpan::new(first_super_start, self.lexer.current_pos()),
                                     segment: "super".into(),
                                     prefix: if i == 0 { Some(PathPrefix::Super) } else { None },
                                 });
                             }
 
-                            let seg_name_start = self.lexer.peek_pos().offset;
+                            let seg_name_start = self.lexer.peek_pos();
                             let Some(seg_name) = self.lexer.next_if_name() else {
                                 self.lexer.rewind(rewind_pos);
                                 break;
                             };
-                            let seg_name_end = self.lexer.current_pos().offset;
+                            let seg_name_end = self.lexer.current_pos();
                             segments.push(ItemPathSegment {
                                 span: SrcSpan::new(seg_name_start, seg_name_end),
                                 segment: seg_name,
@@ -167,7 +169,7 @@ impl Parser<'_, '_> {
                     // No trailing name found — it's `super` or `super::super` (bare).
                     for i in 0..super_count {
                         segments.push(ItemPathSegment {
-                            span: SrcSpan::new(first_super_start, self.lexer.current_pos().offset),
+                            span: SrcSpan::new(first_super_start, self.lexer.current_pos()),
                             segment: "super".into(),
                             prefix: if i == 0 { Some(PathPrefix::Super) } else { None },
                         });
@@ -185,7 +187,7 @@ impl Parser<'_, '_> {
                 // We consumed a prefix keyword (`crate` or `self`).
                 // Push the prefix segment.
                 segments.push(ItemPathSegment {
-                    span: SrcSpan::new(name_start, self.lexer.current_pos().offset),
+                    span: SrcSpan::new(name_start, self.lexer.current_pos()),
                     segment: match prefix {
                         PathPrefix::Crate => "crate",
                         PathPrefix::SelfPath => "self",
@@ -215,10 +217,10 @@ impl Parser<'_, '_> {
                 }
 
                 // After prefix::, parse the first real segment name directly.
-                let seg_name_start = self.lexer.peek_pos().offset;
+                let seg_name_start = self.lexer.peek_pos();
                 let err = SyntaxErr::PathExpectedName(self.lexer.peek_pos());
                 let segment = self.parse_string_name(err);
-                let seg_name_end = self.lexer.current_pos().offset;
+                let seg_name_end = self.lexer.current_pos();
 
                 if !segment.is_empty() {
                     segments.push(ItemPathSegment {
@@ -232,10 +234,10 @@ impl Parser<'_, '_> {
                 if has_global_prefix {
                     // The global `::` prefix consumed. Parse the first name from here.
                 }
-                let first_seg_start = self.lexer.peek_pos().offset;
+                let first_seg_start = self.lexer.peek_pos();
                 let err = SyntaxErr::PathExpectedName(self.lexer.peek_pos());
                 let segment = self.parse_string_name(err);
-                let first_seg_end = self.lexer.current_pos().offset;
+                let first_seg_end = self.lexer.current_pos();
 
                 if !segment.is_empty() {
                     segments.push(ItemPathSegment {
@@ -261,7 +263,7 @@ impl Parser<'_, '_> {
             }
 
             // After `::`, parse the segment name (or prefix keyword)
-            let name_start = self.lexer.peek_pos().offset;
+            let name_start = self.lexer.peek_pos();
             let seg_prefix = match self.lexer.peek_tok().token {
                 Token::Crate => {
                     self.lexer.skip_tok();
@@ -278,7 +280,7 @@ impl Parser<'_, '_> {
                 _ => None,
             };
 
-            let name_end = self.lexer.current_pos().offset;
+            let name_end = self.lexer.current_pos();
             let segment = if seg_prefix.is_some() {
                 match seg_prefix {
                     Some(PathPrefix::Crate) => "crate".into(),
@@ -305,8 +307,8 @@ impl Parser<'_, '_> {
     }
 
     fn finish_path(&self, segments: Vec<ItemPathSegment>) -> ItemPath {
-        let path_start = segments.first().map(|s| s.span.start.offset).unwrap_or(0);
-        let path_end = segments.last().map(|s| s.span.end.offset).unwrap_or(0);
+        let path_start = segments.first().map(|s| s.span.start).unwrap_or(SrcPos::default());
+        let path_end = segments.last().map(|s| s.span.end).unwrap_or(SrcPos::default());
 
         ItemPath {
             span: SrcSpan::new(path_start, path_end),
@@ -321,7 +323,7 @@ impl Parser<'_, '_> {
             if this.parse_double_colon() {
                 if this.lexer.skip_if(&Token::Star) {
                     UseTree::UseAll {
-                        span: SrcSpan::new(path.span().start.offset, this.lexer.current_pos().offset),
+                        span: SrcSpan::new(path.span().start, this.lexer.current_pos()),
                         path,
                     }
                 } else if this.lexer.skip_if(&Token::OpenBrace) {
@@ -344,7 +346,7 @@ impl Parser<'_, '_> {
                     }
 
                     UseTree::Group {
-                        span: SrcSpan::new(path.span().start.offset, this.lexer.current_pos().offset),
+                        span: SrcSpan::new(path.span().start, this.lexer.current_pos()),
                         path,
                         group,
                     }
@@ -359,10 +361,10 @@ impl Parser<'_, '_> {
             } else if this.lexer.skip_if(&Token::As) {
                 let err = SyntaxErr::ImportAliasMissingName(this.lexer.peek_pos());
                 let alias = this.parse_string_name(err);
-                let alias_end = this.lexer.current_pos().offset;
+                let alias_end = this.lexer.current_pos();
 
                 UseTree::Alias {
-                    span: SrcSpan::new(path.span().start.offset, alias_end),
+                    span: SrcSpan::new(path.span().start, alias_end),
                     path,
                     alias: alias.into(),
                 }
@@ -374,7 +376,7 @@ impl Parser<'_, '_> {
             }
         }
 
-        let start = self.lexer.peek_pos().offset;
+        let start = self.lexer.peek_pos();
         assert!(self.lexer.peek_tok().token == Token::Use);
         self.lexer.skip_tok();
 
@@ -384,7 +386,7 @@ impl Parser<'_, '_> {
         self.expect_semicolon();
 
         Import {
-            span: SrcSpan::new(start, self.lexer.current_pos().offset),
+            span: SrcSpan::new(start, self.lexer.current_pos()),
             visibility: None,
             attributes,
             use_tree,
@@ -393,7 +395,7 @@ impl Parser<'_, '_> {
     }
 
     fn parse_type_alias(&mut self) -> TypeAlias {
-        let start = self.lexer.peek_pos().offset;
+        let start = self.lexer.peek_pos();
         assert!(self.lexer.peek_tok().token == Token::Type);
         self.lexer.skip_tok();
 
@@ -413,7 +415,7 @@ impl Parser<'_, '_> {
         self.expect_semicolon();
 
         TypeAlias {
-            span: SrcSpan::new(start, self.lexer.current_pos().offset),
+            span: SrcSpan::new(start, self.lexer.current_pos()),
             visibility: None,
             attributes,
             name,
@@ -426,7 +428,7 @@ impl Parser<'_, '_> {
         fn parse_enum_variant(this: &mut Parser) -> EnumVariant {
             let attributes = this.parse_attributes();
 
-            let name_start = this.lexer.peek_pos().offset;
+            let name_start = this.lexer.peek_pos();
             let err = SyntaxErr::EnumMissingVariantName(this.lexer.peek_pos());
             let name = this.parse_nstring_name(err);
 
@@ -447,7 +449,7 @@ impl Parser<'_, '_> {
             };
 
             EnumVariant {
-                span: SrcSpan::new(name_start, this.lexer.current_pos().offset),
+                span: SrcSpan::new(name_start, this.lexer.current_pos()),
                 attributes,
                 name,
                 ty: variant_type,
@@ -455,7 +457,7 @@ impl Parser<'_, '_> {
             }
         }
 
-        let start = self.lexer.peek_pos().offset;
+        let start = self.lexer.peek_pos();
         assert!(self.lexer.peek_tok().token == Token::Enum);
         self.lexer.skip_tok();
 
@@ -476,7 +478,7 @@ impl Parser<'_, '_> {
             self.parse_comma_separated_list(&Token::CloseBrace, MAX_LIMIT, true, eof, limit, end, parse_enum_variant);
 
         Enum {
-            span: SrcSpan::new(start, self.lexer.current_pos().offset),
+            span: SrcSpan::new(start, self.lexer.current_pos()),
             visibility: None,
             attributes,
             name,
@@ -487,7 +489,7 @@ impl Parser<'_, '_> {
 
     fn parse_struct(&mut self) -> Struct {
         fn parse_struct_field(this: &mut Parser) -> StructField {
-            let field_start = this.lexer.peek_pos().offset;
+            let field_start = this.lexer.peek_pos();
             let visibility = this.parse_visibility();
             let attributes = this.parse_attributes();
 
@@ -505,7 +507,7 @@ impl Parser<'_, '_> {
             };
 
             StructField {
-                span: SrcSpan::new(field_start, this.lexer.current_pos().offset),
+                span: SrcSpan::new(field_start, this.lexer.current_pos()),
                 visibility,
                 attributes,
                 name,
@@ -514,7 +516,7 @@ impl Parser<'_, '_> {
             }
         }
 
-        let start = self.lexer.peek_pos().offset;
+        let start = self.lexer.peek_pos();
         assert!(self.lexer.peek_tok().token == Token::Struct);
         self.lexer.skip_tok();
 
@@ -535,7 +537,7 @@ impl Parser<'_, '_> {
             self.parse_comma_separated_list(&Token::CloseBrace, MAX_LIMIT, true, eof, limit, end, parse_struct_field);
 
         Struct {
-            span: SrcSpan::new(start, self.lexer.current_pos().offset),
+            span: SrcSpan::new(start, self.lexer.current_pos()),
             visibility: None,
             attributes,
             name,
@@ -574,14 +576,14 @@ impl Parser<'_, '_> {
                 self.log.report(&bug);
 
                 AssociatedItem::SyntaxError(ItemSyntaxError {
-                    span: SrcSpan::new(err_pos.offset, self.lexer.current_pos().offset),
+                    span: SrcSpan::new(err_pos, self.lexer.current_pos()),
                 })
             }
         }
     }
 
     fn parse_trait(&mut self) -> Trait {
-        let start = self.lexer.peek_pos().offset;
+        let start = self.lexer.peek_pos();
         assert!(self.lexer.peek_tok().token == Token::Trait);
         self.lexer.skip_tok();
 
@@ -614,7 +616,7 @@ impl Parser<'_, '_> {
         }
 
         Trait {
-            span: SrcSpan::new(start, self.lexer.current_pos().offset),
+            span: SrcSpan::new(start, self.lexer.current_pos()),
             visibility: None,
             attributes,
             name,
@@ -624,7 +626,7 @@ impl Parser<'_, '_> {
     }
 
     fn parse_implementation(&mut self) -> Impl {
-        let start = self.lexer.peek_pos().offset;
+        let start = self.lexer.peek_pos();
         assert!(self.lexer.peek_tok().token == Token::Impl);
         self.lexer.skip_tok();
 
@@ -680,7 +682,7 @@ impl Parser<'_, '_> {
         }
 
         Impl {
-            span: SrcSpan::new(start, self.lexer.current_pos().offset),
+            span: SrcSpan::new(start, self.lexer.current_pos()),
             generics,
             trait_path,
             for_type,
@@ -701,11 +703,11 @@ impl Parser<'_, '_> {
         if is_ref {
             // If we saw &, the next token must be self or mut self
             if self.lexer.next_is(&Token::SelfKeyword) {
-                let self_start = rewind_pos.offset; // start of `&`
+                let self_start = rewind_pos; // start of `&`
                 // &self - create a reference type for the parameter
                 self.lexer.skip_tok(); // consume self
                 let name = "self".into();
-                let self_ty_end = self.lexer.current_pos().offset;
+                let self_ty_end = self.lexer.current_pos();
                 let ref_span = SrcSpan::new(self_start, self_ty_end);
                 let ty = Type::ReferenceType(Box::new(ReferenceType {
                     span: ref_span,
@@ -731,11 +733,11 @@ impl Parser<'_, '_> {
                     default_value: None,
                 });
             } else if self.lexer.skip_if(&Token::Mut) && self.lexer.next_is(&Token::SelfKeyword) {
-                let self_start = rewind_pos.offset; // start of `&`
+                let self_start = rewind_pos; // start of `&`
                 // &mut self
                 self.lexer.skip_tok(); // consume self
                 let name = "self".into();
-                let self_ty_end = self.lexer.current_pos().offset;
+                let self_ty_end = self.lexer.current_pos();
                 let ref_span = SrcSpan::new(self_start, self_ty_end);
                 let ty = Type::ReferenceType(Box::new(ReferenceType {
                     span: ref_span,
@@ -769,10 +771,10 @@ impl Parser<'_, '_> {
 
         // self or mut self (without &)
         if self.lexer.next_is(&Token::SelfKeyword) {
-            let self_start = self.lexer.peek_pos().offset;
+            let self_start = self.lexer.peek_pos();
             self.lexer.skip_tok(); // consume self
             let name = "self".into();
-            let self_ty_end = self.lexer.current_pos().offset;
+            let self_ty_end = self.lexer.current_pos();
             let inner_span = SrcSpan::new(self_start, self_ty_end);
             let ty = Type::TypePath(Box::new(TypePath {
                 span: inner_span,
@@ -797,7 +799,7 @@ impl Parser<'_, '_> {
     }
 
     fn parse_function_parameters(&mut self) -> FuncParams {
-        let paren_start = self.lexer.peek_pos().offset;
+        let paren_start = self.lexer.peek_pos();
         self.expect_open_paren();
 
         let mut params = Vec::new();
@@ -822,7 +824,7 @@ impl Parser<'_, '_> {
                         .report(&SyntaxErr::FunctionParametersExpectedEnd(self.lexer.peek_pos()));
                     self.lexer.skip_while(&Token::CloseParen);
                     return FuncParams {
-                        span: SrcSpan::new(paren_start, self.lexer.current_pos().offset),
+                        span: SrcSpan::new(paren_start, self.lexer.current_pos()),
                         params,
                         variadic: false,
                     };
@@ -851,7 +853,7 @@ impl Parser<'_, '_> {
                 }
 
                 return FuncParams {
-                    span: SrcSpan::new(paren_start, self.lexer.current_pos().offset),
+                    span: SrcSpan::new(paren_start, self.lexer.current_pos()),
                     params,
                     variadic: true,
                 };
@@ -868,14 +870,14 @@ impl Parser<'_, '_> {
         }
 
         FuncParams {
-            span: SrcSpan::new(paren_start, self.lexer.current_pos().offset),
+            span: SrcSpan::new(paren_start, self.lexer.current_pos()),
             params,
             variadic: false,
         }
     }
 
     fn parse_named_function(&mut self) -> Function {
-        let start = self.lexer.peek_pos().offset;
+        let start = self.lexer.peek_pos();
         assert!(self.lexer.peek_tok().token == Token::Fn);
         self.lexer.skip_tok();
 
@@ -896,7 +898,7 @@ impl Parser<'_, '_> {
         };
 
         Function {
-            span: SrcSpan::new(start, self.lexer.current_pos().offset),
+            span: SrcSpan::new(start, self.lexer.current_pos()),
             visibility: None,
             attributes,
             name,
@@ -909,7 +911,7 @@ impl Parser<'_, '_> {
     }
 
     fn parse_global_variable(&mut self) -> GlobalVariable {
-        let start = self.lexer.peek_pos().offset;
+        let start = self.lexer.peek_pos();
         let kind = match self.lexer.next_tok().token {
             Token::Static => GlobalVariableKind::Static,
             Token::Const => GlobalVariableKind::Const,
@@ -938,7 +940,7 @@ impl Parser<'_, '_> {
         self.expect_semicolon();
 
         GlobalVariable {
-            span: SrcSpan::new(start, self.lexer.current_pos().offset),
+            span: SrcSpan::new(start, self.lexer.current_pos()),
             visibility: None,
             kind,
             attributes,
@@ -953,9 +955,9 @@ impl Parser<'_, '_> {
         // Parse an optional ABI string like "C" after extern keyword
         match self.lexer.peek_tok().token {
             Token::String(ref abi_name) => {
-                let abi_start = self.lexer.peek_pos().offset;
+                let abi_start = self.lexer.peek_pos();
                 self.lexer.skip_tok();
-                let abi_end = self.lexer.current_pos().offset;
+                let abi_end = self.lexer.current_pos();
                 Some(ExternAbi {
                     span: SrcSpan::new(abi_start, abi_end),
                     name: abi_name.clone().into(),
@@ -1062,7 +1064,7 @@ impl Parser<'_, '_> {
                 // If no visibility set and there are items, wrap in a placeholder
                 if block_items.is_empty() {
                     Item::SyntaxError(ItemSyntaxError {
-                        span: SrcSpan::new(item_pos_begin.offset, self.lexer.current_pos().offset),
+                        span: SrcSpan::new(item_pos_begin, self.lexer.current_pos()),
                     })
                 } else {
                     block_items.remove(0)
@@ -1076,7 +1078,7 @@ impl Parser<'_, '_> {
                 self.log.report(&bug);
 
                 Item::SyntaxError(ItemSyntaxError {
-                    span: SrcSpan::new(item_pos_begin.offset, self.lexer.current_pos().offset),
+                    span: SrcSpan::new(item_pos_begin, self.lexer.current_pos()),
                 })
             }
         }

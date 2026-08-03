@@ -1,4 +1,4 @@
-use crate::span::{SrcPos, SrcSpan};
+use crate::span::SrcSpan;
 use serde::{Deserialize, Serialize};
 
 /// Represents a range of trivia tokens (whitespace, comments, etc.)
@@ -14,13 +14,6 @@ impl Trivia {
     /// Create a new trivia span.
     pub const fn new(span: SrcSpan) -> Self {
         Trivia { span }
-    }
-
-    /// Create an empty trivia at the given offset.
-    pub fn empty_at(offset: u32) -> Self {
-        Trivia {
-            span: SrcSpan::from_parts(SrcPos::at_offset(offset), SrcPos::at_offset(offset)),
-        }
     }
 
     /// Returns true if this trivia range is empty.
@@ -57,13 +50,5 @@ impl TriviaRef {
     /// Create a new trivia reference.
     pub const fn new(offset: u32) -> Self {
         TriviaRef { offset }
-    }
-}
-
-impl From<TriviaRef> for Trivia {
-    fn from(tr: TriviaRef) -> Self {
-        Trivia {
-            span: SrcSpan::from_parts(SrcPos::at_offset(tr.offset), SrcPos::at_offset(tr.offset)),
-        }
     }
 }

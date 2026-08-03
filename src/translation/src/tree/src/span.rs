@@ -1,6 +1,27 @@
 use nitrate_diagnosis::FileId;
+use nitrate_token::LexPos;
 use serde::{Deserialize, Serialize};
 use std::format;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+#[repr(C, packed)]
+pub struct U24([u8; 3]);
+
+impl U24 {
+    pub const MIN: Self = Self([0x00, 0x00, 0x00]);
+    pub const MAX: Self = Self([0xFF, 0xFF, 0xFF]);
+
+    /// Creates a U24 from a u32, truncating the top byte.
+    pub fn from_u32(val: u32) -> Self {
+        let bytes = val.to_le_bytes(); // Little-endian format
+        Self([bytes[0], bytes[1], bytes[2]])
+    }
+
+    /// Converts the U24 into a native u32.
+    pub fn to_u32(self) -> u32 {
+        u32::from_le_bytes([self.0[0], self.0[1], self.0[2], 0])
+    }
+}
 
 /// A compact source position storing file, line, column, and byte offset.
 /// Total size: 8 bytes.
@@ -13,7 +34,7 @@ pub struct SrcPos {
     /// 0-based line number (clamped to 65535).
     pub line: u16,
     /// Byte offset from start of file (clamped to 24 bits: 16_777_215).
-    pub offset: u32,
+    pub offset: U24,
 }
 
 impl SrcPos {
@@ -22,34 +43,19 @@ impl SrcPos {
 
     /// Create a new source position. Values exceeding field widths are clamped.
     #[must_use]
-    pub fn new(fileid: Option<FileId>, line: u32, column: u32, offset: u32) -> Self {
+    pub fn new(fileid: Option<FileId>, line: u16, column: u8, offset: u32) -> Self {
         SrcPos {
             fileid,
-            line: (line as u64).min(u16::MAX as u64) as u16,
-            column: (column as u64).min(u8::MAX as u64) as u8,
-            offset: offset.min(Self::MAX_OFFSET),
-        }
-    }
-
-    /// Create a source position with just an offset.
-    #[must_use]
-    pub fn at_offset(offset: u32) -> Self {
-        SrcPos {
-            fileid: None,
-            column: 0,
-            line: 0,
-            offset: if offset > Self::MAX_OFFSET {
-                Self::MAX_OFFSET
-            } else {
-                offset
-            },
+            line,
+            column,
+            offset: U24::from_u32(offset.min(Self::MAX_OFFSET)),
         }
     }
 
     /// Returns true if the position is empty (zero offset, no file).
     #[must_use]
     pub fn is_empty(self) -> bool {
-        self.offset == 0 && self.fileid == None && self.line == 0 && self.column == 0
+        self.offset.to_u32() == 0 && self.fileid == None && self.line == 0 && self.column == 0
     }
 
     /// Format the position as `file:line:col`.
@@ -69,6 +75,12 @@ impl SrcPos {
     }
 }
 
+impl From<LexPos> for SrcPos {
+    fn from(lp: LexPos) -> Self {
+        SrcPos::new(lp.fileid, lp.line, lp.column, lp.offset)
+    }
+}
+
 /// A source span storing start and end positions.
 /// Total size: 16 bytes (two SrcPos values).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
@@ -80,20 +92,10 @@ pub struct SrcSpan {
 impl SrcSpan {
     /// Create a new span from start and end byte offsets (backward compatible).
     #[must_use]
-    pub const fn new(start: u32, end: u32) -> Self {
+    pub fn new<T: Into<SrcPos>, U: Into<SrcPos>>(start: T, end: U) -> Self {
         SrcSpan {
-            start: SrcPos {
-                fileid: None,
-                column: 0,
-                line: 0,
-                offset: start,
-            },
-            end: SrcPos {
-                fileid: None,
-                column: 0,
-                line: 0,
-                offset: end,
-            },
+            start: start.into(),
+            end: end.into(),
         }
     }
 
@@ -106,19 +108,21 @@ impl SrcSpan {
     /// Returns true if the span has zero length.
     #[must_use]
     pub fn is_empty(self) -> bool {
-        self.start.offset == self.end.offset && self.start.line == self.end.line && self.start.column == self.end.column
+        self.start.offset.to_u32() == self.end.offset.to_u32()
+            && self.start.line == self.end.line
+            && self.start.column == self.end.column
     }
 
     /// Returns the length of the span in bytes.
     #[must_use]
     pub fn len(self) -> u32 {
-        self.end.offset.saturating_sub(self.start.offset)
+        self.end.offset.to_u32().saturating_sub(self.start.offset.to_u32())
     }
 
     /// Extract the source text for this span from the given source bytes.
     #[must_use]
     pub fn extract<'a>(self, source: &'a [u8]) -> &'a [u8] {
-        &source[self.start.offset as usize..self.end.offset as usize]
+        &source[self.start.offset.to_u32() as usize..self.end.offset.to_u32() as usize]
     }
 
     /// Extract the source text as a string.

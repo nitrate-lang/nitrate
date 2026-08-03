@@ -5,6 +5,7 @@ use std::sync::RwLock;
 use std::sync::atomic::{AtomicBool, AtomicU16, Ordering};
 
 #[derive(Clone, Debug, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[repr(transparent)]
 pub struct FileId(NonZeroU16);
 
 impl std::ops::Deref for FileId {

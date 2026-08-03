@@ -2,7 +2,7 @@ use nitrate_diagnosis::CompilerLog;
 use nitrate_nstring::NString;
 use nitrate_token::Token;
 use nitrate_token_lexer::Lexer;
-use nitrate_tree::SrcSpan;
+use nitrate_tree::{SrcPos, SrcSpan, ast::U24};
 use std::path::PathBuf;
 
 pub struct Parser<'a, 'log> {
@@ -68,7 +68,12 @@ impl<'a, 'log> Parser<'a, 'log> {
 
         // The module span starts at offset 0 (beginning of source file).
         // Must be captured before disabling trivia to include leading whitespace/comments.
-        let module_start = 0u32;
+        let module_start = SrcPos {
+            fileid: self.lexer.peek_pos().fileid,
+            line: 1,
+            column: 1,
+            offset: U24::from_u32(0),
+        };
 
         // Disable trivia so the lexer skips whitespace/comments when parsing items.
         // Trivia is preserved for reconstruction via SrcPos ranges on individual items.
@@ -79,7 +84,7 @@ impl<'a, 'log> Parser<'a, 'log> {
             items.push(item);
         }
 
-        let module_end = self.current_pos();
+        let module_end = self.lexer.current_pos();
 
         nitrate_tree::ast::Module {
             name: package_name.clone(),

@@ -21,9 +21,6 @@ use std::collections::{BTreeMap, BTreeSet, HashSet};
 use std::{format, vec};
 use thin_vec::ThinVec;
 
-fn span(s: u32, _e: u32) -> SrcPos {
-    SrcPos::at_offset(s)
-}
 fn store<R>(f: impl FnOnce(&Store) -> R) -> R {
     let s = Store::new();
     using_storage(&s, || f(&s))
@@ -4024,7 +4021,7 @@ fn test_report_out_of_range() {
     store(|_| {
         let mut s = sym();
         let mut solver = Solver::new(&mut s);
-        solver.report_out_of_range(span(0, 1), 300, u8t());
+        solver.report_out_of_range(SrcPos::default(), 300, u8t());
         assert!(!solver.errors.is_empty());
     });
 }
@@ -4437,7 +4434,7 @@ fn test_diagnostic_all_variants() {
         let cases: Vec<(TypeErr, u16, &str)> = vec![
             (
                 TypeErr::IntegerLiteralOutOfRange {
-                    span: span(0, 1),
+                    span: SrcPos::default(),
                     value: 256,
                     target_type: u8t(),
                 },
@@ -4446,7 +4443,7 @@ fn test_diagnostic_all_variants() {
             ),
             (
                 TypeErr::IntegerLiteralUnsatisfiable {
-                    span: span(0, 1),
+                    span: SrcPos::default(),
                     value: 42,
                     unsatisfiable_type: boolt(),
                 },
@@ -4455,7 +4452,7 @@ fn test_diagnostic_all_variants() {
             ),
             (
                 TypeErr::FloatLiteralUnsatisfiable {
-                    span: span(0, 1),
+                    span: SrcPos::default(),
                     value: OrderedFloat(3.14),
                     unsatisfiable_type: boolt(),
                 },
@@ -4464,7 +4461,7 @@ fn test_diagnostic_all_variants() {
             ),
             (
                 TypeErr::IntegerLiteralOutOfRefinementBounds {
-                    span: span(0, 1),
+                    span: SrcPos::default(),
                     value: 200,
                     refinement_type: refine,
                 },
@@ -4473,7 +4470,7 @@ fn test_diagnostic_all_variants() {
             ),
             (
                 TypeErr::OperationResultOutOfRefinementBounds {
-                    span: span(0, 1),
+                    span: SrcPos::default(),
                     refinement_type: refine,
                     computed_min: 0,
                     computed_max: 200,
@@ -4483,7 +4480,7 @@ fn test_diagnostic_all_variants() {
             ),
             (
                 TypeErr::MismatchedBranchTypes {
-                    span: span(0, 1),
+                    span: SrcPos::default(),
                     true_type: i32t(),
                     false_type: i64t(),
                 },
@@ -4492,7 +4489,7 @@ fn test_diagnostic_all_variants() {
             ),
             (
                 TypeErr::CannotInferTypeArgs {
-                    span: span(0, 1),
+                    span: SrcPos::default(),
                     generic_name: "Foo".into(),
                     reason: "test".into(),
                 },
@@ -4501,7 +4498,7 @@ fn test_diagnostic_all_variants() {
             ),
             (
                 TypeErr::AmbiguousType {
-                    span: span(0, 1),
+                    span: SrcPos::default(),
                     description: "test".into(),
                 },
                 8,
@@ -4509,7 +4506,7 @@ fn test_diagnostic_all_variants() {
             ),
             (
                 TypeErr::UnboundGenericParam {
-                    span: span(0, 1),
+                    span: SrcPos::default(),
                     param_name: "T".into(),
                     generic_name: "Box".into(),
                 },
@@ -4518,7 +4515,7 @@ fn test_diagnostic_all_variants() {
             ),
             (
                 TypeErr::MethodNotFound {
-                    span: span(0, 1),
+                    span: SrcPos::default(),
                     method_name: "bar".into(),
                     receiver_type: i32t(),
                 },
@@ -4538,7 +4535,7 @@ fn test_diagnostic_all_variants() {
             );
         }
         let with_span = TypeErr::IntegerLiteralOutOfRange {
-            span: span(10, 20),
+            span: SrcPos::default(),
             value: 0,
             target_type: i32t(),
         }
@@ -4567,7 +4564,7 @@ fn test_diagnostic_refine_bounds_format() {
             max: lit(Lit::I32(100)),
         });
         let e = TypeErr::OperationResultOutOfRefinementBounds {
-            span: span(0, 3),
+            span: SrcPos::default(),
             refinement_type: r,
             computed_min: 0,
             computed_max: 200,
@@ -4575,7 +4572,7 @@ fn test_diagnostic_refine_bounds_format() {
         let info = e.format();
         assert!(info.message.contains("expected"));
         let e2 = TypeErr::OperationResultOutOfRefinementBounds {
-            span: span(0, 3),
+            span: SrcPos::default(),
             refinement_type: i32t(),
             computed_min: 0,
             computed_max: 200,

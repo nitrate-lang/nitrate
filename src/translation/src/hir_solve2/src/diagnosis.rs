@@ -4,11 +4,11 @@ use nitrate_hir_dump::Dump;
 use nitrate_tree::SrcPos;
 use std::{format, ops::Deref};
 
-fn byte_span_to_origin(span: SrcPos) -> Origin {
+fn srcpos_to_origin(span: SrcPos) -> Origin {
     Origin::Point(SourcePosition {
         line: span.line as u32,
         column: span.column as u32,
-        offset: span.offset,
+        offset: span.offset.to_u32(),
         fileid: span.fileid,
     })
 }
@@ -82,7 +82,7 @@ impl FormattableDiagnosticGroup for TypeErr {
                 value,
                 target_type,
             } => DiagnosticInfo {
-                origin: byte_span_to_origin(*span),
+                origin: srcpos_to_origin(*span),
                 message: format!(
                     "integer literal value `{}` is outside the range of type `{}`",
                     value,
@@ -101,7 +101,7 @@ impl FormattableDiagnosticGroup for TypeErr {
                     _ => String::new(),
                 };
                 DiagnosticInfo {
-                    origin: byte_span_to_origin(*span),
+                    origin: srcpos_to_origin(*span),
                     message: format!(
                         "integer literal `{}` does not satisfy refinement type `{}`{}",
                         value,
@@ -123,7 +123,7 @@ impl FormattableDiagnosticGroup for TypeErr {
                     _ => String::new(),
                 };
                 DiagnosticInfo {
-                    origin: byte_span_to_origin(*span),
+                    origin: srcpos_to_origin(*span),
                     message: format!(
                         "arithmetic operation result range [{}, {}] cannot be guaranteed to satisfy refinement type `{}`{}",
                         computed_min,
@@ -138,7 +138,7 @@ impl FormattableDiagnosticGroup for TypeErr {
                 true_type,
                 false_type,
             } => DiagnosticInfo {
-                origin: byte_span_to_origin(*span),
+                origin: srcpos_to_origin(*span),
                 message: format!(
                     "'if' and 'else' branches have incompatible types: `{}` vs `{}`",
                     true_type.to_string(),
@@ -150,11 +150,11 @@ impl FormattableDiagnosticGroup for TypeErr {
                 generic_name,
                 reason,
             } => DiagnosticInfo {
-                origin: byte_span_to_origin(*span),
+                origin: srcpos_to_origin(*span),
                 message: format!("cannot infer type arguments for `{}`: {}", generic_name, reason),
             },
             TypeErr::AmbiguousType { span, description } => DiagnosticInfo {
-                origin: byte_span_to_origin(*span),
+                origin: srcpos_to_origin(*span),
                 message: format!("ambiguous type: {}", description),
             },
             TypeErr::UnboundGenericParam {
@@ -162,7 +162,7 @@ impl FormattableDiagnosticGroup for TypeErr {
                 param_name,
                 generic_name,
             } => DiagnosticInfo {
-                origin: byte_span_to_origin(*span),
+                origin: srcpos_to_origin(*span),
                 message: format!(
                     "generic parameter `{}` on `{}` could not be inferred from context",
                     param_name, generic_name
@@ -173,7 +173,7 @@ impl FormattableDiagnosticGroup for TypeErr {
                 method_name,
                 receiver_type,
             } => DiagnosticInfo {
-                origin: byte_span_to_origin(*span),
+                origin: srcpos_to_origin(*span),
                 message: format!(
                     "method `{}` not found on type `{}`",
                     method_name,

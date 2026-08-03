@@ -1,5 +1,5 @@
 use nitrate_diagnosis::{DiagnosticGroupId, DiagnosticInfo, FormattableDiagnosticGroup, Origin, SourcePosition};
-use nitrate_token_lexer::LexPos;
+use nitrate_token::LexPos;
 
 pub(crate) enum SyntaxErr {
     GenericMissingParameterName(LexPos),

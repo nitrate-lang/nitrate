@@ -1,6 +1,6 @@
 use log::error;
 use nitrate_diagnosis::FileId;
-use nitrate_token::{AnnotatedToken, Comment, CommentKind, Integer, IntegerKind, Token};
+use nitrate_token::{AnnotatedToken, Comment, CommentKind, Integer, IntegerKind, LexPos, Token};
 use ordered_float::NotNan;
 
 const RESERVED_PREFIX: &str = "⚙️";
@@ -8,25 +8,6 @@ const RESERVED_PREFIX: &str = "⚙️";
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum LexerError {
     SourceTooBig,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct LexPos {
-    pub fileid: Option<FileId>,
-    pub line: u16,
-    pub column: u8,
-    pub offset: u32,
-}
-
-impl From<LexPos> for nitrate_diagnosis::SourcePosition {
-    fn from(pos: LexPos) -> Self {
-        nitrate_diagnosis::SourcePosition {
-            line: u32::from(pos.line),
-            column: u32::from(pos.column),
-            offset: pos.offset,
-            fileid: pos.fileid,
-        }
-    }
 }
 
 #[derive(Debug)]
