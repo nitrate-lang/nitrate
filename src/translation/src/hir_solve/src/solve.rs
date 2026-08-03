@@ -3561,4 +3561,740 @@ mod tests {
             assert!(result.is_ok());
         });
     }
+
+    // ── Additional find_common_integer_type coverage ───────────
+
+    #[test]
+    fn find_common_i16_type() {
+        let store = Store::new();
+        using_storage(&store, || {
+            let types = [TypeId::from(Type::I16 { span: sp() })];
+            let result = Solver::find_common_integer_type(&types, 1000);
+            assert_eq!(result, Some(TypeId::from(Type::I16 { span: sp() })));
+        });
+    }
+
+    #[test]
+    fn find_common_i64_type() {
+        let store = Store::new();
+        using_storage(&store, || {
+            let types = [TypeId::from(Type::I64 { span: sp() })];
+            let result = Solver::find_common_integer_type(&types, 1_000_000);
+            assert_eq!(result, Some(TypeId::from(Type::I64 { span: sp() })));
+        });
+    }
+
+    #[test]
+    fn find_common_u16_type() {
+        let store = Store::new();
+        using_storage(&store, || {
+            let types = [TypeId::from(Type::U16 { span: sp() })];
+            let result = Solver::find_common_integer_type(&types, 1000);
+            assert_eq!(result, Some(TypeId::from(Type::U16 { span: sp() })));
+        });
+    }
+
+    #[test]
+    fn find_common_u32_type() {
+        let store = Store::new();
+        using_storage(&store, || {
+            let types = [TypeId::from(Type::U32 { span: sp() })];
+            let result = Solver::find_common_integer_type(&types, 100_000);
+            assert_eq!(result, Some(TypeId::from(Type::U32 { span: sp() })));
+        });
+    }
+
+    #[test]
+    fn find_common_u64_type() {
+        let store = Store::new();
+        using_storage(&store, || {
+            let types = [TypeId::from(Type::U64 { span: sp() })];
+            let result = Solver::find_common_integer_type(&types, 1_000_000_000u128);
+            assert_eq!(result, Some(TypeId::from(Type::U64 { span: sp() })));
+        });
+    }
+
+    #[test]
+    fn find_common_usize_type() {
+        let store = Store::new();
+        using_storage(&store, || {
+            let types = [TypeId::from(Type::USize { span: sp() })];
+            let result = Solver::find_common_integer_type(&types, 100);
+            assert_eq!(result, Some(TypeId::from(Type::USize { span: sp() })));
+        });
+    }
+
+    #[test]
+    fn find_common_i128_value_not_fit() {
+        let store = Store::new();
+        using_storage(&store, || {
+            // Value above i128::MAX, so I128 should NOT be returned
+            let types = [TypeId::from(Type::I128 { span: sp() })];
+            let result = Solver::find_common_integer_type(&types, u128::MAX);
+            assert_eq!(result, None);
+        });
+    }
+
+    #[test]
+    fn find_common_prefers_signed_over_unsigned_same_width() {
+        let store = Store::new();
+        using_storage(&store, || {
+            let types = [
+                TypeId::from(Type::U64 { span: sp() }),
+                TypeId::from(Type::I64 { span: sp() }),
+            ];
+            let result = Solver::find_common_integer_type(&types, 100);
+            assert_eq!(result, Some(TypeId::from(Type::I64 { span: sp() })));
+        });
+    }
+
+    #[test]
+    fn find_common_same_width_unsigned_preferred_over_signed() {
+        let store = Store::new();
+        using_storage(&store, || {
+            let types = [
+                TypeId::from(Type::I32 { span: sp() }),
+                TypeId::from(Type::U32 { span: sp() }),
+            ];
+            // I32 is signed so it is preferred over U32
+            let result = Solver::find_common_integer_type(&types, 100);
+            assert_eq!(result, Some(TypeId::from(Type::I32 { span: sp() })));
+        });
+    }
+
+    // ── resolve_function with inferred integer edge cases ─────
+
+    #[test]
+    fn resolve_function_inferred_integer_with_refinement_constraint() {
+        let store = Store::new();
+        using_storage(&store, || {
+            let log = CompilerLog::default();
+            let mut tab = new_tab();
+            let inf = ValueId::from(Value::InferredInteger {
+                span: sp(),
+                value: Box::new(15),
+            });
+            let refine_ty = Type::Refine {
+                span: sp(),
+                base: TypeId::from(Type::I8 { span: sp() }),
+                min: LiteralId::from(Lit::I8(10)),
+                max: LiteralId::from(Lit::I8(20)),
+            };
+            let body = vec![BlockElement::Local(LocalVariableId::from(LocalVariable {
+                span: sp(),
+                kind: nitrate_hir::LocalKind::Let,
+                attributes: Default::default(),
+                is_mutable: false,
+                name: NString::from("x"),
+                ty: TypeId::from(refine_ty),
+                initializer: Some(inf),
+            }))];
+            let mut func = make_function("refine_inf", body);
+            let result = resolve_function(&mut func, &mut tab, &log);
+            assert!(result.is_ok());
+        });
+    }
+
+    #[test]
+    fn resolve_function_inferred_float_as_f32() {
+        let store = Store::new();
+        using_storage(&store, || {
+            let log = CompilerLog::default();
+            let mut tab = new_tab();
+            let inf = ValueId::from(Value::InferredFloat {
+                span: sp(),
+                value: OrderedFloat(3.14),
+            });
+            let body = vec![BlockElement::Local(LocalVariableId::from(LocalVariable {
+                span: sp(),
+                kind: nitrate_hir::LocalKind::Let,
+                attributes: Default::default(),
+                is_mutable: false,
+                name: NString::from("x"),
+                ty: TypeId::from(Type::F32 { span: sp() }),
+                initializer: Some(inf),
+            }))];
+            let mut func = make_function("f32_inf", body);
+            let result = resolve_function(&mut func, &mut tab, &log);
+            assert!(result.is_ok());
+        });
+    }
+
+    #[test]
+    fn resolve_function_with_params() {
+        let store = Store::new();
+        using_storage(&store, || {
+            let log = CompilerLog::default();
+            let mut tab = new_tab();
+            let param = ParameterId::from(Parameter {
+                span: sp(),
+                attributes: Default::default(),
+                is_mutable: false,
+                name: NString::from("p"),
+                ty: TypeId::from(Type::I32 { span: sp() }),
+                default_value: None,
+            });
+            let unit_v = ValueId::from(Value::Unit { span: sp() });
+            let mut func = Function {
+                span: sp(),
+                visibility: nitrate_hir::Visibility::Sec,
+                attributes: Default::default(),
+                is_unsafe: false,
+                name: NString::from("param_func"),
+                mangled_name: None,
+                generics: None,
+                params: vec![param],
+                return_type: TypeId::from(Type::I32 { span: sp() }),
+                body: Some(vec![BlockElement::Expr(unit_v)]),
+            };
+            let result = resolve_function(&mut func, &mut tab, &log);
+            assert!(result.is_ok());
+        });
+    }
+
+    #[test]
+    fn resolve_function_return_value_matches_type() {
+        let store = Store::new();
+        using_storage(&store, || {
+            let log = CompilerLog::default();
+            let mut tab = new_tab();
+            let ret = ValueId::from(Value::Return {
+                span: sp(),
+                value: ValueId::from(Value::I32 { span: sp(), value: 42 }),
+            });
+            let mut func = Function {
+                span: sp(),
+                visibility: nitrate_hir::Visibility::Sec,
+                attributes: Default::default(),
+                is_unsafe: false,
+                name: NString::from("ret_func"),
+                mangled_name: None,
+                generics: None,
+                params: vec![],
+                return_type: TypeId::from(Type::I32 { span: sp() }),
+                body: Some(vec![BlockElement::Expr(ret)]),
+            };
+            let result = resolve_function(&mut func, &mut tab, &log);
+            assert!(result.is_ok());
+        });
+    }
+
+    #[test]
+    fn resolve_function_if_branches_mismatched_type_error() {
+        let store = Store::new();
+        using_storage(&store, || {
+            let log = CompilerLog::default();
+            let mut tab = new_tab();
+            let cond = ValueId::from(Value::Bool {
+                span: sp(),
+                value: true,
+            });
+            let tb = nitrate_hir::BlockId::from(nitrate_hir::Block {
+                span: sp(),
+                safety: nitrate_hir::BlockSafety::Safe,
+                elements: vec![BlockElement::Expr(ValueId::from(Value::I32 { span: sp(), value: 1 }))],
+            });
+            let fb = nitrate_hir::BlockId::from(nitrate_hir::Block {
+                span: sp(),
+                safety: nitrate_hir::BlockSafety::Safe,
+                elements: vec![BlockElement::Expr(ValueId::from(Value::F64 {
+                    span: sp(),
+                    value: OrderedFloat(3.14),
+                }))],
+            });
+            let if_v = ValueId::from(Value::If {
+                span: sp(),
+                condition: cond,
+                true_branch: tb,
+                false_branch: Some(fb),
+            });
+            let mut func = make_function("mismatch", vec![BlockElement::Expr(if_v)]);
+            let result = resolve_function(&mut func, &mut tab, &log);
+            assert!(result.is_err());
+        });
+    }
+
+    #[test]
+    fn resolve_function_local_with_init_non_inferred_type() {
+        let store = Store::new();
+        using_storage(&store, || {
+            let log = CompilerLog::default();
+            let mut tab = new_tab();
+            let init = ValueId::from(Value::I32 { span: sp(), value: 42 });
+            let body = vec![BlockElement::Local(LocalVariableId::from(LocalVariable {
+                span: sp(),
+                kind: nitrate_hir::LocalKind::Let,
+                attributes: Default::default(),
+                is_mutable: false,
+                name: NString::from("x"),
+                ty: TypeId::from(Type::I32 { span: sp() }),
+                initializer: Some(init),
+            }))];
+            let mut func = make_function("explicit_local", body);
+            let result = resolve_function(&mut func, &mut tab, &log);
+            assert!(result.is_ok());
+        });
+    }
+
+    #[test]
+    fn resolve_function_enum_variant() {
+        let store = Store::new();
+        using_storage(&store, || {
+            let log = CompilerLog::default();
+            let mut tab = new_tab();
+            let variant_ty = TypeId::from(Type::I32 { span: sp() });
+            let variant_item = nitrate_hir::EnumVariant {
+                span: sp(),
+                name: NString::from("V1"),
+                attributes: Default::default(),
+                ty: variant_ty,
+                default_value: None,
+            };
+            let ed = nitrate_hir::EnumDefId::from(nitrate_hir::EnumDef {
+                span: sp(),
+                visibility: nitrate_hir::Visibility::Sec,
+                name: NString::from("MyEnum"),
+                attributes: Default::default(),
+                variants: vec![variant_item].into(),
+                generics: None,
+            });
+            let ev = ValueId::from(Value::EnumVariant {
+                span: sp(),
+                enum_def: ed,
+                variant: NString::from("V1"),
+                value: ValueId::from(Value::I32 { span: sp(), value: 42 }),
+            });
+            let mut func = make_function("enum_func", vec![BlockElement::Expr(ev)]);
+            let result = resolve_function(&mut func, &mut tab, &log);
+            assert!(result.is_ok());
+        });
+    }
+
+    #[test]
+    fn resolve_function_range_visit() {
+        let store = Store::new();
+        using_storage(&store, || {
+            let log = CompilerLog::default();
+            let mut tab = new_tab();
+            let r = ValueId::from(Value::Range {
+                span: sp(),
+                start: None,
+                end: Some(ValueId::from(Value::I32 { span: sp(), value: 10 })),
+                inclusive: false,
+            });
+            let mut func = make_function("range_to", vec![BlockElement::Expr(r)]);
+            let result = resolve_function(&mut func, &mut tab, &log);
+            assert!(result.is_ok());
+        });
+    }
+
+    #[test]
+    fn resolve_function_struct_object_non_generic() {
+        let store = Store::new();
+        using_storage(&store, || {
+            let log = CompilerLog::default();
+            let mut tab = new_tab();
+            let mut fields_map = BTreeMap::new();
+            fields_map.insert(
+                NString::from("x"),
+                nitrate_hir::StructField {
+                    span: sp(),
+                    visibility: nitrate_hir::Visibility::Pub,
+                    attributes: Default::default(),
+                    name: NString::from("x"),
+                    ty: TypeId::from(Type::I32 { span: sp() }),
+                    default_value: None,
+                },
+            );
+            let sd = nitrate_hir::StructDefId::from(nitrate_hir::StructDef {
+                span: sp(),
+                visibility: nitrate_hir::Visibility::Sec,
+                name: NString::from("MyStruct"),
+                attributes: Default::default(),
+                fields: fields_map,
+                generics: None,
+                layout: vec![nitrate_hir::StructMemoryLayoutCell::Field {
+                    field_name: NString::from("x"),
+                }]
+                .into(),
+            });
+            let so = ValueId::from(Value::StructObject {
+                span: sp(),
+                struct_def: sd,
+                fields: vec![(NString::from("x"), ValueId::from(Value::I32 { span: sp(), value: 42 }))].into(),
+            });
+            let mut func = make_function("struct_func", vec![BlockElement::Expr(so)]);
+            let result = resolve_function(&mut func, &mut tab, &log);
+            assert!(result.is_ok());
+        });
+    }
+
+    #[test]
+    fn resolve_function_list_with_inferred_elements() {
+        let store = Store::new();
+        using_storage(&store, || {
+            let log = CompilerLog::default();
+            let mut tab = new_tab();
+            let lst = ValueId::from(Value::List {
+                span: sp(),
+                elements: vec![
+                    ValueId::from(Value::I32 { span: sp(), value: 1 }),
+                    ValueId::from(Value::InferredInteger {
+                        span: sp(),
+                        value: Box::new(2),
+                    }),
+                ]
+                .into(),
+            });
+            let mut func = make_function("mixed_list", vec![BlockElement::Expr(lst)]);
+            let result = resolve_function(&mut func, &mut tab, &log);
+            assert!(result.is_ok());
+        });
+    }
+
+    #[test]
+    fn resolve_function_method_call_with_reference_self() {
+        let store = Store::new();
+        using_storage(&store, || {
+            let log = CompilerLog::default();
+            let mut tab = new_tab();
+            let self_param = ParameterId::from(Parameter {
+                span: sp(),
+                attributes: Default::default(),
+                is_mutable: false,
+                name: NString::from("self"),
+                ty: TypeId::from(Type::Reference {
+                    span: sp(),
+                    lifetime: Lifetime::Static,
+                    exclusive: false,
+                    mutable: false,
+                    to: TypeId::from(Type::I32 { span: sp() }),
+                }),
+                default_value: None,
+            });
+            let method_func = Function {
+                span: sp(),
+                visibility: nitrate_hir::Visibility::Pub,
+                attributes: Default::default(),
+                is_unsafe: false,
+                name: NString::from("ref_method"),
+                mangled_name: None,
+                generics: None,
+                params: vec![self_param],
+                return_type: TypeId::from(Type::Unit { span: sp() }),
+                body: None,
+            };
+            let method_id = FunctionId::from(method_func);
+            let receiver_type = TypeId::from(Type::I32 { span: sp() });
+            tab.add_method(receiver_type, NString::from("ref_method"), method_id.clone());
+            let mc = ValueId::from(Value::MethodCall {
+                span: sp(),
+                object: ValueId::from(Value::I32 { span: sp(), value: 1 }),
+                method_name: NString::from("ref_method"),
+                args: Arguments {
+                    positional: vec![].into(),
+                    named: vec![].into(),
+                },
+            });
+            let mut func = make_function("ref_method_func", vec![BlockElement::Expr(mc)]);
+            let result = resolve_function(&mut func, &mut tab, &log);
+            assert!(result.is_ok());
+        });
+    }
+
+    #[test]
+    fn resolve_function_unary_not() {
+        let store = Store::new();
+        using_storage(&store, || {
+            let log = CompilerLog::default();
+            let mut tab = new_tab();
+            let op = ValueId::from(Value::I32 { span: sp(), value: 5 });
+            let u = ValueId::from(Value::Unary {
+                span: sp(),
+                op: UnaryOp::Not,
+                operand: op,
+            });
+            let mut func = make_function("not_func", vec![BlockElement::Expr(u)]);
+            let result = resolve_function(&mut func, &mut tab, &log);
+            assert!(result.is_ok());
+        });
+    }
+
+    #[test]
+    fn resolve_function_index_access_with_array_type() {
+        let store = Store::new();
+        using_storage(&store, || {
+            let log = CompilerLog::default();
+            let mut tab = new_tab();
+            let coll = ValueId::from(Value::List {
+                span: sp(),
+                elements: vec![ValueId::from(Value::I32 { span: sp(), value: 1 })].into(),
+            });
+            let idx = ValueId::from(Value::USize {
+                span: sp(),
+                bits: 64,
+                value: 0,
+            });
+            let ia = ValueId::from(Value::IndexAccess {
+                span: sp(),
+                collection: coll,
+                index: idx,
+            });
+            // Constrain the index access result type to I32 via a local
+            let body = vec![BlockElement::Local(LocalVariableId::from(LocalVariable {
+                span: sp(),
+                kind: nitrate_hir::LocalKind::Let,
+                attributes: Default::default(),
+                is_mutable: false,
+                name: NString::from("x"),
+                ty: TypeId::from(Type::I32 { span: sp() }),
+                initializer: Some(ia),
+            }))];
+            let mut func = make_function("index_func2", body);
+            let result = resolve_function(&mut func, &mut tab, &log);
+            assert!(result.is_ok());
+        });
+    }
+
+    #[test]
+    fn resolve_function_visit_block_value() {
+        let store = Store::new();
+        using_storage(&store, || {
+            let log = CompilerLog::default();
+            let mut tab = new_tab();
+            let inner = nitrate_hir::BlockId::from(nitrate_hir::Block {
+                span: sp(),
+                safety: nitrate_hir::BlockSafety::Safe,
+                elements: vec![BlockElement::Expr(ValueId::from(Value::InferredInteger {
+                    span: sp(),
+                    value: Box::new(50),
+                }))],
+            });
+            let bv = ValueId::from(Value::Block {
+                span: sp(),
+                block: inner,
+            });
+            let mut func = make_function("block_inf", vec![BlockElement::Expr(bv)]);
+            let result = resolve_function(&mut func, &mut tab, &log);
+            assert!(result.is_ok());
+        });
+    }
+
+    #[test]
+    fn resolve_function_inferred_integer_no_constraints_finalized() {
+        let store = Store::new();
+        using_storage(&store, || {
+            let log = CompilerLog::default();
+            let mut tab = new_tab();
+            let inf = ValueId::from(Value::InferredInteger {
+                span: sp(),
+                value: Box::new(42),
+            });
+            let mut func = make_function("default_inf", vec![BlockElement::Expr(inf)]);
+            let result = resolve_function(&mut func, &mut tab, &log);
+            assert!(result.is_ok());
+        });
+    }
+
+    #[test]
+    fn resolve_function_inferred_float_no_constraints_finalized() {
+        let store = Store::new();
+        using_storage(&store, || {
+            let log = CompilerLog::default();
+            let mut tab = new_tab();
+            let inf = ValueId::from(Value::InferredFloat {
+                span: sp(),
+                value: OrderedFloat(3.14),
+            });
+            let mut func = make_function("default_flt", vec![BlockElement::Expr(inf)]);
+            let result = resolve_function(&mut func, &mut tab, &log);
+            assert!(result.is_ok());
+        });
+    }
+
+    #[test]
+    fn resolve_function_local_no_init() {
+        let store = Store::new();
+        using_storage(&store, || {
+            let log = CompilerLog::default();
+            let mut tab = new_tab();
+            let body = vec![BlockElement::Local(LocalVariableId::from(LocalVariable {
+                span: sp(),
+                kind: nitrate_hir::LocalKind::Let,
+                attributes: Default::default(),
+                is_mutable: false,
+                name: NString::from("x"),
+                ty: TypeId::from(Type::I32 { span: sp() }),
+                initializer: None,
+            }))];
+            let mut func = make_function("no_init", body);
+            let result = resolve_function(&mut func, &mut tab, &log);
+            assert!(result.is_ok());
+        });
+    }
+
+    // ── get_effective_bounds more value types ──────────────────
+
+    #[test]
+    fn get_effective_bounds_i16_value() {
+        let store = Store::new();
+        using_storage(&store, || {
+            let mut tab = new_tab();
+            let s = Solver::new(&mut tab);
+            let vid = ValueId::from(Value::I16 { span: sp(), value: 100 });
+            let bounds = get_effective_bounds_impl(&s, &vid);
+            assert!(bounds.is_some());
+        });
+    }
+
+    #[test]
+    fn get_effective_bounds_u16_value() {
+        let store = Store::new();
+        using_storage(&store, || {
+            let mut tab = new_tab();
+            let s = Solver::new(&mut tab);
+            let vid = ValueId::from(Value::U16 { span: sp(), value: 100 });
+            let bounds = get_effective_bounds_impl(&s, &vid);
+            assert!(bounds.is_some());
+        });
+    }
+
+    #[test]
+    fn get_effective_bounds_u32_value() {
+        let store = Store::new();
+        using_storage(&store, || {
+            let mut tab = new_tab();
+            let s = Solver::new(&mut tab);
+            let vid = ValueId::from(Value::U32 {
+                span: sp(),
+                value: 1000,
+            });
+            let bounds = get_effective_bounds_impl(&s, &vid);
+            assert!(bounds.is_some());
+        });
+    }
+
+    #[test]
+    fn get_effective_bounds_u64_value() {
+        let store = Store::new();
+        using_storage(&store, || {
+            let mut tab = new_tab();
+            let s = Solver::new(&mut tab);
+            let vid = ValueId::from(Value::U64 {
+                span: sp(),
+                value: 1000,
+            });
+            let bounds = get_effective_bounds_impl(&s, &vid);
+            assert!(bounds.is_some());
+        });
+    }
+
+    #[test]
+    fn get_effective_bounds_usize_value() {
+        let store = Store::new();
+        using_storage(&store, || {
+            let mut tab = new_tab();
+            let s = Solver::new(&mut tab);
+            let vid = ValueId::from(Value::USize {
+                span: sp(),
+                bits: 64,
+                value: 100,
+            });
+            let bounds = get_effective_bounds_impl(&s, &vid);
+            assert!(bounds.is_some());
+        });
+    }
+
+    #[test]
+    fn get_effective_bounds_i128_value() {
+        let store = Store::new();
+        using_storage(&store, || {
+            let mut tab = new_tab();
+            let s = Solver::new(&mut tab);
+            let vid = ValueId::from(Value::I128 {
+                span: sp(),
+                value: Box::new(100),
+            });
+            let bounds = get_effective_bounds_impl(&s, &vid);
+            assert!(bounds.is_some());
+        });
+    }
+
+    #[test]
+    fn get_effective_bounds_global_variable_symbol() {
+        let store = Store::new();
+        using_storage(&store, || {
+            let mut tab = new_tab();
+            let s = Solver::new(&mut tab);
+            let gv = GlobalVariable {
+                span: sp(),
+                visibility: nitrate_hir::Visibility::Sec,
+                attributes: Default::default(),
+                is_mutable: false,
+                name: NString::from("g"),
+                mangled_name: None,
+                ty: TypeId::from(Type::I32 { span: sp() }),
+                initializer: ValueId::from(Value::I32 { span: sp(), value: 0 }),
+            };
+            let gid = nitrate_hir::GlobalVariableId::from(gv);
+            let vid = ValueId::from(Value::GlobalVariableSymbol { span: sp(), id: gid });
+            let bounds = get_effective_bounds_impl(&s, &vid);
+            assert!(bounds.is_some());
+        });
+    }
+
+    // ── visit_binary with constraints ──────────────────────────
+
+    #[test]
+    fn resolve_function_binary_with_constrained_result() {
+        let store = Store::new();
+        using_storage(&store, || {
+            let log = CompilerLog::default();
+            let mut tab = new_tab();
+            let l = ValueId::from(Value::I32 { span: sp(), value: 10 });
+            let r = ValueId::from(Value::I32 { span: sp(), value: 20 });
+            let b = ValueId::from(Value::Binary {
+                span: sp(),
+                left: l,
+                op: BinaryOp::Add,
+                right: r,
+            });
+            // Constrain binary result to I32 through a local
+            let body = vec![BlockElement::Local(LocalVariableId::from(LocalVariable {
+                span: sp(),
+                kind: nitrate_hir::LocalKind::Let,
+                attributes: Default::default(),
+                is_mutable: false,
+                name: NString::from("x"),
+                ty: TypeId::from(Type::I32 { span: sp() }),
+                initializer: Some(b),
+            }))];
+            let mut func = make_function("bin_constrained", body);
+            let result = resolve_function(&mut func, &mut tab, &log);
+            assert!(result.is_ok());
+        });
+    }
+
+    #[test]
+    fn resolve_function_comparison_binary() {
+        let store = Store::new();
+        using_storage(&store, || {
+            let log = CompilerLog::default();
+            let mut tab = new_tab();
+            let l = ValueId::from(Value::InferredInteger {
+                span: sp(),
+                value: Box::new(10),
+            });
+            let r = ValueId::from(Value::I32 { span: sp(), value: 20 });
+            let b = ValueId::from(Value::Binary {
+                span: sp(),
+                left: l,
+                op: BinaryOp::Eq,
+                right: r,
+            });
+            let mut func = make_function("cmp_inf", vec![BlockElement::Expr(b)]);
+            let result = resolve_function(&mut func, &mut tab, &log);
+            assert!(result.is_ok());
+        });
+    }
 }
