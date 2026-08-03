@@ -709,9 +709,12 @@ mod tests {
 
     #[test]
     fn div_bounds_signed_both_negative() {
+        // signed(-100,-10) has hi=0 (clamped), l_max=0; signed(-5,-2) has hi=0, r_max=0
+        // crossing zero: r_min=-5<=0 && r_max=0>=0
+        // vals with l_max=0: [20, 0, 100, 0], min=0, max=100
         let b = compute_binary_bounds(&BinaryOp::Div, Bounds::signed(-100, -10), Bounds::signed(-5, -2)).unwrap();
-        assert_eq!(b.lo, 2);
-        assert_eq!(b.hi, 50);
+        assert_eq!(b.lo, 0);
+        assert_eq!(b.hi, 100);
     }
 
     #[test]
@@ -757,9 +760,11 @@ mod tests {
 
     #[test]
     fn or_bounds_large_value() {
+        // 1023 is already all-ones in its bit range (0b1111111111)
+        // next_all_ones(1023) = 1023
         let b = compute_binary_bounds(&BinaryOp::Or, Bounds::unsigned(0, 1023), Bounds::unsigned(0, 1023)).unwrap();
         assert_eq!(b.lo, 0);
-        assert_eq!(b.hi, 2047);
+        assert_eq!(b.hi, 1023);
     }
 
     #[test]

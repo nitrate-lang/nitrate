@@ -492,7 +492,10 @@ fn apply_subst_to_struct_fields(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use nitrate_hir::{Arguments, FunctionType, Lifetime, Store, Type, TypeId, Value, ValueId, using_storage};
+    use nitrate_hir::{
+        Arguments, FunctionType, Lifetime, Lit, LiteralId, Store, StructDef, StructDefId, Type, TypeId, Value, ValueId,
+        using_storage,
+    };
     use nitrate_nstring::NString;
     use nitrate_tree::SrcPos;
     use std::collections::BTreeMap;
@@ -777,6 +780,236 @@ mod tests {
             } else {
                 panic!("expected Binary");
             }
+        });
+    }
+
+    // ── More unify branches ──────────────────────────────────
+
+    #[test]
+    fn unify_slice_ref_recurses() {
+        with_store(|| {
+            let inner = Type::GenericParam {
+                span: sp(),
+                index: 0,
+                name: NString::from("T"),
+            };
+            let sr_param = Type::SliceRef {
+                span: sp(),
+                lifetime: Lifetime::Static,
+                exclusive: false,
+                mutable: false,
+                element_type: TypeId::from(inner),
+            };
+            let sr_conc = Type::SliceRef {
+                span: sp(),
+                lifetime: Lifetime::Static,
+                exclusive: false,
+                mutable: false,
+                element_type: TypeId::from(Type::F64 { span: sp() }),
+            };
+            let mut subst = Substitution::default();
+            unify_types_with_subst(&sr_conc, &sr_param, &mut subst);
+            assert_eq!(
+                *subst.generic_mapping.get(&0).unwrap(),
+                TypeId::from(Type::F64 { span: sp() })
+            );
+        });
+    }
+
+    #[test]
+    fn unify_inferred_with_concrete() {
+        with_store(|| {
+            let inferred = Type::Inferred {
+                span: sp(),
+                id: NonZeroU32::new(7).unwrap(),
+                name: None,
+            };
+            let concrete = Type::F64 { span: sp() };
+            let mut subst = Substitution::default();
+            unify_types_with_subst(&concrete, &inferred, &mut subst);
+            assert_eq!(
+                *subst.inferred_mapping.get(&7).unwrap(),
+                TypeId::from(Type::F64 { span: sp() })
+            );
+        });
+    }
+
+    #[test]
+    fn unify_generic_param_with_concrete_reversed() {
+        with_store(|| {
+            let t = Type::GenericParam {
+                span: sp(),
+                index: 1,
+                name: NString::from("U"),
+            };
+            let concrete = Type::Bool { span: sp() };
+            let mut subst = Substitution::default();
+            unify_types_with_subst(&t, &concrete, &mut subst);
+            assert_eq!(
+                *subst.generic_mapping.get(&1).unwrap(),
+                TypeId::from(Type::Bool { span: sp() })
+            );
+        });
+    }
+
+    // ── apply_subst_to_value more variants ──────────────────
+
+    #[test]
+    fn apply_subst_unary_recurse() {
+        with_store(|| {
+            let subst = Substitution::default();
+            let unary = Value::Unary {
+                span: sp(),
+                op: nitrate_hir::UnaryOp::Sub,
+                operand: ValueId::from(Value::I64 { span: sp(), value: 10 }),
+            };
+            let result = apply_subst_to_value(&unary, &subst);
+            if let Value::Unary { operand, .. } = result {
+                assert_eq!(*operand.borrow(), Value::I64 { span: sp(), value: 10 });
+            } else {
+                panic!("expected Unary");
+            }
+        });
+    }
+
+    #[test]
+    fn apply_subst_struct_object_no_generics() {
+        with_store(|| {
+            let subst = Substitution::default();
+            let struct_def = StructDefId::from(StructDef {
+                span: sp(),
+                visibility: nitrate_hir::Visibility::Sec,
+                name: NString::from("Foo"),
+                attributes: Default::default(),
+                fields: BTreeMap::new(),
+                generics: None,
+                layout: ThinVec::new(),
+            });
+            let sv = Value::StructObject {
+                span: sp(),
+                struct_def: struct_def.clone(),
+                fields: vec![(NString::from("x"), ValueId::from(Value::I32 { span: sp(), value: 42 }))].into(),
+            };
+            let result = apply_subst_to_value(&sv, &subst);
+            if let Value::StructObject { struct_def: sd, .. } = result {
+                assert_eq!(sd.borrow().name, NString::from("Foo"));
+            } else {
+                panic!("expected StructObject");
+            }
+        });
+    }
+
+    // ── slice_ref/slice_ptr generic detection ────────────────
+
+    #[test]
+    fn slice_ptr_to_generic_contains() {
+        with_store(|| {
+            let sp = Type::SlicePtr {
+                span: sp(),
+                lifetime: Lifetime::Static,
+                exclusive: true,
+                mutable: true,
+                element_type: TypeId::from(Type::GenericParam {
+                    span: sp(),
+                    index: 0,
+                    name: NString::from("T"),
+                }),
+            };
+            assert!(type_contains_any_generic_param(&sp));
+        });
+    }
+
+    #[test]
+    fn refine_with_generic_base_contains() {
+        with_store(|| {
+            let refine = Type::Refine {
+                span: sp(),
+                base: TypeId::from(Type::GenericParam {
+                    span: sp(),
+                    index: 0,
+                    name: NString::from("T"),
+                }),
+                min: LiteralId::from(Lit::I8(0)),
+                max: LiteralId::from(Lit::I8(100)),
+            };
+            assert!(type_contains_any_generic_param(&refine));
+        });
+    }
+
+    #[test]
+    fn param_name_matches_in_array() {
+        with_store(|| {
+            let name = NString::from("T");
+            let ty = TypeId::from(Type::Array {
+                span: sp(),
+                element_type: TypeId::from(Type::GenericParam {
+                    span: sp(),
+                    index: 0,
+                    name: name.clone(),
+                }),
+                len: 4,
+            });
+            assert!(type_contains_generic_param_name(&ty, &name));
+        });
+    }
+
+    #[test]
+    fn collect_multiple_params_from_tuple() {
+        with_store(|| {
+            let ty = TypeId::from(Type::Tuple {
+                span: sp(),
+                element_types: vec![
+                    TypeId::from(Type::GenericParam {
+                        span: sp(),
+                        index: 0,
+                        name: NString::from("A"),
+                    }),
+                    TypeId::from(Type::GenericParam {
+                        span: sp(),
+                        index: 1,
+                        name: NString::from("B"),
+                    }),
+                ]
+                .into(),
+            });
+            let mut map = BTreeMap::new();
+            collect_generic_params_from_type(&ty, &mut map);
+            assert_eq!(map.get(&NString::from("A")), Some(&0u32));
+            assert_eq!(map.get(&NString::from("B")), Some(&1u32));
+        });
+    }
+
+    #[test]
+    fn collect_from_parameterized_type() {
+        with_store(|| {
+            let ty = TypeId::from(Type::Parameterized {
+                span: sp(),
+                base: TypeId::from(Type::GenericParam {
+                    span: sp(),
+                    index: 0,
+                    name: NString::from("Base"),
+                }),
+                args: Arguments {
+                    positional: vec![TypeId::from(Type::GenericParam {
+                        span: sp(),
+                        index: 1,
+                        name: NString::from("Arg"),
+                    })]
+                    .into(),
+                    named: vec![(
+                        NString::from("X"),
+                        TypeId::from(Type::GenericParam {
+                            span: sp(),
+                            index: 2,
+                            name: NString::from("Named"),
+                        }),
+                    )]
+                    .into(),
+                },
+            });
+            let mut map = BTreeMap::new();
+            collect_generic_params_from_type(&ty, &mut map);
+            assert_eq!(map.len(), 3);
         });
     }
 }

@@ -164,7 +164,9 @@ impl Substitution {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use nitrate_hir::{Arguments, FunctionType, Lifetime, LiteralId, Store, Type, TypeId, using_storage};
+    use nitrate_hir::{
+        Arguments, FunctionType, Lifetime, Lit, LiteralId, Store, Type, TypeId, Value, ValueId, using_storage,
+    };
     use nitrate_nstring::NString;
     use nitrate_tree::SrcPos;
     use std::collections::BTreeSet;
@@ -462,6 +464,157 @@ mod tests {
                 name: None,
             };
             assert_eq!(s.apply(&inferred), Type::Bool { span: sp() });
+        });
+    }
+
+    // ── apply for additional Type variants ────────────────────
+
+    #[test]
+    fn apply_slice_ptr_resolves() {
+        with_store(|| {
+            let mut s = Substitution::default();
+            s.generic_mapping.insert(0, TypeId::from(Type::I16 { span: sp() }));
+            let sp_ty = Type::SlicePtr {
+                span: sp(),
+                lifetime: Lifetime::Static,
+                exclusive: true,
+                mutable: true,
+                element_type: TypeId::from(Type::GenericParam {
+                    span: sp(),
+                    index: 0,
+                    name: NString::from("T"),
+                }),
+            };
+            let result = s.apply(&sp_ty);
+            if let Type::SlicePtr { element_type, .. } = result {
+                assert_eq!(*element_type, Type::I16 { span: sp() });
+            } else {
+                panic!("expected SlicePtr");
+            }
+        });
+    }
+
+    #[test]
+    fn apply_trait_object_no_change() {
+        let s = Substitution::default();
+        let ty = Type::TraitObject {
+            span: sp(),
+            bounds: vec![],
+        };
+        assert_eq!(s.apply(&ty), ty);
+    }
+
+    #[test]
+    fn apply_parameterized_resolves() {
+        with_store(|| {
+            let mut s = Substitution::default();
+            s.generic_mapping.insert(0, TypeId::from(Type::I32 { span: sp() }));
+            let pt = Type::Parameterized {
+                span: sp(),
+                base: TypeId::from(Type::GenericParam {
+                    span: sp(),
+                    index: 0,
+                    name: NString::from("T"),
+                }),
+                args: Arguments {
+                    positional: vec![TypeId::from(Type::GenericParam {
+                        span: sp(),
+                        index: 0,
+                        name: NString::from("T"),
+                    })]
+                    .into(),
+                    named: vec![(
+                        NString::from("X"),
+                        TypeId::from(Type::GenericParam {
+                            span: sp(),
+                            index: 0,
+                            name: NString::from("T"),
+                        }),
+                    )]
+                    .into(),
+                },
+            };
+            let result = s.apply(&pt);
+            if let Type::Parameterized { base, args, .. } = result {
+                assert_eq!(*base, Type::I32 { span: sp() });
+                assert_eq!(*args.positional[0], Type::I32 { span: sp() });
+                assert_eq!(*args.named[0].1, Type::I32 { span: sp() });
+            } else {
+                panic!("expected Parameterized");
+            }
+        });
+    }
+
+    #[test]
+    fn apply_unresolved_array_resolves() {
+        with_store(|| {
+            let mut s = Substitution::default();
+            s.generic_mapping.insert(0, TypeId::from(Type::I32 { span: sp() }));
+            let dummy_value = ValueId::from(Value::I32 { span: sp(), value: 0 });
+            let ua = Type::UnresolvedArray {
+                span: sp(),
+                element_type: TypeId::from(Type::GenericParam {
+                    span: sp(),
+                    index: 0,
+                    name: NString::from("T"),
+                }),
+                len: dummy_value.clone(),
+            };
+            let result = s.apply(&ua);
+            if let Type::UnresolvedArray { element_type, .. } = result {
+                assert_eq!(*element_type, Type::I32 { span: sp() });
+            } else {
+                panic!("expected UnresolvedArray");
+            }
+        });
+    }
+
+    #[test]
+    fn apply_unresolved_refine_resolves() {
+        with_store(|| {
+            let mut s = Substitution::default();
+            s.generic_mapping.insert(0, TypeId::from(Type::I32 { span: sp() }));
+            let dummy_value = ValueId::from(Value::I32 { span: sp(), value: 0 });
+            let ur = Type::UnresolvedRefine {
+                span: sp(),
+                base: TypeId::from(Type::GenericParam {
+                    span: sp(),
+                    index: 0,
+                    name: NString::from("T"),
+                }),
+                min: dummy_value.clone(),
+                max: dummy_value,
+            };
+            let result = s.apply(&ur);
+            if let Type::UnresolvedRefine { base, .. } = result {
+                assert_eq!(*base, Type::I32 { span: sp() });
+            } else {
+                panic!("expected UnresolvedRefine");
+            }
+        });
+    }
+
+    #[test]
+    fn apply_refine_resolves_base() {
+        with_store(|| {
+            let mut s = Substitution::default();
+            s.generic_mapping.insert(0, TypeId::from(Type::I32 { span: sp() }));
+            let refine = Type::Refine {
+                span: sp(),
+                base: TypeId::from(Type::GenericParam {
+                    span: sp(),
+                    index: 0,
+                    name: NString::from("T"),
+                }),
+                min: LiteralId::from(Lit::I8(0)),
+                max: LiteralId::from(Lit::I8(100)),
+            };
+            let result = s.apply(&refine);
+            if let Type::Refine { base, .. } = result {
+                assert_eq!(*base, Type::I32 { span: sp() });
+            } else {
+                panic!("expected Refine");
+            }
         });
     }
 }
