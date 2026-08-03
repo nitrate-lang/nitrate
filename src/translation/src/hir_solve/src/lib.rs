@@ -24,3 +24,21 @@ impl std::fmt::Display for SolveError {
 }
 
 pub use solve::{resolve_function, resolve_global};
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn solve_error_display() {
+        assert_eq!(
+            SolveError::TypeErrors.to_string(),
+            "type errors detected during inference"
+        );
+    }
+
+    #[test]
+    fn solve_error_debug() {
+        assert_eq!(format!("{:?}", SolveError::TypeErrors), "TypeErrors");
+    }
+}

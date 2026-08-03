@@ -266,7 +266,6 @@ fn apply_subst_to_args(args: &Arguments<ValueId>, subst: &Substitution) -> Argum
 
 pub(crate) fn apply_subst_to_value(value: &Value, subst: &Substitution) -> Value {
     match value {
-        // ── Leaves (no children to recurse into) ──────────────────
         Value::Unit { .. }
         | Value::Bool { .. }
         | Value::I8 { .. }
@@ -293,7 +292,6 @@ pub(crate) fn apply_subst_to_value(value: &Value, subst: &Substitution) -> Value
         | Value::Break { .. }
         | Value::Continue { .. } => value.clone(),
 
-        // ── Cast ──────────────────────────────────────────────────
         Value::Cast {
             value: v, target_type, ..
         } => Value::Cast {
@@ -302,7 +300,6 @@ pub(crate) fn apply_subst_to_value(value: &Value, subst: &Substitution) -> Value
             target_type: TypeId::from(subst.apply(target_type)),
         },
 
-        // ── StructObject ──────────────────────────────────────────
         Value::StructObject { struct_def, fields, .. } => {
             let nf = apply_subst_to_struct_fields(struct_def, fields, subst);
             Value::StructObject {
@@ -312,7 +309,6 @@ pub(crate) fn apply_subst_to_value(value: &Value, subst: &Substitution) -> Value
             }
         }
 
-        // ── EnumVariant ───────────────────────────────────────────
         Value::EnumVariant {
             span: _,
             enum_def,
@@ -325,7 +321,6 @@ pub(crate) fn apply_subst_to_value(value: &Value, subst: &Substitution) -> Value
             value: recurse(inner, subst),
         },
 
-        // ── Binary ────────────────────────────────────────────────
         Value::Binary {
             span: _,
             left,
@@ -338,14 +333,12 @@ pub(crate) fn apply_subst_to_value(value: &Value, subst: &Substitution) -> Value
             right: recurse(right, subst),
         },
 
-        // ── Unary ─────────────────────────────────────────────────
         Value::Unary { span: _, op, operand } => Value::Unary {
             span: SrcPos::default(),
             op: op.clone(),
             operand: recurse(operand, subst),
         },
 
-        // ── IndexAccess ───────────────────────────────────────────
         Value::IndexAccess {
             span: _,
             collection,
@@ -356,7 +349,6 @@ pub(crate) fn apply_subst_to_value(value: &Value, subst: &Substitution) -> Value
             index: recurse(index, subst),
         },
 
-        // ── FieldAccess ───────────────────────────────────────────
         Value::FieldAccess {
             span: _,
             expr,
@@ -367,7 +359,6 @@ pub(crate) fn apply_subst_to_value(value: &Value, subst: &Substitution) -> Value
             field_name: field_name.clone(),
         },
 
-        // ── Assign ────────────────────────────────────────────────
         Value::Assign {
             span: _,
             place,
@@ -378,13 +369,11 @@ pub(crate) fn apply_subst_to_value(value: &Value, subst: &Substitution) -> Value
             value: recurse(val, subst),
         },
 
-        // ── Deref ─────────────────────────────────────────────────
         Value::Deref { span: _, place } => Value::Deref {
             span: SrcPos::default(),
             place: recurse(place, subst),
         },
 
-        // ── Borrow ────────────────────────────────────────────────
         Value::Borrow {
             span: _,
             exclusive,
@@ -397,19 +386,16 @@ pub(crate) fn apply_subst_to_value(value: &Value, subst: &Substitution) -> Value
             place: recurse(place, subst),
         },
 
-        // ── List ──────────────────────────────────────────────────
         Value::List { span: _, elements } => Value::List {
             span: SrcPos::default(),
             elements: recurse_elements(elements, subst),
         },
 
-        // ── Tuple ─────────────────────────────────────────────────
         Value::Tuple { span: _, elements } => Value::Tuple {
             span: SrcPos::default(),
             elements: recurse_elements(elements, subst),
         },
 
-        // ── If ────────────────────────────────────────────────────
         Value::If {
             span: _,
             condition,
@@ -424,7 +410,6 @@ pub(crate) fn apply_subst_to_value(value: &Value, subst: &Substitution) -> Value
                 .map(|fb| nitrate_hir::BlockId::from(clone_block_with_subst(fb, subst))),
         },
 
-        // ── While ─────────────────────────────────────────────────
         Value::While {
             span: _,
             condition,
@@ -435,32 +420,27 @@ pub(crate) fn apply_subst_to_value(value: &Value, subst: &Substitution) -> Value
             body: nitrate_hir::BlockId::from(clone_block_with_subst(body, subst)),
         },
 
-        // ── Loop ──────────────────────────────────────────────────
         Value::Loop { span: _, body } => Value::Loop {
             span: SrcPos::default(),
             body: nitrate_hir::BlockId::from(clone_block_with_subst(body, subst)),
         },
 
-        // ── Return ────────────────────────────────────────────────
         Value::Return { span: _, value: val } => Value::Return {
             span: SrcPos::default(),
             value: recurse(val, subst),
         },
 
-        // ── Block ─────────────────────────────────────────────────
         Value::Block { block, .. } => Value::Block {
             span: SrcPos::default(),
             block: nitrate_hir::BlockId::from(clone_block_with_subst(block, subst)),
         },
 
-        // ── Call ──────────────────────────────────────────────────
         Value::Call { callee, args, .. } => Value::Call {
             span: SrcPos::default(),
             callee: recurse(callee, subst),
             args: apply_subst_to_args(args, subst),
         },
 
-        // ── MethodCall ────────────────────────────────────────────
         Value::MethodCall {
             span: _,
             object,
@@ -473,7 +453,6 @@ pub(crate) fn apply_subst_to_value(value: &Value, subst: &Substitution) -> Value
             args: apply_subst_to_args(args, subst),
         },
 
-        // ── Range ─────────────────────────────────────────────────
         Value::Range {
             span: _,
             start,
@@ -506,4 +485,298 @@ fn apply_subst_to_struct_fields(
             (n.clone(), ValueId::from(new_v))
         })
         .collect()
+}
+
+// ── Tests ────────────────────────────────────────────────────────────
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use nitrate_hir::{Arguments, FunctionType, Lifetime, Store, Type, TypeId, Value, ValueId, using_storage};
+    use nitrate_nstring::NString;
+    use nitrate_tree::SrcPos;
+    use std::collections::BTreeMap;
+    use std::num::NonZeroU32;
+
+    fn sp() -> SrcPos {
+        SrcPos::default()
+    }
+
+    fn with_store<R>(f: impl FnOnce() -> R) -> R {
+        let store = Store::new();
+        using_storage(&store, f)
+    }
+
+    // ── MonoCacheKey ─────────────────────────────────────────────
+
+    #[test]
+    fn mono_cache_key_same_inputs_equal() {
+        with_store(|| {
+            let k1 = MonoCacheKey::new(42, &[(1, TypeId::from(Type::I32 { span: sp() }))]);
+            let k2 = MonoCacheKey::new(42, &[(1, TypeId::from(Type::I32 { span: sp() }))]);
+            assert_eq!(k1, k2);
+        });
+    }
+
+    #[test]
+    fn mono_cache_key_different_id_not_equal() {
+        with_store(|| {
+            let k1 = MonoCacheKey::new(1, &[(0, TypeId::from(Type::I32 { span: sp() }))]);
+            let k2 = MonoCacheKey::new(2, &[(0, TypeId::from(Type::I32 { span: sp() }))]);
+            assert_ne!(k1, k2);
+        });
+    }
+
+    #[test]
+    fn mono_cache_key_different_subst_not_equal() {
+        with_store(|| {
+            let k1 = MonoCacheKey::new(1, &[(0, TypeId::from(Type::I32 { span: sp() }))]);
+            let k2 = MonoCacheKey::new(1, &[(0, TypeId::from(Type::U8 { span: sp() }))]);
+            assert_ne!(k1, k2);
+        });
+    }
+
+    #[test]
+    fn mono_cache_key_empty_subst() {
+        let k = MonoCacheKey::new(100, &[]);
+        assert_eq!(k, MonoCacheKey::new(100, &[]));
+    }
+
+    // ── unify_types_with_subst ───────────────────────────────────
+
+    #[test]
+    fn unify_generic_param_with_concrete() {
+        with_store(|| {
+            let t = Type::GenericParam {
+                span: sp(),
+                index: 0,
+                name: NString::from("T"),
+            };
+            let concrete = Type::I32 { span: sp() };
+            let mut subst = Substitution::default();
+            unify_types_with_subst(&concrete, &t, &mut subst);
+            assert_eq!(
+                *subst.generic_mapping.get(&0).unwrap(),
+                TypeId::from(Type::I32 { span: sp() })
+            );
+        });
+    }
+
+    #[test]
+    fn unify_does_not_overwrite_existing() {
+        with_store(|| {
+            let t = Type::GenericParam {
+                span: sp(),
+                index: 0,
+                name: NString::from("T"),
+            };
+            let first = Type::I32 { span: sp() };
+            let second = Type::U64 { span: sp() };
+            let mut subst = Substitution::default();
+            unify_types_with_subst(&first, &t, &mut subst);
+            unify_types_with_subst(&second, &t, &mut subst);
+            assert_eq!(
+                *subst.generic_mapping.get(&0).unwrap(),
+                TypeId::from(Type::I32 { span: sp() })
+            );
+        });
+    }
+
+    #[test]
+    fn unify_two_concrete_does_nothing() {
+        let a = Type::I32 { span: sp() };
+        let b = Type::I64 { span: sp() };
+        let mut subst = Substitution::default();
+        unify_types_with_subst(&a, &b, &mut subst);
+        assert!(subst.generic_mapping.is_empty());
+    }
+
+    #[test]
+    fn unify_pointer_recurses() {
+        with_store(|| {
+            let inner = Type::GenericParam {
+                span: sp(),
+                index: 0,
+                name: NString::from("T"),
+            };
+            let ptr_param = Type::Pointer {
+                span: sp(),
+                lifetime: Lifetime::Static,
+                exclusive: false,
+                mutable: false,
+                to: TypeId::from(inner),
+            };
+            let ptr_conc = Type::Pointer {
+                span: sp(),
+                lifetime: Lifetime::Static,
+                exclusive: false,
+                mutable: false,
+                to: TypeId::from(Type::I32 { span: sp() }),
+            };
+            let mut subst = Substitution::default();
+            unify_types_with_subst(&ptr_conc, &ptr_param, &mut subst);
+            assert_eq!(
+                *subst.generic_mapping.get(&0).unwrap(),
+                TypeId::from(Type::I32 { span: sp() })
+            );
+        });
+    }
+
+    // ── type_contains_any_generic_param ──────────────────────────
+
+    #[test]
+    fn generic_param_contains_self() {
+        let ty = Type::GenericParam {
+            span: sp(),
+            index: 0,
+            name: NString::from("T"),
+        };
+        assert!(type_contains_any_generic_param(&ty));
+    }
+
+    #[test]
+    fn concrete_does_not_contain_generic() {
+        assert!(!type_contains_any_generic_param(&Type::I32 { span: sp() }));
+        assert!(!type_contains_any_generic_param(&Type::Bool { span: sp() }));
+    }
+
+    #[test]
+    fn pointer_to_generic_contains() {
+        with_store(|| {
+            let pt = Type::Pointer {
+                span: sp(),
+                lifetime: Lifetime::Static,
+                exclusive: false,
+                mutable: false,
+                to: TypeId::from(Type::GenericParam {
+                    span: sp(),
+                    index: 1,
+                    name: NString::from("T"),
+                }),
+            };
+            assert!(type_contains_any_generic_param(&pt));
+        });
+    }
+
+    #[test]
+    fn array_of_generic_contains() {
+        with_store(|| {
+            let arr = Type::Array {
+                span: sp(),
+                element_type: TypeId::from(Type::GenericParam {
+                    span: sp(),
+                    index: 0,
+                    name: NString::from("T"),
+                }),
+                len: 10,
+            };
+            assert!(type_contains_any_generic_param(&arr));
+        });
+    }
+
+    // ── type_contains_generic_param_name ─────────────────────────
+
+    #[test]
+    fn param_name_matches() {
+        with_store(|| {
+            let name = NString::from("T");
+            let ty = TypeId::from(Type::GenericParam {
+                span: sp(),
+                index: 0,
+                name: name.clone(),
+            });
+            assert!(type_contains_generic_param_name(&ty, &name));
+        });
+    }
+
+    #[test]
+    fn param_name_does_not_match_different() {
+        with_store(|| {
+            let ty = TypeId::from(Type::GenericParam {
+                span: sp(),
+                index: 0,
+                name: NString::from("T"),
+            });
+            assert!(!type_contains_generic_param_name(&ty, &NString::from("U")));
+        });
+    }
+
+    // ── collect_generic_params_from_type ─────────────────────────
+
+    #[test]
+    fn collect_single_param() {
+        with_store(|| {
+            let ty = TypeId::from(Type::GenericParam {
+                span: sp(),
+                index: 5,
+                name: NString::from("T"),
+            });
+            let mut map = BTreeMap::new();
+            collect_generic_params_from_type(&ty, &mut map);
+            assert_eq!(map.get(&NString::from("T")), Some(&5u32));
+        });
+    }
+
+    #[test]
+    fn collect_does_not_duplicate() {
+        with_store(|| {
+            let ty = TypeId::from(Type::GenericParam {
+                span: sp(),
+                index: 3,
+                name: NString::from("T"),
+            });
+            let mut map = BTreeMap::new();
+            collect_generic_params_from_type(&ty, &mut map);
+            collect_generic_params_from_type(&ty, &mut map);
+            assert_eq!(map.len(), 1);
+        });
+    }
+
+    #[test]
+    fn collect_from_concrete_is_empty() {
+        with_store(|| {
+            let mut map = BTreeMap::new();
+            collect_generic_params_from_type(&TypeId::from(Type::I32 { span: sp() }), &mut map);
+            assert!(map.is_empty());
+        });
+    }
+
+    // ── apply_subst_to_value (leaves) ────────────────────────────
+
+    #[test]
+    fn apply_subst_to_value_leaves_identity() {
+        with_store(|| {
+            let subst = Substitution::default();
+            let cases = [
+                Value::Unit { span: sp() },
+                Value::Bool {
+                    span: sp(),
+                    value: true,
+                },
+                Value::I32 { span: sp(), value: 42 },
+            ];
+            for v in &cases {
+                assert_eq!(apply_subst_to_value(v, &subst), *v);
+            }
+        });
+    }
+
+    #[test]
+    fn apply_subst_to_value_binary_recurse() {
+        with_store(|| {
+            let subst = Substitution::default();
+            let bin = Value::Binary {
+                span: sp(),
+                left: ValueId::from(Value::I32 { span: sp(), value: 1 }),
+                op: nitrate_hir::BinaryOp::Add,
+                right: ValueId::from(Value::I32 { span: sp(), value: 2 }),
+            };
+            let result = apply_subst_to_value(&bin, &subst);
+            if let Value::Binary { left, .. } = result {
+                assert_eq!(*left.borrow(), Value::I32 { span: sp(), value: 1 });
+            } else {
+                panic!("expected Binary");
+            }
+        });
+    }
 }

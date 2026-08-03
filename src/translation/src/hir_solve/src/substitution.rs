@@ -158,3 +158,310 @@ impl Substitution {
         }
     }
 }
+
+// ── Tests ────────────────────────────────────────────────────────────
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use nitrate_hir::{Arguments, FunctionType, Lifetime, LiteralId, Store, Type, TypeId, using_storage};
+    use nitrate_nstring::NString;
+    use nitrate_tree::SrcPos;
+    use std::collections::BTreeSet;
+    use std::num::NonZeroU32;
+
+    fn sp() -> SrcPos {
+        SrcPos::default()
+    }
+
+    fn with_store<R>(f: impl FnOnce() -> R) -> R {
+        let store = Store::new();
+        using_storage(&store, f)
+    }
+
+    #[test]
+    fn substitution_default_is_empty() {
+        let s = Substitution::default();
+        assert!(s.generic_mapping.is_empty());
+        assert!(s.inferred_mapping.is_empty());
+    }
+
+    #[test]
+    fn apply_generic_param_resolved() {
+        with_store(|| {
+            let mut s = Substitution::default();
+            s.generic_mapping.insert(0, TypeId::from(Type::I32 { span: sp() }));
+            let param = Type::GenericParam {
+                span: sp(),
+                index: 0,
+                name: NString::from("T"),
+            };
+            assert_eq!(s.apply(&param), Type::I32 { span: sp() });
+        });
+    }
+
+    #[test]
+    fn apply_generic_param_unresolved() {
+        let s = Substitution::default();
+        let param = Type::GenericParam {
+            span: sp(),
+            index: 1,
+            name: NString::from("T"),
+        };
+        assert_eq!(s.apply(&param), param);
+    }
+
+    #[test]
+    fn apply_inferred_resolved() {
+        with_store(|| {
+            let mut s = Substitution::default();
+            let id = NonZeroU32::new(42).unwrap();
+            s.inferred_mapping.insert(42, TypeId::from(Type::I64 { span: sp() }));
+            let inferred = Type::Inferred {
+                span: sp(),
+                id,
+                name: None,
+            };
+            assert_eq!(s.apply(&inferred), Type::I64 { span: sp() });
+        });
+    }
+
+    #[test]
+    fn apply_inferred_unresolved() {
+        let s = Substitution::default();
+        let id = NonZeroU32::new(1).unwrap();
+        let inferred = Type::Inferred {
+            span: sp(),
+            id,
+            name: Some(NString::from("_")),
+        };
+        assert_eq!(s.apply(&inferred), inferred);
+    }
+
+    #[test]
+    fn apply_primitives_no_change() {
+        let s = Substitution::default();
+        assert_eq!(s.apply(&Type::Bool { span: sp() }), Type::Bool { span: sp() });
+        assert_eq!(s.apply(&Type::Unit { span: sp() }), Type::Unit { span: sp() });
+        assert_eq!(s.apply(&Type::Never { span: sp() }), Type::Never { span: sp() });
+    }
+
+    #[test]
+    fn apply_array_resolves_element() {
+        with_store(|| {
+            let mut s = Substitution::default();
+            s.generic_mapping.insert(0, TypeId::from(Type::I32 { span: sp() }));
+            let arr = Type::Array {
+                span: sp(),
+                element_type: TypeId::from(Type::GenericParam {
+                    span: sp(),
+                    index: 0,
+                    name: NString::from("T"),
+                }),
+                len: 5,
+            };
+            let result = s.apply(&arr);
+            if let Type::Array { element_type, len, .. } = result {
+                assert_eq!(*element_type, Type::I32 { span: sp() });
+                assert_eq!(len, 5);
+            } else {
+                panic!("expected Array");
+            }
+        });
+    }
+
+    #[test]
+    fn apply_tuple_resolves_elements() {
+        with_store(|| {
+            let mut s = Substitution::default();
+            s.generic_mapping.insert(0, TypeId::from(Type::U8 { span: sp() }));
+            s.generic_mapping.insert(1, TypeId::from(Type::U16 { span: sp() }));
+            let tuple = Type::Tuple {
+                span: sp(),
+                element_types: vec![
+                    TypeId::from(Type::GenericParam {
+                        span: sp(),
+                        index: 0,
+                        name: NString::from("T"),
+                    }),
+                    TypeId::from(Type::GenericParam {
+                        span: sp(),
+                        index: 1,
+                        name: NString::from("U"),
+                    }),
+                ]
+                .into(),
+            };
+            let result = s.apply(&tuple);
+            if let Type::Tuple { element_types, .. } = result {
+                assert_eq!(*element_types[0], Type::U8 { span: sp() });
+                assert_eq!(*element_types[1], Type::U16 { span: sp() });
+            } else {
+                panic!("expected Tuple");
+            }
+        });
+    }
+
+    #[test]
+    fn apply_reference_resolves_to() {
+        with_store(|| {
+            let mut s = Substitution::default();
+            s.generic_mapping.insert(0, TypeId::from(Type::I32 { span: sp() }));
+            let ref_ty = Type::Reference {
+                span: sp(),
+                lifetime: Lifetime::Static,
+                exclusive: false,
+                mutable: false,
+                to: TypeId::from(Type::GenericParam {
+                    span: sp(),
+                    index: 0,
+                    name: NString::from("T"),
+                }),
+            };
+            let result = s.apply(&ref_ty);
+            if let Type::Reference { to, .. } = result {
+                assert_eq!(*to, Type::I32 { span: sp() });
+            } else {
+                panic!("expected Reference");
+            }
+        });
+    }
+
+    #[test]
+    fn apply_pointer_resolves_to() {
+        with_store(|| {
+            let mut s = Substitution::default();
+            s.generic_mapping.insert(0, TypeId::from(Type::U8 { span: sp() }));
+            let ptr = Type::Pointer {
+                span: sp(),
+                lifetime: Lifetime::Static,
+                exclusive: false,
+                mutable: true,
+                to: TypeId::from(Type::GenericParam {
+                    span: sp(),
+                    index: 0,
+                    name: NString::from("T"),
+                }),
+            };
+            let result = s.apply(&ptr);
+            if let Type::Pointer { to, .. } = result {
+                assert_eq!(*to, Type::U8 { span: sp() });
+            } else {
+                panic!("expected Pointer");
+            }
+        });
+    }
+
+    #[test]
+    fn apply_slice_ref_resolves_element() {
+        with_store(|| {
+            let mut s = Substitution::default();
+            s.generic_mapping.insert(0, TypeId::from(Type::F64 { span: sp() }));
+            let sr = Type::SliceRef {
+                span: sp(),
+                lifetime: Lifetime::Static,
+                exclusive: false,
+                mutable: false,
+                element_type: TypeId::from(Type::GenericParam {
+                    span: sp(),
+                    index: 0,
+                    name: NString::from("T"),
+                }),
+            };
+            let result = s.apply(&sr);
+            if let Type::SliceRef { element_type, .. } = result {
+                assert_eq!(*element_type, Type::F64 { span: sp() });
+            } else {
+                panic!("expected SliceRef");
+            }
+        });
+    }
+
+    #[test]
+    fn apply_function_type_resolves_params_and_return() {
+        with_store(|| {
+            let mut s = Substitution::default();
+            s.generic_mapping.insert(0, TypeId::from(Type::I32 { span: sp() }));
+            let func = Type::Function {
+                span: sp(),
+                function_type: Box::new(FunctionType {
+                    attributes: BTreeSet::new(),
+                    params: vec![(
+                        NString::from("x"),
+                        TypeId::from(Type::GenericParam {
+                            span: sp(),
+                            index: 0,
+                            name: NString::from("T"),
+                        }),
+                    )]
+                    .into(),
+                    return_type: TypeId::from(Type::GenericParam {
+                        span: sp(),
+                        index: 0,
+                        name: NString::from("T"),
+                    }),
+                }),
+            };
+            let result = s.apply(&func);
+            if let Type::Function { function_type, .. } = result {
+                assert_eq!(*function_type.return_type, Type::I32 { span: sp() });
+                assert_eq!(*function_type.params[0].1, Type::I32 { span: sp() });
+            } else {
+                panic!("expected Function");
+            }
+        });
+    }
+
+    #[test]
+    fn apply_multiple_generic_params() {
+        with_store(|| {
+            let mut s = Substitution::default();
+            s.generic_mapping.insert(0, TypeId::from(Type::I8 { span: sp() }));
+            s.generic_mapping.insert(1, TypeId::from(Type::I16 { span: sp() }));
+            s.generic_mapping.insert(2, TypeId::from(Type::I32 { span: sp() }));
+
+            let t = Type::GenericParam {
+                span: sp(),
+                index: 0,
+                name: NString::from("A"),
+            };
+            let u = Type::GenericParam {
+                span: sp(),
+                index: 1,
+                name: NString::from("B"),
+            };
+            let v = Type::GenericParam {
+                span: sp(),
+                index: 2,
+                name: NString::from("C"),
+            };
+
+            assert_eq!(s.apply(&t), Type::I8 { span: sp() });
+            assert_eq!(s.apply(&u), Type::I16 { span: sp() });
+            assert_eq!(s.apply(&v), Type::I32 { span: sp() });
+        });
+    }
+
+    #[test]
+    fn generic_and_inferred_mappings_are_independent() {
+        with_store(|| {
+            let mut s = Substitution::default();
+            s.generic_mapping.insert(0, TypeId::from(Type::I32 { span: sp() }));
+            s.inferred_mapping.insert(10, TypeId::from(Type::Bool { span: sp() }));
+
+            let param = Type::GenericParam {
+                span: sp(),
+                index: 0,
+                name: NString::from("T"),
+            };
+            assert_eq!(s.apply(&param), Type::I32 { span: sp() });
+
+            let inferred = Type::Inferred {
+                span: sp(),
+                id: NonZeroU32::new(10).unwrap(),
+                name: None,
+            };
+            assert_eq!(s.apply(&inferred), Type::Bool { span: sp() });
+        });
+    }
+}

@@ -6,9 +6,6 @@ use nitrate_tree::SrcPos;
 use std::collections::{BTreeMap, BTreeSet};
 use thin_vec::ThinVec;
 
-// Range struct names could conflict with user-defined types. If a user defines
-// a struct with the same name (e.g., "Range"), the user definition wins silently
-// (ensure_range_structs skips if the name already exists in the symbol table).
 const RANGE_NAMES: [&str; 6] = [
     "Range",
     "RangeInclusive",
@@ -29,9 +26,6 @@ pub(crate) fn range_struct_name(has_start: bool, has_end: bool, inclusive: bool)
     }
 }
 
-/// Ensures that synthetic range struct definitions exist in the symbol table.
-/// This is idempotent — if a struct with the same name already exists (including
-/// a user-defined one), it is silently kept and no synthetic definition is created.
 pub(crate) fn ensure_range_structs(tab: &mut SymbolTab) {
     let generic_t: NString = NString::from("T");
     for name_str in RANGE_NAMES {
@@ -103,11 +97,6 @@ pub(crate) fn make_range_struct_object(
     let struct_def = match tab.get_struct(&name_ns) {
         Some(sd) => sd.clone(),
         None => {
-            // Fallback: the range struct wasn't found. This can happen if
-            // ensure_range_structs was not called, or if a user-defined struct
-            // shadowed the compiler-internal one. In this case, emit a tuple
-            // of the range endpoints so that the range expression can still
-            // be type-checked.
             let mut elements = Vec::new();
             if let Some(s) = start {
                 elements.push(s);
@@ -132,5 +121,221 @@ pub(crate) fn make_range_struct_object(
         span,
         struct_def,
         fields,
+    }
+}
+
+// ── Tests ────────────────────────────────────────────────────────────
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use nitrate_hir::{PtrSize, Store, Value, ValueId, using_storage};
+    use nitrate_nstring::NString;
+    use nitrate_tree::SrcPos;
+
+    fn sp() -> SrcPos {
+        SrcPos::default()
+    }
+
+    fn new_tab() -> SymbolTab {
+        SymbolTab::new(PtrSize::U64)
+    }
+
+    // ── range_struct_name ────────────────────────────────────────
+
+    #[test]
+    fn name_range() {
+        assert_eq!(range_struct_name(true, true, false), "Range");
+    }
+
+    #[test]
+    fn name_range_inclusive() {
+        assert_eq!(range_struct_name(true, true, true), "RangeInclusive");
+    }
+
+    #[test]
+    fn name_range_from() {
+        assert_eq!(range_struct_name(true, false, false), "RangeFrom");
+        assert_eq!(range_struct_name(true, false, true), "RangeFrom");
+    }
+
+    #[test]
+    fn name_range_to() {
+        assert_eq!(range_struct_name(false, true, false), "RangeTo");
+    }
+
+    #[test]
+    fn name_range_to_inclusive() {
+        assert_eq!(range_struct_name(false, true, true), "RangeToInclusive");
+    }
+
+    #[test]
+    fn name_range_full() {
+        assert_eq!(range_struct_name(false, false, false), "RangeFull");
+        assert_eq!(range_struct_name(false, false, true), "RangeFull");
+    }
+
+    // ── ensure_range_structs ─────────────────────────────────────
+
+    #[test]
+    fn ensure_creates_structs() {
+        with_store(|| {
+            let mut tab = new_tab();
+            for name_str in RANGE_NAMES {
+                let name = NString::from(name_str);
+                assert!(tab.get_struct(&name).is_none());
+            }
+            ensure_range_structs(&mut tab);
+            for name_str in RANGE_NAMES {
+                let name = NString::from(name_str);
+                assert!(tab.get_struct(&name).is_some());
+            }
+        });
+    }
+
+    #[test]
+    fn ensure_is_idempotent() {
+        with_store(|| {
+            let mut tab = new_tab();
+            ensure_range_structs(&mut tab);
+            ensure_range_structs(&mut tab);
+            ensure_range_structs(&mut tab);
+            for name_str in RANGE_NAMES {
+                let name = NString::from(name_str);
+                assert!(tab.get_struct(&name).is_some());
+            }
+        });
+    }
+
+    #[test]
+    fn range_struct_has_fields() {
+        with_store(|| {
+            let mut tab = new_tab();
+            ensure_range_structs(&mut tab);
+            let sd = tab.get_struct(&NString::from("Range")).unwrap();
+            let s = sd.borrow();
+            assert!(s.fields.contains_key(&NString::from("start")));
+            assert!(s.fields.contains_key(&NString::from("end")));
+            assert!(s.generics.is_some());
+        });
+    }
+
+    #[test]
+    fn range_from_has_start_only() {
+        with_store(|| {
+            let mut tab = new_tab();
+            ensure_range_structs(&mut tab);
+            let sd = tab.get_struct(&NString::from("RangeFrom")).unwrap();
+            let s = sd.borrow();
+            assert!(s.fields.contains_key(&NString::from("start")));
+            assert!(!s.fields.contains_key(&NString::from("end")));
+        });
+    }
+
+    #[test]
+    fn range_full_has_no_fields() {
+        with_store(|| {
+            let mut tab = new_tab();
+            ensure_range_structs(&mut tab);
+            let sd = tab.get_struct(&NString::from("RangeFull")).unwrap();
+            let s = sd.borrow();
+            assert!(s.fields.is_empty());
+            assert!(s.generics.is_none());
+        });
+    }
+
+    #[test]
+    fn ensure_does_not_overwrite_user_defined() {
+        with_store(|| {
+            let mut tab = new_tab();
+            let existing_name = NString::from("Range");
+            let existing = StructDef {
+                span: SrcPos::default(),
+                visibility: nitrate_hir::Visibility::Sec,
+                name: existing_name.clone(),
+                attributes: BTreeSet::new(),
+                fields: BTreeMap::new(),
+                generics: None,
+                layout: ThinVec::new(),
+            };
+            tab.add_struct(StructDefId::from(existing));
+            ensure_range_structs(&mut tab);
+            let sd = tab.get_struct(&existing_name).unwrap();
+            let s = sd.borrow();
+            assert_eq!(s.visibility, nitrate_hir::Visibility::Sec);
+        });
+    }
+
+    // ── make_range_struct_object ─────────────────────────────────
+
+    fn with_store<R>(f: impl FnOnce() -> R) -> R {
+        let store = Store::new();
+        using_storage(&store, f)
+    }
+
+    #[test]
+    fn make_range_creates_struct_object() {
+        with_store(|| {
+            let mut tab = new_tab();
+            ensure_range_structs(&mut tab);
+            let val = make_range_struct_object(
+                &tab,
+                sp(),
+                Some(ValueId::from(Value::I32 { span: sp(), value: 1 })),
+                Some(ValueId::from(Value::I32 { span: sp(), value: 10 })),
+                false,
+                true,
+                true,
+            );
+            if let Value::StructObject { struct_def, fields, .. } = val {
+                assert_eq!(struct_def.borrow().name, NString::from("Range"));
+                assert_eq!(fields.len(), 2);
+            } else {
+                panic!("expected StructObject, got {val:?}");
+            }
+        });
+    }
+
+    #[test]
+    fn make_range_inclusive() {
+        with_store(|| {
+            let mut tab = new_tab();
+            ensure_range_structs(&mut tab);
+            let val = make_range_struct_object(
+                &tab,
+                sp(),
+                Some(ValueId::from(Value::U8 { span: sp(), value: 5 })),
+                Some(ValueId::from(Value::U8 { span: sp(), value: 10 })),
+                true,
+                true,
+                true,
+            );
+            if let Value::StructObject { struct_def, .. } = val {
+                assert_eq!(struct_def.borrow().name, NString::from("RangeInclusive"));
+            } else {
+                panic!("expected StructObject");
+            }
+        });
+    }
+
+    #[test]
+    fn make_range_fallback_to_tuple_when_not_registered() {
+        with_store(|| {
+            let tab = new_tab(); // no range structs registered
+            let val = make_range_struct_object(
+                &tab,
+                sp(),
+                Some(ValueId::from(Value::I32 { span: sp(), value: 1 })),
+                Some(ValueId::from(Value::I32 { span: sp(), value: 2 })),
+                false,
+                true,
+                true,
+            );
+            if let Value::Tuple { elements, .. } = val {
+                assert_eq!(elements.len(), 2);
+            } else {
+                panic!("expected Tuple fallback, got {val:?}");
+            }
+        });
     }
 }

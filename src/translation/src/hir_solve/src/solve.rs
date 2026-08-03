@@ -2001,3 +2001,318 @@ pub fn resolve_global(
     ensure_range_structs(m);
     Solver::new(m).solve_global_variable(global, log)
 }
+
+// ── Tests ────────────────────────────────────────────────────────────
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::constraints::TypeConstraint;
+    use nitrate_hir::{BinaryOp, PtrSize, Store, Type, TypeId, UnaryOp, Value, ValueId, using_storage};
+
+    fn sp() -> SrcPos {
+        SrcPos::default()
+    }
+
+    fn new_tab() -> SymbolTab {
+        SymbolTab::new(PtrSize::U64)
+    }
+
+    // ── classify_value ────────────────────────────────────────
+
+    #[test]
+    fn classify_leaf_values() {
+        assert_eq!(classify_value(&Value::Unit { span: sp() }), 0);
+        assert_eq!(
+            classify_value(&Value::Bool {
+                span: sp(),
+                value: true
+            }),
+            0
+        );
+        assert_eq!(classify_value(&Value::I32 { span: sp(), value: 42 }), 0);
+        assert_eq!(
+            classify_value(&Value::InferredInteger {
+                span: sp(),
+                value: Box::new(10)
+            }),
+            0
+        );
+    }
+
+    #[test]
+    fn classify_binary_unary() {
+        let store = Store::new();
+        using_storage(&store, || {
+            let unit = ValueId::from(Value::Unit { span: sp() });
+            let bv = Value::Binary {
+                span: sp(),
+                left: unit.clone(),
+                op: BinaryOp::Add,
+                right: unit.clone(),
+            };
+            assert_eq!(classify_value(&bv), 3);
+            let uv = Value::Unary {
+                span: sp(),
+                op: UnaryOp::Sub,
+                operand: unit.clone(),
+            };
+            assert_eq!(classify_value(&uv), 4);
+        });
+    }
+
+    // ── Solver::type_bit_width ───────────────────────────────
+
+    #[test]
+    fn type_bit_width_all_types() {
+        assert_eq!(Solver::type_bit_width(&Type::I8 { span: sp() }), 8);
+        assert_eq!(Solver::type_bit_width(&Type::U8 { span: sp() }), 8);
+        assert_eq!(Solver::type_bit_width(&Type::I16 { span: sp() }), 16);
+        assert_eq!(Solver::type_bit_width(&Type::U32 { span: sp() }), 32);
+        assert_eq!(Solver::type_bit_width(&Type::I64 { span: sp() }), 64);
+        assert_eq!(Solver::type_bit_width(&Type::U64 { span: sp() }), 64);
+        assert_eq!(Solver::type_bit_width(&Type::USize { span: sp() }), 64);
+        assert_eq!(Solver::type_bit_width(&Type::I128 { span: sp() }), 128);
+        assert_eq!(Solver::type_bit_width(&Type::U128 { span: sp() }), 128);
+        assert_eq!(Solver::type_bit_width(&Type::Bool { span: sp() }), 0);
+        assert_eq!(Solver::type_bit_width(&Type::F64 { span: sp() }), 0);
+    }
+
+    // ── Solver::find_common_integer_type ─────────────────────
+
+    #[test]
+    fn find_common_integer_type_empty_returns_none() {
+        let result = Solver::find_common_integer_type(&[], 42);
+        assert_eq!(result, None);
+    }
+
+    #[test]
+    fn find_common_single_type() {
+        let store = Store::new();
+        using_storage(&store, || {
+            let types = [TypeId::from(Type::U8 { span: sp() })];
+            let result = Solver::find_common_integer_type(&types, 42);
+            assert_eq!(result, Some(TypeId::from(Type::U8 { span: sp() })));
+        });
+    }
+
+    #[test]
+    fn find_common_does_not_fit_returns_none() {
+        let store = Store::new();
+        using_storage(&store, || {
+            let types = [TypeId::from(Type::U8 { span: sp() })];
+            let result = Solver::find_common_integer_type(&types, 256);
+            assert_eq!(result, None);
+        });
+    }
+
+    #[test]
+    fn find_common_prefers_signed() {
+        let store = Store::new();
+        using_storage(&store, || {
+            let types = [
+                TypeId::from(Type::U32 { span: sp() }),
+                TypeId::from(Type::I32 { span: sp() }),
+            ];
+            let result = Solver::find_common_integer_type(&types, 100);
+            assert_eq!(result, Some(TypeId::from(Type::I32 { span: sp() })));
+        });
+    }
+
+    #[test]
+    fn find_common_prefers_wider() {
+        let store = Store::new();
+        using_storage(&store, || {
+            let types = [
+                TypeId::from(Type::I16 { span: sp() }),
+                TypeId::from(Type::I64 { span: sp() }),
+            ];
+            let result = Solver::find_common_integer_type(&types, 1000);
+            assert_eq!(result, Some(TypeId::from(Type::I64 { span: sp() })));
+        });
+    }
+
+    // ── Solver::new + add_constraint ─────────────────────────
+
+    #[test]
+    fn solver_new_creates_empty_state() {
+        let mut tab = new_tab();
+        let s = Solver::new(&mut tab);
+        assert!(s.worklist.is_empty());
+        assert!(s.constraints.is_empty());
+        assert_eq!(s.constraint_version, 0);
+        assert_eq!(s.mono_counter, 0);
+        assert_eq!(s.mono_depth, 0);
+    }
+
+    #[test]
+    fn add_constraint_adds_to_worklist() {
+        let store = Store::new();
+        using_storage(&store, || {
+            let mut tab = new_tab();
+            let mut s = Solver::new(&mut tab);
+            let vid = ValueId::from(Value::I32 { span: sp(), value: 42 });
+            s.add_constraint(&vid, TypeConstraint::Equal(TypeId::from(Type::I32 { span: sp() })));
+            assert!(s.worklist.contains(&vid));
+        });
+    }
+
+    #[test]
+    fn add_constraint_duplicate_noop() {
+        let store = Store::new();
+        using_storage(&store, || {
+            let mut tab = new_tab();
+            let mut s = Solver::new(&mut tab);
+            let vid = ValueId::from(Value::I32 { span: sp(), value: 42 });
+            let c = TypeConstraint::Equal(TypeId::from(Type::I32 { span: sp() }));
+            s.add_constraint(&vid, c.clone());
+            let v1 = s.constraint_version;
+            s.add_constraint(&vid, c);
+            assert_eq!(s.constraint_version, v1);
+        });
+    }
+
+    // ── Solver::solve_range ──────────────────────────────────
+
+    #[test]
+    fn solve_range_for_non_range_returns_no_change() {
+        let store = Store::new();
+        using_storage(&store, || {
+            let mut tab = new_tab();
+            let mut s = Solver::new(&mut tab);
+            let vid = ValueId::from(Value::Unit { span: sp() });
+            let action = s.solve_range(&vid);
+            match action {
+                NodeAction::NoChange => {}
+                _ => panic!("expected NoChange for non-range value"),
+            }
+        });
+    }
+
+    // ── Solver::determine_action ─────────────────────────────
+
+    #[test]
+    fn determine_action_for_unit_is_no_change() {
+        let store = Store::new();
+        using_storage(&store, || {
+            let mut tab = new_tab();
+            let mut s = Solver::new(&mut tab);
+            let vid = ValueId::from(Value::Unit { span: sp() });
+            let action = s.determine_action(&vid.borrow(), &vid);
+            match action {
+                NodeAction::NoChange => {}
+                _ => panic!("expected NoChange"),
+            }
+        });
+    }
+
+    // ── Solver::visit on leaf values ─────────────────────────
+
+    #[test]
+    fn visit_unit_does_not_panic() {
+        let store = Store::new();
+        using_storage(&store, || {
+            let mut tab = new_tab();
+            let mut s = Solver::new(&mut tab);
+            let vid = ValueId::from(Value::Unit { span: sp() });
+            s.visit(&vid);
+        });
+    }
+
+    #[test]
+    fn visit_bool_does_not_panic() {
+        let store = Store::new();
+        using_storage(&store, || {
+            let mut tab = new_tab();
+            let mut s = Solver::new(&mut tab);
+            let vid = ValueId::from(Value::Bool {
+                span: sp(),
+                value: true,
+            });
+            s.visit(&vid);
+        });
+    }
+
+    #[test]
+    fn visit_deref_visits_children() {
+        let store = Store::new();
+        using_storage(&store, || {
+            let mut tab = new_tab();
+            let mut s = Solver::new(&mut tab);
+            let inner = ValueId::from(Value::I32 { span: sp(), value: 42 });
+            let deref = ValueId::from(Value::Deref {
+                span: sp(),
+                place: inner,
+            });
+            s.visit(&deref);
+        });
+    }
+
+    #[test]
+    fn visit_cast_visits_source() {
+        let store = Store::new();
+        using_storage(&store, || {
+            let mut tab = new_tab();
+            let mut s = Solver::new(&mut tab);
+            let src = ValueId::from(Value::I32 { span: sp(), value: 10 });
+            let cast = ValueId::from(Value::Cast {
+                span: sp(),
+                value: src,
+                target_type: TypeId::from(Type::I32 { span: sp() }),
+            });
+            s.visit(&cast);
+        });
+    }
+
+    #[test]
+    fn visit_tuple_visits_elements() {
+        let store = Store::new();
+        using_storage(&store, || {
+            let mut tab = new_tab();
+            let mut s = Solver::new(&mut tab);
+            let el_a = ValueId::from(Value::I32 { span: sp(), value: 1 });
+            let el_b = ValueId::from(Value::I32 { span: sp(), value: 2 });
+            let tuple = ValueId::from(Value::Tuple {
+                span: sp(),
+                elements: vec![el_a, el_b].into(),
+            });
+            s.visit(&tuple);
+        });
+    }
+
+    #[test]
+    fn visit_field_access_visits_expr() {
+        let store = Store::new();
+        using_storage(&store, || {
+            let mut tab = new_tab();
+            let mut s = Solver::new(&mut tab);
+            let expr = ValueId::from(Value::I32 { span: sp(), value: 100 });
+            let fa = ValueId::from(Value::FieldAccess {
+                span: sp(),
+                expr: expr.clone(),
+                field_name: NString::from("x"),
+            });
+            s.visit(&fa);
+        });
+    }
+
+    // ── add_all_elements_to_worklist ─────────────────────────
+
+    #[test]
+    fn add_all_elements_to_worklist() {
+        let store = Store::new();
+        using_storage(&store, || {
+            let mut tab = new_tab();
+            let mut s = Solver::new(&mut tab);
+            let e1 = ValueId::from(Value::Unit { span: sp() });
+            let e2 = ValueId::from(Value::Bool {
+                span: sp(),
+                value: false,
+            });
+            let body = vec![BlockElement::Expr(e1.clone()), BlockElement::Expr(e2.clone())];
+            s.add_all_elements_to_worklist(&body);
+            assert!(s.worklist.contains(&e1));
+            assert!(s.worklist.contains(&e2));
+        });
+    }
+}
