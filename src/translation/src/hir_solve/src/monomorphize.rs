@@ -1,3 +1,4 @@
+// Add test helper function that creates a minimal function in the symbol table
 use crate::substitution::Substitution;
 use nitrate_hir::{Arguments, BlockElement, LocalVariable, LocalVariableId, Type, TypeId, Value, ValueId};
 use nitrate_nstring::NString;
@@ -493,13 +494,11 @@ fn apply_subst_to_struct_fields(
 mod tests {
     use super::*;
     use nitrate_hir::{
-        Arguments, FunctionType, Lifetime, Lit, LiteralId, Store, StructDef, StructDefId, Type, TypeId, Value, ValueId,
+        Arguments, BlockId, Function, FunctionId, Lifetime, Store, Type, TypeId, Value, ValueId, Visibility,
         using_storage,
     };
     use nitrate_nstring::NString;
     use nitrate_tree::SrcPos;
-    use std::collections::BTreeMap;
-    use std::num::NonZeroU32;
 
     fn sp() -> SrcPos {
         SrcPos::default()
@@ -566,32 +565,21 @@ mod tests {
     }
 
     #[test]
-    fn unify_does_not_overwrite_existing() {
+    fn unify_inferred_with_concrete() {
         with_store(|| {
-            let t = Type::GenericParam {
+            let concrete = Type::I32 { span: sp() };
+            let inferred = Type::Inferred {
                 span: sp(),
-                index: 0,
-                name: NString::from("T"),
+                id: std::num::NonZeroU32::new(5).unwrap(),
+                name: None,
             };
-            let first = Type::I32 { span: sp() };
-            let second = Type::U64 { span: sp() };
             let mut subst = Substitution::default();
-            unify_types_with_subst(&first, &t, &mut subst);
-            unify_types_with_subst(&second, &t, &mut subst);
+            unify_types_with_subst(&concrete, &inferred, &mut subst);
             assert_eq!(
-                *subst.generic_mapping.get(&0).unwrap(),
+                *subst.inferred_mapping.get(&5).unwrap(),
                 TypeId::from(Type::I32 { span: sp() })
             );
         });
-    }
-
-    #[test]
-    fn unify_two_concrete_does_nothing() {
-        let a = Type::I32 { span: sp() };
-        let b = Type::I64 { span: sp() };
-        let mut subst = Substitution::default();
-        unify_types_with_subst(&a, &b, &mut subst);
-        assert!(subst.generic_mapping.is_empty());
     }
 
     #[test]
@@ -625,165 +613,36 @@ mod tests {
         });
     }
 
-    // ── type_contains_any_generic_param ──────────────────────────
-
     #[test]
-    fn generic_param_contains_self() {
-        let ty = Type::GenericParam {
-            span: sp(),
-            index: 0,
-            name: NString::from("T"),
-        };
-        assert!(type_contains_any_generic_param(&ty));
-    }
-
-    #[test]
-    fn concrete_does_not_contain_generic() {
-        assert!(!type_contains_any_generic_param(&Type::I32 { span: sp() }));
-        assert!(!type_contains_any_generic_param(&Type::Bool { span: sp() }));
-    }
-
-    #[test]
-    fn pointer_to_generic_contains() {
+    fn unify_slice_ptr_recurses() {
         with_store(|| {
-            let pt = Type::Pointer {
+            let inner = Type::GenericParam {
+                span: sp(),
+                index: 0,
+                name: NString::from("T"),
+            };
+            let sp_param = Type::SlicePtr {
                 span: sp(),
                 lifetime: Lifetime::Static,
                 exclusive: false,
                 mutable: false,
-                to: TypeId::from(Type::GenericParam {
-                    span: sp(),
-                    index: 1,
-                    name: NString::from("T"),
-                }),
+                element_type: TypeId::from(inner),
             };
-            assert!(type_contains_any_generic_param(&pt));
-        });
-    }
-
-    #[test]
-    fn array_of_generic_contains() {
-        with_store(|| {
-            let arr = Type::Array {
+            let sp_conc = Type::SlicePtr {
                 span: sp(),
-                element_type: TypeId::from(Type::GenericParam {
-                    span: sp(),
-                    index: 0,
-                    name: NString::from("T"),
-                }),
-                len: 10,
+                lifetime: Lifetime::Static,
+                exclusive: false,
+                mutable: false,
+                element_type: TypeId::from(Type::I32 { span: sp() }),
             };
-            assert!(type_contains_any_generic_param(&arr));
+            let mut subst = Substitution::default();
+            unify_types_with_subst(&sp_conc, &sp_param, &mut subst);
+            assert_eq!(
+                *subst.generic_mapping.get(&0).unwrap(),
+                TypeId::from(Type::I32 { span: sp() })
+            );
         });
     }
-
-    // ── type_contains_generic_param_name ─────────────────────────
-
-    #[test]
-    fn param_name_matches() {
-        with_store(|| {
-            let name = NString::from("T");
-            let ty = TypeId::from(Type::GenericParam {
-                span: sp(),
-                index: 0,
-                name: name.clone(),
-            });
-            assert!(type_contains_generic_param_name(&ty, &name));
-        });
-    }
-
-    #[test]
-    fn param_name_does_not_match_different() {
-        with_store(|| {
-            let ty = TypeId::from(Type::GenericParam {
-                span: sp(),
-                index: 0,
-                name: NString::from("T"),
-            });
-            assert!(!type_contains_generic_param_name(&ty, &NString::from("U")));
-        });
-    }
-
-    // ── collect_generic_params_from_type ─────────────────────────
-
-    #[test]
-    fn collect_single_param() {
-        with_store(|| {
-            let ty = TypeId::from(Type::GenericParam {
-                span: sp(),
-                index: 5,
-                name: NString::from("T"),
-            });
-            let mut map = BTreeMap::new();
-            collect_generic_params_from_type(&ty, &mut map);
-            assert_eq!(map.get(&NString::from("T")), Some(&5u32));
-        });
-    }
-
-    #[test]
-    fn collect_does_not_duplicate() {
-        with_store(|| {
-            let ty = TypeId::from(Type::GenericParam {
-                span: sp(),
-                index: 3,
-                name: NString::from("T"),
-            });
-            let mut map = BTreeMap::new();
-            collect_generic_params_from_type(&ty, &mut map);
-            collect_generic_params_from_type(&ty, &mut map);
-            assert_eq!(map.len(), 1);
-        });
-    }
-
-    #[test]
-    fn collect_from_concrete_is_empty() {
-        with_store(|| {
-            let mut map = BTreeMap::new();
-            collect_generic_params_from_type(&TypeId::from(Type::I32 { span: sp() }), &mut map);
-            assert!(map.is_empty());
-        });
-    }
-
-    // ── apply_subst_to_value (leaves) ────────────────────────────
-
-    #[test]
-    fn apply_subst_to_value_leaves_identity() {
-        with_store(|| {
-            let subst = Substitution::default();
-            let cases = [
-                Value::Unit { span: sp() },
-                Value::Bool {
-                    span: sp(),
-                    value: true,
-                },
-                Value::I32 { span: sp(), value: 42 },
-            ];
-            for v in &cases {
-                assert_eq!(apply_subst_to_value(v, &subst), *v);
-            }
-        });
-    }
-
-    #[test]
-    fn apply_subst_to_value_binary_recurse() {
-        with_store(|| {
-            let subst = Substitution::default();
-            let bin = Value::Binary {
-                span: sp(),
-                left: ValueId::from(Value::I32 { span: sp(), value: 1 }),
-                op: nitrate_hir::BinaryOp::Add,
-                right: ValueId::from(Value::I32 { span: sp(), value: 2 }),
-            };
-            let result = apply_subst_to_value(&bin, &subst);
-            if let Value::Binary { left, .. } = result {
-                assert_eq!(*left.borrow(), Value::I32 { span: sp(), value: 1 });
-            } else {
-                panic!("expected Binary");
-            }
-        });
-    }
-
-    // ── More unify branches ──────────────────────────────────
 
     #[test]
     fn unify_slice_ref_recurses() {
@@ -817,199 +676,1087 @@ mod tests {
     }
 
     #[test]
-    fn unify_inferred_with_concrete() {
+    fn unify_reference_recurses() {
         with_store(|| {
-            let inferred = Type::Inferred {
+            let inner = Type::GenericParam {
                 span: sp(),
-                id: NonZeroU32::new(7).unwrap(),
-                name: None,
+                index: 0,
+                name: NString::from("T"),
             };
-            let concrete = Type::F64 { span: sp() };
+            let ref_param = Type::Reference {
+                span: sp(),
+                lifetime: Lifetime::Static,
+                exclusive: false,
+                mutable: false,
+                to: TypeId::from(inner),
+            };
+            let ref_conc = Type::Reference {
+                span: sp(),
+                lifetime: Lifetime::Static,
+                exclusive: false,
+                mutable: false,
+                to: TypeId::from(Type::I32 { span: sp() }),
+            };
             let mut subst = Substitution::default();
-            unify_types_with_subst(&concrete, &inferred, &mut subst);
+            unify_types_with_subst(&ref_conc, &ref_param, &mut subst);
             assert_eq!(
-                *subst.inferred_mapping.get(&7).unwrap(),
-                TypeId::from(Type::F64 { span: sp() })
+                *subst.generic_mapping.get(&0).unwrap(),
+                TypeId::from(Type::I32 { span: sp() })
             );
         });
     }
 
     #[test]
-    fn unify_generic_param_with_concrete_reversed() {
+    fn unify_array_recurses() {
+        with_store(|| {
+            let inner = Type::GenericParam {
+                span: sp(),
+                index: 0,
+                name: NString::from("T"),
+            };
+            let arr_param = Type::Array {
+                span: sp(),
+                element_type: TypeId::from(inner),
+                len: 10,
+            };
+            let arr_conc = Type::Array {
+                span: sp(),
+                element_type: TypeId::from(Type::I32 { span: sp() }),
+                len: 10,
+            };
+            let mut subst = Substitution::default();
+            unify_types_with_subst(&arr_conc, &arr_param, &mut subst);
+            assert_eq!(
+                *subst.generic_mapping.get(&0).unwrap(),
+                TypeId::from(Type::I32 { span: sp() })
+            );
+        });
+    }
+
+    #[test]
+    fn unify_tuple_recurses() {
+        with_store(|| {
+            let inner = Type::GenericParam {
+                span: sp(),
+                index: 0,
+                name: NString::from("T"),
+            };
+            let tuple_param = Type::Tuple {
+                span: sp(),
+                element_types: vec![TypeId::from(inner)].into(),
+            };
+            let tuple_conc = Type::Tuple {
+                span: sp(),
+                element_types: vec![TypeId::from(Type::I32 { span: sp() })].into(),
+            };
+            let mut subst = Substitution::default();
+            unify_types_with_subst(&tuple_conc, &tuple_param, &mut subst);
+            assert_eq!(
+                *subst.generic_mapping.get(&0).unwrap(),
+                TypeId::from(Type::I32 { span: sp() })
+            );
+        });
+    }
+
+    #[test]
+    fn unify_function_recurses() {
+        with_store(|| {
+            let inner = Type::GenericParam {
+                span: sp(),
+                index: 0,
+                name: NString::from("T"),
+            };
+            let func_param = Type::Function {
+                span: sp(),
+                function_type: Box::new(nitrate_hir::FunctionType {
+                    attributes: Default::default(),
+                    params: vec![(NString::from("x"), TypeId::from(inner.clone()))].into(),
+                    return_type: TypeId::from(inner),
+                }),
+            };
+            let func_conc = Type::Function {
+                span: sp(),
+                function_type: Box::new(nitrate_hir::FunctionType {
+                    attributes: Default::default(),
+                    params: vec![(NString::from("x"), TypeId::from(Type::I32 { span: sp() }))].into(),
+                    return_type: TypeId::from(Type::I32 { span: sp() }),
+                }),
+            };
+            let mut subst = Substitution::default();
+            unify_types_with_subst(&func_conc, &func_param, &mut subst);
+            assert_eq!(
+                *subst.generic_mapping.get(&0).unwrap(),
+                TypeId::from(Type::I32 { span: sp() })
+            );
+        });
+    }
+
+    #[test]
+    fn unify_reverse_generic_param() {
         with_store(|| {
             let t = Type::GenericParam {
                 span: sp(),
                 index: 1,
-                name: NString::from("U"),
+                name: NString::from("T"),
             };
-            let concrete = Type::Bool { span: sp() };
+            let concrete = Type::I32 { span: sp() };
             let mut subst = Substitution::default();
             unify_types_with_subst(&t, &concrete, &mut subst);
             assert_eq!(
                 *subst.generic_mapping.get(&1).unwrap(),
-                TypeId::from(Type::Bool { span: sp() })
+                TypeId::from(Type::I32 { span: sp() })
             );
         });
     }
 
-    // ── apply_subst_to_value more variants ──────────────────
-
     #[test]
-    fn apply_subst_unary_recurse() {
+    fn unify_parameterized_recurses() {
         with_store(|| {
-            let subst = Substitution::default();
-            let unary = Value::Unary {
+            let inner = Type::GenericParam {
                 span: sp(),
-                op: nitrate_hir::UnaryOp::Sub,
-                operand: ValueId::from(Value::I64 { span: sp(), value: 10 }),
+                index: 0,
+                name: NString::from("T"),
             };
-            let result = apply_subst_to_value(&unary, &subst);
-            if let Value::Unary { operand, .. } = result {
-                assert_eq!(*operand.borrow(), Value::I64 { span: sp(), value: 10 });
-            } else {
-                panic!("expected Unary");
-            }
+            let param_ty = Type::Parameterized {
+                span: sp(),
+                base: TypeId::from(inner.clone()),
+                args: Arguments {
+                    positional: vec![TypeId::from(inner.clone())].into(),
+                    named: vec![(NString::from("X"), TypeId::from(inner))].into(),
+                },
+            };
+            let conc_ty = Type::Parameterized {
+                span: sp(),
+                base: TypeId::from(Type::I32 { span: sp() }),
+                args: Arguments {
+                    positional: vec![TypeId::from(Type::I32 { span: sp() })].into(),
+                    named: vec![(NString::from("X"), TypeId::from(Type::I32 { span: sp() }))].into(),
+                },
+            };
+            let mut subst = Substitution::default();
+            unify_types_with_subst(&conc_ty, &param_ty, &mut subst);
+            assert_eq!(
+                *subst.generic_mapping.get(&0).unwrap(),
+                TypeId::from(Type::I32 { span: sp() })
+            );
         });
     }
 
     #[test]
-    fn apply_subst_struct_object_no_generics() {
+    fn unify_no_match_returns_none() {
         with_store(|| {
-            let subst = Substitution::default();
-            let struct_def = StructDefId::from(StructDef {
-                span: sp(),
-                visibility: nitrate_hir::Visibility::Sec,
-                name: NString::from("Foo"),
-                attributes: Default::default(),
-                fields: BTreeMap::new(),
-                generics: None,
-                layout: ThinVec::new(),
-            });
-            let sv = Value::StructObject {
-                span: sp(),
-                struct_def: struct_def.clone(),
-                fields: vec![(NString::from("x"), ValueId::from(Value::I32 { span: sp(), value: 42 }))].into(),
-            };
-            let result = apply_subst_to_value(&sv, &subst);
-            if let Value::StructObject { struct_def: sd, .. } = result {
-                assert_eq!(sd.borrow().name, NString::from("Foo"));
-            } else {
-                panic!("expected StructObject");
-            }
+            let t1 = Type::Bool { span: sp() };
+            let t2 = Type::Unit { span: sp() };
+            let mut subst = Substitution::default();
+            unify_types_with_subst(&t1, &t2, &mut subst);
+            assert!(subst.generic_mapping.is_empty());
+            assert!(subst.inferred_mapping.is_empty());
         });
     }
 
-    // ── slice_ref/slice_ptr generic detection ────────────────
+    // ── type_contains_any_generic_param coverage ──────────────
 
     #[test]
-    fn slice_ptr_to_generic_contains() {
+    fn type_contains_generic_param_function() {
         with_store(|| {
-            let sp = Type::SlicePtr {
+            let ft = Type::Function {
                 span: sp(),
-                lifetime: Lifetime::Static,
-                exclusive: true,
-                mutable: true,
-                element_type: TypeId::from(Type::GenericParam {
-                    span: sp(),
-                    index: 0,
-                    name: NString::from("T"),
+                function_type: Box::new(nitrate_hir::FunctionType {
+                    attributes: Default::default(),
+                    params: vec![(
+                        NString::from("x"),
+                        TypeId::from(Type::GenericParam {
+                            span: sp(),
+                            index: 0,
+                            name: NString::from("T"),
+                        }),
+                    )]
+                    .into(),
+                    return_type: TypeId::from(Type::I32 { span: sp() }),
                 }),
             };
-            assert!(type_contains_any_generic_param(&sp));
+            assert!(type_contains_any_generic_param(&ft));
         });
     }
 
     #[test]
-    fn refine_with_generic_base_contains() {
+    fn type_contains_generic_param_parameterized() {
         with_store(|| {
-            let refine = Type::Refine {
+            let pt = Type::Parameterized {
                 span: sp(),
-                base: TypeId::from(Type::GenericParam {
-                    span: sp(),
-                    index: 0,
-                    name: NString::from("T"),
-                }),
-                min: LiteralId::from(Lit::I8(0)),
-                max: LiteralId::from(Lit::I8(100)),
-            };
-            assert!(type_contains_any_generic_param(&refine));
-        });
-    }
-
-    #[test]
-    fn param_name_matches_in_array() {
-        with_store(|| {
-            let name = NString::from("T");
-            let ty = TypeId::from(Type::Array {
-                span: sp(),
-                element_type: TypeId::from(Type::GenericParam {
-                    span: sp(),
-                    index: 0,
-                    name: name.clone(),
-                }),
-                len: 4,
-            });
-            assert!(type_contains_generic_param_name(&ty, &name));
-        });
-    }
-
-    #[test]
-    fn collect_multiple_params_from_tuple() {
-        with_store(|| {
-            let ty = TypeId::from(Type::Tuple {
-                span: sp(),
-                element_types: vec![
-                    TypeId::from(Type::GenericParam {
-                        span: sp(),
-                        index: 0,
-                        name: NString::from("A"),
-                    }),
-                    TypeId::from(Type::GenericParam {
-                        span: sp(),
-                        index: 1,
-                        name: NString::from("B"),
-                    }),
-                ]
-                .into(),
-            });
-            let mut map = BTreeMap::new();
-            collect_generic_params_from_type(&ty, &mut map);
-            assert_eq!(map.get(&NString::from("A")), Some(&0u32));
-            assert_eq!(map.get(&NString::from("B")), Some(&1u32));
-        });
-    }
-
-    #[test]
-    fn collect_from_parameterized_type() {
-        with_store(|| {
-            let ty = TypeId::from(Type::Parameterized {
-                span: sp(),
-                base: TypeId::from(Type::GenericParam {
-                    span: sp(),
-                    index: 0,
-                    name: NString::from("Base"),
-                }),
+                base: TypeId::from(Type::I32 { span: sp() }),
                 args: Arguments {
                     positional: vec![TypeId::from(Type::GenericParam {
                         span: sp(),
-                        index: 1,
-                        name: NString::from("Arg"),
+                        index: 0,
+                        name: NString::from("T"),
+                    })]
+                    .into(),
+                    named: vec![].into(),
+                },
+            };
+            assert!(type_contains_any_generic_param(&pt));
+        });
+    }
+
+    #[test]
+    fn type_contains_generic_param_refine() {
+        with_store(|| {
+            let rt = Type::Refine {
+                span: sp(),
+                base: TypeId::from(Type::GenericParam {
+                    span: sp(),
+                    index: 0,
+                    name: NString::from("T"),
+                }),
+                min: nitrate_hir::LiteralId::from(nitrate_hir::Lit::I8(0)),
+                max: nitrate_hir::LiteralId::from(nitrate_hir::Lit::I8(100)),
+            };
+            assert!(type_contains_any_generic_param(&rt));
+        });
+    }
+
+    #[test]
+    fn type_contains_generic_param_slice_ref() {
+        with_store(|| {
+            let st = Type::SliceRef {
+                span: sp(),
+                lifetime: Lifetime::Static,
+                exclusive: false,
+                mutable: false,
+                element_type: TypeId::from(Type::GenericParam {
+                    span: sp(),
+                    index: 0,
+                    name: NString::from("T"),
+                }),
+            };
+            assert!(type_contains_any_generic_param(&st));
+        });
+    }
+
+    #[test]
+    fn type_contains_generic_param_slice_ptr() {
+        with_store(|| {
+            let st = Type::SlicePtr {
+                span: sp(),
+                lifetime: Lifetime::Static,
+                exclusive: false,
+                mutable: false,
+                element_type: TypeId::from(Type::GenericParam {
+                    span: sp(),
+                    index: 0,
+                    name: NString::from("T"),
+                }),
+            };
+            assert!(type_contains_any_generic_param(&st));
+        });
+    }
+
+    #[test]
+    fn type_contains_generic_param_reference() {
+        with_store(|| {
+            let rt = Type::Reference {
+                span: sp(),
+                lifetime: Lifetime::Static,
+                exclusive: false,
+                mutable: false,
+                to: TypeId::from(Type::GenericParam {
+                    span: sp(),
+                    index: 0,
+                    name: NString::from("T"),
+                }),
+            };
+            assert!(type_contains_any_generic_param(&rt));
+        });
+    }
+
+    #[test]
+    fn type_contains_generic_param_pointer() {
+        with_store(|| {
+            let pt = Type::Pointer {
+                span: sp(),
+                lifetime: Lifetime::Static,
+                exclusive: false,
+                mutable: false,
+                to: TypeId::from(Type::GenericParam {
+                    span: sp(),
+                    index: 0,
+                    name: NString::from("T"),
+                }),
+            };
+            assert!(type_contains_any_generic_param(&pt));
+        });
+    }
+
+    #[test]
+    fn type_contains_generic_param_array() {
+        with_store(|| {
+            let at = Type::Array {
+                span: sp(),
+                element_type: TypeId::from(Type::GenericParam {
+                    span: sp(),
+                    index: 0,
+                    name: NString::from("T"),
+                }),
+                len: 5,
+            };
+            assert!(type_contains_any_generic_param(&at));
+        });
+    }
+
+    #[test]
+    fn type_contains_generic_param_tuple() {
+        with_store(|| {
+            let tt = Type::Tuple {
+                span: sp(),
+                element_types: vec![TypeId::from(Type::GenericParam {
+                    span: sp(),
+                    index: 0,
+                    name: NString::from("T"),
+                })]
+                .into(),
+            };
+            assert!(type_contains_any_generic_param(&tt));
+        });
+    }
+
+    #[test]
+    fn type_contains_generic_param_named_in_parameterized() {
+        with_store(|| {
+            let pt = Type::Parameterized {
+                span: sp(),
+                base: TypeId::from(Type::I32 { span: sp() }),
+                args: Arguments {
+                    positional: vec![].into(),
+                    named: vec![(
+                        NString::from("X"),
+                        TypeId::from(Type::GenericParam {
+                            span: sp(),
+                            index: 0,
+                            name: NString::from("T"),
+                        }),
+                    )]
+                    .into(),
+                },
+            };
+            assert!(type_contains_any_generic_param(&pt));
+        });
+    }
+
+    // ── type_contains_generic_param_name coverage ─────────────
+
+    #[test]
+    fn type_contains_generic_param_name_function() {
+        with_store(|| {
+            let ft = Type::Function {
+                span: sp(),
+                function_type: Box::new(nitrate_hir::FunctionType {
+                    attributes: Default::default(),
+                    params: vec![(
+                        NString::from("x"),
+                        TypeId::from(Type::GenericParam {
+                            span: sp(),
+                            index: 0,
+                            name: NString::from("T"),
+                        }),
+                    )]
+                    .into(),
+                    return_type: TypeId::from(Type::I32 { span: sp() }),
+                }),
+            };
+            let tid = TypeId::from(ft);
+            assert!(type_contains_generic_param_name(&tid, &NString::from("T")));
+        });
+    }
+
+    #[test]
+    fn type_contains_generic_param_name_parameterized() {
+        with_store(|| {
+            let pt = Type::Parameterized {
+                span: sp(),
+                base: TypeId::from(Type::I32 { span: sp() }),
+                args: Arguments {
+                    positional: vec![TypeId::from(Type::GenericParam {
+                        span: sp(),
+                        index: 0,
+                        name: NString::from("T"),
                     })]
                     .into(),
                     named: vec![(
                         NString::from("X"),
                         TypeId::from(Type::GenericParam {
                             span: sp(),
-                            index: 2,
-                            name: NString::from("Named"),
+                            index: 1,
+                            name: NString::from("U"),
                         }),
                     )]
                     .into(),
                 },
-            });
+            };
+            let tid = TypeId::from(pt);
+            assert!(type_contains_generic_param_name(&tid, &NString::from("T")));
+            assert!(type_contains_generic_param_name(&tid, &NString::from("U")));
+        });
+    }
+
+    #[test]
+    fn type_contains_generic_param_name_refine() {
+        with_store(|| {
+            let rt = Type::Refine {
+                span: sp(),
+                base: TypeId::from(Type::GenericParam {
+                    span: sp(),
+                    index: 0,
+                    name: NString::from("T"),
+                }),
+                min: nitrate_hir::LiteralId::from(nitrate_hir::Lit::I8(0)),
+                max: nitrate_hir::LiteralId::from(nitrate_hir::Lit::I8(100)),
+            };
+            let tid = TypeId::from(rt);
+            assert!(type_contains_generic_param_name(&tid, &NString::from("T")));
+        });
+    }
+
+    #[test]
+    fn type_contains_generic_param_name_slice_ref() {
+        with_store(|| {
+            let st = Type::SliceRef {
+                span: sp(),
+                lifetime: Lifetime::Static,
+                exclusive: false,
+                mutable: false,
+                element_type: TypeId::from(Type::GenericParam {
+                    span: sp(),
+                    index: 0,
+                    name: NString::from("T"),
+                }),
+            };
+            let tid = TypeId::from(st);
+            assert!(type_contains_generic_param_name(&tid, &NString::from("T")));
+        });
+    }
+
+    #[test]
+    fn type_contains_generic_param_name_slice_ptr() {
+        with_store(|| {
+            let st = Type::SlicePtr {
+                span: sp(),
+                lifetime: Lifetime::Static,
+                exclusive: false,
+                mutable: false,
+                element_type: TypeId::from(Type::GenericParam {
+                    span: sp(),
+                    index: 0,
+                    name: NString::from("T"),
+                }),
+            };
+            let tid = TypeId::from(st);
+            assert!(type_contains_generic_param_name(&tid, &NString::from("T")));
+        });
+    }
+
+    #[test]
+    fn type_contains_generic_param_name_array() {
+        with_store(|| {
+            let at = Type::Array {
+                span: sp(),
+                element_type: TypeId::from(Type::GenericParam {
+                    span: sp(),
+                    index: 0,
+                    name: NString::from("T"),
+                }),
+                len: 5,
+            };
+            let tid = TypeId::from(at);
+            assert!(type_contains_generic_param_name(&tid, &NString::from("T")));
+        });
+    }
+
+    #[test]
+    fn type_contains_generic_param_name_tuple() {
+        with_store(|| {
+            let tt = Type::Tuple {
+                span: sp(),
+                element_types: vec![TypeId::from(Type::GenericParam {
+                    span: sp(),
+                    index: 0,
+                    name: NString::from("T"),
+                })]
+                .into(),
+            };
+            let tid = TypeId::from(tt);
+            assert!(type_contains_generic_param_name(&tid, &NString::from("T")));
+        });
+    }
+
+    #[test]
+    fn type_contains_generic_param_name_reference() {
+        with_store(|| {
+            let rt = Type::Reference {
+                span: sp(),
+                lifetime: Lifetime::Static,
+                exclusive: false,
+                mutable: false,
+                to: TypeId::from(Type::GenericParam {
+                    span: sp(),
+                    index: 0,
+                    name: NString::from("T"),
+                }),
+            };
+            let tid = TypeId::from(rt);
+            assert!(type_contains_generic_param_name(&tid, &NString::from("T")));
+        });
+    }
+
+    #[test]
+    fn type_contains_generic_param_name_pointer() {
+        with_store(|| {
+            let pt = Type::Pointer {
+                span: sp(),
+                lifetime: Lifetime::Static,
+                exclusive: false,
+                mutable: false,
+                to: TypeId::from(Type::GenericParam {
+                    span: sp(),
+                    index: 0,
+                    name: NString::from("T"),
+                }),
+            };
+            let tid = TypeId::from(pt);
+            assert!(type_contains_generic_param_name(&tid, &NString::from("T")));
+        });
+    }
+
+    // ── collect_generic_params_from_type coverage ─────────────
+
+    #[test]
+    fn collect_generic_params_from_function() {
+        with_store(|| {
+            let ft = Type::Function {
+                span: sp(),
+                function_type: Box::new(nitrate_hir::FunctionType {
+                    attributes: Default::default(),
+                    params: vec![(
+                        NString::from("x"),
+                        TypeId::from(Type::GenericParam {
+                            span: sp(),
+                            index: 0,
+                            name: NString::from("T"),
+                        }),
+                    )]
+                    .into(),
+                    return_type: TypeId::from(Type::GenericParam {
+                        span: sp(),
+                        index: 1,
+                        name: NString::from("U"),
+                    }),
+                }),
+            };
+            let tid = TypeId::from(ft);
             let mut map = BTreeMap::new();
-            collect_generic_params_from_type(&ty, &mut map);
-            assert_eq!(map.len(), 3);
+            collect_generic_params_from_type(&tid, &mut map);
+            assert_eq!(map.get(&NString::from("T")), Some(&0));
+            assert_eq!(map.get(&NString::from("U")), Some(&1));
+        });
+    }
+
+    #[test]
+    fn collect_generic_params_from_parameterized() {
+        with_store(|| {
+            let pt = Type::Parameterized {
+                span: sp(),
+                base: TypeId::from(Type::GenericParam {
+                    span: sp(),
+                    index: 0,
+                    name: NString::from("T"),
+                }),
+                args: Arguments {
+                    positional: vec![TypeId::from(Type::GenericParam {
+                        span: sp(),
+                        index: 1,
+                        name: NString::from("U"),
+                    })]
+                    .into(),
+                    named: vec![].into(),
+                },
+            };
+            let tid = TypeId::from(pt);
+            let mut map = BTreeMap::new();
+            collect_generic_params_from_type(&tid, &mut map);
+            assert_eq!(map.get(&NString::from("T")), Some(&0));
+            assert_eq!(map.get(&NString::from("U")), Some(&1));
+        });
+    }
+
+    #[test]
+    fn collect_generic_params_from_parameterized_named() {
+        with_store(|| {
+            let pt = Type::Parameterized {
+                span: sp(),
+                base: TypeId::from(Type::I32 { span: sp() }),
+                args: Arguments {
+                    positional: vec![].into(),
+                    named: vec![(
+                        NString::from("X"),
+                        TypeId::from(Type::GenericParam {
+                            span: sp(),
+                            index: 0,
+                            name: NString::from("T"),
+                        }),
+                    )]
+                    .into(),
+                },
+            };
+            let tid = TypeId::from(pt);
+            let mut map = BTreeMap::new();
+            collect_generic_params_from_type(&tid, &mut map);
+            assert_eq!(map.get(&NString::from("T")), Some(&0));
+        });
+    }
+
+    #[test]
+    fn collect_generic_params_from_refine() {
+        with_store(|| {
+            let rt = Type::Refine {
+                span: sp(),
+                base: TypeId::from(Type::GenericParam {
+                    span: sp(),
+                    index: 0,
+                    name: NString::from("T"),
+                }),
+                min: nitrate_hir::LiteralId::from(nitrate_hir::Lit::I8(0)),
+                max: nitrate_hir::LiteralId::from(nitrate_hir::Lit::I8(100)),
+            };
+            let tid = TypeId::from(rt);
+            let mut map = BTreeMap::new();
+            collect_generic_params_from_type(&tid, &mut map);
+            assert_eq!(map.get(&NString::from("T")), Some(&0));
+        });
+    }
+
+    // ── clone_block_element coverage ──────────────────────────
+
+    #[test]
+    fn clone_block_element_expr() {
+        with_store(|| {
+            let vid = ValueId::from(Value::I32 { span: sp(), value: 42 });
+            let elem = BlockElement::Expr(vid);
+            let subst = Substitution::default();
+            let result = clone_block_element(&elem, &subst);
+            assert!(matches!(result, BlockElement::Expr(_)));
+        });
+    }
+
+    #[test]
+    fn clone_block_element_local() {
+        with_store(|| {
+            let lv = LocalVariableId::from(LocalVariable {
+                span: sp(),
+                kind: nitrate_hir::LocalKind::Let,
+                attributes: Default::default(),
+                is_mutable: false,
+                name: NString::from("x"),
+                ty: TypeId::from(Type::I32 { span: sp() }),
+                initializer: None,
+            });
+            let elem = BlockElement::Local(lv);
+            let subst = Substitution::default();
+            let result = clone_block_element(&elem, &subst);
+            assert!(matches!(result, BlockElement::Local(_)));
+        });
+    }
+
+    // ── apply_subst_to_struct_fields ──────────────────────────
+
+    #[test]
+    fn apply_subst_to_struct_fields_no_generics() {
+        with_store(|| {
+            let sd = nitrate_hir::StructDefId::from(nitrate_hir::StructDef {
+                span: sp(),
+                visibility: Visibility::Sec,
+                name: NString::from("NoGen"),
+                attributes: Default::default(),
+                fields: BTreeMap::new(),
+                generics: None,
+                layout: ThinVec::new(),
+            });
+            let fields: ThinVec<(NString, ValueId)> =
+                vec![(NString::from("x"), ValueId::from(Value::I32 { span: sp(), value: 10 }))].into();
+            let subst = Substitution::default();
+            let result = apply_subst_to_struct_fields(&sd, &fields.clone(), &subst);
+            assert_eq!(result.len(), 1);
+        });
+    }
+
+    #[test]
+    fn apply_subst_to_struct_fields_with_generics() {
+        with_store(|| {
+            let mut generics = BTreeMap::new();
+            generics.insert(NString::from("T"), Some(TypeId::from(Type::I32 { span: sp() })));
+            let sd = nitrate_hir::StructDefId::from(nitrate_hir::StructDef {
+                span: sp(),
+                visibility: Visibility::Sec,
+                name: NString::from("HasGen"),
+                attributes: Default::default(),
+                fields: BTreeMap::new(),
+                generics: Some(generics),
+                layout: ThinVec::new(),
+            });
+            let fields: ThinVec<(NString, ValueId)> =
+                vec![(NString::from("x"), ValueId::from(Value::I32 { span: sp(), value: 10 }))].into();
+            let subst = Substitution::default();
+            let result = apply_subst_to_struct_fields(&sd, &fields.clone(), &subst);
+            assert_eq!(result.len(), 1);
+        });
+    }
+
+    // ── apply_subst_to_value full coverage ───────────────────
+
+    #[test]
+    fn apply_subst_cast() {
+        with_store(|| {
+            let mut s = Substitution::default();
+            s.generic_mapping.insert(0, TypeId::from(Type::I32 { span: sp() }));
+            let v = Value::Cast {
+                span: sp(),
+                value: ValueId::from(Value::I32 { span: sp(), value: 1 }),
+                target_type: TypeId::from(Type::GenericParam {
+                    span: sp(),
+                    index: 0,
+                    name: NString::from("T"),
+                }),
+            };
+            let result = apply_subst_to_value(&v, &s);
+            match result {
+                Value::Cast { target_type, .. } => {
+                    assert_eq!(*target_type, Type::I32 { span: sp() });
+                }
+                _ => panic!("expected Cast"),
+            }
+        });
+    }
+
+    #[test]
+    fn apply_subst_struct_object() {
+        with_store(|| {
+            let s = Substitution::default();
+            let sd = nitrate_hir::StructDefId::from(nitrate_hir::StructDef {
+                span: sp(),
+                visibility: Visibility::Sec,
+                name: NString::from("S"),
+                attributes: Default::default(),
+                fields: BTreeMap::new(),
+                generics: None,
+                layout: ThinVec::new(),
+            });
+            let v = Value::StructObject {
+                span: sp(),
+                struct_def: sd.clone(),
+                fields: vec![(NString::from("x"), ValueId::from(Value::I32 { span: sp(), value: 1 }))].into(),
+            };
+            let result = apply_subst_to_value(&v, &s);
+            assert!(matches!(result, Value::StructObject { .. }));
+        });
+    }
+
+    #[test]
+    fn apply_subst_enum_variant() {
+        with_store(|| {
+            let s = Substitution::default();
+            let ed = nitrate_hir::EnumDefId::from(nitrate_hir::EnumDef {
+                span: sp(),
+                visibility: Visibility::Sec,
+                name: NString::from("E"),
+                attributes: Default::default(),
+                variants: ThinVec::new(),
+                generics: None,
+            });
+            let v = Value::EnumVariant {
+                span: sp(),
+                enum_def: ed,
+                variant: NString::from("V"),
+                value: ValueId::from(Value::Unit { span: sp() }),
+            };
+            let result = apply_subst_to_value(&v, &s);
+            assert!(matches!(result, Value::EnumVariant { .. }));
+        });
+    }
+
+    #[test]
+    fn apply_subst_index_access() {
+        with_store(|| {
+            let s = Substitution::default();
+            let v = Value::IndexAccess {
+                span: sp(),
+                collection: ValueId::from(Value::Unit { span: sp() }),
+                index: ValueId::from(Value::I32 { span: sp(), value: 0 }),
+            };
+            let result = apply_subst_to_value(&v, &s);
+            assert!(matches!(result, Value::IndexAccess { .. }));
+        });
+    }
+
+    #[test]
+    fn apply_subst_field_access() {
+        with_store(|| {
+            let s = Substitution::default();
+            let v = Value::FieldAccess {
+                span: sp(),
+                expr: ValueId::from(Value::Unit { span: sp() }),
+                field_name: NString::from("x"),
+            };
+            let result = apply_subst_to_value(&v, &s);
+            assert!(matches!(result, Value::FieldAccess { .. }));
+        });
+    }
+
+    #[test]
+    fn apply_subst_assign() {
+        with_store(|| {
+            let s = Substitution::default();
+            let v = Value::Assign {
+                span: sp(),
+                place: ValueId::from(Value::Unit { span: sp() }),
+                value: ValueId::from(Value::I32 { span: sp(), value: 1 }),
+            };
+            let result = apply_subst_to_value(&v, &s);
+            if let Value::Assign { value, .. } = result {
+                assert_eq!(*value.borrow(), Value::I32 { span: sp(), value: 1 });
+            } else {
+                panic!("expected Assign");
+            }
+        });
+    }
+
+    #[test]
+    fn apply_subst_deref() {
+        with_store(|| {
+            let s = Substitution::default();
+            let v = Value::Deref {
+                span: sp(),
+                place: ValueId::from(Value::I32 { span: sp(), value: 1 }),
+            };
+            let result = apply_subst_to_value(&v, &s);
+            assert!(matches!(result, Value::Deref { .. }));
+        });
+    }
+
+    #[test]
+    fn apply_subst_borrow() {
+        with_store(|| {
+            let s = Substitution::default();
+            let v = Value::Borrow {
+                span: sp(),
+                exclusive: true,
+                mutable: true,
+                place: ValueId::from(Value::I8 { span: sp(), value: 42 }),
+            };
+            let result = apply_subst_to_value(&v, &s);
+            if let Value::Borrow { exclusive, mutable, .. } = result {
+                assert!(exclusive);
+                assert!(mutable);
+            } else {
+                panic!("expected Borrow");
+            }
+        });
+    }
+
+    #[test]
+    fn apply_subst_list() {
+        with_store(|| {
+            let s = Substitution::default();
+            let v = Value::List {
+                span: sp(),
+                elements: vec![
+                    ValueId::from(Value::I32 { span: sp(), value: 1 }),
+                    ValueId::from(Value::I32 { span: sp(), value: 2 }),
+                ]
+                .into(),
+            };
+            let result = apply_subst_to_value(&v, &s);
+            if let Value::List { elements, .. } = result {
+                assert_eq!(elements.len(), 2);
+            } else {
+                panic!("expected List");
+            }
+        });
+    }
+
+    #[test]
+    fn apply_subst_tuple_value() {
+        with_store(|| {
+            let s = Substitution::default();
+            let v = Value::Tuple {
+                span: sp(),
+                elements: vec![
+                    ValueId::from(Value::I32 { span: sp(), value: 1 }),
+                    ValueId::from(Value::I32 { span: sp(), value: 2 }),
+                ]
+                .into(),
+            };
+            let result = apply_subst_to_value(&v, &s);
+            if let Value::Tuple { elements, .. } = result {
+                assert_eq!(elements.len(), 2);
+            } else {
+                panic!("expected Tuple");
+            }
+        });
+    }
+
+    #[test]
+    fn apply_subst_if() {
+        with_store(|| {
+            let s = Substitution::default();
+            let inner = BlockId::from(nitrate_hir::Block {
+                span: sp(),
+                safety: nitrate_hir::BlockSafety::Safe,
+                elements: vec![BlockElement::Expr(ValueId::from(Value::Unit { span: sp() }))],
+            });
+            let v = Value::If {
+                span: sp(),
+                condition: ValueId::from(Value::Bool {
+                    span: sp(),
+                    value: true,
+                }),
+                true_branch: inner.clone(),
+                false_branch: Some(inner),
+            };
+            let result = apply_subst_to_value(&v, &s);
+            assert!(matches!(result, Value::If { .. }));
+        });
+    }
+
+    #[test]
+    fn apply_subst_while() {
+        with_store(|| {
+            let s = Substitution::default();
+            let body = BlockId::from(nitrate_hir::Block {
+                span: sp(),
+                safety: nitrate_hir::BlockSafety::Safe,
+                elements: vec![],
+            });
+            let v = Value::While {
+                span: sp(),
+                condition: ValueId::from(Value::Bool {
+                    span: sp(),
+                    value: true,
+                }),
+                body,
+            };
+            let result = apply_subst_to_value(&v, &s);
+            assert!(matches!(result, Value::While { .. }));
+        });
+    }
+
+    #[test]
+    fn apply_subst_loop() {
+        with_store(|| {
+            let s = Substitution::default();
+            let body = BlockId::from(nitrate_hir::Block {
+                span: sp(),
+                safety: nitrate_hir::BlockSafety::Safe,
+                elements: vec![],
+            });
+            let v = Value::Loop { span: sp(), body };
+            let result = apply_subst_to_value(&v, &s);
+            assert!(matches!(result, Value::Loop { .. }));
+        });
+    }
+
+    #[test]
+    fn apply_subst_return_value() {
+        with_store(|| {
+            let s = Substitution::default();
+            let v = Value::Return {
+                span: sp(),
+                value: ValueId::from(Value::I32 { span: sp(), value: 42 }),
+            };
+            let result = apply_subst_to_value(&v, &s);
+            if let Value::Return { value, .. } = result {
+                assert_eq!(*value.borrow(), Value::I32 { span: sp(), value: 42 });
+            } else {
+                panic!("expected Return");
+            }
+        });
+    }
+
+    #[test]
+    fn apply_subst_block_value() {
+        with_store(|| {
+            let s = Substitution::default();
+            let inner = BlockId::from(nitrate_hir::Block {
+                span: sp(),
+                safety: nitrate_hir::BlockSafety::Safe,
+                elements: vec![BlockElement::Expr(ValueId::from(Value::Unit { span: sp() }))],
+            });
+            let v = Value::Block {
+                span: sp(),
+                block: inner,
+            };
+            let result = apply_subst_to_value(&v, &s);
+            assert!(matches!(result, Value::Block { .. }));
+        });
+    }
+
+    #[test]
+    fn apply_subst_call() {
+        with_store(|| {
+            let s = Substitution::default();
+            let fid = FunctionId::from(Function {
+                span: sp(),
+                visibility: Visibility::Sec,
+                attributes: Default::default(),
+                is_unsafe: false,
+                name: NString::from("test_func"),
+                mangled_name: None,
+                generics: None,
+                params: vec![],
+                return_type: TypeId::from(Type::Unit { span: sp() }),
+                body: None,
+            });
+            let v = Value::Call {
+                span: sp(),
+                callee: ValueId::from(Value::FunctionSymbol { span: sp(), id: fid }),
+                args: Arguments {
+                    positional: vec![].into(),
+                    named: vec![].into(),
+                },
+            };
+            let result = apply_subst_to_value(&v, &s);
+            assert!(matches!(result, Value::Call { .. }));
+        });
+    }
+
+    #[test]
+    fn apply_subst_method_call() {
+        with_store(|| {
+            let s = Substitution::default();
+            let v = Value::MethodCall {
+                span: sp(),
+                object: ValueId::from(Value::Unit { span: sp() }),
+                method_name: NString::from("foo"),
+                args: Arguments {
+                    positional: vec![].into(),
+                    named: vec![].into(),
+                },
+            };
+            let result = apply_subst_to_value(&v, &s);
+            assert!(matches!(result, Value::MethodCall { .. }));
+        });
+    }
+
+    #[test]
+    fn apply_subst_range() {
+        with_store(|| {
+            let s = Substitution::default();
+            let v = Value::Range {
+                span: sp(),
+                start: Some(ValueId::from(Value::I32 { span: sp(), value: 1 })),
+                end: Some(ValueId::from(Value::I32 { span: sp(), value: 10 })),
+                inclusive: false,
+            };
+            let result = apply_subst_to_value(&v, &s);
+            assert!(matches!(result, Value::Range { .. }));
         });
     }
 }

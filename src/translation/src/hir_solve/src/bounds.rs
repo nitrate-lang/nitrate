@@ -863,6 +863,32 @@ mod tests {
         assert_eq!(b.hi, 50);
     }
 
+    #[test]
+    fn mul_bounds_signed() {
+        let b = compute_binary_bounds(&BinaryOp::Mul, Bounds::signed(-10, 10), Bounds::signed(-5, 5)).unwrap();
+        assert_eq!(b.lo, -50);
+        assert_eq!(b.hi, 50);
+    }
+
+    #[test]
+    fn mul_bounds_unsigned_large_min_u128_above_i128max() {
+        // min_u128 > i128::MAX as u128 => min_i128_final = i128::MAX
+        let b = compute_binary_bounds(
+            &BinaryOp::Mul,
+            Bounds::unsigned(i128::MAX as u128 + 1, i128::MAX as u128 + 100),
+            Bounds::unsigned(2, 2),
+        )
+        .unwrap();
+        assert_eq!(b.lo, i128::MAX);
+    }
+
+    #[test]
+    fn mul_bounds_one_unsigned_one_signed() {
+        let b = compute_binary_bounds(&BinaryOp::Mul, Bounds::signed(-5, 5), Bounds::unsigned(0, 10)).unwrap();
+        assert_eq!(b.lo, -50);
+        assert_eq!(b.hi, 50);
+    }
+
     // ── compute_div_bounds ───────────────────────────────────────
 
     #[test]

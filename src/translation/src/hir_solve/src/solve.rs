@@ -2008,7 +2008,10 @@ pub fn resolve_global(
 mod tests {
     use super::*;
     use crate::constraints::TypeConstraint;
-    use nitrate_hir::{BinaryOp, PtrSize, Store, Type, TypeId, UnaryOp, Value, ValueId, using_storage};
+    use nitrate_hir::{
+        BinaryOp, Lifetime, Lit, LiteralId, LocalVariable, LocalVariableId, Parameter, ParameterId, PtrSize, Store,
+        Type, TypeId, UnaryOp, Value, ValueId, using_storage,
+    };
 
     fn sp() -> SrcPos {
         SrcPos::default()
@@ -2313,6 +2316,1249 @@ mod tests {
             s.add_all_elements_to_worklist(&body);
             assert!(s.worklist.contains(&e1));
             assert!(s.worklist.contains(&e2));
+        });
+    }
+
+    // ── End-to-end solver tests through resolve_function ───────
+
+    fn make_function(name: &str, body: Vec<BlockElement>) -> Function {
+        Function {
+            span: sp(),
+            visibility: nitrate_hir::Visibility::Sec,
+            attributes: Default::default(),
+            is_unsafe: false,
+            name: NString::from(name),
+            mangled_name: None,
+            generics: None,
+            params: vec![],
+            return_type: TypeId::from(Type::Unit { span: sp() }),
+            body: Some(body),
+        }
+    }
+
+    #[test]
+    fn resolve_function_empty_body() {
+        let store = Store::new();
+        using_storage(&store, || {
+            let log = CompilerLog::default();
+            let mut tab = new_tab();
+            let mut func = make_function("empty", vec![]);
+            let result = resolve_function(&mut func, &mut tab, &log);
+            assert!(result.is_ok());
+        });
+    }
+
+    #[test]
+    fn resolve_function_unit_body() {
+        let store = Store::new();
+        using_storage(&store, || {
+            let log = CompilerLog::default();
+            let mut tab = new_tab();
+            let unit_v = ValueId::from(Value::Unit { span: sp() });
+            let mut func = make_function("unit_func", vec![BlockElement::Expr(unit_v)]);
+            let result = resolve_function(&mut func, &mut tab, &log);
+            assert!(result.is_ok());
+        });
+    }
+
+    #[test]
+    fn resolve_function_inferred_integer() {
+        let store = Store::new();
+        using_storage(&store, || {
+            let log = CompilerLog::default();
+            let mut tab = new_tab();
+            let inf = ValueId::from(Value::InferredInteger {
+                span: sp(),
+                value: Box::new(42),
+            });
+            let mut func = make_function("inf_int", vec![BlockElement::Expr(inf)]);
+            let result = resolve_function(&mut func, &mut tab, &log);
+            assert!(result.is_ok());
+        });
+    }
+
+    #[test]
+    fn resolve_function_inferred_integer_constrained() {
+        let store = Store::new();
+        using_storage(&store, || {
+            let log = CompilerLog::default();
+            let mut tab = new_tab();
+            let inf = ValueId::from(Value::InferredInteger {
+                span: sp(),
+                value: Box::new(42),
+            });
+            let body = vec![BlockElement::Local(LocalVariableId::from(LocalVariable {
+                span: sp(),
+                kind: nitrate_hir::LocalKind::Let,
+                attributes: Default::default(),
+                is_mutable: false,
+                name: NString::from("x"),
+                ty: TypeId::from(Type::I32 { span: sp() }),
+                initializer: Some(inf),
+            }))];
+            let mut func = make_function("constrained_inf", body);
+            let result = resolve_function(&mut func, &mut tab, &log);
+            assert!(result.is_ok());
+        });
+    }
+
+    #[test]
+    fn resolve_function_inferred_float() {
+        let store = Store::new();
+        using_storage(&store, || {
+            let log = CompilerLog::default();
+            let mut tab = new_tab();
+            let inf = ValueId::from(Value::InferredFloat {
+                span: sp(),
+                value: OrderedFloat(3.14),
+            });
+            let mut func = make_function("inf_float", vec![BlockElement::Expr(inf)]);
+            let result = resolve_function(&mut func, &mut tab, &log);
+            assert!(result.is_ok());
+        });
+    }
+
+    #[test]
+    fn resolve_function_inferred_float_constrained() {
+        let store = Store::new();
+        using_storage(&store, || {
+            let log = CompilerLog::default();
+            let mut tab = new_tab();
+            let inf = ValueId::from(Value::InferredFloat {
+                span: sp(),
+                value: OrderedFloat(3.14),
+            });
+            let body = vec![BlockElement::Local(LocalVariableId::from(LocalVariable {
+                span: sp(),
+                kind: nitrate_hir::LocalKind::Let,
+                attributes: Default::default(),
+                is_mutable: false,
+                name: NString::from("x"),
+                ty: TypeId::from(Type::F64 { span: sp() }),
+                initializer: Some(inf),
+            }))];
+            let mut func = make_function("constrained_flt", body);
+            let result = resolve_function(&mut func, &mut tab, &log);
+            assert!(result.is_ok());
+        });
+    }
+
+    #[test]
+    fn resolve_function_bool() {
+        let store = Store::new();
+        using_storage(&store, || {
+            let log = CompilerLog::default();
+            let mut tab = new_tab();
+            let b = ValueId::from(Value::Bool {
+                span: sp(),
+                value: true,
+            });
+            let mut func = make_function("bool_func", vec![BlockElement::Expr(b)]);
+            let result = resolve_function(&mut func, &mut tab, &log);
+            assert!(result.is_ok());
+        });
+    }
+
+    #[test]
+    fn resolve_function_string_lit() {
+        let store = Store::new();
+        using_storage(&store, || {
+            let log = CompilerLog::default();
+            let mut tab = new_tab();
+            let s = ValueId::from(Value::StringLit {
+                span: sp(),
+                value: "hello".into(),
+            });
+            let mut func = make_function("str_func", vec![BlockElement::Expr(s)]);
+            let result = resolve_function(&mut func, &mut tab, &log);
+            assert!(result.is_ok());
+        });
+    }
+
+    #[test]
+    fn resolve_function_binary_arithmetic() {
+        let store = Store::new();
+        using_storage(&store, || {
+            let log = CompilerLog::default();
+            let mut tab = new_tab();
+            let l = ValueId::from(Value::I32 { span: sp(), value: 10 });
+            let r = ValueId::from(Value::I32 { span: sp(), value: 20 });
+            let b = ValueId::from(Value::Binary {
+                span: sp(),
+                left: l,
+                op: BinaryOp::Add,
+                right: r,
+            });
+            let mut func = make_function("binary_func", vec![BlockElement::Expr(b)]);
+            let result = resolve_function(&mut func, &mut tab, &log);
+            assert!(result.is_ok());
+        });
+    }
+
+    #[test]
+    fn resolve_function_binary_comparison() {
+        let store = Store::new();
+        using_storage(&store, || {
+            let log = CompilerLog::default();
+            let mut tab = new_tab();
+            let l = ValueId::from(Value::I32 { span: sp(), value: 10 });
+            let r = ValueId::from(Value::I32 { span: sp(), value: 20 });
+            let b = ValueId::from(Value::Binary {
+                span: sp(),
+                left: l,
+                op: BinaryOp::Lt,
+                right: r,
+            });
+            let mut func = make_function("cmp_func", vec![BlockElement::Expr(b)]);
+            let result = resolve_function(&mut func, &mut tab, &log);
+            assert!(result.is_ok());
+        });
+    }
+
+    #[test]
+    fn resolve_function_unary() {
+        let store = Store::new();
+        using_storage(&store, || {
+            let log = CompilerLog::default();
+            let mut tab = new_tab();
+            let op = ValueId::from(Value::I32 { span: sp(), value: 5 });
+            let u = ValueId::from(Value::Unary {
+                span: sp(),
+                op: UnaryOp::Sub,
+                operand: op,
+            });
+            let mut func = make_function("unary_func", vec![BlockElement::Expr(u)]);
+            let result = resolve_function(&mut func, &mut tab, &log);
+            assert!(result.is_ok());
+        });
+    }
+
+    #[test]
+    fn resolve_function_if() {
+        let store = Store::new();
+        using_storage(&store, || {
+            let log = CompilerLog::default();
+            let mut tab = new_tab();
+            let cond = ValueId::from(Value::Bool {
+                span: sp(),
+                value: true,
+            });
+            let tb = nitrate_hir::BlockId::from(nitrate_hir::Block {
+                span: sp(),
+                safety: nitrate_hir::BlockSafety::Safe,
+                elements: vec![BlockElement::Expr(ValueId::from(Value::I32 { span: sp(), value: 1 }))],
+            });
+            let fb = nitrate_hir::BlockId::from(nitrate_hir::Block {
+                span: sp(),
+                safety: nitrate_hir::BlockSafety::Safe,
+                elements: vec![BlockElement::Expr(ValueId::from(Value::I32 { span: sp(), value: 2 }))],
+            });
+            let if_v = ValueId::from(Value::If {
+                span: sp(),
+                condition: cond,
+                true_branch: tb,
+                false_branch: Some(fb),
+            });
+            let mut func = make_function("if_func", vec![BlockElement::Expr(if_v)]);
+            let result = resolve_function(&mut func, &mut tab, &log);
+            assert!(result.is_ok());
+        });
+    }
+
+    #[test]
+    fn resolve_function_if_no_else() {
+        let store = Store::new();
+        using_storage(&store, || {
+            let log = CompilerLog::default();
+            let mut tab = new_tab();
+            let cond = ValueId::from(Value::Bool {
+                span: sp(),
+                value: true,
+            });
+            let tb = nitrate_hir::BlockId::from(nitrate_hir::Block {
+                span: sp(),
+                safety: nitrate_hir::BlockSafety::Safe,
+                elements: vec![BlockElement::Expr(ValueId::from(Value::Unit { span: sp() }))],
+            });
+            let if_v = ValueId::from(Value::If {
+                span: sp(),
+                condition: cond,
+                true_branch: tb,
+                false_branch: None,
+            });
+            let mut func = make_function("if_no_else", vec![BlockElement::Expr(if_v)]);
+            let result = resolve_function(&mut func, &mut tab, &log);
+            assert!(result.is_ok());
+        });
+    }
+
+    #[test]
+    fn resolve_function_while_loop() {
+        let store = Store::new();
+        using_storage(&store, || {
+            let log = CompilerLog::default();
+            let mut tab = new_tab();
+            let cond = ValueId::from(Value::Bool {
+                span: sp(),
+                value: true,
+            });
+            let body = nitrate_hir::BlockId::from(nitrate_hir::Block {
+                span: sp(),
+                safety: nitrate_hir::BlockSafety::Safe,
+                elements: vec![],
+            });
+            let w = ValueId::from(Value::While {
+                span: sp(),
+                condition: cond,
+                body,
+            });
+            let mut func = make_function("while_func", vec![BlockElement::Expr(w)]);
+            let result = resolve_function(&mut func, &mut tab, &log);
+            assert!(result.is_ok());
+        });
+    }
+
+    #[test]
+    fn resolve_function_loop() {
+        let store = Store::new();
+        using_storage(&store, || {
+            let log = CompilerLog::default();
+            let mut tab = new_tab();
+            let body = nitrate_hir::BlockId::from(nitrate_hir::Block {
+                span: sp(),
+                safety: nitrate_hir::BlockSafety::Safe,
+                elements: vec![],
+            });
+            let lp = ValueId::from(Value::Loop { span: sp(), body });
+            let mut func = make_function("loop_func", vec![BlockElement::Expr(lp)]);
+            let result = resolve_function(&mut func, &mut tab, &log);
+            assert!(result.is_ok());
+        });
+    }
+
+    #[test]
+    fn resolve_function_return_value() {
+        let store = Store::new();
+        using_storage(&store, || {
+            let log = CompilerLog::default();
+            let mut tab = new_tab();
+            let ret = ValueId::from(Value::Return {
+                span: sp(),
+                value: ValueId::from(Value::Unit { span: sp() }),
+            });
+            let mut func = make_function("return_func", vec![BlockElement::Expr(ret)]);
+            let result = resolve_function(&mut func, &mut tab, &log);
+            assert!(result.is_ok());
+        });
+    }
+
+    #[test]
+    fn resolve_function_block_value() {
+        let store = Store::new();
+        using_storage(&store, || {
+            let log = CompilerLog::default();
+            let mut tab = new_tab();
+            let inner = nitrate_hir::BlockId::from(nitrate_hir::Block {
+                span: sp(),
+                safety: nitrate_hir::BlockSafety::Safe,
+                elements: vec![BlockElement::Expr(ValueId::from(Value::Unit { span: sp() }))],
+            });
+            let bv = ValueId::from(Value::Block {
+                span: sp(),
+                block: inner,
+            });
+            let mut func = make_function("block_func", vec![BlockElement::Expr(bv)]);
+            let result = resolve_function(&mut func, &mut tab, &log);
+            assert!(result.is_ok());
+        });
+    }
+
+    #[test]
+    fn resolve_function_break_continue() {
+        let store = Store::new();
+        using_storage(&store, || {
+            let log = CompilerLog::default();
+            let mut tab = new_tab();
+            let brk = ValueId::from(Value::Break {
+                span: sp(),
+                label: None,
+            });
+            let cont = ValueId::from(Value::Continue {
+                span: sp(),
+                label: None,
+            });
+            let mut func = make_function("bc_func", vec![BlockElement::Expr(brk), BlockElement::Expr(cont)]);
+            let result = resolve_function(&mut func, &mut tab, &log);
+            assert!(result.is_ok());
+        });
+    }
+
+    #[test]
+    fn resolve_function_range_value() {
+        let store = Store::new();
+        using_storage(&store, || {
+            let log = CompilerLog::default();
+            let mut tab = new_tab();
+            let r = ValueId::from(Value::Range {
+                span: sp(),
+                start: Some(ValueId::from(Value::I32 { span: sp(), value: 1 })),
+                end: Some(ValueId::from(Value::I32 { span: sp(), value: 10 })),
+                inclusive: false,
+            });
+            let mut func = make_function("range_func", vec![BlockElement::Expr(r)]);
+            let result = resolve_function(&mut func, &mut tab, &log);
+            assert!(result.is_ok());
+        });
+    }
+
+    #[test]
+    fn resolve_function_local_with_init() {
+        let store = Store::new();
+        using_storage(&store, || {
+            let log = CompilerLog::default();
+            let mut tab = new_tab();
+            let init = ValueId::from(Value::I32 { span: sp(), value: 42 });
+            let body = vec![BlockElement::Local(LocalVariableId::from(LocalVariable {
+                span: sp(),
+                kind: nitrate_hir::LocalKind::Let,
+                attributes: Default::default(),
+                is_mutable: false,
+                name: NString::from("x"),
+                ty: TypeId::from(Type::Inferred {
+                    span: sp(),
+                    id: std::num::NonZeroU32::new(1).unwrap(),
+                    name: None,
+                }),
+                initializer: Some(init),
+            }))];
+            let mut func = make_function("local_func", body);
+            let result = resolve_function(&mut func, &mut tab, &log);
+            assert!(result.is_ok());
+        });
+    }
+
+    #[test]
+    fn resolve_function_list() {
+        let store = Store::new();
+        using_storage(&store, || {
+            let log = CompilerLog::default();
+            let mut tab = new_tab();
+            let lst = ValueId::from(Value::List {
+                span: sp(),
+                elements: vec![
+                    ValueId::from(Value::I32 { span: sp(), value: 1 }),
+                    ValueId::from(Value::I32 { span: sp(), value: 2 }),
+                ]
+                .into(),
+            });
+            let mut func = make_function("list_func", vec![BlockElement::Expr(lst)]);
+            let result = resolve_function(&mut func, &mut tab, &log);
+            assert!(result.is_ok());
+        });
+    }
+
+    #[test]
+    fn resolve_function_tuple() {
+        let store = Store::new();
+        using_storage(&store, || {
+            let log = CompilerLog::default();
+            let mut tab = new_tab();
+            let tup = ValueId::from(Value::Tuple {
+                span: sp(),
+                elements: vec![
+                    ValueId::from(Value::I32 { span: sp(), value: 1 }),
+                    ValueId::from(Value::F64 {
+                        span: sp(),
+                        value: OrderedFloat(3.14),
+                    }),
+                ]
+                .into(),
+            });
+            let mut func = make_function("tuple_func", vec![BlockElement::Expr(tup)]);
+            let result = resolve_function(&mut func, &mut tab, &log);
+            assert!(result.is_ok());
+        });
+    }
+
+    #[test]
+    fn resolve_function_cast() {
+        let store = Store::new();
+        using_storage(&store, || {
+            let log = CompilerLog::default();
+            let mut tab = new_tab();
+            let src = ValueId::from(Value::I32 { span: sp(), value: 42 });
+            let cast = ValueId::from(Value::Cast {
+                span: sp(),
+                value: src,
+                target_type: TypeId::from(Type::I64 { span: sp() }),
+            });
+            let mut func = make_function("cast_func", vec![BlockElement::Expr(cast)]);
+            let result = resolve_function(&mut func, &mut tab, &log);
+            assert!(result.is_ok());
+        });
+    }
+
+    #[test]
+    fn resolve_function_borrow() {
+        let store = Store::new();
+        using_storage(&store, || {
+            let log = CompilerLog::default();
+            let mut tab = new_tab();
+            let place = ValueId::from(Value::I32 { span: sp(), value: 42 });
+            let borrow = ValueId::from(Value::Borrow {
+                span: sp(),
+                exclusive: false,
+                mutable: false,
+                place,
+            });
+            let mut func = make_function("borrow_func", vec![BlockElement::Expr(borrow)]);
+            let result = resolve_function(&mut func, &mut tab, &log);
+            assert!(result.is_ok());
+        });
+    }
+
+    #[test]
+    fn resolve_function_field_access() {
+        let store = Store::new();
+        using_storage(&store, || {
+            let log = CompilerLog::default();
+            let mut tab = new_tab();
+            let expr = ValueId::from(Value::I32 { span: sp(), value: 100 });
+            let fa = ValueId::from(Value::FieldAccess {
+                span: sp(),
+                expr,
+                field_name: NString::from("x"),
+            });
+            let mut func = make_function("field_func", vec![BlockElement::Expr(fa)]);
+            let result = resolve_function(&mut func, &mut tab, &log);
+            assert!(result.is_ok());
+        });
+    }
+
+    #[test]
+    fn resolve_function_deref() {
+        let store = Store::new();
+        using_storage(&store, || {
+            let log = CompilerLog::default();
+            let mut tab = new_tab();
+            let place = ValueId::from(Value::I32 { span: sp(), value: 42 });
+            let deref = ValueId::from(Value::Deref { span: sp(), place });
+            let mut func = make_function("deref_func", vec![BlockElement::Expr(deref)]);
+            let result = resolve_function(&mut func, &mut tab, &log);
+            assert!(result.is_ok());
+        });
+    }
+
+    #[test]
+    fn resolve_function_assign() {
+        let store = Store::new();
+        using_storage(&store, || {
+            let log = CompilerLog::default();
+            let mut tab = new_tab();
+            let place = ValueId::from(Value::LocalVariableSymbol {
+                span: sp(),
+                id: LocalVariableId::from(LocalVariable {
+                    span: sp(),
+                    kind: nitrate_hir::LocalKind::Var,
+                    attributes: Default::default(),
+                    is_mutable: true,
+                    name: NString::from("x"),
+                    ty: TypeId::from(Type::I32 { span: sp() }),
+                    initializer: None,
+                }),
+            });
+            let val = ValueId::from(Value::I32 { span: sp(), value: 42 });
+            let assign = ValueId::from(Value::Assign {
+                span: sp(),
+                place,
+                value: val,
+            });
+            let mut func = make_function("assign_func", vec![BlockElement::Expr(assign)]);
+            let result = resolve_function(&mut func, &mut tab, &log);
+            assert!(result.is_ok());
+        });
+    }
+
+    #[test]
+    fn resolve_function_index_access() {
+        let store = Store::new();
+        using_storage(&store, || {
+            let log = CompilerLog::default();
+            let mut tab = new_tab();
+            let arr_type = Type::Array {
+                span: sp(),
+                element_type: TypeId::from(Type::I32 { span: sp() }),
+                len: 10,
+            };
+            // Use a List which can be constrained to be an Array
+            let coll = ValueId::from(Value::List {
+                span: sp(),
+                elements: vec![ValueId::from(Value::I32 { span: sp(), value: 1 })].into(),
+            });
+            let idx = ValueId::from(Value::USize {
+                span: sp(),
+                bits: 64,
+                value: 0,
+            });
+            let ia = ValueId::from(Value::IndexAccess {
+                span: sp(),
+                collection: coll,
+                index: idx,
+            });
+            let mut tab = new_tab();
+            let mut func = make_function("index_func", vec![BlockElement::Expr(ia)]);
+            let result = resolve_function(&mut func, &mut tab, &log);
+            assert!(result.is_ok());
+        });
+    }
+
+    #[test]
+    fn resolve_function_inferred_integer_u128_overflow() {
+        let store = Store::new();
+        using_storage(&store, || {
+            let log = CompilerLog::default();
+            let mut tab = new_tab();
+            let inf = ValueId::from(Value::InferredInteger {
+                span: sp(),
+                value: Box::new(u128::MAX),
+            });
+            let mut func = make_function("big_inf", vec![BlockElement::Expr(inf)]);
+            let result = resolve_function(&mut func, &mut tab, &log);
+            assert!(result.is_ok());
+        });
+    }
+
+    #[test]
+    fn resolve_function_call() {
+        let store = Store::new();
+        using_storage(&store, || {
+            let log = CompilerLog::default();
+            let mut tab = new_tab();
+            let callee_func = Function {
+                span: sp(),
+                visibility: nitrate_hir::Visibility::Sec,
+                attributes: Default::default(),
+                is_unsafe: false,
+                name: NString::from("callee"),
+                mangled_name: None,
+                generics: None,
+                params: vec![],
+                return_type: TypeId::from(Type::Unit { span: sp() }),
+                body: None,
+            };
+            let callee_id = FunctionId::from(callee_func);
+            tab.add_function(callee_id.clone());
+            let call = ValueId::from(Value::Call {
+                span: sp(),
+                callee: ValueId::from(Value::FunctionSymbol {
+                    span: sp(),
+                    id: callee_id,
+                }),
+                args: Arguments {
+                    positional: vec![].into(),
+                    named: vec![].into(),
+                },
+            });
+            let mut func = make_function("call_func", vec![BlockElement::Expr(call)]);
+            let result = resolve_function(&mut func, &mut tab, &log);
+            assert!(result.is_ok());
+        });
+    }
+
+    #[test]
+    fn resolve_function_call_with_args() {
+        let store = Store::new();
+        using_storage(&store, || {
+            let log = CompilerLog::default();
+            let mut tab = new_tab();
+            let param = ParameterId::from(Parameter {
+                span: sp(),
+                attributes: Default::default(),
+                is_mutable: false,
+                name: NString::from("x"),
+                ty: TypeId::from(Type::I32 { span: sp() }),
+                default_value: None,
+            });
+            let callee_func = Function {
+                span: sp(),
+                visibility: nitrate_hir::Visibility::Sec,
+                attributes: Default::default(),
+                is_unsafe: false,
+                name: NString::from("callee2"),
+                mangled_name: None,
+                generics: None,
+                params: vec![param],
+                return_type: TypeId::from(Type::Unit { span: sp() }),
+                body: None,
+            };
+            let callee_id = FunctionId::from(callee_func);
+            tab.add_function(callee_id.clone());
+            let call = ValueId::from(Value::Call {
+                span: sp(),
+                callee: ValueId::from(Value::FunctionSymbol {
+                    span: sp(),
+                    id: callee_id,
+                }),
+                args: Arguments {
+                    positional: vec![ValueId::from(Value::I32 { span: sp(), value: 42 })].into(),
+                    named: vec![].into(),
+                },
+            });
+            let mut func = make_function("call_args_func", vec![BlockElement::Expr(call)]);
+            let result = resolve_function(&mut func, &mut tab, &log);
+            assert!(result.is_ok());
+        });
+    }
+
+    #[test]
+    fn resolve_function_call_with_named_args() {
+        let store = Store::new();
+        using_storage(&store, || {
+            let log = CompilerLog::default();
+            let mut tab = new_tab();
+            let param = ParameterId::from(Parameter {
+                span: sp(),
+                attributes: Default::default(),
+                is_mutable: false,
+                name: NString::from("x"),
+                ty: TypeId::from(Type::I32 { span: sp() }),
+                default_value: None,
+            });
+            let callee_func = Function {
+                span: sp(),
+                visibility: nitrate_hir::Visibility::Sec,
+                attributes: Default::default(),
+                is_unsafe: false,
+                name: NString::from("callee3"),
+                mangled_name: None,
+                generics: None,
+                params: vec![param],
+                return_type: TypeId::from(Type::Unit { span: sp() }),
+                body: None,
+            };
+            let callee_id = FunctionId::from(callee_func);
+            tab.add_function(callee_id.clone());
+            let call = ValueId::from(Value::Call {
+                span: sp(),
+                callee: ValueId::from(Value::FunctionSymbol {
+                    span: sp(),
+                    id: callee_id,
+                }),
+                args: Arguments {
+                    positional: vec![].into(),
+                    named: vec![(NString::from("x"), ValueId::from(Value::I32 { span: sp(), value: 42 }))].into(),
+                },
+            });
+            let mut func = make_function("named_args_func", vec![BlockElement::Expr(call)]);
+            let result = resolve_function(&mut func, &mut tab, &log);
+            assert!(result.is_ok());
+        });
+    }
+
+    #[test]
+    fn resolve_function_method_call() {
+        let store = Store::new();
+        using_storage(&store, || {
+            let log = CompilerLog::default();
+            let mut tab = new_tab();
+            let method_func = Function {
+                span: sp(),
+                visibility: nitrate_hir::Visibility::Pub,
+                attributes: Default::default(),
+                is_unsafe: false,
+                name: NString::from("method"),
+                mangled_name: None,
+                generics: None,
+                params: vec![],
+                return_type: TypeId::from(Type::Unit { span: sp() }),
+                body: None,
+            };
+            let method_id = FunctionId::from(method_func);
+            let receiver_type = TypeId::from(Type::I32 { span: sp() });
+            tab.add_method(receiver_type, NString::from("method"), method_id.clone());
+            let mc = ValueId::from(Value::MethodCall {
+                span: sp(),
+                object: ValueId::from(Value::I32 { span: sp(), value: 1 }),
+                method_name: NString::from("method"),
+                args: Arguments {
+                    positional: vec![].into(),
+                    named: vec![].into(),
+                },
+            });
+            let mut func = make_function("method_func", vec![BlockElement::Expr(mc)]);
+            let result = resolve_function(&mut func, &mut tab, &log);
+            assert!(result.is_ok());
+        });
+    }
+
+    #[test]
+    fn resolve_function_method_not_found_error() {
+        let store = Store::new();
+        using_storage(&store, || {
+            let log = CompilerLog::default();
+            let mut tab = new_tab();
+            let mc = ValueId::from(Value::MethodCall {
+                span: sp(),
+                object: ValueId::from(Value::I32 { span: sp(), value: 1 }),
+                method_name: NString::from("nonexistent"),
+                args: Arguments {
+                    positional: vec![].into(),
+                    named: vec![].into(),
+                },
+            });
+            let mut func = make_function("bad_method", vec![BlockElement::Expr(mc)]);
+            let result = resolve_function(&mut func, &mut tab, &log);
+            assert!(result.is_err()); // TypeErrors
+        });
+    }
+
+    // ── Solver::find_common_integer_type additional coverage ─────
+
+    #[test]
+    fn find_common_prefers_unsigned_when_same_width() {
+        let store = Store::new();
+        using_storage(&store, || {
+            let types = [
+                TypeId::from(Type::U32 { span: sp() }),
+                TypeId::from(Type::I32 { span: sp() }),
+            ];
+            let result = Solver::find_common_integer_type(&types, 100);
+            assert_eq!(result, Some(TypeId::from(Type::I32 { span: sp() })));
+        });
+    }
+
+    #[test]
+    fn find_common_value_above_i128_max() {
+        let store = Store::new();
+        using_storage(&store, || {
+            let types = [TypeId::from(Type::U128 { span: sp() })];
+            let result = Solver::find_common_integer_type(&types, u128::MAX);
+            assert_eq!(result, Some(TypeId::from(Type::U128 { span: sp() })));
+        });
+    }
+
+    #[test]
+    fn find_common_with_refinement_type() {
+        let store = Store::new();
+        using_storage(&store, || {
+            let refine = Type::Refine {
+                span: sp(),
+                base: TypeId::from(Type::I32 { span: sp() }),
+                min: LiteralId::from(Lit::I8(0)),
+                max: LiteralId::from(Lit::I8(100)),
+            };
+            let types = [TypeId::from(refine)];
+            let result = Solver::find_common_integer_type(&types, 50);
+            assert!(result.is_some());
+        });
+    }
+
+    #[test]
+    fn find_common_signed_i8_fits() {
+        let store = Store::new();
+        using_storage(&store, || {
+            let types = [TypeId::from(Type::I8 { span: sp() })];
+            let result = Solver::find_common_integer_type(&types, 50);
+            assert_eq!(result, Some(TypeId::from(Type::I8 { span: sp() })));
+        });
+    }
+
+    #[test]
+    fn find_common_mixed_refinement_and_unsigned() {
+        let store = Store::new();
+        using_storage(&store, || {
+            let refine = Type::Refine {
+                span: sp(),
+                base: TypeId::from(Type::I8 { span: sp() }),
+                min: LiteralId::from(Lit::I8(-10)),
+                max: LiteralId::from(Lit::I8(20)),
+            };
+            let types = [TypeId::from(refine), TypeId::from(Type::U16 { span: sp() })];
+            let result = Solver::find_common_integer_type(&types, 10);
+            assert_eq!(result, Some(TypeId::from(Type::I8 { span: sp() })));
+        });
+    }
+
+    // ── get_effective_bounds_impl coverage ────────────────────────
+
+    #[test]
+    fn get_effective_bounds_local_variable_symbol() {
+        let store = Store::new();
+        using_storage(&store, || {
+            let mut tab = new_tab();
+            let s = Solver::new(&mut tab);
+            let lv = LocalVariable {
+                span: sp(),
+                kind: nitrate_hir::LocalKind::Let,
+                attributes: Default::default(),
+                is_mutable: false,
+                name: NString::from("x"),
+                ty: TypeId::from(Type::I32 { span: sp() }),
+                initializer: None,
+            };
+            let lid = LocalVariableId::from(lv);
+            let vid = ValueId::from(Value::LocalVariableSymbol { span: sp(), id: lid });
+            let bounds = get_effective_bounds_impl(&s, &vid);
+            assert!(bounds.is_some());
+        });
+    }
+
+    #[test]
+    fn get_effective_bounds_parameter_symbol() {
+        let store = Store::new();
+        using_storage(&store, || {
+            let mut tab = new_tab();
+            let s = Solver::new(&mut tab);
+            let param = Parameter {
+                span: sp(),
+                attributes: Default::default(),
+                is_mutable: false,
+                name: NString::from("p"),
+                ty: TypeId::from(Type::U8 { span: sp() }),
+                default_value: None,
+            };
+            let pid = ParameterId::from(param);
+            let vid = ValueId::from(Value::ParameterSymbol { span: sp(), id: pid });
+            let bounds = get_effective_bounds_impl(&s, &vid);
+            assert!(bounds.is_some());
+        });
+    }
+
+    #[test]
+    fn get_effective_bounds_inferred_integer() {
+        let store = Store::new();
+        using_storage(&store, || {
+            let mut tab = new_tab();
+            let s = Solver::new(&mut tab);
+            let vid = ValueId::from(Value::InferredInteger {
+                span: sp(),
+                value: Box::new(50),
+            });
+            let bounds = get_effective_bounds_impl(&s, &vid);
+            assert!(bounds.is_some());
+        });
+    }
+
+    #[test]
+    fn get_effective_bounds_i8_value() {
+        let store = Store::new();
+        using_storage(&store, || {
+            let mut tab = new_tab();
+            let s = Solver::new(&mut tab);
+            let vid = ValueId::from(Value::I8 { span: sp(), value: 10 });
+            let bounds = get_effective_bounds_impl(&s, &vid);
+            assert!(bounds.is_some());
+        });
+    }
+
+    #[test]
+    fn get_effective_bounds_u128_value() {
+        let store = Store::new();
+        using_storage(&store, || {
+            let mut tab = new_tab();
+            let s = Solver::new(&mut tab);
+            let vid = ValueId::from(Value::U128 {
+                span: sp(),
+                value: Box::new(100),
+            });
+            let bounds = get_effective_bounds_impl(&s, &vid);
+            assert!(bounds.is_some());
+        });
+    }
+
+    #[test]
+    fn get_effective_bounds_constrained() {
+        let store = Store::new();
+        using_storage(&store, || {
+            let mut tab = new_tab();
+            let mut s = Solver::new(&mut tab);
+            let vid = ValueId::from(Value::I32 { span: sp(), value: 10 });
+            s.add_constraint(&vid, TypeConstraint::Equal(TypeId::from(Type::U8 { span: sp() })));
+            let bounds = s.get_effective_bounds(&vid);
+            assert!(bounds.is_some());
+        });
+    }
+
+    #[test]
+    fn get_effective_bounds_non_numeric_returns_none() {
+        let store = Store::new();
+        using_storage(&store, || {
+            let mut tab = new_tab();
+            let s = Solver::new(&mut tab);
+            let vid = ValueId::from(Value::Unit { span: sp() });
+            let bounds = get_effective_bounds_impl(&s, &vid);
+            assert_eq!(bounds, None);
+        });
+    }
+
+    // ── resolve_type_impl coverage ────────────────────────────────
+
+    #[test]
+    fn resolve_type_impl_unresolved_array() {
+        let store = Store::new();
+        using_storage(&store, || {
+            let log = CompilerLog::default();
+            let mut tab = new_tab();
+            let s = Solver::new(&mut tab);
+            let len_val = ValueId::from(Value::I32 { span: sp(), value: 5 });
+            let ut = Type::UnresolvedArray {
+                span: sp(),
+                element_type: TypeId::from(Type::I32 { span: sp() }),
+                len: len_val,
+            };
+            let tid = TypeId::from(ut);
+            let result = resolve_type_impl(&s, &tid, &log);
+            // The evaluator can evaluate a literal I32 → length 5
+            if let Type::Array { len, .. } = &*result {
+                assert_eq!(*len, 5);
+            }
+        });
+    }
+
+    #[test]
+    fn resolve_type_impl_unresolved_refine() {
+        let store = Store::new();
+        using_storage(&store, || {
+            let log = CompilerLog::default();
+            let mut tab = new_tab();
+            let s = Solver::new(&mut tab);
+            let min_val = ValueId::from(Value::I8 { span: sp(), value: 10 });
+            let max_val = ValueId::from(Value::I8 { span: sp(), value: 20 });
+            let ut = Type::UnresolvedRefine {
+                span: sp(),
+                base: TypeId::from(Type::I32 { span: sp() }),
+                min: min_val,
+                max: max_val,
+            };
+            let tid = TypeId::from(ut);
+            let result = resolve_type_impl(&s, &tid, &log);
+            if let Type::Refine { min, max, .. } = &*result {
+                assert!(!matches!(&**min, Lit::Unit));
+                assert!(!matches!(&**max, Lit::Unit));
+            }
+        });
+    }
+
+    #[test]
+    fn resolve_type_impl_array_nested() {
+        let store = Store::new();
+        using_storage(&store, || {
+            let log = CompilerLog::default();
+            let mut tab = new_tab();
+            let s = Solver::new(&mut tab);
+            let at = Type::Array {
+                span: sp(),
+                element_type: TypeId::from(Type::I32 { span: sp() }),
+                len: 3,
+            };
+            let tid = TypeId::from(at);
+            let result = resolve_type_impl(&s, &tid, &log);
+            assert!(matches!(&*result, Type::Array { .. }));
+        });
+    }
+
+    #[test]
+    fn resolve_type_impl_parameterized() {
+        let store = Store::new();
+        using_storage(&store, || {
+            let log = CompilerLog::default();
+            let mut tab = new_tab();
+            let s = Solver::new(&mut tab);
+            let pt = Type::Parameterized {
+                span: sp(),
+                base: TypeId::from(Type::I32 { span: sp() }),
+                args: Arguments {
+                    positional: vec![TypeId::from(Type::I8 { span: sp() })].into(),
+                    named: vec![].into(),
+                },
+            };
+            let tid = TypeId::from(pt);
+            let result = resolve_type_impl(&s, &tid, &log);
+            assert!(matches!(&*result, Type::Parameterized { .. }));
+        });
+    }
+
+    #[test]
+    fn resolve_type_impl_tuple() {
+        let store = Store::new();
+        using_storage(&store, || {
+            let log = CompilerLog::default();
+            let mut tab = new_tab();
+            let s = Solver::new(&mut tab);
+            let tt = Type::Tuple {
+                span: sp(),
+                element_types: vec![
+                    TypeId::from(Type::I32 { span: sp() }),
+                    TypeId::from(Type::I8 { span: sp() }),
+                ]
+                .into(),
+            };
+            let tid = TypeId::from(tt);
+            let result = resolve_type_impl(&s, &tid, &log);
+            assert!(matches!(&*result, Type::Tuple { .. }));
+        });
+    }
+
+    #[test]
+    fn resolve_type_impl_reference() {
+        let store = Store::new();
+        using_storage(&store, || {
+            let log = CompilerLog::default();
+            let mut tab = new_tab();
+            let s = Solver::new(&mut tab);
+            let rt = Type::Reference {
+                span: sp(),
+                lifetime: Lifetime::Static,
+                exclusive: false,
+                mutable: false,
+                to: TypeId::from(Type::I32 { span: sp() }),
+            };
+            let tid = TypeId::from(rt);
+            let result = resolve_type_impl(&s, &tid, &log);
+            assert!(matches!(&*result, Type::Reference { .. }));
+        });
+    }
+
+    #[test]
+    fn resolve_type_impl_pointer() {
+        let store = Store::new();
+        using_storage(&store, || {
+            let log = CompilerLog::default();
+            let mut tab = new_tab();
+            let s = Solver::new(&mut tab);
+            let pt = Type::Pointer {
+                span: sp(),
+                lifetime: Lifetime::Static,
+                exclusive: false,
+                mutable: false,
+                to: TypeId::from(Type::I32 { span: sp() }),
+            };
+            let tid = TypeId::from(pt);
+            let result = resolve_type_impl(&s, &tid, &log);
+            assert!(matches!(&*result, Type::Pointer { .. }));
+        });
+    }
+
+    #[test]
+    fn resolve_type_impl_slice_ref() {
+        let store = Store::new();
+        using_storage(&store, || {
+            let log = CompilerLog::default();
+            let mut tab = new_tab();
+            let s = Solver::new(&mut tab);
+            let st = Type::SliceRef {
+                span: sp(),
+                lifetime: Lifetime::Static,
+                exclusive: false,
+                mutable: false,
+                element_type: TypeId::from(Type::I32 { span: sp() }),
+            };
+            let tid = TypeId::from(st);
+            let result = resolve_type_impl(&s, &tid, &log);
+            assert!(matches!(&*result, Type::SliceRef { .. }));
+        });
+    }
+
+    #[test]
+    fn resolve_type_impl_slice_ptr() {
+        let store = Store::new();
+        using_storage(&store, || {
+            let log = CompilerLog::default();
+            let mut tab = new_tab();
+            let s = Solver::new(&mut tab);
+            let st = Type::SlicePtr {
+                span: sp(),
+                lifetime: Lifetime::Static,
+                exclusive: false,
+                mutable: false,
+                element_type: TypeId::from(Type::I32 { span: sp() }),
+            };
+            let tid = TypeId::from(st);
+            let result = resolve_type_impl(&s, &tid, &log);
+            assert!(matches!(&*result, Type::SlicePtr { .. }));
+        });
+    }
+
+    #[test]
+    fn resolve_type_impl_function_type() {
+        let store = Store::new();
+        using_storage(&store, || {
+            let log = CompilerLog::default();
+            let mut tab = new_tab();
+            let s = Solver::new(&mut tab);
+            let ft = Type::Function {
+                span: sp(),
+                function_type: Box::new(nitrate_hir::FunctionType {
+                    attributes: Default::default(),
+                    params: vec![(NString::from("x"), TypeId::from(Type::I32 { span: sp() }))].into(),
+                    return_type: TypeId::from(Type::Bool { span: sp() }),
+                }),
+            };
+            let tid = TypeId::from(ft);
+            let result = resolve_type_impl(&s, &tid, &log);
+            assert!(matches!(&*result, Type::Function { .. }));
+        });
+    }
+
+    #[test]
+    fn resolve_type_impl_non_resolvable_passthrough() {
+        let store = Store::new();
+        using_storage(&store, || {
+            let log = CompilerLog::default();
+            let mut tab = new_tab();
+            let s = Solver::new(&mut tab);
+            let bt = Type::Bool { span: sp() };
+            let tid = TypeId::from(bt);
+            let result = resolve_type_impl(&s, &tid, &log);
+            assert_eq!(result.as_usize(), tid.as_usize());
+        });
+    }
+
+    // ── resolve_global ────────────────────────────────────────────
+
+    #[test]
+    fn resolve_global_with_initializer() {
+        let store = Store::new();
+        using_storage(&store, || {
+            let log = CompilerLog::default();
+            let mut tab = new_tab();
+            let mut g = GlobalVariable {
+                span: sp(),
+                visibility: nitrate_hir::Visibility::Sec,
+                attributes: Default::default(),
+                is_mutable: false,
+                name: NString::from("GLOBAL"),
+                mangled_name: None,
+                ty: TypeId::from(Type::I32 { span: sp() }),
+                initializer: ValueId::from(Value::I32 { span: sp(), value: 42 }),
+            };
+            let result = resolve_global(&mut g, &mut tab, &log);
+            assert!(result.is_ok());
+        });
+    }
+
+    #[test]
+    fn resolve_global_with_inferred_type() {
+        let store = Store::new();
+        using_storage(&store, || {
+            let log = CompilerLog::default();
+            let mut tab = new_tab();
+            let mut g = GlobalVariable {
+                span: sp(),
+                visibility: nitrate_hir::Visibility::Sec,
+                attributes: Default::default(),
+                is_mutable: false,
+                name: NString::from("INFERRED_GLOBAL"),
+                mangled_name: None,
+                ty: TypeId::from(Type::Inferred {
+                    span: sp(),
+                    id: std::num::NonZeroU32::new(1).unwrap(),
+                    name: None,
+                }),
+                initializer: ValueId::from(Value::I32 { span: sp(), value: 42 }),
+            };
+            let result = resolve_global(&mut g, &mut tab, &log);
+            assert!(result.is_ok());
         });
     }
 }
