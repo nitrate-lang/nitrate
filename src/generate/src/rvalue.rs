@@ -4,6 +4,7 @@ use std::{todo, unreachable};
 
 impl Gen {
     fn select_rvalue_kind(&mut self, ty: &ast::Type) -> ast::RValueKind {
+        // TODO: select a random rvalue kind compatible with the given type
         todo!()
     }
 
@@ -43,118 +44,147 @@ impl Gen {
     }
 
     fn gen_rvalue_parentheses(&mut self, ty: &ast::Type) -> ast::Expr {
+        // TODO: generate a parenthesized expression
         todo!()
     }
 
     fn gen_rvalue_boolean(&mut self, ty: &ast::Type) -> ast::Expr {
+        // TODO: generate a boolean literal expression
         todo!()
     }
 
     fn gen_rvalue_integer(&mut self, ty: &ast::Type) -> ast::Expr {
+        // TODO: generate an integer literal expression matching the given type
         todo!()
     }
 
     fn gen_rvalue_float(&mut self, ty: &ast::Type) -> ast::Expr {
+        // TODO: generate a floating-point literal expression
         todo!()
     }
 
     fn gen_rvalue_string(&mut self, ty: &ast::Type) -> ast::Expr {
+        // TODO: generate a string literal expression
         todo!()
     }
 
     fn gen_rvalue_bstring(&mut self, ty: &ast::Type) -> ast::Expr {
+        // TODO: generate a byte string literal expression
         todo!()
     }
 
     fn gen_rvalue_type_info(&mut self, ty: &ast::Type) -> ast::Expr {
+        // TODO: generate a type info expression (compile-time type reflection)
         todo!()
     }
 
     fn gen_rvalue_list(&mut self, ty: &ast::Type) -> ast::Expr {
+        // TODO: generate a list literal expression with random elements
         todo!()
     }
 
     fn gen_rvalue_tuple(&mut self, ty: &ast::Type) -> ast::Expr {
+        // TODO: generate a tuple literal expression with random fields
         todo!()
     }
 
     fn gen_rvalue_struct_init(&mut self, ty: &ast::Type) -> ast::Expr {
+        // TODO: generate a struct initialization expression
         todo!()
     }
 
     fn gen_rvalue_unary_expr(&mut self, ty: &ast::Type) -> ast::Expr {
+        // TODO: generate a unary operator expression (negation, dereference, etc.)
         todo!()
     }
 
     fn gen_rvalue_bin_expr(&mut self, ty: &ast::Type) -> ast::Expr {
+        // TODO: generate a binary operator expression (arithmetic, comparison, logical)
         todo!()
     }
 
     fn gen_rvalue_range(&mut self, ty: &ast::Type) -> ast::Expr {
+        // TODO: generate a range expression (e.g., start..end)
         todo!()
     }
 
     fn gen_rvalue_cast(&mut self, ty: &ast::Type) -> ast::Expr {
+        // TODO: generate a type cast expression
         todo!()
     }
 
     fn gen_rvalue_block(&mut self, ty: &ast::Type) -> ast::Expr {
+        // TODO: generate a block expression with multiple statements
         todo!()
     }
 
     fn gen_rvalue_closure(&mut self, ty: &ast::Type) -> ast::Expr {
+        // TODO: generate a closure/lambda expression
         todo!()
     }
 
     fn gen_rvalue_path(&mut self, ty: &ast::Type) -> ast::Expr {
+        // TODO: generate a path expression (variable reference, function call target)
         todo!()
     }
 
     fn gen_rvalue_index_access(&mut self, ty: &ast::Type) -> ast::Expr {
+        // TODO: generate an index access expression (e.g., array[index])
         todo!()
     }
 
     fn gen_rvalue_field_access(&mut self, ty: &ast::Type) -> ast::Expr {
+        // TODO: generate a field access expression (e.g., struct.field)
         todo!()
     }
 
     fn gen_rvalue_if(&mut self, ty: &ast::Type) -> ast::Expr {
+        // TODO: generate an if/else expression
         todo!()
     }
 
     fn gen_rvalue_while(&mut self, ty: &ast::Type) -> ast::Expr {
+        // TODO: generate a while loop expression
         todo!()
     }
 
     fn gen_rvalue_match(&mut self, ty: &ast::Type) -> ast::Expr {
+        // TODO: generate a match expression with random arms
         todo!()
     }
 
     fn gen_rvalue_break(&mut self, ty: &ast::Type) -> ast::Expr {
+        // TODO: generate a break expression with optional value
         todo!()
     }
 
     fn gen_rvalue_continue(&mut self, ty: &ast::Type) -> ast::Expr {
+        // TODO: generate a continue expression
         todo!()
     }
 
     fn gen_rvalue_return(&mut self, ty: &ast::Type) -> ast::Expr {
+        // TODO: generate a return expression with optional value
         todo!()
     }
 
     fn gen_rvalue_foreach(&mut self, ty: &ast::Type) -> ast::Expr {
+        // TODO: generate a for-each loop expression
         todo!()
     }
 
     fn gen_rvalue_await(&mut self, ty: &ast::Type) -> ast::Expr {
+        // TODO: generate an await expression
         todo!()
     }
 
     fn gen_rvalue_function_call(&mut self, ty: &ast::Type) -> ast::Expr {
+        // TODO: generate a function call expression with random arguments
         todo!()
     }
 
     fn gen_rvalue_method_call(&mut self, ty: &ast::Type) -> ast::Expr {
+        // TODO: generate a method call expression on a random receiver
         todo!()
     }
 }
