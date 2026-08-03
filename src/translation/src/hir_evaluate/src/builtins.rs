@@ -3,7 +3,7 @@ use crate::error::EvalError;
 use crate::evaluator::BuiltinFn;
 use nitrate_hir::Value;
 use nitrate_nstring::NString;
-use nitrate_tree::ByteSpan;
+use nitrate_tree::SrcPos;
 use std::collections::HashMap;
 use std::sync::LazyLock;
 
@@ -87,7 +87,7 @@ pub static DEFAULT_BUILTIN_FUNCTIONS: LazyLock<HashMap<NString, BuiltinFn>> = La
             };
             eval.log.report(&message);
             Ok(Value::Unit {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
             }
             .into())
         }) as BuiltinFn,

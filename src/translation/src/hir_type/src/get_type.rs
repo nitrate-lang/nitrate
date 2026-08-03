@@ -1,5 +1,5 @@
 use nitrate_hir::prelude::*;
-use nitrate_tree::ByteSpan;
+use nitrate_tree::SrcPos;
 use std::ops::Deref;
 
 #[derive(Debug)]
@@ -47,49 +47,49 @@ impl HirGetType for Lit {
     fn determine_type(&self, _ctx: &SymbolTab) -> Result<Type, TypeInferenceError> {
         match self {
             Lit::Unit => Ok(Type::Unit {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
             }),
             Lit::Bool(_) => Ok(Type::Bool {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
             }),
             Lit::I8(_) => Ok(Type::I8 {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
             }),
             Lit::I16(_) => Ok(Type::I16 {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
             }),
             Lit::I32(_) => Ok(Type::I32 {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
             }),
             Lit::I64(_) => Ok(Type::I64 {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
             }),
             Lit::I128(_) => Ok(Type::I128 {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
             }),
             Lit::U8(_) => Ok(Type::U8 {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
             }),
             Lit::U16(_) => Ok(Type::U16 {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
             }),
             Lit::U32(_) => Ok(Type::U32 {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
             }),
             Lit::U64(_) => Ok(Type::U64 {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
             }),
             Lit::U128(_) => Ok(Type::U128 {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
             }),
             Lit::F32(_) => Ok(Type::F32 {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
             }),
             Lit::F64(_) => Ok(Type::F64 {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
             }),
             Lit::USize(_, _) => Ok(Type::USize {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
             }),
         }
     }
@@ -100,7 +100,7 @@ impl HirGetType for Block {
         match self.elements.last() {
             Some(BlockElement::Expr(last)) => last.borrow().determine_type(ctx),
             Some(BlockElement::Local(_)) | None => Ok(Type::Unit {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
             }),
         }
     }
@@ -110,67 +110,67 @@ impl HirGetType for Value {
     fn determine_type(&self, ctx: &SymbolTab) -> Result<Type, TypeInferenceError> {
         match self {
             Value::Unit { .. } => Ok(Type::Unit {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
             }),
             Value::Bool { .. } => Ok(Type::Bool {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
             }),
             Value::I8 { .. } => Ok(Type::I8 {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
             }),
             Value::I16 { .. } => Ok(Type::I16 {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
             }),
             Value::I32 { .. } => Ok(Type::I32 {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
             }),
             Value::I64 { .. } => Ok(Type::I64 {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
             }),
             Value::I128 { .. } => Ok(Type::I128 {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
             }),
             Value::U8 { .. } => Ok(Type::U8 {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
             }),
             Value::U16 { .. } => Ok(Type::U16 {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
             }),
             Value::U32 { .. } => Ok(Type::U32 {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
             }),
             Value::U64 { .. } => Ok(Type::U64 {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
             }),
             Value::U128 { .. } => Ok(Type::U128 {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
             }),
             Value::F32 { .. } => Ok(Type::F32 {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
             }),
             Value::F64 { .. } => Ok(Type::F64 {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
             }),
             Value::USize { .. } => Ok(Type::USize {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
             }),
             Value::InferredInteger { .. } => Ok(Type::InferredInteger {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
             }),
             Value::InferredFloat { .. } => Ok(Type::InferredFloat {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
             }),
 
             Value::StringLit { .. } => Ok(Type::Str {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
             }),
 
             Value::BStringLit { .. } => Ok(Type::Str {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
             }),
 
             Value::StructObject { struct_def, .. } => Ok(Type::Struct {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
                 def: struct_def.clone(),
             }),
 
@@ -202,16 +202,16 @@ impl HirGetType for Value {
                 | BinaryOp::Gte
                 | BinaryOp::Eq
                 | BinaryOp::Ne => Ok(Type::Bool {
-                    span: ByteSpan::default(),
+                    span: SrcPos::default(),
                 }),
             },
 
             Value::Unary { operand: expr, .. } => match expr.borrow().determine_type(ctx) {
                 Ok(Type::InferredFloat { .. }) => Ok(Type::InferredFloat {
-                    span: ByteSpan::default(),
+                    span: SrcPos::default(),
                 }),
                 Ok(Type::InferredInteger { .. }) => Ok(Type::InferredInteger {
-                    span: ByteSpan::default(),
+                    span: SrcPos::default(),
                 }),
                 Ok(other) => Ok(other),
                 Err(e) => Err(e),
@@ -246,7 +246,7 @@ impl HirGetType for Value {
             }
 
             Value::Assign { .. } => Ok(Type::Unit {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
             }),
 
             Value::Deref { place, .. } => {
@@ -270,7 +270,7 @@ impl HirGetType for Value {
             } => {
                 let place_type = place.borrow().determine_type(ctx)?;
                 Ok(Type::Reference {
-                    span: ByteSpan::default(),
+                    span: SrcPos::default(),
                     lifetime: Lifetime::Inferred,
                     exclusive: *exclusive,
                     mutable: *mutable,
@@ -281,14 +281,14 @@ impl HirGetType for Value {
             Value::List { elements, .. } => {
                 let element_type = if elements.is_empty() {
                     Type::Unit {
-                        span: ByteSpan::default(),
+                        span: SrcPos::default(),
                     }
                     .into()
                 } else {
                     elements[0].borrow().determine_type(ctx)?.into()
                 };
                 Ok(Type::Array {
-                    span: ByteSpan::default(),
+                    span: SrcPos::default(),
                     element_type,
                     len: elements.len() as u32,
                 })
@@ -300,32 +300,32 @@ impl HirGetType for Value {
                     element_types.push(elem.borrow().determine_type(ctx)?.into());
                 }
                 Ok(Type::Tuple {
-                    span: ByteSpan::default(),
+                    span: SrcPos::default(),
                     element_types: element_types.into(),
                 })
             }
 
             Value::If { false_branch, .. } => match false_branch {
                 None => Ok(Type::Unit {
-                    span: ByteSpan::default(),
+                    span: SrcPos::default(),
                 }),
                 Some(false_branch) => false_branch.borrow().determine_type(ctx),
             },
 
             Value::While { .. } => Ok(Type::Unit {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
             }),
             Value::Loop { .. } => Ok(Type::Unit {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
             }),
             Value::Break { .. } => Ok(Type::Never {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
             }),
             Value::Continue { .. } => Ok(Type::Never {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
             }),
             Value::Return { .. } => Ok(Type::Never {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
             }),
 
             Value::Block { block, .. } => block.borrow().determine_type(ctx),
@@ -350,7 +350,7 @@ impl HirGetType for Value {
             Value::FunctionSymbol { id, .. } => {
                 let function = id.borrow();
                 Ok(Type::Function {
-                    span: ByteSpan::default(),
+                    span: SrcPos::default(),
                     function_type: function.get_type().into(),
                 })
             }
@@ -375,7 +375,7 @@ impl HirGetType for Value {
 
                 match ctx.get_struct(&struct_name.into()) {
                     Some(struct_def) => Ok(Type::Struct {
-                        span: ByteSpan::default(),
+                        span: SrcPos::default(),
                         def: struct_def.clone(),
                     }),
                     None => Err(TypeInferenceError::RangeStructNotRegistered),

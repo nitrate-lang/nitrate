@@ -1,84 +1,67 @@
 use nitrate_diagnosis::{DiagnosticGroupId, DiagnosticInfo, FormattableDiagnosticGroup, Origin, SourcePosition};
 use nitrate_hir::{Lit, Type, TypeId};
 use nitrate_hir_dump::Dump;
-use nitrate_tree::ByteSpan;
+use nitrate_tree::SrcPos;
 use std::{format, ops::Deref};
 
-fn byte_span_to_origin(span: ByteSpan) -> Origin {
-    if span.is_empty() {
-        Origin::Point(SourcePosition {
-            line: 0,
-            column: 0,
-            offset: span.start,
-            fileid: None,
-        })
-    } else {
-        Origin::Span(nitrate_diagnosis::Span {
-            start: SourcePosition {
-                line: 0,
-                column: 0,
-                offset: span.start,
-                fileid: None,
-            },
-            end: SourcePosition {
-                line: 0,
-                column: 0,
-                offset: span.end,
-                fileid: None,
-            },
-        })
-    }
+fn byte_span_to_origin(span: SrcPos) -> Origin {
+    Origin::Point(SourcePosition {
+        line: span.line as u32,
+        column: span.column as u32,
+        offset: span.offset,
+        fileid: span.fileid,
+    })
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub(crate) enum TypeErr {
     IntegerLiteralOutOfRange {
-        span: ByteSpan,
+        span: SrcPos,
         value: u128,
         target_type: TypeId,
     },
     IntegerLiteralUnsatisfiable {
-        span: ByteSpan,
+        span: SrcPos,
         value: u128,
         unsatisfiable_type: TypeId,
     },
     FloatLiteralUnsatisfiable {
-        span: ByteSpan,
+        span: SrcPos,
         value: ordered_float::OrderedFloat<f64>,
         unsatisfiable_type: TypeId,
     },
     IntegerLiteralOutOfRefinementBounds {
-        span: ByteSpan,
+        span: SrcPos,
         value: u128,
         refinement_type: TypeId,
     },
     OperationResultOutOfRefinementBounds {
-        span: ByteSpan,
+        span: SrcPos,
         refinement_type: TypeId,
         computed_min: u128,
         computed_max: u128,
     },
     MismatchedBranchTypes {
-        span: ByteSpan,
+        span: SrcPos,
         true_type: TypeId,
         false_type: TypeId,
     },
     CannotInferTypeArgs {
-        span: ByteSpan,
+        span: SrcPos,
         generic_name: String,
         reason: String,
     },
     AmbiguousType {
-        span: ByteSpan,
+        span: SrcPos,
         description: String,
     },
     UnboundGenericParam {
-        span: ByteSpan,
+        span: SrcPos,
         param_name: String,
         generic_name: String,
     },
     MethodNotFound {
-        span: ByteSpan,
+        span: SrcPos,
         method_name: String,
         receiver_type: TypeId,
     },

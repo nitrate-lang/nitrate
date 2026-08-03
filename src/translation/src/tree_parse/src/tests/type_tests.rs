@@ -561,8 +561,8 @@ fn test_exp_item() {
 fn test_syntax_not_supported() {
     // This is #[allow(dead_code)] but we can still try to trigger it
     // It's not used in production code, but test format() by creating a SyntaxErr directly
-    use nitrate_token::SourcePosition;
-    let err = crate::diagnosis::SyntaxErr::SyntaxNotSupported(SourcePosition {
+    use nitrate_token_lexer::LexPos;
+    let err = crate::diagnosis::SyntaxErr::SyntaxNotSupported(LexPos {
         offset: 0,
         line: 0,
         column: 0,

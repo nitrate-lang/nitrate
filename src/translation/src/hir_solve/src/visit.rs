@@ -3,7 +3,7 @@ use crate::solver::Solver;
 use crate::{constraints::NodeAction, diagnosis::TypeErr};
 use nitrate_hir::{BlockElement, BlockId, FunctionId, Type, TypeId, Value, ValueId};
 use nitrate_hir_type::HirGetType;
-use nitrate_tree::ByteSpan;
+use nitrate_tree::SrcPos;
 use smallvec::SmallVec;
 use std::{matches, unreachable};
 
@@ -457,7 +457,7 @@ impl<'m> Solver<'m> {
         self.add_constraint(
             index,
             TypeConstraint::eq_type(Type::USize {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
             }),
         );
 
@@ -615,7 +615,7 @@ impl<'m> Solver<'m> {
         self.add_constraint(
             condition,
             TypeConstraint::eq_type(Type::Bool {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
             }),
         );
         self.visit(condition);
@@ -650,7 +650,7 @@ impl<'m> Solver<'m> {
         self.add_constraint(
             condition,
             TypeConstraint::eq_type(Type::Bool {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
             }),
         );
         self.visit(condition);
@@ -711,7 +711,7 @@ impl<'m> Solver<'m> {
         {
             let mono_id = self.monomorphize_function(func_id, &subst);
             callee.replace(Value::FunctionSymbol {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
                 id: mono_id,
             });
         } else if let Some(ref func_id) = callee_func_id
@@ -720,7 +720,7 @@ impl<'m> Solver<'m> {
         {
             let mono_id = self.monomorphize_function(func_id, &subst);
             callee.replace(Value::FunctionSymbol {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
                 id: mono_id,
             });
         }
@@ -787,9 +787,9 @@ impl<'m> Solver<'m> {
                 if let Some(subst) = subst {
                     let mono_id = self.monomorphize_function(&method_id, &subst);
                     e.replace(Value::Call {
-                        span: ByteSpan::default(),
+                        span: SrcPos::default(),
                         callee: ValueId::from(Value::FunctionSymbol {
-                            span: ByteSpan::default(),
+                            span: SrcPos::default(),
                             id: mono_id,
                         }),
                         args: args_with_self,
@@ -808,7 +808,7 @@ impl<'m> Solver<'m> {
 
                 let self_arg = if first_param_is_ref {
                     ValueId::from(Value::Borrow {
-                        span: ByteSpan::default(),
+                        span: SrcPos::default(),
                         exclusive: false,
                         mutable: false,
                         place: object_id.clone(),
@@ -832,9 +832,9 @@ impl<'m> Solver<'m> {
                 }
                 drop(mf);
                 e.replace(Value::Call {
-                    span: ByteSpan::default(),
+                    span: SrcPos::default(),
                     callee: ValueId::from(Value::FunctionSymbol {
-                        span: ByteSpan::default(),
+                        span: SrcPos::default(),
                         id: method_id,
                     }),
                     args: args_with_self,

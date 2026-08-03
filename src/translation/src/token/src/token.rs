@@ -494,98 +494,55 @@ impl std::fmt::Display for Token {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub struct SourcePosition {
-    pub line: u32,
-    pub column: u32,
-    pub offset: u32,
-    pub fileid: Option<FileId>,
-}
-
-impl std::fmt::Display for SourcePosition {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "{}:{}:{}",
-            self.fileid.as_ref().map_or("???", |fid| &**fid),
-            self.line + 1,
-            self.column + 1
-        )
-    }
-}
-
-impl From<SourcePosition> for nitrate_diagnosis::SourcePosition {
-    fn from(pos: SourcePosition) -> Self {
-        nitrate_diagnosis::SourcePosition {
-            line: pos.line,
-            column: pos.column,
-            offset: pos.offset,
-            fileid: pos.fileid,
-        }
-    }
-}
-
+/// A token annotated with its source location.
+/// Uses raw fields to avoid circular dependency with nitrate_tree.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct AnnotatedToken {
     pub token: Token,
-
-    pub start_line: u32,
-    pub start_column: u32,
-    pub start_offset: u32,
-
-    pub end_line: u32,
-    pub end_column: u32,
-    pub end_offset: u32,
-
     pub fileid: Option<FileId>,
+    pub start_line: u16,
+    pub start_column: u8,
+    pub start_offset: u32,
+    pub end_line: u16,
+    pub end_column: u8,
+    pub end_offset: u32,
 }
 
 impl AnnotatedToken {
     #[must_use]
-    #[allow(clippy::needless_pass_by_value)]
-    pub fn new(token: Token, start: SourcePosition, end: SourcePosition) -> Self {
+    pub fn new_raw(
+        token: Token,
+        fileid: Option<FileId>,
+        start_line: u16,
+        start_column: u8,
+        start_offset: u32,
+        end_line: u16,
+        end_column: u8,
+        end_offset: u32,
+    ) -> Self {
         AnnotatedToken {
             token,
-            start_line: start.line,
-            start_column: start.column,
-            start_offset: start.offset,
-            end_line: end.line,
-            end_column: end.column,
-            end_offset: end.offset,
-            fileid: start.fileid,
+            fileid,
+            start_line,
+            start_column,
+            start_offset,
+            end_line,
+            end_column,
+            end_offset,
         }
     }
 
     #[must_use]
-    pub fn start(&self) -> SourcePosition {
-        SourcePosition {
-            line: self.start_line,
-            column: self.start_column,
-            offset: self.start_offset,
-            fileid: self.fileid.clone(),
-        }
-    }
-
-    #[must_use]
-    pub fn end(&self) -> SourcePosition {
-        SourcePosition {
-            line: self.end_line,
-            column: self.end_column,
-            offset: self.end_offset,
-            fileid: self.fileid.clone(),
-        }
-    }
-
-    #[must_use]
-    pub fn range(&self) -> (SourcePosition, SourcePosition) {
-        (self.start(), self.end())
+    pub fn range(&self) -> ((u16, u8, u32), (u16, u8, u32)) {
+        (
+            (self.start_line, self.start_column, self.start_offset),
+            (self.end_line, self.end_column, self.end_offset),
+        )
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use nitrate_diagnosis::intern_file_id;
-
     use super::*;
 
     #[test]
@@ -697,70 +654,12 @@ mod tests {
     }
 
     #[test]
-    fn test_source_position_parsetree() {
-        let line = 2_u32;
-        let column = 5_u32;
-        let offset = 15_u32;
-        let filename = "file.txt";
-
-        let position = SourcePosition {
-            line,
-            column,
-            offset,
-            fileid: intern_file_id(filename),
-        };
-
-        assert_eq!(
-            format!("{position}"),
-            format!("{}:{}:{}", &*position.fileid.unwrap(), line + 1, column + 1)
-        );
-    }
-
-    #[test]
     fn test_annotated_token_parsetree() {
-        let filename = intern_file_id("file.txt");
-
-        let test_vectors = [
-            (Token::Name("example".into()), "example"),
-            (Token::Integer(Integer::new(42, IntegerKind::Dec)), "42"),
-            (
-                Token::Float(NotNan::new(std::f64::consts::PI).unwrap()),
-                "3.141592653589793",
-            ),
-            (Token::String("hello".into()), "\"hello\""),
-            (Token::BString(Vec::from(b"world")), "\"world\""),
-            (
-                Token::Comment(Comment::new(" This is a comment".into(), CommentKind::SingleLine)),
-                " This is a comment",
-            ),
-            (Token::Let, "let"),
-            (Token::OpenParen, "("),
-            (Token::Plus, "+"),
-            (Token::Eof, ""),
-        ];
-
-        for (token, expected_str) in test_vectors {
-            let start = SourcePosition {
-                line: 1,
-                column: 2,
-                offset: 3,
-                fileid: filename.clone(),
-            };
-            let end = SourcePosition {
-                line: 4,
-                column: 5,
-                offset: 6,
-                fileid: filename.clone(),
-            };
-
-            let annotated_token = AnnotatedToken::new(token.clone(), start.clone(), end.clone());
-
-            assert_eq!(&annotated_token.token, &token);
-            assert_eq!(annotated_token.start(), start);
-            assert_eq!(annotated_token.end(), end);
-            assert_eq!(annotated_token.range(), (start, end));
-            assert_eq!(format!("{}", annotated_token.token), expected_str);
-        }
+        let at = AnnotatedToken::new_raw(Token::Semi, None, 2, 5, 10, 2, 8, 13);
+        let (start, end) = at.range();
+        assert_eq!(start, (2, 5, 10));
+        assert_eq!(end, (2, 8, 13));
+        assert_eq!(at.token, Token::Semi);
     }
 
     #[test]

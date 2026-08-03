@@ -1,7 +1,7 @@
 use super::parse::Parser;
 use crate::diagnosis::SyntaxErr;
 use crate::helper::MAX_LIMIT;
-use nitrate_tree::ByteSpan;
+use nitrate_tree::SrcSpan;
 
 use nitrate_token::Token;
 use nitrate_tree::ast::{
@@ -106,7 +106,7 @@ impl Parser<'_, '_> {
 
         if self.lexer.skip_if(&Token::CloseBracket) {
             return Type::SliceType(Box::new(SliceType {
-                span: ByteSpan::new(bracket_start, self.lexer.current_pos().offset),
+                span: SrcSpan::new(bracket_start, self.lexer.current_pos().offset),
                 element_type,
             }));
         }
@@ -118,7 +118,7 @@ impl Parser<'_, '_> {
         self.expect_close_bracket();
 
         Type::ArrayType(Box::new(ArrayType {
-            span: ByteSpan::new(bracket_start, self.lexer.current_pos().offset),
+            span: SrcSpan::new(bracket_start, self.lexer.current_pos().offset),
             element_type,
             len,
         }))
@@ -141,7 +141,7 @@ impl Parser<'_, '_> {
         let to = self.parse_type();
 
         ReferenceType {
-            span: ByteSpan::new(ref_start, self.lexer.current_pos().offset),
+            span: SrcSpan::new(ref_start, self.lexer.current_pos().offset),
             lifetime,
             exclusivity,
             mutability,
@@ -166,7 +166,7 @@ impl Parser<'_, '_> {
         let to = self.parse_type();
 
         PointerType {
-            span: ByteSpan::new(ptr_start, self.lexer.current_pos().offset),
+            span: SrcSpan::new(ptr_start, self.lexer.current_pos().offset),
             lifetime,
             exclusivity,
             mutability,
@@ -185,7 +185,7 @@ impl Parser<'_, '_> {
             let param_start = this.lexer.peek_pos().offset;
             let param = this.parse_common_func_param(false);
             FuncTypeParam {
-                span: ByteSpan::new(param_start, this.lexer.current_pos().offset),
+                span: SrcSpan::new(param_start, this.lexer.current_pos().offset),
                 attributes: param.attributes,
                 name: param.name,
                 ty: param.ty,
@@ -206,7 +206,7 @@ impl Parser<'_, '_> {
         let return_type = self.parse_return_type_arrow();
 
         FunctionType {
-            span: ByteSpan::new(fn_start, self.lexer.current_pos().offset),
+            span: SrcSpan::new(fn_start, self.lexer.current_pos().offset),
             parameters,
             return_type,
             attributes,
@@ -220,7 +220,7 @@ impl Parser<'_, '_> {
 
         if self.lexer.skip_if(&Token::Static) {
             return Lifetime {
-                span: ByteSpan::new(lt_start, self.lexer.current_pos().offset),
+                span: SrcSpan::new(lt_start, self.lexer.current_pos().offset),
                 name: "static".into(),
             };
         }
@@ -229,16 +229,16 @@ impl Parser<'_, '_> {
         let name = self.parse_string_name(err);
 
         Lifetime {
-            span: ByteSpan::new(lt_start, self.lexer.current_pos().offset),
+            span: SrcSpan::new(lt_start, self.lexer.current_pos().offset),
             name: name.into(),
         }
     }
 
     pub(crate) fn create_type_path(&mut self, segment_name: String) -> TypePath {
         TypePath {
-            span: ByteSpan::new(0, 0),
+            span: SrcSpan::new(0, 0),
             segments: Vec::from([TypePathSegment {
-                span: ByteSpan::new(0, 0),
+                span: SrcSpan::new(0, 0),
                 name: segment_name,
                 type_arguments: None,
             }]),
@@ -288,7 +288,7 @@ impl Parser<'_, '_> {
             prev_scope = true;
 
             segments.push(TypePathSegment {
-                span: ByteSpan::new(0, self.lexer.current_pos().offset),
+                span: SrcSpan::new(0, self.lexer.current_pos().offset),
                 name: "".into(),
                 type_arguments: None,
             });
@@ -319,7 +319,7 @@ impl Parser<'_, '_> {
             let type_arguments = self.parse_generic_arguments();
 
             segments.push(TypePathSegment {
-                span: ByteSpan::new(name_start, name_end),
+                span: SrcSpan::new(name_start, name_end),
                 name: identifier,
                 type_arguments,
             });
@@ -329,11 +329,11 @@ impl Parser<'_, '_> {
 
         assert_ne!(segments.len(), 0);
 
-        let path_start = segments.first().map(|s| s.span.start).unwrap_or(0);
-        let path_end = segments.last().map(|s| s.span.end).unwrap_or(0);
+        let path_start = segments.first().map(|s| s.span.start.offset).unwrap_or(0);
+        let path_end = segments.last().map(|s| s.span.end.offset).unwrap_or(0);
 
         TypePath {
-            span: ByteSpan::new(path_start, path_end),
+            span: SrcSpan::new(path_start, path_end),
             segments,
             resolved_path: None,
         }
@@ -374,7 +374,7 @@ impl Parser<'_, '_> {
                 let block_start = self.lexer.peek_pos().offset;
                 let body = self.parse_block();
                 Type::TypePotential(Box::new(TypePotential {
-                    span: ByteSpan::new(block_start, self.lexer.current_pos().offset),
+                    span: SrcSpan::new(block_start, self.lexer.current_pos().offset),
                     body,
                 }))
             }
@@ -387,7 +387,7 @@ impl Parser<'_, '_> {
                 self.log.report(&log);
 
                 Type::SyntaxError(TypeSyntaxError {
-                    span: ByteSpan::new(err_start, self.lexer.current_pos().offset),
+                    span: SrcSpan::new(err_start, self.lexer.current_pos().offset),
                 })
             }
         }
@@ -407,7 +407,7 @@ impl Parser<'_, '_> {
         element_types.extend(rest);
 
         TupleType {
-            span: ByteSpan::new(paren_start, self.lexer.current_pos().offset),
+            span: SrcSpan::new(paren_start, self.lexer.current_pos().offset),
             element_types,
         }
     }
@@ -418,7 +418,7 @@ impl Parser<'_, '_> {
             if self.lexer.skip_if(&Token::CloseParen) {
                 let paren_end = self.lexer.current_pos().offset;
                 return Type::TupleType(Box::new(TupleType {
-                    span: ByteSpan::new(paren_start, paren_end),
+                    span: SrcSpan::new(paren_start, paren_end),
                     element_types: Vec::new(),
                 }));
             }
@@ -429,7 +429,7 @@ impl Parser<'_, '_> {
                 Token::CloseParen => {
                     let paren_end = self.lexer.current_pos().offset;
                     Type::Parentheses(Box::new(TypeParentheses {
-                        span: ByteSpan::new(paren_start, paren_end),
+                        span: SrcSpan::new(paren_start, paren_end),
                         inner,
                     }))
                 }
@@ -444,7 +444,7 @@ impl Parser<'_, '_> {
                     self.log.report(&bug);
 
                     Type::SyntaxError(TypeSyntaxError {
-                        span: ByteSpan::new(paren_start, self.lexer.current_pos().offset),
+                        span: SrcSpan::new(paren_start, self.lexer.current_pos().offset),
                     })
                 }
             };
@@ -460,7 +460,7 @@ impl Parser<'_, '_> {
         }
 
         Type::RefinementType(Box::new(RefinementType {
-            span: ByteSpan::new(basis_type.span().start, self.lexer.current_pos().offset),
+            span: SrcSpan::new(basis_type.span().start.offset, self.lexer.current_pos().offset),
             basis_type,
             width: refine_options.width,
             minimum: refine_options.minimum,
@@ -472,7 +472,7 @@ impl Parser<'_, '_> {
 /// Helper to set the span on a primitive type that was created via Default.
 fn set_type_span(ty: Type, start: u32, end: u32) -> Type {
     use Type::*;
-    let span = ByteSpan::new(start, end);
+    let span = SrcSpan::new(start, end);
     match ty {
         Bool(mut b) => {
             b.span = span;

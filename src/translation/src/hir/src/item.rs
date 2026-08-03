@@ -1,6 +1,6 @@
 use crate::{helper::PowOf2, prelude::*};
 use nitrate_nstring::NString;
-use nitrate_tree::ByteSpan;
+use nitrate_tree::SrcPos;
 use serde::{Deserialize, Serialize};
 use std::{
     collections::{BTreeMap, BTreeSet},
@@ -31,7 +31,7 @@ pub enum GlobalVariableAttribute {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct GlobalVariable {
     /// Source location.
-    pub span: ByteSpan,
+    pub span: SrcPos,
     /// Visibility of this global variable.
     pub visibility: Visibility,
     /// Attributes applied to this global variable.
@@ -73,7 +73,7 @@ pub enum LocalKind {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct LocalVariable {
     /// Source location.
-    pub span: ByteSpan,
+    pub span: SrcPos,
     /// The kind of binding (`let`, `var`, `static`).
     pub kind: LocalKind,
     /// Attributes applied to this local.
@@ -102,7 +102,7 @@ pub enum ParameterAttribute {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct Parameter {
     /// Source location.
-    pub span: ByteSpan,
+    pub span: SrcPos,
     /// Attributes applied to this parameter.
     pub attributes: BTreeSet<ParameterAttribute>,
     /// Whether the parameter is mutable (can be reassigned in the function body).
@@ -122,7 +122,7 @@ pub struct Parameter {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct Function {
     /// Source location of the function signature.
-    pub span: ByteSpan,
+    pub span: SrcPos,
     /// Visibility of the function.
     pub visibility: Visibility,
     /// Attributes applied to this function (CVariadic, NoMangle, ExternAbi).
@@ -172,7 +172,7 @@ impl Function {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct Trait {
     /// Source location of the trait definition.
-    pub span: ByteSpan,
+    pub span: SrcPos,
     /// Visibility of the trait.
     pub visibility: Visibility,
     /// The trait name.
@@ -202,7 +202,7 @@ pub enum ModuleAttribute {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct Module {
     /// Source location.
-    pub span: ByteSpan,
+    pub span: SrcPos,
     /// Visibility of the module.
     pub visibility: Visibility,
     /// The module name.
@@ -217,7 +217,7 @@ pub struct Module {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct TypeAliasDef {
     /// Source location.
-    pub span: ByteSpan,
+    pub span: SrcPos,
     /// Visibility of the type alias.
     pub visibility: Visibility,
     /// The alias name.
@@ -249,7 +249,7 @@ pub enum StructFieldAttribute {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct StructField {
     /// Source location.
-    pub span: ByteSpan,
+    pub span: SrcPos,
     /// Visibility of this field.
     pub visibility: Visibility,
     /// Attributes applied to this field.
@@ -318,7 +318,7 @@ pub type StructLayout = ThinVec<StructMemoryLayoutCell>;
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct StructDef {
     /// Source location.
-    pub span: ByteSpan,
+    pub span: SrcPos,
     /// Visibility of the struct.
     pub visibility: Visibility,
     /// The struct name.
@@ -351,7 +351,7 @@ pub enum EnumVariantAttribute {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct EnumVariant {
     /// Source location.
-    pub span: ByteSpan,
+    pub span: SrcPos,
     /// Attributes applied to this variant.
     pub attributes: BTreeSet<EnumVariantAttribute>,
     /// The variant name.
@@ -369,7 +369,7 @@ pub struct EnumVariant {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct EnumDef {
     /// Source location.
-    pub span: ByteSpan,
+    pub span: SrcPos,
     /// Visibility of the enum.
     pub visibility: Visibility,
     /// The enum name.

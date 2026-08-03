@@ -6,14 +6,14 @@ use serde_with::skip_serializing_none;
 #[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ItemSyntaxError {
-    pub span: ByteSpan,
+    pub span: SrcSpan,
 }
 
 impl Spanned for ItemSyntaxError {
-    fn span(&self) -> ByteSpan {
+    fn span(&self) -> SrcSpan {
         self.span
     }
-    fn set_span(&mut self, span: ByteSpan) {
+    fn set_span(&mut self, span: SrcSpan) {
         self.span = span;
     }
 }
@@ -29,7 +29,7 @@ pub enum Visibility {
 #[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Module {
-    pub span: ByteSpan,
+    pub span: SrcSpan,
     pub visibility: Option<Visibility>,
     pub attributes: Option<AttributeList>,
     pub name: NString,
@@ -37,10 +37,10 @@ pub struct Module {
 }
 
 impl Spanned for Module {
-    fn span(&self) -> ByteSpan {
+    fn span(&self) -> SrcSpan {
         self.span
     }
-    fn set_span(&mut self, span: ByteSpan) {
+    fn set_span(&mut self, span: SrcSpan) {
         self.span = span;
     }
 }
@@ -48,7 +48,7 @@ impl Spanned for Module {
 #[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ItemPathSegment {
-    pub span: ByteSpan,
+    pub span: SrcSpan,
     pub segment: String,
     /// The prefix of the first path segment, if any:
     /// - `Crate` for `crate::foo`
@@ -59,10 +59,10 @@ pub struct ItemPathSegment {
 }
 
 impl Spanned for ItemPathSegment {
-    fn span(&self) -> ByteSpan {
+    fn span(&self) -> SrcSpan {
         self.span
     }
-    fn set_span(&mut self, span: ByteSpan) {
+    fn set_span(&mut self, span: SrcSpan) {
         self.span = span;
     }
 }
@@ -82,15 +82,15 @@ pub enum PathPrefix {
 #[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ItemPath {
-    pub span: ByteSpan,
+    pub span: SrcSpan,
     pub segments: Vec<ItemPathSegment>,
 }
 
 impl Spanned for ItemPath {
-    fn span(&self) -> ByteSpan {
+    fn span(&self) -> SrcSpan {
         self.span
     }
-    fn set_span(&mut self, span: ByteSpan) {
+    fn set_span(&mut self, span: SrcSpan) {
         self.span = span;
     }
 }
@@ -99,27 +99,27 @@ impl Spanned for ItemPath {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum UseTree {
     Single {
-        span: ByteSpan,
+        span: SrcSpan,
         path: ItemPath,
     },
     Alias {
-        span: ByteSpan,
+        span: SrcSpan,
         path: ItemPath,
         alias: NString,
     },
     UseAll {
-        span: ByteSpan,
+        span: SrcSpan,
         path: ItemPath,
     },
     Group {
-        span: ByteSpan,
+        span: SrcSpan,
         path: ItemPath,
         group: Vec<UseTree>,
     },
 }
 
 impl UseTree {
-    pub fn span(&self) -> ByteSpan {
+    pub fn span(&self) -> SrcSpan {
         match self {
             UseTree::Single { span, .. }
             | UseTree::Alias { span, .. }
@@ -127,7 +127,7 @@ impl UseTree {
             | UseTree::Group { span, .. } => *span,
         }
     }
-    pub fn set_span(&mut self, new_span: ByteSpan) {
+    pub fn set_span(&mut self, new_span: SrcSpan) {
         match self {
             UseTree::Single { span, .. }
             | UseTree::Alias { span, .. }
@@ -148,7 +148,7 @@ impl UseTree {
 #[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Import {
-    pub span: ByteSpan,
+    pub span: SrcSpan,
     pub visibility: Option<Visibility>,
     pub attributes: Option<AttributeList>,
     pub use_tree: UseTree,
@@ -156,10 +156,10 @@ pub struct Import {
 }
 
 impl Spanned for Import {
-    fn span(&self) -> ByteSpan {
+    fn span(&self) -> SrcSpan {
         self.span
     }
-    fn set_span(&mut self, span: ByteSpan) {
+    fn set_span(&mut self, span: SrcSpan) {
         self.span = span;
     }
 }
@@ -167,16 +167,16 @@ impl Spanned for Import {
 #[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TypeParam {
-    pub span: ByteSpan,
+    pub span: SrcSpan,
     pub name: NString,
     pub default_value: Option<Type>,
 }
 
 impl Spanned for TypeParam {
-    fn span(&self) -> ByteSpan {
+    fn span(&self) -> SrcSpan {
         self.span
     }
-    fn set_span(&mut self, span: ByteSpan) {
+    fn set_span(&mut self, span: SrcSpan) {
         self.span = span;
     }
 }
@@ -184,15 +184,15 @@ impl Spanned for TypeParam {
 #[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Generics {
-    pub span: ByteSpan,
+    pub span: SrcSpan,
     pub params: Vec<TypeParam>,
 }
 
 impl Spanned for Generics {
-    fn span(&self) -> ByteSpan {
+    fn span(&self) -> SrcSpan {
         self.span
     }
-    fn set_span(&mut self, span: ByteSpan) {
+    fn set_span(&mut self, span: SrcSpan) {
         self.span = span;
     }
 }
@@ -200,7 +200,7 @@ impl Spanned for Generics {
 #[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TypeAlias {
-    pub span: ByteSpan,
+    pub span: SrcSpan,
     pub visibility: Option<Visibility>,
     pub attributes: Option<AttributeList>,
     pub name: NString,
@@ -209,10 +209,10 @@ pub struct TypeAlias {
 }
 
 impl Spanned for TypeAlias {
-    fn span(&self) -> ByteSpan {
+    fn span(&self) -> SrcSpan {
         self.span
     }
-    fn set_span(&mut self, span: ByteSpan) {
+    fn set_span(&mut self, span: SrcSpan) {
         self.span = span;
     }
 }
@@ -220,7 +220,7 @@ impl Spanned for TypeAlias {
 #[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct StructField {
-    pub span: ByteSpan,
+    pub span: SrcSpan,
     pub visibility: Option<Visibility>,
     pub attributes: Option<AttributeList>,
     pub name: NString,
@@ -229,10 +229,10 @@ pub struct StructField {
 }
 
 impl Spanned for StructField {
-    fn span(&self) -> ByteSpan {
+    fn span(&self) -> SrcSpan {
         self.span
     }
-    fn set_span(&mut self, span: ByteSpan) {
+    fn set_span(&mut self, span: SrcSpan) {
         self.span = span;
     }
 }
@@ -240,7 +240,7 @@ impl Spanned for StructField {
 #[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Struct {
-    pub span: ByteSpan,
+    pub span: SrcSpan,
     pub visibility: Option<Visibility>,
     pub attributes: Option<AttributeList>,
     pub name: NString,
@@ -249,10 +249,10 @@ pub struct Struct {
 }
 
 impl Spanned for Struct {
-    fn span(&self) -> ByteSpan {
+    fn span(&self) -> SrcSpan {
         self.span
     }
-    fn set_span(&mut self, span: ByteSpan) {
+    fn set_span(&mut self, span: SrcSpan) {
         self.span = span;
     }
 }
@@ -260,7 +260,7 @@ impl Spanned for Struct {
 #[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct EnumVariant {
-    pub span: ByteSpan,
+    pub span: SrcSpan,
     pub attributes: Option<AttributeList>,
     pub name: NString,
     pub ty: Option<Type>,
@@ -268,10 +268,10 @@ pub struct EnumVariant {
 }
 
 impl Spanned for EnumVariant {
-    fn span(&self) -> ByteSpan {
+    fn span(&self) -> SrcSpan {
         self.span
     }
-    fn set_span(&mut self, span: ByteSpan) {
+    fn set_span(&mut self, span: SrcSpan) {
         self.span = span;
     }
 }
@@ -279,7 +279,7 @@ impl Spanned for EnumVariant {
 #[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Enum {
-    pub span: ByteSpan,
+    pub span: SrcSpan,
     pub visibility: Option<Visibility>,
     pub attributes: Option<AttributeList>,
     pub name: NString,
@@ -288,10 +288,10 @@ pub struct Enum {
 }
 
 impl Spanned for Enum {
-    fn span(&self) -> ByteSpan {
+    fn span(&self) -> SrcSpan {
         self.span
     }
-    fn set_span(&mut self, span: ByteSpan) {
+    fn set_span(&mut self, span: SrcSpan) {
         self.span = span;
     }
 }
@@ -308,7 +308,7 @@ pub enum AssociatedItem {
 #[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Trait {
-    pub span: ByteSpan,
+    pub span: SrcSpan,
     pub visibility: Option<Visibility>,
     pub attributes: Option<AttributeList>,
     pub name: NString,
@@ -317,10 +317,10 @@ pub struct Trait {
 }
 
 impl Spanned for Trait {
-    fn span(&self) -> ByteSpan {
+    fn span(&self) -> SrcSpan {
         self.span
     }
-    fn set_span(&mut self, span: ByteSpan) {
+    fn set_span(&mut self, span: SrcSpan) {
         self.span = span;
     }
 }
@@ -328,7 +328,7 @@ impl Spanned for Trait {
 #[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Impl {
-    pub span: ByteSpan,
+    pub span: SrcSpan,
     pub generics: Option<Generics>,
     pub trait_path: Option<TypePath>,
     pub for_type: Type,
@@ -336,10 +336,10 @@ pub struct Impl {
 }
 
 impl Spanned for Impl {
-    fn span(&self) -> ByteSpan {
+    fn span(&self) -> SrcSpan {
         self.span
     }
-    fn set_span(&mut self, span: ByteSpan) {
+    fn set_span(&mut self, span: SrcSpan) {
         self.span = span;
     }
 }
@@ -354,7 +354,7 @@ pub enum Mutability {
 #[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FuncParam {
-    pub span: ByteSpan,
+    pub span: SrcSpan,
     pub attributes: Option<AttributeList>,
     pub mutability: Option<Mutability>,
     pub name: NString,
@@ -363,32 +363,32 @@ pub struct FuncParam {
 }
 
 impl Spanned for FuncParam {
-    fn span(&self) -> ByteSpan {
+    fn span(&self) -> SrcSpan {
         self.span
     }
-    fn set_span(&mut self, span: ByteSpan) {
+    fn set_span(&mut self, span: SrcSpan) {
         self.span = span;
     }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FuncParams {
-    pub span: ByteSpan,
+    pub span: SrcSpan,
     pub params: Vec<FuncParam>,
     pub variadic: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ExternAbi {
-    pub span: ByteSpan,
+    pub span: SrcSpan,
     pub name: NString,
 }
 
 impl Spanned for ExternAbi {
-    fn span(&self) -> ByteSpan {
+    fn span(&self) -> SrcSpan {
         self.span
     }
-    fn set_span(&mut self, span: ByteSpan) {
+    fn set_span(&mut self, span: SrcSpan) {
         self.span = span;
     }
 }
@@ -396,7 +396,7 @@ impl Spanned for ExternAbi {
 #[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Function {
-    pub span: ByteSpan,
+    pub span: SrcSpan,
     pub visibility: Option<Visibility>,
     pub attributes: Option<AttributeList>,
     pub name: NString,
@@ -408,10 +408,10 @@ pub struct Function {
 }
 
 impl Spanned for Function {
-    fn span(&self) -> ByteSpan {
+    fn span(&self) -> SrcSpan {
         self.span
     }
-    fn set_span(&mut self, span: ByteSpan) {
+    fn set_span(&mut self, span: SrcSpan) {
         self.span = span;
     }
 }
@@ -426,7 +426,7 @@ pub enum GlobalVariableKind {
 #[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GlobalVariable {
-    pub span: ByteSpan,
+    pub span: SrcSpan,
     pub visibility: Option<Visibility>,
     pub kind: GlobalVariableKind,
     pub attributes: Option<AttributeList>,
@@ -437,10 +437,10 @@ pub struct GlobalVariable {
 }
 
 impl Spanned for GlobalVariable {
-    fn span(&self) -> ByteSpan {
+    fn span(&self) -> SrcSpan {
         self.span
     }
-    fn set_span(&mut self, span: ByteSpan) {
+    fn set_span(&mut self, span: SrcSpan) {
         self.span = span;
     }
 }
@@ -461,7 +461,7 @@ pub enum Item {
 }
 
 impl Item {
-    pub fn span(&self) -> ByteSpan {
+    pub fn span(&self) -> SrcSpan {
         match self {
             Item::SyntaxError(e) => e.span,
             Item::Module(e) => e.span,
@@ -475,7 +475,7 @@ impl Item {
             Item::Variable(e) => e.span,
         }
     }
-    pub fn set_span(&mut self, span: ByteSpan) {
+    pub fn set_span(&mut self, span: SrcSpan) {
         match self {
             Item::SyntaxError(e) => e.span = span,
             Item::Module(e) => e.span = span,

@@ -3,46 +3,35 @@
 use crate::Lexer;
 use crate::tests::all_tokens;
 use crate::tests::tokens_skipping_trivia;
-use nitrate_token::{AnnotatedToken, Integer, IntegerKind, SourcePosition, Token};
+use nitrate_token::{AnnotatedToken, Integer, IntegerKind, Token};
 use ordered_float::NotNan;
 
 // AnnotatedToken constructors
 #[test]
 fn test_annotated_token_constructors() {
-    let start = SourcePosition {
-        line: 0,
-        column: 0,
-        offset: 0,
-        fileid: None,
-    };
-    let end = SourcePosition {
-        line: 0,
-        column: 3,
-        offset: 3,
-        fileid: None,
-    };
-    let at = AnnotatedToken::new(Token::Fn, start.clone(), end.clone());
-    assert_eq!(at.start(), start);
-    assert_eq!(at.end(), end);
-    assert_eq!(at.range(), (start, end));
+    let at = AnnotatedToken::new_raw(Token::Fn, None, 0, 0, 0, 0, 3, 3);
+    assert_eq!(at.token, Token::Fn);
+    assert_eq!(at.start_line, 0);
+    assert_eq!(at.start_offset, 0);
+    assert_eq!(at.end_line, 0);
+    assert_eq!(at.end_column, 3);
+    assert_eq!(at.end_offset, 3);
+    let ((sl, sc, so), (el, ec, eo)) = at.range();
+    assert_eq!((sl, sc, so), (0, 0, 0));
+    assert_eq!((el, ec, eo), (0, 3, 3));
 }
 
 #[test]
 fn test_annotated_token_token_field() {
-    let at = AnnotatedToken::new(
+    let at = AnnotatedToken::new_raw(
         Token::Integer(Integer::new(42, IntegerKind::Dec)),
-        SourcePosition {
-            line: 0,
-            column: 0,
-            offset: 0,
-            fileid: None,
-        },
-        SourcePosition {
-            line: 0,
-            column: 2,
-            offset: 2,
-            fileid: None,
-        },
+        None,
+        0,
+        0,
+        0,
+        0,
+        2,
+        2,
     );
     assert_eq!(at.token, Token::Integer(Integer::new(42, IntegerKind::Dec)));
 }

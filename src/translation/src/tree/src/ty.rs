@@ -6,14 +6,14 @@ use serde_with::skip_serializing_none;
 #[skip_serializing_none]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
 pub struct TypeSyntaxError {
-    pub span: ByteSpan,
+    pub span: SrcSpan,
 }
 
 impl Spanned for TypeSyntaxError {
-    fn span(&self) -> ByteSpan {
+    fn span(&self) -> SrcSpan {
         self.span
     }
-    fn set_span(&mut self, span: ByteSpan) {
+    fn set_span(&mut self, span: SrcSpan) {
         self.span = span;
     }
 }
@@ -23,13 +23,13 @@ macro_rules! define_primitive_type {
         #[skip_serializing_none]
         #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
         pub struct $name {
-            pub span: ByteSpan,
+            pub span: SrcSpan,
         }
         impl Spanned for $name {
-            fn span(&self) -> ByteSpan {
+            fn span(&self) -> SrcSpan {
                 self.span
             }
-            fn set_span(&mut self, span: ByteSpan) {
+            fn set_span(&mut self, span: SrcSpan) {
                 self.span = span;
             }
         }
@@ -55,16 +55,16 @@ define_primitive_type!(InferType);
 #[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TypePathSegment {
-    pub span: ByteSpan,
+    pub span: SrcSpan,
     pub name: String,
     pub type_arguments: Option<Vec<TypeArgument>>,
 }
 
 impl Spanned for TypePathSegment {
-    fn span(&self) -> ByteSpan {
+    fn span(&self) -> SrcSpan {
         self.span
     }
-    fn set_span(&mut self, span: ByteSpan) {
+    fn set_span(&mut self, span: SrcSpan) {
         self.span = span;
     }
 }
@@ -72,16 +72,16 @@ impl Spanned for TypePathSegment {
 #[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TypePath {
-    pub span: ByteSpan,
+    pub span: SrcSpan,
     pub segments: Vec<TypePathSegment>,
     pub resolved_path: Option<NString>,
 }
 
 impl Spanned for TypePath {
-    fn span(&self) -> ByteSpan {
+    fn span(&self) -> SrcSpan {
         self.span
     }
-    fn set_span(&mut self, span: ByteSpan) {
+    fn set_span(&mut self, span: SrcSpan) {
         self.span = span;
     }
 }
@@ -89,7 +89,7 @@ impl Spanned for TypePath {
 #[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RefinementType {
-    pub span: ByteSpan,
+    pub span: SrcSpan,
     pub basis_type: Type,
     pub width: Option<Expr>,
     pub minimum: Option<Expr>,
@@ -97,10 +97,10 @@ pub struct RefinementType {
 }
 
 impl Spanned for RefinementType {
-    fn span(&self) -> ByteSpan {
+    fn span(&self) -> SrcSpan {
         self.span
     }
-    fn set_span(&mut self, span: ByteSpan) {
+    fn set_span(&mut self, span: SrcSpan) {
         self.span = span;
     }
 }
@@ -108,15 +108,15 @@ impl Spanned for RefinementType {
 #[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TupleType {
-    pub span: ByteSpan,
+    pub span: SrcSpan,
     pub element_types: Vec<Type>,
 }
 
 impl Spanned for TupleType {
-    fn span(&self) -> ByteSpan {
+    fn span(&self) -> SrcSpan {
         self.span
     }
-    fn set_span(&mut self, span: ByteSpan) {
+    fn set_span(&mut self, span: SrcSpan) {
         self.span = span;
     }
 }
@@ -124,16 +124,16 @@ impl Spanned for TupleType {
 #[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ArrayType {
-    pub span: ByteSpan,
+    pub span: SrcSpan,
     pub element_type: Type,
     pub len: Expr,
 }
 
 impl Spanned for ArrayType {
-    fn span(&self) -> ByteSpan {
+    fn span(&self) -> SrcSpan {
         self.span
     }
-    fn set_span(&mut self, span: ByteSpan) {
+    fn set_span(&mut self, span: SrcSpan) {
         self.span = span;
     }
 }
@@ -141,15 +141,15 @@ impl Spanned for ArrayType {
 #[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SliceType {
-    pub span: ByteSpan,
+    pub span: SrcSpan,
     pub element_type: Type,
 }
 
 impl Spanned for SliceType {
-    fn span(&self) -> ByteSpan {
+    fn span(&self) -> SrcSpan {
         self.span
     }
-    fn set_span(&mut self, span: ByteSpan) {
+    fn set_span(&mut self, span: SrcSpan) {
         self.span = span;
     }
 }
@@ -157,17 +157,17 @@ impl Spanned for SliceType {
 #[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FuncTypeParam {
-    pub span: ByteSpan,
+    pub span: SrcSpan,
     pub attributes: Option<AttributeList>,
     pub name: NString,
     pub ty: Type,
 }
 
 impl Spanned for FuncTypeParam {
-    fn span(&self) -> ByteSpan {
+    fn span(&self) -> SrcSpan {
         self.span
     }
-    fn set_span(&mut self, span: ByteSpan) {
+    fn set_span(&mut self, span: SrcSpan) {
         self.span = span;
     }
 }
@@ -177,17 +177,17 @@ pub type FuncTypeParams = Vec<FuncTypeParam>;
 #[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FunctionType {
-    pub span: ByteSpan,
+    pub span: SrcSpan,
     pub attributes: Option<AttributeList>,
     pub parameters: FuncTypeParams,
     pub return_type: Option<Type>,
 }
 
 impl Spanned for FunctionType {
-    fn span(&self) -> ByteSpan {
+    fn span(&self) -> SrcSpan {
         self.span
     }
-    fn set_span(&mut self, span: ByteSpan) {
+    fn set_span(&mut self, span: SrcSpan) {
         self.span = span;
     }
 }
@@ -195,15 +195,15 @@ impl Spanned for FunctionType {
 #[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Lifetime {
-    pub span: ByteSpan,
+    pub span: SrcSpan,
     pub name: NString,
 }
 
 impl Spanned for Lifetime {
-    fn span(&self) -> ByteSpan {
+    fn span(&self) -> SrcSpan {
         self.span
     }
-    fn set_span(&mut self, span: ByteSpan) {
+    fn set_span(&mut self, span: SrcSpan) {
         self.span = span;
     }
 }
@@ -218,7 +218,7 @@ pub enum Exclusivity {
 #[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ReferenceType {
-    pub span: ByteSpan,
+    pub span: SrcSpan,
     pub lifetime: Option<Lifetime>,
     pub exclusivity: Option<Exclusivity>,
     pub mutability: Option<Mutability>,
@@ -226,10 +226,10 @@ pub struct ReferenceType {
 }
 
 impl Spanned for ReferenceType {
-    fn span(&self) -> ByteSpan {
+    fn span(&self) -> SrcSpan {
         self.span
     }
-    fn set_span(&mut self, span: ByteSpan) {
+    fn set_span(&mut self, span: SrcSpan) {
         self.span = span;
     }
 }
@@ -237,7 +237,7 @@ impl Spanned for ReferenceType {
 #[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PointerType {
-    pub span: ByteSpan,
+    pub span: SrcSpan,
     pub lifetime: Option<Lifetime>,
     pub exclusivity: Option<Exclusivity>,
     pub mutability: Option<Mutability>,
@@ -245,10 +245,10 @@ pub struct PointerType {
 }
 
 impl Spanned for PointerType {
-    fn span(&self) -> ByteSpan {
+    fn span(&self) -> SrcSpan {
         self.span
     }
-    fn set_span(&mut self, span: ByteSpan) {
+    fn set_span(&mut self, span: SrcSpan) {
         self.span = span;
     }
 }
@@ -256,15 +256,15 @@ impl Spanned for PointerType {
 #[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TypePotential {
-    pub span: ByteSpan,
+    pub span: SrcSpan,
     pub body: Block,
 }
 
 impl Spanned for TypePotential {
-    fn span(&self) -> ByteSpan {
+    fn span(&self) -> SrcSpan {
         self.span
     }
-    fn set_span(&mut self, span: ByteSpan) {
+    fn set_span(&mut self, span: SrcSpan) {
         self.span = span;
     }
 }
@@ -272,15 +272,15 @@ impl Spanned for TypePotential {
 #[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TypeParentheses {
-    pub span: ByteSpan,
+    pub span: SrcSpan,
     pub inner: Type,
 }
 
 impl Spanned for TypeParentheses {
-    fn span(&self) -> ByteSpan {
+    fn span(&self) -> SrcSpan {
         self.span
     }
-    fn set_span(&mut self, span: ByteSpan) {
+    fn set_span(&mut self, span: SrcSpan) {
         self.span = span;
     }
 }
@@ -318,7 +318,7 @@ pub enum Type {
 }
 
 impl Type {
-    pub fn span(&self) -> ByteSpan {
+    pub fn span(&self) -> SrcSpan {
         match self {
             Type::SyntaxError(e) => e.span,
             Type::Bool(e) => e.span,
@@ -349,7 +349,7 @@ impl Type {
             Type::Parentheses(e) => e.span,
         }
     }
-    pub fn set_span(&mut self, span: ByteSpan) {
+    pub fn set_span(&mut self, span: SrcSpan) {
         match self {
             Type::SyntaxError(e) => e.span = span,
             Type::Bool(e) => e.span = span,

@@ -2,7 +2,7 @@ use crate::prelude::*;
 use crate::store::LiteralId;
 use crate::store::ValueId;
 use nitrate_nstring::NString;
-use nitrate_tree::ByteSpan;
+use nitrate_tree::SrcPos;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeSet;
 use std::matches;
@@ -97,88 +97,88 @@ pub enum Type {
     /// It is the bottom type: a subtype of every type.
     Never {
         /// Source location.
-        span: ByteSpan,
+        span: SrcPos,
     },
     /// The unit type (`()`). A zero-sized type with exactly one value.
     Unit {
         /// Source location.
-        span: ByteSpan,
+        span: SrcPos,
     },
     /// The boolean type (`bool`). Either `true` or `false`.
     Bool {
         /// Source location.
-        span: ByteSpan,
+        span: SrcPos,
     },
     /// Unsigned 8-bit integer (`u8`). Range: 0 to 255.
     U8 {
         /// Source location.
-        span: ByteSpan,
+        span: SrcPos,
     },
     /// Unsigned 16-bit integer (`u16`). Range: 0 to 65535.
     U16 {
         /// Source location.
-        span: ByteSpan,
+        span: SrcPos,
     },
     /// Unsigned 32-bit integer (`u32`). Range: 0 to 4,294,967,295.
     U32 {
         /// Source location.
-        span: ByteSpan,
+        span: SrcPos,
     },
     /// Unsigned 64-bit integer (`u64`).
     U64 {
         /// Source location.
-        span: ByteSpan,
+        span: SrcPos,
     },
     /// Unsigned 128-bit integer (`u128`).
     U128 {
         /// Source location.
-        span: ByteSpan,
+        span: SrcPos,
     },
     /// Architecture-dependent unsigned integer (`usize`). 32 or 64 bits.
     USize {
         /// Source location.
-        span: ByteSpan,
+        span: SrcPos,
     },
     /// Signed 8-bit integer (`i8`). Range: -128 to 127.
     I8 {
         /// Source location.
-        span: ByteSpan,
+        span: SrcPos,
     },
     /// Signed 16-bit integer (`i16`). Range: -32,768 to 32,767.
     I16 {
         /// Source location.
-        span: ByteSpan,
+        span: SrcPos,
     },
     /// Signed 32-bit integer (`i32`).
     I32 {
         /// Source location.
-        span: ByteSpan,
+        span: SrcPos,
     },
     /// Signed 64-bit integer (`i64`).
     I64 {
         /// Source location.
-        span: ByteSpan,
+        span: SrcPos,
     },
     /// Signed 128-bit integer (`i128`).
     I128 {
         /// Source location.
-        span: ByteSpan,
+        span: SrcPos,
     },
     /// 32-bit IEEE 754 floating-point (`f32`).
     F32 {
         /// Source location.
-        span: ByteSpan,
+        span: SrcPos,
     },
     /// 64-bit IEEE 754 floating-point (`f64`).
     F64 {
         /// Source location.
-        span: ByteSpan,
+        span: SrcPos,
     },
 
     /// A fixed-size array type (`[T; N]`).
     Array {
         /// Source location.
-        span: ByteSpan,
+        span: SrcPos,
         /// The type of each element.
         element_type: TypeId,
         /// The number of elements.
@@ -187,28 +187,28 @@ pub enum Type {
     /// A heterogeneous fixed-size tuple (`(A, B, C)`).
     Tuple {
         /// Source location.
-        span: ByteSpan,
+        span: SrcPos,
         /// The types of each element, in order.
         element_types: ThinVec<TypeId>,
     },
     /// A named struct type.
     Struct {
         /// Source location.
-        span: ByteSpan,
+        span: SrcPos,
         /// Reference to the struct definition.
         def: StructDefId,
     },
     /// A named enum type.
     Enum {
         /// Source location.
-        span: ByteSpan,
+        span: SrcPos,
         /// Reference to the enum definition.
         def: EnumDefId,
     },
     /// A type alias.
     TypeAlias {
         /// Source location.
-        span: ByteSpan,
+        span: SrcPos,
         /// Reference to the alias definition.
         def: TypeAliasDefId,
     },
@@ -216,7 +216,7 @@ pub enum Type {
     /// specific range of values. Used for integer range types.
     Refine {
         /// Source location.
-        span: ByteSpan,
+        span: SrcPos,
         /// The base type being refined (e.g., `I32`).
         base: TypeId,
         /// The inclusive lower bound (compile-time literal).
@@ -228,7 +228,7 @@ pub enum Type {
     /// Resolved to [`Type::Array`] during `hir_solve`.
     UnresolvedArray {
         /// Source location.
-        span: ByteSpan,
+        span: SrcPos,
         /// The type of each element.
         element_type: TypeId,
         /// An unevaluated expression for the array length.
@@ -238,7 +238,7 @@ pub enum Type {
     /// Resolved to [`Type::Refine`] during `hir_solve`.
     UnresolvedRefine {
         /// Source location.
-        span: ByteSpan,
+        span: SrcPos,
         /// The base type being refined.
         base: TypeId,
         /// An unevaluated expression for the minimum bound.
@@ -249,14 +249,14 @@ pub enum Type {
     /// A function pointer type (`fn(A, B) -> C`).
     Function {
         /// Source location.
-        span: ByteSpan,
+        span: SrcPos,
         /// The full function type signature.
         function_type: Box<FunctionType>,
     },
     /// A reference type (`&T`, `&mut T`, `&unique T`).
     Reference {
         /// Source location.
-        span: ByteSpan,
+        span: SrcPos,
         /// The lifetime of the reference.
         lifetime: Lifetime,
         /// Whether the reference is unique (exclusive) or shared.
@@ -269,7 +269,7 @@ pub enum Type {
     /// A reference to a slice (`&[T]`, `&mut [T]`).
     SliceRef {
         /// Source location.
-        span: ByteSpan,
+        span: SrcPos,
         /// The lifetime of the slice reference.
         lifetime: Lifetime,
         /// Whether the reference is unique (exclusive).
@@ -282,7 +282,7 @@ pub enum Type {
     /// A raw pointer type (`*T`, `*mut T`, `*unique T`).
     Pointer {
         /// Source location.
-        span: ByteSpan,
+        span: SrcPos,
         /// The lifetime associated with this pointer.
         lifetime: Lifetime,
         /// Whether the pointer is unique (exclusive).
@@ -295,7 +295,7 @@ pub enum Type {
     /// A raw pointer to a slice (`*[T]`, `*mut [T]`).
     SlicePtr {
         /// Source location.
-        span: ByteSpan,
+        span: SrcPos,
         /// The lifetime associated with this slice pointer.
         lifetime: Lifetime,
         /// Whether the pointer is unique (exclusive).
@@ -308,14 +308,14 @@ pub enum Type {
     /// A trait object type (`dyn Trait` or `impl Trait`).
     TraitObject {
         /// Source location.
-        span: ByteSpan,
+        span: SrcPos,
         /// The trait bounds that constrain this type.
         bounds: Vec<TypeBound>,
     },
     /// A parameterized type application (`Base<A, B, C>`).
     Parameterized {
         /// Source location.
-        span: ByteSpan,
+        span: SrcPos,
         /// The base type being parameterized (e.g., a generic struct).
         base: TypeId,
         /// The type arguments applied to the base.
@@ -325,20 +325,20 @@ pub enum Type {
     /// Defaults to `F64` if no constraints determine the type.
     InferredFloat {
         /// Source location.
-        span: ByteSpan,
+        span: SrcPos,
     },
     /// An integer literal whose concrete type has not yet been inferred.
     /// Defaults to `I32` if no constraints determine the type.
     InferredInteger {
         /// Source location.
-        span: ByteSpan,
+        span: SrcPos,
     },
     /// A type variable to be inferred by Hindley-Milner unification.
     /// Carries a unique identifier for the inference variable and an
     /// optional name for diagnostics.
     Inferred {
         /// Source location.
-        span: ByteSpan,
+        span: SrcPos,
         /// Unique identifier for this inference variable.
         id: NonZeroU32,
         /// Optional name for diagnostic output (e.g., from `_` or named type vars).
@@ -348,7 +348,7 @@ pub enum Type {
     /// (e.g., `T` in `fn foo<T>(x: T)`).
     GenericParam {
         /// Source location.
-        span: ByteSpan,
+        span: SrcPos,
         /// Index of this parameter in the generic parameter list.
         index: u32,
         /// The name of the generic parameter.
@@ -357,12 +357,12 @@ pub enum Type {
     /// The range type — used internally for range expression desugaring.
     Range {
         /// Source location.
-        span: ByteSpan,
+        span: SrcPos,
     },
     /// The string type (`str`). Unsized sequence of UTF-8 bytes.
     Str {
         /// Source location.
-        span: ByteSpan,
+        span: SrcPos,
     },
 }
 
@@ -450,7 +450,7 @@ impl Type {
     }
 
     #[must_use]
-    pub fn span(&self) -> ByteSpan {
+    pub fn span(&self) -> SrcPos {
         match self {
             Type::Never { span } => *span,
             Type::Unit { span } => *span,

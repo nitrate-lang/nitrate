@@ -1,6 +1,6 @@
 use crate::prelude::*;
 use nitrate_nstring::NString;
-use nitrate_tree::ByteSpan;
+use nitrate_tree::SrcPos;
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 
 #[derive(Debug)]
@@ -121,18 +121,18 @@ impl SymbolTab {
         };
 
         let placeholder = GlobalVariable {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             visibility: Visibility::Sec,
             attributes: BTreeSet::new(),
             is_mutable: false,
             name: name.clone(),
             mangled_name: None,
             ty: Type::Unit {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
             }
             .into(),
             initializer: Value::Unit {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
             }
             .into(),
         };
@@ -156,13 +156,13 @@ impl SymbolTab {
         };
 
         let placeholder = LocalVariable {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             kind: LocalKind::Let,
             attributes: BTreeSet::new(),
             is_mutable: false,
             name: name.clone(),
             ty: Type::Unit {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
             }
             .into(),
             initializer: None,
@@ -183,12 +183,12 @@ impl SymbolTab {
         };
 
         let placeholder = Parameter {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             attributes: BTreeSet::new(),
             is_mutable: false,
             name: name.clone(),
             ty: Type::Unit {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
             }
             .into(),
             default_value: None,
@@ -209,7 +209,7 @@ impl SymbolTab {
         };
 
         let placeholder = Function {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             visibility: Visibility::Sec,
             attributes: BTreeSet::new(),
             is_unsafe: false,
@@ -218,7 +218,7 @@ impl SymbolTab {
             generics: None,
             params: Vec::new(),
             return_type: Type::Unit {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
             }
             .into(),
             body: None,
@@ -282,7 +282,7 @@ impl SymbolTab {
         };
 
         let placeholder = Trait {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             visibility: Visibility::Sec,
             name: name.clone(),
             generics: None,
@@ -338,12 +338,12 @@ impl SymbolTab {
         };
 
         let placeholder = TypeAliasDef {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             visibility: Visibility::Sec,
             name: name.clone(),
             generics: None,
             type_id: Type::Unit {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
             }
             .into(),
         };
@@ -363,7 +363,7 @@ impl SymbolTab {
         };
 
         let placeholder = StructDef {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             visibility: Visibility::Sec,
             attributes: BTreeSet::new(),
             name: name.clone(),
@@ -387,7 +387,7 @@ impl SymbolTab {
         };
 
         let placeholder = EnumDef {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             visibility: Visibility::Sec,
             attributes: BTreeSet::new(),
             name: name.clone(),

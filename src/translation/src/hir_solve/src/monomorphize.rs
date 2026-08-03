@@ -6,7 +6,7 @@ use nitrate_hir::{
 };
 use nitrate_hir_type::HirGetType;
 use nitrate_nstring::NString;
-use nitrate_tree::ByteSpan;
+use nitrate_tree::SrcPos;
 use std::collections::BTreeMap;
 use thin_vec::ThinVec;
 
@@ -188,10 +188,10 @@ impl<'m> Solver<'m> {
                 if let Ok(arg_type) = field_value_id.borrow().determine_type(self.m) {
                     let effective_type = match &arg_type {
                         Type::InferredInteger { .. } => Some(Type::I32 {
-                            span: ByteSpan::default(),
+                            span: SrcPos::default(),
                         }),
                         Type::InferredFloat { .. } => Some(Type::F64 {
-                            span: ByteSpan::default(),
+                            span: SrcPos::default(),
                         }),
                         _ => None,
                     };
@@ -435,7 +435,7 @@ impl<'m> Solver<'m> {
         }
 
         let mono_struct = StructDef {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             visibility: struct_def.visibility,
             name: mono_name_ns,
             attributes: struct_def.attributes.clone(),
@@ -507,7 +507,7 @@ impl<'m> Solver<'m> {
         });
 
         let mono_func = Function {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             visibility: func.visibility,
             attributes: func.attributes.clone(),
             is_unsafe: func.is_unsafe,
@@ -563,7 +563,7 @@ impl<'m> Solver<'m> {
             } => {
                 let new_target = subst.apply(target_type);
                 Value::Cast {
-                    span: ByteSpan::default(),
+                    span: SrcPos::default(),
                     value: v.clone(),
                     target_type: TypeId::from(new_target),
                 }
@@ -580,20 +580,20 @@ impl<'m> Solver<'m> {
                         })
                         .collect();
                     Value::StructObject {
-                        span: ByteSpan::default(),
+                        span: SrcPos::default(),
                         struct_def: struct_def.clone(),
                         fields: new_fields,
                     }
                 } else {
                     Value::StructObject {
-                        span: ByteSpan::default(),
+                        span: SrcPos::default(),
                         struct_def: struct_def.clone(),
                         fields: fields.clone(),
                     }
                 }
             }
             Value::Call { callee, args, .. } => Value::Call {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
                 callee: callee.clone(),
                 args: Arguments {
                     positional: args.positional.clone(),
@@ -601,7 +601,7 @@ impl<'m> Solver<'m> {
                 },
             },
             Value::FunctionSymbol { id, .. } => Value::FunctionSymbol {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
                 id: id.clone(),
             },
             val => val.clone(),

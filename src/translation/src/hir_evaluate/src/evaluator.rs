@@ -5,7 +5,7 @@ use crate::value::evaluate_value;
 use nitrate_diagnosis::CompilerLog;
 use nitrate_hir::prelude::*;
 use nitrate_nstring::NString;
-use nitrate_tree::ByteSpan;
+use nitrate_tree::SrcPos;
 use std::collections::HashMap;
 
 /// A single stack frame for function evaluation.
@@ -140,14 +140,14 @@ impl<'log> Evaluator<'log> {
                     self.evaluate(&init_id.borrow())?
                 } else {
                     Value::Unit {
-                        span: ByteSpan::default(),
+                        span: SrcPos::default(),
                     }
                 };
                 if let Some(frame) = self.frames.last_mut() {
                     frame.set_binding(local.name.clone(), init_value);
                 }
                 Ok(Value::Unit {
-                    span: ByteSpan::default(),
+                    span: SrcPos::default(),
                 })
             }
         }
@@ -173,7 +173,7 @@ impl<'log> Evaluator<'log> {
             .map(|(i, param_id)| {
                 let param = param_id.borrow();
                 let value = args.get(i).cloned().unwrap_or_else(|| Value::Unit {
-                    span: ByteSpan::default(),
+                    span: SrcPos::default(),
                 });
                 (param.name.clone(), value)
             })
@@ -190,7 +190,7 @@ impl<'log> Evaluator<'log> {
         }
 
         let mut last_value = Value::Unit {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
         };
         if let Some(body) = &func.body {
             for element in body {
@@ -236,7 +236,7 @@ impl<'log> Evaluator<'log> {
         self.current_safety = block.safety.clone();
 
         let mut last_value = Value::Unit {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
         };
         for element in &block.elements {
             match self.evaluate_block_element(element) {

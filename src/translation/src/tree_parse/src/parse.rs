@@ -2,7 +2,7 @@ use nitrate_diagnosis::CompilerLog;
 use nitrate_nstring::NString;
 use nitrate_token::Token;
 use nitrate_token_lexer::Lexer;
-use nitrate_tree::ByteSpan;
+use nitrate_tree::SrcSpan;
 use std::path::PathBuf;
 
 pub struct Parser<'a, 'log> {
@@ -71,7 +71,7 @@ impl<'a, 'log> Parser<'a, 'log> {
         let module_start = 0u32;
 
         // Disable trivia so the lexer skips whitespace/comments when parsing items.
-        // Trivia is preserved for reconstruction via ByteSpan ranges on individual items.
+        // Trivia is preserved for reconstruction via SrcPos ranges on individual items.
         self.lexer.disable_trivia();
 
         while !self.is_eof() {
@@ -86,7 +86,7 @@ impl<'a, 'log> Parser<'a, 'log> {
             visibility: None,
             items,
             attributes: None,
-            span: ByteSpan::new(module_start, module_end),
+            span: SrcSpan::new(module_start, module_end),
         }
     }
 }

@@ -9,35 +9,35 @@ use crate::{
 use nitrate_diagnosis::CompilerLog;
 use nitrate_hir::prelude::*;
 use nitrate_nstring::NString;
-use nitrate_tree::ByteSpan;
+use nitrate_tree::SrcPos;
+use nitrate_tree::SrcSpan;
 use nitrate_tree::ast::{self};
 use std::collections::{BTreeMap, BTreeSet};
 
-// Helper closures for reject_all_attributes — signature: fn(String, ByteSpan) -> HirErr
-const ATTR_MODULE: fn(String, ByteSpan) -> HirErr = |name, span| HirErr::UnrecognizedModuleAttribute { span, name };
-const ATTR_GLOBAL_VAR: fn(String, ByteSpan) -> HirErr =
+// Helper closures for reject_all_attributes — signature: fn(String, SrcPos) -> HirErr
+const ATTR_MODULE: fn(String, SrcPos) -> HirErr = |name, span| HirErr::UnrecognizedModuleAttribute { span, name };
+const ATTR_GLOBAL_VAR: fn(String, SrcPos) -> HirErr =
     |name, span| HirErr::UnrecognizedGlobalVarAttribute { span, name };
-const ATTR_FUNCTION: fn(String, ByteSpan) -> HirErr = |name, span| HirErr::UnrecognizedFunctionAttribute { span, name };
-const ATTR_FUNC_PARAM: fn(String, ByteSpan) -> HirErr =
+const ATTR_FUNCTION: fn(String, SrcPos) -> HirErr = |name, span| HirErr::UnrecognizedFunctionAttribute { span, name };
+const ATTR_FUNC_PARAM: fn(String, SrcPos) -> HirErr =
     |name, span| HirErr::UnrecognizedFunctionParamAttribute { span, name };
-const ATTR_TYPE_ALIAS: fn(String, ByteSpan) -> HirErr =
+const ATTR_TYPE_ALIAS: fn(String, SrcPos) -> HirErr =
     |name, span| HirErr::UnrecognizedTypeAliasAttribute { span, name };
-const ATTR_STRUCT: fn(String, ByteSpan) -> HirErr = |name, span| HirErr::UnrecognizedStructAttribute { span, name };
-const ATTR_STRUCT_FIELD: fn(String, ByteSpan) -> HirErr =
+const ATTR_STRUCT: fn(String, SrcPos) -> HirErr = |name, span| HirErr::UnrecognizedStructAttribute { span, name };
+const ATTR_STRUCT_FIELD: fn(String, SrcPos) -> HirErr =
     |name, span| HirErr::UnrecognizedStructFieldAttribute { span, name };
-const ATTR_ENUM: fn(String, ByteSpan) -> HirErr = |name, span| HirErr::UnrecognizedEnumAttribute { span, name };
-const ATTR_ENUM_VARIANT: fn(String, ByteSpan) -> HirErr =
+const ATTR_ENUM: fn(String, SrcPos) -> HirErr = |name, span| HirErr::UnrecognizedEnumAttribute { span, name };
+const ATTR_ENUM_VARIANT: fn(String, SrcPos) -> HirErr =
     |name, span| HirErr::UnrecognizedEnumVariantAttribute { span, name };
-const ATTR_LOCAL_VAR: fn(String, ByteSpan) -> HirErr =
-    |name, span| HirErr::UnrecognizedLocalVarAttribute { span, name };
-const ATTR_TRAIT: fn(String, ByteSpan) -> HirErr = |name, span| HirErr::UnrecognizedTraitAttribute { span, name };
+const ATTR_LOCAL_VAR: fn(String, SrcPos) -> HirErr = |name, span| HirErr::UnrecognizedLocalVarAttribute { span, name };
+const ATTR_TRAIT: fn(String, SrcPos) -> HirErr = |name, span| HirErr::UnrecognizedTraitAttribute { span, name };
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Type Alias Lowering
 // ═══════════════════════════════════════════════════════════════════════════
 
 fn lower_type_alias(type_alias: ast::TypeAlias, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<TypeAliasDefId, ()> {
-    let span = type_alias.span;
+    let span: SrcPos = type_alias.span.into();
     let visibility = helpers::lower_visibility(type_alias.visibility);
     helpers::reject_all_attributes(&type_alias.attributes, ATTR_TYPE_ALIAS, log);
 
@@ -77,7 +77,7 @@ fn lower_struct_definition(
     ctx: &mut Ast2HirCtx,
     log: &CompilerLog,
 ) -> Result<StructDefId, ()> {
-    let span = struct_def.span;
+    let span: SrcPos = struct_def.span.into();
     let visibility = helpers::lower_visibility(struct_def.visibility);
     helpers::reject_all_attributes(&struct_def.attributes, ATTR_STRUCT, log);
 
@@ -102,7 +102,7 @@ fn lower_struct_definition(
         };
 
         let struct_field = StructField {
-            span: field.span,
+            span: field.span.into(),
             visibility: field_visibility,
             attributes: BTreeSet::new(),
             name: field_name,
@@ -133,7 +133,7 @@ fn lower_struct_definition(
 // ═══════════════════════════════════════════════════════════════════════════
 
 fn lower_enum_definition(enum_def: ast::Enum, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<EnumDefId, ()> {
-    let span = enum_def.span;
+    let span: SrcPos = enum_def.span.into();
     let visibility = helpers::lower_visibility(enum_def.visibility);
     helpers::reject_all_attributes(&enum_def.attributes, ATTR_ENUM, log);
 
@@ -152,7 +152,7 @@ fn lower_enum_definition(enum_def: ast::Enum, ctx: &mut Ast2HirCtx, log: &Compil
         let variant_type = match variant.ty.to_owned() {
             Some(ty) => lower_type(ty, ctx, log)?.into(),
             None => Type::Unit {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
             }
             .into(),
         };
@@ -163,7 +163,7 @@ fn lower_enum_definition(enum_def: ast::Enum, ctx: &mut Ast2HirCtx, log: &Compil
         };
 
         let variant = EnumVariant {
-            span: variant.span,
+            span: variant.span.into(),
             attributes: BTreeSet::new(),
             name: variant_name,
             ty: variant_type,
@@ -190,7 +190,7 @@ fn lower_enum_definition(enum_def: ast::Enum, ctx: &mut Ast2HirCtx, log: &Compil
 // ═══════════════════════════════════════════════════════════════════════════
 
 fn lower_trait_definition(trait_: &ast::Trait, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<TraitId, ()> {
-    let span = trait_.span;
+    let span: SrcPos = trait_.span.into();
     let visibility = helpers::lower_visibility(trait_.visibility);
     helpers::reject_all_attributes(&trait_.attributes, ATTR_TRAIT, log);
 
@@ -204,7 +204,7 @@ fn lower_trait_definition(trait_: &ast::Trait, ctx: &mut Ast2HirCtx, log: &Compi
     let prev_self = ctx.current_self_type.take();
     ctx.current_self_type = Some(
         Type::GenericParam {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             index: u32::MAX,
             name: "Self".into(),
         }
@@ -360,7 +360,7 @@ fn lower_global_variable(
     ctx: &mut Ast2HirCtx,
     log: &CompilerLog,
 ) -> Result<GlobalVariableId, ()> {
-    let span = var.span;
+    let span: SrcPos = var.span.into();
     let visibility = helpers::lower_visibility(var.visibility);
     helpers::reject_all_attributes(&var.attributes, ATTR_GLOBAL_VAR, log);
 
@@ -404,7 +404,7 @@ fn lower_global_variable(
 // ═══════════════════════════════════════════════════════════════════════════
 
 fn lower_parameter(param: ast::FuncParam, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<ParameterId, ()> {
-    let span = param.span;
+    let span: SrcPos = param.span.into();
     helpers::reject_all_attributes(&param.attributes, ATTR_FUNC_PARAM, log);
 
     let is_mutable = helpers::is_mutable(param.mutability);
@@ -440,7 +440,7 @@ fn lower_parameter(param: ast::FuncParam, ctx: &mut Ast2HirCtx, log: &CompilerLo
 // ═══════════════════════════════════════════════════════════════════════════
 
 fn lower_function(function: ast::Function, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<FunctionId, ()> {
-    let span = function.span;
+    let span: SrcPos = function.span.into();
     let visibility = helpers::lower_visibility(function.visibility);
     let mut attributes = helpers::parse_function_attributes(&function.attributes, log);
 
@@ -468,7 +468,7 @@ fn lower_function(function: ast::Function, ctx: &mut Ast2HirCtx, log: &CompilerL
     let return_type: Type = match &function.return_type {
         Some(ty) => lower_type(ty.to_owned(), ctx, log)?,
         None => Type::Unit {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
         },
     };
 
@@ -519,7 +519,7 @@ fn ensure_return_in_body(
         Some(BlockElement::Expr(expr)) if !expr.borrow().is_return() => {
             *hir_elements.last_mut().unwrap() = BlockElement::Expr(
                 Value::Return {
-                    span: ByteSpan::default(),
+                    span: SrcPos::default(),
                     value: expr.to_owned(),
                 }
                 .into(),
@@ -529,9 +529,9 @@ fn ensure_return_in_body(
         _ if matches!(return_type, Type::Unit { .. }) => {
             hir_elements.push(BlockElement::Expr(
                 Value::Return {
-                    span: ByteSpan::default(),
+                    span: SrcPos::default(),
                     value: Value::Unit {
-                        span: ByteSpan::default(),
+                        span: SrcPos::default(),
                     }
                     .into(),
                 }
@@ -541,7 +541,7 @@ fn ensure_return_in_body(
         }
         _ => {
             log.report(&HirErr::MissingReturnStatement {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
                 name: func_name.to_string(),
             });
             false
@@ -554,7 +554,7 @@ fn ensure_return_in_body(
 // ═══════════════════════════════════════════════════════════════════════════
 
 pub(crate) fn lower_module(module: ast::Module, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Module, ()> {
-    let span = module.span;
+    let span: SrcPos = module.span.into();
     ctx.current_scope.push(module.name.clone());
 
     let visibility = helpers::lower_visibility(module.visibility);

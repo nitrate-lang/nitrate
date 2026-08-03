@@ -10,7 +10,7 @@ use crate::diagnosis::HirErr;
 use nitrate_diagnosis::CompilerLog;
 use nitrate_hir::prelude::*;
 use nitrate_nstring::NString;
-use nitrate_tree::ByteSpan;
+use nitrate_tree::{SrcPos, SrcSpan};
 use nitrate_tree::ast::{self, SymbolKind};
 use std::collections::{BTreeMap, BTreeSet};
 use std::ops::Deref;
@@ -35,11 +35,11 @@ pub(crate) fn lower_visibility(visibility: Option<ast::Visibility>) -> Visibilit
 /// Log an error for each unrecognized attribute on an item.
 /// Used by item definitions that don't support custom attributes.
 ///
-/// `err_ctor` is a function that takes `(name: String, span: ByteSpan)` and
+/// `err_ctor` is a function that takes `(name: String, span: SrcPos)` and
 /// returns a `HirErr` variant with the span populated.
 pub(crate) fn reject_all_attributes(
     ast_attributes: &Option<Vec<ast::Expr>>,
-    err_ctor: fn(String, ByteSpan) -> HirErr,
+    err_ctor: fn(String, SrcPos) -> HirErr,
     log: &CompilerLog,
 ) {
     if let Some(attrs) = ast_attributes {
@@ -51,7 +51,7 @@ pub(crate) fn reject_all_attributes(
 }
 
 /// Extract a display-friendly attribute name and its span from an AST expression.
-fn extract_attr_name_and_span(attr: &ast::Expr) -> (String, ByteSpan) {
+fn extract_attr_name_and_span(attr: &ast::Expr) -> (String, SrcPos) {
     let name = match attr {
         ast::Expr::Path(p) => p
             .segments
@@ -64,7 +64,7 @@ fn extract_attr_name_and_span(attr: &ast::Expr) -> (String, ByteSpan) {
         ast::Expr::String(s) => format!("#[\"{}\"]", s.value),
         _ => "#[<unknown>]".to_string(),
     };
-    (name, attr.span())
+    (name, attr.span().into())
 }
 
 // We keep the old extract_attr_name for parse_function_attributes which doesn't need span
@@ -94,7 +94,7 @@ pub(crate) fn parse_function_attributes(
 
     if let Some(attrs) = ast_attributes {
         for attr in attrs {
-            let attr_span = attr.span();
+            let attr_span: SrcPos = attr.span().into();
             if let ast::Expr::Path(path) = attr {
                 let ident = path
                     .segments
@@ -137,7 +137,7 @@ pub(crate) fn parse_function_attributes(
 pub(crate) fn check_duplicate(name: &NString, ctx: &Ast2HirCtx, log: &CompilerLog) -> Result<(), ()> {
     if ctx.entities_added.contains(name) {
         log.report(&HirErr::DuplicateEntity {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             name: name.to_string(),
         });
         return Err(());
@@ -186,7 +186,7 @@ pub(crate) fn lower_generic_params(
     for (i, parameter) in params.params.iter().enumerate() {
         let generic_name: NString = parameter.name.to_string().into();
         let _generic_type: TypeId = Type::GenericParam {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             index: i as u32,
             name: generic_name.clone(),
         }
@@ -276,7 +276,7 @@ pub(crate) fn lower_lifetime(lifetime: Option<ast::Lifetime>, log: &CompilerLog)
             "_" => Ok(Lifetime::Inferred),
             _ => {
                 log.report(&HirErr::UnrecognizedLifetime {
-                    span: ByteSpan::default(),
+                    span: SrcPos::default(),
                     name: name.to_string(),
                 });
                 Err(())

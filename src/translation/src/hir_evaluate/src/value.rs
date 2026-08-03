@@ -2,7 +2,7 @@ use crate::error::EvalError;
 use crate::evaluator::Evaluator;
 use nitrate_hir::prelude::*;
 use nitrate_nstring::NString;
-use nitrate_tree::ByteSpan;
+use nitrate_tree::SrcPos;
 use ordered_float::OrderedFloat;
 use std::ops::{Add, BitAnd, BitOr, BitXor, Deref, Div, Mul, Neg, Not, Rem, Shl, Shr, Sub};
 
@@ -165,7 +165,7 @@ fn eval_binary(evaluator: &mut Evaluator, left: &ValueId, op: BinaryOp, right: &
             match &left_val {
                 Value::Bool { value: true, .. } => evaluator.evaluate(&right.borrow()),
                 Value::Bool { value: false, .. } => Ok(Value::Bool {
-                    span: ByteSpan::default(),
+                    span: SrcPos::default(),
                     value: false,
                 }),
                 _ => Err(EvalError::TypeError),
@@ -175,7 +175,7 @@ fn eval_binary(evaluator: &mut Evaluator, left: &ValueId, op: BinaryOp, right: &
             let left_val = evaluator.evaluate(&left.borrow())?;
             match &left_val {
                 Value::Bool { value: true, .. } => Ok(Value::Bool {
-                    span: ByteSpan::default(),
+                    span: SrcPos::default(),
                     value: true,
                 }),
                 Value::Bool { value: false, .. } => evaluator.evaluate(&right.borrow()),
@@ -241,42 +241,42 @@ fn eval_binary(evaluator: &mut Evaluator, left: &ValueId, op: BinaryOp, right: &
                 BinaryOp::Lt => {
                     let val = left_lit.lt(&right_lit).map_err(|_| EvalError::TypeError)?;
                     Ok(Value::Bool {
-                        span: ByteSpan::default(),
+                        span: SrcPos::default(),
                         value: val,
                     })
                 }
                 BinaryOp::Gt => {
                     let val = left_lit.gt(&right_lit).map_err(|_| EvalError::TypeError)?;
                     Ok(Value::Bool {
-                        span: ByteSpan::default(),
+                        span: SrcPos::default(),
                         value: val,
                     })
                 }
                 BinaryOp::Lte => {
                     let val = left_lit.le(&right_lit).map_err(|_| EvalError::TypeError)?;
                     Ok(Value::Bool {
-                        span: ByteSpan::default(),
+                        span: SrcPos::default(),
                         value: val,
                     })
                 }
                 BinaryOp::Gte => {
                     let val = left_lit.ge(&right_lit).map_err(|_| EvalError::TypeError)?;
                     Ok(Value::Bool {
-                        span: ByteSpan::default(),
+                        span: SrcPos::default(),
                         value: val,
                     })
                 }
                 BinaryOp::Eq => {
                     let val = left_lit.eq(&right_lit).map_err(|_| EvalError::TypeError)?;
                     Ok(Value::Bool {
-                        span: ByteSpan::default(),
+                        span: SrcPos::default(),
                         value: val,
                     })
                 }
                 BinaryOp::Ne => {
                     let val = left_lit.ne(&right_lit).map_err(|_| EvalError::TypeError)?;
                     Ok(Value::Bool {
-                        span: ByteSpan::default(),
+                        span: SrcPos::default(),
                         value: val,
                     })
                 }
@@ -348,7 +348,7 @@ impl CastBridge {
             _ => return Err(EvalError::TypeError),
         };
         Ok(Value::U8 {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             value: v,
         })
     }
@@ -360,7 +360,7 @@ impl CastBridge {
             _ => return Err(EvalError::TypeError),
         };
         Ok(Value::U16 {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             value: v,
         })
     }
@@ -372,7 +372,7 @@ impl CastBridge {
             _ => return Err(EvalError::TypeError),
         };
         Ok(Value::U32 {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             value: v,
         })
     }
@@ -384,7 +384,7 @@ impl CastBridge {
             _ => return Err(EvalError::TypeError),
         };
         Ok(Value::U64 {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             value: v,
         })
     }
@@ -396,7 +396,7 @@ impl CastBridge {
             _ => return Err(EvalError::TypeError),
         };
         Ok(Value::U128 {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             value: Box::new(v),
         })
     }
@@ -412,7 +412,7 @@ impl CastBridge {
             _ => return Err(EvalError::TypeError),
         };
         Ok(Value::USize {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             bits,
             value: v,
         })
@@ -425,7 +425,7 @@ impl CastBridge {
             _ => return Err(EvalError::TypeError),
         };
         Ok(Value::I8 {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             value: v,
         })
     }
@@ -437,7 +437,7 @@ impl CastBridge {
             _ => return Err(EvalError::TypeError),
         };
         Ok(Value::I16 {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             value: v,
         })
     }
@@ -449,7 +449,7 @@ impl CastBridge {
             _ => return Err(EvalError::TypeError),
         };
         Ok(Value::I32 {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             value: v,
         })
     }
@@ -461,7 +461,7 @@ impl CastBridge {
             _ => return Err(EvalError::TypeError),
         };
         Ok(Value::I64 {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             value: v,
         })
     }
@@ -473,7 +473,7 @@ impl CastBridge {
             _ => return Err(EvalError::TypeError),
         };
         Ok(Value::I128 {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             value: Box::new(v),
         })
     }
@@ -485,7 +485,7 @@ impl CastBridge {
             _ => return Err(EvalError::TypeError),
         };
         Ok(Value::F32 {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             value: v,
         })
     }
@@ -497,7 +497,7 @@ impl CastBridge {
             _ => return Err(EvalError::TypeError),
         };
         Ok(Value::F64 {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             value: v,
         })
     }
@@ -510,7 +510,7 @@ fn eval_cast(evaluator: &mut Evaluator, expr: &ValueId, target_type: &TypeId) ->
 
     match target {
         Type::Unit { .. } => Ok(Value::Unit {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
         }),
         Type::U8 { .. } => bridge.to_u8(),
         Type::U16 { .. } => bridge.to_u16(),
@@ -545,7 +545,7 @@ fn eval_if(
         Value::Bool { value: false, .. } => match false_branch {
             Some(fb) => evaluator.evaluate_block(&fb.borrow()),
             None => Ok(Value::Unit {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
             }),
         },
         _ => Err(EvalError::TypeError),
@@ -573,7 +573,7 @@ fn eval_while(evaluator: &mut Evaluator, condition: &ValueId, body: &BlockId) ->
         }
     }
     Ok(Value::Unit {
-        span: ByteSpan::default(),
+        span: SrcPos::default(),
     })
 }
 
@@ -591,7 +591,7 @@ fn eval_infinite_loop(evaluator: &mut Evaluator, body: &BlockId) -> Result<Value
         }
     }
     Ok(Value::Unit {
-        span: ByteSpan::default(),
+        span: SrcPos::default(),
     })
 }
 
@@ -610,7 +610,7 @@ fn eval_struct_object(
         evaluated.push((name.clone(), field_val.into()));
     }
     Ok(Value::StructObject {
-        span: ByteSpan::default(),
+        span: SrcPos::default(),
         struct_def: struct_def.clone(),
         fields: evaluated.into(),
     })
@@ -624,7 +624,7 @@ fn eval_enum_variant(
 ) -> Result<Value, EvalError> {
     let inner_val = evaluator.evaluate(&inner.borrow())?;
     Ok(Value::EnumVariant {
-        span: ByteSpan::default(),
+        span: SrcPos::default(),
         enum_def: enum_def.clone(),
         variant: variant.clone(),
         value: inner_val.into(),
@@ -637,7 +637,7 @@ fn eval_list(evaluator: &mut Evaluator, elements: &[ValueId]) -> Result<Value, E
         .map(|elem| evaluator.evaluate(&elem.borrow()).map(ValueId::from))
         .collect::<Result<_, _>>()?;
     Ok(Value::List {
-        span: ByteSpan::default(),
+        span: SrcPos::default(),
         elements: evaluated.into(),
     })
 }
@@ -648,7 +648,7 @@ fn eval_tuple(evaluator: &mut Evaluator, elements: &[ValueId]) -> Result<Value, 
         .map(|elem| evaluator.evaluate(&elem.borrow()).map(ValueId::from))
         .collect::<Result<_, _>>()?;
     Ok(Value::Tuple {
-        span: ByteSpan::default(),
+        span: SrcPos::default(),
         elements: evaluated.into(),
     })
 }
@@ -714,7 +714,7 @@ fn eval_assign(evaluator: &mut Evaluator, place: &ValueId, rhs: Value) -> Result
             if let Some(frame) = evaluator.frames.last_mut() {
                 frame.set_binding(local.name.clone(), rhs);
                 Ok(Value::Unit {
-                    span: ByteSpan::default(),
+                    span: SrcPos::default(),
                 })
             } else {
                 Err(EvalError::TypeError)

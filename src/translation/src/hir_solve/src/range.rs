@@ -23,7 +23,7 @@
 
 use nitrate_hir::{StructDef, StructDefId, StructField, StructMemoryLayoutCell, SymbolTab, Type, TypeId, Visibility};
 use nitrate_nstring::NString;
-use nitrate_tree::ByteSpan;
+use nitrate_tree::SrcPos;
 use std::collections::{BTreeMap, BTreeSet};
 use thin_vec::ThinVec;
 
@@ -80,7 +80,7 @@ pub fn ensure_range_structs(tab: &mut SymbolTab) {
         }
 
         let gen_ty = Type::GenericParam {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             index: 0,
             name: generic_t.clone(),
         };
@@ -102,7 +102,7 @@ pub fn ensure_range_structs(tab: &mut SymbolTab) {
             fields.insert(
                 fname.clone(),
                 StructField {
-                    span: ByteSpan::default(),
+                    span: SrcPos::default(),
                     visibility: Visibility::Pub,
                     attributes: BTreeSet::new(),
                     name: fname.clone(),
@@ -122,7 +122,7 @@ pub fn ensure_range_structs(tab: &mut SymbolTab) {
         };
 
         let struct_def = StructDef {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             visibility: Visibility::Pub,
             name,
             attributes: BTreeSet::new(),
@@ -155,7 +155,7 @@ pub fn ensure_range_structs(tab: &mut SymbolTab) {
 /// A `Value::StructObject` that constructs the appropriate range struct.
 pub fn make_range_struct_object(
     tab: &SymbolTab,
-    span: ByteSpan,
+    span: SrcPos,
     start: Option<nitrate_hir::ValueId>,
     end: Option<nitrate_hir::ValueId>,
     inclusive: bool,

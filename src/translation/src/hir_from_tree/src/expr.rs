@@ -2,7 +2,8 @@ use crate::{context::Ast2HirCtx, diagnosis::HirErr, helpers, ty::lower_type};
 use nitrate_diagnosis::CompilerLog;
 use nitrate_hir::prelude::*;
 use nitrate_nstring::NString;
-use nitrate_tree::ByteSpan;
+use nitrate_tree::SrcPos;
+use nitrate_tree::SrcSpan;
 use nitrate_tree::ast::{self as ast, SymbolKind, UnaryExprOp};
 use ordered_float::OrderedFloat;
 use std::collections::{BTreeMap, BTreeSet};
@@ -14,35 +15,35 @@ use std::ops::Deref;
 
 pub(crate) fn lower_boolean_literal(boolean_lit: ast::BooleanLit) -> Result<Value, ()> {
     Ok(Value::Bool {
-        span: boolean_lit.span,
+        span: boolean_lit.span.into(),
         value: boolean_lit.value,
     })
 }
 
 pub(crate) fn lower_integer_literal(integer_lit: ast::IntegerLit) -> Result<Value, ()> {
     Ok(Value::InferredInteger {
-        span: integer_lit.span,
+        span: integer_lit.span.into(),
         value: Box::new(integer_lit.value),
     })
 }
 
 pub(crate) fn lower_float_literal(float_lit: ast::FloatLit) -> Result<Value, ()> {
     Ok(Value::InferredFloat {
-        span: float_lit.span,
+        span: float_lit.span.into(),
         value: (*float_lit.value).into(),
     })
 }
 
 pub(crate) fn lower_string_literal(string_lit: ast::StringLit) -> Result<Value, ()> {
     Ok(Value::StringLit {
-        span: string_lit.span,
+        span: string_lit.span.into(),
         value: string_lit.value.into(),
     })
 }
 
 pub(crate) fn lower_bstring_literal(bstring_lit: ast::BStringLit) -> Result<Value, ()> {
     Ok(Value::BStringLit {
-        span: bstring_lit.span,
+        span: bstring_lit.span.into(),
         value: bstring_lit.value.into(),
     })
 }
@@ -52,7 +53,7 @@ pub(crate) fn lower_bstring_literal(bstring_lit: ast::BStringLit) -> Result<Valu
 // ═══════════════════════════════════════════════════════════════════════════
 
 pub(crate) fn lower_list(list: ast::List, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
-    let span = list.span;
+    let span: SrcPos = list.span.into();
     let mut elements = Vec::with_capacity(list.elements.len());
 
     for element in list.elements {
@@ -67,7 +68,7 @@ pub(crate) fn lower_list(list: ast::List, ctx: &mut Ast2HirCtx, log: &CompilerLo
 }
 
 pub(crate) fn lower_tuple(tuple: ast::Tuple, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
-    let span = tuple.span;
+    let span: SrcPos = tuple.span.into();
     let mut elements = Vec::with_capacity(tuple.elements.len());
 
     for element in tuple.elements {
@@ -90,7 +91,7 @@ pub(crate) fn lower_struct_init(
     ctx: &mut Ast2HirCtx,
     log: &CompilerLog,
 ) -> Result<Value, ()> {
-    let span = struct_init.span;
+    let span: SrcPos = struct_init.span.into();
 
     // Collect explicit type arguments from turbofish syntax
     let explicit_type_args: Vec<TypeId> = struct_init
@@ -143,7 +144,7 @@ fn handle_monomorphized_struct(
     struct_def_id: StructDefId,
     explicit_type_args: &[TypeId],
     resolved_path: &NString,
-    span: ByteSpan,
+    span: SrcPos,
     fields: Vec<(NString, ValueId)>,
     ctx: &mut Ast2HirCtx,
 ) -> Result<Value, ()> {
@@ -188,7 +189,7 @@ fn handle_monomorphized_struct(
     for (field_name, field) in &struct_def.fields {
         let new_field_ty = substitute_generic_params_in_type(&field.ty, &generic_params, explicit_type_args);
         let new_field = StructField {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             visibility: field.visibility,
             attributes: field.attributes.clone(),
             name: field.name.clone(),
@@ -207,7 +208,7 @@ fn handle_monomorphized_struct(
     drop(borrowed);
 
     let mono_struct = StructDef {
-        span: ByteSpan::default(),
+        span: SrcPos::default(),
         visibility,
         name: mono_name_ns,
         attributes,
@@ -245,7 +246,7 @@ fn substitute_generic_params_in_type(ty: &Type, param_names: &[&NString], type_a
         Type::Array { element_type, len, .. } => {
             let new_elem = substitute_generic_params_in_type(element_type, param_names, type_args);
             Type::Array {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
                 element_type: TypeId::from(new_elem),
                 len: *len,
             }
@@ -256,7 +257,7 @@ fn substitute_generic_params_in_type(ty: &Type, param_names: &[&NString], type_a
                 .map(|et| TypeId::from(substitute_generic_params_in_type(et, param_names, type_args)))
                 .collect();
             Type::Tuple {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
                 element_types: new_elements.into(),
             }
         }
@@ -273,7 +274,7 @@ fn substitute_generic_params_in_type(ty: &Type, param_names: &[&NString], type_a
                 .collect();
             let new_ret = substitute_generic_params_in_type(&function_type.return_type, param_names, type_args);
             Type::Function {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
                 function_type: Box::new(FunctionType {
                     attributes: function_type.attributes.clone(),
                     params: new_params.into(),
@@ -290,7 +291,7 @@ fn substitute_generic_params_in_type(ty: &Type, param_names: &[&NString], type_a
         } => {
             let new_to = substitute_generic_params_in_type(to, param_names, type_args);
             Type::Reference {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
                 lifetime: lifetime.clone(),
                 exclusive: *exclusive,
                 mutable: *mutable,
@@ -306,7 +307,7 @@ fn substitute_generic_params_in_type(ty: &Type, param_names: &[&NString], type_a
         } => {
             let new_to = substitute_generic_params_in_type(to, param_names, type_args);
             Type::Pointer {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
                 lifetime: lifetime.clone(),
                 exclusive: *exclusive,
                 mutable: *mutable,
@@ -322,7 +323,7 @@ fn substitute_generic_params_in_type(ty: &Type, param_names: &[&NString], type_a
         } => {
             let new_elem = substitute_generic_params_in_type(element_type, param_names, type_args);
             Type::SliceRef {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
                 lifetime: lifetime.clone(),
                 exclusive: *exclusive,
                 mutable: *mutable,
@@ -338,7 +339,7 @@ fn substitute_generic_params_in_type(ty: &Type, param_names: &[&NString], type_a
         } => {
             let new_elem = substitute_generic_params_in_type(element_type, param_names, type_args);
             Type::SlicePtr {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
                 lifetime: lifetime.clone(),
                 exclusive: *exclusive,
                 mutable: *mutable,
@@ -346,13 +347,13 @@ fn substitute_generic_params_in_type(ty: &Type, param_names: &[&NString], type_a
             }
         }
         Type::TraitObject { bounds, .. } => Type::TraitObject {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             bounds: bounds.clone(),
         },
         Type::Refine { base, min, max, .. } => {
             let new_base = substitute_generic_params_in_type(base, param_names, type_args);
             Type::Refine {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
                 base: TypeId::from(new_base),
                 min: *min,
                 max: *max,
@@ -368,7 +369,7 @@ fn substitute_generic_params_in_type(ty: &Type, param_names: &[&NString], type_a
             match &new_base {
                 Type::Struct { .. } | Type::TypeAlias { .. } => new_base,
                 _ => Type::Parameterized {
-                    span: ByteSpan::default(),
+                    span: SrcPos::default(),
                     base: TypeId::from(new_base),
                     args: Arguments {
                         positional: new_args,
@@ -390,7 +391,7 @@ fn substitute_generic_params_in_type(ty: &Type, param_names: &[&NString], type_a
 // ═══════════════════════════════════════════════════════════════════════════
 
 pub(crate) fn lower_unary(unary: ast::UnaryExpr, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
-    let span = unary.span;
+    let span: SrcPos = unary.span.into();
     let operand = lower_expr(unary.operand, ctx, log)?;
 
     match unary.operator {
@@ -427,7 +428,7 @@ pub(crate) fn lower_unary(unary: ast::UnaryExpr, ctx: &mut Ast2HirCtx, log: &Com
 }
 
 pub(crate) fn lower_binary(binary: ast::BinExpr, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
-    let span = binary.span;
+    let span: SrcPos = binary.span.into();
     let left = lower_expr(binary.left, ctx, log)?.into();
     let right = lower_expr(binary.right, ctx, log)?.into();
 
@@ -586,7 +587,7 @@ pub(crate) fn lower_binary(binary: ast::BinExpr, ctx: &mut Ast2HirCtx, log: &Com
 }
 
 pub(crate) fn lower_range(range: ast::Range, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
-    let span = range.span;
+    let span: SrcPos = range.span.into();
     let start = range.start.map(|s| lower_expr(*s, ctx, log).unwrap().into());
     let end = range.end.map(|e| lower_expr(*e, ctx, log).unwrap().into());
 
@@ -600,7 +601,7 @@ pub(crate) fn lower_range(range: ast::Range, ctx: &mut Ast2HirCtx, log: &Compile
 
 /// Lower compound assignment operators (e.g., `+=`, `-=`) by expanding
 /// them into `place = place OP value`.
-fn lower_compound_assignment(span: ByteSpan, place: ValueId, value: ValueId, op: ast::BinExprOp) -> Value {
+fn lower_compound_assignment(span: SrcPos, place: ValueId, value: ValueId, op: ast::BinExprOp) -> Value {
     let binary_op = match op {
         ast::BinExprOp::SetPlus => BinaryOp::Add,
         ast::BinExprOp::SetMinus => BinaryOp::Sub,
@@ -638,7 +639,7 @@ fn lower_compound_assignment(span: ByteSpan, place: ValueId, value: ValueId, op:
 // ═══════════════════════════════════════════════════════════════════════════
 
 pub(crate) fn lower_cast(cast: ast::Cast, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
-    let span = cast.span;
+    let span: SrcPos = cast.span.into();
     let expr = lower_expr(cast.value, ctx, log)?;
     let to = lower_type(cast.to, ctx, log)?;
 
@@ -675,7 +676,7 @@ pub(crate) fn lower_cast(cast: ast::Cast, ctx: &mut Ast2HirCtx, log: &CompilerLo
 fn try_cast_inferred_integer(
     value: u128,
     target_type: &Type,
-    span: ByteSpan,
+    span: SrcPos,
     ctx: &Ast2HirCtx,
     log: &CompilerLog,
 ) -> Option<Result<Value, ()>> {
@@ -831,7 +832,7 @@ fn lower_local_variable(
     ctx: &mut Ast2HirCtx,
     log: &CompilerLog,
 ) -> Result<LocalVariableId, ()> {
-    let span = local_var.span;
+    let span: SrcPos = local_var.span.into();
     let kind = match local_var.kind {
         ast::LocalVariableKind::Let => LocalKind::Let,
         ast::LocalVariableKind::Var => LocalKind::Var,
@@ -877,7 +878,7 @@ fn lower_local_variable(
 // ═══════════════════════════════════════════════════════════════════════════
 
 pub(crate) fn lower_block(block: ast::Block, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Block, ()> {
-    let span = block.span;
+    let span: SrcPos = block.span.into();
     let elements_len = block.elements.len();
     let mut elements = Vec::with_capacity(elements_len);
 
@@ -893,7 +894,7 @@ pub(crate) fn lower_block(block: ast::Block, ctx: &mut Ast2HirCtx, log: &Compile
                 if i == elements_len - 1 {
                     elements.push(BlockElement::Expr(
                         Value::Unit {
-                            span: ByteSpan::default(),
+                            span: SrcPos::default(),
                         }
                         .into(),
                     ));
@@ -921,7 +922,7 @@ pub(crate) fn lower_block(block: ast::Block, ctx: &mut Ast2HirCtx, log: &Compile
 pub(crate) fn lower_block_value(block: ast::Block, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
     let block = lower_block(block, ctx, log)?;
     Ok(Value::Block {
-        span: block.span,
+        span: block.span.into(),
         block: block.into(),
     })
 }
@@ -931,7 +932,7 @@ pub(crate) fn lower_block_value(block: ast::Block, ctx: &mut Ast2HirCtx, log: &C
 // ═══════════════════════════════════════════════════════════════════════════
 
 pub(crate) fn lower_expr_path(expr_path: ast::ExprPath, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
-    let span = expr_path.span;
+    let span: SrcPos = expr_path.span.into();
 
     let _explicit_type_args = helpers::extract_type_args_from_expr_path(&expr_path.segments, ctx, log);
 
@@ -942,7 +943,7 @@ pub(crate) fn lower_expr_path(expr_path: ast::ExprPath, ctx: &mut Ast2HirCtx, lo
                 enum_def: ctx.tab.get_enum_variant_or_insert_placeholder(&resolved_path),
                 variant: resolved_path.split("::").last().unwrap().to_string().into(),
                 value: Value::Unit {
-                    span: ByteSpan::default(),
+                    span: SrcPos::default(),
                 }
                 .into(),
             }),
@@ -1003,7 +1004,7 @@ pub(crate) fn lower_index_access(
     let index = lower_expr(index_access.index, ctx, log)?.into();
 
     Ok(Value::IndexAccess {
-        span: index_access.span,
+        span: index_access.span.into(),
         collection,
         index,
     })
@@ -1018,7 +1019,7 @@ pub(crate) fn lower_field_access(
     let field: NString = field_access.field.to_string().into();
 
     Ok(Value::FieldAccess {
-        span: field_access.span,
+        span: field_access.span.into(),
         expr: object,
         field_name: field,
     })
@@ -1029,7 +1030,7 @@ pub(crate) fn lower_field_access(
 // ═══════════════════════════════════════════════════════════════════════════
 
 pub(crate) fn lower_if(if_: ast::If, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
-    let span = if_.span;
+    let span: SrcPos = if_.span.into();
     let condition = lower_expr(if_.condition, ctx, log)?.into();
     let true_branch = lower_block(if_.true_branch, ctx, log)?.into();
 
@@ -1037,7 +1038,7 @@ pub(crate) fn lower_if(if_: ast::If, ctx: &mut Ast2HirCtx, log: &CompilerLog) ->
         Some(ast::ElseIf::If(else_if)) => {
             let else_if_value = lower_if(*else_if, ctx, log)?;
             let block = Block {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
                 safety: BlockSafety::Safe,
                 elements: vec![BlockElement::Expr(else_if_value.into())],
             };
@@ -1060,11 +1061,11 @@ pub(crate) fn lower_while_loop(
     ctx: &mut Ast2HirCtx,
     log: &CompilerLog,
 ) -> Result<Value, ()> {
-    let span = while_loop.span;
+    let span: SrcPos = while_loop.span.into();
     let condition = match while_loop.condition {
         Some(cond) => lower_expr(cond, ctx, log)?.into(),
         None => Value::Bool {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             value: true,
         }
         .into(),
@@ -1077,24 +1078,24 @@ pub(crate) fn lower_while_loop(
 
 pub(crate) fn lower_break(break_: ast::Break, _ctx: &mut Ast2HirCtx, _log: &CompilerLog) -> Result<Value, ()> {
     Ok(Value::Break {
-        span: break_.span,
+        span: break_.span.into(),
         label: break_.label.map(|l| l.to_string().into()),
     })
 }
 
 pub(crate) fn lower_continue(continue_: ast::Continue, _ctx: &mut Ast2HirCtx, _log: &CompilerLog) -> Result<Value, ()> {
     Ok(Value::Continue {
-        span: continue_.span,
+        span: continue_.span.into(),
         label: continue_.label.map(|l| l.to_string().into()),
     })
 }
 
 pub(crate) fn lower_return(return_: ast::Return, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
-    let span = return_.span;
+    let span: SrcPos = return_.span.into();
     let value = match return_.value {
         Some(v) => lower_expr(v, ctx, log)?.into(),
         None => Value::Unit {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
         }
         .into(),
     };
@@ -1111,7 +1112,7 @@ pub(crate) fn lower_function_call(
     ctx: &mut Ast2HirCtx,
     log: &CompilerLog,
 ) -> Result<Value, ()> {
-    let span = function_call.span;
+    let span: SrcPos = function_call.span.into();
     let callee = lower_expr(function_call.callee, ctx, log)?;
 
     let args = lower_call_arguments(function_call.positional, function_call.named, ctx, log);
@@ -1128,7 +1129,7 @@ pub(crate) fn lower_method_call(
     ctx: &mut Ast2HirCtx,
     log: &CompilerLog,
 ) -> Result<Value, ()> {
-    let span = method_call.span;
+    let span: SrcPos = method_call.span.into();
     let object = lower_expr(method_call.object, ctx, log)?.into();
     let method: NString = method_call.method_name.into();
 
@@ -1174,22 +1175,30 @@ fn lower_call_arguments(
 // ═══════════════════════════════════════════════════════════════════════════
 
 pub(crate) fn lower_closure(closure: ast::Closure, _ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
-    log.report(&HirErr::ClosureNotImplemented { span: closure.span });
+    log.report(&HirErr::ClosureNotImplemented {
+        span: closure.span.into(),
+    });
     Err(())
 }
 
 pub(crate) fn lower_match(match_: ast::Match, _ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
-    log.report(&HirErr::MatchNotImplemented { span: match_.span });
+    log.report(&HirErr::MatchNotImplemented {
+        span: match_.span.into(),
+    });
     Err(())
 }
 
 pub(crate) fn lower_for_each(for_each: ast::ForEach, _ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
-    log.report(&HirErr::ForLoopNotImplemented { span: for_each.span });
+    log.report(&HirErr::ForLoopNotImplemented {
+        span: for_each.span.into(),
+    });
     Err(())
 }
 
 pub(crate) fn lower_await(await_: ast::Await, _ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
-    log.report(&HirErr::AwaitNotImplemented { span: await_.span });
+    log.report(&HirErr::AwaitNotImplemented {
+        span: await_.span.into(),
+    });
     Err(())
 }
 
@@ -1198,7 +1207,9 @@ pub(crate) fn lower_type_reflection(
     _ctx: &mut Ast2HirCtx,
     log: &CompilerLog,
 ) -> Result<Value, ()> {
-    log.report(&HirErr::TypeReflectionNotImplemented { span: type_info.span });
+    log.report(&HirErr::TypeReflectionNotImplemented {
+        span: type_info.span.into(),
+    });
     Err(())
 }
 

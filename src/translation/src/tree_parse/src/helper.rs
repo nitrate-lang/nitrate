@@ -3,7 +3,7 @@ use crate::diagnosis::SyntaxErr;
 
 use nitrate_nstring::NString;
 use nitrate_token::Token;
-use nitrate_tree::ByteSpan;
+use nitrate_tree::SrcSpan;
 use nitrate_tree::ast::{Exclusivity, Expr, FuncParam, Mutability, Type, Visibility};
 
 /// Default maximum for counted parser elements (items, parameters, fields, etc.).
@@ -227,7 +227,7 @@ impl Parser<'_, '_> {
             None
         };
         FuncParam {
-            span: ByteSpan::new(param_start, self.lexer.current_pos().offset),
+            span: SrcSpan::new(param_start, self.lexer.current_pos().offset),
             attributes,
             mutability,
             name,

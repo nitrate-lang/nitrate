@@ -1,10 +1,8 @@
-use std::{ops::Deref, write};
-
-use serde::{Deserialize, Serialize};
-
 use crate::FileId;
+use serde::{Deserialize, Serialize};
+use std::write;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct SourcePosition {
     pub line: u32,
     pub column: u32,
@@ -12,19 +10,31 @@ pub struct SourcePosition {
     pub fileid: Option<FileId>,
 }
 
+impl SourcePosition {
+    #[must_use]
+    pub const fn new(line: u32, column: u32, offset: u32, fileid: Option<FileId>) -> Self {
+        SourcePosition {
+            line,
+            column,
+            offset,
+            fileid,
+        }
+    }
+}
+
 impl std::fmt::Display for SourcePosition {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
             "{}:{}:{}",
-            self.fileid.as_ref().map_or("???", |fid| fid.deref()),
+            self.fileid.as_ref().map_or("unknown", |id| &**id),
             self.line + 1,
             self.column + 1
         )
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Span {
     pub start: SourcePosition,
     pub end: SourcePosition,

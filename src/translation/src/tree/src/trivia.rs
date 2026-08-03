@@ -1,25 +1,25 @@
-use crate::span::ByteSpan;
+use crate::span::{SrcPos, SrcSpan};
 use serde::{Deserialize, Serialize};
 
 /// Represents a range of trivia tokens (whitespace, comments, etc.)
-/// in the original source. Stores a ByteSpan pointing into the source bytes.
+/// in the original source. Stores a SrcSpan pointing into the source bytes.
 /// For lazy relexing, re-lex the byte range to get the individual trivia tokens.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct Trivia {
-    /// Byte span of this trivia range in the original source.
-    pub span: ByteSpan,
+    /// Source span of this trivia range in the original source.
+    pub span: SrcSpan,
 }
 
 impl Trivia {
     /// Create a new trivia span.
-    pub const fn new(span: ByteSpan) -> Self {
+    pub const fn new(span: SrcSpan) -> Self {
         Trivia { span }
     }
 
     /// Create an empty trivia at the given offset.
-    pub const fn empty_at(offset: u32) -> Self {
+    pub fn empty_at(offset: u32) -> Self {
         Trivia {
-            span: ByteSpan::empty_at(offset),
+            span: SrcSpan::from_parts(SrcPos::at_offset(offset), SrcPos::at_offset(offset)),
         }
     }
 
@@ -39,8 +39,8 @@ impl Trivia {
     }
 }
 
-impl From<ByteSpan> for Trivia {
-    fn from(span: ByteSpan) -> Self {
+impl From<SrcSpan> for Trivia {
+    fn from(span: SrcSpan) -> Self {
         Trivia { span }
     }
 }
@@ -63,7 +63,7 @@ impl TriviaRef {
 impl From<TriviaRef> for Trivia {
     fn from(tr: TriviaRef) -> Self {
         Trivia {
-            span: ByteSpan::empty_at(tr.offset),
+            span: SrcSpan::from_parts(SrcPos::at_offset(tr.offset), SrcPos::at_offset(tr.offset)),
         }
     }
 }

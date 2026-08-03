@@ -2,7 +2,7 @@ use std::matches;
 
 use crate::{prelude::*, store::LiteralId};
 use nitrate_nstring::NString;
-use nitrate_tree::ByteSpan;
+use nitrate_tree::SrcPos;
 use ordered_float::OrderedFloat;
 use serde::{Deserialize, Serialize};
 use thin_str::ThinStr;
@@ -278,7 +278,7 @@ impl BlockElement {
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct Block {
-    pub span: ByteSpan,
+    pub span: SrcPos,
     pub safety: BlockSafety,
     pub elements: Vec<BlockElement>,
 }
@@ -338,103 +338,103 @@ pub enum Value {
     /// The unit literal `()`. Zero-sized, the only value of type `Unit`.
     Unit {
         /// Source location.
-        span: ByteSpan,
+        span: SrcPos,
     },
     /// A boolean literal (`true` or `false`).
     Bool {
         /// Source location.
-        span: ByteSpan,
+        span: SrcPos,
         /// The boolean value.
         value: bool,
     },
     /// An 8-bit signed integer literal.
     I8 {
         /// Source location.
-        span: ByteSpan,
+        span: SrcPos,
         /// The literal value.
         value: i8,
     },
     /// A 16-bit signed integer literal.
     I16 {
         /// Source location.
-        span: ByteSpan,
+        span: SrcPos,
         /// The literal value.
         value: i16,
     },
     /// A 32-bit signed integer literal.
     I32 {
         /// Source location.
-        span: ByteSpan,
+        span: SrcPos,
         /// The literal value.
         value: i32,
     },
     /// A 64-bit signed integer literal.
     I64 {
         /// Source location.
-        span: ByteSpan,
+        span: SrcPos,
         /// The literal value.
         value: i64,
     },
     /// A 128-bit signed integer literal.
     I128 {
         /// Source location.
-        span: ByteSpan,
+        span: SrcPos,
         /// The literal value (boxed to keep enum size manageable).
         value: Box<i128>,
     },
     /// An 8-bit unsigned integer literal.
     U8 {
         /// Source location.
-        span: ByteSpan,
+        span: SrcPos,
         /// The literal value.
         value: u8,
     },
     /// A 16-bit unsigned integer literal.
     U16 {
         /// Source location.
-        span: ByteSpan,
+        span: SrcPos,
         /// The literal value.
         value: u16,
     },
     /// A 32-bit unsigned integer literal.
     U32 {
         /// Source location.
-        span: ByteSpan,
+        span: SrcPos,
         /// The literal value.
         value: u32,
     },
     /// A 64-bit unsigned integer literal.
     U64 {
         /// Source location.
-        span: ByteSpan,
+        span: SrcPos,
         /// The literal value.
         value: u64,
     },
     /// A 128-bit unsigned integer literal.
     U128 {
         /// Source location.
-        span: ByteSpan,
+        span: SrcPos,
         /// The literal value (boxed to keep enum size manageable).
         value: Box<u128>,
     },
     /// A 32-bit floating-point literal.
     F32 {
         /// Source location.
-        span: ByteSpan,
+        span: SrcPos,
         /// The literal value.
         value: OrderedFloat<f32>,
     },
     /// A 64-bit floating-point literal.
     F64 {
         /// Source location.
-        span: ByteSpan,
+        span: SrcPos,
         /// The literal value.
         value: OrderedFloat<f64>,
     },
     /// A platform-dependent unsigned integer literal (`usize`).
     USize {
         /// Source location.
-        span: ByteSpan,
+        span: SrcPos,
         /// The pointer width in bits (32 or 64).
         bits: u8,
         /// The literal value.
@@ -443,14 +443,14 @@ pub enum Value {
     /// A UTF-8 string literal.
     StringLit {
         /// Source location.
-        span: ByteSpan,
+        span: SrcPos,
         /// The string content.
         value: ThinStr,
     },
     /// A byte string literal (sequence of bytes).
     BStringLit {
         /// Source location.
-        span: ByteSpan,
+        span: SrcPos,
         /// The byte content.
         value: ThinVec<u8>,
     },
@@ -458,7 +458,7 @@ pub enum Value {
     /// The solver determines the type from constraints; defaults to `I32`.
     InferredInteger {
         /// Source location.
-        span: ByteSpan,
+        span: SrcPos,
         /// The literal value (boxed to keep enum size manageable).
         value: Box<u128>,
     },
@@ -466,7 +466,7 @@ pub enum Value {
     /// The solver determines the type from constraints; defaults to `F64`.
     InferredFloat {
         /// Source location.
-        span: ByteSpan,
+        span: SrcPos,
         /// The literal value.
         value: OrderedFloat<f64>,
     },
@@ -474,7 +474,7 @@ pub enum Value {
     /// Construction of a struct value (`Foo { field1: val1, field2: val2 }`).
     StructObject {
         /// Source location.
-        span: ByteSpan,
+        span: SrcPos,
         /// Reference to the struct definition.
         struct_def: StructDefId,
         /// Field name to value mappings.
@@ -484,7 +484,7 @@ pub enum Value {
     /// Construction of an enum variant (`MyEnum::Variant(payload)`).
     EnumVariant {
         /// Source location.
-        span: ByteSpan,
+        span: SrcPos,
         /// Reference to the enum definition.
         enum_def: EnumDefId,
         /// The variant name being constructed.
@@ -496,7 +496,7 @@ pub enum Value {
     /// A binary operation expression (`left op right`).
     Binary {
         /// Source location.
-        span: ByteSpan,
+        span: SrcPos,
         /// The left-hand operand.
         left: ValueId,
         /// The binary operator.
@@ -509,7 +509,7 @@ pub enum Value {
     /// Desugared to a struct object during solving.
     Range {
         /// Source location.
-        span: ByteSpan,
+        span: SrcPos,
         /// The start of the range, if present.
         start: Option<ValueId>,
         /// The end of the range, if present.
@@ -521,7 +521,7 @@ pub enum Value {
     /// A unary operation expression (`op operand`).
     Unary {
         /// Source location.
-        span: ByteSpan,
+        span: SrcPos,
         /// The unary operator.
         op: UnaryOp,
         /// The operand.
@@ -531,7 +531,7 @@ pub enum Value {
     /// An index access expression (`collection[index]`).
     IndexAccess {
         /// Source location.
-        span: ByteSpan,
+        span: SrcPos,
         /// The collection being indexed.
         collection: ValueId,
         /// The index value (`USize`).
@@ -541,7 +541,7 @@ pub enum Value {
     /// A field access expression (`expr.field_name`).
     FieldAccess {
         /// Source location.
-        span: ByteSpan,
+        span: SrcPos,
         /// The expression whose field is being accessed.
         expr: ValueId,
         /// The name of the field.
@@ -551,7 +551,7 @@ pub enum Value {
     /// An assignment expression (`place = value`).
     Assign {
         /// Source location.
-        span: ByteSpan,
+        span: SrcPos,
         /// The place being assigned to (must be mutable).
         place: ValueId,
         /// The value being assigned.
@@ -561,7 +561,7 @@ pub enum Value {
     /// A dereference expression (`*place`).
     Deref {
         /// Source location.
-        span: ByteSpan,
+        span: SrcPos,
         /// The pointer or reference being dereferenced.
         place: ValueId,
     },
@@ -569,7 +569,7 @@ pub enum Value {
     /// A type cast expression (`value as target_type`).
     Cast {
         /// Source location.
-        span: ByteSpan,
+        span: SrcPos,
         /// The value being cast.
         value: ValueId,
         /// The target type for the cast.
@@ -579,7 +579,7 @@ pub enum Value {
     /// A borrow expression (`&place`, `&mut place`, `&unique place`).
     Borrow {
         /// Source location.
-        span: ByteSpan,
+        span: SrcPos,
         /// Whether the borrow is exclusive (unique) or shared.
         exclusive: bool,
         /// Whether the borrow allows mutation.
@@ -591,7 +591,7 @@ pub enum Value {
     /// A list literal expression (`[elem1, elem2, ...]`).
     List {
         /// Source location.
-        span: ByteSpan,
+        span: SrcPos,
         /// The elements of the list.
         elements: ThinVec<ValueId>,
     },
@@ -599,7 +599,7 @@ pub enum Value {
     /// A tuple literal expression (`(elem1, elem2, ...)`).
     Tuple {
         /// Source location.
-        span: ByteSpan,
+        span: SrcPos,
         /// The elements of the tuple.
         elements: ThinVec<ValueId>,
     },
@@ -607,7 +607,7 @@ pub enum Value {
     /// An if-else conditional expression.
     If {
         /// Source location.
-        span: ByteSpan,
+        span: SrcPos,
         /// The condition expression (must be `Bool`).
         condition: ValueId,
         /// The block executed when the condition is true.
@@ -619,7 +619,7 @@ pub enum Value {
     /// A while loop expression.
     While {
         /// Source location.
-        span: ByteSpan,
+        span: SrcPos,
         /// The loop condition (must be `Bool`).
         condition: ValueId,
         /// The loop body.
@@ -629,7 +629,7 @@ pub enum Value {
     /// An infinite loop expression (`loop { ... }`).
     Loop {
         /// Source location.
-        span: ByteSpan,
+        span: SrcPos,
         /// The loop body.
         body: BlockId,
     },
@@ -637,7 +637,7 @@ pub enum Value {
     /// A break expression, optionally targeting a labeled loop.
     Break {
         /// Source location.
-        span: ByteSpan,
+        span: SrcPos,
         /// The optional label of the loop to break from.
         label: Option<NString>,
     },
@@ -645,7 +645,7 @@ pub enum Value {
     /// A continue expression, optionally targeting a labeled loop.
     Continue {
         /// Source location.
-        span: ByteSpan,
+        span: SrcPos,
         /// The optional label of the loop to continue.
         label: Option<NString>,
     },
@@ -653,7 +653,7 @@ pub enum Value {
     /// A return expression from the enclosing function.
     Return {
         /// Source location.
-        span: ByteSpan,
+        span: SrcPos,
         /// The value being returned.
         value: ValueId,
     },
@@ -661,7 +661,7 @@ pub enum Value {
     /// A block expression (`{ ... }`). Creates a new scope.
     Block {
         /// Source location.
-        span: ByteSpan,
+        span: SrcPos,
         /// The block body.
         block: BlockId,
     },
@@ -669,7 +669,7 @@ pub enum Value {
     /// A function call expression (`callee(args)`).
     Call {
         /// Source location.
-        span: ByteSpan,
+        span: SrcPos,
         /// The function or function pointer being called.
         callee: ValueId,
         /// The arguments to the call.
@@ -680,7 +680,7 @@ pub enum Value {
     /// Desugared to a [`Value::Call`] during solving.
     MethodCall {
         /// Source location.
-        span: ByteSpan,
+        span: SrcPos,
         /// The receiver object.
         object: ValueId,
         /// The name of the method being called.
@@ -692,7 +692,7 @@ pub enum Value {
     /// A reference to a function symbol (not a call, just the name).
     FunctionSymbol {
         /// Source location.
-        span: ByteSpan,
+        span: SrcPos,
         /// Reference to the function definition.
         id: FunctionId,
     },
@@ -700,7 +700,7 @@ pub enum Value {
     /// A reference to a global variable symbol.
     GlobalVariableSymbol {
         /// Source location.
-        span: ByteSpan,
+        span: SrcPos,
         /// Reference to the global variable definition.
         id: GlobalVariableId,
     },
@@ -708,7 +708,7 @@ pub enum Value {
     /// A reference to a local variable symbol.
     LocalVariableSymbol {
         /// Source location.
-        span: ByteSpan,
+        span: SrcPos,
         /// Reference to the local variable definition.
         id: LocalVariableId,
     },
@@ -716,7 +716,7 @@ pub enum Value {
     /// A reference to a function parameter symbol.
     ParameterSymbol {
         /// Source location.
-        span: ByteSpan,
+        span: SrcPos,
         /// Reference to the parameter definition.
         id: ParameterId,
     },
@@ -724,7 +724,7 @@ pub enum Value {
 
 impl Value {
     #[must_use]
-    pub fn span(&self) -> ByteSpan {
+    pub fn span(&self) -> SrcPos {
         match self {
             Value::Unit { span } => *span,
             Value::Bool { span, .. } => *span,
@@ -1029,62 +1029,62 @@ impl From<Lit> for Value {
     fn from(value: Lit) -> Self {
         match value {
             Lit::Unit => Value::Unit {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
             },
             Lit::Bool(b) => Value::Bool {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
                 value: b,
             },
             Lit::I8(i) => Value::I8 {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
                 value: i,
             },
             Lit::I16(i) => Value::I16 {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
                 value: i,
             },
             Lit::I32(i) => Value::I32 {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
                 value: i,
             },
             Lit::I64(i) => Value::I64 {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
                 value: i,
             },
             Lit::I128(i) => Value::I128 {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
                 value: Box::new(i),
             },
             Lit::U8(u) => Value::U8 {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
                 value: u,
             },
             Lit::U16(u) => Value::U16 {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
                 value: u,
             },
             Lit::U32(u) => Value::U32 {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
                 value: u,
             },
             Lit::U64(u) => Value::U64 {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
                 value: u,
             },
             Lit::U128(u) => Value::U128 {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
                 value: Box::new(u),
             },
             Lit::F32(f) => Value::F32 {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
                 value: f,
             },
             Lit::F64(f) => Value::F64 {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
                 value: f,
             },
             Lit::USize(bits, u) => Value::USize {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
                 bits,
                 value: u,
             },

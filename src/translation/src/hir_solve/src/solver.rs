@@ -8,7 +8,7 @@ use nitrate_hir::{
 };
 use nitrate_hir_evaluate::Evaluator;
 use nitrate_hir_type::HirGetType;
-use nitrate_tree::ByteSpan;
+use nitrate_tree::SrcPos;
 use ordered_float::OrderedFloat;
 use std::collections::{HashMap, HashSet};
 use std::ops::Deref;
@@ -67,7 +67,7 @@ impl<'m> Solver<'m> {
         }
     }
 
-    pub(crate) fn report_out_of_range(&mut self, span: ByteSpan, integer: u128, target_type: TypeId) {
+    pub(crate) fn report_out_of_range(&mut self, span: SrcPos, integer: u128, target_type: TypeId) {
         self.errors.insert(TypeErr::IntegerLiteralOutOfRange {
             span,
             value: integer,

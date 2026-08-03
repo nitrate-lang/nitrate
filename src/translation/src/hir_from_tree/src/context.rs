@@ -1,6 +1,6 @@
 use nitrate_hir::{SymbolTab, prelude::*};
 use nitrate_nstring::NString;
-use nitrate_tree::ByteSpan;
+use nitrate_tree::{SrcPos, SrcSpan};
 use nitrate_tree::ast::SymbolKind;
 use nitrate_tree_resolve::ImportContext;
 use std::collections::{HashMap, HashSet};
@@ -54,7 +54,7 @@ impl Ast2HirCtx {
         Type::Inferred {
             id,
             name: None,
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
         }
     }
 
@@ -66,7 +66,7 @@ impl Ast2HirCtx {
         Type::GenericParam {
             index: 0,
             name,
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
         }
     }
 

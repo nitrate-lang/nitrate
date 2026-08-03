@@ -1,7 +1,7 @@
 use crate::substitution::Substitution;
 use nitrate_hir::{Arguments, BlockElement, LocalVariable, LocalVariableId, Type, TypeId, Value, ValueId};
 use nitrate_nstring::NString;
-use nitrate_tree::ByteSpan;
+use nitrate_tree::SrcPos;
 use std::collections::BTreeMap;
 use thin_vec::ThinVec;
 
@@ -297,7 +297,7 @@ pub(crate) fn apply_subst_to_value(value: &Value, subst: &Substitution) -> Value
         Value::Cast {
             value: v, target_type, ..
         } => Value::Cast {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             value: recurse(v, subst),
             target_type: TypeId::from(subst.apply(target_type)),
         },
@@ -306,7 +306,7 @@ pub(crate) fn apply_subst_to_value(value: &Value, subst: &Substitution) -> Value
         Value::StructObject { struct_def, fields, .. } => {
             let nf = apply_subst_to_struct_fields(struct_def, fields, subst);
             Value::StructObject {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
                 struct_def: struct_def.clone(),
                 fields: nf,
             }
@@ -319,7 +319,7 @@ pub(crate) fn apply_subst_to_value(value: &Value, subst: &Substitution) -> Value
             variant,
             value: inner,
         } => Value::EnumVariant {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             enum_def: enum_def.clone(),
             variant: variant.clone(),
             value: recurse(inner, subst),
@@ -332,7 +332,7 @@ pub(crate) fn apply_subst_to_value(value: &Value, subst: &Substitution) -> Value
             op,
             right,
         } => Value::Binary {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             left: recurse(left, subst),
             op: op.clone(),
             right: recurse(right, subst),
@@ -340,7 +340,7 @@ pub(crate) fn apply_subst_to_value(value: &Value, subst: &Substitution) -> Value
 
         // ── Unary ─────────────────────────────────────────────────
         Value::Unary { span: _, op, operand } => Value::Unary {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             op: op.clone(),
             operand: recurse(operand, subst),
         },
@@ -351,7 +351,7 @@ pub(crate) fn apply_subst_to_value(value: &Value, subst: &Substitution) -> Value
             collection,
             index,
         } => Value::IndexAccess {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             collection: recurse(collection, subst),
             index: recurse(index, subst),
         },
@@ -362,7 +362,7 @@ pub(crate) fn apply_subst_to_value(value: &Value, subst: &Substitution) -> Value
             expr,
             field_name,
         } => Value::FieldAccess {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             expr: recurse(expr, subst),
             field_name: field_name.clone(),
         },
@@ -373,14 +373,14 @@ pub(crate) fn apply_subst_to_value(value: &Value, subst: &Substitution) -> Value
             place,
             value: val,
         } => Value::Assign {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             place: recurse(place, subst),
             value: recurse(val, subst),
         },
 
         // ── Deref ─────────────────────────────────────────────────
         Value::Deref { span: _, place } => Value::Deref {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             place: recurse(place, subst),
         },
 
@@ -391,7 +391,7 @@ pub(crate) fn apply_subst_to_value(value: &Value, subst: &Substitution) -> Value
             mutable,
             place,
         } => Value::Borrow {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             exclusive: *exclusive,
             mutable: *mutable,
             place: recurse(place, subst),
@@ -399,13 +399,13 @@ pub(crate) fn apply_subst_to_value(value: &Value, subst: &Substitution) -> Value
 
         // ── List ──────────────────────────────────────────────────
         Value::List { span: _, elements } => Value::List {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             elements: recurse_elements(elements, subst),
         },
 
         // ── Tuple ─────────────────────────────────────────────────
         Value::Tuple { span: _, elements } => Value::Tuple {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             elements: recurse_elements(elements, subst),
         },
 
@@ -416,7 +416,7 @@ pub(crate) fn apply_subst_to_value(value: &Value, subst: &Substitution) -> Value
             true_branch,
             false_branch,
         } => Value::If {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             condition: recurse(condition, subst),
             true_branch: nitrate_hir::BlockId::from(clone_block_with_subst(true_branch, subst)),
             false_branch: false_branch
@@ -430,32 +430,32 @@ pub(crate) fn apply_subst_to_value(value: &Value, subst: &Substitution) -> Value
             condition,
             body,
         } => Value::While {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             condition: recurse(condition, subst),
             body: nitrate_hir::BlockId::from(clone_block_with_subst(body, subst)),
         },
 
         // ── Loop ──────────────────────────────────────────────────
         Value::Loop { span: _, body } => Value::Loop {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             body: nitrate_hir::BlockId::from(clone_block_with_subst(body, subst)),
         },
 
         // ── Return ────────────────────────────────────────────────
         Value::Return { span: _, value: val } => Value::Return {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             value: recurse(val, subst),
         },
 
         // ── Block ─────────────────────────────────────────────────
         Value::Block { block, .. } => Value::Block {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             block: nitrate_hir::BlockId::from(clone_block_with_subst(block, subst)),
         },
 
         // ── Call ──────────────────────────────────────────────────
         Value::Call { callee, args, .. } => Value::Call {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             callee: recurse(callee, subst),
             args: apply_subst_to_args(args, subst),
         },
@@ -467,7 +467,7 @@ pub(crate) fn apply_subst_to_value(value: &Value, subst: &Substitution) -> Value
             method_name,
             args,
         } => Value::MethodCall {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             object: recurse(object, subst),
             method_name: method_name.clone(),
             args: apply_subst_to_args(args, subst),
@@ -480,7 +480,7 @@ pub(crate) fn apply_subst_to_value(value: &Value, subst: &Substitution) -> Value
             end,
             inclusive,
         } => Value::Range {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             start: start.as_ref().map(|s| recurse(s, subst)),
             end: end.as_ref().map(|e| recurse(e, subst)),
             inclusive: *inclusive,

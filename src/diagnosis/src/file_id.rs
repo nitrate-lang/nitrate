@@ -1,11 +1,11 @@
 use bimap::BiMap;
 use serde::{Deserialize, Serialize};
-use std::num::NonZeroU32;
+use std::num::NonZeroU16;
 use std::sync::RwLock;
-use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU16, Ordering};
 
-#[derive(Clone, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
-pub struct FileId(NonZeroU32);
+#[derive(Clone, Debug, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub struct FileId(NonZeroU16);
 
 impl std::ops::Deref for FileId {
     type Target = str;
@@ -19,7 +19,7 @@ impl std::ops::Deref for FileId {
 
 struct FileIdStore {
     map: RwLock<BiMap<FileId, &'static str>>,
-    next_id: AtomicU32,
+    next_id: AtomicU16,
     id_space_exhausted: AtomicBool,
 }
 
@@ -27,7 +27,7 @@ impl FileIdStore {
     fn new() -> Self {
         Self {
             map: RwLock::new(BiMap::new()),
-            next_id: AtomicU32::new(1),
+            next_id: AtomicU16::new(1),
             id_space_exhausted: AtomicBool::new(false),
         }
     }
@@ -56,7 +56,7 @@ impl FileIdStore {
         let new_id = self.next_id.fetch_add(1, Ordering::Relaxed);
 
         // Step 6: Create the new FileId and insert it.
-        let file_id = NonZeroU32::new(new_id)
+        let file_id = NonZeroU16::new(new_id)
             .map(FileId)
             .expect("Atomic counter generated 0, which should not happen");
 
@@ -65,7 +65,7 @@ impl FileIdStore {
         // Step 7: If this was the last ID, set the flag.
         // We use a Release store to ensure the memory writes to the map are
         // synchronized with the flag being set.
-        if new_id == u32::MAX {
+        if new_id == u16::MAX {
             self.id_space_exhausted.store(true, Ordering::Release);
         }
 

@@ -73,7 +73,7 @@ pub fn demangle_module(mangled: &str) -> Result<String, ()> {
 
 #[cfg(test)]
 mod tests {
-    use nitrate_tree::ByteSpan;
+    use nitrate_tree::SrcPos;
     use thin_vec::ThinVec;
 
     use super::*;
@@ -85,12 +85,12 @@ mod tests {
 
     fn test_type() -> Type {
         Type::Function {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             function_type: FunctionType {
                 attributes: std::collections::BTreeSet::new(),
                 params: ThinVec::new(),
                 return_type: Type::Unit {
-                    span: ByteSpan::default(),
+                    span: SrcPos::default(),
                 }
                 .into(),
             }

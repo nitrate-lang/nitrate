@@ -2,7 +2,7 @@ use std::format;
 
 use nitrate_hir::prelude::*;
 use nitrate_nstring::NString;
-use nitrate_tree::ByteSpan;
+use nitrate_tree::SrcPos;
 use thin_vec::ThinVec;
 
 use crate::string::{demangle_string, mangle_string};
@@ -201,52 +201,52 @@ pub fn demangle_type(input: &mut &[u8]) -> Result<Type, ()> {
 
     match discriminant {
         b'A' => Ok(Type::Never {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
         }),
         b'B' => Ok(Type::Unit {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
         }),
         b'C' => Ok(Type::Bool {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
         }),
         b'D' => Ok(Type::U8 {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
         }),
         b'E' => Ok(Type::U16 {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
         }),
         b'F' => Ok(Type::U32 {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
         }),
         b'G' => Ok(Type::U64 {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
         }),
         b'H' => Ok(Type::U128 {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
         }),
         b'I' => Ok(Type::USize {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
         }),
         b'J' => Ok(Type::I8 {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
         }),
         b'K' => Ok(Type::I16 {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
         }),
         b'L' => Ok(Type::I32 {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
         }),
         b'M' => Ok(Type::I64 {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
         }),
         b'N' => Ok(Type::I128 {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
         }),
         b'O' => Ok(Type::F32 {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
         }),
         b'P' => Ok(Type::F64 {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
         }),
 
         b'Q' => {
@@ -254,7 +254,7 @@ pub fn demangle_type(input: &mut &[u8]) -> Result<Type, ()> {
             let element_type = demangle_type(input)?;
             let len = read_decimal(input)?;
             Ok(Type::Array {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
                 element_type: element_type.into(),
                 len,
             })
@@ -268,7 +268,7 @@ pub fn demangle_type(input: &mut &[u8]) -> Result<Type, ()> {
                 element_types.push(demangle_type(input)?.into());
             }
             Ok(Type::Tuple {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
                 element_types,
             })
         }
@@ -277,9 +277,9 @@ pub fn demangle_type(input: &mut &[u8]) -> Result<Type, ()> {
             // Struct: `S<name>`
             let name = demangle_string(input)?;
             Ok(Type::Struct {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
                 def: StructDefId::from(StructDef {
-                    span: ByteSpan::default(),
+                    span: SrcPos::default(),
                     visibility: Visibility::Sec,
                     name: NString::from(name),
                     attributes: std::collections::BTreeSet::new(),
@@ -294,9 +294,9 @@ pub fn demangle_type(input: &mut &[u8]) -> Result<Type, ()> {
             // Enum: `T<name>`
             let name = demangle_string(input)?;
             Ok(Type::Enum {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
                 def: EnumDefId::from(EnumDef {
-                    span: ByteSpan::default(),
+                    span: SrcPos::default(),
                     visibility: Visibility::Sec,
                     name: NString::from(name),
                     attributes: std::collections::BTreeSet::new(),
@@ -310,14 +310,14 @@ pub fn demangle_type(input: &mut &[u8]) -> Result<Type, ()> {
             // TypeAlias: `U<name>`
             let name = demangle_string(input)?;
             Ok(Type::TypeAlias {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
                 def: TypeAliasDefId::from(TypeAliasDef {
-                    span: ByteSpan::default(),
+                    span: SrcPos::default(),
                     visibility: Visibility::Sec,
                     name: NString::from(name),
                     generics: None,
                     type_id: Type::Unit {
-                        span: ByteSpan::default(),
+                        span: SrcPos::default(),
                     }
                     .into(),
                 }),
@@ -328,7 +328,7 @@ pub fn demangle_type(input: &mut &[u8]) -> Result<Type, ()> {
             // Refine: `V<base>`
             let base = demangle_type(input)?;
             Ok(Type::Refine {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
                 base: base.into(),
                 min: LiteralId::from(Lit::I64(0)),
                 max: LiteralId::from(Lit::I64(0)),
@@ -345,7 +345,7 @@ pub fn demangle_type(input: &mut &[u8]) -> Result<Type, ()> {
             }
             let return_type = demangle_type(input)?;
             Ok(Type::Function {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
                 function_type: FunctionType {
                     attributes: std::collections::BTreeSet::new(),
                     params,
@@ -360,7 +360,7 @@ pub fn demangle_type(input: &mut &[u8]) -> Result<Type, ()> {
             let (exclusive, mutable) = read_ref_flags(input)?;
             let to = demangle_type(input)?;
             Ok(Type::Reference {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
                 lifetime: Lifetime::Inferred,
                 exclusive,
                 mutable,
@@ -373,7 +373,7 @@ pub fn demangle_type(input: &mut &[u8]) -> Result<Type, ()> {
             let (exclusive, mutable) = read_ref_flags(input)?;
             let element_type = demangle_type(input)?;
             Ok(Type::SliceRef {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
                 lifetime: Lifetime::Inferred,
                 exclusive,
                 mutable,
@@ -386,7 +386,7 @@ pub fn demangle_type(input: &mut &[u8]) -> Result<Type, ()> {
             let (exclusive, mutable) = read_ref_flags(input)?;
             let to = demangle_type(input)?;
             Ok(Type::Pointer {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
                 lifetime: Lifetime::Inferred,
                 exclusive,
                 mutable,
@@ -399,7 +399,7 @@ pub fn demangle_type(input: &mut &[u8]) -> Result<Type, ()> {
             let (exclusive, mutable) = read_ref_flags(input)?;
             let element_type = demangle_type(input)?;
             Ok(Type::SlicePtr {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
                 lifetime: Lifetime::Inferred,
                 exclusive,
                 mutable,
@@ -408,7 +408,7 @@ pub fn demangle_type(input: &mut &[u8]) -> Result<Type, ()> {
         }
 
         b'b' => Ok(Type::TraitObject {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             bounds: Vec::new(),
         }),
 
@@ -422,7 +422,7 @@ pub fn demangle_type(input: &mut &[u8]) -> Result<Type, ()> {
                 positional.push(demangle_type(input)?.into());
             }
             Ok(Type::Parameterized {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
                 base: base.into(),
                 args: Arguments { positional, named },
             })
@@ -432,7 +432,7 @@ pub fn demangle_type(input: &mut &[u8]) -> Result<Type, ()> {
             // GenericParam: `d<index>_`
             let index = read_decimal(input)?;
             Ok(Type::GenericParam {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
                 index,
                 name: NString::from(""),
             })
@@ -442,20 +442,20 @@ pub fn demangle_type(input: &mut &[u8]) -> Result<Type, ()> {
             // Inferred: `e<id>_`
             let id = read_decimal(input)?;
             Ok(Type::Inferred {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
                 id: std::num::NonZeroU32::new(id).ok_or(())?,
                 name: None,
             })
         }
 
         b'f' => Ok(Type::InferredFloat {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
         }),
         b'g' => Ok(Type::InferredInteger {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
         }),
         b'h' => Ok(Type::Range {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
         }),
 
         _ => Err(()),
@@ -508,12 +508,12 @@ mod tests {
 
     fn test_type() -> Type {
         Type::Function {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             function_type: FunctionType {
                 attributes: std::collections::BTreeSet::new(),
                 params: ThinVec::new(),
                 return_type: Type::Unit {
-                    span: ByteSpan::default(),
+                    span: SrcPos::default(),
                 }
                 .into(),
             }
@@ -526,76 +526,76 @@ mod tests {
         with_store(|| {
             let cases = [
                 Type::Never {
-                    span: ByteSpan::default(),
+                    span: SrcPos::default(),
                 },
                 Type::Unit {
-                    span: ByteSpan::default(),
+                    span: SrcPos::default(),
                 },
                 Type::Bool {
-                    span: ByteSpan::default(),
+                    span: SrcPos::default(),
                 },
                 Type::U8 {
-                    span: ByteSpan::default(),
+                    span: SrcPos::default(),
                 },
                 Type::U16 {
-                    span: ByteSpan::default(),
+                    span: SrcPos::default(),
                 },
                 Type::U32 {
-                    span: ByteSpan::default(),
+                    span: SrcPos::default(),
                 },
                 Type::U64 {
-                    span: ByteSpan::default(),
+                    span: SrcPos::default(),
                 },
                 Type::U128 {
-                    span: ByteSpan::default(),
+                    span: SrcPos::default(),
                 },
                 Type::USize {
-                    span: ByteSpan::default(),
+                    span: SrcPos::default(),
                 },
                 Type::I8 {
-                    span: ByteSpan::default(),
+                    span: SrcPos::default(),
                 },
                 Type::I16 {
-                    span: ByteSpan::default(),
+                    span: SrcPos::default(),
                 },
                 Type::I32 {
-                    span: ByteSpan::default(),
+                    span: SrcPos::default(),
                 },
                 Type::I64 {
-                    span: ByteSpan::default(),
+                    span: SrcPos::default(),
                 },
                 Type::I128 {
-                    span: ByteSpan::default(),
+                    span: SrcPos::default(),
                 },
                 Type::F32 {
-                    span: ByteSpan::default(),
+                    span: SrcPos::default(),
                 },
                 Type::F64 {
-                    span: ByteSpan::default(),
+                    span: SrcPos::default(),
                 },
                 Type::Array {
-                    span: ByteSpan::default(),
+                    span: SrcPos::default(),
                     element_type: Type::U8 {
-                        span: ByteSpan::default(),
+                        span: SrcPos::default(),
                     }
                     .into(),
                     len: 42,
                 },
                 Type::Tuple {
-                    span: ByteSpan::default(),
+                    span: SrcPos::default(),
                     element_types: ThinVec::from(vec![
                         Type::U8 {
-                            span: ByteSpan::default(),
+                            span: SrcPos::default(),
                         }
                         .into(),
                         Type::I32 {
-                            span: ByteSpan::default(),
+                            span: SrcPos::default(),
                         }
                         .into(),
                     ]),
                 },
                 Type::Function {
-                    span: ByteSpan::default(),
+                    span: SrcPos::default(),
                     function_type: FunctionType {
                         attributes: std::collections::BTreeSet::new(),
                         // Parameter names are deliberately not encoded in the
@@ -605,71 +605,71 @@ mod tests {
                             (
                                 NString::from(""),
                                 Type::U8 {
-                                    span: ByteSpan::default(),
+                                    span: SrcPos::default(),
                                 }
                                 .into(),
                             ),
                             (
                                 NString::from(""),
                                 Type::I32 {
-                                    span: ByteSpan::default(),
+                                    span: SrcPos::default(),
                                 }
                                 .into(),
                             ),
                         ]),
                         return_type: Type::Bool {
-                            span: ByteSpan::default(),
+                            span: SrcPos::default(),
                         }
                         .into(),
                     }
                     .into(),
                 },
                 Type::Reference {
-                    span: ByteSpan::default(),
+                    span: SrcPos::default(),
                     lifetime: Lifetime::Inferred,
                     exclusive: true,
                     mutable: true,
                     to: Type::U8 {
-                        span: ByteSpan::default(),
+                        span: SrcPos::default(),
                     }
                     .into(),
                 },
                 Type::SliceRef {
-                    span: ByteSpan::default(),
+                    span: SrcPos::default(),
                     lifetime: Lifetime::Inferred,
                     exclusive: false,
                     mutable: true,
                     element_type: Type::U8 {
-                        span: ByteSpan::default(),
+                        span: SrcPos::default(),
                     }
                     .into(),
                 },
                 Type::Pointer {
-                    span: ByteSpan::default(),
+                    span: SrcPos::default(),
                     lifetime: Lifetime::Inferred,
                     exclusive: true,
                     mutable: false,
                     to: Type::U8 {
-                        span: ByteSpan::default(),
+                        span: SrcPos::default(),
                     }
                     .into(),
                 },
                 Type::SlicePtr {
-                    span: ByteSpan::default(),
+                    span: SrcPos::default(),
                     lifetime: Lifetime::Inferred,
                     exclusive: false,
                     mutable: false,
                     element_type: Type::U8 {
-                        span: ByteSpan::default(),
+                        span: SrcPos::default(),
                     }
                     .into(),
                 },
                 Type::TraitObject {
-                    span: ByteSpan::default(),
+                    span: SrcPos::default(),
                     bounds: Vec::new(),
                 },
                 Type::GenericParam {
-                    span: ByteSpan::default(),
+                    span: SrcPos::default(),
                     index: 3,
                     // The generic param name is deliberately not encoded in
                     // the mangled type signature (only the index matters for
@@ -677,15 +677,15 @@ mod tests {
                     name: NString::from(""),
                 },
                 Type::Inferred {
-                    span: ByteSpan::default(),
+                    span: SrcPos::default(),
                     id: std::num::NonZeroU32::new(7).unwrap(),
                     name: None,
                 },
                 Type::InferredFloat {
-                    span: ByteSpan::default(),
+                    span: SrcPos::default(),
                 },
                 Type::InferredInteger {
-                    span: ByteSpan::default(),
+                    span: SrcPos::default(),
                 },
             ];
 
@@ -704,25 +704,25 @@ mod tests {
         with_store(|| {
             let cases = [
                 Type::Never {
-                    span: ByteSpan::default(),
+                    span: SrcPos::default(),
                 },
                 Type::Array {
-                    span: ByteSpan::default(),
+                    span: SrcPos::default(),
                     element_type: Type::U8 {
-                        span: ByteSpan::default(),
+                        span: SrcPos::default(),
                     }
                     .into(),
                     len: 42,
                 },
                 Type::Tuple {
-                    span: ByteSpan::default(),
+                    span: SrcPos::default(),
                     element_types: ThinVec::from(vec![
                         Type::U8 {
-                            span: ByteSpan::default(),
+                            span: SrcPos::default(),
                         }
                         .into(),
                         Type::I32 {
-                            span: ByteSpan::default(),
+                            span: SrcPos::default(),
                         }
                         .into(),
                     ]),
@@ -746,15 +746,15 @@ mod tests {
         with_store(|| {
             // Two types concatenated should be decodable independently.
             let ty1 = Type::Array {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
                 element_type: Type::U8 {
-                    span: ByteSpan::default(),
+                    span: SrcPos::default(),
                 }
                 .into(),
                 len: 42,
             };
             let ty2 = Type::I32 {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
             };
 
             let mangled = format!("{}{}", mangle_type(&ty1), mangle_type(&ty2));

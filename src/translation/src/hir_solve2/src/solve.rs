@@ -12,7 +12,7 @@ use nitrate_hir::{
 use nitrate_hir_evaluate::Evaluator;
 use nitrate_hir_type::HirGetType;
 use nitrate_nstring::NString;
-use nitrate_tree::ByteSpan;
+use nitrate_tree::SrcPos;
 use ordered_float::OrderedFloat;
 use std::collections::{BTreeMap, HashMap, HashSet};
 use std::matches;
@@ -715,7 +715,7 @@ impl<'a> Solver<'a> {
         self.add_constraint(
             index,
             TypeConstraint::eq_type(Type::USize {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
             }),
         );
         if let Some(pc) = self.constraints.get(e).cloned() {
@@ -866,7 +866,7 @@ impl<'a> Solver<'a> {
         self.add_constraint(
             condition,
             TypeConstraint::eq_type(Type::Bool {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
             }),
         );
         self.visit(condition);
@@ -927,7 +927,7 @@ impl<'a> Solver<'a> {
         self.add_constraint(
             condition,
             TypeConstraint::eq_type(Type::Bool {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
             }),
         );
         self.visit(condition);
@@ -996,7 +996,7 @@ impl<'a> Solver<'a> {
             if let Some(subst) = subst {
                 let mono_id = self.monomorphize_function(fid, &subst);
                 callee.replace(Value::FunctionSymbol {
-                    span: ByteSpan::default(),
+                    span: SrcPos::default(),
                     id: mono_id,
                 });
             }
@@ -1057,9 +1057,9 @@ impl<'a> Solver<'a> {
                     {
                         let mono_id = self.monomorphize_function(&method_id, &subst);
                         e.replace(Value::Call {
-                            span: ByteSpan::default(),
+                            span: SrcPos::default(),
                             callee: ValueId::from(Value::FunctionSymbol {
-                                span: ByteSpan::default(),
+                                span: SrcPos::default(),
                                 id: mono_id,
                             }),
                             args: args_with_self,
@@ -1079,7 +1079,7 @@ impl<'a> Solver<'a> {
                     });
                     let self_arg = match first_param_info {
                         Some(Some((_, is_mutable, is_exclusive))) => ValueId::from(Value::Borrow {
-                            span: ByteSpan::default(),
+                            span: SrcPos::default(),
                             exclusive: is_exclusive,
                             mutable: is_mutable,
                             place: object_id.clone(),
@@ -1100,9 +1100,9 @@ impl<'a> Solver<'a> {
                     }
                     drop(mf);
                     e.replace(Value::Call {
-                        span: ByteSpan::default(),
+                        span: SrcPos::default(),
                         callee: ValueId::from(Value::FunctionSymbol {
-                            span: ByteSpan::default(),
+                            span: SrcPos::default(),
                             id: method_id,
                         }),
                         args: args_with_self,
@@ -1388,7 +1388,7 @@ impl<'a> Solver<'a> {
             .as_ref()
             .map(|body| body.iter().map(|el| clone_block_element(el, subst)).collect());
         let mono_func = Function {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             visibility: func.visibility,
             attributes: func.attributes.clone(),
             is_unsafe: func.is_unsafe,
@@ -1455,7 +1455,7 @@ impl<'a> Solver<'a> {
             });
         }
         let mono_struct = StructDef {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             visibility: sd.visibility,
             name: mono_name.into(),
             attributes: sd.attributes.clone(),

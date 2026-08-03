@@ -18,18 +18,19 @@
 //! | Module | Description |
 //! |--------|-------------|
 //! | [`ast`] | AST node types: expressions, types, items, spans, trivia |
-//! | [`span`] | `ByteSpan` — byte-offset source location type |
+//! | [`span`] | `SrcPos` — compact source location type |
 //! | [`trivia`] | Whitespace and comment handling |
 //! | [`iter`] / [`iter_mut`] | Immutable / mutable tree traversals |
 //! | [`pretty_print`] | Debug and display formatting of parse trees |
 //!
 //! ## Key Types
 //!
-//! - [`ByteSpan`]: A half-open byte range `[start, end)` in source code.
+//! - [`SrcPos`]: A compact source position storing file, line, column, and byte offset.
 //! - [`Trivia`]: Whitespace and comment information attached to tokens.
 //! - [`ParseTreeIter`] / [`ParseTreeIterMut`]: Iterator-based tree traversal.
 //! - [`PrettyPrint`]: Trait for formatting tree nodes as source-like text.
 
+mod convert;
 mod expr;
 mod expr_iter;
 mod expr_iter_mut;
@@ -45,7 +46,10 @@ mod ty;
 mod ty_iter;
 mod ty_iter_mut;
 
-pub use span::ByteSpan;
+pub use convert::{
+    raw_to_srcpos, span_from_offsets, span_from_raw, tok_to_srcpos_end, tok_to_srcpos_start, tok_to_srcspan,
+};
+pub use span::{SrcPos, SrcSpan};
 pub use trivia::Trivia;
 
 /// Abstract Syntax Tree node types.

@@ -6,6 +6,7 @@ edition = "2024"
 [dependencies]
 nitrate_nstring.workspace = true
 nitrate_token.workspace = true
+nitrate_diagnosis.workspace = true
 
 ordered-float.workspace = true
 serde = { workspace = true, features = ["derive", "rc"] }

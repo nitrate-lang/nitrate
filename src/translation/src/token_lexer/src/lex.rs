@@ -1,6 +1,6 @@
 use log::error;
 use nitrate_diagnosis::FileId;
-use nitrate_token::{AnnotatedToken, Comment, CommentKind, Integer, IntegerKind, SourcePosition, Token};
+use nitrate_token::{AnnotatedToken, Comment, CommentKind, Integer, IntegerKind, Token};
 use ordered_float::NotNan;
 
 const RESERVED_PREFIX: &str = "⚙️";
@@ -10,11 +10,30 @@ pub enum LexerError {
     SourceTooBig,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct LexPos {
+    pub fileid: Option<FileId>,
+    pub line: u16,
+    pub column: u8,
+    pub offset: u32,
+}
+
+impl From<LexPos> for nitrate_diagnosis::SourcePosition {
+    fn from(pos: LexPos) -> Self {
+        nitrate_diagnosis::SourcePosition {
+            line: u32::from(pos.line),
+            column: u32::from(pos.column),
+            offset: pos.offset,
+            fileid: pos.fileid,
+        }
+    }
+}
+
 #[derive(Debug)]
 pub struct Lexer<'a> {
     pub source: &'a [u8],
-    internal_getc_pos: SourcePosition,
-    current_pos: SourcePosition,
+    internal_getc_pos: LexPos,
+    current_pos: LexPos,
     preread_token: Option<AnnotatedToken>,
     trivia_enabled: bool,
 }
@@ -24,36 +43,29 @@ enum StringEscape {
     Byte(u8),
 }
 
-// Must not be increased beyond u32::MAX, as the lexer/compiler pipeline
-// assumes that offsets are representable as u32 values. However, it is
-// acceptable to decrease this value.
 #[cfg(not(test))]
 const MAX_SOURCE_SIZE: usize = u32::MAX as usize;
 #[cfg(test)]
 const MAX_SOURCE_SIZE: usize = 4096;
 
 impl<'a> Lexer<'a> {
-    /// Creates a new lexer instance from the given source code and filename.
-    /// The source code must not exceed 4 GiB in size.
-    /// # Errors
-    /// Returns `LexerError::SourceTooBig` if the source code exceeds 4 GiB in size.
     pub fn new(src: &'a [u8], fileid: Option<FileId>) -> Result<Self, LexerError> {
         if src.len() > MAX_SOURCE_SIZE {
             Err(LexerError::SourceTooBig)
         } else {
             Ok(Lexer {
                 source: src,
-                internal_getc_pos: SourcePosition {
+                internal_getc_pos: LexPos {
+                    fileid: fileid.clone(),
                     line: 0,
                     column: 0,
                     offset: 0,
-                    fileid: fileid.clone(),
                 },
-                current_pos: SourcePosition {
+                current_pos: LexPos {
+                    fileid: fileid.clone(),
                     line: 0,
                     column: 0,
                     offset: 0,
-                    fileid: fileid.clone(),
                 },
                 preread_token: None,
                 trivia_enabled: true,
@@ -64,7 +76,6 @@ impl<'a> Lexer<'a> {
     pub fn enable_trivia(&mut self) {
         self.trivia_enabled = true;
     }
-
     pub fn disable_trivia(&mut self) {
         self.trivia_enabled = false;
     }
@@ -74,10 +85,8 @@ impl<'a> Lexer<'a> {
             self.current_pos = self.internal_getc_pos.clone();
             return peeked;
         }
-
         let token = self.parse_next_token();
         self.current_pos = self.internal_getc_pos.clone();
-
         token
     }
 
@@ -85,10 +94,8 @@ impl<'a> Lexer<'a> {
         if let Some(peeked) = self.preread_token.clone() {
             return peeked;
         }
-
         let peeked = self.parse_next_token();
         self.preread_token = Some(peeked.clone());
-
         peeked
     }
 
@@ -98,7 +105,6 @@ impl<'a> Lexer<'a> {
         } else {
             self.parse_next_token();
         }
-
         self.current_pos = self.internal_getc_pos.clone();
     }
 
@@ -122,17 +128,23 @@ impl<'a> Lexer<'a> {
         while !self.is_eof() && &self.next_tok().token != not {}
     }
 
-    /// Returns the end of the last consumed token
     #[inline(always)]
     #[must_use]
-    pub fn current_pos(&self) -> SourcePosition {
+    pub fn current_pos(&self) -> LexPos {
         self.current_pos.clone()
     }
 
+    /// Returns the start position of the next token without consuming it.
     #[inline(always)]
     #[must_use]
-    pub fn peek_pos(&mut self) -> SourcePosition {
-        self.peek_tok().start()
+    pub fn peek_pos(&mut self) -> LexPos {
+        let tok = self.peek_tok();
+        LexPos {
+            fileid: tok.fileid,
+            line: tok.start_line,
+            column: tok.start_column,
+            offset: tok.start_offset,
+        }
     }
 
     #[inline(always)]
@@ -141,10 +153,46 @@ impl<'a> Lexer<'a> {
         self.peek_tok().token == Token::Eof
     }
 
+    /// Rewind the lexer to a previously saved position.
     #[inline(always)]
-    pub fn rewind(&mut self, pos: SourcePosition) {
+    pub fn rewind(&mut self, pos: LexPos) {
         self.internal_getc_pos = pos.clone();
         self.current_pos = pos;
+        self.preread_token = None;
+    }
+
+    /// Rewind to a position specified by raw tuple (fileid, line, column, offset).
+    #[inline(always)]
+    pub fn rewind_raw(&mut self, (fileid, line, column, offset): (Option<FileId>, u16, u8, u32)) {
+        self.rewind(LexPos {
+            fileid,
+            line,
+            column,
+            offset,
+        });
+    }
+
+    /// Rewind to a previously saved lexer state. The saved value is a
+    /// `(fileid, line, column, offset)` tuple from `current_pos` or `peek_pos`.
+    #[inline(always)]
+    pub fn rewind_saved(&mut self, saved: (Option<FileId>, u16, u8, u32)) {
+        self.rewind_raw(saved);
+    }
+
+    /// Update the internal rewind functions.
+    fn rewind_to_internal(&mut self, fileid: Option<FileId>, line: u16, column: u8, offset: u32) {
+        self.internal_getc_pos = LexPos {
+            fileid: fileid.clone(),
+            line,
+            column,
+            offset,
+        };
+        self.current_pos = LexPos {
+            fileid,
+            line,
+            column,
+            offset,
+        };
         self.preread_token = None;
     }
 
@@ -178,33 +226,26 @@ impl<'a> Lexer<'a> {
     #[inline(always)]
     fn advance(&mut self, byte: u8) -> u8 {
         let current = self.internal_getc_pos.clone();
-
         if byte == b'\n' {
-            self.internal_getc_pos = SourcePosition {
-                line: current.line + 1,
+            self.internal_getc_pos = LexPos {
+                line: current.line.saturating_add(1),
                 column: 0,
-                offset: current.offset + 1,
-                fileid: current.fileid.clone(),
+                offset: current.offset.saturating_add(1),
+                fileid: current.fileid,
             };
         } else {
             let utf8_end = (byte & 0x80) == 0 || (byte & 0xC0) == 0xC0;
-            if utf8_end {
-                self.internal_getc_pos = SourcePosition {
-                    line: current.line,
-                    column: current.column + 1,
-                    offset: current.offset + 1,
-                    fileid: current.fileid.clone(),
-                };
-            } else {
-                self.internal_getc_pos = SourcePosition {
-                    line: current.line,
-                    column: current.column,
-                    offset: current.offset + 1,
-                    fileid: current.fileid.clone(),
-                };
-            }
+            self.internal_getc_pos = LexPos {
+                line: current.line,
+                column: if utf8_end {
+                    current.column.saturating_add(1)
+                } else {
+                    current.column
+                },
+                offset: current.offset.saturating_add(1),
+                fileid: current.fileid,
+            };
         }
-
         byte
     }
 
@@ -223,7 +264,6 @@ impl<'a> Lexer<'a> {
     {
         let start_offset = self.internal_getc_pos.offset;
         let mut end_offset = start_offset;
-
         while let Some(b) = self.source.get(end_offset as usize) {
             if condition(*b) {
                 self.advance(*b);
@@ -232,38 +272,29 @@ impl<'a> Lexer<'a> {
                 break;
             }
         }
-
         &self.source[start_offset as usize..end_offset as usize]
     }
 
     #[inline(always)]
     fn parse_atypical_identifier(&mut self) -> Result<Token, ()> {
         let start_pos = self.internal_getc_pos.clone();
-
         assert!(self.peek_byte().expect("Failed to peek byte") == b'`');
         self.advance(b'`');
-
         let identifier = self.read_while(|b| b != b'`');
-
         if let Ok(b'`') = self.peek_byte() {
             self.advance(b'`');
         } else {
-            error!("[L0000]: Unterminated atypical identifier. Did you forget the '`' terminator?\n--> {start_pos}");
+            error!("[L0000]: Unterminated atypical identifier.");
             return Err(());
         }
-
         if let Ok(identifier) = str::from_utf8(identifier) {
             if identifier.starts_with(RESERVED_PREFIX) {
-                error!(
-                    "[L0002]: Identifiers starting with '{RESERVED_PREFIX}' are reserved for compiler-generated names.\n--> {start_pos}"
-                );
+                error!("[L0002]: Identifiers starting with '{RESERVED_PREFIX}' are reserved.");
                 return Err(());
             }
-
             Ok(Token::Name(identifier.to_string()))
         } else {
-            error!("[L0001]: Identifier contains some invalid utf-8 bytes\n--> {start_pos}");
-
+            error!("[L0001]: Identifier contains invalid utf-8");
             Err(())
         }
     }
@@ -271,10 +302,8 @@ impl<'a> Lexer<'a> {
     #[inline(always)]
     fn parse_typical_identifier(&mut self) -> Result<Token, ()> {
         let start_pos = self.internal_getc_pos.clone();
-
         let name = self.read_while(|b| b.is_ascii_alphanumeric() || b == b'_' || !b.is_ascii());
         assert!(!name.is_empty(), "Identifier should not be empty");
-
         if let Some(keyword) = match name {
             b"let" => Some(Token::Let),
             b"var" => Some(Token::Var),
@@ -347,16 +376,13 @@ impl<'a> Lexer<'a> {
             Ok(keyword)
         } else if let Ok(identifier) = str::from_utf8(name) {
             if identifier.starts_with(RESERVED_PREFIX) {
-                error!(
-                    "[L0002]: Identifiers starting with '{RESERVED_PREFIX}' are reserved for compiler-generated names.\n--> {start_pos}"
-                );
-                return Err(());
+                error!("[L0002]: Reserved prefix.");
+                Err(())
+            } else {
+                Ok(Token::Name(identifier.to_string()))
             }
-
-            Ok(Token::Name(identifier.to_string()))
         } else {
-            error!("[L0100]: Identifier contains some invalid utf-8 bytes\n--> {start_pos}");
-
+            error!("[L0100]: Identifier invalid utf-8.");
             Err(())
         }
     }
@@ -373,126 +399,101 @@ impl<'a> Lexer<'a> {
     }
 
     #[inline(always)]
-    fn parse_float(&mut self, start_pos: &SourcePosition) -> Result<Token, ()> {
+    fn parse_float(&mut self) -> Result<Token, ()> {
+        let start_off = self.internal_getc_pos.offset;
         if let Ok(b'.') = self.peek_byte() {
-            let rewind_pos = self.internal_getc_pos.clone();
+            let rewind = self.internal_getc_pos.clone();
             self.advance(b'.');
-
             match self.peek_byte() {
                 Ok(b) if b.is_ascii_digit() => {
                     self.read_while(|b| b.is_ascii_digit() || b == b'_');
-
                     let literal =
-                        str::from_utf8(&self.source[start_pos.offset as usize..self.internal_getc_pos.offset as usize])
-                            .expect("Failed to convert float literal to str");
-
+                        str::from_utf8(&self.source[start_off as usize..self.internal_getc_pos.offset as usize])
+                            .expect("Failed to convert");
                     if let Ok(result) = Self::convert_float_repr(literal) {
                         return Ok(Token::Float(result));
                     }
                 }
                 _ => {
-                    self.rewind(rewind_pos);
+                    self.rewind_raw((rewind.fileid, rewind.line, rewind.column, rewind.offset));
                 }
             }
         }
-
         Err(())
     }
 
     #[inline(always)]
-    fn radix_decode(digits: &[u8], base: u32, start_pos: &SourcePosition) -> Result<u128, ()> {
+    fn radix_decode(digits: &[u8], base: u32) -> Result<u128, ()> {
         let mut number = 0u128;
-
         for digit in digits {
             if digit == &b'_' {
                 continue;
             }
-
-            if let Ok(digit) = u128::from_str_radix(str::from_utf8(&[*digit]).expect("Unexpected non-utf8 digit"), base)
+            if let Ok(d) = u128::from_str_radix(str::from_utf8(&[*digit]).expect("non-utf8 digit"), base)
                 && let Some(y) = number.checked_mul(u128::from(base))
-                && let Some(sum) = y.checked_add(digit)
+                && let Some(sum) = y.checked_add(d)
             {
                 number = sum;
                 continue;
             }
-
-            error!("[L0300]: Integer literal is too large to fit in u128\n--> {start_pos}");
+            error!("[L0300]: Integer literal too large");
             return Err(());
         }
-
         Ok(number)
     }
 
     #[inline(always)]
     fn parse_number(&mut self) -> Result<Token, ()> {
-        let start_pos = self.internal_getc_pos.clone();
-
         let mut base_prefix = None;
         let mut literal = self.read_while(|b| b.is_ascii_digit() || b == b'_');
-        assert!(!literal.is_empty(), "Number should not be empty");
-
+        assert!(!literal.is_empty());
         if literal == b"0" {
             match self.peek_byte() {
                 Ok(b'b') => {
                     self.advance(b'b');
                     base_prefix = Some(2);
-
                     literal = self.read_while(|b| b == b'0' || b == b'1' || b == b'_');
                     if literal.is_empty() {
-                        error!(
-                            "[L0301]: Binary integer literal must contain at least one digit after '0b'\n--> {start_pos}"
-                        );
+                        error!("[L0301]: Binary literal must have digits");
                         return Err(());
                     }
                 }
-
                 Ok(b'o') => {
                     self.advance(b'o');
                     base_prefix = Some(8);
-
                     literal = self.read_while(|b| (b'0'..=b'7').contains(&b) || b == b'_');
                     if literal.is_empty() {
-                        error!("[L0302]: Octal literal must contain at least one digit after '0o'\n--> {start_pos}");
+                        error!("[L0302]: Octal literal must have digits");
                         return Err(());
                     }
                 }
-
                 Ok(b'd') => {
                     self.advance(b'd');
                     base_prefix = Some(10);
-
                     literal = self.read_while(|b| b.is_ascii_digit() || b == b'_');
                     if literal.is_empty() {
-                        error!("[L0303]: Decimal literal must contain at least one digit after '0d'\n--> {start_pos}");
+                        error!("[L0303]: Decimal literal must have digits");
                         return Err(());
                     }
                 }
-
                 Ok(b'x') => {
                     self.advance(b'x');
                     base_prefix = Some(16);
-
                     literal = self.read_while(|b| b.is_ascii_hexdigit() || b == b'_');
                     if literal.is_empty() {
-                        error!(
-                            "[L0304]: Hexadecimal literal must contain at least one digit after '0x'\n--> {start_pos}"
-                        );
+                        error!("[L0304]: Hex literal must have digits");
                         return Err(());
                     }
                 }
-
                 _ => {}
             }
         }
-
         if base_prefix.is_none()
-            && let Ok(float) = self.parse_float(&start_pos)
+            && let Ok(float) = self.parse_float()
         {
             return Ok(float);
         }
-
-        let number = Self::radix_decode(literal, base_prefix.unwrap_or(10u32), &start_pos)?;
-
+        let number = Self::radix_decode(literal, base_prefix.unwrap_or(10u32))?;
         Ok(Token::Integer(Integer::new(
             number,
             match base_prefix {
@@ -500,147 +501,102 @@ impl<'a> Lexer<'a> {
                 Some(8) => IntegerKind::Oct,
                 Some(16) => IntegerKind::Hex,
                 Some(10) | None => IntegerKind::Dec,
-
                 _ => unreachable!(),
             },
         )))
     }
 
     #[inline(always)]
-    fn parse_string_hex_escape(&mut self, start_pos: &SourcePosition) -> Result<StringEscape, ()> {
+    fn parse_string_hex_escape(&mut self) -> Result<StringEscape, ()> {
         let mut digits = [0u8; 2];
-
         for i in 0..2 {
             let byte = self.peek_byte()?;
-
             if byte.is_ascii_hexdigit() {
                 self.advance(byte);
                 digits[i] = byte;
             } else {
-                error!(
-                    "[L0400]: Invalid hex escape sequence '\\x{}' in string literal. Expected two hex digits (0-9, a-f, A-F) after '\\x'.\n--> {}",
-                    str::from_utf8(&digits[..=i]).unwrap_or("<invalid utf-8>"),
-                    start_pos
-                );
-
+                error!("[L0400]: Invalid hex escape");
                 return Err(());
             }
         }
-
         let mut value = 0u8;
         for digit in digits {
             let digit = digit.to_ascii_lowercase();
-
             if digit.is_ascii_digit() {
                 value = (value << 4) | (digit - b'0');
             } else {
                 value = (value << 4) | (digit - b'a' + 10);
             }
         }
-
         Ok(StringEscape::Byte(value))
     }
 
     #[inline(always)]
-    fn parse_string_octal_escape(&mut self, start_pos: &SourcePosition) -> Result<StringEscape, ()> {
+    fn parse_string_octal_escape(&mut self) -> Result<StringEscape, ()> {
         let mut digits = [0u8; 3];
-
         for i in 0..3 {
             let byte = self.peek_byte()?;
-
             if (b'0'..=b'7').contains(&byte) {
                 self.advance(byte);
                 digits[i] = byte;
             } else {
-                error!(
-                    "[L0401]: Invalid octal escape sequence '\\o{}' in string literal. Expected three octal digits (0-7) after '\\o'.\n--> {}",
-                    str::from_utf8(&digits).unwrap_or("<invalid utf-8>"),
-                    start_pos
-                );
-
+                error!("[L0401]: Invalid octal escape");
                 return Err(());
             }
         }
-
         let mut value = 0u8;
         for &digit in &digits {
             value = (value << 3) | (digit - b'0');
         }
-
         Ok(StringEscape::Byte(value))
     }
 
     #[inline(always)]
-    fn parse_string_unicode_escape(&mut self, start_pos: &SourcePosition) -> Result<StringEscape, ()> {
+    fn parse_string_unicode_escape(&mut self) -> Result<StringEscape, ()> {
         if self.peek_byte()? != b'{' {
-            error!("[L0402]: Invalid unicode escape in string literal. Expected '{{' after '\\u'.\n--> {start_pos}");
+            error!("[L0402]: Expected '{{'");
             return Err(());
         }
         self.advance(b'{');
-
         if self.peek_byte()? == b'U' {
             self.advance(b'U');
-
             if self.peek_byte()? == b'+' {
                 self.advance(b'+');
             } else {
-                error!(
-                    "[L0403]: Invalid unicode escape in string literal. Expected '+' after '\\uU'.\n--> {start_pos}"
-                );
+                error!("[L0403]: Expected '+'");
                 return Err(());
             }
         }
-
         let digits = self.read_while(|b| b.is_ascii_hexdigit());
         if digits.is_empty() {
-            error!(
-                "[L0404]: Invalid unicode escape in string literal. Expected at least one hex digit after '\\u{{'.\n--> {start_pos}"
-            );
+            error!("[L0404]: Expected hex digits");
             return Err(());
         }
-
         if digits.len() > 8 {
-            error!(
-                "[L0405]: Unicode escape codepoint in string literal is too large: '\\u{{{}}}'.\n--> {}",
-                str::from_utf8(digits).unwrap_or("<invalid utf-8>"),
-                start_pos
-            );
+            error!("[L0405]: Codepoint too large");
             return Err(());
         }
-
         let mut value = 0u32;
         for &digit in digits {
             let digit = digit.to_ascii_lowercase();
-
             if digit.is_ascii_digit() {
                 value = (value << 4) | u32::from(digit - b'0');
             } else {
                 value = (value << 4) | u32::from(digit - b'a' + 10);
             }
         }
-
-        let codepoint = char::from_u32(value);
-        if codepoint.is_none() {
-            error!(
-                "[L0405]: Unicode escape codepoint in string literal is too large: '\\u{{{}}}'.\n--> {}",
-                str::from_utf8(digits).unwrap_or("<invalid utf-8>"),
-                start_pos
-            );
-
-            return Err(());
-        }
-
+        let codepoint = char::from_u32(value).ok_or_else(|| {
+            error!("[L0405]: Invalid codepoint");
+        })?;
         if self.peek_byte()? != b'}' {
-            error!("[L0406]: Invalid unicode escape in string literal. Expected '}}' after '\\u{{'.\n--> {start_pos}");
+            error!("[L0406]: Expected '}}'");
             return Err(());
         }
         self.advance(b'}');
-
-        codepoint.map(StringEscape::Char).ok_or(())
+        Ok(StringEscape::Char(codepoint))
     }
 
-    #[inline(always)]
-    fn parse_string_escape(&mut self, start_pos: &SourcePosition) -> Result<StringEscape, ()> {
+    fn parse_string_escape(&mut self) -> Result<StringEscape, ()> {
         match self.peek_byte() {
             Ok(b'0') => {
                 self.advance(b'0');
@@ -686,94 +642,66 @@ impl<'a> Lexer<'a> {
                 self.advance(b'"');
                 Ok(StringEscape::Char('"'))
             }
-
             Ok(b'x') => {
                 self.advance(b'x');
-                self.parse_string_hex_escape(start_pos)
+                self.parse_string_hex_escape()
             }
-
             Ok(b'o') => {
                 self.advance(b'o');
-                self.parse_string_octal_escape(start_pos)
+                self.parse_string_octal_escape()
             }
-
             Ok(b'u') => {
                 self.advance(b'u');
-                self.parse_string_unicode_escape(start_pos)
+                self.parse_string_unicode_escape()
             }
-
             Ok(b) => {
-                error!(
-                    "[L0407]: Invalid escape sequence '\\{}' in string literal\n--> {}",
-                    b as char, start_pos
-                );
-
+                error!("[L0407]: Invalid escape \\{}", b as char);
                 Err(())
             }
-
             Err(()) => {
-                error!("[L0408]: Unexpected end of input while parsing string literal\n--> {start_pos}");
+                error!("[L0408]: Unexpected EOF in string");
                 Err(())
             }
         }
     }
 
-    #[inline(always)]
     fn parse_string(&mut self) -> Result<Token, ()> {
-        let start_pos = self.internal_getc_pos.clone();
-
-        assert!(self.peek_byte().expect("Failed to peek byte") == b'"');
+        assert!(self.peek_byte().expect("peek") == b'"');
         self.advance(b'"');
-
         let start_offset = self.internal_getc_pos.offset;
         let mut end_offset = start_offset;
         let mut storage = Vec::new();
-
         loop {
             match self.peek_byte() {
                 Ok(b'\\') => {
                     self.advance(b'\\');
-
                     if storage.is_empty() {
                         storage.extend_from_slice(&self.source[start_offset as usize..end_offset as usize]);
                     }
-
-                    match self.parse_string_escape(&start_pos) {
-                        Ok(StringEscape::Char(c)) => {
+                    match self.parse_string_escape()? {
+                        StringEscape::Char(c) => {
                             storage.extend_from_slice(c.to_string().as_bytes());
                         }
-
-                        Ok(StringEscape::Byte(b)) => {
+                        StringEscape::Byte(b) => {
                             storage.push(b);
                         }
-
-                        Err(()) => {
-                            return Err(());
-                        }
                     }
-
-                    assert!(
-                        !storage.is_empty(),
-                        "Dynamic string buffer should not be empty after parsing escape sequence"
-                    );
                 }
-
                 Ok(b'"') => {
                     self.advance(b'"');
-
                     if storage.is_empty() {
                         let buffer = &self.source[start_offset as usize..end_offset as usize];
-
-                        if let Ok(utf8_str) = str::from_utf8(buffer) {
-                            return Ok(Token::String(utf8_str.to_string()));
+                        if let Ok(s) = str::from_utf8(buffer) {
+                            return Ok(Token::String(s.to_string()));
                         }
                         return Ok(Token::BString(buffer.to_vec()));
-                    } else if let Ok(utf8_str) = String::from_utf8(storage.clone()) {
-                        return Ok(Token::String(utf8_str.clone()));
                     }
-                    return Ok(Token::BString(storage.clone()));
+                    return if let Ok(s) = String::from_utf8(storage.clone()) {
+                        Ok(Token::String(s))
+                    } else {
+                        Ok(Token::BString(storage.clone()))
+                    };
                 }
-
                 Ok(b) => {
                     self.advance(b);
                     if storage.is_empty() {
@@ -782,121 +710,86 @@ impl<'a> Lexer<'a> {
                         storage.push(b);
                     }
                 }
-
                 Err(()) => {
-                    error!("[L0408]: Unexpected end of input while parsing string literal\n--> {start_pos}");
+                    error!("[L0408]: Unexpected EOF in string");
                     return Err(());
                 }
             }
         }
     }
 
-    #[inline(always)]
     fn parse_comment(&mut self) -> Result<Token, ()> {
-        let start_pos = self.internal_getc_pos.clone();
-        let mut comment_bytes = self.read_while(|b| b != b'\n');
-
-        if comment_bytes.ends_with(b"\r") {
-            comment_bytes = &comment_bytes[..comment_bytes.len() - 1];
+        let mut bytes = self.read_while(|b| b != b'\n');
+        if bytes.ends_with(b"\r") {
+            bytes = &bytes[..bytes.len() - 1];
         }
-
-        if let Ok(comment) = str::from_utf8(comment_bytes) {
-            Ok(Token::Comment(Comment::new(
-                comment.to_string(),
-                CommentKind::SingleLine,
-            )))
+        if let Ok(s) = str::from_utf8(bytes) {
+            Ok(Token::Comment(Comment::new(s.to_string(), CommentKind::SingleLine)))
         } else {
-            error!("[L0600]: Single-line comment contains some invalid utf-8 bytes\n--> {start_pos}");
-
+            error!("[L0600]: Invalid utf-8 in comment");
             Err(())
         }
     }
 
-    #[inline(always)]
     fn parse_slash_comment(&mut self) -> Result<Token, ()> {
-        // We already consumed the first '/', now consume the second '/'
         self.advance(b'/');
-        let start_pos = self.internal_getc_pos.clone();
-        let mut comment_bytes = self.read_while(|b| b != b'\n');
-
-        if comment_bytes.ends_with(b"\r") {
-            comment_bytes = &comment_bytes[..comment_bytes.len() - 1];
+        let mut bytes = self.read_while(|b| b != b'\n');
+        if bytes.ends_with(b"\r") {
+            bytes = &bytes[..bytes.len() - 1];
         }
-
-        if let Ok(comment) = str::from_utf8(comment_bytes) {
-            Ok(Token::Comment(Comment::new(
-                format!("//{comment}"),
-                CommentKind::SingleLine,
-            )))
+        if let Ok(s) = str::from_utf8(bytes) {
+            Ok(Token::Comment(Comment::new(format!("//{s}"), CommentKind::SingleLine)))
         } else {
-            error!("[L0600]: Single-line comment contains some invalid utf-8 bytes\n--> {start_pos}");
-
+            error!("[L0600]: Invalid utf-8");
             Err(())
         }
     }
 
-    #[inline(always)]
     fn parse_block_comment(&mut self) -> Result<Token, ()> {
-        // We already consumed the first '/' in parse_slash_or_comment.
-        // Now consume the '*', then read until "*/" is found.
         self.advance(b'*');
-        let start_pos = self.internal_getc_pos.clone();
-
-        // Pre-populate with the opening "/*"
-        let mut comment_bytes = vec![b'/', b'*'];
-
+        let mut bytes = vec![b'/', b'*'];
         loop {
             match self.peek_byte() {
                 Ok(b'*') => {
                     self.advance(b'*');
                     if let Ok(b'/') = self.peek_byte() {
                         self.advance(b'/');
-                        comment_bytes.push(b'*');
-                        comment_bytes.push(b'/');
+                        bytes.push(b'*');
+                        bytes.push(b'/');
                         break;
                     }
-                    comment_bytes.push(b'*');
+                    bytes.push(b'*');
                 }
                 Ok(b) => {
                     self.advance(b);
-                    comment_bytes.push(b);
+                    bytes.push(b);
                 }
                 Err(()) => {
-                    error!("[L0601]: Unterminated block comment\n--> {start_pos}");
+                    error!("[L0601]: Unterminated block comment");
                     return Err(());
                 }
             }
         }
-
-        if let Ok(comment) = String::from_utf8(comment_bytes) {
-            Ok(Token::Comment(Comment::new(comment, CommentKind::MultiLine)))
+        if let Ok(s) = String::from_utf8(bytes) {
+            Ok(Token::Comment(Comment::new(s, CommentKind::MultiLine)))
         } else {
-            error!("[L0602]: Block comment contains some invalid utf-8 bytes\n--> {start_pos}");
+            error!("[L0602]: Invalid utf-8");
             Err(())
         }
     }
 
-    #[inline(always)]
     fn parse_slash_or_comment(&mut self) -> Result<Token, ()> {
-        let start_pos = self.internal_getc_pos.clone();
         self.advance(b'/');
-
         match self.peek_byte() {
             Ok(b'/') => self.parse_slash_comment(),
             Ok(b'*') => self.parse_block_comment(),
-            _ => {
-                // Just a regular slash `/` operator token
-                Ok(Token::Slash)
-            }
+            _ => Ok(Token::Slash),
         }
     }
 
-    #[inline(always)]
     fn parse_single_byte(&mut self) -> Result<Token, ()> {
-        let start_pos = self.internal_getc_pos.clone();
-
         let b = self.peek_byte()?;
-        let token = match b {
+        let tok = match b {
             b'\'' => Some(Token::SingleQuote),
             b';' => Some(Token::Semi),
             b',' => Some(Token::Comma),
@@ -931,32 +824,22 @@ impl<'a> Lexer<'a> {
             b' ' => Some(Token::Space),
             _ => None,
         };
-
-        if let Some(token) = token {
+        if let Some(t) = tok {
             self.advance(self.peek_byte()?);
-            return Ok(token);
+            Ok(t)
+        } else {
+            error!("[L0700]: Invalid token `{}`", str::from_utf8(&[b]).unwrap_or("?"));
+            Err(())
         }
-
-        error!(
-            "[L0700]: The token `{}` is not valid. Did you mistype an operator or forget some whitespace?\n--> {}",
-            str::from_utf8(&[b]).unwrap_or("<invalid utf-8>"),
-            start_pos
-        );
-
-        Err(())
     }
 
-    #[inline(always)]
     fn parse_next_token(&mut self) -> AnnotatedToken {
-        let start_pos = self.internal_getc_pos.clone();
-
+        let start = self.internal_getc_pos.clone();
         let token = match self.peek_byte() {
             Err(()) => Ok(Token::Eof),
             Ok(b) => match b {
                 b'`' => self.parse_atypical_identifier(),
-                b if b.is_ascii_alphabetic() || b == b'_' || !b.is_ascii() /* Support UTF-8 identifiers */ => {
-                    self.parse_typical_identifier()
-                }
+                b if b.is_ascii_alphabetic() || b == b'_' || !b.is_ascii() => self.parse_typical_identifier(),
                 b if b.is_ascii_digit() => self.parse_number(),
                 b'"' => self.parse_string(),
                 b'#' => self.parse_comment(),
@@ -966,24 +849,21 @@ impl<'a> Lexer<'a> {
         }
         .unwrap_or(Token::Eof);
 
-        if !self.trivia_enabled {
-            match &token {
-                Token::Space
-                | Token::HorizontalTab
-                | Token::NewLine
-                | Token::VerticalTab
-                | Token::FormFeed
-                | Token::CarriageReturn
-                | Token::Comment(_) => {
-                    return self.parse_next_token();
-                }
-                _ => {}
-            }
+        if !self.trivia_enabled && token.is_trivia() {
+            return self.parse_next_token();
         }
 
-        let end_pos = self.internal_getc_pos.clone();
-
-        AnnotatedToken::new(token, start_pos, end_pos)
+        let end = self.internal_getc_pos.clone();
+        AnnotatedToken::new_raw(
+            token,
+            start.fileid,
+            start.line,
+            start.column,
+            start.offset,
+            end.line,
+            end.column,
+            end.offset,
+        )
     }
 }
 
@@ -999,11 +879,8 @@ impl<'a> LexerIterator<'a> {
 
 impl<'a> Iterator for LexerIterator<'a> {
     type Item = AnnotatedToken;
-
     fn next(&mut self) -> Option<Self::Item> {
-        match self.lexer.next_tok() {
-            token if token.token == Token::Eof => None,
-            token => Some(token),
-        }
+        let token = self.lexer.next_tok();
+        if token.token == Token::Eof { None } else { Some(token) }
     }
 }

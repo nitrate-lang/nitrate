@@ -4,7 +4,7 @@ use crate::memory::Memory;
 use nitrate_diagnosis::CompilerLog;
 use nitrate_hir::prelude::*;
 use nitrate_nstring::NString;
-use nitrate_tree::ByteSpan;
+use nitrate_tree::SrcPos;
 use ordered_float::OrderedFloat;
 use std::collections::BTreeMap;
 use std::collections::BTreeSet;
@@ -34,62 +34,62 @@ fn run_test<R>(f: impl FnOnce(&Store, &mut Evaluator) -> R) -> R {
 
 fn make_unit() -> Value {
     Value::Unit {
-        span: ByteSpan::default(),
+        span: SrcPos::default(),
     }
 }
 
 fn make_bool(b: bool) -> Value {
     Value::Bool {
-        span: ByteSpan::default(),
+        span: SrcPos::default(),
         value: b,
     }
 }
 
 fn make_i8(i: i8) -> Value {
     Value::I8 {
-        span: ByteSpan::default(),
+        span: SrcPos::default(),
         value: i,
     }
 }
 
 fn make_i32(i: i32) -> Value {
     Value::I32 {
-        span: ByteSpan::default(),
+        span: SrcPos::default(),
         value: i,
     }
 }
 
 fn make_u8(u: u8) -> Value {
     Value::U8 {
-        span: ByteSpan::default(),
+        span: SrcPos::default(),
         value: u,
     }
 }
 
 fn make_u32(u: u32) -> Value {
     Value::U32 {
-        span: ByteSpan::default(),
+        span: SrcPos::default(),
         value: u,
     }
 }
 
 fn make_u64(u: u64) -> Value {
     Value::U64 {
-        span: ByteSpan::default(),
+        span: SrcPos::default(),
         value: u,
     }
 }
 
 fn make_f64(f: f64) -> Value {
     Value::F64 {
-        span: ByteSpan::default(),
+        span: SrcPos::default(),
         value: OrderedFloat(f),
     }
 }
 
 fn make_binary(left: Value, op: BinaryOp, right: Value) -> Value {
     Value::Binary {
-        span: ByteSpan::default(),
+        span: SrcPos::default(),
         left: ValueId::from(left),
         op,
         right: ValueId::from(right),
@@ -114,7 +114,7 @@ fn make_div(left: Value, right: Value) -> Value {
 
 fn make_block(elements: Vec<BlockElement>, safety: BlockSafety) -> BlockId {
     Block {
-        span: ByteSpan::default(),
+        span: SrcPos::default(),
         safety,
         elements: elements.into(),
     }
@@ -123,7 +123,7 @@ fn make_block(elements: Vec<BlockElement>, safety: BlockSafety) -> BlockId {
 
 fn make_local_var(name: &str, ty: Type, initializer: Value) -> LocalVariableId {
     LocalVariable {
-        span: ByteSpan::default(),
+        span: SrcPos::default(),
         kind: LocalKind::Let,
         attributes: BTreeSet::new(),
         is_mutable: false,
@@ -136,7 +136,7 @@ fn make_local_var(name: &str, ty: Type, initializer: Value) -> LocalVariableId {
 
 fn make_param(name: &str, ty: Type) -> ParameterId {
     Parameter {
-        span: ByteSpan::default(),
+        span: SrcPos::default(),
         attributes: BTreeSet::new(),
         is_mutable: false,
         name: NString::from(name),
@@ -148,7 +148,7 @@ fn make_param(name: &str, ty: Type) -> ParameterId {
 
 fn make_function(name: &str, params: Vec<ParameterId>, return_type: Type, body: Vec<BlockElement>) -> FunctionId {
     Function {
-        span: ByteSpan::default(),
+        span: SrcPos::default(),
         visibility: Visibility::Pub,
         attributes: BTreeSet::new(),
         is_unsafe: false,
@@ -164,7 +164,7 @@ fn make_function(name: &str, params: Vec<ParameterId>, return_type: Type, body: 
 
 fn make_struct_def(name: &str, fields: BTreeMap<NString, StructField>) -> StructDefId {
     StructDef {
-        span: ByteSpan::default(),
+        span: SrcPos::default(),
         visibility: Visibility::Pub,
         name: NString::from(name),
         attributes: BTreeSet::new(),
@@ -177,7 +177,7 @@ fn make_struct_def(name: &str, fields: BTreeMap<NString, StructField>) -> Struct
 
 fn make_enum_def(name: &str, variants: ThinVec<EnumVariant>) -> EnumDefId {
     EnumDef {
-        span: ByteSpan::default(),
+        span: SrcPos::default(),
         visibility: Visibility::Pub,
         name: NString::from(name),
         attributes: BTreeSet::new(),
@@ -189,7 +189,7 @@ fn make_enum_def(name: &str, variants: ThinVec<EnumVariant>) -> EnumDefId {
 
 fn make_cast(value: Value, target_type: Type) -> Value {
     Value::Cast {
-        span: ByteSpan::default(),
+        span: SrcPos::default(),
         value: value.into(),
         target_type: target_type.into(),
     }
@@ -442,7 +442,7 @@ fn eval_literal_f64_negative() {
 fn eval_literal_inferred_integer() {
     run_test(|_, ev| {
         let v = Value::InferredInteger {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             value: Box::new(42u128),
         };
         let result = ev.evaluate(&v).unwrap();
@@ -455,7 +455,7 @@ fn eval_literal_inferred_float() {
     run_test(|_, ev| {
         let f = OrderedFloat(3.14);
         let v = Value::InferredFloat {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             value: f,
         };
         let result = ev.evaluate(&v).unwrap();
@@ -467,7 +467,7 @@ fn eval_literal_inferred_float() {
 fn eval_literal_i16() {
     run_test(|_, ev| {
         let v = Value::I16 {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             value: 1000,
         };
         let result = ev.evaluate(&v).unwrap();
@@ -479,7 +479,7 @@ fn eval_literal_i16() {
 fn eval_literal_i64() {
     run_test(|_, ev| {
         let v = Value::I64 {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             value: 100000,
         };
         let result = ev.evaluate(&v).unwrap();
@@ -491,7 +491,7 @@ fn eval_literal_i64() {
 fn eval_literal_i128() {
     run_test(|_, ev| {
         let v = Value::I128 {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             value: Box::new(1000000000),
         };
         let result = ev.evaluate(&v).unwrap();
@@ -503,7 +503,7 @@ fn eval_literal_i128() {
 fn eval_literal_u16() {
     run_test(|_, ev| {
         let v = Value::U16 {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             value: 50000,
         };
         let result = ev.evaluate(&v).unwrap();
@@ -515,7 +515,7 @@ fn eval_literal_u16() {
 fn eval_literal_u128() {
     run_test(|_, ev| {
         let v = Value::U128 {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             value: Box::new(1000000000),
         };
         let result = ev.evaluate(&v).unwrap();
@@ -527,7 +527,7 @@ fn eval_literal_u128() {
 fn eval_literal_f32() {
     run_test(|_, ev| {
         let v = Value::F32 {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             value: OrderedFloat(1.5f32),
         };
         let result = ev.evaluate(&v).unwrap();
@@ -539,7 +539,7 @@ fn eval_literal_f32() {
 fn eval_literal_usize() {
     run_test(|_, ev| {
         let v = Value::USize {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             bits: 64,
             value: 12345,
         };
@@ -552,7 +552,7 @@ fn eval_literal_usize() {
 fn eval_literal_string() {
     run_test(|_, ev| {
         let v = Value::StringLit {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             value: "hello".into(),
         };
         let result = ev.evaluate(&v).unwrap();
@@ -564,7 +564,7 @@ fn eval_literal_string() {
 fn eval_literal_bstring() {
     run_test(|_, ev| {
         let v = Value::BStringLit {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             value: vec![1, 2, 3].into(),
         };
         let result = ev.evaluate(&v).unwrap();
@@ -1218,11 +1218,11 @@ fn binary_logic_or_non_bool_left_errors() {
 fn binary_add_string_fails() {
     run_test(|_, ev| {
         let left = Value::StringLit {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             value: "hello".into(),
         };
         let right = Value::StringLit {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             value: "world".into(),
         };
         let v = make_add(left, right);
@@ -1257,7 +1257,7 @@ fn binary_cmp_mixed_types_fails() {
 fn unary_add_i32() {
     run_test(|_, ev| {
         let v = Value::Unary {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             operand: make_i32(42).into(),
             op: UnaryOp::Add,
         };
@@ -1270,7 +1270,7 @@ fn unary_add_i32() {
 fn unary_sub_i32() {
     run_test(|_, ev| {
         let v = Value::Unary {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             operand: make_i32(42).into(),
             op: UnaryOp::Sub,
         };
@@ -1283,7 +1283,7 @@ fn unary_sub_i32() {
 fn unary_sub_i32_negative() {
     run_test(|_, ev| {
         let v = Value::Unary {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             operand: make_i32(-42).into(),
             op: UnaryOp::Sub,
         };
@@ -1296,7 +1296,7 @@ fn unary_sub_i32_negative() {
 fn unary_not_bool_true() {
     run_test(|_, ev| {
         let v = Value::Unary {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             operand: make_bool(true).into(),
             op: UnaryOp::Not,
         };
@@ -1309,7 +1309,7 @@ fn unary_not_bool_true() {
 fn unary_not_bool_false() {
     run_test(|_, ev| {
         let v = Value::Unary {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             operand: make_bool(false).into(),
             op: UnaryOp::Not,
         };
@@ -1322,7 +1322,7 @@ fn unary_not_bool_false() {
 fn unary_not_i32() {
     run_test(|_, ev| {
         let v = Value::Unary {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             operand: make_i32(0).into(),
             op: UnaryOp::Not,
         };
@@ -1335,7 +1335,7 @@ fn unary_not_i32() {
 fn unary_add_f64() {
     run_test(|_, ev| {
         let v = Value::Unary {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             operand: make_f64(3.14).into(),
             op: UnaryOp::Add,
         };
@@ -1348,7 +1348,7 @@ fn unary_add_f64() {
 fn unary_sub_f64() {
     run_test(|_, ev| {
         let v = Value::Unary {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             operand: make_f64(3.14).into(),
             op: UnaryOp::Sub,
         };
@@ -1361,7 +1361,7 @@ fn unary_sub_f64() {
 fn unary_sub_u64_zero() {
     run_test(|_, ev| {
         let v = Value::Unary {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             operand: make_u64(0).into(),
             op: UnaryOp::Sub,
         };
@@ -1380,7 +1380,7 @@ fn cast_i32_to_u8() {
         let v = make_cast(
             make_i32(65),
             Type::U8 {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
             },
         );
         let result = ev.evaluate(&v).unwrap();
@@ -1394,7 +1394,7 @@ fn cast_i32_to_u16() {
         let v = make_cast(
             make_i32(1000),
             Type::U16 {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
             },
         );
         let result = ev.evaluate(&v).unwrap();
@@ -1408,7 +1408,7 @@ fn cast_i32_to_u32() {
         let v = make_cast(
             make_i32(42),
             Type::U32 {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
             },
         );
         let result = ev.evaluate(&v).unwrap();
@@ -1422,7 +1422,7 @@ fn cast_i32_to_u64() {
         let v = make_cast(
             make_i32(100),
             Type::U64 {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
             },
         );
         let result = ev.evaluate(&v).unwrap();
@@ -1436,7 +1436,7 @@ fn cast_i32_to_i8() {
         let v = make_cast(
             make_i32(100),
             Type::I8 {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
             },
         );
         let result = ev.evaluate(&v).unwrap();
@@ -1450,7 +1450,7 @@ fn cast_i32_to_i16() {
         let v = make_cast(
             make_i32(1000),
             Type::I16 {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
             },
         );
         let result = ev.evaluate(&v).unwrap();
@@ -1464,7 +1464,7 @@ fn cast_i32_to_i64() {
         let v = make_cast(
             make_i32(42),
             Type::I64 {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
             },
         );
         let result = ev.evaluate(&v).unwrap();
@@ -1478,7 +1478,7 @@ fn cast_i32_to_i128() {
         let v = make_cast(
             make_i32(42),
             Type::I128 {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
             },
         );
         let result = ev.evaluate(&v).unwrap();
@@ -1492,7 +1492,7 @@ fn cast_i32_to_u128() {
         let v = make_cast(
             make_i32(42),
             Type::U128 {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
             },
         );
         let result = ev.evaluate(&v).unwrap();
@@ -1506,7 +1506,7 @@ fn cast_i32_to_usize_64() {
         let v = make_cast(
             make_i32(42),
             Type::USize {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
             },
         );
         let result = ev.evaluate(&v).unwrap();
@@ -1530,7 +1530,7 @@ fn cast_i32_to_usize_32() {
         let v = make_cast(
             make_i32(42),
             Type::USize {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
             },
         );
         let result = ev.evaluate(&v).unwrap();
@@ -1555,7 +1555,7 @@ fn cast_i32_to_f32() {
         let v = make_cast(
             make_i32(42),
             Type::F32 {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
             },
         );
         let result = ev.evaluate(&v).unwrap();
@@ -1569,7 +1569,7 @@ fn cast_i32_to_f64() {
         let v = make_cast(
             make_i32(42),
             Type::F64 {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
             },
         );
         let result = ev.evaluate(&v).unwrap();
@@ -1583,7 +1583,7 @@ fn cast_f64_to_i32() {
         let v = make_cast(
             make_f64(42.7),
             Type::I32 {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
             },
         );
         let result = ev.evaluate(&v).unwrap();
@@ -1597,7 +1597,7 @@ fn cast_u8_to_f64() {
         let v = make_cast(
             make_u8(255),
             Type::F64 {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
             },
         );
         let result = ev.evaluate(&v).unwrap();
@@ -1611,7 +1611,7 @@ fn cast_bool_to_u8() {
         let v = make_cast(
             make_bool(true),
             Type::U8 {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
             },
         );
         let result = ev.evaluate(&v).unwrap();
@@ -1625,7 +1625,7 @@ fn cast_bool_false_to_u8() {
         let v = make_cast(
             make_bool(false),
             Type::U8 {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
             },
         );
         let result = ev.evaluate(&v).unwrap();
@@ -1639,7 +1639,7 @@ fn cast_to_unit() {
         let v = make_cast(
             make_i32(42),
             Type::Unit {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
             },
         );
         let result = ev.evaluate(&v).unwrap();
@@ -1653,7 +1653,7 @@ fn cast_unit_fails() {
         let v = make_cast(
             make_unit(),
             Type::I32 {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
             },
         );
         let result = ev.evaluate(&v);
@@ -1665,13 +1665,13 @@ fn cast_unit_fails() {
 fn cast_string_lit_fails() {
     run_test(|_, ev| {
         let left = Value::StringLit {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             value: "hi".into(),
         };
         let v = make_cast(
             left,
             Type::I32 {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
             },
         );
         let result = ev.evaluate(&v);
@@ -1689,7 +1689,7 @@ fn if_true_branch_evaluated() {
         let true_block = make_block(vec![BlockElement::Expr(make_i32(42).into())], BlockSafety::Safe);
         let false_block = make_block(vec![BlockElement::Expr(make_i32(0).into())], BlockSafety::Safe);
         let v = Value::If {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             condition: make_bool(true).into(),
             true_branch: true_block,
             false_branch: Some(false_block),
@@ -1705,7 +1705,7 @@ fn if_false_branch_evaluated() {
         let true_block = make_block(vec![BlockElement::Expr(make_i32(42).into())], BlockSafety::Safe);
         let false_block = make_block(vec![BlockElement::Expr(make_i32(99).into())], BlockSafety::Safe);
         let v = Value::If {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             condition: make_bool(false).into(),
             true_branch: true_block,
             false_branch: Some(false_block),
@@ -1720,7 +1720,7 @@ fn if_without_else_returns_unit_when_false() {
     run_test(|_, ev| {
         let true_block = make_block(vec![BlockElement::Expr(make_i32(42).into())], BlockSafety::Safe);
         let v = Value::If {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             condition: make_bool(false).into(),
             true_branch: true_block,
             false_branch: None,
@@ -1735,7 +1735,7 @@ fn if_non_bool_condition_fails() {
     run_test(|_, ev| {
         let block = make_block(vec![BlockElement::Expr(make_unit().into())], BlockSafety::Safe);
         let v = Value::If {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             condition: make_i32(1).into(),
             true_branch: block.clone(),
             false_branch: None,
@@ -1754,7 +1754,7 @@ fn while_loop_condition_false_returns_unit() {
     run_test(|_, ev| {
         let body = make_block(vec![BlockElement::Expr(make_unit().into())], BlockSafety::Safe);
         let v = Value::While {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             condition: make_bool(false).into(),
             body,
         };
@@ -1768,7 +1768,7 @@ fn while_loop_non_bool_condition_fails() {
     run_test(|_, ev| {
         let body = make_block(vec![BlockElement::Expr(make_unit().into())], BlockSafety::Safe);
         let v = Value::While {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             condition: make_i32(1).into(),
             body,
         };
@@ -1784,7 +1784,7 @@ fn while_loop_limit_exceeded() {
         ev.loop_count = 5;
         let body = make_block(vec![BlockElement::Expr(make_unit().into())], BlockSafety::Safe);
         let v = Value::While {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             condition: make_bool(true).into(),
             body,
         };
@@ -1803,7 +1803,7 @@ fn loop_break() {
         let body = make_block(
             vec![BlockElement::Expr(
                 Value::Break {
-                    span: ByteSpan::default(),
+                    span: SrcPos::default(),
                     label: None,
                 }
                 .into(),
@@ -1811,7 +1811,7 @@ fn loop_break() {
             BlockSafety::Safe,
         );
         let v = Value::Loop {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             body,
         };
         let result = ev.evaluate(&v).unwrap();
@@ -1826,7 +1826,7 @@ fn loop_limit_exceeded() {
         ev.loop_count = 3;
         let body = make_block(vec![BlockElement::Expr(make_unit().into())], BlockSafety::Safe);
         let v = Value::Loop {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             body,
         };
         let result = ev.evaluate(&v);
@@ -1838,7 +1838,7 @@ fn loop_limit_exceeded() {
 fn break_evaluates_to_error() {
     run_test(|_, ev| {
         let v = Value::Break {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             label: None,
         };
         let result = ev.evaluate(&v);
@@ -1851,7 +1851,7 @@ fn break_with_label() {
     run_test(|_, ev| {
         let label = Some(NString::from("outer"));
         let v = Value::Break {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             label: label.clone(),
         };
         let result = ev.evaluate(&v);
@@ -1863,7 +1863,7 @@ fn break_with_label() {
 fn continue_evaluates_to_error() {
     run_test(|_, ev| {
         let v = Value::Continue {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             label: None,
         };
         let result = ev.evaluate(&v);
@@ -1876,7 +1876,7 @@ fn continue_with_label() {
     run_test(|_, ev| {
         let label = Some(NString::from("inner"));
         let v = Value::Continue {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             label: label.clone(),
         };
         let result = ev.evaluate(&v);
@@ -1892,7 +1892,7 @@ fn continue_with_label() {
 fn return_with_value() {
     run_test(|_, ev| {
         let v = Value::Return {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             value: make_i32(42).into(),
         };
         let result = ev.evaluate(&v);
@@ -1909,7 +1909,7 @@ fn return_with_value() {
 fn return_with_unit() {
     run_test(|_, ev| {
         let v = Value::Return {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             value: make_unit().into(),
         };
         let result = ev.evaluate(&v);
@@ -1931,7 +1931,7 @@ fn evaluate_empty_block_returns_unit() {
     run_test(|_, ev| {
         let block = make_block(vec![], BlockSafety::Safe);
         let v = Value::Block {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             block,
         };
         let result = ev.evaluate(&v).unwrap();
@@ -1951,7 +1951,7 @@ fn evaluate_block_returns_last_expr() {
             BlockSafety::Safe,
         );
         let v = Value::Block {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             block,
         };
         let result = ev.evaluate(&v).unwrap();
@@ -1965,13 +1965,13 @@ fn evaluate_block_with_local_variable() {
         let local = make_local_var(
             "x",
             Type::I32 {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
             },
             make_i32(100),
         );
         let block = make_block(vec![BlockElement::Local(local)], BlockSafety::Safe);
         let v = Value::Block {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             block,
         };
         let result = ev.evaluate(&v).unwrap();
@@ -1984,7 +1984,7 @@ fn evaluate_block_switches_safety_context() {
     run_test(|_, ev| {
         let block = make_block(vec![], BlockSafety::Unsafe);
         let v = Value::Block {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             block,
         };
         let result = ev.evaluate(&v).unwrap();
@@ -2006,7 +2006,7 @@ fn struct_object_construction() {
             (NString::from("y"), make_i32(20).into()),
         ];
         let v = Value::StructObject {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             struct_def,
             fields: fields.into(),
         };
@@ -2029,7 +2029,7 @@ fn struct_object_with_expression_fields() {
             (NString::from("y"), make_i32(20).into()),
         ];
         let v = Value::StructObject {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             struct_def,
             fields: fields.into(),
         };
@@ -2049,12 +2049,12 @@ fn struct_field_access() {
         let struct_def = make_struct_def("Data", BTreeMap::new());
         let fields: Vec<(NString, ValueId)> = vec![(NString::from("value"), make_i32(42).into())];
         let obj = Value::StructObject {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             struct_def,
             fields: fields.into(),
         };
         let v = Value::FieldAccess {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             expr: ValueId::from(obj),
             field_name: NString::from("value"),
         };
@@ -2069,12 +2069,12 @@ fn struct_field_access_missing_field_fails() {
         let struct_def = make_struct_def("Data", BTreeMap::new());
         let fields: Vec<(NString, ValueId)> = vec![(NString::from("x"), make_i32(1).into())];
         let obj = Value::StructObject {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             struct_def,
             fields: fields.into(),
         };
         let v = Value::FieldAccess {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             expr: ValueId::from(obj),
             field_name: NString::from("nonexistent"),
         };
@@ -2087,7 +2087,7 @@ fn struct_field_access_missing_field_fails() {
 fn struct_field_access_on_non_struct_fails() {
     run_test(|_, ev| {
         let v = Value::FieldAccess {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             expr: make_i32(42).into(),
             field_name: NString::from("anything"),
         };
@@ -2105,7 +2105,7 @@ fn enum_variant_construction() {
     run_test(|_, ev| {
         let enum_def = make_enum_def("Option", ThinVec::new());
         let v = Value::EnumVariant {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             enum_def,
             variant: NString::from("Some"),
             value: make_i32(42).into(),
@@ -2125,7 +2125,7 @@ fn enum_variant_with_unit_value() {
     run_test(|_, ev| {
         let enum_def = make_enum_def("Option", ThinVec::new());
         let v = Value::EnumVariant {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             enum_def,
             variant: NString::from("None"),
             value: make_unit().into(),
@@ -2148,7 +2148,7 @@ fn enum_variant_with_unit_value() {
 fn list_construction_empty() {
     run_test(|_, ev| {
         let v = Value::List {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             elements: ThinVec::new(),
         };
         let result = ev.evaluate(&v).unwrap();
@@ -2165,7 +2165,7 @@ fn list_construction_empty() {
 fn list_construction_with_elements() {
     run_test(|_, ev| {
         let v = Value::List {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             elements: vec![make_i32(1).into(), make_i32(2).into(), make_i32(3).into()].into(),
         };
         let result = ev.evaluate(&v).unwrap();
@@ -2182,11 +2182,11 @@ fn list_construction_with_elements() {
 fn list_index_access() {
     run_test(|_, ev| {
         let list = Value::List {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             elements: vec![make_i32(10).into(), make_i32(20).into(), make_i32(30).into()].into(),
         };
         let v = Value::IndexAccess {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             collection: ValueId::from(list),
             index: make_u32(1).into(),
         };
@@ -2199,11 +2199,11 @@ fn list_index_access() {
 fn list_index_access_first() {
     run_test(|_, ev| {
         let list = Value::List {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             elements: vec![make_i32(100).into()].into(),
         };
         let v = Value::IndexAccess {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             collection: ValueId::from(list),
             index: make_u32(0).into(),
         };
@@ -2216,11 +2216,11 @@ fn list_index_access_first() {
 fn list_index_out_of_bounds() {
     run_test(|_, ev| {
         let list = Value::List {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             elements: vec![make_i32(1).into()].into(),
         };
         let v = Value::IndexAccess {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             collection: ValueId::from(list),
             index: make_u32(5).into(),
         };
@@ -2233,7 +2233,7 @@ fn list_index_out_of_bounds() {
 fn tuple_construction() {
     run_test(|_, ev| {
         let v = Value::Tuple {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             elements: vec![make_i32(1).into(), make_bool(true).into()].into(),
         };
         let result = ev.evaluate(&v).unwrap();
@@ -2250,7 +2250,7 @@ fn tuple_construction() {
 fn tuple_empty() {
     run_test(|_, ev| {
         let v = Value::Tuple {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             elements: ThinVec::new(),
         };
         let result = ev.evaluate(&v).unwrap();
@@ -2267,11 +2267,11 @@ fn tuple_empty() {
 fn tuple_index_access() {
     run_test(|_, ev| {
         let tuple = Value::Tuple {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             elements: vec![make_i32(10).into(), make_i32(20).into()].into(),
         };
         let v = Value::IndexAccess {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             collection: ValueId::from(tuple),
             index: make_u32(0).into(),
         };
@@ -2284,11 +2284,11 @@ fn tuple_index_access() {
 fn tuple_index_out_of_bounds() {
     run_test(|_, ev| {
         let tuple = Value::Tuple {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             elements: ThinVec::new(),
         };
         let v = Value::IndexAccess {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             collection: ValueId::from(tuple),
             index: make_u32(0).into(),
         };
@@ -2301,7 +2301,7 @@ fn tuple_index_out_of_bounds() {
 fn index_access_on_non_collection_fails() {
     run_test(|_, ev| {
         let v = Value::IndexAccess {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             collection: make_i32(42).into(),
             index: make_u32(0).into(),
         };
@@ -2314,11 +2314,11 @@ fn index_access_on_non_collection_fails() {
 fn index_access_with_non_integer_fails() {
     run_test(|_, ev| {
         let list = Value::List {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             elements: vec![make_i32(1).into()].into(),
         };
         let v = Value::IndexAccess {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             collection: ValueId::from(list),
             index: make_bool(false).into(),
         };
@@ -2331,11 +2331,11 @@ fn index_access_with_non_integer_fails() {
 fn index_access_with_negative_index_fails() {
     run_test(|_, ev| {
         let list = Value::List {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             elements: vec![make_i32(1).into()].into(),
         };
         let v = Value::IndexAccess {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             collection: ValueId::from(list),
             index: make_i8(-1).into(),
         };
@@ -2354,7 +2354,7 @@ fn assign_to_local_variable() {
         let local = make_local_var(
             "x",
             Type::I32 {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
             },
             make_i32(0),
         );
@@ -2366,11 +2366,11 @@ fn assign_to_local_variable() {
             .set_binding(NString::from("x"), make_i32(0));
 
         let local_sym = Value::LocalVariableSymbol {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             id: local,
         };
         let v = Value::Assign {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             place: ValueId::from(local_sym),
             value: make_i32(42).into(),
         };
@@ -2383,7 +2383,7 @@ fn assign_to_local_variable() {
 fn assign_to_non_local_fails() {
     run_test(|_, ev| {
         let v = Value::Assign {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             place: make_i32(1).into(),
             value: make_i32(42).into(),
         };
@@ -2403,14 +2403,14 @@ fn function_call_unit_body() {
             "unit_body",
             vec![],
             Type::Unit {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
             },
             vec![BlockElement::Expr(make_unit().into())],
         );
         let v = Value::Call {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             callee: Value::from(Value::FunctionSymbol {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
                 id: fn_id,
             })
             .into(),
@@ -2432,14 +2432,14 @@ fn function_call_depth_exceeded() {
             "f",
             vec![],
             Type::Unit {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
             },
             vec![],
         );
         let v = Value::Call {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             callee: Value::from(Value::FunctionSymbol {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
                 id: fn_id,
             })
             .into(),
@@ -2454,7 +2454,7 @@ fn function_call_depth_exceeded() {
 fn function_call_non_function_symbol_fails() {
     run_test(|_, ev| {
         let v = Value::Call {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             callee: make_i32(42).into(),
             args: empty_args(),
         };
@@ -2467,7 +2467,7 @@ fn function_call_non_function_symbol_fails() {
 fn unsafe_function_in_safe_context_fails() {
     run_test(|_, ev| {
         let fn_id = Function {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             visibility: Visibility::Pub,
             attributes: BTreeSet::new(),
             is_unsafe: true,
@@ -2476,16 +2476,16 @@ fn unsafe_function_in_safe_context_fails() {
             generics: None,
             params: vec![],
             return_type: Type::Unit {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
             }
             .into(),
             body: Some(vec![]),
         }
         .into();
         let v = Value::Call {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             callee: Value::from(Value::FunctionSymbol {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
                 id: fn_id,
             })
             .into(),
@@ -2507,7 +2507,7 @@ fn evaluate_function_empty_body_returns_unit() {
             "empty",
             vec![],
             Type::Unit {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
             },
             vec![],
         );
@@ -2524,11 +2524,11 @@ fn evaluate_function_with_missing_args_uses_unit() {
             vec![make_param(
                 "x",
                 Type::I32 {
-                    span: ByteSpan::default(),
+                    span: SrcPos::default(),
                 },
             )],
             Type::Unit {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
             },
             vec![],
         );
@@ -2545,7 +2545,7 @@ fn evaluate_function_restores_safety_after_call() {
             "f",
             vec![],
             Type::Unit {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
             },
             vec![],
         );
@@ -2561,7 +2561,7 @@ fn evaluate_function_body_with_block() {
             "test",
             vec![],
             Type::I32 {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
             },
             vec![BlockElement::Expr(make_i32(42).into())],
         );
@@ -2580,7 +2580,7 @@ fn builtin_abs_positive() {
         fn abs_builtin(_: &mut Evaluator, args: &[Value]) -> Result<Value, EvalError> {
             match &args[0] {
                 Value::I32 { value, .. } => Ok(Value::I32 {
-                    span: ByteSpan::default(),
+                    span: SrcPos::default(),
                     value: value.abs(),
                 }),
                 _ => Err(EvalError::TypeError),
@@ -2589,7 +2589,7 @@ fn builtin_abs_positive() {
         let name = NString::from("abs");
         ev.add_builtin_function(name.clone(), abs_builtin);
         let fn_id = Function {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             visibility: Visibility::Pub,
             attributes: BTreeSet::new(),
             is_unsafe: false,
@@ -2598,7 +2598,7 @@ fn builtin_abs_positive() {
             generics: None,
             params: vec![],
             return_type: Type::I32 {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
             }
             .into(),
             body: None,
@@ -2615,7 +2615,7 @@ fn builtin_max() {
         fn max_builtin(_: &mut Evaluator, args: &[Value]) -> Result<Value, EvalError> {
             match (&args[0], &args[1]) {
                 (Value::I32 { value: a, .. }, Value::I32 { value: b, .. }) => Ok(Value::I32 {
-                    span: ByteSpan::default(),
+                    span: SrcPos::default(),
                     value: std::cmp::max(*a, *b),
                 }),
                 _ => Err(EvalError::TypeError),
@@ -2624,7 +2624,7 @@ fn builtin_max() {
         let name = NString::from("max");
         ev.add_builtin_function(name.clone(), max_builtin);
         let fn_id = Function {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             visibility: Visibility::Pub,
             attributes: BTreeSet::new(),
             is_unsafe: false,
@@ -2633,7 +2633,7 @@ fn builtin_max() {
             generics: None,
             params: vec![],
             return_type: Type::I32 {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
             }
             .into(),
             body: None,
@@ -2651,7 +2651,7 @@ fn builtin_max() {
 fn builtin_extern_no_body_or_builtin_fails() {
     run_test(|_, ev| {
         let fn_id = Function {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             visibility: Visibility::Pub,
             attributes: BTreeSet::new(),
             is_unsafe: false,
@@ -2660,7 +2660,7 @@ fn builtin_extern_no_body_or_builtin_fails() {
             generics: None,
             params: vec![],
             return_type: Type::Unit {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
             }
             .into(),
             body: None,
@@ -2770,14 +2770,14 @@ fn local_variable_symbol_resolves() {
         let local = make_local_var(
             "my_var",
             Type::I32 {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
             },
             make_i32(77),
         );
         let frame = crate::evaluator::Frame::new(&[(NString::from("my_var"), make_i32(77))]);
         ev.frames.push(frame);
         let v = Value::LocalVariableSymbol {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             id: local,
         };
         let result = ev.evaluate(&v).unwrap();
@@ -2791,12 +2791,12 @@ fn local_variable_symbol_not_bound() {
         let local = make_local_var(
             "missing",
             Type::I32 {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
             },
             make_i32(0),
         );
         let v = Value::LocalVariableSymbol {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             id: local,
         };
         let result = ev.evaluate(&v);
@@ -2810,13 +2810,13 @@ fn parameter_symbol_resolves() {
         let param = make_param(
             "p",
             Type::I32 {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
             },
         );
         let frame = crate::evaluator::Frame::new(&[(NString::from("p"), make_i32(55))]);
         ev.frames.push(frame);
         let v = Value::ParameterSymbol {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             id: param,
         };
         let result = ev.evaluate(&v).unwrap();
@@ -2830,11 +2830,11 @@ fn parameter_symbol_not_bound() {
         let param = make_param(
             "missing_param",
             Type::I32 {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
             },
         );
         let v = Value::ParameterSymbol {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             id: param,
         };
         let result = ev.evaluate(&v);
@@ -2853,12 +2853,12 @@ fn function_symbol_evaluates_to_itself() {
             "f",
             vec![],
             Type::Unit {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
             },
             vec![],
         );
         let v = Value::FunctionSymbol {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             id: fn_id,
         };
         let result = ev.evaluate(&v).unwrap();
@@ -2877,7 +2877,7 @@ fn function_symbol_evaluates_to_itself() {
 fn borrow_is_unsupported() {
     run_test(|_, ev| {
         let v = Value::Borrow {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             exclusive: false,
             mutable: false,
             place: make_i32(1).into(),
@@ -2891,7 +2891,7 @@ fn borrow_is_unsupported() {
 fn deref_is_unsupported() {
     run_test(|_, ev| {
         let v = Value::Deref {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             place: make_i32(1).into(),
         };
         let result = ev.evaluate(&v);
@@ -2903,7 +2903,7 @@ fn deref_is_unsupported() {
 fn method_call_is_unsupported() {
     run_test(|_, ev| {
         let v = Value::MethodCall {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             object: make_i32(1).into(),
             method_name: NString::from("foo"),
             args: Arguments {
@@ -2920,21 +2920,21 @@ fn method_call_is_unsupported() {
 fn global_variable_symbol_is_unsupported() {
     run_test(|_, ev| {
         let global_var = GlobalVariable {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             visibility: Visibility::Pub,
             attributes: BTreeSet::new(),
             is_mutable: false,
             name: NString::from("GLOBAL"),
             mangled_name: None,
             ty: Type::I32 {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
             }
             .into(),
             initializer: make_i32(42).into(),
         }
         .into();
         let v = Value::GlobalVariableSymbol {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             id: global_var,
         };
         let result = ev.evaluate(&v);
@@ -2946,7 +2946,7 @@ fn global_variable_symbol_is_unsupported() {
 fn range_is_unsupported() {
     run_test(|_, ev| {
         let v = Value::Range {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             start: Some(make_i32(0).into()),
             end: Some(make_i32(10).into()),
             inclusive: false,
@@ -2964,14 +2964,14 @@ fn range_is_unsupported() {
 fn evaluate_global_initializer_i32() {
     run_test(|_, ev| {
         let global = GlobalVariable {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             visibility: Visibility::Pub,
             attributes: BTreeSet::new(),
             is_mutable: false,
             name: NString::from("G"),
             mangled_name: None,
             ty: Type::I32 {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
             }
             .into(),
             initializer: make_i32(42).into(),
@@ -2985,14 +2985,14 @@ fn evaluate_global_initializer_i32() {
 fn evaluate_global_initializer_bool() {
     run_test(|_, ev| {
         let global = GlobalVariable {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             visibility: Visibility::Pub,
             attributes: BTreeSet::new(),
             is_mutable: false,
             name: NString::from("FLAG"),
             mangled_name: None,
             ty: Type::Bool {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
             }
             .into(),
             initializer: make_bool(true).into(),
@@ -3006,14 +3006,14 @@ fn evaluate_global_initializer_bool() {
 fn evaluate_global_initializer_unit() {
     run_test(|_, ev| {
         let global = GlobalVariable {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             visibility: Visibility::Pub,
             attributes: BTreeSet::new(),
             is_mutable: false,
             name: NString::from("V"),
             mangled_name: None,
             ty: Type::Unit {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
             }
             .into(),
             initializer: make_unit().into(),
@@ -3027,14 +3027,14 @@ fn evaluate_global_initializer_unit() {
 fn evaluate_global_initializer_with_expression() {
     run_test(|_, ev| {
         let global = GlobalVariable {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             visibility: Visibility::Pub,
             attributes: BTreeSet::new(),
             is_mutable: false,
             name: NString::from("SUM"),
             mangled_name: None,
             ty: Type::I32 {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
             }
             .into(),
             initializer: make_add(make_i32(10), make_i32(20)).into(),
@@ -3396,7 +3396,7 @@ fn evaluate_cast_after_arithmetic() {
         let v = make_cast(
             sum,
             Type::U8 {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
             },
         );
         let result = ev.evaluate(&v).unwrap();
@@ -3409,7 +3409,7 @@ fn evaluate_unary_negate_expression() {
     run_test(|_, ev| {
         let expr = make_add(make_i32(10), make_i32(20));
         let v = Value::Unary {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             operand: ValueId::from(expr),
             op: UnaryOp::Sub,
         };
@@ -3426,7 +3426,7 @@ fn block_element_expr_vs_local() {
                 BlockElement::Local(make_local_var(
                     "a",
                     Type::I32 {
-                        span: ByteSpan::default(),
+                        span: SrcPos::default(),
                     },
                     make_i32(1),
                 )),
@@ -3435,7 +3435,7 @@ fn block_element_expr_vs_local() {
             BlockSafety::Safe,
         );
         let v = Value::Block {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             block,
         };
         let result = ev.evaluate(&v).unwrap();
@@ -3451,7 +3451,7 @@ fn call_depth_tracks_correctly() {
             "f",
             vec![],
             Type::Unit {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
             },
             vec![],
         );
@@ -3468,7 +3468,7 @@ fn loop_count_increments_in_loop() {
         let body = make_block(
             vec![BlockElement::Expr(
                 Value::Break {
-                    span: ByteSpan::default(),
+                    span: SrcPos::default(),
                     label: None,
                 }
                 .into(),
@@ -3476,7 +3476,7 @@ fn loop_count_increments_in_loop() {
             BlockSafety::Safe,
         );
         let v = Value::Loop {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             body,
         };
         ev.evaluate(&v).unwrap();
@@ -3497,7 +3497,7 @@ fn if_else_with_complex_expressions() {
         );
         let condition = make_binary(make_i32(5), BinaryOp::Gt, make_i32(3));
         let v = Value::If {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             condition: ValueId::from(condition),
             true_branch: true_block,
             false_branch: Some(false_block),
@@ -3517,14 +3517,14 @@ fn multiple_local_variables_in_block() {
                 BlockElement::Local(make_local_var(
                     "x",
                     Type::I32 {
-                        span: ByteSpan::default(),
+                        span: SrcPos::default(),
                     },
                     make_i32(10),
                 )),
                 BlockElement::Local(make_local_var(
                     "y",
                     Type::I32 {
-                        span: ByteSpan::default(),
+                        span: SrcPos::default(),
                     },
                     make_i32(20),
                 )),
@@ -3533,7 +3533,7 @@ fn multiple_local_variables_in_block() {
         );
         ev.evaluate_block_element(&BlockElement::Expr(
             Value::Block {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
                 block,
             }
             .into(),
@@ -3550,7 +3550,7 @@ fn while_loop_with_break() {
         let body = make_block(
             vec![BlockElement::Expr(
                 Value::Break {
-                    span: ByteSpan::default(),
+                    span: SrcPos::default(),
                     label: None,
                 }
                 .into(),
@@ -3558,7 +3558,7 @@ fn while_loop_with_break() {
             BlockSafety::Safe,
         );
         let v = Value::While {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             condition: make_bool(true).into(),
             body,
         };
@@ -3574,7 +3574,7 @@ fn while_loop_with_continue() {
         let body = make_block(
             vec![BlockElement::Expr(
                 Value::Continue {
-                    span: ByteSpan::default(),
+                    span: SrcPos::default(),
                     label: None,
                 }
                 .into(),
@@ -3582,7 +3582,7 @@ fn while_loop_with_continue() {
             BlockSafety::Safe,
         );
         let v = Value::While {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             condition: make_bool(true).into(),
             body,
         };
@@ -3597,7 +3597,7 @@ fn evaluate_block_safe_then_unsafe_resets() {
         assert!(matches!(ev.current_safety, BlockSafety::Safe));
         let block = make_block(vec![], BlockSafety::Unsafe);
         let v = Value::Block {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             block,
         };
         ev.evaluate(&v).unwrap();
@@ -3611,7 +3611,7 @@ fn evaluate_block_unsafe_then_unsafe_resets() {
         ev.current_safety = BlockSafety::Unsafe;
         let block = make_block(vec![], BlockSafety::Unsafe);
         let v = Value::Block {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             block,
         };
         ev.evaluate(&v).unwrap();
@@ -3625,7 +3625,7 @@ fn evaluate_block_safe_then_safe_unchanged() {
         assert!(matches!(ev.current_safety, BlockSafety::Safe));
         let block = make_block(vec![], BlockSafety::Safe);
         let v = Value::Block {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             block,
         };
         ev.evaluate(&v).unwrap();
@@ -3745,13 +3745,13 @@ fn comparison_i32_multiple_operators() {
 fn cast_i128_to_i8_truncates() {
     run_test(|_, ev| {
         let big = Value::I128 {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             value: Box::new(300),
         };
         let v = make_cast(
             big,
             Type::I8 {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
             },
         );
         let result = ev.evaluate(&v).unwrap();
@@ -3763,13 +3763,13 @@ fn cast_i128_to_i8_truncates() {
 fn cast_u128_to_u8_truncates() {
     run_test(|_, ev| {
         let big = Value::U128 {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             value: Box::new(300),
         };
         let v = make_cast(
             big,
             Type::U8 {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
             },
         );
         let result = ev.evaluate(&v).unwrap();
@@ -3783,7 +3783,7 @@ fn cast_i32_to_i128_preserves_value() {
         let v = make_cast(
             make_i32(-1000),
             Type::I128 {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
             },
         );
         let result = ev.evaluate(&v).unwrap();
@@ -3797,7 +3797,7 @@ fn cast_f64_to_i32_truncates() {
         let v = make_cast(
             make_f64(3.99),
             Type::I32 {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
             },
         );
         let result = ev.evaluate(&v).unwrap();
@@ -3811,7 +3811,7 @@ fn cast_u32_to_f64() {
         let v = make_cast(
             make_u32(42),
             Type::F64 {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
             },
         );
         let result = ev.evaluate(&v).unwrap();
@@ -3823,13 +3823,13 @@ fn cast_u32_to_f64() {
 fn cast_u16_to_u32() {
     run_test(|_, ev| {
         let val = Value::U16 {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             value: 1000,
         };
         let v = make_cast(
             val,
             Type::U32 {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
             },
         );
         let result = ev.evaluate(&v).unwrap();
@@ -3841,13 +3841,13 @@ fn cast_u16_to_u32() {
 fn cast_i16_to_i64() {
     run_test(|_, ev| {
         let val = Value::I16 {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             value: -100,
         };
         let v = make_cast(
             val,
             Type::I64 {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
             },
         );
         let result = ev.evaluate(&v).unwrap();
@@ -3907,11 +3907,11 @@ fn memory_allocated_bytes_are_zeroed() {
 fn inferred_integer_promotes_via_binary_op() {
     run_test(|_, ev| {
         let left = Value::InferredInteger {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             value: Box::new(10u128),
         };
         let right = Value::InferredInteger {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             value: Box::new(20u128),
         };
         let v = make_add(left, right);
@@ -3924,11 +3924,11 @@ fn inferred_integer_promotes_via_binary_op() {
 fn inferred_float_promotes_via_binary_op() {
     run_test(|_, ev| {
         let left = Value::InferredFloat {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             value: OrderedFloat(1.5),
         };
         let right = Value::InferredFloat {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             value: OrderedFloat(2.5),
         };
         let v = make_add(left, right);
@@ -3950,7 +3950,7 @@ fn cast_i32_to_usize_32bit() {
         let v = make_cast(
             make_i32(100),
             Type::USize {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
             },
         );
         let result = ev.evaluate(&v).unwrap();
@@ -3971,7 +3971,7 @@ fn cast_u64_to_usize() {
         let v = make_cast(
             make_u64(999),
             Type::USize {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
             },
         );
         let result = ev.evaluate(&v).unwrap();
@@ -3990,16 +3990,16 @@ fn cast_u64_to_usize() {
 fn usize_index_access() {
     run_test(|_, ev| {
         let list = Value::List {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             elements: vec![make_i32(10).into(), make_i32(20).into()].into(),
         };
         let idx = Value::USize {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             bits: 64,
             value: 1,
         };
         let v = Value::IndexAccess {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             collection: ValueId::from(list),
             index: ValueId::from(idx),
         };
@@ -4016,11 +4016,11 @@ fn usize_index_access() {
 fn index_access_with_u8() {
     run_test(|_, ev| {
         let list = Value::List {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             elements: vec![make_i32(10).into(), make_i32(20).into()].into(),
         };
         let v = Value::IndexAccess {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             collection: ValueId::from(list),
             index: make_u8(1).into(),
         };
@@ -4033,15 +4033,15 @@ fn index_access_with_u8() {
 fn index_access_with_u16() {
     run_test(|_, ev| {
         let list = Value::List {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             elements: vec![make_i32(10).into(), make_i32(20).into()].into(),
         };
         let idx = Value::U16 {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             value: 1,
         };
         let v = Value::IndexAccess {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             collection: ValueId::from(list),
             index: ValueId::from(idx),
         };
@@ -4054,11 +4054,11 @@ fn index_access_with_u16() {
 fn index_access_with_u64() {
     run_test(|_, ev| {
         let list = Value::List {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             elements: vec![make_i32(10).into()].into(),
         };
         let v = Value::IndexAccess {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             collection: ValueId::from(list),
             index: make_u64(0).into(),
         };
@@ -4071,15 +4071,15 @@ fn index_access_with_u64() {
 fn index_access_with_i64_positive() {
     run_test(|_, ev| {
         let list = Value::List {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             elements: vec![make_i32(10).into()].into(),
         };
         let idx = Value::I64 {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             value: 0,
         };
         let v = Value::IndexAccess {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             collection: ValueId::from(list),
             index: ValueId::from(idx),
         };
@@ -4099,7 +4099,7 @@ fn struct_object_with_computed_field() {
         let field_expr = make_add(make_i32(1), make_i32(2));
         let fields: Vec<(NString, ValueId)> = vec![(NString::from("sum"), field_expr.into())];
         let v = Value::StructObject {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             struct_def,
             fields: fields.into(),
         };
@@ -4120,7 +4120,7 @@ fn struct_object_empty_fields() {
     run_test(|_, ev| {
         let struct_def = make_struct_def("Unit", BTreeMap::new());
         let v = Value::StructObject {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
             struct_def,
             fields: ThinVec::new(),
         };

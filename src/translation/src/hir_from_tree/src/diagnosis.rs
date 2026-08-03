@@ -1,6 +1,6 @@
 use nitrate_diagnosis::{DiagnosticGroupId, DiagnosticInfo, FormattableDiagnosticGroup, Origin, SourcePosition};
 use nitrate_hir_evaluate::EvalError;
-use nitrate_tree::ByteSpan;
+use nitrate_tree::{SrcPos, SrcSpan};
 
 /// Comprehensive error codes for the HIR lowering stage (group H).
 ///
@@ -25,130 +25,111 @@ use nitrate_tree::ByteSpan;
 pub(crate) enum HirErr {
     // ── Attribute Errors (H001-H049) ──
     /// An attribute was used on a module item that is not recognized.
-    UnrecognizedModuleAttribute { span: ByteSpan, name: String },
+    UnrecognizedModuleAttribute { span: SrcPos, name: String },
     /// An attribute was used on a global variable that is not recognized.
-    UnrecognizedGlobalVarAttribute { span: ByteSpan, name: String },
+    UnrecognizedGlobalVarAttribute { span: SrcPos, name: String },
     /// An attribute was used on a function that is not recognized.
-    UnrecognizedFunctionAttribute { span: ByteSpan, name: String },
+    UnrecognizedFunctionAttribute { span: SrcPos, name: String },
     /// An attribute was used on a function parameter that is not recognized.
-    UnrecognizedFunctionParamAttribute { span: ByteSpan, name: String },
+    UnrecognizedFunctionParamAttribute { span: SrcPos, name: String },
     /// An attribute was used on a type alias that is not recognized.
-    UnrecognizedTypeAliasAttribute { span: ByteSpan, name: String },
+    UnrecognizedTypeAliasAttribute { span: SrcPos, name: String },
     /// An attribute was used on a struct definition that is not recognized.
-    UnrecognizedStructAttribute { span: ByteSpan, name: String },
+    UnrecognizedStructAttribute { span: SrcPos, name: String },
     /// An attribute was used on a struct field that is not recognized.
-    UnrecognizedStructFieldAttribute { span: ByteSpan, name: String },
+    UnrecognizedStructFieldAttribute { span: SrcPos, name: String },
     /// An attribute was used on an enum definition that is not recognized.
-    UnrecognizedEnumAttribute { span: ByteSpan, name: String },
+    UnrecognizedEnumAttribute { span: SrcPos, name: String },
     /// An attribute was used on an enum variant that is not recognized.
-    UnrecognizedEnumVariantAttribute { span: ByteSpan, name: String },
+    UnrecognizedEnumVariantAttribute { span: SrcPos, name: String },
     /// An attribute was used on a local variable that is not recognized.
-    UnrecognizedLocalVarAttribute { span: ByteSpan, name: String },
+    UnrecognizedLocalVarAttribute { span: SrcPos, name: String },
     /// An attribute was used on a trait definition that is not recognized.
-    UnrecognizedTraitAttribute { span: ByteSpan, name: String },
+    UnrecognizedTraitAttribute { span: SrcPos, name: String },
 
     // ── Name/Symbol Errors (H050-H099) ──
     /// A symbol in an expression path could not be resolved.
-    UnresolvedSymbol { span: ByteSpan, name: String },
+    UnresolvedSymbol { span: SrcPos, name: String },
     /// A type path could not be resolved to any known type.
-    UnresolvedTypePath { span: ByteSpan, name: String },
+    UnresolvedTypePath { span: SrcPos, name: String },
     /// An entity with the same name was already defined in this scope.
-    DuplicateEntity { span: ByteSpan, name: String },
+    DuplicateEntity { span: SrcPos, name: String },
     /// A lifetime name was used that is not recognized or defined.
-    UnrecognizedLifetime { span: ByteSpan, name: String },
+    UnrecognizedLifetime { span: SrcPos, name: String },
 
     // ── Type Errors (H100-H149) ──
     /// An integer literal value cannot fit in the target integer type.
     IntegerCastOutOfRange {
-        span: ByteSpan,
+        span: SrcPos,
         value: String,
         target_type: String,
     },
     /// A global variable declaration had no initializer expression.
-    GlobalVariableMustHaveInitializer { span: ByteSpan, name: String },
+    GlobalVariableMustHaveInitializer { span: SrcPos, name: String },
     /// A local variable declaration had no initializer expression.
-    LocalVariableMissingInitializer { span: ByteSpan, name: String },
+    LocalVariableMissingInitializer { span: SrcPos, name: String },
     /// A type alias definition is missing its right-hand side type.
-    TypeAliasMustHaveType { span: ByteSpan, name: String },
+    TypeAliasMustHaveType { span: SrcPos, name: String },
     /// An array type length expression did not evaluate to a usize value.
-    ArrayLengthExpectedUSize { span: ByteSpan },
+    ArrayLengthExpectedUSize { span: SrcPos },
     /// An array type length expression could not be evaluated at compile time.
-    ArrayTypeLengthEvalError { span: ByteSpan, err: EvalError },
+    ArrayTypeLengthEvalError { span: SrcPos, err: EvalError },
     /// Slice types ([T]) can only appear behind references (&[T]) or pointers (*[T]).
-    SliceTypesMustBeInRefOrPtr { span: ByteSpan },
+    SliceTypesMustBeInRefOrPtr { span: SrcPos },
     /// A type alias's type evaluation failed.
-    TypeAliasEvalError { span: ByteSpan, name: String },
+    TypeAliasEvalError { span: SrcPos, name: String },
 
     // ── Expression and Literal Errors (H150-H199) ──
     /// The `match` expression is not yet implemented.
-    MatchNotImplemented { span: ByteSpan },
+    MatchNotImplemented { span: SrcPos },
     /// The `for` loop is not yet implemented.
-    ForLoopNotImplemented { span: ByteSpan },
+    ForLoopNotImplemented { span: SrcPos },
     /// The `await` expression is not yet implemented.
-    AwaitNotImplemented { span: ByteSpan },
+    AwaitNotImplemented { span: SrcPos },
     /// The `typeof` operator is not yet implemented.
-    TypeofNotImplemented { span: ByteSpan },
+    TypeofNotImplemented { span: SrcPos },
     /// Type reflection via `typeinfo` is not yet implemented.
-    TypeReflectionNotImplemented { span: ByteSpan },
+    TypeReflectionNotImplemented { span: SrcPos },
     /// Closure expressions are not yet implemented.
-    ClosureNotImplemented { span: ByteSpan },
+    ClosureNotImplemented { span: SrcPos },
     /// Type potentials are not yet implemented.
-    TypePotentialNotImplemented { span: ByteSpan },
+    TypePotentialNotImplemented { span: SrcPos },
     /// Lifetime as standalone type is not yet implemented.
-    LifetimeTypeNotImplemented { span: ByteSpan },
+    LifetimeTypeNotImplemented { span: SrcPos },
     /// Generic type arguments in intermediate path segments are not yet supported.
-    IntermediateGenericArgsNotSupported { span: ByteSpan, path: String },
+    IntermediateGenericArgsNotSupported { span: SrcPos, path: String },
 
     // ── Statement/Control Flow Errors (H200-H249) ──
     /// A non-unit function body does not end with a return expression.
-    MissingReturnStatement { span: ByteSpan, name: String },
+    MissingReturnStatement { span: SrcPos, name: String },
     /// Unsafe expression body is not yet implemented.
-    UnsafeExprBodyNotImplemented { span: ByteSpan },
+    UnsafeExprBodyNotImplemented { span: SrcPos },
 
     // ── Refinement Type Errors (H250-H299) ──
     /// A refinement type bound expression could not be evaluated to a constant.
-    RefinementBoundNotConstant { span: ByteSpan },
+    RefinementBoundNotConstant { span: SrcPos },
     /// A refinement type was applied to a non-integer base type.
-    RefinementTypeOnNonInteger { span: ByteSpan, base_type: String },
+    RefinementTypeOnNonInteger { span: SrcPos, base_type: String },
     /// The refinement type width must be between 1 and 128 (inclusive).
-    RefinementWidthOutOfRange { span: ByteSpan, width: String },
+    RefinementWidthOutOfRange { span: SrcPos, width: String },
     /// The refinement type had no bounds specified and at least one is required.
-    RefinementTypeEmpty { span: ByteSpan },
+    RefinementTypeEmpty { span: SrcPos },
     /// The refinement type width was zero or negative.
-    RefinementWidthNotPositive { span: ByteSpan, width: String },
+    RefinementWidthNotPositive { span: SrcPos, width: String },
 
     // ── Item/Definition Errors (H350-H399) ──
     /// The function's return type is non-unit but the body is missing.
-    MissingFunctionBody { span: ByteSpan, name: String },
+    MissingFunctionBody { span: SrcPos, name: String },
 }
 
-/// Convert a `ByteSpan` into an `Origin` for diagnostic output.
-/// Uses byte offsets as position markers since line/column info
-/// is not available at the HIR lowering stage.
-fn byte_span_to_origin(span: ByteSpan) -> Origin {
-    if span.is_empty() {
-        Origin::Point(SourcePosition {
-            line: 0,
-            column: 0,
-            offset: span.start,
-            fileid: None,
-        })
-    } else {
-        Origin::Span(nitrate_diagnosis::Span {
-            start: SourcePosition {
-                line: 0,
-                column: 0,
-                offset: span.start,
-                fileid: None,
-            },
-            end: SourcePosition {
-                line: 0,
-                column: 0,
-                offset: span.end,
-                fileid: None,
-            },
-        })
-    }
+/// Convert a `SrcPos` into an `Origin` for diagnostic output.
+fn byte_span_to_origin(span: SrcPos) -> Origin {
+    Origin::Point(SourcePosition {
+        line: span.line as u32,
+        column: span.column as u32,
+        offset: span.offset,
+        fileid: span.fileid,
+    })
 }
 
 impl FormattableDiagnosticGroup for HirErr {

@@ -2,8 +2,8 @@ use crate::{context::Ast2HirCtx, diagnosis::HirErr, expr::lower_expr, helpers};
 use nitrate_diagnosis::CompilerLog;
 use nitrate_hir::prelude::*;
 use nitrate_token::IntegerKind;
-use nitrate_tree::ByteSpan;
 use nitrate_tree::ast::{self as ast, SymbolKind};
+use nitrate_tree::{SrcPos, SrcSpan};
 use std::collections::BTreeSet;
 use std::ops::Deref;
 
@@ -76,7 +76,7 @@ fn lit_to_u128(lit: &Lit) -> Option<u128> {
 // ═══════════════════════════════════════════════════════════════════════════
 
 pub(crate) fn lower_type_path(type_path: ast::TypePath, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Type, ()> {
-    let span = type_path.span;
+    let span = type_path.span.into();
 
     let has_intermediate_generics = type_path.segments[..type_path.segments.len().saturating_sub(1)]
         .iter()
@@ -174,7 +174,7 @@ fn lower_refinement_bound(
     match target_type {
         Some(ty) => {
             let cast = Value::Cast {
-                span: ByteSpan::default(),
+                span: SrcPos::default(),
                 value: hir_value.into(),
                 target_type: ty.clone().into(),
             };
@@ -189,7 +189,7 @@ pub(crate) fn lower_refinement_type(
     ctx: &mut Ast2HirCtx,
     log: &CompilerLog,
 ) -> Result<Type, ()> {
-    let r_span = refinement_type.span;
+    let r_span: SrcPos = refinement_type.span.into();
     let basis_type = lower_type(refinement_type.basis_type, ctx, log)?;
 
     let is_integer = matches!(
@@ -289,7 +289,7 @@ pub(crate) fn lower_tuple_type(
 ) -> Result<Type, ()> {
     if tuple_type.element_types.is_empty() {
         return Ok(Type::Unit {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
         });
     }
 
@@ -300,7 +300,7 @@ pub(crate) fn lower_tuple_type(
     }
 
     Ok(Type::Tuple {
-        span: tuple_type.span,
+        span: tuple_type.span.into(),
         element_types: element_types.into(),
     })
 }
@@ -311,7 +311,7 @@ pub(crate) fn lower_array_type(
     log: &CompilerLog,
 ) -> Result<Type, ()> {
     let element_type: TypeId = lower_type(array_type.element_type, ctx, log)?.into();
-    let a_span = array_type.span;
+    let a_span: SrcPos = array_type.span.into();
 
     let len_value_id: ValueId = lower_expr(array_type.len, ctx, log)?.into();
 
@@ -327,7 +327,7 @@ pub(crate) fn lower_function_type(
     ctx: &mut Ast2HirCtx,
     log: &CompilerLog,
 ) -> Result<Type, ()> {
-    let span = func_type_ast.span;
+    let span: SrcPos = func_type_ast.span.into();
 
     if let Some(attrs) = &func_type_ast.attributes {
         for attr in attrs {
@@ -341,7 +341,7 @@ pub(crate) fn lower_function_type(
                 _ => "#[<unknown>]".to_string(),
             };
             log.report(&HirErr::UnrecognizedFunctionAttribute {
-                span: attr.span(),
+                span: attr.span().into(),
                 name,
             });
         }
@@ -361,7 +361,7 @@ pub(crate) fn lower_function_type(
                     _ => "#[<unknown>]".to_string(),
                 };
                 log.report(&HirErr::UnrecognizedFunctionParamAttribute {
-                    span: attr.span(),
+                    span: attr.span().into(),
                     name,
                 });
             }
@@ -374,7 +374,7 @@ pub(crate) fn lower_function_type(
     let return_type: TypeId = match func_type_ast.return_type {
         Some(ret_ty) => lower_type(ret_ty, ctx, log)?.into(),
         None => Type::Unit {
-            span: ByteSpan::default(),
+            span: SrcPos::default(),
         }
         .into(),
     };
@@ -407,7 +407,7 @@ pub(crate) fn lower_reference_type(
     if let ast::Type::SliceType(slice) = reference_type.to {
         let element_type = lower_type(slice.element_type, ctx, log)?.into();
         Ok(Type::SliceRef {
-            span: reference_type.span,
+            span: reference_type.span.into(),
             lifetime,
             exclusive,
             mutable,
@@ -416,7 +416,7 @@ pub(crate) fn lower_reference_type(
     } else {
         let to = lower_type(reference_type.to, ctx, log)?.into();
         Ok(Type::Reference {
-            span: reference_type.span,
+            span: reference_type.span.into(),
             lifetime,
             exclusive,
             mutable,
@@ -436,7 +436,7 @@ pub(crate) fn lower_pointer_type(
     if let ast::Type::SliceType(slice) = pointer_type.to {
         let element_type: TypeId = lower_type(slice.element_type, ctx, log)?.into();
         Ok(Type::SlicePtr {
-            span: pointer_type.span,
+            span: pointer_type.span.into(),
             lifetime: Lifetime::Inferred,
             exclusive,
             mutable,
@@ -445,7 +445,7 @@ pub(crate) fn lower_pointer_type(
     } else {
         let to = lower_type(pointer_type.to, ctx, log)?.into();
         Ok(Type::Pointer {
-            span: pointer_type.span,
+            span: pointer_type.span.into(),
             lifetime: Lifetime::Inferred,
             exclusive,
             mutable,
@@ -463,7 +463,9 @@ pub(crate) fn lower_slice_type(
     _ctx: &mut Ast2HirCtx,
     log: &CompilerLog,
 ) -> Result<Type, ()> {
-    log.report(&HirErr::SliceTypesMustBeInRefOrPtr { span: slice_type.span });
+    log.report(&HirErr::SliceTypesMustBeInRefOrPtr {
+        span: slice_type.span.into(),
+    });
     Err(())
 }
 
@@ -473,7 +475,7 @@ pub(crate) fn lower_type_potential(
     log: &CompilerLog,
 ) -> Result<Type, ()> {
     log.report(&HirErr::TypePotentialNotImplemented {
-        span: type_potential.span,
+        span: type_potential.span.into(),
     });
     Err(())
 }
@@ -483,7 +485,9 @@ pub(crate) fn lower_lifetime_type(
     _ctx: &mut Ast2HirCtx,
     log: &CompilerLog,
 ) -> Result<Type, ()> {
-    log.report(&HirErr::LifetimeTypeNotImplemented { span: lifetime.span });
+    log.report(&HirErr::LifetimeTypeNotImplemented {
+        span: lifetime.span.into(),
+    });
     Err(())
 }
 
@@ -494,20 +498,20 @@ pub(crate) fn lower_lifetime_type(
 pub(crate) fn lower_type(ty: ast::Type, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Type, ()> {
     match ty {
         ast::Type::SyntaxError(_) => Err(()),
-        ast::Type::Bool(t) => Ok(Type::Bool { span: t.span }),
-        ast::Type::UInt8(t) => Ok(Type::U8 { span: t.span }),
-        ast::Type::UInt16(t) => Ok(Type::U16 { span: t.span }),
-        ast::Type::UInt32(t) => Ok(Type::U32 { span: t.span }),
-        ast::Type::UInt64(t) => Ok(Type::U64 { span: t.span }),
-        ast::Type::UInt128(t) => Ok(Type::U128 { span: t.span }),
-        ast::Type::USize(t) => Ok(Type::USize { span: t.span }),
-        ast::Type::Int8(t) => Ok(Type::I8 { span: t.span }),
-        ast::Type::Int16(t) => Ok(Type::I16 { span: t.span }),
-        ast::Type::Int32(t) => Ok(Type::I32 { span: t.span }),
-        ast::Type::Int64(t) => Ok(Type::I64 { span: t.span }),
-        ast::Type::Int128(t) => Ok(Type::I128 { span: t.span }),
-        ast::Type::Float32(t) => Ok(Type::F32 { span: t.span }),
-        ast::Type::Float64(t) => Ok(Type::F64 { span: t.span }),
+        ast::Type::Bool(t) => Ok(Type::Bool { span: t.span.into() }),
+        ast::Type::UInt8(t) => Ok(Type::U8 { span: t.span.into() }),
+        ast::Type::UInt16(t) => Ok(Type::U16 { span: t.span.into() }),
+        ast::Type::UInt32(t) => Ok(Type::U32 { span: t.span.into() }),
+        ast::Type::UInt64(t) => Ok(Type::U64 { span: t.span.into() }),
+        ast::Type::UInt128(t) => Ok(Type::U128 { span: t.span.into() }),
+        ast::Type::USize(t) => Ok(Type::USize { span: t.span.into() }),
+        ast::Type::Int8(t) => Ok(Type::I8 { span: t.span.into() }),
+        ast::Type::Int16(t) => Ok(Type::I16 { span: t.span.into() }),
+        ast::Type::Int32(t) => Ok(Type::I32 { span: t.span.into() }),
+        ast::Type::Int64(t) => Ok(Type::I64 { span: t.span.into() }),
+        ast::Type::Int128(t) => Ok(Type::I128 { span: t.span.into() }),
+        ast::Type::Float32(t) => Ok(Type::F32 { span: t.span.into() }),
+        ast::Type::Float64(t) => Ok(Type::F64 { span: t.span.into() }),
         ast::Type::InferType(t) => Ok(ctx.create_inference_placeholder()),
         ast::Type::TypePath(t) => lower_type_path(*t, ctx, log),
         ast::Type::RefinementType(t) => lower_refinement_type(*t, ctx, log),
@@ -553,7 +557,7 @@ mod tests {
         let (mut ctx, log) = ctx_and_log();
         let r = lower_type(
             ast::Type::Bool(ast::Bool {
-                span: ByteSpan::default(),
+                span: SrcSpan::default(),
             }),
             &mut ctx,
             &log,
@@ -561,7 +565,7 @@ mod tests {
         assert_eq!(
             r,
             Ok(Type::Bool {
-                span: ByteSpan::default()
+                span: SrcPos::default()
             })
         );
     }
@@ -571,7 +575,7 @@ mod tests {
         let (mut ctx, log) = ctx_and_log();
         let r = lower_type(
             ast::Type::UInt8(ast::UInt8 {
-                span: ByteSpan::default(),
+                span: SrcSpan::default(),
             }),
             &mut ctx,
             &log,
@@ -579,7 +583,7 @@ mod tests {
         assert_eq!(
             r,
             Ok(Type::U8 {
-                span: ByteSpan::default()
+                span: SrcPos::default()
             })
         );
     }
@@ -589,7 +593,7 @@ mod tests {
         let (mut ctx, log) = ctx_and_log();
         let r = lower_type(
             ast::Type::UInt16(ast::UInt16 {
-                span: ByteSpan::default(),
+                span: SrcSpan::default(),
             }),
             &mut ctx,
             &log,
@@ -597,7 +601,7 @@ mod tests {
         assert_eq!(
             r,
             Ok(Type::U16 {
-                span: ByteSpan::default()
+                span: SrcPos::default()
             })
         );
     }
@@ -607,7 +611,7 @@ mod tests {
         let (mut ctx, log) = ctx_and_log();
         let r = lower_type(
             ast::Type::UInt32(ast::UInt32 {
-                span: ByteSpan::default(),
+                span: SrcSpan::default(),
             }),
             &mut ctx,
             &log,
@@ -615,7 +619,7 @@ mod tests {
         assert_eq!(
             r,
             Ok(Type::U32 {
-                span: ByteSpan::default()
+                span: SrcPos::default()
             })
         );
     }
@@ -625,7 +629,7 @@ mod tests {
         let (mut ctx, log) = ctx_and_log();
         let r = lower_type(
             ast::Type::UInt64(ast::UInt64 {
-                span: ByteSpan::default(),
+                span: SrcSpan::default(),
             }),
             &mut ctx,
             &log,
@@ -633,7 +637,7 @@ mod tests {
         assert_eq!(
             r,
             Ok(Type::U64 {
-                span: ByteSpan::default()
+                span: SrcPos::default()
             })
         );
     }
@@ -643,7 +647,7 @@ mod tests {
         let (mut ctx, log) = ctx_and_log();
         let r = lower_type(
             ast::Type::Int8(ast::Int8 {
-                span: ByteSpan::default(),
+                span: SrcSpan::default(),
             }),
             &mut ctx,
             &log,
@@ -651,7 +655,7 @@ mod tests {
         assert_eq!(
             r,
             Ok(Type::I8 {
-                span: ByteSpan::default()
+                span: SrcPos::default()
             })
         );
     }
@@ -661,7 +665,7 @@ mod tests {
         let (mut ctx, log) = ctx_and_log();
         let r = lower_type(
             ast::Type::Int32(ast::Int32 {
-                span: ByteSpan::default(),
+                span: SrcSpan::default(),
             }),
             &mut ctx,
             &log,
@@ -669,7 +673,7 @@ mod tests {
         assert_eq!(
             r,
             Ok(Type::I32 {
-                span: ByteSpan::default()
+                span: SrcPos::default()
             })
         );
     }
@@ -679,7 +683,7 @@ mod tests {
         let (mut ctx, log) = ctx_and_log();
         let r = lower_type(
             ast::Type::Int64(ast::Int64 {
-                span: ByteSpan::default(),
+                span: SrcSpan::default(),
             }),
             &mut ctx,
             &log,
@@ -687,7 +691,7 @@ mod tests {
         assert_eq!(
             r,
             Ok(Type::I64 {
-                span: ByteSpan::default()
+                span: SrcPos::default()
             })
         );
     }
@@ -697,7 +701,7 @@ mod tests {
         let (mut ctx, log) = ctx_and_log();
         let r = lower_type(
             ast::Type::Float32(ast::Float32 {
-                span: ByteSpan::default(),
+                span: SrcSpan::default(),
             }),
             &mut ctx,
             &log,
@@ -705,7 +709,7 @@ mod tests {
         assert_eq!(
             r,
             Ok(Type::F32 {
-                span: ByteSpan::default()
+                span: SrcPos::default()
             })
         );
     }
@@ -715,7 +719,7 @@ mod tests {
         let (mut ctx, log) = ctx_and_log();
         let r = lower_type(
             ast::Type::Float64(ast::Float64 {
-                span: ByteSpan::default(),
+                span: SrcSpan::default(),
             }),
             &mut ctx,
             &log,
@@ -723,7 +727,7 @@ mod tests {
         assert_eq!(
             r,
             Ok(Type::F64 {
-                span: ByteSpan::default()
+                span: SrcPos::default()
             })
         );
     }
@@ -733,7 +737,7 @@ mod tests {
         let (mut ctx, log) = ctx_and_log();
         let r = lower_type(
             ast::Type::InferType(ast::InferType {
-                span: ByteSpan::default(),
+                span: SrcSpan::default(),
             }),
             &mut ctx,
             &log,
@@ -747,7 +751,7 @@ mod tests {
         let (mut ctx, log) = ctx_and_log();
         let r = lower_type(
             ast::Type::SyntaxError(ast::TypeSyntaxError {
-                span: ByteSpan::default(),
+                span: SrcSpan::default(),
             }),
             &mut ctx,
             &log,
@@ -760,9 +764,9 @@ mod tests {
         let (mut ctx, log) = ctx_and_log();
         let r = lower_type(
             ast::Type::Parentheses(Box::new(ast::TypeParentheses {
-                span: ByteSpan::default(),
+                span: SrcSpan::default(),
                 inner: ast::Type::Bool(ast::Bool {
-                    span: ByteSpan::default(),
+                    span: SrcSpan::default(),
                 }),
             })),
             &mut ctx,
@@ -771,7 +775,7 @@ mod tests {
         assert_eq!(
             r,
             Ok(Type::Bool {
-                span: ByteSpan::default()
+                span: SrcPos::default()
             })
         );
     }
@@ -782,9 +786,9 @@ mod tests {
             ctx.ast_symbol_map.insert("Foo".into(), SymbolKind::Struct);
             ctx.tab.get_struct_or_insert_placeholder(&"Foo".into());
             let tp = ast::TypePath {
-                span: ByteSpan::default(),
+                span: SrcSpan::default(),
                 segments: vec![ast::TypePathSegment {
-                    span: ByteSpan::default(),
+                    span: SrcSpan::default(),
                     name: "Foo".into(),
                     type_arguments: None,
                 }],
@@ -801,9 +805,9 @@ mod tests {
             ctx.ast_symbol_map.insert("Color".into(), SymbolKind::Enum);
             ctx.tab.get_enum_or_insert_placeholder(&"Color".into());
             let tp = ast::TypePath {
-                span: ByteSpan::default(),
+                span: SrcSpan::default(),
                 segments: vec![ast::TypePathSegment {
-                    span: ByteSpan::default(),
+                    span: SrcSpan::default(),
                     name: "Color".into(),
                     type_arguments: None,
                 }],
@@ -820,9 +824,9 @@ mod tests {
             ctx.ast_symbol_map.insert("MyInt".into(), SymbolKind::TypeAlias);
             ctx.tab.get_type_alias_or_insert_placeholder(&"MyInt".into());
             let tp = ast::TypePath {
-                span: ByteSpan::default(),
+                span: SrcSpan::default(),
                 segments: vec![ast::TypePathSegment {
-                    span: ByteSpan::default(),
+                    span: SrcSpan::default(),
                     name: "MyInt".into(),
                     type_arguments: None,
                 }],
@@ -838,9 +842,9 @@ mod tests {
         let (mut ctx, log) = ctx_and_log();
         ctx.ast_symbol_map.insert("T".into(), SymbolKind::GenericParameter);
         let tp = ast::TypePath {
-            span: ByteSpan::default(),
+            span: SrcSpan::default(),
             segments: vec![ast::TypePathSegment {
-                span: ByteSpan::default(),
+                span: SrcSpan::default(),
                 name: "T".into(),
                 type_arguments: None,
             }],
@@ -855,9 +859,9 @@ mod tests {
         let (mut ctx, log) = ctx_and_log();
         ctx.ast_symbol_map.insert("X".into(), SymbolKind::Function);
         let tp = ast::TypePath {
-            span: ByteSpan::default(),
+            span: SrcSpan::default(),
             segments: vec![ast::TypePathSegment {
-                span: ByteSpan::default(),
+                span: SrcSpan::default(),
                 name: "X".into(),
                 type_arguments: None,
             }],
@@ -870,9 +874,9 @@ mod tests {
     fn lower_type_path_unresolved_path() {
         let (mut ctx, log) = ctx_and_log();
         let tp = ast::TypePath {
-            span: ByteSpan::default(),
+            span: SrcSpan::default(),
             segments: vec![ast::TypePathSegment {
-                span: ByteSpan::default(),
+                span: SrcSpan::default(),
                 name: "X".into(),
                 type_arguments: None,
             }],
@@ -887,21 +891,21 @@ mod tests {
         ctx.ast_symbol_map.insert("Foo".into(), SymbolKind::Struct);
         ctx.ast_symbol_map.insert("Bar".into(), SymbolKind::Struct);
         let tp = ast::TypePath {
-            span: ByteSpan::default(),
+            span: SrcSpan::default(),
             segments: vec![
                 ast::TypePathSegment {
-                    span: ByteSpan::default(),
+                    span: SrcSpan::default(),
                     name: "Foo".into(),
                     type_arguments: Some(vec![ast::TypeArgument {
-                        span: ByteSpan::default(),
+                        span: SrcSpan::default(),
                         name: None,
                         value: ast::Type::Int32(ast::Int32 {
-                            span: ByteSpan::default(),
+                            span: SrcSpan::default(),
                         }),
                     }]),
                 },
                 ast::TypePathSegment {
-                    span: ByteSpan::default(),
+                    span: SrcSpan::default(),
                     name: "Bar".into(),
                     type_arguments: None,
                 },
@@ -917,15 +921,15 @@ mod tests {
             ctx.ast_symbol_map.insert("Vec".into(), SymbolKind::Struct);
             ctx.tab.get_struct_or_insert_placeholder(&"Vec".into());
             let tp = ast::TypePath {
-                span: ByteSpan::default(),
+                span: SrcSpan::default(),
                 segments: vec![ast::TypePathSegment {
-                    span: ByteSpan::default(),
+                    span: SrcSpan::default(),
                     name: "Vec".into(),
                     type_arguments: Some(vec![ast::TypeArgument {
-                        span: ByteSpan::default(),
+                        span: SrcSpan::default(),
                         name: None,
                         value: ast::Type::Int32(ast::Int32 {
-                            span: ByteSpan::default(),
+                            span: SrcSpan::default(),
                         }),
                     }]),
                 }],
@@ -940,13 +944,13 @@ mod tests {
     fn lower_tuple_empty_is_unit() {
         let (mut ctx, log) = ctx_and_log();
         let t = ast::TupleType {
-            span: ByteSpan::default(),
+            span: SrcSpan::default(),
             element_types: vec![],
         };
         assert_eq!(
             lower_tuple_type(t, &mut ctx, &log).unwrap(),
             Type::Unit {
-                span: ByteSpan::default()
+                span: SrcPos::default()
             }
         );
     }
@@ -955,9 +959,9 @@ mod tests {
     fn lower_tuple_single() {
         run(|ctx, log| {
             let t = ast::TupleType {
-                span: ByteSpan::default(),
+                span: SrcSpan::default(),
                 element_types: vec![ast::Type::Bool(ast::Bool {
-                    span: ByteSpan::default(),
+                    span: SrcSpan::default(),
                 })],
             };
             let r = lower_tuple_type(t, ctx, log).unwrap();
@@ -969,16 +973,16 @@ mod tests {
     fn lower_tuple_multiple() {
         run(|ctx, log| {
             let t = ast::TupleType {
-                span: ByteSpan::default(),
+                span: SrcSpan::default(),
                 element_types: vec![
                     ast::Type::Bool(ast::Bool {
-                        span: ByteSpan::default(),
+                        span: SrcSpan::default(),
                     }),
                     ast::Type::Int32(ast::Int32 {
-                        span: ByteSpan::default(),
+                        span: SrcSpan::default(),
                     }),
                     ast::Type::Float64(ast::Float64 {
-                        span: ByteSpan::default(),
+                        span: SrcSpan::default(),
                     }),
                 ],
             };
@@ -991,7 +995,7 @@ mod tests {
     fn lower_fn_type_empty() {
         run(|ctx, log| {
             let ft = ast::FunctionType {
-                span: ByteSpan::default(),
+                span: SrcSpan::default(),
                 attributes: None,
                 parameters: vec![],
                 return_type: None,
@@ -1005,28 +1009,28 @@ mod tests {
     fn lower_fn_type_with_params() {
         run(|ctx, log| {
             let ft = ast::FunctionType {
-                span: ByteSpan::default(),
+                span: SrcSpan::default(),
                 attributes: None,
                 parameters: vec![
                     ast::FuncTypeParam {
-                        span: ByteSpan::default(),
+                        span: SrcSpan::default(),
                         attributes: None,
                         name: "a".into(),
                         ty: ast::Type::Int32(ast::Int32 {
-                            span: ByteSpan::default(),
+                            span: SrcSpan::default(),
                         }),
                     },
                     ast::FuncTypeParam {
-                        span: ByteSpan::default(),
+                        span: SrcSpan::default(),
                         attributes: None,
                         name: "b".into(),
                         ty: ast::Type::Bool(ast::Bool {
-                            span: ByteSpan::default(),
+                            span: SrcSpan::default(),
                         }),
                     },
                 ],
                 return_type: Some(ast::Type::Float64(ast::Float64 {
-                    span: ByteSpan::default(),
+                    span: SrcSpan::default(),
                 })),
             };
             let r = lower_function_type(ft, ctx, log).unwrap();
@@ -1038,11 +1042,11 @@ mod tests {
     fn lower_fn_type_attr_error() {
         run(|ctx, log| {
             let ft = ast::FunctionType {
-                span: ByteSpan::default(),
+                span: SrcSpan::default(),
                 attributes: Some(vec![ast::Expr::Path(Box::new(ast::ExprPath {
-                    span: ByteSpan::default(),
+                    span: SrcSpan::default(),
                     segments: vec![ast::ExprPathSegment {
-                        span: ByteSpan::default(),
+                        span: SrcSpan::default(),
                         name: "bad".into(),
                         type_arguments: None,
                     }],
@@ -1060,12 +1064,12 @@ mod tests {
     fn lower_ref_default() {
         run(|ctx, log| {
             let rt = ast::ReferenceType {
-                span: ByteSpan::default(),
+                span: SrcSpan::default(),
                 lifetime: None,
                 exclusivity: None,
                 mutability: None,
                 to: ast::Type::Int32(ast::Int32 {
-                    span: ByteSpan::default(),
+                    span: SrcSpan::default(),
                 }),
             };
             let r = lower_reference_type(rt, ctx, log).unwrap();
@@ -1085,12 +1089,12 @@ mod tests {
     fn lower_ref_mut() {
         run(|ctx, log| {
             let rt = ast::ReferenceType {
-                span: ByteSpan::default(),
+                span: SrcSpan::default(),
                 lifetime: None,
                 exclusivity: None,
                 mutability: Some(ast::Mutability::Mut),
                 to: ast::Type::Bool(ast::Bool {
-                    span: ByteSpan::default(),
+                    span: SrcSpan::default(),
                 }),
             };
             let r = lower_reference_type(rt, ctx, log).unwrap();
@@ -1109,15 +1113,15 @@ mod tests {
     fn lower_ref_lifetime_static() {
         run(|ctx, log| {
             let rt = ast::ReferenceType {
-                span: ByteSpan::default(),
+                span: SrcSpan::default(),
                 lifetime: Some(ast::Lifetime {
-                    span: ByteSpan::default(),
+                    span: SrcSpan::default(),
                     name: "static".into(),
                 }),
                 exclusivity: None,
                 mutability: None,
                 to: ast::Type::Int32(ast::Int32 {
-                    span: ByteSpan::default(),
+                    span: SrcSpan::default(),
                 }),
             };
             let r = lower_reference_type(rt, ctx, log).unwrap();
@@ -1135,14 +1139,14 @@ mod tests {
     fn lower_ref_to_slice() {
         run(|ctx, log| {
             let rt = ast::ReferenceType {
-                span: ByteSpan::default(),
+                span: SrcSpan::default(),
                 lifetime: None,
                 exclusivity: None,
                 mutability: None,
                 to: ast::Type::SliceType(Box::new(ast::SliceType {
-                    span: ByteSpan::default(),
+                    span: SrcSpan::default(),
                     element_type: ast::Type::Int32(ast::Int32 {
-                        span: ByteSpan::default(),
+                        span: SrcSpan::default(),
                     }),
                 })),
             };
@@ -1155,15 +1159,15 @@ mod tests {
     fn lower_ref_bad_lifetime() {
         let (mut ctx, log) = ctx_and_log();
         let rt = ast::ReferenceType {
-            span: ByteSpan::default(),
+            span: SrcSpan::default(),
             lifetime: Some(ast::Lifetime {
-                span: ByteSpan::default(),
+                span: SrcSpan::default(),
                 name: "invalid".into(),
             }),
             exclusivity: None,
             mutability: None,
             to: ast::Type::Int32(ast::Int32 {
-                span: ByteSpan::default(),
+                span: SrcSpan::default(),
             }),
         };
         assert!(lower_reference_type(rt, &mut ctx, &log).is_err());
@@ -1173,12 +1177,12 @@ mod tests {
     fn lower_ptr_default() {
         run(|ctx, log| {
             let pt = ast::PointerType {
-                span: ByteSpan::default(),
+                span: SrcSpan::default(),
                 lifetime: None,
                 exclusivity: None,
                 mutability: None,
                 to: ast::Type::Int32(ast::Int32 {
-                    span: ByteSpan::default(),
+                    span: SrcSpan::default(),
                 }),
             };
             let r = lower_pointer_type(pt, ctx, log).unwrap();
@@ -1197,12 +1201,12 @@ mod tests {
     fn lower_ptr_mut() {
         run(|ctx, log| {
             let pt = ast::PointerType {
-                span: ByteSpan::default(),
+                span: SrcSpan::default(),
                 lifetime: None,
                 exclusivity: None,
                 mutability: Some(ast::Mutability::Mut),
                 to: ast::Type::Bool(ast::Bool {
-                    span: ByteSpan::default(),
+                    span: SrcSpan::default(),
                 }),
             };
             let r = lower_pointer_type(pt, ctx, log).unwrap();
@@ -1221,14 +1225,14 @@ mod tests {
     fn lower_ptr_to_slice() {
         run(|ctx, log| {
             let pt = ast::PointerType {
-                span: ByteSpan::default(),
+                span: SrcSpan::default(),
                 lifetime: None,
                 exclusivity: None,
                 mutability: None,
                 to: ast::Type::SliceType(Box::new(ast::SliceType {
-                    span: ByteSpan::default(),
+                    span: SrcSpan::default(),
                     element_type: ast::Type::Int32(ast::Int32 {
-                        span: ByteSpan::default(),
+                        span: SrcSpan::default(),
                     }),
                 })),
             };
@@ -1243,9 +1247,9 @@ mod tests {
         assert!(
             lower_slice_type(
                 ast::SliceType {
-                    span: ByteSpan::default(),
+                    span: SrcSpan::default(),
                     element_type: ast::Type::Int32(ast::Int32 {
-                        span: ByteSpan::default()
+                        span: SrcSpan::default()
                     })
                 },
                 &mut ctx,
@@ -1261,9 +1265,9 @@ mod tests {
         assert!(
             lower_refinement_type(
                 ast::RefinementType {
-                    span: ByteSpan::default(),
+                    span: SrcSpan::default(),
                     basis_type: ast::Type::Int32(ast::Int32 {
-                        span: ByteSpan::default()
+                        span: SrcSpan::default()
                     }),
                     width: None,
                     minimum: None,
@@ -1282,9 +1286,9 @@ mod tests {
         assert!(
             lower_type_potential(
                 ast::TypePotential {
-                    span: ByteSpan::default(),
+                    span: SrcSpan::default(),
                     body: ast::Block {
-                        span: ByteSpan::default(),
+                        span: SrcSpan::default(),
                         safety: None,
                         elements: vec![]
                     }
@@ -1300,12 +1304,12 @@ mod tests {
     fn lower_array_i32_5() {
         run(|ctx, log| {
             let a = ast::ArrayType {
-                span: ByteSpan::default(),
+                span: SrcSpan::default(),
                 element_type: ast::Type::Int32(ast::Int32 {
-                    span: ByteSpan::default(),
+                    span: SrcSpan::default(),
                 }),
                 len: ast::Expr::Integer(Box::new(ast::IntegerLit {
-                    span: ByteSpan::default(),
+                    span: SrcSpan::default(),
                     value: 5,
                     kind: IntegerKind::Dec,
                 })),
@@ -1319,12 +1323,12 @@ mod tests {
     fn lower_array_len_works() {
         run(|ctx, log| {
             let a = ast::ArrayType {
-                span: ByteSpan::default(),
+                span: SrcSpan::default(),
                 element_type: ast::Type::Int32(ast::Int32 {
-                    span: ByteSpan::default(),
+                    span: SrcSpan::default(),
                 }),
                 len: ast::Expr::String(ast::StringLit {
-                    span: ByteSpan::default(),
+                    span: SrcSpan::default(),
                     value: "bad".into(),
                 }),
             };

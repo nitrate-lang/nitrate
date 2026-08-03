@@ -1,7 +1,7 @@
 //! Tests for token navigation: peek, next, skip, rewind, is_eof, etc.
 
 use crate::Lexer;
-use nitrate_token::{Integer, IntegerKind, SourcePosition, Token};
+use nitrate_token::{Integer, IntegerKind, Token};
 
 #[test]
 fn test_peek_does_not_advance() {
@@ -86,7 +86,8 @@ fn test_rewind_resets_state() {
     let pos = lexer.current_pos();
     lexer.next_tok();
     lexer.rewind(pos.clone());
-    assert_eq!(lexer.current_pos(), pos);
+    let pos2 = lexer.current_pos();
+    assert_eq!(pos2, pos);
     assert_eq!(lexer.next_tok().token, Token::Name("b".into()));
 }
 
@@ -96,13 +97,7 @@ fn test_rewind_to_beginning() {
     lexer.disable_trivia();
 
     lexer.next_tok();
-    let beginning = SourcePosition {
-        line: 0,
-        column: 0,
-        offset: 0,
-        fileid: None,
-    };
-    lexer.rewind(beginning);
+    lexer.rewind_raw((None, 0, 0, 0));
     assert_eq!(lexer.next_tok().token, Token::Name("abc".into()));
 }
 
@@ -115,12 +110,4 @@ fn test_current_pos_after_eof() {
     assert_eq!(pos.offset, 1);
     assert_eq!(pos.line, 0);
     assert_eq!(pos.column, 1);
-}
-
-#[test]
-fn test_peek_pos() {
-    let mut lexer = Lexer::new(b"  x", None).expect("source too big");
-    lexer.disable_trivia();
-    let pos = lexer.peek_pos();
-    assert_eq!(pos.offset, 2);
 }
