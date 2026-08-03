@@ -1,4 +1,4 @@
-use nitrate_diagnosis::{DiagnosticGroupId, DiagnosticInfo, FormattableDiagnosticGroup, Origin, SourcePosition};
+use nitrate_diagnosis::{DiagnosticGroupId, DiagnosticInfo, FormattableDiagnosticGroup, Origin, SourcePosition, Span};
 use nitrate_hir::{Lit, Type, TypeId};
 use nitrate_hir_dump::Dump;
 use nitrate_tree::SrcPos;
@@ -19,16 +19,6 @@ pub(crate) enum TypeErr {
         span: SrcPos,
         value: u128,
         target_type: TypeId,
-    },
-    IntegerLiteralUnsatisfiable {
-        span: SrcPos,
-        value: u128,
-        unsatisfiable_type: TypeId,
-    },
-    FloatLiteralUnsatisfiable {
-        span: SrcPos,
-        value: ordered_float::OrderedFloat<f64>,
-        unsatisfiable_type: TypeId,
     },
     IntegerLiteralOutOfRefinementBounds {
         span: SrcPos,
@@ -75,15 +65,13 @@ impl FormattableDiagnosticGroup for TypeErr {
     fn variant_id(&self) -> u16 {
         match self {
             TypeErr::IntegerLiteralOutOfRange { .. } => 0,
-            TypeErr::IntegerLiteralUnsatisfiable { .. } => 1,
-            TypeErr::FloatLiteralUnsatisfiable { .. } => 2,
-            TypeErr::IntegerLiteralOutOfRefinementBounds { .. } => 3,
-            TypeErr::OperationResultOutOfRefinementBounds { .. } => 4,
-            TypeErr::MismatchedBranchTypes { .. } => 5,
-            TypeErr::CannotInferTypeArgs { .. } => 6,
-            TypeErr::AmbiguousType { .. } => 8,
-            TypeErr::UnboundGenericParam { .. } => 11,
-            TypeErr::MethodNotFound { .. } => 14,
+            TypeErr::IntegerLiteralOutOfRefinementBounds { .. } => 1,
+            TypeErr::OperationResultOutOfRefinementBounds { .. } => 2,
+            TypeErr::MismatchedBranchTypes { .. } => 3,
+            TypeErr::CannotInferTypeArgs { .. } => 4,
+            TypeErr::AmbiguousType { .. } => 5,
+            TypeErr::UnboundGenericParam { .. } => 6,
+            TypeErr::MethodNotFound { .. } => 7,
         }
     }
 
@@ -96,33 +84,9 @@ impl FormattableDiagnosticGroup for TypeErr {
             } => DiagnosticInfo {
                 origin: srcpos_to_origin(*span),
                 message: format!(
-                    "Integer literal value `{}` is outside the range of type `{}`",
+                    "integer literal value `{}` is outside the range of type `{}`",
                     value,
                     target_type.to_string()
-                ),
-            },
-            TypeErr::IntegerLiteralUnsatisfiable {
-                span,
-                value,
-                unsatisfiable_type,
-            } => DiagnosticInfo {
-                origin: srcpos_to_origin(*span),
-                message: format!(
-                    "Integer literal `{}` cannot satisfy non-integer type constraint `{}`",
-                    value,
-                    unsatisfiable_type.to_string()
-                ),
-            },
-            TypeErr::FloatLiteralUnsatisfiable {
-                span,
-                value,
-                unsatisfiable_type,
-            } => DiagnosticInfo {
-                origin: srcpos_to_origin(*span),
-                message: format!(
-                    "Float literal `{}` cannot satisfy non-float type constraint `{}`",
-                    value,
-                    unsatisfiable_type.to_string()
                 ),
             },
             TypeErr::IntegerLiteralOutOfRefinementBounds {
@@ -139,7 +103,7 @@ impl FormattableDiagnosticGroup for TypeErr {
                 DiagnosticInfo {
                     origin: srcpos_to_origin(*span),
                     message: format!(
-                        "Integer literal `{}` does not satisfy refinement type `{}`{}",
+                        "integer literal `{}` does not satisfy refinement type `{}`{}",
                         value,
                         refinement_type.to_string(),
                         bounds_info
@@ -161,7 +125,7 @@ impl FormattableDiagnosticGroup for TypeErr {
                 DiagnosticInfo {
                     origin: srcpos_to_origin(*span),
                     message: format!(
-                        "Arithmetic operation result range [{}, {}] cannot be guaranteed to satisfy refinement type `{}`{}",
+                        "arithmetic operation result range [{}, {}] cannot be guaranteed to satisfy refinement type `{}`{}",
                         computed_min,
                         computed_max,
                         refinement_type.to_string(),
@@ -187,11 +151,11 @@ impl FormattableDiagnosticGroup for TypeErr {
                 reason,
             } => DiagnosticInfo {
                 origin: srcpos_to_origin(*span),
-                message: format!("Cannot infer type arguments for `{}`: {}", generic_name, reason),
+                message: format!("cannot infer type arguments for `{}`: {}", generic_name, reason),
             },
             TypeErr::AmbiguousType { span, description } => DiagnosticInfo {
                 origin: srcpos_to_origin(*span),
-                message: format!("Ambiguous type: {}", description),
+                message: format!("ambiguous type: {}", description),
             },
             TypeErr::UnboundGenericParam {
                 span,
@@ -200,7 +164,7 @@ impl FormattableDiagnosticGroup for TypeErr {
             } => DiagnosticInfo {
                 origin: srcpos_to_origin(*span),
                 message: format!(
-                    "Generic parameter `{}` on `{}` could not be inferred from context",
+                    "generic parameter `{}` on `{}` could not be inferred from context",
                     param_name, generic_name
                 ),
             },
@@ -211,7 +175,7 @@ impl FormattableDiagnosticGroup for TypeErr {
             } => DiagnosticInfo {
                 origin: srcpos_to_origin(*span),
                 message: format!(
-                    "Method `{}` not found on type `{}`",
+                    "method `{}` not found on type `{}`",
                     method_name,
                     receiver_type.to_string()
                 ),

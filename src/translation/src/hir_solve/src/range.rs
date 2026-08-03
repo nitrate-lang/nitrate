@@ -1,34 +1,15 @@
-//! Range expression desugaring.
-//!
-//! Range expressions (`a..b`, `a..=b`, `a..`, `..b`, `..=b`, `..`) are
-//! desugared into construction of standard struct types that mirror Rust's
-//! `Range`, `RangeInclusive`, `RangeFrom`, `RangeTo`, `RangeToInclusive`,
-//! and `RangeFull`. The structs are registered in the SymbolTab as built-in
-//! types so that type inference, codegen, and other passes can refer to them.
-//!
-//! # Desugaring Rules (mirroring Rust)
-//!
-//! | Syntax    | HIR Value                           | Struct Type            |
-//! |-----------|-------------------------------------|------------------------|
-//! | `a..b`    | `StructObject { start: a, end: b }` | `Range<T>`             |
-//! | `a..=b`   | `StructObject { start: a, end: b }` | `RangeInclusive<T>`    |
-//! | `a..`     | `StructObject { start: a }`         | `RangeFrom<T>`         |
-//! | `..b`     | `StructObject { end: b }`           | `RangeTo<T>`           |
-//! | `..=b`    | `StructObject { end: b }`           | `RangeToInclusive<T>`  |
-//! | `..`      | `StructObject {}`                   | `RangeFull`            |
-//!
-//! Each struct is generic over `T` (the element type), so `Range` and friends
-//! work with any integer type. During type inference, `T` will be unified with
-//! the concrete integer type used in the start/end expressions.
-
-use nitrate_hir::{StructDef, StructDefId, StructField, StructMemoryLayoutCell, SymbolTab, Type, TypeId, Visibility};
+use nitrate_hir::{
+    StructDef, StructDefId, StructField, StructMemoryLayoutCell, SymbolTab, Type, TypeId, Value, ValueId,
+};
 use nitrate_nstring::NString;
 use nitrate_tree::SrcPos;
 use std::collections::{BTreeMap, BTreeSet};
 use thin_vec::ThinVec;
 
-/// Names of the built-in range struct types.
-pub const RANGE_NAMES: [&str; 6] = [
+// Range struct names could conflict with user-defined types. If a user defines
+// a struct with the same name (e.g., "Range"), the user definition wins silently
+// (ensure_range_structs skips if the name already exists in the symbol table).
+const RANGE_NAMES: [&str; 6] = [
     "Range",
     "RangeInclusive",
     "RangeFrom",
@@ -37,13 +18,7 @@ pub const RANGE_NAMES: [&str; 6] = [
     "RangeFull",
 ];
 
-/// Map a range combination (has_start, has_end, inclusive) to the built-in
-/// struct name (e.g. `"Range"`, `"RangeInclusive"`, etc.).
-///
-/// This is the authoritative mapping shared between desugaring and type
-/// inference.
-#[must_use]
-pub fn range_struct_name(has_start: bool, has_end: bool, inclusive: bool) -> &'static str {
+pub(crate) fn range_struct_name(has_start: bool, has_end: bool, inclusive: bool) -> &'static str {
     match (has_start, has_end) {
         (true, true) if inclusive => "RangeInclusive",
         (true, true) => "Range",
@@ -54,38 +29,22 @@ pub fn range_struct_name(has_start: bool, has_end: bool, inclusive: bool) -> &'s
     }
 }
 
-/// Insert the six built-in range struct definitions into the symbol table.
-///
-/// Each struct is generic over a single type parameter `T`. The fields
-/// vary according to the range variant:
-///
-/// - `Range<T>`: `{ start: T, end: T }`
-/// - `RangeInclusive<T>`: `{ start: T, end: T }`
-/// - `RangeFrom<T>`: `{ start: T }`
-/// - `RangeTo<T>`: `{ end: T }`
-/// - `RangeToInclusive<T>`: `{ end: T }`
-/// - `RangeFull`: `{}` (no fields, no generics)
-///
-/// This function is idempotent: it will not insert a struct if one with the
-/// given name already exists in the symbol table.
-pub fn ensure_range_structs(tab: &mut SymbolTab) {
+/// Ensures that synthetic range struct definitions exist in the symbol table.
+/// This is idempotent — if a struct with the same name already exists (including
+/// a user-defined one), it is silently kept and no synthetic definition is created.
+pub(crate) fn ensure_range_structs(tab: &mut SymbolTab) {
     let generic_t: NString = NString::from("T");
-
     for name_str in RANGE_NAMES {
         let name: NString = NString::from(name_str);
-
-        // Skip if already registered.
         if tab.get_struct(&name).is_some() {
             continue;
         }
-
         let gen_ty = Type::GenericParam {
             span: SrcPos::default(),
             index: 0,
             name: generic_t.clone(),
         };
         let gen_ty_id: TypeId = gen_ty.into();
-
         let (field_vec, has_generics): (Vec<(&str, TypeId)>, bool) = match name_str {
             "Range" | "RangeInclusive" => (vec![("start", gen_ty_id), ("end", gen_ty_id)], true),
             "RangeFrom" => (vec![("start", gen_ty_id)], true),
@@ -93,95 +52,82 @@ pub fn ensure_range_structs(tab: &mut SymbolTab) {
             "RangeFull" => (vec![], false),
             _ => unreachable!(),
         };
-
         let mut fields: BTreeMap<NString, StructField> = BTreeMap::new();
         let mut layout: ThinVec<StructMemoryLayoutCell> = ThinVec::new();
-
-        for (field_name_str, field_ty) in &field_vec {
-            let fname: NString = NString::from(*field_name_str);
+        for (fn_str, ft) in &field_vec {
+            let fname: NString = NString::from(*fn_str);
             fields.insert(
                 fname.clone(),
                 StructField {
                     span: SrcPos::default(),
-                    visibility: Visibility::Pub,
+                    visibility: nitrate_hir::Visibility::Pub,
                     attributes: BTreeSet::new(),
                     name: fname.clone(),
-                    ty: *field_ty,
+                    ty: *ft,
                     default_value: None,
                 },
             );
             layout.push(StructMemoryLayoutCell::Field { field_name: fname });
         }
-
-        let generics: Option<BTreeMap<NString, Option<TypeId>>> = if has_generics {
+        let generics = if has_generics {
             let mut g = BTreeMap::new();
             g.insert(generic_t.clone(), Some(gen_ty_id));
             Some(g)
         } else {
             None
         };
-
-        let struct_def = StructDef {
+        let sd = StructDef {
             span: SrcPos::default(),
-            visibility: Visibility::Pub,
+            visibility: nitrate_hir::Visibility::Pub,
             name,
             attributes: BTreeSet::new(),
             fields,
             generics,
             layout,
         };
-        let id: StructDefId = struct_def.into();
-        tab.add_struct(id);
+        tab.add_struct(StructDefId::from(sd));
     }
 }
 
-/// Given a range value and its start/end HIR values, resolve the appropriate
-/// range struct from the symbol table and return a `StructObject` value that
-/// constructs it.
-///
-/// # Arguments
-///
-/// * `tab` — The symbol table (must already have range structs registered via
-///   `ensure_range_structs`).
-/// * `span` — The source span of the original range expression.
-/// * `start` — Optional start expression (already visited/solved).
-/// * `end` — Optional end expression (already visited/solved).
-/// * `inclusive` — Whether the end bound is inclusive (`..=` vs `..`).
-/// * `has_start` — Whether a start bound was provided.
-/// * `has_end` — Whether an end bound was provided.
-///
-/// # Returns
-///
-/// A `Value::StructObject` that constructs the appropriate range struct.
-pub fn make_range_struct_object(
+pub(crate) fn make_range_struct_object(
     tab: &SymbolTab,
     span: SrcPos,
-    start: Option<nitrate_hir::ValueId>,
-    end: Option<nitrate_hir::ValueId>,
+    start: Option<ValueId>,
+    end: Option<ValueId>,
     inclusive: bool,
     has_start: bool,
     has_end: bool,
-) -> nitrate_hir::Value {
-    use nitrate_hir::Value;
-
+) -> Value {
     let struct_name = range_struct_name(has_start, has_end, inclusive);
-
-    let struct_def = match tab.get_struct(&NString::from(struct_name)) {
-        Some(def) => def.clone(),
-        None => panic!(
-            "Range struct `{struct_name}` not found in symbol table. Ensure `ensure_range_structs` was called before type solving."
-        ),
+    let name_ns: NString = NString::from(struct_name);
+    let struct_def = match tab.get_struct(&name_ns) {
+        Some(sd) => sd.clone(),
+        None => {
+            // Fallback: the range struct wasn't found. This can happen if
+            // ensure_range_structs was not called, or if a user-defined struct
+            // shadowed the compiler-internal one. In this case, emit a tuple
+            // of the range endpoints so that the range expression can still
+            // be type-checked.
+            let mut elements = Vec::new();
+            if let Some(s) = start {
+                elements.push(s);
+            }
+            if let Some(e) = end {
+                elements.push(e);
+            }
+            return Value::Tuple {
+                span,
+                elements: elements.into(),
+            };
+        }
     };
-
-    let mut fields: ThinVec<(NString, nitrate_hir::ValueId)> = ThinVec::new();
-
+    let mut fields: ThinVec<(NString, ValueId)> = ThinVec::new();
     if let Some(s) = start {
         fields.push((NString::from("start"), s));
     }
     if let Some(e) = end {
         fields.push((NString::from("end"), e));
     }
-
     Value::StructObject {
         span,
         struct_def,

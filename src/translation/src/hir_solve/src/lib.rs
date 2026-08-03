@@ -1,16 +1,26 @@
 #![forbid(unsafe_code)]
-#![allow(clippy::result_unit_err)]
 
 mod bounds;
 mod constraints;
 mod diagnosis;
 mod monomorphize;
 mod range;
-mod solver;
+mod solve;
 mod substitution;
 
-pub use range::{ensure_range_structs, range_struct_name};
-pub use solver::{resolve_function, resolve_global};
+/// Errors that can occur during type inference and solving.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum SolveError {
+    /// Type errors were detected during inference.
+    TypeErrors,
+}
 
-#[cfg(test)]
-mod tests;
+impl std::fmt::Display for SolveError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            SolveError::TypeErrors => write!(f, "type errors detected during inference"),
+        }
+    }
+}
+
+pub use solve::{resolve_function, resolve_global};

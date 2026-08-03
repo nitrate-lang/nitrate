@@ -19,7 +19,7 @@ nitrate_hir_borrow_check.workspace = true
 nitrate_hir_evaluate.workspace = true
 nitrate_hir_type.workspace = true
 nitrate_hir_mangle.workspace = true
-nitrate_hir_solve2.workspace = true
+nitrate_hir_solve.workspace = true
 
 ordered-float.workspace = true
 thin-vec.workspace = true

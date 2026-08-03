@@ -7,7 +7,7 @@ pub use nitrate_hir_evaluate as hir_evaluate;
 pub use nitrate_hir_from_tree as hir_from_tree;
 pub use nitrate_hir_mangle as hir_mangle;
 pub use nitrate_hir_optimize as hir_optimize;
-pub use nitrate_hir_solve2 as hir_solve;
+pub use nitrate_hir_solve as hir_solve;
 pub use nitrate_hir_type as hir_type;
 pub use nitrate_hir_validate as hir_validate;
 pub use nitrate_llvm as llvm;
