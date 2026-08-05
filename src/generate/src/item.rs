@@ -1,11 +1,48 @@
 use crate::Gen;
-use nitrate_translation::parsetree::ast::{self, ItemKind};
-use std::todo;
+use nitrate_translation::{
+    nstring::NString,
+    parsetree::ast::{self, *},
+};
+use std::{format, ops::Deref, unreachable};
 
 impl Gen {
+    /// Select a random item kind weighted by desired frequency.
+    /// Heavily biased toward Function since this is the primary item type
+    /// needed by `gen_program`.
     fn select_item_kind(&mut self) -> ast::ItemKind {
-        // TODO: select a random item kind weighted by desired frequency distribution
-        todo!()
+        // Use an index-based approach to avoid needing Clone/Copy on ItemKind
+        let choices: &[(ast::ItemKind, u32)] = &[
+            (ast::ItemKind::Function, 40),
+            (ast::ItemKind::Struct, 15),
+            (ast::ItemKind::Enum, 8),
+            (ast::ItemKind::Variable, 10),
+            (ast::ItemKind::TypeAlias, 8),
+            (ast::ItemKind::Import, 5),
+            (ast::ItemKind::Trait, 2),
+            (ast::ItemKind::Impl, 3),
+            (ast::ItemKind::Module, 1),
+        ];
+
+        let total_weight: u32 = choices.iter().map(|(_, w)| w).sum();
+        let mut roll = self.next_u64() as u32 % total_weight;
+        for i in 0..choices.len() {
+            if roll < choices[i].1 {
+                return match choices[i].0 {
+                    ast::ItemKind::SyntaxError => ast::ItemKind::SyntaxError,
+                    ast::ItemKind::Module => ast::ItemKind::Module,
+                    ast::ItemKind::Import => ast::ItemKind::Import,
+                    ast::ItemKind::TypeAlias => ast::ItemKind::TypeAlias,
+                    ast::ItemKind::Struct => ast::ItemKind::Struct,
+                    ast::ItemKind::Enum => ast::ItemKind::Enum,
+                    ast::ItemKind::Trait => ast::ItemKind::Trait,
+                    ast::ItemKind::Impl => ast::ItemKind::Impl,
+                    ast::ItemKind::Function => ast::ItemKind::Function,
+                    ast::ItemKind::Variable => ast::ItemKind::Variable,
+                };
+            }
+            roll -= choices[i].1;
+        }
+        ast::ItemKind::Function
     }
 
     pub(crate) fn gen_item(&mut self, argc: Option<u32>) -> ast::Item {
@@ -15,62 +52,394 @@ impl Gen {
         };
 
         match kind {
-            ItemKind::SyntaxError => unreachable!("select_item_kind should not return SyntaxError"),
-            ItemKind::Module => self.gen_item_module(),
-            ItemKind::Import => self.gen_item_import(),
-            ItemKind::TypeAlias => self.gen_item_type_alias(),
-            ItemKind::Struct => self.gen_item_struct(),
-            ItemKind::Enum => self.gen_item_enum(),
-            ItemKind::Trait => self.gen_item_trait(),
-            ItemKind::Impl => self.gen_item_impl(),
-            ItemKind::Function => self.gen_item_function(argc),
-            ItemKind::Variable => self.gen_item_variable(),
+            ast::ItemKind::SyntaxError => unreachable!("select_item_kind should not return SyntaxError"),
+            ast::ItemKind::Module => self.gen_item_module(),
+            ast::ItemKind::Import => self.gen_item_import(),
+            ast::ItemKind::TypeAlias => self.gen_item_type_alias(),
+            ast::ItemKind::Struct => self.gen_item_struct(),
+            ast::ItemKind::Enum => self.gen_item_enum(),
+            ast::ItemKind::Trait => self.gen_item_trait(),
+            ast::ItemKind::Impl => self.gen_item_impl(),
+            ast::ItemKind::Function => self.gen_item_function(argc),
+            ast::ItemKind::Variable => self.gen_item_variable(),
         }
     }
 
+    // ─────────────────────────────────────────────────────────────────
+    // Individual item generators
+    // ─────────────────────────────────────────────────────────────────
+
     fn gen_item_module(&mut self) -> ast::Item {
-        // TODO: generate a module item with nested items
-        todo!()
+        // Generate a simple module with 1-3 nested items
+        let item_count = 1 + self.gen_index(3);
+        let mut items = Vec::with_capacity(item_count);
+        for _ in 0..item_count {
+            items.push(self.gen_item(None));
+        }
+
+        ast::Item::Module(Box::new(ast::Module {
+            span: SrcSpan::default(),
+            visibility: None,
+            attributes: None,
+            name: self.gen_unique_name("module").into(),
+            items,
+        }))
     }
 
     fn gen_item_import(&mut self) -> ast::Item {
-        // TODO: generate an import declaration item
-        todo!()
+        // Generate a simple single-use import
+        let seg_count = 1 + self.gen_index(3);
+        let import_names = ["std", "core", "math", "io", "fs", "net", "util", "prelude"];
+        let mut segments = Vec::with_capacity(seg_count);
+        for _ in 0..seg_count {
+            let name = import_names[self.gen_index(import_names.len())].to_string();
+            segments.push(ast::ItemPathSegment {
+                span: SrcSpan::default(),
+                segment: name,
+                prefix: None,
+            });
+        }
+
+        let use_tree = ast::UseTree::Single {
+            span: SrcSpan::default(),
+            path: ast::ItemPath {
+                span: SrcSpan::default(),
+                segments,
+            },
+        };
+
+        ast::Item::Import(Box::new(ast::Import {
+            span: SrcSpan::default(),
+            visibility: None,
+            attributes: None,
+            use_tree,
+            resolved: None,
+        }))
     }
 
     fn gen_item_type_alias(&mut self) -> ast::Item {
-        // TODO: generate a type alias declaration
-        todo!()
+        let alias_type = Some(self.gen_builtin_type());
+
+        ast::Item::TypeAlias(ast::TypeAlias {
+            span: SrcSpan::default(),
+            visibility: None,
+            attributes: None,
+            name: self.gen_unique_name("Type").into(),
+            generics: None,
+            alias_type,
+        })
     }
 
     fn gen_item_struct(&mut self) -> ast::Item {
-        // TODO: generate a struct definition with random fields
-        todo!()
+        let name = self.gen_unique_name("Struct");
+        self.register_struct(name.clone());
+
+        let field_count = 1 + self.gen_index(6);
+        let mut fields = Vec::with_capacity(field_count);
+        for i in 0..field_count {
+            fields.push(ast::StructField {
+                span: SrcSpan::default(),
+                visibility: None,
+                attributes: None,
+                name: format!("field_{i}").into(),
+                ty: self.gen_builtin_type(),
+                default_value: None,
+            });
+        }
+
+        ast::Item::Struct(ast::Struct {
+            span: SrcSpan::default(),
+            visibility: None,
+            attributes: None,
+            name: name.into(),
+            generics: None,
+            fields,
+        })
     }
 
     fn gen_item_enum(&mut self) -> ast::Item {
-        // TODO: generate an enum definition with random variants
-        todo!()
+        let variant_count = 2 + self.gen_index(5);
+        let mut variants = Vec::with_capacity(variant_count);
+        for _i in 0..variant_count {
+            let variant_name: NString = format!("Variant_{}", self.gen_unique_suffix()).into();
+            variants.push(ast::EnumVariant {
+                span: SrcSpan::default(),
+                attributes: None,
+                name: variant_name,
+                ty: if self.next_bool() {
+                    Some(self.gen_builtin_type())
+                } else {
+                    None
+                },
+                default_value: None,
+            });
+        }
+
+        ast::Item::Enum(ast::Enum {
+            span: SrcSpan::default(),
+            visibility: None,
+            attributes: None,
+            name: self.gen_unique_name("Enum").into(),
+            generics: None,
+            variants,
+        })
     }
 
     fn gen_item_trait(&mut self) -> ast::Item {
-        // TODO: generate a trait definition with associated items
-        todo!()
+        // Stub: generate a trait with a single method signature
+        let method_count = 1 + self.gen_index(3);
+        let mut items = Vec::with_capacity(method_count);
+        for _ in 0..method_count {
+            let params = ast::FuncParams {
+                span: SrcSpan::default(),
+                params: Vec::new(),
+                variadic: false,
+            };
+            items.push(ast::AssociatedItem::Method(ast::Function {
+                span: SrcSpan::default(),
+                visibility: Some(ast::Visibility::Public),
+                attributes: None,
+                name: self.gen_unique_name("method").into(),
+                generics: None,
+                parameters: params,
+                return_type: Some(self.gen_builtin_type()),
+                definition: None,
+                abi: None,
+            }));
+        }
+
+        ast::Item::Trait(ast::Trait {
+            span: SrcSpan::default(),
+            visibility: None,
+            attributes: None,
+            name: self.gen_unique_name("Trait").into(),
+            generics: None,
+            items,
+        })
     }
 
     fn gen_item_impl(&mut self) -> ast::Item {
-        // TODO: generate an impl block with method implementations
-        todo!()
+        // Stub: implement traits on builtin types
+        let for_type = self.gen_builtin_type();
+        let method_count = 1 + self.gen_index(2);
+        let mut items = Vec::with_capacity(method_count);
+        for _ in 0..method_count {
+            let func = self.gen_function(None);
+            items.push(ast::AssociatedItem::Method(func));
+        }
+
+        ast::Item::Impl(Box::new(ast::Impl {
+            span: SrcSpan::default(),
+            generics: None,
+            trait_path: None,
+            for_type,
+            items,
+        }))
+    }
+
+    /// Generate a Function struct (used internally for impl/trait methods).
+    fn gen_function(&mut self, argc: Option<u32>) -> ast::Function {
+        let name = if self.known_functions.is_empty() {
+            "main".to_string()
+        } else {
+            self.gen_unique_name("fn")
+        };
+        self.register_function(name.clone());
+
+        let param_count = match argc {
+            Some(n) => n as usize,
+            None => self.gen_index(6),
+        };
+        let mut params = Vec::with_capacity(param_count);
+        for i in 0..param_count {
+            let param_ty = self.gen_builtin_type();
+            params.push(ast::FuncParam {
+                span: SrcSpan::default(),
+                attributes: None,
+                mutability: None,
+                name: format!("a_{i}").into(),
+                ty: param_ty,
+                default_value: None,
+            });
+        }
+
+        let func_params = ast::FuncParams {
+            span: SrcSpan::default(),
+            params,
+            variadic: false,
+        };
+
+        let return_type = if self.next_bool() {
+            Some(self.gen_builtin_type())
+        } else {
+            None
+        };
+
+        let body_ty = return_type.clone().unwrap_or_else(|| {
+            ast::Type::TupleType(Box::new(ast::TupleType {
+                span: SrcSpan::default(),
+                element_types: vec![],
+            }))
+        });
+
+        self.push_frame();
+        for p in &func_params.params {
+            let local_name: String = String::from(p.name.deref());
+            self.add_local(local_name, p.ty.clone());
+        }
+
+        let definition = Some(self.gen_block_with_return(&body_ty));
+        self.pop_frame();
+
+        ast::Function {
+            span: SrcSpan::default(),
+            visibility: None,
+            attributes: None,
+            name: name.into(),
+            generics: None,
+            parameters: func_params,
+            return_type,
+            definition,
+            abi: None,
+        }
     }
 
     fn gen_item_function(&mut self, argc: Option<u32>) -> ast::Item {
-        // if argc is set the function must have that many arguments, argument counts are random
-        // TODO: generate a function definition with body, parameters, and return type
-        todo!()
+        ast::Item::Function(self.gen_function(argc))
     }
 
     fn gen_item_variable(&mut self) -> ast::Item {
-        // TODO: generate a global variable declaration with optional initializer
-        todo!()
+        let ty = self.gen_builtin_type();
+        let initializer = if self.next_bool() {
+            Some(self.gen_rvalue(&ty))
+        } else {
+            None
+        };
+
+        ast::Item::Variable(ast::GlobalVariable {
+            span: SrcSpan::default(),
+            visibility: None,
+            kind: if self.next_bool() {
+                ast::GlobalVariableKind::Const
+            } else {
+                ast::GlobalVariableKind::Static
+            },
+            attributes: None,
+            mutability: if self.next_bool() {
+                Some(ast::Mutability::Mut)
+            } else {
+                None
+            },
+            name: self.gen_unique_name("VAR").into(),
+            ty: Some(ty),
+            initializer,
+        })
+    }
+
+    // ─────────────────────────────────────────────────────────────────
+    // Shared helpers
+    // ─────────────────────────────────────────────────────────────────
+
+    /// Generate a block whose final expression returns the given type.
+    fn gen_block_with_return(&mut self, ret_ty: &ast::Type) -> ast::Block {
+        let stmt_count = self.gen_index(5);
+        let mut elements = Vec::with_capacity(stmt_count + 1);
+
+        for _ in 0..stmt_count {
+            if self.next_bool() {
+                let var_name = format!("v_{}", self.next_u64() & 0xFFF);
+                let init_ty = self.gen_builtin_type();
+                let init = self.gen_rvalue(&init_ty);
+                self.add_local(var_name.clone(), init_ty.clone());
+                elements.push(ast::BlockItem::Variable(ast::LocalVariable {
+                    span: SrcSpan::default(),
+                    kind: ast::LocalVariableKind::Var,
+                    attributes: None,
+                    mutability: None,
+                    name: var_name.into(),
+                    ty: Some(init_ty),
+                    initializer: Some(init),
+                }));
+            } else {
+                let stmt_ty = self.gen_builtin_type();
+                let expr = self.gen_rvalue(&stmt_ty);
+                elements.push(ast::BlockItem::Stmt(expr));
+            }
+        }
+
+        // Final expression: either a return with value, or the value itself
+        if self.next_bool() {
+            elements.push(ast::BlockItem::Expr(self.gen_rvalue(ret_ty)));
+        } else {
+            let ret_val = if self.next_bool() {
+                Some(self.gen_rvalue(ret_ty))
+            } else {
+                None
+            };
+            elements.push(ast::BlockItem::Expr(ast::Expr::Return(Box::new(ast::Return {
+                span: SrcSpan::default(),
+                value: ret_val,
+            }))));
+        }
+
+        ast::Block {
+            span: SrcSpan::default(),
+            safety: None,
+            elements,
+        }
+    }
+
+    /// Generate a unique name with the given prefix.
+    fn gen_unique_name(&mut self, prefix: &str) -> String {
+        let suffix = self.gen_unique_suffix();
+        format!("{prefix}_{suffix}")
+    }
+
+    /// Generate a numeric suffix for unique naming.
+    fn gen_unique_suffix(&mut self) -> u64 {
+        self.next_u64() & 0xFFFF
+    }
+
+    /// Generate a random builtin type.
+    fn gen_builtin_type(&mut self) -> ast::Type {
+        let types: &[ast::Type] = &[
+            ast::Type::Bool(ast::Bool {
+                span: SrcSpan::default(),
+            }),
+            ast::Type::Int8(ast::Int8 {
+                span: SrcSpan::default(),
+            }),
+            ast::Type::Int16(ast::Int16 {
+                span: SrcSpan::default(),
+            }),
+            ast::Type::Int32(ast::Int32 {
+                span: SrcSpan::default(),
+            }),
+            ast::Type::Int64(ast::Int64 {
+                span: SrcSpan::default(),
+            }),
+            ast::Type::UInt8(ast::UInt8 {
+                span: SrcSpan::default(),
+            }),
+            ast::Type::UInt16(ast::UInt16 {
+                span: SrcSpan::default(),
+            }),
+            ast::Type::UInt32(ast::UInt32 {
+                span: SrcSpan::default(),
+            }),
+            ast::Type::UInt64(ast::UInt64 {
+                span: SrcSpan::default(),
+            }),
+            ast::Type::Float32(ast::Float32 {
+                span: SrcSpan::default(),
+            }),
+            ast::Type::Float64(ast::Float64 {
+                span: SrcSpan::default(),
+            }),
+            ast::Type::USize(ast::USize {
+                span: SrcSpan::default(),
+            }),
+        ];
+        types[self.gen_index(types.len())].clone()
     }
 }
