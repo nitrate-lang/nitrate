@@ -1,11 +1,29 @@
 use nitrate_translation::parsetree::{PrettyPrint, PrintContext, SrcSpan, ast};
-use std::{collections::HashSet, matches};
+use std::matches;
 
 mod item;
 mod rvalue;
 
+/// A named symbol tracked in the generation scope, with its type.
+#[derive(Debug, Clone)]
+pub(crate) struct Symbol {
+    pub name: String,
+    pub kind: SymbolKind,
+}
+
+#[derive(Debug, Clone)]
+pub(crate) enum SymbolKind {
+    /// A local variable or function parameter.
+    Local(ast::Type),
+    /// A globally-declared function name.
+    Function,
+    /// A globally-declared struct name.
+    Struct,
+}
+
 struct Frame {
-    pub(crate) locals: HashSet<String>,
+    /// Local variable names in this scope.
+    pub(crate) locals: Vec<Symbol>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -23,6 +41,10 @@ pub struct Gen {
     rng: u64,
     /// Recursion depth for rvalue generation, prevents infinite recursion.
     rvalue_depth: u32,
+    /// All globally-declared function names.
+    known_functions: Vec<String>,
+    /// All globally-declared struct names.
+    known_structs: Vec<String>,
 }
 
 /// Maximum recursion depth for rvalue generation before forcing leaf expressions.
@@ -37,7 +59,54 @@ impl Gen {
             config,
             rng: splitmix64_init(seed),
             rvalue_depth: 0,
+            known_functions: Vec::new(),
+            known_structs: Vec::new(),
         }
+    }
+
+    /// Register a globally-declared function name.
+    pub(crate) fn register_function(&mut self, name: String) {
+        self.known_functions.push(name);
+    }
+
+    /// Register a globally-declared struct name.
+    pub(crate) fn register_struct(&mut self, name: String) {
+        self.known_structs.push(name);
+    }
+
+    /// Push a new scope frame (e.g., for a block or function body).
+    pub(crate) fn push_frame(&mut self) {
+        self.frames.push(Frame { locals: Vec::new() });
+    }
+
+    /// Pop the current scope frame.
+    pub(crate) fn pop_frame(&mut self) {
+        self.frames.pop();
+    }
+
+    /// Add a local variable to the current frame.
+    pub(crate) fn add_local(&mut self, name: String, ty: ast::Type) {
+        if let Some(frame) = self.frames.last_mut() {
+            frame.locals.push(Symbol {
+                name,
+                kind: SymbolKind::Local(ty),
+            });
+        }
+    }
+
+    /// Check if any local variables are in scope.
+    pub(crate) fn has_any_local(&self) -> bool {
+        self.frames.iter().any(|f| !f.locals.is_empty())
+    }
+
+    /// Check if any functions are known.
+    pub(crate) fn has_any_function(&self) -> bool {
+        !self.known_functions.is_empty()
+    }
+
+    /// Check if any structs are known.
+    pub(crate) fn has_any_struct(&self) -> bool {
+        !self.known_structs.is_empty()
     }
 
     /// Splitmix64: advance the state and return a random u64.
