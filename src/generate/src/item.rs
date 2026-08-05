@@ -3,7 +3,7 @@ use nitrate_translation::{
     nstring::NString,
     parsetree::ast::{self, *},
 };
-use std::{format, ops::Deref, unreachable};
+use std::unreachable;
 
 impl Gen {
     /// Select a random item kind weighted by desired frequency.
@@ -284,7 +284,8 @@ impl Gen {
 
         self.push_frame();
         for p in &func_params.params {
-            let local_name: String = String::from(p.name.deref());
+            let s: &str = &p.name;
+            let local_name: String = String::from(s);
             self.add_local(local_name, p.ty.clone());
         }
 
@@ -391,8 +392,11 @@ impl Gen {
 
     /// Generate a unique name with the given prefix.
     fn gen_unique_name(&mut self, prefix: &str) -> String {
-        let suffix = self.gen_unique_suffix();
-        format!("{prefix}_{suffix}")
+        let suffix = self.gen_unique_suffix().to_string();
+        let mut name = String::from(prefix);
+        name.push('_');
+        name.push_str(&suffix);
+        name
     }
 
     /// Generate a numeric suffix for unique naming.

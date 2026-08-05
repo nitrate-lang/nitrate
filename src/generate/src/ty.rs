@@ -1,6 +1,5 @@
 use crate::Gen;
 use nitrate_translation::parsetree::ast::{self, *};
-use std::any::TypeId;
 
 impl Gen {
     /// Generate a random AST type. Uses seed-based deterministic RNG.
