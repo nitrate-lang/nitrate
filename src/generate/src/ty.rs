@@ -6,34 +6,35 @@ use nitrate_translation::parsetree::ast::{self, *};
 const MAX_TYPE_DEPTH: u32 = 4;
 
 impl Gen {
-    /// Generate a random AST type. Avoids types that are not well-supported
-    /// by the compiler (refinement types, void types in certain positions).
-    pub(crate) fn gen_type(&mut self) -> ast::Type {
+    /// Generate a random AST type.
+    pub(crate) fn gen_simple_type(&mut self) -> ast::Type {
         if self.type_depth >= MAX_TYPE_DEPTH {
             return self.gen_leaf_type();
         }
         self.type_depth += 1;
-        let result = match self.next_u64() % 18 {
-            0..=3 => self.gen_int_type(),
-            4 => self.gen_uint_type(),
-            5..=6 => self.gen_bool_type(),
-            7 => self.gen_float_type(),
-            8 => self.gen_usize_type(),
-            9 => self.gen_slice_type(),
-            10 => self.gen_array_type(),
-            11 => self.gen_tuple_type(),
-            12 => self.gen_type_path(),
-            13 => self.gen_reference_type(),
-            14 => self.gen_pointer_type(),
-            15 => self.gen_function_type(),
-            16..=17 => self.gen_int_type(),
-            _ => self.gen_int_type(),
+        let result = match self.next_u64() % 14 {
+            0..=1 => self.gen_int_type(),
+            2 => self.gen_uint_type(),
+            3..=4 => self.gen_bool_type(),
+            5 => self.gen_float_type(),
+            6 => self.gen_usize_type(),
+            7 => self.gen_slice_type(),
+            8 => self.gen_array_type(),
+            9 => self.gen_tuple_type(),
+            10 => self.gen_type_path(),
+            11 => self.gen_reference_type(),
+            12 => self.gen_pointer_type(),
+            _ => self.gen_function_type(),
         };
         self.type_depth = self.type_depth.saturating_sub(1);
         result
     }
 
-    /// Generate a type that does NOT recurse into further type generation.
+    /// Backward-compatible alias.
+    pub(crate) fn gen_type(&mut self) -> ast::Type {
+        self.gen_simple_type()
+    }
+
     fn gen_leaf_type(&mut self) -> ast::Type {
         match self.next_u64() % 6 {
             0 => self.gen_bool_type(),
@@ -60,8 +61,6 @@ impl Gen {
             }
         }
     }
-
-    // ── Primitive type generators ──
 
     fn gen_bool_type(&mut self) -> ast::Type {
         ast::Type::Bool(ast::Bool {
@@ -127,8 +126,6 @@ impl Gen {
         })
     }
 
-    // ── Compound type generators ──
-
     fn gen_array_type(&mut self) -> ast::Type {
         let element_type = self.gen_type();
         let len_val = (self.next_u64() % 32 + 1) as u128;
@@ -182,7 +179,6 @@ impl Gen {
 
     fn gen_reference_type(&mut self) -> ast::Type {
         let to = self.gen_type();
-        // Always include a lifetime with references to avoid unbound lifetime errors.
         let lifetime = Some(ast::Lifetime {
             span: SrcSpan::default(),
             name: "a".into(),
@@ -244,7 +240,7 @@ impl Gen {
     }
 }
 
-// ── Public convenience helpers (used by rvalue.rs and item.rs) ──
+// ── Public helpers ──
 
 pub(crate) fn bool_type() -> ast::Type {
     ast::Type::Bool(ast::Bool {
@@ -268,6 +264,13 @@ pub(crate) fn float64_type() -> ast::Type {
     ast::Type::Float64(ast::Float64 {
         span: SrcSpan::default(),
     })
+}
+
+pub(crate) fn unit_type() -> ast::Type {
+    ast::Type::TupleType(Box::new(ast::TupleType {
+        span: SrcSpan::default(),
+        element_types: vec![],
+    }))
 }
 
 pub(crate) fn is_integral_type(ty: &ast::Type) -> bool {
@@ -299,37 +302,24 @@ pub(crate) fn is_float_type(ty: &ast::Type) -> bool {
     matches!(ty, ast::Type::Float32(_) | ast::Type::Float64(_))
 }
 
-/// Check if two types are structurally compatible for expression assignment.
-/// More permissive than exact match — allows int→int and uint→uint family matches.
+pub(crate) fn is_unit_type(ty: &ast::Type) -> bool {
+    matches!(ty, ast::Type::TupleType(t) if t.element_types.is_empty())
+}
+
 pub(crate) fn types_compatible(a: &ast::Type, b: &ast::Type) -> bool {
     use ast::Type::*;
     match (a, b) {
-        (Bool(_), Bool(_))
-        | (Int8(_), Int8(_))
-        | (Int16(_), Int16(_))
-        | (Int32(_), Int32(_))
-        | (Int64(_), Int64(_))
-        | (Int128(_), Int128(_))
-        | (UInt8(_), UInt8(_))
-        | (UInt16(_), UInt16(_))
-        | (UInt32(_), UInt32(_))
-        | (UInt64(_), UInt64(_))
-        | (UInt128(_), UInt128(_))
-        | (USize(_), USize(_))
-        | (Float32(_), Float32(_))
-        | (Float64(_), Float64(_))
-        | (ArrayType(_), ArrayType(_))
-        | (SliceType(_), SliceType(_))
-        | (TupleType(_), TupleType(_))
-        | (FunctionType(_), FunctionType(_))
-        | (ReferenceType(_), ReferenceType(_))
-        | (PointerType(_), PointerType(_))
-        | (TypePath(_), TypePath(_))
-        | (InferType(_), InferType(_)) => true,
-        // Allow any integral type to be used with any other integral type for flexibility
+        (Bool(_), Bool(_)) => true,
         (a_ty, b_ty) if is_integral_type(a_ty) && is_integral_type(b_ty) => true,
-        // Allow any float type with any float type
         (a_ty, b_ty) if is_float_type(a_ty) && is_float_type(b_ty) => true,
+        (ArrayType(_), ArrayType(_)) => true,
+        (SliceType(_), SliceType(_)) => true,
+        (TupleType(_), TupleType(_)) => true,
+        (FunctionType(_), FunctionType(_)) => true,
+        (ReferenceType(_), ReferenceType(_)) => true,
+        (PointerType(_), PointerType(_)) => true,
+        (TypePath(_), TypePath(_)) => true,
+        (InferType(_), _) | (_, InferType(_)) => true,
         _ => false,
     }
 }
@@ -338,8 +328,8 @@ pub(crate) fn is_type_path_like(ty: &ast::Type) -> bool {
     matches!(ty, ast::Type::TypePath(_))
 }
 
-pub(crate) fn is_type_path_or_typeof_target(ty: &ast::Type) -> bool {
-    matches!(ty, ast::Type::TypePath(_) | ast::Type::InferType(_))
+pub(crate) fn is_castable_type(ty: &ast::Type) -> bool {
+    is_numeric_type(ty) || is_bool_type(ty)
 }
 
 pub(crate) fn element_type_of(ty: &ast::Type) -> ast::Type {
@@ -353,7 +343,7 @@ pub(crate) fn element_type_of(ty: &ast::Type) -> ast::Type {
 pub(crate) fn tuple_field_types(ty: &ast::Type) -> Vec<ast::Type> {
     match ty {
         ast::Type::TupleType(tup) => tup.element_types.clone(),
-        _ => (0..2).map(|_| int32_type()).collect(),
+        _ => vec![],
     }
 }
 
@@ -361,12 +351,7 @@ pub(crate) fn function_type_parts(ty: &ast::Type) -> (Vec<ast::Type>, ast::Type)
     match ty {
         ast::Type::FunctionType(ft) => {
             let params: Vec<ast::Type> = ft.parameters.iter().map(|p| p.ty.clone()).collect();
-            let ret = ft.return_type.clone().unwrap_or_else(|| {
-                ast::Type::TupleType(Box::new(ast::TupleType {
-                    span: SrcSpan::default(),
-                    element_types: vec![],
-                }))
-            });
+            let ret = ft.return_type.clone().unwrap_or_else(unit_type);
             (params, ret)
         }
         _ => (vec![int32_type()], int32_type()),
@@ -377,13 +362,12 @@ pub(crate) fn range_element_type(ty: &ast::Type) -> ast::Type {
     if is_integral_type(ty) { ty.clone() } else { int32_type() }
 }
 
-pub(crate) fn arbitrary_type() -> ast::Type {
-    int32_type()
+pub(crate) fn arbitrary_type(g: &mut Gen) -> ast::Type {
+    g.gen_simple_type()
 }
 
-/// Pick a random non-void type for cast source.
 pub(crate) fn random_cast_source_type(generator: &mut Gen) -> ast::Type {
-    match generator.next_u64() % 8 {
+    match generator.next_u64() % 7 {
         0 => int32_type(),
         1 => bool_type(),
         2 => usize_type(),
@@ -394,32 +378,55 @@ pub(crate) fn random_cast_source_type(generator: &mut Gen) -> ast::Type {
         5 => ast::Type::UInt32(ast::UInt32 {
             span: SrcSpan::default(),
         }),
-        6 => ast::Type::Int64(ast::Int64 {
-            span: SrcSpan::default(),
-        }),
-        _ => ast::Type::Int128(ast::Int128 {
+        _ => ast::Type::Int64(ast::Int64 {
             span: SrcSpan::default(),
         }),
     }
 }
 
-/// Generate a fallback expression of the given type (for when budget runs out).
+pub(crate) fn max_integer_value(ty: &ast::Type) -> u128 {
+    match ty {
+        ast::Type::Int8(_) | ast::Type::UInt8(_) => 255,
+        ast::Type::Int16(_) | ast::Type::UInt16(_) => 65535,
+        ast::Type::Int32(_) | ast::Type::UInt32(_) => 4294967295,
+        ast::Type::Int64(_) | ast::Type::UInt64(_) | ast::Type::USize(_) => 18446744073709551615,
+        _ => u128::MAX,
+    }
+}
+
 pub(crate) fn fallback_expr(ty: &ast::Type) -> ast::Expr {
     if is_bool_type(ty) {
-        ast::Expr::Boolean(ast::BooleanLit {
+        return ast::Expr::Boolean(ast::BooleanLit {
             span: SrcSpan::default(),
             value: false,
-        })
-    } else if matches!(ty, ast::Type::Float32(_) | ast::Type::Float64(_)) {
-        ast::Expr::Float(ast::FloatLit {
+        });
+    }
+    if is_float_type(ty) {
+        return ast::Expr::Float(ast::FloatLit {
             span: SrcSpan::default(),
             value: ordered_float::NotNan::new(0.0).unwrap(),
-        })
-    } else {
-        ast::Expr::Integer(Box::new(ast::IntegerLit {
+        });
+    }
+    if is_integral_type(ty) {
+        return ast::Expr::Integer(Box::new(ast::IntegerLit {
             span: SrcSpan::default(),
             value: 0,
             kind: nitrate_translation::token::IntegerKind::Dec,
-        }))
+        }));
     }
+    if is_unit_type(ty) {
+        return ast::Expr::Tuple(Box::new(ast::Tuple {
+            span: SrcSpan::default(),
+            elements: vec![],
+        }));
+    }
+    ast::Expr::Cast(Box::new(ast::Cast {
+        span: SrcSpan::default(),
+        value: ast::Expr::Integer(Box::new(ast::IntegerLit {
+            span: SrcSpan::default(),
+            value: 0,
+            kind: nitrate_translation::token::IntegerKind::Dec,
+        })),
+        to: ty.clone(),
+    }))
 }

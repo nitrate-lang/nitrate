@@ -1,5 +1,4 @@
 use nitrate_translation::parsetree::{PrettyPrint, PrintContext, SrcSpan, ast};
-use std::matches;
 
 mod item;
 mod rvalue;
@@ -75,20 +74,33 @@ const MAX_RVALUE_DEPTH: u32 = 5;
 /// Maximum nesting depth for module-in-module generation.
 pub(crate) const MAX_ITEM_DEPTH: u32 = 3;
 
-// Weights for budget spending based on what's being generated.
-const BUDGET_WEIGHT_LITERAL: u32 = 1;
-const BUDGET_WEIGHT_EXPR: u32 = 1;
-const BUDGET_WEIGHT_STMT: u32 = 2;
-const BUDGET_WEIGHT_BLOCK: u32 = 3;
-const BUDGET_WEIGHT_FUNCTION: u32 = 8;
-const BUDGET_WEIGHT_STRUCT: u32 = 5;
-const BUDGET_WEIGHT_ENUM: u32 = 5;
-const BUDGET_WEIGHT_IMPL: u32 = 6;
-const BUDGET_WEIGHT_TRAIT: u32 = 5;
-const BUDGET_WEIGHT_MODULE: u32 = 4;
-const BUDGET_WEIGHT_TYPEALIAS: u32 = 2;
-const BUDGET_WEIGHT_VARIABLE: u32 = 3;
-const BUDGET_WEIGHT_IMPORT: u32 = 1;
+// Budget weights vary based on what's being generated.
+// Simple things cost less; complex things cost more.
+impl Gen {
+    /// Compute a dynamic budget weight for an expression based on its type.
+    fn budget_weight_for_type(&self, ty: &ast::Type) -> u32 {
+        use crate::ty::{is_bool_type, is_float_type, is_integral_type, is_unit_type};
+        if is_bool_type(ty) || is_integral_type(ty) || is_float_type(ty) || is_unit_type(ty) {
+            1
+        } else {
+            2 // compound types cost more
+        }
+    }
+
+    /// Compute a dynamic budget weight for an rvalue kind.
+    fn budget_weight_for_kind(&self, kind: ast::RValueKind) -> u32 {
+        use ast::RValueKind::*;
+        match kind {
+            Boolean | Integer | Float | String | BString | Path | Parentheses => 1,
+            UnaryExpr | Cast | TypeInfo => 1,
+            BinExpr | Range | Tuple | List | IndexAccess => 2,
+            Block | Closure | StructInit | FieldAccess => 3,
+            If | Match | FunctionCall => 4,
+            While | ForEach => 5,
+            _ => 2,
+        }
+    }
+}
 
 impl Gen {
     pub fn new(config: GenConfig) -> Self {
@@ -109,82 +121,62 @@ impl Gen {
         }
     }
 
-    /// Spend budget. Fails (returns false) if insufficient budget remains.
+    /// Spend the exact budget for a given rvalue kind. Fails if insufficient budget.
+    pub(crate) fn spend_budget_for_kind(&mut self, kind: ast::RValueKind) -> bool {
+        let weight = self.budget_weight_for_kind(kind);
+        self.spend_budget(weight)
+    }
+
+    /// Spend budget for a literal/leaf expression.
+    pub(crate) fn spend_budget_literal(&mut self) -> bool {
+        if self.budget < 1 {
+            return false;
+        }
+        self.budget -= 1;
+        true
+    }
+
+    /// Spend budget for a block.
+    pub(crate) fn spend_budget_block(&mut self) -> bool {
+        self.spend_budget(3)
+    }
+
+    /// Spend budget for a function definition.
+    pub(crate) fn spend_budget_function(&mut self) -> bool {
+        self.spend_budget(8)
+    }
+
+    /// Spend budget for a struct definition.
+    pub(crate) fn spend_budget_struct(&mut self) -> bool {
+        self.spend_budget(5)
+    }
+
+    /// Spend budget for an enum definition.
+    pub(crate) fn spend_budget_enum(&mut self) -> bool {
+        self.spend_budget(5)
+    }
+
+    /// Spend budget for a module definition.
+    pub(crate) fn spend_budget_module(&mut self) -> bool {
+        self.spend_budget(4)
+    }
+
+    /// Spend budget for a global variable.
+    pub(crate) fn spend_budget_variable(&mut self) -> bool {
+        self.spend_budget(3)
+    }
+
+    pub(crate) fn budget_left(&self) -> u32 {
+        self.budget
+    }
+
+    /// Spend exact amount. Fails (returns false) if insufficient budget remains.
     pub(crate) fn spend_budget(&mut self, amount: u32) -> bool {
         if self.budget < amount {
             return false;
         }
         self.budget -= amount;
         true
-    }
-
-    /// Spend budget for a literal/leaf expression.
-    pub(crate) fn spend_budget_literal(&mut self) -> bool {
-        self.spend_budget(BUDGET_WEIGHT_LITERAL)
-    }
-
-    /// Spend budget for an expression.
-    pub(crate) fn spend_budget_expr(&mut self) -> bool {
-        self.spend_budget(BUDGET_WEIGHT_EXPR)
-    }
-
-    /// Spend budget for a statement-level item.
-    pub(crate) fn spend_budget_stmt(&mut self) -> bool {
-        self.spend_budget(BUDGET_WEIGHT_STMT)
-    }
-
-    /// Spend budget for a block.
-    pub(crate) fn spend_budget_block(&mut self) -> bool {
-        self.spend_budget(BUDGET_WEIGHT_BLOCK)
-    }
-
-    /// Spend budget for a function definition.
-    pub(crate) fn spend_budget_function(&mut self) -> bool {
-        self.spend_budget(BUDGET_WEIGHT_FUNCTION)
-    }
-
-    /// Spend budget for a struct definition.
-    pub(crate) fn spend_budget_struct(&mut self) -> bool {
-        self.spend_budget(BUDGET_WEIGHT_STRUCT)
-    }
-
-    /// Spend budget for an enum definition.
-    pub(crate) fn spend_budget_enum(&mut self) -> bool {
-        self.spend_budget(BUDGET_WEIGHT_ENUM)
-    }
-
-    /// Spend budget for an impl block.
-    pub(crate) fn spend_budget_impl(&mut self) -> bool {
-        self.spend_budget(BUDGET_WEIGHT_IMPL)
-    }
-
-    /// Spend budget for a trait definition.
-    pub(crate) fn spend_budget_trait(&mut self) -> bool {
-        self.spend_budget(BUDGET_WEIGHT_TRAIT)
-    }
-
-    /// Spend budget for a module definition.
-    pub(crate) fn spend_budget_module(&mut self) -> bool {
-        self.spend_budget(BUDGET_WEIGHT_MODULE)
-    }
-
-    /// Spend budget for a type alias.
-    pub(crate) fn spend_budget_type_alias(&mut self) -> bool {
-        self.spend_budget(BUDGET_WEIGHT_TYPEALIAS)
-    }
-
-    /// Spend budget for a global variable.
-    pub(crate) fn spend_budget_variable(&mut self) -> bool {
-        self.spend_budget(BUDGET_WEIGHT_VARIABLE)
-    }
-
-    /// Spend budget for an import.
-    pub(crate) fn spend_budget_import(&mut self) -> bool {
-        self.spend_budget(BUDGET_WEIGHT_IMPORT)
-    }
-
-    pub(crate) fn budget_left(&self) -> u32 {
-        self.budget
     }
 
     pub(crate) fn register_function(&mut self, info: FuncInfo) {
@@ -298,15 +290,14 @@ impl Gen {
 
     pub fn gen_program(&mut self) -> String {
         let mut items = Vec::new();
-        let mut functions_generated = 0u32;
 
         // Always generate main first.
-        if self.budget_left() >= BUDGET_WEIGHT_FUNCTION {
+        if self.budget_left() >= 8 {
             items.push(self.gen_item_main());
-            functions_generated += 1;
         }
 
         // Generate the required number of user-defined functions.
+        let mut functions_generated = 1u32;
         while functions_generated < self.config.function_count && self.budget_left() > 0 {
             if !self.spend_budget_function() {
                 break;
@@ -316,10 +307,10 @@ impl Gen {
             items.push(item);
         }
 
-        // Generate additional random items to ensure all generators are exercised.
+        // Generate additional random items to cover all item kinds.
         let extra_items = 1 + self.gen_index(4);
         for _ in 0..extra_items {
-            if self.budget_left() > 0 {
+            if self.budget_left() >= 3 {
                 items.push(self.gen_item(None));
             }
         }

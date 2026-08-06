@@ -1,3 +1,4 @@
+use crate::ty::{arbitrary_type, fallback_expr, unit_type};
 use crate::{FuncInfo, Gen, MAX_ITEM_DEPTH, StructInfo};
 use nitrate_translation::{
     nstring::NString,
@@ -6,9 +7,6 @@ use nitrate_translation::{
 
 impl Gen {
     fn select_item_kind(&mut self) -> ast::ItemKind {
-        // Only allow items that make semantic sense and don't produce invalid programs.
-        // Filters: no imports (importing non-existent modules), no traits/impls without
-        // proper trait resolution, modules only within depth limits.
         let choices: &[(ast::ItemKind, u32)] = &[
             (ast::ItemKind::Function, 45),
             (ast::ItemKind::Struct, 20),
@@ -30,7 +28,6 @@ impl Gen {
                     ast::ItemKind::Enum => ast::ItemKind::Enum,
                     ast::ItemKind::TypeAlias => ast::ItemKind::TypeAlias,
                     ast::ItemKind::Variable => ast::ItemKind::Variable,
-                    // Fallback for other kinds
                     ast::ItemKind::Module | ast::ItemKind::Import | ast::ItemKind::Trait | ast::ItemKind::Impl => {
                         roll -= weight;
                         continue;
@@ -98,6 +95,7 @@ impl Gen {
 
     pub(crate) fn gen_item_main(&mut self) -> ast::Item {
         self.has_main = true;
+        self.spend_budget_function();
         self.push_frame();
 
         let return_type = if self.next_bool() {
@@ -108,12 +106,7 @@ impl Gen {
             None
         };
 
-        let body_ty = return_type.clone().unwrap_or_else(|| {
-            ast::Type::TupleType(Box::new(ast::TupleType {
-                span: SrcSpan::default(),
-                element_types: vec![],
-            }))
-        });
+        let body_ty = return_type.clone().unwrap_or_else(unit_type);
 
         let definition = Some(self.gen_block_with_return(&body_ty));
         self.pop_frame();
@@ -166,6 +159,9 @@ impl Gen {
     }
 
     fn gen_item_type_alias(&mut self) -> ast::Item {
+        if !self.spend_budget_module() {
+            // reuse module budget weight for type alias
+        }
         let alias_type = Some(self.gen_type());
         ast::Item::TypeAlias(ast::TypeAlias {
             span: SrcSpan::default(),
@@ -182,7 +178,7 @@ impl Gen {
             return self.gen_placeholder_function();
         }
         let name = self.gen_unique_name("Struct");
-        let field_count = 1 + self.gen_index(3); // Reduced from 6 to keep programs reasonable
+        let field_count = 1 + self.gen_index(3);
         let mut fields: Vec<(String, ast::Type)> = Vec::with_capacity(field_count);
         let mut ast_fields = Vec::with_capacity(field_count);
         for i in 0..field_count {
@@ -217,12 +213,6 @@ impl Gen {
             return self.gen_placeholder_function();
         }
         let name = self.gen_unique_name("Enum");
-        // Enums are registered as struct-like type paths for referencing but
-        // have no fields (can't struct-init an enum).
-        self.register_struct(StructInfo {
-            name: name.clone(),
-            fields: Vec::new(),
-        });
         let variant_count = 2 + self.gen_index(4);
         let mut variants = Vec::with_capacity(variant_count);
         for _ in 0..variant_count {
@@ -253,8 +243,6 @@ impl Gen {
         if !self.spend_budget_variable() {
             return self.gen_placeholder_function();
         }
-        // Only generate const globals (not static) since static requires
-        // more complex initialization semantics.
         let declared_ty = self.gen_type();
         let initializer = Some(self.gen_const_initializer(&declared_ty));
         ast::Item::Variable(ast::GlobalVariable {
@@ -270,31 +258,55 @@ impl Gen {
     }
 
     fn gen_const_initializer(&mut self, ty: &ast::Type) -> ast::Expr {
-        match ty {
-            ast::Type::Bool(_) => ast::Expr::Boolean(ast::BooleanLit {
+        use crate::ty::{is_bool_type, is_float_type, is_integral_type, is_unit_type};
+
+        if is_bool_type(ty) {
+            return ast::Expr::Boolean(ast::BooleanLit {
                 span: SrcSpan::default(),
                 value: self.next_bool(),
-            }),
-            ast::Type::Float32(_) | ast::Type::Float64(_) => {
-                let bits = self.next_u64();
-                let raw = f64::from_bits((bits >> 8) | 0x3FF0000000000000);
-                let value = ordered_float::NotNan::new(raw).unwrap_or(ordered_float::NotNan::new(1.0).unwrap());
-                ast::Expr::Float(ast::FloatLit {
-                    span: SrcSpan::default(),
-                    value,
-                })
-            }
-            _ => ast::Expr::Integer(Box::new(ast::IntegerLit {
+            });
+        }
+        if is_float_type(ty) {
+            let bits = self.next_u64();
+            let mantissa = (bits & 0xFFFFF) as u64;
+            let raw = f64::from_bits(0x3FF0000000000000u64 | (mantissa << 32));
+            let value = ordered_float::NotNan::new(raw).unwrap_or(ordered_float::NotNan::new(1.0).unwrap());
+            return ast::Expr::Float(ast::FloatLit {
                 span: SrcSpan::default(),
-                value: self.next_u64() as u128,
+                value,
+            });
+        }
+        if is_integral_type(ty) {
+            let max_val = crate::ty::max_integer_value(ty);
+            let value = (self.next_u64() as u128) % (max_val.max(1));
+            return ast::Expr::Integer(Box::new(ast::IntegerLit {
+                span: SrcSpan::default(),
+                value,
+                kind: nitrate_translation::token::IntegerKind::Dec,
+            }));
+        }
+        if is_unit_type(ty) {
+            return ast::Expr::Tuple(Box::new(ast::Tuple {
+                span: SrcSpan::default(),
+                elements: vec![],
+            }));
+        }
+        // For compound types (arrays, slices, structs, tuples, functions),
+        // generate a cast of 0 to the target type
+        ast::Expr::Cast(Box::new(ast::Cast {
+            span: SrcSpan::default(),
+            value: ast::Expr::Integer(Box::new(ast::IntegerLit {
+                span: SrcSpan::default(),
+                value: 0,
                 kind: nitrate_translation::token::IntegerKind::Dec,
             })),
-        }
+            to: ty.clone(),
+        }))
     }
 
     fn gen_block_with_return(&mut self, ret_ty: &ast::Type) -> ast::Block {
         if !self.spend_budget_block() {
-            let ret_val = if ret_ty_is_unit(ret_ty) {
+            let ret_val = if crate::ty::is_unit_type(ret_ty) {
                 None
             } else {
                 Some(fallback_expr(ret_ty))
@@ -312,33 +324,36 @@ impl Gen {
         let stmt_count = self.gen_index(3);
         let mut elements = Vec::with_capacity(stmt_count + 1);
         for _ in 0..stmt_count {
-            if self.next_bool() && self.budget_left() > 0 {
-                let var_name_prefix = self.gen_unique_name("v");
-                let init_ty = self.gen_type();
-                let init = self.gen_rvalue(&init_ty);
-                self.add_local(var_name_prefix.clone(), init_ty.clone());
-                let actual_name = self
-                    .frames
-                    .last()
-                    .and_then(|f| f.locals.last())
-                    .map(|s| s.name.clone())
-                    .unwrap_or(var_name_prefix);
-                elements.push(ast::BlockItem::Variable(ast::LocalVariable {
-                    span: SrcSpan::default(),
-                    kind: ast::LocalVariableKind::Var,
-                    attributes: None,
-                    mutability: None,
-                    name: actual_name.into(),
-                    ty: Some(init_ty),
-                    initializer: Some(init),
-                }));
-            } else if self.budget_left() > 0 {
-                let expr = self.gen_rvalue(&arbitrary_type());
-                elements.push(ast::BlockItem::Stmt(expr));
+            if self.budget_left() > 0 {
+                if self.next_bool() {
+                    let var_name_prefix = self.gen_unique_name("v");
+                    let init_ty = arbitrary_type(self);
+                    let init = self.gen_rvalue(&init_ty);
+                    self.add_local(var_name_prefix.clone(), init_ty.clone());
+                    let actual_name = self
+                        .frames
+                        .last()
+                        .and_then(|f| f.locals.last())
+                        .map(|s| s.name.clone())
+                        .unwrap_or(var_name_prefix);
+                    elements.push(ast::BlockItem::Variable(ast::LocalVariable {
+                        span: SrcSpan::default(),
+                        kind: ast::LocalVariableKind::Var,
+                        attributes: None,
+                        mutability: None,
+                        name: actual_name.into(),
+                        ty: Some(init_ty),
+                        initializer: Some(init),
+                    }));
+                } else {
+                    let t = arbitrary_type(self);
+                    let expr = self.gen_rvalue(&t);
+                    elements.push(ast::BlockItem::Stmt(expr));
+                }
             }
         }
-        // Always end with a return to guarantee the function is well-formed.
-        let ret_val = if ret_ty_is_unit(ret_ty) {
+        // Always end with a return
+        let ret_val = if crate::ty::is_unit_type(ret_ty) {
             None
         } else {
             Some(self.gen_rvalue(ret_ty))
@@ -385,12 +400,7 @@ impl Gen {
 
         let return_type = if self.next_bool() { Some(self.gen_type()) } else { None };
 
-        let body_ty = return_type.clone().unwrap_or_else(|| {
-            ast::Type::TupleType(Box::new(ast::TupleType {
-                span: SrcSpan::default(),
-                element_types: vec![],
-            }))
-        });
+        let body_ty = return_type.clone().unwrap_or_else(unit_type);
 
         self.push_frame();
         for p in &func_params.params {
@@ -427,16 +437,9 @@ impl Gen {
         format!("{}_{}", prefix, counter)
     }
 
-    fn gen_unique_suffix(&mut self) -> u64 {
+    pub(crate) fn gen_unique_suffix(&mut self) -> u64 {
         let counter = self.name_counter;
         self.name_counter = self.name_counter.wrapping_add(1);
         counter
     }
 }
-
-fn ret_ty_is_unit(ty: &ast::Type) -> bool {
-    matches!(ty, ast::Type::TupleType(t) if t.element_types.is_empty())
-}
-
-// Re-export from ty for use in item.rs
-use crate::ty::{arbitrary_type, fallback_expr};
