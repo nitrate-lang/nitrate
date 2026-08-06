@@ -49,10 +49,8 @@ async fn main() {
     }
 
     let seed = if let Some(seed) = args.seed {
-        eprintln!("Using provided seed: {}", seed);
         seed
     } else {
-        eprintln!("No seed provided, using random seed.");
         rand::random()
     };
 
