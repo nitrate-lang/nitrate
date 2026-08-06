@@ -1,10 +1,9 @@
-use crate::ty::{
-    arbitrary_type, fallback_expr, is_bool_type, is_float_type, is_integral_type, is_unit_type, unit_type,
-};
+use crate::ty::{fallback_expr, is_bool_type, is_float_type, is_integral_type, is_unit_type, unit_type};
 use crate::{FuncInfo, Gen, MAX_ITEM_DEPTH, StructInfo};
 use nitrate_translation::{
     nstring::NString,
     parsetree::ast::{self, *},
+    token::IntegerKind,
 };
 
 impl Gen {
@@ -99,10 +98,10 @@ impl Gen {
         self.has_main = true;
         self.push_frame();
 
+        // main() returns either i32 or () (unit). These are the only valid
+        // return types for an entry point in Nitrate.
         let return_type = if self.next_bool() {
-            Some(ast::Type::Int32(ast::Int32 {
-                span: SrcSpan::default(),
-            }))
+            Some(crate::ty::int32_type())
         } else {
             None
         };
@@ -137,8 +136,12 @@ impl Gen {
     }
 
     fn gen_item_module(&mut self) -> ast::Item {
-        if !self.spend_budget_module() || self.budget_left() < 3 {
-            return self.gen_item(None);
+        // Spend budget *before* checking, based on weight of module item
+        if !self.spend_budget_module() {
+            return self.gen_placeholder_function();
+        }
+        if self.budget_left() < 3 {
+            return self.gen_placeholder_function();
         }
         self.item_depth += 1;
         let item_count = 1 + self.gen_index(2);
@@ -181,7 +184,8 @@ impl Gen {
         let mut fields: Vec<(String, ast::Type)> = Vec::with_capacity(field_count);
         let mut ast_fields = Vec::with_capacity(field_count);
         for i in 0..field_count {
-            let field_ty = self.gen_type();
+            // Struct fields must use constructible types so struct inits can work
+            let field_ty = self.gen_local_type();
             let field_name = format!("field_{}", i);
             fields.push((field_name.clone(), field_ty.clone()));
             ast_fields.push(ast::StructField {
@@ -218,11 +222,17 @@ impl Gen {
         let mut variants = Vec::with_capacity(variant_count);
         for _ in 0..variant_count {
             let variant_name: NString = format!("Variant_{}", self.gen_unique_suffix()).into();
+            // Enum variant payloads should be constructible types
+            let payload_ty = if self.next_bool() {
+                Some(self.gen_local_type())
+            } else {
+                None
+            };
             variants.push(ast::EnumVariant {
                 span: SrcSpan::default(),
                 attributes: None,
                 name: variant_name,
-                ty: if self.next_bool() { Some(self.gen_type()) } else { None },
+                ty: payload_ty,
                 default_value: None,
             });
         }
@@ -258,8 +268,7 @@ impl Gen {
         })
     }
 
-    /// Generate a type that is safe for const initialization (no refs, ptrs, function types, or
-    /// compound types that can't be initialized from literals — restrict to numeric/bool/unit).
+    /// Generate a type that is safe for const initialization (numeric, bool, unit).
     fn gen_const_initializable_type(&mut self) -> ast::Type {
         match self.next_u64() % 5 {
             0 => ast::Type::Bool(ast::Bool {
@@ -309,7 +318,7 @@ impl Gen {
             return ast::Expr::Integer(Box::new(ast::IntegerLit {
                 span: SrcSpan::default(),
                 value,
-                kind: nitrate_translation::token::IntegerKind::Dec,
+                kind: IntegerKind::Dec,
             }));
         }
         if is_unit_type(ty) {
@@ -318,18 +327,17 @@ impl Gen {
                 elements: vec![],
             }));
         }
-        // For any other type (shouldn't reach here since gen_const_initializable_type
-        // restricts possibilities), return 0
+        // For any other type, return 0
         ast::Expr::Integer(Box::new(ast::IntegerLit {
             span: SrcSpan::default(),
             value: 0,
-            kind: nitrate_translation::token::IntegerKind::Dec,
+            kind: IntegerKind::Dec,
         }))
     }
 
     fn gen_block_with_return(&mut self, ret_ty: &ast::Type) -> ast::Block {
         if !self.spend_budget_block() {
-            let ret_val = if crate::ty::is_unit_type(ret_ty) {
+            let ret_val = if is_unit_type(ret_ty) {
                 None
             } else {
                 Some(fallback_expr(ret_ty))
@@ -350,7 +358,8 @@ impl Gen {
             if self.budget_left() > 0 {
                 if self.next_bool() {
                     let var_name_prefix = self.gen_unique_name("v");
-                    let init_ty = arbitrary_type(self);
+                    // Use gen_local_type for block-local variable types
+                    let init_ty = self.gen_local_type();
                     let init = self.gen_rvalue(&init_ty);
                     let actual_name = self.add_local(var_name_prefix, init_ty.clone());
                     elements.push(ast::BlockItem::Variable(ast::LocalVariable {
@@ -363,14 +372,15 @@ impl Gen {
                         initializer: Some(init),
                     }));
                 } else {
-                    let t = arbitrary_type(self);
+                    // Statement expression (discard value) — use constructible type
+                    let t = self.gen_local_type();
                     let expr = self.gen_rvalue(&t);
                     elements.push(ast::BlockItem::Stmt(expr));
                 }
             }
         }
         // Always end with a return
-        let ret_val = if crate::ty::is_unit_type(ret_ty) {
+        let ret_val = if is_unit_type(ret_ty) {
             None
         } else {
             Some(self.gen_rvalue(ret_ty))
@@ -396,7 +406,8 @@ impl Gen {
         let mut params = Vec::with_capacity(param_count);
         let mut param_types = Vec::with_capacity(param_count);
         for i in 0..param_count {
-            let param_ty = self.gen_type();
+            // Function parameters should use constructible types so callers can pass values
+            let param_ty = self.gen_local_type();
             param_types.push(param_ty.clone());
             params.push(ast::FuncParam {
                 span: SrcSpan::default(),
@@ -414,7 +425,12 @@ impl Gen {
             variadic: false,
         };
 
-        let return_type = if self.next_bool() { Some(self.gen_type()) } else { None };
+        // Return type should also be constructible (avoid ref/ptr/fn returns for now)
+        let return_type = if self.next_bool() {
+            Some(self.gen_local_type())
+        } else {
+            None
+        };
 
         let body_ty = return_type.clone().unwrap_or_else(unit_type);
 
@@ -431,6 +447,7 @@ impl Gen {
         };
         self.register_function(func_info);
 
+        // Budget is spent based on function weight, not on individual block generation
         let definition = Some(self.gen_block_with_return(&body_ty));
         self.pop_frame();
 

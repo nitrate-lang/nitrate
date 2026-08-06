@@ -258,6 +258,17 @@ impl Gen {
             self.gen_int_type()
         }
     }
+
+    /// Generate a type that is safe to use for local variables — meaning it
+    /// must be fully constructible (no ref/ptr/fn types anywhere in the type).
+    pub(crate) fn gen_local_type(&mut self) -> ast::Type {
+        loop {
+            let ty = self.gen_type();
+            if is_constructible_type(&ty) {
+                return ty;
+            }
+        }
+    }
 }
 
 // ── Public helpers ──
@@ -330,6 +341,20 @@ pub(crate) fn is_type_path(ty: &ast::Type) -> bool {
     matches!(ty, ast::Type::TypePath(_))
 }
 
+/// Check whether a type is fully constructible — i.e., we can generate a
+/// runtime value of this type without resorting to invalid casts. This check
+/// is recursive: compound types (arrays, slices, tuples) must have fully
+/// constructible element types.
+pub(crate) fn is_constructible_type(ty: &ast::Type) -> bool {
+    match ty {
+        ast::Type::ReferenceType(_) | ast::Type::PointerType(_) | ast::Type::FunctionType(_) => false,
+        ast::Type::ArrayType(arr) => is_constructible_type(&arr.element_type),
+        ast::Type::SliceType(slice) => is_constructible_type(&slice.element_type),
+        ast::Type::TupleType(tup) => tup.element_types.iter().all(|ft| is_constructible_type(ft)),
+        _ => true,
+    }
+}
+
 pub(crate) fn types_compatible(a: &ast::Type, b: &ast::Type) -> bool {
     use ast::Type::*;
     match (a, b) {
@@ -348,7 +373,17 @@ pub(crate) fn types_compatible(a: &ast::Type, b: &ast::Type) -> bool {
     }
 }
 
-pub(crate) fn is_castable_type(ty: &ast::Type) -> bool {
+/// Returns `true` if a value of type `ty` can appear as the *source* of a
+/// type-cast (`expr as Ty`).  In Nitrate only numeric-to-numeric and
+/// integer-to-pointer casts are valid at the parse-tree level.
+pub(crate) fn is_castable_source_type(ty: &ast::Type) -> bool {
+    is_numeric_type(ty)
+}
+
+/// Returns `true` if a type can appear as the *target* of a type-cast.
+/// Numeric and bool types are always castable. Struct/enum types that exist
+/// in scope may also be cast targets (for pointer-like casts from usize).
+pub(crate) fn is_castable_target_type(ty: &ast::Type) -> bool {
     is_numeric_type(ty) || is_bool_type(ty)
 }
 
@@ -386,19 +421,26 @@ pub(crate) fn arbitrary_type(g: &mut Gen) -> ast::Type {
     g.gen_simple_type()
 }
 
+/// Pick a random numeric source type for a cast expression.
+/// Bool is excluded because `bool as X` is not valid in Nitrate.
 pub(crate) fn random_cast_source_type(generator: &mut Gen) -> ast::Type {
-    match generator.next_u64() % 7 {
+    match generator.next_u64() % 8 {
         0 => int32_type(),
-        1 => bool_type(),
-        2 => usize_type(),
-        3 => float64_type(),
-        4 => ast::Type::Float32(ast::Float32 {
+        1 => usize_type(),
+        2 => float64_type(),
+        3 => ast::Type::Float32(ast::Float32 {
             span: SrcSpan::default(),
         }),
-        5 => ast::Type::UInt32(ast::UInt32 {
+        4 => ast::Type::UInt32(ast::UInt32 {
             span: SrcSpan::default(),
         }),
-        _ => ast::Type::Int64(ast::Int64 {
+        5 => ast::Type::Int64(ast::Int64 {
+            span: SrcSpan::default(),
+        }),
+        6 => ast::Type::Int16(ast::Int16 {
+            span: SrcSpan::default(),
+        }),
+        _ => ast::Type::UInt8(ast::UInt8 {
             span: SrcSpan::default(),
         }),
     }
@@ -448,30 +490,38 @@ pub(crate) fn fallback_expr(ty: &ast::Type) -> ast::Expr {
             elements: vec![],
         }));
     }
-    // For array types, generate an empty array-like construction via cast
-    // (since we can't generate real array values in fallback mode).
-    // 0 as type works for numeric/castable types; for compound types we use a
-    // structurally compatible literal cast.
-    if matches!(ty, ast::Type::ArrayType(_) | ast::Type::SliceType(_)) {
-        return ast::Expr::Cast(Box::new(ast::Cast {
+    // For array types, generate an array literal of the correct size and element type.
+    if let ast::Type::ArrayType(arr) = ty {
+        let elem_fallback = fallback_expr(&arr.element_type);
+        let len: usize = match &arr.len {
+            ast::Expr::Integer(lit) => lit.value.try_into().unwrap_or(0),
+            _ => 0,
+        };
+        let elements: Vec<ast::Expr> = (0..len).map(|_| elem_fallback.clone()).collect();
+        return ast::Expr::List(Box::new(ast::List {
             span: SrcSpan::default(),
-            value: ast::Expr::Integer(Box::new(ast::IntegerLit {
-                span: SrcSpan::default(),
-                value: 0,
-                kind: nitrate_translation::token::IntegerKind::Dec,
-            })),
-            to: ty.clone(),
+            elements,
         }));
     }
-    // For reference/pointer/function/struct types, use a zero-initialized
-    // cast since we don't have real values in fallback mode.
-    ast::Expr::Cast(Box::new(ast::Cast {
-        span: SrcSpan::default(),
-        value: ast::Expr::Integer(Box::new(ast::IntegerLit {
+    // For slice types, generate an empty list.
+    if matches!(ty, ast::Type::SliceType(_)) {
+        return ast::Expr::List(Box::new(ast::List {
             span: SrcSpan::default(),
-            value: 0,
-            kind: nitrate_translation::token::IntegerKind::Dec,
-        })),
-        to: ty.clone(),
+            elements: vec![],
+        }));
+    }
+    // For tuple types, generate a tuple of fallback elements.
+    if let ast::Type::TupleType(tup) = ty {
+        let elements: Vec<ast::Expr> = tup.element_types.iter().map(|ft| fallback_expr(ft)).collect();
+        return ast::Expr::Tuple(Box::new(ast::Tuple {
+            span: SrcSpan::default(),
+            elements,
+        }));
+    }
+    // For struct/function/ref/ptr types, there's no valid fallback without Gen context.
+    // Return unit as a last resort. The caller should detect this and adjust.
+    ast::Expr::Tuple(Box::new(ast::Tuple {
+        span: SrcSpan::default(),
+        elements: vec![],
     }))
 }
