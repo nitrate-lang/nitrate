@@ -211,6 +211,7 @@ impl PrettyPrint for StructInit {
                 ctx.tab_depth -= 1;
             }
 
+            ctx.write_indent(writer)?;
             writer.write_char('}')
         }
     }
