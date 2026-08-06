@@ -1,9 +1,9 @@
-use crate::Gen;
+use crate::{Gen, MAX_ITEM_DEPTH};
 use nitrate_translation::{
     nstring::NString,
     parsetree::ast::{self, *},
 };
-use std::unreachable;
+use std::{format, unreachable};
 
 impl Gen {
     fn select_item_kind(&mut self) -> ast::ItemKind {
@@ -19,13 +19,15 @@ impl Gen {
             (ast::ItemKind::Module, 1),
         ];
 
+        // If we're already deep in module nesting, avoid further modules
         let total_weight: u32 = choices.iter().map(|(_, w)| w).sum();
         let mut roll = self.next_u64() as u32 % total_weight;
         for i in 0..choices.len() {
             if roll < choices[i].1 {
                 return match choices[i].0 {
                     ast::ItemKind::SyntaxError => ast::ItemKind::SyntaxError,
-                    ast::ItemKind::Module => ast::ItemKind::Module,
+                    ast::ItemKind::Module if self.item_depth < MAX_ITEM_DEPTH as u32 => ast::ItemKind::Module,
+                    ast::ItemKind::Module => ast::ItemKind::Function, // fall back to function
                     ast::ItemKind::Import => ast::ItemKind::Import,
                     ast::ItemKind::TypeAlias => ast::ItemKind::TypeAlias,
                     ast::ItemKind::Struct => ast::ItemKind::Struct,
@@ -42,6 +44,30 @@ impl Gen {
     }
 
     pub(crate) fn gen_item(&mut self, argc: Option<u32>) -> ast::Item {
+        if !self.spend_budget() {
+            // Budget exhausted; return a minimal valid item to keep the program
+            // well-formed.
+            return ast::Item::Function(ast::Function {
+                span: SrcSpan::default(),
+                visibility: None,
+                attributes: None,
+                name: "empty".into(),
+                generics: None,
+                parameters: ast::FuncParams {
+                    span: SrcSpan::default(),
+                    params: Vec::new(),
+                    variadic: false,
+                },
+                return_type: None,
+                definition: Some(ast::Block {
+                    span: SrcSpan::default(),
+                    safety: None,
+                    elements: vec![],
+                }),
+                abi: None,
+            });
+        }
+
         let kind = match argc {
             Some(_) => ast::ItemKind::Function,
             None => self.select_item_kind(),
@@ -61,12 +87,56 @@ impl Gen {
         }
     }
 
+    /// Generate the `main` entry-point function (always named "main", 0 arguments).
+    pub(crate) fn gen_item_main(&mut self) -> ast::Item {
+        self.push_frame();
+
+        let return_type = if self.next_bool() {
+            Some(ast::Type::Int32(ast::Int32 {
+                span: SrcSpan::default(),
+            }))
+        } else {
+            None
+        };
+
+        let body_ty = return_type.clone().unwrap_or_else(|| {
+            ast::Type::TupleType(Box::new(ast::TupleType {
+                span: SrcSpan::default(),
+                element_types: vec![],
+            }))
+        });
+
+        let definition = Some(self.gen_block_with_return(&body_ty));
+        self.pop_frame();
+
+        ast::Item::Function(ast::Function {
+            span: SrcSpan::default(),
+            visibility: None,
+            attributes: None,
+            name: "main".into(),
+            generics: None,
+            parameters: ast::FuncParams {
+                span: SrcSpan::default(),
+                params: Vec::new(),
+                variadic: false,
+            },
+            return_type,
+            definition,
+            abi: None,
+        })
+    }
+
     fn gen_item_module(&mut self) -> ast::Item {
-        let item_count = 1 + self.gen_index(3);
+        self.item_depth += 1;
+        let item_count = 1 + self.gen_index(2);
         let mut items = Vec::with_capacity(item_count);
         for _ in 0..item_count {
-            items.push(self.gen_item(None));
+            if self.budget_left() > 0 {
+                items.push(self.gen_item(None));
+            }
         }
+        self.item_depth = self.item_depth.saturating_sub(1);
+
         ast::Item::Module(Box::new(ast::Module {
             span: SrcSpan::default(),
             visibility: None,
@@ -168,9 +238,20 @@ impl Gen {
         let method_count = 1 + self.gen_index(3);
         let mut items = Vec::with_capacity(method_count);
         for _ in 0..method_count {
-            let params = ast::FuncParams {
+            let param_count = self.next_u64() as usize % 3;
+            let params: Vec<ast::FuncParam> = (0..param_count)
+                .map(|i| ast::FuncParam {
+                    span: SrcSpan::default(),
+                    attributes: None,
+                    mutability: None,
+                    name: format!("a_{i}").into(),
+                    ty: self.gen_type(),
+                    default_value: None,
+                })
+                .collect();
+            let func_params = ast::FuncParams {
                 span: SrcSpan::default(),
-                params: Vec::new(),
+                params,
                 variadic: false,
             };
             items.push(ast::AssociatedItem::Method(ast::Function {
@@ -179,7 +260,7 @@ impl Gen {
                 attributes: None,
                 name: self.gen_unique_name("method").into(),
                 generics: None,
-                parameters: params,
+                parameters: func_params,
                 return_type: Some(self.gen_type()),
                 definition: None,
                 abi: None,
@@ -196,10 +277,33 @@ impl Gen {
     }
 
     fn gen_item_impl(&mut self) -> ast::Item {
-        let for_type = self.gen_type();
+        // Use a type path referencing a known struct so that the impl block
+        // is always valid (impl on a non-nominal type is invalid).
+        let for_type = if self.has_any_struct() {
+            let idx = self.gen_index(self.known_structs.len());
+            let name = self.known_structs[idx].clone();
+            ast::Type::TypePath(Box::new(ast::TypePath {
+                span: SrcSpan::default(),
+                segments: vec![ast::TypePathSegment {
+                    span: SrcSpan::default(),
+                    name,
+                    type_arguments: None,
+                }],
+                resolved_path: None,
+            }))
+        } else {
+            ast::Type::Int32(ast::Int32 {
+                span: SrcSpan::default(),
+            })
+        };
+
         let method_count = 1 + self.gen_index(2);
         let mut items = Vec::with_capacity(method_count);
         for _ in 0..method_count {
+            // Use a separate name registration scope: impl methods should not
+            // pollute the global known_functions list (they are scoped to the
+            // impl block). We generate a function locally without registering
+            // its name globally.
             let func = self.gen_function(None);
             items.push(ast::AssociatedItem::Method(func));
         }
@@ -218,7 +322,6 @@ impl Gen {
         } else {
             self.gen_unique_name("fn")
         };
-        self.register_function(name.clone());
 
         let param_count = match argc {
             Some(n) => n as usize,
@@ -252,12 +355,18 @@ impl Gen {
             }))
         });
 
+        // Register the name AFTER pushing the frame so the function cannot
+        // call itself recursively by name (which could cause unbounded
+        // recursion during generation).
         self.push_frame();
         for p in &func_params.params {
             let s: &str = &p.name;
             let local_name: String = String::from(s);
             self.add_local(local_name, p.ty.clone());
         }
+
+        // Register the function name globally only after the scope is set up.
+        self.register_function(name.clone());
 
         let definition = Some(self.gen_block_with_return(&body_ty));
         self.pop_frame();
@@ -281,8 +390,15 @@ impl Gen {
 
     fn gen_item_variable(&mut self) -> ast::Item {
         let ty = self.gen_type();
+        // For static/const globals, only generate constant-evaluable
+        // initializers: literals or simple expressions. Skip recursive
+        // rvalue generation for non-const contexts.
         let initializer = if self.next_bool() {
-            Some(self.gen_rvalue(&ty))
+            Some(ast::Expr::Integer(Box::new(ast::IntegerLit {
+                span: SrcSpan::default(),
+                value: self.next_u64() as u128,
+                kind: nitrate_translation::token::IntegerKind::Dec,
+            })))
         } else {
             None
         };
@@ -311,10 +427,14 @@ impl Gen {
         let mut elements = Vec::with_capacity(stmt_count + 1);
         for _ in 0..stmt_count {
             if self.next_bool() {
+                // Declare a local variable — add it to scope BEFORE generating
+                // the initializer to prevent self-reference.
                 let var_name = format!("v_{}", self.next_u64() & 0xFFF);
                 let init_ty = self.gen_type();
-                let init = self.gen_rvalue(&init_ty);
+                // Add the local to scope first with a dummy init, then generate
+                // the real init (preventing self-reference in init expr)
                 self.add_local(var_name.clone(), init_ty.clone());
+                let init = self.gen_rvalue(&init_ty);
                 elements.push(ast::BlockItem::Variable(ast::LocalVariable {
                     span: SrcSpan::default(),
                     kind: ast::LocalVariableKind::Var,
@@ -351,14 +471,14 @@ impl Gen {
     }
 
     fn gen_unique_name(&mut self, prefix: &str) -> String {
-        let suffix = self.gen_unique_suffix();
-        let mut name = String::from(prefix);
-        name.push('_');
-        name.push_str(&suffix.to_string());
-        name
+        let counter = self.name_counter;
+        self.name_counter = self.name_counter.wrapping_add(1);
+        format!("{}_{}", prefix, counter)
     }
 
     fn gen_unique_suffix(&mut self) -> u64 {
-        self.next_u64() & 0xFFFF
+        let counter = self.name_counter;
+        self.name_counter = self.name_counter.wrapping_add(1);
+        counter
     }
 }

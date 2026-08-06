@@ -20,8 +20,8 @@ impl Gen {
             12 => self.gen_type_path(),
             13 => self.gen_refinement_type(),
             14 => self.gen_parentheses_type(),
-            15 => self.gen_lifetime_type(),
-            16 => self.gen_type_potential(),
+            15 => self.gen_type_potential(),
+            16 => self.gen_parentheses_type(),
             _ => self.gen_int_type(),
         }
     }
@@ -279,15 +279,6 @@ impl Gen {
         ast::Type::Parentheses(Box::new(ast::TypeParentheses {
             span: SrcSpan::default(),
             inner,
-        }))
-    }
-
-    fn gen_lifetime_type(&mut self) -> ast::Type {
-        let names = ["a", "b", "c", "static", "lt"];
-        let name: nitrate_translation::nstring::NString = names[(self.next_u64() as usize) % names.len()].into();
-        ast::Type::Lifetime(Box::new(ast::Lifetime {
-            span: SrcSpan::default(),
-            name,
         }))
     }
 

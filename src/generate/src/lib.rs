@@ -37,14 +37,22 @@ pub struct Gen {
     rng: u64,
     /// Recursion depth for rvalue generation, prevents infinite recursion.
     rvalue_depth: u32,
+    /// Item-level recursion depth for module nesting.
+    item_depth: u32,
     /// All globally-declared function names.
     known_functions: Vec<String>,
     /// All globally-declared struct names.
     known_structs: Vec<String>,
+    /// Whether we are currently inside a loop (break/continue are valid).
+    in_loop: bool,
+    /// Unique name generation counter to avoid collisions.
+    name_counter: u64,
 }
 
 /// Maximum recursion depth for rvalue generation before forcing leaf expressions.
 const MAX_RVALUE_DEPTH: u32 = 6;
+/// Maximum nesting depth for module-in-module generation.
+pub(crate) const MAX_ITEM_DEPTH: u32 = 4;
 
 impl Gen {
     pub fn new(config: GenConfig) -> Self {
@@ -55,17 +63,38 @@ impl Gen {
             config,
             rng: splitmix64_init(seed),
             rvalue_depth: 0,
+            item_depth: 0,
             known_functions: Vec::new(),
             known_structs: Vec::new(),
+            in_loop: false,
+            name_counter: 0,
         }
     }
 
+    /// Spend one unit of budget. Returns true if budget remains.
+    pub(crate) fn spend_budget(&mut self) -> bool {
+        if self.budget == 0 {
+            return false;
+        }
+        self.budget = self.budget.saturating_sub(1);
+        self.budget > 0
+    }
+
+    pub(crate) fn budget_left(&self) -> u32 {
+        self.budget
+    }
+
     pub(crate) fn register_function(&mut self, name: String) {
-        self.known_functions.push(name);
+        // Deduplicate: don't register the same name twice.
+        if !self.known_functions.contains(&name) {
+            self.known_functions.push(name);
+        }
     }
 
     pub(crate) fn register_struct(&mut self, name: String) {
-        self.known_structs.push(name);
+        if !self.known_structs.contains(&name) {
+            self.known_structs.push(name);
+        }
     }
 
     pub(crate) fn push_frame(&mut self) {
@@ -77,9 +106,23 @@ impl Gen {
     }
 
     pub(crate) fn add_local(&mut self, name: String, ty: ast::Type) {
+        // Pre-compute dedup suffix before borrowing self.frames
+        let suffix: Option<u64> = if self
+            .frames
+            .last()
+            .map_or(false, |f| f.locals.iter().any(|s| s.name == name))
+        {
+            Some(self.next_u64() & 0xFFF)
+        } else {
+            None
+        };
         if let Some(frame) = self.frames.last_mut() {
+            let unique_name = match suffix {
+                Some(s) => format!("{}_{}", name, s),
+                None => name,
+            };
             frame.locals.push(Symbol {
-                name,
+                name: unique_name,
                 kind: SymbolKind::Local(ty),
             });
         }
@@ -120,21 +163,8 @@ impl Gen {
         self.rvalue_depth >= MAX_RVALUE_DEPTH || self.budget == 0
     }
 
-    /// Pre-seed the symbol table with a baseline set of functions and
-    /// structs so that rvalue generation can reference valid names.
-    fn seed_symbols(&mut self) {
-        let builtin_names = ["add", "sub", "mul", "print", "len", "push", "pop", "map"];
-        for name in builtin_names {
-            self.register_function(name.to_string());
-        }
-        let struct_names = ["Vec", "Map", "Pair", "Data"];
-        for name in struct_names {
-            self.register_struct(name.to_string());
-        }
-    }
-
-    /// Emit a minimal struct declaration for a seed name so that type paths
-    /// referencing it are valid in the output.
+    /// Emit a minimal struct declaration with one i32 field for seed names
+    /// so that type paths referencing them are valid in the output.
     fn gen_seed_struct_decl(&mut self, name: String) -> ast::Item {
         ast::Item::Struct(ast::Struct {
             span: SrcSpan::default(),
@@ -155,29 +185,64 @@ impl Gen {
         })
     }
 
+    /// Emit a minimal function stub for a seed function name so that
+    /// function calls resolve to a declared function.
+    fn gen_seed_function_stub(&mut self, name: String) -> ast::Item {
+        ast::Item::Function(ast::Function {
+            span: SrcSpan::default(),
+            visibility: None,
+            attributes: None,
+            name: name.into(),
+            generics: None,
+            parameters: ast::FuncParams {
+                span: SrcSpan::default(),
+                params: Vec::new(),
+                variadic: false,
+            },
+            return_type: Some(ast::Type::Int32(ast::Int32 {
+                span: SrcSpan::default(),
+            })),
+            definition: Some(ast::Block {
+                span: SrcSpan::default(),
+                safety: None,
+                elements: vec![ast::BlockItem::Expr(ast::Expr::Integer(Box::new(ast::IntegerLit {
+                    span: SrcSpan::default(),
+                    value: 0,
+                    kind: nitrate_translation::token::IntegerKind::Dec,
+                })))],
+            }),
+            abi: None,
+        })
+    }
+
     pub fn gen_program(&mut self) -> String {
-        // Pre-seed symbols so rvalue generation can produce valid paths.
-        self.seed_symbols();
-
         let mut items = Vec::new();
-
-        // Emit struct declarations for every registered (seeded + generated)
-        // name so that type paths always reference declared types.  We copy
-        // the list first because gen_item() may append to it.
-        {
-            let known = self.known_structs.clone();
-            for name in known {
-                items.push(self.gen_seed_struct_decl(name));
-            }
-        }
-
         let mut functions = 0;
 
-        // Generate the required number of functions, plus random extra items.
-        // The first function is always main with 0 arguments.
+        // Emit struct declarations for preset struct names so that type paths
+        // always reference declared types.
+        let struct_names = ["Vec", "Map", "Pair", "Data"];
+        for name in struct_names {
+            self.register_struct(name.to_string());
+            items.push(self.gen_seed_struct_decl(name.to_string()));
+        }
+
+        // Emit stub functions for preset function names so that function calls
+        // always reference declared functions.
+        let builtin_names = ["add", "sub", "mul", "print", "len", "push", "pop", "map"];
+        for name in builtin_names {
+            self.register_function(name.to_string());
+            items.push(self.gen_seed_function_stub(name.to_string()));
+        }
+
+        // Generate the required number of user-defined functions.
+        // The first function is always `main` with 0 arguments.
         while functions < self.config.function_count && self.budget > 0 {
-            let argc = if functions == 0 { Some(0) } else { None };
-            let item = self.gen_item(argc);
+            let item = if functions == 0 {
+                self.gen_item_main()
+            } else {
+                self.gen_item(None)
+            };
             if matches!(item, ast::Item::Function(_)) {
                 functions += 1;
             }
@@ -185,7 +250,7 @@ impl Gen {
         }
 
         // Generate additional random items to ensure all generators are exercised.
-        let extra_items = self.gen_index(5);
+        let extra_items = 1 + self.gen_index(4);
         for _ in 0..extra_items {
             if self.budget > 0 {
                 items.push(self.gen_item(None));
