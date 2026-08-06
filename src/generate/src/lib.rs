@@ -60,7 +60,7 @@ pub struct Gen {
     pub(crate) type_depth: u32,
     /// All globally-declared function signatures.
     known_functions: Vec<FuncInfo>,
-    /// All globally-declared struct definitions.
+    /// All globally-declared struct definitions (including enums as type paths).
     known_structs: Vec<StructInfo>,
     /// Whether we are currently inside a loop (break/continue are valid).
     in_loop: bool,
@@ -74,6 +74,21 @@ pub struct Gen {
 const MAX_RVALUE_DEPTH: u32 = 5;
 /// Maximum nesting depth for module-in-module generation.
 pub(crate) const MAX_ITEM_DEPTH: u32 = 3;
+
+// Weights for budget spending based on what's being generated.
+const BUDGET_WEIGHT_LITERAL: u32 = 1;
+const BUDGET_WEIGHT_EXPR: u32 = 1;
+const BUDGET_WEIGHT_STMT: u32 = 2;
+const BUDGET_WEIGHT_BLOCK: u32 = 3;
+const BUDGET_WEIGHT_FUNCTION: u32 = 8;
+const BUDGET_WEIGHT_STRUCT: u32 = 5;
+const BUDGET_WEIGHT_ENUM: u32 = 5;
+const BUDGET_WEIGHT_IMPL: u32 = 6;
+const BUDGET_WEIGHT_TRAIT: u32 = 5;
+const BUDGET_WEIGHT_MODULE: u32 = 4;
+const BUDGET_WEIGHT_TYPEALIAS: u32 = 2;
+const BUDGET_WEIGHT_VARIABLE: u32 = 3;
+const BUDGET_WEIGHT_IMPORT: u32 = 1;
 
 impl Gen {
     pub fn new(config: GenConfig) -> Self {
@@ -94,14 +109,78 @@ impl Gen {
         }
     }
 
-    /// Spend budget. Amount scales by the weight of what we're generating.
+    /// Spend budget. Fails (returns false) if insufficient budget remains.
     pub(crate) fn spend_budget(&mut self, amount: u32) -> bool {
-        let amt = amount.max(1);
-        if self.budget == 0 {
+        if self.budget < amount {
             return false;
         }
-        self.budget = self.budget.saturating_sub(amt);
+        self.budget -= amount;
         true
+    }
+
+    /// Spend budget for a literal/leaf expression.
+    pub(crate) fn spend_budget_literal(&mut self) -> bool {
+        self.spend_budget(BUDGET_WEIGHT_LITERAL)
+    }
+
+    /// Spend budget for an expression.
+    pub(crate) fn spend_budget_expr(&mut self) -> bool {
+        self.spend_budget(BUDGET_WEIGHT_EXPR)
+    }
+
+    /// Spend budget for a statement-level item.
+    pub(crate) fn spend_budget_stmt(&mut self) -> bool {
+        self.spend_budget(BUDGET_WEIGHT_STMT)
+    }
+
+    /// Spend budget for a block.
+    pub(crate) fn spend_budget_block(&mut self) -> bool {
+        self.spend_budget(BUDGET_WEIGHT_BLOCK)
+    }
+
+    /// Spend budget for a function definition.
+    pub(crate) fn spend_budget_function(&mut self) -> bool {
+        self.spend_budget(BUDGET_WEIGHT_FUNCTION)
+    }
+
+    /// Spend budget for a struct definition.
+    pub(crate) fn spend_budget_struct(&mut self) -> bool {
+        self.spend_budget(BUDGET_WEIGHT_STRUCT)
+    }
+
+    /// Spend budget for an enum definition.
+    pub(crate) fn spend_budget_enum(&mut self) -> bool {
+        self.spend_budget(BUDGET_WEIGHT_ENUM)
+    }
+
+    /// Spend budget for an impl block.
+    pub(crate) fn spend_budget_impl(&mut self) -> bool {
+        self.spend_budget(BUDGET_WEIGHT_IMPL)
+    }
+
+    /// Spend budget for a trait definition.
+    pub(crate) fn spend_budget_trait(&mut self) -> bool {
+        self.spend_budget(BUDGET_WEIGHT_TRAIT)
+    }
+
+    /// Spend budget for a module definition.
+    pub(crate) fn spend_budget_module(&mut self) -> bool {
+        self.spend_budget(BUDGET_WEIGHT_MODULE)
+    }
+
+    /// Spend budget for a type alias.
+    pub(crate) fn spend_budget_type_alias(&mut self) -> bool {
+        self.spend_budget(BUDGET_WEIGHT_TYPEALIAS)
+    }
+
+    /// Spend budget for a global variable.
+    pub(crate) fn spend_budget_variable(&mut self) -> bool {
+        self.spend_budget(BUDGET_WEIGHT_VARIABLE)
+    }
+
+    /// Spend budget for an import.
+    pub(crate) fn spend_budget_import(&mut self) -> bool {
+        self.spend_budget(BUDGET_WEIGHT_IMPORT)
     }
 
     pub(crate) fn budget_left(&self) -> u32 {
@@ -221,27 +300,24 @@ impl Gen {
         let mut items = Vec::new();
         let mut functions_generated = 0u32;
 
+        // Always generate main first.
+        if self.budget_left() >= BUDGET_WEIGHT_FUNCTION {
+            items.push(self.gen_item_main());
+            functions_generated += 1;
+        }
+
         // Generate the required number of user-defined functions.
-        // First function is always `main` if function_count > 0.
         while functions_generated < self.config.function_count && self.budget_left() > 0 {
-            let item = if functions_generated == 0 {
-                self.gen_item_main()
-            } else {
-                self.gen_item(None)
-            };
-            if matches!(item, ast::Item::Function(_)) {
-                functions_generated += 1;
+            if !self.spend_budget_function() {
+                break;
             }
+            let item = self.gen_item_function(None);
+            functions_generated += 1;
             items.push(item);
         }
 
-        // If no main was generated (e.g. first item wasn't a fn), add one.
-        if !self.has_main && self.budget_left() > 0 {
-            items.insert(0, self.gen_item_main());
-        }
-
         // Generate additional random items to ensure all generators are exercised.
-        let extra_items = 1 + self.gen_index(3);
+        let extra_items = 1 + self.gen_index(4);
         for _ in 0..extra_items {
             if self.budget_left() > 0 {
                 items.push(self.gen_item(None));

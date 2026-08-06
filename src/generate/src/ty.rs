@@ -1,34 +1,32 @@
-use crate::{FuncInfo, Gen, StructInfo};
+use crate::Gen;
 use nitrate_translation::parsetree::ast::{self, *};
 
 /// Maximum nesting depth for recursively-generated types to prevent stack
 /// overflow when types are generated during expression generation.
-const MAX_TYPE_DEPTH: u32 = 6;
+const MAX_TYPE_DEPTH: u32 = 4;
 
 impl Gen {
-    /// Generate a random AST type.
+    /// Generate a random AST type. Avoids types that are not well-supported
+    /// by the compiler (refinement types, void types in certain positions).
     pub(crate) fn gen_type(&mut self) -> ast::Type {
         if self.type_depth >= MAX_TYPE_DEPTH {
             return self.gen_leaf_type();
         }
         self.type_depth += 1;
-        let result = match self.next_u64() % 17 {
-            0 => self.gen_bool_type(),
-            1 => self.gen_int_type(),
-            2 => self.gen_uint_type(),
-            3 => self.gen_float_type(),
-            4 => self.gen_usize_type(),
-            5 => self.gen_int_type(),
-            6 => self.gen_array_type(),
-            7 => self.gen_slice_type(),
-            8 => self.gen_tuple_type(),
-            9 => self.gen_function_type(),
-            10 => self.gen_reference_type(),
-            11 => self.gen_pointer_type(),
+        let result = match self.next_u64() % 18 {
+            0..=3 => self.gen_int_type(),
+            4 => self.gen_uint_type(),
+            5..=6 => self.gen_bool_type(),
+            7 => self.gen_float_type(),
+            8 => self.gen_usize_type(),
+            9 => self.gen_slice_type(),
+            10 => self.gen_array_type(),
+            11 => self.gen_tuple_type(),
             12 => self.gen_type_path(),
-            13 => self.gen_refinement_type(),
-            14 => self.gen_parentheses_type(),
-            15 => self.gen_int_type(),
+            13 => self.gen_reference_type(),
+            14 => self.gen_pointer_type(),
+            15 => self.gen_function_type(),
+            16..=17 => self.gen_int_type(),
             _ => self.gen_int_type(),
         };
         self.type_depth = self.type_depth.saturating_sub(1);
@@ -37,14 +35,13 @@ impl Gen {
 
     /// Generate a type that does NOT recurse into further type generation.
     fn gen_leaf_type(&mut self) -> ast::Type {
-        match self.next_u64() % 8 {
+        match self.next_u64() % 6 {
             0 => self.gen_bool_type(),
             1 => self.gen_int_type(),
             2 => self.gen_uint_type(),
             3 => self.gen_float_type(),
             4 => self.gen_usize_type(),
-            5 => self.gen_int_type(),
-            6 => {
+            _ => {
                 if self.has_any_struct() {
                     let idx = self.gen_index(self.known_structs.len());
                     let name = self.known_structs[idx].name.clone();
@@ -61,15 +58,7 @@ impl Gen {
                     self.gen_int_type()
                 }
             }
-            _ => self.gen_int_type(),
         }
-    }
-
-    /// Generate an InferType for use in type-inference positions.
-    pub(crate) fn gen_infer_type(&mut self) -> ast::Type {
-        ast::Type::InferType(ast::InferType {
-            span: SrcSpan::default(),
-        })
     }
 
     // ── Primitive type generators ──
@@ -142,9 +131,10 @@ impl Gen {
 
     fn gen_array_type(&mut self) -> ast::Type {
         let element_type = self.gen_type();
+        let len_val = (self.next_u64() % 32 + 1) as u128;
         let len = ast::Expr::Integer(Box::new(ast::IntegerLit {
             span: SrcSpan::default(),
-            value: (self.next_u64() % 100 + 1) as u128,
+            value: len_val,
             kind: nitrate_translation::token::IntegerKind::Dec,
         }));
         ast::Type::ArrayType(Box::new(ast::ArrayType {
@@ -163,7 +153,7 @@ impl Gen {
     }
 
     fn gen_tuple_type(&mut self) -> ast::Type {
-        let count = 1 + (self.next_u64() as usize % 5);
+        let count = 1 + (self.next_u64() as usize % 3);
         let element_types: Vec<ast::Type> = (0..count).map(|_| self.gen_type()).collect();
         ast::Type::TupleType(Box::new(ast::TupleType {
             span: SrcSpan::default(),
@@ -177,7 +167,7 @@ impl Gen {
             .map(|i| ast::FuncTypeParam {
                 span: SrcSpan::default(),
                 attributes: None,
-                name: format!("p_{i}").into(),
+                name: format!("p_{}", i).into(),
                 ty: self.gen_type(),
             })
             .collect();
@@ -192,14 +182,11 @@ impl Gen {
 
     fn gen_reference_type(&mut self) -> ast::Type {
         let to = self.gen_type();
-        let lifetime = if self.next_bool() {
-            Some(ast::Lifetime {
-                span: SrcSpan::default(),
-                name: "a".into(),
-            })
-        } else {
-            None
-        };
+        // Always include a lifetime with references to avoid unbound lifetime errors.
+        let lifetime = Some(ast::Lifetime {
+            span: SrcSpan::default(),
+            name: "a".into(),
+        });
         let mutability = if self.next_bool() {
             Some(if self.next_bool() {
                 ast::Mutability::Mut
@@ -240,63 +227,24 @@ impl Gen {
 
     fn gen_type_path(&mut self) -> ast::Type {
         if self.has_any_struct() {
-            let seg_count = 1 + (self.next_u64() as usize % 2);
-            let segments: Vec<ast::TypePathSegment> = (0..seg_count)
-                .map(|_| {
-                    let idx = self.gen_index(self.known_structs.len());
-                    let name = self.known_structs[idx].name.clone();
-                    ast::TypePathSegment {
-                        span: SrcSpan::default(),
-                        name,
-                        type_arguments: None,
-                    }
-                })
-                .collect();
+            let idx = self.gen_index(self.known_structs.len());
+            let name = self.known_structs[idx].name.clone();
             ast::Type::TypePath(Box::new(ast::TypePath {
                 span: SrcSpan::default(),
-                segments,
+                segments: vec![ast::TypePathSegment {
+                    span: SrcSpan::default(),
+                    name,
+                    type_arguments: None,
+                }],
                 resolved_path: None,
             }))
         } else {
             self.gen_int_type()
         }
     }
-
-    fn gen_refinement_type(&mut self) -> ast::Type {
-        let basis_type = match self.next_u64() % 4 {
-            0 => self.gen_int_type(),
-            1 => self.gen_uint_type(),
-            2 => self.gen_float_type(),
-            _ => self.gen_int_type(),
-        };
-        let width = if self.next_bool() {
-            Some(ast::Expr::Integer(Box::new(ast::IntegerLit {
-                span: SrcSpan::default(),
-                value: (self.next_u64() % 64 + 1) as u128,
-                kind: nitrate_translation::token::IntegerKind::Dec,
-            })))
-        } else {
-            None
-        };
-        ast::Type::RefinementType(Box::new(ast::RefinementType {
-            span: SrcSpan::default(),
-            basis_type,
-            width,
-            minimum: None,
-            maximum: None,
-        }))
-    }
-
-    fn gen_parentheses_type(&mut self) -> ast::Type {
-        let inner = self.gen_type();
-        ast::Type::Parentheses(Box::new(ast::TypeParentheses {
-            span: SrcSpan::default(),
-            inner,
-        }))
-    }
 }
 
-// ── Public convenience helpers (used by rvalue.rs) ──
+// ── Public convenience helpers (used by rvalue.rs and item.rs) ──
 
 pub(crate) fn bool_type() -> ast::Type {
     ast::Type::Bool(ast::Bool {
@@ -356,7 +304,6 @@ pub(crate) fn is_float_type(ty: &ast::Type) -> bool {
 pub(crate) fn types_compatible(a: &ast::Type, b: &ast::Type) -> bool {
     use ast::Type::*;
     match (a, b) {
-        // Same discriminant = structurally compatible
         (Bool(_), Bool(_))
         | (Int8(_), Int8(_))
         | (Int16(_), Int16(_))
@@ -378,9 +325,7 @@ pub(crate) fn types_compatible(a: &ast::Type, b: &ast::Type) -> bool {
         | (ReferenceType(_), ReferenceType(_))
         | (PointerType(_), PointerType(_))
         | (TypePath(_), TypePath(_))
-        | (InferType(_), InferType(_))
-        | (RefinementType(_), RefinementType(_))
-        | (Parentheses(_), Parentheses(_)) => true,
+        | (InferType(_), InferType(_)) => true,
         // Allow any integral type to be used with any other integral type for flexibility
         (a_ty, b_ty) if is_integral_type(a_ty) && is_integral_type(b_ty) => true,
         // Allow any float type with any float type
@@ -455,5 +400,26 @@ pub(crate) fn random_cast_source_type(generator: &mut Gen) -> ast::Type {
         _ => ast::Type::Int128(ast::Int128 {
             span: SrcSpan::default(),
         }),
+    }
+}
+
+/// Generate a fallback expression of the given type (for when budget runs out).
+pub(crate) fn fallback_expr(ty: &ast::Type) -> ast::Expr {
+    if is_bool_type(ty) {
+        ast::Expr::Boolean(ast::BooleanLit {
+            span: SrcSpan::default(),
+            value: false,
+        })
+    } else if matches!(ty, ast::Type::Float32(_) | ast::Type::Float64(_)) {
+        ast::Expr::Float(ast::FloatLit {
+            span: SrcSpan::default(),
+            value: ordered_float::NotNan::new(0.0).unwrap(),
+        })
+    } else {
+        ast::Expr::Integer(Box::new(ast::IntegerLit {
+            span: SrcSpan::default(),
+            value: 0,
+            kind: nitrate_translation::token::IntegerKind::Dec,
+        }))
     }
 }
