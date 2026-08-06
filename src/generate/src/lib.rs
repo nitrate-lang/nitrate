@@ -18,6 +18,23 @@ pub(crate) enum SymbolKind {
     Local(ast::Type),
 }
 
+/// Metadata about a function known to the generator, so that call-sites
+/// can emit type-compatible arguments.
+#[derive(Debug, Clone)]
+pub(crate) struct FuncInfo {
+    pub name: String,
+    pub params: Vec<ast::Type>,
+    pub return_type: Option<ast::Type>,
+}
+
+/// Metadata about a struct known to the generator, so that struct-inits
+/// and field-accesses can produce compatible value expressions.
+#[derive(Debug, Clone)]
+pub(crate) struct StructInfo {
+    pub name: String,
+    pub fields: Vec<(String, ast::Type)>,
+}
+
 struct Frame {
     pub(crate) locals: Vec<Symbol>,
 }
@@ -41,20 +58,22 @@ pub struct Gen {
     item_depth: u32,
     /// Type-generation recursion depth to prevent stack overflow in compound types.
     pub(crate) type_depth: u32,
-    /// All globally-declared function names.
-    known_functions: Vec<String>,
-    /// All globally-declared struct names.
-    known_structs: Vec<String>,
+    /// All globally-declared function signatures.
+    known_functions: Vec<FuncInfo>,
+    /// All globally-declared struct definitions.
+    known_structs: Vec<StructInfo>,
     /// Whether we are currently inside a loop (break/continue are valid).
     in_loop: bool,
     /// Unique name generation counter to avoid collisions.
     name_counter: u64,
+    /// Whether a `main` function has been emitted.
+    has_main: bool,
 }
 
 /// Maximum recursion depth for rvalue generation before forcing leaf expressions.
-const MAX_RVALUE_DEPTH: u32 = 6;
+const MAX_RVALUE_DEPTH: u32 = 5;
 /// Maximum nesting depth for module-in-module generation.
-pub(crate) const MAX_ITEM_DEPTH: u32 = 4;
+pub(crate) const MAX_ITEM_DEPTH: u32 = 3;
 
 impl Gen {
     pub fn new(config: GenConfig) -> Self {
@@ -71,15 +90,17 @@ impl Gen {
             known_structs: Vec::new(),
             in_loop: false,
             name_counter: 0,
+            has_main: false,
         }
     }
 
-    /// Spend one unit of budget. Returns true if a unit was successfully spent.
-    pub(crate) fn spend_budget(&mut self) -> bool {
+    /// Spend budget. Amount scales by the weight of what we're generating.
+    pub(crate) fn spend_budget(&mut self, amount: u32) -> bool {
+        let amt = amount.max(1);
         if self.budget == 0 {
             return false;
         }
-        self.budget = self.budget.saturating_sub(1);
+        self.budget = self.budget.saturating_sub(amt);
         true
     }
 
@@ -87,16 +108,15 @@ impl Gen {
         self.budget
     }
 
-    pub(crate) fn register_function(&mut self, name: String) {
-        // Deduplicate: don't register the same name twice.
-        if !self.known_functions.contains(&name) {
-            self.known_functions.push(name);
+    pub(crate) fn register_function(&mut self, info: FuncInfo) {
+        if !self.known_functions.iter().any(|f| f.name == info.name) {
+            self.known_functions.push(info);
         }
     }
 
-    pub(crate) fn register_struct(&mut self, name: String) {
-        if !self.known_structs.contains(&name) {
-            self.known_structs.push(name);
+    pub(crate) fn register_struct(&mut self, info: StructInfo) {
+        if !self.known_structs.iter().any(|s| s.name == info.name) {
+            self.known_structs.push(info);
         }
     }
 
@@ -109,7 +129,6 @@ impl Gen {
     }
 
     pub(crate) fn add_local(&mut self, name: String, ty: ast::Type) {
-        // Pre-compute dedup suffix before borrowing self.frames
         let suffix: Option<u64> = if self
             .frames
             .last()
@@ -143,7 +162,25 @@ impl Gen {
         !self.known_structs.is_empty()
     }
 
-    fn next_u64(&mut self) -> u64 {
+    /// Pick a random known function info.
+    pub(crate) fn pick_function(&mut self) -> FuncInfo {
+        debug_assert!(self.has_any_function());
+        let idx = self.gen_index(self.known_functions.len());
+        self.known_functions[idx].clone()
+    }
+
+    /// Pick a random known struct info.
+    pub(crate) fn pick_struct(&mut self) -> StructInfo {
+        debug_assert!(self.has_any_struct());
+        let idx = self.gen_index(self.known_structs.len());
+        self.known_structs[idx].clone()
+    }
+
+    pub(crate) fn find_struct_by_name(&self, name: &str) -> Option<&StructInfo> {
+        self.known_structs.iter().find(|s| s.name == name)
+    }
+
+    pub(crate) fn next_u64(&mut self) -> u64 {
         self.rng = self.rng.wrapping_add(0x9e3779b97f4a7c15);
         let mut z = self.rng;
         z = (z ^ (z >> 30)).wrapping_mul(0xbf58476d1ce4e5b9);
@@ -151,146 +188,60 @@ impl Gen {
         z ^ (z >> 31)
     }
 
-    fn next_bool(&mut self) -> bool {
+    pub(crate) fn next_bool(&mut self) -> bool {
         (self.next_u64() & 1) != 0
     }
 
-    fn gen_index(&mut self, max: usize) -> usize {
+    pub(crate) fn gen_index(&mut self, max: usize) -> usize {
         assert!(max > 0, "gen_index called with max=0");
         (self.next_u64() as usize) % max
     }
 
-    fn force_leaf(&self) -> bool {
+    pub(crate) fn force_leaf(&self) -> bool {
         self.rvalue_depth >= MAX_RVALUE_DEPTH || self.budget == 0
     }
 
-    /// Emit a minimal struct declaration with four i32 fields for seed names
-    /// so that type paths and struct init expressions referencing them are
-    /// valid in the output (field count matches the 1+gen_index(4) range).
-    fn gen_seed_struct_decl(&mut self, name: String) -> ast::Item {
-        ast::Item::Struct(ast::Struct {
-            span: SrcSpan::default(),
-            visibility: None,
-            attributes: None,
-            name: name.into(),
-            generics: None,
-            fields: vec![
-                ast::StructField {
-                    span: SrcSpan::default(),
-                    visibility: None,
-                    attributes: None,
-                    name: "field_0".into(),
-                    ty: ast::Type::Int32(ast::Int32 {
-                        span: SrcSpan::default(),
-                    }),
-                    default_value: None,
-                },
-                ast::StructField {
-                    span: SrcSpan::default(),
-                    visibility: None,
-                    attributes: None,
-                    name: "field_1".into(),
-                    ty: ast::Type::Int32(ast::Int32 {
-                        span: SrcSpan::default(),
-                    }),
-                    default_value: None,
-                },
-                ast::StructField {
-                    span: SrcSpan::default(),
-                    visibility: None,
-                    attributes: None,
-                    name: "field_2".into(),
-                    ty: ast::Type::Int32(ast::Int32 {
-                        span: SrcSpan::default(),
-                    }),
-                    default_value: None,
-                },
-                ast::StructField {
-                    span: SrcSpan::default(),
-                    visibility: None,
-                    attributes: None,
-                    name: "field_3".into(),
-                    ty: ast::Type::Int32(ast::Int32 {
-                        span: SrcSpan::default(),
-                    }),
-                    default_value: None,
-                },
-            ],
-        })
+    pub(crate) fn set_in_loop(&mut self, val: bool) {
+        self.in_loop = val;
     }
 
-    /// Emit a minimal function stub for a seed function name so that
-    /// function calls resolve to a declared function.
-    fn gen_seed_function_stub(&mut self, name: String) -> ast::Item {
-        ast::Item::Function(ast::Function {
-            span: SrcSpan::default(),
-            visibility: None,
-            attributes: None,
-            name: name.into(),
-            generics: None,
-            parameters: ast::FuncParams {
-                span: SrcSpan::default(),
-                params: Vec::new(),
-                variadic: false,
-            },
-            return_type: Some(ast::Type::Int32(ast::Int32 {
-                span: SrcSpan::default(),
-            })),
-            definition: Some(ast::Block {
-                span: SrcSpan::default(),
-                safety: None,
-                elements: vec![ast::BlockItem::Expr(ast::Expr::Integer(Box::new(ast::IntegerLit {
-                    span: SrcSpan::default(),
-                    value: 0,
-                    kind: nitrate_translation::token::IntegerKind::Dec,
-                })))],
-            }),
-            abi: None,
-        })
+    pub(crate) fn in_loop(&self) -> bool {
+        self.in_loop
+    }
+
+    pub(crate) fn inc_rvalue_depth(&mut self) {
+        self.rvalue_depth += 1;
+    }
+
+    pub(crate) fn dec_rvalue_depth(&mut self) {
+        self.rvalue_depth = self.rvalue_depth.saturating_sub(1);
     }
 
     pub fn gen_program(&mut self) -> String {
         let mut items = Vec::new();
-        let mut functions = 0;
-
-        // Emit struct declarations for preset struct names so that type paths
-        // always reference declared types.
-        let struct_names = ["Vec", "Map", "Pair", "Data"];
-        for name in struct_names {
-            self.register_struct(name.to_string());
-            items.push(self.gen_seed_struct_decl(name.to_string()));
-        }
-
-        // Emit stub functions for preset function names so that function calls
-        // always reference declared functions.
-        let builtin_names = ["add", "sub", "mul", "print", "len", "push", "pop", "map"];
-        for name in builtin_names {
-            self.register_function(name.to_string());
-            items.push(self.gen_seed_function_stub(name.to_string()));
-        }
-
-        // Always emit a `main` function even if function_count is zero.
-        // A program without an entry point is invalid.
-        if self.config.function_count == 0 || self.budget_left() == 0 {
-            items.push(self.gen_item_main());
-            functions = 1;
-        }
+        let mut functions_generated = 0u32;
 
         // Generate the required number of user-defined functions.
-        while functions < self.config.function_count && self.budget_left() > 0 {
-            let item = if functions == 0 {
+        // First function is always `main` if function_count > 0.
+        while functions_generated < self.config.function_count && self.budget_left() > 0 {
+            let item = if functions_generated == 0 {
                 self.gen_item_main()
             } else {
                 self.gen_item(None)
             };
             if matches!(item, ast::Item::Function(_)) {
-                functions += 1;
+                functions_generated += 1;
             }
             items.push(item);
         }
 
+        // If no main was generated (e.g. first item wasn't a fn), add one.
+        if !self.has_main && self.budget_left() > 0 {
+            items.insert(0, self.gen_item_main());
+        }
+
         // Generate additional random items to ensure all generators are exercised.
-        let extra_items = 1 + self.gen_index(4);
+        let extra_items = 1 + self.gen_index(3);
         for _ in 0..extra_items {
             if self.budget_left() > 0 {
                 items.push(self.gen_item(None));
@@ -310,10 +261,7 @@ impl Gen {
     }
 }
 
-/// Initialize splitmix64 state from a seed. The internal state for
-/// splitmix64 is the raw seed value; the finalizer (xorshift-multiply)
-/// is applied during each call to `next_u64` after advancing state with
-/// the Weyl sequence constant.
+/// Initialize splitmix64 state from a seed.
 fn splitmix64_init(seed: u64) -> u64 {
     seed
 }

@@ -1,4 +1,4 @@
-use crate::{Gen, MAX_ITEM_DEPTH};
+use crate::{FuncInfo, Gen, MAX_ITEM_DEPTH, StructInfo};
 use nitrate_translation::{
     nstring::NString,
     parsetree::ast::{self, *},
@@ -18,19 +18,13 @@ impl Gen {
             (ast::ItemKind::Module, 1),
         ];
 
-        // If we're already deep in module nesting, avoid further modules
         let total_weight: u32 = choices.iter().map(|(_, w)| w).sum();
         let mut roll = self.next_u64() as u32 % total_weight;
         for (kind, weight) in choices {
             if roll < *weight {
                 return match kind {
                     ast::ItemKind::SyntaxError => ast::ItemKind::Function,
-                    ast::ItemKind::Module if self.item_depth < MAX_ITEM_DEPTH as u32 => ast::ItemKind::Module,
-                    ast::ItemKind::Module => {
-                        // Module kind blocked by depth limit; fall through to next choice.
-                        roll -= weight;
-                        continue;
-                    }
+                    ast::ItemKind::Module if self.item_depth < MAX_ITEM_DEPTH => ast::ItemKind::Module,
                     ast::ItemKind::Import => ast::ItemKind::Import,
                     ast::ItemKind::TypeAlias => ast::ItemKind::TypeAlias,
                     ast::ItemKind::Struct => ast::ItemKind::Struct,
@@ -39,6 +33,10 @@ impl Gen {
                     ast::ItemKind::Impl => ast::ItemKind::Impl,
                     ast::ItemKind::Function => ast::ItemKind::Function,
                     ast::ItemKind::Variable => ast::ItemKind::Variable,
+                    ast::ItemKind::Module => {
+                        roll -= weight;
+                        continue;
+                    }
                 };
             }
             roll -= weight;
@@ -47,11 +45,14 @@ impl Gen {
     }
 
     pub(crate) fn gen_item(&mut self, argc: Option<u32>) -> ast::Item {
-        if !self.spend_budget() {
-            // Budget exhausted; return a minimal valid function with a
-            // unique name to avoid collisions if called repeatedly.
+        if !self.spend_budget(2) {
             let name = self.gen_unique_name("empty");
-            self.register_function(name.clone());
+            let func_info = FuncInfo {
+                name: name.clone(),
+                params: Vec::new(),
+                return_type: None,
+            };
+            self.register_function(func_info);
             return ast::Item::Function(ast::Function {
                 span: SrcSpan::default(),
                 visibility: None,
@@ -79,7 +80,7 @@ impl Gen {
         };
 
         match kind {
-            ast::ItemKind::SyntaxError => unreachable!("SyntaxError filtered by select_item_kind"),
+            ast::ItemKind::SyntaxError => unreachable!(),
             ast::ItemKind::Module => self.gen_item_module(),
             ast::ItemKind::Import => self.gen_item_import(),
             ast::ItemKind::TypeAlias => self.gen_item_type_alias(),
@@ -92,8 +93,8 @@ impl Gen {
         }
     }
 
-    /// Generate the `main` entry-point function (always named "main", 0 arguments).
     pub(crate) fn gen_item_main(&mut self) -> ast::Item {
+        self.has_main = true;
         self.push_frame();
 
         let return_type = if self.next_bool() {
@@ -114,6 +115,13 @@ impl Gen {
         let definition = Some(self.gen_block_with_return(&body_ty));
         self.pop_frame();
 
+        let func_info = FuncInfo {
+            name: "main".to_string(),
+            params: Vec::new(),
+            return_type: return_type.clone(),
+        };
+        self.register_function(func_info);
+
         ast::Item::Function(ast::Function {
             span: SrcSpan::default(),
             visibility: None,
@@ -132,8 +140,7 @@ impl Gen {
     }
 
     fn gen_item_module(&mut self) -> ast::Item {
-        // Spend budget for the module itself before generating contents.
-        if !self.spend_budget() {
+        if !self.spend_budget(3) {
             return self.gen_item(None);
         }
         self.item_depth += 1;
@@ -196,33 +203,43 @@ impl Gen {
 
     fn gen_item_struct(&mut self) -> ast::Item {
         let name = self.gen_unique_name("Struct");
-        self.register_struct(name.clone());
         let field_count = 1 + self.gen_index(6);
-        let mut fields = Vec::with_capacity(field_count);
+        let mut fields: Vec<(String, ast::Type)> = Vec::with_capacity(field_count);
+        let mut ast_fields = Vec::with_capacity(field_count);
         for i in 0..field_count {
-            fields.push(ast::StructField {
+            let field_ty = self.gen_type();
+            let field_name = format!("field_{i}");
+            fields.push((field_name.clone(), field_ty.clone()));
+            ast_fields.push(ast::StructField {
                 span: SrcSpan::default(),
                 visibility: None,
                 attributes: None,
-                name: format!("field_{i}").into(),
-                ty: self.gen_type(),
+                name: field_name.into(),
+                ty: field_ty,
                 default_value: None,
             });
         }
+        self.register_struct(StructInfo {
+            name: name.clone(),
+            fields,
+        });
         ast::Item::Struct(ast::Struct {
             span: SrcSpan::default(),
             visibility: None,
             attributes: None,
             name: name.into(),
             generics: None,
-            fields,
+            fields: ast_fields,
         })
     }
 
     fn gen_item_enum(&mut self) -> ast::Item {
         let name = self.gen_unique_name("Enum");
-        // Register the enum globally so that type paths can reference it.
-        self.register_struct(name.clone());
+        // Register as a struct-like type path for referencing.
+        self.register_struct(StructInfo {
+            name: name.clone(),
+            fields: Vec::new(),
+        });
         let variant_count = 2 + self.gen_index(5);
         let mut variants = Vec::with_capacity(variant_count);
         for _ in 0..variant_count {
@@ -247,8 +264,10 @@ impl Gen {
 
     fn gen_item_trait(&mut self) -> ast::Item {
         let trait_name = self.gen_unique_name("Trait");
-        // Register the trait as a struct-like name so type paths can reference it.
-        self.register_struct(trait_name.clone());
+        self.register_struct(StructInfo {
+            name: trait_name.clone(),
+            fields: Vec::new(),
+        });
         let method_count = 1 + self.gen_index(3);
         let mut items = Vec::with_capacity(method_count);
         for _ in 0..method_count {
@@ -291,11 +310,9 @@ impl Gen {
     }
 
     fn gen_item_impl(&mut self) -> ast::Item {
-        // Use a type path referencing a known struct so that the impl block
-        // is always valid (impl on a non-nominal type is invalid).
         let for_type = if self.has_any_struct() {
             let idx = self.gen_index(self.known_structs.len());
-            let name = self.known_structs[idx].clone();
+            let name = self.known_structs[idx].name.clone();
             ast::Type::TypePath(Box::new(ast::TypePath {
                 span: SrcSpan::default(),
                 segments: vec![ast::TypePathSegment {
@@ -314,9 +331,6 @@ impl Gen {
         let method_count = 1 + self.gen_index(2);
         let mut items = Vec::with_capacity(method_count);
         for _ in 0..method_count {
-            // Generate impl methods directly without registering them in
-            // known_functions. Impl methods are namespaced and should NOT
-            // be callable as free functions.
             let func = self.gen_function_local(None);
             items.push(ast::AssociatedItem::Method(func));
         }
@@ -329,8 +343,6 @@ impl Gen {
         }))
     }
 
-    /// Generate a function that is NOT registered in known_functions.
-    /// Used for impl methods and other namespaced functions.
     fn gen_function_local(&mut self, argc: Option<u32>) -> ast::Function {
         let name = self.gen_unique_name("method");
 
@@ -339,8 +351,10 @@ impl Gen {
             None => self.gen_index(4),
         };
         let mut params = Vec::with_capacity(param_count);
+        let mut param_types = Vec::with_capacity(param_count);
         for i in 0..param_count {
             let param_ty = self.gen_type();
+            param_types.push(param_ty.clone());
             params.push(ast::FuncParam {
                 span: SrcSpan::default(),
                 attributes: None,
@@ -368,11 +382,9 @@ impl Gen {
 
         self.push_frame();
         for p in &func_params.params {
-            // Clone the String from NString for add_local
             let local_name: String = p.name.to_string();
             self.add_local(local_name, p.ty.clone());
         }
-        // NOTE: name NOT registered globally.
 
         let definition = Some(self.gen_block_with_return(&body_ty));
         self.pop_frame();
@@ -391,7 +403,6 @@ impl Gen {
     }
 
     fn gen_function(&mut self, argc: Option<u32>) -> ast::Function {
-        // Function name is always generated (never "main" from the dead-code path).
         let name = self.gen_unique_name("fn");
 
         let param_count = match argc {
@@ -399,8 +410,10 @@ impl Gen {
             None => self.gen_index(6),
         };
         let mut params = Vec::with_capacity(param_count);
+        let mut param_types = Vec::with_capacity(param_count);
         for i in 0..param_count {
             let param_ty = self.gen_type();
+            param_types.push(param_ty.clone());
             params.push(ast::FuncParam {
                 span: SrcSpan::default(),
                 attributes: None,
@@ -426,17 +439,18 @@ impl Gen {
             }))
         });
 
-        // Register the name AFTER pushing the frame so the function cannot
-        // call itself recursively by name (which could cause unbounded
-        // recursion during generation).
         self.push_frame();
         for p in &func_params.params {
             let local_name: String = p.name.to_string();
             self.add_local(local_name, p.ty.clone());
         }
 
-        // Register the function name globally only after the scope is set up.
-        self.register_function(name.clone());
+        let func_info = FuncInfo {
+            name: name.clone(),
+            params: param_types,
+            return_type: return_type.clone(),
+        };
+        self.register_function(func_info);
 
         let definition = Some(self.gen_block_with_return(&body_ty));
         self.pop_frame();
@@ -465,7 +479,6 @@ impl Gen {
         } else {
             ast::GlobalVariableKind::Static
         };
-        // Const variables must not be declared mutable.
         let mutability = if matches!(kind, ast::GlobalVariableKind::Const) {
             None
         } else if self.next_bool() {
@@ -473,7 +486,6 @@ impl Gen {
         } else {
             None
         };
-        // Generate type-appropriate initializer for const/static globals.
         let initializer = if self.next_bool() {
             let init_expr = self.gen_const_initializer(&declared_ty);
             Some(init_expr)
@@ -492,7 +504,6 @@ impl Gen {
         })
     }
 
-    /// Generate a constant-evaluable initializer compatible with `ty`.
     fn gen_const_initializer(&mut self, ty: &ast::Type) -> ast::Expr {
         match ty {
             ast::Type::Bool(_) => ast::Expr::Boolean(ast::BooleanLit {
@@ -521,14 +532,9 @@ impl Gen {
         let mut elements = Vec::with_capacity(stmt_count + 1);
         for _ in 0..stmt_count {
             if self.next_bool() {
-                // Declare a local variable. Generate the initializer FIRST
-                // so it cannot reference the variable being declared (avoiding
-                // self-referencing). Then add the local to scope AFTER.
                 let var_name_prefix = format!("v_{}", self.next_u64() & 0xFFF);
                 let init_ty = self.gen_type();
                 let init = self.gen_rvalue(&init_ty);
-                // Use add_local to get the potentially-deduped final name,
-                // then use that same name in the AST node so they match.
                 self.add_local(var_name_prefix.clone(), init_ty.clone());
                 let actual_name = self
                     .frames
@@ -554,10 +560,10 @@ impl Gen {
         if self.next_bool() {
             elements.push(ast::BlockItem::Expr(self.gen_rvalue(ret_ty)));
         } else {
-            let ret_val = if self.next_bool() {
-                Some(self.gen_rvalue(ret_ty))
-            } else {
+            let ret_val = if ret_ty_is_unit(ret_ty) {
                 None
+            } else {
+                Some(self.gen_rvalue(ret_ty))
             };
             elements.push(ast::BlockItem::Expr(ast::Expr::Return(Box::new(ast::Return {
                 span: SrcSpan::default(),
@@ -582,4 +588,8 @@ impl Gen {
         self.name_counter = self.name_counter.wrapping_add(1);
         counter
     }
+}
+
+fn ret_ty_is_unit(ty: &ast::Type) -> bool {
+    matches!(ty, ast::Type::TupleType(t) if t.element_types.is_empty())
 }
