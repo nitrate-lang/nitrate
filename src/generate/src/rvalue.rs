@@ -1,8 +1,8 @@
 use crate::ty::{
     bool_type, element_type_of, fallback_expr, function_type_parts, int32_type, is_bool_type, is_castable_source_type,
-    is_castable_target_type, is_constructible_type, is_integral_type, is_numeric_type, is_type_path, is_unit_type,
-    max_integer_value, random_cast_source_type, range_element_type, tuple_field_types, types_compatible, unit_type,
-    usize_type,
+    is_castable_target_type, is_constructible_type, is_float_type, is_integral_type, is_numeric_type, is_type_path,
+    is_unit_type, max_integer_value, random_cast_source_type, range_element_type, tuple_field_types, types_compatible,
+    unit_type, usize_type,
 };
 use crate::{Gen, StructInfo, Symbol, SymbolKind};
 use nitrate_translation::{
@@ -18,147 +18,134 @@ impl Gen {
 
         let is_unit = is_unit_type(ty);
         let constructible = is_constructible_type(ty);
+        let force = self.force_leaf();
 
-        let mut kinds: Vec<ast::RValueKind> = Vec::new();
+        let mut kinds: Vec<(ast::RValueKind, u32)> = Vec::new();
 
-        // Parentheses are always valid
-        kinds.push(Parentheses);
+        // Parentheses are always valid (they defer to inner expression)
+        if !force || is_bool_type(ty) || is_integral_type(ty) || is_float_type(ty) || is_unit {
+            kinds.push((Parentheses, 3));
+        }
 
-        // Path references — only if matching locals exist
-        if self.has_any_local() {
-            kinds.push(Path);
+        // Path references — only if a type-compatible local exists
+        if self.has_any_compatible_local(ty) {
+            kinds.push((Path, 5));
         }
         // Function-typed path — only if functions exist and we need a function type
         if self.has_any_function() && matches!(ty, ast::Type::FunctionType(_)) {
-            kinds.push(Path);
+            kinds.push((Path, 3));
         }
 
         // Cast — only valid between castable source/target types
         if is_castable_target_type(ty) && constructible {
-            kinds.push(Cast);
+            kinds.push((Cast, 4));
         }
 
         // If expression — valid for any constructible non-unit type (produces a value)
-        // The condition must be bool; we generate bool conditions via gen_rvalue_if.
-        if !is_unit && constructible {
-            kinds.push(If);
+        if !is_unit && constructible && !force {
+            kinds.push((If, 4));
         }
 
-        // Match expression — only for integral types, produces a value
-        if is_integral_type(ty) && constructible {
-            kinds.push(Match);
+        // Match expression — only for integral types
+        if is_integral_type(ty) && constructible && !force {
+            kinds.push((Match, 3));
         }
 
-        // While loop — only for unit type, requires a bool condition (we handle internally)
-        if is_unit {
-            kinds.push(While);
-        }
-
-        // ForEach loop — only for unit type
-        if is_unit {
-            kinds.push(ForEach);
+        // While / ForEach — only for unit type and inside loop-capable context
+        if is_unit && !force {
+            kinds.push((While, 2));
+            kinds.push((ForEach, 2));
         }
 
         // Function call — if functions exist with compatible return type
         if self.has_any_function_matching(ty) {
-            kinds.push(FunctionCall);
+            kinds.push((FunctionCall, 4));
         }
 
         // Block — valid for any constructible type
-        if !self.force_leaf() && constructible {
-            kinds.push(Block);
+        if !force && constructible {
+            kinds.push((Block, 3));
+        }
+
+        // Break / Continue — only inside a loop context, unit type
+        if is_unit && self.in_loop() {
+            kinds.push((Break, 2));
+            kinds.push((Continue, 2));
         }
 
         // Type-specific literals
         if is_bool_type(ty) {
-            kinds.push(Boolean);
-            if !self.force_leaf() {
-                kinds.push(UnaryExpr);
+            kinds.push((Boolean, 6));
+            if !force {
+                kinds.push((UnaryExpr, 3));
             }
         } else if is_integral_type(ty) {
-            kinds.push(Integer);
-            if !self.force_leaf() {
-                kinds.push(UnaryExpr);
-                kinds.push(BinExpr);
-                kinds.push(Range);
+            kinds.push((Integer, 6));
+            if !force {
+                kinds.push((UnaryExpr, 3));
+                kinds.push((BinExpr, 4));
+                kinds.push((Range, 3));
             }
-        } else if matches!(ty, ast::Type::Float32(_) | ast::Type::Float64(_)) {
-            kinds.push(Float);
-            if !self.force_leaf() {
-                kinds.push(UnaryExpr);
-                kinds.push(BinExpr);
+        } else if is_float_type(ty) {
+            kinds.push((Float, 6));
+            if !force {
+                kinds.push((UnaryExpr, 3));
+                kinds.push((BinExpr, 4));
             }
         } else if constructible {
-            // Compound constructible types
             match ty {
                 ast::Type::ArrayType(_) | ast::Type::SliceType(_) => {
-                    kinds.push(List);
-                    if !self.force_leaf() {
-                        kinds.push(IndexAccess);
+                    kinds.push((List, 4));
+                    if !force {
+                        kinds.push((IndexAccess, 3));
                     }
                 }
                 ast::Type::TupleType(_) => {
-                    kinds.push(Tuple);
+                    kinds.push((Tuple, 4));
                 }
                 ast::Type::TypePath(_) => {
-                    if self.has_any_struct() && !self.force_leaf() {
-                        kinds.push(StructInit);
-                        kinds.push(FieldAccess);
+                    if self.has_any_struct_matching(ty) && !force {
+                        kinds.push((StructInit, 3));
+                        kinds.push((FieldAccess, 2));
                     }
                 }
                 _ => {
-                    // fallback: integer literal as last resort for unknown types
-                    kinds.push(Integer);
+                    // Unknown constructible type: try integer as last resort
+                    kinds.push((Integer, 1));
                 }
             }
         } else {
-            // Non-constructible type (ref/ptr/fn): only path references are valid
-            // since we can't construct these values, fall back to any available option
-            if self.has_any_local() {
-                kinds.push(Path);
-            } else {
-                // Absolute last resort: path with empty segment (caller handles fallback)
-                kinds.push(Path);
+            // Non-constructible type (ref/ptr/fn): only path refs to existing locals
+            if self.has_any_compatible_local(ty) {
+                kinds.push((Path, 1));
             }
         }
 
-        // If we're at leaf depth, filter to only leaf-appropriate kinds.
-        // Exclude Parentheses at leaf depth for compound types to prevent
-        // infinite nesting (parens wrap the same type, which can hit parens again).
-        if self.force_leaf() {
-            kinds.retain(|k| matches!(k, Boolean | Integer | Float | String | BString | Path | Cast));
-            // Only allow Parentheses for simple scalar types at leaf depth
-            if matches!(
-                ty,
-                ast::Type::Bool(_)
-                    | ast::Type::Int8(_)
-                    | ast::Type::Int16(_)
-                    | ast::Type::Int32(_)
-                    | ast::Type::Int64(_)
-                    | ast::Type::Int128(_)
-                    | ast::Type::UInt8(_)
-                    | ast::Type::UInt16(_)
-                    | ast::Type::UInt32(_)
-                    | ast::Type::UInt64(_)
-                    | ast::Type::UInt128(_)
-                    | ast::Type::USize(_)
-                    | ast::Type::Float32(_)
-                    | ast::Type::Float64(_)
-            ) {
-                kinds.push(Parentheses);
-            }
+        // Prefer leaf kinds when forced
+        if force {
+            kinds.retain(|(k, _)| {
+                matches!(
+                    k,
+                    Boolean | Integer | Float | String | BString | Path | Cast | Parentheses
+                )
+            });
         }
 
         if kinds.is_empty() {
-            // Ultimate fallback: integer literal or path
-            if self.has_any_local() {
-                return Path;
-            }
+            // Ultimate fallback
             return Integer;
         }
 
-        let idx = self.gen_index(kinds.len());
-        kinds.swap_remove(idx)
+        // Weighted selection
+        let total: u32 = kinds.iter().map(|(_, w)| w).sum();
+        let mut roll = self.next_u64() as u32 % total;
+        for (k, w) in kinds {
+            if roll < w {
+                return k;
+            }
+            roll -= w;
+        }
+        Integer
     }
 
     /// Check whether any known function has a return type compatible with `ty`.
@@ -173,6 +160,33 @@ impl Gen {
                 is_unit_type(ty)
             }
         })
+    }
+
+    /// Check whether any local variable in any frame has a type compatible with `ty`.
+    fn has_any_compatible_local(&self, ty: &ast::Type) -> bool {
+        self.frames.iter().rev().any(|f| {
+            f.locals.iter().any(|s| {
+                let SymbolKind::Local(local_ty) = &s.kind;
+                types_compatible(local_ty, ty)
+            })
+        })
+    }
+
+    /// Check whether any known struct's typepath matches `ty`.
+    fn has_any_struct_matching(&self, ty: &ast::Type) -> bool {
+        if !self.has_any_struct() {
+            return false;
+        }
+        if let ast::Type::TypePath(tp) = ty {
+            if let Some(seg) = tp.segments.first() {
+                return self
+                    .known_structs
+                    .iter()
+                    .any(|s| s.name == seg.name && !s.fields.is_empty());
+            }
+        }
+        // If the target type is not a known TypePath, fall back to any struct with fields
+        self.known_structs.iter().any(|s| !s.fields.is_empty())
     }
 
     /// Generate an expression whose type **must** match the given `ty`.
@@ -423,7 +437,6 @@ impl Gen {
             ast::RangeKind::RangeFrom,
             ast::RangeKind::RangeTo,
             ast::RangeKind::RangeToInclusive,
-            ast::RangeKind::RangeFull,
         ];
         let kind = kinds[self.gen_index(kinds.len())];
         let bound_ty = range_element_type(ty);
@@ -436,7 +449,7 @@ impl Gen {
             ast::RangeKind::RangeTo | ast::RangeKind::RangeToInclusive => {
                 (None, Some(Box::new(self.gen_rvalue(&bound_ty))))
             }
-            ast::RangeKind::RangeFull => (None, None),
+            _ => (None, None),
         };
         ast::Expr::Range(Box::new(ast::Range {
             span: SrcSpan::default(),
@@ -595,22 +608,6 @@ impl Gen {
             }
         }
 
-        // Priority 4: Any local variable as last resort (type may not match,
-        // but at least it's a valid reference)
-        if self.has_any_local() {
-            for frame in self.frames.iter().rev() {
-                if let Some(sym) = frame.locals.first() {
-                    return self.make_single_segment_path(sym.name.clone());
-                }
-            }
-        }
-
-        // Priority 5: Any function name as last resort (for any type)
-        if self.has_any_function() {
-            let info = self.pick_function();
-            return self.make_single_segment_path(info.name);
-        }
-
         // No compatible path found - return empty path (caller will use fallback)
         self.make_single_segment_path(String::new())
     }
@@ -681,19 +678,19 @@ impl Gen {
     fn gen_rvalue_if(&mut self, ty: &ast::Type) -> ast::Expr {
         let condition = self.gen_rvalue(&bool_type());
         let true_branch = self.gen_block_with_type(ty);
-        let false_branch = if self.next_bool() {
-            if self.next_bool() {
-                Some(ast::ElseIf::If(Box::new(ast::If {
-                    span: SrcSpan::default(),
-                    condition: self.gen_rvalue(&bool_type()),
-                    true_branch: self.gen_block_with_type(ty),
-                    false_branch: None,
-                })))
-            } else {
-                Some(ast::ElseIf::Block(self.gen_block_with_type(ty)))
-            }
+        // Always provide an else branch to ensure the if produces a value of the
+        // correct type regardless of which branch is taken.
+        let false_branch = if self.next_bool() && self.next_bool() {
+            // Nested else-if
+            Some(ast::ElseIf::If(Box::new(ast::If {
+                span: SrcSpan::default(),
+                condition: self.gen_rvalue(&bool_type()),
+                true_branch: self.gen_block_with_type(ty),
+                false_branch: Some(ast::ElseIf::Block(self.gen_block_with_type(ty))),
+            })))
         } else {
-            None
+            // Plain else block
+            Some(ast::ElseIf::Block(self.gen_block_with_type(ty)))
         };
         ast::Expr::If(Box::new(ast::If {
             span: SrcSpan::default(),

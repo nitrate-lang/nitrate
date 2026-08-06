@@ -355,19 +355,58 @@ pub(crate) fn is_constructible_type(ty: &ast::Type) -> bool {
     }
 }
 
+/// Check whether two types are structurally compatible.  For fuzzing purposes
+/// we use structural equality for scalar types (integers must match exactly
+/// rather than accepting any integral type) and for the broad categories we
+/// only accept the same kind.  This prevents the generator from placing, say,
+/// a `u8` in a context that expects `i32` (which Nitrate rejects).
 pub(crate) fn types_compatible(a: &ast::Type, b: &ast::Type) -> bool {
     use ast::Type::*;
     match (a, b) {
+        // Exact scalar matches — Nitrate does not implicitly coerce integers
+        (Int8(_), Int8(_)) => true,
+        (Int16(_), Int16(_)) => true,
+        (Int32(_), Int32(_)) => true,
+        (Int64(_), Int64(_)) => true,
+        (Int128(_), Int128(_)) => true,
+        (UInt8(_), UInt8(_)) => true,
+        (UInt16(_), UInt16(_)) => true,
+        (UInt32(_), UInt32(_)) => true,
+        (UInt64(_), UInt64(_)) => true,
+        (UInt128(_), UInt128(_)) => true,
+        (USize(_), USize(_)) => true,
         (Bool(_), Bool(_)) => true,
-        (a_ty, b_ty) if is_integral_type(a_ty) && is_integral_type(b_ty) => true,
-        (a_ty, b_ty) if is_float_type(a_ty) && is_float_type(b_ty) => true,
-        (ArrayType(_), ArrayType(_)) => true,
-        (SliceType(_), SliceType(_)) => true,
-        (TupleType(_), TupleType(_)) => true,
-        (FunctionType(_), FunctionType(_)) => true,
-        (ReferenceType(_), ReferenceType(_)) => true,
-        (PointerType(_), PointerType(_)) => true,
-        (TypePath(_), TypePath(_)) => true,
+        (Float32(_), Float32(_)) => true,
+        (Float64(_), Float64(_)) => true,
+        // Structural compatibility for compound types
+        (ArrayType(aa), ArrayType(ab)) => types_compatible(&aa.element_type, &ab.element_type),
+        (SliceType(sa), SliceType(sb)) => types_compatible(&sa.element_type, &sb.element_type),
+        (TupleType(ta), TupleType(tb)) if ta.element_types.len() == tb.element_types.len() => ta
+            .element_types
+            .iter()
+            .zip(tb.element_types.iter())
+            .all(|(fa, fb)| types_compatible(fa, fb)),
+        (FunctionType(fa), FunctionType(fb)) if fa.parameters.len() == fb.parameters.len() => {
+            let params_ok = fa
+                .parameters
+                .iter()
+                .zip(fb.parameters.iter())
+                .all(|(pa, pb)| types_compatible(&pa.ty, &pb.ty));
+            let ret_ok = match (&fa.return_type, &fb.return_type) {
+                (Some(ra), Some(rb)) => types_compatible(ra, rb),
+                (None, None) => true,
+                _ => false,
+            };
+            params_ok && ret_ok
+        }
+        (ReferenceType(ra), ReferenceType(rb)) => types_compatible(&ra.to, &rb.to),
+        (PointerType(pa), PointerType(pb)) => types_compatible(&pa.to, &pb.to),
+        // Type paths: compare by segment name (the only information we have)
+        (TypePath(tpa), TypePath(tpb)) if tpa.segments.len() == tpb.segments.len() => tpa
+            .segments
+            .iter()
+            .zip(tpb.segments.iter())
+            .all(|(sa, sb)| sa.name == sb.name),
         (InferType(_), _) | (_, InferType(_)) => true,
         _ => false,
     }
@@ -381,10 +420,10 @@ pub(crate) fn is_castable_source_type(ty: &ast::Type) -> bool {
 }
 
 /// Returns `true` if a type can appear as the *target* of a type-cast.
-/// Numeric and bool types are always castable. Struct/enum types that exist
-/// in scope may also be cast targets (for pointer-like casts from usize).
+/// We only support numeric-to-numeric casts.  Bool is excluded because
+/// Nitrate does not allow `float as bool` or similar.
 pub(crate) fn is_castable_target_type(ty: &ast::Type) -> bool {
-    is_numeric_type(ty) || is_bool_type(ty)
+    is_numeric_type(ty)
 }
 
 pub(crate) fn element_type_of(ty: &ast::Type) -> ast::Type {
@@ -415,10 +454,6 @@ pub(crate) fn function_type_parts(ty: &ast::Type) -> (Vec<ast::Type>, ast::Type)
 
 pub(crate) fn range_element_type(ty: &ast::Type) -> ast::Type {
     if is_integral_type(ty) { ty.clone() } else { int32_type() }
-}
-
-pub(crate) fn arbitrary_type(g: &mut Gen) -> ast::Type {
-    g.gen_simple_type()
 }
 
 /// Pick a random numeric source type for a cast expression.

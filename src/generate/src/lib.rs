@@ -58,9 +58,9 @@ pub struct Gen {
     /// Type-generation recursion depth to prevent stack overflow in compound types.
     pub(crate) type_depth: u32,
     /// All globally-declared function signatures.
-    known_functions: Vec<FuncInfo>,
+    pub(crate) known_functions: Vec<FuncInfo>,
     /// All globally-declared struct definitions.
-    known_structs: Vec<StructInfo>,
+    pub(crate) known_structs: Vec<StructInfo>,
     /// All globally-declared enum names (for TypePath generation).
     pub(crate) known_enums: Vec<String>,
     /// Whether we are currently inside a loop (break/continue are valid).
@@ -76,16 +76,26 @@ const MAX_RVALUE_DEPTH: u32 = 5;
 /// Maximum nesting depth for module-in-module generation.
 pub(crate) const MAX_ITEM_DEPTH: u32 = 3;
 
+/// Return the budget weight (cost) for generating a given rvalue kind.
+/// Heavier constructs like `if`, `match`, loops cost more so they appear
+/// naturally less frequently than literals and simple expressions.
 pub(crate) fn budget_weight_for_kind(kind: &ast::RValueKind) -> u32 {
     use ast::RValueKind::*;
     match kind {
+        // Leaf / trivial expressions
         Boolean | Integer | Float | String | BString | Path | Parentheses => 1,
-        UnaryExpr | Cast | TypeInfo => 1,
-        BinExpr | Range | Tuple | List | IndexAccess => 2,
-        Block | Closure | StructInit | FieldAccess => 3,
-        If | Match | FunctionCall => 4,
-        While | ForEach => 5,
-        _ => 2,
+        // Simple operations
+        UnaryExpr | Cast | TypeInfo => 2,
+        // Binary operators + compound containers
+        BinExpr | Range | Tuple | List | IndexAccess => 3,
+        // Nested constructs
+        Block | Closure | StructInit | FieldAccess => 4,
+        // Control flow
+        If | Match | FunctionCall => 5,
+        While | ForEach => 6,
+        Break | Continue | Return => 2,
+        // Not applicable
+        _ => 3,
     }
 }
 
@@ -109,15 +119,6 @@ impl Gen {
         }
     }
 
-    /// Spend budget for a literal/leaf expression.
-    pub(crate) fn spend_budget_literal(&mut self) -> bool {
-        if self.budget < 1 {
-            return false;
-        }
-        self.budget -= 1;
-        true
-    }
-
     /// Spend budget for a block.
     pub(crate) fn spend_budget_block(&mut self) -> bool {
         self.spend_budget(3)
@@ -125,22 +126,22 @@ impl Gen {
 
     /// Spend budget for a function definition.
     pub(crate) fn spend_budget_function(&mut self) -> bool {
-        self.spend_budget(8)
+        self.spend_budget(10)
     }
 
     /// Spend budget for a struct definition.
     pub(crate) fn spend_budget_struct(&mut self) -> bool {
-        self.spend_budget(5)
+        self.spend_budget(6)
     }
 
     /// Spend budget for an enum definition.
     pub(crate) fn spend_budget_enum(&mut self) -> bool {
-        self.spend_budget(5)
+        self.spend_budget(6)
     }
 
     /// Spend budget for a module definition.
     pub(crate) fn spend_budget_module(&mut self) -> bool {
-        self.spend_budget(4)
+        self.spend_budget(5)
     }
 
     /// Spend budget for a global variable.
@@ -323,26 +324,32 @@ impl Gen {
     pub fn gen_program(&mut self) -> String {
         let mut items = Vec::new();
 
-        // Always generate main first if budget permits.
-        if self.budget_left() >= 8 {
+        // Generate main first if budget permits.
+        if self.budget_left() >= 10 {
             items.push(self.gen_item_main());
         }
 
-        // Generate the required number of user-defined functions.
-        // Start at 1 because main is already generated.
-        let mut functions_generated = 1u32;
-        while functions_generated < self.config.function_count && self.budget_left() >= 8 {
+        // Generate the required number of additional functions.
+        let functions_needed = if self.has_main {
+            self.config.function_count.saturating_sub(1)
+        } else {
+            self.config.function_count
+        };
+        let mut functions_generated = 0u32;
+        while functions_generated < functions_needed && self.budget_left() >= 10 {
             let item = self.gen_item_function(None);
             functions_generated += 1;
             items.push(item);
         }
 
-        // Generate additional random items to cover all item kinds.
-        let extra_items = 1 + self.gen_index(4);
-        for _ in 0..extra_items {
-            if self.budget_left() >= 3 {
-                items.push(self.gen_item(None));
+        // Generate additional random items to cover all item kinds,
+        // up to a reasonable limit based on remaining budget.
+        let extra_ceiling = 5 + self.gen_index(6);
+        for _ in 0..extra_ceiling {
+            if self.budget_left() < 3 {
+                break;
             }
+            items.push(self.gen_item(None));
         }
 
         let module = ast::Module {

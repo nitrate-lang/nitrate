@@ -8,31 +8,33 @@ use nitrate_translation::{
 
 impl Gen {
     fn select_item_kind(&mut self) -> ast::ItemKind {
-        let choices: &[(ast::ItemKind, u32)] = &[
-            (ast::ItemKind::Function, 45),
-            (ast::ItemKind::Struct, 20),
-            (ast::ItemKind::Enum, 8),
-            (ast::ItemKind::Variable, 12),
-            (ast::ItemKind::TypeAlias, 10),
-            (ast::ItemKind::Module, 5),
-        ];
+        // Build a dynamic list of available item kinds with weights,
+        // filtering out items that aren't available in the current context.
+        // Use integer codes to represent item kinds to avoid borrowing issues
+        // 0=Function, 1=Struct, 2=Enum, 3=Variable, 4=TypeAlias, 5=Module
+        let mut choices: Vec<(u8, u32)> = Vec::new();
+
+        choices.push((0, 40)); // Function
+        if self.item_depth < MAX_ITEM_DEPTH {
+            choices.push((5, 5)); // Module
+        }
+        choices.push((1, 20)); // Struct
+        choices.push((2, 8)); // Enum
+        choices.push((3, 12)); // Variable
+        choices.push((4, 10)); // TypeAlias
 
         let total_weight: u32 = choices.iter().map(|(_, w)| w).sum();
         let mut roll = self.next_u64() as u32 % total_weight;
-        for (kind, weight) in choices {
+        for (kind_code, weight) in &choices {
             if roll < *weight {
-                return match kind {
-                    ast::ItemKind::SyntaxError => ast::ItemKind::Function,
-                    ast::ItemKind::Module if self.item_depth < MAX_ITEM_DEPTH => ast::ItemKind::Module,
-                    ast::ItemKind::Function => ast::ItemKind::Function,
-                    ast::ItemKind::Struct => ast::ItemKind::Struct,
-                    ast::ItemKind::Enum => ast::ItemKind::Enum,
-                    ast::ItemKind::TypeAlias => ast::ItemKind::TypeAlias,
-                    ast::ItemKind::Variable => ast::ItemKind::Variable,
-                    ast::ItemKind::Module | ast::ItemKind::Import | ast::ItemKind::Trait | ast::ItemKind::Impl => {
-                        roll -= weight;
-                        continue;
-                    }
+                return match kind_code {
+                    0 => ast::ItemKind::Function,
+                    1 => ast::ItemKind::Struct,
+                    2 => ast::ItemKind::Enum,
+                    3 => ast::ItemKind::Variable,
+                    4 => ast::ItemKind::TypeAlias,
+                    5 => ast::ItemKind::Module,
+                    _ => ast::ItemKind::Function,
                 };
             }
             roll -= weight;
@@ -42,7 +44,7 @@ impl Gen {
 
     pub(crate) fn gen_item(&mut self, argc: Option<u32>) -> ast::Item {
         if self.budget_left() < 2 {
-            return self.gen_placeholder_function();
+            return self.gen_dummy_item();
         }
 
         let kind = match argc {
@@ -53,49 +55,42 @@ impl Gen {
         match kind {
             ast::ItemKind::SyntaxError => unreachable!(),
             ast::ItemKind::Module => self.gen_item_module(),
-            ast::ItemKind::Import => self.gen_placeholder_function(),
+            ast::ItemKind::Import => self.gen_dummy_item(),
             ast::ItemKind::TypeAlias => self.gen_item_type_alias(),
             ast::ItemKind::Struct => self.gen_item_struct(),
             ast::ItemKind::Enum => self.gen_item_enum(),
-            ast::ItemKind::Trait => self.gen_placeholder_function(),
-            ast::ItemKind::Impl => self.gen_placeholder_function(),
+            ast::ItemKind::Trait => self.gen_dummy_item(),
+            ast::ItemKind::Impl => self.gen_dummy_item(),
             ast::ItemKind::Function => self.gen_item_function(argc),
             ast::ItemKind::Variable => self.gen_item_variable(),
         }
     }
 
-    /// Generate a minimal placeholder function when budget is exhausted.
-    pub(crate) fn gen_placeholder_function(&mut self) -> ast::Item {
-        let name = self.gen_unique_name("empty");
-        let func_info = FuncInfo {
-            name: name.clone(),
-            params: Vec::new(),
-            return_type: None,
-        };
-        self.register_function(func_info);
-        ast::Item::Function(ast::Function {
+    /// Generate a minimal placeholder item that doesn't pollute the function registry.
+    pub(crate) fn gen_dummy_item(&mut self) -> ast::Item {
+        let name = self.gen_unique_name("unused");
+        ast::Item::Variable(ast::GlobalVariable {
             span: SrcSpan::default(),
             visibility: None,
+            kind: ast::GlobalVariableKind::Const,
             attributes: None,
+            mutability: None,
             name: name.into(),
-            generics: None,
-            parameters: ast::FuncParams {
+            ty: Some(ast::Type::Int32(ast::Int32 {
                 span: SrcSpan::default(),
-                params: Vec::new(),
-                variadic: false,
-            },
-            return_type: None,
-            definition: Some(ast::Block {
+            })),
+            initializer: Some(ast::Expr::Integer(Box::new(ast::IntegerLit {
                 span: SrcSpan::default(),
-                safety: None,
-                elements: vec![],
-            }),
-            abi: None,
+                value: 0,
+                kind: IntegerKind::Dec,
+            }))),
         })
     }
 
     pub(crate) fn gen_item_main(&mut self) -> ast::Item {
         self.has_main = true;
+        // Spend budget for main function
+        self.spend_budget_function();
         self.push_frame();
 
         // main() returns either i32 or () (unit). These are the only valid
@@ -136,12 +131,8 @@ impl Gen {
     }
 
     fn gen_item_module(&mut self) -> ast::Item {
-        // Spend budget *before* checking, based on weight of module item
         if !self.spend_budget_module() {
-            return self.gen_placeholder_function();
-        }
-        if self.budget_left() < 3 {
-            return self.gen_placeholder_function();
+            return self.gen_dummy_item();
         }
         self.item_depth += 1;
         let item_count = 1 + self.gen_index(2);
@@ -163,8 +154,10 @@ impl Gen {
     }
 
     fn gen_item_type_alias(&mut self) -> ast::Item {
-        self.spend_budget_type_alias();
-        let alias_type = Some(self.gen_type());
+        if !self.spend_budget_type_alias() {
+            return self.gen_dummy_item();
+        }
+        let alias_type = Some(self.gen_simple_type());
         ast::Item::TypeAlias(ast::TypeAlias {
             span: SrcSpan::default(),
             visibility: None,
@@ -177,7 +170,7 @@ impl Gen {
 
     fn gen_item_struct(&mut self) -> ast::Item {
         if !self.spend_budget_struct() {
-            return self.gen_placeholder_function();
+            return self.gen_dummy_item();
         }
         let name = self.gen_unique_name("Struct");
         let field_count = 1 + self.gen_index(3);
@@ -213,7 +206,7 @@ impl Gen {
 
     fn gen_item_enum(&mut self) -> ast::Item {
         if !self.spend_budget_enum() {
-            return self.gen_placeholder_function();
+            return self.gen_dummy_item();
         }
         let name = self.gen_unique_name("Enum");
         // Register the enum name so it can appear in TypePath generation
@@ -247,12 +240,15 @@ impl Gen {
     }
 
     pub(crate) fn gen_item_function(&mut self, argc: Option<u32>) -> ast::Item {
+        if !self.spend_budget_function() {
+            return self.gen_dummy_item();
+        }
         ast::Item::Function(self.gen_function(argc))
     }
 
     fn gen_item_variable(&mut self) -> ast::Item {
         if !self.spend_budget_variable() {
-            return self.gen_placeholder_function();
+            return self.gen_dummy_item();
         }
         let declared_ty = self.gen_const_initializable_type();
         let initializer = Some(self.gen_const_initializer(&declared_ty));
@@ -268,7 +264,7 @@ impl Gen {
         })
     }
 
-    /// Generate a type that is safe for const initialization (numeric, bool, unit).
+    /// Generate a type that is safe for const initialization (numeric, bool).
     fn gen_const_initializable_type(&mut self) -> ast::Type {
         match self.next_u64() % 5 {
             0 => ast::Type::Bool(ast::Bool {
@@ -280,7 +276,7 @@ impl Gen {
             2 => ast::Type::Float64(ast::Float64 {
                 span: SrcSpan::default(),
             }),
-            3 => ast::Type::USize(ast::USize {
+            3 => ast::Type::UInt64(ast::UInt64 {
                 span: SrcSpan::default(),
             }),
             _ => ast::Type::Int64(ast::Int64 {
@@ -352,16 +348,16 @@ impl Gen {
             };
         }
 
-        let stmt_count = self.gen_index(3);
+        let prev_in_loop = self.in_loop();
+        let stmt_count = self.gen_index(4);
         let mut elements = Vec::with_capacity(stmt_count + 1);
         for _ in 0..stmt_count {
             if self.budget_left() > 0 {
-                if self.next_bool() {
-                    let var_name_prefix = self.gen_unique_name("v");
-                    // Use gen_local_type for block-local variable types
+                if self.next_bool() && self.budget_left() > 1 {
                     let init_ty = self.gen_local_type();
+                    let var_name = self.gen_unique_name("v");
                     let init = self.gen_rvalue(&init_ty);
-                    let actual_name = self.add_local(var_name_prefix, init_ty.clone());
+                    let actual_name = self.add_local(var_name, init_ty.clone());
                     elements.push(ast::BlockItem::Variable(ast::LocalVariable {
                         span: SrcSpan::default(),
                         kind: ast::LocalVariableKind::Var,
@@ -371,8 +367,8 @@ impl Gen {
                         ty: Some(init_ty),
                         initializer: Some(init),
                     }));
-                } else {
-                    // Statement expression (discard value) — use constructible type
+                } else if self.budget_left() > 0 {
+                    // Statement expression (discard value)
                     let t = self.gen_local_type();
                     let expr = self.gen_rvalue(&t);
                     elements.push(ast::BlockItem::Stmt(expr));
@@ -389,6 +385,8 @@ impl Gen {
             span: SrcSpan::default(),
             value: ret_val,
         }))));
+
+        self.set_in_loop(prev_in_loop);
         ast::Block {
             span: SrcSpan::default(),
             safety: None,
@@ -425,7 +423,7 @@ impl Gen {
             variadic: false,
         };
 
-        // Return type should also be constructible (avoid ref/ptr/fn returns for now)
+        // Return type should also be constructible
         let return_type = if self.next_bool() {
             Some(self.gen_local_type())
         } else {
@@ -447,7 +445,6 @@ impl Gen {
         };
         self.register_function(func_info);
 
-        // Budget is spent based on function weight, not on individual block generation
         let definition = Some(self.gen_block_with_return(&body_ty));
         self.pop_frame();
 
