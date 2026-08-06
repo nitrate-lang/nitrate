@@ -1,4 +1,6 @@
-use crate::ty::{arbitrary_type, fallback_expr, unit_type};
+use crate::ty::{
+    arbitrary_type, fallback_expr, is_bool_type, is_float_type, is_integral_type, is_unit_type, unit_type,
+};
 use crate::{FuncInfo, Gen, MAX_ITEM_DEPTH, StructInfo};
 use nitrate_translation::{
     nstring::NString,
@@ -95,7 +97,6 @@ impl Gen {
 
     pub(crate) fn gen_item_main(&mut self) -> ast::Item {
         self.has_main = true;
-        self.spend_budget_function();
         self.push_frame();
 
         let return_type = if self.next_bool() {
@@ -159,9 +160,7 @@ impl Gen {
     }
 
     fn gen_item_type_alias(&mut self) -> ast::Item {
-        if !self.spend_budget_module() {
-            // reuse module budget weight for type alias
-        }
+        self.spend_budget_type_alias();
         let alias_type = Some(self.gen_type());
         ast::Item::TypeAlias(ast::TypeAlias {
             span: SrcSpan::default(),
@@ -213,6 +212,8 @@ impl Gen {
             return self.gen_placeholder_function();
         }
         let name = self.gen_unique_name("Enum");
+        // Register the enum name so it can appear in TypePath generation
+        self.register_enum(name.clone());
         let variant_count = 2 + self.gen_index(4);
         let mut variants = Vec::with_capacity(variant_count);
         for _ in 0..variant_count {
@@ -243,7 +244,7 @@ impl Gen {
         if !self.spend_budget_variable() {
             return self.gen_placeholder_function();
         }
-        let declared_ty = self.gen_type();
+        let declared_ty = self.gen_const_initializable_type();
         let initializer = Some(self.gen_const_initializer(&declared_ty));
         ast::Item::Variable(ast::GlobalVariable {
             span: SrcSpan::default(),
@@ -251,15 +252,35 @@ impl Gen {
             kind: ast::GlobalVariableKind::Const,
             attributes: None,
             mutability: None,
-            name: self.gen_unique_name("VAR").into(),
+            name: self.gen_unique_name("CONST").into(),
             ty: Some(declared_ty),
             initializer,
         })
     }
 
-    fn gen_const_initializer(&mut self, ty: &ast::Type) -> ast::Expr {
-        use crate::ty::{is_bool_type, is_float_type, is_integral_type, is_unit_type};
+    /// Generate a type that is safe for const initialization (no refs, ptrs, function types, or
+    /// compound types that can't be initialized from literals — restrict to numeric/bool/unit).
+    fn gen_const_initializable_type(&mut self) -> ast::Type {
+        match self.next_u64() % 5 {
+            0 => ast::Type::Bool(ast::Bool {
+                span: SrcSpan::default(),
+            }),
+            1 => ast::Type::Int32(ast::Int32 {
+                span: SrcSpan::default(),
+            }),
+            2 => ast::Type::Float64(ast::Float64 {
+                span: SrcSpan::default(),
+            }),
+            3 => ast::Type::USize(ast::USize {
+                span: SrcSpan::default(),
+            }),
+            _ => ast::Type::Int64(ast::Int64 {
+                span: SrcSpan::default(),
+            }),
+        }
+    }
 
+    fn gen_const_initializer(&mut self, ty: &ast::Type) -> ast::Expr {
         if is_bool_type(ty) {
             return ast::Expr::Boolean(ast::BooleanLit {
                 span: SrcSpan::default(),
@@ -278,7 +299,13 @@ impl Gen {
         }
         if is_integral_type(ty) {
             let max_val = crate::ty::max_integer_value(ty);
-            let value = (self.next_u64() as u128) % (max_val.max(1));
+            let value = if max_val <= 1 {
+                0u128
+            } else if max_val == u128::MAX {
+                self.next_u64() as u128
+            } else {
+                (self.next_u64() as u128) % (max_val + 1)
+            };
             return ast::Expr::Integer(Box::new(ast::IntegerLit {
                 span: SrcSpan::default(),
                 value,
@@ -291,16 +318,12 @@ impl Gen {
                 elements: vec![],
             }));
         }
-        // For compound types (arrays, slices, structs, tuples, functions),
-        // generate a cast of 0 to the target type
-        ast::Expr::Cast(Box::new(ast::Cast {
+        // For any other type (shouldn't reach here since gen_const_initializable_type
+        // restricts possibilities), return 0
+        ast::Expr::Integer(Box::new(ast::IntegerLit {
             span: SrcSpan::default(),
-            value: ast::Expr::Integer(Box::new(ast::IntegerLit {
-                span: SrcSpan::default(),
-                value: 0,
-                kind: nitrate_translation::token::IntegerKind::Dec,
-            })),
-            to: ty.clone(),
+            value: 0,
+            kind: nitrate_translation::token::IntegerKind::Dec,
         }))
     }
 
@@ -329,13 +352,7 @@ impl Gen {
                     let var_name_prefix = self.gen_unique_name("v");
                     let init_ty = arbitrary_type(self);
                     let init = self.gen_rvalue(&init_ty);
-                    self.add_local(var_name_prefix.clone(), init_ty.clone());
-                    let actual_name = self
-                        .frames
-                        .last()
-                        .and_then(|f| f.locals.last())
-                        .map(|s| s.name.clone())
-                        .unwrap_or(var_name_prefix);
+                    let actual_name = self.add_local(var_name_prefix, init_ty.clone());
                     elements.push(ast::BlockItem::Variable(ast::LocalVariable {
                         span: SrcSpan::default(),
                         kind: ast::LocalVariableKind::Var,
@@ -371,7 +388,6 @@ impl Gen {
 
     fn gen_function(&mut self, argc: Option<u32>) -> ast::Function {
         let name = self.gen_unique_name("fn");
-        self.spend_budget_function();
 
         let param_count = match argc {
             Some(n) => n as usize,

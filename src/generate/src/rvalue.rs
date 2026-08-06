@@ -1,9 +1,9 @@
 use crate::ty::{
-    arbitrary_type, bool_type, element_type_of, fallback_expr, function_type_parts, int32_type, is_bool_type,
-    is_castable_type, is_integral_type, is_numeric_type, is_unit_type, max_integer_value, random_cast_source_type,
-    range_element_type, tuple_field_types, types_compatible, usize_type,
+    bool_type, element_type_of, fallback_expr, function_type_parts, int32_type, is_bool_type, is_castable_type,
+    is_integral_type, is_numeric_type, is_type_path, is_unit_type, max_integer_value, random_cast_source_type,
+    range_element_type, tuple_field_types, types_compatible, unit_type, usize_type,
 };
-use crate::{FuncInfo, Gen, StructInfo, Symbol, SymbolKind};
+use crate::{Gen, StructInfo, Symbol, SymbolKind};
 use nitrate_translation::{
     nstring::NString,
     parsetree::ast::{self, *},
@@ -15,18 +15,19 @@ impl Gen {
     fn select_rvalue_kind(&mut self, ty: &ast::Type) -> ast::RValueKind {
         use ast::RValueKind::*;
 
-        // For unit type, we can use loops (foreach, while) and statements.
         let is_unit = is_unit_type(ty);
 
-        // Always build a list of compatible kinds
         let mut kinds: Vec<ast::RValueKind> = Vec::new();
 
-        // Leaf-core: Parentheses, Block are always valid
+        // Parentheses are always valid
         kinds.push(Parentheses);
-        kinds.push(Block);
 
         // Path references — only if matching locals or structs exist
-        if self.has_any_local() || (is_unit && self.has_any_function()) {
+        if self.has_any_local() {
+            kinds.push(Path);
+        }
+        // If no locals but functions exist and we need a function-typed path
+        if self.has_any_function() && is_type_path(ty) {
             kinds.push(Path);
         }
 
@@ -34,8 +35,12 @@ impl Gen {
         if is_castable_type(ty) {
             kinds.push(Cast);
         }
+        // Also allow casting to reference/pointer/compound types from integers
+        if !is_castable_type(ty) && !is_unit {
+            kinds.push(Cast);
+        }
 
-        // If expression — valid for any non-unit type (produces a value)
+        // If expression — valid for any type (produces a value)
         if !is_unit {
             kinds.push(If);
         }
@@ -55,9 +60,14 @@ impl Gen {
             kinds.push(ForEach);
         }
 
-        // Function call — if functions exist
+        // Function call — if functions exist (caller must check return compatibility)
         if self.has_any_function() {
             kinds.push(FunctionCall);
+        }
+
+        // Block — valid for any type
+        if !self.force_leaf() {
+            kinds.push(Block);
         }
 
         // Type-specific literals
@@ -74,7 +84,6 @@ impl Gen {
                 kinds.push(Range);
             }
         } else if matches!(ty, ast::Type::Float32(_) | ast::Type::Float64(_)) {
-            kinds.push(Integer);
             kinds.push(Float);
             if !self.force_leaf() {
                 kinds.push(UnaryExpr);
@@ -85,26 +94,32 @@ impl Gen {
             match ty {
                 ast::Type::ArrayType(_) | ast::Type::SliceType(_) => {
                     kinds.push(List);
-                    kinds.push(IndexAccess);
+                    if !self.force_leaf() {
+                        kinds.push(IndexAccess);
+                    }
                 }
                 ast::Type::TupleType(_) => {
                     kinds.push(Tuple);
                 }
                 ast::Type::FunctionType(_) => {
-                    kinds.push(Closure);
+                    if !self.force_leaf() {
+                        kinds.push(Closure);
+                    }
                 }
                 ast::Type::TypePath(_) => {
-                    if self.has_any_struct() {
+                    if self.has_any_struct() && !self.force_leaf() {
                         kinds.push(StructInit);
                         kinds.push(FieldAccess);
                     }
-                    // Also allow literal fallback for type paths
-                    kinds.push(Integer);
                 }
                 ast::Type::ReferenceType(_) | ast::Type::PointerType(_) => {
-                    kinds.push(Integer);
+                    // References/pointers can be obtained via casts
+                    if !self.force_leaf() {
+                        kinds.push(Cast);
+                    }
                 }
                 _ => {
+                    // fallback: allow integer (will be cast) as last resort for unknown types
                     kinds.push(Integer);
                 }
             }
@@ -134,12 +149,12 @@ impl Gen {
             return fallback_expr(ty);
         }
 
-        // Spend budget proportionally to the weight of what we're generating.
-        // This will be deducted again in specific generators for expensive things.
-        self.spend_budget_literal();
         self.inc_rvalue_depth();
 
         let kind = self.select_rvalue_kind(ty);
+        // Spend budget based on the kind's weight
+        self.spend_budget_for_kind(&kind);
+
         let expr = match kind {
             ast::RValueKind::SyntaxError => unreachable!(),
             ast::RValueKind::Parentheses => self.gen_rvalue_parentheses(ty),
@@ -166,7 +181,7 @@ impl Gen {
             ast::RValueKind::Match => self.gen_rvalue_match(ty),
             ast::RValueKind::ForEach => self.gen_rvalue_foreach(ty),
             ast::RValueKind::FunctionCall => self.gen_rvalue_function_call(ty),
-            // Control-flow expressions only appear as block-item statements, not values.
+            // Control-flow expressions as values — only valid inside loops/return position
             ast::RValueKind::Break => self.gen_rvalue_break(ty),
             ast::RValueKind::Continue => self.gen_rvalue_continue(ty),
             ast::RValueKind::Return => self.gen_rvalue_return(ty),
@@ -213,7 +228,6 @@ impl Gen {
     }
 
     fn gen_rvalue_float(&mut self, _ty: &ast::Type) -> ast::Expr {
-        // Generate a simple well-formed float
         let bits = self.next_u64();
         let mantissa = (bits & 0xFFFFF) as u64;
         let raw = f64::from_bits(0x3FF0000000000000u64 | (mantissa << 32));
@@ -226,7 +240,6 @@ impl Gen {
 
     fn gen_rvalue_string(&mut self, _ty: &ast::Type) -> ast::Expr {
         let len = 1 + (self.next_u64() as usize % 8);
-        // Use only printable, non-special ASCII characters (32-126, excluding " and \)
         let safe_chars: &[u8] =
             b"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 !#$%&'()*+,-./:;<=>?@[]^_`{|}~";
         let mut s = String::with_capacity(len);
@@ -253,9 +266,7 @@ impl Gen {
     }
 
     fn gen_rvalue_type_info(&mut self, ty: &ast::Type) -> ast::Expr {
-        // typeof only makes sense with a real expression, but the TypeInfo type
-        // is the type itself. Generate typeof on a cast to the target type.
-        let inner = self.gen_rvalue(&int32_type());
+        // typeof on a type, e.g. typeof(i32)
         ast::Expr::TypeInfo(Box::new(ast::TypeInfo {
             span: SrcSpan::default(),
             the: ty.clone(),
@@ -264,7 +275,7 @@ impl Gen {
 
     fn gen_rvalue_list(&mut self, ty: &ast::Type) -> ast::Expr {
         let elem_ty = element_type_of(ty);
-        let len = 1 + self.gen_index(4); // At least 1 element
+        let len = 1 + self.gen_index(4);
         let elements: Vec<ast::Expr> = (0..len).map(|_| self.gen_rvalue(&elem_ty)).collect();
         ast::Expr::List(Box::new(ast::List {
             span: SrcSpan::default(),
@@ -295,8 +306,10 @@ impl Gen {
 
         let path = self.make_single_segment_path(struct_info.name.clone());
 
-        let fields: Vec<(NString, ast::Expr)> = struct_info
-            .fields
+        // Clone field info first to avoid borrow conflicts with self
+        let field_data: Vec<(String, ast::Type)> = struct_info.fields.clone();
+
+        let fields: Vec<(NString, ast::Expr)> = field_data
             .iter()
             .map(|(name, field_ty)| {
                 let field_name: NString = name.clone().into();
@@ -404,7 +417,7 @@ impl Gen {
     }
 
     fn gen_rvalue_cast(&mut self, ty: &ast::Type) -> ast::Expr {
-        // Only cast between castable types
+        // Generate a cast expression: source_value as target_type
         let source_ty = random_cast_source_type(self);
         let value = self.gen_rvalue(&source_ty);
         ast::Expr::Cast(Box::new(ast::Cast {
@@ -427,17 +440,11 @@ impl Gen {
                     let init_ty = if self.next_bool() {
                         ty.clone()
                     } else {
-                        arbitrary_type(self)
+                        crate::ty::arbitrary_type(self)
                     };
                     let init = self.gen_rvalue(&init_ty);
                     let var_name_prefix = self.gen_unique_name("v");
-                    self.add_local(var_name_prefix.clone(), init_ty.clone());
-                    let actual_name = self
-                        .frames
-                        .last()
-                        .and_then(|f| f.locals.last())
-                        .map(|s| s.name.clone())
-                        .unwrap_or(var_name_prefix);
+                    let actual_name = self.add_local(var_name_prefix, init_ty.clone());
                     elements.push(ast::BlockItem::Variable(ast::LocalVariable {
                         span: SrcSpan::default(),
                         kind: ast::LocalVariableKind::Var,
@@ -449,7 +456,7 @@ impl Gen {
                     }));
                 } else {
                     // Statement expression (discard value)
-                    let stmt_ty = arbitrary_type(self);
+                    let stmt_ty = crate::ty::arbitrary_type(self);
                     let expr = self.gen_rvalue(&stmt_ty);
                     elements.push(ast::BlockItem::Stmt(expr));
                 }
@@ -531,21 +538,42 @@ impl Gen {
             return self.make_single_segment_path(name);
         }
 
-        // Priority 2: Function names (for function types or unit type)
-        if let ast::Type::FunctionType(_) = ty {
+        // Priority 2: Function names (for function types)
+        if matches!(ty, ast::Type::FunctionType(_)) {
             if self.has_any_function() {
                 let info = self.pick_function();
                 return self.make_single_segment_path(info.name);
             }
         }
 
-        // Priority 3: Struct names for TypePath targets
-        if is_unit_type(ty) && self.has_any_function() {
+        // Priority 3: Struct/Enum names for TypePath targets
+        if is_type_path(ty) {
+            // Extract the name from the TypePath and return it as a path
+            if let ast::Type::TypePath(tp) = ty {
+                if let Some(seg) = tp.segments.first() {
+                    return self.make_single_segment_path(seg.name.clone());
+                }
+            }
+        }
+
+        // Priority 4: Any local variable as last resort (type may not match exactly,
+        // but it's better than an empty path)
+        if self.has_any_local() {
+            // find any local
+            for frame in self.frames.iter().rev() {
+                if let Some(sym) = frame.locals.first() {
+                    return self.make_single_segment_path(sym.name.clone());
+                }
+            }
+        }
+
+        // Priority 5: Any function name as last resort
+        if self.has_any_function() && is_unit_type(ty) {
             let info = self.pick_function();
             return self.make_single_segment_path(info.name);
         }
 
-        // No compatible path found - return empty path
+        // No compatible path found - return empty path (caller will use fallback)
         self.make_single_segment_path(String::new())
     }
 
@@ -585,9 +613,11 @@ impl Gen {
             let field_name = info.fields[field_idx].0.clone();
 
             // Generate struct init as the object
-            let path = self.make_single_segment_path(info.name);
-            let field_exprs: Vec<(NString, ast::Expr)> = info
-                .fields
+            let path = self.make_single_segment_path(info.name.clone());
+
+            // Pre-generate field values outside the closure that borrows self
+            let field_data: Vec<(String, ast::Type)> = info.fields.clone();
+            let field_exprs: Vec<(NString, ast::Expr)> = field_data
                 .iter()
                 .map(|(n, ft)| {
                     let fname: NString = n.clone().into();
@@ -595,6 +625,7 @@ impl Gen {
                     (fname, val)
                 })
                 .collect();
+
             let object = ast::Expr::StructInit(Box::new(ast::StructInit {
                 span: SrcSpan::default(),
                 path,
@@ -639,11 +670,8 @@ impl Gen {
         let prev_in_loop = self.in_loop();
         self.set_in_loop(true);
 
-        let condition = if self.next_bool() {
-            Some(self.gen_rvalue(&bool_type()))
-        } else {
-            None
-        };
+        // While loops always need a condition
+        let condition = Some(self.gen_rvalue(&bool_type()));
         let body = self.gen_block_with_type(ty);
 
         self.set_in_loop(prev_in_loop);
@@ -658,17 +686,29 @@ impl Gen {
         let condition = self.gen_rvalue(&int32_type());
         let case_count = 1 + self.gen_index(3);
         let mut cases = Vec::with_capacity(case_count);
-        // Use small integer literals for match cases to avoid overflow
+        // Use pre-generated unique values to avoid duplicate arms
+        let mut used_values: Vec<u128> = Vec::with_capacity(case_count);
         for _ in 0..case_count {
-            let case_val = ast::Expr::Integer(Box::new(ast::IntegerLit {
+            // Generate a small value that hasn't been used yet
+            let mut case_val: u128;
+            let mut tries = 0;
+            loop {
+                case_val = self.next_u64() as u128 % 1000;
+                if !used_values.contains(&case_val) || tries > 10 {
+                    break;
+                }
+                tries += 1;
+            }
+            used_values.push(case_val);
+            let case_expr = ast::Expr::Integer(Box::new(ast::IntegerLit {
                 span: SrcSpan::default(),
-                value: self.next_u64() as u128 % 1000,
+                value: case_val,
                 kind: IntegerKind::Dec,
             }));
             let body = self.gen_block_with_type(ty);
             cases.push(ast::MatchCase {
                 span: SrcSpan::default(),
-                condition: case_val,
+                condition: case_expr,
                 body,
             });
         }
@@ -682,6 +722,10 @@ impl Gen {
     }
 
     fn gen_rvalue_break(&mut self, _ty: &ast::Type) -> ast::Expr {
+        // Only valid inside a loop
+        if !self.in_loop() {
+            return fallback_expr(&unit_type());
+        }
         ast::Expr::Break(Box::new(ast::Break {
             span: SrcSpan::default(),
             label: None,
@@ -689,6 +733,10 @@ impl Gen {
     }
 
     fn gen_rvalue_continue(&mut self, _ty: &ast::Type) -> ast::Expr {
+        // Only valid inside a loop
+        if !self.in_loop() {
+            return fallback_expr(&unit_type());
+        }
         ast::Expr::Continue(Box::new(ast::Continue {
             span: SrcSpan::default(),
             label: None,
@@ -710,12 +758,11 @@ impl Gen {
     }
 
     fn gen_rvalue_foreach(&mut self, ty: &ast::Type) -> ast::Expr {
+        // Generate an iterable type: slice of int32
         let elem_ty = int32_type();
-        // Use unique loop variable names
         let binding_name: NString = format!("it_{}", self.gen_unique_suffix()).into();
         let bindings: Vec<NString> = vec![binding_name.clone()];
 
-        // Generate a slice of int32 as iterable
         let iterable_ty = ast::Type::SliceType(Box::new(ast::SliceType {
             span: SrcSpan::default(),
             element_type: elem_ty.clone(),
@@ -727,7 +774,7 @@ impl Gen {
 
         self.push_frame();
         let bname: String = binding_name.to_string();
-        self.add_local(bname, elem_ty.clone());
+        self.add_local(bname, elem_ty);
 
         let body = self.gen_block_with_type(ty);
         self.pop_frame();
@@ -744,8 +791,9 @@ impl Gen {
     }
 
     fn gen_rvalue_function_call(&mut self, ty: &ast::Type) -> ast::Expr {
+        // Pick a function whose return type is compatible with the expected type
         let func = if self.has_any_function() {
-            self.pick_function_or_main()
+            self.pick_function_matching_return(ty)
         } else {
             return fallback_expr(ty);
         };
@@ -757,18 +805,6 @@ impl Gen {
             positional,
             named: Vec::new(),
         }))
-    }
-
-    /// Pick a function for a call site. Prefers matching return type but falls back to any.
-    fn pick_function_or_main(&mut self) -> FuncInfo {
-        if !self.has_any_function() {
-            return FuncInfo {
-                name: "main".to_string(),
-                params: vec![],
-                return_type: Some(int32_type()),
-            };
-        }
-        self.pick_function()
     }
 
     // ── Symbol-aware helpers ──
@@ -809,16 +845,10 @@ impl Gen {
             if self.budget_left() > 0 {
                 if self.next_bool() {
                     // Variable declaration
-                    let init_ty = arbitrary_type(self);
+                    let init_ty = crate::ty::arbitrary_type(self);
                     let init = self.gen_rvalue(&init_ty);
                     let var_name_prefix = self.gen_unique_name("v");
-                    self.add_local(var_name_prefix.clone(), init_ty.clone());
-                    let actual_name = self
-                        .frames
-                        .last()
-                        .and_then(|f| f.locals.last())
-                        .map(|s| s.name.clone())
-                        .unwrap_or(var_name_prefix);
+                    let actual_name = self.add_local(var_name_prefix, init_ty.clone());
                     elements.push(ast::BlockItem::Variable(ast::LocalVariable {
                         span: SrcSpan::default(),
                         kind: ast::LocalVariableKind::Var,
@@ -830,7 +860,7 @@ impl Gen {
                     }));
                 } else {
                     // Statement expression
-                    let t = arbitrary_type(self);
+                    let t = crate::ty::arbitrary_type(self);
                     let expr = self.gen_rvalue(&t);
                     elements.push(ast::BlockItem::Stmt(expr));
                 }
@@ -880,10 +910,14 @@ fn unary_operand_type(op: ast::UnaryExprOp, result_ty: &ast::Type) -> ast::Type 
     }
 }
 
+/// Return the binary operators whose result type is compatible with `ty`.
+/// Comparison operators (==, !=, <, >, <=, >=) return bool regardless of operand type,
+/// so they are only offered when `ty` is bool. Arithmetic operators return the same type.
 fn compatible_binary_ops(ty: &ast::Type) -> &'static [ast::BinExprOp] {
     use ast::BinExprOp::*;
     if is_bool_type(ty) {
-        &[LogicAnd, LogicOr, LogicEq, LogicNe]
+        // When expecting bool: logic ops on bool + comparisons on numeric types
+        &[LogicAnd, LogicOr, LogicEq, LogicNe, LogicLt, LogicGt, LogicLe, LogicGe]
     } else if is_integral_type(ty) {
         &[Add, Sub, Mul, Div, Mod, BitAnd, BitOr, BitXor, BitShl, BitShr]
     } else if matches!(ty, ast::Type::Float32(_) | ast::Type::Float64(_)) {
@@ -893,11 +927,21 @@ fn compatible_binary_ops(ty: &ast::Type) -> &'static [ast::BinExprOp] {
     }
 }
 
+/// Return the operand types needed for a binary op given the expected result type.
 fn binary_operand_types(op: ast::BinExprOp, result_ty: &ast::Type) -> (ast::Type, ast::Type) {
     use ast::BinExprOp::*;
     match op {
+        // Comparison/equality: operands are int or float, result is bool.
+        // When result_ty is bool, we need integer/float operands.
+        LogicEq | LogicNe | LogicLt | LogicGt | LogicLe | LogicGe => {
+            // Pick a random numeric type for the operands
+            if is_bool_type(result_ty) {
+                (int32_type(), int32_type())
+            } else {
+                (result_ty.clone(), result_ty.clone())
+            }
+        }
         LogicAnd | LogicOr => (bool_type(), bool_type()),
-        LogicEq | LogicNe | LogicLt | LogicGt | LogicLe | LogicGe => (result_ty.clone(), result_ty.clone()),
         BitShl | BitShr => (result_ty.clone(), usize_type()),
         _ => (result_ty.clone(), result_ty.clone()),
     }

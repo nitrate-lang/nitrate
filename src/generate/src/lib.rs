@@ -59,8 +59,10 @@ pub struct Gen {
     pub(crate) type_depth: u32,
     /// All globally-declared function signatures.
     known_functions: Vec<FuncInfo>,
-    /// All globally-declared struct definitions (including enums as type paths).
+    /// All globally-declared struct definitions.
     known_structs: Vec<StructInfo>,
+    /// All globally-declared enum names (for TypePath generation).
+    pub(crate) known_enums: Vec<String>,
     /// Whether we are currently inside a loop (break/continue are valid).
     in_loop: bool,
     /// Unique name generation counter to avoid collisions.
@@ -74,31 +76,16 @@ const MAX_RVALUE_DEPTH: u32 = 5;
 /// Maximum nesting depth for module-in-module generation.
 pub(crate) const MAX_ITEM_DEPTH: u32 = 3;
 
-// Budget weights vary based on what's being generated.
-// Simple things cost less; complex things cost more.
-impl Gen {
-    /// Compute a dynamic budget weight for an expression based on its type.
-    fn budget_weight_for_type(&self, ty: &ast::Type) -> u32 {
-        use crate::ty::{is_bool_type, is_float_type, is_integral_type, is_unit_type};
-        if is_bool_type(ty) || is_integral_type(ty) || is_float_type(ty) || is_unit_type(ty) {
-            1
-        } else {
-            2 // compound types cost more
-        }
-    }
-
-    /// Compute a dynamic budget weight for an rvalue kind.
-    fn budget_weight_for_kind(&self, kind: ast::RValueKind) -> u32 {
-        use ast::RValueKind::*;
-        match kind {
-            Boolean | Integer | Float | String | BString | Path | Parentheses => 1,
-            UnaryExpr | Cast | TypeInfo => 1,
-            BinExpr | Range | Tuple | List | IndexAccess => 2,
-            Block | Closure | StructInit | FieldAccess => 3,
-            If | Match | FunctionCall => 4,
-            While | ForEach => 5,
-            _ => 2,
-        }
+pub(crate) fn budget_weight_for_kind(kind: &ast::RValueKind) -> u32 {
+    use ast::RValueKind::*;
+    match kind {
+        Boolean | Integer | Float | String | BString | Path | Parentheses => 1,
+        UnaryExpr | Cast | TypeInfo => 1,
+        BinExpr | Range | Tuple | List | IndexAccess => 2,
+        Block | Closure | StructInit | FieldAccess => 3,
+        If | Match | FunctionCall => 4,
+        While | ForEach => 5,
+        _ => 2,
     }
 }
 
@@ -115,16 +102,11 @@ impl Gen {
             type_depth: 0,
             known_functions: Vec::new(),
             known_structs: Vec::new(),
+            known_enums: Vec::new(),
             in_loop: false,
             name_counter: 0,
             has_main: false,
         }
-    }
-
-    /// Spend the exact budget for a given rvalue kind. Fails if insufficient budget.
-    pub(crate) fn spend_budget_for_kind(&mut self, kind: ast::RValueKind) -> bool {
-        let weight = self.budget_weight_for_kind(kind);
-        self.spend_budget(weight)
     }
 
     /// Spend budget for a literal/leaf expression.
@@ -166,6 +148,17 @@ impl Gen {
         self.spend_budget(3)
     }
 
+    /// Spend budget for a type alias.
+    pub(crate) fn spend_budget_type_alias(&mut self) -> bool {
+        self.spend_budget(3)
+    }
+
+    /// Spend budget for a kind-specific amount (used before generating a specific rvalue).
+    pub(crate) fn spend_budget_for_kind(&mut self, kind: &ast::RValueKind) -> bool {
+        let weight = budget_weight_for_kind(kind);
+        self.spend_budget(weight)
+    }
+
     pub(crate) fn budget_left(&self) -> u32 {
         self.budget
     }
@@ -191,6 +184,12 @@ impl Gen {
         }
     }
 
+    pub(crate) fn register_enum(&mut self, name: String) {
+        if !self.known_enums.iter().any(|e| e == &name) {
+            self.known_enums.push(name);
+        }
+    }
+
     pub(crate) fn push_frame(&mut self) {
         self.frames.push(Frame { locals: Vec::new() });
     }
@@ -199,7 +198,9 @@ impl Gen {
         self.frames.pop();
     }
 
-    pub(crate) fn add_local(&mut self, name: String, ty: ast::Type) {
+    /// Add a local variable to the current frame. Returns the actual name used (may
+    /// have been uniquified to avoid collisions).
+    pub(crate) fn add_local(&mut self, name: String, ty: ast::Type) -> String {
         let suffix: Option<u64> = if self
             .frames
             .last()
@@ -209,16 +210,17 @@ impl Gen {
         } else {
             None
         };
+        let unique_name = match suffix {
+            Some(s) => format!("{}_{}", name, s),
+            None => name,
+        };
         if let Some(frame) = self.frames.last_mut() {
-            let unique_name = match suffix {
-                Some(s) => format!("{}_{}", name, s),
-                None => name,
-            };
             frame.locals.push(Symbol {
-                name: unique_name,
+                name: unique_name.clone(),
                 kind: SymbolKind::Local(ty),
             });
         }
+        unique_name
     }
 
     pub(crate) fn has_any_local(&self) -> bool {
@@ -233,11 +235,41 @@ impl Gen {
         !self.known_structs.is_empty()
     }
 
+    pub(crate) fn has_any_enum(&self) -> bool {
+        !self.known_enums.is_empty()
+    }
+
     /// Pick a random known function info.
     pub(crate) fn pick_function(&mut self) -> FuncInfo {
         debug_assert!(self.has_any_function());
         let idx = self.gen_index(self.known_functions.len());
         self.known_functions[idx].clone()
+    }
+
+    /// Pick a random known function whose return type is compatible with target_ty.
+    /// Falls back to any function if none match exactly.
+    pub(crate) fn pick_function_matching_return(&mut self, target_ty: &ast::Type) -> FuncInfo {
+        debug_assert!(self.has_any_function());
+        use crate::ty::types_compatible;
+        let compatible: Vec<usize> = self
+            .known_functions
+            .iter()
+            .enumerate()
+            .filter(|(_, f)| {
+                if let Some(ref ret_ty) = f.return_type {
+                    types_compatible(ret_ty, target_ty)
+                } else {
+                    crate::ty::is_unit_type(target_ty)
+                }
+            })
+            .map(|(i, _)| i)
+            .collect();
+        if !compatible.is_empty() {
+            let idx = self.gen_index(compatible.len());
+            self.known_functions[compatible[idx]].clone()
+        } else {
+            self.pick_function()
+        }
     }
 
     /// Pick a random known struct info.
@@ -269,7 +301,7 @@ impl Gen {
     }
 
     pub(crate) fn force_leaf(&self) -> bool {
-        self.rvalue_depth >= MAX_RVALUE_DEPTH || self.budget == 0
+        self.rvalue_depth >= MAX_RVALUE_DEPTH || self.budget_left() < 2
     }
 
     pub(crate) fn set_in_loop(&mut self, val: bool) {
@@ -291,17 +323,15 @@ impl Gen {
     pub fn gen_program(&mut self) -> String {
         let mut items = Vec::new();
 
-        // Always generate main first.
+        // Always generate main first if budget permits.
         if self.budget_left() >= 8 {
             items.push(self.gen_item_main());
         }
 
         // Generate the required number of user-defined functions.
+        // Start at 1 because main is already generated.
         let mut functions_generated = 1u32;
-        while functions_generated < self.config.function_count && self.budget_left() > 0 {
-            if !self.spend_budget_function() {
-                break;
-            }
+        while functions_generated < self.config.function_count && self.budget_left() >= 8 {
             let item = self.gen_item_function(None);
             functions_generated += 1;
             items.push(item);

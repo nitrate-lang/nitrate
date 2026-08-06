@@ -36,25 +36,27 @@ impl Gen {
     }
 
     fn gen_leaf_type(&mut self) -> ast::Type {
-        match self.next_u64() % 6 {
+        let uses_enums = self.has_any_enum();
+        let uses_structs = self.has_any_struct();
+        let total_choices = 6 + if uses_enums { 1 } else { 0 } + if uses_structs { 1 } else { 0 };
+        match self.next_u64() % total_choices {
             0 => self.gen_bool_type(),
             1 => self.gen_int_type(),
             2 => self.gen_uint_type(),
             3 => self.gen_float_type(),
             4 => self.gen_usize_type(),
+            5 => {
+                if uses_structs {
+                    self.gen_type_path()
+                } else if uses_enums {
+                    self.gen_enum_path()
+                } else {
+                    self.gen_int_type()
+                }
+            }
             _ => {
-                if self.has_any_struct() {
-                    let idx = self.gen_index(self.known_structs.len());
-                    let name = self.known_structs[idx].name.clone();
-                    ast::Type::TypePath(Box::new(ast::TypePath {
-                        span: SrcSpan::default(),
-                        segments: vec![ast::TypePathSegment {
-                            span: SrcSpan::default(),
-                            name,
-                            type_arguments: None,
-                        }],
-                        resolved_path: None,
-                    }))
+                if uses_enums {
+                    self.gen_enum_path()
                 } else {
                     self.gen_int_type()
                 }
@@ -238,6 +240,24 @@ impl Gen {
             self.gen_int_type()
         }
     }
+
+    fn gen_enum_path(&mut self) -> ast::Type {
+        if self.has_any_enum() {
+            let idx = self.gen_index(self.known_enums.len());
+            let name = self.known_enums[idx].clone();
+            ast::Type::TypePath(Box::new(ast::TypePath {
+                span: SrcSpan::default(),
+                segments: vec![ast::TypePathSegment {
+                    span: SrcSpan::default(),
+                    name,
+                    type_arguments: None,
+                }],
+                resolved_path: None,
+            }))
+        } else {
+            self.gen_int_type()
+        }
+    }
 }
 
 // ── Public helpers ──
@@ -306,6 +326,10 @@ pub(crate) fn is_unit_type(ty: &ast::Type) -> bool {
     matches!(ty, ast::Type::TupleType(t) if t.element_types.is_empty())
 }
 
+pub(crate) fn is_type_path(ty: &ast::Type) -> bool {
+    matches!(ty, ast::Type::TypePath(_))
+}
+
 pub(crate) fn types_compatible(a: &ast::Type, b: &ast::Type) -> bool {
     use ast::Type::*;
     match (a, b) {
@@ -322,10 +346,6 @@ pub(crate) fn types_compatible(a: &ast::Type, b: &ast::Type) -> bool {
         (InferType(_), _) | (_, InferType(_)) => true,
         _ => false,
     }
-}
-
-pub(crate) fn is_type_path_like(ty: &ast::Type) -> bool {
-    matches!(ty, ast::Type::TypePath(_))
 }
 
 pub(crate) fn is_castable_type(ty: &ast::Type) -> bool {
@@ -384,16 +404,24 @@ pub(crate) fn random_cast_source_type(generator: &mut Gen) -> ast::Type {
     }
 }
 
+/// Returns the *signed* maximum value for integer types (half the unsigned max for signed types).
 pub(crate) fn max_integer_value(ty: &ast::Type) -> u128 {
     match ty {
-        ast::Type::Int8(_) | ast::Type::UInt8(_) => 255,
-        ast::Type::Int16(_) | ast::Type::UInt16(_) => 65535,
-        ast::Type::Int32(_) | ast::Type::UInt32(_) => 4294967295,
-        ast::Type::Int64(_) | ast::Type::UInt64(_) | ast::Type::USize(_) => 18446744073709551615,
+        ast::Type::Int8(_) => 127,
+        ast::Type::UInt8(_) => 255,
+        ast::Type::Int16(_) => 32767,
+        ast::Type::UInt16(_) => 65535,
+        ast::Type::Int32(_) => 2_147_483_647,
+        ast::Type::UInt32(_) => 4_294_967_295,
+        ast::Type::Int64(_) => 9_223_372_036_854_775_807,
+        ast::Type::UInt64(_) | ast::Type::USize(_) => 18_446_744_073_709_551_615,
+        ast::Type::Int128(_) => 170_141_183_460_469_231_731_687_303_715_884_105_727,
+        ast::Type::UInt128(_) => u128::MAX,
         _ => u128::MAX,
     }
 }
 
+/// Produce a type-safe fallback expression for any type without using bogus casts.
 pub(crate) fn fallback_expr(ty: &ast::Type) -> ast::Expr {
     if is_bool_type(ty) {
         return ast::Expr::Boolean(ast::BooleanLit {
@@ -420,6 +448,23 @@ pub(crate) fn fallback_expr(ty: &ast::Type) -> ast::Expr {
             elements: vec![],
         }));
     }
+    // For array types, generate an empty array-like construction via cast
+    // (since we can't generate real array values in fallback mode).
+    // 0 as type works for numeric/castable types; for compound types we use a
+    // structurally compatible literal cast.
+    if matches!(ty, ast::Type::ArrayType(_) | ast::Type::SliceType(_)) {
+        return ast::Expr::Cast(Box::new(ast::Cast {
+            span: SrcSpan::default(),
+            value: ast::Expr::Integer(Box::new(ast::IntegerLit {
+                span: SrcSpan::default(),
+                value: 0,
+                kind: nitrate_translation::token::IntegerKind::Dec,
+            })),
+            to: ty.clone(),
+        }));
+    }
+    // For reference/pointer/function/struct types, use a zero-initialized
+    // cast since we don't have real values in fallback mode.
     ast::Expr::Cast(Box::new(ast::Cast {
         span: SrcSpan::default(),
         value: ast::Expr::Integer(Box::new(ast::IntegerLit {
