@@ -1,16 +1,28 @@
 use crate::Gen;
 use nitrate_translation::parsetree::ast::{self, *};
 
+/// Maximum nesting depth for recursively-generated types to prevent stack
+/// overflow when types are generated during expression generation.
+const MAX_TYPE_DEPTH: u32 = 12;
+
 impl Gen {
     /// Generate a random AST type. Uses seed-based deterministic RNG.
     pub(crate) fn gen_type(&mut self) -> ast::Type {
-        match self.next_u64() % 18 {
+        // Force leaf (non-recursive) types when depth is exhausted.
+        if self.type_depth >= MAX_TYPE_DEPTH {
+            return self.gen_leaf_type();
+        }
+        self.type_depth += 1;
+        let result = match self.next_u64() % 18 {
             0 => self.gen_bool_type(),
             1 => self.gen_int_type(),
             2 => self.gen_uint_type(),
             3 => self.gen_float_type(),
             4 => self.gen_usize_type(),
-            5 => self.gen_infer_type(),
+            // 5 was InferType — removed; InferType (_) is a type inference
+            // placeholder and is not a valid concrete type annotation in
+            // struct fields, function parameters, or return types.
+            5 => self.gen_int_type(),
             6 => self.gen_array_type(),
             7 => self.gen_slice_type(),
             8 => self.gen_tuple_type(),
@@ -20,10 +32,54 @@ impl Gen {
             12 => self.gen_type_path(),
             13 => self.gen_refinement_type(),
             14 => self.gen_parentheses_type(),
-            15 => self.gen_type_potential(),
-            16 => self.gen_parentheses_type(),
+            // 15 was TypePotential — removed; TypePotential is not a valid
+            // concrete type and only makes sense in specific type-system
+            // contexts, not as a general-purpose type annotation.
+            15 => self.gen_int_type(),
+            16 => self.gen_float_type(),
+            _ => self.gen_int_type(),
+        };
+        self.type_depth = self.type_depth.saturating_sub(1);
+        result
+    }
+
+    /// Generate a type that does NOT recurse into further type generation.
+    /// Used as fallback at the depth limit.
+    fn gen_leaf_type(&mut self) -> ast::Type {
+        match self.next_u64() % 8 {
+            0 => self.gen_bool_type(),
+            1 => self.gen_int_type(),
+            2 => self.gen_uint_type(),
+            3 => self.gen_float_type(),
+            4 => self.gen_usize_type(),
+            5 => self.gen_int_type(),
+            6 => {
+                // TypePath (leaf version — use known structs if available)
+                if self.has_any_struct() {
+                    let idx = self.gen_index(self.known_structs.len());
+                    ast::Type::TypePath(Box::new(ast::TypePath {
+                        span: SrcSpan::default(),
+                        segments: vec![ast::TypePathSegment {
+                            span: SrcSpan::default(),
+                            name: self.known_structs[idx].clone(),
+                            type_arguments: None,
+                        }],
+                        resolved_path: None,
+                    }))
+                } else {
+                    self.gen_int_type()
+                }
+            }
             _ => self.gen_int_type(),
         }
+    }
+
+    /// Generate an InferType for use in type-inference positions (only
+    /// called deliberately, never from gen_type).
+    pub(crate) fn gen_infer_type(&mut self) -> ast::Type {
+        ast::Type::InferType(ast::InferType {
+            span: SrcSpan::default(),
+        })
     }
 
     // ─────────────────────────────────────────────────────────────────
@@ -94,12 +150,6 @@ impl Gen {
         })
     }
 
-    fn gen_infer_type(&mut self) -> ast::Type {
-        ast::Type::InferType(ast::InferType {
-            span: SrcSpan::default(),
-        })
-    }
-
     // ─────────────────────────────────────────────────────────────────
     // Compound type generators
     // ─────────────────────────────────────────────────────────────────
@@ -136,7 +186,8 @@ impl Gen {
     }
 
     fn gen_function_type(&mut self) -> ast::Type {
-        let param_count = self.next_u64() as usize % 4;
+        // Limit parameter count to avoid generating absurdly large types.
+        let param_count = self.next_u64() as usize % 3;
         let parameters: Vec<ast::FuncTypeParam> = (0..param_count)
             .map(|i| ast::FuncTypeParam {
                 span: SrcSpan::default(),
@@ -229,8 +280,8 @@ impl Gen {
     }
 
     fn gen_type_path(&mut self) -> ast::Type {
-        // Use only registered struct names to guarantee type paths reference
-        // types that are actually declared in the program output.
+        // Use only registered struct/enum names to guarantee type paths
+        // reference types that are actually declared in the program output.
         if self.has_any_struct() {
             let seg_count = 1 + (self.next_u64() as usize % 3);
             let segments: Vec<ast::TypePathSegment> = (0..seg_count)
@@ -255,7 +306,13 @@ impl Gen {
     }
 
     fn gen_refinement_type(&mut self) -> ast::Type {
-        let basis_type = self.gen_int_type();
+        // Vary the basis type between int types and float types.
+        let basis_type = match self.next_u64() % 4 {
+            0 => self.gen_int_type(),
+            1 => self.gen_uint_type(),
+            2 => self.gen_float_type(),
+            _ => self.gen_int_type(),
+        };
         let width = if self.next_bool() {
             Some(ast::Expr::Integer(Box::new(ast::IntegerLit {
                 span: SrcSpan::default(),
@@ -279,18 +336,6 @@ impl Gen {
         ast::Type::Parentheses(Box::new(ast::TypeParentheses {
             span: SrcSpan::default(),
             inner,
-        }))
-    }
-
-    fn gen_type_potential(&mut self) -> ast::Type {
-        let body = ast::Block {
-            span: SrcSpan::default(),
-            safety: None,
-            elements: vec![],
-        };
-        ast::Type::TypePotential(Box::new(ast::TypePotential {
-            span: SrcSpan::default(),
-            body,
         }))
     }
 }

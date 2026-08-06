@@ -3,7 +3,6 @@ use nitrate_translation::{
     nstring::NString,
     parsetree::ast::{self, *},
 };
-use std::{format, unreachable};
 
 impl Gen {
     fn select_item_kind(&mut self) -> ast::ItemKind {
@@ -22,12 +21,12 @@ impl Gen {
         // If we're already deep in module nesting, avoid further modules
         let total_weight: u32 = choices.iter().map(|(_, w)| w).sum();
         let mut roll = self.next_u64() as u32 % total_weight;
-        for i in 0..choices.len() {
-            if roll < choices[i].1 {
-                return match choices[i].0 {
-                    ast::ItemKind::SyntaxError => ast::ItemKind::SyntaxError,
+        for (kind, weight) in choices {
+            if roll < *weight {
+                return match kind {
+                    ast::ItemKind::SyntaxError => ast::ItemKind::Function,
                     ast::ItemKind::Module if self.item_depth < MAX_ITEM_DEPTH as u32 => ast::ItemKind::Module,
-                    ast::ItemKind::Module => ast::ItemKind::Function, // fall back to function
+                    ast::ItemKind::Module => ast::ItemKind::Function,
                     ast::ItemKind::Import => ast::ItemKind::Import,
                     ast::ItemKind::TypeAlias => ast::ItemKind::TypeAlias,
                     ast::ItemKind::Struct => ast::ItemKind::Struct,
@@ -38,20 +37,22 @@ impl Gen {
                     ast::ItemKind::Variable => ast::ItemKind::Variable,
                 };
             }
-            roll -= choices[i].1;
+            roll -= weight;
         }
         ast::ItemKind::Function
     }
 
     pub(crate) fn gen_item(&mut self, argc: Option<u32>) -> ast::Item {
         if !self.spend_budget() {
-            // Budget exhausted; return a minimal valid item to keep the program
-            // well-formed.
+            // Budget exhausted; return a minimal valid function with a
+            // unique name to avoid collisions if called repeatedly.
+            let name = self.gen_unique_name("empty");
+            self.register_function(name.clone());
             return ast::Item::Function(ast::Function {
                 span: SrcSpan::default(),
                 visibility: None,
                 attributes: None,
-                name: "empty".into(),
+                name: name.into(),
                 generics: None,
                 parameters: ast::FuncParams {
                     span: SrcSpan::default(),
@@ -74,7 +75,7 @@ impl Gen {
         };
 
         match kind {
-            ast::ItemKind::SyntaxError => unreachable!(),
+            ast::ItemKind::SyntaxError => unreachable!("SyntaxError filtered by select_item_kind"),
             ast::ItemKind::Module => self.gen_item_module(),
             ast::ItemKind::Import => self.gen_item_import(),
             ast::ItemKind::TypeAlias => self.gen_item_type_alias(),
@@ -127,6 +128,10 @@ impl Gen {
     }
 
     fn gen_item_module(&mut self) -> ast::Item {
+        // Spend budget for the module itself before generating contents.
+        if !self.spend_budget() {
+            return self.gen_item(None);
+        }
         self.item_depth += 1;
         let item_count = 1 + self.gen_index(2);
         let mut items = Vec::with_capacity(item_count);
@@ -151,10 +156,9 @@ impl Gen {
         let import_names = ["std", "core", "math", "io", "fs", "net", "util", "prelude"];
         let mut segments = Vec::with_capacity(seg_count);
         for _ in 0..seg_count {
-            let name = import_names[self.gen_index(import_names.len())].to_string();
             segments.push(ast::ItemPathSegment {
                 span: SrcSpan::default(),
-                segment: name,
+                segment: import_names[self.gen_index(import_names.len())].to_string(),
                 prefix: None,
             });
         }
@@ -212,9 +216,12 @@ impl Gen {
     }
 
     fn gen_item_enum(&mut self) -> ast::Item {
+        let name = self.gen_unique_name("Enum");
+        // Register the enum globally so that type paths can reference it.
+        self.register_struct(name.clone());
         let variant_count = 2 + self.gen_index(5);
         let mut variants = Vec::with_capacity(variant_count);
-        for _i in 0..variant_count {
+        for _ in 0..variant_count {
             let variant_name: NString = format!("Variant_{}", self.gen_unique_suffix()).into();
             variants.push(ast::EnumVariant {
                 span: SrcSpan::default(),
@@ -228,13 +235,16 @@ impl Gen {
             span: SrcSpan::default(),
             visibility: None,
             attributes: None,
-            name: self.gen_unique_name("Enum").into(),
+            name: name.into(),
             generics: None,
             variants,
         })
     }
 
     fn gen_item_trait(&mut self) -> ast::Item {
+        let trait_name = self.gen_unique_name("Trait");
+        // Register the trait as a struct-like name so type paths can reference it.
+        self.register_struct(trait_name.clone());
         let method_count = 1 + self.gen_index(3);
         let mut items = Vec::with_capacity(method_count);
         for _ in 0..method_count {
@@ -270,7 +280,7 @@ impl Gen {
             span: SrcSpan::default(),
             visibility: None,
             attributes: None,
-            name: self.gen_unique_name("Trait").into(),
+            name: trait_name.into(),
             generics: None,
             items,
         })
@@ -300,11 +310,10 @@ impl Gen {
         let method_count = 1 + self.gen_index(2);
         let mut items = Vec::with_capacity(method_count);
         for _ in 0..method_count {
-            // Use a separate name registration scope: impl methods should not
-            // pollute the global known_functions list (they are scoped to the
-            // impl block). We generate a function locally without registering
-            // its name globally.
-            let func = self.gen_function(None);
+            // Generate impl methods directly without registering them in
+            // known_functions. Impl methods are namespaced and should NOT
+            // be callable as free functions.
+            let func = self.gen_function_local(None);
             items.push(ast::AssociatedItem::Method(func));
         }
         ast::Item::Impl(Box::new(ast::Impl {
@@ -316,12 +325,70 @@ impl Gen {
         }))
     }
 
-    fn gen_function(&mut self, argc: Option<u32>) -> ast::Function {
-        let name = if self.known_functions.is_empty() {
-            "main".to_string()
-        } else {
-            self.gen_unique_name("fn")
+    /// Generate a function that is NOT registered in known_functions.
+    /// Used for impl methods and other namespaced functions.
+    fn gen_function_local(&mut self, argc: Option<u32>) -> ast::Function {
+        let name = self.gen_unique_name("method");
+
+        let param_count = match argc {
+            Some(n) => n as usize,
+            None => self.gen_index(4),
         };
+        let mut params = Vec::with_capacity(param_count);
+        for i in 0..param_count {
+            let param_ty = self.gen_type();
+            params.push(ast::FuncParam {
+                span: SrcSpan::default(),
+                attributes: None,
+                mutability: None,
+                name: format!("a_{i}").into(),
+                ty: param_ty,
+                default_value: None,
+            });
+        }
+
+        let func_params = ast::FuncParams {
+            span: SrcSpan::default(),
+            params,
+            variadic: false,
+        };
+
+        let return_type = if self.next_bool() { Some(self.gen_type()) } else { None };
+
+        let body_ty = return_type.clone().unwrap_or_else(|| {
+            ast::Type::TupleType(Box::new(ast::TupleType {
+                span: SrcSpan::default(),
+                element_types: vec![],
+            }))
+        });
+
+        self.push_frame();
+        for p in &func_params.params {
+            // Clone the String from NString for add_local
+            let local_name: String = p.name.to_string();
+            self.add_local(local_name, p.ty.clone());
+        }
+        // NOTE: name NOT registered globally.
+
+        let definition = Some(self.gen_block_with_return(&body_ty));
+        self.pop_frame();
+
+        ast::Function {
+            span: SrcSpan::default(),
+            visibility: None,
+            attributes: None,
+            name: name.into(),
+            generics: None,
+            parameters: func_params,
+            return_type,
+            definition,
+            abi: None,
+        }
+    }
+
+    fn gen_function(&mut self, argc: Option<u32>) -> ast::Function {
+        // Function name is always generated (never "main" from the dead-code path).
+        let name = self.gen_unique_name("fn");
 
         let param_count = match argc {
             Some(n) => n as usize,
@@ -360,8 +427,7 @@ impl Gen {
         // recursion during generation).
         self.push_frame();
         for p in &func_params.params {
-            let s: &str = &p.name;
-            let local_name: String = String::from(s);
+            let local_name: String = p.name.to_string();
             self.add_local(local_name, p.ty.clone());
         }
 
@@ -389,37 +455,61 @@ impl Gen {
     }
 
     fn gen_item_variable(&mut self) -> ast::Item {
-        let ty = self.gen_type();
-        // For static/const globals, only generate constant-evaluable
-        // initializers: literals or simple expressions. Skip recursive
-        // rvalue generation for non-const contexts.
+        let declared_ty = self.gen_type();
+        let kind = if self.next_bool() {
+            ast::GlobalVariableKind::Const
+        } else {
+            ast::GlobalVariableKind::Static
+        };
+        // Const variables must not be declared mutable.
+        let mutability = if matches!(kind, ast::GlobalVariableKind::Const) {
+            None
+        } else if self.next_bool() {
+            Some(ast::Mutability::Mut)
+        } else {
+            None
+        };
+        // Generate type-appropriate initializer for const/static globals.
         let initializer = if self.next_bool() {
-            Some(ast::Expr::Integer(Box::new(ast::IntegerLit {
-                span: SrcSpan::default(),
-                value: self.next_u64() as u128,
-                kind: nitrate_translation::token::IntegerKind::Dec,
-            })))
+            let init_expr = self.gen_const_initializer(&declared_ty);
+            Some(init_expr)
         } else {
             None
         };
         ast::Item::Variable(ast::GlobalVariable {
             span: SrcSpan::default(),
             visibility: None,
-            kind: if self.next_bool() {
-                ast::GlobalVariableKind::Const
-            } else {
-                ast::GlobalVariableKind::Static
-            },
+            kind,
             attributes: None,
-            mutability: if self.next_bool() {
-                Some(ast::Mutability::Mut)
-            } else {
-                None
-            },
+            mutability,
             name: self.gen_unique_name("VAR").into(),
-            ty: Some(ty),
+            ty: Some(declared_ty),
             initializer,
         })
+    }
+
+    /// Generate a constant-evaluable initializer compatible with `ty`.
+    fn gen_const_initializer(&mut self, ty: &ast::Type) -> ast::Expr {
+        match ty {
+            ast::Type::Bool(_) => ast::Expr::Boolean(ast::BooleanLit {
+                span: SrcSpan::default(),
+                value: self.next_bool(),
+            }),
+            ast::Type::Float32(_) | ast::Type::Float64(_) => {
+                let bits = self.next_u64();
+                let raw = f64::from_bits((bits >> 8) | 0x3FF0000000000000);
+                let value = ordered_float::NotNan::new(raw).unwrap_or(ordered_float::NotNan::new(1.0).unwrap());
+                ast::Expr::Float(ast::FloatLit {
+                    span: SrcSpan::default(),
+                    value,
+                })
+            }
+            _ => ast::Expr::Integer(Box::new(ast::IntegerLit {
+                span: SrcSpan::default(),
+                value: self.next_u64() as u128,
+                kind: nitrate_translation::token::IntegerKind::Dec,
+            })),
+        }
     }
 
     fn gen_block_with_return(&mut self, ret_ty: &ast::Type) -> ast::Block {
@@ -427,20 +517,27 @@ impl Gen {
         let mut elements = Vec::with_capacity(stmt_count + 1);
         for _ in 0..stmt_count {
             if self.next_bool() {
-                // Declare a local variable — add it to scope BEFORE generating
-                // the initializer to prevent self-reference.
-                let var_name = format!("v_{}", self.next_u64() & 0xFFF);
+                // Declare a local variable. Generate the initializer FIRST
+                // so it cannot reference the variable being declared (avoiding
+                // self-referencing). Then add the local to scope AFTER.
+                let var_name_prefix = format!("v_{}", self.next_u64() & 0xFFF);
                 let init_ty = self.gen_type();
-                // Add the local to scope first with a dummy init, then generate
-                // the real init (preventing self-reference in init expr)
-                self.add_local(var_name.clone(), init_ty.clone());
                 let init = self.gen_rvalue(&init_ty);
+                // Use add_local to get the potentially-deduped final name,
+                // then use that same name in the AST node so they match.
+                self.add_local(var_name_prefix.clone(), init_ty.clone());
+                let actual_name = self
+                    .frames
+                    .last()
+                    .and_then(|f| f.locals.last())
+                    .map(|s| s.name.clone())
+                    .unwrap_or(var_name_prefix);
                 elements.push(ast::BlockItem::Variable(ast::LocalVariable {
                     span: SrcSpan::default(),
                     kind: ast::LocalVariableKind::Var,
                     attributes: None,
                     mutability: None,
-                    name: var_name.into(),
+                    name: actual_name.into(),
                     ty: Some(init_ty),
                     initializer: Some(init),
                 }));

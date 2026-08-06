@@ -39,6 +39,8 @@ pub struct Gen {
     rvalue_depth: u32,
     /// Item-level recursion depth for module nesting.
     item_depth: u32,
+    /// Type-generation recursion depth to prevent stack overflow in compound types.
+    pub(crate) type_depth: u32,
     /// All globally-declared function names.
     known_functions: Vec<String>,
     /// All globally-declared struct names.
@@ -64,6 +66,7 @@ impl Gen {
             rng: splitmix64_init(seed),
             rvalue_depth: 0,
             item_depth: 0,
+            type_depth: 0,
             known_functions: Vec::new(),
             known_structs: Vec::new(),
             in_loop: false,
@@ -163,8 +166,9 @@ impl Gen {
         self.rvalue_depth >= MAX_RVALUE_DEPTH || self.budget == 0
     }
 
-    /// Emit a minimal struct declaration with one i32 field for seed names
-    /// so that type paths referencing them are valid in the output.
+    /// Emit a minimal struct declaration with four i32 fields for seed names
+    /// so that type paths and struct init expressions referencing them are
+    /// valid in the output (field count matches the 1+gen_index(4) range).
     fn gen_seed_struct_decl(&mut self, name: String) -> ast::Item {
         ast::Item::Struct(ast::Struct {
             span: SrcSpan::default(),
@@ -172,16 +176,48 @@ impl Gen {
             attributes: None,
             name: name.into(),
             generics: None,
-            fields: vec![ast::StructField {
-                span: SrcSpan::default(),
-                visibility: None,
-                attributes: None,
-                name: "field_0".into(),
-                ty: ast::Type::Int32(ast::Int32 {
+            fields: vec![
+                ast::StructField {
                     span: SrcSpan::default(),
-                }),
-                default_value: None,
-            }],
+                    visibility: None,
+                    attributes: None,
+                    name: "field_0".into(),
+                    ty: ast::Type::Int32(ast::Int32 {
+                        span: SrcSpan::default(),
+                    }),
+                    default_value: None,
+                },
+                ast::StructField {
+                    span: SrcSpan::default(),
+                    visibility: None,
+                    attributes: None,
+                    name: "field_1".into(),
+                    ty: ast::Type::Int32(ast::Int32 {
+                        span: SrcSpan::default(),
+                    }),
+                    default_value: None,
+                },
+                ast::StructField {
+                    span: SrcSpan::default(),
+                    visibility: None,
+                    attributes: None,
+                    name: "field_2".into(),
+                    ty: ast::Type::Int32(ast::Int32 {
+                        span: SrcSpan::default(),
+                    }),
+                    default_value: None,
+                },
+                ast::StructField {
+                    span: SrcSpan::default(),
+                    visibility: None,
+                    attributes: None,
+                    name: "field_3".into(),
+                    ty: ast::Type::Int32(ast::Int32 {
+                        span: SrcSpan::default(),
+                    }),
+                    default_value: None,
+                },
+            ],
         })
     }
 
@@ -235,9 +271,15 @@ impl Gen {
             items.push(self.gen_seed_function_stub(name.to_string()));
         }
 
+        // Always emit a `main` function even if function_count is zero.
+        // A program without an entry point is invalid.
+        if self.config.function_count == 0 || self.budget_left() == 0 {
+            items.push(self.gen_item_main());
+            functions = 1;
+        }
+
         // Generate the required number of user-defined functions.
-        // The first function is always `main` with 0 arguments.
-        while functions < self.config.function_count && self.budget > 0 {
+        while functions < self.config.function_count && self.budget_left() > 0 {
             let item = if functions == 0 {
                 self.gen_item_main()
             } else {
@@ -252,7 +294,7 @@ impl Gen {
         // Generate additional random items to ensure all generators are exercised.
         let extra_items = 1 + self.gen_index(4);
         for _ in 0..extra_items {
-            if self.budget > 0 {
+            if self.budget_left() > 0 {
                 items.push(self.gen_item(None));
             }
         }
