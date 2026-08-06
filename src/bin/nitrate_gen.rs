@@ -7,7 +7,7 @@ struct Args {
     #[clap(long, default_value = "1")]
     min_cyclomatic_complexity: u32,
 
-    #[clap(long, default_value = "1000")]
+    #[clap(long, default_value = "100")]
     max_budget: u32,
 
     #[clap(long, default_value = "1")]
