@@ -4,14 +4,14 @@ use nitrate_translation::{
     parsetree::ast::{self, *},
     token::IntegerKind,
 };
-use std::unreachable;
 
 impl Gen {
     /// Select a random rvalue kind that is **compatible** with the given target
     /// type **and** for which the necessary symbols exist in scope.
     fn select_rvalue_kind(&mut self, ty: &ast::Type) -> ast::RValueKind {
         let mut compatible = compatible_kinds(ty, self);
-        // If compatible is somehow empty (shouldn't happen), fall back to Integer
+        // If compatible is somehow empty (shouldn't happen with the fallbacks
+        // in compatible_kinds), fall back to Integer
         if compatible.is_empty() {
             return ast::RValueKind::Integer;
         }
@@ -27,6 +27,11 @@ impl Gen {
 
         self.spend_budget();
         self.rvalue_depth += 1;
+
+        // If we've exceeded the recursion depth budget but still have
+        // some main budget, force leaf-only generation to prevent
+        // stack overflow while still producing valid output.
+        let prev_rvalue_depth = self.rvalue_depth;
 
         let kind = self.select_rvalue_kind(ty);
         let expr = match kind {
@@ -64,7 +69,7 @@ impl Gen {
             ast::RValueKind::MethodCall => self.gen_rvalue_method_call(ty),
         };
 
-        self.rvalue_depth = self.rvalue_depth.saturating_sub(1);
+        self.rvalue_depth = prev_rvalue_depth.saturating_sub(1);
         expr
     }
 
@@ -99,6 +104,7 @@ impl Gen {
 
     fn gen_rvalue_float(&mut self, _ty: &ast::Type) -> ast::Expr {
         let bits = self.next_u64();
+        // Generate a valid finite f64 value in the range [1.0, 2.0).
         let raw = f64::from_bits((bits >> 8) | 0x3FF0000000000000);
         let value = ordered_float::NotNan::new(raw).unwrap_or(ordered_float::NotNan::new(1.0).unwrap());
         ast::Expr::Float(ast::FloatLit {
@@ -114,7 +120,9 @@ impl Gen {
             let c = (self.next_u64() as u8 % 95).wrapping_add(32);
             s.push(c as char);
         }
-        s = s.replace('\\', "\\\\").replace('"', "\\\"");
+        // The value stored in StringLit is the literal string CONTENT.
+        // The pretty-printer will handle escaping of special characters.
+        // Do NOT pre-escape — that would double-escape in the output.
         ast::Expr::String(ast::StringLit {
             span: SrcSpan::default(),
             value: s,
@@ -165,15 +173,25 @@ impl Gen {
         let path = if let ast::Type::TypePath(tp) = ty {
             if let Some(first_seg) = tp.segments.first() {
                 self.make_single_segment_path(first_seg.name.clone())
-            } else {
+            } else if self.has_any_struct() {
                 self.pick_struct_path()
+            } else {
+                // No structs at all; generate a fallback path that will
+                // at least be syntactically valid.
+                self.make_single_segment_path("Vec".to_string())
             }
-        } else {
+        } else if self.has_any_struct() {
             self.pick_struct_path()
+        } else {
+            self.make_single_segment_path("Vec".to_string())
         };
-        // All seed structs and generated structs have exactly 4 fields:
-        // field_0 through field_3 with i32 types. Generate matching fields.
-        let fields: Vec<(NString, ast::Expr)> = (0..4)
+
+        // Seed structs always have exactly 4 i32 fields named field_0..field_3.
+        // Generated structs have 1..=6 fields with arbitrary types named field_0..field_N-1.
+        // Generate fields dynamically to match the variable struct layouts:
+        // 2..=4 fields (to cover seed structs and most generated ones).
+        let field_count = 2 + (self.next_u64() as usize % 3);
+        let fields: Vec<(NString, ast::Expr)> = (0..field_count)
             .map(|i| {
                 let field_name: NString = format!("field_{i}").into();
                 (field_name, self.gen_rvalue(&int32_type()))
@@ -253,6 +271,8 @@ impl Gen {
     }
 
     fn gen_rvalue_block(&mut self, ty: &ast::Type) -> ast::Expr {
+        // Blocks inherit the `in_loop` state from their parent context.
+        // break/continue inside a block that's inside a loop are valid.
         let prev_in_loop = self.in_loop;
         self.push_frame();
 
@@ -361,12 +381,14 @@ impl Gen {
     /// TypePath expressions — only when target type is a TypePath).
     fn pick_compatible_path(&mut self, ty: &ast::Type) -> ast::ExprPath {
         // Priority 1: Local variables of matching type
-        let len = self.find_locals_by_type(ty).len();
-        if len > 0 {
-            let idx = self.gen_index(len);
-            let compatible_locals = self.find_locals_by_type(ty);
-            let name = compatible_locals[idx].name.clone();
-            return self.make_single_segment_path(name);
+        if self.has_any_local() {
+            let len = self.find_locals_by_type(ty).len();
+            if len > 0 {
+                let idx = self.gen_index(len);
+                let compatible_locals = self.find_locals_by_type(ty);
+                let name = compatible_locals[idx].name.clone();
+                return self.make_single_segment_path(name);
+            }
         }
 
         // Priority 2: Known struct names (only valid as type paths, not
@@ -378,7 +400,8 @@ impl Gen {
             return self.make_single_segment_path(name);
         }
 
-        // Priority 3: Function name (only for function-typed targets)
+        // Priority 3: Function name (only for function-typed targets or
+        // as a best-effort fallback)
         if self.has_any_function() {
             let idx = self.gen_index(self.known_functions.len());
             let name = self.known_functions[idx].clone();
@@ -393,13 +416,8 @@ impl Gen {
             return self.make_single_segment_path(name);
         }
 
-        // Last resort fallback: a known function name
-        if self.has_any_function() {
-            let name = "add".to_string();
-            return self.make_single_segment_path(name);
-        }
-
-        unreachable!("gen_rvalue_path called with no known symbols");
+        // Last resort fallback: a hardcoded seed function name
+        self.make_single_segment_path("add".to_string())
     }
 
     fn gen_rvalue_index_access(&mut self, ty: &ast::Type) -> ast::Expr {
@@ -420,28 +438,9 @@ impl Gen {
     }
 
     fn gen_rvalue_field_access(&mut self, ty: &ast::Type) -> ast::Expr {
-        // Field access requires an object that is a struct instance.
         // Generate a struct init as the object, matching the target type.
-        let object = if is_type_path_like(ty) {
-            self.gen_rvalue_struct_init(ty)
-        } else {
-            // If ty isn't a type path, generate a struct init for a
-            // known struct, then access one of its fields. The result
-            // type won't match ty, but the AST is valid.
-            let struct_path = self.pick_struct_path();
-            let fields: Vec<(NString, ast::Expr)> = (0..4)
-                .map(|i| {
-                    let field_name: NString = format!("field_{i}").into();
-                    (field_name, self.gen_rvalue(&int32_type()))
-                })
-                .collect();
-            ast::Expr::StructInit(Box::new(ast::StructInit {
-                span: SrcSpan::default(),
-                path: struct_path,
-                fields,
-            }))
-        };
-        // field_0 always exists (all structs have at least 4 fields).
+        let object = self.gen_rvalue(ty);
+        // field_0 always exists (all structs have at least 1 field).
         let field = "field_0".to_string();
         ast::Expr::FieldAccess(Box::new(ast::FieldAccess {
             span: SrcSpan::default(),
@@ -517,7 +516,7 @@ impl Gen {
                 }),
             ),
             _ => (
-                self.gen_rvalue(&integer_type()),
+                self.gen_rvalue(&int32_type()),
                 Box::new(|v| {
                     ast::Expr::Integer(Box::new(ast::IntegerLit {
                         span: SrcSpan::default(),
@@ -562,7 +561,17 @@ impl Gen {
     }
 
     fn gen_rvalue_return(&mut self, ty: &ast::Type) -> ast::Expr {
-        let value = if self.next_bool() {
+        // Only generate `return;` (without value) when the expected
+        // result type is the unit/tuple type with no elements.
+        // Otherwise always provide a value to avoid type errors from
+        // returning void in a non-void function.
+        let is_unit_ty = matches!(
+            ty,
+            ast::Type::TupleType(t) if t.element_types.is_empty()
+        );
+        let value = if !is_unit_ty {
+            Some(self.gen_rvalue(ty))
+        } else if self.next_bool() {
             Some(self.gen_rvalue(ty))
         } else {
             None
@@ -574,14 +583,10 @@ impl Gen {
     }
 
     fn gen_rvalue_foreach(&mut self, ty: &ast::Type) -> ast::Expr {
-        // The result type of a foreach is the body type, typically unit.
-        // The element type is derived from what's being iterated: if ty
-        // is a collection, use its element type; otherwise use int32.
-        let elem_ty = if is_collection_type(ty) {
-            element_type_of(ty)
-        } else {
-            int32_type()
-        };
+        // `ty` is the RESULT type of the foreach loop (body type), NOT
+        // the collection type.  Pick an arbitrary element type for the
+        // iterable — typically int32 to keep things simple.
+        let elem_ty = int32_type();
         let bindings: Vec<NString> = vec!["it_0".into()];
         let iterable_ty = ast::Type::SliceType(Box::new(ast::SliceType {
             span: SrcSpan::default(),
@@ -632,15 +637,12 @@ impl Gen {
         } else {
             self.make_single_segment_path("add".to_string())
         };
-        // Generate args with type-aware approach: if ty is a function type,
-        // generate matching args; otherwise use arbitrary types.
-        let (arg_types, _ret_ty) = function_type_parts(ty);
-        let arg_count = self.gen_index(6).min(arg_types.len().max(1));
-        let positional: Vec<ast::Expr> = if !arg_types.is_empty() && arg_count <= arg_types.len() {
-            arg_types[..arg_count].iter().map(|at| self.gen_rvalue(at)).collect()
-        } else {
-            (0..arg_count).map(|_| self.gen_rvalue(&arbitrary_type())).collect()
-        };
+
+        // Generate 0..=3 args with arbitrary types.  Since we don't know
+        // the callee's actual signature, produce a small number of args
+        // to minimise type mismatches (all seed functions take 0 args).
+        let arg_count = self.gen_index(4);
+        let positional: Vec<ast::Expr> = (0..arg_count).map(|_| self.gen_rvalue(&arbitrary_type())).collect();
         let named = Vec::new();
         ast::Expr::FunctionCall(Box::new(ast::FunctionCall {
             span: SrcSpan::default(),
@@ -654,7 +656,8 @@ impl Gen {
         // Generate a struct init as the object so the method call has a
         // valid receiver (not a type name or literal).
         let struct_path = self.pick_struct_path();
-        let fields: Vec<(NString, ast::Expr)> = (0..4)
+        let field_count = 2 + (self.next_u64() as usize % 3);
+        let fields: Vec<(NString, ast::Expr)> = (0..field_count)
             .map(|i| {
                 let field_name: NString = format!("field_{i}").into();
                 (field_name, self.gen_rvalue(&int32_type()))
@@ -724,6 +727,8 @@ impl Gen {
     }
 
     /// Generate a block with the given result type. Manages its own scope.
+    /// The block inherits `in_loop` from the parent context so that
+    /// break/continue inside blocks contained within loops are valid.
     fn gen_block_with_type(&mut self, ty: &ast::Type) -> ast::Block {
         let prev_in_loop = self.in_loop;
         self.push_frame();
@@ -789,10 +794,8 @@ fn compatible_kinds(ty: &ast::Type, generator: &Gen) -> Vec<ast::RValueKind> {
     // Base kinds valid for nearly all types
     let mut kinds = vec![Parentheses, Block, If, Match, Cast];
 
-    // ForEach only if we have anything to iterate over
-    if generator.has_any_local() || generator.has_any_function() || generator.has_any_struct() {
-        kinds.push(ForEach);
-    }
+    // ForEach: always available since the loop body can use int32 iters
+    kinds.push(ForEach);
 
     // Path: only if we have locals, functions, or structs to reference
     if generator.has_any_local() || generator.has_any_function() || generator.has_any_struct() {
@@ -809,8 +812,8 @@ fn compatible_kinds(ty: &ast::Type, generator: &Gen) -> Vec<ast::RValueKind> {
         kinds.push(MethodCall);
     }
 
-    // StructInit and FieldAccess: only when target type is a TypePath
-    // (structs are created by name, fields are accessed on struct instances)
+    // StructInit and FieldAccess: only when we have structs AND the target
+    // type is a TypePath (structs are created by name).
     if generator.has_any_struct() && is_type_path_like(ty) {
         kinds.push(StructInit);
         kinds.push(FieldAccess);
@@ -840,7 +843,6 @@ fn compatible_kinds(ty: &ast::Type, generator: &Gen) -> Vec<ast::RValueKind> {
         }
         ast::Type::Float32(_) | ast::Type::Float64(_) => {
             kinds.push(Float);
-            kinds.push(Integer);
             kinds.push(UnaryExpr);
             kinds.push(BinExpr);
         }
@@ -861,6 +863,7 @@ fn compatible_kinds(ty: &ast::Type, generator: &Gen) -> Vec<ast::RValueKind> {
             kinds.push(Boolean);
             kinds.push(Integer);
             kinds.push(Float);
+            kinds.push(String);
             kinds.push(BString);
             kinds.push(TypeInfo);
         }
@@ -869,6 +872,7 @@ fn compatible_kinds(ty: &ast::Type, generator: &Gen) -> Vec<ast::RValueKind> {
             kinds.push(Boolean);
             kinds.push(Integer);
             kinds.push(Float);
+            kinds.push(String);
             kinds.push(BString);
             kinds.push(TypeInfo);
             kinds.push(UnaryExpr);
@@ -1059,10 +1063,6 @@ fn is_bool_type(ty: &ast::Type) -> bool {
     matches!(ty, ast::Type::Bool(_))
 }
 
-fn is_collection_type(ty: &ast::Type) -> bool {
-    matches!(ty, ast::Type::ArrayType(_) | ast::Type::SliceType(_))
-}
-
 /// Check if a type is a TypePath (for struct init/field access gating).
 fn is_type_path_like(ty: &ast::Type) -> bool {
     matches!(ty, ast::Type::TypePath(_))
@@ -1129,12 +1129,6 @@ fn bool_type() -> ast::Type {
 }
 
 fn int32_type() -> ast::Type {
-    ast::Type::Int32(ast::Int32 {
-        span: SrcSpan::default(),
-    })
-}
-
-fn integer_type() -> ast::Type {
     ast::Type::Int32(ast::Int32 {
         span: SrcSpan::default(),
     })

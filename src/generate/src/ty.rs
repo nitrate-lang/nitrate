@@ -3,7 +3,9 @@ use nitrate_translation::parsetree::ast::{self, *};
 
 /// Maximum nesting depth for recursively-generated types to prevent stack
 /// overflow when types are generated during expression generation.
-const MAX_TYPE_DEPTH: u32 = 12;
+/// Must be kept lower than MAX_RVALUE_DEPTH to prevent type generation
+/// from recursing deeper than expression generation budget allows.
+const MAX_TYPE_DEPTH: u32 = 10;
 
 impl Gen {
     /// Generate a random AST type. Uses seed-based deterministic RNG.

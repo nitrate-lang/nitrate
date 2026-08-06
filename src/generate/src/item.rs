@@ -26,7 +26,11 @@ impl Gen {
                 return match kind {
                     ast::ItemKind::SyntaxError => ast::ItemKind::Function,
                     ast::ItemKind::Module if self.item_depth < MAX_ITEM_DEPTH as u32 => ast::ItemKind::Module,
-                    ast::ItemKind::Module => ast::ItemKind::Function,
+                    ast::ItemKind::Module => {
+                        // Module kind blocked by depth limit; fall through to next choice.
+                        roll -= weight;
+                        continue;
+                    }
                     ast::ItemKind::Import => ast::ItemKind::Import,
                     ast::ItemKind::TypeAlias => ast::ItemKind::TypeAlias,
                     ast::ItemKind::Struct => ast::ItemKind::Struct,

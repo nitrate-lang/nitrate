@@ -74,13 +74,13 @@ impl Gen {
         }
     }
 
-    /// Spend one unit of budget. Returns true if budget remains.
+    /// Spend one unit of budget. Returns true if a unit was successfully spent.
     pub(crate) fn spend_budget(&mut self) -> bool {
         if self.budget == 0 {
             return false;
         }
         self.budget = self.budget.saturating_sub(1);
-        self.budget > 0
+        true
     }
 
     pub(crate) fn budget_left(&self) -> u32 {
@@ -156,9 +156,7 @@ impl Gen {
     }
 
     fn gen_index(&mut self, max: usize) -> usize {
-        if max == 0 {
-            return 0;
-        }
+        assert!(max > 0, "gen_index called with max=0");
         (self.next_u64() as usize) % max
     }
 
@@ -312,10 +310,10 @@ impl Gen {
     }
 }
 
-/// Initialize splitmix64 state from a seed.
+/// Initialize splitmix64 state from a seed. The internal state for
+/// splitmix64 is the raw seed value; the finalizer (xorshift-multiply)
+/// is applied during each call to `next_u64` after advancing state with
+/// the Weyl sequence constant.
 fn splitmix64_init(seed: u64) -> u64 {
-    let mut z = seed;
-    z = (z ^ (z >> 30)).wrapping_mul(0xbf58476d1ce4e5b9);
-    z = (z ^ (z >> 27)).wrapping_mul(0x94d049bb133111eb);
-    z ^ (z >> 31)
+    seed
 }
