@@ -654,7 +654,7 @@ impl PrettyPrint for Continue {
 
 impl PrettyPrint for Return {
     fn pretty_print_fmt(&self, ctx: &mut PrintContext, writer: &mut dyn std::fmt::Write) -> std::fmt::Result {
-        writer.write_str("return")?;
+        writer.write_str("ret")?;
 
         if let Some(value) = &self.value {
             writer.write_char(' ')?;
