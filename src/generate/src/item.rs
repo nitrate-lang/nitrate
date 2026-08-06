@@ -6,11 +6,7 @@ use nitrate_translation::{
 use std::unreachable;
 
 impl Gen {
-    /// Select a random item kind weighted by desired frequency.
-    /// Heavily biased toward Function since this is the primary item type
-    /// needed by `gen_program`.
     fn select_item_kind(&mut self) -> ast::ItemKind {
-        // Use an index-based approach to avoid needing Clone/Copy on ItemKind
         let choices: &[(ast::ItemKind, u32)] = &[
             (ast::ItemKind::Function, 40),
             (ast::ItemKind::Struct, 15),
@@ -52,7 +48,7 @@ impl Gen {
         };
 
         match kind {
-            ast::ItemKind::SyntaxError => unreachable!("select_item_kind should not return SyntaxError"),
+            ast::ItemKind::SyntaxError => unreachable!(),
             ast::ItemKind::Module => self.gen_item_module(),
             ast::ItemKind::Import => self.gen_item_import(),
             ast::ItemKind::TypeAlias => self.gen_item_type_alias(),
@@ -65,18 +61,12 @@ impl Gen {
         }
     }
 
-    // ─────────────────────────────────────────────────────────────────
-    // Individual item generators
-    // ─────────────────────────────────────────────────────────────────
-
     fn gen_item_module(&mut self) -> ast::Item {
-        // Generate a simple module with 1-3 nested items
         let item_count = 1 + self.gen_index(3);
         let mut items = Vec::with_capacity(item_count);
         for _ in 0..item_count {
             items.push(self.gen_item(None));
         }
-
         ast::Item::Module(Box::new(ast::Module {
             span: SrcSpan::default(),
             visibility: None,
@@ -87,7 +77,6 @@ impl Gen {
     }
 
     fn gen_item_import(&mut self) -> ast::Item {
-        // Generate a simple single-use import
         let seg_count = 1 + self.gen_index(3);
         let import_names = ["std", "core", "math", "io", "fs", "net", "util", "prelude"];
         let mut segments = Vec::with_capacity(seg_count);
@@ -99,7 +88,6 @@ impl Gen {
                 prefix: None,
             });
         }
-
         let use_tree = ast::UseTree::Single {
             span: SrcSpan::default(),
             path: ast::ItemPath {
@@ -107,7 +95,6 @@ impl Gen {
                 segments,
             },
         };
-
         ast::Item::Import(Box::new(ast::Import {
             span: SrcSpan::default(),
             visibility: None,
@@ -118,8 +105,7 @@ impl Gen {
     }
 
     fn gen_item_type_alias(&mut self) -> ast::Item {
-        let alias_type = Some(self.gen_builtin_type());
-
+        let alias_type = Some(self.gen_type());
         ast::Item::TypeAlias(ast::TypeAlias {
             span: SrcSpan::default(),
             visibility: None,
@@ -133,7 +119,6 @@ impl Gen {
     fn gen_item_struct(&mut self) -> ast::Item {
         let name = self.gen_unique_name("Struct");
         self.register_struct(name.clone());
-
         let field_count = 1 + self.gen_index(6);
         let mut fields = Vec::with_capacity(field_count);
         for i in 0..field_count {
@@ -142,11 +127,10 @@ impl Gen {
                 visibility: None,
                 attributes: None,
                 name: format!("field_{i}").into(),
-                ty: self.gen_builtin_type(),
+                ty: self.gen_type(),
                 default_value: None,
             });
         }
-
         ast::Item::Struct(ast::Struct {
             span: SrcSpan::default(),
             visibility: None,
@@ -166,15 +150,10 @@ impl Gen {
                 span: SrcSpan::default(),
                 attributes: None,
                 name: variant_name,
-                ty: if self.next_bool() {
-                    Some(self.gen_builtin_type())
-                } else {
-                    None
-                },
+                ty: if self.next_bool() { Some(self.gen_type()) } else { None },
                 default_value: None,
             });
         }
-
         ast::Item::Enum(ast::Enum {
             span: SrcSpan::default(),
             visibility: None,
@@ -186,7 +165,6 @@ impl Gen {
     }
 
     fn gen_item_trait(&mut self) -> ast::Item {
-        // Stub: generate a trait with a single method signature
         let method_count = 1 + self.gen_index(3);
         let mut items = Vec::with_capacity(method_count);
         for _ in 0..method_count {
@@ -202,12 +180,11 @@ impl Gen {
                 name: self.gen_unique_name("method").into(),
                 generics: None,
                 parameters: params,
-                return_type: Some(self.gen_builtin_type()),
+                return_type: Some(self.gen_type()),
                 definition: None,
                 abi: None,
             }));
         }
-
         ast::Item::Trait(ast::Trait {
             span: SrcSpan::default(),
             visibility: None,
@@ -219,15 +196,13 @@ impl Gen {
     }
 
     fn gen_item_impl(&mut self) -> ast::Item {
-        // Stub: implement traits on builtin types
-        let for_type = self.gen_builtin_type();
+        let for_type = self.gen_type();
         let method_count = 1 + self.gen_index(2);
         let mut items = Vec::with_capacity(method_count);
         for _ in 0..method_count {
             let func = self.gen_function(None);
             items.push(ast::AssociatedItem::Method(func));
         }
-
         ast::Item::Impl(Box::new(ast::Impl {
             span: SrcSpan::default(),
             generics: None,
@@ -237,7 +212,6 @@ impl Gen {
         }))
     }
 
-    /// Generate a Function struct (used internally for impl/trait methods).
     fn gen_function(&mut self, argc: Option<u32>) -> ast::Function {
         let name = if self.known_functions.is_empty() {
             "main".to_string()
@@ -252,7 +226,7 @@ impl Gen {
         };
         let mut params = Vec::with_capacity(param_count);
         for i in 0..param_count {
-            let param_ty = self.gen_builtin_type();
+            let param_ty = self.gen_type();
             params.push(ast::FuncParam {
                 span: SrcSpan::default(),
                 attributes: None,
@@ -269,11 +243,7 @@ impl Gen {
             variadic: false,
         };
 
-        let return_type = if self.next_bool() {
-            Some(self.gen_builtin_type())
-        } else {
-            None
-        };
+        let return_type = if self.next_bool() { Some(self.gen_type()) } else { None };
 
         let body_ty = return_type.clone().unwrap_or_else(|| {
             ast::Type::TupleType(Box::new(ast::TupleType {
@@ -310,13 +280,12 @@ impl Gen {
     }
 
     fn gen_item_variable(&mut self) -> ast::Item {
-        let ty = self.gen_builtin_type();
+        let ty = self.gen_type();
         let initializer = if self.next_bool() {
             Some(self.gen_rvalue(&ty))
         } else {
             None
         };
-
         ast::Item::Variable(ast::GlobalVariable {
             span: SrcSpan::default(),
             visibility: None,
@@ -337,19 +306,13 @@ impl Gen {
         })
     }
 
-    // ─────────────────────────────────────────────────────────────────
-    // Shared helpers
-    // ─────────────────────────────────────────────────────────────────
-
-    /// Generate a block whose final expression returns the given type.
     fn gen_block_with_return(&mut self, ret_ty: &ast::Type) -> ast::Block {
         let stmt_count = self.gen_index(5);
         let mut elements = Vec::with_capacity(stmt_count + 1);
-
         for _ in 0..stmt_count {
             if self.next_bool() {
                 let var_name = format!("v_{}", self.next_u64() & 0xFFF);
-                let init_ty = self.gen_builtin_type();
+                let init_ty = self.gen_type();
                 let init = self.gen_rvalue(&init_ty);
                 self.add_local(var_name.clone(), init_ty.clone());
                 elements.push(ast::BlockItem::Variable(ast::LocalVariable {
@@ -362,13 +325,11 @@ impl Gen {
                     initializer: Some(init),
                 }));
             } else {
-                let stmt_ty = self.gen_builtin_type();
+                let stmt_ty = self.gen_type();
                 let expr = self.gen_rvalue(&stmt_ty);
                 elements.push(ast::BlockItem::Stmt(expr));
             }
         }
-
-        // Final expression: either a return with value, or the value itself
         if self.next_bool() {
             elements.push(ast::BlockItem::Expr(self.gen_rvalue(ret_ty)));
         } else {
@@ -382,7 +343,6 @@ impl Gen {
                 value: ret_val,
             }))));
         }
-
         ast::Block {
             span: SrcSpan::default(),
             safety: None,
@@ -390,60 +350,15 @@ impl Gen {
         }
     }
 
-    /// Generate a unique name with the given prefix.
     fn gen_unique_name(&mut self, prefix: &str) -> String {
-        let suffix = self.gen_unique_suffix().to_string();
+        let suffix = self.gen_unique_suffix();
         let mut name = String::from(prefix);
         name.push('_');
-        name.push_str(&suffix);
+        name.push_str(&suffix.to_string());
         name
     }
 
-    /// Generate a numeric suffix for unique naming.
     fn gen_unique_suffix(&mut self) -> u64 {
         self.next_u64() & 0xFFFF
-    }
-
-    /// Generate a random builtin type.
-    fn gen_builtin_type(&mut self) -> ast::Type {
-        let types: &[ast::Type] = &[
-            ast::Type::Bool(ast::Bool {
-                span: SrcSpan::default(),
-            }),
-            ast::Type::Int8(ast::Int8 {
-                span: SrcSpan::default(),
-            }),
-            ast::Type::Int16(ast::Int16 {
-                span: SrcSpan::default(),
-            }),
-            ast::Type::Int32(ast::Int32 {
-                span: SrcSpan::default(),
-            }),
-            ast::Type::Int64(ast::Int64 {
-                span: SrcSpan::default(),
-            }),
-            ast::Type::UInt8(ast::UInt8 {
-                span: SrcSpan::default(),
-            }),
-            ast::Type::UInt16(ast::UInt16 {
-                span: SrcSpan::default(),
-            }),
-            ast::Type::UInt32(ast::UInt32 {
-                span: SrcSpan::default(),
-            }),
-            ast::Type::UInt64(ast::UInt64 {
-                span: SrcSpan::default(),
-            }),
-            ast::Type::Float32(ast::Float32 {
-                span: SrcSpan::default(),
-            }),
-            ast::Type::Float64(ast::Float64 {
-                span: SrcSpan::default(),
-            }),
-            ast::Type::USize(ast::USize {
-                span: SrcSpan::default(),
-            }),
-        ];
-        types[self.gen_index(types.len())].clone()
     }
 }

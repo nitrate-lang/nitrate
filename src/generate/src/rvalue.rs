@@ -4,7 +4,7 @@ use nitrate_translation::{
     parsetree::ast::{self, *},
     token::IntegerKind,
 };
-use std::unreachable;
+use std::{matches, unreachable};
 
 impl Gen {
     /// Select a random rvalue kind that is **compatible** with the given target type
@@ -566,10 +566,9 @@ impl Gen {
         // Search from inner to outer scope
         for frame in self.frames.iter().rev() {
             for sym in &frame.locals {
-                if let SymbolKind::Local(ref local_ty) = sym.kind {
-                    if types_compatible(local_ty, target_ty) {
-                        result.push(sym);
-                    }
+                let SymbolKind::Local(local_ty) = &sym.kind;
+                if types_compatible(local_ty, target_ty) {
+                    result.push(sym);
                 }
             }
         }

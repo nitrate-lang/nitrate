@@ -26,39 +26,6 @@ impl Gen {
         }
     }
 
-    /// Generate a type compatible with a specific discriminant (used when
-    /// callers need a type structurally matching a particular kind).
-    pub(crate) fn gen_type_like(&mut self, exemplar: &ast::Type) -> ast::Type {
-        match exemplar {
-            ast::Type::Bool(_) => self.gen_bool_type(),
-            ast::Type::Int8(_)
-            | ast::Type::Int16(_)
-            | ast::Type::Int32(_)
-            | ast::Type::Int64(_)
-            | ast::Type::Int128(_) => self.gen_int_type(),
-            ast::Type::UInt8(_)
-            | ast::Type::UInt16(_)
-            | ast::Type::UInt32(_)
-            | ast::Type::UInt64(_)
-            | ast::Type::UInt128(_) => self.gen_uint_type(),
-            ast::Type::Float32(_) | ast::Type::Float64(_) => self.gen_float_type(),
-            ast::Type::USize(_) => self.gen_usize_type(),
-            ast::Type::ArrayType(_) => self.gen_array_type(),
-            ast::Type::SliceType(_) => self.gen_slice_type(),
-            ast::Type::TupleType(_) => self.gen_tuple_type(),
-            ast::Type::FunctionType(_) => self.gen_function_type(),
-            ast::Type::ReferenceType(_) => self.gen_reference_type(),
-            ast::Type::PointerType(_) => self.gen_pointer_type(),
-            ast::Type::TypePath(_) => self.gen_type_path(),
-            ast::Type::RefinementType(_) => self.gen_refinement_type(),
-            ast::Type::Parentheses(_) => self.gen_parentheses_type(),
-            ast::Type::Lifetime(_) => self.gen_lifetime_type(),
-            ast::Type::TypePotential(_) => self.gen_type_potential(),
-            ast::Type::InferType(_) => self.gen_infer_type(),
-            ast::Type::SyntaxError(_) => self.gen_int_type(),
-        }
-    }
-
     // ─────────────────────────────────────────────────────────────────
     // Primitive type generators
     // ─────────────────────────────────────────────────────────────────
@@ -262,20 +229,29 @@ impl Gen {
     }
 
     fn gen_type_path(&mut self) -> ast::Type {
-        let seg_count = 1 + (self.next_u64() as usize % 3);
-        let names = ["A", "B", "MyType", "Foo", "Bar", "Data", "Value"];
-        let segments: Vec<ast::TypePathSegment> = (0..seg_count)
-            .map(|_| ast::TypePathSegment {
+        // Use only registered struct names to guarantee type paths reference
+        // types that are actually declared in the program output.
+        if self.has_any_struct() {
+            let seg_count = 1 + (self.next_u64() as usize % 3);
+            let segments: Vec<ast::TypePathSegment> = (0..seg_count)
+                .map(|_| {
+                    let idx = self.gen_index(self.known_structs.len());
+                    ast::TypePathSegment {
+                        span: SrcSpan::default(),
+                        name: self.known_structs[idx].clone(),
+                        type_arguments: None,
+                    }
+                })
+                .collect();
+            ast::Type::TypePath(Box::new(ast::TypePath {
                 span: SrcSpan::default(),
-                name: names[(self.next_u64() as usize) % names.len()].to_string(),
-                type_arguments: None,
-            })
-            .collect();
-        ast::Type::TypePath(Box::new(ast::TypePath {
-            span: SrcSpan::default(),
-            segments,
-            resolved_path: None,
-        }))
+                segments,
+                resolved_path: None,
+            }))
+        } else {
+            // No structs registered yet; fall back to an integer type.
+            self.gen_int_type()
+        }
     }
 
     fn gen_refinement_type(&mut self) -> ast::Type {
