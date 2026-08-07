@@ -5,8 +5,14 @@ use nitrate_translation::parsetree::ast::{self, *};
 /// overflow when types are generated during expression generation.
 const MAX_TYPE_DEPTH: u32 = 4;
 
+/// Depth at which compound types are forced to be simplified to keep
+/// generated programs readable and type-checkable.
+pub(crate) const MAX_TYPE_COMPLEXITY: u32 = 3;
+
 impl Gen {
-    /// Generate a random AST type.
+    /// Generate a random AST type.  This may produce non-constructible
+    /// types (references, pointers, function types).  Use `gen_local_type`
+    /// when the type must be constructible (e.g. for locals/params).
     pub(crate) fn gen_simple_type(&mut self) -> ast::Type {
         if self.type_depth >= MAX_TYPE_DEPTH {
             return self.gen_leaf_type();
@@ -38,30 +44,35 @@ impl Gen {
     fn gen_leaf_type(&mut self) -> ast::Type {
         let uses_enums = self.has_any_enum();
         let uses_structs = self.has_any_struct();
-        let total_choices = 6 + if uses_enums { 1 } else { 0 } + if uses_structs { 1 } else { 0 };
-        match self.next_u64() % total_choices {
-            0 => self.gen_bool_type(),
-            1 => self.gen_int_type(),
-            2 => self.gen_uint_type(),
-            3 => self.gen_float_type(),
-            4 => self.gen_usize_type(),
-            5 => {
-                if uses_structs {
-                    self.gen_type_path()
-                } else if uses_enums {
-                    self.gen_enum_path()
-                } else {
-                    self.gen_int_type()
-                }
-            }
-            _ => {
-                if uses_enums {
-                    self.gen_enum_path()
-                } else {
-                    self.gen_int_type()
-                }
-            }
+
+        // Build a weighted list of available leaf types
+        let mut choices: Vec<(u32, Box<dyn FnOnce(&mut Gen) -> ast::Type>)> = Vec::new();
+        // Always-available primitives get higher weight
+        for _ in 0..3 {
+            choices.push((3, Box::new(|g: &mut Gen| g.gen_bool_type())));
+            choices.push((3, Box::new(|g: &mut Gen| g.gen_int_type())));
+            choices.push((2, Box::new(|g: &mut Gen| g.gen_uint_type())));
         }
+        choices.push((2, Box::new(|g: &mut Gen| g.gen_float_type())));
+        choices.push((2, Box::new(|g: &mut Gen| g.gen_usize_type())));
+
+        if uses_structs {
+            choices.push((2, Box::new(|g: &mut Gen| g.gen_type_path())));
+        }
+        if uses_enums {
+            choices.push((2, Box::new(|g: &mut Gen| g.gen_enum_path())));
+        }
+
+        let total_weight: u32 = choices.iter().map(|(w, _)| w).sum();
+        let mut roll = self.next_u64() as u32 % total_weight;
+        for (weight, func) in choices {
+            if roll < weight {
+                return func(self);
+            }
+            roll -= weight;
+        }
+        // Fallback
+        self.gen_int_type()
     }
 
     fn gen_bool_type(&mut self) -> ast::Type {
@@ -129,8 +140,13 @@ impl Gen {
     }
 
     fn gen_array_type(&mut self) -> ast::Type {
-        let element_type = self.gen_type();
-        let len_val = (self.next_u64() % 32 + 1) as u128;
+        // Nested types in arrays should be constructible so array literals work
+        let element_type = if self.type_depth + 1 >= MAX_TYPE_DEPTH {
+            self.gen_leaf_type()
+        } else {
+            self.gen_local_type()
+        };
+        let len_val = (self.next_u64() % 16 + 1) as u128;
         let len = ast::Expr::Integer(Box::new(ast::IntegerLit {
             span: SrcSpan::default(),
             value: len_val,
@@ -144,7 +160,11 @@ impl Gen {
     }
 
     fn gen_slice_type(&mut self) -> ast::Type {
-        let element_type = self.gen_type();
+        let element_type = if self.type_depth + 1 >= MAX_TYPE_DEPTH {
+            self.gen_leaf_type()
+        } else {
+            self.gen_local_type()
+        };
         ast::Type::SliceType(Box::new(ast::SliceType {
             span: SrcSpan::default(),
             element_type,
@@ -153,7 +173,15 @@ impl Gen {
 
     fn gen_tuple_type(&mut self) -> ast::Type {
         let count = 1 + (self.next_u64() as usize % 3);
-        let element_types: Vec<ast::Type> = (0..count).map(|_| self.gen_type()).collect();
+        let element_types: Vec<ast::Type> = (0..count)
+            .map(|_| {
+                if self.type_depth + 1 >= MAX_TYPE_DEPTH {
+                    self.gen_leaf_type()
+                } else {
+                    self.gen_local_type()
+                }
+            })
+            .collect();
         ast::Type::TupleType(Box::new(ast::TupleType {
             span: SrcSpan::default(),
             element_types,
@@ -167,10 +195,14 @@ impl Gen {
                 span: SrcSpan::default(),
                 attributes: None,
                 name: format!("p_{}", i).into(),
-                ty: self.gen_type(),
+                ty: self.gen_local_type(),
             })
             .collect();
-        let return_type = if self.next_bool() { Some(self.gen_type()) } else { None };
+        let return_type = if self.next_bool() {
+            Some(self.gen_local_type())
+        } else {
+            None
+        };
         ast::Type::FunctionType(Box::new(ast::FunctionType {
             span: SrcSpan::default(),
             attributes: None,
@@ -180,11 +212,9 @@ impl Gen {
     }
 
     fn gen_reference_type(&mut self) -> ast::Type {
-        let to = self.gen_type();
-        let lifetime = Some(ast::Lifetime {
-            span: SrcSpan::default(),
-            name: "a".into(),
-        });
+        let to = self.gen_local_type();
+        // Use anonymous lifetime (valid Nitrate) — named lifetimes like 'a are reserved
+        // for function signatures and can't be used in arbitrary reference types.
         let mutability = if self.next_bool() {
             Some(if self.next_bool() {
                 ast::Mutability::Mut
@@ -196,7 +226,7 @@ impl Gen {
         };
         ast::Type::ReferenceType(Box::new(ast::ReferenceType {
             span: SrcSpan::default(),
-            lifetime,
+            lifetime: None,
             exclusivity: None,
             mutability,
             to,
@@ -204,7 +234,7 @@ impl Gen {
     }
 
     fn gen_pointer_type(&mut self) -> ast::Type {
-        let to = self.gen_type();
+        let to = self.gen_local_type();
         let mutability = if self.next_bool() {
             Some(if self.next_bool() {
                 ast::Mutability::Mut
@@ -263,11 +293,39 @@ impl Gen {
     /// must be fully constructible (no ref/ptr/fn types anywhere in the type).
     pub(crate) fn gen_local_type(&mut self) -> ast::Type {
         loop {
-            let ty = self.gen_type();
-            if is_constructible_type(&ty) {
+            let ty = self.gen_simple_type();
+            if is_constructible_type(&ty) && type_complexity_depth(&ty) <= MAX_TYPE_COMPLEXITY {
                 return ty;
             }
         }
+    }
+}
+
+/// Returns the nesting depth of the most deeply nested compound type.
+/// Used to limit type complexity in generated programs.
+fn type_complexity_depth(ty: &ast::Type) -> u32 {
+    match ty {
+        ast::Type::ArrayType(arr) => 1 + type_complexity_depth(&arr.element_type),
+        ast::Type::SliceType(slice) => 1 + type_complexity_depth(&slice.element_type),
+        ast::Type::TupleType(tup) => {
+            1 + tup
+                .element_types
+                .iter()
+                .map(|t| type_complexity_depth(t))
+                .max()
+                .unwrap_or(0)
+        }
+        ast::Type::FunctionType(ft) => {
+            let param_max = ft
+                .parameters
+                .iter()
+                .map(|p| type_complexity_depth(&p.ty))
+                .max()
+                .unwrap_or(0);
+            let ret_max = ft.return_type.as_ref().map(|t| type_complexity_depth(t)).unwrap_or(0);
+            1 + param_max.max(ret_max)
+        }
+        _ => 0,
     }
 }
 
@@ -313,6 +371,25 @@ pub(crate) fn is_integral_type(ty: &ast::Type) -> bool {
             | ast::Type::Int64(_)
             | ast::Type::Int128(_)
             | ast::Type::UInt8(_)
+            | ast::Type::UInt16(_)
+            | ast::Type::UInt32(_)
+            | ast::Type::UInt64(_)
+            | ast::Type::UInt128(_)
+            | ast::Type::USize(_)
+    )
+}
+
+pub(crate) fn is_signed_integral_type(ty: &ast::Type) -> bool {
+    matches!(
+        ty,
+        ast::Type::Int8(_) | ast::Type::Int16(_) | ast::Type::Int32(_) | ast::Type::Int64(_) | ast::Type::Int128(_)
+    )
+}
+
+pub(crate) fn is_unsigned_integral_type(ty: &ast::Type) -> bool {
+    matches!(
+        ty,
+        ast::Type::UInt8(_)
             | ast::Type::UInt16(_)
             | ast::Type::UInt32(_)
             | ast::Type::UInt64(_)
@@ -378,8 +455,11 @@ pub(crate) fn types_compatible(a: &ast::Type, b: &ast::Type) -> bool {
         (Bool(_), Bool(_)) => true,
         (Float32(_), Float32(_)) => true,
         (Float64(_), Float64(_)) => true,
-        // Structural compatibility for compound types
-        (ArrayType(aa), ArrayType(ab)) => types_compatible(&aa.element_type, &ab.element_type),
+        // Structural compatibility for compound types — array size matters
+        (ArrayType(aa), ArrayType(ab)) => {
+            // Check element type compatibility AND array length
+            types_compatible(&aa.element_type, &ab.element_type) && expr_values_equal(&aa.len, &ab.len)
+        }
         (SliceType(sa), SliceType(sb)) => types_compatible(&sa.element_type, &sb.element_type),
         (TupleType(ta), TupleType(tb)) if ta.element_types.len() == tb.element_types.len() => ta
             .element_types
@@ -412,6 +492,14 @@ pub(crate) fn types_compatible(a: &ast::Type, b: &ast::Type) -> bool {
     }
 }
 
+/// Compare two AST expression values for equality (best-effort, for array length checking).
+fn expr_values_equal(a: &ast::Expr, b: &ast::Expr) -> bool {
+    match (a, b) {
+        (ast::Expr::Integer(al), ast::Expr::Integer(bl)) => al.value == bl.value,
+        _ => false,
+    }
+}
+
 /// Returns `true` if a value of type `ty` can appear as the *source* of a
 /// type-cast (`expr as Ty`).  In Nitrate only numeric-to-numeric and
 /// integer-to-pointer casts are valid at the parse-tree level.
@@ -420,8 +508,7 @@ pub(crate) fn is_castable_source_type(ty: &ast::Type) -> bool {
 }
 
 /// Returns `true` if a type can appear as the *target* of a type-cast.
-/// We only support numeric-to-numeric casts.  Bool is excluded because
-/// Nitrate does not allow `float as bool` or similar.
+/// Only numeric types are valid cast targets.
 pub(crate) fn is_castable_target_type(ty: &ast::Type) -> bool {
     is_numeric_type(ty)
 }
@@ -457,8 +544,9 @@ pub(crate) fn range_element_type(ty: &ast::Type) -> ast::Type {
 }
 
 /// Pick a random numeric source type for a cast expression.
-/// Bool is excluded because `bool as X` is not valid in Nitrate.
 pub(crate) fn random_cast_source_type(generator: &mut Gen) -> ast::Type {
+    // Build a list of candidate types, avoiding ones that could cause
+    // value-range issues when cast.
     match generator.next_u64() % 8 {
         0 => int32_type(),
         1 => usize_type(),
@@ -499,6 +587,8 @@ pub(crate) fn max_integer_value(ty: &ast::Type) -> u128 {
 }
 
 /// Produce a type-safe fallback expression for any type without using bogus casts.
+/// Only handles primitive and simple compound types. Callers should avoid
+/// reaching this for struct/ref/ptr/function types.
 pub(crate) fn fallback_expr(ty: &ast::Type) -> ast::Expr {
     if is_bool_type(ty) {
         return ast::Expr::Boolean(ast::BooleanLit {

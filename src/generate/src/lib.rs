@@ -79,21 +79,33 @@ pub(crate) const MAX_ITEM_DEPTH: u32 = 3;
 /// Return the budget weight (cost) for generating a given rvalue kind.
 /// Heavier constructs like `if`, `match`, loops cost more so they appear
 /// naturally less frequently than literals and simple expressions.
+/// These weights are used both for selection frequency AND budget spending.
 pub(crate) fn budget_weight_for_kind(kind: &ast::RValueKind) -> u32 {
     use ast::RValueKind::*;
     match kind {
-        // Leaf / trivial expressions
-        Boolean | Integer | Float | String | BString | Path | Parentheses => 1,
+        // Leaf / trivial expressions — cheap
+        Boolean | Integer | Float | String | BString | Path | Parentheses | Tuple => 1,
         // Simple operations
-        UnaryExpr | Cast | TypeInfo => 2,
+        UnaryExpr => 2,
+        Cast => 3,
+        TypeInfo => 2,
         // Binary operators + compound containers
-        BinExpr | Range | Tuple | List | IndexAccess => 3,
+        BinExpr => 3,
+        Range => 3,
+        List => 4,
+        IndexAccess => 3,
         // Nested constructs
-        Block | Closure | StructInit | FieldAccess => 4,
-        // Control flow
-        If | Match | FunctionCall => 5,
-        While | ForEach => 6,
-        Break | Continue | Return => 2,
+        Block => 5,
+        Closure => 5,
+        StructInit => 6,
+        FieldAccess => 5,
+        // Control flow — expensive
+        If => 8,
+        Match => 8,
+        FunctionCall => 6,
+        While => 10,
+        ForEach => 8,
+        Break | Continue | Return => 1,
         // Not applicable
         _ => 3,
     }

@@ -8,26 +8,25 @@ use nitrate_translation::{
 
 impl Gen {
     fn select_item_kind(&mut self) -> ast::ItemKind {
-        // Build a dynamic list of available item kinds with weights,
-        // filtering out items that aren't available in the current context.
-        // Use integer codes to represent item kinds to avoid borrowing issues
+        // Build a dynamic list of available item kinds with weights.
+        // We use integers as discriminant codes to avoid needing Clone on ItemKind.
         // 0=Function, 1=Struct, 2=Enum, 3=Variable, 4=TypeAlias, 5=Module
-        let mut choices: Vec<(u8, u32)> = Vec::new();
+        let mut weights: Vec<(u8, u32)> = Vec::new();
 
-        choices.push((0, 40)); // Function
+        weights.push((0, 40)); // Function
         if self.item_depth < MAX_ITEM_DEPTH {
-            choices.push((5, 5)); // Module
+            weights.push((5, 5)); // Module
         }
-        choices.push((1, 20)); // Struct
-        choices.push((2, 8)); // Enum
-        choices.push((3, 12)); // Variable
-        choices.push((4, 10)); // TypeAlias
+        weights.push((1, 20)); // Struct
+        weights.push((2, 8)); // Enum
+        weights.push((3, 12)); // Variable
+        weights.push((4, 10)); // TypeAlias
 
-        let total_weight: u32 = choices.iter().map(|(_, w)| w).sum();
+        let total_weight: u32 = weights.iter().map(|(_, w)| w).sum();
         let mut roll = self.next_u64() as u32 % total_weight;
-        for (kind_code, weight) in &choices {
+        for (code, weight) in &weights {
             if roll < *weight {
-                return match kind_code {
+                return match code {
                     0 => ast::ItemKind::Function,
                     1 => ast::ItemKind::Struct,
                     2 => ast::ItemKind::Enum,
@@ -76,9 +75,7 @@ impl Gen {
             attributes: None,
             mutability: None,
             name: name.into(),
-            ty: Some(ast::Type::Int32(ast::Int32 {
-                span: SrcSpan::default(),
-            })),
+            ty: Some(crate::ty::int32_type()),
             initializer: Some(ast::Expr::Integer(Box::new(ast::IntegerLit {
                 span: SrcSpan::default(),
                 value: 0,
@@ -90,7 +87,37 @@ impl Gen {
     pub(crate) fn gen_item_main(&mut self) -> ast::Item {
         self.has_main = true;
         // Spend budget for main function
-        self.spend_budget_function();
+        if !self.spend_budget_function() {
+            // Not enough budget, generate a minimal main
+            let func_info = FuncInfo {
+                name: "main".to_string(),
+                params: Vec::new(),
+                return_type: None,
+            };
+            self.register_function(func_info);
+            return ast::Item::Function(ast::Function {
+                span: SrcSpan::default(),
+                visibility: None,
+                attributes: None,
+                name: "main".into(),
+                generics: None,
+                parameters: ast::FuncParams {
+                    span: SrcSpan::default(),
+                    params: Vec::new(),
+                    variadic: false,
+                },
+                return_type: None,
+                definition: Some(ast::Block {
+                    span: SrcSpan::default(),
+                    safety: None,
+                    elements: vec![ast::BlockItem::Expr(ast::Expr::Return(Box::new(ast::Return {
+                        span: SrcSpan::default(),
+                        value: None,
+                    })))],
+                }),
+                abi: None,
+            });
+        }
         self.push_frame();
 
         // main() returns either i32 or () (unit). These are the only valid
@@ -138,7 +165,7 @@ impl Gen {
         let item_count = 1 + self.gen_index(2);
         let mut items = Vec::with_capacity(item_count);
         for _ in 0..item_count {
-            if self.budget_left() > 0 {
+            if self.budget_left() >= 3 {
                 items.push(self.gen_item(None));
             }
         }
@@ -157,6 +184,7 @@ impl Gen {
         if !self.spend_budget_type_alias() {
             return self.gen_dummy_item();
         }
+        // Type aliases can reference any type — they're just names.
         let alias_type = Some(self.gen_simple_type());
         ast::Item::TypeAlias(ast::TypeAlias {
             span: SrcSpan::default(),
@@ -177,7 +205,7 @@ impl Gen {
         let mut fields: Vec<(String, ast::Type)> = Vec::with_capacity(field_count);
         let mut ast_fields = Vec::with_capacity(field_count);
         for i in 0..field_count {
-            // Struct fields must use constructible types so struct inits can work
+            // Struct fields must use constructible types so struct inits can work.
             let field_ty = self.gen_local_type();
             let field_name = format!("field_{}", i);
             fields.push((field_name.clone(), field_ty.clone()));
@@ -190,6 +218,8 @@ impl Gen {
                 default_value: None,
             });
         }
+        // Register BEFORE generating the body to avoid issues with self-referencing
+        // (though structs can't directly reference themselves without generics)
         self.register_struct(StructInfo {
             name: name.clone(),
             fields,
@@ -209,13 +239,14 @@ impl Gen {
             return self.gen_dummy_item();
         }
         let name = self.gen_unique_name("Enum");
-        // Register the enum name so it can appear in TypePath generation
+        // Register the enum name so it can appear in TypePath generation.
         self.register_enum(name.clone());
         let variant_count = 2 + self.gen_index(4);
         let mut variants = Vec::with_capacity(variant_count);
         for _ in 0..variant_count {
             let variant_name: NString = format!("Variant_{}", self.gen_unique_suffix()).into();
             // Enum variant payloads should be constructible types
+            // so they can be destructured in match arms.
             let payload_ty = if self.next_bool() {
                 Some(self.gen_local_type())
             } else {
@@ -264,9 +295,9 @@ impl Gen {
         })
     }
 
-    /// Generate a type that is safe for const initialization (numeric, bool).
+    /// Generate a type that is safe for const initialization (numeric, bool, unit).
     fn gen_const_initializable_type(&mut self) -> ast::Type {
-        match self.next_u64() % 5 {
+        match self.next_u64() % 6 {
             0 => ast::Type::Bool(ast::Bool {
                 span: SrcSpan::default(),
             }),
@@ -279,9 +310,10 @@ impl Gen {
             3 => ast::Type::UInt64(ast::UInt64 {
                 span: SrcSpan::default(),
             }),
-            _ => ast::Type::Int64(ast::Int64 {
+            4 => ast::Type::Int64(ast::Int64 {
                 span: SrcSpan::default(),
             }),
+            _ => unit_type(),
         }
     }
 
@@ -323,7 +355,7 @@ impl Gen {
                 elements: vec![],
             }));
         }
-        // For any other type, return 0
+        // For any other type, return 0 (shouldn't happen due to filtering above)
         ast::Expr::Integer(Box::new(ast::IntegerLit {
             span: SrcSpan::default(),
             value: 0,
@@ -331,32 +363,24 @@ impl Gen {
         }))
     }
 
+    /// Generate a function body block that ends with a `ret <expr>;` where the expression
+    /// type matches `ret_ty`.  This is the canonical pattern for Nitrate functions.
     fn gen_block_with_return(&mut self, ret_ty: &ast::Type) -> ast::Block {
-        if !self.spend_budget_block() {
-            let ret_val = if is_unit_type(ret_ty) {
-                None
-            } else {
-                Some(fallback_expr(ret_ty))
-            };
-            return ast::Block {
-                span: SrcSpan::default(),
-                safety: None,
-                elements: vec![ast::BlockItem::Expr(ast::Expr::Return(Box::new(ast::Return {
-                    span: SrcSpan::default(),
-                    value: ret_val,
-                })))],
-            };
-        }
+        // Do NOT spend block budget here — the function item has already paid.
+        // Budget spending happens at the item level only.
 
         let prev_in_loop = self.in_loop();
+        self.set_in_loop(false);
+
         let stmt_count = self.gen_index(4);
         let mut elements = Vec::with_capacity(stmt_count + 1);
         for _ in 0..stmt_count {
             if self.budget_left() > 0 {
                 if self.next_bool() && self.budget_left() > 1 {
+                    // Variable declaration with constructible type
                     let init_ty = self.gen_local_type();
-                    let var_name = self.gen_unique_name("v");
                     let init = self.gen_rvalue(&init_ty);
+                    let var_name = self.gen_unique_name("v");
                     let actual_name = self.add_local(var_name, init_ty.clone());
                     elements.push(ast::BlockItem::Variable(ast::LocalVariable {
                         span: SrcSpan::default(),
@@ -375,13 +399,15 @@ impl Gen {
                 }
             }
         }
-        // Always end with a return
+
+        // Always end with a return statement matching ret_ty.
+        // Use BlockItem::Stmt (not Expr) so the pretty printer emits a trailing `;`.
         let ret_val = if is_unit_type(ret_ty) {
             None
         } else {
             Some(self.gen_rvalue(ret_ty))
         };
-        elements.push(ast::BlockItem::Expr(ast::Expr::Return(Box::new(ast::Return {
+        elements.push(ast::BlockItem::Stmt(ast::Expr::Return(Box::new(ast::Return {
             span: SrcSpan::default(),
             value: ret_val,
         }))));
@@ -404,7 +430,7 @@ impl Gen {
         let mut params = Vec::with_capacity(param_count);
         let mut param_types = Vec::with_capacity(param_count);
         for i in 0..param_count {
-            // Function parameters should use constructible types so callers can pass values
+            // Function parameters must use constructible types so callers can pass values.
             let param_ty = self.gen_local_type();
             param_types.push(param_ty.clone());
             params.push(ast::FuncParam {
@@ -423,7 +449,7 @@ impl Gen {
             variadic: false,
         };
 
-        // Return type should also be constructible
+        // Return type must be constructible so we can generate return values.
         let return_type = if self.next_bool() {
             Some(self.gen_local_type())
         } else {
@@ -432,18 +458,20 @@ impl Gen {
 
         let body_ty = return_type.clone().unwrap_or_else(unit_type);
 
-        self.push_frame();
-        for p in &func_params.params {
-            let local_name: String = p.name.to_string();
-            self.add_local(local_name, p.ty.clone());
-        }
-
+        // Register the function BEFORE generating the body, so recursive calls
+        // and calls between sibling functions can find this function.
         let func_info = FuncInfo {
             name: name.clone(),
             params: param_types,
             return_type: return_type.clone(),
         };
         self.register_function(func_info);
+
+        self.push_frame();
+        for p in &func_params.params {
+            let local_name: String = p.name.to_string();
+            self.add_local(local_name, p.ty.clone());
+        }
 
         let definition = Some(self.gen_block_with_return(&body_ty));
         self.pop_frame();
