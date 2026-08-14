@@ -1,5 +1,6 @@
 use crate::Gen;
 use nitrate_translation::parsetree::ast::{self, *};
+use std::matches;
 
 /// Maximum nesting depth for recursively-generated types to prevent stack
 /// overflow when types are generated during expression generation.
@@ -34,45 +35,6 @@ impl Gen {
         };
         self.type_depth = self.type_depth.saturating_sub(1);
         result
-    }
-
-    /// Backward-compatible alias.
-    pub(crate) fn gen_type(&mut self) -> ast::Type {
-        self.gen_simple_type()
-    }
-
-    fn gen_leaf_type(&mut self) -> ast::Type {
-        let uses_enums = self.has_any_enum();
-        let uses_structs = self.has_any_struct();
-
-        // Build a weighted list of available leaf types
-        let mut choices: Vec<(u32, Box<dyn FnOnce(&mut Gen) -> ast::Type>)> = Vec::new();
-        // Always-available primitives get higher weight
-        for _ in 0..3 {
-            choices.push((3, Box::new(|g: &mut Gen| g.gen_bool_type())));
-            choices.push((3, Box::new(|g: &mut Gen| g.gen_int_type())));
-            choices.push((2, Box::new(|g: &mut Gen| g.gen_uint_type())));
-        }
-        choices.push((2, Box::new(|g: &mut Gen| g.gen_float_type())));
-        choices.push((2, Box::new(|g: &mut Gen| g.gen_usize_type())));
-
-        if uses_structs {
-            choices.push((2, Box::new(|g: &mut Gen| g.gen_type_path())));
-        }
-        if uses_enums {
-            choices.push((2, Box::new(|g: &mut Gen| g.gen_enum_path())));
-        }
-
-        let total_weight: u32 = choices.iter().map(|(w, _)| w).sum();
-        let mut roll = self.next_u64() as u32 % total_weight;
-        for (weight, func) in choices {
-            if roll < weight {
-                return func(self);
-            }
-            roll -= weight;
-        }
-        // Fallback
-        self.gen_int_type()
     }
 
     fn gen_bool_type(&mut self) -> ast::Type {
@@ -139,14 +101,52 @@ impl Gen {
         })
     }
 
+    pub(crate) fn gen_leaf_type(&mut self) -> ast::Type {
+        let uses_enums = self.has_any_enum();
+        let uses_structs = self.has_any_struct();
+
+        // Build a weighted list of available leaf types
+        let mut choices: Vec<(u32, Box<dyn FnOnce(&mut Gen) -> ast::Type>)> = Vec::new();
+        // Always-available primitives get higher weight
+        for _ in 0..3 {
+            choices.push((3, Box::new(|g: &mut Gen| g.gen_bool_type())));
+            choices.push((3, Box::new(|g: &mut Gen| g.gen_int_type())));
+            choices.push((2, Box::new(|g: &mut Gen| g.gen_uint_type())));
+        }
+        choices.push((2, Box::new(|g: &mut Gen| g.gen_float_type())));
+        choices.push((2, Box::new(|g: &mut Gen| g.gen_usize_type())));
+
+        if uses_structs {
+            choices.push((2, Box::new(|g: &mut Gen| g.gen_type_path())));
+        }
+        // NOTE: enums are intentionally NOT generated as TypePaths here because
+        // there is currently no code path to construct a value of an enum type,
+        // which would cause infinite recursion in rvalue generation. Enums are
+        // still emitted as top-level items, but never referenced by types.
+
+        let total_weight: u32 = choices.iter().map(|(w, _)| w).sum();
+        let mut roll = self.next_u64() as u32 % total_weight;
+        for (weight, func) in choices {
+            if roll < weight {
+                return func(self);
+            }
+            roll -= weight;
+        }
+        // Fallback
+        self.gen_int_type()
+    }
+
     fn gen_array_type(&mut self) -> ast::Type {
-        // Nested types in arrays should be constructible so array literals work
+        // Nested types in arrays should be constructible so array literals work.
+        // Use gen_local_type for element (guarantees constructible) but guard
+        // depth via a constructible leaf fallback.
         let element_type = if self.type_depth + 1 >= MAX_TYPE_DEPTH {
-            self.gen_leaf_type()
+            self.gen_constructible_leaf()
         } else {
             self.gen_local_type()
         };
-        let len_val = (self.next_u64() % 16 + 1) as u128;
+        // Clamp array length to prevent massive literals
+        let len_val = ((self.next_u64() % 8) + 1) as u128;
         let len = ast::Expr::Integer(Box::new(ast::IntegerLit {
             span: SrcSpan::default(),
             value: len_val,
@@ -161,7 +161,7 @@ impl Gen {
 
     fn gen_slice_type(&mut self) -> ast::Type {
         let element_type = if self.type_depth + 1 >= MAX_TYPE_DEPTH {
-            self.gen_leaf_type()
+            self.gen_constructible_leaf()
         } else {
             self.gen_local_type()
         };
@@ -176,7 +176,7 @@ impl Gen {
         let element_types: Vec<ast::Type> = (0..count)
             .map(|_| {
                 if self.type_depth + 1 >= MAX_TYPE_DEPTH {
-                    self.gen_leaf_type()
+                    self.gen_constructible_leaf()
                 } else {
                     self.gen_local_type()
                 }
@@ -195,11 +195,12 @@ impl Gen {
                 span: SrcSpan::default(),
                 attributes: None,
                 name: format!("p_{}", i).into(),
-                ty: self.gen_local_type(),
+                // Use simple type for function params (less restrictive)
+                ty: self.gen_simple_type(),
             })
             .collect();
         let return_type = if self.next_bool() {
-            Some(self.gen_local_type())
+            Some(self.gen_simple_type())
         } else {
             None
         };
@@ -271,31 +272,50 @@ impl Gen {
         }
     }
 
-    fn gen_enum_path(&mut self) -> ast::Type {
-        if self.has_any_enum() {
-            let idx = self.gen_index(self.known_enums.len());
-            let name = self.known_enums[idx].clone();
-            ast::Type::TypePath(Box::new(ast::TypePath {
-                span: SrcSpan::default(),
-                segments: vec![ast::TypePathSegment {
-                    span: SrcSpan::default(),
-                    name,
-                    type_arguments: None,
-                }],
-                resolved_path: None,
-            }))
-        } else {
-            self.gen_int_type()
-        }
-    }
+    // Enum TypePaths are intentionally not generated. See the note in
+    // `gen_leaf_type` for why: there is no way to build a value of an enum
+    // type, which would cause infinite recursion during expression generation.
+
+    /// Maximum number of attempts to generate a constructible type before
+    /// falling back to a simple leaf type. Prevents infinite loops when
+    /// non-constructible types (ref/ptr/fn) keep being randomly selected.
+    const MAX_LOCAL_TYPE_ATTEMPTS: u32 = 100;
 
     /// Generate a type that is safe to use for local variables — meaning it
     /// must be fully constructible (no ref/ptr/fn types anywhere in the type).
     pub(crate) fn gen_local_type(&mut self) -> ast::Type {
-        loop {
+        for _ in 0..Self::MAX_LOCAL_TYPE_ATTEMPTS {
             let ty = self.gen_simple_type();
             if is_constructible_type(&ty) && type_complexity_depth(&ty) <= MAX_TYPE_COMPLEXITY {
                 return ty;
+            }
+        }
+        // Fallback to a guaranteed constructible leaf type
+        self.gen_constructible_leaf()
+    }
+
+    /// Generate a simple constructible type guaranteed to succeed.
+    fn gen_constructible_leaf(&mut self) -> ast::Type {
+        match self.next_u64() % 7 {
+            0 => self.gen_bool_type(),
+            1 => self.gen_int_type(),
+            2 => self.gen_uint_type(),
+            3 => self.gen_float_type(),
+            4 => self.gen_usize_type(),
+            5 => {
+                // Empty tuple (unit) — always constructible
+                ast::Type::TupleType(Box::new(ast::TupleType {
+                    span: SrcSpan::default(),
+                    element_types: vec![],
+                }))
+            }
+            _ => {
+                // Struct path if available, else int
+                if self.has_any_struct() {
+                    self.gen_type_path()
+                } else {
+                    self.gen_int_type()
+                }
             }
         }
     }

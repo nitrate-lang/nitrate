@@ -5,19 +5,26 @@ use nitrate_translation::{
     parsetree::ast::{self, *},
     token::IntegerKind,
 };
+use std::{format, unreachable};
 
 impl Gen {
     fn select_item_kind(&mut self) -> ast::ItemKind {
         // Build a dynamic list of available item kinds with weights.
-        // We use integers as discriminant codes to avoid needing Clone on ItemKind.
-        // 0=Function, 1=Struct, 2=Enum, 3=Variable, 4=TypeAlias, 5=Module
+        // We use integers as discriminant codes: 0=Function, 1=Struct, 2=Enum,
+        // 3=Variable, 4=TypeAlias, 5=Module
         let mut weights: Vec<(u8, u32)> = Vec::new();
 
         weights.push((0, 40)); // Function
         if self.item_depth < MAX_ITEM_DEPTH {
-            weights.push((5, 5)); // Module
+            weights.push((5, 5)); // Module (only when not too deep)
         }
-        weights.push((1, 20)); // Struct
+        // Only generate structs/enums if we haven't generated too many already,
+        // to avoid polluting the global type registry with useless types.
+        if self.has_any_struct() || self.next_bool() {
+            weights.push((1, 15)); // Struct
+        } else {
+            weights.push((1, 25)); // Struct (higher weight when none exist yet)
+        }
         weights.push((2, 8)); // Enum
         weights.push((3, 12)); // Variable
         weights.push((4, 10)); // TypeAlias
@@ -52,35 +59,29 @@ impl Gen {
         };
 
         match kind {
-            ast::ItemKind::SyntaxError => unreachable!(),
+            ast::ItemKind::SyntaxError | ast::ItemKind::Import | ast::ItemKind::Trait | ast::ItemKind::Impl => {
+                unreachable!("select_item_kind should never return these variants")
+            }
             ast::ItemKind::Module => self.gen_item_module(),
-            ast::ItemKind::Import => self.gen_dummy_item(),
             ast::ItemKind::TypeAlias => self.gen_item_type_alias(),
             ast::ItemKind::Struct => self.gen_item_struct(),
             ast::ItemKind::Enum => self.gen_item_enum(),
-            ast::ItemKind::Trait => self.gen_dummy_item(),
-            ast::ItemKind::Impl => self.gen_dummy_item(),
             ast::ItemKind::Function => self.gen_item_function(argc),
             ast::ItemKind::Variable => self.gen_item_variable(),
         }
     }
 
-    /// Generate a minimal placeholder item that doesn't pollute the function registry.
+    /// Generate a minimal placeholder item that doesn't affect the type/function registry.
+    /// Uses a type alias (which is harmless) rather than a global constant.
     pub(crate) fn gen_dummy_item(&mut self) -> ast::Item {
-        let name = self.gen_unique_name("unused");
-        ast::Item::Variable(ast::GlobalVariable {
+        let dummy_name = self.gen_unique_name("Unused");
+        ast::Item::TypeAlias(ast::TypeAlias {
             span: SrcSpan::default(),
             visibility: None,
-            kind: ast::GlobalVariableKind::Const,
             attributes: None,
-            mutability: None,
-            name: name.into(),
-            ty: Some(crate::ty::int32_type()),
-            initializer: Some(ast::Expr::Integer(Box::new(ast::IntegerLit {
-                span: SrcSpan::default(),
-                value: 0,
-                kind: IntegerKind::Dec,
-            }))),
+            name: dummy_name.into(),
+            generics: None,
+            alias_type: Some(crate::ty::int32_type()),
         })
     }
 
@@ -110,10 +111,7 @@ impl Gen {
                 definition: Some(ast::Block {
                     span: SrcSpan::default(),
                     safety: None,
-                    elements: vec![ast::BlockItem::Expr(ast::Expr::Return(Box::new(ast::Return {
-                        span: SrcSpan::default(),
-                        value: None,
-                    })))],
+                    elements: vec![],
                 }),
                 abi: None,
             });
@@ -162,7 +160,8 @@ impl Gen {
             return self.gen_dummy_item();
         }
         self.item_depth += 1;
-        let item_count = 1 + self.gen_index(2);
+        // Generate 1-3 items inside the module (limited to avoid huge trees)
+        let item_count = 1 + (self.gen_index(3));
         let mut items = Vec::with_capacity(item_count);
         for _ in 0..item_count {
             if self.budget_left() >= 3 {
@@ -201,7 +200,8 @@ impl Gen {
             return self.gen_dummy_item();
         }
         let name = self.gen_unique_name("Struct");
-        let field_count = 1 + self.gen_index(3);
+        // 1-3 fields (down from 1-4 to keep structs manageable)
+        let field_count = 1 + (self.gen_index(3));
         let mut fields: Vec<(String, ast::Type)> = Vec::with_capacity(field_count);
         let mut ast_fields = Vec::with_capacity(field_count);
         for i in 0..field_count {
@@ -219,7 +219,6 @@ impl Gen {
             });
         }
         // Register BEFORE generating the body to avoid issues with self-referencing
-        // (though structs can't directly reference themselves without generics)
         self.register_struct(StructInfo {
             name: name.clone(),
             fields,
@@ -241,7 +240,8 @@ impl Gen {
         let name = self.gen_unique_name("Enum");
         // Register the enum name so it can appear in TypePath generation.
         self.register_enum(name.clone());
-        let variant_count = 2 + self.gen_index(4);
+        // 2-4 variants (capped to keep enums manageable)
+        let variant_count = 2 + (self.gen_index(3));
         let mut variants = Vec::with_capacity(variant_count);
         for _ in 0..variant_count {
             let variant_name: NString = format!("Variant_{}", self.gen_unique_suffix()).into();
@@ -366,13 +366,11 @@ impl Gen {
     /// Generate a function body block that ends with a `ret <expr>;` where the expression
     /// type matches `ret_ty`.  This is the canonical pattern for Nitrate functions.
     fn gen_block_with_return(&mut self, ret_ty: &ast::Type) -> ast::Block {
-        // Do NOT spend block budget here — the function item has already paid.
-        // Budget spending happens at the item level only.
-
         let prev_in_loop = self.in_loop();
         self.set_in_loop(false);
 
-        let stmt_count = self.gen_index(4);
+        // 0-4 statements before the return (capped to keep functions manageable)
+        let stmt_count = self.gen_index(5);
         let mut elements = Vec::with_capacity(stmt_count + 1);
         for _ in 0..stmt_count {
             if self.budget_left() > 0 {

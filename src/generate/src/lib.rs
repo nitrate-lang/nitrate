@@ -87,22 +87,22 @@ pub(crate) fn budget_weight_for_kind(kind: &ast::RValueKind) -> u32 {
         Boolean | Integer | Float | String | BString | Path | Parentheses | Tuple => 1,
         // Simple operations
         UnaryExpr => 2,
-        Cast => 3,
-        TypeInfo => 2,
+        Cast => 2,
+        TypeInfo => 1,
         // Binary operators + compound containers
         BinExpr => 3,
-        Range => 3,
+        Range => 4,
         List => 4,
         IndexAccess => 3,
         // Nested constructs
         Block => 5,
         Closure => 5,
         StructInit => 6,
-        FieldAccess => 5,
+        FieldAccess => 6,
         // Control flow — expensive
         If => 8,
         Match => 8,
-        FunctionCall => 6,
+        FunctionCall => 5,
         While => 10,
         ForEach => 8,
         Break | Continue | Return => 1,
@@ -143,17 +143,17 @@ impl Gen {
 
     /// Spend budget for a struct definition.
     pub(crate) fn spend_budget_struct(&mut self) -> bool {
-        self.spend_budget(6)
+        self.spend_budget(5)
     }
 
     /// Spend budget for an enum definition.
     pub(crate) fn spend_budget_enum(&mut self) -> bool {
-        self.spend_budget(6)
+        self.spend_budget(5)
     }
 
     /// Spend budget for a module definition.
     pub(crate) fn spend_budget_module(&mut self) -> bool {
-        self.spend_budget(5)
+        self.spend_budget(4)
     }
 
     /// Spend budget for a global variable.
@@ -163,7 +163,7 @@ impl Gen {
 
     /// Spend budget for a type alias.
     pub(crate) fn spend_budget_type_alias(&mut self) -> bool {
-        self.spend_budget(3)
+        self.spend_budget(2)
     }
 
     /// Spend budget for a kind-specific amount (used before generating a specific rvalue).
@@ -314,7 +314,7 @@ impl Gen {
     }
 
     pub(crate) fn force_leaf(&self) -> bool {
-        self.rvalue_depth >= MAX_RVALUE_DEPTH || self.budget_left() < 2
+        self.rvalue_depth >= MAX_RVALUE_DEPTH || self.budget_left() < 3
     }
 
     pub(crate) fn set_in_loop(&mut self, val: bool) {
@@ -337,8 +337,12 @@ impl Gen {
         let mut items = Vec::new();
 
         // Generate main first if budget permits.
-        if self.budget_left() >= 10 {
+        if self.budget_left() >= 8 {
             items.push(self.gen_item_main());
+        } else {
+            // Not enough budget for main, generate a minimal placeholder
+            items.push(self.gen_dummy_item());
+            self.has_main = true; // prevent later attempts
         }
 
         // Generate the required number of additional functions.
@@ -348,7 +352,7 @@ impl Gen {
             self.config.function_count
         };
         let mut functions_generated = 0u32;
-        while functions_generated < functions_needed && self.budget_left() >= 10 {
+        while functions_generated < functions_needed && self.budget_left() >= 8 {
             let item = self.gen_item_function(None);
             functions_generated += 1;
             items.push(item);
@@ -356,7 +360,7 @@ impl Gen {
 
         // Generate additional random items to cover all item kinds,
         // up to a reasonable limit based on remaining budget.
-        let extra_ceiling = 5 + self.gen_index(6);
+        let extra_ceiling = 2 + self.gen_index(5);
         for _ in 0..extra_ceiling {
             if self.budget_left() < 3 {
                 break;

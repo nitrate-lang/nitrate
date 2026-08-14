@@ -105,16 +105,17 @@ impl Gen {
             }
         }
 
-        // Path references — if a type-compatible local exists
-        if !constructible || is_type_path(ty) {
-            // Already handled above
-        } else if self.has_any_compatible_local(ty) {
-            kinds.push((Path, 5));
+        // Path references — if a type-compatible local exists, always eligible
+        if self.has_any_compatible_local(ty) {
+            // Deduplicate: only add if not already present
+            if !kinds.iter().any(|(k, _)| matches!(k, Path)) {
+                kinds.push((Path, 5));
+            }
         }
 
         // Cast — only valid between castable source/target types
         if is_castable_target_type(ty) && constructible && !force {
-            kinds.push((Cast, 4));
+            kinds.push((Cast, 3));
         }
 
         // If expression — valid for any constructible non-unit type (produces a value)
@@ -122,7 +123,7 @@ impl Gen {
             kinds.push((If, 3));
         }
 
-        // Match expression — only for integral types
+        // Match expression — only for integral types (match needs integral scrutinee)
         if is_integral_type(ty) && constructible && !force {
             kinds.push((Match, 3));
         }
@@ -150,10 +151,14 @@ impl Gen {
         }
 
         // Prefer leaf kinds when forced — keep only simple, non-recursive kinds.
-        // Parentheses is excluded because it recursively calls gen_rvalue, which can
-        // defeat the leaf force and cause infinite recursion.
+        // Parentheses is excluded because it recursively calls gen_rvalue.
         if force {
-            kinds.retain(|(k, _)| matches!(k, Boolean | Integer | Float | String | BString | Path | Cast | Tuple));
+            kinds.retain(|(k, _)| {
+                matches!(
+                    k,
+                    Boolean | Integer | Float | String | BString | Path | Cast | Tuple | Range
+                )
+            });
         }
 
         // If we somehow have no valid kinds, produce a safe fallback
@@ -167,25 +172,24 @@ impl Gen {
             } else if is_unit {
                 return Tuple;
             } else {
-                // Last resort: try a path to an existing local, or parentheses
+                // Last resort: try a path to an existing local
                 if self.has_any_compatible_local(ty) {
                     return Path;
                 }
-                return Parentheses;
+                return Integer;
             }
         }
 
-        // Weighted selection — use index-based loop to avoid moving kinds
+        // Weighted selection
         let total: u32 = kinds.iter().map(|(_, w)| w).sum();
         if total == 0 {
             return Integer;
         }
         let mut roll = self.next_u64() as u32 % total;
         for idx in 0..kinds.len() {
-            let k = &kinds[idx].0;
             let w = kinds[idx].1;
             if roll < w {
-                // RValueKind is not Copy/Clone, so we match to construct the return value
+                // RValueKind is not Copy/Clone, so we must match explicitly
                 return match kinds[idx].0 {
                     Boolean => Boolean,
                     Integer => Integer,
@@ -214,7 +218,11 @@ impl Gen {
                     Continue => Continue,
                     Return => Return,
                     Parentheses => Parentheses,
-                    _ => Integer,
+                    ref other => {
+                        // For unknown/not-yet-handled variants, fallback to Integer
+                        let _ = other;
+                        Integer
+                    }
                 };
             }
             roll -= w;
@@ -260,8 +268,7 @@ impl Gen {
                     .any(|s| s.name == seg.name && !s.fields.is_empty());
             }
         }
-        // If the target type is not a known TypePath, fall back to any struct with fields
-        self.known_structs.iter().any(|s| !s.fields.is_empty())
+        false
     }
 
     /// Maximum depth for parentheses nesting — beyond this, parens are simply
@@ -320,8 +327,7 @@ impl Gen {
             ast::RValueKind::Break => self.gen_rvalue_break(ty),
             ast::RValueKind::Continue => self.gen_rvalue_continue(ty),
             ast::RValueKind::Return => self.gen_rvalue_return(ty),
-            ast::RValueKind::Await => fallback_expr(ty),
-            ast::RValueKind::MethodCall => fallback_expr(ty),
+            ast::RValueKind::Await | ast::RValueKind::MethodCall => fallback_expr(ty),
         };
 
         self.dec_rvalue_depth();
@@ -418,12 +424,13 @@ impl Gen {
                 ast::Expr::Integer(lit) => {
                     let n: usize = lit.value.try_into().unwrap_or(1);
                     // Clamp to reasonable size to avoid massive outputs
-                    n.min(20)
+                    n.min(10)
                 }
-                _ => 1 + self.gen_index(4),
+                _ => 1 + self.gen_index(3),
             }
         } else {
-            1 + self.gen_index(4)
+            // Slice: generate 0-3 elements so lists stay readable
+            self.gen_index(4)
         };
 
         let elements: Vec<ast::Expr> = (0..len).map(|_| self.gen_rvalue(&elem_ty)).collect();
@@ -511,7 +518,7 @@ impl Gen {
         if ops.is_empty() {
             return fallback_expr(ty);
         }
-        let operator = ops[self.gen_index(ops.len())];
+        let operator = ops[self.gen_index(ops.len())].clone();
         let operand_ty = unary_operand_type(operator, ty);
         let operand = self.gen_rvalue(&operand_ty);
         ast::Expr::UnaryExpr(Box::new(ast::UnaryExpr {
@@ -526,7 +533,7 @@ impl Gen {
         if ops.is_empty() {
             return fallback_expr(ty);
         }
-        let op = ops[self.gen_index(ops.len())];
+        let op = ops[self.gen_index(ops.len())].clone();
         let (left_ty, right_ty) = binary_operand_types(op, ty);
         let left = self.gen_rvalue(&left_ty);
         let right = self.gen_rvalue(&right_ty);
@@ -625,7 +632,11 @@ impl Gen {
             }
         }
         // Final expression produces the block's value
-        let final_expr = self.gen_rvalue(ty);
+        let final_expr = if is_constructible_type(ty) {
+            self.gen_rvalue(ty)
+        } else {
+            fallback_expr(ty)
+        };
         elements.push(ast::BlockItem::Expr(final_expr));
 
         self.pop_frame();
@@ -720,22 +731,20 @@ impl Gen {
             }
         }
 
-        // Priority 4: If there's an enum matching, use an enum variant reference
-        // (though this doesn't really work as a path expression for non-function types)
-
         // No compatible path found - return empty path (caller will use fallback)
         self.make_single_segment_path(String::new())
     }
 
     fn gen_rvalue_index_access(&mut self, ty: &ast::Type) -> ast::Expr {
-        // Generate an array/slice value and index into it.
+        // Generate a slice value and index into it.
         // The collection's element type must match `ty`.
-        // Use a slice for simplicity (avoids array length constraints).
         let collection_ty = ast::Type::SliceType(Box::new(ast::SliceType {
             span: SrcSpan::default(),
             element_type: ty.clone(),
         }));
+        // Generate collection first so it can be referenced
         let collection = self.gen_rvalue(&collection_ty);
+        // Index must be usize
         let index = self.gen_rvalue(&usize_type());
         ast::Expr::IndexAccess(Box::new(ast::IndexAccess {
             span: SrcSpan::default(),
@@ -802,10 +811,13 @@ impl Gen {
     }
 
     fn gen_rvalue_if(&mut self, ty: &ast::Type) -> ast::Expr {
+        let prev_in_loop = self.in_loop();
+        self.set_in_loop(false);
+
         let condition = self.gen_rvalue(&bool_type());
         let true_branch = self.gen_block_with_type(ty);
         // Always provide an else branch to ensure the if produces a value
-        let false_branch = if self.next_bool() && self.budget_left() > 3 {
+        let false_branch = if self.next_bool() && self.budget_left() > 5 {
             // Nested else-if
             Some(ast::ElseIf::If(Box::new(ast::If {
                 span: SrcSpan::default(),
@@ -817,6 +829,9 @@ impl Gen {
             // Plain else block
             Some(ast::ElseIf::Block(self.gen_block_with_type(ty)))
         };
+
+        self.set_in_loop(prev_in_loop);
+
         ast::Expr::If(Box::new(ast::If {
             span: SrcSpan::default(),
             condition,
@@ -842,21 +857,18 @@ impl Gen {
     }
 
     fn gen_rvalue_match(&mut self, ty: &ast::Type) -> ast::Expr {
+        let prev_in_loop = self.in_loop();
+        self.set_in_loop(false);
+
         // Match on an integer expression. The arms produce values of type `ty`.
-        // Use int32_type() for the scrutinee since match arms need integral patterns.
-        // Always produce a simple scrutinee (literal or path) to avoid parser
+        // Always produce a simple scrutinee (literal) to avoid parser
         // ambiguity with operators like `%` being parsed as patterns.
-        let condition = if self.next_bool() {
-            self.gen_rvalue(&int32_type())
-        } else {
-            // Use a simple integer literal to ensure the match always parses
-            ast::Expr::Integer(Box::new(ast::IntegerLit {
-                span: SrcSpan::default(),
-                value: self.next_u64() as u128 % 1000,
-                kind: IntegerKind::Dec,
-            }))
-        };
-        let case_count = 1 + self.gen_index(3);
+        let condition = ast::Expr::Integer(Box::new(ast::IntegerLit {
+            span: SrcSpan::default(),
+            value: self.next_u64() as u128 % 1000,
+            kind: IntegerKind::Dec,
+        }));
+        let case_count = 1 + self.gen_index(4);
         let mut cases = Vec::with_capacity(case_count);
         // Use pre-generated unique values to avoid duplicate arms
         let mut used_values: Vec<u128> = Vec::with_capacity(case_count);
@@ -886,6 +898,9 @@ impl Gen {
             });
         }
         let default_case = Some(self.gen_block_with_type(ty));
+
+        self.set_in_loop(prev_in_loop);
+
         ast::Expr::Match(Box::new(ast::Match {
             span: SrcSpan::default(),
             condition,
@@ -924,8 +939,8 @@ impl Gen {
     }
 
     fn gen_rvalue_foreach(&mut self, ty: &ast::Type) -> ast::Expr {
-        // Generate a for-each over a slice of the loop variable's type
-        let elem_ty = int32_type();
+        // Generate a for-each over a slice with a random element type
+        let elem_ty = self.gen_local_type();
         let binding_name: NString = format!("it_{}", self.gen_unique_suffix()).into();
         let bindings: Vec<NString> = vec![binding_name.clone()];
 
@@ -999,10 +1014,6 @@ impl Gen {
     /// Generate a block with the given result type. Creates its own scope.
     /// The block always ends with an expression of type `ty` (not a statement or return).
     pub(crate) fn gen_block_with_type(&mut self, ty: &ast::Type) -> ast::Block {
-        // Do NOT spend block budget again — the caller (e.g., gen_rvalue)
-        // has already paid for the containing construct.  Budget is only
-        // deducted per-item/per-function, not per sub-block.
-
         let prev_in_loop = self.in_loop();
         self.push_frame();
 
@@ -1033,8 +1044,13 @@ impl Gen {
                 }
             }
         }
-        // Final expression produces the block's value — must match ty
-        let final_expr = self.gen_rvalue(ty);
+        // Final expression produces the block's value — must match ty.
+        // Use the actual target type, even if non-constructible (block contexts are special).
+        let final_expr = if is_constructible_type(ty) {
+            self.gen_rvalue(ty)
+        } else {
+            fallback_expr(ty)
+        };
         elements.push(ast::BlockItem::Expr(final_expr));
 
         self.pop_frame();
@@ -1098,15 +1114,12 @@ fn compatible_binary_ops(ty: &ast::Type) -> &'static [ast::BinExprOp] {
 /// ambiguity when used as a sub-expression of a binary operator.
 fn maybe_parenthesize(expr: ast::Expr) -> ast::Expr {
     match &expr {
-        ast::Expr::Match(_)
-        | ast::Expr::If(_)
-        | ast::Expr::Block(_)
-        | ast::Expr::Range(_)
-        | ast::Expr::BinExpr(_)
-        | ast::Expr::Cast(_) => ast::Expr::Parentheses(Box::new(ast::ExprParentheses {
-            span: SrcSpan::default(),
-            inner: expr,
-        })),
+        ast::Expr::Match(_) | ast::Expr::If(_) | ast::Expr::Block(_) | ast::Expr::Range(_) | ast::Expr::BinExpr(_) => {
+            ast::Expr::Parentheses(Box::new(ast::ExprParentheses {
+                span: SrcSpan::default(),
+                inner: expr,
+            }))
+        }
         _ => expr,
     }
 }
