@@ -198,3 +198,21 @@ fn test_range_infix_from() {
     let expr = parse_expr("x..");
     assert!(matches!(&expr, Expr::Range(r) if r.kind == RangeKind::RangeFrom));
 }
+
+#[test]
+fn test_range_infix_integer_left() {
+    let expr = parse_expr("5..10");
+    assert!(matches!(&expr, Expr::Range(r) if r.kind == RangeKind::Range));
+}
+
+#[test]
+fn test_range_infix_integer_left_inclusive() {
+    let expr = parse_expr("5..=10");
+    assert!(matches!(&expr, Expr::Range(r) if r.kind == RangeKind::RangeInclusive));
+}
+
+#[test]
+fn test_range_infix_integer_right() {
+    let expr = parse_expr("x..10");
+    assert!(matches!(&expr, Expr::Range(r) if r.kind == RangeKind::Range));
+}

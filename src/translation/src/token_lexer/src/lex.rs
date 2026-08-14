@@ -380,23 +380,32 @@ impl<'a> Lexer<'a> {
     }
 
     #[inline(always)]
-    fn parse_float(&mut self) -> Result<Token, ()> {
-        let start_off = self.internal_getc_pos.offset;
+    fn parse_float(&mut self, whole_start: u32) -> Result<Token, ()> {
         if let Ok(b'.') = self.peek_byte() {
             let rewind = self.internal_getc_pos.clone();
             self.advance(b'.');
             match self.peek_byte() {
                 Ok(b) if b.is_ascii_digit() => {
                     self.read_while(|b| b.is_ascii_digit() || b == b'_');
+                    // The integer part (before the `.`) was already consumed by
+                    // `parse_number`, so the literal must span from the start of
+                    // the whole number, otherwise `123.456` would be lexed as
+                    // just `Float(0.456)` and lose the `123` prefix.
                     let literal =
-                        str::from_utf8(&self.source[start_off as usize..self.internal_getc_pos.offset as usize])
+                        str::from_utf8(&self.source[whole_start as usize..self.internal_getc_pos.offset as usize])
                             .expect("Failed to convert");
                     if let Ok(result) = Self::convert_float_repr(literal) {
                         return Ok(Token::Float(result));
                     }
                 }
                 _ => {
-                    self.rewind_raw((rewind.fileid, rewind.line, rewind.column, rewind.offset));
+                    // Restore ONLY the internal read position here. Calling
+                    // `rewind`/`rewind_raw` would also reset `current_pos` and
+                    // clear `preread_token`, corrupting the lexer's outer state
+                    // (e.g. after an integer was already peeked). This is what
+                    // made `5..10` lex incorrectly: the integer token was dropped
+                    // from the preread cache, so the parser then saw a stray Dot.
+                    self.internal_getc_pos = rewind;
                 }
             }
         }
@@ -426,6 +435,7 @@ impl<'a> Lexer<'a> {
     #[inline(always)]
     fn parse_number(&mut self) -> Result<Token, ()> {
         let mut base_prefix = None;
+        let number_start = self.internal_getc_pos.offset;
         let mut literal = self.read_while(|b| b.is_ascii_digit() || b == b'_');
         assert!(!literal.is_empty());
         if literal == b"0" {
@@ -470,7 +480,7 @@ impl<'a> Lexer<'a> {
             }
         }
         if base_prefix.is_none()
-            && let Ok(float) = self.parse_float()
+            && let Ok(float) = self.parse_float(number_start)
         {
             return Ok(float);
         }
