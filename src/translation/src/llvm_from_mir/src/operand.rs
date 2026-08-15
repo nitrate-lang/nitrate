@@ -1,25 +1,31 @@
-use crate::context::CodegenCtx;
-use crate::place::gen_place;
-use crate::place::get_place_type_for_load;
-use crate::ty::gen_ty;
+use inkwell::FloatPredicate;
+use inkwell::IntPredicate;
 use inkwell::values::BasicValueEnum;
 use nitrate_mir::prelude as mir;
 
+use crate::context::CodegenCtx;
+use crate::place::{gen_place, get_place_type_for_load};
+use crate::ty::gen_ty;
+
 /// Evaluate a MIR Operand into an LLVM BasicValueEnum.
+///
+/// `Copy` and `Move` both load the place's value (move semantics are not
+/// enforced at the LLVM level — see MIR.md). A `Constant` becomes an LLVM
+/// constant.
 pub fn gen_operand<'ctx>(ctx: &mut CodegenCtx<'ctx, '_>, operand: &mir::Operand) -> BasicValueEnum<'ctx> {
     match operand {
         mir::Operand::Copy(place) | mir::Operand::Move(place) => {
             let ptr = gen_place(ctx, place);
             let place_ty = get_place_type_for_load(ctx, place);
             let llvm_ty = gen_ty(&place_ty, &mut ctx.ty_ctx());
-            ctx.builder.build_load(llvm_ty, ptr, "load").unwrap()
+            ctx.builder.build_load(llvm_ty, ptr, "load").expect("load failed")
         }
         mir::Operand::Constant(lit) => gen_literal(ctx, lit),
     }
 }
 
 /// Generate a literal constant.
-pub fn gen_literal<'ctx>(ctx: &CodegenCtx<'ctx, '_>, lit: &mir::MirLiteral) -> BasicValueEnum<'ctx> {
+pub fn gen_literal<'ctx>(ctx: &mut CodegenCtx<'ctx, '_>, lit: &mir::MirLiteral) -> BasicValueEnum<'ctx> {
     match lit {
         mir::MirLiteral::Unit => ctx.llvm.const_struct(&[], false).into(),
         mir::MirLiteral::Bool(b) => {
@@ -31,8 +37,8 @@ pub fn gen_literal<'ctx>(ctx: &CodegenCtx<'ctx, '_>, lit: &mir::MirLiteral) -> B
         mir::MirLiteral::I32(v) => ctx.llvm.i32_type().const_int(*v as u64, true).into(),
         mir::MirLiteral::I64(v) => ctx.llvm.i64_type().const_int(*v as u64, true).into(),
         mir::MirLiteral::I128(v) => {
-            let low = (*v & 0xFFFFFFFFFFFFFFFF) as u64;
-            let high = ((*v >> 64) & 0xFFFFFFFFFFFFFFFF) as u64;
+            let low = (*v & 0xFFFF_FFFF_FFFF_FFFF) as u64;
+            let high = ((*v >> 64) & 0xFFFF_FFFF_FFFF_FFFF) as u64;
             ctx.llvm.i128_type().const_int_arbitrary_precision(&[low, high]).into()
         }
         mir::MirLiteral::U8(v) => ctx.llvm.i8_type().const_int(*v as u64, false).into(),
@@ -40,8 +46,8 @@ pub fn gen_literal<'ctx>(ctx: &CodegenCtx<'ctx, '_>, lit: &mir::MirLiteral) -> B
         mir::MirLiteral::U32(v) => ctx.llvm.i32_type().const_int(*v as u64, false).into(),
         mir::MirLiteral::U64(v) => ctx.llvm.i64_type().const_int(*v, false).into(),
         mir::MirLiteral::U128(v) => {
-            let low = (*v & 0xFFFFFFFFFFFFFFFF) as u64;
-            let high = ((*v >> 64) & 0xFFFFFFFFFFFFFFFF) as u64;
+            let low = (*v & 0xFFFF_FFFF_FFFF_FFFF) as u64;
+            let high = ((*v >> 64) & 0xFFFF_FFFF_FFFF_FFFF) as u64;
             ctx.llvm.i128_type().const_int_arbitrary_precision(&[low, high]).into()
         }
         mir::MirLiteral::F32(v) => ctx.llvm.f32_type().const_float(v.0 as f64).into(),
@@ -50,15 +56,59 @@ pub fn gen_literal<'ctx>(ctx: &CodegenCtx<'ctx, '_>, lit: &mir::MirLiteral) -> B
             let ptr_ty = ctx.llvm.ptr_sized_int_type(ctx.llvm.target_data(), None);
             ptr_ty.const_int(*value, false).into()
         }
-        mir::MirLiteral::Str(s) => ctx.llvm.const_string(s.as_bytes(), false).into(),
-        mir::MirLiteral::BStr(b) => ctx.llvm.const_string(b, false).into(),
+        // String literals are materialized as private globals; a `Str` literal
+        // is a thin pointer to null-terminated data.
+        mir::MirLiteral::Str(s) => ctx.intern_string_literal(s.as_bytes()).into(),
+        // Byte strings are `SliceRef<u8>` — a fat pointer `{ data_ptr, len }`.
+        mir::MirLiteral::BStr(b) => {
+            let data_ptr = ctx.intern_string_literal(b);
+            let len = ctx
+                .llvm
+                .ptr_sized_int_type(ctx.llvm.target_data(), None)
+                .const_int(b.len() as u64, false);
+            ctx.llvm.const_struct(&[data_ptr.into(), len.into()], false).into()
+        }
     }
 }
 
-// ─────────────────────────────────────────────────────────────
-// Binary operations
-// ─────────────────────────────────────────────────────────────
+/// Determine the signedness of an operand's value, if it is an integer.
+/// Returns `Some(true)` for signed, `Some(false)` for unsigned, and `None`
+/// for non-integer operands.
+pub fn operand_signedness(ctx: &CodegenCtx<'_, '_>, operand: &mir::Operand) -> Option<bool> {
+    match operand {
+        mir::Operand::Copy(place) | mir::Operand::Move(place) => {
+            let ty = get_place_type_for_load(ctx, place);
+            let mir_ty = &*ty;
+            if mir_ty.is_signed_primitive() {
+                Some(true)
+            } else if mir_ty.is_unsigned_primitive() || mir_ty.is_bool() {
+                Some(false)
+            } else {
+                None
+            }
+        }
+        mir::Operand::Constant(lit) => match lit {
+            mir::MirLiteral::I8(_)
+            | mir::MirLiteral::I16(_)
+            | mir::MirLiteral::I32(_)
+            | mir::MirLiteral::I64(_)
+            | mir::MirLiteral::I128(_) => Some(true),
+            mir::MirLiteral::U8(_)
+            | mir::MirLiteral::U16(_)
+            | mir::MirLiteral::U32(_)
+            | mir::MirLiteral::U64(_)
+            | mir::MirLiteral::U128(_)
+            | mir::MirLiteral::USize { .. }
+            | mir::MirLiteral::Bool(_) => Some(false),
+            _ => None,
+        },
+    }
+}
 
+/// Generate a binary operation on two operands. Signedness for division,
+/// remainder, right shift, and ordered comparisons is derived from the left
+/// operand's type (comparisons produce a boolean result, so the result type is
+/// not a reliable signedness source).
 pub fn gen_binary_op<'ctx>(
     ctx: &mut CodegenCtx<'ctx, '_>,
     op: mir::MirBinaryOp,
@@ -70,9 +120,12 @@ pub fn gen_binary_op<'ctx>(
     let lhs_ty = llvm_lhs.get_type();
     let rhs_ty = llvm_rhs.get_type();
 
+    let signed = operand_signedness(ctx, lhs).unwrap_or(false);
+    let lhs_is_float = lhs_ty.is_float_type();
+
     match op {
         mir::MirBinaryOp::Add => {
-            if lhs_ty.is_float_type() && rhs_ty.is_float_type() {
+            if lhs_is_float {
                 ctx.builder
                     .build_float_add(llvm_lhs.into_float_value(), llvm_rhs.into_float_value(), "add")
                     .unwrap()
@@ -85,7 +138,7 @@ pub fn gen_binary_op<'ctx>(
             }
         }
         mir::MirBinaryOp::Sub => {
-            if lhs_ty.is_float_type() && rhs_ty.is_float_type() {
+            if lhs_is_float {
                 ctx.builder
                     .build_float_sub(llvm_lhs.into_float_value(), llvm_rhs.into_float_value(), "sub")
                     .unwrap()
@@ -98,7 +151,7 @@ pub fn gen_binary_op<'ctx>(
             }
         }
         mir::MirBinaryOp::Mul => {
-            if lhs_ty.is_float_type() && rhs_ty.is_float_type() {
+            if lhs_is_float {
                 ctx.builder
                     .build_float_mul(llvm_lhs.into_float_value(), llvm_rhs.into_float_value(), "mul")
                     .unwrap()
@@ -111,9 +164,14 @@ pub fn gen_binary_op<'ctx>(
             }
         }
         mir::MirBinaryOp::Div => {
-            if lhs_ty.is_float_type() && rhs_ty.is_float_type() {
+            if lhs_is_float {
                 ctx.builder
                     .build_float_div(llvm_lhs.into_float_value(), llvm_rhs.into_float_value(), "div")
+                    .unwrap()
+                    .into()
+            } else if signed {
+                ctx.builder
+                    .build_int_signed_div(llvm_lhs.into_int_value(), llvm_rhs.into_int_value(), "div")
                     .unwrap()
                     .into()
             } else {
@@ -124,9 +182,14 @@ pub fn gen_binary_op<'ctx>(
             }
         }
         mir::MirBinaryOp::Mod => {
-            if lhs_ty.is_float_type() && rhs_ty.is_float_type() {
+            if lhs_is_float {
                 ctx.builder
                     .build_float_rem(llvm_lhs.into_float_value(), llvm_rhs.into_float_value(), "rem")
+                    .unwrap()
+                    .into()
+            } else if signed {
+                ctx.builder
+                    .build_int_signed_rem(llvm_lhs.into_int_value(), llvm_rhs.into_int_value(), "rem")
                     .unwrap()
                     .into()
             } else {
@@ -158,7 +221,7 @@ pub fn gen_binary_op<'ctx>(
             .into(),
         mir::MirBinaryOp::Shr => ctx
             .builder
-            .build_right_shift(llvm_lhs.into_int_value(), llvm_rhs.into_int_value(), false, "shr")
+            .build_right_shift(llvm_lhs.into_int_value(), llvm_rhs.into_int_value(), signed, "shr")
             .unwrap()
             .into(),
         mir::MirBinaryOp::Rol => {
@@ -225,7 +288,7 @@ pub fn gen_binary_op<'ctx>(
             let lhs_zero = ctx
                 .builder
                 .build_int_compare(
-                    inkwell::IntPredicate::EQ,
+                    IntPredicate::EQ,
                     llvm_lhs.into_int_value(),
                     lhs_ty.into_int_type().const_zero(),
                     "lhs_bool",
@@ -234,7 +297,7 @@ pub fn gen_binary_op<'ctx>(
             let rhs_zero = ctx
                 .builder
                 .build_int_compare(
-                    inkwell::IntPredicate::EQ,
+                    IntPredicate::EQ,
                     llvm_rhs.into_int_value(),
                     rhs_ty.into_int_type().const_zero(),
                     "rhs_bool",
@@ -248,7 +311,7 @@ pub fn gen_binary_op<'ctx>(
             let lhs_nonzero = ctx
                 .builder
                 .build_int_compare(
-                    inkwell::IntPredicate::NE,
+                    IntPredicate::NE,
                     llvm_lhs.into_int_value(),
                     lhs_ty.into_int_type().const_zero(),
                     "lhs_bool",
@@ -257,7 +320,7 @@ pub fn gen_binary_op<'ctx>(
             let rhs_nonzero = ctx
                 .builder
                 .build_int_compare(
-                    inkwell::IntPredicate::NE,
+                    IntPredicate::NE,
                     llvm_rhs.into_int_value(),
                     rhs_ty.into_int_type().const_zero(),
                     "rhs_bool",
@@ -266,10 +329,10 @@ pub fn gen_binary_op<'ctx>(
             ctx.builder.build_or(lhs_nonzero, rhs_nonzero, "lor").unwrap().into()
         }
         mir::MirBinaryOp::Lt => {
-            if lhs_ty.is_float_type() {
+            if lhs_is_float {
                 ctx.builder
                     .build_float_compare(
-                        inkwell::FloatPredicate::OLT,
+                        FloatPredicate::OLT,
                         llvm_lhs.into_float_value(),
                         llvm_rhs.into_float_value(),
                         "lt",
@@ -277,22 +340,18 @@ pub fn gen_binary_op<'ctx>(
                     .unwrap()
                     .into()
             } else {
+                let pred = if signed { IntPredicate::SLT } else { IntPredicate::ULT };
                 ctx.builder
-                    .build_int_compare(
-                        inkwell::IntPredicate::ULT,
-                        llvm_lhs.into_int_value(),
-                        llvm_rhs.into_int_value(),
-                        "lt",
-                    )
+                    .build_int_compare(pred, llvm_lhs.into_int_value(), llvm_rhs.into_int_value(), "lt")
                     .unwrap()
                     .into()
             }
         }
         mir::MirBinaryOp::Gt => {
-            if lhs_ty.is_float_type() {
+            if lhs_is_float {
                 ctx.builder
                     .build_float_compare(
-                        inkwell::FloatPredicate::OGT,
+                        FloatPredicate::OGT,
                         llvm_lhs.into_float_value(),
                         llvm_rhs.into_float_value(),
                         "gt",
@@ -300,22 +359,18 @@ pub fn gen_binary_op<'ctx>(
                     .unwrap()
                     .into()
             } else {
+                let pred = if signed { IntPredicate::SGT } else { IntPredicate::UGT };
                 ctx.builder
-                    .build_int_compare(
-                        inkwell::IntPredicate::UGT,
-                        llvm_lhs.into_int_value(),
-                        llvm_rhs.into_int_value(),
-                        "gt",
-                    )
+                    .build_int_compare(pred, llvm_lhs.into_int_value(), llvm_rhs.into_int_value(), "gt")
                     .unwrap()
                     .into()
             }
         }
         mir::MirBinaryOp::Lte => {
-            if lhs_ty.is_float_type() {
+            if lhs_is_float {
                 ctx.builder
                     .build_float_compare(
-                        inkwell::FloatPredicate::OLE,
+                        FloatPredicate::OLE,
                         llvm_lhs.into_float_value(),
                         llvm_rhs.into_float_value(),
                         "lte",
@@ -323,22 +378,18 @@ pub fn gen_binary_op<'ctx>(
                     .unwrap()
                     .into()
             } else {
+                let pred = if signed { IntPredicate::SLE } else { IntPredicate::ULE };
                 ctx.builder
-                    .build_int_compare(
-                        inkwell::IntPredicate::ULE,
-                        llvm_lhs.into_int_value(),
-                        llvm_rhs.into_int_value(),
-                        "lte",
-                    )
+                    .build_int_compare(pred, llvm_lhs.into_int_value(), llvm_rhs.into_int_value(), "lte")
                     .unwrap()
                     .into()
             }
         }
         mir::MirBinaryOp::Gte => {
-            if lhs_ty.is_float_type() {
+            if lhs_is_float {
                 ctx.builder
                     .build_float_compare(
-                        inkwell::FloatPredicate::OGE,
+                        FloatPredicate::OGE,
                         llvm_lhs.into_float_value(),
                         llvm_rhs.into_float_value(),
                         "gte",
@@ -346,22 +397,18 @@ pub fn gen_binary_op<'ctx>(
                     .unwrap()
                     .into()
             } else {
+                let pred = if signed { IntPredicate::SGE } else { IntPredicate::UGE };
                 ctx.builder
-                    .build_int_compare(
-                        inkwell::IntPredicate::UGE,
-                        llvm_lhs.into_int_value(),
-                        llvm_rhs.into_int_value(),
-                        "gte",
-                    )
+                    .build_int_compare(pred, llvm_lhs.into_int_value(), llvm_rhs.into_int_value(), "gte")
                     .unwrap()
                     .into()
             }
         }
         mir::MirBinaryOp::Eq => {
-            if lhs_ty.is_float_type() {
+            if lhs_is_float {
                 ctx.builder
                     .build_float_compare(
-                        inkwell::FloatPredicate::OEQ,
+                        FloatPredicate::OEQ,
                         llvm_lhs.into_float_value(),
                         llvm_rhs.into_float_value(),
                         "eq",
@@ -371,7 +418,7 @@ pub fn gen_binary_op<'ctx>(
             } else {
                 ctx.builder
                     .build_int_compare(
-                        inkwell::IntPredicate::EQ,
+                        IntPredicate::EQ,
                         llvm_lhs.into_int_value(),
                         llvm_rhs.into_int_value(),
                         "eq",
@@ -381,10 +428,10 @@ pub fn gen_binary_op<'ctx>(
             }
         }
         mir::MirBinaryOp::Ne => {
-            if lhs_ty.is_float_type() {
+            if lhs_is_float {
                 ctx.builder
                     .build_float_compare(
-                        inkwell::FloatPredicate::ONE,
+                        FloatPredicate::ONE,
                         llvm_lhs.into_float_value(),
                         llvm_rhs.into_float_value(),
                         "ne",
@@ -394,7 +441,7 @@ pub fn gen_binary_op<'ctx>(
             } else {
                 ctx.builder
                     .build_int_compare(
-                        inkwell::IntPredicate::NE,
+                        IntPredicate::NE,
                         llvm_lhs.into_int_value(),
                         llvm_rhs.into_int_value(),
                         "ne",

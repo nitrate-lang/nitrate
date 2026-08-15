@@ -11,5 +11,9 @@ nitrate_nstring.workspace = true
 inkwell.workspace = true
 thin-vec.workspace = true
 
+[dev-dependencies]
+ordered-float.workspace = true
+thin_str.workspace = true
+
 [build-dependencies]
 cc.workspace = true

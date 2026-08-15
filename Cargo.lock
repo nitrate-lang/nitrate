@@ -1288,7 +1288,9 @@ dependencies = [
  "nitrate_llvm",
  "nitrate_mir",
  "nitrate_nstring",
+ "ordered-float",
  "thin-vec",
+ "thin_str",
 ]
 
 [[package]]

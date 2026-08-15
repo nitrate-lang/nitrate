@@ -1,28 +1,40 @@
-use core::panic;
-
-use crate::context::CodegenCtx;
-use crate::ty::gen_ty;
 use inkwell::values::PointerValue;
 use nitrate_mir::prelude as mir;
 
+use crate::context::CodegenCtx;
+use crate::ty::gen_ty;
+
 /// Compute the address (PointerValue) of a MIR Place.
+///
+/// This always returns a pointer to the place's storage and never loads the
+/// place's value, preserving aliasing (see LLVM_CODEGEN.md "Place Semantics").
 pub fn gen_place<'ctx>(ctx: &mut CodegenCtx<'ctx, '_>, place: &mir::Place) -> PointerValue<'ctx> {
     match place {
         mir::Place::Local(local_id) => {
             let idx = local_id.as_usize() as u32;
-            ctx.locals.get(&idx).expect("local not found in codegen context").0
+            ctx.locals
+                .get(&idx)
+                .unwrap_or_else(|| panic!("local {} not found in codegen context", idx))
+                .0
         }
         mir::Place::Static(name) => {
             ctx.globals
                 .get(name)
                 .unwrap_or_else(|| panic!("global '{}' not found", name))
-                .0
+                .ptr
         }
         mir::Place::Deref(base) => {
-            let place_op = mir::Operand::Copy(*base.clone());
-            let ptr_val = crate::operand::gen_operand(ctx, &place_op);
+            // The address of `*base` is the pointer value stored at `base`.
+            // Load that pointer from base's storage — no copy of the pointee.
+            let base_ptr = gen_place(ctx, base);
+            let base_ty = get_place_type_for_load(ctx, base);
+            let llvm_ty = gen_ty(&base_ty, &mut ctx.ty_ctx());
+            let ptr_val = ctx
+                .builder
+                .build_load(llvm_ty, base_ptr, "deref_addr")
+                .expect("failed to build deref load");
             if !ptr_val.is_pointer_value() {
-                panic!("Cannot dereference non-pointer type");
+                panic!("Cannot dereference non-pointer type {:?}", &*base_ty);
             }
             ptr_val.into_pointer_value()
         }
@@ -36,12 +48,12 @@ pub fn gen_place<'ctx>(ctx: &mut CodegenCtx<'ctx, '_>, place: &mir::Place) -> Po
                         mir::MirStructLayoutCell::Field { field_name: f } => f == field_name,
                         _ => false,
                     })
-                    .expect("field not found in struct layout");
-                let llvm_struct_ty = gen_ty(&base_ty, &mut ctx.ty_ctx());
+                    .unwrap_or_else(|| panic!("field '{}' not found in struct layout", field_name));
+                let struct_ty = gen_ty(&base_ty, &mut ctx.ty_ctx());
                 unsafe {
                     ctx.builder
                         .build_in_bounds_gep(
-                            llvm_struct_ty,
+                            struct_ty,
                             base_ptr,
                             &[
                                 ctx.llvm.i32_type().const_zero(),
@@ -52,7 +64,7 @@ pub fn gen_place<'ctx>(ctx: &mut CodegenCtx<'ctx, '_>, place: &mir::Place) -> Po
                         .unwrap()
                 }
             } else {
-                panic!("Field access on non-struct type");
+                panic!("Field access on non-struct type {:?}", &*base_ty);
             }
         }
         mir::Place::Index { base, index } => {
@@ -65,47 +77,58 @@ pub fn gen_place<'ctx>(ctx: &mut CodegenCtx<'ctx, '_>, place: &mir::Place) -> Po
                 panic!("Index must be an integer");
             };
             let base_ty = get_place_type_for_load(ctx, base);
-            let elem_ty = match &*base_ty {
-                mir::MirType::Array { element_type, .. } => gen_ty(&*element_type, &mut ctx.ty_ctx()),
-                mir::MirType::SliceRef { element_type, .. } | mir::MirType::SlicePtr { element_type, .. } => {
-                    gen_ty(&*element_type, &mut ctx.ty_ctx())
+            match &*base_ty {
+                mir::MirType::Array { element_type, .. } => {
+                    let elem_ty = gen_ty(&*element_type, &mut ctx.ty_ctx());
+                    unsafe {
+                        ctx.builder
+                            .build_in_bounds_gep(elem_ty, base_ptr, &[idx_int], "index_gep")
+                            .unwrap()
+                    }
                 }
-                _ => gen_ty(&base_ty, &mut ctx.ty_ctx()),
-            };
-            unsafe {
-                ctx.builder
-                    .build_in_bounds_gep(elem_ty, base_ptr, &[idx_int], "index_gep")
-                    .unwrap()
+                mir::MirType::SliceRef { element_type, .. } | mir::MirType::SlicePtr { element_type, .. } => {
+                    // Fat pointer `{ data_ptr, len }`. GEP field 0 to load the
+                    // data pointer, then index the backing elements.
+                    let slice_ty = gen_ty(&base_ty, &mut ctx.ty_ctx());
+                    let zero = ctx.llvm.i32_type().const_zero();
+                    let data_gep = unsafe {
+                        ctx.builder
+                            .build_in_bounds_gep(slice_ty, base_ptr, &[zero, zero], "slice_data_ptr")
+                            .unwrap()
+                    };
+                    let data_ptr = ctx
+                        .builder
+                        .build_load(
+                            ctx.llvm.ptr_type(inkwell::AddressSpace::default()),
+                            data_gep,
+                            "slice_data_load",
+                        )
+                        .unwrap()
+                        .into_pointer_value();
+                    let elem_ty = gen_ty(&*element_type, &mut ctx.ty_ctx());
+                    unsafe {
+                        ctx.builder
+                            .build_in_bounds_gep(elem_ty, data_ptr, &[idx_int], "index_gep")
+                            .unwrap()
+                    }
+                }
+                _ => panic!("Index access requires an array or slice type, got {:?}", &*base_ty),
             }
         }
+        // Downcast projects to the same storage as the base enum value.
         mir::Place::Downcast { base, variant_name: _ } => gen_place(ctx, base),
     }
 }
 
-/// Determine the MirType for a place so we know what LLVM type to load.
-pub fn get_place_type_for_load<'ctx>(ctx: &CodegenCtx<'ctx, '_>, place: &mir::Place) -> mir::MirTypeId {
+/// Determine the MIR type of a place so codegen knows what LLVM type to load.
+pub fn get_place_type_for_load(ctx: &CodegenCtx<'_, '_>, place: &mir::Place) -> mir::MirTypeId {
     match place {
-        mir::Place::Local(local_id) => {
-            // Use the TLS store via LocalId's Deref, not the function-local
-            // copy of the locals vec (which has different indexing).
-            local_id.borrow().ty.clone()
-        }
-        mir::Place::Static(name) => {
-            // Look up the global's type from the globals map
-            if let Some((_, llvm_ty)) = ctx.globals.get(name) {
-                // Map LLVM type back to MirType for load purposes
-                if llvm_ty.is_pointer_type() {
-                    // For string globals, the type is Str (a pointer)
-                    mir::MirType::Str.into()
-                } else if llvm_ty.is_struct_type() {
-                    mir::MirType::Unit.into()
-                } else {
-                    mir::MirType::Unit.into()
-                }
-            } else {
-                mir::MirType::Unit.into()
-            }
-        }
+        mir::Place::Local(local_id) => local_id.borrow().ty.clone(),
+        mir::Place::Static(name) => ctx
+            .globals
+            .get(name)
+            .map(|info| info.mir_ty.clone())
+            .unwrap_or_else(|| panic!("global '{}' not found", name)),
         mir::Place::Deref(base) => {
             let base_ty = get_place_type_for_load(ctx, base);
             match &*base_ty {
@@ -118,13 +141,14 @@ pub fn get_place_type_for_load<'ctx>(ctx: &CodegenCtx<'ctx, '_>, place: &mir::Pl
         }
         mir::Place::Field { base, field_name } => {
             let base_ty = get_place_type_for_load(ctx, base);
-            match &*base_ty {
-                mir::MirType::Struct { fields, .. } => fields
+            if let mir::MirType::Struct { fields, .. } = &*base_ty {
+                fields
                     .iter()
                     .find(|(name, _)| name == field_name)
                     .map(|(_, ty)| ty.clone())
-                    .unwrap_or_else(|| panic!("field '{}' not found", field_name)),
-                _ => base_ty,
+                    .unwrap_or_else(|| panic!("field '{}' not found", field_name))
+            } else {
+                base_ty
             }
         }
         mir::Place::Index { base, .. } => {
