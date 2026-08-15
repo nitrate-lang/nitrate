@@ -3,18 +3,6 @@
 use crate::test_common::Harness;
 use nitrate_mir::prelude as mir;
 
-fn assign_return(h: &Harness, rv: mir::Rvalue, dest_ty: mir::MirType) -> String {
-    h.build_ir(|b| {
-        let dest_id: mir::MirTypeId = dest_ty.into();
-        let mut f = b.start_function("f".into(), dest_id);
-        let tmp = f.new_temp(dest_id, false);
-        f.create_block();
-        f.push_assign(mir::Place::Local(tmp.clone()), rv);
-        f.ret(Some(mir::Operand::Copy(mir::Place::Local(tmp))));
-        f.finish_function();
-    })
-}
-
 #[test]
 fn use_operand_loads_from_place() {
     let h = Harness::new();
@@ -31,7 +19,9 @@ fn use_operand_loads_from_place() {
     });
     let ir = h.ir(&module);
     assert!(h.verify(&module));
-    assert!(ir.contains("ret i32 9"), "expected use rvalue: {ir}");
+    // The constant is stored into the SSA local, then loaded back for return.
+    assert!(ir.contains("store i32 9"), "expected store: {ir}");
+    assert!(ir.contains("ret i32 %load"), "expected load + ret: {ir}");
 }
 
 #[test]
@@ -69,85 +59,134 @@ fn ref_rvalue_produces_pointer_without_copy() {
 }
 
 #[test]
-fn size_of_returns_type_size() {
+fn size_of_i64_is_8() {
     let h = Harness::new();
-    let ir = assign_return(
-        &h,
-        mir::Rvalue::NullaryOp(mir::NullaryOp::SizeOf, mir::MirType::I64.into()),
-        mir::MirType::USize,
-    );
-    assert!(ir.contains("i64 8"), "expected size constant: {ir}");
+    let module = h.build_module(|b| {
+        let usize_id: mir::MirTypeId = mir::MirType::USize.into();
+        let i64_id: mir::MirTypeId = mir::MirType::I64.into();
+        let mut f = b.start_function("f".into(), usize_id);
+        let tmp = f.new_temp(usize_id, false);
+        f.create_block();
+        f.push_assign(
+            mir::Place::Local(tmp.clone()),
+            mir::Rvalue::NullaryOp(mir::NullaryOp::SizeOf, i64_id),
+        );
+        f.ret(Some(mir::Operand::Copy(mir::Place::Local(tmp))));
+        f.finish_function();
+    });
+    let ir = h.ir(&module);
+    assert!(h.verify(&module));
+    let width = h.llvm.ptr_size() * 8;
+    assert!(ir.contains(&format!("i{width} 8")), "expected size 8: {ir}");
 }
 
 #[test]
-fn align_of_returns_type_alignment() {
+fn align_of_i64_is_8() {
     let h = Harness::new();
-    let ir = assign_return(
-        &h,
-        mir::Rvalue::NullaryOp(mir::NullaryOp::AlignOf, mir::MirType::I64.into()),
-        mir::MirType::USize,
-    );
-    assert!(ir.contains("ret"), "expected align constant: {ir}");
+    let module = h.build_module(|b| {
+        let usize_id: mir::MirTypeId = mir::MirType::USize.into();
+        let i64_id: mir::MirTypeId = mir::MirType::I64.into();
+        let mut f = b.start_function("f".into(), usize_id);
+        let tmp = f.new_temp(usize_id, false);
+        f.create_block();
+        f.push_assign(
+            mir::Place::Local(tmp.clone()),
+            mir::Rvalue::NullaryOp(mir::NullaryOp::AlignOf, i64_id),
+        );
+        f.ret(Some(mir::Operand::Copy(mir::Place::Local(tmp))));
+        f.finish_function();
+    });
+    let ir = h.ir(&module);
+    assert!(h.verify(&module));
+    let width = h.llvm.ptr_size() * 8;
+    assert!(ir.contains(&format!("i{width} 8")), "expected alignment 8: {ir}");
 }
 
 #[test]
 fn tuple_aggregate_builds_struct() {
     let h = Harness::new();
-    let tuple_ty = mir::MirType::Tuple {
-        element_types: thin_vec::thin_vec![mir::MirType::I32.into(), mir::MirType::I32.into()],
-    };
-    let ir = assign_return(
-        &h,
-        mir::Rvalue::Aggregate(
-            mir::AggregateKind::Tuple,
-            thin_vec::thin_vec![
-                mir::Operand::Constant(mir::MirLiteral::I32(1)),
-                mir::Operand::Constant(mir::MirLiteral::I32(2)),
-            ],
-        ),
-        tuple_ty,
-    );
+    let module = h.build_module(|b| {
+        let tuple_ty = mir::MirType::Tuple {
+            element_types: thin_vec::thin_vec![mir::MirType::I32.into(), mir::MirType::I32.into()],
+        };
+        let tuple_id: mir::MirTypeId = tuple_ty.into();
+        let mut f = b.start_function("f".into(), tuple_id);
+        let tmp = f.new_temp(tuple_id, false);
+        f.create_block();
+        f.push_assign(
+            mir::Place::Local(tmp.clone()),
+            mir::Rvalue::Aggregate(
+                mir::AggregateKind::Tuple,
+                thin_vec::thin_vec![
+                    mir::Operand::Constant(mir::MirLiteral::I32(1)),
+                    mir::Operand::Constant(mir::MirLiteral::I32(2)),
+                ],
+            ),
+        );
+        f.ret(Some(mir::Operand::Copy(mir::Place::Local(tmp))));
+        f.finish_function();
+    });
+    let ir = h.ir(&module);
+    assert!(h.verify(&module));
     assert!(ir.contains("{ i32, i32 }"), "expected tuple type: {ir}");
 }
 
 #[test]
 fn array_aggregate_builds_array() {
     let h = Harness::new();
-    let arr_ty = mir::MirType::Array {
-        element_type: mir::MirType::I32.into(),
-        len: 3,
-    };
-    let ir = assign_return(
-        &h,
-        mir::Rvalue::Aggregate(
-            mir::AggregateKind::Array(mir::MirType::I32.into()),
-            thin_vec::thin_vec![
-                mir::Operand::Constant(mir::MirLiteral::I32(1)),
-                mir::Operand::Constant(mir::MirLiteral::I32(2)),
-                mir::Operand::Constant(mir::MirLiteral::I32(3)),
-            ],
-        ),
-        arr_ty,
-    );
+    let module = h.build_module(|b| {
+        let arr_ty = mir::MirType::Array {
+            element_type: mir::MirType::I32.into(),
+            len: 3,
+        };
+        let arr_id: mir::MirTypeId = arr_ty.into();
+        let mut f = b.start_function("f".into(), arr_id);
+        let tmp = f.new_temp(arr_id, false);
+        f.create_block();
+        f.push_assign(
+            mir::Place::Local(tmp.clone()),
+            mir::Rvalue::Aggregate(
+                mir::AggregateKind::Array(mir::MirType::I32.into()),
+                thin_vec::thin_vec![
+                    mir::Operand::Constant(mir::MirLiteral::I32(1)),
+                    mir::Operand::Constant(mir::MirLiteral::I32(2)),
+                    mir::Operand::Constant(mir::MirLiteral::I32(3)),
+                ],
+            ),
+        );
+        f.ret(Some(mir::Operand::Copy(mir::Place::Local(tmp))));
+        f.finish_function();
+    });
+    let ir = h.ir(&module);
+    assert!(h.verify(&module));
     assert!(ir.contains("[3 x i32]"), "expected array type: {ir}");
 }
 
 #[test]
 fn struct_aggregate_uses_named_type() {
     let h = Harness::new();
-    let struct_ty = mir::MirType::Struct {
-        name: "S".into(),
-        fields: thin_vec::thin_vec![("x".into(), mir::MirType::I32.into())],
-        layout: thin_vec::thin_vec![mir::MirStructLayoutCell::Field { field_name: "x".into() }],
-    };
-    let ir = assign_return(
-        &h,
-        mir::Rvalue::Aggregate(
-            mir::AggregateKind::Struct("S".into(), thin_vec::thin_vec!["x".into()]),
-            thin_vec::thin_vec![mir::Operand::Constant(mir::MirLiteral::I32(7))],
-        ),
-        struct_ty,
-    );
+    let module = h.build_module(|b| {
+        let struct_ty = mir::MirType::Struct {
+            name: "S".into(),
+            fields: thin_vec::thin_vec![("x".into(), mir::MirType::I32.into())],
+            layout: thin_vec::thin_vec![mir::MirStructLayoutCell::Field { field_name: "x".into() }],
+        };
+        let struct_id: mir::MirTypeId = struct_ty.into();
+        let mut f = b.start_function("f".into(), struct_id);
+        let tmp = f.new_temp(struct_id, false);
+        f.create_block();
+        f.push_assign(
+            mir::Place::Local(tmp.clone()),
+            mir::Rvalue::Aggregate(
+                mir::AggregateKind::Struct("S".into(), thin_vec::thin_vec!["x".into()]),
+                thin_vec::thin_vec![mir::Operand::Constant(mir::MirLiteral::I32(7))],
+            ),
+        );
+        f.ret(Some(mir::Operand::Copy(mir::Place::Local(tmp))));
+        f.finish_function();
+    });
+    let ir = h.ir(&module);
+    assert!(h.verify(&module));
     assert!(ir.contains("%S"), "expected named struct in IR: {ir}");
 }
 

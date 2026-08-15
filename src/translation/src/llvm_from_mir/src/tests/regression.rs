@@ -11,23 +11,18 @@ use nitrate_mir::prelude as mir;
 
 /// A signed comparison was emitted as an unsigned comparison because the
 /// signedness was derived from the boolean result type. It must come from the
-/// left operand's type.
+/// left operand's type. (Dynamic operands prevent constant folding.)
 #[test]
 fn signed_comparison_uses_signed_predicate() {
     let h = Harness::new();
     let module = h.build_module(|b| {
-        fn_binary(
-            b,
-            "cmp",
-            mir::MirType::Bool.into(),
-            mir::MirBinaryOp::Lt,
-            mir::Operand::Constant(mir::MirLiteral::I32(-1)),
-            mir::Operand::Constant(mir::MirLiteral::I32(1)),
-        );
+        let i32ty: mir::MirTypeId = mir::MirType::I32.into();
+        let boolty: mir::MirTypeId = mir::MirType::Bool.into();
+        fn_binary(b, "cmp", i32ty.clone(), i32ty, boolty, mir::MirBinaryOp::Lt);
     });
     let ir = h.ir(&module);
     assert!(h.verify(&module));
-    assert!(ir.contains("icmp slt"), "signed `-1 < 1` must use `slt`, got: {ir}");
+    assert!(ir.contains("icmp slt"), "signed comparison must use `slt`, got: {ir}");
 }
 
 /// Unsigned division was emitted as signed division (`sdiv`), which yields the
@@ -36,14 +31,8 @@ fn signed_comparison_uses_signed_predicate() {
 fn unsigned_division_uses_udiv() {
     let h = Harness::new();
     let module = h.build_module(|b| {
-        fn_binary(
-            b,
-            "div",
-            mir::MirType::U32.into(),
-            mir::MirBinaryOp::Div,
-            mir::Operand::Constant(mir::MirLiteral::U32(u32::MAX)),
-            mir::Operand::Constant(mir::MirLiteral::U32(2)),
-        );
+        let u32ty: mir::MirTypeId = mir::MirType::U32.into();
+        fn_binary(b, "div", u32ty.clone(), u32ty.clone(), u32ty, mir::MirBinaryOp::Div);
     });
     let ir = h.ir(&module);
     assert!(h.verify(&module));
@@ -56,14 +45,8 @@ fn unsigned_division_uses_udiv() {
 fn signed_shift_right_uses_ashr() {
     let h = Harness::new();
     let module = h.build_module(|b| {
-        fn_binary(
-            b,
-            "shr",
-            mir::MirType::I64.into(),
-            mir::MirBinaryOp::Shr,
-            mir::Operand::Constant(mir::MirLiteral::I64(-8)),
-            mir::Operand::Constant(mir::MirLiteral::I64(1)),
-        );
+        let i64ty: mir::MirTypeId = mir::MirType::I64.into();
+        fn_binary(b, "shr", i64ty.clone(), i64ty.clone(), i64ty, mir::MirBinaryOp::Shr);
     });
     let ir = h.ir(&module);
     assert!(h.verify(&module));
@@ -198,7 +181,7 @@ fn block_argument_phi_verifies_with_multiple_args() {
     });
     let ir = h.ir(&module);
     assert!(h.verify(&module));
-    let phis = ir.matches("phi").count();
+    let phis = ir.matches(" = phi ").count();
     assert_eq!(phis, 2, "each block argument must lower to its own phi: {ir}");
 }
 
@@ -208,9 +191,11 @@ fn block_argument_phi_verifies_with_multiple_args() {
 fn string_static_maps_to_str_type() {
     let h = Harness::new();
     let ir = h.build_ir(|b| {
+        // Register a string global so `Place::Static(name)` resolves.
+        let name = b.register_string_global(thin_vec::thin_vec![104u8, 105u8]);
         let mut f = b.start_function("f".into(), mir::MirType::Str.into());
         f.create_block();
-        f.ret(Some(mir::Operand::Copy(mir::Place::Static("__nitrate_str_0".into()))));
+        f.ret(Some(mir::Operand::Copy(mir::Place::Static(name))));
         f.finish_function();
     });
     assert!(ir.contains("ptr"), "string literal static must be a pointer: {ir}");

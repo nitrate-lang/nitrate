@@ -64,7 +64,8 @@ fn u8_literal_unsigned() {
     });
     let ir = h.ir(&module);
     assert!(h.verify(&module));
-    assert!(ir.contains("i8 255"), "expected `i8 255` in IR: {ir}");
+    // LLVM prints i8 byte patterns in signed decimal: 0xFF == -1.
+    assert!(ir.contains("i8 -1"), "expected `i8 -1` in IR: {ir}");
 }
 
 #[test]
@@ -96,7 +97,8 @@ fn u16_literal() {
     });
     let ir = h.ir(&module);
     assert!(h.verify(&module));
-    assert!(ir.contains("i16 65535"), "expected u16 constant: {ir}");
+    // LLVM prints i16 byte patterns in signed decimal: 0xFFFF == -1.
+    assert!(ir.contains("i16 -1"), "expected u16 constant (65535) as `i16 -1`: {ir}");
 }
 
 #[test]
@@ -128,7 +130,8 @@ fn u32_literal() {
     });
     let ir = h.ir(&module);
     assert!(h.verify(&module));
-    assert!(ir.contains("i32 4000000000"), "expected u32 constant: {ir}");
+    // LLVM prints i32 byte patterns in signed decimal: 4_000_000_000 == -294967296.
+    assert!(ir.contains("i32 -294967296"), "unexpected u32 constant: {ir}");
 }
 
 #[test]
@@ -160,7 +163,8 @@ fn u64_literal() {
     });
     let ir = h.ir(&module);
     assert!(h.verify(&module));
-    assert!(ir.contains("i64 18446744073709551615"), "expected max u64 in IR: {ir}");
+    // LLVM prints i64 byte patterns in signed decimal: u64::MAX == -1.
+    assert!(ir.contains("i64 -1"), "expected max u64 as `i64 -1`: {ir}");
 }
 
 #[test]
@@ -176,10 +180,8 @@ fn u128_literal_arbitrary_precision() {
     });
     let ir = h.ir(&module);
     assert!(h.verify(&module));
-    assert!(
-        ir.contains("i128 340282366920938463463374607431768211455"),
-        "unexpected i128 constant: {ir}"
-    );
+    // LLVM prints i128 byte patterns in signed decimal: u128::MAX == -1.
+    assert!(ir.contains("i128 -1"), "unexpected i128 constant: {ir}");
 }
 
 #[test]
@@ -264,7 +266,7 @@ fn string_literal_becomes_private_global() {
     assert!(h.verify(&module));
     assert!(ir.contains("hello"), "expected string data in IR: {ir}");
     assert!(
-        ir.contains("internal constant"),
+        ir.contains("@__nitrate_lit_str_0") && ir.contains("constant [6 x i8]"),
         "expected const string global in IR: {ir}"
     );
 }

@@ -1,12 +1,12 @@
-use inkwell::AddressSpace;
-use inkwell::types::BasicType;
-use inkwell::values::BasicValueEnum;
-use nitrate_mir::prelude as mir;
-
 use crate::context::CodegenCtx;
 use crate::operand::{gen_binary_op, gen_operand, operand_signedness};
 use crate::place::{gen_place, get_place_type_for_load};
 use crate::ty::gen_ty;
+use core::panic;
+use inkwell::AddressSpace;
+use inkwell::types::BasicType;
+use inkwell::values::BasicValueEnum;
+use nitrate_mir::prelude as mir;
 
 /// Generate the LLVM value for a MIR Rvalue.
 ///
@@ -160,11 +160,12 @@ pub fn gen_rvalue<'ctx>(ctx: &mut CodegenCtx<'ctx, '_>, rvalue: &mir::Rvalue) ->
             let ret_ty = ctx.llvm.ptr_sized_int_type(ctx.llvm.target_data(), None);
             match op {
                 mir::NullaryOp::SizeOf => {
-                    let size = llvm_ty
-                        .size_of()
-                        .map(|s| s.const_cast(ret_ty, false))
-                        .unwrap_or_else(|| ret_ty.const_zero());
-                    size.into()
+                    // Compute the byte size as a plain integer constant. This
+                    // avoids inkwell's `size_of()` which emits a GEP-based
+                    // constant expression (`ptrtoint (getelementptr ...)`) for
+                    // aggregate/zero-sized types instead of a literal.
+                    let size = ctx.ty_ctx().size_of(llvm_ty).unwrap_or(0);
+                    ret_ty.const_int(size, false).into()
                 }
                 mir::NullaryOp::AlignOf => {
                     let align = ctx.ty_ctx().abi_align(llvm_ty);

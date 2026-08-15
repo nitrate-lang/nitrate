@@ -2,7 +2,7 @@ use crate::ty::TypegenCtx;
 use inkwell::basic_block::BasicBlock as LlvmBasicBlock;
 use inkwell::builder::Builder;
 use inkwell::llvm_sys::prelude::{LLVMModuleRef, LLVMValueRef};
-use inkwell::module::Module;
+use inkwell::module::{Linkage, Module};
 use inkwell::types::BasicTypeEnum;
 use inkwell::values::{FunctionValue, PhiValue, PointerValue};
 use nitrate_llvm::LLVMContext;
@@ -31,6 +31,39 @@ unsafe extern "C" {
 pub struct GlobalInfo<'ctx> {
     pub ptr: PointerValue<'ctx>,
     pub mir_ty: mir::MirTypeId,
+}
+
+// ─────────────────────────────────────────────────────────────
+// Module-level string literal interning
+// ─────────────────────────────────────────────────────────────
+
+/// Shared, module-wide interning cache for string and byte-string literals.
+///
+/// The cache is keyed by the raw bytes (not a lossy UTF-8 conversion) so that
+/// distinct byte strings never alias, and it is shared across every function
+/// in the module so that (a) repeated literals produce exactly one global and
+/// (b) two different functions cannot collide on the generated global name.
+pub struct ModuleStringCache<'ctx> {
+    cache: HashMap<Vec<u8>, PointerValue<'ctx>>,
+    counter: u64,
+}
+
+impl<'ctx> ModuleStringCache<'ctx> {
+    #[must_use]
+    pub fn new() -> Self {
+        Self {
+            cache: HashMap::new(),
+            counter: 0,
+        }
+    }
+
+    fn get<Q: ?Sized>(&self, key: &Q) -> Option<PointerValue<'ctx>>
+    where
+        Vec<u8>: std::borrow::Borrow<Q>,
+        Q: std::hash::Hash + Eq,
+    {
+        self.cache.get(key).copied()
+    }
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -64,12 +97,9 @@ pub struct CodegenCtx<'ctx, 'module> {
     /// incoming values from predecessor terminators.
     pub block_phi_nodes: HashMap<usize, Vec<RefCell<PhiValue<'ctx>>>>,
 
-    /// Cache of string-literal globals created during operand evaluation, keyed
-    /// by the literal bytes so duplicate literals share one global.
-    pub str_literal_cache: HashMap<NString, PointerValue<'ctx>>,
-
-    /// Counter for generating unique names for string-literal globals.
-    pub str_literal_counter: u64,
+    /// Shared string-literal interning cache, shared across all functions in
+    /// the module. See [`ModuleStringCache`].
+    pub strings: &'module RefCell<ModuleStringCache<'ctx>>,
 }
 
 impl<'ctx, 'module> CodegenCtx<'ctx, 'module> {
@@ -79,6 +109,7 @@ impl<'ctx, 'module> CodegenCtx<'ctx, 'module> {
         builder: Builder<'ctx>,
         mir_func: &'module mir::MirFunction,
         globals: &'module HashMap<NString, GlobalInfo<'ctx>>,
+        strings: &'module RefCell<ModuleStringCache<'ctx>>,
         function: FunctionValue<'ctx>,
     ) -> Self {
         Self {
@@ -92,8 +123,7 @@ impl<'ctx, 'module> CodegenCtx<'ctx, 'module> {
             blocks: HashMap::new(),
             function,
             block_phi_nodes: HashMap::new(),
-            str_literal_cache: HashMap::new(),
-            str_literal_counter: 0,
+            strings,
         }
     }
 
@@ -123,25 +153,33 @@ impl<'ctx, 'module> CodegenCtx<'ctx, 'module> {
 
     /// Get or create a private global constant holding the given bytes as a
     /// null-terminated C string, returning a pointer to its first byte.
+    ///
+    /// The global is deduplicated module-wide by the raw byte contents.
     pub fn intern_string_literal(&mut self, bytes: &[u8]) -> PointerValue<'ctx> {
-        let key: NString = String::from_utf8_lossy(bytes).into_owned().into();
-        if let Some(ptr) = self.str_literal_cache.get(&key) {
-            return *ptr;
+        {
+            let strings = self.strings.borrow();
+            if let Some(ptr) = strings.get(bytes) {
+                return ptr;
+            }
         }
 
-        let name = format!("__nitrate_lit_str_{}", self.str_literal_counter);
-        self.str_literal_counter += 1;
+        let name = {
+            let mut strings = self.strings.borrow_mut();
+            let name = format!("__nitrate_lit_str_{}", strings.counter);
+            strings.counter += 1;
+            name
+        };
 
         let str_const = self.llvm.const_string(bytes, true);
         let str_ty = str_const.get_type();
         let str_global = self.module.add_global(str_ty, None, &name);
         str_global.set_initializer(&str_const);
-        str_global.set_linkage(inkwell::module::Linkage::Private);
+        str_global.set_linkage(Linkage::Private);
         str_global.set_unnamed_addr(true);
         str_global.set_constant(true);
 
         let ptr = str_global.as_pointer_value();
-        self.str_literal_cache.insert(key, ptr);
+        self.strings.borrow_mut().cache.insert(bytes.to_vec(), ptr);
         ptr
     }
 }

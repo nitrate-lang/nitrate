@@ -143,15 +143,21 @@ pub fn gen_terminator<'ctx>(ctx: &mut CodegenCtx<'ctx, '_>, terminator: &mir::Te
 
             ctx.builder.build_switch(discr_int, otherwise_bb, &cases).unwrap();
         }
-        mir::Terminator::Return { value } => match value {
-            Some(op) => {
-                let val = gen_operand(ctx, op);
-                ctx.builder.build_return(Some(&val)).unwrap();
+        mir::Terminator::Return { value } => {
+            // Unit/Never return types map to LLVM `void`. A MIR function may
+            // still carry `Return { value: Some(Unit) }`, which must lower to
+            // `ret void` rather than `ret {}` against a void-typed function.
+            let ret_is_void = matches!(&*ctx.mir_func.return_ty, mir::MirType::Unit | mir::MirType::Never);
+            match value {
+                Some(op) if !ret_is_void => {
+                    let val = gen_operand(ctx, op);
+                    ctx.builder.build_return(Some(&val)).unwrap();
+                }
+                _ => {
+                    ctx.builder.build_return(None).unwrap();
+                }
             }
-            None => {
-                ctx.builder.build_return(None).unwrap();
-            }
-        },
+        }
         mir::Terminator::Unreachable => {
             ctx.builder.build_unreachable().unwrap();
         }

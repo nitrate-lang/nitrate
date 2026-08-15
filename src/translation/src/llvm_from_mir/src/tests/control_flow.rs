@@ -151,7 +151,7 @@ fn if_with_multiple_block_arguments_creates_multiple_phis() {
         f.ret(Some(mir::Operand::Copy(mir::Place::Local(arg_local))));
         f.finish_function();
     });
-    let phi_count = ir.matches("phi").count();
+    let phi_count = ir.matches(" = phi ").count();
     assert_eq!(phi_count, 2, "expected two phi nodes: {ir}");
 }
 

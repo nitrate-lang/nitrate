@@ -1,8 +1,8 @@
-use inkwell::values::PointerValue;
-use nitrate_mir::prelude as mir;
-
 use crate::context::CodegenCtx;
 use crate::ty::gen_ty;
+use core::panic;
+use inkwell::values::PointerValue;
+use nitrate_mir::prelude as mir;
 
 /// Compute the address (PointerValue) of a MIR Place.
 ///
@@ -115,8 +115,32 @@ pub fn gen_place<'ctx>(ctx: &mut CodegenCtx<'ctx, '_>, place: &mir::Place) -> Po
                 _ => panic!("Index access requires an array or slice type, got {:?}", &*base_ty),
             }
         }
-        // Downcast projects to the same storage as the base enum value.
-        mir::Place::Downcast { base, variant_name: _ } => gen_place(ctx, base),
+        // Downcast projects to the payload storage of the selected variant.
+        // The enum is `{ [N x i8] payload, tag }`, and the payload lives at
+        // field 0. We return a pointer to that payload storage (an opaque
+        // pointer), letting the load type be the variant's payload type.
+        mir::Place::Downcast { base, variant_name } => {
+            let base_ty = get_place_type_for_load(ctx, base);
+            if let mir::MirType::Enum { variants, .. } = &*base_ty {
+                let variant = variants
+                    .iter()
+                    .find(|v| v.name == *variant_name)
+                    .unwrap_or_else(|| panic!("variant '{}' not found in enum", variant_name));
+                if variant.payload.is_none() {
+                    panic!("variant '{}' has no payload to downcast to", variant_name);
+                }
+                let enum_llvm_ty = gen_ty(&base_ty, &mut ctx.ty_ctx());
+                let base_ptr = gen_place(ctx, base);
+                let zero = ctx.llvm.i32_type().const_zero();
+                unsafe {
+                    ctx.builder
+                        .build_in_bounds_gep(enum_llvm_ty, base_ptr, &[zero, zero], "downcast_payload")
+                        .unwrap()
+                }
+            } else {
+                panic!("Downcast on non-enum type {:?}", &*base_ty);
+            }
+        }
     }
 }
 
@@ -161,6 +185,17 @@ pub fn get_place_type_for_load(ctx: &CodegenCtx<'_, '_>, place: &mir::Place) -> 
                 _ => base_ty,
             }
         }
-        mir::Place::Downcast { base, .. } => get_place_type_for_load(ctx, base),
+        mir::Place::Downcast { base, variant_name } => {
+            let base_ty = get_place_type_for_load(ctx, base);
+            if let mir::MirType::Enum { variants, .. } = &*base_ty {
+                variants
+                    .iter()
+                    .find(|v| v.name == *variant_name)
+                    .and_then(|v| v.payload.clone())
+                    .unwrap_or_else(|| panic!("variant '{}' has no payload", variant_name))
+            } else {
+                panic!("Downcast on non-enum type {:?}", &*base_ty);
+            }
+        }
     }
 }

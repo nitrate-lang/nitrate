@@ -20,7 +20,9 @@ fn local_place_reads_back_assigned_value() {
     let ir = h.ir(&module);
     assert!(h.verify(&module));
     assert!(ir.contains("store i32 7"), "expected store: {ir}");
-    assert!(ir.contains("ret i32 7"), "expected load + ret: {ir}");
+    // Without optimization, the SSA local is stored, then loaded back.
+    assert!(ir.contains("load i32"), "expected load: {ir}");
+    assert!(ir.contains("ret i32 %load"), "expected load + ret: {ir}");
 }
 
 #[test]

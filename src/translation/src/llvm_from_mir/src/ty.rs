@@ -13,7 +13,7 @@ pub struct TypegenCtx<'ctx, 'module> {
 impl<'ctx, 'module> TypegenCtx<'ctx, 'module> {
     /// Size in bytes of an LLVM type, or `None` for unsized/function types.
     pub fn size_of(&self, ty: BasicTypeEnum<'ctx>) -> Option<u64> {
-        ty.size_of().and_then(|v| v.get_zero_extended_constant())
+        Some(abi_size_of(self.llvm, ty))
     }
 
     /// ABI alignment in bytes of an LLVM type.
@@ -27,6 +27,24 @@ impl<'ctx, 'module> TypegenCtx<'ctx, 'module> {
             BasicTypeEnum::VectorType(t) => self.llvm.target_data().get_abi_alignment(&t),
             BasicTypeEnum::ScalableVectorType(t) => self.llvm.target_data().get_abi_alignment(&t),
         }
+    }
+}
+
+/// ABI size in bytes of an LLVM type.
+///
+/// This uses `TargetData::get_abi_size`, which returns a plain integer byte
+/// count. It deliberately avoids `BasicType::size_of`, which can materialize
+/// the size as a `ptrtoint (getelementptr ...)` constant expression rather
+/// than a simple integer literal.
+fn abi_size_of(llvm: &LLVMContext, ty: BasicTypeEnum<'_>) -> u64 {
+    match ty {
+        BasicTypeEnum::ArrayType(t) => llvm.target_data().get_abi_size(&t),
+        BasicTypeEnum::FloatType(t) => llvm.target_data().get_abi_size(&t),
+        BasicTypeEnum::IntType(t) => llvm.target_data().get_abi_size(&t),
+        BasicTypeEnum::PointerType(t) => llvm.target_data().get_abi_size(&t),
+        BasicTypeEnum::StructType(t) => llvm.target_data().get_abi_size(&t),
+        BasicTypeEnum::VectorType(t) => llvm.target_data().get_abi_size(&t),
+        BasicTypeEnum::ScalableVectorType(t) => llvm.target_data().get_abi_size(&t),
     }
 }
 

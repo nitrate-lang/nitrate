@@ -1,5 +1,6 @@
 use crate::context::CodegenCtx;
 use crate::context::GlobalInfo;
+use crate::context::ModuleStringCache;
 use crate::context::nitrate_llvm_appendToGlobalCtors;
 use crate::stmt::{gen_statement, gen_terminator};
 use crate::ty::{TypegenCtx, gen_fn_ret_ty, gen_ty};
@@ -81,6 +82,19 @@ pub fn gen_function<'ctx>(ctx: &mut CodegenCtx<'ctx, '_>, llvm_function: Functio
 
     // Branch from the synthetic entry to the MIR entry block.
     let entry_target = ctx.get_llvm_block(ctx.mir_func.entry_block());
+    // If the MIR entry block itself has block arguments (a degenerate but
+    // possible shape), the synthetic entry is one of its predecessors and must
+    // contribute a phi incoming value. There are no prior callers to supply a
+    // value, so `undef` keeps the phi well-formed.
+    if let Some(phi_list) = ctx.block_phi_nodes.get(&ctx.mir_func.entry_block().as_usize()) {
+        for phi_node in phi_list.iter() {
+            let undef = {
+                let phi = phi_node.borrow();
+                phi.as_basic_value().get_type().const_zero()
+            };
+            phi_node.borrow_mut().add_incoming(&[(&undef, entry)]);
+        }
+    }
     ctx.builder.build_unconditional_branch(entry_target).unwrap();
 
     // Generate code for each basic block.
@@ -133,6 +147,7 @@ pub fn generate_llvmir_from_mir<'ctx>(
 ) -> Module<'ctx> {
     let module = llvm.create_module(package_name);
     let mut globals: HashMap<NString, GlobalInfo<'ctx>> = HashMap::new();
+    let strings: std::cell::RefCell<ModuleStringCache<'ctx>> = std::cell::RefCell::new(ModuleStringCache::new());
 
     // First pass: declare all global variables. Complex initializers cannot be
     // expressed as LLVM constants, so they are handled through a constructor
@@ -214,7 +229,7 @@ pub fn generate_llvmir_from_mir<'ctx>(
         let mir_func = func_id.borrow();
         if !mir_func.is_extern() {
             let builder = llvm.create_builder();
-            let mut ctx = CodegenCtx::new(llvm, &module, builder, &mir_func, &globals, llvm_function);
+            let mut ctx = CodegenCtx::new(llvm, &module, builder, &mir_func, &globals, &strings, llvm_function);
             gen_function(&mut ctx, llvm_function);
         }
     }
