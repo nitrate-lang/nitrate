@@ -206,6 +206,7 @@ impl<'b> MirFunctionBuilder<'b> {
             statements: ThinVec::new(),
             terminator: Terminator::Unreachable,
             args: arg_types.iter().cloned().collect(),
+            arg_local_ids: arg_locals.clone(),
         };
         let bb_id: BasicBlockId = bb.into();
 
@@ -252,6 +253,7 @@ impl<'b> MirFunctionBuilder<'b> {
             statements: ThinVec::new(),
             terminator: Terminator::Unreachable,
             args: arg_types.iter().cloned().collect(),
+            arg_local_ids: arg_locals.clone(),
         };
         let bb_id: BasicBlockId = bb.into();
 

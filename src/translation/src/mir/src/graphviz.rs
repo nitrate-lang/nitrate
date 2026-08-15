@@ -590,8 +590,8 @@ fn fmt_rvalue(rv: &Rvalue) -> String {
                         .collect();
                     format!("{} {{ {} }}", name, named.join(", "))
                 }
-                AggregateKind::Enum(enum_name, variant_name) => {
-                    format!("{}::{} {{ {} }}", enum_name, variant_name, items.join(", "))
+                AggregateKind::Enum { name, variant_name, .. } => {
+                    format!("{}::{} {{ {} }}", name, variant_name, items.join(", "))
                 }
             }
         }

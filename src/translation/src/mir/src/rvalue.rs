@@ -77,6 +77,15 @@ pub enum AggregateKind {
     /// Construct a struct literal: `StructName { field1: val1, ... }`
     /// The field names are stored separately for matching.
     Struct(NString, ThinVec<NString>),
-    /// Construct an enum variant: `EnumName::Variant(payload)`
-    Enum(NString, NString),
+    /// Construct an enum variant: `EnumName::Variant(payload)`.
+    ///
+    /// Carries the enum's MIR type and the variant's index so codegen can size
+    /// the payload storage and write the discriminant tag without having to
+    /// re-resolve declarations by name.
+    Enum {
+        name: NString,
+        variant_name: NString,
+        variant_index: u32,
+        enum_ty: MirTypeId,
+    },
 }

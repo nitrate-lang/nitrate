@@ -132,6 +132,12 @@ pub struct BasicBlock {
     /// conceptually bound to fresh SSA values at the start of the block
     /// and can be referenced by subsequent statements.
     pub args: ThinVec<MirTypeId>,
+
+    /// The local that receives each block argument, in 1:1 correspondence
+    /// with `args`. These locals are created during lowering so codegen can
+    /// bind incoming edge values (lowered to phi nodes) to the correct
+    /// allocas without re-deriving their indices.
+    pub arg_local_ids: ThinVec<LocalId>,
 }
 
 impl BasicBlock {
@@ -141,6 +147,7 @@ impl BasicBlock {
             statements,
             terminator,
             args: ThinVec::new(),
+            arg_local_ids: ThinVec::new(),
         }
     }
 
@@ -151,6 +158,23 @@ impl BasicBlock {
             statements,
             terminator,
             args,
+            arg_local_ids: ThinVec::new(),
+        }
+    }
+
+    /// Create a basic block with block arguments and their receiving locals.
+    #[must_use]
+    pub fn new_with_arg_locals(
+        statements: ThinVec<Statement>,
+        terminator: Terminator,
+        args: ThinVec<MirTypeId>,
+        arg_local_ids: ThinVec<LocalId>,
+    ) -> Self {
+        Self {
+            statements,
+            terminator,
+            args,
+            arg_local_ids,
         }
     }
 

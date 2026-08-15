@@ -183,9 +183,19 @@ pub fn lower_value(
             ..
         } => {
             let ed = enum_def.borrow();
+            let variant_index = ed.variants.iter().position(|v| v.name == *variant).unwrap_or(0) as u32;
+            let enum_ty = value_result_type(ctx, func, &value);
             let inner_operand = lower_value(ctx, func, inner, false);
             let operands: thin_vec::ThinVec<mir::Operand> = [inner_operand].into_iter().collect();
-            let rv = mir::Rvalue::Aggregate(mir::AggregateKind::Enum(ed.name.clone(), variant.clone()), operands);
+            let rv = mir::Rvalue::Aggregate(
+                mir::AggregateKind::Enum {
+                    name: ed.name.clone(),
+                    variant_name: variant.clone(),
+                    variant_index,
+                    enum_ty,
+                },
+                operands,
+            );
             assign_rvalue_to_temp(ctx, func, &value, rv)
         }
 
