@@ -1,42 +1,9 @@
 use nitrate_translation::parsetree::{PrettyPrint, PrintContext, SrcSpan, ast};
+use std::format;
 
 mod item;
 mod rvalue;
 mod ty;
-
-/// A named symbol tracked in the generation scope, with its type.
-#[derive(Debug, Clone)]
-pub(crate) struct Symbol {
-    pub name: String,
-    pub kind: SymbolKind,
-}
-
-#[derive(Debug, Clone)]
-pub(crate) enum SymbolKind {
-    /// A local variable or function parameter.
-    Local(ast::Type),
-}
-
-/// Metadata about a function known to the generator, so that call-sites
-/// can emit type-compatible arguments.
-#[derive(Debug, Clone)]
-pub(crate) struct FuncInfo {
-    pub name: String,
-    pub params: Vec<ast::Type>,
-    pub return_type: Option<ast::Type>,
-}
-
-/// Metadata about a struct known to the generator, so that struct-inits
-/// and field-accesses can produce compatible value expressions.
-#[derive(Debug, Clone)]
-pub(crate) struct StructInfo {
-    pub name: String,
-    pub fields: Vec<(String, ast::Type)>,
-}
-
-struct Frame {
-    pub(crate) locals: Vec<Symbol>,
-}
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct GenConfig {
@@ -46,134 +13,38 @@ pub struct GenConfig {
     pub seed: u64,
 }
 
+/// Generator state. RNG, budget, and recursion depth counters are kept here.
 pub struct Gen {
-    pub(crate) frames: Vec<Frame>,
     budget: u32,
     config: GenConfig,
     rng: u64,
-    /// Recursion depth for rvalue generation, prevents infinite recursion.
+    /// Recursion depth for value generation, prevents infinite recursion.
     rvalue_depth: u32,
     /// Item-level recursion depth for module nesting.
     item_depth: u32,
     /// Type-generation recursion depth to prevent stack overflow in compound types.
     pub(crate) type_depth: u32,
-    /// All globally-declared function signatures.
-    pub(crate) known_functions: Vec<FuncInfo>,
-    /// All globally-declared struct definitions.
-    pub(crate) known_structs: Vec<StructInfo>,
-    /// All globally-declared enum names (for TypePath generation).
-    pub(crate) known_enums: Vec<String>,
-    /// Whether we are currently inside a loop (break/continue are valid).
-    in_loop: bool,
     /// Unique name generation counter to avoid collisions.
     name_counter: u64,
-    /// Whether a `main` function has been emitted.
-    has_main: bool,
 }
 
-/// Maximum recursion depth for rvalue generation before forcing leaf expressions.
-const MAX_RVALUE_DEPTH: u32 = 5;
+/// Maximum recursion depth for value generation before forcing leaf expressions.
+pub(crate) const MAX_RVALUE_DEPTH: u32 = 5;
 /// Maximum nesting depth for module-in-module generation.
 pub(crate) const MAX_ITEM_DEPTH: u32 = 3;
-
-/// Return the budget weight (cost) for generating a given rvalue kind.
-/// Heavier constructs like `if`, `match`, loops cost more so they appear
-/// naturally less frequently than literals and simple expressions.
-/// These weights are used both for selection frequency AND budget spending.
-pub(crate) fn budget_weight_for_kind(kind: &ast::RValueKind) -> u32 {
-    use ast::RValueKind::*;
-    match kind {
-        // Leaf / trivial expressions — cheap
-        Boolean | Integer | Float | String | BString | Path | Parentheses | Tuple => 1,
-        // Simple operations
-        UnaryExpr => 2,
-        Cast => 2,
-        TypeInfo => 1,
-        // Binary operators + compound containers
-        BinExpr => 3,
-        Range => 4,
-        List => 4,
-        IndexAccess => 3,
-        // Nested constructs
-        Block => 5,
-        Closure => 5,
-        StructInit => 6,
-        FieldAccess => 6,
-        // Control flow — expensive
-        If => 8,
-        Match => 8,
-        FunctionCall => 5,
-        While => 10,
-        ForEach => 8,
-        Break | Continue | Return => 1,
-        // Not applicable
-        _ => 3,
-    }
-}
 
 impl Gen {
     pub fn new(config: GenConfig) -> Self {
         let seed = config.seed;
         Self {
-            frames: Vec::new(),
             budget: config.max_budget,
             config,
             rng: splitmix64_init(seed),
             rvalue_depth: 0,
             item_depth: 0,
             type_depth: 0,
-            known_functions: Vec::new(),
-            known_structs: Vec::new(),
-            known_enums: Vec::new(),
-            in_loop: false,
             name_counter: 0,
-            has_main: false,
         }
-    }
-
-    /// Spend budget for a block.
-    pub(crate) fn spend_budget_block(&mut self) -> bool {
-        self.spend_budget(3)
-    }
-
-    /// Spend budget for a function definition.
-    pub(crate) fn spend_budget_function(&mut self) -> bool {
-        self.spend_budget(10)
-    }
-
-    /// Spend budget for a struct definition.
-    pub(crate) fn spend_budget_struct(&mut self) -> bool {
-        self.spend_budget(5)
-    }
-
-    /// Spend budget for an enum definition.
-    pub(crate) fn spend_budget_enum(&mut self) -> bool {
-        self.spend_budget(5)
-    }
-
-    /// Spend budget for a module definition.
-    pub(crate) fn spend_budget_module(&mut self) -> bool {
-        self.spend_budget(4)
-    }
-
-    /// Spend budget for a global variable.
-    pub(crate) fn spend_budget_variable(&mut self) -> bool {
-        self.spend_budget(3)
-    }
-
-    /// Spend budget for a type alias.
-    pub(crate) fn spend_budget_type_alias(&mut self) -> bool {
-        self.spend_budget(2)
-    }
-
-    /// Spend budget for a kind-specific amount (used before generating a specific rvalue).
-    pub(crate) fn spend_budget_for_kind(&mut self, kind: &ast::RValueKind) -> bool {
-        let weight = budget_weight_for_kind(kind);
-        self.spend_budget(weight)
-    }
-
-    pub(crate) fn budget_left(&self) -> u32 {
-        self.budget
     }
 
     /// Spend exact amount. Fails (returns false) if insufficient budget remains.
@@ -185,115 +56,21 @@ impl Gen {
         true
     }
 
-    pub(crate) fn register_function(&mut self, info: FuncInfo) {
-        if !self.known_functions.iter().any(|f| f.name == info.name) {
-            self.known_functions.push(info);
-        }
+    pub(crate) fn budget_left(&self) -> u32 {
+        self.budget
     }
 
-    pub(crate) fn register_struct(&mut self, info: StructInfo) {
-        if !self.known_structs.iter().any(|s| s.name == info.name) {
-            self.known_structs.push(info);
-        }
+    /// Force leaf generation when deeply nested or out of budget.
+    pub(crate) fn force_leaf(&self) -> bool {
+        self.rvalue_depth >= MAX_RVALUE_DEPTH || self.budget_left() < 2
     }
 
-    pub(crate) fn register_enum(&mut self, name: String) {
-        if !self.known_enums.iter().any(|e| e == &name) {
-            self.known_enums.push(name);
-        }
+    pub(crate) fn inc_rvalue_depth(&mut self) {
+        self.rvalue_depth += 1;
     }
 
-    pub(crate) fn push_frame(&mut self) {
-        self.frames.push(Frame { locals: Vec::new() });
-    }
-
-    pub(crate) fn pop_frame(&mut self) {
-        self.frames.pop();
-    }
-
-    /// Add a local variable to the current frame. Returns the actual name used (may
-    /// have been uniquified to avoid collisions).
-    pub(crate) fn add_local(&mut self, name: String, ty: ast::Type) -> String {
-        let suffix: Option<u64> = if self
-            .frames
-            .last()
-            .map_or(false, |f| f.locals.iter().any(|s| s.name == name))
-        {
-            Some(self.next_u64() & 0xFFF)
-        } else {
-            None
-        };
-        let unique_name = match suffix {
-            Some(s) => format!("{}_{}", name, s),
-            None => name,
-        };
-        if let Some(frame) = self.frames.last_mut() {
-            frame.locals.push(Symbol {
-                name: unique_name.clone(),
-                kind: SymbolKind::Local(ty),
-            });
-        }
-        unique_name
-    }
-
-    pub(crate) fn has_any_local(&self) -> bool {
-        self.frames.iter().any(|f| !f.locals.is_empty())
-    }
-
-    pub(crate) fn has_any_function(&self) -> bool {
-        !self.known_functions.is_empty()
-    }
-
-    pub(crate) fn has_any_struct(&self) -> bool {
-        !self.known_structs.is_empty()
-    }
-
-    pub(crate) fn has_any_enum(&self) -> bool {
-        !self.known_enums.is_empty()
-    }
-
-    /// Pick a random known function info.
-    pub(crate) fn pick_function(&mut self) -> FuncInfo {
-        debug_assert!(self.has_any_function());
-        let idx = self.gen_index(self.known_functions.len());
-        self.known_functions[idx].clone()
-    }
-
-    /// Pick a random known function whose return type is compatible with target_ty.
-    /// Falls back to any function if none match exactly.
-    pub(crate) fn pick_function_matching_return(&mut self, target_ty: &ast::Type) -> FuncInfo {
-        debug_assert!(self.has_any_function());
-        use crate::ty::types_compatible;
-        let compatible: Vec<usize> = self
-            .known_functions
-            .iter()
-            .enumerate()
-            .filter(|(_, f)| {
-                if let Some(ref ret_ty) = f.return_type {
-                    types_compatible(ret_ty, target_ty)
-                } else {
-                    crate::ty::is_unit_type(target_ty)
-                }
-            })
-            .map(|(i, _)| i)
-            .collect();
-        if !compatible.is_empty() {
-            let idx = self.gen_index(compatible.len());
-            self.known_functions[compatible[idx]].clone()
-        } else {
-            self.pick_function()
-        }
-    }
-
-    /// Pick a random known struct info.
-    pub(crate) fn pick_struct(&mut self) -> StructInfo {
-        debug_assert!(self.has_any_struct());
-        let idx = self.gen_index(self.known_structs.len());
-        self.known_structs[idx].clone()
-    }
-
-    pub(crate) fn find_struct_by_name(&self, name: &str) -> Option<&StructInfo> {
-        self.known_structs.iter().find(|s| s.name == name)
+    pub(crate) fn dec_rvalue_depth(&mut self) {
+        self.rvalue_depth = self.rvalue_depth.saturating_sub(1);
     }
 
     pub(crate) fn next_u64(&mut self) -> u64 {
@@ -313,59 +90,48 @@ impl Gen {
         (self.next_u64() as usize) % max
     }
 
-    pub(crate) fn force_leaf(&self) -> bool {
-        self.rvalue_depth >= MAX_RVALUE_DEPTH || self.budget_left() < 3
+    /// Weighted choice: returns one of the supplied `code` values,
+    /// each associated with a positive weight.
+    pub(crate) fn pick_weighted(&mut self, options: &[(u32, u8)]) -> u8 {
+        assert!(!options.is_empty(), "pick_weighted called with no options");
+        let total: u32 = options.iter().map(|(w, _)| w).sum();
+        let mut roll = self.next_u64() as u32 % total;
+        for (weight, code) in options {
+            if roll < *weight {
+                return *code;
+            }
+            roll -= *weight;
+        }
+        options[0].1
     }
 
-    pub(crate) fn set_in_loop(&mut self, val: bool) {
-        self.in_loop = val;
-    }
-
-    pub(crate) fn in_loop(&self) -> bool {
-        self.in_loop
-    }
-
-    pub(crate) fn inc_rvalue_depth(&mut self) {
-        self.rvalue_depth += 1;
-    }
-
-    pub(crate) fn dec_rvalue_depth(&mut self) {
-        self.rvalue_depth = self.rvalue_depth.saturating_sub(1);
+    /// Produce a unique name with the given prefix.
+    pub(crate) fn gen_unique_name(&mut self, prefix: &str) -> String {
+        let counter = self.name_counter;
+        self.name_counter = self.name_counter.wrapping_add(1);
+        format!("{}_{}", prefix, counter)
     }
 
     pub fn gen_program(&mut self) -> String {
         let mut items = Vec::new();
 
-        // Generate main first if budget permits.
-        if self.budget_left() >= 8 {
-            items.push(self.gen_item_main());
-        } else {
-            // Not enough budget for main, generate a minimal placeholder
-            items.push(self.gen_dummy_item());
-            self.has_main = true; // prevent later attempts
+        // Always emit a main function.
+        items.push(self.gen_item_main());
+
+        // Emit the requested number of additional functions, subject to budget.
+        let mut extra_functions = self.config.function_count.saturating_sub(1);
+        while extra_functions > 0 && self.budget_left() >= 10 {
+            items.push(self.gen_item_function());
+            extra_functions -= 1;
         }
 
-        // Generate the required number of additional functions.
-        let functions_needed = if self.has_main {
-            self.config.function_count.saturating_sub(1)
-        } else {
-            self.config.function_count
-        };
-        let mut functions_generated = 0u32;
-        while functions_generated < functions_needed && self.budget_left() >= 8 {
-            let item = self.gen_item_function(None);
-            functions_generated += 1;
-            items.push(item);
-        }
-
-        // Generate additional random items to cover all item kinds,
-        // up to a reasonable limit based on remaining budget.
+        // Emit additional random items (structs, enums, consts, type aliases, modules).
         let extra_ceiling = 2 + self.gen_index(5);
         for _ in 0..extra_ceiling {
             if self.budget_left() < 3 {
                 break;
             }
-            items.push(self.gen_item(None));
+            items.push(self.gen_item());
         }
 
         let module = ast::Module {
