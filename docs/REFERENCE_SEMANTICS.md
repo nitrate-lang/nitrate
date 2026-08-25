@@ -47,26 +47,30 @@ The HIR represents borrows explicitly through `Value::Borrow { exclusive, mutabl
 
 ## Borrow Checking
 
-Borrow checking is a dedicated pass that runs after type inference (the solver) but before validation and code generation. The borrow checker operates as a dataflow analysis over a function body, tracking:
+Borrow checking is a dedicated pass that runs on **MIR**, immediately after MIR lowering (see `HirMangled::lower_mir` in the pipeline) and before LLVM code generation. The former HIR borrow checker was disconnected from the pipeline because the tree-structured HIR cannot express evaluation order, temporary lifetimes, or control-flow merges precisely enough for a non-lexical-lifetimes analysis.
 
-1. **Place decomposition**: Converting HIR value expressions into `Place` paths that represent memory location paths (e.g., `x.f.g` becomes `Projection(Projection(Local(x), .f), .g)`)
+The MIR borrow checker (`nitrate_mir_borrow_check`) implements full **NLL (Non-Lexical Lifetimes)**: a backward liveness analysis computes, for every statement boundary, the set of locals whose values may be used later; a forward dataflow then maintains the set of active borrows, each carrying a set of *holders* (places storing the borrow value). A borrow dies at the last use of its holders, not at the end of its lexical scope. The checker tracks:
 
-2. **Active borrow tracking**: Each borrow expression (`&expr`, `&mut expr`) is recorded as an active borrow on the borrowed place. The borrow remains active for its lexical scope.
+1. **Place decomposition**: MIR `Place` paths into root (`Local`/`Static`) plus projection chains, with precise overlap/prefix relations (a `Deref` begins a new memory region).
+
+2. **Active borrow tracking**: Each `Rvalue::Ref` is recorded as an active borrow on the borrowed place, with shared/mutable kind and a holder set that propagates through copies and block arguments.
 
 3. **Conflict detection**: At each program point, the checker verifies:
-   - **Aliasing XOR Mutation**: No write can occur while any shared borrow is active; no read or write can occur while a mutable/exclusive borrow is active
+   - **Aliasing XOR Mutation**: No write can occur while any shared borrow is active; no read or write can occur while an activated mutable/exclusive borrow is active
    - **Use-after-move**: Values cannot be used after they have been moved
    - **Use-before-initialization**: Variables must be initialized before use
    - **Mutable borrow targets**: Mutable borrows require the target to be mutable
    - **Assignment to borrowed places**: Writing to a place while it is borrowed
-   - **Returning local references**: References to local variables cannot be returned
+   - **Returning local references**: References to local variables cannot be returned (statics and reborrows may)
 
 4. **Control flow handling**:
-   - **if/else**: Borrows from both branches are merged at the join point
-   - **while/loop**: Borrows created inside a loop must be released before the next iteration
-   - **return**: All borrows of local variables are invalidated on return
+   - **if/else**: Borrow states from both branches are merged (union) at the join point; liveness kills borrows whose last use precedes the join
+   - **while/loop**: Borrows live on the back edge (their holder is used in a later iteration or after the loop) remain active; borrows that die within the body end at their last use
+   - **return**: A borrow whose holder is the returned value is checked for escaping
 
-The borrow checker is designed to be conservatively sound: it may reject valid programs (false positives) but will never accept invalid programs (no false negatives). This is the same trade-off Rust made in its lexical borrow checker (pre-NLL). A future upgrade to full NLL (Non-Lexical Lifetimes) region inference will reduce false positives.
+5. **Two-phase borrows**: A `&mut` borrow used exactly once, as a direct call argument, is *reserved* at creation (reads and shared borrows allowed) and *activated* at the call.
+
+The borrow checker is a *may* (union) dataflow: it may reject valid programs (false positives) but never accepts memory-unsafe ones (no false negatives). Drop-liveness is not modeled (MIR has no drops), so borrows end at their last use even when a lexical scope would keep them alive.
 
 ## Code Generation Semantics
 

@@ -360,7 +360,8 @@ impl Interpreter<'_> {
 
         // Build pipeline configuration
         let mut config = pipeline_config_from_opts(opts, &manifest);
-        config.log = CompilerLog::new(self.log.clone());
+        let log = CompilerLog::new(self.log.clone());
+        config.log = log.clone();
 
         let entrypoint = manifest.entrypoint();
         let package_name = manifest.package.name.clone();
@@ -396,7 +397,15 @@ impl Interpreter<'_> {
             let hir_validated = hir_lowered.validate()?;
 
             if opts.check_only {
-                hir_validated.finish_check();
+                // Run the full semantic pipeline through MIR lowering so the
+                // MIR borrow checker (memory-safety enforcement) is exercised.
+                let hir_mangled = hir_validated.mangle();
+                mir::using_storage(&mir_store, || hir_mangled.lower_mir());
+                if log.error_bit() {
+                    return Err(anyhow::anyhow!(
+                        "check failed: the package has errors (see diagnostics above)"
+                    ));
+                }
                 info!(self.log, "Finished checking `{}`", package_name);
                 return Ok(None);
             }
@@ -424,7 +433,7 @@ impl Interpreter<'_> {
                 let llvm_generated = mir_lowered.codegen()?;
 
                 if opts.show_llvmir {
-                    llvm_generated.dump_llvm_ir();
+                    llvm_generated.dump_llvm_ir()?;
                     return Ok(None);
                 }
 

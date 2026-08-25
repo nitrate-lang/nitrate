@@ -1197,7 +1197,6 @@ version = "0.1.0"
 dependencies = [
  "nitrate_diagnosis",
  "nitrate_hir",
- "nitrate_hir_borrow_check",
  "nitrate_hir_evaluate",
  "nitrate_hir_mangle",
  "nitrate_hir_solve",
@@ -1307,6 +1306,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "nitrate_mir_borrow_check"
+version = "0.1.0"
+dependencies = [
+ "nitrate_diagnosis",
+ "nitrate_mir",
+ "nitrate_nstring",
+ "thin-vec",
+]
+
+[[package]]
 name = "nitrate_mir_from_hir"
 version = "0.1.0"
 dependencies = [
@@ -1361,7 +1370,6 @@ version = "0.1.0"
 dependencies = [
  "nitrate_diagnosis",
  "nitrate_hir",
- "nitrate_hir_borrow_check",
  "nitrate_hir_dump",
  "nitrate_hir_evaluate",
  "nitrate_hir_from_tree",
@@ -1373,6 +1381,7 @@ dependencies = [
  "nitrate_llvm",
  "nitrate_llvm_from_mir",
  "nitrate_mir",
+ "nitrate_mir_borrow_check",
  "nitrate_mir_from_hir",
  "nitrate_mir_optimize",
  "nitrate_nstring",

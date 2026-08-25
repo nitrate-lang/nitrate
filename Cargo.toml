@@ -25,6 +25,7 @@ members = [
     "src/translation/src/llvm",
     "src/translation/src/mir",
     "src/translation/src/mir_from_hir",
+    "src/translation/src/mir_borrow_check",
     "src/translation/src/llvm_from_mir",
 ]
 
@@ -105,6 +106,7 @@ nitrate_llvm = { path = "src/translation/src/llvm" }
 
 nitrate_mir = { path = "src/translation/src/mir" }
 nitrate_mir_from_hir = { path = "src/translation/src/mir_from_hir" }
+nitrate_mir_borrow_check = { path = "src/translation/src/mir_borrow_check" }
 nitrate_llvm_from_mir = { path = "src/translation/src/llvm_from_mir" }
 
 nitrate_translation = { path = "src/translation" }

@@ -19,6 +19,7 @@ The documentation follows a coherent narrative that mirrors the natural flow of 
 | [HINDLEY_MILNER.md](HINDLEY_MILNER.md)               | Type inference engine: Hindley-Milner constraint solving, fixed-point iteration, monomorphization         | Inference and solver developers    |
 | [GENERICS_ARCHITECTURE.md](GENERICS_ARCHITECTURE.md) | Generics: monomorphization mechanics, type substitution, template instantiation, caching                  | Generics and solver developers     |
 | [VALIDATION.md](VALIDATION.md)                       | HIR validation: semantic checks, ValidHir wrapper pattern, expression and type validation                 | Validation subsystem developers    |
+| [BORROW_CHECKER.md](BORROW_CHECKER.md)               | MIR borrow checker: NLL dataflow analysis, liveness-based borrow regions, two-phase borrows               | Compiler and language developers   |
 | [EVALUATION.md](EVALUATION.md)                       | Constant evaluation: compile-time expression computation, global initializers, defaults                   | Evaluation developers              |
 | [SOLVER.md](SOLVER.md)                               | Constraint solver: engine architecture, type constraints, refinement bounds, monomorphization             | Type system and solver developers  |
 | [MANGLE.md](MANGLE.md)                               | Name mangling: deterministic symbol names, type encoding, generic instantiation naming                    | Codegen developers                 |

@@ -1,7 +1,6 @@
 pub mod pipeline;
 
 pub use nitrate_hir as hir;
-pub use nitrate_hir_borrow_check as hir_borrow_check;
 pub use nitrate_hir_dump as hir_dump;
 pub use nitrate_hir_evaluate as hir_evaluate;
 pub use nitrate_hir_from_tree as hir_from_tree;
@@ -13,6 +12,7 @@ pub use nitrate_hir_validate as hir_validate;
 pub use nitrate_llvm as llvm;
 pub use nitrate_llvm_from_mir as llvm_from_mir;
 pub use nitrate_mir as mir;
+pub use nitrate_mir_borrow_check as mir_borrow_check;
 pub use nitrate_mir_from_hir as mir_from_hir;
 pub use nitrate_mir_optimize as mir_optimize;
 pub use nitrate_nstring as nstring;

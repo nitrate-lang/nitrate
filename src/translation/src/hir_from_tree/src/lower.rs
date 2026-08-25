@@ -2,7 +2,6 @@ use crate::context::Ast2HirCtx;
 use crate::item::lower_module;
 use nitrate_diagnosis::CompilerLog;
 use nitrate_hir::prelude::*;
-use nitrate_hir_borrow_check::check_function_borrows;
 use nitrate_hir_solve::{SolveError, resolve_function, resolve_global};
 use nitrate_tree::ast::{self};
 use nitrate_tree_resolve::{resolve_imports, resolve_paths};
@@ -36,15 +35,12 @@ pub fn convert_ast_to_hir(
         resolve_global(&mut global, &mut ctx.tab, log)?;
     }
 
-    // Pass 2: Borrow checking.
-    // After type inference, we have enough type information to perform
-    // borrow checking. This ensures memory safety before code generation.
-    for func_id in &function_ids {
-        let mut function = func_id.borrow_mut();
-        if function.body.is_some() {
-            check_function_borrows(&mut function, &ctx.tab, log).map_err(|_| SolveError::TypeErrors)?;
-        }
-    }
+    // Note: borrow checking no longer runs on HIR. Memory-safety enforcement
+    // was moved to the MIR borrow checker (`nitrate_mir_borrow_check`), which
+    // runs after MIR lowering (see the pipeline's `lower_mir` stage). The MIR
+    // checker can reason about liveness-based NLL borrow regions, explicit
+    // temporaries, two-phase borrows, and control flow — none of which are
+    // available on the tree-structured HIR.
 
     Ok(module)
 }

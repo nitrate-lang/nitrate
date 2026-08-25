@@ -43,7 +43,7 @@ An `Operand` is a value consumed by an `Rvalue` or passed as a block argument in
 - **`Move(Place)`** — reads the value from the place, deinitializing it. The place cannot be used afterward. This represents ownership transfer for non-`Copy` types.
 - **`Constant(MirLiteral)`** — a compile-time constant value (integer, float, boolean, string, unit). Constants require no storage and are embedded directly in the IR.
 
-The copy/move distinction in operands provides the foundation for ownership tracking and borrow checking. While the current MIR does not enforce move semantics (no consumption tracking), the distinction is present in the IR to support future borrow-checking passes.
+The copy/move distinction in operands provides the foundation for ownership tracking and borrow checking. The MIR borrow checker (`nitrate_mir_borrow_check`) consumes `Copy`/`Move` operands to track moved-from state, and the IR's `StorageLive`/`StorageDead` markers bound storage lifetimes. While the MIR lowering currently emits only `Copy` operands (no consumption tracking yet), the distinction is present in the IR and fully handled by the borrow checker.
 
 ### Rvalue: Computed Values
 

@@ -52,6 +52,7 @@ use nitrate_hir_mangle::mangle_symbols;
 use nitrate_llvm::{LLVMContext, OptLevel};
 use nitrate_llvm_from_mir::generate_llvmir_from_mir;
 use nitrate_mir::prelude as mir;
+use nitrate_mir_borrow_check::check_mir_module;
 use nitrate_mir_from_hir::lower_hir_to_mir;
 use nitrate_token_lexer::{Lexer, LexerError};
 use nitrate_tree::ast;
@@ -378,10 +379,24 @@ pub struct HirMangled {
 }
 
 impl HirMangled {
-    /// Lower HIR to MIR. TLS must be active.
+    /// Lower HIR to MIR, running the MIR borrow checker on the result.
+    ///
+    /// The MIR borrow checker (`nitrate_mir_borrow_check`) is the compiler's
+    /// memory-safety enforcement pass. It replaces the defunct HIR borrow
+    /// checker and runs on the flattened, control-flow-graph MIR where NLL
+    /// (non-lexical lifetimes) can be computed from liveness. All violations
+    /// are reported to `config.log`; downstream stages (codegen, emission)
+    /// check `log.error_bit()` and fail compilation.
+    ///
+    /// TLS must be active (the caller runs this inside `mir::using_storage`).
     pub fn lower_mir(self) -> MirLowered {
         let hir_module = self.module.into_inner();
         let mir_module = lower_hir_to_mir(&hir_module, &self.symbol_tab);
+
+        // Memory-safety check: reject borrow violations before codegen. Errors
+        // are reported to `config.log` (whose error bit gates codegen), so the
+        // `Result` is intentionally ignored here.
+        let _ = check_mir_module(&mir_module, &self.config.log);
 
         MirLowered {
             config: self.config,
@@ -437,6 +452,9 @@ impl MirLowered {
 
     /// Codegen (skip MIR optimization).
     pub fn codegen(self) -> Result<LlvmGenerated, PipelineError> {
+        if self.config.log.error_bit() {
+            return Err(PipelineError::CompilationFailed);
+        }
         let llvm_ctx = create_llvm_context(self.config.target_triple.as_deref(), self.config.opt_level)?;
 
         Ok(LlvmGenerated {
@@ -458,6 +476,9 @@ pub struct MirOptimized {
 
 impl MirOptimized {
     pub fn codegen(self) -> Result<LlvmGenerated, PipelineError> {
+        if self.config.log.error_bit() {
+            return Err(PipelineError::CompilationFailed);
+        }
         let llvm_ctx = create_llvm_context(self.config.target_triple.as_deref(), self.config.opt_level)?;
 
         Ok(LlvmGenerated {
@@ -487,12 +508,19 @@ impl LlvmGenerated {
         }
     }
 
-    pub fn dump_llvm_ir(self) {
+    pub fn dump_llvm_ir(self) -> Result<(), PipelineError> {
+        if self.config.log.error_bit() {
+            return Err(PipelineError::CompilationFailed);
+        }
         let llvm_module = generate_llvmir_from_mir(&self.config.package_name, &self.mir_module, &self.llvm_ctx);
         println!("{}", llvm_module.print_to_string().to_string());
+        Ok(())
     }
 
     pub fn dump_asm(self) -> Result<(), PipelineError> {
+        if self.config.log.error_bit() {
+            return Err(PipelineError::CompilationFailed);
+        }
         let mut llvm_module = generate_llvmir_from_mir(&self.config.package_name, &self.mir_module, &self.llvm_ctx);
         self.llvm_ctx
             .write_asm(&mut llvm_module, &mut std::io::stdout())
@@ -500,6 +528,9 @@ impl LlvmGenerated {
     }
 
     pub fn emit_obj(self, output_path: &Path) -> Result<Emitted, PipelineError> {
+        if self.config.log.error_bit() {
+            return Err(PipelineError::CompilationFailed);
+        }
         let mut llvm_module = generate_llvmir_from_mir(&self.config.package_name, &self.mir_module, &self.llvm_ctx);
         self.llvm_ctx
             .write_object_file(&mut llvm_module, output_path)
@@ -522,13 +553,20 @@ pub struct LlvmOptimized {
 }
 
 impl LlvmOptimized {
-    pub fn dump_llvm_ir(self) {
+    pub fn dump_llvm_ir(self) -> Result<(), PipelineError> {
+        if self.config.log.error_bit() {
+            return Err(PipelineError::CompilationFailed);
+        }
         let mut llvm_module = generate_llvmir_from_mir(&self.config.package_name, &self.mir_module, &self.llvm_ctx);
         self.llvm_ctx.optimize_module(&mut llvm_module);
         println!("{}", llvm_module.print_to_string().to_string());
+        Ok(())
     }
 
     pub fn dump_asm(self) -> Result<(), PipelineError> {
+        if self.config.log.error_bit() {
+            return Err(PipelineError::CompilationFailed);
+        }
         let mut llvm_module = generate_llvmir_from_mir(&self.config.package_name, &self.mir_module, &self.llvm_ctx);
         self.llvm_ctx.optimize_module(&mut llvm_module);
         self.llvm_ctx
@@ -537,6 +575,9 @@ impl LlvmOptimized {
     }
 
     pub fn emit_obj(self, output_path: &Path) -> Result<Emitted, PipelineError> {
+        if self.config.log.error_bit() {
+            return Err(PipelineError::CompilationFailed);
+        }
         let mut llvm_module = generate_llvmir_from_mir(&self.config.package_name, &self.mir_module, &self.llvm_ctx);
         self.llvm_ctx.optimize_module(&mut llvm_module);
         self.llvm_ctx

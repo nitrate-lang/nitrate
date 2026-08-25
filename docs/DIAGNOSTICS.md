@@ -27,7 +27,8 @@ Each compilation stage has its own diagnostic group, ensuring clear ownership of
 | 3        | Resolution | Name resolution errors — unknown names, cyclic imports                     | `[R0...]`         |
 | 4        | HIR        | HIR lowering errors — invalid type expressions                             | `[H0...]`         |
 | 5        | Type       | Type inference and checking errors — mismatches, unsatisfiable constraints | `[T0...]`         |
-| 6        | Semantic   | Semantic analysis errors — borrow checker, control flow                    | `[S0...]`         |
+| 6        | Semantic   | Semantic analysis errors — control flow                                  | `[S0...]`         |
+| 7        | BorrowCheck | MIR borrow-checking errors — aliasing XOR mutation, escaping borrows, moves/init | `[B0...]`  |
 
 ### Diagnostic IDs
 
