@@ -1,13 +1,13 @@
 use super::parse::Parser;
 use crate::diagnosis::SyntaxErr;
+use crate::helper::MAX_LIMIT;
+use nitrate_tree::{SrcPos, SrcSpan};
 
-use nitrate_nstring::NString;
-use nitrate_token::Token;
+use nitrate_token::{LexPos, Token};
 use nitrate_tree::ast::{
-    ArrayType, Bool, Exclusivity, Expr, Float32, Float64, FuncTypeParam, FuncTypeParams, FunctionType, Int8, Int16,
-    Int32, Int64, Int128, LatentType, Lifetime, Mutability, PointerType, ReferenceType, RefinementType, SliceType,
-    TupleType, Type, TypeParentheses, TypePath, TypePathSegment, TypeSyntaxError, UInt8, UInt16, UInt32, UInt64,
-    UInt128, USize,
+    ArrayType, Bool, Expr, Float32, Float64, FuncTypeParam, FuncTypeParams, FunctionType, Int8, Int16, Int32, Int64,
+    Int128, Lifetime, PointerType, ReferenceType, RefinementType, SliceType, TupleType, Type, TypeParentheses,
+    TypePath, TypePathSegment, TypePotential, TypeSyntaxError, UInt8, UInt16, UInt32, UInt64, UInt128, USize,
 };
 
 #[derive(Default)]
@@ -35,10 +35,7 @@ impl Parser<'_, '_> {
             if !this.lexer.skip_if(&Token::Colon) {
                 let minimum = this.parse_expression();
 
-                if !this.lexer.skip_if(&Token::Colon) {
-                    let bug = SyntaxErr::ExpectedColon(this.lexer.peek_pos());
-                    this.log.report(&bug);
-                }
+                this.expect_colon();
 
                 minimum_bound = Some(minimum);
             }
@@ -46,10 +43,7 @@ impl Parser<'_, '_> {
             if !this.lexer.skip_if(&Token::CloseBracket) {
                 let maximum = this.parse_expression();
 
-                if !this.lexer.skip_if(&Token::CloseBracket) {
-                    let bug = SyntaxErr::ExpectedCloseBracket(this.lexer.peek_pos());
-                    this.log.report(&bug);
-                }
+                this.expect_close_bracket();
 
                 maximum_bound = Some(maximum);
             }
@@ -104,38 +98,36 @@ impl Parser<'_, '_> {
     }
 
     fn parse_array_or_slice(&mut self) -> Type {
+        let bracket_start = self.lexer.peek_pos();
         assert!(self.lexer.peek_tok().token == Token::OpenBracket);
         self.lexer.skip_tok();
 
         let element_type = self.parse_type();
 
         if self.lexer.skip_if(&Token::CloseBracket) {
-            return Type::SliceType(Box::new(SliceType { element_type }));
+            return Type::SliceType(Box::new(SliceType {
+                span: SrcSpan::new(bracket_start, self.lexer.current_pos()),
+                element_type,
+            }));
         }
 
-        if !self.lexer.skip_if(&Token::Semi) {
-            let bug = SyntaxErr::ExpectedSemicolon(self.lexer.peek_pos());
-            self.log.report(&bug);
-        }
+        self.expect_semicolon();
 
         let len = self.parse_expression();
 
-        if !self.lexer.skip_if(&Token::CloseBracket) {
-            let bug = SyntaxErr::ExpectedCloseBracket(self.lexer.peek_pos());
-            self.log.report(&bug);
+        self.expect_close_bracket();
 
-            self.lexer.skip_while(&Token::CloseBracket);
-        }
-
-        Type::ArrayType(Box::new(ArrayType { element_type, len }))
+        Type::ArrayType(Box::new(ArrayType {
+            span: SrcSpan::new(bracket_start, self.lexer.current_pos()),
+            element_type,
+            len,
+        }))
     }
 
     fn parse_reference_type(&mut self) -> ReferenceType {
+        let ref_start = self.lexer.peek_pos();
         assert!(self.lexer.peek_tok().token == Token::And);
         self.lexer.skip_tok();
-
-        let mut exclusive = None;
-        let mut mutability = None;
 
         let lifetime = if self.lexer.next_is(&Token::SingleQuote) {
             Some(self.parse_lifetime())
@@ -143,50 +135,39 @@ impl Parser<'_, '_> {
             None
         };
 
-        if self.lexer.skip_if(&Token::Poly) {
-            exclusive = Some(Exclusivity::Poly);
-        } else if self.lexer.skip_if(&Token::Iso) {
-            exclusive = Some(Exclusivity::Iso);
-        }
-
-        if self.lexer.skip_if(&Token::Mut) {
-            mutability = Some(Mutability::Mut);
-        } else if self.lexer.skip_if(&Token::Const) {
-            mutability = Some(Mutability::Const);
-        }
+        let exclusivity = self.parse_exclusivity();
+        let mutability = self.parse_mutability();
 
         let to = self.parse_type();
 
         ReferenceType {
+            span: SrcSpan::new(ref_start, self.lexer.current_pos()),
             lifetime,
-            exclusivity: exclusive,
+            exclusivity,
             mutability,
             to,
         }
     }
 
     fn parse_pointer_type(&mut self) -> PointerType {
+        let ptr_start = self.lexer.peek_pos();
         assert!(self.lexer.peek_tok().token == Token::Star);
         self.lexer.skip_tok();
 
-        let mut exclusivity = None;
-        let mut mutability = None;
+        let lifetime = if self.lexer.next_is(&Token::SingleQuote) {
+            Some(self.parse_lifetime())
+        } else {
+            None
+        };
 
-        if self.lexer.skip_if(&Token::Poly) {
-            exclusivity = Some(Exclusivity::Poly);
-        } else if self.lexer.skip_if(&Token::Iso) {
-            exclusivity = Some(Exclusivity::Iso);
-        }
-
-        if self.lexer.skip_if(&Token::Mut) {
-            mutability = Some(Mutability::Mut);
-        } else if self.lexer.skip_if(&Token::Const) {
-            mutability = Some(Mutability::Const);
-        }
+        let exclusivity = self.parse_exclusivity();
+        let mutability = self.parse_mutability();
 
         let to = self.parse_type();
 
         PointerType {
+            span: SrcSpan::new(ptr_start, self.lexer.current_pos()),
+            lifetime,
             exclusivity,
             mutability,
             to,
@@ -194,87 +175,38 @@ impl Parser<'_, '_> {
     }
 
     fn parse_function_type_parameters(&mut self) -> FuncTypeParams {
-        fn parse_function_parameter(this: &mut Parser) -> FuncTypeParam {
-            let attributes = this.parse_attributes();
+        self.expect_open_paren();
 
-            let name = this.lexer.next_if_name().unwrap_or_else(|| {
-                let bug = SyntaxErr::FunctionParameterMissingName(this.lexer.peek_pos());
-                this.log.report(&bug);
-                "".into()
-            });
+        let eof = SyntaxErr::FunctionParametersExpectedEnd(self.lexer.peek_pos());
+        let limit = SyntaxErr::FunctionParameterLimit(self.lexer.peek_pos());
+        let end = SyntaxErr::FunctionParametersExpectedEnd(self.lexer.peek_pos());
 
-            let name = NString::from(name);
-
-            if !this.lexer.skip_if(&Token::Colon) {
-                let bug = SyntaxErr::FunctionParameterExpectedType(this.lexer.peek_pos());
-                this.log.report(&bug);
+        let params = self.parse_comma_separated_list(&Token::CloseParen, MAX_LIMIT, true, eof, limit, end, |this| {
+            let param_start = this.lexer.peek_pos();
+            let param = this.parse_common_func_param(false);
+            FuncTypeParam {
+                span: SrcSpan::new(param_start, this.lexer.current_pos()),
+                attributes: param.attributes,
+                name: param.name,
+                ty: param.ty,
             }
-
-            let ty = this.parse_type();
-
-            FuncTypeParam { attributes, name, ty }
-        }
-
-        let mut params = Vec::new();
-
-        if !self.lexer.skip_if(&Token::OpenParen) {
-            let bug = SyntaxErr::ExpectedOpenParen(self.lexer.peek_pos());
-            self.log.report(&bug);
-        }
-
-        self.lexer.skip_if(&Token::Comma);
-
-        let mut already_reported_too_many_parameters = false;
-
-        while !self.lexer.skip_if(&Token::CloseParen) {
-            if self.lexer.is_eof() {
-                let bug = SyntaxErr::FunctionParametersExpectedEnd(self.lexer.peek_pos());
-                self.log.report(&bug);
-                break;
-            }
-
-            const MAX_FUNCTION_PARAMETERS: usize = 65_536;
-
-            if !already_reported_too_many_parameters && params.len() >= MAX_FUNCTION_PARAMETERS {
-                already_reported_too_many_parameters = true;
-
-                let bug = SyntaxErr::FunctionParameterLimit(self.lexer.peek_pos());
-                self.log.report(&bug);
-            }
-
-            let param = parse_function_parameter(self);
-            params.push(param);
-
-            if !self.lexer.skip_if(&Token::Comma) && !self.lexer.next_is(&Token::CloseParen) {
-                let bug = SyntaxErr::FunctionParametersExpectedEnd(self.lexer.peek_pos());
-                self.log.report(&bug);
-                self.lexer.skip_while(&Token::CloseParen);
-                break;
-            }
-        }
+        });
 
         params
     }
 
     fn parse_function_type(&mut self) -> FunctionType {
+        let fn_start = self.lexer.peek_pos();
         assert!(self.lexer.peek_tok().token == Token::Fn);
         self.lexer.skip_tok();
 
         let attributes = self.parse_attributes();
         let parameters = self.parse_function_type_parameters();
 
-        let return_type = if self.lexer.skip_if(&Token::Minus) {
-            if !self.lexer.skip_if(&Token::Gt) {
-                let bug = SyntaxErr::ExpectedArrow(self.lexer.peek_pos());
-                self.log.report(&bug);
-            }
-
-            Some(self.parse_type())
-        } else {
-            None
-        };
+        let return_type = self.parse_return_type_arrow();
 
         FunctionType {
+            span: SrcSpan::new(fn_start, self.lexer.current_pos()),
             parameters,
             return_type,
             attributes,
@@ -282,29 +214,31 @@ impl Parser<'_, '_> {
     }
 
     fn parse_lifetime(&mut self) -> Lifetime {
+        let lt_start = self.lexer.peek_pos();
         assert!(self.lexer.peek_tok().token == Token::SingleQuote);
         self.lexer.skip_tok();
 
         if self.lexer.skip_if(&Token::Static) {
             return Lifetime {
-                name: NString::from("static".to_string()),
+                span: SrcSpan::new(lt_start, self.lexer.current_pos()),
+                name: "static".into(),
             };
         }
 
-        let name = self.lexer.next_if_name().unwrap_or_else(|| {
-            let bug = SyntaxErr::ReferenceTypeExpectedLifetimeName(self.lexer.peek_pos());
-            self.log.report(&bug);
-            "".into()
-        });
+        let err = SyntaxErr::ReferenceTypeExpectedLifetimeName(self.lexer.peek_pos());
+        let name = self.parse_string_name(err);
 
         Lifetime {
-            name: NString::from(name),
+            span: SrcSpan::new(lt_start, self.lexer.current_pos()),
+            name: name.into(),
         }
     }
 
     pub(crate) fn create_type_path(&mut self, segment_name: String) -> TypePath {
         TypePath {
+            span: SrcSpan::default(),
             segments: Vec::from([TypePathSegment {
+                span: SrcSpan::default(),
                 name: segment_name,
                 type_arguments: None,
             }]),
@@ -313,54 +247,50 @@ impl Parser<'_, '_> {
     }
 
     fn parse_type_primitive(&mut self) -> Type {
-        match self.lexer.next_tok().token {
-            Token::Bool => Type::Bool(Bool),
-            Token::U8 => Type::UInt8(UInt8),
-            Token::U16 => Type::UInt16(UInt16),
-            Token::U32 => Type::UInt32(UInt32),
-            Token::U64 => Type::UInt64(UInt64),
-            Token::U128 => Type::UInt128(UInt128),
-            Token::USize => Type::USize(USize),
-            Token::I8 => Type::Int8(Int8),
-            Token::I16 => Type::Int16(Int16),
-            Token::I32 => Type::Int32(Int32),
-            Token::I64 => Type::Int64(Int64),
-            Token::I128 => Type::Int128(Int128),
+        let type_start = self.lexer.peek_pos();
+        let result = match self.lexer.next_tok().token {
+            Token::Bool => Type::Bool(Bool::default()),
+            Token::U8 => Type::UInt8(UInt8::default()),
+            Token::U16 => Type::UInt16(UInt16::default()),
+            Token::U32 => Type::UInt32(UInt32::default()),
+            Token::U64 => Type::UInt64(UInt64::default()),
+            Token::U128 => Type::UInt128(UInt128::default()),
+            Token::USize => Type::USize(USize::default()),
+            Token::I8 => Type::Int8(Int8::default()),
+            Token::I16 => Type::Int16(Int16::default()),
+            Token::I32 => Type::Int32(Int32::default()),
+            Token::I64 => Type::Int64(Int64::default()),
+            Token::I128 => Type::Int128(Int128::default()),
             Token::F8 => Type::TypePath(Box::new(self.create_type_path("f8".to_string()))),
             Token::F16 => Type::TypePath(Box::new(self.create_type_path("f16".to_string()))),
-            Token::F32 => Type::Float32(Float32),
-            Token::F64 => Type::Float64(Float64),
+            Token::F32 => Type::Float32(Float32::default()),
+            Token::F64 => Type::Float64(Float64::default()),
             Token::F128 => Type::TypePath(Box::new(self.create_type_path("f128".to_string()))),
 
-            _ => Type::SyntaxError(TypeSyntaxError),
-        }
+            _ => Type::SyntaxError(TypeSyntaxError::default()),
+        };
+        let type_end = self.lexer.current_pos();
+        // Apply span to result
+        set_type_span(result, type_start, type_end)
     }
 
     pub(crate) fn parse_type_path(&mut self) -> TypePath {
-        fn parse_double_colon(this: &mut Parser) -> bool {
-            if !this.lexer.skip_if(&Token::Colon) {
-                return false;
-            }
-
-            if !this.lexer.skip_if(&Token::Colon) {
-                let bug = SyntaxErr::ExpectedColon(this.lexer.peek_pos());
-                this.log.report(&bug);
-                return false;
-            }
-
-            true
-        }
-
-        assert!(matches!(self.lexer.peek_tok().token, Token::Name(_) | Token::Colon));
+        assert!(matches!(
+            self.lexer.peek_tok().token,
+            Token::Name(_) | Token::Colon | Token::SelfType | Token::SelfKeyword
+        ));
 
         let mut segments = Vec::new();
         let mut prev_scope = false;
         let mut already_reported_too_many_segments = false;
 
-        if parse_double_colon(self) {
+        let pos = self.lexer.peek_pos();
+
+        if self.parse_double_colon() {
             prev_scope = true;
 
             segments.push(TypePathSegment {
+                span: SrcSpan::new(pos, self.lexer.current_pos()),
                 name: "".into(),
                 type_arguments: None,
             });
@@ -373,33 +303,39 @@ impl Parser<'_, '_> {
                 break;
             }
 
-            const MAX_PATH_SEGMENTS: usize = 65_536;
-            if !already_reported_too_many_segments && segments.len() >= MAX_PATH_SEGMENTS {
+            if !already_reported_too_many_segments && segments.len() >= MAX_LIMIT {
                 already_reported_too_many_segments = true;
 
                 let bug = SyntaxErr::PathSegmentLimit(self.lexer.peek_pos());
                 self.log.report(&bug);
             }
 
+            let name_start = self.lexer.peek_pos();
             let Some(identifier) = self.lexer.next_if_name() else {
                 let bug = SyntaxErr::PathExpectedName(self.lexer.peek_pos());
                 self.log.report(&bug);
                 break;
             };
+            let name_end = self.lexer.current_pos();
 
             let type_arguments = self.parse_generic_arguments();
 
             segments.push(TypePathSegment {
+                span: SrcSpan::new(name_start, name_end),
                 name: identifier,
                 type_arguments,
             });
 
-            prev_scope = parse_double_colon(self);
+            prev_scope = self.parse_double_colon();
         }
 
         assert_ne!(segments.len(), 0);
 
+        let path_start = segments.first().map(|s| s.span.start).unwrap_or(SrcPos::default());
+        let path_end = segments.last().map(|s| s.span.end).unwrap_or(SrcPos::default());
+
         TypePath {
+            span: SrcSpan::new(path_start, path_end),
             segments,
             resolved_path: None,
         }
@@ -429,67 +365,62 @@ impl Parser<'_, '_> {
 
             Token::SingleQuote => Type::Lifetime(Box::new(self.parse_lifetime())),
 
-            Token::Name(_) | Token::Colon => Type::TypePath(Box::new(self.parse_type_path())),
+            Token::Name(_) | Token::Colon | Token::SelfType => Type::TypePath(Box::new(self.parse_type_path())),
 
             Token::OpenBracket => self.parse_array_or_slice(),
             Token::And => Type::ReferenceType(Box::new(self.parse_reference_type())),
             Token::Star => Type::PointerType(Box::new(self.parse_pointer_type())),
             Token::Fn => Type::FunctionType(Box::new(self.parse_function_type())),
 
-            Token::OpenBrace | Token::Unsafe | Token::Safe => Type::LatentType(Box::new(LatentType {
-                body: self.parse_block(),
-            })),
+            Token::OpenBrace | Token::Unsafe | Token::Safe => {
+                let block_start = self.lexer.peek_pos();
+                let body = self.parse_block();
+                Type::TypePotential(Box::new(TypePotential {
+                    span: SrcSpan::new(block_start, self.lexer.current_pos()),
+                    body,
+                }))
+            }
 
             _ => {
+                let err_start = self.lexer.peek_pos();
                 self.lexer.skip_tok();
 
                 let log = SyntaxErr::ExpectedType(current_pos);
                 self.log.report(&log);
 
-                Type::SyntaxError(TypeSyntaxError)
+                Type::SyntaxError(TypeSyntaxError {
+                    span: SrcSpan::new(err_start, self.lexer.current_pos()),
+                })
             }
         }
     }
 
-    fn parse_rest_of_tuple(&mut self, first_element: Type) -> TupleType {
+    fn parse_rest_of_tuple(&mut self, first_element: Type, paren_start: LexPos) -> TupleType {
         let mut element_types = Vec::from([first_element]);
-        let mut already_reported_too_many_elements = false;
 
-        while !self.lexer.skip_if(&Token::CloseParen) {
-            if self.lexer.is_eof() {
-                let bug = SyntaxErr::TupleTypeExpectedEnd(self.lexer.peek_pos());
-                self.log.report(&bug);
-                break;
-            }
+        let eof = SyntaxErr::TupleTypeExpectedEnd(self.lexer.peek_pos());
+        let limit = SyntaxErr::TupleTypeElementLimit(self.lexer.peek_pos());
+        let end = SyntaxErr::TupleTypeExpectedEnd(self.lexer.peek_pos());
 
-            const MAX_TUPLE_ELEMENTS: usize = 65_536;
+        let rest = self.parse_comma_separated_list(&Token::CloseParen, MAX_LIMIT, false, eof, limit, end, |this| {
+            this.parse_type()
+        });
 
-            if !already_reported_too_many_elements && element_types.len() >= MAX_TUPLE_ELEMENTS {
-                already_reported_too_many_elements = true;
+        element_types.extend(rest);
 
-                let bug = SyntaxErr::TupleTypeElementLimit(self.lexer.peek_pos());
-                self.log.report(&bug);
-            }
-
-            let element = self.parse_type();
-            element_types.push(element);
-
-            if !self.lexer.skip_if(&Token::Comma) && !self.lexer.next_is(&Token::CloseParen) {
-                let bug = SyntaxErr::TupleTypeExpectedEnd(self.lexer.peek_pos());
-                self.log.report(&bug);
-
-                self.lexer.skip_while(&Token::CloseParen);
-                break;
-            }
+        TupleType {
+            span: SrcSpan::new(paren_start, self.lexer.current_pos()),
+            element_types,
         }
-
-        TupleType { element_types }
     }
 
     pub fn parse_type(&mut self) -> Type {
         if self.lexer.skip_if(&Token::OpenParen) {
+            let paren_start = self.lexer.current_pos();
             if self.lexer.skip_if(&Token::CloseParen) {
+                let paren_end = self.lexer.current_pos();
                 return Type::TupleType(Box::new(TupleType {
+                    span: SrcSpan::new(paren_start, paren_end),
                     element_types: Vec::new(),
                 }));
             }
@@ -497,10 +428,16 @@ impl Parser<'_, '_> {
             let inner = self.parse_type();
 
             let result = match self.lexer.next_tok().token {
-                Token::CloseParen => Type::Parentheses(Box::new(TypeParentheses { inner })),
+                Token::CloseParen => {
+                    let paren_end = self.lexer.current_pos();
+                    Type::Parentheses(Box::new(TypeParentheses {
+                        span: SrcSpan::new(paren_start, paren_end),
+                        inner,
+                    }))
+                }
 
                 Token::Comma => {
-                    let tuple = self.parse_rest_of_tuple(inner);
+                    let tuple = self.parse_rest_of_tuple(inner, paren_start);
                     Type::TupleType(Box::new(tuple))
                 }
 
@@ -508,7 +445,9 @@ impl Parser<'_, '_> {
                     let bug = SyntaxErr::TupleTypeExpectedEnd(self.lexer.peek_pos());
                     self.log.report(&bug);
 
-                    Type::SyntaxError(TypeSyntaxError)
+                    Type::SyntaxError(TypeSyntaxError {
+                        span: SrcSpan::new(paren_start, self.lexer.current_pos()),
+                    })
                 }
             };
 
@@ -523,10 +462,87 @@ impl Parser<'_, '_> {
         }
 
         Type::RefinementType(Box::new(RefinementType {
+            span: SrcSpan::new(basis_type.span().start, self.lexer.current_pos()),
             basis_type,
             width: refine_options.width,
             minimum: refine_options.minimum,
             maximum: refine_options.maximum,
         }))
+    }
+}
+
+/// Helper to set the span on a primitive type that was created via Default.
+fn set_type_span(ty: Type, start: LexPos, end: LexPos) -> Type {
+    use Type::*;
+    let span = SrcSpan::new(start, end);
+    match ty {
+        Bool(mut b) => {
+            b.span = span;
+            Bool(b)
+        }
+        UInt8(mut u) => {
+            u.span = span;
+            UInt8(u)
+        }
+        UInt16(mut u) => {
+            u.span = span;
+            UInt16(u)
+        }
+        UInt32(mut u) => {
+            u.span = span;
+            UInt32(u)
+        }
+        UInt64(mut u) => {
+            u.span = span;
+            UInt64(u)
+        }
+        UInt128(mut u) => {
+            u.span = span;
+            UInt128(u)
+        }
+        USize(mut u) => {
+            u.span = span;
+            USize(u)
+        }
+        Int8(mut i) => {
+            i.span = span;
+            Int8(i)
+        }
+        Int16(mut i) => {
+            i.span = span;
+            Int16(i)
+        }
+        Int32(mut i) => {
+            i.span = span;
+            Int32(i)
+        }
+        Int64(mut i) => {
+            i.span = span;
+            Int64(i)
+        }
+        Int128(mut i) => {
+            i.span = span;
+            Int128(i)
+        }
+        Float32(mut f) => {
+            f.span = span;
+            Float32(f)
+        }
+        Float64(mut f) => {
+            f.span = span;
+            Float64(f)
+        }
+        TypePath(mut tp) => {
+            tp.span = span;
+            if let Some(seg) = tp.segments.first_mut() {
+                seg.span = span;
+            }
+            TypePath(tp)
+        }
+        SyntaxError(mut e) => {
+            e.span = span;
+            SyntaxError(e)
+        }
+        other => other,
     }
 }

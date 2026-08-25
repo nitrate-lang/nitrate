@@ -17,7 +17,13 @@ lazy_static = "1.4.0"
 json_comments = "0.2.2"
 serde = { version = "1.0.228", features = ["derive"] }
 serde_json = "1.0.145"
-serde-xml-rs = "0.8.1"
-xml-doc = "0.2.0"
 anyhow = "1.0"
+thiserror = "2"
 tokio = { version = "1.36.0", features = ["full"] }
+
+flate2.workspace = true
+semver.workspace = true
+tar.workspace = true
+toml.workspace = true
+toml_edit.workspace = true
+ureq.workspace = true

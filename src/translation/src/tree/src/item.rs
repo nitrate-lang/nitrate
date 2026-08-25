@@ -5,7 +5,18 @@ use serde_with::skip_serializing_none;
 
 #[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ItemSyntaxError;
+pub struct ItemSyntaxError {
+    pub span: SrcSpan,
+}
+
+impl Spanned for ItemSyntaxError {
+    fn span(&self) -> SrcSpan {
+        self.span
+    }
+    fn set_span(&mut self, span: SrcSpan) {
+        self.span = span;
+    }
+}
 
 #[skip_serializing_none]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -18,39 +29,117 @@ pub enum Visibility {
 #[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Module {
+    pub span: SrcSpan,
     pub visibility: Option<Visibility>,
     pub attributes: Option<AttributeList>,
     pub name: NString,
     pub items: Vec<Item>,
 }
 
+impl Spanned for Module {
+    fn span(&self) -> SrcSpan {
+        self.span
+    }
+    fn set_span(&mut self, span: SrcSpan) {
+        self.span = span;
+    }
+}
+
 #[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ItemPathSegment {
+    pub span: SrcSpan,
     pub segment: String,
+    /// The prefix of the first path segment, if any:
+    /// - `Crate` for `crate::foo`
+    /// - `Super` for `super::foo` (each `super` becomes a segment)
+    /// - `SelfPath` for `self::foo`
+    /// - `None` for regular names or `::foo` (global path)
+    pub prefix: Option<PathPrefix>,
+}
+
+impl Spanned for ItemPathSegment {
+    fn span(&self) -> SrcSpan {
+        self.span
+    }
+    fn set_span(&mut self, span: SrcSpan) {
+        self.span = span;
+    }
+}
+
+/// Represents the leading path prefix keyword in a use/item path.
+#[skip_serializing_none]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum PathPrefix {
+    /// `crate::` — references the root of the current package
+    Crate,
+    /// `super::` — references the parent module (can be chained)
+    Super,
+    /// `self::` — references the current module
+    SelfPath,
 }
 
 #[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ItemPath {
+    pub span: SrcSpan,
     pub segments: Vec<ItemPathSegment>,
+}
+
+impl Spanned for ItemPath {
+    fn span(&self) -> SrcSpan {
+        self.span
+    }
+    fn set_span(&mut self, span: SrcSpan) {
+        self.span = span;
+    }
 }
 
 #[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum UseTree {
-    Single { path: ItemPath },
-    Alias { path: ItemPath, alias: NString },
-    UseAll { path: ItemPath },
-    Group { path: ItemPath, group: Vec<UseTree> },
+    Single {
+        span: SrcSpan,
+        path: ItemPath,
+    },
+    Alias {
+        span: SrcSpan,
+        path: ItemPath,
+        alias: NString,
+    },
+    UseAll {
+        span: SrcSpan,
+        path: ItemPath,
+    },
+    Group {
+        span: SrcSpan,
+        path: ItemPath,
+        group: Vec<UseTree>,
+    },
 }
 
 impl UseTree {
+    pub fn span(&self) -> SrcSpan {
+        match self {
+            UseTree::Single { span, .. }
+            | UseTree::Alias { span, .. }
+            | UseTree::UseAll { span, .. }
+            | UseTree::Group { span, .. } => *span,
+        }
+    }
+    pub fn set_span(&mut self, new_span: SrcSpan) {
+        match self {
+            UseTree::Single { span, .. }
+            | UseTree::Alias { span, .. }
+            | UseTree::UseAll { span, .. }
+            | UseTree::Group { span, .. } => *span = new_span,
+        }
+    }
     pub fn path(&self) -> &ItemPath {
         match self {
-            UseTree::Single { path } => path,
+            UseTree::Single { path, .. } => path,
             UseTree::Alias { path, .. } => path,
-            UseTree::UseAll { path } => path,
+            UseTree::UseAll { path, .. } => path,
             UseTree::Group { path, .. } => path,
         }
     }
@@ -59,30 +148,59 @@ impl UseTree {
 #[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Import {
+    pub span: SrcSpan,
     pub visibility: Option<Visibility>,
     pub attributes: Option<AttributeList>,
     pub use_tree: UseTree,
-
-    // Not set until import resolution
     pub resolved: Option<Vec<Item>>,
+}
+
+impl Spanned for Import {
+    fn span(&self) -> SrcSpan {
+        self.span
+    }
+    fn set_span(&mut self, span: SrcSpan) {
+        self.span = span;
+    }
 }
 
 #[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TypeParam {
+    pub span: SrcSpan,
     pub name: NString,
     pub default_value: Option<Type>,
+}
+
+impl Spanned for TypeParam {
+    fn span(&self) -> SrcSpan {
+        self.span
+    }
+    fn set_span(&mut self, span: SrcSpan) {
+        self.span = span;
+    }
 }
 
 #[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Generics {
+    pub span: SrcSpan,
     pub params: Vec<TypeParam>,
+}
+
+impl Spanned for Generics {
+    fn span(&self) -> SrcSpan {
+        self.span
+    }
+    fn set_span(&mut self, span: SrcSpan) {
+        self.span = span;
+    }
 }
 
 #[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TypeAlias {
+    pub span: SrcSpan,
     pub visibility: Option<Visibility>,
     pub attributes: Option<AttributeList>,
     pub name: NString,
@@ -90,9 +208,19 @@ pub struct TypeAlias {
     pub alias_type: Option<Type>,
 }
 
+impl Spanned for TypeAlias {
+    fn span(&self) -> SrcSpan {
+        self.span
+    }
+    fn set_span(&mut self, span: SrcSpan) {
+        self.span = span;
+    }
+}
+
 #[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct StructField {
+    pub span: SrcSpan,
     pub visibility: Option<Visibility>,
     pub attributes: Option<AttributeList>,
     pub name: NString,
@@ -100,9 +228,19 @@ pub struct StructField {
     pub default_value: Option<Expr>,
 }
 
+impl Spanned for StructField {
+    fn span(&self) -> SrcSpan {
+        self.span
+    }
+    fn set_span(&mut self, span: SrcSpan) {
+        self.span = span;
+    }
+}
+
 #[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Struct {
+    pub span: SrcSpan,
     pub visibility: Option<Visibility>,
     pub attributes: Option<AttributeList>,
     pub name: NString,
@@ -110,23 +248,52 @@ pub struct Struct {
     pub fields: Vec<StructField>,
 }
 
+impl Spanned for Struct {
+    fn span(&self) -> SrcSpan {
+        self.span
+    }
+    fn set_span(&mut self, span: SrcSpan) {
+        self.span = span;
+    }
+}
+
 #[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct EnumVariant {
+    pub span: SrcSpan,
     pub attributes: Option<AttributeList>,
     pub name: NString,
     pub ty: Option<Type>,
     pub default_value: Option<Expr>,
 }
 
+impl Spanned for EnumVariant {
+    fn span(&self) -> SrcSpan {
+        self.span
+    }
+    fn set_span(&mut self, span: SrcSpan) {
+        self.span = span;
+    }
+}
+
 #[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Enum {
+    pub span: SrcSpan,
     pub visibility: Option<Visibility>,
     pub attributes: Option<AttributeList>,
     pub name: NString,
     pub generics: Option<Generics>,
     pub variants: Vec<EnumVariant>,
+}
+
+impl Spanned for Enum {
+    fn span(&self) -> SrcSpan {
+        self.span
+    }
+    fn set_span(&mut self, span: SrcSpan) {
+        self.span = span;
+    }
 }
 
 #[skip_serializing_none]
@@ -141,6 +308,7 @@ pub enum AssociatedItem {
 #[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Trait {
+    pub span: SrcSpan,
     pub visibility: Option<Visibility>,
     pub attributes: Option<AttributeList>,
     pub name: NString,
@@ -148,17 +316,36 @@ pub struct Trait {
     pub items: Vec<AssociatedItem>,
 }
 
+impl Spanned for Trait {
+    fn span(&self) -> SrcSpan {
+        self.span
+    }
+    fn set_span(&mut self, span: SrcSpan) {
+        self.span = span;
+    }
+}
+
 #[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Impl {
+    pub span: SrcSpan,
     pub generics: Option<Generics>,
     pub trait_path: Option<TypePath>,
     pub for_type: Type,
     pub items: Vec<AssociatedItem>,
 }
 
+impl Spanned for Impl {
+    fn span(&self) -> SrcSpan {
+        self.span
+    }
+    fn set_span(&mut self, span: SrcSpan) {
+        self.span = span;
+    }
+}
+
 #[skip_serializing_none]
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 pub enum Mutability {
     Mut,
     Const,
@@ -167,6 +354,7 @@ pub enum Mutability {
 #[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FuncParam {
+    pub span: SrcSpan,
     pub attributes: Option<AttributeList>,
     pub mutability: Option<Mutability>,
     pub name: NString,
@@ -174,15 +362,41 @@ pub struct FuncParam {
     pub default_value: Option<Expr>,
 }
 
+impl Spanned for FuncParam {
+    fn span(&self) -> SrcSpan {
+        self.span
+    }
+    fn set_span(&mut self, span: SrcSpan) {
+        self.span = span;
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FuncParams {
+    pub span: SrcSpan,
     pub params: Vec<FuncParam>,
     pub variadic: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ExternAbi {
+    pub span: SrcSpan,
+    pub name: NString,
+}
+
+impl Spanned for ExternAbi {
+    fn span(&self) -> SrcSpan {
+        self.span
+    }
+    fn set_span(&mut self, span: SrcSpan) {
+        self.span = span;
+    }
 }
 
 #[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Function {
+    pub span: SrcSpan,
     pub visibility: Option<Visibility>,
     pub attributes: Option<AttributeList>,
     pub name: NString,
@@ -190,6 +404,16 @@ pub struct Function {
     pub parameters: FuncParams,
     pub return_type: Option<Type>,
     pub definition: Option<Block>,
+    pub abi: Option<ExternAbi>,
+}
+
+impl Spanned for Function {
+    fn span(&self) -> SrcSpan {
+        self.span
+    }
+    fn set_span(&mut self, span: SrcSpan) {
+        self.span = span;
+    }
 }
 
 #[skip_serializing_none]
@@ -202,6 +426,7 @@ pub enum GlobalVariableKind {
 #[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GlobalVariable {
+    pub span: SrcSpan,
     pub visibility: Option<Visibility>,
     pub kind: GlobalVariableKind,
     pub attributes: Option<AttributeList>,
@@ -211,8 +436,17 @@ pub struct GlobalVariable {
     pub initializer: Option<Expr>,
 }
 
+impl Spanned for GlobalVariable {
+    fn span(&self) -> SrcSpan {
+        self.span
+    }
+    fn set_span(&mut self, span: SrcSpan) {
+        self.span = span;
+    }
+}
+
 #[skip_serializing_none]
-#[derive(Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum Item {
     SyntaxError(ItemSyntaxError),
     Module(Box<Module>),
@@ -226,80 +460,99 @@ pub enum Item {
     Variable(GlobalVariable),
 }
 
-impl std::fmt::Debug for Item {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Item::SyntaxError(e) => e.fmt(f),
-            Item::Module(e) => e.fmt(f),
-            Item::Import(e) => e.fmt(f),
-            Item::TypeAlias(e) => e.fmt(f),
-            Item::Struct(e) => e.fmt(f),
-            Item::Enum(e) => e.fmt(f),
-            Item::Trait(e) => e.fmt(f),
-            Item::Impl(e) => e.fmt(f),
-            Item::Function(e) => e.fmt(f),
-            Item::Variable(e) => e.fmt(f),
-        }
-    }
+pub enum ItemKind {
+    SyntaxError,
+    Module,
+    Import,
+    TypeAlias,
+    Struct,
+    Enum,
+    Trait,
+    Impl,
+    Function,
+    Variable,
 }
 
 impl Item {
+    pub fn span(&self) -> SrcSpan {
+        match self {
+            Item::SyntaxError(e) => e.span,
+            Item::Module(e) => e.span,
+            Item::Import(e) => e.span,
+            Item::TypeAlias(e) => e.span,
+            Item::Struct(e) => e.span,
+            Item::Enum(e) => e.span,
+            Item::Trait(e) => e.span,
+            Item::Impl(e) => e.span,
+            Item::Function(e) => e.span,
+            Item::Variable(e) => e.span,
+        }
+    }
+    pub fn set_span(&mut self, span: SrcSpan) {
+        match self {
+            Item::SyntaxError(e) => e.span = span,
+            Item::Module(e) => e.span = span,
+            Item::Import(e) => e.span = span,
+            Item::TypeAlias(e) => e.span = span,
+            Item::Struct(e) => e.span = span,
+            Item::Enum(e) => e.span = span,
+            Item::Trait(e) => e.span = span,
+            Item::Impl(e) => e.span = span,
+            Item::Function(e) => e.span = span,
+            Item::Variable(e) => e.span = span,
+        }
+    }
+    pub fn reconstruct(&self, source: &[u8]) -> String {
+        self.span().extract_str(source).to_string()
+    }
     pub fn as_module(self) -> Option<Module> {
         match self {
             Item::Module(m) => Some(*m),
             _ => None,
         }
     }
-
     pub fn as_import(self) -> Option<Import> {
         match self {
             Item::Import(i) => Some(*i),
             _ => None,
         }
     }
-
     pub fn as_type_alias(self) -> Option<TypeAlias> {
         match self {
             Item::TypeAlias(t) => Some(t),
             _ => None,
         }
     }
-
     pub fn as_struct(self) -> Option<Struct> {
         match self {
             Item::Struct(s) => Some(s),
             _ => None,
         }
     }
-
     pub fn as_enum(self) -> Option<Enum> {
         match self {
             Item::Enum(e) => Some(e),
             _ => None,
         }
     }
-
     pub fn as_trait(self) -> Option<Trait> {
         match self {
             Item::Trait(t) => Some(t),
             _ => None,
         }
     }
-
     pub fn as_impl(self) -> Option<Impl> {
         match self {
             Item::Impl(i) => Some(*i),
             _ => None,
         }
     }
-
     pub fn as_function(self) -> Option<Function> {
         match self {
             Item::Function(f) => Some(f),
             _ => None,
         }
     }
-
     pub fn as_variable(self) -> Option<GlobalVariable> {
         match self {
             Item::Variable(v) => Some(v),

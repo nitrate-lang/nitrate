@@ -1,6 +1,7 @@
 use std::io::Read;
 
 use crate::Interpreter;
+use crate::commands::build::resolve_manifest;
 use clap::Parser;
 use nitrate_diagnosis::intern_file_id;
 use nitrate_translation::{
@@ -15,13 +16,17 @@ pub(crate) struct LexArgs {
     /// Format mode for printed output
     #[arg(long, value_parser = ["minify", "pretty"])]
     format_mode: Option<String>,
+
+    /// Path to Cargo.toml
+    #[arg(long, value_name = "PATH")]
+    pub(crate) manifest_path: Option<std::path::PathBuf>,
 }
 
 impl Interpreter<'_> {
     pub(crate) fn sc_lex(&mut self, args: LexArgs) -> anyhow::Result<()> {
-        let package = self.get_package_config()?;
-        self.validate_package_edition(package.edition())?;
-        let entrypoint_path = package.entrypoint();
+        let manifest = resolve_manifest(args.manifest_path.as_deref())?;
+        self.validate_package_edition(manifest.package.edition_major())?;
+        let entrypoint_path = manifest.entrypoint();
 
         if !entrypoint_path.exists() {
             error!(
@@ -49,7 +54,7 @@ impl Interpreter<'_> {
         let mut source_code = Vec::new();
         source_code_file.read_to_end(&mut source_code)?;
 
-        let source_code_file = intern_file_id(&entrypoint_path.to_string_lossy().to_string()).expect("FileId overflow");
+        let source_code_file = intern_file_id(entrypoint_path.to_string_lossy().as_ref()).expect("FileId overflow");
 
         let lexer = match Lexer::new(&source_code, Some(source_code_file)) {
             Ok(lexer) => lexer,

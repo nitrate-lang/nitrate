@@ -1,0 +1,10 @@
+[package]
+name = "nitrate_mir_borrow_check"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+nitrate_mir.workspace = true
+nitrate_diagnosis.workspace = true
+nitrate_nstring.workspace = true
+thin-vec.workspace = true

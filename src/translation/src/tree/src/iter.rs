@@ -25,6 +25,7 @@ pub enum RefNode<'a> {
     ExprStructInit(&'a StructInit),
     ExprUnaryExpr(&'a UnaryExpr),
     ExprBinExpr(&'a BinExpr),
+    ExprRange(&'a Range),
     ExprCast(&'a Cast),
     ExprLocalVariable(&'a LocalVariable),
     ExprBlockItem(&'a BlockItem),
@@ -72,7 +73,7 @@ pub enum RefNode<'a> {
     TypeFunctionType(&'a FunctionType),
     TypeReferenceType(&'a ReferenceType),
     TypePointerType(&'a PointerType),
-    TypeLatentType(&'a Block),
+    TypePotential(&'a Block),
     TypeLifetime(&'a Lifetime),
     TypeParentheses(&'a Type),
 

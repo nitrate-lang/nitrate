@@ -2,6 +2,7 @@
 
 mod diagnosis;
 mod expr;
+mod helper;
 mod item;
 mod parse;
 mod ty;

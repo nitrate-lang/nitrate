@@ -1,6 +1,7 @@
 //! Tests for error-handling edge cases (all return Eof on error).
 
 use crate::Lexer;
+use nitrate_diagnosis::SourcePosition;
 use nitrate_token::Token;
 
 #[test]
@@ -277,27 +278,6 @@ fn test_lexer_iterator_empty() {
     let iter = LexerIterator::new(lexer);
     let toks: Vec<_> = iter.collect();
     assert!(toks.is_empty());
-}
-
-// AnnotatedToken constructors
-#[test]
-fn test_annotated_token_start_end() {
-    use nitrate_token::{AnnotatedToken, SourcePosition};
-    let start = SourcePosition {
-        line: 1,
-        column: 2,
-        offset: 10,
-        fileid: None,
-    };
-    let end = SourcePosition {
-        line: 1,
-        column: 5,
-        offset: 13,
-        fileid: None,
-    };
-    let at = AnnotatedToken::new(Token::Semi, start.clone(), end.clone());
-    assert_eq!(at.start(), start);
-    assert_eq!(at.end(), end);
 }
 
 // Overlong integer overflow paths for radix_decode

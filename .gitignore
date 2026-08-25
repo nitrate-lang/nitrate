@@ -52,3 +52,9 @@ src/translation/src/token_lexer/tarpaulin-report.json
 src/translation/src/token_lexer/cobertura.xml
 src/translation/src/token_lexer/tarpaulin-report.html
 src/translation/src/token_lexer/cov.json
+src/translation/target/.rustc_info.json
+src/translation/target/CACHEDIR.TAG
+src/translation/target/debug/
+docs/_build/
+prompts/
+test-mangle

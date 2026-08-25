@@ -1,6 +1,6 @@
 use crate::prelude::*;
 use nitrate_token::IntegerKind;
-use std::num::NonZeroUsize;
+use std::{num::NonZeroUsize, write};
 
 pub struct PrintContext {
     pub indent: String,
@@ -211,6 +211,7 @@ impl PrettyPrint for StructInit {
                 ctx.tab_depth -= 1;
             }
 
+            ctx.write_indent(writer)?;
             writer.write_char('}')
         }
     }
@@ -279,7 +280,6 @@ impl PrettyPrint for BinExprOp {
             BinExprOp::SetBitRotr => writer.write_str(">>>="),
             BinExprOp::SetLogicAnd => writer.write_str("&&="),
             BinExprOp::SetLogicOr => writer.write_str("||="),
-            BinExprOp::Range => writer.write_str(".."),
         }
     }
 }
@@ -293,6 +293,25 @@ impl PrettyPrint for BinExpr {
         writer.write_char(' ')?;
 
         self.right.pretty_print_fmt(ctx, writer)
+    }
+}
+
+impl PrettyPrint for Range {
+    fn pretty_print_fmt(&self, ctx: &mut PrintContext, writer: &mut dyn std::fmt::Write) -> std::fmt::Result {
+        if let Some(start) = &self.start {
+            start.pretty_print_fmt(ctx, writer)?;
+        }
+
+        writer.write_str("..")?;
+        if self.kind == RangeKind::RangeInclusive || self.kind == RangeKind::RangeToInclusive {
+            writer.write_char('=')?;
+        }
+
+        if let Some(end) = &self.end {
+            end.pretty_print_fmt(ctx, writer)?;
+        }
+
+        Ok(())
     }
 }
 
@@ -635,7 +654,7 @@ impl PrettyPrint for Continue {
 
 impl PrettyPrint for Return {
     fn pretty_print_fmt(&self, ctx: &mut PrintContext, writer: &mut dyn std::fmt::Write) -> std::fmt::Result {
-        writer.write_str("return")?;
+        writer.write_str("ret")?;
 
         if let Some(value) = &self.value {
             writer.write_char(' ')?;
@@ -754,6 +773,7 @@ impl PrettyPrint for Expr {
             Expr::StructInit(m) => m.pretty_print_fmt(ctx, writer),
             Expr::UnaryExpr(m) => m.pretty_print_fmt(ctx, writer),
             Expr::BinExpr(m) => m.pretty_print_fmt(ctx, writer),
+            Expr::Range(m) => m.pretty_print_fmt(ctx, writer),
             Expr::Cast(m) => m.pretty_print_fmt(ctx, writer),
             Expr::Block(m) => m.pretty_print_fmt(ctx, writer),
             Expr::Closure(m) => m.pretty_print_fmt(ctx, writer),
@@ -1071,6 +1091,11 @@ impl PrettyPrint for PointerType {
     fn pretty_print_fmt(&self, ctx: &mut PrintContext, writer: &mut dyn std::fmt::Write) -> std::fmt::Result {
         writer.write_str("*")?;
 
+        if let Some(lifetime) = &self.lifetime {
+            lifetime.pretty_print_fmt(ctx, writer)?;
+            writer.write_char(' ')?;
+        }
+
         if let Some(exclusivity) = &self.exclusivity {
             exclusivity.pretty_print_fmt(ctx, writer)?;
             writer.write_char(' ')?;
@@ -1085,7 +1110,7 @@ impl PrettyPrint for PointerType {
     }
 }
 
-impl PrettyPrint for LatentType {
+impl PrettyPrint for TypePotential {
     fn pretty_print_fmt(&self, ctx: &mut PrintContext, writer: &mut dyn std::fmt::Write) -> std::fmt::Result {
         self.body.pretty_print_fmt(ctx, writer)
     }
@@ -1133,7 +1158,7 @@ impl PrettyPrint for Type {
             Type::FunctionType(m) => m.pretty_print_fmt(ctx, writer),
             Type::ReferenceType(m) => m.pretty_print_fmt(ctx, writer),
             Type::PointerType(m) => m.pretty_print_fmt(ctx, writer),
-            Type::LatentType(m) => m.pretty_print_fmt(ctx, writer),
+            Type::TypePotential(m) => m.pretty_print_fmt(ctx, writer),
             Type::Lifetime(m) => m.pretty_print_fmt(ctx, writer),
             Type::Parentheses(m) => m.pretty_print_fmt(ctx, writer),
         }
@@ -1212,22 +1237,26 @@ impl PrettyPrint for ItemPath {
 impl PrettyPrint for UseTree {
     fn pretty_print_fmt(&self, ctx: &mut PrintContext, writer: &mut dyn std::fmt::Write) -> std::fmt::Result {
         match self {
-            UseTree::Single { path } => {
+            UseTree::Single { span: _, path } => {
                 path.pretty_print_fmt(ctx, writer)?;
             }
 
-            UseTree::Alias { path, alias: name } => {
+            UseTree::Alias {
+                span: _,
+                path,
+                alias: name,
+            } => {
                 path.pretty_print_fmt(ctx, writer)?;
                 writer.write_str(" as ")?;
                 writer.write_str(name)?;
             }
 
-            UseTree::UseAll { path } => {
+            UseTree::UseAll { span: _, path } => {
                 path.pretty_print_fmt(ctx, writer)?;
                 writer.write_str("::*")?;
             }
 
-            UseTree::Group { path, group } => {
+            UseTree::Group { span: _, path, group } => {
                 path.pretty_print_fmt(ctx, writer)?;
                 writer.write_str("::{")?;
 

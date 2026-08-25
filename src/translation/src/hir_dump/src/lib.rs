@@ -1,4 +1,4 @@
-#![warn(clippy::pedantic)]
+#![forbid(unsafe_code)]
 
 mod dump;
 mod dump_expr;

@@ -1,8 +1,13 @@
+use core::panic;
+
+use crate::diagnosis::ValidateErr;
 use crate::{
     ValidHir, ValidateCtx, ValidateHirItem, ValidateHirType, ValidateHirValue, ValidateTypeOptions, establish_property,
 };
 use nitrate_hir::prelude::*;
-use nitrate_hir_get_type::HirGetType;
+use nitrate_hir_dump::Dump;
+use nitrate_hir_type::HirGetType;
+use std::ops::Deref;
 
 impl ValidateHirItem for GlobalVariableAttribute {
     fn verify(&self, ctx: &mut ValidateCtx) -> Result<(), ()> {
@@ -34,20 +39,32 @@ impl ValidateHirItem for GlobalVariable {
         let init_value = self.initializer.borrow();
         init_value.verify(ctx)?;
 
-        establish_property("type_constraint: Sized", || {
-            self.ty.verify(ctx, &ValidateTypeOptions::sized())
-        })?;
+        establish_property(
+            ctx,
+            "type_constraint: Sized",
+            ValidateErr::TypeNotSized {
+                type_repr: self.ty.to_string(),
+            },
+            |c| self.ty.verify(c, &ValidateTypeOptions::sized()),
+        )?;
 
-        establish_property("type_constraint == typeof(initial_value)", || {
-            let init_value = self.initializer.borrow();
-            let init_value_ty = init_value.determine_type(ctx.m).map_err(|_| ())?;
+        establish_property(
+            ctx,
+            "type_constraint == typeof(initial_value)",
+            ValidateErr::TypeMismatch {
+                expected: self.ty.to_string(),
+                actual: init_value.determine_type(ctx.m).map_err(|_| ())?.to_string(),
+            },
+            |c| {
+                let init_value_ty = init_value.determine_type(c.m).map_err(|_| ())?;
 
-            if *self.ty != init_value_ty {
-                return Err(());
-            }
+                if !types_refinement_compatible(&self.ty, &init_value_ty) {
+                    return Err(());
+                }
 
-            Ok(())
-        })
+                Ok(())
+            },
+        )
     }
 
     fn validate(self, ctx: &mut ValidateCtx) -> Result<ValidHir<Self>, ()> {
@@ -63,8 +80,15 @@ impl ValidateHirItem for LocalVariableAttribute {
         }
 
         match self {
-            LocalVariableAttribute::Align { alignment } => {
-                establish_property("local variable alignment is supported", || {
+            LocalVariableAttribute::Align { alignment } => establish_property(
+                ctx,
+                "local variable alignment is supported",
+                ValidateErr::AlignmentTooLarge {
+                    alignment: alignment.get(),
+                    max_supported: 4096,
+                    context: "local variable".to_string(),
+                },
+                |_| {
                     const MAX_SUPPORTED_ALIGNMENT: u32 = 4096;
 
                     if alignment.get() > MAX_SUPPORTED_ALIGNMENT {
@@ -72,8 +96,8 @@ impl ValidateHirItem for LocalVariableAttribute {
                     }
 
                     Ok(())
-                })
-            }
+                },
+            ),
         }
     }
 
@@ -93,20 +117,38 @@ impl ValidateHirItem for LocalVariable {
             attr.verify(ctx)?;
         }
 
-        establish_property("type_constraint: Sized", || {
-            self.ty.verify(ctx, &ValidateTypeOptions::sized())
-        })?;
+        establish_property(
+            ctx,
+            "type_constraint: Sized",
+            ValidateErr::TypeNotSized {
+                type_repr: self.ty.to_string(),
+            },
+            |c| self.ty.verify(c, &ValidateTypeOptions::sized()),
+        )?;
 
-        establish_property("type_constraint == typeof(initial_value)", || {
-            let init_value = self.initializer.borrow();
-            let init_value_ty = init_value.determine_type(ctx.m).map_err(|_| ())?;
+        // Skip type checking for uninitialized local variables.
+        if let Some(init_value_id) = &self.initializer {
+            let init_value = init_value_id.borrow();
+            establish_property(
+                ctx,
+                "type_constraint == typeof(initial_value)",
+                ValidateErr::TypeMismatch {
+                    expected: self.ty.to_string(),
+                    actual: "?".to_string(),
+                },
+                |c| {
+                    let init_value_ty = init_value.determine_type(c.m).map_err(|_| ())?;
 
-            if *self.ty != init_value_ty {
-                return Err(());
-            }
+                    if !types_refinement_compatible(&self.ty, &init_value_ty) {
+                        return Err(());
+                    }
 
-            Ok(())
-        })
+                    Ok(())
+                },
+            )?;
+        }
+
+        Ok(())
     }
 
     fn validate(self, ctx: &mut ValidateCtx) -> Result<ValidHir<Self>, ()> {
@@ -122,15 +164,24 @@ impl ValidateHirItem for ParameterAttribute {
         }
 
         match self {
-            ParameterAttribute::Align { alignment } => establish_property("parameter alignment is supported", || {
-                const MAX_SUPPORTED_ALIGNMENT: u32 = 4096;
+            ParameterAttribute::Align { alignment } => establish_property(
+                ctx,
+                "parameter alignment is supported",
+                ValidateErr::AlignmentTooLarge {
+                    alignment: alignment.get(),
+                    max_supported: 4096,
+                    context: "parameter".to_string(),
+                },
+                |_| {
+                    const MAX_SUPPORTED_ALIGNMENT: u32 = 4096;
 
-                if alignment.get() > MAX_SUPPORTED_ALIGNMENT {
-                    return Err(());
-                }
+                    if alignment.get() > MAX_SUPPORTED_ALIGNMENT {
+                        return Err(());
+                    }
 
-                Ok(())
-            }),
+                    Ok(())
+                },
+            ),
         }
     }
 
@@ -150,22 +201,35 @@ impl ValidateHirItem for Parameter {
             attr.verify(ctx)?;
         }
 
-        establish_property("type_constraint: Sized", || {
-            self.ty.verify(ctx, &ValidateTypeOptions::sized())
-        })?;
+        establish_property(
+            ctx,
+            "type_constraint: Sized",
+            ValidateErr::TypeNotSized {
+                type_repr: self.ty.to_string(),
+            },
+            |c| self.ty.verify(c, &ValidateTypeOptions::sized()),
+        )?;
 
-        establish_property("type_constraint == typeof(default_value)", || {
-            if let Some(default_value) = &self.default_value {
-                let default_value = default_value.borrow();
-                let default_value_ty = default_value.determine_type(ctx.m).map_err(|_| ())?;
+        establish_property(
+            ctx,
+            "type_constraint == typeof(default_value)",
+            ValidateErr::TypeMismatch {
+                expected: self.ty.to_string(),
+                actual: "?".to_string(),
+            },
+            |c| {
+                if let Some(default_value) = &self.default_value {
+                    let default_value = default_value.borrow();
+                    let default_value_ty = default_value.determine_type(c.m).map_err(|_| ())?;
 
-                if *self.ty != default_value_ty {
-                    return Err(());
+                    if !types_refinement_compatible(&self.ty, &default_value_ty) {
+                        return Err(());
+                    }
                 }
-            }
 
-            Ok(())
-        })
+                Ok(())
+            },
+        )
     }
 
     fn validate(self, ctx: &mut ValidateCtx) -> Result<ValidHir<Self>, ()> {
@@ -206,39 +270,60 @@ impl ValidateHirItem for Function {
             param.borrow().verify(ctx)?;
         }
 
-        establish_property("return_type: Sized", || {
-            self.return_type.verify(ctx, &ValidateTypeOptions::sized())
-        })?;
+        establish_property(
+            ctx,
+            "return_type: Sized",
+            ValidateErr::TypeNotSized {
+                type_repr: self.return_type.to_string(),
+            },
+            |c| self.return_type.verify(c, &ValidateTypeOptions::sized()),
+        )?;
 
         if let Some(body) = &self.body {
             for element in body {
                 element.verify(ctx)?;
             }
 
-            establish_property("function body ends with return statement", || match body.last() {
-                Some(BlockElement::Expr(expr)) if expr.borrow().is_return() => Ok(()),
-                _ => Err(()),
-            })?;
+            establish_property(
+                ctx,
+                "function body ends with return statement",
+                ValidateErr::FunctionBodyMissingReturn {
+                    function_name: self.name.clone(),
+                },
+                |_| match body.last() {
+                    Some(BlockElement::Expr(expr)) if expr.borrow().is_return() => Ok(()),
+                    _ => Err(()),
+                },
+            )?;
 
-            establish_property("typeof(body) == return_type", || {
-                let Value::Return { value } = &*body
-                    .last()
-                    .expect("Function body should have at least one element")
-                    .as_expr()
-                    .expect("Last element of function body should be an expression")
-                    .borrow()
-                else {
-                    panic!("Last element of function body should be a return expression");
-                };
+            establish_property(
+                ctx,
+                "typeof(body) == return_type",
+                ValidateErr::ReturnTypeMismatch {
+                    function_name: self.name.clone(),
+                    expected: self.return_type.to_string(),
+                    actual: "?".to_string(),
+                },
+                |c| {
+                    let Value::Return { value, .. } = &*body
+                        .last()
+                        .expect("Function body should have at least one element")
+                        .as_expr()
+                        .expect("Last element of function body should be an expression")
+                        .borrow()
+                    else {
+                        panic!("Last element of function body should be a return expression");
+                    };
 
-                let body_ty = value.borrow().determine_type(ctx.m).map_err(|_| ())?;
+                    let body_ty = value.borrow().determine_type(c.m).map_err(|_| ())?;
 
-                if *self.return_type != body_ty {
-                    return Err(());
-                }
+                    if *self.return_type != body_ty {
+                        return Err(());
+                    }
 
-                Ok(())
-            })?;
+                    Ok(())
+                },
+            )?;
         }
 
         Ok(())
@@ -278,7 +363,10 @@ impl ValidateHirItem for ModuleAttribute {
         }
 
         match self {
-            ModuleAttribute::Invalid => Err(()),
+            ModuleAttribute::Invalid => {
+                ctx.report(ValidateErr::InvalidModuleAttribute);
+                Err(())
+            }
         }
     }
 
@@ -298,9 +386,15 @@ impl ValidateHirItem for Module {
             attr.verify(ctx)?;
         }
 
+        // Push this module onto the current module path for visibility checks
+        ctx.current_module_path.push(self.name.clone());
+
         for item in &self.items {
             item.verify(ctx)?;
         }
+
+        // Pop the module path after processing all items
+        ctx.current_module_path.pop();
 
         Ok(())
     }
@@ -350,8 +444,15 @@ impl ValidateHirItem for StructFieldAttribute {
         }
 
         match self {
-            StructFieldAttribute::Align { alignment } => {
-                establish_property("struct field alignment is supported", || {
+            StructFieldAttribute::Align { alignment } => establish_property(
+                ctx,
+                "struct field alignment is supported",
+                ValidateErr::AlignmentTooLarge {
+                    alignment: alignment.get(),
+                    max_supported: 4096,
+                    context: "struct field".to_string(),
+                },
+                |_| {
                     const MAX_SUPPORTED_ALIGNMENT: u32 = 4096;
 
                     if alignment.get() > MAX_SUPPORTED_ALIGNMENT {
@@ -359,8 +460,8 @@ impl ValidateHirItem for StructFieldAttribute {
                     }
 
                     Ok(())
-                })
-            }
+                },
+            ),
         }
     }
 
@@ -380,22 +481,35 @@ impl ValidateHirItem for StructField {
             attr.verify(ctx)?;
         }
 
-        establish_property("field_type: Sized", || {
-            self.ty.verify(ctx, &ValidateTypeOptions::sized())
-        })?;
+        establish_property(
+            ctx,
+            "field_type: Sized",
+            ValidateErr::TypeNotSized {
+                type_repr: self.ty.to_string(),
+            },
+            |c| self.ty.verify(c, &ValidateTypeOptions::sized()),
+        )?;
 
-        establish_property("type_constraint == typeof(default_value)", || {
-            if let Some(default_value) = &self.default_value {
-                let default_value = default_value.borrow();
-                let default_value_ty = default_value.determine_type(ctx.m).map_err(|_| ())?;
+        establish_property(
+            ctx,
+            "type_constraint == typeof(default_value)",
+            ValidateErr::TypeMismatch {
+                expected: self.ty.to_string(),
+                actual: "?".to_string(),
+            },
+            |c| {
+                if let Some(default_value) = &self.default_value {
+                    let default_value = default_value.borrow();
+                    let default_value_ty = default_value.determine_type(c.m).map_err(|_| ())?;
 
-                if *self.ty != default_value_ty {
-                    return Err(());
+                    if !types_refinement_compatible(&self.ty, &default_value_ty) {
+                        return Err(());
+                    }
                 }
-            }
 
-            Ok(())
-        })
+                Ok(())
+            },
+        )
     }
 
     fn validate(self, ctx: &mut ValidateCtx) -> Result<ValidHir<Self>, ()> {
@@ -436,7 +550,10 @@ impl ValidateHirItem for EnumAttribute {
         }
 
         match self {
-            EnumAttribute::Invalid => Err(()),
+            EnumAttribute::Invalid => {
+                ctx.report(ValidateErr::InvalidEnumAttribute);
+                Err(())
+            }
         }
     }
 
@@ -453,13 +570,26 @@ impl ValidateHirItem for EnumVariantAttribute {
         }
 
         match self {
-            EnumVariantAttribute::Invalid => Err(()),
+            EnumVariantAttribute::Invalid => {
+                ctx.report(ValidateErr::InvalidEnumVariantAttribute);
+                Err(())
+            }
         }
     }
 
     fn validate(self, ctx: &mut ValidateCtx) -> Result<ValidHir<Self>, ()> {
         self.verify(ctx)?;
         Ok(ValidHir::new(self))
+    }
+}
+
+/// Check if a declared type (possibly a Refine) is compatible with an actual expression type.
+/// A `Refine { base: U8, ... }` is compatible with `U8` (the literal type).
+/// Exact equality is also required for non-refinement types.
+fn types_refinement_compatible(declared: &Type, actual: &Type) -> bool {
+    match declared {
+        Type::Refine { base, .. } => base.deref() == actual,
+        _ => declared == actual,
     }
 }
 
@@ -473,22 +603,35 @@ impl ValidateHirItem for EnumVariant {
             attr.verify(ctx)?;
         }
 
-        establish_property("variant_type: Sized", || {
-            self.ty.verify(ctx, &ValidateTypeOptions::sized())
-        })?;
+        establish_property(
+            ctx,
+            "variant_type: Sized",
+            ValidateErr::TypeNotSized {
+                type_repr: self.ty.to_string(),
+            },
+            |c| self.ty.verify(c, &ValidateTypeOptions::sized()),
+        )?;
 
-        establish_property("type_constraint == typeof(default_value)", || {
-            if let Some(default_value) = &self.default_value {
-                let default_value = default_value.borrow();
-                let default_value_ty = default_value.determine_type(ctx.m).map_err(|_| ())?;
+        establish_property(
+            ctx,
+            "type_constraint == typeof(default_value)",
+            ValidateErr::TypeMismatch {
+                expected: self.ty.to_string(),
+                actual: "?".to_string(),
+            },
+            |c| {
+                if let Some(default_value) = &self.default_value {
+                    let default_value = default_value.borrow();
+                    let default_value_ty = default_value.determine_type(c.m).map_err(|_| ())?;
 
-                if *self.ty != default_value_ty {
-                    return Err(());
+                    if !types_refinement_compatible(&self.ty, &default_value_ty) {
+                        return Err(());
+                    }
                 }
-            }
 
-            Ok(())
-        })
+                Ok(())
+            },
+        )
     }
 
     fn validate(self, ctx: &mut ValidateCtx) -> Result<ValidHir<Self>, ()> {

@@ -1,9 +1,27 @@
-use std::ops::Deref;
-
 use enum_iterator::Sequence;
 use nitrate_diagnosis::FileId;
 pub use ordered_float::NotNan;
 use serde::{Deserialize, Serialize};
+use std::{fmt::Write, write};
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct LexPos {
+    pub fileid: Option<FileId>,
+    pub line: u16,
+    pub column: u8,
+    pub offset: u32,
+}
+
+impl From<LexPos> for nitrate_diagnosis::SourcePosition {
+    fn from(pos: LexPos) -> Self {
+        nitrate_diagnosis::SourcePosition {
+            line: u32::from(pos.line),
+            column: u32::from(pos.column),
+            offset: pos.offset,
+            fileid: pos.fileid,
+        }
+    }
+}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Hash, Sequence, Serialize, Deserialize)]
 pub enum IntegerKind {
@@ -50,6 +68,7 @@ impl std::fmt::Display for Integer {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Hash, Sequence, Serialize, Deserialize)]
 pub enum CommentKind {
     SingleLine,
+    MultiLine,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash, Serialize, Deserialize)]
@@ -78,11 +97,12 @@ impl Comment {
 impl std::fmt::Display for Comment {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self.kind() {
-            CommentKind::SingleLine => write!(f, "{}", self.text()),
+            CommentKind::SingleLine | CommentKind::MultiLine => write!(f, "{}", self.text()),
         }
     }
 }
 
+#[must_use]
 pub fn escape_string(s: &str, quotes: bool) -> String {
     let mut escaped = String::with_capacity(s.len() + if quotes { 2 } else { 0 });
 
@@ -105,11 +125,11 @@ pub fn escape_string(s: &str, quotes: bool) -> String {
             '\x20'..='\x7E' => escaped.push(c),
 
             c if c.is_ascii() => {
-                escaped.push_str(&format!("\\x{:02x}", c as u8));
+                let _ = write!(escaped, "\\x{:02x}", c as u8);
             }
 
             c => {
-                escaped.push_str(&format!("\\u{{{:04x}}}", c as u32));
+                let _ = write!(escaped, "\\u{{{:04x}}}", c as u32);
             }
         }
     }
@@ -121,6 +141,7 @@ pub fn escape_string(s: &str, quotes: bool) -> String {
     escaped
 }
 
+#[must_use]
 pub fn escape_bstring(s: &[u8], quotes: bool) -> String {
     let mut escaped = String::with_capacity(s.len() + if quotes { 2 } else { 0 });
 
@@ -143,7 +164,7 @@ pub fn escape_bstring(s: &[u8], quotes: bool) -> String {
             b'\x20'..=b'\x7E' => escaped.push(*c as char),
 
             c => {
-                escaped.push_str(&format!("\\x{:02x}", *c));
+                let _ = write!(escaped, "\\x{c:02x}");
             }
         }
     }
@@ -348,8 +369,34 @@ pub enum Token {
     As,
     /// 'typeof'
     Typeof,
+    /// 'Self' keyword - the implementing type in impl blocks
+    SelfType,
+    /// 'self' keyword - the receiver parameter in methods
+    SelfKeyword,
+    /// 'super' keyword - parent module reference in paths
+    Super,
+    /// 'crate' keyword - package root reference in paths
+    Crate,
+    /// 'extern'
+    Extern,
 
     Eof,
+}
+
+impl Token {
+    /// Returns true if this token is trivia (whitespace, newlines, comments).
+    pub fn is_trivia(&self) -> bool {
+        match self {
+            Token::Space
+            | Token::HorizontalTab
+            | Token::NewLine
+            | Token::VerticalTab
+            | Token::FormFeed
+            | Token::CarriageReturn
+            | Token::Comment(_) => true,
+            _ => false,
+        }
+    }
 }
 
 impl std::fmt::Display for Token {
@@ -362,7 +409,7 @@ impl std::fmt::Display for Token {
             Token::BString(s) => write!(f, "{}", escape_bstring(s, true)),
             Token::Comment(c) => write!(f, "{c}"),
             Token::HorizontalTab => write!(f, "\t"),
-            Token::NewLine => write!(f, "\n"),
+            Token::NewLine => writeln!(f),
             Token::VerticalTab => write!(f, "\x0b"),
             Token::FormFeed => write!(f, "\x0c"),
             Token::CarriageReturn => write!(f, "\r"),
@@ -455,102 +502,65 @@ impl std::fmt::Display for Token {
             Token::Opaque => write!(f, "opaque"),
             Token::As => write!(f, "as"),
             Token::Typeof => write!(f, "typeof"),
+            Token::SelfType => write!(f, "Self"),
+            Token::SelfKeyword => write!(f, "self"),
+            Token::Super => write!(f, "super"),
+            Token::Crate => write!(f, "crate"),
+            Token::Extern => write!(f, "extern"),
             Token::Eof => write!(f, ""),
         }
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub struct SourcePosition {
-    pub line: u32,
-    pub column: u32,
-    pub offset: u32,
-    pub fileid: Option<FileId>,
-}
-
-impl std::fmt::Display for SourcePosition {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "{}:{}:{}",
-            self.fileid.as_ref().map_or("???", |fid| fid.deref()),
-            self.line + 1,
-            self.column + 1
-        )
-    }
-}
-
-impl From<SourcePosition> for nitrate_diagnosis::SourcePosition {
-    fn from(pos: SourcePosition) -> Self {
-        nitrate_diagnosis::SourcePosition {
-            line: pos.line,
-            column: pos.column,
-            offset: pos.offset,
-            fileid: pos.fileid,
-        }
-    }
-}
-
+/// A token annotated with its source location.
+/// Uses raw fields to avoid circular dependency with nitrate_tree.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct AnnotatedToken {
     pub token: Token,
-
-    pub start_line: u32,
-    pub start_column: u32,
-    pub start_offset: u32,
-
-    pub end_line: u32,
-    pub end_column: u32,
-    pub end_offset: u32,
-
     pub fileid: Option<FileId>,
+    pub start_line: u16,
+    pub start_column: u8,
+    pub start_offset: u32,
+    pub end_line: u16,
+    pub end_column: u8,
+    pub end_offset: u32,
 }
 
 impl AnnotatedToken {
     #[must_use]
-    pub fn new(token: Token, start: SourcePosition, end: SourcePosition) -> Self {
+    pub fn new_raw(
+        token: Token,
+        fileid: Option<FileId>,
+        start_line: u16,
+        start_column: u8,
+        start_offset: u32,
+        end_line: u16,
+        end_column: u8,
+        end_offset: u32,
+    ) -> Self {
         AnnotatedToken {
             token,
-            start_line: start.line,
-            start_column: start.column,
-            start_offset: start.offset,
-            end_line: end.line,
-            end_column: end.column,
-            end_offset: end.offset,
-            fileid: start.fileid,
+            fileid,
+            start_line,
+            start_column,
+            start_offset,
+            end_line,
+            end_column,
+            end_offset,
         }
     }
 
     #[must_use]
-    pub fn start(&self) -> SourcePosition {
-        SourcePosition {
-            line: self.start_line,
-            column: self.start_column,
-            offset: self.start_offset,
-            fileid: self.fileid.clone(),
-        }
-    }
-
-    #[must_use]
-    pub fn end(&self) -> SourcePosition {
-        SourcePosition {
-            line: self.end_line,
-            column: self.end_column,
-            offset: self.end_offset,
-            fileid: self.fileid.clone(),
-        }
-    }
-
-    #[must_use]
-    pub fn range(&self) -> (SourcePosition, SourcePosition) {
-        (self.start(), self.end())
+    pub fn range(&self) -> ((u16, u8, u32), (u16, u8, u32)) {
+        (
+            (self.start_line, self.start_column, self.start_offset),
+            (self.end_line, self.end_column, self.end_offset),
+        )
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use nitrate_diagnosis::intern_file_id;
-
     use super::*;
 
     #[test]
@@ -560,7 +570,7 @@ mod tests {
             vec![IntegerKind::Bin, IntegerKind::Oct, IntegerKind::Dec, IntegerKind::Hex]
         );
 
-        let prime_u128 = 0xa8b437b5f0bd41f1e97765f63699f65d_u128;
+        let prime_u128 = 0xa8b4_37b5_f0bd_41f1_e977_65f6_3699_f65d_u128;
 
         let test_vectors = [
             (0_u128, IntegerKind::Bin, "0b0"),
@@ -597,7 +607,7 @@ mod tests {
             let integer = Integer::new(value, kind);
             assert_eq!(integer.value(), value);
             assert_eq!(integer.kind(), kind);
-            assert_eq!(format!("{}", integer), expected_str);
+            assert_eq!(format!("{integer}"), expected_str);
         }
     }
 
@@ -605,27 +615,33 @@ mod tests {
     fn test_comment_token_parsetree() {
         assert_eq!(
             enum_iterator::all::<CommentKind>().collect::<Vec<_>>(),
-            vec![CommentKind::SingleLine]
+            vec![CommentKind::SingleLine, CommentKind::MultiLine]
         );
 
         let test_vectors = [
             (
                 " This is a single-line comment",
                 CommentKind::SingleLine,
-                "# This is a single-line comment",
+                " This is a single-line comment",
             ),
             (
                 "This is another single-line comment",
                 CommentKind::SingleLine,
-                "#This is another single-line comment",
+                "This is another single-line comment",
             ),
+            (
+                " A multi-line comment ",
+                CommentKind::MultiLine,
+                " A multi-line comment ",
+            ),
+            ("line1\nline2\nline3", CommentKind::MultiLine, "line1\nline2\nline3"),
         ];
 
         for (text, kind, expected_str) in test_vectors {
             let comment = Comment::new(text.to_string(), kind);
             assert_eq!(comment.text(), &text);
             assert_eq!(comment.kind(), kind);
-            assert_eq!(format!("{}", comment), expected_str);
+            assert_eq!(format!("{comment}"), expected_str);
         }
     }
 
@@ -634,12 +650,15 @@ mod tests {
         let test_vectors = [
             (Token::Name("example".into()), "example"),
             (Token::Integer(Integer::new(42, IntegerKind::Dec)), "42"),
-            (Token::Float(NotNan::new(3.14).unwrap()), "3.14"),
+            (
+                Token::Float(NotNan::new(std::f64::consts::PI).unwrap()),
+                "3.141592653589793",
+            ),
             (Token::String("hello".into()), "\"hello\""),
-            (Token::BString(Vec::from(b"world")), "[119, 111, 114, 108, 100]"),
+            (Token::BString(Vec::from(b"world")), "\"world\""),
             (
                 Token::Comment(Comment::new(" This is a comment".to_string(), CommentKind::SingleLine)),
-                "# This is a comment",
+                " This is a comment",
             ),
             (Token::Let, "let"),
             (Token::OpenParen, "("),
@@ -648,72 +667,31 @@ mod tests {
         ];
 
         for (token, expected_str) in test_vectors {
-            assert_eq!(format!("{}", token), expected_str);
+            assert_eq!(format!("{token}"), expected_str);
         }
-    }
-
-    #[test]
-    fn test_source_position_parsetree() {
-        let line = 2_u32;
-        let column = 5_u32;
-        let offset = 15_u32;
-        let filename = "file.txt";
-
-        let position = SourcePosition {
-            line,
-            column,
-            offset,
-            fileid: intern_file_id(filename),
-        };
-
-        assert_eq!(
-            format!("{}", position),
-            format!("{}:{}:{}", position.fileid.unwrap().deref(), line + 1, column + 1)
-        );
     }
 
     #[test]
     fn test_annotated_token_parsetree() {
-        let filename = intern_file_id("file.txt");
+        let at = AnnotatedToken::new_raw(Token::Semi, None, 2, 5, 10, 2, 8, 13);
+        let (start, end) = at.range();
+        assert_eq!(start, (2, 5, 10));
+        assert_eq!(end, (2, 8, 13));
+        assert_eq!(at.token, Token::Semi);
+    }
 
-        let test_vectors = [
-            (Token::Name("example".into()), "example"),
-            (Token::Integer(Integer::new(42, IntegerKind::Dec)), "42"),
-            (Token::Float(NotNan::new(3.14).unwrap()), "3.14"),
-            (Token::String("hello".into()), "\"hello\""),
-            (Token::BString(Vec::from(b"world")), "[119, 111, 114, 108, 100]"),
-            (
-                Token::Comment(Comment::new(" This is a comment".into(), CommentKind::SingleLine)),
-                "# This is a comment",
-            ),
-            (Token::Let, "let"),
-            (Token::OpenParen, "("),
-            (Token::Plus, "+"),
-            (Token::Eof, ""),
-        ];
-
-        for (token, expected_str) in test_vectors {
-            let start = SourcePosition {
-                line: 1,
-                column: 2,
-                offset: 3,
-                fileid: filename.clone(),
-            };
-            let end = SourcePosition {
-                line: 4,
-                column: 5,
-                offset: 6,
-                fileid: filename.clone(),
-            };
-
-            let annotated_token = AnnotatedToken::new(token.clone(), start.clone(), end.clone());
-
-            assert_eq!(annotated_token.token(), &token);
-            assert_eq!(annotated_token.start(), start);
-            assert_eq!(annotated_token.end(), end);
-            assert_eq!(annotated_token.range(), (start, end));
-            assert_eq!(format!("{}", annotated_token.token()), expected_str);
-            assert_eq!(format!("{}", annotated_token.into_token()), expected_str);
-        }
+    #[test]
+    fn test_token_is_trivia() {
+        assert!(Token::Space.is_trivia());
+        assert!(Token::NewLine.is_trivia());
+        assert!(Token::HorizontalTab.is_trivia());
+        assert!(Token::VerticalTab.is_trivia());
+        assert!(Token::FormFeed.is_trivia());
+        assert!(Token::CarriageReturn.is_trivia());
+        assert!(Token::Comment(Comment::new("test".to_string(), CommentKind::SingleLine)).is_trivia());
+        assert!(!Token::Let.is_trivia());
+        assert!(!Token::Plus.is_trivia());
+        assert!(!Token::Semi.is_trivia());
+        assert!(!Token::Eof.is_trivia());
     }
 }

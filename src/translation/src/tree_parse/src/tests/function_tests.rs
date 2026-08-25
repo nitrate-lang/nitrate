@@ -140,8 +140,6 @@ fn test_fn_generics_unclosed() {
     assert!(log.error_bit());
 }
 
-
-
 // ========== FUNCTION PARAMETER VARIADIC EXPECTED ==========
 #[test]
 fn test_err_fn_variadic_incomplete() {
@@ -150,7 +148,6 @@ fn test_err_fn_variadic_incomplete() {
     assert!(log.error_bit());
 }
 
-
 // ========== STRUCTURE FIELD LIMIT ==========
 // NOTE: Would need >65536 fields, impractical
 
@@ -158,10 +155,36 @@ fn test_err_fn_variadic_incomplete() {
 // NOTE: Would need >65536 variants, impractical
 
 // ========== CLOSURE PARAMETER LIMIT ==========
-// NOTE: Would need >65536 params, impractical
+// SyntaxErr::ClosureParameterLimit - needs >65536 closure params
+#[test]
+fn test_closure_param_limit() {
+    let mut params = String::new();
+    for i in 0..65538 {
+        if i > 0 {
+            params.push_str(", ");
+        }
+        params.push_str(&format!("x{i}: i32"));
+    }
+    let src = format!("fn({params}) {{ 42 }}");
+    let (_, log) = parse_expr_no_assert(&src);
+    assert!(log.error_bit());
+}
 
 // ========== FUNCTION TYPE PARAM LIMIT ==========
-// NOTE: Would need >65536 params, impractical
+// SyntaxErr::FunctionTypeParamLimit - needs >65536 function type params
+#[test]
+fn test_fn_type_param_limit() {
+    let mut params = String::new();
+    for i in 0..65538 {
+        if i > 0 {
+            params.push_str(", ");
+        }
+        params.push_str(&format!("x{i}: i32"));
+    }
+    let src = format!("fn({params}) -> bool");
+    let (_, log) = parse_type_no_assert(&src);
+    assert!(log.error_bit());
+}
 
 // ========== VARIADIC FUNCTION PARAMETER MISSING SEMICOLON ==========
 #[test]
@@ -169,7 +192,6 @@ fn test_err_fn_variadic_close_paren_missing() {
     let (_, log) = parse_source_no_assert("fn f(x: i32, ...");
     assert!(log.error_bit());
 }
-
 
 // SyntaxErr::FunctionParameterLimit (variant 122) - needs >65536 params
 #[test]
@@ -186,7 +208,6 @@ fn test_fn_param_limit() {
     assert!(log.error_bit());
 }
 
-
 // SyntaxErr::FunctionParametersExpectedEnd (variant 124)
 #[test]
 fn test_fn_params_expected_end() {
@@ -194,9 +215,7 @@ fn test_fn_params_expected_end() {
     assert!(log.error_bit());
 }
 
-
 // SyntaxErr::FunctionParameterVariadicExpected (variant 126)
-
 
 // ---------- FUNCTION CALL ERRORS ----------
 
@@ -207,7 +226,6 @@ fn test_fn_call_expected_end() {
     assert!(log.error_bit());
 }
 
-
 // SyntaxErr::FunctionCallArgumentLimit (variant 401) - needs >65536 args
 #[test]
 fn test_fn_call_arg_limit() {
@@ -215,12 +233,11 @@ fn test_fn_call_arg_limit() {
     for _ in 0..65538 {
         args.push_str("0, ");
     }
-    args.push_str("0");
+    args.push('0');
     let src = format!("f({args})");
     let (_, log) = parse_expr_no_assert(&src);
     assert!(log.error_bit());
 }
-
 
 // SyntaxErr::FunctionCallPositionFollowsNamed (variant 402)
 #[test]
@@ -229,14 +246,12 @@ fn test_fn_call_positional_after_named() {
     assert!(log.error_bit());
 }
 
-
 // ========== EMPTY FUNCTION PARAMS ==========
 #[test]
 fn test_fn_empty_params() {
     let f = single_function(parse_source("fn f() {}"));
     assert!(f.parameters.params.is_empty());
 }
-
 
 // ========== FUNCTION PARAMETER EDGE CASES ==========
 
@@ -246,20 +261,17 @@ fn test_fn_missing_open_paren() {
     assert!(log.error_bit());
 }
 
-
 #[test]
 fn test_fn_param_variadic_no_dots() {
     let (_, log) = parse_source_no_assert("fn foo(x: i32, .) {}");
     assert!(log.error_bit());
 }
 
-
 #[test]
 fn test_fn_param_variadic_missing_close_paren() {
     let (_, log) = parse_source_no_assert("fn foo(x: i32, ...");
     assert!(log.error_bit());
 }
-
 
 // ========== VARIADIC FUNCTION PARAMETER EDGE CASES ==========
 
@@ -270,7 +282,6 @@ fn test_fn_variadic_no_other_params() {
     assert!(f.parameters.params.is_empty());
 }
 
-
 // ========== FUNCTION TYPE ERROR PATHS ==========
 
 #[test]
@@ -279,17 +290,14 @@ fn test_fn_type_missing_open_paren() {
     assert!(log.error_bit());
 }
 
-
 #[test]
 fn test_fn_type_missing_param_name() {
     let (_, log) = parse_type_no_assert("fn(: i32) -> bool");
     assert!(log.error_bit());
 }
 
-
 #[test]
 fn test_fn_type_missing_param_type() {
     let (_, log) = parse_type_no_assert("fn(x) -> bool");
     assert!(log.error_bit());
 }
-

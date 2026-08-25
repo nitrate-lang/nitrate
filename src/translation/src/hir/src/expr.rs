@@ -2,6 +2,7 @@ use std::matches;
 
 use crate::{prelude::*, store::LiteralId};
 use nitrate_nstring::NString;
+use nitrate_tree::SrcPos;
 use ordered_float::OrderedFloat;
 use serde::{Deserialize, Serialize};
 use thin_str::ThinStr;
@@ -51,6 +52,26 @@ pub enum BinaryOp {
     Ne,
 }
 
+impl BinaryOp {
+    #[must_use]
+    pub fn is_comparison(&self) -> bool {
+        matches!(
+            self,
+            BinaryOp::Lt | BinaryOp::Gt | BinaryOp::Lte | BinaryOp::Gte | BinaryOp::Eq | BinaryOp::Ne
+        )
+    }
+
+    #[must_use]
+    pub fn is_equality(&self) -> bool {
+        matches!(self, BinaryOp::Eq | BinaryOp::Ne)
+    }
+
+    #[must_use]
+    pub fn is_logical(&self) -> bool {
+        matches!(self, BinaryOp::LogicAnd | BinaryOp::LogicOr)
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub enum UnaryOp {
     /// `+`
@@ -61,7 +82,7 @@ pub enum UnaryOp {
     Not,
 }
 
-#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, PartialOrd)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, PartialOrd)]
 pub enum Lit {
     Unit,
     Bool(bool),
@@ -77,8 +98,7 @@ pub enum Lit {
     U128(u128),
     F32(OrderedFloat<f32>),
     F64(OrderedFloat<f64>),
-    USize32(u32),
-    USize64(u64),
+    USize(u8, u64),
 }
 
 impl Lit {
@@ -99,8 +119,7 @@ impl Lit {
             Lit::U128(_) => 16,
             Lit::F32(_) => 4,
             Lit::F64(_) => 8,
-            Lit::USize32(_) => 4,
-            Lit::USize64(_) => 8,
+            Lit::USize(bits, _) => usize::from(*bits / 8),
         }
     }
 
@@ -118,48 +137,23 @@ impl Lit {
             + TryInto<u128>,
     {
         match ty {
-            Lit::I8(_) => value.try_into().map(Lit::I8).ok(),
-            Lit::I16(_) => value.try_into().map(Lit::I16).ok(),
-            Lit::I32(_) => value.try_into().map(Lit::I32).ok(),
-            Lit::I64(_) => value.try_into().map(Lit::I64).ok(),
-            Lit::I128(_) => value.try_into().map(Lit::I128).ok(),
-            Lit::U8(_) => value.try_into().map(Lit::U8).ok(),
-            Lit::U16(_) => value.try_into().map(Lit::U16).ok(),
-            Lit::U32(_) => value.try_into().map(Lit::U32).ok(),
-            Lit::U64(_) => value.try_into().map(Lit::U64).ok(),
-            Lit::U128(_) => value.try_into().map(Lit::U128).ok(),
-
-            Lit::Unit | Lit::Bool(_) | Lit::F32(_) | Lit::F64(_) | Lit::USize32(_) | Lit::USize64(_) => None,
-        }
-    }
-
-    pub fn new_float<T>(ty: &Lit, value: T) -> Option<Self>
-    where
-        T: TryInto<OrderedFloat<f32>> + TryInto<OrderedFloat<f64>>,
-    {
-        match ty {
-            Lit::Unit
-            | Lit::Bool(_)
-            | Lit::I8(_)
-            | Lit::I16(_)
-            | Lit::I32(_)
-            | Lit::I64(_)
-            | Lit::I128(_)
-            | Lit::U8(_)
-            | Lit::U16(_)
-            | Lit::U32(_)
-            | Lit::U64(_)
-            | Lit::U128(_)
-            | Lit::USize32(_)
-            | Lit::USize64(_) => None,
-
-            Lit::F32(_) => value.try_into().map(Lit::F32).ok(),
-            Lit::F64(_) => value.try_into().map(Lit::F64).ok(),
+            Lit::Unit => None,
+            Lit::Bool(_) => None,
+            Lit::I8(_) => value.try_into().ok().map(Lit::I8),
+            Lit::I16(_) => value.try_into().ok().map(Lit::I16),
+            Lit::I32(_) => value.try_into().ok().map(Lit::I32),
+            Lit::I64(_) => value.try_into().ok().map(Lit::I64),
+            Lit::I128(_) => value.try_into().ok().map(Lit::I128),
+            Lit::U8(_) => value.try_into().ok().map(Lit::U8),
+            Lit::U16(_) => value.try_into().ok().map(Lit::U16),
+            Lit::U32(_) => value.try_into().ok().map(Lit::U32),
+            Lit::U64(_) => value.try_into().ok().map(Lit::U64),
+            Lit::U128(_) => value.try_into().ok().map(Lit::U128),
+            Lit::F32(_) | Lit::F64(_) => None,
+            Lit::USize(bits, _) => value.try_into().ok().map(|v| Lit::USize(*bits, v)),
         }
     }
 }
-
-impl Eq for Lit {}
 
 impl std::hash::Hash for Lit {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
@@ -219,12 +213,9 @@ impl std::hash::Hash for Lit {
                 15u8.hash(state);
                 f.to_bits().hash(state);
             }
-            Lit::USize32(u) => {
+            Lit::USize(bits, u) => {
                 17u8.hash(state);
-                u.hash(state);
-            }
-            Lit::USize64(u) => {
-                18u8.hash(state);
+                bits.hash(state);
                 u.hash(state);
             }
         }
@@ -248,8 +239,7 @@ impl std::fmt::Display for Lit {
             Lit::U128(u) => write!(f, "{u}_u128"),
             Lit::F32(fl) => write!(f, "{fl}_f32"),
             Lit::F64(fl) => write!(f, "{fl}_f64"),
-            Lit::USize32(u) => write!(f, "{u}_usize"),
-            Lit::USize64(u) => write!(f, "{u}_usize"),
+            Lit::USize(bits, u) => write!(f, "{u}_usize{}", *bits),
         }
     }
 }
@@ -288,6 +278,7 @@ impl BlockElement {
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct Block {
+    pub span: SrcPos,
     pub safety: BlockSafety,
     pub elements: Vec<BlockElement>,
 }
@@ -304,6 +295,7 @@ pub struct ArgumentsIterator<T> {
 }
 
 impl<T> Arguments<T> {
+    #[allow(clippy::should_implement_trait)]
     pub fn into_iter(self) -> ArgumentsIterator<T> {
         ArgumentsIterator {
             positional: self.positional,
@@ -326,237 +318,555 @@ impl<T> Iterator for ArgumentsIterator<T> {
     }
 }
 
+/// The central expression representation in the HIR.
+///
+/// Every expression in a Nitrate program is lowered into a [`Value`] variant.
+/// Values are stored in TLS-backed append-only storage and accessed via
+/// lightweight [`ValueId`] handles. Expressions fall into several categories:
+///
+/// - **Literals**: `Unit`, `Bool`, integer/float primitives, strings.
+/// - **Inference placeholders**: `InferredInteger`, `InferredFloat`.
+/// - **Compound construction**: `StructObject`, `EnumVariant`, `List`, `Tuple`.
+/// - **Operations**: `Binary`, `Unary`, `IndexAccess`, `FieldAccess`, `Deref`, `Cast`, `Borrow`.
+/// - **Control flow**: `If`, `While`, `Loop`, `Break`, `Continue`, `Return`, `Block`.
+/// - **Calls**: `Call`, `MethodCall`.
+/// - **Symbol references**: `FunctionSymbol`, `GlobalVariableSymbol`, `LocalVariableSymbol`, `ParameterSymbol`.
+/// - **Assignment**: `Assign`.
+/// - **Range**: `Range`.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub enum Value {
-    Unit,
-    Bool(bool),
-    I8(i8),
-    I16(i16),
-    I32(i32),
-    I64(i64),
-    I128(Box<i128>),
-    U8(u8),
-    U16(u16),
-    U32(u32),
-    U64(u64),
-    U128(Box<u128>),
-    F32(OrderedFloat<f32>),
-    F64(OrderedFloat<f64>),
-    USize32(u32),
-    USize64(u64),
-    StringLit(ThinStr),
-    BStringLit(ThinVec<u8>),
-    InferredInteger(Box<u128>),
-    InferredFloat(OrderedFloat<f64>),
+    /// The unit literal `()`. Zero-sized, the only value of type `Unit`.
+    Unit {
+        /// Source location.
+        span: SrcPos,
+    },
+    /// A boolean literal (`true` or `false`).
+    Bool {
+        /// Source location.
+        span: SrcPos,
+        /// The boolean value.
+        value: bool,
+    },
+    /// An 8-bit signed integer literal.
+    I8 {
+        /// Source location.
+        span: SrcPos,
+        /// The literal value.
+        value: i8,
+    },
+    /// A 16-bit signed integer literal.
+    I16 {
+        /// Source location.
+        span: SrcPos,
+        /// The literal value.
+        value: i16,
+    },
+    /// A 32-bit signed integer literal.
+    I32 {
+        /// Source location.
+        span: SrcPos,
+        /// The literal value.
+        value: i32,
+    },
+    /// A 64-bit signed integer literal.
+    I64 {
+        /// Source location.
+        span: SrcPos,
+        /// The literal value.
+        value: i64,
+    },
+    /// A 128-bit signed integer literal.
+    I128 {
+        /// Source location.
+        span: SrcPos,
+        /// The literal value (boxed to keep enum size manageable).
+        value: Box<i128>,
+    },
+    /// An 8-bit unsigned integer literal.
+    U8 {
+        /// Source location.
+        span: SrcPos,
+        /// The literal value.
+        value: u8,
+    },
+    /// A 16-bit unsigned integer literal.
+    U16 {
+        /// Source location.
+        span: SrcPos,
+        /// The literal value.
+        value: u16,
+    },
+    /// A 32-bit unsigned integer literal.
+    U32 {
+        /// Source location.
+        span: SrcPos,
+        /// The literal value.
+        value: u32,
+    },
+    /// A 64-bit unsigned integer literal.
+    U64 {
+        /// Source location.
+        span: SrcPos,
+        /// The literal value.
+        value: u64,
+    },
+    /// A 128-bit unsigned integer literal.
+    U128 {
+        /// Source location.
+        span: SrcPos,
+        /// The literal value (boxed to keep enum size manageable).
+        value: Box<u128>,
+    },
+    /// A 32-bit floating-point literal.
+    F32 {
+        /// Source location.
+        span: SrcPos,
+        /// The literal value.
+        value: OrderedFloat<f32>,
+    },
+    /// A 64-bit floating-point literal.
+    F64 {
+        /// Source location.
+        span: SrcPos,
+        /// The literal value.
+        value: OrderedFloat<f64>,
+    },
+    /// A platform-dependent unsigned integer literal (`usize`).
+    USize {
+        /// Source location.
+        span: SrcPos,
+        /// The pointer width in bits (32 or 64).
+        bits: u8,
+        /// The literal value.
+        value: u64,
+    },
+    /// A UTF-8 string literal.
+    StringLit {
+        /// Source location.
+        span: SrcPos,
+        /// The string content.
+        value: ThinStr,
+    },
+    /// A byte string literal (sequence of bytes).
+    BStringLit {
+        /// Source location.
+        span: SrcPos,
+        /// The byte content.
+        value: ThinVec<u8>,
+    },
+    /// An integer literal whose concrete type is not yet inferred.
+    /// The solver determines the type from constraints; defaults to `I32`.
+    InferredInteger {
+        /// Source location.
+        span: SrcPos,
+        /// The literal value (boxed to keep enum size manageable).
+        value: Box<u128>,
+    },
+    /// A floating-point literal whose concrete type is not yet inferred.
+    /// The solver determines the type from constraints; defaults to `F64`.
+    InferredFloat {
+        /// Source location.
+        span: SrcPos,
+        /// The literal value.
+        value: OrderedFloat<f64>,
+    },
 
+    /// Construction of a struct value (`Foo { field1: val1, field2: val2 }`).
     StructObject {
+        /// Source location.
+        span: SrcPos,
+        /// Reference to the struct definition.
         struct_def: StructDefId,
+        /// Field name to value mappings.
         fields: ThinVec<(NString, ValueId)>,
     },
 
+    /// Construction of an enum variant (`MyEnum::Variant(payload)`).
     EnumVariant {
+        /// Source location.
+        span: SrcPos,
+        /// Reference to the enum definition.
         enum_def: EnumDefId,
+        /// The variant name being constructed.
         variant: NString,
+        /// The payload value for this variant.
         value: ValueId,
     },
 
+    /// A binary operation expression (`left op right`).
     Binary {
+        /// Source location.
+        span: SrcPos,
+        /// The left-hand operand.
         left: ValueId,
+        /// The binary operator.
         op: BinaryOp,
+        /// The right-hand operand.
         right: ValueId,
     },
 
+    /// A range expression (`start..end`, `start..=end`, `..end`, `start..`, `..`).
+    /// Desugared to a struct object during solving.
+    Range {
+        /// Source location.
+        span: SrcPos,
+        /// The start of the range, if present.
+        start: Option<ValueId>,
+        /// The end of the range, if present.
+        end: Option<ValueId>,
+        /// Whether the range is inclusive of the end value.
+        inclusive: bool,
+    },
+
+    /// A unary operation expression (`op operand`).
     Unary {
+        /// Source location.
+        span: SrcPos,
+        /// The unary operator.
         op: UnaryOp,
+        /// The operand.
         operand: ValueId,
     },
 
+    /// An index access expression (`collection[index]`).
+    IndexAccess {
+        /// Source location.
+        span: SrcPos,
+        /// The collection being indexed.
+        collection: ValueId,
+        /// The index value (`USize`).
+        index: ValueId,
+    },
+
+    /// A field access expression (`expr.field_name`).
     FieldAccess {
+        /// Source location.
+        span: SrcPos,
+        /// The expression whose field is being accessed.
         expr: ValueId,
+        /// The name of the field.
         field_name: NString,
     },
 
+    /// An assignment expression (`place = value`).
     Assign {
+        /// Source location.
+        span: SrcPos,
+        /// The place being assigned to (must be mutable).
         place: ValueId,
+        /// The value being assigned.
         value: ValueId,
     },
 
+    /// A dereference expression (`*place`).
     Deref {
+        /// Source location.
+        span: SrcPos,
+        /// The pointer or reference being dereferenced.
         place: ValueId,
     },
 
+    /// A type cast expression (`value as target_type`).
     Cast {
+        /// Source location.
+        span: SrcPos,
+        /// The value being cast.
         value: ValueId,
+        /// The target type for the cast.
         target_type: TypeId,
     },
 
+    /// A borrow expression (`&place`, `&mut place`, `&unique place`).
     Borrow {
+        /// Source location.
+        span: SrcPos,
+        /// Whether the borrow is exclusive (unique) or shared.
         exclusive: bool,
+        /// Whether the borrow allows mutation.
         mutable: bool,
+        /// The place being borrowed.
         place: ValueId,
     },
 
+    /// A list literal expression (`[elem1, elem2, ...]`).
     List {
+        /// Source location.
+        span: SrcPos,
+        /// The elements of the list.
         elements: ThinVec<ValueId>,
     },
 
+    /// A tuple literal expression (`(elem1, elem2, ...)`).
     Tuple {
+        /// Source location.
+        span: SrcPos,
+        /// The elements of the tuple.
         elements: ThinVec<ValueId>,
     },
 
+    /// An if-else conditional expression.
     If {
+        /// Source location.
+        span: SrcPos,
+        /// The condition expression (must be `Bool`).
         condition: ValueId,
+        /// The block executed when the condition is true.
         true_branch: BlockId,
+        /// The optional else block executed when the condition is false.
         false_branch: Option<BlockId>,
     },
 
+    /// A while loop expression.
     While {
+        /// Source location.
+        span: SrcPos,
+        /// The loop condition (must be `Bool`).
         condition: ValueId,
+        /// The loop body.
         body: BlockId,
     },
 
+    /// An infinite loop expression (`loop { ... }`).
     Loop {
+        /// Source location.
+        span: SrcPos,
+        /// The loop body.
         body: BlockId,
     },
 
+    /// A break expression, optionally targeting a labeled loop.
     Break {
+        /// Source location.
+        span: SrcPos,
+        /// The optional label of the loop to break from.
         label: Option<NString>,
     },
 
+    /// A continue expression, optionally targeting a labeled loop.
     Continue {
+        /// Source location.
+        span: SrcPos,
+        /// The optional label of the loop to continue.
         label: Option<NString>,
     },
 
+    /// A return expression from the enclosing function.
     Return {
+        /// Source location.
+        span: SrcPos,
+        /// The value being returned.
         value: ValueId,
     },
 
+    /// A block expression (`{ ... }`). Creates a new scope.
     Block {
+        /// Source location.
+        span: SrcPos,
+        /// The block body.
         block: BlockId,
     },
 
+    /// A function call expression (`callee(args)`).
     Call {
+        /// Source location.
+        span: SrcPos,
+        /// The function or function pointer being called.
         callee: ValueId,
+        /// The arguments to the call.
         args: Arguments<ValueId>,
     },
 
+    /// A method call expression (`object.method_name(args)`).
+    /// Desugared to a [`Value::Call`] during solving.
     MethodCall {
+        /// Source location.
+        span: SrcPos,
+        /// The receiver object.
         object: ValueId,
+        /// The name of the method being called.
         method_name: NString,
+        /// The arguments to the method (excluding `self`).
         args: Arguments<ValueId>,
     },
 
+    /// A reference to a function symbol (not a call, just the name).
     FunctionSymbol {
+        /// Source location.
+        span: SrcPos,
+        /// Reference to the function definition.
         id: FunctionId,
     },
 
+    /// A reference to a global variable symbol.
     GlobalVariableSymbol {
+        /// Source location.
+        span: SrcPos,
+        /// Reference to the global variable definition.
         id: GlobalVariableId,
     },
 
+    /// A reference to a local variable symbol.
     LocalVariableSymbol {
+        /// Source location.
+        span: SrcPos,
+        /// Reference to the local variable definition.
         id: LocalVariableId,
     },
 
+    /// A reference to a function parameter symbol.
     ParameterSymbol {
+        /// Source location.
+        span: SrcPos,
+        /// Reference to the parameter definition.
         id: ParameterId,
     },
 }
 
 impl Value {
     #[must_use]
+    pub fn span(&self) -> SrcPos {
+        match self {
+            Value::Unit { span } => *span,
+            Value::Bool { span, .. } => *span,
+            Value::I8 { span, .. } => *span,
+            Value::I16 { span, .. } => *span,
+            Value::I32 { span, .. } => *span,
+            Value::I64 { span, .. } => *span,
+            Value::I128 { span, .. } => *span,
+            Value::U8 { span, .. } => *span,
+            Value::U16 { span, .. } => *span,
+            Value::U32 { span, .. } => *span,
+            Value::U64 { span, .. } => *span,
+            Value::U128 { span, .. } => *span,
+            Value::F32 { span, .. } => *span,
+            Value::F64 { span, .. } => *span,
+            Value::USize { span, .. } => *span,
+            Value::StringLit { span, .. } => *span,
+            Value::BStringLit { span, .. } => *span,
+            Value::InferredInteger { span, .. } => *span,
+            Value::InferredFloat { span, .. } => *span,
+            Value::StructObject { span, .. } => *span,
+            Value::EnumVariant { span, .. } => *span,
+            Value::Binary { span, .. } => *span,
+            Value::Range { span, .. } => *span,
+            Value::Unary { span, .. } => *span,
+            Value::IndexAccess { span, .. } => *span,
+            Value::FieldAccess { span, .. } => *span,
+            Value::Assign { span, .. } => *span,
+            Value::Deref { span, .. } => *span,
+            Value::Cast { span, .. } => *span,
+            Value::Borrow { span, .. } => *span,
+            Value::List { span, .. } => *span,
+            Value::Tuple { span, .. } => *span,
+            Value::If { span, .. } => *span,
+            Value::While { span, .. } => *span,
+            Value::Loop { span, .. } => *span,
+            Value::Break { span, .. } => *span,
+            Value::Continue { span, .. } => *span,
+            Value::Return { span, .. } => *span,
+            Value::Block { span, .. } => *span,
+            Value::Call { span, .. } => *span,
+            Value::MethodCall { span, .. } => *span,
+            Value::FunctionSymbol { span, .. } => *span,
+            Value::GlobalVariableSymbol { span, .. } => *span,
+            Value::LocalVariableSymbol { span, .. } => *span,
+            Value::ParameterSymbol { span, .. } => *span,
+        }
+    }
+
+    #[must_use]
     pub fn is_unit(&self) -> bool {
-        matches!(self, Value::Unit)
+        matches!(self, Value::Unit { .. })
     }
 
     #[must_use]
     pub fn is_bool(&self) -> bool {
-        matches!(self, Value::Bool(_))
+        matches!(self, Value::Bool { .. })
     }
 
     #[must_use]
     pub fn is_i8(&self) -> bool {
-        matches!(self, Value::I8(_))
+        matches!(self, Value::I8 { .. })
     }
 
     #[must_use]
     pub fn is_i16(&self) -> bool {
-        matches!(self, Value::I16(_))
+        matches!(self, Value::I16 { .. })
     }
 
     #[must_use]
     pub fn is_i32(&self) -> bool {
-        matches!(self, Value::I32(_))
+        matches!(self, Value::I32 { .. })
     }
 
     #[must_use]
     pub fn is_i64(&self) -> bool {
-        matches!(self, Value::I64(_))
+        matches!(self, Value::I64 { .. })
     }
 
     #[must_use]
     pub fn is_i128(&self) -> bool {
-        matches!(self, Value::I128(_))
+        matches!(self, Value::I128 { .. })
     }
 
     #[must_use]
     pub fn is_u8(&self) -> bool {
-        matches!(self, Value::U8(_))
+        matches!(self, Value::U8 { .. })
     }
 
     #[must_use]
     pub fn is_u16(&self) -> bool {
-        matches!(self, Value::U16(_))
+        matches!(self, Value::U16 { .. })
     }
 
     #[must_use]
     pub fn is_u32(&self) -> bool {
-        matches!(self, Value::U32(_))
+        matches!(self, Value::U32 { .. })
     }
 
     #[must_use]
     pub fn is_u64(&self) -> bool {
-        matches!(self, Value::U64(_))
+        matches!(self, Value::U64 { .. })
     }
 
     #[must_use]
     pub fn is_u128(&self) -> bool {
-        matches!(self, Value::U128(_))
+        matches!(self, Value::U128 { .. })
     }
 
     #[must_use]
     pub fn is_f32(&self) -> bool {
-        matches!(self, Value::F32(_))
+        matches!(self, Value::F32 { .. })
     }
 
     #[must_use]
     pub fn is_f64(&self) -> bool {
-        matches!(self, Value::F64(_))
+        matches!(self, Value::F64 { .. })
     }
 
     #[must_use]
     pub fn is_usize(&self) -> bool {
-        matches!(self, Value::USize32(_) | Value::USize64(_))
+        matches!(self, Value::USize { .. })
     }
 
     #[must_use]
     pub fn is_string_lit(&self) -> bool {
-        matches!(self, Value::StringLit(_))
+        matches!(self, Value::StringLit { .. })
     }
 
     #[must_use]
     pub fn is_bstring_lit(&self) -> bool {
-        matches!(self, Value::BStringLit(_))
+        matches!(self, Value::BStringLit { .. })
     }
 
     #[must_use]
     pub fn is_inferred_integer(&self) -> bool {
-        matches!(self, Value::InferredInteger(_))
+        matches!(self, Value::InferredInteger { .. })
     }
 
     #[must_use]
     pub fn is_inferred_float(&self) -> bool {
-        matches!(self, Value::InferredFloat(_))
+        matches!(self, Value::InferredFloat { .. })
     }
 
     #[must_use]
@@ -575,8 +885,18 @@ impl Value {
     }
 
     #[must_use]
+    pub fn is_range(&self) -> bool {
+        matches!(self, Value::Range { .. })
+    }
+
+    #[must_use]
     pub fn is_unary(&self) -> bool {
         matches!(self, Value::Unary { .. })
+    }
+
+    #[must_use]
+    pub fn is_index_access(&self) -> bool {
+        matches!(self, Value::IndexAccess { .. })
     }
 
     #[must_use]
@@ -658,6 +978,26 @@ impl Value {
     pub fn is_method_call(&self) -> bool {
         matches!(self, Value::MethodCall { .. })
     }
+
+    #[must_use]
+    pub fn is_function_symbol(&self) -> bool {
+        matches!(self, Value::FunctionSymbol { .. })
+    }
+
+    #[must_use]
+    pub fn is_global_variable_symbol(&self) -> bool {
+        matches!(self, Value::GlobalVariableSymbol { .. })
+    }
+
+    #[must_use]
+    pub fn is_local_variable_symbol(&self) -> bool {
+        matches!(self, Value::LocalVariableSymbol { .. })
+    }
+
+    #[must_use]
+    pub fn is_parameter_symbol(&self) -> bool {
+        matches!(self, Value::ParameterSymbol { .. })
+    }
 }
 
 impl TryFrom<Value> for Lit {
@@ -665,22 +1005,21 @@ impl TryFrom<Value> for Lit {
 
     fn try_from(value: Value) -> Result<Self, Self::Error> {
         match value {
-            Value::Unit => Ok(Lit::Unit),
-            Value::Bool(b) => Ok(Lit::Bool(b)),
-            Value::I8(i) => Ok(Lit::I8(i)),
-            Value::I16(i) => Ok(Lit::I16(i)),
-            Value::I32(i) => Ok(Lit::I32(i)),
-            Value::I64(i) => Ok(Lit::I64(i)),
-            Value::I128(i) => Ok(Lit::I128(*i)),
-            Value::U8(u) => Ok(Lit::U8(u)),
-            Value::U16(u) => Ok(Lit::U16(u)),
-            Value::U32(u) => Ok(Lit::U32(u)),
-            Value::U64(u) => Ok(Lit::U64(u)),
-            Value::U128(u) => Ok(Lit::U128(*u)),
-            Value::F32(f) => Ok(Lit::F32(f)),
-            Value::F64(f) => Ok(Lit::F64(f)),
-            Value::USize32(u) => Ok(Lit::USize32(u)),
-            Value::USize64(u) => Ok(Lit::USize64(u)),
+            Value::Unit { .. } => Ok(Lit::Unit),
+            Value::Bool { value, .. } => Ok(Lit::Bool(value)),
+            Value::I8 { value, .. } => Ok(Lit::I8(value)),
+            Value::I16 { value, .. } => Ok(Lit::I16(value)),
+            Value::I32 { value, .. } => Ok(Lit::I32(value)),
+            Value::I64 { value, .. } => Ok(Lit::I64(value)),
+            Value::I128 { value, .. } => Ok(Lit::I128(*value)),
+            Value::U8 { value, .. } => Ok(Lit::U8(value)),
+            Value::U16 { value, .. } => Ok(Lit::U16(value)),
+            Value::U32 { value, .. } => Ok(Lit::U32(value)),
+            Value::U64 { value, .. } => Ok(Lit::U64(value)),
+            Value::U128 { value, .. } => Ok(Lit::U128(*value)),
+            Value::F32 { value, .. } => Ok(Lit::F32(value)),
+            Value::F64 { value, .. } => Ok(Lit::F64(value)),
+            Value::USize { bits, value, .. } => Ok(Lit::USize(bits, value)),
             other => Err(other),
         }
     }
@@ -689,22 +1028,66 @@ impl TryFrom<Value> for Lit {
 impl From<Lit> for Value {
     fn from(value: Lit) -> Self {
         match value {
-            Lit::Unit => Value::Unit,
-            Lit::Bool(b) => Value::Bool(b),
-            Lit::I8(i) => Value::I8(i),
-            Lit::I16(i) => Value::I16(i),
-            Lit::I32(i) => Value::I32(i),
-            Lit::I64(i) => Value::I64(i),
-            Lit::I128(i) => Value::I128(Box::new(i)),
-            Lit::U8(u) => Value::U8(u),
-            Lit::U16(u) => Value::U16(u),
-            Lit::U32(u) => Value::U32(u),
-            Lit::U64(u) => Value::U64(u),
-            Lit::U128(u) => Value::U128(Box::new(u)),
-            Lit::F32(f) => Value::F32(f),
-            Lit::F64(f) => Value::F64(f),
-            Lit::USize32(u) => Value::USize32(u),
-            Lit::USize64(u) => Value::USize64(u),
+            Lit::Unit => Value::Unit {
+                span: SrcPos::default(),
+            },
+            Lit::Bool(b) => Value::Bool {
+                span: SrcPos::default(),
+                value: b,
+            },
+            Lit::I8(i) => Value::I8 {
+                span: SrcPos::default(),
+                value: i,
+            },
+            Lit::I16(i) => Value::I16 {
+                span: SrcPos::default(),
+                value: i,
+            },
+            Lit::I32(i) => Value::I32 {
+                span: SrcPos::default(),
+                value: i,
+            },
+            Lit::I64(i) => Value::I64 {
+                span: SrcPos::default(),
+                value: i,
+            },
+            Lit::I128(i) => Value::I128 {
+                span: SrcPos::default(),
+                value: Box::new(i),
+            },
+            Lit::U8(u) => Value::U8 {
+                span: SrcPos::default(),
+                value: u,
+            },
+            Lit::U16(u) => Value::U16 {
+                span: SrcPos::default(),
+                value: u,
+            },
+            Lit::U32(u) => Value::U32 {
+                span: SrcPos::default(),
+                value: u,
+            },
+            Lit::U64(u) => Value::U64 {
+                span: SrcPos::default(),
+                value: u,
+            },
+            Lit::U128(u) => Value::U128 {
+                span: SrcPos::default(),
+                value: Box::new(u),
+            },
+            Lit::F32(f) => Value::F32 {
+                span: SrcPos::default(),
+                value: f,
+            },
+            Lit::F64(f) => Value::F64 {
+                span: SrcPos::default(),
+                value: f,
+            },
+            Lit::USize(bits, u) => Value::USize {
+                span: SrcPos::default(),
+                bits,
+                value: u,
+            },
         }
     }
 }
@@ -714,23 +1097,22 @@ impl Value {
     pub fn is_literal(&self) -> bool {
         matches!(
             self,
-            Value::Unit
-                | Value::Bool(_)
-                | Value::I8(_)
-                | Value::I16(_)
-                | Value::I32(_)
-                | Value::I64(_)
-                | Value::I128(_)
-                | Value::U8(_)
-                | Value::U16(_)
-                | Value::U32(_)
-                | Value::U64(_)
-                | Value::U128(_)
-                | Value::F32(_)
-                | Value::F64(_)
-                | Value::USize32(_)
-                | Value::USize64(_)
-                | Value::InferredInteger(_)
+            Value::Unit { .. }
+                | Value::Bool { .. }
+                | Value::I8 { .. }
+                | Value::I16 { .. }
+                | Value::I32 { .. }
+                | Value::I64 { .. }
+                | Value::I128 { .. }
+                | Value::U8 { .. }
+                | Value::U16 { .. }
+                | Value::U32 { .. }
+                | Value::U64 { .. }
+                | Value::U128 { .. }
+                | Value::F32 { .. }
+                | Value::F64 { .. }
+                | Value::USize { .. }
+                | Value::InferredInteger { .. }
         )
     }
 }

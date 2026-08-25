@@ -1,5 +1,6 @@
 use crate::prelude::*;
 use nitrate_nstring::NString;
+use nitrate_tree::SrcPos;
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 
 #[derive(Debug)]
@@ -17,6 +18,8 @@ pub struct SymbolTab {
     methods: HashMap<(TypeId, NString), FunctionId>,
     traits: HashMap<NString, TraitId>,
     impls: HashMap<TypeId, HashMap<TraitId, HashMap<NString, FunctionId>>>,
+    impl_associated_types: HashMap<TypeId, HashMap<TraitId, HashMap<NString, TypeAliasDefId>>>,
+    impl_associated_constants: HashMap<TypeId, HashMap<TraitId, HashMap<NString, GlobalVariableId>>>,
     arch_ptr_size: PtrSize,
 }
 
@@ -35,6 +38,8 @@ impl SymbolTab {
             methods: HashMap::new(),
             traits: HashMap::new(),
             impls: HashMap::new(),
+            impl_associated_types: HashMap::new(),
+            impl_associated_constants: HashMap::new(),
             arch_ptr_size,
         }
     }
@@ -77,11 +82,7 @@ impl SymbolTab {
     }
 
     pub fn add_impl_trait(&mut self, type_id: TypeId, trait_id: TraitId) {
-        self.impls
-            .entry(type_id)
-            .or_insert_with(HashMap::new)
-            .entry(trait_id)
-            .or_insert_with(HashMap::new);
+        self.impls.entry(type_id).or_default().entry(trait_id).or_default();
     }
 
     pub fn add_trait_method(
@@ -93,9 +94,9 @@ impl SymbolTab {
     ) {
         self.impls
             .entry(type_id)
-            .or_insert_with(HashMap::new)
+            .or_default()
             .entry(trait_id)
-            .or_insert_with(HashMap::new)
+            .or_default()
             .insert(method_name, function_id);
     }
 
@@ -120,13 +121,20 @@ impl SymbolTab {
         };
 
         let placeholder = GlobalVariable {
+            span: SrcPos::default(),
             visibility: Visibility::Sec,
             attributes: BTreeSet::new(),
             is_mutable: false,
             name: name.clone(),
-            mangled_name: NString::default(),
-            ty: Type::Unit.into(),
-            initializer: Value::Unit.into(),
+            mangled_name: None,
+            ty: Type::Unit {
+                span: SrcPos::default(),
+            }
+            .into(),
+            initializer: Value::Unit {
+                span: SrcPos::default(),
+            }
+            .into(),
         };
 
         let global_var_id: GlobalVariableId = placeholder.into();
@@ -148,12 +156,16 @@ impl SymbolTab {
         };
 
         let placeholder = LocalVariable {
+            span: SrcPos::default(),
             kind: LocalKind::Let,
             attributes: BTreeSet::new(),
             is_mutable: false,
             name: name.clone(),
-            ty: Type::Unit.into(),
-            initializer: Value::Unit.into(),
+            ty: Type::Unit {
+                span: SrcPos::default(),
+            }
+            .into(),
+            initializer: None,
         };
 
         let local_var_id: LocalVariableId = placeholder.into();
@@ -171,10 +183,14 @@ impl SymbolTab {
         };
 
         let placeholder = Parameter {
+            span: SrcPos::default(),
             attributes: BTreeSet::new(),
             is_mutable: false,
             name: name.clone(),
-            ty: Type::Unit.into(),
+            ty: Type::Unit {
+                span: SrcPos::default(),
+            }
+            .into(),
             default_value: None,
         };
 
@@ -193,13 +209,18 @@ impl SymbolTab {
         };
 
         let placeholder = Function {
+            span: SrcPos::default(),
             visibility: Visibility::Sec,
             attributes: BTreeSet::new(),
+            is_unsafe: false,
             name: name.clone(),
-            mangled_name: NString::default(),
+            mangled_name: None,
             generics: None,
             params: Vec::new(),
-            return_type: Type::Unit.into(),
+            return_type: Type::Unit {
+                span: SrcPos::default(),
+            }
+            .into(),
             body: None,
         };
 
@@ -261,9 +282,15 @@ impl SymbolTab {
         };
 
         let placeholder = Trait {
+            span: SrcPos::default(),
             visibility: Visibility::Sec,
             name: name.clone(),
-            methods: Vec::new().into(),
+            generics: None,
+            supertraits: Vec::new(),
+            where_clause: None,
+            methods: Vec::new(),
+            associated_types: Vec::new(),
+            associated_constants: Vec::new(),
         };
 
         let trait_id: TraitId = placeholder.into();
@@ -275,16 +302,50 @@ impl SymbolTab {
         self.traits.get(name)
     }
 
+    pub fn add_impl_associated_type(
+        &mut self,
+        type_id: TypeId,
+        trait_id: TraitId,
+        assoc_name: NString,
+        type_alias_id: TypeAliasDefId,
+    ) {
+        self.impl_associated_types
+            .entry(type_id)
+            .or_default()
+            .entry(trait_id)
+            .or_default()
+            .insert(assoc_name, type_alias_id);
+    }
+
+    pub fn add_impl_associated_constant(
+        &mut self,
+        type_id: TypeId,
+        trait_id: TraitId,
+        assoc_name: NString,
+        const_id: GlobalVariableId,
+    ) {
+        self.impl_associated_constants
+            .entry(type_id)
+            .or_default()
+            .entry(trait_id)
+            .or_default()
+            .insert(assoc_name, const_id);
+    }
+
     pub fn get_type_alias_or_insert_placeholder(&mut self, name: &NString) -> TypeAliasDefId {
         if let Some(type_alias_id) = self.type_alises.get(name).cloned() {
             return type_alias_id;
         };
 
         let placeholder = TypeAliasDef {
+            span: SrcPos::default(),
             visibility: Visibility::Sec,
             name: name.clone(),
             generics: None,
-            type_id: Type::Unit.into(),
+            type_id: Type::Unit {
+                span: SrcPos::default(),
+            }
+            .into(),
         };
 
         let type_alias_def: TypeAliasDefId = placeholder.into();
@@ -302,6 +363,7 @@ impl SymbolTab {
         };
 
         let placeholder = StructDef {
+            span: SrcPos::default(),
             visibility: Visibility::Sec,
             attributes: BTreeSet::new(),
             name: name.clone(),
@@ -325,6 +387,7 @@ impl SymbolTab {
         };
 
         let placeholder = EnumDef {
+            span: SrcPos::default(),
             visibility: Visibility::Sec,
             attributes: BTreeSet::new(),
             name: name.clone(),

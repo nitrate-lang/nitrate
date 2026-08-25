@@ -54,7 +54,7 @@ fn test_float_scientific_notation_tokens() {
     // The lexer does NOT parse scientific notation as a single float.
     let toks = tokens_skipping_trivia("3.4028235e+38");
     assert_eq!(toks.len(), 4);
-    assert_eq!(toks[0].token, Token::Float(NotNan::new(3.4028235).unwrap()));
+    assert_eq!(toks[0].token, Token::Float(NotNan::new(3.402_823_5).unwrap()));
     assert_eq!(toks[1].token, Token::Name("e".into()));
     assert_eq!(toks[2].token, Token::Plus);
     assert_eq!(toks[3].token, Token::Integer(Integer::new(38, IntegerKind::Dec)));

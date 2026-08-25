@@ -124,6 +124,24 @@ impl ParseTreeIterMut for BinExpr {
     }
 }
 
+impl ParseTreeIterMut for Range {
+    fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
+        f(Order::Enter, RefNodeMut::ExprRange(self));
+
+        let _ = self.kind;
+
+        if let Some(start) = &mut self.start {
+            start.depth_first_iter_mut(f);
+        }
+
+        if let Some(end) = &mut self.end {
+            end.depth_first_iter_mut(f);
+        }
+
+        f(Order::Leave, RefNodeMut::ExprRange(self));
+    }
+}
+
 impl ParseTreeIterMut for Cast {
     fn depth_first_iter_mut(&mut self, f: &mut dyn FnMut(Order, RefNodeMut)) {
         f(Order::Enter, RefNodeMut::ExprCast(self));
@@ -454,6 +472,7 @@ impl ParseTreeIterMut for Expr {
             Expr::StructInit(e) => e.depth_first_iter_mut(f),
             Expr::UnaryExpr(e) => e.depth_first_iter_mut(f),
             Expr::BinExpr(e) => e.depth_first_iter_mut(f),
+            Expr::Range(e) => e.depth_first_iter_mut(f),
             Expr::Cast(e) => e.depth_first_iter_mut(f),
             Expr::Block(e) => e.depth_first_iter_mut(f),
             Expr::Closure(e) => e.depth_first_iter_mut(f),

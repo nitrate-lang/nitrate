@@ -10,7 +10,7 @@ fn qualify_name(scope: &[NString], name: &str) -> NString {
     let mut qualified = String::with_capacity(length);
 
     for module in scope {
-        qualified.push_str(&module);
+        qualified.push_str(module);
         qualified.push_str("::");
     }
 
@@ -28,7 +28,7 @@ fn enumerate_generics(
         scope_vec.push(name.clone());
 
         for generic in &generics.params {
-            let generic_name = qualify_name(&scope_vec, &generic.name);
+            let generic_name = qualify_name(scope_vec, &generic.name);
             symbol_map.insert(generic_name, SymbolKind::GenericParameter);
         }
 
@@ -77,6 +77,11 @@ pub fn discover_symbols(module: &mut Module) -> HashMap<NString, SymbolKind> {
                     enumerate_generics(&mut scope_vec, sym.name.clone(), &sym.generics, &mut symbol_map);
                 }
 
+                RefNode::ItemImpl(_impl_def) => {
+                    // No symbol to register for the impl block itself.
+                    // Methods inside are handled by ItemFunction when visited.
+                }
+
                 RefNode::ItemFuncParam(sym) => {
                     let name = qualify_name(&scope_vec, &sym.name);
                     symbol_map.insert(name, SymbolKind::Parameter);
@@ -103,6 +108,18 @@ pub fn discover_symbols(module: &mut Module) -> HashMap<NString, SymbolKind> {
             RefNode::ItemTrait(trait_def) => Some(trait_def.name.to_string().into()),
             RefNode::ItemFunction(function) => Some(function.name.to_string().into()),
             RefNode::ItemModule(module) => Some(module.name.clone()),
+            RefNode::ItemImpl(impl_def) => match &impl_def.for_type {
+                nitrate_tree::ast::Type::TypePath(type_path) => {
+                    let name = type_path
+                        .segments
+                        .iter()
+                        .map(|seg| seg.name.clone())
+                        .collect::<Vec<_>>()
+                        .join("::");
+                    Some(name.into())
+                }
+                _ => None,
+            },
             _ => None,
         };
 

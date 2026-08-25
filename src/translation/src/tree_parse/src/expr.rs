@@ -1,4 +1,5 @@
 use crate::diagnosis::SyntaxErr;
+use crate::helper::MAX_LIMIT;
 
 use super::parse::Parser;
 use nitrate_nstring::NString;
@@ -7,14 +8,174 @@ use nitrate_tree::ast::{
     AttributeList, Await, BStringLit, BinExpr, BinExprOp, Block, BlockItem, Bool, BooleanLit, Break, Cast, Closure,
     Continue, ElseIf, Expr, ExprParentheses, ExprPath, ExprPathSegment, ExprSyntaxError, FieldAccess, Float32, Float64,
     FloatLit, ForEach, FuncParam, FunctionCall, If, IndexAccess, Int8, Int16, Int32, Int64, Int128, IntegerLit, List,
-    LocalVariable, LocalVariableKind, MethodCall, Mutability, Return, Safety, StringLit, StructInit, Tuple, Type,
+    LocalVariable, LocalVariableKind, MethodCall, Range, RangeKind, Return, Safety, StringLit, StructInit, Tuple, Type,
     TypeArgument, TypeInfo, TypePath, TypePathSegment, UInt8, UInt16, UInt32, UInt64, UInt128, USize, UnaryExpr,
     UnaryExprOp, WhileLoop,
 };
+use nitrate_tree::{SrcPos, SrcSpan};
 
 type Precedence = u32;
 
+/// A single operator-pattern entry: a sequence of tokens to skip and the resulting `BinExprOp`.
+struct OpPattern {
+    tokens: &'static [Token],
+    op: BinExprOp,
+}
+
+/// All binary operator patterns, ordered so longer sequences are tried first.
+const BINOP_PATTERNS: &[OpPattern] = &[
+    // Three-token patterns (must come before two-token)
+    OpPattern {
+        tokens: &[Token::Lt, Token::Lt, Token::Lt, Token::Eq],
+        op: BinExprOp::SetBitRotl,
+    },
+    OpPattern {
+        tokens: &[Token::Gt, Token::Gt, Token::Gt, Token::Eq],
+        op: BinExprOp::SetBitRotr,
+    },
+    OpPattern {
+        tokens: &[Token::And, Token::And, Token::Eq],
+        op: BinExprOp::SetLogicAnd,
+    },
+    OpPattern {
+        tokens: &[Token::Or, Token::Or, Token::Eq],
+        op: BinExprOp::SetLogicOr,
+    },
+    OpPattern {
+        tokens: &[Token::Lt, Token::Lt, Token::Lt],
+        op: BinExprOp::BitRol,
+    },
+    OpPattern {
+        tokens: &[Token::Gt, Token::Gt, Token::Gt],
+        op: BinExprOp::BitRor,
+    },
+    // Two-token patterns
+    OpPattern {
+        tokens: &[Token::Bang, Token::Eq],
+        op: BinExprOp::SetLogicAnd,
+    }, // != is handled by ! alone below, this is for !=
+    OpPattern {
+        tokens: &[Token::Percent, Token::Eq],
+        op: BinExprOp::SetPercent,
+    },
+    OpPattern {
+        tokens: &[Token::And, Token::Eq],
+        op: BinExprOp::SetBitAnd,
+    },
+    OpPattern {
+        tokens: &[Token::And, Token::And],
+        op: BinExprOp::LogicAnd,
+    },
+    OpPattern {
+        tokens: &[Token::Star, Token::Eq],
+        op: BinExprOp::SetTimes,
+    },
+    OpPattern {
+        tokens: &[Token::Plus, Token::Eq],
+        op: BinExprOp::SetPlus,
+    },
+    OpPattern {
+        tokens: &[Token::Minus, Token::Eq],
+        op: BinExprOp::SetMinus,
+    },
+    OpPattern {
+        tokens: &[Token::Slash, Token::Eq],
+        op: BinExprOp::SetSlash,
+    },
+    OpPattern {
+        tokens: &[Token::Lt, Token::Lt, Token::Eq],
+        op: BinExprOp::SetBitShl,
+    },
+    OpPattern {
+        tokens: &[Token::Lt, Token::Lt],
+        op: BinExprOp::BitShl,
+    },
+    OpPattern {
+        tokens: &[Token::Lt, Token::Eq],
+        op: BinExprOp::LogicLe,
+    },
+    OpPattern {
+        tokens: &[Token::Eq, Token::Eq],
+        op: BinExprOp::LogicEq,
+    },
+    OpPattern {
+        tokens: &[Token::Gt, Token::Gt, Token::Eq],
+        op: BinExprOp::SetBitShr,
+    },
+    OpPattern {
+        tokens: &[Token::Gt, Token::Gt],
+        op: BinExprOp::BitShr,
+    },
+    OpPattern {
+        tokens: &[Token::Gt, Token::Eq],
+        op: BinExprOp::LogicGe,
+    },
+    OpPattern {
+        tokens: &[Token::Caret, Token::Eq],
+        op: BinExprOp::SetBitXor,
+    },
+    OpPattern {
+        tokens: &[Token::Or, Token::Eq],
+        op: BinExprOp::SetBitOr,
+    },
+    OpPattern {
+        tokens: &[Token::Or, Token::Or],
+        op: BinExprOp::LogicOr,
+    },
+    // Single-token patterns (try these last)
+    OpPattern {
+        tokens: &[Token::Bang],
+        op: BinExprOp::LogicNe,
+    },
+    OpPattern {
+        tokens: &[Token::Percent],
+        op: BinExprOp::Mod,
+    },
+    OpPattern {
+        tokens: &[Token::And],
+        op: BinExprOp::BitAnd,
+    },
+    OpPattern {
+        tokens: &[Token::Star],
+        op: BinExprOp::Mul,
+    },
+    OpPattern {
+        tokens: &[Token::Plus],
+        op: BinExprOp::Add,
+    },
+    OpPattern {
+        tokens: &[Token::Minus],
+        op: BinExprOp::Sub,
+    },
+    OpPattern {
+        tokens: &[Token::Slash],
+        op: BinExprOp::Div,
+    },
+    OpPattern {
+        tokens: &[Token::Eq],
+        op: BinExprOp::Set,
+    },
+    OpPattern {
+        tokens: &[Token::Caret],
+        op: BinExprOp::BitXor,
+    },
+    OpPattern {
+        tokens: &[Token::Or],
+        op: BinExprOp::BitOr,
+    },
+    OpPattern {
+        tokens: &[Token::Lt],
+        op: BinExprOp::LogicLt,
+    },
+    OpPattern {
+        tokens: &[Token::Gt],
+        op: BinExprOp::LogicGt,
+    },
+];
+
+/// Precedence levels in ascending order (lower = binds tighter).
 #[repr(u32)]
+#[derive(Clone, Copy)]
 enum PrecedenceRank {
     Assign,
     Range,
@@ -48,62 +209,35 @@ enum Operation {
 }
 
 fn get_precedence_of_binary_operator(op: BinExprOp) -> (Associativity, Precedence) {
+    use BinExprOp::*;
     let (associativity, precedence) = match op {
-        BinExprOp::Mul | BinExprOp::Div | BinExprOp::Mod => (Associativity::LeftToRight, PrecedenceRank::MulDivMod),
-
-        BinExprOp::Add | BinExprOp::Sub => (Associativity::LeftToRight, PrecedenceRank::AddSub),
-
-        BinExprOp::BitShl | BinExprOp::BitShr | BinExprOp::BitRol | BinExprOp::BitRor => {
-            (Associativity::LeftToRight, PrecedenceRank::BitShiftAndRotate)
+        Mul | Div | Mod => (Associativity::LeftToRight, PrecedenceRank::MulDivMod),
+        Add | Sub => (Associativity::LeftToRight, PrecedenceRank::AddSub),
+        BitShl | BitShr | BitRol | BitRor => (Associativity::LeftToRight, PrecedenceRank::BitShiftAndRotate),
+        BitAnd => (Associativity::LeftToRight, PrecedenceRank::BitAnd),
+        BitXor => (Associativity::LeftToRight, PrecedenceRank::BitXor),
+        BitOr => (Associativity::LeftToRight, PrecedenceRank::BitOr),
+        LogicEq | LogicNe | LogicLt | LogicGt | LogicLe | LogicGe => {
+            (Associativity::LeftToRight, PrecedenceRank::Comparison)
         }
-
-        BinExprOp::BitAnd => (Associativity::LeftToRight, PrecedenceRank::BitAnd),
-        BinExprOp::BitXor => (Associativity::LeftToRight, PrecedenceRank::BitXor),
-        BinExprOp::BitOr => (Associativity::LeftToRight, PrecedenceRank::BitOr),
-
-        BinExprOp::LogicEq
-        | BinExprOp::LogicNe
-        | BinExprOp::LogicLt
-        | BinExprOp::LogicGt
-        | BinExprOp::LogicLe
-        | BinExprOp::LogicGe => (Associativity::LeftToRight, PrecedenceRank::Comparison),
-
-        BinExprOp::LogicAnd => (Associativity::LeftToRight, PrecedenceRank::LogicAnd),
-        BinExprOp::LogicOr => (Associativity::LeftToRight, PrecedenceRank::LogicOr),
-
-        BinExprOp::Range => (Associativity::LeftToRight, PrecedenceRank::Range),
-
-        BinExprOp::Set
-        | BinExprOp::SetPlus
-        | BinExprOp::SetMinus
-        | BinExprOp::SetTimes
-        | BinExprOp::SetSlash
-        | BinExprOp::SetPercent
-        | BinExprOp::SetBitAnd
-        | BinExprOp::SetBitOr
-        | BinExprOp::SetBitXor
-        | BinExprOp::SetBitShl
-        | BinExprOp::SetBitShr
-        | BinExprOp::SetBitRotl
-        | BinExprOp::SetBitRotr
-        | BinExprOp::SetLogicAnd
-        | BinExprOp::SetLogicOr => (Associativity::RightToLeft, PrecedenceRank::Assign),
+        LogicAnd => (Associativity::LeftToRight, PrecedenceRank::LogicAnd),
+        LogicOr => (Associativity::LeftToRight, PrecedenceRank::LogicOr),
+        Set | SetPlus | SetMinus | SetTimes | SetSlash | SetPercent | SetBitAnd | SetBitOr | SetBitXor | SetBitShl
+        | SetBitShr | SetBitRotl | SetBitRotr | SetLogicAnd | SetLogicOr => {
+            (Associativity::RightToLeft, PrecedenceRank::Assign)
+        }
     };
-
     (associativity, precedence as Precedence)
 }
 
 fn get_precedence(operation: Operation) -> (Associativity, Precedence) {
     match operation {
         Operation::BinOp(op) => get_precedence_of_binary_operator(op),
-
         Operation::FunctionCall | Operation::Index => (
             Associativity::LeftToRight,
             PrecedenceRank::FunctionCallAndIndexing as Precedence,
         ),
-
         Operation::Cast => (Associativity::LeftToRight, PrecedenceRank::Cast as Precedence),
-
         Operation::FieldAccessOrMethodCall => (Associativity::LeftToRight, PrecedenceRank::FieldAccess as Precedence),
     }
 }
@@ -145,220 +279,123 @@ impl Parser<'_, '_> {
         }
     }
 
+    /// Tries to match a binary operator pattern starting at the current lexer position.
+    /// Returns `None` without advancing the lexer if no pattern matches.
     fn detect_and_parse_binary_operator(&mut self) -> Option<BinExprOp> {
-        let rewind = self.lexer.current_pos();
-
-        let result = match self.lexer.peek_tok().token {
-            Token::Bang => {
-                self.lexer.skip_tok();
-                Some(BinExprOp::LogicNe)
+        for pattern in BINOP_PATTERNS {
+            // Quick reject: check the first token without advancing
+            if self.lexer.peek_tok().token != pattern.tokens[0] {
+                continue;
             }
 
-            Token::Percent => {
-                self.lexer.skip_tok();
-                if self.lexer.skip_if(&Token::Eq) {
-                    Some(BinExprOp::SetPercent)
-                } else {
-                    Some(BinExprOp::Mod)
+            let saved = self.lexer.current_pos();
+
+            // Try the full sequence
+            let mut matched = true;
+            for tok in pattern.tokens {
+                if !self.lexer.skip_if(tok) {
+                    matched = false;
+                    break;
                 }
             }
 
-            Token::And => {
-                self.lexer.skip_tok();
-                if self.lexer.skip_if(&Token::And) {
-                    if self.lexer.skip_if(&Token::Eq) {
-                        Some(BinExprOp::SetLogicAnd)
-                    } else {
-                        Some(BinExprOp::LogicAnd)
-                    }
-                } else if self.lexer.skip_if(&Token::Eq) {
-                    Some(BinExprOp::SetBitAnd)
-                } else {
-                    Some(BinExprOp::BitAnd)
-                }
+            if matched {
+                return Some(pattern.op);
             }
 
-            Token::Star => {
-                self.lexer.skip_tok();
-                if self.lexer.skip_if(&Token::Eq) {
-                    Some(BinExprOp::SetTimes)
-                } else {
-                    Some(BinExprOp::Mul)
-                }
-            }
-
-            Token::Plus => {
-                self.lexer.skip_tok();
-                if self.lexer.skip_if(&Token::Eq) {
-                    Some(BinExprOp::SetPlus)
-                } else {
-                    Some(BinExprOp::Add)
-                }
-            }
-
-            Token::Minus => {
-                self.lexer.skip_tok();
-                if self.lexer.skip_if(&Token::Eq) {
-                    Some(BinExprOp::SetMinus)
-                } else {
-                    Some(BinExprOp::Sub)
-                }
-            }
-
-            Token::Dot => {
-                self.lexer.skip_tok();
-                if self.lexer.skip_if(&Token::Dot) {
-                    Some(BinExprOp::Range)
-                } else {
-                    None
-                }
-            }
-
-            Token::Slash => {
-                self.lexer.skip_tok();
-                if self.lexer.skip_if(&Token::Eq) {
-                    Some(BinExprOp::SetSlash)
-                } else {
-                    Some(BinExprOp::Div)
-                }
-            }
-
-            Token::Lt => {
-                self.lexer.skip_tok();
-                if self.lexer.skip_if(&Token::Lt) {
-                    if self.lexer.skip_if(&Token::Lt) {
-                        if self.lexer.skip_if(&Token::Eq) {
-                            Some(BinExprOp::SetBitRotl)
-                        } else {
-                            Some(BinExprOp::BitRol)
-                        }
-                    } else if self.lexer.skip_if(&Token::Eq) {
-                        Some(BinExprOp::SetBitShl)
-                    } else {
-                        Some(BinExprOp::BitShl)
-                    }
-                } else if self.lexer.skip_if(&Token::Eq) {
-                    Some(BinExprOp::LogicLe)
-                } else {
-                    Some(BinExprOp::LogicLt)
-                }
-            }
-
-            Token::Eq => {
-                self.lexer.skip_tok();
-                if self.lexer.skip_if(&Token::Eq) {
-                    Some(BinExprOp::LogicEq)
-                } else {
-                    Some(BinExprOp::Set)
-                }
-            }
-
-            Token::Gt => {
-                self.lexer.skip_tok();
-                if self.lexer.skip_if(&Token::Gt) {
-                    if self.lexer.skip_if(&Token::Gt) {
-                        if self.lexer.skip_if(&Token::Eq) {
-                            Some(BinExprOp::SetBitRotr)
-                        } else {
-                            Some(BinExprOp::BitRor)
-                        }
-                    } else if self.lexer.skip_if(&Token::Eq) {
-                        Some(BinExprOp::SetBitShr)
-                    } else {
-                        Some(BinExprOp::BitShr)
-                    }
-                } else if self.lexer.skip_if(&Token::Eq) {
-                    Some(BinExprOp::LogicGe)
-                } else {
-                    Some(BinExprOp::LogicGt)
-                }
-            }
-
-            Token::Caret => {
-                self.lexer.skip_tok();
-                if self.lexer.skip_if(&Token::Eq) {
-                    Some(BinExprOp::SetBitXor)
-                } else {
-                    Some(BinExprOp::BitXor)
-                }
-            }
-
-            Token::Or => {
-                self.lexer.skip_tok();
-                if self.lexer.skip_if(&Token::Eq) {
-                    Some(BinExprOp::SetBitOr)
-                } else if self.lexer.skip_if(&Token::Or) {
-                    if self.lexer.skip_if(&Token::Eq) {
-                        Some(BinExprOp::SetLogicOr)
-                    } else {
-                        Some(BinExprOp::LogicOr)
-                    }
-                } else {
-                    Some(BinExprOp::BitOr)
-                }
-            }
-
-            _ => None,
-        };
-
-        if result.is_none() {
-            self.lexer.rewind(rewind);
+            // Rewind to try next pattern - clone to avoid move issues
+            self.lexer.rewind(saved.clone());
         }
 
-        result
+        None
     }
 
     fn parse_expression_primary(&mut self) -> Expr {
         match self.lexer.peek_tok().token {
             Token::Integer(int) => {
+                let token_start = self.lexer.peek_pos();
                 self.lexer.skip_tok();
+                let token_end = self.lexer.current_pos();
                 self.parse_literal_suffix(Expr::Integer(Box::new(IntegerLit {
+                    span: SrcSpan::new(token_start, token_end),
                     value: int.value(),
                     kind: int.kind(),
                 })))
             }
 
             Token::Float(value) => {
+                let token_start = self.lexer.peek_pos();
                 self.lexer.skip_tok();
-                self.parse_literal_suffix(Expr::Float(FloatLit { value }))
+                let token_end = self.lexer.current_pos();
+                self.parse_literal_suffix(Expr::Float(FloatLit {
+                    span: SrcSpan::new(token_start, token_end),
+                    value,
+                }))
             }
 
             Token::String(string) => {
+                let token_start = self.lexer.peek_pos();
                 self.lexer.skip_tok();
-                self.parse_literal_suffix(Expr::String(StringLit { value: string }))
+                let token_end = self.lexer.current_pos();
+                self.parse_literal_suffix(Expr::String(StringLit {
+                    span: SrcSpan::new(token_start, token_end),
+                    value: string,
+                }))
             }
 
             Token::BString(data) => {
+                let token_start = self.lexer.peek_pos();
                 self.lexer.skip_tok();
-                self.parse_literal_suffix(Expr::BString(Box::new(BStringLit { value: data })))
+                let token_end = self.lexer.current_pos();
+                self.parse_literal_suffix(Expr::BString(Box::new(BStringLit {
+                    span: SrcSpan::new(token_start, token_end),
+                    value: data,
+                })))
             }
 
             Token::True => {
+                let token_start = self.lexer.peek_pos();
                 self.lexer.skip_tok();
-                Expr::Boolean(BooleanLit { value: true })
+                let token_end = self.lexer.current_pos();
+                Expr::Boolean(BooleanLit {
+                    span: SrcSpan::new(token_start, token_end),
+                    value: true,
+                })
             }
 
             Token::False => {
+                let token_start = self.lexer.peek_pos();
                 self.lexer.skip_tok();
-                Expr::Boolean(BooleanLit { value: false })
+                let token_end = self.lexer.current_pos();
+                Expr::Boolean(BooleanLit {
+                    span: SrcSpan::new(token_start, token_end),
+                    value: false,
+                })
             }
 
             Token::OpenBracket => Expr::List(Box::new(self.parse_list())),
 
-            Token::Name(_) | Token::Colon => {
+            Token::Name(_) | Token::Colon | Token::SelfKeyword => {
                 let path = self.parse_path();
-                if self.lexer.next_is(&Token::OpenBrace) {
+                if self.lexer.next_is(&Token::OpenBrace) && self.peek_is_struct_field_start() {
                     Expr::StructInit(Box::new(self.parse_struct_object(path)))
                 } else {
                     Expr::Path(Box::new(path))
                 }
             }
 
-            Token::Type => Expr::TypeInfo(Box::new(TypeInfo {
-                the: self.parse_type_info(),
-            })),
+            Token::Type => {
+                let token_start = self.lexer.peek_pos();
+                let the = self.parse_type_info();
+                let token_end = self.lexer.current_pos();
+                Expr::TypeInfo(Box::new(TypeInfo {
+                    span: SrcSpan::new(token_start, token_end),
+                    the,
+                }))
+            }
 
-            Token::Fn | Token::OpenBrace | Token::Unsafe | Token::Safe => Expr::Closure(Box::new(self.parse_closure())),
+            Token::Fn => Expr::Closure(Box::new(self.parse_closure())),
+            Token::OpenBrace | Token::Unsafe | Token::Safe => Expr::Block(Box::new(self.parse_block())),
 
             Token::If => Expr::If(Box::new(self.parse_if())),
             Token::For => Expr::For(Box::new(self.parse_for())),
@@ -370,13 +407,49 @@ impl Parser<'_, '_> {
             Token::Await => Expr::Await(Box::new(self.parse_await())),
 
             _ => {
+                let err_pos = self.lexer.peek_pos();
                 self.lexer.skip_tok();
 
                 let bug = SyntaxErr::ExpectedExpr(self.lexer.peek_pos());
                 self.log.report(&bug);
 
-                Expr::SyntaxError(ExprSyntaxError)
+                Expr::SyntaxError(ExprSyntaxError {
+                    span: SrcSpan::new(err_pos, self.lexer.current_pos()),
+                })
             }
+        }
+    }
+
+    /// Check if the current peeked token can start an expression.
+    /// Used to decide between `..` (RangeFull) and `..expr` (RangeTo) after
+    /// the `..` token.
+    fn peek_is_expr_start(&mut self) -> bool {
+        match self.lexer.peek_tok().token {
+            Token::Integer(_)
+            | Token::Float(_)
+            | Token::String(_)
+            | Token::BString(_)
+            | Token::True
+            | Token::False
+            | Token::OpenBracket
+            | Token::OpenParen
+            | Token::Name(_)
+            | Token::Colon
+            | Token::SelfKeyword
+            | Token::Type
+            | Token::Fn
+            | Token::OpenBrace
+            | Token::Unsafe
+            | Token::Safe
+            | Token::If
+            | Token::For
+            | Token::While
+            | Token::Break
+            | Token::Continue
+            | Token::Ret
+            | Token::Await
+            | Token::Dot => true,
+            _ => false,
         }
     }
 
@@ -385,23 +458,71 @@ impl Parser<'_, '_> {
             let precedence = PrecedenceRank::Unary as Precedence;
             let operand = self.parse_expression_precedence(precedence);
 
-            return Expr::UnaryExpr(Box::new(UnaryExpr { operator, operand }));
+            return Expr::UnaryExpr(Box::new(UnaryExpr {
+                span: SrcSpan::new(operand.span().start, operand.span().end),
+                operator,
+                operand,
+            }));
         }
 
+        // Range start expressions: `..`, `..expr`, `..=expr`
+        let saved = self.lexer.current_pos();
+        if self.lexer.skip_if(&Token::Dot) && self.lexer.skip_if(&Token::Dot) {
+            let inclusive = self.lexer.skip_if(&Token::Eq);
+            if inclusive {
+                // `..=expr`
+                let end = self.parse_expression_precedence(PrecedenceRank::Range as Precedence + 1);
+                let end_span = end.span().end;
+                return Expr::Range(Box::new(Range {
+                    span: SrcSpan::new(saved, end_span),
+                    kind: RangeKind::RangeToInclusive,
+                    start: None,
+                    end: Some(Box::new(end)),
+                }));
+            }
+            // `..` or `..expr`
+            if self.peek_is_expr_start() {
+                let end = self.parse_expression_precedence(PrecedenceRank::Range as Precedence + 1);
+                let end_span = end.span().end;
+                return Expr::Range(Box::new(Range {
+                    span: SrcSpan::new(saved, end_span),
+                    kind: RangeKind::RangeTo,
+                    start: None,
+                    end: Some(Box::new(end)),
+                }));
+            }
+            // `..` with no end — RangeFull
+            let dot_end = self.lexer.current_pos();
+            return Expr::Range(Box::new(Range {
+                span: SrcSpan::new(saved, dot_end),
+                kind: RangeKind::RangeFull,
+                start: None,
+                end: None,
+            }));
+        }
+        // Not a range — rewind and continue
+        self.lexer.rewind(saved);
+
         if self.lexer.skip_if(&Token::OpenParen) {
+            let paren_start = self.lexer.current_pos();
             if self.lexer.skip_if(&Token::CloseParen) {
-                return Expr::Tuple(Box::new(Tuple { elements: vec![] }));
+                let paren_end = self.lexer.current_pos();
+                return Expr::Tuple(Box::new(Tuple {
+                    span: SrcSpan::new(paren_start, paren_end),
+                    elements: vec![],
+                }));
             }
 
             let inner = self.parse_expression();
 
             if !self.lexer.skip_if(&Token::Comma) {
-                if !self.lexer.skip_if(&Token::CloseParen) {
-                    let bug = SyntaxErr::ExpectedCloseParen(self.lexer.peek_pos());
-                    self.log.report(&bug);
-                }
+                self.expect_close_paren();
+                let end = self.lexer.current_pos();
 
-                return Expr::Parentheses(Box::new(ExprParentheses { inner }));
+                return Expr::Parentheses(Box::new(ExprParentheses {
+                    span: SrcSpan::new(paren_start, end),
+                    inner,
+                }));
             }
 
             let mut tuple_elements = vec![inner];
@@ -425,7 +546,10 @@ impl Parser<'_, '_> {
                 }
             }
 
+            let paren_end = self.lexer.current_pos();
+
             return Expr::Tuple(Box::new(Tuple {
+                span: SrcSpan::new(paren_start, paren_end),
                 elements: tuple_elements,
             }));
         }
@@ -453,7 +577,10 @@ impl Parser<'_, '_> {
                     self.parse_expression_precedence(op_precedence)
                 };
 
+                let left_start = sofar.span().start;
+                let right_end = right_expr.span().end;
                 sofar = Expr::BinExpr(Box::new(BinExpr {
+                    span: SrcSpan::new(left_start, right_end),
                     left: sofar,
                     operator,
                     right: right_expr,
@@ -461,6 +588,56 @@ impl Parser<'_, '_> {
             } else {
                 match self.lexer.peek_tok().token {
                     Token::Dot => {
+                        // Check if this is a range operator: `..` or `..=`
+                        // We just saw one Dot. Save position, then check for another.
+                        let saved_dot = self.lexer.current_pos();
+                        self.lexer.skip_tok(); // consume first Dot
+
+                        if self.lexer.skip_if(&Token::Dot) {
+                            // We have `..` — this is a range infix operator
+                            let range_precedence = PrecedenceRank::Range as Precedence;
+                            if range_precedence < min_precedence_to_proceed {
+                                // Rewind both dots and return
+                                self.lexer.rewind(saved_dot.clone());
+                                return sofar;
+                            }
+
+                            let inclusive = self.lexer.skip_if(&Token::Eq);
+                            let start_span = sofar.span().start;
+
+                            if inclusive || self.peek_is_expr_start() {
+                                // `expr..expr` (Range) or `expr..=expr` (RangeInclusive)
+                                let end = self.parse_expression_precedence(range_precedence + 1);
+                                let end_span = end.span().end;
+
+                                let kind = if inclusive {
+                                    RangeKind::RangeInclusive
+                                } else {
+                                    RangeKind::Range
+                                };
+
+                                sofar = Expr::Range(Box::new(Range {
+                                    span: SrcSpan::new(start_span, end_span),
+                                    kind,
+                                    start: Some(Box::new(sofar)),
+                                    end: Some(Box::new(end)),
+                                }));
+                            } else {
+                                // `expr..` (RangeFrom)
+                                let end_span = self.lexer.current_pos();
+
+                                sofar = Expr::Range(Box::new(Range {
+                                    span: SrcSpan::new(start_span, end_span),
+                                    kind: RangeKind::RangeFrom,
+                                    start: Some(Box::new(sofar)),
+                                    end: None,
+                                }));
+                            }
+
+                            continue;
+                        }
+
+                        // Not a range — it's a single Dot: field access or method call
                         let operation = Operation::FieldAccessOrMethodCall;
                         let (_, new_precedence) = get_precedence(operation);
 
@@ -468,18 +645,22 @@ impl Parser<'_, '_> {
                             return sofar;
                         }
 
-                        self.lexer.skip_tok();
-
-                        let member_name = self.lexer.next_if_name().unwrap_or_else(|| {
-                            let bug = SyntaxErr::ExpectedFieldOrMethodName(self.lexer.peek_pos());
-                            self.log.report(&bug);
-                            "".into()
-                        });
+                        // Already consumed the single Dot above
+                        let err = SyntaxErr::ExpectedFieldOrMethodName(self.lexer.peek_pos());
+                        let member_name = self.parse_string_name(err);
+                        let member_name_end = self.lexer.current_pos();
 
                         if self.lexer.next_is(&Token::OpenParen) {
                             let (positional, named) = self.parse_function_call_arguments();
+                            let object_start = sofar.span().start;
+                            let last_arg_end = named
+                                .last()
+                                .map(|(_, e)| e.span().end)
+                                .or_else(|| positional.last().map(|e| e.span().end))
+                                .unwrap_or(SrcPos::default());
 
                             sofar = Expr::MethodCall(Box::new(MethodCall {
+                                span: SrcSpan::new(object_start, last_arg_end),
                                 object: sofar,
                                 method_name: member_name,
                                 positional,
@@ -488,7 +669,9 @@ impl Parser<'_, '_> {
 
                             continue;
                         } else {
+                            let object_start = sofar.span().start;
                             sofar = Expr::FieldAccess(Box::new(FieldAccess {
+                                span: SrcSpan::new(object_start, member_name_end),
                                 object: sofar,
                                 field: member_name,
                             }))
@@ -506,8 +689,14 @@ impl Parser<'_, '_> {
                         self.lexer.skip_tok();
 
                         let to = self.parse_type();
+                        let value_start = sofar.span().start;
+                        let to_end = to.span().end;
 
-                        sofar = Expr::Cast(Box::new(Cast { value: sofar, to }));
+                        sofar = Expr::Cast(Box::new(Cast {
+                            span: SrcSpan::new(value_start, to_end),
+                            value: sofar,
+                            to,
+                        }));
                     }
 
                     Token::OpenParen => {
@@ -519,8 +708,15 @@ impl Parser<'_, '_> {
                         }
 
                         let (positional, named) = self.parse_function_call_arguments();
+                        let callee_start = sofar.span().start;
+                        let last_arg_end = named
+                            .last()
+                            .map(|(_, e)| e.span().end)
+                            .or_else(|| positional.last().map(|e| e.span().end))
+                            .unwrap_or_else(|| SrcPos::default());
 
                         sofar = Expr::FunctionCall(Box::new(FunctionCall {
+                            span: SrcSpan::new(callee_start, last_arg_end),
                             callee: sofar,
                             positional,
                             named,
@@ -539,12 +735,13 @@ impl Parser<'_, '_> {
 
                         let index = self.parse_expression();
 
-                        if !self.lexer.skip_if(&Token::CloseBracket) {
-                            let bug = SyntaxErr::ExpectedCloseBracket(self.lexer.peek_pos());
-                            self.log.report(&bug);
-                        }
+                        self.expect_close_bracket();
+
+                        let collection_start = sofar.span().start;
+                        let index_end = self.lexer.current_pos();
 
                         sofar = Expr::IndexAccess(Box::new(IndexAccess {
+                            span: SrcSpan::new(collection_start, index_end),
                             collection: sofar,
                             index,
                         }));
@@ -560,77 +757,85 @@ impl Parser<'_, '_> {
 
     fn parse_literal_suffix(&mut self, value: Expr) -> Expr {
         let suffix = match self.lexer.peek_tok().token {
-            Token::Bool => Type::Bool(Bool {}),
-            Token::U8 => Type::UInt8(UInt8 {}),
-            Token::U16 => Type::UInt16(UInt16 {}),
-            Token::U32 => Type::UInt32(UInt32 {}),
-            Token::U64 => Type::UInt64(UInt64 {}),
-            Token::U128 => Type::UInt128(UInt128 {}),
-            Token::USize => Type::USize(USize {}),
-            Token::I8 => Type::Int8(Int8 {}),
-            Token::I16 => Type::Int16(Int16 {}),
-            Token::I32 => Type::Int32(Int32 {}),
-            Token::I64 => Type::Int64(Int64 {}),
-            Token::I128 => Type::Int128(Int128 {}),
+            Token::Bool => Type::Bool(Bool::default()),
+            Token::U8 => Type::UInt8(UInt8::default()),
+            Token::U16 => Type::UInt16(UInt16::default()),
+            Token::U32 => Type::UInt32(UInt32::default()),
+            Token::U64 => Type::UInt64(UInt64::default()),
+            Token::U128 => Type::UInt128(UInt128::default()),
+            Token::USize => Type::USize(USize::default()),
+            Token::I8 => Type::Int8(Int8::default()),
+            Token::I16 => Type::Int16(Int16::default()),
+            Token::I32 => Type::Int32(Int32::default()),
+            Token::I64 => Type::Int64(Int64::default()),
+            Token::I128 => Type::Int128(Int128::default()),
             Token::F8 => Type::TypePath(Box::new(self.create_type_path("f8".to_string()))),
             Token::F16 => Type::TypePath(Box::new(self.create_type_path("f16".to_string()))),
-            Token::F32 => Type::Float32(Float32 {}),
-            Token::F64 => Type::Float64(Float64 {}),
+            Token::F32 => Type::Float32(Float32::default()),
+            Token::F64 => Type::Float64(Float64::default()),
             Token::F128 => Type::TypePath(Box::new(self.create_type_path("f128".to_string()))),
 
-            Token::Name(name) => Type::TypePath(Box::new(TypePath {
-                segments: vec![TypePathSegment {
-                    name: name,
-                    type_arguments: None,
-                }],
-                resolved_path: None,
-            })),
+            Token::Name(name) => {
+                let name_start = self.lexer.peek_pos();
+                let path = Type::TypePath(Box::new(TypePath {
+                    span: SrcSpan::new(name_start, name_start), // will be updated after skip
+                    segments: vec![TypePathSegment {
+                        span: SrcSpan::new(name_start, name_start),
+                        name,
+                        type_arguments: None,
+                    }],
+                    resolved_path: None,
+                }));
+                self.lexer.skip_tok();
+                let name_end = self.lexer.current_pos();
+                // Update the path with proper end offset
+                let mut updated_path = path;
+                if let Type::TypePath(ref mut tp) = updated_path {
+                    tp.span = SrcSpan::new(name_start, name_end);
+                    if let Some(seg) = tp.segments.first_mut() {
+                        seg.span = SrcSpan::new(name_start, name_end);
+                    }
+                }
+                return Expr::Cast(Box::new(Cast {
+                    span: SrcSpan::new(name_start, name_end),
+                    value,
+                    to: updated_path,
+                }));
+            }
 
             _ => return value,
         };
 
         self.lexer.skip_tok();
+        let suffix_end = self.lexer.current_pos();
 
-        Expr::Cast(Box::new(Cast { value, to: suffix }))
+        Expr::Cast(Box::new(Cast {
+            span: SrcSpan::new(value.span().start, suffix_end),
+            value,
+            to: suffix,
+        }))
     }
 
     fn parse_list(&mut self) -> List {
+        let bracket_start = self.lexer.peek_pos();
         assert!(self.lexer.peek_tok().token == Token::OpenBracket);
         self.lexer.skip_tok();
 
-        let mut elements = Vec::new();
-        let mut already_reported_too_many_elements = false;
+        let eof = SyntaxErr::ListExpectedEnd(self.lexer.peek_pos());
+        let limit = SyntaxErr::ListElementLimit(self.lexer.peek_pos());
+        let end = SyntaxErr::ListExpectedEnd(self.lexer.peek_pos());
 
-        self.lexer.skip_if(&Token::Comma);
+        let elements =
+            self.parse_comma_separated_list(&Token::CloseBracket, MAX_LIMIT, true, eof, limit, end, |this| {
+                this.parse_expression()
+            });
 
-        while !self.lexer.skip_if(&Token::CloseBracket) {
-            if self.lexer.is_eof() {
-                let bug = SyntaxErr::ListExpectedEnd(self.lexer.peek_pos());
-                self.log.report(&bug);
-                break;
-            }
+        let bracket_end = self.lexer.current_pos();
 
-            const MAX_LIST_ELEMENTS: usize = 65_536;
-
-            if !already_reported_too_many_elements && elements.len() >= MAX_LIST_ELEMENTS {
-                already_reported_too_many_elements = true;
-
-                let bug = SyntaxErr::ListElementLimit(self.lexer.peek_pos());
-                self.log.report(&bug);
-            }
-
-            let element = self.parse_expression();
-            elements.push(element);
-
-            if !self.lexer.skip_if(&Token::Comma) && !self.lexer.next_is(&Token::CloseBracket) {
-                let bug = SyntaxErr::ListExpectedEnd(self.lexer.peek_pos());
-                self.log.report(&bug);
-                self.lexer.skip_while(&Token::CloseBracket);
-                break;
-            }
+        List {
+            span: SrcSpan::new(bracket_start, bracket_end),
+            elements,
         }
-
-        List { elements }
     }
 
     pub(crate) fn parse_attributes(&mut self) -> Option<AttributeList> {
@@ -638,33 +843,23 @@ impl Parser<'_, '_> {
         let mut already_reported_too_many_attributes = false;
 
         while self.lexer.skip_if(&Token::OpenBracket) {
-            self.lexer.skip_if(&Token::Comma);
+            let eof = SyntaxErr::AttributesExpectedEnd(self.lexer.peek_pos());
+            let limit = SyntaxErr::AttributesElementLimit(self.lexer.peek_pos());
+            let end = SyntaxErr::AttributesExpectedEnd(self.lexer.peek_pos());
 
-            while !self.lexer.skip_if(&Token::CloseBracket) {
-                if self.lexer.is_eof() {
-                    let bug = SyntaxErr::AttributesExpectedEnd(self.lexer.peek_pos());
-                    self.log.report(&bug);
-                    break;
-                }
+            let inner =
+                self.parse_comma_separated_list(&Token::CloseBracket, MAX_LIMIT, true, eof, limit, end, |this| {
+                    this.parse_expression()
+                });
 
-                const MAX_ATTRIBUTES: usize = 65_536;
-
-                if !already_reported_too_many_attributes && elements.len() >= MAX_ATTRIBUTES {
-                    already_reported_too_many_attributes = true;
-
-                    let bug = SyntaxErr::AttributesElementLimit(self.lexer.peek_pos());
-                    self.log.report(&bug);
-                }
-
-                let attrib = self.parse_expression();
-                elements.push(attrib);
-
-                if !self.lexer.skip_if(&Token::Comma) && !self.lexer.next_is(&Token::CloseBracket) {
-                    let bug = SyntaxErr::AttributesExpectedEnd(self.lexer.peek_pos());
-                    self.log.report(&bug);
-                    break;
-                }
+            let total = elements.len() + inner.len();
+            if !already_reported_too_many_attributes && total > MAX_LIMIT {
+                already_reported_too_many_attributes = true;
+                let bug = SyntaxErr::AttributesElementLimit(self.lexer.peek_pos());
+                self.log.report(&bug);
             }
+
+            elements.extend(inner);
         }
 
         if elements.is_empty() { None } else { Some(elements) }
@@ -683,81 +878,52 @@ impl Parser<'_, '_> {
                 }
             }
 
+            let name_or_type_start = this.lexer.peek_pos();
             let value = this.parse_type();
+            let type_end = this.lexer.current_pos();
 
-            TypeArgument { name, value }
+            TypeArgument {
+                span: SrcSpan::new(name_or_type_start, type_end),
+                name,
+                value,
+            }
         }
 
         if !self.lexer.skip_if(&Token::Lt) {
             return None;
         }
 
-        let mut arguments = Vec::new();
-        let mut already_reported_too_many_arguments = false;
+        let eof = SyntaxErr::PathGenericArgumentExpectedEnd(self.lexer.peek_pos());
+        let limit = SyntaxErr::PathGenericArgumentLimit(self.lexer.peek_pos());
+        let end = SyntaxErr::ExpectedCloseAngle(self.lexer.peek_pos());
 
-        self.lexer.skip_if(&Token::Comma);
-
-        while !self.lexer.skip_if(&Token::Gt) {
-            if self.lexer.is_eof() {
-                let bug = SyntaxErr::PathGenericArgumentExpectedEnd(self.lexer.peek_pos());
-                self.log.report(&bug);
-                break;
-            }
-
-            const MAX_GENERIC_ARGUMENTS: usize = 65_536;
-
-            if !already_reported_too_many_arguments && arguments.len() >= MAX_GENERIC_ARGUMENTS {
-                already_reported_too_many_arguments = true;
-
-                let bug = SyntaxErr::PathGenericArgumentLimit(self.lexer.peek_pos());
-                self.log.report(&bug);
-            }
-
-            let argument = parse_generic_argument(self);
-            arguments.push(argument);
-
-            if !self.lexer.skip_if(&Token::Comma) && !self.lexer.next_is(&Token::Gt) {
-                let bug = SyntaxErr::ExpectedCloseAngle(self.lexer.peek_pos());
-                self.log.report(&bug);
-
-                self.lexer.skip_while(&Token::Gt);
-                break;
-            }
-        }
+        let arguments =
+            self.parse_comma_separated_list(&Token::Gt, MAX_LIMIT, true, eof, limit, end, parse_generic_argument);
 
         Some(arguments)
     }
 
     pub(crate) fn parse_path(&mut self) -> ExprPath {
-        fn parse_double_colon(this: &mut Parser) -> bool {
-            if !this.lexer.skip_if(&Token::Colon) {
-                return false;
-            }
-
-            if !this.lexer.skip_if(&Token::Colon) {
-                let bug = SyntaxErr::ExpectedColon(this.lexer.peek_pos());
-                this.log.report(&bug);
-                return false;
-            }
-
-            true
-        }
-
-        assert!(matches!(self.lexer.peek_tok().token, Token::Name(_) | Token::Colon));
+        assert!(matches!(
+            self.lexer.peek_tok().token,
+            Token::Name(_) | Token::Colon | Token::SelfKeyword
+        ));
 
         let mut segments = Vec::new();
         let mut prev_scope = false;
         let mut already_reported_too_many_segments = false;
 
-        if parse_double_colon(self) {
+        if self.parse_double_colon() {
             prev_scope = true;
+            let segment_start = self.lexer.peek_pos();
 
             let type_arguments = self.parse_generic_arguments();
             if type_arguments.is_some() {
-                prev_scope = parse_double_colon(self);
+                prev_scope = self.parse_double_colon();
             }
 
             segments.push(ExprPathSegment {
+                span: SrcSpan::new(segment_start, self.lexer.current_pos()),
                 name: "".into(),
                 type_arguments,
             });
@@ -770,34 +936,37 @@ impl Parser<'_, '_> {
                 break;
             }
 
-            const MAX_PATH_SEGMENTS: usize = 65_536;
-            if !already_reported_too_many_segments && segments.len() >= MAX_PATH_SEGMENTS {
+            if !already_reported_too_many_segments && segments.len() >= MAX_LIMIT {
                 already_reported_too_many_segments = true;
 
                 let bug = SyntaxErr::PathSegmentLimit(self.lexer.peek_pos());
                 self.log.report(&bug);
             }
 
+            let name_start = self.lexer.peek_pos();
             let Some(identifier) = self.lexer.next_if_name() else {
                 let bug = SyntaxErr::PathExpectedName(self.lexer.peek_pos());
                 self.log.report(&bug);
                 break;
             };
+            let name_end = self.lexer.current_pos();
 
-            prev_scope = parse_double_colon(self);
+            prev_scope = self.parse_double_colon();
 
             if prev_scope {
                 let type_arguments = self.parse_generic_arguments();
                 if type_arguments.is_some() {
-                    prev_scope = parse_double_colon(self);
+                    prev_scope = self.parse_double_colon();
                 }
 
                 segments.push(ExprPathSegment {
+                    span: SrcSpan::new(name_start, name_end),
                     name: identifier,
                     type_arguments,
                 });
             } else {
                 segments.push(ExprPathSegment {
+                    span: SrcSpan::new(name_start, name_end),
                     name: identifier,
                     type_arguments: None,
                 });
@@ -806,13 +975,18 @@ impl Parser<'_, '_> {
             }
         }
 
+        let path_start = segments.first().map(|s| s.span.start).unwrap_or(SrcPos::default());
+        let path_end = segments.last().map(|s| s.span.end).unwrap_or(SrcPos::default());
+
         ExprPath {
+            span: SrcSpan::new(path_start, path_end),
             segments,
             resolved_path: None,
         }
     }
 
     fn parse_struct_object(&mut self, path: ExprPath) -> StructInit {
+        let brace_start = self.lexer.peek_pos();
         assert!(self.lexer.peek_tok().token == Token::OpenBrace);
         self.lexer.skip_tok();
 
@@ -825,16 +999,10 @@ impl Parser<'_, '_> {
                 break;
             }
 
-            let field_name = self.lexer.next_if_name().unwrap_or_else(|| {
-                let bug = SyntaxErr::StructExpectedFieldName(self.lexer.peek_pos());
-                self.log.report(&bug);
-                "".into()
-            });
+            let err = SyntaxErr::StructExpectedFieldName(self.lexer.peek_pos());
+            let field_name = self.parse_string_name(err);
 
-            if !self.lexer.skip_if(&Token::Colon) {
-                let bug = SyntaxErr::StructExpectedColon(self.lexer.peek_pos());
-                self.log.report(&bug);
-            }
+            self.expect_colon();
 
             let field_value = self.parse_expression();
 
@@ -849,7 +1017,13 @@ impl Parser<'_, '_> {
             }
         }
 
-        StructInit { path, fields }
+        let brace_end = self.lexer.current_pos();
+
+        StructInit {
+            span: SrcSpan::new(brace_start, brace_end),
+            path,
+            fields,
+        }
     }
 
     fn parse_type_info(&mut self) -> Type {
@@ -860,6 +1034,7 @@ impl Parser<'_, '_> {
     }
 
     fn parse_if(&mut self) -> If {
+        let start = self.lexer.peek_pos();
         assert!(self.lexer.peek_tok().token == Token::If);
         self.lexer.skip_tok();
 
@@ -877,6 +1052,7 @@ impl Parser<'_, '_> {
         };
 
         If {
+            span: SrcSpan::new(start, self.lexer.current_pos()),
             condition,
             true_branch,
             false_branch,
@@ -886,57 +1062,25 @@ impl Parser<'_, '_> {
     fn parse_for(&mut self) -> ForEach {
         fn parse_for_bindings(this: &mut Parser) -> Vec<NString> {
             if !this.lexer.skip_if(&Token::OpenParen) {
-                let binding_name = this.lexer.next_if_name().unwrap_or_else(|| {
-                    let bug = SyntaxErr::ForVariableBindingMissingName(this.lexer.peek_pos());
-                    this.log.report(&bug);
-                    "".into()
-                });
+                let err = SyntaxErr::ForVariableBindingMissingName(this.lexer.peek_pos());
+                let binding_name = this.parse_string_name(err);
 
                 return vec![NString::from(binding_name)];
             }
 
-            let mut bindings = Vec::new();
-            let mut already_reported_too_many_bindings = false;
+            let eof = SyntaxErr::ForVariableBindingExpectedEnd(this.lexer.peek_pos());
+            let limit = SyntaxErr::ForVariableBindingLimit(this.lexer.peek_pos());
+            let end = SyntaxErr::ForVariableBindingExpectedEnd(this.lexer.peek_pos());
 
-            this.lexer.skip_if(&Token::Comma);
+            this.parse_comma_separated_list(&Token::CloseParen, MAX_LIMIT, true, eof, limit, end, |this| {
+                let err = SyntaxErr::ForVariableBindingMissingName(this.lexer.peek_pos());
+                let binding_name = this.parse_string_name(err);
 
-            while !this.lexer.skip_if(&Token::CloseParen) {
-                if this.lexer.is_eof() {
-                    let bug = SyntaxErr::ForVariableBindingExpectedEnd(this.lexer.peek_pos());
-                    this.log.report(&bug);
-                    break;
-                }
-
-                const MAX_BINDINGS: usize = 65_536;
-
-                if !already_reported_too_many_bindings && bindings.len() >= MAX_BINDINGS {
-                    already_reported_too_many_bindings = true;
-
-                    let bug = SyntaxErr::ForVariableBindingLimit(this.lexer.peek_pos());
-                    this.log.report(&bug);
-                }
-
-                let binding_name = this.lexer.next_if_name().unwrap_or_else(|| {
-                    let bug = SyntaxErr::ForVariableBindingMissingName(this.lexer.peek_pos());
-                    this.log.report(&bug);
-                    "".into()
-                });
-
-                let binding_name = NString::from(binding_name);
-                bindings.push(binding_name);
-
-                if !this.lexer.skip_if(&Token::Comma) && !this.lexer.next_is(&Token::CloseParen) {
-                    let bug = SyntaxErr::ForVariableBindingExpectedEnd(this.lexer.peek_pos());
-                    this.log.report(&bug);
-
-                    this.lexer.skip_while(&Token::CloseParen);
-                    break;
-                }
-            }
-
-            bindings
+                NString::from(binding_name)
+            })
         }
 
+        let start = self.lexer.peek_pos();
         assert!(self.lexer.peek_tok().token == Token::For);
         self.lexer.skip_tok();
 
@@ -952,6 +1096,7 @@ impl Parser<'_, '_> {
         let body = self.parse_block();
 
         ForEach {
+            span: SrcSpan::new(start, self.lexer.current_pos()),
             attributes,
             bindings,
             iterable,
@@ -960,6 +1105,7 @@ impl Parser<'_, '_> {
     }
 
     fn parse_while(&mut self) -> WhileLoop {
+        let start = self.lexer.peek_pos();
         assert!(self.lexer.peek_tok().token == Token::While);
         self.lexer.skip_tok();
 
@@ -971,10 +1117,15 @@ impl Parser<'_, '_> {
 
         let body = self.parse_block();
 
-        WhileLoop { condition, body }
+        WhileLoop {
+            span: SrcSpan::new(start, self.lexer.current_pos()),
+            condition,
+            body,
+        }
     }
 
     fn parse_break(&mut self) -> Break {
+        let start = self.lexer.peek_pos();
         assert!(self.lexer.peek_tok().token == Token::Break);
         self.lexer.skip_tok();
 
@@ -990,15 +1141,16 @@ impl Parser<'_, '_> {
             None
         };
 
-        if !self.lexer.skip_if(&Token::Semi) {
-            let bug = SyntaxErr::ExpectedSemicolon(self.lexer.peek_pos());
-            self.log.report(&bug);
-        }
+        self.expect_semicolon();
 
-        Break { label }
+        Break {
+            span: SrcSpan::new(start, self.lexer.current_pos()),
+            label,
+        }
     }
 
     fn parse_continue(&mut self) -> Continue {
+        let start = self.lexer.peek_pos();
         assert!(self.lexer.peek_tok().token == Token::Continue);
         self.lexer.skip_tok();
 
@@ -1014,15 +1166,16 @@ impl Parser<'_, '_> {
             None
         };
 
-        if !self.lexer.skip_if(&Token::Semi) {
-            let bug = SyntaxErr::ExpectedSemicolon(self.lexer.peek_pos());
-            self.log.report(&bug);
-        }
+        self.expect_semicolon();
 
-        Continue { label }
+        Continue {
+            span: SrcSpan::new(start, self.lexer.current_pos()),
+            label,
+        }
     }
 
     fn parse_return(&mut self) -> Return {
+        let start = self.lexer.peek_pos();
         assert!(self.lexer.peek_tok().token == Token::Ret);
         self.lexer.skip_tok();
 
@@ -1032,139 +1185,56 @@ impl Parser<'_, '_> {
             Some(self.parse_expression())
         };
 
-        if !self.lexer.skip_if(&Token::Semi) {
-            let bug = SyntaxErr::ExpectedSemicolon(self.lexer.peek_pos());
-            self.log.report(&bug);
-        }
+        self.expect_semicolon();
 
-        Return { value }
+        Return {
+            span: SrcSpan::new(start, self.lexer.current_pos()),
+            value,
+        }
     }
 
     fn parse_await(&mut self) -> Await {
+        let start = self.lexer.peek_pos();
         assert!(self.lexer.peek_tok().token == Token::Await);
         self.lexer.skip_tok();
 
         let future = self.parse_expression();
 
-        Await { future }
+        Await {
+            span: SrcSpan::new(start, self.lexer.current_pos()),
+            future,
+        }
     }
 
     fn parse_closure_parameters(&mut self) -> Option<Vec<FuncParam>> {
-        fn parse_closure_parameter(this: &mut Parser) -> FuncParam {
-            let attributes = this.parse_attributes();
-
-            let mut mutability = None;
-            if this.lexer.skip_if(&Token::Mut) {
-                mutability = Some(Mutability::Mut);
-            } else if this.lexer.skip_if(&Token::Const) {
-                mutability = Some(Mutability::Const);
-            }
-
-            let name = this.lexer.next_if_name().unwrap_or_else(|| {
-                let bug = SyntaxErr::FunctionParameterMissingName(this.lexer.peek_pos());
-                this.log.report(&bug);
-                "".into()
-            });
-
-            let name = NString::from(name);
-
-            if !this.lexer.skip_if(&Token::Colon) {
-                let bug = SyntaxErr::FunctionParameterExpectedType(this.lexer.peek_pos());
-                this.log.report(&bug);
-            }
-
-            let ty = this.parse_type();
-
-            let default = if this.lexer.skip_if(&Token::Eq) {
-                Some(this.parse_expression())
-            } else {
-                None
-            };
-
-            FuncParam {
-                attributes,
-                mutability,
-                name,
-                ty,
-                default_value: default,
-            }
-        }
-
         if !self.lexer.skip_if(&Token::OpenParen) {
             return None;
         }
 
-        let mut params = Vec::new();
-        let mut already_reported_too_many_parameters = false;
+        let eof = SyntaxErr::FunctionParametersExpectedEnd(self.lexer.peek_pos());
+        let limit = SyntaxErr::FunctionParameterLimit(self.lexer.peek_pos());
+        let end = SyntaxErr::FunctionParametersExpectedEnd(self.lexer.peek_pos());
 
-        self.lexer.skip_if(&Token::Comma);
-
-        while !self.lexer.skip_if(&Token::CloseParen) {
-            if self.lexer.is_eof() {
-                let bug = SyntaxErr::FunctionParametersExpectedEnd(self.lexer.peek_pos());
-                self.log.report(&bug);
-                break;
-            }
-
-            const MAX_FUNCTION_PARAMETERS: usize = 65_536;
-
-            if !already_reported_too_many_parameters && params.len() >= MAX_FUNCTION_PARAMETERS {
-                already_reported_too_many_parameters = true;
-
-                let bug = SyntaxErr::FunctionParameterLimit(self.lexer.peek_pos());
-                self.log.report(&bug);
-            }
-
-            let param = parse_closure_parameter(self);
-            params.push(param);
-
-            if !self.lexer.skip_if(&Token::Comma) && !self.lexer.next_is(&Token::CloseParen) {
-                let bug = SyntaxErr::FunctionParametersExpectedEnd(self.lexer.peek_pos());
-                self.log.report(&bug);
-
-                self.lexer.skip_while(&Token::CloseParen);
-                break;
-            }
-        }
+        let params = self.parse_comma_separated_list(&Token::CloseParen, MAX_LIMIT, true, eof, limit, end, |this| {
+            this.parse_common_func_param(true)
+        });
 
         Some(params)
     }
 
     fn parse_closure(&mut self) -> Closure {
-        if matches!(
-            self.lexer.peek_tok().token,
-            Token::OpenBrace | Token::Unsafe | Token::Safe
-        ) {
-            let definition = self.parse_block();
-
-            return Closure {
-                attributes: None,
-                parameters: None,
-                return_type: None,
-                definition,
-            };
-        }
-
+        let fn_start = self.lexer.peek_pos();
         assert!(self.lexer.peek_tok().token == Token::Fn);
         self.lexer.skip_tok();
 
         let attributes = self.parse_attributes();
         let parameters = self.parse_closure_parameters();
 
-        let return_type = if self.lexer.skip_if(&Token::Minus) {
-            if !self.lexer.skip_if(&Token::Gt) {
-                let bug = SyntaxErr::ExpectedArrow(self.lexer.peek_pos());
-                self.log.report(&bug);
-            }
-
-            Some(self.parse_type())
-        } else {
-            None
-        };
-
+        let return_type = self.parse_return_type_arrow();
         let definition = self.parse_block();
 
         Closure {
+            span: SrcSpan::new(fn_start, self.lexer.current_pos()),
             attributes,
             parameters,
             return_type,
@@ -1184,11 +1254,8 @@ impl Parser<'_, '_> {
             let rewind_pos = this.lexer.current_pos();
             if let Some(argument_name) = this.lexer.next_if_name() {
                 if this.lexer.skip_if(&Token::Colon) {
-                    // Successfully parsed a named argument
                     name = Some(NString::from(argument_name));
                 } else {
-                    // It was just an identifier that wasn't followed by a colon,
-                    // so we treat it as the start of a positional expression.
                     this.lexer.rewind(rewind_pos);
                 }
             }
@@ -1202,7 +1269,6 @@ impl Parser<'_, '_> {
         self.lexer.skip_tok();
 
         let mut parsed_arguments = Vec::new();
-        let mut already_reported_too_many_arguments = false;
         let mut named_argument_seen = false;
 
         self.lexer.skip_if(&Token::Comma);
@@ -1214,26 +1280,19 @@ impl Parser<'_, '_> {
                 break;
             }
 
-            const MAX_CARGUMENTS: usize = 65_536;
-
-            if !already_reported_too_many_arguments && parsed_arguments.len() >= MAX_CARGUMENTS {
-                already_reported_too_many_arguments = true;
-
+            if parsed_arguments.len() >= MAX_LIMIT {
                 let bug = SyntaxErr::FunctionCallArgumentLimit(self.lexer.peek_pos());
                 self.log.report(&bug);
+                break;
             }
 
             let argument = parse_function_call_argument(self);
 
-            // 1. Enforce Positional-before-Named rule
             if argument.name.is_some() {
                 named_argument_seen = true;
-            } else {
-                if named_argument_seen {
-                    // Error: Positional argument follows a named argument
-                    let bug = SyntaxErr::FunctionCallPositionFollowsNamed(self.lexer.peek_pos());
-                    self.log.report(&bug);
-                }
+            } else if named_argument_seen {
+                let bug = SyntaxErr::FunctionCallPositionFollowsNamed(self.lexer.peek_pos());
+                self.log.report(&bug);
             }
 
             parsed_arguments.push(argument);
@@ -1247,7 +1306,6 @@ impl Parser<'_, '_> {
             }
         }
 
-        // 2. Separate into positional and named vectors for the return type
         let mut positional_args = Vec::new();
         let mut named_args = Vec::new();
 
@@ -1262,6 +1320,7 @@ impl Parser<'_, '_> {
     }
 
     fn parse_local_variable(&mut self) -> LocalVariable {
+        let var_start = self.lexer.peek_pos();
         let kind = match self.lexer.next_tok().token {
             Token::Let => LocalVariableKind::Let,
             Token::Var => LocalVariableKind::Var,
@@ -1270,20 +1329,10 @@ impl Parser<'_, '_> {
 
         let attributes = self.parse_attributes();
 
-        let mut mutability = None;
-        if self.lexer.skip_if(&Token::Mut) {
-            mutability = Some(Mutability::Mut);
-        } else if self.lexer.skip_if(&Token::Const) {
-            mutability = Some(Mutability::Const);
-        }
+        let mutability = self.parse_mutability();
 
-        let name = self.lexer.next_if_name().unwrap_or_else(|| {
-            let bug = SyntaxErr::VariableMissingName(self.lexer.peek_pos());
-            self.log.report(&bug);
-            "".into()
-        });
-
-        let name = NString::from(name);
+        let err = SyntaxErr::VariableMissingName(self.lexer.peek_pos());
+        let name = self.parse_nstring_name(err);
 
         let var_type = if self.lexer.skip_if(&Token::Colon) {
             Some(self.parse_type())
@@ -1297,12 +1346,10 @@ impl Parser<'_, '_> {
             None
         };
 
-        if !self.lexer.skip_if(&Token::Semi) {
-            let bug = SyntaxErr::ExpectedSemicolon(self.lexer.peek_pos());
-            self.log.report(&bug);
-        }
+        self.expect_semicolon();
 
         LocalVariable {
+            span: SrcSpan::new(var_start, self.lexer.current_pos()),
             kind,
             attributes,
             mutability,
@@ -1357,14 +1404,12 @@ impl Parser<'_, '_> {
 
             let modifier = this.parse_expression();
 
-            if !this.lexer.skip_if(&Token::CloseParen) {
-                let bug = SyntaxErr::ExpectedCloseParen(this.lexer.peek_pos());
-                this.log.report(&bug);
-            }
+            this.expect_close_paren();
 
             Some(Safety::Unsafe(Some(modifier)))
         }
 
+        let block_start = self.lexer.peek_pos();
         let safety = parse_safety_modifier(self);
 
         if !self.lexer.skip_if(&Token::OpenBrace) {
@@ -1382,9 +1427,7 @@ impl Parser<'_, '_> {
                 break;
             }
 
-            const MAX_BLOCK_ELEMENTS: usize = 65_536;
-
-            if !already_reported_too_many_elements && elements.len() >= MAX_BLOCK_ELEMENTS {
+            if !already_reported_too_many_elements && elements.len() >= MAX_LIMIT {
                 already_reported_too_many_elements = true;
 
                 let bug = SyntaxErr::BlockElementLimit(self.lexer.peek_pos());
@@ -1395,7 +1438,11 @@ impl Parser<'_, '_> {
             elements.push(element);
         }
 
-        Block { safety, elements }
+        Block {
+            span: SrcSpan::new(block_start, self.lexer.current_pos()),
+            safety,
+            elements,
+        }
     }
 
     pub fn parse_expression(&mut self) -> Expr {

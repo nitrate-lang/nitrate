@@ -4,23 +4,24 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-nitrate_nstring = { path = "../nstring" }
-nitrate_diagnosis = { path = "../../../diagnosis" }
+nitrate_nstring.workspace = true
+nitrate_diagnosis.workspace = true
 
-nitrate_token_lexer = { path = "../token_lexer" }
-nitrate_token = { path = "../token" }
+nitrate_token_lexer.workspace = true
+nitrate_token.workspace = true
 
-nitrate_tree = { path = "../tree" }
-nitrate_tree_resolve = { path = "../tree_resolve" }
-nitrate_tree_parse = { path = "../tree_parse" }
+nitrate_tree.workspace = true
+nitrate_tree_resolve.workspace = true
+nitrate_tree_parse.workspace = true
 
-nitrate_hir = { path = "../hir" }
-nitrate_hir_evaluate = { path = "../hir_evaluate" }
-nitrate_hir_get_type = { path = "../hir_get_type" }
-nitrate_hir_mangle = { path = "../hir_mangle" }
-nitrate_hir_polish = { path = "../hir_polish" }
+nitrate_hir.workspace = true
+nitrate_hir_evaluate.workspace = true
+nitrate_hir_type.workspace = true
+nitrate_hir_mangle.workspace = true
+nitrate_hir_solve.workspace = true
 
-ordered-float = { version = "5.0.0" }
-thin-vec = { version = "0.2.14" }
+ordered-float.workspace = true
+thin-vec.workspace = true
+num-bigint = "0.4"
 
-serde_json = { version = "1.0", features = ["preserve_order"] }
+serde_json = { workspace = true, features = ["preserve_order"] }

@@ -79,7 +79,7 @@ pub(crate) async fn handle_rpc_request(m: &mut LspServer, req: RpcRequest) -> an
 
         _ => {
             error!(m.log, "Unknown RPC method: {}", req.method);
-            return Err(anyhow::anyhow!("Unknown RPC method"));
+            Err(anyhow::anyhow!("Unknown RPC method"))
         }
     }
 }

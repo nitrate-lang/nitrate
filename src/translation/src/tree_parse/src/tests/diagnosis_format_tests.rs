@@ -80,7 +80,16 @@ fn test_err_enum_missing_name() {
 
 #[test]
 fn test_err_enum_variant_limit() {
-    // Many variants to trigger limit - skip since it needs >65536 items
+    let mut variants = String::new();
+    for i in 0..65538 {
+        if i > 0 {
+            variants.push_str(", ");
+        }
+        variants.push_str(&format!("V{i}"));
+    }
+    let src = format!("enum Foo {{ {variants} }}");
+    let (_, log) = parse_source_no_assert(&src);
+    assert!(log.error_bit());
 }
 
 #[test]
@@ -107,7 +116,16 @@ fn test_err_fn_missing_name() {
 
 #[test]
 fn test_err_fn_param_limit() {
-    // Can't easily create 65536 params in a test, but we test the other error paths
+    let mut params = String::new();
+    for i in 0..65538 {
+        if i > 0 {
+            params.push_str(", ");
+        }
+        params.push_str(&format!("x{i}: i32"));
+    }
+    let src = format!("fn f({params}) {{}}");
+    let (_, log) = parse_source_no_assert(&src);
+    assert!(log.error_bit());
 }
 
 #[test]
@@ -128,7 +146,13 @@ fn test_err_variable_missing_name() {
 
 #[test]
 fn test_err_trait_item_limit() {
-    // Can't easily create 65536 items in a test
+    let mut items = String::new();
+    for i in 0..65538 {
+        items.push_str(&format!("fn f{i}(); "));
+    }
+    let src = format!("trait Foo {{ {items} }}");
+    let (_, log) = parse_source_no_assert(&src);
+    assert!(log.error_bit());
 }
 
 // ========== IMPL ERRORS ==========
@@ -322,7 +346,17 @@ fn test_err_expr_missing_close_paren() {
 }
 
 // ========== LIST ELEMENT LIMIT ==========
-// NOTE: This can't be tested in practice since it requires > 65536 elements
+// SyntaxErr::ListElementLimit (variant 301) - needs >65536 elements
+#[test]
+fn test_err_list_element_limit() {
+    let mut elems = String::from("0");
+    for _ in 0..65538 {
+        elems.push_str(", 0");
+    }
+    let src = format!("[{elems}]");
+    let (_, log) = parse_expr_no_assert(&src);
+    assert!(log.error_bit());
+}
 
 // ========== WIDTH WITH MISSING CLOSE BRACKET IN REFINEMENT ==========
 
@@ -333,10 +367,30 @@ fn test_err_refine_missing_bracket() {
 }
 
 // ========== MODULE ITEM LIMIT ==========
-// NOTE: Won't test for 65536 items in module here, would be too slow
+// SyntaxErr::ModuleItemLimit (variant 21) - needs >65536 items in module
+#[test]
+fn test_err_mod_item_limit() {
+    let mut items = String::new();
+    for _ in 0..65538 {
+        items.push_str("fn f() {} ");
+    }
+    let src = format!("mod m {{ {items} }}");
+    let (_, log) = parse_source_no_assert(&src);
+    assert!(log.error_bit());
+}
 
 // ========== IMPL ITEM LIMIT ==========
-// NOTE: Similar constraint
+// SyntaxErr::ImplItemLimit (variant 202) - needs >65536 items
+#[test]
+fn test_err_impl_item_limit() {
+    let mut items = String::new();
+    for i in 0..65538 {
+        items.push_str(&format!("fn f{i}() {{}} "));
+    }
+    let src = format!("impl Foo {{ {items} }}");
+    let (_, log) = parse_source_no_assert(&src);
+    assert!(log.error_bit());
+}
 
 // ========== TRAIT UNEXPECTED TOKEN ==========
 
@@ -350,7 +404,7 @@ fn test_err_trait_invalid_token() {
 
 #[test]
 fn test_err_expected_open_angle() {
-    let (_, log) = parse_source_no_assert("fn f() { ::<i32>::bar() }");
+    let (_, _log) = parse_source_no_assert("fn f() { ::<i32>::bar() }");
     // May or may not trigger ExpectedOpenAngle depending on parse flow
     // Just verify it parses or errors gracefully
 }

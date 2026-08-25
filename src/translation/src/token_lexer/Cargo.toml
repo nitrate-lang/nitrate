@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [dev-dependencies]
-criterion = { version = "0.7.0", features = ["html_reports"] }
+criterion.workspace = true
 
 [[bench]]
 name = "lex_bench"
@@ -15,7 +15,7 @@ name = "throughput_bench"
 harness = false
 
 [dependencies]
-nitrate_diagnosis = { path = "../../../diagnosis" }
-nitrate_token = { path = "../token" }
-log = "0.4.27"
-ordered-float = { version = "5.0.0" }
+nitrate_diagnosis.workspace = true
+nitrate_token.workspace = true
+log.workspace = true
+ordered-float.workspace = true

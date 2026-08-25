@@ -3,137 +3,97 @@ use crate::{
     convert_ast_to_hir,
     diagnosis::HirErr,
     expr::{lower_block, lower_expr},
+    helpers,
     ty::lower_type,
 };
 use nitrate_diagnosis::CompilerLog;
 use nitrate_hir::prelude::*;
 use nitrate_nstring::NString;
+use nitrate_tree::SrcPos;
+use nitrate_tree::SrcSpan;
 use nitrate_tree::ast::{self};
 use std::collections::{BTreeMap, BTreeSet};
 
+// Helper closures for reject_all_attributes — signature: fn(String, SrcPos) -> HirErr
+const ATTR_MODULE: fn(String, SrcPos) -> HirErr = |name, span| HirErr::UnrecognizedModuleAttribute { span, name };
+const ATTR_GLOBAL_VAR: fn(String, SrcPos) -> HirErr =
+    |name, span| HirErr::UnrecognizedGlobalVarAttribute { span, name };
+const ATTR_FUNCTION: fn(String, SrcPos) -> HirErr = |name, span| HirErr::UnrecognizedFunctionAttribute { span, name };
+const ATTR_FUNC_PARAM: fn(String, SrcPos) -> HirErr =
+    |name, span| HirErr::UnrecognizedFunctionParamAttribute { span, name };
+const ATTR_TYPE_ALIAS: fn(String, SrcPos) -> HirErr =
+    |name, span| HirErr::UnrecognizedTypeAliasAttribute { span, name };
+const ATTR_STRUCT: fn(String, SrcPos) -> HirErr = |name, span| HirErr::UnrecognizedStructAttribute { span, name };
+const ATTR_STRUCT_FIELD: fn(String, SrcPos) -> HirErr =
+    |name, span| HirErr::UnrecognizedStructFieldAttribute { span, name };
+const ATTR_ENUM: fn(String, SrcPos) -> HirErr = |name, span| HirErr::UnrecognizedEnumAttribute { span, name };
+const ATTR_ENUM_VARIANT: fn(String, SrcPos) -> HirErr =
+    |name, span| HirErr::UnrecognizedEnumVariantAttribute { span, name };
+const ATTR_LOCAL_VAR: fn(String, SrcPos) -> HirErr = |name, span| HirErr::UnrecognizedLocalVarAttribute { span, name };
+const ATTR_TRAIT: fn(String, SrcPos) -> HirErr = |name, span| HirErr::UnrecognizedTraitAttribute { span, name };
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Type Alias Lowering
+// ═══════════════════════════════════════════════════════════════════════════
+
 fn lower_type_alias(type_alias: ast::TypeAlias, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<TypeAliasDefId, ()> {
-    let visibility = match type_alias.visibility {
-        Some(ast::Visibility::Public) => Visibility::Pub,
-        Some(ast::Visibility::Protected) => Visibility::Pro,
-        Some(ast::Visibility::Private) | None => Visibility::Sec,
-    };
+    let span: SrcPos = type_alias.span.start;
+    let visibility = helpers::lower_visibility(type_alias.visibility);
+    helpers::reject_all_attributes(&type_alias.attributes, ATTR_TYPE_ALIAS, log);
 
-    if let Some(ast_attributes) = &type_alias.attributes {
-        for _attr in ast_attributes {
-            log.report(&HirErr::UnrecognizedTypeAliasAttribute);
-        }
-    }
+    let name = helpers::qualify(&type_alias.name, ctx);
+    helpers::check_duplicate(&name, ctx, log)?;
 
-    let name = ctx.qualify_name(&type_alias.name).into();
-    if ctx.entities_added.contains(&name) {
-        log.report(&HirErr::DuplicateEntity(name.to_string()));
-        return Err(());
-    }
+    let generics = helpers::lower_generic_params(type_alias.generics, ctx, log)?;
 
-    let mut generics: Option<BTreeMap<NString, Option<TypeId>>> = None;
-    if let Some(generic_params) = type_alias.generics {
-        let mut generics_map = BTreeMap::new();
-        for (i, parameter) in generic_params.params.iter().enumerate() {
-            let generic_name = NString::from(parameter.name.to_string());
-            let generic_type: TypeId = Type::GenericParam {
-                index: i as u32,
-                name: generic_name.clone(),
-            }
-            .into();
-            let default_type = match &parameter.default_value {
-                Some(ty) => Some(lower_type(ty.to_owned(), ctx, log)?.into()),
-                None => None,
-            };
-            generics_map.insert(generic_name, default_type);
-        }
-        generics = Some(generics_map);
-    }
-
-    let type_id = match &type_alias.alias_type {
-        Some(ty) => lower_type(ty.to_owned(), ctx, log)?.into(),
+    let type_id = match type_alias.alias_type {
+        Some(ty) => lower_type(ty, ctx, log)?.into(),
         None => {
-            log.report(&HirErr::TypeAliasMustHaveType);
+            log.report(&HirErr::TypeAliasMustHaveType {
+                span,
+                name: name.to_string(),
+            });
             return Err(());
         }
     };
 
-    let type_alias = TypeAliasDef {
+    let type_alias_def = TypeAliasDef {
+        span,
         visibility,
         name,
         generics,
         type_id,
     };
 
-    ctx.entities_added.insert(type_alias.name.clone());
-
-    if let Some(existing_type_alias_def_id) = ctx.tab.get_type_alias(&type_alias.name) {
-        let mut existing_type_alias_def = existing_type_alias_def_id.borrow_mut();
-        *existing_type_alias_def = type_alias;
-        Ok(existing_type_alias_def_id.clone())
-    } else {
-        let type_alias_def_id: TypeAliasDefId = type_alias.into();
-        ctx.tab.add_type_alias(type_alias_def_id.clone());
-        Ok(type_alias_def_id)
-    }
+    Ok(helpers::upsert_type_alias(type_alias_def, ctx))
 }
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Struct Definition Lowering
+// ═══════════════════════════════════════════════════════════════════════════
 
 fn lower_struct_definition(
     struct_def: ast::Struct,
     ctx: &mut Ast2HirCtx,
     log: &CompilerLog,
 ) -> Result<StructDefId, ()> {
-    let visibility = match struct_def.visibility {
-        Some(ast::Visibility::Public) => Visibility::Pub,
-        Some(ast::Visibility::Protected) => Visibility::Pro,
-        Some(ast::Visibility::Private) | None => Visibility::Sec,
-    };
+    let span: SrcPos = struct_def.span.start;
+    let visibility = helpers::lower_visibility(struct_def.visibility);
+    helpers::reject_all_attributes(&struct_def.attributes, ATTR_STRUCT, log);
 
-    let attributes = BTreeSet::new();
-    if let Some(ast_attributes) = &struct_def.attributes {
-        for _attr in ast_attributes {
-            log.report(&HirErr::UnrecognizedStructAttribute);
-        }
-    }
+    let name = helpers::qualify(&struct_def.name, ctx);
+    helpers::check_duplicate(&name, ctx, log)?;
 
-    let name = ctx.qualify_name(&struct_def.name).into();
-    if ctx.entities_added.contains(&name) {
-        log.report(&HirErr::DuplicateEntity(name.to_string()));
-        return Err(());
-    }
-
-    let mut generics: Option<BTreeMap<NString, Option<TypeId>>> = None;
-
-    if let Some(generic_params) = struct_def.generics {
-        let mut generics_map = BTreeMap::new();
-        for parameter in generic_params.params {
-            let generic_name = NString::from(parameter.name.to_string());
-            let default_type = match parameter.default_value {
-                Some(ty) => Some(lower_type(ty, ctx, log)?.into()),
-                None => None,
-            };
-            generics_map.insert(generic_name, default_type);
-        }
-        generics = Some(generics_map);
-    }
+    let generics = helpers::lower_generic_params(struct_def.generics, ctx, log)?;
 
     let mut fields = BTreeMap::new();
     let mut layout = StructLayout::new();
 
     for field in &struct_def.fields {
-        let field_visibility = match field.visibility {
-            Some(ast::Visibility::Public) => Visibility::Pub,
-            Some(ast::Visibility::Protected) => Visibility::Pro,
-            Some(ast::Visibility::Private) | None => Visibility::Sec,
-        };
+        let field_visibility = helpers::lower_visibility(field.visibility);
+        helpers::reject_all_attributes(&field.attributes, ATTR_STRUCT_FIELD, log);
 
-        let field_attributes = BTreeSet::new();
-        if let Some(ast_attributes) = &field.attributes {
-            for _attr in ast_attributes {
-                log.report(&HirErr::UnrecognizedStructFieldAttribute);
-            }
-        }
-
-        let field_name = NString::from(field.name.to_string());
+        let field_name: NString = field.name.to_string().into();
         let field_type = lower_type(field.ty.to_owned(), ctx, log)?.into();
 
         let default_value = match field.default_value.to_owned() {
@@ -142,8 +102,9 @@ fn lower_struct_definition(
         };
 
         let struct_field = StructField {
+            span: field.span.start,
             visibility: field_visibility,
-            attributes: field_attributes,
+            attributes: BTreeSet::new(),
             name: field_name,
             ty: field_type,
             default_value,
@@ -152,85 +113,48 @@ fn lower_struct_definition(
         let field_name = struct_field.name.clone();
         fields.insert(field_name.clone(), struct_field);
         layout.push(StructMemoryLayoutCell::Field { field_name });
-        // TODO: Handle padding and alignment for struct layout
     }
 
     let struct_def = StructDef {
+        span,
         visibility,
         name,
-        attributes,
+        attributes: BTreeSet::new(),
         generics,
         fields,
         layout,
     };
 
-    ctx.entities_added.insert(struct_def.name.clone());
-
-    if let Some(existing_struct_def_id) = ctx.tab.get_struct(&struct_def.name) {
-        let mut existing_struct_def = existing_struct_def_id.borrow_mut();
-        *existing_struct_def = struct_def;
-        Ok(existing_struct_def_id.clone())
-    } else {
-        let struct_def_id: StructDefId = struct_def.into();
-        ctx.tab.add_struct(struct_def_id.clone());
-        Ok(struct_def_id)
-    }
+    Ok(helpers::upsert_struct(struct_def, ctx))
 }
 
+// ═══════════════════════════════════════════════════════════════════════════
+// Enum Definition Lowering
+// ═══════════════════════════════════════════════════════════════════════════
+
 fn lower_enum_definition(enum_def: ast::Enum, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<EnumDefId, ()> {
-    let visibility = match enum_def.visibility {
-        Some(ast::Visibility::Public) => Visibility::Pub,
-        Some(ast::Visibility::Protected) => Visibility::Pro,
-        Some(ast::Visibility::Private) | None => Visibility::Sec,
-    };
+    let span: SrcPos = enum_def.span.start;
+    let visibility = helpers::lower_visibility(enum_def.visibility);
+    helpers::reject_all_attributes(&enum_def.attributes, ATTR_ENUM, log);
 
-    let attributes = BTreeSet::new();
-    if let Some(ast_attributes) = &enum_def.attributes {
-        for _attr in ast_attributes {
-            log.report(&HirErr::UnrecognizedEnumAttribute);
-        }
-    }
+    let name: NString = helpers::qualify(&enum_def.name, ctx);
+    helpers::check_duplicate(&name, ctx, log)?;
 
-    let name: NString = ctx.qualify_name(&enum_def.name).into();
-    if ctx.entities_added.contains(&name) {
-        log.report(&HirErr::DuplicateEntity(name.to_string()));
-        return Err(());
-    }
-
-    let mut generics: Option<BTreeMap<NString, Option<TypeId>>> = None;
-    if let Some(generic_params) = enum_def.generics {
-        let mut generics_map = BTreeMap::new();
-        for (i, parameter) in generic_params.params.iter().enumerate() {
-            let generic_name = NString::from(parameter.name.to_string());
-            let generic_type: TypeId = Type::GenericParam {
-                index: i as u32,
-                name: generic_name.clone(),
-            }
-            .into();
-            let default_type = match &parameter.default_value {
-                Some(ty) => Some(lower_type(ty.to_owned(), ctx, log)?.into()),
-                None => None,
-            };
-            generics_map.insert(generic_name, default_type);
-        }
-        generics = Some(generics_map);
-    }
+    let generics = helpers::lower_generic_params(enum_def.generics, ctx, log)?;
 
     let mut variants = Vec::new();
 
     for variant in &enum_def.variants {
-        let variant_attributes = BTreeSet::new();
-        if let Some(ast_attributes) = &variant.attributes {
-            for _attr in ast_attributes {
-                log.report(&HirErr::UnrecognizedEnumVariantAttribute);
-            }
-        }
+        helpers::reject_all_attributes(&variant.attributes, ATTR_ENUM_VARIANT, log);
 
-        let variant_name = NString::from(variant.name.to_string());
+        let variant_name: NString = variant.name.to_string().into();
 
         let variant_type = match variant.ty.to_owned() {
             Some(ty) => lower_type(ty, ctx, log)?.into(),
-            None => Type::Unit.into(),
+            None => Type::Unit {
+                span: SrcPos::default(),
+            }
+            .into(),
         };
 
         let field_default = match variant.default_value.to_owned() {
@@ -239,7 +163,8 @@ fn lower_enum_definition(enum_def: ast::Enum, ctx: &mut Ast2HirCtx, log: &Compil
         };
 
         let variant = EnumVariant {
-            attributes: variant_attributes,
+            span: variant.span.start,
+            attributes: BTreeSet::new(),
             name: variant_name,
             ty: variant_type,
             default_value: field_default,
@@ -249,108 +174,117 @@ fn lower_enum_definition(enum_def: ast::Enum, ctx: &mut Ast2HirCtx, log: &Compil
     }
 
     let enum_def = EnumDef {
+        span,
         visibility,
         name: name.clone(),
-        attributes,
+        attributes: BTreeSet::new(),
         generics,
         variants: variants.clone().into(),
     };
 
-    ctx.entities_added.insert(enum_def.name.clone());
-
-    let enum_def_id = if let Some(existing_enum_def_id) = ctx.tab.get_enum(&enum_def.name) {
-        let mut existing_enum_def = existing_enum_def_id.borrow_mut();
-        *existing_enum_def = enum_def;
-        existing_enum_def_id.clone()
-    } else {
-        let enum_def_id: EnumDefId = enum_def.into();
-        ctx.tab.add_enum(enum_def_id.clone());
-        enum_def_id
-    };
-
-    for variant in variants {
-        let variant_name = NString::from(format!("{}::{}", name.clone(), variant.name));
-        ctx.tab.add_enum_variant(variant_name, enum_def_id.clone());
-    }
-
-    Ok(enum_def_id)
+    Ok(helpers::upsert_enum(enum_def, variants, ctx))
 }
 
+// ═══════════════════════════════════════════════════════════════════════════
+// Trait Definition Lowering
+// ═══════════════════════════════════════════════════════════════════════════
+
 fn lower_trait_definition(trait_: &ast::Trait, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<TraitId, ()> {
-    let visibility = match trait_.visibility {
-        Some(ast::Visibility::Public) => Visibility::Pub,
-        Some(ast::Visibility::Protected) => Visibility::Pro,
-        Some(ast::Visibility::Private) | None => Visibility::Sec,
-    };
+    let span: SrcPos = trait_.span.start;
+    let visibility = helpers::lower_visibility(trait_.visibility);
+    helpers::reject_all_attributes(&trait_.attributes, ATTR_TRAIT, log);
 
-    if let Some(ast_attributes) = &trait_.attributes {
-        for _attr in ast_attributes {
-            log.report(&HirErr::UnrecognizedTraitAttribute);
+    let name: NString = helpers::qualify(&trait_.name, ctx);
+    helpers::check_duplicate(&name, ctx, log)?;
+
+    // Push trait name as scope so methods get properly qualified names
+    ctx.current_scope.push(trait_.name.clone());
+
+    // Set current_self_type to a generic Self placeholder
+    let prev_self = ctx.current_self_type.take();
+    ctx.current_self_type = Some(
+        Type::GenericParam {
+            span: SrcPos::default(),
+            index: u32::MAX,
+            name: "Self".into(),
         }
-    }
+        .into(),
+    );
 
-    let name: NString = ctx.qualify_name(&trait_.name).into();
-    if ctx.entities_added.contains(&name) {
-        log.report(&HirErr::DuplicateEntity(name.to_string()));
-        return Err(());
-    }
-
-    if trait_.generics.is_some() {
-        // TODO: Implement generics for traits
-        log.report(&HirErr::UnimplementedFeature("generic traits".into()));
-    }
+    let generics = helpers::lower_generic_params(trait_.generics.clone(), ctx, log)?;
 
     let mut methods = Vec::new();
+    let mut associated_types: Vec<NString> = Vec::new();
+    let mut associated_constants: Vec<NString> = Vec::new();
+
     for method in &trait_.items {
         match method {
             ast::AssociatedItem::Method(func) => {
-                let func_id: FunctionId = lower_function(func.to_owned(), ctx, log)?.into();
+                let func_id: FunctionId = lower_function(func.to_owned(), ctx, log)?;
                 methods.push(func_id);
             }
-
-            _ => {
-                // TODO: Support trait associated type aliases
-                // TODO: Support trait associated constants
-                log.report(&HirErr::UnimplementedFeature(
-                    "only method trait items are supported".into(),
-                ));
-                return Err(());
+            ast::AssociatedItem::TypeAlias(type_alias) => {
+                let type_name: NString = helpers::qualify(&type_alias.name, ctx);
+                associated_types.push(type_name);
             }
+            ast::AssociatedItem::ConstantItem(const_var) => {
+                let const_name: NString = helpers::qualify(&const_var.name, ctx);
+                associated_constants.push(const_name);
+            }
+            ast::AssociatedItem::SyntaxError(_) => return Err(()),
         }
     }
 
+    // Restore the previous self type
+    ctx.current_self_type = prev_self;
+    ctx.current_scope.pop();
+
     let trait_ = Trait {
+        span,
         visibility,
         name: name.clone(),
+        generics,
+        supertraits: Vec::new(),
+        where_clause: None,
         methods,
+        associated_types,
+        associated_constants,
     };
 
-    ctx.entities_added.insert(trait_.name.clone());
-
-    let trait_id = if let Some(existing_trait_id) = ctx.tab.get_trait(&trait_.name) {
-        let mut existing_trait = existing_trait_id.borrow_mut();
-        *existing_trait = trait_;
-        existing_trait_id.clone()
-    } else {
-        let trait_id: TraitId = trait_.into();
-        ctx.tab.add_trait(trait_id.clone());
-        trait_id
-    };
-
-    Ok(trait_id)
+    Ok(helpers::upsert_trait(trait_, ctx))
 }
 
+// ═══════════════════════════════════════════════════════════════════════════
+// Implementation Lowering
+// ═══════════════════════════════════════════════════════════════════════════
+
 fn lower_implementation(impl_: ast::Impl, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<(), ()> {
-    // Generic impl blocks are still experimental; process them but the generics
-    // will be handled during monomorphization when methods are called.
-    if let Some(_generics) = impl_.generics {
-        // Continue processing without error - the monomorphization pass
-        // will handle generic method calls when they are encountered
-    }
+    // Extract the impl type name before moving impl_.for_type
+    let impl_type_name: Option<NString> = match &impl_.for_type {
+        nitrate_tree::ast::Type::TypePath(type_path) => {
+            let name = type_path
+                .segments
+                .iter()
+                .map(|seg| seg.name.clone())
+                .collect::<Vec<_>>()
+                .join("::");
+            Some(name.into())
+        }
+        _ => None,
+    };
 
     let for_type: TypeId = lower_type(impl_.for_type, ctx, log)?.into();
 
-    match impl_.trait_path {
+    // Push the impl type name onto the current scope
+    if let Some(ref name) = impl_type_name {
+        ctx.current_scope.push(name.clone());
+    }
+
+    // Save and set the current self type
+    let prev_self = ctx.current_self_type.take();
+    ctx.current_self_type = Some(for_type);
+
+    let result = match impl_.trait_path {
         Some(trait_path) => {
             let trait_name = trait_path
                 .segments
@@ -360,86 +294,80 @@ fn lower_implementation(impl_: ast::Impl, ctx: &mut Ast2HirCtx, log: &CompilerLo
                 .join("::");
 
             let trait_id = ctx.tab.get_trait_or_insert_placeholder(&trait_name.into());
-            ctx.tab.add_impl_trait(for_type.clone(), trait_id.clone());
+            ctx.tab.add_impl_trait(for_type, trait_id.clone());
 
-            for assosiated_item in impl_.items {
-                match assosiated_item {
+            for associated_item in impl_.items {
+                match associated_item {
                     ast::AssociatedItem::Method(method) => {
                         let name = method.name.clone();
-                        let func_id = lower_function(method, ctx, log)?.into();
+                        let func_id = lower_function(method, ctx, log)?;
+                        ctx.tab.add_trait_method(for_type, trait_id.clone(), name, func_id);
+                    }
+                    ast::AssociatedItem::TypeAlias(type_alias) => {
+                        let type_alias_id = lower_type_alias(type_alias, ctx, log)?;
                         ctx.tab
-                            .add_trait_method(for_type.clone(), trait_id.clone(), name, func_id);
+                            .add_impl_associated_type(for_type, trait_id.clone(), "".into(), type_alias_id);
                     }
-
-                    _ => {
-                        // TODO: Support impl associated type aliases
-                        // TODO: Support impl associated constants
-                        log.report(&HirErr::UnimplementedFeature("only method impls are supported".into()));
-                        return Err(());
+                    ast::AssociatedItem::ConstantItem(const_var) => {
+                        let const_id = lower_global_variable(&const_var, ctx, log)?;
+                        ctx.tab
+                            .add_impl_associated_constant(for_type, trait_id.clone(), "".into(), const_id);
                     }
+                    ast::AssociatedItem::SyntaxError(_) => return Err(()),
                 }
             }
 
             Ok(())
         }
-
         None => {
-            for assosiated_item in impl_.items {
-                match assosiated_item {
+            for associated_item in impl_.items {
+                match associated_item {
                     ast::AssociatedItem::Method(method) => {
                         let name = method.name.clone();
-                        let func_id = lower_function(method, ctx, log)?.into();
-                        ctx.tab.add_method(for_type.clone(), name, func_id);
+                        let func_id = lower_function(method, ctx, log)?;
+                        ctx.tab.add_method(for_type, name, func_id);
                     }
-
-                    _ => {
-                        // TODO: Support impl associated type aliases
-                        // TODO: Support impl associated constants
-                        log.report(&HirErr::UnimplementedFeature("only method impls are supported".into()));
-                        return Err(());
+                    ast::AssociatedItem::TypeAlias(type_alias) => {
+                        let _ = lower_type_alias(type_alias, ctx, log)?;
                     }
+                    ast::AssociatedItem::ConstantItem(const_var) => {
+                        let _ = lower_global_variable(&const_var, ctx, log)?;
+                    }
+                    ast::AssociatedItem::SyntaxError(_) => return Err(()),
                 }
             }
 
             Ok(())
         }
+    };
+
+    // Pop the impl type name from scope
+    if impl_type_name.is_some() {
+        ctx.current_scope.pop();
     }
+
+    // Restore the previous self type
+    ctx.current_self_type = prev_self;
+    result
 }
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Global Variable Lowering
+// ═══════════════════════════════════════════════════════════════════════════
 
 fn lower_global_variable(
     var: &ast::GlobalVariable,
     ctx: &mut Ast2HirCtx,
     log: &CompilerLog,
 ) -> Result<GlobalVariableId, ()> {
-    let visibility = match var.visibility {
-        Some(ast::Visibility::Public) => Visibility::Pub,
-        Some(ast::Visibility::Protected) => Visibility::Pro,
-        Some(ast::Visibility::Private) | None => Visibility::Sec,
-    };
+    let span: SrcPos = var.span.start;
+    let visibility = helpers::lower_visibility(var.visibility);
+    helpers::reject_all_attributes(&var.attributes, ATTR_GLOBAL_VAR, log);
 
-    let attributes = BTreeSet::new();
-    if let Some(ast_attributes) = &var.attributes {
-        for _attr in ast_attributes {
-            log.report(&HirErr::UnrecognizedGlobalVariableAttribute);
-        }
-    }
+    let is_mutable = helpers::is_mutable(var.mutability);
 
-    let is_mutable = match var.mutability {
-        Some(ast::Mutability::Mut) => true,
-        Some(ast::Mutability::Const) | None => false,
-    };
-
-    let name = ctx.qualify_name(&var.name).into();
-    let mangled_name = if attributes.contains(&GlobalVariableAttribute::NoMangle) {
-        var.name.clone()
-    } else {
-        ctx.qualify_name(&var.name).into()
-    };
-
-    if ctx.entities_added.contains(&name) {
-        log.report(&HirErr::DuplicateEntity(name.to_string()));
-        return Err(());
-    }
+    let name = helpers::qualify(&var.name, ctx);
+    helpers::check_duplicate(&name, ctx, log)?;
 
     let ty = match var.ty.to_owned() {
         None => ctx.create_inference_placeholder().into(),
@@ -449,52 +377,40 @@ fn lower_global_variable(
     let init = match var.initializer.to_owned() {
         Some(expr) => lower_expr(expr, ctx, log)?.into(),
         None => {
-            log.report(&HirErr::GlobalVariableMustHaveInitializer);
+            log.report(&HirErr::GlobalVariableMustHaveInitializer {
+                span,
+                name: name.to_string(),
+            });
             return Err(());
         }
     };
 
     let global_variable = GlobalVariable {
+        span,
         visibility,
-        attributes,
+        attributes: BTreeSet::new(),
         is_mutable,
         name,
-        mangled_name,
+        mangled_name: None,
         ty,
         initializer: init,
     };
 
-    ctx.entities_added.insert(global_variable.name.clone());
-
-    if let Some(existing_global_id) = ctx.tab.get_global_variable(&global_variable.name) {
-        let mut existing_global_variable = existing_global_id.borrow_mut();
-        *existing_global_variable = global_variable;
-        Ok(existing_global_id.clone())
-    } else {
-        let variable_id: GlobalVariableId = global_variable.into();
-        ctx.tab.add_global_variable(variable_id.clone());
-        Ok(variable_id)
-    }
+    Ok(helpers::upsert_global_variable(global_variable, ctx))
 }
 
+// ═══════════════════════════════════════════════════════════════════════════
+// Parameter Lowering
+// ═══════════════════════════════════════════════════════════════════════════
+
 fn lower_parameter(param: ast::FuncParam, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<ParameterId, ()> {
-    let attributes = BTreeSet::new();
-    if let Some(ast_attributes) = &param.attributes {
-        for _attr in ast_attributes {
-            log.report(&HirErr::UnrecognizedFunctionParameterAttribute);
-        }
-    }
+    let span: SrcPos = param.span.start;
+    helpers::reject_all_attributes(&param.attributes, ATTR_FUNC_PARAM, log);
 
-    let is_mutable = match param.mutability {
-        Some(ast::Mutability::Mut) => true,
-        Some(ast::Mutability::Const) | None => false,
-    };
+    let is_mutable = helpers::is_mutable(param.mutability);
 
-    let name = ctx.qualify_name(&param.name).into();
-    if ctx.entities_added.contains(&name) {
-        log.report(&HirErr::DuplicateEntity(name.to_string()));
-        return Err(());
-    }
+    let name = helpers::qualify(&param.name, ctx);
+    helpers::check_duplicate(&name, ctx, log)?;
 
     let ty = lower_type(param.ty.to_owned(), ctx, log)?.into();
 
@@ -504,7 +420,8 @@ fn lower_parameter(param: ast::FuncParam, ctx: &mut Ast2HirCtx, log: &CompilerLo
     };
 
     let parameter_id: ParameterId = Parameter {
-        attributes,
+        span,
+        attributes: BTreeSet::new(),
         is_mutable,
         name,
         ty,
@@ -518,73 +435,26 @@ fn lower_parameter(param: ast::FuncParam, ctx: &mut Ast2HirCtx, log: &CompilerLo
     Ok(parameter_id)
 }
 
+// ═══════════════════════════════════════════════════════════════════════════
+// Function Lowering
+// ═══════════════════════════════════════════════════════════════════════════
+
 fn lower_function(function: ast::Function, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<FunctionId, ()> {
-    let visibility = match function.visibility {
-        Some(ast::Visibility::Public) => Visibility::Pub,
-        Some(ast::Visibility::Protected) => Visibility::Pro,
-        Some(ast::Visibility::Private) | None => Visibility::Sec,
-    };
+    let span: SrcPos = function.span.start;
+    let visibility = helpers::lower_visibility(function.visibility);
+    let mut attributes = helpers::parse_function_attributes(&function.attributes, log);
 
-    let mut attributes = BTreeSet::new();
-    if let Some(ast_attributes) = &function.attributes {
-        for attr in ast_attributes {
-            if let ast::Expr::Path(path) = &attr {
-                let ident = path
-                    .segments
-                    .iter()
-                    .map(|seg| seg.name.to_string())
-                    .collect::<Vec<_>>()
-                    .join("::");
-
-                match ident.as_str() {
-                    "no_mangle" => {
-                        attributes.insert(FunctionAttribute::NoMangle);
-                        continue;
-                    }
-
-                    _ => {
-                        log.report(&HirErr::UnrecognizedFunctionAttribute);
-                        continue;
-                    }
-                }
-            }
-
-            log.report(&HirErr::UnrecognizedEnumAttribute);
-        }
+    // Lower extern ABI from the AST
+    if let Some(abi) = &function.abi {
+        attributes.insert(FunctionAttribute::ExternAbi(ExternAbi { name: abi.name.clone() }));
     }
 
-    let name: NString = ctx.qualify_name(&function.name).into();
-    if ctx.entities_added.contains(&name) {
-        log.report(&HirErr::DuplicateEntity(name.to_string()));
-        return Err(());
-    }
-
-    let mangled_name: NString = if attributes.contains(&FunctionAttribute::NoMangle) {
-        function.name.clone()
-    } else {
-        ctx.qualify_name(&function.name).into()
-    };
+    let name: NString = helpers::qualify(&function.name, ctx);
+    helpers::check_duplicate(&name, ctx, log)?;
 
     ctx.current_scope.push(function.name.clone());
 
-    let mut generics: Option<BTreeMap<NString, Option<TypeId>>> = None;
-    if let Some(generic_params) = function.generics {
-        let mut generics_map = BTreeMap::new();
-        for (i, parameter) in generic_params.params.iter().enumerate() {
-            let generic_name = NString::from(parameter.name.to_string());
-            let generic_type: TypeId = Type::GenericParam {
-                index: i as u32,
-                name: generic_name.clone(),
-            }
-            .into();
-            let default_type = match &parameter.default_value {
-                Some(ty) => Some(lower_type(ty.to_owned(), ctx, log)?.into()),
-                None => None,
-            };
-            generics_map.insert(generic_name, default_type);
-        }
-        generics = Some(generics_map);
-    }
+    let generics = helpers::lower_generic_params(function.generics, ctx, log)?;
 
     let mut parameters = Vec::with_capacity(function.parameters.params.len());
     for param in &function.parameters.params {
@@ -595,85 +465,104 @@ fn lower_function(function: ast::Function, ctx: &mut Ast2HirCtx, log: &CompilerL
         attributes.insert(FunctionAttribute::CVariadic);
     }
 
-    let return_type = match &function.return_type {
+    let return_type: Type = match &function.return_type {
         Some(ty) => lower_type(ty.to_owned(), ctx, log)?,
-        None => Type::Unit,
+        None => Type::Unit {
+            span: SrcPos::default(),
+        },
     };
 
     let body = match function.definition {
         None => None,
         Some(block) => {
             let mut hir_elements = lower_block(block, ctx, log)?.elements;
-            match hir_elements.last() {
-                Some(BlockElement::Expr(expr)) if expr.borrow().is_return() => {}
 
-                Some(BlockElement::Expr(expr)) if !expr.borrow().is_return() => {
-                    *hir_elements.last_mut().unwrap() =
-                        BlockElement::Expr(Value::Return { value: expr.to_owned() }.into());
-                }
+            // Ensure the function body ends with a return statement
+            let return_inserted = ensure_return_in_body(&mut hir_elements, &return_type, &name, log);
 
-                _ if return_type == Type::Unit => {
-                    hir_elements.push(BlockElement::Expr(
-                        Value::Return {
-                            value: Value::Unit.into(),
-                        }
-                        .into(),
-                    ));
-                }
-
-                _ => log.report(&HirErr::MissingReturnStatement),
+            if return_inserted {
+                Some(hir_elements)
+            } else {
+                return Err(());
             }
-
-            Some(hir_elements.into())
         }
     };
 
     ctx.current_scope.pop();
 
     let function = Function {
+        span,
         visibility,
         attributes,
+        is_unsafe: false,
         name: name.clone(),
-        mangled_name,
+        mangled_name: None,
         generics,
         params: parameters,
         return_type: return_type.into(),
         body,
     };
 
-    ctx.entities_added.insert(function.name.clone());
+    Ok(helpers::upsert_function(function, ctx))
+}
 
-    if let Some(existing_function_id) = ctx.tab.get_function(&name) {
-        let mut existing_function = existing_function_id.borrow_mut();
-        *existing_function = function;
-        Ok(existing_function_id.clone())
-    } else {
-        let function_id: FunctionId = function.into();
-        ctx.tab.add_function(function_id.clone());
-        Ok(function_id)
+/// Ensures that a function's block elements end with a `return` expression.
+/// Returns `true` if the body is valid, `false` if an error occurred.
+fn ensure_return_in_body(
+    hir_elements: &mut Vec<BlockElement>,
+    return_type: &Type,
+    func_name: &NString,
+    log: &CompilerLog,
+) -> bool {
+    match hir_elements.last() {
+        Some(BlockElement::Expr(expr)) if expr.borrow().is_return() => true,
+        Some(BlockElement::Expr(expr)) if !expr.borrow().is_return() => {
+            *hir_elements.last_mut().unwrap() = BlockElement::Expr(
+                Value::Return {
+                    span: SrcPos::default(),
+                    value: expr.to_owned(),
+                }
+                .into(),
+            );
+            true
+        }
+        _ if matches!(return_type, Type::Unit { .. }) => {
+            hir_elements.push(BlockElement::Expr(
+                Value::Return {
+                    span: SrcPos::default(),
+                    value: Value::Unit {
+                        span: SrcPos::default(),
+                    }
+                    .into(),
+                }
+                .into(),
+            ));
+            true
+        }
+        _ => {
+            log.report(&HirErr::MissingReturnStatement {
+                span: SrcPos::default(),
+                name: func_name.to_string(),
+            });
+            false
+        }
     }
 }
 
+// ═══════════════════════════════════════════════════════════════════════════
+// Module Lowering
+// ═══════════════════════════════════════════════════════════════════════════
+
 pub(crate) fn lower_module(module: ast::Module, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Module, ()> {
+    let span: SrcPos = module.span.start;
     ctx.current_scope.push(module.name.clone());
 
-    let visibility = match module.visibility {
-        Some(ast::Visibility::Public) => Visibility::Pub,
-        Some(ast::Visibility::Protected) => Visibility::Pro,
-        Some(ast::Visibility::Private) | None => Visibility::Sec,
-    };
+    let visibility = helpers::lower_visibility(module.visibility);
 
-    let ast_attributes = module.attributes.unwrap_or_default();
-    let attributes = BTreeSet::new();
-    for _attr in ast_attributes {
-        log.report(&HirErr::UnrecognizedModuleAttribute);
-    }
+    helpers::reject_all_attributes(&Some(module.attributes.clone().unwrap_or_default()), ATTR_MODULE, log);
 
-    let qualified_name = ctx.qualify_name(&module.name).into();
-    if ctx.entities_added.contains(&qualified_name) {
-        log.report(&HirErr::DuplicateEntity(qualified_name.to_string()));
-        return Err(());
-    }
+    let qualified_name = helpers::qualify(&module.name, ctx);
+    helpers::check_duplicate(&qualified_name, ctx, log)?;
 
     let mut items = Vec::with_capacity(module.items.len());
 
@@ -685,8 +574,9 @@ pub(crate) fn lower_module(module: ast::Module, ctx: &mut Ast2HirCtx, log: &Comp
     }
 
     let module = Module {
+        span,
         visibility,
-        attributes,
+        attributes: BTreeSet::new(),
         name: module.name,
         items,
     };
@@ -697,10 +587,16 @@ pub(crate) fn lower_module(module: ast::Module, ctx: &mut Ast2HirCtx, log: &Comp
     Ok(module)
 }
 
+// ═══════════════════════════════════════════════════════════════════════════
+// Item Dispatch
+// ═══════════════════════════════════════════════════════════════════════════
+
+pub(crate) type Item = nitrate_hir::Item;
+
 fn lower_item(ctx: &mut Ast2HirCtx, item: ast::Item, log: &CompilerLog) -> Result<Option<Item>, ()> {
     match item {
         ast::Item::Module(module) => {
-            let hir_module = convert_ast_to_hir(*module, ctx, log)?.into();
+            let hir_module = convert_ast_to_hir(*module, ctx, log).map_err(|_| ())?.into();
             Ok(Some(Item::Module(hir_module)))
         }
 

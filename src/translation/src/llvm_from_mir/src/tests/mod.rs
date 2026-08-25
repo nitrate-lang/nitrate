@@ -1,0 +1,29 @@
+//! Comprehensive unit and regression test suite for `nitrate_llvm_from_mir`.
+
+mod binops;
+mod binops_matrix;
+mod binops_widths;
+mod casts;
+mod casts_matrix;
+mod casts_signedness;
+mod comparisons_matrix;
+mod control_flow;
+mod control_flow_matrix;
+mod coverage_gaps;
+mod error_paths;
+mod functions_calls;
+mod functions_matrix;
+mod literals;
+mod literals_matrix;
+mod operand_matrix;
+mod places;
+mod places_matrix;
+mod regression;
+mod rvalues;
+mod rvalues_matrix;
+mod shifts_matrix;
+mod storage_markers;
+mod typegen;
+mod typegen_matrix;
+mod unary_nullary;
+mod unary_nullary_matrix;

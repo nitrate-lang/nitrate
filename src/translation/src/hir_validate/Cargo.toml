@@ -4,11 +4,13 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-nitrate_diagnosis = { path = "../../../diagnosis" }
-nitrate_nstring = { path = "../nstring" }
+nitrate_diagnosis.workspace = true
+nitrate_tree.workspace = true
+nitrate_nstring.workspace = true
 
-nitrate_hir = { path = "../hir" }
-nitrate_hir_get_type = { path = "../hir_get_type" }
-nitrate_hir_dump = { path = "../hir_dump" }
+nitrate_hir.workspace = true
+nitrate_hir_type.workspace = true
+nitrate_hir_dump.workspace = true
 
-log = "0.4"
+log.workspace = true
+

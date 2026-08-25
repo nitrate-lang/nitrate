@@ -1,27 +1,35 @@
-use crate::Interpreter;
+use crate::{Interpreter, package::validate_package_name};
 use clap::Parser;
 use slog::{error, info};
 
 #[derive(Parser, Debug)]
 #[command(about, long_about = None)]
 pub(crate) struct NewArgs {
+    /// Initialize a new repository for the given version control system
+    #[arg(long, value_parser = ["git", "hg", "pijul", "fossil", "none"])]
+    pub(crate) vcs: Option<String>,
+
     /// Use a binary (application) template [default]
     #[arg(long, default_value_t = true)]
-    bin: bool,
+    pub(crate) bin: bool,
 
     /// Use a library template
     #[arg(long)]
-    lib: bool,
+    pub(crate) lib: bool,
 
-    /// Specify the edition for the new package
+    /// Edition to set for the package generated
     #[arg(long, default_value = "2026")]
-    edition: u16,
+    pub(crate) edition: String,
 
     /// Set the resulting package name, defaults to the directory name
     #[arg(long)]
-    name: Option<String>,
+    pub(crate) name: Option<String>,
 
-    path: String,
+    /// Registry to use
+    #[arg(long)]
+    pub(crate) registry: Option<String>,
+
+    pub(crate) path: String,
 }
 
 impl Interpreter<'_> {
@@ -41,7 +49,9 @@ impl Interpreter<'_> {
                 .to_string(),
         };
 
-        self.create_package_dir_structure(containing_dir, &package_name, args.lib, args.edition)?;
+        validate_package_name(&package_name).map_err(|e| anyhow::anyhow!("{e}"))?;
+
+        self.create_package_dir_structure(containing_dir, &package_name, args.lib, &args.edition)?;
 
         info!(
             self.log,

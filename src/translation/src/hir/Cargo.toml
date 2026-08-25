@@ -4,15 +4,16 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-nitrate_nstring = { path = "../nstring" }
-log = "0.4.27"
-serde = { version = "1.0.219", features = ["derive", "rc"] }
-serde_json = "1.0.143"
-blake3 = "1.8.2"
-bimap = "0.6.3"
-append-only-vec = "0.1.7"
-thin-vec = { version = "0.2.14", features = ["serde"] }
-thin_str = { version = "0.1.0", features = ["serde", "serde_support"] }
-ordered-float = "5.1.0"
-nitrate_token = { path = "../token" }
-internal-iterator = "0.2.3"
+nitrate_nstring.workspace = true
+nitrate_tree.workspace = true
+log.workspace = true
+serde = { workspace = true, features = ["derive", "rc"] }
+serde_json.workspace = true
+blake3.workspace = true
+bimap.workspace = true
+append-only-vec.workspace = true
+thin-vec = { workspace = true, features = ["serde"] }
+thin_str = { workspace = true, features = ["serde", "serde_support"] }
+ordered-float.workspace = true
+nitrate_token.workspace = true
+internal-iterator.workspace = true

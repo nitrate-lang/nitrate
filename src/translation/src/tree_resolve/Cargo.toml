@@ -4,11 +4,11 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-nitrate_nstring = { path = "../nstring" }
-nitrate_token = { path = "../token" }
-nitrate_token_lexer = { path = "../token_lexer" }
-nitrate_tree = { path = "../tree" }
-nitrate_tree_parse = { path = "../tree_parse" }
-nitrate_diagnosis = { path = "../../../diagnosis" }
+nitrate_nstring.workspace = true
+nitrate_token.workspace = true
+nitrate_token_lexer.workspace = true
+nitrate_tree.workspace = true
+nitrate_tree_parse.workspace = true
+nitrate_diagnosis.workspace = true
 
-log = "0.4.27"
+log.workspace = true

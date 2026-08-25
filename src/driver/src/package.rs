@@ -1,138 +1,385 @@
 use serde::{Deserialize, Serialize};
-use xml_doc::ReadOptions;
+use std::collections::BTreeMap;
+use std::matches;
+use std::path::{Path, PathBuf};
 
-#[derive(Debug, Serialize, Deserialize, PartialEq)]
-pub struct Dependency {
-    #[serde(rename = "@name")]
+pub const MANIFEST_FILE: &str = "no3.toml";
+pub const LOCK_FILE: &str = "no3.lock";
+pub const DEFAULT_REGISTRY: &str = "https://registry.nitrate.dev";
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(untagged)]
+pub enum DependencyReq {
+    Simple(String),
+    Full(DependencyFull),
+}
+
+#[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq)]
+pub struct DependencyFull {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub version: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub path: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub git: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub branch: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub tag: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub rev: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub registry: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub features: Option<Vec<String>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub optional: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub default_features: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub package: Option<String>,
+}
+
+impl DependencyReq {
+    pub fn version_req(&self) -> Option<semver::VersionReq> {
+        let s = match self {
+            DependencyReq::Simple(v) => v.as_str(),
+            DependencyReq::Full(f) => f.version.as_deref()?,
+        };
+        semver::VersionReq::parse(s).ok()
+    }
+
+    pub fn name(&self) -> Option<&str> {
+        match self {
+            DependencyReq::Full(f) => f.package.as_deref(),
+            DependencyReq::Simple(_) => None,
+        }
+    }
+
+    pub fn is_optional(&self) -> bool {
+        matches!(self, DependencyReq::Full(f) if f.optional == Some(true))
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct LockedPackage {
     pub name: String,
-    #[serde(rename = "@major")]
-    pub major: u32,
-    #[serde(rename = "@minor")]
-    pub minor: u32,
-    #[serde(rename = "@patch")]
-    pub patch: u32,
+    pub version: String,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub dependencies: Vec<String>,
+    #[serde(default = "default_registry_source")]
+    pub source: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub checksum: Option<String>,
 }
 
-#[derive(Debug, Serialize, Deserialize, PartialEq)]
-pub struct Dependencies {
-    #[serde(rename = "dependency")]
-    dependency: Option<Vec<Dependency>>,
+fn default_registry_source() -> String {
+    DEFAULT_REGISTRY.to_string()
 }
 
-#[derive(Debug, Serialize, Deserialize, PartialEq)]
-pub struct Version {
-    #[serde(rename = "@major")]
-    pub major: u32,
-    #[serde(rename = "@minor")]
-    pub minor: u32,
-    #[serde(rename = "@patch")]
-    pub patch: u32,
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct Lockfile {
+    #[serde(default = "default_lock_version")]
+    pub version: u32,
+    #[serde(default, rename = "package")]
+    pub packages: Vec<LockedPackage>,
 }
 
-#[derive(Debug, Serialize, Deserialize, PartialEq)]
-#[serde(rename = "package")]
+impl Default for Lockfile {
+    fn default() -> Self {
+        Self {
+            version: 4,
+            packages: Vec::new(),
+        }
+    }
+}
+
+fn default_lock_version() -> u32 {
+    4
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct WorkspaceSection {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub members: Vec<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub exclude: Option<Vec<String>>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct Manifest {
+    pub package: Package,
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub dependencies: BTreeMap<String, DependencyReq>,
+    #[serde(default, rename = "dev-dependencies", skip_serializing_if = "BTreeMap::is_empty")]
+    pub dev_dependencies: BTreeMap<String, DependencyReq>,
+    #[serde(default, rename = "build-dependencies", skip_serializing_if = "BTreeMap::is_empty")]
+    pub build_dependencies: BTreeMap<String, DependencyReq>,
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub features: BTreeMap<String, Vec<String>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub workspace: Option<WorkspaceSection>,
+    #[serde(skip)]
+    pub manifest_dir: PathBuf,
+}
+
+/// The `[package]` section.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct Package {
-    #[serde(rename = "name")]
-    name: String,
-
-    #[serde(rename = "version")]
-    version: Version,
-
-    #[serde(rename = "edition")]
-    edition: u16,
-
-    #[serde(rename = "dependencies")]
-    dependencies: Dependencies,
+    pub name: String,
+    pub version: String,
+    pub edition: String,
+    #[serde(default, rename = "rust-version", skip_serializing_if = "Option::is_none")]
+    pub rust_version: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub authors: Option<Vec<String>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub license: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub readme: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub repository: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub homepage: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub documentation: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub keywords: Option<Vec<String>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub categories: Option<Vec<String>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub publish: Option<bool>,
 }
 
 impl Package {
-    pub fn from_xml(xml: &str) -> Result<Self, serde_xml_rs::Error> {
-        serde_xml_rs::from_str(xml)
+    pub fn semver(&self) -> Result<semver::Version, semver::Error> {
+        semver::Version::parse(&self.version)
     }
 
-    pub fn name(&self) -> &str {
-        &self.name
+    pub fn major_minor_patch(&self) -> (u64, u64, u64) {
+        let v = self.semver().unwrap_or_else(|_| semver::Version::new(0, 1, 0));
+        (v.major, v.minor, v.patch)
     }
 
-    pub fn version(&self) -> (u32, u32, u32) {
-        (self.version.major, self.version.minor, self.version.patch)
-    }
-
-    pub fn edition(&self) -> u16 {
+    pub fn edition_major(&self) -> u16 {
         self.edition
-    }
-
-    pub fn entrypoint(&self) -> std::path::PathBuf {
-        std::path::Path::new("src").join("entry.nit")
-    }
-
-    pub fn xml_serialize(&self) -> String {
-        const XMLNS_XSI: &str = "http://www.w3.org/2001/XMLSchema-instance";
-        const XSI_NO_NAMESPACE_SCHEMA_LOCATION: &str = "https://static.nitrate.dev/no3_package_config.xsd";
-
-        let serialized = serde_xml_rs::to_string(self).unwrap();
-        let mut document = xml_doc::Document::parse_str_with_opts(&serialized, ReadOptions::default()).unwrap();
-
-        let root = document.root_element().unwrap();
-        root.set_attribute(&mut document, "xmlns:xsi", XMLNS_XSI);
-        root.set_attribute(
-            &mut document,
-            "xsi:noNamespaceSchemaLocation",
-            XSI_NO_NAMESPACE_SCHEMA_LOCATION,
-        );
-
-        document.write_str().unwrap()
+            .split('.')
+            .next()
+            .and_then(|s| s.parse().ok())
+            .unwrap_or(2026)
     }
 }
 
-pub struct PackageBuilder {
-    name: String,
-    version: Version,
-    edition: u16,
-    dependencies: Vec<Dependency>,
+impl Lockfile {
+    pub fn from_str(s: &str) -> Result<Self, toml::de::Error> {
+        toml::from_str(s)
+    }
+
+    pub fn to_toml_string(&self) -> String {
+        let mut out = format!("version = {}\n\n", self.version);
+        for pkg in &self.packages {
+            out.push_str("[[package]]\n");
+            out.push_str(&format!("name = \"{}\"\n", pkg.name));
+            out.push_str(&format!("version = \"{}\"\n", pkg.version));
+            out.push_str(&format!("source = \"{}\"\n", pkg.source));
+            if !pkg.dependencies.is_empty() {
+                out.push_str("dependencies = [\n");
+                for dep in &pkg.dependencies {
+                    out.push_str(&format!("    \"{}\",\n", dep));
+                }
+                out.push_str("]\n");
+            }
+            if let Some(checksum) = &pkg.checksum {
+                out.push_str(&format!("checksum = \"{}\"\n", checksum));
+            }
+            out.push('\n');
+        }
+        out
+    }
 }
 
-impl PackageBuilder {
-    pub fn new(name: String) -> Self {
+#[derive(Debug, thiserror::Error)]
+pub enum ManifestError {
+    #[error("failed to parse manifest: {0}")]
+    Parse(toml::de::Error),
+    #[error("failed to read manifest '{0}': {1}")]
+    Io(PathBuf, std::io::Error),
+    #[error("could not find `no3.toml` in `{0}` or any parent directory")]
+    NotFound(PathBuf),
+}
+
+/// Find `no3.toml` starting at `dir` and walking up parents.
+pub fn find_manifest(start_dir: &Path) -> Result<PathBuf, ManifestError> {
+    let mut dir = Some(start_dir);
+    while let Some(d) = dir {
+        let candidate = d.join(MANIFEST_FILE);
+        if candidate.is_file() {
+            return Ok(candidate);
+        }
+        dir = d.parent();
+    }
+    Err(ManifestError::NotFound(start_dir.to_path_buf()))
+}
+
+impl Manifest {
+    /// Load the manifest, searching upward from `start_dir` for `no3.toml`.
+    pub fn discover(start_dir: &Path) -> Result<Self, ManifestError> {
+        let manifest_path = find_manifest(start_dir)?;
+        Self::load(&manifest_path)
+    }
+
+    /// Load a manifest from an explicit `--manifest-path`.
+    pub fn load(path: &Path) -> Result<Self, ManifestError> {
+        let text = std::fs::read_to_string(path).map_err(|e| ManifestError::Io(path.to_path_buf(), e))?;
+        let mut manifest: Manifest = toml::from_str(&text).map_err(ManifestError::Parse)?;
+        manifest.manifest_dir = path
+            .parent()
+            .map(|p| p.to_path_buf())
+            .unwrap_or_else(|| PathBuf::from("."));
+        Ok(manifest)
+    }
+
+    pub fn to_toml_string(&self) -> String {
+        let mut manifest = self.clone();
+        manifest.manifest_dir = PathBuf::new();
+        toml::to_string(&manifest).expect("failed to serialize manifest")
+    }
+
+    /// The default source entrypoint for this package.
+    pub fn entrypoint(&self) -> PathBuf {
+        self.manifest_dir.join("src").join("entry.nit")
+    }
+
+    pub fn all_dependencies(&self) -> impl Iterator<Item = (&String, &DependencyReq)> {
+        self.dependencies
+            .iter()
+            .chain(self.dev_dependencies.iter())
+            .chain(self.build_dependencies.iter())
+    }
+
+    pub fn existing_dependency(&self, name: &str) -> Option<(&String, &DependencyReq)> {
+        self.all_dependencies().find(|(n, _)| *n == name)
+    }
+
+    /// The lockfile path next to the manifest.
+    pub fn lockfile_path(&self) -> PathBuf {
+        self.manifest_dir.join(LOCK_FILE)
+    }
+
+    pub fn load_lockfile(&self) -> Result<Lockfile, ManifestError> {
+        let path = self.lockfile_path();
+        let text = std::fs::read_to_string(&path).map_err(|e| ManifestError::Io(path, e))?;
+        Lockfile::from_str(&text).map_err(ManifestError::Parse)
+    }
+
+    pub fn save_lockfile(&self, lockfile: &Lockfile) -> Result<(), ManifestError> {
+        let path = self.lockfile_path();
+        std::fs::write(&path, lockfile.to_toml_string()).map_err(|e| ManifestError::Io(path, e))
+    }
+}
+
+/// Builder for `no3 new` / `no3 init`.
+pub struct ManifestBuilder {
+    manifest: Manifest,
+    is_lib: bool,
+}
+
+impl ManifestBuilder {
+    pub fn new(name: String, edition: &str) -> Self {
         Self {
-            name,
-            version: Version {
-                major: 0,
-                minor: 1,
-                patch: 0,
-            },
-            edition: 2026,
-            dependencies: Vec::new(),
-        }
-    }
-
-    pub fn _version(mut self, version: Version) -> Self {
-        self.version = version;
-        self
-    }
-
-    pub fn edition(mut self, edition: u16) -> Self {
-        self.edition = edition;
-        self
-    }
-
-    pub fn _add_dependency(mut self, dependency: Dependency) -> Self {
-        self.dependencies.push(dependency);
-        self
-    }
-
-    pub fn build(self) -> Package {
-        Package {
-            name: self.name,
-            version: self.version,
-            edition: self.edition,
-            dependencies: Dependencies {
-                dependency: if self.dependencies.is_empty() {
-                    None
-                } else {
-                    Some(self.dependencies)
+            manifest: Manifest {
+                package: Package {
+                    name,
+                    version: "0.1.0".to_string(),
+                    edition: edition.to_string(),
+                    rust_version: None,
+                    description: None,
+                    authors: Some(vec![default_author()]),
+                    license: None,
+                    readme: None,
+                    repository: None,
+                    homepage: None,
+                    documentation: None,
+                    keywords: None,
+                    categories: None,
+                    publish: None,
                 },
+                dependencies: BTreeMap::new(),
+                dev_dependencies: BTreeMap::new(),
+                build_dependencies: BTreeMap::new(),
+                features: BTreeMap::new(),
+                workspace: None,
+                manifest_dir: PathBuf::from("."),
             },
+            is_lib: false,
         }
     }
+
+    pub fn lib(mut self, is_lib: bool) -> Self {
+        self.is_lib = is_lib;
+        self
+    }
+
+    pub fn build(self) -> Manifest {
+        self.manifest
+    }
+
+    pub fn is_lib(&self) -> bool {
+        self.is_lib
+    }
+}
+
+fn default_author() -> String {
+    match std::env::var("USER") {
+        Ok(user) => {
+            let name_env = std::env::var("NITRATE_AUTHOR_NAME")
+                .or_else(|_| std::env::var("CARGO_AUTHOR_NAME"))
+                .ok();
+            let email_env = std::env::var("NITRATE_AUTHOR_EMAIL")
+                .or_else(|_| std::env::var("CARGO_AUTHOR_EMAIL"))
+                .ok();
+            match (name_env, email_env) {
+                (Some(name), Some(email)) => format!("{} <{}>", name, email),
+                (Some(name), None) => name,
+                (None, Some(email)) => format!("{} <{}>", user, email),
+                (None, None) => user,
+            }
+        }
+        Err(_) => "Unknown".to_string(),
+    }
+}
+
+/// Sanitize a package name to only contain alphanumeric, `-`, and `_`.
+pub fn sanitize_package_name(name: &str) -> String {
+    let mut out = String::with_capacity(name.len());
+    for c in name.chars() {
+        if c.is_alphanumeric() || c == '-' || c == '_' {
+            out.push(c);
+        } else {
+            out.push('_');
+        }
+    }
+    out
+}
+
+/// Validate a package name against cargo-like rules.
+pub fn validate_package_name(name: &str) -> Result<(), String> {
+    if name.is_empty() {
+        return Err("package name cannot be empty".to_string());
+    }
+    if !name.chars().all(|c| c.is_alphanumeric() || c == '-' || c == '_') {
+        return Err(format!(
+            "invalid package name `{}`: characters must be alphanumeric, `-`, or `_`",
+            name
+        ));
+    }
+    if name.starts_with('-') || name.ends_with('-') {
+        return Err(format!("invalid package name `{}`: cannot start or end with `-`", name));
+    }
+    if name == "no3" {
+        return Err("package name `no3` is reserved".to_string());
+    }
+    Ok(())
 }

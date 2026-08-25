@@ -1,19 +1,12 @@
-use crate::{Interpreter, package::Package};
+use crate::{Interpreter, package::Manifest};
 use clap::Parser;
-use nitrate_diagnosis::{CompilerLog, intern_file_id};
-use nitrate_translation::{
-    hir::{Store, prelude as hir, using_storage},
-    hir_dump::Dump,
-    hir_from_tree::{Ast2HirCtx, convert_ast_to_hir},
-    hir_validate::{self, ValidateHirItem},
-    llvm::{LLVMContext, OptLevel},
-    llvm_from_hir::generate_llvmir,
-    parsetree::ast,
-    token_lexer::{Lexer, LexerError},
-    tree_resolve::ImportContext,
-};
+use nitrate_diagnosis::CompilerLog;
+use nitrate_translation::MirLowered;
+use nitrate_translation::{Pipeline, PipelineConfig, hir, llvm::OptLevel, mir};
 use slog::{debug, error, info};
-use std::{collections::HashSet, io::Read, path::PathBuf};
+use std::collections::HashSet;
+use std::num::NonZero;
+use std::path::{Path, PathBuf};
 
 #[derive(Parser, Debug)]
 #[command(about, long_about = None)]
@@ -30,6 +23,10 @@ pub(crate) struct BuildArgs {
     #[arg(long, group = "output")]
     show_llvmir: bool,
 
+    /// Export the MIR control-flow graph as a Graphviz DOT file
+    #[arg(long)]
+    emit_mir: bool,
+
     /// Pretty-print the Assembly Code
     #[arg(long, group = "output")]
     show_asm: bool,
@@ -44,19 +41,273 @@ pub(crate) struct BuildArgs {
 
     /// Build artifacts in release mode, with optimizations
     #[arg(long, short = 'r', group = "build-profile")]
-    release: bool,
+    pub(crate) release: bool,
 
     /// Build artifacts with the specified profile
     #[arg(long, group = "build-profile", value_name = "PROFILE-NAME")]
-    profile: Option<String>,
+    pub(crate) profile: Option<String>,
 
     /// Build for the LLVM target triple
     #[arg(long, value_name = "TRIPLE")]
-    target: Option<String>,
+    pub(crate) target: Option<String>,
 
     /// Directory for all generated artifacts
-    #[arg(long, value_name = "DIRECTORY", default_value = ".no3/build")]
-    target_dir: PathBuf,
+    #[arg(long, value_name = "DIRECTORY")]
+    pub(crate) target_dir: Option<PathBuf>,
+
+    /// Number of parallel jobs, defaults to # of CPUs.
+    #[arg(long, short = 'j', value_name = "N")]
+    pub(crate) jobs: Option<usize>,
+
+    /// Do not abort the build as soon as there is an error
+    #[arg(long)]
+    pub(crate) keep_going: bool,
+
+    /// Path to Cargo.toml
+    #[arg(long, value_name = "PATH")]
+    pub(crate) manifest_path: Option<PathBuf>,
+
+    /// Build only this package's library
+    #[arg(long)]
+    pub(crate) lib: bool,
+
+    /// Build all binaries
+    #[arg(long)]
+    pub(crate) bins: bool,
+
+    /// Build only the specified binary
+    #[arg(long, value_name = "NAME")]
+    pub(crate) bin: Option<String>,
+
+    /// Build all examples
+    #[arg(long)]
+    pub(crate) examples: bool,
+
+    /// Build only the specified example
+    #[arg(long, value_name = "NAME")]
+    pub(crate) example: Option<String>,
+
+    /// Build all tests
+    #[arg(long)]
+    pub(crate) tests: bool,
+
+    /// Build only the specified test target
+    #[arg(long, value_name = "NAME")]
+    pub(crate) test: Option<String>,
+
+    /// Build all benchmarks
+    #[arg(long)]
+    pub(crate) benches: bool,
+
+    /// Build only the specified benchmark target
+    #[arg(long, value_name = "NAME")]
+    pub(crate) bench: Option<String>,
+
+    /// Build all targets
+    #[arg(long)]
+    pub(crate) all_targets: bool,
+
+    /// Space or comma separated list of features to activate
+    #[arg(long, short = 'F', value_name = "FEATURES")]
+    pub(crate) features: Vec<String>,
+
+    /// Activate all available features
+    #[arg(long)]
+    pub(crate) all_features: bool,
+
+    /// Do not activate the `default` feature
+    #[arg(long)]
+    pub(crate) no_default_features: bool,
+
+    /// Package to build (see `no3 help pkgid`)
+    #[arg(long, short = 'p', value_name = "SPEC")]
+    pub(crate) package: Option<String>,
+
+    /// Build all packages in the workspace
+    #[arg(long)]
+    pub(crate) workspace: bool,
+
+    /// Exclude packages from the build
+    #[arg(long, value_name = "SPEC")]
+    pub(crate) exclude: Vec<String>,
+
+    /// Codegen options: -C opt-level=3, -C target-cpu=native, -C passes=inline,constfold
+    #[arg(long = "codegen", short = 'C', value_name = "OPTION[=VALUE]", number_of_values = 1)]
+    pub(crate) codegen_opts: Vec<String>,
+
+    /// Disable default optimization passes
+    #[arg(long)]
+    pub(crate) no_default_passes: bool,
+}
+
+/// Shared compile options extracted from a cargo-style command.
+#[derive(Debug, Clone)]
+pub(crate) struct CompileOptions {
+    pub(crate) release: bool,
+    pub(crate) profile: Option<String>,
+    pub(crate) target: Option<String>,
+    pub(crate) target_dir: Option<PathBuf>,
+    pub(crate) manifest_path: Option<PathBuf>,
+    pub(crate) show_ast: bool,
+    pub(crate) show_hir: bool,
+    pub(crate) show_llvmir: bool,
+    pub(crate) show_asm: bool,
+    pub(crate) show_obj: bool,
+    pub(crate) format_mode: Option<String>,
+    /// Export MIR control-flow graph as a Graphviz DOT file in the target dir.
+    pub(crate) emit_mir: bool,
+    /// Stop after HIR validation; don't emit object code or link.
+    pub(crate) check_only: bool,
+    /// Raw `-C` codegen options to parse.
+    pub(crate) codegen_opts: Vec<String>,
+    /// Disable default optimization passes.
+    pub(crate) no_default_passes: bool,
+    /// Number of parallel jobs.
+    pub(crate) jobs: Option<usize>,
+}
+
+impl Default for CompileOptions {
+    fn default() -> Self {
+        Self {
+            release: false,
+            profile: None,
+            target: None,
+            target_dir: None,
+            manifest_path: None,
+            show_ast: false,
+            show_hir: false,
+            show_llvmir: false,
+            show_asm: false,
+            show_obj: false,
+            format_mode: None,
+            emit_mir: false,
+            check_only: false,
+            codegen_opts: Vec::new(),
+            no_default_passes: false,
+            jobs: None,
+        }
+    }
+}
+
+impl From<&BuildArgs> for CompileOptions {
+    fn from(args: &BuildArgs) -> Self {
+        Self {
+            release: args.release,
+            profile: args.profile.clone(),
+            target: args.target.clone(),
+            target_dir: args.target_dir.clone(),
+            manifest_path: args.manifest_path.clone(),
+            show_ast: args.show_ast,
+            show_hir: args.show_hir,
+            show_llvmir: args.show_llvmir,
+            show_asm: args.show_asm,
+            show_obj: args.show_obj,
+            format_mode: args.format_mode.clone(),
+            emit_mir: args.emit_mir,
+            check_only: false,
+            codegen_opts: args.codegen_opts.clone(),
+            no_default_passes: args.no_default_passes,
+            jobs: args.jobs,
+        }
+    }
+}
+
+/// Resolve the manifest to compile, honoring `--manifest-path` if given.
+pub(crate) fn resolve_manifest(manifest_path: Option<&Path>) -> anyhow::Result<Manifest> {
+    match manifest_path {
+        Some(path) => Manifest::load(path).map_err(|e| anyhow::anyhow!("{e}")),
+        None => {
+            let cwd = std::env::current_dir().map_err(|e| anyhow::anyhow!("failed to get current dir: {e}"))?;
+            Manifest::discover(&cwd).map_err(|e| anyhow::anyhow!("{e}"))
+        }
+    }
+}
+
+/// Compute the target directory: `--target-dir`, or `<manifest_dir>/target`.
+pub(crate) fn target_dir_for(manifest: &Manifest, explicit: Option<&Path>) -> PathBuf {
+    match explicit {
+        Some(dir) => dir.to_path_buf(),
+        None => manifest.manifest_dir.join("target"),
+    }
+}
+
+/// Compute the profile directory name (debug/release or custom profile).
+pub(crate) fn profile_dir(opts: &CompileOptions) -> String {
+    match &opts.profile {
+        Some(p) => p.clone(),
+        None if opts.release => "release".to_string(),
+        None => "debug".to_string(),
+    }
+}
+
+/// Compute the optimization level from compile options.
+pub(crate) fn opt_level_for(opts: &CompileOptions) -> OptLevel {
+    match opts
+        .codegen_opts
+        .iter()
+        .find_map(|opt| opt.strip_prefix("opt-level=").and_then(|v| v.parse::<u8>().ok()))
+    {
+        Some(0) => OptLevel::None,
+        Some(1) => OptLevel::Default,
+        Some(_) | None if opts.release => OptLevel::Aggressive,
+        _ => OptLevel::None,
+    }
+}
+
+/// Extract the target CPU from `-C target-cpu=...` codegen options.
+pub(crate) fn target_cpu_from_opts(opts: &CompileOptions) -> Option<String> {
+    opts.codegen_opts
+        .iter()
+        .find_map(|opt| opt.strip_prefix("target-cpu=").map(String::from))
+}
+
+/// Build a `PipelineConfig` from compile options and manifest.
+pub(crate) fn pipeline_config_from_opts(opts: &CompileOptions, manifest: &Manifest) -> PipelineConfig {
+    let log = CompilerLog::new(slog::Logger::root(slog::Discard, slog::o!()));
+    let opt_level = opt_level_for(opts);
+    let target_cpu = target_cpu_from_opts(opts);
+
+    PipelineConfig {
+        package_name: manifest.package.name.clone(),
+        target_triple: opts.target.clone(),
+        target_cpu,
+        opt_level,
+        hir_passes: Vec::new(),
+        hir_module_passes: Vec::new(),
+        mir_passes: Vec::new(),
+        mir_module_passes: Vec::new(),
+        no_default_passes: opts.no_default_passes,
+        thread_count: opts
+            .jobs
+            .and_then(|j| NonZero::new(j))
+            .unwrap_or_else(|| NonZero::new(1).unwrap()),
+        log,
+    }
+}
+
+/// Helper: link an object file into a binary using the system linker.
+fn link_binary(log: &slog::Logger, object_file: &Path, binary_path: &Path, package_name: &str) -> anyhow::Result<()> {
+    let status = std::process::Command::new("clang")
+        .arg(object_file)
+        .arg("-o")
+        .arg(binary_path)
+        .status()
+        .map_err(|e| {
+            error!(log, "Failed to link final binary for package '{}': {}", package_name, e);
+            e
+        })?;
+
+    if !status.success() {
+        error!(
+            log,
+            "Linking final binary for package '{}' failed with exit code: {}",
+            package_name,
+            status.code().unwrap_or(-1),
+        );
+        return Err(anyhow::anyhow!("Linking final binary failed"));
+    }
+
+    Ok(())
 }
 
 impl Interpreter<'_> {
@@ -81,99 +332,7 @@ impl Interpreter<'_> {
         Ok(())
     }
 
-    pub(crate) fn get_package_config(&self) -> anyhow::Result<Package> {
-        let config_file_string = match std::fs::read_to_string("no3.xml") {
-            Ok(content) => content,
-
-            Err(e) => {
-                error!(self.log, "Failed to read package config file 'no3.xml': {}", e);
-
-                return Err(anyhow::anyhow!("Failed to read package config file 'no3.xml'"));
-            }
-        };
-
-        match Package::from_xml(&config_file_string) {
-            Ok(pkg) => Ok(pkg),
-
-            Err(e) => {
-                error!(self.log, "Failed to load package config from 'no3.xml': {}", e);
-
-                return Err(anyhow::anyhow!("Failed to load package config from 'no3.xml'"));
-            }
-        }
-    }
-
-    pub(crate) fn parse_source_code(
-        &self,
-        entrypoint_path: &std::path::Path,
-        package_name: &str,
-        log: &CompilerLog,
-    ) -> anyhow::Result<ast::Module> {
-        if !entrypoint_path.exists() {
-            error!(
-                self.log,
-                "Package entrypoint '{}' does not exist.",
-                entrypoint_path.display()
-            );
-            return Err(anyhow::anyhow!("Package entrypoint does not exist"));
-        }
-
-        let mut source_code_file = match std::fs::File::open(&entrypoint_path) {
-            Ok(file) => file,
-
-            Err(e) => {
-                error!(
-                    self.log,
-                    "Failed to open package entrypoint '{}': {}",
-                    entrypoint_path.display(),
-                    e
-                );
-
-                return Err(e.into());
-            }
-        };
-
-        let mut source_code = Vec::new();
-        source_code_file.read_to_end(&mut source_code)?;
-
-        let source_code_file = intern_file_id(&entrypoint_path.to_string_lossy().to_string()).expect("FileId overflow");
-
-        let lexer = match Lexer::new(&source_code, Some(source_code_file)) {
-            Ok(lexer) => lexer,
-
-            Err(LexerError::SourceTooBig) => {
-                error!(
-                    self.log,
-                    "Source file '{}' is too large to be processed.",
-                    entrypoint_path.display(),
-                );
-
-                return Err(anyhow::anyhow!("Source file too large"));
-            }
-        };
-
-        let mut parser = nitrate_translation::parse::Parser::new(lexer, &log);
-
-        Ok(parser.parse_source(package_name.into()))
-    }
-
-    pub(crate) fn show_ast(&self, module: &ast::Module, format_mode: &Option<String>) {
-        match format_mode {
-            Some(mode) if mode == "minify" => {
-                serde_json::to_writer(&mut std::io::stdout(), &module).expect("Failed to write AST to stdout");
-            }
-
-            Some(mode) if mode == "pretty" => {
-                serde_json::to_writer_pretty(&mut std::io::stdout(), &module).expect("Failed to write AST to stdout");
-            }
-
-            _ => {
-                serde_json::to_writer_pretty(&mut std::io::stdout(), &module).expect("Failed to write AST to stdout");
-            }
-        }
-    }
-
-    fn create_target_dir(&self, dir: &PathBuf) -> anyhow::Result<()> {
+    fn create_target_dir(&self, dir: &Path) -> anyhow::Result<()> {
         if let Err(e) = std::fs::create_dir_all(dir) {
             error!(
                 self.log,
@@ -187,212 +346,145 @@ impl Interpreter<'_> {
         Ok(())
     }
 
-    fn get_llvm_context(&self, triple: Option<String>, opt_level: OptLevel) -> anyhow::Result<LLVMContext> {
-        let triple = match triple {
-            Some(t) => t,
-            None => LLVMContext::default_target_triple(),
-        };
+    /// Run the full compilation pipeline for a package and produce a binary.
+    ///
+    /// Uses the centralized `Pipeline` type-state builder from `nitrate_translation`.
+    pub(crate) fn compile_package(&mut self, opts: &CompileOptions) -> anyhow::Result<Option<PathBuf>> {
+        let manifest = resolve_manifest(opts.manifest_path.as_deref())?;
+        let target_dir = target_dir_for(&manifest, opts.target_dir.as_deref());
+        let profile = profile_dir(opts);
+        let build_dir = target_dir.join(&profile);
 
-        match LLVMContext::new(&triple, opt_level) {
-            Ok(ctx) => Ok(ctx),
+        self.create_target_dir(&build_dir)?;
+        self.validate_package_edition(manifest.package.edition_major())?;
 
-            Err(e) => {
-                error!(self.log, "Failed to create LLVM context for target '{}': {}", triple, e);
+        // Build pipeline configuration
+        let mut config = pipeline_config_from_opts(opts, &manifest);
+        let log = CompilerLog::new(self.log.clone());
+        config.log = log.clone();
 
-                Err(anyhow::anyhow!("Failed to create LLVM context"))
-            }
+        let entrypoint = manifest.entrypoint();
+        let package_name = manifest.package.name.clone();
+
+        // Create the HIR Store upfront
+        let mut hir_store = hir::Store::new();
+        let mir_store = mir::MirStore::new();
+
+        let pipeline = Pipeline::new(config);
+
+        // Load → Lex → Parse (no Store needed)
+        let source = pipeline.load_source(&entrypoint)?;
+        let tokenized = source.lex()?;
+        let parsed = tokenized.parse()?;
+
+        if opts.show_ast {
+            let pretty = opts.format_mode.as_deref() != Some("minify");
+            parsed.dump_ast(pretty);
+            return Ok(None);
         }
-    }
 
-    fn _get_search_paths(&self) -> Vec<PathBuf> {
-        let mut search_paths = Vec::new();
+        let ptr_size = std::mem::size_of::<*const u8>() as u32;
 
-        search_paths.push(std::env::current_dir().unwrap().join(".no3/modules"));
-        debug!(self.log, "Package search paths: {:?}", search_paths);
+        // HIR stages run inside HIR TLS storage
+        let mir_lowered = hir::using_storage(&hir_store, || -> anyhow::Result<Option<MirLowered>> {
+            let hir_lowered = parsed.lower_hir(ptr_size)?;
 
-        search_paths
-    }
-
-    fn lower_to_hir(
-        &self,
-        module: ast::Module,
-        ptr_size: u32,
-        package_name: &str,
-        source_filepath: &std::path::Path,
-        log: &CompilerLog,
-    ) -> anyhow::Result<(hir::Module, hir::SymbolTab)> {
-        let ptr_size = match ptr_size {
-            4 => hir::PtrSize::U32,
-            8 => hir::PtrSize::U64,
-            _ => {
-                error!(self.log, "Unsupported pointer size: {} bytes", ptr_size);
-                return Err(anyhow::anyhow!("Unsupported pointer size"));
+            if opts.show_hir {
+                hir_lowered.dump_hir();
+                return Ok(None);
             }
-        };
 
-        let import_ctx = ImportContext::new(package_name.into(), source_filepath.into());
-        let mut ctx = Ast2HirCtx::new(ptr_size, import_ctx);
-        let module = match convert_ast_to_hir(module, &mut ctx, log) {
-            Err(_) => return Err(anyhow::anyhow!("Failed to convert AST to HIR")),
-            Ok(module) => module,
-        };
+            let hir_validated = hir_lowered.validate()?;
 
-        Ok((module, ctx.tab))
+            if opts.check_only {
+                // Run the full semantic pipeline through MIR lowering so the
+                // MIR borrow checker (memory-safety enforcement) is exercised.
+                let hir_mangled = hir_validated.mangle();
+                mir::using_storage(&mir_store, || hir_mangled.lower_mir());
+                if log.error_bit() {
+                    return Err(anyhow::anyhow!(
+                        "check failed: the package has errors (see diagnostics above)"
+                    ));
+                }
+                info!(self.log, "Finished checking `{}`", package_name);
+                return Ok(None);
+            }
+
+            let hir_mangled = hir_validated.mangle();
+
+            // MIR stages need their own TLS storage (separate from HIR)
+            let mir_lowered = mir::using_storage(&mir_store, || -> MirLowered { hir_mangled.lower_mir() });
+
+            Ok(Some(mir_lowered))
+        });
+
+        // Reset the HIR store to free memory before codegen
+        hir_store.reset();
+
+        if let Some(mir_lowered) = mir_lowered? {
+            mir::using_storage(&mir_store, || -> anyhow::Result<Option<PathBuf>> {
+                if opts.emit_mir {
+                    let dot_path = build_dir.join(format!("{}.mir.dot", package_name));
+                    mir_lowered.dump_mir_dot(&dot_path)?;
+                    info!(self.log, "MIR control-flow graph written to '{}'", dot_path.display());
+                    return Ok(None);
+                }
+
+                let llvm_generated = mir_lowered.codegen()?;
+
+                if opts.show_llvmir {
+                    llvm_generated.dump_llvm_ir()?;
+                    return Ok(None);
+                }
+
+                if opts.show_asm {
+                    llvm_generated.dump_asm()?;
+                    return Ok(None);
+                }
+
+                let (major, minor, patch) = manifest.package.major_minor_patch();
+                let object_file = build_dir.join(format!("{}-{}.{}.{}.o", package_name, major, minor, patch));
+
+                let emitted = llvm_generated.optimize_llvm().emit_obj(&object_file)?;
+
+                if opts.show_obj {
+                    info!(
+                        self.log,
+                        "Object file for package '{}' written to '{}'",
+                        package_name,
+                        emitted.path().display()
+                    );
+                    return Ok(None);
+                }
+
+                let binary_path = build_dir.join(&package_name);
+                link_binary(self.log, emitted.path(), &binary_path, &package_name)?;
+
+                info!(
+                    self.log,
+                    "Successfully built package '{}' v{}.{}.{}", package_name, major, minor, patch,
+                );
+
+                Ok(Some(binary_path))
+            })
+        } else {
+            Ok(None)
+        }
     }
 
     pub(crate) fn sc_build(&mut self, args: BuildArgs) -> anyhow::Result<()> {
-        self.create_target_dir(&args.target_dir)?;
-        let log = CompilerLog::new(self.log.clone());
+        let opts = CompileOptions::from(&args);
+        let manifest = resolve_manifest(opts.manifest_path.as_deref())?;
+        let target_dir = target_dir_for(&manifest, opts.target_dir.as_deref());
 
-        let package = self.get_package_config()?;
-        self.validate_package_edition(package.edition())?;
+        self.compile_package(&opts)?;
 
-        let ast_module = self.parse_source_code(&package.entrypoint(), package.name(), &log)?;
-        if args.show_ast {
-            self.show_ast(&ast_module, &args.format_mode);
-            return Ok(());
-        }
+        debug!(
+            self.log,
+            "Build artifacts in '{}'",
+            target_dir.join(profile_dir(&opts)).display()
+        );
 
-        let opt_level = if args.release {
-            OptLevel::Aggressive
-        } else {
-            match &args.profile {
-                Some(profile_name) if profile_name == "debug" => OptLevel::None,
-                Some(profile_name) if profile_name == "release" => OptLevel::Aggressive,
-                Some(profile_name) => {
-                    error!(
-                        self.log,
-                        "Unknown build profile '{}'. Supported profiles are 'debug' and 'release'.", profile_name
-                    );
-                    return Err(anyhow::anyhow!("Unknown build profile"));
-                }
-                None => OptLevel::None,
-            }
-        };
-
-        let llvm_ctx = self.get_llvm_context(args.target, opt_level)?;
-        let ptr_size = llvm_ctx.target_data.get_pointer_byte_size(None);
-
-        let store = Store::new();
-
-        using_storage(&store, || {
-            let (hir_module, symbol_tab) =
-                self.lower_to_hir(ast_module, ptr_size, package.name(), &package.entrypoint(), &log)?;
-
-            let mut hir_verifier = hir_validate::ValidateCtx::new(&symbol_tab);
-            let valid_hir_module = match hir_module.clone().validate(&mut hir_verifier) {
-                Ok(m) => m,
-                Err(_) => {
-                    error!(self.log, "HIR validation failed for package '{}'", package.name());
-
-                    if args.show_hir {
-                        println!("{}", hir_module.to_string());
-                        return Ok(());
-                    }
-
-                    return Err(anyhow::anyhow!("HIR validation failed"));
-                }
-            };
-
-            if args.show_hir {
-                println!("{}", valid_hir_module.into_inner().to_string());
-                return Ok(());
-            }
-
-            let mut llvm_module = generate_llvmir(package.name(), valid_hir_module, &llvm_ctx, &symbol_tab);
-
-            llvm_ctx.optimize_module(&mut llvm_module);
-
-            if args.show_llvmir {
-                println!("{}", llvm_module.print_to_string().to_string());
-                return Ok(());
-            }
-
-            if args.show_asm {
-                if let Err(e) = llvm_ctx.write_asm(&mut llvm_module, &mut std::io::stdout()) {
-                    error!(
-                        self.log,
-                        "Failed to write assembly file for package '{}': {}",
-                        package.name(),
-                        e
-                    );
-
-                    return Err(anyhow::anyhow!("Failed to write assembly file"));
-                }
-                return Ok(());
-            }
-
-            let target_file_o = format!(
-                ".no3/build/{}-{}.{}.{}.o",
-                package.name(),
-                package.version().0,
-                package.version().1,
-                package.version().2
-            );
-
-            if let Err(e) = llvm_ctx.write_object_file(&mut llvm_module, std::path::Path::new(&target_file_o)) {
-                error!(
-                    self.log,
-                    "Failed to write object file for package '{}': {}",
-                    package.name(),
-                    e
-                );
-
-                return Err(anyhow::anyhow!("Failed to write object file"));
-            }
-
-            if args.show_obj {
-                info!(
-                    self.log,
-                    "Object file for package '{}' written to '{}'",
-                    package.name(),
-                    target_file_o
-                );
-                return Ok(());
-            }
-
-            // run system command
-            let status = std::process::Command::new("clang")
-                .args(&[&target_file_o, "-o"])
-                .arg(format!(
-                    "{}-{}.{}.{}",
-                    package.name(),
-                    package.version().0,
-                    package.version().1,
-                    package.version().2
-                ))
-                .status()
-                .map_err(|e| {
-                    error!(
-                        self.log,
-                        "Failed to link final binary for package '{}': {}",
-                        package.name(),
-                        e
-                    );
-
-                    e
-                })?;
-
-            if !status.success() {
-                error!(
-                    self.log,
-                    "Linking final binary for package '{}' failed with exit code: {}",
-                    package.name(),
-                    status.code().unwrap_or(-1),
-                );
-                return Err(anyhow::anyhow!("Linking final binary failed"));
-            }
-
-            info!(
-                self.log,
-                "Successfully built package '{}' version {}.{}.{}",
-                package.name(),
-                package.version().0,
-                package.version().1,
-                package.version().2,
-            );
-
-            Ok(())
-        })
+        Ok(())
     }
 }
