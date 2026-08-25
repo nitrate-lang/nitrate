@@ -262,14 +262,6 @@ impl<'log> Evaluator<'log> {
     // Frame management
     // ────────────────────────────────────────────────────────────────
 
-    pub(crate) fn current_frame(&self) -> &Frame {
-        self.frames.last().expect("no active frame")
-    }
-
-    pub(crate) fn current_frame_mut(&mut self) -> &mut Frame {
-        self.frames.last_mut().expect("no active frame")
-    }
-
     pub(crate) fn lookup_binding(&self, name: &NString) -> Option<Value> {
         for frame in self.frames.iter().rev() {
             if let Some(value) = frame.get_binding(name) {
@@ -277,5 +269,9 @@ impl<'log> Evaluator<'log> {
             }
         }
         None
+    }
+
+    pub fn get_unsafe_operations_performed(&self) -> usize {
+        self.unsafe_operations_performed
     }
 }

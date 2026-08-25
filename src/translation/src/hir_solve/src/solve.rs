@@ -2884,12 +2884,6 @@ mod tests {
         let store = Store::new();
         using_storage(&store, || {
             let log = CompilerLog::default();
-            let mut tab = new_tab();
-            let arr_type = Type::Array {
-                span: sp(),
-                element_type: TypeId::from(Type::I32 { span: sp() }),
-                len: 10,
-            };
             // Use a List which can be constrained to be an Array
             let coll = ValueId::from(Value::List {
                 span: sp(),

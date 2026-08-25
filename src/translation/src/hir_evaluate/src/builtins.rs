@@ -39,12 +39,7 @@ pub static DEFAULT_BUILTIN_FUNCTIONS: LazyLock<HashMap<NString, BuiltinFn>> = La
                 return Err(EvalError::TypeError);
             };
 
-            let Value::StructObject {
-                span,
-                struct_def,
-                fields,
-            } = srcloc
-            else {
+            let Value::StructObject { struct_def, fields, .. } = srcloc else {
                 return Err(EvalError::TypeError);
             };
 

@@ -1,6 +1,7 @@
 use nitrate_diagnosis::{DiagnosticGroupId, DiagnosticInfo, FormattableDiagnosticGroup, Origin, SourcePosition};
 use nitrate_token::LexPos;
 
+#[allow(dead_code)]
 pub(crate) enum SyntaxErr {
     GenericMissingParameterName(LexPos),
     GenericParameterLimit(LexPos),

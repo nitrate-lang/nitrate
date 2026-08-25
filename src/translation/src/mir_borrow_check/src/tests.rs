@@ -19,7 +19,9 @@ struct Harness {
 
 impl Harness {
     fn new() -> Self {
-        Self { store: mir::MirStore::new() }
+        Self {
+            store: mir::MirStore::new(),
+        }
     }
 
     /// Build a module and return the deduplicated borrow errors for every
@@ -75,7 +77,12 @@ fn bool_ty() -> MirTypeId {
 }
 
 fn ref_ty(mutable: bool) -> MirTypeId {
-    MirType::Reference { exclusive: false, mutable, to: i32_ty() }.into()
+    MirType::Reference {
+        exclusive: false,
+        mutable,
+        to: i32_ty(),
+    }
+    .into()
 }
 
 fn mut_ref_ty() -> MirTypeId {
@@ -237,7 +244,6 @@ fn shared_then_mutable_conflicts() {
     );
 }
 
-
 // ─────────────────────────────────────────────────────────────
 // NLL: borrow regions end at the last use
 // ─────────────────────────────────────────────────────────────
@@ -388,7 +394,6 @@ fn use_before_init_is_rejected() {
     );
 }
 
-
 // ─────────────────────────────────────────────────────────────
 // Escaping borrows
 // ─────────────────────────────────────────────────────────────
@@ -462,8 +467,20 @@ fn disjoint_field_borrows_do_not_conflict() {
                 .into(),
             ),
         );
-        let ra = f.borrow(BorrowKind::Shared, Place::Field { base: Box::new(Place::Local(s)), field_name: "a".into() });
-        let rb = f.borrow(BorrowKind::Mutable, Place::Field { base: Box::new(Place::Local(s)), field_name: "b".into() });
+        let ra = f.borrow(
+            BorrowKind::Shared,
+            Place::Field {
+                base: Box::new(Place::Local(s)),
+                field_name: "a".into(),
+            },
+        );
+        let rb = f.borrow(
+            BorrowKind::Mutable,
+            Place::Field {
+                base: Box::new(Place::Local(s)),
+                field_name: "b".into(),
+            },
+        );
         // Use both borrows so they stay live.
         f.ret(Some(Operand::Copy(Place::Deref(Box::new(Place::Local(ra))))));
         let _ = rb;
@@ -491,7 +508,13 @@ fn write_whole_struct_while_field_borrowed_conflicts() {
                     .into(),
                 ),
             );
-            let r = f.borrow(BorrowKind::Shared, Place::Field { base: Box::new(Place::Local(s)), field_name: "a".into() });
+            let r = f.borrow(
+                BorrowKind::Shared,
+                Place::Field {
+                    base: Box::new(Place::Local(s)),
+                    field_name: "a".into(),
+                },
+            );
             f.push_assign(
                 Place::Local(s),
                 Rvalue::Aggregate(
@@ -529,16 +552,24 @@ fn write_disjoint_field_while_field_borrowed_is_ok() {
                 .into(),
             ),
         );
-        let r = f.borrow(BorrowKind::Shared, Place::Field { base: Box::new(Place::Local(s)), field_name: "a".into() });
+        let r = f.borrow(
+            BorrowKind::Shared,
+            Place::Field {
+                base: Box::new(Place::Local(s)),
+                field_name: "a".into(),
+            },
+        );
         f.push_assign(
-            Place::Field { base: Box::new(Place::Local(s)), field_name: "b".into() },
+            Place::Field {
+                base: Box::new(Place::Local(s)),
+                field_name: "b".into(),
+            },
             Rvalue::Use(Operand::Constant(MirLiteral::I32(9))),
         );
         f.ret(Some(Operand::Copy(Place::Deref(Box::new(Place::Local(r))))));
         f.finish_function();
     });
 }
-
 
 // ─────────────────────────────────────────────────────────────
 // Two-phase borrows
@@ -628,7 +659,6 @@ fn two_phase_mutable_borrow_used_twice_is_not_a_reservation() {
             f.create_block();
             f.assign_const(Place::Local(x), MirLiteral::I32(5));
             let t = f.borrow(BorrowKind::Mutable, Place::Local(x));
-            let s = f.borrow(BorrowKind::Shared, Place::Local(x));
             let cont = f.reserve_block();
             let cont2 = f.reserve_block();
             let y = f.local(i32_ty(), false);
@@ -653,7 +683,6 @@ fn two_phase_mutable_borrow_used_twice_is_not_a_reservation() {
         &["as shared because it is already mutably borrowed"],
     );
 }
-
 
 // ─────────────────────────────────────────────────────────────
 // Loops and control flow
@@ -811,7 +840,6 @@ fn borrowing_an_uninitialized_value_is_rejected() {
     );
 }
 
-
 // ─────────────────────────────────────────────────────────────
 // Borrow-value propagation
 // ─────────────────────────────────────────────────────────────
@@ -829,10 +857,7 @@ fn borrow_propagates_through_copies() {
             f.assign_const(Place::Local(x), MirLiteral::I32(5));
             let r1 = f.borrow(BorrowKind::Shared, Place::Local(x));
             let r2 = f.local(shr_ref_ty(), false);
-            f.push_assign(
-                Place::Local(r2),
-                Rvalue::Use(Operand::Copy(Place::Local(r1))),
-            );
+            f.push_assign(Place::Local(r2), Rvalue::Use(Operand::Copy(Place::Local(r1))));
             f.ret(Some(Operand::Copy(Place::Local(r2))));
             f.finish_function();
         },
@@ -853,10 +878,7 @@ fn write_after_borrow_propagated_through_copy_conflicts() {
             f.assign_const(Place::Local(x), MirLiteral::I32(5));
             let r1 = f.borrow(BorrowKind::Shared, Place::Local(x));
             let r2 = f.local(shr_ref_ty(), false);
-            f.push_assign(
-                Place::Local(r2),
-                Rvalue::Use(Operand::Copy(Place::Local(r1))),
-            );
+            f.push_assign(Place::Local(r2), Rvalue::Use(Operand::Copy(Place::Local(r1))));
             f.assign_const(Place::Local(x), MirLiteral::I32(9));
             f.ret(Some(Operand::Copy(Place::Deref(Box::new(Place::Local(r2))))));
             f.finish_function();
@@ -887,7 +909,6 @@ fn borrow_flowing_through_block_arguments_is_tracked() {
     );
 }
 
-
 // ─────────────────────────────────────────────────────────────
 // Log integration (pipeline-facing API)
 // ─────────────────────────────────────────────────────────────
@@ -909,7 +930,10 @@ fn check_mir_module_reports_errors_to_the_log() {
         let module = builder.build_module(mir::PtrSize::U64);
 
         let log = CompilerLog::default();
-        assert!(check_mir_module(&module, &log).is_err(), "escaping borrow must be reported");
+        assert!(
+            check_mir_module(&module, &log).is_err(),
+            "escaping borrow must be reported"
+        );
         assert!(log.error_bit(), "the compiler log's error bit must be set");
     });
 }
@@ -934,4 +958,3 @@ fn check_mir_module_passes_valid_module() {
         assert!(!log.error_bit(), "no errors must be reported");
     });
 }
-

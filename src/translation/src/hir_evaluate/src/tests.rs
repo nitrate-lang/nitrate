@@ -1855,7 +1855,7 @@ fn break_with_label() {
             label: label.clone(),
         };
         let result = ev.evaluate(&v);
-        assert!(matches!(result, Err(EvalError::Break { label })));
+        assert!(matches!(result, Err(EvalError::Break { .. })));
     });
 }
 
@@ -1880,7 +1880,7 @@ fn continue_with_label() {
             label: label.clone(),
         };
         let result = ev.evaluate(&v);
-        assert!(matches!(result, Err(EvalError::Continue { label })));
+        assert!(matches!(result, Err(EvalError::Continue { .. })));
     });
 }
 
@@ -3156,7 +3156,7 @@ fn memory_deallocate_nonexistent_does_not_panic() {
 
 #[test]
 fn memory_deallocate_frees_space() {
-    run_test(|_, ev| {
+    run_test(|_, _| {
         let mut memory = Memory::new(50);
         let addr1 = memory.allocate(20, 1, true).unwrap();
         assert!(memory.is_valid_pointer(addr1));
