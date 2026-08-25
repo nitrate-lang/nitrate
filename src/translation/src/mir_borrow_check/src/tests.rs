@@ -379,6 +379,29 @@ fn use_after_move_is_rejected() {
 }
 
 #[test]
+fn double_move_is_rejected() {
+    // var x = 5; y = move(x); z = move(x); ret z
+    // Moving the same place twice is a use-after-move: the second move reads
+    // already-deinitialized memory.
+    let h = Harness::new();
+    h.reject(
+        |b| {
+            let mut f = b.start_function("double_move".into(), i32_ty());
+            let x = f.local(i32_ty(), true);
+            f.create_block();
+            f.assign_const(Place::Local(x), MirLiteral::I32(5));
+            let y = f.local(i32_ty(), false);
+            f.push_assign(Place::Local(y), Rvalue::Use(Operand::Move(Place::Local(x))));
+            let z = f.local(i32_ty(), false);
+            f.push_assign(Place::Local(z), Rvalue::Use(Operand::Move(Place::Local(x))));
+            f.ret(Some(Operand::Copy(Place::Local(z))));
+            f.finish_function();
+        },
+        &["use of moved value _1"],
+    );
+}
+
+#[test]
 fn use_before_init_is_rejected() {
     // ret x  — x never assigned
     let h = Harness::new();
@@ -659,6 +682,10 @@ fn two_phase_mutable_borrow_used_twice_is_not_a_reservation() {
             f.create_block();
             f.assign_const(Place::Local(x), MirLiteral::I32(5));
             let t = f.borrow(BorrowKind::Mutable, Place::Local(x));
+            // t is used as a call argument twice → not two-phase → the mutable
+            // borrow of x is activated immediately, so this shared borrow of x
+            // must conflict.
+            let _s = f.borrow(BorrowKind::Shared, Place::Local(x));
             let cont = f.reserve_block();
             let cont2 = f.reserve_block();
             let y = f.local(i32_ty(), false);

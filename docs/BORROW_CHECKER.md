@@ -91,7 +91,7 @@ Known over-approximations and limitations:
 
 - **Drop-liveness is not modeled** (MIR has no drops): a borrow dies at its last use even if the holding local's lexical scope extends further. This is sound (unused references are dead) and strictly more permissive than lexical borrow checking.
 - **Points-to aliasing** through copied references is not tracked (the analysis is place-based); full soundness there requires move-only `&mut T`, which the MIR lowering does not yet enforce.
-- **Partial moves** are tracked per-place; reading a whole struct after one field was moved is not rejected (the MIR emits no moves today).
+- **Partial moves** are tracked per-place; reading a whole struct after one field was moved is not rejected. The lowering emits `Move` for every by-value read of a non-copy type (structs and enums), so whole-value double moves are always rejected; field-level partial moves are recorded but a later whole-struct read is still permitted.
 - **Global mutability** is not carried on `MirGlobal`; string-literal statics are treated as immutable, and unknown statics conservatively reject `&mut`.
 
 ## Place Representation

@@ -19,10 +19,12 @@
 
 mod get_type;
 mod ty_alignment;
+mod ty_copy;
 mod ty_size;
 mod ty_stride;
 
 pub use get_type::*;
 pub use ty_alignment::*;
+pub use ty_copy::*;
 pub use ty_size::*;
 pub use ty_stride::*;

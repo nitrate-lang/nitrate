@@ -61,8 +61,9 @@
 //!   MIR lowering does not yet enforce.
 //! * A place that is a suffix of a moved place is tracked as moved; partial
 //!   moves of individual fields are tracked per-place, but reading a whole
-//!   struct after one field was moved is not rejected (the MIR emits no moves
-//!   today).
+//!   struct after one field was moved is not rejected. Whole-value moves are
+//!   emitted by the HIR→MIR lowering for non-copy types (structs/enums), so
+//!   double moves are always rejected.
 
 mod check;
 pub mod diagnosis;

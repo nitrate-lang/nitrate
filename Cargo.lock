@@ -1377,6 +1377,7 @@ dependencies = [
  "nitrate_tree_parse",
  "nitrate_tree_resolve",
  "serde_json",
+ "slog",
  "thiserror 2.0.19",
  "threadpool",
  "threadpool_scope",

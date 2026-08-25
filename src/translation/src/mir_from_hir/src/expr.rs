@@ -2,7 +2,7 @@ use super::LoweringCtx;
 use crate::block;
 use crate::ty;
 use nitrate_hir::prelude as hir;
-use nitrate_hir_type::HirGetType;
+use nitrate_hir_type::{hir_type_is_copy, HirGetType};
 use nitrate_mir::prelude as mir;
 use nitrate_nstring::NString;
 
@@ -46,7 +46,13 @@ pub fn lower_value(
         hir::Value::ParameterSymbol { id, .. } => {
             let param = id.borrow();
             if let Some(local_id) = ctx.local_map.get(&param.name).cloned() {
-                mir::Operand::Copy(mir::Place::Local(local_id))
+                // Parameters of non-copy types are moved when read by value so
+                // the borrow checker tracks the ownership transfer.
+                if value_type_is_copy(ctx, &*value) {
+                    mir::Operand::Copy(mir::Place::Local(local_id))
+                } else {
+                    mir::Operand::Move(mir::Place::Local(local_id))
+                }
             } else {
                 mir::Operand::Constant(mir::MirLiteral::Unit)
             }
@@ -55,13 +61,19 @@ pub fn lower_value(
         hir::Value::LocalVariableSymbol { id, .. } => {
             let local_var = id.borrow();
             if let Some(local_id) = ctx.local_map.get(&local_var.name).cloned() {
-                mir::Operand::Copy(mir::Place::Local(local_id))
+                if value_type_is_copy(ctx, &*value) {
+                    mir::Operand::Copy(mir::Place::Local(local_id))
+                } else {
+                    mir::Operand::Move(mir::Place::Local(local_id))
+                }
             } else {
                 mir::Operand::Constant(mir::MirLiteral::Unit)
             }
         }
 
         hir::Value::GlobalVariableSymbol { id, .. } => {
+            // Globals are shared statics; reading them always copies (the
+            // value semantics of a global read, never an ownership transfer).
             let gv = id.borrow();
             mir::Operand::Copy(mir::Place::Static(gv.name.clone()))
         }
@@ -107,7 +119,13 @@ pub fn lower_value(
                 base: Box::new(base_place),
                 field_name: field_name.clone(),
             };
-            mir::Operand::Copy(place)
+            // Reading a non-copy field transfers ownership out of the parent
+            // (a partial move); copy types are read in place.
+            if value_type_is_copy(ctx, &*value) {
+                mir::Operand::Copy(place)
+            } else {
+                mir::Operand::Move(place)
+            }
         }
 
         // ── Index access ────────────────────────────────
@@ -118,14 +136,22 @@ pub fn lower_value(
                 base: Box::new(collection_place),
                 index: Box::new(index_place),
             };
-            mir::Operand::Copy(place)
+            if value_type_is_copy(ctx, &*value) {
+                mir::Operand::Copy(place)
+            } else {
+                mir::Operand::Move(place)
+            }
         }
 
         // ── Deref ───────────────────────────────────────
         hir::Value::Deref { place: inner, .. } => {
             let base_place = lower_value_as_place(ctx, func, inner);
             let place = mir::Place::Deref(Box::new(base_place));
-            mir::Operand::Copy(place)
+            if value_type_is_copy(ctx, &*value) {
+                mir::Operand::Copy(place)
+            } else {
+                mir::Operand::Move(place)
+            }
         }
 
         // ── Borrow ──────────────────────────────────────
@@ -243,7 +269,13 @@ pub fn lower_value(
                 let merge_block = func.reserve_block();
                 func.call_return(callee_op, mir_args, mir::Place::Local(ret_temp.clone()), merge_block);
                 func.switch_to_block(merge_block);
-                mir::Operand::Copy(mir::Place::Local(ret_temp))
+                // A non-copy return value is moved out of the call's temporary
+                // into its destination.
+                if value_type_is_copy(ctx, &*value) {
+                    mir::Operand::Copy(mir::Place::Local(ret_temp))
+                } else {
+                    mir::Operand::Move(mir::Place::Local(ret_temp))
+                }
             }
         }
 
@@ -267,7 +299,11 @@ pub fn lower_value(
                     merge_block,
                 );
                 func.switch_to_block(merge_block);
-                mir::Operand::Copy(mir::Place::Local(ret_temp))
+                if value_type_is_copy(ctx, &*value) {
+                    mir::Operand::Copy(mir::Place::Local(ret_temp))
+                } else {
+                    mir::Operand::Move(mir::Place::Local(ret_temp))
+                }
             }
         }
 
@@ -466,12 +502,18 @@ fn lower_if(
 ) -> mir::Operand {
     let cond_op = lower_value(ctx, func, condition, false);
 
-    // Determine the result type
+    // Determine the result type from the branches (the type of the if
+    // expression itself, not the condition).
+    let branch_ty = true_branch.borrow().determine_type(ctx.symbol_tab).ok();
     let result_ty = if is_tail {
         None
     } else {
-        Some(value_result_type(ctx, func, &condition.borrow()))
+        Some(match &branch_ty {
+            Some(ty) => ty::lower_type(ty),
+            None => func.store_type(mir::MirType::Unit),
+        })
     };
+    let result_is_copy = branch_ty.as_ref().map_or(true, |t| hir_type_is_copy(t));
 
     // Reserve all blocks before setting the terminator on the current block
     let merge_types: thin_vec::ThinVec<mir::MirTypeId> = result_ty
@@ -517,9 +559,15 @@ fn lower_if(
     // Switch to the merge block so the caller can continue adding statements
     func.switch_to_block(merge.block);
 
-    // Return the merge block argument as the result operand
+    // Return the merge block argument as the result operand. Non-copy results
+    // are moved out of the merge argument so the borrow checker tracks the
+    // ownership transfer to the if-expression's consumer.
     if let Some(arg_local) = merge_arg_local {
-        mir::Operand::Copy(mir::Place::Local(arg_local))
+        if result_is_copy {
+            mir::Operand::Copy(mir::Place::Local(arg_local))
+        } else {
+            mir::Operand::Move(mir::Place::Local(arg_local))
+        }
     } else {
         mir::Operand::Constant(mir::MirLiteral::Unit)
     }
@@ -603,6 +651,17 @@ fn value_result_type(
         ty::lower_type(&hir_ty)
     } else {
         func.store_type(mir::MirType::Unit)
+    }
+}
+
+/// Whether an HIR value's type has implicit copy semantics.
+///
+/// Non-copy values are emitted as `Operand::Move` when read in rvalue position
+/// so the borrow checker can reject double moves and use-after-move.
+fn value_type_is_copy(ctx: &LoweringCtx, hir_value: &hir::Value) -> bool {
+    match hir_value.determine_type(ctx.symbol_tab) {
+        Ok(ty) => hir_type_is_copy(&ty),
+        Err(_) => true, // be permissive if type inference unexpectedly fails
     }
 }
 

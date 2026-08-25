@@ -30,3 +30,6 @@ serde_json.workspace = true
 thiserror.workspace = true
 threadpool_scope.workspace = true
 threadpool.workspace = true
+
+[dev-dependencies]
+slog.workspace = true
