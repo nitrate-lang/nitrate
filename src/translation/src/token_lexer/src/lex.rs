@@ -59,6 +59,16 @@ impl<'a> Lexer<'a> {
     }
     pub fn disable_trivia(&mut self) {
         self.trivia_enabled = false;
+        // If a trivia token (comment/whitespace/newline) was already peeked
+        // while trivia was enabled, drop it. Otherwise the next peek would
+        // return the stale trivia token instead of re-scanning with trivia
+        // skipping active (e.g. `parse_source` peeks to compute the module
+        // span before disabling trivia).
+        if let Some(peeked) = &self.preread_token
+            && peeked.token.is_trivia()
+        {
+            self.preread_token = None;
+        }
     }
 
     pub fn next_tok(&mut self) -> AnnotatedToken {

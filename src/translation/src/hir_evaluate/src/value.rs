@@ -96,60 +96,24 @@ pub fn evaluate_value(evaluator: &mut Evaluator, value: &Value) -> Result<Value,
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// Helper: convert Value to Lit, normalizing all integer types to
-// compatible forms so that mixed solved/unsolved function calls
-// produce compatible Lit values regardless of function solve order.
+// Helper: convert Value to Lit, preserving each literal's concrete type.
+//
+// Unconstrained inference placeholders (`InferredInteger` / `InferredFloat`)
+// promote to their widest representable literal (`U128` / `F64`) so the
+// numeric value survives exactly; concrete literals keep their declared type
+// so that width-dependent semantics (wrapping arithmetic, bitwise masks,
+// rotate/shift widths, `bool` negation) are preserved by `eval_binary` and
+// `eval_unary`.
 // ═══════════════════════════════════════════════════════════════════════════
 
-/// Extract the raw `u128` value from any integer-like `Value`, so we can
-/// normalise it into a single canonical `Lit` that is add-compatible.
-fn integer_value_u128(v: &Value) -> u128 {
-    match v {
-        Value::U8 { value, .. } => *value as u128,
-        Value::U16 { value, .. } => *value as u128,
-        Value::U32 { value, .. } => *value as u128,
-        Value::U64 { value, .. } => *value as u128,
-        Value::U128 { value, .. } => **value,
-        Value::I8 { value, .. } => *value as u128,
-        Value::I16 { value, .. } => *value as u128,
-        Value::I32 { value, .. } => *value as u128,
-        Value::I64 { value, .. } => *value as u128,
-        Value::I128 { value, .. } => **value as u128,
-        Value::USize { value, .. } => *value as u128,
-        Value::Bool { value, .. } => *value as u128,
-        Value::InferredInteger { value, .. } => **value,
-        _ => 0,
-    }
-}
-
-/// Normalize an integer value to a `Lit` variant that is compatible with
-/// other normalized integer values.  Small values become `Lit::I32` so
-/// that USize, InferredInteger, and other integer types can all be
-/// combined (e.g. `foo() + bar()` used as an array size).
-fn normalize_integer_to_lit(raw: u128) -> Lit {
-    if let Ok(v) = i32::try_from(raw) {
-        Lit::I32(v)
-    } else if let Ok(v) = i64::try_from(raw) {
-        Lit::I64(v)
-    } else if let Ok(v) = u64::try_from(raw) {
-        Lit::U64(v)
-    } else {
-        Lit::U128(raw)
-    }
-}
-
-/// Try to convert a Value to a Lit.  Integer types are normalized so
-/// that the evaluator can combine them regardless of which function
-/// bodies have already been solved.
+/// Try to convert a Value to a Lit, preserving the concrete literal type.
 fn try_to_lit(value: Value) -> Result<Lit, EvalError> {
     match value {
-        Value::InferredInteger { value: v, .. } => Ok(normalize_integer_to_lit(*v)),
+        Value::InferredInteger { value: v, .. } => Ok(Lit::U128(*v)),
         Value::InferredFloat { value: v, .. } => Ok(Lit::F64(v)),
         Value::Unit { .. } => Ok(Lit::Unit),
         Value::F32 { value: v, .. } => Ok(Lit::F32(v)),
         Value::F64 { value: v, .. } => Ok(Lit::F64(v)),
-        // Normalize all integer types to I32 (or larger when needed)
-        other if other.is_literal() => Ok(normalize_integer_to_lit(integer_value_u128(&other))),
         other => Lit::try_from(other).map_err(|_| EvalError::TypeError),
     }
 }
