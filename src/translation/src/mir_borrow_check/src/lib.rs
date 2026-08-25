@@ -70,6 +70,8 @@ pub mod diagnosis;
 mod liveness;
 mod place;
 
+pub use diagnosis::explanations;
+
 #[cfg(test)]
 mod tests;
 

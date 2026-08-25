@@ -1,6 +1,6 @@
 use std::format;
 
-use nitrate_diagnosis::{DiagnosticGroupId, DiagnosticInfo, FormattableDiagnosticGroup, Origin};
+use nitrate_diagnosis::{DiagnosticExplanation, DiagnosticGroupId, DiagnosticInfo, FormattableDiagnosticGroup, Origin};
 use nitrate_nstring::NString;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -82,7 +82,7 @@ pub(crate) enum ValidateErr {
 
 impl FormattableDiagnosticGroup for ValidateErr {
     fn group_id(&self) -> DiagnosticGroupId {
-        DiagnosticGroupId::Hir
+        DiagnosticGroupId::Semantic
     }
 
     fn variant_id(&self) -> u16 {
@@ -237,3 +237,143 @@ impl FormattableDiagnosticGroup for ValidateErr {
         }
     }
 }
+
+/// Static explanations for every semantic-validation error code, used by `no3 --explain`.
+pub fn explanations() -> &'static [DiagnosticExplanation] {
+    &[
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::Semantic,
+            variant_id: 0x000,
+            explanation: "The struct being accessed does not have a field with that name. \
+                           Check the spelling of the field name and confirm it is declared on the struct.",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::Semantic,
+            variant_id: 0x001,
+            explanation: "A field is not accessible from the current module. \
+                           The field is private to its defining module; mark it `pub` to expose it.",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::Semantic,
+            variant_id: 0x002,
+            explanation: "The enum being accessed does not have a variant with that name. \
+                           Check the spelling of the variant name and confirm it is declared on the enum.",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::Semantic,
+            variant_id: 0x003,
+            explanation: "The assignment target is not mutable. \
+                           Declare the variable with `var` instead of `let`, or assign through a mutable reference.",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::Semantic,
+            variant_id: 0x004,
+            explanation: "A mutable borrow target is not mutable. \
+                           You cannot take `&mut` of an immutable binding; declare it with `var`.",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::Semantic,
+            variant_id: 0x005,
+            explanation: "A function is not accessible from the current module. \
+                           The function is private to its defining module; mark it `pub` to expose it.",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::Semantic,
+            variant_id: 0x006,
+            explanation: "A global variable is not accessible from the current module. \
+                           The global is private to its defining module; mark it `pub` to expose it.",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::Semantic,
+            variant_id: 0x007,
+            explanation: "A divergent statement (`break`, `continue`, or `return`) is not the last statement in a block. \
+                           Statements after a divergent statement are unreachable; remove them.",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::Semantic,
+            variant_id: 0x008,
+            explanation: "A type is required to have a known size at compile time but does not. \
+                           Unsized types (such as bare slices) can only be used behind references or pointers.",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::Semantic,
+            variant_id: 0x009,
+            explanation: "A type mismatch: the expected type differs from the actual type of the expression. \
+                           Annotate the expression or change it to match the expected type.",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::Semantic,
+            variant_id: 0x00A,
+            explanation: "An inferred type was found where a concrete type is required. \
+                           Provide an explicit type annotation.",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::Semantic,
+            variant_id: 0x00B,
+            explanation: "An alignment value exceeds the maximum supported alignment. \
+                           Use an alignment within the supported range.",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::Semantic,
+            variant_id: 0x00C,
+            explanation: "An invalid extern ABI name was given. \
+                           Use a recognized ABI string such as \"C\".",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::Semantic,
+            variant_id: 0x00D,
+            explanation: "A function type declares the same parameter name more than once. \
+                           Rename the duplicate parameter.",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::Semantic,
+            variant_id: 0x00E,
+            explanation: "A refinement type has an invalid bound where the minimum is greater than the maximum. \
+                           Swap the bounds so min <= max.",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::Semantic,
+            variant_id: 0x00F,
+            explanation: "A non-unit function body does not end with a `return` statement. \
+                           Add a trailing `return` expression matching the return type.",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::Semantic,
+            variant_id: 0x010,
+            explanation: "The type returned by a function body does not match the declared return type. \
+                           Change the body's return value or the declared return type so they agree.",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::Semantic,
+            variant_id: 0x011,
+            explanation: "A module has an invalid attribute. \
+                           Remove or correct the module attribute.",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::Semantic,
+            variant_id: 0x012,
+            explanation: "An enum has an invalid attribute. \
+                           Remove or correct the enum attribute.",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::Semantic,
+            variant_id: 0x013,
+            explanation: "An enum variant has an invalid attribute. \
+                           Remove or correct the variant attribute.",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::Semantic,
+            variant_id: 0x015,
+            explanation: "An unsafe operation was performed outside an `unsafe` block. \
+                           Operations like raw pointer dereference, calling unsafe functions, and accessing \
+                           mutable statics must be wrapped in `unsafe { ... }`.",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::Semantic,
+            variant_id: 0x016,
+            explanation: "An `unsafe` function was called from safe code. \
+                           Wrap the call in an `unsafe { ... }` block to explicitly opt into the unsafe operation.",
+        },
+    ]
+}
+

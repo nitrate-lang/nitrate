@@ -1,4 +1,4 @@
-use nitrate_diagnosis::{DiagnosticGroupId, DiagnosticInfo, FormattableDiagnosticGroup, Origin};
+use nitrate_diagnosis::{DiagnosticExplanation, DiagnosticGroupId, DiagnosticInfo, FormattableDiagnosticGroup, Origin};
 use nitrate_nstring::NString;
 use nitrate_tree::ast::{ExprPath, TypePath};
 
@@ -85,4 +85,46 @@ impl FormattableDiagnosticGroup for ResolveIssue {
             },
         }
     }
+}
+
+/// Static explanations for every name-resolution error code, used by `no3 --explain`.
+pub fn explanations() -> &'static [DiagnosticExplanation] {
+    &[
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::Resolve,
+            variant_id: 1,
+            explanation: "An expression path (e.g. `foo::bar`) could not be resolved to any known symbol. \
+                           Make sure the name is spelled correctly, is in scope, and has been imported with `use` if it lives in another module.",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::Resolve,
+            variant_id: 20,
+            explanation: "A type path could not be resolved to any known type. \
+                           Check the spelling of the type and make sure it is in scope (or imported).",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::Resolve,
+            variant_id: 40,
+            explanation: "An imported module was not found. \
+                           Verify that the module file exists at the expected path and that the import path is spelled correctly.",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::Resolve,
+            variant_id: 41,
+            explanation: "A circular import was detected: a module (transitively) imports itself. \
+                           Break the cycle by moving the shared declarations into a separate module that both sides import.",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::Resolve,
+            variant_id: 42,
+            explanation: "An imported module exceeded the maximum source file size limit. \
+                           Split the module into smaller files.",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::Resolve,
+            variant_id: 43,
+            explanation: "The import chain exceeded the maximum depth of 256 nested imports. \
+                           Flatten the module hierarchy to reduce import nesting.",
+        },
+    ]
 }

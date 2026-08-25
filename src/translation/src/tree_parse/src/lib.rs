@@ -11,3 +11,4 @@ mod ty;
 mod tests;
 
 pub use parse::{Parser, ResolveCtx};
+pub use diagnosis::explanations;

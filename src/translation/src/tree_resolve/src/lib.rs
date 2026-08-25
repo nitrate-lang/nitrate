@@ -8,3 +8,4 @@ mod symbol_table;
 pub use resolve_import::{FolderPath, ImportContext, SourceFilePath, resolve_imports};
 pub use resolve_path::resolve_paths;
 pub use symbol_table::discover_symbols;
+pub use diagnosis::explanations;

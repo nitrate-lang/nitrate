@@ -14,3 +14,4 @@ mod tests;
 
 pub use context::Ast2HirCtx;
 pub use lower::convert_ast_to_hir;
+pub use diagnosis::explanations;

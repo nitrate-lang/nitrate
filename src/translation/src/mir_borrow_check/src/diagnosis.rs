@@ -6,7 +6,7 @@
 
 use std::fmt;
 
-use nitrate_diagnosis::{DiagnosticGroupId, DiagnosticInfo, FormattableDiagnosticGroup, Origin};
+use nitrate_diagnosis::{DiagnosticExplanation, DiagnosticGroupId, DiagnosticInfo, FormattableDiagnosticGroup, Origin};
 
 /// All possible MIR borrow-checking errors.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -123,5 +123,94 @@ impl FormattableDiagnosticGroup for BorrowError {
             message: self.to_string(),
         }
     }
+}
+
+
+/// Static explanations for every borrow-checking error code, used by `no3 --explain`.
+pub fn explanations() -> &'static [DiagnosticExplanation] {
+    &[
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::BorrowCheck,
+            variant_id: 0x100,
+            explanation: "A mutable borrow was taken of a place that is not mutable (e.g. an immutable `let` binding). \
+                           Declare the binding with `var` to allow mutation.",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::BorrowCheck,
+            variant_id: 0x101,
+            explanation: "A mutable borrow overlaps an existing active borrow of the same place. \
+                           Nitrate enforces the aliasing rule: either multiple shared borrows or a single mutable borrow, \
+                           never both at once. Restructure the code so the conflicting borrows do not overlap.",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::BorrowCheck,
+            variant_id: 0x102,
+            explanation: "A shared borrow was created while an activated mutable borrow was still in use. \
+                           Wait until the mutable borrow ends before taking a shared borrow of the same place.",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::BorrowCheck,
+            variant_id: 0x103,
+            explanation: "A write (assignment) to a place occurred while it was borrowed. \
+                           You cannot mutate a value that is currently borrowed. End the borrow before assigning.",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::BorrowCheck,
+            variant_id: 0x104,
+            explanation: "A read of a place occurred while it was mutably borrowed. \
+                           A mutable borrow grants exclusive access; end it before reading the value.",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::BorrowCheck,
+            variant_id: 0x105,
+            explanation: "A reference to a local variable escapes the function (for example, by being returned). \
+                           The local would be destroyed when the function returns, leaving a dangling reference. \
+                           Return an owned value instead.",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::BorrowCheck,
+            variant_id: 0x106,
+            explanation: "A value was moved out of a place while it was borrowed. \
+                           Moving out invalidates the borrowed memory. End the borrow before moving the value.",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::BorrowCheck,
+            variant_id: 0x107,
+            explanation: "A value was used after it was moved from. \
+                           Once a non-`Copy` value is moved, the original binding can no longer be read. \
+                           Use the value before the move or move it only at the end of its use.",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::BorrowCheck,
+            variant_id: 0x108,
+            explanation: "A possibly-uninitialized value was read. \
+                           Initialize the variable before reading it, or make the initialization unconditional.",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::BorrowCheck,
+            variant_id: 0x109,
+            explanation: "A borrow was taken of a value that was moved from. \
+                           The moved value is gone; borrow it before the move or reinitialize first.",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::BorrowCheck,
+            variant_id: 0x10A,
+            explanation: "A borrow was taken of a possibly-uninitialized value. \
+                           Initialize the value before borrowing it.",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::BorrowCheck,
+            variant_id: 0x10B,
+            explanation: "An assignment targeted a place whose parent was moved from. \
+                           Reinitialize the parent (or its owner) before assigning into it.",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::BorrowCheck,
+            variant_id: 0x10C,
+            explanation: "A two-phase mutable borrow was activated while another borrow of the same place was still active. \
+                           Two-phase borrows are reserved at the call site and activated during the call; \
+                           the activation must not conflict with existing borrows.",
+        },
+    ]
 }
 

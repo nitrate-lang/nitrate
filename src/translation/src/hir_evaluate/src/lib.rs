@@ -14,3 +14,4 @@ pub use builtins::DEFAULT_BUILTIN_FUNCTIONS;
 pub use error::EvalError;
 pub use evaluator::{BuiltinFn, Evaluator};
 pub use memory::Memory;
+pub use diagnosis::explanations;

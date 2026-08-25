@@ -1,4 +1,4 @@
-use nitrate_diagnosis::{DiagnosticGroupId, DiagnosticInfo, FormattableDiagnosticGroup, Origin, SourcePosition};
+use nitrate_diagnosis::{DiagnosticExplanation, DiagnosticGroupId, DiagnosticInfo, FormattableDiagnosticGroup, Origin, SourcePosition};
 use nitrate_token::LexPos;
 
 #[allow(dead_code)]
@@ -508,3 +508,434 @@ impl FormattableDiagnosticGroup for SyntaxErr {
         }
     }
 }
+
+/// Static explanations for every parser error code, used by `no3 --explain`.
+pub fn explanations() -> &'static [DiagnosticExplanation] {
+    &[
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::Parse,
+            variant_id: 0,
+            explanation: "A generic parameter list (e.g. `fn foo<T, U>`) is missing a parameter name. \
+                           Every generic parameter must have a name so it can be referred to elsewhere in the declaration.",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::Parse,
+            variant_id: 1,
+            explanation: "The generic parameter list exceeded the 65,536-parameter limit. \
+                           Generics lists are bounded to prevent pathological inputs; split the declaration into fewer parameters.",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::Parse,
+            variant_id: 2,
+            explanation: "The parser expected `>` or `,` to terminate a generic parameter list. \
+                           Generic parameters are separated by commas and the list must be closed with `>`.",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::Parse,
+            variant_id: 20,
+            explanation: "A `module` declaration is missing its name. Write the module name after the `module` keyword.",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::Parse,
+            variant_id: 21,
+            explanation: "A module declaration exceeded the 65,536-item limit. \
+                           Split the module into multiple modules and import them.",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::Parse,
+            variant_id: 22,
+            explanation: "The parser expected `}` at the end of a `module` block. \
+                           Every module body must be closed with a closing brace.",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::Parse,
+            variant_id: 41,
+            explanation: "A `use` import declaration is missing its alias name. \
+                           An alias is written as `use path as Alias;`.",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::Parse,
+            variant_id: 42,
+            explanation: "The parser expected `*` or `{` after `::` in a `use` declaration. \
+                           Glob imports use `use path::*;` and grouped imports use `use path::{a, b};`.",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::Parse,
+            variant_id: 43,
+            explanation: "The parser expected `}` at the end of a grouped `use` declaration. \
+                           Close the import group with a closing brace.",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::Parse,
+            variant_id: 60,
+            explanation: "A `type` alias declaration is missing its name. \
+                           Write the alias name after the `type` keyword, e.g. `type MyInt = i32;`.",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::Parse,
+            variant_id: 80,
+            explanation: "An `enum` declaration is missing its name. \
+                           Write the enum name after the `enum` keyword.",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::Parse,
+            variant_id: 81,
+            explanation: "An enum declaration exceeded the 65,536-variant limit. \
+                           Split the enum into multiple types.",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::Parse,
+            variant_id: 82,
+            explanation: "An enum variant is missing its name. \
+                           Every variant must have a name, e.g. `enum Color { Red, Green, Blue }`.",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::Parse,
+            variant_id: 83,
+            explanation: "The parser expected `}` or `,` inside an enum body. \
+                           Variants are separated by commas and the body is closed with `}`.",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::Parse,
+            variant_id: 100,
+            explanation: "A `struct` declaration is missing its name. \
+                           Write the struct name after the `struct` keyword.",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::Parse,
+            variant_id: 101,
+            explanation: "A struct declaration exceeded the 65,536-field limit. \
+                           Split the struct into nested structs.",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::Parse,
+            variant_id: 102,
+            explanation: "A struct field is missing its name. \
+                           Every field must have a name, e.g. `struct Point { x: i32, y: i32 }`.",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::Parse,
+            variant_id: 103,
+            explanation: "The parser expected `}` or `,` inside a struct body. \
+                           Fields are separated by commas and the body is closed with `}`.",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::Parse,
+            variant_id: 120,
+            explanation: "A `fn` declaration is missing its name. \
+                           Write the function name after the `fn` keyword.",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::Parse,
+            variant_id: 122,
+            explanation: "A function declaration exceeded the 65,536-parameter limit. \
+                           Split the function into multiple functions or pass a struct of parameters.",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::Parse,
+            variant_id: 123,
+            explanation: "A function parameter is missing its name. \
+                           Every parameter needs a name, e.g. `fn foo(x: i32, y: i32)`.",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::Parse,
+            variant_id: 124,
+            explanation: "The parser expected `)` or `,` in a function parameter list. \
+                           Parameters are separated by commas and the list is closed with `)`.",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::Parse,
+            variant_id: 126,
+            explanation: "A variadic function parameter must use the `...` syntax, e.g. `fn printf(fmt: *const u8, ...)`. \
+                           The `...` marks the point where additional variadic arguments are accepted.",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::Parse,
+            variant_id: 140,
+            explanation: "A variable declaration is missing its name. \
+                           Write the variable name after `let` or `var`.",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::Parse,
+            variant_id: 180,
+            explanation: "A `trait` declaration is missing its name. \
+                           Write the trait name after the `trait` keyword.",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::Parse,
+            variant_id: 181,
+            explanation: "A trait declaration exceeded the 65,536-item limit. \
+                           Split the trait into multiple traits.",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::Parse,
+            variant_id: 182,
+            explanation: "Traits may only contain associated constants, type aliases, and function signatures. \
+                           Definitions with bodies or other item kinds are not allowed inside a trait.",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::Parse,
+            variant_id: 183,
+            explanation: "The parser expected `}` at the end of a trait body. \
+                           Close the trait body with a closing brace.",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::Parse,
+            variant_id: 200,
+            explanation: "An `impl` block is missing its `for` clause. \
+                           Write `impl Trait for Type { ... }`.",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::Parse,
+            variant_id: 201,
+            explanation: "The parser expected `}` at the end of an `impl` block. \
+                           Close the impl body with a closing brace.",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::Parse,
+            variant_id: 202,
+            explanation: "An `impl` block exceeded the 65,536-item limit. \
+                           Split the impl into multiple impl blocks.",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::Parse,
+            variant_id: 203,
+            explanation: "`impl` blocks cannot have visibility modifiers. \
+                           Remove the `pub`/`private` keyword from the impl declaration.",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::Parse,
+            variant_id: 222,
+            explanation: "The parser expected `>` or `,` inside a generic argument list. \
+                           Generic arguments are separated by commas and closed with `>`.",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::Parse,
+            variant_id: 223,
+            explanation: "A generic argument list exceeded the 65,536-argument limit.",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::Parse,
+            variant_id: 224,
+            explanation: "The parser expected an identifier or `::` in a path. \
+                           Path segments are separated by `::`, e.g. `std::io::println`.",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::Parse,
+            variant_id: 225,
+            explanation: "A path exceeded the 65,536-segment limit.",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::Parse,
+            variant_id: 226,
+            explanation: "A path segment is missing its name. \
+                           Every segment in a path must be a valid identifier.",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::Parse,
+            variant_id: 240,
+            explanation: "A reference type is missing its lifetime name. \
+                           Write the lifetime after the `&` marker, e.g. `&'a T`.",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::Parse,
+            variant_id: 260,
+            explanation: "The parser expected a field name or `}` inside a struct literal. \
+                           Struct literals list fields as `Name: value` separated by commas.",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::Parse,
+            variant_id: 261,
+            explanation: "The parser expected a field name in a struct literal. \
+                           Every entry must name the field it initializes.",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::Parse,
+            variant_id: 280,
+            explanation: "The parser expected `)` or `,` inside a tuple type. \
+                           Tuple types list element types separated by commas and close with `)`.",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::Parse,
+            variant_id: 281,
+            explanation: "A tuple type exceeded the 65,536-element limit.",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::Parse,
+            variant_id: 300,
+            explanation: "The parser expected `,` or `]` inside a list. \
+                           Lists separate elements with commas and close with `]`.",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::Parse,
+            variant_id: 301,
+            explanation: "A list exceeded the 65,536-element limit.",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::Parse,
+            variant_id: 320,
+            explanation: "The parser expected `,` or `]` inside an attribute list. \
+                           Attributes are written as `[attr]` or `[attr1, attr2]` before an item.",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::Parse,
+            variant_id: 321,
+            explanation: "An attribute list exceeded the 65,536-element limit.",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::Parse,
+            variant_id: 340,
+            explanation: "The parser expected `}` at the end of a block. \
+                           Every block body must be closed with a closing brace.",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::Parse,
+            variant_id: 341,
+            explanation: "A block exceeded the 65,536-statement limit.",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::Parse,
+            variant_id: 360,
+            explanation: "A `break` statement is missing its label. \
+                           When breaking out of a labeled loop, the label must follow `break`, e.g. `break 'outer`.",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::Parse,
+            variant_id: 380,
+            explanation: "A `continue` statement is missing its label. \
+                           When continuing a labeled loop, the label must follow `continue`, e.g. `continue 'outer`.",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::Parse,
+            variant_id: 400,
+            explanation: "The parser expected `)` at the end of a function call. \
+                           Call arguments are closed with `)`.",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::Parse,
+            variant_id: 401,
+            explanation: "A function call exceeded the 65,536-argument limit.",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::Parse,
+            variant_id: 402,
+            explanation: "Positional arguments cannot follow named arguments in a function call. \
+                           Place all positional arguments before any `name: value` arguments.",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::Parse,
+            variant_id: 440,
+            explanation: "A `for`-loop binding is missing its variable name. \
+                           Write `for x in iterable { ... }`.",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::Parse,
+            variant_id: 441,
+            explanation: "The parser expected the end of the `for`-loop binding list. \
+                           Bindings are separated by commas, e.g. `for (a, b) in pairs`.",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::Parse,
+            variant_id: 442,
+            explanation: "A `for`-loop binding list exceeded the 65,536-binding limit.",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::Parse,
+            variant_id: 443,
+            explanation: "The parser expected the `in` keyword after the `for`-loop bindings. \
+                           Write `for x in iterable { ... }`.",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::Parse,
+            variant_id: 500,
+            explanation: "The parser expected a field or method name after a `.` in an access expression. \
+                           Write the field or method name after the dot.",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::Parse,
+            variant_id: 1000,
+            explanation: "The parser expected `(` here. \
+                           Check the expression or declaration for a missing opening parenthesis.",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::Parse,
+            variant_id: 1001,
+            explanation: "The parser expected `)` here. \
+                           Check the expression or parameter list for a missing closing parenthesis.",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::Parse,
+            variant_id: 1002,
+            explanation: "The parser expected `{` here. \
+                           Check the block, struct literal, or declaration for a missing opening brace.",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::Parse,
+            variant_id: 1003,
+            explanation: "The parser expected `}` here. \
+                           Check the block or declaration for a missing closing brace.",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::Parse,
+            variant_id: 1004,
+            explanation: "The parser expected `[` here. \
+                           Check the list, array type, or index expression for a missing opening bracket.",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::Parse,
+            variant_id: 1005,
+            explanation: "The parser expected `]` here. \
+                           Check the list or array type for a missing closing bracket.",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::Parse,
+            variant_id: 1007,
+            explanation: "The parser expected `>` here. \
+                           Check the generic argument list or comparison expression for a missing closing angle bracket.",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::Parse,
+            variant_id: 1008,
+            explanation: "The parser expected `;` here. \
+                           Most statements must be terminated with a semicolon.",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::Parse,
+            variant_id: 1009,
+            explanation: "The parser expected `:` here. \
+                           Check the type annotation, struct literal, or named argument for a missing colon.",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::Parse,
+            variant_id: 1010,
+            explanation: "The parser expected `->` here. \
+                           Function return types are written after an arrow, e.g. `fn foo() -> i32`.",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::Parse,
+            variant_id: 2000,
+            explanation: "The parser expected an item here (a function, struct, enum, module, etc.). \
+                           Top-level declarations must be valid items.",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::Parse,
+            variant_id: 2001,
+            explanation: "The parser expected a type here. \
+                           Check the type annotation or type argument for a missing or malformed type.",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::Parse,
+            variant_id: 2002,
+            explanation: "The parser expected an expression here. \
+                           Check the statement or operand for a missing or malformed expression.",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::Parse,
+            variant_id: 2020,
+            explanation: "The parser encountered syntax that is recognized but not yet supported. \
+                           This usually means the feature exists in the grammar but is not implemented; \
+                           check the Nitrate documentation or remove the offending construct.",
+        },
+    ]
+}
+

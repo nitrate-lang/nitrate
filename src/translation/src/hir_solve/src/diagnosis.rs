@@ -1,4 +1,6 @@
-use nitrate_diagnosis::{DiagnosticGroupId, DiagnosticInfo, FormattableDiagnosticGroup, Origin, SourcePosition};
+use nitrate_diagnosis::{
+    DiagnosticExplanation, DiagnosticGroupId, DiagnosticInfo, FormattableDiagnosticGroup, Origin, SourcePosition,
+};
 use nitrate_hir::{Lit, Type, TypeId};
 use nitrate_hir_dump::Dump;
 use nitrate_tree::SrcPos;
@@ -182,6 +184,64 @@ impl FormattableDiagnosticGroup for TypeErr {
             },
         }
     }
+}
+
+
+/// Static explanations for every type-inference error code, used by `no3 --explain`.
+pub fn explanations() -> &'static [DiagnosticExplanation] {
+    &[
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::Type,
+            variant_id: 0,
+            explanation: "An integer literal value is outside the representable range of its target type. \
+                           Use a smaller literal or a wider integer type.",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::Type,
+            variant_id: 1,
+            explanation: "An integer literal does not satisfy the bounds of a refinement type. \
+                           Choose a value within the refinement's range or widen the refinement bounds.",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::Type,
+            variant_id: 2,
+            explanation: "The computed result range of an arithmetic operation cannot be guaranteed to satisfy a refinement type. \
+                           The compiler computes the possible min/max of the expression and rejects it when that range \
+                           falls outside the refinement bounds. Rewrite the expression or widen the bounds.",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::Type,
+            variant_id: 3,
+            explanation: "The `if` and `else` branches of a conditional expression have incompatible types. \
+                           Both branches must produce the same type when the expression is used as a value.",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::Type,
+            variant_id: 4,
+            explanation: "The compiler could not infer the type arguments of a generic call. \
+                           Provide explicit type arguments (e.g. `foo::<i32>()`) or add constraints that let inference succeed.",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::Type,
+            variant_id: 5,
+            explanation: "A type could not be determined because the context leaves it ambiguous. \
+                           Add an explicit type annotation to disambiguate.",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::Type,
+            variant_id: 6,
+            explanation: "A generic parameter is used in a context where it is not bound. \
+                           Ensure the parameter is declared by the enclosing generic item (e.g. `fn foo<T>(...)`) \
+                           or pass an explicit type argument.",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::Type,
+            variant_id: 7,
+            explanation: "A method call could not find a method with that name on the receiver type. \
+                           Check the spelling, confirm the method exists on the type, and verify any trait \
+                           providing the method is in scope.",
+        },
+    ]
 }
 
 // ── Tests ────────────────────────────────────────────────────────────

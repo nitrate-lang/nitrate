@@ -1,4 +1,6 @@
-use nitrate_diagnosis::{DiagnosticGroupId, DiagnosticInfo, FormattableDiagnosticGroup, Origin, SourcePosition};
+use nitrate_diagnosis::{
+    DiagnosticExplanation, DiagnosticGroupId, DiagnosticInfo, FormattableDiagnosticGroup, Origin, SourcePosition,
+};
 use nitrate_hir_evaluate::EvalError;
 use nitrate_tree::{SrcPos, SrcSpan};
 
@@ -651,3 +653,245 @@ impl FormattableDiagnosticGroup for HirErr {
         }
     }
 }
+
+/// Static explanations for every HIR-lowering error code, used by `no3 --explain`.
+pub fn explanations() -> &'static [DiagnosticExplanation] {
+    &[
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::Hir,
+            variant_id: 1,
+            explanation: "An unrecognized attribute was used on a module item. \
+                           Remove the attribute or use a recognized module attribute.",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::Hir,
+            variant_id: 2,
+            explanation: "An unrecognized attribute was used on a global variable. \
+                           Remove the attribute or use a recognized global-variable attribute.",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::Hir,
+            variant_id: 3,
+            explanation: "An unrecognized attribute was used on a function. \
+                           Remove the attribute or use a recognized function attribute such as `no_mangle`.",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::Hir,
+            variant_id: 4,
+            explanation: "An unrecognized attribute was used on a function parameter. \
+                           Remove the attribute from the parameter.",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::Hir,
+            variant_id: 5,
+            explanation: "An unrecognized attribute was used on a type alias. \
+                           Remove the attribute from the alias declaration.",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::Hir,
+            variant_id: 6,
+            explanation: "An unrecognized attribute was used on a struct definition. \
+                           Remove the attribute from the struct.",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::Hir,
+            variant_id: 7,
+            explanation: "An unrecognized attribute was used on a struct field. \
+                           Remove the attribute from the field.",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::Hir,
+            variant_id: 8,
+            explanation: "An unrecognized attribute was used on an enum definition. \
+                           Remove the attribute from the enum.",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::Hir,
+            variant_id: 9,
+            explanation: "An unrecognized attribute was used on an enum variant. \
+                           Remove the attribute from the variant.",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::Hir,
+            variant_id: 10,
+            explanation: "An unrecognized attribute was used on a local variable. \
+                           Remove the attribute from the `let`/`var` declaration.",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::Hir,
+            variant_id: 11,
+            explanation: "An unrecognized attribute was used on a trait definition. \
+                           Remove the attribute from the trait.",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::Hir,
+            variant_id: 50,
+            explanation: "A symbol referenced in an expression could not be resolved. \
+                           Check the spelling, confirm the symbol is in scope, and import it with `use` if it is defined in another module.",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::Hir,
+            variant_id: 51,
+            explanation: "A type path could not be resolved to any known type. \
+                           Check the spelling and scope of the type name.",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::Hir,
+            variant_id: 52,
+            explanation: "An entity with the same name was already defined in this scope. \
+                           Rename the new declaration or remove the duplicate.",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::Hir,
+            variant_id: 53,
+            explanation: "A lifetime name was used that has not been declared. \
+                           Declare the lifetime in the appropriate position (e.g. `fn foo<'a>(...)`) or correct its spelling.",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::Hir,
+            variant_id: 100,
+            explanation: "An integer literal value cannot fit in the target integer type. \
+                           Use a wider integer type or a smaller literal value.",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::Hir,
+            variant_id: 101,
+            explanation: "A global variable declaration has no initializer expression. \
+                           Global variables must be given an initial value, e.g. `static X: i32 = 42;`.",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::Hir,
+            variant_id: 102,
+            explanation: "A local variable declaration has no initializer expression. \
+                           Provide an initial value, e.g. `let x = 42;`.",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::Hir,
+            variant_id: 103,
+            explanation: "A type alias definition is missing its right-hand side type. \
+                           Write `type Alias = ActualType;`.",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::Hir,
+            variant_id: 104,
+            explanation: "An array type length expression did not evaluate to a `usize` value. \
+                           Array lengths must be compile-time `usize` expressions, e.g. `[i32; 4]`.",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::Hir,
+            variant_id: 105,
+            explanation: "An array type length expression could not be evaluated at compile time. \
+                           Array lengths must be constant expressions.",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::Hir,
+            variant_id: 106,
+            explanation: "Slice types (`[T]`) can only appear behind references (`&[T]`) or pointers (`*[T]`). \
+                           A bare slice type has no size; wrap it in a reference or pointer.",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::Hir,
+            variant_id: 107,
+            explanation: "A type alias's right-hand side could not be evaluated at compile time. \
+                           Check that the aliased type is well-formed.",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::Hir,
+            variant_id: 150,
+            explanation: "The `match` expression is not yet implemented in the compiler. \
+                           Rewrite the code using `if`/`else` chains until `match` lands.",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::Hir,
+            variant_id: 151,
+            explanation: "The `for` loop is not yet implemented in the compiler. \
+                           Rewrite the code using `while` loops until `for` lands.",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::Hir,
+            variant_id: 152,
+            explanation: "The `await` expression is not yet implemented in the compiler.",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::Hir,
+            variant_id: 153,
+            explanation: "The `typeof` operator is not yet implemented in the compiler.",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::Hir,
+            variant_id: 155,
+            explanation: "Type reflection (e.g. `typeinfo`) is not yet implemented in the compiler.",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::Hir,
+            variant_id: 156,
+            explanation: "Closure expressions are not yet implemented in the compiler. \
+                           Rewrite the code using named functions until closures land.",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::Hir,
+            variant_id: 157,
+            explanation: "Type potentials are not yet implemented in the compiler.",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::Hir,
+            variant_id: 158,
+            explanation: "Lifetime types used as standalone types are not yet implemented in the compiler.",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::Hir,
+            variant_id: 159,
+            explanation: "Generic type arguments in intermediate path segments are not yet supported. \
+                           Move the generic arguments to the final path segment.",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::Hir,
+            variant_id: 200,
+            explanation: "A non-unit function body does not end with a return expression. \
+                           Add a trailing expression or `return` statement whose type matches the function's return type.",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::Hir,
+            variant_id: 201,
+            explanation: "Unsafe expression bodies are not yet implemented in the compiler. \
+                           Use `unsafe { ... }` blocks inside the expression instead.",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::Hir,
+            variant_id: 250,
+            explanation: "A refinement type bound expression could not be evaluated to a constant. \
+                           Refinement bounds must be compile-time constant expressions, e.g. `i32: [0:100]`.",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::Hir,
+            variant_id: 251,
+            explanation: "A refinement type was applied to a non-integer base type. \
+                           Refinement types can only refine integers. Use an integer base type.",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::Hir,
+            variant_id: 252,
+            explanation: "A refinement type width is outside the valid range of 1 to 128 bits. \
+                           Use a width between 1 and 128, e.g. `u8: 4` for 4-bit values.",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::Hir,
+            variant_id: 253,
+            explanation: "A refinement type must specify at least one bound (width, minimum, or maximum). \
+                           Add a bound, e.g. `i32: [0:100]` or `u8: 4`.",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::Hir,
+            variant_id: 254,
+            explanation: "A refinement type width must be a positive integer. \
+                           A width of 0 bits would produce an uninhabitable type.",
+        },
+        DiagnosticExplanation {
+            group_id: DiagnosticGroupId::Hir,
+            variant_id: 350,
+            explanation: "A function with a non-unit return type has no body. \
+                           Either add a body that returns a value, change the return type to `()`, or mark the function `extern`.",
+        },
+    ]
+}
+

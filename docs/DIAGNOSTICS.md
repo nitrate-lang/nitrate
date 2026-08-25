@@ -73,6 +73,18 @@ Errors are displayed with error codes, source location, and context lines. The f
 
 This display format maximizes the information density of each error message: the error code allows quick lookup in documentation, the source location enables editor integration (click-to-navigate), the message explains the problem, and the context lines with caret show exactly which part of the code triggered the error.
 
+### Error-Code Explanations and `no3 --explain`
+
+Every error code carries a static, human-readable explanation that the driver serves through `no3 --explain <CODE>`. Explanations are not maintained in an external file — they are compiled into the binary so they can never drift out of sync with the error definitions.
+
+The mechanism has three parts:
+
+1. **`DiagnosticExplanation`** (`nitrate_diagnosis`): a `(group_id, variant_id, explanation)` triple. Its `code()` method derives the exact `EXXXX` string the compiler prints from the packed diagnostic ID, so the lookup key always matches the emitted code.
+2. **Per-stage `explanations()` tables**: each compilation stage that defines errors also defines a static `explanations() -> &'static [DiagnosticExplanation]` in its `diagnosis` module, listing one entry per error variant. Keeping the table next to the error types makes it easy to update both together.
+3. **`nitrate_translation::diagnostic_explanations()`**: aggregates every stage's table into a single slice. The `no3` driver builds its lookup table from this slice.
+
+Adding a new error variant therefore requires only two edits: the variant itself (with its `variant_id`) and one `DiagnosticExplanation` entry with the matching group and variant. A driver unit test (`explain_code.rs`) asserts that every registered code is unique, which catches accidental ID collisions at test time.
+
 ## Error Recovery Strategy
 
 The compiler follows a fail-soft approach across all stages. The **lexer** logs invalid input and returns `Token::Eof` for that position, continuing from the next valid position. The **parser** skips tokens until synchronization points (semicolons, braces, keywords like `fn`/`struct`/`enum`) are found. The **solver** accumulates type errors in a `HashSet` for deduplication, reporting all errors at once. The **validator** continues checking after discovering an error. Only **codegen** panics on invalid LLVM IR — this is a hard failure because invalid IR cannot produce correct machine code.
