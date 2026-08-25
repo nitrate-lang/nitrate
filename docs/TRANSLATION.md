@@ -114,7 +114,7 @@ The pipeline supports different modes by stopping at different stages:
 - **Check-only** (stages 1-7): Used for `no3 check` — validates code without producing output
 - **Lex-only** (stage 2): Used for `no3 lex` — debugging the lexer by inspecting the token stream
 - **Parse-only** (stages 2-3): Used for `no3 parse` — debugging the parser by inspecting the AST
-- **LLVM IR emission** (stages 1-9): Used for `no3 build --show-llvm` — outputs LLVM IR for inspection
+- **LLVM IR emission** (stages 1-9): Used for `no3 build --emit-llvmir` — outputs LLVM IR for inspection
 
 ## Design Rationale
 

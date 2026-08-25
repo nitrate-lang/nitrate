@@ -119,6 +119,8 @@ The crate provides complete demangling support:
 - `demangle_string(input: &mut &[u8]) -> Result<String, ()>` — decodes a mangled string (consuming exactly the encoded bytes).
 - `demangle_type(input: &mut &[u8]) -> Result<Type, ()>` — decodes a type encoding (consuming exactly the encoded bytes).
 
+The `no3` driver exposes this via the `no3 demangle <SYMBOL>` command, which accepts both full symbol names (`_N<package><name><type>`, printing the package, name, and decoded type) and module names (`_N<module>`, printing the module path).
+
 Demangling is lossless for the encoded fields (package, name, type structure). Note that parameter names and generic parameter names are not recoverable from the mangled form — they are intentionally excluded for compactness.
 
 ## Symbol Table Pass

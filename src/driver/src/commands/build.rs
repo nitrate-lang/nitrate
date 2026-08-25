@@ -11,29 +11,29 @@ use std::path::{Path, PathBuf};
 #[derive(Parser, Debug)]
 #[command(about, long_about = None)]
 pub(crate) struct BuildArgs {
-    /// Pretty-print the Abstract Syntax Tree (AST)
+    /// Emit the Abstract Syntax Tree (AST)
     #[arg(long, group = "output")]
-    show_ast: bool,
+    emit_ast: bool,
 
-    /// Pretty-print the High-Level Intermediate Representation (HIR)
+    /// Emit the High-Level Intermediate Representation (HIR)
     #[arg(long, group = "output")]
-    show_hir: bool,
+    emit_hir: bool,
 
-    /// Pretty-print the LLVM Intermediate Representation
+    /// Emit the LLVM Intermediate Representation
     #[arg(long, group = "output")]
-    show_llvmir: bool,
+    emit_llvmir: bool,
 
     /// Export the MIR control-flow graph as a Graphviz DOT file
     #[arg(long)]
     emit_mir: bool,
 
-    /// Pretty-print the Assembly Code
+    /// Emit the Assembly Code
     #[arg(long, group = "output")]
-    show_asm: bool,
+    emit_asm: bool,
 
-    /// Dump the Object Code
+    /// Emit the Object Code
     #[arg(long, group = "output")]
-    show_obj: bool,
+    emit_obj: bool,
 
     /// Format mode for printed output
     #[arg(long, value_parser = ["minify", "pretty"])]
@@ -148,11 +148,11 @@ pub(crate) struct CompileOptions {
     pub(crate) target: Option<String>,
     pub(crate) target_dir: Option<PathBuf>,
     pub(crate) manifest_path: Option<PathBuf>,
-    pub(crate) show_ast: bool,
-    pub(crate) show_hir: bool,
-    pub(crate) show_llvmir: bool,
-    pub(crate) show_asm: bool,
-    pub(crate) show_obj: bool,
+    pub(crate) emit_ast: bool,
+    pub(crate) emit_hir: bool,
+    pub(crate) emit_llvmir: bool,
+    pub(crate) emit_asm: bool,
+    pub(crate) emit_obj: bool,
     pub(crate) format_mode: Option<String>,
     /// Export MIR control-flow graph as a Graphviz DOT file in the target dir.
     pub(crate) emit_mir: bool,
@@ -174,11 +174,11 @@ impl Default for CompileOptions {
             target: None,
             target_dir: None,
             manifest_path: None,
-            show_ast: false,
-            show_hir: false,
-            show_llvmir: false,
-            show_asm: false,
-            show_obj: false,
+            emit_ast: false,
+            emit_hir: false,
+            emit_llvmir: false,
+            emit_asm: false,
+            emit_obj: false,
             format_mode: None,
             emit_mir: false,
             check_only: false,
@@ -197,11 +197,11 @@ impl From<&BuildArgs> for CompileOptions {
             target: args.target.clone(),
             target_dir: args.target_dir.clone(),
             manifest_path: args.manifest_path.clone(),
-            show_ast: args.show_ast,
-            show_hir: args.show_hir,
-            show_llvmir: args.show_llvmir,
-            show_asm: args.show_asm,
-            show_obj: args.show_obj,
+            emit_ast: args.emit_ast,
+            emit_hir: args.emit_hir,
+            emit_llvmir: args.emit_llvmir,
+            emit_asm: args.emit_asm,
+            emit_obj: args.emit_obj,
             format_mode: args.format_mode.clone(),
             emit_mir: args.emit_mir,
             check_only: false,
@@ -286,7 +286,7 @@ pub(crate) fn pipeline_config_from_opts(opts: &CompileOptions, manifest: &Manife
 }
 
 /// Helper: link an object file into a binary using the system linker.
-fn link_binary(log: &slog::Logger, object_file: &Path, binary_path: &Path, package_name: &str) -> anyhow::Result<()> {
+pub(crate) fn link_binary(log: &slog::Logger, object_file: &Path, binary_path: &Path, package_name: &str) -> anyhow::Result<()> {
     let status = std::process::Command::new("clang")
         .arg(object_file)
         .arg("-o")
@@ -332,7 +332,7 @@ impl Interpreter<'_> {
         Ok(())
     }
 
-    fn create_target_dir(&self, dir: &Path) -> anyhow::Result<()> {
+    pub(crate) fn create_target_dir(&self, dir: &Path) -> anyhow::Result<()> {
         if let Err(e) = std::fs::create_dir_all(dir) {
             error!(
                 self.log,
@@ -377,7 +377,7 @@ impl Interpreter<'_> {
         let tokenized = source.lex()?;
         let parsed = tokenized.parse()?;
 
-        if opts.show_ast {
+        if opts.emit_ast {
             let pretty = opts.format_mode.as_deref() != Some("minify");
             parsed.dump_ast(pretty);
             return Ok(None);
@@ -389,7 +389,7 @@ impl Interpreter<'_> {
         let mir_lowered = hir::using_storage(&hir_store, || -> anyhow::Result<Option<MirLowered>> {
             let hir_lowered = parsed.lower_hir(ptr_size)?;
 
-            if opts.show_hir {
+            if opts.emit_hir {
                 hir_lowered.dump_hir();
                 return Ok(None);
             }
@@ -432,12 +432,12 @@ impl Interpreter<'_> {
 
                 let llvm_generated = mir_lowered.codegen()?;
 
-                if opts.show_llvmir {
+                if opts.emit_llvmir {
                     llvm_generated.dump_llvm_ir()?;
                     return Ok(None);
                 }
 
-                if opts.show_asm {
+                if opts.emit_asm {
                     llvm_generated.dump_asm()?;
                     return Ok(None);
                 }
@@ -447,7 +447,7 @@ impl Interpreter<'_> {
 
                 let emitted = llvm_generated.optimize_llvm().emit_obj(&object_file)?;
 
-                if opts.show_obj {
+                if opts.emit_obj {
                     info!(
                         self.log,
                         "Object file for package '{}' written to '{}'",

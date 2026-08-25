@@ -51,6 +51,12 @@ enum Commands {
     /// Parse the current package's source code and print the AST
     Parse(ParseArgs),
 
+    /// Compile a single .nit file without a project manifest
+    Compile(CompileArgs),
+
+    /// Demangle a Nitrate-mangled symbol name
+    Demangle(DemangleArgs),
+
     /// Lex the current package's source code and print the tokens
     Lex(LexArgs),
 
@@ -247,6 +253,8 @@ impl<'log> Interpreter<'log> {
             return match subcommand {
                 Commands::Build(build_args) => self.sc_build(build_args),
                 Commands::Parse(parse_args) => self.sc_parse(parse_args),
+                Commands::Compile(compile_args) => self.sc_compile(compile_args),
+                Commands::Demangle(demangle_args) => self.sc_demangle(demangle_args),
                 Commands::Lex(lex_args) => self.sc_lex(lex_args),
                 Commands::Check(check_args) => self.sc_check(check_args),
                 Commands::Clean(clean_args) => self.sc_clean(clean_args),

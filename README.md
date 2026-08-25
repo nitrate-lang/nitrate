@@ -109,7 +109,7 @@ The translation pipeline executes 10 sequential stages to lower source code into
 
 | Subsystem / Module | Primary Crate            | Primary Role & Responsibilities                                                                                                           |
 | ------------------ | ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------- |
-| **CLI Driver**     | `nitrate_driver` / `no3` | Binary entry point handling subcommands (`build`, `run`, `check`, `lex`, `parse`), manifest parsing (`no3.xml`), and package resolution.  |
+| **CLI Driver**     | `nitrate_driver` / `no3` | Binary entry point handling subcommands (`build`, `run`, `check`, `compile`, `demangle`, `lex`, `parse`), manifest parsing (`no3.xml`), and package resolution.  |
 | **Lexer**          | `nitrate_token_lexer`    | Byte-slice dispatch scanner implementing maximal munch, backtick raw identifiers, and token location tracking.                            |
 | **Parser**         | `nitrate_tree_parse`     | Hand-written recursive descent parser with precedence climbing (10 precedence levels) producing the Parse Tree AST.                       |
 | **Name Resolver**  | `nitrate_tree_resolve`   | Resolves module paths, `use` statements, relative/absolute paths, and builds symbol tables via depth-first AST traversal.                 |

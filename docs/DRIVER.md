@@ -50,6 +50,10 @@ The `no3` binary parses command-line arguments, initializes logging, creates the
 
 **`no3 lex <file>` / `no3 parse <file>`**: Debug modes that lex or parse a file and print the result.
 
+**`no3 compile <FILE> [OPTIONS]`**: Compiles a single `.nit` file without requiring a `no3.toml` project manifest — Nitrate's equivalent of `rustc <file>` or `gcc <file>`. The package name is derived from the file stem. Supports `-o/--output <PATH>` (default: `<FILE stem>` in the current directory), `--target-dir <DIRECTORY>` (default: `<FILE dir>/target`), `-r/--release`, `--target <TRIPLE>`, `-j/--jobs <N>`, `-C/--codegen <OPTION[=VALUE]>`, `--no-default-passes`, `--check` (type-check without emitting artifacts), `--emit-mir` (write the MIR control-flow graph as a DOT file), and the `--emit-ast` / `--emit-hir` / `--emit-llvmir` / `--emit-asm` / `--emit-obj` emission modes.
+
+**`no3 demangle <SYMBOL>`**: Demangles a Nitrate-mangled symbol name. Full symbol names (format `_N<package><name><type>`) print the package, name, and decoded type; module names (format `_N<module>`) print the module path. Errors if the symbol is not a valid Nitrate-mangled name.
+
 ## Package Manifest
 
 The `no3.toml` manifest uses the same TOML format as `Cargo.toml`:
