@@ -1277,6 +1277,7 @@ dependencies = [
  "append-only-vec",
  "bimap",
  "nitrate_nstring",
+ "nitrate_tree",
  "ordered-float",
  "serde",
  "thin-vec",
@@ -1290,6 +1291,7 @@ dependencies = [
  "nitrate_diagnosis",
  "nitrate_mir",
  "nitrate_nstring",
+ "nitrate_tree",
  "thin-vec",
 ]
 
@@ -1301,6 +1303,7 @@ dependencies = [
  "nitrate_hir_type",
  "nitrate_mir",
  "nitrate_nstring",
+ "nitrate_tree",
  "thin-vec",
 ]
 

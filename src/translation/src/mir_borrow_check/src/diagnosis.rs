@@ -6,38 +6,47 @@
 
 use std::fmt;
 
-use nitrate_diagnosis::{DiagnosticExplanation, DiagnosticGroupId, DiagnosticInfo, FormattableDiagnosticGroup, Origin};
+use nitrate_diagnosis::{
+    DiagnosticExplanation, DiagnosticGroupId, DiagnosticInfo, FormattableDiagnosticGroup, Origin, SourcePosition,
+};
+use nitrate_tree::SrcPos;
 
 /// All possible MIR borrow-checking errors.
+///
+/// Every variant carries an optional `span`: the source position of the MIR
+/// statement or terminator that triggered the violation. It is populated by
+/// the checker from the function's per-statement source map; when no source
+/// information was recorded (e.g. MIR built directly by tests) the span is
+/// `None` and the diagnostic is printed without a location.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum BorrowError {
     /// `&mut` of a place that is not mutable (immutable local/static).
-    MutableBorrowOfImmutable { place: String, reason: String },
+    MutableBorrowOfImmutable { span: Option<SrcPos>, place: String, reason: String },
     /// A mutable borrow overlaps an existing borrow (shared or mutable).
-    MutableBorrowConflict { place: String, borrow_kind: String, reason: String },
+    MutableBorrowConflict { span: Option<SrcPos>, place: String, borrow_kind: String, reason: String },
     /// A shared borrow overlaps an existing *activated* mutable borrow.
-    SharedBorrowConflict { place: String, borrow_kind: String, reason: String },
+    SharedBorrowConflict { span: Option<SrcPos>, place: String, borrow_kind: String, reason: String },
     /// A write to a place while it is borrowed (shared or mutable).
-    WriteWhileBorrowed { place: String, borrow_kind: String, reason: String },
+    WriteWhileBorrowed { span: Option<SrcPos>, place: String, borrow_kind: String, reason: String },
     /// A read of a place while it is mutably borrowed.
-    ReadWhileMutablyBorrowed { place: String, borrow_kind: String, reason: String },
+    ReadWhileMutablyBorrowed { span: Option<SrcPos>, place: String, borrow_kind: String, reason: String },
     /// A reference to a local variable escapes the function (returned).
-    BorrowOfLocalEscape { place: String, reason: String },
+    BorrowOfLocalEscape { span: Option<SrcPos>, place: String, reason: String },
     /// A move out of a place while it is borrowed.
-    MoveWhileBorrowed { place: String, borrow_kind: String, reason: String },
+    MoveWhileBorrowed { span: Option<SrcPos>, place: String, borrow_kind: String, reason: String },
     /// A read of a value that was moved from.
-    UseAfterMove { place: String, reason: String },
+    UseAfterMove { span: Option<SrcPos>, place: String, reason: String },
     /// A read of a value before it was initialized.
-    UseBeforeInit { place: String, reason: String },
+    UseBeforeInit { span: Option<SrcPos>, place: String, reason: String },
     /// A borrow of a value that was moved from.
-    BorrowOfMoved { place: String, reason: String },
+    BorrowOfMoved { span: Option<SrcPos>, place: String, reason: String },
     /// A borrow of a value before it was initialized.
-    BorrowOfUninit { place: String, reason: String },
+    BorrowOfUninit { span: Option<SrcPos>, place: String, reason: String },
     /// A write to a place whose parent was moved from.
-    AssignToMoved { place: String, reason: String },
+    AssignToMoved { span: Option<SrcPos>, place: String, reason: String },
     /// A mutable borrow was activated while another borrow of the same place
     /// was still active (two-phase activation conflict).
-    TwoPhaseActivationConflict { place: String, borrow_kind: String, reason: String },
+    TwoPhaseActivationConflict { span: Option<SrcPos>, place: String, borrow_kind: String, reason: String },
 }
 
 impl BorrowError {
@@ -60,48 +69,83 @@ impl BorrowError {
             BorrowError::TwoPhaseActivationConflict { .. } => 0x10C,
         }
     }
+
+    /// Attach the source position at which the violation occurred.
+    ///
+    /// The checker populates the span from the function's per-statement source
+    /// map right before reporting; callers constructing errors for direct
+    /// inspection (e.g. unit tests) leave it as `None`.
+    #[must_use]
+    pub fn with_span(mut self, span: Option<SrcPos>) -> Self {
+        match &mut self {
+            BorrowError::MutableBorrowOfImmutable { span: s, .. }
+            | BorrowError::MutableBorrowConflict { span: s, .. }
+            | BorrowError::SharedBorrowConflict { span: s, .. }
+            | BorrowError::WriteWhileBorrowed { span: s, .. }
+            | BorrowError::ReadWhileMutablyBorrowed { span: s, .. }
+            | BorrowError::BorrowOfLocalEscape { span: s, .. }
+            | BorrowError::MoveWhileBorrowed { span: s, .. }
+            | BorrowError::UseAfterMove { span: s, .. }
+            | BorrowError::UseBeforeInit { span: s, .. }
+            | BorrowError::BorrowOfMoved { span: s, .. }
+            | BorrowError::BorrowOfUninit { span: s, .. }
+            | BorrowError::AssignToMoved { span: s, .. }
+            | BorrowError::TwoPhaseActivationConflict { span: s, .. } => *s = span,
+        }
+        self
+    }
+}
+
+/// Convert a `SrcPos` into the diagnostic `Origin` used by `format()`.
+fn srcpos_to_origin(span: SrcPos) -> Origin {
+    Origin::Point(SourcePosition {
+        line: u32::from(span.line),
+        column: u32::from(span.column),
+        offset: span.offset.to_u32(),
+        fileid: span.fileid,
+    })
 }
 
 impl fmt::Display for BorrowError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            BorrowError::MutableBorrowOfImmutable { place, reason } => {
+            BorrowError::MutableBorrowOfImmutable { place, reason, .. } => {
                 write!(f, "cannot borrow {place} as mutable — {reason}")
             }
-            BorrowError::MutableBorrowConflict { place, borrow_kind, reason } => {
+            BorrowError::MutableBorrowConflict { place, borrow_kind, reason, .. } => {
                 write!(f, "cannot borrow {place} as mutable because it is already borrowed ({borrow_kind}) — {reason}")
             }
-            BorrowError::SharedBorrowConflict { place, borrow_kind, reason } => {
+            BorrowError::SharedBorrowConflict { place, borrow_kind, reason, .. } => {
                 write!(f, "cannot borrow {place} as shared because it is already mutably borrowed ({borrow_kind}) — {reason}")
             }
-            BorrowError::WriteWhileBorrowed { place, borrow_kind, reason } => {
+            BorrowError::WriteWhileBorrowed { place, borrow_kind, reason, .. } => {
                 write!(f, "cannot assign to {place} because it is borrowed ({borrow_kind}) — {reason}")
             }
-            BorrowError::ReadWhileMutablyBorrowed { place, borrow_kind, reason } => {
+            BorrowError::ReadWhileMutablyBorrowed { place, borrow_kind, reason, .. } => {
                 write!(f, "cannot read {place} because it is mutably borrowed ({borrow_kind}) — {reason}")
             }
-            BorrowError::BorrowOfLocalEscape { place, reason } => {
+            BorrowError::BorrowOfLocalEscape { place, reason, .. } => {
                 write!(f, "cannot return a reference to local variable {place} — {reason}")
             }
-            BorrowError::MoveWhileBorrowed { place, borrow_kind, reason } => {
+            BorrowError::MoveWhileBorrowed { place, borrow_kind, reason, .. } => {
                 write!(f, "cannot move out of {place} because it is borrowed ({borrow_kind}) — {reason}")
             }
-            BorrowError::UseAfterMove { place, reason } => {
+            BorrowError::UseAfterMove { place, reason, .. } => {
                 write!(f, "use of moved value {place} — {reason}")
             }
-            BorrowError::UseBeforeInit { place, reason } => {
+            BorrowError::UseBeforeInit { place, reason, .. } => {
                 write!(f, "use of possibly-uninitialized value {place} — {reason}")
             }
-            BorrowError::BorrowOfMoved { place, reason } => {
+            BorrowError::BorrowOfMoved { place, reason, .. } => {
                 write!(f, "cannot borrow {place} because it was moved — {reason}")
             }
-            BorrowError::BorrowOfUninit { place, reason } => {
+            BorrowError::BorrowOfUninit { place, reason, .. } => {
                 write!(f, "cannot borrow {place} because it is possibly-uninitialized — {reason}")
             }
-            BorrowError::AssignToMoved { place, reason } => {
+            BorrowError::AssignToMoved { place, reason, .. } => {
                 write!(f, "cannot assign to {place} because its parent was moved — {reason}")
             }
-            BorrowError::TwoPhaseActivationConflict { place, borrow_kind, reason } => {
+            BorrowError::TwoPhaseActivationConflict { place, borrow_kind, reason, .. } => {
                 write!(f, "mutable borrow of {place} was activated while a {borrow_kind} borrow was still active — {reason}")
             }
         }
@@ -118,8 +162,23 @@ impl FormattableDiagnosticGroup for BorrowError {
     }
 
     fn format(&self) -> DiagnosticInfo {
+        let origin = match self {
+            BorrowError::MutableBorrowOfImmutable { span, .. }
+            | BorrowError::MutableBorrowConflict { span, .. }
+            | BorrowError::SharedBorrowConflict { span, .. }
+            | BorrowError::WriteWhileBorrowed { span, .. }
+            | BorrowError::ReadWhileMutablyBorrowed { span, .. }
+            | BorrowError::BorrowOfLocalEscape { span, .. }
+            | BorrowError::MoveWhileBorrowed { span, .. }
+            | BorrowError::UseAfterMove { span, .. }
+            | BorrowError::UseBeforeInit { span, .. }
+            | BorrowError::BorrowOfMoved { span, .. }
+            | BorrowError::BorrowOfUninit { span, .. }
+            | BorrowError::AssignToMoved { span, .. }
+            | BorrowError::TwoPhaseActivationConflict { span, .. } => span.map_or(Origin::None, srcpos_to_origin),
+        };
         DiagnosticInfo {
-            origin: Origin::None,
+            origin,
             message: self.to_string(),
         }
     }

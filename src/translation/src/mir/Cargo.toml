@@ -5,6 +5,7 @@ edition = "2024"
 
 [dependencies]
 nitrate_nstring.workspace = true
+nitrate_tree.workspace = true
 ordered-float.workspace = true
 serde.workspace = true
 append-only-vec.workspace = true

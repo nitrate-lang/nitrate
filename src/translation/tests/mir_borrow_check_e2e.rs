@@ -96,6 +96,12 @@ fn main() {{
         diags.iter().any(|d| d.contains("use of moved value")),
         "expected a use-after-move diagnostic from the borrow checker, got:\n{diags:#?}"
     );
+    assert!(
+        diags
+            .iter()
+            .any(|d| d.contains("use of moved value") && d.contains("-->")),
+        "expected the use-after-move diagnostic to carry a source location, got:\n{diags:#?}"
+    );
 }
 
 #[test]

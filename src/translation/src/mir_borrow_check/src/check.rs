@@ -23,6 +23,7 @@ use nitrate_mir::MirFunction;
 use nitrate_mir::MirModule;
 use nitrate_mir::{BasicBlockId, BorrowKind, LocalId, MirStore, MirTypeId, Operand, Place, Rvalue, Statement, Terminator};
 use nitrate_nstring::NString;
+use nitrate_tree::SrcPos;
 use std::collections::{HashMap, HashSet};
 use thin_vec::ThinVec;
 
@@ -43,6 +44,10 @@ pub(crate) struct FunctionData {
     pub blocks: Vec<nitrate_mir::BasicBlock>,
     /// Index of the entry block.
     pub entry: usize,
+    /// Per-statement source map, parallel to `blocks`: `statement_spans[b][s]`
+    /// is the position of block `b`'s `s`-th statement; the final entry of
+    /// each inner vector is the block's terminator position.
+    pub statement_spans: Vec<Vec<Option<SrcPos>>>,
     id_to_idx: HashMap<BasicBlockId, usize>,
     local_id_to_idx: HashMap<LocalId, usize>,
 }
@@ -64,6 +69,7 @@ impl FunctionData {
             arg_count: body.arg_count as usize,
             blocks,
             entry,
+            statement_spans: body.statement_spans.clone(),
             id_to_idx,
             local_id_to_idx,
         })
@@ -527,6 +533,7 @@ impl<'a> BorrowChecker<'a> {
         if let Some(moved) = self.find_moved(place, state) {
             self.report(
                 BorrowError::UseAfterMove {
+                    span: None,
                     place: place::place_to_string(place, &self.function),
                     reason: format!(
                         "`{}` was moved from earlier on this path",
@@ -538,6 +545,7 @@ impl<'a> BorrowChecker<'a> {
         } else if let Some(uninit) = self.find_uninit(place, state) {
             self.report(
                 BorrowError::UseBeforeInit {
+                    span: None,
                     place: place::place_to_string(place, &self.function),
                     reason: format!(
                         "`{}` is not initialized on this path",
@@ -556,6 +564,7 @@ impl<'a> BorrowChecker<'a> {
                     // with borrows of any kind.
                     self.report(
                         BorrowError::MoveWhileBorrowed {
+                            span: None,
                             place: place::place_to_string(place, &self.function),
                             borrow_kind: br.kind_str().to_string(),
                             reason: "moving deinitializes the borrowed memory".to_string(),
@@ -565,6 +574,7 @@ impl<'a> BorrowChecker<'a> {
                 } else if br.kind == BorrowKind::Mutable && br.activated {
                     self.report(
                         BorrowError::ReadWhileMutablyBorrowed {
+                            span: None,
                             place: place::place_to_string(place, &self.function),
                             borrow_kind: "mutable".to_string(),
                             reason: "reading while a mutable borrow is active".to_string(),
@@ -591,6 +601,7 @@ impl<'a> BorrowChecker<'a> {
             if place::overlaps(place, &br.source) {
                 self.report(
                     BorrowError::WriteWhileBorrowed {
+                        span: None,
                         place: place::place_to_string(place, &self.function),
                         borrow_kind: br.kind_str().to_string(),
                         reason: "assigning while a borrow of the same memory is active".to_string(),
@@ -606,6 +617,7 @@ impl<'a> BorrowChecker<'a> {
             if state.moved.contains(ancestor) {
                 self.report(
                     BorrowError::AssignToMoved {
+                        span: None,
                         place: place::place_to_string(place, &self.function),
                         reason: format!(
                             "parent `{}` was moved from",
@@ -626,6 +638,7 @@ impl<'a> BorrowChecker<'a> {
         if let Some(moved) = self.find_moved(place, state) {
             self.report(
                 BorrowError::BorrowOfMoved {
+                    span: None,
                     place: place::place_to_string(place, &self.function),
                     reason: format!("`{}` was moved from earlier", place::place_to_string(&moved, &self.function)),
                 },
@@ -634,6 +647,7 @@ impl<'a> BorrowChecker<'a> {
         } else if let Some(uninit) = self.find_uninit(place, state) {
             self.report(
                 BorrowError::BorrowOfUninit {
+                    span: None,
                     place: place::place_to_string(place, &self.function),
                     reason: format!("`{}` is not initialized", place::place_to_string(&uninit, &self.function)),
                 },
@@ -645,6 +659,7 @@ impl<'a> BorrowChecker<'a> {
         if kind == BorrowKind::Mutable && !place::is_place_mutable(place, &self.function, self.module) {
             self.report(
                 BorrowError::MutableBorrowOfImmutable {
+                    span: None,
                     place: place::place_to_string(place, &self.function),
                     reason: "the target is not declared mutable".to_string(),
                 },
@@ -664,6 +679,7 @@ impl<'a> BorrowChecker<'a> {
                     // any existing borrow of overlapping memory.
                     self.report(
                         BorrowError::MutableBorrowConflict {
+                            span: None,
                             place: place::place_to_string(place, &self.function),
                             borrow_kind: br.kind_str().to_string(),
                             reason: "a mutable borrow cannot coexist with any other borrow".to_string(),
@@ -678,6 +694,7 @@ impl<'a> BorrowChecker<'a> {
                     if br.kind == BorrowKind::Mutable && br.activated {
                         self.report(
                             BorrowError::SharedBorrowConflict {
+                                span: None,
                                 place: place::place_to_string(place, &self.function),
                                 borrow_kind: "mutable".to_string(),
                                 reason: "a shared borrow cannot coexist with an active mutable borrow".to_string(),
@@ -736,6 +753,7 @@ impl<'a> BorrowChecker<'a> {
                     if place::overlaps(&source, &other.source) {
                         self.report(
                             BorrowError::TwoPhaseActivationConflict {
+                                span: None,
                                 place: place::place_to_string(&source, &self.function),
                                 borrow_kind: other.kind_str().to_string(),
                                 reason: "the two-phase mutable borrow was activated while another borrow of the same memory was still active".to_string(),
@@ -755,6 +773,7 @@ impl<'a> BorrowChecker<'a> {
             if br.holders.contains(place) && !place::is_escapable(&br.source) {
                 self.report(
                     BorrowError::BorrowOfLocalEscape {
+                        span: None,
                         place: place::place_to_string(&br.source, &self.function),
                         reason: "the referenced local dies when the function returns".to_string(),
                     },
@@ -809,8 +828,22 @@ impl<'a> BorrowChecker<'a> {
     // Reporting
     // ─────────────────────────────────────────────────────────
 
+    /// Source position of the given program point, if one was recorded during
+    /// HIR→MIR lowering. Returns `None` for synthetic statements or MIR built
+    /// directly by tests.
+    fn span_at(&self, loc: Location) -> Option<SrcPos> {
+        self.function
+            .statement_spans
+            .get(loc.block)
+            .and_then(|spans| spans.get(loc.stmt).copied())
+            .flatten()
+    }
+
     /// Report an error to the log (deduplicated) and collect it.
     fn report(&mut self, error: BorrowError, loc: Location) {
+        // Attach the source position of the offending statement/terminator so
+        // the diagnostic carries `file:line:col` context.
+        let error = error.with_span(self.span_at(loc));
         let key = format!("{loc:?}|{error}");
         if self.reported.insert(key) {
             self.log.report(&error);

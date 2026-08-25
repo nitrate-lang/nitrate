@@ -195,6 +195,7 @@ pub struct MirFunctionBody {
     pub entry_block: BasicBlockId,        // where execution starts
     pub blocks: ThinVec<BasicBlockId>,    // all blocks in the function
     pub arg_count: u32,                   // number of parameters
+    pub statement_spans: Vec<Vec<Option<SrcPos>>>, // per-block source map (see below)
 }
 
 pub struct MirFunction {
@@ -207,6 +208,8 @@ pub struct MirFunction {
 ```
 
 For function definitions (bodies with code), `body` is `Some(MirFunctionBody { ... })`. For extern/FFI declarations, `body` is `None`. The `is_extern()` method returns `true` when `body.is_none()`, providing a clean check for bodyless functions. Accessor methods (`locals()`, `blocks()`, `local_ids()`, `entry_block()`, `arg_count()`) safely handle both cases, returning empty slices or panicking as appropriate.
+
+**Per-statement source map**: `statement_spans` records the `SrcPos` (file/line/column/offset) of every statement and terminator, indexed as `[block_position][statement_index]`. The final entry of each block's inner vector is that block's terminator position, so a block with `n` statements holds `n + 1` entries. The `MirFunctionBuilder` maintains the map in lock-step with `push_stmt`/`set_terminator`; the HIR→MIR lowering populates it from each HIR value's span (via `set_current_span`), and the MIR borrow checker reads it to attach `file:line:col` context to its diagnostics. MIR built directly without source information (e.g. in tests) records `None` entries and the borrow checker then reports without locations.
 
 Parameters are stored as the first `arg_count` entries in `locals` — the same vector holds parameters, user-declared variables, and compiler-generated temporaries. This uniform treatment simplifies iteration and avoids separate parameter-specific code paths in analysis passes.
 

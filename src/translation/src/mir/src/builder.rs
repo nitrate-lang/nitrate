@@ -6,6 +6,7 @@ use crate::stmt::{BasicBlock, Statement, Terminator};
 use crate::store::{BasicBlockId, LocalId, MirFunctionId, MirTypeId};
 use crate::ty::{MirType, PtrSize};
 use nitrate_nstring::NString;
+use nitrate_tree::SrcPos;
 use thin_vec::ThinVec;
 
 // ─────────────────────────────────────────────────────────────
@@ -47,6 +48,9 @@ impl MirBuilder {
             entry_block: None,
             is_c_variadic: false,
             current_block: None,
+            current_block_idx: None,
+            current_span: None,
+            block_spans: Vec::new(),
         }
     }
 
@@ -133,6 +137,19 @@ pub struct MirFunctionBuilder<'b> {
 
     /// The basic block currently being constructed (if any).
     pub current_block: Option<BasicBlockId>,
+
+    /// Positional index of the block currently being constructed, in lock-step
+    /// with `current_block`.
+    current_block_idx: Option<usize>,
+
+    /// Source position to attach to the next pushed statement/terminator.
+    /// Consumed (reset to `None`) by `push_stmt` and `set_terminator`.
+    current_span: Option<SrcPos>,
+
+    /// Per-block source map, parallel to `blocks`: `block_spans[b][s]` is the
+    /// position of block `b`'s `s`-th statement; the final entry of each
+    /// inner vector is the block's terminator position.
+    block_spans: Vec<Vec<Option<SrcPos>>>,
 }
 
 impl<'b> MirFunctionBuilder<'b> {
@@ -193,6 +210,7 @@ impl<'b> MirFunctionBuilder<'b> {
     pub fn create_block_with_args(&mut self, arg_types: &[MirTypeId]) -> NewBlock {
         // Finalize any previous current block
         self.current_block = None;
+        self.current_block_idx = None;
 
         // Create locals for block arguments
         let mut arg_locals: ThinVec<LocalId> = ThinVec::new();
@@ -216,7 +234,9 @@ impl<'b> MirFunctionBuilder<'b> {
         }
 
         self.blocks.push(bb_id.clone());
+        self.block_spans.push(Vec::new());
         self.current_block = Some(bb_id.clone());
+        self.current_block_idx = Some(self.blocks.len() - 1);
 
         NewBlock {
             block: bb_id,
@@ -263,6 +283,7 @@ impl<'b> MirFunctionBuilder<'b> {
         }
 
         self.blocks.push(bb_id.clone());
+        self.block_spans.push(Vec::new());
         // NOTE: current_block is NOT changed — caller must use switch_to_block
 
         NewBlock {
@@ -276,7 +297,15 @@ impl<'b> MirFunctionBuilder<'b> {
     /// All subsequent `push_stmt` / `push_assign` / terminator calls will
     /// operate on this block.
     pub fn switch_to_block(&mut self, block: BasicBlockId) -> &mut Self {
-        self.current_block = Some(block);
+        self.current_block = Some(block.clone());
+        self.current_block_idx = self.blocks.iter().position(|b| *b == block);
+        self
+    }
+
+    /// Set the source position attached to the next pushed statement or
+    /// terminator. Empty positions (no file / zero offset) are ignored.
+    pub fn set_current_span(&mut self, span: Option<SrcPos>) -> &mut Self {
+        self.current_span = span.filter(|s| !s.is_empty());
         self
     }
 
@@ -292,6 +321,14 @@ impl<'b> MirFunctionBuilder<'b> {
             .expect("push_stmt called with no current block — call create_block first");
         let mut borrowed = bb_id.borrow_mut();
         borrowed.statements.push(stmt.clone());
+
+        // Record the statement's source position in the per-block map.
+        if let Some(idx) = self.current_block_idx {
+            if let Some(spans) = self.block_spans.get_mut(idx) {
+                spans.push(self.current_span);
+            }
+        }
+        self.current_span = None;
         self
     }
 
@@ -323,6 +360,17 @@ impl<'b> MirFunctionBuilder<'b> {
             .current_block
             .take()
             .expect("set_terminator called with no current block");
+
+        // Record the terminator's source position as the final entry of the
+        // block's span map (statement index `n` where `n` is the statement
+        // count — the convention used by the borrow checker's `Location`).
+        if let Some(idx) = self.current_block_idx.take() {
+            if let Some(spans) = self.block_spans.get_mut(idx) {
+                spans.push(self.current_span);
+            }
+        }
+        self.current_span = None;
+
         let mut borrowed = bb_id.borrow_mut();
         borrowed.terminator = terminator;
         self
@@ -531,6 +579,7 @@ impl<'b> MirFunctionBuilder<'b> {
             entry_block,
             blocks: self.blocks,
             arg_count: self.arg_count,
+            statement_spans: self.block_spans,
         };
 
         let func = MirFunction {
@@ -579,3 +628,85 @@ impl<'b> MirFunctionBuilder<'b> {
 // ─────────────────────────────────────────────────────────────
 
 use crate::func::MirModule;
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::MirType;
+
+    #[test]
+    fn builder_records_statement_and_terminator_spans() {
+        let store = crate::MirStore::new();
+        crate::using_storage(&store, || {
+            let mut builder = MirBuilder::new();
+            let i32_ty = MirType::I32.into();
+
+            let mut f = builder.start_function("span_map".into(), i32_ty);
+            let x = f.new_temp(i32_ty, true);
+            f.create_block();
+
+            // Two statements with spans, then a terminator with a span.
+            f.set_current_span(Some(SrcPos::new(None, 1, 1, 10)));
+            f.push_storage_live(x.clone());
+            f.set_current_span(Some(SrcPos::new(None, 1, 5, 14)));
+            f.push_assign(Place::Local(x.clone()), Rvalue::Use(Operand::Constant(MirLiteral::I32(7))));
+            f.set_current_span(Some(SrcPos::new(None, 1, 9, 18)));
+            f.ret(Some(Operand::Copy(Place::Local(x))));
+            f.finish_function();
+
+            let module = builder.build_module(PtrSize::U64);
+            let func = module.functions[0].borrow().clone();
+            let body = func.body.as_ref().expect("function should have a body");
+
+            // One block: two statement entries + one terminator entry.
+            assert_eq!(body.blocks.len(), 1);
+            assert_eq!(body.statement_spans.len(), 1);
+            let spans = &body.statement_spans[0];
+            assert_eq!(spans.len(), 3, "statements + terminator entry");
+            assert_eq!(spans[0].unwrap().offset.to_u32(), 10);
+            assert_eq!(spans[1].unwrap().offset.to_u32(), 14);
+            assert_eq!(spans[2].unwrap().offset.to_u32(), 18);
+
+            // Statements pushed without an explicit span record `None`.
+            let mut builder = MirBuilder::new();
+            let mut f2 = builder.start_function("unspanned".into(), i32_ty);
+            let y = f2.new_temp(i32_ty, true);
+            f2.create_block();
+            f2.push_storage_live(y.clone());
+            f2.push_assign(Place::Local(y.clone()), Rvalue::Use(Operand::Constant(MirLiteral::I32(1))));
+            f2.ret(None);
+            f2.finish_function();
+
+            let module = builder.build_module(PtrSize::U64);
+            let func = module.functions[0].borrow().clone();
+            let body = func.body.as_ref().expect("function should have a body");
+            assert_eq!(body.statement_spans[0].len(), 3);
+            assert!(body.statement_spans[0].iter().all(Option::is_none));
+        });
+    }
+
+    #[test]
+    fn empty_spans_are_filtered_out() {
+        // `SrcPos::default()` (used by the solver for monomorphized copies)
+        // must not be recorded, so no bogus `?:1:1` location is ever printed.
+        let store = crate::MirStore::new();
+        crate::using_storage(&store, || {
+            let mut builder = MirBuilder::new();
+            let i32_ty = MirType::I32.into();
+
+            let mut f = builder.start_function("empty_span".into(), i32_ty);
+            let x = f.new_temp(i32_ty, true);
+            f.create_block();
+            f.set_current_span(Some(SrcPos::default()));
+            f.push_assign(Place::Local(x.clone()), Rvalue::Use(Operand::Constant(MirLiteral::I32(1))));
+            f.ret(None);
+            f.finish_function();
+
+            let module = builder.build_module(PtrSize::U64);
+            let func = module.functions[0].borrow().clone();
+            let body = func.body.as_ref().expect("function should have a body");
+            assert_eq!(body.statement_spans[0].len(), 2);
+            assert!(body.statement_spans[0].iter().all(Option::is_none));
+        });
+    }
+}

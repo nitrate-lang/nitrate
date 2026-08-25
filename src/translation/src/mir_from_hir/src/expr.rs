@@ -5,6 +5,7 @@ use nitrate_hir::prelude as hir;
 use nitrate_hir_type::{hir_type_is_copy, HirGetType};
 use nitrate_mir::prelude as mir;
 use nitrate_nstring::NString;
+use nitrate_tree::SrcPos;
 
 // ─────────────────────────────────────────────────────────────
 // Expression lowering
@@ -105,9 +106,15 @@ pub fn lower_value(
         }
 
         // ── Assign ──────────────────────────────────────
-        hir::Value::Assign { place, value: rhs, .. } => {
+        hir::Value::Assign {
+            span,
+            place,
+            value: rhs,
+            ..
+        } => {
             let lhs_place = lower_value_as_place(ctx, func, place);
             let rhs_operand = lower_value(ctx, func, rhs, false);
+            func.set_current_span(Some(*span));
             func.push_assign(lhs_place, mir::Rvalue::Use(rhs_operand));
             mir::Operand::Constant(mir::MirLiteral::Unit)
         }
@@ -252,7 +259,12 @@ pub fn lower_value(
         }
 
         // ── Call ────────────────────────────────────────
-        hir::Value::Call { callee, args, .. } => {
+        hir::Value::Call {
+            span,
+            callee,
+            args,
+            ..
+        } => {
             let callee_op = lower_value(ctx, func, callee, false);
             let mir_args: thin_vec::ThinVec<mir::Operand> = args
                 .clone()
@@ -261,12 +273,14 @@ pub fn lower_value(
                 .collect();
 
             if is_tail {
+                func.set_current_span(Some(*span));
                 func.call(callee_op, mir_args);
                 mir::Operand::Constant(mir::MirLiteral::Unit)
             } else {
                 let return_ty = value_result_type(ctx, func, &value);
                 let ret_temp = func.new_temp(return_ty.clone(), false);
                 let merge_block = func.reserve_block();
+                func.set_current_span(Some(*span));
                 func.call_return(callee_op, mir_args, mir::Place::Local(ret_temp.clone()), merge_block);
                 func.switch_to_block(merge_block);
                 // A non-copy return value is moved out of the call's temporary
@@ -281,17 +295,22 @@ pub fn lower_value(
 
         // ── Method call ─────────────────────────────────
         hir::Value::MethodCall {
-            object, method_name: _, ..
+            span,
+            object,
+            method_name: _,
+            ..
         } => {
             let callee_op = lower_value(ctx, func, object, false);
             let return_ty = value_result_type(ctx, func, &value);
 
             if is_tail {
+                func.set_current_span(Some(*span));
                 func.call(callee_op, thin_vec::ThinVec::new());
                 mir::Operand::Constant(mir::MirLiteral::Unit)
             } else {
                 let ret_temp = func.new_temp(return_ty.clone(), false);
                 let merge_block = func.reserve_block();
+                func.set_current_span(Some(*span));
                 func.call_return(
                     callee_op,
                     thin_vec::ThinVec::new(),
@@ -308,33 +327,41 @@ pub fn lower_value(
         }
 
         // ── Return ──────────────────────────────────────
-        hir::Value::Return { value: ret_val, .. } => {
+        hir::Value::Return { span, value: ret_val } => {
             let borrowed = ret_val.borrow();
             let operand = if matches!(&*borrowed, hir::Value::Unit { .. }) {
                 None
             } else {
                 Some(lower_value(ctx, func, ret_val, false))
             };
+            func.set_current_span(Some(*span));
             func.ret(operand);
             mir::Operand::Constant(mir::MirLiteral::Unit)
         }
 
         // ── If / else ───────────────────────────────────
         hir::Value::If {
+            span,
             condition,
             true_branch,
             false_branch,
             ..
-        } => lower_if(ctx, func, condition, true_branch, false_branch.as_ref(), is_tail),
+        } => lower_if(ctx, func, *span, condition, true_branch, false_branch.as_ref(), is_tail),
 
         // ── While loop ──────────────────────────────────
-        hir::Value::While { condition, body, .. } => lower_while(ctx, func, condition, body),
+        hir::Value::While {
+            span,
+            condition,
+            body,
+            ..
+        } => lower_while(ctx, func, *span, condition, body),
 
         // ── Loop ────────────────────────────────────────
-        hir::Value::Loop { body, .. } => lower_loop(ctx, func, body),
+        hir::Value::Loop { span, body, .. } => lower_loop(ctx, func, *span, body),
 
         // ── Break ───────────────────────────────────────
-        hir::Value::Break { .. } => {
+        hir::Value::Break { span, .. } => {
+            func.set_current_span(Some(*span));
             if let Some((_, break_target)) = ctx.loop_targets().cloned() {
                 func.goto(break_target);
             } else {
@@ -344,7 +371,8 @@ pub fn lower_value(
         }
 
         // ── Continue ────────────────────────────────────
-        hir::Value::Continue { .. } => {
+        hir::Value::Continue { span, .. } => {
+            func.set_current_span(Some(*span));
             if let Some((continue_target, _)) = ctx.loop_targets().cloned() {
                 func.goto(continue_target);
             } else {
@@ -466,17 +494,22 @@ pub fn lower_value_as_place(
         }
         _ => {
             let operand = lower_value(ctx, func, value_id, false);
-            operand_to_place(func, operand)
+            operand_to_place(func, operand, Some(value.span()))
         }
     }
 }
 
-fn operand_to_place(func: &mut mir::MirFunctionBuilder, operand: mir::Operand) -> mir::Place {
+fn operand_to_place(
+    func: &mut mir::MirFunctionBuilder,
+    operand: mir::Operand,
+    span: Option<SrcPos>,
+) -> mir::Place {
     match operand {
         mir::Operand::Copy(p) | mir::Operand::Move(p) => p,
         mir::Operand::Constant(_) => {
             let unit_ty = func.store_type(mir::MirType::Unit);
             let temp = func.new_temp(unit_ty, false);
+            func.set_current_span(span);
             func.push_assign(mir::Place::Local(temp.clone()), mir::Rvalue::Use(operand));
             mir::Place::Local(temp)
         }
@@ -495,6 +528,7 @@ fn operand_to_place(func: &mut mir::MirFunctionBuilder, operand: mir::Operand) -
 fn lower_if(
     ctx: &mut LoweringCtx,
     func: &mut mir::MirFunctionBuilder,
+    span: SrcPos,
     condition: &hir::ValueId,
     true_branch: &hir::BlockId,
     false_branch: Option<&hir::BlockId>,
@@ -527,6 +561,7 @@ fn lower_if(
     let else_block = false_branch.as_ref().map(|_| func.reserve_block());
 
     // Branch from condition (which is in the current block) to then/else
+    func.set_current_span(Some(span));
     func.if_br(cond_op, then_block, else_block.unwrap_or(merge.block.clone()));
 
     // Lower then branch
@@ -534,6 +569,7 @@ fn lower_if(
     let true_block_data = true_branch.borrow();
     let then_result = block::lower_block(ctx, func, &true_block_data);
     if func.current_block.is_some() {
+        func.set_current_span(Some(span));
         if is_tail {
             func.goto(merge.block.clone());
         } else {
@@ -548,6 +584,7 @@ fn lower_if(
         let false_block_data = false_id.borrow();
         let else_result = block::lower_block(ctx, func, &false_block_data);
         if func.current_block.is_some() {
+            func.set_current_span(Some(span));
             if is_tail {
                 func.goto(merge.block.clone());
             } else {
@@ -576,6 +613,7 @@ fn lower_if(
 fn lower_while(
     ctx: &mut LoweringCtx,
     func: &mut mir::MirFunctionBuilder,
+    span: SrcPos,
     condition: &hir::ValueId,
     body: &hir::BlockId,
 ) -> mir::Operand {
@@ -585,11 +623,13 @@ fn lower_while(
     let exit_block = func.reserve_block();
 
     // Set goto on the current block to header
+    func.set_current_span(Some(span));
     func.goto(header_block);
 
     // Header: evaluate condition
     func.switch_to_block(header_block);
     let cond_op = lower_value(ctx, func, condition, false);
+    func.set_current_span(Some(span));
     func.if_br(cond_op, body_block, exit_block);
 
     // Body block
@@ -598,6 +638,7 @@ fn lower_while(
     let body_data = body.borrow();
     block::lower_block_elements(ctx, func, &body_data.elements);
     ctx.pop_loop();
+    func.set_current_span(Some(span));
     func.goto(header_block);
 
     // Switch to exit block so caller can continue
@@ -605,12 +646,18 @@ fn lower_while(
     mir::Operand::Constant(mir::MirLiteral::Unit)
 }
 
-fn lower_loop(ctx: &mut LoweringCtx, func: &mut mir::MirFunctionBuilder, body: &hir::BlockId) -> mir::Operand {
+fn lower_loop(
+    ctx: &mut LoweringCtx,
+    func: &mut mir::MirFunctionBuilder,
+    span: SrcPos,
+    body: &hir::BlockId,
+) -> mir::Operand {
     // Reserve blocks first
     let loop_body = func.reserve_block();
     let loop_exit = func.reserve_block();
 
     // Terminate current block with goto to loop body
+    func.set_current_span(Some(span));
     func.goto(loop_body);
 
     func.switch_to_block(loop_body);
@@ -618,6 +665,7 @@ fn lower_loop(ctx: &mut LoweringCtx, func: &mut mir::MirFunctionBuilder, body: &
     let body_data = body.borrow();
     block::lower_block_elements(ctx, func, &body_data.elements);
     ctx.pop_loop();
+    func.set_current_span(Some(span));
     func.goto(loop_body);
 
     // Switch to exit block so caller can continue
@@ -637,6 +685,7 @@ fn assign_rvalue_to_temp(
 ) -> mir::Operand {
     let mir_ty = value_result_type(ctx, func, hir_value);
     let temp = func.new_temp(mir_ty, false);
+    func.set_current_span(Some(hir_value.span()));
     func.push_assign(mir::Place::Local(temp.clone()), rvalue);
     mir::Operand::Copy(mir::Place::Local(temp))
 }

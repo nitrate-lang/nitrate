@@ -1,6 +1,7 @@
 use crate::store::*;
 use crate::ty::PtrSize;
 use nitrate_nstring::NString;
+use nitrate_tree::SrcPos;
 use serde::{Deserialize, Serialize};
 use thin_vec::ThinVec;
 
@@ -44,6 +45,14 @@ pub struct MirFunctionBody {
     /// Number of "arguments" (parameter locals). The first `arg_count`
     /// entries in `locals` are parameters.
     pub arg_count: u32,
+
+    /// Source position for every statement and the terminator, indexed as
+    /// `[block_position][statement_index]`. The final entry of each block's
+    /// vector is that block's terminator position, so a vector with `n`
+    /// statements holds `n + 1` entries. The map is empty when no source
+    /// information was recorded during lowering (e.g. MIR built directly by
+    /// tests); the borrow checker then reports diagnostics without locations.
+    pub statement_spans: Vec<Vec<Option<SrcPos>>>,
 }
 
 /// The complete MIR representation of a function.

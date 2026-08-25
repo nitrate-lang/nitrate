@@ -47,12 +47,17 @@ fn lower_local_declaration(ctx: &mut LoweringCtx, func: &mut mir::MirFunctionBui
     ctx.local_map.insert(local_var.name.clone(), local_id.clone());
 
     // Emit StorageLive
+    func.set_current_span(Some(local_var.span));
     func.push_storage_live(local_id.clone());
 
     // Lower the initializer if present
     if let Some(init_value) = &local_var.initializer {
+        // Point the assignment at the initializer expression so diagnostics
+        // (e.g. use-after-move) point at the exact expression being evaluated.
+        let init_span = init_value.borrow().span();
         let init_operand = expr::lower_value(ctx, func, init_value, false);
         let init_rvalue = mir::Rvalue::Use(init_operand);
+        func.set_current_span(Some(init_span));
         func.push_assign(mir::Place::Local(local_id.clone()), init_rvalue);
     }
 }

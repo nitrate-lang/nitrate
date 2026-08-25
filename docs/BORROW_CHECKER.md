@@ -6,6 +6,10 @@ This document describes Nitrate's borrow checker, which provides memory safety g
 
 The implementation lives in the `nitrate_mir_borrow_check` crate, which runs as part of the pipeline immediately after MIR lowering (see `HirMangled::lower_mir` in the pipeline). It replaces the former HIR borrow checker (`nitrate_hir_borrow_check`), which was disconnected from the pipeline because the tree-structured HIR cannot represent evaluation order, temporary lifetimes, or control-flow merges precisely enough for NLL.
 
+## Diagnostics
+
+Every violation is reported through the shared `CompilerLog` as a `BorrowError` (diagnostic group `BorrowCheck`, prefix `[B...]`, stable variant IDs `0x100`–`0x10C`). The checker attaches the **source position** of the offending MIR statement or terminator: the HIR→MIR lowering records each value's `SrcPos` into the function's per-statement source map (`MirFunctionBody::statement_spans`, maintained by `MirFunctionBuilder::set_current_span`), and `BorrowError::format()` surfaces it as the diagnostic `Origin::Point`, so errors print as `file:line:col` (e.g. `use of moved value _1 --> src/entry.nit:17:13`). MIR built without source information (unit tests, synthetic codegen) reports `Origin::None` and prints without a location.
+
 ## Core Invariants
 
 The borrow checker enforces these invariants at all times:

@@ -379,6 +379,99 @@ fn use_after_move_is_rejected() {
 }
 
 #[test]
+fn diagnostics_carry_recorded_source_positions() {
+    // When MIR statements are built with a recorded source span, the reported
+    // violation must surface that span as its diagnostic origin.
+    use crate::diagnosis::BorrowError;
+    use nitrate_diagnosis::{FormattableDiagnosticGroup, Origin};
+    use nitrate_tree::SrcPos;
+
+    let store = mir::MirStore::new();
+    mir::using_storage(&store, || {
+        let mut builder = MirBuilder::new();
+        let mut f = builder.start_function("spanned_move".into(), i32_ty());
+        let x = f.local(i32_ty(), true);
+        f.create_block();
+        f.assign_const(Place::Local(x), MirLiteral::I32(5));
+
+        let span = SrcPos::new(None, 3, 5, 100);
+        let y = f.local(i32_ty(), false);
+        f.set_current_span(Some(span));
+        f.push_assign(Place::Local(y), Rvalue::Use(Operand::Move(Place::Local(x))));
+
+        // The statement that triggers the use-after-move points at `x`.
+        let z = f.local(i32_ty(), false);
+        f.set_current_span(Some(span));
+        f.push_assign(Place::Local(z), Rvalue::Use(Operand::Copy(Place::Local(x))));
+        f.ret(Some(Operand::Copy(Place::Local(z))));
+        f.finish_function();
+
+        let module = builder.build_module(mir::PtrSize::U64);
+        let func = module.functions[0].borrow().clone();
+        let errors = collect_errors(&func, &module);
+        let use_after_move = errors
+            .iter()
+            .find(|e| matches!(e, BorrowError::UseAfterMove { .. }))
+            .expect("expected a use-after-move error");
+
+        match use_after_move.format().origin {
+            Origin::Point(pos) => {
+                assert_eq!(pos.line, 3);
+                assert_eq!(pos.column, 5);
+                assert_eq!(pos.offset, 100);
+            }
+            other => panic!("expected a point origin with the recorded span, got {other:?}"),
+        }
+    });
+}
+
+#[test]
+fn diagnostics_without_spans_have_no_origin() {
+    // MIR built without source information (the default for the builder) must
+    // fall back to `Origin::None` so no bogus location is printed.
+    use crate::diagnosis::BorrowError;
+    use nitrate_diagnosis::{FormattableDiagnosticGroup, Origin};
+
+    let h = Harness::new();
+    let errors = h.errors(|b| {
+        let mut f = b.start_function("unspanned_move".into(), i32_ty());
+        let x = f.local(i32_ty(), true);
+        f.create_block();
+        f.assign_const(Place::Local(x), MirLiteral::I32(5));
+        let y = f.local(i32_ty(), false);
+        f.push_assign(Place::Local(y), Rvalue::Use(Operand::Move(Place::Local(x))));
+        let z = f.local(i32_ty(), false);
+        f.push_assign(Place::Local(z), Rvalue::Use(Operand::Copy(Place::Local(x))));
+        f.ret(Some(Operand::Copy(Place::Local(z))));
+        f.finish_function();
+    });
+    assert_eq!(errors.len(), 1, "expected exactly one violation, got: {errors:#?}");
+
+    // Re-collect the structured errors to inspect their origins.
+    mir::using_storage(&h.store, || {
+        let mut builder = MirBuilder::new();
+        let mut f = builder.start_function("unspanned_move".into(), i32_ty());
+        let x = f.local(i32_ty(), true);
+        f.create_block();
+        f.assign_const(Place::Local(x), MirLiteral::I32(5));
+        let y = f.local(i32_ty(), false);
+        f.push_assign(Place::Local(y), Rvalue::Use(Operand::Move(Place::Local(x))));
+        let z = f.local(i32_ty(), false);
+        f.push_assign(Place::Local(z), Rvalue::Use(Operand::Copy(Place::Local(x))));
+        f.ret(Some(Operand::Copy(Place::Local(z))));
+        f.finish_function();
+        let module = builder.build_module(mir::PtrSize::U64);
+        let func = module.functions[0].borrow().clone();
+        let errors = collect_errors(&func, &module);
+        let use_after_move = errors
+            .iter()
+            .find(|e| matches!(e, BorrowError::UseAfterMove { .. }))
+            .expect("expected a use-after-move error");
+        assert!(matches!(use_after_move.format().origin, Origin::None));
+    });
+}
+
+#[test]
 fn double_move_is_rejected() {
     // var x = 5; y = move(x); z = move(x); ret z
     // Moving the same place twice is a use-after-move: the second move reads
