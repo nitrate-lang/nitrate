@@ -1155,20 +1155,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "nitrate_hir_borrow_check"
-version = "0.1.0"
-dependencies = [
- "log",
- "nitrate_diagnosis",
- "nitrate_hir",
- "nitrate_hir_type",
- "nitrate_nstring",
- "nitrate_tree",
- "ordered-float",
- "thin-vec",
-]
-
-[[package]]
 name = "nitrate_hir_dump"
 version = "0.1.0"
 dependencies = [
