@@ -1,6 +1,127 @@
 use nitrate_hir::prelude::*;
 use nitrate_tree::SrcPos;
+use std::collections::BTreeMap;
 use std::ops::Deref;
+
+/// Substitute generic parameters (by index) inside a type. Used to resolve
+/// the return type of a generic call with explicit turbofish type arguments
+/// (`foo::<i32>()`) before monomorphization has run.
+fn substitute_generic_params(ty: &Type, mapping: &BTreeMap<u32, TypeId>) -> Type {
+    match ty {
+        Type::GenericParam { index, .. } => mapping
+            .get(index)
+            .map(|c| (**c).clone())
+            .unwrap_or_else(|| ty.clone()),
+        Type::Array { element_type, len, .. } => Type::Array {
+            span: ty.span(),
+            element_type: TypeId::from(substitute_generic_params(element_type, mapping)),
+            len: *len,
+        },
+        Type::Tuple { element_types, .. } => Type::Tuple {
+            span: ty.span(),
+            element_types: element_types
+                .iter()
+                .map(|et| TypeId::from(substitute_generic_params(et, mapping)))
+                .collect(),
+        },
+        Type::Reference {
+            lifetime,
+            exclusive,
+            mutable,
+            to,
+            ..
+        } => Type::Reference {
+            span: ty.span(),
+            lifetime: lifetime.clone(),
+            exclusive: *exclusive,
+            mutable: *mutable,
+            to: TypeId::from(substitute_generic_params(to, mapping)),
+        },
+        Type::Pointer {
+            lifetime,
+            exclusive,
+            mutable,
+            to,
+            ..
+        } => Type::Pointer {
+            span: ty.span(),
+            lifetime: lifetime.clone(),
+            exclusive: *exclusive,
+            mutable: *mutable,
+            to: TypeId::from(substitute_generic_params(to, mapping)),
+        },
+        Type::SliceRef {
+            lifetime,
+            exclusive,
+            mutable,
+            element_type,
+            ..
+        } => Type::SliceRef {
+            span: ty.span(),
+            lifetime: lifetime.clone(),
+            exclusive: *exclusive,
+            mutable: *mutable,
+            element_type: TypeId::from(substitute_generic_params(element_type, mapping)),
+        },
+        Type::SlicePtr {
+            lifetime,
+            exclusive,
+            mutable,
+            element_type,
+            ..
+        } => Type::SlicePtr {
+            span: ty.span(),
+            lifetime: lifetime.clone(),
+            exclusive: *exclusive,
+            mutable: *mutable,
+            element_type: TypeId::from(substitute_generic_params(element_type, mapping)),
+        },
+        Type::Parameterized { base, args, .. } => {
+            let new_base = substitute_generic_params(base, mapping);
+            let new_positional: Vec<TypeId> = args
+                .positional
+                .iter()
+                .map(|a| TypeId::from(substitute_generic_params(a, mapping)))
+                .collect();
+            let new_named: Vec<(nitrate_nstring::NString, TypeId)> = args
+                .named
+                .iter()
+                .map(|(k, v)| (k.clone(), TypeId::from(substitute_generic_params(v, mapping))))
+                .collect();
+            Type::Parameterized {
+                span: ty.span(),
+                base: TypeId::from(new_base),
+                args: Arguments {
+                    positional: new_positional.into(),
+                    named: new_named.into(),
+                },
+            }
+        }
+        Type::Function { function_type, .. } => {
+            let params: Vec<(nitrate_nstring::NString, TypeId)> = function_type
+                .params
+                .iter()
+                .map(|(n, p)| (n.clone(), TypeId::from(substitute_generic_params(p, mapping))))
+                .collect();
+            let ret = substitute_generic_params(&function_type.return_type, mapping);
+            Type::Function {
+                span: ty.span(),
+                function_type: Box::new(FunctionType {
+                    attributes: function_type.attributes.clone(),
+                    params: params.into(),
+                    return_type: TypeId::from(ret),
+                }),
+            }
+        }
+        Type::Refine { base, min, max, .. } => Type::Refine {
+            span: ty.span(),
+            base: TypeId::from(substitute_generic_params(base, mapping)),
+            min: *min,
+            max: *max,
+        },
+        _ => ty.clone(),
+    }
+}
 
 #[derive(Debug)]
 pub enum TypeInferenceError {
@@ -330,9 +451,36 @@ impl HirGetType for Value {
 
             Value::Block { block, .. } => block.borrow().determine_type(ctx),
 
-            Value::Call { callee, .. } => {
+            Value::Call { callee, type_args, .. } => {
                 if let Type::Function { function_type, .. } = callee.borrow().determine_type(ctx)? {
-                    return Ok(function_type.return_type.deref().clone());
+                    let mut return_type = function_type.return_type.deref().clone();
+                    // When calling a generic function with explicit type
+                    // arguments (turbofish), substitute them into the return
+                    // type so the caller observes the concrete instantiation.
+                    if !type_args.positional.is_empty() || !type_args.named.is_empty() {
+                        if let Value::FunctionSymbol { id, .. } = &*callee.borrow() {
+                            let func = id.borrow();
+                            if let Some(generics) = &func.generics
+                                && !generics.is_empty()
+                            {
+                                let mut mapping: BTreeMap<u32, TypeId> = BTreeMap::new();
+                                for (i, (_name, _)) in generics.iter().enumerate() {
+                                    if let Some(arg) = type_args.positional.get(i) {
+                                        mapping.insert(i as u32, *arg);
+                                    }
+                                }
+                                for (name, arg) in &type_args.named {
+                                    for (i, (gn, _)) in generics.iter().enumerate() {
+                                        if gn == name {
+                                            mapping.insert(i as u32, *arg);
+                                        }
+                                    }
+                                }
+                                return_type = substitute_generic_params(&return_type, &mapping);
+                            }
+                        }
+                    }
+                    return Ok(return_type);
                 }
                 Err(TypeInferenceError::CalleeIsNotFunctionType)
             }

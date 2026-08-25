@@ -202,6 +202,13 @@ fn empty_args() -> Arguments<ValueId> {
     }
 }
 
+fn empty_type_args() -> Arguments<TypeId> {
+    Arguments {
+        positional: ThinVec::new(),
+        named: ThinVec::new(),
+    }
+}
+
 // ═══════════════════════════════════════════════════════════════════════════
 // 1. Evaluator Construction & Configuration Tests
 // ═══════════════════════════════════════════════════════════════════════════
@@ -2418,6 +2425,7 @@ fn function_call_unit_body() {
                 positional: ThinVec::new(),
                 named: ThinVec::new(),
             },
+            type_args: empty_type_args(),
         };
         let result = ev.evaluate(&v);
         assert!(result.is_ok());
@@ -2444,6 +2452,7 @@ fn function_call_depth_exceeded() {
             })
             .into(),
             args: empty_args(),
+            type_args: empty_type_args(),
         };
         let result = ev.evaluate(&v);
         assert!(matches!(result, Err(EvalError::CallDepthExceeded)));
@@ -2457,6 +2466,7 @@ fn function_call_non_function_symbol_fails() {
             span: SrcPos::default(),
             callee: make_i32(42).into(),
             args: empty_args(),
+            type_args: empty_type_args(),
         };
         let result = ev.evaluate(&v);
         assert!(matches!(result, Err(EvalError::TypeError)));
@@ -2490,6 +2500,7 @@ fn unsafe_function_in_safe_context_fails() {
             })
             .into(),
             args: empty_args(),
+            type_args: empty_type_args(),
         };
         let result = ev.evaluate(&v);
         assert!(matches!(result, Err(EvalError::UnsafeInSafeContext)));

@@ -23,7 +23,7 @@ impl std::fmt::Display for SolveError {
     }
 }
 
-pub use solve::{resolve_function, resolve_global};
+pub use solve::{resolve_all_functions, resolve_function, resolve_global};
 
 #[cfg(test)]
 mod tests {

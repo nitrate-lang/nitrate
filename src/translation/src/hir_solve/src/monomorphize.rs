@@ -110,6 +110,32 @@ pub(crate) fn unify_types_with_subst(arg_type: &Type, param_type: &Type, subst: 
     }
 }
 
+/// Whether every binding in the substitution maps to a fully concrete type.
+/// A substitution that still maps some generic parameter to another generic
+/// parameter (or to an inference variable) must not be used to monomorphize:
+/// doing so would fabricate a "concrete" copy that still contains abstract
+/// type variables, corrupting downstream layout and codegen.
+pub(crate) fn substitution_is_concrete(subst: &Substitution) -> bool {
+    subst
+        .generic_mapping
+        .values()
+        .all(|t| !type_contains_any_generic_param(t) && !t.is_inferred())
+}
+
+/// Default an inference-placeholder literal to its canonical type for the
+/// purpose of generic unification. An otherwise-unconstrained integer literal
+/// defaults to `I32` and a float literal to `F64` — matching what
+/// `finalize_inferred_literals` does for literals that end the solve with no
+/// constraints. This lets `identity(42)` drive `T := i32` rather than stalling
+/// on an unresolved `InferredInteger`.
+pub(crate) fn default_inferred_literal(ty: &Type) -> Type {
+    match ty {
+        Type::InferredInteger { span } => Type::I32 { span: *span },
+        Type::InferredFloat { span } => Type::F64 { span: *span },
+        _ => ty.clone(),
+    }
+}
+
 pub(crate) fn type_contains_any_generic_param(ty: &Type) -> bool {
     match ty {
         Type::GenericParam { .. } => true,
@@ -436,10 +462,22 @@ pub(crate) fn apply_subst_to_value(value: &Value, subst: &Substitution) -> Value
             block: nitrate_hir::BlockId::from(clone_block_with_subst(block, subst)),
         },
 
-        Value::Call { callee, args, .. } => Value::Call {
+        Value::Call { callee, args, type_args, .. } => Value::Call {
             span: SrcPos::default(),
             callee: recurse(callee, subst),
             args: apply_subst_to_args(args, subst),
+            type_args: Arguments {
+                positional: type_args
+                    .positional
+                    .iter()
+                    .map(|t| TypeId::from(subst.apply(t)))
+                    .collect(),
+                named: type_args
+                    .named
+                    .iter()
+                    .map(|(k, v)| (k.clone(), TypeId::from(subst.apply(v))))
+                    .collect(),
+            },
         },
 
         Value::MethodCall {
@@ -1721,6 +1759,7 @@ mod tests {
                     positional: vec![].into(),
                     named: vec![].into(),
                 },
+                type_args: Arguments::default(),
             };
             let result = apply_subst_to_value(&v, &s);
             assert!(matches!(result, Value::Call { .. }));

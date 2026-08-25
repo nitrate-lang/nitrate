@@ -296,6 +296,17 @@ impl ValidateHirItem for Function {
                 },
             )?;
 
+            // A generic function's body legitimately references its own type
+            // parameters (e.g. a struct literal `Point { x: 10 as T, y: 20 as T }`
+            // inside `fn foo<T>() -> Point<T>`). Its body type therefore cannot
+            // be compared against the return type until concrete type arguments
+            // are supplied. The monomorphized copies produced by the solver are
+            // the concrete functions; the original generic definition is only a
+            // template and must not fail validation here.
+            if self.generics.as_ref().is_some_and(|g| !g.is_empty()) {
+                return Ok(());
+            }
+
             establish_property(
                 ctx,
                 "typeof(body) == return_type",

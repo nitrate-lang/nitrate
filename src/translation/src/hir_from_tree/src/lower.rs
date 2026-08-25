@@ -2,7 +2,7 @@ use crate::context::Ast2HirCtx;
 use crate::item::lower_module;
 use nitrate_diagnosis::CompilerLog;
 use nitrate_hir::prelude::*;
-use nitrate_hir_solve::{SolveError, resolve_function, resolve_global};
+use nitrate_hir_solve::{SolveError, resolve_all_functions, resolve_global};
 use nitrate_tree::ast::{self};
 use nitrate_tree_resolve::{resolve_imports, resolve_paths};
 
@@ -18,15 +18,12 @@ pub fn convert_ast_to_hir(
 
     let mut module = lower_module(module, ctx, log).map_err(|_| SolveError::TypeErrors)?;
 
-    // Pass 1: Type inference and solving.
-    // Collect function IDs first to avoid borrow conflict with resolve_function
-    let function_ids: Vec<FunctionId> = ctx.tab.functions().cloned().collect();
-    for func_id in &function_ids {
-        let mut function = func_id.borrow_mut();
-        if function.body.is_some() {
-            resolve_function(&mut function, &mut ctx.tab, log)?;
-        }
-    }
+    // Pass 1: Type inference and solving. `resolve_all_functions` runs to a
+    // fixed point: solving one function can monomorphize generic callees,
+    // producing new concrete functions that must themselves be solved, and
+    // later rounds re-normalize earlier functions' types once the mono structs
+    // they reference have been created.
+    resolve_all_functions(&mut ctx.tab, log)?;
 
     // Collect global IDs first to avoid borrow conflict with resolve_global
     let global_ids: Vec<GlobalVariableId> = ctx.tab.globals().cloned().collect();

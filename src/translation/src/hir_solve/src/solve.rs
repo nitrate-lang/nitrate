@@ -32,6 +32,17 @@ struct Solver<'a> {
     constraint_version: u64,
     mono_depth: u32,
     mono_in_progress: HashSet<MonoCacheKey>,
+    /// True while solving the body of a function that declares generic
+    /// parameters. Generic function bodies legitimately contain unresolved
+    /// `Type::GenericParam` values (e.g. a struct literal whose type argument
+    /// is still abstract `T`); such functions are validated via their
+    /// monomorphized copies, so we suppress errors that only make sense for
+    /// concrete code.
+    solving_generic_function: bool,
+    /// Functions created by monomorphization while solving other functions.
+    /// The fixed-point driver drains this queue so every concrete copy is
+    /// itself solved (struct literals monomorphized, return types resolved).
+    pending_functions: Vec<FunctionId>,
 }
 
 impl<'a> Solver<'a> {
@@ -48,6 +59,8 @@ impl<'a> Solver<'a> {
             constraint_version: 0,
             mono_depth: 0,
             mono_in_progress: HashSet::new(),
+            solving_generic_function: false,
+            pending_functions: Vec::new(),
         }
     }
 
@@ -537,7 +550,12 @@ impl<'a> Solver<'a> {
                     }
                 }
                 self.apply_struct_field_constraints(e);
-            } else {
+            } else if !self.solving_generic_function {
+                // Only report missing type arguments when we are in a concrete
+                // (non-generic) context. Inside a generic function body a
+                // struct literal legitimately keeps abstract type arguments
+                // (`T`); the concrete copies are produced by monomorphization
+                // and are solved separately.
                 let generics = struct_def.borrow();
                 let name = generics.name.to_string();
                 self.errors.insert(TypeErr::CannotInferTypeArgs {
@@ -555,6 +573,11 @@ impl<'a> Solver<'a> {
                         generic_name: name.clone(),
                     });
                 }
+                self.apply_struct_field_constraints(e);
+            } else {
+                // Generic context: leave the struct literal unmonomorphized
+                // (it still references the generic definition) and constrain
+                // the non-generic field values against their declared types.
                 self.apply_struct_field_constraints(e);
             }
         } else {
@@ -957,8 +980,13 @@ impl<'a> Solver<'a> {
     }
 
     fn visit_call(&mut self, e: &ValueId) {
-        let v = e.borrow();
-        let Value::Call { callee, args, .. } = &*v else { return };
+        let (callee, args, type_args, span) = {
+            let v = e.borrow();
+            let Value::Call { callee, args, type_args, span } = &*v else {
+                return;
+            };
+            (callee.clone(), args.clone(), type_args.clone(), *span)
+        };
         let callee_func_id = match &*callee.borrow() {
             Value::FunctionSymbol { id, .. } if id.borrow().generics.as_ref().is_some_and(|g| !g.is_empty()) => {
                 Some(id.clone())
@@ -966,32 +994,62 @@ impl<'a> Solver<'a> {
             _ => None,
         };
         if let Some(ref fid) = callee_func_id {
-            // Try positional inference first
-            let pos_subst = self.infer_generic_args_from_call(fid, &args.positional);
-            // Named args should supplement positional inference, not be an
-            // alternative. Start with the positional result, then fold in named args.
-            let subst = if let Some(pos) = pos_subst {
-                if !args.named.is_empty() {
-                    if let Some(named) = self.infer_generic_args_from_call_named(fid, args) {
-                        // Merge: start with positional bindings, add named on top
-                        let mut merged = pos;
-                        for (k, v) in named.generic_mapping {
-                            merged.generic_mapping.entry(k).or_insert(v);
+            let has_explicit = !type_args.positional.is_empty() || !type_args.named.is_empty();
+            let explicit_subst = if has_explicit {
+                self.explicit_type_args_to_subst(fid, &type_args)
+            } else {
+                None
+            };
+            let subst = if let Some(Some(explicit)) = explicit_subst {
+                // User-supplied type arguments take priority: monomorphize
+                // directly with them, then fold any inferred bindings on top.
+                Some(explicit)
+            } else if let Some(None) = explicit_subst {
+                let func = fid.borrow();
+                let generic_name = func
+                    .generics
+                    .as_ref()
+                    .and_then(|g| g.keys().next())
+                    .cloned()
+                    .unwrap_or_else(|| NString::from("?"))
+                    .to_string();
+                drop(func);
+                self.errors.insert(TypeErr::CannotInferTypeArgs {
+                    span,
+                    generic_name,
+                    reason: "explicit type arguments do not cover every generic parameter of the function"
+                        .into(),
+                });
+                None
+            } else {
+                // No explicit type arguments: fall back to positional inference.
+                // Try positional inference first
+                let pos_subst = self.infer_generic_args_from_call(fid, &args.positional);
+                // Named args should supplement positional inference, not be an
+                // alternative. Start with the positional result, then fold in named args.
+                if let Some(pos) = pos_subst {
+                    if !args.named.is_empty() {
+                        if let Some(named) = self.infer_generic_args_from_call_named(fid, &args) {
+                            // Merge: start with positional bindings, add named on top
+                            let mut merged = pos;
+                            for (k, v) in named.generic_mapping {
+                                merged.generic_mapping.entry(k).or_insert(v);
+                            }
+                            for (k, v) in named.inferred_mapping {
+                                merged.inferred_mapping.entry(k).or_insert(v);
+                            }
+                            Some(merged)
+                        } else {
+                            Some(pos)
                         }
-                        for (k, v) in named.inferred_mapping {
-                            merged.inferred_mapping.entry(k).or_insert(v);
-                        }
-                        Some(merged)
                     } else {
                         Some(pos)
                     }
+                } else if !args.named.is_empty() {
+                    self.infer_generic_args_from_call_named(fid, &args)
                 } else {
-                    Some(pos)
+                    None
                 }
-            } else if !args.named.is_empty() {
-                self.infer_generic_args_from_call_named(fid, args)
-            } else {
-                None
             };
             if let Some(subst) = subst {
                 let mono_id = self.monomorphize_function(fid, &subst);
@@ -999,9 +1057,30 @@ impl<'a> Solver<'a> {
                     span: SrcPos::default(),
                     id: mono_id,
                 });
+            } else if !self.solving_generic_function && !has_explicit {
+                // A generic function call whose type arguments could not be
+                // inferred (e.g. `foo()` for `fn foo<T>() -> Point<T>`) would
+                // otherwise leave `GenericParam` types in place and panic later
+                // in MIR lowering. Report a clear diagnostic instead. Inside a
+                // generic function body the call may legitimately stay generic;
+                // its monomorphized copies are resolved with concrete types.
+                let func = fid.borrow();
+                let generic_name = func
+                    .generics
+                    .as_ref()
+                    .and_then(|g| g.keys().next())
+                    .cloned()
+                    .unwrap_or_else(|| NString::from("?"))
+                    .to_string();
+                drop(func);
+                self.errors.insert(TypeErr::CannotInferTypeArgs {
+                    span,
+                    generic_name,
+                    reason: "cannot infer type arguments for generic function call".into(),
+                });
             }
         }
-        self.visit(callee);
+        self.visit(&callee);
         if let Value::FunctionSymbol { id, .. } = &*callee.borrow() {
             let func = id.borrow();
             for (i, arg) in args.positional.iter().enumerate() {
@@ -1063,6 +1142,7 @@ impl<'a> Solver<'a> {
                                 id: mono_id,
                             }),
                             args: args_with_self,
+                            type_args: Arguments::default(),
                         });
                         self.visit(e);
                         return;
@@ -1106,6 +1186,7 @@ impl<'a> Solver<'a> {
                             id: method_id,
                         }),
                         args: args_with_self,
+                        type_args: Arguments::default(),
                     });
                     self.visit(e);
                     return;
@@ -1153,6 +1234,10 @@ impl<'a> Solver<'a> {
         }
         for (a, p) in args.iter().zip(ptypes.iter()) {
             let at = a.borrow().determine_type(self.symbol_tab).ok()?;
+            let at = default_inferred_literal(&at);
+            if at.is_inferred() {
+                continue;
+            }
             unify_types_with_subst(&at, p, &mut subst);
         }
         // Ensure all generic params (including those appearing only in the
@@ -1170,7 +1255,7 @@ impl<'a> Solver<'a> {
                 }
             }
         }
-        if subst.generic_mapping.is_empty() {
+        if subst.generic_mapping.is_empty() || !substitution_is_concrete(&subst) {
             return None;
         }
         Some(subst)
@@ -1188,6 +1273,7 @@ impl<'a> Solver<'a> {
             if let Some(pid) = func.params.iter().find(|p| p.borrow().name == *name) {
                 let pt = pid.borrow().ty;
                 if let Ok(at) = v.borrow().determine_type(self.symbol_tab) {
+                    let at = default_inferred_literal(&at);
                     if at.is_inferred() {
                         continue;
                     }
@@ -1200,6 +1286,7 @@ impl<'a> Solver<'a> {
             if let Some(pid) = func.params.get(i) {
                 let pt = pid.borrow().ty;
                 if let Ok(at) = v.borrow().determine_type(self.symbol_tab) {
+                    let at = default_inferred_literal(&at);
                     if at.is_inferred() {
                         continue;
                     }
@@ -1208,7 +1295,7 @@ impl<'a> Solver<'a> {
                 }
             }
         }
-        if !any || subst.generic_mapping.is_empty() {
+        if !any || subst.generic_mapping.is_empty() || !substitution_is_concrete(&subst) {
             return None;
         }
         // Collect all generic param indices that appear in parameter types,
@@ -1226,6 +1313,67 @@ impl<'a> Solver<'a> {
             }
         }
         Some(subst)
+    }
+
+    /// Build a substitution directly from user-supplied explicit type
+    /// arguments (turbofish). Returns `Some(Some(_))` when the arguments
+    /// cover every generic parameter that appears in the function's
+    /// signature, `Some(None)` when arguments were supplied but are
+    /// incomplete, and `None` when the function has no generics to resolve.
+    fn explicit_type_args_to_subst(&self, fid: &FunctionId, type_args: &Arguments<TypeId>) -> Option<Option<Substitution>> {
+        let func = fid.borrow();
+        let generics = func.generics.as_ref()?;
+        if generics.is_empty() {
+            return Some(Some(Substitution::default()));
+        }
+
+        // Map generic parameter names to their declared indices.
+        let mut name_to_index: BTreeMap<NString, u32> = BTreeMap::new();
+        for (pn, pd) in generics.iter() {
+            let idx = pd
+                .as_ref()
+                .and_then(|t| {
+                    if let Type::GenericParam { index, .. } = &**t {
+                        Some(*index)
+                    } else {
+                        None
+                    }
+                })
+                .unwrap_or_else(|| generics.keys().position(|k| k == pn).unwrap_or(0) as u32);
+            name_to_index.insert(pn.clone(), idx);
+        }
+
+        let mut subst = Substitution::default();
+        // Positional arguments bind in declaration order.
+        for (i, (pn, _)) in generics.iter().enumerate() {
+            if let Some(arg) = type_args.positional.get(i) {
+                let idx = name_to_index.get(pn).copied().unwrap_or(i as u32);
+                subst.generic_mapping.insert(idx, *arg);
+            }
+        }
+        // Named arguments bind by name.
+        for (name, arg) in &type_args.named {
+            let Some(idx) = name_to_index.get(name) else {
+                return Some(None);
+            };
+            subst.generic_mapping.insert(*idx, *arg);
+        }
+
+        // Every generic parameter that appears in the signature must be bound.
+        let mut signature_indices: BTreeMap<NString, u32> = BTreeMap::new();
+        for pid in &func.params {
+            collect_generic_params_from_type(&pid.borrow().ty, &mut signature_indices);
+        }
+        collect_generic_params_from_type(&func.return_type, &mut signature_indices);
+        for (_, idx) in &signature_indices {
+            if !subst.generic_mapping.contains_key(idx) {
+                return Some(None);
+            }
+        }
+        if subst.generic_mapping.is_empty() {
+            return None;
+        }
+        Some(Some(subst))
     }
 
     fn infer_generic_args_from_struct_fields(
@@ -1281,7 +1429,7 @@ impl<'a> Solver<'a> {
                 }
             }
         }
-        if !any {
+        if !any || !substitution_is_concrete(&subst) {
             return None;
         }
         for info in pi.values() {
@@ -1323,6 +1471,14 @@ impl<'a> Solver<'a> {
                         continue;
                     }
                     if args.len() != opn.len() {
+                        continue;
+                    }
+                    // Only monomorphize when every type argument is concrete.
+                    // Inside a generic function body the constraint may carry
+                    // abstract `GenericParam` arguments (e.g. `Point<T>`); we
+                    // must not fabricate a mono struct for those — the concrete
+                    // copies are monomorphized later with real types.
+                    if args.iter().any(|a| type_contains_any_generic_param(a) || a.is_inferred()) {
                         continue;
                     }
                     let mut subst = Substitution::default();
@@ -1404,6 +1560,11 @@ impl<'a> Solver<'a> {
         self.mono_cache.insert(ck, mono_id.clone());
         self.mono_depth -= 1;
         self.mono_in_progress.remove(&ck);
+        // Queue the concrete copy for solving: its body still contains
+        // references to the original generic items (e.g. a generic struct
+        // literal) that must be monomorphized with the concrete type
+        // arguments before codegen. The fixed-point driver drains this queue.
+        self.pending_functions.push(mono_id.clone());
         mono_id
     }
 
@@ -1474,6 +1635,24 @@ impl<'a> Solver<'a> {
     // ── Main entry points ──────────────────────────────────────────
 
     fn solve_function(&mut self, function: &mut Function, log: &CompilerLog) -> Result<(), crate::SolveError> {
+        // Track whether we are inside a generic (uninstantiated) function so
+        // that generic-only constructs (e.g. struct literals with abstract
+        // type arguments) don't produce spurious inference errors here.
+        self.solving_generic_function = function.generics.as_ref().is_some_and(|g| !g.is_empty());
+
+        // Reset per-function inference state. When the same Solver is reused
+        // across functions (the fixed-point driver), stale constraints from a
+        // previously solved function must not leak into this one. Reusing a
+        // stale constraint key can also hash a Value that references the
+        // function currently being solved (its `FunctionId` hash borrows the
+        // whole function), which would panic while `function` is mutably
+        // borrowed. The monomorphization caches intentionally persist.
+        self.constraints.clear();
+        self.worklist.clear();
+        self.errors.clear();
+        self.constraint_version = 0;
+        self.function_return_type = None;
+
         function.return_type = resolve_type_impl(self, &function.return_type, log);
         for param_id in &function.params {
             let mut p = param_id.borrow_mut();
@@ -1506,6 +1685,17 @@ impl<'a> Solver<'a> {
             // (e.g. InferredInteger -> I32).  Propagate those final types
             // back to the local variable `ty` fields.
             self.sync_local_types_from_initializers(body);
+        }
+        // Normalize the function's signature types now that body solving may
+        // have monomorphized generic structs. A `Parameterized` type such as
+        // `Point<i32>` whose struct has been monomorphized to `Point::<mono-N>`
+        // resolves to the concrete `Type::Struct { def: Point::<mono-N> }` form,
+        // which is the representation expected by validation, MIR lowering and
+        // codegen.
+        function.return_type = resolve_type_impl(self, &function.return_type, log);
+        for param_id in &function.params {
+            let mut p = param_id.borrow_mut();
+            p.ty = resolve_type_impl(self, &p.ty, log);
         }
         for error in &self.errors {
             log.report(error);
@@ -1541,6 +1731,69 @@ impl<'a> Solver<'a> {
                         {
                             lv_mut.ty = new_ty.into();
                         }
+                    }
+                }
+            }
+        }
+    }
+
+    fn normalize_function_types(&mut self, function: &mut Function, log: &CompilerLog) {
+        // Re-resolve signature types now that the body may have monomorphized
+        // generic structs. This collapses `Parameterized` types (e.g.
+        // `Point<i32>`) into their concrete `Type::Struct` form whenever a
+        // matching mono struct definition has been created.
+        function.return_type = resolve_type_impl(self, &function.return_type, log);
+        for param_id in &function.params {
+            let mut p = param_id.borrow_mut();
+            p.ty = resolve_type_impl(self, &p.ty, log);
+        }
+
+        // Re-sync local variable types from their (now fully resolved)
+        // initializers. A local bound to `foo::<i32>()` first receives the
+        // parameterized return type of the generic call; once the
+        // monomorphized copy of `foo` is solved, the type collapses to the
+        // concrete mono struct form and the local must be updated to match.
+        if let Some(body) = &function.body {
+            self.normalize_local_types_recursive(body);
+        }
+    }
+
+    fn normalize_local_types_recursive(&mut self, elements: &[BlockElement]) {
+        for element in elements {
+            match element {
+                BlockElement::Local(lv) => {
+                    let (init_id, is_parameterized) = {
+                        let local = lv.borrow();
+                        (local.initializer.clone(), matches!(&*local.ty, Type::Parameterized { .. }))
+                    };
+                    if is_parameterized {
+                        if let Some(init_id) = init_id {
+                            if let Ok(new_ty) = init_id.borrow().determine_type(self.symbol_tab) {
+                                lv.borrow_mut().ty = new_ty.into();
+                            }
+                        }
+                    }
+                }
+                BlockElement::Expr(expr) => {
+                    let value = expr.borrow();
+                    match &*value {
+                        Value::Block { block, .. } => {
+                            self.normalize_local_types_recursive(&block.borrow().elements);
+                        }
+                        Value::If {
+                            true_branch,
+                            false_branch,
+                            ..
+                        } => {
+                            self.normalize_local_types_recursive(&true_branch.borrow().elements);
+                            if let Some(fb) = false_branch {
+                                self.normalize_local_types_recursive(&fb.borrow().elements);
+                            }
+                        }
+                        Value::While { body, .. } | Value::Loop { body, .. } => {
+                            self.normalize_local_types_recursive(&body.borrow().elements);
+                        }
+                        _ => {}
                     }
                 }
             }
@@ -1706,6 +1959,31 @@ impl<'a> Solver<'a> {
 
 // ── Free functions that are borrowed by Solver via &self ───────────
 
+/// Build the same `MonoCacheKey` that `monomorphize_struct` uses when
+/// instantiating a generic struct, but from a `Parameterized` type's
+/// positional arguments. This lets `resolve_type_impl` reverse-lookup an
+/// already-created mono struct definition and collapse `Point<i32>` into
+/// `Type::Struct { def: Point::<mono-N> }`.
+fn parameterized_mono_cache_key(sid: &StructDefId, positional: &[TypeId]) -> MonoCacheKey {
+    let sd = sid.borrow();
+    let generics = sd.generics.as_ref().expect("struct must be generic");
+    let mut name_to_index: BTreeMap<NString, u32> = BTreeMap::new();
+    for field in sd.fields.values() {
+        collect_generic_params_from_type(&field.ty, &mut name_to_index);
+    }
+    let ordered: Vec<&NString> = generics.keys().collect();
+    let mut sa: Vec<(u32, TypeId)> = Vec::with_capacity(positional.len());
+    for (i, arg) in positional.iter().enumerate() {
+        let idx = ordered
+            .get(i)
+            .and_then(|pn| name_to_index.get(*pn))
+            .copied()
+            .unwrap_or(i as u32);
+        sa.push((idx, *arg));
+    }
+    MonoCacheKey::new(sid.as_usize(), &sa)
+}
+
 fn resolve_type_impl(s: &Solver, ty: &TypeId, log: &CompilerLog) -> TypeId {
     let span = ty.span();
     match &*ty.deref() {
@@ -1767,6 +2045,26 @@ fn resolve_type_impl(s: &Solver, ty: &TypeId, log: &CompilerLog) -> TypeId {
                 .iter()
                 .map(|(k, v)| (k.clone(), resolve_type_impl(s, v, log)))
                 .collect();
+            // If the base is a generic struct that has already been
+            // monomorphized for exactly these (concrete) type arguments,
+            // collapse the parameterized type into the concrete struct type.
+            // This is the representation expected downstream: validation
+            // compares `Type::Struct` forms, MIR lowering builds layouts from
+            // mono struct definitions, and codegen never sees `Parameterized`.
+            if let Type::Struct { def, .. } = &*rb
+                && def.borrow().generics.as_ref().is_some_and(|g| !g.is_empty())
+                && ra.iter().all(|a| !type_contains_any_generic_param(a) && !a.is_inferred())
+                && args.named.is_empty()
+            {
+                let key = parameterized_mono_cache_key(def, &ra);
+                if let Some(mono_id) = s.struct_mono_cache.get(&key) {
+                    return Type::Struct {
+                        span,
+                        def: mono_id.clone(),
+                    }
+                    .into();
+                }
+            }
             Type::Parameterized {
                 span,
                 base: rb,
@@ -1991,6 +2289,68 @@ pub fn resolve_function(
 ) -> Result<(), crate::SolveError> {
     ensure_range_structs(m);
     Solver::new(m).solve_function(function, log)
+}
+
+/// Solve every function in the symbol table to a fixed point, including
+/// functions produced by monomorphization while solving other functions.
+///
+/// Generic calls (e.g. `foo::<i32>()`) create monomorphized copies during
+/// solving. Those copies contain references to original generic items (struct
+/// literals, nested generic calls) that must themselves be solved with the
+/// concrete type arguments. After each solve round, all solved functions are
+/// re-normalized so that types referencing newly created mono structs collapse
+/// to their concrete `Type::Struct` form.
+pub fn resolve_all_functions(m: &mut SymbolTab, log: &CompilerLog) -> Result<(), crate::SolveError> {
+    ensure_range_structs(m);
+
+    // Collect the initially-known functions before the solver borrows `m`
+    // mutably. Functions created later are discovered via the solver's
+    // `pending_functions` queue.
+    let initial: Vec<FunctionId> = m
+        .functions()
+        .filter(|f| f.borrow().body.is_some())
+        .cloned()
+        .collect();
+
+    let mut solver = Solver::new(m);
+    let mut all_functions: Vec<FunctionId> = initial.clone();
+    let mut queue: std::collections::VecDeque<FunctionId> = initial.into_iter().collect();
+    let mut visited: std::collections::HashSet<usize> = std::collections::HashSet::new();
+    let mut failed = false;
+
+    while let Some(fid) = queue.pop_front() {
+        if !visited.insert(fid.as_usize()) {
+            continue;
+        }
+        {
+            let mut func = fid.borrow_mut();
+            if solver.solve_function(&mut func, log).is_err() {
+                failed = true;
+            }
+        }
+        // Discover monomorphized functions created while solving this one.
+        for nf in solver.pending_functions.drain(..) {
+            all_functions.push(nf.clone());
+            if nf.borrow().body.is_some() {
+                queue.push_back(nf);
+            }
+        }
+        // Re-normalize every solved function so that types referencing the
+        // structs/functions monomorphized in this round resolve to their
+        // concrete forms. Order doesn't matter here: the functions themselves
+        // were fully normalized by `solve_function`.
+        let snapshot: Vec<FunctionId> = all_functions.clone();
+        for prev in &snapshot {
+            let mut func = prev.borrow_mut();
+            solver.normalize_function_types(&mut func, log);
+        }
+    }
+
+    if failed {
+        Err(crate::SolveError::TypeErrors)
+    } else {
+        Ok(())
+    }
 }
 
 pub fn resolve_global(
@@ -2952,6 +3312,7 @@ mod tests {
                     positional: vec![].into(),
                     named: vec![].into(),
                 },
+                type_args: Arguments::default(),
             });
             let mut func = make_function("call_func", vec![BlockElement::Expr(call)]);
             let result = resolve_function(&mut func, &mut tab, &log);
@@ -2997,6 +3358,7 @@ mod tests {
                     positional: vec![ValueId::from(Value::I32 { span: sp(), value: 42 })].into(),
                     named: vec![].into(),
                 },
+                type_args: Arguments::default(),
             });
             let mut func = make_function("call_args_func", vec![BlockElement::Expr(call)]);
             let result = resolve_function(&mut func, &mut tab, &log);
@@ -3042,6 +3404,7 @@ mod tests {
                     positional: vec![].into(),
                     named: vec![(NString::from("x"), ValueId::from(Value::I32 { span: sp(), value: 42 }))].into(),
                 },
+                type_args: Arguments::default(),
             });
             let mut func = make_function("named_args_func", vec![BlockElement::Expr(call)]);
             let result = resolve_function(&mut func, &mut tab, &log);

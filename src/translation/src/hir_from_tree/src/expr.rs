@@ -934,8 +934,6 @@ pub(crate) fn lower_block_value(block: ast::Block, ctx: &mut Ast2HirCtx, log: &C
 pub(crate) fn lower_expr_path(expr_path: ast::ExprPath, ctx: &mut Ast2HirCtx, log: &CompilerLog) -> Result<Value, ()> {
     let span: SrcPos = expr_path.span.start;
 
-    let _explicit_type_args = helpers::extract_type_args_from_expr_path(&expr_path.segments, ctx, log);
-
     match expr_path.resolved_path {
         Some(resolved_path) => match ctx.ast_symbol_map.get(&resolved_path) {
             Some(SymbolKind::EnumVariant) => Ok(Value::EnumVariant {
@@ -1113,6 +1111,13 @@ pub(crate) fn lower_function_call(
     log: &CompilerLog,
 ) -> Result<Value, ()> {
     let span: SrcPos = function_call.span.start;
+
+    // Preserve explicit type arguments (turbofish syntax, e.g. `foo::<i32>()`)
+    // so the solver can monomorphize generic callees when inference alone is
+    // insufficient (e.g. nullary generic functions whose type parameters only
+    // appear in the return type).
+    let type_args = lower_call_type_args(&function_call.callee, ctx, log);
+
     let callee = lower_expr(function_call.callee, ctx, log)?;
 
     let args = lower_call_arguments(function_call.positional, function_call.named, ctx, log);
@@ -1121,7 +1126,43 @@ pub(crate) fn lower_function_call(
         span,
         callee: callee.into(),
         args,
+        type_args,
     })
+}
+
+/// Extract and lower explicit type arguments (`foo::<T1, T2>` / `foo::<T = i32>`)
+/// from a call's callee path, if the callee is a path expression.
+fn lower_call_type_args(
+    callee: &ast::Expr,
+    ctx: &mut Ast2HirCtx,
+    log: &CompilerLog,
+) -> Arguments<TypeId> {
+    let ast::Expr::Path(path) = callee else {
+        return Arguments::default();
+    };
+
+    let mut positional = Vec::new();
+    let mut named = Vec::new();
+    for segment in &path.segments {
+        let Some(type_arguments) = &segment.type_arguments else {
+            continue;
+        };
+        for type_arg in type_arguments {
+            let Ok(ty) = lower_type(type_arg.value.clone(), ctx, log) else {
+                continue;
+            };
+            if let Some(name) = &type_arg.name {
+                named.push((name.clone(), ty.into()));
+            } else {
+                positional.push(ty.into());
+            }
+        }
+    }
+
+    Arguments {
+        positional: positional.into(),
+        named: named.into(),
+    }
 }
 
 pub(crate) fn lower_method_call(

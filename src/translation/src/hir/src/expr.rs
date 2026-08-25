@@ -289,6 +289,15 @@ pub struct Arguments<T> {
     pub named: ThinVec<(NString, T)>,
 }
 
+impl<T> Default for Arguments<T> {
+    fn default() -> Self {
+        Self {
+            positional: ThinVec::new(),
+            named: ThinVec::new(),
+        }
+    }
+}
+
 pub struct ArgumentsIterator<T> {
     positional: ThinVec<T>,
     named: ThinVec<(NString, T)>,
@@ -674,6 +683,12 @@ pub enum Value {
         callee: ValueId,
         /// The arguments to the call.
         args: Arguments<ValueId>,
+        /// Explicit type arguments supplied with turbofish syntax
+        /// (`foo::<T1, T2>(args)`). Empty when no type arguments were
+        /// written at the call site. Used by the solver to monomorphize
+        /// generic callees when inference alone cannot determine the
+        /// type parameters (e.g. nullary generic functions).
+        type_args: Arguments<TypeId>,
     },
 
     /// A method call expression (`object.method_name(args)`).
